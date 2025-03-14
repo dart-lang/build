@@ -245,6 +245,9 @@ class SingleStepReaderWriter extends AssetReader
   @override
   FilesystemCache get cache => _delegate.cache;
 
+  @override
+  FilesystemDigests get digests => _delegate.digests;
+
   /// Checks whether [id] can be read by this step - attempting to build the
   /// asset if necessary.
   ///

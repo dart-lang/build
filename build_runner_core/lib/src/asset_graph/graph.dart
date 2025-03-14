@@ -61,7 +61,6 @@ class AssetGraph implements GeneratedAssetHider {
     Set<AssetId> sources,
     Set<AssetId> internalSources,
     PackageGraph packageGraph,
-    AssetReader digestReader,
   ) async {
     var packageLanguageVersions = {
       for (var pkg in packageGraph.allPackages.values)
@@ -77,24 +76,62 @@ class AssetGraph implements GeneratedAssetHider {
     graph._addSources(sources);
     graph
       .._addBuilderOptionsNodes(buildPhases)
+      .._addInternalSources(internalSources)
       .._addOutputsForSources(
         buildPhases,
         sources,
         packageGraph.root.name,
         placeholders: placeholders,
       );
-    // Pre-emptively compute digests for the nodes we know have outputs.
-    await graph._setLastKnownDigests(
-      sources.where((id) => graph.get(id)!.primaryOutputs.isNotEmpty),
-      digestReader,
-    );
-    // Always compute digests for all internal nodes.
-    graph._addInternalSources(internalSources);
-    await graph._setLastKnownDigests(internalSources, digestReader);
     return graph;
   }
 
   List<int> serialize() => _AssetGraphSerializer(this).serialize();
+
+  Future<void> computeDigests(AssetReader digestReader) async {
+    await _setLastKnownDigests(
+      allNodes
+          .where(
+            (node) =>
+                (node.type == NodeType.source) ||
+                (node.type == NodeType.internal),
+          )
+          .map((node) => node.id),
+      digestReader,
+    );
+  }
+
+  void prepareForSave(FilesystemDigests digests) {
+    final seenIds = <AssetId>{};
+    for (final entry in digests.digests) {
+      final id = entry.key;
+      seenIds.add(id);
+      final filesystemDigest = entry.value;
+
+      final node = get(entry.key);
+      if (node == null) throw StateError('Missing node for $id');
+
+      final nodeDigest = node.lastKnownDigest;
+
+      if (filesystemDigest != nodeDigest) {
+        throw StateError(
+          'Digest mismatch for $id: '
+          'filesystem: $filesystemDigest, node: $nodeDigest',
+        );
+      }
+    }
+
+    for (final node in allNodes) {
+      if (node.type == NodeType.builderOptions ||
+          node.type == NodeType.glob ||
+          node.type == NodeType.generated) {
+        continue;
+      }
+      if (node.lastKnownDigest != null && !seenIds.contains(node.id)) {
+        throw StateError('Missing in FilesystemDigests: ${node.id}');
+      }
+    }
+  }
 
   /// Checks if [id] exists in the graph.
   bool contains(AssetId id) =>
@@ -117,6 +154,9 @@ class AssetGraph implements GeneratedAssetHider {
     if (node == null) throw StateError('Missing node: $id');
     final updatedNode = node.rebuild(updates);
     _nodesByPackage[id.package]![id.path] = updatedNode;
+    if (updatedNode.id.path == 'lib/src/base/errors.dart') {
+      print('Update $id here: ${StackTrace.current}');
+    }
     return updatedNode;
   }
 
@@ -229,7 +269,8 @@ class AssetGraph implements GeneratedAssetHider {
     await digestReader.cache.invalidate(ids);
     await Future.wait(
       ids.map((id) async {
-        final digest = await digestReader.digest(id);
+        final canRead = await digestReader.canRead(id);
+        final digest = canRead ? await digestReader.digest(id) : null;
         updateNode(id, (nodeBuilder) {
           nodeBuilder.lastKnownDigest = digest;
         });

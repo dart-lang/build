@@ -108,6 +108,9 @@ class BuildStepImpl implements BuildStep, AssetReaderState, AssetReaderWriter {
   @override
   FilesystemCache get cache => _readerWriter.cache;
 
+  @override
+  FilesystemDigests get digests => _readerWriter.digests;
+
   InputTracker get inputTracker => _readerWriter.inputTracker;
 
   @override

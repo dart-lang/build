@@ -55,6 +55,11 @@ extension AssetReaderStateExtension on AssetReader {
     return (this as AssetReaderState).cache;
   }
 
+  FilesystemDigests get digests {
+    _requireIsAssetReaderState();
+    return (this as AssetReaderState).digests;
+  }
+
   /// Throws if `this` is not an [AssetReaderState].
   void _requireIsAssetReaderState() {
     if (this is! AssetReaderState) {
@@ -115,4 +120,7 @@ abstract interface class AssetReaderState {
 
   /// The [FilesystemCache] that this reader uses for caching.
   FilesystemCache get cache;
+
+  /// The [FilesystemDigests] that this reader tracks digests in.
+  FilesystemDigests get digests;
 }

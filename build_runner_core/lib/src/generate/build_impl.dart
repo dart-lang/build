@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:build/build.dart';
@@ -89,13 +90,21 @@ class BuildImpl {
     Map<AssetId, ChangeType> updates, {
     Set<BuildDirectory> buildDirs = const <BuildDirectory>{},
     Set<BuildFilter> buildFilters = const {},
-  }) {
+  }) async {
     finalizedReader.reset(_buildPaths(buildDirs), buildFilters);
+
     _readerWriter = _readerWriter.copyWith(
       digests: SingleBuildFilesystemDigests(),
     );
-    return _SingleBuild(this, buildDirs, buildFilters).run(updates)
-      ..whenComplete(_options.resolvers.reset);
+    await assetGraph.computeDigests(_readerWriter);
+
+    final result = await _SingleBuild(
+      this,
+      buildDirs,
+      buildFilters,
+    ).run(updates);
+    _options.resolvers.reset();
+    return result;
   }
 
   static Future<BuildImpl> create(
@@ -288,6 +297,8 @@ class _SingleBuild {
         // Run a fresh build.
         var result = await logTimedAsync(_logger, 'Running build', _runPhases);
 
+        _assetGraph.prepareForSave(_readerWriter.digests);
+
         // Write out the dependency graph file.
         await logTimedAsync(
           _logger,
@@ -325,6 +336,7 @@ class _SingleBuild {
       },
       (e, st) {
         if (!done.isCompleted) {
+          stdout.writeln('failed $e $st');
           _logger.severe('Unhandled build failure!', e, st);
           done.complete(BuildResult(BuildStatus.failure, []));
         }

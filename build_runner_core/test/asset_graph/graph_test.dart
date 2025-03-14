@@ -52,7 +52,6 @@ void main() {
           <AssetId>{},
           <AssetId>{},
           fooPackageGraph,
-          digestReader,
         );
       });
 
@@ -254,11 +253,10 @@ void main() {
           {primaryInputId, excludedInputId},
           {internalId},
           fooPackageGraph,
-          digestReader,
         );
       });
 
-      test('build', () {
+      test('build', () async {
         expect(graph.outputs, unorderedEquals([primaryOutputId]));
         expect(
           graph.allNodes.map((n) => n.id),
@@ -273,6 +271,7 @@ void main() {
             ...placeholders,
           ]),
         );
+        await graph.computeDigests(digestReader);
         var node = graph.get(primaryInputId)!;
         expect(node.primaryOutputs, [primaryOutputId]);
         expect(node.outputs, isEmpty);
@@ -581,7 +580,6 @@ void main() {
           {makeAssetId('foo|file')},
           <AssetId>{},
           fooPackageGraph,
-          digestReader,
         ),
         throwsA(duplicateAssetNodeException),
       );
@@ -626,7 +624,6 @@ void main() {
           sources,
           <AssetId>{},
           fooPackageGraph,
-          digestReader,
         );
         expect(
           graph.outputs,
@@ -671,7 +668,6 @@ void main() {
           sources,
           <AssetId>{},
           fooPackageGraph,
-          digestReader,
         );
         expect(
           graph.outputs,
@@ -710,7 +706,6 @@ void main() {
           sources,
           <AssetId>{},
           fooPackageGraph,
-          digestReader,
         );
 
         // Pretend a build happened
@@ -768,7 +763,6 @@ void main() {
           {source},
           <AssetId>{},
           packageGraph,
-          digestReader,
         );
 
         // Pretend a build happened

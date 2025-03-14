@@ -35,6 +35,7 @@ class ReaderWriter extends AssetReader
   final Filesystem filesystem;
   @override
   final FilesystemCache cache;
+  @override
   final FilesystemDigests digests;
 
   final void Function(AssetId)? onDelete;

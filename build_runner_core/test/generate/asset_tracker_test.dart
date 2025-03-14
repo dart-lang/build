@@ -42,13 +42,7 @@ void main() {
       );
       var reader = ReaderWriter(packageGraph);
       var aId = AssetId('a', 'web/a.txt');
-      assetGraph = await AssetGraph.build(
-        [],
-        {aId},
-        <AssetId>{},
-        packageGraph,
-        reader,
-      );
+      assetGraph = await AssetGraph.build([], {aId}, <AssetId>{}, packageGraph);
       // We need to pre-emptively assign a digest so we determine that the
       // node is "interesting".
       final digest = await reader.digest(aId);

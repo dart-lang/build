@@ -48,6 +48,9 @@ class DelegatingAssetReaderWriter
   FilesystemCache get cache => reader.cache;
 
   @override
+  FilesystemDigests get digests => reader.digests;
+
+  @override
   AssetReaderWriter copyWith({
     FilesystemCache? cache,
     FilesystemDigests? digests,

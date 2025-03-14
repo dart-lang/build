@@ -9,6 +9,8 @@ import '../asset/id.dart';
 /// Digests accumulated during a build.
 abstract interface class FilesystemDigests {
   void addOrCheck(AssetId id, Digest digest);
+
+  Iterable<MapEntry<AssetId, Digest>> get digests;
 }
 
 class NoopFilesystemDigests implements FilesystemDigests {
@@ -16,6 +18,9 @@ class NoopFilesystemDigests implements FilesystemDigests {
 
   @override
   void addOrCheck(AssetId id, Digest digest) {}
+
+  @override
+  Iterable<MapEntry<AssetId, Digest>> get digests => const [];
 }
 
 class SingleBuildFilesystemDigests implements FilesystemDigests {
@@ -30,6 +35,9 @@ class SingleBuildFilesystemDigests implements FilesystemDigests {
       throw FileChangedException(id: id, from: existingDigest, to: digest);
     }
   }
+
+  @override
+  Iterable<MapEntry<AssetId, Digest>> get digests => _digests.entries;
 }
 
 class FileChangedException implements Exception {

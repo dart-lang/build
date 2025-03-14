@@ -148,7 +148,6 @@ targets:
           {makeAssetId('a|lib/a.txt'), makeAssetId('a|lib/b.txt')},
           <AssetId>{},
           aPackageGraph,
-          environment.reader,
         );
         var generatedAId = makeAssetId('a|lib/a.txt.copy');
         originalAssetGraph.updateNode(generatedAId, (nodeBuilder) {
@@ -190,7 +189,6 @@ targets:
           <AssetId>{},
           <AssetId>{},
           aPackageGraph,
-          environment.reader,
         );
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());
@@ -226,8 +224,8 @@ targets:
           {aTxt},
           <AssetId>{},
           aPackageGraph,
-          environment.reader,
         );
+        await originalAssetGraph.computeDigests(environment.reader);
 
         // pretend a build happened
         originalAssetGraph.updateNode(aTxtCopy, (nodeBuilder) {
@@ -268,7 +266,6 @@ targets:
           {makeAssetId('a|lib/test.txt')},
           <AssetId>{},
           aPackageGraph,
-          environment.reader,
         );
         var generatedSrcId = makeAssetId('a|lib/test.txt.copy');
         originalAssetGraph.updateNode(generatedSrcId, (nodeBuilder) {
@@ -312,7 +309,6 @@ targets:
           {makeAssetId('a|lib/a.txt')},
           <AssetId>{},
           aPackageGraph,
-          environment.reader,
         );
         var generatedACopyId = makeAssetId('a|lib/a.txt.copy');
         var generatedACloneId = makeAssetId('a|lib/a.txt.clone');
@@ -390,7 +386,6 @@ targets:
           <AssetId>{},
           <AssetId>{},
           aPackageGraph,
-          environment.reader,
         );
         var expectedIds = placeholderIdsFor(aPackageGraph)
           ..addAll([makeAssetId('a|Phase0.builderOptions')]);
@@ -490,7 +485,6 @@ targets:
           <AssetId>{},
           <AssetId>{},
           aPackageGraph,
-          environment.reader,
         );
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());
@@ -536,7 +530,6 @@ targets:
             <AssetId>{},
             <AssetId>{},
             aPackageGraph,
-            environment.reader,
           );
 
           await createFile(assetGraphPath, originalAssetGraph.serialize());
@@ -578,7 +571,6 @@ targets:
           <AssetId>{},
           <AssetId>{},
           aPackageGraph,
-          environment.reader,
         );
 
         var bytes = originalAssetGraph.serialize();
@@ -628,7 +620,6 @@ targets:
             <AssetId>{},
             <AssetId>{},
             aPackageGraph,
-            environment.reader,
           );
 
           await createFile(assetGraphPath, originalAssetGraph.serialize());
@@ -682,7 +673,6 @@ targets:
             <AssetId>{},
             <AssetId>{},
             aPackageGraph,
-            environment.reader,
           );
 
           await createFile(assetGraphPath, originalAssetGraph.serialize());
@@ -732,7 +722,6 @@ targets:
           <AssetId>{aTxt},
           <AssetId>{},
           aPackageGraph,
-          environment.reader,
         );
 
         var aTxtCopy = AssetId('a', 'lib/a.txt.copy');
@@ -774,7 +763,6 @@ targets:
           <AssetId>{aTxt},
           <AssetId>{},
           aPackageGraph,
-          environment.reader,
         );
 
         var aTxtCopy = AssetId('a', 'lib/a.txt.copy');
@@ -822,13 +810,9 @@ targets:
       test(
         'invalidates the graph if the language version of a package changes',
         () async {
-          var assetGraph = await AssetGraph.build(
-            [],
-            <AssetId>{},
-            {AssetId('a', '.dart_tool/package_config.json')},
-            aPackageGraph,
-            environment.reader,
-          );
+          var assetGraph = await AssetGraph.build([], <AssetId>{}, {
+            AssetId('a', '.dart_tool/package_config.json'),
+          }, aPackageGraph);
 
           var graph = await createFile(assetGraphPath, assetGraph.serialize());
 
@@ -875,13 +859,7 @@ targets:
       test('invalidates the graph if the enabled experiments change', () async {
         AssetGraph assetGraph;
         assetGraph = await withEnabledExperiments(
-          () => AssetGraph.build(
-            [],
-            <AssetId>{},
-            <AssetId>{},
-            aPackageGraph,
-            environment.reader,
-          ),
+          () => AssetGraph.build([], <AssetId>{}, <AssetId>{}, aPackageGraph),
           ['a'],
         );
 

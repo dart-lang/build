@@ -268,7 +268,6 @@ class _Loader {
             inputSources,
             internalSources,
             _options.packageGraph,
-            _environment.reader,
           );
         } on DuplicateAssetNodeException catch (e, st) {
           _logger.severe('Conflicting outputs', e, st);
