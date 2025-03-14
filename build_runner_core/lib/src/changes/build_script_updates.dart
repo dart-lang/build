@@ -70,17 +70,6 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
           'don\'t have your dependencies specified fully in your '
           'pubspec.yaml.',
         );
-      } else {
-        // Make sure we are tracking changes for all ids in [allSources].
-        for (var id in allSources) {
-          final node = graph.get(id)!;
-          if (node.lastKnownDigest == null) {
-            final digest = await reader.digest(id);
-            graph.updateNode(id, (nodeBuilder) {
-              nodeBuilder.lastKnownDigest = digest;
-            });
-          }
-        }
       }
     } on ArgumentError // ignore: avoid_catching_errors
     catch (_) {

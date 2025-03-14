@@ -78,7 +78,6 @@ void main() {
         sources.keys.toSet(),
         <AssetId>{},
         packageGraph,
-        readerWriter,
       );
       targetGraph = await TargetGraph.forPackageGraph(
         packageGraph,

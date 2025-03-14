@@ -57,7 +57,7 @@ class AssetTracker {
 
   AssetTracker(this._reader, this._targetGraph);
 
-  /// Checks for and returns any file system changes compared to the current
+  /// Checks for and returns any file system changest compared to the current
   /// state of the asset graph.
   Future<Map<AssetId, ChangeType>> collectChanges(AssetGraph assetGraph) async {
     var inputSources = await _findInputSources();
@@ -142,8 +142,7 @@ class AssetTracker {
     var preExistingSources = originalGraphSources.intersection(inputSources)
       ..addAll(internalSources.where(assetGraph.contains));
     var modifyChecks = preExistingSources.map((id) async {
-      var node = assetGraph.get(id)!;
-      var originalDigest = node.lastKnownDigest;
+      var originalDigest = assetGraph.previousFilesystemDigests.get(id);
       if (originalDigest == null) return;
       await _reader.cache.invalidate([id]);
       var currentDigest = await _reader.digest(id);
@@ -268,7 +267,6 @@ class _Loader {
             inputSources,
             internalSources,
             _options.packageGraph,
-            _environment.reader,
           );
         } on DuplicateAssetNodeException catch (e, st) {
           _logger.severe('Conflicting outputs', e, st);
@@ -307,7 +305,7 @@ class _Loader {
         'Checking for unexpected pre-existing outputs.',
         () => _initialBuildCleanup(
           conflictingOutputs,
-          _environment.writer.copyWith(generatedAssetHider: assetGraph),
+          _environment.writer.copyWriterWith(generatedAssetHider: assetGraph),
         ),
       );
     }
@@ -513,7 +511,7 @@ class _Loader {
       updates,
       _options.packageGraph.root.name,
       (id) => _environment.writer
-          .copyWith(generatedAssetHider: assetGraph)
+          .copyWriterWith(generatedAssetHider: assetGraph)
           .delete(id),
       _environment.reader.copyWith(generatedAssetHider: assetGraph),
     );
@@ -532,19 +530,21 @@ class _Loader {
       AssetId builderOptionsId,
       BuilderOptions options,
     ) {
-      assetGraph.updateNode(builderOptionsId, (nodeBuilder) {
-        if (nodeBuilder.type != NodeType.builderOptions) {
-          throw StateError(
-            'Expected node of type NodeType.builderOptionsNode:'
-            '${nodeBuilder.build()}',
-          );
-        }
-        var oldDigest = nodeBuilder.lastKnownDigest;
-        nodeBuilder.lastKnownDigest = computeBuilderOptionsDigest(options);
-        if (nodeBuilder.lastKnownDigest != oldDigest) {
-          result[builderOptionsId] = ChangeType.MODIFY;
-        }
-      });
+      final node = assetGraph.get(builderOptionsId)!;
+      if (node.type != NodeType.builderOptions) {
+        throw StateError(
+          'Expected node of type NodeType.builderOptionsNode:'
+          '$node',
+        );
+      }
+      final oldDigest = assetGraph.previousBuilderOptionsDigests.get(
+        builderOptionsId,
+      );
+      final newDigest = computeBuilderOptionsDigest(options);
+      if (oldDigest != newDigest) {
+        result[builderOptionsId] = ChangeType.MODIFY;
+      }
+      assetGraph.builderOptionsDigests.add(builderOptionsId, newDigest);
     }
 
     for (var phase = 0; phase < buildPhases.length; phase++) {

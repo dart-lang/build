@@ -11,12 +11,14 @@ import 'package:build/build.dart';
 import 'package:build/experiments.dart' as experiments_zone;
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:package_config/package_config.dart';
 import 'package:watcher/watcher.dart';
 
+import '../generate/output_digests.dart';
 import '../generate/phase.dart';
 import '../package_graph/package_graph.dart';
 import '../util/constants.dart';
@@ -45,11 +47,18 @@ class AssetGraph implements GeneratedAssetHider {
 
   final Map<String, LanguageVersion?> packageLanguageVersions;
 
+  final BuilderOptionsDigests previousBuilderOptionsDigests;
+  final BuilderOptionsDigests builderOptionsDigests = BuilderOptionsDigests();
+
+  final FilesystemDigests previousFilesystemDigests;
+
   AssetGraph._(
     this.buildPhasesDigest,
     this.dartVersion,
     this.packageLanguageVersions,
     this.enabledExperiments,
+    this.previousBuilderOptionsDigests,
+    this.previousFilesystemDigests,
   );
 
   /// Deserializes this graph.
@@ -61,7 +70,6 @@ class AssetGraph implements GeneratedAssetHider {
     Set<AssetId> sources,
     Set<AssetId> internalSources,
     PackageGraph packageGraph,
-    AssetReader digestReader,
   ) async {
     var packageLanguageVersions = {
       for (var pkg in packageGraph.allPackages.values)
@@ -72,29 +80,38 @@ class AssetGraph implements GeneratedAssetHider {
       Platform.version,
       packageLanguageVersions,
       experiments_zone.enabledExperiments,
+      BuilderOptionsDigests(),
+      const NoopFilesystemDigests(),
     );
     var placeholders = graph._addPlaceHolderNodes(packageGraph);
     graph._addSources(sources);
     graph
       .._addBuilderOptionsNodes(buildPhases)
+      .._addInternalSources(internalSources)
       .._addOutputsForSources(
         buildPhases,
         sources,
         packageGraph.root.name,
         placeholders: placeholders,
       );
-    // Pre-emptively compute digests for the nodes we know have outputs.
-    await graph._setLastKnownDigests(
-      sources.where((id) => graph.get(id)!.primaryOutputs.isNotEmpty),
-      digestReader,
-    );
-    // Always compute digests for all internal nodes.
-    graph._addInternalSources(internalSources);
-    await graph._setLastKnownDigests(internalSources, digestReader);
     return graph;
   }
 
-  List<int> serialize() => _AssetGraphSerializer(this).serialize();
+  List<int> serialize(FilesystemDigests digests) =>
+      _AssetGraphSerializer(this).serialize(digests);
+
+  Future<void> computeDigests(AssetReader digestReader) async {
+    await _setLastKnownDigests(
+      allNodes
+          .where(
+            (node) =>
+                (node.type == NodeType.source) ||
+                (node.type == NodeType.internal),
+          )
+          .map((node) => node.id),
+      digestReader,
+    );
+  }
 
   /// Checks if [id] exists in the graph.
   bool contains(AssetId id) =>
@@ -117,6 +134,9 @@ class AssetGraph implements GeneratedAssetHider {
     if (node == null) throw StateError('Missing node: $id');
     final updatedNode = node.rebuild(updates);
     _nodesByPackage[id.package]![id.path] = updatedNode;
+    if (updatedNode.id.path == 'lib/src/base/errors.dart') {
+      print('Update $id here: ${StackTrace.current}');
+    }
     return updatedNode;
   }
 
@@ -195,22 +215,20 @@ class AssetGraph implements GeneratedAssetHider {
     for (var phaseNum = 0; phaseNum < buildPhases.length; phaseNum++) {
       var phase = buildPhases[phaseNum];
       if (phase is InBuildPhase) {
-        add(
-          AssetNode.builderOptions(
-            builderOptionsIdForAction(phase, phaseNum),
-            lastKnownDigest: computeBuilderOptionsDigest(phase.builderOptions),
-          ),
+        final id = builderOptionsIdForAction(phase, phaseNum);
+        add(AssetNode.builderOptions(id));
+        builderOptionsDigests.add(
+          id,
+          computeBuilderOptionsDigest(phase.builderOptions),
         );
       } else if (phase is PostBuildPhase) {
         var actionNum = 0;
         for (var builderAction in phase.builderActions) {
-          add(
-            AssetNode.builderOptions(
-              builderOptionsIdForAction(builderAction, actionNum),
-              lastKnownDigest: computeBuilderOptionsDigest(
-                builderAction.builderOptions,
-              ),
-            ),
+          final id = builderOptionsIdForAction(builderAction, actionNum);
+          add(AssetNode.builderOptions(id));
+          builderOptionsDigests.add(
+            id,
+            computeBuilderOptionsDigest(builderAction.builderOptions),
           );
           actionNum++;
         }
@@ -229,10 +247,7 @@ class AssetGraph implements GeneratedAssetHider {
     await digestReader.cache.invalidate(ids);
     await Future.wait(
       ids.map((id) async {
-        final digest = await digestReader.digest(id);
-        updateNode(id, (nodeBuilder) {
-          nodeBuilder.lastKnownDigest = digest;
-        });
+        await digestReader.canRead(id);
       }),
     );
   }
@@ -370,9 +385,7 @@ class AssetGraph implements GeneratedAssetHider {
           .where(
             (node) =>
                 node.isTrackedInput &&
-                (node.outputs.isNotEmpty ||
-                    node.primaryOutputs.isNotEmpty ||
-                    node.lastKnownDigest != null),
+                (node.outputs.isNotEmpty || node.primaryOutputs.isNotEmpty),
           )
           .map((node) => node.id),
       digestReader,

@@ -353,13 +353,9 @@ void main() {
           readerWriter.testing.readBytes(makeAssetId('a|$assetGraphPath')),
         );
 
-        var expectedGraph = await AssetGraph.build(
-          [],
-          <AssetId>{},
-          {packageConfigId},
-          buildPackageGraph({rootPackage('a'): []}),
-          readerWriter,
-        );
+        var expectedGraph = await AssetGraph.build([], <AssetId>{}, {
+          packageConfigId,
+        }, buildPackageGraph({rootPackage('a'): []}));
 
         var builderOptionsId = makeAssetId('a|Phase0.builderOptions');
         var builderOptionsNode = AssetNode.builderOptions(

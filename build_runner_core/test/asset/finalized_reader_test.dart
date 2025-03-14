@@ -34,7 +34,6 @@ void main() {
         <AssetId>{},
         <AssetId>{},
         packageGraph,
-        TestReaderWriter(),
       );
     });
 

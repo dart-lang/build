@@ -9,6 +9,8 @@ import 'package:_test_common/common.dart';
 import 'package:_test_common/runner_asset_writer_spy.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
@@ -127,6 +129,11 @@ targets:
       ]).create();
       var packageGraph = await PackageGraph.forPath(pkgARoot);
       environment = BuildEnvironment(packageGraph, onLogOverride: (_) {});
+      environment = environment.copyWith(
+        reader: environment.reader.copyWith(
+          digests: SingleBuildFilesystemDigests(),
+        ),
+      );
       options = await BuildOptions.create(
         LogSubscription(environment, logLevel: Level.OFF),
         packageGraph: packageGraph,
@@ -148,7 +155,6 @@ targets:
           {makeAssetId('a|lib/a.txt'), makeAssetId('a|lib/b.txt')},
           <AssetId>{},
           aPackageGraph,
-          environment.reader,
         );
         var generatedAId = makeAssetId('a|lib/a.txt.copy');
         originalAssetGraph.updateNode(generatedAId, (nodeBuilder) {
@@ -158,7 +164,10 @@ targets:
             ..pendingBuildAction = PendingBuildAction.none;
         });
 
-        await createFile(assetGraphPath, originalAssetGraph.serialize());
+        await createFile(
+          assetGraphPath,
+          originalAssetGraph.serialize(const NoopFilesystemDigests()),
+        );
 
         await deleteFile(p.join('lib', 'b.txt'));
         var buildDefinition = await BuildDefinition.prepareWorkspace(
@@ -190,10 +199,12 @@ targets:
           <AssetId>{},
           <AssetId>{},
           aPackageGraph,
-          environment.reader,
         );
 
-        await createFile(assetGraphPath, originalAssetGraph.serialize());
+        await createFile(
+          assetGraphPath,
+          originalAssetGraph.serialize(const NoopFilesystemDigests()),
+        );
 
         await createFile(p.join('lib', 'a.txt'), 'a');
         var buildDefinition = await BuildDefinition.prepareWorkspace(
@@ -226,8 +237,8 @@ targets:
           {aTxt},
           <AssetId>{},
           aPackageGraph,
-          environment.reader,
         );
+        await originalAssetGraph.computeDigests(environment.reader);
 
         // pretend a build happened
         originalAssetGraph.updateNode(aTxtCopy, (nodeBuilder) {
@@ -238,9 +249,17 @@ targets:
         originalAssetGraph.updateNode(aTxt, (nodeBuilder) {
           nodeBuilder.outputs.add(aTxtCopy);
         });
-        await createFile(assetGraphPath, originalAssetGraph.serialize());
+        await createFile(
+          assetGraphPath,
+          originalAssetGraph.serialize(environment.reader.digests),
+        );
 
         await modifyFile(p.join('lib', 'a.txt'), 'b');
+        environment = environment.copyWith(
+          reader: environment.reader.copyWith(
+            digests: SingleBuildFilesystemDigests(),
+          ),
+        );
         var buildDefinition = await BuildDefinition.prepareWorkspace(
           environment,
           options,
@@ -268,7 +287,6 @@ targets:
           {makeAssetId('a|lib/test.txt')},
           <AssetId>{},
           aPackageGraph,
-          environment.reader,
         );
         var generatedSrcId = makeAssetId('a|lib/test.txt.copy');
         originalAssetGraph.updateNode(generatedSrcId, (nodeBuilder) {
@@ -277,7 +295,10 @@ targets:
             ..isFailure = false;
         });
 
-        await createFile(assetGraphPath, originalAssetGraph.serialize());
+        await createFile(
+          assetGraphPath,
+          originalAssetGraph.serialize(const NoopFilesystemDigests()),
+        );
 
         var buildDefinition = await BuildDefinition.prepareWorkspace(
           environment,
@@ -312,7 +333,6 @@ targets:
           {makeAssetId('a|lib/a.txt')},
           <AssetId>{},
           aPackageGraph,
-          environment.reader,
         );
         var generatedACopyId = makeAssetId('a|lib/a.txt.copy');
         var generatedACloneId = makeAssetId('a|lib/a.txt.clone');
@@ -325,7 +345,10 @@ targets:
           });
         }
 
-        await createFile(assetGraphPath, originalAssetGraph.serialize());
+        await createFile(
+          assetGraphPath,
+          originalAssetGraph.serialize(const NoopFilesystemDigests()),
+        );
 
         // Same as before, but change the `BuilderOptions` for the first phase.
         var newBuildPhases = [
@@ -390,7 +413,6 @@ targets:
           <AssetId>{},
           <AssetId>{},
           aPackageGraph,
-          environment.reader,
         );
         var expectedIds = placeholderIdsFor(aPackageGraph)
           ..addAll([makeAssetId('a|Phase0.builderOptions')]);
@@ -399,7 +421,10 @@ targets:
           unorderedEquals(expectedIds),
         );
 
-        await createFile(assetGraphPath, assetGraph.serialize());
+        await createFile(
+          assetGraphPath,
+          assetGraph.serialize(const NoopFilesystemDigests()),
+        );
 
         var buildDefinition = await BuildDefinition.prepareWorkspace(
           environment,
@@ -490,10 +515,12 @@ targets:
           <AssetId>{},
           <AssetId>{},
           aPackageGraph,
-          environment.reader,
         );
 
-        await createFile(assetGraphPath, originalAssetGraph.serialize());
+        await createFile(
+          assetGraphPath,
+          originalAssetGraph.serialize(const NoopFilesystemDigests()),
+        );
 
         buildPhases.add(
           InBuildPhase(
@@ -536,10 +563,12 @@ targets:
             <AssetId>{},
             <AssetId>{},
             aPackageGraph,
-            environment.reader,
           );
 
-          await createFile(assetGraphPath, originalAssetGraph.serialize());
+          await createFile(
+            assetGraphPath,
+            originalAssetGraph.serialize(const NoopFilesystemDigests()),
+          );
 
           buildPhases = [
             InBuildPhase(
@@ -578,10 +607,9 @@ targets:
           <AssetId>{},
           <AssetId>{},
           aPackageGraph,
-          environment.reader,
         );
 
-        var bytes = originalAssetGraph.serialize();
+        var bytes = originalAssetGraph.serialize(const NoopFilesystemDigests());
         var serialized =
             json.decode(utf8.decode(bytes)) as Map<String, dynamic>;
         serialized['dart_version'] = 'some_fake_version';
@@ -628,10 +656,12 @@ targets:
             <AssetId>{},
             <AssetId>{},
             aPackageGraph,
-            environment.reader,
           );
 
-          await createFile(assetGraphPath, originalAssetGraph.serialize());
+          await createFile(
+            assetGraphPath,
+            originalAssetGraph.serialize(const NoopFilesystemDigests()),
+          );
 
           buildPhases = [
             InBuildPhase(
@@ -682,10 +712,12 @@ targets:
             <AssetId>{},
             <AssetId>{},
             aPackageGraph,
-            environment.reader,
           );
 
-          await createFile(assetGraphPath, originalAssetGraph.serialize());
+          await createFile(
+            assetGraphPath,
+            originalAssetGraph.serialize(const NoopFilesystemDigests()),
+          );
 
           buildPhases = [
             InBuildPhase(
@@ -732,7 +764,6 @@ targets:
           <AssetId>{aTxt},
           <AssetId>{},
           aPackageGraph,
-          environment.reader,
         );
 
         var aTxtCopy = AssetId('a', 'lib/a.txt.copy');
@@ -742,7 +773,10 @@ targets:
         });
         await createFile(aTxtCopy.path, 'hello');
 
-        await createFile(assetGraphPath, originalAssetGraph.serialize());
+        await createFile(
+          assetGraphPath,
+          originalAssetGraph.serialize(const NoopFilesystemDigests()),
+        );
 
         buildPhases.add(
           InBuildPhase(
@@ -774,7 +808,6 @@ targets:
           <AssetId>{aTxt},
           <AssetId>{},
           aPackageGraph,
-          environment.reader,
         );
 
         var aTxtCopy = AssetId('a', 'lib/a.txt.copy');
@@ -784,7 +817,10 @@ targets:
         });
         await createFile(aTxtCopy.path, 'hello');
 
-        await createFile(assetGraphPath, originalAssetGraph.serialize());
+        await createFile(
+          assetGraphPath,
+          originalAssetGraph.serialize(const NoopFilesystemDigests()),
+        );
 
         await modifyFile(
           'pubspec.yaml',
@@ -822,15 +858,14 @@ targets:
       test(
         'invalidates the graph if the language version of a package changes',
         () async {
-          var assetGraph = await AssetGraph.build(
-            [],
-            <AssetId>{},
-            {AssetId('a', '.dart_tool/package_config.json')},
-            aPackageGraph,
-            environment.reader,
-          );
+          var assetGraph = await AssetGraph.build([], <AssetId>{}, {
+            AssetId('a', '.dart_tool/package_config.json'),
+          }, aPackageGraph);
 
-          var graph = await createFile(assetGraphPath, assetGraph.serialize());
+          var graph = await createFile(
+            assetGraphPath,
+            assetGraph.serialize(const NoopFilesystemDigests()),
+          );
 
           await modifyFile(
             '.dart_tool/package_config.json',
@@ -875,17 +910,14 @@ targets:
       test('invalidates the graph if the enabled experiments change', () async {
         AssetGraph assetGraph;
         assetGraph = await withEnabledExperiments(
-          () => AssetGraph.build(
-            [],
-            <AssetId>{},
-            <AssetId>{},
-            aPackageGraph,
-            environment.reader,
-          ),
+          () => AssetGraph.build([], <AssetId>{}, <AssetId>{}, aPackageGraph),
           ['a'],
         );
 
-        var graph = await createFile(assetGraphPath, assetGraph.serialize());
+        var graph = await createFile(
+          assetGraphPath,
+          assetGraph.serialize(const NoopFilesystemDigests()),
+        );
 
         var newOptions = await BuildOptions.create(
           LogSubscription(environment, logLevel: Level.OFF),

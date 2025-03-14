@@ -8,10 +8,14 @@ import 'dart:convert';
 
 import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
+// ignore: implementation_imports
+import 'package:build_test/src/in_memory_reader_writer.dart';
 import 'package:crypto/crypto.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
@@ -21,7 +25,9 @@ void main() {
   final fooPackageGraph = buildPackageGraph({rootPackage('foo'): []});
 
   setUp(() async {
-    digestReader = TestReaderWriter();
+    digestReader = InMemoryAssetReaderWriter().copyWith(
+      digests: SingleBuildFilesystemDigests(),
+    );
   });
 
   group('AssetGraph', () {
@@ -52,7 +58,6 @@ void main() {
           <AssetId>{},
           <AssetId>{},
           fooPackageGraph,
-          digestReader,
         );
       });
 
@@ -183,7 +188,7 @@ void main() {
         }
         graph.add(globNode);
 
-        var encoded = graph.serialize();
+        var encoded = graph.serialize(const NoopFilesystemDigests());
         var decoded = AssetGraph.deserialize(encoded);
         expect(decoded.failedOutputs, isNotEmpty);
         expect(graph, equalsAssetGraph(decoded));
@@ -192,7 +197,7 @@ void main() {
       test(
         'Throws an AssetGraphCorruptedException if versions dont match up',
         () {
-          var bytes = graph.serialize();
+          var bytes = graph.serialize(const NoopFilesystemDigests());
           var serialized =
               json.decode(utf8.decode(bytes)) as Map<String, dynamic>;
           serialized['version'] = -1;
@@ -205,7 +210,8 @@ void main() {
       );
 
       test('Throws an AssetGraphCorruptedException on invalid json', () {
-        var bytes = List.of(graph.serialize())..removeLast();
+        var bytes = List.of(graph.serialize(const NoopFilesystemDigests()))
+          ..removeLast();
         expect(() => AssetGraph.deserialize(bytes), throwsCorruptedException);
       });
     });
@@ -254,11 +260,10 @@ void main() {
           {primaryInputId, excludedInputId},
           {internalId},
           fooPackageGraph,
-          digestReader,
         );
       });
 
-      test('build', () {
+      test('build', () async {
         expect(graph.outputs, unorderedEquals([primaryOutputId]));
         expect(
           graph.allNodes.map((n) => n.id),
@@ -273,11 +278,12 @@ void main() {
             ...placeholders,
           ]),
         );
+        await graph.computeDigests(digestReader);
         var node = graph.get(primaryInputId)!;
         expect(node.primaryOutputs, [primaryOutputId]);
         expect(node.outputs, isEmpty);
         expect(
-          node.lastKnownDigest,
+          digestReader.digests.get(primaryInputId),
           isNotNull,
           reason: 'Nodes with outputs should get an eager digest.',
         );
@@ -285,9 +291,9 @@ void main() {
         var excludedNode = graph.get(excludedInputId);
         expect(excludedNode, isNotNull);
         expect(
-          excludedNode!.lastKnownDigest,
-          isNull,
-          reason: 'Nodes with no output shouldn\'t get an eager digest.',
+          digestReader.digests.get(excludedInputId),
+          Digest(const []),
+          reason: 'Missing files should have empty digest.',
         );
 
         expect(graph.get(internalId)?.type, NodeType.internal);
@@ -581,7 +587,6 @@ void main() {
           {makeAssetId('foo|file')},
           <AssetId>{},
           fooPackageGraph,
-          digestReader,
         ),
         throwsA(duplicateAssetNodeException),
       );
@@ -626,7 +631,6 @@ void main() {
           sources,
           <AssetId>{},
           fooPackageGraph,
-          digestReader,
         );
         expect(
           graph.outputs,
@@ -671,7 +675,6 @@ void main() {
           sources,
           <AssetId>{},
           fooPackageGraph,
-          digestReader,
         );
         expect(
           graph.outputs,
@@ -710,7 +713,6 @@ void main() {
           sources,
           <AssetId>{},
           fooPackageGraph,
-          digestReader,
         );
 
         // Pretend a build happened
@@ -768,7 +770,6 @@ void main() {
           {source},
           <AssetId>{},
           packageGraph,
-          digestReader,
         );
 
         // Pretend a build happened

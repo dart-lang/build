@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:build/build.dart';
@@ -40,6 +41,7 @@ import 'finalized_assets_view.dart';
 import 'heartbeat.dart';
 import 'input_tracker.dart';
 import 'options.dart';
+import 'output_digests.dart';
 import 'performance_tracker.dart';
 import 'phase.dart';
 import 'single_step_reader_writer.dart';
@@ -60,9 +62,10 @@ class BuildImpl {
   final List<BuildPhase> _buildPhases;
 
   final FinalizedReader finalizedReader;
-  final AssetReaderWriter _readerWriter;
   final RunnerAssetWriter _deleteWriter;
   final ResourceManager _resourceManager = ResourceManager();
+
+  AssetReaderWriter _readerWriter;
 
   Future<void> beforeExit() => _resourceManager.beforeExit();
 
@@ -73,7 +76,7 @@ class BuildImpl {
     this._options,
     this._buildPhases,
     this.finalizedReader,
-  ) : _deleteWriter = _environment.writer.copyWith(
+  ) : _deleteWriter = _environment.writer.copyWriterWith(
         generatedAssetHider: assetGraph,
       ),
       _readerWriter = _environment.reader.copyWith(
@@ -88,10 +91,21 @@ class BuildImpl {
     Map<AssetId, ChangeType> updates, {
     Set<BuildDirectory> buildDirs = const <BuildDirectory>{},
     Set<BuildFilter> buildFilters = const {},
-  }) {
+  }) async {
     finalizedReader.reset(_buildPaths(buildDirs), buildFilters);
-    return _SingleBuild(this, buildDirs, buildFilters).run(updates)
-      ..whenComplete(_options.resolvers.reset);
+
+    _readerWriter = _readerWriter.copyWith(
+      digests: SingleBuildFilesystemDigests(),
+    );
+    await assetGraph.computeDigests(_readerWriter);
+
+    final result = await _SingleBuild(
+      this,
+      buildDirs,
+      buildFilters,
+    ).run(updates);
+    _options.resolvers.reset();
+    return result;
   }
 
   static Future<BuildImpl> create(
@@ -164,6 +178,8 @@ class _SingleBuild {
   int actionsStartedCount = 0;
 
   final pendingActions = SplayTreeMap<int, Set<String>>();
+
+  final OutputDigests _outputDigests = OutputDigests();
 
   late final HungActionsHeartbeat hungActionsHeartbeat;
 
@@ -291,7 +307,7 @@ class _SingleBuild {
           () async {
             await _readerWriter.writeAsBytes(
               AssetId(_packageGraph.root.name, assetGraphPath),
-              _assetGraph.serialize(),
+              _assetGraph.serialize(_readerWriter.digests),
             );
           },
         );
@@ -321,6 +337,7 @@ class _SingleBuild {
       },
       (e, st) {
         if (!done.isCompleted) {
+          stdout.writeln('failed $e $st');
           _logger.severe('Unhandled build failure!', e, st);
           done.complete(BuildResult(BuildStatus.failure, []));
         }
@@ -959,8 +976,8 @@ class _SingleBuild {
           ..globNodeState.inputs.replace(
             generatedFileInputs.followedBy(otherInputs),
           )
-          ..globNodeState.pendingBuildAction = PendingBuildAction.none
-          ..lastKnownDigest = md5.convert(utf8.encode(results.join(' ')));
+          ..globNodeState.pendingBuildAction = PendingBuildAction.none;
+        _outputDigests.add(globId, md5.convert(utf8.encode(results.join(' '))));
       });
 
       unawaited(_lazyGlobs.remove(globId));
@@ -982,31 +999,26 @@ class _SingleBuild {
       }
     }
 
-    var builderOptionsNode = _assetGraph.get(builderOptionsId)!;
-    combine(builderOptionsNode.lastKnownDigest!.bytes as Uint8List);
+    combine(
+      _assetGraph.builderOptionsDigests.get(builderOptionsId).bytes
+          as Uint8List,
+    );
 
     for (final id in ids) {
       var node = _assetGraph.get(id)!;
       if (node.type == NodeType.glob) {
         await _buildGlobNode(node.id);
-        node = _assetGraph.get(id)!;
+        combine(_outputDigests.get(node.id)!.bytes as Uint8List);
       } else if (!await reader.canRead(id)) {
         // We want to add something here, a missing/unreadable input should be
         // different from no input at all.
         //
         // This needs to be unique per input so we use the md5 hash of the id.
         combine(md5.convert(id.toString().codeUnits).bytes as Uint8List);
-        continue;
       } else {
-        if (node.lastKnownDigest == null) {
-          final digest = await reader.digest(id);
-          await reader.cache.invalidate([id]);
-          node = _assetGraph.updateNode(node.id, (nodeBuilder) {
-            nodeBuilder.lastKnownDigest = digest;
-          });
-        }
+        final digest = await _readerWriter.digest(id);
+        combine(digest.bytes as Uint8List);
       }
-      combine(node.lastKnownDigest!.bytes as Uint8List);
     }
 
     return Digest(combinedBytes);
@@ -1018,7 +1030,7 @@ class _SingleBuild {
   /// - Setting `wasOutput` based on `writer.assetsWritten`.
   /// - Setting `isFailed` based on action success.
   /// - Adding `outputs` as outputs to all `reader.assetsRead`.
-  /// - Setting the `lastKnownDigest` on each output based on the new contents.
+  /// - Adding the new outputs digests to `_outputDigests`.
   /// - Setting the `previousInputsDigest` on each output based on the inputs.
   /// - Storing the error message with the [_failureReporter].
   Future<void> _setOutputsState(
@@ -1059,7 +1071,7 @@ class _SingleBuild {
           ..wasOutput = wasOutput
           ..isFailure = isFailure
           ..previousInputsDigest = inputsDigest;
-        nodeBuilder.lastKnownDigest = digest;
+        _outputDigests.add(output, digest);
       });
 
       if (isFailure) {
@@ -1075,7 +1087,7 @@ class _SingleBuild {
               ..wasOutput = false
               ..isFailure = true
               ..previousInputsDigest = null;
-            nodeBuilder.lastKnownDigest = null;
+            _outputDigests.add(output, digest);
           });
           allSkippedFailures.add(output);
           needsMarkAsFailure.addAll(_assetGraph.get(output)!.primaryOutputs);

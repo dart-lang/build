@@ -271,14 +271,6 @@ class _$AssetNodeSerializer implements StructuredSerializer<AssetNode> {
           ),
         );
     }
-    value = object.lastKnownDigest;
-    if (value != null) {
-      result
-        ..add('lastKnownDigest')
-        ..add(
-          serializers.serialize(value, specifiedType: const FullType(Digest)),
-        );
-    }
     return result;
   }
 
@@ -400,14 +392,6 @@ class _$AssetNodeSerializer implements StructuredSerializer<AssetNode> {
                 )!
                 as BuiltSet<Object?>,
           );
-          break;
-        case 'lastKnownDigest':
-          result.lastKnownDigest =
-              serializers.deserialize(
-                    value,
-                    specifiedType: const FullType(Digest),
-                  )
-                  as Digest?;
           break;
         case 'deletedBy':
           result.deletedBy.replace(
@@ -975,8 +959,6 @@ class _$AssetNode extends AssetNode {
   @override
   final BuiltSet<AssetId> anchorOutputs;
   @override
-  final Digest? lastKnownDigest;
-  @override
   final BuiltSet<AssetId> deletedBy;
 
   factory _$AssetNode([void Function(AssetNodeBuilder)? updates]) =>
@@ -994,7 +976,6 @@ class _$AssetNode extends AssetNode {
     required this.primaryOutputs,
     required this.outputs,
     required this.anchorOutputs,
-    this.lastKnownDigest,
     required this.deletedBy,
   }) : super._() {
     BuiltValueNullFieldError.checkNotNull(id, r'AssetNode', 'id');
@@ -1036,7 +1017,6 @@ class _$AssetNode extends AssetNode {
         primaryOutputs == other.primaryOutputs &&
         outputs == other.outputs &&
         anchorOutputs == other.anchorOutputs &&
-        lastKnownDigest == other.lastKnownDigest &&
         deletedBy == other.deletedBy;
   }
 
@@ -1054,7 +1034,6 @@ class _$AssetNode extends AssetNode {
     _$hash = $jc(_$hash, primaryOutputs.hashCode);
     _$hash = $jc(_$hash, outputs.hashCode);
     _$hash = $jc(_$hash, anchorOutputs.hashCode);
-    _$hash = $jc(_$hash, lastKnownDigest.hashCode);
     _$hash = $jc(_$hash, deletedBy.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
@@ -1077,7 +1056,6 @@ class _$AssetNode extends AssetNode {
           ..add('primaryOutputs', primaryOutputs)
           ..add('outputs', outputs)
           ..add('anchorOutputs', anchorOutputs)
-          ..add('lastKnownDigest', lastKnownDigest)
           ..add('deletedBy', deletedBy))
         .toString();
   }
@@ -1159,11 +1137,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
   set anchorOutputs(SetBuilder<AssetId>? anchorOutputs) =>
       _$this._anchorOutputs = anchorOutputs;
 
-  Digest? _lastKnownDigest;
-  Digest? get lastKnownDigest => _$this._lastKnownDigest;
-  set lastKnownDigest(Digest? lastKnownDigest) =>
-      _$this._lastKnownDigest = lastKnownDigest;
-
   SetBuilder<AssetId>? _deletedBy;
   SetBuilder<AssetId> get deletedBy =>
       _$this._deletedBy ??= new SetBuilder<AssetId>();
@@ -1187,7 +1160,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
       _primaryOutputs = $v.primaryOutputs.toBuilder();
       _outputs = $v.outputs.toBuilder();
       _anchorOutputs = $v.anchorOutputs.toBuilder();
-      _lastKnownDigest = $v.lastKnownDigest;
       _deletedBy = $v.deletedBy.toBuilder();
       _$v = null;
     }
@@ -1230,7 +1202,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
             primaryOutputs: primaryOutputs.build(),
             outputs: outputs.build(),
             anchorOutputs: anchorOutputs.build(),
-            lastKnownDigest: lastKnownDigest,
             deletedBy: deletedBy.build(),
           );
     } catch (_) {
@@ -1254,7 +1225,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
         outputs.build();
         _$failedField = 'anchorOutputs';
         anchorOutputs.build();
-
         _$failedField = 'deletedBy';
         deletedBy.build();
       } catch (e) {

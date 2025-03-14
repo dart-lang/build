@@ -163,6 +163,7 @@ class SingleStepReaderWriter extends AssetReader
   @override
   SingleStepReaderWriter copyWith({
     FilesystemCache? cache,
+    FilesystemDigests? digests,
     GeneratedAssetHider? generatedAssetHider,
   }) => SingleStepReaderWriter(
     runningBuild: _runningBuild,
@@ -170,6 +171,7 @@ class SingleStepReaderWriter extends AssetReader
     fakeRunningBuildStep: _fakeRunningBuildStep,
     readerWriter: _delegate.copyWith(
       cache: cache,
+      digests: digests,
       generatedAssetHider: generatedAssetHider,
     ),
     inputTracker: inputTracker,
@@ -243,6 +245,9 @@ class SingleStepReaderWriter extends AssetReader
   @override
   FilesystemCache get cache => _delegate.cache;
 
+  @override
+  FilesystemDigests get digests => _delegate.digests;
+
   /// Checks whether [id] can be read by this step - attempting to build the
   /// asset if necessary.
   ///
@@ -312,9 +317,6 @@ class SingleStepReaderWriter extends AssetReader
       return false;
     }
 
-    // If digests can be cached, cache it.
-    // TODO(davidmorgan): remove?
-    await _ensureDigest(id);
     return true;
   }
 
@@ -325,7 +327,7 @@ class SingleStepReaderWriter extends AssetReader
     if (!isReadable) {
       throw AssetNotFoundException(id);
     }
-    return _ensureDigest(id);
+    return _delegate.digest(id);
   }
 
   @override
@@ -334,7 +336,6 @@ class SingleStepReaderWriter extends AssetReader
     if (!isReadable) {
       throw AssetNotFoundException(id);
     }
-    await _ensureDigest(id);
     return _delegate.readAsBytes(id);
   }
 
@@ -344,7 +345,6 @@ class SingleStepReaderWriter extends AssetReader
     if (!isReadable) {
       throw AssetNotFoundException(id);
     }
-    await _ensureDigest(id);
     return _delegate.readAsString(id, encoding: encoding);
   }
 
@@ -367,22 +367,6 @@ class SingleStepReaderWriter extends AssetReader
       );
     });
     return streamCompleter.stream;
-  }
-
-  /// Returns the `lastKnownDigest` of [id], computing and caching it if
-  /// necessary.
-  ///
-  /// Note that [id] must exist in the asset graph.
-  FutureOr<Digest> _ensureDigest(AssetId id) {
-    if (_runningBuild == null) return _delegate.digest(id);
-    var node = _runningBuild.assetGraph.get(id)!;
-    if (node.lastKnownDigest != null) return node.lastKnownDigest!;
-    return _delegate.digest(id).then((digest) {
-      _runningBuild.assetGraph.updateNode(id, (nodeBuilder) {
-        nodeBuilder.lastKnownDigest = digest;
-      });
-      return digest;
-    });
   }
 
   /// Checks whether [node] can be read by this step.

@@ -27,7 +27,6 @@ void main() {
       <AssetId>{},
       <AssetId>{},
       buildPackageGraph({rootPackage('a'): []}),
-      TestReaderWriter(),
     );
     delegate = TestReaderWriter();
     final packageGraph = buildPackageGraph({rootPackage('a'): []});

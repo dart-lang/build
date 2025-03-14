@@ -10,6 +10,7 @@ import 'asset_finder.dart';
 import 'asset_path_provider.dart';
 import 'filesystem.dart';
 import 'filesystem_cache.dart';
+import 'filesystem_digests.dart';
 import 'generated_asset_hider.dart';
 import 'reader_writer.dart';
 
@@ -18,11 +19,13 @@ extension AssetReaderStateExtension on AssetReader {
   /// Returns a new instance with optionally updated [cache] and/or [generatedAssetHider].
   AssetReaderWriter copyWith({
     FilesystemCache? cache,
+    FilesystemDigests? digests,
     GeneratedAssetHider? generatedAssetHider,
   }) {
     _requireIsAssetReaderState();
     return (this as AssetReaderState).copyWith(
       cache: cache,
+      digests: digests,
       generatedAssetHider: generatedAssetHider,
     );
   }
@@ -52,6 +55,11 @@ extension AssetReaderStateExtension on AssetReader {
     return (this as AssetReaderState).cache;
   }
 
+  FilesystemDigests get digests {
+    _requireIsAssetReaderState();
+    return (this as AssetReaderState).digests;
+  }
+
   /// Throws if `this` is not an [AssetReaderState].
   void _requireIsAssetReaderState() {
     if (this is! AssetReaderState) {
@@ -65,7 +73,7 @@ extension AssetReaderStateExtension on AssetReader {
 /// Provides access to the state backing an [AssetWriter].
 extension AssetWriterStateExtension on RunnerAssetWriter {
   /// Returns a new instance with optionally updated [generatedAssetHider].
-  RunnerAssetWriter copyWith({GeneratedAssetHider? generatedAssetHider}) {
+  RunnerAssetWriter copyWriterWith({GeneratedAssetHider? generatedAssetHider}) {
     _requireIsAssetReaderState();
     return (this as AssetReaderState).copyWith(
           generatedAssetHider: generatedAssetHider,
@@ -88,6 +96,7 @@ abstract interface class AssetReaderState {
   /// Returns a new instance with optionally updated [cache] and/or [generatedAssetHider].
   AssetReaderWriter copyWith({
     FilesystemCache? cache,
+    FilesystemDigests? digests,
     GeneratedAssetHider? generatedAssetHider,
   });
 
@@ -111,4 +120,7 @@ abstract interface class AssetReaderState {
 
   /// The [FilesystemCache] that this reader uses for caching.
   FilesystemCache get cache;
+
+  /// The [FilesystemDigests] that this reader tracks digests in.
+  FilesystemDigests get digests;
 }

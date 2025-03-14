@@ -75,12 +75,14 @@ class BuildStepImpl implements BuildStep, AssetReaderState, AssetReaderWriter {
   @override
   BuildStepImpl copyWith({
     FilesystemCache? cache,
+    FilesystemDigests? digests,
     GeneratedAssetHider? generatedAssetHider,
   }) => BuildStepImpl(
     inputId,
     allowedOutputs,
     _readerWriter.copyWith(
       cache: cache,
+      digests: digests,
       generatedAssetHider: generatedAssetHider,
     ),
     _resolvers,
@@ -105,6 +107,9 @@ class BuildStepImpl implements BuildStep, AssetReaderState, AssetReaderWriter {
 
   @override
   FilesystemCache get cache => _readerWriter.cache;
+
+  @override
+  FilesystemDigests get digests => _readerWriter.digests;
 
   InputTracker get inputTracker => _readerWriter.inputTracker;
 

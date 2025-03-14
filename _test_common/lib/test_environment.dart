@@ -69,11 +69,17 @@ class TestBuildEnvironment implements BuildEnvironment {
   @override
   BuildEnvironment copyWith({
     void Function(LogRecord)? onLogOverride,
+    AssetReader? reader,
     RunnerAssetWriter? writer,
-  }) => TestBuildEnvironment(
-    readerWriter: (writer as TestReaderWriter?) ?? _readerWriter,
-    throwOnPrompt: throwOnPrompt,
-  );
+  }) {
+    if (!identical(reader, writer)) {
+      throw ArgumentError('Expected identical: $reader, $writer');
+    }
+    return TestBuildEnvironment(
+      readerWriter: (reader as TestReaderWriter?) ?? _readerWriter,
+      throwOnPrompt: throwOnPrompt,
+    );
+  }
 
   @override
   Future<BuildResult> finalizeBuild(

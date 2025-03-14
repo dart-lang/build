@@ -1247,13 +1247,9 @@ void main() {
       result.readerWriter.testing.readBytes(graphId),
     );
 
-    var expectedGraph = await AssetGraph.build(
-      [],
-      <AssetId>{},
-      {makeAssetId('a|.dart_tool/package_config.json')},
-      buildPackageGraph({rootPackage('a'): []}),
-      result.readerWriter,
-    );
+    var expectedGraph = await AssetGraph.build([], <AssetId>{}, {
+      makeAssetId('a|.dart_tool/package_config.json'),
+    }, buildPackageGraph({rootPackage('a'): []}));
 
     // Source nodes
     var aSourceNode = makeAssetNode(

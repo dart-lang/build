@@ -31,10 +31,9 @@ FutureOr<bool> shouldProcess(
     if (_isAddOrEditOnGeneratedFile(node, change.type)) return false;
     if (change.type == ChangeType.MODIFY) {
       // Was it really modified or just touched?
+      final digest = reader.digests.get(change.id);
       reader.cache.invalidate([change.id]);
-      return reader
-          .digest(change.id)
-          .then((newDigest) => node.lastKnownDigest != newDigest);
+      return reader.digest(change.id).then((newDigest) => digest != newDigest);
     }
   } else {
     if (change.type != ChangeType.ADD) return false;

@@ -111,7 +111,6 @@ void main() {
       <AssetId>{},
       <AssetId>{},
       packageGraph,
-      readerWriter,
     );
     watchImpl = MockWatchImpl(
       Future.value(
