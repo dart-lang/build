@@ -305,7 +305,7 @@ class _Loader {
         'Checking for unexpected pre-existing outputs.',
         () => _initialBuildCleanup(
           conflictingOutputs,
-          _environment.writer.copyWith(generatedAssetHider: assetGraph),
+          _environment.writer.copyWriterWith(generatedAssetHider: assetGraph),
         ),
       );
     }
@@ -511,7 +511,7 @@ class _Loader {
       updates,
       _options.packageGraph.root.name,
       (id) => _environment.writer
-          .copyWith(generatedAssetHider: assetGraph)
+          .copyWriterWith(generatedAssetHider: assetGraph)
           .delete(id),
       _environment.reader.copyWith(generatedAssetHider: assetGraph),
     );

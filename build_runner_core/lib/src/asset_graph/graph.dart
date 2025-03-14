@@ -247,11 +247,7 @@ class AssetGraph implements GeneratedAssetHider {
     await digestReader.cache.invalidate(ids);
     await Future.wait(
       ids.map((id) async {
-        final canRead = await digestReader.canRead(id);
-        final digest = canRead ? await digestReader.digest(id) : null;
-        updateNode(id, (nodeBuilder) {
-          nodeBuilder.lastKnownDigest = digest;
-        });
+        await digestReader.canRead(id);
       }),
     );
   }
@@ -389,9 +385,7 @@ class AssetGraph implements GeneratedAssetHider {
           .where(
             (node) =>
                 node.isTrackedInput &&
-                (node.outputs.isNotEmpty ||
-                    node.primaryOutputs.isNotEmpty ||
-                    node.lastKnownDigest != null),
+                (node.outputs.isNotEmpty || node.primaryOutputs.isNotEmpty),
           )
           .map((node) => node.id),
       digestReader,

@@ -76,7 +76,7 @@ class BuildImpl {
     this._options,
     this._buildPhases,
     this.finalizedReader,
-  ) : _deleteWriter = _environment.writer.copyWith(
+  ) : _deleteWriter = _environment.writer.copyWriterWith(
         generatedAssetHider: assetGraph,
       ),
       _readerWriter = _environment.reader.copyWith(

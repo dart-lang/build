@@ -73,7 +73,7 @@ extension AssetReaderStateExtension on AssetReader {
 /// Provides access to the state backing an [AssetWriter].
 extension AssetWriterStateExtension on RunnerAssetWriter {
   /// Returns a new instance with optionally updated [generatedAssetHider].
-  RunnerAssetWriter copyWith({GeneratedAssetHider? generatedAssetHider}) {
+  RunnerAssetWriter copyWriterWith({GeneratedAssetHider? generatedAssetHider}) {
     _requireIsAssetReaderState();
     return (this as AssetReaderState).copyWith(
           generatedAssetHider: generatedAssetHider,

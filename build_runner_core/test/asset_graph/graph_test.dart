@@ -14,6 +14,8 @@ import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
+// ignore: implementation_imports
+import 'package:build_test/src/in_memory_reader_writer.dart';
 import 'package:crypto/crypto.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
@@ -23,7 +25,9 @@ void main() {
   final fooPackageGraph = buildPackageGraph({rootPackage('foo'): []});
 
   setUp(() async {
-    digestReader = TestReaderWriter();
+    digestReader = InMemoryAssetReaderWriter().copyWith(
+      digests: SingleBuildFilesystemDigests(),
+    );
   });
 
   group('AssetGraph', () {
@@ -279,7 +283,7 @@ void main() {
         expect(node.primaryOutputs, [primaryOutputId]);
         expect(node.outputs, isEmpty);
         expect(
-          node.lastKnownDigest,
+          digestReader.digests.get(primaryInputId),
           isNotNull,
           reason: 'Nodes with outputs should get an eager digest.',
         );
@@ -287,9 +291,9 @@ void main() {
         var excludedNode = graph.get(excludedInputId);
         expect(excludedNode, isNotNull);
         expect(
-          excludedNode!.lastKnownDigest,
-          isNull,
-          reason: 'Nodes with no output shouldn\'t get an eager digest.',
+          digestReader.digests.get(excludedInputId),
+          Digest(const []),
+          reason: 'Missing files should have empty digest.',
         );
 
         expect(graph.get(internalId)?.type, NodeType.internal);

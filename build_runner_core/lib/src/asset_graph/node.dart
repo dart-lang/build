@@ -74,12 +74,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   /// node is the primary input.
   BuiltSet<AssetId> get anchorOutputs;
 
-  /// The [Digest] for this node in its last known state.
-  ///
-  /// May be `null` if this asset has no outputs, or if it doesn't actually
-  /// exist.
-  Digest? get lastKnownDigest;
-
   /// The IDs of the [AssetNode.postProcessAnchor] for post process builder
   /// which requested to delete this asset.
   BuiltSet<AssetId> get deletedBy;
@@ -108,10 +102,7 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
 
   /// Whether changes to this node will have any effect on other nodes.
   bool get changesRequireRebuild =>
-      type == NodeType.internal ||
-      type == NodeType.glob ||
-      outputs.isNotEmpty ||
-      lastKnownDigest != null;
+      type == NodeType.internal || type == NodeType.glob || outputs.isNotEmpty;
 
   factory AssetNode([void Function(AssetNodeBuilder) updates]) = _$AssetNode;
 
@@ -126,8 +117,7 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
         (b) =>
             b
               ..id = id
-              ..type = NodeType.internal
-              ..lastKnownDigest = lastKnownDigest,
+              ..type = NodeType.internal,
       );
 
   /// A manually-written source file.
@@ -142,8 +132,7 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
           ..id = id
           ..type = NodeType.source
           ..primaryOutputs.replace(primaryOutputs ?? {})
-          ..outputs.replace(outputs ?? {})
-          ..lastKnownDigest = lastKnownDigest,
+          ..outputs.replace(outputs ?? {}),
   );
 
   /// A [BuilderOptions] object.
@@ -155,8 +144,7 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
         (b) =>
             b
               ..id = id
-              ..type = NodeType.builderOptions
-              ..lastKnownDigest = lastKnownDigest,
+              ..type = NodeType.builderOptions,
       );
 
   /// A missing source file.
@@ -170,8 +158,7 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
         (b) =>
             b
               ..id = id
-              ..type = NodeType.missingSource
-              ..lastKnownDigest = lastKnownDigest,
+              ..type = NodeType.missingSource,
       );
 
   /// Placeholders for useful parts of packages.
@@ -185,8 +172,7 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
         (b) =>
             b
               ..id = id
-              ..type = NodeType.placeholder
-              ..lastKnownDigest = lastKnownDigest,
+              ..type = NodeType.placeholder,
       );
 
   /// A generated node.
@@ -215,8 +201,7 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
           ..generatedNodeState.previousInputsDigest = previousInputsDigest
           ..generatedNodeState.pendingBuildAction = pendingBuildAction
           ..generatedNodeState.wasOutput = wasOutput
-          ..generatedNodeState.isFailure = isFailure
-          ..lastKnownDigest = lastKnownDigest,
+          ..generatedNodeState.isFailure = isFailure,
   );
 
   /// A glob node.
@@ -236,8 +221,7 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
           ..globNodeConfiguration.glob = glob
           ..globNodeConfiguration.phaseNumber = phaseNumber
           ..globNodeState.pendingBuildAction = pendingBuildAction
-          ..globNodeState.results.replace(results ?? [])
-          ..lastKnownDigest = lastKnownDigest,
+          ..globNodeState.results.replace(results ?? []),
   );
 
   static AssetId createGlobNodeId(String package, String glob, int phaseNum) =>
