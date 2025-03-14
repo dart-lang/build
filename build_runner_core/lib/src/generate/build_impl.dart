@@ -1032,7 +1032,7 @@ class _SingleBuild {
   /// - Setting `wasOutput` based on `writer.assetsWritten`.
   /// - Setting `isFailed` based on action success.
   /// - Adding `outputs` as outputs to all `reader.assetsRead`.
-  /// - Setting the `lastKnownDigest` on each output based on the new contents.
+  /// - Adding the new outputs digests to `_outputDigests`.
   /// - Setting the `previousInputsDigest` on each output based on the inputs.
   /// - Storing the error message with the [_failureReporter].
   Future<void> _setOutputsState(
@@ -1073,7 +1073,7 @@ class _SingleBuild {
           ..wasOutput = wasOutput
           ..isFailure = isFailure
           ..previousInputsDigest = inputsDigest;
-        nodeBuilder.lastKnownDigest = digest;
+        _outputDigests.add(output, digest);
       });
 
       if (isFailure) {
@@ -1089,7 +1089,7 @@ class _SingleBuild {
               ..wasOutput = false
               ..isFailure = true
               ..previousInputsDigest = null;
-            nodeBuilder.lastKnownDigest = null;
+            _outputDigests.add(output, digest);
           });
           allSkippedFailures.add(output);
           needsMarkAsFailure.addAll(_assetGraph.get(output)!.primaryOutputs);

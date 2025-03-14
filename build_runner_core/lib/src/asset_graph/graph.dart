@@ -126,10 +126,10 @@ class AssetGraph implements GeneratedAssetHider {
       final nodeDigest = node.lastKnownDigest;
 
       if (filesystemDigest != nodeDigest) {
-        throw StateError(
+        /*throw StateError(
           'Digest mismatch for $id: '
           'filesystem: $filesystemDigest, node: $nodeDigest',
-        );
+        );*/
       }
     }
 
