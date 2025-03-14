@@ -8,6 +8,8 @@ import 'dart:convert';
 
 import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
@@ -182,7 +184,7 @@ void main() {
         }
         graph.add(globNode);
 
-        var encoded = graph.serialize();
+        var encoded = graph.serialize(const NoopFilesystemDigests());
         var decoded = AssetGraph.deserialize(encoded);
         expect(decoded.failedOutputs, isNotEmpty);
         expect(graph, equalsAssetGraph(decoded));
@@ -191,7 +193,7 @@ void main() {
       test(
         'Throws an AssetGraphCorruptedException if versions dont match up',
         () {
-          var bytes = graph.serialize();
+          var bytes = graph.serialize(const NoopFilesystemDigests());
           var serialized =
               json.decode(utf8.decode(bytes)) as Map<String, dynamic>;
           serialized['version'] = -1;
@@ -204,7 +206,8 @@ void main() {
       );
 
       test('Throws an AssetGraphCorruptedException on invalid json', () {
-        var bytes = List.of(graph.serialize())..removeLast();
+        var bytes = List.of(graph.serialize(const NoopFilesystemDigests()))
+          ..removeLast();
         expect(() => AssetGraph.deserialize(bytes), throwsCorruptedException);
       });
     });

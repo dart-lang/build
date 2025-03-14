@@ -7,6 +7,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 // ignore: implementation_imports
 import 'package:build_runner_core/src/asset_graph/graph.dart';
@@ -65,7 +67,9 @@ class AssetGraphHandler {
         }
         break;
       case 'assets.json':
-        return _jsonResponse(_assetGraph.serialize());
+        return _jsonResponse(
+          _assetGraph.serialize(const NoopFilesystemDigests()),
+        );
     }
 
     return shelf.Response.notFound('Bad request: "${request.url}".');

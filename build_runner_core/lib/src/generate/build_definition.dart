@@ -57,7 +57,7 @@ class AssetTracker {
 
   AssetTracker(this._reader, this._targetGraph);
 
-  /// Checks for and returns any file system changes compared to the current
+  /// Checks for and returns any file system changest compared to the current
   /// state of the asset graph.
   Future<Map<AssetId, ChangeType>> collectChanges(AssetGraph assetGraph) async {
     var inputSources = await _findInputSources();
@@ -531,19 +531,21 @@ class _Loader {
       AssetId builderOptionsId,
       BuilderOptions options,
     ) {
-      assetGraph.updateNode(builderOptionsId, (nodeBuilder) {
-        if (nodeBuilder.type != NodeType.builderOptions) {
-          throw StateError(
-            'Expected node of type NodeType.builderOptionsNode:'
-            '${nodeBuilder.build()}',
-          );
-        }
-        var oldDigest = nodeBuilder.lastKnownDigest;
-        nodeBuilder.lastKnownDigest = computeBuilderOptionsDigest(options);
-        if (nodeBuilder.lastKnownDigest != oldDigest) {
-          result[builderOptionsId] = ChangeType.MODIFY;
-        }
-      });
+      final node = assetGraph.get(builderOptionsId)!;
+      if (node.type != NodeType.builderOptions) {
+        throw StateError(
+          'Expected node of type NodeType.builderOptionsNode:'
+          '$node',
+        );
+      }
+      final oldDigest = assetGraph.previousBuilderOptionsDigests.get(
+        builderOptionsId,
+      );
+      final newDigest = computeBuilderOptionsDigest(options);
+      if (oldDigest != newDigest) {
+        result[builderOptionsId] = ChangeType.MODIFY;
+      }
+      assetGraph.builderOptionsDigests.add(builderOptionsId, newDigest);
     }
 
     for (var phase = 0; phase < buildPhases.length; phase++) {

@@ -309,7 +309,7 @@ class _SingleBuild {
           () async {
             await _readerWriter.writeAsBytes(
               AssetId(_packageGraph.root.name, assetGraphPath),
-              _assetGraph.serialize(),
+              _assetGraph.serialize(_readerWriter.digests),
             );
           },
         );
@@ -1001,8 +1001,10 @@ class _SingleBuild {
       }
     }
 
-    var builderOptionsNode = _assetGraph.get(builderOptionsId)!;
-    combine(builderOptionsNode.lastKnownDigest!.bytes as Uint8List);
+    combine(
+      _assetGraph.builderOptionsDigests.get(builderOptionsId).bytes
+          as Uint8List,
+    );
 
     for (final id in ids) {
       var node = _assetGraph.get(id)!;

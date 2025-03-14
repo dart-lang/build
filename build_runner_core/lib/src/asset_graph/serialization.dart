@@ -49,6 +49,16 @@ class _AssetGraphDeserializer {
       _serializedGraph['dart_version'] as String,
       packageLanguageVersions,
       List.from(_serializedGraph['enabledExperiments'] as List),
+      BuilderOptionsDigests.from(
+        (serializers.deserialize(_serializedGraph['builderOptionsDigests'])
+                as BuiltMap)
+            .map((k, v) => MapEntry(k as AssetId, v as Digest)),
+      ),
+      SingleBuildFilesystemDigests.from(
+        (serializers.deserialize(_serializedGraph['builderOptionsDigests'])
+                as BuiltMap)
+            .map((k, v) => MapEntry(k as AssetId, v as Digest)),
+      ),
     );
 
     var packageNames = _serializedGraph['packages'] as List;
@@ -85,7 +95,7 @@ class _AssetGraphSerializer {
   _AssetGraphSerializer(this._graph);
 
   /// Perform the serialization, should only be called once.
-  List<int> serialize() {
+  List<int> serialize(FilesystemDigests digests) {
     var pathId = 0;
     // [path0, packageId0, path1, packageId1, ...]
     var assetPaths = <dynamic>[];
@@ -111,6 +121,10 @@ class _AssetGraphSerializer {
         (pkg, version) => MapEntry(pkg, version?.toString()),
       ),
       'enabledExperiments': _graph.enabledExperiments,
+      'builderOptionsDigests': serializers.serialize(
+        _graph.builderOptionsDigests.toMap(),
+      ),
+      'filesystemDigests': serializers.serialize(digests.toMap()),
     };
     return utf8.encode(json.encode(result));
   }

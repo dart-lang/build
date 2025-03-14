@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 
 import '../asset/id.dart';
@@ -11,6 +12,8 @@ abstract interface class FilesystemDigests {
   void addOrCheck(AssetId id, Digest digest);
 
   Iterable<MapEntry<AssetId, Digest>> get digests;
+
+  BuiltMap<AssetId, Digest> toMap();
 }
 
 class NoopFilesystemDigests implements FilesystemDigests {
@@ -21,10 +24,18 @@ class NoopFilesystemDigests implements FilesystemDigests {
 
   @override
   Iterable<MapEntry<AssetId, Digest>> get digests => const [];
+
+  @override
+  BuiltMap<AssetId, Digest> toMap() => <AssetId, Digest>{}.build();
 }
 
 class SingleBuildFilesystemDigests implements FilesystemDigests {
-  final Map<AssetId, Digest> _digests = {};
+  final Map<AssetId, Digest> _digests;
+
+  SingleBuildFilesystemDigests.from(BuiltMap<AssetId, Digest> digests)
+    : _digests = digests.toMap();
+
+  SingleBuildFilesystemDigests() : _digests = {};
 
   @override
   void addOrCheck(AssetId id, Digest digest) {
@@ -38,6 +49,9 @@ class SingleBuildFilesystemDigests implements FilesystemDigests {
 
   @override
   Iterable<MapEntry<AssetId, Digest>> get digests => _digests.entries;
+
+  @override
+  BuiltMap<AssetId, Digest> toMap() => _digests.build();
 }
 
 class FileChangedException implements Exception {

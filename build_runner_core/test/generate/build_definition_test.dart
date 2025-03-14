@@ -9,6 +9,8 @@ import 'package:_test_common/common.dart';
 import 'package:_test_common/runner_asset_writer_spy.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
@@ -157,7 +159,10 @@ targets:
             ..pendingBuildAction = PendingBuildAction.none;
         });
 
-        await createFile(assetGraphPath, originalAssetGraph.serialize());
+        await createFile(
+          assetGraphPath,
+          originalAssetGraph.serialize(const NoopFilesystemDigests()),
+        );
 
         await deleteFile(p.join('lib', 'b.txt'));
         var buildDefinition = await BuildDefinition.prepareWorkspace(
@@ -191,7 +196,10 @@ targets:
           aPackageGraph,
         );
 
-        await createFile(assetGraphPath, originalAssetGraph.serialize());
+        await createFile(
+          assetGraphPath,
+          originalAssetGraph.serialize(const NoopFilesystemDigests()),
+        );
 
         await createFile(p.join('lib', 'a.txt'), 'a');
         var buildDefinition = await BuildDefinition.prepareWorkspace(
@@ -236,7 +244,10 @@ targets:
         originalAssetGraph.updateNode(aTxt, (nodeBuilder) {
           nodeBuilder.outputs.add(aTxtCopy);
         });
-        await createFile(assetGraphPath, originalAssetGraph.serialize());
+        await createFile(
+          assetGraphPath,
+          originalAssetGraph.serialize(const NoopFilesystemDigests()),
+        );
 
         await modifyFile(p.join('lib', 'a.txt'), 'b');
         var buildDefinition = await BuildDefinition.prepareWorkspace(
@@ -274,7 +285,10 @@ targets:
             ..isFailure = false;
         });
 
-        await createFile(assetGraphPath, originalAssetGraph.serialize());
+        await createFile(
+          assetGraphPath,
+          originalAssetGraph.serialize(const NoopFilesystemDigests()),
+        );
 
         var buildDefinition = await BuildDefinition.prepareWorkspace(
           environment,
@@ -321,7 +335,10 @@ targets:
           });
         }
 
-        await createFile(assetGraphPath, originalAssetGraph.serialize());
+        await createFile(
+          assetGraphPath,
+          originalAssetGraph.serialize(const NoopFilesystemDigests()),
+        );
 
         // Same as before, but change the `BuilderOptions` for the first phase.
         var newBuildPhases = [
@@ -394,7 +411,10 @@ targets:
           unorderedEquals(expectedIds),
         );
 
-        await createFile(assetGraphPath, assetGraph.serialize());
+        await createFile(
+          assetGraphPath,
+          assetGraph.serialize(const NoopFilesystemDigests()),
+        );
 
         var buildDefinition = await BuildDefinition.prepareWorkspace(
           environment,
@@ -487,7 +507,10 @@ targets:
           aPackageGraph,
         );
 
-        await createFile(assetGraphPath, originalAssetGraph.serialize());
+        await createFile(
+          assetGraphPath,
+          originalAssetGraph.serialize(const NoopFilesystemDigests()),
+        );
 
         buildPhases.add(
           InBuildPhase(
@@ -532,7 +555,10 @@ targets:
             aPackageGraph,
           );
 
-          await createFile(assetGraphPath, originalAssetGraph.serialize());
+          await createFile(
+            assetGraphPath,
+            originalAssetGraph.serialize(const NoopFilesystemDigests()),
+          );
 
           buildPhases = [
             InBuildPhase(
@@ -573,7 +599,7 @@ targets:
           aPackageGraph,
         );
 
-        var bytes = originalAssetGraph.serialize();
+        var bytes = originalAssetGraph.serialize(const NoopFilesystemDigests());
         var serialized =
             json.decode(utf8.decode(bytes)) as Map<String, dynamic>;
         serialized['dart_version'] = 'some_fake_version';
@@ -622,7 +648,10 @@ targets:
             aPackageGraph,
           );
 
-          await createFile(assetGraphPath, originalAssetGraph.serialize());
+          await createFile(
+            assetGraphPath,
+            originalAssetGraph.serialize(const NoopFilesystemDigests()),
+          );
 
           buildPhases = [
             InBuildPhase(
@@ -675,7 +704,10 @@ targets:
             aPackageGraph,
           );
 
-          await createFile(assetGraphPath, originalAssetGraph.serialize());
+          await createFile(
+            assetGraphPath,
+            originalAssetGraph.serialize(const NoopFilesystemDigests()),
+          );
 
           buildPhases = [
             InBuildPhase(
@@ -731,7 +763,10 @@ targets:
         });
         await createFile(aTxtCopy.path, 'hello');
 
-        await createFile(assetGraphPath, originalAssetGraph.serialize());
+        await createFile(
+          assetGraphPath,
+          originalAssetGraph.serialize(const NoopFilesystemDigests()),
+        );
 
         buildPhases.add(
           InBuildPhase(
@@ -772,7 +807,10 @@ targets:
         });
         await createFile(aTxtCopy.path, 'hello');
 
-        await createFile(assetGraphPath, originalAssetGraph.serialize());
+        await createFile(
+          assetGraphPath,
+          originalAssetGraph.serialize(const NoopFilesystemDigests()),
+        );
 
         await modifyFile(
           'pubspec.yaml',
@@ -814,7 +852,10 @@ targets:
             AssetId('a', '.dart_tool/package_config.json'),
           }, aPackageGraph);
 
-          var graph = await createFile(assetGraphPath, assetGraph.serialize());
+          var graph = await createFile(
+            assetGraphPath,
+            assetGraph.serialize(const NoopFilesystemDigests()),
+          );
 
           await modifyFile(
             '.dart_tool/package_config.json',
@@ -863,7 +904,10 @@ targets:
           ['a'],
         );
 
-        var graph = await createFile(assetGraphPath, assetGraph.serialize());
+        var graph = await createFile(
+          assetGraphPath,
+          assetGraph.serialize(const NoopFilesystemDigests()),
+        );
 
         var newOptions = await BuildOptions.create(
           LogSubscription(environment, logLevel: Level.OFF),

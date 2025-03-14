@@ -11,6 +11,7 @@ import 'package:build/build.dart';
 import 'package:build/experiments.dart' as experiments_zone;
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
@@ -46,11 +47,18 @@ class AssetGraph implements GeneratedAssetHider {
 
   final Map<String, LanguageVersion?> packageLanguageVersions;
 
+  final BuilderOptionsDigests previousBuilderOptionsDigests;
+  final BuilderOptionsDigests builderOptionsDigests = BuilderOptionsDigests();
+
+  final FilesystemDigests previousFilesystemDigests;
+
   AssetGraph._(
     this.buildPhasesDigest,
     this.dartVersion,
     this.packageLanguageVersions,
     this.enabledExperiments,
+    this.previousBuilderOptionsDigests,
+    this.previousFilesystemDigests,
   );
 
   /// Deserializes this graph.
@@ -72,6 +80,8 @@ class AssetGraph implements GeneratedAssetHider {
       Platform.version,
       packageLanguageVersions,
       experiments_zone.enabledExperiments,
+      BuilderOptionsDigests(),
+      const NoopFilesystemDigests(),
     );
     var placeholders = graph._addPlaceHolderNodes(packageGraph);
     graph._addSources(sources);
@@ -87,7 +97,8 @@ class AssetGraph implements GeneratedAssetHider {
     return graph;
   }
 
-  List<int> serialize() => _AssetGraphSerializer(this).serialize();
+  List<int> serialize(FilesystemDigests digests) =>
+      _AssetGraphSerializer(this).serialize(digests);
 
   Future<void> computeDigests(AssetReader digestReader) async {
     await _setLastKnownDigests(
@@ -242,22 +253,20 @@ class AssetGraph implements GeneratedAssetHider {
     for (var phaseNum = 0; phaseNum < buildPhases.length; phaseNum++) {
       var phase = buildPhases[phaseNum];
       if (phase is InBuildPhase) {
-        add(
-          AssetNode.builderOptions(
-            builderOptionsIdForAction(phase, phaseNum),
-            lastKnownDigest: computeBuilderOptionsDigest(phase.builderOptions),
-          ),
+        final id = builderOptionsIdForAction(phase, phaseNum);
+        add(AssetNode.builderOptions(id));
+        builderOptionsDigests.add(
+          id,
+          computeBuilderOptionsDigest(phase.builderOptions),
         );
       } else if (phase is PostBuildPhase) {
         var actionNum = 0;
         for (var builderAction in phase.builderActions) {
-          add(
-            AssetNode.builderOptions(
-              builderOptionsIdForAction(builderAction, actionNum),
-              lastKnownDigest: computeBuilderOptionsDigest(
-                builderAction.builderOptions,
-              ),
-            ),
+          final id = builderOptionsIdForAction(builderAction, actionNum);
+          add(AssetNode.builderOptions(id));
+          builderOptionsDigests.add(
+            id,
+            computeBuilderOptionsDigest(builderAction.builderOptions),
           );
           actionNum++;
         }

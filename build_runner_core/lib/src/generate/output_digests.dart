@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 
 class OutputDigests {
@@ -26,7 +27,14 @@ class OutputDigests {
 }
 
 class BuilderOptionsDigests {
-  final Map<AssetId, Digest> _digests = {};
+  final Map<AssetId, Digest> _digests;
+
+  BuilderOptionsDigests.from(BuiltMap<AssetId, Digest> digests)
+    : _digests = digests.toMap();
+
+  BuiltMap<AssetId, Digest> toMap() => _digests.build();
+
+  BuilderOptionsDigests() : _digests = {};
 
   void add(AssetId id, Digest digest) {
     if (_digests.containsKey(id)) {
