@@ -300,8 +300,6 @@ class _SingleBuild {
         // Run a fresh build.
         var result = await logTimedAsync(_logger, 'Running build', _runPhases);
 
-        _assetGraph.prepareForSave(_readerWriter.digests, _outputDigests);
-
         // Write out the dependency graph file.
         await logTimedAsync(
           _logger,

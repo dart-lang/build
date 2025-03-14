@@ -113,44 +113,6 @@ class AssetGraph implements GeneratedAssetHider {
     );
   }
 
-  void prepareForSave(FilesystemDigests digests, OutputDigests outputDigests) {
-    final seenIds = <AssetId>{};
-    for (final entry in digests.digests) {
-      final id = entry.key;
-      seenIds.add(id);
-      final filesystemDigest = entry.value;
-
-      final node = get(entry.key);
-      if (node == null) throw StateError('Missing node for $id');
-
-      final nodeDigest = node.lastKnownDigest;
-
-      if (filesystemDigest != nodeDigest) {
-        /*throw StateError(
-          'Digest mismatch for $id: '
-          'filesystem: $filesystemDigest, node: $nodeDigest',
-        );*/
-      }
-    }
-
-    for (final node in allNodes) {
-      if (node.type == NodeType.builderOptions ||
-          node.type == NodeType.glob ||
-          node.type == NodeType.generated) {
-        continue;
-      }
-      if (node.lastKnownDigest != null && !seenIds.contains(node.id)) {
-        throw StateError('Missing in FilesystemDigests: ${node.id}');
-      }
-    }
-
-    for (final entry in outputDigests.digests) {
-      updateNode(entry.key, (nodeBuilder) {
-        nodeBuilder.lastKnownDigest = entry.value;
-      });
-    }
-  }
-
   /// Checks if [id] exists in the graph.
   bool contains(AssetId id) =>
       _nodesByPackage[id.package]?.containsKey(id.path) ?? false;
