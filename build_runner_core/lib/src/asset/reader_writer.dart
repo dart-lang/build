@@ -25,11 +25,13 @@ class ReaderWriter extends AssetReader
   final String rootPackage;
 
   @override
+  final AssetFinder assetFinder;
+  @override
   final AssetPathProvider assetPathProvider;
   @override
-  final Filesystem filesystem;
+  final GeneratedAssetHider generatedAssetHider;
   @override
-  final AssetFinder assetFinder;
+  final Filesystem filesystem;
   @override
   final FilesystemCache cache;
 
@@ -45,6 +47,7 @@ class ReaderWriter extends AssetReader
     rootPackage: packageGraph.root.name,
     assetFinder: PackageGraphAssetFinder(packageGraph),
     assetPathProvider: packageGraph,
+    generatedAssetHider: const NoopGeneratedAssetHider(),
     filesystem: IoFilesystem(),
     cache: const PassthroughFilesystemCache(),
     onDelete: null,
@@ -54,6 +57,7 @@ class ReaderWriter extends AssetReader
     required this.rootPackage,
     required this.assetFinder,
     required this.assetPathProvider,
+    required this.generatedAssetHider,
     required this.filesystem,
     required this.cache,
     required this.onDelete,
@@ -61,24 +65,28 @@ class ReaderWriter extends AssetReader
 
   @override
   ReaderWriter copyWith({
-    AssetPathProvider? assetPathProvider,
     FilesystemCache? cache,
+    GeneratedAssetHider? generatedAssetHider,
     void Function(AssetId)? onDelete,
   }) => ReaderWriter.using(
     rootPackage: rootPackage,
     assetFinder: assetFinder,
-    assetPathProvider: assetPathProvider ?? this.assetPathProvider,
+    assetPathProvider: assetPathProvider,
+    generatedAssetHider: generatedAssetHider ?? this.generatedAssetHider,
     filesystem: filesystem,
     cache: cache ?? this.cache,
     onDelete: onDelete ?? this.onDelete,
   );
+
+  String _pathFor(AssetId id) =>
+      assetPathProvider.pathFor(generatedAssetHider.maybeHide(id, rootPackage));
 
   @override
   Future<bool> canRead(AssetId id) {
     return cache.exists(
       id,
       ifAbsent: () async {
-        final path = assetPathProvider.pathFor(id);
+        final path = _pathFor(id);
         return filesystem.exists(path);
       },
     );
@@ -89,7 +97,7 @@ class ReaderWriter extends AssetReader
     return cache.readAsBytes(
       id,
       ifAbsent: () async {
-        final path = assetPathProvider.pathFor(id);
+        final path = _pathFor(id);
         if (!await filesystem.exists(path)) {
           throw AssetNotFoundException(id, path: path);
         }
@@ -104,7 +112,7 @@ class ReaderWriter extends AssetReader
       id,
       encoding: encoding,
       ifAbsent: () async {
-        final path = assetPathProvider.pathFor(id);
+        final path = _pathFor(id);
         if (!await filesystem.exists(path)) {
           throw AssetNotFoundException(id, path: path);
         }
@@ -121,7 +129,7 @@ class ReaderWriter extends AssetReader
 
   @override
   Future<void> writeAsBytes(AssetId id, List<int> bytes) async {
-    final path = assetPathProvider.pathFor(id);
+    final path = _pathFor(id);
     await filesystem.writeAsBytes(path, bytes);
   }
 
@@ -131,14 +139,14 @@ class ReaderWriter extends AssetReader
     String contents, {
     Encoding encoding = utf8,
   }) async {
-    final path = assetPathProvider.pathFor(id);
+    final path = _pathFor(id);
     await filesystem.writeAsString(path, contents, encoding: encoding);
   }
 
   @override
-  Future delete(AssetId id) async {
+  Future<void> delete(AssetId id) async {
     onDelete?.call(id);
-    final path = assetPathProvider.pathFor(id);
+    final path = _pathFor(id);
     // Hidden generated files are moved by `assetPathProvider` under the root
     // package folder, and it's allowed to delete them. So for assets in a
     // different package, check if the path has mapped onto the generated output

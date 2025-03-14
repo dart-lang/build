@@ -10,5 +10,6 @@ export 'state/asset_finder.dart';
 export 'state/asset_path_provider.dart';
 export 'state/filesystem.dart';
 export 'state/filesystem_cache.dart';
+export 'state/generated_asset_hider.dart';
 export 'state/reader_state.dart';
 export 'state/reader_writer.dart';

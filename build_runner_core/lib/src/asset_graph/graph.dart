@@ -19,13 +19,14 @@ import 'package:watcher/watcher.dart';
 
 import '../generate/phase.dart';
 import '../package_graph/package_graph.dart';
+import '../util/constants.dart';
 import 'exceptions.dart';
 import 'node.dart';
 
 part 'serialization.dart';
 
 /// All the [AssetId]s involved in a build, and all of their outputs.
-class AssetGraph {
+class AssetGraph implements GeneratedAssetHider {
   /// All the [AssetNode]s in the graph, indexed by package and then path.
   final _nodesByPackage = <String, Map<String, AssetNode>>{};
 
@@ -711,6 +712,26 @@ class AssetGraph {
         }
       });
     }
+  }
+
+  @override
+  AssetId maybeHide(AssetId id, String rootPackage) {
+    if (id.path.startsWith(generatedOutputDirectory) ||
+        id.path.startsWith(cacheDir)) {
+      return id;
+    }
+    if (!contains(id)) {
+      return id;
+    }
+    final assetNode = get(id)!;
+    if (assetNode.type == NodeType.generated &&
+        assetNode.generatedNodeConfiguration!.isHidden) {
+      return AssetId(
+        rootPackage,
+        '$generatedOutputDirectory/${id.package}/${id.path}',
+      );
+    }
+    return id;
   }
 }
 
