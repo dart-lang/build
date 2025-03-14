@@ -17,6 +17,7 @@ import 'package:glob/glob.dart';
 import 'package:package_config/package_config.dart';
 import 'package:watcher/watcher.dart';
 
+import '../generate/output_digests.dart';
 import '../generate/phase.dart';
 import '../package_graph/package_graph.dart';
 import '../util/constants.dart';
@@ -101,7 +102,7 @@ class AssetGraph implements GeneratedAssetHider {
     );
   }
 
-  void prepareForSave(FilesystemDigests digests) {
+  void prepareForSave(FilesystemDigests digests, OutputDigests outputDigests) {
     final seenIds = <AssetId>{};
     for (final entry in digests.digests) {
       final id = entry.key;
@@ -130,6 +131,12 @@ class AssetGraph implements GeneratedAssetHider {
       if (node.lastKnownDigest != null && !seenIds.contains(node.id)) {
         throw StateError('Missing in FilesystemDigests: ${node.id}');
       }
+    }
+
+    for (final entry in outputDigests.digests) {
+      updateNode(entry.key, (nodeBuilder) {
+        nodeBuilder.lastKnownDigest = entry.value;
+      });
     }
   }
 

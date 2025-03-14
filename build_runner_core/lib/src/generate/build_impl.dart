@@ -41,6 +41,7 @@ import 'finalized_assets_view.dart';
 import 'heartbeat.dart';
 import 'input_tracker.dart';
 import 'options.dart';
+import 'output_digests.dart';
 import 'performance_tracker.dart';
 import 'phase.dart';
 import 'single_step_reader_writer.dart';
@@ -178,6 +179,8 @@ class _SingleBuild {
 
   final pendingActions = SplayTreeMap<int, Set<String>>();
 
+  final OutputDigests _outputDigests = OutputDigests();
+
   late final HungActionsHeartbeat hungActionsHeartbeat;
 
   _SingleBuild(
@@ -297,7 +300,7 @@ class _SingleBuild {
         // Run a fresh build.
         var result = await logTimedAsync(_logger, 'Running build', _runPhases);
 
-        _assetGraph.prepareForSave(_readerWriter.digests);
+        _assetGraph.prepareForSave(_readerWriter.digests, _outputDigests);
 
         // Write out the dependency graph file.
         await logTimedAsync(
@@ -975,8 +978,8 @@ class _SingleBuild {
           ..globNodeState.inputs.replace(
             generatedFileInputs.followedBy(otherInputs),
           )
-          ..globNodeState.pendingBuildAction = PendingBuildAction.none
-          ..lastKnownDigest = md5.convert(utf8.encode(results.join(' ')));
+          ..globNodeState.pendingBuildAction = PendingBuildAction.none;
+        _outputDigests.add(globId, md5.convert(utf8.encode(results.join(' '))));
       });
 
       unawaited(_lazyGlobs.remove(globId));
@@ -1005,14 +1008,13 @@ class _SingleBuild {
       var node = _assetGraph.get(id)!;
       if (node.type == NodeType.glob) {
         await _buildGlobNode(node.id);
-        node = _assetGraph.get(id)!;
+        combine(_outputDigests.get(node.id)!.bytes as Uint8List);
       } else if (!await reader.canRead(id)) {
         // We want to add something here, a missing/unreadable input should be
         // different from no input at all.
         //
         // This needs to be unique per input so we use the md5 hash of the id.
         combine(md5.convert(id.toString().codeUnits).bytes as Uint8List);
-        continue;
       } else {
         if (node.lastKnownDigest == null) {
           final digest = await reader.digest(id);
@@ -1021,8 +1023,8 @@ class _SingleBuild {
             nodeBuilder.lastKnownDigest = digest;
           });
         }
+        combine(node.lastKnownDigest!.bytes as Uint8List);
       }
-      combine(node.lastKnownDigest!.bytes as Uint8List);
     }
 
     return Digest(combinedBytes);
