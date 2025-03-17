@@ -390,7 +390,7 @@ function relativeURL(ref) {
           dart2WasmResult?.supportExpression ??
           "'WebAssembly' in self && "
               'WebAssembly.validate(new Uint8Array('
-              '[0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 95, 1, 120, 0]));';
+              '[0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 95, 1, 120, 0]))';
 
       loaderResult.writeln('''
 if ($supportCheck) {

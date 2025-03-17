@@ -1,3 +1,7 @@
+## 4.1.3
+
+- Fixed WebAssembly detection logic.
+
 ## 4.1.2
 
 - Bump the min SDK to 3.7.0.
