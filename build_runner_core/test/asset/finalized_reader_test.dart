@@ -10,6 +10,7 @@ import 'package:build/build.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_runner_core/src/generate/build_phases.dart';
 import 'package:build_runner_core/src/generate/options.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
 import 'package:build_runner_core/src/package_graph/target_graph.dart';
@@ -30,7 +31,7 @@ void main() {
       );
 
       graph = await AssetGraph.build(
-        [],
+        BuildPhases([]),
         <AssetId>{},
         <AssetId>{},
         packageGraph,
@@ -62,7 +63,13 @@ void main() {
       delegate.testing.writeString(notDeleted.id, '');
       delegate.testing.writeString(deleted.id, '');
 
-      reader = FinalizedReader(delegate, graph, targetGraph, [], 'a');
+      reader = FinalizedReader(
+        delegate,
+        graph,
+        targetGraph,
+        BuildPhases([]),
+        'a',
+      );
       expect(await reader.canRead(notDeleted.id), true);
       expect(await reader.canRead(deleted.id), false);
     });
@@ -82,9 +89,13 @@ void main() {
       graph.add(node);
       var delegate = TestReaderWriter();
       delegate.testing.writeString(id, '');
-      reader = FinalizedReader(delegate, graph, targetGraph, [
-        InBuildPhase(TestBuilder(), 'a', isOptional: false),
-      ], 'a')..reset({'web'}, {});
+      reader = FinalizedReader(
+        delegate,
+        graph,
+        targetGraph,
+        BuildPhases([InBuildPhase(TestBuilder(), 'a', isOptional: false)]),
+        'a',
+      )..reset({'web'}, {});
       expect(
         await reader.unreadableReason(id),
         UnreadableReason.failed,

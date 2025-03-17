@@ -11,6 +11,7 @@ import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_runner_core/src/generate/build_phases.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
 import 'package:crypto/crypto.dart';
 import 'package:test/test.dart';
@@ -48,7 +49,7 @@ void main() {
     group('simple graph', () {
       setUp(() async {
         graph = await AssetGraph.build(
-          [],
+          BuildPhases([]),
           <AssetId>{},
           <AssetId>{},
           fooPackageGraph,
@@ -212,7 +213,7 @@ void main() {
 
     group('with buildPhases', () {
       var targetSources = const InputSet(exclude: ['excluded.txt']);
-      final buildPhases = [
+      final buildPhases = BuildPhases([
         InBuildPhase(
           TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')),
           'foo',
@@ -227,7 +228,7 @@ void main() {
             generateFor: const InputSet(),
           ),
         ]),
-      ];
+      ]);
       final primaryInputId = makeAssetId('foo|file.txt');
       final excludedInputId = makeAssetId('foo|excluded.txt');
       final primaryOutputId = makeAssetId('foo|file.txt.copy');
@@ -577,7 +578,7 @@ void main() {
     test('overlapping build phases cause an error', () async {
       expect(
         () => AssetGraph.build(
-          List.filled(2, InBuildPhase(TestBuilder(), 'foo')),
+          BuildPhases(List.filled(2, InBuildPhase(TestBuilder(), 'foo'))),
           {makeAssetId('foo|file')},
           <AssetId>{},
           fooPackageGraph,
@@ -604,7 +605,7 @@ void main() {
           digestReader.testing.writeString(id, 'contents of $id');
         }
         final graph = await AssetGraph.build(
-          [
+          BuildPhases([
             InBuildPhase(
               TestBuilder(buildExtensions: replaceExtension('.txt', '.a.txt')),
               'foo',
@@ -622,7 +623,7 @@ void main() {
               'foo',
               hideOutput: false,
             ),
-          ],
+          ]),
           sources,
           <AssetId>{},
           fooPackageGraph,
@@ -657,7 +658,7 @@ void main() {
           digestReader.testing.writeString(id, 'contents of $id');
         }
         final graph = await AssetGraph.build(
-          [
+          BuildPhases([
             InBuildPhase(
               TestBuilder(buildExtensions: appendExtension('.1', from: '.txt')),
               'foo',
@@ -667,7 +668,7 @@ void main() {
               'foo',
               targetSources: const InputSet(include: ['lib/*.txt']),
             ),
-          ],
+          ]),
           sources,
           <AssetId>{},
           fooPackageGraph,
@@ -687,7 +688,7 @@ void main() {
         final nodeToRead = AssetId('foo', 'lib/a.1');
         final outputReadingNode = AssetId('foo', 'lib/b.2');
         final lastPrimaryOutputNode = AssetId('foo', 'lib/b.3');
-        final buildPhases = [
+        final buildPhases = BuildPhases([
           InBuildPhase(
             TestBuilder(buildExtensions: replaceExtension('.txt', '.1')),
             'foo',
@@ -700,7 +701,7 @@ void main() {
             TestBuilder(buildExtensions: replaceExtension('.2', '.3')),
             'foo',
           ),
-        ];
+        ]);
         final sources = {makeAssetId('foo|lib/b.anchor')};
         for (final id in sources) {
           digestReader.testing.writeString(id, 'contents of $id');
@@ -750,7 +751,7 @@ void main() {
         final generatedDart = AssetId('a', 'lib/a.g.dart');
         final generatedPart = AssetId('a', 'lib/a.g.part');
         final toBeGeneratedDart = AssetId('a', 'lib/A.g.dart');
-        final buildPhases = [
+        final buildPhases = BuildPhases([
           InBuildPhase(
             TestBuilder(buildExtensions: replaceExtension('.dart', '.g.part')),
             'a',
@@ -761,7 +762,7 @@ void main() {
             ),
             'a',
           ),
-        ];
+        ]);
         final packageGraph = buildPackageGraph({rootPackage('a'): []});
         final graph = await AssetGraph.build(
           buildPhases,
