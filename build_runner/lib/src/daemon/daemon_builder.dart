@@ -17,7 +17,7 @@ import 'package:build_runner_core/build_runner_core.dart'
 import 'package:build_runner_core/build_runner_core.dart'
     hide BuildResult, BuildStatus;
 // ignore: implementation_imports
-import 'package:build_runner_core/src/generate/build_definition.dart';
+import 'package:build_runner_core/src/generate/asset_tracker.dart';
 // ignore: implementation_imports
 import 'package:build_runner_core/src/generate/build_series.dart';
 import 'package:stream_transform/stream_transform.dart';

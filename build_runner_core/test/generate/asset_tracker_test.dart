@@ -8,7 +8,7 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
-import 'package:build_runner_core/src/generate/build_definition.dart';
+import 'package:build_runner_core/src/generate/asset_tracker.dart';
 import 'package:build_runner_core/src/package_graph/target_graph.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
