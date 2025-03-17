@@ -17,9 +17,9 @@ import 'package:build_runner_core/build_runner_core.dart'
 import 'package:build_runner_core/build_runner_core.dart'
     hide BuildResult, BuildStatus;
 // ignore: implementation_imports
-import 'package:build_runner_core/src/generate/asset_tracker.dart';
+import 'package:build_runner_core/src/generate/build_definition.dart';
 // ignore: implementation_imports
-import 'package:build_runner_core/src/generate/build_series.dart';
+import 'package:build_runner_core/src/generate/build_impl.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
@@ -36,7 +36,7 @@ import 'change_providers.dart';
 class BuildRunnerDaemonBuilder implements DaemonBuilder {
   final _buildResults = StreamController<BuildResults>();
 
-  final BuildSeries _buildSeries;
+  final BuildImpl _builder;
   final BuildOptions _buildOptions;
   final StreamController<ServerLog> _outputStreamController;
   final ChangeProvider changeProvider;
@@ -47,7 +47,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   final Stream<ServerLog> logs;
 
   BuildRunnerDaemonBuilder._(
-    this._buildSeries,
+    this._builder,
     this._buildOptions,
     this._outputStreamController,
     this.changeProvider,
@@ -60,7 +60,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   @override
   Stream<BuildResults> get builds => _buildResults.stream;
 
-  FinalizedReader get reader => _buildSeries.finalizedReader;
+  FinalizedReader get reader => _builder.finalizedReader;
 
   final _buildScriptUpdateCompleter = Completer<void>();
   Future<void> get buildScriptUpdated => _buildScriptUpdateCompleter.future;
@@ -79,7 +79,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
             .toList();
 
     if (!_buildOptions.skipBuildScriptCheck &&
-        _buildSeries.buildScriptUpdates!.hasBeenUpdated(
+        _builder.buildScriptUpdates!.hasBeenUpdated(
           changes.map<AssetId>((change) => change.id).toSet(),
         )) {
       if (!_buildScriptUpdateCompleter.isCompleted) {
@@ -131,7 +131,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
     try {
       var mergedChanges = collectChanges([changes]);
-      var result = await _buildSeries.run(
+      var result = await _builder.run(
         mergedChanges,
         buildDirs: buildDirs,
         buildFilters: buildFilters,
@@ -190,7 +190,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
   @override
   Future<void> stop() async {
-    await _buildSeries.beforeExit();
+    await _builder.beforeExit();
     await _buildOptions.logListener.cancel();
   }
 
@@ -279,7 +279,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       logPerformanceDir: daemonOptions.logPerformanceDir,
     );
 
-    var buildSeries = await BuildSeries.create(
+    var builder = await BuildImpl.create(
       buildOptions,
       daemonEnvironment,
       builders,
@@ -300,7 +300,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         .asyncWhere(
           (change) => shouldProcess(
             change,
-            buildSeries.assetGraph,
+            builder.assetGraph,
             buildOptions,
             // Assume we will create an outputDir.
             true,
@@ -316,11 +316,11 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
             ? AutoChangeProviderImpl(graphEvents())
             : ManualChangeProviderImpl(
               AssetTracker(daemonEnvironment.reader, buildOptions.targetGraph),
-              buildSeries.assetGraph,
+              builder.assetGraph,
             );
 
     return BuildRunnerDaemonBuilder._(
-      buildSeries,
+      builder,
       buildOptions,
       outputStreamController,
       changeProvider,

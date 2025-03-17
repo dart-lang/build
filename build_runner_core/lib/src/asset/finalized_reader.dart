@@ -15,7 +15,7 @@ import '../../build_runner_core.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../asset_graph/optional_output_tracker.dart';
-import '../generate/build_phases.dart';
+import '../generate/phase.dart';
 import '../package_graph/target_graph.dart';
 
 /// A view of the build output.
@@ -30,7 +30,7 @@ class FinalizedReader {
   final TargetGraph _targetGraph;
   OptionalOutputTracker? _optionalOutputTracker;
   final String _rootPackage;
-  final BuildPhases _buildPhases;
+  final List<BuildPhase> _buildPhases;
 
   void reset(Set<String> buildDirs, Set<BuildFilter> buildFilters) {
     _optionalOutputTracker = OptionalOutputTracker(

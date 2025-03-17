@@ -11,7 +11,7 @@ import 'package:build_runner_core/build_runner_core.dart';
 // ignore: implementation_imports
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 // ignore: implementation_imports
-import 'package:build_runner_core/src/generate/build_series.dart';
+import 'package:build_runner_core/src/generate/build_impl.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
 import 'package:stream_transform/stream_transform.dart';
@@ -159,9 +159,9 @@ WatchImpl _runWatch(
 );
 
 class WatchImpl implements BuildState {
-  BuildSeries? _buildSeries;
+  BuildImpl? _build;
 
-  AssetGraph? get assetGraph => _buildSeries?.assetGraph;
+  AssetGraph? get assetGraph => _build?.assetGraph;
 
   final String? _configKey;
 
@@ -250,7 +250,7 @@ class WatchImpl implements BuildState {
     var controller = StreamController<BuildResult>();
 
     Future<BuildResult> doBuild(List<List<AssetChange>> changes) async {
-      var build = _buildSeries!;
+      var build = _build!;
       _logger
         ..info('${'-' * 72}\n')
         ..info('Starting Build\n');
@@ -362,7 +362,7 @@ class WatchImpl implements BuildState {
         })
         .onDone(() async {
           await currentBuild;
-          await _buildSeries?.beforeExit();
+          await _build?.beforeExit();
           if (!controller.isClosed) await controller.close();
           _logger.info('Builds finished. Safe to exit\n');
         });
@@ -387,10 +387,10 @@ class WatchImpl implements BuildState {
       }
 
       BuildResult firstBuild;
-      BuildSeries? build;
+      BuildImpl? build;
       try {
         build =
-            _buildSeries = await BuildSeries.create(
+            _build = await BuildImpl.create(
               options,
               watcherEnvironment,
               builders,

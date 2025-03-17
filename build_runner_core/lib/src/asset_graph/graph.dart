@@ -11,15 +11,14 @@ import 'package:build/build.dart';
 import 'package:build/experiments.dart' as experiments_zone;
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
-import 'package:built_collection/built_collection.dart';
+import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:package_config/package_config.dart';
 import 'package:watcher/watcher.dart';
 
-import '../../build_runner_core.dart';
-import '../generate/build_phases.dart';
 import '../generate/phase.dart';
+import '../package_graph/package_graph.dart';
 import '../util/constants.dart';
 import 'exceptions.dart';
 import 'node.dart';
@@ -42,9 +41,9 @@ class AssetGraph implements GeneratedAssetHider {
 
   /// The Dart language experiments that were enabled when this graph was
   /// originally created from the [build] constructor.
-  final BuiltList<String> enabledExperiments;
+  final List<String> enabledExperiments;
 
-  final BuiltMap<String, LanguageVersion?> packageLanguageVersions;
+  final Map<String, LanguageVersion?> packageLanguageVersions;
 
   AssetGraph._(
     this.buildPhasesDigest,
@@ -58,17 +57,21 @@ class AssetGraph implements GeneratedAssetHider {
       _AssetGraphDeserializer(serializedGraph).deserialize();
 
   static Future<AssetGraph> build(
-    BuildPhases buildPhases,
+    List<BuildPhase> buildPhases,
     Set<AssetId> sources,
     Set<AssetId> internalSources,
     PackageGraph packageGraph,
     AssetReader digestReader,
   ) async {
+    var packageLanguageVersions = {
+      for (var pkg in packageGraph.allPackages.values)
+        pkg.name: pkg.languageVersion,
+    };
     var graph = AssetGraph._(
-      buildPhases.digest,
+      computeBuildPhasesDigest(buildPhases),
       Platform.version,
-      packageGraph.languageVersions,
-      experiments_zone.enabledExperiments.build(),
+      packageLanguageVersions,
+      experiments_zone.enabledExperiments,
     );
     var placeholders = graph._addPlaceHolderNodes(packageGraph);
     graph._addSources(sources);
@@ -188,7 +191,7 @@ class AssetGraph implements GeneratedAssetHider {
   }
 
   /// Adds [AssetNode.builderOptions] for all [buildPhases] to this graph.
-  void _addBuilderOptionsNodes(BuildPhases buildPhases) {
+  void _addBuilderOptionsNodes(List<BuildPhase> buildPhases) {
     for (var phaseNum = 0; phaseNum < buildPhases.length; phaseNum++) {
       var phase = buildPhases[phaseNum];
       if (phase is InBuildPhase) {
@@ -332,7 +335,7 @@ class AssetGraph implements GeneratedAssetHider {
   ///
   /// Returns the list of [AssetId]s that were invalidated.
   Future<Set<AssetId>> updateAndInvalidate(
-    BuildPhases buildPhases,
+    List<BuildPhase> buildPhases,
     Map<AssetId, ChangeType> updates,
     String rootPackage,
     Future Function(AssetId id) delete,
@@ -528,7 +531,7 @@ class AssetGraph implements GeneratedAssetHider {
   /// If [placeholders] is supplied they will be added to [newSources] to create
   /// the full input set.
   Set<AssetId> _addOutputsForSources(
-    BuildPhases buildPhases,
+    List<BuildPhase> buildPhases,
     Set<AssetId> newSources,
     String rootPackage, {
     Set<AssetId>? placeholders,
@@ -567,7 +570,7 @@ class AssetGraph implements GeneratedAssetHider {
     InBuildPhase phase,
     int phaseNum,
     Set<AssetId> allInputs,
-    BuildPhases buildPhases,
+    List<BuildPhase> buildPhases,
     String rootPackage,
   ) {
     var phaseOutputs = <AssetId>{};
@@ -637,7 +640,7 @@ class AssetGraph implements GeneratedAssetHider {
     Iterable<AssetId> outputs,
     int phaseNumber,
     AssetNode builderOptionsNode,
-    BuildPhases buildPhases,
+    List<BuildPhase> buildPhases,
     String rootPackage, {
     required AssetId primaryInput,
     required bool isHidden,
@@ -730,35 +733,17 @@ class AssetGraph implements GeneratedAssetHider {
     }
     return id;
   }
+}
 
-  /// Deletes outputs that were written to the source tree.
-  ///
-  /// Returns the assets that were deleted.
-  Future<Iterable<AssetId>> deleteOutputs(
-    PackageGraph packageGraph,
-    RunnerAssetWriter writer,
-  ) async {
-    var deletedSources = <AssetId>[];
-    // Delete all the non-hidden outputs.
-    for (final id in outputs) {
-      var node = get(id)!;
-      final nodeConfiguration = node.generatedNodeConfiguration!;
-      final nodeState = node.generatedNodeState!;
-      if (nodeState.wasOutput && !nodeConfiguration.isHidden) {
-        var idToDelete = id;
-        // If the package no longer exists, then the user must have
-        // renamed the root package.
-        //
-        // In that case we change `idToDelete` to be in the root package.
-        if (packageGraph[id.package] == null) {
-          idToDelete = AssetId(packageGraph.root.name, id.path);
-        }
-        deletedSources.add(idToDelete);
-        await writer.delete(idToDelete);
-      }
-    }
-    return deletedSources;
-  }
+/// Computes a [Digest] for [buildPhases] which can be used to compare one set
+/// of [BuildPhase]s against another.
+Digest computeBuildPhasesDigest(Iterable<BuildPhase> buildPhases) {
+  var digestSink = AccumulatorSink<Digest>();
+  md5.startChunkedConversion(digestSink)
+    ..add(buildPhases.map((phase) => phase.identity).toList())
+    ..close();
+  assert(digestSink.events.length == 1);
+  return digestSink.events.first;
 }
 
 Digest computeBuilderOptionsDigest(BuilderOptions options) =>

@@ -15,12 +15,6 @@ class BuildDirectory {
 
   @override
   int get hashCode => Object.hash(directory, outputLocation);
-
-  static Set<String> buildPaths(Set<BuildDirectory> buildDirs) =>
-      // The empty string means build everything.
-      buildDirs.any((b) => b.directory == '')
-          ? <String>{}
-          : buildDirs.map((b) => b.directory).toSet();
 }
 
 class OutputLocation {
