@@ -12,6 +12,7 @@ import 'package:build_config/build_config.dart';
 import 'package:graphs/graphs.dart';
 import 'package:logging/logging.dart';
 
+import '../generate/build_phases.dart';
 import '../generate/exceptions.dart';
 import '../generate/phase.dart';
 import '../validation/config_validation.dart';
@@ -292,7 +293,7 @@ final _logger = Logger('ApplyBuilders');
 /// Builders may be filtered, for instance to run only on package which have a
 /// dependency on some other package by choosing the appropriate
 /// [BuilderApplication].
-Future<List<BuildPhase>> createBuildPhases(
+Future<BuildPhases> createBuildPhases(
   TargetGraph targetGraph,
   Iterable<BuilderApplication> builderApplications,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
@@ -370,7 +371,7 @@ Future<List<BuildPhase>> createBuildPhases(
     );
   }
 
-  return <BuildPhase>[...inBuildPhases, ...collapsedPostBuildPhase];
+  return BuildPhases([...inBuildPhases, ...collapsedPostBuildPhase]);
 }
 
 Iterable<BuildPhase> _createBuildPhasesWithinCycle(

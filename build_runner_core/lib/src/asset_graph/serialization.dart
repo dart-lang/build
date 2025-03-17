@@ -47,8 +47,8 @@ class _AssetGraphDeserializer {
     var graph = AssetGraph._(
       _deserializeDigest(_serializedGraph['buildActionsDigest'] as String)!,
       _serializedGraph['dart_version'] as String,
-      packageLanguageVersions,
-      List.from(_serializedGraph['enabledExperiments'] as List),
+      packageLanguageVersions.build(),
+      BuiltList<String>.from(_serializedGraph['enabledExperiments'] as List),
     );
 
     var packageNames = _serializedGraph['packages'] as List;
@@ -107,10 +107,11 @@ class _AssetGraphSerializer {
       'buildActionsDigest': _serializeDigest(_graph.buildPhasesDigest),
       'packages': packages,
       'assetPaths': assetPaths,
-      'packageLanguageVersions': _graph.packageLanguageVersions.map(
-        (pkg, version) => MapEntry(pkg, version?.toString()),
-      ),
-      'enabledExperiments': _graph.enabledExperiments,
+      'packageLanguageVersions':
+          _graph.packageLanguageVersions
+              .map((pkg, version) => MapEntry(pkg, version?.toString()))
+              .toMap(),
+      'enabledExperiments': _graph.enabledExperiments.toList(),
     };
     return utf8.encode(json.encode(result));
   }

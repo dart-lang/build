@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
+import 'package:build_runner_core/src/generate/build_phases.dart';
 import 'package:build_runner_core/src/generate/exceptions.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
 import 'package:build_runner_core/src/package_graph/apply_builders.dart';
@@ -29,7 +30,7 @@ void main() {
       var phases = await createBuildPhases(targetGraph, builderApplications, {
         'b:cool_builder': {'option_a': 'a', 'option_c': 'c'},
       }, false);
-      for (final phase in phases.cast<InBuildPhase>()) {
+      for (final phase in phases.phases.cast<InBuildPhase>()) {
         expect((phase.builder as CoolBuilder).optionA, equals('a'));
         expect((phase.builder as CoolBuilder).optionB, equals('defaultB'));
         expect((phase.builder as CoolBuilder).optionC, equals('c'));
@@ -78,7 +79,7 @@ void main() {
               },
               true,
             );
-            for (final phase in phases.cast<InBuildPhase>()) {
+            for (final phase in phases.phases.cast<InBuildPhase>()) {
               expect(
                 (phase.builder as CoolBuilder).optionA,
                 equals('global a'),
@@ -118,7 +119,7 @@ void main() {
         false,
       );
       expect(phases, hasLength(1));
-      expect((phases.first as InBuildPhase).package, 'a');
+      expect((phases.phases.first as InBuildPhase).package, 'a');
     });
 
     test('honors appliesBuilders', () async {
@@ -147,7 +148,7 @@ void main() {
       );
       expect(phases, hasLength(2));
       expect(
-        phases,
+        phases.phases,
         everyElement(
           const TypeMatcher<InBuildPhase>().having(
             (p) => p.package,
@@ -184,7 +185,7 @@ void main() {
       );
       expect(phases, hasLength(1));
       expect(
-        phases,
+        phases.phases,
         everyElement(
           const TypeMatcher<InBuildPhase>().having(
             (p) => p.package,
@@ -229,7 +230,7 @@ void main() {
         );
         expect(phases, hasLength(2));
         expect(
-          phases,
+          phases.phases,
           everyElement(
             const TypeMatcher<InBuildPhase>().having(
               (p) => p.package,
@@ -276,7 +277,7 @@ void main() {
     });
 
     group('autoApplyBuilders', () {
-      Future<List<BuildPhase>> createPhases({
+      Future<BuildPhases> createPhases({
         Map<String, TargetBuilderConfig>? builderConfigs,
       }) async {
         var packageGraph = buildPackageGraph({
@@ -321,7 +322,7 @@ void main() {
 
       test('can be disabled for a target', () async {
         var phases = await createPhases();
-        expect(phases, isEmpty);
+        expect(phases.phases, isEmpty);
       });
 
       test('individual builders can still be enabled', () async {
@@ -332,7 +333,7 @@ void main() {
         );
         expect(phases, hasLength(1));
         expect(
-          phases.first,
+          phases.phases.first,
           isA<InBuildPhase>()
               .having((p) => p.package, 'package', 'a')
               .having(
@@ -353,7 +354,7 @@ void main() {
           );
           expect(phases, hasLength(2));
           expect(
-            phases,
+            phases.phases,
             equals([
               isA<InBuildPhase>()
                   .having((p) => p.package, 'package', 'a')

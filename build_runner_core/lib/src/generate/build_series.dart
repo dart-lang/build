@@ -20,9 +20,9 @@ import '../util/constants.dart';
 import 'build.dart';
 import 'build_definition.dart';
 import 'build_directory.dart';
+import 'build_phases.dart';
 import 'build_result.dart';
 import 'options.dart';
-import 'phase.dart';
 
 final _logger = Logger('BuildSeries');
 
@@ -43,7 +43,7 @@ class BuildSeries {
   final AssetGraph assetGraph;
   final BuildScriptUpdates? buildScriptUpdates;
   final BuildOptions options;
-  final List<BuildPhase> buildPhases;
+  final BuildPhases buildPhases;
 
   final FinalizedReader finalizedReader;
   final AssetReaderWriter readerWriter;
@@ -97,14 +97,16 @@ class BuildSeries {
       builderConfigOverrides,
       isReleaseBuild,
     );
-    if (buildPhases.isEmpty) {
+    if (buildPhases.phases.isEmpty) {
       _logger.severe('Nothing can be built, yet a build was requested.');
     }
+
     var buildDefinition = await BuildDefinition.prepareWorkspace(
       environment,
       options,
       buildPhases,
     );
+
     var finalizedReader = FinalizedReader(
       environment.reader.copyWith(
         generatedAssetHider: buildDefinition.assetGraph,
