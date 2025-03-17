@@ -16,26 +16,24 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
-import '../asset/finalized_reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../asset_graph/optional_output_tracker.dart';
-import '../changes/build_script_updates.dart';
 import '../environment/build_environment.dart';
 import '../logging/build_for_input_logger.dart';
 import '../logging/failure_reporter.dart';
 import '../logging/human_readable_duration.dart';
 import '../logging/logging.dart';
-import '../package_graph/apply_builders.dart';
 import '../package_graph/package_graph.dart';
 import '../package_graph/target_graph.dart';
 import '../performance_tracking/performance_tracking_resolvers.dart';
 import '../util/build_dirs.dart';
 import '../util/constants.dart';
-import 'build_definition.dart';
 import 'build_directory.dart';
+import 'build_phases.dart';
 import 'build_result.dart';
+import 'build_series.dart';
 import 'finalized_assets_view.dart';
 import 'heartbeat.dart';
 import 'input_tracker.dart';
@@ -46,106 +44,11 @@ import 'single_step_reader_writer.dart';
 
 final _logger = Logger('Build');
 
-Set<String> _buildPaths(Set<BuildDirectory> buildDirs) =>
-    // The empty string means build everything.
-    buildDirs.any((b) => b.directory == '')
-        ? <String>{}
-        : buildDirs.map((b) => b.directory).toSet();
-
-class BuildImpl {
-  final BuildEnvironment _environment;
-  final AssetGraph assetGraph;
-  final BuildScriptUpdates? buildScriptUpdates;
-  final BuildOptions _options;
-  final List<BuildPhase> _buildPhases;
-
-  final FinalizedReader finalizedReader;
-  final AssetReaderWriter _readerWriter;
-  final RunnerAssetWriter _deleteWriter;
-  final ResourceManager _resourceManager = ResourceManager();
-
-  Future<void> beforeExit() => _resourceManager.beforeExit();
-
-  BuildImpl._(
-    this._environment,
-    this.assetGraph,
-    this.buildScriptUpdates,
-    this._options,
-    this._buildPhases,
-    this.finalizedReader,
-  ) : _deleteWriter = _environment.writer.copyWith(
-        generatedAssetHider: assetGraph,
-      ),
-      _readerWriter = _environment.reader.copyWith(
-        generatedAssetHider: assetGraph,
-        cache:
-            _options.enableLowResourcesMode
-                ? const PassthroughFilesystemCache()
-                : InMemoryFilesystemCache(),
-      );
-
-  Future<BuildResult> run(
-    Map<AssetId, ChangeType> updates, {
-    Set<BuildDirectory> buildDirs = const <BuildDirectory>{},
-    Set<BuildFilter> buildFilters = const {},
-  }) {
-    finalizedReader.reset(_buildPaths(buildDirs), buildFilters);
-    return _SingleBuild(this, buildDirs, buildFilters).run(updates)
-      ..whenComplete(_options.resolvers.reset);
-  }
-
-  static Future<BuildImpl> create(
-    BuildOptions options,
-    BuildEnvironment environment,
-    List<BuilderApplication> builders,
-    Map<String, Map<String, dynamic>> builderConfigOverrides, {
-    bool isReleaseBuild = false,
-  }) async {
-    // Don't allow any changes to the generated asset directory after this
-    // point.
-    lockGeneratedOutputDirectory();
-
-    var buildPhases = await createBuildPhases(
-      options.targetGraph,
-      builders,
-      builderConfigOverrides,
-      isReleaseBuild,
-    );
-    if (buildPhases.isEmpty) {
-      _logger.severe('Nothing can be built, yet a build was requested.');
-    }
-    var buildDefinition = await BuildDefinition.prepareWorkspace(
-      environment,
-      options,
-      buildPhases,
-    );
-    var finalizedReader = FinalizedReader(
-      environment.reader.copyWith(
-        generatedAssetHider: buildDefinition.assetGraph,
-      ),
-      buildDefinition.assetGraph,
-      options.targetGraph,
-      buildPhases,
-      options.packageGraph.root.name,
-    );
-    var build = BuildImpl._(
-      environment,
-      buildDefinition.assetGraph,
-      buildDefinition.buildScriptUpdates,
-      options,
-      buildPhases,
-      finalizedReader,
-    );
-    return build;
-  }
-}
-
-/// Performs a single build and manages state that only lives for a single
-/// build.
-class _SingleBuild {
+/// A single build.
+class Build {
   final AssetGraph _assetGraph;
   final Set<BuildFilter> _buildFilters;
-  final List<BuildPhase> _buildPhases;
+  final BuildPhases _buildPhases;
   final BuildEnvironment _environment;
   final _lazyPhases = <String, Future<Iterable<AssetId>>>{};
   final _lazyGlobs = <AssetId, Future<void>>{};
@@ -167,26 +70,26 @@ class _SingleBuild {
 
   late final HungActionsHeartbeat hungActionsHeartbeat;
 
-  _SingleBuild(
-    BuildImpl buildImpl,
+  Build(
+    BuildSeries buildSeries,
     Set<BuildDirectory> buildDirs,
     Set<BuildFilter> buildFilters,
-  ) : _assetGraph = buildImpl.assetGraph,
+  ) : _assetGraph = buildSeries.assetGraph,
       _buildFilters = buildFilters,
-      _buildPhases = buildImpl._buildPhases,
-      _environment = buildImpl._environment,
-      _packageGraph = buildImpl._options.packageGraph,
-      _targetGraph = buildImpl._options.targetGraph,
+      _buildPhases = buildSeries.buildPhases,
+      _environment = buildSeries.environment,
+      _packageGraph = buildSeries.options.packageGraph,
+      _targetGraph = buildSeries.options.targetGraph,
       _performanceTracker =
-          buildImpl._options.trackPerformance
+          buildSeries.options.trackPerformance
               ? BuildPerformanceTracker()
               : BuildPerformanceTracker.noOp(),
-      _readerWriter = buildImpl._readerWriter,
-      _deleteWriter = buildImpl._deleteWriter,
-      _resolvers = buildImpl._options.resolvers,
-      _resourceManager = buildImpl._resourceManager,
+      _readerWriter = buildSeries.readerWriter,
+      _deleteWriter = buildSeries.deleteWriter,
+      _resolvers = buildSeries.options.resolvers,
+      _resourceManager = buildSeries.resourceManager,
       _buildDirs = buildDirs,
-      _logPerformanceDir = buildImpl._options.logPerformanceDir {
+      _logPerformanceDir = buildSeries.options.logPerformanceDir {
     hungActionsHeartbeat = HungActionsHeartbeat(() {
       final message = StringBuffer();
       const actionsToLogMax = 5;
@@ -211,7 +114,7 @@ class _SingleBuild {
     var optionalOutputTracker = OptionalOutputTracker(
       _assetGraph,
       _targetGraph,
-      _buildPaths(_buildDirs),
+      BuildDirectory.buildPaths(_buildDirs),
       _buildFilters,
       _buildPhases,
     );
@@ -389,7 +292,7 @@ class _SingleBuild {
         .toList(growable: false)) {
       if (!shouldBuildForDirs(
         node.id,
-        buildDirs: _buildPaths(_buildDirs),
+        buildDirs: BuildDirectory.buildPaths(_buildDirs),
         buildFilters: _buildFilters,
         phase: phase,
         targetGraph: _targetGraph,
