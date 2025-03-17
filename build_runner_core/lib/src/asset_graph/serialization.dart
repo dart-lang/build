@@ -47,8 +47,8 @@ class _AssetGraphDeserializer {
     var graph = AssetGraph._(
       _deserializeDigest(_serializedGraph['buildActionsDigest'] as String)!,
       _serializedGraph['dart_version'] as String,
-      packageLanguageVersions.build(),
-      BuiltList<String>.from(_serializedGraph['enabledExperiments'] as List),
+      packageLanguageVersions,
+      List.from(_serializedGraph['enabledExperiments'] as List),
     );
 
     var packageNames = _serializedGraph['packages'] as List;

@@ -10,12 +10,12 @@ import 'package:watcher/watcher.dart';
 import '../environment/build_environment.dart';
 import '../package_graph/apply_builders.dart';
 import 'build_directory.dart';
+import 'build_impl.dart';
 import 'build_result.dart';
-import 'build_series.dart';
 import 'options.dart';
 
 class BuildRunner {
-  final BuildSeries _build;
+  final BuildImpl _build;
   BuildRunner._(this._build);
 
   Future<void> beforeExit() => _build.beforeExit();
@@ -34,7 +34,7 @@ class BuildRunner {
     bool isReleaseBuild = false,
   }) async {
     return BuildRunner._(
-      await BuildSeries.create(
+      await BuildImpl.create(
         options,
         environment,
         builders,
