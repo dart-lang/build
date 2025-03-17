@@ -3,11 +3,10 @@ analyzer:
   language:
     strict-casts: true
   errors:
-    unused_import: error
-    unused_local_variable: error
-    dead_code: error
     todo: ignore
     deprecated_member_use_from_same_package: ignore
+    # TODO(davidmorgan): update code for this lint.
+    discarded_futures: ignore
   exclude:
     # Prevents extra work during some e2e test runs.
     - "dart2js_test/**"
