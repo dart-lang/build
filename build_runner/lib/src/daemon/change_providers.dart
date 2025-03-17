@@ -8,7 +8,7 @@ import 'package:build_daemon/change_provider.dart';
 // ignore: implementation_imports
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 // ignore: implementation_imports
-import 'package:build_runner_core/src/generate/build_definition.dart';
+import 'package:build_runner_core/src/generate/asset_tracker.dart';
 import 'package:watcher/watcher.dart' show WatchEvent;
 
 /// Continually updates the [changes] stream as watch events are seen on the

@@ -100,11 +100,13 @@ class BuildSeries {
     if (buildPhases.isEmpty) {
       _logger.severe('Nothing can be built, yet a build was requested.');
     }
+
     var buildDefinition = await BuildDefinition.prepareWorkspace(
       environment,
       options,
       buildPhases,
     );
+
     var finalizedReader = FinalizedReader(
       environment.reader.copyWith(
         generatedAssetHider: buildDefinition.assetGraph,
