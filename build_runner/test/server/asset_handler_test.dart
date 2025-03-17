@@ -10,6 +10,7 @@ import 'package:build_runner/src/server/server.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_runner_core/src/generate/build_phases.dart';
 import 'package:build_runner_core/src/generate/options.dart';
 import 'package:build_runner_core/src/package_graph/target_graph.dart';
 import 'package:shelf/shelf.dart';
@@ -23,7 +24,7 @@ void main() {
 
   setUp(() async {
     graph = await AssetGraph.build(
-      [],
+      BuildPhases([]),
       <AssetId>{},
       <AssetId>{},
       buildPackageGraph({rootPackage('a'): []}),
@@ -38,7 +39,7 @@ void main() {
         packageGraph,
         defaultRootPackageSources: defaultRootPackageSources,
       ),
-      [],
+      BuildPhases([]),
       'a',
     );
     handler = AssetHandler(reader, 'a');

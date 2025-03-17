@@ -14,6 +14,7 @@ import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_runner_core/src/generate/build_phases.dart';
 import 'package:build_test/src/in_memory_reader_writer.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
@@ -354,7 +355,7 @@ void main() {
         );
 
         var expectedGraph = await AssetGraph.build(
-          [],
+          BuildPhases([]),
           <AssetId>{},
           {packageConfigId},
           buildPackageGraph({rootPackage('a'): []}),

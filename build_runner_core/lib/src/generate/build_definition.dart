@@ -6,26 +6,22 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:build/experiments.dart';
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
-import 'package:collection/collection.dart';
 import 'package:logging/logging.dart';
-import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
 import '../asset/writer.dart';
 import '../asset_graph/exceptions.dart';
 import '../asset_graph/graph.dart';
+import '../asset_graph/graph_loader.dart';
 import '../asset_graph/node.dart';
 import '../changes/build_script_updates.dart';
 import '../environment/build_environment.dart';
-import '../logging/failure_reporter.dart';
 import '../logging/logging.dart';
-import '../package_graph/package_graph.dart';
 import '../util/constants.dart';
-import '../util/sdk_version_match.dart';
 import 'asset_tracker.dart';
+import 'build_phases.dart';
 import 'exceptions.dart';
 import 'options.dart';
 import 'phase.dart';
@@ -43,23 +39,31 @@ class BuildDefinition {
   static Future<BuildDefinition> prepareWorkspace(
     BuildEnvironment environment,
     BuildOptions options,
-    List<BuildPhase> buildPhases,
+    BuildPhases buildPhases,
   ) => _Loader(environment, options, buildPhases).prepareWorkspace();
 }
 
 class _Loader {
-  final List<BuildPhase> _buildPhases;
+  final BuildPhases _buildPhases;
   final BuildOptions _options;
   final BuildEnvironment _environment;
 
   _Loader(this._environment, this._options, this._buildPhases);
 
   Future<BuildDefinition> prepareWorkspace() async {
-    _checkBuildPhases();
+    _buildPhases.checkOutputLocations(_options.packageGraph.root.name, _logger);
 
     _logger.info('Initializing inputs');
 
-    var assetGraph = await _tryReadCachedAssetGraph();
+    final assetGraphLoader = AssetGraphLoader(
+      reader: _environment.reader,
+      writer: _environment.writer,
+      buildPhases: _buildPhases,
+      packageGraph: _options.packageGraph,
+    );
+
+    var assetGraph = await assetGraphLoader.load();
+
     var assetTracker = AssetTracker(_environment.reader, _options.targetGraph);
     var inputSources = await assetTracker.findInputSources();
     var cacheDirSources = await assetTracker.findCacheDirSources();
@@ -92,7 +96,11 @@ class _Loader {
       if (buildScriptUpdated) {
         _logger.warning('Invalidating asset graph due to build script update!');
 
-        var deletedSourceOutputs = await _cleanupOldOutputs(assetGraph);
+        var deletedSourceOutputs = await assetGraph.deleteOutputs(
+          _options.packageGraph,
+          _environment.writer,
+        );
+        await _deleteGeneratedDir();
 
         if (_runningFromSnapshot) {
           // We have to be regenerated if running from a snapshot.
@@ -162,179 +170,13 @@ class _Loader {
     return BuildDefinition._(assetGraph!, buildScriptUpdates);
   }
 
-  /// Checks that the [_buildPhases] are valid based on whether they are
-  /// written to the build cache.
-  void _checkBuildPhases() {
-    final root = _options.packageGraph.root.name;
-    for (final action in _buildPhases) {
-      if (!action.hideOutput) {
-        // Only `InBuildPhase`s can be not hidden.
-        if (action is InBuildPhase && action.package != root) {
-          // This should happen only with a manual build script since the build
-          // script generation filters these out.
-          _logger.severe(
-            'A build phase (${action.builderLabel}) is attempting '
-            'to operate on package "${action.package}", but the build script '
-            'is located in package "$root". It\'s not valid to attempt to '
-            'generate files for another package unless the BuilderApplication'
-            'specified "hideOutput".'
-            '\n\n'
-            'Did you mean to write:\n'
-            '  new BuilderApplication(..., toRoot())\n'
-            'or\n'
-            '  new BuilderApplication(..., hideOutput: true)\n'
-            '... instead?',
-          );
-          throw const CannotBuildException();
-        }
-      }
-    }
-  }
-
   /// Deletes the generated output directory.
-  ///
-  /// Typically this should be done whenever an asset graph is thrown away.
   Future<void> _deleteGeneratedDir() async {
     var generatedDir = Directory(generatedOutputDirectory);
     if (await generatedDir.exists()) {
       await generatedDir.delete(recursive: true);
     }
   }
-
-  /// Attempts to read in an [AssetGraph] from disk, and returns `null` if it
-  /// fails for any reason.
-  Future<AssetGraph?> _tryReadCachedAssetGraph() async {
-    final assetGraphId = AssetId(
-      _options.packageGraph.root.name,
-      assetGraphPath,
-    );
-    if (!await _environment.reader.canRead(assetGraphId)) {
-      return null;
-    }
-
-    return logTimedAsync(_logger, 'Reading cached asset graph', () async {
-      try {
-        var cachedGraph = AssetGraph.deserialize(
-          await _environment.reader.readAsBytes(assetGraphId),
-        );
-        var buildPhasesChanged =
-            computeBuildPhasesDigest(_buildPhases) !=
-            cachedGraph.buildPhasesDigest;
-        var pkgVersionsChanged =
-            !const DeepCollectionEquality()
-                .equals(cachedGraph.packageLanguageVersions, {
-                  for (var pkg in _options.packageGraph.allPackages.values)
-                    pkg.name: pkg.languageVersion,
-                });
-        var enabledExperimentsChanged =
-            !const DeepCollectionEquality.unordered().equals(
-              cachedGraph.enabledExperiments,
-              enabledExperiments,
-            );
-        if (buildPhasesChanged ||
-            pkgVersionsChanged ||
-            enabledExperimentsChanged) {
-          if (buildPhasesChanged) {
-            _logger.warning(
-              'Throwing away cached asset graph because the build phases '
-              'have changed. This most commonly would happen as a result of '
-              'adding a new dependency or updating your dependencies.',
-            );
-          }
-          if (pkgVersionsChanged) {
-            _logger.warning(
-              'Throwing away cached asset graph because the language '
-              'version of some package(s) changed. This would most commonly '
-              'happen when updating dependencies or changing your min sdk '
-              'constraint.',
-            );
-          }
-          if (enabledExperimentsChanged) {
-            _logger.warning(
-              'Throwing away cached asset graph because the enabled Dart '
-              'language experiments changed:\n\n'
-              'Previous value: ${cachedGraph.enabledExperiments.join(' ')}\n'
-              'Current value: ${enabledExperiments.join(' ')}',
-            );
-          }
-          await Future.wait([
-            _deleteAssetGraph(_options.packageGraph),
-            _cleanupOldOutputs(cachedGraph),
-            FailureReporter.cleanErrorCache(),
-          ]);
-          if (_runningFromSnapshot) {
-            throw const BuildScriptChangedException();
-          }
-          return null;
-        }
-        if (!isSameSdkVersion(cachedGraph.dartVersion, Platform.version)) {
-          _logger.warning(
-            'Throwing away cached asset graph due to Dart SDK update.',
-          );
-          await Future.wait([
-            _deleteAssetGraph(_options.packageGraph),
-            _cleanupOldOutputs(cachedGraph),
-            FailureReporter.cleanErrorCache(),
-          ]);
-          if (_runningFromSnapshot) {
-            throw const BuildScriptChangedException();
-          }
-          return null;
-        }
-        return cachedGraph;
-      } on AssetGraphCorruptedException catch (_) {
-        // Start fresh if the cached asset_graph cannot be deserialized
-        _logger.warning(
-          'Throwing away cached asset graph due to '
-          'version mismatch or corrupted asset graph.',
-        );
-        await Future.wait([
-          _deleteGeneratedDir(),
-          FailureReporter.cleanErrorCache(),
-        ]);
-        return null;
-      }
-    });
-  }
-
-  /// Deletes all the old outputs from [graph] that were written to the source
-  /// tree, and deletes the entire generated directory.
-  Future<Iterable<AssetId>> _cleanupOldOutputs(AssetGraph graph) async {
-    var deletedSources = <AssetId>[];
-    await logTimedAsync(
-      _logger,
-      'Cleaning up outputs from previous builds.',
-      () async {
-        // Delete all the non-hidden outputs.
-        await Future.wait(
-          graph.outputs.map((id) {
-            var node = graph.get(id)!;
-            final nodeConfiguration = node.generatedNodeConfiguration!;
-            final nodeState = node.generatedNodeState!;
-            if (nodeState.wasOutput && !nodeConfiguration.isHidden) {
-              var idToDelete = id;
-              // If the package no longer exists, then the user must have
-              // renamed the root package.
-              //
-              // In that case we change `idToDelete` to be in the root package.
-              if (_options.packageGraph[id.package] == null) {
-                idToDelete = AssetId(_options.packageGraph.root.name, id.path);
-              }
-              deletedSources.add(idToDelete);
-              return _environment.writer.delete(idToDelete);
-            }
-            return null;
-          }).whereType<Future>(),
-        );
-
-        await _deleteGeneratedDir();
-      },
-    );
-    return deletedSources;
-  }
-
-  Future<void> _deleteAssetGraph(PackageGraph packageGraph) =>
-      File(p.join(packageGraph.root.path, assetGraphPath)).delete();
 
   /// Updates [assetGraph] based on a the new view of the world.
   ///
@@ -343,7 +185,7 @@ class _Loader {
   Future<Map<AssetId, ChangeType>> _updateAssetGraph(
     AssetGraph assetGraph,
     AssetTracker assetTracker,
-    List<BuildPhase> buildPhases,
+    BuildPhases buildPhases,
     Set<AssetId> inputSources,
     Set<AssetId> cacheDirSources,
     Set<AssetId> internalSources,
@@ -371,7 +213,7 @@ class _Loader {
   /// [buildPhases] compared to the last known state.
   Map<AssetId, ChangeType> _computeBuilderOptionsUpdates(
     AssetGraph assetGraph,
-    List<BuildPhase> buildPhases,
+    BuildPhases buildPhases,
   ) {
     var result = <AssetId, ChangeType>{};
 

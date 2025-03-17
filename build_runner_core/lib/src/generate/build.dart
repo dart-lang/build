@@ -31,6 +31,7 @@ import '../performance_tracking/performance_tracking_resolvers.dart';
 import '../util/build_dirs.dart';
 import '../util/constants.dart';
 import 'build_directory.dart';
+import 'build_phases.dart';
 import 'build_result.dart';
 import 'build_series.dart';
 import 'finalized_assets_view.dart';
@@ -47,7 +48,7 @@ final _logger = Logger('Build');
 class Build {
   final AssetGraph _assetGraph;
   final Set<BuildFilter> _buildFilters;
-  final List<BuildPhase> _buildPhases;
+  final BuildPhases _buildPhases;
   final BuildEnvironment _environment;
   final _lazyPhases = <String, Future<Iterable<AssetId>>>{};
   final _lazyGlobs = <AssetId, Future<void>>{};
