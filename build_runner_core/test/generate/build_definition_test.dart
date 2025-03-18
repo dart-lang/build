@@ -23,6 +23,7 @@ import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
+import 'package:watcher/watcher.dart';
 
 void main() {
   final languageVersion = LanguageVersion(2, 0);
@@ -138,7 +139,7 @@ targets:
       addTearDown(options.logListener.cancel);
     });
 
-    group('updates the asset graph', () {
+    group('reports updates', () {
       test('for deleted source and generated nodes', () async {
         await createFile(p.join('lib', 'a.txt'), 'a');
         await createFile(p.join('lib', 'b.txt'), 'b');
@@ -169,23 +170,15 @@ targets:
           options,
           buildPhases,
         );
-        var newAssetGraph = buildDefinition.assetGraph;
 
-        var generatedANode = newAssetGraph.get(generatedAId)!;
-        expect(generatedANode, isNotNull);
+        expect(buildDefinition.updates![generatedAId], ChangeType.REMOVE);
         expect(
-          generatedANode.generatedNodeState!.pendingBuildAction,
-          PendingBuildAction.build,
-        );
-
-        expect(newAssetGraph.contains(makeAssetId('a|lib/b.txt')), isFalse);
-        expect(
-          newAssetGraph.contains(makeAssetId('a|lib/b.txt.copy')),
-          isFalse,
+          buildDefinition.updates![makeAssetId('a|lib/b.txt')],
+          ChangeType.REMOVE,
         );
       });
 
-      test('for new sources and generated nodes', () async {
+      test('for new sources', () async {
         var buildPhases = BuildPhases([
           InBuildPhase(TestBuilder(), 'a', hideOutput: true),
         ]);
@@ -206,17 +199,10 @@ targets:
           options,
           buildPhases,
         );
-        var newAssetGraph = buildDefinition.assetGraph;
 
-        expect(newAssetGraph.contains(makeAssetId('a|lib/a.txt')), isTrue);
-
-        var generatedANode =
-            newAssetGraph.get(makeAssetId('a|lib/a.txt.copy'))!;
-        expect(generatedANode, isNotNull);
-        // New nodes definitely need an update.
         expect(
-          generatedANode.generatedNodeState!.pendingBuildAction,
-          PendingBuildAction.build,
+          buildDefinition.updates![makeAssetId('a|lib/a.txt')],
+          ChangeType.ADD,
         );
       });
 
@@ -253,14 +239,10 @@ targets:
           options,
           buildPhases,
         );
-        var newAssetGraph = buildDefinition.assetGraph;
 
-        var generatedANode =
-            newAssetGraph.get(makeAssetId('a|lib/a.txt.copy'))!;
-        expect(generatedANode, isNotNull);
         expect(
-          generatedANode.generatedNodeState!.pendingBuildAction,
-          PendingBuildAction.buildIfInputsChanged,
+          buildDefinition.updates![makeAssetId('a|lib/a.txt')],
+          ChangeType.MODIFY,
         );
       });
 
@@ -355,22 +337,27 @@ targets:
           options,
           newBuildPhases,
         );
+
         var newAssetGraph = buildDefinition.assetGraph;
 
         // The *.copy node should be invalidated, its builder options changed.
         var generatedACopyNode = newAssetGraph.get(generatedACopyId)!;
-        expect(generatedACopyNode, isNotNull);
         expect(
-          generatedACopyNode.generatedNodeState!.pendingBuildAction,
-          PendingBuildAction.buildIfInputsChanged,
+          buildDefinition.updates![generatedACopyNode
+              .generatedNodeConfiguration!
+              .builderOptionsId],
+          ChangeType.MODIFY,
         );
 
         // But the *.clone node should remain the same since its options didn't.
         var generatedACloneNode = newAssetGraph.get(generatedACloneId)!;
-        expect(generatedACloneNode, isNotNull);
         expect(
-          generatedACloneNode.generatedNodeState!.pendingBuildAction,
-          PendingBuildAction.none,
+          buildDefinition.updates!.keys,
+          isNot(
+            contains(
+              generatedACloneNode.generatedNodeConfiguration!.builderOptionsId,
+            ),
+          ),
         );
       });
     });
