@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:build/build.dart';
@@ -224,6 +225,7 @@ class Build {
       },
       (e, st) {
         if (!done.isCompleted) {
+          stdout.writeln('failed $e $st');
           _logger.severe('Unhandled build failure!', e, st);
           done.complete(BuildResult(BuildStatus.failure, []));
         }
@@ -675,7 +677,10 @@ class Build {
     final newResult = await _newBuildShouldRun(outputs, reader);
 
     if (oldResult != newResult) {
-      throw StateError('Mismatch!)');
+      throw StateError(
+        'Mismatch! $oldResult -> $newResult for $outputs, '
+        '${outputs.map(assetGraph.get).toList()}',
+      );
     }
 
     return oldResult;
@@ -717,29 +722,98 @@ class Build {
           ),
       'All outputs of a build action should share the same inputs.',
     );
+
     final firstNodeState = firstNode.generatedNodeState!;
     // No need to build an up to date output
     if (firstNodeState.pendingBuildAction == PendingBuildAction.none) {
+      for (var id in outputs) {
+        stdout.writeln('Mark none for bail out: $id');
+        unchangedOutputs.add(id);
+        assetGraph.updateNode(id, (nodeBuilder) {
+          if (nodeBuilder.type == NodeType.generated) {
+            nodeBuilder.generatedNodeState.pendingBuildAction =
+                PendingBuildAction.none;
+          } else if (nodeBuilder.type == NodeType.glob) {
+            nodeBuilder.globNodeState.pendingBuildAction =
+                PendingBuildAction.none;
+          }
+        });
+      }
+
       return false;
     }
     // Early bail out condition, this is a forced update.
     if (firstNodeState.pendingBuildAction == PendingBuildAction.build) {
+      stdout.writeln('true because bail out for $outputs');
       return true;
     }
 
     final builderOptionsId =
         firstNode.generatedNodeConfiguration!.builderOptionsId;
     if (invalidated!.contains(builderOptionsId)) {
+      stdout.writeln('true because builder options for $outputs');
       return true;
     }
 
+    final matches =
+        invalidated!
+            .where(
+              (node) =>
+                  firstNodeState.inputs.contains(node) &&
+                  !unchangedOutputs.contains(node),
+            )
+            .toList();
     if (invalidated!.any(
       (node) =>
           firstNodeState.inputs.contains(node) &&
           !unchangedOutputs.contains(node),
     )) {
+      stdout.writeln('true because invalidated $outputs: <--- $matches');
+      for (final match in matches) {
+        if (unchangedOutputs.contains(match)) {
+          stdout.writeln('already unchanged??? $match');
+        }
+        await _buildAsset(match);
+        if (unchangedOutputs.contains(match)) {
+          stdout.writeln('became unchanged: $match');
+        }
+      }
+      if (matches.every((match) => unchangedOutputs.contains(match))) {
+        stdout.writeln('all matches became unchanged for $outputs');
+        for (var id in outputs) {
+          stdout.writeln('DO mark none: $id');
+          unchangedOutputs.add(id);
+          assetGraph.updateNode(id, (nodeBuilder) {
+            if (nodeBuilder.type == NodeType.generated) {
+              nodeBuilder.generatedNodeState.pendingBuildAction =
+                  PendingBuildAction.none;
+            } else if (nodeBuilder.type == NodeType.glob) {
+              nodeBuilder.globNodeState.pendingBuildAction =
+                  PendingBuildAction.none;
+            }
+          });
+        }
+
+        return false;
+      }
       return true;
     }
+
+    /// Outputs don't have to rerun.
+    for (var id in outputs) {
+      stdout.writeln('DO mark none: $id');
+      unchangedOutputs.add(id);
+      assetGraph.updateNode(id, (nodeBuilder) {
+        if (nodeBuilder.type == NodeType.generated) {
+          nodeBuilder.generatedNodeState.pendingBuildAction =
+              PendingBuildAction.none;
+        } else if (nodeBuilder.type == NodeType.glob) {
+          nodeBuilder.globNodeState.pendingBuildAction =
+              PendingBuildAction.none;
+        }
+      });
+    }
+
     return false;
   }
 
@@ -806,7 +880,8 @@ class Build {
     } else {
       // Make sure to update the `state` field for all outputs.
       for (var id in outputs) {
-        assetGraph.updateNode(id, (nodeBuilder) {
+        stdout.writeln('would mark none: $id');
+        /*assetGraph.updateNode(id, (nodeBuilder) {
           if (nodeBuilder.type == NodeType.generated) {
             nodeBuilder.generatedNodeState.pendingBuildAction =
                 PendingBuildAction.none;
@@ -814,7 +889,7 @@ class Build {
             nodeBuilder.globNodeState.pendingBuildAction =
                 PendingBuildAction.none;
           }
-        });
+        });*/
       }
       return false;
     }
@@ -932,14 +1007,18 @@ class Build {
       }
 
       final results = [...otherInputs, ...generatedFileResults];
+      final digest = md5.convert(utf8.encode(results.join(' ')));
       assetGraph.updateNode(globId, (nodeBuilder) {
+        if (nodeBuilder.lastKnownDigest == digest) {
+          unchangedOutputs.add(globId);
+        }
         nodeBuilder
           ..globNodeState.results.replace(results)
           ..globNodeState.inputs.replace(
             generatedFileInputs.followedBy(otherInputs),
           )
           ..globNodeState.pendingBuildAction = PendingBuildAction.none
-          ..lastKnownDigest = md5.convert(utf8.encode(results.join(' ')));
+          ..lastKnownDigest = digest;
       });
 
       unawaited(lazyGlobs.remove(globId));
@@ -1033,6 +1112,9 @@ class Build {
       _removeOldInputs(output, usedInputs);
       _addNewInputs(output, usedInputs);
       assetGraph.updateNode(output, (nodeBuilder) {
+        if (nodeBuilder.lastKnownDigest == digest) {
+          unchangedOutputs.add(output);
+        }
         nodeBuilder.generatedNodeState
           ..pendingBuildAction = PendingBuildAction.none
           ..wasOutput = wasOutput
