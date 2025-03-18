@@ -68,6 +68,9 @@ class Build {
   int actionsStartedCount = 0;
   final pendingActions = SplayTreeMap<int, Set<String>>();
 
+  Set<AssetId>? invalidated;
+  Set<AssetId> unchangedOutputs = {};
+
   Build({
     required this.environment,
     required this.options,
@@ -149,14 +152,14 @@ class Build {
 
   Future<void> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
     await logTimedAsync(_logger, 'Updating asset graph', () async {
-      var invalidated = await assetGraph.updateAndInvalidate(
+      invalidated = await assetGraph.updateAndInvalidate(
         buildPhases,
         updates,
         options.packageGraph.root.name,
         _delete,
         readerWriter,
       );
-      await readerWriter.cache.invalidate(invalidated);
+      await readerWriter.cache.invalidate(invalidated!);
     });
   }
 
@@ -177,9 +180,7 @@ class Build {
 
     runZonedGuarded(
       () async {
-        if (updates.isNotEmpty) {
-          await _updateAssetGraph(updates);
-        }
+        await _updateAssetGraph(updates);
         // Run a fresh build.
         var result = await logTimedAsync(_logger, 'Running build', _runPhases);
 
@@ -670,6 +671,83 @@ class Build {
     Iterable<AssetId> outputs,
     AssetReader reader,
   ) async {
+    final oldResult = await _oldBuildShouldRun(outputs, reader);
+    final newResult = await _newBuildShouldRun(outputs, reader);
+
+    if (oldResult != newResult) {
+      throw StateError('Mismatch!)');
+    }
+
+    return oldResult;
+  }
+
+  /// Checks and returns whether any [outputs] need to be updated.
+  Future<bool> _newBuildShouldRun(
+    Iterable<AssetId> outputs,
+    AssetReader reader,
+  ) async {
+    assert(
+      outputs.every(assetGraph.contains),
+      'Outputs should be known statically. Missing '
+      '${outputs.where((o) => !assetGraph.contains(o)).toList()}',
+    );
+    assert(outputs.isNotEmpty, 'Can\'t run a build with no outputs');
+    // We check if any output definitely needs an update - its possible during
+    // manual deletions that only one of the outputs would be marked.
+    for (var output in outputs.skip(1)) {
+      if (assetGraph.get(output)!.generatedNodeState!.pendingBuildAction ==
+          PendingBuildAction.build) {
+        return true;
+      }
+    }
+    // Otherwise, we only check the first output, because all outputs share the
+    // same inputs and invalidation state.
+    var firstNode = assetGraph.get(outputs.first)!;
+    assert(
+      outputs
+          .skip(1)
+          .every(
+            (output) =>
+                assetGraph
+                    .get(output)!
+                    .generatedNodeState!
+                    .inputs
+                    .difference(firstNode.generatedNodeState!.inputs)
+                    .isEmpty,
+          ),
+      'All outputs of a build action should share the same inputs.',
+    );
+    final firstNodeState = firstNode.generatedNodeState!;
+    // No need to build an up to date output
+    if (firstNodeState.pendingBuildAction == PendingBuildAction.none) {
+      return false;
+    }
+    // Early bail out condition, this is a forced update.
+    if (firstNodeState.pendingBuildAction == PendingBuildAction.build) {
+      return true;
+    }
+
+    final builderOptionsId =
+        firstNode.generatedNodeConfiguration!.builderOptionsId;
+    if (invalidated!.contains(builderOptionsId)) {
+      return true;
+    }
+
+    if (invalidated!.any(
+      (node) =>
+          firstNodeState.inputs.contains(node) &&
+          !unchangedOutputs.contains(node),
+    )) {
+      return true;
+    }
+    return false;
+  }
+
+  /// Checks and returns whether any [outputs] need to be updated.
+  Future<bool> _oldBuildShouldRun(
+    Iterable<AssetId> outputs,
+    AssetReader reader,
+  ) async {
     assert(
       outputs.every(assetGraph.contains),
       'Outputs should be known statically. Missing '
@@ -742,7 +820,6 @@ class Build {
     }
   }
 
-  /// Checks if a post process build should run based on [anchorNode].
   Future<bool> _postProcessBuildShouldRun(
     AssetNode anchorNode,
     AssetReader reader,
