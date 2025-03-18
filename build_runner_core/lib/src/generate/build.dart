@@ -5,7 +5,6 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:build/build.dart';
 // ignore: implementation_imports
@@ -67,6 +66,9 @@ class Build {
   int actionsCompletedCount = 0;
   int actionsStartedCount = 0;
   final pendingActions = SplayTreeMap<int, Set<String>>();
+
+  Set<AssetId>? invalidated;
+  Set<AssetId> unchangedOutputs = {};
 
   Build({
     required this.environment,
@@ -149,14 +151,14 @@ class Build {
 
   Future<void> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
     await logTimedAsync(_logger, 'Updating asset graph', () async {
-      var invalidated = await assetGraph.updateAndInvalidate(
+      invalidated = await assetGraph.updateAndInvalidate(
         buildPhases,
         updates,
         options.packageGraph.root.name,
         _delete,
         readerWriter,
       );
-      await readerWriter.cache.invalidate(invalidated);
+      await readerWriter.cache.invalidate(invalidated!);
     });
   }
 
@@ -177,9 +179,7 @@ class Build {
 
     runZonedGuarded(
       () async {
-        if (updates.isNotEmpty) {
-          await _updateAssetGraph(updates);
-        }
+        await _updateAssetGraph(updates);
         // Run a fresh build.
         var result = await logTimedAsync(_logger, 'Running build', _runPhases);
 
@@ -715,31 +715,21 @@ class Build {
     if (firstNodeState.pendingBuildAction == PendingBuildAction.build) {
       return true;
     }
-    // This is a fresh build or the first time we've seen this output.
-    if (firstNodeState.previousInputsDigest == null) return true;
 
-    var digest = await _computeCombinedDigest(
-      firstNodeState.inputs,
-      firstNode.generatedNodeConfiguration!.builderOptionsId,
-      reader,
-    );
-    if (digest != firstNodeState.previousInputsDigest) {
+    final builderOptionsId =
+        firstNode.generatedNodeConfiguration!.builderOptionsId;
+    if (invalidated!.contains(builderOptionsId)) {
       return true;
-    } else {
-      // Make sure to update the `state` field for all outputs.
-      for (var id in outputs) {
-        assetGraph.updateNode(id, (nodeBuilder) {
-          if (nodeBuilder.type == NodeType.generated) {
-            nodeBuilder.generatedNodeState.pendingBuildAction =
-                PendingBuildAction.none;
-          } else if (nodeBuilder.type == NodeType.glob) {
-            nodeBuilder.globNodeState.pendingBuildAction =
-                PendingBuildAction.none;
-          }
-        });
-      }
-      return false;
     }
+
+    if (invalidated!.any(
+      (node) =>
+          firstNodeState.inputs.contains(node) &&
+          !unchangedOutputs.contains(node),
+    )) {
+      return true;
+    }
+    return false;
   }
 
   /// Checks if a post process build should run based on [anchorNode].
@@ -747,22 +737,19 @@ class Build {
     AssetNode anchorNode,
     AssetReader reader,
   ) async {
+    // "No outputs" is currently used as a proxy for "first run".
+    // TODO(davidmorgan): make this more explicit.
+    if (anchorNode.outputs.isEmpty) return true;
+
     final nodeConfiguration = anchorNode.postProcessAnchorNodeConfiguration!;
-    var inputsDigest = await _computeCombinedDigest(
-      [nodeConfiguration.primaryInput],
+    for (final node in [
+      nodeConfiguration.primaryInput,
       nodeConfiguration.builderOptionsId,
-      reader,
-    );
-
-    final nodeState = anchorNode.postProcessAnchorNodeState!;
-    if (inputsDigest != nodeState.previousInputsDigest) {
-      assetGraph.updateNode(anchorNode.id, (nodeBuilder) {
-        nodeBuilder.postProcessAnchorNodeState.previousInputsDigest =
-            inputsDigest;
-      });
-      return true;
+    ]) {
+      if (invalidated!.contains(node) && !unchangedOutputs.contains(node)) {
+        return true;
+      }
     }
-
     return false;
   }
 
@@ -869,51 +856,6 @@ class Build {
     });
   }
 
-  /// Computes a single [Digest] based on the combined [Digest]s of [ids] and
-  /// [builderOptionsId].
-  Future<Digest> _computeCombinedDigest(
-    Iterable<AssetId> ids,
-    AssetId builderOptionsId,
-    AssetReader reader,
-  ) async {
-    var combinedBytes = Uint8List.fromList(List.filled(16, 0));
-    void combine(Uint8List other) {
-      assert(other.length == 16);
-      for (var i = 0; i < 16; i++) {
-        combinedBytes[i] ^= other[i];
-      }
-    }
-
-    var builderOptionsNode = assetGraph.get(builderOptionsId)!;
-    combine(builderOptionsNode.lastKnownDigest!.bytes as Uint8List);
-
-    for (final id in ids) {
-      var node = assetGraph.get(id)!;
-      if (node.type == NodeType.glob) {
-        await _buildGlobNode(node.id);
-        node = assetGraph.get(id)!;
-      } else if (!await reader.canRead(id)) {
-        // We want to add something here, a missing/unreadable input should be
-        // different from no input at all.
-        //
-        // This needs to be unique per input so we use the md5 hash of the id.
-        combine(md5.convert(id.toString().codeUnits).bytes as Uint8List);
-        continue;
-      } else {
-        if (node.lastKnownDigest == null) {
-          final digest = await reader.digest(id);
-          await reader.cache.invalidate([id]);
-          node = assetGraph.updateNode(node.id, (nodeBuilder) {
-            nodeBuilder.lastKnownDigest = digest;
-          });
-        }
-      }
-      combine(node.lastKnownDigest!.bytes as Uint8List);
-    }
-
-    return Digest(combinedBytes);
-  }
-
   /// Sets the state for all [outputs] of a build step, by:
   ///
   /// - Setting `needsUpdate` to `false` for each output
@@ -938,15 +880,6 @@ class Build {
             ? inputTracker.inputs.difference(unusedAssets)
             : inputTracker.inputs;
 
-    final inputsDigest = await _computeCombinedDigest(
-      usedInputs,
-      assetGraph
-          .get(outputs.first)!
-          .generatedNodeConfiguration!
-          .builderOptionsId,
-      readerWriter,
-    );
-
     final isFailure = errors.isNotEmpty;
 
     for (var output in outputs) {
@@ -956,11 +889,13 @@ class Build {
       _removeOldInputs(output, usedInputs);
       _addNewInputs(output, usedInputs);
       assetGraph.updateNode(output, (nodeBuilder) {
+        if (nodeBuilder.lastKnownDigest == digest) {
+          unchangedOutputs.add(output);
+        }
         nodeBuilder.generatedNodeState
           ..pendingBuildAction = PendingBuildAction.none
           ..wasOutput = wasOutput
-          ..isFailure = isFailure
-          ..previousInputsDigest = inputsDigest;
+          ..isFailure = isFailure;
         nodeBuilder.lastKnownDigest = digest;
       });
 
@@ -975,8 +910,7 @@ class Build {
             nodeBuilder.generatedNodeState
               ..pendingBuildAction = PendingBuildAction.none
               ..wasOutput = false
-              ..isFailure = true
-              ..previousInputsDigest = null;
+              ..isFailure = true;
             nodeBuilder.lastKnownDigest = null;
           });
           allSkippedFailures.add(output);

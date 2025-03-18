@@ -58,10 +58,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   /// [AssetNode.postProcessAnchorNodeConfiguration].
   PostProcessAnchorNodeConfiguration? get postProcessAnchorNodeConfiguration;
 
-  /// Additional node state that changes during the build for an
-  /// [AssetNode.postProcessAnchor].
-  PostProcessAnchorNodeState? get postProcessAnchorNodeState;
-
   /// The assets that any [Builder] in the build graph declares it may output
   /// when run on this asset.
   BuiltSet<AssetId> get primaryOutputs;
@@ -198,7 +194,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     required int phaseNumber,
     required bool isHidden,
     Iterable<AssetId>? inputs,
-    Digest? previousInputsDigest,
     required PendingBuildAction pendingBuildAction,
     required bool wasOutput,
     required bool isFailure,
@@ -212,7 +207,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
           ..generatedNodeConfiguration.phaseNumber = phaseNumber
           ..generatedNodeConfiguration.isHidden = isHidden
           ..generatedNodeState.inputs.replace(inputs ?? [])
-          ..generatedNodeState.previousInputsDigest = previousInputsDigest
           ..generatedNodeState.pendingBuildAction = pendingBuildAction
           ..generatedNodeState.wasOutput = wasOutput
           ..generatedNodeState.isFailure = isFailure
@@ -252,7 +246,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     required AssetId primaryInput,
     required int actionNumber,
     required AssetId builderOptionsId,
-    Digest? previousInputsDigest,
   }) => AssetNode(
     (b) =>
         b
@@ -261,9 +254,7 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
           ..postProcessAnchorNodeConfiguration.actionNumber = actionNumber
           ..postProcessAnchorNodeConfiguration.builderOptionsId =
               builderOptionsId
-          ..postProcessAnchorNodeConfiguration.primaryInput = primaryInput
-          ..postProcessAnchorNodeState.previousInputsDigest =
-              previousInputsDigest,
+          ..postProcessAnchorNodeConfiguration.primaryInput = primaryInput,
   );
 
   factory AssetNode.postProcessAnchorForInputAndAction(
@@ -281,13 +272,13 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     // Check that configuration and state fields are non-null exactly when the
     // node is of the corresponding type.
 
-    void check(bool hasType, bool hasConfiguration, bool hasState) {
+    void check(bool hasType, bool hasConfiguration, [bool? hasState]) {
       if (hasType != hasConfiguration) {
         throw ArgumentError(
           'Node configuration does not match its type: $this',
         );
       }
-      if (hasType != hasState) {
+      if (hasState != null && hasType != hasState) {
         throw ArgumentError('Node state does not match its type: $this');
       }
     }
@@ -305,7 +296,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     check(
       type == NodeType.postProcessAnchor,
       postProcessAnchorNodeConfiguration != null,
-      postProcessAnchorNodeState != null,
     );
   }
 }
@@ -361,12 +351,6 @@ abstract class GeneratedNodeState
 
   /// Whether the action which did or would produce this node failed.
   bool get isFailure;
-
-  /// A digest combining all digests of all previous inputs.
-  ///
-  /// Used to determine whether all the inputs to a build step are identical to
-  /// the previous run, indicating that the previous output is still valid.
-  Digest? get previousInputsDigest;
 
   bool get isSuccessfulFreshOutput =>
       wasOutput && !isFailure && pendingBuildAction == PendingBuildAction.none;
@@ -438,22 +422,6 @@ abstract class PostProcessAnchorNodeConfiguration
   factory PostProcessAnchorNodeConfiguration(
     void Function(PostProcessAnchorNodeConfigurationBuilder) updates,
   ) = _$PostProcessAnchorNodeConfiguration;
-}
-
-/// State for an [AssetNode.postProcessAnchor].
-abstract class PostProcessAnchorNodeState
-    implements
-        Built<PostProcessAnchorNodeState, PostProcessAnchorNodeStateBuilder> {
-  static Serializer<PostProcessAnchorNodeState> get serializer =>
-      _$postProcessAnchorNodeStateSerializer;
-
-  Digest? get previousInputsDigest;
-
-  factory PostProcessAnchorNodeState(
-    void Function(PostProcessAnchorNodeStateBuilder) updates,
-  ) = _$PostProcessAnchorNodeState;
-
-  PostProcessAnchorNodeState._();
 }
 
 /// Work that needs doing for a node that tracks its inputs.

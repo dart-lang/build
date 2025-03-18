@@ -16,58 +16,24 @@ final Matcher throwsCorruptedException = throwsA(
 final Matcher duplicateAssetNodeException =
     const TypeMatcher<DuplicateAssetNodeException>();
 
-Matcher equalsAssetGraph(
-  AssetGraph expected, {
-  bool checkPreviousInputsDigest = true,
-}) => _AssetGraphMatcher(expected, checkPreviousInputsDigest);
+Matcher equalsAssetGraph(AssetGraph expected) => _AssetGraphMatcher(expected);
 
 class _AssetGraphMatcher extends Matcher {
   final AssetGraph _expected;
-  final bool checkPreviousInputsDigest;
   final Matcher _matcher;
 
-  _AssetGraphMatcher(this._expected, this.checkPreviousInputsDigest)
-    : _matcher = equals(
-        _graphToList(
-          _expected,
-          checkPreviousInputsDigest: checkPreviousInputsDigest,
-        ),
-      );
+  _AssetGraphMatcher(this._expected)
+    : _matcher = equals(_graphToList(_expected));
 
   /// Converts [graph] to a list of [AssetNode], sorted by ID, for comparison.
-  ///
-  /// If [checkPreviousInputsDigest] is false, removes `previousInputDigest`
-  /// fields so they won't be compared.
-  static List<AssetNode> _graphToList(
-    AssetGraph graph, {
-    required bool checkPreviousInputsDigest,
-  }) {
-    final result = <AssetNode>[];
-    for (var node in graph.allNodes) {
-      if (!checkPreviousInputsDigest) {
-        if (node.type == NodeType.generated) {
-          node = node.rebuild(
-            (b) => b.generatedNodeState.previousInputsDigest = null,
-          );
-        }
-        if (node.type == NodeType.postProcessAnchor) {
-          node = node.rebuild(
-            (b) => b..postProcessAnchorNodeState.previousInputsDigest = null,
-          );
-        }
-      }
-      result.add(node);
-    }
-    return result..sort((a, b) => a.id.toString().compareTo(b.id.toString()));
-  }
+  static List<AssetNode> _graphToList(AssetGraph graph) =>
+      graph.allNodes.toList()
+        ..sort((a, b) => a.id.toString().compareTo(b.id.toString()));
 
   @override
   bool matches(dynamic item, Map<dynamic, dynamic> matchState) {
     if (item is! AssetGraph) return false;
-    return _matcher.matches(
-      _graphToList(item, checkPreviousInputsDigest: checkPreviousInputsDigest),
-      matchState,
-    );
+    return _matcher.matches(_graphToList(item), matchState);
   }
 
   @override
@@ -81,12 +47,7 @@ class _AssetGraphMatcher extends Matcher {
     Map matchState,
     bool verbose,
   ) => _matcher.describeMismatch(
-    item is AssetGraph
-        ? _graphToList(
-          item,
-          checkPreviousInputsDigest: checkPreviousInputsDigest,
-        )
-        : '(not an AssetGraph!) $item',
+    item is AssetGraph ? _graphToList(item) : '(not an AssetGraph!) $item',
     mismatchDescription,
     matchState,
     verbose,

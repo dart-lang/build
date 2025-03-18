@@ -86,7 +86,6 @@ Serializers _$serializers =
           ..add(NodeType.serializer)
           ..add(PendingBuildAction.serializer)
           ..add(PostProcessAnchorNodeConfiguration.serializer)
-          ..add(PostProcessAnchorNodeState.serializer)
           ..addBuilderFactory(
             const FullType(BuiltSet, const [const FullType(AssetId)]),
             () => new SetBuilder<AssetId>(),
@@ -129,8 +128,6 @@ Serializer<GlobNodeState> _$globNodeStateSerializer =
 Serializer<PostProcessAnchorNodeConfiguration>
 _$postProcessAnchorNodeConfigurationSerializer =
     new _$PostProcessAnchorNodeConfigurationSerializer();
-Serializer<PostProcessAnchorNodeState> _$postProcessAnchorNodeStateSerializer =
-    new _$PostProcessAnchorNodeStateSerializer();
 Serializer<PendingBuildAction> _$pendingBuildActionSerializer =
     new _$PendingBuildActionSerializer();
 
@@ -260,17 +257,6 @@ class _$AssetNodeSerializer implements StructuredSerializer<AssetNode> {
           ),
         );
     }
-    value = object.postProcessAnchorNodeState;
-    if (value != null) {
-      result
-        ..add('postProcessAnchorNodeState')
-        ..add(
-          serializers.serialize(
-            value,
-            specifiedType: const FullType(PostProcessAnchorNodeState),
-          ),
-        );
-    }
     value = object.lastKnownDigest;
     if (value != null) {
       result
@@ -357,15 +343,6 @@ class _$AssetNodeSerializer implements StructuredSerializer<AssetNode> {
                   ),
                 )!
                 as PostProcessAnchorNodeConfiguration,
-          );
-          break;
-        case 'postProcessAnchorNodeState':
-          result.postProcessAnchorNodeState.replace(
-            serializers.deserialize(
-                  value,
-                  specifiedType: const FullType(PostProcessAnchorNodeState),
-                )!
-                as PostProcessAnchorNodeState,
           );
           break;
         case 'primaryOutputs':
@@ -559,15 +536,7 @@ class _$GeneratedNodeStateSerializer
         specifiedType: const FullType(bool),
       ),
     ];
-    Object? value;
-    value = object.previousInputsDigest;
-    if (value != null) {
-      result
-        ..add('previousInputsDigest')
-        ..add(
-          serializers.serialize(value, specifiedType: const FullType(Digest)),
-        );
-    }
+
     return result;
   }
 
@@ -619,14 +588,6 @@ class _$GeneratedNodeStateSerializer
                     specifiedType: const FullType(bool),
                   )!
                   as bool;
-          break;
-        case 'previousInputsDigest':
-          result.previousInputsDigest =
-              serializers.deserialize(
-                    value,
-                    specifiedType: const FullType(Digest),
-                  )
-                  as Digest?;
           break;
       }
     }
@@ -871,64 +832,6 @@ class _$PostProcessAnchorNodeConfigurationSerializer
   }
 }
 
-class _$PostProcessAnchorNodeStateSerializer
-    implements StructuredSerializer<PostProcessAnchorNodeState> {
-  @override
-  final Iterable<Type> types = const [
-    PostProcessAnchorNodeState,
-    _$PostProcessAnchorNodeState,
-  ];
-  @override
-  final String wireName = 'PostProcessAnchorNodeState';
-
-  @override
-  Iterable<Object?> serialize(
-    Serializers serializers,
-    PostProcessAnchorNodeState object, {
-    FullType specifiedType = FullType.unspecified,
-  }) {
-    final result = <Object?>[];
-    Object? value;
-    value = object.previousInputsDigest;
-    if (value != null) {
-      result
-        ..add('previousInputsDigest')
-        ..add(
-          serializers.serialize(value, specifiedType: const FullType(Digest)),
-        );
-    }
-    return result;
-  }
-
-  @override
-  PostProcessAnchorNodeState deserialize(
-    Serializers serializers,
-    Iterable<Object?> serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) {
-    final result = new PostProcessAnchorNodeStateBuilder();
-
-    final iterator = serialized.iterator;
-    while (iterator.moveNext()) {
-      final key = iterator.current! as String;
-      iterator.moveNext();
-      final Object? value = iterator.current;
-      switch (key) {
-        case 'previousInputsDigest':
-          result.previousInputsDigest =
-              serializers.deserialize(
-                    value,
-                    specifiedType: const FullType(Digest),
-                  )
-                  as Digest?;
-          break;
-      }
-    }
-
-    return result.build();
-  }
-}
-
 class _$PendingBuildActionSerializer
     implements PrimitiveSerializer<PendingBuildAction> {
   @override
@@ -967,8 +870,6 @@ class _$AssetNode extends AssetNode {
   @override
   final PostProcessAnchorNodeConfiguration? postProcessAnchorNodeConfiguration;
   @override
-  final PostProcessAnchorNodeState? postProcessAnchorNodeState;
-  @override
   final BuiltSet<AssetId> primaryOutputs;
   @override
   final BuiltSet<AssetId> outputs;
@@ -990,7 +891,6 @@ class _$AssetNode extends AssetNode {
     this.globNodeConfiguration,
     this.globNodeState,
     this.postProcessAnchorNodeConfiguration,
-    this.postProcessAnchorNodeState,
     required this.primaryOutputs,
     required this.outputs,
     required this.anchorOutputs,
@@ -1032,7 +932,6 @@ class _$AssetNode extends AssetNode {
         globNodeState == other.globNodeState &&
         postProcessAnchorNodeConfiguration ==
             other.postProcessAnchorNodeConfiguration &&
-        postProcessAnchorNodeState == other.postProcessAnchorNodeState &&
         primaryOutputs == other.primaryOutputs &&
         outputs == other.outputs &&
         anchorOutputs == other.anchorOutputs &&
@@ -1050,7 +949,6 @@ class _$AssetNode extends AssetNode {
     _$hash = $jc(_$hash, globNodeConfiguration.hashCode);
     _$hash = $jc(_$hash, globNodeState.hashCode);
     _$hash = $jc(_$hash, postProcessAnchorNodeConfiguration.hashCode);
-    _$hash = $jc(_$hash, postProcessAnchorNodeState.hashCode);
     _$hash = $jc(_$hash, primaryOutputs.hashCode);
     _$hash = $jc(_$hash, outputs.hashCode);
     _$hash = $jc(_$hash, anchorOutputs.hashCode);
@@ -1073,7 +971,6 @@ class _$AssetNode extends AssetNode {
             'postProcessAnchorNodeConfiguration',
             postProcessAnchorNodeConfiguration,
           )
-          ..add('postProcessAnchorNodeState', postProcessAnchorNodeState)
           ..add('primaryOutputs', primaryOutputs)
           ..add('outputs', outputs)
           ..add('anchorOutputs', anchorOutputs)
@@ -1134,14 +1031,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
       _$this._postProcessAnchorNodeConfiguration =
           postProcessAnchorNodeConfiguration;
 
-  PostProcessAnchorNodeStateBuilder? _postProcessAnchorNodeState;
-  PostProcessAnchorNodeStateBuilder get postProcessAnchorNodeState =>
-      _$this._postProcessAnchorNodeState ??=
-          new PostProcessAnchorNodeStateBuilder();
-  set postProcessAnchorNodeState(
-    PostProcessAnchorNodeStateBuilder? postProcessAnchorNodeState,
-  ) => _$this._postProcessAnchorNodeState = postProcessAnchorNodeState;
-
   SetBuilder<AssetId>? _primaryOutputs;
   SetBuilder<AssetId> get primaryOutputs =>
       _$this._primaryOutputs ??= new SetBuilder<AssetId>();
@@ -1183,7 +1072,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
       _globNodeState = $v.globNodeState?.toBuilder();
       _postProcessAnchorNodeConfiguration =
           $v.postProcessAnchorNodeConfiguration?.toBuilder();
-      _postProcessAnchorNodeState = $v.postProcessAnchorNodeState?.toBuilder();
       _primaryOutputs = $v.primaryOutputs.toBuilder();
       _outputs = $v.outputs.toBuilder();
       _anchorOutputs = $v.anchorOutputs.toBuilder();
@@ -1226,7 +1114,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
             globNodeState: _globNodeState?.build(),
             postProcessAnchorNodeConfiguration:
                 _postProcessAnchorNodeConfiguration?.build(),
-            postProcessAnchorNodeState: _postProcessAnchorNodeState?.build(),
             primaryOutputs: primaryOutputs.build(),
             outputs: outputs.build(),
             anchorOutputs: anchorOutputs.build(),
@@ -1246,8 +1133,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
         _globNodeState?.build();
         _$failedField = 'postProcessAnchorNodeConfiguration';
         _postProcessAnchorNodeConfiguration?.build();
-        _$failedField = 'postProcessAnchorNodeState';
-        _postProcessAnchorNodeState?.build();
         _$failedField = 'primaryOutputs';
         primaryOutputs.build();
         _$failedField = 'outputs';
@@ -1444,8 +1329,6 @@ class _$GeneratedNodeState extends GeneratedNodeState {
   final bool wasOutput;
   @override
   final bool isFailure;
-  @override
-  final Digest? previousInputsDigest;
 
   factory _$GeneratedNodeState([
     void Function(GeneratedNodeStateBuilder)? updates,
@@ -1456,7 +1339,6 @@ class _$GeneratedNodeState extends GeneratedNodeState {
     required this.pendingBuildAction,
     required this.wasOutput,
     required this.isFailure,
-    this.previousInputsDigest,
   }) : super._() {
     BuiltValueNullFieldError.checkNotNull(
       inputs,
@@ -1496,8 +1378,7 @@ class _$GeneratedNodeState extends GeneratedNodeState {
         inputs == other.inputs &&
         pendingBuildAction == other.pendingBuildAction &&
         wasOutput == other.wasOutput &&
-        isFailure == other.isFailure &&
-        previousInputsDigest == other.previousInputsDigest;
+        isFailure == other.isFailure;
   }
 
   @override
@@ -1507,7 +1388,6 @@ class _$GeneratedNodeState extends GeneratedNodeState {
     _$hash = $jc(_$hash, pendingBuildAction.hashCode);
     _$hash = $jc(_$hash, wasOutput.hashCode);
     _$hash = $jc(_$hash, isFailure.hashCode);
-    _$hash = $jc(_$hash, previousInputsDigest.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -1518,8 +1398,7 @@ class _$GeneratedNodeState extends GeneratedNodeState {
           ..add('inputs', inputs)
           ..add('pendingBuildAction', pendingBuildAction)
           ..add('wasOutput', wasOutput)
-          ..add('isFailure', isFailure)
-          ..add('previousInputsDigest', previousInputsDigest))
+          ..add('isFailure', isFailure))
         .toString();
   }
 }
@@ -1546,11 +1425,6 @@ class GeneratedNodeStateBuilder
   bool? get isFailure => _$this._isFailure;
   set isFailure(bool? isFailure) => _$this._isFailure = isFailure;
 
-  Digest? _previousInputsDigest;
-  Digest? get previousInputsDigest => _$this._previousInputsDigest;
-  set previousInputsDigest(Digest? previousInputsDigest) =>
-      _$this._previousInputsDigest = previousInputsDigest;
-
   GeneratedNodeStateBuilder();
 
   GeneratedNodeStateBuilder get _$this {
@@ -1560,7 +1434,6 @@ class GeneratedNodeStateBuilder
       _pendingBuildAction = $v.pendingBuildAction;
       _wasOutput = $v.wasOutput;
       _isFailure = $v.isFailure;
-      _previousInputsDigest = $v.previousInputsDigest;
       _$v = null;
     }
     return this;
@@ -1602,7 +1475,6 @@ class GeneratedNodeStateBuilder
               r'GeneratedNodeState',
               'isFailure',
             ),
-            previousInputsDigest: previousInputsDigest,
           );
     } catch (_) {
       late String _$failedField;
@@ -2028,93 +1900,6 @@ class PostProcessAnchorNodeConfigurationBuilder
             r'PostProcessAnchorNodeConfiguration',
             'primaryInput',
           ),
-        );
-    replace(_$result);
-    return _$result;
-  }
-}
-
-class _$PostProcessAnchorNodeState extends PostProcessAnchorNodeState {
-  @override
-  final Digest? previousInputsDigest;
-
-  factory _$PostProcessAnchorNodeState([
-    void Function(PostProcessAnchorNodeStateBuilder)? updates,
-  ]) => (new PostProcessAnchorNodeStateBuilder()..update(updates))._build();
-
-  _$PostProcessAnchorNodeState._({this.previousInputsDigest}) : super._();
-
-  @override
-  PostProcessAnchorNodeState rebuild(
-    void Function(PostProcessAnchorNodeStateBuilder) updates,
-  ) => (toBuilder()..update(updates)).build();
-
-  @override
-  PostProcessAnchorNodeStateBuilder toBuilder() =>
-      new PostProcessAnchorNodeStateBuilder()..replace(this);
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(other, this)) return true;
-    return other is PostProcessAnchorNodeState &&
-        previousInputsDigest == other.previousInputsDigest;
-  }
-
-  @override
-  int get hashCode {
-    var _$hash = 0;
-    _$hash = $jc(_$hash, previousInputsDigest.hashCode);
-    _$hash = $jf(_$hash);
-    return _$hash;
-  }
-
-  @override
-  String toString() {
-    return (newBuiltValueToStringHelper(r'PostProcessAnchorNodeState')
-      ..add('previousInputsDigest', previousInputsDigest)).toString();
-  }
-}
-
-class PostProcessAnchorNodeStateBuilder
-    implements
-        Builder<PostProcessAnchorNodeState, PostProcessAnchorNodeStateBuilder> {
-  _$PostProcessAnchorNodeState? _$v;
-
-  Digest? _previousInputsDigest;
-  Digest? get previousInputsDigest => _$this._previousInputsDigest;
-  set previousInputsDigest(Digest? previousInputsDigest) =>
-      _$this._previousInputsDigest = previousInputsDigest;
-
-  PostProcessAnchorNodeStateBuilder();
-
-  PostProcessAnchorNodeStateBuilder get _$this {
-    final $v = _$v;
-    if ($v != null) {
-      _previousInputsDigest = $v.previousInputsDigest;
-      _$v = null;
-    }
-    return this;
-  }
-
-  @override
-  void replace(PostProcessAnchorNodeState other) {
-    ArgumentError.checkNotNull(other, 'other');
-    _$v = other as _$PostProcessAnchorNodeState;
-  }
-
-  @override
-  void update(void Function(PostProcessAnchorNodeStateBuilder)? updates) {
-    if (updates != null) updates(this);
-  }
-
-  @override
-  PostProcessAnchorNodeState build() => _build();
-
-  _$PostProcessAnchorNodeState _build() {
-    final _$result =
-        _$v ??
-        new _$PostProcessAnchorNodeState._(
-          previousInputsDigest: previousInputsDigest,
         );
     replace(_$result);
     return _$result;

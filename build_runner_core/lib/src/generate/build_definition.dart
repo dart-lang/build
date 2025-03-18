@@ -82,7 +82,7 @@ class _Loader {
       updates = await logTimedAsync(
         _logger,
         'Checking for updates since last build',
-        () => _updateAssetGraph(
+        () => _computeUpdates(
           assetGraph!,
           assetTracker,
           _buildPhases,
@@ -186,11 +186,9 @@ class _Loader {
     }
   }
 
-  /// Updates [assetGraph] based on a the new view of the world.
-  ///
-  /// Once done, this returns a map of [AssetId] to [ChangeType] for all the
-  /// changes.
-  Future<Map<AssetId, ChangeType>> _updateAssetGraph(
+  /// Returns which sources and builder options changed, and the [ChangeType]
+  /// describing whether they where added, removed or modified.
+  Future<Map<AssetId, ChangeType>> _computeUpdates(
     AssetGraph assetGraph,
     AssetTracker assetTracker,
     BuildPhases buildPhases,
@@ -205,15 +203,6 @@ class _Loader {
       assetGraph,
     );
     updates.addAll(_computeBuilderOptionsUpdates(assetGraph, buildPhases));
-    /*await assetGraph.updateAndInvalidate(
-      _buildPhases,
-      updates,
-      _options.packageGraph.root.name,
-      (id) => _environment.writer
-          .copyWith(generatedAssetHider: assetGraph)
-          .delete(id),
-      _environment.reader.copyWith(generatedAssetHider: assetGraph),
-    );*/
     return updates;
   }
 

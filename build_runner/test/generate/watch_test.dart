@@ -420,12 +420,7 @@ void main() {
 
         expectedGraph.add(builderOptionsNode);
 
-        // TODO: We dont have a shared way of computing the combined input
-        // hashes today, but eventually we should test those here too.
-        expect(
-          cachedGraph,
-          equalsAssetGraph(expectedGraph, checkPreviousInputsDigest: false),
-        );
+        expect(cachedGraph, equalsAssetGraph(expectedGraph));
       });
 
       test('ignores events from nested packages', () async {
