@@ -34,7 +34,14 @@ class BuildDefinition {
   final AssetGraph assetGraph;
   final BuildScriptUpdates? buildScriptUpdates;
 
-  BuildDefinition._(this.assetGraph, this.buildScriptUpdates);
+  /// When reusing serialized state from a previous build: the file updates
+  /// since that build.
+  ///
+  /// Or, `null` if there was no serialized state or it was discared due to
+  /// the current build having an incompatible change.
+  final Map<AssetId, ChangeType>? updates;
+
+  BuildDefinition._(this.assetGraph, this.buildScriptUpdates, this.updates);
 
   static Future<BuildDefinition> prepareWorkspace(
     BuildEnvironment environment,
@@ -70,8 +77,9 @@ class _Loader {
     var internalSources = await assetTracker.findInternalSources();
 
     BuildScriptUpdates? buildScriptUpdates;
+    Map<AssetId, ChangeType>? updates;
     if (assetGraph != null) {
-      var updates = await logTimedAsync(
+      updates = await logTimedAsync(
         _logger,
         'Checking for updates since last build',
         () => _updateAssetGraph(
@@ -92,7 +100,7 @@ class _Loader {
 
       var buildScriptUpdated =
           !_options.skipBuildScriptCheck &&
-          buildScriptUpdates.hasBeenUpdated(updates.keys.toSet());
+          buildScriptUpdates.hasBeenUpdated(updates!.keys.toSet());
       if (buildScriptUpdated) {
         _logger.warning('Invalidating asset graph due to build script update!');
 
@@ -167,7 +175,7 @@ class _Loader {
       );
     }
 
-    return BuildDefinition._(assetGraph!, buildScriptUpdates);
+    return BuildDefinition._(assetGraph!, buildScriptUpdates, updates);
   }
 
   /// Deletes the generated output directory.
@@ -197,7 +205,7 @@ class _Loader {
       assetGraph,
     );
     updates.addAll(_computeBuilderOptionsUpdates(assetGraph, buildPhases));
-    await assetGraph.updateAndInvalidate(
+    /*await assetGraph.updateAndInvalidate(
       _buildPhases,
       updates,
       _options.packageGraph.root.name,
@@ -205,7 +213,7 @@ class _Loader {
           .copyWith(generatedAssetHider: assetGraph)
           .delete(id),
       _environment.reader.copyWith(generatedAssetHider: assetGraph),
-    );
+    );*/
     return updates;
   }
 

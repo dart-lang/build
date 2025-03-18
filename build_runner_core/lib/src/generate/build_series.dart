@@ -50,6 +50,13 @@ class BuildSeries {
   final RunnerAssetWriter deleteWriter;
   final ResourceManager resourceManager = ResourceManager();
 
+  /// For the first build only, updates from the previous serialized build
+  /// state.
+  ///
+  /// Null after the first build, or if there was no serialized build state, or
+  /// if the serialized build state was discarded.
+  Map<AssetId, ChangeType>? updatesFromLoad;
+
   Future<void> beforeExit() => resourceManager.beforeExit();
 
   BuildSeries._(
@@ -59,6 +66,7 @@ class BuildSeries {
     this.options,
     this.buildPhases,
     this.finalizedReader,
+    this.updatesFromLoad,
   ) : deleteWriter = environment.writer.copyWith(
         generatedAssetHider: assetGraph,
       ),
@@ -82,6 +90,14 @@ class BuildSeries {
     Set<BuildDirectory> buildDirs = const <BuildDirectory>{},
     Set<BuildFilter> buildFilters = const {},
   }) async {
+    if (updatesFromLoad != null) {
+      if (updates.isNotEmpty) {
+        throw StateError('First build must not pass `updates`.');
+      }
+      updates = updatesFromLoad!;
+      updatesFromLoad = null;
+    }
+
     finalizedReader.reset(BuildDirectory.buildPaths(buildDirs), buildFilters);
     final build = Build(
       environment: environment,
@@ -142,6 +158,7 @@ class BuildSeries {
       options,
       buildPhases,
       finalizedReader,
+      buildDefinition.updates,
     );
     return build;
   }
