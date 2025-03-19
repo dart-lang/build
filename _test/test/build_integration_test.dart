@@ -92,7 +92,9 @@ void main() {
           '//import_anchor',
           "import: 'package:_test/bad_file.dart';",
         );
-        final result = await runBuild(trailingArgs: ['--fail-on-severe']);
+        final result = await runBuild(
+          trailingArgs: ['--fail-on-severe', '--verbose'],
+        );
         expect(result.exitCode, isNot(0));
         expect(result.stdout, contains('Failed'));
 
@@ -103,7 +105,9 @@ void main() {
           "import: 'package:_test/bad_file.dart';",
           '//import_anchor',
         );
-        final nextBuild = await runBuild(trailingArgs: ['--fail-on-severe']);
+        final nextBuild = await runBuild(
+          trailingArgs: ['--fail-on-severe', '--verbose'],
+        );
         expect(nextBuild.exitCode, 0);
       },
     );

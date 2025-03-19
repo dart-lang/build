@@ -315,35 +315,34 @@ class Build {
 
       var input =
           assetGraph.get(node.generatedNodeConfiguration!.primaryInput)!;
-      if (input.type != NodeType.generated) {
-        continue;
-      }
-      if (explain) {
-        _logger.fine('Check ${input.id} -> ${node.id}.');
-      }
-
       if (input.type == NodeType.generated) {
-        var inputState = input.generatedNodeState!;
-        if (inputState.pendingBuildAction == PendingBuildAction.none) {
-          if (explain) {
-            _logger.fine(
-              'Do nothing, ${input.id} has PendingBuildAction.none.',
+        if (explain) {
+          _logger.fine('Check ${input.id} -> ${node.id}.');
+        }
+
+        if (input.type == NodeType.generated) {
+          var inputState = input.generatedNodeState!;
+          if (inputState.pendingBuildAction == PendingBuildAction.none) {
+            if (explain) {
+              _logger.fine(
+                'Do nothing, ${input.id} has PendingBuildAction.none.',
+              );
+            }
+          } else {
+            if (explain) {
+              _logger.fine('Build ${input.id} -> ${node.id}.');
+            }
+            final inputConfiguration = input.generatedNodeConfiguration!;
+            await _runLazyPhaseForInput(
+              inputConfiguration.phaseNumber,
+              inputConfiguration.primaryInput,
             );
           }
-        } else {
-          if (explain) {
-            _logger.fine('Build ${input.id} -> ${node.id}.');
-          }
-          final inputConfiguration = input.generatedNodeConfiguration!;
-          await _runLazyPhaseForInput(
-            inputConfiguration.phaseNumber,
-            inputConfiguration.primaryInput,
-          );
+          // Read the result of the build.
+          inputState = assetGraph.get(input.id)!.generatedNodeState!;
+          if (!inputState.wasOutput) continue;
+          if (inputState.isFailure) continue;
         }
-        // Read the result of the build.
-        inputState = assetGraph.get(input.id)!.generatedNodeState!;
-        if (!inputState.wasOutput) continue;
-        if (inputState.isFailure) continue;
       }
       ids.add(input.id);
     }
@@ -489,7 +488,7 @@ class Build {
 
       if (!await tracker.trackStage(
         'Setup',
-        () => _buildShouldRun(input, builderOutputs, readerWriter),
+        () => _buildShouldRun(phaseNumber, input, builderOutputs, readerWriter),
       )) {
         return <AssetId>[];
       }
@@ -540,6 +539,7 @@ class Build {
       await tracker.trackStage(
         'Finalize',
         () => _setOutputsState(
+          phaseNumber,
           input,
           builderOutputs,
           readerWriter,
@@ -710,6 +710,7 @@ class Build {
     });
 
     await _setOutputsState(
+      phaseNumber,
       input,
       assetsWritten,
       readerWriter,
@@ -723,12 +724,13 @@ class Build {
 
   /// Checks and returns whether any [outputs] need to be updated.
   Future<bool> _buildShouldRun(
+    int phaseNumber,
     AssetId input,
     Iterable<AssetId> outputs,
     AssetReader reader,
   ) async {
     if (explain) {
-      _logger.fine('_buildShouldRun $input.');
+      _logger.fine('_buildShouldRun $input in $phaseNumber.');
     }
     assert(
       outputs.every(assetGraph.contains),
@@ -805,6 +807,7 @@ class Build {
     }
 
     var digest = await _computeCombinedDigest(
+      input,
       firstNodeState.inputs,
       firstNode.generatedNodeConfiguration!.builderOptionsId,
       reader,
@@ -818,17 +821,25 @@ class Build {
       for (final input in inputs) {
         var node = assetGraph.get(input)!;
         if (node.type == NodeType.generated) {
-          if (node.generatedNodeState!.pendingBuildAction ==
-              PendingBuildAction.buildIfInputsChanged) {
-            explanation.writeln('REBUILD $input to check');
-            await _buildAsset(node.id);
-            node = assetGraph.get(node.id)!;
-          }
-          if (changedOutputs.contains(input)) {
-            explanation.writeln('$input, generated, changed');
-            predictedFromInputs = true;
+          explanation.writeln(
+            'Checking in phase $phaseNumber, input $input has phase '
+            '${node.generatedNodeConfiguration!.phaseNumber}',
+          );
+          if (node.generatedNodeConfiguration!.phaseNumber >= phaseNumber) {
+            explanation.writeln('$input is not readable due to phase');
           } else {
-            explanation.writeln('$input, generated, unchanged');
+            if (node.generatedNodeState!.pendingBuildAction ==
+                PendingBuildAction.buildIfInputsChanged) {
+              explanation.writeln('REBUILD $input to check');
+              await _buildAsset(node.id);
+              node = assetGraph.get(node.id)!;
+            }
+            if (changedOutputs.contains(input)) {
+              explanation.writeln('$input, generated, changed');
+              predictedFromInputs = true;
+            } else {
+              explanation.writeln('$input, generated, unchanged');
+            }
           }
         } else if (node.type == NodeType.glob) {
           if (changedOutputs.contains(input)) {
@@ -897,6 +908,7 @@ class Build {
   ) async {
     final nodeConfiguration = anchorNode.postProcessAnchorNodeConfiguration!;
     var inputsDigest = await _computeCombinedDigest(
+      anchorNode.id,
       [nodeConfiguration.primaryInput],
       nodeConfiguration.builderOptionsId,
       reader,
@@ -1003,14 +1015,30 @@ class Build {
       }
 
       final results = [...otherInputs, ...generatedFileResults];
+      final digest = md5.convert(utf8.encode(results.join(' ')));
       assetGraph.updateNode(globId, (nodeBuilder) {
+        if (nodeBuilder.lastKnownDigest != digest) {
+          if (explain) {
+            _logger.fine(
+              '_setOutputState: glob $globId changed, '
+              '${nodeBuilder.lastKnownDigest} -> $digest',
+            );
+          }
+          changedOutputs.add(globId);
+        } else {
+          if (explain) {
+            _logger.fine(
+              '_setOutputState:glob $globId did not change, $digest',
+            );
+          }
+        }
         nodeBuilder
           ..globNodeState.results.replace(results)
           ..globNodeState.inputs.replace(
             generatedFileInputs.followedBy(otherInputs),
           )
           ..globNodeState.pendingBuildAction = PendingBuildAction.none
-          ..lastKnownDigest = md5.convert(utf8.encode(results.join(' ')));
+          ..lastKnownDigest = digest;
       });
 
       unawaited(lazyGlobs.remove(globId));
@@ -1020,10 +1048,13 @@ class Build {
   /// Computes a single [Digest] based on the combined [Digest]s of [ids] and
   /// [builderOptionsId].
   Future<Digest> _computeCombinedDigest(
+    AssetId input,
     Iterable<AssetId> ids,
     AssetId builderOptionsId,
     AssetReader reader,
   ) async {
+    final trace = input.package == '_test' && input.path == 'lib/app.dart';
+
     var combinedBytes = Uint8List.fromList(List.filled(16, 0));
     void combine(Uint8List other) {
       assert(other.length == 16);
@@ -1035,12 +1066,22 @@ class Build {
     var builderOptionsNode = assetGraph.get(builderOptionsId)!;
     combine(builderOptionsNode.lastKnownDigest!.bytes as Uint8List);
 
+    if (trace && explain) {
+      _logger.fine(
+        '_computeCombinedDigest $input, combine $builderOptionsNode',
+      );
+    }
+
     for (final id in ids) {
+      if (trace && explain) {
+        _logger.fine('_computeCombinedDigest $input, combine $id');
+      }
       var node = assetGraph.get(id)!;
       if (node.type == NodeType.glob) {
+        _logger.fine('_computeCombinedDigest $input, glob');
         await _buildGlobNode(node.id);
-        node = assetGraph.get(id)!;
       } else if (!await reader.canRead(id)) {
+        _logger.fine('_computeCombinedDigest $input, cannot read');
         // We want to add something here, a missing/unreadable input should be
         // different from no input at all.
         //
@@ -1049,6 +1090,7 @@ class Build {
         continue;
       } else {
         if (node.lastKnownDigest == null) {
+          _logger.fine('_computeCombinedDigest $input, no digest');
           final digest = await reader.digest(id);
           await reader.cache.invalidate([id]);
           node = assetGraph.updateNode(node.id, (nodeBuilder) {
@@ -1056,9 +1098,19 @@ class Build {
           });
         }
       }
+      node = assetGraph.get(id)!;
+      if (trace && explain) {
+        _logger.fine(
+          '_computeCombinedDigest $input, '
+          'combine ${node.id} ${node.lastKnownDigest}',
+        );
+      }
       combine(node.lastKnownDigest!.bytes as Uint8List);
     }
 
+    if (trace && explain) {
+      _logger.fine('Return ${Digest(combinedBytes)}');
+    }
     return Digest(combinedBytes);
   }
 
@@ -1072,6 +1124,7 @@ class Build {
   /// - Setting the `previousInputsDigest` on each output based on the inputs.
   /// - Storing the error message with the [failureReporter].
   Future<void> _setOutputsState(
+    int phase,
     AssetId input,
     Iterable<AssetId> outputs,
     SingleStepReaderWriter readerWriter,
@@ -1087,6 +1140,7 @@ class Build {
             : inputTracker.inputs;
 
     final inputsDigest = await _computeCombinedDigest(
+      input,
       usedInputs,
       assetGraph
           .get(outputs.first)!
@@ -1106,13 +1160,17 @@ class Build {
       assetGraph.updateNode(output, (nodeBuilder) {
         if (nodeBuilder.lastKnownDigest != digest) {
           if (explain) {
-            _logger.fine('_setOutputState: generated node $output changed');
+            _logger.fine(
+              '_setOutputState: generated node $output changed in phase '
+              '$phase, ${nodeBuilder.lastKnownDigest} -> $digest',
+            );
           }
           changedOutputs.add(output);
         } else {
           if (explain) {
             _logger.fine(
-              '_setOutputState: generated node $output did not change',
+              '_setOutputState: generated node $output did not change in '
+              'phase $phase, $digest',
             );
           }
         }
@@ -1142,7 +1200,8 @@ class Build {
             } else {
               if (explain) {
                 _logger.fine(
-                  '_setOutputState: generated node $output did not change, still fail',
+                  '_setOutputState: generated node $output did not '
+                  'change, still fail',
                 );
               }
             }
