@@ -40,6 +40,7 @@ import 'phase.dart';
 import 'single_step_reader_writer.dart';
 
 final _logger = Logger('Build');
+final explain = true;
 
 /// A single build.
 class Build {
@@ -163,6 +164,10 @@ class Build {
   /// Runs a build inside a zone with an error handler and stack chain
   /// capturing.
   Future<BuildResult> _safeBuild(Map<AssetId, ChangeType> updates) {
+    if (explain) {
+      _logger.fine('Building for updates: $updates');
+    }
+
     var done = Completer<BuildResult>();
 
     var heartbeat = HeartbeatLogger(
@@ -306,9 +311,25 @@ class Build {
 
       var input =
           assetGraph.get(node.generatedNodeConfiguration!.primaryInput)!;
+      if (input.type != NodeType.generated) {
+        continue;
+      }
+      if (explain) {
+        _logger.fine('Check ${input.id} -> ${node.id}.');
+      }
+
       if (input.type == NodeType.generated) {
         var inputState = input.generatedNodeState!;
-        if (inputState.pendingBuildAction != PendingBuildAction.none) {
+        if (inputState.pendingBuildAction == PendingBuildAction.none) {
+          if (explain) {
+            _logger.fine(
+              'Do nothing, ${input.id} has PendingBuildAction.none.',
+            );
+          }
+        } else {
+          if (explain) {
+            _logger.fine('Build ${input.id} -> ${node.id}.');
+          }
           final inputConfiguration = input.generatedNodeConfiguration!;
           await _runLazyPhaseForInput(
             inputConfiguration.phaseNumber,
@@ -336,6 +357,9 @@ class Build {
     Iterable<AssetId> primaryInputs,
   ) async {
     final outputs = <AssetId>[];
+    if (explain) {
+      _logger.fine('_runBuilder $primaryInputs.');
+    }
     for (final input in primaryInputs) {
       outputs.addAll(await _runForInput(phaseNumber, action, input));
     }
@@ -348,14 +372,30 @@ class Build {
     AssetId input,
   ) {
     return lazyPhases.putIfAbsent('$phaseNumber|$input', () async {
+      if (explain) {
+        _logger.fine('_runLazyPhaseForInput $input.');
+      }
       // First check if `input` is generated, and whether or not it was
       // actually output. If it wasn't then we just return an empty list here.
       var inputNode = assetGraph.get(input)!;
       if (inputNode.type == NodeType.generated) {
+        if (explain) {
+          _logger.fine('$input is generated.');
+        }
         var nodeState = inputNode.generatedNodeState!;
         // Make sure the `inputNode` is up to date, and rebuild it if not.
-        if (nodeState.pendingBuildAction != PendingBuildAction.none) {
+        if (nodeState.pendingBuildAction == PendingBuildAction.none) {
+          if (explain) {
+            _logger.fine('$input is generated, but also up to date.');
+          }
+        } else {
           final nodeConfiguration = inputNode.generatedNodeConfiguration!;
+          if (explain) {
+            _logger.fine(
+              '$input is generated and not up to date, build it '
+              'by building ${nodeConfiguration.primaryInput}.',
+            );
+          }
           await _runLazyPhaseForInput(
             nodeConfiguration.phaseNumber,
             nodeConfiguration.primaryInput,
@@ -363,7 +403,16 @@ class Build {
         }
         // Read the result of the build.
         nodeState = assetGraph.get(inputNode.id)!.generatedNodeState!;
-        if (!nodeState.wasOutput || nodeState.isFailure) return <AssetId>[];
+        if (!nodeState.wasOutput || nodeState.isFailure) {
+          if (explain) {
+            if (!nodeState.wasOutput) {
+              _logger.fine('$input was not output.');
+            } else {
+              _logger.fine('$input failed to build.');
+            }
+          }
+          return <AssetId>[];
+        }
       }
 
       // We can never lazily build `PostProcessBuildAction`s.
@@ -396,6 +445,9 @@ class Build {
       input,
       phase.builderLabel,
     );
+    if (explain) {
+      _logger.fine('_runForInput $input $phaseNumber $phase.');
+    }
     return tracker.track(() async {
       var builderOutputs = expectedOutputs(builder, input);
 
@@ -433,7 +485,7 @@ class Build {
 
       if (!await tracker.trackStage(
         'Setup',
-        () => _buildShouldRun(builderOutputs, readerWriter),
+        () => _buildShouldRun(input, builderOutputs, readerWriter),
       )) {
         return <AssetId>[];
       }
@@ -667,9 +719,13 @@ class Build {
 
   /// Checks and returns whether any [outputs] need to be updated.
   Future<bool> _buildShouldRun(
+    AssetId input,
     Iterable<AssetId> outputs,
     AssetReader reader,
   ) async {
+    if (explain) {
+      _logger.fine('_buildShouldRun $input.');
+    }
     assert(
       outputs.every(assetGraph.contains),
       'Outputs should be known statically. Missing '
@@ -682,6 +738,12 @@ class Build {
     for (var output in outputs.skip(1)) {
       if (assetGraph.get(output)!.generatedNodeState!.pendingBuildAction ==
           PendingBuildAction.build) {
+        if (explain) {
+          _logger.fine(
+            '_buildShouldRun $input: yes, because '
+            '$output PendingBuildAction.build.',
+          );
+        }
         return true;
       }
     }
@@ -708,15 +770,35 @@ class Build {
 
     // No need to build an up to date output
     if (firstNodeState.pendingBuildAction == PendingBuildAction.none) {
+      if (explain) {
+        _logger.fine(
+          '_buildShouldRun $input: no, because '
+          '${firstNode.id} PendingBuildAction.none.',
+        );
+      }
       return false;
     }
 
     // Early bail out condition, this is a forced update.
     if (firstNodeState.pendingBuildAction == PendingBuildAction.build) {
+      if (explain) {
+        _logger.fine(
+          '_buildShouldRun $input: yes, because '
+          '${firstNode.id} PendingBuildAction.build.',
+        );
+      }
       return true;
     }
     // This is a fresh build or the first time we've seen this output.
-    if (firstNodeState.previousInputsDigest == null) return true;
+    if (firstNodeState.previousInputsDigest == null) {
+      if (explain) {
+        _logger.fine(
+          '_buildShouldRun $input: yes, because '
+          '${firstNode.id} PendingBuildAction.build.',
+        );
+      }
+      return true;
+    }
 
     var digest = await _computeCombinedDigest(
       firstNodeState.inputs,
@@ -724,6 +806,12 @@ class Build {
       reader,
     );
     if (digest != firstNodeState.previousInputsDigest) {
+      if (explain) {
+        _logger.fine(
+          '_buildShouldRun $input: yes, because '
+          'digest changed ${firstNodeState.previousInputsDigest} -> $digest.',
+        );
+      }
       return true;
     } else {
       // Make sure to update the `state` field for all outputs.
@@ -737,6 +825,13 @@ class Build {
                 PendingBuildAction.none;
           }
         });
+      }
+
+      if (explain) {
+        _logger.fine(
+          '_buildShouldRun $input: no, because '
+          'digest is still $digest.',
+        );
       }
       return false;
     }
