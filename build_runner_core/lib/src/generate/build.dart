@@ -817,6 +817,16 @@ class Build {
     if (changedInputs != null && explain) {
       predictedFromInputs = false;
       final explanation = StringBuffer();
+
+      final builderOptionsId =
+          firstNode.generatedNodeConfiguration!.builderOptionsId;
+      if (changedInputs!.contains(builderOptionsId)) {
+        predictedFromInputs = true;
+        explanation.writeln('$builderOptionsId, build options, changed');
+      } else {
+        explanation.writeln('$builderOptionsId, build options, unchanged');
+      }
+
       final inputs = firstNodeState.inputs;
       for (final input in inputs) {
         var node = assetGraph.get(input)!;
