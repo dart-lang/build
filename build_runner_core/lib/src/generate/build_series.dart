@@ -70,14 +70,33 @@ class BuildSeries {
                 : InMemoryFilesystemCache(),
       );
 
+  /// Runs a single build.
+  ///
+  /// For the first build, pass empty [updates].
+  ///
+  /// For subsequent builds, pass filesystem changes in [updates].
+  ///
+  /// TODO(davidmorgan): unify these two codepaths.
   Future<BuildResult> run(
     Map<AssetId, ChangeType> updates, {
     Set<BuildDirectory> buildDirs = const <BuildDirectory>{},
     Set<BuildFilter> buildFilters = const {},
-  }) {
+  }) async {
     finalizedReader.reset(BuildDirectory.buildPaths(buildDirs), buildFilters);
-    return Build(this, buildDirs, buildFilters).run(updates)
-      ..whenComplete(options.resolvers.reset);
+    final build = Build(
+      environment: environment,
+      options: options,
+      buildPhases: buildPhases,
+      assetGraph: assetGraph,
+      buildDirs: buildDirs,
+      buildFilters: buildFilters,
+      readerWriter: readerWriter,
+      deleteWriter: deleteWriter,
+      resourceManager: resourceManager,
+    );
+    final result = await build.run(updates);
+    options.resolvers.reset();
+    return result;
   }
 
   static Future<BuildSeries> create(
