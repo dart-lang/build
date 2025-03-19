@@ -806,12 +806,12 @@ class Build {
       return true;
     }
 
-    var digest = await _computeCombinedDigest(
+    /*var digest = await _computeCombinedDigest(
       input,
       firstNodeState.inputs,
       firstNode.generatedNodeConfiguration!.builderOptionsId,
       reader,
-    );
+    );*/
 
     bool? predictedFromInputs;
     if (changedInputs != null && explain) {
@@ -852,6 +852,11 @@ class Build {
             }
           }
         } else if (node.type == NodeType.glob) {
+          if (node.globNodeState!.pendingBuildAction !=
+              PendingBuildAction.none) {
+            explanation.writeln('$input, glob, building');
+            await _buildGlobNode(input);
+          }
           if (changedOutputs.contains(input)) {
             explanation.writeln('$input, glob, changed');
             predictedFromInputs = true;
@@ -870,15 +875,13 @@ class Build {
       _logger.fine('_buildShouldRun $input checks\n$explanation');
     }
 
-    if (digest != firstNodeState.previousInputsDigest) {
+    if (predictedFromInputs == null) {
+      throw StateError('ehm');
+    }
+
+    if (predictedFromInputs) {
       if (explain) {
-        _logger.fine(
-          '_buildShouldRun $input: yes, because '
-          'digest changed ${firstNodeState.previousInputsDigest} -> $digest.',
-        );
-      }
-      if (predictedFromInputs == false) {
-        throw StateError('Difference of opinion: predictedFromInputs said no.');
+        _logger.fine('_buildShouldRun $input: yes, because of inputs.');
       }
       return true;
     } else {
@@ -896,10 +899,7 @@ class Build {
       }
 
       if (explain) {
-        _logger.fine(
-          '_buildShouldRun $input: no, because '
-          'digest is still $digest.',
-        );
+        _logger.fine('_buildShouldRun $input: no, because of inputs.');
       }
 
       if (predictedFromInputs == true) {
