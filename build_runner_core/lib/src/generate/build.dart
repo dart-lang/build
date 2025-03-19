@@ -69,6 +69,9 @@ class Build {
   int actionsStartedCount = 0;
   final pendingActions = SplayTreeMap<int, Set<String>>();
 
+  Set<AssetId>? changedInputs = {};
+  Set<AssetId> changedOutputs = {};
+
   Build({
     required this.environment,
     required this.options,
@@ -150,6 +153,7 @@ class Build {
 
   Future<void> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
     await logTimedAsync(_logger, 'Updating asset graph', () async {
+      changedInputs = updates.keys.toSet();
       var invalidated = await assetGraph.updateAndInvalidate(
         buildPhases,
         updates,
@@ -805,12 +809,55 @@ class Build {
       firstNode.generatedNodeConfiguration!.builderOptionsId,
       reader,
     );
+
+    bool? predictedFromInputs;
+    if (changedInputs != null && explain) {
+      predictedFromInputs = false;
+      final explanation = StringBuffer();
+      final inputs = firstNodeState.inputs;
+      for (final input in inputs) {
+        var node = assetGraph.get(input)!;
+        if (node.type == NodeType.generated) {
+          if (node.generatedNodeState!.pendingBuildAction ==
+              PendingBuildAction.buildIfInputsChanged) {
+            explanation.writeln('REBUILD $input to check');
+            await _buildAsset(node.id);
+            node = assetGraph.get(node.id)!;
+          }
+          if (changedOutputs.contains(input)) {
+            explanation.writeln('$input, generated, changed');
+            predictedFromInputs = true;
+          } else {
+            explanation.writeln('$input, generated, unchanged');
+          }
+        } else if (node.type == NodeType.glob) {
+          if (changedOutputs.contains(input)) {
+            explanation.writeln('$input, glob, changed');
+            predictedFromInputs = true;
+          } else {
+            explanation.writeln('$input, glob, unchanged');
+          }
+        } else if (node.type == NodeType.source) {
+          if (changedInputs!.contains(input)) {
+            predictedFromInputs = true;
+            explanation.writeln('$input, source, changed');
+          } else {
+            explanation.writeln('$input, source, unchanged');
+          }
+        }
+      }
+      _logger.fine('_buildShouldRun $input checks\n$explanation');
+    }
+
     if (digest != firstNodeState.previousInputsDigest) {
       if (explain) {
         _logger.fine(
           '_buildShouldRun $input: yes, because '
           'digest changed ${firstNodeState.previousInputsDigest} -> $digest.',
         );
+      }
+      if (predictedFromInputs == false) {
+        throw StateError('Difference of opinion: predictedFromInputs said no.');
       }
       return true;
     } else {
@@ -831,6 +878,12 @@ class Build {
         _logger.fine(
           '_buildShouldRun $input: no, because '
           'digest is still $digest.',
+        );
+      }
+
+      if (predictedFromInputs == true) {
+        throw StateError(
+          'Difference of opinion: predictedFromInputs said yes.',
         );
       }
       return false;
@@ -1051,6 +1104,18 @@ class Build {
       _removeOldInputs(output, usedInputs);
       _addNewInputs(output, usedInputs);
       assetGraph.updateNode(output, (nodeBuilder) {
+        if (nodeBuilder.lastKnownDigest != digest) {
+          if (explain) {
+            _logger.fine('_setOutputState: generated node $output changed');
+          }
+          changedOutputs.add(output);
+        } else {
+          if (explain) {
+            _logger.fine(
+              '_setOutputState: generated node $output did not change',
+            );
+          }
+        }
         nodeBuilder.generatedNodeState
           ..pendingBuildAction = PendingBuildAction.none
           ..wasOutput = wasOutput
@@ -1067,6 +1132,20 @@ class Build {
         while (needsMarkAsFailure.isNotEmpty) {
           var output = needsMarkAsFailure.removeLast();
           assetGraph.updateNode(output, (nodeBuilder) {
+            if (nodeBuilder.lastKnownDigest != digest) {
+              if (explain) {
+                _logger.fine(
+                  '_setOutputState: generated node $output changed to fail',
+                );
+              }
+              changedOutputs.add(output);
+            } else {
+              if (explain) {
+                _logger.fine(
+                  '_setOutputState: generated node $output did not change, still fail',
+                );
+              }
+            }
             nodeBuilder.generatedNodeState
               ..pendingBuildAction = PendingBuildAction.none
               ..wasOutput = false

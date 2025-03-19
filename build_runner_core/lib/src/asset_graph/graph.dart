@@ -14,6 +14,7 @@ import 'package:build/src/internal.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
+import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:watcher/watcher.dart';
 
@@ -25,6 +26,9 @@ import 'exceptions.dart';
 import 'node.dart';
 
 part 'serialization.dart';
+
+final explain = true;
+final _logger = Logger('AssetGraph');
 
 /// All the [AssetId]s involved in a build, and all of their outputs.
 class AssetGraph implements GeneratedAssetHider {
@@ -223,6 +227,9 @@ class AssetGraph implements GeneratedAssetHider {
     Iterable<AssetId> ids,
     AssetReader digestReader,
   ) async {
+    if (explain) {
+      _logger.fine('_setLastKnownDigests $ids');
+    }
     await digestReader.cache.invalidate(ids);
     await Future.wait(
       ids.map((id) async {
@@ -430,12 +437,18 @@ class AssetGraph implements GeneratedAssetHider {
             if (nodeBuilder.type == NodeType.generated) {
               final nodeState = nodeBuilder.generatedNodeState;
               if (nodeState.pendingBuildAction == PendingBuildAction.none) {
+                if (explain) {
+                  _logger.fine(
+                    'Invalidate $id (generated) -> buildIfInputsChanged',
+                  );
+                }
                 nodeBuilder.generatedNodeState.pendingBuildAction =
                     PendingBuildAction.buildIfInputsChanged;
               }
             } else if (nodeBuilder.type == NodeType.glob) {
               final nodeState = nodeBuilder.globNodeState;
               if (nodeState.pendingBuildAction == PendingBuildAction.none) {
+                _logger.fine('Invalidate $id (glob) -> buildIfInputsChanged');
                 nodeBuilder.globNodeState.pendingBuildAction =
                     PendingBuildAction.buildIfInputsChanged;
               }
@@ -454,6 +467,9 @@ class AssetGraph implements GeneratedAssetHider {
     }
 
     for (var changed in updates.keys.followedBy(newGeneratedOutputs)) {
+      if (explain) {
+        _logger.fine('Invalidate node and deps: $changed');
+      }
       invalidateNodeAndDeps(changed);
     }
 
@@ -491,6 +507,10 @@ class AssetGraph implements GeneratedAssetHider {
         invalidateNodeAndDeps(id);
         _removeRecursive(id);
       }
+    }
+
+    if (explain) {
+      _logger.fine('Invalidated IDs: $invalidatedIds');
     }
 
     return invalidatedIds;
