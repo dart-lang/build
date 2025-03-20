@@ -26,7 +26,7 @@ StringBuffer colorLog(LogRecord record, {required bool verbose}) {
   final level = color.wrap('[${record.level}]');
   final eraseLine = ansiOutputEnabled && !verbose ? '\x1b[2K\r' : '';
   var lines = <Object>[
-    '$eraseLine$level ${_recordHeader(record, verbose)}${record.message}',
+    '$eraseLine$level ${_recordHeader(record)}${record.message}',
   ];
 
   if (record.error != null) {
@@ -64,9 +64,9 @@ void _stdIOLogListener(LogRecord record, {required bool verbose}) =>
 
 /// Filter out the Logger names which aren't coming from specific builders and
 /// splits the header for levels >= WARNING.
-String _recordHeader(LogRecord record, bool verbose) {
+String _recordHeader(LogRecord record) {
   var maybeSplit = record.level >= Level.WARNING ? '\n' : '';
-  return verbose || record.loggerName.contains(' ')
+  return record.loggerName.contains(' ')
       ? '${record.loggerName}:$maybeSplit'
       : '';
 }
