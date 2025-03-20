@@ -83,24 +83,22 @@ class BuildSeries {
 
   /// Runs a single build.
   ///
-  /// For the first build, pass empty [updates].
+  /// For the first build, pass any changes since the `BuildSeries` was created
+  /// as [updates]. If the first build happens immediately then pass empty
+  /// `updates`.
   ///
-  /// For subsequent builds, pass filesystem changes in [updates].
+  /// For further builds, pass the changes since the previous builds as
+  /// [updates].
   Future<BuildResult> run(
     Map<AssetId, ChangeType> updates, {
     Set<BuildDirectory> buildDirs = const <BuildDirectory>{},
     Set<BuildFilter> buildFilters = const {},
   }) async {
     if (firstBuild) {
-      if (updates.isNotEmpty) {
-        throw StateError('First build must pass empty `updates`.');
-      }
-
       if (updatesFromLoad != null) {
-        updates = updatesFromLoad!;
+        updates = updatesFromLoad!..addAll(updates);
         updatesFromLoad = null;
       }
-
       firstBuild = false;
     } else {
       if (updatesFromLoad != null) {
