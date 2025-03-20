@@ -45,6 +45,9 @@ class BuildSeries {
   final BuildOptions options;
   final BuildPhases buildPhases;
 
+  // Whether the build is a fresh build.
+  final bool freshBuild;
+
   final FinalizedReader finalizedReader;
   final AssetReaderWriter readerWriter;
   final RunnerAssetWriter deleteWriter;
@@ -68,6 +71,7 @@ class BuildSeries {
     this.buildScriptUpdates,
     this.options,
     this.buildPhases,
+    this.freshBuild,
     this.finalizedReader,
     this.updatesFromLoad,
   ) : deleteWriter = environment.writer.copyWith(
@@ -94,6 +98,7 @@ class BuildSeries {
     Set<BuildDirectory> buildDirs = const <BuildDirectory>{},
     Set<BuildFilter> buildFilters = const {},
   }) async {
+    final wasFirstBuild = firstBuild;
     if (firstBuild) {
       if (updatesFromLoad != null) {
         updates = updatesFromLoad!..addAll(updates);
@@ -114,11 +119,13 @@ class BuildSeries {
       assetGraph: assetGraph,
       buildDirs: buildDirs,
       buildFilters: buildFilters,
+      freshBuild: freshBuild && firstBuild,
+      updates: updates,
       readerWriter: readerWriter,
       deleteWriter: deleteWriter,
       resourceManager: resourceManager,
     );
-    final result = await build.run(updates);
+    final result = await build.run();
     options.resolvers.reset();
     return result;
   }
@@ -165,6 +172,7 @@ class BuildSeries {
       buildDefinition.buildScriptUpdates,
       options,
       buildPhases,
+      buildDefinition.freshBuild,
       finalizedReader,
       buildDefinition.updates,
     );

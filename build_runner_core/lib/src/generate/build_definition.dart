@@ -33,6 +33,7 @@ final _logger = Logger('BuildDefinition');
 class BuildDefinition {
   final AssetGraph assetGraph;
   final BuildScriptUpdates? buildScriptUpdates;
+  final bool freshBuild;
 
   /// When reusing serialized state from a previous build: the file updates
   /// since that build.
@@ -41,7 +42,12 @@ class BuildDefinition {
   /// the current build having an incompatible change.
   final Map<AssetId, ChangeType>? updates;
 
-  BuildDefinition._(this.assetGraph, this.buildScriptUpdates, this.updates);
+  BuildDefinition._(
+    this.assetGraph,
+    this.buildScriptUpdates,
+    this.freshBuild,
+    this.updates,
+  );
 
   static Future<BuildDefinition> prepareWorkspace(
     BuildEnvironment environment,
@@ -78,7 +84,9 @@ class _Loader {
 
     BuildScriptUpdates? buildScriptUpdates;
     Map<AssetId, ChangeType>? updates;
+    var freshBuild = false;
     if (assetGraph != null) {
+      freshBuild = true;
       updates = await logTimedAsync(
         _logger,
         'Checking for updates since last build',
@@ -119,6 +127,7 @@ class _Loader {
         assetGraph = null;
         buildScriptUpdates = null;
         updates = null;
+        freshBuild = false;
       }
     }
 
@@ -176,7 +185,12 @@ class _Loader {
       );
     }
 
-    return BuildDefinition._(assetGraph!, buildScriptUpdates, updates);
+    return BuildDefinition._(
+      assetGraph!,
+      buildScriptUpdates,
+      freshBuild,
+      updates,
+    );
   }
 
   /// Deletes the generated output directory.
