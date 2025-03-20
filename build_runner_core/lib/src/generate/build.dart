@@ -72,6 +72,17 @@ class Build {
   int actionsStartedCount = 0;
   final pendingActions = SplayTreeMap<int, Set<String>>();
 
+  /// Inputs that changed since the last build.
+  ///
+  /// Filled from the `updates` passed in to the build.
+  final Set<AssetId> changedInputs = {};
+
+  /// Outputs that changed since the last build.
+  ///
+  /// Filled during the build as each output is produced and its digest is
+  /// checked against the digest from the previous build.
+  final Set<AssetId> changedOutputs = {};
+
   Build({
     required this.environment,
     required this.options,
@@ -159,6 +170,7 @@ class Build {
 
   Future<void> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
     await logTimedAsync(_logger, 'Updating asset graph', () async {
+      changedInputs.addAll(updates.keys.toSet());
       var invalidated = await assetGraph.updateAndInvalidate(
         buildPhases,
         updates,
@@ -442,7 +454,7 @@ class Build {
 
       if (!await tracker.trackStage(
         'Setup',
-        () => _buildShouldRun(input, builderOutputs, readerWriter),
+        () => _buildShouldRun(phaseNumber, input, builderOutputs, readerWriter),
       )) {
         return <AssetId>[];
       }
@@ -676,7 +688,8 @@ class Build {
 
   /// Checks and returns whether any [outputs] need to be updated.
   Future<bool> _buildShouldRun(
-    AssetId input,
+    int phaseNumber,
+    AssetId forInput,
     Iterable<AssetId> outputs,
     AssetReader reader,
   ) async {
@@ -694,7 +707,7 @@ class Build {
           PendingBuildAction.build) {
         if (logFine) {
           _logger.fine(
-            'Build ${renderer.build(input, outputs)} because '
+            'Build ${renderer.build(forInput, outputs)} because '
             '${renderer.id(output)} was marked for build.',
           );
         }
@@ -731,60 +744,88 @@ class Build {
     if (firstNodeState.pendingBuildAction == PendingBuildAction.build) {
       if (logFine) {
         _logger.fine(
-          'Build ${renderer.build(input, outputs)} because '
+          'Build ${renderer.build(forInput, outputs)} because '
           '${renderer.id(firstNode.id)} was marked for build.',
         );
       }
       return true;
     }
-    // This is a fresh build or the first time we've seen this output.
-    if (firstNodeState.previousInputsDigest == null) {
+
+    final builderOptionsId =
+        firstNode.generatedNodeConfiguration!.builderOptionsId;
+    if (changedInputs.contains(builderOptionsId)) {
       if (logFine) {
         _logger.fine(
-          'Build ${renderer.build(input, outputs)} because '
-          '${renderer.id(firstNode.id)} has no previousInputsDigest.',
+          'Build ${renderer.build(forInput, outputs)} because '
+          'builder options changed.',
         );
       }
       return true;
     }
 
-    var digest = await _computeCombinedDigest(
-      firstNodeState.inputs,
-      firstNode.generatedNodeConfiguration!.builderOptionsId,
-      reader,
-    );
-    if (digest != firstNodeState.previousInputsDigest) {
-      if (logFine) {
-        _logger.fine(
-          'Build ${renderer.build(input, outputs)} because '
-          'inputs digest changed '
-          'from ${renderer.digest(firstNodeState.previousInputsDigest)} '
-          'to ${renderer.digest(digest)}.',
-        );
-      }
-      return true;
-    } else {
-      if (logFine) {
-        _logger.fine(
-          'Skip bulding ${renderer.build(input, outputs)} because '
-          'inputs digest is still '
-          '${renderer.digest(firstNodeState.previousInputsDigest)}.',
-        );
-      }
-      // Make sure to update the `state` field for all outputs.
-      for (var id in outputs) {
-        assetGraph.updateNode(id, (nodeBuilder) {
-          if (nodeBuilder.type == NodeType.generated) {
-            nodeBuilder.generatedNodeState.pendingBuildAction =
-                PendingBuildAction.none;
-          } else if (nodeBuilder.type == NodeType.glob) {
-            nodeBuilder.globNodeState.pendingBuildAction =
-                PendingBuildAction.none;
+    final inputs = firstNodeState.inputs;
+    for (final input in inputs) {
+      final node = assetGraph.get(input)!;
+      if (node.type == NodeType.generated) {
+        if (node.generatedNodeConfiguration!.phaseNumber >= phaseNumber) {
+          // It's not readable in this phase.
+          continue;
+        }
+        // Check that the input was built, so [changedOutputs] is updated.
+        if (node.generatedNodeState!.pendingBuildAction !=
+            PendingBuildAction.none) {
+          await _buildAsset(node.id);
+        }
+        if (changedOutputs.contains(input)) {
+          if (logFine) {
+            _logger.fine(
+              'Build ${renderer.build(forInput, outputs)} because '
+              '${renderer.id(input)} was built and changed.',
+            );
           }
-        });
+          return true;
+        }
+      } else if (node.type == NodeType.glob) {
+        // Check that the glob was evaluated, so [changedOutputs] is updated.
+        if (node.globNodeState!.pendingBuildAction != PendingBuildAction.none) {
+          await _buildGlobNode(input);
+        }
+        if (changedOutputs.contains(input)) {
+          if (logFine) {
+            _logger.fine(
+              'Build ${renderer.build(forInput, outputs)} because '
+              '${renderer.id(input)} matches changed.',
+            );
+          }
+          return true;
+        }
+      } else if (node.type == NodeType.source) {
+        if (changedInputs.contains(input)) {
+          if (logFine) {
+            _logger.fine(
+              'Build ${renderer.build(forInput, outputs)} because '
+              '${renderer.id(input)} changed.',
+            );
+          }
+          return true;
+        }
       }
-      return false;
     }
+
+    // Mark outputs as not needing building.
+    for (var id in outputs) {
+      assetGraph.updateNode(id, (nodeBuilder) {
+        if (nodeBuilder.type == NodeType.generated) {
+          nodeBuilder.generatedNodeState.pendingBuildAction =
+              PendingBuildAction.none;
+        } else if (nodeBuilder.type == NodeType.glob) {
+          nodeBuilder.globNodeState.pendingBuildAction =
+              PendingBuildAction.none;
+        }
+      });
+    }
+
+    return false;
   }
 
   /// Checks if a post process build should run based on [anchorNode].
@@ -900,14 +941,18 @@ class Build {
       }
 
       final results = [...otherInputs, ...generatedFileResults];
+      final digest = md5.convert(utf8.encode(results.join(' ')));
       assetGraph.updateNode(globId, (nodeBuilder) {
+        if (nodeBuilder.lastKnownDigest != digest) {
+          changedOutputs.add(globId);
+        }
         nodeBuilder
           ..globNodeState.results.replace(results)
           ..globNodeState.inputs.replace(
             generatedFileInputs.followedBy(otherInputs),
           )
           ..globNodeState.pendingBuildAction = PendingBuildAction.none
-          ..lastKnownDigest = md5.convert(utf8.encode(results.join(' ')));
+          ..lastKnownDigest = digest;
       });
 
       unawaited(lazyGlobs.remove(globId));
@@ -983,15 +1028,6 @@ class Build {
             ? inputTracker.inputs.difference(unusedAssets)
             : inputTracker.inputs;
 
-    final inputsDigest = await _computeCombinedDigest(
-      usedInputs,
-      assetGraph
-          .get(outputs.first)!
-          .generatedNodeConfiguration!
-          .builderOptionsId,
-      readerWriter,
-    );
-
     final isFailure = errors.isNotEmpty;
 
     for (var output in outputs) {
@@ -1001,11 +1037,13 @@ class Build {
       _removeOldInputs(output, usedInputs);
       _addNewInputs(output, usedInputs);
       assetGraph.updateNode(output, (nodeBuilder) {
+        if (nodeBuilder.lastKnownDigest != digest) {
+          changedOutputs.add(output);
+        }
         nodeBuilder.generatedNodeState
           ..pendingBuildAction = PendingBuildAction.none
           ..wasOutput = wasOutput
-          ..isFailure = isFailure
-          ..previousInputsDigest = inputsDigest;
+          ..isFailure = isFailure;
         nodeBuilder.lastKnownDigest = digest;
       });
 
@@ -1017,11 +1055,13 @@ class Build {
         while (needsMarkAsFailure.isNotEmpty) {
           var output = needsMarkAsFailure.removeLast();
           assetGraph.updateNode(output, (nodeBuilder) {
+            if (nodeBuilder.lastKnownDigest != null) {
+              changedOutputs.add(output);
+            }
             nodeBuilder.generatedNodeState
               ..pendingBuildAction = PendingBuildAction.none
               ..wasOutput = false
-              ..isFailure = true
-              ..previousInputsDigest = null;
+              ..isFailure = true;
             nodeBuilder.lastKnownDigest = null;
           });
           allSkippedFailures.add(output);

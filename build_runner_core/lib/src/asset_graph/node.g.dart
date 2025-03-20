@@ -559,15 +559,7 @@ class _$GeneratedNodeStateSerializer
         specifiedType: const FullType(bool),
       ),
     ];
-    Object? value;
-    value = object.previousInputsDigest;
-    if (value != null) {
-      result
-        ..add('previousInputsDigest')
-        ..add(
-          serializers.serialize(value, specifiedType: const FullType(Digest)),
-        );
-    }
+
     return result;
   }
 
@@ -619,14 +611,6 @@ class _$GeneratedNodeStateSerializer
                     specifiedType: const FullType(bool),
                   )!
                   as bool;
-          break;
-        case 'previousInputsDigest':
-          result.previousInputsDigest =
-              serializers.deserialize(
-                    value,
-                    specifiedType: const FullType(Digest),
-                  )
-                  as Digest?;
           break;
       }
     }
@@ -1444,8 +1428,6 @@ class _$GeneratedNodeState extends GeneratedNodeState {
   final bool wasOutput;
   @override
   final bool isFailure;
-  @override
-  final Digest? previousInputsDigest;
 
   factory _$GeneratedNodeState([
     void Function(GeneratedNodeStateBuilder)? updates,
@@ -1456,7 +1438,6 @@ class _$GeneratedNodeState extends GeneratedNodeState {
     required this.pendingBuildAction,
     required this.wasOutput,
     required this.isFailure,
-    this.previousInputsDigest,
   }) : super._() {
     BuiltValueNullFieldError.checkNotNull(
       inputs,
@@ -1496,8 +1477,7 @@ class _$GeneratedNodeState extends GeneratedNodeState {
         inputs == other.inputs &&
         pendingBuildAction == other.pendingBuildAction &&
         wasOutput == other.wasOutput &&
-        isFailure == other.isFailure &&
-        previousInputsDigest == other.previousInputsDigest;
+        isFailure == other.isFailure;
   }
 
   @override
@@ -1507,7 +1487,6 @@ class _$GeneratedNodeState extends GeneratedNodeState {
     _$hash = $jc(_$hash, pendingBuildAction.hashCode);
     _$hash = $jc(_$hash, wasOutput.hashCode);
     _$hash = $jc(_$hash, isFailure.hashCode);
-    _$hash = $jc(_$hash, previousInputsDigest.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -1518,8 +1497,7 @@ class _$GeneratedNodeState extends GeneratedNodeState {
           ..add('inputs', inputs)
           ..add('pendingBuildAction', pendingBuildAction)
           ..add('wasOutput', wasOutput)
-          ..add('isFailure', isFailure)
-          ..add('previousInputsDigest', previousInputsDigest))
+          ..add('isFailure', isFailure))
         .toString();
   }
 }
@@ -1546,11 +1524,6 @@ class GeneratedNodeStateBuilder
   bool? get isFailure => _$this._isFailure;
   set isFailure(bool? isFailure) => _$this._isFailure = isFailure;
 
-  Digest? _previousInputsDigest;
-  Digest? get previousInputsDigest => _$this._previousInputsDigest;
-  set previousInputsDigest(Digest? previousInputsDigest) =>
-      _$this._previousInputsDigest = previousInputsDigest;
-
   GeneratedNodeStateBuilder();
 
   GeneratedNodeStateBuilder get _$this {
@@ -1560,7 +1533,6 @@ class GeneratedNodeStateBuilder
       _pendingBuildAction = $v.pendingBuildAction;
       _wasOutput = $v.wasOutput;
       _isFailure = $v.isFailure;
-      _previousInputsDigest = $v.previousInputsDigest;
       _$v = null;
     }
     return this;
@@ -1602,7 +1574,6 @@ class GeneratedNodeStateBuilder
               r'GeneratedNodeState',
               'isFailure',
             ),
-            previousInputsDigest: previousInputsDigest,
           );
     } catch (_) {
       late String _$failedField;

@@ -21,6 +21,7 @@
 - Add `NodeType` to `AssetNode`, remove subtypes. Make mutations explicit.
 - Use `built_value` for `AssetNode` and related types, and for serialization.
 - Add details of what changed and what is built to `--verbose` logging.
+- New change detection algorithm.
 
 ## 8.0.0
 
