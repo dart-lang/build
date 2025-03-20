@@ -50,6 +50,16 @@ class BuildSeries {
   final RunnerAssetWriter deleteWriter;
   final ResourceManager resourceManager = ResourceManager();
 
+  /// For the first build only, updates from the previous serialized build
+  /// state.
+  ///
+  /// Null after the first build, or if there was no serialized build state, or
+  /// if the serialized build state was discarded.
+  Map<AssetId, ChangeType>? updatesFromLoad;
+
+  /// Whether the next build is the first build.
+  bool firstBuild = true;
+
   Future<void> beforeExit() => resourceManager.beforeExit();
 
   BuildSeries._(
@@ -59,6 +69,7 @@ class BuildSeries {
     this.options,
     this.buildPhases,
     this.finalizedReader,
+    this.updatesFromLoad,
   ) : deleteWriter = environment.writer.copyWith(
         generatedAssetHider: assetGraph,
       ),
@@ -72,16 +83,29 @@ class BuildSeries {
 
   /// Runs a single build.
   ///
-  /// For the first build, pass empty [updates].
+  /// For the first build, pass any changes since the `BuildSeries` was created
+  /// as [updates]. If the first build happens immediately then pass empty
+  /// `updates`.
   ///
-  /// For subsequent builds, pass filesystem changes in [updates].
-  ///
-  /// TODO(davidmorgan): unify these two codepaths.
+  /// For further builds, pass the changes since the previous builds as
+  /// [updates].
   Future<BuildResult> run(
     Map<AssetId, ChangeType> updates, {
     Set<BuildDirectory> buildDirs = const <BuildDirectory>{},
     Set<BuildFilter> buildFilters = const {},
   }) async {
+    if (firstBuild) {
+      if (updatesFromLoad != null) {
+        updates = updatesFromLoad!..addAll(updates);
+        updatesFromLoad = null;
+      }
+      firstBuild = false;
+    } else {
+      if (updatesFromLoad != null) {
+        throw StateError('Only first build can have updates from load.');
+      }
+    }
+
     finalizedReader.reset(BuildDirectory.buildPaths(buildDirs), buildFilters);
     final build = Build(
       environment: environment,
@@ -142,6 +166,7 @@ class BuildSeries {
       options,
       buildPhases,
       finalizedReader,
+      buildDefinition.updates,
     );
     return build;
   }
