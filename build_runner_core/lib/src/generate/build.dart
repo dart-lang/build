@@ -20,10 +20,12 @@ import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../asset_graph/optional_output_tracker.dart';
+import '../changes/asset_updates.dart';
 import '../environment/build_environment.dart';
 import '../logging/build_for_input_logger.dart';
 import '../logging/failure_reporter.dart';
 import '../logging/human_readable_duration.dart';
+import '../logging/log_renderer.dart';
 import '../logging/logging.dart';
 import '../performance_tracking/performance_tracking_resolvers.dart';
 import '../util/build_dirs.dart';
@@ -56,8 +58,10 @@ class Build {
   final RunnerAssetWriter deleteWriter;
 
   // Logging.
-  final BuildPerformanceTracker _performanceTracker;
+  final LogRenderer renderer;
+  final BuildPerformanceTracker performanceTracker;
   late final HungActionsHeartbeat hungActionsHeartbeat;
+  final bool logFine;
 
   // State.
   final AssetGraph assetGraph;
@@ -78,10 +82,12 @@ class Build {
     required this.deleteWriter,
     required this.resourceManager,
     required this.assetGraph,
-  }) : _performanceTracker =
+  }) : renderer = LogRenderer(rootPackageName: options.packageGraph.root.name),
+       performanceTracker =
            options.trackPerformance
                ? BuildPerformanceTracker()
-               : BuildPerformanceTracker.noOp() {
+               : BuildPerformanceTracker.noOp(),
+       logFine = _logger.level <= Level.FINE {
     hungActionsHeartbeat = HungActionsHeartbeat(() {
       final message = StringBuffer();
       const actionsToLogMax = 5;
@@ -101,6 +107,10 @@ class Build {
   }
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
+    if (logFine) {
+      _logger.fine(AssetUpdates.from(updates).render(renderer));
+    }
+
     var watch = Stopwatch()..start();
     var result = await _safeBuild(updates);
     var optionalOutputTracker = OptionalOutputTracker(
@@ -164,7 +174,6 @@ class Build {
   /// capturing.
   Future<BuildResult> _safeBuild(Map<AssetId, ChangeType> updates) {
     var done = Completer<BuildResult>();
-
     var heartbeat = HeartbeatLogger(
       transformLog: (original) => '$original, ${_buildProgress()}',
       waitDuration: const Duration(seconds: 1),
@@ -238,13 +247,13 @@ class Build {
   /// Runs the actions in [buildPhases] and returns a future which completes
   /// to the [BuildResult] once all [BuildPhase]s are done.
   Future<BuildResult> _runPhases() {
-    return _performanceTracker.track(() async {
+    return performanceTracker.track(() async {
       final outputs = <AssetId>[];
       for (var phaseNum = 0; phaseNum < buildPhases.length; phaseNum++) {
         var phase = buildPhases[phaseNum];
         if (phase.isOptional) continue;
         outputs.addAll(
-          await _performanceTracker.trackBuildPhase(phase, () async {
+          await performanceTracker.trackBuildPhase(phase, () async {
             if (phase is InBuildPhase) {
               var primaryInputs = await _matchingPrimaryInputs(
                 phase.package,
@@ -268,7 +277,7 @@ class Build {
       return BuildResult(
         BuildStatus.success,
         outputs,
-        performance: _performanceTracker,
+        performance: performanceTracker,
       );
     });
   }
@@ -392,7 +401,7 @@ class Build {
     AssetId input,
   ) async {
     final builder = phase.builder;
-    var tracker = _performanceTracker.addBuilderAction(
+    var tracker = performanceTracker.addBuilderAction(
       input,
       phase.builderLabel,
     );
@@ -433,7 +442,7 @@ class Build {
 
       if (!await tracker.trackStage(
         'Setup',
-        () => _buildShouldRun(builderOutputs, readerWriter),
+        () => _buildShouldRun(input, builderOutputs, readerWriter),
       )) {
         return <AssetId>[];
       }
@@ -667,6 +676,7 @@ class Build {
 
   /// Checks and returns whether any [outputs] need to be updated.
   Future<bool> _buildShouldRun(
+    AssetId input,
     Iterable<AssetId> outputs,
     AssetReader reader,
   ) async {
@@ -682,6 +692,12 @@ class Build {
     for (var output in outputs.skip(1)) {
       if (assetGraph.get(output)!.generatedNodeState!.pendingBuildAction ==
           PendingBuildAction.build) {
+        if (logFine) {
+          _logger.fine(
+            'Build ${renderer.build(input, outputs)} because '
+            '${renderer.id(output)} was marked for build.',
+          );
+        }
         return true;
       }
     }
@@ -713,10 +729,24 @@ class Build {
 
     // Early bail out condition, this is a forced update.
     if (firstNodeState.pendingBuildAction == PendingBuildAction.build) {
+      if (logFine) {
+        _logger.fine(
+          'Build ${renderer.build(input, outputs)} because '
+          '${renderer.id(firstNode.id)} was marked for build.',
+        );
+      }
       return true;
     }
     // This is a fresh build or the first time we've seen this output.
-    if (firstNodeState.previousInputsDigest == null) return true;
+    if (firstNodeState.previousInputsDigest == null) {
+      if (logFine) {
+        _logger.fine(
+          'Build ${renderer.build(input, outputs)} because '
+          '${renderer.id(firstNode.id)} has no previousInputsDigest.',
+        );
+      }
+      return true;
+    }
 
     var digest = await _computeCombinedDigest(
       firstNodeState.inputs,
@@ -724,8 +754,23 @@ class Build {
       reader,
     );
     if (digest != firstNodeState.previousInputsDigest) {
+      if (logFine) {
+        _logger.fine(
+          'Build ${renderer.build(input, outputs)} because '
+          'inputs digest changed '
+          'from ${renderer.digest(firstNodeState.previousInputsDigest)} '
+          'to ${renderer.digest(digest)}.',
+        );
+      }
       return true;
     } else {
+      if (logFine) {
+        _logger.fine(
+          'Skip bulding ${renderer.build(input, outputs)} because '
+          'inputs digest is still '
+          '${renderer.digest(firstNodeState.previousInputsDigest)}.',
+        );
+      }
       // Make sure to update the `state` field for all outputs.
       for (var id in outputs) {
         assetGraph.updateNode(id, (nodeBuilder) {

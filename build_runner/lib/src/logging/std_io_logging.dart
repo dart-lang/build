@@ -66,7 +66,7 @@ void _stdIOLogListener(LogRecord record, {required bool verbose}) =>
 /// splits the header for levels >= WARNING.
 String _recordHeader(LogRecord record, bool verbose) {
   var maybeSplit = record.level >= Level.WARNING ? '\n' : '';
-  return verbose || record.loggerName.contains(' ')
+  return record.loggerName.contains(' ')
       ? '${record.loggerName}:$maybeSplit'
       : '';
 }
