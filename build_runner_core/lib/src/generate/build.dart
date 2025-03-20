@@ -796,7 +796,7 @@ class Build {
       return true;
     }
     // This is a fresh build or the first time we've seen this output.
-    if (firstNodeState.previousInputsDigest == null) {
+    /*if (firstNodeState.previousInputsDigest == null) {
       if (explain) {
         _logger.fine(
           '_buildShouldRun $input: yes, because '
@@ -804,7 +804,7 @@ class Build {
         );
       }
       return true;
-    }
+    }*/
 
     /*var digest = await _computeCombinedDigest(
       input,
@@ -1149,7 +1149,7 @@ class Build {
             ? inputTracker.inputs.difference(unusedAssets)
             : inputTracker.inputs;
 
-    final inputsDigest = await _computeCombinedDigest(
+    /*final inputsDigest = await _computeCombinedDigest(
       input,
       usedInputs,
       assetGraph
@@ -1157,7 +1157,7 @@ class Build {
           .generatedNodeConfiguration!
           .builderOptionsId,
       readerWriter,
-    );
+    );*/
 
     final isFailure = errors.isNotEmpty;
 
@@ -1187,8 +1187,7 @@ class Build {
         nodeBuilder.generatedNodeState
           ..pendingBuildAction = PendingBuildAction.none
           ..wasOutput = wasOutput
-          ..isFailure = isFailure
-          ..previousInputsDigest = inputsDigest;
+          ..isFailure = isFailure;
         nodeBuilder.lastKnownDigest = digest;
       });
 
