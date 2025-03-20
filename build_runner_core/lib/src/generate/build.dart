@@ -1217,8 +1217,7 @@ class Build {
             nodeBuilder.generatedNodeState
               ..pendingBuildAction = PendingBuildAction.none
               ..wasOutput = false
-              ..isFailure = true
-              ..previousInputsDigest = null;
+              ..isFailure = true;
             nodeBuilder.lastKnownDigest = null;
           });
           allSkippedFailures.add(output);

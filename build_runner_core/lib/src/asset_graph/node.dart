@@ -198,7 +198,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     required int phaseNumber,
     required bool isHidden,
     Iterable<AssetId>? inputs,
-    Digest? previousInputsDigest,
     required PendingBuildAction pendingBuildAction,
     required bool wasOutput,
     required bool isFailure,
@@ -212,7 +211,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
           ..generatedNodeConfiguration.phaseNumber = phaseNumber
           ..generatedNodeConfiguration.isHidden = isHidden
           ..generatedNodeState.inputs.replace(inputs ?? [])
-          ..generatedNodeState.previousInputsDigest = previousInputsDigest
           ..generatedNodeState.pendingBuildAction = pendingBuildAction
           ..generatedNodeState.wasOutput = wasOutput
           ..generatedNodeState.isFailure = isFailure
@@ -361,12 +359,6 @@ abstract class GeneratedNodeState
 
   /// Whether the action which did or would produce this node failed.
   bool get isFailure;
-
-  /// A digest combining all digests of all previous inputs.
-  ///
-  /// Used to determine whether all the inputs to a build step are identical to
-  /// the previous run, indicating that the previous output is still valid.
-  Digest? get previousInputsDigest;
 
   bool get isSuccessfulFreshOutput =>
       wasOutput && !isFailure && pendingBuildAction == PendingBuildAction.none;
