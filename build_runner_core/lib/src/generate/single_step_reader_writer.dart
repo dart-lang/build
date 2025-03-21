@@ -446,7 +446,6 @@ class SingleStepReaderWriter extends AssetReader
         globNodeId,
         glob: glob,
         phaseNumber: _runningBuildStep.phaseNumber,
-        pendingBuildAction: PendingBuildAction.build,
       );
       _runningBuild.assetGraph.add(globNode);
     }

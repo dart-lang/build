@@ -79,6 +79,8 @@ class Build {
   /// Filled from the `updates` passed in to the build.
   final Set<AssetId> changedInputs = {};
 
+  final Set<AssetId> globsToBuild = {};
+
   /// Outputs that changed since the last build.
   ///
   /// Filled during the build as each output is produced and its digest is
@@ -174,12 +176,21 @@ class Build {
   Future<void> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
     await logTimedAsync(_logger, 'Updating asset graph', () async {
       changedInputs.addAll(updates.keys.toSet());
-      var invalidated = await assetGraph.updateAndInvalidate(
-        buildPhases,
-        updates,
-        options.packageGraph.root.name,
-        _delete,
-        readerWriter,
+      var (invalidated, invalidatedGlobs) = await assetGraph
+          .updateAndInvalidate(
+            buildPhases,
+            updates,
+            options.packageGraph.root.name,
+            _delete,
+            readerWriter,
+          );
+      globsToBuild.addAll(
+        cleanBuild
+            ? assetGraph.allNodes
+                .where((n) => n.type == NodeType.glob)
+                .map((n) => n.id)
+                .toSet()
+            : invalidatedGlobs,
       );
       await readerWriter.cache.invalidate(invalidated);
     });
@@ -201,9 +212,7 @@ class Build {
 
     runZonedGuarded(
       () async {
-        if (updates.isNotEmpty) {
-          await _updateAssetGraph(updates);
-        }
+        await _updateAssetGraph(updates);
         // Run a fresh build.
         var result = await logTimedAsync(_logger, 'Running build', _runPhases);
 
@@ -442,7 +451,7 @@ class Build {
           targetGraph: options.targetGraph,
           assetGraph: assetGraph,
           nodeBuilder: _buildAsset,
-          globNodeBuilder: _buildGlobNode,
+          globNodeBuilder: _buildNewGlobNode,
         ),
         runningBuildStep: RunningBuildStep(
           phaseNumber: phaseNumber,
@@ -790,7 +799,7 @@ class Build {
         }
       } else if (node.type == NodeType.glob) {
         // Check that the glob was evaluated, so [changedOutputs] is updated.
-        if (node.globNodeState!.pendingBuildAction != PendingBuildAction.none) {
+        if (globsToBuild.contains(input)) {
           await _buildGlobNode(input);
         }
         if (changedOutputs.contains(input)) {
@@ -822,8 +831,7 @@ class Build {
           nodeBuilder.generatedNodeState.pendingBuildAction =
               PendingBuildAction.none;
         } else if (nodeBuilder.type == NodeType.glob) {
-          nodeBuilder.globNodeState.pendingBuildAction =
-              PendingBuildAction.none;
+          globsToBuild.remove(id);
         }
       });
     }
@@ -885,6 +893,11 @@ class Build {
     }
   }
 
+  Future<void> _buildNewGlobNode(AssetId globId) async {
+    globsToBuild.add(globId);
+    return _buildGlobNode(globId);
+  }
+
   /// Builds the glob node with [globId].
   ///
   /// This means finding matches of the glob and building them if necessary.
@@ -903,8 +916,7 @@ class Build {
   ///
   ///
   Future<void> _buildGlobNode(AssetId globId) async {
-    if (assetGraph.get(globId)!.globNodeState!.pendingBuildAction ==
-        PendingBuildAction.none) {
+    if (!globsToBuild.contains(globId)) {
       return;
     }
 
@@ -969,7 +981,6 @@ class Build {
           ..globNodeState.inputs.replace(
             generatedFileInputs.followedBy(otherInputs),
           )
-          ..globNodeState.pendingBuildAction = PendingBuildAction.none
           ..lastKnownDigest = digest;
       });
 

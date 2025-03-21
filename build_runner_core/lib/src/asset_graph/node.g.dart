@@ -682,11 +682,6 @@ class _$GlobNodeStateSerializer implements StructuredSerializer<GlobNodeState> {
           const FullType(AssetId),
         ]),
       ),
-      'pendingBuildAction',
-      serializers.serialize(
-        object.pendingBuildAction,
-        specifiedType: const FullType(PendingBuildAction),
-      ),
       'results',
       serializers.serialize(
         object.results,
@@ -723,14 +718,6 @@ class _$GlobNodeStateSerializer implements StructuredSerializer<GlobNodeState> {
                 )!
                 as BuiltSet<Object?>,
           );
-          break;
-        case 'pendingBuildAction':
-          result.pendingBuildAction =
-              serializers.deserialize(
-                    value,
-                    specifiedType: const FullType(PendingBuildAction),
-                  )!
-                  as PendingBuildAction;
           break;
         case 'results':
           result.results.replace(
@@ -1616,24 +1603,13 @@ class _$GlobNodeState extends GlobNodeState {
   @override
   final BuiltSet<AssetId> inputs;
   @override
-  final PendingBuildAction pendingBuildAction;
-  @override
   final BuiltList<AssetId> results;
 
   factory _$GlobNodeState([void Function(GlobNodeStateBuilder)? updates]) =>
       (new GlobNodeStateBuilder()..update(updates))._build();
 
-  _$GlobNodeState._({
-    required this.inputs,
-    required this.pendingBuildAction,
-    required this.results,
-  }) : super._() {
+  _$GlobNodeState._({required this.inputs, required this.results}) : super._() {
     BuiltValueNullFieldError.checkNotNull(inputs, r'GlobNodeState', 'inputs');
-    BuiltValueNullFieldError.checkNotNull(
-      pendingBuildAction,
-      r'GlobNodeState',
-      'pendingBuildAction',
-    );
     BuiltValueNullFieldError.checkNotNull(results, r'GlobNodeState', 'results');
   }
 
@@ -1649,7 +1625,6 @@ class _$GlobNodeState extends GlobNodeState {
     if (identical(other, this)) return true;
     return other is GlobNodeState &&
         inputs == other.inputs &&
-        pendingBuildAction == other.pendingBuildAction &&
         results == other.results;
   }
 
@@ -1657,7 +1632,6 @@ class _$GlobNodeState extends GlobNodeState {
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, inputs.hashCode);
-    _$hash = $jc(_$hash, pendingBuildAction.hashCode);
     _$hash = $jc(_$hash, results.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
@@ -1667,7 +1641,6 @@ class _$GlobNodeState extends GlobNodeState {
   String toString() {
     return (newBuiltValueToStringHelper(r'GlobNodeState')
           ..add('inputs', inputs)
-          ..add('pendingBuildAction', pendingBuildAction)
           ..add('results', results))
         .toString();
   }
@@ -1682,11 +1655,6 @@ class GlobNodeStateBuilder
       _$this._inputs ??= new SetBuilder<AssetId>();
   set inputs(SetBuilder<AssetId>? inputs) => _$this._inputs = inputs;
 
-  PendingBuildAction? _pendingBuildAction;
-  PendingBuildAction? get pendingBuildAction => _$this._pendingBuildAction;
-  set pendingBuildAction(PendingBuildAction? pendingBuildAction) =>
-      _$this._pendingBuildAction = pendingBuildAction;
-
   ListBuilder<AssetId>? _results;
   ListBuilder<AssetId> get results =>
       _$this._results ??= new ListBuilder<AssetId>();
@@ -1698,7 +1666,6 @@ class GlobNodeStateBuilder
     final $v = _$v;
     if ($v != null) {
       _inputs = $v.inputs.toBuilder();
-      _pendingBuildAction = $v.pendingBuildAction;
       _results = $v.results.toBuilder();
       _$v = null;
     }
@@ -1726,11 +1693,6 @@ class GlobNodeStateBuilder
           _$v ??
           new _$GlobNodeState._(
             inputs: inputs.build(),
-            pendingBuildAction: BuiltValueNullFieldError.checkNotNull(
-              pendingBuildAction,
-              r'GlobNodeState',
-              'pendingBuildAction',
-            ),
             results: results.build(),
           );
     } catch (_) {
@@ -1738,7 +1700,6 @@ class GlobNodeStateBuilder
       try {
         _$failedField = 'inputs';
         inputs.build();
-
         _$failedField = 'results';
         results.build();
       } catch (e) {

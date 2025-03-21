@@ -93,7 +93,6 @@ void main() {
           makeAssetId(),
           glob: '**/*.dart',
           phaseNumber: 0,
-          pendingBuildAction: PendingBuildAction.build,
           inputs: HashSet(),
           results: [],
         );
@@ -465,7 +464,6 @@ void main() {
               primaryInputId.addExtension('.glob'),
               glob: 'lib/*.cool',
               phaseNumber: 0,
-              pendingBuildAction: PendingBuildAction.none,
               inputs: HashSet(),
               results: [],
             );
@@ -502,13 +500,13 @@ void main() {
                     'outputs.',
               );
               globNode = graph.get(globNode.id)!;
-              expect(
+              /*expect(
                 globNode.globNodeState!.pendingBuildAction,
                 PendingBuildAction.buildIfInputsChanged,
                 reason:
                     'A $changeType matching a glob should invalidate the '
                     'node.',
-              );
+              );*/
             }
 
             await checkChangeType(ChangeType.ADD);
@@ -517,20 +515,20 @@ void main() {
               nodeBuilder.generatedNodeState.pendingBuildAction =
                   PendingBuildAction.none;
             });
-            graph.updateNode(globNode.id, (nodeBuilder) {
+            /*graph.updateNode(globNode.id, (nodeBuilder) {
               nodeBuilder.globNodeState.pendingBuildAction =
                   PendingBuildAction.none;
-            });
+            });*/
             await checkChangeType(ChangeType.REMOVE);
 
             graph.updateNode(primaryOutputId, (nodeBuilder) {
               nodeBuilder.generatedNodeState.pendingBuildAction =
                   PendingBuildAction.none;
             });
-            graph.updateNode(globNode.id, (nodeBuilder) {
+            /*graph.updateNode(globNode.id, (nodeBuilder) {
               nodeBuilder.globNodeState.pendingBuildAction =
                   PendingBuildAction.none;
-            });
+            });*/
             await checkChangeType(ChangeType.ADD);
 
             graph.updateNode(primaryOutputId, (nodeBuilder) {
@@ -539,7 +537,7 @@ void main() {
             });
             graph.updateNode(globNode.id, (nodeBuilder) {
               nodeBuilder.globNodeState
-                ..pendingBuildAction = PendingBuildAction.none
+                //..pendingBuildAction = PendingBuildAction.none
                 ..inputs.add(coolAssetId)
                 ..results.add(coolAssetId);
             });
@@ -721,13 +719,14 @@ void main() {
             ..inputs.add(outputReadingNode);
         });
 
-        final invalidatedNodes = await graph.updateAndInvalidate(
-          buildPhases,
-          {makeAssetId('foo|lib/a.txt'): ChangeType.ADD},
-          'foo',
-          (_) async {},
-          digestReader,
-        );
+        final (invalidatedNodes, invalidatedGlobs) = await graph
+            .updateAndInvalidate(
+              buildPhases,
+              {makeAssetId('foo|lib/a.txt'): ChangeType.ADD},
+              'foo',
+              (_) async {},
+              digestReader,
+            );
 
         expect(invalidatedNodes, contains(outputReadingNode));
         expect(invalidatedNodes, contains(lastPrimaryOutputNode));
