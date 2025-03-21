@@ -126,11 +126,9 @@ class Server {
         connection.sink.add(
           jsonEncode(
             _serializers.serialize(
-              ShutdownNotification(
-                (b) =>
-                    b
-                      ..message = message
-                      ..failureType = failureType,
+              ShutdownNotification((b) => b
+                ..message = message
+                ..failureType = failureType,
               ),
             ),
           ),
@@ -243,14 +241,12 @@ class Server {
     Object? error,
     StackTrace? stackTrace,
   ]) => _outputStreamController.add(
-    ServerLog(
-      (b) =>
-          b
-            ..message = message
-            ..level = level
-            ..loggerName = loggerName
-            ..error = error?.toString()
-            ..stackTrace = stackTrace?.toString(),
+    ServerLog((b) => b
+      ..message = message
+      ..level = level
+      ..loggerName = loggerName
+      ..error = error?.toString()
+      ..stackTrace = stackTrace?.toString(),
     ),
   );
 }

@@ -204,53 +204,43 @@ class BuildScriptInfo {
 }
 
 /// A method forwarding to `run`.
-Method _main() => Method(
-  (b) =>
-      b
-        ..name = 'main'
-        ..returns = refer('void')
-        ..modifier = MethodModifier.async
-        ..requiredParameters.add(
-          Parameter(
-            (b) =>
-                b
-                  ..name = 'args'
-                  ..type = TypeReference(
-                    (b) =>
-                        b
-                          ..symbol = 'List'
-                          ..types.add(refer('String')),
-                  ),
-          ),
-        )
-        ..optionalParameters.add(
-          Parameter(
-            (b) =>
-                b
-                  ..name = 'sendPort'
-                  ..type = TypeReference(
-                    (b) =>
-                        b
-                          ..symbol = 'SendPort'
-                          ..url = 'dart:isolate'
-                          ..isNullable = true,
-                  ),
-          ),
-        )
-        ..body = Block.of([
-          declareVar('result')
-              .assign(
-                refer(
-                  'run',
-                  'package:build_runner/build_runner.dart',
-                ).call([refer('args'), refer('_builders')]).awaited,
-              )
-              .statement,
+Method _main() => Method((b) => b
+  ..name = 'main'
+  ..returns = refer('void')
+  ..modifier = MethodModifier.async
+  ..requiredParameters.add(
+    Parameter((b) => b
+      ..name = 'args'
+      ..type = TypeReference((b) => b
+        ..symbol = 'List'
+        ..types.add(refer('String')),
+      ),
+    ),
+  )
+  ..optionalParameters.add(
+    Parameter((b) => b
+      ..name = 'sendPort'
+      ..type = TypeReference((b) => b
+        ..symbol = 'SendPort'
+        ..url = 'dart:isolate'
+        ..isNullable = true,
+      ),
+    ),
+  )
+  ..body = Block.of([
+    declareVar('result')
+        .assign(
           refer(
-            'sendPort',
-          ).nullSafeProperty('send').call([refer('result')]).statement,
-          refer('exitCode', 'dart:io').assign(refer('result')).statement,
-        ]),
+            'run',
+            'package:build_runner/build_runner.dart',
+          ).call([refer('args'), refer('_builders')]).awaited,
+        )
+        .statement,
+    refer(
+      'sendPort',
+    ).nullSafeProperty('send').call([refer('result')]).statement,
+    refer('exitCode', 'dart:io').assign(refer('result')).statement,
+  ]),
 );
 
 /// An expression calling `apply` with appropriate setup for a Builder.
