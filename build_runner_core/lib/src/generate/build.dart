@@ -5,7 +5,6 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:build/build.dart';
 // ignore: implementation_imports
@@ -52,6 +51,9 @@ class Build {
   final Set<BuildDirectory> buildDirs;
   final Set<BuildFilter> buildFilters;
 
+  /// Whether this is a build starting from no previous state or outputs.
+  final bool cleanBuild;
+
   // Collaborators.
   final ResourceManager resourceManager;
   final AssetReaderWriter readerWriter;
@@ -93,6 +95,7 @@ class Build {
     required this.deleteWriter,
     required this.resourceManager,
     required this.assetGraph,
+    required this.cleanBuild,
   }) : renderer = LogRenderer(rootPackageName: options.packageGraph.root.name),
        performanceTracker =
            options.trackPerformance
@@ -834,19 +837,34 @@ class Build {
     AssetReader reader,
   ) async {
     final nodeConfiguration = anchorNode.postProcessAnchorNodeConfiguration!;
-    var inputsDigest = await _computeCombinedDigest(
-      [nodeConfiguration.primaryInput],
-      nodeConfiguration.builderOptionsId,
-      reader,
-    );
 
-    final nodeState = anchorNode.postProcessAnchorNodeState!;
-    if (inputsDigest != nodeState.previousInputsDigest) {
-      assetGraph.updateNode(anchorNode.id, (nodeBuilder) {
-        nodeBuilder.postProcessAnchorNodeState.previousInputsDigest =
-            inputsDigest;
-      });
+    final input = nodeConfiguration.primaryInput;
+    final node = assetGraph.get(input)!;
+
+    if (cleanBuild) {
       return true;
+    }
+
+    final builderOptionsId = nodeConfiguration.builderOptionsId;
+    if (changedInputs.contains(builderOptionsId)) {
+      return true;
+    }
+
+    if (node.type == NodeType.generated) {
+      // Check that the input was built, so [changedOutputs] is updated.
+      if (node.generatedNodeState!.pendingBuildAction !=
+          PendingBuildAction.none) {
+        await _buildAsset(node.id);
+      }
+      if (changedOutputs.contains(input)) {
+        return true;
+      }
+    } else if (node.type == NodeType.source) {
+      if (changedInputs.contains(input)) {
+        return true;
+      }
+    } else {
+      throw StateError('Expected generated or source node: $node');
     }
 
     return false;
@@ -959,59 +977,12 @@ class Build {
     });
   }
 
-  /// Computes a single [Digest] based on the combined [Digest]s of [ids] and
-  /// [builderOptionsId].
-  Future<Digest> _computeCombinedDigest(
-    Iterable<AssetId> ids,
-    AssetId builderOptionsId,
-    AssetReader reader,
-  ) async {
-    var combinedBytes = Uint8List.fromList(List.filled(16, 0));
-    void combine(Uint8List other) {
-      assert(other.length == 16);
-      for (var i = 0; i < 16; i++) {
-        combinedBytes[i] ^= other[i];
-      }
-    }
-
-    var builderOptionsNode = assetGraph.get(builderOptionsId)!;
-    combine(builderOptionsNode.lastKnownDigest!.bytes as Uint8List);
-
-    for (final id in ids) {
-      var node = assetGraph.get(id)!;
-      if (node.type == NodeType.glob) {
-        await _buildGlobNode(node.id);
-        node = assetGraph.get(id)!;
-      } else if (!await reader.canRead(id)) {
-        // We want to add something here, a missing/unreadable input should be
-        // different from no input at all.
-        //
-        // This needs to be unique per input so we use the md5 hash of the id.
-        combine(md5.convert(id.toString().codeUnits).bytes as Uint8List);
-        continue;
-      } else {
-        if (node.lastKnownDigest == null) {
-          final digest = await reader.digest(id);
-          await reader.cache.invalidate([id]);
-          node = assetGraph.updateNode(node.id, (nodeBuilder) {
-            nodeBuilder.lastKnownDigest = digest;
-          });
-        }
-      }
-      combine(node.lastKnownDigest!.bytes as Uint8List);
-    }
-
-    return Digest(combinedBytes);
-  }
-
   /// Sets the state for all [outputs] of a build step, by:
   ///
   /// - Setting `needsUpdate` to `false` for each output
   /// - Setting `wasOutput` based on `writer.assetsWritten`.
   /// - Setting `isFailed` based on action success.
   /// - Adding `outputs` as outputs to all `reader.assetsRead`.
-  /// - Setting the `lastKnownDigest` on each output based on the new contents.
-  /// - Setting the `previousInputsDigest` on each output based on the inputs.
   /// - Storing the error message with the [failureReporter].
   Future<void> _setOutputsState(
     AssetId input,
