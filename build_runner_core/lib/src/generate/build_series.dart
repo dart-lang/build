@@ -57,6 +57,9 @@ class BuildSeries {
   /// if the serialized build state was discarded.
   Map<AssetId, ChangeType>? updatesFromLoad;
 
+  /// Whether old build output is reused.
+  final bool reusedOutput;
+
   /// Whether the next build is the first build.
   bool firstBuild = true;
 
@@ -69,6 +72,7 @@ class BuildSeries {
     this.options,
     this.buildPhases,
     this.finalizedReader,
+    this.reusedOutput,
     this.updatesFromLoad,
   ) : deleteWriter = environment.writer.copyWith(
         generatedAssetHider: assetGraph,
@@ -99,7 +103,6 @@ class BuildSeries {
         updates = updatesFromLoad!..addAll(updates);
         updatesFromLoad = null;
       }
-      firstBuild = false;
     } else {
       if (updatesFromLoad != null) {
         throw StateError('Only first build can have updates from load.');
@@ -117,7 +120,9 @@ class BuildSeries {
       readerWriter: readerWriter,
       deleteWriter: deleteWriter,
       resourceManager: resourceManager,
+      reusedOutput: reusedOutput || !firstBuild,
     );
+    if (firstBuild) firstBuild = false;
     final result = await build.run(updates);
     options.resolvers.reset();
     return result;
@@ -166,6 +171,7 @@ class BuildSeries {
       options,
       buildPhases,
       finalizedReader,
+      buildDefinition.reusedOutput,
       buildDefinition.updates,
     );
     return build;

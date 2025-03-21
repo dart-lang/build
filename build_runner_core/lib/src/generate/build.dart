@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:build/build.dart';
@@ -51,6 +52,7 @@ class Build {
   final BuildPhases buildPhases;
   final Set<BuildDirectory> buildDirs;
   final Set<BuildFilter> buildFilters;
+  final bool reusedOutput;
 
   // Collaborators.
   final ResourceManager resourceManager;
@@ -93,6 +95,7 @@ class Build {
     required this.deleteWriter,
     required this.resourceManager,
     required this.assetGraph,
+    required this.reusedOutput,
   }) : renderer = LogRenderer(rootPackageName: options.packageGraph.root.name),
        performanceTracker =
            options.trackPerformance
@@ -244,6 +247,7 @@ class Build {
       },
       (e, st) {
         if (!done.isCompleted) {
+          stdout.writeln('failed $e $st');
           _logger.severe('Unhandled build failure!', e, st);
           done.complete(BuildResult(BuildStatus.failure, []));
         }
@@ -834,22 +838,99 @@ class Build {
     AssetReader reader,
   ) async {
     final nodeConfiguration = anchorNode.postProcessAnchorNodeConfiguration!;
-    var inputsDigest = await _computeCombinedDigest(
-      [nodeConfiguration.primaryInput],
-      nodeConfiguration.builderOptionsId,
-      reader,
+    stdout.writeln(
+      '_postProcessBuildShouldRun $anchorNode $nodeConfiguration $reusedOutput',
     );
 
-    final nodeState = anchorNode.postProcessAnchorNodeState!;
-    if (inputsDigest != nodeState.previousInputsDigest) {
-      assetGraph.updateNode(anchorNode.id, (nodeBuilder) {
-        nodeBuilder.postProcessAnchorNodeState.previousInputsDigest =
-            inputsDigest;
-      });
-      return true;
+    Future<bool> findNewResult() async {
+      final input = nodeConfiguration.primaryInput;
+      final node = assetGraph.get(input)!;
+
+      stdout.writeln('_postProcessBuildShouldRun primary input $node');
+
+      if (!reusedOutput) {
+        stdout.writeln('_postProcessBuildShouldRun !reusedOutput, return true');
+        return true;
+      }
+
+      final builderOptionsId = nodeConfiguration.builderOptionsId;
+      if (changedInputs.contains(builderOptionsId)) {
+        stdout.writeln(
+          '_postProcessBuildShouldRun builderOptions changed, '
+          'return true',
+        );
+        return true;
+      }
+
+      if (node.type == NodeType.generated) {
+        stdout.writeln('_postProcessBuildShouldRun primary input is generated');
+        // Check that the input was built, so [changedOutputs] is updated.
+        if (node.generatedNodeState!.pendingBuildAction !=
+            PendingBuildAction.none) {
+          stdout.writeln(
+            '_postProcessBuildShouldRun primary input is generated, build it',
+          );
+          await _buildAsset(node.id);
+        }
+        if (changedOutputs.contains(input)) {
+          stdout.writeln(
+            '_postProcessBuildShouldRun primary input is generated and '
+            'changed, return true',
+          );
+          return true;
+        }
+      } else if (node.type == NodeType.source) {
+        stdout.writeln('_postProcessBuildShouldRun primary input is source');
+        if (changedInputs.contains(input)) {
+          stdout.writeln(
+            '_postProcessBuildShouldRun primary input is source and changed, '
+            'return true',
+          );
+          return true;
+        }
+      } else {
+        throw StateError('Expected generated or source node: $node');
+      }
+      stdout.writeln('_postProcessBuildShouldRun new returns false');
+
+      return false;
     }
 
-    return false;
+    Future<bool> findOldResult() async {
+      var inputsDigest = await _computeCombinedDigest(
+        [nodeConfiguration.primaryInput],
+        nodeConfiguration.builderOptionsId,
+        reader,
+      );
+
+      final nodeState = anchorNode.postProcessAnchorNodeState!;
+      if (inputsDigest != nodeState.previousInputsDigest) {
+        stdout.writeln(
+          '_postProcessBuildShouldRun digest has changed '
+          '${nodeState.previousInputsDigest} to $inputsDigest',
+        );
+        assetGraph.updateNode(anchorNode.id, (nodeBuilder) {
+          nodeBuilder.postProcessAnchorNodeState.previousInputsDigest =
+              inputsDigest;
+        });
+        return true;
+      }
+
+      stdout.writeln(
+        '_postProcessBuildShouldRun digest is still $inputsDigest, '
+        'return false',
+      );
+      return false;
+    }
+
+    final oldResult = await findOldResult();
+    final newResult = await findNewResult();
+
+    if (oldResult != newResult) {
+      throw StateError('Expected $oldResult, got $newResult');
+    }
+
+    return oldResult;
   }
 
   /// Deletes any of [outputs] which previously were output.
