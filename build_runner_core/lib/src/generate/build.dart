@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:build/build.dart';
 // ignore: implementation_imports
@@ -31,6 +32,7 @@ import '../util/build_dirs.dart';
 import '../util/constants.dart';
 import 'build_directory.dart';
 import 'build_phases.dart';
+import 'build_plan.dart';
 import 'build_result.dart';
 import 'finalized_assets_view.dart';
 import 'heartbeat.dart';
@@ -74,10 +76,9 @@ class Build {
   int actionsStartedCount = 0;
   final pendingActions = SplayTreeMap<int, Set<String>>();
 
-  /// Inputs that changed since the last build.
-  ///
-  /// Filled from the `updates` passed in to the build.
-  final Set<AssetId> changedInputs = {};
+  late final BuildPlan buildPlan;
+  late final Set<AssetId> globNodesToEvaluate;
+  late final Set<AssetId> generatedNodesToCheckOrBuild;
 
   /// Outputs that changed since the last build.
   ///
@@ -173,15 +174,39 @@ class Build {
 
   Future<void> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
     await logTimedAsync(_logger, 'Updating asset graph', () async {
-      changedInputs.addAll(updates.keys.toSet());
-      var invalidated = await assetGraph.updateAndInvalidate(
-        buildPhases,
-        updates,
-        options.packageGraph.root.name,
-        _delete,
-        readerWriter,
-      );
-      await readerWriter.cache.invalidate(invalidated);
+      if (updates.isEmpty) {
+        buildPlan = BuildPlan(
+          (b) =>
+              b
+                ..outputsToBuild.replace(
+                  assetGraph.allNodes
+                      .where((node) => node.type == NodeType.generated)
+                      .map((node) => node.id),
+                ),
+        );
+        globNodesToEvaluate =
+            assetGraph.allNodes
+                .where((node) => node.type == NodeType.glob)
+                .map((node) => node.id)
+                .toSet();
+        generatedNodesToCheckOrBuild =
+            assetGraph.allNodes
+                .where((node) => node.type == NodeType.generated)
+                .map((node) => node.id)
+                .toSet();
+      } else {
+        buildPlan = await assetGraph.updateAndInvalidate(
+          buildPhases,
+          updates,
+          options.packageGraph.root.name,
+          _delete,
+          readerWriter,
+        );
+        globNodesToEvaluate = buildPlan.globsToEvaluate.toSet();
+        generatedNodesToCheckOrBuild =
+            buildPlan.outputsToBuild.toSet()..addAll(buildPlan.outputsToCheck);
+      }
+      // TODO(davidmorgan): invalidate was here, put it back?
     });
   }
 
@@ -201,9 +226,7 @@ class Build {
 
     runZonedGuarded(
       () async {
-        if (updates.isNotEmpty) {
-          await _updateAssetGraph(updates);
-        }
+        await _updateAssetGraph(updates);
         // Run a fresh build.
         var result = await logTimedAsync(_logger, 'Running build', _runPhases);
 
@@ -247,6 +270,7 @@ class Build {
       },
       (e, st) {
         if (!done.isCompleted) {
+          stdout.writeln('failed $e $st');
           _logger.severe('Unhandled build failure!', e, st);
           done.complete(BuildResult(BuildStatus.failure, []));
         }
@@ -332,7 +356,7 @@ class Build {
           assetGraph.get(node.generatedNodeConfiguration!.primaryInput)!;
       if (input.type == NodeType.generated) {
         var inputState = input.generatedNodeState!;
-        if (inputState.pendingBuildAction != PendingBuildAction.none) {
+        if (generatedNodesToCheckOrBuild.contains(input.id)) {
           final inputConfiguration = input.generatedNodeConfiguration!;
           await _runLazyPhaseForInput(
             inputConfiguration.phaseNumber,
@@ -378,7 +402,7 @@ class Build {
       if (inputNode.type == NodeType.generated) {
         var nodeState = inputNode.generatedNodeState!;
         // Make sure the `inputNode` is up to date, and rebuild it if not.
-        if (nodeState.pendingBuildAction != PendingBuildAction.none) {
+        if (generatedNodesToCheckOrBuild.contains(input)) {
           final nodeConfiguration = inputNode.generatedNodeConfiguration!;
           await _runLazyPhaseForInput(
             nodeConfiguration.phaseNumber,
@@ -706,8 +730,7 @@ class Build {
     // We check if any output definitely needs an update - its possible during
     // manual deletions that only one of the outputs would be marked.
     for (var output in outputs.skip(1)) {
-      if (assetGraph.get(output)!.generatedNodeState!.pendingBuildAction ==
-          PendingBuildAction.build) {
+      if (buildPlan.outputsToBuild.contains(output)) {
         if (logFine) {
           _logger.fine(
             'Build ${renderer.build(forInput, outputs)} because '
@@ -720,7 +743,8 @@ class Build {
 
     // Otherwise, we only check the first output, because all outputs share the
     // same inputs and invalidation state.
-    var firstNode = assetGraph.get(outputs.first)!;
+    final firstOutput = outputs.first;
+    final firstNode = assetGraph.get(outputs.first)!;
     assert(
       outputs
           .skip(1)
@@ -738,13 +762,7 @@ class Build {
 
     final firstNodeState = firstNode.generatedNodeState!;
 
-    // No need to build an up to date output
-    if (firstNodeState.pendingBuildAction == PendingBuildAction.none) {
-      return false;
-    }
-
-    // Early bail out condition, this is a forced update.
-    if (firstNodeState.pendingBuildAction == PendingBuildAction.build) {
+    if (buildPlan.outputsToBuild.contains(firstOutput)) {
       if (logFine) {
         _logger.fine(
           'Build ${renderer.build(forInput, outputs)} because '
@@ -754,9 +772,14 @@ class Build {
       return true;
     }
 
+    if (generatedNodesToCheckOrBuild.contains(firstOutput)) {
+      return false;
+    }
+
     final builderOptionsId =
         firstNode.generatedNodeConfiguration!.builderOptionsId;
-    if (changedInputs.contains(builderOptionsId)) {
+    // TODO(davidmorgan): split out changed options from changedInputs.
+    if (buildPlan.changedInputs.contains(builderOptionsId)) {
       if (logFine) {
         _logger.fine(
           'Build ${renderer.build(forInput, outputs)} because '
@@ -775,8 +798,7 @@ class Build {
           continue;
         }
         // Check that the input was built, so [changedOutputs] is updated.
-        if (node.generatedNodeState!.pendingBuildAction !=
-            PendingBuildAction.none) {
+        if (generatedNodesToCheckOrBuild.contains(node.id)) {
           await _buildAsset(node.id);
         }
         if (changedOutputs.contains(input)) {
@@ -790,7 +812,7 @@ class Build {
         }
       } else if (node.type == NodeType.glob) {
         // Check that the glob was evaluated, so [changedOutputs] is updated.
-        if (node.globNodeState!.pendingBuildAction != PendingBuildAction.none) {
+        if (globNodesToEvaluate.contains(node.id)) {
           await _buildGlobNode(input);
         }
         if (changedOutputs.contains(input)) {
@@ -803,7 +825,7 @@ class Build {
           return true;
         }
       } else if (node.type == NodeType.source) {
-        if (changedInputs.contains(input)) {
+        if (buildPlan.changedInputs.contains(input)) {
           if (logFine) {
             _logger.fine(
               'Build ${renderer.build(forInput, outputs)} because '
@@ -817,15 +839,13 @@ class Build {
 
     // Mark outputs as not needing building.
     for (var id in outputs) {
-      assetGraph.updateNode(id, (nodeBuilder) {
-        if (nodeBuilder.type == NodeType.generated) {
-          nodeBuilder.generatedNodeState.pendingBuildAction =
-              PendingBuildAction.none;
-        } else if (nodeBuilder.type == NodeType.glob) {
-          nodeBuilder.globNodeState.pendingBuildAction =
-              PendingBuildAction.none;
-        }
-      });
+      final node = assetGraph.get(id)!;
+
+      if (node.type == NodeType.generated) {
+        generatedNodesToCheckOrBuild.remove(id);
+      } else if (node.type == NodeType.glob) {
+        globNodesToEvaluate.remove(id);
+      }
     }
 
     return false;
@@ -846,21 +866,20 @@ class Build {
     }
 
     final builderOptionsId = nodeConfiguration.builderOptionsId;
-    if (changedInputs.contains(builderOptionsId)) {
+    if (buildPlan.changedInputs.contains(builderOptionsId)) {
       return true;
     }
 
     if (node.type == NodeType.generated) {
       // Check that the input was built, so [changedOutputs] is updated.
-      if (node.generatedNodeState!.pendingBuildAction !=
-          PendingBuildAction.none) {
+      if (generatedNodesToCheckOrBuild.contains(node.id)) {
         await _buildAsset(node.id);
       }
       if (changedOutputs.contains(input)) {
         return true;
       }
     } else if (node.type == NodeType.source) {
-      if (changedInputs.contains(input)) {
+      if (buildPlan.changedInputs.contains(input)) {
         return true;
       }
     } else {
@@ -903,10 +922,7 @@ class Build {
   ///
   ///
   Future<void> _buildGlobNode(AssetId globId) async {
-    if (assetGraph.get(globId)!.globNodeState!.pendingBuildAction ==
-        PendingBuildAction.none) {
-      return;
-    }
+    if (!buildPlan.globsToEvaluate.contains(globId) && !cleanBuild) return;
 
     return lazyGlobs.putIfAbsent(globId, () async {
       final globNodeConfiguration =
@@ -1007,6 +1023,7 @@ class Build {
 
       _removeOldInputs(output, usedInputs);
       _addNewInputs(output, usedInputs);
+      generatedNodesToCheckOrBuild.remove(output);
       assetGraph.updateNode(output, (nodeBuilder) {
         if (nodeBuilder.lastKnownDigest != digest) {
           changedOutputs.add(output);
@@ -1025,6 +1042,7 @@ class Build {
         var allSkippedFailures = <AssetId>[];
         while (needsMarkAsFailure.isNotEmpty) {
           var output = needsMarkAsFailure.removeLast();
+          generatedNodesToCheckOrBuild.remove(output);
           assetGraph.updateNode(output, (nodeBuilder) {
             if (nodeBuilder.lastKnownDigest != null) {
               changedOutputs.add(output);

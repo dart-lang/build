@@ -194,7 +194,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     required int phaseNumber,
     required bool isHidden,
     Iterable<AssetId>? inputs,
-    required PendingBuildAction pendingBuildAction,
     required bool wasOutput,
     required bool isFailure,
   }) => AssetNode(
@@ -207,7 +206,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
           ..generatedNodeConfiguration.phaseNumber = phaseNumber
           ..generatedNodeConfiguration.isHidden = isHidden
           ..generatedNodeState.inputs.replace(inputs ?? [])
-          ..generatedNodeState.pendingBuildAction = pendingBuildAction
           ..generatedNodeState.wasOutput = wasOutput
           ..generatedNodeState.isFailure = isFailure
           ..lastKnownDigest = lastKnownDigest,
@@ -220,7 +218,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     required String glob,
     required int phaseNumber,
     Iterable<AssetId>? inputs,
-    required PendingBuildAction pendingBuildAction,
     List<AssetId>? results,
   }) => AssetNode(
     (b) =>
@@ -229,7 +226,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
           ..type = NodeType.glob
           ..globNodeConfiguration.glob = glob
           ..globNodeConfiguration.phaseNumber = phaseNumber
-          ..globNodeState.pendingBuildAction = pendingBuildAction
           ..globNodeState.results.replace(results ?? [])
           ..lastKnownDigest = lastKnownDigest,
   );
@@ -344,17 +340,14 @@ abstract class GeneratedNodeState
   /// to generate it.
   BuiltSet<AssetId> get inputs;
 
-  /// The next work that needs doing on this node.
-  PendingBuildAction get pendingBuildAction;
-
   /// Whether the asset was actually output.
   bool get wasOutput;
 
   /// Whether the action which did or would produce this node failed.
   bool get isFailure;
 
-  bool get isSuccessfulFreshOutput =>
-      wasOutput && !isFailure && pendingBuildAction == PendingBuildAction.none;
+  /*bool get isSuccessfulFreshOutput =>
+      wasOutput && !isFailure && pendingBuildAction == PendingBuildAction.none;*/
 
   factory GeneratedNodeState(void Function(GeneratedNodeStateBuilder) updates) =
       _$GeneratedNodeState;
@@ -392,10 +385,7 @@ abstract class GlobNodeState
   /// [results].
   BuiltSet<AssetId> get inputs;
 
-  PendingBuildAction get pendingBuildAction;
-
-  /// The results of the glob, valid when [pendingBuildAction] is
-  /// [PendingBuildAction.none].
+  /// The results of the glob.
   BuiltList<AssetId> get results;
 
   factory GlobNodeState(void Function(GlobNodeStateBuilder) updates) =
@@ -423,22 +413,6 @@ abstract class PostProcessAnchorNodeConfiguration
   factory PostProcessAnchorNodeConfiguration(
     void Function(PostProcessAnchorNodeConfigurationBuilder) updates,
   ) = _$PostProcessAnchorNodeConfiguration;
-}
-
-/// Work that needs doing for a node that tracks its inputs.
-class PendingBuildAction extends EnumClass {
-  static Serializer<PendingBuildAction> get serializer =>
-      _$pendingBuildActionSerializer;
-
-  static const PendingBuildAction none = _$none;
-  static const PendingBuildAction buildIfInputsChanged = _$buildIfInputsChanged;
-  static const PendingBuildAction build = _$build;
-
-  const PendingBuildAction._(super.name);
-
-  static BuiltSet<PendingBuildAction> get values => _$pendingBuildActionValues;
-  static PendingBuildAction valueOf(String name) =>
-      _$pendingBuildActionValueOf(name);
 }
 
 @SerializersFor([AssetNode])

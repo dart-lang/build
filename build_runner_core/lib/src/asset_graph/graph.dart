@@ -19,6 +19,7 @@ import 'package:watcher/watcher.dart';
 
 import '../../build_runner_core.dart';
 import '../generate/build_phases.dart';
+import '../generate/build_plan.dart';
 import '../generate/phase.dart';
 import '../util/constants.dart';
 import 'exceptions.dart';
@@ -331,13 +332,15 @@ class AssetGraph implements GeneratedAssetHider {
   /// affected.
   ///
   /// Returns the list of [AssetId]s that were invalidated.
-  Future<Set<AssetId>> updateAndInvalidate(
+  Future<BuildPlan> updateAndInvalidate(
     BuildPhases buildPhases,
     Map<AssetId, ChangeType> updates,
     String rootPackage,
     Future Function(AssetId id) delete,
     AssetReader digestReader,
   ) async {
+    final result = BuildPlanBuilder()..changedInputs.addAll(updates.keys);
+
     var newIds = <AssetId>{};
     var modifyIds = <AssetId>{};
     var removeIds = <AssetId>{};
@@ -401,10 +404,7 @@ class AssetGraph implements GeneratedAssetHider {
         .map(get)
         .nonNulls
         .where((n) => n.type == NodeType.generated)) {
-      updateNode(deletedOutput.id, (nodeBuilder) {
-        nodeBuilder.generatedNodeState.pendingBuildAction =
-            PendingBuildAction.build;
-      });
+      result.outputsToBuild.add(deletedOutput.id);
     }
 
     var newGeneratedOutputs = _addOutputsForSources(
@@ -428,17 +428,9 @@ class AssetGraph implements GeneratedAssetHider {
         for (final id in nextNodes) {
           final invalidatedNode = updateNodeIfPresent(id, (nodeBuilder) {
             if (nodeBuilder.type == NodeType.generated) {
-              final nodeState = nodeBuilder.generatedNodeState;
-              if (nodeState.pendingBuildAction == PendingBuildAction.none) {
-                nodeBuilder.generatedNodeState.pendingBuildAction =
-                    PendingBuildAction.buildIfInputsChanged;
-              }
+              result.outputsToCheck.add(id);
             } else if (nodeBuilder.type == NodeType.glob) {
-              final nodeState = nodeBuilder.globNodeState;
-              if (nodeState.pendingBuildAction == PendingBuildAction.none) {
-                nodeBuilder.globNodeState.pendingBuildAction =
-                    PendingBuildAction.buildIfInputsChanged;
-              }
+              result.globsToEvaluate.add(id);
             }
           });
 
@@ -470,10 +462,6 @@ class AssetGraph implements GeneratedAssetHider {
         final glob = Glob(nodeConfiguration.glob);
         if (glob.matches(id.path)) {
           invalidateNodeAndDeps(node.id);
-          updateNode(node.id, (nodeBuilder) {
-            nodeBuilder.globNodeState.pendingBuildAction =
-                PendingBuildAction.buildIfInputsChanged;
-          });
         }
       }
     }
@@ -493,7 +481,7 @@ class AssetGraph implements GeneratedAssetHider {
       }
     }
 
-    return invalidatedIds;
+    return result.build();
   }
 
   /// Crawl up primary inputs to see if the original Source file matches the
