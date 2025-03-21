@@ -220,7 +220,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     required String glob,
     required int phaseNumber,
     Iterable<AssetId>? inputs,
-    required PendingBuildAction pendingBuildAction,
     List<AssetId>? results,
   }) => AssetNode(
     (b) =>
@@ -229,7 +228,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
           ..type = NodeType.glob
           ..globNodeConfiguration.glob = glob
           ..globNodeConfiguration.phaseNumber = phaseNumber
-          ..globNodeState.pendingBuildAction = pendingBuildAction
           ..globNodeState.results.replace(results ?? [])
           ..lastKnownDigest = lastKnownDigest,
   );
@@ -392,10 +390,7 @@ abstract class GlobNodeState
   /// [results].
   BuiltSet<AssetId> get inputs;
 
-  PendingBuildAction get pendingBuildAction;
-
-  /// The results of the glob, valid when [pendingBuildAction] is
-  /// [PendingBuildAction.none].
+  /// The results of the glob.
   BuiltList<AssetId> get results;
 
   factory GlobNodeState(void Function(GlobNodeStateBuilder) updates) =

@@ -331,7 +331,7 @@ class AssetGraph implements GeneratedAssetHider {
   /// affected.
   ///
   /// Returns the list of [AssetId]s that were invalidated.
-  Future<Set<AssetId>> updateAndInvalidate(
+  Future<(Set<AssetId>, Set<AssetId>)> updateAndInvalidate(
     BuildPhases buildPhases,
     Map<AssetId, ChangeType> updates,
     String rootPackage,
@@ -417,6 +417,7 @@ class AssetGraph implements GeneratedAssetHider {
     // Transitively invalidates all assets. This needs to happen after the
     // structure of the graph has been updated.
     var invalidatedIds = <AssetId>{};
+    final invalidatedGlobs = <AssetId>{};
 
     void invalidateNodeAndDeps(AssetId startNodeId) {
       if (!invalidatedIds.add(startNodeId)) return;
@@ -434,11 +435,7 @@ class AssetGraph implements GeneratedAssetHider {
                     PendingBuildAction.buildIfInputsChanged;
               }
             } else if (nodeBuilder.type == NodeType.glob) {
-              final nodeState = nodeBuilder.globNodeState;
-              if (nodeState.pendingBuildAction == PendingBuildAction.none) {
-                nodeBuilder.globNodeState.pendingBuildAction =
-                    PendingBuildAction.buildIfInputsChanged;
-              }
+              invalidatedGlobs.add(id);
             }
           });
 
@@ -460,20 +457,15 @@ class AssetGraph implements GeneratedAssetHider {
     // For all new or deleted assets, check if they match any glob nodes and
     // invalidate those.
     for (var id in allNewAndDeletedIds) {
-      var samePackageGlobNodes = packageNodes(id.package).where(
-        (n) =>
-            n.type == NodeType.glob &&
-            n.globNodeState!.pendingBuildAction == PendingBuildAction.none,
-      );
+      var samePackageGlobNodes = packageNodes(
+        id.package,
+      ).where((n) => n.type == NodeType.glob && !invalidatedGlobs.contains(id));
       for (final node in samePackageGlobNodes) {
         final nodeConfiguration = node.globNodeConfiguration!;
         final glob = Glob(nodeConfiguration.glob);
         if (glob.matches(id.path)) {
           invalidateNodeAndDeps(node.id);
-          updateNode(node.id, (nodeBuilder) {
-            nodeBuilder.globNodeState.pendingBuildAction =
-                PendingBuildAction.buildIfInputsChanged;
-          });
+          invalidatedGlobs.add(node.id);
         }
       }
     }
@@ -493,7 +485,7 @@ class AssetGraph implements GeneratedAssetHider {
       }
     }
 
-    return invalidatedIds;
+    return (invalidatedIds, invalidatedGlobs);
   }
 
   /// Crawl up primary inputs to see if the original Source file matches the

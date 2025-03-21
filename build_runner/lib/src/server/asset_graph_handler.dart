@@ -153,8 +153,6 @@ class AssetGraphHandler {
         'state':
             node.type == NodeType.generated
                 ? '${node.generatedNodeState!.pendingBuildAction}'
-                : node.type == NodeType.glob
-                ? '${node.globNodeState!.pendingBuildAction}'
                 : null,
         'wasOutput':
             node.type == NodeType.generated
