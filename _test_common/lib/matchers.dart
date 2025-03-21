@@ -45,11 +45,6 @@ class _AssetGraphMatcher extends Matcher {
     final result = <AssetNode>[];
     for (var node in graph.allNodes) {
       if (!checkPreviousInputsDigest) {
-        if (node.type == NodeType.generated) {
-          node = node.rebuild(
-            (b) => b.generatedNodeState.previousInputsDigest = null,
-          );
-        }
         if (node.type == NodeType.postProcessAnchor) {
           node = node.rebuild(
             (b) => b..postProcessAnchorNodeState.previousInputsDigest = null,
