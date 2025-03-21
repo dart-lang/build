@@ -118,12 +118,10 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   /// They are "inputs" to the entire build, so they are never explicitly
   /// tracked as inputs.
   factory AssetNode.internal(AssetId id, {Digest? lastKnownDigest}) =>
-      AssetNode(
-        (b) =>
-            b
-              ..id = id
-              ..type = NodeType.internal
-              ..lastKnownDigest = lastKnownDigest,
+      AssetNode((b) => b
+        ..id = id
+        ..type = NodeType.internal
+        ..lastKnownDigest = lastKnownDigest,
       );
 
   /// A manually-written source file.
@@ -132,14 +130,12 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     Digest? lastKnownDigest,
     Iterable<AssetId>? outputs,
     Iterable<AssetId>? primaryOutputs,
-  }) => AssetNode(
-    (b) =>
-        b
-          ..id = id
-          ..type = NodeType.source
-          ..primaryOutputs.replace(primaryOutputs ?? {})
-          ..outputs.replace(outputs ?? {})
-          ..lastKnownDigest = lastKnownDigest,
+  }) => AssetNode((b) => b
+    ..id = id
+    ..type = NodeType.source
+    ..primaryOutputs.replace(primaryOutputs ?? {})
+    ..outputs.replace(outputs ?? {})
+    ..lastKnownDigest = lastKnownDigest,
   );
 
   /// A [BuilderOptions] object.
@@ -147,12 +143,10 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   /// Each [AssetNode.generated] has one describing its configuration, so it
   /// rebuilds when the configuration changes.
   factory AssetNode.builderOptions(AssetId id, {Digest? lastKnownDigest}) =>
-      AssetNode(
-        (b) =>
-            b
-              ..id = id
-              ..type = NodeType.builderOptions
-              ..lastKnownDigest = lastKnownDigest,
+      AssetNode((b) => b
+        ..id = id
+        ..type = NodeType.builderOptions
+        ..lastKnownDigest = lastKnownDigest,
       );
 
   /// A missing source file.
@@ -162,12 +156,10 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   /// If later the file does exist, the builder must be rerun as it can
   /// produce different output.
   factory AssetNode.missingSource(AssetId id, {Digest? lastKnownDigest}) =>
-      AssetNode(
-        (b) =>
-            b
-              ..id = id
-              ..type = NodeType.missingSource
-              ..lastKnownDigest = lastKnownDigest,
+      AssetNode((b) => b
+        ..id = id
+        ..type = NodeType.missingSource
+        ..lastKnownDigest = lastKnownDigest,
       );
 
   /// Placeholders for useful parts of packages.
@@ -177,12 +169,10 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   ///
   /// TODO(davidmorgan): describe how these are used.
   factory AssetNode.placeholder(AssetId id, {Digest? lastKnownDigest}) =>
-      AssetNode(
-        (b) =>
-            b
-              ..id = id
-              ..type = NodeType.placeholder
-              ..lastKnownDigest = lastKnownDigest,
+      AssetNode((b) => b
+        ..id = id
+        ..type = NodeType.placeholder
+        ..lastKnownDigest = lastKnownDigest,
       );
 
   /// A generated node.
@@ -197,20 +187,18 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     required PendingBuildAction pendingBuildAction,
     required bool wasOutput,
     required bool isFailure,
-  }) => AssetNode(
-    (b) =>
-        b
-          ..id = id
-          ..type = NodeType.generated
-          ..generatedNodeConfiguration.primaryInput = primaryInput
-          ..generatedNodeConfiguration.builderOptionsId = builderOptionsId
-          ..generatedNodeConfiguration.phaseNumber = phaseNumber
-          ..generatedNodeConfiguration.isHidden = isHidden
-          ..generatedNodeState.inputs.replace(inputs ?? [])
-          ..generatedNodeState.pendingBuildAction = pendingBuildAction
-          ..generatedNodeState.wasOutput = wasOutput
-          ..generatedNodeState.isFailure = isFailure
-          ..lastKnownDigest = lastKnownDigest,
+  }) => AssetNode((b) => b
+    ..id = id
+    ..type = NodeType.generated
+    ..generatedNodeConfiguration.primaryInput = primaryInput
+    ..generatedNodeConfiguration.builderOptionsId = builderOptionsId
+    ..generatedNodeConfiguration.phaseNumber = phaseNumber
+    ..generatedNodeConfiguration.isHidden = isHidden
+    ..generatedNodeState.inputs.replace(inputs ?? [])
+    ..generatedNodeState.pendingBuildAction = pendingBuildAction
+    ..generatedNodeState.wasOutput = wasOutput
+    ..generatedNodeState.isFailure = isFailure
+    ..lastKnownDigest = lastKnownDigest,
   );
 
   /// A glob node.
@@ -222,16 +210,14 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     Iterable<AssetId>? inputs,
     required PendingBuildAction pendingBuildAction,
     List<AssetId>? results,
-  }) => AssetNode(
-    (b) =>
-        b
-          ..id = id
-          ..type = NodeType.glob
-          ..globNodeConfiguration.glob = glob
-          ..globNodeConfiguration.phaseNumber = phaseNumber
-          ..globNodeState.pendingBuildAction = pendingBuildAction
-          ..globNodeState.results.replace(results ?? [])
-          ..lastKnownDigest = lastKnownDigest,
+  }) => AssetNode((b) => b
+    ..id = id
+    ..type = NodeType.glob
+    ..globNodeConfiguration.glob = glob
+    ..globNodeConfiguration.phaseNumber = phaseNumber
+    ..globNodeState.pendingBuildAction = pendingBuildAction
+    ..globNodeState.results.replace(results ?? [])
+    ..lastKnownDigest = lastKnownDigest,
   );
 
   static AssetId createGlobNodeId(String package, String glob, int phaseNum) =>
@@ -247,15 +233,13 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     required int actionNumber,
     required AssetId builderOptionsId,
     Digest? previousInputsDigest,
-  }) => AssetNode(
-    (b) =>
-        b
-          ..id = id
-          ..type = NodeType.postProcessAnchor
-          ..postProcessAnchorNodeConfiguration.actionNumber = actionNumber
-          ..postProcessAnchorNodeConfiguration.builderOptionsId =
-              builderOptionsId
-          ..postProcessAnchorNodeConfiguration.primaryInput = primaryInput,
+  }) => AssetNode((b) => b
+    ..id = id
+    ..type = NodeType.postProcessAnchor
+    ..postProcessAnchorNodeConfiguration.actionNumber = actionNumber
+    ..postProcessAnchorNodeConfiguration.builderOptionsId =
+        builderOptionsId
+    ..postProcessAnchorNodeConfiguration.primaryInput = primaryInput,
   );
 
   factory AssetNode.postProcessAnchorForInputAndAction(
