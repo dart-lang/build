@@ -36,13 +36,11 @@ class FakeTestDaemonBuilder implements DaemonBuilder {
     Iterable<WatchEvent> changes,
   ) async {
     _outputStreamController.add(
-      ServerLog(
-        (b) =>
-            b
-              ..loggerName = loggerName
-              ..level = Level.INFO
-              ..message = buildCompletedMessage,
-      ),
+      ServerLog((b) {
+        b.loggerName = loggerName;
+        b.level = Level.INFO;
+        b.message = buildCompletedMessage;
+      }),
     );
 
     _buildsController.add(
