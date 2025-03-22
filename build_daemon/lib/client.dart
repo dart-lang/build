@@ -32,12 +32,10 @@ Future<void> _handleDaemonStartup(
   process.stderr.transform(utf8.decoder).transform(const LineSplitter()).listen(
     (line) {
       logHandler(
-        ServerLog(
-          (b) =>
-              b
-                ..level = Level.SEVERE
-                ..message = line,
-        ),
+        ServerLog((b) {
+          b.level = Level.SEVERE;
+          b.message = line;
+        }),
       );
     },
   );
@@ -82,12 +80,10 @@ Future<void> _handleDaemonStartup(
       nextLogRecord = StringBuffer();
     } else {
       logHandler(
-        ServerLog(
-          (b) =>
-              b
-                ..level = Level.INFO
-                ..message = line,
-        ),
+        ServerLog((b) {
+          b.level = Level.INFO;
+          b.message = line;
+        }),
       );
     }
   });

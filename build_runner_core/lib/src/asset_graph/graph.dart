@@ -146,12 +146,10 @@ class AssetGraph implements GeneratedAssetHider {
         // Don't call _removeRecursive, that recursively removes all transitive
         // primary outputs. We only want to remove this node.
         _nodesByPackage[existing.id.package]!.remove(existing.id.path);
-        node = node.rebuild(
-          (b) =>
-              b
-                ..outputs.addAll(existing.outputs)
-                ..primaryOutputs.addAll(existing.primaryOutputs),
-        );
+        node = node.rebuild((b) {
+          b.outputs.addAll(existing.outputs);
+          b.primaryOutputs.addAll(existing.primaryOutputs);
+        });
       } else {
         throw StateError(
           'Tried to add node ${node.id} to the asset graph but it already '
