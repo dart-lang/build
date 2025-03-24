@@ -148,39 +148,33 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         if (result.status == core.BuildStatus.success) {
           // TODO(grouma) - Can we notify if a target was cached?
           results.add(
-            DefaultBuildResult(
-              (b) =>
-                  b
-                    ..status = BuildStatus.succeeded
-                    ..target = target.target,
-            ),
+            DefaultBuildResult((b) {
+              b.status = BuildStatus.succeeded;
+              b.target = target.target;
+            }),
           );
         } else {
           results.add(
-            DefaultBuildResult(
-              (b) =>
-                  b
-                    ..status = BuildStatus.failed
-                    // TODO(grouma) - We should forward the error messages
-                    // instead.
-                    // We can use the AssetGraph and FailureReporter to provide
-                    // a better error message.
-                    ..error = 'FailureType: ${result.failureType?.exitCode}'
-                    ..target = target.target,
-            ),
+            DefaultBuildResult((b) {
+              b.status = BuildStatus.failed;
+              // TODO(grouma) - We should forward the error messages
+              // instead.
+              // We can use the AssetGraph and FailureReporter to provide
+              // a better error message.;
+              b.error = 'FailureType: ${result.failureType?.exitCode}';
+              b.target = target.target;
+            }),
           );
         }
       }
     } catch (e) {
       for (var target in targets) {
         results.add(
-          DefaultBuildResult(
-            (b) =>
-                b
-                  ..status = BuildStatus.failed
-                  ..error = '$e'
-                  ..target = target.target,
-          ),
+          DefaultBuildResult((b) {
+            b.status = BuildStatus.failed;
+            b.error = '$e';
+            b.target = target.target;
+          }),
         );
       }
       _logMessage(Level.SEVERE, 'Build Failed:\n${e.toString()}');
@@ -195,12 +189,10 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   }
 
   void _logMessage(Level level, String message) => _outputStreamController.add(
-    ServerLog(
-      (b) =>
-          b
-            ..message = message
-            ..level = level,
-    ),
+    ServerLog((b) {
+      b.message = message;
+      b.level = level;
+    }),
   );
 
   void _signalEnd(
@@ -224,12 +216,10 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     var results = <BuildResult>[];
     for (var target in targets) {
       results.add(
-        DefaultBuildResult(
-          (b) =>
-              b
-                ..status = BuildStatus.started
-                ..target = target,
-        ),
+        DefaultBuildResult((b) {
+          b.status = BuildStatus.started;
+          b.target = target;
+        }),
       );
     }
     _buildResults.add(BuildResults((b) => b..results.addAll(results)));

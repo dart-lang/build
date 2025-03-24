@@ -73,15 +73,13 @@ abstract class ServerLog implements Built<ServerLog, ServerLogBuilder> {
 
   factory ServerLog([void Function(ServerLogBuilder b) updates]) = _$ServerLog;
 
-  factory ServerLog.fromLogRecord(logging.LogRecord record) => ServerLog(
-    (b) =>
-        b
-          ..message = record.message
-          ..level = Level.valueOf(record.level.name)
-          ..loggerName = record.loggerName
-          ..error = record.error?.toString()
-          ..stackTrace = record.stackTrace?.toString(),
-  );
+  factory ServerLog.fromLogRecord(logging.LogRecord record) => ServerLog((b) {
+    b.message = record.message;
+    b.level = Level.valueOf(record.level.name);
+    b.loggerName = record.loggerName;
+    b.error = record.error?.toString();
+    b.stackTrace = record.stackTrace?.toString();
+  });
 
   logging.LogRecord toLogRecord() {
     return logging.LogRecord(
