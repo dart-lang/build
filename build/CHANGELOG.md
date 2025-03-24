@@ -14,6 +14,7 @@
 - Refactor `BuildCacheReader` to `BuildCacheAssetPathProvider`.
 - Refactor `FileBasedAssetReader` and `FileBasedAssetWriter` to `ReaderWriter`.
 - Move `BuildStepImpl` to `build_runner_core`, use `SingleStepReader` directly.
+- Add `LibraryCycleGraphLoader` for loading transitive deps for analysis.
 
 ## 2.4.2
 

@@ -95,7 +95,7 @@ class RunningBuildStep {
 /// Tracks the assets and globs read during this step for input dependency
 /// tracking.
 class SingleStepReaderWriter extends AssetReader
-    implements AssetReaderState, AssetReaderWriter {
+    implements AssetReaderState, AssetReaderWriter, PhasedReader {
   @override
   late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);
 
@@ -202,6 +202,9 @@ class SingleStepReaderWriter extends AssetReader
 
   @override
   FilesystemCache get cache => _delegate.cache;
+
+  @override
+  int get phase => _runningBuildStep?.phaseNumber ?? 0;
 
   /// Checks whether [id] can be read by this step - attempting to build the
   /// asset if necessary.
@@ -418,5 +421,37 @@ class SingleStepReaderWriter extends AssetReader
   }) {
     assetsWritten.add(id);
     return _delegate.writeAsString(id, contents, encoding: encoding);
+  }
+
+  @override
+  Future<PhasedValue<String>> readPhased(AssetId id) async {
+    if (_runningBuild == null) {
+      final exists = await _delegate.canRead(id);
+      if (exists) {
+        return PhasedValue.fixed(await _delegate.readAsString(id));
+      } else {
+        return PhasedValue.fixed('');
+      }
+    }
+
+    final node = _runningBuild.assetGraph.get(id);
+    if (node == null) {
+      return PhasedValue.fixed('');
+    }
+
+    if (node.type == NodeType.generated) {
+      final nodePhase = node.generatedNodeConfiguration!.phaseNumber;
+      if (nodePhase >= phase) {
+        return PhasedValue.unavailable(before: '', untilAfterPhase: nodePhase);
+      } else {
+        return PhasedValue.generated(
+          atPhase: phase,
+          before: '',
+          await _delegate.readAsString(id),
+        );
+      }
+    }
+
+    return PhasedValue.fixed(await _delegate.readAsString(id));
   }
 }
