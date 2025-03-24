@@ -15,7 +15,7 @@ void main() {
         final loader = DepsGraphLoader(
           TestDepsNodeLoader([DepsNode.missingSource(AssetId('p1', 'l1'))]),
         );
-        await loader.load(AssetId('p1', 'l1'));
+        await loader.load(0, AssetId('p1', 'l1'));
         expect(loader.transitiveDepsOf(0, AssetId('p1', 'l1')), {
           AssetId('p1', 'l1'),
         });
@@ -25,7 +25,7 @@ void main() {
         final loader = DepsGraphLoader(
           TestDepsNodeLoader([DepsNode.source(AssetId('p1', 'l1'), {})]),
         );
-        await loader.load(AssetId('p1', 'l1'));
+        await loader.load(0, AssetId('p1', 'l1'));
         expect(loader.transitiveDepsOf(0, AssetId('p1', 'l1')), {
           AssetId('p1', 'l1'),
         });
@@ -38,7 +38,7 @@ void main() {
             DepsNode.source(AssetId('p1', 'l2'), {}),
           ]),
         );
-        await loader.load(AssetId('p1', 'l1'));
+        await loader.load(0, AssetId('p1', 'l1'));
         expect(loader.transitiveDepsOf(0, AssetId('p1', 'l1')), {
           AssetId('p1', 'l1'),
           AssetId('p1', 'l2'),
@@ -66,7 +66,7 @@ void main() {
             DepsNode.source(AssetId('p1', 'l7'), {}),
           ]),
         );
-        await loader.load(AssetId('p1', 'l1'));
+        await loader.load(0, AssetId('p1', 'l1'));
         expect(loader.transitiveDepsOf(0, AssetId('p1', 'l1')), {
           AssetId('p1', 'l1'),
           AssetId('p1', 'l2'),
@@ -90,7 +90,7 @@ void main() {
             DepsNode.source(AssetId('p1', 'l4'), {}),
           ]),
         );
-        await loader.load(AssetId('p1', 'l1'));
+        await loader.load(0, AssetId('p1', 'l1'));
         expect(loader.transitiveDepsOf(0, AssetId('p1', 'l1')), {
           AssetId('p1', 'l1'),
           AssetId('p1', 'l2'),
@@ -106,7 +106,7 @@ void main() {
             DepsNode.source(AssetId('p1', 'l2'), {AssetId('p1', 'l1')}),
           ]),
         );
-        await loader.load(AssetId('p1', 'l1'));
+        await loader.load(0, AssetId('p1', 'l1'));
         expect(loader.transitiveDepsOf(0, AssetId('p1', 'l1')), {
           AssetId('p1', 'l1'),
           AssetId('p1', 'l2'),
@@ -121,12 +121,97 @@ void main() {
             DepsNode.source(AssetId('p1', 'l3'), {AssetId('p1', 'l2')}),
           ]),
         );
-        await loader.load(AssetId('p1', 'l1'));
+        await loader.load(0, AssetId('p1', 'l1'));
         expect(loader.transitiveDepsOf(0, AssetId('p1', 'l1')), {
           AssetId('p1', 'l1'),
           AssetId('p1', 'l2'),
           AssetId('p1', 'l3'),
         });
+      });
+    });
+  });
+
+  group('with generated nodes', () {
+    test('single generated node', () async {
+      final loader = DepsGraphLoader(
+        TestDepsNodeLoader([DepsNode.generated(AssetId('p1', 'l1'), 1, {})]),
+      );
+      await loader.load(2, AssetId('p1', 'l1'));
+
+      // It's a dependency irrespective of the phase.
+      expect(loader.transitiveDepsOf(0, AssetId('p1', 'l1')), {
+        AssetId('p1', 'l1'),
+      });
+      expect(loader.transitiveDepsOf(2, AssetId('p1', 'l1')), {
+        AssetId('p1', 'l1'),
+      });
+    });
+
+    test('sequence of three nodes', () async {
+      final loader = DepsGraphLoader(
+        TestDepsNodeLoader([
+          DepsNode.generated(AssetId('p1', 'l1'), 1, {AssetId('p1', 'l2')}),
+          DepsNode.generated(AssetId('p1', 'l2'), 2, {AssetId('p1', 'l3')}),
+          DepsNode.generated(AssetId('p1', 'l3'), 3, {}),
+        ]),
+      );
+      await loader.load(4, AssetId('p1', 'l1'));
+
+      // Dependencies appear in the phase after they are generated.
+      expect(loader.transitiveDepsOf(1, AssetId('p1', 'l1')), {
+        AssetId('p1', 'l1'),
+      });
+      expect(loader.transitiveDepsOf(2, AssetId('p1', 'l1')), {
+        AssetId('p1', 'l1'),
+      });
+      expect(loader.transitiveDepsOf(3, AssetId('p1', 'l1')), {
+        AssetId('p1', 'l1'),
+        AssetId('p1', 'l2'),
+      });
+      expect(loader.transitiveDepsOf(4, AssetId('p1', 'l1')), {
+        AssetId('p1', 'l1'),
+        AssetId('p1', 'l2'),
+        AssetId('p1', 'l3'),
+      });
+    });
+
+    test('sequence of three with nodes not generated yet', () async {
+      final loader = DepsGraphLoader(
+        TestDepsNodeLoader([
+          DepsNode.generated(AssetId('p1', 'l1'), 1, {AssetId('p1', 'l2')}),
+          DepsNode.generated(AssetId('p1', 'l2'), 2, {AssetId('p1', 'l3')}),
+          DepsNode.generated(AssetId('p1', 'l3'), 3, {}),
+        ]),
+      );
+      await loader.load(1, AssetId('p1', 'l1'));
+
+      // Nodes not readable yet as "load" was done at phase 1.
+      expect(loader.transitiveDepsOf(1, AssetId('p1', 'l1')), {
+        AssetId('p1', 'l1'),
+      });
+      expect(
+        () => loader.transitiveDepsOf(2, AssetId('p1', 'l1')),
+        throwsA(isA<StateError>()),
+      );
+      expect(
+        () => loader.transitiveDepsOf(3, AssetId('p1', 'l1')),
+        throwsA(isA<StateError>()),
+      );
+      expect(
+        () => loader.transitiveDepsOf(4, AssetId('p1', 'l1')),
+        throwsA(isA<StateError>()),
+      );
+
+      // Readable if loaded at a late enough phase.
+      await loader.load(5, AssetId('p1', 'l1'));
+      expect(loader.transitiveDepsOf(3, AssetId('p1', 'l1')), {
+        AssetId('p1', 'l1'),
+        AssetId('p1', 'l2'),
+      });
+      expect(loader.transitiveDepsOf(4, AssetId('p1', 'l1')), {
+        AssetId('p1', 'l1'),
+        AssetId('p1', 'l2'),
+        AssetId('p1', 'l3'),
       });
     });
   });
@@ -139,5 +224,11 @@ class TestDepsNodeLoader implements DepsNodeLoader {
     : results = {for (final result in results) result.id: result};
 
   @override
-  Future<DepsNode> load(AssetId id) async => results[id]!;
+  Future<DepsNode> load(int phase, AssetId id) async {
+    var result = results[id]!;
+    if (result.phase != null && result.phase! >= phase) {
+      result = result.rebuild((b) => b..deps = null);
+    }
+    return result;
+  }
 }

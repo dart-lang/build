@@ -17,7 +17,10 @@ abstract class DepsNode implements Built<DepsNode, DepsNodeBuilder> {
   /// If so, [phase] and [deps] are `null`.
   bool get missing;
 
-  /// If this node is generated, the phase at which it becomes readable.
+  /// If this node is generated, the phase in which it is generated.
+  ///
+  /// It becomes readable _after_ this phase. So for example if `phase` is 11,
+  /// it is first readable in phase 12.
   ///
   /// Or, `null` if it is not a generated source.
   int? get phase;
@@ -44,4 +47,17 @@ abstract class DepsNode implements Built<DepsNode, DepsNodeBuilder> {
     phase: null,
     deps: BuiltSet.of(deps),
   );
+
+  factory DepsNode.generated(AssetId id, int phase, Iterable<AssetId> deps) =>
+      _$DepsNode._(
+        id: id,
+        missing: false,
+        phase: phase,
+        deps: BuiltSet.of(deps),
+      );
+
+  bool isHidden({required int atPhase}) {
+    if (phase == null) return false;
+    return atPhase <= phase!;
+  }
 }

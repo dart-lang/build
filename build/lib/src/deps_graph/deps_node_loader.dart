@@ -17,8 +17,8 @@ class DepsNodeLoader {
 
   DepsNodeLoader(this._reader);
 
-  Future<DepsNode> load(AssetId id) async {
-    final contents = await _reader.read(id);
+  Future<DepsNode> load(int phase, AssetId id) async {
+    final contents = await _reader.read(phase, id);
     if (contents.contents == null) {
       return DepsNode.missingSource(id);
     }
@@ -44,7 +44,7 @@ class DepsNodeLoader {
 }
 
 abstract class PhaseRestrictedReader {
-  Future<PhaseRestrictedContents> read(AssetId id);
+  Future<PhaseRestrictedContents> read(int phase, AssetId id);
 }
 
 class PhaseRestrictedContents {
