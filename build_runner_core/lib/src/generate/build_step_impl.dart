@@ -17,6 +17,7 @@ import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:package_config/package_config_types.dart';
 
+import '../asset_graph/graph.dart';
 import 'input_tracker.dart';
 import 'single_step_reader_writer.dart';
 
@@ -115,6 +116,10 @@ class BuildStepImpl implements BuildStep, AssetReaderState, AssetReaderWriter {
 
     return (await resolved).asFuture;
   }
+
+  int get phase => _readerWriter.phase;
+
+  PhaseRestrictedReader get phaseRestrictedReader => _readerWriter;
 
   @override
   Resolver get resolver {

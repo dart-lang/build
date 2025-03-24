@@ -14,15 +14,20 @@ class _$DepsNode extends DepsNode {
   @override
   final int? phase;
   @override
-  final BuiltSet<AssetId>? deps;
+  final BuiltSet<AssetId> deps;
 
   factory _$DepsNode([void Function(DepsNodeBuilder)? updates]) =>
       (new DepsNodeBuilder()..update(updates))._build();
 
-  _$DepsNode._({required this.id, required this.missing, this.phase, this.deps})
-    : super._() {
+  _$DepsNode._({
+    required this.id,
+    required this.missing,
+    this.phase,
+    required this.deps,
+  }) : super._() {
     BuiltValueNullFieldError.checkNotNull(id, r'DepsNode', 'id');
     BuiltValueNullFieldError.checkNotNull(missing, r'DepsNode', 'missing');
+    BuiltValueNullFieldError.checkNotNull(deps, r'DepsNode', 'deps');
   }
 
   @override
@@ -91,7 +96,7 @@ class DepsNodeBuilder implements Builder<DepsNode, DepsNodeBuilder> {
       _id = $v.id;
       _missing = $v.missing;
       _phase = $v.phase;
-      _deps = $v.deps?.toBuilder();
+      _deps = $v.deps.toBuilder();
       _$v = null;
     }
     return this;
@@ -124,13 +129,13 @@ class DepsNodeBuilder implements Builder<DepsNode, DepsNodeBuilder> {
               'missing',
             ),
             phase: phase,
-            deps: _deps?.build(),
+            deps: deps.build(),
           );
     } catch (_) {
       late String _$failedField;
       try {
         _$failedField = 'deps';
-        _deps?.build();
+        deps.build();
       } catch (e) {
         throw new BuiltValueNestedFieldError(
           r'DepsNode',

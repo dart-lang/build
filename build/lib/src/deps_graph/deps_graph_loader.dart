@@ -17,40 +17,49 @@ class DepsGraphLoader {
   final Map<AssetId, int> _nodeReadPhases = {};
   final Map<int, Map<AssetId, DepsCycle>> _cycles = {};
   final Map<int, Map<AssetId, DepsGraph>> _graphs = {};
-  final DepsNodeLoader nodeLoader;
 
-  DepsGraphLoader(this.nodeLoader);
+  void clear() {
+    _nodes.clear();
+    _nodeReadPhases.clear();
+    _cycles.clear();
+    _graphs.clear();
+  }
 
-  Future<void> load(int phase, AssetId id) async {
+  Future<void> load(DepsNodeLoader nodeLoader, AssetId id) async {
     final pendingIds = [id];
 
     while (pendingIds.isNotEmpty) {
       final nextId = pendingIds.removeLast();
       final lastReadAt = _nodeReadPhases[nextId];
 
-      if (lastReadAt != null && lastReadAt >= phase) {
+      if (lastReadAt != null &&
+          nodeLoader.phase != null &&
+          lastReadAt >= nodeLoader.phase!) {
         continue;
       }
-      _nodeReadPhases[nextId] = phase;
-      final node = await nodeLoader.load(phase, nextId);
+      if (nodeLoader.phase != null) {
+        _nodeReadPhases[nextId] = nodeLoader.phase!;
+      }
+      final node = await nodeLoader.load(nextId);
       _nodes[nextId] = node;
 
-      if (node.deps != null) {
-        for (final dep in node.deps!) {
-          final lastReadAt = _nodeReadPhases[dep];
-          if (lastReadAt == null || lastReadAt < phase) {
-            pendingIds.add(dep);
-          }
+      for (final dep in node.deps) {
+        final lastReadAt = _nodeReadPhases[dep];
+        if (lastReadAt == null ||
+            (nodeLoader.phase != null && lastReadAt < nodeLoader.phase!)) {
+          pendingIds.add(dep);
         }
       }
     }
   }
 
   void _buildCycles(int phase) {
-    if (_cycles.containsKey(phase)) return;
+    // TODO(davidmorgan): detect if there is work to do.
+    // if (_cycles.containsKey(phase)) return;
     final result = _cycles[phase] = {};
     final cycles = stronglyConnectedComponents(_nodes.values, (node) {
       final isHidden = node.isHidden(atPhase: phase);
+      // TODO(davidmorgan): check loaded at phase.
       if (node.deps == null) {
         if (node.missing || isHidden) {
           return [];
@@ -67,7 +76,7 @@ class DepsGraphLoader {
         return [];
       }
 
-      return node.deps!.map((n) => _nodes[n]!);
+      return node.deps.map((n) => _nodes[n]!);
     });
     for (final cycleNodes in cycles) {
       final cycle = DepsCycle((b) => b..nodes.replace(cycleNodes));
@@ -85,24 +94,30 @@ class DepsGraphLoader {
     final building = <AssetId>{};
     building.addAll(root.nodes.map((node) => node.id));
     for (final node in root.nodes) {
-      if (node.deps != null) {
-        for (final dep in node.deps!) {
-          if (building.contains(dep)) continue;
-          final depNode = _nodes[dep]!;
-          if (depNode.phase == null || depNode.phase! < phase) {
-            _buildGraph(phase, dep);
-            graph.children.add(graphs[dep]!);
-          }
+      for (final dep in node.deps!) {
+        if (building.contains(dep)) continue;
+        final depNode = _nodes[dep]!;
+        if (depNode.phase == null || depNode.phase! < phase) {
+          _buildGraph(phase, dep);
+          graph.children.add(graphs[dep]!);
         }
       }
     }
     graphs[id] = graph.build();
   }
 
-  BuiltSet<AssetId> transitiveDepsOf(int phase, AssetId id) {
-    _buildCycles(phase);
-    _buildGraph(phase, id);
+  Future<BuiltSet<AssetId>> transitiveDepsOf(
+    DepsNodeLoader nodeLoader,
+    AssetId id,
+  ) async {
+    if (!_nodes.containsKey(id)) {
+      await load(nodeLoader, id);
+    }
 
-    return _graphs[phase]![id]!.transitiveDeps;
+    _buildCycles(nodeLoader.phase!);
+    _buildGraph(nodeLoader.phase!, id);
+
+    final result = _graphs[nodeLoader.phase!]![id]!.transitiveDeps;
+    return result;
   }
 }

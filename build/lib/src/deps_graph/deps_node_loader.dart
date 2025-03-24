@@ -17,8 +17,10 @@ class DepsNodeLoader {
 
   DepsNodeLoader(this._reader);
 
-  Future<DepsNode> load(int phase, AssetId id) async {
-    final contents = await _reader.read(phase, id);
+  int? get phase => _reader.phase;
+
+  Future<DepsNode> load(AssetId id) async {
+    final contents = await _reader.readPhaseRestricted(id);
     if (contents.contents == null) {
       return DepsNode.missingSource(id);
     }
@@ -29,7 +31,12 @@ class DepsNodeLoader {
           throwIfDiagnostics: false,
         ).unit;
 
-    final result = DepsNodeBuilder()..phase = contents.phase!;
+    final result =
+        DepsNodeBuilder()
+          ..missing = false
+          ..id = id
+          ..phase = contents.phase;
+
     for (final directive in parsed.directives) {
       if (directive is! UriBasedDirective) continue;
       final uri = directive.uri.stringValue;
@@ -44,7 +51,8 @@ class DepsNodeLoader {
 }
 
 abstract class PhaseRestrictedReader {
-  Future<PhaseRestrictedContents> read(int phase, AssetId id);
+  int? get phase;
+  Future<PhaseRestrictedContents> readPhaseRestricted(AssetId id);
 }
 
 class PhaseRestrictedContents {

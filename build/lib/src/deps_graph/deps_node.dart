@@ -14,7 +14,7 @@ abstract class DepsNode implements Built<DepsNode, DepsNodeBuilder> {
 
   /// Whether this is a missing source.
   ///
-  /// If so, [phase] and [deps] are `null`.
+  /// If so, [phase] is `null`.
   bool get missing;
 
   /// If this node is generated, the phase in which it is generated.
@@ -27,8 +27,9 @@ abstract class DepsNode implements Built<DepsNode, DepsNodeBuilder> {
 
   /// The deps of this node.
   ///
-  /// Or, `null` if it is missing.
-  BuiltSet<AssetId>? get deps;
+  /// Empty if [missing] or if the node was not readable when it was loaded, due
+  /// to loading in a too-early phase.
+  BuiltSet<AssetId> get deps;
 
   factory DepsNode([void Function(DepsNodeBuilder)? updates]) =>
       (DepsNodeBuilder()
@@ -38,14 +39,25 @@ abstract class DepsNode implements Built<DepsNode, DepsNodeBuilder> {
           .build();
   DepsNode._();
 
-  factory DepsNode.missingSource(AssetId id) =>
-      _$DepsNode._(id: id, missing: true, phase: null, deps: null);
+  factory DepsNode.missingSource(AssetId id) => _$DepsNode._(
+    id: id,
+    missing: true,
+    phase: null,
+    deps: <AssetId>{}.build(),
+  );
 
   factory DepsNode.source(AssetId id, Iterable<AssetId> deps) => _$DepsNode._(
     id: id,
     missing: false,
     phase: null,
     deps: BuiltSet.of(deps),
+  );
+
+  factory DepsNode.futureGenerated(AssetId id, int phase) => _$DepsNode._(
+    id: id,
+    missing: false,
+    phase: phase,
+    deps: <AssetId>{}.build(),
   );
 
   factory DepsNode.generated(AssetId id, int phase, Iterable<AssetId> deps) =>
