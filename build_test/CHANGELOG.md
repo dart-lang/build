@@ -2,6 +2,12 @@
 
 - Bump the min SDK to 3.7.0.
 - Use `build_runner_core` 9.0.0.
+- `resolveSources` and `testBuilder` now do a full `build_runner` build, with
+  configuration as much as possible based on the some parameters.
+- Add `testBuilders` to run a test build with multiple builders.
+- Add `resolvers` parameter to `testBuild` and `testBuilders`.
+- Breaking change: removed `tearDown` parameter to `resolveSources` for
+  keeping resolvers across multiple tests.
 - Breaking change: tests must use new `TestReaderWriter` instead of
   `InMemoryAssetReader` and `InMemoryAssetWriter`.
 - Breaking change: `testBuilder` no longer accepts a `reader` and a `writer`.

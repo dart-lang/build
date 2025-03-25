@@ -15,7 +15,7 @@ import 'package:test/test.dart';
 void main() {
   test('fail if an output is on disk and !deleteFilesByDefault', () async {
     expect(
-      testBuilders(
+      testPhases(
         [applyToRoot(TestBuilder())],
         {'a|lib/a.dart': '', 'a|lib/a.dart.copy': ''},
         packageGraph: buildPackageGraph({rootPackage('a'): []}),
@@ -26,7 +26,7 @@ void main() {
   });
 
   test('should fail if a severe logged', () async {
-    await testBuilders(
+    await testPhases(
       [applyToRoot(_LoggingBuilder(Level.SEVERE))],
       {'a|lib/a.dart': ''},
       packageGraph: buildPackageGraph({rootPackage('a'): []}),
@@ -40,7 +40,7 @@ void main() {
     var packageGraph = buildPackageGraph({rootPackage('a'): []});
     var builder = _LoggingBuilder(Level.SEVERE);
     var builders = [applyToRoot(builder)];
-    final result = await testBuilders(
+    final result = await testPhases(
       builders,
       {'a|lib/a.dart': ''},
       packageGraph: packageGraph,
@@ -48,7 +48,7 @@ void main() {
       status: BuildStatus.failure,
       outputs: {'a|lib/a.dart.empty': ''},
     );
-    await testBuilders(
+    await testPhases(
       builders,
       {},
       resumeFrom: result,
@@ -65,7 +65,7 @@ void main() {
       var packageGraph = buildPackageGraph({rootPackage('a'): []});
       var builder = _LoggingBuilder(Level.SEVERE);
       var builders = [applyToRoot(builder)];
-      final result = await testBuilders(
+      final result = await testPhases(
         builders,
         {'a|lib/a.dart': ''},
         packageGraph: packageGraph,
@@ -74,7 +74,7 @@ void main() {
         outputs: {'a|lib/a.dart.empty': ''},
       );
       builder.level = Level.WARNING;
-      await testBuilders(
+      await testPhases(
         builders,
         {'a|lib/a.dart': 'changed'},
         resumeFrom: result,
@@ -87,7 +87,7 @@ void main() {
   );
 
   test('should fail if an exception is thrown', () async {
-    await testBuilders(
+    await testPhases(
       [
         applyToRoot(
           TestBuilder(build: (_, _) => throw Exception('Some build failure')),
@@ -102,7 +102,7 @@ void main() {
   test(
     'should throw an exception if a read is attempted on a failed file',
     () async {
-      await testBuilders(
+      await testPhases(
         [
           applyToRoot(
             TestBuilder(

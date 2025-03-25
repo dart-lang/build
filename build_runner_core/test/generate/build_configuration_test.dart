@@ -30,7 +30,7 @@ void main() {
         },
       },
     });
-    await testBuilders(
+    await testPhases(
       [
         apply('a:optioned_builder', [copyBuilder], toRoot(), hideOutput: false),
       ],
@@ -51,7 +51,7 @@ void main() {
       rootPackage('a'): ['b'],
       package('b'): [],
     });
-    await testBuilders(
+    await testPhases(
       [
         apply(
           'a:optioned_builder',

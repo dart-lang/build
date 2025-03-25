@@ -124,7 +124,6 @@ class Build {
     if (logFine) {
       _logger.fine(AssetUpdates.from(updates).render(renderer));
     }
-
     var watch = Stopwatch()..start();
     var result = await _safeBuild(updates);
     var optionalOutputTracker = OptionalOutputTracker(
@@ -481,6 +480,11 @@ class Build {
           .add(actionDescription);
 
       var unusedAssets = <AssetId>{};
+      void reportUnusedAssetsForInput(AssetId input, Iterable<AssetId> assets) {
+        options.reportUnusedAssetsForInput?.call(input, assets);
+        unusedAssets.addAll(assets);
+      }
+
       await tracker.trackStage(
         'Build',
         () => runBuilder(
@@ -492,8 +496,7 @@ class Build {
           logger: logger,
           resourceManager: resourceManager,
           stageTracker: tracker,
-          reportUnusedAssetsForInput:
-              (_, assets) => unusedAssets.addAll(assets),
+          reportUnusedAssetsForInput: reportUnusedAssetsForInput,
           packageConfig: options.packageGraph.asPackageConfig,
         ).catchError((void _) {
           // Errors tracked through the logger

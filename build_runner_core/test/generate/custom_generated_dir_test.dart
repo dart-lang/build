@@ -18,7 +18,7 @@ void main() {
   });
 
   test('can output files to a custom generated dir', () async {
-    final result = await testBuilders(
+    final result = await testPhases(
       [
         applyToRoot(
           TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')),

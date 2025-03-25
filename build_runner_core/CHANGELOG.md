@@ -24,6 +24,8 @@
 - Use `built_value` for `AssetNode` and related types, and for serialization.
 - Add details of what changed and what is built to `--verbose` logging.
 - New change detection algorithm.
+- Add `reportUnusedAssetsForInput` to `BuildOptions`, to listen for when
+  a builder notifies that an asset is unused.
 
 ## 8.0.0
 

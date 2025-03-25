@@ -84,36 +84,6 @@ void main() {
       expect(type!.supertype!.element.name, 'Example');
     });
 
-    test('waits for tearDown', () async {
-      var resolverDone = Completer<void>();
-      var resolver = await resolveSource(
-        r'''
-        library example;
-
-        import 'package:collection/collection.dart';
-
-        abstract class Foo implements Equality {}
-      ''',
-        nonInputsToReadFromFilesystem: {
-          AssetId('collection', 'lib/collection.dart'),
-          AssetId('collection', 'lib/src/equality.dart'),
-        },
-        (resolver) => resolver,
-        tearDown: resolverDone.future,
-      );
-      expect(
-        await resolver.libraries.any((library) => library.name == 'example'),
-        true,
-      );
-      var libExample = await resolver.findLibraryNotNull('example');
-      resolverDone.complete();
-      var classFoo = libExample.getClass('Foo')!;
-      expect(
-        classFoo.allSupertypes.map(_toStringId),
-        contains(endsWith(':collection#Equality')),
-      );
-    });
-
     test('can do expects inside the action', () async {
       await resolveSource(
         r'''
