@@ -10,7 +10,6 @@ import 'package:build/experiments.dart';
 import 'package:built_collection/built_collection.dart';
 // ignore: implementation_imports
 import 'package:logging/logging.dart';
-import 'package:path/path.dart' as p;
 
 import '../asset/writer.dart';
 import '../asset_graph/exceptions.dart';
@@ -66,7 +65,7 @@ class AssetGraphLoader {
           'version mismatch or corrupted asset graph.',
         );
         await Future.wait([
-          _deleteGeneratedDir(),
+          writer.deleteDirectory(_generatedOutputDirectoryId),
           FailureReporter.cleanErrorCache(),
         ]);
         return null;
@@ -109,9 +108,9 @@ class AssetGraphLoader {
         );
       }
       await Future.wait([
-        _deleteAssetGraph(packageGraph),
+        writer.delete(assetGraphId),
         cachedGraph.deleteOutputs(packageGraph, writer),
-        _deleteGeneratedDir(),
+        writer.deleteDirectory(_generatedOutputDirectoryId),
         FailureReporter.cleanErrorCache(),
       ]);
       if (_runningFromSnapshot) {
@@ -124,9 +123,9 @@ class AssetGraphLoader {
         'Throwing away cached asset graph due to Dart SDK update.',
       );
       await Future.wait([
-        _deleteAssetGraph(packageGraph),
+        writer.delete(assetGraphId),
         cachedGraph.deleteOutputs(packageGraph, writer),
-        _deleteGeneratedDir(),
+        writer.deleteDirectory(_generatedOutputDirectoryId),
         FailureReporter.cleanErrorCache(),
       ]);
       if (_runningFromSnapshot) {
@@ -136,16 +135,9 @@ class AssetGraphLoader {
     }
     return cachedGraph;
   }
-}
 
-Future<void> _deleteAssetGraph(PackageGraph packageGraph) =>
-    File(p.join(packageGraph.root.path, assetGraphPath)).delete();
-
-Future<void> _deleteGeneratedDir() async {
-  var generatedDir = Directory(generatedOutputDirectory);
-  if (await generatedDir.exists()) {
-    await generatedDir.delete(recursive: true);
-  }
+  AssetId get _generatedOutputDirectoryId =>
+      AssetId(packageGraph.root.name, generatedOutputDirectory);
 }
 
 bool get _runningFromSnapshot => !Platform.script.path.endsWith('.dart');

@@ -154,4 +154,7 @@ final class BatchWriter extends RunnerAssetWriter {
   Future<void> completeBuild() async {
     await _batch.completeWrites(_inner);
   }
+
+  @override
+  Future<void> deleteDirectory(AssetId id) => _inner.deleteDirectory(id);
 }

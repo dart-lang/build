@@ -16,10 +16,13 @@ class RunnerAssetWriterSpy extends AssetWriterSpy implements RunnerAssetWriter {
   RunnerAssetWriterSpy(this._delegate) : super(_delegate);
 
   @override
-  Future delete(AssetId id) {
+  Future<void> delete(AssetId id) {
     _assetsDeleted.add(id);
     return _delegate.delete(id);
   }
+
+  @override
+  Future<void> deleteDirectory(AssetId id) => _delegate.deleteDirectory(id);
 
   @override
   Future<void> completeBuild() async {}
