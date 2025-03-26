@@ -41,6 +41,11 @@ abstract interface class Filesystem {
   /// If the file does not exist, does nothing.
   void deleteSync(String path);
 
+  /// Deletes a directory recursively.
+  ///
+  /// If the directory does not exist, does nothing.
+  Future<void> deleteDirectory(String path);
+
   /// Writes a file.
   ///
   /// Creates enclosing directories as needed if they don't exist.
@@ -107,6 +112,14 @@ class IoFilesystem implements Filesystem {
     return _pool.withResource(() async {
       final file = File(path);
       if (await file.exists()) await file.delete();
+    });
+  }
+
+  @override
+  Future<void> deleteDirectory(String path) {
+    return _pool.withResource(() async {
+      final directory = Directory(path);
+      if (await directory.exists()) await directory.delete(recursive: true);
     });
   }
 
@@ -190,6 +203,13 @@ class InMemoryFilesystem implements Filesystem {
 
   @override
   void deleteSync(String path) => _files.remove(path);
+
+  @override
+  Future<void> deleteDirectory(String path) {
+    final prefix = '$path/';
+    _files.removeWhere((filePath, _) => filePath.startsWith(prefix));
+    return Future.value();
+  }
 
   @override
   void writeAsBytesSync(String path, List<int> contents) {

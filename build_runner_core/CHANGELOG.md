@@ -2,6 +2,8 @@
 
 - Breaking: refactor `OverridableEnvironment` and `IOEnvironment` into
   `BuildEnvironment`
+- Breaking: add `deleteDirectory` to `RunnerAssetWriter`, make `delete`
+  return `Future<void>`, remove deprecated `OnDelete`.
 - Bump the min SDK to 3.7.0.
 - Fix crash when running on assets ending in a dot.
 - Start using `package:build/src/internal.dart'.

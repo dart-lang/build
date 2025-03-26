@@ -164,6 +164,12 @@ class ReaderWriter extends AssetReader
   }
 
   @override
+  Future<void> deleteDirectory(AssetId id) async {
+    final path = _pathFor(id);
+    await filesystem.deleteDirectory(path);
+  }
+
+  @override
   Future<void> completeBuild() async {
     // TODO(davidmorgan): add back write caching, "batching".
   }

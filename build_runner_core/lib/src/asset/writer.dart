@@ -6,11 +6,17 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 
-@Deprecated('No longer used')
-typedef OnDelete = void Function(AssetId id);
-
 abstract class RunnerAssetWriter implements AssetWriter {
-  Future delete(AssetId id);
+  /// Delete [id].
+  Future<void> delete(AssetId id);
+
+  /// Delete the directory [id] recursively.
+  ///
+  /// Usually an `AssetId` points to a file, but here its `path` is a directory.
+  ///
+  /// Delete unconditionally and recursively: if the directory does not exist,
+  /// do nothing.
+  Future<void> deleteDirectory(AssetId id);
 
   /// Called after each completed build.
   ///
