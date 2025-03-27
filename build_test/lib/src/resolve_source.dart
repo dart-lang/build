@@ -10,8 +10,9 @@ import 'package:build/experiments.dart';
 import 'package:build_resolvers/build_resolvers.dart';
 import 'package:package_config/package_config.dart';
 
-import 'in_memory_reader_writer.dart';
 import 'package_reader.dart';
+import 'test_builder.dart';
+import 'test_reader_writer.dart';
 
 /// Marker constant that may be used in combination with [resolveSources].
 ///
@@ -27,7 +28,6 @@ Future<T> resolveSource<T>(
   AssetId? inputId,
   PackageConfig? packageConfig,
   Set<AssetId>? nonInputsToReadFromFilesystem,
-  Future<void>? tearDown,
   Resolvers? resolvers,
 }) {
   inputId ??= AssetId('_resolve_source', 'lib/_resolve_source.dart');
@@ -38,7 +38,6 @@ Future<T> resolveSource<T>(
     packageConfig: packageConfig,
     nonInputsToReadFromFilesystem: nonInputsToReadFromFilesystem,
     resolverFor: inputId,
-    tearDown: tearDown,
     resolvers: resolvers,
   );
 }
@@ -77,35 +76,6 @@ Future<T> resolveSource<T>(
 /// }
 /// ```
 ///
-/// By default the [Resolver] is unusable after [action] completes. To keep the
-/// resolver active across multiple tests (for example, use `setUpAll` and
-/// `tearDownAll`, provide a `tearDown` [Future]:
-/// ```
-/// import 'dart:async';
-/// import 'package:build/build.dart';
-/// import 'package:build_test/build_test.dart';
-/// import 'package:test/test.dart';
-///
-/// void main() {
-///   Resolver resolver;
-///   var resolverDone = new Completer<Null>();
-///
-///   setUpAll(() async {
-///     resolver = await resolveSources(
-///       {...},
-///       (resolver) => resolver,
-///       tearDown: resolverDone.future,
-///     );
-///   });
-///
-///   tearDownAll(() => resolverDone.complete());
-///
-///   test('...', () async {
-///     // Use the resolver here, and in other tests.
-///   });
-/// }
-/// ```
-///
 /// May provide [resolverFor] to return the [Resolver] for the asset provided,
 /// otherwise defaults to the first one in [inputs].
 ///
@@ -122,7 +92,7 @@ Future<T> resolveSources<T>(
   Set<AssetId>? nonInputsToReadFromFilesystem,
   String? resolverFor,
   String? rootPackage,
-  FutureOr<void> Function(InMemoryAssetReaderWriter)? assetReaderChecks,
+  FutureOr<void> Function(TestReaderWriter)? assetReaderChecks,
   Future<void>? tearDown,
   Resolvers? resolvers,
 }) {
@@ -137,7 +107,6 @@ Future<T> resolveSources<T>(
     nonInputsToReadFromFilesystem: nonInputsToReadFromFilesystem,
     resolverFor: AssetId.parse(resolverFor ?? inputs.keys.first),
     assetReaderChecks: assetReaderChecks,
-    tearDown: tearDown,
     resolvers: resolvers,
   );
 }
@@ -158,7 +127,6 @@ Future<T> resolveAsset<T>(
     packageConfig: packageConfig,
     nonInputsToReadFromFilesystem: nonInputsToReadFromFilesystem,
     resolverFor: inputId,
-    tearDown: tearDown,
     resolvers: resolvers,
   );
 }
@@ -175,37 +143,28 @@ Future<T> _resolveAssets<T>(
   PackageConfig? packageConfig,
   Set<AssetId>? nonInputsToReadFromFilesystem,
   AssetId? resolverFor,
-  FutureOr<void> Function(InMemoryAssetReaderWriter)? assetReaderChecks,
-  Future<void>? tearDown,
+  FutureOr<void> Function(TestReaderWriter)? assetReaderChecks,
   Resolvers? resolvers,
 }) async {
   final resolvedConfig =
       packageConfig ??
       await loadPackageConfigUri((await Isolate.packageConfig)!);
-  final resolveBuilder = _ResolveSourceBuilder(action, resolverFor, tearDown);
+  final resolveBuilder = _ResolveSourceBuilder(action, resolverFor);
 
+  // Replace any `useAssetReader` inputs with actual values.
   final inputAssetIds = inputs.keys.map(AssetId.parse).toList();
-
-  // Prepare the in-memory filesystem the build will run on.
-  final readerWriter = InMemoryAssetReaderWriter(rootPackage: rootPackage);
-
-  // First, add directly-passed [inputs], reading from the filesystem if the
-  // string passed is [useAssetReader].
   final assetReader = PackageAssetReader(resolvedConfig, rootPackage);
-
   for (final assetId in inputAssetIds) {
     var assetValue = inputs[assetId.toString()]!;
     if (assetValue == useAssetReader) {
-      assetValue = await assetReader.readAsString(assetId);
+      inputs[assetId.toString()] = await assetReader.readAsString(assetId);
     }
-    await readerWriter.writeAsString(assetId, assetValue);
   }
 
-  // Then, copy any additionally requested files from the filesystem to the
-  // in-memory filesystem.
+  // Copy any additionally requested files from the filesystem to `inputs`.
   if (nonInputsToReadFromFilesystem != null) {
     for (final id in nonInputsToReadFromFilesystem) {
-      await readerWriter.writeAsBytes(id, await assetReader.readAsBytes(id));
+      inputs[id.toString()] = await assetReader.readAsString(id);
     }
   }
 
@@ -216,28 +175,18 @@ Future<T> _resolveAssets<T>(
           ? AnalyzerResolvers.sharedInstance
           : AnalyzerResolvers.custom(packageConfig: resolvedConfig);
 
-  // We don't care about the results of this build, but we also can't await
-  // it because that would block on the `tearDown` of the `resolveBuilder`.
-  //
-  // We also dont want to leak errors as unhandled async errors so we swallow
-  // them here.
-  //
-  // Errors will still be reported through the resolver itself as well as the
-  // `onDone` future that we return.
-  unawaited(
-    runBuilder(
-      resolveBuilder,
-      inputAssetIds,
-      readerWriter,
-      readerWriter,
-      resolvers,
-    ).catchError((_) {}),
+  final buildResult = await testBuilder(
+    resolveBuilder,
+    inputs,
+    resolvers: resolvers,
+    packageConfig: packageConfig,
   );
-  final result = await resolveBuilder.onDone.future;
+  final readerWriter = buildResult.readerWriter;
   if (assetReaderChecks != null) {
-    await assetReaderChecks(readerWriter);
+    assetReaderChecks(readerWriter);
   }
-  return result;
+
+  return resolveBuilder.onDone.future;
 }
 
 /// A [Builder] that is only used to retrieve a [Resolver] instance.
@@ -246,12 +195,11 @@ Future<T> _resolveAssets<T>(
 /// input given a set of dependencies to also use. See `resolveSource`.
 class _ResolveSourceBuilder<T> implements Builder {
   final FutureOr<T> Function(Resolver) _action;
-  final Future? _tearDown;
   final AssetId? _resolverFor;
 
   final onDone = Completer<T>();
 
-  _ResolveSourceBuilder(this._action, this._resolverFor, this._tearDown);
+  _ResolveSourceBuilder(this._action, this._resolverFor);
 
   @override
   Future<void> build(BuildStep buildStep) async {
@@ -261,7 +209,6 @@ class _ResolveSourceBuilder<T> implements Builder {
     } catch (e, s) {
       onDone.completeError(e, s);
     }
-    await _tearDown;
   }
 
   @override

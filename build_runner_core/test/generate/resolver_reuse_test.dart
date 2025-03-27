@@ -70,7 +70,7 @@ void main() {
             );
           },
         );
-        await testBuilders(
+        await testPhases(
           [
             applyToRoot(optionalWithResolver, isOptional: true),
             applyToRoot(
@@ -151,7 +151,7 @@ void main() {
           generateFor: const InputSet(include: ['lib/b.dart']),
         ),
       ];
-      await testBuilders(
+      await testPhases(
         builders,
         {
           'a|lib/a.dart': '''

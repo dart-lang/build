@@ -1,16 +1,22 @@
 // Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
+import 'package:build_config/build_config.dart';
 import 'package:build_resolvers/build_resolvers.dart';
+import 'package:build_runner_core/build_runner_core.dart';
+// ignore: implementation_imports
+import 'package:build_runner_core/src/generate/build_series.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
 
 import 'assets.dart';
+import 'in_memory_reader_writer.dart';
 import 'test_reader_writer.dart';
 
 AssetId _passThrough(AssetId id) => id;
@@ -33,6 +39,8 @@ AssetId _passThrough(AssetId id) => id;
 /// If assets are written to a location that does not match their logical
 /// association to a package pass [mapAssetIds] to translate from the logical
 /// location to the actual written location.
+///
+/// The serialized asset graph asset is ignored.
 void checkOutputs(
   Map<String, /*List<int>|String|Matcher<List<int>>*/ Object>? outputs,
   Iterable<AssetId> actualAssets,
@@ -40,6 +48,10 @@ void checkOutputs(
   AssetId Function(AssetId id) mapAssetIds = _passThrough,
 }) {
   var modifiableActualAssets = Set.of(actualAssets);
+
+  // Ignore asset graph.
+  modifiableActualAssets.removeWhere((id) => id.path.endsWith(assetGraphPath));
+
   if (outputs != null) {
     outputs.forEach((serializedId, contentsMatcher) {
       assert(
@@ -57,7 +69,28 @@ void checkOutputs(
         reason: 'Builder failed to write asset $assetId',
       );
       modifiableActualAssets.remove(assetId);
-      var actual = writer.testing.readBytes(mapAssetIds(assetId));
+      var mappedAssetId = assetId;
+      if (!writer.testing.exists(assetId)) {
+        // The asset was output but not to the expected location. First try the
+        // `mapAssetIds` if one was supplied.
+        mappedAssetId = mapAssetIds(assetId);
+        if (!writer.testing.exists(mappedAssetId)) {
+          // Then try the usual mapping for generated assets.
+          mappedAssetId = AssetId(
+            (writer as InMemoryAssetReaderWriter).rootPackage,
+            '.dart_tool/build/generated/${assetId.package}/${assetId.path}',
+          );
+        }
+        // If neither succeeded then the asset was output but written somewhere
+        // unexpected.
+        if (!writer.testing.exists(mappedAssetId)) {
+          throw StateError(
+            'Internal error: "$assetId" was recorded as output, but the file '
+            'could not be found. All assets: ${writer.testing.assets}',
+          );
+        }
+      }
+      var actual = writer.testing.readBytes(mappedAssetId);
       Object expected;
       if (contentsMatcher is String) {
         expected = utf8.decode(actual);
@@ -82,12 +115,42 @@ void checkOutputs(
       modifiableActualAssets,
       isEmpty,
       reason:
-          'Unexpected outputs found `$actualAssets`. Only expected $outputs',
+          'Unexpected outputs found `$modifiableActualAssets`. '
+          'Only expected $outputs',
     );
   }
 }
 
 /// Runs [builder] in a test environment.
+///
+/// Calls [testBuilders] with a single builder, see that method for details.
+Future<TestBuilderResult> testBuilder(
+  Builder builder,
+  Map<String, /*String|List<int>*/ Object> sourceAssets, {
+  Set<String>? generateFor,
+  bool Function(String assetId)? isInput,
+  String? rootPackage,
+  Map<String, /*String|List<int>|Matcher<List<int>>*/ Object>? outputs,
+  void Function(LogRecord log)? onLog,
+  void Function(AssetId, Iterable<AssetId>)? reportUnusedAssetsForInput,
+  PackageConfig? packageConfig,
+  Resolvers? resolvers,
+}) async {
+  return testBuilders(
+    [builder],
+    sourceAssets,
+    generateFor: generateFor,
+    isInput: isInput,
+    rootPackage: rootPackage,
+    outputs: outputs,
+    onLog: onLog,
+    reportUnusedAssetsForInput: reportUnusedAssetsForInput,
+    packageConfig: packageConfig,
+    resolvers: resolvers,
+  );
+}
+
+/// Runs [builders] in a test environment.
 ///
 /// The test environment supplies in-memory build [sourceAssets] to the builders
 /// under test.
@@ -101,6 +164,9 @@ void checkOutputs(
 /// should be given as inputs to the builder. These can be omitted if every
 /// asset in [sourceAssets] should be considered an input. [generateFor] is
 /// ignored if both [isInput] and [generateFor] are provided.
+///
+/// Pass [rootPackage] to set the package the build is running in; if not passed
+/// explicitly it will be taken from the first asset in [sourceAssets].
 ///
 /// The keys in [sourceAssets] and [outputs] are paths to file assets and the
 /// values are file contents. The paths must use the following format:
@@ -118,13 +184,15 @@ void checkOutputs(
 /// certain packages. It will only be used for this purpose and not for reading
 /// of files or converting uris.
 ///
+/// Optionally pass [resolvers] to set the analyzer resolvers for the build.
+///
 /// Enabling of language experiments is supported through the
 /// `withEnabledExperiments` method from package:build.
 ///
 /// Returns a [TestBuilderResult] with the [TestReaderWriter] used for
 /// the build, which can be used for further checks.
-Future<TestBuilderResult> testBuilder(
-  Builder builder,
+Future<TestBuilderResult> testBuilders(
+  Iterable<Builder> builders,
   Map<String, /*String|List<int>*/ Object> sourceAssets, {
   Set<String>? generateFor,
   bool Function(String assetId)? isInput,
@@ -133,23 +201,18 @@ Future<TestBuilderResult> testBuilder(
   void Function(LogRecord log)? onLog,
   void Function(AssetId, Iterable<AssetId>)? reportUnusedAssetsForInput,
   PackageConfig? packageConfig,
+  Resolvers? resolvers,
 }) async {
-  onLog ??= (log) => printOnFailure('$log');
+  onLog ??=
+      (log) =>
+          printOnFailure('$log${log.error == null ? '' : '  ${log.error}'}');
 
   var inputIds = {
     for (var descriptor in sourceAssets.keys) makeAssetId(descriptor),
   };
-  var allPackages = {for (var id in inputIds) id.package};
-  if (allPackages.length == 1) rootPackage ??= allPackages.first;
 
-  inputIds.addAll([
-    for (var package in allPackages) AssetId(package, r'lib/$lib$'),
-    if (rootPackage != null) ...[
-      AssetId(rootPackage, r'$package$'),
-      AssetId(rootPackage, r'test/$test$'),
-      AssetId(rootPackage, r'web/$web$'),
-    ],
-  ]);
+  var allPackages = {for (var id in inputIds) id.package};
+  rootPackage ??= allPackages.first;
 
   final readerWriter = TestReaderWriter(rootPackage: rootPackage);
 
@@ -165,30 +228,91 @@ Future<TestBuilderResult> testBuilder(
   final inputFilter = isInput ?? generateFor?.contains ?? (_) => true;
   inputIds.retainWhere((id) => inputFilter('$id'));
 
-  var logger = Logger('testBuilder');
-  var logSubscription = logger.onRecord.listen(onLog);
-  var resolvers =
+  var logSubscription = Logger.root.onRecord.listen(onLog);
+  resolvers ??=
       packageConfig == null && enabledExperiments.isEmpty
           ? AnalyzerResolvers.sharedInstance
           : AnalyzerResolvers.custom(packageConfig: packageConfig);
-  final startingAssets = readerWriter.testing.assets.toSet();
 
-  for (var input in inputIds) {
-    await runBuilder(
-      builder,
-      {input},
-      readerWriter,
-      readerWriter,
-      resolvers,
-      logger: logger,
-      reportUnusedAssetsForInput: reportUnusedAssetsForInput,
-      fakeStartingAssets: startingAssets,
+  // Build a `PackageGraph` based on [sourceAssets].
+  final rootNode = PackageNode(
+    rootPackage,
+    '/$rootPackage',
+    DependencyType.path,
+    null,
+    isRoot: true,
+  );
+  for (final otherPackage in allPackages.where((p) => p != rootPackage)) {
+    rootNode.dependencies.add(
+      PackageNode(otherPackage, '/$otherPackage', DependencyType.path, null),
     );
   }
+  final packageGraph = PackageGraph.fromRoot(rootNode);
 
+  final environment = BuildEnvironment(
+    packageGraph,
+    reader: readerWriter,
+    writer: readerWriter,
+  );
+
+  String builderName(Builder builder) {
+    final result = builder.toString();
+    if (result.startsWith("Instance of '") && result.endsWith("'")) {
+      return result.substring("Instance of '".length, result.length - 1);
+    }
+    return result;
+  }
+
+  final buildOptions = await BuildOptions.create(
+    _NoopLogSubscription(),
+    packageGraph: packageGraph,
+    reportUnusedAssetsForInput: reportUnusedAssetsForInput,
+    resolvers: resolvers,
+    // Override sources to all inputs, optionally restricted by [inputFilter] or
+    // [generateFor]. Without this, the defaults would be used, for example
+    // picking up `lib/**` but not all files in the package root.
+    overrideBuildConfig: {
+      for (final package in allPackages)
+        package: BuildConfig.fromMap(package, [], {
+          'targets': {
+            package: {
+              'sources': [
+                r'\$package$',
+                r'lib/$lib$',
+                r'test/$test$',
+                r'web/$web$',
+                ...inputIds
+                    .where((id) => id.package == package)
+                    .map((id) => id.path),
+              ],
+            },
+          },
+        }),
+    },
+    // Tests always trigger the "build script updated" check, even if it
+    // didn't change. Skip it to allow testing with preserved state.
+    skipBuildScriptCheck: true,
+  );
+
+  final buildSeries = await BuildSeries.create(buildOptions, environment, [
+    for (final builder in builders)
+      apply(builderName(builder), [
+        (_) => builder,
+      ], (package) => package.name != r'$sdk'),
+  ], {});
+
+  // Run the build.
+  await buildSeries.run({});
+
+  // Do cleanup that would usually happen on process exit.
+  await buildSeries.beforeExit();
+
+  // Stop logging.
   await logSubscription.cancel();
-  var actualOutputs = readerWriter.testing.assetsWritten;
-  checkOutputs(outputs, actualOutputs, readerWriter);
+
+  // Check the build outputs as requested.
+  checkOutputs(outputs, readerWriter.testing.assetsWritten, readerWriter);
+
   return TestBuilderResult(readerWriter: readerWriter);
 }
 
@@ -196,4 +320,11 @@ class TestBuilderResult {
   final TestReaderWriter readerWriter;
 
   TestBuilderResult({required this.readerWriter});
+}
+
+/// [LogSubscription] that does nothing.
+class _NoopLogSubscription implements LogSubscription {
+  @override
+  StreamSubscription<LogRecord> get logListener =>
+      StreamController<LogRecord>().stream.listen((_) {});
 }

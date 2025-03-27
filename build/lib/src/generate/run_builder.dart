@@ -34,10 +34,6 @@ import 'expected_outputs.dart';
 /// If [reportUnusedAssetsForInput] is provided then all calls to
 /// `BuildStep.reportUnusedAssets` in [builder] will be forwarded to this
 /// function with the associated primary input.
-///
-/// Optionally pass [fakeStartingAssets] for testing: the builder will behave as
-/// if exactly those assets are available from previous phases, and will not be
-/// able to access other files except for its own output.
 Future<void> runBuilder(
   Builder builder,
   Iterable<AssetId> inputs,
@@ -50,7 +46,6 @@ Future<void> runBuilder(
   void Function(AssetId input, Iterable<AssetId> assets)?
   reportUnusedAssetsForInput,
   PackageConfig? packageConfig,
-  Set<AssetId>? fakeStartingAssets,
 }) async {
   var shouldDisposeResourceManager = resourceManager == null;
   final resources = resourceManager ?? ResourceManager();
@@ -89,13 +84,8 @@ Future<void> runBuilder(
       // `SingleStepReaderWriter` instance integrated with the build; the `from`
       // factory just passes it through.
       //
-      // If there is no build running, this creates a fake build step,
-      // optionally with `fakeStartingAssets`.
-      SingleStepReaderWriter.from(
-        reader: assetReader,
-        writer: assetWriter,
-        fakeStartingAssets: fakeStartingAssets,
-      ),
+      // If there is no build running, this creates a fake build step.
+      SingleStepReaderWriter.from(reader: assetReader, writer: assetWriter),
       resolvers,
       resources,
       loadPackageConfig,

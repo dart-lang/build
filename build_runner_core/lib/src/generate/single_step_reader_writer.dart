@@ -83,15 +83,6 @@ class RunningBuildStep {
   });
 }
 
-/// If there is no build currently running, state to fake it for testing.
-class FakeRunningBuildStep {
-  /// If set, `SingleStepReaderWriter` acts as if running in a build step where
-  /// `startingAssets` are available from previous phase(s).
-  final Set<AssetId>? startingAssets;
-
-  FakeRunningBuildStep({required this.startingAssets});
-}
-
 /// An [AssetReader] with a lifetime equivalent to that of a single step in a
 /// build.
 ///
@@ -110,7 +101,6 @@ class SingleStepReaderWriter extends AssetReader
 
   final RunningBuild? _runningBuild;
   final RunningBuildStep? _runningBuildStep;
-  final FakeRunningBuildStep? _fakeRunningBuildStep;
 
   final AssetReaderWriter _delegate;
 
@@ -122,13 +112,11 @@ class SingleStepReaderWriter extends AssetReader
   SingleStepReaderWriter({
     required RunningBuild? runningBuild,
     required RunningBuildStep? runningBuildStep,
-    FakeRunningBuildStep? fakeRunningBuildStep,
     required AssetReaderWriter readerWriter,
     required this.inputTracker,
     required this.assetsWritten,
   }) : _runningBuild = runningBuild,
        _runningBuildStep = runningBuildStep,
-       _fakeRunningBuildStep = fakeRunningBuildStep,
        _delegate = readerWriter {
     if (runningBuildStep != null) {
       if (runningBuild == null) {
@@ -137,24 +125,12 @@ class SingleStepReaderWriter extends AssetReader
           'be both null or both set.',
         );
       }
-      if (fakeRunningBuildStep != null) {
-        throw ArgumentError(
-          'Exactly one of `runningBuildStep` and '
-          '`fakeRunningBuildStep` must be set, but both were set.',
-        );
-      }
     }
     if (runningBuildStep == null) {
       if (runningBuild != null) {
         throw ArgumentError(
           '`runningBuildStep` was not set but `runningBuild` '
           'was, they must be both null or both set.',
-        );
-      }
-      if (fakeRunningBuildStep == null) {
-        throw ArgumentError(
-          'Exactly one of `runningBuildStep` and '
-          '`fakeRunningBuildStep` must be set, but neither was set.',
         );
       }
     }
@@ -167,7 +143,6 @@ class SingleStepReaderWriter extends AssetReader
   }) => SingleStepReaderWriter(
     runningBuild: _runningBuild,
     runningBuildStep: _runningBuildStep,
-    fakeRunningBuildStep: _fakeRunningBuildStep,
     readerWriter: _delegate.copyWith(
       cache: cache,
       generatedAssetHider: generatedAssetHider,
@@ -185,15 +160,9 @@ class SingleStepReaderWriter extends AssetReader
   ///
   /// Otherwise, this constructor is for a cut down use case where the generator
   /// runs outside of a build, which is mostly for testing.
-  ///
-  /// Optionally pass [fakeStartingAssets] to cause the build step to only
-  /// see starting assets and assets the step itself wrote. This approximates
-  /// the behaviour during a build where a step can't see outputs from other
-  /// generators running in the same or later phases.
   factory SingleStepReaderWriter.from({
     required AssetReader reader,
     required AssetWriter writer,
-    Set<AssetId>? fakeStartingAssets,
   }) {
     AssetReaderWriter readerWriter;
     if (identical(reader, writer) && reader is AssetReaderWriter) {
@@ -208,23 +177,14 @@ class SingleStepReaderWriter extends AssetReader
     if (readerWriter is SingleStepReaderWriter) {
       return readerWriter;
     } else {
-      return SingleStepReaderWriter.fakeFor(
-        readerWriter,
-        fakeStartingAssets: fakeStartingAssets,
-      );
+      return SingleStepReaderWriter.fakeFor(readerWriter);
     }
   }
 
-  factory SingleStepReaderWriter.fakeFor(
-    AssetReaderWriter assetReaderWriter, {
-    Set<AssetId>? fakeStartingAssets,
-  }) {
+  factory SingleStepReaderWriter.fakeFor(AssetReaderWriter assetReaderWriter) {
     return SingleStepReaderWriter(
       runningBuild: null,
       runningBuildStep: null,
-      fakeRunningBuildStep: FakeRunningBuildStep(
-        startingAssets: fakeStartingAssets,
-      ),
       readerWriter: assetReaderWriter,
       inputTracker: InputTracker(assetReaderWriter.filesystem),
       assetsWritten: {},
@@ -264,16 +224,6 @@ class SingleStepReaderWriter extends AssetReader
     }
 
     if (_runningBuild == null) {
-      // For a fake build, files are readable if they were on the filesystem
-      // when the step was created or they were written by the build step. This
-      // approximates the real behaviour whereby a build step can see output
-      // from earlier phases plus its own output.
-      if (_fakeRunningBuildStep!.startingAssets != null) {
-        if (!_fakeRunningBuildStep.startingAssets!.contains(id) &&
-            !assetsWritten.contains(id)) {
-          return false;
-        }
-      }
       inputTracker.add(id);
       return _delegate.canRead(id);
     }

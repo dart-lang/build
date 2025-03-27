@@ -66,7 +66,9 @@ void _printOnFailure(LogRecord record) {
 ///       });
 ///     }
 ///
-Future<TestBuildersResult> testBuilders(
+/// TODO(davidmorgan): this overlaps with the newer `testBuilders` in
+/// `package:build_test`, can they be unified?
+Future<TestBuildersResult> testPhases(
   List<BuilderApplication> builders,
   Map<String, /*String|List<int>*/ Object> inputs, {
   TestBuildersResult? resumeFrom,

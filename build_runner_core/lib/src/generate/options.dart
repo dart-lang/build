@@ -146,11 +146,14 @@ class BuildOptions {
   final TargetGraph targetGraph;
   final bool trackPerformance;
 
-  // Watch mode options.
+  /// Watch mode options.
   Duration debounceDelay;
 
-  // For testing only, skips the build script updates check.
+  /// For testing only, skips the build script updates check.
   bool skipBuildScriptCheck;
+
+  /// Listener for when builders report unused assets.
+  void Function(AssetId, Iterable<AssetId>)? reportUnusedAssetsForInput;
 
   BuildOptions._({
     required this.debounceDelay,
@@ -163,6 +166,7 @@ class BuildOptions {
     required this.targetGraph,
     required this.logPerformanceDir,
     required this.resolvers,
+    this.reportUnusedAssetsForInput,
   });
 
   /// Creates a [BuildOptions] with sane defaults.
@@ -180,6 +184,7 @@ class BuildOptions {
     bool trackPerformance = false,
     String? logPerformanceDir,
     Resolvers? resolvers,
+    void Function(AssetId, Iterable<AssetId>)? reportUnusedAssetsForInput,
   }) async {
     TargetGraph targetGraph;
     try {
@@ -230,6 +235,7 @@ feature, you may need to run `dart run build_runner clean` and then rebuild.
       targetGraph: targetGraph,
       logPerformanceDir: logPerformanceDir,
       resolvers: resolvers,
+      reportUnusedAssetsForInput: reportUnusedAssetsForInput,
     );
   }
 }
