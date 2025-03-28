@@ -3,13 +3,12 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:collection';
 
-import 'package:analyzer/dart/analysis/utilities.dart';
-import 'package:analyzer/dart/ast/ast.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 // ignore: implementation_imports
 import 'package:build_runner_core/src/generate/build_step_impl.dart';
 
@@ -34,7 +33,7 @@ class AnalysisDriverModel {
   final AnalysisDriverFilesystem filesystem = AnalysisDriverFilesystem();
 
   /// The import graph of all sources needed for analysis.
-  final _graph = _Graph();
+  final DepsGraphLoader _graphLoader = DepsGraphLoader();
 
   /// Assets that have been synced into the in-memory filesystem
   /// [filesystem].
@@ -49,7 +48,7 @@ class AnalysisDriverModel {
 
   /// Clear cached information specific to an individual build.
   void reset() {
-    _graph.clear();
+    _graphLoader.clear();
     _syncedOntoFilesystem.clear();
   }
 
@@ -113,13 +112,23 @@ class AnalysisDriverModel {
   }) async {
     var idsToSyncOntoFilesystem = entryPoints;
     Iterable<AssetId> inputIds = entryPoints;
+    final nodeLoader = DepsNodeLoader(buildStep.phaseRestrictedReader);
 
     // If requested, find transitive imports.
     if (transitive) {
-      final previouslyMissingFiles = await _graph.load(buildStep, entryPoints);
-      _syncedOntoFilesystem.removeAll(previouslyMissingFiles);
-      idsToSyncOntoFilesystem = _graph.nodes.keys.toList();
-      inputIds = _graph.inputsFor(entryPoints);
+      /*final previouslyMissingFiles =*/
+      await _graphLoader.load(
+        nodeLoader,
+        // TODO(davidmorgan): other entrypoints.
+        entryPoints.first,
+      );
+      /*_syncedOntoFilesystem.removeAll(previouslyMissingFiles);*/
+      idsToSyncOntoFilesystem =
+          (await _graphLoader.transitiveDepsOf(
+            nodeLoader,
+            entryPoints.first,
+          )).toList();
+      inputIds = idsToSyncOntoFilesystem;
     }
 
     // Notify [buildStep] of its inputs.
@@ -130,7 +139,10 @@ class AnalysisDriverModel {
 
     // Sync changes onto the "URI resolver", the in-memory filesystem.
     for (final id in idsToSyncOntoFilesystem) {
-      if (!_syncedOntoFilesystem.add(id)) continue;
+      if (!_syncedOntoFilesystem.add(id)) {
+        // print('Skip syncing $id');
+        continue;
+      }
       final content =
           await buildStep.canRead(id) ? await buildStep.readAsString(id) : null;
       if (content == null) {
@@ -150,119 +162,7 @@ class AnalysisDriverModel {
   }
 }
 
-const _ignoredSchemes = ['dart', 'dart-ext'];
-
-/// Parses Dart source in [content], returns all depedencies: all assets
-/// mentioned in directives, excluding `dart:` and `dart-ext` schemes.
-List<AssetId> _parseDependencies(String content, AssetId from) =>
-    parseString(content: content, throwIfDiagnostics: false).unit.directives
-        .whereType<UriBasedDirective>()
-        .map((directive) => directive.uri.stringValue)
-        // Uri.stringValue can be null for strings that use interpolation.
-        .nonNulls
-        .where(
-          (uriContent) => !_ignoredSchemes.any(Uri.parse(uriContent).isScheme),
-        )
-        .map((content) => AssetId.resolve(Uri.parse(content), from: from))
-        .toList();
-
 extension _AssetIdExtensions on AssetId {
   /// Asset path for the in-memory filesystem.
   String get asPath => AnalysisDriverFilesystem.assetPath(this);
-}
-
-/// The directive graph of all known sources.
-class _Graph {
-  final Map<AssetId, _Node> nodes = {};
-
-  /// Walks the import graph from [ids] loading into [nodes].
-  ///
-  /// Checks files that are in the graph as missing to determine whether they
-  /// are now available.
-  ///
-  /// Returns the set of files that were in the graph as missing and have now
-  /// been loaded.
-  Future<Set<AssetId>> load(AssetReader reader, Iterable<AssetId> ids) async {
-    // TODO(davidmorgan): check if List is faster.
-    final nextIds = Queue.of(ids);
-    final processed = <AssetId>{};
-    final previouslyMissingFiles = <AssetId>{};
-    while (nextIds.isNotEmpty) {
-      final id = nextIds.removeFirst();
-
-      if (!processed.add(id)) continue;
-
-      // Read nodes not yet loaded or that were missing when loaded.
-      var node = nodes[id];
-      if (node == null || node.isMissing) {
-        if (await reader.canRead(id)) {
-          // If it was missing when loaded, record that.
-          if (node != null && node.isMissing) {
-            previouslyMissingFiles.add(id);
-          }
-          // Load the node.
-          final content = await reader.readAsString(id);
-          final deps = _parseDependencies(content, id);
-          node = _Node(id: id, deps: deps);
-        } else {
-          node ??= _Node.missing(id: id);
-        }
-        nodes[id] = node;
-      }
-
-      // Continue to deps even for already-loaded nodes, to check missing files.
-      nextIds.addAll(node.deps.where((id) => !processed.contains(id)));
-    }
-
-    return previouslyMissingFiles;
-  }
-
-  void clear() {
-    nodes.clear();
-  }
-
-  /// The inputs for a build action analyzing [entryPoints].
-  ///
-  /// This is transitive deps, but cut off by the presence of any
-  /// `.transitive_digest` file next to an asset.
-  Set<AssetId> inputsFor(Iterable<AssetId> entryPoints) {
-    final result = entryPoints.toSet();
-    final nextIds = Queue.of(entryPoints);
-
-    while (nextIds.isNotEmpty) {
-      final nextId = nextIds.removeFirst();
-      final node = nodes[nextId]!;
-
-      // Skip if there are no deps because the file is missing.
-      if (node.isMissing) continue;
-
-      // For each dep, if it's not in `result` yet, it's newly-discovered:
-      // add it to `nextIds`.
-      for (final dep in node.deps) {
-        if (result.add(dep)) {
-          nextIds.add(dep);
-        }
-      }
-    }
-    return result;
-  }
-
-  @override
-  String toString() => nodes.toString();
-}
-
-/// A node in the directive graph.
-class _Node {
-  final AssetId id;
-  final List<AssetId> deps;
-  final bool isMissing;
-
-  _Node({required this.id, required this.deps}) : isMissing = false;
-
-  _Node.missing({required this.id}) : isMissing = true, deps = const [];
-
-  @override
-  String toString() =>
-      '$id:'
-      '${isMissing ? 'missing' : deps}';
 }

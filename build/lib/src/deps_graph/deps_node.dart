@@ -1,0 +1,75 @@
+// Copyright (c) 2025, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+import 'package:built_collection/built_collection.dart';
+import 'package:built_value/built_value.dart';
+
+import '../../build.dart' hide Builder;
+
+part 'deps_node.g.dart';
+
+abstract class DepsNode implements Built<DepsNode, DepsNodeBuilder> {
+  AssetId get id;
+
+  /// Whether this is a missing source.
+  ///
+  /// If so, [phase] is `null`.
+  bool get missing;
+
+  /// If this node is generated, the phase in which it is generated.
+  ///
+  /// It becomes readable _after_ this phase. So for example if `phase` is 11,
+  /// it is first readable in phase 12.
+  ///
+  /// Or, `null` if it is not a generated source.
+  int? get phase;
+
+  /// The deps of this node.
+  ///
+  /// Empty if [missing] or if the node was not readable when it was loaded, due
+  /// to loading in a too-early phase.
+  BuiltSet<AssetId> get deps;
+
+  factory DepsNode([void Function(DepsNodeBuilder)? updates]) =>
+      (DepsNodeBuilder()
+            ..missing = false
+            ..deps
+            ..update(updates))
+          .build();
+  DepsNode._();
+
+  factory DepsNode.missingSource(AssetId id) => _$DepsNode._(
+    id: id,
+    missing: true,
+    phase: null,
+    deps: <AssetId>{}.build(),
+  );
+
+  factory DepsNode.source(AssetId id, Iterable<AssetId> deps) => _$DepsNode._(
+    id: id,
+    missing: false,
+    phase: null,
+    deps: BuiltSet.of(deps),
+  );
+
+  factory DepsNode.futureGenerated(AssetId id, int phase) => _$DepsNode._(
+    id: id,
+    missing: false,
+    phase: phase,
+    deps: <AssetId>{}.build(),
+  );
+
+  factory DepsNode.generated(AssetId id, int phase, Iterable<AssetId> deps) =>
+      _$DepsNode._(
+        id: id,
+        missing: false,
+        phase: phase,
+        deps: BuiltSet.of(deps),
+      );
+
+  bool isHidden({required int atPhase}) {
+    if (phase == null) return false;
+    return atPhase <= phase!;
+  }
+}

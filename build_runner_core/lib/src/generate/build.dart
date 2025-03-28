@@ -204,7 +204,11 @@ class Build {
           await _updateAssetGraph(updates);
         }
         // Run a fresh build.
-        var result = await logTimedAsync(_logger, 'Running build', _runPhases);
+        var result = await logTimedAsync(
+          _logger,
+          'Running build $updates',
+          _runPhases,
+        );
 
         // Write out the dependency graph file.
         await logTimedAsync(

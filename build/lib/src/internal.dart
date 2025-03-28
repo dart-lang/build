@@ -6,6 +6,12 @@
 /// `build_runner_core` and `build_test` only.
 library;
 
+export 'deps_graph/deps_cycle.dart';
+export 'deps_graph/deps_graph.dart';
+export 'deps_graph/deps_graph_loader.dart';
+export 'deps_graph/deps_node.dart';
+export 'deps_graph/deps_node_loader.dart';
+export 'deps_graph/node_reader.dart';
 export 'state/asset_finder.dart';
 export 'state/asset_path_provider.dart';
 export 'state/filesystem.dart';
