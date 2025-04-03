@@ -96,12 +96,11 @@ class Build {
     required this.resourceManager,
     required this.assetGraph,
     required this.cleanBuild,
-  }) : renderer = LogRenderer(rootPackageName: options.packageGraph.root.name),
-       performanceTracker =
-           options.trackPerformance
-               ? BuildPerformanceTracker()
-               : BuildPerformanceTracker.noOp(),
-       logFine = _logger.level <= Level.FINE {
+  })  : renderer = LogRenderer(rootPackageName: options.packageGraph.root.name),
+        performanceTracker = options.trackPerformance
+            ? BuildPerformanceTracker()
+            : BuildPerformanceTracker.noOp(),
+        logFine = _logger.level <= Level.FINE {
     hungActionsHeartbeat = HungActionsHeartbeat(() {
       final message = StringBuffer();
       const actionsToLogMax = 5;
@@ -445,7 +444,6 @@ class Build {
         ),
         runningBuildStep: RunningBuildStep(
           phaseNumber: phaseNumber,
-
           buildPhase: phase,
           primaryPackage: input.package,
         ),
@@ -547,9 +545,8 @@ class Build {
     PostBuildAction action,
   ) async {
     final outputs = <AssetId>[];
-    for (final node in assetGraph
-        .packageNodes(action.package)
-        .toList(growable: false)) {
+    for (final node
+        in assetGraph.packageNodes(action.package).toList(growable: false)) {
       if (node.type != NodeType.postProcessAnchor) continue;
       final nodeConfiguration = node.postProcessAnchorNodeConfiguration!;
       if (nodeConfiguration.actionNumber != actionNum) continue;
@@ -606,12 +603,13 @@ class Build {
 
     // Clean out the impacts of the previous run.
     await FailureReporter.clean(phaseNumber, input);
-    await _cleanUpStaleOutputs(anchorNode.outputs);
-    for (final output in anchorNode.outputs.toList(growable: false)) {
+    final anchorNodeState = anchorNode.postProcessAnchorNodeState!;
+    await _cleanUpStaleOutputs(anchorNodeState.outputs);
+    for (final output in anchorNodeState.outputs) {
       assetGraph.remove(output);
     }
     assetGraph.updateNode(anchorNode.id, (nodeBuilder) {
-      nodeBuilder.outputs.clear();
+      nodeBuilder.postProcessAnchorNodeState.outputs.clear();
     });
     assetGraph.updateNode(inputNode.id, (nodeBuilder) {
       nodeBuilder.deletedBy.remove(anchorNode.id);
@@ -648,7 +646,7 @@ class Build {
         );
         assetGraph.add(node);
         assetGraph.updateNode(anchorNode.id, (nodeBuilder) {
-          nodeBuilder.outputs.add(assetId);
+          nodeBuilder.postProcessAnchorNodeState.outputs.add(assetId);
         });
       },
       deleteAsset: (assetId) {
@@ -725,16 +723,13 @@ class Build {
     // same inputs and invalidation state.
     var firstNode = assetGraph.get(outputs.first)!;
     assert(
-      outputs
-          .skip(1)
-          .every(
-            (output) =>
-                assetGraph
-                    .get(output)!
-                    .generatedNodeState!
-                    .inputs
-                    .difference(firstNode.generatedNodeState!.inputs)
-                    .isEmpty,
+      outputs.skip(1).every(
+            (output) => assetGraph
+                .get(output)!
+                .generatedNodeState!
+                .inputs
+                .difference(firstNode.generatedNodeState!.inputs)
+                .isEmpty,
           ),
       'All outputs of a build action should share the same inputs.',
     );
@@ -941,7 +936,7 @@ class Build {
       // Mark the glob node as an output of all the inputs.
       for (var id in generatedFileInputs.followedBy(otherInputs)) {
         assetGraph.updateNode(id, (nodeBuilder) {
-          nodeBuilder.outputs.add(globId);
+          // nodeBuilder.outputs.add(globId);
         });
       }
 
@@ -970,8 +965,8 @@ class Build {
         nodeBuilder
           ..globNodeState.results.replace(results)
           ..globNodeState.inputs.replace(
-            generatedFileInputs.followedBy(otherInputs),
-          )
+                generatedFileInputs.followedBy(otherInputs),
+              )
           ..globNodeState.pendingBuildAction = PendingBuildAction.none
           ..lastKnownDigest = digest;
       });
@@ -997,10 +992,9 @@ class Build {
     Set<AssetId>? unusedAssets,
   }) async {
     if (outputs.isEmpty) return;
-    var usedInputs =
-        unusedAssets != null
-            ? inputTracker.inputs.difference(unusedAssets)
-            : inputTracker.inputs;
+    var usedInputs = unusedAssets != null
+        ? inputTracker.inputs.difference(unusedAssets)
+        : inputTracker.inputs;
 
     final isFailure = errors.isNotEmpty;
 
@@ -1043,9 +1037,9 @@ class Build {
 
           // Make sure output invalidation follows primary outputs for builds
           // that won't run
-          assetGraph.updateNode(node.id, (nodeBuilder) {
+          /*assetGraph.updateNode(node.id, (nodeBuilder) {
             nodeBuilder.outputs.add(output);
-          });
+          });*/
           assetGraph.updateNode(output, (nodeBuilder) {
             nodeBuilder.generatedNodeState.inputs.add(node.id);
           });
@@ -1060,23 +1054,23 @@ class Build {
   /// Removes old inputs from node with [id] based on [updatedInputs], and
   /// cleans up all the old edges.
   void _removeOldInputs(AssetId id, Set<AssetId> updatedInputs) {
-    final node = assetGraph.get(id)!;
-    final nodeState = node.generatedNodeState!;
-    var removedInputs = nodeState.inputs.asSet().difference(updatedInputs);
-    assetGraph.updateNode(node.id, (nodeBuilder) {
-      nodeBuilder.generatedNodeState.inputs.removeAll(removedInputs);
+    // final node = assetGraph.get(id)!;
+    // final nodeState = node.generatedNodeState!;
+    // var removedInputs = nodeState.inputs.asSet().difference(updatedInputs);
+    assetGraph.updateNode(id, (nodeBuilder) {
+      nodeBuilder.generatedNodeState.inputs.replace(updatedInputs);
     });
-    for (var input in removedInputs) {
+    /*for (var input in removedInputs) {
       assetGraph.updateNode(input, (nodeBuilder) {
         nodeBuilder.outputs.remove(node.id);
       });
-    }
+    }*/
   }
 
   /// Adds new inputs to node with [id] based on [updatedInputs], and adds the
   /// appropriate edges.
   void _addNewInputs(AssetId id, Set<AssetId> updatedInputs) {
-    final node = assetGraph.get(id)!;
+    /*final node = assetGraph.get(id)!;
     final nodeState = node.generatedNodeState!;
     var newInputs = updatedInputs.difference(nodeState.inputs.asSet());
     assetGraph.updateNode(node.id, (nodeBuilder) {
@@ -1086,7 +1080,7 @@ class Build {
       assetGraph.updateNode(input, (nodeBuilder) {
         nodeBuilder.outputs.add(node.id);
       });
-    }
+    }*/
   }
 
   Future _delete(AssetId id) => deleteWriter.delete(id);
@@ -1097,10 +1091,9 @@ String _actionLoggerName(
   AssetId primaryInput,
   String rootPackageName,
 ) {
-  var asset =
-      primaryInput.package == rootPackageName
-          ? primaryInput.path
-          : primaryInput.uri.toString();
+  var asset = primaryInput.package == rootPackageName
+      ? primaryInput.path
+      : primaryInput.uri.toString();
 
   // In the rare case that the assets ends with a dot, remove it to ensure that
   // the logger name is valid.
