@@ -8,7 +8,7 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 26;
+const _version = 27;
 
 /// Deserializes an [AssetGraph] from a [Map].
 class _AssetGraphDeserializer {
@@ -34,6 +34,27 @@ class _AssetGraphDeserializer {
 
   /// Perform the deserialization, should only be called once.
   AssetGraph deserialize() {
+    final underlyingAssetIdSerializer = AssetIdSerializer();
+    final assetIds = _serializedGraph['assetIds'] as Iterable;
+    assetIdSerializer.setObjects(
+      assetIds.map(
+        (serialized) => underlyingAssetIdSerializer.deserialize(
+          serializers,
+          serialized as Object,
+        ),
+      ),
+    );
+
+    final libraryCycleGraphs =
+        _serializedGraph['libraryCycleGraphs'] as Iterable;
+    libraryCycleGraphSerializer.setObjects(
+      libraryCycleGraphs.map(
+        (serialized) => (LibraryCycleGraph.serializer
+                as StructuredSerializer<LibraryCycleGraph>)
+            .deserialize(serializers, serialized as Iterable<Object?>),
+      ),
+    );
+
     var packageLanguageVersions = {
       for (var entry
           in (_serializedGraph['packageLanguageVersions']
@@ -98,6 +119,9 @@ class _AssetGraphSerializer {
         ..add(packages.indexOf(node.id.package));
     }
 
+    assetIdSerializer.setObjects([]);
+    libraryCycleGraphSerializer.setObjects([]);
+    final underlyingAssetIdSerializer = AssetIdSerializer();
     var result = <String, dynamic>{
       'version': _version,
       'dart_version': _graph.dartVersion,
@@ -112,6 +136,8 @@ class _AssetGraphSerializer {
               .map((pkg, version) => MapEntry(pkg, version?.toString()))
               .toMap(),
       'enabledExperiments': _graph.enabledExperiments.toList(),
+      'assetIds': assetIdSerializer.serializedObjects,
+      'libraryCycleGraphs': libraryCycleGraphSerializer.serializedObjects,
     };
     return utf8.encode(json.encode(result));
   }

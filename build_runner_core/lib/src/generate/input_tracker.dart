@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:collection';
-
 import 'package:build/build.dart';
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
@@ -21,7 +19,7 @@ class InputTracker {
   static Map<Filesystem, List<InputTracker>> inputTrackersForTesting =
       Map.identity();
 
-  final HashSet<AssetId> _inputs = HashSet<AssetId>();
+  AssetSet inputs = AssetSet();
 
   /// Creates an input tracker.
   ///
@@ -34,16 +32,16 @@ class InputTracker {
     }
   }
 
-  void add(AssetId input) => _inputs.add(input);
+  void add(AssetId input) =>
+      inputs = inputs.rebuild((b) => b..assets.add(input));
 
-  void addAll({
-    required AssetId primaryInput,
-    required Iterable<AssetId> inputs,
-  }) => _inputs.addAll(inputs);
+  void addAll({required Iterable<AssetId> inputs}) =>
+      this.inputs = this.inputs.rebuild((b) => b..assets.addAll(inputs));
 
-  Set<AssetId> get inputs => _inputs;
+  void addGraph(LibraryCycleGraph graph) =>
+      inputs = inputs.rebuild((b) => b..graphs.add(graph));
 
   void clear() {
-    inputs.clear();
+    inputs = AssetSet();
   }
 }

@@ -12,6 +12,7 @@ import 'package:build/experiments.dart' as experiments_zone;
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
 import 'package:built_collection/built_collection.dart';
+import 'package:built_value/serializer.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:package_config/package_config.dart';
@@ -91,7 +92,28 @@ class AssetGraph implements GeneratedAssetHider {
     return graph;
   }
 
-  List<int> serialize() => _AssetGraphSerializer(this).serialize();
+  List<int> serialize() {
+    updateOutputs();
+    return _AssetGraphSerializer(this).serialize();
+  }
+
+  void updateOutputs() {
+    final outputs = <AssetId, Set<AssetId>>{};
+
+    for (final node in allNodes) {
+      if (node.type == NodeType.generated) {
+        for (final input in node.generatedNodeState!.inputs.iterable) {
+          outputs.putIfAbsent(input, () => {}).add(node.id);
+        }
+      }
+    }
+
+    for (final entry in outputs.entries) {
+      updateNode(entry.key, (nodeBuilder) {
+        nodeBuilder.outputs.replace(entry.value);
+      });
+    }
+  }
 
   /// Checks if [id] exists in the graph.
   bool contains(AssetId id) =>
@@ -252,7 +274,7 @@ class AssetGraph implements GeneratedAssetHider {
     for (var output in node.outputs) {
       updateNodeIfPresent(output, (nodeBuilder) {
         if (nodeBuilder.type == NodeType.generated) {
-          nodeBuilder.generatedNodeState.inputs.remove(id);
+          // nodeBuilder.generatedNodeState.inputs.remove(id);
         } else if (nodeBuilder.type == NodeType.glob) {
           nodeBuilder.globNodeState
             ..inputs.remove(id)
@@ -262,7 +284,7 @@ class AssetGraph implements GeneratedAssetHider {
     }
 
     if (node.type == NodeType.generated) {
-      for (var input in node.generatedNodeState!.inputs) {
+      for (var input in node.generatedNodeState!.inputs.iterable) {
         // We may have already removed this node entirely.
         updateNodeIfPresent(input, (nodeBuilder) {
           nodeBuilder
@@ -701,7 +723,7 @@ class AssetGraph implements GeneratedAssetHider {
     for (var output in outputs) {
       updateNodeIfPresent(output, (nodeBuilder) {
         if (nodeBuilder.type == NodeType.generated) {
-          nodeBuilder.generatedNodeState.inputs.add(input);
+          nodeBuilder.generatedNodeState.inputs.assets.add(input);
         } else if (nodeBuilder.type == NodeType.glob) {
           nodeBuilder.globNodeState.inputs.add(input);
         }

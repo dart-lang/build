@@ -5,12 +5,16 @@
 import 'dart:convert';
 
 import 'package:build/build.dart' hide Builder;
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 import 'package:crypto/crypto.dart';
 
 import '../generate/phase.dart';
+import 'identity_serializer.dart';
+import 'identity_serializer_plugin.dart';
 
 part 'node.g.dart';
 
@@ -194,7 +198,7 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     b.generatedNodeConfiguration.builderOptionsId = builderOptionsId;
     b.generatedNodeConfiguration.phaseNumber = phaseNumber;
     b.generatedNodeConfiguration.isHidden = isHidden;
-    b.generatedNodeState.inputs.replace(inputs ?? []);
+    b.generatedNodeState.inputs.assets.replace(inputs ?? []);
     b.generatedNodeState.pendingBuildAction = pendingBuildAction;
     b.generatedNodeState.wasOutput = wasOutput;
     b.generatedNodeState.isFailure = isFailure;
@@ -325,7 +329,7 @@ abstract class GeneratedNodeState
 
   /// All the inputs that were read when generating this asset, or deciding not
   /// to generate it.
-  BuiltSet<AssetId> get inputs;
+  AssetSet get inputs;
 
   /// The next work that needs doing on this node.
   PendingBuildAction get pendingBuildAction;
@@ -424,11 +428,19 @@ class PendingBuildAction extends EnumClass {
       _$pendingBuildActionValueOf(name);
 }
 
+final assetIdSerializer = IdentitySerializer(AssetIdSerializer());
+final libraryCycleGraphSerializer = IdentitySerializer(
+  LibraryCycleGraph.serializer,
+);
+
 @SerializersFor([AssetNode])
 final Serializers serializers =
     (_$serializers.toBuilder()
-          ..add(AssetIdSerializer())
-          ..add(DigestSerializer()))
+          ..add(assetIdSerializer)
+          ..add(libraryCycleGraphSerializer)
+          ..add(DigestSerializer())
+        //..addPlugin(IdentitySerializerPlugin())
+        )
         .build();
 
 /// Serializer for [AssetId].

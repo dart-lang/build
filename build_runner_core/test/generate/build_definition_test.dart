@@ -226,7 +226,7 @@ targets:
         originalAssetGraph.updateNode(aTxtCopy, (nodeBuilder) {
           nodeBuilder.generatedNodeState
             ..pendingBuildAction = PendingBuildAction.none
-            ..inputs.add(aTxt);
+            ..inputs.assets.add(aTxt);
         });
         originalAssetGraph.updateNode(aTxt, (nodeBuilder) {
           nodeBuilder.outputs.add(aTxtCopy);

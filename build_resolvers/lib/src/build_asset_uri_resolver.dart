@@ -65,7 +65,7 @@ class BuildAssetUriResolver implements AnalysisDriverModel {
   ///
   /// This is not used within testing contexts or similar custom contexts.
   static AnalysisDriverModel get sharedInstance => _sharedInstance;
-  static AnalysisDriverModel _sharedInstance = _sharedUriResolverInstance;
+  static AnalysisDriverModel _sharedInstance = AnalysisDriverModel();
   // Keep a [BuildAssetUriResolver] instance even if [useExperimentalResolver]
   // is called, for [dependenciesOf].
   static final BuildAssetUriResolver _sharedUriResolverInstance =

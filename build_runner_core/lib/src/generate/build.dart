@@ -729,12 +729,8 @@ class Build {
           .skip(1)
           .every(
             (output) =>
-                assetGraph
-                    .get(output)!
-                    .generatedNodeState!
-                    .inputs
-                    .difference(firstNode.generatedNodeState!.inputs)
-                    .isEmpty,
+                assetGraph.get(output)!.generatedNodeState!.inputs ==
+                firstNode.generatedNodeState!.inputs,
           ),
       'All outputs of a build action should share the same inputs.',
     );
@@ -770,7 +766,7 @@ class Build {
     }
 
     final inputs = firstNodeState.inputs;
-    for (final input in inputs) {
+    for (final input in inputs.iterable) {
       final node = assetGraph.get(input)!;
       if (node.type == NodeType.generated) {
         if (node.generatedNodeConfiguration!.phaseNumber >= phaseNumber) {
@@ -998,7 +994,7 @@ class Build {
   }) async {
     if (outputs.isEmpty) return;
     var usedInputs =
-        unusedAssets != null
+        unusedAssets != null && unusedAssets.isNotEmpty
             ? inputTracker.inputs.difference(unusedAssets)
             : inputTracker.inputs;
 
@@ -1047,7 +1043,7 @@ class Build {
             nodeBuilder.outputs.add(output);
           });
           assetGraph.updateNode(output, (nodeBuilder) {
-            nodeBuilder.generatedNodeState.inputs.add(node.id);
+            nodeBuilder.generatedNodeState.inputs.assets.add(node.id);
           });
         }
         await failureReporter.markSkipped(
@@ -1059,34 +1055,34 @@ class Build {
 
   /// Removes old inputs from node with [id] based on [updatedInputs], and
   /// cleans up all the old edges.
-  void _removeOldInputs(AssetId id, Set<AssetId> updatedInputs) {
+  void _removeOldInputs(AssetId id, AssetSet updatedInputs) {
     final node = assetGraph.get(id)!;
-    final nodeState = node.generatedNodeState!;
-    var removedInputs = nodeState.inputs.asSet().difference(updatedInputs);
+    //final nodeState = node.generatedNodeState!;
+    // var removedInputs = nodeState.inputs.asSet().difference(updatedInputs);
     assetGraph.updateNode(node.id, (nodeBuilder) {
-      nodeBuilder.generatedNodeState.inputs.removeAll(removedInputs);
+      nodeBuilder.generatedNodeState.inputs.replace(updatedInputs);
     });
-    for (var input in removedInputs) {
+    /*for (var input in removedInputs) {
       assetGraph.updateNode(input, (nodeBuilder) {
         nodeBuilder.outputs.remove(node.id);
       });
-    }
+    }*/
   }
 
   /// Adds new inputs to node with [id] based on [updatedInputs], and adds the
   /// appropriate edges.
-  void _addNewInputs(AssetId id, Set<AssetId> updatedInputs) {
-    final node = assetGraph.get(id)!;
+  void _addNewInputs(AssetId id, AssetSet updatedInputs) {
+    /*final node = assetGraph.get(id)!;
     final nodeState = node.generatedNodeState!;
     var newInputs = updatedInputs.difference(nodeState.inputs.asSet());
     assetGraph.updateNode(node.id, (nodeBuilder) {
       nodeBuilder.generatedNodeState.inputs.addAll(newInputs);
-    });
-    for (var input in newInputs) {
+    });*/
+    /*for (var input in updatedInputs.iterable) {
       assetGraph.updateNode(input, (nodeBuilder) {
-        nodeBuilder.outputs.add(node.id);
+        nodeBuilder.outputs.add(id);
       });
-    }
+    }*/
   }
 
   Future _delete(AssetId id) => deleteWriter.delete(id);
