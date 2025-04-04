@@ -33,8 +33,8 @@ part 'phased_value.g.dart';
 ///
 /// If the last value in the list has non-null [ExpiringValue.expiresAfter] then
 /// the `PhasedValue` is incomplete: after the specified phase it changes to an
-/// unknown value. Or, if the last value in the list has `null` `expiresAt` then
-/// the `PhasedValue` is complete; no further changes are possible.
+/// unknown value. Or, if the last value in the list has `null` `expiresAfter`
+/// then the `PhasedValue` is complete; no further changes are possible.
 ///
 /// A `PhasedValue` cannot have missing values before present values: the
 /// initial value is always known, and the value after all changes except
@@ -165,9 +165,8 @@ abstract class ExpiringValue<T>
 ///
 /// `null` represents "never", so any non-`null` phase is earlier than a `null`
 /// one.
-int? earliestPhase(int? a, int? b) =>
-    a == null
-        ? b
-        : b == null
-        ? a
-        : min(a, b);
+int? earliestPhase(int? a, int? b) {
+  if (a == null) return b;
+  if (b == null) return a;
+  return min(a, b);
+}

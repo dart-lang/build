@@ -21,17 +21,18 @@ abstract class LibraryCycleGraph
   LibraryCycleGraph._();
 
   /// All subgraphs in the graph, including the root.
-  Iterable<LibraryCycleGraph> get transitiveGraphs sync* {
-    final seenGraphs = Set<LibraryCycleGraph>.identity();
+  Iterable<LibraryCycleGraph> get transitiveGraphs {
+    final result = Set<LibraryCycleGraph>.identity();
     final nextGraphs = [this];
 
     while (nextGraphs.isNotEmpty) {
       final graph = nextGraphs.removeLast();
-      if (seenGraphs.add(graph)) {
-        yield graph;
+      if (result.add(graph)) {
         nextGraphs.addAll(graph.children);
       }
     }
+
+    return result;
   }
 
   /// All assets in the graph, including the root.
