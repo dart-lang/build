@@ -118,7 +118,6 @@ void main() {
             builderOptionsNode.id,
           );
           graph.add(anchorNode);
-          node = node.rebuild((b) => b..anchorOutputs.add(anchorNode.id));
           for (var g = 0; g < 5 - n; g++) {
             var builderOptionsNode = AssetNode.builderOptions(
               makeAssetId(),

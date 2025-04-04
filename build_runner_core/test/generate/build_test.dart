@@ -1351,12 +1351,7 @@ void main() {
     );
     // Note we don't expect this node to get added to the builder options node
     // outputs.
-    aSourceNode = aSourceNode.rebuild(
-      (b) =>
-          b
-            ..outputs.add(aPostCopyNode.id)
-            ..anchorOutputs.add(aAnchorNode.id),
-    );
+    aSourceNode = aSourceNode.rebuild((b) => b..outputs.add(aPostCopyNode.id));
     aAnchorNode = aAnchorNode.rebuild((b) => b..outputs.add(aPostCopyNode.id));
     aSourceNode = aSourceNode.rebuild(
       (b) => b..primaryOutputs.add(aPostCopyNode.id),
@@ -1376,12 +1371,7 @@ void main() {
     );
     // Note we don't expect this node to get added to the builder options node
     // outputs.
-    bSourceNode = bSourceNode.rebuild(
-      (b) =>
-          b
-            ..outputs.add(bPostCopyNode.id)
-            ..anchorOutputs.add(bAnchorNode.id),
-    );
+    bSourceNode = bSourceNode.rebuild((b) => b..outputs.add(bPostCopyNode.id));
     bAnchorNode = bAnchorNode.rebuild((b) => b..outputs.add(bPostCopyNode.id));
     bSourceNode = bSourceNode.rebuild(
       (b) => b..primaryOutputs.add(bPostCopyNode.id),

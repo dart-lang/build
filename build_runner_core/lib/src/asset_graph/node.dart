@@ -66,10 +66,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   /// which reads this asset.
   BuiltSet<AssetId> get outputs;
 
-  /// The [AssetId]s of all [AssetNode.postProcessAnchor] assets for which this
-  /// node is the primary input.
-  BuiltSet<AssetId> get anchorOutputs;
-
   /// The [Digest] for this node in its last known state.
   ///
   /// May be `null` if this asset has no outputs, or if it doesn't actually

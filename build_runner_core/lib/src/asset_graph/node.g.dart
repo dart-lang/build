@@ -109,10 +109,6 @@ Serializers _$serializers =
           ..addBuilderFactory(
             const FullType(BuiltSet, const [const FullType(AssetId)]),
             () => new SetBuilder<AssetId>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltSet, const [const FullType(AssetId)]),
-            () => new SetBuilder<AssetId>(),
           ))
         .build();
 Serializer<NodeType> _$nodeTypeSerializer = new _$NodeTypeSerializer();
@@ -182,13 +178,6 @@ class _$AssetNodeSerializer implements StructuredSerializer<AssetNode> {
       'outputs',
       serializers.serialize(
         object.outputs,
-        specifiedType: const FullType(BuiltSet, const [
-          const FullType(AssetId),
-        ]),
-      ),
-      'anchorOutputs',
-      serializers.serialize(
-        object.anchorOutputs,
         specifiedType: const FullType(BuiltSet, const [
           const FullType(AssetId),
         ]),
@@ -358,17 +347,6 @@ class _$AssetNodeSerializer implements StructuredSerializer<AssetNode> {
           break;
         case 'outputs':
           result.outputs.replace(
-            serializers.deserialize(
-                  value,
-                  specifiedType: const FullType(BuiltSet, const [
-                    const FullType(AssetId),
-                  ]),
-                )!
-                as BuiltSet<Object?>,
-          );
-          break;
-        case 'anchorOutputs':
-          result.anchorOutputs.replace(
             serializers.deserialize(
                   value,
                   specifiedType: const FullType(BuiltSet, const [
@@ -874,8 +852,6 @@ class _$AssetNode extends AssetNode {
   @override
   final BuiltSet<AssetId> outputs;
   @override
-  final BuiltSet<AssetId> anchorOutputs;
-  @override
   final Digest? lastKnownDigest;
   @override
   final BuiltSet<AssetId> deletedBy;
@@ -893,7 +869,6 @@ class _$AssetNode extends AssetNode {
     this.postProcessAnchorNodeConfiguration,
     required this.primaryOutputs,
     required this.outputs,
-    required this.anchorOutputs,
     this.lastKnownDigest,
     required this.deletedBy,
   }) : super._() {
@@ -905,11 +880,6 @@ class _$AssetNode extends AssetNode {
       'primaryOutputs',
     );
     BuiltValueNullFieldError.checkNotNull(outputs, r'AssetNode', 'outputs');
-    BuiltValueNullFieldError.checkNotNull(
-      anchorOutputs,
-      r'AssetNode',
-      'anchorOutputs',
-    );
     BuiltValueNullFieldError.checkNotNull(deletedBy, r'AssetNode', 'deletedBy');
   }
 
@@ -934,7 +904,6 @@ class _$AssetNode extends AssetNode {
             other.postProcessAnchorNodeConfiguration &&
         primaryOutputs == other.primaryOutputs &&
         outputs == other.outputs &&
-        anchorOutputs == other.anchorOutputs &&
         lastKnownDigest == other.lastKnownDigest &&
         deletedBy == other.deletedBy;
   }
@@ -951,7 +920,6 @@ class _$AssetNode extends AssetNode {
     _$hash = $jc(_$hash, postProcessAnchorNodeConfiguration.hashCode);
     _$hash = $jc(_$hash, primaryOutputs.hashCode);
     _$hash = $jc(_$hash, outputs.hashCode);
-    _$hash = $jc(_$hash, anchorOutputs.hashCode);
     _$hash = $jc(_$hash, lastKnownDigest.hashCode);
     _$hash = $jc(_$hash, deletedBy.hashCode);
     _$hash = $jf(_$hash);
@@ -973,7 +941,6 @@ class _$AssetNode extends AssetNode {
           )
           ..add('primaryOutputs', primaryOutputs)
           ..add('outputs', outputs)
-          ..add('anchorOutputs', anchorOutputs)
           ..add('lastKnownDigest', lastKnownDigest)
           ..add('deletedBy', deletedBy))
         .toString();
@@ -1042,12 +1009,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
       _$this._outputs ??= new SetBuilder<AssetId>();
   set outputs(SetBuilder<AssetId>? outputs) => _$this._outputs = outputs;
 
-  SetBuilder<AssetId>? _anchorOutputs;
-  SetBuilder<AssetId> get anchorOutputs =>
-      _$this._anchorOutputs ??= new SetBuilder<AssetId>();
-  set anchorOutputs(SetBuilder<AssetId>? anchorOutputs) =>
-      _$this._anchorOutputs = anchorOutputs;
-
   Digest? _lastKnownDigest;
   Digest? get lastKnownDigest => _$this._lastKnownDigest;
   set lastKnownDigest(Digest? lastKnownDigest) =>
@@ -1074,7 +1035,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
           $v.postProcessAnchorNodeConfiguration?.toBuilder();
       _primaryOutputs = $v.primaryOutputs.toBuilder();
       _outputs = $v.outputs.toBuilder();
-      _anchorOutputs = $v.anchorOutputs.toBuilder();
       _lastKnownDigest = $v.lastKnownDigest;
       _deletedBy = $v.deletedBy.toBuilder();
       _$v = null;
@@ -1116,7 +1076,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
                 _postProcessAnchorNodeConfiguration?.build(),
             primaryOutputs: primaryOutputs.build(),
             outputs: outputs.build(),
-            anchorOutputs: anchorOutputs.build(),
             lastKnownDigest: lastKnownDigest,
             deletedBy: deletedBy.build(),
           );
@@ -1137,8 +1096,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
         primaryOutputs.build();
         _$failedField = 'outputs';
         outputs.build();
-        _$failedField = 'anchorOutputs';
-        anchorOutputs.build();
 
         _$failedField = 'deletedBy';
         deletedBy.build();
