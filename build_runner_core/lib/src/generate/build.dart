@@ -19,6 +19,7 @@ import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../asset_graph/optional_output_tracker.dart';
+import '../asset_graph/post_process_build_step_id.dart';
 import '../changes/asset_updates.dart';
 import '../environment/build_environment.dart';
 import '../logging/build_for_input_logger.dart';
@@ -275,7 +276,7 @@ class Build {
               );
               return _runBuilder(phaseNum, phase, primaryInputs);
             } else if (phase is PostBuildPhase) {
-              return _runPostProcessPhase(phaseNum, phase);
+              return _runPostBuildPhase(phaseNum, phase);
             } else {
               throw StateError('Unrecognized BuildPhase type $phase');
             }
@@ -525,14 +526,14 @@ class Build {
     });
   }
 
-  Future<Iterable<AssetId>> _runPostProcessPhase(
+  Future<Iterable<AssetId>> _runPostBuildPhase(
     int phaseNum,
     PostBuildPhase phase,
   ) async {
     var actionNum = 0;
     var outputLists = await Future.wait(
       phase.builderActions.map(
-        (action) => _runPostProcessAction(phaseNum, actionNum++, action),
+        (action) => _runPostBuildAction(phaseNum, actionNum++, action),
       ),
     );
     return outputLists.fold<List<AssetId>>(
@@ -541,42 +542,34 @@ class Build {
     );
   }
 
-  Future<Iterable<AssetId>> _runPostProcessAction(
+  Future<Iterable<AssetId>> _runPostBuildAction(
     int phaseNum,
     int actionNum,
     PostBuildAction action,
   ) async {
     final outputs = <AssetId>[];
-    for (final node in assetGraph
-        .packageNodes(action.package)
-        .toList(growable: false)) {
-      if (node.type != NodeType.postProcessAnchor) continue;
-      final nodeConfiguration = node.postProcessAnchorNodeConfiguration!;
-      if (nodeConfiguration.actionNumber != actionNum) continue;
-      final inputNode = assetGraph.get(nodeConfiguration.primaryInput)!;
+    for (final buildStepId in assetGraph.postProcessBuildStepIds(
+      package: action.package,
+    )) {
+      if (buildStepId.actionNumber != actionNum) continue;
+      final inputNode = assetGraph.get(buildStepId.input)!;
       if (inputNode.type == NodeType.source ||
           inputNode.type == NodeType.generated &&
               inputNode.generatedNodeState!.isSuccessfulFreshOutput) {
         outputs.addAll(
-          await _runPostProcessBuilderForAnchor(
-            phaseNum,
-            actionNum,
-            action.builder,
-            node,
-          ),
+          await _runPostProcessBuildStep(phaseNum, action.builder, buildStepId),
         );
       }
     }
     return outputs;
   }
 
-  Future<Iterable<AssetId>> _runPostProcessBuilderForAnchor(
+  Future<Iterable<AssetId>> _runPostProcessBuildStep(
     int phaseNumber,
-    int actionNum,
     PostProcessBuilder builder,
-    AssetNode anchorNode,
+    PostProcessBuildStepId postProcessBuildStepId,
   ) async {
-    var input = anchorNode.postProcessAnchorNodeConfiguration!.primaryInput;
+    var input = postProcessBuildStepId.input;
     var inputNode = assetGraph.get(input)!;
     var readerWriter = SingleStepReaderWriter(
       runningBuild: RunningBuild(
@@ -596,25 +589,26 @@ class Build {
       assetsWritten: {},
     );
 
-    if (!await _postProcessBuildShouldRun(anchorNode, readerWriter)) {
+    if (!await _postProcessBuildStepShouldRun(
+      postProcessBuildStepId,
+      readerWriter,
+    )) {
       return <AssetId>[];
     }
     // Clear input tracking accumulated during `_buildShouldRun`.
     readerWriter.inputTracker.clear();
-    // The anchor node is an input.
-    readerWriter.inputTracker.add(anchorNode.id);
 
     // Clean out the impacts of the previous run.
     await FailureReporter.clean(phaseNumber, input);
-    await _cleanUpStaleOutputs(anchorNode.outputs);
-    for (final output in anchorNode.outputs.toList(growable: false)) {
+    final existingOutputs = assetGraph.postProcessBuildStepOutputs(
+      postProcessBuildStepId,
+    );
+    await _cleanUpStaleOutputs(existingOutputs);
+    for (final output in existingOutputs) {
       assetGraph.remove(output);
     }
-    assetGraph.updateNode(anchorNode.id, (nodeBuilder) {
-      nodeBuilder.outputs.clear();
-    });
     assetGraph.updateNode(inputNode.id, (nodeBuilder) {
-      nodeBuilder.deletedBy.remove(anchorNode.id);
+      nodeBuilder.deletedBy.remove(postProcessBuildStepId);
     });
 
     var actionDescription = '$builder on $input';
@@ -625,6 +619,7 @@ class Build {
         .putIfAbsent(phaseNumber, () => <String>{})
         .add(actionDescription);
 
+    final outputs = <AssetId>{};
     await runPostProcessBuilder(
       builder,
       input,
@@ -638,8 +633,7 @@ class Build {
         var node = AssetNode.generated(
           assetId,
           primaryInput: input,
-          builderOptionsId:
-              anchorNode.postProcessAnchorNodeConfiguration!.builderOptionsId,
+          builderOptionsId: postProcessBuildStepId.builderOptionsId,
           isHidden: true,
           phaseNumber: phaseNumber,
           wasOutput: true,
@@ -647,9 +641,7 @@ class Build {
           pendingBuildAction: PendingBuildAction.none,
         );
         assetGraph.add(node);
-        assetGraph.updateNode(anchorNode.id, (nodeBuilder) {
-          nodeBuilder.outputs.add(assetId);
-        });
+        outputs.add(assetId);
       },
       deleteAsset: (assetId) {
         if (!assetGraph.contains(assetId)) {
@@ -662,12 +654,18 @@ class Build {
           );
         }
         assetGraph.updateNode(assetId, (nodeBuilder) {
-          nodeBuilder.deletedBy.add(anchorNode.id);
+          nodeBuilder.deletedBy.add(postProcessBuildStepId);
         });
       },
     ).catchError((void _) {
       // Errors tracked through the logger
     });
+
+    assetGraph.updatePostProcessBuildStep(
+      postProcessBuildStepId,
+      outputs: outputs,
+    );
+
     actionsCompletedCount++;
     hungActionsHeartbeat.ping();
     pendingActions[phaseNumber]!.remove(actionDescription);
@@ -834,21 +832,21 @@ class Build {
     return false;
   }
 
-  /// Checks if a post process build should run based on [anchorNode].
-  Future<bool> _postProcessBuildShouldRun(
-    AssetNode anchorNode,
+  /// Whether the post process build step [buildStepId] should run.
+  ///
+  /// It should run if its builder options changed or its input changed.
+  Future<bool> _postProcessBuildStepShouldRun(
+    PostProcessBuildStepId buildStepId,
     AssetReader reader,
   ) async {
-    final nodeConfiguration = anchorNode.postProcessAnchorNodeConfiguration!;
-
-    final input = nodeConfiguration.primaryInput;
+    final input = buildStepId.input;
     final node = assetGraph.get(input)!;
 
     if (cleanBuild) {
       return true;
     }
 
-    final builderOptionsId = nodeConfiguration.builderOptionsId;
+    final builderOptionsId = buildStepId.builderOptionsId;
     if (changedInputs.contains(builderOptionsId)) {
       return true;
     }

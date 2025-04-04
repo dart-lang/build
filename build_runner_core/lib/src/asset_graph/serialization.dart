@@ -8,7 +8,7 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 26;
+const _version = 27;
 
 /// Deserializes an [AssetGraph] from a [Map].
 class _AssetGraphDeserializer {
@@ -67,6 +67,19 @@ class _AssetGraphDeserializer {
       graph._add(_deserializeAssetNode(serializedItem as List));
     }
 
+    final postProcessOutputs =
+        serializers.deserialize(
+              _serializedGraph['postProcessOutputs'],
+              specifiedType: postProcessBuildStepOutputsFullType,
+            )
+            as Map<String, Map<PostProcessBuildStepId, Set<AssetId>>>;
+
+    for (final postProcessOutputsForPackage in postProcessOutputs.values) {
+      for (final entry in postProcessOutputsForPackage.entries) {
+        graph.updatePostProcessBuildStep(entry.key, outputs: entry.value);
+      }
+    }
+
     return graph;
   }
 
@@ -112,6 +125,10 @@ class _AssetGraphSerializer {
               .map((pkg, version) => MapEntry(pkg, version?.toString()))
               .toMap(),
       'enabledExperiments': _graph.enabledExperiments.toList(),
+      'postProcessOutputs': serializers.serialize(
+        _graph._postProcessBuildStepOutputs,
+        specifiedType: postProcessBuildStepOutputsFullType,
+      ),
     };
     return utf8.encode(json.encode(result));
   }

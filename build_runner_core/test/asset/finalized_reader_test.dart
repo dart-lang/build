@@ -10,6 +10,7 @@ import 'package:build/build.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_runner_core/src/asset_graph/post_process_build_step_id.dart';
 import 'package:build_runner_core/src/generate/build_phases.dart';
 import 'package:build_runner_core/src/generate/options.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
@@ -52,7 +53,11 @@ void main() {
       );
 
       deleted = deleted.rebuild(
-        (b) => b..deletedBy.add(deleted.id.addExtension('.post_anchor.1')),
+        (b) =>
+            b
+              ..deletedBy.add(
+                PostProcessBuildStepId(input: notDeleted.id, actionNumber: 0),
+              ),
       );
 
       graph

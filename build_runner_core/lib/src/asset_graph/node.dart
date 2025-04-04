@@ -10,7 +10,7 @@ import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 import 'package:crypto/crypto.dart';
 
-import '../generate/phase.dart';
+import 'post_process_build_step_id.dart';
 
 part 'node.g.dart';
 
@@ -23,7 +23,6 @@ class NodeType extends EnumClass {
   static const NodeType glob = _$glob;
   static const NodeType internal = _$internal;
   static const NodeType placeholder = _$placeholder;
-  static const NodeType postProcessAnchor = _$postProcessAnchor;
   static const NodeType source = _$source;
   static const NodeType missingSource = _$missingSource;
 
@@ -54,10 +53,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   /// [AssetNode.glob].
   GlobNodeState? get globNodeState;
 
-  /// Additional node configuration for an
-  /// [AssetNode.postProcessAnchorNodeConfiguration].
-  PostProcessAnchorNodeConfiguration? get postProcessAnchorNodeConfiguration;
-
   /// The assets that any [Builder] in the build graph declares it may output
   /// when run on this asset.
   BuiltSet<AssetId> get primaryOutputs;
@@ -66,19 +61,14 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   /// which reads this asset.
   BuiltSet<AssetId> get outputs;
 
-  /// The [AssetId]s of all [AssetNode.postProcessAnchor] assets for which this
-  /// node is the primary input.
-  BuiltSet<AssetId> get anchorOutputs;
-
   /// The [Digest] for this node in its last known state.
   ///
   /// May be `null` if this asset has no outputs, or if it doesn't actually
   /// exist.
   Digest? get lastKnownDigest;
 
-  /// The IDs of the [AssetNode.postProcessAnchor] for post process builder
-  /// which requested to delete this asset.
-  BuiltSet<AssetId> get deletedBy;
+  /// The `PostProcessBuildStep`s which requested to delete this asset.
+  BuiltSet<PostProcessBuildStepId> get deletedBy;
 
   /// Whether this asset is a normal, readable file.
   ///
@@ -223,35 +213,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   static AssetId createGlobNodeId(String package, String glob, int phaseNum) =>
       AssetId(package, 'glob.$phaseNum.${base64.encode(utf8.encode(glob))}');
 
-  /// A [primaryInput] to a [PostBuildAction].
-  ///
-  /// The [outputs] of this node are the individual outputs created for the
-  /// [primaryInput] during the [PostBuildAction] at index [actionNumber].
-  factory AssetNode.postProcessAnchor(
-    AssetId id, {
-    required AssetId primaryInput,
-    required int actionNumber,
-    required AssetId builderOptionsId,
-    Digest? previousInputsDigest,
-  }) => AssetNode((b) {
-    b.id = id;
-    b.type = NodeType.postProcessAnchor;
-    b.postProcessAnchorNodeConfiguration.actionNumber = actionNumber;
-    b.postProcessAnchorNodeConfiguration.builderOptionsId = builderOptionsId;
-    b.postProcessAnchorNodeConfiguration.primaryInput = primaryInput;
-  });
-
-  factory AssetNode.postProcessAnchorForInputAndAction(
-    AssetId primaryInput,
-    int actionNumber,
-    AssetId builderOptionsId,
-  ) => AssetNode.postProcessAnchor(
-    primaryInput.addExtension('.post_anchor.$actionNumber'),
-    primaryInput: primaryInput,
-    actionNumber: actionNumber,
-    builderOptionsId: builderOptionsId,
-  );
-
   AssetNode._() {
     // Check that configuration and state fields are non-null exactly when the
     // node is of the corresponding type.
@@ -276,10 +237,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
       type == NodeType.glob,
       globNodeConfiguration != null,
       globNodeState != null,
-    );
-    check(
-      type == NodeType.postProcessAnchor,
-      postProcessAnchorNodeConfiguration != null,
     );
   }
 }
@@ -387,27 +344,6 @@ abstract class GlobNodeState
   GlobNodeState._();
 }
 
-// Additional configuration for an [AssetNode.postProcessAnchor].
-abstract class PostProcessAnchorNodeConfiguration
-    implements
-        Built<
-          PostProcessAnchorNodeConfiguration,
-          PostProcessAnchorNodeConfigurationBuilder
-        > {
-  static Serializer<PostProcessAnchorNodeConfiguration> get serializer =>
-      _$postProcessAnchorNodeConfigurationSerializer;
-
-  int get actionNumber;
-  AssetId get builderOptionsId;
-  AssetId get primaryInput;
-
-  PostProcessAnchorNodeConfiguration._();
-
-  factory PostProcessAnchorNodeConfiguration(
-    void Function(PostProcessAnchorNodeConfigurationBuilder) updates,
-  ) = _$PostProcessAnchorNodeConfiguration;
-}
-
 /// Work that needs doing for a node that tracks its inputs.
 class PendingBuildAction extends EnumClass {
   static Serializer<PendingBuildAction> get serializer =>
@@ -422,60 +358,4 @@ class PendingBuildAction extends EnumClass {
   static BuiltSet<PendingBuildAction> get values => _$pendingBuildActionValues;
   static PendingBuildAction valueOf(String name) =>
       _$pendingBuildActionValueOf(name);
-}
-
-@SerializersFor([AssetNode])
-final Serializers serializers =
-    (_$serializers.toBuilder()
-          ..add(AssetIdSerializer())
-          ..add(DigestSerializer()))
-        .build();
-
-/// Serializer for [AssetId].
-///
-/// It would also work to make `AssetId` a `built_value` class, but there's
-/// little benefit and it's nicer to keep codegen local to this package.
-class AssetIdSerializer implements PrimitiveSerializer<AssetId> {
-  @override
-  Iterable<Type> get types => [AssetId];
-
-  @override
-  String get wireName => 'AssetId';
-
-  @override
-  AssetId deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => AssetId.parse(serialized as String);
-
-  @override
-  Object serialize(
-    Serializers serializers,
-    AssetId object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => object.toString();
-}
-
-/// Serializer for [Digest].
-class DigestSerializer implements PrimitiveSerializer<Digest> {
-  @override
-  Iterable<Type> get types => [Digest];
-
-  @override
-  String get wireName => 'Digest';
-
-  @override
-  Digest deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => Digest(base64.decode(serialized as String));
-
-  @override
-  Object serialize(
-    Serializers serializers,
-    Digest object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => base64.encode(object.bytes);
 }

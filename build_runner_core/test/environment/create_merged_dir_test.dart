@@ -12,6 +12,7 @@ import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:build_runner_core/src/asset_graph/optional_output_tracker.dart';
+import 'package:build_runner_core/src/asset_graph/post_process_build_step_id.dart';
 import 'package:build_runner_core/src/environment/create_merged_dir.dart';
 import 'package:build_runner_core/src/generate/build_phases.dart';
 import 'package:build_runner_core/src/generate/options.dart';
@@ -134,7 +135,9 @@ void main() {
     test('doesnt write deleted files', () async {
       var node = graph.get(AssetId('b', 'lib/c.txt.copy'))!;
       graph.updateNode(node.id, (nodeBuilder) {
-        nodeBuilder.deletedBy.add(node.id.addExtension('.post_anchor.1'));
+        nodeBuilder.deletedBy.add(
+          PostProcessBuildStepId(input: node.id, actionNumber: 1),
+        );
       });
 
       var success = await createMergedOutputDirectories(
@@ -536,7 +539,10 @@ void main() {
         for (var remove in removes) {
           graph.updateNode(makeAssetId(remove), (nodeBuilder) {
             nodeBuilder.deletedBy.add(
-              makeAssetId(remove).addExtension('.post_anchor.1'),
+              PostProcessBuildStepId(
+                input: makeAssetId(remove),
+                actionNumber: 1,
+              ),
             );
           });
         }
