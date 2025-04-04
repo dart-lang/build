@@ -14,6 +14,7 @@ import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_runner_core/src/asset_graph/post_process_build_step_id.dart';
 import 'package:build_runner_core/src/generate/build_phases.dart';
 import 'package:build_runner_core/src/generate/options.dart'
     show defaultNonRootVisibleAssets;
@@ -1286,14 +1287,8 @@ void main() {
       inputs: [makeAssetId('a|web/a.txt')],
       isHidden: false,
     );
-    builderOptionsNode = builderOptionsNode.rebuild(
-      (b) => b..outputs.add(aCopyNode.id),
-    );
     aSourceNode = aSourceNode.rebuild(
-      (b) =>
-          b
-            ..outputs.add(aCopyNode.id)
-            ..primaryOutputs.add(aCopyNode.id),
+      (b) => b..primaryOutputs.add(aCopyNode.id),
     );
 
     var bCopyId = makeAssetId('a|lib/b.txt.copy'); //;
@@ -1309,14 +1304,8 @@ void main() {
       inputs: [makeAssetId('a|lib/b.txt')],
       isHidden: false,
     );
-    builderOptionsNode = builderOptionsNode.rebuild(
-      (b) => b..outputs.add(bCopyNode.id),
-    );
     bSourceNode = bSourceNode.rebuild(
-      (b) =>
-          b
-            ..outputs.add(bCopyNode.id)
-            ..primaryOutputs.add(bCopyNode.id),
+      (b) => b..primaryOutputs.add(bCopyNode.id),
     );
 
     // Post build generates asset nodes and supporting nodes
@@ -1326,15 +1315,13 @@ void main() {
       lastKnownDigest: computeBuilderOptionsDigest(defaultBuilderOptions),
     );
 
-    var aAnchorNode = AssetNode.postProcessAnchorForInputAndAction(
-      aSourceNode.id,
-      0,
-      postBuilderOptionsId,
+    var aPostProcessBuildStepId = PostProcessBuildStepId(
+      input: aSourceNode.id,
+      actionNumber: 0,
     );
-    var bAnchorNode = AssetNode.postProcessAnchorForInputAndAction(
-      bSourceNode.id,
-      0,
-      postBuilderOptionsId,
+    var bPostProcessBuildStepId = PostProcessBuildStepId(
+      input: bSourceNode.id,
+      actionNumber: 0,
     );
 
     var aPostCopyNode = AssetNode.generated(
@@ -1346,18 +1333,11 @@ void main() {
       isFailure: false,
       builderOptionsId: postBuilderOptionsId,
       lastKnownDigest: computeDigest(makeAssetId(r'$$a|web/a.txt.post'), 'a'),
-      inputs: [makeAssetId('a|web/a.txt'), aAnchorNode.id],
+      inputs: [makeAssetId('a|web/a.txt')],
       isHidden: true,
     );
     // Note we don't expect this node to get added to the builder options node
     // outputs.
-    aSourceNode = aSourceNode.rebuild(
-      (b) =>
-          b
-            ..outputs.add(aPostCopyNode.id)
-            ..anchorOutputs.add(aAnchorNode.id),
-    );
-    aAnchorNode = aAnchorNode.rebuild((b) => b..outputs.add(aPostCopyNode.id));
     aSourceNode = aSourceNode.rebuild(
       (b) => b..primaryOutputs.add(aPostCopyNode.id),
     );
@@ -1371,18 +1351,11 @@ void main() {
       isFailure: false,
       builderOptionsId: postBuilderOptionsId,
       lastKnownDigest: computeDigest(makeAssetId(r'$$a|lib/b.txt.post'), 'b'),
-      inputs: [makeAssetId('a|lib/b.txt'), bAnchorNode.id],
+      inputs: [makeAssetId('a|lib/b.txt')],
       isHidden: true,
     );
     // Note we don't expect this node to get added to the builder options node
     // outputs.
-    bSourceNode = bSourceNode.rebuild(
-      (b) =>
-          b
-            ..outputs.add(bPostCopyNode.id)
-            ..anchorOutputs.add(bAnchorNode.id),
-    );
-    bAnchorNode = bAnchorNode.rebuild((b) => b..outputs.add(bPostCopyNode.id));
     bSourceNode = bSourceNode.rebuild(
       (b) => b..primaryOutputs.add(bPostCopyNode.id),
     );
@@ -1396,14 +1369,24 @@ void main() {
       ..add(postBuilderOptionsNode)
       ..add(aPostCopyNode)
       ..add(bPostCopyNode)
-      ..add(aAnchorNode)
-      ..add(bAnchorNode);
+      ..updatePostProcessBuildStep(
+        aPostProcessBuildStepId,
+        outputs: {aPostCopyNode.id},
+      )
+      ..updatePostProcessBuildStep(
+        bPostProcessBuildStepId,
+        outputs: {bPostCopyNode.id},
+      );
 
     // TODO: We dont have a shared way of computing the combined input hashes
     // today, but eventually we should test those here too.
     expect(
       cachedGraph,
       equalsAssetGraph(expectedGraph, checkPreviousInputsDigest: false),
+    );
+    expect(
+      cachedGraph.allPostProcessBuildStepOutputs,
+      expectedGraph.allPostProcessBuildStepOutputs,
     );
   });
 
@@ -1837,9 +1820,10 @@ void main() {
         outputNode.generatedNodeState!.inputs,
         unorderedEquals([fileANode.id, fileCNode.id]),
       );
-      expect(fileANode.outputs, contains(outputNode.id));
-      expect(fileBNode.outputs, isEmpty);
-      expect(fileCNode.outputs, unorderedEquals([outputNode.id]));
+      final computedOutputs = graph.computeOutputs();
+      expect(computedOutputs[fileANode.id]!, contains(outputNode.id));
+      expect(computedOutputs[fileBNode.id] ?? const <AssetId>{}, isEmpty);
+      expect(computedOutputs[fileCNode.id]!, unorderedEquals([outputNode.id]));
     });
 
     test('Ouputs aren\'t rebuilt if their inputs didn\'t change', () async {

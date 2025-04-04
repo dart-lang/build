@@ -11,6 +11,7 @@ import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_runner_core/src/asset_graph/post_process_build_step_id.dart';
 import 'package:build_runner_core/src/generate/build_phases.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
 import 'package:crypto/crypto.dart';
@@ -105,20 +106,17 @@ void main() {
                   ..inputs.add(node.id)
                   ..results.add(node.id),
           );
-          node = node.rebuild((b) => b..outputs.add(globNode.id));
           var phaseNum = n;
           final builderOptionsNode = AssetNode.builderOptions(
             makeAssetId(),
             lastKnownDigest: Digest([n]),
           );
           graph.add(builderOptionsNode);
-          final anchorNode = AssetNode.postProcessAnchorForInputAndAction(
-            node.id,
-            n,
-            builderOptionsNode.id,
+          final postProcessBuildStep = PostProcessBuildStepId(
+            input: node.id,
+            actionNumber: n,
           );
-          graph.add(anchorNode);
-          node = node.rebuild((b) => b..anchorOutputs.add(anchorNode.id));
+          graph.updatePostProcessBuildStep(postProcessBuildStep, outputs: {});
           for (var g = 0; g < 5 - n; g++) {
             var builderOptionsNode = AssetNode.builderOptions(
               makeAssetId(),
@@ -137,25 +135,14 @@ void main() {
               builderOptionsId: builderOptionsNode.id,
               isHidden: g % 3 == 0,
             );
-            node = node.rebuild(
-              (b) =>
-                  b
-                    ..outputs.add(generatedNode.id)
-                    ..primaryOutputs.add(generatedNode.id),
-            );
-            globNode = globNode.rebuild(
-              (b) => b..outputs.add(generatedNode.id),
-            );
-            builderOptionsNode = builderOptionsNode.rebuild(
-              (b) => b..outputs.add(generatedNode.id),
-            );
+            node = node.rebuild((b) => b..primaryOutputs.add(generatedNode.id));
             if (g.isEven) {
-              node = node.rebuild((b) => b..deletedBy.add(anchorNode.id));
+              node = node.rebuild(
+                (b) => b..deletedBy.add(postProcessBuildStep),
+              );
             }
 
-            var syntheticNode = AssetNode.missingSource(
-              makeAssetId(),
-            ).rebuild((b) => b..outputs.add(generatedNode.id));
+            var syntheticNode = AssetNode.missingSource(makeAssetId());
 
             generatedNode = generatedNode.rebuild(
               (b) => b.generatedNodeState.inputs.addAll([
@@ -176,7 +163,11 @@ void main() {
         var encoded = graph.serialize();
         var decoded = AssetGraph.deserialize(encoded);
         expect(decoded.failedOutputs, isNotEmpty);
-        expect(graph, equalsAssetGraph(decoded));
+        expect(decoded, equalsAssetGraph(graph));
+        expect(
+          decoded.allPostProcessBuildStepOutputs,
+          graph.allPostProcessBuildStepOutputs,
+        );
       });
 
       test(
@@ -229,10 +220,9 @@ void main() {
       final builderOptionsId = makeAssetId('foo|Phase0.builderOptions');
       final postBuilderOptionsId = makeAssetId('foo|PostPhase0.builderOptions');
       final placeholders = placeholderIdsFor(fooPackageGraph);
-      final expectedAnchorNode = AssetNode.postProcessAnchorForInputAndAction(
-        primaryInputId,
-        0,
-        postBuilderOptionsId,
+      final expectedBuildStepId = PostProcessBuildStepId(
+        input: primaryInputId,
+        actionNumber: 0,
       );
 
       setUp(() async {
@@ -258,14 +248,16 @@ void main() {
             primaryOutputId,
             internalId,
             builderOptionsId,
-            expectedAnchorNode.id,
             postBuilderOptionsId,
             ...placeholders,
           ]),
         );
+        expect(graph.postProcessBuildStepIds(package: 'foo'), {
+          expectedBuildStepId,
+        });
         var node = graph.get(primaryInputId)!;
         expect(node.primaryOutputs, [primaryOutputId]);
-        expect(node.outputs, isEmpty);
+        expect(graph.computeOutputs()[node.id] ?? <AssetId>{}, isEmpty);
         expect(
           node.lastKnownDigest,
           isNotNull,
@@ -296,14 +288,21 @@ void main() {
 
         var builderOptionsNode = graph.get(builderOptionsId)!;
         expect(builderOptionsNode.type, NodeType.builderOptions);
-        expect(builderOptionsNode.outputs, unorderedEquals([primaryOutputId]));
+        expect(
+          graph.computeOutputs()[builderOptionsNode.id]!,
+          unorderedEquals([primaryOutputId]),
+        );
 
         var postBuilderOptionsNode = graph.get(postBuilderOptionsId)!;
         expect(postBuilderOptionsNode.type, NodeType.builderOptions);
         expect(postBuilderOptionsNode, isNotNull);
-        expect(postBuilderOptionsNode.outputs, isEmpty);
-        var anchorNode = graph.get(expectedAnchorNode.id)!;
-        expect(anchorNode.type, NodeType.postProcessAnchor);
+        expect(
+          graph.computeOutputs()[postBuilderOptionsNode.id] ?? <AssetId>{},
+          isEmpty,
+        );
+        expect(graph.postProcessBuildStepIds(package: 'foo'), {
+          expectedBuildStepId,
+        });
       });
 
       group('updateAndInvalidate', () {
@@ -317,12 +316,14 @@ void main() {
             digestReader,
           );
           expect(graph.contains(AssetId('foo', 'new.txt.copy')), isTrue);
-          var newAnchor = AssetNode.postProcessAnchorForInputAndAction(
-            primaryInputId,
-            0,
-            AssetId('foo', '\$builder_options'),
+          var newBuildStepId = PostProcessBuildStepId(
+            input: primaryInputId,
+            actionNumber: 0,
           );
-          expect(graph.contains(newAnchor.id), isTrue);
+          expect(
+            graph.postProcessBuildStepIds(package: 'foo'),
+            contains(newBuildStepId),
+          );
         });
 
         test('delete old primary input', () async {
@@ -339,7 +340,7 @@ void main() {
           expect(graph.contains(primaryInputId), isFalse);
           expect(graph.contains(primaryOutputId), isFalse);
           expect(deletes, equals([primaryOutputId]));
-          expect(graph.contains(expectedAnchorNode.id), isFalse);
+          expect(graph.postProcessBuildStepIds(package: 'foo'), isEmpty);
         });
 
         test('modify primary input', () async {
@@ -351,9 +352,6 @@ void main() {
             nodeBuilder.generatedNodeState
               ..pendingBuildAction = PendingBuildAction.none
               ..inputs.add(primaryInputId);
-          });
-          graph.updateNode(primaryInputId, (nodeBuilder) {
-            nodeBuilder.outputs.add(primaryOutputId);
           });
           await graph.updateAndInvalidate(
             buildPhases,
@@ -393,13 +391,14 @@ void main() {
           expect(graph.contains(syntheticOutputId), isTrue);
           expect(graph.get(syntheticOutputId)!.type, NodeType.generated);
 
-          var newAnchor = AssetNode.postProcessAnchorForInputAndAction(
-            syntheticId,
-            0,
-            AssetId('foo', '\$builder_options'),
+          var newAnchor = PostProcessBuildStepId(
+            input: syntheticId,
+            actionNumber: 0,
           );
-          expect(graph.contains(newAnchor.id), isTrue);
-          expect(graph.get(newAnchor.id)!.type, NodeType.postProcessAnchor);
+          expect(
+            graph.postProcessBuildStepIds(package: 'foo'),
+            contains(newAnchor),
+          );
         });
 
         test(
@@ -428,9 +427,7 @@ void main() {
           'removing nodes deletes primary outputs and secondary edges',
           () async {
             var secondaryId = makeAssetId('foo|secondary.txt');
-            var secondaryNode = AssetNode.source(
-              secondaryId,
-            ).rebuild((b) => b..outputs.add(primaryOutputId));
+            var secondaryNode = AssetNode.source(secondaryId);
 
             graph.updateNode(primaryOutputId, (nodeBuilder) {
               nodeBuilder.generatedNodeState.inputs.add(secondaryNode.id);
@@ -451,7 +448,7 @@ void main() {
             expect(graph.contains(primaryInputId), isFalse);
             expect(graph.contains(primaryOutputId), isFalse);
             expect(
-              graph.get(secondaryId)!.outputs,
+              graph.computeOutputs()[secondaryId] ?? const <AssetId>{},
               isNot(contains(primaryOutputId)),
             );
           },
@@ -475,7 +472,6 @@ void main() {
                 ..inputs.add(globNode.id);
             });
 
-            globNode = globNode.rebuild((b) => b..outputs.add(primaryOutputId));
             graph.add(globNode);
 
             var coolAssetId = AssetId('foo', 'lib/really.cool');
@@ -542,9 +538,6 @@ void main() {
                 ..pendingBuildAction = PendingBuildAction.none
                 ..inputs.add(coolAssetId)
                 ..results.add(coolAssetId);
-            });
-            graph.updateNode(coolAssetId, (nodeBuilder) {
-              nodeBuilder.outputs.add(globNode.id);
             });
             await checkChangeType(ChangeType.MODIFY);
 
@@ -704,16 +697,11 @@ void main() {
         );
 
         // Pretend a build happened
-        graph.add(
-          AssetNode.missingSource(
-            nodeToRead,
-          ).rebuild((b) => b..outputs.add(outputReadingNode)),
-        );
+        graph.add(AssetNode.missingSource(nodeToRead));
         graph.updateNode(outputReadingNode, (nodeBuilder) {
           nodeBuilder.generatedNodeState
             ..pendingBuildAction = PendingBuildAction.none
             ..inputs.add(nodeToRead);
-          nodeBuilder.outputs.add(lastPrimaryOutputNode);
         });
         graph.updateNode(lastPrimaryOutputNode, (nodeBuilder) {
           nodeBuilder.generatedNodeState
@@ -762,21 +750,14 @@ void main() {
         );
 
         // Pretend a build happened
-        graph.add(
-          AssetNode.missingSource(
-            toBeGeneratedDart,
-          ).rebuild((b) => b..outputs.add(generatedPart)),
-        );
+        graph.add(AssetNode.missingSource(toBeGeneratedDart));
         graph.updateNode(generatedDart, (nodeBuilder) {
           nodeBuilder.generatedNodeState
             ..pendingBuildAction = PendingBuildAction.none
             ..inputs.addAll([generatedPart, toBeGeneratedDart]);
         });
 
-        graph.updateNode(source, (nodeBuilder) {
-          expect(nodeBuilder.type, NodeType.source);
-          nodeBuilder.outputs.add(generatedPart);
-        });
+        expect(graph.get(source)!.type, NodeType.source);
 
         await graph.updateAndInvalidate(
           buildPhases,
@@ -792,7 +773,7 @@ void main() {
         // The generated part file should not exist in outputs of the new
         // generated dart file
         expect(
-          graph.get(toBeGeneratedDart)!.outputs,
+          graph.computeOutputs()[toBeGeneratedDart] ?? <AssetId>{},
           isNot(contains(generatedPart)),
         );
       });

@@ -382,9 +382,6 @@ void main() {
           inputs: [makeAssetId('a|web/b.txt')],
           isHidden: false,
         );
-        builderOptionsNode = builderOptionsNode.rebuild(
-          (b) => b..outputs.add(bCopyNode.id),
-        );
         expectedGraph
           ..add(bCopyNode)
           ..add(
@@ -407,9 +404,6 @@ void main() {
           inputs: [makeAssetId('a|web/c.txt')],
           isHidden: false,
         );
-        builderOptionsNode = builderOptionsNode.rebuild(
-          (b) => b..outputs.add(cCopyNode.id),
-        );
         expectedGraph
           ..add(cCopyNode)
           ..add(
@@ -425,6 +419,10 @@ void main() {
         expect(
           cachedGraph,
           equalsAssetGraph(expectedGraph, checkPreviousInputsDigest: false),
+        );
+        expect(
+          cachedGraph.allPostProcessBuildStepOutputs,
+          expectedGraph.allPostProcessBuildStepOutputs,
         );
       });
 

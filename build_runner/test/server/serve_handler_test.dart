@@ -15,6 +15,7 @@ import 'package:build_runner/src/server/server.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_runner_core/src/asset_graph/post_process_build_step_id.dart';
 import 'package:build_runner_core/src/generate/build_phases.dart';
 import 'package:build_runner_core/src/generate/options.dart';
 import 'package:build_runner_core/src/generate/performance_tracker.dart';
@@ -139,9 +140,11 @@ void main() {
   void addSource(String id, String content, {bool deleted = false}) {
     var node = makeAssetNode(id, [], computeDigest(AssetId.parse(id), content));
     if (deleted) {
-      node = node.rebuild(
-        (b) => b..deletedBy.add(node.id.addExtension('.post_anchor.1')),
-      );
+      node = node.rebuild((b) {
+        b.deletedBy.add(
+          PostProcessBuildStepId(input: node.id, actionNumber: 1),
+        );
+      });
     }
     assetGraph.add(node);
     readerWriter.testing.writeString(node.id, content);
