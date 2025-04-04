@@ -46,6 +46,8 @@ class AssetGraph implements GeneratedAssetHider {
 
   final BuiltMap<String, LanguageVersion?> packageLanguageVersions;
 
+  Map<AssetId, Set<AssetId>>? _anchorOutputs;
+
   AssetGraph._(
     this.buildPhasesDigest,
     this.dartVersion,
@@ -158,6 +160,12 @@ class AssetGraph implements GeneratedAssetHider {
       }
     }
     _nodesByPackage.putIfAbsent(node.id.package, () => {})[node.id.path] = node;
+
+    if (node.type == NodeType.postProcessAnchor) {
+      // Invalidate `_anchorOutputs`, it will be recomputed when needed.
+      _anchorOutputs = null;
+    }
+
     return node;
   }
 
@@ -238,16 +246,29 @@ class AssetGraph implements GeneratedAssetHider {
   /// Also removes all edges between all removed nodes and remaining nodes.
   ///
   /// Returns the IDs of removed asset nodes.
-  Set<AssetId> _removeRecursive(AssetId id, {Set<AssetId>? removedIds}) {
+  Set<AssetId> _removeRecursive(
+    AssetId id, {
+    Set<AssetId>? removedIds,
+    Map<AssetId, Set<AssetId>>? anchorOutputs,
+  }) {
     removedIds ??= <AssetId>{};
     var node = get(id);
     if (node == null) return removedIds;
     removedIds.add(id);
-    for (var anchor in node.anchorOutputs.toList()) {
-      _removeRecursive(anchor, removedIds: removedIds);
+    anchorOutputs ??= _computeAnchorOutputs();
+    for (var anchor in (anchorOutputs[node.id] ?? const <AssetId>{})) {
+      _removeRecursive(
+        anchor,
+        removedIds: removedIds,
+        anchorOutputs: anchorOutputs,
+      );
     }
     for (var output in node.primaryOutputs.toList()) {
-      _removeRecursive(output, removedIds: removedIds);
+      _removeRecursive(
+        output,
+        removedIds: removedIds,
+        anchorOutputs: anchorOutputs,
+      );
     }
     for (var output in node.outputs) {
       updateNodeIfPresent(output, (nodeBuilder) {
@@ -291,6 +312,24 @@ class AssetGraph implements GeneratedAssetHider {
       _nodesByPackage[id.package]!.remove(id.path);
     }
     return removedIds;
+  }
+
+  /// Returns a map from ID to the set of IDs of the
+  /// [AssetNode.postProcessAnchor] nodes for which it is the primary input.
+  ///
+  /// Returns a cached value if possible. Recomputes if any
+  /// [AssetNode.postProcessAnchor] has been added since it was last computed;
+  /// not recomputed for removes as values for missing nodes are harmless.
+  Map<AssetId, Set<AssetId>> _computeAnchorOutputs() {
+    if (_anchorOutputs != null) return _anchorOutputs!;
+    final result = <AssetId, Set<AssetId>>{};
+    for (final node in allNodes) {
+      if (node.type == NodeType.postProcessAnchor) {
+        (result[node.postProcessAnchorNodeConfiguration!.primaryInput] ??= {})
+            .add(node.id);
+      }
+    }
+    return _anchorOutputs = result;
   }
 
   /// All nodes in the graph, whether source files or generated outputs.
@@ -616,9 +655,6 @@ class AssetGraph implements GeneratedAssetHider {
           buildOptionsNodeId,
         );
         add(anchor);
-        updateNode(input, (nodeBuilder) {
-          nodeBuilder.anchorOutputs.add(anchor.id);
-        });
       }
       actionNum++;
     }
