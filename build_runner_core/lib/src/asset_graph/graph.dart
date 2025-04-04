@@ -149,6 +149,7 @@ class AssetGraph implements GeneratedAssetHider {
         node = node.rebuild((b) {
           b.outputs.addAll(existing.outputs);
           b.primaryOutputs.addAll(existing.primaryOutputs);
+          //? b.anchorOutputs.addAll(existing.anchorOutputs);)
         });
       } else {
         throw StateError(
@@ -238,16 +239,40 @@ class AssetGraph implements GeneratedAssetHider {
   /// Also removes all edges between all removed nodes and remaining nodes.
   ///
   /// Returns the IDs of removed asset nodes.
-  Set<AssetId> _removeRecursive(AssetId id, {Set<AssetId>? removedIds}) {
+  Set<AssetId> _removeRecursive(
+    AssetId id, {
+    Set<AssetId>? removedIds,
+    required Map<AssetId, Set<AssetId>> anchorOutputs,
+  }) {
     removedIds ??= <AssetId>{};
     var node = get(id);
     if (node == null) return removedIds;
     removedIds.add(id);
+    if (node.anchorOutputs.isNotEmpty) {
+      final maybeAnchorOutputs = anchorOutputs[id];
+      if (maybeAnchorOutputs == null) {
+        throw StateError('Not in anchorOutputs: $id');
+      }
+      if (maybeAnchorOutputs.build() != node.anchorOutputs) {
+        throw StateError(
+          'Mismatched anchorOutputs for $id, '
+          'expected ${node.anchorOutputs}, got $maybeAnchorOutputs',
+        );
+      }
+    }
     for (var anchor in node.anchorOutputs.toList()) {
-      _removeRecursive(anchor, removedIds: removedIds);
+      _removeRecursive(
+        anchor,
+        removedIds: removedIds,
+        anchorOutputs: anchorOutputs,
+      );
     }
     for (var output in node.primaryOutputs.toList()) {
-      _removeRecursive(output, removedIds: removedIds);
+      _removeRecursive(
+        output,
+        removedIds: removedIds,
+        anchorOutputs: anchorOutputs,
+      );
     }
     for (var output in node.outputs) {
       updateNodeIfPresent(output, (nodeBuilder) {
@@ -483,15 +508,27 @@ class AssetGraph implements GeneratedAssetHider {
 
     // Remove all deleted source assets from the graph, which also recursively
     // removes all their primary outputs.
+    final anchorOutputs = computeAnchorOutputs();
     for (final id in removeIds) {
       final node = get(id);
       if (node != null && node.type == NodeType.source) {
         invalidateNodeAndDeps(id);
-        _removeRecursive(id);
+        _removeRecursive(id, anchorOutputs: anchorOutputs);
       }
     }
 
     return invalidatedIds;
+  }
+
+  Map<AssetId, Set<AssetId>> computeAnchorOutputs() {
+    final result = <AssetId, Set<AssetId>>{};
+    for (final node in allNodes) {
+      if (node.type == NodeType.postProcessAnchor) {
+        (result[node.postProcessAnchorNodeConfiguration!.primaryInput] ??= {})
+            .add(node.id);
+      }
+    }
+    return result;
   }
 
   /// Crawl up primary inputs to see if the original Source file matches the
@@ -661,7 +698,12 @@ class AssetGraph implements GeneratedAssetHider {
             (buildPhases[phaseNumber] as InBuildPhase).builderLabel,
           );
         }
-        _removeRecursive(output, removedIds: removed);
+        _removeRecursive(
+          output,
+          removedIds: removed,
+          // No need to remove anchor outputs: they would be recreated the same.
+          anchorOutputs: const {},
+        );
       }
 
       var newNode = AssetNode.generated(
@@ -692,7 +734,8 @@ class AssetGraph implements GeneratedAssetHider {
 
   // TODO remove once tests are updated
   void add(AssetNode node) => _add(node);
-  Set<AssetId> remove(AssetId id) => _removeRecursive(id);
+  Set<AssetId> remove(AssetId id) =>
+      _removeRecursive(id, anchorOutputs: const {});
 
   /// Adds [input] to all [outputs] if they track inputs.
   ///
