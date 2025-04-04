@@ -4,6 +4,7 @@
 
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
+import 'package:built_value/serializer.dart';
 
 import '../asset/id.dart';
 
@@ -14,6 +15,8 @@ part 'library_cycle.g.dart';
 /// This means they have to be compiled as a single unit.
 abstract class LibraryCycle
     implements Built<LibraryCycle, LibraryCycleBuilder> {
+  static Serializer<LibraryCycle> get serializer => _$libraryCycleSerializer;
+
   BuiltSet<AssetId> get ids;
 
   factory LibraryCycle([void Function(LibraryCycleBuilder) updates]) =

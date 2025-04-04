@@ -4,6 +4,7 @@
 
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
+import 'package:built_value/serializer.dart';
 
 import '../asset/id.dart';
 import 'library_cycle.dart';
@@ -13,6 +14,9 @@ part 'library_cycle_graph.g.dart';
 /// A directed acyclic graph of [LibraryCycle]s.
 abstract class LibraryCycleGraph
     implements Built<LibraryCycleGraph, LibraryCycleGraphBuilder> {
+  static Serializer<LibraryCycleGraph> get serializer =>
+      _$libraryCycleGraphSerializer;
+
   LibraryCycle get root;
   BuiltList<LibraryCycleGraph> get children;
 

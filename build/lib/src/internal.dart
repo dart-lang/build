@@ -8,6 +8,7 @@ library;
 
 export 'library_cycle_graph/asset_deps.dart';
 export 'library_cycle_graph/asset_deps_loader.dart';
+export 'library_cycle_graph/asset_set.dart';
 export 'library_cycle_graph/library_cycle.dart';
 export 'library_cycle_graph/library_cycle_graph.dart';
 export 'library_cycle_graph/library_cycle_graph_loader.dart';

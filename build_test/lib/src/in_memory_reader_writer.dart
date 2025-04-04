@@ -188,7 +188,7 @@ class _ReaderWriterTestingImpl implements ReaderWriterTesting {
   @override
   Iterable<AssetId> get inputsTracked =>
       InputTracker.inputTrackersForTesting[_readerWriter.filesystem]!
-          .expand((tracker) => tracker.inputs)
+          .expand((tracker) => tracker.inputs.iterable)
           .toSet();
 
   @override

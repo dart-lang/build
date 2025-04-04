@@ -382,6 +382,14 @@ class LibraryCycleGraphLoader {
     return graph.valueAt(phase: assetDepsLoader.phase).transitiveDeps;
   }
 
+  Future<LibraryCycleGraph> transitiveDepsGraphOf(
+    AssetDepsLoader assetDepsLoader,
+    AssetId id,
+  ) async {
+    final graph = await libraryCycleGraphOf(assetDepsLoader, id);
+    return graph.valueAt(phase: assetDepsLoader.phase);
+  }
+
   @override
   String toString() => '''
 LibraryCycleGraphLoader(

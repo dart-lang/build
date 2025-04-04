@@ -158,7 +158,7 @@ void main() {
             ).rebuild((b) => b..outputs.add(generatedNode.id));
 
             generatedNode = generatedNode.rebuild(
-              (b) => b.generatedNodeState.inputs.addAll([
+              (b) => b.generatedNodeState.inputs.assets.addAll([
                 node.id,
                 syntheticNode.id,
                 globNode.id,
@@ -350,7 +350,7 @@ void main() {
           graph.updateNode(primaryOutputId, (nodeBuilder) {
             nodeBuilder.generatedNodeState
               ..pendingBuildAction = PendingBuildAction.none
-              ..inputs.add(primaryInputId);
+              ..inputs.assets.add(primaryInputId);
           });
           graph.updateNode(primaryInputId, (nodeBuilder) {
             nodeBuilder.outputs.add(primaryOutputId);
@@ -433,7 +433,9 @@ void main() {
             ).rebuild((b) => b..outputs.add(primaryOutputId));
 
             graph.updateNode(primaryOutputId, (nodeBuilder) {
-              nodeBuilder.generatedNodeState.inputs.add(secondaryNode.id);
+              nodeBuilder.generatedNodeState.inputs.assets.add(
+                secondaryNode.id,
+              );
             });
 
             graph.add(secondaryNode);
@@ -472,7 +474,7 @@ void main() {
             graph.updateNode(primaryOutputId, (nodeBuilder) {
               nodeBuilder.generatedNodeState
                 ..pendingBuildAction = PendingBuildAction.none
-                ..inputs.add(globNode.id);
+                ..inputs.assets.add(globNode.id);
             });
 
             globNode = globNode.rebuild((b) => b..outputs.add(primaryOutputId));
@@ -712,13 +714,13 @@ void main() {
         graph.updateNode(outputReadingNode, (nodeBuilder) {
           nodeBuilder.generatedNodeState
             ..pendingBuildAction = PendingBuildAction.none
-            ..inputs.add(nodeToRead);
+            ..inputs.assets.add(nodeToRead);
           nodeBuilder.outputs.add(lastPrimaryOutputNode);
         });
         graph.updateNode(lastPrimaryOutputNode, (nodeBuilder) {
           nodeBuilder.generatedNodeState
             ..pendingBuildAction = PendingBuildAction.none
-            ..inputs.add(outputReadingNode);
+            ..inputs.assets.add(outputReadingNode);
         });
 
         final invalidatedNodes = await graph.updateAndInvalidate(
@@ -770,7 +772,7 @@ void main() {
         graph.updateNode(generatedDart, (nodeBuilder) {
           nodeBuilder.generatedNodeState
             ..pendingBuildAction = PendingBuildAction.none
-            ..inputs.addAll([generatedPart, toBeGeneratedDart]);
+            ..inputs.assets.addAll([generatedPart, toBeGeneratedDart]);
         });
 
         graph.updateNode(source, (nodeBuilder) {
