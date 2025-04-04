@@ -129,6 +129,10 @@ class BuildStepImpl implements BuildStep, AssetReaderState, AssetReaderWriter {
 
   Future<ReleasableResolver>? _resolver;
 
+  /// A reader for assets that additionally provides information about when an
+  /// asset was generated or will be generated.
+  PhasedReader get phasedReader => _readerWriter;
+
   @override
   Future<bool> canRead(AssetId id) {
     if (_isComplete) throw BuildStepCompletedException();
