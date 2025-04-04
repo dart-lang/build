@@ -8,7 +8,7 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 26;
+const _version = 27;
 
 /// Deserializes an [AssetGraph] from a [Map].
 class _AssetGraphDeserializer {
@@ -67,6 +67,27 @@ class _AssetGraphDeserializer {
       graph._add(_deserializeAssetNode(serializedItem as List));
     }
 
+    for (final pair in _serializedGraph['postProcessOutputs'] as List) {
+      pair as List;
+      final serializedBuildStepId = pair[0];
+      final buildStepId =
+          serializers.deserializeWith(
+            PostProcessBuildStepId.serializer,
+            serializedBuildStepId,
+          )!;
+      final serializedOutputs = pair[1] as List;
+      final outputs = <AssetId>{};
+      for (final serializedOutput in serializedOutputs) {
+        outputs.add(
+          const AssetIdSerializer().deserialize(
+            serializers,
+            serializedOutput as Object,
+          ),
+        );
+      }
+      graph.updatePostProcessBuildStep(buildStepId, outputs: outputs);
+    }
+
     return graph;
   }
 
@@ -112,6 +133,28 @@ class _AssetGraphSerializer {
               .map((pkg, version) => MapEntry(pkg, version?.toString()))
               .toMap(),
       'enabledExperiments': _graph.enabledExperiments.toList(),
+      'postProcessOutputs':
+          _graph._postProcessBuildStepOutputs.values
+              .map(
+                (value) => value.entries.map((entry) {
+                  return [
+                    serializers.serializeWith(
+                      PostProcessBuildStepId.serializer,
+                      entry.key,
+                    ),
+                    entry.value
+                        .map(
+                          (id) => const AssetIdSerializer().serialize(
+                            serializers,
+                            id,
+                          ),
+                        )
+                        .toList(),
+                  ];
+                }),
+              )
+              .expand((x) => x)
+              .toList(),
     };
     return utf8.encode(json.encode(result));
   }

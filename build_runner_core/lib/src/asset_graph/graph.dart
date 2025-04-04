@@ -14,6 +14,7 @@ import 'package:build/src/internal.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
+import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:watcher/watcher.dart';
 
@@ -23,6 +24,7 @@ import '../generate/phase.dart';
 import '../util/constants.dart';
 import 'exceptions.dart';
 import 'node.dart';
+import 'post_process_build_step_id.dart';
 
 part 'serialization.dart';
 
@@ -45,6 +47,14 @@ class AssetGraph implements GeneratedAssetHider {
   final BuiltList<String> enabledExperiments;
 
   final BuiltMap<String, LanguageVersion?> packageLanguageVersions;
+
+  /// All post process build steps outputs, indexed by package then
+  /// [PostProcessBuildStepId].
+  ///
+  /// Created with empty outputs at the start of the build if it's a new build
+  /// step; or deserialized with previous build outputs if it has run before.
+  final Map<String, Map<PostProcessBuildStepId, Set<AssetId>>>
+  _postProcessBuildStepOutputs = {};
 
   AssetGraph._(
     this.buildPhasesDigest,
@@ -92,6 +102,10 @@ class AssetGraph implements GeneratedAssetHider {
   }
 
   List<int> serialize() => _AssetGraphSerializer(this).serialize();
+
+  @visibleForTesting
+  Map<String, Map<PostProcessBuildStepId, Set<AssetId>>>
+  get allPostProcessBuildStepOutputs => _postProcessBuildStepOutputs;
 
   /// Checks if [id] exists in the graph.
   bool contains(AssetId id) =>
@@ -158,6 +172,7 @@ class AssetGraph implements GeneratedAssetHider {
       }
     }
     _nodesByPackage.putIfAbsent(node.id.package, () => {})[node.id.path] = node;
+
     return node;
   }
 
@@ -238,16 +253,21 @@ class AssetGraph implements GeneratedAssetHider {
   /// Also removes all edges between all removed nodes and remaining nodes.
   ///
   /// Returns the IDs of removed asset nodes.
-  Set<AssetId> _removeRecursive(AssetId id, {Set<AssetId>? removedIds}) {
+  Set<AssetId> _removeRecursive(
+    AssetId id, {
+    Set<AssetId>? removedIds,
+    Map<AssetId, Set<AssetId>>? anchorOutputs,
+  }) {
     removedIds ??= <AssetId>{};
     var node = get(id);
     if (node == null) return removedIds;
     removedIds.add(id);
-    for (var anchor in node.anchorOutputs.toList()) {
-      _removeRecursive(anchor, removedIds: removedIds);
-    }
     for (var output in node.primaryOutputs.toList()) {
-      _removeRecursive(output, removedIds: removedIds);
+      _removeRecursive(
+        output,
+        removedIds: removedIds,
+        anchorOutputs: anchorOutputs,
+      );
     }
     for (var output in node.outputs) {
       updateNodeIfPresent(output, (nodeBuilder) {
@@ -290,6 +310,12 @@ class AssetGraph implements GeneratedAssetHider {
     if (node.type != NodeType.missingSource) {
       _nodesByPackage[id.package]!.remove(id.path);
     }
+
+    // Remove post build action applications with removed assets as inputs.
+    for (final packageOutputs in _postProcessBuildStepOutputs.values) {
+      packageOutputs.removeWhere((id, _) => removedIds!.contains(id.input));
+    }
+
     return removedIds;
   }
 
@@ -300,6 +326,25 @@ class AssetGraph implements GeneratedAssetHider {
   /// All nodes in the graph for `package`.
   Iterable<AssetNode> packageNodes(String package) =>
       _nodesByPackage[package]?.values ?? [];
+
+  Iterable<PostProcessBuildStepId> postProcessBuildStepIds({
+    required String package,
+  }) => _postProcessBuildStepOutputs[package]?.keys ?? const [];
+
+  void updatePostProcessBuildStep(
+    PostProcessBuildStepId buildStepId, {
+    required Set<AssetId> outputs,
+  }) {
+    _postProcessBuildStepOutputs.putIfAbsent(
+          buildStepId.input.package,
+          () => {},
+        )[buildStepId] =
+        outputs;
+  }
+
+  Iterable<AssetId> postProcessBuildStepOutputs(PostProcessBuildStepId action) {
+    return _postProcessBuildStepOutputs[action.input.package]![action]!;
+  }
 
   /// All the generated outputs in the graph.
   Iterable<AssetId> get outputs =>
@@ -547,7 +592,7 @@ class AssetGraph implements GeneratedAssetHider {
           ),
         );
       } else if (phase is PostBuildPhase) {
-        _addPostBuildPhaseAnchors(phase, allInputs);
+        _addPostBuildActionApplications(phase, allInputs);
       } else {
         throw StateError('Unrecognized phase type $phase');
       }
@@ -600,27 +645,21 @@ class AssetGraph implements GeneratedAssetHider {
     return phaseOutputs;
   }
 
-  /// Adds all [AssetNode.postProcessAnchor]s for [phase] given [allInputs];
-  ///
-  /// Does not return anything because [AssetNode.postProcessAnchor]s are
-  /// synthetic and should not be treated as inputs.
-  void _addPostBuildPhaseAnchors(PostBuildPhase phase, Set<AssetId> allInputs) {
-    var actionNum = 0;
+  /// Adds all [PostProcessBuildStepId]s for [phase] given [allInputs];
+  void _addPostBuildActionApplications(
+    PostBuildPhase phase,
+    Set<AssetId> allInputs,
+  ) {
+    var actionNumber = 0;
     for (var action in phase.builderActions) {
       var inputs = allInputs.where((input) => _actionMatches(action, input));
       for (var input in inputs) {
-        var buildOptionsNodeId = builderOptionsIdForAction(action, actionNum);
-        var anchor = AssetNode.postProcessAnchorForInputAndAction(
-          input,
-          actionNum,
-          buildOptionsNodeId,
+        updatePostProcessBuildStep(
+          PostProcessBuildStepId(input: input, actionNumber: actionNumber),
+          outputs: {},
         );
-        add(anchor);
-        updateNode(input, (nodeBuilder) {
-          nodeBuilder.anchorOutputs.add(anchor.id);
-        });
       }
-      actionNum++;
+      actionNumber++;
     }
   }
 
@@ -762,11 +801,14 @@ class AssetGraph implements GeneratedAssetHider {
 Digest computeBuilderOptionsDigest(BuilderOptions options) =>
     md5.convert(utf8.encode(json.encode(options.config)));
 
-AssetId builderOptionsIdForAction(BuildAction action, int actionNum) {
+AssetId builderOptionsIdForAction(BuildAction action, int actionNumber) {
   if (action is InBuildPhase) {
-    return AssetId(action.package, 'Phase$actionNum.builderOptions');
+    return AssetId(action.package, 'Phase$actionNumber.builderOptions');
   } else if (action is PostBuildAction) {
-    return AssetId(action.package, 'PostPhase$actionNum.builderOptions');
+    return PostProcessBuildStepId.builderOptionsIdFor(
+      package: action.package,
+      actionNumber: actionNumber,
+    );
   } else {
     throw StateError('Unsupported action type $action');
   }

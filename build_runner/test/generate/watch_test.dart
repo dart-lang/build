@@ -426,6 +426,10 @@ void main() {
           cachedGraph,
           equalsAssetGraph(expectedGraph, checkPreviousInputsDigest: false),
         );
+        expect(
+          cachedGraph.allPostProcessBuildStepOutputs,
+          expectedGraph.allPostProcessBuildStepOutputs,
+        );
       });
 
       test('ignores events from nested packages', () async {
