@@ -147,7 +147,6 @@ class AssetGraph implements GeneratedAssetHider {
         // primary outputs. We only want to remove this node.
         _nodesByPackage[existing.id.package]!.remove(existing.id.path);
         node = node.rebuild((b) {
-          b.outputs.addAll(existing.outputs);
           b.primaryOutputs.addAll(existing.primaryOutputs);
         });
       } else {
@@ -249,7 +248,7 @@ class AssetGraph implements GeneratedAssetHider {
     for (var output in node.primaryOutputs.toList()) {
       _removeRecursive(output, removedIds: removedIds);
     }
-    for (var output in node.outputs) {
+    /*for (var output in node.outputs) {
       updateNodeIfPresent(output, (nodeBuilder) {
         if (nodeBuilder.type == NodeType.generated) {
           nodeBuilder.generatedNodeState.inputs.remove(id);
@@ -259,29 +258,31 @@ class AssetGraph implements GeneratedAssetHider {
             ..results.remove(id);
         }
       });
-    }
+    }*/
 
     if (node.type == NodeType.generated) {
       for (var input in node.generatedNodeState!.inputs) {
         // We may have already removed this node entirely.
         updateNodeIfPresent(input, (nodeBuilder) {
           nodeBuilder
-            ..outputs.remove(id)
-            ..primaryOutputs.remove(id);
+              // ..outputs.remove(id)
+              .primaryOutputs
+              .remove(id);
         });
       }
-      updateNode(node.generatedNodeConfiguration!.builderOptionsId, (
+      /*updateNode(node.generatedNodeConfiguration!.builderOptionsId, (
         nodeBuilder,
       ) {
         nodeBuilder.outputs.remove(id);
-      });
+      });*/
     } else if (node.type == NodeType.glob) {
       for (var input in node.globNodeState!.inputs) {
         // We may have already removed this node entirely.
         updateNodeIfPresent(input, (nodeBuilder) {
           nodeBuilder
-            ..outputs.remove(id)
-            ..primaryOutputs.remove(id);
+              // ..outputs.remove(id)
+              .primaryOutputs
+              .remove(id);
         });
       }
     }
@@ -307,11 +308,11 @@ class AssetGraph implements GeneratedAssetHider {
 
   /// The outputs which were, or would have been, produced by failing actions.
   Iterable<AssetNode> get failedOutputs => allNodes.where(
-    (n) =>
-        n.type == NodeType.generated &&
-        n.generatedNodeState!.isFailure &&
-        n.generatedNodeState!.pendingBuildAction == PendingBuildAction.none,
-  );
+        (n) =>
+            n.type == NodeType.generated &&
+            n.generatedNodeState!.isFailure &&
+            n.generatedNodeState!.pendingBuildAction == PendingBuildAction.none,
+      );
 
   /// All the generated outputs for a particular phase.
   Iterable<AssetNode> outputsForPhase(String package, int phase) =>
@@ -365,8 +366,7 @@ class AssetGraph implements GeneratedAssetHider {
           .where(
             (node) =>
                 node.isTrackedInput &&
-                (node.outputs.isNotEmpty ||
-                    node.primaryOutputs.isNotEmpty ||
+                (node.primaryOutputs.isNotEmpty ||
                     node.lastKnownDigest != null),
           )
           .map((node) => node.id),
@@ -441,11 +441,11 @@ class AssetGraph implements GeneratedAssetHider {
           });
 
           if (invalidatedNode != null) {
-            for (final id in invalidatedNode.outputs) {
+            /*for (final id in invalidatedNode.outputs) {
               if (invalidatedIds.add(id)) {
                 nodesToInvalidate.add(id);
               }
-            }
+            }*/
           }
         }
       }
@@ -675,13 +675,13 @@ class AssetGraph implements GeneratedAssetHider {
         isHidden: isHidden,
       );
       if (existing != null) {
-        newNode = newNode.rebuild((b) => b..outputs.addAll(existing!.outputs));
+        /*newNode = newNode.rebuild((b) => b..outputs.addAll(existing!.outputs));
         // Ensure we set up the reverse link for NodeWithInput nodes.
-        _addInput(existing.outputs, output);
+        _addInput(existing.outputs, output);*/
       }
-      updateNode(builderOptionsNode.id, (nodeBuilder) {
+      /*updateNode(builderOptionsNode.id, (nodeBuilder) {
         nodeBuilder.outputs.add(output);
-      });
+      });*/
       _add(newNode);
     }
     return removed;
@@ -773,12 +773,12 @@ AssetId builderOptionsIdForAction(BuildAction action, int actionNum) {
 }
 
 Set<AssetId> placeholderIdsFor(PackageGraph packageGraph) => Set<AssetId>.from(
-  packageGraph.allPackages.keys.expand(
-    (package) => [
-      AssetId(package, r'lib/$lib$'),
-      AssetId(package, r'test/$test$'),
-      AssetId(package, r'web/$web$'),
-      AssetId(package, r'$package$'),
-    ],
-  ),
-);
+      packageGraph.allPackages.keys.expand(
+        (package) => [
+          AssetId(package, r'lib/$lib$'),
+          AssetId(package, r'test/$test$'),
+          AssetId(package, r'web/$web$'),
+          AssetId(package, r'$package$'),
+        ],
+      ),
+    );
