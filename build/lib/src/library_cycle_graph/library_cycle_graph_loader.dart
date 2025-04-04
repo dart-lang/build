@@ -97,17 +97,17 @@ class LibraryCycleGraphLoader {
     final idsToLoad = [id];
     // Finish loading any assets that were `_load`ed before they were generated
     // and have now been generated.
-    for (final phase in _assetDepsToLoadByPhase.keys.toList(growable: false)
-      ..sort()) {
-      if (phase > assetDepsLoader.phase) break;
-      idsToLoad.addAll(_assetDepsToLoadByPhase.remove(phase)!);
+    for (final phase in _assetDepsToLoadByPhase.keys.toList(growable: false)) {
+      if (phase <= assetDepsLoader.phase) {
+        idsToLoad.addAll(_assetDepsToLoadByPhase.remove(phase)!);
+      }
     }
 
     while (idsToLoad.isNotEmpty) {
       final idToLoad = idsToLoad.removeLast();
 
-      // Nothing to do if deps were already loaded, unless they were
-      // loaded and expire and [assetDepsLoader] can see a newer value.
+      // Nothing to do if deps were already loaded, unless they expire and
+      // [assetDepsLoader] is at a late enough phase to see the updated value.
       final alreadyLoadedAssetDeps = _assetDeps[idToLoad];
       if (alreadyLoadedAssetDeps != null &&
           !alreadyLoadedAssetDeps.isExpiredAt(phase: assetDepsLoader.phase)) {
@@ -132,7 +132,8 @@ class LibraryCycleGraphLoader {
       } else {
         // It's a generated source that has not yet been generated. Mark it for
         // loading later.
-        (_assetDepsToLoadByPhase[assetDeps.values.last.expiresAt! + 1] ??= {})
+        (_assetDepsToLoadByPhase[assetDeps.values.last.expiresAfter! + 1] ??=
+                {})
             .add(idToLoad);
       }
     }
@@ -162,7 +163,7 @@ class LibraryCycleGraphLoader {
         // Work through phases <= `upToPhase` at which graphs expire,
         // so there are new values to compute.
         if (_graphsToComputeByPhase.isEmpty) break;
-        phase = (_graphsToComputeByPhase.keys.toList()..sort()).first;
+        phase = _graphsToComputeByPhase.keys.reduce(min);
         if (phase > upToPhase) break;
         idsToComputeCyclesFrom = _graphsToComputeByPhase.remove(phase)!;
       }
@@ -204,19 +205,16 @@ class LibraryCycleGraphLoader {
           }).toList();
 
       // Build graphs from cycles.
-      final existingCycles =
-          _cycles.values
-              .where((v) => !v.isExpiredAt(phase: phase))
-              .map((v) => v.valueAt(phase: phase))
-              .toList();
-      _buildGraphs(phase, newCycles: newCycles, existingCycles: existingCycles);
+      _buildGraphs(phase, newCycles: newCycles);
 
       for (final cycle in newCycles) {
         // A cycle expires at the earliest expiry phase of all its transitive
         // deps, because new deps of any transitive dep might change the
         // cycle. Get this from the graph built by `_buildGraphs`.
         final expiresAt =
-            _graphs[cycle.ids.first]!.expiringValueAt(phase: phase).expiresAt;
+            _graphs[cycle.ids.first]!
+                .expiringValueAt(phase: phase)
+                .expiresAfter;
 
         // Merge the computed cycle into any existing phased value for each ID.
         // The phased value can differ by ID: they are in the same cycle at this
@@ -235,10 +233,10 @@ class LibraryCycleGraphLoader {
           final existingCycle = _cycles[id];
           _cycles[id] = updatedValueByOldValue.putIfAbsent(existingCycle, () {
             if (existingCycle == null) {
-              return PhasedValue.of(cycle, expiresAt: expiresAt);
+              return PhasedValue.of(cycle, expiresAfter: expiresAt);
             }
             return existingCycle.followedBy(
-              ExpiringValue<LibraryCycle>(cycle, expiresAt: expiresAt),
+              ExpiringValue<LibraryCycle>(cycle, expiresAfter: expiresAt),
             );
           });
         }
@@ -253,14 +251,13 @@ class LibraryCycleGraphLoader {
   /// cycles in that order.
   ///
   /// A [_graphs] entry will be created for each ID in [newCycles].
-  /// [existingCycles] should be all already-computed cycles at [phase]: it's
-  /// used when new cycles depend on existing cycles.
-  void _buildGraphs(
-    int phase, {
-    required List<LibraryCycle> newCycles,
-    required List<LibraryCycle> existingCycles,
-  }) {
+  void _buildGraphs(int phase, {required List<LibraryCycle> newCycles}) {
     // Build lookup from ID to [LibraryCycle] including new and existing cycles.
+    final existingCycles = <LibraryCycle>[];
+    for (final phasedCycle in _cycles.values) {
+      if (phasedCycle.isExpiredAt(phase: phase)) continue;
+      existingCycles.add(phasedCycle.valueAt(phase: phase));
+    }
     final cycleById = <AssetId, LibraryCycle>{};
     for (final cycle in existingCycles) {
       for (final id in cycle.ids) {
@@ -277,20 +274,15 @@ class LibraryCycleGraphLoader {
     for (final root in newCycles) {
       final graph = LibraryCycleGraphBuilder()..root.replace(root);
 
-      // The graph expires at the earliest of its root cycle deps expirey phases
-      // and all its child graph expirey phases, compute the initial value for
-      // the root to be updated as childen are added.
+      // The graph expires at first phase in which any asset in the graph
+      // expires. Start this calculation by finding the earliest expirey phase
+      // of all assets in the graph root cycle. It will be updated for each
+      // child graph below.
       var expiresAt = root.ids
-          .map((id) => _assetDeps[id]!.expiringValueAt(phase: phase).expiresAt)
-          .fold<int?>(
-            null,
-            (a, b) =>
-                a == null
-                    ? b
-                    : b == null
-                    ? null
-                    : min(a, b),
-          );
+          .map(
+            (id) => _assetDeps[id]!.expiringValueAt(phase: phase).expiresAfter,
+          )
+          .reduce(earliestPhase);
 
       // Look up child cycles based on individual id dependencies, then look
       // up graphs for those cycles. All child graphs have already been computed
@@ -304,13 +296,7 @@ class LibraryCycleGraphLoader {
           if (alreadyAddedChildren.add(depCycle)) {
             final childGraph = _graphs[dep]!.expiringValueAt(phase: phase);
             graph.children.add(childGraph.value);
-
-            // Update `expiresAt` if the child graph expires before it.
-            if (expiresAt == null) {
-              expiresAt = childGraph.expiresAt;
-            } else if (childGraph.expiresAt != null) {
-              expiresAt = min(expiresAt, childGraph.expiresAt!);
-            }
+            expiresAt = earliestPhase(expiresAt, childGraph.expiresAfter);
           }
         }
       }
@@ -339,10 +325,10 @@ class LibraryCycleGraphLoader {
         final oldValue = _graphs[idToUpdate];
         _graphs[idToUpdate] = updatedValueByOldValue.putIfAbsent(oldValue, () {
           if (oldValue == null) {
-            return PhasedValue.of(graph.build(), expiresAt: expiresAt);
+            return PhasedValue.of(graph.build(), expiresAfter: expiresAt);
           }
           return oldValue.followedBy(
-            ExpiringValue(graph.build(), expiresAt: expiresAt),
+            ExpiringValue(graph.build(), expiresAfter: expiresAt),
           );
         });
       }

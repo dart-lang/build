@@ -168,14 +168,20 @@ void main() {
       // Load before it's generated; the not-yet-available node is still a dep.
       // But the results show that they are incomplete.
       expect(await loader.transitiveDepsOf(nodeLoader0, a1), {a1});
-      expect((await loader.libraryCycleOf(nodeLoader0, a1)).expiresAt, 1);
-      expect((await loader.libraryCycleGraphOf(nodeLoader0, a1)).expiresAt, 1);
+      expect((await loader.libraryCycleOf(nodeLoader0, a1)).expiresAfter, 1);
+      expect(
+        (await loader.libraryCycleGraphOf(nodeLoader0, a1)).expiresAfter,
+        1,
+      );
 
       // Same result, but now marked as complete.
       expect(await loader.transitiveDepsOf(nodeLoader2, a1), {a1});
-      expect((await loader.libraryCycleOf(nodeLoader0, a1)).expiresAt, isNull);
       expect(
-        (await loader.libraryCycleGraphOf(nodeLoader0, a1)).expiresAt,
+        (await loader.libraryCycleOf(nodeLoader0, a1)).expiresAfter,
+        isNull,
+      );
+      expect(
+        (await loader.libraryCycleGraphOf(nodeLoader0, a1)).expiresAfter,
         isNull,
       );
     });
@@ -441,8 +447,8 @@ class TestAssetDepsLoader implements AssetDepsLoader {
           PhasedValue<AssetDeps>((b) {
             for (final expiringValue in value.values) {
               b.values.add(expiringValue);
-              if (expiringValue.expiresAt != null &&
-                  expiringValue.expiresAt! > phase) {
+              if (expiringValue.expiresAfter != null &&
+                  expiringValue.expiresAfter! > phase) {
                 return;
               }
             }

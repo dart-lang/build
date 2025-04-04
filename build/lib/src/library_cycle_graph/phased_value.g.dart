@@ -110,12 +110,12 @@ class _$ExpiringValue<T> extends ExpiringValue<T> {
   @override
   final T value;
   @override
-  final int? expiresAt;
+  final int? expiresAfter;
 
   factory _$ExpiringValue([void Function(ExpiringValueBuilder<T>)? updates]) =>
       (new ExpiringValueBuilder<T>()..update(updates))._build();
 
-  _$ExpiringValue._({required this.value, this.expiresAt}) : super._() {
+  _$ExpiringValue._({required this.value, this.expiresAfter}) : super._() {
     BuiltValueNullFieldError.checkNotNull(value, r'ExpiringValue', 'value');
     if (T == dynamic) {
       throw new BuiltValueMissingGenericsError(r'ExpiringValue', 'T');
@@ -135,14 +135,14 @@ class _$ExpiringValue<T> extends ExpiringValue<T> {
     if (identical(other, this)) return true;
     return other is ExpiringValue &&
         value == other.value &&
-        expiresAt == other.expiresAt;
+        expiresAfter == other.expiresAfter;
   }
 
   @override
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, value.hashCode);
-    _$hash = $jc(_$hash, expiresAt.hashCode);
+    _$hash = $jc(_$hash, expiresAfter.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -151,7 +151,7 @@ class _$ExpiringValue<T> extends ExpiringValue<T> {
   String toString() {
     return (newBuiltValueToStringHelper(r'ExpiringValue')
           ..add('value', value)
-          ..add('expiresAt', expiresAt))
+          ..add('expiresAfter', expiresAfter))
         .toString();
   }
 }
@@ -164,9 +164,9 @@ class ExpiringValueBuilder<T>
   T? get value => _$this._value;
   set value(T? value) => _$this._value = value;
 
-  int? _expiresAt;
-  int? get expiresAt => _$this._expiresAt;
-  set expiresAt(int? expiresAt) => _$this._expiresAt = expiresAt;
+  int? _expiresAfter;
+  int? get expiresAfter => _$this._expiresAfter;
+  set expiresAfter(int? expiresAfter) => _$this._expiresAfter = expiresAfter;
 
   ExpiringValueBuilder();
 
@@ -174,7 +174,7 @@ class ExpiringValueBuilder<T>
     final $v = _$v;
     if ($v != null) {
       _value = $v.value;
-      _expiresAt = $v.expiresAt;
+      _expiresAfter = $v.expiresAfter;
       _$v = null;
     }
     return this;
@@ -203,7 +203,7 @@ class ExpiringValueBuilder<T>
             r'ExpiringValue',
             'value',
           ),
-          expiresAt: expiresAt,
+          expiresAfter: expiresAfter,
         );
     replace(_$result);
     return _$result;

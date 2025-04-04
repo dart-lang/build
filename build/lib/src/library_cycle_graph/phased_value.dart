@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:math';
+
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 
@@ -16,7 +18,7 @@ part 'phased_value.g.dart';
 /// For example, if `foo.dart` is a generated file generated in phase 3:
 ///
 ///  - the value of `foo.dart` at phase 0 is empty/missing;
-///  - that value expires at phase 3
+///  - that value expires after phase 3
 ///  - the new value of `foo.dart` is readable in phase 4
 ///
 /// Ignoring post process deletion, which happens outside the main build, a
@@ -27,9 +29,9 @@ part 'phased_value.g.dart';
 /// dependency trees.
 ///
 /// Represented as a list of [ExpiringValue] with ascending
-/// [ExpiringValue.expiresAt].
+/// [ExpiringValue.expiresAfter].
 ///
-/// If the last value in the list has non-null [ExpiringValue.expiresAt] then
+/// If the last value in the list has non-null [ExpiringValue.expiresAfter] then
 /// the `PhasedValue` is incomplete: after the specified phase it changes to an
 /// unknown value. Or, if the last value in the list has `null` `expiresAt` then
 /// the `PhasedValue` is complete; no further changes are possible.
@@ -60,7 +62,7 @@ abstract class PhasedValue<T>
     required int untilAfterPhase,
     required T before,
   }) => PhasedValue((b) {
-    b.values.add(ExpiringValue<T>(before, expiresAt: untilAfterPhase));
+    b.values.add(ExpiringValue<T>(before, expiresAfter: untilAfterPhase));
   });
 
   /// A value that is generated during [atPhase], changing from [before] to
@@ -70,26 +72,27 @@ abstract class PhasedValue<T>
     required int atPhase,
     required T before,
   }) => PhasedValue((b) {
-    b.values.add(ExpiringValue<T>(before, expiresAt: atPhase));
+    b.values.add(ExpiringValue<T>(before, expiresAfter: atPhase));
     b.values.add(ExpiringValue<T>(value));
   });
 
-  /// A [value] expiring at [expiresAt] if it's not `null`.
-  factory PhasedValue.of(T value, {required int? expiresAt}) =>
+  /// A [value] expiring after [expiresAfter] if it's not `null`.
+  factory PhasedValue.of(T value, {required int? expiresAfter}) =>
       PhasedValue((b) {
-        b.values.add(ExpiringValue<T>(value, expiresAt: expiresAt));
+        b.values.add(ExpiringValue<T>(value, expiresAfter: expiresAfter));
       });
 
   /// Whether this value is complete: all values are known, no further changes
   /// are possible.
-  bool get isComplete => values.last.expiresAt == null;
+  bool get isComplete => values.last.expiresAfter == null;
 
-  int? get expiresAt => values.last.expiresAt;
+  /// The phase after which the value expires, or `null` if it never expires.
+  int? get expiresAfter => values.last.expiresAfter;
 
   /// Whether this value has expired at the specified [phase], meaning the
   /// actual value is not known.
   bool isExpiredAt({required int phase}) {
-    return expiresAt != null && expiresAt! < phase;
+    return expiresAfter != null && expiresAfter! < phase;
   }
 
   /// The value at [phase], with its expirey phase.
@@ -97,11 +100,12 @@ abstract class PhasedValue<T>
   /// Throws `StateError` if the value has expired at [phase], meaning the value
   /// is not known.
   ExpiringValue<T> expiringValueAt({required int phase}) {
-    final result = values.firstWhere(
-      (v) => v.expiresAt == null || v.expiresAt! >= phase,
-      orElse: () => throw StateError('No value for phase $phase in $this.'),
-    );
-    return result;
+    for (final value in values) {
+      if (value.expiresAfter == null || value.expiresAfter! >= phase) {
+        return value;
+      }
+    }
+    throw StateError('No value for phase $phase in $this.');
   }
 
   /// The value at [phase].
@@ -123,12 +127,13 @@ abstract class PhasedValue<T>
   /// Throws `StateError` if [isComplete], as a complete value cannot change.
   ///
   /// Throws `StateError` if the additional value expires before or at
-  /// [expiresAt], as it cannot follow this one.
+  /// [expiresAfter], as it cannot follow this one.
   PhasedValue<T> followedBy(ExpiringValue<T> value) {
-    if (values.last.expiresAt == null) {
+    if (values.last.expiresAfter == null) {
       throw StateError("Can't follow a value that doesn't expire.");
     }
-    if (value.expiresAt != null && value.expiresAt! <= values.last.expiresAt!) {
+    if (value.expiresAfter != null &&
+        value.expiresAfter! <= values.last.expiresAfter!) {
       throw StateError(
         "Can't follow with a value expiring before or at the existing value."
         ' This: $this, followedBy: $value',
@@ -142,16 +147,27 @@ abstract class PhasedValue<T>
 
 /// A [value] with optionally limited lifespan.
 ///
-/// If [expiresAt] is `null`, the value never expires.
+/// If [expiresAfter] is `null`, the value never expires.
 ///
-/// If [expiresAt] is set, the value expires at that phase: it takes a new value
-/// in the _next_ phase after that.
+/// If [expiresAfter] is set, the value expires after that phase, taking a new
+/// value in the next phase.
 abstract class ExpiringValue<T>
     implements Built<ExpiringValue<T>, ExpiringValueBuilder<T>> {
   T get value;
-  int? get expiresAt;
+  int? get expiresAfter;
 
-  factory ExpiringValue(T value, {int? expiresAt}) =>
-      _$ExpiringValue<T>._(value: value, expiresAt: expiresAt);
+  factory ExpiringValue(T value, {int? expiresAfter}) =>
+      _$ExpiringValue<T>._(value: value, expiresAfter: expiresAfter);
   ExpiringValue._();
 }
+
+/// Returns the earliest of two nullable phases [a] and [b].
+///
+/// `null` represents "never", so any non-`null` phase is earlier than a `null`
+/// one.
+int? earliestPhase(int? a, int? b) =>
+    a == null
+        ? b
+        : b == null
+        ? a
+        : min(a, b);

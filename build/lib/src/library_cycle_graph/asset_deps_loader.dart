@@ -36,7 +36,7 @@ class AssetDepsLoader {
   /// Parses directives in [content] to return an [AssetDeps].
   ExpiringValue<AssetDeps> _parse(AssetId id, ExpiringValue<String> content) {
     final result =
-        ExpiringValueBuilder<AssetDeps>()..expiresAt = content.expiresAt;
+        ExpiringValueBuilder<AssetDeps>()..expiresAfter = content.expiresAfter;
 
     final parsed =
         parseString(content: content.value, throwIfDiagnostics: false).unit;
