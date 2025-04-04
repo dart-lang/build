@@ -73,7 +73,9 @@ class OptionalOutputTracker {
     return _checkedOutputs.putIfAbsent(
       output,
       () =>
-          node.outputs.any((o) => isRequired(o, currentlyChecking)) ||
+          (_assetGraph.computeOutputs()[node.id] ?? <AssetId>{}).any(
+            (o) => isRequired(o, currentlyChecking),
+          ) ||
           _assetGraph
               .outputsForPhase(output.package, nodeConfiguration.phaseNumber)
               .where(

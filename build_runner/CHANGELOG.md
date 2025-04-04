@@ -13,6 +13,7 @@
 - Add `NodeType` to `AssetNode`, remove subtypes. Make mutations explicit.
 - Use `built_value` for `AssetNode` and related types.
 - Add details of what changed and what is built to `--verbose` logging.
+- Compute outputs as needed instead of storing them in the asset graph.
 
 ## 2.4.15
 

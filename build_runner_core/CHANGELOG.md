@@ -29,6 +29,7 @@
 - Use `LibraryCycleGraphLoader` to load transitive deps for analysis.
 - Track post process builder outputs separately from the main graph Instead of
   in `postProcessAnchor` nodes.
+- Compute outputs as needed instead of storing them in the asset graph.
 
 ## 8.0.0
 
