@@ -118,6 +118,7 @@ class InspectNodeCommand extends Command<bool> {
 
   @override
   bool run() {
+    var computedOutputs = assetGraph.computeOutputs();
     var argResults = this.argResults!;
     var stringUris = argResults.rest;
     if (stringUris.isEmpty) {
@@ -157,12 +158,16 @@ class InspectNodeCommand extends Command<bool> {
         node.primaryOutputs.forEach(printAsset);
 
         description.writeln('  secondary outputs:');
-        node.outputs.difference(node.primaryOutputs).forEach(printAsset);
+        (computedOutputs[node.id] ?? const <AssetId>{})
+            .difference(node.primaryOutputs.asSet())
+            .forEach(printAsset);
 
         if (node.type == NodeType.generated || node.type == NodeType.glob) {
           description.writeln('  inputs:');
           assetGraph.allNodes
-              .where((n) => n.outputs.contains(node.id))
+              .where(
+                (n) => (computedOutputs[n.id] ?? <AssetId>{}).contains(node.id),
+              )
               .map((n) => n.id)
               .forEach(printAsset);
         }

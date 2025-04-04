@@ -48,6 +48,8 @@ class AssetGraph implements GeneratedAssetHider {
 
   final BuiltMap<String, LanguageVersion?> packageLanguageVersions;
 
+  Map<AssetId, Set<AssetId>>? _outputs;
+
   /// All post process build steps outputs, indexed by package then
   /// [PostProcessBuildStepId].
   ///
@@ -128,6 +130,20 @@ class AssetGraph implements GeneratedAssetHider {
     if (node == null) throw StateError('Missing node: $id');
     final updatedNode = node.rebuild(updates);
     _nodesByPackage[id.package]![id.path] = updatedNode;
+
+    if (updatedNode.type == NodeType.generated) {
+      if (node.type != NodeType.generated ||
+          updatedNode.generatedNodeState!.inputs !=
+              node.generatedNodeState!.inputs) {
+        _outputs = null;
+      }
+    } else if (updatedNode.type == NodeType.glob) {
+      if (node.type != NodeType.glob ||
+          updatedNode.globNodeState!.inputs != node.globNodeState!.inputs) {
+        _outputs = null;
+      }
+    }
+
     return updatedNode;
   }
 
@@ -144,6 +160,21 @@ class AssetGraph implements GeneratedAssetHider {
     if (node == null) return null;
     final updatedNode = node.rebuild(updates);
     _nodesByPackage[id.package]![id.path] = updatedNode;
+
+    // TODO(davidmorgan): dedupe.
+    if (updatedNode.type == NodeType.generated) {
+      if (node.type != NodeType.generated ||
+          updatedNode.generatedNodeState!.inputs !=
+              node.generatedNodeState!.inputs) {
+        _outputs = null;
+      }
+    } else if (updatedNode.type == NodeType.glob) {
+      if (node.type != NodeType.glob ||
+          updatedNode.globNodeState!.inputs != node.globNodeState!.inputs) {
+        _outputs = null;
+      }
+    }
+
     return updatedNode;
   }
 
@@ -161,7 +192,6 @@ class AssetGraph implements GeneratedAssetHider {
         // primary outputs. We only want to remove this node.
         _nodesByPackage[existing.id.package]!.remove(existing.id.path);
         node = node.rebuild((b) {
-          b.outputs.addAll(existing.outputs);
           b.primaryOutputs.addAll(existing.primaryOutputs);
         });
       } else {
@@ -172,6 +202,11 @@ class AssetGraph implements GeneratedAssetHider {
       }
     }
     _nodesByPackage.putIfAbsent(node.id.package, () => {})[node.id.path] = node;
+
+    if (node.type == NodeType.generated || node.type == NodeType.glob) {
+      // TODO(davidmorgan): check for non-empty inputs?
+      _outputs = null;
+    }
 
     return node;
   }
@@ -269,7 +304,8 @@ class AssetGraph implements GeneratedAssetHider {
         anchorOutputs: anchorOutputs,
       );
     }
-    for (var output in node.outputs) {
+    final outputs = computeOutputs();
+    for (var output in (outputs[node.id] ?? const <AssetId>{})) {
       updateNodeIfPresent(output, (nodeBuilder) {
         if (nodeBuilder.type == NodeType.generated) {
           nodeBuilder.generatedNodeState.inputs.remove(id);
@@ -285,23 +321,14 @@ class AssetGraph implements GeneratedAssetHider {
       for (var input in node.generatedNodeState!.inputs) {
         // We may have already removed this node entirely.
         updateNodeIfPresent(input, (nodeBuilder) {
-          nodeBuilder
-            ..outputs.remove(id)
-            ..primaryOutputs.remove(id);
+          nodeBuilder.primaryOutputs.remove(id);
         });
       }
-      updateNode(node.generatedNodeConfiguration!.builderOptionsId, (
-        nodeBuilder,
-      ) {
-        nodeBuilder.outputs.remove(id);
-      });
     } else if (node.type == NodeType.glob) {
       for (var input in node.globNodeState!.inputs) {
         // We may have already removed this node entirely.
         updateNodeIfPresent(input, (nodeBuilder) {
-          nodeBuilder
-            ..outputs.remove(id)
-            ..primaryOutputs.remove(id);
+          nodeBuilder.primaryOutputs.remove(id);
         });
       }
     }
@@ -317,6 +344,29 @@ class AssetGraph implements GeneratedAssetHider {
     }
 
     return removedIds;
+  }
+
+  Map<AssetId, Set<AssetId>> computeOutputs() {
+    if (_outputs != null) return _outputs!;
+    final result = <AssetId, Set<AssetId>>{};
+    for (final node in allNodes) {
+      if (node.type == NodeType.generated) {
+        for (final input in node.generatedNodeState!.inputs) {
+          result.putIfAbsent(input, () => {}).add(node.id);
+        }
+        result
+            .putIfAbsent(
+              node.generatedNodeConfiguration!.builderOptionsId,
+              () => {},
+            )
+            .add(node.id);
+      } else if (node.type == NodeType.glob) {
+        for (final input in node.globNodeState!.inputs) {
+          result.putIfAbsent(input, () => {}).add(node.id);
+        }
+      }
+    }
+    return _outputs = result;
   }
 
   /// All nodes in the graph, whether source files or generated outputs.
@@ -410,8 +460,7 @@ class AssetGraph implements GeneratedAssetHider {
           .where(
             (node) =>
                 node.isTrackedInput &&
-                (node.outputs.isNotEmpty ||
-                    node.primaryOutputs.isNotEmpty ||
+                (node.primaryOutputs.isNotEmpty ||
                     node.lastKnownDigest != null),
           )
           .map((node) => node.id),
@@ -460,6 +509,7 @@ class AssetGraph implements GeneratedAssetHider {
     // Transitively invalidates all assets. This needs to happen after the
     // structure of the graph has been updated.
     var invalidatedIds = <AssetId>{};
+    final computedOutputs = computeOutputs();
 
     void invalidateNodeAndDeps(AssetId startNodeId) {
       if (!invalidatedIds.add(startNodeId)) return;
@@ -486,7 +536,8 @@ class AssetGraph implements GeneratedAssetHider {
           });
 
           if (invalidatedNode != null) {
-            for (final id in invalidatedNode.outputs) {
+            for (final id
+                in (computedOutputs[invalidatedNode.id] ?? const <AssetId>{})) {
               if (invalidatedIds.add(id)) {
                 nodesToInvalidate.add(id);
               }
@@ -535,6 +586,9 @@ class AssetGraph implements GeneratedAssetHider {
         _removeRecursive(id);
       }
     }
+
+    // TODO(davidmorgan): more efficient?
+    _outputs = null;
 
     return invalidatedIds;
   }
@@ -685,11 +739,14 @@ class AssetGraph implements GeneratedAssetHider {
     var removed = <AssetId>{};
     for (var output in outputs) {
       AssetNode? existing;
+      Map<AssetId, Set<AssetId>>? computedOutputs;
       // When any outputs aren't hidden we can pick up old generated outputs as
       // regular `AssetNode`s, we need to delete them and all their primary
       // outputs, and replace them with a `GeneratedAssetNode`.
       if (contains(output)) {
         existing = get(output)!;
+        // TODO(davidmorgan): does this happen often?
+        computedOutputs = computeOutputs();
         if (existing.type == NodeType.generated) {
           final existingConfiguration = existing.generatedNodeConfiguration!;
           throw DuplicateAssetNodeException(
@@ -714,13 +771,9 @@ class AssetGraph implements GeneratedAssetHider {
         isHidden: isHidden,
       );
       if (existing != null) {
-        newNode = newNode.rebuild((b) => b..outputs.addAll(existing!.outputs));
         // Ensure we set up the reverse link for NodeWithInput nodes.
-        _addInput(existing.outputs, output);
+        _addInput(computedOutputs![output] ?? <AssetId>{}, output);
       }
-      updateNode(builderOptionsNode.id, (nodeBuilder) {
-        nodeBuilder.outputs.add(output);
-      });
       _add(newNode);
     }
     return removed;

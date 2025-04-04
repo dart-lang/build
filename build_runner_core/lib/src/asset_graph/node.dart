@@ -57,10 +57,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   /// when run on this asset.
   BuiltSet<AssetId> get primaryOutputs;
 
-  /// The [AssetId]s of all generated assets which are output by a [Builder]
-  /// which reads this asset.
-  BuiltSet<AssetId> get outputs;
-
   /// The [Digest] for this node in its last known state.
   ///
   /// May be `null` if this asset has no outputs, or if it doesn't actually
@@ -96,7 +92,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   bool get changesRequireRebuild =>
       type == NodeType.internal ||
       type == NodeType.glob ||
-      outputs.isNotEmpty ||
       lastKnownDigest != null;
 
   factory AssetNode([void Function(AssetNodeBuilder) updates]) = _$AssetNode;
@@ -124,7 +119,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     b.id = id;
     b.type = NodeType.source;
     b.primaryOutputs.replace(primaryOutputs ?? {});
-    b.outputs.replace(outputs ?? {});
     b.lastKnownDigest = lastKnownDigest;
   });
 

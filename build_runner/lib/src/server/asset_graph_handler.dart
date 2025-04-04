@@ -115,7 +115,8 @@ class AssetGraphHandler {
       {'id': '${node.id}', 'label': '${node.id}'},
     ];
     var edges = <Map<String, String>>[];
-    for (final output in node.outputs) {
+    var computedOutputs = _assetGraph.computeOutputs();
+    for (final output in (computedOutputs[node.id] ?? <AssetId>{})) {
       if (filterGlob != null && !filterGlob.matches(output.toString())) {
         continue;
       }

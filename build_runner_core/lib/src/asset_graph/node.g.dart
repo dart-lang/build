@@ -99,10 +99,6 @@ Serializers _$serializers =
             () => new SetBuilder<AssetId>(),
           )
           ..addBuilderFactory(
-            const FullType(BuiltSet, const [const FullType(AssetId)]),
-            () => new SetBuilder<AssetId>(),
-          )
-          ..addBuilderFactory(
             const FullType(BuiltSet, const [
               const FullType(PostProcessBuildStepId),
             ]),
@@ -166,13 +162,6 @@ class _$AssetNodeSerializer implements StructuredSerializer<AssetNode> {
       'primaryOutputs',
       serializers.serialize(
         object.primaryOutputs,
-        specifiedType: const FullType(BuiltSet, const [
-          const FullType(AssetId),
-        ]),
-      ),
-      'outputs',
-      serializers.serialize(
-        object.outputs,
         specifiedType: const FullType(BuiltSet, const [
           const FullType(AssetId),
         ]),
@@ -309,17 +298,6 @@ class _$AssetNodeSerializer implements StructuredSerializer<AssetNode> {
           break;
         case 'primaryOutputs':
           result.primaryOutputs.replace(
-            serializers.deserialize(
-                  value,
-                  specifiedType: const FullType(BuiltSet, const [
-                    const FullType(AssetId),
-                  ]),
-                )!
-                as BuiltSet<Object?>,
-          );
-          break;
-        case 'outputs':
-          result.outputs.replace(
             serializers.deserialize(
                   value,
                   specifiedType: const FullType(BuiltSet, const [
@@ -739,8 +717,6 @@ class _$AssetNode extends AssetNode {
   @override
   final BuiltSet<AssetId> primaryOutputs;
   @override
-  final BuiltSet<AssetId> outputs;
-  @override
   final Digest? lastKnownDigest;
   @override
   final BuiltSet<PostProcessBuildStepId> deletedBy;
@@ -756,7 +732,6 @@ class _$AssetNode extends AssetNode {
     this.globNodeConfiguration,
     this.globNodeState,
     required this.primaryOutputs,
-    required this.outputs,
     this.lastKnownDigest,
     required this.deletedBy,
   }) : super._() {
@@ -767,7 +742,6 @@ class _$AssetNode extends AssetNode {
       r'AssetNode',
       'primaryOutputs',
     );
-    BuiltValueNullFieldError.checkNotNull(outputs, r'AssetNode', 'outputs');
     BuiltValueNullFieldError.checkNotNull(deletedBy, r'AssetNode', 'deletedBy');
   }
 
@@ -789,7 +763,6 @@ class _$AssetNode extends AssetNode {
         globNodeConfiguration == other.globNodeConfiguration &&
         globNodeState == other.globNodeState &&
         primaryOutputs == other.primaryOutputs &&
-        outputs == other.outputs &&
         lastKnownDigest == other.lastKnownDigest &&
         deletedBy == other.deletedBy;
   }
@@ -804,7 +777,6 @@ class _$AssetNode extends AssetNode {
     _$hash = $jc(_$hash, globNodeConfiguration.hashCode);
     _$hash = $jc(_$hash, globNodeState.hashCode);
     _$hash = $jc(_$hash, primaryOutputs.hashCode);
-    _$hash = $jc(_$hash, outputs.hashCode);
     _$hash = $jc(_$hash, lastKnownDigest.hashCode);
     _$hash = $jc(_$hash, deletedBy.hashCode);
     _$hash = $jf(_$hash);
@@ -821,7 +793,6 @@ class _$AssetNode extends AssetNode {
           ..add('globNodeConfiguration', globNodeConfiguration)
           ..add('globNodeState', globNodeState)
           ..add('primaryOutputs', primaryOutputs)
-          ..add('outputs', outputs)
           ..add('lastKnownDigest', lastKnownDigest)
           ..add('deletedBy', deletedBy))
         .toString();
@@ -872,11 +843,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
   set primaryOutputs(SetBuilder<AssetId>? primaryOutputs) =>
       _$this._primaryOutputs = primaryOutputs;
 
-  SetBuilder<AssetId>? _outputs;
-  SetBuilder<AssetId> get outputs =>
-      _$this._outputs ??= new SetBuilder<AssetId>();
-  set outputs(SetBuilder<AssetId>? outputs) => _$this._outputs = outputs;
-
   Digest? _lastKnownDigest;
   Digest? get lastKnownDigest => _$this._lastKnownDigest;
   set lastKnownDigest(Digest? lastKnownDigest) =>
@@ -900,7 +866,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
       _globNodeConfiguration = $v.globNodeConfiguration?.toBuilder();
       _globNodeState = $v.globNodeState?.toBuilder();
       _primaryOutputs = $v.primaryOutputs.toBuilder();
-      _outputs = $v.outputs.toBuilder();
       _lastKnownDigest = $v.lastKnownDigest;
       _deletedBy = $v.deletedBy.toBuilder();
       _$v = null;
@@ -939,7 +904,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
             globNodeConfiguration: _globNodeConfiguration?.build(),
             globNodeState: _globNodeState?.build(),
             primaryOutputs: primaryOutputs.build(),
-            outputs: outputs.build(),
             lastKnownDigest: lastKnownDigest,
             deletedBy: deletedBy.build(),
           );
@@ -956,8 +920,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
         _globNodeState?.build();
         _$failedField = 'primaryOutputs';
         primaryOutputs.build();
-        _$failedField = 'outputs';
-        outputs.build();
 
         _$failedField = 'deletedBy';
         deletedBy.build();

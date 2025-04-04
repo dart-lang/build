@@ -382,9 +382,6 @@ void main() {
           inputs: [makeAssetId('a|web/b.txt')],
           isHidden: false,
         );
-        builderOptionsNode = builderOptionsNode.rebuild(
-          (b) => b..outputs.add(bCopyNode.id),
-        );
         expectedGraph
           ..add(bCopyNode)
           ..add(
@@ -406,9 +403,6 @@ void main() {
           lastKnownDigest: computeDigest(cCopyId, 'c'),
           inputs: [makeAssetId('a|web/c.txt')],
           isHidden: false,
-        );
-        builderOptionsNode = builderOptionsNode.rebuild(
-          (b) => b..outputs.add(cCopyNode.id),
         );
         expectedGraph
           ..add(cCopyNode)

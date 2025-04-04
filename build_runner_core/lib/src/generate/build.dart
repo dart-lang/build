@@ -936,13 +936,6 @@ class Build {
         }
       }
 
-      // Mark the glob node as an output of all the inputs.
-      for (var id in generatedFileInputs.followedBy(otherInputs)) {
-        assetGraph.updateNode(id, (nodeBuilder) {
-          nodeBuilder.outputs.add(globId);
-        });
-      }
-
       // Request to build the matching generated files.
       for (final id in generatedFileInputs) {
         await _buildAsset(id);
@@ -1006,8 +999,7 @@ class Build {
       var wasOutput = readerWriter.assetsWritten.contains(output);
       var digest = wasOutput ? await this.readerWriter.digest(output) : null;
 
-      _removeOldInputs(output, usedInputs);
-      _addNewInputs(output, usedInputs);
+      _updateInputs(output, usedInputs);
       assetGraph.updateNode(output, (nodeBuilder) {
         if (nodeBuilder.lastKnownDigest != digest) {
           changedOutputs.add(output);
@@ -1040,10 +1032,7 @@ class Build {
           needsMarkAsFailure.addAll(assetGraph.get(output)!.primaryOutputs);
 
           // Make sure output invalidation follows primary outputs for builds
-          // that won't run
-          assetGraph.updateNode(node.id, (nodeBuilder) {
-            nodeBuilder.outputs.add(output);
-          });
+          // that won't run.
           assetGraph.updateNode(output, (nodeBuilder) {
             nodeBuilder.generatedNodeState.inputs.add(node.id);
           });
@@ -1055,36 +1044,13 @@ class Build {
     }
   }
 
-  /// Removes old inputs from node with [id] based on [updatedInputs], and
-  /// cleans up all the old edges.
-  void _removeOldInputs(AssetId id, Set<AssetId> updatedInputs) {
-    final node = assetGraph.get(id)!;
-    final nodeState = node.generatedNodeState!;
-    var removedInputs = nodeState.inputs.asSet().difference(updatedInputs);
-    assetGraph.updateNode(node.id, (nodeBuilder) {
-      nodeBuilder.generatedNodeState.inputs.removeAll(removedInputs);
-    });
-    for (var input in removedInputs) {
-      assetGraph.updateNode(input, (nodeBuilder) {
-        nodeBuilder.outputs.remove(node.id);
-      });
-    }
-  }
-
   /// Adds new inputs to node with [id] based on [updatedInputs], and adds the
   /// appropriate edges.
-  void _addNewInputs(AssetId id, Set<AssetId> updatedInputs) {
+  void _updateInputs(AssetId id, Set<AssetId> updatedInputs) {
     final node = assetGraph.get(id)!;
-    final nodeState = node.generatedNodeState!;
-    var newInputs = updatedInputs.difference(nodeState.inputs.asSet());
     assetGraph.updateNode(node.id, (nodeBuilder) {
-      nodeBuilder.generatedNodeState.inputs.addAll(newInputs);
+      nodeBuilder.generatedNodeState.inputs.replace(updatedInputs);
     });
-    for (var input in newInputs) {
-      assetGraph.updateNode(input, (nodeBuilder) {
-        nodeBuilder.outputs.add(node.id);
-      });
-    }
   }
 
   Future _delete(AssetId id) => deleteWriter.delete(id);

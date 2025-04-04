@@ -26,15 +26,15 @@ class _$PostProcessBuildStepIdSerializer
     FullType specifiedType = FullType.unspecified,
   }) {
     final result = <Object?>[
-      'actionNumber',
-      serializers.serialize(
-        object.actionNumber,
-        specifiedType: const FullType(int),
-      ),
       'input',
       serializers.serialize(
         object.input,
         specifiedType: const FullType(AssetId),
+      ),
+      'actionNumber',
+      serializers.serialize(
+        object.actionNumber,
+        specifiedType: const FullType(int),
       ),
     ];
 
@@ -55,14 +55,6 @@ class _$PostProcessBuildStepIdSerializer
       iterator.moveNext();
       final Object? value = iterator.current;
       switch (key) {
-        case 'actionNumber':
-          result.actionNumber =
-              serializers.deserialize(
-                    value,
-                    specifiedType: const FullType(int),
-                  )!
-                  as int;
-          break;
         case 'input':
           result.input =
               serializers.deserialize(
@@ -70,6 +62,14 @@ class _$PostProcessBuildStepIdSerializer
                     specifiedType: const FullType(AssetId),
                   )!
                   as AssetId;
+          break;
+        case 'actionNumber':
+          result.actionNumber =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(int),
+                  )!
+                  as int;
           break;
       }
     }
@@ -80,25 +80,25 @@ class _$PostProcessBuildStepIdSerializer
 
 class _$PostProcessBuildStepId extends PostProcessBuildStepId {
   @override
-  final int actionNumber;
-  @override
   final AssetId input;
+  @override
+  final int actionNumber;
 
   factory _$PostProcessBuildStepId([
     void Function(PostProcessBuildStepIdBuilder)? updates,
   ]) => (new PostProcessBuildStepIdBuilder()..update(updates))._build();
 
-  _$PostProcessBuildStepId._({required this.actionNumber, required this.input})
+  _$PostProcessBuildStepId._({required this.input, required this.actionNumber})
     : super._() {
-    BuiltValueNullFieldError.checkNotNull(
-      actionNumber,
-      r'PostProcessBuildStepId',
-      'actionNumber',
-    );
     BuiltValueNullFieldError.checkNotNull(
       input,
       r'PostProcessBuildStepId',
       'input',
+    );
+    BuiltValueNullFieldError.checkNotNull(
+      actionNumber,
+      r'PostProcessBuildStepId',
+      'actionNumber',
     );
   }
 
@@ -115,15 +115,15 @@ class _$PostProcessBuildStepId extends PostProcessBuildStepId {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is PostProcessBuildStepId &&
-        actionNumber == other.actionNumber &&
-        input == other.input;
+        input == other.input &&
+        actionNumber == other.actionNumber;
   }
 
   @override
   int get hashCode {
     var _$hash = 0;
-    _$hash = $jc(_$hash, actionNumber.hashCode);
     _$hash = $jc(_$hash, input.hashCode);
+    _$hash = $jc(_$hash, actionNumber.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -131,8 +131,8 @@ class _$PostProcessBuildStepId extends PostProcessBuildStepId {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'PostProcessBuildStepId')
-          ..add('actionNumber', actionNumber)
-          ..add('input', input))
+          ..add('input', input)
+          ..add('actionNumber', actionNumber))
         .toString();
   }
 }
@@ -141,21 +141,21 @@ class PostProcessBuildStepIdBuilder
     implements Builder<PostProcessBuildStepId, PostProcessBuildStepIdBuilder> {
   _$PostProcessBuildStepId? _$v;
 
-  int? _actionNumber;
-  int? get actionNumber => _$this._actionNumber;
-  set actionNumber(int? actionNumber) => _$this._actionNumber = actionNumber;
-
   AssetId? _input;
   AssetId? get input => _$this._input;
   set input(AssetId? input) => _$this._input = input;
+
+  int? _actionNumber;
+  int? get actionNumber => _$this._actionNumber;
+  set actionNumber(int? actionNumber) => _$this._actionNumber = actionNumber;
 
   PostProcessBuildStepIdBuilder();
 
   PostProcessBuildStepIdBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
-      _actionNumber = $v.actionNumber;
       _input = $v.input;
+      _actionNumber = $v.actionNumber;
       _$v = null;
     }
     return this;
@@ -179,15 +179,15 @@ class PostProcessBuildStepIdBuilder
     final _$result =
         _$v ??
         new _$PostProcessBuildStepId._(
-          actionNumber: BuiltValueNullFieldError.checkNotNull(
-            actionNumber,
-            r'PostProcessBuildStepId',
-            'actionNumber',
-          ),
           input: BuiltValueNullFieldError.checkNotNull(
             input,
             r'PostProcessBuildStepId',
             'input',
+          ),
+          actionNumber: BuiltValueNullFieldError.checkNotNull(
+            actionNumber,
+            r'PostProcessBuildStepId',
+            'actionNumber',
           ),
         );
     replace(_$result);
