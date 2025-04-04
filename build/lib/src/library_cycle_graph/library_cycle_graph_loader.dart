@@ -244,7 +244,7 @@ class LibraryCycleGraphLoader {
     }
   }
 
-  /// Builds [_graphs] at [phase] from [newCycles] and [existingCycles].
+  /// Builds [_graphs] at [phase] from [newCycles].
   ///
   /// [newCycles] must be ordered so that a cycle is preceded by all its
   /// dependencies. Fortunately, [stronglyConnectedComponents] already returns
