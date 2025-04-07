@@ -100,6 +100,10 @@ class AnalysisDriverFilesystem implements UriResolver, ResourceProvider {
   static String assetPath(AssetId assetId) =>
       '/${assetId.package}/${assetId.path}';
 
+  /// Path of the asset with [package] and [path] for the in-memory filesystem.
+  static String assetPathFor({required String package, required String path}) =>
+      '/$package/$path';
+
   /// Attempts to parse [uri] into an [AssetId].
   ///
   /// Handles 'package:' or 'asset:' URIs, as well as 'file:' URIs that have the

@@ -29,6 +29,9 @@ import 'analysis_driver_filesystem.dart';
 /// anywhere; finish it. See `build_asset_uri_resolver.dart` for the current
 /// implementation.
 class AnalysisDriverModel {
+  /// The instance used by the shared `AnalyzerResolvers` instance.
+  static AnalysisDriverModel sharedInstance = AnalysisDriverModel();
+
   /// In-memory filesystem for the analyzer.
   final AnalysisDriverFilesystem filesystem = AnalysisDriverFilesystem();
 
@@ -37,7 +40,7 @@ class AnalysisDriverModel {
 
   /// Assets that have been synced into the in-memory filesystem
   /// [filesystem].
-  final _syncedOntoFilesystem = <AssetId>{};
+  final _syncedOntoFilesystemAtPhase = <AssetId, int>{};
 
   /// Notifies that [step] has completed.
   ///
@@ -49,7 +52,7 @@ class AnalysisDriverModel {
   /// Clear cached information specific to an individual build.
   void reset() {
     _graphLoader.clear();
-    _syncedOntoFilesystem.clear();
+    _syncedOntoFilesystemAtPhase.clear();
   }
 
   /// Attempts to parse [uri] into an [AssetId] and returns it if it is cached.
@@ -86,25 +89,17 @@ class AnalysisDriverModel {
     withDriverResource, {
     required bool transitive,
   }) async {
-    // Immediately take the lock on `driver` so that the whole class state,
-    // is only mutated by one build step at a time.
-    await withDriverResource((driver) async {
-      // TODO(davidmorgan): it looks like this is only ever called with a single
-      // entrypoint, consider doing a breaking release to simplify the API.
-      for (final entrypoint in entrypoints) {
-        await _performResolve(
-          driver,
-          buildStep as BuildStepImpl,
-          entrypoint,
-          withDriverResource,
-          transitive: transitive,
-        );
-      }
-    });
+    for (final entrypoint in entrypoints) {
+      await _performResolve(
+        buildStep as BuildStepImpl,
+        entrypoint,
+        withDriverResource,
+        transitive: transitive,
+      );
+    }
   }
 
   Future<void> _performResolve(
-    AnalysisDriverForPackageBuild driver,
     BuildStepImpl buildStep,
     AssetId entrypoint,
     Future<void> Function(
@@ -113,17 +108,18 @@ class AnalysisDriverModel {
     withDriverResource, {
     required bool transitive,
   }) async {
-    var idsToSyncOntoFilesystem = [entrypoint];
+    Iterable<AssetId> idsToSyncOntoFilesystem = [entrypoint];
     Iterable<AssetId> inputIds = [entrypoint];
 
     // If requested, find transitive imports.
     if (transitive) {
+      // Note: `transitiveDepsOf` can cause loads that cause builds that cause a
+      // recursive `_performResolve` on this same `AnalysisDriver` instance.
       final nodeLoader = AssetDepsLoader(buildStep.phasedReader);
-      idsToSyncOntoFilesystem =
-          (await _graphLoader.transitiveDepsOf(
-            nodeLoader,
-            entrypoint,
-          )).toList();
+      idsToSyncOntoFilesystem = await _graphLoader.transitiveDepsOf(
+        nodeLoader,
+        entrypoint,
+      );
       inputIds = idsToSyncOntoFilesystem;
     }
 
@@ -133,27 +129,45 @@ class AnalysisDriverModel {
       inputs: inputIds,
     );
 
-    // Sync changes onto the "URI resolver", the in-memory filesystem.
-    for (final id in idsToSyncOntoFilesystem) {
-      if (!_syncedOntoFilesystem.add(id)) {
-        continue;
-      }
-      final content =
-          await buildStep.canRead(id) ? await buildStep.readAsString(id) : null;
-      if (content == null) {
-        filesystem.deleteFile(id.asPath);
-      } else {
-        filesystem.writeFile(id.asPath, content);
-      }
-    }
+    await withDriverResource((driver) async {
+      // Sync changes onto the "URI resolver", the in-memory filesystem.
+      final phase = buildStep.phasedReader.phase;
+      for (final id in idsToSyncOntoFilesystem) {
+        final wasSyncedAt = _syncedOntoFilesystemAtPhase[id];
+        if (wasSyncedAt != null) {
+          // Skip if already synced at this phase.
+          if (wasSyncedAt == phase) {
+            continue;
+          }
+          // Skip if synced at an equivalent other phase.
+          if (!buildStep.phasedReader.hasChanged(
+            id,
+            comparedToPhase: wasSyncedAt,
+          )) {
+            continue;
+          }
+        }
 
-    // Notify the analyzer of changes and wait for it to update its internal
-    // state.
-    for (final path in filesystem.changedPaths) {
-      driver.changeFile(path);
-    }
-    filesystem.clearChangedPaths();
-    await driver.applyPendingFileChanges();
+        _syncedOntoFilesystemAtPhase[id] = phase;
+        final content =
+            await buildStep.canRead(id)
+                ? await buildStep.readAsString(id)
+                : null;
+        if (content == null) {
+          filesystem.deleteFile(id.asPath);
+        } else {
+          filesystem.writeFile(id.asPath, content);
+        }
+      }
+
+      // Notify the analyzer of changes and wait for it to update its internal
+      // state.
+      for (final path in filesystem.changedPaths) {
+        driver.changeFile(path);
+      }
+      filesystem.clearChangedPaths();
+      await driver.applyPendingFileChanges();
+    });
   }
 }
 

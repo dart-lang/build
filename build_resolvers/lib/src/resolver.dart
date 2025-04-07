@@ -26,8 +26,8 @@ import 'package:pool/pool.dart';
 import 'package:yaml/yaml.dart';
 
 import 'analysis_driver.dart';
+import 'analysis_driver_filesystem.dart';
 import 'analysis_driver_model.dart';
-import 'build_asset_uri_resolver.dart';
 import 'sdk_summary.dart';
 import 'shared_resource_pool.dart';
 
@@ -213,7 +213,10 @@ class AnalyzerResolver implements ReleasableResolver {
     return _driverPool.withResource(() {
       if (!_driver.isUriOfExistingFile(assetId.uri)) return false;
       var result =
-          _driver.currentSession.getFile(assetPath(assetId)) as FileResult;
+          _driver.currentSession.getFile(
+                AnalysisDriverFilesystem.assetPath(assetId),
+              )
+              as FileResult;
       return !result.isPart;
     });
   }
@@ -260,7 +263,7 @@ class AnalyzerResolver implements ReleasableResolver {
         throw AssetNotFoundException(assetId);
       }
 
-      var path = assetPath(assetId);
+      var path = AnalysisDriverFilesystem.assetPath(assetId);
 
       var parsedResult =
           _driver.currentSession.getParsedUnit(path) as ParsedUnitResult;
@@ -286,7 +289,7 @@ class AnalyzerResolver implements ReleasableResolver {
           throw AssetNotFoundException(assetId);
         }
 
-        var path = assetPath(assetId);
+        var path = AnalysisDriverFilesystem.assetPath(assetId);
         var parsedResult = _driver.currentSession.getParsedUnit(path);
         if (parsedResult is! ParsedUnitResult || parsedResult.isPart) {
           throw NonLibraryAssetException(assetId);
@@ -325,7 +328,7 @@ class AnalyzerResolver implements ReleasableResolver {
     final paths = existingSources
         .map((source) => _analysisDriverModel.lookupCachedAsset(source.uri))
         .whereType<AssetId>() // filter out nulls
-        .map(assetPath);
+        .map(AnalysisDriverFilesystem.assetPath);
 
     final relevantResults = <ErrorsResult>[];
 
@@ -456,7 +459,7 @@ class AnalyzerResolvers implements Resolvers {
     packageConfig: packageConfig,
     // Custom resolvers get their own asset uri resolver by default as
     // there should always be a 1:1 relationship between them.
-    analysisDriverModel: analysisDriverModel ?? BuildAssetUriResolver(),
+    analysisDriverModel: analysisDriverModel ?? AnalysisDriverModel(),
   );
 
   /// See [AnalyzerResolvers.custom] for docs.
@@ -473,7 +476,7 @@ class AnalyzerResolvers implements Resolvers {
     sdkSummaryGenerator: sdkSummaryGenerator,
     packageConfig: packageConfig,
     // For backwards compatibility we use the shared instance here.
-    analysisDriverModel: BuildAssetUriResolver.sharedInstance,
+    analysisDriverModel: AnalysisDriverModel.sharedInstance,
   );
 
   /// See [AnalyzerResolvers.custom] for docs.
@@ -494,7 +497,7 @@ class AnalyzerResolvers implements Resolvers {
 
   /// The instance that most real build systems should use.
   static final AnalyzerResolvers sharedInstance = AnalyzerResolvers._(
-    analysisDriverModel: BuildAssetUriResolver.sharedInstance,
+    analysisDriverModel: AnalysisDriverModel.sharedInstance,
   );
 
   /// Create a Resolvers backed by an `AnalysisContext` using options
@@ -641,4 +644,9 @@ current version by running `pub deps`.
     sdkLanguageVersion: sdkLanguageVersion,
     flags: enableExperiments,
   );
+}
+
+Future<String> packagePath(String package) async {
+  var libRoot = await Isolate.resolvePackageUri(Uri.parse('package:$package/'));
+  return p.dirname(p.fromUri(libRoot));
 }

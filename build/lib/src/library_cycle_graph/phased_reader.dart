@@ -29,4 +29,14 @@ abstract class PhasedReader {
   /// its content. Note that generation might output nothing, in which case an
   /// empty string is returned for its content.
   Future<PhasedValue<String>> readPhased(AssetId id);
+
+  /// Whether [id] is a generated asset that changes between [phase] and
+  /// [comparedToPhase].
+  ///
+  /// Returns `true` iff the generated file is hidden to one of the two phases
+  /// and not hidden to the other. Do not check actual file content or
+  /// generation state.
+  ///
+  /// Returns `false` for all other types of asset, including unknown assets.
+  bool hasChanged(AssetId id, {required int comparedToPhase});
 }

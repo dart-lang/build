@@ -7,13 +7,12 @@ import 'dart:io';
 import 'package:analyzer/file_system/file_system.dart' show ResourceProvider;
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
-import 'package:build/build.dart';
 import 'package:package_config/package_config.dart' show PackageConfig;
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 
+import 'analysis_driver_filesystem.dart';
 import 'analysis_driver_model.dart';
-import 'build_asset_uri_resolver.dart';
 
 /// Builds an [AnalysisDriverForPackageBuild] backed by a summary SDK.
 ///
@@ -55,10 +54,20 @@ Packages _buildAnalyzerPackages(
       // make them match the paths that we give it, so we use the
       // `assetPath` function to create those.
       rootFolder: resourceProvider.getFolder(
-        p.url.normalize(assetPath(AssetId(package.name, ''))),
+        p.url.normalize(
+          AnalysisDriverFilesystem.assetPathFor(
+            package: package.name,
+            path: '',
+          ),
+        ),
       ),
       libFolder: resourceProvider.getFolder(
-        p.url.normalize(assetPath(AssetId(package.name, 'lib'))),
+        p.url.normalize(
+          AnalysisDriverFilesystem.assetPathFor(
+            package: package.name,
+            path: 'lib',
+          ),
+        ),
       ),
     ),
 });

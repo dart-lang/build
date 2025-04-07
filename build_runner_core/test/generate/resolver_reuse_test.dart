@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:_test_common/common.dart';
+import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:test/test.dart';
@@ -131,6 +132,11 @@ void main() {
           TestBuilder(
             buildExtensions: replaceExtension('.dart', '.slow.dart'),
             build: (buildStep, _) async {
+              // The test relies on `g2` generation running so that
+              // `slowBuilderCompleter` is completed. It's in an earlier phase,
+              // so it always _can_ run earlier, but it's not guaranteed. Read
+              // it so that it actually does run earlier.
+              await buildStep.canRead(AssetId('a', 'lib/a.g2.dart'));
               await slowBuilderCompleter.future;
               await buildStep.writeAsString(
                 buildStep.inputId.changeExtension('.slow.dart'),

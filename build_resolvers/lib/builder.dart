@@ -4,11 +4,11 @@
 
 import 'dart:async';
 
+import 'package:analyzer/dart/analysis/utilities.dart';
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:build/build.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
-
-import 'src/build_asset_uri_resolver.dart';
 
 const transitiveDigestExtension = '.transitive_digest';
 
@@ -64,7 +64,7 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#unable-to-read-asset-
       byteSink.add((await buildStep.digest(next)).bytes);
 
       // We know this isn't null since we already checked if we can read `next`.
-      final deps = (await dependenciesOf(next, buildStep))!;
+      final deps = _parseDependencies(await buildStep.readAsString(next), next);
 
       // Add all previously unseen deps to the queue.
       for (final dep in deps) {
@@ -83,3 +83,17 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#unable-to-read-asset-
     '.dart': ['.dart$transitiveDigestExtension'],
   };
 }
+
+const _ignoredSchemes = ['dart', 'dart-ext'];
+
+Iterable<AssetId> _parseDependencies(String content, AssetId from) =>
+    parseString(content: content, throwIfDiagnostics: false).unit.directives
+        .whereType<UriBasedDirective>()
+        .map((directive) => directive.uri.stringValue)
+        // Filter out nulls. uri.stringValue can be null for strings that use
+        // interpolation.
+        .whereType<String>()
+        .where(
+          (uriContent) => !_ignoredSchemes.any(Uri.parse(uriContent).isScheme),
+        )
+        .map((content) => AssetId.resolve(Uri.parse(content), from: from));

@@ -13,7 +13,6 @@ import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_resolvers/src/analysis_driver.dart';
 import 'package:build_resolvers/src/analysis_driver_model.dart';
-import 'package:build_resolvers/src/build_asset_uri_resolver.dart';
 import 'package:build_resolvers/src/resolver.dart';
 import 'package:build_resolvers/src/sdk_summary.dart';
 import 'package:build_test/build_test.dart';
@@ -24,8 +23,6 @@ import 'package:test/test.dart';
 
 void main() {
   for (final resolversFactory in [
-    BuildAssetUriResolversFactory(),
-    SharedBuildAssetUriResolversFactory(),
     AnalysisDriverModelFactory(),
     SharedAnalysisDriverModelFactory(),
   ]) {
@@ -1327,28 +1324,6 @@ final _skipOnPreRelease =
 abstract class ResolversFactory {
   /// Whether [create] returns a shared instance that persists between tests.
   Resolvers create({PackageConfig? packageConfig});
-}
-
-class BuildAssetUriResolversFactory implements ResolversFactory {
-  @override
-  Resolvers create({PackageConfig? packageConfig}) => AnalyzerResolvers.custom(
-    packageConfig: packageConfig,
-    analysisDriverModel: BuildAssetUriResolver(),
-  );
-
-  @override
-  String toString() => 'Resolver';
-}
-
-class SharedBuildAssetUriResolversFactory implements ResolversFactory {
-  @override
-  Resolvers create({PackageConfig? packageConfig}) => AnalyzerResolvers.custom(
-    packageConfig: packageConfig,
-    analysisDriverModel: BuildAssetUriResolver.sharedInstance,
-  );
-
-  @override
-  String toString() => 'Shared resolver';
 }
 
 class AnalysisDriverModelFactory implements ResolversFactory {

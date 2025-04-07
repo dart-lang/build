@@ -87,8 +87,6 @@ class SharedOptions {
 
   final List<String> enableExperiments;
 
-  final bool useExperimentalResolver;
-
   SharedOptions._({
     required this.buildFilters,
     required this.deleteFilesByDefault,
@@ -103,7 +101,6 @@ class SharedOptions {
     required this.isReleaseBuild,
     required this.logPerformanceDir,
     required this.enableExperiments,
-    required this.useExperimentalResolver,
   });
 
   SharedOptions.fromParsedArgs(
@@ -131,8 +128,6 @@ class SharedOptions {
         isReleaseBuild: argResults[releaseOption] as bool,
         logPerformanceDir: argResults[logPerformanceOption] as String?,
         enableExperiments: argResults[enableExperimentOption] as List<String>,
-        useExperimentalResolver:
-            argResults[useExperimentalResolverOption] as bool,
       );
 }
 
@@ -158,7 +153,6 @@ class DaemonOptions extends WatchOptions {
     required super.logPerformanceDir,
     required super.usePollingWatcher,
     required super.enableExperiments,
-    required super.useExperimentalResolver,
   }) : super._();
 
   factory DaemonOptions.fromParsedArgs(
@@ -206,8 +200,6 @@ class DaemonOptions extends WatchOptions {
       logPerformanceDir: argResults[logPerformanceOption] as String?,
       usePollingWatcher: argResults[usePollingWatcherOption] as bool,
       enableExperiments: argResults[enableExperimentOption] as List<String>,
-      useExperimentalResolver:
-          argResults[useExperimentalResolverOption] as bool,
     );
   }
 }
@@ -235,7 +227,6 @@ class WatchOptions extends SharedOptions {
     required super.isReleaseBuild,
     required super.logPerformanceDir,
     required super.enableExperiments,
-    required super.useExperimentalResolver,
   }) : super._();
 
   WatchOptions.fromParsedArgs(
@@ -264,8 +255,6 @@ class WatchOptions extends SharedOptions {
         logPerformanceDir: argResults[logPerformanceOption] as String?,
         usePollingWatcher: argResults[usePollingWatcherOption] as bool,
         enableExperiments: argResults[enableExperimentOption] as List<String>,
-        useExperimentalResolver:
-            argResults[useExperimentalResolverOption] as bool,
       );
 }
 
@@ -295,7 +284,6 @@ class ServeOptions extends WatchOptions {
     required super.logPerformanceDir,
     required super.usePollingWatcher,
     required super.enableExperiments,
-    required super.useExperimentalResolver,
   }) : super._();
 
   factory ServeOptions.fromParsedArgs(
@@ -378,8 +366,6 @@ class ServeOptions extends WatchOptions {
       logPerformanceDir: argResults[logPerformanceOption] as String?,
       usePollingWatcher: argResults[usePollingWatcherOption] as bool,
       enableExperiments: argResults[enableExperimentOption] as List<String>,
-      useExperimentalResolver:
-          argResults[useExperimentalResolverOption] as bool,
     );
   }
 }
