@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:collection';
 import 'dart:math';
 
 import 'package:graphs/graphs.dart';
@@ -39,7 +40,19 @@ import 'phased_value.dart';
 /// Secondly, because the loader is for use _during_ the build, it might be that
 /// not all files have been generated yet. So, results must be returned based on
 /// incomplete data, as needed.
+///
+/// There can be multiple concurrent computations running on top of the same
+/// state, as noted in the implementation. It is allowed to call the methods
+/// `libraryCycleOf`, `libraryCycleGraphOf` and `transitiveDepsOf` while a prior
+/// call to any of the methods is still running, provided each newer call is at
+/// an earlier phase. This happens when a load does a read that triggers a build
+/// of a generated file in an earlier phase.
 class LibraryCycleGraphLoader {
+  /// The phases at which evaluation is currently running.
+  ///
+  /// Used to check that recursive loads are always to an earlier phase.
+  final List<int> _runningAtPhases = [];
+
   /// The dependencies of loaded assets, as far as is known.
   ///
   /// Source files do not change during the build, so as soon as loaded
@@ -47,19 +60,19 @@ class LibraryCycleGraphLoader {
   ///
   /// A generated file that could not yet be loaded is a
   /// [PhasedValue.unavailable] specify the phase when it will be generated.
-  /// When to finish loading the asset is tracked in [_assetDepsToLoadByPhase].
+  /// When to finish loading the asset is tracked in [_idsToLoad].
   ///
   /// A generated file that _has_ been loaded is a [PhasedValue.generated]
   /// specifying both the phase it was generated at and its parsed dependencies.
   final Map<AssetId, PhasedValue<AssetDeps>> _assetDeps = {};
 
-  /// Generated assets that were loaded before they were generated.
+  /// Assets to load.
   ///
-  /// The `key` is the phase at which they have been generated and can be read.
-  final Map<int, Set<AssetId>> _assetDepsToLoadByPhase = {};
+  /// The `key` is the phase to load them at or after. A [SplayTreeMap] is used
+  /// to keep the keys sorted so earlier phases are processed first.
+  final SplayTreeMap<int, List<AssetId>> _idsToLoad = SplayTreeMap();
 
-  /// Newly [_load]ed assets to process for the first time in [_buildCycles].
-  Set<AssetId> _newAssets = {};
+  final List<(int, AssetId)> _loadingIds = [];
 
   /// All loaded library cycles, by asset.
   final Map<AssetId, PhasedValue<LibraryCycle>> _cycles = {};
@@ -75,11 +88,60 @@ class LibraryCycleGraphLoader {
 
   /// Clears all data.
   void clear() {
+    _runningAtPhases.clear();
     _assetDeps.clear();
-    _assetDepsToLoadByPhase.clear();
-    _newAssets.clear();
+    _idsToLoad.clear();
     _cycles.clear();
     _graphs.clear();
+    _graphsToComputeByPhase.clear();
+  }
+
+  /// Marks asset with [id] for loading at [phase].
+  ///
+  /// Any [_load] running at that phase or later will load it.
+  void _loadAtPhase(int phase, AssetId id) {
+    (_idsToLoad[phase] ??= []).add(id);
+  }
+
+  void _loadAllAtPhase(int phase, Iterable<AssetId> ids) {
+    if (ids.isEmpty) return;
+    (_idsToLoad[phase] ??= []).addAll(ids);
+  }
+
+  /// Whether there are assets to load before or at [upToPhase].
+  bool _hasIdToLoad({required int upToPhase}) =>
+      _idsToLoad.keys.where((key) => key <= upToPhase).isNotEmpty;
+
+  /// The phase and ID of the next asset to load before or at [upToPhase].
+  ///
+  /// Earlier phases are processed first.
+  ///
+  /// Throws if not [_hasIdToLoad] at [upToPhase].
+  ///
+  /// When done loading call [_removeIdToLoad] with the phase and ID.
+  (int, AssetId) _nextIdToLoad({required int upToPhase}) {
+    final entry =
+        _idsToLoad.entries.where((entry) => entry.key <= upToPhase).first;
+    final result = entry.value.last;
+    _loadingIds.add((entry.key, result));
+    return (entry.key, result);
+  }
+
+  /// Removes from [_idsToLoad].
+  ///
+  /// Pass a phase and ID from [_nextIdToLoad].
+  void _removeIdToLoad(int phase, AssetId id) {
+    // A recursive load might have updated `_idsToLoad` since `_nextIdToLoad`
+    // was called. If so it fully processed some phases: either `_idsToLoad` is
+    // now empty at `phase`, in which case there is nothing to do, or it's
+    // unchanged, in which case `id` is still the last ID.
+    final ids = _idsToLoad[phase];
+    if (ids != null) {
+      if (ids.removeLast() != id) {
+        throw StateError('$id should still be last in _idsToLoad[$phase]');
+      }
+      if (ids.isEmpty) _idsToLoad.remove(phase);
+    }
   }
 
   /// Loads [id] and its transitive dependencies at all phases available to
@@ -88,85 +150,91 @@ class LibraryCycleGraphLoader {
   /// Assets are loaded to [_assetDeps].
   ///
   /// If assets are encountered that have not yet been generated, they are
-  /// added to [_assetDepsToLoadByPhase], and will be loaded eagerly by any
-  /// call to `_load` with an `assetDepsLoader` at a late enough phase.
+  /// added to [_idsToLoad], and will be loaded eagerly by any call to `_load`
+  /// with an `assetDepsLoader` at a late enough phase.
   ///
-  /// Newly seen assets are noted in [_newAssets] for further processing by
-  /// [_buildCycles].
+  /// Newly seen assets are noted in [_graphsToComputeByPhase] at phase 0
+  /// for further processing by [_buildCycles].
   Future<void> _load(AssetDepsLoader assetDepsLoader, AssetId id) async {
-    final idsToLoad = [id];
-    // Finish loading any assets that were `_load`ed before they were generated
-    // and have now been generated.
-    for (final phase in _assetDepsToLoadByPhase.keys.toList(growable: false)) {
-      if (phase <= assetDepsLoader.phase) {
-        idsToLoad.addAll(_assetDepsToLoadByPhase.remove(phase)!);
-      }
-    }
+    // Mark [id] as an asset to load at any phase.
+    _loadAtPhase(0, id);
 
-    while (idsToLoad.isNotEmpty) {
-      final idToLoad = idsToLoad.removeLast();
+    final phase = assetDepsLoader.phase;
+    while (_hasIdToLoad(upToPhase: phase)) {
+      final (idToLoadPhase, idToLoad) = _nextIdToLoad(upToPhase: phase);
 
       // Nothing to do if deps were already loaded, unless they expire and
       // [assetDepsLoader] is at a late enough phase to see the updated value.
       final alreadyLoadedAssetDeps = _assetDeps[idToLoad];
       if (alreadyLoadedAssetDeps != null &&
           !alreadyLoadedAssetDeps.isExpiredAt(phase: assetDepsLoader.phase)) {
+        _removeIdToLoad(idToLoadPhase, idToLoad);
         continue;
       }
-
-      final assetDeps =
-          _assetDeps[idToLoad] = await assetDepsLoader.load(idToLoad);
 
       // First time seeing the asset, mark for computation of cycles and
       // graphs given the initial state of the build.
       if (alreadyLoadedAssetDeps == null) {
-        _newAssets.add(idToLoad);
+        (_graphsToComputeByPhase[0] ??= {}).add(idToLoad);
       }
+
+      // If `idToLoad` is a generated asset from an earlier phase then the call
+      // to `assetDepsLoader.load` causes it to be built if not yet build. This
+      // in turn might cause a recursion into `LibraryCycleGraphLoader` and back
+      // into this `_load` method.
+      //
+      // Only recursion with an earlier phase is possible: attempted reads to a
+      // later phase return nothing instead of causing a build. This is also
+      // enforced in `libraryCycleOf`.
+      //
+      // The earlier phase `_load` might need results that this `_load` was
+      // going to produce. This is handled via the shared `_idsToLoad`: the
+      // earlier phase `_load` will take all the pending loads up to its own
+      // phase.
+      //
+      // This might include the current `idToLoad`, which is left in
+      // `_idsToLoad` until the load completes for that reason.
+      //
+      // If a recursive `_load` happens then the associated cycles and graphs
+      // are also fully computed before this `_load` continues: the work that
+      // remains is only work for later phases.
+      final assetDeps =
+          _assetDeps[idToLoad] = await assetDepsLoader.load(idToLoad);
+      _removeIdToLoad(idToLoadPhase, idToLoad);
 
       if (assetDeps.isComplete) {
         // "isComplete" means it's a source file or a generated value that has
-        // already been generated. It has deps, so mark them for loading.
-        for (final dep in assetDeps.lastValue.deps) {
-          idsToLoad.add(dep);
-        }
+        // already been generated, and its deps have been parsed. Mark them
+        // for loading at any phase: if the `_load` that loads them is at a too
+        // early phase to see generated output they will be queued for
+        // processing by a later `_load`.
+        _loadAllAtPhase(0, assetDeps.lastValue.deps);
       } else {
         // It's a generated source that has not yet been generated. Mark it for
         // loading later.
-        (_assetDepsToLoadByPhase[assetDeps.values.last.expiresAfter! + 1] ??=
-                {})
-            .add(idToLoad);
+        _loadAtPhase(assetDeps.values.last.expiresAfter! + 1, idToLoad);
       }
     }
   }
 
-  /// Computes [_cycles] for all [_newAssets] at phase 0, then for all assets
-  /// with expiring graphs up to and including [upToPhase].
+  /// Computes [_cycles] then [_graphs] for all [_graphsToComputeByPhase].
   ///
-  /// Call [_load] first so there are [_newAssets] assets to process. Clears
-  /// [_newAssets] of processed IDs.
+  /// Call [_load] first so there are [_graphsToComputeByPhase] to process.
   ///
   /// Graphs which are still not complete--they have one or more assets that
-  /// expire after [upToPhase]--are added to [_graphsToComputeByPhase] to
-  /// be completed later.
-  /// [_graphsToComputeByPhase].
+  /// expire after [upToPhase]--are added to [_graphsToComputeByPhase] at
+  /// the appropirate phase to be completed later.
   void _buildCycles(int upToPhase) {
     // Process phases that have work to do in ascending order.
     while (true) {
       int phase;
-      Set<AssetId> idsToComputeCyclesFrom;
-      if (_newAssets.isNotEmpty) {
-        // New assets: work to do at phase 0, the initial build state.
-        phase = 0;
-        idsToComputeCyclesFrom = _newAssets;
-        _newAssets = {};
-      } else {
-        // Work through phases <= `upToPhase` at which graphs expire,
-        // so there are new values to compute.
-        if (_graphsToComputeByPhase.isEmpty) break;
-        phase = _graphsToComputeByPhase.keys.reduce(min);
-        if (phase > upToPhase) break;
-        idsToComputeCyclesFrom = _graphsToComputeByPhase.remove(phase)!;
-      }
+
+      // Work through phases <= `upToPhase` at which graphs expire,
+      // so there are new values to compute.
+      if (_graphsToComputeByPhase.isEmpty) break;
+      phase = _graphsToComputeByPhase.keys.reduce(min);
+      if (phase > upToPhase) break;
+      final idsToComputeCyclesFrom = _graphsToComputeByPhase.remove(phase)!;
 
       // Edges for strongly connected components computation.
       Iterable<AssetId> edgesFromId(AssetId id) {
@@ -340,13 +408,27 @@ class LibraryCycleGraphLoader {
   ///
   /// Previously computed state is used if possible, anything additional is
   /// loaded using [assetDepsLoader].
+  ///
+  /// See class note about recursive calls.
   Future<PhasedValue<LibraryCycle>> libraryCycleOf(
     AssetDepsLoader assetDepsLoader,
     AssetId id,
   ) async {
-    await _load(assetDepsLoader, id);
-    _buildCycles(assetDepsLoader.phase);
-    return _cycles[id]!;
+    if (_runningAtPhases.isNotEmpty &&
+        assetDepsLoader.phase >= _runningAtPhases.last) {
+      throw StateError(
+        'Cannot recurse at later or equal phase ${assetDepsLoader.phase}, '
+        'already running at : $_runningAtPhases',
+      );
+    }
+    _runningAtPhases.add(assetDepsLoader.phase);
+    try {
+      await _load(assetDepsLoader, id);
+      _buildCycles(assetDepsLoader.phase);
+      return _cycles[id]!;
+    } finally {
+      _runningAtPhases.removeLast();
+    }
   }
 
   /// Returns the [LibraryCycleGraph] of [id] at all phases before the
@@ -354,6 +436,8 @@ class LibraryCycleGraphLoader {
   ///
   /// Previously computed state is used if possible, anything additional is
   /// loaded using [assetDepsLoader].
+  ///
+  /// See class note about recursive calls.
   Future<PhasedValue<LibraryCycleGraph>> libraryCycleGraphOf(
     AssetDepsLoader assetDepsLoader,
     AssetId id,
@@ -374,6 +458,8 @@ class LibraryCycleGraphLoader {
   ///
   /// Previously computed state is used if possible, anything additional is
   /// loaded using [assetDepsLoader].
+  ///
+  /// See class note about recursive calls.
   Future<Iterable<AssetId>> transitiveDepsOf(
     AssetDepsLoader assetDepsLoader,
     AssetId id,
@@ -385,9 +471,9 @@ class LibraryCycleGraphLoader {
   @override
   String toString() => '''
 LibraryCycleGraphLoader(
+  _runningAtPhases: $_runningAtPhases
   _assetDeps: $_assetDeps,
-  _assetDepsToLoadByPhase: $_assetDepsToLoadByPhase,
-  _newAssets: $_newAssets,
+  _idsToLoad: $_idsToLoad,
   _cycles: $_cycles,
   _graphs: $_graphs,
   _graphsToComputeByPhase: $_graphsToComputeByPhase,
