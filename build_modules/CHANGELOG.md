@@ -1,3 +1,7 @@
+## 5.0.13
+
+- Allow Dart SDK 3.8.x and 3.9 prerelease.
+
 ## 5.0.12
 
 - Bump the min SDK to 3.7.0.
