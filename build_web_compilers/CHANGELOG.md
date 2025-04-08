@@ -1,3 +1,7 @@
+## 4.1.4
+
+- Allow Dart SDK 3.8.x and 3.9 prerelease.
+
 ## 4.1.3
 
 - Fixed WebAssembly detection logic.
