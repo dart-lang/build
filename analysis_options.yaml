@@ -6,6 +6,7 @@ analyzer:
     unused_import: error
     unused_local_variable: error
     dead_code: error
+    discarded_futures: ignore
     todo: ignore
     deprecated_member_use_from_same_package: ignore
   exclude:
@@ -14,3 +15,6 @@ analyzer:
     # Common top level directories containing generated files in any package.
     - "build/**"
     - ".dart_tool/**"
+linter:
+  rules:
+    - analyzer_use_new_elements
