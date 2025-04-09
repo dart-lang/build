@@ -10,8 +10,8 @@ import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
-import 'build_asset_uri_resolver.dart' show packagePath;
 import 'human_readable_duration.dart';
+import 'resolver.dart' show packagePath;
 
 final _logger = Logger('build_resolvers');
 

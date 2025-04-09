@@ -434,7 +434,7 @@ class SingleStepReaderWriter extends AssetReader
       }
     }
 
-    final node = _runningBuild.assetGraph.get(id);
+    var node = _runningBuild.assetGraph.get(id);
     if (node == null) {
       return PhasedValue.fixed('');
     }
@@ -444,14 +444,41 @@ class SingleStepReaderWriter extends AssetReader
       if (nodePhase >= phase) {
         return PhasedValue.unavailable(before: '', untilAfterPhase: nodePhase);
       } else {
+        // If needed, trigger a build at an earlier phase.
+        if (node.generatedNodeState!.pendingBuildAction !=
+            PendingBuildAction.none) {
+          await _runningBuild.nodeBuilder(id);
+          node = _runningBuild.assetGraph.get(id)!;
+        }
         return PhasedValue.generated(
           atPhase: phase,
           before: '',
-          await _delegate.readAsString(id),
+          node.generatedNodeState!.isSuccessfulFreshOutput
+              ? await _delegate.readAsString(id)
+              : '',
         );
       }
     }
 
-    return PhasedValue.fixed(await _delegate.readAsString(id));
+    return PhasedValue.fixed(
+      await _delegate.canRead(id) ? await _delegate.readAsString(id) : '',
+    );
+  }
+
+  @override
+  bool hasChanged(AssetId id, {required int comparedToPhase}) {
+    if (comparedToPhase == phase) return false;
+    if (_runningBuild == null) return false;
+
+    final node = _runningBuild.assetGraph.get(id);
+    if (node == null) return false;
+    if (node.type != NodeType.generated) return false;
+
+    final assetPhase = node.generatedNodeConfiguration!.phaseNumber;
+
+    final isHiddenAtComparePhase = assetPhase >= comparedToPhase;
+    final isHiddenAtCurrentPhase = assetPhase >= phase;
+
+    return isHiddenAtComparePhase != isHiddenAtCurrentPhase;
   }
 }

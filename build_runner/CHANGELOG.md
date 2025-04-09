@@ -3,6 +3,7 @@
 - Bump the min SDK to 3.7.0.
 - Use `build_test` 3.0.0.
 - Use `build_runner_core` 9.0.0.
+- Use new resolver always; remove `--use-experimental-resolver` flag.
 - Start using `package:build/src/internal.dart'.
 - Refactor `MultiPackageAssetReader` to internal `AssetFinder`.
 - `FinalizedReader` no longer implements `AssetReader`.

@@ -5,9 +5,6 @@
 import 'dart:async';
 
 import 'package:build/experiments.dart';
-// ignore: implementation_imports
-import 'package:build_resolvers/src/build_asset_uri_resolver.dart'
-    as uri_resolver;
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
 
@@ -37,10 +34,6 @@ class BuildCommand extends BuildRunnerCommand {
   }
 
   Future<int> _run(SharedOptions options) async {
-    // TODO(davidmorgan): remove when experiment is over.
-    if (options.useExperimentalResolver) {
-      uri_resolver.useExperimentalResolver();
-    }
     var result = await build(
       builderApplications,
       buildFilters: options.buildFilters,
