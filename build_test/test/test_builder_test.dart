@@ -169,7 +169,7 @@ void main() {
         },
         build: (step, _) async {
           expect(
-              step.inputLibrary,
+              step.inputLibrary2,
               throwsA(isA<SyntaxErrorInAssetException>().having(
                   (e) => e.syntaxErrors.first.message,
                   'message',
