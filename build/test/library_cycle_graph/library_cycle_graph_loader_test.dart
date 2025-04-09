@@ -187,7 +187,7 @@ void main() {
     });
 
     group('sequence of three nodes', () {
-      final nodeLoader4 = TestAssetDepsLoader(4, {
+      final nodeLoader = TestAssetDepsLoader(4, {
         a1: PhasedValue.generated(
           atPhase: 1,
           before: AssetDeps.empty,
@@ -204,26 +204,73 @@ void main() {
           AssetDeps({}),
         ),
       });
-      final nodeLoader3 = nodeLoader4.at(phase: 3);
-      final nodeLoader2 = nodeLoader4.at(phase: 2);
-      final nodeLoader1 = nodeLoader4.at(phase: 1);
 
       test('loaded in the order they appear', () async {
         final loader = LibraryCycleGraphLoader();
 
-        expect(await loader.transitiveDepsOf(nodeLoader1, a1), {a1});
-        expect(await loader.transitiveDepsOf(nodeLoader2, a1), {a1, a2});
-        expect(await loader.transitiveDepsOf(nodeLoader3, a1), {a1, a2, a3});
-        expect(await loader.transitiveDepsOf(nodeLoader4, a1), {a1, a2, a3});
+        expect(await loader.transitiveDepsOf(nodeLoader.at(phase: 1), a1), {
+          a1,
+        });
+        expect(await loader.transitiveDepsOf(nodeLoader.at(phase: 2), a1), {
+          a1,
+          a2,
+        });
+        expect(await loader.transitiveDepsOf(nodeLoader.at(phase: 3), a1), {
+          a1,
+          a2,
+          a3,
+        });
+        expect(await loader.transitiveDepsOf(nodeLoader.at(phase: 4), a1), {
+          a1,
+          a2,
+          a3,
+        });
       });
 
       test('loaded in reverse order', () async {
         final loader = LibraryCycleGraphLoader();
 
-        expect(await loader.transitiveDepsOf(nodeLoader4, a1), {a1, a2, a3});
-        expect(await loader.transitiveDepsOf(nodeLoader3, a1), {a1, a2, a3});
-        expect(await loader.transitiveDepsOf(nodeLoader2, a1), {a1, a2});
-        expect(await loader.transitiveDepsOf(nodeLoader1, a1), {a1});
+        expect(await loader.transitiveDepsOf(nodeLoader.at(phase: 4), a1), {
+          a1,
+          a2,
+          a3,
+        });
+        expect(await loader.transitiveDepsOf(nodeLoader.at(phase: 3), a1), {
+          a1,
+          a2,
+          a3,
+        });
+        expect(await loader.transitiveDepsOf(nodeLoader.at(phase: 2), a1), {
+          a1,
+          a2,
+        });
+        expect(await loader.transitiveDepsOf(nodeLoader.at(phase: 1), a1), {
+          a1,
+        });
+      });
+
+      test('loaded in reverse order with recursive load', () async {
+        final loader = LibraryCycleGraphLoader();
+        final recursiveLoader = nodeLoader.withRecursiveLoads(loader, {
+          a3: [a2],
+        });
+
+        expect(
+          await loader.transitiveDepsOf(recursiveLoader.at(phase: 4), a1),
+          {a1, a2, a3},
+        );
+        expect(
+          await loader.transitiveDepsOf(recursiveLoader.at(phase: 3), a1),
+          {a1, a2, a3},
+        );
+        expect(
+          await loader.transitiveDepsOf(recursiveLoader.at(phase: 2), a1),
+          {a1, a2},
+        );
+        expect(
+          await loader.transitiveDepsOf(recursiveLoader.at(phase: 1), a1),
+          {a1},
+        );
       });
     });
 
@@ -256,7 +303,7 @@ void main() {
       //       \---------------------> a8 <--- a9
       // ```
 
-      final nodeLoader = TestAssetDepsLoader(5, {
+      final nodeLoader = TestAssetDepsLoader(6, {
         a1: PhasedValue.generated(
           atPhase: 1,
           before: AssetDeps.empty,
@@ -406,6 +453,20 @@ void main() {
         await expectEqualValuesAreIdentical(loader);
       });
 
+      test('loaded in reverse order with recursive loads', () async {
+        final loader = LibraryCycleGraphLoader();
+        final recursiveLoader = nodeLoader.withRecursiveLoads(loader, {
+          a4: [a1],
+          a6: [a2],
+          a9: [a5],
+        });
+        for (final expectation in expectations.reversed) {
+          printOnFailure(expectation.toString());
+          await expectation.run(loader, recursiveLoader);
+        }
+        await expectEqualValuesAreIdentical(loader);
+      });
+
       // 50 randomized runs was enough to find all known issues multiple times;
       // 100000 runs, which only takes 100s, didn't find any further issues.
       for (var seed = 0; seed != 50; ++seed) {
@@ -419,6 +480,42 @@ void main() {
           await expectEqualValuesAreIdentical(loader);
         });
       }
+
+      for (var seed = 0; seed != 50; ++seed) {
+        test(
+          'loaded in random order with recursive loads (seed $seed)',
+          () async {
+            // Use a second `Random` so the load order matches the above tests.
+            final randomForLoads = Random(seed);
+
+            List<AssetId> randomLoads() {
+              return ([a1, a2, a3, a4, a5, a6, a7, a8, a9]..shuffle(
+                randomForLoads,
+              )).take(randomForLoads.nextInt(3)).toList();
+            }
+
+            final loader = LibraryCycleGraphLoader();
+            final recursiveLoader = nodeLoader.withRecursiveLoads(loader, {
+              a1: randomLoads(),
+              a2: randomLoads(),
+              a3: randomLoads(),
+              a4: randomLoads(),
+              a5: randomLoads(),
+              a6: randomLoads(),
+              a7: randomLoads(),
+              a8: randomLoads(),
+              a9: randomLoads(),
+            });
+
+            final random = Random(seed);
+            for (final expectation in expectations.toList()..shuffle(random)) {
+              printOnFailure(expectation.toString());
+              await expectation.run(loader, recursiveLoader);
+            }
+            await expectEqualValuesAreIdentical(loader);
+          },
+        );
+      }
     });
   });
 }
@@ -429,16 +526,66 @@ class TestAssetDepsLoader implements AssetDepsLoader {
   final int phase;
   final Map<AssetId, PhasedValue<AssetDeps>> results;
 
-  TestAssetDepsLoader(this.phase, this.results);
+  // Support for triggering recursive loads.
+
+  /// Loader to do recursive loads.
+  final LibraryCycleGraphLoader? loader;
+
+  /// Test data: map from asset ID to recursive loads to trigger while
+  /// loading that ID.
+  final Map<AssetId, List<AssetId>>? triggeredBuilds;
+
+  /// Assets that "have been built". A recursive load is only triggered
+  /// once, as in a real build it would only happen at most once when the
+  /// asset gets built.
+  final Set<AssetId>? built;
+
+  TestAssetDepsLoader(
+    this.phase,
+    this.results, [
+    this.loader,
+    this.triggeredBuilds,
+    this.built,
+  ]);
 
   @override
   Future<PhasedValue<AssetDeps>> load(AssetId id) async {
-    return results[id]!;
+    final result = results[id]!;
+
+    // Check test setup for recursive loads that should be triggered by this
+    // load.
+    if (triggeredBuilds != null) {
+      for (final triggeredBuild in triggeredBuilds![id] ?? const <AssetId>[]) {
+        if (built!.add(triggeredBuild)) {
+          final triggeredBuildPhase =
+              results[triggeredBuild]!.values.first.expiresAfter!;
+          // It's only allowed to trigger loads at earlier phases than the
+          // currently-running phase. `LibraryCycleGraphLoader` checks and
+          // enforces this condition. In a real build, it happens this way
+          // because reads of an asset generated at the current or a later phase
+          // return nothing instead of triggering a build.
+          if (triggeredBuildPhase >= phase) {
+            continue;
+          }
+          await loader!.transitiveDepsOf(
+            at(phase: triggeredBuildPhase),
+            triggeredBuild,
+          );
+        }
+      }
+    }
+    return result;
   }
 
   /// Returns a [TestAssetDepsLoader] at [phase] with the same values as this,
   /// but excluding any values not yet available at [phase].
   TestAssetDepsLoader at({required int phase}) {
+    if (phase > this.phase) {
+      throw ArgumentError(
+        "Can't make a phase $phase TestAssetDepsLoader from "
+        'a phase ${this.phase} loader.',
+      );
+    }
     return TestAssetDepsLoader(
       phase,
       results.map((id, value) {
@@ -455,8 +602,22 @@ class TestAssetDepsLoader implements AssetDepsLoader {
           }),
         );
       }),
+      loader,
+      triggeredBuilds,
+      built,
     );
   }
+
+  /// Returns a [TestAssetDepsLoader] with the same values as this, plus
+  /// set up to trigger recursive loads using [loader] according
+  /// [triggeredBuilds].
+  ///
+  /// For example, `triggeredBuilds[a1] = [a2]` to cause a load of `a1` to
+  /// trigger a recursive load of `a2`.
+  TestAssetDepsLoader withRecursiveLoads(
+    LibraryCycleGraphLoader loader,
+    Map<AssetId, List<AssetId>> triggeredBuilds,
+  ) => TestAssetDepsLoader(phase, results, loader, triggeredBuilds, {});
 }
 
 /// An expectation about [LibraryCycleGraphLoader#transitiveDepsOf].
