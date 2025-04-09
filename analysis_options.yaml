@@ -9,6 +9,8 @@ analyzer:
     discarded_futures: ignore
     todo: ignore
     deprecated_member_use_from_same_package: ignore
+    unnecessary_underscores: ignore
+    strict_top_level_inference: ignore
   exclude:
     # Prevents extra work during some e2e test runs.
     - "dart2js_test/**"
