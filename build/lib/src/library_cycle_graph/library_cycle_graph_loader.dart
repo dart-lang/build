@@ -109,8 +109,15 @@ class LibraryCycleGraphLoader {
   }
 
   /// Whether there are assets to load before or at [upToPhase].
-  bool _hasIdToLoad({required int upToPhase}) =>
-      _idsToLoad.keys.where((key) => key <= upToPhase).isNotEmpty;
+  bool _hasIdToLoad({required int upToPhase}) {
+    final first = _idsToLoad.keys.firstOrNull;
+    if (first == null) return false;
+    if (first > upToPhase) {
+      // Entries are sorted, so all further entries are also too high phase.
+      return false;
+    }
+    return true;
+  }
 
   /// The phase and ID of the next asset to load before or at [upToPhase].
   ///
@@ -120,11 +127,16 @@ class LibraryCycleGraphLoader {
   ///
   /// When done loading call [_removeIdToLoad] with the phase and ID.
   (int, AssetId) _nextIdToLoad({required int upToPhase}) {
-    final entry =
-        _idsToLoad.entries.where((entry) => entry.key <= upToPhase).first;
-    final result = entry.value.last;
-    _loadingIds.add((entry.key, result));
-    return (entry.key, result);
+    final first = _idsToLoad.entries.first;
+    if (first.key > upToPhase) {
+      // Entries are sorted, so all further entries are also too high phase.
+      throw StateError('No such element.');
+    }
+    // Return the last ID from the list of IDs at this phase because it's
+    // cheapest to remove in `_removeIdToLoad`.
+    final result = first.value.last;
+    _loadingIds.add((first.key, result));
+    return (first.key, result);
   }
 
   /// Removes from [_idsToLoad].
