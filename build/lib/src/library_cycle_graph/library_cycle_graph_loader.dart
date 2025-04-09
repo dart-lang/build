@@ -69,7 +69,7 @@ class LibraryCycleGraphLoader {
   /// Assets to load.
   ///
   /// The `key` is the phase to load them at or after. A [SplayTreeMap] is used
-  /// to keep the keys sorted so earlier phases are processed first.
+  /// for its sorting, so earlier phases are processed first in [_nextIdToLoad].
   final SplayTreeMap<int, List<AssetId>> _idsToLoad = SplayTreeMap();
 
   final List<(int, AssetId)> _loadingIds = [];
@@ -414,21 +414,26 @@ class LibraryCycleGraphLoader {
     AssetDepsLoader assetDepsLoader,
     AssetId id,
   ) async {
-    if (_runningAtPhases.isNotEmpty &&
-        assetDepsLoader.phase >= _runningAtPhases.last) {
+    final phase = assetDepsLoader.phase;
+    if (_runningAtPhases.isNotEmpty && phase >= _runningAtPhases.last) {
       throw StateError(
-        'Cannot recurse at later or equal phase ${assetDepsLoader.phase}, '
-        'already running at : $_runningAtPhases',
+        'Cannot recurse at later or equal phase $phase, already running at: '
+        '$_runningAtPhases',
       );
     }
     _runningAtPhases.add(assetDepsLoader.phase);
-    try {
-      await _load(assetDepsLoader, id);
-      _buildCycles(assetDepsLoader.phase);
-      return _cycles[id]!;
-    } finally {
-      _runningAtPhases.removeLast();
+
+    await _load(assetDepsLoader, id);
+    _buildCycles(assetDepsLoader.phase);
+    final result = _cycles[id]!;
+
+    // A recursive call always finishes before the outer call resumes.
+    final removedPhase = _runningAtPhases.removeLast();
+    if (removedPhase != phase) {
+      throw StateError('Removed phase $removedPhase, expected $phase.');
     }
+
+    return result;
   }
 
   /// Returns the [LibraryCycleGraph] of [id] at all phases before the
