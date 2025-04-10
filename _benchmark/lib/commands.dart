@@ -89,7 +89,10 @@ class MeasureCommand extends Command<void> {
       await Future<void>.delayed(const Duration(seconds: 1));
 
       final update = StringBuffer('${config.generator.packageName}\n');
-      update.write('shape,libraries,clean/ms,no changes/ms,incremental/ms\n');
+      update.write(
+        'shape,libraries,clean/ms,no changes/ms,incremental/ms,'
+        'json/KiB\n',
+      );
       for (final shape in config.shapes) {
         for (final size in config.sizes) {
           final pendingResult = pendingResults[(shape, size)]!;
@@ -104,6 +107,7 @@ class MeasureCommand extends Command<void> {
                 pendingResult.cleanBuildTime.renderFailed,
                 pendingResult.noChangesBuildTime.renderFailed,
                 pendingResult.incrementalBuildTime.renderFailed,
+                pendingResult.graphSize.renderFailed,
               ].join(','),
             );
           } else {
@@ -114,6 +118,7 @@ class MeasureCommand extends Command<void> {
                 pendingResult.cleanBuildTime.render,
                 pendingResult.noChangesBuildTime.render,
                 pendingResult.incrementalBuildTime.render,
+                pendingResult.graphSize.render,
               ].join(','),
             );
           }
@@ -137,4 +142,12 @@ extension DurationExtension on Duration? {
   /// Renders with X` for `null`, to mean "failed".
   String get renderFailed =>
       this == null ? 'X' : this!.inMilliseconds.toString();
+}
+
+extension IntExtension on int? {
+  /// Renders with `---` for `null`, to mean "pending".
+  String get render => this == null ? '---' : (this! / 1024).round().toString();
+
+  /// Renders with X` for `null`, to mean "failed".
+  String get renderFailed => this == null ? 'X' : this!.toString();
 }
