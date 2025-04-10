@@ -130,7 +130,7 @@ class AssetGraphHandler {
     if (node.type == NodeType.generated || node.type == NodeType.glob) {
       final inputs =
           node.type == NodeType.generated
-              ? node.generatedNodeState!.inputs
+              ? node.generatedNodeState!.inputs.iterable
               : node.globNodeState!.inputs;
       for (final input in inputs) {
         if (filterGlob != null && !filterGlob.matches(input.toString())) {

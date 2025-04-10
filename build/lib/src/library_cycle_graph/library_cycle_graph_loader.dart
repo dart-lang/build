@@ -463,6 +463,16 @@ class LibraryCycleGraphLoader {
     return _graphs[id]!;
   }
 
+  Future<LibraryCycleGraph> transitiveDepsGraphOf(
+    AssetDepsLoader assetDepsLoader,
+    AssetId id,
+  ) async {
+    return (await libraryCycleGraphOf(
+      assetDepsLoader,
+      id,
+    )).valueAt(phase: assetDepsLoader.phase);
+  }
+
   /// Returns the transitive dependencies of Dart source [id] at the
   /// [assetDepsLoader] phase.
   ///
@@ -481,8 +491,7 @@ class LibraryCycleGraphLoader {
     AssetDepsLoader assetDepsLoader,
     AssetId id,
   ) async {
-    final graph = await libraryCycleGraphOf(assetDepsLoader, id);
-    return graph.valueAt(phase: assetDepsLoader.phase).transitiveDeps;
+    return (await transitiveDepsGraphOf(assetDepsLoader, id)).transitiveDeps;
   }
 
   @override
