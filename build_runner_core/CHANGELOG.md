@@ -27,6 +27,8 @@
 - Add `reportUnusedAssetsForInput` to `BuildOptions`, to listen for when
   a builder notifies that an asset is unused.
 - Use `LibraryCycleGraphLoader` to load transitive deps for analysis.
+- Track post process builder outputs separately from the main graph Instead of
+  in `postProcessAnchor` nodes.
 
 ## 8.0.0
 
