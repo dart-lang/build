@@ -9,6 +9,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:built_value/serializer.dart';
 import 'package:crypto/crypto.dart';
 
+import 'identity_serializer.dart';
 import 'node.dart';
 import 'post_process_build_step_id.dart';
 
@@ -24,10 +25,15 @@ final postProcessBuildStepOutputsFullType = FullType(Map, [
   postProcessBuildStepOutputsInnerFullType,
 ]);
 
+final assetIdSerializer = AssetIdSerializer();
+final identityAssetIdSerializer = IdentitySerializer<AssetId>(
+  assetIdSerializer,
+);
+
 @SerializersFor([AssetNode])
 final Serializers serializers =
     (_$serializers.toBuilder()
-          ..add(AssetIdSerializer())
+          ..add(identityAssetIdSerializer)
           ..add(DigestSerializer())
           ..add(MapSerializer())
           ..add(SetSerializer())

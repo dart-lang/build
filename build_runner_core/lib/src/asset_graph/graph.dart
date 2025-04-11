@@ -70,7 +70,7 @@ class AssetGraph implements GeneratedAssetHider {
 
   /// Deserializes this graph.
   factory AssetGraph.deserialize(List<int> serializedGraph) =>
-      _AssetGraphDeserializer(serializedGraph).deserialize();
+      deserializeAssetGraph(serializedGraph);
 
   static Future<AssetGraph> build(
     BuildPhases buildPhases,
@@ -106,7 +106,7 @@ class AssetGraph implements GeneratedAssetHider {
     return graph;
   }
 
-  List<int> serialize() => _AssetGraphSerializer(this).serialize();
+  List<int> serialize() => serializeAssetGraph(this);
 
   @visibleForTesting
   Map<String, Map<PostProcessBuildStepId, Set<AssetId>>>
