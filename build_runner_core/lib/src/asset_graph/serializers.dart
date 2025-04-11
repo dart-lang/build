@@ -32,10 +32,17 @@ final identityAssetIdSerializer = IdentitySerializer<AssetId>(
   assetIdSerializer,
 );
 
+final libraryCycleGraphSerializer =
+    LibraryCycleGraph.serializer as StructuredSerializer<LibraryCycleGraph>;
+
+final identityLibraryCycleGraphSerializer =
+    IdentitySerializer<LibraryCycleGraph>(libraryCycleGraphSerializer);
+
 @SerializersFor([AssetNode])
 final Serializers serializers =
     (_$serializers.toBuilder()
           ..add(identityAssetIdSerializer)
+          ..add(identityLibraryCycleGraphSerializer)
           ..add(DigestSerializer())
           ..add(MapSerializer())
           ..add(SetSerializer())
