@@ -72,6 +72,8 @@ class Workspace {
       return;
     }
 
+    result.graphSize = _readGraphSize();
+
     // Build with no changes.
     stopwatch.reset();
     process = await Process.start('dart', [
@@ -111,6 +113,17 @@ class Workspace {
       return;
     }
   }
+
+  /// Returns the `build_runner` asset graph size, or `null` if not found.
+  int? _readGraphSize() {
+    for (final entry in Directory.fromUri(
+      directory.uri.resolve('.dart_tool/build'),
+    ).listSync(recursive: true)) {
+      if (entry is! File) continue;
+      if (entry.path.endsWith('asset_graph.json')) return entry.lengthSync();
+    }
+    return null;
+  }
 }
 
 /// Benchmark results.
@@ -120,6 +133,7 @@ class PendingResult {
   Duration? cleanBuildTime;
   Duration? noChangesBuildTime;
   Duration? incrementalBuildTime;
+  int? graphSize;
   String? failure;
 
   bool get isFailure => failure != null;
