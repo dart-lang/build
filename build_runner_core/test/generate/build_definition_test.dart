@@ -228,9 +228,6 @@ targets:
             ..pendingBuildAction = PendingBuildAction.none
             ..inputs.add(aTxt);
         });
-        originalAssetGraph.updateNode(aTxt, (nodeBuilder) {
-          nodeBuilder.outputs.add(aTxtCopy);
-        });
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
         await modifyFile(p.join('lib', 'a.txt'), 'b');

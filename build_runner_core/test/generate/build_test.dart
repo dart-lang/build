@@ -1287,14 +1287,8 @@ void main() {
       inputs: [makeAssetId('a|web/a.txt')],
       isHidden: false,
     );
-    builderOptionsNode = builderOptionsNode.rebuild(
-      (b) => b..outputs.add(aCopyNode.id),
-    );
     aSourceNode = aSourceNode.rebuild(
-      (b) =>
-          b
-            ..outputs.add(aCopyNode.id)
-            ..primaryOutputs.add(aCopyNode.id),
+      (b) => b..primaryOutputs.add(aCopyNode.id),
     );
 
     var bCopyId = makeAssetId('a|lib/b.txt.copy'); //;
@@ -1310,14 +1304,8 @@ void main() {
       inputs: [makeAssetId('a|lib/b.txt')],
       isHidden: false,
     );
-    builderOptionsNode = builderOptionsNode.rebuild(
-      (b) => b..outputs.add(bCopyNode.id),
-    );
     bSourceNode = bSourceNode.rebuild(
-      (b) =>
-          b
-            ..outputs.add(bCopyNode.id)
-            ..primaryOutputs.add(bCopyNode.id),
+      (b) => b..primaryOutputs.add(bCopyNode.id),
     );
 
     // Post build generates asset nodes and supporting nodes
@@ -1350,7 +1338,6 @@ void main() {
     );
     // Note we don't expect this node to get added to the builder options node
     // outputs.
-    aSourceNode = aSourceNode.rebuild((b) => b..outputs.add(aPostCopyNode.id));
     aSourceNode = aSourceNode.rebuild(
       (b) => b..primaryOutputs.add(aPostCopyNode.id),
     );
@@ -1369,7 +1356,6 @@ void main() {
     );
     // Note we don't expect this node to get added to the builder options node
     // outputs.
-    bSourceNode = bSourceNode.rebuild((b) => b..outputs.add(bPostCopyNode.id));
     bSourceNode = bSourceNode.rebuild(
       (b) => b..primaryOutputs.add(bPostCopyNode.id),
     );
@@ -1834,9 +1820,10 @@ void main() {
         outputNode.generatedNodeState!.inputs,
         unorderedEquals([fileANode.id, fileCNode.id]),
       );
-      expect(fileANode.outputs, contains(outputNode.id));
-      expect(fileBNode.outputs, isEmpty);
-      expect(fileCNode.outputs, unorderedEquals([outputNode.id]));
+      final computedOutputs = graph.computeOutputs();
+      expect(computedOutputs[fileANode.id]!, contains(outputNode.id));
+      expect(computedOutputs[fileBNode.id] ?? const <AssetId>{}, isEmpty);
+      expect(computedOutputs[fileCNode.id]!, unorderedEquals([outputNode.id]));
     });
 
     test('Ouputs aren\'t rebuilt if their inputs didn\'t change', () async {
