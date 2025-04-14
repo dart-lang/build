@@ -38,6 +38,7 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   ///     await step.resolver.libraryFor(step.inputId, allowSyntaxErrors: true);
   /// }
   /// ```
+  @Deprecated('use inputLibrary2')
   Future<LibraryElement> get inputLibrary;
 
   /// Resolved library defined by [inputId].
