@@ -6,7 +6,6 @@ import 'dart:collection';
 import 'dart:convert';
 
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/element2.dart';
 import 'package:async/async.dart';
 import 'package:crypto/crypto.dart';
@@ -34,18 +33,15 @@ class BuildStepImpl implements BuildStep {
   @override
   final AssetId inputId;
 
-  @Deprecated('use inputLibrary2')
   @override
-  Future<LibraryElement> get inputLibrary async {
+  Future<LibraryElement2> get inputLibrary async {
     if (_isComplete) throw BuildStepCompletedException();
     return resolver.libraryFor(inputId);
   }
 
+  @Deprecated('use inputLibrary')
   @override
-  Future<LibraryElement2> get inputLibrary2 async {
-    if (_isComplete) throw BuildStepCompletedException();
-    return resolver.libraryFor2(inputId);
-  }
+  Future<LibraryElement2> get inputLibrary2 => inputLibrary;
 
   /// The list of all outputs which are expected/allowed to be output from this
   /// step.
@@ -73,16 +69,16 @@ class BuildStepImpl implements BuildStep {
   Future<Result<PackageConfig>>? _resolvedPackageConfig;
 
   BuildStepImpl(
-      this.inputId,
-      Iterable<AssetId> expectedOutputs,
-      this._reader,
-      this._writer,
-      this._resolvers,
-      this._resourceManager,
-      this._resolvePackageConfig,
-      {StageTracker? stageTracker,
-      void Function(Iterable<AssetId>)? reportUnusedAssets})
-      : allowedOutputs = UnmodifiableSetView(expectedOutputs.toSet()),
+    this.inputId,
+    Iterable<AssetId> expectedOutputs,
+    this._reader,
+    this._writer,
+    this._resolvers,
+    this._resourceManager,
+    this._resolvePackageConfig, {
+    StageTracker? stageTracker,
+    void Function(Iterable<AssetId>)? reportUnusedAssets,
+  })  : allowedOutputs = UnmodifiableSetView(expectedOutputs.toSet()),
         _stageTracker = stageTracker ?? NoOpStageTracker.instance,
         _reportUnusedAssets = reportUnusedAssets;
 
@@ -145,19 +141,26 @@ class BuildStepImpl implements BuildStep {
   Future<void> writeAsBytes(AssetId id, FutureOr<List<int>> bytes) {
     if (_isComplete) throw BuildStepCompletedException();
     _checkOutput(id);
-    var done =
-        _futureOrWrite(bytes, (List<int> b) => _writer.writeAsBytes(id, b));
+    var done = _futureOrWrite(
+      bytes,
+      (List<int> b) => _writer.writeAsBytes(id, b),
+    );
     _writeResults.add(Result.capture(done));
     return done;
   }
 
   @override
-  Future<void> writeAsString(AssetId id, FutureOr<String> content,
-      {Encoding encoding = utf8}) {
+  Future<void> writeAsString(
+    AssetId id,
+    FutureOr<String> content, {
+    Encoding encoding = utf8,
+  }) {
     if (_isComplete) throw BuildStepCompletedException();
     _checkOutput(id);
-    var done = _futureOrWrite(content,
-        (String c) => _writer.writeAsString(id, c, encoding: encoding));
+    var done = _futureOrWrite(
+      content,
+      (String c) => _writer.writeAsString(id, c, encoding: encoding),
+    );
     _writeResults.add(Result.capture(done));
     return done;
   }
@@ -169,12 +172,17 @@ class BuildStepImpl implements BuildStep {
   }
 
   @override
-  T trackStage<T>(String label, T Function() action,
-          {bool isExternal = false}) =>
+  T trackStage<T>(
+    String label,
+    T Function() action, {
+    bool isExternal = false,
+  }) =>
       _stageTracker.trackStage(label, action, isExternal: isExternal);
 
   Future<void> _futureOrWrite<T>(
-          FutureOr<T> content, Future<void> Function(T content) write) =>
+    FutureOr<T> content,
+    Future<void> Function(T content) write,
+  ) =>
       (content is Future<T>) ? content.then(write) : write(content);
 
   /// Waits for work to finish and cleans up resources.
@@ -221,65 +229,72 @@ class _DelayedResolver implements Resolver {
   Future<bool> isLibrary(AssetId assetId) async =>
       (await _delegate).isLibrary(assetId);
 
-  @Deprecated('use libraries2')
   @override
-  Stream<LibraryElement> get libraries {
-    var completer = StreamCompleter<LibraryElement>();
+  Stream<LibraryElement2> get libraries {
+    var completer = StreamCompleter<LibraryElement2>();
     _delegate.then((r) => completer.setSourceStream(r.libraries));
     return completer.stream;
   }
 
+  @Deprecated('use libraries')
   @override
-  Stream<LibraryElement2> get libraries2 {
-    var completer = StreamCompleter<LibraryElement2>();
-    _delegate.then((r) => completer.setSourceStream(r.libraries2));
-    return completer.stream;
-  }
-
-  @Deprecated('use astNodeFor2')
-  @override
-  Future<AstNode?> astNodeFor(Element element, {bool resolve = false}) async =>
-      (await _delegate).astNodeFor(element, resolve: resolve);
+  Stream<LibraryElement2> get libraries2 => libraries;
 
   @override
-  Future<AstNode?> astNodeFor2(Fragment fragment,
-          {bool resolve = false}) async =>
-      (await _delegate).astNodeFor2(fragment, resolve: resolve);
+  Future<AstNode?> astNodeFor(
+    Fragment fragment, {
+    bool resolve = false,
+  }) async =>
+      (await _delegate).astNodeFor(fragment, resolve: resolve);
+
+  @Deprecated('use astNodeFor')
+  @override
+  Future<AstNode?> astNodeFor2(Fragment fragment, {bool resolve = false}) =>
+      astNodeFor(fragment, resolve: resolve);
 
   @override
-  Future<CompilationUnit> compilationUnitFor(AssetId assetId,
-          {bool allowSyntaxErrors = false}) async =>
-      (await _delegate)
-          .compilationUnitFor(assetId, allowSyntaxErrors: allowSyntaxErrors);
-
-  @Deprecated('use libraryFor2')
-  @override
-  Future<LibraryElement> libraryFor(AssetId assetId,
-          {bool allowSyntaxErrors = false}) async =>
-      (await _delegate)
-          .libraryFor(assetId, allowSyntaxErrors: allowSyntaxErrors);
+  Future<CompilationUnit> compilationUnitFor(
+    AssetId assetId, {
+    bool allowSyntaxErrors = false,
+  }) async =>
+      (await _delegate).compilationUnitFor(
+        assetId,
+        allowSyntaxErrors: allowSyntaxErrors,
+      );
 
   @override
-  Future<LibraryElement2> libraryFor2(AssetId assetId,
-          {bool allowSyntaxErrors = false}) async =>
-      (await _delegate)
-          .libraryFor2(assetId, allowSyntaxErrors: allowSyntaxErrors);
+  Future<LibraryElement2> libraryFor(
+    AssetId assetId, {
+    bool allowSyntaxErrors = false,
+  }) async =>
+      (await _delegate).libraryFor(
+        assetId,
+        allowSyntaxErrors: allowSyntaxErrors,
+      );
 
-  @Deprecated('use findLibraryByName2')
+  @Deprecated('use libraryFor')
   @override
-  Future<LibraryElement?> findLibraryByName(String libraryName) async =>
+  Future<LibraryElement2> libraryFor2(
+    AssetId assetId, {
+    bool allowSyntaxErrors = false,
+  }) async =>
+      libraryFor(assetId, allowSyntaxErrors: allowSyntaxErrors);
+
+  @override
+  Future<LibraryElement2?> findLibraryByName(String libraryName) async =>
       (await _delegate).findLibraryByName(libraryName);
 
+  @Deprecated('use findLibraryByName')
   @override
   Future<LibraryElement2?> findLibraryByName2(String libraryName) async =>
-      (await _delegate).findLibraryByName2(libraryName);
+      findLibraryByName(libraryName);
 
-  @Deprecated('use assetIdForElement2')
   @override
-  Future<AssetId> assetIdForElement(Element element) async =>
+  Future<AssetId> assetIdForElement(Element2 element) async =>
       (await _delegate).assetIdForElement(element);
 
+  @Deprecated('use assetIdForElement')
   @override
   Future<AssetId> assetIdForElement2(Element2 element) async =>
-      (await _delegate).assetIdForElement2(element);
+      assetIdForElement(element);
 }

@@ -11,13 +11,10 @@ import 'dart:isolate';
 import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/error/error.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
-// ignore: implementation_imports
-import 'package:analyzer/src/utilities/extensions/element.dart';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
@@ -43,14 +40,13 @@ class PerActionResolver implements ReleasableResolver {
   final _entryPoints = <AssetId>{};
 
   PerActionResolver(
-      this._delegate, this._driverPool, this._readAndWritePool, this._step);
+    this._delegate,
+    this._driverPool,
+    this._readAndWritePool,
+    this._step,
+  );
 
-  @Deprecated('use _librariesFromEntrypoints2 instead')
-  Stream<LibraryElement> get _librariesFromEntrypoints {
-    return _librariesFromEntrypoints2.map((e) => e.asElement);
-  }
-
-  Stream<LibraryElement2> get _librariesFromEntrypoints2 async* {
+  Stream<LibraryElement2> get _librariesFromEntrypoints async* {
     await _resolveIfNecessary(_step.inputId, transitive: true);
 
     final seen = <LibraryElement2>{};
@@ -61,8 +57,10 @@ class PerActionResolver implements ReleasableResolver {
     final entryPoints = _entryPoints.toList();
     for (final entryPoint in entryPoints) {
       if (!await _delegate.isLibrary(entryPoint)) continue;
-      final library =
-          await _delegate.libraryFor2(entryPoint, allowSyntaxErrors: true);
+      final library = await _delegate.libraryFor(
+        entryPoint,
+        allowSyntaxErrors: true,
+      );
       toVisit.add(library);
       seen.add(library);
     }
@@ -74,8 +72,11 @@ class PerActionResolver implements ReleasableResolver {
       yield current;
       final toCrawl = current.firstFragment.libraryImports2
           .map((import) => import.importedLibrary2)
-          .followedBy(current.firstFragment.libraryExports2
-              .map((export) => export.exportedLibrary2))
+          .followedBy(
+            current.firstFragment.libraryExports2.map(
+              (export) => export.exportedLibrary2,
+            ),
+          )
           .nonNulls
           .where((library) => !seen.contains(library))
           .toSet();
@@ -84,38 +85,30 @@ class PerActionResolver implements ReleasableResolver {
     }
   }
 
-  @Deprecated('use libraries2 instead')
   @override
-  Stream<LibraryElement> get libraries async* {
-    yield* _delegate.sdkLibraries;
+  Stream<LibraryElement2> get libraries async* {
+    yield* _delegate.sdkLibraries2;
     yield* _librariesFromEntrypoints.where((library) => !library.isInSdk);
   }
 
+  @Deprecated('use libraries instead')
   @override
-  Stream<LibraryElement2> get libraries2 async* {
-    yield* _delegate.sdkLibraries2;
-    yield* _librariesFromEntrypoints2.where((library) => !library.isInSdk);
-  }
-
-  @Deprecated('use findLibraryByName2 instead')
-  @override
-  Future<LibraryElement?> findLibraryByName(String libraryName) async {
-    final element = await findLibraryByName2(libraryName);
-    if (element == null) {
-      return null;
-    }
-    return element.asElement;
-  }
+  Stream<LibraryElement2> get libraries2 => libraries;
 
   @override
-  Future<LibraryElement2?> findLibraryByName2(String libraryName) async {
+  Future<LibraryElement2?> findLibraryByName(String libraryName) async {
     return _step.trackStage('findLibraryByName $libraryName', () async {
-      await for (final library in libraries2) {
+      await for (final library in libraries) {
         if (library.name3 == libraryName) return library;
       }
       return null;
     });
   }
+
+  @Deprecated('use findLibraryByName instead')
+  @override
+  Future<LibraryElement2?> findLibraryByName2(String libraryName) =>
+      findLibraryByName(libraryName);
 
   @override
   Future<bool> isLibrary(AssetId assetId) =>
@@ -125,58 +118,67 @@ class PerActionResolver implements ReleasableResolver {
         return _delegate.isLibrary(assetId);
       });
 
-  @Deprecated('use astNodeFor2 instead')
   @override
-  Future<AstNode?> astNodeFor(Element element, {bool resolve = false}) =>
-      _step.trackStage('astNodeFor $element',
-          () => _delegate.astNodeFor(element, resolve: resolve));
+  Future<AstNode?> astNodeFor(Fragment fragment, {bool resolve = false}) =>
+      _step.trackStage(
+        'astNodeFor $fragment',
+        () => _delegate.astNodeFor(fragment, resolve: resolve),
+      );
 
+  @Deprecated('use astNodeFor instead')
   @override
   Future<AstNode?> astNodeFor2(Fragment fragment, {bool resolve = false}) =>
-      _step.trackStage('astNodeFor $fragment',
-          () => _delegate.astNodeFor2(fragment, resolve: resolve));
+      astNodeFor(fragment, resolve: resolve);
 
   @override
-  Future<CompilationUnit> compilationUnitFor(AssetId assetId,
-          {bool allowSyntaxErrors = false}) =>
+  Future<CompilationUnit> compilationUnitFor(
+    AssetId assetId, {
+    bool allowSyntaxErrors = false,
+  }) =>
       _step.trackStage('compilationUnitFor $assetId', () async {
         if (!await _step.canRead(assetId)) {
           throw AssetNotFoundException(assetId);
         }
         await _resolveIfNecessary(assetId, transitive: false);
-        return _delegate.compilationUnitFor(assetId,
-            allowSyntaxErrors: allowSyntaxErrors);
+        return _delegate.compilationUnitFor(
+          assetId,
+          allowSyntaxErrors: allowSyntaxErrors,
+        );
       });
 
-  @Deprecated('use libraryFor2 instead')
   @override
-  Future<LibraryElement> libraryFor(AssetId assetId,
-      {bool allowSyntaxErrors = false}) async {
-    final element = await libraryFor2(
-      assetId,
-      allowSyntaxErrors: allowSyntaxErrors,
-    );
-    return element.asElement;
-  }
-
-  @override
-  Future<LibraryElement2> libraryFor2(AssetId assetId,
-      {bool allowSyntaxErrors = false}) async {
+  Future<LibraryElement2> libraryFor(
+    AssetId assetId, {
+    bool allowSyntaxErrors = false,
+  }) async {
     return _step.trackStage('libraryFor $assetId', () async {
       if (!await _step.canRead(assetId)) {
         throw AssetNotFoundException(assetId);
       }
       await _resolveIfNecessary(assetId, transitive: true);
-      return _delegate.libraryFor2(assetId,
-          allowSyntaxErrors: allowSyntaxErrors);
+      return _delegate.libraryFor(
+        assetId,
+        allowSyntaxErrors: allowSyntaxErrors,
+      );
     });
   }
+
+  @Deprecated('use libraryFor instead')
+  @override
+  Future<LibraryElement2> libraryFor2(
+    AssetId assetId, {
+    bool allowSyntaxErrors = false,
+  }) =>
+      libraryFor(assetId, allowSyntaxErrors: allowSyntaxErrors);
 
   // Ensures we only resolve one entrypoint at a time from the same build step,
   // otherwise there are race conditions with `_entryPoints` being updated
   // before it is actually ready, or resolving entrypoints more than once.
   final Pool _perActionResolvePool = Pool(1);
-  Future<void> _resolveIfNecessary(AssetId id, {required bool transitive}) =>
+  Future<void> _resolveIfNecessary(
+    AssetId id, {
+    required bool transitive,
+  }) =>
       _perActionResolvePool.withResource(() async {
         if (!_entryPoints.contains(id)) {
           // We only want transitively resolved ids in `_entrypoints`.
@@ -185,22 +187,25 @@ class PerActionResolver implements ReleasableResolver {
           // The resolver will only visit assets that haven't been resolved
           // in this step yet.
           await _step.trackStage(
-              'Resolving library $id',
-              () => _delegate._uriResolver.performResolve(
-                  _step,
-                  [id],
-                  // This does a "write" - it will result in
-                  // `changeFile` calls in the analysis driver.
-                  //
-                  // It can't use the shared resource since it is a "write"
-                  // operation.
-                  //
-                  // TODO: Better abstraction here? We are relying on
-                  // implementation details (knowing this calls changeFile).
-                  (withDriver) => _readAndWritePool.withResource(() =>
-                      _driverPool
-                          .withResource(() => withDriver(_delegate._driver))),
-                  transitive: transitive));
+            'Resolving library $id',
+            () => _delegate._uriResolver.performResolve(
+              _step,
+              [id],
+              // This does a "write" - it will result in
+              // `changeFile` calls in the analysis driver.
+              //
+              // It can't use the shared resource since it is a "write"
+              // operation.
+              //
+              // TODO: Better abstraction here? We are relying on
+              // implementation details (knowing this calls changeFile).
+              (withDriver) => _readAndWritePool.withResource(
+                () => _driverPool
+                    .withResource(() => withDriver(_delegate._driver)),
+              ),
+              transitive: transitive,
+            ),
+          );
         }
       });
 
@@ -210,14 +215,14 @@ class PerActionResolver implements ReleasableResolver {
     _delegate.release();
   }
 
-  @Deprecated('use assetIdForElement2 instead')
   @override
-  Future<AssetId> assetIdForElement(Element element) =>
+  Future<AssetId> assetIdForElement(Element2 element) =>
       _delegate.assetIdForElement(element);
 
+  @Deprecated('use assetIdForElement instead')
   @override
   Future<AssetId> assetIdForElement2(Element2 element) =>
-      _delegate.assetIdForElement2(element);
+      assetIdForElement(element);
 }
 
 class AnalyzerResolver implements ReleasableResolver {
@@ -228,8 +233,12 @@ class AnalyzerResolver implements ReleasableResolver {
 
   Future<List<LibraryElement2>>? _sdkLibraries;
 
-  AnalyzerResolver(this._driver, this._driverPool, this._readAndWritePool,
-      this._uriResolver);
+  AnalyzerResolver(
+    this._driver,
+    this._driverPool,
+    this._readAndWritePool,
+    this._uriResolver,
+  );
 
   @override
   Future<bool> isLibrary(AssetId assetId) async {
@@ -242,42 +251,8 @@ class AnalyzerResolver implements ReleasableResolver {
     });
   }
 
-  @Deprecated('use astNodeFor2 instead')
   @override
-  Future<AstNode?> astNodeFor(Element element, {bool resolve = false}) async {
-    final library = element.library;
-    if (library == null) {
-      // Invalid elements (e.g. an MultiplyDefinedElement) are not part of any
-      // library and can't be resolved like this.
-      return null;
-    }
-    var path = library.source.fullName;
-
-    return _driverPool.withResource(() async {
-      var session = _driver.currentSession;
-      if (resolve) {
-        final result =
-            await session.getResolvedLibrary(path) as ResolvedLibraryResult;
-        if (element is CompilationUnitElement) {
-          return result.unitWithPath(element.source.fullName)?.unit;
-        }
-        return result.getElementDeclaration(element)?.node;
-      } else {
-        final result = session.getParsedLibrary(path) as ParsedLibraryResult;
-        if (element is CompilationUnitElement) {
-          final unitPath = element.source.fullName;
-          return result.units
-              .firstWhereOrNull((unit) => unit.path == unitPath)
-              ?.unit;
-        }
-        return result.getElementDeclaration(element)?.node;
-      }
-    });
-  }
-
-  @override
-  Future<AstNode?> astNodeFor2(Fragment fragment,
-      {bool resolve = false}) async {
+  Future<AstNode?> astNodeFor(Fragment fragment, {bool resolve = false}) async {
     final library = fragment.libraryFragment?.element;
     if (library == null) {
       // Invalid elements (e.g. an MultiplyDefinedElement) are not part of any
@@ -294,7 +269,7 @@ class AnalyzerResolver implements ReleasableResolver {
         if (fragment is LibraryFragment) {
           return result.unitWithPath(fragment.source.fullName)?.unit;
         }
-        return result.getElementDeclaration2(fragment)?.node;
+        return result.getFragmentDeclaration(fragment)?.node;
       } else {
         final result = session.getParsedLibrary(path) as ParsedLibraryResult;
         if (fragment is LibraryFragment) {
@@ -303,14 +278,21 @@ class AnalyzerResolver implements ReleasableResolver {
               .firstWhereOrNull((unit) => unit.path == unitPath)
               ?.unit;
         }
-        return result.getElementDeclaration2(fragment)?.node;
+        return result.getFragmentDeclaration(fragment)?.node;
       }
     });
   }
 
+  @Deprecated('use astNodeFor instead')
   @override
-  Future<CompilationUnit> compilationUnitFor(AssetId assetId,
-      {bool allowSyntaxErrors = false}) {
+  Future<AstNode?> astNodeFor2(Fragment fragment, {bool resolve = false}) =>
+      astNodeFor(fragment, resolve: resolve);
+
+  @override
+  Future<CompilationUnit> compilationUnitFor(
+    AssetId assetId, {
+    bool allowSyntaxErrors = false,
+  }) {
     return _driverPool.withResource(() async {
       if (!_driver.isUriOfExistingFile(assetId.uri)) {
         throw AssetNotFoundException(assetId);
@@ -327,36 +309,30 @@ class AnalyzerResolver implements ReleasableResolver {
     });
   }
 
-  @Deprecated('use libraryFor2 instead')
   @override
-  Future<LibraryElement> libraryFor(AssetId assetId,
-      {bool allowSyntaxErrors = false}) async {
-    var element =
-        await libraryFor2(assetId, allowSyntaxErrors: allowSyntaxErrors);
-    return element.asElement;
-  }
-
-  @override
-  Future<LibraryElement2> libraryFor2(AssetId assetId,
-      {bool allowSyntaxErrors = false}) async {
+  Future<LibraryElement2> libraryFor(
+    AssetId assetId, {
+    bool allowSyntaxErrors = false,
+  }) async {
     // Since this calls `getLibraryByUri` it is a "read", and can use the shared
     // resource to allow concurrent reads.
-    final library = await _readAndWritePool
-        .withSharedResource(() => _driverPool.withResource(() async {
-              var uri = assetId.uri;
-              if (!_driver.isUriOfExistingFile(uri)) {
-                throw AssetNotFoundException(assetId);
-              }
+    final library = await _readAndWritePool.withSharedResource(
+      () => _driverPool.withResource(() async {
+        var uri = assetId.uri;
+        if (!_driver.isUriOfExistingFile(uri)) {
+          throw AssetNotFoundException(assetId);
+        }
 
-              var path = assetPath(assetId);
-              var parsedResult = _driver.currentSession.getParsedUnit(path);
-              if (parsedResult is! ParsedUnitResult || parsedResult.isPart) {
-                throw NonLibraryAssetException(assetId);
-              }
+        var path = assetPath(assetId);
+        var parsedResult = _driver.currentSession.getParsedUnit(path);
+        if (parsedResult is! ParsedUnitResult || parsedResult.isPart) {
+          throw NonLibraryAssetException(assetId);
+        }
 
-              return await _driver.currentSession
-                  .getLibraryByUri(uri.toString()) as LibraryElementResult;
-            }));
+        return await _driver.currentSession.getLibraryByUri(uri.toString())
+            as LibraryElementResult;
+      }),
+    );
 
     if (!allowSyntaxErrors) {
       final errors = await _syntacticErrorsFor2(library.element2);
@@ -368,11 +344,20 @@ class AnalyzerResolver implements ReleasableResolver {
     return library.element2;
   }
 
+  @Deprecated('use libraryFor instead')
+  @override
+  Future<LibraryElement2> libraryFor2(
+    AssetId assetId, {
+    bool allowSyntaxErrors = false,
+  }) =>
+      libraryFor(assetId, allowSyntaxErrors: allowSyntaxErrors);
+
   /// Finds syntax errors in files related to the [element].
   ///
   /// This includes the main library and existing part files.
   Future<List<ErrorsResult>> _syntacticErrorsFor2(
-      LibraryElement2 element) async {
+    LibraryElement2 element,
+  ) async {
     final existingSources = <Source>[];
 
     for (final fragment in element.fragments) {
@@ -392,7 +377,8 @@ class AnalyzerResolver implements ReleasableResolver {
         final result = await _driver.currentSession.getErrors(path);
         if (result is ErrorsResult &&
             result.errors.any(
-                (error) => error.errorCode.type == ErrorType.SYNTACTIC_ERROR)) {
+              (error) => error.errorCode.type == ErrorType.SYNTACTIC_ERROR,
+            )) {
           relevantResults.add(result);
         }
       }
@@ -405,51 +391,48 @@ class AnalyzerResolver implements ReleasableResolver {
   // Do nothing
   void release() {}
 
-  @Deprecated('use libraries2 instead')
   @override
-  Stream<LibraryElement> get libraries {
+  Stream<LibraryElement2> get libraries {
     // We don't know what libraries to expose without leaking libraries written
     // by later phases.
     throw UnimplementedError();
   }
 
+  @Deprecated('use libraries instead')
   @override
-  Stream<LibraryElement2> get libraries2 {
-    // We don't know what libraries to expose without leaking libraries written
-    // by later phases.
-    throw UnimplementedError();
-  }
+  Stream<LibraryElement2> get libraries2 => libraries;
 
-  @Deprecated('use sdkLibraries2 instead')
-  Stream<LibraryElement> get sdkLibraries {
-    return sdkLibraries2.map((e) => e.asElement);
-  }
-
-  Stream<LibraryElement2> get sdkLibraries2 {
+  Stream<LibraryElement2> get sdkLibraries {
     final loadLibraries = _sdkLibraries ??= Future.sync(() {
-      final publicSdkUris =
-          _driver.sdkLibraryUris.where((e) => !e.path.startsWith('_'));
+      final publicSdkUris = _driver.sdkLibraryUris.where(
+        (e) => !e.path.startsWith('_'),
+      );
 
-      return Future.wait(publicSdkUris.map((uri) {
-        return _driverPool.withResource(() async {
-          final result = await _driver.currentSession
-              .getLibraryByUri(uri.toString()) as LibraryElementResult;
-          return result.element2;
-        });
-      }));
+      return Future.wait(
+        publicSdkUris.map((uri) {
+          return _driverPool.withResource(() async {
+            final result = await _driver.currentSession
+                .getLibraryByUri(uri.toString()) as LibraryElementResult;
+            return result.element2;
+          });
+        }),
+      );
     });
 
     return Stream.fromFuture(loadLibraries).expand((libraries) => libraries);
   }
 
-  @Deprecated('use findLibraryByName2 instead')
+  @Deprecated('use sdkLibraries instead')
+  Stream<LibraryElement2> get sdkLibraries2 => sdkLibraries;
+
   @override
-  Future<LibraryElement> findLibraryByName(String libraryName) {
+  Future<LibraryElement2?> findLibraryByName(String libraryName) async {
     // We don't know what libraries to expose without leaking libraries written
     // by later phases.
     throw UnimplementedError();
   }
 
+  @Deprecated('use findLibraryByName instead')
   @override
   Future<LibraryElement2?> findLibraryByName2(String libraryName) async {
     // We don't know what libraries to expose without leaking libraries written
@@ -457,14 +440,8 @@ class AnalyzerResolver implements ReleasableResolver {
     throw UnimplementedError();
   }
 
-  @Deprecated('use assetIdForElement2 instead')
   @override
-  Future<AssetId> assetIdForElement(Element element) {
-    return assetIdForElement2(element.asElement2!);
-  }
-
-  @override
-  Future<AssetId> assetIdForElement2(Element2 element) async {
+  Future<AssetId> assetIdForElement(Element2 element) async {
     if (element is MultiplyDefinedElement2) {
       throw UnresolvableAssetException('${element.name3} is ambiguous');
     }
@@ -472,7 +449,8 @@ class AnalyzerResolver implements ReleasableResolver {
     final source = element.firstFragment.libraryFragment?.source;
     if (source == null) {
       throw UnresolvableAssetException(
-          '${element.name3} does not have a source');
+        '${element.name3} does not have a source',
+      );
     }
 
     final uri = source.uri;
@@ -481,6 +459,11 @@ class AnalyzerResolver implements ReleasableResolver {
     }
     return AssetId.resolve(source.uri);
   }
+
+  @Deprecated('use assetIdForElement instead')
+  @override
+  Future<AssetId> assetIdForElement2(Element2 element) =>
+      assetIdForElement(element);
 }
 
 class AnalyzerResolvers implements Resolvers {
@@ -532,27 +515,31 @@ class AnalyzerResolvers implements Resolvers {
     PackageConfig? packageConfig,
   }) =>
       AnalyzerResolvers._(
-          analysisOptions: analysisOptions,
-          sdkSummaryGenerator: sdkSummaryGenerator,
-          packageConfig: packageConfig,
-          // Custom resolvers get their own asset uri resolver, as there should
-          // always be a 1:1 relationship between them.
-          uriResolver: BuildAssetUriResolver());
+        analysisOptions: analysisOptions,
+        sdkSummaryGenerator: sdkSummaryGenerator,
+        packageConfig: packageConfig,
+        // Custom resolvers get their own asset uri resolver, as there should
+        // always be a 1:1 relationship between them.
+        uriResolver: BuildAssetUriResolver(),
+      );
 
   /// See [AnalyzerResolvers.custom] for docs.
-  @Deprecated('Use either the AnalyzerResolvers.custom constructor or the '
-      'AnalyzerResolvers.sharedInstance static getter to get an instance.')
+  @Deprecated(
+    'Use either the AnalyzerResolvers.custom constructor or the '
+    'AnalyzerResolvers.sharedInstance static getter to get an instance.',
+  )
   factory AnalyzerResolvers([
     AnalysisOptions? analysisOptions,
     Future<String> Function()? sdkSummaryGenerator,
     PackageConfig? packageConfig,
   ]) =>
       AnalyzerResolvers._(
-          analysisOptions: analysisOptions,
-          sdkSummaryGenerator: sdkSummaryGenerator,
-          packageConfig: packageConfig,
-          // For backwards compatibility we use the shared instance here.
-          uriResolver: BuildAssetUriResolver.sharedInstance);
+        analysisOptions: analysisOptions,
+        sdkSummaryGenerator: sdkSummaryGenerator,
+        packageConfig: packageConfig,
+        // For backwards compatibility we use the shared instance here.
+        uriResolver: BuildAssetUriResolver.sharedInstance,
+      );
 
   /// See [AnalyzerResolvers.custom] for docs.
   AnalyzerResolvers._({
@@ -562,37 +549,54 @@ class AnalyzerResolvers implements Resolvers {
     required BuildAssetUriResolver uriResolver,
   })  : _analysisOptions = analysisOptions ??
             (AnalysisOptionsImpl()
-              ..contextFeatures =
-                  _featureSet(enableExperiments: enabledExperiments)),
+              ..contextFeatures = _featureSet(
+                enableExperiments: enabledExperiments,
+              )),
         _packageConfig = packageConfig,
         _sdkSummaryGenerator =
             sdkSummaryGenerator ?? defaultSdkSummaryGenerator,
         _uriResolver = uriResolver;
 
   /// The instance that most real build systems should use.
-  static final AnalyzerResolvers sharedInstance =
-      AnalyzerResolvers._(uriResolver: BuildAssetUriResolver.sharedInstance);
+  static final AnalyzerResolvers sharedInstance = AnalyzerResolvers._(
+    uriResolver: BuildAssetUriResolver.sharedInstance,
+  );
 
   /// Create a Resolvers backed by an `AnalysisContext` using options
   /// [_analysisOptions].
   Future<void> _ensureInitialized() {
-    return Result.release(_initialized ??= Result.capture(() async {
-      _warnOnLanguageVersionMismatch();
-      final loadedConfig = _packageConfig ??=
-          await loadPackageConfigUri((await Isolate.packageConfig)!);
-      var driver = await analysisDriver(_uriResolver, _analysisOptions,
-          await _sdkSummaryGenerator(), loadedConfig);
+    return Result.release(
+      _initialized ??= Result.capture(() async {
+        _warnOnLanguageVersionMismatch();
+        final loadedConfig = _packageConfig ??= await loadPackageConfigUri(
+          (await Isolate.packageConfig)!,
+        );
+        var driver = await analysisDriver(
+          _uriResolver,
+          _analysisOptions,
+          await _sdkSummaryGenerator(),
+          loadedConfig,
+        );
 
-      _resolver = AnalyzerResolver(
-          driver, _driverPool, _readAndWritePool, _uriResolver);
-    }()));
+        _resolver = AnalyzerResolver(
+          driver,
+          _driverPool,
+          _readAndWritePool,
+          _uriResolver,
+        );
+      }()),
+    );
   }
 
   @override
   Future<ReleasableResolver> get(BuildStep buildStep) async {
     await _ensureInitialized();
     return PerActionResolver(
-        _resolver, _driverPool, _readAndWritePool, buildStep);
+      _resolver,
+      _driverPool,
+      _readAndWritePool,
+      buildStep,
+    );
   }
 
   /// Must be called between each build.
@@ -609,8 +613,9 @@ void _warnOnLanguageVersionMismatch() async {
 
   try {
     var client = HttpClient();
-    var request = await client
-        .getUrl(Uri.https('pub.dartlang.org', 'api/packages/analyzer'));
+    var request = await client.getUrl(
+      Uri.https('pub.dartlang.org', 'api/packages/analyzer'),
+    );
     var response = await request.close();
     var content = StringBuffer();
     await response
@@ -619,8 +624,10 @@ void _warnOnLanguageVersionMismatch() async {
         .asFuture<void>();
     var json = jsonDecode(content.toString()) as Map<String, Object?>;
     var latestAnalyzer = (json['latest'] as Map<String, Object?>)['version'];
-    var analyzerPubspecPath =
-        p.join(await packagePath('analyzer'), 'pubspec.yaml');
+    var analyzerPubspecPath = p.join(
+      await packagePath('analyzer'),
+      'pubspec.yaml',
+    );
     var currentAnalyzer =
         (loadYaml(await File(analyzerPubspecPath).readAsString())
             as YamlMap)['version'];
@@ -695,5 +702,7 @@ current version by running `pub deps`.
 ''');
   }
   return FeatureSet.fromEnableFlags2(
-      sdkLanguageVersion: sdkLanguageVersion, flags: enableExperiments);
+    sdkLanguageVersion: sdkLanguageVersion,
+    flags: enableExperiments,
+  );
 }

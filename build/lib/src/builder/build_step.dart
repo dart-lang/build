@@ -4,7 +4,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/element2.dart';
 import 'package:meta/meta.dart';
 import 'package:package_config/package_config_types.dart';
@@ -38,8 +37,7 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   ///     await step.resolver.libraryFor(step.inputId, allowSyntaxErrors: true);
   /// }
   /// ```
-  @Deprecated('use inputLibrary2')
-  Future<LibraryElement> get inputLibrary;
+  Future<LibraryElement2> get inputLibrary;
 
   /// Resolved library defined by [inputId].
   ///
@@ -54,6 +52,7 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   ///     await step.resolver.libraryFor(step.inputId, allowSyntaxErrors: true);
   /// }
   /// ```
+  @Deprecated('use inputLibrary')
   Future<LibraryElement2> get inputLibrary2;
 
   /// Gets an instance provided by [resource] which is guaranteed to be unique

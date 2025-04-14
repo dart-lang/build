@@ -126,7 +126,7 @@ void main() {
             AnalyzerResolvers.custom(), resourceManager, _unsupported);
         var resolver = buildStep.resolver;
 
-        var aLib = await resolver.libraryFor2(primary);
+        var aLib = await resolver.libraryFor(primary);
         expect(aLib.name3, 'a');
         expect(aLib.firstFragment.libraryImports2.length, 2);
         expect(
@@ -134,7 +134,7 @@ void main() {
                 .any((import) => import.importedLibrary2!.name3 == 'b'),
             isTrue);
 
-        var bLib = await resolver.findLibraryByName2('b');
+        var bLib = await resolver.findLibraryByName('b');
         expect(bLib!.name3, 'b');
         expect(bLib.firstFragment.libraryImports2.length, 1);
 

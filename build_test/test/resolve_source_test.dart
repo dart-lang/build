@@ -87,8 +87,7 @@ void main() {
         abstract class Foo implements Equality {}
       ''', (resolver) => resolver, tearDown: resolverDone.future);
       expect(
-          await resolver.libraries2
-              .any((library) => library.name3 == 'example'),
+          await resolver.libraries.any((library) => library.name3 == 'example'),
           true);
       var libExample = await resolver.findLibraryNotNull2('example');
       resolverDone.complete();
@@ -150,7 +149,7 @@ void main() {
       var partAsset = AssetId('build_test', 'test/_files/example_part.dart');
       await resolveAsset(partAsset, (resolver) async {
         expect(
-            () => resolver.libraryFor2(partAsset),
+            () => resolver.libraryFor(partAsset),
             throwsA(isA<NonLibraryAssetException>()
                 .having((e) => e.assetId, 'assetId', partAsset)));
       });
@@ -164,6 +163,6 @@ String _toStringId(InterfaceType t) =>
 
 extension on Resolver {
   Future<LibraryElement2> findLibraryNotNull2(String name) async {
-    return (await findLibraryByName2(name))!;
+    return (await findLibraryByName(name))!;
   }
 }
