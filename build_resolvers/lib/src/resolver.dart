@@ -87,13 +87,9 @@ class PerActionResolver implements ReleasableResolver {
 
   @override
   Stream<LibraryElement2> get libraries async* {
-    yield* _delegate.sdkLibraries2;
+    yield* _delegate.sdkLibraries;
     yield* _librariesFromEntrypoints.where((library) => !library.isInSdk);
   }
-
-  @Deprecated('use libraries instead')
-  @override
-  Stream<LibraryElement2> get libraries2 => libraries;
 
   @override
   Future<LibraryElement2?> findLibraryByName(String libraryName) async {
@@ -104,11 +100,6 @@ class PerActionResolver implements ReleasableResolver {
       return null;
     });
   }
-
-  @Deprecated('use findLibraryByName instead')
-  @override
-  Future<LibraryElement2?> findLibraryByName2(String libraryName) =>
-      findLibraryByName(libraryName);
 
   @override
   Future<bool> isLibrary(AssetId assetId) =>
@@ -124,11 +115,6 @@ class PerActionResolver implements ReleasableResolver {
         'astNodeFor $fragment',
         () => _delegate.astNodeFor(fragment, resolve: resolve),
       );
-
-  @Deprecated('use astNodeFor instead')
-  @override
-  Future<AstNode?> astNodeFor2(Fragment fragment, {bool resolve = false}) =>
-      astNodeFor(fragment, resolve: resolve);
 
   @override
   Future<CompilationUnit> compilationUnitFor(
@@ -162,14 +148,6 @@ class PerActionResolver implements ReleasableResolver {
       );
     });
   }
-
-  @Deprecated('use libraryFor instead')
-  @override
-  Future<LibraryElement2> libraryFor2(
-    AssetId assetId, {
-    bool allowSyntaxErrors = false,
-  }) =>
-      libraryFor(assetId, allowSyntaxErrors: allowSyntaxErrors);
 
   // Ensures we only resolve one entrypoint at a time from the same build step,
   // otherwise there are race conditions with `_entryPoints` being updated
@@ -218,11 +196,6 @@ class PerActionResolver implements ReleasableResolver {
   @override
   Future<AssetId> assetIdForElement(Element2 element) =>
       _delegate.assetIdForElement(element);
-
-  @Deprecated('use assetIdForElement instead')
-  @override
-  Future<AssetId> assetIdForElement2(Element2 element) =>
-      assetIdForElement(element);
 }
 
 class AnalyzerResolver implements ReleasableResolver {
@@ -283,11 +256,6 @@ class AnalyzerResolver implements ReleasableResolver {
     });
   }
 
-  @Deprecated('use astNodeFor instead')
-  @override
-  Future<AstNode?> astNodeFor2(Fragment fragment, {bool resolve = false}) =>
-      astNodeFor(fragment, resolve: resolve);
-
   @override
   Future<CompilationUnit> compilationUnitFor(
     AssetId assetId, {
@@ -344,14 +312,6 @@ class AnalyzerResolver implements ReleasableResolver {
     return library.element2;
   }
 
-  @Deprecated('use libraryFor instead')
-  @override
-  Future<LibraryElement2> libraryFor2(
-    AssetId assetId, {
-    bool allowSyntaxErrors = false,
-  }) =>
-      libraryFor(assetId, allowSyntaxErrors: allowSyntaxErrors);
-
   /// Finds syntax errors in files related to the [element].
   ///
   /// This includes the main library and existing part files.
@@ -398,10 +358,6 @@ class AnalyzerResolver implements ReleasableResolver {
     throw UnimplementedError();
   }
 
-  @Deprecated('use libraries instead')
-  @override
-  Stream<LibraryElement2> get libraries2 => libraries;
-
   Stream<LibraryElement2> get sdkLibraries {
     final loadLibraries = _sdkLibraries ??= Future.sync(() {
       final publicSdkUris = _driver.sdkLibraryUris.where(
@@ -422,19 +378,8 @@ class AnalyzerResolver implements ReleasableResolver {
     return Stream.fromFuture(loadLibraries).expand((libraries) => libraries);
   }
 
-  @Deprecated('use sdkLibraries instead')
-  Stream<LibraryElement2> get sdkLibraries2 => sdkLibraries;
-
   @override
   Future<LibraryElement2?> findLibraryByName(String libraryName) async {
-    // We don't know what libraries to expose without leaking libraries written
-    // by later phases.
-    throw UnimplementedError();
-  }
-
-  @Deprecated('use findLibraryByName instead')
-  @override
-  Future<LibraryElement2?> findLibraryByName2(String libraryName) async {
     // We don't know what libraries to expose without leaking libraries written
     // by later phases.
     throw UnimplementedError();
@@ -459,11 +404,6 @@ class AnalyzerResolver implements ReleasableResolver {
     }
     return AssetId.resolve(source.uri);
   }
-
-  @Deprecated('use assetIdForElement instead')
-  @override
-  Future<AssetId> assetIdForElement2(Element2 element) =>
-      assetIdForElement(element);
 }
 
 class AnalyzerResolvers implements Resolvers {
