@@ -39,10 +39,6 @@ class BuildStepImpl implements BuildStep {
     return resolver.libraryFor(inputId);
   }
 
-  @Deprecated('use inputLibrary')
-  @override
-  Future<LibraryElement2> get inputLibrary2 => inputLibrary;
-
   /// The list of all outputs which are expected/allowed to be output from this
   /// step.
   @override
@@ -236,21 +232,12 @@ class _DelayedResolver implements Resolver {
     return completer.stream;
   }
 
-  @Deprecated('use libraries')
-  @override
-  Stream<LibraryElement2> get libraries2 => libraries;
-
   @override
   Future<AstNode?> astNodeFor(
     Fragment fragment, {
     bool resolve = false,
   }) async =>
       (await _delegate).astNodeFor(fragment, resolve: resolve);
-
-  @Deprecated('use astNodeFor')
-  @override
-  Future<AstNode?> astNodeFor2(Fragment fragment, {bool resolve = false}) =>
-      astNodeFor(fragment, resolve: resolve);
 
   @override
   Future<CompilationUnit> compilationUnitFor(
@@ -272,29 +259,11 @@ class _DelayedResolver implements Resolver {
         allowSyntaxErrors: allowSyntaxErrors,
       );
 
-  @Deprecated('use libraryFor')
-  @override
-  Future<LibraryElement2> libraryFor2(
-    AssetId assetId, {
-    bool allowSyntaxErrors = false,
-  }) async =>
-      libraryFor(assetId, allowSyntaxErrors: allowSyntaxErrors);
-
   @override
   Future<LibraryElement2?> findLibraryByName(String libraryName) async =>
       (await _delegate).findLibraryByName(libraryName);
 
-  @Deprecated('use findLibraryByName')
-  @override
-  Future<LibraryElement2?> findLibraryByName2(String libraryName) async =>
-      findLibraryByName(libraryName);
-
   @override
   Future<AssetId> assetIdForElement(Element2 element) async =>
       (await _delegate).assetIdForElement(element);
-
-  @Deprecated('use assetIdForElement')
-  @override
-  Future<AssetId> assetIdForElement2(Element2 element) async =>
-      assetIdForElement(element);
 }
