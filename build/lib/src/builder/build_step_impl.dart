@@ -34,6 +34,7 @@ class BuildStepImpl implements BuildStep {
   @override
   final AssetId inputId;
 
+  @Deprecated('use inputLibrary2')
   @override
   Future<LibraryElement> get inputLibrary async {
     if (_isComplete) throw BuildStepCompletedException();
@@ -220,6 +221,7 @@ class _DelayedResolver implements Resolver {
   Future<bool> isLibrary(AssetId assetId) async =>
       (await _delegate).isLibrary(assetId);
 
+  @Deprecated('use libraries2')
   @override
   Stream<LibraryElement> get libraries {
     var completer = StreamCompleter<LibraryElement>();
@@ -234,12 +236,14 @@ class _DelayedResolver implements Resolver {
     return completer.stream;
   }
 
+  @Deprecated('use astNodeFor2')
   @override
   Future<AstNode?> astNodeFor(Element element, {bool resolve = false}) async =>
       (await _delegate).astNodeFor(element, resolve: resolve);
 
   @override
-  Future<AstNode?> astNodeFor2(Fragment fragment, {bool resolve = false}) async =>
+  Future<AstNode?> astNodeFor2(Fragment fragment,
+          {bool resolve = false}) async =>
       (await _delegate).astNodeFor2(fragment, resolve: resolve);
 
   @override
@@ -248,6 +252,7 @@ class _DelayedResolver implements Resolver {
       (await _delegate)
           .compilationUnitFor(assetId, allowSyntaxErrors: allowSyntaxErrors);
 
+  @Deprecated('use libraryFor2')
   @override
   Future<LibraryElement> libraryFor(AssetId assetId,
           {bool allowSyntaxErrors = false}) async =>
@@ -260,6 +265,7 @@ class _DelayedResolver implements Resolver {
       (await _delegate)
           .libraryFor2(assetId, allowSyntaxErrors: allowSyntaxErrors);
 
+  @Deprecated('use findLibraryByName2')
   @override
   Future<LibraryElement?> findLibraryByName(String libraryName) async =>
       (await _delegate).findLibraryByName(libraryName);
@@ -268,6 +274,7 @@ class _DelayedResolver implements Resolver {
   Future<LibraryElement2?> findLibraryByName2(String libraryName) async =>
       (await _delegate).findLibraryByName2(libraryName);
 
+  @Deprecated('use assetIdForElement2')
   @override
   Future<AssetId> assetIdForElement(Element element) async =>
       (await _delegate).assetIdForElement(element);

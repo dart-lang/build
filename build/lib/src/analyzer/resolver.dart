@@ -28,6 +28,7 @@ abstract class Resolver {
   ///  - Every public `dart:` library part of the SDK.
   ///  - All libraries recursively accessible from the mentioned sources, for
   ///    instance because due to imports or exports.
+  @Deprecated('use libraries2')
   Stream<LibraryElement> get libraries;
 
   /// All libraries resolved by this resolver.
@@ -52,9 +53,10 @@ abstract class Resolver {
   /// Returns `null` if the ast node can not be found. This can happen if an
   /// element is coming from a summary, or is unavailable for some other
   /// reason.
+  @Deprecated('use astNodeFor2')
   Future<AstNode?> astNodeFor(Element element, {bool resolve = false});
 
-  /// Returns the parsed [AstNode] for [Element].
+  /// Returns the parsed [AstNode] for [Fragment].
   ///
   /// This should always be preferred over using the [AnalysisSession]
   /// directly, because it avoids [InconsistentAnalysisException] issues.
@@ -82,6 +84,7 @@ abstract class Resolver {
   /// * Throws [NonLibraryAssetException] if [assetId] is not a Dart library.
   /// * If the [assetId] has syntax errors, and [allowSyntaxErrors] is set to
   ///   `false` (the default), throws a [SyntaxErrorInAssetException].
+  @Deprecated('use libraryFor2')
   Future<LibraryElement> libraryFor(AssetId assetId,
       {bool allowSyntaxErrors = false});
 
@@ -103,6 +106,7 @@ abstract class Resolver {
   /// **NOTE**: In general, its recommended to use [libraryFor] with an absolute
   /// asset id instead of a named identifier that has the possibility of not
   /// being unique.
+  @Deprecated('use findLibraryByName2')
   Future<LibraryElement?> findLibraryByName(String libraryName);
 
   /// Returns the first resolved library identified by [libraryName].
@@ -115,8 +119,7 @@ abstract class Resolver {
   /// **NOTE**: In general, its recommended to use [libraryFor] with an absolute
   /// asset id instead of a named identifier that has the possibility of not
   /// being unique.
-  Future<LibraryElement2?> findLibraryByName2(
-      String libraryName);
+  Future<LibraryElement2?> findLibraryByName2(String libraryName);
 
   /// Returns the [AssetId] of the Dart library or part declaring [element].
   ///
@@ -126,6 +129,7 @@ abstract class Resolver {
   ///
   /// The returned asset is not necessarily the asset that should be imported to
   /// use the element, it may be a part file instead of the library.
+  @Deprecated('use assetIdForElement2')
   Future<AssetId> assetIdForElement(Element element);
 
   /// Returns the [AssetId] of the Dart library or part declaring [element].

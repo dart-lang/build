@@ -14,8 +14,6 @@ analyzer:
   exclude:
     # Prevents extra work during some e2e test runs.
     - "dart2js_test/**"
-    # Common top level directories containing generated files in any package.
-    - "build/**"
     - ".dart_tool/**"
 linter:
   rules:
