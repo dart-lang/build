@@ -29,7 +29,7 @@ void main() {
       return resolveSources({'a|web/main.dart': ' main() {}'}, (
         resolver,
       ) async {
-        var lib = await resolver.libraryFor2(entryPoint);
+        var lib = await resolver.libraryFor(entryPoint);
         expect(lib, isNotNull);
       }, resolvers: AnalyzerResolvers());
     });
@@ -47,7 +47,7 @@ void main() {
               ''',
         },
         (resolver) async {
-          var lib = await resolver.libraryFor2(entryPoint);
+          var lib = await resolver.libraryFor(entryPoint);
           expect(lib.firstFragment.libraryImports2.length, 2);
           var libA = lib
             ..firstFragment
@@ -73,7 +73,7 @@ void main() {
               ''',
         },
         (resolver) async {
-          var lib = await resolver.libraryFor2(entryPoint);
+          var lib = await resolver.libraryFor(entryPoint);
           expect(lib.firstFragment.libraryImports2.length, 2);
           var libB = lib
             ..firstFragment
@@ -100,7 +100,7 @@ void main() {
         },
         (resolver) async {
           await resolver.isLibrary(entryPoint);
-          var libs = await resolver.libraries2.toList();
+          var libs = await resolver.libraries.toList();
           expect(
             libs,
             contains(predicate((LibraryElement2 l) => l.name3 == 'b')),
@@ -123,7 +123,7 @@ void main() {
         (resolver) async {
           await resolver.isLibrary(AssetId('b', 'lib/b.dart'));
           await expectLater(
-            resolver.libraries2,
+            resolver.libraries,
             neverEmits(
               isA<LibraryElement2>().having((e) => e.name3, 'name', 'b'),
             ),
@@ -149,7 +149,7 @@ void main() {
           },
           (resolver) async {
             await resolver.compilationUnitFor(entryPoint);
-            var libs = await resolver.libraries2.toList();
+            var libs = await resolver.libraries.toList();
             expect(
               libs,
               contains(predicate((LibraryElement2 l) => l.name3 == 'b')),
@@ -165,7 +165,7 @@ void main() {
         await resolveSources(
           {'a|web/main.dart': '// @dart=3.1\n\nmain() {}'},
           (resolver) async {
-            var lib = await resolver.libraryFor2(entryPoint);
+            var lib = await resolver.libraryFor(entryPoint);
             expect(lib.languageVersion.effective.major, 3);
             expect(lib.languageVersion.effective.minor, 1);
           },
@@ -181,7 +181,7 @@ void main() {
             'build_resolvers',
             'lib/build_resolvers.dart',
           );
-          var lib = await resolver.libraryFor2(buildResolversId);
+          var lib = await resolver.libraryFor(buildResolversId);
           var currentPackageConfig = await loadPackageConfigUri(
             (await Isolate.packageConfig)!,
           );
@@ -207,7 +207,7 @@ void main() {
         await resolveSources(
           {'a|web/main.dart': 'main() {}'},
           (resolver) async {
-            var lib = await resolver.libraryFor2(entryPoint);
+            var lib = await resolver.libraryFor(entryPoint);
             expect(lib.languageVersion.effective.major, customVersion.major);
             expect(lib.languageVersion.effective.minor, customVersion.minor);
           },
@@ -227,7 +227,7 @@ void main() {
         await resolveSources(
           {'a|web/main.dart': 'main() {}'},
           (resolver) async {
-            var lib = await resolver.libraryFor2(entryPoint);
+            var lib = await resolver.libraryFor(entryPoint);
             expect(
               lib.languageVersion.effective.major,
               sdkLanguageVersion.major,
@@ -257,7 +257,7 @@ void main() {
           await resolveSources({'a|web/main.dart': 'main() {}'}, (
             resolver,
           ) async {
-            await resolver.libraryFor2(entryPoint);
+            await resolver.libraryFor(entryPoint);
           }, resolvers: AnalyzerResolvers());
         },
       );
@@ -283,10 +283,10 @@ void main() {
 
       test('can be resolved', () {
         return runWith((resolver) async {
-          final main = await resolver.libraryFor2(entryPoint);
+          final main = await resolver.libraryFor(entryPoint);
           expect(main, isNotNull);
 
-          final other = await resolver.libraryFor2(otherId);
+          final other = await resolver.libraryFor(otherId);
           expect(other.name3, 'other');
         });
       });
@@ -294,14 +294,14 @@ void main() {
       test('are included in library stream', () {
         return runWith((resolver) async {
           await expectLater(
-            resolver.libraries2.map((l) => l.name3),
+            resolver.libraries.map((l) => l.name3),
             neverEmits('other'),
           );
 
-          await resolver.libraryFor2(otherId);
+          await resolver.libraryFor(otherId);
 
           await expectLater(
-            resolver.libraries2.map((l) => l.name3),
+            resolver.libraries.map((l) => l.name3),
             emitsThrough('other'),
           );
         });
@@ -309,10 +309,10 @@ void main() {
 
       test('can be found by name', () {
         return runWith((resolver) async {
-          await resolver.libraryFor2(otherId);
+          await resolver.libraryFor(otherId);
 
           await expectLater(
-            resolver.findLibraryByName2('other'),
+            resolver.findLibraryByName('other'),
             completion(isNotNull),
           );
         });
@@ -331,7 +331,7 @@ void main() {
               } ''',
         },
         (resolver) async {
-          var lib = await resolver.libraryFor2(entryPoint);
+          var lib = await resolver.libraryFor(entryPoint);
           expect(lib.fragments.length, 1);
         },
         resolvers: AnalyzerResolvers(),
@@ -349,7 +349,7 @@ void main() {
               ''',
         },
         (resolver) async {
-          var lib = await resolver.libraryFor2(entryPoint);
+          var lib = await resolver.libraryFor(entryPoint);
           var clazz = lib.getClass2('A');
           expect(clazz, isNotNull);
           expect(clazz!.interfaces, isEmpty);
@@ -370,7 +370,7 @@ void main() {
               ''',
         },
         (resolver) async {
-          var lib = await resolver.libraryFor2(entryPoint);
+          var lib = await resolver.libraryFor(entryPoint);
           var clazz = lib.getClass2('A');
           expect(clazz, isNotNull);
           expect(clazz!.interfaces, hasLength(1));
@@ -395,7 +395,7 @@ void main() {
               ''',
         },
         (resolver) async {
-          var lib = await resolver.libraryFor2(entryPoint);
+          var lib = await resolver.libraryFor(entryPoint);
           var clazz = lib.getClass2('A');
           expect(clazz, isNotNull);
           expect(clazz!.interfaces, hasLength(1));
@@ -424,7 +424,7 @@ void main() {
               ''',
         },
         (resolver) async {
-          var lib = await resolver.libraryFor2(entryPoint);
+          var lib = await resolver.libraryFor(entryPoint);
           var clazz = lib.getClass2('A');
           expect(clazz, isNotNull);
           expect(clazz!.interfaces, isEmpty);
@@ -448,8 +448,7 @@ void main() {
           'a|lib/d.dart': 'library a.d;',
         },
         (resolver) async {
-          var libs =
-              await resolver.libraries2.where((l) => !l.isInSdk).toList();
+          var libs = await resolver.libraries.where((l) => !l.isInSdk).toList();
           expect(
             libs.map((l) => l.name3),
             unorderedEquals(['a.main', 'a.a', 'a.b', 'a.c', 'a.d']),
@@ -485,10 +484,10 @@ void main() {
                 ''',
         },
         (resolver) async {
-          var a = await resolver.findLibraryByName2('a.a');
+          var a = await resolver.findLibraryByName('a.a');
           expect(a, isNotNull);
 
-          var main = await resolver.findLibraryByName2('');
+          var main = await resolver.findLibraryByName('');
           expect(main, isNotNull);
         },
         resolvers: AnalyzerResolvers(),
@@ -514,7 +513,7 @@ void main() {
               class Bar {}''',
         },
         (resolver) async {
-          var main = (await resolver.findLibraryByName2('web.main'))!;
+          var main = (await resolver.findLibraryByName('web.main'))!;
           var meta = main
               .getClass2('Foo')!
               .supertype!
@@ -542,7 +541,7 @@ void main() {
                 import 'package:a/a.dart'; ''',
         },
         (resolver) async {
-          var libs = await resolver.libraries2.map((lib) => lib.name3).toList();
+          var libs = await resolver.libraries.map((lib) => lib.name3).toList();
           expect(libs.contains('a'), isTrue);
           expect(libs.contains('b'), isTrue);
         },
@@ -564,12 +563,12 @@ void main() {
               ''',
         },
         (resolver) async {
-          var entry = await resolver.libraryFor2(AssetId('a', 'lib/a.dart'));
+          var entry = await resolver.libraryFor(AssetId('a', 'lib/a.dart'));
           var classDefinition = entry.firstFragment.libraryImports2
               .map((l) => l.importedLibrary2!.getClass2('SomeClass'))
               .singleWhere((c) => c != null)!;
           expect(
-            await resolver.assetIdForElement2(classDefinition),
+            await resolver.assetIdForElement(classDefinition),
             AssetId('a', 'lib/b.dart'),
           );
         },
@@ -595,14 +594,14 @@ void main() {
               ''',
         },
         (resolver) async {
-          var entry = await resolver.libraryFor2(AssetId('a', 'lib/a.dart'));
+          var entry = await resolver.libraryFor(AssetId('a', 'lib/a.dart'));
           final element = entry.topLevelFunctions
               .firstWhere((e) => e.name3 == 'main')
               .metadata2
               .annotations
               .single;
           await expectLater(
-            () => resolver.assetIdForElement2(element.element2!),
+            () => resolver.assetIdForElement(element.element2!),
             throwsA(isA<UnresolvableAssetException>()),
           );
         },
@@ -622,7 +621,7 @@ int? get x => 1;
                 ''',
           },
           (resolver) async {
-            var lib = await resolver.libraryFor2(entryPoint);
+            var lib = await resolver.libraryFor(entryPoint);
             expect(
               lib.languageVersion.effective.major,
               sdkLanguageVersion.major,
@@ -648,13 +647,13 @@ int? get x => 1;
         await resolveSources({'a|web/main.dart': '', 'a|web/other.dart': ''}, (
           resolver,
         ) async {
-          var lib = await resolver.libraryFor2(entryPoint);
+          var lib = await resolver.libraryFor(entryPoint);
           expect(
             await resolver.isLibrary(AssetId('a', 'web/other.dart')),
             true,
           );
-          var newLib = await resolver.libraryFor2(
-            await resolver.assetIdForElement2(lib),
+          var newLib = await resolver.libraryFor(
+            await resolver.assetIdForElement(lib),
           );
           expect(
             await newLib.session.getResolvedLibraryByElement2(newLib),
@@ -678,7 +677,7 @@ int? get x => 1;
           },
           (resolver) async {
             await expectLater(
-              resolver.libraryFor2(AssetId.parse('a|errors.dart')),
+              resolver.libraryFor(AssetId.parse('a|errors.dart')),
               throwsA(isA<SyntaxErrorInAssetException>()),
             );
             await expectLater(
@@ -707,7 +706,7 @@ int? get x => 1;
           },
           (resolver) async {
             await expectLater(
-              resolver.libraryFor2(AssetId.parse('a|lib.dart')),
+              resolver.libraryFor(AssetId.parse('a|lib.dart')),
               throwsA(
                 isA<SyntaxErrorInAssetException>().having(
                   (e) => e.syntaxErrors,
@@ -743,7 +742,7 @@ int? get x => 1;
           },
           (resolver) async {
             await expectLater(
-              resolver.libraryFor2(
+              resolver.libraryFor(
                 AssetId.parse('a|errors.dart'),
                 allowSyntaxErrors: true,
               ),
@@ -784,7 +783,7 @@ int? get x => 1;
               ),
             );
             await expectLater(
-              resolver.libraryFor2(AssetId.parse('a|errors.dart')),
+              resolver.libraryFor(AssetId.parse('a|errors.dart')),
               expectation,
             );
             await expectLater(
@@ -809,7 +808,7 @@ int? get x => 1;
           },
           (resolver) async {
             await expectLater(
-              resolver.libraryFor2(AssetId.parse('a|errors.dart')),
+              resolver.libraryFor(AssetId.parse('a|errors.dart')),
               completion(isNotNull),
             );
             await expectLater(
@@ -835,7 +834,7 @@ int? get x => 1;
       (resolver) async {
         final assetId = AssetId.parse('a|lib/b.dart');
         await expectLater(
-          () => resolver.libraryFor2(assetId),
+          () => resolver.libraryFor(assetId),
           throwsA(
             const TypeMatcher<NonLibraryAssetException>().having(
               (e) => e.assetId,
@@ -850,10 +849,10 @@ int? get x => 1;
 
   test('Can resolve sdk libraries that are not imported', () async {
     await resolveSources({'a|lib/a.dart': ''}, (resolver) async {
-      var convert = await resolver.findLibraryByName2('dart.convert');
+      var convert = await resolver.findLibraryByName('dart.convert');
       expect(convert, isNotNull);
       expect(convert!.getClass2('Codec'), isNotNull);
-      var allLibraries = await resolver.libraries2.toList();
+      var allLibraries = await resolver.libraries.toList();
       expect(
         allLibraries.map((e) => e.uri.toString()),
         containsAll([
@@ -885,7 +884,7 @@ int? get x => 1;
 
   test('can resolve sdk libraries without seeing anything else', () async {
     await resolveSources({'a|lib/not_dart.txt': ''}, (resolver) async {
-      var allLibraries = await resolver.libraries2.toList();
+      var allLibraries = await resolver.libraries.toList();
 
       expect(
         allLibraries.map((e) => e.uri.toString()),
@@ -907,9 +906,9 @@ int? get x => 1;
         '.dart': ['.txt'],
       },
       build: (buildStep, buildExtensions) async {
-        await buildStep.inputLibrary2;
+        await buildStep.inputLibrary;
 
-        final allLibraries = await buildStep.resolver.libraries2.toList();
+        final allLibraries = await buildStep.resolver.libraries.toList();
         expect(
           allLibraries.map((e) => e.uri.toString()),
           containsAll(['dart:io', 'dart:core', 'dart:html']),
@@ -953,7 +952,7 @@ int? get x => 1;
               } ''',
         },
         (resolver) async {
-          var entry = await resolver.libraryFor2(AssetId('a', 'lib/a.dart'));
+          var entry = await resolver.libraryFor(AssetId('a', 'lib/a.dart'));
           var classDefinition = entry.getClass2('MyClass')!;
           var color = classDefinition.getField2('color')!;
 
@@ -1086,9 +1085,9 @@ int? get x => 1;
       return resolveSources({'a|web/main.dart': ' main() {}'}, (
         resolver,
       ) async {
-        var lib = await resolver.libraryFor2(entryPoint);
+        var lib = await resolver.libraryFor(entryPoint);
         var unit = await resolver
-            .astNodeFor2(lib.topLevelFunctions.first.firstFragment);
+            .astNodeFor(lib.topLevelFunctions.first.firstFragment);
         expect(unit, isA<FunctionDeclaration>());
         expect(unit!.toSource(), 'main() {}');
         expect((unit as FunctionDeclaration).declaredFragment, isNull);
@@ -1097,8 +1096,8 @@ int? get x => 1;
 
     test('can return an resolved ast', () {
       return resolveSources({'a|web/main.dart': 'main() {}'}, (resolver) async {
-        var lib = await resolver.libraryFor2(entryPoint);
-        var unit = await resolver.astNodeFor2(
+        var lib = await resolver.libraryFor(entryPoint);
+        var unit = await resolver.astNodeFor(
           lib.topLevelFunctions.first.firstFragment,
           resolve: true,
         );
@@ -1114,8 +1113,8 @@ int? get x => 1;
 
     test('can return a resolved compilation unit', () {
       return resolveSources({'a|web/main.dart': 'main() {}'}, (resolver) async {
-        var lib = await resolver.libraryFor2(entryPoint);
-        var unit = await resolver.astNodeFor2(
+        var lib = await resolver.libraryFor(entryPoint);
+        var unit = await resolver.astNodeFor(
           lib.firstFragment,
           resolve: true,
         );

@@ -4,7 +4,6 @@
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/session.dart';
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/error/error.dart';
 
@@ -28,8 +27,7 @@ abstract class Resolver {
   ///  - Every public `dart:` library part of the SDK.
   ///  - All libraries recursively accessible from the mentioned sources, for
   ///    instance because due to imports or exports.
-  @Deprecated('use libraries2')
-  Stream<LibraryElement> get libraries;
+  Stream<LibraryElement2> get libraries;
 
   /// All libraries resolved by this resolver.
   ///
@@ -40,21 +38,8 @@ abstract class Resolver {
   ///  - Every public `dart:` library part of the SDK.
   ///  - All libraries recursively accessible from the mentioned sources, for
   ///    instance because due to imports or exports.
+  @Deprecated('use libraries')
   Stream<LibraryElement2> get libraries2;
-
-  /// Returns the parsed [AstNode] for [Element].
-  ///
-  /// This should always be preferred over using the [AnalysisSession]
-  /// directly, because it avoids [InconsistentAnalysisException] issues.
-  ///
-  /// If [resolve] is `true` then you will get a resolved ast node, otherwise
-  /// it will only be a parsed ast node.
-  ///
-  /// Returns `null` if the ast node can not be found. This can happen if an
-  /// element is coming from a summary, or is unavailable for some other
-  /// reason.
-  @Deprecated('use astNodeFor2')
-  Future<AstNode?> astNodeFor(Element element, {bool resolve = false});
 
   /// Returns the parsed [AstNode] for [Fragment].
   ///
@@ -67,6 +52,20 @@ abstract class Resolver {
   /// Returns `null` if the ast node can not be found. This can happen if an
   /// element is coming from a summary, or is unavailable for some other
   /// reason.
+  Future<AstNode?> astNodeFor(Fragment fragment, {bool resolve = false});
+
+  /// Returns the parsed [AstNode] for [Fragment].
+  ///
+  /// This should always be preferred over using the [AnalysisSession]
+  /// directly, because it avoids [InconsistentAnalysisException] issues.
+  ///
+  /// If [resolve] is `true` then you will get a resolved ast node, otherwise
+  /// it will only be a parsed ast node.
+  ///
+  /// Returns `null` if the ast node can not be found. This can happen if an
+  /// element is coming from a summary, or is unavailable for some other
+  /// reason.
+  @Deprecated('use astNodeFor')
   Future<AstNode?> astNodeFor2(Fragment element, {bool resolve = false});
 
   /// Returns a parsed AST structor representing the file defined in [assetId].
@@ -76,25 +75,31 @@ abstract class Resolver {
   ///
   /// This is a much cheaper api compared to [libraryFor], because it will only
   /// parse a single file and does not give you a resolved element model.
-  Future<CompilationUnit> compilationUnitFor(AssetId assetId,
-      {bool allowSyntaxErrors = false});
+  Future<CompilationUnit> compilationUnitFor(
+    AssetId assetId, {
+    bool allowSyntaxErrors = false,
+  });
 
   /// Returns a resolved library representing the file defined in [assetId].
   ///
   /// * Throws [NonLibraryAssetException] if [assetId] is not a Dart library.
   /// * If the [assetId] has syntax errors, and [allowSyntaxErrors] is set to
   ///   `false` (the default), throws a [SyntaxErrorInAssetException].
-  @Deprecated('use libraryFor2')
-  Future<LibraryElement> libraryFor(AssetId assetId,
-      {bool allowSyntaxErrors = false});
+  Future<LibraryElement2> libraryFor(
+    AssetId assetId, {
+    bool allowSyntaxErrors = false,
+  });
 
   /// Returns a resolved library representing the file defined in [assetId].
   ///
   /// * Throws [NonLibraryAssetException] if [assetId] is not a Dart library.
   /// * If the [assetId] has syntax errors, and [allowSyntaxErrors] is set to
   ///   `false` (the default), throws a [SyntaxErrorInAssetException].
-  Future<LibraryElement2> libraryFor2(AssetId assetId,
-      {bool allowSyntaxErrors = false});
+  @Deprecated('use libraryFor')
+  Future<LibraryElement2> libraryFor2(
+    AssetId assetId, {
+    bool allowSyntaxErrors = false,
+  });
 
   /// Returns the first resolved library identified by [libraryName].
   ///
@@ -106,8 +111,7 @@ abstract class Resolver {
   /// **NOTE**: In general, its recommended to use [libraryFor] with an absolute
   /// asset id instead of a named identifier that has the possibility of not
   /// being unique.
-  @Deprecated('use findLibraryByName2')
-  Future<LibraryElement?> findLibraryByName(String libraryName);
+  Future<LibraryElement2?> findLibraryByName(String libraryName);
 
   /// Returns the first resolved library identified by [libraryName].
   ///
@@ -119,6 +123,7 @@ abstract class Resolver {
   /// **NOTE**: In general, its recommended to use [libraryFor] with an absolute
   /// asset id instead of a named identifier that has the possibility of not
   /// being unique.
+  @Deprecated('use findLibraryByName')
   Future<LibraryElement2?> findLibraryByName2(String libraryName);
 
   /// Returns the [AssetId] of the Dart library or part declaring [element].
@@ -129,8 +134,7 @@ abstract class Resolver {
   ///
   /// The returned asset is not necessarily the asset that should be imported to
   /// use the element, it may be a part file instead of the library.
-  @Deprecated('use assetIdForElement2')
-  Future<AssetId> assetIdForElement(Element element);
+  Future<AssetId> assetIdForElement(Element2 element);
 
   /// Returns the [AssetId] of the Dart library or part declaring [element].
   ///
@@ -140,6 +144,7 @@ abstract class Resolver {
   ///
   /// The returned asset is not necessarily the asset that should be imported to
   /// use the element, it may be a part file instead of the library.
+  @Deprecated('use assetIdForElement')
   Future<AssetId> assetIdForElement2(Element2 element);
 }
 
@@ -224,8 +229,10 @@ class SyntaxErrorInAssetException implements Exception {
   String toString() {
     final buffer = StringBuffer()
       ..writeln('This builder requires Dart inputs without syntax errors.')
-      ..writeln('However, ${assetId.uri} (or an existing part) contains the '
-          'following errors.');
+      ..writeln(
+        'However, ${assetId.uri} (or an existing part) contains the '
+        'following errors.',
+      );
 
     // Avoid generating too much output for syntax errors. The user likely has
     // an editor that shows them anyway.
@@ -241,8 +248,9 @@ class SyntaxErrorInAssetException implements Exception {
 
       // Output messages like "foo.dart:3:4: Expected a semicolon here."
       buffer.writeln(
-          '$sourceName:${position.lineNumber}:${position.columnNumber}: '
-          '${error.message}');
+        '$sourceName:${position.lineNumber}:${position.columnNumber}: '
+        '${error.message}',
+      );
     }
 
     final additionalErrors = entries.length - _maxErrorsInToString;
