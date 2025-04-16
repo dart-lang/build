@@ -12,6 +12,7 @@ import 'asset_deps.dart';
 import 'asset_deps_loader.dart';
 import 'library_cycle.dart';
 import 'library_cycle_graph.dart';
+import 'phased_library_cycle_graphs.dart';
 import 'phased_value.dart';
 
 /// Loads [LibraryCycleGraph]s during a phased build.
@@ -374,8 +375,8 @@ class LibraryCycleGraphLoader {
           final depCycle = cycleById[dep]!;
           if (identical(depCycle, root)) continue;
           if (alreadyAddedChildren.add(depCycle)) {
+            graph.children.add(dep);
             final childGraph = _graphs[dep]!.expiringValueAt(phase: phase);
-            graph.children.add(childGraph.value);
             expiresAfter = earliestPhase(expiresAfter, childGraph.expiresAfter);
           }
         }
@@ -482,8 +483,29 @@ class LibraryCycleGraphLoader {
     AssetId id,
   ) async {
     final graph = await libraryCycleGraphOf(assetDepsLoader, id);
-    return graph.valueAt(phase: assetDepsLoader.phase).transitiveDeps;
+    return graph
+        .valueAt(phase: assetDepsLoader.phase)
+        .transitiveDeps(
+          lookupGraph:
+              (id) => _graphs[id]!.valueAt(phase: assetDepsLoader.phase),
+        );
   }
+
+  Future<Iterable<LibraryCycleGraph>> transitiveGraphsOf(
+    AssetDepsLoader assetDepsLoader,
+    AssetId id,
+  ) async {
+    final graph = await libraryCycleGraphOf(assetDepsLoader, id);
+    return graph
+        .valueAt(phase: assetDepsLoader.phase)
+        .transitiveGraphs(
+          lookupGraph:
+              (id) => _graphs[id]!.valueAt(phase: assetDepsLoader.phase),
+        );
+  }
+
+  PhasedLibraryCycleGraphs phasedLibraryCycleGraphs() =>
+      PhasedLibraryCycleGraphs((b) => b.graphs.addAll(_graphs));
 
   @override
   String toString() => '''

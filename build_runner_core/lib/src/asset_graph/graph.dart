@@ -61,6 +61,8 @@ class AssetGraph implements GeneratedAssetHider {
   final Map<String, Map<PostProcessBuildStepId, Set<AssetId>>>
   _postProcessBuildStepOutputs = {};
 
+  PhasedLibraryCycleGraphs? previousBuildPhasedLibraryCycleGraphs;
+
   AssetGraph._(
     this.buildPhasesDigest,
     this.dartVersion,
@@ -106,7 +108,8 @@ class AssetGraph implements GeneratedAssetHider {
     return graph;
   }
 
-  List<int> serialize() => serializeAssetGraph(this);
+  List<int> serialize([PhasedLibraryCycleGraphs? graphs]) =>
+      serializeAssetGraph(this, graphs);
 
   @visibleForTesting
   Map<String, Map<PostProcessBuildStepId, Set<AssetId>>>

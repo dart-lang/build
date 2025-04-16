@@ -9,6 +9,7 @@ import 'dart:convert';
 import 'package:build/build.dart';
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
+import 'package:build_resolvers/src/internal.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
@@ -214,7 +215,9 @@ class Build {
           () async {
             await readerWriter.writeAsBytes(
               AssetId(options.packageGraph.root.name, assetGraphPath),
-              assetGraph.serialize(),
+              assetGraph.serialize(
+                AnalysisDriverModel.sharedInstance.phasedLibraryCycleGraphs(),
+              ),
             );
           },
         );
