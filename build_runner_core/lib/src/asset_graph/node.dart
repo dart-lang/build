@@ -5,6 +5,8 @@
 import 'dart:convert';
 
 import 'package:build/build.dart' hide Builder;
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
@@ -178,7 +180,7 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     b.generatedNodeConfiguration.builderOptionsId = builderOptionsId;
     b.generatedNodeConfiguration.phaseNumber = phaseNumber;
     b.generatedNodeConfiguration.isHidden = isHidden;
-    b.generatedNodeState.inputs.replace(inputs ?? []);
+    b.generatedNodeState.inputs.assets.replace(inputs ?? []);
     b.generatedNodeState.pendingBuildAction = pendingBuildAction;
     b.generatedNodeState.wasOutput = wasOutput;
     b.generatedNodeState.isFailure = isFailure;
@@ -236,7 +238,7 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
 
   /// The generated node inputs, or the glob node inputs, or `null` if the node
   /// is not of one of those two types.
-  BuiltSet<AssetId>? get inputs {
+  Object? get inputs {
     switch (type) {
       case NodeType.generated:
         return generatedNodeState!.inputs;
@@ -244,6 +246,17 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
         return globNodeState!.inputs;
       default:
         return null;
+    }
+  }
+
+  bool get hasInputs {
+    switch (type) {
+      case NodeType.generated:
+        return generatedNodeState!.inputs.isNotEmpty;
+      case NodeType.glob:
+        return globNodeState!.inputs.isNotEmpty;
+      default:
+        return false;
     }
   }
 }
@@ -289,7 +302,7 @@ abstract class GeneratedNodeState
 
   /// All the inputs that were read when generating this asset, or deciding not
   /// to generate it.
-  BuiltSet<AssetId> get inputs;
+  GeneratedNodeInputs get inputs;
 
   /// The next work that needs doing on this node.
   PendingBuildAction get pendingBuildAction;

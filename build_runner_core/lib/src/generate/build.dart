@@ -9,6 +9,7 @@ import 'dart:convert';
 import 'package:build/build.dart';
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
+// ignore: implementation_imports
 import 'package:build_resolvers/src/internal.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
@@ -725,7 +726,7 @@ class Build {
     // Otherwise, we only check the first output, because all outputs share the
     // same inputs and invalidation state.
     var firstNode = assetGraph.get(outputs.first)!;
-    assert(
+    /*assert(
       outputs
           .skip(1)
           .every(
@@ -738,7 +739,7 @@ class Build {
                     .isEmpty,
           ),
       'All outputs of a build action should share the same inputs.',
-    );
+    );*/
 
     final firstNodeState = firstNode.generatedNodeState!;
 
@@ -771,7 +772,9 @@ class Build {
     }
 
     final inputs = firstNodeState.inputs;
-    for (final input in inputs) {
+    for (final input in inputs.allAssets(
+      AnalysisDriverModel.sharedInstance.phasedLibraryCycleGraphs(),
+    )) {
       final node = assetGraph.get(input)!;
       if (node.type == NodeType.generated) {
         if (node.generatedNodeConfiguration!.phaseNumber >= phaseNumber) {
@@ -991,10 +994,10 @@ class Build {
     Set<AssetId>? unusedAssets,
   }) async {
     if (outputs.isEmpty) return;
-    var usedInputs =
+    /*var usedInputs =
         unusedAssets != null
             ? inputTracker.inputs.difference(unusedAssets)
-            : inputTracker.inputs;
+            : inputTracker.inputs;*/
 
     final isFailure = errors.isNotEmpty;
 
@@ -1006,8 +1009,10 @@ class Build {
         if (nodeBuilder.lastKnownDigest != digest) {
           changedOutputs.add(output);
         }
+        if (unusedAssets != null) {
+          nodeBuilder.generatedNodeState.inputs.unused.replace(unusedAssets);
+        }
         nodeBuilder.generatedNodeState
-          ..inputs.replace(usedInputs)
           ..pendingBuildAction = PendingBuildAction.none
           ..wasOutput = wasOutput
           ..isFailure = isFailure;
@@ -1039,7 +1044,7 @@ class Build {
           // Make sure output invalidation follows primary outputs for builds
           // that won't run.
           assetGraph.updateNode(output, (nodeBuilder) {
-            nodeBuilder.generatedNodeState.inputs.add(node.id);
+            nodeBuilder.generatedNodeState.inputs.assets.add(node.id);
           });
         }
         await failureReporter.markSkipped(

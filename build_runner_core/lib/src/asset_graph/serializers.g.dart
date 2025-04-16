@@ -11,6 +11,7 @@ Serializers _$serializers =
           ..add(AssetNode.serializer)
           ..add(ExpiringValue.serializer)
           ..add(GeneratedNodeConfiguration.serializer)
+          ..add(GeneratedNodeInputs.serializer)
           ..add(GeneratedNodeState.serializer)
           ..add(GlobNodeConfiguration.serializer)
           ..add(GlobNodeState.serializer)
@@ -43,12 +44,20 @@ Serializers _$serializers =
             () => new SetBuilder<AssetId>(),
           )
           ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(AssetId)]),
+            () => new ListBuilder<AssetId>(),
+          )
+          ..addBuilderFactory(
             const FullType(BuiltSet, const [const FullType(AssetId)]),
             () => new SetBuilder<AssetId>(),
           )
           ..addBuilderFactory(
-            const FullType(BuiltList, const [const FullType(AssetId)]),
-            () => new ListBuilder<AssetId>(),
+            const FullType(BuiltSet, const [const FullType(AssetId)]),
+            () => new SetBuilder<AssetId>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltSet, const [const FullType(AssetId)]),
+            () => new SetBuilder<AssetId>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltSet, const [const FullType(AssetId)]),
