@@ -9,6 +9,8 @@ import 'package:build/build.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:test/test.dart';
 
+// ignore_for_file: deprecated_member_use, #3977 Element2 migration.
+
 void main() {
   test('should resolve a dart file with a part file', () async {
     await testPhases(

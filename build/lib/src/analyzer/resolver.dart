@@ -10,6 +10,8 @@ import 'package:analyzer/error/error.dart';
 import '../asset/id.dart';
 import '../builder/build_step.dart';
 
+// ignore_for_file: deprecated_member_use, #3977 Element2 migration.
+
 /// Standard interface for resolving Dart source code as part of a build.
 abstract class Resolver {
   /// Returns whether [assetId] represents an Dart library file.

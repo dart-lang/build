@@ -16,6 +16,8 @@ import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
 
+// ignore_for_file: deprecated_member_use, #3977 Element2 migration.
+
 void main() {
   late ResourceManager resourceManager;
 

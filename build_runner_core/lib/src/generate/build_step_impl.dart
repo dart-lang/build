@@ -20,6 +20,8 @@ import 'package:package_config/package_config_types.dart';
 import 'input_tracker.dart';
 import 'single_step_reader_writer.dart';
 
+// ignore_for_file: deprecated_member_use, #3977 Element2 migration.
+
 /// A single step in the build processes.
 ///
 /// This represents a single input and its expected and real outputs. It also

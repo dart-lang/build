@@ -13,6 +13,8 @@ import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../resource/resource.dart';
 
+// ignore_for_file: deprecated_member_use, #3977 Element2 migration.
+
 /// A single step in a build process.
 ///
 /// This represents a single [inputId], logic around resolving as a library,

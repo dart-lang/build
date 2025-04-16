@@ -10,6 +10,8 @@ import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:test/test.dart';
 
+// ignore_for_file: deprecated_member_use, #3977 Element2 migration.
+
 void main() {
   group('Resolver Reuse', () {
     test(

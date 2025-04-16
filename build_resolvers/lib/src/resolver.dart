@@ -31,6 +31,8 @@ import 'analysis_driver_model.dart';
 import 'sdk_summary.dart';
 import 'shared_resource_pool.dart';
 
+// ignore_for_file: deprecated_member_use, #3977 Element2 migration.
+
 /// Implements [Resolver.libraries] and [Resolver.findLibraryByName] by crawling
 /// down from entrypoints.
 class PerActionResolver implements ReleasableResolver {
