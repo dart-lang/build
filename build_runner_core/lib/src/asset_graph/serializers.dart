@@ -5,6 +5,8 @@
 import 'dart:convert';
 
 import 'package:build/build.dart' show AssetId, PostProcessBuildStep;
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/serializer.dart';
 import 'package:crypto/crypto.dart';
@@ -30,10 +32,17 @@ final identityAssetIdSerializer = IdentitySerializer<AssetId>(
   assetIdSerializer,
 );
 
+final libraryCycleGraphSerializer =
+    LibraryCycleGraph.serializer as StructuredSerializer<LibraryCycleGraph>;
+
+final identityLibraryCycleGraphSerializer =
+    IdentitySerializer<LibraryCycleGraph>(libraryCycleGraphSerializer);
+
 @SerializersFor([AssetNode])
 final Serializers serializers =
     (_$serializers.toBuilder()
           ..add(identityAssetIdSerializer)
+          ..add(identityLibraryCycleGraphSerializer)
           ..add(DigestSerializer())
           ..add(MapSerializer())
           ..add(SetSerializer())

@@ -12,6 +12,7 @@ const _version = 28;
 
 /// Deserializes an [AssetGraph] from a [Map].
 AssetGraph deserializeAssetGraph(List<int> bytes) {
+  //print('**** \n \n **** deserialize \n \n');
   dynamic serializedGraph;
   try {
     serializedGraph = jsonDecode(utf8.decode(bytes));
@@ -23,12 +24,18 @@ AssetGraph deserializeAssetGraph(List<int> bytes) {
     throw AssetGraphCorruptedException();
   }
 
-  identityAssetIdSerializer.deserializeWithObjects(
-    (serializedGraph['ids'] as List).map(
-      (id) => assetIdSerializer.deserialize(serializers, id as Object),
-    ),
+  //print('**** ids');
+  identityAssetIdSerializer.deserializeObjects(
+    //serializers,
+    serializedGraph['ids'] as List,
+  );
+  //print('**** graphs');
+  identityLibraryCycleGraphSerializer.deserializeObjects(
+    // serializers,
+    serializedGraph['graphs'] as List,
   );
 
+  //print('**** more');
   var packageLanguageVersions = {
     for (var entry
         in (serializedGraph['packageLanguageVersions'] as Map<String, dynamic>)
@@ -63,6 +70,7 @@ AssetGraph deserializeAssetGraph(List<int> bytes) {
   }
 
   identityAssetIdSerializer.reset();
+  identityLibraryCycleGraphSerializer.reset();
   return graph;
 }
 
@@ -73,14 +81,21 @@ AssetNode _deserializeAssetNode(List serializedNode) =>
 /// Serializes an [AssetGraph] into a [Map].
 List<int> serializeAssetGraph(AssetGraph graph) {
   // Serialize nodes first so all `AssetId` instances are seen by
-  // `identityAssetIdSeralizer`.
+  // `identityAssetIdSerializer` and `libraryCycleGraphSerializer`.
   final nodes = graph.allNodes
       .map((node) => serializers.serializeWith(AssetNode.serializer, node))
       .toList(growable: false);
+  final postProcessOutputs = serializers.serialize(
+    graph._postProcessBuildStepOutputs,
+    specifiedType: postProcessBuildStepOutputsFullType,
+  );
 
   var result = <String, dynamic>{
     'version': _version,
-    'ids': identityAssetIdSerializer.serializedObjects,
+    'ids': identityAssetIdSerializer.serializedObjects(serializers),
+    'graphs': identityLibraryCycleGraphSerializer.serializedObjects(
+      serializers,
+    ),
     'dart_version': graph.dartVersion,
     'nodes': nodes,
     'buildActionsDigest': _serializeDigest(graph.buildPhasesDigest),
@@ -89,13 +104,11 @@ List<int> serializeAssetGraph(AssetGraph graph) {
             .map((pkg, version) => MapEntry(pkg, version?.toString()))
             .toMap(),
     'enabledExperiments': graph.enabledExperiments.toList(),
-    'postProcessOutputs': serializers.serialize(
-      graph._postProcessBuildStepOutputs,
-      specifiedType: postProcessBuildStepOutputsFullType,
-    ),
+    'postProcessOutputs': postProcessOutputs,
   };
 
   identityAssetIdSerializer.reset();
+  identityLibraryCycleGraphSerializer.reset();
   return utf8.encode(json.encode(result));
 }
 

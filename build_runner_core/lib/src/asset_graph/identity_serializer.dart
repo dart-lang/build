@@ -20,21 +20,25 @@ class IdentitySerializer<T> implements PrimitiveSerializer<T> {
   final Serializer<T> delegate;
   final PrimitiveSerializer<T>? _primitiveDelegate;
   final StructuredSerializer<T>? _structuredDelegate;
+  final FullType specifiedType;
 
-  final Map<T, int> _ids = Map.identity();
-  final List<T> _objects = [];
+  Map<T, int> _ids = Map.identity();
+  List<T?> _objects = [];
   List<Object?> _serializedObjects = [];
+
+  int lastTried = 0;
 
   /// A serializer wrapping [delegate] to deduplicate by identity.
   IdentitySerializer(this.delegate)
     : _primitiveDelegate = delegate is PrimitiveSerializer<T> ? delegate : null,
       _structuredDelegate =
-          delegate is StructuredSerializer<T> ? delegate : null;
+          delegate is StructuredSerializer<T> ? delegate : null,
+      specifiedType = FullType(delegate.types.first);
 
   /// Sets the stored object values to [objects].
   ///
   /// Serialized values are indices into this list.
-  void deserializeWithObjects(Iterable<T> objects) {
+  /*void deserializeWithObjects(Iterable<T> objects) {
     _ids.clear();
     _objects.clear();
     _serializedObjects.clear();
@@ -42,18 +46,57 @@ class IdentitySerializer<T> implements PrimitiveSerializer<T> {
       _objects.add(object);
       _ids[object] = _objects.length - 1;
     }
+  }*/
+
+  void deserializeObjects(List<Object?> serializedObjects) {
+    _ids.clear();
+    _serializedObjects = serializedObjects;
+    _objects = List.filled(_serializedObjects.length, null);
+    /*print('got ${_serializedObjects.length}');
+    print('into ${_objects.length}');
+    try {
+      for (var i = _serializedObjects.length - 1; i != -1; --i) {
+        print('deserialize $i ${_serializedObjects[i]}');
+        if (_primitiveDelegate != null) {
+          _objects[i] = _primitiveDelegate.deserialize(
+            serializers,
+            _serializedObjects[i]!,
+          );
+        } else {
+          _objects[i] = _structuredDelegate!.deserialize(
+            serializers,
+            _serializedObjects[i] as Iterable,
+          );
+          _ids[_objects[i] as T] = i;
+        }
+      }
+    } catch (e, st) {
+      print('$e $st');
+      rethrow;
+    }*/
   }
 
   /// The list of unique objects encountered since the most recent [reset].
-  List<Object?> get serializedObjects => _serializedObjects;
+  List<Object?> serializedObjects(Serializers serializers) {
+    while (_serializedObjects.length < _objects.length) {
+      // print('$_serializedObjects, $_objects');
+      final object = _objects[_serializedObjects.length]!;
+      final serialized =
+          _primitiveDelegate == null
+              ? _structuredDelegate!.serialize(serializers, object)
+              : _primitiveDelegate.serialize(serializers, object);
+      _serializedObjects.add(serialized);
+    }
+    return _serializedObjects;
+  }
 
   /// Clears the ID to object and serialized object mappings.
   ///
   /// Call this after serializing or deserializing to avoid retaining objects in
   /// memory; or, don't call it to continue using the same IDs and objects.
   void reset() {
-    _ids.clear();
-    _objects.clear();
+    _ids = {};
+    _objects = [];
     _serializedObjects = [];
   }
 
@@ -68,7 +111,24 @@ class IdentitySerializer<T> implements PrimitiveSerializer<T> {
     Serializers serializers,
     Object serialized, {
     FullType specifiedType = FullType.unspecified,
-  }) => _objects[serialized as int];
+  }) {
+    serialized as int;
+    if (_objects[serialized] == null) {
+      if (_primitiveDelegate != null) {
+        _objects[serialized] = _primitiveDelegate.deserialize(
+          serializers,
+          _serializedObjects[serialized]!,
+        );
+      } else {
+        _objects[serialized] = _structuredDelegate!.deserialize(
+          serializers,
+          _serializedObjects[serialized] as Iterable,
+        );
+        _ids[_objects[serialized] as T] = serialized;
+      }
+    }
+    return _objects[serialized]!;
+  }
 
   @override
   Object serialize(
@@ -78,13 +138,7 @@ class IdentitySerializer<T> implements PrimitiveSerializer<T> {
   }) {
     // If it has already been seen, return the ID.
     return _ids.putIfAbsent(object, () {
-      // Otherwise, serialize it, store the value and serialized value, and
-      // return the index of the last of `_objects` as the ID.
-      final serialized =
-          _primitiveDelegate == null
-              ? _structuredDelegate!.serialize(serializers, object)
-              : _primitiveDelegate.serialize(serializers, object);
-      _serializedObjects.add(serialized);
+      // print('add $object');
       return (_objects..add(object)).length - 1;
     });
   }

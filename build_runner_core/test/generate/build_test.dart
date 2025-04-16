@@ -1817,7 +1817,7 @@ void main() {
       var fileBNode = graph.get(makeAssetId('a|lib/file.b'))!;
       var fileCNode = graph.get(makeAssetId('a|lib/file.c'))!;
       expect(
-        outputNode.generatedNodeState!.inputs,
+        outputNode.generatedNodeState!.inputs.iterable,
         unorderedEquals([fileANode.id, fileCNode.id]),
       );
       final computedOutputs = graph.computeOutputs();

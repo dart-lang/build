@@ -186,7 +186,7 @@ class AssetGraph implements GeneratedAssetHider {
       }
     }
     _nodesByPackage.putIfAbsent(node.id.package, () => {})[node.id.path] = node;
-    if (node.inputs?.isNotEmpty ?? false) {
+    if (node.hasInputs) {
       _outputs = null;
     }
 
@@ -282,7 +282,7 @@ class AssetGraph implements GeneratedAssetHider {
     for (var output in (outputs[node.id] ?? const <AssetId>{})) {
       updateNodeIfPresent(output, (nodeBuilder) {
         if (nodeBuilder.type == NodeType.generated) {
-          nodeBuilder.generatedNodeState.inputs.remove(id);
+          // nodeBuilder.generatedNodeState.inputs.remove(id);
         } else if (nodeBuilder.type == NodeType.glob) {
           nodeBuilder.globNodeState
             ..inputs.remove(id)
@@ -292,7 +292,7 @@ class AssetGraph implements GeneratedAssetHider {
     }
 
     if (node.type == NodeType.generated) {
-      for (var input in node.generatedNodeState!.inputs) {
+      for (var input in node.generatedNodeState!.inputs.iterable) {
         // We may have already removed this node entirely.
         updateNodeIfPresent(input, (nodeBuilder) {
           nodeBuilder.primaryOutputs.remove(id);
@@ -330,7 +330,7 @@ class AssetGraph implements GeneratedAssetHider {
     final result = <AssetId, Set<AssetId>>{};
     for (final node in allNodes) {
       if (node.type == NodeType.generated) {
-        for (final input in node.generatedNodeState!.inputs) {
+        for (final input in node.generatedNodeState!.inputs.iterable) {
           result.putIfAbsent(input, () => {}).add(node.id);
         }
         result
@@ -775,7 +775,7 @@ class AssetGraph implements GeneratedAssetHider {
     for (var output in outputs) {
       updateNodeIfPresent(output, (nodeBuilder) {
         if (nodeBuilder.type == NodeType.generated) {
-          nodeBuilder.generatedNodeState.inputs.add(input);
+          nodeBuilder.generatedNodeState.inputs.assets.add(input);
         } else if (nodeBuilder.type == NodeType.glob) {
           nodeBuilder.globNodeState.inputs.add(input);
         }

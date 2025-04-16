@@ -109,25 +109,22 @@ class AnalysisDriverModel {
     required bool transitive,
   }) async {
     Iterable<AssetId> idsToSyncOntoFilesystem = [entrypoint];
-    Iterable<AssetId> inputIds = [entrypoint];
 
     // If requested, find transitive imports.
     if (transitive) {
       // Note: `transitiveDepsOf` can cause loads that cause builds that cause a
       // recursive `_performResolve` on this same `AnalysisDriver` instance.
       final nodeLoader = AssetDepsLoader(buildStep.phasedReader);
-      idsToSyncOntoFilesystem = await _graphLoader.transitiveDepsOf(
+      final graph = await _graphLoader.transitiveDepsGraphOf(
         nodeLoader,
         entrypoint,
       );
-      inputIds = idsToSyncOntoFilesystem;
+      idsToSyncOntoFilesystem = graph.transitiveDeps;
+      buildStep.inputTracker.addGraph(graph);
+    } else {
+      // Notify [buildStep] of its inputs.
+      buildStep.inputTracker.add(entrypoint);
     }
-
-    // Notify [buildStep] of its inputs.
-    buildStep.inputTracker.addAll(
-      primaryInput: buildStep.inputId,
-      inputs: inputIds,
-    );
 
     await withDriverResource((driver) async {
       // Sync changes onto the "URI resolver", the in-memory filesystem.

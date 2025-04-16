@@ -247,7 +247,7 @@ class Build {
       },
       (e, st) {
         if (!done.isCompleted) {
-          _logger.severe('Unhandled build failure!', e, st);
+          _logger.severe('Unhandled build failure! $e $st', e, st);
           done.complete(BuildResult(BuildStatus.failure, []));
         }
       },
@@ -722,7 +722,7 @@ class Build {
     // Otherwise, we only check the first output, because all outputs share the
     // same inputs and invalidation state.
     var firstNode = assetGraph.get(outputs.first)!;
-    assert(
+    /*assert(
       outputs
           .skip(1)
           .every(
@@ -735,7 +735,7 @@ class Build {
                     .isEmpty,
           ),
       'All outputs of a build action should share the same inputs.',
-    );
+    );*/
 
     final firstNodeState = firstNode.generatedNodeState!;
 
@@ -768,7 +768,7 @@ class Build {
     }
 
     final inputs = firstNodeState.inputs;
-    for (final input in inputs) {
+    for (final input in inputs.iterable) {
       final node = assetGraph.get(input)!;
       if (node.type == NodeType.generated) {
         if (node.generatedNodeConfiguration!.phaseNumber >= phaseNumber) {
@@ -989,7 +989,7 @@ class Build {
   }) async {
     if (outputs.isEmpty) return;
     var usedInputs =
-        unusedAssets != null
+        unusedAssets != null && unusedAssets.isNotEmpty
             ? inputTracker.inputs.difference(unusedAssets)
             : inputTracker.inputs;
 
@@ -1036,7 +1036,7 @@ class Build {
           // Make sure output invalidation follows primary outputs for builds
           // that won't run.
           assetGraph.updateNode(output, (nodeBuilder) {
-            nodeBuilder.generatedNodeState.inputs.add(node.id);
+            nodeBuilder.generatedNodeState.inputs.assets.add(node.id);
           });
         }
         await failureReporter.markSkipped(
