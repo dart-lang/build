@@ -409,7 +409,7 @@ class AssetHandler {
         // We always want this revalidated, which requires specifying both
         // max-age=0 and must-revalidate.
         //
-        // See spec https://goo.gl/Lhvttg for more info about this header.
+        // See spec https://goo.gle/maxage for more info about this header.
         HttpHeaders.cacheControlHeader: 'max-age=0, must-revalidate',
       };
 
