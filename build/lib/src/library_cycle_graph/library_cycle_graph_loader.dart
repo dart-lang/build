@@ -12,6 +12,7 @@ import 'asset_deps.dart';
 import 'asset_deps_loader.dart';
 import 'library_cycle.dart';
 import 'library_cycle_graph.dart';
+import 'phased_asset_deps.dart';
 import 'phased_library_cycle_graphs.dart';
 import 'phased_value.dart';
 
@@ -506,6 +507,9 @@ class LibraryCycleGraphLoader {
 
   PhasedLibraryCycleGraphs phasedLibraryCycleGraphs() =>
       PhasedLibraryCycleGraphs((b) => b.graphs.addAll(_graphs));
+
+  PhasedAssetDeps phasedAssetDeps() =>
+      PhasedAssetDeps((b) => b.assetDeps.addAll(_assetDeps));
 
   @override
   String toString() => '''

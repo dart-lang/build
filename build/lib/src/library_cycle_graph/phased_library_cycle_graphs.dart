@@ -35,7 +35,9 @@ abstract class PhasedLibraryCycleGraphs
         Map<LibraryCycleGraph, LibraryCycleGraphBuilder>.identity();
 
     for (final phasedGraph in graphs.values) {
+      var fromPhase = 0;
       for (final expiringGraph in phasedGraph.values) {
+        final toPhase = expiringGraph.expiresAfter;
         final graph = expiringGraph.value;
         reversedGraphs.putIfAbsent(
           graph,
@@ -43,13 +45,18 @@ abstract class PhasedLibraryCycleGraphs
         );
         for (final child in graph.children) {
           // TODO(davidmorgan): fix lookup.
-          final childGraph = graphs[child]!.values.first.value;
-          final builder = reversedGraphs.putIfAbsent(
-            childGraph,
-            () => LibraryCycleGraphBuilder()..root.replace(childGraph.root),
-          );
-          builder.children.add(graph.root.ids.first);
+          for (final childGraph in graphs[child]!.valueRange(
+            fromPhase: fromPhase,
+            toPhase: toPhase,
+          )) {
+            final builder = reversedGraphs.putIfAbsent(
+              childGraph,
+              () => LibraryCycleGraphBuilder()..root.replace(childGraph.root),
+            );
+            builder.children.add(graph.root.ids.first);
+          }
         }
+        if (toPhase != null) fromPhase = toPhase;
       }
     }
 

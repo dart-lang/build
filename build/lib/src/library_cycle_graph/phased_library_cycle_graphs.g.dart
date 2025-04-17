@@ -78,6 +78,7 @@ class _$PhasedLibraryCycleGraphsSerializer
 class _$PhasedLibraryCycleGraphs extends PhasedLibraryCycleGraphs {
   @override
   final BuiltMap<AssetId, PhasedValue<LibraryCycleGraph>> graphs;
+  PhasedLibraryCycleGraphs? __reversed;
 
   factory _$PhasedLibraryCycleGraphs([
     void Function(PhasedLibraryCycleGraphsBuilder)? updates,
@@ -90,6 +91,9 @@ class _$PhasedLibraryCycleGraphs extends PhasedLibraryCycleGraphs {
       'graphs',
     );
   }
+
+  @override
+  PhasedLibraryCycleGraphs get reversed => __reversed ??= super.reversed;
 
   @override
   PhasedLibraryCycleGraphs rebuild(

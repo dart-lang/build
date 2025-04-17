@@ -117,6 +117,20 @@ abstract class PhasedValue<T>
   /// is not known.
   T valueAt({required int phase}) => expiringValueAt(phase: phase).value;
 
+  Iterable<T> valueRange({required int fromPhase, int? toPhase}) sync* {
+    for (final value in values) {
+      if (value.expiresAfter != null && value.expiresAfter! < fromPhase) {
+        continue;
+      }
+      if (toPhase != null &&
+          value.expiresAfter != null &&
+          value.expiresAfter! > toPhase) {
+        break;
+      }
+      yield value.value;
+    }
+  }
+
   /// The value after all changes have happened.
   ///
   /// Throws if not [isComplete], meaning the last value is not known.

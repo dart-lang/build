@@ -23,5 +23,7 @@ abstract class AssetDeps implements Built<AssetDeps, AssetDepsBuilder> {
 
   factory AssetDeps(Iterable<AssetId> deps) =>
       _$AssetDeps._(deps: BuiltSet.of(deps));
+  factory AssetDeps.build(void Function(AssetDepsBuilder) updates) =
+      _$AssetDeps;
   AssetDeps._();
 }
