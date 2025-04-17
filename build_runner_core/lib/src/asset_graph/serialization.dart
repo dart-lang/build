@@ -62,6 +62,11 @@ AssetGraph deserializeAssetGraph(List<int> bytes) {
     }
   }
 
+  graph.previousBuildPhasedLibraryCycleGraphs = serializers.deserializeWith(
+    PhasedLibraryCycleGraphs.serializer,
+    serializedGraph['phasedLibraryCycleGraphs'],
+  );
+
   identityAssetIdSerializer.reset();
   return graph;
 }
@@ -71,12 +76,19 @@ AssetNode _deserializeAssetNode(List serializedNode) =>
         as AssetNode;
 
 /// Serializes an [AssetGraph] into a [Map].
-List<int> serializeAssetGraph(AssetGraph graph) {
+List<int> serializeAssetGraph(
+  AssetGraph graph, [
+  PhasedLibraryCycleGraphs? phasedLibraryCycleGraphs,
+]) {
   // Serialize nodes first so all `AssetId` instances are seen by
   // `identityAssetIdSeralizer`.
   final nodes = graph.allNodes
       .map((node) => serializers.serializeWith(AssetNode.serializer, node))
       .toList(growable: false);
+  final serializedPhasedGraphs = serializers.serializeWith(
+    PhasedLibraryCycleGraphs.serializer,
+    phasedLibraryCycleGraphs,
+  );
 
   var result = <String, dynamic>{
     'version': _version,
@@ -93,6 +105,7 @@ List<int> serializeAssetGraph(AssetGraph graph) {
       graph._postProcessBuildStepOutputs,
       specifiedType: postProcessBuildStepOutputsFullType,
     ),
+    'phasedLibraryCycleGraphs': serializedPhasedGraphs,
   };
 
   identityAssetIdSerializer.reset();

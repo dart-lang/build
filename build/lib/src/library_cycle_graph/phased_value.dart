@@ -6,6 +6,7 @@ import 'dart:math';
 
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
+import 'package:built_value/serializer.dart';
 
 part 'phased_value.g.dart';
 
@@ -44,6 +45,8 @@ part 'phased_value.g.dart';
 /// cases, fixed or changing exactly once, as different implementation types.
 abstract class PhasedValue<T>
     implements Built<PhasedValue<T>, PhasedValueBuilder<T>> {
+  static Serializer<PhasedValue> get serializer => _$phasedValueSerializer;
+
   BuiltList<ExpiringValue<T>> get values;
 
   factory PhasedValue([void Function(PhasedValueBuilder<T>)? updates]) =
@@ -153,6 +156,8 @@ abstract class PhasedValue<T>
 /// value in the next phase.
 abstract class ExpiringValue<T>
     implements Built<ExpiringValue<T>, ExpiringValueBuilder<T>> {
+  static Serializer<ExpiringValue> get serializer => _$expiringValueSerializer;
+
   T get value;
   int? get expiresAfter;
 

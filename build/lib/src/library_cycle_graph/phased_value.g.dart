@@ -6,6 +6,160 @@ part of 'phased_value.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+Serializer<PhasedValue<Object?>> _$phasedValueSerializer =
+    new _$PhasedValueSerializer();
+Serializer<ExpiringValue<Object?>> _$expiringValueSerializer =
+    new _$ExpiringValueSerializer();
+
+class _$PhasedValueSerializer
+    implements StructuredSerializer<PhasedValue<Object?>> {
+  @override
+  final Iterable<Type> types = const [PhasedValue, _$PhasedValue];
+  @override
+  final String wireName = 'PhasedValue';
+
+  @override
+  Iterable<Object?> serialize(
+    Serializers serializers,
+    PhasedValue<Object?> object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    final isUnderspecified =
+        specifiedType.isUnspecified || specifiedType.parameters.isEmpty;
+    if (!isUnderspecified) serializers.expectBuilder(specifiedType);
+    final parameterT =
+        isUnderspecified ? FullType.object : specifiedType.parameters[0];
+
+    final result = <Object?>[
+      'values',
+      serializers.serialize(
+        object.values,
+        specifiedType: new FullType(BuiltList, [
+          new FullType(ExpiringValue, [parameterT]),
+        ]),
+      ),
+    ];
+
+    return result;
+  }
+
+  @override
+  PhasedValue<Object?> deserialize(
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    final isUnderspecified =
+        specifiedType.isUnspecified || specifiedType.parameters.isEmpty;
+    if (!isUnderspecified) serializers.expectBuilder(specifiedType);
+    final parameterT =
+        isUnderspecified ? FullType.object : specifiedType.parameters[0];
+
+    final result =
+        isUnderspecified
+            ? new PhasedValueBuilder<Object?>()
+            : serializers.newBuilder(specifiedType)
+                as PhasedValueBuilder<Object?>;
+
+    final iterator = serialized.iterator;
+    while (iterator.moveNext()) {
+      final key = iterator.current! as String;
+      iterator.moveNext();
+      final Object? value = iterator.current;
+      switch (key) {
+        case 'values':
+          result.values.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: new FullType(BuiltList, [
+                    new FullType(ExpiringValue, [parameterT]),
+                  ]),
+                )!
+                as BuiltList<Object?>,
+          );
+          break;
+      }
+    }
+
+    return result.build();
+  }
+}
+
+class _$ExpiringValueSerializer
+    implements StructuredSerializer<ExpiringValue<Object?>> {
+  @override
+  final Iterable<Type> types = const [ExpiringValue, _$ExpiringValue];
+  @override
+  final String wireName = 'ExpiringValue';
+
+  @override
+  Iterable<Object?> serialize(
+    Serializers serializers,
+    ExpiringValue<Object?> object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    final isUnderspecified =
+        specifiedType.isUnspecified || specifiedType.parameters.isEmpty;
+    if (!isUnderspecified) serializers.expectBuilder(specifiedType);
+    final parameterT =
+        isUnderspecified ? FullType.object : specifiedType.parameters[0];
+
+    final result = <Object?>[
+      'value',
+      serializers.serialize(object.value, specifiedType: parameterT),
+    ];
+    Object? value;
+    value = object.expiresAfter;
+    if (value != null) {
+      result
+        ..add('expiresAfter')
+        ..add(serializers.serialize(value, specifiedType: const FullType(int)));
+    }
+    return result;
+  }
+
+  @override
+  ExpiringValue<Object?> deserialize(
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    final isUnderspecified =
+        specifiedType.isUnspecified || specifiedType.parameters.isEmpty;
+    if (!isUnderspecified) serializers.expectBuilder(specifiedType);
+    final parameterT =
+        isUnderspecified ? FullType.object : specifiedType.parameters[0];
+
+    final result =
+        isUnderspecified
+            ? new ExpiringValueBuilder<Object?>()
+            : serializers.newBuilder(specifiedType)
+                as ExpiringValueBuilder<Object?>;
+
+    final iterator = serialized.iterator;
+    while (iterator.moveNext()) {
+      final key = iterator.current! as String;
+      iterator.moveNext();
+      final Object? value = iterator.current;
+      switch (key) {
+        case 'value':
+          result.value = serializers.deserialize(
+            value,
+            specifiedType: parameterT,
+          );
+          break;
+        case 'expiresAfter':
+          result.expiresAfter =
+              serializers.deserialize(value, specifiedType: const FullType(int))
+                  as int?;
+          break;
+      }
+    }
+
+    return result.build();
+  }
+}
+
 class _$PhasedValue<T> extends PhasedValue<T> {
   @override
   final BuiltList<ExpiringValue<T>> values;

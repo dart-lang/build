@@ -423,11 +423,9 @@ void main() {
         final allGraphs = Set<LibraryCycleGraph>.identity();
         for (final id in [a1, a2, a3, a4, a5, a6, a7, a8, a9]) {
           final phasedCycle = await loader.libraryCycleOf(nodeLoader, id);
-          final phasedGraph = await loader.libraryCycleGraphOf(nodeLoader, id);
           for (final phase in [1, 2, 3, 4, 5, 6]) {
             allCycles.add(phasedCycle.valueAt(phase: phase));
-            final graph = phasedGraph.valueAt(phase: phase);
-            allGraphs.addAll(graph.transitiveGraphs);
+            allGraphs.addAll(await loader.transitiveGraphsOf(nodeLoader, id));
           }
         }
 

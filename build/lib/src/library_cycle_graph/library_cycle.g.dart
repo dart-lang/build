@@ -6,6 +6,66 @@ part of 'library_cycle.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+Serializer<LibraryCycle> _$libraryCycleSerializer =
+    new _$LibraryCycleSerializer();
+
+class _$LibraryCycleSerializer implements StructuredSerializer<LibraryCycle> {
+  @override
+  final Iterable<Type> types = const [LibraryCycle, _$LibraryCycle];
+  @override
+  final String wireName = 'LibraryCycle';
+
+  @override
+  Iterable<Object?> serialize(
+    Serializers serializers,
+    LibraryCycle object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    final result = <Object?>[
+      'ids',
+      serializers.serialize(
+        object.ids,
+        specifiedType: const FullType(BuiltSet, const [
+          const FullType(AssetId),
+        ]),
+      ),
+    ];
+
+    return result;
+  }
+
+  @override
+  LibraryCycle deserialize(
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    final result = new LibraryCycleBuilder();
+
+    final iterator = serialized.iterator;
+    while (iterator.moveNext()) {
+      final key = iterator.current! as String;
+      iterator.moveNext();
+      final Object? value = iterator.current;
+      switch (key) {
+        case 'ids':
+          result.ids.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(BuiltSet, const [
+                    const FullType(AssetId),
+                  ]),
+                )!
+                as BuiltSet<Object?>,
+          );
+          break;
+      }
+    }
+
+    return result.build();
+  }
+}
+
 class _$LibraryCycle extends LibraryCycle {
   @override
   final BuiltSet<AssetId> ids;
