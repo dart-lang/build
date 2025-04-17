@@ -59,7 +59,7 @@ class AssetGraph implements GeneratedAssetHider {
   /// Created with empty outputs at the start of the build if it's a new build
   /// step; or deserialized with previous build outputs if it has run before.
   final Map<String, Map<PostProcessBuildStepId, Set<AssetId>>>
-  _postProcessBuildStepOutputs = {};
+      _postProcessBuildStepOutputs = {};
 
   PhasedLibraryCycleGraphs? previousBuildPhasedLibraryCycleGraphs;
 
@@ -113,7 +113,7 @@ class AssetGraph implements GeneratedAssetHider {
 
   @visibleForTesting
   Map<String, Map<PostProcessBuildStepId, Set<AssetId>>>
-  get allPostProcessBuildStepOutputs => _postProcessBuildStepOutputs;
+      get allPostProcessBuildStepOutputs => _postProcessBuildStepOutputs;
 
   /// Checks if [id] exists in the graph.
   bool contains(AssetId id) =>
@@ -189,7 +189,7 @@ class AssetGraph implements GeneratedAssetHider {
       }
     }
     _nodesByPackage.putIfAbsent(node.id.package, () => {})[node.id.path] = node;
-    if (node.hasInputs) {
+    if (node.inputs?.isNotEmpty ?? false) {
       _outputs = null;
     }
 
@@ -285,7 +285,7 @@ class AssetGraph implements GeneratedAssetHider {
     for (var output in (outputs[node.id] ?? const <AssetId>{})) {
       updateNodeIfPresent(output, (nodeBuilder) {
         if (nodeBuilder.type == NodeType.generated) {
-          // nodeBuilder.generatedNodeState.inputs.remove(id);
+          nodeBuilder.generatedNodeState.inputs.assets.remove(id);
         } else if (nodeBuilder.type == NodeType.glob) {
           nodeBuilder.globNodeState
             ..inputs.remove(id)
@@ -295,12 +295,12 @@ class AssetGraph implements GeneratedAssetHider {
     }
 
     if (node.type == NodeType.generated) {
-      /*for (var input in node.generatedNodeState!.inputs) {
+      for (var input in node.generatedNodeState!.inputs.assets) {
         // We may have already removed this node entirely.
         updateNodeIfPresent(input, (nodeBuilder) {
           nodeBuilder.primaryOutputs.remove(id);
         });
-      }*/
+      }
     } else if (node.type == NodeType.glob) {
       for (var input in node.globNodeState!.inputs) {
         // We may have already removed this node entirely.
@@ -333,9 +333,7 @@ class AssetGraph implements GeneratedAssetHider {
     final result = <AssetId, Set<AssetId>>{};
     for (final node in allNodes) {
       if (node.type == NodeType.generated) {
-        for (final input in node.generatedNodeState!.inputs.allAssets(
-          previousBuildPhasedLibraryCycleGraphs!,
-        )) {
+        for (final input in node.generatedNodeState!.inputs.assets) {
           result.putIfAbsent(input, () => {}).add(node.id);
         }
         result
@@ -364,7 +362,8 @@ class AssetGraph implements GeneratedAssetHider {
   /// All the post process build steps for `package`.
   Iterable<PostProcessBuildStepId> postProcessBuildStepIds({
     required String package,
-  }) => _postProcessBuildStepOutputs[package]?.keys ?? const [];
+  }) =>
+      _postProcessBuildStepOutputs[package]?.keys ?? const [];
 
   /// Creates or updates state for a [PostProcessBuildStepId].
   void updatePostProcessBuildStep(
@@ -372,10 +371,9 @@ class AssetGraph implements GeneratedAssetHider {
     required Set<AssetId> outputs,
   }) {
     _postProcessBuildStepOutputs.putIfAbsent(
-          buildStepId.input.package,
-          () => {},
-        )[buildStepId] =
-        outputs;
+      buildStepId.input.package,
+      () => {},
+    )[buildStepId] = outputs;
   }
 
   /// Gets outputs of a [PostProcessBuildStepId].
@@ -392,11 +390,11 @@ class AssetGraph implements GeneratedAssetHider {
 
   /// The outputs which were, or would have been, produced by failing actions.
   Iterable<AssetNode> get failedOutputs => allNodes.where(
-    (n) =>
-        n.type == NodeType.generated &&
-        n.generatedNodeState!.isFailure &&
-        n.generatedNodeState!.pendingBuildAction == PendingBuildAction.none,
-  );
+        (n) =>
+            n.type == NodeType.generated &&
+            n.generatedNodeState!.isFailure &&
+            n.generatedNodeState!.pendingBuildAction == PendingBuildAction.none,
+      );
 
   /// All the generated outputs for a particular phase.
   Iterable<AssetNode> outputsForPhase(String package, int phase) =>
@@ -855,12 +853,12 @@ AssetId builderOptionsIdForAction(BuildAction action, int actionNumber) {
 }
 
 Set<AssetId> placeholderIdsFor(PackageGraph packageGraph) => Set<AssetId>.from(
-  packageGraph.allPackages.keys.expand(
-    (package) => [
-      AssetId(package, r'lib/$lib$'),
-      AssetId(package, r'test/$test$'),
-      AssetId(package, r'web/$web$'),
-      AssetId(package, r'$package$'),
-    ],
-  ),
-);
+      packageGraph.allPackages.keys.expand(
+        (package) => [
+          AssetId(package, r'lib/$lib$'),
+          AssetId(package, r'test/$test$'),
+          AssetId(package, r'web/$web$'),
+          AssetId(package, r'$package$'),
+        ],
+      ),
+    );

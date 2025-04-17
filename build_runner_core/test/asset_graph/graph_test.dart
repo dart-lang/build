@@ -280,7 +280,7 @@ void main() {
           builderOptionsId,
         );
         // Didn't actually do a build yet so this starts out empty.
-        expect(primaryOutputNode.generatedNodeState!.inputs, isEmpty);
+        expect(primaryOutputNode.generatedNodeState!.inputs.assets, isEmpty);
         expect(
           primaryOutputNode.generatedNodeConfiguration!.primaryInput,
           primaryInputId,

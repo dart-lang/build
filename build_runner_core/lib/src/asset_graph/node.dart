@@ -117,12 +117,13 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     Digest? lastKnownDigest,
     Iterable<AssetId>? outputs,
     Iterable<AssetId>? primaryOutputs,
-  }) => AssetNode((b) {
-    b.id = id;
-    b.type = NodeType.source;
-    b.primaryOutputs.replace(primaryOutputs ?? {});
-    b.lastKnownDigest = lastKnownDigest;
-  });
+  }) =>
+      AssetNode((b) {
+        b.id = id;
+        b.type = NodeType.source;
+        b.primaryOutputs.replace(primaryOutputs ?? {});
+        b.lastKnownDigest = lastKnownDigest;
+      });
 
   /// A [BuilderOptions] object.
   ///
@@ -173,19 +174,20 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     required PendingBuildAction pendingBuildAction,
     required bool wasOutput,
     required bool isFailure,
-  }) => AssetNode((b) {
-    b.id = id;
-    b.type = NodeType.generated;
-    b.generatedNodeConfiguration.primaryInput = primaryInput;
-    b.generatedNodeConfiguration.builderOptionsId = builderOptionsId;
-    b.generatedNodeConfiguration.phaseNumber = phaseNumber;
-    b.generatedNodeConfiguration.isHidden = isHidden;
-    b.generatedNodeState.inputs.assets.replace(inputs ?? []);
-    b.generatedNodeState.pendingBuildAction = pendingBuildAction;
-    b.generatedNodeState.wasOutput = wasOutput;
-    b.generatedNodeState.isFailure = isFailure;
-    b.lastKnownDigest = lastKnownDigest;
-  });
+  }) =>
+      AssetNode((b) {
+        b.id = id;
+        b.type = NodeType.generated;
+        b.generatedNodeConfiguration.primaryInput = primaryInput;
+        b.generatedNodeConfiguration.builderOptionsId = builderOptionsId;
+        b.generatedNodeConfiguration.phaseNumber = phaseNumber;
+        b.generatedNodeConfiguration.isHidden = isHidden;
+        b.generatedNodeState.inputs.assets.replace(inputs ?? []);
+        b.generatedNodeState.pendingBuildAction = pendingBuildAction;
+        b.generatedNodeState.wasOutput = wasOutput;
+        b.generatedNodeState.isFailure = isFailure;
+        b.lastKnownDigest = lastKnownDigest;
+      });
 
   /// A glob node.
   factory AssetNode.glob(
@@ -196,15 +198,16 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     Iterable<AssetId>? inputs,
     required PendingBuildAction pendingBuildAction,
     List<AssetId>? results,
-  }) => AssetNode((b) {
-    b.id = id;
-    b.type = NodeType.glob;
-    b.globNodeConfiguration.glob = glob;
-    b.globNodeConfiguration.phaseNumber = phaseNumber;
-    b.globNodeState.pendingBuildAction = pendingBuildAction;
-    b.globNodeState.results.replace(results ?? []);
-    b.lastKnownDigest = lastKnownDigest;
-  });
+  }) =>
+      AssetNode((b) {
+        b.id = id;
+        b.type = NodeType.glob;
+        b.globNodeConfiguration.glob = glob;
+        b.globNodeConfiguration.phaseNumber = phaseNumber;
+        b.globNodeState.pendingBuildAction = pendingBuildAction;
+        b.globNodeState.results.replace(results ?? []);
+        b.lastKnownDigest = lastKnownDigest;
+      });
 
   static AssetId createGlobNodeId(String package, String glob, int phaseNum) =>
       AssetId(package, 'glob.$phaseNum.${base64.encode(utf8.encode(glob))}');
@@ -238,25 +241,14 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
 
   /// The generated node inputs, or the glob node inputs, or `null` if the node
   /// is not of one of those two types.
-  Object? get inputs {
+  BuiltSet<AssetId>? get inputs {
     switch (type) {
       case NodeType.generated:
-        return generatedNodeState!.inputs;
+        return generatedNodeState!.inputs.assets;
       case NodeType.glob:
         return globNodeState!.inputs;
       default:
         return null;
-    }
-  }
-
-  bool get hasInputs {
-    switch (type) {
-      case NodeType.generated:
-        return generatedNodeState!.inputs.isNotEmpty;
-      case NodeType.glob:
-        return globNodeState!.inputs.isNotEmpty;
-      default:
-        return false;
     }
   }
 }
