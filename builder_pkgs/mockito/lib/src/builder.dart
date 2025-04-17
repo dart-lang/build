@@ -16,7 +16,6 @@ import 'dart:collection';
 
 import 'package:analyzer/dart/ast/ast.dart' as ast;
 import 'package:analyzer/dart/constant/value.dart';
-import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart' as analyzer;
@@ -77,7 +76,7 @@ class MockBuilder implements Builder {
   @override
   Future<void> build(BuildStep buildStep) async {
     if (!await buildStep.resolver.isLibrary(buildStep.inputId)) return;
-    final entryLib = await buildStep.inputLibrary2;
+    final entryLib = await buildStep.inputLibrary;
     final sourceLibIsNonNullable = true;
 
     final mockLibraryAsset = buildStep.allowedOutputs.singleOrNull;
@@ -244,7 +243,7 @@ $rawOutput
       final exportingLibrary = _findExportOf(librariesWithTypes, element);
 
       try {
-        final typeAssetId = await resolver.assetIdForElement2(exportingLibrary);
+        final typeAssetId = await resolver.assetIdForElement(exportingLibrary);
 
         if (typeAssetId.path.startsWith('lib/')) {
           typeUris[element] = typeAssetId.uri.toString();
