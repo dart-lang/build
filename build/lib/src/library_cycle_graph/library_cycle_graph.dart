@@ -24,6 +24,14 @@ abstract class LibraryCycleGraph
       _$LibraryCycleGraph;
   LibraryCycleGraph._();
 
+  factory LibraryCycleGraph.of(
+    Iterable<AssetId> root, {
+    Iterable<AssetId> children = const [],
+  }) => _$LibraryCycleGraph._(
+    root: LibraryCycle.of(root),
+    children: children.toBuiltSet(),
+  );
+
   /// All subgraphs in the graph, including the root.
   Iterable<LibraryCycleGraph> transitiveGraphs({
     required LibraryCycleGraph Function(AssetId) lookupGraph,

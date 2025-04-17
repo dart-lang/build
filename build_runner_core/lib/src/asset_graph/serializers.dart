@@ -63,7 +63,7 @@ final Serializers serializers =
             const FullType(BuiltList, [
               FullType(ExpiringValue, [FullType(LibraryCycleGraph)]),
             ]),
-            ExpiringValueBuilder<LibraryCycleGraph>.new,
+            ListBuilder<ExpiringValue<LibraryCycleGraph>>.new,
           ))
         .build();
 

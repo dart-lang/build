@@ -772,9 +772,7 @@ class Build {
     }
 
     final inputs = firstNodeState.inputs;
-    for (final input in inputs.allAssets(
-      AnalysisDriverModel.sharedInstance.phasedLibraryCycleGraphs(),
-    )) {
+    for (final input in inputs.assets) {
       final node = assetGraph.get(input)!;
       if (node.type == NodeType.generated) {
         if (node.generatedNodeConfiguration!.phaseNumber >= phaseNumber) {
@@ -1013,6 +1011,7 @@ class Build {
           nodeBuilder.generatedNodeState.inputs.unused.replace(unusedAssets);
         }
         nodeBuilder.generatedNodeState
+          ..inputs.assets.replace(inputTracker.inputs)
           ..pendingBuildAction = PendingBuildAction.none
           ..wasOutput = wasOutput
           ..isFailure = isFailure;

@@ -22,6 +22,7 @@ class InputTracker {
       Map.identity();
 
   final HashSet<AssetId> _inputs = HashSet<AssetId>();
+  final Set<AssetId> _graphs = HashSet<AssetId>();
 
   /// Creates an input tracker.
   ///
@@ -36,14 +37,15 @@ class InputTracker {
 
   void add(AssetId input) => _inputs.add(input);
 
-  void addAll({
-    required AssetId primaryInput,
-    required Iterable<AssetId> inputs,
-  }) => _inputs.addAll(inputs);
+  void addAll({required Iterable<AssetId> inputs}) => _inputs.addAll(inputs);
+
+  void addGraph(AssetId graph) => _graphs.add(graph);
 
   Set<AssetId> get inputs => _inputs;
+  Set<AssetId> get graphs => _graphs;
 
   void clear() {
-    inputs.clear();
+    _inputs.clear();
+    _graphs.clear();
   }
 }
