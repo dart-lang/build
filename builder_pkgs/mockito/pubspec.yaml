@@ -13,7 +13,7 @@ environment:
   sdk: ^3.7.0
 
 dependencies:
-  analyzer: '>=6.9.0 <8.0.0'
+  analyzer: '>=7.4.1 <8.0.0'
   build: ^2.4.1
   code_builder: ^4.5.0
   collection: ^1.19.0
