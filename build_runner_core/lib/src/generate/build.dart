@@ -215,13 +215,13 @@ class Build {
   Future<void> _addChangedLibraryCycles(int phase, AssetId id) async {
     final loader = reverseDepsLoader;
     if (loader == null) return;
-    final phasedReverseDeps = await reverseLibraryCycleGraphLoader
-        .libraryCycleGraphOf(loader, id);
-    final reverseDeps = phasedReverseDeps.valueAt(phase: phase);
     final toAdd = [id];
     while (toAdd.isNotEmpty) {
       final next = toAdd.removeLast();
-      if (changedLibraryCycles.add(next)) {
+      final phasedReverseDeps = await reverseLibraryCycleGraphLoader
+          .libraryCycleGraphOf(loader, next);
+      final reverseDeps = phasedReverseDeps.valueAt(phase: phase);
+      if (changedLibraryCycles.add(reverseDeps.root.leastId)) {
         toAdd.addAll(reverseDeps.children);
       }
     }

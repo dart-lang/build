@@ -25,4 +25,15 @@ abstract class LibraryCycle
 
   factory LibraryCycle.of(Iterable<AssetId> ids) =>
       _$LibraryCycle._(ids: ids.toBuiltSet());
+
+  @memoized
+  AssetId get leastId {
+    var least = ids.first;
+    for (var id in ids) {
+      if (id.compareTo(least) < 0) {
+        least = id;
+      }
+    }
+    return least;
+  }
 }

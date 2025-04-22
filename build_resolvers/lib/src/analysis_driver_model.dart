@@ -121,7 +121,12 @@ class AnalysisDriverModel {
         nodeLoader,
         entrypoint,
       );
-      buildStep.inputTracker.addGraph(entrypoint);
+      buildStep.inputTracker.addGraph(
+        (await _graphLoader.libraryCycleGraphOf(
+          nodeLoader,
+          entrypoint,
+        )).valueAt(phase: buildStep.phasedReader.phase).root.leastId,
+      );
     } else {
       // Notify [buildStep] of its inputs.
       buildStep.inputTracker.add(entrypoint);
