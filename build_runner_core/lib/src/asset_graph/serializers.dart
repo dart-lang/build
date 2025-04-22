@@ -32,7 +32,7 @@ final identityAssetIdSerializer = IdentitySerializer<AssetId>(
   assetIdSerializer,
 );
 
-@SerializersFor([AssetNode, LibraryCycleGraph, PhasedAssetDeps])
+@SerializersFor([AssetNode, LibraryCycleGraph, PhasedAssetDeps, AssetDeps])
 final Serializers serializers =
     (_$serializers.toBuilder()
           ..add(identityAssetIdSerializer)
@@ -52,18 +52,18 @@ final Serializers serializers =
             () => <String, Map<PostProcessBuildStepId, Set<AssetId>>>{},
           )
           ..addBuilderFactory(
-            const FullType(PhasedValue, [FullType(LibraryCycleGraph)]),
-            PhasedValueBuilder<LibraryCycleGraph>.new,
+            const FullType(PhasedValue, [FullType(AssetDeps)]),
+            PhasedValueBuilder<AssetDeps>.new,
           )
           ..addBuilderFactory(
-            const FullType(ExpiringValue, [FullType(LibraryCycleGraph)]),
-            ExpiringValueBuilder<LibraryCycleGraph>.new,
+            const FullType(ExpiringValue, [FullType(AssetDeps)]),
+            ExpiringValueBuilder<AssetDeps>.new,
           )
           ..addBuilderFactory(
             const FullType(BuiltList, [
-              FullType(ExpiringValue, [FullType(LibraryCycleGraph)]),
+              FullType(ExpiringValue, [FullType(AssetDeps)]),
             ]),
-            ListBuilder<ExpiringValue<LibraryCycleGraph>>.new,
+            ListBuilder<ExpiringValue<AssetDeps>>.new,
           ))
         .build();
 

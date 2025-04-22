@@ -61,6 +61,9 @@ class Build {
   final ResourceManager resourceManager;
   final AssetReaderWriter readerWriter;
   final RunnerAssetWriter deleteWriter;
+  final LibraryCycleGraphLoader reverseLibraryCycleGraphLoader =
+      LibraryCycleGraphLoader();
+  final AssetDepsLoader? reverseDepsLoader;
 
   // Logging.
   final LogRenderer renderer;
@@ -88,6 +91,8 @@ class Build {
   /// checked against the digest from the previous build.
   final Set<AssetId> changedOutputs = {};
 
+  final Set<AssetId> changedLibraryCycles = {};
+
   Build({
     required this.environment,
     required this.options,
@@ -104,7 +109,13 @@ class Build {
            options.trackPerformance
                ? BuildPerformanceTracker()
                : BuildPerformanceTracker.noOp(),
-       logFine = _logger.level <= Level.FINE {
+       logFine = _logger.level <= Level.FINE,
+       reverseDepsLoader =
+           assetGraph.previousBuildPhasedAssetDeps == null
+               ? null
+               : AssetDepsLoader.fromDeps(
+                 assetGraph.previousBuildPhasedAssetDeps!.reversed,
+               ) {
     hungActionsHeartbeat = HungActionsHeartbeat(() {
       final message = StringBuffer();
       const actionsToLogMax = 5;
@@ -175,7 +186,7 @@ class Build {
 
   Future<void> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
     await logTimedAsync(_logger, 'Updating asset graph', () async {
-      changedInputs.addAll(updates.keys.toSet());
+      await _addChangedInputs(updates.keys.toSet());
       var invalidated = await assetGraph.updateAndInvalidate(
         buildPhases,
         updates,
@@ -185,6 +196,35 @@ class Build {
       );
       await readerWriter.cache.invalidate(invalidated);
     });
+  }
+
+  Future<void> _addChangedInputs(Iterable<AssetId> inputs) async {
+    for (final id in inputs) {
+      if (changedInputs.add(id)) {
+        await _addChangedLibraryCycles(0, id);
+      }
+    }
+  }
+
+  Future<void> _addChangedGeneratedOutput(int phase, AssetId output) async {
+    if (changedOutputs.add(output)) {
+      await _addChangedLibraryCycles(phase, output);
+    }
+  }
+
+  Future<void> _addChangedLibraryCycles(int phase, AssetId id) async {
+    final loader = reverseDepsLoader;
+    if (loader == null) return;
+    final phasedReverseDeps = await reverseLibraryCycleGraphLoader
+        .libraryCycleGraphOf(loader, id);
+    final reverseDeps = phasedReverseDeps.valueAt(phase: phase);
+    final toAdd = [id];
+    while (toAdd.isNotEmpty) {
+      final next = toAdd.removeLast();
+      if (changedLibraryCycles.add(next)) {
+        toAdd.addAll(reverseDeps.children);
+      }
+    }
   }
 
   /// Runs a build inside a zone with an error handler and stack chain
@@ -251,6 +291,7 @@ class Build {
       },
       (e, st) {
         if (!done.isCompleted) {
+          print('Unhandled build failure! $e $st');
           _logger.severe('Unhandled build failure!', e, st);
           done.complete(BuildResult(BuildStatus.failure, []));
         }
@@ -745,7 +786,8 @@ class Build {
 
     // No need to build an up to date output
     if (firstNodeState.pendingBuildAction == PendingBuildAction.none) {
-      return false;
+      //_logger.fine('Do not build $forInput: up to date');
+      //return false;
     }
 
     // Early bail out condition, this is a forced update.
@@ -772,6 +814,22 @@ class Build {
     }
 
     final inputs = firstNodeState.inputs;
+
+    _logger.fine(
+      'Checking $forInput: ${firstNodeState.inputs.graphs} against $changedLibraryCycles',
+    );
+    for (final graph in firstNodeState.inputs.graphs) {
+      if (changedLibraryCycles.contains(graph)) {
+        if (logFine) {
+          _logger.fine(
+            'Build ${renderer.build(forInput, outputs)} because '
+            'transitive deps of $graph had a change.',
+          );
+        }
+        return true;
+      }
+    }
+
     for (final input in inputs.assets) {
       final node = assetGraph.get(input)!;
       if (node.type == NodeType.generated) {
@@ -1003,20 +1061,23 @@ class Build {
       var wasOutput = readerWriter.assetsWritten.contains(output);
       var digest = wasOutput ? await this.readerWriter.digest(output) : null;
 
+      var changed = false;
       assetGraph.updateNode(output, (nodeBuilder) {
         if (nodeBuilder.lastKnownDigest != digest) {
-          changedOutputs.add(output);
-        }
-        if (unusedAssets != null) {
-          nodeBuilder.generatedNodeState.inputs.unused.replace(unusedAssets);
+          changed = true;
         }
         nodeBuilder.generatedNodeState
           ..inputs.assets.replace(inputTracker.inputs)
+          ..inputs.graphs.replace(inputTracker.graphs)
+          ..inputs.unused.replace(unusedAssets ?? const [])
           ..pendingBuildAction = PendingBuildAction.none
           ..wasOutput = wasOutput
           ..isFailure = isFailure;
         nodeBuilder.lastKnownDigest = digest;
       });
+      if (changed) {
+        await _addChangedGeneratedOutput(readerWriter.phase, output);
+      }
 
       assetGraph.updateNode(output, (nodeBuilder) {});
 
@@ -1027,9 +1088,10 @@ class Build {
         var allSkippedFailures = <AssetId>[];
         while (needsMarkAsFailure.isNotEmpty) {
           var output = needsMarkAsFailure.removeLast();
+          var changed = false;
           assetGraph.updateNode(output, (nodeBuilder) {
             if (nodeBuilder.lastKnownDigest != null) {
-              changedOutputs.add(output);
+              changed = true;
             }
             nodeBuilder.generatedNodeState
               ..pendingBuildAction = PendingBuildAction.none
@@ -1037,6 +1099,9 @@ class Build {
               ..isFailure = true;
             nodeBuilder.lastKnownDigest = null;
           });
+          if (changed) {
+            await _addChangedGeneratedOutput(readerWriter.phase, output);
+          }
           allSkippedFailures.add(output);
           needsMarkAsFailure.addAll(assetGraph.get(output)!.primaryOutputs);
 

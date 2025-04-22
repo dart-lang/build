@@ -8,6 +8,7 @@ part of 'serializers.dart';
 
 Serializers _$serializers =
     (new Serializers().toBuilder()
+          ..add(AssetDeps.serializer)
           ..add(AssetNode.serializer)
           ..add(ExpiringValue.serializer)
           ..add(GeneratedNodeConfiguration.serializer)
@@ -28,6 +29,10 @@ Serializers _$serializers =
               const FullType(PhasedValue, const [const FullType(AssetDeps)]),
             ]),
             () => new MapBuilder<AssetId, PhasedValue<AssetDeps>>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltSet, const [const FullType(AssetId)]),
+            () => new SetBuilder<AssetId>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltSet, const [const FullType(AssetId)]),

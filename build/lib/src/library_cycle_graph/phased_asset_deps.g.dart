@@ -71,6 +71,7 @@ class _$PhasedAssetDepsSerializer
 class _$PhasedAssetDeps extends PhasedAssetDeps {
   @override
   final BuiltMap<AssetId, PhasedValue<AssetDeps>> assetDeps;
+  PhasedAssetDeps? __reversed;
 
   factory _$PhasedAssetDeps([void Function(PhasedAssetDepsBuilder)? updates]) =>
       (new PhasedAssetDepsBuilder()..update(updates))._build();
@@ -82,6 +83,9 @@ class _$PhasedAssetDeps extends PhasedAssetDeps {
       'assetDeps',
     );
   }
+
+  @override
+  PhasedAssetDeps get reversed => __reversed ??= super.reversed;
 
   @override
   PhasedAssetDeps rebuild(void Function(PhasedAssetDepsBuilder) updates) =>
