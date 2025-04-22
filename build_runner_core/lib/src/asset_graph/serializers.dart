@@ -32,7 +32,7 @@ final identityAssetIdSerializer = IdentitySerializer<AssetId>(
   assetIdSerializer,
 );
 
-@SerializersFor([AssetNode, LibraryCycleGraph, PhasedLibraryCycleGraphs])
+@SerializersFor([AssetNode, LibraryCycleGraph, PhasedAssetDeps])
 final Serializers serializers =
     (_$serializers.toBuilder()
           ..add(identityAssetIdSerializer)

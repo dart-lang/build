@@ -19,17 +19,15 @@ Serializers _$serializers =
           ..add(LibraryCycleGraph.serializer)
           ..add(NodeType.serializer)
           ..add(PendingBuildAction.serializer)
-          ..add(PhasedLibraryCycleGraphs.serializer)
+          ..add(PhasedAssetDeps.serializer)
           ..add(PhasedValue.serializer)
           ..add(PostProcessBuildStepId.serializer)
           ..addBuilderFactory(
             const FullType(BuiltMap, const [
               const FullType(AssetId),
-              const FullType(PhasedValue, const [
-                const FullType(LibraryCycleGraph),
-              ]),
+              const FullType(PhasedValue, const [const FullType(AssetDeps)]),
             ]),
-            () => new MapBuilder<AssetId, PhasedValue<LibraryCycleGraph>>(),
+            () => new MapBuilder<AssetId, PhasedValue<AssetDeps>>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltSet, const [const FullType(AssetId)]),

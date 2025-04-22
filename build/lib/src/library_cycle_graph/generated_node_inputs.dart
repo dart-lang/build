@@ -7,7 +7,6 @@ import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
 import '../asset/id.dart';
-import '../internal.dart';
 
 part 'generated_node_inputs.g.dart';
 
@@ -28,13 +27,4 @@ abstract class GeneratedNodeInputs
   bool get isNotEmpty =>
       // TODO(davidmorgan): what about "unused"?
       assets.isNotEmpty || graphs.isNotEmpty;
-
-  Iterable<AssetId> allAssets(PhasedLibraryCycleGraphs libraryCycleGraphs) {
-    final result = Set<AssetId>.identity();
-    result.addAll(assets);
-    for (final id in graphs) {
-      result.addAll(libraryCycleGraphs.graphs[id]!.valueAt(phase: 1).root.ids);
-    }
-    return result;
-  }
 }

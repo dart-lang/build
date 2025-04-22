@@ -217,7 +217,7 @@ class Build {
             await readerWriter.writeAsBytes(
               AssetId(options.packageGraph.root.name, assetGraphPath),
               assetGraph.serialize(
-                AnalysisDriverModel.sharedInstance.phasedLibraryCycleGraphs(),
+                AnalysisDriverModel.sharedInstance.phasedAssetDeps(),
               ),
             );
           },

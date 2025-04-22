@@ -59,9 +59,9 @@ class AssetGraph implements GeneratedAssetHider {
   /// Created with empty outputs at the start of the build if it's a new build
   /// step; or deserialized with previous build outputs if it has run before.
   final Map<String, Map<PostProcessBuildStepId, Set<AssetId>>>
-      _postProcessBuildStepOutputs = {};
+  _postProcessBuildStepOutputs = {};
 
-  PhasedLibraryCycleGraphs? previousBuildPhasedLibraryCycleGraphs;
+  PhasedAssetDeps? previousBuildPhasedAssetDeps;
 
   AssetGraph._(
     this.buildPhasesDigest,
@@ -108,12 +108,12 @@ class AssetGraph implements GeneratedAssetHider {
     return graph;
   }
 
-  List<int> serialize([PhasedLibraryCycleGraphs? graphs]) =>
-      serializeAssetGraph(this, graphs);
+  List<int> serialize([PhasedAssetDeps? deps]) =>
+      serializeAssetGraph(this, deps);
 
   @visibleForTesting
   Map<String, Map<PostProcessBuildStepId, Set<AssetId>>>
-      get allPostProcessBuildStepOutputs => _postProcessBuildStepOutputs;
+  get allPostProcessBuildStepOutputs => _postProcessBuildStepOutputs;
 
   /// Checks if [id] exists in the graph.
   bool contains(AssetId id) =>
@@ -362,8 +362,7 @@ class AssetGraph implements GeneratedAssetHider {
   /// All the post process build steps for `package`.
   Iterable<PostProcessBuildStepId> postProcessBuildStepIds({
     required String package,
-  }) =>
-      _postProcessBuildStepOutputs[package]?.keys ?? const [];
+  }) => _postProcessBuildStepOutputs[package]?.keys ?? const [];
 
   /// Creates or updates state for a [PostProcessBuildStepId].
   void updatePostProcessBuildStep(
@@ -371,9 +370,10 @@ class AssetGraph implements GeneratedAssetHider {
     required Set<AssetId> outputs,
   }) {
     _postProcessBuildStepOutputs.putIfAbsent(
-      buildStepId.input.package,
-      () => {},
-    )[buildStepId] = outputs;
+          buildStepId.input.package,
+          () => {},
+        )[buildStepId] =
+        outputs;
   }
 
   /// Gets outputs of a [PostProcessBuildStepId].
@@ -390,11 +390,11 @@ class AssetGraph implements GeneratedAssetHider {
 
   /// The outputs which were, or would have been, produced by failing actions.
   Iterable<AssetNode> get failedOutputs => allNodes.where(
-        (n) =>
-            n.type == NodeType.generated &&
-            n.generatedNodeState!.isFailure &&
-            n.generatedNodeState!.pendingBuildAction == PendingBuildAction.none,
-      );
+    (n) =>
+        n.type == NodeType.generated &&
+        n.generatedNodeState!.isFailure &&
+        n.generatedNodeState!.pendingBuildAction == PendingBuildAction.none,
+  );
 
   /// All the generated outputs for a particular phase.
   Iterable<AssetNode> outputsForPhase(String package, int phase) =>
@@ -853,12 +853,12 @@ AssetId builderOptionsIdForAction(BuildAction action, int actionNumber) {
 }
 
 Set<AssetId> placeholderIdsFor(PackageGraph packageGraph) => Set<AssetId>.from(
-      packageGraph.allPackages.keys.expand(
-        (package) => [
-          AssetId(package, r'lib/$lib$'),
-          AssetId(package, r'test/$test$'),
-          AssetId(package, r'web/$web$'),
-          AssetId(package, r'$package$'),
-        ],
-      ),
-    );
+  packageGraph.allPackages.keys.expand(
+    (package) => [
+      AssetId(package, r'lib/$lib$'),
+      AssetId(package, r'test/$test$'),
+      AssetId(package, r'web/$web$'),
+      AssetId(package, r'$package$'),
+    ],
+  ),
+);

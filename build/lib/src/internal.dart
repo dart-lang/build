@@ -12,7 +12,7 @@ export 'library_cycle_graph/generated_node_inputs.dart';
 export 'library_cycle_graph/library_cycle.dart';
 export 'library_cycle_graph/library_cycle_graph.dart';
 export 'library_cycle_graph/library_cycle_graph_loader.dart';
-export 'library_cycle_graph/phased_library_cycle_graphs.dart';
+export 'library_cycle_graph/phased_asset_deps.dart';
 export 'library_cycle_graph/phased_reader.dart';
 export 'library_cycle_graph/phased_value.dart';
 export 'state/asset_finder.dart';

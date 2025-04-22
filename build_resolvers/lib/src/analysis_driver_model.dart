@@ -55,8 +55,7 @@ class AnalysisDriverModel {
     _syncedOntoFilesystemAtPhase.clear();
   }
 
-  PhasedLibraryCycleGraphs phasedLibraryCycleGraphs() =>
-      _graphLoader.phasedLibraryCycleGraphs();
+  PhasedAssetDeps phasedAssetDeps() => _graphLoader.phasedAssetDeps();
 
   /// Attempts to parse [uri] into an [AssetId] and returns it if it is cached.
   ///
