@@ -6,6 +6,65 @@ part of 'asset_deps.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+Serializer<AssetDeps> _$assetDepsSerializer = new _$AssetDepsSerializer();
+
+class _$AssetDepsSerializer implements StructuredSerializer<AssetDeps> {
+  @override
+  final Iterable<Type> types = const [AssetDeps, _$AssetDeps];
+  @override
+  final String wireName = 'AssetDeps';
+
+  @override
+  Iterable<Object?> serialize(
+    Serializers serializers,
+    AssetDeps object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    final result = <Object?>[
+      'deps',
+      serializers.serialize(
+        object.deps,
+        specifiedType: const FullType(BuiltSet, const [
+          const FullType(AssetId),
+        ]),
+      ),
+    ];
+
+    return result;
+  }
+
+  @override
+  AssetDeps deserialize(
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    final result = new AssetDepsBuilder();
+
+    final iterator = serialized.iterator;
+    while (iterator.moveNext()) {
+      final key = iterator.current! as String;
+      iterator.moveNext();
+      final Object? value = iterator.current;
+      switch (key) {
+        case 'deps':
+          result.deps.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(BuiltSet, const [
+                    const FullType(AssetId),
+                  ]),
+                )!
+                as BuiltSet<Object?>,
+          );
+          break;
+      }
+    }
+
+    return result.build();
+  }
+}
+
 class _$AssetDeps extends AssetDeps {
   @override
   final BuiltSet<AssetId> deps;

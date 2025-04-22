@@ -6,11 +6,86 @@ part of 'library_cycle_graph.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+Serializer<LibraryCycleGraph> _$libraryCycleGraphSerializer =
+    new _$LibraryCycleGraphSerializer();
+
+class _$LibraryCycleGraphSerializer
+    implements StructuredSerializer<LibraryCycleGraph> {
+  @override
+  final Iterable<Type> types = const [LibraryCycleGraph, _$LibraryCycleGraph];
+  @override
+  final String wireName = 'LibraryCycleGraph';
+
+  @override
+  Iterable<Object?> serialize(
+    Serializers serializers,
+    LibraryCycleGraph object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    final result = <Object?>[
+      'root',
+      serializers.serialize(
+        object.root,
+        specifiedType: const FullType(LibraryCycle),
+      ),
+      'children',
+      serializers.serialize(
+        object.children,
+        specifiedType: const FullType(BuiltSet, const [
+          const FullType(AssetId),
+        ]),
+      ),
+    ];
+
+    return result;
+  }
+
+  @override
+  LibraryCycleGraph deserialize(
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    final result = new LibraryCycleGraphBuilder();
+
+    final iterator = serialized.iterator;
+    while (iterator.moveNext()) {
+      final key = iterator.current! as String;
+      iterator.moveNext();
+      final Object? value = iterator.current;
+      switch (key) {
+        case 'root':
+          result.root.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(LibraryCycle),
+                )!
+                as LibraryCycle,
+          );
+          break;
+        case 'children':
+          result.children.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(BuiltSet, const [
+                    const FullType(AssetId),
+                  ]),
+                )!
+                as BuiltSet<Object?>,
+          );
+          break;
+      }
+    }
+
+    return result.build();
+  }
+}
+
 class _$LibraryCycleGraph extends LibraryCycleGraph {
   @override
   final LibraryCycle root;
   @override
-  final BuiltList<LibraryCycleGraph> children;
+  final BuiltSet<AssetId> children;
 
   factory _$LibraryCycleGraph([
     void Function(LibraryCycleGraphBuilder)? updates,
@@ -68,11 +143,10 @@ class LibraryCycleGraphBuilder
   LibraryCycleBuilder get root => _$this._root ??= new LibraryCycleBuilder();
   set root(LibraryCycleBuilder? root) => _$this._root = root;
 
-  ListBuilder<LibraryCycleGraph>? _children;
-  ListBuilder<LibraryCycleGraph> get children =>
-      _$this._children ??= new ListBuilder<LibraryCycleGraph>();
-  set children(ListBuilder<LibraryCycleGraph>? children) =>
-      _$this._children = children;
+  SetBuilder<AssetId>? _children;
+  SetBuilder<AssetId> get children =>
+      _$this._children ??= new SetBuilder<AssetId>();
+  set children(SetBuilder<AssetId>? children) => _$this._children = children;
 
   LibraryCycleGraphBuilder();
 

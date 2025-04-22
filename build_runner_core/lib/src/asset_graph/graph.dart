@@ -61,6 +61,8 @@ class AssetGraph implements GeneratedAssetHider {
   final Map<String, Map<PostProcessBuildStepId, Set<AssetId>>>
   _postProcessBuildStepOutputs = {};
 
+  PhasedAssetDeps? previousBuildPhasedAssetDeps;
+
   AssetGraph._(
     this.buildPhasesDigest,
     this.dartVersion,
@@ -106,7 +108,8 @@ class AssetGraph implements GeneratedAssetHider {
     return graph;
   }
 
-  List<int> serialize() => serializeAssetGraph(this);
+  List<int> serialize([PhasedAssetDeps? deps]) =>
+      serializeAssetGraph(this, deps);
 
   @visibleForTesting
   Map<String, Map<PostProcessBuildStepId, Set<AssetId>>>
@@ -282,7 +285,7 @@ class AssetGraph implements GeneratedAssetHider {
     for (var output in (outputs[node.id] ?? const <AssetId>{})) {
       updateNodeIfPresent(output, (nodeBuilder) {
         if (nodeBuilder.type == NodeType.generated) {
-          nodeBuilder.generatedNodeState.inputs.remove(id);
+          nodeBuilder.generatedNodeState.inputs.assets.remove(id);
         } else if (nodeBuilder.type == NodeType.glob) {
           nodeBuilder.globNodeState
             ..inputs.remove(id)
@@ -292,7 +295,7 @@ class AssetGraph implements GeneratedAssetHider {
     }
 
     if (node.type == NodeType.generated) {
-      for (var input in node.generatedNodeState!.inputs) {
+      for (var input in node.generatedNodeState!.inputs.assets) {
         // We may have already removed this node entirely.
         updateNodeIfPresent(input, (nodeBuilder) {
           nodeBuilder.primaryOutputs.remove(id);
@@ -330,7 +333,7 @@ class AssetGraph implements GeneratedAssetHider {
     final result = <AssetId, Set<AssetId>>{};
     for (final node in allNodes) {
       if (node.type == NodeType.generated) {
-        for (final input in node.generatedNodeState!.inputs) {
+        for (final input in node.generatedNodeState!.inputs.assets) {
           result.putIfAbsent(input, () => {}).add(node.id);
         }
         result
@@ -775,7 +778,7 @@ class AssetGraph implements GeneratedAssetHider {
     for (var output in outputs) {
       updateNodeIfPresent(output, (nodeBuilder) {
         if (nodeBuilder.type == NodeType.generated) {
-          nodeBuilder.generatedNodeState.inputs.add(input);
+          nodeBuilder.generatedNodeState.inputs.assets.add(input);
         } else if (nodeBuilder.type == NodeType.glob) {
           nodeBuilder.globNodeState.inputs.add(input);
         }

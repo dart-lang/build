@@ -6,6 +6,7 @@ import 'dart:math';
 
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
+import 'package:built_value/serializer.dart';
 
 part 'phased_value.g.dart';
 
@@ -44,6 +45,8 @@ part 'phased_value.g.dart';
 /// cases, fixed or changing exactly once, as different implementation types.
 abstract class PhasedValue<T>
     implements Built<PhasedValue<T>, PhasedValueBuilder<T>> {
+  static Serializer<PhasedValue> get serializer => _$phasedValueSerializer;
+
   BuiltList<ExpiringValue<T>> get values;
 
   factory PhasedValue([void Function(PhasedValueBuilder<T>)? updates]) =
@@ -114,6 +117,20 @@ abstract class PhasedValue<T>
   /// is not known.
   T valueAt({required int phase}) => expiringValueAt(phase: phase).value;
 
+  Iterable<T> valueRange({required int fromPhase, int? toPhase}) sync* {
+    for (final value in values) {
+      if (value.expiresAfter != null && value.expiresAfter! < fromPhase) {
+        continue;
+      }
+      if (toPhase != null &&
+          value.expiresAfter != null &&
+          value.expiresAfter! > toPhase) {
+        break;
+      }
+      yield value.value;
+    }
+  }
+
   /// The value after all changes have happened.
   ///
   /// Throws if not [isComplete], meaning the last value is not known.
@@ -153,6 +170,8 @@ abstract class PhasedValue<T>
 /// value in the next phase.
 abstract class ExpiringValue<T>
     implements Built<ExpiringValue<T>, ExpiringValueBuilder<T>> {
+  static Serializer<ExpiringValue> get serializer => _$expiringValueSerializer;
+
   T get value;
   int? get expiresAfter;
 

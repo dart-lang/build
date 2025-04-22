@@ -128,7 +128,7 @@ class AssetGraphHandler {
       nodes.add({'id': '$output', 'label': '$output'});
     }
     if (node.type == NodeType.generated || node.type == NodeType.glob) {
-      final inputs =
+      /*final inputs =
           node.type == NodeType.generated
               ? node.generatedNodeState!.inputs
               : node.globNodeState!.inputs;
@@ -142,7 +142,7 @@ class AssetGraphHandler {
           'id': 'e${currentEdge++}',
         });
         nodes.add({'id': '$input', 'label': '$input'});
-      }
+      }*/
     }
     var result = <String, dynamic>{
       'primary': {

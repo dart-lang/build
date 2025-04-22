@@ -412,9 +412,7 @@ class _$GeneratedNodeStateSerializer
       'inputs',
       serializers.serialize(
         object.inputs,
-        specifiedType: const FullType(BuiltSet, const [
-          const FullType(AssetId),
-        ]),
+        specifiedType: const FullType(GeneratedNodeInputs),
       ),
       'pendingBuildAction',
       serializers.serialize(
@@ -454,11 +452,9 @@ class _$GeneratedNodeStateSerializer
           result.inputs.replace(
             serializers.deserialize(
                   value,
-                  specifiedType: const FullType(BuiltSet, const [
-                    const FullType(AssetId),
-                  ]),
+                  specifiedType: const FullType(GeneratedNodeInputs),
                 )!
-                as BuiltSet<Object?>,
+                as GeneratedNodeInputs,
           );
           break;
         case 'pendingBuildAction':
@@ -1070,7 +1066,7 @@ class GeneratedNodeConfigurationBuilder
 
 class _$GeneratedNodeState extends GeneratedNodeState {
   @override
-  final BuiltSet<AssetId> inputs;
+  final GeneratedNodeInputs inputs;
   @override
   final PendingBuildAction pendingBuildAction;
   @override
@@ -1155,10 +1151,10 @@ class GeneratedNodeStateBuilder
     implements Builder<GeneratedNodeState, GeneratedNodeStateBuilder> {
   _$GeneratedNodeState? _$v;
 
-  SetBuilder<AssetId>? _inputs;
-  SetBuilder<AssetId> get inputs =>
-      _$this._inputs ??= new SetBuilder<AssetId>();
-  set inputs(SetBuilder<AssetId>? inputs) => _$this._inputs = inputs;
+  GeneratedNodeInputsBuilder? _inputs;
+  GeneratedNodeInputsBuilder get inputs =>
+      _$this._inputs ??= new GeneratedNodeInputsBuilder();
+  set inputs(GeneratedNodeInputsBuilder? inputs) => _$this._inputs = inputs;
 
   PendingBuildAction? _pendingBuildAction;
   PendingBuildAction? get pendingBuildAction => _$this._pendingBuildAction;

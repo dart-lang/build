@@ -4,6 +4,7 @@
 
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
+import 'package:built_value/serializer.dart';
 
 import '../../build.dart' hide Builder;
 
@@ -17,11 +18,15 @@ part 'asset_deps.g.dart';
 /// Missing or not-yet-generated sources can be represented by this class: they
 /// have no deps.
 abstract class AssetDeps implements Built<AssetDeps, AssetDepsBuilder> {
+  static Serializer<AssetDeps> get serializer => _$assetDepsSerializer;
+
   static final AssetDeps empty = _$AssetDeps._(deps: BuiltSet());
 
   BuiltSet<AssetId> get deps;
 
   factory AssetDeps(Iterable<AssetId> deps) =>
       _$AssetDeps._(deps: BuiltSet.of(deps));
+  factory AssetDeps.build(void Function(AssetDepsBuilder) updates) =
+      _$AssetDeps;
   AssetDeps._();
 }

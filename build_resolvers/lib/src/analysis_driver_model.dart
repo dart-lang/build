@@ -55,6 +55,8 @@ class AnalysisDriverModel {
     _syncedOntoFilesystemAtPhase.clear();
   }
 
+  PhasedAssetDeps phasedAssetDeps() => _graphLoader.phasedAssetDeps();
+
   /// Attempts to parse [uri] into an [AssetId] and returns it if it is cached.
   ///
   /// Handles 'package:' or 'asset:' URIs, as well as 'file:' URIs of the form
@@ -109,7 +111,6 @@ class AnalysisDriverModel {
     required bool transitive,
   }) async {
     Iterable<AssetId> idsToSyncOntoFilesystem = [entrypoint];
-    Iterable<AssetId> inputIds = [entrypoint];
 
     // If requested, find transitive imports.
     if (transitive) {
@@ -120,14 +121,16 @@ class AnalysisDriverModel {
         nodeLoader,
         entrypoint,
       );
-      inputIds = idsToSyncOntoFilesystem;
+      buildStep.inputTracker.addGraph(
+        (await _graphLoader.libraryCycleGraphOf(
+          nodeLoader,
+          entrypoint,
+        )).valueAt(phase: buildStep.phasedReader.phase).root.leastId,
+      );
+    } else {
+      // Notify [buildStep] of its inputs.
+      buildStep.inputTracker.add(entrypoint);
     }
-
-    // Notify [buildStep] of its inputs.
-    buildStep.inputTracker.addAll(
-      primaryInput: buildStep.inputId,
-      inputs: inputIds,
-    );
 
     await withDriverResource((driver) async {
       // Sync changes onto the "URI resolver", the in-memory filesystem.

@@ -7,6 +7,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 
 import '../asset/id.dart';
 import 'asset_deps.dart';
+import 'phased_asset_deps.dart';
 import 'phased_reader.dart';
 import 'phased_value.dart';
 
@@ -17,6 +18,8 @@ class AssetDepsLoader {
   final PhasedReader _reader;
 
   AssetDepsLoader(this._reader);
+  factory AssetDepsLoader.fromDeps(PhasedAssetDeps deps) =>
+      _InMemoryAssetDepsLoader(deps);
 
   /// The phase that this loader is reading build state at.
   int get phase => _reader.phase;
@@ -56,4 +59,31 @@ class AssetDepsLoader {
     result.value = depsNodeBuilder.build();
     return result.build();
   }
+}
+
+class _InMemoryAssetDepsLoader implements AssetDepsLoader {
+  final Future<PhasedValue<AssetDeps>> _empty = Future.value(
+    PhasedValue.fixed(AssetDeps.empty),
+  );
+  PhasedAssetDeps phasedAssetDeps;
+
+  _InMemoryAssetDepsLoader(this.phasedAssetDeps);
+
+  @override
+  ExpiringValue<AssetDeps> _parse(AssetId id, ExpiringValue<String> content) {
+    throw UnimplementedError();
+  }
+
+  @override
+  PhasedReader get _reader => throw UnimplementedError();
+
+  @override
+  Future<PhasedValue<AssetDeps>> load(AssetId id) {
+    final result = phasedAssetDeps.assetDeps[id];
+    if (result == null) return _empty;
+    return Future.value(result);
+  }
+
+  @override
+  int get phase => 0xffffffff;
 }
