@@ -124,7 +124,7 @@ class ErrorReport {
 }
 
 String _actionKey(AssetNode node) =>
-    '${node.generatedNodeConfiguration!.builderOptionsId} on '
+    '${node.generatedNodeConfiguration!.phaseNumber} on '
     '${node.generatedNodeConfiguration!.primaryInput}';
 
 String _errorPathForOutput(AssetNode output) => p.joinAll([

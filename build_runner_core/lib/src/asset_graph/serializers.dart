@@ -48,6 +48,10 @@ final Serializers serializers =
           ..addBuilderFactory(
             postProcessBuildStepOutputsFullType,
             () => <String, Map<PostProcessBuildStepId, Set<AssetId>>>{},
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, [FullType(Digest)]),
+            ListBuilder<Digest>.new,
           ))
         .build();
 

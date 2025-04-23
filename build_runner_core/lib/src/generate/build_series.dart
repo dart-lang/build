@@ -120,7 +120,6 @@ class BuildSeries {
       readerWriter: readerWriter,
       deleteWriter: deleteWriter,
       resourceManager: resourceManager,
-      cleanBuild: cleanBuild && firstBuild,
     );
     if (firstBuild) firstBuild = false;
     final result = await build.run(updates);
@@ -145,7 +144,8 @@ class BuildSeries {
       builderConfigOverrides,
       isReleaseBuild,
     );
-    if (buildPhases.phases.isEmpty) {
+    if (buildPhases.inBuildPhases.isEmpty &&
+        buildPhases.postBuildPhase.builderActions.isEmpty) {
       _logger.severe('Nothing can be built, yet a build was requested.');
     }
 

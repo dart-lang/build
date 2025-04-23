@@ -15,7 +15,6 @@ import '../asset/writer.dart';
 import '../asset_graph/exceptions.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/graph_loader.dart';
-import '../asset_graph/node.dart';
 import '../changes/build_script_updates.dart';
 import '../environment/build_environment.dart';
 import '../logging/logging.dart';
@@ -24,7 +23,6 @@ import 'asset_tracker.dart';
 import 'build_phases.dart';
 import 'exceptions.dart';
 import 'options.dart';
-import 'phase.dart';
 
 final _logger = Logger('BuildDefinition');
 
@@ -95,7 +93,6 @@ class _Loader {
         () => _computeUpdates(
           assetGraph!,
           assetTracker,
-          _buildPhases,
           inputSources,
           cacheDirSources,
           internalSources,
@@ -208,7 +205,6 @@ class _Loader {
   Future<Map<AssetId, ChangeType>> _computeUpdates(
     AssetGraph assetGraph,
     AssetTracker assetTracker,
-    BuildPhases buildPhases,
     Set<AssetId> inputSources,
     Set<AssetId> cacheDirSources,
     Set<AssetId> internalSources,
@@ -219,56 +215,7 @@ class _Loader {
       internalSources,
       assetGraph,
     );
-    updates.addAll(_computeBuilderOptionsUpdates(assetGraph, buildPhases));
     return updates;
-  }
-
-  /// Checks for any updates to the [AssetNode.builderOptions] for
-  /// [buildPhases] compared to the last known state.
-  Map<AssetId, ChangeType> _computeBuilderOptionsUpdates(
-    AssetGraph assetGraph,
-    BuildPhases buildPhases,
-  ) {
-    var result = <AssetId, ChangeType>{};
-
-    void updateBuilderOptionsNode(
-      AssetId builderOptionsId,
-      BuilderOptions options,
-    ) {
-      assetGraph.updateNode(builderOptionsId, (nodeBuilder) {
-        if (nodeBuilder.type != NodeType.builderOptions) {
-          throw StateError(
-            'Expected node of type NodeType.builderOptionsNode:'
-            '${nodeBuilder.build()}',
-          );
-        }
-        var oldDigest = nodeBuilder.lastKnownDigest;
-        nodeBuilder.lastKnownDigest = computeBuilderOptionsDigest(options);
-        if (nodeBuilder.lastKnownDigest != oldDigest) {
-          result[builderOptionsId] = ChangeType.MODIFY;
-        }
-      });
-    }
-
-    for (var phase = 0; phase < buildPhases.length; phase++) {
-      var action = buildPhases[phase];
-      if (action is InBuildPhase) {
-        updateBuilderOptionsNode(
-          builderOptionsIdForAction(action, phase),
-          action.builderOptions,
-        );
-      } else if (action is PostBuildPhase) {
-        var actionNum = 0;
-        for (var builderAction in action.builderActions) {
-          updateBuilderOptionsNode(
-            builderOptionsIdForAction(builderAction, actionNum),
-            builderAction.builderOptions,
-          );
-          actionNum++;
-        }
-      }
-    }
-    return result;
   }
 
   /// Handles cleanup of pre-existing outputs for initial builds (where there is

@@ -41,7 +41,6 @@ void main() {
     ),
   );
   final globBuilder = GlobbingBuilder(Glob('**.txt'));
-  final defaultBuilderOptions = const BuilderOptions({});
   final placeholders = placeholderIdsFor(
     buildPackageGraph({rootPackage('a'): []}),
   );
@@ -571,8 +570,6 @@ void main() {
             makeAssetId('a|web/a.txt'),
             makeAssetId('a|web/a.txt.copy'),
             makeAssetId('a|web/a.txt.copy.clone'),
-            makeAssetId('a|Phase0.builderOptions'),
-            makeAssetId('a|Phase1.builderOptions'),
             ...placeholders,
             makeAssetId('a|.dart_tool/package_config.json'),
           ]),
@@ -1267,13 +1264,7 @@ void main() {
       computeDigest(AssetId('a', 'lib/b.txt'), 'b'),
     );
 
-    // Regular generated asset nodes and supporting nodes.
-    var builderOptionsId = makeAssetId('a|Phase0.builderOptions');
-    var builderOptionsNode = AssetNode.builderOptions(
-      builderOptionsId,
-      lastKnownDigest: computeBuilderOptionsDigest(defaultBuilderOptions),
-    );
-
+    // Regular generated asset nodes.
     var aCopyId = makeAssetId('a|web/a.txt.copy');
     var aCopyNode = AssetNode.generated(
       aCopyId,
@@ -1282,7 +1273,6 @@ void main() {
       pendingBuildAction: PendingBuildAction.none,
       wasOutput: true,
       isFailure: false,
-      builderOptionsId: builderOptionsId,
       lastKnownDigest: computeDigest(aCopyId, 'a'),
       inputs: [makeAssetId('a|web/a.txt')],
       isHidden: false,
@@ -1299,7 +1289,6 @@ void main() {
       pendingBuildAction: PendingBuildAction.none,
       wasOutput: true,
       isFailure: false,
-      builderOptionsId: builderOptionsId,
       lastKnownDigest: computeDigest(bCopyId, 'b'),
       inputs: [makeAssetId('a|lib/b.txt')],
       isHidden: false,
@@ -1308,13 +1297,7 @@ void main() {
       (b) => b..primaryOutputs.add(bCopyNode.id),
     );
 
-    // Post build generates asset nodes and supporting nodes
-    var postBuilderOptionsId = makeAssetId('a|PostPhase0.builderOptions');
-    var postBuilderOptionsNode = AssetNode.builderOptions(
-      postBuilderOptionsId,
-      lastKnownDigest: computeBuilderOptionsDigest(defaultBuilderOptions),
-    );
-
+    // Post build generates asset nodes.
     var aPostProcessBuildStepId = PostProcessBuildStepId(
       input: aSourceNode.id,
       actionNumber: 0,
@@ -1331,7 +1314,6 @@ void main() {
       pendingBuildAction: PendingBuildAction.none,
       wasOutput: true,
       isFailure: false,
-      builderOptionsId: postBuilderOptionsId,
       lastKnownDigest: computeDigest(makeAssetId(r'$$a|web/a.txt.post'), 'a'),
       inputs: [makeAssetId('a|web/a.txt')],
       isHidden: true,
@@ -1349,7 +1331,6 @@ void main() {
       pendingBuildAction: PendingBuildAction.none,
       wasOutput: true,
       isFailure: false,
-      builderOptionsId: postBuilderOptionsId,
       lastKnownDigest: computeDigest(makeAssetId(r'$$a|lib/b.txt.post'), 'b'),
       inputs: [makeAssetId('a|lib/b.txt')],
       isHidden: true,
@@ -1363,10 +1344,8 @@ void main() {
     expectedGraph
       ..add(aSourceNode)
       ..add(bSourceNode)
-      ..add(builderOptionsNode)
       ..add(aCopyNode)
       ..add(bCopyNode)
-      ..add(postBuilderOptionsNode)
       ..add(aPostCopyNode)
       ..add(bPostCopyNode)
       ..updatePostProcessBuildStep(

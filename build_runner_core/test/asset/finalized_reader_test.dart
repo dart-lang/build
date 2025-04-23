@@ -89,7 +89,6 @@ void main() {
         isFailure: true,
         primaryInput: AssetId('a', 'web/a.dart'),
         isHidden: true,
-        builderOptionsId: AssetId('a', 'builder_options'),
       );
       graph.add(node);
       var delegate = TestReaderWriter();

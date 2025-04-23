@@ -52,9 +52,6 @@ class Build {
   final Set<BuildDirectory> buildDirs;
   final Set<BuildFilter> buildFilters;
 
-  /// Whether this is a build starting from no previous state or outputs.
-  final bool cleanBuild;
-
   // Collaborators.
   final ResourceManager resourceManager;
   final AssetReaderWriter readerWriter;
@@ -86,6 +83,8 @@ class Build {
   /// checked against the digest from the previous build.
   final Set<AssetId> changedOutputs = {};
 
+  final Set<int> changedOptionPhases = {};
+
   Build({
     required this.environment,
     required this.options,
@@ -96,7 +95,6 @@ class Build {
     required this.deleteWriter,
     required this.resourceManager,
     required this.assetGraph,
-    required this.cleanBuild,
   }) : renderer = LogRenderer(rootPackageName: options.packageGraph.root.name),
        performanceTracker =
            options.trackPerformance
@@ -201,9 +199,10 @@ class Build {
 
     runZonedGuarded(
       () async {
-        if (updates.isNotEmpty) {
+        if (!assetGraph.cleanBuild) {
           await _updateAssetGraph(updates);
         }
+
         // Run a fresh build.
         var result = await logTimedAsync(_logger, 'Running build', _runPhases);
 
@@ -216,6 +215,13 @@ class Build {
               AssetId(options.packageGraph.root.name, assetGraphPath),
               assetGraph.serialize(),
             );
+            // Phases options don't change during a build series, so for all
+            // subsequent builds "previous" and current build options digests
+            // match.
+            assetGraph.previousInBuildPhasesOptionsDigests =
+                assetGraph.inBuildPhasesOptionsDigests;
+            assetGraph.postBuildActionsOptionsDigests =
+                assetGraph.postBuildActionsOptionsDigests;
           },
         );
 
@@ -264,25 +270,41 @@ class Build {
   Future<BuildResult> _runPhases() {
     return performanceTracker.track(() async {
       final outputs = <AssetId>[];
-      for (var phaseNum = 0; phaseNum < buildPhases.length; phaseNum++) {
-        var phase = buildPhases[phaseNum];
+
+      // Main build phases.
+      for (
+        var phaseNum = 0;
+        phaseNum < buildPhases.inBuildPhases.length;
+        phaseNum++
+      ) {
+        var phase = buildPhases.inBuildPhases[phaseNum];
         if (phase.isOptional) continue;
         outputs.addAll(
           await performanceTracker.trackBuildPhase(phase, () async {
-            if (phase is InBuildPhase) {
-              var primaryInputs = await _matchingPrimaryInputs(
-                phase.package,
-                phaseNum,
-              );
-              return _runBuilder(phaseNum, phase, primaryInputs);
-            } else if (phase is PostBuildPhase) {
-              return _runPostBuildPhase(phaseNum, phase);
-            } else {
-              throw StateError('Unrecognized BuildPhase type $phase');
-            }
+            var primaryInputs = await _matchingPrimaryInputs(
+              phase.package,
+              phaseNum,
+            );
+            return _runBuilder(phaseNum, phase, primaryInputs);
           }),
         );
       }
+
+      // Post build phase.
+      if (buildPhases.postBuildPhase.builderActions.isNotEmpty) {
+        outputs.addAll(
+          await performanceTracker.trackBuildPhase(
+            buildPhases.postBuildPhase,
+            () async {
+              return _runPostBuildPhase(
+                buildPhases.inBuildPhases.length,
+                buildPhases.postBuildPhase,
+              );
+            },
+          ),
+        );
+      }
+
       await Future.forEach(
         lazyPhases.values,
         (Future<Iterable<AssetId>> lazyOuts) async =>
@@ -390,10 +412,11 @@ class Build {
         if (!nodeState.wasOutput || nodeState.isFailure) return <AssetId>[];
       }
 
-      // We can never lazily build `PostProcessBuildAction`s.
-      var action = buildPhases[phaseNumber] as InBuildPhase;
-
-      return _runForInput(phaseNumber, action, input);
+      return _runForInput(
+        phaseNumber,
+        buildPhases.inBuildPhases[phaseNumber],
+        input,
+      );
     });
   }
 
@@ -581,7 +604,7 @@ class Build {
       ),
       runningBuildStep: RunningBuildStep(
         phaseNumber: phaseNumber,
-        buildPhase: buildPhases[phaseNumber],
+        buildPhase: buildPhases.postBuildPhase,
         primaryPackage: input.package,
       ),
       readerWriter: this.readerWriter,
@@ -633,7 +656,6 @@ class Build {
         var node = AssetNode.generated(
           assetId,
           primaryInput: input,
-          builderOptionsId: postProcessBuildStepId.builderOptionsId,
           isHidden: true,
           phaseNumber: phaseNumber,
           wasOutput: true,
@@ -704,6 +726,27 @@ class Build {
     );
     assert(outputs.isNotEmpty, 'Can\'t run a build with no outputs');
 
+    if (assetGraph.previousInBuildPhasesOptionsDigests == null) {
+      if (logFine) {
+        _logger.fine(
+          'Build ${renderer.build(forInput, outputs)} because this is a clean '
+          'build.',
+        );
+      }
+      return true;
+    }
+
+    if (assetGraph.previousInBuildPhasesOptionsDigests![phaseNumber] !=
+        assetGraph.inBuildPhasesOptionsDigests[phaseNumber]) {
+      if (logFine) {
+        _logger.fine(
+          'Build ${renderer.build(forInput, outputs)} because builder options '
+          'changed.',
+        );
+      }
+      return true;
+    }
+
     // We check if any output definitely needs an update - its possible during
     // manual deletions that only one of the outputs would be marked.
     for (var output in outputs.skip(1)) {
@@ -750,18 +793,6 @@ class Build {
         _logger.fine(
           'Build ${renderer.build(forInput, outputs)} because '
           '${renderer.id(firstNode.id)} was marked for build.',
-        );
-      }
-      return true;
-    }
-
-    final builderOptionsId =
-        firstNode.generatedNodeConfiguration!.builderOptionsId;
-    if (changedInputs.contains(builderOptionsId)) {
-      if (logFine) {
-        _logger.fine(
-          'Build ${renderer.build(forInput, outputs)} because '
-          'builder options changed.',
         );
       }
       return true;
@@ -842,12 +873,13 @@ class Build {
     final input = buildStepId.input;
     final node = assetGraph.get(input)!;
 
-    if (cleanBuild) {
+    if (assetGraph.previousPostBuildOptionsDigests == null) {
+      // It's a clean build.
       return true;
     }
 
-    final builderOptionsId = buildStepId.builderOptionsId;
-    if (changedInputs.contains(builderOptionsId)) {
+    if (assetGraph.previousPostBuildOptionsDigests![buildStepId.actionNumber] !=
+        assetGraph.postBuildActionsOptionsDigests[buildStepId.actionNumber]) {
       return true;
     }
 

@@ -18,7 +18,6 @@ part 'node.g.dart';
 class NodeType extends EnumClass {
   static Serializer<NodeType> get serializer => _$nodeTypeSerializer;
 
-  static const NodeType builderOptions = _$builderOptions;
   static const NodeType generated = _$generated;
   static const NodeType glob = _$glob;
   static const NodeType internal = _$internal;
@@ -122,17 +121,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     b.lastKnownDigest = lastKnownDigest;
   });
 
-  /// A [BuilderOptions] object.
-  ///
-  /// Each [AssetNode.generated] has one describing its configuration, so it
-  /// rebuilds when the configuration changes.
-  factory AssetNode.builderOptions(AssetId id, {Digest? lastKnownDigest}) =>
-      AssetNode((b) {
-        b.id = id;
-        b.type = NodeType.builderOptions;
-        b.lastKnownDigest = lastKnownDigest;
-      });
-
   /// A missing source file.
   ///
   /// Created when a builder tries to read a non-existent file.
@@ -164,7 +152,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     AssetId id, {
     Digest? lastKnownDigest,
     required AssetId primaryInput,
-    required AssetId builderOptionsId,
     required int phaseNumber,
     required bool isHidden,
     Iterable<AssetId>? inputs,
@@ -175,7 +162,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     b.id = id;
     b.type = NodeType.generated;
     b.generatedNodeConfiguration.primaryInput = primaryInput;
-    b.generatedNodeConfiguration.builderOptionsId = builderOptionsId;
     b.generatedNodeConfiguration.phaseNumber = phaseNumber;
     b.generatedNodeConfiguration.isHidden = isHidden;
     b.generatedNodeState.inputs.replace(inputs ?? []);
@@ -257,10 +243,6 @@ abstract class GeneratedNodeConfiguration
 
   /// The primary input which generated this node.
   AssetId get primaryInput;
-
-  /// The [AssetId] of the node representing the [BuilderOptions] used to create
-  /// this node.
-  AssetId get builderOptionsId;
 
   /// The phase in which this node is generated.
   ///

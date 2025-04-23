@@ -336,25 +336,13 @@ targets:
         );
 
         var newAssetGraph = buildDefinition.assetGraph;
-
-        // The *.copy node should be invalidated, its builder options changed.
-        var generatedACopyNode = newAssetGraph.get(generatedACopyId)!;
         expect(
-          buildDefinition.updates![generatedACopyNode
-              .generatedNodeConfiguration!
-              .builderOptionsId],
-          ChangeType.MODIFY,
+          newAssetGraph.inBuildPhasesOptionsDigests[0],
+          isNot(newAssetGraph.previousInBuildPhasesOptionsDigests![0]),
         );
-
-        // But the *.clone node should remain the same since its options didn't.
-        var generatedACloneNode = newAssetGraph.get(generatedACloneId)!;
         expect(
-          buildDefinition.updates!.keys,
-          isNot(
-            contains(
-              generatedACloneNode.generatedNodeConfiguration!.builderOptionsId,
-            ),
-          ),
+          newAssetGraph.inBuildPhasesOptionsDigests[1],
+          newAssetGraph.previousInBuildPhasesOptionsDigests![1],
         );
       });
     });
@@ -383,8 +371,7 @@ targets:
           aPackageGraph,
           environment.reader,
         );
-        var expectedIds = placeholderIdsFor(aPackageGraph)
-          ..addAll([makeAssetId('a|Phase0.builderOptions')]);
+        var expectedIds = placeholderIdsFor(aPackageGraph);
         expect(
           assetGraph.allNodes.map((node) => node.id),
           unorderedEquals(expectedIds),
@@ -491,7 +478,7 @@ targets:
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
         buildPhases = BuildPhases([
-          ...buildPhases.phases,
+          ...buildPhases.inBuildPhases,
           InBuildPhase(
             TestBuilder(),
             'a',
@@ -745,7 +732,7 @@ targets:
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
         buildPhases = BuildPhases([
-          ...buildPhases.phases,
+          ...buildPhases.inBuildPhases,
           InBuildPhase(
             TestBuilder(),
             'a',

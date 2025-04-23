@@ -26,7 +26,6 @@ void main() {
   final copyABuildApplication = applyToRoot(
     TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')),
   );
-  final defaultBuilderOptions = const BuilderOptions({});
   final packageConfigId = makeAssetId('a|.dart_tool/package_config.json');
   final packageGraph = buildPackageGraph({
     rootPackage('a', path: path.absolute('a')): [],
@@ -362,12 +361,6 @@ void main() {
           readerWriter,
         );
 
-        var builderOptionsId = makeAssetId('a|Phase0.builderOptions');
-        var builderOptionsNode = AssetNode.builderOptions(
-          builderOptionsId,
-          lastKnownDigest: computeBuilderOptionsDigest(defaultBuilderOptions),
-        );
-
         var bCopyId = makeAssetId('a|web/b.txt.copy');
         var bTxtId = makeAssetId('a|web/b.txt');
         var bCopyNode = AssetNode.generated(
@@ -377,7 +370,6 @@ void main() {
           pendingBuildAction: PendingBuildAction.none,
           wasOutput: true,
           isFailure: false,
-          builderOptionsId: builderOptionsId,
           lastKnownDigest: computeDigest(bCopyId, 'b2'),
           inputs: [makeAssetId('a|web/b.txt')],
           isHidden: false,
@@ -399,7 +391,6 @@ void main() {
           pendingBuildAction: PendingBuildAction.none,
           wasOutput: true,
           isFailure: false,
-          builderOptionsId: builderOptionsId,
           lastKnownDigest: computeDigest(cCopyId, 'c'),
           inputs: [makeAssetId('a|web/c.txt')],
           isHidden: false,
@@ -411,8 +402,6 @@ void main() {
               cCopyNode.id,
             ], computeDigest(cTxtId, 'c')),
           );
-
-        expectedGraph.add(builderOptionsNode);
 
         // TODO: We dont have a shared way of computing the combined input
         // hashes today, but eventually we should test those here too.

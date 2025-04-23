@@ -26,13 +26,4 @@ abstract class PostProcessBuildStepId
     required AssetId input,
     required int actionNumber,
   }) = _$PostProcessBuildStepId._;
-
-  /// The [AssetId] used to store the hash of the build options for the step.
-  AssetId get builderOptionsId =>
-      builderOptionsIdFor(package: input.package, actionNumber: actionNumber);
-
-  static AssetId builderOptionsIdFor({
-    required String package,
-    required int actionNumber,
-  }) => AssetId(package, 'PostPhase$actionNumber.builderOptions');
 }

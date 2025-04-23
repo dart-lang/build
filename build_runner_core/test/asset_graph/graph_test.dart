@@ -14,7 +14,6 @@ import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:build_runner_core/src/asset_graph/post_process_build_step_id.dart';
 import 'package:build_runner_core/src/generate/build_phases.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
-import 'package:crypto/crypto.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
@@ -107,22 +106,12 @@ void main() {
                   ..results.add(node.id),
           );
           var phaseNum = n;
-          final builderOptionsNode = AssetNode.builderOptions(
-            makeAssetId(),
-            lastKnownDigest: Digest([n]),
-          );
-          graph.add(builderOptionsNode);
           final postProcessBuildStep = PostProcessBuildStepId(
             input: node.id,
             actionNumber: n,
           );
           graph.updatePostProcessBuildStep(postProcessBuildStep, outputs: {});
           for (var g = 0; g < 5 - n; g++) {
-            var builderOptionsNode = AssetNode.builderOptions(
-              makeAssetId(),
-              lastKnownDigest: md5.convert(utf8.encode('test')),
-            );
-
             var generatedNode = AssetNode.generated(
               makeAssetId(),
               phaseNumber: phaseNum,
@@ -132,7 +121,6 @@ void main() {
                       PendingBuildAction.values.length],
               wasOutput: g.isEven,
               isFailure: phaseNum.isEven,
-              builderOptionsId: builderOptionsNode.id,
               isHidden: g % 3 == 0,
             );
             node = node.rebuild((b) => b..primaryOutputs.add(generatedNode.id));
@@ -152,7 +140,6 @@ void main() {
               ]),
             );
             graph
-              ..add(builderOptionsNode)
               ..add(generatedNode)
               ..add(syntheticNode);
           }
@@ -193,12 +180,16 @@ void main() {
 
     group('with buildPhases', () {
       var targetSources = const InputSet(exclude: ['excluded.txt']);
-      final buildPhases = BuildPhases([
-        InBuildPhase(
-          TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')),
-          'foo',
-          targetSources: targetSources,
-        ),
+      final buildPhases = BuildPhases(
+        [
+          InBuildPhase(
+            TestBuilder(
+              buildExtensions: appendExtension('.copy', from: '.txt'),
+            ),
+            'foo',
+            targetSources: targetSources,
+          ),
+        ],
         PostBuildPhase([
           PostBuildAction(
             CopyingPostProcessBuilder(outputExtension: '.post'),
@@ -208,7 +199,7 @@ void main() {
             generateFor: const InputSet(),
           ),
         ]),
-      ]);
+      );
       final primaryInputId = makeAssetId('foo|file.txt');
       final excludedInputId = makeAssetId('foo|excluded.txt');
       final primaryOutputId = makeAssetId('foo|file.txt.copy');
@@ -217,8 +208,6 @@ void main() {
       final internalId = makeAssetId(
         'foo|.dart_tool/build/entrypoint/serve.dart',
       );
-      final builderOptionsId = makeAssetId('foo|Phase0.builderOptions');
-      final postBuilderOptionsId = makeAssetId('foo|PostPhase0.builderOptions');
       final placeholders = placeholderIdsFor(fooPackageGraph);
       final expectedBuildStepId = PostProcessBuildStepId(
         input: primaryInputId,
@@ -247,8 +236,6 @@ void main() {
             excludedInputId,
             primaryOutputId,
             internalId,
-            builderOptionsId,
-            postBuilderOptionsId,
             ...placeholders,
           ]),
         );
@@ -275,10 +262,6 @@ void main() {
         expect(graph.get(internalId)?.type, NodeType.internal);
 
         var primaryOutputNode = graph.get(primaryOutputId)!;
-        expect(
-          primaryOutputNode.generatedNodeConfiguration!.builderOptionsId,
-          builderOptionsId,
-        );
         // Didn't actually do a build yet so this starts out empty.
         expect(primaryOutputNode.generatedNodeState!.inputs, isEmpty);
         expect(
@@ -286,20 +269,6 @@ void main() {
           primaryInputId,
         );
 
-        var builderOptionsNode = graph.get(builderOptionsId)!;
-        expect(builderOptionsNode.type, NodeType.builderOptions);
-        expect(
-          graph.computeOutputs()[builderOptionsNode.id]!,
-          unorderedEquals([primaryOutputId]),
-        );
-
-        var postBuilderOptionsNode = graph.get(postBuilderOptionsId)!;
-        expect(postBuilderOptionsNode.type, NodeType.builderOptions);
-        expect(postBuilderOptionsNode, isNotNull);
-        expect(
-          graph.computeOutputs()[postBuilderOptionsNode.id] ?? <AssetId>{},
-          isEmpty,
-        );
         expect(graph.postProcessBuildStepIds(package: 'foo'), {
           expectedBuildStepId,
         });
