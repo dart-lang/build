@@ -83,8 +83,6 @@ class Build {
   /// checked against the digest from the previous build.
   final Set<AssetId> changedOutputs = {};
 
-  final Set<int> changedOptionPhases = {};
-
   Build({
     required this.environment,
     required this.options,
