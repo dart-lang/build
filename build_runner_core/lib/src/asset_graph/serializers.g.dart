@@ -14,7 +14,6 @@ Serializers _$serializers =
           ..add(GlobNodeConfiguration.serializer)
           ..add(GlobNodeState.serializer)
           ..add(NodeType.serializer)
-          ..add(PendingBuildAction.serializer)
           ..add(PostProcessBuildStepId.serializer)
           ..addBuilderFactory(
             const FullType(BuiltSet, const [const FullType(AssetId)]),

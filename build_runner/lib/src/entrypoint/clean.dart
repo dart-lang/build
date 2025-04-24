@@ -86,7 +86,7 @@ Future<void> _cleanUpSourceOutputs(
   for (var id in assetGraph.outputs) {
     if (id.package != packageGraph.root.name) continue;
     var node = assetGraph.get(id)!;
-    if (node.generatedNodeState!.wasOutput) {
+    if (node.wasOutput) {
       // Note that this does a file.exists check in the root package and
       // only tries to delete the file if it exists. This way we only
       // actually delete to_source outputs, without reading in the build

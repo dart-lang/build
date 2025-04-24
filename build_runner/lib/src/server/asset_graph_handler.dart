@@ -151,19 +151,10 @@ class AssetGraphHandler {
             node.type == NodeType.generated
                 ? node.generatedNodeConfiguration!.isHidden
                 : null,
-        'state':
+        'wasOutput': node.type == NodeType.generated ? node.wasOutput : null,
+        'result':
             node.type == NodeType.generated
-                ? '${node.generatedNodeState!.pendingBuildAction}'
-                : node.type == NodeType.glob
-                ? '${node.globNodeState!.pendingBuildAction}'
-                : null,
-        'wasOutput':
-            node.type == NodeType.generated
-                ? node.generatedNodeState!.wasOutput
-                : null,
-        'isFailure':
-            node.type == NodeType.generated
-                ? node.generatedNodeState!.isFailure
+                ? node.generatedNodeState!.result
                 : null,
         'phaseNumber':
             node.type == NodeType.generated
@@ -176,7 +167,7 @@ class AssetGraphHandler {
             node.type == NodeType.glob
                 ? node.globNodeConfiguration!.glob
                 : null,
-        'lastKnownDigest': node.lastKnownDigest.toString(),
+        'digest': node.digest.toString(),
       },
       'edges': edges,
       'nodes': nodes,

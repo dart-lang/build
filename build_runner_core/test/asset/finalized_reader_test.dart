@@ -15,6 +15,7 @@ import 'package:build_runner_core/src/generate/build_phases.dart';
 import 'package:build_runner_core/src/generate/options.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
 import 'package:build_runner_core/src/package_graph/target_graph.dart';
+import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 
@@ -83,10 +84,9 @@ void main() {
       var id = AssetId('a', 'web/a.txt');
       var node = AssetNode.generated(
         id,
-        pendingBuildAction: PendingBuildAction.none,
         phaseNumber: 0,
-        wasOutput: true,
-        isFailure: true,
+        result: false,
+        digest: Digest([]),
         primaryInput: AssetId('a', 'web/a.dart'),
         isHidden: true,
       );

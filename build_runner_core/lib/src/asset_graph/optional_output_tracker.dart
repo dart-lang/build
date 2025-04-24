@@ -29,6 +29,7 @@ import 'node.dart';
 /// Non-required optional output might still exist in the generated directory
 /// and the asset graph but we should avoid serving them, outputting them in
 /// the merged directories, or considering a failed output as an overall.
+// TODO(davidmorgan): can this be removed?
 class OptionalOutputTracker {
   final _checkedOutputs = <AssetId, bool>{};
   final AssetGraph _assetGraph;

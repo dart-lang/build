@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
@@ -14,7 +13,6 @@ import 'package:build/src/internal.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/serializer.dart';
 import 'package:crypto/crypto.dart';
-import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:watcher/watcher.dart';
@@ -121,13 +119,13 @@ class AssetGraph implements GeneratedAssetHider {
       placeholders: placeholders,
     );
     // Pre-emptively compute digests for the nodes we know have outputs.
-    await graph._setLastKnownDigests(
+    await graph._setDigests(
       sources.where((id) => graph.get(id)!.primaryOutputs.isNotEmpty),
       digestReader,
     );
     // Always compute digests for all internal nodes.
     graph._addInternalSources(internalSources);
-    await graph._setLastKnownDigests(internalSources, digestReader);
+    await graph._setDigests(internalSources, digestReader);
     return graph;
   }
 
@@ -246,7 +244,7 @@ class AssetGraph implements GeneratedAssetHider {
 
   /// Uses [digestReader] to compute the [Digest] for nodes with [ids] and set
   /// the `lastKnownDigest` field.
-  Future<void> _setLastKnownDigests(
+  Future<void> _setDigests(
     Iterable<AssetId> ids,
     AssetReader digestReader,
   ) async {
@@ -255,7 +253,7 @@ class AssetGraph implements GeneratedAssetHider {
       ids.map((id) async {
         final digest = await digestReader.digest(id);
         updateNode(id, (nodeBuilder) {
-          nodeBuilder.lastKnownDigest = digest;
+          nodeBuilder.digest = digest;
         });
       }),
     );
@@ -339,14 +337,6 @@ class AssetGraph implements GeneratedAssetHider {
   Iterable<AssetId> get outputs =>
       allNodes.where((n) => n.type == NodeType.generated).map((n) => n.id);
 
-  /// The outputs which were, or would have been, produced by failing actions.
-  Iterable<AssetNode> get failedOutputs => allNodes.where(
-    (n) =>
-        n.type == NodeType.generated &&
-        n.generatedNodeState!.isFailure &&
-        n.generatedNodeState!.pendingBuildAction == PendingBuildAction.none,
-  );
-
   /// All the generated outputs for a particular phase.
   Iterable<AssetNode> outputsForPhase(String package, int phase) =>
       packageNodes(package).where(
@@ -365,9 +355,8 @@ class AssetGraph implements GeneratedAssetHider {
   /// Outputs that are deleted from the filesystem are retained in the graph as
   /// `missingSource` nodes.
   ///
-  /// Returns the set of [AssetId]s that were deleted, and the set that was
-  /// invalidated.
-  Future<(Set<AssetId>, Set<AssetId>)> updateAndInvalidate(
+  /// Returns the set of [AssetId]s that were deleted.
+  Future<Set<AssetId>> updateAndInvalidate(
     BuildPhases buildPhases,
     Map<AssetId, ChangeType> updates,
     String rootPackage,
@@ -393,26 +382,25 @@ class AssetGraph implements GeneratedAssetHider {
     });
 
     _addSources(newIds);
+
     var newAndModifiedNodes = [
       for (var id in modifyIds.followedBy(newIds)) get(id)!,
     ];
     // Pre-emptively compute digests for the new and modified nodes we know have
     // outputs.
-    await _setLastKnownDigests(
+    await _setDigests(
       newAndModifiedNodes
           .where(
             (node) =>
                 node.isTrackedInput &&
-                (node.primaryOutputs.isNotEmpty ||
-                    node.lastKnownDigest != null),
+                (node.primaryOutputs.isNotEmpty || node.digest != null),
           )
           .map((node) => node.id),
       digestReader,
     );
 
-    // Collects the set of all transitive ids to be removed from the graph,
-    // based on the removed `SourceAssetNode`s by following the
-    // `primaryOutputs`.
+    // Compute generated nodes that will no longer be output because their
+    // primary input was deleted. Delete them.
     var transitiveRemovedIds = <AssetId>{};
     void addTransitivePrimaryOutputs(AssetId id) {
       if (transitiveRemovedIds.add(id)) {
@@ -426,118 +414,8 @@ class AssetGraph implements GeneratedAssetHider {
         addTransitivePrimaryOutputs(id);
       }
     }
-
-    // The generated nodes to actually delete from the file system.
     var idsToDelete = Set<AssetId>.from(transitiveRemovedIds)
       ..removeAll(removeIds);
-
-    // We definitely need to update manually deleted outputs.
-    for (var deletedOutput in removeIds
-        .map(get)
-        .nonNulls
-        .where((n) => n.type == NodeType.generated)) {
-      updateNode(deletedOutput.id, (nodeBuilder) {
-        nodeBuilder.generatedNodeState.pendingBuildAction =
-            PendingBuildAction.build;
-      });
-    }
-
-    var newGeneratedOutputs = _addOutputsForSources(
-      buildPhases,
-      newIds,
-      rootPackage,
-    );
-    var allNewAndDeletedIds = {...newGeneratedOutputs, ...transitiveRemovedIds};
-
-    // Transitively invalidates all assets. This needs to happen after the
-    // structure of the graph has been updated.
-    var invalidatedIds = <AssetId>{};
-    final computedOutputs = computeOutputs();
-
-    // TODO(davidmorgan): it should be possible to track what needs building in
-    // the `Build` class instead of this invalidation logic.
-    void invalidateNodeAndDeps(AssetId startNodeId) {
-      if (!invalidatedIds.add(startNodeId)) return;
-      var nodesToInvalidate = [startNodeId];
-
-      while (nodesToInvalidate.isNotEmpty) {
-        final nextNodes = nodesToInvalidate;
-        nodesToInvalidate = [];
-        for (final id in nextNodes) {
-          final invalidatedNode = updateNodeIfPresent(id, (nodeBuilder) {
-            if (nodeBuilder.type == NodeType.generated) {
-              final nodeState = nodeBuilder.generatedNodeState;
-              if (nodeState.pendingBuildAction == PendingBuildAction.none) {
-                nodeBuilder.generatedNodeState.pendingBuildAction =
-                    PendingBuildAction.buildIfInputsChanged;
-              }
-            } else if (nodeBuilder.type == NodeType.glob) {
-              final nodeState = nodeBuilder.globNodeState;
-              if (nodeState.pendingBuildAction == PendingBuildAction.none) {
-                nodeBuilder.globNodeState.pendingBuildAction =
-                    PendingBuildAction.buildIfInputsChanged;
-              }
-            }
-          });
-
-          if (invalidatedNode != null) {
-            for (final id
-                in (computedOutputs[invalidatedNode.id] ?? const <AssetId>{})) {
-              if (invalidatedIds.add(id)) {
-                nodesToInvalidate.add(id);
-              }
-            }
-          }
-        }
-      }
-    }
-
-    for (var changed in updates.keys.followedBy(newGeneratedOutputs)) {
-      invalidateNodeAndDeps(changed);
-    }
-
-    // Invalidate nodes that depend on nodes that will be rebuilt due to changed
-    // build options.
-    if (previousInBuildPhasesOptionsDigests != null) {
-      final invalidatedPhases = <int>{};
-      for (var i = 0; i != buildPhases.inBuildPhases.length; i++) {
-        if (previousInBuildPhasesOptionsDigests![i] !=
-            inBuildPhasesOptionsDigests[i]) {
-          invalidatedPhases.add(i);
-        }
-      }
-      for (final node in allNodes) {
-        if (node.type == NodeType.generated &&
-            invalidatedPhases.contains(
-              node.generatedNodeConfiguration!.phaseNumber,
-            )) {
-          invalidateNodeAndDeps(node.id);
-        }
-      }
-    }
-
-    // For all new or deleted assets, check if they match any glob nodes and
-    // invalidate those.
-    for (var id in allNewAndDeletedIds) {
-      var samePackageGlobNodes = packageNodes(id.package).where(
-        (n) =>
-            n.type == NodeType.glob &&
-            n.globNodeState!.pendingBuildAction == PendingBuildAction.none,
-      );
-      for (final node in samePackageGlobNodes) {
-        final nodeConfiguration = node.globNodeConfiguration!;
-        final glob = Glob(nodeConfiguration.glob);
-        if (glob.matches(id.path)) {
-          invalidateNodeAndDeps(node.id);
-          updateNode(node.id, (nodeBuilder) {
-            nodeBuilder.globNodeState.pendingBuildAction =
-                PendingBuildAction.buildIfInputsChanged;
-          });
-        }
-      }
-    }
-
-    // Delete all the invalidated assets.
     await Future.wait(idsToDelete.map(delete));
 
     // Change deleted source assets and their transitive primary outputs to
@@ -546,13 +424,14 @@ class AssetGraph implements GeneratedAssetHider {
     for (final id in removeIds) {
       final node = get(id);
       if (node != null && node.type == NodeType.source) {
-        invalidateNodeAndDeps(id);
         _setMissingRecursive(id);
       }
     }
 
+    _addOutputsForSources(buildPhases, newIds, rootPackage);
+
     _outputs = null;
-    return (idsToDelete, invalidatedIds);
+    return idsToDelete;
   }
 
   /// Crawl up primary inputs to see if the original Source file matches the
@@ -586,7 +465,7 @@ class AssetGraph implements GeneratedAssetHider {
   ///
   /// If [placeholders] is supplied they will be added to [newSources] to create
   /// the full input set.
-  Set<AssetId> _addOutputsForSources(
+  void _addOutputsForSources(
     BuildPhases buildPhases,
     Set<AssetId> newSources,
     String rootPackage, {
@@ -610,7 +489,6 @@ class AssetGraph implements GeneratedAssetHider {
       );
     }
     _addPostBuildActionApplications(buildPhases.postBuildPhase, allInputs);
-    return allInputs;
   }
 
   /// Adds all [AssetNode.generated]s for [phase] given [allInputs].
@@ -716,9 +594,6 @@ class AssetGraph implements GeneratedAssetHider {
         output,
         phaseNumber: phaseNumber,
         primaryInput: primaryInput,
-        pendingBuildAction: PendingBuildAction.build,
-        wasOutput: false,
-        isFailure: false,
         isHidden: isHidden,
       );
       if (existing != null) {
@@ -791,8 +666,7 @@ class AssetGraph implements GeneratedAssetHider {
     for (final id in outputs) {
       var node = get(id)!;
       final nodeConfiguration = node.generatedNodeConfiguration!;
-      final nodeState = node.generatedNodeState!;
-      if (nodeState.wasOutput && !nodeConfiguration.isHidden) {
+      if (node.wasOutput && !nodeConfiguration.isHidden) {
         var idToDelete = id;
         // If the package no longer exists, then the user must have
         // renamed the root package.

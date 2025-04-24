@@ -34,7 +34,7 @@ FutureOr<bool> shouldProcess(
       reader.cache.invalidate([change.id]);
       return reader
           .digest(change.id)
-          .then((newDigest) => node.lastKnownDigest != newDigest);
+          .then((newDigest) => node.digest != newDigest);
     }
   } else {
     if (change.type != ChangeType.ADD) return false;

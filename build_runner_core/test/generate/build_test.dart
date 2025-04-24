@@ -1270,10 +1270,8 @@ void main() {
       aCopyId,
       phaseNumber: 0,
       primaryInput: makeAssetId('a|web/a.txt'),
-      pendingBuildAction: PendingBuildAction.none,
-      wasOutput: true,
-      isFailure: false,
-      lastKnownDigest: computeDigest(aCopyId, 'a'),
+      result: true,
+      digest: computeDigest(aCopyId, 'a'),
       inputs: [makeAssetId('a|web/a.txt')],
       isHidden: false,
     );
@@ -1286,10 +1284,8 @@ void main() {
       bCopyId,
       phaseNumber: 0,
       primaryInput: makeAssetId('a|lib/b.txt'),
-      pendingBuildAction: PendingBuildAction.none,
-      wasOutput: true,
-      isFailure: false,
-      lastKnownDigest: computeDigest(bCopyId, 'b'),
+      result: true,
+      digest: computeDigest(bCopyId, 'b'),
       inputs: [makeAssetId('a|lib/b.txt')],
       isHidden: false,
     );
@@ -1311,10 +1307,8 @@ void main() {
       makeAssetId('a|web/a.txt.post'),
       phaseNumber: 1,
       primaryInput: makeAssetId('a|web/a.txt'),
-      pendingBuildAction: PendingBuildAction.none,
-      wasOutput: true,
-      isFailure: false,
-      lastKnownDigest: computeDigest(makeAssetId(r'$$a|web/a.txt.post'), 'a'),
+      result: true,
+      digest: computeDigest(makeAssetId(r'$$a|web/a.txt.post'), 'a'),
       inputs: [makeAssetId('a|web/a.txt')],
       isHidden: true,
     );
@@ -1328,10 +1322,8 @@ void main() {
       makeAssetId('a|lib/b.txt.post'),
       phaseNumber: 1,
       primaryInput: makeAssetId('a|lib/b.txt'),
-      pendingBuildAction: PendingBuildAction.none,
-      wasOutput: true,
-      isFailure: false,
-      lastKnownDigest: computeDigest(makeAssetId(r'$$a|lib/b.txt.post'), 'b'),
+      result: true,
+      digest: computeDigest(makeAssetId(r'$$a|lib/b.txt.post'), 'b'),
       inputs: [makeAssetId('a|lib/b.txt')],
       isHidden: true,
     );
@@ -2012,10 +2004,19 @@ void main() {
       var finalGraph = AssetGraph.deserialize(
         result.readerWriter.testing.readBytes(AssetId('a', assetGraphPath)),
       );
-      for (var i = 1; i < 4; i++) {
-        var node = finalGraph.get(AssetId('a', 'web/a.g$i'))!;
-        expect(node.generatedNodeState!.isFailure, isTrue);
-      }
+
+      expect(
+        finalGraph.get(AssetId('a', 'web/a.g1'))!.generatedNodeState!.result,
+        isFalse,
+      );
+      expect(
+        finalGraph.get(AssetId('a', 'web/a.g2'))!.generatedNodeState!.result,
+        isFalse,
+      );
+      expect(
+        finalGraph.get(AssetId('a', 'web/a.g3'))!.generatedNodeState!.result,
+        isFalse,
+      );
     });
 
     test('a glob should not be an output of an anchor node', () async {

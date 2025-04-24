@@ -20,6 +20,7 @@ import 'package:build_runner_core/src/generate/build_phases.dart';
 import 'package:build_runner_core/src/generate/options.dart';
 import 'package:build_runner_core/src/generate/performance_tracker.dart';
 import 'package:build_runner_core/src/package_graph/target_graph.dart';
+import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 import 'package:stream_channel/stream_channel.dart';
@@ -210,10 +211,9 @@ void main() {
         AssetNode.generated(
           AssetId('a', 'web/main.ddc.js'),
           phaseNumber: 0,
-          pendingBuildAction: PendingBuildAction.none,
           isHidden: false,
-          wasOutput: true,
-          isFailure: true,
+          digest: Digest([]),
+          result: false,
           primaryInput: AssetId('a', 'web/main.dart'),
         ),
       );

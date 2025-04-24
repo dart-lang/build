@@ -10,12 +10,12 @@ import 'package:crypto/crypto.dart';
 AssetNode makeAssetNode([
   String? assetIdString,
   List<AssetId>? outputs,
-  Digest? lastKnownDigest,
+  Digest? digest,
 ]) {
   var id = makeAssetId(assetIdString);
   return AssetNode.source(
     id,
-    lastKnownDigest: lastKnownDigest,
+    digest: digest,
     outputs: outputs,
     primaryOutputs: outputs,
   );

@@ -43,32 +43,6 @@ final BuiltSet<NodeType> _$nodeTypeValues = new BuiltSet<NodeType>(
   ],
 );
 
-const PendingBuildAction _$none = const PendingBuildAction._('none');
-const PendingBuildAction _$buildIfInputsChanged = const PendingBuildAction._(
-  'buildIfInputsChanged',
-);
-const PendingBuildAction _$build = const PendingBuildAction._('build');
-
-PendingBuildAction _$pendingBuildActionValueOf(String name) {
-  switch (name) {
-    case 'none':
-      return _$none;
-    case 'buildIfInputsChanged':
-      return _$buildIfInputsChanged;
-    case 'build':
-      return _$build;
-    default:
-      throw new ArgumentError(name);
-  }
-}
-
-final BuiltSet<PendingBuildAction> _$pendingBuildActionValues =
-    new BuiltSet<PendingBuildAction>(const <PendingBuildAction>[
-      _$none,
-      _$buildIfInputsChanged,
-      _$build,
-    ]);
-
 Serializer<NodeType> _$nodeTypeSerializer = new _$NodeTypeSerializer();
 Serializer<AssetNode> _$assetNodeSerializer = new _$AssetNodeSerializer();
 Serializer<GeneratedNodeConfiguration> _$generatedNodeConfigurationSerializer =
@@ -79,8 +53,6 @@ Serializer<GlobNodeConfiguration> _$globNodeConfigurationSerializer =
     new _$GlobNodeConfigurationSerializer();
 Serializer<GlobNodeState> _$globNodeStateSerializer =
     new _$GlobNodeStateSerializer();
-Serializer<PendingBuildAction> _$pendingBuildActionSerializer =
-    new _$PendingBuildActionSerializer();
 
 class _$NodeTypeSerializer implements PrimitiveSerializer<NodeType> {
   @override
@@ -183,10 +155,10 @@ class _$AssetNodeSerializer implements StructuredSerializer<AssetNode> {
           ),
         );
     }
-    value = object.lastKnownDigest;
+    value = object.digest;
     if (value != null) {
       result
-        ..add('lastKnownDigest')
+        ..add('digest')
         ..add(
           serializers.serialize(value, specifiedType: const FullType(Digest)),
         );
@@ -271,8 +243,8 @@ class _$AssetNodeSerializer implements StructuredSerializer<AssetNode> {
                 as BuiltSet<Object?>,
           );
           break;
-        case 'lastKnownDigest':
-          result.lastKnownDigest =
+        case 'digest':
+          result.digest =
               serializers.deserialize(
                     value,
                     specifiedType: const FullType(Digest),
@@ -400,23 +372,16 @@ class _$GeneratedNodeStateSerializer
           const FullType(AssetId),
         ]),
       ),
-      'pendingBuildAction',
-      serializers.serialize(
-        object.pendingBuildAction,
-        specifiedType: const FullType(PendingBuildAction),
-      ),
-      'wasOutput',
-      serializers.serialize(
-        object.wasOutput,
-        specifiedType: const FullType(bool),
-      ),
-      'isFailure',
-      serializers.serialize(
-        object.isFailure,
-        specifiedType: const FullType(bool),
-      ),
     ];
-
+    Object? value;
+    value = object.result;
+    if (value != null) {
+      result
+        ..add('result')
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(bool)),
+        );
+    }
     return result;
   }
 
@@ -445,29 +410,13 @@ class _$GeneratedNodeStateSerializer
                 as BuiltSet<Object?>,
           );
           break;
-        case 'pendingBuildAction':
-          result.pendingBuildAction =
-              serializers.deserialize(
-                    value,
-                    specifiedType: const FullType(PendingBuildAction),
-                  )!
-                  as PendingBuildAction;
-          break;
-        case 'wasOutput':
-          result.wasOutput =
+        case 'result':
+          result.result =
               serializers.deserialize(
                     value,
                     specifiedType: const FullType(bool),
-                  )!
-                  as bool;
-          break;
-        case 'isFailure':
-          result.isFailure =
-              serializers.deserialize(
-                    value,
-                    specifiedType: const FullType(bool),
-                  )!
-                  as bool;
+                  )
+                  as bool?;
           break;
       }
     }
@@ -562,11 +511,6 @@ class _$GlobNodeStateSerializer implements StructuredSerializer<GlobNodeState> {
           const FullType(AssetId),
         ]),
       ),
-      'pendingBuildAction',
-      serializers.serialize(
-        object.pendingBuildAction,
-        specifiedType: const FullType(PendingBuildAction),
-      ),
       'results',
       serializers.serialize(
         object.results,
@@ -604,14 +548,6 @@ class _$GlobNodeStateSerializer implements StructuredSerializer<GlobNodeState> {
                 as BuiltSet<Object?>,
           );
           break;
-        case 'pendingBuildAction':
-          result.pendingBuildAction =
-              serializers.deserialize(
-                    value,
-                    specifiedType: const FullType(PendingBuildAction),
-                  )!
-                  as PendingBuildAction;
-          break;
         case 'results':
           result.results.replace(
             serializers.deserialize(
@@ -630,28 +566,6 @@ class _$GlobNodeStateSerializer implements StructuredSerializer<GlobNodeState> {
   }
 }
 
-class _$PendingBuildActionSerializer
-    implements PrimitiveSerializer<PendingBuildAction> {
-  @override
-  final Iterable<Type> types = const <Type>[PendingBuildAction];
-  @override
-  final String wireName = 'PendingBuildAction';
-
-  @override
-  Object serialize(
-    Serializers serializers,
-    PendingBuildAction object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => object.name;
-
-  @override
-  PendingBuildAction deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => PendingBuildAction.valueOf(serialized as String);
-}
-
 class _$AssetNode extends AssetNode {
   @override
   final AssetId id;
@@ -668,7 +582,7 @@ class _$AssetNode extends AssetNode {
   @override
   final BuiltSet<AssetId> primaryOutputs;
   @override
-  final Digest? lastKnownDigest;
+  final Digest? digest;
   @override
   final BuiltSet<PostProcessBuildStepId> deletedBy;
 
@@ -683,7 +597,7 @@ class _$AssetNode extends AssetNode {
     this.globNodeConfiguration,
     this.globNodeState,
     required this.primaryOutputs,
-    this.lastKnownDigest,
+    this.digest,
     required this.deletedBy,
   }) : super._() {
     BuiltValueNullFieldError.checkNotNull(id, r'AssetNode', 'id');
@@ -714,7 +628,7 @@ class _$AssetNode extends AssetNode {
         globNodeConfiguration == other.globNodeConfiguration &&
         globNodeState == other.globNodeState &&
         primaryOutputs == other.primaryOutputs &&
-        lastKnownDigest == other.lastKnownDigest &&
+        digest == other.digest &&
         deletedBy == other.deletedBy;
   }
 
@@ -728,7 +642,7 @@ class _$AssetNode extends AssetNode {
     _$hash = $jc(_$hash, globNodeConfiguration.hashCode);
     _$hash = $jc(_$hash, globNodeState.hashCode);
     _$hash = $jc(_$hash, primaryOutputs.hashCode);
-    _$hash = $jc(_$hash, lastKnownDigest.hashCode);
+    _$hash = $jc(_$hash, digest.hashCode);
     _$hash = $jc(_$hash, deletedBy.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
@@ -744,7 +658,7 @@ class _$AssetNode extends AssetNode {
           ..add('globNodeConfiguration', globNodeConfiguration)
           ..add('globNodeState', globNodeState)
           ..add('primaryOutputs', primaryOutputs)
-          ..add('lastKnownDigest', lastKnownDigest)
+          ..add('digest', digest)
           ..add('deletedBy', deletedBy))
         .toString();
   }
@@ -794,10 +708,9 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
   set primaryOutputs(SetBuilder<AssetId>? primaryOutputs) =>
       _$this._primaryOutputs = primaryOutputs;
 
-  Digest? _lastKnownDigest;
-  Digest? get lastKnownDigest => _$this._lastKnownDigest;
-  set lastKnownDigest(Digest? lastKnownDigest) =>
-      _$this._lastKnownDigest = lastKnownDigest;
+  Digest? _digest;
+  Digest? get digest => _$this._digest;
+  set digest(Digest? digest) => _$this._digest = digest;
 
   SetBuilder<PostProcessBuildStepId>? _deletedBy;
   SetBuilder<PostProcessBuildStepId> get deletedBy =>
@@ -817,7 +730,7 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
       _globNodeConfiguration = $v.globNodeConfiguration?.toBuilder();
       _globNodeState = $v.globNodeState?.toBuilder();
       _primaryOutputs = $v.primaryOutputs.toBuilder();
-      _lastKnownDigest = $v.lastKnownDigest;
+      _digest = $v.digest;
       _deletedBy = $v.deletedBy.toBuilder();
       _$v = null;
     }
@@ -855,7 +768,7 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
             globNodeConfiguration: _globNodeConfiguration?.build(),
             globNodeState: _globNodeState?.build(),
             primaryOutputs: primaryOutputs.build(),
-            lastKnownDigest: lastKnownDigest,
+            digest: digest,
             deletedBy: deletedBy.build(),
           );
     } catch (_) {
@@ -1034,41 +947,17 @@ class _$GeneratedNodeState extends GeneratedNodeState {
   @override
   final BuiltSet<AssetId> inputs;
   @override
-  final PendingBuildAction pendingBuildAction;
-  @override
-  final bool wasOutput;
-  @override
-  final bool isFailure;
+  final bool? result;
 
   factory _$GeneratedNodeState([
     void Function(GeneratedNodeStateBuilder)? updates,
   ]) => (new GeneratedNodeStateBuilder()..update(updates))._build();
 
-  _$GeneratedNodeState._({
-    required this.inputs,
-    required this.pendingBuildAction,
-    required this.wasOutput,
-    required this.isFailure,
-  }) : super._() {
+  _$GeneratedNodeState._({required this.inputs, this.result}) : super._() {
     BuiltValueNullFieldError.checkNotNull(
       inputs,
       r'GeneratedNodeState',
       'inputs',
-    );
-    BuiltValueNullFieldError.checkNotNull(
-      pendingBuildAction,
-      r'GeneratedNodeState',
-      'pendingBuildAction',
-    );
-    BuiltValueNullFieldError.checkNotNull(
-      wasOutput,
-      r'GeneratedNodeState',
-      'wasOutput',
-    );
-    BuiltValueNullFieldError.checkNotNull(
-      isFailure,
-      r'GeneratedNodeState',
-      'isFailure',
     );
   }
 
@@ -1086,18 +975,14 @@ class _$GeneratedNodeState extends GeneratedNodeState {
     if (identical(other, this)) return true;
     return other is GeneratedNodeState &&
         inputs == other.inputs &&
-        pendingBuildAction == other.pendingBuildAction &&
-        wasOutput == other.wasOutput &&
-        isFailure == other.isFailure;
+        result == other.result;
   }
 
   @override
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, inputs.hashCode);
-    _$hash = $jc(_$hash, pendingBuildAction.hashCode);
-    _$hash = $jc(_$hash, wasOutput.hashCode);
-    _$hash = $jc(_$hash, isFailure.hashCode);
+    _$hash = $jc(_$hash, result.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -1106,9 +991,7 @@ class _$GeneratedNodeState extends GeneratedNodeState {
   String toString() {
     return (newBuiltValueToStringHelper(r'GeneratedNodeState')
           ..add('inputs', inputs)
-          ..add('pendingBuildAction', pendingBuildAction)
-          ..add('wasOutput', wasOutput)
-          ..add('isFailure', isFailure))
+          ..add('result', result))
         .toString();
   }
 }
@@ -1122,18 +1005,9 @@ class GeneratedNodeStateBuilder
       _$this._inputs ??= new SetBuilder<AssetId>();
   set inputs(SetBuilder<AssetId>? inputs) => _$this._inputs = inputs;
 
-  PendingBuildAction? _pendingBuildAction;
-  PendingBuildAction? get pendingBuildAction => _$this._pendingBuildAction;
-  set pendingBuildAction(PendingBuildAction? pendingBuildAction) =>
-      _$this._pendingBuildAction = pendingBuildAction;
-
-  bool? _wasOutput;
-  bool? get wasOutput => _$this._wasOutput;
-  set wasOutput(bool? wasOutput) => _$this._wasOutput = wasOutput;
-
-  bool? _isFailure;
-  bool? get isFailure => _$this._isFailure;
-  set isFailure(bool? isFailure) => _$this._isFailure = isFailure;
+  bool? _result;
+  bool? get result => _$this._result;
+  set result(bool? result) => _$this._result = result;
 
   GeneratedNodeStateBuilder();
 
@@ -1141,9 +1015,7 @@ class GeneratedNodeStateBuilder
     final $v = _$v;
     if ($v != null) {
       _inputs = $v.inputs.toBuilder();
-      _pendingBuildAction = $v.pendingBuildAction;
-      _wasOutput = $v.wasOutput;
-      _isFailure = $v.isFailure;
+      _result = $v.result;
       _$v = null;
     }
     return this;
@@ -1168,24 +1040,7 @@ class GeneratedNodeStateBuilder
     try {
       _$result =
           _$v ??
-          new _$GeneratedNodeState._(
-            inputs: inputs.build(),
-            pendingBuildAction: BuiltValueNullFieldError.checkNotNull(
-              pendingBuildAction,
-              r'GeneratedNodeState',
-              'pendingBuildAction',
-            ),
-            wasOutput: BuiltValueNullFieldError.checkNotNull(
-              wasOutput,
-              r'GeneratedNodeState',
-              'wasOutput',
-            ),
-            isFailure: BuiltValueNullFieldError.checkNotNull(
-              isFailure,
-              r'GeneratedNodeState',
-              'isFailure',
-            ),
-          );
+          new _$GeneratedNodeState._(inputs: inputs.build(), result: result);
     } catch (_) {
       late String _$failedField;
       try {
@@ -1326,24 +1181,13 @@ class _$GlobNodeState extends GlobNodeState {
   @override
   final BuiltSet<AssetId> inputs;
   @override
-  final PendingBuildAction pendingBuildAction;
-  @override
   final BuiltList<AssetId> results;
 
   factory _$GlobNodeState([void Function(GlobNodeStateBuilder)? updates]) =>
       (new GlobNodeStateBuilder()..update(updates))._build();
 
-  _$GlobNodeState._({
-    required this.inputs,
-    required this.pendingBuildAction,
-    required this.results,
-  }) : super._() {
+  _$GlobNodeState._({required this.inputs, required this.results}) : super._() {
     BuiltValueNullFieldError.checkNotNull(inputs, r'GlobNodeState', 'inputs');
-    BuiltValueNullFieldError.checkNotNull(
-      pendingBuildAction,
-      r'GlobNodeState',
-      'pendingBuildAction',
-    );
     BuiltValueNullFieldError.checkNotNull(results, r'GlobNodeState', 'results');
   }
 
@@ -1359,7 +1203,6 @@ class _$GlobNodeState extends GlobNodeState {
     if (identical(other, this)) return true;
     return other is GlobNodeState &&
         inputs == other.inputs &&
-        pendingBuildAction == other.pendingBuildAction &&
         results == other.results;
   }
 
@@ -1367,7 +1210,6 @@ class _$GlobNodeState extends GlobNodeState {
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, inputs.hashCode);
-    _$hash = $jc(_$hash, pendingBuildAction.hashCode);
     _$hash = $jc(_$hash, results.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
@@ -1377,7 +1219,6 @@ class _$GlobNodeState extends GlobNodeState {
   String toString() {
     return (newBuiltValueToStringHelper(r'GlobNodeState')
           ..add('inputs', inputs)
-          ..add('pendingBuildAction', pendingBuildAction)
           ..add('results', results))
         .toString();
   }
@@ -1392,11 +1233,6 @@ class GlobNodeStateBuilder
       _$this._inputs ??= new SetBuilder<AssetId>();
   set inputs(SetBuilder<AssetId>? inputs) => _$this._inputs = inputs;
 
-  PendingBuildAction? _pendingBuildAction;
-  PendingBuildAction? get pendingBuildAction => _$this._pendingBuildAction;
-  set pendingBuildAction(PendingBuildAction? pendingBuildAction) =>
-      _$this._pendingBuildAction = pendingBuildAction;
-
   ListBuilder<AssetId>? _results;
   ListBuilder<AssetId> get results =>
       _$this._results ??= new ListBuilder<AssetId>();
@@ -1408,7 +1244,6 @@ class GlobNodeStateBuilder
     final $v = _$v;
     if ($v != null) {
       _inputs = $v.inputs.toBuilder();
-      _pendingBuildAction = $v.pendingBuildAction;
       _results = $v.results.toBuilder();
       _$v = null;
     }
@@ -1436,11 +1271,6 @@ class GlobNodeStateBuilder
           _$v ??
           new _$GlobNodeState._(
             inputs: inputs.build(),
-            pendingBuildAction: BuiltValueNullFieldError.checkNotNull(
-              pendingBuildAction,
-              r'GlobNodeState',
-              'pendingBuildAction',
-            ),
             results: results.build(),
           );
     } catch (_) {
@@ -1448,7 +1278,6 @@ class GlobNodeStateBuilder
       try {
         _$failedField = 'inputs';
         inputs.build();
-
         _$failedField = 'results';
         results.build();
       } catch (e) {

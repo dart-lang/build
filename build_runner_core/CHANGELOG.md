@@ -32,6 +32,8 @@
 - Compute outputs as needed instead of storing them in the asset graph.
 - Check build options for changes in the phase setup instead of storing them
   in the asset graph.
+- Refactor invalidation to track current build progress in `Build` instead of
+  in the asset graph.
 
 ## 8.0.0
 

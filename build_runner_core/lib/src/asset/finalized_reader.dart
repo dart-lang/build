@@ -63,8 +63,8 @@ class FinalizedReader {
 
     if (node.type == NodeType.generated) {
       final nodeState = node.generatedNodeState!;
-      if (nodeState.isFailure) return UnreadableReason.failed;
-      if (!nodeState.wasOutput) return UnreadableReason.notOutput;
+      if (nodeState.result == false) return UnreadableReason.failed;
+      if (!node.wasOutput) return UnreadableReason.notOutput;
       // No need to explicitly check readability for generated files, their
       // readability is recorded in the node state.
       return null;
@@ -120,10 +120,10 @@ class FinalizedReader {
   /// Note that [id] must exist in the asset graph.
   FutureOr<Digest> _ensureDigest(AssetId id) {
     var node = _assetGraph.get(id)!;
-    if (node.lastKnownDigest != null) return node.lastKnownDigest!;
+    if (node.digest != null) return node.digest!;
     return _delegate.digest(id).then((digest) {
       _assetGraph.updateNode(id, (nodeBuilder) {
-        nodeBuilder.lastKnownDigest = digest;
+        nodeBuilder.digest = digest;
       });
       return digest;
     });
