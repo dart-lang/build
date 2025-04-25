@@ -218,7 +218,7 @@ class Build {
             // match.
             assetGraph.previousInBuildPhasesOptionsDigests =
                 assetGraph.inBuildPhasesOptionsDigests;
-            assetGraph.postBuildActionsOptionsDigests =
+            assetGraph.previousPostBuildActionsOptionsDigests =
                 assetGraph.postBuildActionsOptionsDigests;
           },
         );
@@ -871,12 +871,13 @@ class Build {
     final input = buildStepId.input;
     final node = assetGraph.get(input)!;
 
-    if (assetGraph.previousPostBuildOptionsDigests == null) {
+    if (assetGraph.previousPostBuildActionsOptionsDigests == null) {
       // It's a clean build.
       return true;
     }
 
-    if (assetGraph.previousPostBuildOptionsDigests![buildStepId.actionNumber] !=
+    if (assetGraph.previousPostBuildActionsOptionsDigests![buildStepId
+            .actionNumber] !=
         assetGraph.postBuildActionsOptionsDigests[buildStepId.actionNumber]) {
       return true;
     }

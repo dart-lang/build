@@ -71,7 +71,7 @@ class AssetGraph implements GeneratedAssetHider {
 
   /// Digests from the previous build's [BuildPhases], or `null` if this is a
   /// clean build.
-  BuiltList<Digest>? previousPostBuildOptionsDigests;
+  BuiltList<Digest>? previousPostBuildActionsOptionsDigests;
 
   /// Digests from the current build's [BuildPhases].
   BuiltList<Digest> postBuildActionsOptionsDigests;

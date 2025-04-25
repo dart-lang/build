@@ -140,7 +140,7 @@ class AssetGraphLoader {
         cachedGraph.inBuildPhasesOptionsDigests;
     cachedGraph.inBuildPhasesOptionsDigests =
         buildPhases.inBuildPhasesOptionsDigests;
-    cachedGraph.previousPostBuildOptionsDigests =
+    cachedGraph.previousPostBuildActionsOptionsDigests =
         cachedGraph.postBuildActionsOptionsDigests;
     cachedGraph.postBuildActionsOptionsDigests =
         buildPhases.postBuildActionsOptionsDigests;
