@@ -189,6 +189,13 @@ Future<TestBuilderResult> testBuilder(
 /// Enabling of language experiments is supported through the
 /// `withEnabledExperiments` method from package:build.
 ///
+/// To mark a builder as optional, add it to [optionalBuilders]. Optional
+/// builders only run if their output is used by a non-optional builder.
+///
+/// The default builder config will be overwritten with one that causes the
+/// builder to run for all inputs. To use the default builder config instead,
+/// set [testingBuilderConfig] to `false`.
+///
 /// Returns a [TestBuilderResult] with the [TestReaderWriter] used for
 /// the build, which can be used for further checks.
 Future<TestBuilderResult> testBuilders(
@@ -202,6 +209,8 @@ Future<TestBuilderResult> testBuilders(
   void Function(AssetId, Iterable<AssetId>)? reportUnusedAssetsForInput,
   PackageConfig? packageConfig,
   Resolvers? resolvers,
+  Set<Builder> optionalBuilders = const {},
+  bool testingBuilderConfig = true,
 }) async {
   onLog ??=
       (log) =>
@@ -268,27 +277,31 @@ Future<TestBuilderResult> testBuilders(
     packageGraph: packageGraph,
     reportUnusedAssetsForInput: reportUnusedAssetsForInput,
     resolvers: resolvers,
-    // Override sources to all inputs, optionally restricted by [inputFilter] or
-    // [generateFor]. Without this, the defaults would be used, for example
-    // picking up `lib/**` but not all files in the package root.
-    overrideBuildConfig: {
-      for (final package in allPackages)
-        package: BuildConfig.fromMap(package, [], {
-          'targets': {
-            package: {
-              'sources': [
-                r'\$package$',
-                r'lib/$lib$',
-                r'test/$test$',
-                r'web/$web$',
-                ...inputIds
-                    .where((id) => id.package == package)
-                    .map((id) => id.path),
-              ],
-            },
-          },
-        }),
-    },
+    overrideBuildConfig:
+        // Override sources to all inputs, optionally restricted by
+        // [inputFilter] or [generateFor]. Or if [testingBuilderConfig] is
+        // false, use the defaults. These skip some files, for example
+        // picking up `lib/**` but not all files in the package root.
+        testingBuilderConfig
+            ? {
+              for (final package in allPackages)
+                package: BuildConfig.fromMap(package, [], {
+                  'targets': {
+                    package: {
+                      'sources': [
+                        r'\$package$',
+                        r'lib/$lib$',
+                        r'test/$test$',
+                        r'web/$web$',
+                        ...inputIds
+                            .where((id) => id.package == package)
+                            .map((id) => id.path),
+                      ],
+                    },
+                  },
+                }),
+            }
+            : const {},
     // Tests always trigger the "build script updated" check, even if it
     // didn't change. Skip it to allow testing with preserved state.
     skipBuildScriptCheck: true,
@@ -296,9 +309,12 @@ Future<TestBuilderResult> testBuilders(
 
   final buildSeries = await BuildSeries.create(buildOptions, environment, [
     for (final builder in builders)
-      apply(builderName(builder), [
-        (_) => builder,
-      ], (package) => package.name != r'$sdk'),
+      apply(
+        builderName(builder),
+        [(_) => builder],
+        (package) => package.name != r'$sdk',
+        isOptional: optionalBuilders.contains(builder),
+      ),
   ], {});
 
   // Run the build.
