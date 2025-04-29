@@ -27,7 +27,12 @@ class InvalidationTester {
   /// The [OutputStrategy] for generated assets.
   ///
   /// [OutputStrategy.inputDigest] is the default if there is no entry.
-  final Map<AssetId, OutputStrategy> _outputs = {};
+  final Map<AssetId, OutputStrategy> _outputStrategies = {};
+
+  /// The [FailureStrategy] for generated assets.
+  ///
+  /// [FailureStrategy.succeed] is the default if there is no entry.
+  final Map<AssetId, FailureStrategy> _failureStrategies = {};
 
   /// Assets written by generators.
   final Set<AssetId> _generatedOutputsWritten = {};
@@ -73,14 +78,32 @@ class InvalidationTester {
   /// By default, output will be a digest of all read files. This changes it to
   /// fixed: it won't change when inputs change.
   void fixOutput(String name) {
-    _outputs[name.assetId] = OutputStrategy.fixed;
+    _outputStrategies[name.assetId] = OutputStrategy.fixed;
+  }
+
+  /// Sets the output strategy for [name] back to the default,
+  /// [OutputStrategy.inputDigest].
+  void digestOutput(String name) {
+    _outputStrategies[name.assetId] = OutputStrategy.inputDigest;
   }
 
   /// Sets the output strategy for [name] to [OutputStrategy.none].
   ///
   /// The generator will not output the file.
   void skipOutput(String name) {
-    _outputs[name.assetId] = OutputStrategy.none;
+    _outputStrategies[name.assetId] = OutputStrategy.none;
+  }
+
+  /// Sets the failure strategy for [name] to [FailureStrategy.fail].
+  ///
+  /// The generator will write any outputs it is configured to write, then fail.
+  void fail(String name) {
+    _failureStrategies[name.assetId] = FailureStrategy.fail;
+  }
+
+  /// Sets the failure strategy for [name] to [FailureStrategy.succeed].
+  void succeed(String name) {
+    _failureStrategies[name.assetId] = FailureStrategy.succeed;
   }
 
   /// Does a build.
@@ -140,9 +163,10 @@ class InvalidationTester {
       optionalBuilders: _builders.where((b) => b.isOptional).toSet(),
       testingBuilderConfig: false,
     );
+    final logString = log.toString();
     printOnFailure(
       '=== build log #${++_buildNumber} ===\n\n'
-      '${log.toString().trimAndIndent}',
+      '${logString.trimAndIndent}',
     );
     _readerWriter = testBuildResult.readerWriter;
 
@@ -152,7 +176,9 @@ class InvalidationTester {
     );
     final deleted = deletedAssets.map(_assetIdToName);
 
-    return Result(written: written, deleted: deleted);
+    return logString.contains('Succeeded after')
+        ? Result(written: written, deleted: deleted)
+        : Result.failure(written: written, deleted: deleted);
   }
 }
 
@@ -168,6 +194,12 @@ enum OutputStrategy {
   inputDigest,
 }
 
+/// Whether a generator succeeds or fails.
+///
+/// Writing files is independent from success or failure: if a generator is
+/// configured to write files, it does so before failing.
+enum FailureStrategy { fail, succeed }
+
 /// The changes on disk caused by the build.
 class Result {
   /// The "names" of the assets that were written.
@@ -176,22 +208,34 @@ class Result {
   /// The "names" of the assets that were deleted.
   BuiltSet<String> deleted;
 
+  /// Whether the build succeeded.
+  bool succeeded;
+
   Result({Iterable<String>? written, Iterable<String>? deleted})
     : written = (written ?? {}).toBuiltSet(),
-      deleted = (deleted ?? {}).toBuiltSet();
+      deleted = (deleted ?? {}).toBuiltSet(),
+      succeeded = true;
+
+  Result.failure({Iterable<String>? written, Iterable<String>? deleted})
+    : written = (written ?? {}).toBuiltSet(),
+      deleted = (deleted ?? {}).toBuiltSet(),
+      succeeded = false;
 
   @override
   bool operator ==(Object other) {
     if (other is! Result) return false;
-    return written == other.written && deleted == other.deleted;
+    return succeeded == other.succeeded &&
+        written == other.written &&
+        deleted == other.deleted;
   }
 
   @override
-  int get hashCode => Object.hash(written, deleted);
+  int get hashCode => Object.hash(succeeded, written, deleted);
 
   @override
   String toString() => [
     'Result(',
+    if (!succeeded) 'failed',
     if (written.isNotEmpty) 'written: ${written.join(', ')}',
     if (deleted.isNotEmpty) 'deleted: ${deleted.join(', ')}',
     ')',
@@ -249,7 +293,7 @@ class TestBuilder implements Builder {
     for (final write in writes) {
       final writeId = buildStep.inputId.replaceAllPathExtensions(write);
       final outputStrategy =
-          _tester._outputs[writeId] ?? OutputStrategy.inputDigest;
+          _tester._outputStrategies[writeId] ?? OutputStrategy.inputDigest;
       final output = switch (outputStrategy) {
         OutputStrategy.fixed => '',
         OutputStrategy.inputDigest =>
@@ -261,14 +305,20 @@ class TestBuilder implements Builder {
         _tester._generatedOutputsWritten.add(writeId);
       }
     }
+    for (final write in writes) {
+      final writeId = buildStep.inputId.replaceAllPathExtensions(write);
+      if (_tester._failureStrategies[writeId] == FailureStrategy.fail) {
+        throw StateError('Failing as requested by test setup.');
+      }
+    }
   }
 }
 
 extension LogRecordExtension on LogRecord {
-  /// Displays [message] with error and stack trace if present.
+  /// Displays [toString] plus error and stack trace if present.
   String get display {
     if (error == null && stackTrace == null) return message;
-    return '$message\n$error\n$stackTrace';
+    return '${toString()}\n$error\n$stackTrace';
   }
 }
 
