@@ -51,8 +51,8 @@ class InvalidationTester {
   /// Adds a builder to the test.
   ///
   /// [from] and [to] are the input and output extension of the builder,
-  /// without ".dart". So `from: '', to: '.g.dart'` is a builder that takes
-  /// `.dart` files as primary inputs and outputs corresponding `.g.dart` files.
+  /// without ".dart". So `from: '', to: '.g'` is a builder that takes `.dart`
+  /// files as primary inputs and outputs corresponding `.g.dart` files.
   ///
   /// Set [isOptional] to make the builder optional. Optional builders only run
   /// if their output is depended on by a non-optional builder.
