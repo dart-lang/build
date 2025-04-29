@@ -136,7 +136,6 @@ void main() {
     graph.add(
       AssetNode.generated(
         AssetId('a', 'web/main.ddc.js'),
-        builderOptionsId: AssetId('_\$fake', 'options_id'),
         phaseNumber: 0,
         pendingBuildAction: PendingBuildAction.none,
         isHidden: false,

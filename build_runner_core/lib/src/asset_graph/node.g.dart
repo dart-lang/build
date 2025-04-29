@@ -6,7 +6,6 @@ part of 'node.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-const NodeType _$builderOptions = const NodeType._('builderOptions');
 const NodeType _$generated = const NodeType._('generated');
 const NodeType _$glob = const NodeType._('glob');
 const NodeType _$internal = const NodeType._('internal');
@@ -16,8 +15,6 @@ const NodeType _$missingSource = const NodeType._('missingSource');
 
 NodeType _$nodeTypeValueOf(String name) {
   switch (name) {
-    case 'builderOptions':
-      return _$builderOptions;
     case 'generated':
       return _$generated;
     case 'glob':
@@ -35,16 +32,16 @@ NodeType _$nodeTypeValueOf(String name) {
   }
 }
 
-final BuiltSet<NodeType> _$nodeTypeValues =
-    new BuiltSet<NodeType>(const <NodeType>[
-      _$builderOptions,
-      _$generated,
-      _$glob,
-      _$internal,
-      _$placeholder,
-      _$source,
-      _$missingSource,
-    ]);
+final BuiltSet<NodeType> _$nodeTypeValues = new BuiltSet<NodeType>(
+  const <NodeType>[
+    _$generated,
+    _$glob,
+    _$internal,
+    _$placeholder,
+    _$source,
+    _$missingSource,
+  ],
+);
 
 const PendingBuildAction _$none = const PendingBuildAction._('none');
 const PendingBuildAction _$buildIfInputsChanged = const PendingBuildAction._(
@@ -322,11 +319,6 @@ class _$GeneratedNodeConfigurationSerializer
         object.primaryInput,
         specifiedType: const FullType(AssetId),
       ),
-      'builderOptionsId',
-      serializers.serialize(
-        object.builderOptionsId,
-        specifiedType: const FullType(AssetId),
-      ),
       'phaseNumber',
       serializers.serialize(
         object.phaseNumber,
@@ -358,14 +350,6 @@ class _$GeneratedNodeConfigurationSerializer
       switch (key) {
         case 'primaryInput':
           result.primaryInput =
-              serializers.deserialize(
-                    value,
-                    specifiedType: const FullType(AssetId),
-                  )!
-                  as AssetId;
-          break;
-        case 'builderOptionsId':
-          result.builderOptionsId =
               serializers.deserialize(
                     value,
                     specifiedType: const FullType(AssetId),
@@ -908,8 +892,6 @@ class _$GeneratedNodeConfiguration extends GeneratedNodeConfiguration {
   @override
   final AssetId primaryInput;
   @override
-  final AssetId builderOptionsId;
-  @override
   final int phaseNumber;
   @override
   final bool isHidden;
@@ -920,7 +902,6 @@ class _$GeneratedNodeConfiguration extends GeneratedNodeConfiguration {
 
   _$GeneratedNodeConfiguration._({
     required this.primaryInput,
-    required this.builderOptionsId,
     required this.phaseNumber,
     required this.isHidden,
   }) : super._() {
@@ -928,11 +909,6 @@ class _$GeneratedNodeConfiguration extends GeneratedNodeConfiguration {
       primaryInput,
       r'GeneratedNodeConfiguration',
       'primaryInput',
-    );
-    BuiltValueNullFieldError.checkNotNull(
-      builderOptionsId,
-      r'GeneratedNodeConfiguration',
-      'builderOptionsId',
     );
     BuiltValueNullFieldError.checkNotNull(
       phaseNumber,
@@ -960,7 +936,6 @@ class _$GeneratedNodeConfiguration extends GeneratedNodeConfiguration {
     if (identical(other, this)) return true;
     return other is GeneratedNodeConfiguration &&
         primaryInput == other.primaryInput &&
-        builderOptionsId == other.builderOptionsId &&
         phaseNumber == other.phaseNumber &&
         isHidden == other.isHidden;
   }
@@ -969,7 +944,6 @@ class _$GeneratedNodeConfiguration extends GeneratedNodeConfiguration {
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, primaryInput.hashCode);
-    _$hash = $jc(_$hash, builderOptionsId.hashCode);
     _$hash = $jc(_$hash, phaseNumber.hashCode);
     _$hash = $jc(_$hash, isHidden.hashCode);
     _$hash = $jf(_$hash);
@@ -980,7 +954,6 @@ class _$GeneratedNodeConfiguration extends GeneratedNodeConfiguration {
   String toString() {
     return (newBuiltValueToStringHelper(r'GeneratedNodeConfiguration')
           ..add('primaryInput', primaryInput)
-          ..add('builderOptionsId', builderOptionsId)
           ..add('phaseNumber', phaseNumber)
           ..add('isHidden', isHidden))
         .toString();
@@ -997,11 +970,6 @@ class GeneratedNodeConfigurationBuilder
   set primaryInput(AssetId? primaryInput) =>
       _$this._primaryInput = primaryInput;
 
-  AssetId? _builderOptionsId;
-  AssetId? get builderOptionsId => _$this._builderOptionsId;
-  set builderOptionsId(AssetId? builderOptionsId) =>
-      _$this._builderOptionsId = builderOptionsId;
-
   int? _phaseNumber;
   int? get phaseNumber => _$this._phaseNumber;
   set phaseNumber(int? phaseNumber) => _$this._phaseNumber = phaseNumber;
@@ -1016,7 +984,6 @@ class GeneratedNodeConfigurationBuilder
     final $v = _$v;
     if ($v != null) {
       _primaryInput = $v.primaryInput;
-      _builderOptionsId = $v.builderOptionsId;
       _phaseNumber = $v.phaseNumber;
       _isHidden = $v.isHidden;
       _$v = null;
@@ -1046,11 +1013,6 @@ class GeneratedNodeConfigurationBuilder
             primaryInput,
             r'GeneratedNodeConfiguration',
             'primaryInput',
-          ),
-          builderOptionsId: BuiltValueNullFieldError.checkNotNull(
-            builderOptionsId,
-            r'GeneratedNodeConfiguration',
-            'builderOptionsId',
           ),
           phaseNumber: BuiltValueNullFieldError.checkNotNull(
             phaseNumber,

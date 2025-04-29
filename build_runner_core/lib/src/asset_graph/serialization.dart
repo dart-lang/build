@@ -8,7 +8,7 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 28;
+const _version = 29;
 
 /// Deserializes an [AssetGraph] from a [Map].
 AssetGraph deserializeAssetGraph(List<int> bytes) {
@@ -38,8 +38,18 @@ AssetGraph deserializeAssetGraph(List<int> bytes) {
               ? LanguageVersion.parse(entry.value as String)
               : null,
   };
-  var graph = AssetGraph._(
+  var graph = AssetGraph._fromSerialized(
     _deserializeDigest(serializedGraph['buildActionsDigest'] as String)!,
+    serializers.deserialize(
+          serializedGraph['inBuildPhasesOptionsDigests'],
+          specifiedType: const FullType(BuiltList, [FullType(Digest)]),
+        )
+        as BuiltList<Digest>,
+    serializers.deserialize(
+          serializedGraph['postBuildActionsOptionsDigests'],
+          specifiedType: const FullType(BuiltList, [FullType(Digest)]),
+        )
+        as BuiltList<Digest>,
     serializedGraph['dart_version'] as String,
     packageLanguageVersions.build(),
     BuiltList<String>.from(serializedGraph['enabledExperiments'] as List),
@@ -92,6 +102,14 @@ List<int> serializeAssetGraph(AssetGraph graph) {
     'postProcessOutputs': serializers.serialize(
       graph._postProcessBuildStepOutputs,
       specifiedType: postProcessBuildStepOutputsFullType,
+    ),
+    'inBuildPhasesOptionsDigests': serializers.serialize(
+      graph.inBuildPhasesOptionsDigests,
+      specifiedType: const FullType(BuiltList, [FullType(Digest)]),
+    ),
+    'postBuildActionsOptionsDigests': serializers.serialize(
+      graph.postBuildActionsOptionsDigests,
+      specifiedType: const FullType(BuiltList, [FullType(Digest)]),
     ),
   };
 

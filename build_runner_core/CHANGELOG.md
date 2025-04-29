@@ -30,6 +30,8 @@
 - Track post process builder outputs separately from the main graph Instead of
   in `postProcessAnchor` nodes.
 - Compute outputs as needed instead of storing them in the asset graph.
+- Check build options for changes in the phase setup instead of storing them
+  in the asset graph.
 
 ## 8.0.0
 

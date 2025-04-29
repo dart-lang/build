@@ -371,7 +371,7 @@ Future<BuildPhases> createBuildPhases(
     );
   }
 
-  return BuildPhases([...inBuildPhases, ...collapsedPostBuildPhase]);
+  return BuildPhases(inBuildPhases, collapsedPostBuildPhase.singleOrNull);
 }
 
 Iterable<BuildPhase> _createBuildPhasesWithinCycle(

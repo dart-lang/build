@@ -133,6 +133,18 @@ class AssetGraphLoader {
       }
       return null;
     }
+
+    // Move old build phases digests to "previous" fields, set the new ones.
+    // These are used to check for phases to fully rerun due to changed options.
+    cachedGraph.previousInBuildPhasesOptionsDigests =
+        cachedGraph.inBuildPhasesOptionsDigests;
+    cachedGraph.inBuildPhasesOptionsDigests =
+        buildPhases.inBuildPhasesOptionsDigests;
+    cachedGraph.previousPostBuildActionsOptionsDigests =
+        cachedGraph.postBuildActionsOptionsDigests;
+    cachedGraph.postBuildActionsOptionsDigests =
+        buildPhases.postBuildActionsOptionsDigests;
+
     return cachedGraph;
   }
 

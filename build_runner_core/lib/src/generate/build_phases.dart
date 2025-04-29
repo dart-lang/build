@@ -2,6 +2,9 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:convert';
+
+import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
@@ -11,19 +14,54 @@ import 'exceptions.dart';
 import 'phase.dart';
 
 /// The [BuildPhases] defining the sequence of actions in a build, and their
-/// [Digest].
+/// [Digest] and options digests.
 class BuildPhases {
-  final BuiltList<BuildPhase> phases;
+  /// The sequence of actions in the main build.
+  final BuiltList<InBuildPhase> inBuildPhases;
+
+  /// For each [inBuildPhases], its `builderOptions` digest.
+  final BuiltList<Digest> inBuildPhasesOptionsDigests;
+
+  /// The post build phase of the build.
+  final PostBuildPhase postBuildPhase;
+
+  /// For each [PostBuildAction] in [postBuildPhase], its `builderOptions`
+  /// digest.
+  final BuiltList<Digest> postBuildActionsOptionsDigests;
 
   /// A [Digest] that can be used to detect any change to the phases.
   final Digest digest;
 
-  BuildPhases(Iterable<BuildPhase> phases)
-    : phases = phases.toBuiltList(),
-      digest = _computeDigest(phases);
+  BuildPhases(
+    Iterable<InBuildPhase> inBuildPhases, [
+    PostBuildPhase? postBuildPhase,
+  ]) : inBuildPhases = inBuildPhases.toBuiltList(),
+       inBuildPhasesOptionsDigests = _digestsOf(inBuildPhases),
+       postBuildPhase = postBuildPhase ?? PostBuildPhase(const []),
+       postBuildActionsOptionsDigests = _digestsOf(
+         postBuildPhase?.builderActions ?? [],
+       ),
+       digest = _computeDigest([
+         ...inBuildPhases,
+         if (postBuildPhase != null) postBuildPhase,
+       ]);
 
-  BuildPhase operator [](int index) => phases[index];
-  int get length => phases.length;
+  /// The phases, [inBuildPhases] followed by [postBuildPhase], by number.
+  BuildPhase operator [](int index) {
+    if (index < inBuildPhases.length) {
+      return inBuildPhases[index];
+    } else if (index == inBuildPhases.length &&
+        postBuildPhase.builderActions.isNotEmpty) {
+      return postBuildPhase;
+    } else {
+      throw RangeError.index(index, this);
+    }
+  }
+
+  /// The number of [inBuildPhases] plus one for [postBuildPhase] if it's
+  /// non-empty.
+  int get length =>
+      inBuildPhases.length + (postBuildPhase.builderActions.isEmpty ? 0 : 1);
 
   static Digest _computeDigest(Iterable<BuildPhase> phases) {
     final digestSink = AccumulatorSink<Digest>();
@@ -34,6 +72,17 @@ class BuildPhases {
     return digestSink.events.first;
   }
 
+  static BuiltList<Digest> _digestsOf(Iterable<BuildAction> actions) {
+    final result = ListBuilder<Digest>();
+    for (final action in actions) {
+      result.add(_digestOf(action.builderOptions));
+    }
+    return result.build();
+  }
+
+  static Digest _digestOf(BuilderOptions builderOptions) =>
+      md5.convert(utf8.encode(json.encode(builderOptions.config)));
+
   /// Checks that outputs are to allowed locations.
   ///
   /// To be valid, all outputs must be under the package [root], or hidden,
@@ -41,29 +90,28 @@ class BuildPhases {
   ///
   /// If the phases are not valid, logs to [logger] then throws
   /// [CannotBuildException].
+  ///
+  ///  [PostBuildPhase]s are always hidden, so they are always valid.
   void checkOutputLocations(String root, Logger logger) {
-    for (final action in phases) {
-      if (!action.hideOutput) {
-        // Only `InBuildPhase`s can be not hidden.
-        if (action is InBuildPhase && action.package != root) {
-          // This should happen only with a manual build script since the build
-          // script generation filters these out.
-          logger.severe(
-            'A build phase (${action.builderLabel}) is attempting '
-            'to operate on package "${action.package}", but the build script '
-            'is located in package "$root". It\'s not valid to attempt to '
-            'generate files for another package unless the BuilderApplication'
-            'specified "hideOutput".'
-            '\n\n'
-            'Did you mean to write:\n'
-            '  new BuilderApplication(..., toRoot())\n'
-            'or\n'
-            '  new BuilderApplication(..., hideOutput: true)\n'
-            '... instead?',
-          );
-          throw const CannotBuildException();
-        }
-      }
+    for (final action in inBuildPhases) {
+      if (action.hideOutput) continue;
+      if (action.package == root) continue;
+      // This should happen only with a manual build script since the build
+      // script generation filters these out.
+      logger.severe(
+        'A build phase (${action.builderLabel}) is attempting '
+        'to operate on package "${action.package}", but the build script '
+        'is located in package "$root". It\'s not valid to attempt to '
+        'generate files for another package unless the BuilderApplication'
+        'specified "hideOutput".'
+        '\n\n'
+        'Did you mean to write:\n'
+        '  new BuilderApplication(..., toRoot())\n'
+        'or\n'
+        '  new BuilderApplication(..., hideOutput: true)\n'
+        '... instead?',
+      );
+      throw const CannotBuildException();
     }
   }
 }

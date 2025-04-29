@@ -139,7 +139,7 @@ class InBuildPhase extends BuildPhase implements BuildAction {
 ///
 /// There should only be one of these per build, and it should be the final
 /// phase.
-class PostBuildPhase extends BuildPhase {
+class PostBuildPhase implements BuildPhase {
   final List<PostBuildAction> builderActions;
 
   @override

@@ -12,6 +12,7 @@ import 'package:build/experiments.dart' as experiments_zone;
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
 import 'package:built_collection/built_collection.dart';
+import 'package:built_value/serializer.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
@@ -61,8 +62,34 @@ class AssetGraph implements GeneratedAssetHider {
   final Map<String, Map<PostProcessBuildStepId, Set<AssetId>>>
   _postProcessBuildStepOutputs = {};
 
+  /// Digests from the previous build's [BuildPhases], or `null` if this is a
+  /// clean build.
+  BuiltList<Digest>? previousInBuildPhasesOptionsDigests;
+
+  /// Digests from the current build's [BuildPhases].
+  BuiltList<Digest> inBuildPhasesOptionsDigests;
+
+  /// Digests from the previous build's [BuildPhases], or `null` if this is a
+  /// clean build.
+  BuiltList<Digest>? previousPostBuildActionsOptionsDigests;
+
+  /// Digests from the current build's [BuildPhases].
+  BuiltList<Digest> postBuildActionsOptionsDigests;
+
   AssetGraph._(
+    BuildPhases buildPhases,
+    this.dartVersion,
+    this.packageLanguageVersions,
+    this.enabledExperiments,
+  ) : buildPhasesDigest = buildPhases.digest,
+      inBuildPhasesOptionsDigests = buildPhases.inBuildPhasesOptionsDigests,
+      postBuildActionsOptionsDigests =
+          buildPhases.postBuildActionsOptionsDigests;
+
+  AssetGraph._fromSerialized(
     this.buildPhasesDigest,
+    this.inBuildPhasesOptionsDigests,
+    this.postBuildActionsOptionsDigests,
     this.dartVersion,
     this.packageLanguageVersions,
     this.enabledExperiments,
@@ -80,21 +107,19 @@ class AssetGraph implements GeneratedAssetHider {
     AssetReader digestReader,
   ) async {
     var graph = AssetGraph._(
-      buildPhases.digest,
+      buildPhases,
       Platform.version,
       packageGraph.languageVersions,
       experiments_zone.enabledExperiments.build(),
     );
     var placeholders = graph._addPlaceHolderNodes(packageGraph);
     graph._addSources(sources);
-    graph
-      .._addBuilderOptionsNodes(buildPhases)
-      .._addOutputsForSources(
-        buildPhases,
-        sources,
-        packageGraph.root.name,
-        placeholders: placeholders,
-      );
+    graph._addOutputsForSources(
+      buildPhases,
+      sources,
+      packageGraph.root.name,
+      placeholders: placeholders,
+    );
     // Pre-emptively compute digests for the nodes we know have outputs.
     await graph._setLastKnownDigests(
       sources.where((id) => graph.get(id)!.primaryOutputs.isNotEmpty),
@@ -111,6 +136,10 @@ class AssetGraph implements GeneratedAssetHider {
   @visibleForTesting
   Map<String, Map<PostProcessBuildStepId, Set<AssetId>>>
   get allPostProcessBuildStepOutputs => _postProcessBuildStepOutputs;
+
+  /// Whether this is a clean build, meaning there was no previous build state
+  /// loaded or it was discarded as incompatible.
+  bool get cleanBuild => previousInBuildPhasesOptionsDigests == null;
 
   /// Checks if [id] exists in the graph.
   bool contains(AssetId id) =>
@@ -217,36 +246,6 @@ class AssetGraph implements GeneratedAssetHider {
     }
   }
 
-  /// Adds [AssetNode.builderOptions] for all [buildPhases] to this graph.
-  void _addBuilderOptionsNodes(BuildPhases buildPhases) {
-    for (var phaseNum = 0; phaseNum < buildPhases.length; phaseNum++) {
-      var phase = buildPhases[phaseNum];
-      if (phase is InBuildPhase) {
-        add(
-          AssetNode.builderOptions(
-            builderOptionsIdForAction(phase, phaseNum),
-            lastKnownDigest: computeBuilderOptionsDigest(phase.builderOptions),
-          ),
-        );
-      } else if (phase is PostBuildPhase) {
-        var actionNum = 0;
-        for (var builderAction in phase.builderActions) {
-          add(
-            AssetNode.builderOptions(
-              builderOptionsIdForAction(builderAction, actionNum),
-              lastKnownDigest: computeBuilderOptionsDigest(
-                builderAction.builderOptions,
-              ),
-            ),
-          );
-          actionNum++;
-        }
-      } else {
-        throw StateError('Invalid action type $phase');
-      }
-    }
-  }
-
   /// Uses [digestReader] to compute the [Digest] for nodes with [ids] and set
   /// the `lastKnownDigest` field.
   Future<void> _setLastKnownDigests(
@@ -333,12 +332,6 @@ class AssetGraph implements GeneratedAssetHider {
         for (final input in node.generatedNodeState!.inputs) {
           result.putIfAbsent(input, () => {}).add(node.id);
         }
-        result
-            .putIfAbsent(
-              node.generatedNodeConfiguration!.builderOptionsId,
-              () => {},
-            )
-            .add(node.id);
       } else if (node.type == NodeType.glob) {
         for (final input in node.globNodeState!.inputs) {
           result.putIfAbsent(input, () => {}).add(node.id);
@@ -496,6 +489,8 @@ class AssetGraph implements GeneratedAssetHider {
     var invalidatedIds = <AssetId>{};
     final computedOutputs = computeOutputs();
 
+    // TODO(davidmorgan): it should be possible to track what needs building in
+    // the `Build` class instead of this invalidation logic.
     void invalidateNodeAndDeps(AssetId startNodeId) {
       if (!invalidatedIds.add(startNodeId)) return;
       var nodesToInvalidate = [startNodeId];
@@ -534,6 +529,26 @@ class AssetGraph implements GeneratedAssetHider {
 
     for (var changed in updates.keys.followedBy(newGeneratedOutputs)) {
       invalidateNodeAndDeps(changed);
+    }
+
+    // Invalidate nodes that depend on nodes that will be rebuilt due to changed
+    // build options.
+    if (previousInBuildPhasesOptionsDigests != null) {
+      final invalidatedPhases = <int>{};
+      for (var i = 0; i != buildPhases.inBuildPhases.length; i++) {
+        if (previousInBuildPhasesOptionsDigests![i] !=
+            inBuildPhasesOptionsDigests[i]) {
+          invalidatedPhases.add(i);
+        }
+      }
+      for (final node in allNodes) {
+        if (node.type == NodeType.generated &&
+            invalidatedPhases.contains(
+              node.generatedNodeConfiguration!.phaseNumber,
+            )) {
+          invalidateNodeAndDeps(node.id);
+        }
+      }
     }
 
     // For all new or deleted assets, check if they match any glob nodes and
@@ -615,25 +630,22 @@ class AssetGraph implements GeneratedAssetHider {
   }) {
     var allInputs = Set<AssetId>.from(newSources);
     if (placeholders != null) allInputs.addAll(placeholders);
-
-    for (var phaseNum = 0; phaseNum < buildPhases.length; phaseNum++) {
-      var phase = buildPhases[phaseNum];
-      if (phase is InBuildPhase) {
-        allInputs.addAll(
-          _addInBuildPhaseOutputs(
-            phase,
-            phaseNum,
-            allInputs,
-            buildPhases,
-            rootPackage,
-          ),
-        );
-      } else if (phase is PostBuildPhase) {
-        _addPostBuildActionApplications(phase, allInputs);
-      } else {
-        throw StateError('Unrecognized phase type $phase');
-      }
+    for (
+      var phaseNum = 0;
+      phaseNum < buildPhases.inBuildPhases.length;
+      phaseNum++
+    ) {
+      allInputs.addAll(
+        _addInBuildPhaseOutputs(
+          buildPhases.inBuildPhases[phaseNum],
+          phaseNum,
+          allInputs,
+          buildPhases,
+          rootPackage,
+        ),
+      );
     }
+    _addPostBuildActionApplications(buildPhases.postBuildPhase, allInputs);
     return allInputs;
   }
 
@@ -651,8 +663,6 @@ class AssetGraph implements GeneratedAssetHider {
     String rootPackage,
   ) {
     var phaseOutputs = <AssetId>{};
-    var buildOptionsNodeId = builderOptionsIdForAction(phase, phaseNum);
-    var builderOptionsNode = get(buildOptionsNodeId)!;
     var inputs =
         allInputs.where((input) => _actionMatches(phase, input)).toList();
     for (var input in inputs) {
@@ -667,7 +677,6 @@ class AssetGraph implements GeneratedAssetHider {
       var deleted = _addGeneratedOutputs(
         outputs,
         phaseNum,
-        builderOptionsNode,
         buildPhases,
         rootPackage,
         primaryInput: input,
@@ -710,15 +719,11 @@ class AssetGraph implements GeneratedAssetHider {
   Set<AssetId> _addGeneratedOutputs(
     Iterable<AssetId> outputs,
     int phaseNumber,
-    AssetNode builderOptionsNode,
     BuildPhases buildPhases,
     String rootPackage, {
     required AssetId primaryInput,
     required bool isHidden,
   }) {
-    if (builderOptionsNode.type != NodeType.builderOptions) {
-      throw ArgumentError('Expected node of type NodeType.builderOptionsNode');
-    }
     var removed = <AssetId>{};
     Map<AssetId, Set<AssetId>>? computedOutputsBeforeRemoves;
     for (var output in outputs) {
@@ -734,9 +739,10 @@ class AssetGraph implements GeneratedAssetHider {
           throw DuplicateAssetNodeException(
             rootPackage,
             existing.id,
-            (buildPhases[existingConfiguration.phaseNumber] as InBuildPhase)
+            buildPhases
+                .inBuildPhases[existingConfiguration.phaseNumber]
                 .builderLabel,
-            (buildPhases[phaseNumber] as InBuildPhase).builderLabel,
+            buildPhases.inBuildPhases[phaseNumber].builderLabel,
           );
         }
         _removeRecursive(output, removedIds: removed);
@@ -749,7 +755,6 @@ class AssetGraph implements GeneratedAssetHider {
         pendingBuildAction: PendingBuildAction.build,
         wasOutput: false,
         isFailure: false,
-        builderOptionsId: builderOptionsNode.id,
         isHidden: isHidden,
       );
       if (existing != null) {
@@ -830,22 +835,6 @@ class AssetGraph implements GeneratedAssetHider {
       }
     }
     return deletedSources;
-  }
-}
-
-Digest computeBuilderOptionsDigest(BuilderOptions options) =>
-    md5.convert(utf8.encode(json.encode(options.config)));
-
-AssetId builderOptionsIdForAction(BuildAction action, int actionNumber) {
-  if (action is InBuildPhase) {
-    return AssetId(action.package, 'Phase$actionNumber.builderOptions');
-  } else if (action is PostBuildAction) {
-    return PostProcessBuildStepId.builderOptionsIdFor(
-      package: action.package,
-      actionNumber: actionNumber,
-    );
-  } else {
-    throw StateError('Unsupported action type $action');
   }
 }
 

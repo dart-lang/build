@@ -30,7 +30,7 @@ void main() {
       var phases = await createBuildPhases(targetGraph, builderApplications, {
         'b:cool_builder': {'option_a': 'a', 'option_c': 'c'},
       }, false);
-      for (final phase in phases.phases.cast<InBuildPhase>()) {
+      for (final phase in phases.inBuildPhases) {
         expect((phase.builder as CoolBuilder).optionA, equals('a'));
         expect((phase.builder as CoolBuilder).optionB, equals('defaultB'));
         expect((phase.builder as CoolBuilder).optionC, equals('c'));
@@ -79,7 +79,7 @@ void main() {
               },
               true,
             );
-            for (final phase in phases.phases.cast<InBuildPhase>()) {
+            for (final phase in phases.inBuildPhases) {
               expect(
                 (phase.builder as CoolBuilder).optionA,
                 equals('global a'),
@@ -119,7 +119,7 @@ void main() {
         false,
       );
       expect(phases, hasLength(1));
-      expect((phases.phases.first as InBuildPhase).package, 'a');
+      expect(phases.inBuildPhases.first.package, 'a');
     });
 
     test('honors appliesBuilders', () async {
@@ -148,7 +148,7 @@ void main() {
       );
       expect(phases, hasLength(2));
       expect(
-        phases.phases,
+        phases.inBuildPhases,
         everyElement(
           const TypeMatcher<InBuildPhase>().having(
             (p) => p.package,
@@ -185,7 +185,7 @@ void main() {
       );
       expect(phases, hasLength(1));
       expect(
-        phases.phases,
+        phases.inBuildPhases,
         everyElement(
           const TypeMatcher<InBuildPhase>().having(
             (p) => p.package,
@@ -230,7 +230,7 @@ void main() {
         );
         expect(phases, hasLength(2));
         expect(
-          phases.phases,
+          phases.inBuildPhases,
           everyElement(
             const TypeMatcher<InBuildPhase>().having(
               (p) => p.package,
@@ -322,7 +322,7 @@ void main() {
 
       test('can be disabled for a target', () async {
         var phases = await createPhases();
-        expect(phases.phases, isEmpty);
+        expect(phases.inBuildPhases, isEmpty);
       });
 
       test('individual builders can still be enabled', () async {
@@ -333,7 +333,7 @@ void main() {
         );
         expect(phases, hasLength(1));
         expect(
-          phases.phases.first,
+          phases.inBuildPhases.first,
           isA<InBuildPhase>()
               .having((p) => p.package, 'package', 'a')
               .having(
@@ -354,7 +354,7 @@ void main() {
           );
           expect(phases, hasLength(2));
           expect(
-            phases.phases,
+            phases.inBuildPhases,
             equals([
               isA<InBuildPhase>()
                   .having((p) => p.package, 'package', 'a')
