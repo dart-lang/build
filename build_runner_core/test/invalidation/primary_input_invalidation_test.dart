@@ -32,6 +32,11 @@ void main() {
       expect(await tester.build(), Result(written: ['a.1']));
     });
 
+    test('a.1 can be output by failing generator', () async {
+      tester.fail('a.1');
+      expect(await tester.build(), Result.failure(written: ['a.1']));
+    });
+
     test('change a, nothing is rebuilt', () async {
       await tester.build();
       expect(await tester.build(change: 'a'), Result());
@@ -79,6 +84,19 @@ void main() {
       await tester.build();
       expect(await tester.build(change: 'a'), Result());
     });
+
+    test('change a, failed a.1 is not built', () async {
+      // "a" is not an input of "a.1", so changing "a" does not retry the
+      // failed "a.1" build: it would fail exactly the same.
+      tester
+        ..fail('a.1')
+        ..skipOutput('a.1');
+      await tester.build();
+      tester
+        ..succeed('a.1')
+        ..digestOutput('a.1');
+      expect(await tester.build(change: 'a'), Result());
+    });
   });
 
   group('a <-- a.1 <-- a.2', () {
@@ -90,6 +108,14 @@ void main() {
     test('a.1 is not output, a.2 is not built', () async {
       tester.skipOutput('a.1');
       expect(await tester.build(), Result());
+    });
+
+    test('a.1 is output but fails, a.2 is not built', () async {
+      tester
+        ..fail('a.1')
+        ..skipOutput('a.1');
+
+      expect(await tester.build(), Result.failure());
     });
 
     test('a.1+a.2 are built', () async {
@@ -128,6 +154,17 @@ void main() {
     test('change a, a.1 is rebuilt', () async {
       await tester.build();
       expect(await tester.build(change: 'a'), Result(written: ['a.1']));
+    });
+
+    test('a.1 is built after fix, a.2 is built', () async {
+      tester
+        ..fail('a.1')
+        ..skipOutput('a.1');
+      expect(await tester.build(), Result.failure());
+      tester
+        ..succeed('a.1')
+        ..digestOutput('a.1');
+      expect(await tester.build(change: 'a'), Result(written: ['a.1', 'a.2']));
     });
 
     test('change a, on rebuild a.1 is not output, a.2 is deleted', () async {
@@ -296,6 +333,19 @@ void main() {
       await tester.build();
       expect(await tester.build(change: 'a'), Result(written: ['a.1', 'a.2']));
     });
+
+    test(
+      'change a to recover from failure, a.1+a.2+a.3+a.4 are built',
+      () async {
+        tester.fail('a.1');
+        expect(await tester.build(), Result.failure(written: ['a.1']));
+        tester.succeed('a.1');
+        expect(
+          await tester.build(change: 'a'),
+          Result(written: ['a.1', 'a.2', 'a.3', 'a.4']),
+        );
+      },
+    );
 
     test('change a, on rebuild a.2 is not output', () async {
       expect(
