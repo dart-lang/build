@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:build_runner_core/src/changes/asset_updates.dart';
 import 'package:build_test/build_test.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
@@ -254,6 +255,11 @@ class TestBuilderBuilder {
     _builder.reads.add('$extension.dart');
   }
 
+  /// Test setup: the builder will read the asset with [name].
+  void readsOther(String name) {
+    _builder.otherReads.add(name);
+  }
+
   /// Test setup: the builder will write the asset that is [extension] applied
   /// to the primary input.
   ///
@@ -273,10 +279,19 @@ class TestBuilder implements Builder {
 
   final InvalidationTester _tester;
 
-  /// Assets that the builder will read.
+  /// Extensions of assets that the builder will read.
+  ///
+  /// The extensions are applied to the primary input asset ID with
+  /// [AssetIdExtension.replaceAllPathExtensions].
   List<String> reads = [];
 
-  /// Assets that the builder will write.
+  /// Names of assets that the builder will read.
+  List<String> otherReads = [];
+
+  /// Extensions of assets that the builder will write.
+  ///
+  /// The extensions are applied to the primary input asset ID with
+  /// [AssetIdExtension.replaceAllPathExtensions].
   List<String> writes = [];
 
   TestBuilder(this._tester, String from, Iterable<String> to, this.isOptional)
@@ -288,7 +303,15 @@ class TestBuilder implements Builder {
     for (final read in reads) {
       final readId = buildStep.inputId.replaceAllPathExtensions(read);
       content.add(read.toString());
-      content.add(await buildStep.readAsString(readId));
+      if (await buildStep.canRead(readId)) {
+        content.add(await buildStep.readAsString(readId));
+      }
+    }
+    for (final read in otherReads) {
+      content.add(read.assetId.toString());
+      if (await buildStep.canRead(read.assetId)) {
+        content.add(await buildStep.readAsString(read.assetId));
+      }
     }
     for (final write in writes) {
       final writeId = buildStep.inputId.replaceAllPathExtensions(write);
