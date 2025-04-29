@@ -6,7 +6,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
-import 'package:build_runner_core/src/changes/asset_updates.dart';
 import 'package:build_test/build_test.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';

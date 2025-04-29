@@ -201,8 +201,6 @@ class AssetGraph implements GeneratedAssetHider {
     var existing = get(node.id);
     if (existing != null) {
       if (existing.type == NodeType.missingSource) {
-        // Don't call _removeRecursive, that recursively removes all transitive
-        // primary outputs. We only want to remove this node.
         _nodesByPackage[existing.id.package]!.remove(existing.id.path);
         node = node.rebuild((b) {
           b.primaryOutputs.addAll(existing.primaryOutputs);
@@ -263,60 +261,23 @@ class AssetGraph implements GeneratedAssetHider {
     );
   }
 
-  /// Removes the node representing [id] from the graph, and all of its
-  /// `primaryOutput`s.
-  ///
-  /// Also removes all edges between all removed nodes and remaining nodes.
-  ///
-  /// Returns the IDs of removed asset nodes.
-  Set<AssetId> _removeRecursive(AssetId id, {Set<AssetId>? removedIds}) {
+  /// Changes [id] and its transitive`primaryOutput`s to `missingSource` nodes.
+  void _setMissingRecursive(AssetId id, {Set<AssetId>? removedIds}) {
     removedIds ??= <AssetId>{};
     var node = get(id);
-    if (node == null) return removedIds;
+    if (node == null) return;
     removedIds.add(id);
     for (var output in node.primaryOutputs.toList()) {
-      _removeRecursive(output, removedIds: removedIds);
+      _setMissingRecursive(output, removedIds: removedIds);
     }
-    final outputs = computeOutputs();
-    for (var output in (outputs[node.id] ?? const <AssetId>{})) {
-      updateNodeIfPresent(output, (nodeBuilder) {
-        if (nodeBuilder.type == NodeType.generated) {
-          nodeBuilder.generatedNodeState.inputs.remove(id);
-        } else if (nodeBuilder.type == NodeType.glob) {
-          nodeBuilder.globNodeState
-            ..inputs.remove(id)
-            ..results.remove(id);
-        }
-      });
-    }
-
-    if (node.type == NodeType.generated) {
-      for (var input in node.generatedNodeState!.inputs) {
-        // We may have already removed this node entirely.
-        updateNodeIfPresent(input, (nodeBuilder) {
-          nodeBuilder.primaryOutputs.remove(id);
-        });
-      }
-    } else if (node.type == NodeType.glob) {
-      for (var input in node.globNodeState!.inputs) {
-        // We may have already removed this node entirely.
-        updateNodeIfPresent(input, (nodeBuilder) {
-          nodeBuilder.primaryOutputs.remove(id);
-        });
-      }
-    }
-
-    // Missing source nodes need to be kept to retain dependency tracking.
-    if (node.type != NodeType.missingSource) {
-      _nodesByPackage[id.package]!.remove(id.path);
-    }
+    updateNode(id, (nodeBuilder) {
+      nodeBuilder.replace(AssetNode.missingSource(id));
+    });
 
     // Remove post build action applications with removed assets as inputs.
     for (final packageOutputs in _postProcessBuildStepOutputs.values) {
       packageOutputs.removeWhere((id, _) => removedIds!.contains(id.input));
     }
-
-    return removedIds;
   }
 
   /// Computes node outputs: the inverse of the graph described by the `inputs`
@@ -401,8 +362,12 @@ class AssetGraph implements GeneratedAssetHider {
   /// Updates graph structure, invalidating and deleting any outputs that were
   /// affected.
   ///
-  /// Returns the list of [AssetId]s that were invalidated.
-  Future<Set<AssetId>> updateAndInvalidate(
+  /// Outputs that are deleted from the filesystem are retained in the graph as
+  /// `missingSource` nodes.
+  ///
+  /// Returns the set of [AssetId]s that were deleted, and the set that was
+  /// invalidated.
+  Future<(Set<AssetId>, Set<AssetId>)> updateAndInvalidate(
     BuildPhases buildPhases,
     Map<AssetId, ChangeType> updates,
     String rootPackage,
@@ -572,23 +537,22 @@ class AssetGraph implements GeneratedAssetHider {
       }
     }
 
-    // Delete all the invalidated assets, then remove them from the graph. This
-    // order is important because some `AssetWriter`s throw if the id is not in
-    // the graph.
+    // Delete all the invalidated assets.
     await Future.wait(idsToDelete.map(delete));
 
-    // Remove all deleted source assets from the graph, which also recursively
-    // removes all their primary outputs.
+    // Change deleted source assets and their transitive primary outputs to
+    // `missingSource` nodes, rather than deleting them. This allows them to
+    // remain referenced in `inputs` in order to trigger rebuilds if necessary.
     for (final id in removeIds) {
       final node = get(id);
       if (node != null && node.type == NodeType.source) {
         invalidateNodeAndDeps(id);
-        _removeRecursive(id);
+        _setMissingRecursive(id);
       }
     }
 
     _outputs = null;
-    return invalidatedIds;
+    return (idsToDelete, invalidatedIds);
   }
 
   /// Crawl up primary inputs to see if the original Source file matches the
@@ -713,9 +677,9 @@ class AssetGraph implements GeneratedAssetHider {
   ///
   /// If there are existing [AssetNode.source]s or [AssetNode.missingSource]s
   /// that overlap the [AssetNode.generated]s, then they will be replaced with
-  /// [AssetNode.generated]s, and all their `primaryOutputs` will be removed
-  /// from from the graph as well. The return value is the set of assets that
-  /// were removed from the graph.
+  /// [AssetNode.generated]s, and their transitive `primaryOutputs` will be
+  /// changed to `missingSource` nodes. The return value is the set of assets
+  /// that were removed from the graph.
   Set<AssetId> _addGeneratedOutputs(
     Iterable<AssetId> outputs,
     int phaseNumber,
@@ -745,7 +709,7 @@ class AssetGraph implements GeneratedAssetHider {
             buildPhases.inBuildPhases[phaseNumber].builderLabel,
           );
         }
-        _removeRecursive(output, removedIds: removed);
+        _setMissingRecursive(output, removedIds: removed);
       }
 
       var newNode = AssetNode.generated(
@@ -769,9 +733,16 @@ class AssetGraph implements GeneratedAssetHider {
   @override
   String toString() => allNodes.toList().toString();
 
-  // TODO remove once tests are updated
   void add(AssetNode node) => _add(node);
-  Set<AssetId> remove(AssetId id) => _removeRecursive(id);
+
+  /// Removes a generated node that was output by a post process build step.
+  /// TODO(davidmorgan): look at removing them from the graph altogether.
+  void removePostProcessOutput(AssetId id) {
+    _nodesByPackage[id.package]!.remove(id.path);
+  }
+
+  void removeForTest(AssetId id) =>
+      _nodesByPackage[id.package]?.remove(id.path);
 
   /// Adds [input] to all [outputs] if they track inputs.
   ///

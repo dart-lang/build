@@ -6,7 +6,8 @@ import 'package:test/test.dart';
 
 import 'invalidation_tester.dart';
 
-/// Invalidation tests in which the inputs are individually read arbitrary assets.
+/// Invalidation tests in which the inputs are individually read arbitrary
+/// assets.
 void main() {
   late InvalidationTester tester;
 
@@ -35,10 +36,7 @@ void main() {
       await tester.build();
       expect(
         await tester.build(delete: 'z'),
-        // TODO(davidmorgan): a.1 should be rebuilt, but it's not. This is a
-        // regression since the last version on pub: fix it!
-        // Result(written: ['a.1'], deleted: ['z.1'])
-        Result(deleted: ['z.1']),
+        Result(written: ['a.1'], deleted: ['z.1']),
       );
     });
 
@@ -73,14 +71,11 @@ void main() {
       );
     });
 
-    test('delete a.1, a.2+b.4 are rebuilt', () async {
+    test('delete a.1, a.2 is deleted and b.4 is rebuilt', () async {
       await tester.build();
       expect(
         await tester.build(delete: 'a.1'),
-        // TODO(davidmorgan): a.1 should be rebuilt, but it's not. This is a
-        // regression since the last version on pub: fix it!
-        // Result(written: ['a.2', 'b.4']),
-        Result(deleted: ['a.2']),
+        Result(deleted: ['a.2'], written: ['b.4']),
       );
     });
 
