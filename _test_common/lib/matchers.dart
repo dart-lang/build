@@ -16,23 +16,16 @@ final Matcher throwsCorruptedException = throwsA(
 final Matcher duplicateAssetNodeException =
     const TypeMatcher<DuplicateAssetNodeException>();
 
-Matcher equalsAssetGraph(
-  AssetGraph expected, {
-  bool checkPreviousInputsDigest = true,
-}) => _AssetGraphMatcher(expected, checkPreviousInputsDigest);
+Matcher equalsAssetGraph(AssetGraph expected) => _AssetGraphMatcher(expected);
 
 class _AssetGraphMatcher extends Matcher {
   final AssetGraph _expected;
-  final bool checkPreviousInputsDigest;
   final Matcher _matcher;
 
-  _AssetGraphMatcher(this._expected, this.checkPreviousInputsDigest)
+  _AssetGraphMatcher(this._expected)
     : _matcher = equals(_graphToList(_expected));
 
   /// Converts [graph] to a list of [AssetNode], sorted by ID, for comparison.
-  ///
-  /// If [checkPreviousInputsDigest] is false, removes `previousInputDigest`
-  /// fields so they won't be compared.
   static List<AssetNode> _graphToList(AssetGraph graph) =>
       graph.allNodes.toList()
         ..sort((a, b) => a.id.toString().compareTo(b.id.toString()));
