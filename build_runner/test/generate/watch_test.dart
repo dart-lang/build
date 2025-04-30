@@ -361,6 +361,10 @@ void main() {
           readerWriter,
         );
 
+        var aTxtId = makeAssetId('a|web/a.txt');
+        var aTxtNode = AssetNode.missingSource(aTxtId);
+        var aTxtCopyId = makeAssetId('a|web/a.txt.copy');
+        var aTxtCopyNode = AssetNode.missingSource(aTxtCopyId);
         var bCopyId = makeAssetId('a|web/b.txt.copy');
         var bTxtId = makeAssetId('a|web/b.txt');
         var bCopyNode = AssetNode.generated(
@@ -374,7 +378,10 @@ void main() {
           inputs: [makeAssetId('a|web/b.txt')],
           isHidden: false,
         );
+
         expectedGraph
+          ..add(aTxtNode)
+          ..add(aTxtCopyNode)
           ..add(bCopyNode)
           ..add(
             makeAssetNode('a|web/b.txt', [

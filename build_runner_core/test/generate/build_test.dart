@@ -1673,7 +1673,10 @@ void main() {
               makeAssetId('a|$assetGraphPath'),
             ),
           );
-          expect(graph.get(makeAssetId('a|lib/a.txt.copy')), isNull);
+          expect(
+            graph.get(makeAssetId('a|lib/a.txt.copy'))!.type,
+            NodeType.missingSource,
+          );
         },
       );
     });
@@ -1702,15 +1705,15 @@ void main() {
         resumeFrom: result,
       );
 
-      /// Should be deleted using the writer, and removed from the new graph.
+      /// Should be deleted using the writer, and converted to missingSource.
       var newGraph = AssetGraph.deserialize(
         result.readerWriter.testing.readBytes(makeAssetId('a|$assetGraphPath')),
       );
       var aNodeId = makeAssetId('a|lib/a.txt');
       var aCopyNodeId = makeAssetId('a|lib/a.txt.copy');
       var aCloneNodeId = makeAssetId('a|lib/a.txt.copy.clone');
-      expect(newGraph.contains(aNodeId), isFalse);
-      expect(newGraph.contains(aCopyNodeId), isFalse);
+      expect(newGraph.get(aNodeId)!.type, NodeType.missingSource);
+      expect(newGraph.get(aCopyNodeId)!.type, NodeType.missingSource);
       expect(newGraph.contains(aCloneNodeId), isFalse);
       expect(result.readerWriter.testing.exists(aNodeId), isFalse);
       expect(result.readerWriter.testing.exists(aCopyNodeId), isFalse);

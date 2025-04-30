@@ -71,8 +71,8 @@ void main() {
           nodes.add(testAddNode());
         }
         graph
-          ..remove(nodes[1].id)
-          ..remove(nodes[4].id);
+          ..removeForTest(nodes[1].id)
+          ..removeForTest(nodes[4].id);
 
         expectNodeExists(nodes[0]);
         expectNodeDoesNotExist(nodes[1]);
@@ -82,7 +82,7 @@ void main() {
 
         graph
           // Doesn't throw.
-          ..remove(nodes[1].id)
+          ..removeForTest(nodes[1].id)
           // Can be added back
           ..add(nodes[1]);
         expectNodeExists(nodes[1]);
@@ -306,8 +306,8 @@ void main() {
             (id) async => deletes.add(id),
             digestReader,
           );
-          expect(graph.contains(primaryInputId), isFalse);
-          expect(graph.contains(primaryOutputId), isFalse);
+          expect(graph.get(primaryInputId)!.type, NodeType.missingSource);
+          expect(graph.get(primaryOutputId)!.type, NodeType.missingSource);
           expect(deletes, equals([primaryOutputId]));
           expect(graph.postProcessBuildStepIds(package: 'foo'), isEmpty);
         });
@@ -414,8 +414,8 @@ void main() {
               digestReader,
             );
 
-            expect(graph.contains(primaryInputId), isFalse);
-            expect(graph.contains(primaryOutputId), isFalse);
+            expect(graph.get(primaryInputId)!.type, NodeType.missingSource);
+            expect(graph.get(primaryOutputId)!.type, NodeType.missingSource);
             expect(
               graph.computeOutputs()[secondaryId] ?? const <AssetId>{},
               isNot(contains(primaryOutputId)),
@@ -513,14 +513,6 @@ void main() {
             expect(globNode.globNodeState!.inputs, contains(coolAssetId));
             expect(globNode.globNodeState!.results, contains(coolAssetId));
             await checkChangeType(ChangeType.REMOVE);
-            expect(
-              globNode.globNodeState!.inputs,
-              isNot(contains(coolAssetId)),
-            );
-            expect(
-              globNode.globNodeState!.results,
-              isNot(contains(coolAssetId)),
-            );
           },
         );
       });
@@ -678,7 +670,7 @@ void main() {
             ..inputs.add(outputReadingNode);
         });
 
-        final invalidatedNodes = await graph.updateAndInvalidate(
+        await graph.updateAndInvalidate(
           buildPhases,
           {makeAssetId('foo|lib/a.txt'): ChangeType.ADD},
           'foo',
@@ -686,8 +678,17 @@ void main() {
           digestReader,
         );
 
-        expect(invalidatedNodes, contains(outputReadingNode));
-        expect(invalidatedNodes, contains(lastPrimaryOutputNode));
+        expect(
+          graph.get(outputReadingNode)!.generatedNodeState!.pendingBuildAction,
+          PendingBuildAction.buildIfInputsChanged,
+        );
+        expect(
+          graph
+              .get(lastPrimaryOutputNode)!
+              .generatedNodeState!
+              .pendingBuildAction,
+          PendingBuildAction.buildIfInputsChanged,
+        );
       });
 
       test('https://github.com/dart-lang/build/issues/1804', () async {
@@ -736,8 +737,8 @@ void main() {
           digestReader,
         );
 
-        // The old generated part file should no longer exist
-        expect(graph.get(generatedPart), isNull);
+        // The old generated part file should be marked as missing.
+        expect(graph.get(generatedPart)!.type, NodeType.missingSource);
 
         // The generated part file should not exist in outputs of the new
         // generated dart file

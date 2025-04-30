@@ -77,6 +77,12 @@ class Build {
   /// Filled from the `updates` passed in to the build.
   final Set<AssetId> changedInputs = {};
 
+  /// Assets that were deleted since the last build.
+  ///
+  /// This is used to distinguish between `missingSource` nodes that were
+  /// already missing and `missingSource` nodes that are newly missing.
+  final Set<AssetId> deletedAssets = {};
+
   /// Outputs that changed since the last build.
   ///
   /// Filled during the build as each output is produced and its digest is
@@ -169,14 +175,23 @@ class Build {
 
   Future<void> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
     await logTimedAsync(_logger, 'Updating asset graph', () async {
-      changedInputs.addAll(updates.keys.toSet());
-      var invalidated = await assetGraph.updateAndInvalidate(
+      changedInputs.clear();
+      deletedAssets.clear();
+      for (final update in updates.entries) {
+        if (update.value == ChangeType.REMOVE) {
+          deletedAssets.add(update.key);
+        } else {
+          changedInputs.add(update.key);
+        }
+      }
+      final (deleted, invalidated) = await assetGraph.updateAndInvalidate(
         buildPhases,
         updates,
         options.packageGraph.root.name,
         _delete,
         readerWriter,
       );
+      deletedAssets.addAll(deleted);
       await readerWriter.cache.invalidate(invalidated);
     });
   }
@@ -626,7 +641,7 @@ class Build {
     );
     await _cleanUpStaleOutputs(existingOutputs);
     for (final output in existingOutputs) {
-      assetGraph.remove(output);
+      assetGraph.removePostProcessOutput(output);
     }
     assetGraph.updateNode(inputNode.id, (nodeBuilder) {
       nodeBuilder.deletedBy.remove(postProcessBuildStepId);
@@ -838,6 +853,16 @@ class Build {
             _logger.fine(
               'Build ${renderer.build(forInput, outputs)} because '
               '${renderer.id(input)} changed.',
+            );
+          }
+          return true;
+        }
+      } else if (node.type == NodeType.missingSource) {
+        if (deletedAssets.contains(input)) {
+          if (logFine) {
+            _logger.fine(
+              'Build ${renderer.build(forInput, outputs)} because '
+              '${renderer.id(input)} was deleted.',
             );
           }
           return true;
