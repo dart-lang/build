@@ -8,6 +8,16 @@ import 'invalidation_tester.dart';
 
 /// Invalidation tests in which the inputs are individually read arbitrary
 /// assets.
+///
+/// In the test names:
+///
+///  - `a1 <-- a2` means a1 is the primary input of a2, but _not_ an input:
+///    the builder does not read a1
+///  - `a1 <== a2` means a1 is the primary input of a2 _and_ is an input:
+///    the builder _does_ read a1
+///  - `[a1]` means a1 is an optional output
+///  - `a1+(z1+z2) <-- a2` means z1 and z2 are non-primary inputs of a2
+
 void main() {
   late InvalidationTester tester;
 
@@ -85,6 +95,97 @@ void main() {
       expect(
         await tester.build(create: 'a.1'),
         Result(written: ['a.2', 'b.4']),
+      );
+    });
+  });
+
+  // The same as the previous group, but a.2 is now an optional output.
+  group('a.1 <== [a.2], b.3+(a.2) <== b.4', () {
+    setUp(() {
+      tester.sources(['a.1', 'b.3']);
+      tester.builder(from: '.1', to: '.2', isOptional: true)
+        ..reads('.1')
+        ..writes('.2');
+      tester.builder(from: '.3', to: '.4')
+        ..reads('.3')
+        ..readsOther('a.2')
+        ..writes('.4');
+    });
+
+    test('b.4 is built', () async {
+      expect(await tester.build(), Result(written: ['a.2', 'b.4']));
+    });
+
+    test('change a.1, a.2+b.4 are rebuilt', () async {
+      await tester.build();
+      expect(
+        await tester.build(change: 'a.1'),
+        Result(written: ['a.2', 'b.4']),
+      );
+    });
+
+    test('delete a.1, a.2 is deleted and b.4 is rebuilt', () async {
+      await tester.build();
+      expect(
+        await tester.build(delete: 'a.1'),
+        Result(deleted: ['a.2'], written: ['b.4']),
+      );
+    });
+
+    test('create a.1, a.2+b.4 are rebuilt', () async {
+      tester.sources(['b.3']);
+      await tester.build();
+      expect(
+        await tester.build(create: 'a.1'),
+        Result(written: ['a.2', 'b.4']),
+      );
+    });
+  });
+
+  // As previous group but with b.4 now optional and introducing c.6 that
+  // depends on it.
+  group('a.1 <== [a.2], b.3+(a.2) <== [b.4], c.5+(b.4) <== c.6', () {
+    setUp(() {
+      tester.sources(['a.1', 'b.3', 'c.5']);
+      tester.builder(from: '.1', to: '.2', isOptional: true)
+        ..reads('.1')
+        ..writes('.2');
+      tester.builder(from: '.3', to: '.4', isOptional: true)
+        ..reads('.3')
+        ..readsOther('a.2')
+        ..writes('.4');
+      tester.builder(from: '.5', to: '.6')
+        ..reads('.5')
+        ..readsOther('b.4')
+        ..writes('.6');
+    });
+
+    test('c.6 is built', () async {
+      expect(await tester.build(), Result(written: ['a.2', 'b.4', 'c.6']));
+    });
+
+    test('change a.1, a.2+b.4+c.6 are rebuilt', () async {
+      await tester.build();
+      expect(
+        await tester.build(change: 'a.1'),
+        Result(written: ['a.2', 'b.4', 'c.6']),
+      );
+    });
+
+    test('delete a.1, a.2 is deleted and b.4+c.6 are rebuilt', () async {
+      await tester.build();
+      expect(
+        await tester.build(delete: 'a.1'),
+        Result(deleted: ['a.2'], written: ['b.4', 'c.6']),
+      );
+    });
+
+    test('create a.1, a.2+b.4+c.6 are rebuilt', () async {
+      tester.sources(['b.3', 'c.5']);
+      await tester.build();
+      expect(
+        await tester.build(create: 'a.1'),
+        Result(written: ['a.2', 'b.4', 'c.6']),
       );
     });
   });
