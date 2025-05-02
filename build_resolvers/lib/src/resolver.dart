@@ -550,8 +550,9 @@ class AnalyzerResolvers implements Resolvers {
 void _warnOnLanguageVersionMismatch() async {
   if (sdkLanguageVersion <= ExperimentStatus.currentVersion) return;
 
+  HttpClient? client;
   try {
-    var client = HttpClient();
+    client = HttpClient();
     var request = await client.getUrl(
       Uri.https('pub.dartlang.org', 'api/packages/analyzer'),
     );
@@ -616,6 +617,8 @@ SDK language version: $sdkLanguageVersion
 Please ensure you are on the latest `analyzer` version, which can be seen at
 https://pub.dev/packages/analyzer.
 ''');
+  } finally {
+    client?.close();
   }
 }
 
