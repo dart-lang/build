@@ -189,4 +189,42 @@ void main() {
       );
     });
   });
+
+  // Builder input set grows between builds.
+  group('a.1 <== [a.2], b.3 <== b.4', () {
+    late TestBuilderBuilder bBuilder;
+
+    setUp(() {
+      tester.sources(['a.1', 'b.3']);
+      tester.builder(from: '.1', to: '.2', isOptional: true)
+        ..reads('.1')
+        ..writes('.2');
+      bBuilder =
+          tester.builder(from: '.3', to: '.4')
+            ..reads('.3')
+            ..writes('.4');
+    });
+
+    test('only b.4 is built', () async {
+      expect(await tester.build(), Result(written: ['b.4']));
+    });
+
+    test('changes to b.3+(a.2) <== b.4, a.2 is built', () async {
+      expect(await tester.build(), Result(written: ['b.4']));
+
+      // Builder for 'b.4' reads additional input 'a.2' in the next build.
+      //
+      // Normally a builder's inputs can only change if the contents of its
+      // inputs change to trigger additional reads. Simulate this by telling the
+      // builder to read 'a.2' on the next run then changing its input so it
+      // will rerun.
+      bBuilder.readsOther('a.2');
+
+      // Now the optional 'a.2' is needed so it's built, and 'b.4' is rebuilt.
+      expect(
+        await tester.build(change: 'b.3'),
+        Result(written: ['a.2', 'b.4']),
+      );
+    });
+  });
 }
