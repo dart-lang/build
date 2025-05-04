@@ -56,7 +56,7 @@ List<String> fixSourceMapSources(List<String> uris) {
 external set dartStackTraceUtility(DartStackTraceUtility value);
 
 @JS(r'$dartLoader.rootDirectories')
-external List get rootDirectories;
+external JSArray<JSString> get rootDirectories;
 
 typedef SourceMapProvider = dynamic Function(String modulePath);
 
@@ -124,7 +124,7 @@ class LazyMapping extends Mapping {
 
 LazyMapping? _mapping;
 
-final roots = rootDirectories.map((s) => '$s').toList();
+final roots = rootDirectories.toDart.map((s) => s.toDart).toList();
 
 String mapper(String rawStackTrace) {
   if (_mapping == null) {
