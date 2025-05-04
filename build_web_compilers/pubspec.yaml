@@ -16,7 +16,6 @@ dependencies:
   build_modules: ^5.0.0
   collection: ^1.15.0
   glob: ^2.0.0
-  js: '>=0.6.3 <0.8.0'
   logging: ^1.0.0
   path: ^1.8.0
   pool: ^1.5.0
