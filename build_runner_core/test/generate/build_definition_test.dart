@@ -12,12 +12,12 @@ import 'package:build/experiments.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
-import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:build_runner_core/src/generate/build_definition.dart';
 import 'package:build_runner_core/src/generate/build_phases.dart';
 import 'package:build_runner_core/src/generate/options.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
 import 'package:build_runner_core/src/util/constants.dart';
+import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
@@ -156,10 +156,8 @@ targets:
         );
         var generatedAId = makeAssetId('a|lib/a.txt.copy');
         originalAssetGraph.updateNode(generatedAId, (nodeBuilder) {
-          nodeBuilder.generatedNodeState
-            ..wasOutput = true
-            ..isFailure = false
-            ..pendingBuildAction = PendingBuildAction.none;
+          nodeBuilder.digest = Digest([]);
+          nodeBuilder.generatedNodeState.result = true;
         });
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());
@@ -224,9 +222,7 @@ targets:
 
         // pretend a build happened
         originalAssetGraph.updateNode(aTxtCopy, (nodeBuilder) {
-          nodeBuilder.generatedNodeState
-            ..pendingBuildAction = PendingBuildAction.none
-            ..inputs.add(aTxt);
+          nodeBuilder.generatedNodeState.inputs.add(aTxt);
         });
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
@@ -258,9 +254,8 @@ targets:
         );
         var generatedSrcId = makeAssetId('a|lib/test.txt.copy');
         originalAssetGraph.updateNode(generatedSrcId, (nodeBuilder) {
-          nodeBuilder.generatedNodeState
-            ..wasOutput = false
-            ..isFailure = false;
+          nodeBuilder.digest = null;
+          nodeBuilder.generatedNodeState.result = true;
         });
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());
@@ -304,10 +299,8 @@ targets:
         var generatedACloneId = makeAssetId('a|lib/a.txt.clone');
         for (var id in [generatedACopyId, generatedACloneId]) {
           originalAssetGraph.updateNode(id, (nodeBuilder) {
-            nodeBuilder.generatedNodeState
-              ..wasOutput = true
-              ..isFailure = false
-              ..pendingBuildAction = PendingBuildAction.none;
+            nodeBuilder.digest = Digest([]);
+            nodeBuilder.generatedNodeState.result = true;
           });
         }
 
@@ -725,7 +718,7 @@ targets:
         var aTxtCopy = AssetId('a', 'lib/a.txt.copy');
         // Pretend we already output this without actually running a build.
         originalAssetGraph.updateNode(aTxtCopy, (nodeBuilder) {
-          nodeBuilder.generatedNodeState.wasOutput = true;
+          nodeBuilder.digest = Digest([]);
         });
         await createFile(aTxtCopy.path, 'hello');
 
@@ -770,7 +763,7 @@ targets:
         var aTxtCopy = AssetId('a', 'lib/a.txt.copy');
         // Pretend we already output this without actually running a build.
         originalAssetGraph.updateNode(aTxtCopy, (nodeBuilder) {
-          nodeBuilder.generatedNodeState.wasOutput = true;
+          nodeBuilder.digest = Digest([]);
         });
         await createFile(aTxtCopy.path, 'hello');
 

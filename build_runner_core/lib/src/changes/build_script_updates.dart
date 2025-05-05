@@ -74,10 +74,10 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
         // Make sure we are tracking changes for all ids in [allSources].
         for (var id in allSources) {
           final node = graph.get(id)!;
-          if (node.lastKnownDigest == null) {
+          if (node.digest == null) {
             final digest = await reader.digest(id);
             graph.updateNode(id, (nodeBuilder) {
-              nodeBuilder.lastKnownDigest = digest;
+              nodeBuilder.digest = digest;
             });
           }
         }

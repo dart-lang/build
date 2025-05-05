@@ -96,7 +96,7 @@ class AssetTracker {
         .where((n) {
           if (!n.isFile) return false;
           if (n.type == NodeType.generated) {
-            return n.generatedNodeState!.wasOutput;
+            return n.wasOutput;
           }
           return true;
         })
@@ -110,7 +110,7 @@ class AssetTracker {
       ..addAll(internalSources.where(assetGraph.contains));
     var modifyChecks = preExistingSources.map((id) async {
       var node = assetGraph.get(id)!;
-      var originalDigest = node.lastKnownDigest;
+      var originalDigest = node.digest;
       if (originalDigest == null) return;
       await _reader.cache.invalidate([id]);
       var currentDigest = await _reader.digest(id);

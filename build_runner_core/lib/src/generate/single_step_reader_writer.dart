@@ -22,6 +22,11 @@ import 'phase.dart';
 /// Builds an asset.
 typedef AssetBuilder = Future<void> Function(AssetId);
 
+/// Whether an asset is a "processed output".
+///
+/// If so, there is no need to build it.
+typedef AssetIsProcessedOutput = bool Function(AssetId);
+
 /// Builds a "glob node": all assets matching a glob.
 ///
 /// The node must have type [NodeType.glob].
@@ -59,6 +64,7 @@ class RunningBuild {
   final TargetGraph targetGraph;
   final AssetGraph assetGraph;
   final AssetBuilder nodeBuilder;
+  final AssetIsProcessedOutput assetIsProcessedOutput;
   final GlobNodeBuilder globNodeBuilder;
 
   RunningBuild({
@@ -66,6 +72,7 @@ class RunningBuild {
     required this.targetGraph,
     required this.assetGraph,
     required this.nodeBuilder,
+    required this.assetIsProcessedOutput,
     required this.globNodeBuilder,
   });
 }
@@ -329,10 +336,10 @@ class SingleStepReaderWriter extends AssetReader
   FutureOr<Digest> _ensureDigest(AssetId id) {
     if (_runningBuild == null) return _delegate.digest(id);
     var node = _runningBuild.assetGraph.get(id)!;
-    if (node.lastKnownDigest != null) return node.lastKnownDigest!;
+    if (node.digest != null) return node.digest!;
     return _delegate.digest(id).then((digest) {
       _runningBuild.assetGraph.updateNode(id, (nodeBuilder) {
-        nodeBuilder.lastKnownDigest = digest;
+        nodeBuilder.digest = digest;
       });
       return digest;
     });
@@ -360,7 +367,7 @@ class SingleStepReaderWriter extends AssetReader
       node = _runningBuild.assetGraph.get(node.id)!;
       final nodeState = node.generatedNodeState!;
       return Readability.fromPreviousPhase(
-        nodeState.wasOutput && !nodeState.isFailure,
+        node.wasOutput && nodeState.result != false,
       );
     }
     return Readability.fromPreviousPhase(node.isFile && node.isTrackedInput);
@@ -399,7 +406,6 @@ class SingleStepReaderWriter extends AssetReader
         globNodeId,
         glob: glob,
         phaseNumber: _runningBuildStep.phaseNumber,
-        pendingBuildAction: PendingBuildAction.build,
       );
       _runningBuild.assetGraph.add(globNode);
     }
@@ -445,15 +451,14 @@ class SingleStepReaderWriter extends AssetReader
         return PhasedValue.unavailable(before: '', untilAfterPhase: nodePhase);
       } else {
         // If needed, trigger a build at an earlier phase.
-        if (node.generatedNodeState!.pendingBuildAction !=
-            PendingBuildAction.none) {
+        if (!_runningBuild.assetIsProcessedOutput(id)) {
           await _runningBuild.nodeBuilder(id);
           node = _runningBuild.assetGraph.get(id)!;
         }
         return PhasedValue.generated(
           atPhase: phase,
           before: '',
-          node.generatedNodeState!.isSuccessfulFreshOutput
+          (node.wasOutput && node.generatedNodeState!.result == true)
               ? await _delegate.readAsString(id)
               : '',
         );

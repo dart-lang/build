@@ -144,10 +144,9 @@ class InspectNodeCommand extends Command<bool> {
         final nodeState = node.generatedNodeState!;
         final nodeConfiguration = node.generatedNodeConfiguration!;
         description
-          ..writeln('  state: ${nodeState.pendingBuildAction}')
-          ..writeln('  wasOutput: ${nodeState.wasOutput}')
+          ..writeln('  wasOutput: ${node.wasOutput}')
           ..writeln('  phase: ${nodeConfiguration.phaseNumber}')
-          ..writeln('  isFailure: ${nodeState.isFailure}');
+          ..writeln('  result: ${nodeState.result}');
       }
 
       void printAsset(AssetId asset) =>

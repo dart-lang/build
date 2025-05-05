@@ -74,10 +74,7 @@ bool _shouldSkipNode(
 
   if (node.type == NodeType.internal || node.type == NodeType.glob) return true;
   if (node.type == NodeType.generated) {
-    final nodeState = node.generatedNodeState!;
-    if (!nodeState.wasOutput ||
-        nodeState.isFailure ||
-        nodeState.pendingBuildAction != PendingBuildAction.none) {
+    if (!node.wasOutput || node.generatedNodeState!.result == false) {
       return true;
     }
     return !optionalOutputTracker.isRequired(node.id);

@@ -54,7 +54,7 @@ void main() {
       // node is "interesting".
       final digest = await reader.digest(aId);
       assetGraph.updateNode(aId, (nodeBuilder) {
-        nodeBuilder.lastKnownDigest = digest;
+        nodeBuilder.digest = digest;
       });
 
       var targetGraph = await TargetGraph.forPackageGraph(

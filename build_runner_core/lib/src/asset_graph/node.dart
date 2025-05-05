@@ -54,13 +54,24 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
 
   /// The assets that any [Builder] in the build graph declares it may output
   /// when run on this asset.
+  // TODO(davidmorgan): remove and compute when needed?
   BuiltSet<AssetId> get primaryOutputs;
 
-  /// The [Digest] for this node in its last known state.
+  /// The [Digest] for this node.
   ///
-  /// May be `null` if this asset has no outputs, or if it doesn't actually
-  /// exist.
-  Digest? get lastKnownDigest;
+  /// For source files, this is computed when the file is read so it can be used
+  /// to check for changes in the next build.
+  ///
+  /// For generated files, it's computed and set when the file is output, at the
+  /// same time comparing with any previous value to check if the output has
+  /// changed since the previous build. Here, `null` means "not output".
+  ///
+  /// For globs, it's computed and set when the glob is evaluated, at the same
+  /// time comparing with any previous value to check if the glob results have
+  /// changed.
+  ///
+  /// For other node types, `null`.
+  Digest? get digest;
 
   /// The `PostProcessBuildStep`s which requested to delete this asset.
   BuiltSet<PostProcessBuildStepId> get deletedBy;
@@ -89,9 +100,7 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
 
   /// Whether changes to this node will have any effect on other nodes.
   bool get changesRequireRebuild =>
-      type == NodeType.internal ||
-      type == NodeType.glob ||
-      lastKnownDigest != null;
+      type == NodeType.internal || type == NodeType.glob || digest != null;
 
   factory AssetNode([void Function(AssetNodeBuilder) updates]) = _$AssetNode;
 
@@ -101,24 +110,22 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   ///
   /// They are "inputs" to the entire build, so they are never explicitly
   /// tracked as inputs.
-  factory AssetNode.internal(AssetId id, {Digest? lastKnownDigest}) =>
-      AssetNode((b) {
-        b.id = id;
-        b.type = NodeType.internal;
-        b.lastKnownDigest = lastKnownDigest;
-      });
+  factory AssetNode.internal(AssetId id) => AssetNode((b) {
+    b.id = id;
+    b.type = NodeType.internal;
+  });
 
   /// A manually-written source file.
   factory AssetNode.source(
     AssetId id, {
-    Digest? lastKnownDigest,
+    Digest? digest,
     Iterable<AssetId>? outputs,
     Iterable<AssetId>? primaryOutputs,
   }) => AssetNode((b) {
     b.id = id;
     b.type = NodeType.source;
     b.primaryOutputs.replace(primaryOutputs ?? {});
-    b.lastKnownDigest = lastKnownDigest;
+    b.digest = digest;
   });
 
   /// A missing source file.
@@ -127,12 +134,10 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   ///
   /// If later the file does exist, the builder must be rerun as it can
   /// produce different output.
-  factory AssetNode.missingSource(AssetId id, {Digest? lastKnownDigest}) =>
-      AssetNode((b) {
-        b.id = id;
-        b.type = NodeType.missingSource;
-        b.lastKnownDigest = lastKnownDigest;
-      });
+  factory AssetNode.missingSource(AssetId id) => AssetNode((b) {
+    b.id = id;
+    b.type = NodeType.missingSource;
+  });
 
   /// Placeholders for useful parts of packages.
   ///
@@ -140,24 +145,20 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   /// `test` folder, the `web` folder, and the whole package.
   ///
   /// TODO(davidmorgan): describe how these are used.
-  factory AssetNode.placeholder(AssetId id, {Digest? lastKnownDigest}) =>
-      AssetNode((b) {
-        b.id = id;
-        b.type = NodeType.placeholder;
-        b.lastKnownDigest = lastKnownDigest;
-      });
+  factory AssetNode.placeholder(AssetId id) => AssetNode((b) {
+    b.id = id;
+    b.type = NodeType.placeholder;
+  });
 
   /// A generated node.
   factory AssetNode.generated(
     AssetId id, {
-    Digest? lastKnownDigest,
+    Digest? digest,
     required AssetId primaryInput,
     required int phaseNumber,
     required bool isHidden,
     Iterable<AssetId>? inputs,
-    required PendingBuildAction pendingBuildAction,
-    required bool wasOutput,
-    required bool isFailure,
+    bool? result,
   }) => AssetNode((b) {
     b.id = id;
     b.type = NodeType.generated;
@@ -165,29 +166,23 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     b.generatedNodeConfiguration.phaseNumber = phaseNumber;
     b.generatedNodeConfiguration.isHidden = isHidden;
     b.generatedNodeState.inputs.replace(inputs ?? []);
-    b.generatedNodeState.pendingBuildAction = pendingBuildAction;
-    b.generatedNodeState.wasOutput = wasOutput;
-    b.generatedNodeState.isFailure = isFailure;
-    b.lastKnownDigest = lastKnownDigest;
+    b.generatedNodeState.result = result;
+    b.digest = digest;
   });
 
   /// A glob node.
   factory AssetNode.glob(
     AssetId id, {
-    Digest? lastKnownDigest,
     required String glob,
     required int phaseNumber,
     Iterable<AssetId>? inputs,
-    required PendingBuildAction pendingBuildAction,
     List<AssetId>? results,
   }) => AssetNode((b) {
     b.id = id;
     b.type = NodeType.glob;
     b.globNodeConfiguration.glob = glob;
     b.globNodeConfiguration.phaseNumber = phaseNumber;
-    b.globNodeState.pendingBuildAction = pendingBuildAction;
     b.globNodeState.results.replace(results ?? []);
-    b.lastKnownDigest = lastKnownDigest;
   });
 
   static AssetId createGlobNodeId(String package, String glob, int phaseNum) =>
@@ -232,6 +227,12 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
         return null;
     }
   }
+
+  /// Whether this is a generated node that was written when the generator ran.
+  ///
+  /// A file can be output by a failing generator, check
+  /// `generatedNodeState.result` for whether the generator succeeded.
+  bool get wasOutput => type == NodeType.generated && digest != null;
 }
 
 /// Additional configuration for an [AssetNode.generated].
@@ -273,17 +274,14 @@ abstract class GeneratedNodeState
   /// to generate it.
   BuiltSet<AssetId> get inputs;
 
-  /// The next work that needs doing on this node.
-  PendingBuildAction get pendingBuildAction;
-
-  /// Whether the asset was actually output.
-  bool get wasOutput;
-
-  /// Whether the action which did or would produce this node failed.
-  bool get isFailure;
-
-  bool get isSuccessfulFreshOutput =>
-      wasOutput && !isFailure && pendingBuildAction == PendingBuildAction.none;
+  /// Whether the generation succeded, or `null` if it did not run.
+  ///
+  /// A full build can complete with `null` results if there are optional
+  /// outputs that are not depended on by required outputs.
+  ///
+  /// Generation can succeed without writing the output: see
+  /// [AssetNode.wasOutput].
+  bool? get result;
 
   factory GeneratedNodeState(void Function(GeneratedNodeStateBuilder) updates) =
       _$GeneratedNodeState;
@@ -321,30 +319,11 @@ abstract class GlobNodeState
   /// [results].
   BuiltSet<AssetId> get inputs;
 
-  PendingBuildAction get pendingBuildAction;
-
-  /// The results of the glob, valid when [pendingBuildAction] is
-  /// [PendingBuildAction.none].
+  /// The results of the glob.
   BuiltList<AssetId> get results;
 
   factory GlobNodeState(void Function(GlobNodeStateBuilder) updates) =
       _$GlobNodeState;
 
   GlobNodeState._();
-}
-
-/// Work that needs doing for a node that tracks its inputs.
-class PendingBuildAction extends EnumClass {
-  static Serializer<PendingBuildAction> get serializer =>
-      _$pendingBuildActionSerializer;
-
-  static const PendingBuildAction none = _$none;
-  static const PendingBuildAction buildIfInputsChanged = _$buildIfInputsChanged;
-  static const PendingBuildAction build = _$build;
-
-  const PendingBuildAction._(super.name);
-
-  static BuiltSet<PendingBuildAction> get values => _$pendingBuildActionValues;
-  static PendingBuildAction valueOf(String name) =>
-      _$pendingBuildActionValueOf(name);
 }

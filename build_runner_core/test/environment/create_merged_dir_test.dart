@@ -10,7 +10,6 @@ import 'package:_test_common/test_environment.dart';
 import 'package:build/build.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
-import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:build_runner_core/src/asset_graph/optional_output_tracker.dart';
 import 'package:build_runner_core/src/asset_graph/post_process_build_step_id.dart';
 import 'package:build_runner_core/src/environment/create_merged_dir.dart';
@@ -18,6 +17,7 @@ import 'package:build_runner_core/src/generate/build_phases.dart';
 import 'package:build_runner_core/src/generate/options.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
 import 'package:build_runner_core/src/package_graph/target_graph.dart';
+import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -100,10 +100,8 @@ void main() {
       );
       for (var id in graph.outputs) {
         graph.updateNode(id, (nodeBuilder) {
-          nodeBuilder.generatedNodeState
-            ..pendingBuildAction = PendingBuildAction.none
-            ..wasOutput = true
-            ..isFailure = false;
+          nodeBuilder.digest = Digest([]);
+          nodeBuilder.generatedNodeState.result = true;
         });
         readerWriter.testing.writeString(
           id,
@@ -337,9 +335,8 @@ void main() {
     test('doesnt write files that werent output', () async {
       final node = graph.get(AssetId('b', 'lib/c.txt.copy'))!;
       graph.updateNode(node.id, (nodeBuilder) {
-        nodeBuilder.generatedNodeState
-          ..wasOutput = false
-          ..isFailure = false;
+        nodeBuilder.digest = null;
+        nodeBuilder.generatedNodeState.result = null;
       });
 
       var success = await createMergedOutputDirectories(
