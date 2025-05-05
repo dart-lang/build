@@ -835,8 +835,8 @@ class Build {
     if (firstOutputState.result == null) {
       if (logFine) {
         _logger.fine(
-          'Build ${renderer.build(primaryInput, outputs)} the outputs are '
-          'optional outputs than have become needed.',
+          'Build ${renderer.build(primaryInput, outputs)} because it was '
+          'skipped as optional but is now needed.',
         );
       }
       return true;
