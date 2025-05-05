@@ -456,7 +456,7 @@ class SingleStepReaderWriter extends AssetReader
           node = _runningBuild.assetGraph.get(id)!;
         }
         return PhasedValue.generated(
-          atPhase: phase,
+          atPhase: nodePhase,
           before: '',
           (node.wasOutput && node.generatedNodeState!.result == true)
               ? await _delegate.readAsString(id)

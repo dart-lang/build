@@ -21,6 +21,12 @@ class InvalidationTester {
   /// The source assets on disk before the first build.
   final Set<AssetId> _sourceAssets = {};
 
+  /// Import statements.
+  ///
+  /// If an asset has an entry here then sources and generated sources will
+  /// start with the import statements specified.
+  final Map<String, List<String>> _importGraph = {};
+
   /// The builders that will run.
   final List<TestBuilder> _builders = [];
 
@@ -43,6 +49,9 @@ class InvalidationTester {
   /// The build number for "printOnFailure" output.
   int _buildNumber = 0;
 
+  /// Output number, for writing outputs that are different.
+  int _outputNumber = 0;
+
   /// Sets the assets that will be on disk before the first build.
   ///
   /// See the note on "names" in the class dartdoc.
@@ -51,6 +60,12 @@ class InvalidationTester {
     for (final name in names) {
       _sourceAssets.add(name.assetId);
     }
+  }
+
+  // Sets the import graph for source files and generated files.
+  void importGraph(Map<String, List<String>> importGraph) {
+    _importGraph.clear();
+    _importGraph.addAll(importGraph);
   }
 
   /// Adds a builder to the test.
@@ -106,6 +121,13 @@ class InvalidationTester {
     _failureStrategies[name.assetId] = FailureStrategy.succeed;
   }
 
+  String _imports(AssetId id) {
+    final imports = _importGraph[_assetIdToName(id)];
+    return imports == null
+        ? ''
+        : imports.map((i) => "import '${i.pathForImport}';").join('\n');
+  }
+
   /// Does a build.
   ///
   /// For the initial build, do not pass [change] [delete] or [create].
@@ -120,7 +142,7 @@ class InvalidationTester {
         throw StateError('Do a build without change, delete or create first.');
       }
       for (final id in _sourceAssets) {
-        assets[id] = '// initial source';
+        assets[id] = '${_imports(id)}// initial source';
       }
     } else {
       // Create the new filesystem from the previous build state.
@@ -131,7 +153,8 @@ class InvalidationTester {
 
     // Make the requested updates.
     if (change != null) {
-      assets[change.assetId] = '${assets[change.assetId]}\n// changed';
+      assets[change.assetId] =
+          '${_imports(change.assetId)}}\n// ${++_outputNumber}';
     }
     if (delete != null) {
       if (assets.containsKey(delete.assetId)) {
@@ -148,7 +171,7 @@ class InvalidationTester {
       if (assets.containsKey(create.assetId)) {
         throw StateError('Asset $create to create already exists in: $assets');
       }
-      assets[create.assetId] = '// initial source';
+      assets[create.assetId] = '${_imports(create.assetId)}// initial source';
     }
 
     // Build and check what changed.
@@ -259,6 +282,11 @@ class TestBuilderBuilder {
     _builder.otherReads.add(name);
   }
 
+  /// Test setup: the builder will parse the Dart source asset with [name].
+  void resolvesOther(String name) {
+    _builder.otherResolves.add(name);
+  }
+
   /// Test setup: the builder will write the asset that is [extension] applied
   /// to the primary input.
   ///
@@ -287,6 +315,9 @@ class TestBuilder implements Builder {
   /// Names of assets that the builder will read.
   List<String> otherReads = [];
 
+  /// Names of assets that the builder will resolve.
+  List<String> otherResolves = [];
+
   /// Extensions of assets that the builder will write.
   ///
   /// The extensions are applied to the primary input asset ID with
@@ -312,14 +343,21 @@ class TestBuilder implements Builder {
         content.add(await buildStep.readAsString(read.assetId));
       }
     }
+    for (final resolve in otherResolves) {
+      content.add(resolve.assetId.toString());
+      await buildStep.resolver.libraryFor(resolve.assetId);
+    }
     for (final write in writes) {
       final writeId = buildStep.inputId.replaceAllPathExtensions(write);
       final outputStrategy =
           _tester._outputStrategies[writeId] ?? OutputStrategy.inputDigest;
+      final inputHash = base64.encode(
+        md5.convert(utf8.encode(content.join('\n\n'))).bytes,
+      );
       final output = switch (outputStrategy) {
-        OutputStrategy.fixed => '',
+        OutputStrategy.fixed => _tester._imports(writeId),
         OutputStrategy.inputDigest =>
-          '// ${base64.encode(md5.convert(utf8.encode(content.join('\n\n'))).bytes)}',
+          '${_tester._imports(writeId)}\n// $inputHash',
         OutputStrategy.none => null,
       };
       if (output != null) {
@@ -353,6 +391,9 @@ extension StringExtension on String {
   /// Maps "names" to [AssetId]s under `build/generated`.
   AssetId get generatedAssetId =>
       AssetId('pkg', '.dart_tool/build/generated/pkg/lib/$this.dart');
+
+  /// Maps "names" to relative import path.
+  String get pathForImport => '$this.dart';
 
   /// Displays trimmed and with two space indent.
   String get trimAndIndent => '  ${toString().trim().replaceAll('\n', '\n  ')}';
