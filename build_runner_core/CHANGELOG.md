@@ -34,6 +34,7 @@
   in the asset graph.
 - Refactor invalidation to track current build progress in `Build` instead of
   in the asset graph.
+- Track resolver dependencies as library cycle graphs.
 
 ## 8.0.0
 

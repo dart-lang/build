@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:build_runner_core/src/util/constants.dart';
 import 'package:build_test/build_test.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
@@ -154,7 +155,7 @@ class InvalidationTester {
     // Make the requested updates.
     if (change != null) {
       assets[change.assetId] =
-          '${_imports(change.assetId)}}\n// ${++_outputNumber}';
+          '${_imports(change.assetId)}\n// ${++_outputNumber}';
     }
     if (delete != null) {
       if (assets.containsKey(delete.assetId)) {
@@ -203,6 +204,10 @@ class InvalidationTester {
         ? Result(written: written, deleted: deleted)
         : Result.failure(written: written, deleted: deleted);
   }
+
+  /// The size of the asset graph that was written by [build], in bytes.
+  int get assetGraphSize =>
+      _readerWriter!.testing.readBytes(AssetId('pkg', assetGraphPath)).length;
 }
 
 /// Strategy used by generators for outputting files.

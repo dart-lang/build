@@ -74,6 +74,10 @@ class AssetGraph implements GeneratedAssetHider {
   /// Digests from the current build's [BuildPhases].
   BuiltList<Digest> postBuildActionsOptionsDigests;
 
+  /// Imports of resolved assets in the previous build, or `null` if this is a
+  /// clean build.
+  PhasedAssetDeps? previousPhasedAssetDeps;
+
   AssetGraph._(
     BuildPhases buildPhases,
     this.dartVersion,

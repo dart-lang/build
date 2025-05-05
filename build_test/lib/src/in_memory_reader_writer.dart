@@ -192,6 +192,12 @@ class _ReaderWriterTestingImpl implements ReaderWriterTesting {
           .toSet();
 
   @override
+  Iterable<AssetId> get resolverEntrypointsTracked =>
+      InputTracker.inputTrackersForTesting[_readerWriter.filesystem]!
+          .expand((tracker) => tracker.resolverEntrypoints)
+          .toSet();
+
+  @override
   Iterable<AssetId> get assetsRead => _readerWriter.assetsRead;
 
   @override

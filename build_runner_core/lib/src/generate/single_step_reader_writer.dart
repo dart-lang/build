@@ -222,6 +222,7 @@ class SingleStepReaderWriter extends AssetReader
   Future<bool> _isReadable(
     AssetId id, {
     bool catchInvalidInputs = false,
+    bool track = true,
   }) async {
     try {
       _checkInvalidInput(id);
@@ -234,13 +235,13 @@ class SingleStepReaderWriter extends AssetReader
     }
 
     if (_runningBuild == null) {
-      inputTracker.add(id);
+      if (track) inputTracker.add(id);
       return _delegate.canRead(id);
     }
 
     final node = _runningBuild.assetGraph.get(id);
     if (node == null) {
-      inputTracker.add(id);
+      if (track) inputTracker.add(id);
       _runningBuild.assetGraph.add(AssetNode.missingSource(id));
       return false;
     }
@@ -252,15 +253,19 @@ class SingleStepReaderWriter extends AssetReader
     // it's an output of a generator running in parallel, which means it's
     // hidden and can't be an input.
     if (!readability.inSamePhase) {
-      inputTracker.add(id);
+      if (track) inputTracker.add(id);
     }
 
     return readability.canRead;
   }
 
   @override
-  Future<bool> canRead(AssetId id) async {
-    final isReadable = await _isReadable(id, catchInvalidInputs: true);
+  Future<bool> canRead(AssetId id, {bool track = true}) async {
+    final isReadable = await _isReadable(
+      id,
+      catchInvalidInputs: true,
+      track: track,
+    );
     if (!isReadable) return false;
     if (_runningBuild == null) return true;
 
@@ -299,8 +304,12 @@ class SingleStepReaderWriter extends AssetReader
   }
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async {
-    final isReadable = await _isReadable(id);
+  Future<String> readAsString(
+    AssetId id, {
+    Encoding encoding = utf8,
+    bool track = true,
+  }) async {
+    final isReadable = await _isReadable(id, track: track);
     if (!isReadable) {
       throw AssetNotFoundException(id);
     }
@@ -468,6 +477,13 @@ class SingleStepReaderWriter extends AssetReader
     return PhasedValue.fixed(
       await _delegate.canRead(id) ? await _delegate.readAsString(id) : '',
     );
+  }
+
+  @override
+  Future<String?> readAtPhase(AssetId id) async {
+    return await canRead(id, track: false)
+        ? await readAsString(id, track: false)
+        : null;
   }
 
   @override

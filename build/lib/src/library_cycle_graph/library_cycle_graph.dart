@@ -4,6 +4,7 @@
 
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
+import 'package:built_value/serializer.dart';
 
 import '../asset/id.dart';
 import 'library_cycle.dart';
@@ -13,6 +14,8 @@ part 'library_cycle_graph.g.dart';
 /// A directed acyclic graph of [LibraryCycle]s.
 abstract class LibraryCycleGraph
     implements Built<LibraryCycleGraph, LibraryCycleGraphBuilder> {
+  static Serializer<LibraryCycleGraph> get serializer =>
+      _$libraryCycleGraphSerializer;
   LibraryCycle get root;
   BuiltList<LibraryCycleGraph> get children;
 
@@ -21,7 +24,7 @@ abstract class LibraryCycleGraph
   LibraryCycleGraph._();
 
   /// All subgraphs in the graph, including the root.
-  Iterable<LibraryCycleGraph> get transitiveGraphs {
+  Iterable<LibraryCycleGraph> transitiveGraphs() {
     final result = Set<LibraryCycleGraph>.identity();
     final nextGraphs = [this];
 
@@ -40,8 +43,8 @@ abstract class LibraryCycleGraph
   // graph rather than being expanded into an explicit set of nodes. So, remove
   // uses of this. If in the end it's still needed, investigate if it needs to
   // be optimized.
-  Iterable<AssetId> get transitiveDeps sync* {
-    for (final graph in transitiveGraphs) {
+  Iterable<AssetId> transitiveDeps() sync* {
+    for (final graph in transitiveGraphs()) {
       yield* graph.root.ids;
     }
   }

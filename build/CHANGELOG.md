@@ -15,6 +15,7 @@
 - Refactor `FileBasedAssetReader` and `FileBasedAssetWriter` to `ReaderWriter`.
 - Move `BuildStepImpl` to `build_runner_core`, use `SingleStepReader` directly.
 - Add `LibraryCycleGraphLoader` for loading transitive deps for analysis.
+- Track resolver dependencies as library cycle graphs.
 
 ## 2.4.2
 

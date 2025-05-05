@@ -139,10 +139,8 @@ void runTests(ResolversFactory resolversFactory) {
         await resolver.libraryFor(entryPoint);
       },
       assetReaderChecks: (reader) {
-        expect(reader.testing.inputsTracked, {
+        expect(reader.testing.resolverEntrypointsTracked, {
           AssetId('a', 'web/main.dart'),
-          AssetId('a', 'web/a.dart'),
-          AssetId('a', 'web/b.dart'),
         });
       },
       resolvers: createResolvers(),

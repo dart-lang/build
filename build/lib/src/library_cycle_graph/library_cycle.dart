@@ -19,4 +19,7 @@ abstract class LibraryCycle
   factory LibraryCycle([void Function(LibraryCycleBuilder) updates]) =
       _$LibraryCycle;
   LibraryCycle._();
+
+  factory LibraryCycle.of(Iterable<AssetId> ids) =>
+      _$LibraryCycle._(ids: ids.toBuiltSet());
 }

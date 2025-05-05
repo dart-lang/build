@@ -24,10 +24,6 @@ import 'analysis_driver_filesystem.dart';
 /// - Maintains an in-memory filesystem that is the analyzer's view of the
 ///   build.
 /// - Notifies the analyzer of changes to that in-memory filesystem.
-///
-/// TODO(davidmorgan): the implementation here is unfinished and not used
-/// anywhere; finish it. See `build_asset_uri_resolver.dart` for the current
-/// implementation.
 class AnalysisDriverModel {
   /// The instance used by the shared `AnalyzerResolvers` instance.
   static AnalysisDriverModel sharedInstance = AnalysisDriverModel();
@@ -54,6 +50,13 @@ class AnalysisDriverModel {
     _graphLoader.clear();
     _syncedOntoFilesystemAtPhase.clear();
   }
+
+  /// Serializable data from which the library cycle graphs can be
+  /// reconstructed.
+  ///
+  /// This must be used to associated the entrypoints recorded with
+  /// `InputTracker.addResolverEntrypoint` to transitively loaded assets.
+  PhasedAssetDeps phasedAssetDeps() => _graphLoader.phasedAssetDeps();
 
   /// Attempts to parse [uri] into an [AssetId] and returns it if it is cached.
   ///
@@ -108,26 +111,23 @@ class AnalysisDriverModel {
     withDriverResource, {
     required bool transitive,
   }) async {
-    Iterable<AssetId> idsToSyncOntoFilesystem = [entrypoint];
-    Iterable<AssetId> inputIds = [entrypoint];
+    Iterable<AssetId> idsToSyncOntoFilesystem;
 
     // If requested, find transitive imports.
     if (transitive) {
       // Note: `transitiveDepsOf` can cause loads that cause builds that cause a
       // recursive `_performResolve` on this same `AnalysisDriver` instance.
       final nodeLoader = AssetDepsLoader(buildStep.phasedReader);
+      buildStep.inputTracker.addResolverEntrypoint(entrypoint);
       idsToSyncOntoFilesystem = await _graphLoader.transitiveDepsOf(
         nodeLoader,
         entrypoint,
       );
-      inputIds = idsToSyncOntoFilesystem;
+    } else {
+      // Notify [buildStep] of its inputs.
+      buildStep.inputTracker.add(entrypoint);
+      idsToSyncOntoFilesystem = [entrypoint];
     }
-
-    // Notify [buildStep] of its inputs.
-    buildStep.inputTracker.addAll(
-      primaryInput: buildStep.inputId,
-      inputs: inputIds,
-    );
 
     await withDriverResource((driver) async {
       // Sync changes onto the "URI resolver", the in-memory filesystem.
@@ -149,10 +149,11 @@ class AnalysisDriverModel {
         }
 
         _syncedOntoFilesystemAtPhase[id] = phase;
-        final content =
-            await buildStep.canRead(id)
-                ? await buildStep.readAsString(id)
-                : null;
+
+        // Tracking has already been done by calling `inputTracker` directly.
+        // Use `phasedReader` for the read instead of the `buildStep` methods
+        // `canRead` and `readAsString`, which would call `inputTracker`.
+        final content = await buildStep.phasedReader.readAtPhase(id);
         if (content == null) {
           filesystem.deleteFile(id.asPath);
         } else {

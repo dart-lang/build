@@ -12,6 +12,7 @@ import 'asset_deps.dart';
 import 'asset_deps_loader.dart';
 import 'library_cycle.dart';
 import 'library_cycle_graph.dart';
+import 'phased_asset_deps.dart';
 import 'phased_value.dart';
 
 /// Loads [LibraryCycleGraph]s during a phased build.
@@ -482,8 +483,13 @@ class LibraryCycleGraphLoader {
     AssetId id,
   ) async {
     final graph = await libraryCycleGraphOf(assetDepsLoader, id);
-    return graph.valueAt(phase: assetDepsLoader.phase).transitiveDeps;
+    return graph.valueAt(phase: assetDepsLoader.phase).transitiveDeps();
   }
+
+  /// Serializable data from which the library cycle graphs can be
+  /// reconstructed.
+  PhasedAssetDeps phasedAssetDeps() =>
+      PhasedAssetDeps((b) => b.assetDeps.addAll(_assetDeps));
 
   @override
   String toString() => '''

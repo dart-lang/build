@@ -19,7 +19,11 @@ Future<void> wait(int milliseconds) =>
     Future.delayed(Duration(milliseconds: milliseconds));
 
 void _printOnFailure(LogRecord record) {
-  printOnFailure('$record');
+  printOnFailure(
+    '$record'
+    '${record.error == null ? '' : '  ${record.error}'}'
+    '${record.stackTrace == null ? '' : '  ${record.stackTrace}'}',
+  );
 }
 
 /// Runs [builders] in a test environment.

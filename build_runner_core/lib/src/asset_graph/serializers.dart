@@ -5,6 +5,8 @@
 import 'dart:convert';
 
 import 'package:build/build.dart' show AssetId, PostProcessBuildStep;
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/serializer.dart';
 import 'package:crypto/crypto.dart';
@@ -30,7 +32,7 @@ final identityAssetIdSerializer = IdentitySerializer<AssetId>(
   assetIdSerializer,
 );
 
-@SerializersFor([AssetNode])
+@SerializersFor([AssetNode, PhasedAssetDeps, AssetDeps])
 final Serializers serializers =
     (_$serializers.toBuilder()
           ..add(identityAssetIdSerializer)
@@ -52,6 +54,20 @@ final Serializers serializers =
           ..addBuilderFactory(
             const FullType(BuiltList, [FullType(Digest)]),
             ListBuilder<Digest>.new,
+          )
+          ..addBuilderFactory(
+            const FullType(PhasedValue, [FullType(AssetDeps)]),
+            PhasedValueBuilder<AssetDeps>.new,
+          )
+          ..addBuilderFactory(
+            const FullType(ExpiringValue, [FullType(AssetDeps)]),
+            ExpiringValueBuilder<AssetDeps>.new,
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, [
+              FullType(ExpiringValue, [FullType(AssetDeps)]),
+            ]),
+            ListBuilder<ExpiringValue<AssetDeps>>.new,
           ))
         .build();
 

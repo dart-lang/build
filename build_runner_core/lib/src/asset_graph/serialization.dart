@@ -8,7 +8,7 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 29;
+const _version = 30;
 
 /// Deserializes an [AssetGraph] from a [Map].
 AssetGraph deserializeAssetGraph(List<int> bytes) {
@@ -72,6 +72,11 @@ AssetGraph deserializeAssetGraph(List<int> bytes) {
     }
   }
 
+  graph.previousPhasedAssetDeps = serializers.deserializeWith(
+    PhasedAssetDeps.serializer,
+    serializedGraph['phasedAssetDeps'],
+  );
+
   identityAssetIdSerializer.reset();
   return graph;
 }
@@ -87,6 +92,10 @@ List<int> serializeAssetGraph(AssetGraph graph) {
   final nodes = graph.allNodes
       .map((node) => serializers.serializeWith(AssetNode.serializer, node))
       .toList(growable: false);
+  final serializedPhasedAssetDeps = serializers.serializeWith(
+    PhasedAssetDeps.serializer,
+    graph.previousPhasedAssetDeps,
+  );
 
   var result = <String, dynamic>{
     'version': _version,
@@ -111,6 +120,7 @@ List<int> serializeAssetGraph(AssetGraph graph) {
       graph.postBuildActionsOptionsDigests,
       specifiedType: const FullType(BuiltList, [FullType(Digest)]),
     ),
+    'phasedAssetDeps': serializedPhasedAssetDeps,
   };
 
   identityAssetIdSerializer.reset();
