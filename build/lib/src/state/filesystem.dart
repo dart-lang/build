@@ -6,8 +6,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:pool/pool.dart';
-
 /// The filesystem the build is running on.
 ///
 /// Methods behave as the `dart:io` methods with the same names, with some
@@ -77,25 +75,21 @@ abstract interface class Filesystem {
 
 /// The `dart:io` filesystem.
 class IoFilesystem implements Filesystem {
-  /// Pool for async file operations.
-  final _pool = Pool(32);
-
   @override
-  Future<bool> exists(String path) => _pool.withResource(File(path).exists);
+  Future<bool> exists(String path) => File(path).exists();
 
   @override
   bool existsSync(String path) => File(path).existsSync();
 
   @override
-  Future<Uint8List> readAsBytes(String path) =>
-      _pool.withResource(File(path).readAsBytes);
+  Future<Uint8List> readAsBytes(String path) => File(path).readAsBytes();
 
   @override
   Uint8List readAsBytesSync(String path) => File(path).readAsBytesSync();
 
   @override
   Future<String> readAsString(String path, {Encoding encoding = utf8}) =>
-      _pool.withResource(() => File(path).readAsString(encoding: encoding));
+      File(path).readAsString(encoding: encoding);
 
   @override
   String readAsStringSync(String path, {Encoding encoding = utf8}) =>
@@ -108,19 +102,15 @@ class IoFilesystem implements Filesystem {
   }
 
   @override
-  Future<void> delete(String path) {
-    return _pool.withResource(() async {
-      final file = File(path);
-      if (await file.exists()) await file.delete();
-    });
+  Future<void> delete(String path) async {
+    final file = File(path);
+    if (await file.exists()) await file.delete();
   }
 
   @override
-  Future<void> deleteDirectory(String path) {
-    return _pool.withResource(() async {
-      final directory = Directory(path);
-      if (await directory.exists()) await directory.delete(recursive: true);
-    });
+  Future<void> deleteDirectory(String path) async {
+    final directory = Directory(path);
+    if (await directory.exists()) await directory.delete(recursive: true);
   }
 
   @override
@@ -135,12 +125,10 @@ class IoFilesystem implements Filesystem {
   }
 
   @override
-  Future<void> writeAsBytes(String path, List<int> contents) {
-    return _pool.withResource(() async {
-      final file = File(path);
-      await file.parent.create(recursive: true);
-      await file.writeAsBytes(contents);
-    });
+  Future<void> writeAsBytes(String path, List<int> contents) async {
+    final file = File(path);
+    await file.parent.create(recursive: true);
+    await file.writeAsBytes(contents);
   }
 
   @override
@@ -159,12 +147,10 @@ class IoFilesystem implements Filesystem {
     String path,
     String contents, {
     Encoding encoding = utf8,
-  }) {
-    return _pool.withResource(() async {
-      final file = File(path);
-      await file.parent.create(recursive: true);
-      await file.writeAsString(contents, encoding: encoding);
-    });
+  }) async {
+    final file = File(path);
+    await file.parent.create(recursive: true);
+    await file.writeAsString(contents, encoding: encoding);
   }
 }
 

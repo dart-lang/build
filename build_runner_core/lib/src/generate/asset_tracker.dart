@@ -108,17 +108,16 @@ class AssetTracker {
     var originalGraphSources = assetGraph.sources.toSet();
     var preExistingSources = originalGraphSources.intersection(inputSources)
       ..addAll(internalSources.where(assetGraph.contains));
-    var modifyChecks = preExistingSources.map((id) async {
+    for (final id in preExistingSources) {
       var node = assetGraph.get(id)!;
       var originalDigest = node.digest;
-      if (originalDigest == null) return;
-      await _reader.cache.invalidate([id]);
+      if (originalDigest == null) continue;
+      _reader.cache.invalidate([id]);
       var currentDigest = await _reader.digest(id);
       if (currentDigest != originalDigest) {
         updates[id] = ChangeType.MODIFY;
       }
-    });
-    await Future.wait(modifyChecks);
+    }
     return updates;
   }
 

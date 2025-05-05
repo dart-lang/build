@@ -183,7 +183,7 @@ class Build {
         );
       }
     }
-    await environment.writer.completeBuild();
+    readerWriter.cache.flush();
     await resourceManager.disposeAll();
     result = await environment.finalizeBuild(
       result,
@@ -221,6 +221,7 @@ class Build {
           }
         }
       }
+      readerWriter.cache.invalidate(changedInputs);
       final deleted = await assetGraph.updateAndInvalidate(
         buildPhases,
         updates,
@@ -229,9 +230,7 @@ class Build {
         readerWriter,
       );
       deletedAssets.addAll(deleted);
-      // TODO(davidmorgan): there are a few places that invalidate, check that
-      // it's once per file, add test coverage.
-      await readerWriter.cache.invalidate(changedInputs);
+      readerWriter.cache.invalidate(deleted);
     });
   }
 
@@ -561,15 +560,13 @@ class Build {
     PostBuildPhase phase,
   ) async {
     var actionNum = 0;
-    var outputLists = await Future.wait(
-      phase.builderActions.map(
-        (action) => _runPostBuildAction(phaseNum, actionNum++, action),
-      ),
-    );
-    return outputLists.fold<List<AssetId>>(
-      <AssetId>[],
-      (combined, next) => combined..addAll(next),
-    );
+    final result = <AssetId>[];
+    for (final builderAction in phase.builderActions) {
+      result.addAll(
+        await _runPostBuildAction(phaseNum, actionNum++, builderAction),
+      );
+    }
+    return result;
   }
 
   Future<Iterable<AssetId>> _runPostBuildAction(
@@ -1209,7 +1206,6 @@ class Build {
 
     final result = errors.isEmpty;
 
-    await readerWriter.cache.invalidate(outputs);
     for (final output in outputs) {
       final wasOutput = readerWriter.assetsWritten.contains(output);
       final digest = wasOutput ? await this.readerWriter.digest(output) : null;

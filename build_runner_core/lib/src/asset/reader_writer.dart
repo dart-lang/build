@@ -83,41 +83,47 @@ class ReaderWriter extends AssetReader
 
   @override
   Future<bool> canRead(AssetId id) {
-    return cache.exists(
-      id,
-      ifAbsent: () async {
-        final path = _pathFor(id);
-        return filesystem.exists(path);
-      },
+    return Future.value(
+      cache.exists(
+        id,
+        ifAbsent: () {
+          final path = _pathFor(id);
+          return filesystem.existsSync(path);
+        },
+      ),
     );
   }
 
   @override
-  Future<List<int>> readAsBytes(AssetId id) async {
-    return cache.readAsBytes(
-      id,
-      ifAbsent: () async {
-        final path = _pathFor(id);
-        if (!await filesystem.exists(path)) {
-          throw AssetNotFoundException(id, path: path);
-        }
-        return filesystem.readAsBytes(path);
-      },
+  Future<List<int>> readAsBytes(AssetId id) {
+    return Future.value(
+      cache.readAsBytes(
+        id,
+        ifAbsent: () {
+          final path = _pathFor(id);
+          if (!filesystem.existsSync(path)) {
+            throw AssetNotFoundException(id, path: path);
+          }
+          return filesystem.readAsBytesSync(path);
+        },
+      ),
     );
   }
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async {
-    return cache.readAsString(
-      id,
-      encoding: encoding,
-      ifAbsent: () async {
-        final path = _pathFor(id);
-        if (!await filesystem.exists(path)) {
-          throw AssetNotFoundException(id, path: path);
-        }
-        return filesystem.readAsBytes(path);
-      },
+  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
+    return Future.value(
+      cache.readAsString(
+        id,
+        encoding: encoding,
+        ifAbsent: () {
+          final path = _pathFor(id);
+          if (!filesystem.existsSync(path)) {
+            throw AssetNotFoundException(id, path: path);
+          }
+          return filesystem.readAsBytesSync(path);
+        },
+      ),
     );
   }
 
@@ -128,9 +134,16 @@ class ReaderWriter extends AssetReader
   // [AssetWriter] methods.
 
   @override
-  Future<void> writeAsBytes(AssetId id, List<int> bytes) async {
+  Future<void> writeAsBytes(AssetId id, List<int> bytes) {
     final path = _pathFor(id);
-    await filesystem.writeAsBytes(path, bytes);
+    cache.writeAsBytes(
+      id,
+      bytes,
+      writer: () {
+        return filesystem.writeAsBytesSync(path, bytes);
+      },
+    );
+    return Future.value();
   }
 
   @override
@@ -138,13 +151,21 @@ class ReaderWriter extends AssetReader
     AssetId id,
     String contents, {
     Encoding encoding = utf8,
-  }) async {
+  }) {
     final path = _pathFor(id);
-    await filesystem.writeAsString(path, contents, encoding: encoding);
+    cache.writeAsString(
+      id,
+      contents,
+      encoding: encoding,
+      writer: () {
+        filesystem.writeAsStringSync(path, contents, encoding: encoding);
+      },
+    );
+    return Future.value();
   }
 
   @override
-  Future<void> delete(AssetId id) async {
+  Future<void> delete(AssetId id) {
     onDelete?.call(id);
     final path = _pathFor(id);
     // Hidden generated files are moved by `assetPathProvider` under the root
@@ -160,18 +181,19 @@ class ReaderWriter extends AssetReader
         'Should not delete assets outside of $rootPackage',
       );
     }
-    await filesystem.delete(path);
+    cache.delete(
+      id,
+      deleter: () {
+        filesystem.deleteSync(path);
+      },
+    );
+    return Future.value();
   }
 
   @override
   Future<void> deleteDirectory(AssetId id) async {
     final path = _pathFor(id);
     await filesystem.deleteDirectory(path);
-  }
-
-  @override
-  Future<void> completeBuild() async {
-    // TODO(davidmorgan): add back write caching, "batching".
   }
 }
 

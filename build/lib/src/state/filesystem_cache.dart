@@ -2,12 +2,10 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import '../asset/id.dart';
-import 'lru_cache.dart';
+import '../../build.dart';
 
 /// Cache for file existence and contents.
 ///
@@ -16,29 +14,43 @@ abstract interface class FilesystemCache {
   /// Clears all [ids] from all caches.
   ///
   /// Waits for any pending reads to complete first.
-  Future<void> invalidate(Iterable<AssetId> ids);
+  void invalidate(Iterable<AssetId> ids);
+
+  void flush();
 
   /// Whether [id] exists.
   ///
   /// Returns a cached result if available, or caches and returns `ifAbsent()`.
-  Future<bool> exists(AssetId id, {required Future<bool> Function() ifAbsent});
+  bool exists(AssetId id, {required bool Function() ifAbsent});
 
   /// Reads [id] as bytes.
   ///
   /// Returns a cached result if available, or caches and returns `ifAbsent()`.
-  Future<Uint8List> readAsBytes(
-    AssetId id, {
-    required Future<Uint8List> Function() ifAbsent,
+  Uint8List readAsBytes(AssetId id, {required Uint8List Function() ifAbsent});
+
+  void writeAsBytes(
+    AssetId id,
+    List<int> contents, {
+    required void Function() writer,
   });
 
   /// Reads [id] as a `String`.
   ///
   /// Returns a cached result if available, or caches and returns `ifAbsent()`.
-  Future<String> readAsString(
+  String readAsString(
     AssetId id, {
     Encoding encoding = utf8,
-    required Future<Uint8List> Function() ifAbsent,
+    required Uint8List Function() ifAbsent,
   });
+
+  void writeAsString(
+    AssetId id,
+    String contents, {
+    Encoding encoding = utf8,
+    required void Function() writer,
+  });
+
+  void delete(AssetId id, {required void Function() deleter});
 }
 
 /// [FilesystemCache] that always reads from the underlying source.
@@ -46,114 +58,189 @@ class PassthroughFilesystemCache implements FilesystemCache {
   const PassthroughFilesystemCache();
 
   @override
-  Future<void> invalidate(Iterable<AssetId> ids) async {}
+  void invalidate(Iterable<AssetId> ids) {}
 
   @override
-  Future<bool> exists(
-    AssetId id, {
-    required Future<bool> Function() ifAbsent,
-  }) => ifAbsent();
+  void flush() {}
 
   @override
-  Future<Uint8List> readAsBytes(
-    AssetId id, {
-    required Future<Uint8List> Function() ifAbsent,
-  }) => ifAbsent();
+  bool exists(AssetId id, {required bool Function() ifAbsent}) => ifAbsent();
 
   @override
-  Future<String> readAsString(
+  Uint8List readAsBytes(AssetId id, {required Uint8List Function() ifAbsent}) =>
+      ifAbsent();
+
+  @override
+  String readAsString(
     AssetId id, {
     Encoding encoding = utf8,
-    required Future<Uint8List> Function() ifAbsent,
-  }) async => encoding.decode(await ifAbsent());
+    required Uint8List Function() ifAbsent,
+  }) => encoding.decode(ifAbsent());
+
+  @override
+  void writeAsBytes(
+    AssetId id,
+    List<int> contents, {
+    required void Function() writer,
+  }) => writer();
+
+  @override
+  void writeAsString(
+    AssetId id,
+    String contents, {
+    Encoding encoding = utf8,
+    required void Function() writer,
+  }) => writer();
+
+  @override
+  void delete(AssetId id, {required void Function() deleter}) => deleter();
 }
 
 /// [FilesystemCache] that stores data in memory.
 class InMemoryFilesystemCache implements FilesystemCache {
   /// Cached results of [readAsBytes].
-  final _bytesContentCache = LruCache<AssetId, Uint8List>(
-    1024 * 1024,
-    1024 * 1024 * 512,
-    (value) => value.lengthInBytes,
-  );
-
-  /// Pending [readAsBytes] operations.
-  final _pendingBytesContentCache = <AssetId, Future<Uint8List>>{};
+  final _bytesContentCache = <AssetId, Uint8List>{};
 
   /// Cached results of [exists].
   ///
   /// Don't bother using an LRU cache for this since it's just booleans.
-  final _canReadCache = <AssetId, Future<bool>>{};
+  final _canReadCache = <AssetId, bool>{};
 
   /// Cached results of [readAsString].
   ///
   /// These are computed and stored lazily using [readAsBytes].
   ///
   /// Only files read with [utf8] encoding (the default) will ever be cached.
-  final _stringContentCache = LruCache<AssetId, String>(
-    1024 * 1024,
-    1024 * 1024 * 512,
-    (value) => value.length,
-  );
+  final _stringContentCache = <AssetId, String>{};
 
-  /// Pending `readAsString` operations.
-  final _pendingStringContentCache = <AssetId, Future<String>>{};
+  final _pendingWrites = <AssetId, void Function()>{};
+  final _pendingDeletes = <AssetId, void Function()>{};
 
   @override
-  Future<void> invalidate(Iterable<AssetId> ids) async {
-    // First finish all pending operations, as they will write to the cache.
+  void invalidate(Iterable<AssetId> ids) {
     for (var id in ids) {
-      await _canReadCache.remove(id);
-      await _pendingBytesContentCache.remove(id);
-      await _pendingStringContentCache.remove(id);
-    }
-    for (var id in ids) {
+      _pendingWrites.remove(id);
+      _pendingDeletes.remove(id);
+      _canReadCache.remove(id);
       _bytesContentCache.remove(id);
       _stringContentCache.remove(id);
     }
   }
 
   @override
-  Future<bool> exists(
-    AssetId id, {
-    required Future<bool> Function() ifAbsent,
-  }) => _canReadCache.putIfAbsent(id, ifAbsent);
-
-  @override
-  Future<Uint8List> readAsBytes(
-    AssetId id, {
-    required Future<Uint8List> Function() ifAbsent,
-  }) {
-    var cached = _bytesContentCache[id];
-    if (cached != null) return Future.value(cached);
-
-    return _pendingBytesContentCache.putIfAbsent(id, () async {
-      final result = await ifAbsent();
-      _bytesContentCache[id] = result;
-      unawaited(_pendingBytesContentCache.remove(id));
-      return result;
-    });
+  void flush() {
+    for (final write in _pendingWrites.values) {
+      write();
+    }
+    for (final delete in _pendingDeletes.values) {
+      delete();
+    }
+    _pendingWrites.clear();
+    _pendingDeletes.clear();
   }
 
   @override
-  Future<String> readAsString(
+  bool exists(AssetId id, {required bool Function() ifAbsent}) {
+    final maybeResult = _canReadCache[id];
+    if (maybeResult != null) return maybeResult;
+    return _canReadCache[id] = ifAbsent();
+  }
+
+  @override
+  Uint8List readAsBytes(AssetId id, {required Uint8List Function() ifAbsent}) {
+    final maybeResult = _bytesContentCache[id];
+    if (maybeResult != null) return maybeResult;
+
+    // Not in cache. Check pending writes and deletes.
+    if (_pendingDeletes.containsKey(id)) throw AssetNotFoundException(id);
+    if (_pendingWrites.containsKey(id)) {
+      throw StateError('Should be in cache: $id');
+    }
+
+    // Read and cache.
+    final bytes = _bytesContentCache[id] = ifAbsent();
+    // Might not be a valid String, only convert to String when read as String.
+    _stringContentCache.remove(id);
+    return bytes;
+  }
+
+  @override
+  String readAsString(
     AssetId id, {
     Encoding encoding = utf8,
-    required Future<Uint8List> Function() ifAbsent,
-  }) async {
+    required Uint8List Function() ifAbsent,
+  }) {
     if (encoding != utf8) {
-      final bytes = await readAsBytes(id, ifAbsent: ifAbsent);
+      final bytes = readAsBytes(id, ifAbsent: ifAbsent);
       return encoding.decode(bytes);
     }
 
-    var cached = _stringContentCache[id];
-    if (cached != null) return cached;
+    final maybeResult = _stringContentCache[id];
+    if (maybeResult != null) return maybeResult;
 
-    return _pendingStringContentCache.putIfAbsent(id, () async {
-      final bytes = await ifAbsent();
-      final result = _stringContentCache[id] = utf8.decode(bytes);
-      unawaited(_pendingStringContentCache.remove(id));
-      return result;
-    });
+    // Not in cache. Check pending writes and deletes.
+    if (_pendingDeletes.containsKey(id)) throw AssetNotFoundException(id);
+    if (_pendingWrites.containsKey(id)) {
+      // Might have been written as bytes; only cached as String when it's
+      // read as String, because it might not be a valid String.
+      final bytes = _bytesContentCache[id];
+      if (bytes == null) {
+        throw StateError('Should be in cache: $id');
+      } else {
+        return _stringContentCache[id] = utf8.decode(_bytesContentCache[id]!);
+      }
+    }
+
+    final bytes = ifAbsent();
+    _bytesContentCache[id] = bytes;
+    return _stringContentCache[id] = utf8.decode(bytes);
+  }
+
+  @override
+  void writeAsBytes(
+    AssetId id,
+    List<int> contents, {
+    required void Function() writer,
+  }) {
+    // [contents] might not be a valid string so defer trying to
+    // decode it until if/when it's read as a string.
+    _stringContentCache.remove(id);
+    _bytesContentCache[id] =
+        (contents is Uint8List ? contents : Uint8List.fromList(contents));
+    _canReadCache[id] = true;
+    _pendingDeletes.remove(id);
+    _pendingWrites[id] = writer;
+  }
+
+  @override
+  void writeAsString(
+    AssetId id,
+    String contents, {
+    Encoding encoding = utf8,
+    required void Function() writer,
+  }) {
+    // Strings are only cached if utf8.
+    if (encoding == utf8) {
+      _stringContentCache[id] = contents;
+    } else {
+      _stringContentCache.remove(id);
+    }
+
+    final encoded = encoding.encode(contents);
+    _bytesContentCache[id] =
+        encoded is Uint8List ? encoded : Uint8List.fromList(encoded);
+
+    _canReadCache[id] = true;
+    _pendingDeletes.remove(id);
+    _pendingWrites[id] = writer;
+  }
+
+  @override
+  void delete(AssetId id, {required void Function() deleter}) {
+    _stringContentCache.remove(id);
+    _bytesContentCache.remove(id);
+    _canReadCache[id] = false;
+    _pendingWrites.remove(id);
+    _pendingDeletes[id] = deleter;
   }
 }

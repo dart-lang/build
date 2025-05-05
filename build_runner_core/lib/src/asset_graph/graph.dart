@@ -252,15 +252,12 @@ class AssetGraph implements GeneratedAssetHider {
     Iterable<AssetId> ids,
     AssetReader digestReader,
   ) async {
-    await digestReader.cache.invalidate(ids);
-    await Future.wait(
-      ids.map((id) async {
-        final digest = await digestReader.digest(id);
-        updateNode(id, (nodeBuilder) {
-          nodeBuilder.digest = digest;
-        });
-      }),
-    );
+    for (final id in ids) {
+      final digest = await digestReader.digest(id);
+      updateNode(id, (nodeBuilder) {
+        nodeBuilder.digest = digest;
+      });
+    }
   }
 
   /// Changes [id] and its transitive`primaryOutput`s to `missingSource` nodes.
