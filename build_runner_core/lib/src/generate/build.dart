@@ -258,6 +258,7 @@ class Build {
         // Run a fresh build.
         var result = await logTimedAsync(_logger, 'Running build', _runPhases);
 
+        int? size;
         // Write out the dependency graph file.
         await logTimedAsync(
           _logger,
@@ -270,9 +271,11 @@ class Build {
                       AnalysisDriverModel.sharedInstance.phasedAssetDeps(),
                     );
             assetGraph.previousPhasedAssetDeps = updatedPhasedAssetDeps;
+            final bytes = assetGraph.serialize();
+            size = bytes.length;
             await readerWriter.writeAsBytes(
               AssetId(options.packageGraph.root.name, assetGraphPath),
-              assetGraph.serialize(),
+              bytes,
             );
             // Phases options don't change during a build series, so for all
             // subsequent builds "previous" and current build options digests
@@ -283,6 +286,7 @@ class Build {
                 assetGraph.postBuildActionsOptionsDigests;
           },
         );
+        _logger.info('Asset graph size: $size\n');
 
         // Log performance information if requested
         if (options.logPerformanceDir != null) {
