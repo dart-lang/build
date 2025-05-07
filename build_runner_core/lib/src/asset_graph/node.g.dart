@@ -372,6 +372,13 @@ class _$GeneratedNodeStateSerializer
           const FullType(AssetId),
         ]),
       ),
+      'resolverEntrypoints',
+      serializers.serialize(
+        object.resolverEntrypoints,
+        specifiedType: const FullType(BuiltSet, const [
+          const FullType(AssetId),
+        ]),
+      ),
     ];
     Object? value;
     value = object.result;
@@ -401,6 +408,17 @@ class _$GeneratedNodeStateSerializer
       switch (key) {
         case 'inputs':
           result.inputs.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(BuiltSet, const [
+                    const FullType(AssetId),
+                  ]),
+                )!
+                as BuiltSet<Object?>,
+          );
+          break;
+        case 'resolverEntrypoints':
+          result.resolverEntrypoints.replace(
             serializers.deserialize(
                   value,
                   specifiedType: const FullType(BuiltSet, const [
@@ -947,17 +965,28 @@ class _$GeneratedNodeState extends GeneratedNodeState {
   @override
   final BuiltSet<AssetId> inputs;
   @override
+  final BuiltSet<AssetId> resolverEntrypoints;
+  @override
   final bool? result;
 
   factory _$GeneratedNodeState([
     void Function(GeneratedNodeStateBuilder)? updates,
   ]) => (new GeneratedNodeStateBuilder()..update(updates))._build();
 
-  _$GeneratedNodeState._({required this.inputs, this.result}) : super._() {
+  _$GeneratedNodeState._({
+    required this.inputs,
+    required this.resolverEntrypoints,
+    this.result,
+  }) : super._() {
     BuiltValueNullFieldError.checkNotNull(
       inputs,
       r'GeneratedNodeState',
       'inputs',
+    );
+    BuiltValueNullFieldError.checkNotNull(
+      resolverEntrypoints,
+      r'GeneratedNodeState',
+      'resolverEntrypoints',
     );
   }
 
@@ -975,6 +1004,7 @@ class _$GeneratedNodeState extends GeneratedNodeState {
     if (identical(other, this)) return true;
     return other is GeneratedNodeState &&
         inputs == other.inputs &&
+        resolverEntrypoints == other.resolverEntrypoints &&
         result == other.result;
   }
 
@@ -982,6 +1012,7 @@ class _$GeneratedNodeState extends GeneratedNodeState {
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, inputs.hashCode);
+    _$hash = $jc(_$hash, resolverEntrypoints.hashCode);
     _$hash = $jc(_$hash, result.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
@@ -991,6 +1022,7 @@ class _$GeneratedNodeState extends GeneratedNodeState {
   String toString() {
     return (newBuiltValueToStringHelper(r'GeneratedNodeState')
           ..add('inputs', inputs)
+          ..add('resolverEntrypoints', resolverEntrypoints)
           ..add('result', result))
         .toString();
   }
@@ -1005,6 +1037,12 @@ class GeneratedNodeStateBuilder
       _$this._inputs ??= new SetBuilder<AssetId>();
   set inputs(SetBuilder<AssetId>? inputs) => _$this._inputs = inputs;
 
+  SetBuilder<AssetId>? _resolverEntrypoints;
+  SetBuilder<AssetId> get resolverEntrypoints =>
+      _$this._resolverEntrypoints ??= new SetBuilder<AssetId>();
+  set resolverEntrypoints(SetBuilder<AssetId>? resolverEntrypoints) =>
+      _$this._resolverEntrypoints = resolverEntrypoints;
+
   bool? _result;
   bool? get result => _$this._result;
   set result(bool? result) => _$this._result = result;
@@ -1015,6 +1053,7 @@ class GeneratedNodeStateBuilder
     final $v = _$v;
     if ($v != null) {
       _inputs = $v.inputs.toBuilder();
+      _resolverEntrypoints = $v.resolverEntrypoints.toBuilder();
       _result = $v.result;
       _$v = null;
     }
@@ -1040,12 +1079,18 @@ class GeneratedNodeStateBuilder
     try {
       _$result =
           _$v ??
-          new _$GeneratedNodeState._(inputs: inputs.build(), result: result);
+          new _$GeneratedNodeState._(
+            inputs: inputs.build(),
+            resolverEntrypoints: resolverEntrypoints.build(),
+            result: result,
+          );
     } catch (_) {
       late String _$failedField;
       try {
         _$failedField = 'inputs';
         inputs.build();
+        _$failedField = 'resolverEntrypoints';
+        resolverEntrypoints.build();
       } catch (e) {
         throw new BuiltValueNestedFieldError(
           r'GeneratedNodeState',

@@ -23,7 +23,9 @@
   `TestReaderWriter` instead.
 - Breaking change: `TestReaderWriter.assetsRead` does not take into account
   details of the build, it's just what was actually read. Use
-  `TestReaderWriter.inputsTracked` for what was recorded as an input.
+  `TestReaderWriter.inputsTracked` for what was recorded as an input. Note that
+  resolver entrypoints are now tracked separately from inputs, see
+  `TestReaderWriter.resolverEntrypointsTracked`.
 - Breaking change: Remove `StubAssetReader`. Use `TestReaderWriter` instead.
 - `TestReaderWriter` writes and deletes are notified to `FakeWatcher`.
 - `TestReaderWriter` tracks `assetsWritten`.

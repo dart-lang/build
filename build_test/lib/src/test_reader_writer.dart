@@ -32,6 +32,13 @@ abstract interface class ReaderWriterTesting {
   /// The assets that have been recorded as inputs of the build.
   Iterable<AssetId> get inputsTracked;
 
+  /// The assets that the build resolved using the analyzer.
+  ///
+  /// Only the entrypoints are recorded, but all sources reachable transitively
+  /// via its directives will be treated as dependencies of the build for
+  /// invalidation purposes.
+  Iterable<AssetId> get resolverEntrypointsTracked;
+
   /// The assets that have been read via the [TestReaderWriter]'s non-test
   /// APIs.
   ///

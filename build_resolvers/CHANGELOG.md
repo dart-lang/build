@@ -12,6 +12,7 @@
 - Use `LibraryCycleGraphLoader` to load transitive deps for analysis.
 - Bug fix: fix delay on shutdown for fast builds when the "analyzer out of
   date" warning is displayed.
+- Track resolver dependencies as library cycle graphs.
 
 ## 2.4.4
 

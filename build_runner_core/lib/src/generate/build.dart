@@ -9,6 +9,8 @@ import 'dart:convert';
 import 'package:build/build.dart';
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
+// ignore: implementation_imports
+import 'package:build_resolvers/src/internal.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
@@ -56,6 +58,9 @@ class Build {
   final ResourceManager resourceManager;
   final AssetReaderWriter readerWriter;
   final RunnerAssetWriter deleteWriter;
+  final LibraryCycleGraphLoader previousLibraryCycleGraphLoader =
+      LibraryCycleGraphLoader();
+  final AssetDepsLoader? previousDepsLoader;
 
   // Logging.
   final LogRenderer renderer;
@@ -109,6 +114,10 @@ class Build {
   /// checked against the digest from the previous build.
   final Set<AssetId> changedOutputs = {};
 
+  /// Whether a graph from [previousLibraryCycleGraphLoader] has any changed
+  /// transitive source.
+  final Map<LibraryCycleGraph, bool> changedGraphs = Map.identity();
+
   Build({
     required this.environment,
     required this.options,
@@ -124,7 +133,11 @@ class Build {
            options.trackPerformance
                ? BuildPerformanceTracker()
                : BuildPerformanceTracker.noOp(),
-       logFine = _logger.level <= Level.FINE {
+       logFine = _logger.level <= Level.FINE,
+       previousDepsLoader =
+           assetGraph.previousPhasedAssetDeps == null
+               ? null
+               : AssetDepsLoader.fromDeps(assetGraph.previousPhasedAssetDeps!) {
     hungActionsHeartbeat = HungActionsHeartbeat(() {
       final message = StringBuffer();
       const actionsToLogMax = 5;
@@ -250,6 +263,13 @@ class Build {
           _logger,
           'Caching finalized dependency graph',
           () async {
+            final updatedPhasedAssetDeps =
+                assetGraph.previousPhasedAssetDeps == null
+                    ? AnalysisDriverModel.sharedInstance.phasedAssetDeps()
+                    : assetGraph.previousPhasedAssetDeps!.addAll(
+                      AnalysisDriverModel.sharedInstance.phasedAssetDeps(),
+                    );
+            assetGraph.previousPhasedAssetDeps = updatedPhasedAssetDeps;
             await readerWriter.writeAsBytes(
               AssetId(options.packageGraph.root.name, assetGraphPath),
               assetGraph.serialize(),
@@ -845,60 +865,59 @@ class Build {
     // Check for changes to any inputs.
     final inputs = firstOutputState.inputs;
     for (final input in inputs) {
-      final inputNode = assetGraph.get(input)!;
-      if (inputNode.type == NodeType.generated) {
-        if (inputNode.generatedNodeConfiguration!.phaseNumber >= phaseNumber) {
-          // It's not readable in this phase.
-          continue;
-        }
-        // Ensure that the input was built, so [changedOutputs] is updated.
-        if (!processedOutputs.contains(input)) {
-          await _buildOutput(inputNode.id);
-        }
-        if (changedOutputs.contains(input)) {
-          if (logFine) {
-            _logger.fine(
-              'Build ${renderer.build(primaryInput, outputs)} because '
-              '${renderer.id(input)} was built and changed.',
-            );
+      final changed = await _hasInputChanged(
+        phaseNumber: phaseNumber,
+        input: input,
+      );
+
+      if (changed) {
+        if (logFine) {
+          final inputNode = assetGraph.get(input)!;
+          switch (inputNode.type) {
+            case NodeType.generated:
+              _logger.fine(
+                'Build ${renderer.build(primaryInput, outputs)} because '
+                '${renderer.id(input)} was built and changed.',
+              );
+
+            case NodeType.glob:
+              _logger.fine(
+                'Build ${renderer.build(primaryInput, outputs)} because '
+                '${inputNode.globNodeConfiguration!.glob} matches changed.',
+              );
+
+            case NodeType.source:
+              _logger.fine(
+                'Build ${renderer.build(primaryInput, outputs)} because '
+                '${renderer.id(input)} changed.',
+              );
+
+            case NodeType.missingSource:
+              _logger.fine(
+                'Build ${renderer.build(primaryInput, outputs)} because '
+                '${renderer.id(input)} was deleted.',
+              );
+
+            default:
+              throw StateError(inputNode.type.toString());
           }
-          return true;
         }
-      } else if (inputNode.type == NodeType.glob) {
-        // Ensure that the glob was evaluated, so [changedOutputs] is updated.
-        if (!processedOutputs.contains(input)) {
-          await _buildGlobNode(input);
+        return true;
+      }
+    }
+
+    for (final graphId in firstOutputState.resolverEntrypoints) {
+      if (await _hasInputGraphChanged(
+        phaseNumber: phaseNumber,
+        entrypointId: graphId,
+      )) {
+        if (logFine) {
+          _logger.fine(
+            'Build ${renderer.build(primaryInput, outputs)} because '
+            'resolved source changed.',
+          );
         }
-        if (changedOutputs.contains(input)) {
-          if (logFine) {
-            _logger.fine(
-              'Build ${renderer.build(primaryInput, outputs)} because '
-              '${inputNode.globNodeConfiguration!.glob} matches changed.',
-            );
-          }
-          return true;
-        }
-      } else if (inputNode.type == NodeType.source) {
-        if (changedInputs.contains(input)) {
-          if (logFine) {
-            _logger.fine(
-              'Build ${renderer.build(primaryInput, outputs)} because '
-              '${renderer.id(input)} changed.',
-            );
-          }
-          return true;
-        }
-      } else if (inputNode.type == NodeType.missingSource) {
-        // It's only a newly-deleted asset if it's also in [deletedAssets].
-        if (deletedAssets.contains(input)) {
-          if (logFine) {
-            _logger.fine(
-              'Build ${renderer.build(primaryInput, outputs)} because '
-              '${renderer.id(input)} was deleted.',
-            );
-          }
-          return true;
-        }
+        return true;
       }
     }
 
@@ -907,6 +926,126 @@ class Build {
       processedOutputs.add(output);
     }
 
+    return false;
+  }
+
+  /// Whether any source in the _previous build_ transitive import graph
+  /// of [entrypointId] has a change visible at [phaseNumber].
+  ///
+  /// There is a tradeoff between returning early when a first change is
+  /// encountered and continuing to process the graph to produce results that
+  /// might be useful later. This implementation is eager, it computes whether
+  /// every subgraph reachable from [entrypointId] has changed.
+  Future<bool> _hasInputGraphChanged({
+    required AssetId entrypointId,
+    required int phaseNumber,
+  }) async {
+    // If the result has already been calculated, return it.
+    final entrypointGraph = (await previousLibraryCycleGraphLoader
+        .libraryCycleGraphOf(
+          previousDepsLoader!,
+          entrypointId,
+        )).valueAt(phase: phaseNumber);
+    final maybeResult = changedGraphs[entrypointGraph];
+    if (maybeResult != null) {
+      return maybeResult;
+    }
+
+    final graphsToCheckStack = [entrypointGraph];
+
+    while (graphsToCheckStack.isNotEmpty) {
+      final nextGraph = graphsToCheckStack.last;
+
+      // If there are multiple paths to a node, it might have been calculated
+      // for another path.
+      if (changedGraphs.containsKey(nextGraph)) {
+        graphsToCheckStack.removeLast();
+        continue;
+      }
+
+      // Determine whether there are child graphs not yet evaluated.
+      //
+      // If so, add them to the stack and "continue" to evaluate those before
+      // returning to this graph.
+      final childGraphsWithWorkToDo = <LibraryCycleGraph>[];
+      for (final childGraph in nextGraph.children) {
+        final maybeChildResult = changedGraphs[childGraph];
+        if (maybeChildResult == null) {
+          childGraphsWithWorkToDo.add(childGraph);
+        }
+      }
+      if (childGraphsWithWorkToDo.isNotEmpty) {
+        graphsToCheckStack.addAll(childGraphsWithWorkToDo);
+        continue;
+      }
+
+      // Determine whether the graph root library cycle has any changed IDs. If
+      // so, the graph has changed; if not, check whether any child graph
+      // changed.
+      var rootLibraryCycleHasChanged = false;
+      for (final id in nextGraph.root.ids) {
+        if (await _hasInputChanged(phaseNumber: phaseNumber, input: id)) {
+          rootLibraryCycleHasChanged = true;
+          break;
+        }
+      }
+      if (rootLibraryCycleHasChanged) {
+        changedGraphs[nextGraph] = true;
+      } else {
+        var anyChildHasChanged = false;
+        for (final childGraph in nextGraph.children) {
+          final childResult = changedGraphs[childGraph];
+          if (childResult == null) {
+            throw StateError('Child graphs should have been checked.');
+          } else if (childResult) {
+            anyChildHasChanged = true;
+            break;
+          }
+        }
+        changedGraphs[nextGraph] = anyChildHasChanged;
+      }
+      graphsToCheckStack.removeLast();
+    }
+
+    return changedGraphs[entrypointGraph]!;
+  }
+
+  /// Whether [input] has a change visible at [phaseNumber].
+  Future<bool> _hasInputChanged({
+    required AssetId input,
+    required int phaseNumber,
+  }) async {
+    final inputNode = assetGraph.get(input)!;
+    if (inputNode.type == NodeType.generated) {
+      if (inputNode.generatedNodeConfiguration!.phaseNumber >= phaseNumber) {
+        // It's not readable in this phase.
+        return false;
+      }
+      // Ensure that the input was built, so [changedOutputs] is updated.
+      if (!processedOutputs.contains(input)) {
+        await _buildOutput(inputNode.id);
+      }
+      if (changedOutputs.contains(input)) {
+        return true;
+      }
+    } else if (inputNode.type == NodeType.glob) {
+      // Ensure that the glob was evaluated, so [changedOutputs] is updated.
+      if (!processedOutputs.contains(input)) {
+        await _buildGlobNode(input);
+      }
+      if (changedOutputs.contains(input)) {
+        return true;
+      }
+    } else if (inputNode.type == NodeType.source) {
+      if (changedInputs.contains(input)) {
+        return true;
+      }
+    } else if (inputNode.type == NodeType.missingSource) {
+      // It's only a newly-deleted asset if it's also in [deletedAssets].
+      if (deletedAssets.contains(input)) {
+        return true;
+      }
+    }
     return false;
   }
 
@@ -1092,6 +1231,7 @@ class Build {
       outputNode = assetGraph.updateNode(output, (nodeBuilder) {
         nodeBuilder.generatedNodeState
           ..inputs.replace(usedInputs)
+          ..resolverEntrypoints.replace(inputTracker.resolverEntrypoints)
           ..result = result;
         nodeBuilder.digest = digest;
       });

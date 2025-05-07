@@ -427,7 +427,7 @@ void main() {
           for (final phase in [1, 2, 3, 4, 5, 6]) {
             allCycles.add(phasedCycle.valueAt(phase: phase));
             final graph = phasedGraph.valueAt(phase: phase);
-            allGraphs.addAll(graph.transitiveGraphs);
+            allGraphs.add(graph);
           }
         }
 
