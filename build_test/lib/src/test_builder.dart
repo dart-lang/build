@@ -135,6 +135,8 @@ Future<TestBuilderResult> testBuilder(
   void Function(AssetId, Iterable<AssetId>)? reportUnusedAssetsForInput,
   PackageConfig? packageConfig,
   Resolvers? resolvers,
+  TestReaderWriter? readerWriter,
+  bool enableLowResourceMode = false,
 }) async {
   return testBuilders(
     [builder],
@@ -147,6 +149,8 @@ Future<TestBuilderResult> testBuilder(
     reportUnusedAssetsForInput: reportUnusedAssetsForInput,
     packageConfig: packageConfig,
     resolvers: resolvers,
+    readerWriter: readerWriter,
+    enableLowResourceMode: enableLowResourceMode,
   );
 }
 
@@ -196,8 +200,16 @@ Future<TestBuilderResult> testBuilder(
 /// builder to run for all inputs. To use the default builder config instead,
 /// set [testingBuilderConfig] to `false`.
 ///
-/// Returns a [TestBuilderResult] with the [TestReaderWriter] used for
-/// the build, which can be used for further checks.
+/// Optionally pass [readerWriter] to pass in the filesystem that will be
+/// used during the build. Before the build, [sourceAssets] will be written
+/// to it.
+///
+/// Optionally pass [enableLowResourceMode], which acts like the command
+/// line flag; in particular it disables file caching.
+///
+/// Returns a [TestBuilderResult] with the [BuildResult] and the
+/// [TestReaderWriter] used for the build, which can be used for further
+/// checks.
 Future<TestBuilderResult> testBuilders(
   Iterable<Builder> builders,
   Map<String, /*String|List<int>*/ Object> sourceAssets, {
@@ -211,10 +223,15 @@ Future<TestBuilderResult> testBuilders(
   Resolvers? resolvers,
   Set<Builder> optionalBuilders = const {},
   bool testingBuilderConfig = true,
+  TestReaderWriter? readerWriter,
+  bool enableLowResourceMode = false,
 }) async {
   onLog ??=
-      (log) =>
-          printOnFailure('$log${log.error == null ? '' : '  ${log.error}'}');
+      (log) => printOnFailure(
+        '$log'
+        '${log.error == null ? '' : '  ${log.error}'}'
+        '${log.stackTrace == null ? '' : '  ${log.stackTrace}'}',
+      );
 
   var inputIds = {
     for (var descriptor in sourceAssets.keys) makeAssetId(descriptor),
@@ -223,14 +240,14 @@ Future<TestBuilderResult> testBuilders(
   var allPackages = {for (var id in inputIds) id.package};
   rootPackage ??= allPackages.first;
 
-  final readerWriter = TestReaderWriter(rootPackage: rootPackage);
+  readerWriter ??= TestReaderWriter(rootPackage: rootPackage);
 
   sourceAssets.forEach((serializedId, contents) {
     var id = makeAssetId(serializedId);
     if (contents is String) {
-      readerWriter.testing.writeString(id, contents);
+      readerWriter!.testing.writeString(id, contents);
     } else if (contents is List<int>) {
-      readerWriter.testing.writeBytes(id, contents);
+      readerWriter!.testing.writeBytes(id, contents);
     }
   });
 
@@ -305,6 +322,7 @@ Future<TestBuilderResult> testBuilders(
     // Tests always trigger the "build script updated" check, even if it
     // didn't change. Skip it to allow testing with preserved state.
     skipBuildScriptCheck: true,
+    enableLowResourcesMode: enableLowResourceMode,
   );
 
   final buildSeries = await BuildSeries.create(buildOptions, environment, [
@@ -318,7 +336,7 @@ Future<TestBuilderResult> testBuilders(
   ], {});
 
   // Run the build.
-  await buildSeries.run({});
+  final buildResult = await buildSeries.run({});
 
   // Do cleanup that would usually happen on process exit.
   await buildSeries.beforeExit();
@@ -329,13 +347,17 @@ Future<TestBuilderResult> testBuilders(
   // Check the build outputs as requested.
   checkOutputs(outputs, readerWriter.testing.assetsWritten, readerWriter);
 
-  return TestBuilderResult(readerWriter: readerWriter);
+  return TestBuilderResult(
+    buildResult: buildResult,
+    readerWriter: readerWriter,
+  );
 }
 
 class TestBuilderResult {
+  final BuildResult buildResult;
   final TestReaderWriter readerWriter;
 
-  TestBuilderResult({required this.readerWriter});
+  TestBuilderResult({required this.buildResult, required this.readerWriter});
 }
 
 /// [LogSubscription] that does nothing.

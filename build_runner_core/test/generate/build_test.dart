@@ -600,10 +600,20 @@ void main() {
           outputs: {'a|web/a.txt.copy': 'a'},
         );
 
+        var copyId = makeAssetId('a|web/a.txt.copy');
+
+        var readCompleter = Completer<bool>();
         var blockingCompleter = Completer<void>();
         var builder = TestBuilder(
           buildExtensions: appendExtension('.copy', from: '.txt'),
-          extraWork: (_, _) => blockingCompleter.future,
+          build: (buildStep, _) async {
+            readCompleter.complete(await buildStep.canRead(copyId));
+            await buildStep.writeAsString(
+              copyId,
+              await buildStep.readAsString(buildStep.inputId),
+            );
+            await blockingCompleter.future;
+          },
         );
         var done = testPhases(
           [applyToRoot(builder)],
@@ -614,13 +624,16 @@ void main() {
 
         // Before the build starts we should still see the asset, we haven't
         // actually deleted it yet.
-        var copyId = makeAssetId('a|web/a.txt.copy');
         expect(result.readerWriter.testing.exists(copyId), isTrue);
 
         // But we should delete it before actually running the builder.
         var inputId = makeAssetId('a|web/a.txt');
         await builder.buildInputs.firstWhere((id) => id == inputId);
-        expect(result.readerWriter.testing.exists(copyId), isFalse);
+
+        // Because of write caching, it's not deleted from `readerWriter`.
+        expect(result.readerWriter.testing.exists(copyId), isTrue);
+        // ...but it is gone from the point of view of the build.
+        expect(await readCompleter.future, isFalse);
 
         // Now let the build finish.
         blockingCompleter.complete();

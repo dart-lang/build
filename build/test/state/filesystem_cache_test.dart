@@ -45,6 +45,43 @@ void main() {
         isFalse /* updated value */,
       );
     });
+
+    test('reads from latest writeAsBytes without calling ifAbsent', () async {
+      cache.writeAsBytes(
+        txt1,
+        txt1Bytes,
+        writer: () => throw UnimplementedError(),
+      );
+      expect(
+        cache.exists(txt1, ifAbsent: () => throw UnimplementedError()),
+        true,
+      );
+    });
+
+    test('reads from writeAsString without calling ifAbsent', () async {
+      cache.writeAsString(
+        txt1,
+        txt1String,
+        writer: () => throw UnimplementedError(),
+      );
+      expect(
+        cache.exists(txt1, ifAbsent: () => throw UnimplementedError()),
+        true,
+      );
+    });
+
+    test('reads from delete without calling ifAbsent', () async {
+      cache.writeAsString(
+        txt1,
+        txt1String,
+        writer: () => throw UnimplementedError(),
+      );
+      cache.delete(txt1, deleter: () => throw UnimplementedError());
+      expect(
+        cache.exists(txt1, ifAbsent: () => throw UnimplementedError()),
+        false,
+      );
+    });
   });
 
   group('readAsBytes', () {
@@ -66,6 +103,30 @@ void main() {
       expect(
         cache.readAsBytes(txt1, ifAbsent: () => txt2Bytes),
         txt2Bytes /* updated value */,
+      );
+    });
+
+    test('reads from latest writeAsBytes without calling ifAbsent', () async {
+      cache.writeAsBytes(
+        txt1,
+        txt1Bytes,
+        writer: () => throw UnimplementedError(),
+      );
+      expect(
+        cache.readAsBytes(txt1, ifAbsent: () => throw UnimplementedError()),
+        txt1Bytes,
+      );
+    });
+
+    test('reads from writeAsString without calling ifAbsent', () async {
+      cache.writeAsString(
+        txt1,
+        txt1String,
+        writer: () => throw UnimplementedError(),
+      );
+      expect(
+        cache.readAsBytes(txt1, ifAbsent: () => throw UnimplementedError()),
+        txt1Bytes,
       );
     });
   });
@@ -90,6 +151,77 @@ void main() {
         cache.readAsString(txt1, ifAbsent: () => txt2Bytes),
         txt2String /* updated value */,
       );
+    });
+  });
+
+  test('reads from latest writeAsBytes without calling ifAbsent', () async {
+    cache.writeAsBytes(
+      txt1,
+      txt1Bytes,
+      writer: () => throw UnimplementedError(),
+    );
+    expect(
+      cache.readAsString(txt1, ifAbsent: () => throw UnimplementedError()),
+      txt1String,
+    );
+  });
+
+  test('reads from writeAsString without calling ifAbsent', () async {
+    cache.writeAsString(
+      txt1,
+      txt1String,
+      writer: () => throw UnimplementedError(),
+    );
+    expect(
+      cache.readAsString(txt1, ifAbsent: () => throw UnimplementedError()),
+      txt1String,
+    );
+  });
+
+  group('writeAsBytes', () {
+    test('writes on flush', () async {
+      var written = false;
+      cache.writeAsBytes(
+        txt1,
+        txt1Bytes,
+        writer: () {
+          written = true;
+        },
+      );
+      expect(written, isFalse);
+      cache.flush();
+      expect(written, isTrue);
+    });
+  });
+
+  group('writeAsString', () {
+    test('writes on flush', () async {
+      var written = false;
+      cache.writeAsString(
+        txt1,
+        txt1String,
+        writer: () {
+          written = true;
+        },
+      );
+      expect(written, isFalse);
+      cache.flush();
+      expect(written, isTrue);
+    });
+  });
+
+  group('delete', () {
+    test('deletes on flush', () async {
+      var deleted = false;
+      cache.delete(
+        txt1,
+        deleter: () {
+          deleted = true;
+        },
+      );
+      expect(deleted, isFalse);
+      cache.flush();
+      expect(deleted, isTrue);
     });
   });
 }

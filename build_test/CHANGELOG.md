@@ -9,6 +9,8 @@
 - Add `testingBuilderConfig` to `testBuilders` to control builder config
   override.
 - Add `resolvers` parameter to `testBuild` and `testBuilders`.
+- Add `readerWriter` and `enableLowResourceMode` parameters to `testBuild`
+  and `testBuilders`.
 - Breaking change: removed `tearDown` parameter to `resolveSources` for
   keeping resolvers across multiple tests.
 - Breaking change: tests must use new `TestReaderWriter` instead of
