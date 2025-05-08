@@ -14,30 +14,25 @@ import 'lru_cache.dart';
 /// TODO(davidmorgan): benchmark, optimize the caching strategy.
 abstract interface class FilesystemCache {
   /// Clears all [ids] from all caches.
-  ///
-  /// Waits for any pending reads to complete first.
-  Future<void> invalidate(Iterable<AssetId> ids);
+  void invalidate(Iterable<AssetId> ids);
 
   /// Whether [id] exists.
   ///
   /// Returns a cached result if available, or caches and returns `ifAbsent()`.
-  Future<bool> exists(AssetId id, {required Future<bool> Function() ifAbsent});
+  bool exists(AssetId id, {required bool Function() ifAbsent});
 
   /// Reads [id] as bytes.
   ///
   /// Returns a cached result if available, or caches and returns `ifAbsent()`.
-  Future<Uint8List> readAsBytes(
-    AssetId id, {
-    required Future<Uint8List> Function() ifAbsent,
-  });
+  Uint8List readAsBytes(AssetId id, {required Uint8List Function() ifAbsent});
 
   /// Reads [id] as a `String`.
   ///
   /// Returns a cached result if available, or caches and returns `ifAbsent()`.
-  Future<String> readAsString(
+  String readAsString(
     AssetId id, {
     Encoding encoding = utf8,
-    required Future<Uint8List> Function() ifAbsent,
+    required Uint8List Function() ifAbsent,
   });
 }
 
@@ -49,23 +44,18 @@ class PassthroughFilesystemCache implements FilesystemCache {
   Future<void> invalidate(Iterable<AssetId> ids) async {}
 
   @override
-  Future<bool> exists(
-    AssetId id, {
-    required Future<bool> Function() ifAbsent,
-  }) => ifAbsent();
+  bool exists(AssetId id, {required bool Function() ifAbsent}) => ifAbsent();
 
   @override
-  Future<Uint8List> readAsBytes(
-    AssetId id, {
-    required Future<Uint8List> Function() ifAbsent,
-  }) => ifAbsent();
+  Uint8List readAsBytes(AssetId id, {required Uint8List Function() ifAbsent}) =>
+      ifAbsent();
 
   @override
-  Future<String> readAsString(
+  String readAsString(
     AssetId id, {
     Encoding encoding = utf8,
-    required Future<Uint8List> Function() ifAbsent,
-  }) async => encoding.decode(await ifAbsent());
+    required Uint8List Function() ifAbsent,
+  }) => encoding.decode(ifAbsent());
 }
 
 /// [FilesystemCache] that stores data in memory.
@@ -77,13 +67,10 @@ class InMemoryFilesystemCache implements FilesystemCache {
     (value) => value.lengthInBytes,
   );
 
-  /// Pending [readAsBytes] operations.
-  final _pendingBytesContentCache = <AssetId, Future<Uint8List>>{};
-
   /// Cached results of [exists].
   ///
   /// Don't bother using an LRU cache for this since it's just booleans.
-  final _canReadCache = <AssetId, Future<bool>>{};
+  final _existsCache = <AssetId, bool>{};
 
   /// Cached results of [readAsString].
   ///
@@ -96,64 +83,50 @@ class InMemoryFilesystemCache implements FilesystemCache {
     (value) => value.length,
   );
 
-  /// Pending `readAsString` operations.
-  final _pendingStringContentCache = <AssetId, Future<String>>{};
-
   @override
   Future<void> invalidate(Iterable<AssetId> ids) async {
-    // First finish all pending operations, as they will write to the cache.
     for (var id in ids) {
-      await _canReadCache.remove(id);
-      await _pendingBytesContentCache.remove(id);
-      await _pendingStringContentCache.remove(id);
-    }
-    for (var id in ids) {
+      _existsCache.remove(id);
       _bytesContentCache.remove(id);
       _stringContentCache.remove(id);
     }
   }
 
   @override
-  Future<bool> exists(
-    AssetId id, {
-    required Future<bool> Function() ifAbsent,
-  }) => _canReadCache.putIfAbsent(id, ifAbsent);
+  bool exists(AssetId id, {required bool Function() ifAbsent}) =>
+      _existsCache.putIfAbsent(id, ifAbsent);
 
   @override
-  Future<Uint8List> readAsBytes(
-    AssetId id, {
-    required Future<Uint8List> Function() ifAbsent,
-  }) {
-    var cached = _bytesContentCache[id];
-    if (cached != null) return Future.value(cached);
+  Uint8List readAsBytes(AssetId id, {required Uint8List Function() ifAbsent}) {
+    final maybeResult = _bytesContentCache[id];
+    if (maybeResult != null) return maybeResult;
 
-    return _pendingBytesContentCache.putIfAbsent(id, () async {
-      final result = await ifAbsent();
-      _bytesContentCache[id] = result;
-      unawaited(_pendingBytesContentCache.remove(id));
-      return result;
-    });
+    final result = ifAbsent();
+    _bytesContentCache[id] = result;
+    return result;
   }
 
   @override
-  Future<String> readAsString(
+  String readAsString(
     AssetId id, {
     Encoding encoding = utf8,
-    required Future<Uint8List> Function() ifAbsent,
-  }) async {
+    required Uint8List Function() ifAbsent,
+  }) {
     if (encoding != utf8) {
-      final bytes = await readAsBytes(id, ifAbsent: ifAbsent);
+      final bytes = readAsBytes(id, ifAbsent: ifAbsent);
       return encoding.decode(bytes);
     }
 
-    var cached = _stringContentCache[id];
-    if (cached != null) return cached;
+    final maybeResult = _stringContentCache[id];
+    if (maybeResult != null) return maybeResult;
 
-    return _pendingStringContentCache.putIfAbsent(id, () async {
-      final bytes = await ifAbsent();
-      final result = _stringContentCache[id] = utf8.decode(bytes);
-      unawaited(_pendingStringContentCache.remove(id));
-      return result;
-    });
+    var bytes = _bytesContentCache[id];
+    if (bytes == null) {
+      bytes = ifAbsent();
+      _bytesContentCache[id] = bytes;
+    }
+    final result = utf8.decode(bytes);
+    _stringContentCache[id] = result;
+    return result;
   }
 }
