@@ -231,7 +231,7 @@ class Build {
       deletedAssets.addAll(deleted);
       // TODO(davidmorgan): there are a few places that invalidate, check that
       // it's once per file, add test coverage.
-      await readerWriter.cache.invalidate(changedInputs);
+      readerWriter.cache.invalidate(changedInputs);
     });
   }
 
@@ -1209,7 +1209,7 @@ class Build {
 
     final result = errors.isEmpty;
 
-    await readerWriter.cache.invalidate(outputs);
+    readerWriter.cache.invalidate(outputs);
     for (final output in outputs) {
       final wasOutput = readerWriter.assetsWritten.contains(output);
       final digest = wasOutput ? await this.readerWriter.digest(output) : null;

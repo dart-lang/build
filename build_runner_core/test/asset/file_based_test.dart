@@ -76,15 +76,15 @@ void main() async {
 
     test('throws when attempting to read a non-existent file', () async {
       expect(
-        readerWriter.readAsString(makeAssetId('basic_pkg|foo.txt')),
+        () => readerWriter.readAsString(makeAssetId('basic_pkg|foo.txt')),
         throwsA(assetNotFoundException),
       );
       expect(
-        readerWriter.readAsString(makeAssetId('a|lib/b.txt')),
+        () => readerWriter.readAsString(makeAssetId('a|lib/b.txt')),
         throwsA(assetNotFoundException),
       );
       expect(
-        readerWriter.readAsString(makeAssetId('foo|lib/bar.txt')),
+        () => readerWriter.readAsString(makeAssetId('foo|lib/bar.txt')),
         throwsA(packageNotFoundException),
       );
     });

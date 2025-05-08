@@ -24,88 +24,70 @@ void main() {
   });
 
   group('exists', () {
-    test('reads from ifAbsent', () async {
-      expect(await cache.exists(txt1, ifAbsent: () async => true), isTrue);
-      expect(await cache.exists(txt2, ifAbsent: () async => false), isFalse);
+    test('reads from ifAbsent', () {
+      expect(cache.exists(txt1, ifAbsent: () => true), isTrue);
+      expect(cache.exists(txt2, ifAbsent: () => false), isFalse);
     });
 
-    test('does not re-read from ifAbsent', () async {
-      expect(await cache.exists(txt1, ifAbsent: () async => true), isTrue);
+    test('does not re-read from ifAbsent', () {
+      expect(cache.exists(txt1, ifAbsent: () => true), isTrue);
       expect(
-        await cache.exists(txt1, ifAbsent: () async => false),
+        cache.exists(txt1, ifAbsent: () => false),
         isTrue /* cached value */,
       );
     });
 
-    test('can be invalidated with invalidate', () async {
-      expect(await cache.exists(txt1, ifAbsent: () async => true), isTrue);
-      await cache.invalidate([txt1]);
+    test('can be invalidated with invalidate', () {
+      expect(cache.exists(txt1, ifAbsent: () => true), isTrue);
+      cache.invalidate([txt1]);
       expect(
-        await cache.exists(txt1, ifAbsent: () async => false),
+        cache.exists(txt1, ifAbsent: () => false),
         isFalse /* updated value */,
       );
     });
   });
 
   group('readAsBytes', () {
-    test('reads from ifAbsent', () async {
-      expect(
-        await cache.readAsBytes(txt1, ifAbsent: () async => txt1Bytes),
-        txt1Bytes,
-      );
+    test('reads from ifAbsent', () {
+      expect(cache.readAsBytes(txt1, ifAbsent: () => txt1Bytes), txt1Bytes);
     });
 
-    test('does not re-read from ifAbsent', () async {
+    test('does not re-read from ifAbsent', () {
+      expect(cache.readAsBytes(txt1, ifAbsent: () => txt1Bytes), txt1Bytes);
       expect(
-        await cache.readAsBytes(txt1, ifAbsent: () async => txt1Bytes),
-        txt1Bytes,
-      );
-      expect(
-        await cache.readAsBytes(txt1, ifAbsent: () async => txt2Bytes),
+        cache.readAsBytes(txt1, ifAbsent: () => txt2Bytes),
         txt1Bytes /* cached value */,
       );
     });
 
-    test('can be invalidated with invalidate', () async {
+    test('can be invalidated with invalidate', () {
+      expect(cache.readAsBytes(txt1, ifAbsent: () => txt1Bytes), txt1Bytes);
+      cache.invalidate([txt1]);
       expect(
-        await cache.readAsBytes(txt1, ifAbsent: () async => txt1Bytes),
-        txt1Bytes,
-      );
-      await cache.invalidate([txt1]);
-      expect(
-        await cache.readAsBytes(txt1, ifAbsent: () async => txt2Bytes),
+        cache.readAsBytes(txt1, ifAbsent: () => txt2Bytes),
         txt2Bytes /* updated value */,
       );
     });
   });
 
   group('readAsString', () {
-    test('reads from isAbsent', () async {
-      expect(
-        await cache.readAsString(txt1, ifAbsent: () async => txt1Bytes),
-        txt1String,
-      );
+    test('reads from isAbsent', () {
+      expect(cache.readAsString(txt1, ifAbsent: () => txt1Bytes), txt1String);
     });
 
-    test('does not re-read from isAbsent', () async {
+    test('does not re-read from isAbsent', () {
+      expect(cache.readAsString(txt1, ifAbsent: () => txt1Bytes), txt1String);
       expect(
-        await cache.readAsString(txt1, ifAbsent: () async => txt1Bytes),
-        txt1String,
-      );
-      expect(
-        await cache.readAsString(txt1, ifAbsent: () async => txt2Bytes),
+        cache.readAsString(txt1, ifAbsent: () => txt2Bytes),
         txt1String /* cached value */,
       );
     });
 
-    test('can be invalidated with invalidate', () async {
+    test('can be invalidated with invalidate', () {
+      expect(cache.readAsString(txt1, ifAbsent: () => txt1Bytes), txt1String);
+      cache.invalidate([txt1]);
       expect(
-        await cache.readAsString(txt1, ifAbsent: () async => txt1Bytes),
-        txt1String,
-      );
-      await cache.invalidate([txt1]);
-      expect(
-        await cache.readAsString(txt1, ifAbsent: () async => txt2Bytes),
+        cache.readAsString(txt1, ifAbsent: () => txt2Bytes),
         txt2String /* updated value */,
       );
     });

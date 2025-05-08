@@ -252,7 +252,7 @@ class AssetGraph implements GeneratedAssetHider {
     Iterable<AssetId> ids,
     AssetReader digestReader,
   ) async {
-    await digestReader.cache.invalidate(ids);
+    digestReader.cache.invalidate(ids);
     await Future.wait(
       ids.map((id) async {
         final digest = await digestReader.digest(id);
