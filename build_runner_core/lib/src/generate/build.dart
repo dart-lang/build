@@ -263,10 +263,13 @@ class Build {
           _logger,
           'Caching finalized dependency graph',
           () async {
+            // Combine previous phased asset deps, if any, with the newly loaded
+            // deps. Because of skipped builds, the newly loaded deps might just
+            // say "not generated yet", in which case the old value is retained.
             final updatedPhasedAssetDeps =
                 assetGraph.previousPhasedAssetDeps == null
                     ? AnalysisDriverModel.sharedInstance.phasedAssetDeps()
-                    : assetGraph.previousPhasedAssetDeps!.addAll(
+                    : assetGraph.previousPhasedAssetDeps!.update(
                       AnalysisDriverModel.sharedInstance.phasedAssetDeps(),
                     );
             assetGraph.previousPhasedAssetDeps = updatedPhasedAssetDeps;
