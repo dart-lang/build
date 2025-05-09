@@ -23,7 +23,4 @@ class RunnerAssetWriterSpy extends AssetWriterSpy implements RunnerAssetWriter {
 
   @override
   Future<void> deleteDirectory(AssetId id) => _delegate.deleteDirectory(id);
-
-  @override
-  Future<void> completeBuild() async {}
 }

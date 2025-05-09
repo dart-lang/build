@@ -31,7 +31,7 @@ class InMemoryAssetReaderWriter extends ReaderWriter
   /// Assets written directly to this reader/writer.
   final Set<AssetId> assetsWritten;
 
-  final _onCanReadController = StreamController<AssetId>.broadcast();
+  final StreamController<AssetId> onCanReadController;
 
   /// Create a new asset reader/writer.
   ///
@@ -48,6 +48,7 @@ class InMemoryAssetReaderWriter extends ReaderWriter
       filesystem: filesystem,
       cache: const PassthroughFilesystemCache(),
       onDelete: null,
+      onCanReadController: StreamController(),
     );
   }
 
@@ -61,6 +62,7 @@ class InMemoryAssetReaderWriter extends ReaderWriter
     required super.filesystem,
     required super.cache,
     required super.onDelete,
+    required this.onCanReadController,
   }) : super.using() {
     InputTracker.captureInputTrackersForTesting = true;
   }
@@ -80,6 +82,7 @@ class InMemoryAssetReaderWriter extends ReaderWriter
     filesystem: filesystem,
     cache: cache ?? this.cache,
     onDelete: onDelete ?? this.onDelete,
+    onCanReadController: onCanReadController,
   );
 
   @override
@@ -87,7 +90,7 @@ class InMemoryAssetReaderWriter extends ReaderWriter
 
   @override
   Future<bool> canRead(AssetId id) {
-    _onCanReadController.add(id);
+    onCanReadController.add(id);
     assetsRead.add(id);
     return super.canRead(id);
   }
@@ -96,7 +99,7 @@ class InMemoryAssetReaderWriter extends ReaderWriter
   ///
   /// This is used by internal `build_runner` tests and not exposed via the
   /// public `build_test` APIs.
-  Stream<AssetId> get onCanRead => _onCanReadController.stream;
+  Stream<AssetId> get onCanRead => onCanReadController.stream;
 
   @override
   Future<List<int>> readAsBytes(AssetId id) async {

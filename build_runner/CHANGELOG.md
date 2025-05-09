@@ -16,6 +16,7 @@
 - Compute outputs as needed instead of storing them in the asset graph.
 - Refactor invalidation to track current build progress in `Build` instead of
   in the asset graph.
+- Remove `completeBuild` from `RunnerAssetWriter` as it's no longer needed.
 
 ## 2.4.15
 

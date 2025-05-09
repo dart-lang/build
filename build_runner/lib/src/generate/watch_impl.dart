@@ -240,10 +240,17 @@ class WatchImpl implements BuildState {
     Future until, {
     bool isReleaseMode = false,
   }) {
+    // TODO(davidmorgan): simplify setup.
     var watcherEnvironment = environment.copyWith(
       writer: (environment.writer as ReaderWriter).copyWith(
         onDelete: _expectedDeletes.add,
       ),
+      reader:
+          environment.reader is ReaderWriter
+              ? (environment.reader as ReaderWriter).copyWith(
+                onDelete: _expectedDeletes.add,
+              )
+              : environment.reader,
     );
     var firstBuildCompleter = Completer<BuildResult>();
     currentBuild = firstBuildCompleter.future;
