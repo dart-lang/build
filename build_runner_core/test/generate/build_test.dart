@@ -602,12 +602,12 @@ void main() {
 
         var copyId = makeAssetId('a|web/a.txt.copy');
 
-        var readCompleter = Completer<bool>();
+        var canReadInBuild = Completer<bool>();
         var blockingCompleter = Completer<void>();
         var builder = TestBuilder(
           buildExtensions: appendExtension('.copy', from: '.txt'),
           build: (buildStep, _) async {
-            readCompleter.complete(await buildStep.canRead(copyId));
+            canReadInBuild.complete(await buildStep.canRead(copyId));
             await buildStep.writeAsString(
               copyId,
               await buildStep.readAsString(buildStep.inputId),
@@ -633,7 +633,7 @@ void main() {
         // Because of write caching, it's not deleted from `readerWriter`.
         expect(result.readerWriter.testing.exists(copyId), isTrue);
         // ...but it is gone from the point of view of the build.
-        expect(await readCompleter.future, isFalse);
+        expect(await canReadInBuild.future, isFalse);
 
         // Now let the build finish.
         blockingCompleter.complete();

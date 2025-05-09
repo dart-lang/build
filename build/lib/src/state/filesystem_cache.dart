@@ -64,7 +64,7 @@ abstract interface class FilesystemCache {
 
   /// Deletes [id].
   ///
-  /// [deleter] is a function that does the actual write. If this cache does
+  /// [deleter] is a function that does the actual delete. If this cache does
   /// write caching, it is not called until [flush], and might not be called at
   /// all if another write to the same asset happens first.
   void delete(AssetId id, {required void Function() deleter});
@@ -186,7 +186,6 @@ class InMemoryFilesystemCache implements FilesystemCache {
   }
 
   @override
-  @override
   void writeAsBytes(
     AssetId id,
     List<int> contents, {
@@ -209,12 +208,14 @@ class InMemoryFilesystemCache implements FilesystemCache {
     Encoding encoding = utf8,
     required Uint8List Function() ifAbsent,
   }) {
+    // Encodings other than utf8 do not use `_stringContentCache`. Read as
+    // bytes then convert, instead.
     if (encoding != utf8) {
       final bytes = readAsBytes(id, ifAbsent: ifAbsent);
       return encoding.decode(bytes);
     }
 
-    // Check _stringContentCache first to use it as a cache for conversion of
+    // Check `_stringContentCache` first to use it as a cache for conversion of
     // bytes from _pendingWrites.
     final maybeResult = _stringContentCache[id];
     if (maybeResult != null) return maybeResult;
@@ -244,15 +245,18 @@ class InMemoryFilesystemCache implements FilesystemCache {
     Encoding encoding = utf8,
     required void Function() writer,
   }) {
-    _stringContentCache[id] = contents;
-    _bytesContentCache.remove(id);
-    _existsCache[id] = true;
-
+    // Encodings other than utf8 do not use `_stringContentCache`.
+    if (encoding == utf8) {
+      _stringContentCache[id] = contents;
+    } else {
+      _stringContentCache.remove(id);
+    }
     final encoded = encoding.encode(contents);
-    _pendingWrites[id] = _PendingWrite(
-      writer: writer,
-      bytes: encoded is Uint8List ? encoded : Uint8List.fromList(encoded),
-    );
+    final uint8ListEncoded =
+        encoded is Uint8List ? encoded : Uint8List.fromList(encoded);
+    _bytesContentCache[id] = uint8ListEncoded;
+    _existsCache[id] = true;
+    _pendingWrites[id] = _PendingWrite(writer: writer, bytes: uint8ListEncoded);
   }
 
   @override

@@ -195,6 +195,60 @@ void main() {
   });
 
   group('writeAsString', () {
+    group('with non-utf8 encoding', () {
+      test('uses the encoding for the bytes representation', () async {
+        cache.writeAsString(
+          txt1,
+          txt1String,
+          encoding: OneWayUtf8IncompatibleEncoding(),
+          writer: () {},
+        );
+        expect(
+          cache.readAsBytes(txt1, ifAbsent: () => throw UnimplementedError()),
+          Utf8IncompatibleEncoding().encoder.convert(txt1String),
+        );
+      });
+
+      test('converts from bytes instead of using the String cache', () async {
+        cache.writeAsString(
+          txt1,
+          txt1String,
+          encoding: OneWayUtf8IncompatibleEncoding(),
+          writer: () {},
+        );
+
+        // Check the decode is used by passing a decoder that throws.
+        expect(
+          () => cache.readAsString(
+            txt1,
+            encoding: OneWayUtf8IncompatibleEncoding(),
+            ifAbsent: () => throw UnimplementedError(),
+          ),
+          throwsA(isA<UnimplementedError>()),
+        );
+
+        // Pass the real decoder and check the result.
+        expect(
+          cache.readAsString(
+            txt1,
+            encoding: Utf8IncompatibleEncoding(),
+            ifAbsent: () => throw UnimplementedError(),
+          ),
+          txt1String,
+        );
+
+        // Read as UTF-8 should fail.
+        expect(
+          () => cache.readAsString(
+            txt1,
+            encoding: utf8,
+            ifAbsent: () => throw UnimplementedError(),
+          ),
+          throwsA(isA<FormatException>()),
+        );
+      });
+    });
+
     test('writes on flush', () async {
       var written = false;
       cache.writeAsString(
@@ -224,4 +278,46 @@ void main() {
       expect(deleted, isTrue);
     });
   });
+}
+
+/// An encoding that produces bytes that are not valid UTF-8.
+class Utf8IncompatibleEncoding extends Encoding {
+  @override
+  Converter<List<int>, String> get decoder => Utf8IncompatibleDecoder();
+
+  @override
+  Converter<String, List<int>> get encoder => Utf8IncompatibleEncoder();
+
+  @override
+  String get name => 'TestEncoding';
+}
+
+/// An encoder that produces bytes that are not valid UTF-8.
+///
+/// The bytes are UTF-8 prefixed with four 0xff.
+class Utf8IncompatibleEncoder extends Converter<String, List<int>> {
+  @override
+  List<int> convert(String input) => [
+    0xff,
+    0xff,
+    0xff,
+    0xff,
+    ...utf8.encode(input),
+  ];
+}
+
+class Utf8IncompatibleDecoder extends Converter<List<int>, String> {
+  @override
+  String convert(List<int> input) {
+    for (var i = 0; i != 4; ++i) {
+      if (input[i] != 0xff) throw ArgumentError('Expected four 0xff .');
+    }
+    return utf8.decode(input.skip(4).toList());
+  }
+}
+
+/// [Utf8IncompatibleEncoding] but throws on decode.
+class OneWayUtf8IncompatibleEncoding extends Utf8IncompatibleEncoding {
+  @override
+  Converter<List<int>, String> get decoder => throw UnimplementedError();
 }

@@ -200,9 +200,8 @@ Future<TestBuilderResult> testBuilder(
 /// builder to run for all inputs. To use the default builder config instead,
 /// set [testingBuilderConfig] to `false`.
 ///
-/// Optionally pass [readerWriter] to pass in the filesystem that will be
-/// used during the build. Before the build, [sourceAssets] will be written
-/// to it.
+/// Optionally pass [readerWriter] to set the filesystem that will be used
+/// during the build. Before the build, [sourceAssets] will be written to it.
 ///
 /// Optionally pass [enableLowResourceMode], which acts like the command
 /// line flag; in particular it disables file caching.
