@@ -192,6 +192,14 @@ class InMemoryFilesystemCache implements FilesystemCache {
     required void Function() writer,
   }) {
     _stringContentCache.remove(id);
+    _writeBytes(id, contents, writer: writer);
+  }
+
+  void _writeBytes(
+    AssetId id,
+    List<int> contents, {
+    required void Function() writer,
+  }) {
     final uint8ListContents =
         contents is Uint8List ? contents : Uint8List.fromList(contents);
     _bytesContentCache[id] = uint8ListContents;
@@ -220,19 +228,7 @@ class InMemoryFilesystemCache implements FilesystemCache {
     final maybeResult = _stringContentCache[id];
     if (maybeResult != null) return maybeResult;
 
-    final maybePendingWrite = _pendingWrites[id];
-    if (maybePendingWrite != null) {
-      // Throws if it's a delete; callers should check [exists] before reading.
-      final converted = utf8.decode(maybePendingWrite.bytes!);
-      _stringContentCache[id] = converted;
-      return converted;
-    }
-
-    var bytes = _bytesContentCache[id];
-    if (bytes == null) {
-      bytes = ifAbsent();
-      _bytesContentCache[id] = bytes;
-    }
+    final bytes = readAsBytes(id, ifAbsent: ifAbsent);
     final result = utf8.decode(bytes);
     _stringContentCache[id] = result;
     return result;
@@ -251,12 +247,8 @@ class InMemoryFilesystemCache implements FilesystemCache {
     } else {
       _stringContentCache.remove(id);
     }
-    final encoded = encoding.encode(contents);
-    final uint8ListEncoded =
-        encoded is Uint8List ? encoded : Uint8List.fromList(encoded);
-    _bytesContentCache[id] = uint8ListEncoded;
-    _existsCache[id] = true;
-    _pendingWrites[id] = _PendingWrite(writer: writer, bytes: uint8ListEncoded);
+    final bytes = encoding.encode(contents);
+    _writeBytes(id, bytes, writer: writer);
   }
 
   @override
