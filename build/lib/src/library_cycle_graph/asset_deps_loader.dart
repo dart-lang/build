@@ -41,22 +41,26 @@ class AssetDepsLoader {
     final result =
         ExpiringValueBuilder<AssetDeps>()..expiresAfter = content.expiresAfter;
 
-    final parsed =
-        parseString(content: content.value, throwIfDiagnostics: false).unit;
-
     final depsNodeBuilder = AssetDepsBuilder();
 
-    for (final directive in parsed.directives) {
-      if (directive is! UriBasedDirective) continue;
-      final uri = directive.uri.stringValue;
-      if (uri == null) continue;
-      final parsedUri = Uri.parse(uri);
-      if (_ignoredSchemes.any(parsedUri.isScheme)) continue;
-      final assetId = AssetId.resolve(parsedUri, from: id);
-      depsNodeBuilder.deps.add(assetId);
-    }
+    if (content.value == '') {
+      result.value = AssetDeps.empty;
+    } else {
+      final parsed =
+          parseString(content: content.value, throwIfDiagnostics: false).unit;
 
-    result.value = depsNodeBuilder.build();
+      for (final directive in parsed.directives) {
+        if (directive is! UriBasedDirective) continue;
+        final uri = directive.uri.stringValue;
+        if (uri == null) continue;
+        final parsedUri = Uri.parse(uri);
+        if (_ignoredSchemes.any(parsedUri.isScheme)) continue;
+        final assetId = AssetId.resolve(parsedUri, from: id);
+        depsNodeBuilder.deps.add(assetId);
+      }
+
+      result.value = depsNodeBuilder.build();
+    }
     return result.build();
   }
 }

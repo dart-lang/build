@@ -58,14 +58,14 @@ abstract class PhasedValue<T>
     b.values.add(ExpiringValue<T>(value));
   });
 
-  /// A value that will be generated during [untilAfterPhase].
+  /// A value that will be generated in phase [expiresAfter].
   ///
   /// Pass the "missing" value for T as [before].
   factory PhasedValue.unavailable({
-    required int untilAfterPhase,
+    required int expiresAfter,
     required T before,
   }) => PhasedValue((b) {
-    b.values.add(ExpiringValue<T>(before, expiresAfter: untilAfterPhase));
+    b.values.add(ExpiringValue<T>(before, expiresAfter: expiresAfter));
   });
 
   /// A value that is generated during [atPhase], changing from [before] to
@@ -108,7 +108,7 @@ abstract class PhasedValue<T>
         return value;
       }
     }
-    throw StateError('No value for phase $phase in $this.');
+    throw StateError('No value for phase $phase.');
   }
 
   /// The value at [phase].
@@ -121,7 +121,7 @@ abstract class PhasedValue<T>
   ///
   /// Throws if not [isComplete], meaning the last value is not known.
   T get lastValue {
-    if (!isComplete) throw StateError('Not complete, no last value: $this');
+    if (!isComplete) throw StateError('Not complete, no last value.');
     return values.last.value;
   }
 
@@ -138,8 +138,7 @@ abstract class PhasedValue<T>
     if (value.expiresAfter != null &&
         value.expiresAfter! <= values.last.expiresAfter!) {
       throw StateError(
-        "Can't follow with a value expiring before or at the existing value."
-        ' This: $this, followedBy: $value',
+        "Can't follow with a value expiring before or at the existing value.",
       );
     }
     return rebuild((b) {

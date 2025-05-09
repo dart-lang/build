@@ -151,10 +151,7 @@ void main() {
   group('with generated nodes', () {
     test('single generated node', () async {
       final nodeLoader0 = TestAssetDepsLoader(0, {
-        a1: PhasedValue.unavailable(
-          untilAfterPhase: 1,
-          before: AssetDeps.empty,
-        ),
+        a1: PhasedValue.unavailable(expiresAfter: 1, before: AssetDeps.empty),
       });
       final nodeLoader2 = TestAssetDepsLoader(2, {
         a1: PhasedValue.generated(

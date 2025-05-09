@@ -457,7 +457,7 @@ class SingleStepReaderWriter extends AssetReader
     if (node.type == NodeType.generated) {
       final nodePhase = node.generatedNodeConfiguration!.phaseNumber;
       if (nodePhase >= phase) {
-        return PhasedValue.unavailable(before: '', untilAfterPhase: nodePhase);
+        return PhasedValue.unavailable(before: '', expiresAfter: nodePhase);
       } else {
         // If needed, trigger a build at an earlier phase.
         if (!_runningBuild.assetIsProcessedOutput(id)) {
