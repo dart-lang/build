@@ -342,6 +342,7 @@ class Build {
       ) {
         var phase = buildPhases.inBuildPhases[phaseNum];
         if (phase.isOptional) continue;
+        _logger.info('**** Start phase ${phase.builderLabel}\n');
         outputs.addAll(
           await performanceTracker.trackBuildPhase(phase, () async {
             var primaryInputs = await _matchingPrimaryInputs(
