@@ -27,6 +27,10 @@ class BuildCommand extends BuildRunnerCommand {
   @override
   Future<int> run() {
     var options = readOptions();
+
+    buildLog.verbose = options.verbose;
+    buildLog.start(BuildLogMode.build);
+
     return withEnabledExperiments(
       () => _run(options),
       options.enableExperiments,
@@ -43,7 +47,6 @@ class BuildCommand extends BuildRunnerCommand {
       buildDirs: options.buildDirs,
       outputSymlinksOnly: options.outputSymlinksOnly,
       packageGraph: packageGraph,
-      verbose: options.verbose,
       builderConfigOverrides: options.builderConfigOverrides,
       isReleaseBuild: options.isReleaseBuild,
       trackPerformance: options.trackPerformance,

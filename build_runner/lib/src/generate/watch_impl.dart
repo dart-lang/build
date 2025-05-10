@@ -17,7 +17,6 @@ import 'package:logging/logging.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
-import '../logging/std_io_logging.dart';
 import '../package_graph/build_config_overrides.dart';
 import '../server/server.dart';
 import '../watcher/asset_change.dart';
@@ -26,8 +25,6 @@ import '../watcher/collect_changes.dart';
 import '../watcher/graph_watcher.dart';
 import '../watcher/node_watcher.dart';
 import 'terminator.dart';
-
-final _logger = Logger('Watch');
 
 Future<ServeHandler> watch(
   List<BuilderApplication> builders, {
@@ -73,21 +70,16 @@ Future<ServeHandler> watch(
     outputSymlinksOnly: outputSymlinksOnly,
     reader: reader,
     writer: writer,
-    onLogOverride:
-        onLog ?? stdIOLogListener(assumeTty: assumeTty, verbose: verbose),
   );
-  var logSubscription = LogSubscription(
-    environment,
-    verbose: verbose,
-    logLevel: logLevel,
-  );
+  if (assumeTty != null) buildLog.assumeTty = assumeTty;
+  buildLog.verbose = verbose;
+  if (logLevel != null) buildLog.logLevel = logLevel;
   overrideBuildConfig ??= await findBuildConfigOverrides(
     packageGraph,
     environment.reader,
     configKey: configKey,
   );
   var options = await BuildOptions.create(
-    logSubscription,
     deleteFilesByDefault: deleteFilesByDefault,
     packageGraph: packageGraph,
     overrideBuildConfig: overrideBuildConfig,
@@ -117,7 +109,6 @@ Future<ServeHandler> watch(
   unawaited(
     watch.buildResults.drain<void>().then((_) async {
       await terminator.cancel();
-      await options.logListener.cancel();
     }),
   );
 
@@ -258,7 +249,7 @@ class WatchImpl implements BuildState {
 
     Future<BuildResult> doBuild(List<List<AssetChange>> changes) async {
       var build = _buildSeries!;
-      _logger
+      buildLog
         ..info('${'-' * 72}\n')
         ..info('Starting Build\n');
       var mergedChanges = collectChanges(changes);
@@ -269,7 +260,7 @@ class WatchImpl implements BuildState {
           mergedChanges.keys.toSet(),
         )) {
           _terminateCompleter.complete();
-          _logger.severe('Terminating builds due to build script update');
+          buildLog.severe('Terminating builds due to build script update');
           return BuildResult(
             BuildStatus.failure,
             [],
@@ -285,7 +276,7 @@ class WatchImpl implements BuildState {
     }
 
     var terminate = Future.any([until, _terminateCompleter.future]).then((_) {
-      _logger.info('Terminating. No further builds will be scheduled\n');
+      buildLog.info('Terminating. No further builds will be scheduled\n');
     });
 
     Digest? originalRootPackageConfigDigest;
@@ -297,7 +288,6 @@ class WatchImpl implements BuildState {
     // Start watching files immediately, before the first build is even started.
     var graphWatcher = PackageGraphWatcher(
       packageGraph,
-      logger: _logger,
       watch:
           (node) => PackageNodeWatcher(node, watch: _directoryWatcherFactory),
     );
@@ -319,7 +309,7 @@ class WatchImpl implements BuildState {
             return _readOnceExists(id, watcherEnvironment.reader).then((bytes) {
               if (md5.convert(bytes) != digest) {
                 _terminateCompleter.complete();
-                _logger.severe(
+                buildLog.severe(
                   'Terminating builds due to package graph update, '
                   'please restart the build.',
                 );
@@ -339,7 +329,7 @@ class WatchImpl implements BuildState {
 
             // Kill future builds if the build.yaml files change.
             _terminateCompleter.complete();
-            _logger.severe(
+            buildLog.severe(
               'Terminating builds due to ${id.package}:${id.path} update.',
             );
           }
@@ -371,23 +361,24 @@ class WatchImpl implements BuildState {
           await currentBuild;
           await _buildSeries?.beforeExit();
           if (!controller.isClosed) await controller.close();
-          _logger.info('Builds finished. Safe to exit\n');
+          buildLog.info('Builds finished. Safe to exit\n');
         });
 
     // Schedule the actual first build for the future so we can return the
     // stream synchronously.
     () async {
-      await logTimedAsync(
-        _logger,
+      await graphWatcher.ready;
+      /*await logTimedAsync(
+        _log.loggerForSetup(),
         'Waiting for all file watchers to be ready',
         () => graphWatcher.ready,
-      );
+      );*/
       if (await watcherEnvironment.reader.canRead(rootPackageConfigId)) {
         originalRootPackageConfigDigest = md5.convert(
           await watcherEnvironment.reader.readAsBytes(rootPackageConfigId),
         );
       } else {
-        _logger.warning(
+        buildLog.warning(
           'Root package config not readable, manual restarts will be needed '
           'after running `pub upgrade`.',
         );
