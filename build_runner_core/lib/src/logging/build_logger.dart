@@ -11,8 +11,9 @@ class BuildLogger {
 
   Future<T> stage<T>(BuildStage stage, Future<T> Function() function) async {
     print(stage);
+    final stopwatch = Stopwatch()..start();
     final result = await function();
-    print('done $stage');
+    print('done $stage, ${stopwatch.elapsed}');
     return result;
   }
 
@@ -28,7 +29,7 @@ void info(String message) {
     print(message);
   }
 
-  void severe(String message, [Exception? e, StackTrace? s]) {
+  void severe(String message, [Object? e, StackTrace? s]) {
     print(message);
   }
 }
@@ -40,5 +41,8 @@ readAssetGraph,
 checkForUpdates,
 newAssetGraph,
 initialBuildCleanup,
-
+updateAssetGraph,
+build,
+saveGraph,
+writePerformance,
 }
