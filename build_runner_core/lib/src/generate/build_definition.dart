@@ -17,6 +17,7 @@ import '../asset_graph/graph.dart';
 import '../asset_graph/graph_loader.dart';
 import '../changes/build_script_updates.dart';
 import '../environment/build_environment.dart';
+import '../logging/build_logger.dart';
 import '../logging/logging.dart';
 import '../util/constants.dart';
 import 'asset_tracker.dart';
@@ -24,7 +25,7 @@ import 'build_phases.dart';
 import 'exceptions.dart';
 import 'options.dart';
 
-final _logger = Logger('BuildDefinition');
+final _log = BuildLogger();
 
 // TODO(davidmorgan): rename/refactor this, it's now just about loading state,
 // not a build definition.
@@ -64,9 +65,7 @@ class _Loader {
   _Loader(this._environment, this._options, this._buildPhases);
 
   Future<BuildDefinition> prepareWorkspace() async {
-    _buildPhases.checkOutputLocations(_options.packageGraph.root.name, _logger);
-
-    _logger.info('Initializing inputs');
+    _buildPhases.checkOutputLocations(_options.packageGraph.root.name, _log);
 
     final assetGraphLoader = AssetGraphLoader(
       reader: _environment.reader,
@@ -87,9 +86,8 @@ class _Loader {
     var cleanBuild = true;
     if (assetGraph != null) {
       cleanBuild = false;
-      updates = await logTimedAsync(
-        _logger,
-        'Checking for updates since last build',
+      updates = await _log.stage(
+        BuildStage.checkForUpdates,
         () => _computeUpdates(
           assetGraph!,
           assetTracker,
@@ -109,7 +107,7 @@ class _Loader {
           !_options.skipBuildScriptCheck &&
           buildScriptUpdates.hasBeenUpdated(updates!.keys.toSet());
       if (buildScriptUpdated) {
-        _logger.warning('Invalidating asset graph due to build script update!');
+        _log.warning('Invalidating asset graph due to build script update!');
 
         var deletedSourceOutputs = await assetGraph.deleteOutputs(
           _options.packageGraph,
@@ -133,7 +131,7 @@ class _Loader {
     if (assetGraph == null) {
       late Set<AssetId> conflictingOutputs;
 
-      await logTimedAsync(_logger, 'Building new asset graph', () async {
+      await _log.stage(BuildStage.newAssetGraph, () async {
         try {
           assetGraph = await AssetGraph.build(
             _buildPhases,
@@ -143,7 +141,7 @@ class _Loader {
             _environment.reader,
           );
         } on DuplicateAssetNodeException catch (e, st) {
-          _logger.severe('Conflicting outputs', e, st);
+          _log.severe('Conflicting outputs', e, st);
           throw const CannotBuildException();
         }
         buildScriptUpdates = await BuildScriptUpdates.create(
@@ -174,9 +172,8 @@ class _Loader {
         }
       });
 
-      await logTimedAsync(
-        _logger,
-        'Checking for unexpected pre-existing outputs.',
+      await _log.stage(
+        BuildStage.initialBuildCleanup,
         () => _initialBuildCleanup(
           conflictingOutputs,
           _environment.writer.copyWith(generatedAssetHider: assetGraph),
@@ -228,7 +225,7 @@ class _Loader {
 
     // Skip the prompt if using this option.
     if (_options.deleteFilesByDefault) {
-      _logger.info(
+      _log.info(
         'Deleting ${conflictingAssets.length} declared outputs '
         'which already existed on disk.',
       );
@@ -237,7 +234,7 @@ class _Loader {
     }
 
     // Prompt the user to delete files that are declared as outputs.
-    _logger.info(
+    _log.info(
       'Found ${conflictingAssets.length} declared outputs '
       'which already exist on disk. This is likely because the'
       '`$cacheDir` folder was deleted, or you are submitting generated '
@@ -254,12 +251,12 @@ class _Loader {
         ]);
         switch (choice) {
           case 0:
-            _logger.info('Deleting files...');
+            _log.info('Deleting files...');
             done = true;
             await Future.wait(conflictingAssets.map((id) => writer.delete(id)));
             break;
           case 1:
-            _logger.severe(
+            _log.severe(
               'The build will not be able to contiue until the '
               'conflicting assets are removed or the Builders which may '
               'output them are disabled. The outputs are: '
@@ -267,12 +264,12 @@ class _Loader {
             );
             throw const CannotBuildException();
           case 2:
-            _logger.info('Conflicts:\n${conflictingAssets.join('\n')}');
+            _log.info('Conflicts:\n${conflictingAssets.join('\n')}');
             // Logging should be sync :(
             await Future(() {});
         }
       } on NonInteractiveBuildException {
-        _logger.severe(
+        _log.severe(
           'Conflicting outputs were detected and the build '
           'is unable to prompt for permission to remove them. '
           'These outputs must be removed manually or the build can be '
