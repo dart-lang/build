@@ -25,9 +25,9 @@ import '../asset_graph/post_process_build_step_id.dart';
 import '../changes/asset_updates.dart';
 import '../environment/build_environment.dart';
 import '../logging/build_for_input_logger.dart';
+import '../logging/build_logger.dart';
 import '../logging/human_readable_duration.dart';
 import '../logging/log_renderer.dart';
-import '../logging/logging.dart';
 import '../performance_tracking/performance_tracking_resolvers.dart';
 import '../util/build_dirs.dart';
 import '../util/constants.dart';
@@ -42,7 +42,7 @@ import 'performance_tracker.dart';
 import 'phase.dart';
 import 'single_step_reader_writer.dart';
 
-final _logger = Logger('Build');
+final _log = BuildLogger();
 
 /// A single build.
 class Build {
@@ -134,7 +134,7 @@ class Build {
            options.trackPerformance
                ? BuildPerformanceTracker()
                : BuildPerformanceTracker.noOp(),
-       logFine = _logger.level <= Level.FINE,
+       logFine = false,
        previousDepsLoader =
            assetGraph.previousPhasedAssetDeps == null
                ? null
@@ -159,7 +159,7 @@ class Build {
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
     if (logFine) {
-      _logger.fine(AssetUpdates.from(updates).render(renderer));
+      _log.fine(AssetUpdates.from(updates).render(renderer));
     }
     var watch = Stopwatch()..start();
     var result = await _safeBuild(updates);
@@ -212,19 +212,19 @@ class Build {
       buildDirs,
     );
     if (result.status == BuildStatus.success) {
-      _logger.info(
+      _log.info(
         'Succeeded after ${humanReadable(watch.elapsed)} with '
         '${result.outputs.length} outputs '
         '($actionsCompletedCount actions)\n',
       );
     } else {
-      _logger.severe('Failed after ${humanReadable(watch.elapsed)}');
+      _log.severe('Failed after ${humanReadable(watch.elapsed)}');
     }
     return result;
   }
 
   Future<void> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
-    await logTimedAsync(_logger, 'Updating asset graph', () async {
+    await _log.stage(BuildStage.updateAssetGraph,() async {
       changedInputs.clear();
       deletedAssets.clear();
       for (final update in updates.entries) {
@@ -270,12 +270,11 @@ class Build {
         }
 
         // Run a fresh build.
-        var result = await logTimedAsync(_logger, 'Running build', _runPhases);
+        var result = await _log.stage(BuildStage.build, _runPhases);
 
         // Write out the dependency graph file.
-        await logTimedAsync(
-          _logger,
-          'Caching finalized dependency graph',
+        await _log.stage(
+          BuildStage.saveGraph,
           () async {
             // Combine previous phased asset deps, if any, with the newly loaded
             // deps. Because of skipped builds, the newly loaded deps might just
@@ -311,9 +310,9 @@ class Build {
             '_${_twoDigits(now.hour)}-${_twoDigits(now.minute)}-'
             '${_twoDigits(now.second)}',
           );
-          await logTimedAsync(
-            _logger,
-            'Writing performance log to $logPath',
+          _log.info('Writing performance log to $logPath');
+          await _log.stage(
+            BuildStage.writePerformance,
             () {
               var performanceLogId = AssetId(
                 options.packageGraph.root.name,
@@ -329,7 +328,7 @@ class Build {
       },
       (e, st) {
         if (!done.isCompleted) {
-          _logger.severe('Unhandled build failure!', e, st);
+          _log.severe('Unhandled build failure!', e, st);
           done.complete(BuildResult(BuildStatus.failure, []));
         }
       },
@@ -781,7 +780,7 @@ class Build {
     if (deletedAssets.contains(primaryInput)) {
       if (primaryInputNode.type == NodeType.missingSource) {
         if (logFine) {
-          _logger.fine(
+          _log.fine(
             'Skip ${renderer.build(primaryInput, outputs)} because '
             '$primaryInput was deleted.',
           );
@@ -796,7 +795,7 @@ class Build {
       // If the primary input is failed, this build is also failed.
       if (primaryInputNode.generatedNodeState!.result == false) {
         if (logFine) {
-          _logger.fine(
+          _log.fine(
             'Skip ${renderer.build(primaryInput, outputs)} because '
             '$primaryInput is a generated file that failed.',
           );
@@ -809,7 +808,7 @@ class Build {
       // skipped.
       if (!primaryInputNode.wasOutput) {
         if (logFine) {
-          _logger.fine(
+          _log.fine(
             'Skip ${renderer.build(primaryInput, outputs)} because '
             '$primaryInput is a generated file that was not output.',
           );
@@ -821,7 +820,7 @@ class Build {
 
     if (assetGraph.cleanBuild) {
       if (logFine) {
-        _logger.fine(
+        _log.fine(
           'Build ${renderer.build(primaryInput, outputs)} because this is a '
           'clean build.',
         );
@@ -832,7 +831,7 @@ class Build {
     if (assetGraph.previousInBuildPhasesOptionsDigests![phaseNumber] !=
         assetGraph.inBuildPhasesOptionsDigests[phaseNumber]) {
       if (logFine) {
-        _logger.fine(
+        _log.fine(
           'Build ${renderer.build(primaryInput, outputs)} because builder '
           'options changed.',
         );
@@ -842,7 +841,7 @@ class Build {
 
     if (newPrimaryInputs.contains(primaryInput)) {
       if (logFine) {
-        _logger.fine(
+        _log.fine(
           'Build ${renderer.build(primaryInput, outputs)} because '
           '$primaryInput was created.',
         );
@@ -853,7 +852,7 @@ class Build {
     for (var output in outputs) {
       if (deletedAssets.contains(output)) {
         if (logFine) {
-          _logger.fine(
+          _log.fine(
             'Build ${renderer.build(primaryInput, outputs)} because '
             '${renderer.id(output)} was deleted.',
           );
@@ -869,7 +868,7 @@ class Build {
 
     if (firstOutputState.result == null) {
       if (logFine) {
-        _logger.fine(
+        _log.fine(
           'Build ${renderer.build(primaryInput, outputs)} because it was '
           'skipped as optional but is now needed.',
         );
@@ -890,25 +889,25 @@ class Build {
           final inputNode = assetGraph.get(input)!;
           switch (inputNode.type) {
             case NodeType.generated:
-              _logger.fine(
+              _log.fine(
                 'Build ${renderer.build(primaryInput, outputs)} because '
                 '${renderer.id(input)} was built and changed.',
               );
 
             case NodeType.glob:
-              _logger.fine(
+              _log.fine(
                 'Build ${renderer.build(primaryInput, outputs)} because '
                 '${inputNode.globNodeConfiguration!.glob} matches changed.',
               );
 
             case NodeType.source:
-              _logger.fine(
+              _log.fine(
                 'Build ${renderer.build(primaryInput, outputs)} because '
                 '${renderer.id(input)} changed.',
               );
 
             case NodeType.missingSource:
-              _logger.fine(
+              _log.fine(
                 'Build ${renderer.build(primaryInput, outputs)} because '
                 '${renderer.id(input)} was deleted.',
               );
@@ -927,7 +926,7 @@ class Build {
         entrypointId: graphId,
       )) {
         if (logFine) {
-          _logger.fine(
+          _log.fine(
             'Build ${renderer.build(primaryInput, outputs)} because '
             'resolved source changed.',
           );
