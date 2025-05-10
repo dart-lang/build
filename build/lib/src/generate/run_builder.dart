@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:isolate';
 
+import 'package:build_runner_core/build_runner_core.dart';
 // ignore: implementation_imports
 import 'package:build_runner_core/src/generate/build_step_impl.dart';
 // ignore: implementation_imports
@@ -102,7 +103,10 @@ Future<void> runBuilder(
     }
   }
 
-  await scopeLogAsync(() => Future.wait(inputs.map(buildForInput)), logger);
+  await BuildLogLogger.scopeLogAsync(
+    () => Future.wait(inputs.map(buildForInput)),
+    logger,
+  );
 
   if (shouldDisposeResourceManager) {
     await resources.disposeAll();

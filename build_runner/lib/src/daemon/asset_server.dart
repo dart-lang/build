@@ -5,16 +5,14 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:http_multi_server/http_multi_server.dart';
-import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 
 import '../entrypoint/options.dart';
 import '../server/server.dart';
 import 'daemon_builder.dart';
-
-final _logger = Logger('AssetServer');
 
 class AssetServer {
   final HttpServer _server;
@@ -41,7 +39,7 @@ class AssetServer {
     var pipeline = const Pipeline();
     if (options.logRequests) {
       pipeline = pipeline.addMiddleware(
-        logRequests(logger: (message, isError) => _logger.finest(message)),
+        logRequests(logger: (message, isError) => buildLog.info(message)),
       );
     }
 

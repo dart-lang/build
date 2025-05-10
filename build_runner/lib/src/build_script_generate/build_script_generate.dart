@@ -10,7 +10,6 @@ import 'package:build_runner_core/build_runner_core.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
 import 'package:graphs/graphs.dart';
-import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 
@@ -24,14 +23,10 @@ const scriptKernelCachedLocation =
     '$scriptKernelLocation$scriptKernelCachedSuffix';
 const scriptKernelCachedSuffix = '.cached';
 
-final _log = Logger('Entrypoint');
-
 final _lastShortFormatDartVersion = Version(3, 6, 0);
 
-Future<String> generateBuildScript() =>
-    logTimedAsync(_log, 'Generating build script', _generateBuildScript);
-
-Future<String> _generateBuildScript() async {
+Future<String> generateBuildScript() async {
+  buildLog.doing('Generating the build script.');
   final info = await findBuildScriptOptions();
   final builders = info.builderApplications;
   final library = Library(
@@ -59,13 +54,14 @@ Future<String> _generateBuildScript() async {
       '''
 // @dart=${_lastShortFormatDartVersion.major}.${_lastShortFormatDartVersion.minor}
 // ignore_for_file: directives_ordering
+// build_runner >=2.4.16
 ${library.accept(emitter)}
 ''',
     );
   } on FormatterException {
-    _log.severe(
-      'Generated build script could not be parsed.\n'
-      'This is likely caused by a misconfigured builder definition.',
+    buildLog.error(
+      'Generated build script could not be parsed. '
+      'Check builder definitions.',
     );
     throw const CannotBuildException();
   }
@@ -143,7 +139,7 @@ Future<BuildScriptInfo> findBuildScriptOptions({
       if (packageGraph?.allPackages.containsKey(pkg) ?? true) {
         return true;
       }
-      _log.warning(
+      buildLog.warning(
         'Could not load imported package "$pkg" for definition '
         // ignore: avoid_dynamic_calls
         '"${definition.key}".',
@@ -178,7 +174,7 @@ Future<BuildScriptInfo> findBuildScriptOptions({
   for (var globalBuilderConfig in rootBuildConfig.globalOptions.entries) {
     void checkBuilderKey(String builderKey) {
       if (allBuilderKeys.contains(builderKey)) return;
-      _log.warning(
+      buildLog.warning(
         'Invalid builder key `$builderKey` found in global_options config of '
         'build.yaml. This configuration will have no effect.',
       );
@@ -338,7 +334,7 @@ String _buildScriptImport(String import) {
   if (import.startsWith('package:')) {
     return import;
   } else if (import.startsWith('../') || import.startsWith('/')) {
-    _log.warning(
+    buildLog.warning(
       'The `../` import syntax in build.yaml is now deprecated, '
       'instead do a normal relative import as if it was from the root of '
       'the package. Found `$import` in your `build.yaml` file.',

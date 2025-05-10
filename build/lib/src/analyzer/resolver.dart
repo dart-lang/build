@@ -169,39 +169,34 @@ class SyntaxErrorInAssetException implements Exception {
 
   @override
   String toString() {
-    final buffer =
-        StringBuffer()
-          ..writeln('This builder requires Dart inputs without syntax errors.')
-          ..writeln(
-            'However, ${assetId.uri} (or an existing part) contains the '
-            'following errors.',
-          );
+    final buffer = StringBuffer();
 
     // Avoid generating too much output for syntax errors. The user likely has
     // an editor that shows them anyway.
     final entries = errorToResult.entries.toList();
+    var first = true;
     for (final errorAndResult in entries.take(_maxErrorsInToString)) {
+      if (!first) {
+        buffer.write('\n');
+      }
+      first = false;
       final error = errorAndResult.key;
-      // Use a short name: We present the full context by including the asset id
-      // and this is easier to skim through
-      final sourceName = error.source.shortName;
 
       final lineInfo = errorAndResult.value.lineInfo;
       final position = lineInfo.getLocation(error.offset);
 
-      // Output messages like "foo.dart:3:4: Expected a semicolon here."
-      buffer.writeln(
-        '$sourceName:${position.lineNumber}:${position.columnNumber}: '
+      // The file name will be added by `BuildLog`, so write just the line
+      // number and column, for example: "3:4: Expected a semicolon here."
+      buffer.write(
+        '${position.lineNumber}:${position.columnNumber}: '
         '${error.message}',
       );
     }
 
     final additionalErrors = entries.length - _maxErrorsInToString;
     if (additionalErrors > 0) {
-      buffer.writeln('And $additionalErrors more...');
+      buffer.write('\nAnd $additionalErrors more.');
     }
-
-    buffer.writeln('\nTry fixing the errors and re-running the build.');
 
     return buffer.toString();
   }

@@ -4,8 +4,7 @@
 
 import 'dart:async';
 
-// ignore: implementation_imports
-import 'package:build/src/builder/logging.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:logging/logging.dart';
 import 'package:matcher/matcher.dart';
 
@@ -26,7 +25,7 @@ import 'package:matcher/matcher.dart';
 Stream<LogRecord> recordLogs(dynamic Function() run, {String name = ''}) {
   final logger = Logger(name);
   Timer.run(() async {
-    await scopeLogAsync(() => Future.value(run()), logger);
+    await BuildLogLogger.scopeLogAsync(() => Future.value(run()), logger);
     logger.clearListeners();
   });
   return logger.onRecord;

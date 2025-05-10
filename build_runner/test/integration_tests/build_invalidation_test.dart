@@ -9,7 +9,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
-import 'package:build_runner_core/src/util/constants.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_test/build_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -111,9 +111,9 @@ void main() {
       final secondBuild = await buildTool.build();
 
       await expectOutput(secondBuild, [
-        'Invalidating asset graph due to build script update',
-        'Precompiling build script',
-        'Building new asset graph',
+        'Compiling the build script.',
+        'Creating the asset graph.',
+        'Building, full build because builders changed.',
       ]);
     });
 
@@ -132,8 +132,8 @@ void main() {
       final secondBuild = await buildTool.build();
 
       await expectOutput(secondBuild, [
-        'Throwing away cached asset graph due to version mismatch',
-        'Building new asset graph',
+        'Creating the asset graph.',
+        'Building, full build because there is no valid asset graph.',
       ]);
     });
   });
@@ -151,8 +151,8 @@ void main() {
 
       await expectOutput(server.stdout, [
         'Terminating builds due to build script update',
-        'Precompiling build script',
-        'Building new asset graph',
+        'Compiling the build script.',
+        'Creating the asset graph.',
       ]);
 
       await server.shutDown();
@@ -165,7 +165,7 @@ void main() {
       await expectOutput(server.stdout, [
         'Terminating builds due to a:build.yaml update',
         'Builds finished. Safe to exit',
-        'with 0 outputs',
+        'wrote 0 outputs',
       ]);
 
       await server.shutDown();
@@ -195,8 +195,8 @@ void main() {
     final secondBuild = await buildTool.build();
 
     await expectOutput(secondBuild, [
-      'Invalidated precompiled build script due to core package update',
-      'Precompiling build script',
+      'Compiling the build script.',
+      'Building, full build because builders changed.',
     ]);
   });
 

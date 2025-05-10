@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build_runner_core/build_runner_core.dart';
-import 'package:logging/logging.dart';
 
 void main() async {
   var env = BuildEnvironment(
@@ -11,6 +10,5 @@ void main() async {
     assumeTty: true,
   );
   var result = await env.prompt('Select an option!', ['a', 'b', 'c']);
-  Logger.root.onRecord.listen(env.onLog);
-  Logger('Simple Logger').info(result);
+  buildLog.info(result.toString());
 }

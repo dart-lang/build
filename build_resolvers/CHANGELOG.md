@@ -1,5 +1,7 @@
 ## 2.4.5-wip
 
+- Improved logging: show what builders are running and, for long-running
+  builders, where the time is spent.
 - Bump the min SDK to 3.7.0.
 - Use `build_test` 3.0.0.
 - Use `build_runner_core` 9.0.0.

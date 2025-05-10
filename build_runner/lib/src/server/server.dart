@@ -11,7 +11,6 @@ import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/generate/performance_tracker.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
-import 'package:logging/logging.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart' as shelf;
@@ -29,8 +28,6 @@ final _graphPath = r'$graph';
 final _assetsDigestPath = r'$assetDigests';
 final _buildUpdatesProtocol = r'$buildUpdates';
 final entrypointExtensionMarker = '/* ENTRYPOINT_EXTENTION_MARKER */';
-
-final _logger = Logger('Serve');
 
 enum PerfSortOrder {
   startTimeAsc,
@@ -218,10 +215,10 @@ class ServeHandler implements BuildState {
     if (!_state.assetGraph!
         .packageNodes(_rootPackage)
         .any((n) => n.id.path.startsWith('$rootDir/'))) {
-      _logger.warning(
+      buildLog.warning(
         'Requested a server for `$rootDir` but this directory '
         'has no assets in the build. You may need to add some sources or '
-        'include this directory in some target in your `build.yaml`',
+        'include this directory in some target in your `build.yaml`.',
       );
     }
   }
@@ -424,11 +421,12 @@ class AssetHandler {
         headers[HttpHeaders.contentLengthHeader] = '${body.length}';
       }
       return shelf.Response.ok(body, headers: headers);
-    } catch (e, s) {
-      _logger.finest(
-        'Error on request ${request.method} ${request.requestedUri}',
-        e,
-        s,
+    } catch (e) {
+      buildLog.info(
+        buildLog.renderThrowable(
+          'Error on request ${request.method} ${request.requestedUri}',
+          e,
+        ),
       );
       rethrow;
     }
@@ -739,7 +737,7 @@ shelf.Handler _logRequests(shelf.Handler innerHandler) {
     var watch = Stopwatch()..start();
     try {
       var response = await innerHandler(request);
-      var logFn = response.statusCode >= 500 ? _logger.warning : _logger.info;
+      var logFn = response.statusCode >= 500 ? buildLog.warning : buildLog.info;
       var msg = _requestLabel(
         startTime,
         response.statusCode,
@@ -758,7 +756,7 @@ shelf.Handler _logRequests(shelf.Handler innerHandler) {
         request.method,
         watch.elapsed,
       );
-      _logger.severe(msg, error, stackTrace);
+      buildLog.error(buildLog.renderThrowable(msg, error, stackTrace));
       rethrow;
     }
   };
@@ -772,7 +770,7 @@ String _requestLabel(
   Duration elapsedTime,
 ) {
   return '${requestTime.toIso8601String()} '
-      '${humanReadable(elapsedTime)} '
+      '${buildLog.renderDuration(elapsedTime)} '
       '$method [$statusCode] '
       '${requestedUri.path}${_formatQuery(requestedUri.query)}\r\n';
 }

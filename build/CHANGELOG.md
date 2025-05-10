@@ -1,5 +1,7 @@
 ## 2.4.3-wip
 
+- Improved logging: show what builders are running and, for long-running
+  builders, where the time is spent.
 - `AssetNotFoundException` now also reports the missing `path`.
 - Bump the min sdk to 3.7.0.
 - Use `build_test` 3.0.0.

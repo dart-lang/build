@@ -8,7 +8,8 @@ import 'dart:io';
 import 'package:build/build.dart';
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
-import 'package:logging/logging.dart';
+// ignore: implementation_imports
+import 'package:build_runner/src/internal.dart';
 import 'package:watcher/watcher.dart';
 
 import '../asset/writer.dart';
@@ -17,14 +18,12 @@ import '../asset_graph/graph.dart';
 import '../asset_graph/graph_loader.dart';
 import '../changes/build_script_updates.dart';
 import '../environment/build_environment.dart';
-import '../logging/logging.dart';
+import '../logging/build_log.dart';
 import '../util/constants.dart';
 import 'asset_tracker.dart';
 import 'build_phases.dart';
 import 'exceptions.dart';
 import 'options.dart';
-
-final _logger = Logger('BuildDefinition');
 
 // TODO(davidmorgan): rename/refactor this, it's now just about loading state,
 // not a build definition.
@@ -64,9 +63,7 @@ class _Loader {
   _Loader(this._environment, this._options, this._buildPhases);
 
   Future<BuildDefinition> prepareWorkspace() async {
-    _buildPhases.checkOutputLocations(_options.packageGraph.root.name, _logger);
-
-    _logger.info('Initializing inputs');
+    _buildPhases.checkOutputLocations(_options.packageGraph.root.name);
 
     final assetGraphLoader = AssetGraphLoader(
       reader: _environment.reader,
@@ -87,16 +84,13 @@ class _Loader {
     var cleanBuild = true;
     if (assetGraph != null) {
       cleanBuild = false;
-      updates = await logTimedAsync(
-        _logger,
-        'Checking for updates since last build',
-        () => _computeUpdates(
-          assetGraph!,
-          assetTracker,
-          inputSources,
-          cacheDirSources,
-          internalSources,
-        ),
+      buildLog.doing('Checking for updates.');
+      updates = await _computeUpdates(
+        assetGraph,
+        assetTracker,
+        inputSources,
+        cacheDirSources,
+        internalSources,
       );
       buildScriptUpdates = await BuildScriptUpdates.create(
         _environment.reader,
@@ -107,10 +101,9 @@ class _Loader {
 
       var buildScriptUpdated =
           !_options.skipBuildScriptCheck &&
-          buildScriptUpdates.hasBeenUpdated(updates!.keys.toSet());
+          buildScriptUpdates.hasBeenUpdated(updates.keys.toSet());
       if (buildScriptUpdated) {
-        _logger.warning('Invalidating asset graph due to build script update!');
-
+        buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
         var deletedSourceOutputs = await assetGraph.deleteOutputs(
           _options.packageGraph,
           _environment.writer,
@@ -131,61 +124,57 @@ class _Loader {
     }
 
     if (assetGraph == null) {
+      buildLog.doing('Creating the asset graph.');
+
       late Set<AssetId> conflictingOutputs;
-
-      await logTimedAsync(_logger, 'Building new asset graph', () async {
-        try {
-          assetGraph = await AssetGraph.build(
-            _buildPhases,
-            inputSources,
-            internalSources,
-            _options.packageGraph,
-            _environment.reader,
-          );
-        } on DuplicateAssetNodeException catch (e, st) {
-          _logger.severe('Conflicting outputs', e, st);
-          throw const CannotBuildException();
-        }
-        buildScriptUpdates = await BuildScriptUpdates.create(
-          _environment.reader,
+      try {
+        assetGraph = await AssetGraph.build(
+          _buildPhases,
+          inputSources,
+          internalSources,
           _options.packageGraph,
-          assetGraph!,
-          disabled: _options.skipBuildScriptCheck,
+          _environment.reader,
         );
+      } on DuplicateAssetNodeException catch (e) {
+        buildLog.error(e.toString());
+        throw const CannotBuildException();
+      }
+      buildScriptUpdates = await BuildScriptUpdates.create(
+        _environment.reader,
+        _options.packageGraph,
+        assetGraph,
+        disabled: _options.skipBuildScriptCheck,
+      );
 
-        conflictingOutputs =
-            assetGraph!.outputs
-                .where((n) => n.package == _options.packageGraph.root.name)
-                .where(inputSources.contains)
-                .toSet();
-        final conflictsInDeps =
-            assetGraph!.outputs
-                .where((n) => n.package != _options.packageGraph.root.name)
-                .where(inputSources.contains)
-                .toSet();
-        if (conflictsInDeps.isNotEmpty) {
-          log.severe(
-            'There are existing files in dependencies which conflict '
-            'with files that a Builder may produce. These must be removed or '
-            'the Builders disabled before a build can continue: '
-            '${conflictsInDeps.map((a) => a.uri).join('\n')}',
-          );
-          throw const CannotBuildException();
-        }
-      });
+      conflictingOutputs =
+          assetGraph.outputs
+              .where((n) => n.package == _options.packageGraph.root.name)
+              .where(inputSources.contains)
+              .toSet();
+      final conflictsInDeps =
+          assetGraph.outputs
+              .where((n) => n.package != _options.packageGraph.root.name)
+              .where(inputSources.contains)
+              .toSet();
+      if (conflictsInDeps.isNotEmpty) {
+        log.severe(
+          'There are existing files in dependencies which conflict '
+          'with files that a Builder may produce. These must be removed or '
+          'the Builders disabled before a build can continue: '
+          '${conflictsInDeps.map((a) => a.uri).join('\n')}',
+        );
+        throw const CannotBuildException();
+      }
 
-      await logTimedAsync(
-        _logger,
-        'Checking for unexpected pre-existing outputs.',
-        () => _initialBuildCleanup(
-          conflictingOutputs,
-          _environment.writer.copyWith(generatedAssetHider: assetGraph),
-        ),
+      buildLog.doing('Doing initial build cleanup.');
+      await _initialBuildCleanup(
+        conflictingOutputs,
+        _environment.writer.copyWith(generatedAssetHider: assetGraph),
       );
     }
 
     return BuildDefinition._(
-      assetGraph!,
+      assetGraph,
       buildScriptUpdates,
       cleanBuild,
       updates,
@@ -228,7 +217,7 @@ class _Loader {
 
     // Skip the prompt if using this option.
     if (_options.deleteFilesByDefault) {
-      _logger.info(
+      buildLog.info(
         'Deleting ${conflictingAssets.length} declared outputs '
         'which already existed on disk.',
       );
@@ -237,7 +226,7 @@ class _Loader {
     }
 
     // Prompt the user to delete files that are declared as outputs.
-    _logger.info(
+    buildLog.prompt(
       'Found ${conflictingAssets.length} declared outputs '
       'which already exist on disk. This is likely because the'
       '`$cacheDir` folder was deleted, or you are submitting generated '
@@ -254,12 +243,11 @@ class _Loader {
         ]);
         switch (choice) {
           case 0:
-            _logger.info('Deleting files...');
             done = true;
             await Future.wait(conflictingAssets.map((id) => writer.delete(id)));
             break;
           case 1:
-            _logger.severe(
+            buildLog.error(
               'The build will not be able to contiue until the '
               'conflicting assets are removed or the Builders which may '
               'output them are disabled. The outputs are: '
@@ -267,12 +255,12 @@ class _Loader {
             );
             throw const CannotBuildException();
           case 2:
-            _logger.info('Conflicts:\n${conflictingAssets.join('\n')}');
+            buildLog.info('Conflicts:\n${conflictingAssets.join('\n')}');
             // Logging should be sync :(
             await Future(() {});
         }
       } on NonInteractiveBuildException {
-        _logger.severe(
+        buildLog.error(
           'Conflicting outputs were detected and the build '
           'is unable to prompt for permission to remove them. '
           'These outputs must be removed manually or the build can be '

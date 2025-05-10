@@ -9,6 +9,7 @@ library;
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -42,10 +43,7 @@ void main() {
       'build',
       '--delete-conflicting-outputs',
     ]);
-    expect(
-      result,
-      contains(RegExp(r'Succeeded after \S+( \S+)? with \d+ outputs')),
-    );
+    expect(result, contains(BuildLog.successPattern));
 
     // 3 - get a list of modified `.g.dart` files - should still be empty
     expect(_changedGeneratedFiles(), isEmpty);

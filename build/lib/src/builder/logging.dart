@@ -14,31 +14,3 @@ final _default = Logger('build.fallback');
 ///
 /// Will be `null` when not running within a build.
 Logger get log => Zone.current[logKey] as Logger? ?? _default;
-
-/// Runs [fn] in an error handling [Zone].
-///
-/// Any calls to [print] will be logged with `log.warning`, and any errors will
-/// be logged with `log.severe`.
-///
-/// Completes with the first error or result of `fn`, whichever comes first.
-Future<T> scopeLogAsync<T>(Future<T> Function() fn, Logger log) {
-  var done = Completer<T>();
-  runZonedGuarded(
-    fn,
-    (e, st) {
-      log.severe('', e, st);
-      if (done.isCompleted) return;
-      done.completeError(e, st);
-    },
-    zoneSpecification: ZoneSpecification(
-      print: (self, parent, zone, message) {
-        log.warning(message);
-      },
-    ),
-    zoneValues: {logKey: log},
-  )?.then((result) {
-    if (done.isCompleted) return;
-    done.complete(result);
-  });
-  return done.future;
-}

@@ -16,8 +16,6 @@ import 'package:stack_trace/stack_trace.dart';
 import 'build_process_state.dart';
 import 'build_script_generate.dart';
 
-final _logger = Logger('Bootstrap');
-
 /// Generates the build script, precompiles it if needed, and runs it.
 ///
 /// The [handleUncaughtError] function will be invoked when the build script
@@ -35,9 +33,25 @@ Future<int> generateAndRun(
   Future<String> Function() generateBuildScript = generateBuildScript,
   void Function(Object error, StackTrace stackTrace) handleUncaughtError =
       _defaultHandleUncaughtError,
-}) async {
+}) {
+  return buildLog.runWithLoggerDisplay(
+    logger,
+    () => _generateAndRun(
+      args,
+      experiments,
+      generateBuildScript,
+      handleUncaughtError,
+    ),
+  );
+}
+
+Future<int> _generateAndRun(
+  List<String> args,
+  List<String>? experiments,
+  Future<String> Function() generateBuildScript,
+  void Function(Object error, StackTrace stackTrace) handleUncaughtError,
+) async {
   experiments ??= [];
-  logger ??= _logger;
   ReceivePort? exitPort;
   ReceivePort? errorPort;
   RawReceivePort? messagePort;
@@ -52,7 +66,6 @@ Future<int> generateAndRun(
     messagePort?.close();
     await errorListener?.cancel();
 
-    var buildScriptChanged = false;
     try {
       var buildScript = File(scriptLocation);
       var oldContents = '';
@@ -62,20 +75,21 @@ Future<int> generateAndRun(
       var newContents = await generateBuildScript();
       // Only trigger a build script update if necessary.
       if (newContents != oldContents) {
-        buildScriptChanged = true;
         buildScript
           ..createSync(recursive: true)
           ..writeAsStringSync(newContents);
+        // Delete the kernel file so it will be rebuilt.
+        final kernelFile = File(scriptKernelLocation);
+        if (await kernelFile.exists()) {
+          await kernelFile.delete();
+        }
+        buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
       }
     } on CannotBuildException {
       return ExitCode.config.code;
     }
 
-    if (!await _createKernelIfNeeded(
-      logger,
-      experiments,
-      buildScriptChanged: buildScriptChanged,
-    )) {
+    if (!await _createKernelIfNeeded(experiments)) {
       return buildProcessState.isolateExitCode = ExitCode.config.code;
     }
 
@@ -105,19 +119,17 @@ Future<int> generateAndRun(
       succeeded = true;
     } on IsolateSpawnException catch (e) {
       if (tryCount > 1) {
-        logger.severe(
-          'Failed to spawn build script after retry. '
-          'This is likely due to a misconfigured builder definition. '
-          'See the generated script at $scriptLocation to find errors.',
-          e,
+        buildLog.error(
+          buildLog.renderThrowable(
+            'Failed to spawn build script. '
+            'Check builder definitions and generated script $scriptLocation.',
+            e,
+          ),
         );
         messagePort.sendPort.send(ExitCode.config.code);
         exitPort.sendPort.send(null);
       } else {
-        logger.warning(
-          'Error spawning build script isolate, this is likely due to a Dart '
-          'SDK update. Deleting precompiled script and retrying...',
-        );
+        buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
       }
       await File(scriptKernelLocation).rename(scriptKernelCachedLocation);
     }
@@ -149,39 +161,25 @@ Future<int> generateAndRun(
 ///
 /// A snapshot is generated if:
 ///
-/// - [buildScriptChanged] is `true`
 /// - It doesn't exist currently
 /// - Either build_runner or build_daemon point at a different location than
 ///   they used to, see https://github.com/dart-lang/build/issues/1929.
 ///
 /// Returns `true` on success or `false` on failure.
-Future<bool> _createKernelIfNeeded(
-  Logger logger,
-  List<String> experiments, {
-  bool buildScriptChanged = false,
-}) async {
+Future<bool> _createKernelIfNeeded(List<String> experiments) async {
   var assetGraphFile = File(assetGraphPathFor(scriptKernelLocation));
   var kernelFile = File(scriptKernelLocation);
   var kernelCacheFile = File(scriptKernelCachedLocation);
 
   if (await kernelFile.exists()) {
-    if (buildScriptChanged) {
-      await kernelFile.rename(scriptKernelCachedLocation);
-      logger.warning(
-        'Invalidated precompiled build script because script changed.',
-      );
-    } else if (!await assetGraphFile.exists()) {
+    if (!await assetGraphFile.exists()) {
       // If we failed to serialize an asset graph for the snapshot, then we
       // don't want to re-use it because we can't check if it is up to date.
       await kernelFile.rename(scriptKernelCachedLocation);
-      logger.warning(
-        'Invalidated precompiled build script due to missing asset graph.',
-      );
+      buildLog.fullBuildBecause(FullBuildReason.incompatibleAssetGraph);
     } else if (!await _checkImportantPackageDepsAndExperiments(experiments)) {
       await kernelFile.rename(scriptKernelCachedLocation);
-      logger.warning(
-        'Invalidated precompiled build script due to core package update.',
-      );
+      buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
     }
   }
 
@@ -195,29 +193,21 @@ Future<bool> _createKernelIfNeeded(
       packagesJson: (await Isolate.packageConfig)!.toFilePath(),
     );
 
-    var hadOutput = false;
     var hadErrors = false;
-    await logTimedAsync(logger, 'Precompiling build script...', () async {
-      try {
-        final result = await client.compile();
-        hadErrors = result.errorCount > 0 || !(await kernelCacheFile.exists());
+    buildLog.doing('Compiling the build script.');
+    try {
+      final result = await client.compile();
+      hadErrors = result.errorCount > 0 || !(await kernelCacheFile.exists());
 
-        // Note: We're logging all output with a single log call to keep
-        // annotated source spans intact.
-        final logOutput = result.compilerOutputLines.join('\n');
-        if (logOutput.isNotEmpty) {
-          hadOutput = true;
-          if (hadErrors) {
-            // Always show compiler output if there were errors
-            logger.warning(logOutput);
-          } else {
-            logger.fine(logOutput);
-          }
-        }
-      } finally {
-        client.kill();
+      // Note: We're logging all output with a single log call to keep
+      // annotated source spans intact.
+      final logOutput = result.compilerOutputLines.join('\n');
+      if (logOutput.isNotEmpty && hadErrors) {
+        buildLog.warning(logOutput);
       }
-    });
+    } finally {
+      client.kill();
+    }
 
     // For some compilation errors, the frontend inserts an "invalid
     // expression" which throws at runtime. When running those kernel files
@@ -227,20 +217,13 @@ Future<bool> _createKernelIfNeeded(
     // are faster, but don't copy it over to the real location.
     if (!hadErrors) {
       await kernelCacheFile.rename(scriptKernelLocation);
-      if (hadOutput) {
-        logger.info(
-          'There was output on stdout while precompiling the build script; run '
-          'with `--verbose` to see it (you will need to run a `clean` first to '
-          're-generate it).\n',
-        );
-      }
     }
 
     if (!await kernelFile.exists()) {
-      logger.severe('''
-Failed to precompile build script $scriptLocation.
-This is likely caused by a misconfigured builder definition.
-''');
+      buildLog.error(
+        'Failed to compile build script. '
+        'Check builder definitions and generated script $scriptLocation.',
+      );
       return false;
     }
     // Create _previousLocationsFile.
@@ -278,13 +261,11 @@ Future<bool> _checkImportantPackageDepsAndExperiments(
       .join('\n');
 
   if (!_previousLocationsFile.existsSync()) {
-    _logger.fine('Core package locations file does not exist');
     _previousLocationsFile.writeAsStringSync(fileContents);
     return false;
   }
 
   if (fileContents != _previousLocationsFile.readAsStringSync()) {
-    _logger.fine('Core packages locations have changed');
     _previousLocationsFile.writeAsStringSync(fileContents);
     return false;
   }

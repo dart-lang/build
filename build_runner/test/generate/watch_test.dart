@@ -83,15 +83,16 @@ void main() {
         expect(await results.hasNext, isFalse);
       });
 
-      test('emits an error message when no builders are specified', () async {
+      test('emits a warning when no builders are specified', () async {
         var logs = <LogRecord>[];
         var buildState = await startWatch(
           [],
           {'a|web/a.txt.copy': 'a'},
           readerWriter,
           packageGraph: packageGraph,
-          onLog: logs.add,
-          logLevel: Level.SEVERE,
+          onLog: (record) {
+            if (record.level == Level.WARNING) logs.add(record);
+          },
         );
         var result = await buildState.buildResults.first;
         expect(result.status, BuildStatus.success);
@@ -99,9 +100,8 @@ void main() {
           logs,
           contains(
             predicate(
-              (LogRecord record) => record.message.contains(
-                'Nothing can be built, yet a build was requested.',
-              ),
+              (LogRecord record) =>
+                  record.message.contains('Nothing to build.'),
             ),
           ),
         );
@@ -540,8 +540,9 @@ void main() {
           {'a|web/a.txt': 'a'},
           readerWriter,
           packageGraph: packageGraph,
-          logLevel: Level.SEVERE,
-          onLog: logs.add,
+          onLog: (record) {
+            if (record.level == Level.SEVERE) logs.add(record);
+          },
         );
         var results = StreamQueue(buildState.buildResults);
 
@@ -563,10 +564,7 @@ void main() {
         expect(logs, hasLength(1));
         expect(
           logs.first.message,
-          contains(
-            'Terminating builds due to package graph update, '
-            'please restart the build.',
-          ),
+          contains('Terminating builds due to package graph update.'),
         );
       });
 
@@ -579,8 +577,9 @@ void main() {
             {'a|web/a.txt': 'a'},
             readerWriter,
             packageGraph: packageGraph,
-            logLevel: Level.SEVERE,
-            onLog: logs.add,
+            onLog: (record) {
+              if (record.level == Level.SEVERE) logs.add(record);
+            },
           );
           buildState.buildResults.handleError(
             (Object e, StackTrace s) => print('$e\n$s'),
@@ -615,10 +614,7 @@ void main() {
           expect(logs, hasLength(1));
           expect(
             logs.first.message,
-            contains(
-              'Terminating builds due to package graph update, '
-              'please restart the build.',
-            ),
+            contains('Terminating builds due to package graph update.'),
           );
         },
       );
@@ -638,8 +634,9 @@ void main() {
               [copyABuildApplication],
               {},
               readerWriter,
-              logLevel: Level.SEVERE,
-              onLog: logs.add,
+              onLog: (record) {
+                if (record.level == Level.SEVERE) logs.add(record);
+              },
               packageGraph: packageGraph,
             );
             results = StreamQueue(buildState.buildResults);
@@ -703,8 +700,9 @@ void main() {
               [copyABuildApplication],
               {'a|build.yaml': '', 'b|build.yaml': ''},
               readerWriter,
-              logLevel: Level.SEVERE,
-              onLog: logs.add,
+              onLog: (record) {
+                if (record.level == Level.SEVERE) logs.add(record);
+              },
               packageGraph: packageGraph,
             );
             results = StreamQueue(buildState.buildResults);
@@ -754,8 +752,9 @@ void main() {
               {'a|build.yaml': '', 'a|build.cool.yaml': ''},
               readerWriter,
               configKey: 'cool',
-              logLevel: Level.SEVERE,
-              onLog: logs.add,
+              onLog: (record) {
+                if (record.level == Level.SEVERE) logs.add(record);
+              },
               overrideBuildConfig: {
                 'a': BuildConfig.useDefault('a', ['b']),
               },
@@ -1138,7 +1137,6 @@ Future<BuildState> startWatch(
   required PackageGraph packageGraph,
   Map<String, BuildConfig> overrideBuildConfig = const {},
   void Function(LogRecord)? onLog,
-  Level logLevel = Level.OFF,
   String? configKey,
 }) async {
   onLog ??= (_) {};
@@ -1158,7 +1156,6 @@ Future<BuildState> startWatch(
     writer: readerWriter,
     packageGraph: packageGraph,
     terminateEventStream: _terminateWatchController!.stream,
-    logLevel: logLevel,
     onLog: onLog,
     skipBuildScriptCheck: true,
   );

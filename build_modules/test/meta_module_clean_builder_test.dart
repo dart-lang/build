@@ -97,7 +97,7 @@ void main() {
         logs,
         orderedEquals([
           predicate(
-            (LogRecord r) => r.message.startsWith(
+            (LogRecord r) => r.message.contains(
               'Unable to read module information for package:b',
             ),
           ),

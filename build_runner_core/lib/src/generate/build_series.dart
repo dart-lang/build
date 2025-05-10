@@ -7,7 +7,6 @@ import 'dart:async';
 import 'package:build/build.dart';
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
-import 'package:logging/logging.dart';
 import 'package:watcher/watcher.dart';
 
 import '../asset/finalized_reader.dart';
@@ -15,6 +14,7 @@ import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../changes/build_script_updates.dart';
 import '../environment/build_environment.dart';
+import '../logging/build_log.dart';
 import '../package_graph/apply_builders.dart';
 import '../util/constants.dart';
 import 'build.dart';
@@ -23,8 +23,6 @@ import 'build_directory.dart';
 import 'build_phases.dart';
 import 'build_result.dart';
 import 'options.dart';
-
-final _logger = Logger('BuildSeries');
 
 /// A series of builds with the same configuration.
 ///
@@ -154,7 +152,7 @@ class BuildSeries {
     );
     if (buildPhases.inBuildPhases.isEmpty &&
         buildPhases.postBuildPhase.builderActions.isEmpty) {
-      _logger.severe('Nothing can be built, yet a build was requested.');
+      buildLog.warning('Nothing to build.');
     }
 
     var buildDefinition = await BuildDefinition.prepareWorkspace(
