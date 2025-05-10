@@ -10,7 +10,6 @@ import 'package:build_runner_core/build_runner_core.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
 import 'package:graphs/graphs.dart';
-import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 
@@ -23,8 +22,6 @@ const scriptKernelSuffix = '.dill';
 const scriptKernelCachedLocation =
     '$scriptKernelLocation$scriptKernelCachedSuffix';
 const scriptKernelCachedSuffix = '.cached';
-
-final _log = Logger('Entrypoint');
 
 final _lastShortFormatDartVersion = Version(3, 6, 0);
 
