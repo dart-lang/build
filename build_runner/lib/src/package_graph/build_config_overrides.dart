@@ -10,10 +10,7 @@ import 'package:build/src/internal.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:glob/glob.dart';
-import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
-
-final _log = Logger('BuildConfigOverrides');
 
 Future<Map<String, BuildConfig>> findBuildConfigOverrides(
   PackageGraph packageGraph,
@@ -29,7 +26,7 @@ Future<Map<String, BuildConfig>> findBuildConfigOverrides(
     final packageName = p.basename(id.path).split('.').first;
     final packageNode = packageGraph.allPackages[packageName];
     if (packageNode == null) {
-      _log.warning(
+      buildLog.warning(
         'A build config override is provided for $packageName but '
         'that package does not exist. '
         'Remove the ${p.basename(id.path)} override or add a dependency '
@@ -49,7 +46,7 @@ Future<Map<String, BuildConfig>> findBuildConfigOverrides(
   if (configKey != null) {
     final id = AssetId(packageGraph.root.name, 'build.$configKey.yaml');
     if (!await reader.canRead(id)) {
-      _log.warning('Cannot find ${id.path} for specified config.');
+      buildLog.warning('Cannot find ${id.path} for specified config.');
       throw const CannotBuildException();
     }
     final yaml = await reader.readAsString(id);
@@ -60,7 +57,7 @@ Future<Map<String, BuildConfig>> findBuildConfigOverrides(
       configYamlPath: id.path,
     );
     if (config.builderDefinitions.isNotEmpty) {
-      _log.warning(
+      buildLog.warning(
         'Ignoring `builders` configuration in `build.$configKey.yaml` - '
         'overriding builder configuration is not supported.',
       );

@@ -11,7 +11,6 @@ import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 import 'package:watcher/watcher.dart';
 
-import '../logging/std_io_logging.dart';
 import '../package_graph/build_config_overrides.dart';
 import '../server/server.dart';
 import 'terminator.dart';
@@ -88,16 +87,12 @@ Future<BuildResult> build(
     outputSymlinksOnly: outputSymlinksOnly,
     reader: reader,
     writer: writer,
-    onLogOverride:
-        onLog ?? stdIOLogListener(assumeTty: assumeTty, verbose: verbose),
   );
-  var logSubscription = LogSubscription(
-    environment,
-    verbose: verbose,
-    logLevel: logLevel,
-  );
+  buildLog.onLog = onLog;
+  if (assumeTty != null) buildLog.assumeTty = assumeTty;
+  buildLog.verbose = verbose;
+  if (logLevel != null) buildLog.logLevel = logLevel;
   var options = await BuildOptions.create(
-    logSubscription,
     deleteFilesByDefault: deleteFilesByDefault,
     packageGraph: packageGraph,
     skipBuildScriptCheck: skipBuildScriptCheck,
@@ -129,7 +124,6 @@ Future<BuildResult> build(
     return result;
   } finally {
     await terminator.cancel();
-    await options.logListener.cancel();
   }
 }
 

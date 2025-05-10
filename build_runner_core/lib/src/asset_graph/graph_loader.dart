@@ -8,20 +8,16 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:built_collection/built_collection.dart';
-// ignore: implementation_imports
-import 'package:logging/logging.dart';
 
 import '../asset/writer.dart';
 import '../asset_graph/exceptions.dart';
 import '../asset_graph/graph.dart';
 import '../generate/build_phases.dart';
 import '../generate/exceptions.dart';
-import '../logging/logging.dart';
+import '../logging/build_log.dart';
 import '../package_graph/package_graph.dart';
 import '../util/constants.dart';
 import '../util/sdk_version_match.dart';
-
-final _logger = Logger('AssetGraphLoader');
 
 /// Loads and verifies an [AssetGraph].
 class AssetGraphLoader {
@@ -49,26 +45,23 @@ class AssetGraphLoader {
   ///  - if running from a snapshot, throws `BuildScriptChangedException`,
   ///    otherwise returns `null`
   Future<AssetGraph?> load() async {
+    buildLog.progress(Progress.readAssetGraph);
     final assetGraphId = AssetId(packageGraph.root.name, assetGraphPath);
     if (!await reader.canRead(assetGraphId)) {
       return null;
     }
 
-    return logTimedAsync(_logger, 'Reading cached asset graph', () async {
-      try {
-        return await _load(assetGraphId);
-      } on AssetGraphCorruptedException catch (_) {
-        // Start fresh if the cached asset_graph cannot be deserialized
-        _logger.warning(
-          'Throwing away cached asset graph due to '
-          'version mismatch or corrupted asset graph.',
-        );
-        await Future.wait([
-          writer.deleteDirectory(_generatedOutputDirectoryId),
-        ]);
-        return null;
-      }
-    });
+    try {
+      return await _load(assetGraphId);
+    } on AssetGraphCorruptedException catch (_) {
+      // Start fresh if the cached asset_graph cannot be deserialized
+      buildLog.warning(
+        'Throwing away cached asset graph due to '
+        'version mismatch or corrupted asset graph.',
+      );
+      await Future.wait([writer.deleteDirectory(_generatedOutputDirectoryId)]);
+      return null;
+    }
   }
 
   Future<AssetGraph?> _load(AssetId assetGraphId) async {
@@ -83,14 +76,14 @@ class AssetGraphLoader {
         cachedGraph.enabledExperiments != enabledExperiments.build();
     if (buildPhasesChanged || pkgVersionsChanged || enabledExperimentsChanged) {
       if (buildPhasesChanged) {
-        _logger.warning(
+        buildLog.warning(
           'Throwing away cached asset graph because the build phases '
           'have changed. This most commonly would happen as a result of '
           'adding a new dependency or updating your dependencies.',
         );
       }
       if (pkgVersionsChanged) {
-        _logger.warning(
+        buildLog.warning(
           'Throwing away cached asset graph because the language '
           'version of some package(s) changed. This would most commonly '
           'happen when updating dependencies or changing your min sdk '
@@ -98,7 +91,7 @@ class AssetGraphLoader {
         );
       }
       if (enabledExperimentsChanged) {
-        _logger.warning(
+        buildLog.warning(
           'Throwing away cached asset graph because the enabled Dart '
           'language experiments changed:\n\n'
           'Previous value: ${cachedGraph.enabledExperiments.join(' ')}\n'
@@ -116,7 +109,7 @@ class AssetGraphLoader {
       return null;
     }
     if (!isSameSdkVersion(cachedGraph.dartVersion, Platform.version)) {
-      _logger.warning(
+      buildLog.warning(
         'Throwing away cached asset graph due to Dart SDK update.',
       );
       await Future.wait([

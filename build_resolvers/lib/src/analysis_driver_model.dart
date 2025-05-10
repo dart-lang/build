@@ -9,6 +9,7 @@ import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:build/build.dart';
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 // ignore: implementation_imports
 import 'package:build_runner_core/src/generate/build_step_impl.dart';
 
@@ -115,13 +116,16 @@ class AnalysisDriverModel {
 
     // If requested, find transitive imports.
     if (transitive) {
-      // Note: `transitiveDepsOf` can cause loads that cause builds that cause a
-      // recursive `_performResolve` on this same `AnalysisDriver` instance.
-      final nodeLoader = AssetDepsLoader(buildStep.phasedReader);
-      buildStep.inputTracker.addResolverEntrypoint(entrypoint);
-      idsToSyncOntoFilesystem = await _graphLoader.transitiveDepsOf(
-        nodeLoader,
-        entrypoint,
+      idsToSyncOntoFilesystem = await buildLog.attributeAsync(
+        Attribution.track,
+        () async {
+          // Note: `transitiveDepsOf` can cause loads that cause builds that
+          // cause a recursive `_performResolve` on this same `AnalysisDriver`
+          // instance.
+          final nodeLoader = AssetDepsLoader(buildStep.phasedReader);
+          buildStep.inputTracker.addResolverEntrypoint(entrypoint);
+          return await _graphLoader.transitiveDepsOf(nodeLoader, entrypoint);
+        },
       );
     } else {
       // Notify [buildStep] of its inputs.
