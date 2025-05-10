@@ -23,10 +23,12 @@ const scriptKernelCachedLocation =
     '$scriptKernelLocation$scriptKernelCachedSuffix';
 const scriptKernelCachedSuffix = '.cached';
 
+final _log = BuildLogger();
+
 final _lastShortFormatDartVersion = Version(3, 6, 0);
 
 Future<String> generateBuildScript() =>
-    logTimedAsync(_log, 'Generating build script', _generateBuildScript);
+    _log.stage(BuildStage.generateBuildScript, _generateBuildScript);
 
 Future<String> _generateBuildScript() async {
   final info = await findBuildScriptOptions();
