@@ -16,6 +16,7 @@
 - Move `BuildStepImpl` to `build_runner_core`, use `SingleStepReader` directly.
 - Add `LibraryCycleGraphLoader` for loading transitive deps for analysis.
 - Track resolver dependencies as library cycle graphs.
+- Ignore deprecated analyzer API usages.
 
 ## 2.4.2
 

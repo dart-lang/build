@@ -13,6 +13,7 @@
 - Bug fix: fix delay on shutdown for fast builds when the "analyzer out of
   date" warning is displayed.
 - Track resolver dependencies as library cycle graphs.
+- Ignore deprecated analyzer API usages.
 
 ## 2.4.4
 
