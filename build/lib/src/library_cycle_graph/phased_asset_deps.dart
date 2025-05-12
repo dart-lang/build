@@ -32,11 +32,23 @@ abstract class PhasedAssetDeps
   factory PhasedAssetDeps.of(Map<AssetId, PhasedValue<AssetDeps>> assetDeps) =>
       _$PhasedAssetDeps._(assetDeps: assetDeps.build());
 
-  /// Returns this data with [other] added to it.
-  PhasedAssetDeps addAll(PhasedAssetDeps other) {
+  /// Returns `this` data with [other] added to it.
+  ///
+  /// For each asset: if [other] has a complete value for that asset, use the
+  /// new value. Otherwise, use the old value from `this`.
+  PhasedAssetDeps update(PhasedAssetDeps other) {
     final result = toBuilder();
     for (final entry in other.assetDeps.entries) {
-      result.assetDeps[entry.key] = entry.value;
+      final updatedValue = entry.value;
+      if (updatedValue.isComplete) {
+        result.assetDeps[entry.key] = updatedValue;
+      } else {
+        // The only allow "not available yet" value is `AssetDeps.empty`.
+        if (updatedValue.values.length != 1 ||
+            updatedValue.values.single.value != AssetDeps.empty) {
+          throw StateError('Unexpected value: $updatedValue');
+        }
+      }
     }
     return result.build();
   }
