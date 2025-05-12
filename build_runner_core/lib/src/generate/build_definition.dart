@@ -8,7 +8,6 @@ import 'dart:io';
 import 'package:build/build.dart';
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
-import 'package:logging/logging.dart';
 import 'package:watcher/watcher.dart';
 
 import '../asset/writer.dart';
@@ -18,7 +17,6 @@ import '../asset_graph/graph_loader.dart';
 import '../changes/build_script_updates.dart';
 import '../environment/build_environment.dart';
 import '../logging/build_logger.dart';
-import '../logging/logging.dart';
 import '../util/constants.dart';
 import 'asset_tracker.dart';
 import 'build_phases.dart';
