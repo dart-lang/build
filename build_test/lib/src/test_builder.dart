@@ -196,6 +196,10 @@ Future<TestBuilderResult> testBuilder(
 /// To mark a builder as optional, add it to [optionalBuilders]. Optional
 /// builders only run if their output is used by a non-optional builder.
 ///
+/// To mark a builder's output as visible, add it to [visibleOutputBuilders].
+/// The builder then writes its outputs next to its input, instead of hidden
+/// under `.dart_tool`.
+///
 /// The default builder config will be overwritten with one that causes the
 /// builder to run for all inputs. To use the default builder config instead,
 /// set [testingBuilderConfig] to `false`.
@@ -221,6 +225,7 @@ Future<TestBuilderResult> testBuilders(
   PackageConfig? packageConfig,
   Resolvers? resolvers,
   Set<Builder> optionalBuilders = const {},
+  Set<Builder> visibleOutputBuilders = const {},
   bool testingBuilderConfig = true,
   TestReaderWriter? readerWriter,
   bool enableLowResourceMode = false,
@@ -322,6 +327,9 @@ Future<TestBuilderResult> testBuilders(
     // didn't change. Skip it to allow testing with preserved state.
     skipBuildScriptCheck: true,
     enableLowResourcesMode: enableLowResourceMode,
+    // If a builder has visible output, it might need to be deleted. Do so
+    // without prompting.
+    deleteFilesByDefault: true,
   );
 
   final buildSeries = await BuildSeries.create(buildOptions, environment, [
@@ -331,6 +339,7 @@ Future<TestBuilderResult> testBuilders(
         [(_) => builder],
         (package) => package.name != r'$sdk',
         isOptional: optionalBuilders.contains(builder),
+        hideOutput: !visibleOutputBuilders.contains(builder),
       ),
   ], {});
 
