@@ -35,6 +35,7 @@
 - Refactor invalidation to track current build progress in `Build` instead of
   in the asset graph.
 - Track resolver dependencies as library cycle graphs.
+- Ignore deprecated analyzer API usages.
 
 ## 8.0.0
 

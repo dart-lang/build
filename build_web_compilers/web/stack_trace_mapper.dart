@@ -19,13 +19,11 @@
 /// This utility can be compiled to JavaScript using Dart2JS while the rest
 /// of the application is compiled with DDC or could be compiled with DDC.
 
-@JS()
 library;
 
 import 'dart:convert';
+import 'dart:js_interop';
 
-// ignore: deprecated_member_use
-import 'package:js/js.dart';
 import 'package:path/path.dart' as p;
 import 'package:source_maps/source_maps.dart';
 import 'package:source_span/source_span.dart';
@@ -58,18 +56,17 @@ List<String> fixSourceMapSources(List<String> uris) {
 external set dartStackTraceUtility(DartStackTraceUtility value);
 
 @JS(r'$dartLoader.rootDirectories')
-external List get rootDirectories;
+external JSArray<JSString> get rootDirectories;
 
-typedef StackTraceMapper = String Function(String stackTrace);
 typedef SourceMapProvider = dynamic Function(String modulePath);
-typedef SetSourceMapProvider = void Function(SourceMapProvider provider);
 
-@JS()
 @anonymous
-class DartStackTraceUtility {
+extension type DartStackTraceUtility._(JSObject _) implements JSObject {
   external factory DartStackTraceUtility({
-    StackTraceMapper mapper,
-    SetSourceMapProvider setSourceMapProvider,
+    // signature: String Function(String)
+    required JSFunction mapper,
+    // signature: void Function(dynamic Function(String))
+    required JSFunction setSourceMapProvider,
   });
 }
 
@@ -127,7 +124,7 @@ class LazyMapping extends Mapping {
 
 LazyMapping? _mapping;
 
-final roots = rootDirectories.map((s) => '$s').toList();
+final roots = rootDirectories.toDart.map((s) => s.toDart).toList();
 
 String mapper(String rawStackTrace) {
   if (_mapping == null) {
@@ -139,14 +136,16 @@ String mapper(String rawStackTrace) {
   return mapStackTrace(_mapping!, trace, roots: roots).toString();
 }
 
-void setSourceMapProvider(SourceMapProvider provider) {
-  _mapping = LazyMapping(provider);
+void setSourceMapProvider(JSFunction provider) {
+  _mapping = LazyMapping((modulePath) {
+    return provider.callAsFunction(null, modulePath.toJS);
+  });
 }
 
 void main() {
   // Register with DDC.
   dartStackTraceUtility = DartStackTraceUtility(
-    mapper: allowInterop(mapper),
-    setSourceMapProvider: allowInterop(setSourceMapProvider),
+    mapper: mapper.toJS,
+    setSourceMapProvider: setSourceMapProvider.toJS,
   );
 }
