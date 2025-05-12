@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:collection';
 import 'dart:convert';
 
 import 'package:build/build.dart';
@@ -73,9 +72,6 @@ class Build {
   final lazyPhases = <String, Future<Iterable<AssetId>>>{};
   final lazyGlobs = <AssetId, Future<void>>{};
   final failureReporter = FailureReporter();
-  int actionsCompletedCount = 0;
-  int actionsStartedCount = 0;
-  final pendingActions = SplayTreeMap<int, Set<String>>();
 
   /// Generated outputs that have been processed.
   ///
@@ -137,24 +133,7 @@ class Build {
        previousDepsLoader =
            assetGraph.previousPhasedAssetDeps == null
                ? null
-               : AssetDepsLoader.fromDeps(assetGraph.previousPhasedAssetDeps!) {
-    hungActionsHeartbeat = HungActionsHeartbeat(() {
-      final message = StringBuffer();
-      const actionsToLogMax = 5;
-      final descriptions = pendingActions.values
-          .expand((actions) => actions)
-          .take(actionsToLogMax);
-      for (final description in descriptions) {
-        message.writeln('  - $description');
-      }
-      var additionalActionsCount =
-          actionsStartedCount - actionsCompletedCount - actionsToLogMax;
-      if (additionalActionsCount > 0) {
-        message.writeln('  .. and $additionalActionsCount more');
-      }
-      return '$message';
-    });
-  }
+               : AssetDepsLoader.fromDeps(assetGraph.previousPhasedAssetDeps!);
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
     if (logFine) {
@@ -198,8 +177,7 @@ class Build {
     if (result.status == BuildStatus.success) {
       _log.info(
         'Succeeded after ${humanReadable(watch.elapsed)} with '
-        '${result.outputs.length} outputs '
-        '($actionsCompletedCount actions)\n',
+        '${result.outputs.length} outputs\n',
       );
     } else {
       _log.severe('Failed after ${humanReadable(watch.elapsed)}');
@@ -208,7 +186,7 @@ class Build {
   }
 
   Future<void> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
-    await _log.stage(BuildStage.updateAssetGraph,() async {
+    await _log.stage(BuildStage.updateAssetGraph, () async {
       changedInputs.clear();
       deletedAssets.clear();
       for (final update in updates.entries) {
@@ -236,17 +214,7 @@ class Build {
   /// Runs a build inside a zone with an error handler and stack chain
   /// capturing.
   Future<BuildResult> _safeBuild(Map<AssetId, ChangeType> updates) {
-    var done = Completer<BuildResult>();
-    var heartbeat = HeartbeatLogger(
-      transformLog: (original) => '$original, ${_buildProgress()}',
-      waitDuration: const Duration(seconds: 1),
-    )..start();
-    hungActionsHeartbeat.start();
-    done.future.whenComplete(() {
-      heartbeat.stop();
-      hungActionsHeartbeat.stop();
-    });
-
+    final done = Completer<BuildResult>();
     runZonedGuarded(
       () async {
         if (!assetGraph.cleanBuild) {
@@ -257,15 +225,13 @@ class Build {
         var result = await _log.stage(BuildStage.build, _runPhases);
 
         // Write out the dependency graph file.
-        await _log.stage(
-          BuildStage.saveGraph,
-          () async {
+        await _log.stage(BuildStage.saveGraph, () async {
             // Combine previous phased asset deps, if any, with the newly loaded
             // deps. Because of skipped builds, the newly loaded deps might just
             // say "not generated yet", in which case the old value is retained.
-            final updatedPhasedAssetDeps =
-                assetGraph.previousPhasedAssetDeps == null
-                    ? AnalysisDriverModel.sharedInstance.phasedAssetDeps()
+          final updatedPhasedAssetDeps =
+              assetGraph.previousPhasedAssetDeps == null
+                  ? AnalysisDriverModel.sharedInstance.phasedAssetDeps()
                     : assetGraph.previousPhasedAssetDeps!.update(
                       AnalysisDriverModel.sharedInstance.phasedAssetDeps(),
                     );
@@ -295,34 +261,27 @@ class Build {
             '${_twoDigits(now.second)}',
           );
           _log.info('Writing performance log to $logPath');
-          await _log.stage(
-            BuildStage.writePerformance,
-            () {
-              var performanceLogId = AssetId(
-                options.packageGraph.root.name,
-                logPath,
-              );
-              var serialized = jsonEncode(result.performance);
-              return readerWriter.writeAsString(performanceLogId, serialized);
-            },
-          );
+          await _log.stage(BuildStage.writePerformance, () {
+            var performanceLogId = AssetId(
+              options.packageGraph.root.name,
+              logPath,
+            );
+            var serialized = jsonEncode(result.performance);
+            return readerWriter.writeAsString(performanceLogId, serialized);
+          });
         }
 
         if (!done.isCompleted) done.complete(result);
       },
       (e, st) {
         if (!done.isCompleted) {
-          _log.severe('Unhandled build failure!', e, st);
+          _log.severe('Unhandled build failure! $e $st', e, st);
           done.complete(BuildResult(BuildStatus.failure, []));
         }
       },
     );
     return done.future;
   }
-
-  /// Returns a message describing the progress of the current build.
-  String _buildProgress() =>
-      '$actionsCompletedCount/$actionsStartedCount actions completed.';
 
   /// Runs the actions in [buildPhases] and returns a future which completes
   /// to the [BuildResult] once all [BuildPhase]s are done.
@@ -338,14 +297,21 @@ class Build {
       ) {
         var phase = buildPhases.inBuildPhases[phaseNum];
         if (phase.isOptional) continue;
+
         outputs.addAll(
           await performanceTracker.trackBuildPhase(phase, () async {
-            var primaryInputs = await _matchingPrimaryInputs(
+            final primaryInputs = await _matchingPrimaryInputs(
               phase.package,
               phaseNum,
             );
             final outputs = <AssetId>[];
-            for (final primaryInput in primaryInputs) {
+            for (var i = 0; i != primaryInputs.length; ++i) {
+              final primaryInput = primaryInputs[i];
+              _log.buildStep(
+                phase.builderLabel,
+                number: i + 1,
+                of: primaryInputs.length,
+              );
               outputs.addAll(
                 await _buildForPrimaryInput(
                   phaseNumber: phaseNum,
@@ -389,11 +355,11 @@ class Build {
   }
 
   /// Returns primary inputs for [package] in [phaseNumber].
-  Future<Set<AssetId>> _matchingPrimaryInputs(
+  Future<List<AssetId>> _matchingPrimaryInputs(
     String package,
     int phaseNumber,
   ) async {
-    var ids = <AssetId>{};
+    var ids = <AssetId>[];
     var phase = buildPhases[phaseNumber];
     var packageNode = options.packageGraph[package]!;
 
@@ -505,11 +471,6 @@ class Build {
       );
       final logger = BuildForInputLogger(Logger(actionDescription));
 
-      actionsStartedCount++;
-      pendingActions
-          .putIfAbsent(phaseNumber, () => <String>{})
-          .add(actionDescription);
-
       final unusedAssets = <AssetId>{};
       void reportUnusedAssetsForInput(AssetId input, Iterable<AssetId> assets) {
         options.reportUnusedAssetsForInput?.call(input, assets);
@@ -533,9 +494,6 @@ class Build {
           // Errors tracked through the logger.
         }),
       );
-      actionsCompletedCount++;
-      hungActionsHeartbeat.ping();
-      pendingActions[phaseNumber]!.remove(actionDescription);
 
       // Update the state for all the `builderOutputs` nodes based on what was
       // read and written.
@@ -644,11 +602,6 @@ class Build {
     var actionDescription = '$builder on $input';
     var logger = BuildForInputLogger(Logger(actionDescription));
 
-    actionsStartedCount++;
-    pendingActions
-        .putIfAbsent(phaseNumber, () => <String>{})
-        .add(actionDescription);
-
     final outputs = <AssetId>{};
     await runPostProcessBuilder(
       builder,
@@ -691,10 +644,6 @@ class Build {
       postProcessBuildStepId,
       outputs: outputs,
     );
-
-    actionsCompletedCount++;
-    hungActionsHeartbeat.ping();
-    pendingActions[phaseNumber]!.remove(actionDescription);
 
     var assetsWritten = readerWriter.assetsWritten.toSet();
 

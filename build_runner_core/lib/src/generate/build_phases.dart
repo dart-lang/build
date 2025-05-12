@@ -8,7 +8,6 @@ import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
-import 'package:logging/logging.dart';
 
 import '../logging/build_logger.dart';
 import 'exceptions.dart';

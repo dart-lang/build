@@ -35,7 +35,15 @@ Future<int> generateAndRun(
   void Function(Object error, StackTrace stackTrace) handleUncaughtError =
       _defaultHandleUncaughtError,
 }) {
-  return _log.runAsyncWithLogger(logger, () => _generateAndRun(args, experiments, generateBuildScript, handleUncaughtError));
+  return _log.runAsyncWithLogger(
+    logger,
+    () => _generateAndRun(
+      args,
+      experiments,
+      generateBuildScript,
+      handleUncaughtError,
+    ),
+  );
 }
 
 Future<int> _generateAndRun(
@@ -151,9 +159,7 @@ Future<int> _generateAndRun(
 ///
 /// Returns zero for success or a number for failure which should be set to the
 /// exit code.
-Future<int> _createKernelIfNeeded(
-  List<String> experiments,
-) async {
+Future<int> _createKernelIfNeeded(List<String> experiments) async {
   var assetGraphFile = File(assetGraphPathFor(scriptKernelLocation));
   var kernelFile = File(scriptKernelLocation);
   var kernelCacheFile = File(scriptKernelCachedLocation);
