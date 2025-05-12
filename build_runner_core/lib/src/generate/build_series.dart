@@ -47,7 +47,7 @@ class BuildSeries {
 
   final FinalizedReader finalizedReader;
   final AssetReaderWriter readerWriter;
-  final RunnerAssetWriter deleteWriter;
+  late final RunnerAssetWriter deleteWriter;
   final ResourceManager resourceManager = ResourceManager();
 
   /// For the first build only, updates from the previous serialized build
@@ -74,16 +74,24 @@ class BuildSeries {
     this.finalizedReader,
     this.cleanBuild,
     this.updatesFromLoad,
-  ) : deleteWriter = environment.writer.copyWith(
-        generatedAssetHider: assetGraph,
-      ),
-      readerWriter = environment.reader.copyWith(
+  ) : readerWriter = environment.reader.copyWith(
         generatedAssetHider: assetGraph,
         cache:
             options.enableLowResourcesMode
                 ? const PassthroughFilesystemCache()
                 : InMemoryFilesystemCache(),
+      ) {
+    // Prefer to use `readerWriter` for deletes if possible, so deletes can go
+    // to the write cache.
+    // TODO(davidmorgan): clean up setup so it's always possible.
+    if (readerWriter is RunnerAssetWriter) {
+      deleteWriter = readerWriter as RunnerAssetWriter;
+    } else {
+      deleteWriter = environment.writer.copyWith(
+        generatedAssetHider: assetGraph,
       );
+    }
+  }
 
   /// Runs a single build.
   ///

@@ -17,10 +17,4 @@ abstract class RunnerAssetWriter implements AssetWriter {
   /// Delete unconditionally and recursively: if the directory does not exist,
   /// do nothing.
   Future<void> deleteDirectory(AssetId id);
-
-  /// Called after each completed build.
-  ///
-  /// Some [RunnerAssetWriter] implementations may buffer completed writes
-  /// internally and flush them in [completeBuild].
-  Future<void> completeBuild();
 }

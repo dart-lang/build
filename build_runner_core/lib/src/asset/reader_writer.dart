@@ -136,7 +136,13 @@ class ReaderWriter extends AssetReader
   @override
   Future<void> writeAsBytes(AssetId id, List<int> bytes) {
     final path = _pathFor(id);
-    filesystem.writeAsBytesSync(path, bytes);
+    cache.writeAsBytes(
+      id,
+      bytes,
+      writer: () {
+        filesystem.writeAsBytesSync(path, bytes);
+      },
+    );
     return Future.value();
   }
 
@@ -147,7 +153,13 @@ class ReaderWriter extends AssetReader
     Encoding encoding = utf8,
   }) {
     final path = _pathFor(id);
-    filesystem.writeAsStringSync(path, contents, encoding: encoding);
+    cache.writeAsString(
+      id,
+      contents,
+      writer: () {
+        filesystem.writeAsStringSync(path, contents, encoding: encoding);
+      },
+    );
     return Future.value();
   }
 
@@ -168,7 +180,12 @@ class ReaderWriter extends AssetReader
         'Should not delete assets outside of $rootPackage',
       );
     }
-    filesystem.deleteSync(path);
+    cache.delete(
+      id,
+      deleter: () {
+        filesystem.deleteSync(path);
+      },
+    );
     return Future.value();
   }
 
@@ -177,11 +194,6 @@ class ReaderWriter extends AssetReader
     final path = _pathFor(id);
     filesystem.deleteDirectorySync(path);
     return Future.value();
-  }
-
-  @override
-  Future<void> completeBuild() async {
-    // TODO(davidmorgan): add back write caching, "batching".
   }
 }
 

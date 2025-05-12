@@ -70,8 +70,12 @@ class TestBuildEnvironment implements BuildEnvironment {
   BuildEnvironment copyWith({
     void Function(LogRecord)? onLogOverride,
     RunnerAssetWriter? writer,
+    AssetReader? reader,
   }) => TestBuildEnvironment(
-    readerWriter: (writer as TestReaderWriter?) ?? _readerWriter,
+    readerWriter:
+        (writer as TestReaderWriter?) ??
+        (reader as TestReaderWriter?) ??
+        _readerWriter,
     throwOnPrompt: throwOnPrompt,
   );
 

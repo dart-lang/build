@@ -183,7 +183,7 @@ class Build {
         );
       }
     }
-    await environment.writer.completeBuild();
+    readerWriter.cache.flush();
     await resourceManager.disposeAll();
     result = await environment.finalizeBuild(
       result,
@@ -221,6 +221,7 @@ class Build {
           }
         }
       }
+      readerWriter.cache.invalidate(changedInputs);
       final deleted = await assetGraph.updateAndInvalidate(
         buildPhases,
         updates,
@@ -229,9 +230,6 @@ class Build {
         readerWriter,
       );
       deletedAssets.addAll(deleted);
-      // TODO(davidmorgan): there are a few places that invalidate, check that
-      // it's once per file, add test coverage.
-      readerWriter.cache.invalidate(changedInputs);
     });
   }
 
@@ -1212,7 +1210,6 @@ class Build {
 
     final result = errors.isEmpty;
 
-    readerWriter.cache.invalidate(outputs);
     for (final output in outputs) {
       final wasOutput = readerWriter.assetsWritten.contains(output);
       final digest = wasOutput ? await this.readerWriter.digest(output) : null;
