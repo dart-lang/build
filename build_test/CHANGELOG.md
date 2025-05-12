@@ -5,7 +5,9 @@
 - `resolveSources` and `testBuilder` now do a full `build_runner` build, with
   configuration as much as possible based on the some parameters.
 - Add `testBuilders` to run a test build with multiple builders.
-- Add `optionalBuilder` to `testBuilders` to have some builders be optional.
+- Add `optionalBuilders` to `testBuilders` to have some builders be optional.
+- Add `visibleOutputBuilders` to `testBuilders` to have some builders write
+  their output next to their inputs.
 - Add `testingBuilderConfig` to `testBuilders` to control builder config
   override.
 - Add `resolvers` parameter to `testBuild` and `testBuilders`.

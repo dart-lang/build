@@ -83,8 +83,9 @@ class InvalidationTester {
     required String from,
     required String to,
     bool isOptional = false,
+    bool outputIsVisible = true,
   }) {
-    final builder = TestBuilder(this, from, [to], isOptional);
+    final builder = TestBuilder(this, from, [to], isOptional, outputIsVisible);
     _builders.add(builder);
     return TestBuilderBuilder(builder);
   }
@@ -185,6 +186,7 @@ class InvalidationTester {
       assets.map((id, content) => MapEntry(id.toString(), content)),
       rootPackage: 'pkg',
       optionalBuilders: _builders.where((b) => b.isOptional).toSet(),
+      visibleOutputBuilders: _builders.where((b) => b.outputIsVisible).toSet(),
       testingBuilderConfig: false,
     );
     final logString = log.toString();
@@ -309,12 +311,16 @@ class TestBuilder implements Builder {
 
   final bool isOptional;
 
+  final bool outputIsVisible;
+
   final InvalidationTester _tester;
+
+  final String from;
 
   /// Extensions of assets that the builder will read.
   ///
   /// The extensions are applied to the primary input asset ID with
-  /// [AssetIdExtension.replaceAllPathExtensions].
+  /// [AssetIdExtension.replaceExtensions].
   List<String> reads = [];
 
   /// Names of assets that the builder will read.
@@ -326,17 +332,22 @@ class TestBuilder implements Builder {
   /// Extensions of assets that the builder will write.
   ///
   /// The extensions are applied to the primary input asset ID with
-  /// [AssetIdExtension.replaceAllPathExtensions].
+  /// [AssetIdExtension.replaceExtensions].
   List<String> writes = [];
 
-  TestBuilder(this._tester, String from, Iterable<String> to, this.isOptional)
-    : buildExtensions = {'$from.dart': to.map((to) => '$to.dart').toList()};
+  TestBuilder(
+    this._tester,
+    this.from,
+    Iterable<String> to,
+    this.isOptional,
+    this.outputIsVisible,
+  ) : buildExtensions = {'$from.dart': to.map((to) => '$to.dart').toList()};
 
   @override
   Future<void> build(BuildStep buildStep) async {
     final content = <String>[];
     for (final read in reads) {
-      final readId = buildStep.inputId.replaceAllPathExtensions(read);
+      final readId = buildStep.inputId.replaceExtensions('$from.dart', read);
       content.add(read.toString());
       if (await buildStep.canRead(readId)) {
         content.add(await buildStep.readAsString(readId));
@@ -353,7 +364,7 @@ class TestBuilder implements Builder {
       await buildStep.resolver.libraryFor(resolve.assetId);
     }
     for (final write in writes) {
-      final writeId = buildStep.inputId.replaceAllPathExtensions(write);
+      final writeId = buildStep.inputId.replaceExtensions('$from.dart', write);
       final outputStrategy =
           _tester._outputStrategies[writeId] ?? OutputStrategy.inputDigest;
       final inputHash = base64.encode(
@@ -371,7 +382,7 @@ class TestBuilder implements Builder {
       }
     }
     for (final write in writes) {
-      final writeId = buildStep.inputId.replaceAllPathExtensions(write);
+      final writeId = buildStep.inputId.replaceExtensions('$from.dart', write);
       if (_tester._failureStrategies[writeId] == FailureStrategy.fail) {
         throw StateError('Failing as requested by test setup.');
       }
@@ -417,8 +428,6 @@ String _assetIdToName(AssetId id) {
 }
 
 extension AssetIdExtension on AssetId {
-  static final extensionsRegexp = RegExp(r'\..*');
-
-  AssetId replaceAllPathExtensions(String extension) =>
-      AssetId(package, path.replaceAll(extensionsRegexp, '') + extension);
+  AssetId replaceExtensions(String from, String to) =>
+      AssetId(package, path.replaceAll(RegExp('$from\$'), to));
 }
