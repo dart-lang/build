@@ -104,9 +104,9 @@ class LibraryCycleGraphLoader {
     (_idsToLoad[phase] ??= []).add(id);
   }
 
-  void _loadAllAtPhase(int phase, Iterable<AssetId> ids) {
+  void _loadAllAtPhaseZero(Iterable<AssetId> ids) {
     if (ids.isEmpty) return;
-    (_idsToLoad[phase] ??= []).addAll(ids);
+    (_idsToLoad[0] ??= []).addAll(ids);
   }
 
   /// Whether there are assets to load before or at [upToPhase].
@@ -144,17 +144,27 @@ class LibraryCycleGraphLoader {
   ///
   /// Pass a phase and ID from [_nextIdToLoad].
   void _removeIdToLoad(int phase, AssetId id) {
-    // A recursive load might have updated `_idsToLoad` since `_nextIdToLoad`
-    // was called. If so it fully processed some phases: either `_idsToLoad` is
-    // now empty at `phase`, in which case there is nothing to do, or it's
-    // unchanged, in which case `id` is still the last ID.
     final ids = _idsToLoad[phase];
-    if (ids != null) {
-      if (ids.removeLast() != id) {
-        throw StateError('$id should still be last in _idsToLoad[$phase]');
-      }
-      if (ids.isEmpty) _idsToLoad.remove(phase);
+
+    // It's possible that a recursive call to an earlier phase fully processed
+    // the phase, leaving nothing to clean up.
+    if (ids == null) {
+      return;
     }
+
+    // It's possible that a recursive call to an earlier phase encountered a
+    // reference to an asset generated at this phase, and so added another
+    // asset to load in this phase. In that case `id` is no longer the last in
+    // the list: search the whole list to remove it.
+    if (ids.last == id) {
+      ids.removeLast();
+    } else {
+      final removed = ids.remove(id);
+      if (!removed) {
+        throw StateError('Failed to remove $id from _idsToLoad: $_idsToLoad');
+      }
+    }
+    if (ids.isEmpty) _idsToLoad.remove(phase);
   }
 
   /// Loads [id] and its transitive dependencies at all phases available to
@@ -221,7 +231,7 @@ class LibraryCycleGraphLoader {
         // for loading at any phase: if the `_load` that loads them is at a too
         // early phase to see generated output they will be queued for
         // processing by a later `_load`.
-        _loadAllAtPhase(0, assetDeps.lastValue.deps);
+        _loadAllAtPhaseZero(assetDeps.lastValue.deps);
       } else {
         // It's a generated source that has not yet been generated. Mark it for
         // loading later.

@@ -72,12 +72,20 @@ class _InMemoryAssetDepsLoader implements AssetDepsLoader {
   );
   PhasedAssetDeps phasedAssetDeps;
 
-  _InMemoryAssetDepsLoader(this.phasedAssetDeps);
+  _InMemoryAssetDepsLoader(PhasedAssetDeps phasedAssetDeps)
+    : phasedAssetDeps = phasedAssetDeps.complete();
 
-  // This is important: it prevents LibraryCycleGraphLoader from trying to load
-  // data that is not in an incomplete [phasedAssetDeps].
+  // Return very high phase to tell `LibraryCycleGraphLoader` that all data is
+  // available.
+  //
+  // Returning incomplete data would then cause `LibraryCycleGraphLoader` to
+  // get stuck, which is why `phasedAssetDeps.complete` was called to mark
+  // all the data complete.
+  //
+  // This loader is only used for rebuilding graphs constructed in an earlier
+  // run, so incomplete data won't actually be used.
   @override
-  int get phase => phasedAssetDeps.phase;
+  int get phase => 0xffffffff;
 
   @override
   ExpiringValue<AssetDeps> _parse(AssetId id, ExpiringValue<String> content) =>
