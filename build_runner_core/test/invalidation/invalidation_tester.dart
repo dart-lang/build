@@ -266,7 +266,7 @@ enum OutputStrategy {
   /// that could be read, or `$name` if not.
   ///
   /// If a builder resolves files, this includes all transitively resolved
-  /// files and their hashes.s
+  /// files and their hashes.
   inputDigest,
 }
 
