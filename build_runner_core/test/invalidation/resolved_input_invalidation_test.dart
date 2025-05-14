@@ -501,4 +501,60 @@ void main() {
       );
     });
   });
+
+  // Resolve to an earlier generated asset triggers resolve to a later
+  // generated asset in the currently-running phase.
+  group('a.1 <== a.2 <== [a.3] <== a.4, '
+      'b.2 resolves: b.1 --> c.3, '
+      'c.2 resolves: a.1 --> a.3', () {
+    setUp(() {
+      tester.sources(['a.1', 'b.1', 'c.1']);
+      tester.importGraph({
+        'a.1': ['a.3'],
+        'b.1': ['c.3'],
+      });
+      tester.builder(from: '.1', to: '.2')
+        ..reads('.1')
+        ..writes('.2');
+      tester.builder(
+          from: '.2',
+          to: '.3',
+          isOptional: true,
+          outputIsVisible: true,
+        )
+        ..reads('.2')
+        // Resolving b.1 causes imported c.3 to be queued for read at later
+        // phase.
+        ..resolvesOther('b.1', forInput: 'b.2')
+        ..resolvesOther('a.1', forInput: 'c.2')
+        ..writes('.3');
+      tester.builder(from: '.3', to: '.4')
+        ..reads('.3')
+        // Resolving c.1 causes read of c.3 because it was queued for read at
+        // a later phase and can now be read. This causes generation of c.3
+        // to run, which resolves a.1, causing a.3 to be queued for read at
+        // this currently-running phase.
+        ..resolvesOther('c.1', forInput: 'b.3')
+        ..writes('.4');
+    });
+
+    test('a.2+a.4+a.6 are built', () async {
+      expect(
+        await tester.build(),
+        Result(
+          written: [
+            'a.2',
+            'b.2',
+            'c.2',
+            'a.3',
+            'b.3',
+            'c.3',
+            'a.4',
+            'b.4',
+            'c.4',
+          ],
+        ),
+      );
+    });
+  });
 }

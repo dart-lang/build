@@ -64,4 +64,49 @@ void main() {
       expect(await tester.build(change: 'z2'), Result(written: ['a.3']));
     });
   });
+
+  // A build that causes incomplete library graph data to be stored
+  // along with complete data changing at a later phase. This checks that
+  // phased data is not cut off at the first incomplete phase.
+  group('a1 <== [a.2] <== [a.3], a.4 <== a.5 <== a.6, '
+      'a.2 resolves: z3 -> a.3, '
+      'a.6 resolves: a.5, '
+      'b.5 reads: a.2', () {
+    setUp(() {
+      tester.sources(['a.1', 'z3', 'a.4', 'b.4']);
+      tester.importGraph({
+        'z3': ['a.3'],
+      });
+      tester.builder(from: '.1', to: '.2', isOptional: true)
+        ..reads('.1')
+        // This tries to resolve z3 -> a.3 when a.3 is not yet available,
+        // causing incomplete data.
+        ..resolvesOther('z3')
+        ..writes('.2');
+      tester.builder(from: '.2', to: '.3', isOptional: true)
+        ..reads('.2')
+        ..writes('.3');
+      tester.builder(from: '.4', to: '.5')
+        ..reads('.4')
+        ..writes('.5');
+      tester.builder(from: '.5', to: '.6')
+        ..reads('.5')
+        // Resolve onto a.5 means there is library cycle graph data used which
+        // changes at that (late) phase.
+        ..resolvesOther('a.5', forInput: 'a.5')
+        // Then read a.2 to trigger resolve of z3 at an earlier phase. It reads
+        // incomplete data and marks it for reading "at a later phase", but no
+        // more reads are done at a later phase so it remains incomplete.
+        ..readsOther('a.2', forInput: 'b.5')
+        ..writes('.6');
+    });
+
+    test('can rebuild with no changes', () async {
+      expect(
+        await tester.build(),
+        Result(written: ['a.2', 'a.5', 'b.5', 'a.6', 'b.6']),
+      );
+      expect(await tester.build(), Result());
+    });
+  });
 }

@@ -71,7 +71,6 @@ class _$PhasedAssetDepsSerializer
 class _$PhasedAssetDeps extends PhasedAssetDeps {
   @override
   final BuiltMap<AssetId, PhasedValue<AssetDeps>> assetDeps;
-  int? __phase;
 
   factory _$PhasedAssetDeps([void Function(PhasedAssetDepsBuilder)? updates]) =>
       (new PhasedAssetDepsBuilder()..update(updates))._build();
@@ -83,9 +82,6 @@ class _$PhasedAssetDeps extends PhasedAssetDeps {
       'assetDeps',
     );
   }
-
-  @override
-  int get phase => __phase ??= super.phase;
 
   @override
   PhasedAssetDeps rebuild(void Function(PhasedAssetDepsBuilder) updates) =>

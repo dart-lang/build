@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:math';
-
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
@@ -29,9 +27,6 @@ abstract class PhasedAssetDeps
       _$PhasedAssetDeps;
   PhasedAssetDeps._();
 
-  factory PhasedAssetDeps.of(Map<AssetId, PhasedValue<AssetDeps>> assetDeps) =>
-      _$PhasedAssetDeps._(assetDeps: assetDeps.build());
-
   /// Returns `this` data with [other] added to it.
   ///
   /// For each asset: if [other] has a complete value for that asset, use the
@@ -53,20 +48,12 @@ abstract class PhasedAssetDeps
     return result.build();
   }
 
-  /// The max phase before there is any incomplete data, or 0xffffffff if there
-  /// is no incomplete data.
-  @memoized
-  int get phase {
-    int? result;
-    for (final entry in assetDeps.values) {
-      if (!entry.isComplete) {
-        if (result == null) {
-          result = entry.expiresAfter;
-        } else {
-          result = min(result, entry.expiresAfter!);
-        }
+  PhasedAssetDeps complete() => rebuild((b) {
+    for (final entry in assetDeps.entries) {
+      final value = entry.value;
+      if (!value.isComplete) {
+        b.assetDeps[entry.key] = PhasedValue.fixed(value.values.single.value);
       }
     }
-    return result ?? 0xffffffff;
-  }
+  });
 }
