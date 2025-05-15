@@ -17,6 +17,9 @@ class BuildLogger {
   factory BuildLogger() => _instance ??= BuildLogger._();
 
   BuildLogger._() {
+    print('''
+ --- build_runner
+''');
     _steps['setup'] = _BuildStepState('setup', 0, 7);
     start('setup');
   }
@@ -111,17 +114,36 @@ class BuildLogger {
       final of = step.of;
 
       final time =
-          ((step.stopwatch.elapsed.inMilliseconds ~/ 100) / 10).toStringAsFixed(
-            1,
-          ) +
-          's';
+          step.stopwatch.elapsed.inMilliseconds == 0
+              ? '    '
+              : step.stopwatch.elapsed.inMilliseconds < 1000
+              ? ('<1s').padLeft(4)
+              : ((step.stopwatch.elapsed.inMilliseconds / 1000)
+                          .round()
+                          .toString() +
+                      's')
+                  .padLeft(4);
+
+      /*final time = (((step.stopwatch.elapsed.inMilliseconds / 100) / 10)
+                  .round()
+                  .toString() +
+              's')
+          .padLeft(4);*/
 
       /*var ticks = 80 * number ~/ of;
       ticks = max(0, ticks - displayName.length - 1);
       var spaces = max(0, 80 - ticks - displayName.length - 1 - time.length);
       // buffer.writeln('$displayName ${'.' * ticks}${' ' * spaces}$time');*/
 
-      var percent = '${100 * number ~/ of}'.padLeft(3);
+      /*var percent =
+          number == 0 ? '    ' : '${100 * number ~/ of}'.padLeft(3) + '%';*/
+
+      var percent = number == 0 ? '' : '${100 * number ~/ of}'.padLeft(2, '0');
+      if (percent == '100' || percent == '') {
+        percent = '';
+      } else {
+        percent = ' ' + percent + '%';
+      }
 
       //displayName = displayName.padLeft(longestNameLength);
 
@@ -131,9 +153,9 @@ class BuildLogger {
         final entries = _durations.entries.toList();
         entries.sort((a, b) => b.value.compareTo(a.value));
         for (final entry in entries) {
+          if (entry.value.inMilliseconds < 1000) continue;
           final time =
-              ((entry.value.inMilliseconds ~/ 100) / 10).toStringAsFixed(1) +
-              's';
+              (entry.value.inMilliseconds / 1000).round().toString() + 's';
 
           buffer2.write('${entry.key} $time');
           if (entry != entries.last) buffer2.write(', ');
@@ -142,7 +164,7 @@ class BuildLogger {
         //buffer.writeln('     │      │ $buffer2'.padRight(80));
       }
 
-      buffer.writeln('$percent% │ $time │ $displayName$attrs'.padRight(80));
+      buffer.writeln('$time$percent $displayName$attrs'.padRight(80));
     }
 
     final output = buffer.toString();
@@ -155,6 +177,7 @@ class BuildLogger {
 
   void buildDone(bool result) {
     progress('cleanup', number: 2);
+    print('     ${result ? 'SUCCESS' : 'FAILURE'}');
 
     _steps.clear();
     _durations.clear();
