@@ -121,11 +121,28 @@ class BuildLogger {
       var spaces = max(0, 80 - ticks - displayName.length - 1 - time.length);
       // buffer.writeln('$displayName ${'.' * ticks}${' ' * spaces}$time');*/
 
-      var percent = '${100 * number ~/ of}%'.padLeft(4);
+      var percent = '${100 * number ~/ of}'.padLeft(3);
 
-      displayName = displayName.padLeft(longestNameLength);
+      //displayName = displayName.padLeft(longestNameLength);
 
-      buffer.writeln('$displayName [$percent] $time');
+      var attrs = '';
+      if (name == step.name) {
+        final buffer2 = StringBuffer();
+        final entries = _durations.entries.toList();
+        entries.sort((a, b) => b.value.compareTo(a.value));
+        for (final entry in entries) {
+          final time =
+              ((entry.value.inMilliseconds ~/ 100) / 10).toStringAsFixed(1) +
+              's';
+
+          buffer2.write('${entry.key} $time');
+          if (entry != entries.last) buffer2.write(', ');
+        }
+        attrs = ': $buffer2';
+        //buffer.writeln('     │      │ $buffer2'.padRight(80));
+      }
+
+      buffer.writeln('$percent% │ $time │ $displayName$attrs'.padRight(80));
     }
 
     final output = buffer.toString();
@@ -138,7 +155,6 @@ class BuildLogger {
 
   void buildDone(bool result) {
     progress('cleanup', number: 2);
-    print(_durations);
 
     _steps.clear();
     _durations.clear();
@@ -153,6 +169,21 @@ class BuildLogger {
     final startAttributionDuration = attributedDuration;
     try {
       return await function();
+    } finally {
+      final end = stopwatch.elapsed;
+      final thisAttributedDuration =
+          end - start - attributedDuration + startAttributionDuration;
+      attributedDuration += thisAttributedDuration;
+      _durations[type] =
+          (_durations[type] ?? Duration.zero) + thisAttributedDuration;
+    }
+  }
+
+  T attributeSync<T>(String type, T Function() function) {
+    final start = stopwatch.elapsed;
+    final startAttributionDuration = attributedDuration;
+    try {
+      return function();
     } finally {
       final end = stopwatch.elapsed;
       final thisAttributedDuration =
