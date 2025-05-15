@@ -230,7 +230,10 @@ class Build {
         });
 
         // Run a fresh build.
-        var result = await _log.run(BuildStage.build, _runPhases);
+        var result = await _log.attribute(
+          'build',
+          () => _log.run(BuildStage.build, _runPhases),
+        );
 
         // Write out the dependency graph file.
         await _log.run(BuildStage.saveGraph, () async {
@@ -737,7 +740,7 @@ class Build {
     Iterable<AssetId> outputs,
     AssetReader reader,
   ) async {
-    return await _log.attribute('invalidate', () async {
+    return await _log.attribute('check', () async {
       // Update state for primary input if needed.
       var primaryInputNode = assetGraph.get(primaryInput)!;
       if (primaryInputNode.type == NodeType.generated) {
