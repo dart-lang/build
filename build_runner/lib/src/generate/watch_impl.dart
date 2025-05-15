@@ -27,7 +27,7 @@ import '../watcher/graph_watcher.dart';
 import '../watcher/node_watcher.dart';
 import 'terminator.dart';
 
-final _logger = Logger('Watch');
+final _log = BuildLogger();
 
 Future<ServeHandler> watch(
   List<BuilderApplication> builders, {
@@ -258,7 +258,7 @@ class WatchImpl implements BuildState {
 
     Future<BuildResult> doBuild(List<List<AssetChange>> changes) async {
       var build = _buildSeries!;
-      _logger
+      _log
         ..info('${'-' * 72}\n')
         ..info('Starting Build\n');
       var mergedChanges = collectChanges(changes);
@@ -269,7 +269,7 @@ class WatchImpl implements BuildState {
           mergedChanges.keys.toSet(),
         )) {
           _terminateCompleter.complete();
-          _logger.severe('Terminating builds due to build script update');
+          _log.severe('Terminating builds due to build script update');
           return BuildResult(
             BuildStatus.failure,
             [],
@@ -285,7 +285,7 @@ class WatchImpl implements BuildState {
     }
 
     var terminate = Future.any([until, _terminateCompleter.future]).then((_) {
-      _logger.info('Terminating. No further builds will be scheduled\n');
+      _log.info('Terminating. No further builds will be scheduled\n');
     });
 
     Digest? originalRootPackageConfigDigest;
@@ -297,7 +297,7 @@ class WatchImpl implements BuildState {
     // Start watching files immediately, before the first build is even started.
     var graphWatcher = PackageGraphWatcher(
       packageGraph,
-      logger: _logger,
+      logger: _log.logger,
       watch:
           (node) => PackageNodeWatcher(node, watch: _directoryWatcherFactory),
     );
@@ -319,7 +319,7 @@ class WatchImpl implements BuildState {
             return _readOnceExists(id, watcherEnvironment.reader).then((bytes) {
               if (md5.convert(bytes) != digest) {
                 _terminateCompleter.complete();
-                _logger.severe(
+                _log.severe(
                   'Terminating builds due to package graph update, '
                   'please restart the build.',
                 );
@@ -339,7 +339,7 @@ class WatchImpl implements BuildState {
 
             // Kill future builds if the build.yaml files change.
             _terminateCompleter.complete();
-            _logger.severe(
+            _log.severe(
               'Terminating builds due to ${id.package}:${id.path} update.',
             );
           }
@@ -371,14 +371,14 @@ class WatchImpl implements BuildState {
           await currentBuild;
           await _buildSeries?.beforeExit();
           if (!controller.isClosed) await controller.close();
-          _logger.info('Builds finished. Safe to exit\n');
+          _log.info('Builds finished. Safe to exit\n');
         });
 
     // Schedule the actual first build for the future so we can return the
     // stream synchronously.
     () async {
       await logTimedAsync(
-        _logger,
+        _log.logger,
         'Waiting for all file watchers to be ready',
         () => graphWatcher.ready,
       );
@@ -387,7 +387,7 @@ class WatchImpl implements BuildState {
           await watcherEnvironment.reader.readAsBytes(rootPackageConfigId),
         );
       } else {
-        _logger.warning(
+        _log.warning(
           'Root package config not readable, manual restarts will be needed '
           'after running `pub upgrade`.',
         );

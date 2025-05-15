@@ -84,7 +84,7 @@ class _Loader {
     var cleanBuild = true;
     if (assetGraph != null) {
       cleanBuild = false;
-      updates = await _log.stage(
+      updates = await _log.run(
         BuildStage.checkForUpdates,
         () => _computeUpdates(
           assetGraph!,
@@ -129,7 +129,7 @@ class _Loader {
     if (assetGraph == null) {
       late Set<AssetId> conflictingOutputs;
 
-      await _log.stage(BuildStage.newAssetGraph, () async {
+      await _log.run(BuildStage.newAssetGraph, () async {
         try {
           assetGraph = await AssetGraph.build(
             _buildPhases,
@@ -170,7 +170,7 @@ class _Loader {
         }
       });
 
-      await _log.stage(
+      await _log.run(
         BuildStage.initialBuildCleanup,
         () => _initialBuildCleanup(
           conflictingOutputs,

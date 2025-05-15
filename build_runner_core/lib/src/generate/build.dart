@@ -140,7 +140,6 @@ class Build {
     if (logFine) {
       _log.fine(AssetUpdates.from(updates).render(renderer));
     }
-    var watch = Stopwatch()..start();
     var result = await _safeBuild(updates);
     var optionalOutputTracker = OptionalOutputTracker(
       assetGraph,
@@ -190,41 +189,32 @@ class Build {
       readerWriter,
       buildDirs,
     );
-    if (result.status == BuildStatus.success) {
-      _log.info(
-        'Succeeded after ${humanReadable(watch.elapsed)} with '
-        '${result.outputs.length} outputs\n',
-      );
-    } else {
-      _log.severe('Failed after ${humanReadable(watch.elapsed)}');
-    }
+    _log.buildDone(result.status == BuildStatus.success);
     return result;
   }
 
   Future<void> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
-    await _log.stage(BuildStage.updateAssetGraph, () async {
-      changedInputs.clear();
-      deletedAssets.clear();
-      for (final update in updates.entries) {
-        if (update.value == ChangeType.REMOVE) {
-          deletedAssets.add(update.key);
-        } else {
-          changedInputs.add(update.key);
-          if (update.value == ChangeType.ADD) {
-            newPrimaryInputs.add(update.key);
-          }
+    changedInputs.clear();
+    deletedAssets.clear();
+    for (final update in updates.entries) {
+      if (update.value == ChangeType.REMOVE) {
+        deletedAssets.add(update.key);
+      } else {
+        changedInputs.add(update.key);
+        if (update.value == ChangeType.ADD) {
+          newPrimaryInputs.add(update.key);
         }
       }
-      readerWriter.cache.invalidate(changedInputs);
-      final deleted = await assetGraph.updateAndInvalidate(
-        buildPhases,
-        updates,
-        options.packageGraph.root.name,
-        _delete,
-        readerWriter,
-      );
-      deletedAssets.addAll(deleted);
-    });
+    }
+    readerWriter.cache.invalidate(changedInputs);
+    final deleted = await assetGraph.updateAndInvalidate(
+      buildPhases,
+      updates,
+      options.packageGraph.root.name,
+      _delete,
+      readerWriter,
+    );
+    deletedAssets.addAll(deleted);
   }
 
   /// Runs a build inside a zone with an error handler and stack chain
@@ -233,59 +223,60 @@ class Build {
     final done = Completer<BuildResult>();
     runZonedGuarded(
       () async {
-        if (!assetGraph.cleanBuild) {
-          await _updateAssetGraph(updates);
-        }
+        await _log.run(BuildStage.updateAssetGraph, () async {
+          if (!assetGraph.cleanBuild) {
+            await _updateAssetGraph(updates);
+          }
+        });
 
         // Run a fresh build.
-        var result = await _log.stage(BuildStage.build, _runPhases);
+        var result = await _log.run(BuildStage.build, _runPhases);
 
         // Write out the dependency graph file.
-        await _log.stage(BuildStage.saveGraph, () async {
-            // Combine previous phased asset deps, if any, with the newly loaded
-            // deps. Because of skipped builds, the newly loaded deps might just
-            // say "not generated yet", in which case the old value is retained.
+        await _log.run(BuildStage.saveGraph, () async {
+          // Combine previous phased asset deps, if any, with the newly loaded
+          // deps. Because of skipped builds, the newly loaded deps might just
+          // say "not generated yet", in which case the old value is retained.
           final updatedPhasedAssetDeps =
               assetGraph.previousPhasedAssetDeps == null
                   ? AnalysisDriverModel.sharedInstance.phasedAssetDeps()
-                    : assetGraph.previousPhasedAssetDeps!.update(
-                      AnalysisDriverModel.sharedInstance.phasedAssetDeps(),
-                    );
-            assetGraph.previousPhasedAssetDeps = updatedPhasedAssetDeps;
-            await readerWriter.writeAsBytes(
-              AssetId(options.packageGraph.root.name, assetGraphPath),
-              assetGraph.serialize(),
-            );
-            // Phases options don't change during a build series, so for all
-            // subsequent builds "previous" and current build options digests
-            // match.
-            assetGraph.previousInBuildPhasesOptionsDigests =
-                assetGraph.inBuildPhasesOptionsDigests;
-            assetGraph.previousPostBuildActionsOptionsDigests =
-                assetGraph.postBuildActionsOptionsDigests;
-          },
-        );
+                  : assetGraph.previousPhasedAssetDeps!.update(
+                    AnalysisDriverModel.sharedInstance.phasedAssetDeps(),
+                  );
+          assetGraph.previousPhasedAssetDeps = updatedPhasedAssetDeps;
+          await readerWriter.writeAsBytes(
+            AssetId(options.packageGraph.root.name, assetGraphPath),
+            assetGraph.serialize(),
+          );
+          // Phases options don't change during a build series, so for all
+          // subsequent builds "previous" and current build options digests
+          // match.
+          assetGraph.previousInBuildPhasesOptionsDigests =
+              assetGraph.inBuildPhasesOptionsDigests;
+          assetGraph.previousPostBuildActionsOptionsDigests =
+              assetGraph.postBuildActionsOptionsDigests;
+        });
 
         // Log performance information if requested
-        if (options.logPerformanceDir != null) {
-          assert(result.performance != null);
-          var now = DateTime.now();
-          var logPath = p.join(
-            options.logPerformanceDir!,
-            '${now.year}-${_twoDigits(now.month)}-${_twoDigits(now.day)}'
-            '_${_twoDigits(now.hour)}-${_twoDigits(now.minute)}-'
-            '${_twoDigits(now.second)}',
-          );
-          _log.info('Writing performance log to $logPath');
-          await _log.stage(BuildStage.writePerformance, () {
+        await _log.run(BuildStage.writePerformance, () async {
+          if (options.logPerformanceDir != null) {
+            assert(result.performance != null);
+            var now = DateTime.now();
+            var logPath = p.join(
+              options.logPerformanceDir!,
+              '${now.year}-${_twoDigits(now.month)}-${_twoDigits(now.day)}'
+              '_${_twoDigits(now.hour)}-${_twoDigits(now.minute)}-'
+              '${_twoDigits(now.second)}',
+            );
+            _log.info('Writing performance log to $logPath');
             var performanceLogId = AssetId(
               options.packageGraph.root.name,
               logPath,
             );
             var serialized = jsonEncode(result.performance);
             return readerWriter.writeAsString(performanceLogId, serialized);
-          });
-        }
+          }
+        });
 
         if (!done.isCompleted) done.complete(result);
       },
@@ -305,6 +296,35 @@ class Build {
     return performanceTracker.track(() async {
       final outputs = <AssetId>[];
 
+      final primaryInputsByPhase = <int, List<AssetId>>{};
+      final names = <String>{};
+      final inputLengthByName = <String, int>{};
+      for (
+        var phaseNum = 0;
+        phaseNum < buildPhases.inBuildPhases.length;
+        phaseNum++
+      ) {
+        var phase = buildPhases.inBuildPhases[phaseNum];
+        if (phase.isOptional) continue;
+        final primaryInputs = await _matchingPrimaryInputs(
+          phase.package,
+          phaseNum,
+        );
+        primaryInputsByPhase[phaseNum] = primaryInputs;
+        inputLengthByName[phase.builderLabel] =
+            (inputLengthByName[phase.builderLabel] ?? 0) + primaryInputs.length;
+        names.remove(phase.builderLabel);
+        names.add(phase.builderLabel);
+      }
+
+      if (buildPhases.postBuildPhase.builderActions.isNotEmpty) {
+        names.add('postprocess');
+        inputLengthByName['postprocess'] =
+            buildPhases.postBuildPhase.builderActions.length;
+      }
+
+      _log.declare(names.toList(), inputLengthByName);
+
       // Main build phases.
       for (
         var phaseNum = 0;
@@ -314,20 +334,16 @@ class Build {
         var phase = buildPhases.inBuildPhases[phaseNum];
         if (phase.isOptional) continue;
 
+        final primaryInputs = primaryInputsByPhase[phaseNum]!;
+        if (primaryInputs.isEmpty) continue;
+        _log.start(phase.builderLabel);
+
         outputs.addAll(
           await performanceTracker.trackBuildPhase(phase, () async {
-            final primaryInputs = await _matchingPrimaryInputs(
-              phase.package,
-              phaseNum,
-            );
             final outputs = <AssetId>[];
             for (var i = 0; i != primaryInputs.length; ++i) {
               final primaryInput = primaryInputs[i];
-              _log.buildStep(
-                phase.builderLabel,
-                number: i + 1,
-                of: primaryInputs.length,
-              );
+              _log.progress(phase.builderLabel);
               outputs.addAll(
                 await _buildForPrimaryInput(
                   phaseNumber: phaseNum,
@@ -339,6 +355,8 @@ class Build {
             return outputs;
           }),
         );
+
+        _log.stop(phase.builderLabel);
       }
 
       // Post build phase.
@@ -416,10 +434,14 @@ class Build {
       final phaseNumber = nodeConfiguration.phaseNumber;
       final primaryInput = node.generatedNodeConfiguration!.primaryInput;
       await lazyPhases.putIfAbsent('$phaseNumber|$primaryInput', () async {
-        return _buildForPrimaryInput(
-          primaryInput: primaryInput,
-          phaseNumber: phaseNumber,
-          phase: buildPhases.inBuildPhases[nodeConfiguration.phaseNumber],
+        final phase = buildPhases.inBuildPhases[nodeConfiguration.phaseNumber];
+        return _log.attribute(
+          'lazy ${phase.builderLabel}',
+          () => _buildForPrimaryInput(
+            primaryInput: primaryInput,
+            phaseNumber: phaseNumber,
+            phase: phase,
+          ),
         );
       });
     }
@@ -534,15 +556,14 @@ class Build {
     PostBuildPhase phase,
   ) async {
     var actionNum = 0;
-    var outputLists = await Future.wait(
-      phase.builderActions.map(
-        (action) => _runPostBuildAction(phaseNum, actionNum++, action),
-      ),
-    );
-    return outputLists.fold<List<AssetId>>(
-      <AssetId>[],
-      (combined, next) => combined..addAll(next),
-    );
+    final outputs = <AssetId>[];
+    for (final builderAction in phase.builderActions) {
+      _log.progress('postprocess');
+      outputs.addAll(
+        await _runPostBuildAction(phaseNum, actionNum++, builderAction),
+      );
+    }
+    return outputs;
   }
 
   Future<Iterable<AssetId>> _runPostBuildAction(
@@ -716,180 +737,182 @@ class Build {
     Iterable<AssetId> outputs,
     AssetReader reader,
   ) async {
-    // Update state for primary input if needed.
-    var primaryInputNode = assetGraph.get(primaryInput)!;
-    if (primaryInputNode.type == NodeType.generated) {
-      if (!processedOutputs.contains(primaryInput)) {
-        await _buildOutput(primaryInput);
-        primaryInputNode = assetGraph.get(primaryInput)!;
-      }
-    }
-
-    // If the primary input has been deleted, the build is skipped.
-    if (deletedAssets.contains(primaryInput)) {
-      if (primaryInputNode.type == NodeType.missingSource) {
-        if (logFine) {
-          _log.fine(
-            'Skip ${renderer.build(primaryInput, outputs)} because '
-            '$primaryInput was deleted.',
-          );
+    return await _log.attribute('invalidate', () async {
+      // Update state for primary input if needed.
+      var primaryInputNode = assetGraph.get(primaryInput)!;
+      if (primaryInputNode.type == NodeType.generated) {
+        if (!processedOutputs.contains(primaryInput)) {
+          await _buildOutput(primaryInput);
+          primaryInputNode = assetGraph.get(primaryInput)!;
         }
-        _markOutputsSkipped(outputs);
-        return false;
-      }
-    }
-
-    // Propagate results for generated node inputs.
-    if (primaryInputNode.type == NodeType.generated) {
-      // If the primary input is failed, this build is also failed.
-      if (primaryInputNode.generatedNodeState!.result == false) {
-        if (logFine) {
-          _log.fine(
-            'Skip ${renderer.build(primaryInput, outputs)} because '
-            '$primaryInput is a generated file that failed.',
-          );
-        }
-        await _markOutputsTransitivelyFailed(outputs);
-        return false;
       }
 
-      // If the primary input succeeded but was not output, this build is
-      // skipped.
-      if (!primaryInputNode.wasOutput) {
-        if (logFine) {
-          _log.fine(
-            'Skip ${renderer.build(primaryInput, outputs)} because '
-            '$primaryInput is a generated file that was not output.',
-          );
-        }
-        _markOutputsSkipped(outputs);
-        return false;
-      }
-    }
-
-    if (assetGraph.cleanBuild) {
-      if (logFine) {
-        _log.fine(
-          'Build ${renderer.build(primaryInput, outputs)} because this is a '
-          'clean build.',
-        );
-      }
-      return true;
-    }
-
-    if (assetGraph.previousInBuildPhasesOptionsDigests![phaseNumber] !=
-        assetGraph.inBuildPhasesOptionsDigests[phaseNumber]) {
-      if (logFine) {
-        _log.fine(
-          'Build ${renderer.build(primaryInput, outputs)} because builder '
-          'options changed.',
-        );
-      }
-      return true;
-    }
-
-    if (newPrimaryInputs.contains(primaryInput)) {
-      if (logFine) {
-        _log.fine(
-          'Build ${renderer.build(primaryInput, outputs)} because '
-          '$primaryInput was created.',
-        );
-      }
-      return true;
-    }
-
-    for (var output in outputs) {
-      if (deletedAssets.contains(output)) {
-        if (logFine) {
-          _log.fine(
-            'Build ${renderer.build(primaryInput, outputs)} because '
-            '${renderer.id(output)} was deleted.',
-          );
-        }
-        return true;
-      }
-    }
-
-    // Build results are the same across outputs, so just check the first
-    // output.
-    var firstOutput = assetGraph.get(outputs.first)!;
-    final firstOutputState = firstOutput.generatedNodeState!;
-
-    if (firstOutputState.result == null) {
-      if (logFine) {
-        _log.fine(
-          'Build ${renderer.build(primaryInput, outputs)} because it was '
-          'skipped as optional but is now needed.',
-        );
-      }
-      return true;
-    }
-
-    // Check for changes to any inputs.
-    final inputs = firstOutputState.inputs;
-    for (final input in inputs) {
-      final changed = await _hasInputChanged(
-        phaseNumber: phaseNumber,
-        input: input,
-      );
-
-      if (changed) {
-        if (logFine) {
-          final inputNode = assetGraph.get(input)!;
-          switch (inputNode.type) {
-            case NodeType.generated:
-              _log.fine(
-                'Build ${renderer.build(primaryInput, outputs)} because '
-                '${renderer.id(input)} was built and changed.',
-              );
-
-            case NodeType.glob:
-              _log.fine(
-                'Build ${renderer.build(primaryInput, outputs)} because '
-                '${inputNode.globNodeConfiguration!.glob} matches changed.',
-              );
-
-            case NodeType.source:
-              _log.fine(
-                'Build ${renderer.build(primaryInput, outputs)} because '
-                '${renderer.id(input)} changed.',
-              );
-
-            case NodeType.missingSource:
-              _log.fine(
-                'Build ${renderer.build(primaryInput, outputs)} because '
-                '${renderer.id(input)} was deleted.',
-              );
-
-            default:
-              throw StateError(inputNode.type.toString());
+      // If the primary input has been deleted, the build is skipped.
+      if (deletedAssets.contains(primaryInput)) {
+        if (primaryInputNode.type == NodeType.missingSource) {
+          if (logFine) {
+            _log.fine(
+              'Skip ${renderer.build(primaryInput, outputs)} because '
+              '$primaryInput was deleted.',
+            );
           }
+          _markOutputsSkipped(outputs);
+          return false;
         }
-        return true;
       }
-    }
 
-    for (final graphId in firstOutputState.resolverEntrypoints) {
-      if (await _hasInputGraphChanged(
-        phaseNumber: phaseNumber,
-        entrypointId: graphId,
-      )) {
+      // Propagate results for generated node inputs.
+      if (primaryInputNode.type == NodeType.generated) {
+        // If the primary input is failed, this build is also failed.
+        if (primaryInputNode.generatedNodeState!.result == false) {
+          if (logFine) {
+            _log.fine(
+              'Skip ${renderer.build(primaryInput, outputs)} because '
+              '$primaryInput is a generated file that failed.',
+            );
+          }
+          await _markOutputsTransitivelyFailed(outputs);
+          return false;
+        }
+
+        // If the primary input succeeded but was not output, this build is
+        // skipped.
+        if (!primaryInputNode.wasOutput) {
+          if (logFine) {
+            _log.fine(
+              'Skip ${renderer.build(primaryInput, outputs)} because '
+              '$primaryInput is a generated file that was not output.',
+            );
+          }
+          _markOutputsSkipped(outputs);
+          return false;
+        }
+      }
+
+      if (assetGraph.cleanBuild) {
         if (logFine) {
           _log.fine(
-            'Build ${renderer.build(primaryInput, outputs)} because '
-            'resolved source changed.',
+            'Build ${renderer.build(primaryInput, outputs)} because this is a '
+            'clean build.',
           );
         }
         return true;
       }
-    }
 
-    // No input changes: build is not needed, and outputs state is up to date.
-    for (final output in outputs) {
-      processedOutputs.add(output);
-    }
+      if (assetGraph.previousInBuildPhasesOptionsDigests![phaseNumber] !=
+          assetGraph.inBuildPhasesOptionsDigests[phaseNumber]) {
+        if (logFine) {
+          _log.fine(
+            'Build ${renderer.build(primaryInput, outputs)} because builder '
+            'options changed.',
+          );
+        }
+        return true;
+      }
 
-    return false;
+      if (newPrimaryInputs.contains(primaryInput)) {
+        if (logFine) {
+          _log.fine(
+            'Build ${renderer.build(primaryInput, outputs)} because '
+            '$primaryInput was created.',
+          );
+        }
+        return true;
+      }
+
+      for (var output in outputs) {
+        if (deletedAssets.contains(output)) {
+          if (logFine) {
+            _log.fine(
+              'Build ${renderer.build(primaryInput, outputs)} because '
+              '${renderer.id(output)} was deleted.',
+            );
+          }
+          return true;
+        }
+      }
+
+      // Build results are the same across outputs, so just check the first
+      // output.
+      var firstOutput = assetGraph.get(outputs.first)!;
+      final firstOutputState = firstOutput.generatedNodeState!;
+
+      if (firstOutputState.result == null) {
+        if (logFine) {
+          _log.fine(
+            'Build ${renderer.build(primaryInput, outputs)} because it was '
+            'skipped as optional but is now needed.',
+          );
+        }
+        return true;
+      }
+
+      // Check for changes to any inputs.
+      final inputs = firstOutputState.inputs;
+      for (final input in inputs) {
+        final changed = await _hasInputChanged(
+          phaseNumber: phaseNumber,
+          input: input,
+        );
+
+        if (changed) {
+          if (logFine) {
+            final inputNode = assetGraph.get(input)!;
+            switch (inputNode.type) {
+              case NodeType.generated:
+                _log.fine(
+                  'Build ${renderer.build(primaryInput, outputs)} because '
+                  '${renderer.id(input)} was built and changed.',
+                );
+
+              case NodeType.glob:
+                _log.fine(
+                  'Build ${renderer.build(primaryInput, outputs)} because '
+                  '${inputNode.globNodeConfiguration!.glob} matches changed.',
+                );
+
+              case NodeType.source:
+                _log.fine(
+                  'Build ${renderer.build(primaryInput, outputs)} because '
+                  '${renderer.id(input)} changed.',
+                );
+
+              case NodeType.missingSource:
+                _log.fine(
+                  'Build ${renderer.build(primaryInput, outputs)} because '
+                  '${renderer.id(input)} was deleted.',
+                );
+
+              default:
+                throw StateError(inputNode.type.toString());
+            }
+          }
+          return true;
+        }
+      }
+
+      for (final graphId in firstOutputState.resolverEntrypoints) {
+        if (await _hasInputGraphChanged(
+          phaseNumber: phaseNumber,
+          entrypointId: graphId,
+        )) {
+          if (logFine) {
+            _log.fine(
+              'Build ${renderer.build(primaryInput, outputs)} because '
+              'resolved source changed.',
+            );
+          }
+          return true;
+        }
+      }
+
+      // No input changes: build is not needed, and outputs state is up to date.
+      for (final output in outputs) {
+        processedOutputs.add(output);
+      }
+
+      return false;
+    });
   }
 
   /// Whether any source in the _previous build_ transitive import graph
