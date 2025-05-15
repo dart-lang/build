@@ -28,7 +28,7 @@ final _log = BuildLogger();
 final _lastShortFormatDartVersion = Version(3, 6, 0);
 
 Future<String> generateBuildScript() =>
-    _log.stage(BuildStage.generateBuildScript, _generateBuildScript);
+    _log.run(BuildStage.generateBuildScript, _generateBuildScript);
 
 Future<String> _generateBuildScript() async {
   final info = await findBuildScriptOptions();

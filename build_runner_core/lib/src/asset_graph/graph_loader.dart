@@ -53,7 +53,7 @@ class AssetGraphLoader {
       return null;
     }
 
-    return _log.stage(BuildStage.readAssetGraph, () async {
+    return _log.run(BuildStage.readAssetGraph, () async {
       try {
         return await _load(assetGraphId);
       } on AssetGraphCorruptedException catch (_) {
@@ -117,9 +117,7 @@ class AssetGraphLoader {
       return null;
     }
     if (!isSameSdkVersion(cachedGraph.dartVersion, Platform.version)) {
-      _log.warning(
-        'Throwing away cached asset graph due to Dart SDK update.',
-      );
+      _log.warning('Throwing away cached asset graph due to Dart SDK update.');
       await Future.wait([
         writer.delete(assetGraphId),
         cachedGraph.deleteOutputs(packageGraph, writer),

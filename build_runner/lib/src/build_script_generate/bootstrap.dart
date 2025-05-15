@@ -192,7 +192,7 @@ Future<int> _createKernelIfNeeded(List<String> experiments) async {
 
     var hadOutput = false;
     var hadErrors = false;
-    await _log.stage(BuildStage.precompileBuildScript, () async {
+    await _log.run(BuildStage.precompileBuildScript, () async {
       try {
         final result = await client.compile();
         hadErrors = result.errorCount > 0 || !(await kernelCacheFile.exists());
