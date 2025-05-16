@@ -84,15 +84,13 @@ class _Loader {
     var cleanBuild = true;
     if (assetGraph != null) {
       cleanBuild = false;
-      updates = await _log.run(
-        BuildStage.checkForUpdates,
-        () => _computeUpdates(
-          assetGraph!,
-          assetTracker,
-          inputSources,
-          cacheDirSources,
-          internalSources,
-        ),
+      _log.progress(Progress.checkForUpdates);
+      updates = await _computeUpdates(
+        assetGraph,
+        assetTracker,
+        inputSources,
+        cacheDirSources,
+        internalSources,
       );
       buildScriptUpdates = await BuildScriptUpdates.create(
         _environment.reader,
@@ -103,7 +101,7 @@ class _Loader {
 
       var buildScriptUpdated =
           !_options.skipBuildScriptCheck &&
-          buildScriptUpdates.hasBeenUpdated(updates!.keys.toSet());
+          buildScriptUpdates.hasBeenUpdated(updates.keys.toSet());
       if (buildScriptUpdated) {
         _log.warning('Invalidating asset graph due to build script update!');
 
@@ -129,58 +127,56 @@ class _Loader {
     if (assetGraph == null) {
       late Set<AssetId> conflictingOutputs;
 
-      await _log.run(BuildStage.newAssetGraph, () async {
-        try {
-          assetGraph = await AssetGraph.build(
-            _buildPhases,
-            inputSources,
-            internalSources,
-            _options.packageGraph,
-            _environment.reader,
-          );
-        } on DuplicateAssetNodeException catch (e, st) {
-          _log.severe('Conflicting outputs', e, st);
-          throw const CannotBuildException();
-        }
-        buildScriptUpdates = await BuildScriptUpdates.create(
-          _environment.reader,
+      _log.progress(Progress.newAssetGraph);
+
+      try {
+        assetGraph = await AssetGraph.build(
+          _buildPhases,
+          inputSources,
+          internalSources,
           _options.packageGraph,
-          assetGraph!,
-          disabled: _options.skipBuildScriptCheck,
+          _environment.reader,
         );
+      } on DuplicateAssetNodeException catch (e, st) {
+        _log.severe('Conflicting outputs', e, st);
+        throw const CannotBuildException();
+      }
+      buildScriptUpdates = await BuildScriptUpdates.create(
+        _environment.reader,
+        _options.packageGraph,
+        assetGraph,
+        disabled: _options.skipBuildScriptCheck,
+      );
 
-        conflictingOutputs =
-            assetGraph!.outputs
-                .where((n) => n.package == _options.packageGraph.root.name)
-                .where(inputSources.contains)
-                .toSet();
-        final conflictsInDeps =
-            assetGraph!.outputs
-                .where((n) => n.package != _options.packageGraph.root.name)
-                .where(inputSources.contains)
-                .toSet();
-        if (conflictsInDeps.isNotEmpty) {
-          log.severe(
-            'There are existing files in dependencies which conflict '
-            'with files that a Builder may produce. These must be removed or '
-            'the Builders disabled before a build can continue: '
-            '${conflictsInDeps.map((a) => a.uri).join('\n')}',
-          );
-          throw const CannotBuildException();
-        }
-      });
+      conflictingOutputs =
+          assetGraph.outputs
+              .where((n) => n.package == _options.packageGraph.root.name)
+              .where(inputSources.contains)
+              .toSet();
+      final conflictsInDeps =
+          assetGraph.outputs
+              .where((n) => n.package != _options.packageGraph.root.name)
+              .where(inputSources.contains)
+              .toSet();
+      if (conflictsInDeps.isNotEmpty) {
+        log.severe(
+          'There are existing files in dependencies which conflict '
+          'with files that a Builder may produce. These must be removed or '
+          'the Builders disabled before a build can continue: '
+          '${conflictsInDeps.map((a) => a.uri).join('\n')}',
+        );
+        throw const CannotBuildException();
+      }
 
-      await _log.run(
-        BuildStage.initialBuildCleanup,
-        () => _initialBuildCleanup(
-          conflictingOutputs,
-          _environment.writer.copyWith(generatedAssetHider: assetGraph),
-        ),
+      _log.progress(Progress.initialBuildCleanup);
+      await _initialBuildCleanup(
+        conflictingOutputs,
+        _environment.writer.copyWith(generatedAssetHider: assetGraph),
       );
     }
 
     return BuildDefinition._(
-      assetGraph!,
+      assetGraph,
       buildScriptUpdates,
       cleanBuild,
       updates,

@@ -159,7 +159,7 @@ class InMemoryFilesystemCache implements FilesystemCache {
 
   @override
   void flush() {
-    _log.attribute('write', () {
+    _log.attribute(Attribution.write, () {
       for (final write in _pendingWrites.values) {
         write.writer();
       }

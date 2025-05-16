@@ -3,27 +3,104 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:io';
-import 'dart:math';
 
 import 'package:logging/logging.dart';
+
+import 'console_display.dart';
 
 BuildLogger? _instance;
 
 class BuildLogger {
-  final Map<String, Duration> _durations = {};
-  final Map<String, _BuildStepState> _steps = {};
+  late final ConsoleDisplay _display;
+  final Map<Stage, StageState> _stages = {};
+  final Stopwatch _stopwatch = Stopwatch()..start();
+
+  Duration _attributedDuration = Duration.zero;
+  Stage _stage = Stage.setup;
 
   factory BuildLogger() => _instance ??= BuildLogger._();
 
-  String get loggerState => '333333333333333333\n\n3333';
+  String loggerState() {
+    _display.dispose();
+    return '333333333333333333\n\n3333';
+  }
 
   BuildLogger._() {
+    _display = ConsoleDisplay(render);
     print('''
  --- build_runner
 ''');
-    _steps['setup'] = _BuildStepState('setup', 0, 7);
-    start('setup');
+    _stages[Stage.setup] = StageState();
+  }
+
+  String render() {
+    final buffer = StringBuffer();
+    for (final entry in _stages.entries) {
+      final stage = entry.key;
+      final state = entry.value;
+      /*if (name == 'setup' && step.name != 'setup') break;
+      var displayName =
+          step.name == name
+              ? (extra == null ? step.name : '${step.name} $extra')
+              : step.name;*/
+      var displayName = stage.name;
+      final length = stage.length;
+      final progress = state.progress;
+
+      final time =
+          state.duration.inMilliseconds == 0
+              ? '    '
+              : state.duration.inMilliseconds < 1000
+              ? ('<1s').padLeft(4)
+              : ((state.duration.inMilliseconds / 1000).round().toString() +
+                      's')
+                  .padLeft(4);
+
+      /*final time = (((step.stopwatch.elapsed.inMilliseconds / 100) / 10)
+                  .round()
+                  .toString() +
+              's')
+          .padLeft(4);*/
+
+      /*var ticks = 80 * number ~/ of;
+      ticks = max(0, ticks - displayName.length - 1);
+      var spaces = max(0, 80 - ticks - displayName.length - 1 - time.length);
+      // buffer.writeln('$displayName ${'.' * ticks}${' ' * spaces}$time');*/
+
+      /*var percent =
+          number == 0 ? '    ' : '${100 * number ~/ of}'.padLeft(3) + '%';*/
+
+      var percent =
+          progress == 0 ? '' : '${100 * progress ~/ length}'.padLeft(2, '0');
+      if (percent == '100' || percent == '') {
+        percent = '';
+      } else {
+        percent = ' ' + percent + '%';
+      }
+
+      //displayName = displayName.padLeft(longestNameLength);
+
+      var attrs = '';
+      //if (name == step.name) {
+      final buffer2 = StringBuffer();
+      final entries = state.attributions.entries.toList();
+      entries.sort((a, b) => b.value.compareTo(a.value));
+      for (final entry in entries) {
+        if (entry.value.inMilliseconds < 1000) continue;
+        final time =
+            (entry.value.inMilliseconds / 1000).round().toString() + 's';
+
+        buffer2.write('${entry.key} $time');
+        if (entry != entries.last) buffer2.write(', ');
+      }
+      attrs = ': $buffer2';
+      //buffer.writeln('     │      │ $buffer2'.padRight(80));
+      //}
+
+      buffer.writeln('$time$percent $displayName$attrs'.padRight(80));
+    }
+
+    return buffer.toString();
   }
 
   void oldLoggerState(String state) {
@@ -35,28 +112,6 @@ class BuildLogger {
     Future<T> Function() function,
   ) async {
     return await function();
-  }
-
-  Future<T> run<T>(BuildStage stage, Future<T> Function() function) async {
-    if (stage.type == StageType.setup) {
-      if (stage != BuildStage.generateBuildScript) {
-        previous = 1;
-      }
-    }
-    if (stage.type != StageType.build) {
-      progress(stage.type.name, number: stage.number, extra: stage.name);
-    }
-    if (stage == BuildStage.saveGraph) {
-      start('cleanup');
-    }
-    if (stage == BuildStage.build) {
-      stop('setup');
-    }
-    final result = await function();
-    if (stage.type != StageType.build) {
-      progress(stage.type.name, number: stage.number + 1, extra: stage.name);
-    }
-    return result;
   }
 
   void fine(String message) {
@@ -75,254 +130,154 @@ class BuildLogger {
     print('*** severe $message $e $s');
   }
 
-  var previous = 0;
+  int previous = 0;
 
   void declare(List<String> names, Map<String, int> buildSteps) {
     // print('declare: $names $buildSteps');
     for (final name in names) {
       final length = buildSteps[name]!;
       if (length == 0) continue;
-      _steps[name] = _BuildStepState(name, 0, length);
+      final stage = Stage(name, length);
+      _stages[stage] = StageState();
     }
-    _steps['cleanup'] = _BuildStepState('cleanup', 0, 2);
+    _stages[Stage.cleanup] = StageState();
   }
 
-  void start(String name) {
-    _steps[name]!.start();
-  }
+  void progress(Progress progress) {
+    _stages[_stage]!.duration += _stopwatch.elapsed;
+    _stopwatch.reset();
 
-  void stop(String name) {
-    _steps[name]!.stop();
-  }
-
-  void progress(String name, {int? number, String? extra}) {
-    final buffer = StringBuffer();
-    if (!_steps.containsKey(name)) throw 'missing: $name';
-    if (number != null) {
-      _steps[name]!.number = number;
+    if (progress.number != null) {
+      _stage = _stages.keys.where((s) => s.name == progress.stage).single;
+      _stages[_stage]!.progress = progress.number!;
     } else {
-      _steps[name]!.number++;
+      _stages[_stage]!.progress++;
+      _stage = _stages.keys.where((s) => s.name == progress.stage).single;
     }
-    _steps[name]!.maybeStart();
-
-    final longestNameLength = _steps.keys.fold(
-      0,
-      (longest, name) => max(longest, name.length),
-    );
-
-    for (final step in _steps.values) {
-      if (name == 'setup' && step.name != 'setup') break;
-      var displayName =
-          step.name == name
-              ? (extra == null ? step.name : '${step.name} $extra')
-              : step.name;
-      final number = step.number;
-      final of = step.of;
-
-      final time =
-          step.stopwatch.elapsed.inMilliseconds == 0
-              ? '    '
-              : step.stopwatch.elapsed.inMilliseconds < 1000
-              ? ('<1s').padLeft(4)
-              : ((step.stopwatch.elapsed.inMilliseconds / 1000)
-                          .round()
-                          .toString() +
-                      's')
-                  .padLeft(4);
-
-      /*final time = (((step.stopwatch.elapsed.inMilliseconds / 100) / 10)
-                  .round()
-                  .toString() +
-              's')
-          .padLeft(4);*/
-
-      /*var ticks = 80 * number ~/ of;
-      ticks = max(0, ticks - displayName.length - 1);
-      var spaces = max(0, 80 - ticks - displayName.length - 1 - time.length);
-      // buffer.writeln('$displayName ${'.' * ticks}${' ' * spaces}$time');*/
-
-      /*var percent =
-          number == 0 ? '    ' : '${100 * number ~/ of}'.padLeft(3) + '%';*/
-
-      var percent = number == 0 ? '' : '${100 * number ~/ of}'.padLeft(2, '0');
-      if (percent == '100' || percent == '') {
-        percent = '';
-      } else {
-        percent = ' ' + percent + '%';
-      }
-
-      //displayName = displayName.padLeft(longestNameLength);
-
-      var attrs = '';
-      if (name == step.name) {
-        final buffer2 = StringBuffer();
-        final entries = _durations.entries.toList();
-        entries.sort((a, b) => b.value.compareTo(a.value));
-        for (final entry in entries) {
-          if (entry.value.inMilliseconds < 1000) continue;
-          final time =
-              (entry.value.inMilliseconds / 1000).round().toString() + 's';
-
-          buffer2.write('${entry.key} $time');
-          if (entry != entries.last) buffer2.write(', ');
-        }
-        attrs = ': $buffer2';
-        //buffer.writeln('     │      │ $buffer2'.padRight(80));
-      }
-
-      buffer.writeln('$time$percent $displayName$attrs'.padRight(80));
-    }
-
-    final output = buffer.toString();
-
-    final moveCursor = previous == 0 ? '' : '\x1b[${previous}F';
-    final count = '\n'.allMatches(output).length;
-    previous = count;
-    stdout.write('$moveCursor$output');
   }
 
   void buildDone(bool result) {
-    progress('cleanup', number: 2);
+    progress(Progress.done);
     print('     ${result ? 'SUCCESS' : 'FAILURE'}');
 
-    _steps.clear();
-    _durations.clear();
-    _steps['setup'] = _BuildStepState('setup', 0, 7);
+    _display.dispose();
+    _stages.clear();
+    _stages[Stage.setup] = StageState();
   }
 
-  final Stopwatch stopwatch = Stopwatch()..start();
-  var attributedDuration = Duration.zero;
-
-  Future<T> attribute<T>(String type, FutureOr<T> Function() function) async {
-    final start = stopwatch.elapsed;
-    final startAttributionDuration = attributedDuration;
+  Future<T> attributeAsync<T>(
+    Attribution attribution,
+    Future<T> Function() function,
+  ) async {
+    final start = _stopwatch.elapsed;
+    final startAttributionDuration = _attributedDuration;
+    final stageState = _stages[_stage]!;
     try {
       return await function();
     } finally {
-      final end = stopwatch.elapsed;
+      final end = _stopwatch.elapsed;
       final thisAttributedDuration =
-          end - start - attributedDuration + startAttributionDuration;
-      attributedDuration += thisAttributedDuration;
-      _durations[type] =
-          (_durations[type] ?? Duration.zero) + thisAttributedDuration;
+          end - start - _attributedDuration + startAttributionDuration;
+      _attributedDuration += thisAttributedDuration;
+      stageState.attributions[attribution] =
+          (stageState.attributions[attribution] ?? Duration.zero) +
+          thisAttributedDuration;
     }
   }
 
-  T attributeSync<T>(String type, T Function() function) {
-    final start = stopwatch.elapsed;
-    final startAttributionDuration = attributedDuration;
+  T attribute<T>(Attribution attribution, T Function() function) {
+    final start = _stopwatch.elapsed;
+    final startAttributionDuration = _attributedDuration;
+    final stageState = _stages[_stage]!;
     try {
       return function();
     } finally {
-      final end = stopwatch.elapsed;
+      final end = _stopwatch.elapsed;
       final thisAttributedDuration =
-          end - start - attributedDuration + startAttributionDuration;
-      attributedDuration += thisAttributedDuration;
-      _durations[type] =
-          (_durations[type] ?? Duration.zero) + thisAttributedDuration;
+          end - start - _attributedDuration + startAttributionDuration;
+      _attributedDuration += thisAttributedDuration;
+      stageState.attributions[attribution] =
+          (stageState.attributions[attribution] ?? Duration.zero) +
+          thisAttributedDuration;
     }
   }
 
   Logger get logger => BuildLoggerLogger(this);
 }
 
-enum BuildStage {
-  generateBuildScript(StageType.setup, 0, 7),
-  precompileBuildScript(StageType.setup, 1, 7),
-  readAssetGraph(StageType.setup, 2, 7),
-  checkForUpdates(StageType.setup, 3, 7),
-  newAssetGraph(StageType.setup, 4, 7),
-  initialBuildCleanup(StageType.setup, 5, 7),
-  updateAssetGraph(StageType.setup, 6, 7),
-  build(StageType.build, 0, 1),
-  saveGraph(StageType.cleanup, 0, 2),
-  writePerformance(StageType.cleanup, 1, 2);
+class Stage {
+  static final Stage setup = Stage('setup', 7);
+  static final Stage cleanup = Stage('cleanup', 3);
 
-  final StageType type;
-  final int number;
-  final int of;
+  final String name;
+  final int length;
 
-  const BuildStage(this.type, this.number, this.of);
+  Stage(this.name, this.length);
 }
 
-enum StageType { setup, build, cleanup }
+class Progress {
+  static final Progress generateBuildScript = Progress(
+    'setup',
+    0,
+    'generate build script',
+  );
+  static final Progress compileBuildScript = Progress(
+    'setup',
+    1,
+    'compile build script',
+  );
+  static final Progress readAssetGraph = Progress(
+    'setup',
+    2,
+    'read asset graph',
+  );
+  static final Progress checkForUpdates = Progress(
+    'setup',
+    3,
+    'check for updates',
+  );
+  static final Progress newAssetGraph = Progress(
+    'setup',
+    4,
+    'create asset graph',
+  );
+  static final Progress initialBuildCleanup = Progress(
+    'setup',
+    5,
+    'initial build cleanup',
+  );
+  static final Progress updateAssetGraph = Progress(
+    'setup',
+    6,
+    'update asset graph',
+  );
 
-class _BuildStepState {
-  String name;
-  int number;
-  int of;
-  Stopwatch stopwatch = Stopwatch();
+  static final Progress postbuild = Progress('cleanup', 0, 'postbuild');
+  static final Progress writeAssetGraph = Progress(
+    'cleanup',
+    1,
+    'write asset graph',
+  );
+  static final Progress writePerformance = Progress(
+    'cleanup',
+    2,
+    'write performance log',
+  );
+  static final Progress done = Progress('cleanup', 2, 'done');
 
-  _BuildStepState(this.name, this.number, this.of) {
-    // if (of == 0) throw '0 for $name';
-  }
+  final String stage;
+  final int? number;
+  final String? note;
 
-  void start() {
-    if (stopwatch.isRunning) print('already running? $name');
-    stopwatch.start();
-  }
+  Progress(this.stage, this.number, [this.note]);
 
-  void maybeStart() {
-    stopwatch.start();
-  }
-
-  void stop() {
-    stopwatch.stop();
-  }
+  Progress.build(String builder) : stage = builder, number = null, note = null;
 }
 
-Future<void> main() async {
-  final log = BuildLogger();
-
-  await log.run(
-    BuildStage.generateBuildScript,
-    () => Future<void>.delayed(const Duration(milliseconds: 50)),
-  );
-  await log.run(
-    BuildStage.precompileBuildScript,
-    () => Future<void>.delayed(const Duration(milliseconds: 50)),
-  );
-  await log.run(
-    BuildStage.readAssetGraph,
-    () => Future<void>.delayed(const Duration(milliseconds: 50)),
-  );
-  await log.run(
-    BuildStage.checkForUpdates,
-    () => Future<void>.delayed(const Duration(milliseconds: 50)),
-  );
-  await log.run(
-    BuildStage.newAssetGraph,
-    () => Future<void>.delayed(const Duration(milliseconds: 50)),
-  );
-  await log.run(
-    BuildStage.initialBuildCleanup,
-    () => Future<void>.delayed(const Duration(milliseconds: 50)),
-  );
-  await log.run(
-    BuildStage.updateAssetGraph,
-    () => Future<void>.delayed(const Duration(milliseconds: 50)),
-  );
-
-  log.declare(['foo', 'bar'], {'foo': 100, 'bar': 100});
-
-  for (var i = 1; i != 101; ++i) {
-    log.progress('foo');
-    await Future<void>.delayed(const Duration(milliseconds: 2));
-  }
-  for (var i = 1; i != 101; ++i) {
-    log.progress('bar');
-    await Future<void>.delayed(const Duration(milliseconds: 1));
-  }
-
-  await log.run(
-    BuildStage.saveGraph,
-    () => Future<void>.delayed(const Duration(milliseconds: 50)),
-  );
-
-  await log.run(
-    BuildStage.writePerformance,
-    () => Future<void>.delayed(const Duration(milliseconds: 50)),
-  );
+class StageState {
+  final Map<Attribution, Duration> attributions = {};
+  Duration duration = Duration.zero;
+  int progress = 0;
 }
 
 class BuildLoggerLogger implements Logger {
@@ -417,6 +372,18 @@ class BuildLoggerLogger implements Logger {
   void warning(Object? message, [Object? error, StackTrace? stackTrace]) {
     // TODO: implement warning
   }
+}
+
+extension type Attribution(String name) {
+  static final Attribution analyze = Attribution._('analyze');
+  static final Attribution build = Attribution._('build');
+  static final Attribution check = Attribution._('build');
+  static final Attribution resolve = Attribution._('resolve');
+  static final Attribution read = Attribution._('read');
+  static final Attribution write = Attribution._('write');
+
+  Attribution.optionalBuilder(this.name);
+  Attribution._(this.name);
 }
 
 enum AttributionType { analyzer, resolver, lazy, other }

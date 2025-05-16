@@ -214,7 +214,7 @@ class AnalyzerResolver implements ReleasableResolver {
   @override
   Future<bool> isLibrary(AssetId assetId) async {
     if (assetId.extension != '.dart') return false;
-    return _driverPool.withResource(() {
+    return _driverPool.withResource(() async {
       if (!_driver.isUriOfExistingFile(assetId.uri)) return false;
       var result =
           _driver.currentSession.getFile(
@@ -665,7 +665,9 @@ class AttributingPool {
 
   AttributingPool(this.pool);
 
-  Future<T> withResource<T>(FutureOr<T> Function() function) async {
-    return pool.withResource(() => _log.attribute('analyze', function));
+  Future<T> withResource<T>(Future<T> Function() function) async {
+    return pool.withResource(
+      () => _log.attributeAsync(Attribution.analyze, function),
+    );
   }
 }

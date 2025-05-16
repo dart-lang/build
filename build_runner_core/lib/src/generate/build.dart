@@ -25,7 +25,6 @@ import '../changes/asset_updates.dart';
 import '../environment/build_environment.dart';
 import '../logging/build_for_input_logger.dart';
 import '../logging/build_logger.dart';
-import '../logging/human_readable_duration.dart';
 import '../logging/log_renderer.dart';
 import '../performance_tracking/performance_tracking_resolvers.dart';
 import '../util/build_dirs.dart';
@@ -34,7 +33,6 @@ import 'build_directory.dart';
 import 'build_phases.dart';
 import 'build_result.dart';
 import 'finalized_assets_view.dart';
-import 'heartbeat.dart';
 import 'input_tracker.dart';
 import 'options.dart';
 import 'performance_tracker.dart';
@@ -63,7 +61,6 @@ class Build {
   // Logging.
   final LogRenderer renderer;
   final BuildPerformanceTracker performanceTracker;
-  late final HungActionsHeartbeat hungActionsHeartbeat;
   final bool logFine;
 
   // State.
@@ -223,63 +220,58 @@ class Build {
     final done = Completer<BuildResult>();
     runZonedGuarded(
       () async {
-        await _log.run(BuildStage.updateAssetGraph, () async {
-          if (!assetGraph.cleanBuild) {
-            await _updateAssetGraph(updates);
-          }
-        });
+        _log.progress(Progress.updateAssetGraph);
+        if (!assetGraph.cleanBuild) {
+          await _updateAssetGraph(updates);
+        }
 
         // Run a fresh build.
-        var result = await _log.attribute(
-          'build',
-          () => _log.run(BuildStage.build, _runPhases),
-        );
+        var result = await _log.attributeAsync(Attribution.build, _runPhases);
 
         // Write out the dependency graph file.
-        await _log.run(BuildStage.saveGraph, () async {
-          // Combine previous phased asset deps, if any, with the newly loaded
-          // deps. Because of skipped builds, the newly loaded deps might just
-          // say "not generated yet", in which case the old value is retained.
-          final updatedPhasedAssetDeps =
-              assetGraph.previousPhasedAssetDeps == null
-                  ? AnalysisDriverModel.sharedInstance.phasedAssetDeps()
-                  : assetGraph.previousPhasedAssetDeps!.update(
-                    AnalysisDriverModel.sharedInstance.phasedAssetDeps(),
-                  );
-          assetGraph.previousPhasedAssetDeps = updatedPhasedAssetDeps;
-          await readerWriter.writeAsBytes(
-            AssetId(options.packageGraph.root.name, assetGraphPath),
-            assetGraph.serialize(),
-          );
-          // Phases options don't change during a build series, so for all
-          // subsequent builds "previous" and current build options digests
-          // match.
-          assetGraph.previousInBuildPhasesOptionsDigests =
-              assetGraph.inBuildPhasesOptionsDigests;
-          assetGraph.previousPostBuildActionsOptionsDigests =
-              assetGraph.postBuildActionsOptionsDigests;
-        });
+        _log.progress(Progress.writeAssetGraph);
+
+        // Combine previous phased asset deps, if any, with the newly loaded
+        // deps. Because of skipped builds, the newly loaded deps might just
+        // say "not generated yet", in which case the old value is retained.
+        final updatedPhasedAssetDeps =
+            assetGraph.previousPhasedAssetDeps == null
+                ? AnalysisDriverModel.sharedInstance.phasedAssetDeps()
+                : assetGraph.previousPhasedAssetDeps!.update(
+                  AnalysisDriverModel.sharedInstance.phasedAssetDeps(),
+                );
+        assetGraph.previousPhasedAssetDeps = updatedPhasedAssetDeps;
+        await readerWriter.writeAsBytes(
+          AssetId(options.packageGraph.root.name, assetGraphPath),
+          assetGraph.serialize(),
+        );
+        // Phases options don't change during a build series, so for all
+        // subsequent builds "previous" and current build options digests
+        // match.
+        assetGraph.previousInBuildPhasesOptionsDigests =
+            assetGraph.inBuildPhasesOptionsDigests;
+        assetGraph.previousPostBuildActionsOptionsDigests =
+            assetGraph.postBuildActionsOptionsDigests;
 
         // Log performance information if requested
-        await _log.run(BuildStage.writePerformance, () async {
-          if (options.logPerformanceDir != null) {
-            assert(result.performance != null);
-            var now = DateTime.now();
-            var logPath = p.join(
-              options.logPerformanceDir!,
-              '${now.year}-${_twoDigits(now.month)}-${_twoDigits(now.day)}'
-              '_${_twoDigits(now.hour)}-${_twoDigits(now.minute)}-'
-              '${_twoDigits(now.second)}',
-            );
-            _log.info('Writing performance log to $logPath');
-            var performanceLogId = AssetId(
-              options.packageGraph.root.name,
-              logPath,
-            );
-            var serialized = jsonEncode(result.performance);
-            return readerWriter.writeAsString(performanceLogId, serialized);
-          }
-        });
+        _log.progress(Progress.writePerformance);
+        if (options.logPerformanceDir != null) {
+          assert(result.performance != null);
+          var now = DateTime.now();
+          var logPath = p.join(
+            options.logPerformanceDir!,
+            '${now.year}-${_twoDigits(now.month)}-${_twoDigits(now.day)}'
+            '_${_twoDigits(now.hour)}-${_twoDigits(now.minute)}-'
+            '${_twoDigits(now.second)}',
+          );
+          _log.info('Writing performance log to $logPath');
+          var performanceLogId = AssetId(
+            options.packageGraph.root.name,
+            logPath,
+          );
+          var serialized = jsonEncode(result.performance);
+          return readerWriter.writeAsString(performanceLogId, serialized);
+        }
 
         if (!done.isCompleted) done.complete(result);
       },
@@ -339,14 +331,13 @@ class Build {
 
         final primaryInputs = primaryInputsByPhase[phaseNum]!;
         if (primaryInputs.isEmpty) continue;
-        _log.start(phase.builderLabel);
 
         outputs.addAll(
           await performanceTracker.trackBuildPhase(phase, () async {
             final outputs = <AssetId>[];
             for (var i = 0; i != primaryInputs.length; ++i) {
               final primaryInput = primaryInputs[i];
-              _log.progress(phase.builderLabel);
+              _log.progress(Progress.build(phase.builderLabel));
               outputs.addAll(
                 await _buildForPrimaryInput(
                   phaseNumber: phaseNum,
@@ -358,8 +349,6 @@ class Build {
             return outputs;
           }),
         );
-
-        _log.stop(phase.builderLabel);
       }
 
       // Post build phase.
@@ -438,8 +427,8 @@ class Build {
       final primaryInput = node.generatedNodeConfiguration!.primaryInput;
       await lazyPhases.putIfAbsent('$phaseNumber|$primaryInput', () async {
         final phase = buildPhases.inBuildPhases[nodeConfiguration.phaseNumber];
-        return _log.attribute(
-          'lazy ${phase.builderLabel}',
+        return _log.attributeAsync(
+          Attribution.optionalBuilder(phase.builderLabel),
           () => _buildForPrimaryInput(
             primaryInput: primaryInput,
             phaseNumber: phaseNumber,
@@ -561,7 +550,7 @@ class Build {
     var actionNum = 0;
     final outputs = <AssetId>[];
     for (final builderAction in phase.builderActions) {
-      _log.progress('postprocess');
+      _log.progress(Progress.postbuild);
       outputs.addAll(
         await _runPostBuildAction(phaseNum, actionNum++, builderAction),
       );
@@ -740,7 +729,7 @@ class Build {
     Iterable<AssetId> outputs,
     AssetReader reader,
   ) async {
-    return await _log.attribute('check', () async {
+    return await _log.attributeAsync(Attribution.check, () async {
       // Update state for primary input if needed.
       var primaryInputNode = assetGraph.get(primaryInput)!;
       if (primaryInputNode.type == NodeType.generated) {

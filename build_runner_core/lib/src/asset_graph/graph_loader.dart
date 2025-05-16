@@ -47,26 +47,25 @@ class AssetGraphLoader {
   ///  - if running from a snapshot, throws `BuildScriptChangedException`,
   ///    otherwise returns `null`
   Future<AssetGraph?> load() async {
+    _log.progress(Progress.readAssetGraph);
     final assetGraphId = AssetId(packageGraph.root.name, assetGraphPath);
     if (!await reader.canRead(assetGraphId)) {
       return null;
     }
 
-    return _log.run(BuildStage.readAssetGraph, () async {
-      try {
-        return await _load(assetGraphId);
-      } on AssetGraphCorruptedException catch (_) {
-        // Start fresh if the cached asset_graph cannot be deserialized
-        _log.warning(
-          'Throwing away cached asset graph due to '
-          'version mismatch or corrupted asset graph.',
-        );
-        await Future.wait([
-          writer.deleteDirectory(_generatedOutputDirectoryId),
-        ]);
-        return null;
-      }
-    });
+    try {
+      return await _load(assetGraphId);
+    } on AssetGraphCorruptedException catch (_) {
+      // Start fresh if the cached asset_graph cannot be deserialized
+      _log.warning(
+        'Throwing away cached asset graph due to '
+        'version mismatch or corrupted asset graph.',
+      );
+      await Future.wait([
+        writer.deleteDirectory(_generatedOutputDirectoryId),
+      ]);
+      return null;
+    }
   }
 
   Future<AssetGraph?> _load(AssetId assetGraphId) async {

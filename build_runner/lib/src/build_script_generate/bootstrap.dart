@@ -102,7 +102,7 @@ Future<int> _generateAndRun(
     try {
       await Isolate.spawnUri(
         Uri.file(p.absolute(scriptKernelLocation)),
-        [args.first, '--passed-state', _log.loggerState, ...args.skip(1)],
+        [args.first, '--passed-state', _log.loggerState(), ...args.skip(1)],
         messagePort.sendPort,
         errorsAreFatal: true,
         onExit: exitPort.sendPort,
@@ -192,27 +192,26 @@ Future<int> _createKernelIfNeeded(List<String> experiments) async {
 
     var hadOutput = false;
     var hadErrors = false;
-    await _log.run(BuildStage.precompileBuildScript, () async {
-      try {
-        final result = await client.compile();
-        hadErrors = result.errorCount > 0 || !(await kernelCacheFile.exists());
+    _log.progress(Progress.compileBuildScript);
+    try {
+      final result = await client.compile();
+      hadErrors = result.errorCount > 0 || !(await kernelCacheFile.exists());
 
-        // Note: We're logging all output with a single log call to keep
-        // annotated source spans intact.
-        final logOutput = result.compilerOutputLines.join('\n');
-        if (logOutput.isNotEmpty) {
-          hadOutput = true;
-          if (hadErrors) {
-            // Always show compiler output if there were errors
-            _log.warning(logOutput);
-          } else {
-            _log.fine(logOutput);
-          }
+      // Note: We're logging all output with a single log call to keep
+      // annotated source spans intact.
+      final logOutput = result.compilerOutputLines.join('\n');
+      if (logOutput.isNotEmpty) {
+        hadOutput = true;
+        if (hadErrors) {
+          // Always show compiler output if there were errors
+          _log.warning(logOutput);
+        } else {
+          _log.fine(logOutput);
         }
-      } finally {
-        client.kill();
       }
-    });
+    } finally {
+      client.kill();
+    }
 
     // For some compilation errors, the frontend inserts an "invalid
     // expression" which throws at runtime. When running those kernel files

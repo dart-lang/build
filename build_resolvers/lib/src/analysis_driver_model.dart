@@ -115,7 +115,7 @@ class AnalysisDriverModel {
     withDriverResource, {
     required bool transitive,
   }) async {
-    await _log.attribute('resolve', () async {
+    await _log.attributeAsync(Attribution.resolve, () async {
       Iterable<AssetId> idsToSyncOntoFilesystem;
 
       // If requested, find transitive imports.
@@ -172,7 +172,10 @@ class AnalysisDriverModel {
           driver.changeFile(path);
         }
         filesystem.clearChangedPaths();
-        await _log.attribute('analyze', driver.applyPendingFileChanges);
+        await _log.attributeAsync(
+          Attribution.analyze,
+          driver.applyPendingFileChanges,
+        );
       });
     });
   }

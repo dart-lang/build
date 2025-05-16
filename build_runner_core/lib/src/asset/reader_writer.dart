@@ -87,8 +87,8 @@ class ReaderWriter extends AssetReader
   @override
   Future<bool> canRead(AssetId id) {
     return Future.value(
-      _log.attributeSync(
-        'read',
+      _log.attribute(
+        Attribution.read,
         () => cache.exists(
           id,
           ifAbsent: () {
@@ -103,8 +103,8 @@ class ReaderWriter extends AssetReader
   @override
   Future<List<int>> readAsBytes(AssetId id) {
     return Future.value(
-      _log.attributeSync(
-        'read',
+      _log.attribute(
+        Attribution.read,
         () => cache.readAsBytes(
           id,
           ifAbsent: () {
@@ -122,8 +122,8 @@ class ReaderWriter extends AssetReader
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
     return Future.value(
-      _log.attributeSync(
-        'read',
+      _log.attribute(
+        Attribution.read,
         () => cache.readAsString(
           id,
           encoding: encoding,
@@ -147,7 +147,7 @@ class ReaderWriter extends AssetReader
 
   @override
   Future<void> writeAsBytes(AssetId id, List<int> bytes) {
-    _log.attributeSync('write', () {
+    _log.attribute(Attribution.write, () {
       final path = _pathFor(id);
       cache.writeAsBytes(
         id,
@@ -166,7 +166,7 @@ class ReaderWriter extends AssetReader
     String contents, {
     Encoding encoding = utf8,
   }) {
-    _log.attributeSync('write', () {
+    _log.attribute(Attribution.write, () {
       final path = _pathFor(id);
       cache.writeAsString(
         id,
@@ -181,7 +181,7 @@ class ReaderWriter extends AssetReader
 
   @override
   Future<void> delete(AssetId id) {
-    _log.attributeSync('write', () {
+    _log.attribute(Attribution.write, () {
       onDelete?.call(id);
       final path = _pathFor(id);
       // Hidden generated files are moved by `assetPathProvider` under the root
@@ -209,7 +209,7 @@ class ReaderWriter extends AssetReader
 
   @override
   Future<void> deleteDirectory(AssetId id) {
-    _log.attributeSync('write', () {
+    _log.attribute(Attribution.write, () {
       final path = _pathFor(id);
       filesystem.deleteDirectorySync(path);
     });
