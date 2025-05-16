@@ -303,6 +303,7 @@ class Build {
           phase.package,
           phaseNum,
         );
+        primaryInputs.sort();
         primaryInputsByPhase[phaseNum] = primaryInputs;
         inputLengthByName[phase.builderLabel] =
             (inputLengthByName[phase.builderLabel] ?? 0) + primaryInputs.length;
