@@ -16,12 +16,18 @@ class BuildLogger {
 
   factory BuildLogger() => _instance ??= BuildLogger._();
 
+  String get loggerState => '333333333333333333\n\n3333';
+
   BuildLogger._() {
     print('''
  --- build_runner
 ''');
     _steps['setup'] = _BuildStepState('setup', 0, 7);
     start('setup');
+  }
+
+  void oldLoggerState(String state) {
+    print(state);
   }
 
   Future<T> runAsyncWithLogger<T>(
