@@ -31,9 +31,9 @@ const releaseOption = 'release';
 const trackPerformanceOption = 'track-performance';
 const skipBuildScriptCheckOption = 'skip-build-script-check';
 const symlinkOption = 'symlink';
-const useExperimentalResolverOption = 'use-experimental-resolver';
 const usePollingWatcherOption = 'use-polling-watcher';
 const verboseOption = 'verbose';
+const passedState = 'passed-state';
 
 enum BuildUpdatesOption { none, liveReload }
 

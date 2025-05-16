@@ -131,7 +131,13 @@ abstract class BuildRunnerCommand extends Command<int> {
         enableExperimentOption,
         help: 'A list of dart language experiments to enable.',
       )
-      ..addFlag(useExperimentalResolverOption, hide: true);
+      ..addOption(
+        passedState,
+        hide: true,
+        help:
+            'Internal: pass state from build_runner to the generated '
+            'build script.',
+      );
   }
 
   /// Must be called inside [run] so that [argResults] is non-null.
@@ -139,6 +145,12 @@ abstract class BuildRunnerCommand extends Command<int> {
   /// You may override this to return more specific options if desired, but they
   /// must extend [SharedOptions].
   SharedOptions readOptions() {
+    final state = argResults![passedState] as String?;
+
+    if (state != null) {
+      BuildLogger().oldLoggerState(state);
+    }
+
     return SharedOptions.fromParsedArgs(
       argResults!,
       argResults!.rest,
