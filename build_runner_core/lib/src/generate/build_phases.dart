@@ -8,8 +8,8 @@ import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
-import 'package:logging/logging.dart';
 
+import '../logging/build_logger.dart';
 import 'exceptions.dart';
 import 'phase.dart';
 
@@ -92,7 +92,7 @@ class BuildPhases {
   /// [CannotBuildException].
   ///
   ///  [PostBuildPhase]s are always hidden, so they are always valid.
-  void checkOutputLocations(String root, Logger logger) {
+  void checkOutputLocations(String root, BuildLogger logger) {
     for (final action in inBuildPhases) {
       if (action.hideOutput) continue;
       if (action.package == root) continue;

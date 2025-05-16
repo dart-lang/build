@@ -21,6 +21,7 @@ export 'src/generate/options.dart'
     show BuildFilter, BuildOptions, LogSubscription;
 export 'src/generate/performance_tracker.dart'
     show BuildPerformance, BuildPhasePerformance, BuilderActionPerformance;
+export 'src/logging/build_logger.dart';
 export 'src/logging/human_readable_duration.dart';
 export 'src/logging/logging.dart';
 export 'src/package_graph/apply_builders.dart'

@@ -10,7 +10,6 @@ import 'package:build_runner_core/build_runner_core.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
 import 'package:graphs/graphs.dart';
-import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 
@@ -24,12 +23,12 @@ const scriptKernelCachedLocation =
     '$scriptKernelLocation$scriptKernelCachedSuffix';
 const scriptKernelCachedSuffix = '.cached';
 
-final _log = Logger('Entrypoint');
+final _log = BuildLogger();
 
 final _lastShortFormatDartVersion = Version(3, 6, 0);
 
 Future<String> generateBuildScript() =>
-    logTimedAsync(_log, 'Generating build script', _generateBuildScript);
+    _log.run(BuildStage.generateBuildScript, _generateBuildScript);
 
 Future<String> _generateBuildScript() async {
   final info = await findBuildScriptOptions();
@@ -59,6 +58,7 @@ Future<String> _generateBuildScript() async {
       '''
 // @dart=${_lastShortFormatDartVersion.major}.${_lastShortFormatDartVersion.minor}
 // ignore_for_file: directives_ordering
+// build_runner 2.4.16
 ${library.accept(emitter)}
 ''',
     );
