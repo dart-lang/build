@@ -93,7 +93,7 @@ class BuildLogger {
         buffer2.write('${entry.key} $time');
         if (entry != entries.last) buffer2.write(', ');
       }
-      attrs = ': $buffer2';
+      attrs = buffer2.isEmpty ? '' : ': $buffer2';
       //buffer.writeln('     │      │ $buffer2'.padRight(80));
       //}
 
@@ -147,13 +147,19 @@ class BuildLogger {
     _stages[_stage]!.duration += _stopwatch.elapsed;
     _stopwatch.reset();
 
+    final oldStage = _stage;
     if (progress.number != null) {
       _stage = _stages.keys.where((s) => s.name == progress.stage).single;
+      if (_stage != oldStage) {
+        _stages[oldStage]!.progress = oldStage.length;
+      }
       _stages[_stage]!.progress = progress.number!;
     } else {
       _stages[_stage]!.progress++;
       _stage = _stages.keys.where((s) => s.name == progress.stage).single;
     }
+
+    if (_stage != oldStage) _display.display();
   }
 
   void buildDone(bool result) {

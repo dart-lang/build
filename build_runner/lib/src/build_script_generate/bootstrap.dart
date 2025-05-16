@@ -68,6 +68,7 @@ Future<int> _generateAndRun(
     messagePort?.close();
     await errorListener?.cancel();
 
+    var buildScriptChanged = false;
     try {
       var buildScript = File(scriptLocation);
       var oldContents = '';
@@ -80,12 +81,16 @@ Future<int> _generateAndRun(
         buildScript
           ..createSync(recursive: true)
           ..writeAsStringSync(newContents);
+        buildScriptChanged = true;
       }
     } on CannotBuildException {
       return ExitCode.config.code;
     }
 
-    scriptExitCode = await _createKernelIfNeeded(experiments);
+    scriptExitCode = await _createKernelIfNeeded(
+      experiments,
+      force: buildScriptChanged,
+    );
     if (scriptExitCode != 0) return scriptExitCode!;
 
     exitPort = ReceivePort();
@@ -159,10 +164,19 @@ Future<int> _generateAndRun(
 ///
 /// Returns zero for success or a number for failure which should be set to the
 /// exit code.
-Future<int> _createKernelIfNeeded(List<String> experiments) async {
+Future<int> _createKernelIfNeeded(
+  List<String> experiments, {
+  bool force = false,
+}) async {
   var assetGraphFile = File(assetGraphPathFor(scriptKernelLocation));
   var kernelFile = File(scriptKernelLocation);
   var kernelCacheFile = File(scriptKernelCachedLocation);
+
+  if (force) {
+    if (await kernelFile.exists()) {
+      await kernelFile.delete();
+    }
+  }
 
   if (await kernelFile.exists()) {
     // If we failed to serialize an asset graph for the snapshot, then we don't

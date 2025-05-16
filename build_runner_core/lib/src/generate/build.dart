@@ -312,12 +312,6 @@ class Build {
         names.add(phase.builderLabel);
       }
 
-      if (buildPhases.postBuildPhase.builderActions.isNotEmpty) {
-        names.add('postprocess');
-        inputLengthByName['postprocess'] =
-            buildPhases.postBuildPhase.builderActions.length;
-      }
-
       _log.declare(names.toList(), inputLengthByName);
 
       // Main build phases.
@@ -352,6 +346,7 @@ class Build {
       }
 
       // Post build phase.
+      _log.progress(Progress.postbuild);
       if (buildPhases.postBuildPhase.builderActions.isNotEmpty) {
         outputs.addAll(
           await performanceTracker.trackBuildPhase(
