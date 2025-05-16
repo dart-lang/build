@@ -14,8 +14,11 @@ import 'package:watcher/watcher.dart';
 
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
+import '../logging/build_logger.dart';
 import '../package_graph/target_graph.dart';
 import '../util/constants.dart';
+
+final _log = BuildLogger();
 
 /// Finds build assets and computes changes to build assets.
 class AssetTracker {
@@ -47,7 +50,10 @@ class AssetTracker {
     final targets = Stream<TargetNode>.fromIterable(
       _targetGraph.allModules.values,
     );
-    return targets.asyncExpand(_listAssetIds).toSet();
+    return _log.attribute(
+      Attribution.read,
+      () => targets.asyncExpand(_listAssetIds).toSet(),
+    );
   }
 
   /// Returns all the internal sources, such as those under [entryPointDir].
