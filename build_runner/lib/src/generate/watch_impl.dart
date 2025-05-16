@@ -297,7 +297,7 @@ class WatchImpl implements BuildState {
     // Start watching files immediately, before the first build is even started.
     var graphWatcher = PackageGraphWatcher(
       packageGraph,
-      logger: _log.logger,
+      logger: _log.loggerForSetup(),
       watch:
           (node) => PackageNodeWatcher(node, watch: _directoryWatcherFactory),
     );
@@ -378,7 +378,7 @@ class WatchImpl implements BuildState {
     // stream synchronously.
     () async {
       await logTimedAsync(
-        _log.logger,
+        _log.loggerForSetup(),
         'Waiting for all file watchers to be ready',
         () => graphWatcher.ready,
       );

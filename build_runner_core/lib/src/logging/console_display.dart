@@ -2,23 +2,30 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:async';
 import 'dart:io';
 
 class ConsoleDisplay {
   final String Function() render;
-  late final Timer timer;
+  late Stopwatch stopwatch = Stopwatch()..start();
 
-  var displayedLines = 0;
+  int displayedLines = 0;
+  bool closed = false;
 
-  ConsoleDisplay(this.render) {
-    display();
-    timer = Timer.periodic(const Duration(milliseconds: 100), (_) {
+  ConsoleDisplay(this.render);
+
+  void close() {
+    closed = true;
+  }
+
+  void maybeDisplay() {
+    if (stopwatch.elapsedMilliseconds > 100) {
       display();
-    });
+    }
   }
 
   void display() {
+    if (closed) return;
+    stopwatch.reset();
     final output = render();
 
     final moveCursor = displayedLines == 0 ? '' : '\x1b[${displayedLines}F';
@@ -27,8 +34,7 @@ class ConsoleDisplay {
     stdout.write('$moveCursor$output');
   }
 
-  void dispose() {
+  void finish() {
     displayedLines = 0;
-    timer.cancel();
   }
 }

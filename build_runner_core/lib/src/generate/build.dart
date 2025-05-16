@@ -12,7 +12,6 @@ import 'package:build/src/internal.dart';
 import 'package:build_resolvers/src/internal.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
-import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
@@ -23,7 +22,6 @@ import '../asset_graph/optional_output_tracker.dart';
 import '../asset_graph/post_process_build_step_id.dart';
 import '../changes/asset_updates.dart';
 import '../environment/build_environment.dart';
-import '../logging/build_for_input_logger.dart';
 import '../logging/build_logger.dart';
 import '../logging/log_renderer.dart';
 import '../performance_tracking/performance_tracking_resolvers.dart';
@@ -488,19 +486,13 @@ class Build {
       // Clear input tracking accumulated during `_buildShouldRun`.
       readerWriter.inputTracker.clear();
 
-      final actionDescription = _actionLoggerName(
-        phase,
-        primaryInput,
-        options.packageGraph.root.name,
-      );
-      final logger = BuildForInputLogger(Logger(actionDescription));
-
       final unusedAssets = <AssetId>{};
       void reportUnusedAssetsForInput(AssetId input, Iterable<AssetId> assets) {
         options.reportUnusedAssetsForInput?.call(input, assets);
         unusedAssets.addAll(assets);
       }
 
+      final logger = _log.loggerForStep(phase.builderLabel, primaryInput);
       await tracker.trackStage(
         'Build',
         () => runBuilder(
@@ -528,8 +520,7 @@ class Build {
           builderOutputs,
           readerWriter,
           readerWriter.inputTracker,
-          actionDescription,
-          logger.errorsSeen,
+          logger.errors,
           unusedAssets: unusedAssets,
         ),
       );
@@ -621,9 +612,7 @@ class Build {
       nodeBuilder.deletedBy.remove(postProcessBuildStepId);
     });
 
-    var actionDescription = '$builder on $input';
-    var logger = BuildForInputLogger(Logger(actionDescription));
-
+    final logger = _log.loggerForStep(builder.toString(), input);
     final outputs = <AssetId>{};
     await runPostProcessBuilder(
       builder,
@@ -680,8 +669,7 @@ class Build {
       assetsWritten,
       readerWriter,
       readerWriter.inputTracker,
-      actionDescription,
-      logger.errorsSeen,
+      logger.errors,
     );
 
     return assetsWritten;
@@ -1170,7 +1158,6 @@ class Build {
     Iterable<AssetId> outputs,
     SingleStepReaderWriter readerWriter,
     InputTracker inputTracker,
-    String actionDescription,
     Iterable<String> errors, {
     Set<AssetId>? unusedAssets,
   }) async {
@@ -1217,25 +1204,6 @@ class Build {
   }
 
   Future _delete(AssetId id) => deleteWriter.delete(id);
-}
-
-String _actionLoggerName(
-  InBuildPhase phase,
-  AssetId primaryInput,
-  String rootPackageName,
-) {
-  var asset =
-      primaryInput.package == rootPackageName
-          ? primaryInput.path
-          : primaryInput.uri.toString();
-
-  // In the rare case that the assets ends with a dot, remove it to ensure that
-  // the logger name is valid.
-  while (asset.endsWith('.')) {
-    asset = asset.substring(0, asset.length - 1);
-  }
-
-  return '${phase.builderLabel} on $asset';
 }
 
 String _twoDigits(int n) => '$n'.padLeft(2, '0');

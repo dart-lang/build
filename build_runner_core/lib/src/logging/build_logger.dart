@@ -3,10 +3,13 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:io';
 
+import 'package:build/build.dart' show AssetId;
 import 'package:logging/logging.dart';
 
 import 'console_display.dart';
+import 'failure_reporter.dart';
 
 BuildLogger? _instance;
 
@@ -15,26 +18,45 @@ class BuildLogger {
   final Map<Stage, StageState> _stages = {};
   final Stopwatch _stopwatch = Stopwatch()..start();
 
+  var loaded = '';
+
   Duration _attributedDuration = Duration.zero;
   Stage _stage = Stage.setup;
+
+  var again = false;
 
   factory BuildLogger() => _instance ??= BuildLogger._();
 
   String loggerState() {
-    _display.dispose();
-    return '333333333333333333\n\n3333';
+    _display.close();
+    var lines = _display.displayedLines;
+    if (again) lines += 2;
+    again = true;
+    return '$lines,${_stages[Stage.setup]!.duration.inMilliseconds}';
+  }
+
+  void oldLoggerState(String state) {
+    loaded = state;
+    try {
+      final items = state.split(',');
+      _display.displayedLines = int.parse(items[0]);
+      _stages[Stage.setup]!.duration = Duration(
+        milliseconds: int.parse(items[1]),
+      );
+    } catch (_) {}
+    //
   }
 
   BuildLogger._() {
     _display = ConsoleDisplay(render);
-    print('''
- --- build_runner
-''');
     _stages[Stage.setup] = StageState();
   }
 
   String render() {
-    final buffer = StringBuffer();
+    final buffer = StringBuffer(
+      // TODO: add rerun type
+      ' --- build_runner'.padRight(80) + '\n',
+    );
     for (final entry in _stages.entries) {
       final stage = entry.key;
       final state = entry.value;
@@ -75,7 +97,7 @@ class BuildLogger {
       if (percent == '100' || percent == '') {
         percent = '';
       } else {
-        percent = ' ' + percent + '%';
+        percent = ', ' + percent + '%';
       }
 
       //displayName = displayName.padLeft(longestNameLength);
@@ -87,24 +109,20 @@ class BuildLogger {
       entries.sort((a, b) => b.value.compareTo(a.value));
       for (final entry in entries) {
         if (entry.value.inMilliseconds < 1000) continue;
+        buffer2.write(', ');
         final time =
             (entry.value.inMilliseconds / 1000).round().toString() + 's';
 
         buffer2.write('${entry.key} $time');
-        if (entry != entries.last) buffer2.write(', ');
       }
-      attrs = buffer2.isEmpty ? '' : ': $buffer2';
+      attrs = buffer2.toString();
       //buffer.writeln('     │      │ $buffer2'.padRight(80));
       //}
 
-      buffer.writeln('$time$percent $displayName$attrs'.padRight(80));
+      buffer.writeln('$time $displayName$percent$attrs'.padRight(80));
     }
 
     return buffer.toString();
-  }
-
-  void oldLoggerState(String state) {
-    print(state);
   }
 
   Future<T> runAsyncWithLogger<T>(
@@ -159,14 +177,18 @@ class BuildLogger {
       _stage = _stages.keys.where((s) => s.name == progress.stage).single;
     }
 
-    if (_stage != oldStage) _display.display();
+    if (_stage != oldStage) {
+      _display.display();
+    } else {
+      _display.maybeDisplay();
+    }
   }
 
   void buildDone(bool result) {
     progress(Progress.done);
     print('     ${result ? 'SUCCESS' : 'FAILURE'}');
 
-    _display.dispose();
+    _display.finish();
     _stages.clear();
     _stages[Stage.setup] = StageState();
   }
@@ -208,7 +230,10 @@ class BuildLogger {
     }
   }
 
-  Logger get logger => BuildLoggerLogger(this);
+  BuildStepLogger loggerForSetup() => BuildStepLogger(this);
+
+  BuildStepLogger loggerForStep(String stage, AssetId input) =>
+      BuildStepLogger(this);
 }
 
 class Stage {
@@ -269,7 +294,7 @@ class Progress {
     2,
     'write performance log',
   );
-  static final Progress done = Progress('cleanup', 2, 'done');
+  static final Progress done = Progress('cleanup', 3, 'done');
 
   final String stage;
   final int? number;
@@ -284,15 +309,17 @@ class StageState {
   final Map<Attribution, Duration> attributions = {};
   Duration duration = Duration.zero;
   int progress = 0;
+
+  final List<String> warnings = [];
 }
 
-class BuildLoggerLogger implements Logger {
+class BuildStepLogger implements Logger {
   final BuildLogger buildLogger;
 
-  BuildLoggerLogger(this.buildLogger);
+  BuildStepLogger(this.buildLogger);
 
   @override
-  Level get level => Level.ALL;
+  Level get level => Level.INFO;
   @override
   set level(Level? value) {}
 
@@ -303,33 +330,8 @@ class BuildLoggerLogger implements Logger {
   void clearListeners() {}
 
   @override
-  void config(Object? message, [Object? error, StackTrace? stackTrace]) {
-    // TODO: implement config
-  }
-
-  @override
-  void fine(Object? message, [Object? error, StackTrace? stackTrace]) {
-    // TODO: implement fine
-  }
-
-  @override
-  void finer(Object? message, [Object? error, StackTrace? stackTrace]) {
-    // TODO: implement finer
-  }
-
-  @override
-  void finest(Object? message, [Object? error, StackTrace? stackTrace]) {
-    // TODO: implement finest
-  }
-
-  @override
   // TODO: implement fullName
   String get fullName => throw UnimplementedError();
-
-  @override
-  void info(Object? message, [Object? error, StackTrace? stackTrace]) {
-    // TODO: implement info
-  }
 
   @override
   bool isLoggable(Level value) {
@@ -345,7 +347,10 @@ class BuildLoggerLogger implements Logger {
     StackTrace? stackTrace,
     Zone? zone,
   ]) {
-    // TODO: implement log
+    if (logLevel < Level.INFO) return;
+    stdout.write(
+      '\n\n\n\n\n\n$logLevel $message $error $stackTrace\n\n\n\n\n\n',
+    );
   }
 
   @override
@@ -365,18 +370,39 @@ class BuildLoggerLogger implements Logger {
   Logger? get parent => throw UnimplementedError();
 
   @override
-  void severe(Object? message, [Object? error, StackTrace? stackTrace]) {
-    // TODO: implement severe
-  }
+  void finest(Object? message, [Object? error, StackTrace? stackTrace]) =>
+      log(Level.FINEST, message, error, stackTrace);
 
   @override
-  void shout(Object? message, [Object? error, StackTrace? stackTrace]) {
-    // TODO: implement shout
-  }
+  void finer(Object? message, [Object? error, StackTrace? stackTrace]) =>
+      log(Level.FINER, message, error, stackTrace);
 
   @override
-  void warning(Object? message, [Object? error, StackTrace? stackTrace]) {
-    // TODO: implement warning
+  void fine(Object? message, [Object? error, StackTrace? stackTrace]) =>
+      log(Level.FINE, message, error, stackTrace);
+
+  @override
+  void config(Object? message, [Object? error, StackTrace? stackTrace]) =>
+      log(Level.CONFIG, message, error, stackTrace);
+
+  @override
+  void info(Object? message, [Object? error, StackTrace? stackTrace]) =>
+      log(Level.INFO, message, error, stackTrace);
+
+  @override
+  void warning(Object? message, [Object? error, StackTrace? stackTrace]) =>
+      log(Level.WARNING, message, error, stackTrace);
+
+  @override
+  void severe(Object? message, [Object? error, StackTrace? stackTrace]) =>
+      log(Level.SEVERE, message, error, stackTrace);
+
+  @override
+  void shout(Object? message, [Object? error, StackTrace? stackTrace]) =>
+      log(Level.SHOUT, message, error, stackTrace);
+
+  List<ErrorReport> get errors {
+    return [];
   }
 }
 
