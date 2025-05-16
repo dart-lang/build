@@ -224,7 +224,7 @@ class Build {
         }
 
         // Run a fresh build.
-        var result = await _log.attributeAsync(Attribution.build, _runPhases);
+        var result = await _runPhases();
 
         // Write out the dependency graph file.
         _log.progress(Progress.writeAssetGraph);
@@ -329,7 +329,9 @@ class Build {
             final outputs = <AssetId>[];
             for (var i = 0; i != primaryInputs.length; ++i) {
               final primaryInput = primaryInputs[i];
-              _log.progress(Progress.build(phase.builderLabel));
+              _log.progress(
+                Progress.build(phase.builderLabel, renderer.id(primaryInput)),
+              );
               outputs.addAll(
                 await _buildForPrimaryInput(
                   phaseNumber: phaseNum,
@@ -493,35 +495,41 @@ class Build {
       }
 
       final logger = _log.loggerForStep(phase.builderLabel, primaryInput);
-      await tracker.trackStage(
-        'Build',
-        () => runBuilder(
-          builder,
-          [primaryInput],
-          readerWriter,
-          readerWriter,
-          PerformanceTrackingResolvers(options.resolvers, tracker),
-          logger: logger,
-          resourceManager: resourceManager,
-          stageTracker: tracker,
-          reportUnusedAssetsForInput: reportUnusedAssetsForInput,
-          packageConfig: options.packageGraph.asPackageConfig,
-        ).catchError((void _) {
-          // Errors tracked through the logger.
-        }),
+      await _log.attribute(
+        Attribution.build,
+        () => tracker.trackStage(
+          'Build',
+          () => runBuilder(
+            builder,
+            [primaryInput],
+            readerWriter,
+            readerWriter,
+            PerformanceTrackingResolvers(options.resolvers, tracker),
+            logger: logger,
+            resourceManager: resourceManager,
+            stageTracker: tracker,
+            reportUnusedAssetsForInput: reportUnusedAssetsForInput,
+            packageConfig: options.packageGraph.asPackageConfig,
+          ).catchError((void _) {
+            // Errors tracked through the logger.
+          }),
+        ),
       );
 
       // Update the state for all the `builderOutputs` nodes based on what was
       // read and written.
-      await tracker.trackStage(
-        'Finalize',
-        () => _setOutputsState(
-          primaryInput,
-          builderOutputs,
-          readerWriter,
-          readerWriter.inputTracker,
-          logger.errors,
-          unusedAssets: unusedAssets,
+      await _log.attributeAsync(
+        Attribution.track,
+        () => tracker.trackStage(
+          'Finalize',
+          () => _setOutputsState(
+            primaryInput,
+            builderOutputs,
+            readerWriter,
+            readerWriter.inputTracker,
+            logger.errors,
+            unusedAssets: unusedAssets,
+          ),
         ),
       );
 
@@ -712,7 +720,7 @@ class Build {
     Iterable<AssetId> outputs,
     AssetReader reader,
   ) async {
-    return await _log.attributeAsync(Attribution.check, () async {
+    return await _log.attributeAsync(Attribution.track, () async {
       // Update state for primary input if needed.
       var primaryInputNode = assetGraph.get(primaryInput)!;
       if (primaryInputNode.type == NodeType.generated) {

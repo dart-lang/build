@@ -119,7 +119,9 @@ class BuildLogger {
       //buffer.writeln('     │      │ $buffer2'.padRight(80));
       //}
 
-      buffer.writeln('$time $displayName$percent$attrs'.padRight(80));
+      final note = state.note == null ? '' : ', ${state.note}';
+
+      buffer.writeln('$time $displayName$note$percent$attrs'.padRight(80));
     }
 
     return buffer.toString();
@@ -168,16 +170,17 @@ class BuildLogger {
     final oldStage = _stage;
     if (progress.number != null) {
       _stage = _stages.keys.where((s) => s.name == progress.stage).single;
-      if (_stage != oldStage) {
-        _stages[oldStage]!.progress = oldStage.length;
-      }
       _stages[_stage]!.progress = progress.number!;
     } else {
       _stages[_stage]!.progress++;
       _stage = _stages.keys.where((s) => s.name == progress.stage).single;
     }
 
+    _stages[_stage]!.note = progress.note;
+
     if (_stage != oldStage) {
+      _stages[oldStage]!.progress = oldStage.length;
+      _stages[oldStage]!.note = null;
       _display.display();
     } else {
       _display.maybeDisplay();
@@ -186,6 +189,7 @@ class BuildLogger {
 
   void buildDone(bool result) {
     progress(Progress.done);
+    _display.display();
     print('     ${result ? 'SUCCESS' : 'FAILURE'}');
 
     _display.finish();
@@ -294,7 +298,7 @@ class Progress {
     2,
     'write performance log',
   );
-  static final Progress done = Progress('cleanup', 3, 'done');
+  static final Progress done = Progress('cleanup', 3, null);
 
   final String stage;
   final int? number;
@@ -302,13 +306,14 @@ class Progress {
 
   Progress(this.stage, this.number, [this.note]);
 
-  Progress.build(String builder) : stage = builder, number = null, note = null;
+  Progress.build(String builder, this.note) : stage = builder, number = null;
 }
 
 class StageState {
   final Map<Attribution, Duration> attributions = {};
   Duration duration = Duration.zero;
   int progress = 0;
+  String? note;
 
   final List<String> warnings = [];
 }
@@ -348,9 +353,9 @@ class BuildStepLogger implements Logger {
     Zone? zone,
   ]) {
     if (logLevel < Level.INFO) return;
-    stdout.write(
+    /*stdout.write(
       '\n\n\n\n\n\n$logLevel $message $error $stackTrace\n\n\n\n\n\n',
-    );
+    );*/
   }
 
   @override
@@ -409,7 +414,7 @@ class BuildStepLogger implements Logger {
 extension type Attribution(String name) {
   static final Attribution analyze = Attribution._('analyze');
   static final Attribution build = Attribution._('build');
-  static final Attribution check = Attribution._('build');
+  static final Attribution track = Attribution._('track');
   static final Attribution resolve = Attribution._('resolve');
   static final Attribution read = Attribution._('read');
   static final Attribution write = Attribution._('write');
@@ -417,5 +422,3 @@ extension type Attribution(String name) {
   Attribution.optionalBuilder(this.name);
   Attribution._(this.name);
 }
-
-enum AttributionType { analyzer, resolver, lazy, other }
