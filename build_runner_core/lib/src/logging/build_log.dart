@@ -32,7 +32,7 @@ class BuildLog {
     var lines = _display.displayedLines;
     if (again) lines += 2;
     again = true;
-    return '$lines,${_stages[Stage.setup]!.duration.inMilliseconds}';
+    return '$lines,${_stages[Stage.setup]!.duration?.inMilliseconds}';
   }
 
   void oldLoggerState(String state) {
@@ -40,9 +40,10 @@ class BuildLog {
     try {
       final items = state.split(',');
       _display.displayedLines = int.parse(items[0]);
-      _stages[Stage.setup]!.duration = Duration(
-        milliseconds: int.parse(items[1]),
-      );
+      _stages[Stage.setup]!.duration =
+          items[1] == 'null'
+              ? null
+              : Duration(milliseconds: int.parse(items[1]));
     } catch (_) {}
     //
   }
@@ -50,6 +51,7 @@ class BuildLog {
   BuildLog._() {
     _display = LogDisplay(render);
     _stages[Stage.setup] = StageState();
+    progress(Progress.setup);
   }
 
   String render() {
@@ -70,11 +72,11 @@ class BuildLog {
       final progress = state.progress;
 
       final time =
-          state.duration.inMilliseconds == 0
+          state.duration == null
               ? '    '
-              : state.duration.inMilliseconds < 1000
+              : state.duration!.inMilliseconds < 1000
               ? ('<1s').padLeft(4)
-              : ((state.duration.inMilliseconds / 1000).round().toString() +
+              : ((state.duration!.inMilliseconds / 1000).round().toString() +
                       's')
                   .padLeft(4);
 
@@ -93,7 +95,7 @@ class BuildLog {
           number == 0 ? '    ' : '${100 * number ~/ of}'.padLeft(3) + '%';*/
 
       var percent =
-          progress == 0 ? '' : '${100 * progress ~/ length}'.padLeft(2, '0');
+          progress == null ? '' : '${100 * progress ~/ length}'.padLeft(2);
       if (percent == '100' || percent == '') {
         percent = '';
       } else {
@@ -154,7 +156,7 @@ class BuildLog {
 
   int previous = 0;
 
-  void declare(List<String> names, Map<String, int> buildSteps) {
+  void builders(List<String> names, Map<String, int> buildSteps) {
     // print('declare: $names $buildSteps');
     for (final name in names) {
       final length = buildSteps[name]!;
@@ -166,7 +168,8 @@ class BuildLog {
   }
 
   void progress(Progress progress) {
-    _stages[_stage]!.duration += _stopwatch.elapsed;
+    _stages[_stage]!.duration =
+        (_stages[_stage]!.duration ?? Duration.zero) + _stopwatch.elapsed;
     _stopwatch.reset();
 
     final oldStage = _stage;
@@ -174,11 +177,17 @@ class BuildLog {
       _stage = _stages.keys.where((s) => s.name == progress.stage).single;
       _stages[_stage]!.progress = progress.number!;
     } else {
-      _stages[_stage]!.progress++;
+      _stages[_stage]!.progress = (_stages[_stage]!.progress ?? 0) + 1;
       _stage = _stages.keys.where((s) => s.name == progress.stage).single;
     }
 
     _stages[_stage]!.note = progress.note;
+    if (_stages[_stage]!.duration == null) {
+      _stages[_stage]!.duration = Duration.zero;
+    }
+    if (_stages[_stage]!.progress == null) {
+      _stages[_stage]!.progress = 0;
+    }
 
     if (_stage != oldStage) {
       _stages[oldStage]!.progress = oldStage.length;
@@ -243,7 +252,7 @@ class BuildLog {
 }
 
 class Stage {
-  static final Stage setup = Stage('setup', 7);
+  static final Stage setup = Stage('setup', 8);
   static final Stage cleanup = Stage('cleanup', 3);
 
   final String name;
@@ -253,39 +262,40 @@ class Stage {
 }
 
 class Progress {
+  static final Progress setup = Progress('setup', 0);
   static final Progress generateBuildScript = Progress(
     'setup',
-    0,
+    1,
     'generate build script',
   );
   static final Progress compileBuildScript = Progress(
     'setup',
-    1,
+    2,
     'compile build script',
   );
   static final Progress readAssetGraph = Progress(
     'setup',
-    2,
+    3,
     'read asset graph',
   );
   static final Progress checkForUpdates = Progress(
     'setup',
-    3,
+    4,
     'check for updates',
   );
   static final Progress newAssetGraph = Progress(
     'setup',
-    4,
+    5,
     'create asset graph',
   );
   static final Progress initialBuildCleanup = Progress(
     'setup',
-    5,
+    6,
     'initial build cleanup',
   );
   static final Progress updateAssetGraph = Progress(
     'setup',
-    6,
+    7,
     'update asset graph',
   );
 
@@ -313,8 +323,8 @@ class Progress {
 
 class StageState {
   final Map<Attribution, Duration> attributions = {};
-  Duration duration = Duration.zero;
-  int progress = 0;
+  Duration? duration;
+  int? progress;
   String? note;
 
   final List<String> warnings = [];

@@ -311,7 +311,7 @@ class Build {
         names.add(phase.builderLabel);
       }
 
-      _log.declare(names.toList(), inputLengthByName);
+      _log.builders(names.toList(), inputLengthByName);
 
       // Main build phases.
       for (

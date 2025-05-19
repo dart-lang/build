@@ -38,3 +38,7 @@ class LogDisplay {
     displayedLines = 0;
   }
 }
+
+abstract class LogSink {
+  void write(String output) {}
+}
