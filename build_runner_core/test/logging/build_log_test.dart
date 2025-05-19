@@ -33,7 +33,7 @@ void main() {
       );
     });
 
-    test('build with no output', () {
+    test('build with no warnings or errors', () {
       log.progress(Progress.generateBuildScript);
       log.progress(Progress.compileBuildScript);
       log.progress(Progress.newAssetGraph);
