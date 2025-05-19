@@ -57,13 +57,14 @@ void main() {
           .loggerForStep('builder1', AssetId('pkg', 'lib/foo.dart'))
           .warning('Some builder warning.');
 
+      // TODO(davidmorgan): set and use root package.
       expect(
         log.render(),
         padLinesRight('''
  --- build_runner
  <1s setup
  <1s builder1, lib/foo.dart,  0%
-       --- output for lib/foo.dart
+       1 warning(s), latest: pkg|lib/foo.dart
        Some builder warning.
      builder2
      cleanup'''),
@@ -92,6 +93,31 @@ void main() {
  <1s builder1
  <1s builder2
  <1s cleanup'''),
+      );
+    });
+
+    test('complete build with builder warnings', () {
+      log.builders(['builder1', 'builder2'], {'builder1': 10, 'builder2': 15});
+      log.progress(Progress.build('builder1', 'lib/foo.dart'));
+      log
+          .loggerForStep('builder1', AssetId('pkg', 'lib/foo.dart'))
+          .warning('Some builder warning.');
+      log.progress(Progress.done);
+      log.buildDone(true);
+
+      // TODO(davidmorgan): set and use root package.
+      expect(
+        log.render(),
+        padLinesRight('''
+ --- build_runner
+ <1s setup
+ <1s builder1
+     builder2
+     cleanup
+     SUCCESS
+--- warnings
+       pkg|lib/foo.dart
+       Some builder warning.'''),
       );
     });
   });

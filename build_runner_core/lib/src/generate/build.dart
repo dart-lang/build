@@ -621,7 +621,7 @@ class Build {
       nodeBuilder.deletedBy.remove(postProcessBuildStepId);
     });
 
-    final logger = _log.loggerForStep(builder.toString(), input);
+    final logger = _log.loggerForPostprocess(input);
     final outputs = <AssetId>{};
     await runPostProcessBuilder(
       builder,
