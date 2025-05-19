@@ -71,6 +71,27 @@ void main() {
       );
     });
 
+    test('build progress with builder errors', () {
+      log.builders(['builder1', 'builder2'], {'builder1': 10, 'builder2': 15});
+      log.progress(Progress.build('builder1', 'lib/foo.dart'));
+      log
+          .loggerForStep('builder1', AssetId('pkg', 'lib/foo.dart'))
+          .severe('Some builder error.');
+
+      // TODO(davidmorgan): set and use root package.
+      expect(
+        log.render(),
+        padLinesRight('''
+ --- build_runner
+ <1s setup
+ <1s builder1, lib/foo.dart,  0%
+       1 error(s), latest: pkg|lib/foo.dart
+       Some builder error.
+     builder2
+     cleanup'''),
+      );
+    });
+
     test('complete build with no warnings or errors', () {
       log.progress(Progress.generateBuildScript);
       log.progress(Progress.compileBuildScript);
@@ -96,12 +117,21 @@ void main() {
       );
     });
 
-    test('complete build with builder warnings', () {
+    test('complete build with warnings and errors', () {
       log.builders(['builder1', 'builder2'], {'builder1': 10, 'builder2': 15});
       log.progress(Progress.build('builder1', 'lib/foo.dart'));
       log
-          .loggerForStep('builder1', AssetId('pkg', 'lib/foo.dart'))
+          .loggerForStep('builder1', AssetId('pkg', 'lib/foo1.dart'))
           .warning('Some builder warning.');
+      log
+          .loggerForStep('builder1', AssetId('pkg', 'lib/foo2.dart'))
+          .severe('Some builder error.');
+      log
+          .loggerForStep('builder2', AssetId('pkg', 'lib/bar1.dart'))
+          .warning('Some other builder warning.');
+      log
+          .loggerForStep('builder2', AssetId('pkg', 'lib/bar2.dart'))
+          .severe('Some other builder error.');
       log.progress(Progress.done);
       log.buildDone(true);
 

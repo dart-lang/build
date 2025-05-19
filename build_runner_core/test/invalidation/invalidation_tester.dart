@@ -244,7 +244,7 @@ class InvalidationTester {
     );
     final deleted = deletedAssets.map(_assetIdToName);
 
-    return logString.contains('Succeeded after')
+    return logString.contains('SUCCESS')
         ? Result(written: written, deleted: deleted)
         : Result.failure(written: written, deleted: deleted);
   }

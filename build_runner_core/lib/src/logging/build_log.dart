@@ -130,33 +130,57 @@ class BuildLog {
 
       buffer.writeln('$time $name$note$percent$attrs'.padRight(80));
 
-      if (!buildDone && stage.warnings.isNotEmpty) {
-        final warnings = stage.warnings.values.fold(
-          0,
-          (count, list) => count + list.length,
-        );
-        final key = stage.warnings.keys.last;
-        final value = stage.warnings[key]!.last;
-        buffer.writeln(
-          '       $warnings warning(s), latest: $key'.padRight(80),
-        );
-        buffer.writeln('       $value'.padRight(80));
+      if (!buildDone) {
+        if (stage.warnings.isNotEmpty) {
+          final warnings = stage.warnings.values.fold(
+            0,
+            (count, list) => count + list.length,
+          );
+          final key = stage.warnings.keys.last;
+          final value = stage.warnings[key]!.last;
+          buffer.writeln(
+            '       $warnings warning(s), latest: $key'.padRight(80),
+          );
+          buffer.writeln('       $value'.padRight(80));
+        }
+
+        if (stage.errors.isNotEmpty) {
+          final errors = stage.errors.values.fold(
+            0,
+            (count, list) => count + list.length,
+          );
+          final key = stage.errors.keys.last;
+          final value = stage.errors[key]!.last;
+          buffer.writeln('       $errors error(s), latest: $key'.padRight(80));
+          buffer.writeln('       $value'.padRight(80));
+        }
       }
     }
 
     if (result != null) {
-      buffer.writeln('     ${result! ? 'SUCCESS' : 'FAILURE'}');
+      var anyWarningsOrErrors = false;
       for (final stage in _stagesByName.values) {
         if (stage.warnings.isNotEmpty) {
-          buffer.writeln(' --- ${stage.name} warning(s)');
+          anyWarningsOrErrors = true;
           for (final key in stage.warnings.keys) {
-            buffer.writeln('     $key');
+            buffer.writeln(' --- ${stage.name} on $key warnings');
             for (final value in stage.warnings[key]!) {
               buffer.writeln('     $value');
             }
           }
         }
+        if (stage.errors.isNotEmpty) {
+          anyWarningsOrErrors = true;
+          for (final key in stage.errors.keys) {
+            buffer.writeln(' --- ${stage.name} on $key errors');
+            for (final value in stage.errors[key]!) {
+              buffer.writeln('     $value');
+            }
+          }
+        }
       }
+
+      buffer.writeln(' --- ${result! ? 'SUCCESS' : 'FAILURE'}');
     }
 
     return buffer.toString();
@@ -356,6 +380,7 @@ class Stage {
   factory Stage.cleanup() => Stage(name: 'cleanup', length: 3);
 
   final Map<AssetId?, List<String>> warnings = {};
+  final Map<AssetId?, List<String>> errors = {};
 }
 
 class BuildStepLogger implements Logger {
@@ -396,7 +421,13 @@ class BuildStepLogger implements Logger {
   ]) {
     if (logLevel < Level.INFO) return;
 
-    (stage.warnings[primaryInput] ??= []).add('$message');
+    final severe = logLevel >= Level.SEVERE;
+
+    if (severe) {
+      (stage.errors[primaryInput] ??= []).add('$message');
+    } else {
+      (stage.warnings[primaryInput] ??= []).add('$message');
+    }
     buildLogger._display.display();
 
     /*stdout.write(
