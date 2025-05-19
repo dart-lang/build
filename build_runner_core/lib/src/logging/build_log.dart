@@ -64,6 +64,11 @@ class BuildLog {
       // TODO: add rerun type
       ' --- build_runner'.padRight(80) + '\n',
     );
+
+    void writeLine(String line) {
+      buffer.writeln(line.padRight(80));
+    }
+
     for (final entry in _stagesByName.entries) {
       final name = entry.key;
       final stage = entry.value;
@@ -128,7 +133,7 @@ class BuildLog {
 
       final note = stage.note == null ? '' : ', ${stage.note}';
 
-      buffer.writeln('$time $name$note$percent$attrs'.padRight(80));
+      writeLine('$time $name$note$percent$attrs');
 
       if (!buildDone) {
         if (stage.warnings.isNotEmpty) {
@@ -138,10 +143,8 @@ class BuildLog {
           );
           final key = stage.warnings.keys.last;
           final value = stage.warnings[key]!.last;
-          buffer.writeln(
-            '       $warnings warning(s), latest: $key'.padRight(80),
-          );
-          buffer.writeln('       $value'.padRight(80));
+          writeLine('       $warnings warning(s), latest: $key');
+          writeLine('       $value');
         }
 
         if (stage.errors.isNotEmpty) {
@@ -151,36 +154,33 @@ class BuildLog {
           );
           final key = stage.errors.keys.last;
           final value = stage.errors[key]!.last;
-          buffer.writeln('       $errors error(s), latest: $key'.padRight(80));
-          buffer.writeln('       $value'.padRight(80));
+          writeLine('       $errors error(s), latest: $key');
+          writeLine('       $value');
         }
       }
     }
 
     if (result != null) {
-      var anyWarningsOrErrors = false;
       for (final stage in _stagesByName.values) {
         if (stage.warnings.isNotEmpty) {
-          anyWarningsOrErrors = true;
           for (final key in stage.warnings.keys) {
-            buffer.writeln(' --- ${stage.name} on $key warnings');
+            writeLine(' === ${stage.name} on $key warnings');
             for (final value in stage.warnings[key]!) {
-              buffer.writeln('     $value');
+              writeLine('     $value');
             }
           }
         }
         if (stage.errors.isNotEmpty) {
-          anyWarningsOrErrors = true;
           for (final key in stage.errors.keys) {
-            buffer.writeln(' --- ${stage.name} on $key errors');
+            writeLine(' === ${stage.name} on $key errors');
             for (final value in stage.errors[key]!) {
-              buffer.writeln('     $value');
+              writeLine('     $value');
             }
           }
         }
       }
 
-      buffer.writeln(' --- ${result! ? 'SUCCESS' : 'FAILURE'}');
+      writeLine(' --- ${result! ? 'SUCCESS' : 'FAILURE'}');
     }
 
     return buffer.toString();

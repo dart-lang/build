@@ -126,6 +126,7 @@ void main() {
       log
           .loggerForStep('builder1', AssetId('pkg', 'lib/foo2.dart'))
           .severe('Some builder error.');
+      log.progress(Progress.build('builder2', 'lib/bar1.dart'));
       log
           .loggerForStep('builder2', AssetId('pkg', 'lib/bar1.dart'))
           .warning('Some other builder warning.');
@@ -142,12 +143,17 @@ void main() {
  --- build_runner
  <1s setup
  <1s builder1
-     builder2
-     cleanup
-     SUCCESS
---- warnings
-       pkg|lib/foo.dart
-       Some builder warning.'''),
+ <1s builder2
+ <1s cleanup
+ === builder1 on pkg|lib/foo1.dart warnings
+     Some builder warning.
+ === builder1 on pkg|lib/foo2.dart errors
+     Some builder error.
+ === builder2 on pkg|lib/bar1.dart warnings
+     Some other builder warning.
+ === builder2 on pkg|lib/bar2.dart errors
+     Some other builder error.
+ --- SUCCESS'''),
       );
     });
   });
