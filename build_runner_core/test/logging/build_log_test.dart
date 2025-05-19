@@ -29,8 +29,8 @@ void main() {
       expect(
         log.render(),
         padLinesRight('''
- --- build_runner
- <1s setup, compile build script, 25%'''),
+ --- build_runner compile build script
+ <1s setup, 25%'''),
       );
     });
 
@@ -42,9 +42,9 @@ void main() {
       expect(
         log.render(),
         padLinesRight('''
- --- build_runner
+ --- build_runner lib/foo.dart
  <1s setup
- <1s builder1, lib/foo.dart,  0%
+ <1s builder1,  0%
      builder2
      cleanup'''),
       );
@@ -61,9 +61,9 @@ void main() {
       expect(
         log.render(),
         padLinesRight('''
- --- build_runner
+ --- build_runner lib/foo.dart
  <1s setup
- <1s builder1, lib/foo.dart,  0%
+ <1s builder1,  0%
        1 warning(s), latest: pkg|lib/foo.dart
        Some builder warning.
      builder2
@@ -82,9 +82,9 @@ void main() {
       expect(
         log.render(),
         padLinesRight('''
- --- build_runner
+ --- build_runner lib/foo.dart
  <1s setup
- <1s builder1, lib/foo.dart,  0%
+ <1s builder1,  0%
        1 error(s), latest: pkg|lib/foo.dart
        Some builder error.
      builder2

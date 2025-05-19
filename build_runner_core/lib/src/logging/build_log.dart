@@ -60,14 +60,16 @@ class BuildLog {
 
   String render() {
     final buildDone = result != null;
-    final buffer = StringBuffer(
-      // TODO: add rerun type
-      ' --- build_runner'.padRight(80) + '\n',
-    );
+
+    final note = _currentStage.note == null ? '' : ' ${_currentStage.note}';
+
+    final buffer = StringBuffer();
 
     void writeLine(String line) {
       buffer.writeln(line.padRight(80));
     }
+
+    writeLine(' --- build_runner$note');
 
     for (final entry in _stagesByName.entries) {
       final name = entry.key;
@@ -131,9 +133,7 @@ class BuildLog {
       //buffer.writeln('     │      │ $buffer2'.padRight(80));
       //}
 
-      final note = stage.note == null ? '' : ', ${stage.note}';
-
-      writeLine('$time $name$note$percent$attrs');
+      writeLine('$time $name$percent$attrs');
 
       if (!buildDone) {
         if (stage.warnings.isNotEmpty) {
