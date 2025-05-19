@@ -27,6 +27,14 @@ class BuildLog {
 
   factory BuildLog() => _instance ??= BuildLog._();
 
+  BuildLog._() {
+    _display = LogDisplay(render);
+    _stages[Stage.setup] = StageState();
+    progress(Progress.setup);
+  }
+
+  factory BuildLog.forTesting() = BuildLog._;
+
   String loggerState() {
     _display.close();
     var lines = _display.displayedLines;
@@ -46,12 +54,6 @@ class BuildLog {
               : Duration(milliseconds: int.parse(items[1]));
     } catch (_) {}
     //
-  }
-
-  BuildLog._() {
-    _display = LogDisplay(render);
-    _stages[Stage.setup] = StageState();
-    progress(Progress.setup);
   }
 
   String render() {
@@ -198,6 +200,7 @@ class BuildLog {
     }
   }
 
+  // TODO(davidmorgan): move reset to start.
   void buildDone(bool result) {
     progress(Progress.done);
     _display.display();
@@ -365,6 +368,7 @@ class BuildStepLogger implements Logger {
     Zone? zone,
   ]) {
     if (logLevel < Level.INFO) return;
+
     /*stdout.write(
       '\n\n\n\n\n\n$logLevel $message $error $stackTrace\n\n\n\n\n\n',
     );*/
