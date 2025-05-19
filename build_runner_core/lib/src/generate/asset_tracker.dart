@@ -14,11 +14,11 @@ import 'package:watcher/watcher.dart';
 
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
-import '../logging/build_logger.dart';
+import '../logging/build_log.dart';
 import '../package_graph/target_graph.dart';
 import '../util/constants.dart';
 
-final _log = BuildLogger();
+final _log = BuildLog();
 
 /// Finds build assets and computes changes to build assets.
 class AssetTracker {

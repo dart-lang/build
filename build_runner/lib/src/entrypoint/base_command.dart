@@ -148,7 +148,7 @@ abstract class BuildRunnerCommand extends Command<int> {
     final state = argResults![passedState] as String?;
 
     if (state != null) {
-      BuildLogger().oldLoggerState(state);
+      BuildLog().oldLoggerState(state);
     }
 
     return SharedOptions.fromParsedArgs(

@@ -11,10 +11,10 @@ import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
 import '../asset_graph/graph.dart';
-import '../logging/build_logger.dart';
+import '../logging/build_log.dart';
 import '../package_graph/package_graph.dart';
 
-final _log = BuildLogger();
+final _log = BuildLog();
 
 /// Functionality for detecting if the build script itself or any of its
 /// transitive imports have changed.

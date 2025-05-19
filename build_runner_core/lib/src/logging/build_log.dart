@@ -8,13 +8,13 @@ import 'dart:io';
 import 'package:build/build.dart' show AssetId;
 import 'package:logging/logging.dart';
 
-import 'console_display.dart';
 import 'failure_reporter.dart';
+import 'log_display.dart';
 
-BuildLogger? _instance;
+BuildLog? _instance;
 
-class BuildLogger {
-  late final ConsoleDisplay _display;
+class BuildLog {
+  late final LogDisplay _display;
   final Map<Stage, StageState> _stages = {};
   final Stopwatch _stopwatch = Stopwatch()..start();
 
@@ -25,7 +25,7 @@ class BuildLogger {
 
   var again = false;
 
-  factory BuildLogger() => _instance ??= BuildLogger._();
+  factory BuildLog() => _instance ??= BuildLog._();
 
   String loggerState() {
     _display.close();
@@ -47,8 +47,8 @@ class BuildLogger {
     //
   }
 
-  BuildLogger._() {
-    _display = ConsoleDisplay(render);
+  BuildLog._() {
+    _display = LogDisplay(render);
     _stages[Stage.setup] = StageState();
   }
 
@@ -127,10 +127,12 @@ class BuildLogger {
     return buffer.toString();
   }
 
+  // TODO(davidmorgan): document.
   Future<T> runAsyncWithLogger<T>(
     Logger? logger,
     Future<T> Function() function,
   ) async {
+    // TODO(davidmorgan): output to the logger.
     return await function();
   }
 
@@ -319,7 +321,7 @@ class StageState {
 }
 
 class BuildStepLogger implements Logger {
-  final BuildLogger buildLogger;
+  final BuildLog buildLogger;
 
   BuildStepLogger(this.buildLogger);
 

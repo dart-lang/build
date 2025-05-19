@@ -12,11 +12,11 @@ import 'package:build/src/internal.dart';
 // ignore: implementation_imports
 import 'package:build_runner_core/src/generate/build_step_impl.dart';
 // ignore: implementation_imports
-import 'package:build_runner_core/src/logging/build_logger.dart';
+import 'package:build_runner_core/src/logging/build_log.dart';
 
 import 'analysis_driver_filesystem.dart';
 
-final _log = BuildLogger();
+final _log = BuildLog();
 
 /// Manages analysis driver and related build state.
 ///
@@ -96,16 +96,14 @@ class AnalysisDriverModel {
     withDriverResource, {
     required bool transitive,
   }) async {
-    await _log.attributeAsync(Attribution.resolve, () async {
-      for (final entrypoint in entrypoints) {
-        await _performResolve(
-          buildStep as BuildStepImpl,
-          entrypoint,
-          withDriverResource,
-          transitive: transitive,
-        );
-      }
-    });
+    for (final entrypoint in entrypoints) {
+      await _performResolve(
+        buildStep as BuildStepImpl,
+        entrypoint,
+        withDriverResource,
+        transitive: transitive,
+      );
+    }
   }
 
   Future<void> _performResolve(
@@ -121,13 +119,15 @@ class AnalysisDriverModel {
 
     // If requested, find transitive imports.
     if (transitive) {
-      // Note: `transitiveDepsOf` can cause loads that cause builds that cause a
-      // recursive `_performResolve` on this same `AnalysisDriver` instance.
-      final nodeLoader = AssetDepsLoader(buildStep.phasedReader);
-      buildStep.inputTracker.addResolverEntrypoint(entrypoint);
-      idsToSyncOntoFilesystem = await _graphLoader.transitiveDepsOf(
-        nodeLoader,
-        entrypoint,
+      idsToSyncOntoFilesystem = await _log.attributeAsync(
+        Attribution.track,
+        () async {
+          // Note: `transitiveDepsOf` can cause loads that cause builds that cause a
+          // recursive `_performResolve` on this same `AnalysisDriver` instance.
+          final nodeLoader = AssetDepsLoader(buildStep.phasedReader);
+          buildStep.inputTracker.addResolverEntrypoint(entrypoint);
+          return await _graphLoader.transitiveDepsOf(nodeLoader, entrypoint);
+        },
       );
     } else {
       // Notify [buildStep] of its inputs.

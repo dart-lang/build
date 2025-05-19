@@ -12,12 +12,12 @@ import 'package:glob/glob.dart';
 import 'package:glob/list_local_fs.dart';
 import 'package:path/path.dart' as path;
 
-import '../logging/build_logger.dart';
+import '../logging/build_log.dart';
 import '../package_graph/package_graph.dart';
 import '../util/constants.dart';
 import 'writer.dart';
 
-final _log = BuildLogger();
+final _log = BuildLog();
 
 /// Pluggable [AssetReader] and [AssetWriter].
 class ReaderWriter extends AssetReader

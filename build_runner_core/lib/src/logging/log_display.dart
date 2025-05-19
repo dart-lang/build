@@ -4,14 +4,14 @@
 
 import 'dart:io';
 
-class ConsoleDisplay {
+class LogDisplay {
   final String Function() render;
   late Stopwatch stopwatch = Stopwatch()..start();
 
   int displayedLines = 0;
   bool closed = false;
 
-  ConsoleDisplay(this.render);
+  LogDisplay(this.render);
 
   void close() {
     closed = true;

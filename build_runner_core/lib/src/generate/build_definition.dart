@@ -16,14 +16,14 @@ import '../asset_graph/graph.dart';
 import '../asset_graph/graph_loader.dart';
 import '../changes/build_script_updates.dart';
 import '../environment/build_environment.dart';
-import '../logging/build_logger.dart';
+import '../logging/build_log.dart';
 import '../util/constants.dart';
 import 'asset_tracker.dart';
 import 'build_phases.dart';
 import 'exceptions.dart';
 import 'options.dart';
 
-final _log = BuildLogger();
+final _log = BuildLog();
 
 // TODO(davidmorgan): rename/refactor this, it's now just about loading state,
 // not a build definition.

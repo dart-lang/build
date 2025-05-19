@@ -22,7 +22,7 @@ import '../asset_graph/optional_output_tracker.dart';
 import '../asset_graph/post_process_build_step_id.dart';
 import '../changes/asset_updates.dart';
 import '../environment/build_environment.dart';
-import '../logging/build_logger.dart';
+import '../logging/build_log.dart';
 import '../logging/log_renderer.dart';
 import '../performance_tracking/performance_tracking_resolvers.dart';
 import '../util/build_dirs.dart';
@@ -37,7 +37,7 @@ import 'performance_tracker.dart';
 import 'phase.dart';
 import 'single_step_reader_writer.dart';
 
-final _log = BuildLogger();
+final _log = BuildLog();
 
 /// A single build.
 class Build {

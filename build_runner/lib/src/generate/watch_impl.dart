@@ -27,7 +27,7 @@ import '../watcher/graph_watcher.dart';
 import '../watcher/node_watcher.dart';
 import 'terminator.dart';
 
-final _log = BuildLogger();
+final _log = BuildLog();
 
 Future<ServeHandler> watch(
   List<BuilderApplication> builders, {

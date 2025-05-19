@@ -15,7 +15,7 @@ import 'package:stack_trace/stack_trace.dart';
 
 import 'build_script_generate.dart';
 
-final _log = BuildLogger();
+final _log = BuildLog();
 
 /// Generates the build script, precompiles it if needed, and runs it.
 ///

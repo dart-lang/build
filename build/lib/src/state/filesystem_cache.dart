@@ -7,13 +7,13 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 // ignore: implementation_imports
-import 'package:build_runner_core/src/logging/build_logger.dart';
+import 'package:build_runner_core/src/logging/build_log.dart';
 
 import '../../build.dart';
 import '../asset/id.dart';
 import 'lru_cache.dart';
 
-final BuildLogger _log = BuildLogger();
+final BuildLog _log = BuildLog();
 
 /// Cache for file existence and contents.
 ///

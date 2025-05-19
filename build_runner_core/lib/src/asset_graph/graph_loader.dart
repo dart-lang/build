@@ -14,12 +14,12 @@ import '../asset_graph/exceptions.dart';
 import '../asset_graph/graph.dart';
 import '../generate/build_phases.dart';
 import '../generate/exceptions.dart';
-import '../logging/build_logger.dart';
+import '../logging/build_log.dart';
 import '../package_graph/package_graph.dart';
 import '../util/constants.dart';
 import '../util/sdk_version_match.dart';
 
-final _log = BuildLogger();
+final _log = BuildLog();
 
 /// Loads and verifies an [AssetGraph].
 class AssetGraphLoader {

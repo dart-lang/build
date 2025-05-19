@@ -23,7 +23,7 @@ const scriptKernelCachedLocation =
     '$scriptKernelLocation$scriptKernelCachedSuffix';
 const scriptKernelCachedSuffix = '.cached';
 
-final _log = BuildLogger();
+final _log = BuildLog();
 
 final _lastShortFormatDartVersion = Version(3, 6, 0);
 
