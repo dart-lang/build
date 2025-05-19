@@ -96,14 +96,16 @@ class AnalysisDriverModel {
     withDriverResource, {
     required bool transitive,
   }) async {
-    for (final entrypoint in entrypoints) {
-      await _performResolve(
-        buildStep as BuildStepImpl,
-        entrypoint,
-        withDriverResource,
-        transitive: transitive,
-      );
-    }
+    await _log.attributeAsync(Attribution.resolve, () async {
+      for (final entrypoint in entrypoints) {
+        await _performResolve(
+          buildStep as BuildStepImpl,
+          entrypoint,
+          withDriverResource,
+          transitive: transitive,
+        );
+      }
+    });
   }
 
   Future<void> _performResolve(
@@ -115,68 +117,63 @@ class AnalysisDriverModel {
     withDriverResource, {
     required bool transitive,
   }) async {
-    await _log.attributeAsync(Attribution.resolve, () async {
-      Iterable<AssetId> idsToSyncOntoFilesystem;
+    Iterable<AssetId> idsToSyncOntoFilesystem;
 
-      // If requested, find transitive imports.
-      if (transitive) {
-        // Note: `transitiveDepsOf` can cause loads that cause builds that cause a
-        // recursive `_performResolve` on this same `AnalysisDriver` instance.
-        final nodeLoader = AssetDepsLoader(buildStep.phasedReader);
-        buildStep.inputTracker.addResolverEntrypoint(entrypoint);
-        idsToSyncOntoFilesystem = await _graphLoader.transitiveDepsOf(
-          nodeLoader,
-          entrypoint,
-        );
-      } else {
-        // Notify [buildStep] of its inputs.
-        buildStep.inputTracker.add(entrypoint);
-        idsToSyncOntoFilesystem = [entrypoint];
+    // If requested, find transitive imports.
+    if (transitive) {
+      // Note: `transitiveDepsOf` can cause loads that cause builds that cause a
+      // recursive `_performResolve` on this same `AnalysisDriver` instance.
+      final nodeLoader = AssetDepsLoader(buildStep.phasedReader);
+      buildStep.inputTracker.addResolverEntrypoint(entrypoint);
+      idsToSyncOntoFilesystem = await _graphLoader.transitiveDepsOf(
+        nodeLoader,
+        entrypoint,
+      );
+    } else {
+      // Notify [buildStep] of its inputs.
+      buildStep.inputTracker.add(entrypoint);
+      idsToSyncOntoFilesystem = [entrypoint];
+    }
+
+    await withDriverResource((driver) async {
+      // Sync changes onto the "URI resolver", the in-memory filesystem.
+      final phase = buildStep.phasedReader.phase;
+      for (final id in idsToSyncOntoFilesystem) {
+        final wasSyncedAt = _syncedOntoFilesystemAtPhase[id];
+        if (wasSyncedAt != null) {
+          // Skip if already synced at this phase.
+          if (wasSyncedAt == phase) {
+            continue;
+          }
+          // Skip if synced at an equivalent other phase.
+          if (!buildStep.phasedReader.hasChanged(
+            id,
+            comparedToPhase: wasSyncedAt,
+          )) {
+            continue;
+          }
+        }
+
+        _syncedOntoFilesystemAtPhase[id] = phase;
+
+        // Tracking has already been done by calling `inputTracker` directly.
+        // Use `phasedReader` for the read instead of the `buildStep` methods
+        // `canRead` and `readAsString`, which would call `inputTracker`.
+        final content = await buildStep.phasedReader.readAtPhase(id);
+        if (content == null) {
+          filesystem.deleteFile(id.asPath);
+        } else {
+          filesystem.writeFile(id.asPath, content);
+        }
       }
 
-      await withDriverResource((driver) async {
-        // Sync changes onto the "URI resolver", the in-memory filesystem.
-        final phase = buildStep.phasedReader.phase;
-        for (final id in idsToSyncOntoFilesystem) {
-          final wasSyncedAt = _syncedOntoFilesystemAtPhase[id];
-          if (wasSyncedAt != null) {
-            // Skip if already synced at this phase.
-            if (wasSyncedAt == phase) {
-              continue;
-            }
-            // Skip if synced at an equivalent other phase.
-            if (!buildStep.phasedReader.hasChanged(
-              id,
-              comparedToPhase: wasSyncedAt,
-            )) {
-              continue;
-            }
-          }
-
-          _syncedOntoFilesystemAtPhase[id] = phase;
-
-          // Tracking has already been done by calling `inputTracker` directly.
-          // Use `phasedReader` for the read instead of the `buildStep` methods
-          // `canRead` and `readAsString`, which would call `inputTracker`.
-          final content = await buildStep.phasedReader.readAtPhase(id);
-          if (content == null) {
-            filesystem.deleteFile(id.asPath);
-          } else {
-            filesystem.writeFile(id.asPath, content);
-          }
-        }
-
-        // Notify the analyzer of changes and wait for it to update its internal
-        // state.
-        for (final path in filesystem.changedPaths) {
-          driver.changeFile(path);
-        }
-        filesystem.clearChangedPaths();
-        await _log.attributeAsync(
-          Attribution.analyze,
-          driver.applyPendingFileChanges,
-        );
-      });
+      // Notify the analyzer of changes and wait for it to update its internal
+      // state.
+      for (final path in filesystem.changedPaths) {
+        driver.changeFile(path);
+      }
+      filesystem.clearChangedPaths();
+      await driver.applyPendingFileChanges();
     });
   }
 }
