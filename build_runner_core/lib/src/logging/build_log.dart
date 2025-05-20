@@ -30,7 +30,7 @@ class BuildLog {
   factory BuildLog() => _instance ??= BuildLog._();
 
   BuildLog._() {
-    _display = LogDisplay(render);
+    _display = LogDisplay();
     _stagesByName['setup'] = Stage.setup();
     progress(Progress.setup);
   }
@@ -58,15 +58,22 @@ class BuildLog {
     //
   }
 
-  String render() {
+  BuildLogEntry makeEntry({
+    required LineSeverity severity,
+    required String line,
+  }) {
+    return BuildLogEntry(lines: render(), line: line, severity: severity);
+  }
+
+  List<String> render() {
     final buildDone = result != null;
 
     final note = _currentStage.note == null ? '' : ' ${_currentStage.note}';
 
-    final buffer = StringBuffer();
+    final buffer = <String>[];
 
     void writeLine(String line) {
-      buffer.writeln(line.padRight(80));
+      buffer.add(line.padRight(80));
     }
 
     writeLine(' --- build_runner$note');
@@ -187,7 +194,7 @@ class BuildLog {
       writeLine(' --- ${result! ? 'SUCCESS' : 'FAILURE'}');
     }
 
-    return buffer.toString();
+    return buffer;
   }
 
   // TODO(davidmorgan): document.
@@ -245,20 +252,25 @@ class BuildLog {
     _currentStage.duration ??= Duration.zero;
     _currentStage.progress ??= 0;
 
+    final thisMakeEntry =
+        () => makeEntry(severity: LineSeverity.info, line: progress.toString());
+
     if (_currentStage != oldStage) {
       oldStage.progress = oldStage.length;
       oldStage.note = null;
-      _display.display();
+    }
+
+    if (_currentStage != oldStage || result != null) {
+      _display.display(thisMakeEntry());
     } else {
-      _display.maybeDisplay();
+      _display.maybeDisplay(thisMakeEntry);
     }
   }
 
   // TODO(davidmorgan): move reset to start.
   void buildDone(bool result) {
-    progress(Progress.done);
     this.result = result;
-    _display.display();
+    progress(Progress.done);
 
     /*_display.finish();
     _stagesByName.clear();
@@ -436,7 +448,12 @@ class BuildStepLogger implements Logger {
     } else {
       (stage.warnings[primaryInput] ??= []).add(renderedMessage);
     }
-    buildLogger._display.display();
+    buildLogger._display.display(
+      buildLogger.makeEntry(
+        severity: severe ? LineSeverity.error : LineSeverity.warning,
+        line: renderedMessage,
+      ),
+    );
 
     /*stdout.write(
       '\n\n\n\n\n\n$logLevel $message $error $stackTrace\n\n\n\n\n\n',

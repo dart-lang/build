@@ -17,7 +17,6 @@ import 'package:logging/logging.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
-import '../logging/std_io_logging.dart';
 import '../package_graph/build_config_overrides.dart';
 import '../server/server.dart';
 import '../watcher/asset_change.dart';
@@ -74,7 +73,7 @@ Future<ServeHandler> watch(
     reader: reader,
     writer: writer,
     onLogOverride:
-        onLog ?? stdIOLogListener(assumeTty: assumeTty, verbose: verbose),
+        onLog ?? BuildLogPrinter(assumeTty: assumeTty, verbose: verbose).onData,
   );
   var logSubscription = LogSubscription(
     environment,

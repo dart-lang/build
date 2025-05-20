@@ -12,7 +12,6 @@ import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:logging/logging.dart';
 
-import '../logging/std_io_logging.dart';
 import 'base_command.dart';
 
 class CleanCommand extends Command<int> {
@@ -31,7 +30,9 @@ class CleanCommand extends Command<int> {
 
   @override
   Future<int> run() async {
-    var logSubscription = Logger.root.onRecord.listen(stdIOLogListener());
+    var logSubscription = Logger.root.onRecord.listen(
+      BuildLogPrinter(verbose: false).onData,
+    );
     await cleanFor(assetGraphPath, logger);
     await logSubscription.cancel();
     return 0;

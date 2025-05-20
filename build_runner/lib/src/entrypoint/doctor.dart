@@ -14,7 +14,6 @@ import 'package:io/io.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
-import '../logging/std_io_logging.dart';
 import '../package_graph/build_config_overrides.dart';
 import 'base_command.dart';
 
@@ -32,7 +31,7 @@ class DoctorCommand extends BuildRunnerCommand {
     final verbose = options.verbose;
     Logger.root.level = verbose ? Level.ALL : Level.INFO;
     final logSubscription = Logger.root.onRecord.listen(
-      stdIOLogListener(verbose: verbose),
+      BuildLogPrinter(verbose: verbose).onData,
     );
 
     final config = await _loadBuilderDefinitions();

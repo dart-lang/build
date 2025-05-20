@@ -10,7 +10,6 @@ import 'package:args/command_runner.dart';
 import 'package:build_runner/src/build_script_generate/bootstrap.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner/src/entrypoint/runner.dart';
-import 'package:build_runner/src/logging/std_io_logging.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/ansi.dart';
 import 'package:io/io.dart';
@@ -95,7 +94,7 @@ Future<void> main(List<String> args) async {
     var verbose = parsedArgs.command!['verbose'] as bool? ?? false;
     if (verbose) Logger.root.level = Level.ALL;
     logListener = Logger.root.onRecord.listen(
-      stdIOLogListener(verbose: verbose),
+      BuildLogPrinter(verbose: verbose).onData,
     );
   }
   if (localCommandNames.contains(commandName)) {

@@ -14,7 +14,6 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
 import '../generate/build.dart';
-import '../logging/std_io_logging.dart';
 import 'base_command.dart';
 import 'options.dart';
 
@@ -84,7 +83,7 @@ class RunCommand extends BuildRunnerCommand {
 
   FutureOr<int> _run(SharedOptions options) async {
     var logSubscription = Logger.root.onRecord.listen(
-      stdIOLogListener(verbose: options.verbose),
+      BuildLogPrinter(verbose: options.verbose).onData,
     );
     var argResults = this.argResults!;
     try {

@@ -13,7 +13,6 @@ import 'package:logging/logging.dart';
 import 'package:shelf/shelf_io.dart';
 
 import '../generate/build.dart';
-import '../logging/std_io_logging.dart';
 import '../server/server.dart';
 import 'options.dart';
 import 'watch.dart';
@@ -88,7 +87,9 @@ class ServeCommand extends WatchCommand {
         }),
       );
     } on SocketException catch (e) {
-      var listener = Logger.root.onRecord.listen(stdIOLogListener());
+      var listener = Logger.root.onRecord.listen(
+        BuildLogPrinter(verbose: false).onData,
+      );
       if (e.address != null && e.port != null) {
         logger.severe(
           'Error starting server at ${e.address!.address}:${e.port}, address '

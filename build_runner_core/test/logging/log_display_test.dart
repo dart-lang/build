@@ -8,7 +8,7 @@ import 'package:test/test.dart';
 void main() {
   group('LogDisplay', () {
     test('does nothing', () {
-      final display = LogDisplay(() => '');
+      final display = LogDisplay();
     });
   });
 }
