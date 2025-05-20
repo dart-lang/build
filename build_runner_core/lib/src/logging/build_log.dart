@@ -507,7 +507,7 @@ class BuildStepLogger implements Logger {
       log(Level.SHOUT, message, error, stackTrace);
 
   List<String> get errors {
-    return [];
+    return stage.errors.values.expand((x) => x).toList();
   }
 }
 
