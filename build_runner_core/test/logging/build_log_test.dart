@@ -35,7 +35,7 @@ void main() {
     });
 
     test('build progress with no warnings or errors', () {
-      log.builders(['builder1', 'builder2'], {'builder1': 10, 'builder2': 15});
+      log.builders({'builder1': 10, 'builder2': 15});
 
       log.progress(Progress.build('builder1', 'lib/foo.dart'));
 
@@ -51,7 +51,7 @@ void main() {
     });
 
     test('build progress with builder warnings', () {
-      log.builders(['builder1', 'builder2'], {'builder1': 10, 'builder2': 15});
+      log.builders({'builder1': 10, 'builder2': 15});
       log.progress(Progress.build('builder1', 'lib/foo.dart'));
       log
           .loggerForStep('builder1', AssetId('pkg', 'lib/foo.dart'))
@@ -72,7 +72,7 @@ void main() {
     });
 
     test('build progress with builder errors', () {
-      log.builders(['builder1', 'builder2'], {'builder1': 10, 'builder2': 15});
+      log.builders({'builder1': 10, 'builder2': 15});
       log.progress(Progress.build('builder1', 'lib/foo.dart'));
       log
           .loggerForStep('builder1', AssetId('pkg', 'lib/foo.dart'))
@@ -99,7 +99,7 @@ void main() {
       log.progress(Progress.initialBuildCleanup);
       log.progress(Progress.updateAssetGraph);
 
-      log.builders(['builder1', 'builder2'], {'builder1': 10, 'builder2': 15});
+      log.builders({'builder1': 10, 'builder2': 15});
 
       log.progress(Progress.build('builder1', 'lib/foo.dart'));
       log.progress(Progress.build('builder2', 'lib/foo.dart'));
@@ -118,7 +118,7 @@ void main() {
     });
 
     test('complete build with warnings and errors', () {
-      log.builders(['builder1', 'builder2'], {'builder1': 10, 'builder2': 15});
+      log.builders({'builder1': 10, 'builder2': 15});
       log.progress(Progress.build('builder1', 'lib/foo.dart'));
       log
           .loggerForStep('builder1', AssetId('pkg', 'lib/foo1.dart'))

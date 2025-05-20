@@ -4,10 +4,10 @@
 
 import 'dart:async';
 
-import 'package:build/build.dart' show AssetId;
+import 'package:build/build.dart'
+    show AssetId, SyntaxErrorInAssetException, UnresolvableAssetException;
 import 'package:logging/logging.dart';
 
-import 'failure_reporter.dart';
 import 'log_display.dart';
 
 BuildLog? _instance;
@@ -75,6 +75,10 @@ class BuildLog {
       final name = entry.key;
       final stage = entry.value;
       final length = stage.length;
+
+      if (length == 0 && !stage.hasLogOutput) {
+        continue;
+      }
 
       /*if (name == 'setup' && step.name != 'setup') break;
       var displayName =
@@ -213,11 +217,11 @@ class BuildLog {
 
   int previous = 0;
 
-  void builders(List<String> names, Map<String, int> buildSteps) {
+  void builders(Map<String, int> buildSteps) {
     // print('declare: $names $buildSteps');
-    for (final name in names) {
-      final length = buildSteps[name]!;
-      if (length == 0) continue;
+    for (final entry in buildSteps.entries) {
+      final name = entry.key;
+      final length = entry.value;
       _stagesByName[name] = Stage(name: name, length: length);
     }
     _stagesByName['cleanup'] = Stage.cleanup();
@@ -381,6 +385,8 @@ class Stage {
 
   final Map<AssetId?, List<String>> warnings = {};
   final Map<AssetId?, List<String>> errors = {};
+
+  bool get hasLogOutput => warnings.isNotEmpty || errors.isNotEmpty;
 }
 
 class BuildStepLogger implements Logger {
@@ -423,16 +429,33 @@ class BuildStepLogger implements Logger {
 
     final severe = logLevel >= Level.SEVERE;
 
+    final renderedMessage = _render(message, error, stackTrace);
+
     if (severe) {
-      (stage.errors[primaryInput] ??= []).add('$message');
+      (stage.errors[primaryInput] ??= []).add(renderedMessage);
     } else {
-      (stage.warnings[primaryInput] ??= []).add('$message');
+      (stage.warnings[primaryInput] ??= []).add(renderedMessage);
     }
     buildLogger._display.display();
 
     /*stdout.write(
       '\n\n\n\n\n\n$logLevel $message $error $stackTrace\n\n\n\n\n\n',
     );*/
+  }
+
+  String _render(Object? message, [Object? error, StackTrace? stackTrace]) {
+    var result = message?.toString() ?? '';
+    if (error != null) result += '\n$error';
+
+    // Drop stack traces for exception types that can be caused by normal
+    // user input; render stack traces for everything else as they can point to
+    // bugs in generators or in build_runner.
+    if (stackTrace != null &&
+        error is! SyntaxErrorInAssetException &&
+        error is! UnresolvableAssetException) {
+      result += '\n$stackTrace';
+    }
+    return result;
   }
 
   @override
@@ -483,7 +506,7 @@ class BuildStepLogger implements Logger {
   void shout(Object? message, [Object? error, StackTrace? stackTrace]) =>
       log(Level.SHOUT, message, error, stackTrace);
 
-  List<ErrorReport> get errors {
+  List<String> get errors {
     return [];
   }
 }

@@ -45,6 +45,7 @@ class Build {
   final BuildEnvironment environment;
   final BuildOptions options;
   final BuildPhases buildPhases;
+  final List<String> inBuildPhaseDisplayNames = [];
   final Set<BuildDirectory> buildDirs;
   final Set<BuildFilter> buildFilters;
 
@@ -162,7 +163,7 @@ class Build {
               failure.generatedNodeConfiguration!.primaryInput,
               options.packageGraph.root.name,
             );
-            _logger.severe('$name (cached)\n$error');
+            _log.severe('$name (cached)\n$error');
           }
         }
         result = BuildResult(
@@ -289,29 +290,52 @@ class Build {
     return performanceTracker.track(() async {
       final outputs = <AssetId>[];
 
+      final samePhaseNameCounts = <String, int>{};
+      inBuildPhaseDisplayNames.addAll(
+        Iterable.generate(buildPhases.inBuildPhases.length, (_) => ''),
+      );
+      String namePhase(int phaseNumber) {
+        final phase = buildPhases.inBuildPhases[phaseNumber];
+        final label = phase.builderLabel;
+        final count =
+            samePhaseNameCounts[label] = (samePhaseNameCounts[label] ?? 0) + 1;
+        final result = '$label${count == 1 ? '' : '($count)'}';
+        inBuildPhaseDisplayNames[phaseNumber] = result;
+        return result;
+      }
+
       final primaryInputsByPhase = <int, List<AssetId>>{};
-      final names = <String>{};
       final inputLengthByName = <String, int>{};
       for (
         var phaseNum = 0;
         phaseNum < buildPhases.inBuildPhases.length;
         phaseNum++
       ) {
-        var phase = buildPhases.inBuildPhases[phaseNum];
-        if (phase.isOptional) continue;
+        final phase = buildPhases.inBuildPhases[phaseNum];
+
+        // An optional phase does not show progress but still has a logging
+        // stage in order to track warnings and errors.
+        if (phase.isOptional) {
+          inputLengthByName[namePhase(phaseNum)] = 0;
+          primaryInputsByPhase[phaseNum] = [];
+          continue;
+        }
         final primaryInputs = await _matchingPrimaryInputs(
           phase.package,
           phaseNum,
         );
-        primaryInputs.sort();
-        primaryInputsByPhase[phaseNum] = primaryInputs;
-        inputLengthByName[phase.builderLabel] =
-            (inputLengthByName[phase.builderLabel] ?? 0) + primaryInputs.length;
-        names.remove(phase.builderLabel);
-        names.add(phase.builderLabel);
+        if (primaryInputs.isEmpty) {
+          // A non-optional phase with no inputs won't run at all, so no stage
+          // name is needed: there are no warnings or errors to log.
+          primaryInputsByPhase[phaseNum] = [];
+        } else {
+          primaryInputs.sort();
+          primaryInputsByPhase[phaseNum] = primaryInputs;
+          inputLengthByName[namePhase(phaseNum)] = primaryInputs.length;
+        }
       }
 
-      _log.builders(names.toList(), inputLengthByName);
+      _log.builders(inputLengthByName);
 
       // Main build phases.
       for (
@@ -320,8 +344,6 @@ class Build {
         phaseNum++
       ) {
         var phase = buildPhases.inBuildPhases[phaseNum];
-        if (phase.isOptional) continue;
-
         final primaryInputs = primaryInputsByPhase[phaseNum]!;
         if (primaryInputs.isEmpty) continue;
 
@@ -331,7 +353,10 @@ class Build {
             for (var i = 0; i != primaryInputs.length; ++i) {
               final primaryInput = primaryInputs[i];
               _log.progress(
-                Progress.build(phase.builderLabel, renderer.id(primaryInput)),
+                Progress.build(
+                  inBuildPhaseDisplayNames[phaseNum],
+                  renderer.id(primaryInput),
+                ),
               );
               outputs.addAll(
                 await _buildForPrimaryInput(
@@ -495,7 +520,10 @@ class Build {
         unusedAssets.addAll(assets);
       }
 
-      final logger = _log.loggerForStep(phase.builderLabel, primaryInput);
+      final logger = _log.loggerForStep(
+        inBuildPhaseDisplayNames[phaseNumber],
+        primaryInput,
+      );
       await _log.attribute(
         Attribution.build,
         () => tracker.trackStage(
@@ -1213,6 +1241,23 @@ class Build {
   }
 
   Future _delete(AssetId id) => deleteWriter.delete(id);
+}
+
+String _actionLoggerName(
+  InBuildPhase phase,
+  AssetId primaryInput,
+  String rootPackageName,
+) {
+  var asset =
+      primaryInput.package == rootPackageName
+          ? primaryInput.path
+          : primaryInput.uri.toString();
+  // In the rare case that the assets ends with a dot, remove it to ensure that
+  // the logger name is valid.
+  while (asset.endsWith('.')) {
+    asset = asset.substring(0, asset.length - 1);
+  }
+  return '${phase.builderLabel} on $asset';
 }
 
 String _twoDigits(int n) => '$n'.padLeft(2, '0');
