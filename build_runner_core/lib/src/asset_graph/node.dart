@@ -286,6 +286,8 @@ abstract class GeneratedNodeState
   /// [AssetNode.wasOutput].
   bool? get result;
 
+  BuiltList<String> get errors;
+
   factory GeneratedNodeState(void Function(GeneratedNodeStateBuilder) updates) =
       _$GeneratedNodeState;
 

@@ -4,16 +4,15 @@
 
 import 'dart:async';
 
+import 'package:build/build.dart';
 import 'package:logging/logging.dart';
-
-import 'failure_reporter.dart';
 
 /// A delegating [Logger] that records if any logs of level >= [Level.SEVERE]
 /// were seen.
 class BuildForInputLogger implements Logger {
   final Logger _delegate;
 
-  final errorsSeen = <ErrorReport>[];
+  final errorsSeen = <String>[];
 
   BuildForInputLogger(this._delegate);
 
@@ -64,7 +63,7 @@ class BuildForInputLogger implements Logger {
     Zone? zone,
   ]) {
     if (logLevel >= Level.SEVERE) {
-      errorsSeen.add(ErrorReport('$message', '${error ?? ''}', stackTrace));
+      errorsSeen.add(_renderError(message, error, stackTrace));
     }
     _delegate.log(logLevel, message, error, stackTrace, zone);
   }
@@ -80,13 +79,13 @@ class BuildForInputLogger implements Logger {
 
   @override
   void severe(Object? message, [Object? error, StackTrace? stackTrace]) {
-    errorsSeen.add(ErrorReport('$message', '${error ?? ''}', stackTrace));
+    errorsSeen.add(_renderError(message, error, stackTrace));
     _delegate.severe(message, error, stackTrace);
   }
 
   @override
   void shout(Object? message, [Object? error, StackTrace? stackTrace]) {
-    errorsSeen.add(ErrorReport('$message', '${error ?? ''}', stackTrace));
+    errorsSeen.add(_renderError(message, error, stackTrace));
     _delegate.shout(message, error, stackTrace);
   }
 
@@ -96,4 +95,23 @@ class BuildForInputLogger implements Logger {
 
   @override
   Stream<Level?> get onLevelChanged => _delegate.onLevelChanged;
+
+  String _renderError(
+    Object? message, [
+    Object? error,
+    StackTrace? stackTrace,
+  ]) {
+    var result = message?.toString() ?? '';
+    if (error != null) result += '\n$error';
+
+    // Drop stack traces for exception types that can be caused by normal
+    // user input; render stack traces for everything else as they can point to
+    // bugs in generators or in build_runner.
+    if (stackTrace != null &&
+        error is! SyntaxErrorInAssetException &&
+        error is! UnresolvableAssetException) {
+      result += '\n$stackTrace';
+    }
+    return result;
+  }
 }

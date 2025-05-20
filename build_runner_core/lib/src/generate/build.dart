@@ -25,7 +25,6 @@ import '../asset_graph/post_process_build_step_id.dart';
 import '../changes/asset_updates.dart';
 import '../environment/build_environment.dart';
 import '../logging/build_for_input_logger.dart';
-import '../logging/failure_reporter.dart';
 import '../logging/human_readable_duration.dart';
 import '../logging/log_renderer.dart';
 import '../logging/logging.dart';
@@ -72,7 +71,6 @@ class Build {
   final AssetGraph assetGraph;
   final lazyPhases = <String, Future<Iterable<AssetId>>>{};
   final lazyGlobs = <AssetId, Future<void>>{};
-  final failureReporter = FailureReporter();
   int actionsCompletedCount = 0;
   int actionsStartedCount = 0;
   final pendingActions = SplayTreeMap<int, Set<String>>();
@@ -113,6 +111,9 @@ class Build {
   /// Filled during the build as each output is produced and its digest is
   /// checked against the digest from the previous build.
   final Set<AssetId> changedOutputs = {};
+
+  /// Outputs for which errors have been shown.
+  final Set<AssetId> errorsShownOutputs = {};
 
   /// Whether a graph from [previousLibraryCycleGraphLoader] has any changed
   /// transitive source.
@@ -170,12 +171,27 @@ class Build {
       buildPhases,
     );
     if (result.status == BuildStatus.success) {
-      final failures = processedOutputs
-          .map((id) => assetGraph.get(id)!)
-          .where((node) => node.type == NodeType.generated)
-          .where((node) => node.generatedNodeState!.result == false);
+      final failures = <AssetNode>[];
+      for (final output in processedOutputs) {
+        final node = assetGraph.get(output)!;
+        if (node.type != NodeType.generated) continue;
+        if (node.generatedNodeState!.result != false) continue;
+        failures.add(node);
+      }
       if (failures.isNotEmpty) {
-        await failureReporter.reportErrors(failures);
+        for (final failure in failures) {
+          if (errorsShownOutputs.contains(failure.id)) continue;
+          for (final error in failure.generatedNodeState!.errors) {
+            final name = _actionLoggerName(
+              buildPhases.inBuildPhases[failure
+                  .generatedNodeConfiguration!
+                  .phaseNumber],
+              failure.generatedNodeConfiguration!.primaryInput,
+              options.packageGraph.root.name,
+            );
+            _logger.severe('$name (cached)\n$error');
+          }
+        }
         result = BuildResult(
           BuildStatus.failure,
           result.outputs,
@@ -494,7 +510,6 @@ class Build {
       }
 
       await _cleanUpStaleOutputs(builderOutputs);
-      await FailureReporter.clean(phaseNumber, primaryInput);
 
       // Clear input tracking accumulated during `_buildShouldRun`.
       readerWriter.inputTracker.clear();
@@ -630,7 +645,6 @@ class Build {
     readerWriter.inputTracker.clear();
 
     // Clean out the impacts of the previous run.
-    await FailureReporter.clean(phaseNumber, input);
     final existingOutputs = assetGraph.postProcessBuildStepOutputs(
       postProcessBuildStepId,
     );
@@ -738,10 +752,10 @@ class Build {
         // https://github.com/dart-lang/build/issues/3875.
         nodeBuilder.digest = null;
         nodeBuilder.generatedNodeState.result = false;
+        nodeBuilder.generatedNodeState.errors.clear();
       });
       processedOutputs.add(output);
     }
-    await failureReporter.markSkipped(outputs.map((id) => assetGraph.get(id)!));
   }
 
   /// Checks and returns whether any [outputs] need to be updated in
@@ -1191,7 +1205,7 @@ class Build {
   /// - Setting `digest` based on what was written.
   /// - Setting `result` based on action success.
   /// - Setting `inputs` based on `inputTracker` and `unusedAssets`.
-  /// - Storing the error message with the [failureReporter].
+  /// - Setting `errors`.
   /// - Updating `newPrimaryInputs` and `changedOutputs` as needed.
   Future<void> _setOutputsState(
     AssetId input,
@@ -1199,7 +1213,7 @@ class Build {
     SingleStepReaderWriter readerWriter,
     InputTracker inputTracker,
     String actionDescription,
-    Iterable<ErrorReport> errors, {
+    Iterable<String> errors, {
     Set<AssetId>? unusedAssets,
   }) async {
     if (outputs.isEmpty) return;
@@ -1232,22 +1246,15 @@ class Build {
         nodeBuilder.generatedNodeState
           ..inputs.replace(usedInputs)
           ..resolverEntrypoints.replace(inputTracker.resolverEntrypoints)
-          ..result = result;
+          ..result = result
+          ..errors.replace(errors);
         nodeBuilder.digest = digest;
       });
 
-      if (!result) {
-        // Mark this output as failed. Transitive outputs will be marked as
-        // failed when they are processed and notice their primary inputs
-        // have failed.
-        await failureReporter.markReported(
-          actionDescription,
-          outputNode,
-          errors,
-        );
-      }
-
       processedOutputs.add(output);
+      if (result == false) {
+        errorsShownOutputs.add(output);
+      }
     }
   }
 
