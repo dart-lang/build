@@ -1031,7 +1031,7 @@ class Build {
       }
     } else if (inputNode.type == NodeType.glob) {
       // Ensure that the glob was evaluated, so [changedOutputs] is updated.
-      if (!processedOutputs.contains(input)) {
+      if (!processedGlobs.contains(input)) {
         await _buildGlobNode(input);
       }
       if (changedOutputs.contains(input)) {
