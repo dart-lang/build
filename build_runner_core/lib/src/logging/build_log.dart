@@ -12,6 +12,34 @@ import 'log_display.dart';
 
 BuildLog? _instance;
 
+/// The `build_runner` log.
+///
+/// The `package:logging` APIs are used in three distinct ways.
+///
+/// First: builders can log info, warnings and errors, via the `log` top-level
+/// variable in `package:build` that returns a `Logger`.
+///
+/// This `Logger` is scoped to the current builder:
+///
+///  - a severe log message marks the build step as failed
+///  - prints by the builder are logged as warnings instead of printed
+///  - exceptions thrown by the builder are logged as severe instead of printed
+///
+/// Second: the user-visible `build_runner` output passes through the root
+/// `Logger` as log messages.
+///
+///  - info, warnings and errors from `build_runner` setup and cleanup are
+///   logged as "info", "warning" or "severe", respectively
+///  - log output from scoped builder loggers is passed through to the root
+///   logger after prefixing it with the builder name and primary input
+///
+/// So, code calling `build_runner` as a library can access the log streams
+/// using the `Logger` APIs; in some cases a log listener can be passed in.
+///
+/// Where a console with ANSI control codes is available, the `Logger`output is
+/// _not_ displayed. Instead, no log listener is attached, and output is written
+/// directly to the console taking advantage of the capability to overwrite
+/// previous lines and the capability to write in color.
 class BuildLog {
   late final LogDisplay _display;
   final Stopwatch _stopwatch = Stopwatch()..start();
