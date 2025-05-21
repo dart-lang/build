@@ -122,8 +122,9 @@ class AnalysisDriverModel {
       idsToSyncOntoFilesystem = await _log.attributeAsync(
         Attribution.track,
         () async {
-          // Note: `transitiveDepsOf` can cause loads that cause builds that cause a
-          // recursive `_performResolve` on this same `AnalysisDriver` instance.
+          // Note: `transitiveDepsOf` can cause loads that cause builds that
+          // cause a recursive `_performResolve` on this same `AnalysisDriver`
+          // instance.
           final nodeLoader = AssetDepsLoader(buildStep.phasedReader);
           buildStep.inputTracker.addResolverEntrypoint(entrypoint);
           return await _graphLoader.transitiveDepsOf(nodeLoader, entrypoint);

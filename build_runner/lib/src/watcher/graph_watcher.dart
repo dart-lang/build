@@ -56,12 +56,14 @@ class PackageGraphWatcher {
                 StackTrace s,
               ) {
                 _log.severe(
-                  'Error from directory watcher for package:${w.node.name}\n\n'
-                  'If you see this consistently then it is recommended that '
-                  'you enable the polling file watcher with '
-                  '--use-polling-watcher.\n\n',
-                  e,
-                  s,
+                  _log.renderThrowable(
+                    'Error from directory watcher for '
+                    'package:${w.node.name}\n\n'
+                    'If you see this consistently then it is recommended that '
+                    'you enable the polling file watcher with '
+                    '--use-polling-watcher.\n\n',
+                    e,
+                  ),
                 );
               }),
             )

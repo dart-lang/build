@@ -8,6 +8,7 @@ import 'package:test/test.dart';
 void main() {
   group('LogDisplay', () {
     test('does nothing', () {
+      // ignore: unused_local_variable
       final display = LogDisplay();
     });
   });

@@ -61,9 +61,7 @@ class AssetGraphLoader {
         'Throwing away cached asset graph due to '
         'version mismatch or corrupted asset graph.',
       );
-      await Future.wait([
-        writer.deleteDirectory(_generatedOutputDirectoryId),
-      ]);
+      await Future.wait([writer.deleteDirectory(_generatedOutputDirectoryId)]);
       return null;
     }
   }

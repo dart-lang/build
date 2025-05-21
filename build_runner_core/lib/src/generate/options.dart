@@ -191,17 +191,13 @@ class BuildOptions {
         requiredSourcePaths: [r'lib/$lib$'],
         requiredRootSourcePaths: [r'$package$', r'lib/$lib$'],
       );
-    } on BuildConfigParseException catch (e, s) {
-      _log.severe(
-        '''
+    } on BuildConfigParseException catch (e) {
+      _log.severe('''
 Failed to parse `build.yaml` for ${e.packageName}.
 
 If you believe you have gotten this message in error, especially if using a new
 feature, you may need to run `dart run build_runner clean` and then rebuild.
-''',
-        e.exception,
-        s,
-      );
+''');
       throw const CannotBuildException();
     }
 

@@ -276,7 +276,7 @@ class Build {
       },
       (e, st) {
         if (!done.isCompleted) {
-          _log.severe('Unhandled build failure! $e $st', e, st);
+          _log.severe(_log.renderThrowable('Unhandled build failure!', e, st));
           done.complete(BuildResult(BuildStatus.failure, []));
         }
       },

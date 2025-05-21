@@ -423,11 +423,12 @@ class AssetHandler {
         headers[HttpHeaders.contentLengthHeader] = '${body.length}';
       }
       return shelf.Response.ok(body, headers: headers);
-    } catch (e, s) {
+    } catch (e) {
       _log.info(
-        'Error on request ${request.method} ${request.requestedUri}',
-        e,
-        s,
+        _log.renderThrowable(
+          'Error on request ${request.method} ${request.requestedUri}',
+          e,
+        ),
       );
       rethrow;
     }
@@ -757,7 +758,7 @@ shelf.Handler _logRequests(shelf.Handler innerHandler) {
         request.method,
         watch.elapsed,
       );
-      _log.severe(msg, error, stackTrace);
+      _log.severe(_log.renderThrowable(msg, error, stackTrace));
       rethrow;
     }
   };

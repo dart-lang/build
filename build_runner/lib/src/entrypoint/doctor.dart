@@ -71,8 +71,8 @@ class DoctorCommand extends BuildRunnerCommand {
       } on ArgumentError // ignore: avoid_catching_errors
       catch (e) {
         _log.severe(
-          'Failed to parse a `build.yaml` file for ${package.name}',
-          e,
+          'Failed to parse a `build.yaml` file for ${package.name}:'
+          ' ${e.message}',
         );
         return BuildConfig.useDefault(
           package.name,

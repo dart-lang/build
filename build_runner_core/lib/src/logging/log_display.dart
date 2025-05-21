@@ -2,10 +2,11 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:io';
+
 import 'package:logging/logging.dart';
 
 final logger = Logger.root;
-final consoleLevel = Level('console', Level.ALL.value + 1);
 
 class LogDisplay {
   late Stopwatch stopwatch = Stopwatch()..start();
@@ -13,6 +14,7 @@ class LogDisplay {
   int displayedLines = 0;
   String previousLastLine = '';
   bool closed = false;
+  void Function(LogRecord record)? onLog;
 
   void close() {
     closed = true;
@@ -28,11 +30,25 @@ class LogDisplay {
     if (closed) return;
     stopwatch.reset();
 
-    final moveCursor = displayedLines == 0 ? '' : '\x1b[${displayedLines}F';
-    displayedLines = entry.lines.length;
+    if (onLog != null) {
+      onLog!(LogRecord(entry.level, entry.line, ''));
+      return;
+    }
 
-    logger.log(consoleLevel, '$moveCursor${entry.block}');
     logger.log(entry.level, entry.line);
+    if (stdout.hasTerminal && stdout.supportsAnsiEscapes) {
+      final moveCursor = displayedLines == 0 ? '' : '\x1b[${displayedLines}F';
+      displayedLines = entry.lines.length;
+
+      stdout.writeln('$moveCursor${entry.block}');
+    } else {
+      stdout.writeln(entry.line);
+      /*if (entry.severity == LineSeverity.error) {
+        stderr.writeln(entry.line);
+      } else {
+        stdout.writeln(entry.line);
+      }*/
+    }
   }
 
   void finish() {
@@ -51,13 +67,14 @@ class BuildLogEntry {
     required this.severity,
   });
 
-  String get block => lines.map((l) => '$l\n').join('');
+  String get block => lines.join('\n');
 
   Level get level => switch (severity) {
+    LineSeverity.fine => Level.FINE,
     LineSeverity.info => Level.INFO,
     LineSeverity.warning => Level.WARNING,
     LineSeverity.error => Level.SEVERE,
   };
 }
 
-enum LineSeverity { info, warning, error }
+enum LineSeverity { fine, info, warning, error }

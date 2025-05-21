@@ -117,10 +117,12 @@ Future<int> _generateAndRun(
     } on IsolateSpawnException catch (e) {
       if (tryCount > 1) {
         _log.severe(
-          'Failed to spawn build script after retry. '
-          'This is likely due to a misconfigured builder definition. '
-          'See the generated script at $scriptLocation to find errors.',
-          e,
+          _log.renderThrowable(
+            'Failed to spawn build script after retry. '
+            'This is likely due to a misconfigured builder definition. '
+            'See the generated script at $scriptLocation to find errors.',
+            e,
+          ),
         );
         messagePort.sendPort.send(ExitCode.config.code);
         exitPort.sendPort.send(null);

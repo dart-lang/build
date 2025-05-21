@@ -177,9 +177,11 @@ class RunCommand extends BuildRunnerCommand {
         onExit?.close();
         onError?.close();
         _log.severe(
-          'Unhandled error from script: $scriptName',
-          e[0],
-          StackTrace.fromString(e[1].toString()),
+          _log.renderThrowable(
+            'Unhandled error from script: $scriptName',
+            e[0],
+            StackTrace.fromString(e[1].toString()),
+          ),
         );
         if (!exitCodeCompleter.isCompleted) exitCodeCompleter.complete(1);
       });
@@ -197,9 +199,11 @@ class RunCommand extends BuildRunnerCommand {
       return await exitCodeCompleter.future;
     } on IsolateSpawnException catch (e) {
       _log.severe(
-        'Could not spawn isolate. Ensure that your file is in a valid '
-        'directory (i.e. "bin", "benchmark", "example", "test", "tool").',
-        e,
+        _log.renderThrowable(
+          'Could not spawn isolate. Ensure that your file is in a valid '
+          'directory (i.e. "bin", "benchmark", "example", "test", "tool").',
+          e,
+        ),
       );
       return ExitCode.ioError.code;
     } finally {

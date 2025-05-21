@@ -186,8 +186,8 @@ class ReaderWriter extends AssetReader
       final path = _pathFor(id);
       // Hidden generated files are moved by `assetPathProvider` under the root
       // package folder, and it's allowed to delete them. So for assets in a
-      // different package, check if the path has mapped onto the generated output
-      // path, and if so allow the deleted.
+      // different package, check if the path has mapped onto the generated
+      // output path, and if so allow the deleted.
       var generatedOutputPath = assetPathProvider.pathFor(
         AssetId(rootPackage, generatedOutputDirectory),
       );

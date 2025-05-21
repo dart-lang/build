@@ -59,18 +59,19 @@ enum BuildLogMode { simple, build, watch, daemon }
 class BuildLog {
   late final LogDisplay _display;
   final Stopwatch _stopwatch = Stopwatch()..start();
+  // ignore: unused_field
   BuildLogMode _mode = BuildLogMode.simple;
 
   final Map<String, Stage> _stagesByName = {};
   Stage _currentStage = Stage.setup();
 
-  var loaded = '';
+  String loaded = '';
 
   Duration _attributedDuration = Duration.zero;
 
-  var again = false;
+  bool again = false;
 
-  bool? result = null;
+  bool? result;
 
   factory BuildLog() => _instance ??= BuildLog._();
 
@@ -90,10 +91,12 @@ class BuildLog {
     void Function(LogRecord record)? onLog,
   }) {
     if (mode != null) _mode = mode;
+    if (onLog != null) _display.onLog = onLog;
     // TODO
   }
 
   void clearOnLog() {
+    _display.onLog = null;
     // TODO
   }
 
@@ -125,6 +128,61 @@ class BuildLog {
     return BuildLogEntry(lines: render(), line: line, severity: severity);
   }
 
+  String _renderStage(Stage stage) {
+    final name = stage.name;
+    final progress = stage.progress;
+    final length = stage.length;
+
+    final time =
+        stage.duration == null
+            ? '    '
+            : stage.duration!.inMilliseconds < 1000
+            ? '<1s'.padLeft(4)
+            : '${(stage.duration!.inMilliseconds / 1000).round()}s'.padLeft(4);
+
+    /*final time = (((step.stopwatch.elapsed.inMilliseconds / 100) / 10)
+                  .round()
+                  .toString() +
+              's')
+          .padLeft(4);*/
+
+    /*var ticks = 80 * number ~/ of;
+      ticks = max(0, ticks - displayName.length - 1);
+      var spaces = max(0, 80 - ticks - displayName.length - 1 - time.length);
+      // buffer.writeln('$displayName ${'.' * ticks}${' ' * spaces}$time');*/
+
+    /*var percent =
+          number == 0 ? '    ' : '${100 * number ~/ of}'.padLeft(3) + '%';*/
+
+    var percent =
+        progress == null ? '' : '${100 * progress ~/ length}'.padLeft(2);
+    if (percent == '100' || percent == '') {
+      percent = '';
+    } else {
+      percent = ', $percent%';
+    }
+
+    //displayName = displayName.padLeft(longestNameLength);
+
+    var attrs = '';
+    //if (name == step.name) {
+    final buffer2 = StringBuffer();
+    final entries = stage.attributions.entries.toList();
+    entries.sort((a, b) => b.value.compareTo(a.value));
+    for (final entry in entries) {
+      if (entry.value.inMilliseconds < 1000) continue;
+      buffer2.write(', ');
+      final time = '${(entry.value.inMilliseconds / 1000).round()}s';
+
+      buffer2.write('${entry.key} $time');
+    }
+    attrs = buffer2.toString();
+    //buffer.writeln('     │      │ $buffer2'.padRight(80));
+    //}
+
+    return '$time $name$percent$attrs';
+  }
+
   List<String> render() {
     final buildDone = result != null;
 
@@ -139,7 +197,6 @@ class BuildLog {
     writeLine(' --- build_runner$note');
 
     for (final entry in _stagesByName.entries) {
-      final name = entry.key;
       final stage = entry.value;
       final length = stage.length;
 
@@ -147,64 +204,7 @@ class BuildLog {
         continue;
       }
 
-      /*if (name == 'setup' && step.name != 'setup') break;
-      var displayName =
-          step.name == name
-              ? (extra == null ? step.name : '${step.name} $extra')
-              : step.name;*/
-      final progress = stage.progress;
-
-      final time =
-          stage.duration == null
-              ? '    '
-              : stage.duration!.inMilliseconds < 1000
-              ? ('<1s').padLeft(4)
-              : ((stage.duration!.inMilliseconds / 1000).round().toString() +
-                      's')
-                  .padLeft(4);
-
-      /*final time = (((step.stopwatch.elapsed.inMilliseconds / 100) / 10)
-                  .round()
-                  .toString() +
-              's')
-          .padLeft(4);*/
-
-      /*var ticks = 80 * number ~/ of;
-      ticks = max(0, ticks - displayName.length - 1);
-      var spaces = max(0, 80 - ticks - displayName.length - 1 - time.length);
-      // buffer.writeln('$displayName ${'.' * ticks}${' ' * spaces}$time');*/
-
-      /*var percent =
-          number == 0 ? '    ' : '${100 * number ~/ of}'.padLeft(3) + '%';*/
-
-      var percent =
-          progress == null ? '' : '${100 * progress ~/ length}'.padLeft(2);
-      if (percent == '100' || percent == '') {
-        percent = '';
-      } else {
-        percent = ', ' + percent + '%';
-      }
-
-      //displayName = displayName.padLeft(longestNameLength);
-
-      var attrs = '';
-      //if (name == step.name) {
-      final buffer2 = StringBuffer();
-      final entries = stage.attributions.entries.toList();
-      entries.sort((a, b) => b.value.compareTo(a.value));
-      for (final entry in entries) {
-        if (entry.value.inMilliseconds < 1000) continue;
-        buffer2.write(', ');
-        final time =
-            (entry.value.inMilliseconds / 1000).round().toString() + 's';
-
-        buffer2.write('${entry.key} $time');
-      }
-      attrs = buffer2.toString();
-      //buffer.writeln('     │      │ $buffer2'.padRight(80));
-      //}
-
-      writeLine('$time $name$percent$attrs');
+      writeLine(_renderStage(stage));
 
       if (!buildDone) {
         if (stage.warnings.isNotEmpty) {
@@ -266,20 +266,24 @@ class BuildLog {
     return await function();
   }
 
-  void fine(String message) {
-    //print(message);
+  void fine(String message, {String? stage, String? note}) {
+    _display.display(makeEntry(severity: LineSeverity.fine, line: message));
   }
 
-  void info(String message, [Object? error, StackTrace? stackTrace]) {
-    //print(message);
+  void info(String message, {String? stage, String? note}) {
+    _display.display(makeEntry(severity: LineSeverity.info, line: message));
   }
 
-  void warning(String message) {
-    //print(message);
+  void warning(String message, {String? stage, String? note}) {
+    ((_stagesByName[stage] ?? _currentStage).warnings[note] ??= []).add(
+      message,
+    );
+    _display.display(makeEntry(severity: LineSeverity.warning, line: message));
   }
 
-  void severe(String message, [Object? e, StackTrace? s]) {
-    print('*** severe $message $e $s');
+  void severe(String message, {String? stage, String? note}) {
+    ((_stagesByName[stage] ?? _currentStage).errors[note] ??= []).add(message);
+    _display.display(makeEntry(severity: LineSeverity.error, line: message));
   }
 
   int previous = 0;
@@ -312,8 +316,10 @@ class BuildLog {
     _currentStage.duration ??= Duration.zero;
     _currentStage.progress ??= 0;
 
-    final thisMakeEntry =
-        () => makeEntry(severity: LineSeverity.info, line: progress.toString());
+    BuildLogEntry thisMakeEntry() => makeEntry(
+      severity: LineSeverity.info,
+      line: _renderStage(_currentStage),
+    );
 
     if (_currentStage != oldStage) {
       oldStage.progress = oldStage.length;
@@ -383,6 +389,27 @@ class BuildLog {
 
   BuildLogLogger loggerForPostprocess(AssetId input) =>
       BuildLogLogger(stage: 'cleanup', note: input.toString());
+
+  String renderThrowable(
+    Object? message, [
+    Object? error,
+    StackTrace? stackTrace,
+  ]) {
+    var result = message?.toString() ?? '';
+    if (error != null) result += '\n$error';
+
+    // TODO drop frames.
+
+    // Drop stack traces for exception types that can be caused by normal
+    // user input; render stack traces for everything else as they can point to
+    // bugs in generators or in build_runner.
+    if (stackTrace != null &&
+        error is! SyntaxErrorInAssetException &&
+        error is! UnresolvableAssetException) {
+      result += '\n$stackTrace';
+    }
+    return result;
+  }
 }
 
 class Progress {
@@ -463,8 +490,8 @@ class Stage {
   factory Stage.setup() => Stage(name: 'setup', length: 8);
   factory Stage.cleanup() => Stage(name: 'cleanup', length: 4);
 
-  final Map<AssetId?, List<String>> warnings = {};
-  final Map<AssetId?, List<String>> errors = {};
+  final Map<String?, List<String>> warnings = {};
+  final Map<String?, List<String>> errors = {};
 
   bool get hasLogOutput => warnings.isNotEmpty || errors.isNotEmpty;
 }

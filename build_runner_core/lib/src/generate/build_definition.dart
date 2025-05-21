@@ -137,8 +137,8 @@ class _Loader {
           _options.packageGraph,
           _environment.reader,
         );
-      } on DuplicateAssetNodeException catch (e, st) {
-        _log.severe('Conflicting outputs', e, st);
+      } on DuplicateAssetNodeException catch (e) {
+        _log.severe(e.toString());
         throw const CannotBuildException();
       }
       buildScriptUpdates = await BuildScriptUpdates.create(

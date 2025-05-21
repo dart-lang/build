@@ -4,7 +4,6 @@
 
 import 'dart:async';
 
-import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 
 import 'build_log.dart';
@@ -45,7 +44,7 @@ class BuildLogLogger implements Logger {
     StackTrace? stackTrace,
     Zone? zone,
   ]) {
-    final renderedMessage = _render(message, error, stackTrace);
+    final renderedMessage = _log.renderThrowable(message, error, stackTrace);
 
     if (logLevel < Level.INFO) {
       _log.fine(renderedMessage);
@@ -57,21 +56,6 @@ class BuildLogLogger implements Logger {
       errors.add(renderedMessage);
       _log.severe(renderedMessage);
     }
-  }
-
-  String _render(Object? message, [Object? error, StackTrace? stackTrace]) {
-    var result = message?.toString() ?? '';
-    if (error != null) result += '\n$error';
-
-    // Drop stack traces for exception types that can be caused by normal
-    // user input; render stack traces for everything else as they can point to
-    // bugs in generators or in build_runner.
-    if (stackTrace != null &&
-        error is! SyntaxErrorInAssetException &&
-        error is! UnresolvableAssetException) {
-      result += '\n$stackTrace';
-    }
-    return result;
   }
 
   @override
