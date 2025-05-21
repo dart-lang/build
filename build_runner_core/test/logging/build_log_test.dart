@@ -159,10 +159,10 @@ void main() {
   });
 }
 
-String padLinesRight(String output) {
-  final result = StringBuffer();
+List<String> padLinesRight(String output) {
+  final result = <String>[];
   for (final line in output.split('\n')) {
-    result.writeln(line.padRight(80));
+    result.add(line.padRight(80));
   }
-  return result.toString();
+  return result;
 }

@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:build/build.dart'
     show AssetId, SyntaxErrorInAssetException, UnresolvableAssetException;
@@ -155,7 +156,9 @@ class BuildLog {
           number == 0 ? '    ' : '${100 * number ~/ of}'.padLeft(3) + '%';*/
 
     var percent =
-        progress == null ? '' : '${100 * progress ~/ length}'.padLeft(2);
+        (progress == null || length == 0)
+            ? ''
+            : '${100 * progress ~/ length}'.padLeft(2);
     if (percent == '100' || percent == '') {
       percent = '';
     } else {
@@ -286,6 +289,11 @@ class BuildLog {
     _display.display(makeEntry(severity: LineSeverity.error, line: message));
   }
 
+  @Deprecated('Only for printf debugging, do not submit.')
+  void debug(String message) {
+    stderr.writeln(message);
+  }
+
   int previous = 0;
 
   void builders(Map<String, int> buildSteps) {
@@ -298,6 +306,9 @@ class BuildLog {
     _stagesByName['cleanup'] = Stage.cleanup();
   }
 
+  Stage stageNamed(String name) =>
+      _stagesByName[name] ??= Stage(name: name, length: 0);
+
   void progress(Progress progress) {
     _currentStage.duration =
         (_currentStage.duration ?? Duration.zero) + _stopwatch.elapsed;
@@ -305,11 +316,11 @@ class BuildLog {
 
     final oldStage = _currentStage;
     if (progress.number != null) {
-      _currentStage = _stagesByName[progress.stage]!;
+      _currentStage = stageNamed(progress.stage);
       _currentStage.progress = progress.number!;
     } else {
       _currentStage.progress = (_currentStage.progress ?? 0) + 1;
-      _currentStage = _stagesByName[progress.stage]!;
+      _currentStage = stageNamed(progress.stage);
     }
 
     _currentStage.note = progress.note;
@@ -336,7 +347,11 @@ class BuildLog {
   // TODO(davidmorgan): move reset to start.
   void buildDone(bool result) {
     this.result = result;
+    final conclusion = result ? 'SUCCESS' : 'FAILURE';
     progress(Progress.done);
+    _display.display(
+      makeEntry(severity: LineSeverity.info, line: '--- $conclusion'),
+    );
 
     /*_display.finish();
     _stagesByName.clear();
