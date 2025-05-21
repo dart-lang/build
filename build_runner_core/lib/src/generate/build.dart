@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:collection';
 import 'dart:convert';
 
 import 'package:build/build.dart';
@@ -13,7 +12,6 @@ import 'package:build/src/internal.dart';
 import 'package:build_resolvers/src/internal.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
-import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
@@ -24,11 +22,8 @@ import '../asset_graph/optional_output_tracker.dart';
 import '../asset_graph/post_process_build_step_id.dart';
 import '../changes/asset_updates.dart';
 import '../environment/build_environment.dart';
-import '../logging/build_for_input_logger.dart';
-import '../logging/failure_reporter.dart';
-import '../logging/human_readable_duration.dart';
+import '../logging/build_log.dart';
 import '../logging/log_renderer.dart';
-import '../logging/logging.dart';
 import '../performance_tracking/performance_tracking_resolvers.dart';
 import '../util/build_dirs.dart';
 import '../util/constants.dart';
@@ -36,14 +31,13 @@ import 'build_directory.dart';
 import 'build_phases.dart';
 import 'build_result.dart';
 import 'finalized_assets_view.dart';
-import 'heartbeat.dart';
 import 'input_tracker.dart';
 import 'options.dart';
 import 'performance_tracker.dart';
 import 'phase.dart';
 import 'single_step_reader_writer.dart';
 
-final _logger = Logger('Build');
+final _log = BuildLog();
 
 /// A single build.
 class Build {
@@ -51,6 +45,7 @@ class Build {
   final BuildEnvironment environment;
   final BuildOptions options;
   final BuildPhases buildPhases;
+  final List<String> inBuildPhaseDisplayNames = [];
   final Set<BuildDirectory> buildDirs;
   final Set<BuildFilter> buildFilters;
 
@@ -65,17 +60,12 @@ class Build {
   // Logging.
   final LogRenderer renderer;
   final BuildPerformanceTracker performanceTracker;
-  late final HungActionsHeartbeat hungActionsHeartbeat;
   final bool logFine;
 
   // State.
   final AssetGraph assetGraph;
   final lazyPhases = <String, Future<Iterable<AssetId>>>{};
   final lazyGlobs = <AssetId, Future<void>>{};
-  final failureReporter = FailureReporter();
-  int actionsCompletedCount = 0;
-  int actionsStartedCount = 0;
-  final pendingActions = SplayTreeMap<int, Set<String>>();
 
   /// Generated outputs that have been processed.
   ///
@@ -114,6 +104,9 @@ class Build {
   /// checked against the digest from the previous build.
   final Set<AssetId> changedOutputs = {};
 
+  /// Outputs for which errors have been shown.
+  final Set<AssetId> errorsShownOutputs = {};
+
   /// Whether a graph from [previousLibraryCycleGraphLoader] has any changed
   /// transitive source.
   final Map<LibraryCycleGraph, bool> changedGraphs = Map.identity();
@@ -133,34 +126,16 @@ class Build {
            options.trackPerformance
                ? BuildPerformanceTracker()
                : BuildPerformanceTracker.noOp(),
-       logFine = _logger.level <= Level.FINE,
+       logFine = false,
        previousDepsLoader =
            assetGraph.previousPhasedAssetDeps == null
                ? null
-               : AssetDepsLoader.fromDeps(assetGraph.previousPhasedAssetDeps!) {
-    hungActionsHeartbeat = HungActionsHeartbeat(() {
-      final message = StringBuffer();
-      const actionsToLogMax = 5;
-      final descriptions = pendingActions.values
-          .expand((actions) => actions)
-          .take(actionsToLogMax);
-      for (final description in descriptions) {
-        message.writeln('  - $description');
-      }
-      var additionalActionsCount =
-          actionsStartedCount - actionsCompletedCount - actionsToLogMax;
-      if (additionalActionsCount > 0) {
-        message.writeln('  .. and $additionalActionsCount more');
-      }
-      return '$message';
-    });
-  }
+               : AssetDepsLoader.fromDeps(assetGraph.previousPhasedAssetDeps!);
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
     if (logFine) {
-      _logger.fine(AssetUpdates.from(updates).render(renderer));
+      _log.fine(AssetUpdates.from(updates).render(renderer));
     }
-    var watch = Stopwatch()..start();
     var result = await _safeBuild(updates);
     var optionalOutputTracker = OptionalOutputTracker(
       assetGraph,
@@ -170,12 +145,27 @@ class Build {
       buildPhases,
     );
     if (result.status == BuildStatus.success) {
-      final failures = processedOutputs
-          .map((id) => assetGraph.get(id)!)
-          .where((node) => node.type == NodeType.generated)
-          .where((node) => node.generatedNodeState!.result == false);
+      final failures = <AssetNode>[];
+      for (final output in processedOutputs) {
+        final node = assetGraph.get(output)!;
+        if (node.type != NodeType.generated) continue;
+        if (node.generatedNodeState!.result != false) continue;
+        failures.add(node);
+      }
       if (failures.isNotEmpty) {
-        await failureReporter.reportErrors(failures);
+        for (final failure in failures) {
+          if (errorsShownOutputs.contains(failure.id)) continue;
+          for (final error in failure.generatedNodeState!.errors) {
+            final name = _actionLoggerName(
+              buildPhases.inBuildPhases[failure
+                  .generatedNodeConfiguration!
+                  .phaseNumber],
+              failure.generatedNodeConfiguration!.primaryInput,
+              options.packageGraph.root.name,
+            );
+            _log.severe('$name (cached)\n$error');
+          }
+        }
         result = BuildResult(
           BuildStatus.failure,
           result.outputs,
@@ -195,97 +185,75 @@ class Build {
       readerWriter,
       buildDirs,
     );
-    if (result.status == BuildStatus.success) {
-      _logger.info(
-        'Succeeded after ${humanReadable(watch.elapsed)} with '
-        '${result.outputs.length} outputs '
-        '($actionsCompletedCount actions)\n',
-      );
-    } else {
-      _logger.severe('Failed after ${humanReadable(watch.elapsed)}');
-    }
+    _log.buildDone(result.status == BuildStatus.success);
     return result;
   }
 
   Future<void> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
-    await logTimedAsync(_logger, 'Updating asset graph', () async {
-      changedInputs.clear();
-      deletedAssets.clear();
-      for (final update in updates.entries) {
-        if (update.value == ChangeType.REMOVE) {
-          deletedAssets.add(update.key);
-        } else {
-          changedInputs.add(update.key);
-          if (update.value == ChangeType.ADD) {
-            newPrimaryInputs.add(update.key);
-          }
+    changedInputs.clear();
+    deletedAssets.clear();
+    for (final update in updates.entries) {
+      if (update.value == ChangeType.REMOVE) {
+        deletedAssets.add(update.key);
+      } else {
+        changedInputs.add(update.key);
+        if (update.value == ChangeType.ADD) {
+          newPrimaryInputs.add(update.key);
         }
       }
-      readerWriter.cache.invalidate(changedInputs);
-      final deleted = await assetGraph.updateAndInvalidate(
-        buildPhases,
-        updates,
-        options.packageGraph.root.name,
-        _delete,
-        readerWriter,
-      );
-      deletedAssets.addAll(deleted);
-    });
+    }
+    readerWriter.cache.invalidate(changedInputs);
+    final deleted = await assetGraph.updateAndInvalidate(
+      buildPhases,
+      updates,
+      options.packageGraph.root.name,
+      _delete,
+      readerWriter,
+    );
+    deletedAssets.addAll(deleted);
   }
 
   /// Runs a build inside a zone with an error handler and stack chain
   /// capturing.
   Future<BuildResult> _safeBuild(Map<AssetId, ChangeType> updates) {
-    var done = Completer<BuildResult>();
-    var heartbeat = HeartbeatLogger(
-      transformLog: (original) => '$original, ${_buildProgress()}',
-      waitDuration: const Duration(seconds: 1),
-    )..start();
-    hungActionsHeartbeat.start();
-    done.future.whenComplete(() {
-      heartbeat.stop();
-      hungActionsHeartbeat.stop();
-    });
-
+    final done = Completer<BuildResult>();
     runZonedGuarded(
       () async {
+        _log.progress(Progress.updateAssetGraph);
         if (!assetGraph.cleanBuild) {
           await _updateAssetGraph(updates);
         }
 
         // Run a fresh build.
-        var result = await logTimedAsync(_logger, 'Running build', _runPhases);
+        var result = await _runPhases();
 
         // Write out the dependency graph file.
-        await logTimedAsync(
-          _logger,
-          'Caching finalized dependency graph',
-          () async {
-            // Combine previous phased asset deps, if any, with the newly loaded
-            // deps. Because of skipped builds, the newly loaded deps might just
-            // say "not generated yet", in which case the old value is retained.
-            final updatedPhasedAssetDeps =
-                assetGraph.previousPhasedAssetDeps == null
-                    ? AnalysisDriverModel.sharedInstance.phasedAssetDeps()
-                    : assetGraph.previousPhasedAssetDeps!.update(
-                      AnalysisDriverModel.sharedInstance.phasedAssetDeps(),
-                    );
-            assetGraph.previousPhasedAssetDeps = updatedPhasedAssetDeps;
-            await readerWriter.writeAsBytes(
-              AssetId(options.packageGraph.root.name, assetGraphPath),
-              assetGraph.serialize(),
-            );
-            // Phases options don't change during a build series, so for all
-            // subsequent builds "previous" and current build options digests
-            // match.
-            assetGraph.previousInBuildPhasesOptionsDigests =
-                assetGraph.inBuildPhasesOptionsDigests;
-            assetGraph.previousPostBuildActionsOptionsDigests =
-                assetGraph.postBuildActionsOptionsDigests;
-          },
+        _log.progress(Progress.writeAssetGraph);
+
+        // Combine previous phased asset deps, if any, with the newly loaded
+        // deps. Because of skipped builds, the newly loaded deps might just
+        // say "not generated yet", in which case the old value is retained.
+        final updatedPhasedAssetDeps =
+            assetGraph.previousPhasedAssetDeps == null
+                ? AnalysisDriverModel.sharedInstance.phasedAssetDeps()
+                : assetGraph.previousPhasedAssetDeps!.update(
+                  AnalysisDriverModel.sharedInstance.phasedAssetDeps(),
+                );
+        assetGraph.previousPhasedAssetDeps = updatedPhasedAssetDeps;
+        await readerWriter.writeAsBytes(
+          AssetId(options.packageGraph.root.name, assetGraphPath),
+          assetGraph.serialize(),
         );
+        // Phases options don't change during a build series, so for all
+        // subsequent builds "previous" and current build options digests
+        // match.
+        assetGraph.previousInBuildPhasesOptionsDigests =
+            assetGraph.inBuildPhasesOptionsDigests;
+        assetGraph.previousPostBuildActionsOptionsDigests =
+            assetGraph.postBuildActionsOptionsDigests;
 
         // Log performance information if requested
+        _log.progress(Progress.writePerformance);
         if (options.logPerformanceDir != null) {
           assert(result.performance != null);
           var now = DateTime.now();
@@ -295,41 +263,80 @@ class Build {
             '_${_twoDigits(now.hour)}-${_twoDigits(now.minute)}-'
             '${_twoDigits(now.second)}',
           );
-          await logTimedAsync(
-            _logger,
-            'Writing performance log to $logPath',
-            () {
-              var performanceLogId = AssetId(
-                options.packageGraph.root.name,
-                logPath,
-              );
-              var serialized = jsonEncode(result.performance);
-              return readerWriter.writeAsString(performanceLogId, serialized);
-            },
+          _log.info('Writing performance log to $logPath');
+          var performanceLogId = AssetId(
+            options.packageGraph.root.name,
+            logPath,
           );
+          var serialized = jsonEncode(result.performance);
+          return readerWriter.writeAsString(performanceLogId, serialized);
         }
 
         if (!done.isCompleted) done.complete(result);
       },
       (e, st) {
         if (!done.isCompleted) {
-          _logger.severe('Unhandled build failure!', e, st);
+          _log.severe(_log.renderThrowable('Unhandled build failure!', e, st));
           done.complete(BuildResult(BuildStatus.failure, []));
         }
       },
     );
+
     return done.future;
   }
-
-  /// Returns a message describing the progress of the current build.
-  String _buildProgress() =>
-      '$actionsCompletedCount/$actionsStartedCount actions completed.';
 
   /// Runs the actions in [buildPhases] and returns a future which completes
   /// to the [BuildResult] once all [BuildPhase]s are done.
   Future<BuildResult> _runPhases() {
     return performanceTracker.track(() async {
       final outputs = <AssetId>[];
+
+      final samePhaseNameCounts = <String, int>{};
+      inBuildPhaseDisplayNames.addAll(
+        Iterable.generate(buildPhases.inBuildPhases.length, (_) => ''),
+      );
+      String namePhase(int phaseNumber) {
+        final phase = buildPhases.inBuildPhases[phaseNumber];
+        final label = phase.builderLabel;
+        final count =
+            samePhaseNameCounts[label] = (samePhaseNameCounts[label] ?? 0) + 1;
+        final result = '$label${count == 1 ? '' : '($count)'}';
+        inBuildPhaseDisplayNames[phaseNumber] = result;
+        return result;
+      }
+
+      final primaryInputsByPhase = <int, List<AssetId>>{};
+      final inputLengthByName = <String, int>{};
+      for (
+        var phaseNum = 0;
+        phaseNum < buildPhases.inBuildPhases.length;
+        phaseNum++
+      ) {
+        final phase = buildPhases.inBuildPhases[phaseNum];
+
+        // An optional phase does not show progress but still has a logging
+        // stage in order to track warnings and errors.
+        if (phase.isOptional) {
+          inputLengthByName[namePhase(phaseNum)] = 0;
+          primaryInputsByPhase[phaseNum] = [];
+          continue;
+        }
+        final primaryInputs = await _matchingPrimaryInputs(
+          phase.package,
+          phaseNum,
+        );
+        if (primaryInputs.isEmpty) {
+          // A non-optional phase with no inputs won't run at all, so no stage
+          // name is needed: there are no warnings or errors to log.
+          primaryInputsByPhase[phaseNum] = [];
+        } else {
+          primaryInputs.sort();
+          primaryInputsByPhase[phaseNum] = primaryInputs;
+          inputLengthByName[namePhase(phaseNum)] = primaryInputs.length;
+        }
+      }
+
+      _log.builders(inputLengthByName);
 
       // Main build phases.
       for (
@@ -338,15 +345,20 @@ class Build {
         phaseNum++
       ) {
         var phase = buildPhases.inBuildPhases[phaseNum];
-        if (phase.isOptional) continue;
+        final primaryInputs = primaryInputsByPhase[phaseNum]!;
+        if (primaryInputs.isEmpty) continue;
+
         outputs.addAll(
           await performanceTracker.trackBuildPhase(phase, () async {
-            var primaryInputs = await _matchingPrimaryInputs(
-              phase.package,
-              phaseNum,
-            );
             final outputs = <AssetId>[];
-            for (final primaryInput in primaryInputs) {
+            for (var i = 0; i != primaryInputs.length; ++i) {
+              final primaryInput = primaryInputs[i];
+              _log.progress(
+                Progress.build(
+                  inBuildPhaseDisplayNames[phaseNum],
+                  renderer.id(primaryInput),
+                ),
+              );
               outputs.addAll(
                 await _buildForPrimaryInput(
                   phaseNumber: phaseNum,
@@ -361,6 +373,7 @@ class Build {
       }
 
       // Post build phase.
+      _log.progress(Progress.postbuild);
       if (buildPhases.postBuildPhase.builderActions.isNotEmpty) {
         outputs.addAll(
           await performanceTracker.trackBuildPhase(
@@ -390,11 +403,11 @@ class Build {
   }
 
   /// Returns primary inputs for [package] in [phaseNumber].
-  Future<Set<AssetId>> _matchingPrimaryInputs(
+  Future<List<AssetId>> _matchingPrimaryInputs(
     String package,
     int phaseNumber,
   ) async {
-    var ids = <AssetId>{};
+    var ids = <AssetId>[];
     var phase = buildPhases[phaseNumber];
     var packageNode = options.packageGraph[package]!;
 
@@ -435,10 +448,14 @@ class Build {
       final phaseNumber = nodeConfiguration.phaseNumber;
       final primaryInput = node.generatedNodeConfiguration!.primaryInput;
       await lazyPhases.putIfAbsent('$phaseNumber|$primaryInput', () async {
-        return _buildForPrimaryInput(
-          primaryInput: primaryInput,
-          phaseNumber: phaseNumber,
-          phase: buildPhases.inBuildPhases[nodeConfiguration.phaseNumber],
+        final phase = buildPhases.inBuildPhases[nodeConfiguration.phaseNumber];
+        return _log.attributeAsync(
+          Attribution.optionalBuilder(phase.builderLabel),
+          () => _buildForPrimaryInput(
+            primaryInput: primaryInput,
+            phaseNumber: phaseNumber,
+            phase: phase,
+          ),
         );
       });
     }
@@ -494,22 +511,9 @@ class Build {
       }
 
       await _cleanUpStaleOutputs(builderOutputs);
-      await FailureReporter.clean(phaseNumber, primaryInput);
 
       // Clear input tracking accumulated during `_buildShouldRun`.
       readerWriter.inputTracker.clear();
-
-      final actionDescription = _actionLoggerName(
-        phase,
-        primaryInput,
-        options.packageGraph.root.name,
-      );
-      final logger = BuildForInputLogger(Logger(actionDescription));
-
-      actionsStartedCount++;
-      pendingActions
-          .putIfAbsent(phaseNumber, () => <String>{})
-          .add(actionDescription);
 
       final unusedAssets = <AssetId>{};
       void reportUnusedAssetsForInput(AssetId input, Iterable<AssetId> assets) {
@@ -517,39 +521,45 @@ class Build {
         unusedAssets.addAll(assets);
       }
 
-      await tracker.trackStage(
-        'Build',
-        () => runBuilder(
-          builder,
-          [primaryInput],
-          readerWriter,
-          readerWriter,
-          PerformanceTrackingResolvers(options.resolvers, tracker),
-          logger: logger,
-          resourceManager: resourceManager,
-          stageTracker: tracker,
-          reportUnusedAssetsForInput: reportUnusedAssetsForInput,
-          packageConfig: options.packageGraph.asPackageConfig,
-        ).catchError((void _) {
-          // Errors tracked through the logger.
-        }),
+      final logger = _log.loggerForStep(
+        inBuildPhaseDisplayNames[phaseNumber],
+        primaryInput,
       );
-      actionsCompletedCount++;
-      hungActionsHeartbeat.ping();
-      pendingActions[phaseNumber]!.remove(actionDescription);
+      await _log.attribute(
+        Attribution.build,
+        () => tracker.trackStage(
+          'Build',
+          () => runBuilder(
+            builder,
+            [primaryInput],
+            readerWriter,
+            readerWriter,
+            PerformanceTrackingResolvers(options.resolvers, tracker),
+            logger: logger,
+            resourceManager: resourceManager,
+            stageTracker: tracker,
+            reportUnusedAssetsForInput: reportUnusedAssetsForInput,
+            packageConfig: options.packageGraph.asPackageConfig,
+          ).catchError((void _) {
+            // Errors tracked through the logger.
+          }),
+        ),
+      );
 
       // Update the state for all the `builderOutputs` nodes based on what was
       // read and written.
-      await tracker.trackStage(
-        'Finalize',
-        () => _setOutputsState(
-          primaryInput,
-          builderOutputs,
-          readerWriter,
-          readerWriter.inputTracker,
-          actionDescription,
-          logger.errorsSeen,
-          unusedAssets: unusedAssets,
+      await _log.attributeAsync(
+        Attribution.track,
+        () => tracker.trackStage(
+          'Finalize',
+          () => _setOutputsState(
+            primaryInput,
+            builderOutputs,
+            readerWriter,
+            readerWriter.inputTracker,
+            logger.errors,
+            unusedAssets: unusedAssets,
+          ),
         ),
       );
 
@@ -562,15 +572,14 @@ class Build {
     PostBuildPhase phase,
   ) async {
     var actionNum = 0;
-    var outputLists = await Future.wait(
-      phase.builderActions.map(
-        (action) => _runPostBuildAction(phaseNum, actionNum++, action),
-      ),
-    );
-    return outputLists.fold<List<AssetId>>(
-      <AssetId>[],
-      (combined, next) => combined..addAll(next),
-    );
+    final outputs = <AssetId>[];
+    for (final builderAction in phase.builderActions) {
+      _log.progress(Progress.postbuild);
+      outputs.addAll(
+        await _runPostBuildAction(phaseNum, actionNum++, builderAction),
+      );
+    }
+    return outputs;
   }
 
   Future<Iterable<AssetId>> _runPostBuildAction(
@@ -630,7 +639,6 @@ class Build {
     readerWriter.inputTracker.clear();
 
     // Clean out the impacts of the previous run.
-    await FailureReporter.clean(phaseNumber, input);
     final existingOutputs = assetGraph.postProcessBuildStepOutputs(
       postProcessBuildStepId,
     );
@@ -642,14 +650,7 @@ class Build {
       nodeBuilder.deletedBy.remove(postProcessBuildStepId);
     });
 
-    var actionDescription = '$builder on $input';
-    var logger = BuildForInputLogger(Logger(actionDescription));
-
-    actionsStartedCount++;
-    pendingActions
-        .putIfAbsent(phaseNumber, () => <String>{})
-        .add(actionDescription);
-
+    final logger = _log.loggerForPostprocess(input);
     final outputs = <AssetId>{};
     await runPostProcessBuilder(
       builder,
@@ -693,10 +694,6 @@ class Build {
       outputs: outputs,
     );
 
-    actionsCompletedCount++;
-    hungActionsHeartbeat.ping();
-    pendingActions[phaseNumber]!.remove(actionDescription);
-
     var assetsWritten = readerWriter.assetsWritten.toSet();
 
     // Reset the state for all the output nodes based on what was read and
@@ -710,8 +707,7 @@ class Build {
       assetsWritten,
       readerWriter,
       readerWriter.inputTracker,
-      actionDescription,
-      logger.errorsSeen,
+      logger.errors,
     );
 
     return assetsWritten;
@@ -738,10 +734,10 @@ class Build {
         // https://github.com/dart-lang/build/issues/3875.
         nodeBuilder.digest = null;
         nodeBuilder.generatedNodeState.result = false;
+        nodeBuilder.generatedNodeState.errors.clear();
       });
       processedOutputs.add(output);
     }
-    await failureReporter.markSkipped(outputs.map((id) => assetGraph.get(id)!));
   }
 
   /// Checks and returns whether any [outputs] need to be updated in
@@ -754,180 +750,182 @@ class Build {
     Iterable<AssetId> outputs,
     AssetReader reader,
   ) async {
-    // Update state for primary input if needed.
-    var primaryInputNode = assetGraph.get(primaryInput)!;
-    if (primaryInputNode.type == NodeType.generated) {
-      if (!processedOutputs.contains(primaryInput)) {
-        await _buildOutput(primaryInput);
-        primaryInputNode = assetGraph.get(primaryInput)!;
-      }
-    }
-
-    // If the primary input has been deleted, the build is skipped.
-    if (deletedAssets.contains(primaryInput)) {
-      if (primaryInputNode.type == NodeType.missingSource) {
-        if (logFine) {
-          _logger.fine(
-            'Skip ${renderer.build(primaryInput, outputs)} because '
-            '$primaryInput was deleted.',
-          );
+    return await _log.attributeAsync(Attribution.track, () async {
+      // Update state for primary input if needed.
+      var primaryInputNode = assetGraph.get(primaryInput)!;
+      if (primaryInputNode.type == NodeType.generated) {
+        if (!processedOutputs.contains(primaryInput)) {
+          await _buildOutput(primaryInput);
+          primaryInputNode = assetGraph.get(primaryInput)!;
         }
-        _markOutputsSkipped(outputs);
-        return false;
-      }
-    }
-
-    // Propagate results for generated node inputs.
-    if (primaryInputNode.type == NodeType.generated) {
-      // If the primary input is failed, this build is also failed.
-      if (primaryInputNode.generatedNodeState!.result == false) {
-        if (logFine) {
-          _logger.fine(
-            'Skip ${renderer.build(primaryInput, outputs)} because '
-            '$primaryInput is a generated file that failed.',
-          );
-        }
-        await _markOutputsTransitivelyFailed(outputs);
-        return false;
       }
 
-      // If the primary input succeeded but was not output, this build is
-      // skipped.
-      if (!primaryInputNode.wasOutput) {
-        if (logFine) {
-          _logger.fine(
-            'Skip ${renderer.build(primaryInput, outputs)} because '
-            '$primaryInput is a generated file that was not output.',
-          );
-        }
-        _markOutputsSkipped(outputs);
-        return false;
-      }
-    }
-
-    if (assetGraph.cleanBuild) {
-      if (logFine) {
-        _logger.fine(
-          'Build ${renderer.build(primaryInput, outputs)} because this is a '
-          'clean build.',
-        );
-      }
-      return true;
-    }
-
-    if (assetGraph.previousInBuildPhasesOptionsDigests![phaseNumber] !=
-        assetGraph.inBuildPhasesOptionsDigests[phaseNumber]) {
-      if (logFine) {
-        _logger.fine(
-          'Build ${renderer.build(primaryInput, outputs)} because builder '
-          'options changed.',
-        );
-      }
-      return true;
-    }
-
-    if (newPrimaryInputs.contains(primaryInput)) {
-      if (logFine) {
-        _logger.fine(
-          'Build ${renderer.build(primaryInput, outputs)} because '
-          '$primaryInput was created.',
-        );
-      }
-      return true;
-    }
-
-    for (var output in outputs) {
-      if (deletedAssets.contains(output)) {
-        if (logFine) {
-          _logger.fine(
-            'Build ${renderer.build(primaryInput, outputs)} because '
-            '${renderer.id(output)} was deleted.',
-          );
-        }
-        return true;
-      }
-    }
-
-    // Build results are the same across outputs, so just check the first
-    // output.
-    var firstOutput = assetGraph.get(outputs.first)!;
-    final firstOutputState = firstOutput.generatedNodeState!;
-
-    if (firstOutputState.result == null) {
-      if (logFine) {
-        _logger.fine(
-          'Build ${renderer.build(primaryInput, outputs)} because it was '
-          'skipped as optional but is now needed.',
-        );
-      }
-      return true;
-    }
-
-    // Check for changes to any inputs.
-    final inputs = firstOutputState.inputs;
-    for (final input in inputs) {
-      final changed = await _hasInputChanged(
-        phaseNumber: phaseNumber,
-        input: input,
-      );
-
-      if (changed) {
-        if (logFine) {
-          final inputNode = assetGraph.get(input)!;
-          switch (inputNode.type) {
-            case NodeType.generated:
-              _logger.fine(
-                'Build ${renderer.build(primaryInput, outputs)} because '
-                '${renderer.id(input)} was built and changed.',
-              );
-
-            case NodeType.glob:
-              _logger.fine(
-                'Build ${renderer.build(primaryInput, outputs)} because '
-                '${inputNode.globNodeConfiguration!.glob} matches changed.',
-              );
-
-            case NodeType.source:
-              _logger.fine(
-                'Build ${renderer.build(primaryInput, outputs)} because '
-                '${renderer.id(input)} changed.',
-              );
-
-            case NodeType.missingSource:
-              _logger.fine(
-                'Build ${renderer.build(primaryInput, outputs)} because '
-                '${renderer.id(input)} was deleted.',
-              );
-
-            default:
-              throw StateError(inputNode.type.toString());
+      // If the primary input has been deleted, the build is skipped.
+      if (deletedAssets.contains(primaryInput)) {
+        if (primaryInputNode.type == NodeType.missingSource) {
+          if (logFine) {
+            _log.fine(
+              'Skip ${renderer.build(primaryInput, outputs)} because '
+              '$primaryInput was deleted.',
+            );
           }
+          _markOutputsSkipped(outputs);
+          return false;
         }
-        return true;
       }
-    }
 
-    for (final graphId in firstOutputState.resolverEntrypoints) {
-      if (await _hasInputGraphChanged(
-        phaseNumber: phaseNumber,
-        entrypointId: graphId,
-      )) {
+      // Propagate results for generated node inputs.
+      if (primaryInputNode.type == NodeType.generated) {
+        // If the primary input is failed, this build is also failed.
+        if (primaryInputNode.generatedNodeState!.result == false) {
+          if (logFine) {
+            _log.fine(
+              'Skip ${renderer.build(primaryInput, outputs)} because '
+              '$primaryInput is a generated file that failed.',
+            );
+          }
+          await _markOutputsTransitivelyFailed(outputs);
+          return false;
+        }
+
+        // If the primary input succeeded but was not output, this build is
+        // skipped.
+        if (!primaryInputNode.wasOutput) {
+          if (logFine) {
+            _log.fine(
+              'Skip ${renderer.build(primaryInput, outputs)} because '
+              '$primaryInput is a generated file that was not output.',
+            );
+          }
+          _markOutputsSkipped(outputs);
+          return false;
+        }
+      }
+
+      if (assetGraph.cleanBuild) {
         if (logFine) {
-          _logger.fine(
-            'Build ${renderer.build(primaryInput, outputs)} because '
-            'resolved source changed.',
+          _log.fine(
+            'Build ${renderer.build(primaryInput, outputs)} because this is a '
+            'clean build.',
           );
         }
         return true;
       }
-    }
 
-    // No input changes: build is not needed, and outputs state is up to date.
-    for (final output in outputs) {
-      processedOutputs.add(output);
-    }
+      if (assetGraph.previousInBuildPhasesOptionsDigests![phaseNumber] !=
+          assetGraph.inBuildPhasesOptionsDigests[phaseNumber]) {
+        if (logFine) {
+          _log.fine(
+            'Build ${renderer.build(primaryInput, outputs)} because builder '
+            'options changed.',
+          );
+        }
+        return true;
+      }
 
-    return false;
+      if (newPrimaryInputs.contains(primaryInput)) {
+        if (logFine) {
+          _log.fine(
+            'Build ${renderer.build(primaryInput, outputs)} because '
+            '$primaryInput was created.',
+          );
+        }
+        return true;
+      }
+
+      for (var output in outputs) {
+        if (deletedAssets.contains(output)) {
+          if (logFine) {
+            _log.fine(
+              'Build ${renderer.build(primaryInput, outputs)} because '
+              '${renderer.id(output)} was deleted.',
+            );
+          }
+          return true;
+        }
+      }
+
+      // Build results are the same across outputs, so just check the first
+      // output.
+      var firstOutput = assetGraph.get(outputs.first)!;
+      final firstOutputState = firstOutput.generatedNodeState!;
+
+      if (firstOutputState.result == null) {
+        if (logFine) {
+          _log.fine(
+            'Build ${renderer.build(primaryInput, outputs)} because it was '
+            'skipped as optional but is now needed.',
+          );
+        }
+        return true;
+      }
+
+      // Check for changes to any inputs.
+      final inputs = firstOutputState.inputs;
+      for (final input in inputs) {
+        final changed = await _hasInputChanged(
+          phaseNumber: phaseNumber,
+          input: input,
+        );
+
+        if (changed) {
+          if (logFine) {
+            final inputNode = assetGraph.get(input)!;
+            switch (inputNode.type) {
+              case NodeType.generated:
+                _log.fine(
+                  'Build ${renderer.build(primaryInput, outputs)} because '
+                  '${renderer.id(input)} was built and changed.',
+                );
+
+              case NodeType.glob:
+                _log.fine(
+                  'Build ${renderer.build(primaryInput, outputs)} because '
+                  '${inputNode.globNodeConfiguration!.glob} matches changed.',
+                );
+
+              case NodeType.source:
+                _log.fine(
+                  'Build ${renderer.build(primaryInput, outputs)} because '
+                  '${renderer.id(input)} changed.',
+                );
+
+              case NodeType.missingSource:
+                _log.fine(
+                  'Build ${renderer.build(primaryInput, outputs)} because '
+                  '${renderer.id(input)} was deleted.',
+                );
+
+              default:
+                throw StateError(inputNode.type.toString());
+            }
+          }
+          return true;
+        }
+      }
+
+      for (final graphId in firstOutputState.resolverEntrypoints) {
+        if (await _hasInputGraphChanged(
+          phaseNumber: phaseNumber,
+          entrypointId: graphId,
+        )) {
+          if (logFine) {
+            _log.fine(
+              'Build ${renderer.build(primaryInput, outputs)} because '
+              'resolved source changed.',
+            );
+          }
+          return true;
+        }
+      }
+
+      // No input changes: build is not needed, and outputs state is up to date.
+      for (final output in outputs) {
+        processedOutputs.add(output);
+      }
+
+      return false;
+    });
   }
 
   /// Whether any source in the _previous build_ transitive import graph
@@ -1191,15 +1189,14 @@ class Build {
   /// - Setting `digest` based on what was written.
   /// - Setting `result` based on action success.
   /// - Setting `inputs` based on `inputTracker` and `unusedAssets`.
-  /// - Storing the error message with the [failureReporter].
+  /// - Setting `errors`.
   /// - Updating `newPrimaryInputs` and `changedOutputs` as needed.
   Future<void> _setOutputsState(
     AssetId input,
     Iterable<AssetId> outputs,
     SingleStepReaderWriter readerWriter,
     InputTracker inputTracker,
-    String actionDescription,
-    Iterable<ErrorReport> errors, {
+    Iterable<String> errors, {
     Set<AssetId>? unusedAssets,
   }) async {
     if (outputs.isEmpty) return;
@@ -1232,22 +1229,15 @@ class Build {
         nodeBuilder.generatedNodeState
           ..inputs.replace(usedInputs)
           ..resolverEntrypoints.replace(inputTracker.resolverEntrypoints)
-          ..result = result;
+          ..result = result
+          ..errors.replace(errors);
         nodeBuilder.digest = digest;
       });
 
-      if (!result) {
-        // Mark this output as failed. Transitive outputs will be marked as
-        // failed when they are processed and notice their primary inputs
-        // have failed.
-        await failureReporter.markReported(
-          actionDescription,
-          outputNode,
-          errors,
-        );
-      }
-
       processedOutputs.add(output);
+      if (result == false) {
+        errorsShownOutputs.add(output);
+      }
     }
   }
 
@@ -1263,13 +1253,11 @@ String _actionLoggerName(
       primaryInput.package == rootPackageName
           ? primaryInput.path
           : primaryInput.uri.toString();
-
   // In the rare case that the assets ends with a dot, remove it to ensure that
   // the logger name is valid.
   while (asset.endsWith('.')) {
     asset = asset.substring(0, asset.length - 1);
   }
-
   return '${phase.builderLabel} on $asset';
 }
 

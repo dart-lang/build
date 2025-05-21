@@ -7,12 +7,14 @@ import 'dart:mirrors';
 
 import 'package:build/build.dart';
 import 'package:collection/collection.dart';
-import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
 import '../asset_graph/graph.dart';
+import '../logging/build_log.dart';
 import '../package_graph/package_graph.dart';
+
+final _log = BuildLog();
 
 /// Functionality for detecting if the build script itself or any of its
 /// transitive imports have changed.
@@ -54,7 +56,6 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
   ) async {
     var supportsIncrementalRebuilds = true;
     Set<AssetId> allSources;
-    var logger = Logger('BuildScriptUpdates');
     try {
       allSources =
           _urisForThisScript
@@ -64,7 +65,7 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
       var missing = allSources.firstWhereOrNull((id) => !graph.contains(id));
       if (missing != null) {
         supportsIncrementalRebuilds = false;
-        logger.warning(
+        _log.warning(
           '$missing was not found in the asset graph, '
           'incremental builds will not work.\n This probably means you '
           'don\'t have your dependencies specified fully in your '

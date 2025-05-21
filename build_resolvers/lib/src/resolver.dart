@@ -21,6 +21,8 @@ import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
+// ignore: implementation_imports
+import 'package:build_runner_core/src/logging/build_log.dart';
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
@@ -197,22 +199,22 @@ class PerActionResolver implements ReleasableResolver {
 class AnalyzerResolver implements ReleasableResolver {
   final AnalysisDriverModel _analysisDriverModel;
   final AnalysisDriverForPackageBuild _driver;
-  final Pool _driverPool;
+  final AttributingPool _driverPool;
   final SharedResourcePool _readAndWritePool;
 
   Future<List<LibraryElement>>? _sdkLibraries;
 
   AnalyzerResolver(
     this._driver,
-    this._driverPool,
+    Pool driverPool,
     this._readAndWritePool,
     this._analysisDriverModel,
-  );
+  ) : _driverPool = AttributingPool(driverPool);
 
   @override
   Future<bool> isLibrary(AssetId assetId) async {
     if (assetId.extension != '.dart') return false;
-    return _driverPool.withResource(() {
+    return _driverPool.withResource(() async {
       if (!_driver.isUriOfExistingFile(assetId.uri)) return false;
       var result =
           _driver.currentSession.getFile(
@@ -654,4 +656,19 @@ current version by running `pub deps`.
 Future<String> packagePath(String package) async {
   var libRoot = await Isolate.resolvePackageUri(Uri.parse('package:$package/'));
   return p.dirname(p.fromUri(libRoot));
+}
+
+final _log = BuildLog();
+
+/// Wraps [pool] so accesses are attributed as [Attribution.analyze].
+class AttributingPool {
+  final Pool pool;
+
+  AttributingPool(this.pool);
+
+  Future<T> withResource<T>(Future<T> Function() function) async {
+    return pool.withResource(
+      () => _log.attributeAsync(Attribution.analyze, function),
+    );
+  }
 }

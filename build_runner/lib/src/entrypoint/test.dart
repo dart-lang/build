@@ -18,6 +18,8 @@ import '../generate/build.dart';
 import 'base_command.dart';
 import 'options.dart';
 
+final _log = BuildLog();
+
 /// A command that does a single build and then runs tests using the compiled
 /// assets.
 class TestCommand extends BuildRunnerCommand {
@@ -94,6 +96,7 @@ class TestCommand extends BuildRunnerCommand {
     try {
       _ensureBuildTestDependency(packageGraph);
       options = readOptions();
+      _log.configure(mode: BuildLogMode.build, verbose: options.verbose);
       return withEnabledExperiments(
         () => _run(options, tempPath),
         options.enableExperiments,

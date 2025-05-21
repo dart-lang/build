@@ -379,6 +379,13 @@ class _$GeneratedNodeStateSerializer
           const FullType(AssetId),
         ]),
       ),
+      'errors',
+      serializers.serialize(
+        object.errors,
+        specifiedType: const FullType(BuiltList, const [
+          const FullType(String),
+        ]),
+      ),
     ];
     Object? value;
     value = object.result;
@@ -435,6 +442,17 @@ class _$GeneratedNodeStateSerializer
                     specifiedType: const FullType(bool),
                   )
                   as bool?;
+          break;
+        case 'errors':
+          result.errors.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(BuiltList, const [
+                    const FullType(String),
+                  ]),
+                )!
+                as BuiltList<Object?>,
+          );
           break;
       }
     }
@@ -968,6 +986,8 @@ class _$GeneratedNodeState extends GeneratedNodeState {
   final BuiltSet<AssetId> resolverEntrypoints;
   @override
   final bool? result;
+  @override
+  final BuiltList<String> errors;
 
   factory _$GeneratedNodeState([
     void Function(GeneratedNodeStateBuilder)? updates,
@@ -977,6 +997,7 @@ class _$GeneratedNodeState extends GeneratedNodeState {
     required this.inputs,
     required this.resolverEntrypoints,
     this.result,
+    required this.errors,
   }) : super._() {
     BuiltValueNullFieldError.checkNotNull(
       inputs,
@@ -987,6 +1008,11 @@ class _$GeneratedNodeState extends GeneratedNodeState {
       resolverEntrypoints,
       r'GeneratedNodeState',
       'resolverEntrypoints',
+    );
+    BuiltValueNullFieldError.checkNotNull(
+      errors,
+      r'GeneratedNodeState',
+      'errors',
     );
   }
 
@@ -1005,7 +1031,8 @@ class _$GeneratedNodeState extends GeneratedNodeState {
     return other is GeneratedNodeState &&
         inputs == other.inputs &&
         resolverEntrypoints == other.resolverEntrypoints &&
-        result == other.result;
+        result == other.result &&
+        errors == other.errors;
   }
 
   @override
@@ -1014,6 +1041,7 @@ class _$GeneratedNodeState extends GeneratedNodeState {
     _$hash = $jc(_$hash, inputs.hashCode);
     _$hash = $jc(_$hash, resolverEntrypoints.hashCode);
     _$hash = $jc(_$hash, result.hashCode);
+    _$hash = $jc(_$hash, errors.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -1023,7 +1051,8 @@ class _$GeneratedNodeState extends GeneratedNodeState {
     return (newBuiltValueToStringHelper(r'GeneratedNodeState')
           ..add('inputs', inputs)
           ..add('resolverEntrypoints', resolverEntrypoints)
-          ..add('result', result))
+          ..add('result', result)
+          ..add('errors', errors))
         .toString();
   }
 }
@@ -1047,6 +1076,11 @@ class GeneratedNodeStateBuilder
   bool? get result => _$this._result;
   set result(bool? result) => _$this._result = result;
 
+  ListBuilder<String>? _errors;
+  ListBuilder<String> get errors =>
+      _$this._errors ??= new ListBuilder<String>();
+  set errors(ListBuilder<String>? errors) => _$this._errors = errors;
+
   GeneratedNodeStateBuilder();
 
   GeneratedNodeStateBuilder get _$this {
@@ -1055,6 +1089,7 @@ class GeneratedNodeStateBuilder
       _inputs = $v.inputs.toBuilder();
       _resolverEntrypoints = $v.resolverEntrypoints.toBuilder();
       _result = $v.result;
+      _errors = $v.errors.toBuilder();
       _$v = null;
     }
     return this;
@@ -1083,6 +1118,7 @@ class GeneratedNodeStateBuilder
             inputs: inputs.build(),
             resolverEntrypoints: resolverEntrypoints.build(),
             result: result,
+            errors: errors.build(),
           );
     } catch (_) {
       late String _$failedField;
@@ -1091,6 +1127,9 @@ class GeneratedNodeStateBuilder
         inputs.build();
         _$failedField = 'resolverEntrypoints';
         resolverEntrypoints.build();
+
+        _$failedField = 'errors';
+        errors.build();
       } catch (e) {
         throw new BuiltValueNestedFieldError(
           r'GeneratedNodeState',

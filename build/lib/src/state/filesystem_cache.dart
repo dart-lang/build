@@ -6,9 +6,14 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+// ignore: implementation_imports
+import 'package:build_runner_core/src/logging/build_log.dart';
+
 import '../../build.dart';
 import '../asset/id.dart';
 import 'lru_cache.dart';
+
+final BuildLog _log = BuildLog();
 
 /// Cache for file existence and contents.
 ///
@@ -154,10 +159,12 @@ class InMemoryFilesystemCache implements FilesystemCache {
 
   @override
   void flush() {
-    for (final write in _pendingWrites.values) {
-      write.writer();
-    }
-    _pendingWrites.clear();
+    _log.attribute(Attribution.write, () {
+      for (final write in _pendingWrites.values) {
+        write.writer();
+      }
+      _pendingWrites.clear();
+    });
   }
 
   @override

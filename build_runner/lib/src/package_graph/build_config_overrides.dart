@@ -10,10 +10,9 @@ import 'package:build/src/internal.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:glob/glob.dart';
-import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
-final _log = Logger('BuildConfigOverrides');
+final _log = BuildLog();
 
 Future<Map<String, BuildConfig>> findBuildConfigOverrides(
   PackageGraph packageGraph,

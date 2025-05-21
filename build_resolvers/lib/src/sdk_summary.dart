@@ -7,13 +7,13 @@ import 'dart:io';
 
 import 'package:analyzer/dart/sdk/build_sdk_summary.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
-import 'package:logging/logging.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:path/path.dart' as p;
 
 import 'human_readable_duration.dart';
 import 'resolver.dart' show packagePath;
 
-final _logger = Logger('build_resolvers');
+final _log = BuildLog();
 
 /// `true` if the currently running dart was provided by the Flutter SDK.
 final isFlutter =
@@ -63,7 +63,7 @@ Future<String> defaultSdkSummaryGenerator() async {
   // Generate the summary and version files if necessary.
   if (needsRebuild) {
     var watch = Stopwatch()..start();
-    _logger.info('Generating SDK summary...');
+    _log.info('Generating SDK summary...');
     await Directory(cacheDir).create(recursive: true);
     final tempDir = await Directory(cacheDir).createTemp();
     final tempFile = File(p.join(tempDir.path, p.basename(summaryPath)));
@@ -82,7 +82,7 @@ Future<String> defaultSdkSummaryGenerator() async {
     await _createDepsFile(depsFile, currentDeps);
     await tempDir.delete();
     watch.stop();
-    _logger.info(
+    _log.info(
       'Generating SDK summary completed, took '
       '${humanReadable(watch.elapsed)}\n',
     );

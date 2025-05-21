@@ -141,15 +141,9 @@ Future<TestBuildersResult> testPhases(
     packageGraph,
     reader: readerWriter,
     writer: readerWriter,
-    onLogOverride: onLog,
   );
-  var logSubscription = LogSubscription(
-    environment,
-    verbose: verbose,
-    logLevel: logLevel,
-  );
+  BuildLog().configure(verbose: verbose, logLevel: logLevel, onLog: onLog);
   var options = await BuildOptions.create(
-    logSubscription,
     deleteFilesByDefault: deleteFilesByDefault,
     packageGraph: packageGraph,
     skipBuildScriptCheck: true,
@@ -172,7 +166,6 @@ Future<TestBuildersResult> testPhases(
     buildFilters: buildFilters,
   );
   await build.beforeExit();
-  await options.logListener.cancel();
 
   if (checkBuildStatus) {
     checkBuild(

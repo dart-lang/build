@@ -36,6 +36,7 @@
   in the asset graph.
 - Track resolver dependencies as library cycle graphs.
 - Ignore deprecated analyzer API usages.
+- Store errors in the asset graph instead of separate files.
 
 ## 8.0.0
 

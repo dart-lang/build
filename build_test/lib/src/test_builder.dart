@@ -19,6 +19,8 @@ import 'assets.dart';
 import 'in_memory_reader_writer.dart';
 import 'test_reader_writer.dart';
 
+final _log = BuildLog();
+
 AssetId _passThrough(AssetId id) => id;
 
 /// Validates that [actualAssets] matches the expected [outputs].
@@ -258,7 +260,7 @@ Future<TestBuilderResult> testBuilders(
   final inputFilter = isInput ?? generateFor?.contains ?? (_) => true;
   inputIds.retainWhere((id) => inputFilter('$id'));
 
-  var logSubscription = Logger.root.onRecord.listen(onLog);
+  _log.configure(onLog: onLog);
   resolvers ??=
       packageConfig == null && enabledExperiments.isEmpty
           ? AnalyzerResolvers.sharedInstance
@@ -294,7 +296,6 @@ Future<TestBuilderResult> testBuilders(
   }
 
   final buildOptions = await BuildOptions.create(
-    _NoopLogSubscription(),
     packageGraph: packageGraph,
     reportUnusedAssetsForInput: reportUnusedAssetsForInput,
     resolvers: resolvers,
@@ -350,7 +351,7 @@ Future<TestBuilderResult> testBuilders(
   await buildSeries.beforeExit();
 
   // Stop logging.
-  await logSubscription.cancel();
+  _log.clearOnLog();
 
   // Check the build outputs as requested.
   checkOutputs(outputs, readerWriter.testing.assetsWritten, readerWriter);
@@ -366,11 +367,4 @@ class TestBuilderResult {
   final TestReaderWriter readerWriter;
 
   TestBuilderResult({required this.buildResult, required this.readerWriter});
-}
-
-/// [LogSubscription] that does nothing.
-class _NoopLogSubscription implements LogSubscription {
-  @override
-  StreamSubscription<LogRecord> get logListener =>
-      StreamController<LogRecord>().stream.listen((_) {});
 }
