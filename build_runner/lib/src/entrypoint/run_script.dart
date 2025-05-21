@@ -76,6 +76,7 @@ class RunCommand extends BuildRunnerCommand {
   @override
   FutureOr<int> run() {
     var options = readOptions();
+    _log.configure(mode: BuildLogMode.build, verbose: options.verbose);
     return withEnabledExperiments(
       () => _run(options),
       options.enableExperiments,
@@ -83,7 +84,6 @@ class RunCommand extends BuildRunnerCommand {
   }
 
   FutureOr<int> _run(SharedOptions options) async {
-    _log.configure(verbose: options.verbose);
     var argResults = this.argResults!;
     // Ensure that the user passed the name of a file to run.
     if (argResults.rest.isEmpty) {

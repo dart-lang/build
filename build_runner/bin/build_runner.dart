@@ -13,10 +13,11 @@ import 'package:build_runner/src/entrypoint/runner.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/ansi.dart';
 import 'package:io/io.dart';
-import 'package:logging/logging.dart';
 
 import 'src/commands/clean.dart';
 import 'src/commands/generate_build_script.dart';
+
+final _log = BuildLog();
 
 Future<void> main(List<String> args) async {
   // Use the actual command runner to parse the args and immediately print the
@@ -76,26 +77,11 @@ Future<void> main(List<String> args) async {
     return;
   }
 
-  StreamSubscription logListener;
   if (commandName == 'daemon') {
-    // Simple logs only in daemon mode. These get converted into info or
-    // severe logs by the client.
-    logListener = Logger.root.onRecord.listen((record) {
-      if (record.level >= Level.SEVERE) {
-        var buffer = StringBuffer(record.message);
-        if (record.error != null) buffer.writeln(record.error);
-        if (record.stackTrace != null) buffer.writeln(record.stackTrace);
-        stderr.writeln(buffer);
-      } else {
-        stdout.writeln(record.message);
-      }
-    });
+    _log.configure(mode: BuildLogMode.daemon);
   } else {
     var verbose = parsedArgs.command!['verbose'] as bool? ?? false;
-    if (verbose) Logger.root.level = Level.ALL;
-    logListener = Logger.root.onRecord.listen(
-      BuildLogPrinter(verbose: verbose).onData,
-    );
+    _log.configure(verbose: verbose);
   }
   if (localCommandNames.contains(commandName)) {
     exitCode = await commandRunner.runCommand(parsedArgs) ?? 1;
@@ -104,5 +90,4 @@ Future<void> main(List<String> args) async {
     while ((exitCode = await generateAndRun(args, experiments: experiments)) ==
         ExitCode.tempFail.code) {}
   }
-  await logListener.cancel();
 }

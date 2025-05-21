@@ -8,9 +8,25 @@ import 'package:build/build.dart'
     show AssetId, SyntaxErrorInAssetException, UnresolvableAssetException;
 import 'package:logging/logging.dart';
 
+import 'build_log_logger.dart';
 import 'log_display.dart';
 
 BuildLog? _instance;
+
+enum BuildLogMode { simple, build, watch, daemon }
+
+/*    // Simple logs only in daemon mode. These get converted into info or
+    // severe logs by the client.
+    logListener = Logger.root.onRecord.listen((record) {
+      if (record.level >= Level.SEVERE) {
+        var buffer = StringBuffer(record.message);
+        if (record.error != null) buffer.writeln(record.error);
+        if (record.stackTrace != null) buffer.writeln(record.stackTrace);
+        stderr.writeln(buffer);
+      } else {
+        stdout.writeln(record.message);
+      }
+    });*/
 
 /// The `build_runner` log.
 ///
@@ -43,6 +59,7 @@ BuildLog? _instance;
 class BuildLog {
   late final LogDisplay _display;
   final Stopwatch _stopwatch = Stopwatch()..start();
+  BuildLogMode _mode = BuildLogMode.simple;
 
   final Map<String, Stage> _stagesByName = {};
   Stage _currentStage = Stage.setup();
@@ -66,11 +83,13 @@ class BuildLog {
   factory BuildLog.forTesting() = BuildLog._;
 
   void configure({
+    BuildLogMode? mode,
     bool? assumeTty,
     bool? verbose,
     Level? logLevel,
     void Function(LogRecord record)? onLog,
   }) {
+    if (mode != null) _mode = mode;
     // TODO
   }
 
@@ -354,17 +373,16 @@ class BuildLog {
   }
 
   // TODO: "run scoped"
-  BuildStepLogger loggerForBuilderFactory(String name) =>
-      BuildStepLogger(this, _stagesByName['setup']!, null);
+  BuildLogLogger loggerForBuilderFactory(String name) =>
+      BuildLogLogger(stage: 'setup', note: name);
 
-  BuildStepLogger loggerForSetup() =>
-      BuildStepLogger(this, _stagesByName['setup']!, null);
+  BuildLogLogger loggerForSetup() => BuildLogLogger(stage: 'setup');
 
-  BuildStepLogger loggerForStep(String stage, AssetId input) =>
-      BuildStepLogger(this, _stagesByName[stage]!, input);
+  BuildLogLogger loggerForStep(String stage, AssetId input) =>
+      BuildLogLogger(stage: stage, note: input.toString());
 
-  BuildStepLogger loggerForPostprocess(AssetId input) =>
-      BuildStepLogger(this, _stagesByName['cleanup']!, input);
+  BuildLogLogger loggerForPostprocess(AssetId input) =>
+      BuildLogLogger(stage: 'cleanup', note: input.toString());
 }
 
 class Progress {
@@ -449,133 +467,6 @@ class Stage {
   final Map<AssetId?, List<String>> errors = {};
 
   bool get hasLogOutput => warnings.isNotEmpty || errors.isNotEmpty;
-}
-
-class BuildStepLogger implements Logger {
-  final BuildLog buildLogger;
-  final Stage stage;
-  final AssetId? primaryInput;
-
-  BuildStepLogger(this.buildLogger, this.stage, this.primaryInput);
-
-  @override
-  Level get level => Level.INFO;
-  @override
-  set level(Level? value) {}
-
-  @override
-  Map<String, Logger> get children => {};
-
-  @override
-  void clearListeners() {}
-
-  @override
-  // TODO: implement fullName
-  String get fullName => throw UnimplementedError();
-
-  @override
-  bool isLoggable(Level value) {
-    // TODO: implement isLoggable
-    throw UnimplementedError();
-  }
-
-  @override
-  void log(
-    Level logLevel,
-    Object? message, [
-    Object? error,
-    StackTrace? stackTrace,
-    Zone? zone,
-  ]) {
-    if (logLevel < Level.INFO) return;
-
-    final severe = logLevel >= Level.SEVERE;
-
-    final renderedMessage = _render(message, error, stackTrace);
-
-    if (severe) {
-      (stage.errors[primaryInput] ??= []).add(renderedMessage);
-    } else {
-      (stage.warnings[primaryInput] ??= []).add(renderedMessage);
-    }
-    buildLogger._display.display(
-      buildLogger.makeEntry(
-        severity: severe ? LineSeverity.error : LineSeverity.warning,
-        line: renderedMessage,
-      ),
-    );
-
-    /*stdout.write(
-      '\n\n\n\n\n\n$logLevel $message $error $stackTrace\n\n\n\n\n\n',
-    );*/
-  }
-
-  String _render(Object? message, [Object? error, StackTrace? stackTrace]) {
-    var result = message?.toString() ?? '';
-    if (error != null) result += '\n$error';
-
-    // Drop stack traces for exception types that can be caused by normal
-    // user input; render stack traces for everything else as they can point to
-    // bugs in generators or in build_runner.
-    if (stackTrace != null &&
-        error is! SyntaxErrorInAssetException &&
-        error is! UnresolvableAssetException) {
-      result += '\n$stackTrace';
-    }
-    return result;
-  }
-
-  @override
-  // TODO: implement name
-  String get name => throw UnimplementedError();
-
-  @override
-  // TODO: implement onLevelChanged
-  Stream<Level?> get onLevelChanged => throw UnimplementedError();
-
-  @override
-  // TODO: implement onRecord
-  Stream<LogRecord> get onRecord => throw UnimplementedError();
-
-  @override
-  // TODO: implement parent
-  Logger? get parent => throw UnimplementedError();
-
-  @override
-  void finest(Object? message, [Object? error, StackTrace? stackTrace]) =>
-      log(Level.FINEST, message, error, stackTrace);
-
-  @override
-  void finer(Object? message, [Object? error, StackTrace? stackTrace]) =>
-      log(Level.FINER, message, error, stackTrace);
-
-  @override
-  void fine(Object? message, [Object? error, StackTrace? stackTrace]) =>
-      log(Level.FINE, message, error, stackTrace);
-
-  @override
-  void config(Object? message, [Object? error, StackTrace? stackTrace]) =>
-      log(Level.CONFIG, message, error, stackTrace);
-
-  @override
-  void info(Object? message, [Object? error, StackTrace? stackTrace]) =>
-      log(Level.INFO, message, error, stackTrace);
-
-  @override
-  void warning(Object? message, [Object? error, StackTrace? stackTrace]) =>
-      log(Level.WARNING, message, error, stackTrace);
-
-  @override
-  void severe(Object? message, [Object? error, StackTrace? stackTrace]) =>
-      log(Level.SEVERE, message, error, stackTrace);
-
-  @override
-  void shout(Object? message, [Object? error, StackTrace? stackTrace]) =>
-      log(Level.SHOUT, message, error, stackTrace);
-
-  List<String> get errors {
-    return stage.errors.values.expand((x) => x).toList();
-  }
 }
 
 extension type Attribution(String name) {

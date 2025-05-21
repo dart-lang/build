@@ -12,6 +12,8 @@ import '../generate/build.dart';
 import 'base_command.dart';
 import 'options.dart';
 
+final _log = BuildLog();
+
 /// A command that watches the file system for updates and rebuilds as
 /// appropriate.
 class WatchCommand extends BuildRunnerCommand {
@@ -48,6 +50,7 @@ class WatchCommand extends BuildRunnerCommand {
   @override
   Future<int> run() {
     var options = readOptions();
+    _log.configure(mode: BuildLogMode.watch, verbose: options.verbose);
     return withEnabledExperiments(
       () => _run(options),
       options.enableExperiments,

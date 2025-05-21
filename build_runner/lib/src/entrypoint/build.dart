@@ -12,6 +12,8 @@ import '../generate/build.dart';
 import 'base_command.dart';
 import 'options.dart';
 
+final _log = BuildLog();
+
 /// A command that does a single build and then exits.
 class BuildCommand extends BuildRunnerCommand {
   @override
@@ -27,6 +29,9 @@ class BuildCommand extends BuildRunnerCommand {
   @override
   Future<int> run() {
     var options = readOptions();
+
+    _log.configure(mode: BuildLogMode.build, verbose: options.verbose);
+
     return withEnabledExperiments(
       () => _run(options),
       options.enableExperiments,
@@ -43,7 +48,6 @@ class BuildCommand extends BuildRunnerCommand {
       buildDirs: options.buildDirs,
       outputSymlinksOnly: options.outputSymlinksOnly,
       packageGraph: packageGraph,
-      verbose: options.verbose,
       builderConfigOverrides: options.builderConfigOverrides,
       isReleaseBuild: options.isReleaseBuild,
       trackPerformance: options.trackPerformance,

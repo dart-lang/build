@@ -57,6 +57,7 @@ class DaemonCommand extends WatchCommand {
 
   @override
   Future<int> run() async {
+    _log.configure(mode: BuildLogMode.daemon);
     var options = readOptions();
     return withEnabledExperiments(
       () => _run(options),

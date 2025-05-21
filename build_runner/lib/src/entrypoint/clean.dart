@@ -29,6 +29,7 @@ class CleanCommand extends Command<int> {
 
   @override
   Future<int> run() async {
+    _log.configure(mode: BuildLogMode.simple);
     await cleanFor(assetGraphPath);
     return 0;
   }
