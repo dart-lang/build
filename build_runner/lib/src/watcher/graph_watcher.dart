@@ -7,17 +7,16 @@ import 'dart:io';
 
 import 'package:async/async.dart';
 import 'package:build_runner_core/build_runner_core.dart';
-import 'package:logging/logging.dart';
 
 import 'asset_change.dart';
 import 'node_watcher.dart';
 
 PackageNodeWatcher _default(PackageNode node) => PackageNodeWatcher(node);
 
+final _log = BuildLog();
+
 /// Allows watching an entire graph of packages to schedule rebuilds.
 class PackageGraphWatcher {
-  // TODO: Consider pulling logging out and providing hooks instead.
-  final Logger _logger;
   final PackageNodeWatcher Function(PackageNode) _strategy;
   final PackageGraph _graph;
 
@@ -32,18 +31,15 @@ class PackageGraphWatcher {
   /// reasonable default based on the current platform.
   PackageGraphWatcher(
     this._graph, {
-    Logger? logger,
     PackageNodeWatcher Function(PackageNode node)? watch,
-  }) : _logger = logger ?? Logger('build_runner'),
-       _strategy = watch ?? _default;
+  }) : _strategy = watch ?? _default;
 
   /// Returns a stream of records for assets that changed in the package graph.
   Stream<AssetChange> watch() {
     assert(!_isWatching);
     _isWatching = true;
-    return LazyStream(
-      () => logTimedSync(_logger, 'Setting up file watchers', _watch),
-    );
+    // logTimedSync(_logger, 'Setting up file watchers'
+    return LazyStream(_watch);
   }
 
   Stream<AssetChange> _watch() {
@@ -59,7 +55,7 @@ class PackageGraphWatcher {
                 Object e,
                 StackTrace s,
               ) {
-                _logger.severe(
+                _log.severe(
                   'Error from directory watcher for package:${w.node.name}\n\n'
                   'If you see this consistently then it is recommended that '
                   'you enable the polling file watcher with '

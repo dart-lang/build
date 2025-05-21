@@ -65,6 +65,19 @@ class BuildLog {
 
   factory BuildLog.forTesting() = BuildLog._;
 
+  void configure({
+    bool? assumeTty,
+    bool? verbose,
+    Level? logLevel,
+    void Function(LogRecord record)? onLog,
+  }) {
+    // TODO
+  }
+
+  void clearOnLog() {
+    // TODO
+  }
+
   String loggerState() {
     _display.close();
     var lines = _display.displayedLines;
@@ -238,7 +251,7 @@ class BuildLog {
     //print(message);
   }
 
-  void info(String message) {
+  void info(String message, [Object? error, StackTrace? stackTrace]) {
     //print(message);
   }
 
@@ -340,6 +353,10 @@ class BuildLog {
     }
   }
 
+  // TODO: "run scoped"
+  BuildStepLogger loggerForBuilderFactory(String name) =>
+      BuildStepLogger(this, _stagesByName['setup']!, null);
+
   BuildStepLogger loggerForSetup() =>
       BuildStepLogger(this, _stagesByName['setup']!, null);
 
@@ -399,7 +416,12 @@ class Progress {
     2,
     'write performance log',
   );
-  static final Progress done = Progress('cleanup', 3, null);
+  static final Progress writeOutputDirectory = Progress(
+    'cleanup',
+    3,
+    'write output directory',
+  );
+  static final Progress done = Progress('cleanup', 4, null);
 
   final String stage;
   final int? number;
@@ -421,7 +443,7 @@ class Stage {
 
   Stage({required this.name, required this.length});
   factory Stage.setup() => Stage(name: 'setup', length: 8);
-  factory Stage.cleanup() => Stage(name: 'cleanup', length: 3);
+  factory Stage.cleanup() => Stage(name: 'cleanup', length: 4);
 
   final Map<AssetId?, List<String>> warnings = {};
   final Map<AssetId?, List<String>> errors = {};

@@ -11,7 +11,6 @@ import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/generate/performance_tracker.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
-import 'package:logging/logging.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart' as shelf;
@@ -30,7 +29,7 @@ final _assetsDigestPath = r'$assetDigests';
 final _buildUpdatesProtocol = r'$buildUpdates';
 final entrypointExtensionMarker = '/* ENTRYPOINT_EXTENTION_MARKER */';
 
-final _logger = Logger('Serve');
+final _log = BuildLog();
 
 enum PerfSortOrder {
   startTimeAsc,
@@ -218,7 +217,7 @@ class ServeHandler implements BuildState {
     if (!_state.assetGraph!
         .packageNodes(_rootPackage)
         .any((n) => n.id.path.startsWith('$rootDir/'))) {
-      _logger.warning(
+      _log.warning(
         'Requested a server for `$rootDir` but this directory '
         'has no assets in the build. You may need to add some sources or '
         'include this directory in some target in your `build.yaml`',
@@ -425,7 +424,7 @@ class AssetHandler {
       }
       return shelf.Response.ok(body, headers: headers);
     } catch (e, s) {
-      _logger.finest(
+      _log.info(
         'Error on request ${request.method} ${request.requestedUri}',
         e,
         s,
@@ -739,7 +738,7 @@ shelf.Handler _logRequests(shelf.Handler innerHandler) {
     var watch = Stopwatch()..start();
     try {
       var response = await innerHandler(request);
-      var logFn = response.statusCode >= 500 ? _logger.warning : _logger.info;
+      var logFn = response.statusCode >= 500 ? _log.warning : _log.info;
       var msg = _requestLabel(
         startTime,
         response.statusCode,
@@ -758,7 +757,7 @@ shelf.Handler _logRequests(shelf.Handler innerHandler) {
         request.method,
         watch.elapsed,
       );
-      _logger.severe(msg, error, stackTrace);
+      _log.severe(msg, error, stackTrace);
       rethrow;
     }
   };
@@ -772,11 +771,36 @@ String _requestLabel(
   Duration elapsedTime,
 ) {
   return '${requestTime.toIso8601String()} '
-      '${humanReadable(elapsedTime)} '
+      '${_humanReadable(elapsedTime)} '
       '$method [$statusCode] '
       '${requestedUri.path}${_formatQuery(requestedUri.query)}\r\n';
 }
 
 String _formatQuery(String query) {
   return query == '' ? '' : '?$query';
+}
+
+/// Returns a human readable string for a duration.
+///
+/// Handles durations that span up to hours - this will not be a good fit for
+/// durations that are longer than days.
+///
+/// Always attempts 2 'levels' of precision. Will show hours/minutes,
+/// minutes/seconds, seconds/tenths of a second, or milliseconds depending on
+/// the largest level that needs to be displayed.
+String _humanReadable(Duration duration) {
+  if (duration < const Duration(seconds: 1)) {
+    return '${duration.inMilliseconds}ms';
+  }
+  if (duration < const Duration(minutes: 1)) {
+    return '${(duration.inMilliseconds / 1000.0).toStringAsFixed(1)}s';
+  }
+  if (duration < const Duration(hours: 1)) {
+    final minutes = duration.inMinutes;
+    final remaining = duration - Duration(minutes: minutes);
+    return '${minutes}m ${remaining.inSeconds}s';
+  }
+  final hours = duration.inHours;
+  final remaining = duration - Duration(hours: hours);
+  return '${hours}h ${remaining.inMinutes}m';
 }

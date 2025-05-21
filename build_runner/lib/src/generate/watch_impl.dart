@@ -72,11 +72,9 @@ Future<ServeHandler> watch(
     outputSymlinksOnly: outputSymlinksOnly,
     reader: reader,
     writer: writer,
-    onLogOverride:
-        onLog ?? BuildLogPrinter(assumeTty: assumeTty, verbose: verbose).onData,
   );
-  var logSubscription = LogSubscription(
-    environment,
+  BuildLog().configure(
+    assumeTty: assumeTty,
     verbose: verbose,
     logLevel: logLevel,
   );
@@ -86,7 +84,6 @@ Future<ServeHandler> watch(
     configKey: configKey,
   );
   var options = await BuildOptions.create(
-    logSubscription,
     deleteFilesByDefault: deleteFilesByDefault,
     packageGraph: packageGraph,
     overrideBuildConfig: overrideBuildConfig,
@@ -116,7 +113,6 @@ Future<ServeHandler> watch(
   unawaited(
     watch.buildResults.drain<void>().then((_) async {
       await terminator.cancel();
-      await options.logListener.cancel();
     }),
   );
 
@@ -296,7 +292,6 @@ class WatchImpl implements BuildState {
     // Start watching files immediately, before the first build is even started.
     var graphWatcher = PackageGraphWatcher(
       packageGraph,
-      logger: _log.loggerForSetup(),
       watch:
           (node) => PackageNodeWatcher(node, watch: _directoryWatcherFactory),
     );
@@ -376,11 +371,12 @@ class WatchImpl implements BuildState {
     // Schedule the actual first build for the future so we can return the
     // stream synchronously.
     () async {
-      await logTimedAsync(
+      await graphWatcher.ready;
+      /*await logTimedAsync(
         _log.loggerForSetup(),
         'Waiting for all file watchers to be ready',
         () => graphWatcher.ready,
-      );
+      );*/
       if (await watcherEnvironment.reader.canRead(rootPackageConfigId)) {
         originalRootPackageConfigDigest = md5.convert(
           await watcherEnvironment.reader.readAsBytes(rootPackageConfigId),

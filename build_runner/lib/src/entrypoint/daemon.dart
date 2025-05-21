@@ -11,13 +11,15 @@ import 'package:build_daemon/constants.dart';
 import 'package:build_daemon/daemon.dart';
 import 'package:build_daemon/data/serializers.dart';
 import 'package:build_daemon/data/server_log.dart';
-import 'package:logging/logging.dart' hide Level;
+import 'package:build_runner_core/build_runner_core.dart';
 
 import '../daemon/asset_server.dart';
 import '../daemon/constants.dart';
 import '../daemon/daemon_builder.dart';
 import 'options.dart';
 import 'watch.dart';
+
+final _log = BuildLog();
 
 /// A command that starts the Build Daemon.
 class DaemonCommand extends WatchCommand {
@@ -95,8 +97,9 @@ class DaemonCommand extends WatchCommand {
       // These are serialized between special `<log-record>` and `</log-record>`
       // tags to make parsing them on stdout easier. They can have multiline
       // strings so we can't just serialize the json on a single line.
-      var startupLogSub = Logger.root.onRecord.listen(
-        (record) => stdout.writeln('''
+      _log.configure(
+        onLog:
+            (record) => stdout.writeln('''
 $logStartMarker
 ${jsonEncode(serializers.serialize(ServerLog.fromLogRecord(record)))}
 $logEndMarker'''),
@@ -106,7 +109,7 @@ $logEndMarker'''),
         builderApplications,
         options,
       );
-      await startupLogSub.cancel();
+      _log.clearOnLog();
 
       // Forward server logs to daemon command STDIO.
       var logSub = builder.logs.listen((log) {

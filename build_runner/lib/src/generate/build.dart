@@ -87,16 +87,14 @@ Future<BuildResult> build(
     outputSymlinksOnly: outputSymlinksOnly,
     reader: reader,
     writer: writer,
-    onLogOverride:
-        onLog ?? BuildLogPrinter(assumeTty: assumeTty, verbose: verbose).onData,
   );
-  var logSubscription = LogSubscription(
-    environment,
+  BuildLog().configure(
+    assumeTty: assumeTty,
+    onLog: onLog,
     verbose: verbose,
     logLevel: logLevel,
   );
   var options = await BuildOptions.create(
-    logSubscription,
     deleteFilesByDefault: deleteFilesByDefault,
     packageGraph: packageGraph,
     skipBuildScriptCheck: skipBuildScriptCheck,
@@ -128,7 +126,6 @@ Future<BuildResult> build(
     return result;
   } finally {
     await terminator.cancel();
-    await options.logListener.cancel();
   }
 }
 

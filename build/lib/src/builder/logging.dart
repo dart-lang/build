@@ -21,6 +21,7 @@ Logger get log => Zone.current[logKey] as Logger? ?? _default;
 /// be logged with `log.severe`.
 ///
 /// Completes with the first error or result of `fn`, whichever comes first.
+/// TODO move to BuildLog.
 Future<T> scopeLogAsync<T>(Future<T> Function() fn, Logger log) {
   var done = Completer<T>();
   runZonedGuarded(
@@ -41,4 +42,24 @@ Future<T> scopeLogAsync<T>(Future<T> Function() fn, Logger log) {
     done.complete(result);
   });
   return done.future;
+}
+
+/// Runs [fn] in an error handling [Zone].
+///
+/// Any calls to [print] will be logged with `log.info`, and any errors will be
+/// logged with `log.severe`.
+/// TODO move to BuildLog.
+T? scopeLogSync<T>(T Function() fn, Logger log) {
+  return runZonedGuarded(
+    fn,
+    (e, st) {
+      log.severe('', e, st);
+    },
+    zoneSpecification: ZoneSpecification(
+      print: (self, parent, zone, message) {
+        log.info(message);
+      },
+    ),
+    zoneValues: {logKey: log},
+  );
 }
