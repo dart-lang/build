@@ -107,7 +107,14 @@ Future<int> _generateAndRun(
     try {
       await Isolate.spawnUri(
         Uri.file(p.absolute(scriptKernelLocation)),
-        [args.first, '--passed-state', _log.loggerState(), ...args.skip(1)],
+        args.isNotEmpty
+            ? [
+              args.first,
+              '--passed-state',
+              _log.loggerState(),
+              ...args.skip(1),
+            ]
+            : ['--passed-state', _log.loggerState()],
         messagePort.sendPort,
         errorsAreFatal: true,
         onExit: exitPort.sendPort,
