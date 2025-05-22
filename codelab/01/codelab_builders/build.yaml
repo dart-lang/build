@@ -1,0 +1,5 @@
+builders:
+  first_builder:
+    import: "package:codelab_builders/builders.dart"
+    builder_factories: ["firstBuilder"]
+    build_extensions: {"$lib$": ["first_builder_output.txt"]}

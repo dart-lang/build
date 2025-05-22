@@ -1,0 +1,23 @@
+name: end_to_end_test
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+
+dependencies:
+  build: ^2.4.2
+
+dev_dependencies:
+  build_runner: ^2.4.15
+  codelab_builders:
+    path: ../codelab_builders
+
+dependency_overrides:
+  build:
+    path: ../../../build
+  build_resolvers:
+    path: ../../../build_resolvers
+  build_runner:
+    path: ../../../build_runner
+  build_runner_core:
+    path: ../../../build_runner_core

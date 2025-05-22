@@ -1,0 +1,16 @@
+name: codelab_builders
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+
+dependencies:
+  build: ^2.4.2
+
+dependency_overrides:
+  build:
+    path: ../../../build
+  build_config:
+    path: ../../../build_config
+  build_runner_core:
+    path: ../../../build_runner_core
