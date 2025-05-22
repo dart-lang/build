@@ -16,7 +16,6 @@ import '../asset_graph/exceptions.dart';
 import '../asset_graph/graph.dart';
 import '../generate/build_phases.dart';
 import '../generate/exceptions.dart';
-import '../logging/failure_reporter.dart';
 import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
 import '../util/constants.dart';
@@ -66,7 +65,6 @@ class AssetGraphLoader {
         );
         await Future.wait([
           writer.deleteDirectory(_generatedOutputDirectoryId),
-          FailureReporter.cleanErrorCache(),
         ]);
         return null;
       }
@@ -111,7 +109,6 @@ class AssetGraphLoader {
         writer.delete(assetGraphId),
         cachedGraph.deleteOutputs(packageGraph, writer),
         writer.deleteDirectory(_generatedOutputDirectoryId),
-        FailureReporter.cleanErrorCache(),
       ]);
       if (_runningFromSnapshot) {
         throw const BuildScriptChangedException();
@@ -126,7 +123,6 @@ class AssetGraphLoader {
         writer.delete(assetGraphId),
         cachedGraph.deleteOutputs(packageGraph, writer),
         writer.deleteDirectory(_generatedOutputDirectoryId),
-        FailureReporter.cleanErrorCache(),
       ]);
       if (_runningFromSnapshot) {
         throw const BuildScriptChangedException();
