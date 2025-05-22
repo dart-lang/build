@@ -260,6 +260,45 @@ void main() {
         );
       });
 
+      test('rebuilds on created missing source files', () async {
+        final application = applyToRoot(
+          TestBuilder(
+            buildExtensions: appendExtension('.copy', from: '.txt'),
+            extraWork: (buildStep, _) async {
+              await buildStep.canRead(makeAssetId('a|web/b.other'));
+            },
+          ),
+        );
+
+        var buildState = await startWatch(
+          [application],
+          {'a|web/a.txt': 'a'},
+          readerWriter,
+          packageGraph: packageGraph,
+        );
+        var results = StreamQueue(buildState.buildResults);
+
+        var result = await results.next;
+        checkBuild(
+          result,
+          outputs: {'a|web/a.txt.copy': 'a'},
+          readerWriter: readerWriter,
+        );
+
+        readerWriter.testing.writeString(makeAssetId('a|web/b.other'), 'b');
+        FakeWatcher.notifyWatchers(
+          WatchEvent(ChangeType.ADD, path.absolute('a', 'web', 'b.other')),
+        );
+
+        // Should rebuild due to the previously-missing input appearing.
+        result = await results.next;
+        checkBuild(
+          result,
+          outputs: {'a|web/a.txt.copy': 'a'},
+          readerWriter: readerWriter,
+        );
+      });
+
       test('rebuilds on deleted files outside hardcoded sources', () async {
         var buildState = await startWatch(
           [copyABuildApplication],
