@@ -34,11 +34,11 @@ Level _$valueOf(String name) {
     case 'SHOUT':
       return _$shout;
     default:
-      throw new ArgumentError(name);
+      throw ArgumentError(name);
   }
 }
 
-final BuiltSet<Level> _$values = new BuiltSet<Level>(const <Level>[
+final BuiltSet<Level> _$values = BuiltSet<Level>(const <Level>[
   _$finest,
   _$finer,
   _$fine,
@@ -49,8 +49,8 @@ final BuiltSet<Level> _$values = new BuiltSet<Level>(const <Level>[
   _$shout,
 ]);
 
-Serializer<Level> _$levelSerializer = new _$LevelSerializer();
-Serializer<ServerLog> _$serverLogSerializer = new _$ServerLogSerializer();
+Serializer<Level> _$levelSerializer = _$LevelSerializer();
+Serializer<ServerLog> _$serverLogSerializer = _$ServerLogSerializer();
 
 class _$LevelSerializer implements PrimitiveSerializer<Level> {
   @override
@@ -128,7 +128,7 @@ class _$ServerLogSerializer implements StructuredSerializer<ServerLog> {
     Iterable<Object?> serialized, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    final result = new ServerLogBuilder();
+    final result = ServerLogBuilder();
 
     final iterator = serialized.iterator;
     while (iterator.moveNext()) {
@@ -196,7 +196,7 @@ class _$ServerLog extends ServerLog {
   final String? stackTrace;
 
   factory _$ServerLog([void Function(ServerLogBuilder)? updates]) =>
-      (new ServerLogBuilder()..update(updates))._build();
+      (ServerLogBuilder()..update(updates))._build();
 
   _$ServerLog._({
     required this.level,
@@ -204,17 +204,13 @@ class _$ServerLog extends ServerLog {
     this.loggerName,
     this.error,
     this.stackTrace,
-  }) : super._() {
-    BuiltValueNullFieldError.checkNotNull(level, r'ServerLog', 'level');
-    BuiltValueNullFieldError.checkNotNull(message, r'ServerLog', 'message');
-  }
-
+  }) : super._();
   @override
   ServerLog rebuild(void Function(ServerLogBuilder) updates) =>
       (toBuilder()..update(updates)).build();
 
   @override
-  ServerLogBuilder toBuilder() => new ServerLogBuilder()..replace(this);
+  ServerLogBuilder toBuilder() => ServerLogBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
@@ -291,7 +287,6 @@ class ServerLogBuilder implements Builder<ServerLog, ServerLogBuilder> {
 
   @override
   void replace(ServerLog other) {
-    ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$ServerLog;
   }
 
@@ -306,7 +301,7 @@ class ServerLogBuilder implements Builder<ServerLog, ServerLogBuilder> {
   _$ServerLog _build() {
     final _$result =
         _$v ??
-        new _$ServerLog._(
+        _$ServerLog._(
           level: BuiltValueNullFieldError.checkNotNull(
             level,
             r'ServerLog',

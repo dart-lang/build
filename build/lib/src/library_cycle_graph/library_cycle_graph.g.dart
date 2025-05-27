@@ -7,7 +7,7 @@ part of 'library_cycle_graph.dart';
 // **************************************************************************
 
 Serializer<LibraryCycleGraph> _$libraryCycleGraphSerializer =
-    new _$LibraryCycleGraphSerializer();
+    _$LibraryCycleGraphSerializer();
 
 class _$LibraryCycleGraphSerializer
     implements StructuredSerializer<LibraryCycleGraph> {
@@ -46,7 +46,7 @@ class _$LibraryCycleGraphSerializer
     Iterable<Object?> serialized, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    final result = new LibraryCycleGraphBuilder();
+    final result = LibraryCycleGraphBuilder();
 
     final iterator = serialized.iterator;
     while (iterator.moveNext()) {
@@ -89,25 +89,17 @@ class _$LibraryCycleGraph extends LibraryCycleGraph {
 
   factory _$LibraryCycleGraph([
     void Function(LibraryCycleGraphBuilder)? updates,
-  ]) => (new LibraryCycleGraphBuilder()..update(updates))._build();
+  ]) => (LibraryCycleGraphBuilder()..update(updates))._build();
 
   _$LibraryCycleGraph._({required this.root, required this.children})
-    : super._() {
-    BuiltValueNullFieldError.checkNotNull(root, r'LibraryCycleGraph', 'root');
-    BuiltValueNullFieldError.checkNotNull(
-      children,
-      r'LibraryCycleGraph',
-      'children',
-    );
-  }
-
+    : super._();
   @override
   LibraryCycleGraph rebuild(void Function(LibraryCycleGraphBuilder) updates) =>
       (toBuilder()..update(updates)).build();
 
   @override
   LibraryCycleGraphBuilder toBuilder() =>
-      new LibraryCycleGraphBuilder()..replace(this);
+      LibraryCycleGraphBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
@@ -140,12 +132,12 @@ class LibraryCycleGraphBuilder
   _$LibraryCycleGraph? _$v;
 
   LibraryCycleBuilder? _root;
-  LibraryCycleBuilder get root => _$this._root ??= new LibraryCycleBuilder();
+  LibraryCycleBuilder get root => _$this._root ??= LibraryCycleBuilder();
   set root(LibraryCycleBuilder? root) => _$this._root = root;
 
   ListBuilder<LibraryCycleGraph>? _children;
   ListBuilder<LibraryCycleGraph> get children =>
-      _$this._children ??= new ListBuilder<LibraryCycleGraph>();
+      _$this._children ??= ListBuilder<LibraryCycleGraph>();
   set children(ListBuilder<LibraryCycleGraph>? children) =>
       _$this._children = children;
 
@@ -163,7 +155,6 @@ class LibraryCycleGraphBuilder
 
   @override
   void replace(LibraryCycleGraph other) {
-    ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$LibraryCycleGraph;
   }
 
@@ -180,10 +171,7 @@ class LibraryCycleGraphBuilder
     try {
       _$result =
           _$v ??
-          new _$LibraryCycleGraph._(
-            root: root.build(),
-            children: children.build(),
-          );
+          _$LibraryCycleGraph._(root: root.build(), children: children.build());
     } catch (_) {
       late String _$failedField;
       try {
@@ -192,7 +180,7 @@ class LibraryCycleGraphBuilder
         _$failedField = 'children';
         children.build();
       } catch (e) {
-        throw new BuiltValueNestedFieldError(
+        throw BuiltValueNestedFieldError(
           r'LibraryCycleGraph',
           _$failedField,
           e.toString(),

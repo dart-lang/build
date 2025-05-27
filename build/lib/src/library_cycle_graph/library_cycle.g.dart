@@ -11,18 +11,15 @@ class _$LibraryCycle extends LibraryCycle {
   final BuiltSet<AssetId> ids;
 
   factory _$LibraryCycle([void Function(LibraryCycleBuilder)? updates]) =>
-      (new LibraryCycleBuilder()..update(updates))._build();
+      (LibraryCycleBuilder()..update(updates))._build();
 
-  _$LibraryCycle._({required this.ids}) : super._() {
-    BuiltValueNullFieldError.checkNotNull(ids, r'LibraryCycle', 'ids');
-  }
-
+  _$LibraryCycle._({required this.ids}) : super._();
   @override
   LibraryCycle rebuild(void Function(LibraryCycleBuilder) updates) =>
       (toBuilder()..update(updates)).build();
 
   @override
-  LibraryCycleBuilder toBuilder() => new LibraryCycleBuilder()..replace(this);
+  LibraryCycleBuilder toBuilder() => LibraryCycleBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
@@ -50,7 +47,7 @@ class LibraryCycleBuilder
   _$LibraryCycle? _$v;
 
   SetBuilder<AssetId>? _ids;
-  SetBuilder<AssetId> get ids => _$this._ids ??= new SetBuilder<AssetId>();
+  SetBuilder<AssetId> get ids => _$this._ids ??= SetBuilder<AssetId>();
   set ids(SetBuilder<AssetId>? ids) => _$this._ids = ids;
 
   LibraryCycleBuilder();
@@ -66,7 +63,6 @@ class LibraryCycleBuilder
 
   @override
   void replace(LibraryCycle other) {
-    ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$LibraryCycle;
   }
 
@@ -81,14 +77,14 @@ class LibraryCycleBuilder
   _$LibraryCycle _build() {
     _$LibraryCycle _$result;
     try {
-      _$result = _$v ?? new _$LibraryCycle._(ids: ids.build());
+      _$result = _$v ?? _$LibraryCycle._(ids: ids.build());
     } catch (_) {
       late String _$failedField;
       try {
         _$failedField = 'ids';
         ids.build();
       } catch (e) {
-        throw new BuiltValueNestedFieldError(
+        throw BuiltValueNestedFieldError(
           r'LibraryCycle',
           _$failedField,
           e.toString(),

@@ -7,9 +7,9 @@ part of 'phased_value.dart';
 // **************************************************************************
 
 Serializer<PhasedValue<Object?>> _$phasedValueSerializer =
-    new _$PhasedValueSerializer();
+    _$PhasedValueSerializer();
 Serializer<ExpiringValue<Object?>> _$expiringValueSerializer =
-    new _$ExpiringValueSerializer();
+    _$ExpiringValueSerializer();
 
 class _$PhasedValueSerializer
     implements StructuredSerializer<PhasedValue<Object?>> {
@@ -34,8 +34,8 @@ class _$PhasedValueSerializer
       'values',
       serializers.serialize(
         object.values,
-        specifiedType: new FullType(BuiltList, [
-          new FullType(ExpiringValue, [parameterT]),
+        specifiedType: FullType(BuiltList, [
+          FullType(ExpiringValue, [parameterT]),
         ]),
       ),
     ];
@@ -57,7 +57,7 @@ class _$PhasedValueSerializer
 
     final result =
         isUnderspecified
-            ? new PhasedValueBuilder<Object?>()
+            ? PhasedValueBuilder<Object?>()
             : serializers.newBuilder(specifiedType)
                 as PhasedValueBuilder<Object?>;
 
@@ -71,8 +71,8 @@ class _$PhasedValueSerializer
           result.values.replace(
             serializers.deserialize(
                   value,
-                  specifiedType: new FullType(BuiltList, [
-                    new FullType(ExpiringValue, [parameterT]),
+                  specifiedType: FullType(BuiltList, [
+                    FullType(ExpiringValue, [parameterT]),
                   ]),
                 )!
                 as BuiltList<Object?>,
@@ -132,7 +132,7 @@ class _$ExpiringValueSerializer
 
     final result =
         isUnderspecified
-            ? new ExpiringValueBuilder<Object?>()
+            ? ExpiringValueBuilder<Object?>()
             : serializers.newBuilder(specifiedType)
                 as ExpiringValueBuilder<Object?>;
 
@@ -165,22 +165,15 @@ class _$PhasedValue<T> extends PhasedValue<T> {
   final BuiltList<ExpiringValue<T>> values;
 
   factory _$PhasedValue([void Function(PhasedValueBuilder<T>)? updates]) =>
-      (new PhasedValueBuilder<T>()..update(updates))._build();
+      (PhasedValueBuilder<T>()..update(updates))._build();
 
-  _$PhasedValue._({required this.values}) : super._() {
-    BuiltValueNullFieldError.checkNotNull(values, r'PhasedValue', 'values');
-    if (T == dynamic) {
-      throw new BuiltValueMissingGenericsError(r'PhasedValue', 'T');
-    }
-  }
-
+  _$PhasedValue._({required this.values}) : super._();
   @override
   PhasedValue<T> rebuild(void Function(PhasedValueBuilder<T>) updates) =>
       (toBuilder()..update(updates)).build();
 
   @override
-  PhasedValueBuilder<T> toBuilder() =>
-      new PhasedValueBuilder<T>()..replace(this);
+  PhasedValueBuilder<T> toBuilder() => PhasedValueBuilder<T>()..replace(this);
 
   @override
   bool operator ==(Object other) {
@@ -209,7 +202,7 @@ class PhasedValueBuilder<T>
 
   ListBuilder<ExpiringValue<T>>? _values;
   ListBuilder<ExpiringValue<T>> get values =>
-      _$this._values ??= new ListBuilder<ExpiringValue<T>>();
+      _$this._values ??= ListBuilder<ExpiringValue<T>>();
   set values(ListBuilder<ExpiringValue<T>>? values) => _$this._values = values;
 
   PhasedValueBuilder();
@@ -225,7 +218,6 @@ class PhasedValueBuilder<T>
 
   @override
   void replace(PhasedValue<T> other) {
-    ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$PhasedValue<T>;
   }
 
@@ -240,14 +232,14 @@ class PhasedValueBuilder<T>
   _$PhasedValue<T> _build() {
     _$PhasedValue<T> _$result;
     try {
-      _$result = _$v ?? new _$PhasedValue<T>._(values: values.build());
+      _$result = _$v ?? _$PhasedValue<T>._(values: values.build());
     } catch (_) {
       late String _$failedField;
       try {
         _$failedField = 'values';
         values.build();
       } catch (e) {
-        throw new BuiltValueNestedFieldError(
+        throw BuiltValueNestedFieldError(
           r'PhasedValue',
           _$failedField,
           e.toString(),
@@ -267,22 +259,16 @@ class _$ExpiringValue<T> extends ExpiringValue<T> {
   final int? expiresAfter;
 
   factory _$ExpiringValue([void Function(ExpiringValueBuilder<T>)? updates]) =>
-      (new ExpiringValueBuilder<T>()..update(updates))._build();
+      (ExpiringValueBuilder<T>()..update(updates))._build();
 
-  _$ExpiringValue._({required this.value, this.expiresAfter}) : super._() {
-    BuiltValueNullFieldError.checkNotNull(value, r'ExpiringValue', 'value');
-    if (T == dynamic) {
-      throw new BuiltValueMissingGenericsError(r'ExpiringValue', 'T');
-    }
-  }
-
+  _$ExpiringValue._({required this.value, this.expiresAfter}) : super._();
   @override
   ExpiringValue<T> rebuild(void Function(ExpiringValueBuilder<T>) updates) =>
       (toBuilder()..update(updates)).build();
 
   @override
   ExpiringValueBuilder<T> toBuilder() =>
-      new ExpiringValueBuilder<T>()..replace(this);
+      ExpiringValueBuilder<T>()..replace(this);
 
   @override
   bool operator ==(Object other) {
@@ -336,7 +322,6 @@ class ExpiringValueBuilder<T>
 
   @override
   void replace(ExpiringValue<T> other) {
-    ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$ExpiringValue<T>;
   }
 
@@ -351,7 +336,7 @@ class ExpiringValueBuilder<T>
   _$ExpiringValue<T> _build() {
     final _$result =
         _$v ??
-        new _$ExpiringValue<T>._(
+        _$ExpiringValue<T>._(
           value: BuiltValueNullFieldError.checkNotNull(
             value,
             r'ExpiringValue',
