@@ -6,8 +6,7 @@ part of 'build_request.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-Serializer<BuildRequest> _$buildRequestSerializer =
-    new _$BuildRequestSerializer();
+Serializer<BuildRequest> _$buildRequestSerializer = _$BuildRequestSerializer();
 
 class _$BuildRequestSerializer implements StructuredSerializer<BuildRequest> {
   @override
@@ -30,22 +29,21 @@ class _$BuildRequestSerializer implements StructuredSerializer<BuildRequest> {
     Iterable<Object?> serialized, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    return new BuildRequestBuilder().build();
+    return BuildRequestBuilder().build();
   }
 }
 
 class _$BuildRequest extends BuildRequest {
   factory _$BuildRequest([void Function(BuildRequestBuilder)? updates]) =>
-      (new BuildRequestBuilder()..update(updates))._build();
+      (BuildRequestBuilder()..update(updates))._build();
 
   _$BuildRequest._() : super._();
-
   @override
   BuildRequest rebuild(void Function(BuildRequestBuilder) updates) =>
       (toBuilder()..update(updates)).build();
 
   @override
-  BuildRequestBuilder toBuilder() => new BuildRequestBuilder()..replace(this);
+  BuildRequestBuilder toBuilder() => BuildRequestBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
@@ -72,7 +70,6 @@ class BuildRequestBuilder
 
   @override
   void replace(BuildRequest other) {
-    ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$BuildRequest;
   }
 
@@ -85,7 +82,7 @@ class BuildRequestBuilder
   BuildRequest build() => _build();
 
   _$BuildRequest _build() {
-    final _$result = _$v ?? new _$BuildRequest._();
+    final _$result = _$v ?? _$BuildRequest._();
     replace(_$result);
     return _$result;
   }

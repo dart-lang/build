@@ -7,7 +7,7 @@ part of 'serializers.dart';
 // **************************************************************************
 
 Serializers _$serializers =
-    (new Serializers().toBuilder()
+    (Serializers().toBuilder()
           ..add(AssetDeps.serializer)
           ..add(AssetNode.serializer)
           ..add(ExpiringValue.serializer)
@@ -24,41 +24,41 @@ Serializers _$serializers =
               const FullType(AssetId),
               const FullType(PhasedValue, const [const FullType(AssetDeps)]),
             ]),
-            () => new MapBuilder<AssetId, PhasedValue<AssetDeps>>(),
+            () => MapBuilder<AssetId, PhasedValue<AssetDeps>>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltSet, const [const FullType(AssetId)]),
-            () => new SetBuilder<AssetId>(),
+            () => SetBuilder<AssetId>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltSet, const [const FullType(AssetId)]),
-            () => new SetBuilder<AssetId>(),
+            () => SetBuilder<AssetId>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(AssetId)]),
-            () => new ListBuilder<AssetId>(),
+            () => ListBuilder<AssetId>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltSet, const [const FullType(AssetId)]),
-            () => new SetBuilder<AssetId>(),
+            () => SetBuilder<AssetId>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltSet, const [const FullType(AssetId)]),
-            () => new SetBuilder<AssetId>(),
+            () => SetBuilder<AssetId>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(String)]),
-            () => new ListBuilder<String>(),
+            () => ListBuilder<String>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltSet, const [const FullType(AssetId)]),
-            () => new SetBuilder<AssetId>(),
+            () => SetBuilder<AssetId>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltSet, const [
               const FullType(PostProcessBuildStepId),
             ]),
-            () => new SetBuilder<PostProcessBuildStepId>(),
+            () => SetBuilder<PostProcessBuildStepId>(),
           ))
         .build();
 

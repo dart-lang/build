@@ -7,7 +7,7 @@ part of 'phased_asset_deps.dart';
 // **************************************************************************
 
 Serializer<PhasedAssetDeps> _$phasedAssetDepsSerializer =
-    new _$PhasedAssetDepsSerializer();
+    _$PhasedAssetDepsSerializer();
 
 class _$PhasedAssetDepsSerializer
     implements StructuredSerializer<PhasedAssetDeps> {
@@ -42,7 +42,7 @@ class _$PhasedAssetDepsSerializer
     Iterable<Object?> serialized, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    final result = new PhasedAssetDepsBuilder();
+    final result = PhasedAssetDepsBuilder();
 
     final iterator = serialized.iterator;
     while (iterator.moveNext()) {
@@ -73,23 +73,15 @@ class _$PhasedAssetDeps extends PhasedAssetDeps {
   final BuiltMap<AssetId, PhasedValue<AssetDeps>> assetDeps;
 
   factory _$PhasedAssetDeps([void Function(PhasedAssetDepsBuilder)? updates]) =>
-      (new PhasedAssetDepsBuilder()..update(updates))._build();
+      (PhasedAssetDepsBuilder()..update(updates))._build();
 
-  _$PhasedAssetDeps._({required this.assetDeps}) : super._() {
-    BuiltValueNullFieldError.checkNotNull(
-      assetDeps,
-      r'PhasedAssetDeps',
-      'assetDeps',
-    );
-  }
-
+  _$PhasedAssetDeps._({required this.assetDeps}) : super._();
   @override
   PhasedAssetDeps rebuild(void Function(PhasedAssetDepsBuilder) updates) =>
       (toBuilder()..update(updates)).build();
 
   @override
-  PhasedAssetDepsBuilder toBuilder() =>
-      new PhasedAssetDepsBuilder()..replace(this);
+  PhasedAssetDepsBuilder toBuilder() => PhasedAssetDepsBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
@@ -118,7 +110,7 @@ class PhasedAssetDepsBuilder
 
   MapBuilder<AssetId, PhasedValue<AssetDeps>>? _assetDeps;
   MapBuilder<AssetId, PhasedValue<AssetDeps>> get assetDeps =>
-      _$this._assetDeps ??= new MapBuilder<AssetId, PhasedValue<AssetDeps>>();
+      _$this._assetDeps ??= MapBuilder<AssetId, PhasedValue<AssetDeps>>();
   set assetDeps(MapBuilder<AssetId, PhasedValue<AssetDeps>>? assetDeps) =>
       _$this._assetDeps = assetDeps;
 
@@ -135,7 +127,6 @@ class PhasedAssetDepsBuilder
 
   @override
   void replace(PhasedAssetDeps other) {
-    ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$PhasedAssetDeps;
   }
 
@@ -150,14 +141,14 @@ class PhasedAssetDepsBuilder
   _$PhasedAssetDeps _build() {
     _$PhasedAssetDeps _$result;
     try {
-      _$result = _$v ?? new _$PhasedAssetDeps._(assetDeps: assetDeps.build());
+      _$result = _$v ?? _$PhasedAssetDeps._(assetDeps: assetDeps.build());
     } catch (_) {
       late String _$failedField;
       try {
         _$failedField = 'assetDeps';
         assetDeps.build();
       } catch (e) {
-        throw new BuiltValueNestedFieldError(
+        throw BuiltValueNestedFieldError(
           r'PhasedAssetDeps',
           _$failedField,
           e.toString(),

@@ -7,7 +7,7 @@ part of 'shutdown_notification.dart';
 // **************************************************************************
 
 Serializer<ShutdownNotification> _$shutdownNotificationSerializer =
-    new _$ShutdownNotificationSerializer();
+    _$ShutdownNotificationSerializer();
 
 class _$ShutdownNotificationSerializer
     implements StructuredSerializer<ShutdownNotification> {
@@ -47,7 +47,7 @@ class _$ShutdownNotificationSerializer
     Iterable<Object?> serialized, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    final result = new ShutdownNotificationBuilder();
+    final result = ShutdownNotificationBuilder();
 
     final iterator = serialized.iterator;
     while (iterator.moveNext()) {
@@ -86,22 +86,10 @@ class _$ShutdownNotification extends ShutdownNotification {
 
   factory _$ShutdownNotification([
     void Function(ShutdownNotificationBuilder)? updates,
-  ]) => (new ShutdownNotificationBuilder()..update(updates))._build();
+  ]) => (ShutdownNotificationBuilder()..update(updates))._build();
 
   _$ShutdownNotification._({required this.message, required this.failureType})
-    : super._() {
-    BuiltValueNullFieldError.checkNotNull(
-      message,
-      r'ShutdownNotification',
-      'message',
-    );
-    BuiltValueNullFieldError.checkNotNull(
-      failureType,
-      r'ShutdownNotification',
-      'failureType',
-    );
-  }
-
+    : super._();
   @override
   ShutdownNotification rebuild(
     void Function(ShutdownNotificationBuilder) updates,
@@ -109,7 +97,7 @@ class _$ShutdownNotification extends ShutdownNotification {
 
   @override
   ShutdownNotificationBuilder toBuilder() =>
-      new ShutdownNotificationBuilder()..replace(this);
+      ShutdownNotificationBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
@@ -163,7 +151,6 @@ class ShutdownNotificationBuilder
 
   @override
   void replace(ShutdownNotification other) {
-    ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$ShutdownNotification;
   }
 
@@ -178,7 +165,7 @@ class ShutdownNotificationBuilder
   _$ShutdownNotification _build() {
     final _$result =
         _$v ??
-        new _$ShutdownNotification._(
+        _$ShutdownNotification._(
           message: BuiltValueNullFieldError.checkNotNull(
             message,
             r'ShutdownNotification',

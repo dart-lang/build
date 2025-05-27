@@ -7,7 +7,7 @@ part of 'serializers.dart';
 // **************************************************************************
 
 Serializers _$serializers =
-    (new Serializers().toBuilder()
+    (Serializers().toBuilder()
           ..add(BuildRequest.serializer)
           ..add(BuildResults.serializer)
           ..add(BuildStatus.serializer)
@@ -20,19 +20,19 @@ Serializers _$serializers =
           ..add(ShutdownNotification.serializer)
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(BuildResult)]),
-            () => new ListBuilder<BuildResult>(),
+            () => ListBuilder<BuildResult>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(Uri)]),
-            () => new ListBuilder<Uri>(),
+            () => ListBuilder<Uri>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltSet, const [const FullType(RegExp)]),
-            () => new SetBuilder<RegExp>(),
+            () => SetBuilder<RegExp>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltSet, const [const FullType(String)]),
-            () => new SetBuilder<String>(),
+            () => SetBuilder<String>(),
           ))
         .build();
 

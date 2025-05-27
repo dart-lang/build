@@ -7,7 +7,7 @@ part of 'post_process_build_step_id.dart';
 // **************************************************************************
 
 Serializer<PostProcessBuildStepId> _$postProcessBuildStepIdSerializer =
-    new _$PostProcessBuildStepIdSerializer();
+    _$PostProcessBuildStepIdSerializer();
 
 class _$PostProcessBuildStepIdSerializer
     implements StructuredSerializer<PostProcessBuildStepId> {
@@ -47,7 +47,7 @@ class _$PostProcessBuildStepIdSerializer
     Iterable<Object?> serialized, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    final result = new PostProcessBuildStepIdBuilder();
+    final result = PostProcessBuildStepIdBuilder();
 
     final iterator = serialized.iterator;
     while (iterator.moveNext()) {
@@ -86,22 +86,10 @@ class _$PostProcessBuildStepId extends PostProcessBuildStepId {
 
   factory _$PostProcessBuildStepId([
     void Function(PostProcessBuildStepIdBuilder)? updates,
-  ]) => (new PostProcessBuildStepIdBuilder()..update(updates))._build();
+  ]) => (PostProcessBuildStepIdBuilder()..update(updates))._build();
 
   _$PostProcessBuildStepId._({required this.input, required this.actionNumber})
-    : super._() {
-    BuiltValueNullFieldError.checkNotNull(
-      input,
-      r'PostProcessBuildStepId',
-      'input',
-    );
-    BuiltValueNullFieldError.checkNotNull(
-      actionNumber,
-      r'PostProcessBuildStepId',
-      'actionNumber',
-    );
-  }
-
+    : super._();
   @override
   PostProcessBuildStepId rebuild(
     void Function(PostProcessBuildStepIdBuilder) updates,
@@ -109,7 +97,7 @@ class _$PostProcessBuildStepId extends PostProcessBuildStepId {
 
   @override
   PostProcessBuildStepIdBuilder toBuilder() =>
-      new PostProcessBuildStepIdBuilder()..replace(this);
+      PostProcessBuildStepIdBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
@@ -163,7 +151,6 @@ class PostProcessBuildStepIdBuilder
 
   @override
   void replace(PostProcessBuildStepId other) {
-    ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$PostProcessBuildStepId;
   }
 
@@ -178,7 +165,7 @@ class PostProcessBuildStepIdBuilder
   _$PostProcessBuildStepId _build() {
     final _$result =
         _$v ??
-        new _$PostProcessBuildStepId._(
+        _$PostProcessBuildStepId._(
           input: BuiltValueNullFieldError.checkNotNull(
             input,
             r'PostProcessBuildStepId',

@@ -7,7 +7,7 @@ part of 'build_target_request.dart';
 // **************************************************************************
 
 Serializer<BuildTargetRequest> _$buildTargetRequestSerializer =
-    new _$BuildTargetRequestSerializer();
+    _$BuildTargetRequestSerializer();
 
 class _$BuildTargetRequestSerializer
     implements StructuredSerializer<BuildTargetRequest> {
@@ -39,7 +39,7 @@ class _$BuildTargetRequestSerializer
     Iterable<Object?> serialized, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    final result = new BuildTargetRequestBuilder();
+    final result = BuildTargetRequestBuilder();
 
     final iterator = serialized.iterator;
     while (iterator.moveNext()) {
@@ -68,16 +68,9 @@ class _$BuildTargetRequest extends BuildTargetRequest {
 
   factory _$BuildTargetRequest([
     void Function(BuildTargetRequestBuilder)? updates,
-  ]) => (new BuildTargetRequestBuilder()..update(updates))._build();
+  ]) => (BuildTargetRequestBuilder()..update(updates))._build();
 
-  _$BuildTargetRequest._({required this.target}) : super._() {
-    BuiltValueNullFieldError.checkNotNull(
-      target,
-      r'BuildTargetRequest',
-      'target',
-    );
-  }
-
+  _$BuildTargetRequest._({required this.target}) : super._();
   @override
   BuildTargetRequest rebuild(
     void Function(BuildTargetRequestBuilder) updates,
@@ -85,7 +78,7 @@ class _$BuildTargetRequest extends BuildTargetRequest {
 
   @override
   BuildTargetRequestBuilder toBuilder() =>
-      new BuildTargetRequestBuilder()..replace(this);
+      BuildTargetRequestBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
@@ -129,7 +122,6 @@ class BuildTargetRequestBuilder
 
   @override
   void replace(BuildTargetRequest other) {
-    ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$BuildTargetRequest;
   }
 
@@ -144,7 +136,7 @@ class BuildTargetRequestBuilder
   _$BuildTargetRequest _build() {
     final _$result =
         _$v ??
-        new _$BuildTargetRequest._(
+        _$BuildTargetRequest._(
           target: BuiltValueNullFieldError.checkNotNull(
             target,
             r'BuildTargetRequest',

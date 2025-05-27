@@ -7,9 +7,9 @@ part of 'build_target.dart';
 // **************************************************************************
 
 Serializer<DefaultBuildTarget> _$defaultBuildTargetSerializer =
-    new _$DefaultBuildTargetSerializer();
+    _$DefaultBuildTargetSerializer();
 Serializer<OutputLocation> _$outputLocationSerializer =
-    new _$OutputLocationSerializer();
+    _$OutputLocationSerializer();
 
 class _$DefaultBuildTargetSerializer
     implements StructuredSerializer<DefaultBuildTarget> {
@@ -75,7 +75,7 @@ class _$DefaultBuildTargetSerializer
     Iterable<Object?> serialized, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    final result = new DefaultBuildTargetBuilder();
+    final result = DefaultBuildTargetBuilder();
 
     final iterator = serialized.iterator;
     while (iterator.moveNext()) {
@@ -174,7 +174,7 @@ class _$OutputLocationSerializer
     Iterable<Object?> serialized, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    final result = new OutputLocationBuilder();
+    final result = OutputLocationBuilder();
 
     final iterator = serialized.iterator;
     while (iterator.moveNext()) {
@@ -227,7 +227,7 @@ class _$DefaultBuildTarget extends DefaultBuildTarget {
 
   factory _$DefaultBuildTarget([
     void Function(DefaultBuildTargetBuilder)? updates,
-  ]) => (new DefaultBuildTargetBuilder()..update(updates))._build();
+  ]) => (DefaultBuildTargetBuilder()..update(updates))._build();
 
   _$DefaultBuildTarget._({
     required this.blackListPatterns,
@@ -235,24 +235,7 @@ class _$DefaultBuildTarget extends DefaultBuildTarget {
     this.buildFilters,
     required this.reportChangedAssets,
     required this.target,
-  }) : super._() {
-    BuiltValueNullFieldError.checkNotNull(
-      blackListPatterns,
-      r'DefaultBuildTarget',
-      'blackListPatterns',
-    );
-    BuiltValueNullFieldError.checkNotNull(
-      reportChangedAssets,
-      r'DefaultBuildTarget',
-      'reportChangedAssets',
-    );
-    BuiltValueNullFieldError.checkNotNull(
-      target,
-      r'DefaultBuildTarget',
-      'target',
-    );
-  }
-
+  }) : super._();
   @override
   DefaultBuildTarget rebuild(
     void Function(DefaultBuildTargetBuilder) updates,
@@ -260,7 +243,7 @@ class _$DefaultBuildTarget extends DefaultBuildTarget {
 
   @override
   DefaultBuildTargetBuilder toBuilder() =>
-      new DefaultBuildTargetBuilder()..replace(this);
+      DefaultBuildTargetBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
@@ -303,19 +286,19 @@ class DefaultBuildTargetBuilder
 
   SetBuilder<RegExp>? _blackListPatterns;
   SetBuilder<RegExp> get blackListPatterns =>
-      _$this._blackListPatterns ??= new SetBuilder<RegExp>();
+      _$this._blackListPatterns ??= SetBuilder<RegExp>();
   set blackListPatterns(SetBuilder<RegExp>? blackListPatterns) =>
       _$this._blackListPatterns = blackListPatterns;
 
   OutputLocationBuilder? _outputLocation;
   OutputLocationBuilder get outputLocation =>
-      _$this._outputLocation ??= new OutputLocationBuilder();
+      _$this._outputLocation ??= OutputLocationBuilder();
   set outputLocation(OutputLocationBuilder? outputLocation) =>
       _$this._outputLocation = outputLocation;
 
   SetBuilder<String>? _buildFilters;
   SetBuilder<String> get buildFilters =>
-      _$this._buildFilters ??= new SetBuilder<String>();
+      _$this._buildFilters ??= SetBuilder<String>();
   set buildFilters(SetBuilder<String>? buildFilters) =>
       _$this._buildFilters = buildFilters;
 
@@ -347,7 +330,6 @@ class DefaultBuildTargetBuilder
 
   @override
   void replace(DefaultBuildTarget other) {
-    ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$DefaultBuildTarget;
   }
 
@@ -364,7 +346,7 @@ class DefaultBuildTargetBuilder
     try {
       _$result =
           _$v ??
-          new _$DefaultBuildTarget._(
+          _$DefaultBuildTarget._(
             blackListPatterns: blackListPatterns.build(),
             outputLocation: _outputLocation?.build(),
             buildFilters: _buildFilters?.build(),
@@ -389,7 +371,7 @@ class DefaultBuildTargetBuilder
         _$failedField = 'buildFilters';
         _buildFilters?.build();
       } catch (e) {
-        throw new BuiltValueNestedFieldError(
+        throw BuiltValueNestedFieldError(
           r'DefaultBuildTarget',
           _$failedField,
           e.toString(),
@@ -411,29 +393,19 @@ class _$OutputLocation extends OutputLocation {
   final bool hoist;
 
   factory _$OutputLocation([void Function(OutputLocationBuilder)? updates]) =>
-      (new OutputLocationBuilder()..update(updates))._build();
+      (OutputLocationBuilder()..update(updates))._build();
 
   _$OutputLocation._({
     required this.output,
     required this.useSymlinks,
     required this.hoist,
-  }) : super._() {
-    BuiltValueNullFieldError.checkNotNull(output, r'OutputLocation', 'output');
-    BuiltValueNullFieldError.checkNotNull(
-      useSymlinks,
-      r'OutputLocation',
-      'useSymlinks',
-    );
-    BuiltValueNullFieldError.checkNotNull(hoist, r'OutputLocation', 'hoist');
-  }
-
+  }) : super._();
   @override
   OutputLocation rebuild(void Function(OutputLocationBuilder) updates) =>
       (toBuilder()..update(updates)).build();
 
   @override
-  OutputLocationBuilder toBuilder() =>
-      new OutputLocationBuilder()..replace(this);
+  OutputLocationBuilder toBuilder() => OutputLocationBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
@@ -495,7 +467,6 @@ class OutputLocationBuilder
 
   @override
   void replace(OutputLocation other) {
-    ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$OutputLocation;
   }
 
@@ -510,7 +481,7 @@ class OutputLocationBuilder
   _$OutputLocation _build() {
     final _$result =
         _$v ??
-        new _$OutputLocation._(
+        _$OutputLocation._(
           output: BuiltValueNullFieldError.checkNotNull(
             output,
             r'OutputLocation',

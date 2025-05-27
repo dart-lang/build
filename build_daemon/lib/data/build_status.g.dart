@@ -19,19 +19,18 @@ BuildStatus _$valueOf(String name) {
     case 'failed':
       return _$failed;
     default:
-      throw new ArgumentError(name);
+      throw ArgumentError(name);
   }
 }
 
-final BuiltSet<BuildStatus> _$values = new BuiltSet<BuildStatus>(
+final BuiltSet<BuildStatus> _$values = BuiltSet<BuildStatus>(
   const <BuildStatus>[_$started, _$succeeded, _$failed],
 );
 
-Serializer<BuildStatus> _$buildStatusSerializer = new _$BuildStatusSerializer();
+Serializer<BuildStatus> _$buildStatusSerializer = _$BuildStatusSerializer();
 Serializer<DefaultBuildResult> _$defaultBuildResultSerializer =
-    new _$DefaultBuildResultSerializer();
-Serializer<BuildResults> _$buildResultsSerializer =
-    new _$BuildResultsSerializer();
+    _$DefaultBuildResultSerializer();
+Serializer<BuildResults> _$buildResultsSerializer = _$BuildResultsSerializer();
 
 class _$BuildStatusSerializer implements PrimitiveSerializer<BuildStatus> {
   @override
@@ -113,7 +112,7 @@ class _$DefaultBuildResultSerializer
     Iterable<Object?> serialized, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    final result = new DefaultBuildResultBuilder();
+    final result = DefaultBuildResultBuilder();
 
     final iterator = serialized.iterator;
     while (iterator.moveNext()) {
@@ -212,7 +211,7 @@ class _$BuildResultsSerializer implements StructuredSerializer<BuildResults> {
     Iterable<Object?> serialized, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    final result = new BuildResultsBuilder();
+    final result = BuildResultsBuilder();
 
     final iterator = serialized.iterator;
     while (iterator.moveNext()) {
@@ -263,7 +262,7 @@ class _$DefaultBuildResult extends DefaultBuildResult {
 
   factory _$DefaultBuildResult([
     void Function(DefaultBuildResultBuilder)? updates,
-  ]) => (new DefaultBuildResultBuilder()..update(updates))._build();
+  ]) => (DefaultBuildResultBuilder()..update(updates))._build();
 
   _$DefaultBuildResult._({
     required this.status,
@@ -271,19 +270,7 @@ class _$DefaultBuildResult extends DefaultBuildResult {
     this.buildId,
     this.error,
     this.isCached,
-  }) : super._() {
-    BuiltValueNullFieldError.checkNotNull(
-      status,
-      r'DefaultBuildResult',
-      'status',
-    );
-    BuiltValueNullFieldError.checkNotNull(
-      target,
-      r'DefaultBuildResult',
-      'target',
-    );
-  }
-
+  }) : super._();
   @override
   DefaultBuildResult rebuild(
     void Function(DefaultBuildResultBuilder) updates,
@@ -291,7 +278,7 @@ class _$DefaultBuildResult extends DefaultBuildResult {
 
   @override
   DefaultBuildResultBuilder toBuilder() =>
-      new DefaultBuildResultBuilder()..replace(this);
+      DefaultBuildResultBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
@@ -369,7 +356,6 @@ class DefaultBuildResultBuilder
 
   @override
   void replace(DefaultBuildResult other) {
-    ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$DefaultBuildResult;
   }
 
@@ -384,7 +370,7 @@ class DefaultBuildResultBuilder
   _$DefaultBuildResult _build() {
     final _$result =
         _$v ??
-        new _$DefaultBuildResult._(
+        _$DefaultBuildResult._(
           status: BuiltValueNullFieldError.checkNotNull(
             status,
             r'DefaultBuildResult',
@@ -411,18 +397,15 @@ class _$BuildResults extends BuildResults {
   final BuiltList<Uri>? changedAssets;
 
   factory _$BuildResults([void Function(BuildResultsBuilder)? updates]) =>
-      (new BuildResultsBuilder()..update(updates))._build();
+      (BuildResultsBuilder()..update(updates))._build();
 
-  _$BuildResults._({required this.results, this.changedAssets}) : super._() {
-    BuiltValueNullFieldError.checkNotNull(results, r'BuildResults', 'results');
-  }
-
+  _$BuildResults._({required this.results, this.changedAssets}) : super._();
   @override
   BuildResults rebuild(void Function(BuildResultsBuilder) updates) =>
       (toBuilder()..update(updates)).build();
 
   @override
-  BuildResultsBuilder toBuilder() => new BuildResultsBuilder()..replace(this);
+  BuildResultsBuilder toBuilder() => BuildResultsBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
@@ -456,12 +439,12 @@ class BuildResultsBuilder
 
   ListBuilder<BuildResult>? _results;
   ListBuilder<BuildResult> get results =>
-      _$this._results ??= new ListBuilder<BuildResult>();
+      _$this._results ??= ListBuilder<BuildResult>();
   set results(ListBuilder<BuildResult>? results) => _$this._results = results;
 
   ListBuilder<Uri>? _changedAssets;
   ListBuilder<Uri> get changedAssets =>
-      _$this._changedAssets ??= new ListBuilder<Uri>();
+      _$this._changedAssets ??= ListBuilder<Uri>();
   set changedAssets(ListBuilder<Uri>? changedAssets) =>
       _$this._changedAssets = changedAssets;
 
@@ -479,7 +462,6 @@ class BuildResultsBuilder
 
   @override
   void replace(BuildResults other) {
-    ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$BuildResults;
   }
 
@@ -496,7 +478,7 @@ class BuildResultsBuilder
     try {
       _$result =
           _$v ??
-          new _$BuildResults._(
+          _$BuildResults._(
             results: results.build(),
             changedAssets: _changedAssets?.build(),
           );
@@ -508,7 +490,7 @@ class BuildResultsBuilder
         _$failedField = 'changedAssets';
         _changedAssets?.build();
       } catch (e) {
-        throw new BuiltValueNestedFieldError(
+        throw BuiltValueNestedFieldError(
           r'BuildResults',
           _$failedField,
           e.toString(),

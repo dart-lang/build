@@ -28,31 +28,29 @@ NodeType _$nodeTypeValueOf(String name) {
     case 'missingSource':
       return _$missingSource;
     default:
-      throw new ArgumentError(name);
+      throw ArgumentError(name);
   }
 }
 
-final BuiltSet<NodeType> _$nodeTypeValues = new BuiltSet<NodeType>(
-  const <NodeType>[
-    _$generated,
-    _$glob,
-    _$internal,
-    _$placeholder,
-    _$source,
-    _$missingSource,
-  ],
-);
+final BuiltSet<NodeType> _$nodeTypeValues = BuiltSet<NodeType>(const <NodeType>[
+  _$generated,
+  _$glob,
+  _$internal,
+  _$placeholder,
+  _$source,
+  _$missingSource,
+]);
 
-Serializer<NodeType> _$nodeTypeSerializer = new _$NodeTypeSerializer();
-Serializer<AssetNode> _$assetNodeSerializer = new _$AssetNodeSerializer();
+Serializer<NodeType> _$nodeTypeSerializer = _$NodeTypeSerializer();
+Serializer<AssetNode> _$assetNodeSerializer = _$AssetNodeSerializer();
 Serializer<GeneratedNodeConfiguration> _$generatedNodeConfigurationSerializer =
-    new _$GeneratedNodeConfigurationSerializer();
+    _$GeneratedNodeConfigurationSerializer();
 Serializer<GeneratedNodeState> _$generatedNodeStateSerializer =
-    new _$GeneratedNodeStateSerializer();
+    _$GeneratedNodeStateSerializer();
 Serializer<GlobNodeConfiguration> _$globNodeConfigurationSerializer =
-    new _$GlobNodeConfigurationSerializer();
+    _$GlobNodeConfigurationSerializer();
 Serializer<GlobNodeState> _$globNodeStateSerializer =
-    new _$GlobNodeStateSerializer();
+    _$GlobNodeStateSerializer();
 
 class _$NodeTypeSerializer implements PrimitiveSerializer<NodeType> {
   @override
@@ -172,7 +170,7 @@ class _$AssetNodeSerializer implements StructuredSerializer<AssetNode> {
     Iterable<Object?> serialized, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    final result = new AssetNodeBuilder();
+    final result = AssetNodeBuilder();
 
     final iterator = serialized.iterator;
     while (iterator.moveNext()) {
@@ -312,7 +310,7 @@ class _$GeneratedNodeConfigurationSerializer
     Iterable<Object?> serialized, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    final result = new GeneratedNodeConfigurationBuilder();
+    final result = GeneratedNodeConfigurationBuilder();
 
     final iterator = serialized.iterator;
     while (iterator.moveNext()) {
@@ -405,7 +403,7 @@ class _$GeneratedNodeStateSerializer
     Iterable<Object?> serialized, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    final result = new GeneratedNodeStateBuilder();
+    final result = GeneratedNodeStateBuilder();
 
     final iterator = serialized.iterator;
     while (iterator.moveNext()) {
@@ -496,7 +494,7 @@ class _$GlobNodeConfigurationSerializer
     Iterable<Object?> serialized, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    final result = new GlobNodeConfigurationBuilder();
+    final result = GlobNodeConfigurationBuilder();
 
     final iterator = serialized.iterator;
     while (iterator.moveNext()) {
@@ -565,7 +563,7 @@ class _$GlobNodeStateSerializer implements StructuredSerializer<GlobNodeState> {
     Iterable<Object?> serialized, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    final result = new GlobNodeStateBuilder();
+    final result = GlobNodeStateBuilder();
 
     final iterator = serialized.iterator;
     while (iterator.moveNext()) {
@@ -623,7 +621,7 @@ class _$AssetNode extends AssetNode {
   final BuiltSet<PostProcessBuildStepId> deletedBy;
 
   factory _$AssetNode([void Function(AssetNodeBuilder)? updates]) =>
-      (new AssetNodeBuilder()..update(updates))._build();
+      (AssetNodeBuilder()..update(updates))._build();
 
   _$AssetNode._({
     required this.id,
@@ -635,23 +633,13 @@ class _$AssetNode extends AssetNode {
     required this.primaryOutputs,
     this.digest,
     required this.deletedBy,
-  }) : super._() {
-    BuiltValueNullFieldError.checkNotNull(id, r'AssetNode', 'id');
-    BuiltValueNullFieldError.checkNotNull(type, r'AssetNode', 'type');
-    BuiltValueNullFieldError.checkNotNull(
-      primaryOutputs,
-      r'AssetNode',
-      'primaryOutputs',
-    );
-    BuiltValueNullFieldError.checkNotNull(deletedBy, r'AssetNode', 'deletedBy');
-  }
-
+  }) : super._();
   @override
   AssetNode rebuild(void Function(AssetNodeBuilder) updates) =>
       (toBuilder()..update(updates)).build();
 
   @override
-  AssetNodeBuilder toBuilder() => new AssetNodeBuilder()..replace(this);
+  AssetNodeBuilder toBuilder() => AssetNodeBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
@@ -714,33 +702,33 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
   GeneratedNodeConfigurationBuilder? _generatedNodeConfiguration;
   GeneratedNodeConfigurationBuilder get generatedNodeConfiguration =>
       _$this._generatedNodeConfiguration ??=
-          new GeneratedNodeConfigurationBuilder();
+          GeneratedNodeConfigurationBuilder();
   set generatedNodeConfiguration(
     GeneratedNodeConfigurationBuilder? generatedNodeConfiguration,
   ) => _$this._generatedNodeConfiguration = generatedNodeConfiguration;
 
   GeneratedNodeStateBuilder? _generatedNodeState;
   GeneratedNodeStateBuilder get generatedNodeState =>
-      _$this._generatedNodeState ??= new GeneratedNodeStateBuilder();
+      _$this._generatedNodeState ??= GeneratedNodeStateBuilder();
   set generatedNodeState(GeneratedNodeStateBuilder? generatedNodeState) =>
       _$this._generatedNodeState = generatedNodeState;
 
   GlobNodeConfigurationBuilder? _globNodeConfiguration;
   GlobNodeConfigurationBuilder get globNodeConfiguration =>
-      _$this._globNodeConfiguration ??= new GlobNodeConfigurationBuilder();
+      _$this._globNodeConfiguration ??= GlobNodeConfigurationBuilder();
   set globNodeConfiguration(
     GlobNodeConfigurationBuilder? globNodeConfiguration,
   ) => _$this._globNodeConfiguration = globNodeConfiguration;
 
   GlobNodeStateBuilder? _globNodeState;
   GlobNodeStateBuilder get globNodeState =>
-      _$this._globNodeState ??= new GlobNodeStateBuilder();
+      _$this._globNodeState ??= GlobNodeStateBuilder();
   set globNodeState(GlobNodeStateBuilder? globNodeState) =>
       _$this._globNodeState = globNodeState;
 
   SetBuilder<AssetId>? _primaryOutputs;
   SetBuilder<AssetId> get primaryOutputs =>
-      _$this._primaryOutputs ??= new SetBuilder<AssetId>();
+      _$this._primaryOutputs ??= SetBuilder<AssetId>();
   set primaryOutputs(SetBuilder<AssetId>? primaryOutputs) =>
       _$this._primaryOutputs = primaryOutputs;
 
@@ -750,7 +738,7 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
 
   SetBuilder<PostProcessBuildStepId>? _deletedBy;
   SetBuilder<PostProcessBuildStepId> get deletedBy =>
-      _$this._deletedBy ??= new SetBuilder<PostProcessBuildStepId>();
+      _$this._deletedBy ??= SetBuilder<PostProcessBuildStepId>();
   set deletedBy(SetBuilder<PostProcessBuildStepId>? deletedBy) =>
       _$this._deletedBy = deletedBy;
 
@@ -775,7 +763,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
 
   @override
   void replace(AssetNode other) {
-    ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$AssetNode;
   }
 
@@ -792,7 +779,7 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
     try {
       _$result =
           _$v ??
-          new _$AssetNode._(
+          _$AssetNode._(
             id: BuiltValueNullFieldError.checkNotNull(id, r'AssetNode', 'id'),
             type: BuiltValueNullFieldError.checkNotNull(
               type,
@@ -824,7 +811,7 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
         _$failedField = 'deletedBy';
         deletedBy.build();
       } catch (e) {
-        throw new BuiltValueNestedFieldError(
+        throw BuiltValueNestedFieldError(
           r'AssetNode',
           _$failedField,
           e.toString(),
@@ -847,30 +834,13 @@ class _$GeneratedNodeConfiguration extends GeneratedNodeConfiguration {
 
   factory _$GeneratedNodeConfiguration([
     void Function(GeneratedNodeConfigurationBuilder)? updates,
-  ]) => (new GeneratedNodeConfigurationBuilder()..update(updates))._build();
+  ]) => (GeneratedNodeConfigurationBuilder()..update(updates))._build();
 
   _$GeneratedNodeConfiguration._({
     required this.primaryInput,
     required this.phaseNumber,
     required this.isHidden,
-  }) : super._() {
-    BuiltValueNullFieldError.checkNotNull(
-      primaryInput,
-      r'GeneratedNodeConfiguration',
-      'primaryInput',
-    );
-    BuiltValueNullFieldError.checkNotNull(
-      phaseNumber,
-      r'GeneratedNodeConfiguration',
-      'phaseNumber',
-    );
-    BuiltValueNullFieldError.checkNotNull(
-      isHidden,
-      r'GeneratedNodeConfiguration',
-      'isHidden',
-    );
-  }
-
+  }) : super._();
   @override
   GeneratedNodeConfiguration rebuild(
     void Function(GeneratedNodeConfigurationBuilder) updates,
@@ -878,7 +848,7 @@ class _$GeneratedNodeConfiguration extends GeneratedNodeConfiguration {
 
   @override
   GeneratedNodeConfigurationBuilder toBuilder() =>
-      new GeneratedNodeConfigurationBuilder()..replace(this);
+      GeneratedNodeConfigurationBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
@@ -942,7 +912,6 @@ class GeneratedNodeConfigurationBuilder
 
   @override
   void replace(GeneratedNodeConfiguration other) {
-    ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$GeneratedNodeConfiguration;
   }
 
@@ -957,7 +926,7 @@ class GeneratedNodeConfigurationBuilder
   _$GeneratedNodeConfiguration _build() {
     final _$result =
         _$v ??
-        new _$GeneratedNodeConfiguration._(
+        _$GeneratedNodeConfiguration._(
           primaryInput: BuiltValueNullFieldError.checkNotNull(
             primaryInput,
             r'GeneratedNodeConfiguration',
@@ -991,31 +960,14 @@ class _$GeneratedNodeState extends GeneratedNodeState {
 
   factory _$GeneratedNodeState([
     void Function(GeneratedNodeStateBuilder)? updates,
-  ]) => (new GeneratedNodeStateBuilder()..update(updates))._build();
+  ]) => (GeneratedNodeStateBuilder()..update(updates))._build();
 
   _$GeneratedNodeState._({
     required this.inputs,
     required this.resolverEntrypoints,
     this.result,
     required this.errors,
-  }) : super._() {
-    BuiltValueNullFieldError.checkNotNull(
-      inputs,
-      r'GeneratedNodeState',
-      'inputs',
-    );
-    BuiltValueNullFieldError.checkNotNull(
-      resolverEntrypoints,
-      r'GeneratedNodeState',
-      'resolverEntrypoints',
-    );
-    BuiltValueNullFieldError.checkNotNull(
-      errors,
-      r'GeneratedNodeState',
-      'errors',
-    );
-  }
-
+  }) : super._();
   @override
   GeneratedNodeState rebuild(
     void Function(GeneratedNodeStateBuilder) updates,
@@ -1023,7 +975,7 @@ class _$GeneratedNodeState extends GeneratedNodeState {
 
   @override
   GeneratedNodeStateBuilder toBuilder() =>
-      new GeneratedNodeStateBuilder()..replace(this);
+      GeneratedNodeStateBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
@@ -1062,13 +1014,12 @@ class GeneratedNodeStateBuilder
   _$GeneratedNodeState? _$v;
 
   SetBuilder<AssetId>? _inputs;
-  SetBuilder<AssetId> get inputs =>
-      _$this._inputs ??= new SetBuilder<AssetId>();
+  SetBuilder<AssetId> get inputs => _$this._inputs ??= SetBuilder<AssetId>();
   set inputs(SetBuilder<AssetId>? inputs) => _$this._inputs = inputs;
 
   SetBuilder<AssetId>? _resolverEntrypoints;
   SetBuilder<AssetId> get resolverEntrypoints =>
-      _$this._resolverEntrypoints ??= new SetBuilder<AssetId>();
+      _$this._resolverEntrypoints ??= SetBuilder<AssetId>();
   set resolverEntrypoints(SetBuilder<AssetId>? resolverEntrypoints) =>
       _$this._resolverEntrypoints = resolverEntrypoints;
 
@@ -1077,8 +1028,7 @@ class GeneratedNodeStateBuilder
   set result(bool? result) => _$this._result = result;
 
   ListBuilder<String>? _errors;
-  ListBuilder<String> get errors =>
-      _$this._errors ??= new ListBuilder<String>();
+  ListBuilder<String> get errors => _$this._errors ??= ListBuilder<String>();
   set errors(ListBuilder<String>? errors) => _$this._errors = errors;
 
   GeneratedNodeStateBuilder();
@@ -1097,7 +1047,6 @@ class GeneratedNodeStateBuilder
 
   @override
   void replace(GeneratedNodeState other) {
-    ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$GeneratedNodeState;
   }
 
@@ -1114,7 +1063,7 @@ class GeneratedNodeStateBuilder
     try {
       _$result =
           _$v ??
-          new _$GeneratedNodeState._(
+          _$GeneratedNodeState._(
             inputs: inputs.build(),
             resolverEntrypoints: resolverEntrypoints.build(),
             result: result,
@@ -1131,7 +1080,7 @@ class GeneratedNodeStateBuilder
         _$failedField = 'errors';
         errors.build();
       } catch (e) {
-        throw new BuiltValueNestedFieldError(
+        throw BuiltValueNestedFieldError(
           r'GeneratedNodeState',
           _$failedField,
           e.toString(),
@@ -1152,22 +1101,10 @@ class _$GlobNodeConfiguration extends GlobNodeConfiguration {
 
   factory _$GlobNodeConfiguration([
     void Function(GlobNodeConfigurationBuilder)? updates,
-  ]) => (new GlobNodeConfigurationBuilder()..update(updates))._build();
+  ]) => (GlobNodeConfigurationBuilder()..update(updates))._build();
 
   _$GlobNodeConfiguration._({required this.glob, required this.phaseNumber})
-    : super._() {
-    BuiltValueNullFieldError.checkNotNull(
-      glob,
-      r'GlobNodeConfiguration',
-      'glob',
-    );
-    BuiltValueNullFieldError.checkNotNull(
-      phaseNumber,
-      r'GlobNodeConfiguration',
-      'phaseNumber',
-    );
-  }
-
+    : super._();
   @override
   GlobNodeConfiguration rebuild(
     void Function(GlobNodeConfigurationBuilder) updates,
@@ -1175,7 +1112,7 @@ class _$GlobNodeConfiguration extends GlobNodeConfiguration {
 
   @override
   GlobNodeConfigurationBuilder toBuilder() =>
-      new GlobNodeConfigurationBuilder()..replace(this);
+      GlobNodeConfigurationBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
@@ -1229,7 +1166,6 @@ class GlobNodeConfigurationBuilder
 
   @override
   void replace(GlobNodeConfiguration other) {
-    ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$GlobNodeConfiguration;
   }
 
@@ -1244,7 +1180,7 @@ class GlobNodeConfigurationBuilder
   _$GlobNodeConfiguration _build() {
     final _$result =
         _$v ??
-        new _$GlobNodeConfiguration._(
+        _$GlobNodeConfiguration._(
           glob: BuiltValueNullFieldError.checkNotNull(
             glob,
             r'GlobNodeConfiguration',
@@ -1268,19 +1204,15 @@ class _$GlobNodeState extends GlobNodeState {
   final BuiltList<AssetId> results;
 
   factory _$GlobNodeState([void Function(GlobNodeStateBuilder)? updates]) =>
-      (new GlobNodeStateBuilder()..update(updates))._build();
+      (GlobNodeStateBuilder()..update(updates))._build();
 
-  _$GlobNodeState._({required this.inputs, required this.results}) : super._() {
-    BuiltValueNullFieldError.checkNotNull(inputs, r'GlobNodeState', 'inputs');
-    BuiltValueNullFieldError.checkNotNull(results, r'GlobNodeState', 'results');
-  }
-
+  _$GlobNodeState._({required this.inputs, required this.results}) : super._();
   @override
   GlobNodeState rebuild(void Function(GlobNodeStateBuilder) updates) =>
       (toBuilder()..update(updates)).build();
 
   @override
-  GlobNodeStateBuilder toBuilder() => new GlobNodeStateBuilder()..replace(this);
+  GlobNodeStateBuilder toBuilder() => GlobNodeStateBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
@@ -1313,13 +1245,12 @@ class GlobNodeStateBuilder
   _$GlobNodeState? _$v;
 
   SetBuilder<AssetId>? _inputs;
-  SetBuilder<AssetId> get inputs =>
-      _$this._inputs ??= new SetBuilder<AssetId>();
+  SetBuilder<AssetId> get inputs => _$this._inputs ??= SetBuilder<AssetId>();
   set inputs(SetBuilder<AssetId>? inputs) => _$this._inputs = inputs;
 
   ListBuilder<AssetId>? _results;
   ListBuilder<AssetId> get results =>
-      _$this._results ??= new ListBuilder<AssetId>();
+      _$this._results ??= ListBuilder<AssetId>();
   set results(ListBuilder<AssetId>? results) => _$this._results = results;
 
   GlobNodeStateBuilder();
@@ -1336,7 +1267,6 @@ class GlobNodeStateBuilder
 
   @override
   void replace(GlobNodeState other) {
-    ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$GlobNodeState;
   }
 
@@ -1353,10 +1283,7 @@ class GlobNodeStateBuilder
     try {
       _$result =
           _$v ??
-          new _$GlobNodeState._(
-            inputs: inputs.build(),
-            results: results.build(),
-          );
+          _$GlobNodeState._(inputs: inputs.build(), results: results.build());
     } catch (_) {
       late String _$failedField;
       try {
@@ -1365,7 +1292,7 @@ class GlobNodeStateBuilder
         _$failedField = 'results';
         results.build();
       } catch (e) {
-        throw new BuiltValueNestedFieldError(
+        throw BuiltValueNestedFieldError(
           r'GlobNodeState',
           _$failedField,
           e.toString(),
