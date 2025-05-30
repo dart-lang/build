@@ -70,6 +70,7 @@ Future<ServeHandler> watch(
     reader: reader,
     writer: writer,
   );
+  buildLog.start(BuildLogMode.watch);
   if (assumeTty != null) buildLog.assumeTty = assumeTty;
   buildLog.verbose = verbose;
   buildLog.onLog = onLog;
@@ -247,10 +248,8 @@ class WatchImpl implements BuildState {
     var controller = StreamController<BuildResult>();
 
     Future<BuildResult> doBuild(List<List<AssetChange>> changes) async {
+      buildLog.start(BuildLogMode.buildOfSeries);
       var build = _buildSeries!;
-      buildLog
-        ..info('${'-' * 72}\n')
-        ..info('Starting Build\n');
       var mergedChanges = collectChanges(changes);
 
       _expectedDeletes.clear();
@@ -267,11 +266,12 @@ class WatchImpl implements BuildState {
           );
         }
       }
-      return build.run(
+      final result = await build.run(
         mergedChanges,
         buildDirs: _buildDirs,
         buildFilters: _buildFilters,
       );
+      return result;
     }
 
     var terminate = Future.any([until, _terminateCompleter.future]).then((_) {

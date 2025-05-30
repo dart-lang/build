@@ -17,7 +17,7 @@ import 'log_display.dart';
 
 final BuildLog buildLog = BuildLog._();
 
-enum BuildLogMode { simple, build, watch, daemon }
+enum BuildLogMode { simple, build, buildOfSeries, watch, daemon }
 
 /*    // Simple logs only in daemon mode. These get converted into info or
     // severe logs by the client.
@@ -163,6 +163,11 @@ class BuildLog {
     _mode = mode;
 
     if (mode == BuildLogMode.build) {
+      _stagesByName['setup'] = Stage.setup();
+      progress(Progress.setup);
+    } else if (mode == BuildLogMode.buildOfSeries) {
+      _display.displayedLines = 0;
+      _stagesByName.clear();
       _stagesByName['setup'] = Stage.setup();
       progress(Progress.setup);
     }
