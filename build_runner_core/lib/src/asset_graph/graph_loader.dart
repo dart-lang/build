@@ -55,10 +55,7 @@ class AssetGraphLoader {
       return await _load(assetGraphId);
     } on AssetGraphCorruptedException catch (_) {
       // Start fresh if the cached asset_graph cannot be deserialized
-      buildLog.warning(
-        'Throwing away cached asset graph due to '
-        'version mismatch or corrupted asset graph.',
-      );
+      buildLog.setBuildType(BuildType.incompatibleAssetGraph);
       await Future.wait([writer.deleteDirectory(_generatedOutputDirectoryId)]);
       return null;
     }
@@ -75,29 +72,7 @@ class AssetGraphLoader {
     final enabledExperimentsChanged =
         cachedGraph.enabledExperiments != enabledExperiments.build();
     if (buildPhasesChanged || pkgVersionsChanged || enabledExperimentsChanged) {
-      if (buildPhasesChanged) {
-        buildLog.warning(
-          'Throwing away cached asset graph because the build phases '
-          'have changed. This most commonly would happen as a result of '
-          'adding a new dependency or updating your dependencies.',
-        );
-      }
-      if (pkgVersionsChanged) {
-        buildLog.warning(
-          'Throwing away cached asset graph because the language '
-          'version of some package(s) changed. This would most commonly '
-          'happen when updating dependencies or changing your min sdk '
-          'constraint.',
-        );
-      }
-      if (enabledExperimentsChanged) {
-        buildLog.warning(
-          'Throwing away cached asset graph because the enabled Dart '
-          'language experiments changed:\n\n'
-          'Previous value: ${cachedGraph.enabledExperiments.join(' ')}\n'
-          'Current value: ${enabledExperiments.join(' ')}',
-        );
-      }
+      buildLog.setBuildType(BuildType.incompatibleBuild);
       await Future.wait([
         writer.delete(assetGraphId),
         cachedGraph.deleteOutputs(packageGraph, writer),
@@ -109,9 +84,7 @@ class AssetGraphLoader {
       return null;
     }
     if (!isSameSdkVersion(cachedGraph.dartVersion, Platform.version)) {
-      buildLog.warning(
-        'Throwing away cached asset graph due to Dart SDK update.',
-      );
+      buildLog.setBuildType(BuildType.incompatibleBuild);
       await Future.wait([
         writer.delete(assetGraphId),
         cachedGraph.deleteOutputs(packageGraph, writer),

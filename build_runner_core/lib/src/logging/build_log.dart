@@ -81,6 +81,8 @@ class BuildLog {
   bool again = false;
 
   bool? buildResult;
+  BuildType? buildType;
+  int? assetGraphSize;
 
   void reset() {
     _display.displayedLines = 0;
@@ -353,7 +355,8 @@ class BuildLog {
       result.writeLine([
         ' --- ',
         AnsiBuffer.bold,
-        buildResult! ? 'SUCCESS' : 'FAILURE',
+        // TODO(davidmorgan): dedupe.
+        buildResult! ? 'SUCCESS $buildType' : 'FAILURE $buildType',
         AnsiBuffer.reset,
       ]);
     }
@@ -384,6 +387,13 @@ class BuildLog {
         onLog = previousOnLog;
       }
     }
+  }
+
+  void setBuildType(BuildType rebuildReason) {
+    rebuildReason = rebuildReason;
+    _display.display(
+      makeEntry(severity: LineSeverity.info, line: rebuildReason.message),
+    );
   }
 
   // TODO(davidmorgan): do we need this? How is it configured?
@@ -467,7 +477,7 @@ class BuildLog {
   // TODO(davidmorgan): move reset to start.
   void buildDone(bool result) {
     buildResult = result;
-    final conclusion = result ? 'SUCCESS' : 'FAILURE';
+    final conclusion = result ? 'SUCCESS $buildType' : 'FAILURE $buildType';
     progress(Progress.done);
     _display.display(
       makeEntry(severity: LineSeverity.info, line: '--- $conclusion'),
@@ -651,4 +661,16 @@ extension type Attribution(String name) {
 
   Attribution.optionalBuilder(this.name);
   Attribution._(this.name);
+}
+
+enum BuildType {
+  clean('Clean build.'),
+  incremental('Incremental build.'),
+  incompatibleScript('Builder code changed, doing a full build.'),
+  incompatibleAssetGraph('Could not load asset graph, doing a full build.'),
+  incompatibleBuild('Build changed, doing a full build.');
+
+  const BuildType(this.message);
+
+  final String message;
 }

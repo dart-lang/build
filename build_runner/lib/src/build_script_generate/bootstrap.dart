@@ -138,10 +138,7 @@ Future<int> _generateAndRun(
         messagePort.sendPort.send(ExitCode.config.code);
         exitPort.sendPort.send(null);
       } else {
-        buildLog.warning(
-          'Error spawning build script isolate, this is likely due to a Dart '
-          'SDK update. Deleting precompiled script and retrying...',
-        );
+        buildLog.setBuildType(BuildType.incompatibleScript);
       }
       await File(scriptKernelLocation).rename(scriptKernelCachedLocation);
     }
@@ -204,14 +201,10 @@ Future<bool> _createKernelIfNeeded(
       // If we failed to serialize an asset graph for the snapshot, then we
       // don't want to re-use it because we can't check if it is up to date.
       await kernelFile.rename(scriptKernelCachedLocation);
-      buildLog.warning(
-        'Invalidated precompiled build script due to missing asset graph.',
-      );
+      buildLog.setBuildType(BuildType.incompatibleAssetGraph);
     } else if (!await _checkImportantPackageDepsAndExperiments(experiments)) {
       await kernelFile.rename(scriptKernelCachedLocation);
-      buildLog.warning(
-        'Invalidated precompiled build script due to core package update.',
-      );
+      buildLog.setBuildType(BuildType.incompatibleScript);
     }
   }
 
