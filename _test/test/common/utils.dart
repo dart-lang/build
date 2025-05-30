@@ -155,11 +155,11 @@ Future<void> _resetGitClient() async {
 }
 
 Future<void> get nextSuccessfulBuild async {
-  await _stdOutLines!.firstWhere((line) => line.contains('Succeeded after'));
+  await _stdOutLines!.firstWhere((line) => line.contains('SUCCESS'));
 }
 
 Future<void> get nextFailedBuild async {
-  await _stdOutLines!.firstWhere((line) => line.contains('Failed after'));
+  await _stdOutLines!.firstWhere((line) => line.contains('FAILURE'));
 }
 
 Future<String> nextStdOutLine(String message) =>

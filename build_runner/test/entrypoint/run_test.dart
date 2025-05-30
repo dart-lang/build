@@ -92,11 +92,11 @@ main() {
     if (command == 'serve' || command == 'watch') {
       while (await queue.hasNext) {
         var nextLine = (await queue.next).toLowerCase();
-        if (nextLine.contains('succeeded after')) {
+        if (nextLine.contains('SUCCESS')) {
           process.kill();
           await process.exitCode;
           return ExitCode.success.code;
-        } else if (nextLine.contains('failed after')) {
+        } else if (nextLine.contains('FAILURE')) {
           process.kill();
           await process.exitCode;
           return 1;
