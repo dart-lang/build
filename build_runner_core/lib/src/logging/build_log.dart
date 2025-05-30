@@ -167,7 +167,9 @@ class BuildLog {
   }
 
   String loggerState() {
-    _display.close();
+    // TODO: can get some updates after fail if a rebuild is needed...
+    // move back to top before exit? BulidScriptChangedException
+    // _display.close();
     var lines = _display.displayedLines;
     if (again) lines += 2;
     again = true;
@@ -194,8 +196,12 @@ class BuildLog {
     return BuildLogEntry(lines: render(), message: line, severity: severity);
   }
 
-  String _renderStage(Stage stage) {
-    final name = stage.name;
+  String _renderStage(Stage stage, {bool forLine = false}) {
+    var name = stage.name;
+    if (forLine && stage.note != null) {
+      name = '$name ${stage.note}';
+    }
+
     final progress = stage.progress;
     final length = stage.length;
 
@@ -443,7 +449,7 @@ class BuildLog {
 
     BuildLogEntry thisMakeEntry() => makeEntry(
       severity: LineSeverity.info,
-      line: _renderStage(_currentStage),
+      line: _renderStage(_currentStage, forLine: true),
     );
 
     if (_currentStage != oldStage) {
@@ -451,11 +457,11 @@ class BuildLog {
       oldStage.note = null;
     }
 
-    if (_currentStage != oldStage || buildResult != null) {
-      _display.display(thisMakeEntry());
-    } else {
-      _display.maybeDisplay(thisMakeEntry);
-    }
+    _display.display(
+      thisMakeEntry(),
+      // TODO: changed note?
+      force: _currentStage != oldStage || buildResult != null,
+    );
   }
 
   // TODO(davidmorgan): move reset to start.
