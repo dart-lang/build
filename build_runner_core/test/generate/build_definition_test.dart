@@ -441,7 +441,6 @@ targets:
       setUp(() async {
         logs.clear();
         buildLog.onLog = logs.add;
-        buildLog.logLevel = Level.WARNING;
         options = await BuildOptions.create(
           packageGraph: options.packageGraph,
           skipBuildScriptCheck: true,

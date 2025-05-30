@@ -91,7 +91,6 @@ Future<BuildResult> build(
   buildLog.onLog = onLog;
   if (assumeTty != null) buildLog.assumeTty = assumeTty;
   buildLog.verbose = verbose;
-  if (logLevel != null) buildLog.logLevel = logLevel;
   var options = await BuildOptions.create(
     deleteFilesByDefault: deleteFilesByDefault,
     packageGraph: packageGraph,
@@ -180,7 +179,6 @@ Future<ServeHandler> watch(
   reader: reader,
   writer: writer,
   resolvers: resolvers,
-  logLevel: logLevel,
   onLog: onLog,
   debounceDelay: debounceDelay,
   directoryWatcherFactory: directoryWatcherFactory,

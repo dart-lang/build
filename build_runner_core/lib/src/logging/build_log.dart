@@ -93,7 +93,6 @@ class BuildLog {
     buildResult = null;
     assumeTty = false;
     verbose = false;
-    logLevel = Level.INFO;
   }
 
   /// Runs [fn] in an error handling [Zone].
@@ -156,7 +155,6 @@ class BuildLog {
 
   bool assumeTty = false;
   bool verbose = false;
-  Level logLevel = Level.INFO;
 
   void start(BuildLogMode mode) {
     _display.severeToStderr = mode == BuildLogMode.daemon;
@@ -171,8 +169,8 @@ class BuildLog {
   String loggerState() {
     _display.close();
     var lines = _display.displayedLines;
-    /*if (again) lines += 2;
-    again = true;*/
+    if (again) lines += 2;
+    again = true;
     return '$lines,${_stagesByName['setup']!.duration?.inMilliseconds}';
   }
 
