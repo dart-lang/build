@@ -22,13 +22,7 @@ class LogDisplay {
     closed = true;
   }
 
-  void maybeDisplay(BuildLogEntry Function() render) {
-    if (stopwatch.elapsedMilliseconds > 100) {
-      display(render());
-    }
-  }
-
-  void display(BuildLogEntry entry) {
+  void display(BuildLogEntry entry, {bool force = false}) {
     if (closed) return;
     stopwatch.reset();
 
@@ -39,6 +33,7 @@ class LogDisplay {
 
     logger.log(entry.level, entry.message);
     if (stdout.hasTerminal && stdout.supportsAnsiEscapes) {
+      // TODO throttle / force
       final moveCursor = displayedLines == 0 ? '' : '\x1b[${displayedLines}F';
       displayedLines = entry.lines.length;
 
@@ -47,7 +42,10 @@ class LogDisplay {
       if (severeToStderr && entry.severity == LineSeverity.error) {
         stderr.writeln(entry.message);
       } else {
-        stdout.writeln(entry.message);
+        if (force || entry.message != previousLastLine) {
+          stdout.writeln(entry.message);
+        }
+        previousLastLine = entry.message;
       }
     }
   }
