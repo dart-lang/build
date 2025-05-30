@@ -258,7 +258,7 @@ Future<TestBuilderResult> testBuilders(
   final inputFilter = isInput ?? generateFor?.contains ?? (_) => true;
   inputIds.retainWhere((id) => inputFilter('$id'));
 
-  var logSubscription = Logger.root.onRecord.listen(onLog);
+  buildLog.onLog = onLog;
   resolvers ??=
       packageConfig == null && enabledExperiments.isEmpty
           ? AnalyzerResolvers.sharedInstance
@@ -294,7 +294,6 @@ Future<TestBuilderResult> testBuilders(
   }
 
   final buildOptions = await BuildOptions.create(
-    _NoopLogSubscription(),
     packageGraph: packageGraph,
     reportUnusedAssetsForInput: reportUnusedAssetsForInput,
     resolvers: resolvers,
@@ -350,7 +349,7 @@ Future<TestBuilderResult> testBuilders(
   await buildSeries.beforeExit();
 
   // Stop logging.
-  await logSubscription.cancel();
+  buildLog.onLog = null;
 
   // Check the build outputs as requested.
   checkOutputs(outputs, readerWriter.testing.assetsWritten, readerWriter);
@@ -366,11 +365,4 @@ class TestBuilderResult {
   final TestReaderWriter readerWriter;
 
   TestBuilderResult({required this.buildResult, required this.readerWriter});
-}
-
-/// [LogSubscription] that does nothing.
-class _NoopLogSubscription implements LogSubscription {
-  @override
-  StreamSubscription<LogRecord> get logListener =>
-      StreamController<LogRecord>().stream.listen((_) {});
 }

@@ -4,7 +4,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:build/build.dart';
+import 'package:build/build.dart' hide log;
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_test/build_test.dart';
@@ -52,8 +52,7 @@ void _printOnFailure(LogRecord record) {
 ///
 /// [status] optionally indicates the desired outcome.
 ///
-/// [logLevel] sets the builder log level and [onLog] can optionally capture
-/// build log messages.
+/// [onLog] can optionally capture log messages.
 ///
 /// Example:
 ///
@@ -80,7 +79,6 @@ Future<TestBuildersResult> testPhases(
   PackageGraph? packageGraph,
   BuildStatus status = BuildStatus.success,
   Map<String, BuildConfig>? overrideBuildConfig,
-  Level? logLevel,
   // A better way to "silence" logging than setting logLevel to OFF.
   void Function(LogRecord record) onLog = _printOnFailure,
   bool checkBuildStatus = true,
@@ -141,15 +139,12 @@ Future<TestBuildersResult> testPhases(
     packageGraph,
     reader: readerWriter,
     writer: readerWriter,
-    onLogOverride: onLog,
   );
-  var logSubscription = LogSubscription(
-    environment,
-    verbose: verbose,
-    logLevel: logLevel,
-  );
+
+  buildLog.onLog = onLog;
+  buildLog.verbose = verbose;
+
   var options = await BuildOptions.create(
-    logSubscription,
     deleteFilesByDefault: deleteFilesByDefault,
     packageGraph: packageGraph,
     skipBuildScriptCheck: true,
@@ -172,7 +167,6 @@ Future<TestBuildersResult> testPhases(
     buildFilters: buildFilters,
   );
   await build.beforeExit();
-  await options.logListener.cancel();
 
   if (checkBuildStatus) {
     checkBuild(
