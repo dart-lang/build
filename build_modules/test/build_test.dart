@@ -42,10 +42,7 @@ void main() {
       'build',
       '--delete-conflicting-outputs',
     ]);
-    expect(
-      result,
-      contains(RegExp(r'Succeeded after \S+( \S+)? with \d+ outputs')),
-    );
+    expect(result, contains('SUCCESS'));
 
     // 3 - get a list of modified `.g.dart` files - should still be empty
     expect(_changedGeneratedFiles(), isEmpty);
