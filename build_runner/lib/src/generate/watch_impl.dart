@@ -35,7 +35,6 @@ Future<ServeHandler> watch(
   AssetReader? reader,
   RunnerAssetWriter? writer,
   Resolvers? resolvers,
-  Level? logLevel,
   void Function(LogRecord)? onLog,
   Duration? debounceDelay,
   required DirectoryWatcher Function(String) directoryWatcherFactory,
@@ -73,7 +72,7 @@ Future<ServeHandler> watch(
   );
   if (assumeTty != null) buildLog.assumeTty = assumeTty;
   buildLog.verbose = verbose;
-  if (logLevel != null) buildLog.logLevel = logLevel;
+  buildLog.onLog = onLog;
   overrideBuildConfig ??= await findBuildConfigOverrides(
     packageGraph,
     environment.reader,

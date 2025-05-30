@@ -90,8 +90,9 @@ void main() {
           {'a|web/a.txt.copy': 'a'},
           readerWriter,
           packageGraph: packageGraph,
-          onLog: logs.add,
-          logLevel: Level.SEVERE,
+          onLog: (record) {
+            if (record.level == Level.SEVERE) logs.add(record);
+          },
         );
         var result = await buildState.buildResults.first;
         expect(result.status, BuildStatus.success);
@@ -540,8 +541,9 @@ void main() {
           {'a|web/a.txt': 'a'},
           readerWriter,
           packageGraph: packageGraph,
-          logLevel: Level.SEVERE,
-          onLog: logs.add,
+          onLog: (record) {
+            if (record.level == Level.SEVERE) logs.add(record);
+          },
         );
         var results = StreamQueue(buildState.buildResults);
 
@@ -579,8 +581,9 @@ void main() {
             {'a|web/a.txt': 'a'},
             readerWriter,
             packageGraph: packageGraph,
-            logLevel: Level.SEVERE,
-            onLog: logs.add,
+            onLog: (record) {
+              if (record.level == Level.SEVERE) logs.add(record);
+            },
           );
           buildState.buildResults.handleError(
             (Object e, StackTrace s) => print('$e\n$s'),
@@ -638,8 +641,9 @@ void main() {
               [copyABuildApplication],
               {},
               readerWriter,
-              logLevel: Level.SEVERE,
-              onLog: logs.add,
+              onLog: (record) {
+                if (record.level == Level.SEVERE) logs.add(record);
+              },
               packageGraph: packageGraph,
             );
             results = StreamQueue(buildState.buildResults);
@@ -703,8 +707,9 @@ void main() {
               [copyABuildApplication],
               {'a|build.yaml': '', 'b|build.yaml': ''},
               readerWriter,
-              logLevel: Level.SEVERE,
-              onLog: logs.add,
+              onLog: (record) {
+                if (record.level == Level.SEVERE) logs.add(record);
+              },
               packageGraph: packageGraph,
             );
             results = StreamQueue(buildState.buildResults);
@@ -754,8 +759,9 @@ void main() {
               {'a|build.yaml': '', 'a|build.cool.yaml': ''},
               readerWriter,
               configKey: 'cool',
-              logLevel: Level.SEVERE,
-              onLog: logs.add,
+              onLog: (record) {
+                if (record.level == Level.SEVERE) logs.add(record);
+              },
               overrideBuildConfig: {
                 'a': BuildConfig.useDefault('a', ['b']),
               },
@@ -1138,7 +1144,6 @@ Future<BuildState> startWatch(
   required PackageGraph packageGraph,
   Map<String, BuildConfig> overrideBuildConfig = const {},
   void Function(LogRecord)? onLog,
-  Level logLevel = Level.OFF,
   String? configKey,
 }) async {
   onLog ??= (_) {};
@@ -1158,7 +1163,6 @@ Future<BuildState> startWatch(
     writer: readerWriter,
     packageGraph: packageGraph,
     terminateEventStream: _terminateWatchController!.stream,
-    logLevel: logLevel,
     onLog: onLog,
     skipBuildScriptCheck: true,
   );

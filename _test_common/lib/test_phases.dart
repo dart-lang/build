@@ -52,8 +52,7 @@ void _printOnFailure(LogRecord record) {
 ///
 /// [status] optionally indicates the desired outcome.
 ///
-/// [logLevel] sets the builder log level and [onLog] can optionally capture
-/// build log messages.
+/// [onLog] can optionally capture log messages.
 ///
 /// Example:
 ///
@@ -80,7 +79,6 @@ Future<TestBuildersResult> testPhases(
   PackageGraph? packageGraph,
   BuildStatus status = BuildStatus.success,
   Map<String, BuildConfig>? overrideBuildConfig,
-  Level? logLevel,
   // A better way to "silence" logging than setting logLevel to OFF.
   void Function(LogRecord record) onLog = _printOnFailure,
   bool checkBuildStatus = true,
@@ -145,7 +143,6 @@ Future<TestBuildersResult> testPhases(
 
   buildLog.onLog = onLog;
   buildLog.verbose = verbose;
-  if (logLevel != null) buildLog.logLevel = logLevel;
 
   var options = await BuildOptions.create(
     deleteFilesByDefault: deleteFilesByDefault,
