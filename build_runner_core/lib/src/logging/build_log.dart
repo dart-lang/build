@@ -174,19 +174,6 @@ class BuildLog {
     }
   }
 
-  void oldLoggerState(String state) {
-    loaded = state;
-    try {
-      final items = state.split(',');
-      _display.displayedLines = int.parse(items[0]);
-      _stagesByName['setup']!.duration =
-          items[1] == 'null'
-              ? null
-              : Duration(milliseconds: int.parse(items[1]));
-    } catch (_) {}
-    //
-  }
-
   BuildLogEntry makeEntry({
     required LineSeverity severity,
     required String line,
@@ -194,7 +181,7 @@ class BuildLog {
     return BuildLogEntry(lines: render(), message: line, severity: severity);
   }
 
-  String _renderStage(Stage stage, {bool forLine = false}) {
+  List<String> _renderStage(Stage stage, {bool forLine = false}) {
     var name = stage.name;
     if (forLine && stage.note != null) {
       name = '$name ${stage.note}';
@@ -210,65 +197,40 @@ class BuildLog {
             ? '<1s'.padLeft(4)
             : '${(stage.duration!.inMilliseconds / 1000).round()}s'.padLeft(4);
 
-    /*final time = (((step.stopwatch.elapsed.inMilliseconds / 100) / 10)
-                  .round()
-                  .toString() +
-              's')
-          .padLeft(4);*/
+    var attrs = <String>[];
 
-    /*var ticks = 80 * number ~/ of;
-      ticks = max(0, ticks - displayName.length - 1);
-      var spaces = max(0, 80 - ticks - displayName.length - 1 - time.length);
-      // buffer.writeln('$displayName ${'.' * ticks}${' ' * spaces}$time');*/
-
-    /*var percent =
-          number == 0 ? '    ' : '${100 * number ~/ of}'.padLeft(3) + '%';*/
-
-    var percent =
-        (progress == null || length == 0)
-            ? ''
-            : '${100 * progress ~/ length}'.padLeft(2);
-    if (percent == '100' || percent == '') {
-      percent = '';
-    } else {
-      percent = ', $percent%';
+    if (progress != null && length != 0 && progress != length) {
+      var progressLine = '       $progress/$length';
+      if (stage.note != null) progressLine += ' ${stage.note}';
+      attrs.add(progressLine);
     }
 
-    //displayName = displayName.padLeft(longestNameLength);
-
-    var attrs = '';
-    //if (name == step.name) {
-    final buffer2 = StringBuffer();
     final entries = stage.attributions.entries.toList();
     entries.sort((a, b) => b.value.compareTo(a.value));
     for (final entry in entries) {
       if (entry.value.inMilliseconds < 1000) continue;
-      buffer2.write(', ');
       final time = '${(entry.value.inMilliseconds / 1000).round()}s';
 
-      buffer2.write('${entry.key} $time');
+      attrs.add('       ${entry.key} $time');
     }
-    attrs = buffer2.toString();
-    //buffer.writeln('     │      │ $buffer2'.padRight(80));
-    //}
 
-    return '$time $name$percent$attrs';
+    return ['$time $name', ...attrs];
   }
 
   List<String> render() {
     final buildDone = buildResult != null;
 
-    final note = _currentStage.note == null ? '' : ' ${_currentStage.note}';
+    // final note = _currentStage.note == null ? '' : ' ${_currentStage.note}';
 
     final result = AnsiBuffer();
 
     result.writeLine([
-      ' --- ',
+      ' ~~~ ',
       AnsiBuffer.bold,
       'build_runner',
       AnsiBuffer.reset,
-      note,
-    ], indent: ' --- build_runner '.length);
+      ' ~~~',
+    ]);
 
     for (final entry in _stagesByName.entries) {
       final stage = entry.value;
@@ -278,7 +240,11 @@ class BuildLog {
         continue;
       }
 
-      result.writeLine([_renderStage(stage)], indent: 5);
+      var first = true;
+      for (final line in _renderStage(stage)) {
+        result.writeLine([line], indent: first ? 5 : 7);
+        first = false;
+      }
 
       if (!buildDone) {
         if (verbose && stage.infos.isNotEmpty) {
@@ -471,7 +437,7 @@ class BuildLog {
 
     BuildLogEntry thisMakeEntry() => makeEntry(
       severity: LineSeverity.info,
-      line: _renderStage(_currentStage, forLine: true),
+      line: _renderStage(_currentStage, forLine: true).first,
     );
 
     if (_currentStage != oldStage) {
