@@ -87,7 +87,6 @@ Future<int> _generateAndRun(
     }
 
     if (!await _createKernelIfNeeded(
-      logger,
       experiments,
       buildScriptChanged: buildScriptChanged,
     )) {
@@ -111,14 +110,7 @@ Future<int> _generateAndRun(
     try {
       await Isolate.spawnUri(
         Uri.file(p.absolute(scriptKernelLocation)),
-        args.isNotEmpty
-            ? [
-              args.first,
-              '--passed-state',
-              buildLog.loggerState(),
-              ...args.skip(1),
-            ]
-            : ['--passed-state', buildLog.loggerState()],
+        args,
         messagePort.sendPort,
         errorsAreFatal: true,
         onExit: exitPort.sendPort,
@@ -178,14 +170,13 @@ Future<int> _generateAndRun(
 /// Returns `true` on success or `false` on failure.
 Future<bool> _createKernelIfNeeded(
   List<String> experiments, {
-  List<String> experiments, {
   bool buildScriptChanged = false,
 }) async {
   var assetGraphFile = File(assetGraphPathFor(scriptKernelLocation));
   var kernelFile = File(scriptKernelLocation);
   var kernelCacheFile = File(scriptKernelCachedLocation);
 
-  if (force) {
+  if (buildScriptChanged) {
     if (await kernelFile.exists()) {
       await kernelFile.delete();
     }
@@ -194,9 +185,7 @@ Future<bool> _createKernelIfNeeded(
   if (await kernelFile.exists()) {
     if (buildScriptChanged) {
       await kernelFile.rename(scriptKernelCachedLocation);
-      logger.warning(
-        'Invalidated precompiled build script because script changed.',
-      );
+      buildLog.setBuildType(BuildType.incompatibleScript);
     } else if (!await assetGraphFile.exists()) {
       // If we failed to serialize an asset graph for the snapshot, then we
       // don't want to re-use it because we can't check if it is up to date.

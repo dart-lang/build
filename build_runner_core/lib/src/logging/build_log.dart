@@ -173,16 +173,6 @@ class BuildLog {
     }
   }
 
-  String loggerState() {
-    // TODO: can get some updates after fail if a rebuild is needed...
-    // move back to top before exit? BulidScriptChangedException
-    // _display.close();
-    var lines = _display.displayedLines;
-    if (again) lines += 2;
-    again = true;
-    return '$lines,${_stagesByName['setup']!.duration?.inMilliseconds}';
-  }
-
   void oldLoggerState(String state) {
     loaded = state;
     try {

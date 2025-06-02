@@ -4,6 +4,8 @@
 
 import 'dart:io';
 
+// ignore: implementation_imports
+import 'package:build_runner/src/build_script_generate/build_process_state.dart';
 import 'package:logging/logging.dart';
 
 final logger = Logger.root;
@@ -13,7 +15,6 @@ class LogDisplay {
 
   bool severeToStderr = false;
 
-  int displayedLines = 0;
   String previousLastLine = '';
   bool closed = false;
   void Function(LogRecord record)? onLog;
@@ -21,6 +22,10 @@ class LogDisplay {
   void close() {
     closed = true;
   }
+
+  int get displayedLines => buildProcessState.displayedLines;
+  set displayedLines(int displayedLines) =>
+      buildProcessState.displayedLines = displayedLines;
 
   void display(BuildLogEntry entry, {bool force = false}) {
     if (closed) return;

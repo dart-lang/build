@@ -17,6 +17,9 @@ extension type BuildProcessState(Map<String, Object?> state) {
   int? get isolateExitCode => state['isolateExitCode'] as int?;
   set isolateExitCode(int? value) => state['isolateExitCode'] = value;
 
+  int get displayedLines => (state['displayedLines'] as int?) ?? 0;
+  set displayedLines(int? value) => state['displayedLines'] = value;
+
   /// Sends `this` to [sendPort].
   Future<void> send(SendPort? sendPort) async {
     sendPort?.send(state);

@@ -33,7 +33,6 @@ const skipBuildScriptCheckOption = 'skip-build-script-check';
 const symlinkOption = 'symlink';
 const usePollingWatcherOption = 'use-polling-watcher';
 const verboseOption = 'verbose';
-const passedState = 'passed-state';
 
 enum BuildUpdatesOption { none, liveReload }
 
