@@ -1,9 +1,11 @@
+## 5.4.7-wip
+
+* Require Dart SDK ^3.7.0.
+
 ## 5.4.6
 
 * When formatting a generated mocks library, use the language version of the
   library with the mockito annotation.
-* Require Dart SDK ^3.7.0.
-* Require `analyzer: '>=7.4.1 <8.0.0'`.
 
 ## 5.4.5
 
