@@ -9,8 +9,10 @@ import 'package:build_config/build_config.dart' as _i5;
 import 'package:build_modules/builders.dart' as _i6;
 import 'package:build/build.dart' as _i7;
 import 'dart:isolate' as _i8;
-import 'package:build_runner/build_runner.dart' as _i9;
-import 'dart:io' as _i10;
+import 'package:build_runner/src/build_script_generate/build_process_state.dart'
+    as _i9;
+import 'package:build_runner/build_runner.dart' as _i10;
+import 'dart:io' as _i11;
 
 final _builders = <_i1.BuilderApplication>[
   _i1.apply(
@@ -169,10 +171,11 @@ void main(
   List<String> args, [
   _i8.SendPort? sendPort,
 ]) async {
-  var result = await _i9.run(
+  await _i9.buildProcessState.receive(sendPort);
+  _i9.buildProcessState.isolateExitCode = await _i10.run(
     args,
     _builders,
   );
-  sendPort?.send(result);
-  _i10.exitCode = result;
+  _i11.exitCode = _i9.buildProcessState.isolateExitCode!;
+  await _i9.buildProcessState.send(sendPort);
 }

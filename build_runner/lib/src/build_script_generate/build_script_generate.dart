@@ -227,8 +227,16 @@ Method _main() => Method((b) {
       });
     }),
   );
+  final isolateExitCode = refer(
+    'buildProcessState.isolateExitCode',
+    'package:build_runner/src/build_script_generate/build_process_state.dart',
+  );
   b.body = Block.of([
-    declareVar('result')
+    refer(
+      'buildProcessState.receive',
+      'package:build_runner/src/build_script_generate/build_process_state.dart',
+    ).call([refer('sendPort')]).awaited.statement,
+    isolateExitCode
         .assign(
           refer(
             'run',
@@ -236,10 +244,11 @@ Method _main() => Method((b) {
           ).call([refer('args'), refer('_builders')]).awaited,
         )
         .statement,
+    refer('exitCode', 'dart:io').assign(isolateExitCode).nullChecked.statement,
     refer(
-      'sendPort',
-    ).nullSafeProperty('send').call([refer('result')]).statement,
-    refer('exitCode', 'dart:io').assign(refer('result')).statement,
+      'buildProcessState.send',
+      'package:build_runner/src/build_script_generate/build_process_state.dart',
+    ).call([refer('sendPort')]).awaited.statement,
   ]);
 });
 

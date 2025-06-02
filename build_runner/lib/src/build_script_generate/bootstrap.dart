@@ -13,6 +13,7 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:stack_trace/stack_trace.dart';
 
+import 'build_process_state.dart';
 import 'build_script_generate.dart';
 
 final _logger = Logger('Bootstrap');
@@ -39,9 +40,8 @@ Future<int> generateAndRun(
   logger ??= _logger;
   ReceivePort? exitPort;
   ReceivePort? errorPort;
-  ReceivePort? messagePort;
+  RawReceivePort? messagePort;
   StreamSubscription? errorListener;
-  int? scriptExitCode;
 
   var tryCount = 0;
   var succeeded = false;
@@ -52,6 +52,7 @@ Future<int> generateAndRun(
     messagePort?.close();
     await errorListener?.cancel();
 
+    var buildScriptChanged = false;
     try {
       var buildScript = File(scriptLocation);
       var oldContents = '';
@@ -61,6 +62,7 @@ Future<int> generateAndRun(
       var newContents = await generateBuildScript();
       // Only trigger a build script update if necessary.
       if (newContents != oldContents) {
+        buildScriptChanged = true;
         buildScript
           ..createSync(recursive: true)
           ..writeAsStringSync(newContents);
@@ -69,19 +71,27 @@ Future<int> generateAndRun(
       return ExitCode.config.code;
     }
 
-    scriptExitCode = await _createKernelIfNeeded(logger, experiments);
-    if (scriptExitCode != 0) return scriptExitCode!;
+    if (!await _createKernelIfNeeded(
+      logger,
+      experiments,
+      buildScriptChanged: buildScriptChanged,
+    )) {
+      return buildProcessState.isolateExitCode = ExitCode.config.code;
+    }
 
     exitPort = ReceivePort();
     errorPort = ReceivePort();
-    messagePort = ReceivePort();
+    messagePort = RawReceivePort();
     errorListener = errorPort.listen((e) {
       e = e as List<Object?>;
       final error = e[0] ?? TypeError();
       final trace = Trace.parse(e[1] as String? ?? '').terse;
 
       handleUncaughtError(error, trace);
-      if (scriptExitCode == 0) scriptExitCode = 1;
+      if (buildProcessState.isolateExitCode == null ||
+          buildProcessState.isolateExitCode == 0) {
+        buildProcessState.isolateExitCode = 1;
+      }
     });
     try {
       await Isolate.spawnUri(
@@ -113,48 +123,56 @@ Future<int> generateAndRun(
     }
   }
 
-  StreamSubscription? exitCodeListener;
-  exitCodeListener = messagePort!.listen((isolateExitCode) {
-    if (isolateExitCode is int) {
-      scriptExitCode = isolateExitCode;
-    } else {
-      throw StateError(
-        'Bad response from isolate, expected an exit code but got '
-        '$isolateExitCode',
-      );
-    }
-    exitCodeListener!.cancel();
-    exitCodeListener = null;
-  });
+  final sendPortCompleter = Completer<SendPort>();
+  messagePort!.handler = (Object? message) {
+    sendPortCompleter.complete(message as SendPort);
+  };
+  final sendPort = await sendPortCompleter.future;
+
+  await buildProcessState.send(sendPort);
+  buildProcessState.isolateExitCode = null;
+  final buildProcessStateListener = buildProcessState.listen(
+    ReceivePort.fromRawReceivePort(messagePort),
+  );
+
   await exitPort?.first;
   await errorListener?.cancel();
-  await exitCodeListener?.cancel();
+  await buildProcessStateListener.cancel();
 
-  return scriptExitCode ?? 1;
+  // Can be null if the isolate did not set any exit code.
+  buildProcessState.isolateExitCode ??= 1;
+
+  return buildProcessState.isolateExitCode!;
 }
 
 /// Creates a precompiled Kernel snapshot for the build script if necessary.
 ///
 /// A snapshot is generated if:
 ///
+/// - [buildScriptChanged] is `true`
 /// - It doesn't exist currently
 /// - Either build_runner or build_daemon point at a different location than
 ///   they used to, see https://github.com/dart-lang/build/issues/1929.
 ///
-/// Returns zero for success or a number for failure which should be set to the
-/// exit code.
-Future<int> _createKernelIfNeeded(
+/// Returns `true` on success or `false` on failure.
+Future<bool> _createKernelIfNeeded(
   Logger logger,
-  List<String> experiments,
-) async {
+  List<String> experiments, {
+  bool buildScriptChanged = false,
+}) async {
   var assetGraphFile = File(assetGraphPathFor(scriptKernelLocation));
   var kernelFile = File(scriptKernelLocation);
   var kernelCacheFile = File(scriptKernelCachedLocation);
 
   if (await kernelFile.exists()) {
-    // If we failed to serialize an asset graph for the snapshot, then we don't
-    // want to re-use it because we can't check if it is up to date.
-    if (!await assetGraphFile.exists()) {
+    if (buildScriptChanged) {
+      await kernelFile.rename(scriptKernelCachedLocation);
+      logger.warning(
+        'Invalidated precompiled build script because script changed.',
+      );
+    } else if (!await assetGraphFile.exists()) {
+      // If we failed to serialize an asset graph for the snapshot, then we
+      // don't want to re-use it because we can't check if it is up to date.
       await kernelFile.rename(scriptKernelCachedLocation);
       logger.warning(
         'Invalidated precompiled build script due to missing asset graph.',
@@ -162,7 +180,7 @@ Future<int> _createKernelIfNeeded(
     } else if (!await _checkImportantPackageDepsAndExperiments(experiments)) {
       await kernelFile.rename(scriptKernelCachedLocation);
       logger.warning(
-        'Invalidated precompiled build script due to core package update',
+        'Invalidated precompiled build script due to core package update.',
       );
     }
   }
@@ -223,12 +241,12 @@ Future<int> _createKernelIfNeeded(
 Failed to precompile build script $scriptLocation.
 This is likely caused by a misconfigured builder definition.
 ''');
-      return ExitCode.config.code;
+      return false;
     }
     // Create _previousLocationsFile.
     await _checkImportantPackageDepsAndExperiments(experiments);
   }
-  return 0;
+  return true;
 }
 
 const _importantPackages = ['build_daemon', 'build_runner'];
