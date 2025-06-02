@@ -22,10 +22,13 @@ void main() {
               // @dart=3.0
               import 'dart:io';
               import 'dart:isolate';
+              import 'package:build_runner/src/build_script_generate/build_process_state.dart';
 
               void main(List<String> _, SendPort sendPort) {
+                buildProcessState.receive(sendPort);
                 var x = (1, 2);
-                sendPort.send(x.\$2);
+                buildProcessState.isolateExitCode = (x.\$2);
+                buildProcessState.send(sendPort);
               }
               ''';
       },
