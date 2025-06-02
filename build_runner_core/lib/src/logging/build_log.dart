@@ -11,6 +11,7 @@ import 'package:build/build.dart'
 import 'package:build/src/internal.dart';
 import 'package:logging/logging.dart';
 
+import '../../build_runner_core.dart';
 import 'ansi_buffer.dart';
 import 'build_log_logger.dart';
 import 'log_display.dart';
@@ -81,7 +82,7 @@ class BuildLog {
   bool again = false;
 
   bool? buildResult;
-  BuildType? buildType;
+  BuildType buildType = BuildType.clean;
   int? assetGraphSize;
 
   void reset() {
@@ -350,13 +351,29 @@ class BuildLog {
       result.writeLine([
         ' --- ',
         AnsiBuffer.bold,
-        // TODO(davidmorgan): dedupe.
-        buildResult! ? 'SUCCESS $buildType' : 'FAILURE $buildType',
+        finalStatus,
         AnsiBuffer.reset,
       ]);
     }
 
     return result.lines;
+  }
+
+  String get finalStatus {
+    final buildResultString = buildResult! ? 'SUCCESS' : 'FAILURE';
+    final totalTime = renderDuration(
+      _stagesByName.values
+          .where((stage) => stage.length != 0)
+          .map((stage) => stage.duration ?? Duration.zero)
+          .reduce((a, b) => a + b),
+    );
+    final filesOutput = '100';
+
+    final graphSize = File(assetGraphPath).lengthSync();
+
+    return '$buildResultString, $buildType, '
+        'built $filesOutput file(s) in $totalTime, '
+        'asset graph is $graphSize bytes';
   }
 
   /// Runs [function] with [onLog] forwarding to [logger].
@@ -472,7 +489,7 @@ class BuildLog {
   // TODO(davidmorgan): move reset to start.
   void buildDone(bool result) {
     buildResult = result;
-    final conclusion = result ? 'SUCCESS $buildType' : 'FAILURE $buildType';
+    final conclusion = finalStatus;
     progress(Progress.done);
     _display.display(
       makeEntry(severity: LineSeverity.info, line: '--- $conclusion'),
