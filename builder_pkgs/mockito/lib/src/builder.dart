@@ -1973,7 +1973,10 @@ class _MockClassInfo {
     String? defaultName,
     bool forceNullable = false,
   }) {
-    final parameterHasName = parameter.name3 != '' && parameter.name3 != '_';
+    final parameterHasName =
+        parameter.name3 != null &&
+        parameter.name3 != '' &&
+        parameter.name3 != '_';
     assert(
       parameterHasName || defaultName != null,
       'parameter must have a non-empty name, or non-null defaultName must be '
