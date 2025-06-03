@@ -231,12 +231,13 @@ class BuildLog {
 
       result.writeLine([
         AnsiBuffer.bold,
+        if (stage.name == 'setup') ...['build_runner '],
         stage.name,
         AnsiBuffer.reset,
+        ', ',
+        stage.renderProgress,
         if (stage.note != null) ', ${stage.note}',
       ]);
-
-      result.writeLine([stage.renderProgress], indent: 1);
 
       /*var first = true;
       for (final line in _renderStage(stage)) {
@@ -326,25 +327,44 @@ class BuildLog {
   }
 
   List<String> get finalStatus {
+    final result = <String>[];
     if (buildResult == null) {
-      return [AnsiBuffer.bold, 'pending', AnsiBuffer.reset];
+      result.addAll([AnsiBuffer.bold, 'running', AnsiBuffer.reset]);
+    } else if (buildResult!) {
+      result.addAll([
+        AnsiBuffer.bold,
+        AnsiBuffer.green,
+        'success',
+        AnsiBuffer.reset,
+      ]);
+    } else {
+      result.addAll([
+        AnsiBuffer.bold,
+        AnsiBuffer.red,
+        'failure',
+        AnsiBuffer.reset,
+      ]);
     }
-    final buildResultString = buildResult! ? 'SUCCESS' : 'FAILURE';
-    final totalTime = renderDuration(
-      _stagesByName.values
-          .where((stage) => stage.length != 0)
-          .map((stage) => stage.duration ?? Duration.zero)
-          .reduce((a, b) => a + b),
-    );
-    final filesOutput = '100';
 
-    final graphSize = File(assetGraphPath).lengthSync();
+    if (buildResult != null) {
+      final totalTime = renderDuration(
+        _stagesByName.values
+            .where((stage) => stage.length != 0)
+            .map((stage) => stage.duration ?? Duration.zero)
+            .reduce((a, b) => a + b),
+      );
+      final filesOutput = '100';
 
-    return [
-      '$buildResultString, $buildType, '
-          'built $filesOutput file(s) in $totalTime, '
-          'asset graph is $graphSize bytes',
-    ];
+      final graphSize = File(assetGraphPath).lengthSync();
+
+      result.addAll([
+        ', $buildType, '
+            'built $filesOutput file(s) in $totalTime, '
+            'asset graph is $graphSize bytes',
+      ]);
+    }
+
+    return result;
   }
 
   /// Runs [function] with [onLog] forwarding to [logger].
