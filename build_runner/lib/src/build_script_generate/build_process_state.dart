@@ -9,33 +9,35 @@ import 'dart:isolate';
 ///
 /// It's passed from the entrypoint to the spawned build script isolate, then
 /// updated in the host when the isolate exits.
-final BuildProcessState buildProcessState = BuildProcessState({});
+final BuildProcessState buildProcessState = BuildProcessState();
 
-extension type BuildProcessState(Map<String, Object?> state) {
+class BuildProcessState {
+  final Map<String, Object?> _state = {};
+
   /// The exit code of the most recent build script isolate, or `null` if there
   /// was none or it is currently running.
-  int? get isolateExitCode => state['isolateExitCode'] as int?;
-  set isolateExitCode(int? value) => state['isolateExitCode'] = value;
+  int? get isolateExitCode => _state['isolateExitCode'] as int?;
+  set isolateExitCode(int? value) => _state['isolateExitCode'] = value;
 
-  int get displayedLines => (state['displayedLines'] as int?) ?? 0;
-  set displayedLines(int? value) => state['displayedLines'] = value;
+  int get displayedLines => (_state['displayedLines'] as int?) ?? 0;
+  set displayedLines(int? value) => _state['displayedLines'] = value;
 
   /// Sends `this` to [sendPort].
   Future<void> send(SendPort? sendPort) async {
-    sendPort?.send(state);
+    sendPort?.send(_state);
   }
 
   /// Receives `this` from [sendPort], by sending a `SendPort` then listening
   /// on its corresponding `ReceivePort`.
   Future<void> receive(SendPort? sendPort) async {
     if (sendPort == null) {
-      state.clear();
+      _state.clear();
       return;
     }
     final receivePort = ReceivePort();
     sendPort.send(receivePort.sendPort);
     final received = await receivePort.first;
-    state
+    _state
       ..clear()
       ..addAll(received as Map<String, Object?>);
   }
@@ -45,7 +47,7 @@ extension type BuildProcessState(Map<String, Object?> state) {
     StreamSubscription<void>? result;
     result = receivePort.listen((isolateState) {
       if (isolateState is Map<String, Object?>) {
-        state
+        _state
           ..clear()
           ..addAll(isolateState);
       } else {
