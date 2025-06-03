@@ -197,6 +197,8 @@ class BuildLog {
             ? '<1s'.padLeft(4)
             : '${(stage.duration!.inMilliseconds / 1000).round()}s'.padLeft(4);
 
+    //////////
+
     var attrs = <String>[];
 
     if (progress != null && length != 0 && progress != length) {
@@ -218,35 +220,31 @@ class BuildLog {
   }
 
   List<String> render() {
-    final buildDone = buildResult != null;
-
-    // final note = _currentStage.note == null ? '' : ' ${_currentStage.note}';
-
     final result = AnsiBuffer();
-
-    result.writeLine([
-      ' ~~~ ',
-      AnsiBuffer.bold,
-      'build_runner',
-      AnsiBuffer.reset,
-      ' ~~~',
-    ]);
 
     for (final entry in _stagesByName.entries) {
       final stage = entry.value;
-      final length = stage.length;
 
-      if (length == 0 && !stage.hasLogOutput) {
+      if (stage.isHidden) {
         continue;
       }
 
-      var first = true;
+      result.writeLine([
+        AnsiBuffer.bold,
+        stage.name,
+        AnsiBuffer.reset,
+        if (stage.note != null) ', ${stage.note}',
+      ]);
+
+      result.writeLine([stage.renderProgress], indent: 1);
+
+      /*var first = true;
       for (final line in _renderStage(stage)) {
         result.writeLine([line], indent: first ? 5 : 7);
         first = false;
-      }
+      }*/
 
-      if (!buildDone) {
+      /*if (!buildDone) {
         if (verbose && stage.infos.isNotEmpty) {
           final infos = stage.infos.values.fold(
             0,
@@ -319,13 +317,18 @@ class BuildLog {
         AnsiBuffer.bold,
         finalStatus,
         AnsiBuffer.reset,
-      ]);
+      ]);*/
     }
+
+    result.writeLine(finalStatus);
 
     return result.lines;
   }
 
-  String get finalStatus {
+  List<String> get finalStatus {
+    if (buildResult == null) {
+      return [AnsiBuffer.bold, 'pending', AnsiBuffer.reset];
+    }
     final buildResultString = buildResult! ? 'SUCCESS' : 'FAILURE';
     final totalTime = renderDuration(
       _stagesByName.values
@@ -337,9 +340,11 @@ class BuildLog {
 
     final graphSize = File(assetGraphPath).lengthSync();
 
-    return '$buildResultString, $buildType, '
-        'built $filesOutput file(s) in $totalTime, '
-        'asset graph is $graphSize bytes';
+    return [
+      '$buildResultString, $buildType, '
+          'built $filesOutput file(s) in $totalTime, '
+          'asset graph is $graphSize bytes',
+    ];
   }
 
   /// Runs [function] with [onLog] forwarding to [logger].
@@ -623,19 +628,50 @@ class Stage {
   final Map<String?, List<String>> warnings = {};
   final Map<String?, List<String>> errors = {};
 
+  bool get isHidden => length == 0 && !hasLogOutput;
+
+  bool get isInProgress => progress != null && progress! < length;
+
+  String get renderProgress {
+    final result = StringBuffer('${progress ?? 0} of $length');
+
+    if (duration != null) {
+      result.write(', ${buildLog.renderDuration(duration!)}');
+    }
+
+    final renderedAttributions = renderAttributions;
+    if (renderedAttributions.isNotEmpty) {
+      result.write(', [$renderedAttributions]');
+    }
+
+    return result.toString();
+  }
+
   bool get hasLogOutput =>
       warnings.isNotEmpty ||
       errors.isNotEmpty ||
       (buildLog.verbose && infos.isNotEmpty);
+
+  String get renderAttributions {
+    final result = StringBuffer();
+    final entries = attributions.entries.toList();
+    entries.sort((a, b) => b.value.compareTo(a.value));
+    for (final entry in entries) {
+      if (entry.value.inMilliseconds < 1000) continue;
+      if (result.isNotEmpty) result.write(', ');
+      result.write('${buildLog.renderDuration(entry.value)} ${entry.key}');
+    }
+    return result.toString();
+  }
 }
 
 extension type Attribution(String name) {
-  static final Attribution analyze = Attribution._('analyze');
-  static final Attribution build = Attribution._('build');
-  static final Attribution track = Attribution._('track');
-  static final Attribution resolve = Attribution._('resolve');
-  static final Attribution read = Attribution._('read');
-  static final Attribution write = Attribution._('write');
+  static final Attribution analyze = Attribution._('analyzing');
+  static final Attribution build = Attribution._('building');
+  static final Attribution track = Attribution._('tracking');
+  static final Attribution resolve = Attribution._('resolving');
+  static final Attribution read = Attribution._('reading');
+  static final Attribution write = Attribution._('writing');
 
   Attribution.optionalBuilder(this.name);
   Attribution._(this.name);

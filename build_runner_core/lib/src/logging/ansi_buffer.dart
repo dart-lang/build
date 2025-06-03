@@ -12,8 +12,8 @@ class AnsiBuffer {
   bool _isAnsi(String item) => item == bold || item == reset;
 
   void writeLine(List<String> items, {int indent = 0}) {
-    final buffer = StringBuffer();
-    var lengthIgnoringAnsi = 0;
+    final buffer = StringBuffer(' ' * indent);
+    var lengthIgnoringAnsi = indent;
     for (final item in items) {
       if (!_isAnsi(item)) lengthIgnoringAnsi += item.length;
       buffer.write(item);
