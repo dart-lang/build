@@ -6,7 +6,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:build/build.dart'
-    show AssetId, SyntaxErrorInAssetException, UnresolvableAssetException;
+    show SyntaxErrorInAssetException, UnresolvableAssetException;
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
 import 'package:logging/logging.dart';
@@ -237,15 +237,9 @@ class BuildLog {
         ', ',
         stage.renderProgress,
         if (stage.note != null) ', ${stage.note}',
-      ]);
+      ], hangingIndent: 2);
 
-      /*var first = true;
-      for (final line in _renderStage(stage)) {
-        result.writeLine([line], indent: first ? 5 : 7);
-        first = false;
-      }*/
-
-      /*if (!buildDone) {
+      if (buildResult == null) {
         if (verbose && stage.infos.isNotEmpty) {
           final infos = stage.infos.values.fold(
             0,
@@ -253,8 +247,12 @@ class BuildLog {
           );
           final key = stage.infos.keys.last;
           final value = stage.infos[key]!.last;
-          result.writeLine(['       $infos info(s), latest: $key'], indent: 7);
-          result.writeLine(['       $value'], indent: 7);
+          result.writeLine([
+            'info',
+            if (key != null) ', $key',
+            if (infos > 1) ', +${infos - 1}',
+          ]);
+          result.writeLine([value], indent: 2);
         }
 
         if (stage.warnings.isNotEmpty) {
@@ -265,9 +263,11 @@ class BuildLog {
           final key = stage.warnings.keys.last;
           final value = stage.warnings[key]!.last;
           result.writeLine([
-            '       $warnings warning(s), latest: $key',
-          ], indent: 7);
-          result.writeLine(['       $value'], indent: 7);
+            'warning',
+            if (key != null) ', $key',
+            if (warnings > 1) ', +${warnings - 1}',
+          ]);
+          result.writeLine([value], indent: 2);
         }
 
         if (stage.errors.isNotEmpty) {
@@ -278,50 +278,58 @@ class BuildLog {
           final key = stage.errors.keys.last;
           final value = stage.errors[key]!.last;
           result.writeLine([
-            '       $errors error(s), latest: $key',
-          ], indent: 7);
-          result.writeLine(['       $value'], indent: 7);
+            'error',
+            if (key != null) ', $key',
+            if (errors > 1) ', +${errors - 1}',
+          ]);
+          result.writeLine([value], indent: 2);
         }
       }
     }
 
+    result.writeLine(finalStatus);
+
     if (buildResult != null) {
       for (final stage in _stagesByName.values) {
-        if (verbose && stage.infos.isNotEmpty) {
-          for (final key in stage.warnings.keys) {
-            result.writeLine([' === ${stage.name} on $key infos']);
-            for (final value in stage.infos[key]!) {
-              result.writeLine(['     $value'], indent: 5);
+        if (verbose) {
+          for (final stage in _stagesByName.values) {
+            if (stage.infos.isNotEmpty) {
+              for (final key in stage.warnings.keys) {
+                for (final value in stage.infos[key]!) {
+                  result.writeLine([
+                    '${stage.name}, info',
+                    if (key != null) ', $key',
+                  ], hangingIndent: 2);
+                  result.writeLine([value], indent: 2);
+                }
+              }
             }
           }
         }
         if (stage.warnings.isNotEmpty) {
           for (final key in stage.warnings.keys) {
-            result.writeLine([' === ${stage.name} on $key warnings']);
             for (final value in stage.warnings[key]!) {
-              result.writeLine(['     $value'], indent: 5);
+              result.writeLine([
+                '${stage.name}, warning',
+                if (key != null) ', $key',
+              ], hangingIndent: 2);
+              result.writeLine([value], indent: 2);
             }
           }
         }
         if (stage.errors.isNotEmpty) {
           for (final key in stage.errors.keys) {
-            result.writeLine([' === ${stage.name} on $key errors']);
             for (final value in stage.errors[key]!) {
-              result.writeLine(['     $value'], indent: 5);
+              result.writeLine([
+                '${stage.name}, error',
+                if (key != null) ', $key',
+              ], hangingIndent: 2);
+              result.writeLine([value], indent: 2);
             }
           }
         }
       }
-
-      result.writeLine([
-        ' --- ',
-        AnsiBuffer.bold,
-        finalStatus,
-        AnsiBuffer.reset,
-      ]);*/
     }
-
-    result.writeLine(finalStatus);
 
     return result.lines;
   }
@@ -358,8 +366,10 @@ class BuildLog {
       final graphSize = File(assetGraphPath).lengthSync();
 
       result.addAll([
-        ', $buildType, '
-            'built $filesOutput file(s) in $totalTime, '
+        ', $buildType,'
+            ' '
+            'built $filesOutput file(s) in $totalTime,'
+            ' '
             'asset graph is $graphSize bytes',
       ]);
     }
@@ -532,11 +542,11 @@ class BuildLog {
 
   BuildLogLogger loggerForSetup() => BuildLogLogger(stage: 'setup');
 
-  BuildLogLogger loggerForStep(String stage, AssetId input) =>
-      BuildLogLogger(stage: stage, note: input.toString());
+  BuildLogLogger loggerForStep(String stage, String note) =>
+      BuildLogLogger(stage: stage, note: note);
 
-  BuildLogLogger loggerForPostprocess(AssetId input) =>
-      BuildLogLogger(stage: 'cleanup', note: input.toString());
+  BuildLogLogger loggerForPostprocess(String note) =>
+      BuildLogLogger(stage: 'cleanup', note: note);
 
   String renderThrowable(
     Object? message, [
@@ -653,10 +663,13 @@ class Stage {
   bool get isInProgress => progress != null && progress! < length;
 
   String get renderProgress {
-    final result = StringBuffer('${progress ?? 0} of $length');
+    final result = StringBuffer('${progress ?? 0}/$length');
 
     if (duration != null) {
-      result.write(', ${buildLog.renderDuration(duration!)}');
+      result.write(
+        '${AnsiBuffer.nbsp}in${AnsiBuffer.nbsp}'
+        '${buildLog.renderDuration(duration!)}',
+      );
     }
 
     final renderedAttributions = renderAttributions;
@@ -679,7 +692,9 @@ class Stage {
     for (final entry in entries) {
       if (entry.value.inMilliseconds < 1000) continue;
       if (result.isNotEmpty) result.write(', ');
-      result.write('${buildLog.renderDuration(entry.value)} ${entry.key}');
+      result.write(
+        '${buildLog.renderDuration(entry.value)}${AnsiBuffer.nbsp}${entry.key}',
+      );
     }
     return result.toString();
   }

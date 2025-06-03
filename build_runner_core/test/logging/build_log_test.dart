@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:build/build.dart';
 import 'package:build_runner_core/src/logging/ansi_buffer.dart';
 import 'package:build_runner_core/src/logging/build_log.dart';
 import 'package:test/test.dart';
@@ -78,7 +77,7 @@ void main() {
       buildLog.builders({'builder1': 10, 'builder2': 15});
       buildLog.progress(Progress.build('builder1', 'lib/foo.dart'));
       buildLog
-          .loggerForStep('builder1', AssetId('pkg', 'lib/foo.dart'))
+          .loggerForStep('builder1', 'lib/foo.dart')
           .warning('Some builder warning.');
 
       // TODO(davidmorgan): set and use root package.
@@ -88,7 +87,7 @@ void main() {
  --- build_runner lib/foo.dart
  <1s setup
  <1s builder1,  0%
-       1 warning(s), latest: pkg|lib/foo.dart
+       1 warning(s), latest: lib/foo.dart
        Some builder warning.
      builder2
      cleanup'''),
@@ -100,7 +99,7 @@ void main() {
       buildLog.builders({'builder1': 10, 'builder2': 15});
       buildLog.progress(Progress.build('builder1', 'lib/foo.dart'));
       buildLog
-          .loggerForStep('builder1', AssetId('pkg', 'lib/foo.dart'))
+          .loggerForStep('builder1', 'lib/foo.dart')
           .severe('Some builder error.');
 
       // TODO(davidmorgan): set and use root package.
@@ -110,7 +109,7 @@ void main() {
  --- build_runner lib/foo.dart
  <1s setup
  <1s builder1,  0%
-       1 error(s), latest: pkg|lib/foo.dart
+       1 error(s), latest: lib/foo.dart
        Some builder error.
      builder2
      cleanup'''),
@@ -122,7 +121,7 @@ void main() {
       buildLog.builders({'builder1': 10, 'builder2': 15});
       buildLog.progress(Progress.build('builder1', 'lib/foo.dart'));
       buildLog
-          .loggerForStep('builder1', AssetId('pkg', 'lib/foo.dart'))
+          .loggerForStep('builder1', 'lib/foo.dart')
           .info('Some builder info.');
 
       // TODO(davidmorgan): set and use root package.
@@ -144,7 +143,7 @@ void main() {
       buildLog.builders({'builder1': 10, 'builder2': 15});
       buildLog.progress(Progress.build('builder1', 'lib/foo.dart'));
       buildLog
-          .loggerForStep('builder1', AssetId('pkg', 'lib/foo.dart'))
+          .loggerForStep('builder1', 'lib/foo.dart')
           .info('Some builder info.');
 
       // TODO(davidmorgan): set and use root package.
@@ -192,17 +191,17 @@ void main() {
       buildLog.builders({'builder1': 10, 'builder2': 15});
       buildLog.progress(Progress.build('builder1', 'lib/foo.dart'));
       buildLog
-          .loggerForStep('builder1', AssetId('pkg', 'lib/foo1.dart'))
+          .loggerForStep('builder1', 'lib/foo1.dart')
           .warning('Some builder warning.');
       buildLog
-          .loggerForStep('builder1', AssetId('pkg', 'lib/foo2.dart'))
+          .loggerForStep('builder1', 'lib/foo2.dart')
           .severe('Some builder error.');
       buildLog.progress(Progress.build('builder2', 'lib/bar1.dart'));
       buildLog
-          .loggerForStep('builder2', AssetId('pkg', 'lib/bar1.dart'))
+          .loggerForStep('builder2', 'lib/bar1.dart')
           .warning('Some other builder warning.');
       buildLog
-          .loggerForStep('builder2', AssetId('pkg', 'lib/bar2.dart'))
+          .loggerForStep('builder2', 'lib/bar2.dart')
           .severe('Some other builder error.');
       buildLog.progress(Progress.done);
       buildLog.buildDone(true);

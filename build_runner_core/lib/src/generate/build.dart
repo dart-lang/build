@@ -523,7 +523,7 @@ class Build {
 
       final logger = buildLog.loggerForStep(
         inBuildPhaseDisplayNames[phaseNumber],
-        primaryInput,
+        renderer.id(primaryInput),
       );
       await buildLog.attribute(
         Attribution.build,
@@ -650,7 +650,7 @@ class Build {
       nodeBuilder.deletedBy.remove(postProcessBuildStepId);
     });
 
-    final logger = buildLog.loggerForPostprocess(input);
+    final logger = buildLog.loggerForPostprocess(renderer.id(input));
     final outputs = <AssetId>{};
     await runPostProcessBuilder(
       builder,

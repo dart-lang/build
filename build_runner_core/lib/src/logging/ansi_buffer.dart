@@ -3,6 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 class AnsiBuffer {
+  static const String nbsp = '\u00A0';
+
   static const String reset = '\x1B[0m';
   static const String bold = '\x1B[1m';
   static const String red = '\x1B[31m';
@@ -14,7 +16,9 @@ class AnsiBuffer {
   bool _isAnsi(String item) =>
       item == reset || item == bold || item == red || item == green;
 
-  void writeLine(List<String> items, {int indent = 0}) {
+  void writeLine(List<String> items, {int indent = 0, int? hangingIndent}) {
+    hangingIndent ??= indent;
+
     final buffer = StringBuffer(' ' * indent);
     var lengthIgnoringAnsi = indent;
     int? lastWhitespaceIndex;
@@ -26,9 +30,9 @@ class AnsiBuffer {
         continue;
       }
 
-      for (final character in item.split('')) {
+      for (var character in item.split('')) {
         lengthIgnoringAnsi++;
-        buffer.write(character);
+        buffer.write(character == nbsp ? ' ' : character);
 
         if (character == ' ') {
           lastWhitespaceIndex = buffer.length;
@@ -46,10 +50,12 @@ class AnsiBuffer {
           );
 
           buffer.clear();
-          buffer.write(' ' * indent);
+          buffer.write(' ' * hangingIndent);
           buffer.write(bufferString.substring(lastWhitespaceIndex));
           lengthIgnoringAnsi =
-              lengthIgnoringAnsi - lastWhitespaceLengthIgnoringAnsi + indent;
+              lengthIgnoringAnsi -
+              lastWhitespaceLengthIgnoringAnsi +
+              hangingIndent;
 
           lastWhitespaceIndex = null;
           lastWhitespaceLengthIgnoringAnsi = null;
