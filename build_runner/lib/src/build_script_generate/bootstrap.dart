@@ -34,7 +34,7 @@ Future<int> generateAndRun(
   void Function(Object error, StackTrace stackTrace) handleUncaughtError =
       _defaultHandleUncaughtError,
 }) {
-  return buildLog.runWithOutputToLogger(
+  return buildLog.runWithLoggerDisplay(
     logger,
     () => _generateAndRun(
       args,
@@ -76,7 +76,6 @@ Future<int> _generateAndRun(
       var newContents = await generateBuildScript();
       // Only trigger a build script update if necessary.
       if (newContents != oldContents) {
-        buildScriptChanged = true;
         buildScript
           ..createSync(recursive: true)
           ..writeAsStringSync(newContents);

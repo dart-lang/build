@@ -513,6 +513,7 @@ class Build {
           readerWriter,
         ),
       )) {
+        buildLog.stepSkipped(inBuildPhaseDisplayNames[phaseNumber]);
         return <AssetId>[];
       }
 
@@ -566,6 +567,14 @@ class Build {
             logger.errors,
             unusedAssets: unusedAssets,
           ),
+        ),
+      );
+
+      buildLog.stepRan(
+        inBuildPhaseDisplayNames[phaseNumber],
+        anyOutputs: readerWriter.assetsWritten.isNotEmpty,
+        anyChangedOutputs: readerWriter.assetsWritten.any(
+          changedOutputs.contains,
         ),
       );
 

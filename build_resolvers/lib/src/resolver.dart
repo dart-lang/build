@@ -198,7 +198,7 @@ class PerActionResolver implements ReleasableResolver {
 class AnalyzerResolver implements ReleasableResolver {
   final AnalysisDriverModel _analysisDriverModel;
   final AnalysisDriverForPackageBuild _driver;
-  final AttributingPool _driverPool;
+  final AnalyzeActivityPool _driverPool;
   final SharedResourcePool _readAndWritePool;
 
   Future<List<LibraryElement>>? _sdkLibraries;
@@ -208,7 +208,7 @@ class AnalyzerResolver implements ReleasableResolver {
     Pool driverPool,
     this._readAndWritePool,
     this._analysisDriverModel,
-  ) : _driverPool = AttributingPool(driverPool);
+  ) : _driverPool = AnalyzeActivityPool(driverPool);
 
   @override
   Future<bool> isLibrary(AssetId assetId) async {
@@ -657,11 +657,11 @@ Future<String> packagePath(String package) async {
   return p.dirname(p.fromUri(libRoot));
 }
 
-/// Wraps [pool] so accesses are attributed as [StageActivity.analyze].
-class AttributingPool {
+/// Wraps [pool] so accesses are timed as [StageActivity.analyze].
+class AnalyzeActivityPool {
   final Pool pool;
 
-  AttributingPool(this.pool);
+  AnalyzeActivityPool(this.pool);
 
   Future<T> withResource<T>(Future<T> Function() function) async {
     return pool.withResource(

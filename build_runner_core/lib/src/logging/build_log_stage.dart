@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:math';
-
 import 'ansi_buffer.dart';
 import 'build_log.dart';
 
@@ -16,6 +14,11 @@ class Stage {
   int? progress;
   String? note;
 
+  int skipped = 0;
+  int builtNew = 0;
+  int builtSame = 0;
+  int builtNothing = 0;
+
   Stage({required this.name, required this.length});
   factory Stage.setup() => Stage(name: 'build_runner setup', length: 8);
   factory Stage.cleanup() => Stage(name: 'build_runner cleanup', length: 4);
@@ -24,30 +27,19 @@ class Stage {
   final Map<String?, List<String>> warnings = {};
   final Map<String?, List<String>> errors = {};
 
-  bool get isHidden => length == 0 && !hasLogOutput;
+  bool get isHidden {
+    if (length == 0 && !hasLogOutput) return true;
+    if (name != 'build_runner setup' && name != 'build_runner cleanup') {
+      return false;
+    }
+    return (progress == null || progress == length) && !hasLogOutput;
+  }
 
   bool get isInProgress => progress != null && progress! < length;
 
   String get renderProgress {
-    final result = StringBuffer('${progress ?? 0}/$length');
-
-    if (duration != null) {
-      result.write(
-        '${AnsiBuffer.nbsp}in${AnsiBuffer.nbsp}'
-        '${buildLog.renderDuration(duration!)}',
-      );
-    }
-
-    return result.toString();
-  }
-
-  int get maxProgressWidth {
-    final progressWidth = '$length/$length in '.length;
-    final durationWidth =
-        duration == null
-            ? 3
-            : max(3, buildLog.renderDuration(duration!).length);
-    return progressWidth + durationWidth;
+    if (duration == null) return '';
+    return buildLog.renderDuration(duration!);
   }
 
   bool get hasLogOutput =>
@@ -72,6 +64,7 @@ class Stage {
 
 extension type StageActivity(String name) {
   static final StageActivity analyze = StageActivity._('analyzing');
+  static final StageActivity analyzeSdk = StageActivity._('analyzing sdk');
   static final StageActivity build = StageActivity._('building');
   static final StageActivity track = StageActivity._('tracking');
   static final StageActivity resolve = StageActivity._('resolving');

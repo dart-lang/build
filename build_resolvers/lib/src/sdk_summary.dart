@@ -59,28 +59,25 @@ Future<String> defaultSdkSummaryGenerator() async {
 
   // Generate the summary and version files if necessary.
   if (needsRebuild) {
-    var watch = Stopwatch()..start();
-    await Directory(cacheDir).create(recursive: true);
-    final tempDir = await Directory(cacheDir).createTemp();
-    final tempFile = File(p.join(tempDir.path, p.basename(summaryPath)));
-    await tempFile.create();
-    final embedderYamlPath =
-        isFlutter ? p.join(_dartUiPath, '_embedder.yaml') : null;
-    await tempFile.writeAsBytes(
-      await buildSdkSummary(
-        sdkPath: _runningDartSdkPath,
-        resourceProvider: PhysicalResourceProvider.INSTANCE,
-        embedderYamlPath: embedderYamlPath,
-      ),
-    );
+    await buildLog.runActivityAsync(StageActivity.analyzeSdk, () async {
+      await Directory(cacheDir).create(recursive: true);
+      final tempDir = await Directory(cacheDir).createTemp();
+      final tempFile = File(p.join(tempDir.path, p.basename(summaryPath)));
+      await tempFile.create();
+      final embedderYamlPath =
+          isFlutter ? p.join(_dartUiPath, '_embedder.yaml') : null;
+      await tempFile.writeAsBytes(
+        await buildSdkSummary(
+          sdkPath: _runningDartSdkPath,
+          resourceProvider: PhysicalResourceProvider.INSTANCE,
+          embedderYamlPath: embedderYamlPath,
+        ),
+      );
 
-    await tempFile.rename(summaryPath);
-    await _createDepsFile(depsFile, currentDeps);
-    await tempDir.delete();
-    watch.stop();
-    buildLog.info(
-      'Computed SDK summary in ${buildLog.renderDuration(watch.elapsed)}',
-    );
+      await tempFile.rename(summaryPath);
+      await _createDepsFile(depsFile, currentDeps);
+      await tempDir.delete();
+    });
   }
 
   return p.absolute(summaryPath);

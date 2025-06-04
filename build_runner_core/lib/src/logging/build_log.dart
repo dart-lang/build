@@ -97,6 +97,36 @@ class BuildLog {
     _display.onLog = _configuration.onLog;
   }
 
+  /// Runs [function] with all output sent to [logger] instead of the default
+  /// display.
+  ///
+  /// If [logger] is `null`, just runs [function].
+  Future<T> runWithLoggerDisplay<T>(
+    Logger? logger,
+    Future<T> Function() function,
+  ) async {
+    final previousOnLog = configuration.onLog;
+    if (logger != null) {
+      _configuration = configuration.rebuild((b) {
+        b.onLog =
+            (record) => logger.log(
+              record.level,
+              record.message,
+              record.error,
+              record.stackTrace,
+              record.zone,
+            );
+      });
+    }
+    try {
+      return await function();
+    } finally {
+      if (logger != null) {
+        configuration = configuration.rebuild((b) => b..onLog = previousOnLog);
+      }
+    }
+  }
+
   void reset() {
     _display.displayedLines = 0;
     _stopwatch.reset();
@@ -179,7 +209,7 @@ class BuildLog {
 
     final maxProgressWidth = _stagesByName.values
         .where((value) => !value.isHidden)
-        .map((value) => value.maxProgressWidth)
+        .map((value) => value.renderProgress.length)
         .fold(0, max);
     final indent = maxProgressWidth + 1;
 
@@ -198,6 +228,11 @@ class BuildLog {
         AnsiBuffer.bold,
         stage.name,
         AnsiBuffer.reset,
+        if (stage.length != 0) ' on ${stage.length.renderNamed('input')}',
+        if (stage.skipped != 0) ', ${stage.skipped} skipped',
+        if (stage.builtNew != 0) ', ${stage.builtNew} built',
+        if (stage.builtSame != 0) ', ${stage.builtSame} no change',
+        if (stage.builtNothing != 0) ', ${stage.builtNothing} no output',
         if (stage.note != null) ', ${stage.note}',
         if (attributions.isNotEmpty) ', [$attributions]',
       ], hangingIndent: indent);
@@ -337,33 +372,6 @@ class BuildLog {
     return result;
   }
 
-  /// Runs [function] with [configuration] `onLog` forwarding to [logger].
-  Future<T> runWithOutputToLogger<T>(
-    Logger? logger,
-    Future<T> Function() function,
-  ) async {
-    final previousOnLog = configuration.onLog;
-    if (logger != null) {
-      _configuration = configuration.rebuild((b) {
-        b.onLog =
-            (record) => logger.log(
-              record.level,
-              record.message,
-              record.error,
-              record.stackTrace,
-              record.zone,
-            );
-      });
-    }
-    try {
-      return await function();
-    } finally {
-      if (logger != null) {
-        configuration = configuration.rebuild((b) => b..onLog = previousOnLog);
-      }
-    }
-  }
-
   void setBuildType(BuildType rebuildReason) {
     rebuildReason = rebuildReason;
     _display.display(
@@ -413,6 +421,24 @@ class BuildLog {
 
   Stage stageNamed(String name) =>
       _stagesByName[name] ??= Stage(name: name, length: 0);
+
+  void stepSkipped(String name) {
+    stageNamed(name).skipped++;
+  }
+
+  void stepRan(
+    String name, {
+    required bool anyOutputs,
+    required bool anyChangedOutputs,
+  }) {
+    if (anyChangedOutputs) {
+      stageNamed(name).builtNew++;
+    } else if (anyOutputs) {
+      stageNamed(name).builtSame++;
+    } else {
+      stageNamed(name).builtNothing++;
+    }
+  }
 
   void progress(Progress progress) {
     _currentStage.duration =
@@ -543,11 +569,8 @@ class BuildLog {
     return result;
   }
 
-  String renderDuration(Duration duration) {
-    if (duration == Duration.zero) return '0s';
-    if (duration.inMilliseconds < 1000) return '<1s';
-    return '${(duration.inMilliseconds / 1000).round()}s';
-  }
+  String renderDuration(Duration duration) =>
+      '${(duration.inMilliseconds / 1000).round()}s';
 }
 
 class Progress {
@@ -629,4 +652,8 @@ enum BuildType {
   const BuildType(this.message);
 
   final String message;
+}
+
+extension _IntExtension on int {
+  String renderNamed(String name) => '$this $name${this == 1 ? '' : 's'}';
 }
