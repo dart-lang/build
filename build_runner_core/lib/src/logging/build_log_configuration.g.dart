@@ -11,12 +11,18 @@ class _$BuildLogConfiguration extends BuildLogConfiguration {
   final bool verbose;
   @override
   final void Function(LogRecord)? onLog;
+  @override
+  final String? rootPackageName;
 
   factory _$BuildLogConfiguration([
     void Function(BuildLogConfigurationBuilder)? updates,
   ]) => (BuildLogConfigurationBuilder()..update(updates))._build();
 
-  _$BuildLogConfiguration._({required this.verbose, this.onLog}) : super._();
+  _$BuildLogConfiguration._({
+    required this.verbose,
+    this.onLog,
+    this.rootPackageName,
+  }) : super._();
   @override
   BuildLogConfiguration rebuild(
     void Function(BuildLogConfigurationBuilder) updates,
@@ -32,7 +38,8 @@ class _$BuildLogConfiguration extends BuildLogConfiguration {
     final dynamic _$dynamicOther = other;
     return other is BuildLogConfiguration &&
         verbose == other.verbose &&
-        onLog == _$dynamicOther.onLog;
+        onLog == _$dynamicOther.onLog &&
+        rootPackageName == other.rootPackageName;
   }
 
   @override
@@ -40,6 +47,7 @@ class _$BuildLogConfiguration extends BuildLogConfiguration {
     var _$hash = 0;
     _$hash = $jc(_$hash, verbose.hashCode);
     _$hash = $jc(_$hash, onLog.hashCode);
+    _$hash = $jc(_$hash, rootPackageName.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -48,7 +56,8 @@ class _$BuildLogConfiguration extends BuildLogConfiguration {
   String toString() {
     return (newBuiltValueToStringHelper(r'BuildLogConfiguration')
           ..add('verbose', verbose)
-          ..add('onLog', onLog))
+          ..add('onLog', onLog)
+          ..add('rootPackageName', rootPackageName))
         .toString();
   }
 }
@@ -65,6 +74,11 @@ class BuildLogConfigurationBuilder
   void Function(LogRecord)? get onLog => _$this._onLog;
   set onLog(void Function(LogRecord)? onLog) => _$this._onLog = onLog;
 
+  String? _rootPackageName;
+  String? get rootPackageName => _$this._rootPackageName;
+  set rootPackageName(String? rootPackageName) =>
+      _$this._rootPackageName = rootPackageName;
+
   BuildLogConfigurationBuilder();
 
   BuildLogConfigurationBuilder get _$this {
@@ -72,6 +86,7 @@ class BuildLogConfigurationBuilder
     if ($v != null) {
       _verbose = $v.verbose;
       _onLog = $v.onLog;
+      _rootPackageName = $v.rootPackageName;
       _$v = null;
     }
     return this;
@@ -100,6 +115,7 @@ class BuildLogConfigurationBuilder
             'verbose',
           ),
           onLog: onLog,
+          rootPackageName: rootPackageName,
         );
     replace(_$result);
     return _$result;

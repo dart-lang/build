@@ -7,7 +7,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:build/build.dart'
-    show SyntaxErrorInAssetException, UnresolvableAssetException;
+    show AssetId, SyntaxErrorInAssetException, UnresolvableAssetException;
 import 'package:logging/logging.dart';
 
 import 'ansi_buffer.dart';
@@ -19,19 +19,6 @@ import 'log_display.dart';
 final BuildLog buildLog = BuildLog._();
 
 enum BuildLogMode { simple, build, buildOfSeries, watch, daemon }
-
-/*    // Simple logs only in daemon mode. These get converted into info or
-    // severe logs by the client.
-    logListener = Logger.root.onRecord.listen((record) {
-      if (record.level >= Level.SEVERE) {
-        var buffer = StringBuffer(record.message);
-        if (record.error != null) buffer.writeln(record.error);
-        if (record.stackTrace != null) buffer.writeln(record.stackTrace);
-        stderr.writeln(buffer);
-      } else {
-        stdout.writeln(record.message);
-      }
-    });*/
 
 /// The `build_runner` log.
 ///
@@ -67,8 +54,8 @@ enum BuildLogMode { simple, build, buildOfSeries, watch, daemon }
 ///  - By default, only builder logs of level `WARNING` and above are displayed.
 ///    The `verbose` flag will show all builder logs.
 class BuildLog {
-  static final String successPattern = 'success';
-  static final String failurePattern = 'failure';
+  static final String successPattern = 'succeeded';
+  static final String failurePattern = 'failed';
 
   BuildLogConfiguration _configuration = BuildLogConfiguration();
 
@@ -83,8 +70,6 @@ class BuildLog {
   String loaded = '';
 
   Duration _attributedDuration = Duration.zero;
-
-  bool again = false;
 
   bool? buildResult;
   int? outputs;
@@ -127,6 +112,45 @@ class BuildLog {
     }
   }
 
+  /// Runs [function] adding the time spent to the measure of the specified
+  /// [activity] of the currently-running [Stage].
+  Future<T> runActivityAsync<T>(
+    StageActivity activity,
+    Future<T> Function() function,
+  ) async {
+    final start = _stopwatch.elapsed;
+    final startAttributionDuration = _attributedDuration;
+    try {
+      return await function();
+    } finally {
+      final end = _stopwatch.elapsed;
+      final thisAttributedDuration =
+          end - start - _attributedDuration + startAttributionDuration;
+      _attributedDuration += thisAttributedDuration;
+      _currentStage.attributions[activity] =
+          (_currentStage.attributions[activity] ?? Duration.zero) +
+          thisAttributedDuration;
+    }
+  }
+
+  /// Runs [function] adding the time spent to the measure of the specified
+  /// [activity] of the currently-running [Stage].
+  T runActivity<T>(StageActivity activity, T Function() function) {
+    final start = _stopwatch.elapsed;
+    final startAttributionDuration = _attributedDuration;
+    try {
+      return function();
+    } finally {
+      final end = _stopwatch.elapsed;
+      final thisAttributedDuration =
+          end - start - _attributedDuration + startAttributionDuration;
+      _attributedDuration += thisAttributedDuration;
+      _currentStage.attributions[activity] =
+          (_currentStage.attributions[activity] ?? Duration.zero) +
+          thisAttributedDuration;
+    }
+  }
+
   void reset() {
     _display.displayedLines = 0;
     _stopwatch.reset();
@@ -134,7 +158,6 @@ class BuildLog {
     _stagesByName.clear();
     _currentStage = Stage.setup();
     _attributedDuration = Duration.zero;
-    again = false;
     buildResult = null;
 
     configuration = BuildLogConfiguration();
@@ -222,6 +245,15 @@ class BuildLog {
 
       final attributions = stage.renderAttributions;
 
+      var firstSeparator = true;
+      String separator() {
+        if (firstSeparator) {
+          firstSeparator = false;
+          return ': ';
+        }
+        return ', ';
+      }
+
       result.writeLine([
         stage.renderProgress.padLeft(maxProgressWidth),
         ' ',
@@ -229,12 +261,13 @@ class BuildLog {
         stage.name,
         AnsiBuffer.reset,
         if (stage.length != 0) ' on ${stage.length.renderNamed('input')}',
-        if (stage.skipped != 0) ', ${stage.skipped} skipped',
-        if (stage.builtNew != 0) ', ${stage.builtNew} built',
-        if (stage.builtSame != 0) ', ${stage.builtSame} no change',
-        if (stage.builtNothing != 0) ', ${stage.builtNothing} no output',
-        if (stage.note != null) ', ${stage.note}',
-        if (attributions.isNotEmpty) ', [$attributions]',
+        if (stage.skipped != 0) '${separator()}${stage.skipped} skipped',
+        if (stage.builtNew != 0) '${separator()}${stage.builtNew} built',
+        if (stage.builtSame != 0) '${separator()}${stage.builtSame} no change',
+        if (stage.builtNothing != 0)
+          '${separator()}${stage.builtNothing} no output',
+        if (stage.note != null) '${separator()}${stage.note}',
+        if (attributions.isNotEmpty) '; $attributions',
       ], hangingIndent: indent);
 
       if (buildResult == null) {
@@ -285,9 +318,27 @@ class BuildLog {
       }
     }
 
-    result.writeLine(finalStatus, indent: indent);
-
     if (buildResult != null) {
+      result.writeLine([]);
+      final totalTime = renderDuration(
+        _stagesByName.values
+            .where((stage) => stage.length != 0)
+            .map((stage) => stage.duration ?? Duration.zero)
+            .reduce((a, b) => a + b),
+      );
+
+      result.writeLine([
+        buildType.status,
+        ' ',
+        AnsiBuffer.bold,
+        if (buildResult!) successPattern else failurePattern,
+        AnsiBuffer.reset,
+        ' in $totalTime.',
+      ]);
+
+      // TODO: if more output.
+      result.writeLine([]);
+
       for (final stage in _stagesByName.values) {
         if (_configuration.verbose) {
           for (final stage in _stagesByName.values) {
@@ -297,8 +348,8 @@ class BuildLog {
                   result.writeLine([
                     '${stage.name} info',
                     if (key != null) ' on $key',
-                  ], indent: indent);
-                  result.writeLine([value], indent: indent + 2);
+                  ]);
+                  result.writeLine([value], indent: 2);
                 }
               }
             }
@@ -310,8 +361,8 @@ class BuildLog {
               result.writeLine([
                 '${stage.name} warning',
                 if (key != null) ' on $key',
-              ], indent: indent);
-              result.writeLine([value], indent: indent + 2);
+              ]);
+              result.writeLine([value], indent: 2);
             }
           }
         }
@@ -321,8 +372,8 @@ class BuildLog {
               result.writeLine([
                 '${stage.name} error',
                 if (key != null) ' on $key',
-              ], indent: indent);
-              result.writeLine([value], indent: indent + 2);
+              ]);
+              result.writeLine([value], indent: 2);
             }
           }
         }
@@ -333,49 +384,31 @@ class BuildLog {
   }
 
   List<String> get finalStatus {
-    final result = <String>[];
     if (buildResult == null) {
-      result.addAll([AnsiBuffer.bold, 'running', AnsiBuffer.reset]);
-    } else if (buildResult!) {
-      result.addAll([
-        AnsiBuffer.bold,
-        AnsiBuffer.green,
-        'success',
-        AnsiBuffer.reset,
-      ]);
-    } else {
-      result.addAll([
-        AnsiBuffer.bold,
-        AnsiBuffer.red,
-        'failure',
-        AnsiBuffer.reset,
-      ]);
+      return [];
     }
 
-    if (buildResult != null) {
-      final totalTime = renderDuration(
-        _stagesByName.values
-            .where((stage) => stage.length != 0)
-            .map((stage) => stage.duration ?? Duration.zero)
-            .reduce((a, b) => a + b),
-      );
+    final totalTime = renderDuration(
+      _stagesByName.values
+          .where((stage) => stage.length != 0)
+          .map((stage) => stage.duration ?? Duration.zero)
+          .reduce((a, b) => a + b),
+    );
 
-      result.addAll([
-        ', $buildType,'
-            ' '
-            'wrote $outputs file(s) in $totalTime,'
-            ' '
-            'asset graph is $assetGraphSize bytes',
-      ]);
-    }
-
-    return result;
+    return [
+      buildType.status,
+      ' ',
+      AnsiBuffer.bold,
+      if (buildResult!) successPattern else failurePattern,
+      AnsiBuffer.reset,
+      ' in $totalTime.',
+    ];
   }
 
-  void setBuildType(BuildType rebuildReason) {
-    rebuildReason = rebuildReason;
+  void setBuildType(BuildType buildType) {
+    this.buildType = buildType;
     _display.display(
-      makeEntry(severity: LineSeverity.info, line: rebuildReason.message),
+      makeEntry(severity: LineSeverity.info, line: buildType.message),
     );
   }
 
@@ -401,8 +434,6 @@ class BuildLog {
     stdout.writeln('BuildLog.debug:$message');
     _display.displayedLines = 0;
   }
-
-  int previous = 0;
 
   void builders(Map<String, int> buildSteps) {
     // print('declare: $names $buildSteps');
@@ -491,45 +522,6 @@ class BuildLog {
     _stagesByName['setup'] = Stage.setup();*/
   }
 
-  /// Runs [function] adding the time spent to the measure of the specified
-  /// [activity] of the currently-running [Stage].
-  Future<T> runActivityAsync<T>(
-    StageActivity activity,
-    Future<T> Function() function,
-  ) async {
-    final start = _stopwatch.elapsed;
-    final startAttributionDuration = _attributedDuration;
-    try {
-      return await function();
-    } finally {
-      final end = _stopwatch.elapsed;
-      final thisAttributedDuration =
-          end - start - _attributedDuration + startAttributionDuration;
-      _attributedDuration += thisAttributedDuration;
-      _currentStage.attributions[activity] =
-          (_currentStage.attributions[activity] ?? Duration.zero) +
-          thisAttributedDuration;
-    }
-  }
-
-  /// Runs [function] adding the time spent to the measure of the specified
-  /// [activity] of the currently-running [Stage].
-  T runActivity<T>(StageActivity activity, T Function() function) {
-    final start = _stopwatch.elapsed;
-    final startAttributionDuration = _attributedDuration;
-    try {
-      return function();
-    } finally {
-      final end = _stopwatch.elapsed;
-      final thisAttributedDuration =
-          end - start - _attributedDuration + startAttributionDuration;
-      _attributedDuration += thisAttributedDuration;
-      _currentStage.attributions[activity] =
-          (_currentStage.attributions[activity] ?? Duration.zero) +
-          thisAttributedDuration;
-    }
-  }
-
   // TODO: "run scoped"
   BuildLogLogger loggerForBuilderFactory(String name) =>
       BuildLogLogger(stage: 'build_runner setup', note: name);
@@ -537,11 +529,11 @@ class BuildLog {
   BuildLogLogger loggerForSetup() =>
       BuildLogLogger(stage: 'build_runner setup');
 
-  BuildLogLogger loggerForStep(String stage, String note) =>
-      BuildLogLogger(stage: stage, note: note);
+  BuildLogLogger loggerForStep(String stage, AssetId input) =>
+      BuildLogLogger(stage: stage, note: renderId(input));
 
-  BuildLogLogger loggerForPostprocess(String note) =>
-      BuildLogLogger(stage: 'build_runner cleanup', note: note);
+  BuildLogLogger loggerForPostprocess(AssetId input) =>
+      BuildLogLogger(stage: 'build_runner cleanup', note: renderId(input));
 
   String renderThrowable(
     Object? message, [
@@ -566,6 +558,18 @@ class BuildLog {
 
   String renderDuration(Duration duration) =>
       '${(duration.inMilliseconds / 1000).round()}s';
+
+  /// Renders [id].
+  ///
+  /// Like `AssetId.toString`, except the package name is omitted if it matches
+  /// [configuration] `rootPackageName`.
+  String renderId(AssetId id) {
+    if (id.package == configuration.rootPackageName) {
+      return id.path;
+    } else {
+      return id.toString();
+    }
+  }
 }
 
 class Progress {
@@ -638,15 +642,25 @@ class Progress {
 }
 
 enum BuildType {
-  clean('Clean build.'),
-  incremental('Incremental build.'),
-  incompatibleScript('Builder code changed, doing a full build.'),
-  incompatibleAssetGraph('Could not load asset graph, doing a full build.'),
-  incompatibleBuild('Build changed, doing a full build.');
+  clean('Clean build.', 'Full build'),
+  incremental('Incremental build.', 'Incremental build'),
+  incompatibleScript(
+    'Builder code changed, doing a full build.',
+    'Full build (builders changed)',
+  ),
+  incompatibleAssetGraph(
+    'Could not load asset graph, doing a full build.',
+    'Full build (no valid asset graph)',
+  ),
+  incompatibleBuild(
+    'Build changed, doing a full build.',
+    'Full build (target changed)',
+  );
 
-  const BuildType(this.message);
+  const BuildType(this.message, this.status);
 
   final String message;
+  final String status;
 }
 
 extension _IntExtension on int {

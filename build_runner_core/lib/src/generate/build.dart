@@ -132,6 +132,12 @@ class Build {
                : AssetDepsLoader.fromDeps(assetGraph.previousPhasedAssetDeps!);
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
+    if (!assetGraph.cleanBuild) {
+      buildLog.setBuildType(BuildType.incremental);
+    }
+    buildLog.configuration = buildLog.configuration.rebuild(
+      (b) => b..rootPackageName = options.packageGraph.root.name,
+    );
     var result = await _safeBuild(updates);
     var optionalOutputTracker = OptionalOutputTracker(
       assetGraph,
@@ -358,7 +364,7 @@ class Build {
               buildLog.progress(
                 Progress.build(
                   inBuildPhaseDisplayNames[phaseNum],
-                  renderer.id(primaryInput),
+                  buildLog.renderId(primaryInput),
                 ),
               );
               outputs.addAll(
@@ -526,7 +532,7 @@ class Build {
 
       final logger = buildLog.loggerForStep(
         inBuildPhaseDisplayNames[phaseNumber],
-        renderer.id(primaryInput),
+        primaryInput,
       );
       await buildLog.runActivity(
         StageActivity.build,
@@ -661,7 +667,7 @@ class Build {
       nodeBuilder.deletedBy.remove(postProcessBuildStepId);
     });
 
-    final logger = buildLog.loggerForPostprocess(renderer.id(input));
+    final logger = buildLog.loggerForPostprocess(input);
     final outputs = <AssetId>{};
     await runPostProcessBuilder(
       builder,

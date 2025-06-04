@@ -17,6 +17,11 @@ abstract class BuildLogConfiguration
   /// If set, normal output is turned off.
   void Function(LogRecord)? get onLog;
 
+  /// The root package of the build.
+  ///
+  /// If set, the package name will be omitted when rendering asset ids.
+  String? get rootPackageName;
+
   /// Default configuration.
   factory BuildLogConfiguration() =>
       _$BuildLogConfiguration._(verbose: false, onLog: null);

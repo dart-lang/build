@@ -63,7 +63,7 @@ class AnsiBuffer {
       }
     }
 
-    if (buffer.isNotEmpty) {
+    if (buffer.isNotEmpty || items.isEmpty) {
       lines.add(buffer.toString() + ' ' * (width - lengthIgnoringAnsi));
     }
   }
