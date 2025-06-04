@@ -70,10 +70,11 @@ Future<ServeHandler> watch(
     reader: reader,
     writer: writer,
   );
+  buildLog.configuration = buildLog.configuration.rebuild((b) {
+    b.verbose = verbose;
+    b.onLog = onLog;
+  });
   buildLog.start(BuildLogMode.watch);
-  if (assumeTty != null) buildLog.assumeTty = assumeTty;
-  buildLog.verbose = verbose;
-  buildLog.onLog = onLog;
   overrideBuildConfig ??= await findBuildConfigOverrides(
     packageGraph,
     environment.reader,

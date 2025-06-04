@@ -258,7 +258,9 @@ Future<TestBuilderResult> testBuilders(
   final inputFilter = isInput ?? generateFor?.contains ?? (_) => true;
   inputIds.retainWhere((id) => inputFilter('$id'));
 
-  buildLog.onLog = onLog;
+  buildLog.configuration = buildLog.configuration.rebuild((b) {
+    b.onLog = onLog;
+  });
   resolvers ??=
       packageConfig == null && enabledExperiments.isEmpty
           ? AnalyzerResolvers.sharedInstance
@@ -349,7 +351,9 @@ Future<TestBuilderResult> testBuilders(
   await buildSeries.beforeExit();
 
   // Stop logging.
-  buildLog.onLog = null;
+  buildLog.configuration = buildLog.configuration.rebuild((b) {
+    b.onLog = null;
+  });
 
   // Check the build outputs as requested.
   checkOutputs(outputs, readerWriter.testing.assetsWritten, readerWriter);

@@ -141,8 +141,10 @@ Future<TestBuildersResult> testPhases(
     writer: readerWriter,
   );
 
-  buildLog.onLog = onLog;
-  buildLog.verbose = verbose;
+  buildLog.configuration = buildLog.configuration.rebuild((b) {
+    b.onLog = onLog;
+    b.verbose = verbose;
+  });
 
   var options = await BuildOptions.create(
     deleteFilesByDefault: deleteFilesByDefault,

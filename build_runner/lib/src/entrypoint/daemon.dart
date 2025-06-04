@@ -96,17 +96,21 @@ class DaemonCommand extends WatchCommand {
       // These are serialized between special `<log-record>` and `</log-record>`
       // tags to make parsing them on stdout easier. They can have multiline
       // strings so we can't just serialize the json on a single line.
-      buildLog.onLog =
-          (record) => stdout.writeln('''
+      buildLog.configuration = buildLog.configuration.rebuild((b) {
+        b.onLog =
+            (record) => stdout.writeln('''
 $logStartMarker
 ${jsonEncode(serializers.serialize(ServerLog.fromLogRecord(record)))}
 $logEndMarker''');
+      });
       builder = await BuildRunnerDaemonBuilder.create(
         packageGraph,
         builderApplications,
         options,
       );
-      buildLog.onLog = null;
+      buildLog.configuration = buildLog.configuration.rebuild((b) {
+        b.onLog = null;
+      });
 
       // Forward server logs to daemon command STDIO.
       var logSub = builder.logs.listen((log) {

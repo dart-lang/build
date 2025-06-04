@@ -440,7 +440,9 @@ targets:
       var logs = <LogRecord>[];
       setUp(() async {
         logs.clear();
-        buildLog.onLog = logs.add;
+        buildLog.configuration = buildLog.configuration.rebuild((b) {
+          b.onLog = logs.add;
+        });
         options = await BuildOptions.create(
           packageGraph: options.packageGraph,
           skipBuildScriptCheck: true,

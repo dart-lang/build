@@ -88,9 +88,10 @@ Future<BuildResult> build(
     reader: reader,
     writer: writer,
   );
-  buildLog.onLog = onLog;
-  if (assumeTty != null) buildLog.assumeTty = assumeTty;
-  buildLog.verbose = verbose;
+  buildLog.configuration = buildLog.configuration.rebuild((b) {
+    b.verbose = verbose;
+    b.onLog = onLog;
+  });
   var options = await BuildOptions.create(
     deleteFilesByDefault: deleteFilesByDefault,
     packageGraph: packageGraph,

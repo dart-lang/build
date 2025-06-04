@@ -1,0 +1,24 @@
+// Copyright (c) 2025, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+import 'package:built_value/built_value.dart';
+import 'package:logging/logging.dart';
+
+part 'build_log_configuration.g.dart';
+
+abstract class BuildLogConfiguration
+    implements Built<BuildLogConfiguration, BuildLogConfigurationBuilder> {
+  /// Whether info from builders is displayed.
+  bool get verbose;
+
+  /// Optionally, a callback that will receive all log messages.
+  ///
+  /// If set, normal output is turned off.
+  void Function(LogRecord)? get onLog;
+
+  /// Default configuration.
+  factory BuildLogConfiguration() =>
+      _$BuildLogConfiguration._(verbose: false, onLog: null);
+  BuildLogConfiguration._();
+}

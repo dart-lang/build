@@ -13,6 +13,7 @@ import 'package:build/src/internal.dart';
 import 'package:logging/logging.dart';
 
 import 'ansi_buffer.dart';
+import 'build_log_configuration.dart';
 import 'build_log_logger.dart';
 import 'log_display.dart';
 
@@ -70,6 +71,8 @@ class BuildLog {
   static final String successPattern = 'success';
   static final String failurePattern = 'failure';
 
+  BuildLogConfiguration _configuration = BuildLogConfiguration();
+
   late final LogDisplay _display;
   final Stopwatch _stopwatch = Stopwatch()..start();
   // ignore: unused_field
@@ -89,6 +92,12 @@ class BuildLog {
   BuildType buildType = BuildType.clean;
   int? assetGraphSize;
 
+  BuildLogConfiguration get configuration => _configuration;
+  set configuration(BuildLogConfiguration configuration) {
+    _configuration = configuration;
+    _display.onLog = _configuration.onLog;
+  }
+
   void reset() {
     _display.displayedLines = 0;
     _stopwatch.reset();
@@ -98,8 +107,8 @@ class BuildLog {
     _attributedDuration = Duration.zero;
     again = false;
     buildResult = null;
-    assumeTty = false;
-    verbose = false;
+
+    configuration = BuildLogConfiguration();
   }
 
   /// Runs [fn] in an error handling [Zone].
@@ -153,15 +162,6 @@ class BuildLog {
   BuildLog._() {
     _display = LogDisplay();
   }
-
-  set onLog(void Function(LogRecord)? onLog) {
-    _display.onLog = onLog;
-  }
-
-  void Function(LogRecord)? get onLog => _display.onLog;
-
-  bool assumeTty = false;
-  bool verbose = false;
 
   void start(BuildLogMode mode) {
     _display.severeToStderr = mode == BuildLogMode.daemon;
@@ -252,7 +252,7 @@ class BuildLog {
       ], hangingIndent: indent);
 
       if (buildResult == null) {
-        if (verbose && stage.infos.isNotEmpty) {
+        if (_configuration.verbose && stage.infos.isNotEmpty) {
           final infos = stage.infos.values.fold(
             0,
             (count, list) => count + list.length,
@@ -303,7 +303,7 @@ class BuildLog {
 
     if (buildResult != null) {
       for (final stage in _stagesByName.values) {
-        if (verbose) {
+        if (_configuration.verbose) {
           for (final stage in _stagesByName.values) {
             if (stage.infos.isNotEmpty) {
               for (final key in stage.warnings.keys) {
@@ -386,27 +386,29 @@ class BuildLog {
     return result;
   }
 
-  /// Runs [function] with [onLog] forwarding to [logger].
+  /// Runs [function] with [configuration] `onLog` forwarding to [logger].
   Future<T> runWithOutputToLogger<T>(
     Logger? logger,
     Future<T> Function() function,
   ) async {
-    final previousOnLog = onLog;
+    final previousOnLog = configuration.onLog;
     if (logger != null) {
-      onLog =
-          (record) => logger.log(
-            record.level,
-            record.message,
-            record.error,
-            record.stackTrace,
-            record.zone,
-          );
+      _configuration = configuration.rebuild((b) {
+        b.onLog =
+            (record) => logger.log(
+              record.level,
+              record.message,
+              record.error,
+              record.stackTrace,
+              record.zone,
+            );
+      });
     }
     try {
       return await function();
     } finally {
       if (logger != null) {
-        onLog = previousOnLog;
+        configuration = configuration.rebuild((b) => b..onLog = previousOnLog);
       }
     }
   }
@@ -708,7 +710,7 @@ class Stage {
   bool get hasLogOutput =>
       warnings.isNotEmpty ||
       errors.isNotEmpty ||
-      (buildLog.verbose && infos.isNotEmpty);
+      (buildLog.configuration.verbose && infos.isNotEmpty);
 
   String get renderAttributions {
     final result = StringBuffer();

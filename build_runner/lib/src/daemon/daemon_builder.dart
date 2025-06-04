@@ -236,10 +236,12 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       packageGraph,
       outputSymlinksOnly: daemonOptions.outputSymlinksOnly,
     );
-    buildLog.verbose = daemonOptions.verbose;
-    buildLog.onLog = (record) {
-      outputStreamController.add(ServerLog.fromLogRecord(record));
-    };
+    buildLog.configuration = buildLog.configuration.rebuild((b) {
+      b.verbose = daemonOptions.verbose;
+      b.onLog = (record) {
+        outputStreamController.add(ServerLog.fromLogRecord(record));
+      };
+    });
 
     var daemonEnvironment = environment.copyWith(
       writer: (environment.writer as ReaderWriter).copyWith(

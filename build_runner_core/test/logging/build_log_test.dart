@@ -138,7 +138,9 @@ void main() {
 
     test('build progress with builder info is on in verbose mode', () {
       buildLog.start(BuildLogMode.build);
-      buildLog.verbose = true;
+      buildLog.configuration = buildLog.configuration.rebuild((b) {
+        b.verbose = true;
+      });
 
       buildLog.builders({'builder1': 10, 'builder2': 15});
       buildLog.progress(Progress.build('builder1', 'lib/foo.dart'));
