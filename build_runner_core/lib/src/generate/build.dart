@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:build/build.dart';
 // ignore: implementation_imports
@@ -183,7 +184,11 @@ class Build {
       readerWriter,
       buildDirs,
     );
-    buildLog.buildDone(result.status == BuildStatus.success);
+    buildLog.buildDone(
+      result: result.status == BuildStatus.success,
+      outputs: result.outputs.length,
+      graphSize: File(assetGraphPath).lengthSync(),
+    );
     return result;
   }
 

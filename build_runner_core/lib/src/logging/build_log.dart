@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:build/build.dart'
     show SyntaxErrorInAssetException, UnresolvableAssetException;
@@ -11,7 +12,6 @@ import 'package:build/build.dart'
 import 'package:build/src/internal.dart';
 import 'package:logging/logging.dart';
 
-import '../../build_runner_core.dart';
 import 'ansi_buffer.dart';
 import 'build_log_logger.dart';
 import 'log_display.dart';
@@ -82,6 +82,7 @@ class BuildLog {
   bool again = false;
 
   bool? buildResult;
+  int? outputs;
   BuildType buildType = BuildType.clean;
   int? assetGraphSize;
 
@@ -164,12 +165,12 @@ class BuildLog {
     _mode = mode;
 
     if (mode == BuildLogMode.build) {
-      _stagesByName['setup'] = Stage.setup();
+      _stagesByName['build_runner setup'] = Stage.setup();
       progress(Progress.setup);
     } else if (mode == BuildLogMode.buildOfSeries) {
       _display.displayedLines = 0;
       _stagesByName.clear();
-      _stagesByName['setup'] = Stage.setup();
+      _stagesByName['build_runner setup'] = Stage.setup();
       progress(Progress.setup);
     }
   }
@@ -222,6 +223,12 @@ class BuildLog {
   List<String> render() {
     final result = AnsiBuffer();
 
+    final maxProgressWidth = _stagesByName.values
+        .where((value) => !value.isHidden)
+        .map((value) => value.maxProgressWidth)
+        .fold(0, max);
+    final indent = maxProgressWidth + 1;
+
     for (final entry in _stagesByName.entries) {
       final stage = entry.value;
 
@@ -229,15 +236,17 @@ class BuildLog {
         continue;
       }
 
+      final attributions = stage.renderAttributions;
+
       result.writeLine([
+        stage.renderProgress.padLeft(maxProgressWidth),
+        ' ',
         AnsiBuffer.bold,
-        if (stage.name == 'setup') ...['build_runner '],
         stage.name,
         AnsiBuffer.reset,
-        ', ',
-        stage.renderProgress,
         if (stage.note != null) ', ${stage.note}',
-      ], hangingIndent: 2);
+        if (attributions.isNotEmpty) ', [$attributions]',
+      ], hangingIndent: indent);
 
       if (buildResult == null) {
         if (verbose && stage.infos.isNotEmpty) {
@@ -251,8 +260,8 @@ class BuildLog {
             'info',
             if (key != null) ', $key',
             if (infos > 1) ', +${infos - 1}',
-          ]);
-          result.writeLine([value], indent: 2);
+          ], indent: indent);
+          result.writeLine([value], indent: indent + 2);
         }
 
         if (stage.warnings.isNotEmpty) {
@@ -266,8 +275,8 @@ class BuildLog {
             'warning',
             if (key != null) ', $key',
             if (warnings > 1) ', +${warnings - 1}',
-          ]);
-          result.writeLine([value], indent: 2);
+          ], indent: indent);
+          result.writeLine([value], indent: indent + 2);
         }
 
         if (stage.errors.isNotEmpty) {
@@ -281,13 +290,13 @@ class BuildLog {
             'error',
             if (key != null) ', $key',
             if (errors > 1) ', +${errors - 1}',
-          ]);
-          result.writeLine([value], indent: 2);
+          ], indent: indent);
+          result.writeLine([value], indent: indent + 2);
         }
       }
     }
 
-    result.writeLine(finalStatus);
+    result.writeLine(finalStatus, indent: indent);
 
     if (buildResult != null) {
       for (final stage in _stagesByName.values) {
@@ -297,10 +306,10 @@ class BuildLog {
               for (final key in stage.warnings.keys) {
                 for (final value in stage.infos[key]!) {
                   result.writeLine([
-                    '${stage.name}, info',
-                    if (key != null) ', $key',
-                  ], hangingIndent: 2);
-                  result.writeLine([value], indent: 2);
+                    '${stage.name} info',
+                    if (key != null) ' on $key',
+                  ], indent: indent);
+                  result.writeLine([value], indent: indent + 2);
                 }
               }
             }
@@ -310,10 +319,10 @@ class BuildLog {
           for (final key in stage.warnings.keys) {
             for (final value in stage.warnings[key]!) {
               result.writeLine([
-                '${stage.name}, warning',
-                if (key != null) ', $key',
-              ], hangingIndent: 2);
-              result.writeLine([value], indent: 2);
+                '${stage.name} warning',
+                if (key != null) ' on $key',
+              ], indent: indent);
+              result.writeLine([value], indent: indent + 2);
             }
           }
         }
@@ -321,10 +330,10 @@ class BuildLog {
           for (final key in stage.errors.keys) {
             for (final value in stage.errors[key]!) {
               result.writeLine([
-                '${stage.name}, error',
-                if (key != null) ', $key',
-              ], hangingIndent: 2);
-              result.writeLine([value], indent: 2);
+                '${stage.name} error',
+                if (key != null) ' on $key',
+              ], indent: indent);
+              result.writeLine([value], indent: indent + 2);
             }
           }
         }
@@ -361,16 +370,13 @@ class BuildLog {
             .map((stage) => stage.duration ?? Duration.zero)
             .reduce((a, b) => a + b),
       );
-      final filesOutput = '100';
-
-      final graphSize = File(assetGraphPath).lengthSync();
 
       result.addAll([
         ', $buildType,'
             ' '
-            'built $filesOutput file(s) in $totalTime,'
+            'wrote $outputs file(s) in $totalTime,'
             ' '
-            'asset graph is $graphSize bytes',
+            'asset graph is $assetGraphSize bytes',
       ]);
     }
 
@@ -446,7 +452,7 @@ class BuildLog {
       final length = entry.value;
       _stagesByName[name] = Stage(name: name, length: length);
     }
-    _stagesByName['cleanup'] = Stage.cleanup();
+    _stagesByName['build_runner cleanup'] = Stage.cleanup();
   }
 
   Stage stageNamed(String name) =>
@@ -488,8 +494,15 @@ class BuildLog {
   }
 
   // TODO(davidmorgan): move reset to start.
-  void buildDone(bool result) {
+  void buildDone({
+    required bool result,
+    required int outputs,
+    required int graphSize,
+  }) {
     buildResult = result;
+    this.outputs = outputs;
+    assetGraphSize = graphSize;
+
     final conclusion = finalStatus;
     progress(Progress.done);
     _display.display(
@@ -538,15 +551,16 @@ class BuildLog {
 
   // TODO: "run scoped"
   BuildLogLogger loggerForBuilderFactory(String name) =>
-      BuildLogLogger(stage: 'setup', note: name);
+      BuildLogLogger(stage: 'build_runner setup', note: name);
 
-  BuildLogLogger loggerForSetup() => BuildLogLogger(stage: 'setup');
+  BuildLogLogger loggerForSetup() =>
+      BuildLogLogger(stage: 'build_runner setup');
 
   BuildLogLogger loggerForStep(String stage, String note) =>
       BuildLogLogger(stage: stage, note: note);
 
   BuildLogLogger loggerForPostprocess(String note) =>
-      BuildLogLogger(stage: 'cleanup', note: note);
+      BuildLogLogger(stage: 'build_runner cleanup', note: note);
 
   String renderThrowable(
     Object? message, [
@@ -577,60 +591,64 @@ class BuildLog {
 }
 
 class Progress {
-  static final Progress setup = Progress('setup', 0);
+  static final Progress setup = Progress('build_runner setup', 0);
   static final Progress generateBuildScript = Progress(
-    'setup',
+    'build_runner setup',
     1,
     'generate build script',
   );
   static final Progress compileBuildScript = Progress(
-    'setup',
+    'build_runner setup',
     2,
     'compile build script',
   );
   static final Progress readAssetGraph = Progress(
-    'setup',
+    'build_runner setup',
     3,
     'read asset graph',
   );
   static final Progress checkForUpdates = Progress(
-    'setup',
+    'build_runner setup',
     4,
     'check for updates',
   );
   static final Progress newAssetGraph = Progress(
-    'setup',
+    'build_runner setup',
     5,
     'create asset graph',
   );
   static final Progress initialBuildCleanup = Progress(
-    'setup',
+    'build_runner setup',
     6,
     'initial build cleanup',
   );
   static final Progress updateAssetGraph = Progress(
-    'setup',
+    'build_runner setup',
     7,
     'update asset graph',
   );
 
-  static final Progress postbuild = Progress('cleanup', 0, 'postbuild');
+  static final Progress postbuild = Progress(
+    'build_runner cleanup',
+    0,
+    'postbuild',
+  );
   static final Progress writeAssetGraph = Progress(
-    'cleanup',
+    'build_runner cleanup',
     1,
     'write asset graph',
   );
   static final Progress writePerformance = Progress(
-    'cleanup',
+    'build_runner cleanup',
     2,
     'write performance log',
   );
   static final Progress writeOutputDirectory = Progress(
-    'cleanup',
+    'build_runner cleanup',
     3,
     'write output directory',
   );
-  static final Progress done = Progress('cleanup', 4, null);
+  static final Progress done = Progress('build_runner cleanup', 4, null);
 
   final String stage;
   final int? number;
@@ -651,8 +669,8 @@ class Stage {
   String? note;
 
   Stage({required this.name, required this.length});
-  factory Stage.setup() => Stage(name: 'setup', length: 8);
-  factory Stage.cleanup() => Stage(name: 'cleanup', length: 4);
+  factory Stage.setup() => Stage(name: 'build_runner setup', length: 8);
+  factory Stage.cleanup() => Stage(name: 'build_runner cleanup', length: 4);
 
   final Map<String?, List<String>> infos = {};
   final Map<String?, List<String>> warnings = {};
@@ -672,12 +690,16 @@ class Stage {
       );
     }
 
-    final renderedAttributions = renderAttributions;
-    if (renderedAttributions.isNotEmpty) {
-      result.write(', [$renderedAttributions]');
-    }
-
     return result.toString();
+  }
+
+  int get maxProgressWidth {
+    final progressWidth = '$length/$length in '.length;
+    final durationWidth =
+        duration == null
+            ? 3
+            : max(3, buildLog.renderDuration(duration!).length);
+    return progressWidth + durationWidth;
   }
 
   bool get hasLogOutput =>

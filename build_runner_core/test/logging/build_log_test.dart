@@ -204,7 +204,7 @@ void main() {
           .loggerForStep('builder2', 'lib/bar2.dart')
           .severe('Some other builder error.');
       buildLog.progress(Progress.done);
-      buildLog.buildDone(true);
+      buildLog.buildDone(result: true, outputs: 1, graphSize: 2);
 
       // TODO(davidmorgan): set and use root package.
       expect(
