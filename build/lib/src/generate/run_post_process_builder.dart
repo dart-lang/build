@@ -25,7 +25,7 @@ Future<void> runPostProcessBuilder(
   required void Function(AssetId) addAsset,
   required void Function(AssetId) deleteAsset,
 }) async {
-  await buildLog.scopeLogAsync(() async {
+  await BuildLogLogger.scopeLogAsync(() async {
     var buildStep = postProcessBuildStep(
       inputId,
       reader,

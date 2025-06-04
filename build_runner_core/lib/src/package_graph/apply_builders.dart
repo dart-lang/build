@@ -12,6 +12,7 @@ import '../generate/build_phases.dart';
 import '../generate/exceptions.dart';
 import '../generate/phase.dart';
 import '../logging/build_log.dart';
+import '../logging/build_log_logger.dart';
 import '../validation/config_validation.dart';
 import 'package_graph.dart';
 import 'target_graph.dart';
@@ -192,7 +193,7 @@ class BuilderApplication {
               );
             }
 
-            final builder = buildLog.scopeLogSync(
+            final builder = BuildLogLogger.scopeLogSync(
               () => builderFactory(optionsWithDefaults),
               buildLog.loggerForBuilderFactory(builderKey),
             );
@@ -249,7 +250,7 @@ class BuilderApplication {
         );
       }
 
-      final builder = buildLog.scopeLogSync(
+      final builder = BuildLogLogger.scopeLogSync(
         () => builderFactory(optionsWithDefaults),
         buildLog.loggerForBuilderFactory(builderKey),
       );

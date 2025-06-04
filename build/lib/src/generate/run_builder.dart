@@ -103,7 +103,7 @@ Future<void> runBuilder(
     }
   }
 
-  await buildLog.scopeLogAsync(
+  await BuildLogLogger.scopeLogAsync(
     () => Future.wait(inputs.map(buildForInput)),
     logger,
   );

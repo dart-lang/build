@@ -25,7 +25,7 @@ import 'package:matcher/matcher.dart';
 Stream<LogRecord> recordLogs(dynamic Function() run, {String name = ''}) {
   final logger = Logger(name);
   Timer.run(() async {
-    await buildLog.scopeLogAsync(() => Future.value(run()), logger);
+    await BuildLogLogger.scopeLogAsync(() => Future.value(run()), logger);
     logger.clearListeners();
   });
   return logger.onRecord;
