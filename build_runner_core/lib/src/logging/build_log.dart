@@ -13,6 +13,7 @@ import 'package:logging/logging.dart';
 import 'ansi_buffer.dart';
 import 'build_log_configuration.dart';
 import 'build_log_logger.dart';
+import 'build_log_stage.dart';
 import 'log_display.dart';
 
 final BuildLog buildLog = BuildLog._();
@@ -469,8 +470,10 @@ class BuildLog {
     _stagesByName['setup'] = Stage.setup();*/
   }
 
-  Future<T> attributeAsync<T>(
-    Attribution attribution,
+  /// Runs [function] adding the time spent to the measure of the specified
+  /// [activity] of the currently-running [Stage].
+  Future<T> runActivityAsync<T>(
+    StageActivity activity,
     Future<T> Function() function,
   ) async {
     final start = _stopwatch.elapsed;
@@ -482,13 +485,15 @@ class BuildLog {
       final thisAttributedDuration =
           end - start - _attributedDuration + startAttributionDuration;
       _attributedDuration += thisAttributedDuration;
-      _currentStage.attributions[attribution] =
-          (_currentStage.attributions[attribution] ?? Duration.zero) +
+      _currentStage.attributions[activity] =
+          (_currentStage.attributions[activity] ?? Duration.zero) +
           thisAttributedDuration;
     }
   }
 
-  T attribute<T>(Attribution attribution, T Function() function) {
+  /// Runs [function] adding the time spent to the measure of the specified
+  /// [activity] of the currently-running [Stage].
+  T runActivity<T>(StageActivity activity, T Function() function) {
     final start = _stopwatch.elapsed;
     final startAttributionDuration = _attributedDuration;
     try {
@@ -498,8 +503,8 @@ class BuildLog {
       final thisAttributedDuration =
           end - start - _attributedDuration + startAttributionDuration;
       _attributedDuration += thisAttributedDuration;
-      _currentStage.attributions[attribution] =
-          (_currentStage.attributions[attribution] ?? Duration.zero) +
+      _currentStage.attributions[activity] =
+          (_currentStage.attributions[activity] ?? Duration.zero) +
           thisAttributedDuration;
     }
   }
@@ -612,81 +617,6 @@ class Progress {
   Progress(this.stage, this.number, [this.note]);
 
   Progress.build(String builder, this.note) : stage = builder, number = null;
-}
-
-class Stage {
-  final String name;
-  final int length;
-
-  final Map<Attribution, Duration> attributions = {};
-  Duration? duration;
-  int? progress;
-  String? note;
-
-  Stage({required this.name, required this.length});
-  factory Stage.setup() => Stage(name: 'build_runner setup', length: 8);
-  factory Stage.cleanup() => Stage(name: 'build_runner cleanup', length: 4);
-
-  final Map<String?, List<String>> infos = {};
-  final Map<String?, List<String>> warnings = {};
-  final Map<String?, List<String>> errors = {};
-
-  bool get isHidden => length == 0 && !hasLogOutput;
-
-  bool get isInProgress => progress != null && progress! < length;
-
-  String get renderProgress {
-    final result = StringBuffer('${progress ?? 0}/$length');
-
-    if (duration != null) {
-      result.write(
-        '${AnsiBuffer.nbsp}in${AnsiBuffer.nbsp}'
-        '${buildLog.renderDuration(duration!)}',
-      );
-    }
-
-    return result.toString();
-  }
-
-  int get maxProgressWidth {
-    final progressWidth = '$length/$length in '.length;
-    final durationWidth =
-        duration == null
-            ? 3
-            : max(3, buildLog.renderDuration(duration!).length);
-    return progressWidth + durationWidth;
-  }
-
-  bool get hasLogOutput =>
-      warnings.isNotEmpty ||
-      errors.isNotEmpty ||
-      (buildLog.configuration.verbose && infos.isNotEmpty);
-
-  String get renderAttributions {
-    final result = StringBuffer();
-    final entries = attributions.entries.toList();
-    entries.sort((a, b) => b.value.compareTo(a.value));
-    for (final entry in entries) {
-      if (entry.value.inMilliseconds < 1000) continue;
-      if (result.isNotEmpty) result.write(', ');
-      result.write(
-        '${buildLog.renderDuration(entry.value)}${AnsiBuffer.nbsp}${entry.key}',
-      );
-    }
-    return result.toString();
-  }
-}
-
-extension type Attribution(String name) {
-  static final Attribution analyze = Attribution._('analyzing');
-  static final Attribution build = Attribution._('building');
-  static final Attribution track = Attribution._('tracking');
-  static final Attribution resolve = Attribution._('resolving');
-  static final Attribution read = Attribution._('reading');
-  static final Attribution write = Attribution._('writing');
-
-  Attribution.optionalBuilder(this.name);
-  Attribution._(this.name);
 }
 
 enum BuildType {

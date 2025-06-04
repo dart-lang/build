@@ -15,6 +15,7 @@ import 'package:watcher/watcher.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../logging/build_log.dart';
+import '../logging/build_log_stage.dart';
 import '../package_graph/target_graph.dart';
 import '../util/constants.dart';
 
@@ -48,8 +49,8 @@ class AssetTracker {
     final targets = Stream<TargetNode>.fromIterable(
       _targetGraph.allModules.values,
     );
-    return buildLog.attribute(
-      Attribution.read,
+    return buildLog.runActivity(
+      StageActivity.read,
       () => targets.asyncExpand(_listAssetIds).toSet(),
     );
   }

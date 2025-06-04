@@ -657,7 +657,7 @@ Future<String> packagePath(String package) async {
   return p.dirname(p.fromUri(libRoot));
 }
 
-/// Wraps [pool] so accesses are attributed as [Attribution.analyze].
+/// Wraps [pool] so accesses are attributed as [StageActivity.analyze].
 class AttributingPool {
   final Pool pool;
 
@@ -665,7 +665,7 @@ class AttributingPool {
 
   Future<T> withResource<T>(Future<T> Function() function) async {
     return pool.withResource(
-      () => buildLog.attributeAsync(Attribution.analyze, function),
+      () => buildLog.runActivityAsync(StageActivity.analyze, function),
     );
   }
 }

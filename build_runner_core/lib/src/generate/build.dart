@@ -24,6 +24,7 @@ import '../asset_graph/post_process_build_step_id.dart';
 import '../changes/asset_updates.dart';
 import '../environment/build_environment.dart';
 import '../logging/build_log.dart';
+import '../logging/build_log_stage.dart';
 import '../logging/log_renderer.dart';
 import '../performance_tracking/performance_tracking_resolvers.dart';
 import '../util/build_dirs.dart';
@@ -454,8 +455,8 @@ class Build {
       final primaryInput = node.generatedNodeConfiguration!.primaryInput;
       await lazyPhases.putIfAbsent('$phaseNumber|$primaryInput', () async {
         final phase = buildPhases.inBuildPhases[nodeConfiguration.phaseNumber];
-        return buildLog.attributeAsync(
-          Attribution.optionalBuilder(phase.builderLabel),
+        return buildLog.runActivityAsync(
+          StageActivity.optionalBuilder(phase.builderLabel),
           () => _buildForPrimaryInput(
             primaryInput: primaryInput,
             phaseNumber: phaseNumber,
@@ -530,8 +531,8 @@ class Build {
         inBuildPhaseDisplayNames[phaseNumber],
         renderer.id(primaryInput),
       );
-      await buildLog.attribute(
-        Attribution.build,
+      await buildLog.runActivity(
+        StageActivity.build,
         () => tracker.trackStage(
           'Build',
           () => runBuilder(
@@ -553,8 +554,8 @@ class Build {
 
       // Update the state for all the `builderOutputs` nodes based on what was
       // read and written.
-      await buildLog.attributeAsync(
-        Attribution.track,
+      await buildLog.runActivityAsync(
+        StageActivity.track,
         () => tracker.trackStage(
           'Finalize',
           () => _setOutputsState(
@@ -755,7 +756,7 @@ class Build {
     Iterable<AssetId> outputs,
     AssetReader reader,
   ) async {
-    return await buildLog.attributeAsync(Attribution.track, () async {
+    return await buildLog.runActivityAsync(StageActivity.track, () async {
       // Update state for primary input if needed.
       var primaryInputNode = assetGraph.get(primaryInput)!;
       if (primaryInputNode.type == NodeType.generated) {
