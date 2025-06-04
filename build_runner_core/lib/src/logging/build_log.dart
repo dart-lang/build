@@ -67,6 +67,9 @@ enum BuildLogMode { simple, build, buildOfSeries, watch, daemon }
 ///  - By default, only builder logs of level `WARNING` and above are displayed.
 ///    The `verbose` flag will show all builder logs.
 class BuildLog {
+  static final String successPattern = 'success';
+  static final String failurePattern = 'failure';
+
   late final LogDisplay _display;
   final Stopwatch _stopwatch = Stopwatch()..start();
   // ignore: unused_field
