@@ -338,8 +338,12 @@ class BuildLog {
         ' in $totalTime.',
       ]);
 
-      // TODO: if more output.
-      result.writeLine([]);
+      var displayedEmptyLine = false;
+      void maybeEmptyLine() {
+        if (displayedEmptyLine) return;
+        result.writeLine([]);
+        displayedEmptyLine = true;
+      }
 
       for (final stage in _stagesByName.values) {
         if (_configuration.verbose) {
@@ -347,6 +351,7 @@ class BuildLog {
             if (stage.infos.isNotEmpty) {
               for (final key in stage.warnings.keys) {
                 for (final value in stage.infos[key]!) {
+                  maybeEmptyLine();
                   result.writeLine([
                     '${stage.name} info',
                     if (key != null) ' on $key',
@@ -360,6 +365,7 @@ class BuildLog {
         if (stage.warnings.isNotEmpty) {
           for (final key in stage.warnings.keys) {
             for (final value in stage.warnings[key]!) {
+              maybeEmptyLine();
               result.writeLine([
                 '${stage.name} warning',
                 if (key != null) ' on $key',
@@ -371,6 +377,7 @@ class BuildLog {
         if (stage.errors.isNotEmpty) {
           for (final key in stage.errors.keys) {
             for (final value in stage.errors[key]!) {
+              maybeEmptyLine();
               result.writeLine([
                 '${stage.name} error',
                 if (key != null) ' on $key',
