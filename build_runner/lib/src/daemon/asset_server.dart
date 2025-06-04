@@ -39,7 +39,7 @@ class AssetServer {
     var pipeline = const Pipeline();
     if (options.logRequests) {
       pipeline = pipeline.addMiddleware(
-        logRequests(logger: (message, isError) => buildLog.fine(message)),
+        logRequests(logger: (message, isError) => buildLog.info(message)),
       );
     }
 

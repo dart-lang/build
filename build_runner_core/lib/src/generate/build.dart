@@ -21,7 +21,6 @@ import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../asset_graph/optional_output_tracker.dart';
 import '../asset_graph/post_process_build_step_id.dart';
-import '../changes/asset_updates.dart';
 import '../environment/build_environment.dart';
 import '../logging/build_log.dart';
 import '../logging/build_log_stage.dart';
@@ -133,9 +132,6 @@ class Build {
                : AssetDepsLoader.fromDeps(assetGraph.previousPhasedAssetDeps!);
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
-    if (logFine) {
-      buildLog.fine(AssetUpdates.from(updates).render(renderer));
-    }
     var result = await _safeBuild(updates);
     var optionalOutputTracker = OptionalOutputTracker(
       assetGraph,
@@ -778,12 +774,6 @@ class Build {
       // If the primary input has been deleted, the build is skipped.
       if (deletedAssets.contains(primaryInput)) {
         if (primaryInputNode.type == NodeType.missingSource) {
-          if (logFine) {
-            buildLog.fine(
-              'Skip ${renderer.build(primaryInput, outputs)} because '
-              '$primaryInput was deleted.',
-            );
-          }
           _markOutputsSkipped(outputs);
           return false;
         }
@@ -793,12 +783,6 @@ class Build {
       if (primaryInputNode.type == NodeType.generated) {
         // If the primary input is failed, this build is also failed.
         if (primaryInputNode.generatedNodeState!.result == false) {
-          if (logFine) {
-            buildLog.fine(
-              'Skip ${renderer.build(primaryInput, outputs)} because '
-              '$primaryInput is a generated file that failed.',
-            );
-          }
           await _markOutputsTransitivelyFailed(outputs);
           return false;
         }
@@ -806,58 +790,22 @@ class Build {
         // If the primary input succeeded but was not output, this build is
         // skipped.
         if (!primaryInputNode.wasOutput) {
-          if (logFine) {
-            buildLog.fine(
-              'Skip ${renderer.build(primaryInput, outputs)} because '
-              '$primaryInput is a generated file that was not output.',
-            );
-          }
           _markOutputsSkipped(outputs);
           return false;
         }
       }
 
-      if (assetGraph.cleanBuild) {
-        if (logFine) {
-          buildLog.fine(
-            'Build ${renderer.build(primaryInput, outputs)} because this is a '
-            'clean build.',
-          );
-        }
-        return true;
-      }
+      if (assetGraph.cleanBuild) return true;
 
       if (assetGraph.previousInBuildPhasesOptionsDigests![phaseNumber] !=
           assetGraph.inBuildPhasesOptionsDigests[phaseNumber]) {
-        if (logFine) {
-          buildLog.fine(
-            'Build ${renderer.build(primaryInput, outputs)} because builder '
-            'options changed.',
-          );
-        }
         return true;
       }
 
-      if (newPrimaryInputs.contains(primaryInput)) {
-        if (logFine) {
-          buildLog.fine(
-            'Build ${renderer.build(primaryInput, outputs)} because '
-            '$primaryInput was created.',
-          );
-        }
-        return true;
-      }
+      if (newPrimaryInputs.contains(primaryInput)) return true;
 
       for (var output in outputs) {
-        if (deletedAssets.contains(output)) {
-          if (logFine) {
-            buildLog.fine(
-              'Build ${renderer.build(primaryInput, outputs)} because '
-              '${renderer.id(output)} was deleted.',
-            );
-          }
-          return true;
-        }
+        if (deletedAssets.contains(output)) return true;
       }
 
       // Build results are the same across outputs, so just check the first
@@ -865,15 +813,7 @@ class Build {
       var firstOutput = assetGraph.get(outputs.first)!;
       final firstOutputState = firstOutput.generatedNodeState!;
 
-      if (firstOutputState.result == null) {
-        if (logFine) {
-          buildLog.fine(
-            'Build ${renderer.build(primaryInput, outputs)} because it was '
-            'skipped as optional but is now needed.',
-          );
-        }
-        return true;
-      }
+      if (firstOutputState.result == null) return true;
 
       // Check for changes to any inputs.
       final inputs = firstOutputState.inputs;
@@ -883,40 +823,7 @@ class Build {
           input: input,
         );
 
-        if (changed) {
-          if (logFine) {
-            final inputNode = assetGraph.get(input)!;
-            switch (inputNode.type) {
-              case NodeType.generated:
-                buildLog.fine(
-                  'Build ${renderer.build(primaryInput, outputs)} because '
-                  '${renderer.id(input)} was built and changed.',
-                );
-
-              case NodeType.glob:
-                buildLog.fine(
-                  'Build ${renderer.build(primaryInput, outputs)} because '
-                  '${inputNode.globNodeConfiguration!.glob} matches changed.',
-                );
-
-              case NodeType.source:
-                buildLog.fine(
-                  'Build ${renderer.build(primaryInput, outputs)} because '
-                  '${renderer.id(input)} changed.',
-                );
-
-              case NodeType.missingSource:
-                buildLog.fine(
-                  'Build ${renderer.build(primaryInput, outputs)} because '
-                  '${renderer.id(input)} was deleted.',
-                );
-
-              default:
-                throw StateError(inputNode.type.toString());
-            }
-          }
-          return true;
-        }
+        if (changed) return true;
       }
 
       for (final graphId in firstOutputState.resolverEntrypoints) {
@@ -924,12 +831,6 @@ class Build {
           phaseNumber: phaseNumber,
           entrypointId: graphId,
         )) {
-          if (logFine) {
-            buildLog.fine(
-              'Build ${renderer.build(primaryInput, outputs)} because '
-              'resolved source changed.',
-            );
-          }
           return true;
         }
       }

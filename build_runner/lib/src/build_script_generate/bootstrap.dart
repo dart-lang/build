@@ -221,8 +221,6 @@ Future<bool> _createKernelIfNeeded(
         if (hadErrors) {
           // Always show compiler output if there were errors
           buildLog.warning(logOutput);
-        } else {
-          buildLog.fine(logOutput);
         }
       }
     } finally {
@@ -288,13 +286,11 @@ Future<bool> _checkImportantPackageDepsAndExperiments(
       .join('\n');
 
   if (!_previousLocationsFile.existsSync()) {
-    buildLog.fine('Core package locations file does not exist');
     _previousLocationsFile.writeAsStringSync(fileContents);
     return false;
   }
 
   if (fileContents != _previousLocationsFile.readAsStringSync()) {
-    buildLog.fine('Core packages locations have changed');
     _previousLocationsFile.writeAsStringSync(fileContents);
     return false;
   }

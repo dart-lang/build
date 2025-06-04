@@ -268,9 +268,7 @@ Future<AssetId> _writeAsset(
         await _writeAsBytes(outputDir, outputId, await reader.readAsBytes(id));
       }
     } on AssetNotFoundException catch (e) {
-      if (p.basename(id.path).startsWith('.')) {
-        buildLog.fine('Skipping missing hidden file ${id.path}');
-      } else {
+      if (!p.basename(id.path).startsWith('.')) {
         buildLog.severe(
           'Missing asset ${e.assetId}, it may have been deleted during the '
           'build. Please try rebuilding and if you continue to see the '

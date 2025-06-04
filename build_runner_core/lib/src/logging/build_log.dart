@@ -379,11 +379,6 @@ class BuildLog {
     );
   }
 
-  // TODO(davidmorgan): do we need this? How is it configured?
-  void fine(String message, {String? stage, String? note}) {
-    _display.display(makeEntry(severity: LineSeverity.fine, line: message));
-  }
-
   void info(String message, {String? stage, String? note}) {
     ((_stagesByName[stage] ?? _currentStage).infos[note] ??= []).add(message);
     _display.display(makeEntry(severity: LineSeverity.info, line: message));
