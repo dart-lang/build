@@ -5,6 +5,7 @@
 import 'ansi_buffer.dart';
 import 'build_log.dart';
 
+// TODO(davidmorgan): refactor overhead, hidden, ...
 class Stage {
   final String name;
   final int length;
@@ -23,6 +24,7 @@ class Stage {
   factory Stage.setup() => Stage(name: 'build_runner setup', length: 8);
   factory Stage.cleanup() => Stage(name: 'build_runner cleanup', length: 4);
 
+  // TODO(davidmorgan): refactor.
   final Map<String?, List<String>> infos = {};
   final Map<String?, List<String>> warnings = {};
   final Map<String?, List<String>> errors = {};

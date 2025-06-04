@@ -42,7 +42,6 @@ class Build {
   final BuildEnvironment environment;
   final BuildOptions options;
   final BuildPhases buildPhases;
-  final List<String> inBuildPhaseDisplayNames = [];
   final Set<BuildDirectory> buildDirs;
   final Set<BuildFilter> buildFilters;
 
@@ -293,16 +292,13 @@ class Build {
       final outputs = <AssetId>[];
 
       final samePhaseNameCounts = <String, int>{};
-      inBuildPhaseDisplayNames.addAll(
-        Iterable.generate(buildPhases.inBuildPhases.length, (_) => ''),
-      );
       String namePhase(int phaseNumber) {
         final phase = buildPhases.inBuildPhases[phaseNumber];
         final label = phase.builderLabel;
         final count =
             samePhaseNameCounts[label] = (samePhaseNameCounts[label] ?? 0) + 1;
         final result = '$label${count == 1 ? '' : '($count)'}';
-        inBuildPhaseDisplayNames[phaseNumber] = result;
+        buildLog.declarePhase(phase, result);
         return result;
       }
 
@@ -354,12 +350,7 @@ class Build {
             final outputs = <AssetId>[];
             for (var i = 0; i != primaryInputs.length; ++i) {
               final primaryInput = primaryInputs[i];
-              buildLog.progress(
-                Progress.build(
-                  inBuildPhaseDisplayNames[phaseNum],
-                  buildLog.renderId(primaryInput),
-                ),
-              );
+              buildLog.stepStarts(phase, primaryInput);
               outputs.addAll(
                 await _buildForPrimaryInput(
                   phaseNumber: phaseNum,
@@ -508,7 +499,7 @@ class Build {
           readerWriter,
         ),
       )) {
-        buildLog.stepSkipped(inBuildPhaseDisplayNames[phaseNumber]);
+        buildLog.stepSkipped(phase);
         return <AssetId>[];
       }
 
@@ -523,10 +514,7 @@ class Build {
         unusedAssets.addAll(assets);
       }
 
-      final logger = buildLog.loggerForStep(
-        inBuildPhaseDisplayNames[phaseNumber],
-        primaryInput,
-      );
+      final logger = buildLog.loggerForPhase(phase, primaryInput);
       await buildLog.runActivity(
         StageActivity.build,
         () => tracker.trackStage(
@@ -566,7 +554,7 @@ class Build {
       );
 
       buildLog.stepRan(
-        inBuildPhaseDisplayNames[phaseNumber],
+        phase,
         anyOutputs: readerWriter.assetsWritten.isNotEmpty,
         anyChangedOutputs: readerWriter.assetsWritten.any(
           changedOutputs.contains,

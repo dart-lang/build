@@ -10,6 +10,7 @@ import 'package:build/build.dart'
     show AssetId, SyntaxErrorInAssetException, UnresolvableAssetException;
 import 'package:logging/logging.dart';
 
+import '../generate/phase.dart';
 import 'ansi_buffer.dart';
 import 'build_log_configuration.dart';
 import 'build_log_logger.dart';
@@ -70,6 +71,8 @@ class BuildLog {
   String loaded = '';
 
   Duration _attributedDuration = Duration.zero;
+
+  final Map<InBuildPhase, String> _phaseStageNames = Map.identity();
 
   bool? buildResult;
   int? outputs;
@@ -447,15 +450,22 @@ class BuildLog {
   Stage stageNamed(String name) =>
       _stagesByName[name] ??= Stage(name: name, length: 0);
 
-  void stepSkipped(String name) {
+  void stepStarts(InBuildPhase phase, AssetId id) {
+    final name = _phaseStageNames[phase]!;
+    progress(Progress.build(name, renderId(id)));
+  }
+
+  void stepSkipped(InBuildPhase phase) {
+    final name = _phaseStageNames[phase]!;
     stageNamed(name).skipped++;
   }
 
   void stepRan(
-    String name, {
+    InBuildPhase phase, {
     required bool anyOutputs,
     required bool anyChangedOutputs,
   }) {
+    final name = _phaseStageNames[phase]!;
     if (anyChangedOutputs) {
       stageNamed(name).builtNew++;
     } else if (anyOutputs) {
@@ -516,16 +526,21 @@ class BuildLog {
     _stagesByName['setup'] = Stage.setup();*/
   }
 
-  // TODO: "run scoped"
-  BuildLogLogger loggerForBuilderFactory(String name) =>
+  void declarePhase(InBuildPhase phase, String name) {
+    _phaseStageNames[phase] = name;
+  }
+
+  /// Creates a logger that logs to the [BuildLog] setup stage.
+  BuildLogLogger loggerForSetup(String name) =>
       BuildLogLogger(stage: 'build_runner setup', note: name);
 
-  BuildLogLogger loggerForSetup() =>
-      BuildLogLogger(stage: 'build_runner setup');
+  /// Creates a logger that logs to the [BuildLog] stage for [phase] for
+  /// [input].
+  BuildLogLogger loggerForPhase(InBuildPhase phase, AssetId input) =>
+      BuildLogLogger(stage: _phaseStageNames[phase], note: renderId(input));
 
-  BuildLogLogger loggerForStep(String stage, AssetId input) =>
-      BuildLogLogger(stage: stage, note: renderId(input));
-
+  /// Creates a logger that logs to the [BuildLog] cleanup stage for
+  /// postprocessing [input].
   BuildLogLogger loggerForPostprocess(AssetId input) =>
       BuildLogLogger(stage: 'build_runner cleanup', note: renderId(input));
 
