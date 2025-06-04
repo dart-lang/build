@@ -65,7 +65,7 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
         supportsIncrementalRebuilds = false;
         buildLog.warning(
           '$missing was not found in the asset graph, '
-          'incremental builds will not work.\n This probably means you '
+          'incremental builds will not work. This probably means you '
           'don\'t have your dependencies specified fully in your '
           'pubspec.yaml.',
         );

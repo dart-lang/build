@@ -206,7 +206,6 @@ Future<bool> _createKernelIfNeeded(
       packagesJson: (await Isolate.packageConfig)!.toFilePath(),
     );
 
-    var hadOutput = false;
     var hadErrors = false;
     buildLog.progress(Progress.compileBuildScript);
     try {
@@ -216,12 +215,8 @@ Future<bool> _createKernelIfNeeded(
       // Note: We're logging all output with a single log call to keep
       // annotated source spans intact.
       final logOutput = result.compilerOutputLines.join('\n');
-      if (logOutput.isNotEmpty) {
-        hadOutput = true;
-        if (hadErrors) {
-          // Always show compiler output if there were errors
-          buildLog.warning(logOutput);
-        }
+      if (logOutput.isNotEmpty && hadErrors) {
+        buildLog.warning(logOutput);
       }
     } finally {
       client.kill();
@@ -235,13 +230,6 @@ Future<bool> _createKernelIfNeeded(
     // are faster, but don't copy it over to the real location.
     if (!hadErrors) {
       await kernelCacheFile.rename(scriptKernelLocation);
-      if (hadOutput) {
-        buildLog.info(
-          'There was output on stdout while precompiling the build script; run '
-          'with `--verbose` to see it (you will need to run a `clean` first to '
-          're-generate it).\n',
-        );
-      }
     }
 
     if (!await kernelFile.exists()) {

@@ -74,7 +74,6 @@ class BuildLog {
   bool? buildResult;
   int? outputs;
   BuildType buildType = BuildType.clean;
-  int? assetGraphSize;
 
   BuildLogConfiguration get configuration => _configuration;
   set configuration(BuildLogConfiguration configuration) {
@@ -502,14 +501,9 @@ class BuildLog {
   }
 
   // TODO(davidmorgan): move reset to start.
-  void buildDone({
-    required bool result,
-    required int outputs,
-    required int graphSize,
-  }) {
+  void buildDone({required bool result, required int outputs}) {
     buildResult = result;
     this.outputs = outputs;
-    assetGraphSize = graphSize;
 
     final conclusion = finalStatus;
     progress(Progress.done);

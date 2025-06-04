@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:io';
+
 class AnsiBuffer {
   static const String nbsp = '\u00A0';
 
@@ -10,13 +12,13 @@ class AnsiBuffer {
   static const String red = '\x1B[31m';
   static const String green = '\x1B[32m';
 
-  final int width = 80;
   final List<String> lines = [];
 
   bool _isAnsi(String item) =>
       item == reset || item == bold || item == red || item == green;
 
   void writeLine(List<String> items, {int indent = 0, int? hangingIndent}) {
+    final width = stdout.hasTerminal ? stdout.terminalColumns : 80;
     hangingIndent ??= indent;
 
     final buffer = StringBuffer(' ' * indent);

@@ -218,7 +218,7 @@ class ServeHandler implements BuildState {
       buildLog.warning(
         'Requested a server for `$rootDir` but this directory '
         'has no assets in the build. You may need to add some sources or '
-        'include this directory in some target in your `build.yaml`',
+        'include this directory in some target in your `build.yaml`.',
       );
     }
   }

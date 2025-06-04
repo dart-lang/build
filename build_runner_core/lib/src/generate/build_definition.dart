@@ -101,10 +101,7 @@ class _Loader {
           !_options.skipBuildScriptCheck &&
           buildScriptUpdates.hasBeenUpdated(updates.keys.toSet());
       if (buildScriptUpdated) {
-        buildLog.warning(
-          'Invalidating asset graph due to build script update!',
-        );
-
+        buildLog.setBuildType(BuildType.incompatibleScript);
         var deletedSourceOutputs = await assetGraph.deleteOutputs(
           _options.packageGraph,
           _environment.writer,

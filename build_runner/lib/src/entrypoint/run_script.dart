@@ -153,7 +153,7 @@ class RunCommand extends BuildRunnerCommand {
       );
 
       if (result.status == BuildStatus.failure) {
-        buildLog.warning('Skipping script run due to build failure');
+        buildLog.warning('Skipping script run due to build failure.');
         return result.failureType?.exitCode ?? 1;
       }
 

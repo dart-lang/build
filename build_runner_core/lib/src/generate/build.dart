@@ -4,7 +4,6 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:build/build.dart';
 // ignore: implementation_imports
@@ -24,7 +23,6 @@ import '../asset_graph/post_process_build_step_id.dart';
 import '../environment/build_environment.dart';
 import '../logging/build_log.dart';
 import '../logging/build_log_stage.dart';
-import '../logging/log_renderer.dart';
 import '../performance_tracking/performance_tracking_resolvers.dart';
 import '../util/build_dirs.dart';
 import '../util/constants.dart';
@@ -57,9 +55,7 @@ class Build {
   final AssetDepsLoader? previousDepsLoader;
 
   // Logging.
-  final LogRenderer renderer;
   final BuildPerformanceTracker performanceTracker;
-  final bool logFine;
 
   // State.
   final AssetGraph assetGraph;
@@ -120,12 +116,10 @@ class Build {
     required this.deleteWriter,
     required this.resourceManager,
     required this.assetGraph,
-  }) : renderer = LogRenderer(rootPackageName: options.packageGraph.root.name),
-       performanceTracker =
+  }) : performanceTracker =
            options.trackPerformance
                ? BuildPerformanceTracker()
                : BuildPerformanceTracker.noOp(),
-       logFine = false,
        previousDepsLoader =
            assetGraph.previousPhasedAssetDeps == null
                ? null
@@ -190,7 +184,6 @@ class Build {
     buildLog.buildDone(
       result: result.status == BuildStatus.success,
       outputs: result.outputs.length,
-      graphSize: File(assetGraphPath).lengthSync(),
     );
     return result;
   }
