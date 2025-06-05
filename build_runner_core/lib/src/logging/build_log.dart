@@ -16,7 +16,6 @@ import 'build_log_activities.dart';
 import 'build_log_configuration.dart';
 import 'build_log_logger.dart';
 import 'build_log_messages.dart';
-import 'build_log_stage.dart';
 import 'log_display.dart';
 import 'phase_progress.dart';
 
@@ -69,9 +68,6 @@ class BuildLog {
   final Stopwatch _stopwatch = Stopwatch()..start();
   // ignore: unused_field
   BuildLogMode _mode = BuildLogMode.simple;
-
-  final Map<String, Stage> _stagesByName = {};
-  Stage _currentStage = Stage.setup();
 
   final Map<InBuildPhase, PhaseProgress> _phaseProgress = {};
   InBuildPhase? _currentPhase;
@@ -144,8 +140,6 @@ class BuildLog {
     _display.displayedLines = 0;
     _stopwatch.reset();
     _stopwatch.start();
-    _stagesByName.clear();
-    _currentStage = Stage.setup();
     buildResult = null;
 
     configuration = BuildLogConfiguration();
@@ -171,50 +165,12 @@ class BuildLog {
     return BuildLogEntry(lines: render(), message: line, severity: severity);
   }
 
-  List<String> _renderStage(Stage stage, {bool forLine = false}) {
-    var name = stage.name;
-    if (forLine && stage.note != null) {
-      name = '$name ${stage.note}';
-    }
-
-    final progress = stage.progress;
-    final length = stage.length;
-
-    final time =
-        stage.duration == null
-            ? '    '
-            : stage.duration!.inMilliseconds < 1000
-            ? '<1s'.padLeft(4)
-            : '${(stage.duration!.inMilliseconds / 1000).round()}s'.padLeft(4);
-
-    //////////
-
-    var attrs = <String>[];
-
-    if (progress != null && length != 0 && progress != length) {
-      var progressLine = '       $progress/$length';
-      if (stage.note != null) progressLine += ' ${stage.note}';
-      attrs.add(progressLine);
-    }
-
-    final entries = stage.attributions.entries.toList();
-    entries.sort((a, b) => b.value.compareTo(a.value));
-    for (final entry in entries) {
-      if (entry.value.inMilliseconds < 1000) continue;
-      final time = '${(entry.value.inMilliseconds / 1000).round()}s';
-
-      attrs.add('       ${entry.key} $time');
-    }
-
-    return ['$time $name', ...attrs];
-  }
-
   List<String> render() {
     final result = AnsiBuffer();
 
-    final maxProgressWidth = _stagesByName.values
+    final maxProgressWidth = _phaseProgress.values
         //.where((value) => !value.isHidden)
-        .map((value) => value.renderProgress.length)
+        .map((value) => renderDuration(value.duration).length)
         .followedBy([renderDuration(_totalDuration).length])
         .reduce(max);
     final indent = maxProgressWidth + 1;
@@ -357,19 +313,6 @@ class BuildLog {
     }
   }
 
-  void builders(Map<String, int> buildSteps) {
-    // print('declare: $names $buildSteps');
-    for (final entry in buildSteps.entries) {
-      final name = entry.key;
-      final length = entry.value;
-      _stagesByName[name] = Stage(name: name, length: length);
-    }
-    _stagesByName['build_runner cleanup'] = Stage.cleanup();
-  }
-
-  Stage stageNamed(String name) =>
-      _stagesByName[name] ??= Stage(name: name, length: 0);
-
   void startStep(InBuildPhase phase, AssetId id) {
     _phaseProgress[phase]!.nextInput = id;
     tick(phase: phase);
@@ -411,10 +354,7 @@ class BuildLog {
     }
 
     _display.display(
-      makeEntry(
-        severity: LineSeverity.info,
-        line: _renderStage(_currentStage, forLine: true).first,
-      ),
+      makeEntry(severity: LineSeverity.info, line: ''),
       // TODO: changed note?
       force: _currentPhase != previousPhase || buildResult != null,
     );

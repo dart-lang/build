@@ -5,7 +5,6 @@
 import '../generate/phase.dart';
 import 'ansi_buffer.dart';
 import 'build_log.dart';
-import 'build_log_stage.dart';
 
 class BuildLogActivities {
   final Stopwatch _stopwatch = Stopwatch()..start();
@@ -13,7 +12,7 @@ class BuildLogActivities {
   final Map<InBuildPhase?, Map<ActivityType, Duration>> _activities = {};
 
   /// Runs [function] adding the time spent to the measure of the specified
-  /// [activity] of the currently-running [Stage].
+  /// [activity] of the currently-running [InBuildPhase].
   Future<T> runActivityAsync<T>({
     required InBuildPhase? phase,
     required ActivityType activity,
