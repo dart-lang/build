@@ -53,7 +53,7 @@ class PackageGraphWatcher {
                 Object e,
                 StackTrace s,
               ) {
-                buildLog.severe(
+                buildLog.error(
                   buildLog.renderThrowable(
                     'Error from directory watcher for '
                     'package:${w.node.name}\n\n'

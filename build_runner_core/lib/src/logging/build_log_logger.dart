@@ -17,9 +17,10 @@ import 'build_log.dart';
 class BuildLogLogger implements Logger {
   final String? stage;
   final String? note;
+  final bool forBuilder;
   final List<String> errors = [];
 
-  BuildLogLogger({this.stage, this.note});
+  BuildLogLogger({this.stage, this.note, this.forBuilder = false});
 
   /// Runs [fn] in an error handling [Zone].
   ///
@@ -101,12 +102,17 @@ class BuildLogLogger implements Logger {
     );
 
     if (logLevel < Level.WARNING) {
-      buildLog.info(renderedMessage, stage: stage, note: note);
+      buildLog.info(
+        renderedMessage,
+        stage: stage,
+        substage: note,
+        fromBuilder: true,
+      );
     } else if (logLevel < Level.SEVERE) {
-      buildLog.warning(renderedMessage, stage: stage, note: note);
+      buildLog.warning(renderedMessage, stage: stage, substage: note);
     } else {
       errors.add(renderedMessage);
-      buildLog.severe(renderedMessage, stage: stage, note: note);
+      buildLog.error(renderedMessage, stage: stage, substage: note);
     }
   }
 

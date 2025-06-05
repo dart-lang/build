@@ -24,19 +24,6 @@ class Stage {
   factory Stage.setup() => Stage(name: 'build_runner setup', length: 8);
   factory Stage.cleanup() => Stage(name: 'build_runner cleanup', length: 4);
 
-  // TODO(davidmorgan): refactor.
-  final Map<String?, List<String>> infos = {};
-  final Map<String?, List<String>> warnings = {};
-  final Map<String?, List<String>> errors = {};
-
-  bool get isHidden {
-    if (length == 0 && !hasLogOutput) return true;
-    if (name != 'build_runner setup' && name != 'build_runner cleanup') {
-      return false;
-    }
-    return (progress == null || progress == length) && !hasLogOutput;
-  }
-
   bool get isInProgress => progress != null && progress! < length;
 
   String get renderProgress {
@@ -44,10 +31,10 @@ class Stage {
     return buildLog.renderDuration(duration!);
   }
 
-  bool get hasLogOutput =>
+  /*bool get hasLogOutput =>
       warnings.isNotEmpty ||
       errors.isNotEmpty ||
-      (buildLog.configuration.verbose && infos.isNotEmpty);
+      (buildLog.configuration.verbose && infos.isNotEmpty);*/
 
   String get renderAttributions {
     final result = StringBuffer();

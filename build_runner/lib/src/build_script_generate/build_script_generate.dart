@@ -59,7 +59,7 @@ ${library.accept(emitter)}
 ''',
     );
   } on FormatterException {
-    buildLog.severe(
+    buildLog.error(
       'Generated build script could not be parsed.\n'
       'This is likely caused by a misconfigured builder definition.',
     );

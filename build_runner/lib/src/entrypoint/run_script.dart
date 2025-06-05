@@ -90,8 +90,8 @@ class RunCommand extends BuildRunnerCommand {
     // Ensure that the user passed the name of a file to run.
     if (argResults.rest.isEmpty) {
       buildLog
-        ..severe('Must specify an executable to run.')
-        ..severe(usage);
+        ..error('Must specify an executable to run.')
+        ..error(usage);
       return ExitCode.usage.code;
     }
 
@@ -100,7 +100,7 @@ class RunCommand extends BuildRunnerCommand {
 
     // Ensure the extension is .dart.
     if (p.extension(scriptName) != '.dart') {
-      buildLog.severe(
+      buildLog.error(
         '$scriptName is not a valid Dart file '
         'and cannot be run in the VM.',
       );
@@ -178,7 +178,7 @@ class RunCommand extends BuildRunnerCommand {
         e = e as List<Object?>;
         onExit?.close();
         onError?.close();
-        buildLog.severe(
+        buildLog.error(
           buildLog.renderThrowable(
             'Unhandled error from script: $scriptName',
             e[0],
@@ -200,7 +200,7 @@ class RunCommand extends BuildRunnerCommand {
 
       return await exitCodeCompleter.future;
     } on IsolateSpawnException catch (e) {
-      buildLog.severe(
+      buildLog.error(
         buildLog.renderThrowable(
           'Could not spawn isolate. Ensure that your file is in a valid '
           'directory (i.e. "bin", "benchmark", "example", "test", "tool").',

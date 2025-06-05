@@ -118,7 +118,7 @@ Future<int> _generateAndRun(
       succeeded = true;
     } on IsolateSpawnException catch (e) {
       if (tryCount > 1) {
-        buildLog.severe(
+        buildLog.error(
           buildLog.renderThrowable(
             'Failed to spawn build script after retry. '
             'This is likely due to a misconfigured builder definition. '
@@ -233,7 +233,7 @@ Future<bool> _createKernelIfNeeded(
     }
 
     if (!await kernelFile.exists()) {
-      buildLog.severe('''
+      buildLog.error('''
 Failed to precompile build script $scriptLocation.
 This is likely caused by a misconfigured builder definition.
 ''');

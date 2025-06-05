@@ -158,7 +158,7 @@ class Build {
               failure.generatedNodeConfiguration!.primaryInput,
               options.packageGraph.root.name,
             );
-            buildLog.severe('$name (cached)\n$error');
+            buildLog.error('$name (cached)\n$error');
           }
         }
         result = BuildResult(
@@ -274,7 +274,7 @@ class Build {
       },
       (e, st) {
         if (!done.isCompleted) {
-          buildLog.severe(
+          buildLog.error(
             buildLog.renderThrowable('Unhandled build failure!', e, st),
           );
           done.complete(BuildResult(BuildStatus.failure, []));

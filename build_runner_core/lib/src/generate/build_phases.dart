@@ -98,7 +98,7 @@ class BuildPhases {
       if (action.package == root) continue;
       // This should happen only with a manual build script since the build
       // script generation filters these out.
-      buildLog.severe(
+      buildLog.error(
         'A build phase (${action.builderLabel}) is attempting '
         'to operate on package "${action.package}", but the build script '
         'is located in package "$root". It\'s not valid to attempt to '

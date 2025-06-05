@@ -135,7 +135,7 @@ class _Loader {
           _environment.reader,
         );
       } on DuplicateAssetNodeException catch (e) {
-        buildLog.severe(e.toString());
+        buildLog.error(e.toString());
         throw const CannotBuildException();
       }
       buildScriptUpdates = await BuildScriptUpdates.create(
@@ -247,7 +247,7 @@ class _Loader {
             await Future.wait(conflictingAssets.map((id) => writer.delete(id)));
             break;
           case 1:
-            buildLog.severe(
+            buildLog.error(
               'The build will not be able to contiue until the '
               'conflicting assets are removed or the Builders which may '
               'output them are disabled. The outputs are: '
@@ -260,7 +260,7 @@ class _Loader {
             await Future(() {});
         }
       } on NonInteractiveBuildException {
-        buildLog.severe(
+        buildLog.error(
           'Conflicting outputs were detected and the build '
           'is unable to prompt for permission to remove them. '
           'These outputs must be removed manually or the build can be '

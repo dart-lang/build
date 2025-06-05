@@ -318,7 +318,7 @@ Future<BuildPhases> createBuildPhases(
     targetGraph.allModules.values,
     (node) => node.target.dependencies.map((key) {
       if (!targetGraph.allModules.containsKey(key)) {
-        buildLog.severe(
+        buildLog.error(
           '${node.target.key} declares a dependency on $key '
           'but it does not exist',
         );

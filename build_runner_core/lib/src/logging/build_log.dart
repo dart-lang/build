@@ -14,6 +14,7 @@ import '../generate/phase.dart';
 import 'ansi_buffer.dart';
 import 'build_log_configuration.dart';
 import 'build_log_logger.dart';
+import 'build_log_messages.dart';
 import 'build_log_stage.dart';
 import 'log_display.dart';
 
@@ -59,6 +60,7 @@ class BuildLog {
   static final String failurePattern = 'failed';
 
   BuildLogConfiguration _configuration = BuildLogConfiguration();
+  final BuildLogMessages _messages = BuildLogMessages();
 
   late final LogDisplay _display;
   final Stopwatch _stopwatch = Stopwatch()..start();
@@ -233,7 +235,7 @@ class BuildLog {
     final result = AnsiBuffer();
 
     final maxProgressWidth = _stagesByName.values
-        .where((value) => !value.isHidden)
+        //.where((value) => !value.isHidden)
         .map((value) => value.renderProgress.length)
         .fold(0, max);
     final indent = maxProgressWidth + 1;
@@ -241,9 +243,9 @@ class BuildLog {
     for (final entry in _stagesByName.entries) {
       final stage = entry.value;
 
-      if (stage.isHidden) {
+      /*if (stage.isHidden) {
         continue;
-      }
+      }*/
 
       final attributions = stage.renderAttributions;
 
@@ -273,49 +275,11 @@ class BuildLog {
       ], hangingIndent: indent);
 
       if (buildResult == null) {
-        if (_configuration.verbose && stage.infos.isNotEmpty) {
-          final infos = stage.infos.values.fold(
-            0,
-            (count, list) => count + list.length,
-          );
-          final key = stage.infos.keys.last;
-          final value = stage.infos[key]!.last;
-          result.writeLine([
-            'info',
-            if (key != null) ', $key',
-            if (infos > 1) ', +${infos - 1}',
-          ], indent: indent);
-          result.writeLine([value], indent: indent + 2);
-        }
-
-        if (stage.warnings.isNotEmpty) {
-          final warnings = stage.warnings.values.fold(
-            0,
-            (count, list) => count + list.length,
-          );
-          final key = stage.warnings.keys.last;
-          final value = stage.warnings[key]!.last;
-          result.writeLine([
-            'warning',
-            if (key != null) ', $key',
-            if (warnings > 1) ', +${warnings - 1}',
-          ], indent: indent);
-          result.writeLine([value], indent: indent + 2);
-        }
-
-        if (stage.errors.isNotEmpty) {
-          final errors = stage.errors.values.fold(
-            0,
-            (count, list) => count + list.length,
-          );
-          final key = stage.errors.keys.last;
-          final value = stage.errors[key]!.last;
-          result.writeLine([
-            'error',
-            if (key != null) ', $key',
-            if (errors > 1) ', +${errors - 1}',
-          ], indent: indent);
-          result.writeLine([value], indent: indent + 2);
+        for (final line in _messages.renderInline(
+          stage: stage.name,
+          indent: indent,
+        )) {
+          result.write(line);
         }
       }
     }
@@ -338,53 +302,11 @@ class BuildLog {
         ' in $totalTime.',
       ]);
 
-      var displayedEmptyLine = false;
-      void maybeEmptyLine() {
-        if (displayedEmptyLine) return;
+      final renderedMessages = _messages.render();
+      if (renderedMessages.isNotEmpty) {
         result.writeLine([]);
-        displayedEmptyLine = true;
-      }
-
-      for (final stage in _stagesByName.values) {
-        if (_configuration.verbose) {
-          for (final stage in _stagesByName.values) {
-            if (stage.infos.isNotEmpty) {
-              for (final key in stage.warnings.keys) {
-                for (final value in stage.infos[key]!) {
-                  maybeEmptyLine();
-                  result.writeLine([
-                    '${stage.name} info',
-                    if (key != null) ' on $key',
-                  ]);
-                  result.writeLine([value], indent: 2);
-                }
-              }
-            }
-          }
-        }
-        if (stage.warnings.isNotEmpty) {
-          for (final key in stage.warnings.keys) {
-            for (final value in stage.warnings[key]!) {
-              maybeEmptyLine();
-              result.writeLine([
-                '${stage.name} warning',
-                if (key != null) ' on $key',
-              ]);
-              result.writeLine([value], indent: 2);
-            }
-          }
-        }
-        if (stage.errors.isNotEmpty) {
-          for (final key in stage.errors.keys) {
-            for (final value in stage.errors[key]!) {
-              maybeEmptyLine();
-              result.writeLine([
-                '${stage.name} error',
-                if (key != null) ' on $key',
-              ]);
-              result.writeLine([value], indent: 2);
-            }
-          }
+        for (final line in _messages.render()) {
+          result.write(line);
         }
       }
     }
@@ -421,20 +343,39 @@ class BuildLog {
     );
   }
 
-  void info(String message, {String? stage, String? note}) {
-    ((_stagesByName[stage] ?? _currentStage).infos[note] ??= []).add(message);
+  void info(
+    String message, {
+    String? stage,
+    String? substage,
+    bool fromBuilder = false,
+  }) {
+    if (fromBuilder && !_configuration.verbose) return;
+    _messages.add(
+      stage: stage,
+      substage: substage,
+      severity: BuildLogSeverity.info,
+      message,
+    );
     _display.display(makeEntry(severity: LineSeverity.info, line: message));
   }
 
-  void warning(String message, {String? stage, String? note}) {
-    ((_stagesByName[stage] ?? _currentStage).warnings[note] ??= []).add(
+  void warning(String message, {String? stage, String? substage}) {
+    _messages.add(
+      stage: stage,
+      substage: substage,
+      severity: BuildLogSeverity.info,
       message,
     );
     _display.display(makeEntry(severity: LineSeverity.warning, line: message));
   }
 
-  void severe(String message, {String? stage, String? note}) {
-    ((_stagesByName[stage] ?? _currentStage).errors[note] ??= []).add(message);
+  void error(String message, {String? stage, String? substage}) {
+    _messages.add(
+      stage: stage,
+      substage: substage,
+      severity: BuildLogSeverity.error,
+      message,
+    );
     _display.display(makeEntry(severity: LineSeverity.error, line: message));
   }
 

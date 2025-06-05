@@ -17,6 +17,14 @@ class AnsiBuffer {
   bool _isAnsi(String item) =>
       item == reset || item == bold || item == red || item == green;
 
+  void write(AnsiBufferLine line) {
+    writeLine(
+      line.items,
+      indent: line.indent,
+      hangingIndent: line.hangingIndent,
+    );
+  }
+
   void writeLine(List<String> items, {int indent = 0, int? hangingIndent}) {
     final width = stdout.hasTerminal ? stdout.terminalColumns : 80;
     hangingIndent ??= indent;
@@ -72,4 +80,12 @@ class AnsiBuffer {
 
   static String removeAnsi(String string) =>
       string.replaceAll(bold, '').replaceAll(reset, '');
+}
+
+class AnsiBufferLine {
+  List<String> items;
+  int indent;
+  int? hangingIndent;
+
+  AnsiBufferLine(this.items, {this.indent = 0, this.hangingIndent});
 }

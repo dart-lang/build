@@ -39,7 +39,7 @@ Future<bool> createMergedOutputDirectories(
   buildLog.progress(Progress.writeOutputDirectory);
   return await buildLog.runActivityAsync(StageActivity.write, () async {
     if (outputSymlinksOnly && reader.filesystem is! IoFilesystem) {
-      buildLog.severe(
+      buildLog.error(
         'The current environment does not support symlinks, but symlinks were '
         'requested.',
       );
@@ -47,7 +47,7 @@ Future<bool> createMergedOutputDirectories(
     }
     var conflictingOutputs = _conflicts(buildDirs);
     if (conflictingOutputs.isNotEmpty) {
-      buildLog.severe(
+      buildLog.error(
         'Unable to create merged directory. '
         'Conflicting outputs for $conflictingOutputs',
       );
@@ -68,7 +68,7 @@ Future<bool> createMergedOutputDirectories(
           outputSymlinksOnly || outputLocation.useSymlinks,
           outputLocation.hoist,
         )) {
-          buildLog.severe(
+          buildLog.error(
             'Unable to create merged directory for ${outputLocation.path}.',
           );
           return false;
@@ -104,7 +104,7 @@ Future<bool> _createMergedOutputDir(
     var absoluteRoot = p.join(packageGraph.root.path, root);
     if (absoluteRoot != packageGraph.root.path &&
         !p.isWithin(packageGraph.root.path, absoluteRoot)) {
-      buildLog.severe(
+      buildLog.error(
         'Invalid dir to build `$root`, must be within the package root.',
       );
       return false;
@@ -119,7 +119,7 @@ Future<bool> _createMergedOutputDir(
         !builtAssets
             .where((id) => id.package == packageGraph.root.name)
             .any((id) => p.isWithin(root, id.path))) {
-      buildLog.severe('No assets exist in $root, skipping output');
+      buildLog.error('No assets exist in $root, skipping output');
       return false;
     }
 
@@ -171,7 +171,7 @@ Future<bool> _createMergedOutputDir(
     var devModeLink =
         'https://docs.microsoft.com/en-us/windows/uwp/get-started/'
         'enable-your-device-for-development';
-    buildLog.severe(
+    buildLog.error(
       'Unable to create symlink ${e.path}. Note that to create '
       'symlinks on windows you need to either run in a console with admin '
       'privileges or enable developer mode (see $devModeLink).',
@@ -269,7 +269,7 @@ Future<AssetId> _writeAsset(
       }
     } on AssetNotFoundException catch (e) {
       if (!p.basename(id.path).startsWith('.')) {
-        buildLog.severe(
+        buildLog.error(
           'Missing asset ${e.assetId}, it may have been deleted during the '
           'build. Please try rebuilding and if you continue to see the '
           'error then file a bug at '
@@ -332,7 +332,7 @@ Future<bool> _cleanUpOutputDir(
           choices,
         );
       } on NonInteractiveBuildException catch (_) {
-        buildLog.severe(
+        buildLog.error(
           'Unable to create merged directory at $outputPath.\n'
           'Choose a different directory or delete the contents of that '
           'directory.',
@@ -341,13 +341,13 @@ Future<bool> _cleanUpOutputDir(
       }
       switch (choice) {
         case 0:
-          buildLog.severe('Skipped creation of the merged output directory.');
+          buildLog.error('Skipped creation of the merged output directory.');
           return false;
         case 1:
           try {
             outputDir.deleteSync(recursive: true);
           } catch (e) {
-            buildLog.severe(
+            buildLog.error(
               'Failed to delete output dir at `$outputPath` with error:\n\n'
               '$e',
             );

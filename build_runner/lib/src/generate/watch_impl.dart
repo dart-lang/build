@@ -259,7 +259,7 @@ class WatchImpl implements BuildState {
           mergedChanges.keys.toSet(),
         )) {
           _terminateCompleter.complete();
-          buildLog.severe('Terminating builds due to build script update');
+          buildLog.error('Terminating builds due to build script update');
           return BuildResult(
             BuildStatus.failure,
             [],
@@ -309,7 +309,7 @@ class WatchImpl implements BuildState {
             return _readOnceExists(id, watcherEnvironment.reader).then((bytes) {
               if (md5.convert(bytes) != digest) {
                 _terminateCompleter.complete();
-                buildLog.severe(
+                buildLog.error(
                   'Terminating builds due to package graph update, '
                   'please restart the build.',
                 );
@@ -329,7 +329,7 @@ class WatchImpl implements BuildState {
 
             // Kill future builds if the build.yaml files change.
             _terminateCompleter.complete();
-            buildLog.severe(
+            buildLog.error(
               'Terminating builds due to ${id.package}:${id.path} update.',
             );
           }

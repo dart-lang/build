@@ -91,13 +91,13 @@ class ServeCommand extends WatchCommand {
       );
     } on SocketException catch (e) {
       if (e.address != null && e.port != null) {
-        buildLog.severe(
+        buildLog.error(
           'Error starting server at ${e.address!.address}:${e.port}, address '
           'is already in use. Please kill the server running on that port or '
           'serve on a different port and restart this process.',
         );
       } else {
-        buildLog.severe('Error starting server on ${options.hostName}.');
+        buildLog.error('Error starting server on ${options.hostName}.');
       }
       return ExitCode.osError.code;
     }

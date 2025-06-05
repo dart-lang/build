@@ -756,7 +756,7 @@ shelf.Handler _logRequests(shelf.Handler innerHandler) {
         request.method,
         watch.elapsed,
       );
-      buildLog.severe(buildLog.renderThrowable(msg, error, stackTrace));
+      buildLog.error(buildLog.renderThrowable(msg, error, stackTrace));
       rethrow;
     }
   };
