@@ -112,8 +112,8 @@ void main() {
 
       await expectOutput(secondBuild, [
         'Invalidating asset graph due to build script update',
-        Progress.compileBuildScript.stage,
-        Progress.newAssetGraph.stage,
+        'compile build script',
+        'create asset graph',
       ]);
     });
 
@@ -151,8 +151,8 @@ void main() {
 
       await expectOutput(server.stdout, [
         'Terminating builds due to build script update',
-        Progress.compileBuildScript.stage,
-        Progress.newAssetGraph.stage,
+        'compile build script',
+        'create asset graph',
       ]);
 
       await server.shutDown();
@@ -196,7 +196,7 @@ void main() {
 
     await expectOutput(secondBuild, [
       'Invalidated precompiled build script due to core package update',
-      Progress.compileBuildScript.stage,
+      'compile build script',
     ]);
   });
 

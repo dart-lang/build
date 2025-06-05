@@ -76,6 +76,7 @@ class BuildLog {
   final Map<InBuildPhase, PhaseProgress> _phaseProgress = {};
   InBuildPhase? _currentPhase;
   Duration _totalDuration = Duration.zero;
+  List<String> _status = [];
 
   String loaded = '';
 
@@ -158,14 +159,8 @@ class BuildLog {
     _display.severeToStderr = mode == BuildLogMode.daemon;
     _mode = mode;
 
-    if (mode == BuildLogMode.build) {
-      _stagesByName['build_runner setup'] = Stage.setup();
-      progress(Progress.setup);
-    } else if (mode == BuildLogMode.buildOfSeries) {
+    if (mode == BuildLogMode.buildOfSeries) {
       _display.displayedLines = 0;
-      _stagesByName.clear();
-      _stagesByName['build_runner setup'] = Stage.setup();
-      progress(Progress.setup);
     }
   }
 
@@ -220,7 +215,8 @@ class BuildLog {
     final maxProgressWidth = _stagesByName.values
         //.where((value) => !value.isHidden)
         .map((value) => value.renderProgress.length)
-        .fold(0, max);
+        .followedBy([renderDuration(_totalDuration).length])
+        .reduce(max);
     final indent = maxProgressWidth + 1;
 
     for (final entry in _phaseProgress.entries) {
@@ -267,9 +263,15 @@ class BuildLog {
       }
     }
 
+    result.writeLine([]);
+    result.writeLine([
+      renderDuration(_totalDuration).padLeft(maxProgressWidth),
+      ' ',
+      ..._status,
+    ]);
+
     if (buildResult != null) {
-      result.writeLine([]);
-      final totalTime = renderDuration(
+      /*final totalTime = renderDuration(
         _stagesByName.values
             .where((stage) => stage.length != 0)
             .map((stage) => stage.duration ?? Duration.zero)
@@ -283,7 +285,7 @@ class BuildLog {
         if (buildResult!) successPattern else failurePattern,
         AnsiBuffer.reset,
         ' in $totalTime.',
-      ]);
+      ]);*/
 
       final renderedMessages = _messages.render([..._phaseProgress.keys, null]);
       if (renderedMessages.isNotEmpty) {
@@ -295,28 +297,6 @@ class BuildLog {
     }
 
     return result.lines;
-  }
-
-  List<String> get finalStatus {
-    if (buildResult == null) {
-      return [];
-    }
-
-    final totalTime = renderDuration(
-      _stagesByName.values
-          .where((stage) => stage.length != 0)
-          .map((stage) => stage.duration ?? Duration.zero)
-          .reduce((a, b) => a + b),
-    );
-
-    return [
-      buildType.status,
-      ' ',
-      AnsiBuffer.bold,
-      if (buildResult!) successPattern else failurePattern,
-      AnsiBuffer.reset,
-      ' in $totalTime.',
-    ];
   }
 
   void setBuildType(BuildType buildType) {
@@ -440,39 +420,9 @@ class BuildLog {
     );
   }
 
-  void progress(Progress progress) {
-    _currentStage.duration =
-        (_currentStage.duration ?? Duration.zero) + _stopwatch.elapsed;
-    _stopwatch.reset();
-
-    final oldStage = _currentStage;
-    if (progress.number != null) {
-      _currentStage = stageNamed(progress.stage);
-      _currentStage.progress = progress.number!;
-    } else {
-      _currentStage.progress = (_currentStage.progress ?? 0) + 1;
-      _currentStage = stageNamed(progress.stage);
-    }
-
-    _currentStage.note = progress.note;
-    _currentStage.duration ??= Duration.zero;
-    _currentStage.progress ??= 0;
-
-    BuildLogEntry thisMakeEntry() => makeEntry(
-      severity: LineSeverity.info,
-      line: _renderStage(_currentStage, forLine: true).first,
-    );
-
-    if (_currentStage != oldStage) {
-      oldStage.progress = oldStage.length;
-      oldStage.note = null;
-    }
-
-    _display.display(
-      thisMakeEntry(),
-      // TODO: changed note?
-      force: _currentStage != oldStage || buildResult != null,
-    );
+  void doing(String task) {
+    _status = ['build_runner ', task];
+    tick(phase: null);
   }
 
   // TODO(davidmorgan): move reset to start.
@@ -480,11 +430,10 @@ class BuildLog {
     buildResult = result;
     this.outputs = outputs;
 
-    final conclusion = finalStatus;
-    progress(Progress.done);
+    /*final conclusion = finalStatus;
     _display.display(
       makeEntry(severity: LineSeverity.info, line: '--- $conclusion'),
-    );
+    );*/
 
     /*_display.finish();
     _stagesByName.clear();
@@ -536,75 +485,6 @@ class BuildLog {
       return id.toString();
     }
   }
-}
-
-class Progress {
-  static final Progress setup = Progress('build_runner setup', 0);
-  static final Progress generateBuildScript = Progress(
-    'build_runner setup',
-    1,
-    'generate build script',
-  );
-  static final Progress compileBuildScript = Progress(
-    'build_runner setup',
-    2,
-    'compile build script',
-  );
-  static final Progress readAssetGraph = Progress(
-    'build_runner setup',
-    3,
-    'read asset graph',
-  );
-  static final Progress checkForUpdates = Progress(
-    'build_runner setup',
-    4,
-    'check for updates',
-  );
-  static final Progress newAssetGraph = Progress(
-    'build_runner setup',
-    5,
-    'create asset graph',
-  );
-  static final Progress initialBuildCleanup = Progress(
-    'build_runner setup',
-    6,
-    'initial build cleanup',
-  );
-  static final Progress updateAssetGraph = Progress(
-    'build_runner setup',
-    7,
-    'update asset graph',
-  );
-
-  static final Progress postbuild = Progress(
-    'build_runner cleanup',
-    0,
-    'postbuild',
-  );
-  static final Progress writeAssetGraph = Progress(
-    'build_runner cleanup',
-    1,
-    'write asset graph',
-  );
-  static final Progress writePerformance = Progress(
-    'build_runner cleanup',
-    2,
-    'write performance log',
-  );
-  static final Progress writeOutputDirectory = Progress(
-    'build_runner cleanup',
-    3,
-    'write output directory',
-  );
-  static final Progress done = Progress('build_runner cleanup', 4, null);
-
-  final String stage;
-  final int? number;
-  final String? note;
-
-  Progress(this.stage, this.number, [this.note]);
-
-  Progress.build(String builder, this.note) : stage = builder, number = null;
 }
 
 enum BuildType {

@@ -217,16 +217,14 @@ class Build {
     final done = Completer<BuildResult>();
     runZonedGuarded(
       () async {
-        buildLog.progress(Progress.updateAssetGraph);
+        buildLog.doing('update asset graph');
         if (!assetGraph.cleanBuild) {
           await _updateAssetGraph(updates);
         }
 
-        // Run a fresh build.
+        buildLog.doing('build');
         var result = await _runPhases();
-
-        // Write out the dependency graph file.
-        buildLog.progress(Progress.writeAssetGraph);
+        buildLog.doing('write asset graph');
 
         // Combine previous phased asset deps, if any, with the newly loaded
         // deps. Because of skipped builds, the newly loaded deps might just
@@ -251,8 +249,8 @@ class Build {
             assetGraph.postBuildActionsOptionsDigests;
 
         // Log performance information if requested
-        buildLog.progress(Progress.writePerformance);
         if (options.logPerformanceDir != null) {
+          buildLog.doing('write performance log');
           assert(result.performance != null);
           var now = DateTime.now();
           var logPath = p.join(
@@ -347,7 +345,7 @@ class Build {
       }
 
       // Post build phase.
-      buildLog.progress(Progress.postbuild);
+      buildLog.doing('post build');
       if (buildPhases.postBuildPhase.builderActions.isNotEmpty) {
         outputs.addAll(
           await performanceTracker.trackBuildPhase(
@@ -554,7 +552,6 @@ class Build {
     var actionNum = 0;
     final outputs = <AssetId>[];
     for (final builderAction in phase.builderActions) {
-      buildLog.progress(Progress.postbuild);
       outputs.addAll(
         await _runPostBuildAction(phaseNum, actionNum++, builderAction),
       );

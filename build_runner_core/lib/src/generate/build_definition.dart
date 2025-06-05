@@ -82,7 +82,7 @@ class _Loader {
     var cleanBuild = true;
     if (assetGraph != null) {
       cleanBuild = false;
-      buildLog.progress(Progress.checkForUpdates);
+      buildLog.doing('check for updates');
       updates = await _computeUpdates(
         assetGraph,
         assetTracker,
@@ -122,10 +122,9 @@ class _Loader {
     }
 
     if (assetGraph == null) {
+      buildLog.doing('create asset graph');
+
       late Set<AssetId> conflictingOutputs;
-
-      buildLog.progress(Progress.newAssetGraph);
-
       try {
         assetGraph = await AssetGraph.build(
           _buildPhases,
@@ -165,7 +164,7 @@ class _Loader {
         throw const CannotBuildException();
       }
 
-      buildLog.progress(Progress.initialBuildCleanup);
+      buildLog.doing('initial build cleanup');
       await _initialBuildCleanup(
         conflictingOutputs,
         _environment.writer.copyWith(generatedAssetHider: assetGraph),

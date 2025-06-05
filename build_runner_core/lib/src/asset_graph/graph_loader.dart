@@ -45,7 +45,7 @@ class AssetGraphLoader {
   ///  - if running from a snapshot, throws `BuildScriptChangedException`,
   ///    otherwise returns `null`
   Future<AssetGraph?> load() async {
-    buildLog.progress(Progress.readAssetGraph);
+    buildLog.doing('read asset graph');
     final assetGraphId = AssetId(packageGraph.root.name, assetGraphPath);
     if (!await reader.canRead(assetGraphId)) {
       return null;
