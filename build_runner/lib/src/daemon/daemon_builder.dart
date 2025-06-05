@@ -231,7 +231,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     DaemonOptions daemonOptions,
   ) async {
     var expectedDeletes = <AssetId>{};
-    var outputStreamController = StreamController<ServerLog>();
+    var outputStreamController = StreamController<ServerLog>(sync: true);
 
     var environment = BuildEnvironment(
       packageGraph,
