@@ -117,7 +117,7 @@ class AnalysisDriverModel {
     // If requested, find transitive imports.
     if (transitive) {
       idsToSyncOntoFilesystem = await buildLog.runActivityAsync(
-        StageActivity.track,
+        ActivityType.track,
         () async {
           // Note: `transitiveDepsOf` can cause loads that cause builds that
           // cause a recursive `_performResolve` on this same `AnalysisDriver`

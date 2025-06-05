@@ -59,7 +59,7 @@ Future<String> defaultSdkSummaryGenerator() async {
 
   // Generate the summary and version files if necessary.
   if (needsRebuild) {
-    await buildLog.runActivityAsync(StageActivity.analyzeSdk, () async {
+    await buildLog.runActivityAsync(ActivityType.analyzeSdk, () async {
       await Directory(cacheDir).create(recursive: true);
       final tempDir = await Directory(cacheDir).createTemp();
       final tempFile = File(p.join(tempDir.path, p.basename(summaryPath)));

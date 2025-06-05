@@ -665,7 +665,7 @@ class AnalyzeActivityPool {
 
   Future<T> withResource<T>(Future<T> Function() function) async {
     return pool.withResource(
-      () => buildLog.runActivityAsync(StageActivity.analyze, function),
+      () => buildLog.runActivityAsync(ActivityType.analyze, function),
     );
   }
 }

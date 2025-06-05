@@ -22,7 +22,7 @@ import '../asset_graph/optional_output_tracker.dart';
 import '../asset_graph/post_process_build_step_id.dart';
 import '../environment/build_environment.dart';
 import '../logging/build_log.dart';
-import '../logging/build_log_stage.dart';
+import '../logging/build_log_activities.dart';
 import '../performance_tracking/performance_tracking_resolvers.dart';
 import '../util/build_dirs.dart';
 import '../util/constants.dart';
@@ -424,7 +424,7 @@ class Build {
       await lazyPhases.putIfAbsent('$phaseNumber|$primaryInput', () async {
         final phase = buildPhases.inBuildPhases[nodeConfiguration.phaseNumber];
         return buildLog.runActivityAsync(
-          StageActivity.optionalBuilder(phase.builderLabel),
+          ActivityType.optionalBuilder(phase.builderLabel),
           () => _buildForPrimaryInput(
             primaryInput: primaryInput,
             phaseNumber: phaseNumber,
@@ -498,7 +498,7 @@ class Build {
 
       final logger = buildLog.loggerForPhase(phase, primaryInput);
       await buildLog.runActivity(
-        StageActivity.build,
+        ActivityType.build,
         () => tracker.trackStage(
           'Build',
           () => runBuilder(
@@ -521,7 +521,7 @@ class Build {
       // Update the state for all the `builderOutputs` nodes based on what was
       // read and written.
       await buildLog.runActivityAsync(
-        StageActivity.track,
+        ActivityType.track,
         () => tracker.trackStage(
           'Finalize',
           () => _setOutputsState(
@@ -730,7 +730,7 @@ class Build {
     Iterable<AssetId> outputs,
     AssetReader reader,
   ) async {
-    return await buildLog.runActivityAsync(StageActivity.track, () async {
+    return await buildLog.runActivityAsync(ActivityType.track, () async {
       // Update state for primary input if needed.
       var primaryInputNode = assetGraph.get(primaryInput)!;
       if (primaryInputNode.type == NodeType.generated) {

@@ -156,7 +156,7 @@ class InMemoryFilesystemCache implements FilesystemCache {
 
   @override
   void flush() {
-    buildLog.runActivity(StageActivity.write, () {
+    buildLog.runActivity(ActivityType.write, () {
       for (final write in _pendingWrites.values) {
         write.writer();
       }
