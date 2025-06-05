@@ -17,6 +17,7 @@ import 'build_log_logger.dart';
 import 'build_log_messages.dart';
 import 'build_log_stage.dart';
 import 'log_display.dart';
+import 'phase_progress.dart';
 
 final BuildLog buildLog = BuildLog._();
 
@@ -70,11 +71,13 @@ class BuildLog {
   final Map<String, Stage> _stagesByName = {};
   Stage _currentStage = Stage.setup();
 
+  final Map<InBuildPhase, PhaseProgress> _phaseProgress = {};
+  InBuildPhase? _currentPhase;
+  Duration _totalDuration = Duration.zero;
+
   String loaded = '';
 
   Duration _attributedDuration = Duration.zero;
-
-  final Map<InBuildPhase, String> _phaseStageNames = Map.identity();
 
   bool? buildResult;
   int? outputs;
@@ -240,14 +243,13 @@ class BuildLog {
         .fold(0, max);
     final indent = maxProgressWidth + 1;
 
-    for (final entry in _stagesByName.entries) {
-      final stage = entry.value;
+    for (final entry in _phaseProgress.entries) {
+      final phase = entry.key;
+      final progress = entry.value;
 
-      /*if (stage.isHidden) {
-        continue;
-      }*/
+      if (progress.isOptional) continue;
 
-      final attributions = stage.renderAttributions;
+      final attributions = progress.renderAttributions;
 
       var firstSeparator = true;
       String separator() {
@@ -259,24 +261,25 @@ class BuildLog {
       }
 
       result.writeLine([
-        stage.renderProgress.padLeft(maxProgressWidth),
+        renderDuration(progress.duration).padLeft(maxProgressWidth),
         ' ',
         AnsiBuffer.bold,
-        stage.name,
+        phase.builderLabel,
         AnsiBuffer.reset,
-        if (stage.length != 0) ' on ${stage.length.renderNamed('input')}',
-        if (stage.skipped != 0) '${separator()}${stage.skipped} skipped',
-        if (stage.builtNew != 0) '${separator()}${stage.builtNew} built',
-        if (stage.builtSame != 0) '${separator()}${stage.builtSame} no change',
-        if (stage.builtNothing != 0)
-          '${separator()}${stage.builtNothing} no output',
-        if (stage.note != null) '${separator()}${stage.note}',
+        if (progress.inputs != 0) ' on ${progress.inputs.renderNamed('input')}',
+        if (progress.skipped != 0) '${separator()}${progress.skipped} skipped',
+        if (progress.builtNew != 0) '${separator()}${progress.builtNew} output',
+        if (progress.builtSame != 0) '${separator()}${progress.builtSame} same',
+        if (progress.builtNothing != 0)
+          '${separator()}${progress.builtNothing} no-op',
+        if (progress.nextInput != null)
+          '${separator()}${renderId(progress.nextInput!)}',
         if (attributions.isNotEmpty) '; $attributions',
       ], hangingIndent: indent);
 
       if (buildResult == null) {
         for (final line in _messages.renderInline(
-          stage: stage.name,
+          phase: phase,
           indent: indent,
         )) {
           result.write(line);
@@ -302,10 +305,10 @@ class BuildLog {
         ' in $totalTime.',
       ]);
 
-      final renderedMessages = _messages.render();
+      final renderedMessages = _messages.render([..._phaseProgress.keys, null]);
       if (renderedMessages.isNotEmpty) {
         result.writeLine([]);
-        for (final line in _messages.render()) {
+        for (final line in renderedMessages) {
           result.write(line);
         }
       }
@@ -345,34 +348,34 @@ class BuildLog {
 
   void info(
     String message, {
-    String? stage,
-    String? substage,
+    InBuildPhase? phase,
+    String? context,
     bool fromBuilder = false,
   }) {
     if (fromBuilder && !_configuration.verbose) return;
     _messages.add(
-      stage: stage,
-      substage: substage,
+      phase: phase,
+      context: context,
       severity: BuildLogSeverity.info,
       message,
     );
     _display.display(makeEntry(severity: LineSeverity.info, line: message));
   }
 
-  void warning(String message, {String? stage, String? substage}) {
+  void warning(String message, {InBuildPhase? phase, String? context}) {
     _messages.add(
-      stage: stage,
-      substage: substage,
+      phase: phase,
+      context: context,
       severity: BuildLogSeverity.info,
       message,
     );
     _display.display(makeEntry(severity: LineSeverity.warning, line: message));
   }
 
-  void error(String message, {String? stage, String? substage}) {
+  void error(String message, {InBuildPhase? phase, String? context}) {
     _messages.add(
-      stage: stage,
-      substage: substage,
+      phase: phase,
+      context: context,
       severity: BuildLogSeverity.error,
       message,
     );
@@ -383,6 +386,15 @@ class BuildLog {
   void debug(String message) {
     stdout.writeln('BuildLog.debug:$message');
     _display.displayedLines = 0;
+  }
+
+  void startPhases(Map<InBuildPhase, List<AssetId>> primaryInputsByPhase) {
+    _phaseProgress.clear();
+    for (final entry in primaryInputsByPhase.entries) {
+      final phase = entry.key;
+      final primaryInputs = entry.value;
+      _phaseProgress[phase] = PhaseProgress(inputs: primaryInputs.length);
+    }
   }
 
   void builders(Map<String, int> buildSteps) {
@@ -398,29 +410,52 @@ class BuildLog {
   Stage stageNamed(String name) =>
       _stagesByName[name] ??= Stage(name: name, length: 0);
 
-  void stepStarts(InBuildPhase phase, AssetId id) {
-    final name = _phaseStageNames[phase]!;
-    progress(Progress.build(name, renderId(id)));
+  void startStep(InBuildPhase phase, AssetId id) {
+    _phaseProgress[phase]!.nextInput = id;
+    tick(phase: phase);
   }
 
-  void stepSkipped(InBuildPhase phase) {
-    final name = _phaseStageNames[phase]!;
-    stageNamed(name).skipped++;
+  void skipStep(InBuildPhase phase) {
+    _phaseProgress[phase]!.skipped++;
   }
 
-  void stepRan(
+  void finishStep(
     InBuildPhase phase, {
     required bool anyOutputs,
     required bool anyChangedOutputs,
   }) {
-    final name = _phaseStageNames[phase]!;
+    final progress = _phaseProgress[phase]!;
     if (anyChangedOutputs) {
-      stageNamed(name).builtNew++;
+      progress.builtNew++;
     } else if (anyOutputs) {
-      stageNamed(name).builtSame++;
+      progress.builtSame++;
     } else {
-      stageNamed(name).builtNothing++;
+      progress.builtNothing++;
     }
+    if (progress.isFinished) {
+      tick(phase: null);
+    }
+  }
+
+  void tick({InBuildPhase? phase}) {
+    final duration = _stopwatch.elapsed;
+    _stopwatch.reset();
+    final previousPhase = _currentPhase;
+    _currentPhase = phase;
+
+    _totalDuration += duration;
+    if (previousPhase != null) {
+      _phaseProgress[previousPhase]!.duration += duration;
+    }
+
+    _display.display(
+      makeEntry(
+        severity: LineSeverity.info,
+        line: _renderStage(_currentStage, forLine: true).first,
+      ),
+      // TODO: changed note?
+      force: _currentPhase != previousPhase || buildResult != null,
+    );
   }
 
   void progress(Progress progress) {
@@ -474,23 +509,15 @@ class BuildLog {
     _stagesByName['setup'] = Stage.setup();*/
   }
 
-  void declarePhase(InBuildPhase phase, String name) {
-    _phaseStageNames[phase] = name;
-  }
-
-  /// Creates a logger that logs to the [BuildLog] setup stage.
-  BuildLogLogger loggerForSetup(String name) =>
-      BuildLogLogger(stage: 'build_runner setup', note: name);
-
-  /// Creates a logger that logs to the [BuildLog] stage for [phase] for
+  /// Creates a logger that logs to the [BuildLog] stage for [phase] on
   /// [input].
   BuildLogLogger loggerForPhase(InBuildPhase phase, AssetId input) =>
-      BuildLogLogger(stage: _phaseStageNames[phase], note: renderId(input));
+      BuildLogLogger(phase: phase, context: renderId(input));
 
-  /// Creates a logger that logs to the [BuildLog] cleanup stage for
-  /// postprocessing [input].
-  BuildLogLogger loggerForPostprocess(AssetId input) =>
-      BuildLogLogger(stage: 'build_runner cleanup', note: renderId(input));
+  /// Creates a logger that logs to the [BuildLog] for work other than building
+  /// described by [context].
+  BuildLogLogger loggerForOther(String context) =>
+      BuildLogLogger(context: context);
 
   String renderThrowable(
     Object? message, [

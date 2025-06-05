@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import '../generate/phase.dart';
 import 'ansi_buffer.dart';
 
 class BuildLogMessages {
@@ -9,44 +10,50 @@ class BuildLogMessages {
 
   void add(
     String message, {
-    String? stage,
-    String? substage,
+    InBuildPhase? phase,
+    String? context,
     required BuildLogSeverity severity,
   }) {
     _messages.add(
       BuildLogMessage(
         message: message,
-        stage: stage,
-        substage: substage,
+        phase: phase,
+        context: context,
         severity: severity,
       ),
     );
   }
 
-  int count({required String? stage, required BuildLogSeverity severity}) {
+  int count({
+    required InBuildPhase? phase,
+    required BuildLogSeverity severity,
+  }) {
     // TODO: fasterer
     var result = 0;
     for (final message in _messages) {
-      if (message.severity == severity && message.stage == stage) ++result;
+      if (identical(message.phase, phase) && message.severity == severity) {
+        ++result;
+      }
     }
     return result;
   }
 
   Iterable<BuildLogMessage> messages({
-    required String? stage,
+    required InBuildPhase? phase,
     required BuildLogSeverity severity,
   }) {
     return _messages.where(
-      (message) => message.stage == stage && message.severity == severity,
+      (message) =>
+          identical(message.phase, phase) && message.severity == severity,
     );
   }
 
   BuildLogMessage last({
-    required String? stage,
+    required InBuildPhase? phase,
     required BuildLogSeverity severity,
   }) {
     for (final message in _messages.reversed) {
-      if (message.severity == severity && message.stage == stage) {
+      if (identical(message.phase, phase) && message.severity == severity) {
         return message;
       }
     }
@@ -54,7 +61,7 @@ class BuildLogMessages {
   }
 
   List<AnsiBufferLine> renderInline({
-    required String? stage,
+    required InBuildPhase? phase,
     required int indent,
   }) {
     final result = {
@@ -64,16 +71,16 @@ class BuildLogMessages {
     };
 
     for (final severity in result.keys) {
-      final count = this.count(stage: stage, severity: severity);
+      final count = this.count(phase: phase, severity: severity);
       if (count == 0) continue;
 
       final severityResult = result[severity]!;
-      final message = last(stage: stage, severity: severity);
-      final substage = message.substage;
+      final message = last(phase: phase, severity: severity);
+      final context = message.context;
       severityResult.add(
         AnsiBufferLine([
           severity.name,
-          if (substage != null) ', $substage',
+          if (context != null) ', $context',
           if (count > 1) ', +${count - 1}',
         ], indent: indent),
       );
@@ -83,20 +90,17 @@ class BuildLogMessages {
     return result.values.expand((x) => x).toList();
   }
 
-  List<AnsiBufferLine> render() {
+  List<AnsiBufferLine> render(Iterable<InBuildPhase?> phases) {
     final result = <AnsiBufferLine>[];
-    // TODO: fasterer
-    final stages =
-        _messages.map((message) => message.stage).toSet().toList()..sort();
-
-    for (final stage in stages) {
+    for (final phase in phases) {
       for (final severity in BuildLogSeverity.values) {
-        for (final message in messages(stage: stage, severity: severity)) {
-          final substage = message.substage;
+        for (final message in messages(phase: phase, severity: severity)) {
+          final context = message.context;
           result.add(
             AnsiBufferLine([
-              '${message.stage ?? 'build_runner'} ${severity.name}',
-              if (substage != null) ' $substage',
+              '${message.phase?.builderLabel ?? 'build_runner'} '
+                  '${severity.name}',
+              if (context != null) ' $context',
             ]),
           );
           result.add(AnsiBufferLine([message.message], indent: 2));
@@ -108,16 +112,16 @@ class BuildLogMessages {
 }
 
 class BuildLogMessage {
-  final String? stage;
-  final String? substage;
+  final InBuildPhase? phase;
+  final String? context;
   final BuildLogSeverity severity;
   final String message;
 
   BuildLogMessage({
     required this.severity,
     required this.message,
-    this.stage,
-    this.substage,
+    this.phase,
+    this.context,
   });
 }
 

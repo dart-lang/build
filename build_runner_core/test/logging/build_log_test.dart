@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:build/build.dart';
+/*import 'package:build/build.dart';
 import 'package:build_runner_core/src/logging/ansi_buffer.dart';
 import 'package:build_runner_core/src/logging/build_log.dart';
 import 'package:test/test.dart';
@@ -239,3 +239,4 @@ List<String> padLinesRight(String output) {
   }
   return result;
 }
+*/

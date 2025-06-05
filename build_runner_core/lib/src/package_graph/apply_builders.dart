@@ -195,7 +195,7 @@ class BuilderApplication {
 
             final builder = BuildLogLogger.scopeLogSync(
               () => builderFactory(optionsWithDefaults),
-              buildLog.loggerForSetup(builderKey),
+              buildLog.loggerForOther(builderKey),
             );
             if (builder == null) throw const CannotBuildException();
             _validateBuilder(builder);
@@ -252,7 +252,7 @@ class BuilderApplication {
 
       final builder = BuildLogLogger.scopeLogSync(
         () => builderFactory(optionsWithDefaults),
-        buildLog.loggerForSetup(builderKey),
+        buildLog.loggerForOther(builderKey),
       );
       if (builder == null) throw const CannotBuildException();
       _validatePostProcessBuilder(builder);

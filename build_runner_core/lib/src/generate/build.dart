@@ -290,20 +290,8 @@ class Build {
   Future<BuildResult> _runPhases() {
     return performanceTracker.track(() async {
       final outputs = <AssetId>[];
-
-      final samePhaseNameCounts = <String, int>{};
-      String namePhase(int phaseNumber) {
-        final phase = buildPhases.inBuildPhases[phaseNumber];
-        final label = phase.builderLabel;
-        final count =
-            samePhaseNameCounts[label] = (samePhaseNameCounts[label] ?? 0) + 1;
-        final result = '$label${count == 1 ? '' : '($count)'}';
-        buildLog.declarePhase(phase, result);
-        return result;
-      }
-
-      final primaryInputsByPhase = <int, List<AssetId>>{};
-      final inputLengthByName = <String, int>{};
+      // Find inputs for non-optional phases, count them for logging.
+      final primaryInputsByPhase = <InBuildPhase, List<AssetId>>{};
       for (
         var phaseNum = 0;
         phaseNum < buildPhases.inBuildPhases.length;
@@ -311,29 +299,23 @@ class Build {
       ) {
         final phase = buildPhases.inBuildPhases[phaseNum];
 
-        // An optional phase does not show progress but still has a logging
-        // stage in order to track warnings and errors.
         if (phase.isOptional) {
-          inputLengthByName[namePhase(phaseNum)] = 0;
-          primaryInputsByPhase[phaseNum] = [];
+          // Optional phases get an empty entry as a placeholder for log output.
+          primaryInputsByPhase[phase] = [];
           continue;
         }
         final primaryInputs = await _matchingPrimaryInputs(
           phase.package,
           phaseNum,
         );
-        if (primaryInputs.isEmpty) {
-          // A non-optional phase with no inputs won't run at all, so no stage
-          // name is needed: there are no warnings or errors to log.
-          primaryInputsByPhase[phaseNum] = [];
-        } else {
+        // Skip non-optional phases with no inputs, nothing will run.
+        if (primaryInputs.isNotEmpty) {
           primaryInputs.sort();
-          primaryInputsByPhase[phaseNum] = primaryInputs;
-          inputLengthByName[namePhase(phaseNum)] = primaryInputs.length;
+          primaryInputsByPhase[phase] = primaryInputs;
         }
       }
 
-      buildLog.builders(inputLengthByName);
+      buildLog.startPhases(primaryInputsByPhase);
 
       // Main build phases.
       for (
@@ -342,7 +324,7 @@ class Build {
         phaseNum++
       ) {
         var phase = buildPhases.inBuildPhases[phaseNum];
-        final primaryInputs = primaryInputsByPhase[phaseNum]!;
+        final primaryInputs = primaryInputsByPhase[phase]!;
         if (primaryInputs.isEmpty) continue;
 
         outputs.addAll(
@@ -350,7 +332,7 @@ class Build {
             final outputs = <AssetId>[];
             for (var i = 0; i != primaryInputs.length; ++i) {
               final primaryInput = primaryInputs[i];
-              buildLog.stepStarts(phase, primaryInput);
+              buildLog.startStep(phase, primaryInput);
               outputs.addAll(
                 await _buildForPrimaryInput(
                   phaseNumber: phaseNum,
@@ -499,7 +481,7 @@ class Build {
           readerWriter,
         ),
       )) {
-        buildLog.stepSkipped(phase);
+        buildLog.skipStep(phase);
         return <AssetId>[];
       }
 
@@ -553,7 +535,7 @@ class Build {
         ),
       );
 
-      buildLog.stepRan(
+      buildLog.finishStep(
         phase,
         anyOutputs: readerWriter.assetsWritten.isNotEmpty,
         anyChangedOutputs: readerWriter.assetsWritten.any(
@@ -648,7 +630,7 @@ class Build {
       nodeBuilder.deletedBy.remove(postProcessBuildStepId);
     });
 
-    final logger = buildLog.loggerForPostprocess(input);
+    final logger = buildLog.loggerForOther(buildLog.renderId(input));
     final outputs = <AssetId>{};
     await runPostProcessBuilder(
       builder,

@@ -8,6 +8,7 @@ import 'dart:async';
 import 'package:build/src/internal.dart';
 import 'package:logging/logging.dart';
 
+import '../generate/phase.dart';
 import 'build_log.dart';
 
 /// A [Logger] that forwards messages to [BuildLog] and records errors.
@@ -15,12 +16,11 @@ import 'build_log.dart';
 /// Use [scopeLogAsync] or [scopeLogSync] to run builder code while redirecting
 /// prints and exception logs to a `BuildLogLogger`.
 class BuildLogLogger implements Logger {
-  final String? stage;
-  final String? note;
-  final bool forBuilder;
+  final InBuildPhase? phase;
+  final String? context;
   final List<String> errors = [];
 
-  BuildLogLogger({this.stage, this.note, this.forBuilder = false});
+  BuildLogLogger({this.phase, this.context});
 
   /// Runs [fn] in an error handling [Zone].
   ///
@@ -104,15 +104,15 @@ class BuildLogLogger implements Logger {
     if (logLevel < Level.WARNING) {
       buildLog.info(
         renderedMessage,
-        stage: stage,
-        substage: note,
+        phase: phase,
+        context: context,
         fromBuilder: true,
       );
     } else if (logLevel < Level.SEVERE) {
-      buildLog.warning(renderedMessage, stage: stage, substage: note);
+      buildLog.warning(renderedMessage, phase: phase, context: context);
     } else {
       errors.add(renderedMessage);
-      buildLog.error(renderedMessage, stage: stage, substage: note);
+      buildLog.error(renderedMessage, phase: phase, context: context);
     }
   }
 
