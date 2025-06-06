@@ -89,8 +89,11 @@ class AnsiBuffer {
   }
 
   /// Removes all ANSI constants from [string], for testing.
-  static String removeAnsi(String string) =>
-      string.replaceAll(bold, '').replaceAll(reset, '');
+  static String removeAnsi(String string) => string
+      .replaceAll(reset, '')
+      .replaceAll(bold, '')
+      .replaceAll(green, '')
+      .replaceAll(red, '');
 }
 
 /// A line for writing to an [AnsiBuffer].

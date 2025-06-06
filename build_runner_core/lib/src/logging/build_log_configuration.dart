@@ -2,24 +2,12 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+// ignore: implementation_imports
+import 'package:build_runner/src/internal.dart';
 import 'package:built_value/built_value.dart';
 import 'package:logging/logging.dart';
 
 part 'build_log_configuration.g.dart';
-
-enum BuildLogMode {
-  /// Line by line logging.
-  simple,
-
-  /// For `build_daemon`, as `simple` but log errors to stderr.
-  daemon,
-
-  /// Advanced log mode for builds.
-  ///
-  /// If a console is available, progress is shown and updated in place instead
-  /// of line by line logging.
-  build,
-}
 
 abstract class BuildLogConfiguration
     implements Built<BuildLogConfiguration, BuildLogConfigurationBuilder> {

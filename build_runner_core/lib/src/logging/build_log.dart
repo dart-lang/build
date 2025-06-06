@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:io';
 import 'dart:math';
 
 import 'package:build/build.dart'
@@ -73,20 +72,27 @@ class BuildLog {
   /// Stopwatch used to update [processDuration] every [_tick].
   final Stopwatch _stopwatch = Stopwatch()..start();
 
+  /// Amount of time since a progress update.
+  final Stopwatch _progressStopwatch = Stopwatch()..start();
+
   InBuildPhase? _currentPhase;
   List<String> _status = [];
 
   BuildLog._() {
-    // Spawned isolates need the host elapsed duration, set it when
-    // `buildProcessState` is sent.
+    // Sync configuration between spawned isolates and the host.
     buildProcessState.doBeforeSend(() {
       buildProcessState.elapsedMillis = processDuration.inMilliseconds;
+      buildProcessState.buildLogMode = configuration.mode;
     });
-    // Read it on any isolate start; it's harmless to read as the host isolate
-    // as it defaults to zero. Note that we _could_ read it again on spawned
-    // isolate exit, but there is no need because the host isolate clock
-    // continues to run so it already knows the additional elapsed time.
-    processDuration = Duration(milliseconds: buildProcessState.elapsedMillis);
+    void updateFromProcessState() {
+      processDuration = Duration(milliseconds: buildProcessState.elapsedMillis);
+      configuration = configuration.rebuild((b) {
+        b.mode = buildProcessState.buildLogMode;
+      });
+    }
+
+    updateFromProcessState();
+    buildProcessState.doAfterReceive(updateFromProcessState);
   }
 
   InBuildPhase? get currentPhase => _currentPhase;
@@ -131,22 +137,12 @@ class BuildLog {
     }
   }
 
-  // TODO
-  BuildLogEntry makeEntry({
-    required BuildLogSeverity severity,
-    required String line,
-    bool finished = false,
-  }) {
-    return BuildLogEntry(
-      lines: _render(finished: finished),
-      message: line,
-      severity: severity,
-    );
-  }
-
   void fullBuildBecause(FullBuildReason reason) {
     buildProcessState.fullBuildReason = reason;
     _tick(phase: null);
+    if (_display.displayingBlocks) {
+      _display.block(_render());
+    }
   }
 
   /// Logs a prompt that will be followed by an interactive question to the
@@ -160,24 +156,32 @@ class BuildLog {
 
   /// Logs a `build_runner` info.
   void info(String message) {
-    _messages.add(severity: BuildLogSeverity.info, message);
-    _display.display(makeEntry(severity: BuildLogSeverity.info, line: message));
+    if (_display.displayingBlocks) {
+      _messages.add(severity: BuildLogSeverity.info, message);
+      _display.block(_render());
+    } else {
+      _display.message(BuildLogSeverity.info, message);
+    }
   }
 
   /// Logs a `build_runner` warning.
   void warning(String message) {
-    _messages.add(severity: BuildLogSeverity.warning, message);
-    _display.display(
-      makeEntry(severity: BuildLogSeverity.warning, line: message),
-    );
+    if (_display.displayingBlocks) {
+      _messages.add(severity: BuildLogSeverity.warning, message);
+      _display.block(_render());
+    } else {
+      _display.message(BuildLogSeverity.warning, message);
+    }
   }
 
   /// Logs an `build_runner` error.
   void error(String message) {
-    _messages.add(severity: BuildLogSeverity.error, message);
-    _display.display(
-      makeEntry(severity: BuildLogSeverity.error, line: message),
-    );
+    if (_display.displayingBlocks) {
+      _messages.add(severity: BuildLogSeverity.error, message);
+      _display.block(_render());
+    } else {
+      _display.message(BuildLogSeverity.error, message);
+    }
   }
 
   void fromBuildLogLogger(
@@ -186,19 +190,29 @@ class BuildLog {
     InBuildPhase? phase,
     String? context,
   }) {
-    _messages.add(
-      severity: BuildLogSeverity.error,
-      phase: phase,
-      context: context,
-      message,
-    );
-    _display.display(makeEntry(severity: severity, line: message));
+    if (_display.displayingBlocks) {
+      _messages.add(
+        severity: severity,
+        phase: phase,
+        context: context,
+        message,
+      );
+      _display.block(_render());
+    } else {
+      _display.message(
+        severity,
+        [
+          if (phase != null) phase.builderLabel,
+          if (phase != null && context != null) 'on $context:',
+          message,
+        ].join(' '),
+      );
+    }
   }
 
   @Deprecated('Only for printf debugging, do not submit.')
   void debug(String message) {
-    stdout.writeln('BuildLog.debug:$message');
-    _display.displayedLines = 0;
+    _display.prompt('BuildLog.debug:$message');
   }
 
   void startPhases(Map<InBuildPhase, List<AssetId>> primaryInputsByPhase) {
@@ -211,12 +225,28 @@ class BuildLog {
   }
 
   void startStep(InBuildPhase phase, AssetId id) {
-    _phaseProgress[phase]!.nextInput = id;
+    final progress = _phaseProgress[phase]!;
+    progress.nextInput = id;
     _tick(phase: phase);
+    if (progress.isStarting || _shouldShowProgressNow) {
+      if (_display.displayingBlocks) {
+        _display.block(_render());
+      } else {
+        _display.message(BuildLogSeverity.info, _renderPhase(phase).join(''));
+      }
+    }
   }
 
   void skipStep(InBuildPhase phase) {
     _phaseProgress[phase]!.skipped++;
+    _tick(phase: phase);
+    if (_shouldShowProgressNow) {
+      if (_display.displayingBlocks) {
+        _display.block(_render());
+      } else {
+        _display.message(BuildLogSeverity.info, _renderPhase(phase).join(''));
+      }
+    }
   }
 
   void finishStep(
@@ -234,8 +264,15 @@ class BuildLog {
       progress.builtNothing++;
     }
 
+    // Usually the next step will update the display; but if this is the last
+    // one, display it.
     if (progress.isFinished) {
       _tick(phase: null);
+      if (_display.displayingBlocks) {
+        _display.block(_render());
+      } else {
+        _display.message(BuildLogSeverity.info, _renderPhase(phase).join(''));
+      }
     }
   }
 
@@ -243,9 +280,13 @@ class BuildLog {
   ///
   /// Logs the task, or in console mode updates the status line.
   void doing(String task) {
-    _status = [task];
-    _tick(phase: null);
-    // TODO line log
+    if (_display.displayingBlocks) {
+      _status = [task];
+      _tick(phase: null);
+      _display.block(_render());
+    } else {
+      _display.message(BuildLogSeverity.info, task);
+    }
   }
 
   void startBuild() {
@@ -253,21 +294,28 @@ class BuildLog {
   }
 
   void finishBuild({required bool result, required int outputs}) {
+    _tick(phase: null);
+    final displayingBlocks = _display.displayingBlocks;
     _status = [
       buildProcessState.fullBuildReason == FullBuildReason.none
           ? 'Incremental build '
           : 'Full build ',
-      AnsiBuffer.bold,
-      result ? AnsiBuffer.green : AnsiBuffer.red,
+      if (displayingBlocks) AnsiBuffer.bold,
+      if (displayingBlocks) result ? AnsiBuffer.green : AnsiBuffer.red,
       result ? successPattern : failurePattern,
-      AnsiBuffer.reset,
+      if (displayingBlocks) AnsiBuffer.reset,
       ' in ',
       renderDuration(processDuration),
       if (_messages.hasWarnings) ' with warnings',
       '.',
     ];
-    _tick(phase: null, finished: true);
-    _display.displayedLines = 0;
+
+    if (displayingBlocks) {
+      _display.block(_render(finished: true));
+      _display.flush();
+    } else {
+      _display.message(BuildLogSeverity.info, _status.join(''));
+    }
   }
 
   String renderThrowable(
@@ -306,7 +354,11 @@ class BuildLog {
     }
   }
 
-  void _tick({InBuildPhase? phase, bool finished = false}) {
+  /// Updates timers and [_currentPhase].
+  ///
+  /// The time since the previous tick is attributed to the previous [phase].
+  /// And, [processDuration] is updated.
+  void _tick({InBuildPhase? phase}) {
     final duration = _stopwatch.elapsed;
     _stopwatch.reset();
     final previousPhase = _currentPhase;
@@ -316,12 +368,6 @@ class BuildLog {
     if (previousPhase != null) {
       _phaseProgress[previousPhase]!.duration += duration;
     }
-
-    _display.display(
-      makeEntry(severity: BuildLogSeverity.info, line: '', finished: finished),
-      // TODO: changed note?
-      force: _currentPhase != previousPhase || finished,
-    );
   }
 
   List<String> _render({bool finished = false}) {
@@ -341,33 +387,7 @@ class BuildLog {
 
       if (progress.isOptional) continue;
 
-      final activities = this.activities.render(phase: phase);
-
-      var firstSeparator = true;
-      String separator() {
-        if (firstSeparator) {
-          firstSeparator = false;
-          return ': ';
-        }
-        return ', ';
-      }
-
-      result.writeLine([
-        renderDuration(progress.duration).padLeft(maxProgressWidth),
-        ' ',
-        AnsiBuffer.bold,
-        phase.builderLabel,
-        AnsiBuffer.reset,
-        if (progress.inputs != 0) ' on ${progress.inputs.renderNamed('input')}',
-        if (progress.skipped != 0) '${separator()}${progress.skipped} skipped',
-        if (progress.builtNew != 0) '${separator()}${progress.builtNew} output',
-        if (progress.builtSame != 0) '${separator()}${progress.builtSame} same',
-        if (progress.builtNothing != 0)
-          '${separator()}${progress.builtNothing} no-op',
-        if (progress.nextInput != null)
-          '${separator()}${renderId(progress.nextInput!)}',
-        if (activities.isNotEmpty) '; spent $activities',
-      ], hangingIndent: indent);
+      result.writeLine(_renderPhase(phase), hangingIndent: indent);
 
       if (!finished) {
         for (final line in _messages.renderInline(
@@ -401,6 +421,50 @@ class BuildLog {
     }
 
     return result.lines;
+  }
+
+  List<String> _renderPhase(InBuildPhase phase, {int maxProgressWidth = 0}) {
+    final activities = this.activities.render(phase: phase);
+
+    var firstSeparator = true;
+    String separator() {
+      if (firstSeparator) {
+        firstSeparator = false;
+        return ': ';
+      }
+      return ', ';
+    }
+
+    final useAnsi = _display.displayingBlocks;
+    final progress = _phaseProgress[phase]!;
+    return [
+      renderDuration(progress.duration).padLeft(maxProgressWidth),
+      ' ',
+      if (useAnsi) AnsiBuffer.bold,
+      phase.builderLabel,
+      if (useAnsi) AnsiBuffer.reset,
+      if (progress.inputs != 0) ' on ${progress.inputs.renderNamed('input')}',
+      if (progress.skipped != 0) '${separator()}${progress.skipped} skipped',
+      if (progress.builtNew != 0) '${separator()}${progress.builtNew} output',
+      if (progress.builtSame != 0) '${separator()}${progress.builtSame} same',
+      if (progress.builtNothing != 0)
+        '${separator()}${progress.builtNothing} no-op',
+      if (progress.nextInput != null)
+        '${separator()}${renderId(progress.nextInput!)}',
+      if (activities.isNotEmpty) '; spent $activities',
+    ];
+  }
+
+  bool get _shouldShowProgressNow {
+    final interval =
+        configuration.mode == BuildLogMode.build && _display.displayingBlocks
+            ? const Duration(milliseconds: 100)
+            : const Duration(seconds: 1);
+    if (_progressStopwatch.elapsed >= interval) {
+      _progressStopwatch.reset();
+      return true;
+    }
+    return false;
   }
 }
 

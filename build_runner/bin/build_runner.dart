@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:build_runner/src/build_script_generate/bootstrap.dart';
+import 'package:build_runner/src/build_script_generate/build_process_state.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner/src/entrypoint/runner.dart';
 import 'package:build_runner_core/build_runner_core.dart';
@@ -79,6 +80,13 @@ Future<void> main(List<String> args) async {
     exitCode = await commandRunner.runCommand(parsedArgs) ?? 1;
   } else {
     var experiments = parsedArgs.command!['enable-experiment'] as List<String>?;
+    if (commandName == 'build' ||
+        commandName == 'serve' ||
+        commandName == 'watch') {
+      buildLog.configuration = buildLog.configuration.rebuild((b) {
+        b.mode = BuildLogMode.build;
+      });
+    }
     while ((exitCode = await generateAndRun(args, experiments: experiments)) ==
         ExitCode.tempFail.code) {}
   }

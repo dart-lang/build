@@ -17,6 +17,7 @@ import 'package:logging/logging.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
+import '../build_script_generate/build_process_state.dart';
 import '../package_graph/build_config_overrides.dart';
 import '../server/server.dart';
 import '../watcher/asset_change.dart';

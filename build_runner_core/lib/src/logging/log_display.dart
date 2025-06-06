@@ -5,31 +5,23 @@
 import 'dart:io';
 
 // ignore: implementation_imports
-import 'package:build_runner/src/build_script_generate/build_process_state.dart';
+import 'package:build_runner/src/internal.dart';
 import 'package:logging/logging.dart';
 
 import 'build_log.dart';
-import 'build_log_configuration.dart';
 import 'build_log_messages.dart';
 
-final logger = Logger.root;
+final _logger = Logger.root;
 
 class LogDisplay {
-  late Stopwatch stopwatch = Stopwatch()..start();
-
   String previousLastLine = '';
-  bool closed = false;
 
-  void close() {
-    closed = true;
-  }
-
-  int get displayedLines => buildProcessState.displayedLines;
-  set displayedLines(int displayedLines) =>
+  int get _displayedLines => buildProcessState.displayedLines;
+  set _displayedLines(int displayedLines) =>
       buildProcessState.displayedLines = displayedLines;
 
   void prompt(String message) {
-    displayedLines = 0;
+    _displayedLines = 0;
     if (buildLog.configuration.onLog != null) {
       buildLog.configuration.onLog!(
         _LogRecord(Level.INFO, message, Logger.root.name),
@@ -39,54 +31,54 @@ class LogDisplay {
     stdout.writeln(message);
   }
 
-  void display(BuildLogEntry entry, {bool force = false}) {
-    if (closed) return;
-    stopwatch.reset();
+  /// Whether blocks are displayed.
+  ///
+  /// Otherwise, messages are displayed or sent to `onLog` line by line.
+  bool get displayingBlocks =>
+      buildLog.configuration.onLog == null &&
+      buildLog.configuration.mode == BuildLogMode.build &&
+      stdout.hasTerminal &&
+      stdout.supportsAnsiEscapes;
 
+  void block(List<String> lines) {
+    if (!displayingBlocks) return;
+    final moveCursor = _displayedLines == 0 ? '' : '\x1b[${_displayedLines}F';
+    _displayedLines = lines.length;
+    stdout.writeln('$moveCursor${lines.join('\n')}');
+  }
+
+  void message(BuildLogSeverity severity, String message) {
+    // If block display is possible it replaces message display.
+    if (displayingBlocks) return;
+
+    // If `onLog` is set, call it and don't do any further display.
     if (buildLog.configuration.onLog != null) {
       buildLog.configuration.onLog!(
-        _LogRecord(entry.severity.level, entry.message, Logger.root.name),
+        _LogRecord(severity.level, message, Logger.root.name),
       );
       return;
     }
 
-    logger.log(entry.severity.level, entry.message);
-    if (stdout.hasTerminal && stdout.supportsAnsiEscapes) {
-      // TODO throttle / force
-      final moveCursor = displayedLines == 0 ? '' : '\x1b[${displayedLines}F';
-      displayedLines = entry.lines.length;
+    // Log to the root logger for the benefit of any non-`build_runner` log
+    // listeners.
+    _logger.log(severity.level, message);
 
-      stdout.writeln('$moveCursor${entry.block}');
+    // Display.
+    if (buildLog.configuration.mode == BuildLogMode.daemon &&
+        severity == BuildLogSeverity.error) {
+      stderr.writeln(severity.render(message));
     } else {
-      if (buildLog.configuration.mode == BuildLogMode.daemon &&
-          entry.severity == BuildLogSeverity.error) {
-        stderr.writeln(entry.message);
-      } else {
-        if (force || entry.message != previousLastLine) {
-          stdout.writeln(entry.message);
-        }
-        previousLastLine = entry.message;
-      }
+      stdout.writeln(severity.render(message));
     }
   }
 
-  void finish() {
-    displayedLines = 0;
+  /// If [displayingBlocks], stops updating the current block and starts a new
+  /// one.
+  ///
+  /// Otherwise, does nothing.
+  void flush() {
+    _displayedLines = 0;
   }
-}
-
-class BuildLogEntry {
-  final List<String> lines;
-  final String message;
-  final BuildLogSeverity severity;
-
-  BuildLogEntry({
-    required this.lines,
-    required this.message,
-    required this.severity,
-  });
-
-  String get block => lines.join('\n');
 }
 
 /// As [LogRecord] with better `toString`.

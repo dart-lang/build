@@ -88,12 +88,13 @@ class BuildLogMessages {
       final context = message.context;
       severityResult.add(
         AnsiBufferLine([
-          severity.name,
-          if (context != null) ', $context',
+          if (context != null) context,
           if (count > 1) ', +${count - 1}',
         ], indent: indent),
       );
-      severityResult.add(AnsiBufferLine([message.message], indent: indent + 2));
+      severityResult.add(
+        AnsiBufferLine([severity.prefix, message.message], indent: indent),
+      );
     }
 
     return result.values.expand((x) => x).toList();
@@ -107,12 +108,11 @@ class BuildLogMessages {
           final context = message.context;
           result.add(
             AnsiBufferLine([
-              '${message.phase?.builderLabel ?? 'build_runner'} '
-                  '${severity.name}',
+              message.phase?.builderLabel ?? 'build_runner',
               if (context != null) ' on $context',
             ]),
           );
-          result.add(AnsiBufferLine([message.message], indent: 2));
+          result.add(AnsiBufferLine([severity.prefix, message.message]));
         }
       }
     }
@@ -149,5 +149,13 @@ enum BuildLogSeverity {
     BuildLogSeverity.info => Level.INFO,
     BuildLogSeverity.warning => Level.WARNING,
     BuildLogSeverity.error => Level.SEVERE,
+  };
+
+  String render(String message) => '$prefix$message';
+
+  String get prefix => switch (this) {
+    BuildLogSeverity.info => '  ',
+    BuildLogSeverity.warning => 'W ',
+    BuildLogSeverity.error => 'E ',
   };
 }

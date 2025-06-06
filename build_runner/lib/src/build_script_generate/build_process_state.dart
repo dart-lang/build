@@ -14,11 +14,19 @@ final BuildProcessState buildProcessState = BuildProcessState();
 class BuildProcessState {
   final Map<String, Object?> _state = {};
   final List<void Function()> _beforeSends = [];
+  final List<void Function()> _afterReceives = [];
 
   /// The exit code of the most recent build script isolate, or `null` if there
   /// was none or it is currently running.
   int? get isolateExitCode => _state['isolateExitCode'] as int?;
   set isolateExitCode(int? value) => _state['isolateExitCode'] = value;
+
+  /// For `buildLog`, the log mode.
+  BuildLogMode get buildLogMode => BuildLogMode.values.singleWhere(
+    (mode) => mode.name == _state['buildLogMode'],
+    orElse: () => BuildLogMode.simple,
+  );
+  set buildLogMode(BuildLogMode mode) => _state['buildLogMode'] = mode.name;
 
   /// For `buildLog` console display, the number of displayed lines that should
   /// be overwritten by the next display.
@@ -51,6 +59,10 @@ class BuildProcessState {
     sendPort?.send(_state);
   }
 
+  void doAfterReceive(void Function() function) {
+    _afterReceives.add(function);
+  }
+
   /// Receives `this` from [sendPort], by sending a `SendPort` then listening
   /// on its corresponding `ReceivePort`.
   Future<void> receive(SendPort? sendPort) async {
@@ -64,6 +76,9 @@ class BuildProcessState {
     _state
       ..clear()
       ..addAll(received as Map<String, Object?>);
+    for (final afterReceive in _afterReceives) {
+      afterReceive();
+    }
   }
 
   /// Receives `this` from [receivePort].
@@ -97,4 +112,18 @@ enum FullBuildReason {
   const FullBuildReason(this.message);
 
   final String message;
+}
+
+enum BuildLogMode {
+  /// Line by line logging.
+  simple,
+
+  /// For `build_daemon`, as `simple` but log errors to stderr.
+  daemon,
+
+  /// Advanced log mode for builds.
+  ///
+  /// If a console is available, progress is shown and updated in place instead
+  /// of line by line logging.
+  build,
 }

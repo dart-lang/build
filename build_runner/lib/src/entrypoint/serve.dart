@@ -11,6 +11,7 @@ import 'package:http_multi_server/http_multi_server.dart';
 import 'package:io/io.dart';
 import 'package:shelf/shelf_io.dart';
 
+import '../build_script_generate/build_process_state.dart';
 import '../generate/build.dart';
 import '../server/server.dart';
 import 'options.dart';

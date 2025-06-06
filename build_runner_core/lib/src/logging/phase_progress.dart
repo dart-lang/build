@@ -24,6 +24,8 @@ class PhaseProgress {
 
   bool get isOptional => inputs == 0;
 
+  bool get isStarting => skipped + builtNew + builtSame + builtNothing == 0;
+
   bool get isFinished =>
       inputs == skipped + builtNew + builtSame + builtNothing;
 }
