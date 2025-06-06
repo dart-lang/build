@@ -19,7 +19,6 @@ class LogDisplay {
 
   String previousLastLine = '';
   bool closed = false;
-  void Function(LogRecord record)? onLog;
 
   void close() {
     closed = true;
@@ -31,8 +30,10 @@ class LogDisplay {
 
   void prompt(String message) {
     displayedLines = 0;
-    if (onLog != null) {
-      onLog!(_LogRecord(Level.INFO, message, Logger.root.name));
+    if (buildLog.configuration.onLog != null) {
+      buildLog.configuration.onLog!(
+        _LogRecord(Level.INFO, message, Logger.root.name),
+      );
       return;
     }
     stdout.writeln(message);
@@ -42,8 +43,10 @@ class LogDisplay {
     if (closed) return;
     stopwatch.reset();
 
-    if (onLog != null) {
-      onLog!(_LogRecord(entry.severity.level, entry.message, Logger.root.name));
+    if (buildLog.configuration.onLog != null) {
+      buildLog.configuration.onLog!(
+        _LogRecord(entry.severity.level, entry.message, Logger.root.name),
+      );
       return;
     }
 
