@@ -24,7 +24,7 @@ import '../asset_graph/optional_output_tracker.dart';
 import '../asset_graph/post_process_build_step_id.dart';
 import '../environment/build_environment.dart';
 import '../logging/build_log.dart';
-import '../logging/build_log_activities.dart';
+import '../logging/timed_activities.dart';
 import '../performance_tracking/performance_tracking_resolvers.dart';
 import '../util/build_dirs.dart';
 import '../util/constants.dart';
@@ -423,8 +423,7 @@ class Build {
       final primaryInput = node.generatedNodeConfiguration!.primaryInput;
       await lazyPhases.putIfAbsent('$phaseNumber|$primaryInput', () async {
         final phase = buildPhases.inBuildPhases[nodeConfiguration.phaseNumber];
-        return buildLog.runActivityAsync(
-          ActivityType.optionalBuilder(phase.builderLabel),
+        return TimedActivity.optionalPhase(phase).runAsync(
           () => _buildForPrimaryInput(
             primaryInput: primaryInput,
             phaseNumber: phaseNumber,
@@ -497,8 +496,7 @@ class Build {
       }
 
       final logger = buildLog.loggerForPhase(phase, primaryInput);
-      await buildLog.runActivity(
-        ActivityType.build,
+      await TimedActivity.build.run(
         () => tracker.trackStage(
           'Build',
           () => runBuilder(
@@ -520,8 +518,7 @@ class Build {
 
       // Update the state for all the `builderOutputs` nodes based on what was
       // read and written.
-      await buildLog.runActivityAsync(
-        ActivityType.track,
+      await TimedActivity.track.runAsync(
         () => tracker.trackStage(
           'Finalize',
           () => _setOutputsState(
@@ -729,7 +726,7 @@ class Build {
     Iterable<AssetId> outputs,
     AssetReader reader,
   ) async {
-    return await buildLog.runActivityAsync(ActivityType.track, () async {
+    return await TimedActivity.track.runAsync(() async {
       // Update state for primary input if needed.
       var primaryInputNode = assetGraph.get(primaryInput)!;
       if (primaryInputNode.type == NodeType.generated) {

@@ -116,17 +116,14 @@ class AnalysisDriverModel {
 
     // If requested, find transitive imports.
     if (transitive) {
-      idsToSyncOntoFilesystem = await buildLog.runActivityAsync(
-        ActivityType.track,
-        () async {
-          // Note: `transitiveDepsOf` can cause loads that cause builds that
-          // cause a recursive `_performResolve` on this same `AnalysisDriver`
-          // instance.
-          final nodeLoader = AssetDepsLoader(buildStep.phasedReader);
-          buildStep.inputTracker.addResolverEntrypoint(entrypoint);
-          return await _graphLoader.transitiveDepsOf(nodeLoader, entrypoint);
-        },
-      );
+      idsToSyncOntoFilesystem = await TimedActivity.track.runAsync(() async {
+        // Note: `transitiveDepsOf` can cause loads that cause builds that
+        // cause a recursive `_performResolve` on this same `AnalysisDriver`
+        // instance.
+        final nodeLoader = AssetDepsLoader(buildStep.phasedReader);
+        buildStep.inputTracker.addResolverEntrypoint(entrypoint);
+        return await _graphLoader.transitiveDepsOf(nodeLoader, entrypoint);
+      });
     } else {
       // Notify [buildStep] of its inputs.
       buildStep.inputTracker.add(entrypoint);

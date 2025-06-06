@@ -6,14 +6,62 @@ import '../generate/phase.dart';
 import 'ansi_buffer.dart';
 import 'build_log.dart';
 
-class BuildLogActivities {
+extension type TimedActivity(String name) {
+  /// Analyzing code with `package:analyzer`.
+  static final TimedActivity analyze = TimedActivity._('analyzing');
+
+  /// Creating the SDK summary.
+  static final TimedActivity analyzeSdk = TimedActivity._('sdk');
+
+  /// Builder code.
+  static final TimedActivity build = TimedActivity._('building');
+
+  /// `build_runner`'s incremental build logic.
+  static final TimedActivity track = TimedActivity._('tracking');
+
+  /// `build_runner`'s analyzer setup, but not the analysis itself.
+  static final TimedActivity resolve = TimedActivity._('resolving');
+
+  /// Reading files.
+  static final TimedActivity read = TimedActivity._('reading');
+
+  /// Writing or deleting files.
+  static final TimedActivity write = TimedActivity._('writing');
+
+  TimedActivity._(this.name);
+
+  /// [TimedActivity] for the optional phase [phase].
+  ///
+  /// Optional phase builds happen only if needed, and always during a required
+  /// phase. So they count as a [TimedActivity] launched in that required phase.
+  TimedActivity.optionalPhase(InBuildPhase phase) : name = phase.builderLabel {
+    if (!phase.isOptional) throw ArgumentError('Phase not optional: $phase');
+  }
+
+  /// Runs [function] attributing the time spent to this activity.
+  Future<T> runAsync<T>(Future<T> Function() function) =>
+      buildLog.activities._runAsync(
+        activity: this,
+        phase: buildLog.currentPhase,
+        function: function,
+      );
+
+  /// Runs [function] attributing the time spent to this activity.
+  T run<T>(T Function() function) => buildLog.activities._run(
+    activity: this,
+    phase: buildLog.currentPhase,
+    function: function,
+  );
+}
+
+class TimedActivities {
   final Stopwatch _stopwatch = Stopwatch()..start();
   Duration _attributedDuration = Duration.zero;
-  final Map<InBuildPhase?, Map<ActivityType, Duration>> _activities = {};
+  final Map<InBuildPhase?, Map<TimedActivity, Duration>> _activities = {};
 
-  Future<T> runActivityAsync<T>({
+  Future<T> _runAsync<T>({
     required InBuildPhase? phase,
-    required ActivityType activity,
+    required TimedActivity activity,
     required Future<T> Function() function,
   }) async {
     final start = _stopwatch.elapsed;
@@ -29,9 +77,9 @@ class BuildLogActivities {
     }
   }
 
-  T runActivity<T>({
+  T _run<T>({
     required InBuildPhase? phase,
-    required ActivityType activity,
+    required TimedActivity activity,
     required T Function() function,
   }) {
     final start = _stopwatch.elapsed;
@@ -47,10 +95,10 @@ class BuildLogActivities {
     }
   }
 
-  Map<ActivityType, Duration> durations({required InBuildPhase? phase}) =>
+  Map<TimedActivity, Duration> durations({required InBuildPhase? phase}) =>
       _activities.putIfAbsent(phase, () => {});
 
-  void _record(InBuildPhase? phase, ActivityType activity, Duration duration) {
+  void _record(InBuildPhase? phase, TimedActivity activity, Duration duration) {
     final durations = this.durations(phase: phase);
     durations[activity] = (durations[activity] ?? Duration.zero) + duration;
   }
@@ -68,17 +116,4 @@ class BuildLogActivities {
     }
     return result.toString();
   }
-}
-
-extension type ActivityType(String name) {
-  static final ActivityType analyze = ActivityType._('analyzing');
-  static final ActivityType analyzeSdk = ActivityType._('analyzing sdk');
-  static final ActivityType build = ActivityType._('building');
-  static final ActivityType track = ActivityType._('tracking');
-  static final ActivityType resolve = ActivityType._('resolving');
-  static final ActivityType read = ActivityType._('reading');
-  static final ActivityType write = ActivityType._('writing');
-
-  ActivityType.optionalBuilder(this.name);
-  ActivityType._(this.name);
 }

@@ -657,15 +657,13 @@ Future<String> packagePath(String package) async {
   return p.dirname(p.fromUri(libRoot));
 }
 
-/// Wraps [pool] so resource use is timed as [ActivityType.analyze].
+/// Wraps [pool] so resource use is timed as [TimedActivity.analyze].
 class AnalyzeActivityPool {
   final Pool pool;
 
   AnalyzeActivityPool(this.pool);
 
   Future<T> withResource<T>(Future<T> Function() function) async {
-    return pool.withResource(
-      () => buildLog.runActivityAsync(ActivityType.analyze, function),
-    );
+    return pool.withResource(() => TimedActivity.analyze.runAsync(function));
   }
 }

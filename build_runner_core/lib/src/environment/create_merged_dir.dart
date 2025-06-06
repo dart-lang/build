@@ -16,7 +16,7 @@ import '../environment/build_environment.dart';
 import '../generate/build_directory.dart';
 import '../generate/finalized_assets_view.dart';
 import '../logging/build_log.dart';
-import '../logging/build_log_activities.dart';
+import '../logging/timed_activities.dart';
 import '../package_graph/package_graph.dart';
 
 /// Pool for async file operations, we don't want to use too many file handles.
@@ -37,7 +37,7 @@ Future<bool> createMergedOutputDirectories(
   bool outputSymlinksOnly,
 ) async {
   buildLog.doing('Writing the output directory.');
-  return await buildLog.runActivityAsync(ActivityType.write, () async {
+  return await TimedActivity.write.runAsync(() async {
     if (outputSymlinksOnly && reader.filesystem is! IoFilesystem) {
       buildLog.error(
         'The current environment does not support symlinks, but symlinks were '

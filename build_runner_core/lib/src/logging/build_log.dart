@@ -14,12 +14,12 @@ import 'package:logging/logging.dart';
 
 import '../generate/phase.dart';
 import 'ansi_buffer.dart';
-import 'build_log_activities.dart';
 import 'build_log_configuration.dart';
 import 'build_log_logger.dart';
 import 'build_log_messages.dart';
 import 'log_display.dart';
 import 'phase_progress.dart';
+import 'timed_activities.dart';
 
 final BuildLog buildLog = BuildLog._();
 
@@ -62,9 +62,10 @@ class BuildLog {
   static final String successPattern = 'succeeded';
   static final String failurePattern = 'failed';
 
+  final TimedActivities activities = TimedActivities();
+
   BuildLogConfiguration _configuration = BuildLogConfiguration();
   final BuildLogMessages _messages = BuildLogMessages();
-  final BuildLogActivities _activities = BuildLogActivities();
 
   late final LogDisplay _display = LogDisplay();
   final Stopwatch _stopwatch = Stopwatch()..start();
@@ -83,6 +84,8 @@ class BuildLog {
     _configuration = configuration;
     _display.onLog = _configuration.onLog;
   }
+
+  InBuildPhase? get currentPhase => _currentPhase;
 
   /// Runs [function] with all output sent to [logger] instead of the default
   /// display.
@@ -113,24 +116,6 @@ class BuildLog {
       }
     }
   }
-
-  /// Runs [function] attributing the time spent to [activity].
-  Future<T> runActivityAsync<T>(
-    ActivityType activity,
-    Future<T> Function() function,
-  ) => _activities.runActivityAsync(
-    phase: _currentPhase,
-    activity: activity,
-    function: function,
-  );
-
-  /// Runs [function] attributing the time spent to [activity].
-  T runActivity<T>(ActivityType activity, T Function() function) =>
-      _activities.runActivity(
-        phase: _currentPhase,
-        activity: activity,
-        function: function,
-      );
 
   void reset() {
     _display.displayedLines = 0;
@@ -185,7 +170,7 @@ class BuildLog {
 
       if (progress.isOptional) continue;
 
-      final activities = _activities.render(phase: phase);
+      final activities = this.activities.render(phase: phase);
 
       var firstSeparator = true;
       String separator() {

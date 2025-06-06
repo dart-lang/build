@@ -12,8 +12,7 @@ import 'package:glob/glob.dart';
 import 'package:glob/list_local_fs.dart';
 import 'package:path/path.dart' as path;
 
-import '../logging/build_log.dart';
-import '../logging/build_log_activities.dart';
+import '../logging/timed_activities.dart';
 import '../package_graph/package_graph.dart';
 import '../util/constants.dart';
 import 'writer.dart';
@@ -86,8 +85,7 @@ class ReaderWriter extends AssetReader
   @override
   Future<bool> canRead(AssetId id) {
     return Future.value(
-      buildLog.runActivity(
-        ActivityType.read,
+      TimedActivity.read.run(
         () => cache.exists(
           id,
           ifAbsent: () {
@@ -102,8 +100,7 @@ class ReaderWriter extends AssetReader
   @override
   Future<List<int>> readAsBytes(AssetId id) {
     return Future.value(
-      buildLog.runActivity(
-        ActivityType.read,
+      TimedActivity.read.run(
         () => cache.readAsBytes(
           id,
           ifAbsent: () {
@@ -121,8 +118,7 @@ class ReaderWriter extends AssetReader
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
     return Future.value(
-      buildLog.runActivity(
-        ActivityType.read,
+      TimedActivity.read.run(
         () => cache.readAsString(
           id,
           encoding: encoding,
@@ -146,7 +142,7 @@ class ReaderWriter extends AssetReader
 
   @override
   Future<void> writeAsBytes(AssetId id, List<int> bytes) {
-    buildLog.runActivity(ActivityType.write, () {
+    TimedActivity.write.run(() {
       final path = _pathFor(id);
       cache.writeAsBytes(
         id,
@@ -165,7 +161,7 @@ class ReaderWriter extends AssetReader
     String contents, {
     Encoding encoding = utf8,
   }) {
-    buildLog.runActivity(ActivityType.write, () {
+    TimedActivity.write.run(() {
       final path = _pathFor(id);
       cache.writeAsString(
         id,
@@ -180,7 +176,7 @@ class ReaderWriter extends AssetReader
 
   @override
   Future<void> delete(AssetId id) {
-    buildLog.runActivity(ActivityType.write, () {
+    TimedActivity.write.run(() {
       onDelete?.call(id);
       final path = _pathFor(id);
       // Hidden generated files are moved by `assetPathProvider` under the root
@@ -208,7 +204,7 @@ class ReaderWriter extends AssetReader
 
   @override
   Future<void> deleteDirectory(AssetId id) {
-    buildLog.runActivity(ActivityType.write, () {
+    TimedActivity.write.run(() {
       final path = _pathFor(id);
       filesystem.deleteDirectorySync(path);
     });
