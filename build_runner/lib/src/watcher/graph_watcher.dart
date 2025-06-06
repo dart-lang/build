@@ -36,7 +36,6 @@ class PackageGraphWatcher {
   Stream<AssetChange> watch() {
     assert(!_isWatching);
     _isWatching = true;
-    // logTimedSync(_logger, 'Setting up file watchers'
     return LazyStream(_watch);
   }
 
@@ -59,7 +58,7 @@ class PackageGraphWatcher {
                     'package:${w.node.name}\n\n'
                     'If you see this consistently then it is recommended that '
                     'you enable the polling file watcher with '
-                    '--use-polling-watcher.\n\n',
+                    '--use-polling-watcher.',
                     e,
                   ),
                 );

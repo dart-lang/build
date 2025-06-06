@@ -4,6 +4,7 @@
 
 import 'dart:io';
 
+/// A buffer that wraps text taking into account ANSI escape codes.
 class AnsiBuffer {
   static const String nbsp = '\u00A0';
 
@@ -17,14 +18,14 @@ class AnsiBuffer {
   bool _isAnsi(String item) =>
       item == reset || item == bold || item == red || item == green;
 
-  void write(AnsiBufferLine line) {
-    writeLine(
-      line.items,
-      indent: line.indent,
-      hangingIndent: line.hangingIndent,
-    );
-  }
-
+  /// Writes [items] as a line prefixed with [indent], wraps to console width;
+  /// on wrapping, indents by [hangingIndent].
+  ///
+  /// ANSI codes must be individual items and must use the constants defined in
+  /// this class such as [bold] and [reset].
+  ///
+  /// In addition to ANSI codes, [nbsp] is a non-breaking space which will not
+  /// be used for wrapping. In the buffer it is replaced with a normal space.
   void writeLine(List<String> items, {int indent = 0, int? hangingIndent}) {
     final width = stdout.hasTerminal ? stdout.terminalColumns : 80;
     hangingIndent ??= indent;
@@ -78,10 +79,21 @@ class AnsiBuffer {
     }
   }
 
+  /// As [writeLine] for an [AnsiBuffer].
+  void write(AnsiBufferLine line) {
+    writeLine(
+      line.items,
+      indent: line.indent,
+      hangingIndent: line.hangingIndent,
+    );
+  }
+
+  /// Removes all ANSI constants from [string], for testing.
   static String removeAnsi(String string) =>
       string.replaceAll(bold, '').replaceAll(reset, '');
 }
 
+/// A line for writing to an [AnsiBuffer].
 class AnsiBufferLine {
   List<String> items;
   int indent;

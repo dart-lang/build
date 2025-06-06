@@ -272,6 +272,7 @@ class WatchImpl implements BuildState {
         buildDirs: _buildDirs,
         buildFilters: _buildFilters,
       );
+      // TODO log something
       return result;
     }
 
@@ -367,12 +368,8 @@ class WatchImpl implements BuildState {
     // Schedule the actual first build for the future so we can return the
     // stream synchronously.
     () async {
+      buildLog.doing('Waiting for file watchers to be ready.');
       await graphWatcher.ready;
-      /*await logTimedAsync(
-        _log.loggerForSetup(),
-        'Waiting for all file watchers to be ready',
-        () => graphWatcher.ready,
-      );*/
       if (await watcherEnvironment.reader.canRead(rootPackageConfigId)) {
         originalRootPackageConfigDigest = md5.convert(
           await watcherEnvironment.reader.readAsBytes(rootPackageConfigId),

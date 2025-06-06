@@ -42,7 +42,6 @@ Future<void> cleanFor(String assetGraphPath) async {
     'to work around an apparent (and reproducible) bug.',
   );
 
-  // await logTimedAsync(logger, 'Cleaning up source outputs', () async {
   var assetGraphFile = File(assetGraphPath);
   if (!assetGraphFile.existsSync()) {
     buildLog.warning(
@@ -63,13 +62,6 @@ Future<void> cleanFor(String assetGraphPath) async {
   }
   var packageGraph = await PackageGraph.forThisPackage();
   await _cleanUpSourceOutputs(assetGraph, packageGraph);
-  //});
-
-  /*await logTimedAsync(
-    logger,
-    'Cleaning up cache directory',
-    _cleanUpGeneratedDirectory,
-  );*/
   await _cleanUpGeneratedDirectory();
 }
 

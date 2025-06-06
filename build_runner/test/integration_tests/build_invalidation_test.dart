@@ -112,8 +112,8 @@ void main() {
 
       await expectOutput(secondBuild, [
         'Invalidating asset graph due to build script update',
-        'compile build script',
-        'create asset graph',
+        'Compiling build script.',
+        'Creating asset graph.',
       ]);
     });
 
@@ -133,7 +133,7 @@ void main() {
 
       await expectOutput(secondBuild, [
         'Throwing away cached asset graph due to version mismatch',
-        'create asset graph',
+        'Create asset graph.',
       ]);
     });
   });
@@ -151,8 +151,8 @@ void main() {
 
       await expectOutput(server.stdout, [
         'Terminating builds due to build script update',
-        'compile build script',
-        'create asset graph',
+        'Compiling build script.',
+        'Creating asset graph.',
       ]);
 
       await server.shutDown();
@@ -196,7 +196,7 @@ void main() {
 
     await expectOutput(secondBuild, [
       'Invalidated precompiled build script due to core package update',
-      'compile build script',
+      'Comiling build script.',
     ]);
   });
 

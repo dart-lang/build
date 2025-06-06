@@ -152,15 +152,14 @@ class Build {
       if (failures.isNotEmpty) {
         for (final failure in failures) {
           if (errorsShownOutputs.contains(failure.id)) continue;
+          final logger = buildLog.loggerForPhase(
+            buildPhases.inBuildPhases[failure
+                .generatedNodeConfiguration!
+                .phaseNumber],
+            failure.generatedNodeConfiguration!.primaryInput,
+          );
           for (final error in failure.generatedNodeState!.errors) {
-            final name = _actionLoggerName(
-              buildPhases.inBuildPhases[failure
-                  .generatedNodeConfiguration!
-                  .phaseNumber],
-              failure.generatedNodeConfiguration!.primaryInput,
-              options.packageGraph.root.name,
-            );
-            buildLog.error('$name (cached)\n$error');
+            logger.severe(error);
           }
         }
         result = BuildResult(
@@ -1123,23 +1122,6 @@ class Build {
   }
 
   Future _delete(AssetId id) => deleteWriter.delete(id);
-}
-
-String _actionLoggerName(
-  InBuildPhase phase,
-  AssetId primaryInput,
-  String rootPackageName,
-) {
-  var asset =
-      primaryInput.package == rootPackageName
-          ? primaryInput.path
-          : primaryInput.uri.toString();
-  // In the rare case that the assets ends with a dot, remove it to ensure that
-  // the logger name is valid.
-  while (asset.endsWith('.')) {
-    asset = asset.substring(0, asset.length - 1);
-  }
-  return '${phase.builderLabel} on $asset';
 }
 
 String _twoDigits(int n) => '$n'.padLeft(2, '0');

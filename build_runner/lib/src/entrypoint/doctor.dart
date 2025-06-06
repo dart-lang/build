@@ -44,7 +44,7 @@ class DoctorCommand extends BuildRunnerCommand {
     }
 
     if (isOk) {
-      buildLog.info('No problems found!\n');
+      buildLog.info('No problems found!');
     }
     return isOk ? ExitCode.success.code : ExitCode.config.code;
   }

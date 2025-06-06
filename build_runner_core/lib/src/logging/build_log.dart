@@ -57,7 +57,10 @@ final BuildLog buildLog = BuildLog._();
 ///  - By default, only builder logs of level `WARNING` and above are displayed.
 ///    The `verbose` flag will show all builder logs.
 class BuildLog {
+  /// The log output signalling success, for tests.
   static final String successPattern = 'succeeded';
+
+  /// The log output signalling failure, for tests.
   static final String failurePattern = 'failed';
 
   final TimedActivities activities = TimedActivities();
