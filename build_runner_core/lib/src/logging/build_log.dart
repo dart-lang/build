@@ -232,8 +232,8 @@ class BuildLog {
     return result.lines;
   }
 
-  void setBuildType(BuildType buildType) {
-    buildProcessState.buildType = buildType;
+  void fullBuildBecause(FullBuildReason reason) {
+    buildProcessState.buildType = reason;
     tick(phase: null);
   }
 
@@ -350,7 +350,7 @@ class BuildLog {
 
   void finishBuild({required bool result, required int outputs}) {
     _status = [
-      buildProcessState.buildType == BuildType.incremental
+      buildProcessState.buildType == FullBuildReason.none
           ? 'Incremental build '
           : 'Full build ',
       AnsiBuffer.bold,

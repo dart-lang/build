@@ -80,6 +80,7 @@ Future<int> _generateAndRun(
           ..createSync(recursive: true)
           ..writeAsStringSync(newContents);
         buildScriptChanged = true;
+        buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
       }
     } on CannotBuildException {
       return ExitCode.config.code;
@@ -129,7 +130,7 @@ Future<int> _generateAndRun(
         messagePort.sendPort.send(ExitCode.config.code);
         exitPort.sendPort.send(null);
       } else {
-        buildLog.setBuildType(BuildType.incompatibleScript);
+        buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
       }
       await File(scriptKernelLocation).rename(scriptKernelCachedLocation);
     }
@@ -182,17 +183,14 @@ Future<bool> _createKernelIfNeeded(
   }
 
   if (await kernelFile.exists()) {
-    if (buildScriptChanged) {
-      await kernelFile.rename(scriptKernelCachedLocation);
-      buildLog.setBuildType(BuildType.incompatibleScript);
-    } else if (!await assetGraphFile.exists()) {
+    if (!await assetGraphFile.exists()) {
       // If we failed to serialize an asset graph for the snapshot, then we
       // don't want to re-use it because we can't check if it is up to date.
       await kernelFile.rename(scriptKernelCachedLocation);
-      buildLog.setBuildType(BuildType.incompatibleAssetGraph);
+      buildLog.fullBuildBecause(FullBuildReason.incompatibleAssetGraph);
     } else if (!await _checkImportantPackageDepsAndExperiments(experiments)) {
       await kernelFile.rename(scriptKernelCachedLocation);
-      buildLog.setBuildType(BuildType.incompatibleScript);
+      buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
     }
   }
 

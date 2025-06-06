@@ -103,7 +103,7 @@ class _Loader {
           !_options.skipBuildScriptCheck &&
           buildScriptUpdates.hasBeenUpdated(updates.keys.toSet());
       if (buildScriptUpdated) {
-        buildLog.setBuildType(BuildType.incompatibleScript);
+        buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
         var deletedSourceOutputs = await assetGraph.deleteOutputs(
           _options.packageGraph,
           _environment.writer,

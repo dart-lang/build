@@ -128,7 +128,7 @@ class Build {
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
     if (!assetGraph.cleanBuild) {
-      buildLog.setBuildType(BuildType.incremental);
+      buildLog.fullBuildBecause(FullBuildReason.none);
     }
     buildLog.configuration = buildLog.configuration.rebuild(
       (b) => b..rootPackageName = options.packageGraph.root.name,

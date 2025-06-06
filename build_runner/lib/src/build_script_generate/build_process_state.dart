@@ -23,12 +23,13 @@ class BuildProcessState {
   int get displayedLines => (_state['displayedLines'] as int?) ?? 0;
   set displayedLines(int? value) => _state['displayedLines'] = value;
 
-  BuildType get buildType => BuildType.values.singleWhere(
-    (v) => v.name == _state['buildType'],
-    orElse: () => BuildType.clean,
+  FullBuildReason get buildType => FullBuildReason.values.singleWhere(
+    (v) => v.name == _state['fullBuildReason'],
+    orElse: () => FullBuildReason.clean,
   );
 
-  set buildType(BuildType buildType) => _state['buildType'] = buildType.name;
+  set buildType(FullBuildReason buildType) =>
+      _state['buildType'] = buildType.name;
 
   int get elapsedMillis => _state['elapsedMillis'] as int? ?? 0;
   set elapsedMillis(int elapsedMillis) =>
@@ -81,14 +82,16 @@ class BuildProcessState {
   }
 }
 
-enum BuildType {
+/// Reason why `build_runner` will do a full build; or `none` for an
+/// incremental build.
+enum FullBuildReason {
   clean('full build'),
   incompatibleScript('full build because builders changed'),
   incompatibleAssetGraph('full build because there is no valid asset graph'),
   incompatibleBuild('full build because target changed'),
-  incremental('incremental build');
+  none('incremental build');
 
-  const BuildType(this.message);
+  const FullBuildReason(this.message);
 
   final String message;
 }

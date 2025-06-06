@@ -57,7 +57,7 @@ class AssetGraphLoader {
       return await _load(assetGraphId);
     } on AssetGraphCorruptedException catch (_) {
       // Start fresh if the cached asset_graph cannot be deserialized
-      buildLog.setBuildType(BuildType.incompatibleAssetGraph);
+      buildLog.fullBuildBecause(FullBuildReason.incompatibleAssetGraph);
       await Future.wait([writer.deleteDirectory(_generatedOutputDirectoryId)]);
       return null;
     }
@@ -74,7 +74,7 @@ class AssetGraphLoader {
     final enabledExperimentsChanged =
         cachedGraph.enabledExperiments != enabledExperiments.build();
     if (buildPhasesChanged || pkgVersionsChanged || enabledExperimentsChanged) {
-      buildLog.setBuildType(BuildType.incompatibleBuild);
+      buildLog.fullBuildBecause(FullBuildReason.incompatibleBuild);
       await Future.wait([
         writer.delete(assetGraphId),
         cachedGraph.deleteOutputs(packageGraph, writer),
@@ -86,7 +86,7 @@ class AssetGraphLoader {
       return null;
     }
     if (!isSameSdkVersion(cachedGraph.dartVersion, Platform.version)) {
-      buildLog.setBuildType(BuildType.incompatibleBuild);
+      buildLog.fullBuildBecause(FullBuildReason.incompatibleBuild);
       await Future.wait([
         writer.delete(assetGraphId),
         cachedGraph.deleteOutputs(packageGraph, writer),
