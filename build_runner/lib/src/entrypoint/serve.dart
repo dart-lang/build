@@ -63,9 +63,9 @@ class ServeCommand extends WatchCommand {
     final servers = <ServeTarget, HttpServer>{};
     var options = readOptions();
     buildLog.configuration = buildLog.configuration.rebuild((b) {
+      b.mode = BuildLogMode.build;
       b.verbose = options.verbose;
     });
-    buildLog.start(BuildLogMode.watch);
     return withEnabledExperiments(
       () => _runServe(servers, options).whenComplete(() async {
         await Future.wait(

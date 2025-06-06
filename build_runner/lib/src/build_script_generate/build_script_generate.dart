@@ -54,7 +54,7 @@ Future<String> generateBuildScript() async {
       '''
 // @dart=${_lastShortFormatDartVersion.major}.${_lastShortFormatDartVersion.minor}
 // ignore_for_file: directives_ordering
-// build_runner 2.4.16
+// build_runner >=2.4.16
 ${library.accept(emitter)}
 ''',
     );

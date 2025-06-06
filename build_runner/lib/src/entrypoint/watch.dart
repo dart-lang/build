@@ -49,9 +49,9 @@ class WatchCommand extends BuildRunnerCommand {
   Future<int> run() {
     var options = readOptions();
     buildLog.configuration = buildLog.configuration.rebuild((b) {
+      b.mode = BuildLogMode.build;
       b.verbose = options.verbose;
     });
-    buildLog.start(BuildLogMode.watch);
     return withEnabledExperiments(
       () => _run(options),
       options.enableExperiments,

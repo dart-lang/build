@@ -26,7 +26,6 @@ class DoctorCommand extends BuildRunnerCommand {
 
   @override
   Future<int> run() async {
-    buildLog.start(BuildLogMode.simple);
     final config = await _loadBuilderDefinitions();
 
     var isOk = true;

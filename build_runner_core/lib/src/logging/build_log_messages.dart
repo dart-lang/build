@@ -4,7 +4,6 @@
 
 import 'package:logging/logging.dart';
 
-import '../../build_runner_core.dart';
 import '../generate/phase.dart';
 import 'ansi_buffer.dart';
 

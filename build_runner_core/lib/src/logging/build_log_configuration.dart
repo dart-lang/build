@@ -7,8 +7,24 @@ import 'package:logging/logging.dart';
 
 part 'build_log_configuration.g.dart';
 
+enum BuildLogMode {
+  /// Line by line logging.
+  simple,
+
+  /// For `build_daemon`, as `simple` but log errors to stderr.
+  daemon,
+
+  /// Advanced log mode for builds.
+  ///
+  /// If a console is available, progress is shown and updated in place instead
+  /// of line by line logging.
+  build,
+}
+
 abstract class BuildLogConfiguration
     implements Built<BuildLogConfiguration, BuildLogConfigurationBuilder> {
+  BuildLogMode get mode;
+
   /// Whether info from builders is displayed.
   bool get verbose;
 
@@ -23,7 +39,10 @@ abstract class BuildLogConfiguration
   String? get rootPackageName;
 
   /// Default configuration.
-  factory BuildLogConfiguration() =>
-      _$BuildLogConfiguration._(verbose: false, onLog: null);
+  factory BuildLogConfiguration() => _$BuildLogConfiguration._(
+    verbose: false,
+    onLog: null,
+    mode: BuildLogMode.simple,
+  );
   BuildLogConfiguration._();
 }

@@ -95,9 +95,9 @@ class TestCommand extends BuildRunnerCommand {
       _ensureBuildTestDependency(packageGraph);
       options = readOptions();
       buildLog.configuration = buildLog.configuration.rebuild((b) {
+        b.mode = BuildLogMode.build;
         b.verbose = options.verbose;
       });
-      buildLog.start(BuildLogMode.build);
       return withEnabledExperiments(
         () => _run(options, tempPath),
         options.enableExperiments,

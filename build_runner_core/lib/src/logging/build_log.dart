@@ -23,8 +23,6 @@ import 'timed_activities.dart';
 
 final BuildLog buildLog = BuildLog._();
 
-enum BuildLogMode { simple, build, buildOfSeries, watch, daemon }
-
 /// The `build_runner` log.
 ///
 /// The `package:logging` APIs are used in three distinct ways.
@@ -69,8 +67,6 @@ class BuildLog {
 
   late final LogDisplay _display = LogDisplay();
   final Stopwatch _stopwatch = Stopwatch()..start();
-  // ignore: unused_field
-  BuildLogMode _mode = BuildLogMode.simple;
 
   final Map<InBuildPhase, PhaseProgress> _phaseProgress = {};
   InBuildPhase? _currentPhase;
@@ -130,15 +126,6 @@ class BuildLog {
     buildProcessState.doBeforeSend(() {
       buildProcessState.elapsedMillis = _totalDuration.inMilliseconds;
     });
-  }
-
-  void start(BuildLogMode mode) {
-    _display.severeToStderr = mode == BuildLogMode.daemon;
-    _mode = mode;
-
-    if (mode == BuildLogMode.buildOfSeries) {
-      _display.displayedLines = 0;
-    }
   }
 
   BuildLogEntry makeEntry({
@@ -233,7 +220,7 @@ class BuildLog {
   }
 
   void fullBuildBecause(FullBuildReason reason) {
-    buildProcessState.buildType = reason;
+    buildProcessState.fullBuildReason = reason;
     tick(phase: null);
   }
 
@@ -355,12 +342,12 @@ class BuildLog {
   }
 
   void startBuild() {
-    doing('Building, ${buildProcessState.buildType.message}.');
+    doing('Building, ${buildProcessState.fullBuildReason.message}.');
   }
 
   void finishBuild({required bool result, required int outputs}) {
     _status = [
-      buildProcessState.buildType == FullBuildReason.none
+      buildProcessState.fullBuildReason == FullBuildReason.none
           ? 'Incremental build '
           : 'Full build ',
       AnsiBuffer.bold,

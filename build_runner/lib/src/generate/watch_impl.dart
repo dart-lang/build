@@ -71,10 +71,10 @@ Future<ServeHandler> watch(
     writer: writer,
   );
   buildLog.configuration = buildLog.configuration.rebuild((b) {
+    b.mode = BuildLogMode.build;
     b.verbose = verbose;
     b.onLog = onLog;
   });
-  buildLog.start(BuildLogMode.watch);
   overrideBuildConfig ??= await findBuildConfigOverrides(
     packageGraph,
     environment.reader,
@@ -249,7 +249,7 @@ class WatchImpl implements BuildState {
     var controller = StreamController<BuildResult>();
 
     Future<BuildResult> doBuild(List<List<AssetChange>> changes) async {
-      buildLog.start(BuildLogMode.buildOfSeries);
+      // TODO log something
       var build = _buildSeries!;
       var mergedChanges = collectChanges(changes);
 

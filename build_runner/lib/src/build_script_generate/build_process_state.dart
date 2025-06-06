@@ -20,17 +20,20 @@ class BuildProcessState {
   int? get isolateExitCode => _state['isolateExitCode'] as int?;
   set isolateExitCode(int? value) => _state['isolateExitCode'] = value;
 
+  /// For `buildLog` console display, the number of displayed lines that should
+  /// be overwritten by the next display.
   int get displayedLines => (_state['displayedLines'] as int?) ?? 0;
   set displayedLines(int? value) => _state['displayedLines'] = value;
 
-  FullBuildReason get buildType => FullBuildReason.values.singleWhere(
+  /// For `buildLog`, the reason why a full build was needed.
+  FullBuildReason get fullBuildReason => FullBuildReason.values.singleWhere(
     (v) => v.name == _state['fullBuildReason'],
     orElse: () => FullBuildReason.clean,
   );
+  set fullBuildReason(FullBuildReason buildType) =>
+      _state['fullBuildReason'] = buildType.name;
 
-  set buildType(FullBuildReason buildType) =>
-      _state['buildType'] = buildType.name;
-
+  /// For `buildLog`, the elapsed time since the process started.
   int get elapsedMillis => _state['elapsedMillis'] as int? ?? 0;
   set elapsedMillis(int elapsedMillis) =>
       _state['elapsedMillis'] = elapsedMillis;

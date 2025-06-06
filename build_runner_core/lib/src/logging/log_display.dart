@@ -8,14 +8,14 @@ import 'dart:io';
 import 'package:build_runner/src/build_script_generate/build_process_state.dart';
 import 'package:logging/logging.dart';
 
+import 'build_log.dart';
+import 'build_log_configuration.dart';
 import 'build_log_messages.dart';
 
 final logger = Logger.root;
 
 class LogDisplay {
   late Stopwatch stopwatch = Stopwatch()..start();
-
-  bool severeToStderr = false;
 
   String previousLastLine = '';
   bool closed = false;
@@ -43,11 +43,11 @@ class LogDisplay {
     stopwatch.reset();
 
     if (onLog != null) {
-      onLog!(_LogRecord(entry.level, entry.message, Logger.root.name));
+      onLog!(_LogRecord(entry.severity.level, entry.message, Logger.root.name));
       return;
     }
 
-    logger.log(entry.level, entry.message);
+    logger.log(entry.severity.level, entry.message);
     if (stdout.hasTerminal && stdout.supportsAnsiEscapes) {
       // TODO throttle / force
       final moveCursor = displayedLines == 0 ? '' : '\x1b[${displayedLines}F';
@@ -55,7 +55,8 @@ class LogDisplay {
 
       stdout.writeln('$moveCursor${entry.block}');
     } else {
-      if (severeToStderr && entry.severity == BuildLogSeverity.error) {
+      if (buildLog.configuration.mode == BuildLogMode.daemon &&
+          entry.severity == BuildLogSeverity.error) {
         stderr.writeln(entry.message);
       } else {
         if (force || entry.message != previousLastLine) {

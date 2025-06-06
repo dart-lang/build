@@ -8,6 +8,8 @@ part of 'build_log_configuration.dart';
 
 class _$BuildLogConfiguration extends BuildLogConfiguration {
   @override
+  final BuildLogMode mode;
+  @override
   final bool verbose;
   @override
   final void Function(LogRecord)? onLog;
@@ -19,6 +21,7 @@ class _$BuildLogConfiguration extends BuildLogConfiguration {
   ]) => (BuildLogConfigurationBuilder()..update(updates))._build();
 
   _$BuildLogConfiguration._({
+    required this.mode,
     required this.verbose,
     this.onLog,
     this.rootPackageName,
@@ -37,6 +40,7 @@ class _$BuildLogConfiguration extends BuildLogConfiguration {
     if (identical(other, this)) return true;
     final dynamic _$dynamicOther = other;
     return other is BuildLogConfiguration &&
+        mode == other.mode &&
         verbose == other.verbose &&
         onLog == _$dynamicOther.onLog &&
         rootPackageName == other.rootPackageName;
@@ -45,6 +49,7 @@ class _$BuildLogConfiguration extends BuildLogConfiguration {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, mode.hashCode);
     _$hash = $jc(_$hash, verbose.hashCode);
     _$hash = $jc(_$hash, onLog.hashCode);
     _$hash = $jc(_$hash, rootPackageName.hashCode);
@@ -55,6 +60,7 @@ class _$BuildLogConfiguration extends BuildLogConfiguration {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'BuildLogConfiguration')
+          ..add('mode', mode)
           ..add('verbose', verbose)
           ..add('onLog', onLog)
           ..add('rootPackageName', rootPackageName))
@@ -65,6 +71,10 @@ class _$BuildLogConfiguration extends BuildLogConfiguration {
 class BuildLogConfigurationBuilder
     implements Builder<BuildLogConfiguration, BuildLogConfigurationBuilder> {
   _$BuildLogConfiguration? _$v;
+
+  BuildLogMode? _mode;
+  BuildLogMode? get mode => _$this._mode;
+  set mode(BuildLogMode? mode) => _$this._mode = mode;
 
   bool? _verbose;
   bool? get verbose => _$this._verbose;
@@ -84,6 +94,7 @@ class BuildLogConfigurationBuilder
   BuildLogConfigurationBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _mode = $v.mode;
       _verbose = $v.verbose;
       _onLog = $v.onLog;
       _rootPackageName = $v.rootPackageName;
@@ -109,6 +120,11 @@ class BuildLogConfigurationBuilder
     final _$result =
         _$v ??
         _$BuildLogConfiguration._(
+          mode: BuiltValueNullFieldError.checkNotNull(
+            mode,
+            r'BuildLogConfiguration',
+            'mode',
+          ),
           verbose: BuiltValueNullFieldError.checkNotNull(
             verbose,
             r'BuildLogConfiguration',

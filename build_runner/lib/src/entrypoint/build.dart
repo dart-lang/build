@@ -29,9 +29,9 @@ class BuildCommand extends BuildRunnerCommand {
     var options = readOptions();
 
     buildLog.configuration = buildLog.configuration.rebuild((b) {
+      b.mode = BuildLogMode.build;
       b.verbose = options.verbose;
     });
-    buildLog.start(BuildLogMode.build);
 
     return withEnabledExperiments(
       () => _run(options),
