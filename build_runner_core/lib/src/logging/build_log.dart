@@ -142,7 +142,7 @@ class BuildLog {
   }
 
   BuildLogEntry makeEntry({
-    required LineSeverity severity,
+    required BuildLogSeverity severity,
     required String line,
     bool finished = false,
   }) {
@@ -237,44 +237,50 @@ class BuildLog {
     tick(phase: null);
   }
 
+  /// Logs a prompt that will be followed by an interactive question to the
+  /// user.
+  ///
+  /// In console mode this prints a message and resets tracking of displayed
+  /// lines, so the next display will not erase and rewrite over the prompt.
   void prompt(String message) {
     _display.prompt(message);
   }
 
-  void info(
+  /// Logs a `build_runner` info.
+  void info(String message) {
+    _messages.add(severity: BuildLogSeverity.info, message);
+    _display.display(makeEntry(severity: BuildLogSeverity.info, line: message));
+  }
+
+  /// Logs a `build_runner` warning.
+  void warning(String message) {
+    _messages.add(severity: BuildLogSeverity.warning, message);
+    _display.display(
+      makeEntry(severity: BuildLogSeverity.warning, line: message),
+    );
+  }
+
+  /// Logs an `build_runner` error.
+  void error(String message) {
+    _messages.add(severity: BuildLogSeverity.error, message);
+    _display.display(
+      makeEntry(severity: BuildLogSeverity.error, line: message),
+    );
+  }
+
+  void fromBuildLogLogger(
     String message, {
+    required BuildLogSeverity severity,
     InBuildPhase? phase,
     String? context,
-    bool fromBuilder = false,
   }) {
-    if (fromBuilder && !_configuration.verbose) return;
     _messages.add(
-      phase: phase,
-      context: context,
-      severity: BuildLogSeverity.info,
-      message,
-    );
-    _display.display(makeEntry(severity: LineSeverity.info, line: message));
-  }
-
-  void warning(String message, {InBuildPhase? phase, String? context}) {
-    _messages.add(
-      phase: phase,
-      context: context,
-      severity: BuildLogSeverity.warning,
-      message,
-    );
-    _display.display(makeEntry(severity: LineSeverity.warning, line: message));
-  }
-
-  void error(String message, {InBuildPhase? phase, String? context}) {
-    _messages.add(
-      phase: phase,
-      context: context,
       severity: BuildLogSeverity.error,
+      phase: phase,
+      context: context,
       message,
     );
-    _display.display(makeEntry(severity: LineSeverity.error, line: message));
+    _display.display(makeEntry(severity: severity, line: message));
   }
 
   @Deprecated('Only for printf debugging, do not submit.')
@@ -333,15 +339,19 @@ class BuildLog {
     }
 
     _display.display(
-      makeEntry(severity: LineSeverity.info, line: '', finished: finished),
+      makeEntry(severity: BuildLogSeverity.info, line: '', finished: finished),
       // TODO: changed note?
       force: _currentPhase != previousPhase || finished,
     );
   }
 
+  /// Describe what `build_runner` is doing.
+  ///
+  /// Logs the task, or in console mode updates the status line.
   void doing(String task) {
     _status = [task];
     tick(phase: null);
+    // TODO line log
   }
 
   void startBuild() {

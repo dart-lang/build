@@ -10,14 +10,27 @@ import 'package:logging/logging.dart';
 
 import '../generate/phase.dart';
 import 'build_log.dart';
+import 'build_log_messages.dart';
 
-/// A [Logger] that forwards messages to [BuildLog] and records errors.
+/// [Logger] that forwards messages to [BuildLog] and records errors.
 ///
-/// Use [scopeLogAsync] or [scopeLogSync] to run builder code while redirecting
-/// prints and exception logs to a `BuildLogLogger`.
+/// Use `buildLog.loggerForPhase` or `buildLog.loggerForOther` to create an
+/// instance.
+///
+/// Then use [scopeLogAsync] or [scopeLogSync] to run builder code while
+/// redirecting prints and exception logs to `buildLog` via the
+/// `BuildLogLogger`.
+///
+/// Messages of level lower than `WARNING` are logged only in verbose mode,
+/// according to `buildLog.configuration.verbose`.
+///
+/// Messages at level `SEVERE` and higher are stored in [errors] as well as
+/// displayed via `buildLog`.
 class BuildLogLogger implements Logger {
   final InBuildPhase? phase;
   final String? context;
+
+  /// The errors logged to this logger.
   final List<String> errors = [];
 
   BuildLogLogger({this.phase, this.context});
@@ -70,22 +83,23 @@ class BuildLogLogger implements Logger {
   }
 
   @override
-  Level get level => Level.INFO;
+  Level get level => buildLog.configuration.verbose ? Level.ALL : Level.WARNING;
 
   @override
-  set level(Level? value) {}
+  set level(Level? value) => throw UnimplementedError();
 
   @override
-  Map<String, Logger> get children => {};
+  Map<String, Logger> get children => const {};
 
   @override
   void clearListeners() {}
 
   @override
-  String get fullName => throw UnimplementedError();
+  String get fullName => name;
 
   @override
-  bool isLoggable(Level value) => true;
+  bool isLoggable(Level value) =>
+      value >= Level.WARNING || buildLog.configuration.verbose;
 
   @override
   void log(
@@ -95,42 +109,32 @@ class BuildLogLogger implements Logger {
     StackTrace? stackTrace,
     Zone? zone,
   ]) {
+    if (!isLoggable(logLevel)) return;
     final renderedMessage = buildLog.renderThrowable(
       message,
       error,
       stackTrace,
     );
-
-    if (logLevel < Level.WARNING) {
-      buildLog.info(
-        renderedMessage,
-        phase: phase,
-        context: context,
-        fromBuilder: true,
-      );
-    } else if (logLevel < Level.SEVERE) {
-      buildLog.warning(renderedMessage, phase: phase, context: context);
-    } else {
-      errors.add(renderedMessage);
-      buildLog.error(renderedMessage, phase: phase, context: context);
-    }
+    if (logLevel >= Level.SEVERE) errors.add(renderedMessage);
+    buildLog.fromBuildLogLogger(
+      severity: BuildLogSeverity.fromLogLevel(logLevel),
+      phase: phase,
+      context: context,
+      renderedMessage,
+    );
   }
 
   @override
-  // TODO: implement name
-  String get name => throw UnimplementedError();
+  String get name => phase?.builderLabel ?? '';
 
   @override
-  // TODO: implement onLevelChanged
   Stream<Level?> get onLevelChanged => throw UnimplementedError();
 
   @override
-  // TODO: implement onRecord
   Stream<LogRecord> get onRecord => throw UnimplementedError();
 
   @override
-  // TODO: implement parent
-  Logger? get parent => throw UnimplementedError();
+  Logger? get parent => null;
 
   @override
   void finest(Object? message, [Object? error, StackTrace? stackTrace]) =>

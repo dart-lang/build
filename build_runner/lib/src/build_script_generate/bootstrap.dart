@@ -66,7 +66,6 @@ Future<int> _generateAndRun(
     messagePort?.close();
     await errorListener?.cancel();
 
-    var buildScriptChanged = false;
     try {
       var buildScript = File(scriptLocation);
       var oldContents = '';
@@ -79,17 +78,18 @@ Future<int> _generateAndRun(
         buildScript
           ..createSync(recursive: true)
           ..writeAsStringSync(newContents);
-        buildScriptChanged = true;
+        // Delete the kernel file so it will be rebuilt.
+        final kernelFile = File(scriptKernelLocation);
+        if (await kernelFile.exists()) {
+          await kernelFile.delete();
+        }
         buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
       }
     } on CannotBuildException {
       return ExitCode.config.code;
     }
 
-    if (!await _createKernelIfNeeded(
-      experiments,
-      buildScriptChanged: buildScriptChanged,
-    )) {
+    if (!await _createKernelIfNeeded(experiments)) {
       return buildProcessState.isolateExitCode = ExitCode.config.code;
     }
 
@@ -162,25 +162,15 @@ Future<int> _generateAndRun(
 ///
 /// A snapshot is generated if:
 ///
-/// - [buildScriptChanged] is `true`
 /// - It doesn't exist currently
 /// - Either build_runner or build_daemon point at a different location than
 ///   they used to, see https://github.com/dart-lang/build/issues/1929.
 ///
 /// Returns `true` on success or `false` on failure.
-Future<bool> _createKernelIfNeeded(
-  List<String> experiments, {
-  bool buildScriptChanged = false,
-}) async {
+Future<bool> _createKernelIfNeeded(List<String> experiments) async {
   var assetGraphFile = File(assetGraphPathFor(scriptKernelLocation));
   var kernelFile = File(scriptKernelLocation);
   var kernelCacheFile = File(scriptKernelCachedLocation);
-
-  if (buildScriptChanged) {
-    if (await kernelFile.exists()) {
-      await kernelFile.delete();
-    }
-  }
 
   if (await kernelFile.exists()) {
     if (!await assetGraphFile.exists()) {

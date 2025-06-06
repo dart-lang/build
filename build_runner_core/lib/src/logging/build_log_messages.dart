@@ -2,6 +2,9 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:logging/logging.dart';
+
+import '../../build_runner_core.dart';
 import '../generate/phase.dart';
 import 'ansi_buffer.dart';
 
@@ -132,4 +135,20 @@ class BuildLogMessage {
   });
 }
 
-enum BuildLogSeverity { info, warning, error }
+enum BuildLogSeverity {
+  info,
+  warning,
+  error;
+
+  static BuildLogSeverity fromLogLevel(Level level) {
+    if (level < Level.WARNING) return BuildLogSeverity.info;
+    if (level < Level.SEVERE) return BuildLogSeverity.warning;
+    return BuildLogSeverity.error;
+  }
+
+  Level get level => switch (this) {
+    BuildLogSeverity.info => Level.INFO,
+    BuildLogSeverity.warning => Level.WARNING,
+    BuildLogSeverity.error => Level.SEVERE,
+  };
+}

@@ -8,6 +8,8 @@ import 'dart:io';
 import 'package:build_runner/src/build_script_generate/build_process_state.dart';
 import 'package:logging/logging.dart';
 
+import 'build_log_messages.dart';
+
 final logger = Logger.root;
 
 class LogDisplay {
@@ -53,7 +55,7 @@ class LogDisplay {
 
       stdout.writeln('$moveCursor${entry.block}');
     } else {
-      if (severeToStderr && entry.severity == LineSeverity.error) {
+      if (severeToStderr && entry.severity == BuildLogSeverity.error) {
         stderr.writeln(entry.message);
       } else {
         if (force || entry.message != previousLastLine) {
@@ -72,7 +74,7 @@ class LogDisplay {
 class BuildLogEntry {
   final List<String> lines;
   final String message;
-  final LineSeverity severity;
+  final BuildLogSeverity severity;
 
   BuildLogEntry({
     required this.lines,
@@ -81,16 +83,7 @@ class BuildLogEntry {
   });
 
   String get block => lines.join('\n');
-
-  Level get level => switch (severity) {
-    LineSeverity.fine => Level.FINE,
-    LineSeverity.info => Level.INFO,
-    LineSeverity.warning => Level.WARNING,
-    LineSeverity.error => Level.SEVERE,
-  };
 }
-
-enum LineSeverity { fine, info, warning, error }
 
 /// As [LogRecord] with better `toString`.
 ///
