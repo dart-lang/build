@@ -8,6 +8,7 @@ import 'package:build/experiments.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
 
+import '../build_script_generate/build_process_state.dart';
 import '../generate/build.dart';
 import 'base_command.dart';
 import 'options.dart';
@@ -48,6 +49,10 @@ class WatchCommand extends BuildRunnerCommand {
   @override
   Future<int> run() {
     var options = readOptions();
+    buildLog.configuration = buildLog.configuration.rebuild((b) {
+      b.mode = BuildLogMode.build;
+      b.verbose = options.verbose;
+    });
     return withEnabledExperiments(
       () => _run(options),
       options.enableExperiments,

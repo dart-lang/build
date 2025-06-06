@@ -18,6 +18,7 @@ dependencies:
   build: ^2.4.3-wip
   build_config: ^1.0.0
   build_resolvers: ^2.4.0
+  build_runner: ^2.4.16-wip
   built_collection: ^5.1.1
   built_value: ^8.10.1
   collection: ^1.15.0
@@ -38,7 +39,6 @@ dependencies:
 dev_dependencies:
   _test_common:
     path: ../_test_common
-  build_runner: ^2.0.0
   build_test: ^3.0.0-wip
   built_value_generator: ^8.10.1
   dart_flutter_team_lints: ^3.1.0

@@ -11,6 +11,7 @@ import 'dart:io';
 
 import 'package:_test_common/common.dart';
 import 'package:async/async.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -92,11 +93,11 @@ main() {
     if (command == 'serve' || command == 'watch') {
       while (await queue.hasNext) {
         var nextLine = (await queue.next).toLowerCase();
-        if (nextLine.contains('succeeded after')) {
+        if (nextLine.contains(BuildLog.successPattern)) {
           process.kill();
           await process.exitCode;
           return ExitCode.success.code;
-        } else if (nextLine.contains('failed after')) {
+        } else if (nextLine.contains(BuildLog.failurePattern)) {
           process.kill();
           await process.exitCode;
           return 1;

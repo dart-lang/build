@@ -6,6 +6,7 @@
 /// `build_runner_core` and `build_test` only.
 library;
 
+export 'builder/logging.dart';
 export 'library_cycle_graph/asset_deps.dart';
 export 'library_cycle_graph/asset_deps_loader.dart';
 export 'library_cycle_graph/library_cycle.dart';

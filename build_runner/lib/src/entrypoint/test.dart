@@ -14,6 +14,7 @@ import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 
+import '../build_script_generate/build_process_state.dart';
 import '../generate/build.dart';
 import 'base_command.dart';
 import 'options.dart';
@@ -94,6 +95,10 @@ class TestCommand extends BuildRunnerCommand {
     try {
       _ensureBuildTestDependency(packageGraph);
       options = readOptions();
+      buildLog.configuration = buildLog.configuration.rebuild((b) {
+        b.mode = BuildLogMode.build;
+        b.verbose = options.verbose;
+      });
       return withEnabledExperiments(
         () => _run(options, tempPath),
         options.enableExperiments,

@@ -2,14 +2,13 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:logging/logging.dart';
 
 import '../asset/id.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
-import '../builder/logging.dart';
 import '../builder/post_process_build_step.dart';
-import '../builder/post_process_builder.dart';
 
 /// Run [builder] with [inputId] as the primary input.
 ///
@@ -26,7 +25,7 @@ Future<void> runPostProcessBuilder(
   required void Function(AssetId) addAsset,
   required void Function(AssetId) deleteAsset,
 }) async {
-  await scopeLogAsync(() async {
+  await BuildLogLogger.scopeLogAsync(() async {
     var buildStep = postProcessBuildStep(
       inputId,
       reader,

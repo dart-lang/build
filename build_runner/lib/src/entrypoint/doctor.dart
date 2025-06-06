@@ -11,10 +11,8 @@ import 'package:build_runner_core/build_runner_core.dart';
 // ignore: implementation_imports
 import 'package:build_runner_core/src/generate/phase.dart';
 import 'package:io/io.dart';
-import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
-import '../logging/std_io_logging.dart';
 import '../package_graph/build_config_overrides.dart';
 import 'base_command.dart';
 
@@ -28,13 +26,6 @@ class DoctorCommand extends BuildRunnerCommand {
 
   @override
   Future<int> run() async {
-    final options = readOptions();
-    final verbose = options.verbose;
-    Logger.root.level = verbose ? Level.ALL : Level.INFO;
-    final logSubscription = Logger.root.onRecord.listen(
-      stdIOLogListener(verbose: verbose),
-    );
-
     final config = await _loadBuilderDefinitions();
 
     var isOk = true;
@@ -45,7 +36,7 @@ class DoctorCommand extends BuildRunnerCommand {
 
     if (File(p.join(p.current, 'build.yml')).existsSync() &&
         !File(p.join(p.current, 'build.yaml')).existsSync()) {
-      logger.warning(
+      buildLog.warning(
         'Found a `build.yml` file but no `build.yaml` file, rename it with '
         'the `.yaml` extension for it to take effect.',
       );
@@ -53,9 +44,8 @@ class DoctorCommand extends BuildRunnerCommand {
     }
 
     if (isOk) {
-      logger.info('No problems found!\n');
+      buildLog.info('No problems found!');
     }
-    await logSubscription.cancel();
     return isOk ? ExitCode.success.code : ExitCode.config.code;
   }
 
@@ -77,9 +67,9 @@ class DoctorCommand extends BuildRunnerCommand {
         );
       } on ArgumentError // ignore: avoid_catching_errors
       catch (e) {
-        logger.severe(
-          'Failed to parse a `build.yaml` file for ${package.name}',
-          e,
+        buildLog.error(
+          'Failed to parse a `build.yaml` file for ${package.name}:'
+          ' ${e.message}',
         );
         return BuildConfig.useDefault(
           package.name,
@@ -130,7 +120,7 @@ class DoctorCommand extends BuildRunnerCommand {
       final extensions = phase.builder.buildExtensions;
       for (final extension in extensions.entries) {
         if (!allowed.containsKey(extension.key)) {
-          logger.warning(
+          buildLog.warning(
             'Builder ${builderApplication.builderKey} '
             'uses input extension ${extension.key} '
             'which is not specified in the `build.yaml`',
@@ -141,7 +131,7 @@ class DoctorCommand extends BuildRunnerCommand {
         final allowedOutputs = List.of(allowed[extension.key]!);
         for (final output in extension.value) {
           if (!allowedOutputs.contains(output)) {
-            logger.warning(
+            buildLog.warning(
               'Builder ${builderApplication.builderKey} '
               'outputs $output  from ${extension.key} '
               'which is not specified in the `build.yaml`',

@@ -185,7 +185,6 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   @override
   Future<void> stop() async {
     await _buildSeries.beforeExit();
-    await _buildOptions.logListener.cancel();
   }
 
   void _logMessage(Level level, String message) => _outputStreamController.add(
@@ -236,20 +235,18 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     var environment = BuildEnvironment(
       packageGraph,
       outputSymlinksOnly: daemonOptions.outputSymlinksOnly,
-      onLogOverride: (record) {
-        outputStreamController.add(ServerLog.fromLogRecord(record));
-      },
     );
+    buildLog.configuration = buildLog.configuration.rebuild((b) {
+      b.verbose = daemonOptions.verbose;
+      b.onLog = (record) {
+        outputStreamController.add(ServerLog.fromLogRecord(record));
+      };
+    });
 
     var daemonEnvironment = environment.copyWith(
       writer: (environment.writer as ReaderWriter).copyWith(
         onDelete: expectedDeletes.add,
       ),
-    );
-
-    var logSubscription = LogSubscription(
-      environment,
-      verbose: daemonOptions.verbose,
     );
 
     var overrideBuildConfig = await findBuildConfigOverrides(
@@ -259,7 +256,6 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     );
 
     var buildOptions = await BuildOptions.create(
-      logSubscription,
       packageGraph: packageGraph,
       deleteFilesByDefault: daemonOptions.deleteFilesByDefault,
       overrideBuildConfig: overrideBuildConfig,

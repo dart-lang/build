@@ -7,7 +7,6 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:build_runner_core/build_runner_core.dart';
-import 'package:logging/logging.dart';
 
 import 'options.dart';
 import 'runner.dart';
@@ -15,8 +14,6 @@ import 'runner.dart';
 final lineLength = stdout.hasTerminal ? stdout.terminalColumns : 80;
 
 abstract class BuildRunnerCommand extends Command<int> {
-  Logger get logger => Logger(name);
-
   List<BuilderApplication> get builderApplications =>
       (runner as BuildCommandRunner).builderApplications;
 
@@ -130,8 +127,7 @@ abstract class BuildRunnerCommand extends Command<int> {
       ..addMultiOption(
         enableExperimentOption,
         help: 'A list of dart language experiments to enable.',
-      )
-      ..addFlag(useExperimentalResolverOption, hide: true);
+      );
   }
 
   /// Must be called inside [run] so that [argResults] is non-null.

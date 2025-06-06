@@ -10,9 +10,7 @@ import 'package:args/command_runner.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 // ignore: implementation_imports
 import 'package:build_runner_core/src/asset_graph/graph.dart';
-import 'package:logging/logging.dart';
 
-import '../logging/std_io_logging.dart';
 import 'base_command.dart';
 
 class CleanCommand extends Command<int> {
@@ -27,19 +25,15 @@ class CleanCommand extends Command<int> {
       'Cleans up output from previous builds. Does not clean up --output '
       'directories.';
 
-  Logger get logger => Logger(name);
-
   @override
   Future<int> run() async {
-    var logSubscription = Logger.root.onRecord.listen(stdIOLogListener());
-    await cleanFor(assetGraphPath, logger);
-    await logSubscription.cancel();
+    await cleanFor(assetGraphPath);
     return 0;
   }
 }
 
-Future<void> cleanFor(String assetGraphPath, Logger logger) async {
-  logger.warning(
+Future<void> cleanFor(String assetGraphPath) async {
+  buildLog.warning(
     'Deleting cache and generated source files.\n'
     'This shouldn\'t be necessary for most applications, unless you have '
     'made intentional edits to generated files (i.e. for testing). '
@@ -48,34 +42,27 @@ Future<void> cleanFor(String assetGraphPath, Logger logger) async {
     'to work around an apparent (and reproducible) bug.',
   );
 
-  await logTimedAsync(logger, 'Cleaning up source outputs', () async {
-    var assetGraphFile = File(assetGraphPath);
-    if (!assetGraphFile.existsSync()) {
-      logger.warning(
-        'No asset graph found. '
-        'Skipping cleanup of generated files in source directories.',
-      );
-      return;
-    }
-    AssetGraph assetGraph;
-    try {
-      assetGraph = AssetGraph.deserialize(await assetGraphFile.readAsBytes());
-    } catch (_) {
-      logger.warning(
-        'Failed to deserialize AssetGraph. '
-        'Skipping cleanup of generated files in source directories.',
-      );
-      return;
-    }
-    var packageGraph = await PackageGraph.forThisPackage();
-    await _cleanUpSourceOutputs(assetGraph, packageGraph);
-  });
-
-  await logTimedAsync(
-    logger,
-    'Cleaning up cache directory',
-    _cleanUpGeneratedDirectory,
-  );
+  var assetGraphFile = File(assetGraphPath);
+  if (!assetGraphFile.existsSync()) {
+    buildLog.warning(
+      'No asset graph found. '
+      'Skipping cleanup of generated files in source directories.',
+    );
+    return;
+  }
+  AssetGraph assetGraph;
+  try {
+    assetGraph = AssetGraph.deserialize(await assetGraphFile.readAsBytes());
+  } catch (_) {
+    buildLog.warning(
+      'Failed to deserialize AssetGraph. '
+      'Skipping cleanup of generated files in source directories.',
+    );
+    return;
+  }
+  var packageGraph = await PackageGraph.forThisPackage();
+  await _cleanUpSourceOutputs(assetGraph, packageGraph);
+  await _cleanUpGeneratedDirectory();
 }
 
 Future<void> _cleanUpSourceOutputs(

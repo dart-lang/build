@@ -21,6 +21,7 @@ import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
@@ -197,22 +198,22 @@ class PerActionResolver implements ReleasableResolver {
 class AnalyzerResolver implements ReleasableResolver {
   final AnalysisDriverModel _analysisDriverModel;
   final AnalysisDriverForPackageBuild _driver;
-  final Pool _driverPool;
+  final AnalyzeActivityPool _driverPool;
   final SharedResourcePool _readAndWritePool;
 
   Future<List<LibraryElement>>? _sdkLibraries;
 
   AnalyzerResolver(
     this._driver,
-    this._driverPool,
+    Pool driverPool,
     this._readAndWritePool,
     this._analysisDriverModel,
-  );
+  ) : _driverPool = AnalyzeActivityPool(driverPool);
 
   @override
   Future<bool> isLibrary(AssetId assetId) async {
     if (assetId.extension != '.dart') return false;
-    return _driverPool.withResource(() {
+    return _driverPool.withResource(() async {
       if (!_driver.isUriOfExistingFile(assetId.uri)) return false;
       var result =
           _driver.currentSession.getFile(
@@ -654,4 +655,15 @@ current version by running `pub deps`.
 Future<String> packagePath(String package) async {
   var libRoot = await Isolate.resolvePackageUri(Uri.parse('package:$package/'));
   return p.dirname(p.fromUri(libRoot));
+}
+
+/// Wraps [pool] so resource use is timed as [TimedActivity.analyze].
+class AnalyzeActivityPool {
+  final Pool pool;
+
+  AnalyzeActivityPool(this.pool);
+
+  Future<T> withResource<T>(Future<T> Function() function) async {
+    return pool.withResource(() => TimedActivity.analyze.runAsync(function));
+  }
 }

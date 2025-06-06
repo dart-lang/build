@@ -9,7 +9,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
-import 'package:build_runner_core/src/util/constants.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_test/build_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -112,8 +112,8 @@ void main() {
 
       await expectOutput(secondBuild, [
         'Invalidating asset graph due to build script update',
-        'Precompiling build script',
-        'Building new asset graph',
+        'Compiling build script.',
+        'Creating asset graph.',
       ]);
     });
 
@@ -133,7 +133,7 @@ void main() {
 
       await expectOutput(secondBuild, [
         'Throwing away cached asset graph due to version mismatch',
-        'Building new asset graph',
+        'Create asset graph.',
       ]);
     });
   });
@@ -151,8 +151,8 @@ void main() {
 
       await expectOutput(server.stdout, [
         'Terminating builds due to build script update',
-        'Precompiling build script',
-        'Building new asset graph',
+        'Compiling build script.',
+        'Creating asset graph.',
       ]);
 
       await server.shutDown();
@@ -196,7 +196,7 @@ void main() {
 
     await expectOutput(secondBuild, [
       'Invalidated precompiled build script due to core package update',
-      'Precompiling build script',
+      'Comiling build script.',
     ]);
   });
 

@@ -8,8 +8,8 @@ import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
-import 'package:logging/logging.dart';
 
+import '../logging/build_log.dart';
 import 'exceptions.dart';
 import 'phase.dart';
 
@@ -88,17 +88,17 @@ class BuildPhases {
   /// To be valid, all outputs must be under the package [root], or hidden,
   /// meaning they will generate to the hidden generated output directory.
   ///
-  /// If the phases are not valid, logs to [logger] then throws
+  /// If the phases are not valid, logs then throws
   /// [CannotBuildException].
   ///
   ///  [PostBuildPhase]s are always hidden, so they are always valid.
-  void checkOutputLocations(String root, Logger logger) {
+  void checkOutputLocations(String root) {
     for (final action in inBuildPhases) {
       if (action.hideOutput) continue;
       if (action.package == root) continue;
       // This should happen only with a manual build script since the build
       // script generation filters these out.
-      logger.severe(
+      buildLog.error(
         'A build phase (${action.builderLabel}) is attempting '
         'to operate on package "${action.package}", but the build script '
         'is located in package "$root". It\'s not valid to attempt to '
