@@ -152,7 +152,7 @@ class BuildSeries {
     );
     if (buildPhases.inBuildPhases.isEmpty &&
         buildPhases.postBuildPhase.builderActions.isEmpty) {
-      buildLog.error('Nothing can be built, yet a build was requested.');
+      buildLog.warning('Nothing to build.');
     }
 
     var buildDefinition = await BuildDefinition.prepareWorkspace(

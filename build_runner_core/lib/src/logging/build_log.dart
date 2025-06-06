@@ -66,7 +66,7 @@ class BuildLog {
   final BuildLogMessages _messages = BuildLogMessages();
   final BuildLogActivities _activities = BuildLogActivities();
 
-  late final LogDisplay _display;
+  late final LogDisplay _display = LogDisplay();
   final Stopwatch _stopwatch = Stopwatch()..start();
   // ignore: unused_field
   BuildLogMode _mode = BuildLogMode.simple;
@@ -141,7 +141,10 @@ class BuildLog {
   }
 
   BuildLog._() {
-    _display = LogDisplay();
+    _totalDuration = Duration(milliseconds: buildProcessState.elapsedMillis);
+    buildProcessState.doBeforeSend(() {
+      buildProcessState.elapsedMillis = _totalDuration.inMilliseconds;
+    });
   }
 
   void start(BuildLogMode mode) {
@@ -207,7 +210,7 @@ class BuildLog {
           '${separator()}${progress.builtNothing} no-op',
         if (progress.nextInput != null)
           '${separator()}${renderId(progress.nextInput!)}',
-        if (activities.isNotEmpty) '; $activities',
+        if (activities.isNotEmpty) '; spent $activities',
       ], hangingIndent: indent);
 
       if (!finished) {

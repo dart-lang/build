@@ -13,6 +13,7 @@ final BuildProcessState buildProcessState = BuildProcessState();
 
 class BuildProcessState {
   final Map<String, Object?> _state = {};
+  final List<void Function()> _beforeSends = [];
 
   /// The exit code of the most recent build script isolate, or `null` if there
   /// was none or it is currently running.
@@ -29,8 +30,20 @@ class BuildProcessState {
 
   set buildType(BuildType buildType) => _state['buildType'] = buildType.name;
 
+  int get elapsedMillis => _state['elapsedMillis'] as int? ?? 0;
+  set elapsedMillis(int elapsedMillis) =>
+      _state['elapsedMillis'] = elapsedMillis;
+
+  /// Registers [function] to be called before sending the state.
+  void doBeforeSend(void Function() function) {
+    _beforeSends.add(function);
+  }
+
   /// Sends `this` to [sendPort].
   Future<void> send(SendPort? sendPort) async {
+    for (final beforeSend in _beforeSends) {
+      beforeSend();
+    }
     sendPort?.send(_state);
   }
 
