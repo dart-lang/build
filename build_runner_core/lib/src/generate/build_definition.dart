@@ -8,6 +8,8 @@ import 'dart:io';
 import 'package:build/build.dart';
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
+// ignore: implementation_imports
+import 'package:build_runner/src/internal.dart';
 import 'package:watcher/watcher.dart';
 
 import '../asset/writer.dart';
@@ -82,7 +84,7 @@ class _Loader {
     var cleanBuild = true;
     if (assetGraph != null) {
       cleanBuild = false;
-      buildLog.doing('check for updates');
+      buildLog.doing('Checking for updates.');
       updates = await _computeUpdates(
         assetGraph,
         assetTracker,
@@ -122,7 +124,7 @@ class _Loader {
     }
 
     if (assetGraph == null) {
-      buildLog.doing('create asset graph');
+      buildLog.doing('Creating the asset graph.');
 
       late Set<AssetId> conflictingOutputs;
       try {
@@ -164,7 +166,7 @@ class _Loader {
         throw const CannotBuildException();
       }
 
-      buildLog.doing('initial build cleanup');
+      buildLog.doing('Doing initial build cleanup.');
       await _initialBuildCleanup(
         conflictingOutputs,
         _environment.writer.copyWith(generatedAssetHider: assetGraph),
@@ -224,7 +226,7 @@ class _Loader {
     }
 
     // Prompt the user to delete files that are declared as outputs.
-    buildLog.info(
+    buildLog.prompt(
       'Found ${conflictingAssets.length} declared outputs '
       'which already exist on disk. This is likely because the'
       '`$cacheDir` folder was deleted, or you are submitting generated '
@@ -241,7 +243,6 @@ class _Loader {
         ]);
         switch (choice) {
           case 0:
-            buildLog.info('Deleting files...');
             done = true;
             await Future.wait(conflictingAssets.map((id) => writer.delete(id)));
             break;

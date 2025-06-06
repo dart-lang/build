@@ -27,6 +27,15 @@ class LogDisplay {
   set displayedLines(int displayedLines) =>
       buildProcessState.displayedLines = displayedLines;
 
+  void prompt(String message) {
+    displayedLines = 0;
+    if (onLog != null) {
+      onLog!(_LogRecord(Level.INFO, message, Logger.root.name));
+      return;
+    }
+    stdout.writeln(message);
+  }
+
   void display(BuildLogEntry entry, {bool force = false}) {
     if (closed) return;
     stopwatch.reset();

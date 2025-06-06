@@ -207,7 +207,7 @@ Future<bool> _createKernelIfNeeded(
     );
 
     var hadErrors = false;
-    buildLog.doing('compile build script');
+    buildLog.doing('Compiling the build script.');
     try {
       final result = await client.compile();
       hadErrors = result.errorCount > 0 || !(await kernelCacheFile.exists());

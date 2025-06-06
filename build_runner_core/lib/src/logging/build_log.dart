@@ -8,6 +8,8 @@ import 'dart:math';
 
 import 'package:build/build.dart'
     show AssetId, SyntaxErrorInAssetException, UnresolvableAssetException;
+// ignore: implementation_imports
+import 'package:build_runner/src/internal.dart';
 import 'package:logging/logging.dart';
 
 import '../generate/phase.dart';
@@ -76,10 +78,6 @@ class BuildLog {
 
   String loaded = '';
 
-  bool? buildResult;
-  int? outputs;
-  BuildType buildType = BuildType.clean;
-
   BuildLogConfiguration get configuration => _configuration;
   set configuration(BuildLogConfiguration configuration) {
     _configuration = configuration;
@@ -116,8 +114,7 @@ class BuildLog {
     }
   }
 
-  /// Runs [function] adding the time spent to the measure of the specified
-  /// [activity] of the currently-running [Stage].
+  /// Runs [function] attributing the time spent to [activity].
   Future<T> runActivityAsync<T>(
     ActivityType activity,
     Future<T> Function() function,
@@ -127,8 +124,7 @@ class BuildLog {
     function: function,
   );
 
-  /// Runs [function] adding the time spent to the measure of the specified
-  /// [activity] of the currently-running [Stage].
+  /// Runs [function] attributing the time spent to [activity].
   T runActivity<T>(ActivityType activity, T Function() function) =>
       _activities.runActivity(
         phase: _currentPhase,
@@ -140,7 +136,6 @@ class BuildLog {
     _display.displayedLines = 0;
     _stopwatch.reset();
     _stopwatch.start();
-    buildResult = null;
 
     configuration = BuildLogConfiguration();
   }
@@ -161,21 +156,27 @@ class BuildLog {
   BuildLogEntry makeEntry({
     required LineSeverity severity,
     required String line,
+    bool finished = false,
   }) {
-    return BuildLogEntry(lines: render(), message: line, severity: severity);
+    return BuildLogEntry(
+      lines: render(finished: finished),
+      message: line,
+      severity: severity,
+    );
   }
 
-  List<String> render() {
+  List<String> render({bool finished = false}) {
     final result = AnsiBuffer();
 
-    final maxProgressWidth = _phaseProgress.values
-        //.where((value) => !value.isHidden)
-        .map((value) => renderDuration(value.duration).length)
-        .followedBy([renderDuration(_totalDuration).length])
-        .reduce(max);
+    final displayedProgressEntries = _phaseProgress.entries.where(
+      (e) => !e.key.isOptional || _messages.hasMessages(phase: e.key),
+    );
+    final maxProgressWidth = displayedProgressEntries
+        .map((entry) => renderDuration(entry.value.duration).length)
+        .fold(0, max);
     final indent = maxProgressWidth + 1;
 
-    for (final entry in _phaseProgress.entries) {
+    for (final entry in displayedProgressEntries) {
       final phase = entry.key;
       final progress = entry.value;
 
@@ -209,7 +210,7 @@ class BuildLog {
         if (activities.isNotEmpty) '; $activities',
       ], hangingIndent: indent);
 
-      if (buildResult == null) {
+      if (!finished) {
         for (final line in _messages.renderInline(
           phase: phase,
           indent: indent,
@@ -219,30 +220,18 @@ class BuildLog {
       }
     }
 
-    result.writeLine([]);
-    result.writeLine([
-      renderDuration(_totalDuration).padLeft(maxProgressWidth),
-      ' ',
-      ..._status,
-    ]);
+    if (displayedProgressEntries.isNotEmpty) {
+      result.writeLine([]);
+    }
+    result.writeLine(_status);
 
-    if (buildResult != null) {
-      /*final totalTime = renderDuration(
-        _stagesByName.values
-            .where((stage) => stage.length != 0)
-            .map((stage) => stage.duration ?? Duration.zero)
-            .reduce((a, b) => a + b),
-      );
+    if (!finished) {
+      for (final line in _messages.renderInline(phase: null, indent: indent)) {
+        result.write(line);
+      }
+    }
 
-      result.writeLine([
-        buildType.status,
-        ' ',
-        AnsiBuffer.bold,
-        if (buildResult!) successPattern else failurePattern,
-        AnsiBuffer.reset,
-        ' in $totalTime.',
-      ]);*/
-
+    if (finished) {
       final renderedMessages = _messages.render([..._phaseProgress.keys, null]);
       if (renderedMessages.isNotEmpty) {
         result.writeLine([]);
@@ -256,10 +245,12 @@ class BuildLog {
   }
 
   void setBuildType(BuildType buildType) {
-    this.buildType = buildType;
-    _display.display(
-      makeEntry(severity: LineSeverity.info, line: buildType.message),
-    );
+    buildProcessState.buildType = buildType;
+    tick(phase: null);
+  }
+
+  void prompt(String message) {
+    _display.prompt(message);
   }
 
   void info(
@@ -282,7 +273,7 @@ class BuildLog {
     _messages.add(
       phase: phase,
       context: context,
-      severity: BuildLogSeverity.info,
+      severity: BuildLogSeverity.warning,
       message,
     );
     _display.display(makeEntry(severity: LineSeverity.warning, line: message));
@@ -342,7 +333,7 @@ class BuildLog {
     }
   }
 
-  void tick({InBuildPhase? phase}) {
+  void tick({InBuildPhase? phase, bool finished = false}) {
     final duration = _stopwatch.elapsed;
     _stopwatch.reset();
     final previousPhase = _currentPhase;
@@ -354,30 +345,37 @@ class BuildLog {
     }
 
     _display.display(
-      makeEntry(severity: LineSeverity.info, line: ''),
+      makeEntry(severity: LineSeverity.info, line: '', finished: finished),
       // TODO: changed note?
-      force: _currentPhase != previousPhase || buildResult != null,
+      force: _currentPhase != previousPhase || finished,
     );
   }
 
   void doing(String task) {
-    _status = ['build_runner ', task];
+    _status = [task];
     tick(phase: null);
   }
 
-  // TODO(davidmorgan): move reset to start.
-  void buildDone({required bool result, required int outputs}) {
-    buildResult = result;
-    this.outputs = outputs;
+  void startBuild() {
+    doing('Building, ${buildProcessState.buildType.message}.');
+  }
 
-    /*final conclusion = finalStatus;
-    _display.display(
-      makeEntry(severity: LineSeverity.info, line: '--- $conclusion'),
-    );*/
-
-    /*_display.finish();
-    _stagesByName.clear();
-    _stagesByName['setup'] = Stage.setup();*/
+  void finishBuild({required bool result, required int outputs}) {
+    _status = [
+      buildProcessState.buildType == BuildType.incremental
+          ? 'Incremental build '
+          : 'Full build ',
+      AnsiBuffer.bold,
+      result ? AnsiBuffer.green : AnsiBuffer.red,
+      result ? successPattern : failurePattern,
+      AnsiBuffer.reset,
+      ' in ',
+      renderDuration(_totalDuration),
+      if (_messages.hasWarnings) ' with warnings',
+      '.',
+    ];
+    tick(phase: null, finished: true);
+    reset();
   }
 
   /// Creates a logger that logs to the [BuildLog] stage for [phase] on
@@ -425,28 +423,6 @@ class BuildLog {
       return id.toString();
     }
   }
-}
-
-enum BuildType {
-  clean('Clean build.', 'Full build'),
-  incremental('Incremental build.', 'Incremental build'),
-  incompatibleScript(
-    'Builder code changed, doing a full build.',
-    'Full build (builders changed)',
-  ),
-  incompatibleAssetGraph(
-    'Could not load asset graph, doing a full build.',
-    'Full build (no valid asset graph)',
-  ),
-  incompatibleBuild(
-    'Build changed, doing a full build.',
-    'Full build (target changed)',
-  );
-
-  const BuildType(this.message, this.status);
-
-  final String message;
-  final String status;
 }
 
 extension _IntExtension on int {

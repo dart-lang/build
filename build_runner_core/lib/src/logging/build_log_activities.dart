@@ -11,8 +11,6 @@ class BuildLogActivities {
   Duration _attributedDuration = Duration.zero;
   final Map<InBuildPhase?, Map<ActivityType, Duration>> _activities = {};
 
-  /// Runs [function] adding the time spent to the measure of the specified
-  /// [activity] of the currently-running [InBuildPhase].
   Future<T> runActivityAsync<T>({
     required InBuildPhase? phase,
     required ActivityType activity,
@@ -31,8 +29,6 @@ class BuildLogActivities {
     }
   }
 
-  /// Runs [function] adding the time spent to the measure of the specified
-  /// [activity] of the currently-running [Stage].
   T runActivity<T>({
     required InBuildPhase? phase,
     required ActivityType activity,

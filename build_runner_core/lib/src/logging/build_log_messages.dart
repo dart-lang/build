@@ -7,6 +7,9 @@ import 'ansi_buffer.dart';
 
 class BuildLogMessages {
   final List<BuildLogMessage> _messages = [];
+  bool _hasWarnings = false;
+
+  bool get hasWarnings => _hasWarnings;
 
   void add(
     String message, {
@@ -14,6 +17,7 @@ class BuildLogMessages {
     String? context,
     required BuildLogSeverity severity,
   }) {
+    if (severity == BuildLogSeverity.warning) _hasWarnings = true;
     _messages.add(
       BuildLogMessage(
         message: message,
@@ -23,6 +27,9 @@ class BuildLogMessages {
       ),
     );
   }
+
+  bool hasMessages({required InBuildPhase phase}) =>
+      _messages.any((message) => message.phase == phase);
 
   int count({
     required InBuildPhase? phase,
@@ -100,7 +107,7 @@ class BuildLogMessages {
             AnsiBufferLine([
               '${message.phase?.builderLabel ?? 'build_runner'} '
                   '${severity.name}',
-              if (context != null) ' $context',
+              if (context != null) ' on $context',
             ]),
           );
           result.add(AnsiBufferLine([message.message], indent: 2));

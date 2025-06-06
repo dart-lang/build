@@ -36,7 +36,7 @@ Future<bool> createMergedOutputDirectories(
   FinalizedAssetsView finalizedAssetsView,
   bool outputSymlinksOnly,
 ) async {
-  buildLog.doing('write output directory');
+  buildLog.doing('Writing the output directory.');
   return await buildLog.runActivityAsync(ActivityType.write, () async {
     if (outputSymlinksOnly && reader.filesystem is! IoFilesystem) {
       buildLog.error(

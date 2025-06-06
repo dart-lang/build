@@ -22,6 +22,13 @@ class BuildProcessState {
   int get displayedLines => (_state['displayedLines'] as int?) ?? 0;
   set displayedLines(int? value) => _state['displayedLines'] = value;
 
+  BuildType get buildType => BuildType.values.singleWhere(
+    (v) => v.name == _state['buildType'],
+    orElse: () => BuildType.clean,
+  );
+
+  set buildType(BuildType buildType) => _state['buildType'] = buildType.name;
+
   /// Sends `this` to [sendPort].
   Future<void> send(SendPort? sendPort) async {
     sendPort?.send(_state);
@@ -59,4 +66,16 @@ class BuildProcessState {
     });
     return result;
   }
+}
+
+enum BuildType {
+  clean('full build'),
+  incompatibleScript('full build because builders changed'),
+  incompatibleAssetGraph('full build because there is no valid asset graph'),
+  incompatibleBuild('full build because target changed'),
+  incremental('incremental build');
+
+  const BuildType(this.message);
+
+  final String message;
 }

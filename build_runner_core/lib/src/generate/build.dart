@@ -10,6 +10,8 @@ import 'package:build/build.dart';
 import 'package:build/src/internal.dart';
 // ignore: implementation_imports
 import 'package:build_resolvers/src/internal.dart';
+// ignore: implementation_imports
+import 'package:build_runner/src/internal.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
@@ -180,7 +182,7 @@ class Build {
       readerWriter,
       buildDirs,
     );
-    buildLog.buildDone(
+    buildLog.finishBuild(
       result: result.status == BuildStatus.success,
       outputs: result.outputs.length,
     );
@@ -217,14 +219,14 @@ class Build {
     final done = Completer<BuildResult>();
     runZonedGuarded(
       () async {
-        buildLog.doing('update asset graph');
+        buildLog.doing('Updating the asset graph.');
         if (!assetGraph.cleanBuild) {
           await _updateAssetGraph(updates);
         }
 
-        buildLog.doing('build');
+        buildLog.startBuild();
         var result = await _runPhases();
-        buildLog.doing('write asset graph');
+        buildLog.doing('Writing the asset graph.');
 
         // Combine previous phased asset deps, if any, with the newly loaded
         // deps. Because of skipped builds, the newly loaded deps might just
@@ -250,7 +252,7 @@ class Build {
 
         // Log performance information if requested
         if (options.logPerformanceDir != null) {
-          buildLog.doing('write performance log');
+          buildLog.doing('Writing the performance log.');
           assert(result.performance != null);
           var now = DateTime.now();
           var logPath = p.join(
@@ -345,7 +347,7 @@ class Build {
       }
 
       // Post build phase.
-      buildLog.doing('post build');
+      buildLog.doing('Running the post build.');
       if (buildPhases.postBuildPhase.builderActions.isNotEmpty) {
         outputs.addAll(
           await performanceTracker.trackBuildPhase(

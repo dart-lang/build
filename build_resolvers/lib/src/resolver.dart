@@ -657,7 +657,7 @@ Future<String> packagePath(String package) async {
   return p.dirname(p.fromUri(libRoot));
 }
 
-/// Wraps [pool] so accesses are timed as [StageActivity.analyze].
+/// Wraps [pool] so resource use is timed as [ActivityType.analyze].
 class AnalyzeActivityPool {
   final Pool pool;
 

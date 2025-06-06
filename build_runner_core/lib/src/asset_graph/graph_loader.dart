@@ -7,6 +7,8 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
+// ignore: implementation_imports
+import 'package:build_runner/src/internal.dart';
 import 'package:built_collection/built_collection.dart';
 
 import '../asset/writer.dart';
@@ -45,7 +47,7 @@ class AssetGraphLoader {
   ///  - if running from a snapshot, throws `BuildScriptChangedException`,
   ///    otherwise returns `null`
   Future<AssetGraph?> load() async {
-    buildLog.doing('read asset graph');
+    buildLog.doing('Reading the asset graph.');
     final assetGraphId = AssetId(packageGraph.root.name, assetGraphPath);
     if (!await reader.canRead(assetGraphId)) {
       return null;
