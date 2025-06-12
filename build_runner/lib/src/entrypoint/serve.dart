@@ -136,12 +136,12 @@ class ServeCommand extends WatchCommand {
 
     final completer = Completer<int>();
     handleBuildResultsStream(handler.buildResults, completer);
-    _logServerPorts(handler, options);
+    _logServerPorts(options);
+    await handler.currentBuild;
     return completer.future;
   }
 
-  void _logServerPorts(ServeHandler serveHandler, ServeOptions options) async {
-    await serveHandler.currentBuild;
+  void _logServerPorts(ServeOptions options) async {
     // Warn if in serve mode with no servers.
     if (options.serveTargets.isEmpty) {
       buildLog.warning(
