@@ -296,6 +296,7 @@ class BuildLog {
     progress.nextInput = primaryInput;
     _tick();
     _pushPhase(phaseName);
+    // Always log if it's the first step in the phase, otherwise throttle.
     if (progress.isStarting || _shouldShowProgressNow) {
       if (_display.displayingBlocks) {
         _display.block(render());
@@ -372,7 +373,8 @@ class BuildLog {
     }
   }
 
-  /// For `watch` and `serve` modes, logs that a new build has started.
+  /// For `watch` and `serve` modes, logs that a new build (not the initial
+  /// build) has started.
   ///
   /// Clears timings and messages.
   void nextBuild() {
@@ -492,9 +494,9 @@ class BuildLog {
       result.writeLine(_status);
     }
 
-    final renderedMessages = _messages.render([..._phaseProgress.keys, null]);
+    final renderedMessages = _messages.render();
     if (renderedMessages.isNotEmpty) {
-      result.writeLine([]);
+      result.writeEmptyLine();
       for (final line in renderedMessages) {
         result.write(line);
       }
@@ -543,6 +545,10 @@ class BuildLog {
   ///
   /// In `BuildLogMode.build` progress is throttled to 10x per second,
   /// in other modes it's throttled to once per second.
+  ///
+  /// Important progress, such as the first step in a phase or the last step
+  /// in a phase, does not check this; it's always logged.
+  ///
   bool get _shouldShowProgressNow {
     if (!configuration.throttleProgressUpdates) return true;
     final interval =

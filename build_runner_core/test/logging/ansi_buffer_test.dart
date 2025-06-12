@@ -18,6 +18,33 @@ void main() {
       expect(buffer.lines, ['0123456789' * 8, ('0123456789' * 2).padRight(80)]);
     });
 
+    test('indents, wraps and pads to 80 cols', () {
+      final buffer = AnsiBuffer();
+      buffer.writeLine(['012345678 ' * 10], indent: 5);
+      expect(buffer.lines, [
+        '     ${'012345678 ' * 7}'.padRight(80),
+        '     ${'012345678 ' * 3}'.padRight(80),
+      ]);
+    });
+
+    test('indents, wraps with smaller hanging indent and pads to 80 cols', () {
+      final buffer = AnsiBuffer();
+      buffer.writeLine(['012345678 ' * 10], indent: 5, hangingIndent: 3);
+      expect(buffer.lines, [
+        '     ${'012345678 ' * 7}'.padRight(80),
+        '   ${'012345678 ' * 3}'.padRight(80),
+      ]);
+    });
+
+    test('indents, wraps with larger hanging indent and pads to 80 cols', () {
+      final buffer = AnsiBuffer();
+      buffer.writeLine(['012345678 ' * 10], indent: 5, hangingIndent: 10);
+      expect(buffer.lines, [
+        '     ${'012345678 ' * 7}'.padRight(80),
+        '          ${'012345678 ' * 3}'.padRight(80),
+      ]);
+    });
+
     test('wraps very long lines and pads to 80 cols', () {
       final buffer = AnsiBuffer();
       buffer.writeLine(['0123456789' * 20]);
@@ -75,8 +102,41 @@ void main() {
       final buffer = AnsiBuffer();
       buffer.writeLine(['012345678${AnsiBuffer.nbsp}abcde' * 6]);
       expect(buffer.lines, [
-        '${'012345678 abcde' * 4}012345678 abcde01234',
+        '${'012345678 abcde' * 5}01234',
         '5678 abcde'.padRight(80),
+      ]);
+    });
+
+    test('line that fits width with hanging indent does not write '
+        'empty line', () {
+      final buffer = AnsiBuffer();
+      buffer.writeLine(['0123456789' * 8], hangingIndent: 2);
+      expect(buffer.lines, ['0123456789' * 8]);
+    });
+
+    test('hanging indent is limited to width ~/ 2', () {
+      final buffer = AnsiBuffer();
+      buffer.writeLine([
+        '012345678${AnsiBuffer.nbsp}abcde' * 6,
+      ], hangingIndent: 81);
+      expect(buffer.lines, [
+        '${'012345678 abcde' * 4}012345678 abcde01234',
+        (' ' * 40 + '5678 abcde').padRight(80),
+      ]);
+    });
+
+    test('overflow that overflows due to hangingIndent is wrapped', () {
+      final buffer = AnsiBuffer();
+      buffer.writeLine([
+        '0123456789',
+        ' ',
+        '0123456789' * 9,
+      ], hangingIndent: 40);
+      expect(buffer.lines, [
+        '0123456789'.padRight(80),
+        ' ' * 40 + '0123456789' * 4,
+        (' ' * 40 + ('0123456789' * 4)).padRight(80),
+        (' ' * 40 + '0123456789').padRight(80),
       ]);
     });
   });

@@ -85,7 +85,8 @@ class BuildLogLogger implements Logger {
   Level get level => buildLog.configuration.verbose ? Level.ALL : Level.WARNING;
 
   @override
-  set level(Level? value) => throw UnimplementedError();
+  set level(Level? value) =>
+      throw UnsupportedError('Builders are not allowed to set loggel level.');
 
   @override
   Map<String, Logger> get children => const {};
@@ -127,10 +128,16 @@ class BuildLogLogger implements Logger {
   String get name => phaseName ?? '';
 
   @override
-  Stream<Level?> get onLevelChanged => throw UnimplementedError();
+  Stream<Level?> get onLevelChanged =>
+      throw UnsupportedError(
+        'Builders are not allowed to subscribe to logger level changes.',
+      );
 
   @override
-  Stream<LogRecord> get onRecord => throw UnimplementedError();
+  Stream<LogRecord> get onRecord =>
+      throw UnsupportedError(
+        'Builders are not allowed to subscribe to log records.',
+      );
 
   @override
   Logger? get parent => null;

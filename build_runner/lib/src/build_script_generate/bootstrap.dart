@@ -80,8 +80,8 @@ Future<int> _generateAndRun(
           ..writeAsStringSync(newContents);
         // Delete the kernel file so it will be rebuilt.
         final kernelFile = File(scriptKernelLocation);
-        if (await kernelFile.exists()) {
-          await kernelFile.delete();
+        if (kernelFile.existsSync()) {
+          kernelFile.deleteSync();
         }
         buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
       }
@@ -131,7 +131,7 @@ Future<int> _generateAndRun(
       } else {
         buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
       }
-      await File(scriptKernelLocation).rename(scriptKernelCachedLocation);
+      File(scriptKernelLocation).renameSync(scriptKernelCachedLocation);
     }
   }
 
@@ -171,19 +171,19 @@ Future<bool> _createKernelIfNeeded(List<String> experiments) async {
   var kernelFile = File(scriptKernelLocation);
   var kernelCacheFile = File(scriptKernelCachedLocation);
 
-  if (await kernelFile.exists()) {
-    if (!await assetGraphFile.exists()) {
+  if (kernelFile.existsSync()) {
+    if (!assetGraphFile.existsSync()) {
       // If we failed to serialize an asset graph for the snapshot, then we
       // don't want to re-use it because we can't check if it is up to date.
-      await kernelFile.rename(scriptKernelCachedLocation);
+      kernelFile.renameSync(scriptKernelCachedLocation);
       buildLog.fullBuildBecause(FullBuildReason.incompatibleAssetGraph);
     } else if (!await _checkImportantPackageDepsAndExperiments(experiments)) {
-      await kernelFile.rename(scriptKernelCachedLocation);
+      kernelFile.renameSync(scriptKernelCachedLocation);
       buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
     }
   }
 
-  if (!await kernelFile.exists()) {
+  if (!kernelFile.existsSync()) {
     final client = await FrontendServerClient.start(
       scriptLocation,
       scriptKernelCachedLocation,
@@ -197,7 +197,7 @@ Future<bool> _createKernelIfNeeded(List<String> experiments) async {
     buildLog.doing('Compiling the build script.');
     try {
       final result = await client.compile();
-      hadErrors = result.errorCount > 0 || !(await kernelCacheFile.exists());
+      hadErrors = result.errorCount > 0 || !kernelCacheFile.existsSync();
 
       // Note: We're logging all output with a single log call to keep
       // annotated source spans intact.
@@ -216,10 +216,10 @@ Future<bool> _createKernelIfNeeded(List<String> experiments) async {
     // In this case we leave the cached kernel file in tact so future compiles
     // are faster, but don't copy it over to the real location.
     if (!hadErrors) {
-      await kernelCacheFile.rename(scriptKernelLocation);
+      kernelCacheFile.renameSync(scriptKernelLocation);
     }
 
-    if (!await kernelFile.exists()) {
+    if (!kernelFile.existsSync()) {
       buildLog.error(
         'Failed to compile build script. '
         'Check builder definitions and generated script $scriptLocation.',

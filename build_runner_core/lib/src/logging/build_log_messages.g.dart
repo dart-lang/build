@@ -128,4 +128,94 @@ class MessageBuilder implements Builder<Message, MessageBuilder> {
   }
 }
 
+class _$MessageCategory extends _MessageCategory {
+  @override
+  final String? phaseName;
+  @override
+  final String? context;
+
+  factory _$MessageCategory([
+    void Function(_MessageCategoryBuilder)? updates,
+  ]) => (_MessageCategoryBuilder()..update(updates))._build();
+
+  _$MessageCategory._({this.phaseName, this.context}) : super._();
+  @override
+  _MessageCategory rebuild(void Function(_MessageCategoryBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
+
+  @override
+  _MessageCategoryBuilder toBuilder() =>
+      _MessageCategoryBuilder()..replace(this);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(other, this)) return true;
+    return other is _MessageCategory &&
+        phaseName == other.phaseName &&
+        context == other.context;
+  }
+
+  @override
+  int get hashCode {
+    var _$hash = 0;
+    _$hash = $jc(_$hash, phaseName.hashCode);
+    _$hash = $jc(_$hash, context.hashCode);
+    _$hash = $jf(_$hash);
+    return _$hash;
+  }
+
+  @override
+  String toString() {
+    return (newBuiltValueToStringHelper(r'_MessageCategory')
+          ..add('phaseName', phaseName)
+          ..add('context', context))
+        .toString();
+  }
+}
+
+class _MessageCategoryBuilder
+    implements Builder<_MessageCategory, _MessageCategoryBuilder> {
+  _$MessageCategory? _$v;
+
+  String? _phaseName;
+  String? get phaseName => _$this._phaseName;
+  set phaseName(String? phaseName) => _$this._phaseName = phaseName;
+
+  String? _context;
+  String? get context => _$this._context;
+  set context(String? context) => _$this._context = context;
+
+  _MessageCategoryBuilder();
+
+  _MessageCategoryBuilder get _$this {
+    final $v = _$v;
+    if ($v != null) {
+      _phaseName = $v.phaseName;
+      _context = $v.context;
+      _$v = null;
+    }
+    return this;
+  }
+
+  @override
+  void replace(_MessageCategory other) {
+    _$v = other as _$MessageCategory;
+  }
+
+  @override
+  void update(void Function(_MessageCategoryBuilder)? updates) {
+    if (updates != null) updates(this);
+  }
+
+  @override
+  _MessageCategory build() => _build();
+
+  _$MessageCategory _build() {
+    final _$result =
+        _$v ?? _$MessageCategory._(phaseName: phaseName, context: context);
+    replace(_$result);
+    return _$result;
+  }
+}
+
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint

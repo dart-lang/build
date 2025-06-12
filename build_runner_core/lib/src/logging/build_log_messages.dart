@@ -16,13 +16,12 @@ part 'build_log_messages.g.dart';
 class BuildLogMessages {
   bool _hasWarnings = false;
   final Set<String?> _phaseNamesWithMessages = {};
-  final Map<(String?, Severity), List<Message>>
-  _messagesByPhaseNameAndSeverity = {};
+  final Map<_MessageCategory, List<Message>> _messageByCategory = {};
 
   void clear() {
     _hasWarnings = false;
     _phaseNamesWithMessages.clear();
-    _messagesByPhaseNameAndSeverity.clear();
+    _messageByCategory.clear();
   }
 
   void add(
@@ -39,8 +38,11 @@ class BuildLogMessages {
       context: context,
       severity: severity,
     );
-    _messagesByPhaseNameAndSeverity
-        .putIfAbsent((phaseName, severity), () => [])
+    _messageByCategory
+        .putIfAbsent(
+          _MessageCategory(phaseName: phaseName, context: context),
+          () => [],
+        )
         .add(message);
   }
 
@@ -49,50 +51,53 @@ class BuildLogMessages {
   bool hasMessages({required String? phaseName}) =>
       _phaseNamesWithMessages.contains(phaseName);
 
-  Iterable<Message> messages({
-    required String? phaseName,
-    required Severity severity,
-  }) => _messagesByPhaseNameAndSeverity[(phaseName, severity)] ?? const [];
-
-  List<AnsiBufferLine> render(Iterable<String?> phaseNames) {
+  List<AnsiBufferLine> render() {
     final result = <AnsiBufferLine>[];
-    for (final phaseName in phaseNames) {
-      AnsiBufferLine? previousHeader;
-      for (final severity in Severity.values) {
-        for (final message in messages(
-          phaseName: phaseName,
-          severity: severity,
-        )) {
-          final context = message.context;
-          final header = AnsiBufferLine([
-            'log output for ',
+
+    // Show messages by _MessageCategory in the order they were reported,
+    // except `build_runner` messages (no phase) which are all pulled to the
+    // end for emphasis.
+    final phaseCategories = <_MessageCategory>[];
+    final noPhaseCategories = <_MessageCategory>[];
+    for (final category in _messageByCategory.keys) {
+      if (category.phaseName == null) {
+        noPhaseCategories.add(category);
+      } else {
+        phaseCategories.add(category);
+      }
+    }
+
+    for (final category in phaseCategories.followedBy(noPhaseCategories)) {
+      final context = category.context;
+      result.add(
+        AnsiBufferLine([
+          'log output for ',
+          AnsiBuffer.bold,
+          category.phaseName ?? 'build_runner',
+          AnsiBuffer.reset,
+          if (context != null) ...[
+            ' on ',
             AnsiBuffer.bold,
-            message.phaseName ?? 'build_runner',
+            context,
             AnsiBuffer.reset,
-            if (context != null) ...[
-              ' on ',
-              AnsiBuffer.bold,
-              context,
-              AnsiBuffer.reset,
-            ],
-          ]);
-          if (header != previousHeader) {
-            result.add(header);
-          }
-          previousHeader = header;
-          var first = true;
-          for (final line in message.text.split('\n')) {
-            result.add(
-              AnsiBufferLine([
-                first ? severity.prefix : '  ',
-                line,
-              ], hangingIndent: 2),
-            );
-            first = false;
-          }
+          ],
+        ]),
+      );
+
+      for (final message in _messageByCategory[category]!) {
+        var first = true;
+        for (final line in message.text.split('\n')) {
+          result.add(
+            AnsiBufferLine([
+              first ? message.severity.prefix : '  ',
+              line,
+            ], hangingIndent: 2),
+          );
+          first = false;
         }
       }
     }
+
     return result;
   }
 }
@@ -117,6 +122,21 @@ abstract class Message implements Built<Message, MessageBuilder> {
     required String text,
   }) = _$Message._;
   Message._();
+
+  String get header => '$phaseName on $context';
+}
+
+/// Messages are displayed by phase+context.
+abstract class _MessageCategory
+    implements Built<_MessageCategory, _MessageCategoryBuilder> {
+  String? get phaseName;
+  String? get context;
+
+  factory _MessageCategory({
+    required String? phaseName,
+    required String? context,
+  }) => _$MessageCategory._(phaseName: phaseName, context: context);
+  _MessageCategory._();
 }
 
 /// Severity of a message logged to `BuildLog`.

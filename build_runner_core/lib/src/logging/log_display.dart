@@ -21,8 +21,6 @@ final _logger = Logger.root;
 /// For console output, counts the lines written so they can be rewritten by
 /// the next output.
 class LogDisplay {
-  String previousLastLine = '';
-
   int get _displayedLines => buildProcessState.displayedLines;
   set _displayedLines(int displayedLines) =>
       buildProcessState.displayedLines = displayedLines;
@@ -59,6 +57,8 @@ class LogDisplay {
 
     var lines = block.lines;
 
+    // https://en.wikipedia.org/wiki/ANSI_escape_code#:~:text=Cursor%20Previous
+    // Moves cursor to the beginning of the line n lines up.
     final moveCursor = _displayedLines == 0 ? '' : '\x1b[${_displayedLines}F';
     _displayedLines = lines.length;
     stdout.writeln('$moveCursor${lines.join('\n')}');

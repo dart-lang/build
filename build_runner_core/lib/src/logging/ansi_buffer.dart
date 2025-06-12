@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:io';
+import 'dart:math';
 
 import 'package:collection/collection.dart';
 
@@ -13,6 +14,7 @@ class AnsiBuffer {
   static const String nbsp = '\u00A0';
   static const reset = '\x1B[0m';
   static const bold = '\x1B[1m';
+  static const _spaceCodeUnit = 32;
 
   /// The text added to the buffer, wrapped to [width].
   final List<String> lines = [];
@@ -29,6 +31,8 @@ class AnsiBuffer {
   /// Writes [items] as a line prefixed with [indent], wraps to console width;
   /// on wrapping, indents by [hangingIndent].
   ///
+  /// Hanging indent is capped at `width ~/ 2`.
+  ///
   /// ANSI codes must be individual items and must use the constants [reset]
   /// and/or [bold].
   ///
@@ -37,6 +41,7 @@ class AnsiBuffer {
   void writeLine(List<String> items, {int indent = 0, int? hangingIndent}) {
     final width = this.width;
     hangingIndent ??= indent;
+    hangingIndent = min(hangingIndent, width ~/ 2);
 
     final buffer = StringBuffer(' ' * indent);
     var lengthIgnoringAnsi = indent;
@@ -51,11 +56,13 @@ class AnsiBuffer {
         continue;
       }
 
-      for (var character in item.split('')) {
+      for (var character in item.codeUnits) {
         lengthIgnoringAnsi++;
-        buffer.write(character == nbsp ? ' ' : character);
+        buffer.writeCharCode(
+          character == nbsp.codeUnits[0] ? _spaceCodeUnit : character,
+        );
 
-        if (character == ' ') {
+        if (character == _spaceCodeUnit) {
           lastWhitespaceIndex = buffer.length;
           lastWhitespaceLengthIgnoringAnsi = lengthIgnoringAnsi;
         }
@@ -73,10 +80,20 @@ class AnsiBuffer {
           buffer.clear();
           buffer.write(' ' * hangingIndent);
           buffer.write(bufferString.substring(lastWhitespaceIndex));
-          lengthIgnoringAnsi =
-              lengthIgnoringAnsi -
-              lastWhitespaceLengthIgnoringAnsi +
-              hangingIndent;
+          // There can be no ANSI codes in the overflow.
+          lengthIgnoringAnsi = buffer.length;
+
+          // If hangingIndent > indent then the overflow from the first line
+          // can fill line two and spill onto line three.
+          if (buffer.length >= width) {
+            final bufferString = buffer.toString();
+            final overflow = bufferString.substring(width);
+            lines.add(bufferString.substring(0, width));
+            buffer.clear();
+            buffer.write(' ' * hangingIndent);
+            buffer.write(overflow);
+            lengthIgnoringAnsi = buffer.length;
+          }
 
           lastWhitespaceIndex = null;
           lastWhitespaceLengthIgnoringAnsi = null;
@@ -84,10 +101,18 @@ class AnsiBuffer {
       }
     }
 
-    if (buffer.isNotEmpty || items.isEmpty) {
-      lines.add(buffer.toString() + ' ' * (width - lengthIgnoringAnsi));
+    final bufferString = buffer.toString();
+    // Handle cases where the buffer is just indent or hanging indent.
+    final bufferHasContent = bufferString.codeUnits.any(
+      (c) => c != _spaceCodeUnit,
+    );
+    // Always write if `items.isEmpty` so `writeLine([])` writes an empty line.
+    if (bufferHasContent || items.isEmpty) {
+      lines.add(bufferString + ' ' * (width - lengthIgnoringAnsi));
     }
   }
+
+  void writeEmptyLine() => writeLine([]);
 
   /// As [writeLine] for an [AnsiBuffer].
   void write(AnsiBufferLine line) {
@@ -124,6 +149,7 @@ class AnsiBufferLine {
       hangingIndent == other.hangingIndent &&
       const DeepCollectionEquality().equals(items, other.items);
 
+  // Package-private class that is never hashed.
   @override
   int get hashCode => throw UnimplementedError();
 
