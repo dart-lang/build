@@ -8,8 +8,6 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:build_runner_core/build_runner_core.dart';
-// ignore: implementation_imports
-import 'package:build_runner_core/src/asset_graph/graph.dart';
 
 import 'base_command.dart';
 
@@ -22,70 +20,19 @@ class CleanCommand extends Command<int> {
 
   @override
   String get description =>
-      'Cleans up output from previous builds. Does not clean up --output '
-      'directories.';
+      'Deletes the build cache. The next build will be a full build.';
 
   @override
   Future<int> run() async {
-    await cleanFor(assetGraphPath);
+    clean();
     return 0;
   }
 }
 
-Future<void> cleanFor(String assetGraphPath) async {
-  buildLog.warning(
-    'Deleting cache and generated source files.\n'
-    'This shouldn\'t be necessary for most applications, unless you have '
-    'made intentional edits to generated files (i.e. for testing). '
-    'Consider filing a bug at '
-    'https://github.com/dart-lang/build/issues/new if you are using this '
-    'to work around an apparent (and reproducible) bug.',
-  );
-
-  var assetGraphFile = File(assetGraphPath);
-  if (!assetGraphFile.existsSync()) {
-    buildLog.warning(
-      'No asset graph found. '
-      'Skipping cleanup of generated files in source directories.',
-    );
-    return;
-  }
-  AssetGraph assetGraph;
-  try {
-    assetGraph = AssetGraph.deserialize(await assetGraphFile.readAsBytes());
-  } catch (_) {
-    buildLog.warning(
-      'Failed to deserialize AssetGraph. '
-      'Skipping cleanup of generated files in source directories.',
-    );
-    return;
-  }
-  var packageGraph = await PackageGraph.forThisPackage();
-  await _cleanUpSourceOutputs(assetGraph, packageGraph);
-  await _cleanUpGeneratedDirectory();
-}
-
-Future<void> _cleanUpSourceOutputs(
-  AssetGraph assetGraph,
-  PackageGraph packageGraph,
-) async {
-  var writer = ReaderWriter(packageGraph);
-  for (var id in assetGraph.outputs) {
-    if (id.package != packageGraph.root.name) continue;
-    var node = assetGraph.get(id)!;
-    if (node.wasOutput) {
-      // Note that this does a file.exists check in the root package and
-      // only tries to delete the file if it exists. This way we only
-      // actually delete to_source outputs, without reading in the build
-      // actions.
-      await writer.delete(id);
-    }
-  }
-}
-
-Future<void> _cleanUpGeneratedDirectory() async {
+void clean() {
+  buildLog.doing('Deleting the build cache.');
   var generatedDir = Directory(cacheDir);
-  if (await generatedDir.exists()) {
-    await generatedDir.delete(recursive: true);
+  if (generatedDir.existsSync()) {
+    generatedDir.deleteSync(recursive: true);
   }
 }

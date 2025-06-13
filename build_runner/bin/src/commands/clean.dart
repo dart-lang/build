@@ -6,10 +6,8 @@ import 'dart:async';
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
-import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
 import 'package:build_runner/src/entrypoint/base_command.dart' show lineLength;
-import 'package:build_runner/src/entrypoint/clean.dart' show cleanFor;
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner/src/entrypoint/clean.dart' show clean;
 import 'package:logging/logging.dart';
 
 class CleanCommand extends Command<int> {
@@ -22,12 +20,11 @@ class CleanCommand extends Command<int> {
 
   @override
   String get description =>
-      'Cleans up output from previous builds. Does not clean up --output '
-      'directories.';
+      'Deletes the build cache. The next build will be a full build.';
 
   @override
   Future<int> run() async {
-    await cleanFor(assetGraphPathFor(scriptLocation));
+    clean();
     return 0;
   }
 }

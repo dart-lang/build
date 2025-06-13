@@ -42,11 +42,10 @@ void main() {
       ]).validate();
     });
 
-    test('cleans up .dart_tool and generated source files', () async {
+    test('cleans up .dart_tool', () async {
       var cleanResult = await runDart('a', 'tool/build.dart', args: ['clean']);
       expect(cleanResult.exitCode, 0);
       await d.dir('a', [
-        d.dir('web', [d.nothing('a.txt.copy')]),
         d.dir('.dart_tool', [d.nothing('build')]),
       ]).validate();
     });
