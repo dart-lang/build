@@ -54,50 +54,57 @@ class BuildLogMessages {
   List<AnsiBufferLine> render() {
     final result = <AnsiBufferLine>[];
 
-    // Show messages by _MessageCategory in the order they were reported,
-    // except `build_runner` messages (no phase) which are all pulled to the
-    // end for emphasis.
-    final phaseCategories = <_MessageCategory>[];
-    final noPhaseCategories = <_MessageCategory>[];
-    for (final category in _messageByCategory.keys) {
-      if (category.phaseName == null) {
-        noPhaseCategories.add(category);
+    final buildRunnerCategories = <MapEntry<_MessageCategory, List<Message>>>[];
+    for (final entry in _messageByCategory.entries) {
+      if (entry.key.phaseName == null) {
+        // Messages with no phase name are `build_runner` messages, render them
+        // last for maximum visibility.
+        buildRunnerCategories.add(entry);
       } else {
-        phaseCategories.add(category);
+        result.addAll(_renderCategory(entry));
       }
     }
 
-    for (final category in phaseCategories.followedBy(noPhaseCategories)) {
-      final context = category.context;
-      result.add(
-        AnsiBufferLine([
-          'log output for ',
+    for (final entry in buildRunnerCategories) {
+      result.addAll(_renderCategory(entry));
+    }
+
+    return result;
+  }
+
+  List<AnsiBufferLine> _renderCategory(
+    MapEntry<_MessageCategory, List<Message>> entry,
+  ) {
+    final result = <AnsiBufferLine>[];
+    final category = entry.key;
+    final context = category.context;
+    result.add(
+      AnsiBufferLine([
+        'log output for ',
+        AnsiBuffer.bold,
+        category.phaseName ?? 'build_runner',
+        AnsiBuffer.reset,
+        if (context != null) ...[
+          ' on ',
           AnsiBuffer.bold,
-          category.phaseName ?? 'build_runner',
+          context,
           AnsiBuffer.reset,
-          if (context != null) ...[
-            ' on ',
-            AnsiBuffer.bold,
-            context,
-            AnsiBuffer.reset,
-          ],
-        ]),
-      );
+        ],
+      ]),
+    );
 
-      for (final message in _messageByCategory[category]!) {
-        var first = true;
-        for (final line in message.text.split('\n')) {
-          result.add(
-            AnsiBufferLine([
-              first ? message.severity.prefix : '  ',
-              line,
-            ], hangingIndent: 2),
-          );
-          first = false;
-        }
+    for (final message in _messageByCategory[category]!) {
+      var first = true;
+      for (final line in message.text.split('\n')) {
+        result.add(
+          AnsiBufferLine([
+            first ? message.severity.prefix : '  ',
+            line,
+          ], hangingIndent: 2),
+        );
+        first = false;
       }
     }
-
     return result;
   }
 }
@@ -122,8 +129,6 @@ abstract class Message implements Built<Message, MessageBuilder> {
     required String text,
   }) = _$Message._;
   Message._();
-
-  String get header => '$phaseName on $context';
 }
 
 /// Messages are displayed by phase+context.

@@ -45,6 +45,15 @@ void main() {
       ]);
     });
 
+    test('indent is limited to width ~/ 2', () {
+      final buffer = AnsiBuffer();
+      buffer.writeLine(['012345678 ' * 8], indent: 100);
+      expect(buffer.lines, [
+        ' ' * 40 + '012345678 ' * 4,
+        ' ' * 40 + '012345678 ' * 4,
+      ]);
+    });
+
     test('wraps very long lines and pads to 80 cols', () {
       final buffer = AnsiBuffer();
       buffer.writeLine(['0123456789' * 20]);

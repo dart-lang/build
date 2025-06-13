@@ -14,6 +14,7 @@ class AnsiBuffer {
   static const String nbsp = '\u00A0';
   static const reset = '\x1B[0m';
   static const bold = '\x1B[1m';
+  static const _nbspCodeUnit = 0xA0;
   static const _spaceCodeUnit = 32;
 
   /// The text added to the buffer, wrapped to [width].
@@ -31,7 +32,7 @@ class AnsiBuffer {
   /// Writes [items] as a line prefixed with [indent], wraps to console width;
   /// on wrapping, indents by [hangingIndent].
   ///
-  /// Hanging indent is capped at `width ~/ 2`.
+  /// Indent and hanging indent are capped at `width ~/ 2`.
   ///
   /// ANSI codes must be individual items and must use the constants [reset]
   /// and/or [bold].
@@ -41,6 +42,7 @@ class AnsiBuffer {
   void writeLine(List<String> items, {int indent = 0, int? hangingIndent}) {
     final width = this.width;
     hangingIndent ??= indent;
+    indent = min(indent, width ~/ 2);
     hangingIndent = min(hangingIndent, width ~/ 2);
 
     final buffer = StringBuffer(' ' * indent);
@@ -59,7 +61,7 @@ class AnsiBuffer {
       for (var character in item.codeUnits) {
         lengthIgnoringAnsi++;
         buffer.writeCharCode(
-          character == nbsp.codeUnits[0] ? _spaceCodeUnit : character,
+          character == _nbspCodeUnit ? _spaceCodeUnit : character,
         );
 
         if (character == _spaceCodeUnit) {
