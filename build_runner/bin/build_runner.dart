@@ -80,10 +80,20 @@ Future<void> main(List<String> args) async {
     exitCode = await commandRunner.runCommand(parsedArgs) ?? 1;
   } else {
     var experiments = parsedArgs.command!['enable-experiment'] as List<String>?;
-    if ({'build', 'serve', 'watch', 'test'}.contains(commandName)) {
-      buildLog.configuration = buildLog.configuration.rebuild((b) {
-        b.mode = BuildLogMode.build;
-      });
+    // Set the buildLog mode before the command starts so the first few log
+    // messages are displayed correctly.
+    switch (commandName) {
+      case 'build':
+      case 'serve':
+      case 'watch':
+      case 'test':
+        buildLog.configuration = buildLog.configuration.rebuild((b) {
+          b.mode = BuildLogMode.build;
+        });
+      case 'daemon':
+        buildLog.configuration = buildLog.configuration.rebuild((b) {
+          b.mode = BuildLogMode.daemon;
+        });
     }
     while ((exitCode = await generateAndRun(args, experiments: experiments)) ==
         ExitCode.tempFail.code) {}
