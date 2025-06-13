@@ -1,18 +1,7 @@
-## 3.0.0-wip
+## 3.0.0
 
-- Bump the min SDK to 3.7.0.
-- Use `build_runner_core` 9.0.0.
-- `resolveSources` and `testBuilder` now do a full `build_runner` build, with
-  configuration as much as possible based on the some parameters.
-- Add `testBuilders` to run a test build with multiple builders.
-- Add `optionalBuilders` to `testBuilders` to have some builders be optional.
-- Add `visibleOutputBuilders` to `testBuilders` to have some builders write
-  their output next to their inputs.
-- Add `testingBuilderConfig` to `testBuilders` to control builder config
-  override.
-- Add `resolvers` parameter to `testBuild` and `testBuilders`.
-- Add `readerWriter` and `enableLowResourceMode` parameters to `testBuild`
-  and `testBuilders`.
+Breaking changes:
+
 - Breaking change: removed `tearDown` parameter to `resolveSources` for
   keeping resolvers across multiple tests.
 - Breaking change: tests must use new `TestReaderWriter` instead of
@@ -31,9 +20,31 @@
   resolver entrypoints are now tracked separately from inputs, see
   `TestReaderWriter.resolverEntrypointsTracked`.
 - Breaking change: Remove `StubAssetReader`. Use `TestReaderWriter` instead.
+
+Other user-visible changes:
+
+- `resolveSources` and `testBuilder` now do a full `build_runner` build, with
+  configuration as much as possible based on the some parameters.
+- Add `testBuilders` to run a test build with multiple builders.
+- Add `optionalBuilders` to `testBuilders` to have some builders be optional.
+- Add `visibleOutputBuilders` to `testBuilders` to have some builders write
+  their output next to their inputs.
+- Add `testingBuilderConfig` to `testBuilders` to control builder config
+  override.
+- Add `resolvers` parameter to `testBuild` and `testBuilders`.
+- Add `readerWriter` and `enableLowResourceMode` parameters to `testBuild`
+  and `testBuilders`.
 - `TestReaderWriter` writes and deletes are notified to `FakeWatcher`.
 - `TestReaderWriter` tracks `assetsWritten`.
 - Support checks on reader state after a build action in `resolveSources`.
+
+Versions:
+
+- Bump the min SDK to 3.7.0.
+- Use `build_runner_core` 9.0.0.
+
+Internal changes:
+
 - Start using `package:build/src/internal.dart`.
 - Refactor `BuildCacheReader` to `BuildCacheAssetPathProvider`.
 - Refactor `FileBasedAssetReader` and `FileBasedAssetWriter` to `ReaderWriter`.

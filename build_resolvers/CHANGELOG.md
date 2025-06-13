@@ -1,19 +1,30 @@
-## 2.4.5-wip
+## 2.5.0
 
+User-visible changes:
+
+- Improved performance for large builds. More performance improvements
+  will follow, if your workflow is affected by slow `build_runner` performance
+  then please consider sharing details at
+  https://github.com/dart-lang/build/discussions.
 - Improved logging: show what builders are running and, for long-running
   builders, where the time is spent.
+- Bug fix: fix delay on shutdown for fast builds when the "analyzer out of
+  date" warning is displayed.
+
+Versions:
+
 - Bump the min SDK to 3.7.0.
 - Use `build_test` 3.0.0.
 - Use `build_runner_core` 9.0.0.
-- Use new resolver always; remove `--use-experimental-resolver` flag.
 - Start using `package:build/src/internal.dart`.
+
+Internal changes:
+
 - Switch `BuildAssetUriResolver` dependency crawl to an iterative
   algorithm, preventing stack overflows.
 - Move `BuildStepImpl` to `build_runner_core`, use `SingleStepReader` directly.
 - Stop building `transitive_digest` files by default.
 - Use `LibraryCycleGraphLoader` to load transitive deps for analysis.
-- Bug fix: fix delay on shutdown for fast builds when the "analyzer out of
-  date" warning is displayed.
 - Track resolver dependencies as library cycle graphs.
 - Ignore deprecated analyzer API usages.
 

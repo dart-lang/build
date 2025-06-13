@@ -30,7 +30,7 @@ dev_dependencies:
   b:
     path: ../build_modules/test/fixtures/b
   build_runner: ^2.0.0
-  build_test: ^3.0.0-wip
+  build_test: ^3.0.0
   c:
     path: test/fixtures/c
   d:
