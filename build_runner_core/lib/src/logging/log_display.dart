@@ -60,8 +60,13 @@ class LogDisplay {
     // https://en.wikipedia.org/wiki/ANSI_escape_code#:~:text=Cursor%20Previous
     // Moves cursor to the beginning of the line n lines up.
     final moveCursor = _displayedLines == 0 ? '' : '\x1b[${_displayedLines}F';
-    _displayedLines = lines.length;
     stdout.writeln('$moveCursor${lines.join('\n')}');
+    if (_displayedLines > lines.length) {
+      // If the block is smaller than last time, erase the rest of the display.
+      // https://en.wikipedia.org/wiki/ANSI_escape_code#:~:text=Erase%20in%20Display
+      stdout.write('\x1b[J');
+    }
+    _displayedLines = lines.length;
 
     if (block.overflowsConsole) {
       prompt('Log overflowed the console, switching to line-by-line logging.');
