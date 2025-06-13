@@ -10,11 +10,10 @@ import 'package:args/command_runner.dart';
 import 'package:build/experiments.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
-import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
+import '../build_script_generate/build_process_state.dart';
 import '../generate/build.dart';
-import '../logging/std_io_logging.dart';
 import 'base_command.dart';
 import 'options.dart';
 
@@ -76,6 +75,10 @@ class RunCommand extends BuildRunnerCommand {
   @override
   FutureOr<int> run() {
     var options = readOptions();
+    buildLog.configuration = buildLog.configuration.rebuild((b) {
+      b.mode = BuildLogMode.build;
+      b.verbose = options.verbose;
+    });
     return withEnabledExperiments(
       () => _run(options),
       options.enableExperiments,
@@ -83,141 +86,138 @@ class RunCommand extends BuildRunnerCommand {
   }
 
   FutureOr<int> _run(SharedOptions options) async {
-    var logSubscription = Logger.root.onRecord.listen(
-      stdIOLogListener(verbose: options.verbose),
-    );
     var argResults = this.argResults!;
+    // Ensure that the user passed the name of a file to run.
+    if (argResults.rest.isEmpty) {
+      buildLog
+        ..error('Must specify an executable to run.')
+        ..error(usage);
+      return ExitCode.usage.code;
+    }
+
+    var scriptName = argResults.rest[0];
+    var passedArgs = argResults.rest.skip(1).toList();
+
+    // Ensure the extension is .dart.
+    if (p.extension(scriptName) != '.dart') {
+      buildLog.error(
+        '$scriptName is not a valid Dart file '
+        'and cannot be run in the VM.',
+      );
+      return ExitCode.usage.code;
+    }
+
+    // Create a temporary directory in which to execute the script.
+    var tempPath =
+        Directory.systemTemp
+            .createTempSync('build_runner_run_script')
+            .absolute
+            .uri
+            .toFilePath();
+
+    // Create two ReceivePorts, so that we can quit when the isolate is done.
+    //
+    // Define these before starting the isolate, so that we can close
+    // them if there is a spawn exception.
+    ReceivePort? onExit, onError;
+
+    // Use a completer to determine the exit code.
+    var exitCodeCompleter = Completer<int>();
+
     try {
-      // Ensure that the user passed the name of a file to run.
-      if (argResults.rest.isEmpty) {
-        logger
-          ..severe('Must specify an executable to run.')
-          ..severe(usage);
-        return ExitCode.usage.code;
-      }
-
-      var scriptName = argResults.rest[0];
-      var passedArgs = argResults.rest.skip(1).toList();
-
-      // Ensure the extension is .dart.
-      if (p.extension(scriptName) != '.dart') {
-        logger.severe(
-          '$scriptName is not a valid Dart file '
-          'and cannot be run in the VM.',
-        );
-        return ExitCode.usage.code;
-      }
-
-      // Create a temporary directory in which to execute the script.
-      var tempPath =
-          Directory.systemTemp
-              .createTempSync('build_runner_run_script')
-              .absolute
-              .uri
-              .toFilePath();
-
-      // Create two ReceivePorts, so that we can quit when the isolate is done.
-      //
-      // Define these before starting the isolate, so that we can close
-      // them if there is a spawn exception.
-      ReceivePort? onExit, onError;
-
-      // Use a completer to determine the exit code.
-      var exitCodeCompleter = Completer<int>();
-
-      try {
-        var buildDirs =
-            (options.buildDirs)..add(
-              BuildDirectory(
-                '',
-                outputLocation: OutputLocation(
-                  tempPath,
-                  useSymlinks: options.outputSymlinksOnly,
-                  hoist: false,
-                ),
+      var buildDirs =
+          (options.buildDirs)..add(
+            BuildDirectory(
+              '',
+              outputLocation: OutputLocation(
+                tempPath,
+                useSymlinks: options.outputSymlinksOnly,
+                hoist: false,
               ),
-            );
-        var result = await build(
-          builderApplications,
-          deleteFilesByDefault: options.deleteFilesByDefault,
-          enableLowResourcesMode: options.enableLowResourcesMode,
-          configKey: options.configKey,
-          buildDirs: buildDirs,
-          packageGraph: packageGraph,
-          verbose: options.verbose,
-          builderConfigOverrides: options.builderConfigOverrides,
-          isReleaseBuild: options.isReleaseBuild,
-          trackPerformance: options.trackPerformance,
-          skipBuildScriptCheck: options.skipBuildScriptCheck,
-          logPerformanceDir: options.logPerformanceDir,
-          buildFilters: options.buildFilters,
-        );
+            ),
+          );
+      var result = await build(
+        builderApplications,
+        deleteFilesByDefault: options.deleteFilesByDefault,
+        enableLowResourcesMode: options.enableLowResourcesMode,
+        configKey: options.configKey,
+        buildDirs: buildDirs,
+        packageGraph: packageGraph,
+        verbose: options.verbose,
+        builderConfigOverrides: options.builderConfigOverrides,
+        isReleaseBuild: options.isReleaseBuild,
+        trackPerformance: options.trackPerformance,
+        skipBuildScriptCheck: options.skipBuildScriptCheck,
+        logPerformanceDir: options.logPerformanceDir,
+        buildFilters: options.buildFilters,
+      );
 
-        if (result.status == BuildStatus.failure) {
-          logger.warning('Skipping script run due to build failure');
-          return result.failureType?.exitCode ?? 1;
-        }
+      if (result.status == BuildStatus.failure) {
+        buildLog.warning('Skipping script run due to build failure.');
+        return result.failureType?.exitCode ?? 1;
+      }
 
-        // Find the path of the script to run.
-        var scriptPath = p.join(tempPath, scriptName);
-        var packageConfigPath = p.join(
-          tempPath,
-          '.dart_tool/package_config.json',
-        );
+      // Find the path of the script to run.
+      var scriptPath = p.join(tempPath, scriptName);
+      var packageConfigPath = p.join(
+        tempPath,
+        '.dart_tool/package_config.json',
+      );
 
-        onExit = ReceivePort();
-        onError = ReceivePort();
+      onExit = ReceivePort();
+      onError = ReceivePort();
 
-        // Cleanup after exit.
-        onExit.listen((_) {
-          // If no error was thrown, return 0.
-          if (!exitCodeCompleter.isCompleted) exitCodeCompleter.complete(0);
-        });
+      // Cleanup after exit.
+      onExit.listen((_) {
+        // If no error was thrown, return 0.
+        if (!exitCodeCompleter.isCompleted) exitCodeCompleter.complete(0);
+      });
 
-        // On an error, kill the isolate, and log the error.
-        onError.listen((e) {
-          e = e as List<Object?>;
-          onExit?.close();
-          onError?.close();
-          logger.severe(
+      // On an error, kill the isolate, and log the error.
+      onError.listen((e) {
+        e = e as List<Object?>;
+        onExit?.close();
+        onError?.close();
+        buildLog.error(
+          buildLog.renderThrowable(
             'Unhandled error from script: $scriptName',
             e[0],
             StackTrace.fromString(e[1].toString()),
-          );
-          if (!exitCodeCompleter.isCompleted) exitCodeCompleter.complete(1);
-        });
-
-        await Isolate.spawnUri(
-          p.toUri(scriptPath),
-          passedArgs,
-          null,
-          errorsAreFatal: true,
-          onExit: onExit.sendPort,
-          onError: onError.sendPort,
-          packageConfig: p.toUri(packageConfigPath),
+          ),
         );
+        if (!exitCodeCompleter.isCompleted) exitCodeCompleter.complete(1);
+      });
 
-        return await exitCodeCompleter.future;
-      } on IsolateSpawnException catch (e) {
-        logger.severe(
+      await Isolate.spawnUri(
+        p.toUri(scriptPath),
+        passedArgs,
+        null,
+        errorsAreFatal: true,
+        onExit: onExit.sendPort,
+        onError: onError.sendPort,
+        packageConfig: p.toUri(packageConfigPath),
+      );
+
+      return await exitCodeCompleter.future;
+    } on IsolateSpawnException catch (e) {
+      buildLog.error(
+        buildLog.renderThrowable(
           'Could not spawn isolate. Ensure that your file is in a valid '
           'directory (i.e. "bin", "benchmark", "example", "test", "tool").',
           e,
-        );
-        return ExitCode.ioError.code;
-      } finally {
-        // Clean up the output dir.
-        var dir = Directory(tempPath);
-        if (await dir.exists()) await dir.delete(recursive: true);
-
-        onExit?.close();
-        onError?.close();
-        if (!exitCodeCompleter.isCompleted) {
-          exitCodeCompleter.complete(ExitCode.success.code);
-        }
-      }
+        ),
+      );
+      return ExitCode.ioError.code;
     } finally {
-      await logSubscription.cancel();
+      // Clean up the output dir.
+      var dir = Directory(tempPath);
+      if (await dir.exists()) await dir.delete(recursive: true);
+
+      onExit?.close();
+      onError?.close();
+      if (!exitCodeCompleter.isCompleted) {
+        exitCodeCompleter.complete(ExitCode.success.code);
+      }
     }
   }
 }

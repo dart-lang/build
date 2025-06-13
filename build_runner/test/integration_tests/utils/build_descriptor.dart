@@ -335,9 +335,10 @@ class BuildServer {
   BuildServer(this._process);
 
   Future<void>? _serversStarted;
-  Future<void> get started => _serversStarted ??= readThrough('Serving `web`');
+  Future<void> get started =>
+      _serversStarted ??= readThrough(BuildLog.successPattern);
 
-  Future<void> get nextSuccessfulBuild => readThrough('Succeeded after');
+  Future<void> get nextSuccessfulBuild => readThrough(BuildLog.successPattern);
 
   /// Reads stdout until there is a line containing [message];
   Future<void> readThrough(String message) async {

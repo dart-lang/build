@@ -27,7 +27,7 @@ class CleanCommand extends Command<int> {
 
   @override
   Future<int> run() async {
-    await cleanFor(assetGraphPathFor(scriptLocation), logger);
+    await cleanFor(assetGraphPathFor(scriptLocation));
     return 0;
   }
 }

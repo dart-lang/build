@@ -8,6 +8,7 @@ import 'dart:math';
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
+import 'package:build_runner_core/src/logging/build_log.dart';
 import 'package:build_runner_core/src/util/constants.dart';
 import 'package:build_test/build_test.dart';
 import 'package:built_collection/built_collection.dart';
@@ -244,7 +245,7 @@ class InvalidationTester {
     );
     final deleted = deletedAssets.map(_assetIdToName);
 
-    return logString.contains('Succeeded after')
+    return logString.contains(BuildLog.successPattern)
         ? Result(written: written, deleted: deleted)
         : Result.failure(written: written, deleted: deleted);
   }

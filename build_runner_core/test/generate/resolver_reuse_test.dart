@@ -13,6 +13,9 @@ import 'package:build_runner_core/build_runner_core.dart';
 import 'package:test/test.dart';
 
 void main() {
+  setUp(() {
+    BuildLog.resetForTests(printOnFailure: printOnFailure);
+  });
   group('Resolver Reuse', () {
     test(
       'Does not remove sources due to crawling for an earlier phase',

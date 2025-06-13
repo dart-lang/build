@@ -5,16 +5,14 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-// TODO: Move `scopeLogSync` to package:build?
-// ignore: implementation_imports
-import 'package:build/src/builder/logging.dart';
 import 'package:build_config/build_config.dart';
 import 'package:graphs/graphs.dart';
-import 'package:logging/logging.dart';
 
 import '../generate/build_phases.dart';
 import '../generate/exceptions.dart';
 import '../generate/phase.dart';
+import '../logging/build_log.dart';
+import '../logging/build_log_logger.dart';
 import '../validation/config_validation.dart';
 import 'package_graph.dart';
 import 'target_graph.dart';
@@ -195,10 +193,9 @@ class BuilderApplication {
               );
             }
 
-            final logger = Logger(builderKey);
-            final builder = _scopeLogSync(
+            final builder = BuildLogLogger.scopeLogSync(
               () => builderFactory(optionsWithDefaults),
-              logger,
+              buildLog.loggerForOther(builderKey),
             );
             if (builder == null) throw const CannotBuildException();
             _validateBuilder(builder);
@@ -253,10 +250,9 @@ class BuilderApplication {
         );
       }
 
-      final logger = Logger(builderKey);
-      final builder = _scopeLogSync(
+      final builder = BuildLogLogger.scopeLogSync(
         () => builderFactory(optionsWithDefaults),
-        logger,
+        buildLog.loggerForOther(builderKey),
       );
       if (builder == null) throw const CannotBuildException();
       _validatePostProcessBuilder(builder);
@@ -280,8 +276,6 @@ class BuilderApplication {
   }
 }
 
-final _logger = Logger('ApplyBuilders');
-
 /// Creates a [BuildPhase] to apply each builder in [builderApplications] to
 /// each target in [targetGraph] such that all builders are run for dependencies
 /// before moving on to later packages.
@@ -303,7 +297,6 @@ Future<BuildPhases> createBuildPhases(
     builderApplications,
     targetGraph.rootPackageConfig,
     builderConfigOverrides,
-    _logger,
   );
   final globalOptions = targetGraph.rootPackageConfig.globalOptions.map(
     (key, config) => MapEntry(
@@ -325,9 +318,9 @@ Future<BuildPhases> createBuildPhases(
     targetGraph.allModules.values,
     (node) => node.target.dependencies.map((key) {
       if (!targetGraph.allModules.containsKey(key)) {
-        _logger.severe(
+        buildLog.error(
           '${node.target.key} declares a dependency on $key '
-          'but it does not exist',
+          'but it does not exist.',
         );
         throw const CannotBuildException();
       }
@@ -470,25 +463,6 @@ Map<String, List<BuilderApplication>> _applyWith(
     }
   }
   return applyWith;
-}
-
-/// Runs [fn] in an error handling [Zone].
-///
-/// Any calls to [print] will be logged with `log.info`, and any errors will be
-/// logged with `log.severe`.
-T? _scopeLogSync<T>(T Function() fn, Logger log) {
-  return runZonedGuarded(
-    fn,
-    (e, st) {
-      log.severe('', e, st);
-    },
-    zoneSpecification: ZoneSpecification(
-      print: (self, parent, zone, message) {
-        log.info(message);
-      },
-    ),
-    zoneValues: {logKey: log},
-  );
 }
 
 BuilderOptions _options(Map<String, dynamic>? options) =>

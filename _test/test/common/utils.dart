@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_process/test_process.dart';
@@ -155,11 +156,15 @@ Future<void> _resetGitClient() async {
 }
 
 Future<void> get nextSuccessfulBuild async {
-  await _stdOutLines!.firstWhere((line) => line.contains('Succeeded after'));
+  await _stdOutLines!.firstWhere(
+    (line) => line.contains(BuildLog.successPattern),
+  );
 }
 
 Future<void> get nextFailedBuild async {
-  await _stdOutLines!.firstWhere((line) => line.contains('Failed after'));
+  await _stdOutLines!.firstWhere(
+    (line) => line.contains(BuildLog.failurePattern),
+  );
 }
 
 Future<String> nextStdOutLine(String message) =>

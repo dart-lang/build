@@ -6,6 +6,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:build_runner_core/build_runner_core.dart';
+
 import '../../build.dart';
 import '../asset/id.dart';
 import 'lru_cache.dart';
@@ -154,10 +156,12 @@ class InMemoryFilesystemCache implements FilesystemCache {
 
   @override
   void flush() {
-    for (final write in _pendingWrites.values) {
-      write.writer();
-    }
-    _pendingWrites.clear();
+    TimedActivity.write.run(() {
+      for (final write in _pendingWrites.values) {
+        write.writer();
+      }
+      _pendingWrites.clear();
+    });
   }
 
   @override

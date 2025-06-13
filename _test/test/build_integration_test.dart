@@ -8,7 +8,7 @@ library;
 import 'dart:io';
 
 import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
-import 'package:build_runner_core/src/util/constants.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -54,10 +54,10 @@ void main() {
 
     test('rebuilds if the input file changes and not otherwise', () async {
       var result = await runBuild();
-      expect(result.stdout, contains('with 0 outputs'));
+      expect(result.stdout, contains('wrote 0 outputs'));
       await replaceAllInFile('lib/hello.txt', 'hello', 'goodbye');
       result = await runBuild();
-      expect(result.stdout, contains('with 1 outputs'));
+      expect(result.stdout, contains('wrote 1 output'));
       var content = await readGeneratedFileAsString('_test/lib/hello.txt.post');
       expect(content, contains('goodbye'));
     });
@@ -70,7 +70,7 @@ void main() {
       );
 
       expect(result.exitCode, isNot(0));
-      expect(result.stdout, contains('Failed to precompile build script'));
+      expect(result.stdout, contains('Failed to compile build script'));
       expect(
         result.stdout,
         contains('Unknown experiment: fake-experiment'),
@@ -134,14 +134,13 @@ void main() {
       expect(
         (nextBuild.stdout as String).split('\n'),
         containsAllInOrder([
-          contains('Generating build script'),
+          contains('Generating the build script'),
+          contains('Compiling the build script.'),
+          contains('Creating the asset graph.'),
           contains(
-            'Invalidated precompiled build script due to missing asset '
-            'graph.',
+            'Building, full build because there is no valid asset graph.',
           ),
-          contains('Precompiling build script'),
-          contains('Building new asset graph.'),
-          contains('Succeeded after'),
+          contains(BuildLog.successPattern),
         ]),
       );
     });

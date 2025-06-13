@@ -10,6 +10,8 @@ import 'package:_test_common/runner_asset_writer_spy.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_config/build_config.dart';
+// ignore: implementation_imports
+import 'package:build_runner/src/internal.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/generate/build_definition.dart';
@@ -27,6 +29,10 @@ import 'package:watcher/watcher.dart';
 
 void main() {
   final languageVersion = LanguageVersion(2, 0);
+
+  setUp(() {
+    BuildLog.resetForTests(printOnFailure: printOnFailure);
+  });
 
   group('BuildDefinition.prepareWorkspace', () {
     late BuildOptions options;
@@ -128,15 +134,11 @@ targets:
         d.dir('lib', [d.file('some_lib.dart')]),
       ]).create();
       var packageGraph = await PackageGraph.forPath(pkgARoot);
-      environment = BuildEnvironment(packageGraph, onLogOverride: (_) {});
+      environment = BuildEnvironment(packageGraph);
       options = await BuildOptions.create(
-        LogSubscription(environment, logLevel: Level.OFF),
         packageGraph: packageGraph,
         skipBuildScriptCheck: true,
       );
-      // we don't want this unconditionally in a normal `tearDown`, this may
-      // not be initialized if something above this fails.
-      addTearDown(options.logListener.cancel);
     });
 
     group('reports updates', () {
@@ -443,13 +445,11 @@ targets:
     group('invalidation', () {
       var logs = <LogRecord>[];
       setUp(() async {
-        // Gets rid of console spam during tests, we are setting up a new
-        // options object.
-        await options.logListener.cancel();
         logs.clear();
-        environment = environment.copyWith(onLogOverride: logs.add);
+        buildLog.configuration = buildLog.configuration.rebuild((b) {
+          b.onLog = logs.add;
+        });
         options = await BuildOptions.create(
-          LogSubscription(environment, logLevel: Level.WARNING),
           packageGraph: options.packageGraph,
           skipBuildScriptCheck: true,
         );
@@ -479,7 +479,6 @@ targets:
             hideOutput: true,
           ),
         ]);
-        logs.clear();
 
         await expectLater(
           () => BuildDefinition.prepareWorkspace(
@@ -490,12 +489,8 @@ targets:
           throwsA(const TypeMatcher<BuildScriptChangedException>()),
         );
         expect(
-          logs.any(
-            (log) =>
-                log.level == Level.WARNING &&
-                log.message.contains('build phases have changed'),
-          ),
-          isTrue,
+          buildProcessState.fullBuildReason,
+          FullBuildReason.incompatibleBuild,
         );
         expect(File(assetGraphPath).existsSync(), isFalse);
       });
@@ -524,7 +519,6 @@ targets:
               hideOutput: true,
             ),
           ]);
-          logs.clear();
 
           await expectLater(
             () => BuildDefinition.prepareWorkspace(
@@ -535,12 +529,8 @@ targets:
             throwsA(const TypeMatcher<BuildScriptChangedException>()),
           );
           expect(
-            logs.any(
-              (log) =>
-                  log.level == Level.WARNING &&
-                  log.message.contains('build phases have changed'),
-            ),
-            isTrue,
+            buildProcessState.fullBuildReason,
+            FullBuildReason.incompatibleBuild,
           );
           expect(File(assetGraphPath).existsSync(), isFalse);
         },
@@ -566,8 +556,6 @@ targets:
         var encoded = utf8.encode(json.encode(serialized));
         await createFile(assetGraphPath, encoded);
 
-        logs.clear();
-
         await expectLater(
           () => BuildDefinition.prepareWorkspace(
             environment,
@@ -578,14 +566,9 @@ targets:
         );
 
         expect(
-          logs.any(
-            (log) =>
-                log.level == Level.WARNING &&
-                log.message.contains('due to Dart SDK update.'),
-          ),
-          isTrue,
+          buildProcessState.fullBuildReason,
+          FullBuildReason.incompatibleBuild,
         );
-        expect(File(assetGraphPath).existsSync(), isFalse);
       });
 
       test(
@@ -781,11 +764,10 @@ targets:
         );
 
         var packageGraph = await PackageGraph.forPath(pkgARoot);
-        environment = BuildEnvironment(packageGraph, onLogOverride: (_) {});
+        environment = BuildEnvironment(packageGraph);
         var writerSpy = RunnerAssetWriterSpy(environment.writer);
         environment = environment.copyWith(writer: writerSpy);
         options = await BuildOptions.create(
-          LogSubscription(environment, logLevel: Level.OFF),
           packageGraph: packageGraph,
           skipBuildScriptCheck: true,
         );
@@ -843,7 +825,6 @@ targets:
           );
 
           var newOptions = await BuildOptions.create(
-            LogSubscription(environment, logLevel: Level.OFF),
             packageGraph: await PackageGraph.forPath(pkgARoot),
             skipBuildScriptCheck: true,
           );
@@ -877,7 +858,6 @@ targets:
         var graph = await createFile(assetGraphPath, assetGraph.serialize());
 
         var newOptions = await BuildOptions.create(
-          LogSubscription(environment, logLevel: Level.OFF),
           packageGraph: aPackageGraph,
           skipBuildScriptCheck: true,
         );
@@ -915,7 +895,6 @@ targets:
       test('a missing sources/include does not cause an error', () async {
         var rootPkg = options.packageGraph.root.name;
         options = await BuildOptions.create(
-          LogSubscription(environment),
           packageGraph: options.packageGraph,
           overrideBuildConfig: {
             rootPkg: BuildConfig.fromMap(rootPkg, [], {
@@ -946,7 +925,6 @@ targets:
         () async {
           var rootPkg = options.packageGraph.root.name;
           options = await BuildOptions.create(
-            LogSubscription(environment),
             packageGraph: options.packageGraph,
             overrideBuildConfig: {
               rootPkg: BuildConfig.fromMap(rootPkg, [], {
@@ -977,7 +955,6 @@ targets:
       test('allows a target config with empty sources list', () async {
         var rootPkg = options.packageGraph.root.name;
         options = await BuildOptions.create(
-          LogSubscription(environment),
           packageGraph: options.packageGraph,
           overrideBuildConfig: {
             rootPkg: BuildConfig.fromMap(rootPkg, [], {

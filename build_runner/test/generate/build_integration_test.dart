@@ -73,7 +73,7 @@ main(List<String> args) async {
         expect(result.exitCode, 0, reason: result.stderr as String);
         expect(
           result.stdout,
-          contains('Invalidating asset graph due to build script update'),
+          contains('Building, full build because builders changed.'),
         );
         await d.dir('a', [
           d.dir('web', [d.file('a.txt.copy', 'a')]),
@@ -98,10 +98,7 @@ main(List<String> args) async {
         expect(result.exitCode, 0, reason: result.stderr as String);
         expect(
           result.stdout,
-          contains(
-            'Throwing away cached asset graph because the build phases '
-            'have changed.',
-          ),
+          contains('Building, full build because target changed.'),
         );
 
         // Running a new builder should delete the old generated asset and add
@@ -341,7 +338,7 @@ main() async {
         // Run a new build and validate.
         var result = await runDart('a', 'tool/build.dart', args: ['build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
-        expect(result.stdout, contains('with 1 outputs'));
+        expect(result.stdout, contains('wrote 1 output'));
         await d.dir('a', [
           d.dir('web', [
             d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt\na|web/c.txt'),
@@ -356,7 +353,7 @@ main() async {
         // Run a new build and validate.
         var result = await runDart('a', 'tool/build.dart', args: ['build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
-        expect(result.stdout, contains('with 1 outputs'));
+        expect(result.stdout, contains('wrote 1 output'));
         await d.dir('a', [
           d.dir('web', [d.file('a.matchingFiles', 'a|web/b.txt')]),
         ]).validate();
@@ -372,7 +369,7 @@ main() async {
         // Run a new build and validate.
         var result = await runDart('a', 'tool/build.dart', args: ['build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
-        expect(result.stdout, contains('with 0 outputs'));
+        expect(result.stdout, contains('wrote 0 outputs'));
         await d.dir('a', [
           d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt')]),
         ]).validate();
@@ -387,7 +384,7 @@ main() async {
         // Run a new build and validate.
         var result = await runDart('a', 'tool/build.dart', args: ['build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
-        expect(result.stdout, contains('with 0 outputs'));
+        expect(result.stdout, contains('wrote 0 outputs'));
         await d.dir('a', [
           d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt')]),
         ]).validate();
@@ -450,7 +447,7 @@ class OverDeclaringGlobbingBuilder extends GlobbingBuilder {
         // Run a build and validate the output.
         var result = await runDart('a', 'tool/build.dart', args: ['build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
-        expect(result.stdout, contains('with 0 outputs'));
+        expect(result.stdout, contains('wrote 0 outputs'));
         await d.dir('a', [
           d.dir('web', [d.nothing('a.matchingFiles')]),
         ]).validate();
@@ -465,7 +462,7 @@ class OverDeclaringGlobbingBuilder extends GlobbingBuilder {
         // Run a new build and validate.
         var result = await runDart('a', 'tool/build.dart', args: ['build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
-        expect(result.stdout, contains('with 1 outputs'));
+        expect(result.stdout, contains('wrote 1 output'));
         await d.dir('a', [
           d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt')]),
         ]).validate();

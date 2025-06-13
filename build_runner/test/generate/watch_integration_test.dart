@@ -10,6 +10,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:_test_common/common.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
@@ -107,7 +108,7 @@ void main() {
 }
 
 Future get nextSuccessfulBuild =>
-    stdOutLines.firstWhere((line) => line.contains('Succeeded after'));
+    stdOutLines.firstWhere((line) => line.contains(BuildLog.successPattern));
 
 Future nextStdOutLine(String message) =>
     stdOutLines.firstWhere((line) => line.contains(message));

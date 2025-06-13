@@ -6,7 +6,6 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:build_runner_core/build_runner_core.dart';
-import 'package:logging/logging.dart';
 
 import 'common.dart';
 
@@ -32,8 +31,6 @@ class TestBuildEnvironment implements BuildEnvironment {
   /// [prompt].
   final bool throwOnPrompt;
 
-  final logRecords = <LogRecord>[];
-
   /// The next response for calls to [prompt]. Must be set before calling
   /// [prompt].
   set nextPromptResponse(int next) {
@@ -47,9 +44,6 @@ class TestBuildEnvironment implements BuildEnvironment {
     TestReaderWriter? readerWriter,
     this.throwOnPrompt = false,
   }) : _readerWriter = readerWriter ?? TestReaderWriter();
-
-  @override
-  void onLog(LogRecord record) => logRecords.add(record);
 
   /// Prompt the user for input.
   ///
@@ -67,17 +61,14 @@ class TestBuildEnvironment implements BuildEnvironment {
   }
 
   @override
-  BuildEnvironment copyWith({
-    void Function(LogRecord)? onLogOverride,
-    RunnerAssetWriter? writer,
-    AssetReader? reader,
-  }) => TestBuildEnvironment(
-    readerWriter:
-        (writer as TestReaderWriter?) ??
-        (reader as TestReaderWriter?) ??
-        _readerWriter,
-    throwOnPrompt: throwOnPrompt,
-  );
+  BuildEnvironment copyWith({RunnerAssetWriter? writer, AssetReader? reader}) =>
+      TestBuildEnvironment(
+        readerWriter:
+            (writer as TestReaderWriter?) ??
+            (reader as TestReaderWriter?) ??
+            _readerWriter,
+        throwOnPrompt: throwOnPrompt,
+      );
 
   @override
   Future<BuildResult> finalizeBuild(

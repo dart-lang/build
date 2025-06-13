@@ -1,5 +1,7 @@
 ## 9.0.0-wip
 
+- Improved logging: show what builders are running and, for long-running
+  builders, where the time is spent.
 - Breaking: refactor `OverridableEnvironment` and `IOEnvironment` into
   `BuildEnvironment`
 - Breaking: add `deleteDirectory` to `RunnerAssetWriter`, make `delete`

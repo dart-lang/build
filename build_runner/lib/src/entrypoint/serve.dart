@@ -9,12 +9,10 @@ import 'package:build/experiments.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:http_multi_server/http_multi_server.dart';
 import 'package:io/io.dart';
-import 'package:logging/logging.dart';
 import 'package:shelf/shelf_io.dart';
 
+import '../build_script_generate/build_process_state.dart';
 import '../generate/build.dart';
-import '../logging/std_io_logging.dart';
-import '../server/server.dart';
 import 'options.dart';
 import 'watch.dart';
 
@@ -64,6 +62,10 @@ class ServeCommand extends WatchCommand {
   Future<int> run() {
     final servers = <ServeTarget, HttpServer>{};
     var options = readOptions();
+    buildLog.configuration = buildLog.configuration.rebuild((b) {
+      b.mode = BuildLogMode.build;
+      b.verbose = options.verbose;
+    });
     return withEnabledExperiments(
       () => _runServe(servers, options).whenComplete(() async {
         await Future.wait(
@@ -88,17 +90,15 @@ class ServeCommand extends WatchCommand {
         }),
       );
     } on SocketException catch (e) {
-      var listener = Logger.root.onRecord.listen(stdIOLogListener());
       if (e.address != null && e.port != null) {
-        logger.severe(
+        buildLog.error(
           'Error starting server at ${e.address!.address}:${e.port}, address '
           'is already in use. Please kill the server running on that port or '
           'serve on a different port and restart this process.',
         );
       } else {
-        logger.severe('Error starting server on ${options.hostName}.');
+        buildLog.error('Error starting server on ${options.hostName}.');
       }
-      await listener.cancel();
       return ExitCode.osError.code;
     }
 
@@ -131,30 +131,26 @@ class ServeCommand extends WatchCommand {
       );
     });
 
-    _ensureBuildWebCompilersDependency(packageGraph, logger);
+    _ensureBuildWebCompilersDependency(packageGraph);
 
     final completer = Completer<int>();
     handleBuildResultsStream(handler.buildResults, completer);
-    _logServerPorts(handler, options, logger);
+    _logServerPorts(options);
+    await handler.currentBuild;
     return completer.future;
   }
 
-  void _logServerPorts(
-    ServeHandler serveHandler,
-    ServeOptions options,
-    Logger logger,
-  ) async {
-    await serveHandler.currentBuild;
+  void _logServerPorts(ServeOptions options) async {
     // Warn if in serve mode with no servers.
     if (options.serveTargets.isEmpty) {
-      logger.warning(
+      buildLog.warning(
         'Found no known web directories to serve, but running in `serve` '
         'mode. You may expliclity provide a directory to serve with trailing '
         'args in <dir>[:<port>] format.',
       );
     } else {
       for (var target in options.serveTargets) {
-        stdout.writeln(
+        buildLog.info(
           'Serving `${target.dir}` on '
           'http://${options.hostName}:${target.port}',
         );
@@ -163,9 +159,9 @@ class ServeCommand extends WatchCommand {
   }
 }
 
-void _ensureBuildWebCompilersDependency(PackageGraph packageGraph, Logger log) {
+void _ensureBuildWebCompilersDependency(PackageGraph packageGraph) {
   if (!packageGraph.allPackages.containsKey('build_web_compilers')) {
-    log.warning('''
+    buildLog.warning('''
     Missing dev dependency on package:build_web_compilers, which is required to serve Dart compiled to JavaScript.
 
     Please update your dev_dependencies section of your pubspec.yaml:

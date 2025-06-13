@@ -12,6 +12,7 @@ import 'package:glob/glob.dart';
 import 'package:glob/list_local_fs.dart';
 import 'package:path/path.dart' as path;
 
+import '../logging/timed_activities.dart';
 import '../package_graph/package_graph.dart';
 import '../util/constants.dart';
 import 'writer.dart';
@@ -84,12 +85,14 @@ class ReaderWriter extends AssetReader
   @override
   Future<bool> canRead(AssetId id) {
     return Future.value(
-      cache.exists(
-        id,
-        ifAbsent: () {
-          final path = _pathFor(id);
-          return filesystem.existsSync(path);
-        },
+      TimedActivity.read.run(
+        () => cache.exists(
+          id,
+          ifAbsent: () {
+            final path = _pathFor(id);
+            return filesystem.existsSync(path);
+          },
+        ),
       ),
     );
   }
@@ -97,15 +100,17 @@ class ReaderWriter extends AssetReader
   @override
   Future<List<int>> readAsBytes(AssetId id) {
     return Future.value(
-      cache.readAsBytes(
-        id,
-        ifAbsent: () {
-          final path = _pathFor(id);
-          if (!filesystem.existsSync(path)) {
-            throw AssetNotFoundException(id, path: path);
-          }
-          return filesystem.readAsBytesSync(path);
-        },
+      TimedActivity.read.run(
+        () => cache.readAsBytes(
+          id,
+          ifAbsent: () {
+            final path = _pathFor(id);
+            if (!filesystem.existsSync(path)) {
+              throw AssetNotFoundException(id, path: path);
+            }
+            return filesystem.readAsBytesSync(path);
+          },
+        ),
       ),
     );
   }
@@ -113,16 +118,18 @@ class ReaderWriter extends AssetReader
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
     return Future.value(
-      cache.readAsString(
-        id,
-        encoding: encoding,
-        ifAbsent: () {
-          final path = _pathFor(id);
-          if (!filesystem.existsSync(path)) {
-            throw AssetNotFoundException(id, path: path);
-          }
-          return filesystem.readAsBytesSync(path);
-        },
+      TimedActivity.read.run(
+        () => cache.readAsString(
+          id,
+          encoding: encoding,
+          ifAbsent: () {
+            final path = _pathFor(id);
+            if (!filesystem.existsSync(path)) {
+              throw AssetNotFoundException(id, path: path);
+            }
+            return filesystem.readAsBytesSync(path);
+          },
+        ),
       ),
     );
   }
@@ -135,14 +142,16 @@ class ReaderWriter extends AssetReader
 
   @override
   Future<void> writeAsBytes(AssetId id, List<int> bytes) {
-    final path = _pathFor(id);
-    cache.writeAsBytes(
-      id,
-      bytes,
-      writer: () {
-        filesystem.writeAsBytesSync(path, bytes);
-      },
-    );
+    TimedActivity.write.run(() {
+      final path = _pathFor(id);
+      cache.writeAsBytes(
+        id,
+        bytes,
+        writer: () {
+          filesystem.writeAsBytesSync(path, bytes);
+        },
+      );
+    });
     return Future.value();
   }
 
@@ -152,47 +161,53 @@ class ReaderWriter extends AssetReader
     String contents, {
     Encoding encoding = utf8,
   }) {
-    final path = _pathFor(id);
-    cache.writeAsString(
-      id,
-      contents,
-      writer: () {
-        filesystem.writeAsStringSync(path, contents, encoding: encoding);
-      },
-    );
+    TimedActivity.write.run(() {
+      final path = _pathFor(id);
+      cache.writeAsString(
+        id,
+        contents,
+        writer: () {
+          filesystem.writeAsStringSync(path, contents, encoding: encoding);
+        },
+      );
+    });
     return Future.value();
   }
 
   @override
   Future<void> delete(AssetId id) {
-    onDelete?.call(id);
-    final path = _pathFor(id);
-    // Hidden generated files are moved by `assetPathProvider` under the root
-    // package folder, and it's allowed to delete them. So for assets in a
-    // different package, check if the path has mapped onto the generated output
-    // path, and if so allow the deleted.
-    var generatedOutputPath = assetPathProvider.pathFor(
-      AssetId(rootPackage, generatedOutputDirectory),
-    );
-    if (id.package != rootPackage && !path.startsWith(generatedOutputPath)) {
-      throw InvalidOutputException(
-        id,
-        'Should not delete assets outside of $rootPackage',
+    TimedActivity.write.run(() {
+      onDelete?.call(id);
+      final path = _pathFor(id);
+      // Hidden generated files are moved by `assetPathProvider` under the root
+      // package folder, and it's allowed to delete them. So for assets in a
+      // different package, check if the path has mapped onto the generated
+      // output path, and if so allow the deleted.
+      var generatedOutputPath = assetPathProvider.pathFor(
+        AssetId(rootPackage, generatedOutputDirectory),
       );
-    }
-    cache.delete(
-      id,
-      deleter: () {
-        filesystem.deleteSync(path);
-      },
-    );
+      if (id.package != rootPackage && !path.startsWith(generatedOutputPath)) {
+        throw InvalidOutputException(
+          id,
+          'Should not delete assets outside of $rootPackage',
+        );
+      }
+      cache.delete(
+        id,
+        deleter: () {
+          filesystem.deleteSync(path);
+        },
+      );
+    });
     return Future.value();
   }
 
   @override
   Future<void> deleteDirectory(AssetId id) {
-    final path = _pathFor(id);
-    filesystem.deleteDirectorySync(path);
+    TimedActivity.write.run(() {
+      final path = _pathFor(id);
+      filesystem.deleteDirectorySync(path);
+    });
     return Future.value();
   }
 }

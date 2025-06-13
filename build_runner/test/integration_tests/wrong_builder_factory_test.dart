@@ -36,10 +36,7 @@ void main() {
           expectExitCode: ExitCode.config.code,
         );
         expect(result, emitsThrough(contains('Undefined name \'wrongKey\'')));
-        expect(
-          result,
-          emitsThrough(contains('misconfigured builder definition')),
-        );
+        expect(result, emitsThrough(contains('Check builder definition')));
       },
     );
   });

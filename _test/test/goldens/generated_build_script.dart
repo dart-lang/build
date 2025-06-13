@@ -1,5 +1,6 @@
 // @dart=3.6
 // ignore_for_file: directives_ordering
+// build_runner >=2.4.16
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:build_runner_core/build_runner_core.dart' as _i1;
 import 'package:provides_builder/builders.dart' as _i2;

@@ -6,17 +6,15 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:logging/logging.dart';
 
 import '../asset/reader_writer.dart';
 import '../asset/writer.dart';
 import '../generate/build_directory.dart';
 import '../generate/build_result.dart';
 import '../generate/finalized_assets_view.dart';
+import '../logging/build_log.dart';
 import '../package_graph/package_graph.dart';
 import 'create_merged_dir.dart';
-
-final _logger = Logger('IOEnvironment');
 
 /// The I/O and UI environment that the build runs in.
 class BuildEnvironment {
@@ -28,8 +26,6 @@ class BuildEnvironment {
   final bool _outputSymlinksOnly;
 
   final PackageGraph _packageGraph;
-
-  final void Function(LogRecord)? _onLogOverride;
 
   final Future<BuildResult> Function(
     BuildResult,
@@ -45,23 +41,18 @@ class BuildEnvironment {
     this._isInteractive,
     this._outputSymlinksOnly,
     this._packageGraph,
-    this._onLogOverride,
     this._finalizeBuildOverride,
   );
 
-  BuildEnvironment copyWith({
-    void Function(LogRecord)? onLogOverride,
-    RunnerAssetWriter? writer,
-    AssetReader? reader,
-  }) => BuildEnvironment._(
-    reader ?? this.reader,
-    writer ?? this.writer,
-    _isInteractive,
-    _outputSymlinksOnly,
-    _packageGraph,
-    onLogOverride ?? _onLogOverride,
-    _finalizeBuildOverride,
-  );
+  BuildEnvironment copyWith({RunnerAssetWriter? writer, AssetReader? reader}) =>
+      BuildEnvironment._(
+        reader ?? this.reader,
+        writer ?? this.writer,
+        _isInteractive,
+        _outputSymlinksOnly,
+        _packageGraph,
+        _finalizeBuildOverride,
+      );
 
   factory BuildEnvironment(
     PackageGraph packageGraph, {
@@ -69,7 +60,6 @@ class BuildEnvironment {
     RunnerAssetWriter? writer,
     bool? assumeTty,
     bool outputSymlinksOnly = false,
-    void Function(LogRecord)? onLogOverride,
     Future<BuildResult> Function(
       BuildResult,
       FinalizedAssetsView,
@@ -79,7 +69,7 @@ class BuildEnvironment {
     finalizeBuildOverride,
   }) {
     if (outputSymlinksOnly && Platform.isWindows) {
-      _logger.warning(
+      buildLog.warning(
         'Symlinks to files are not yet working on Windows, you '
         'may experience issues using this mode. Follow '
         'https://github.com/dart-lang/sdk/issues/33966 for updates.',
@@ -98,21 +88,8 @@ class BuildEnvironment {
       assumeTty == true || _canPrompt(),
       outputSymlinksOnly,
       packageGraph,
-      onLogOverride,
       finalizeBuildOverride,
     );
-  }
-
-  void onLog(LogRecord record) {
-    if (_onLogOverride != null) {
-      _onLogOverride(record);
-      return;
-    }
-    if (record.level >= Level.SEVERE) {
-      stderr.writeln(record);
-    } else {
-      stdout.writeln(record);
-    }
   }
 
   /// Prompt the user for input.
