@@ -1,11 +1,23 @@
-## 2.4.3-wip
+## 2.5.0
 
+User-visible changes:
+
+- Improved performance for large builds. More performance improvements
+  will follow, if your workflow is affected by slow `build_runner` performance
+  then please consider sharing details at
+  https://github.com/dart-lang/build/discussions.
 - Improved logging: show what builders are running and, for long-running
   builders, where the time is spent.
 - `AssetNotFoundException` now also reports the missing `path`.
+
+Versions:
+
 - Bump the min sdk to 3.7.0.
 - Use `build_test` 3.0.0.
 - Use `build_runner_core` 9.0.0.
+
+Internal changes:
+
 - Add `package:build/src/internal.dart` for use by `build_resolvers`,
   `build_runner_core` and `build_test`.
 - Refactor `PathProvidingAssetReader` to `AssetPathProvider`.

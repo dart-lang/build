@@ -1,15 +1,28 @@
-## 9.0.0-wip
+## 9.0.0
 
+- Improved performance for large builds. More performance improvements
+  will follow, if your workflow is affected by slow `build_runner` performance
+  then please consider sharing details at
+  https://github.com/dart-lang/build/discussions.
 - Improved logging: show what builders are running and, for long-running
   builders, where the time is spent.
+
+Breaking changes:
+
 - Breaking: refactor `OverridableEnvironment` and `IOEnvironment` into
   `BuildEnvironment`
 - Breaking: add `deleteDirectory` to `RunnerAssetWriter`, make `delete`
   return `Future<void>`, remove deprecated `OnDelete`.
+
+Versions:
+
 - Bump the min SDK to 3.7.0.
+- Use `build_test` 3.0.0.
+
+Internal changes:
+
 - Fix crash when running on assets ending in a dot.
 - Start using `package:build/src/internal.dart'.
-- Use `build_test` 3.0.0.
 - Refactor `PathProvidingAssetReader` to `AssetPathProvider`.
 - Refactor `MultiPackageAssetReader` to internal `AssetFinder`.
 - `FinalizedReader` no longer implements `AssetReader`.
