@@ -380,9 +380,9 @@ See also [Configuring the number of compiler processes](#configuring-the-number-
 ## How can I setup my editor to work with `build.yaml` files?
 
 A schema for valid keys and values in build configuration files is available on
-[SchemaStore.org](https://www.schemastore.org/json/), but it is not assigned to
-any file names by default. You can configure your editor to use the correct
-schema.
+[SchemaStore.org](https://www.schemastore.org/dart-build.json), but it is not
+assigned to any file names by default. You can configure your editor to use the
+correct schema.
 
 ### VS Code
 
