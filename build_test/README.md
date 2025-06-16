@@ -23,7 +23,7 @@ add to your `pubspec.yaml`:
 
 ```yaml
 dev_dependencies:
-  build_test:
+  build_test: ^3.0.0
 ```
 
 ## Running tests
@@ -79,16 +79,19 @@ creates an in-memory representation of various utility classes.
 
 ### Exposing actual package sources to `testBuilder`
 
-You can expose real package sources to the builder in addition to your in
-memory sources, by passing a `PackageAssetReader` to the `reader` parameter:
+To pass sources on disk to `testBuilder`, create a `TestReaderWriter`. You can
+write individual sources to it from a `PackageAssetReader`, or write all sources
+to it with `loadIsolateSources`:
 
 ```dart
-testBuilder(yourBuilder, {}/* test assets here */,
-    reader: await PackageAssetReader.currentIsolate());
+final readerWriter = TestReaderWriter();
+await readerWriter.loadIsolateSources();
+testBuilder(
+  yourBuilder,
+  {} /* test assets here */,
+  readerWriter: readerWriter,
+);
 ```
-
-You can pass any custom AssetReader here, which will be used as a fallback
-for any source not defined in the source assets map.
 
 ### Resolve source code for testing
 
@@ -112,25 +115,15 @@ test('should resolve a simple dart file', () async {
 ### Various test implementations of classes
 
 * [`FakeWatcher`][api:FakeWatcher]
-* [`InMemoryAssetReader`][api:InMemoryAssetReader]
-* [`InMemoryAssetWriter`][api:InMemoryAssetWriter]
-* [`MultiAssetReader`][api:MultiAssetReader]
+* [`TestReaderWriter`][api:TestReaderWriter]
 * [`PackageAssetReader`][api:PackageAssetReader]
-* [`RecordingAssetWriter`][api:RecordingAssetWriter]
-* [`StubAssetReader`][api:StubAssetReader]
-* [`StubAssetWriter`][api:StubAssetWriter]
 
 [development dependency]: https://dart.dev/tools/pub/dependencies#dev-dependencies
 [`package:build`]: https://pub.dev/packages/build
 
 [api:FakeWatcher]: https://pub.dev/documentation/build_test/latest/build_test/FakeWatcher-class.html
-[api:InMemoryAssetReader]: https://pub.dev/documentation/build_test/latest/build_test/InMemoryAssetReader-class.html
-[api:InMemoryAssetWriter]: https://pub.dev/documentation/build_test/latest/build_test/InMemoryAssetWriter-class.html
-[api:MultiAssetReader]: https://pub.dev/documentation/build_test/latest/build_test/MultiAssetReader-class.html
+[api:TestReaderWriter]: https://pub.dev/documentation/build_test/latest/build_test/TestReaderWriter-class.html
 [api:PackageAssetReader]: https://pub.dev/documentation/build_test/latest/build_test/PackageAssetReader-class.html
-[api:RecordingAssetWriter]: https://pub.dev/documentation/build_test/latest/build_test/RecordingAssetWriter-class.html
-[api:StubAssetReader]: https://pub.dev/documentation/build_test/latest/build_test/StubAssetReader-class.html
-[api:StubAssetWriter]: https://pub.dev/documentation/build_test/latest/build_test/StubAssetWriter-class.html
 
 [api:resolveAsset]: https://pub.dev/documentation/build_test/latest/build_test/resolveAsset.html
 [api:resolveSource]: https://pub.dev/documentation/build_test/latest/build_test/resolveSource.html

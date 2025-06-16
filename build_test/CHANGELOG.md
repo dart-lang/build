@@ -7,6 +7,7 @@
   sources visible to the test into memory.
 - `testBuilder` default `onLog` now works outside of tests: it falls
   back to `print` instead of crashing.
+- Update `README.md`.
 
 ## 3.0.0
 
