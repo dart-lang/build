@@ -5,8 +5,7 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:build/build.dart'
-    show AssetId, SyntaxErrorInAssetException, UnresolvableAssetException;
+import 'package:build/build.dart' show AssetId;
 // ignore: implementation_imports
 import 'package:build_runner/src/internal.dart';
 import 'package:logging/logging.dart';
@@ -414,8 +413,7 @@ class BuildLog {
 
   /// Renders [message] with optional [error] and [stackTrace].
   ///
-  /// Drops `build_runner` exceptions that can be caused by normal user input:
-  /// [SyntaxErrorInAssetException] and [UnresolvableAssetException].
+  /// Skips rendering [stackTrace] if [error] is an [Exception].
   String renderThrowable(
     Object? message, [
     Object? error,
@@ -427,11 +425,7 @@ class BuildLog {
       result += '$error';
     }
 
-    if (stackTrace != null &&
-        error is! SyntaxErrorInAssetException &&
-        error is! UnresolvableAssetException &&
-        // From `source_gen`, use the name to avoid a build dependency.
-        error.runtimeType.toString() != 'InvalidGenerationSource') {
+    if (stackTrace != null && error is! Exception) {
       result += '\n$stackTrace';
     }
     return result;
