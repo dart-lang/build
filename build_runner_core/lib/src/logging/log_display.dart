@@ -101,9 +101,14 @@ class LogDisplay {
     _logger.log(severity.toLogLevel, message);
 
     // Display.
-    if (buildLog.configuration.mode == BuildLogMode.daemon &&
-        severity == Severity.error) {
-      stderr.writeln(_render(severity, message));
+    if (buildLog.configuration.mode == BuildLogMode.daemon) {
+      // For `build_daemon` just display the messages, severity is determined
+      // by stderr vs stdout.
+      if (severity == Severity.error) {
+        stderr.writeln(message);
+      } else {
+        stdout.writeln(message);
+      }
     } else {
       stdout.writeln(_render(severity, message));
     }
