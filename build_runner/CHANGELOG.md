@@ -1,11 +1,22 @@
-## 2.4.16-wip
+## 2.5.0
 
+User-visible changes:
+
+- Improved performance for large builds. More performance improvements
+  will follow, if your workflow is affected by slow `build_runner` performance
+  then please consider sharing details at
+  https://github.com/dart-lang/build/discussions.
 - Improved logging: show what builders are running and, for long-running
   builders, where the time is spent.
+
+Versions:
+
 - Bump the min SDK to 3.7.0.
 - Use `build_test` 3.0.0.
 - Use `build_runner_core` 9.0.0.
-- Use new resolver always; remove `--use-experimental-resolver` flag.
+
+Internal changes:
+
 - Start using `package:build/src/internal.dart'.
 - Refactor `MultiPackageAssetReader` to internal `AssetFinder`.
 - `FinalizedReader` no longer implements `AssetReader`.
