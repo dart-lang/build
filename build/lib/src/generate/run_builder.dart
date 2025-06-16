@@ -3,11 +3,11 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:isolate';
 
+// ignore: implementation_imports
+import 'package:build/src/generate/build_step_impl.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/single_step_reader_writer.dart';
 import 'package:build_runner_core/build_runner_core.dart';
-// ignore: implementation_imports
-import 'package:build_runner_core/src/generate/build_step_impl.dart';
-// ignore: implementation_imports
-import 'package:build_runner_core/src/generate/single_step_reader_writer.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 

@@ -6,10 +6,10 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/phase.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
-// ignore: implementation_imports
-import 'package:build_runner_core/src/generate/phase.dart';
 import 'package:io/io.dart';
 import 'package:path/path.dart' as p;
 

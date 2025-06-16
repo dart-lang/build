@@ -6,7 +6,12 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:build_runner_core/build_runner_core.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/exceptions.dart';
+// ignore: implementation_imports
+import 'package:build/src/logging/build_log.dart';
+// ignore: implementation_imports
+import 'package:build/src/util/constants.dart';
 import 'package:frontend_server_client/frontend_server_client.dart';
 import 'package:io/io.dart';
 import 'package:logging/logging.dart';

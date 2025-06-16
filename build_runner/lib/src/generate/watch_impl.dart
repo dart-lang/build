@@ -6,12 +6,12 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build/src/asset_graph/graph.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/build_series.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
-// ignore: implementation_imports
-import 'package:build_runner_core/src/asset_graph/graph.dart';
-// ignore: implementation_imports
-import 'package:build_runner_core/src/generate/build_series.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
 import 'package:stream_transform/stream_transform.dart';

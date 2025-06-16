@@ -6,9 +6,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:build_runner_core/build_runner_core.dart';
 // ignore: implementation_imports
-import 'package:build_runner_core/src/generate/performance_tracker.dart';
+import 'package:build/src/generate/performance_tracker.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:mime/mime.dart';

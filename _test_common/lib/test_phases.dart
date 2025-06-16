@@ -5,8 +5,23 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build/src/environment/build_environment.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/build_directory.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/build_result.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/build_runner.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/options.dart';
+// ignore: implementation_imports
+import 'package:build/src/logging/build_log.dart';
+// ignore: implementation_imports
+import 'package:build/src/package_graph/apply_builders.dart';
+// ignore: implementation_imports
+import 'package:build/src/package_graph/package_graph.dart';
 import 'package:build_config/build_config.dart';
-import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_test/build_test.dart';
 // ignore: implementation_imports
 import 'package:build_test/src/in_memory_reader_writer.dart';

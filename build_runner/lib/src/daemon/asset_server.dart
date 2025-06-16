@@ -5,7 +5,8 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:build_runner_core/build_runner_core.dart';
+// ignore: implementation_imports
+import 'package:build/src/logging/build_log.dart';
 import 'package:http_multi_server/http_multi_server.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;

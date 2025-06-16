@@ -6,10 +6,10 @@ import 'dart:async';
 
 import 'package:_test_common/package_graphs.dart';
 import 'package:build/build.dart';
+import 'package:build/src/package_graph/package_graph.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/graph_watcher.dart';
 import 'package:build_runner/src/watcher/node_watcher.dart';
-import 'package:build_runner_core/src/package_graph/package_graph.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 

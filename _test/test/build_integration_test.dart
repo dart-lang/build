@@ -7,8 +7,9 @@ library;
 
 import 'dart:io';
 
+import 'package:build/src/logging/build_log.dart';
+import 'package:build/src/util/constants.dart';
 import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
-import 'package:build_runner_core/build_runner_core.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 

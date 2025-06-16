@@ -5,12 +5,12 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 // ignore: implementation_imports
+import 'package:build/src/asset_graph/graph.dart';
+// ignore: implementation_imports
+import 'package:build/src/asset_graph/node.dart';
+// ignore: implementation_imports
 import 'package:build/src/internal.dart';
 import 'package:build_runner_core/build_runner_core.dart';
-// ignore: implementation_imports
-import 'package:build_runner_core/src/asset_graph/graph.dart';
-// ignore: implementation_imports
-import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:watcher/watcher.dart';
 
 import 'asset_change.dart';

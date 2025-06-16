@@ -5,21 +5,22 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build/src/asset/finalized_reader.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/asset_tracker.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/build_directory.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/build_series.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/options.dart';
 import 'package:build_daemon/change_provider.dart';
 import 'package:build_daemon/constants.dart';
 import 'package:build_daemon/daemon_builder.dart';
 import 'package:build_daemon/data/build_status.dart';
 import 'package:build_daemon/data/build_target.dart' hide OutputLocation;
 import 'package:build_daemon/data/server_log.dart';
-import 'package:build_runner_core/build_runner_core.dart'
-    as core
-    show BuildStatus;
-import 'package:build_runner_core/build_runner_core.dart'
-    hide BuildResult, BuildStatus;
-// ignore: implementation_imports
-import 'package:build_runner_core/src/generate/asset_tracker.dart';
-// ignore: implementation_imports
-import 'package:build_runner_core/src/generate/build_series.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 

@@ -7,11 +7,11 @@ import 'dart:convert';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 // ignore: implementation_imports
+import 'package:build/src/generate/build_series.dart';
+// ignore: implementation_imports
 import 'package:build/src/resolvers/resolver.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
-// ignore: implementation_imports
-import 'package:build_runner_core/src/generate/build_series.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';

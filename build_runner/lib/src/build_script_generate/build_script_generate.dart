@@ -5,8 +5,17 @@
 import 'dart:async';
 
 import 'package:build/build.dart' show AssetId, BuilderOptions;
+// ignore: implementation_imports
+import 'package:build/src/asset/reader_writer.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/exceptions.dart';
+// ignore: implementation_imports
+import 'package:build/src/logging/build_log.dart';
+// ignore: implementation_imports
+import 'package:build/src/package_graph/package_graph.dart';
+// ignore: implementation_imports
+import 'package:build/src/util/constants.dart';
 import 'package:build_config/build_config.dart';
-import 'package:build_runner_core/build_runner_core.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
 import 'package:graphs/graphs.dart';

@@ -6,9 +6,9 @@ import 'dart:async';
 
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
-import 'package:build_runner_core/build_runner_core.dart';
 // ignore: implementation_imports
-import 'package:build_runner_core/src/generate/build_step_impl.dart';
+import 'package:build/src/generate/build_step_impl.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 
 import '../asset/id.dart';
 import '../builder/build_step.dart';
