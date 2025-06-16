@@ -7,7 +7,8 @@ import 'dart:isolate';
 
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
-import 'package:build_resolvers/build_resolvers.dart';
+// ignore: implementation_imports
+import 'package:build/src/resolvers/resolver.dart';
 import 'package:package_config/package_config.dart';
 
 import 'package_reader.dart';

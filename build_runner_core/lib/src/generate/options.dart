@@ -6,8 +6,9 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
+// ignore: implementation_imports
+import 'package:build/src/resolvers/resolver.dart';
 import 'package:build_config/build_config.dart';
-import 'package:build_resolvers/build_resolvers.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 

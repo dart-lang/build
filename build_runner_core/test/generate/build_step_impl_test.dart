@@ -11,7 +11,7 @@ import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build/src/builder/build_step.dart';
-import 'package:build_resolvers/build_resolvers.dart';
+import 'package:build/src/resolvers/resolver.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/generate/build_step_impl.dart';
 import 'package:build_runner_core/src/generate/single_step_reader_writer.dart';

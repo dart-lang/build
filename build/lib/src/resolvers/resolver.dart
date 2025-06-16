@@ -19,8 +19,6 @@ import 'package:analyzer/error/error.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:async/async.dart';
-import 'package:build/build.dart';
-import 'package:build/experiments.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:package_config/package_config.dart';
@@ -28,6 +26,12 @@ import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
 import 'package:yaml/yaml.dart';
 
+import '../../experiments.dart';
+import '../analyzer/resolver.dart';
+import '../asset/exceptions.dart';
+import '../asset/id.dart';
+import '../builder/build_step.dart';
+import '../builder/logging.dart';
 import 'analysis_driver.dart';
 import 'analysis_driver_filesystem.dart';
 import 'analysis_driver_model.dart';

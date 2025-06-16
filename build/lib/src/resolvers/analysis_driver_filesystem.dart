@@ -9,8 +9,9 @@ import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/source/file_source.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
-import 'package:build/build.dart' hide Resource;
 import 'package:path/path.dart' as p;
+
+import '../asset/id.dart';
 
 /// The in-memory filesystem that is the analyzer's view of the build.
 ///

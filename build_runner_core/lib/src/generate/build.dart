@@ -9,7 +9,7 @@ import 'package:build/build.dart';
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
 // ignore: implementation_imports
-import 'package:build_resolvers/src/internal.dart';
+import 'package:build/src/resolvers/internal.dart';
 // ignore: implementation_imports
 import 'package:build_runner/src/internal.dart';
 import 'package:crypto/crypto.dart';
