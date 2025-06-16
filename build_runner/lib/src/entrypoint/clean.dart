@@ -7,7 +7,10 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+// ignore: implementation_imports
+import 'package:build/src/logging/build_log.dart';
+// ignore: implementation_imports
+import 'package:build/src/util/constants.dart';
 
 import 'base_command.dart';
 

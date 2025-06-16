@@ -8,13 +8,25 @@ import 'package:build/build.dart';
 // ignore: implementation_imports
 import 'package:build/src/asset/finalized_reader.dart';
 // ignore: implementation_imports
+import 'package:build/src/asset/reader_writer.dart';
+// ignore: implementation_imports
+import 'package:build/src/environment/build_environment.dart';
+// ignore: implementation_imports
 import 'package:build/src/generate/asset_tracker.dart';
 // ignore: implementation_imports
 import 'package:build/src/generate/build_directory.dart';
 // ignore: implementation_imports
+import 'package:build/src/generate/build_result.dart' as core;
+// ignore: implementation_imports
 import 'package:build/src/generate/build_series.dart';
 // ignore: implementation_imports
 import 'package:build/src/generate/options.dart';
+// ignore: implementation_imports
+import 'package:build/src/logging/build_log.dart';
+// ignore: implementation_imports
+import 'package:build/src/package_graph/apply_builders.dart';
+// ignore: implementation_imports
+import 'package:build/src/package_graph/package_graph.dart';
 import 'package:build_daemon/change_provider.dart';
 import 'package:build_daemon/constants.dart';
 import 'package:build_daemon/daemon_builder.dart';

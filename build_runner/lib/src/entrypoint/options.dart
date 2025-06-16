@@ -7,9 +7,12 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/build_directory.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/options.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_daemon/constants.dart';
-import 'package:build_runner_core/build_runner_core.dart';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 

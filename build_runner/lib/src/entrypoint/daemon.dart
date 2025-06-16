@@ -7,11 +7,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/experiments.dart';
+// ignore: implementation_imports
+import 'package:build/src/logging/build_log.dart';
 import 'package:build_daemon/constants.dart';
 import 'package:build_daemon/daemon.dart';
 import 'package:build_daemon/data/serializers.dart';
 import 'package:build_daemon/data/server_log.dart';
-import 'package:build_runner_core/build_runner_core.dart';
 
 import '../build_script_generate/build_process_state.dart';
 import '../daemon/asset_server.dart';

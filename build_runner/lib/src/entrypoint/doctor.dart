@@ -7,9 +7,16 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 // ignore: implementation_imports
+import 'package:build/src/asset/reader_writer.dart';
+// ignore: implementation_imports
 import 'package:build/src/generate/phase.dart';
+// ignore: implementation_imports
+import 'package:build/src/logging/build_log.dart';
+// ignore: implementation_imports
+import 'package:build/src/package_graph/apply_builders.dart';
+// ignore: implementation_imports
+import 'package:build/src/package_graph/package_graph.dart';
 import 'package:build_config/build_config.dart';
-import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
 import 'package:path/path.dart' as p;
 

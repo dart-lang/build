@@ -6,7 +6,14 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/exceptions.dart';
+// ignore: implementation_imports
+import 'package:build/src/package_graph/apply_builders.dart';
+// ignore: implementation_imports
+import 'package:build/src/package_graph/package_graph.dart';
+// ignore: implementation_imports
+import 'package:build/src/util/constants.dart';
 import 'package:io/ansi.dart' as ansi;
 import 'package:io/io.dart' show ExitCode;
 
