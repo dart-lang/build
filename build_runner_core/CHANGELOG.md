@@ -1,3 +1,8 @@
+## 9.0.1-wip
+
+- Don't show stack traces if a generator throws `InvalidGenerationSourceError`
+  from `source_gen`.
+
 ## 9.0.0
 
 - Improved performance for large builds. More performance improvements

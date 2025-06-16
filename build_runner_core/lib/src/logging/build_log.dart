@@ -429,7 +429,9 @@ class BuildLog {
 
     if (stackTrace != null &&
         error is! SyntaxErrorInAssetException &&
-        error is! UnresolvableAssetException) {
+        error is! UnresolvableAssetException &&
+        // From `source_gen`, use the name to avoid a build dependency.
+        error.runtimeType.toString() != 'InvalidGenerationSource') {
       result += '\n$stackTrace';
     }
     return result;

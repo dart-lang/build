@@ -1,3 +1,8 @@
+## 2.5.1-wip
+
+- Don't show stack traces if a generator throws `InvalidGenerationSourceError`
+  from `source_gen`.
+
 ## 2.5.0
 
 User-visible changes:
