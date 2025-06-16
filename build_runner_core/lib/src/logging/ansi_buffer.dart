@@ -21,7 +21,7 @@ class AnsiBuffer {
   final List<String> lines = [];
 
   /// The width that the buffer wraps to.
-  int get width =>
+  static int get width =>
       buildLog.configuration.forceConsoleWidthForTesting ??
       (stdout.hasTerminal ? stdout.terminalColumns : 80);
 
@@ -40,7 +40,7 @@ class AnsiBuffer {
   /// In addition to ANSI codes, [nbsp] is a non-breaking space which will not
   /// be used for wrapping. In the buffer it is replaced with a normal space.
   void writeLine(List<String> items, {int indent = 0, int? hangingIndent}) {
-    final width = this.width;
+    final width = AnsiBuffer.width;
     hangingIndent ??= indent;
     indent = min(indent, width ~/ 2);
     hangingIndent = min(hangingIndent, width ~/ 2);

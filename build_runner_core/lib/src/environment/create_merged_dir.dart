@@ -68,9 +68,6 @@ Future<bool> createMergedOutputDirectories(
           outputSymlinksOnly || outputLocation.useSymlinks,
           outputLocation.hoist,
         )) {
-          buildLog.error(
-            'Unable to create merged directory for ${outputLocation.path}.',
-          );
           return false;
         }
       }
@@ -333,9 +330,8 @@ Future<bool> _cleanUpOutputDir(
         );
       } on NonInteractiveBuildException catch (_) {
         buildLog.error(
-          'Unable to create merged directory at $outputPath.\n'
-          'Choose a different directory or delete the contents of that '
-          'directory.',
+          'Unable to create merged directory $outputPath. Choose a different '
+          'directory or delete the contents of that directory.',
         );
         return false;
       }
