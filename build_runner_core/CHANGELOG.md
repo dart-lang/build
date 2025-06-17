@@ -1,7 +1,6 @@
 ## 9.0.1-wip
 
-- Don't show stack traces if a generator throws `InvalidGenerationSourceError`
-  from `source_gen`.
+- Don't log stack traces for subclasses of `Exception`.
 
 ## 9.0.0
 
