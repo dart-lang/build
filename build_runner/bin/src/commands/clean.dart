@@ -6,8 +6,8 @@ import 'dart:async';
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
-import 'package:build_runner/src/entrypoint/base_command.dart' show lineLength;
-import 'package:build_runner/src/entrypoint/clean.dart' show clean;
+import 'package:build/src/entrypoint/base_command.dart' show lineLength;
+import 'package:build/src/entrypoint/clean.dart' show clean;
 import 'package:logging/logging.dart';
 
 class CleanCommand extends Command<int> {

@@ -9,10 +9,19 @@ stages:
     sdk:
     - dev
 - unit_test:
-  - test: --test-randomize-ordering-seed=random
+  - test: -x integration --test-randomize-ordering-seed=random
     os:
     - linux
     - windows
+  - test: -P experiments --test-randomize-ordering-seed=random
+    sdk:
+    - dev
+- e2e_test:
+  - test: -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1
+  - test: -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1
+  - test: -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1
+  - test: -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1
+  - test: -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1
 
 cache:
   directories:

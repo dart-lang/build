@@ -7,11 +7,11 @@ import 'dart:typed_data';
 
 import 'package:build/build.dart';
 // ignore: implementation_imports
+import 'package:build/src/asset/reader_writer.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/input_tracker.dart';
+// ignore: implementation_imports
 import 'package:build/src/internal.dart';
-// ignore: implementation_imports
-import 'package:build_runner_core/src/asset/reader_writer.dart';
-// ignore: implementation_imports
-import 'package:build_runner_core/src/generate/input_tracker.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';

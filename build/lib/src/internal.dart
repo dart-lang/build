@@ -2,8 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-/// Internal build state for `build_resolvers`, `build_runner`,
-/// `build_runner_core` and `build_test` only.
+/// Internal build state for build scripts and `build_test` only.
+/// TODO: update.
 library;
 
 export 'builder/logging.dart';
@@ -15,6 +15,7 @@ export 'library_cycle_graph/library_cycle_graph_loader.dart';
 export 'library_cycle_graph/phased_asset_deps.dart';
 export 'library_cycle_graph/phased_reader.dart';
 export 'library_cycle_graph/phased_value.dart';
+export 'package_graph/apply_builders.dart';
 export 'state/asset_finder.dart';
 export 'state/asset_path_provider.dart';
 export 'state/filesystem.dart';

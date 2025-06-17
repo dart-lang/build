@@ -2,7 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:build_runner_core/build_runner_core.dart';
+// ignore: implementation_imports
+import 'package:build/src/package_graph/package_graph.dart';
 import 'package:package_config/package_config.dart';
 
 PackageGraph buildPackageGraph(Map<PackageNode, Iterable<String>> packages) {

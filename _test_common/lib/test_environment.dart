@@ -5,7 +5,14 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+// ignore: implementation_imports
+import 'package:build/src/environment/build_environment.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/build_directory.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/build_result.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/finalized_assets_view.dart';
 
 import 'common.dart';
 

@@ -53,3 +53,16 @@ class AssetWriterSpy implements AssetWriter {
     return _delegate.writeAsString(id, contents, encoding: encoding);
   }
 }
+
+abstract class RunnerAssetWriter implements AssetWriter {
+  /// Delete [id].
+  Future<void> delete(AssetId id);
+
+  /// Delete the directory [id] recursively.
+  ///
+  /// Usually an `AssetId` points to a file, but here its `path` is a directory.
+  ///
+  /// Delete unconditionally and recursively: if the directory does not exist,
+  /// do nothing.
+  Future<void> deleteDirectory(AssetId id);
+}

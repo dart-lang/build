@@ -80,12 +80,8 @@ dependency_overrides:
     path: $buildRepoPath/build_config
   build_modules:
     path: $buildRepoPath/build_modules
-  build_resolvers:
-    path: $buildRepoPath/build_resolvers
   build_runner:
     path: $buildRepoPath/build_runner
-  build_runner_core:
-    path: $buildRepoPath/build_runner_core
   build_test:
     path: $buildRepoPath/build_test
   build_web_compilers:

@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'package:build/build.dart';
 // ignore: implementation_imports
-import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build/src/asset_graph/node.dart';
 import 'package:build_test/build_test.dart';
 import 'package:crypto/crypto.dart';
 
