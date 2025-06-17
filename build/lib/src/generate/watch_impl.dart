@@ -11,9 +11,13 @@ import 'package:logging/logging.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
-import '../../build.dart';
+import '../analyzer/resolver.dart';
+import '../asset/exceptions.dart';
 import '../asset/finalized_reader.dart';
+import '../asset/id.dart';
+import '../asset/reader.dart';
 import '../asset/reader_writer.dart';
+import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../build_script_generate/build_process_state.dart';
 import '../environment/build_environment.dart';

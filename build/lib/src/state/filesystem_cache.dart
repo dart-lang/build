@@ -6,7 +6,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import '../../build.dart';
 import '../asset/id.dart';
 import '../logging/timed_activities.dart';
 import 'lru_cache.dart';

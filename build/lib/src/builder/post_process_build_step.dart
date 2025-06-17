@@ -8,7 +8,13 @@ import 'dart:convert';
 import 'package:async/async.dart';
 import 'package:crypto/crypto.dart' show Digest;
 
-import '../../build.dart';
+import '../analyzer/resolver.dart';
+import '../asset/exceptions.dart';
+import '../asset/id.dart';
+import '../asset/reader.dart';
+import '../asset/writer.dart';
+import '../resource/resource.dart';
+import 'build_step.dart';
 
 // This is not exported to hack around a package-private constructor.
 PostProcessBuildStep postProcessBuildStep(

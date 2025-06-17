@@ -5,7 +5,8 @@ import 'dart:async';
 
 import 'package:watcher/watcher.dart';
 
-import '../../build.dart';
+import '../asset/id.dart';
+import '../asset/reader.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../generate/options.dart';

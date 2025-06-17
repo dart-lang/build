@@ -9,7 +9,6 @@ environment:
 dependencies:
   build: any
   build_config: any
-  build_runner_core: any
   build_test: any
   crypto: ^3.0.0
   logging: ^1.0.0

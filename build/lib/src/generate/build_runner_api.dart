@@ -9,7 +9,9 @@ import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 import 'package:watcher/watcher.dart';
 
-import '../../build.dart';
+import '../analyzer/resolver.dart';
+import '../asset/reader.dart';
+import '../asset/writer.dart';
 import '../environment/build_environment.dart';
 import '../logging/build_log.dart';
 import '../package_graph/apply_builders.dart';
