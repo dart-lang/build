@@ -19,13 +19,13 @@ void main() {
       });
 
       test('root', () {
-        expectPkg(graph.root, 'build_runner_core', '', DependencyType.path);
+        expectPkg(graph.root, 'build', '', DependencyType.path);
       });
 
       test('asPackageConfig', () {
         final config = graph.asPackageConfig;
         final buildRunner = config.packages.singleWhere(
-          (p) => p.name == 'build_runner_core',
+          (p) => p.name == 'build',
         );
 
         expect(buildRunner.languageVersion, LanguageVersion(3, 7));

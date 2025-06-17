@@ -11,7 +11,7 @@ dependencies:
   analyzer: '>=6.9.0 <8.0.0'
   async: ^2.5.0
   build_config: ^1.0.0
-  build_runner: '2.5.0'
+  build_runner: '2.5.1-wip'
   built_collection: ^5.1.1
   built_value: ^8.9.5
   collection: ^1.17.0
@@ -33,7 +33,6 @@ dependencies:
 dev_dependencies:
   _test_common:
     path: ../_test_common
-  build_resolvers: '2.5.1-wip'    
   build_test: '3.0.0'
   built_value_generator: ^8.9.5
   dart_flutter_team_lints: ^3.1.0
