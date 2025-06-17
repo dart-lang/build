@@ -4,10 +4,9 @@
 
 import 'dart:async';
 
-// ignore: implementation_imports
-import 'package:build/src/internal.dart';
 import 'package:logging/logging.dart';
 
+import '../builder/logging.dart';
 import 'build_log.dart';
 import 'build_log_messages.dart';
 

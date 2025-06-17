@@ -7,11 +7,13 @@ library;
 
 import 'dart:async';
 
-import 'package:build/build.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 import 'package:timing/timing.dart';
 
+import '../asset/id.dart';
+import '../builder/build_step.dart';
+import '../builder/builder.dart';
 import 'phase.dart';
 
 part 'performance_tracker.g.dart';

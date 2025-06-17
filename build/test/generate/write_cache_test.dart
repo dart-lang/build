@@ -5,7 +5,7 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build/src/generate/build_result.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 

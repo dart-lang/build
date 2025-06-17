@@ -2,9 +2,10 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:build/build.dart' hide Builder;
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
+
+import '../asset/id.dart';
 
 part 'post_process_build_step_id.g.dart';
 

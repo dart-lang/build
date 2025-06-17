@@ -4,11 +4,11 @@
 
 import 'dart:async';
 
-import 'package:build/build.dart';
 import 'package:watcher/watcher.dart';
 
-import '../../../../build_runner_core/lib/src/environment/build_environment.dart';
-import '../../../../build_runner_core/lib/src/package_graph/apply_builders.dart';
+import '../asset/id.dart';
+import '../environment/build_environment.dart';
+import '../package_graph/apply_builders.dart';
 import 'build_directory.dart';
 import 'build_result.dart';
 import 'build_series.dart';

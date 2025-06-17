@@ -8,7 +8,8 @@ import 'dart:async';
 
 import 'package:_test_common/test_phases.dart';
 import 'package:build/build.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build/src/logging/build_log.dart';
+import 'package:build/src/package_graph/apply_builders.dart';
 import 'package:test/test.dart';
 
 void main() {

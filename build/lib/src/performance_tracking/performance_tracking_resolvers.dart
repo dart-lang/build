@@ -4,8 +4,8 @@
 
 import 'dart:async';
 
-import 'package:build/build.dart';
-
+import '../analyzer/resolver.dart';
+import '../builder/build_step.dart';
 import '../generate/performance_tracker.dart';
 
 class PerformanceTrackingResolvers implements Resolvers {

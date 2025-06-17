@@ -2,13 +2,13 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 
-import '../../../../build_runner_core/lib/src/asset_graph/graph.dart';
-import '../../../../build_runner_core/lib/src/asset_graph/node.dart';
-import '../../../../build_runner_core/lib/src/asset_graph/optional_output_tracker.dart';
-import '../../../../build_runner_core/lib/src/package_graph/package_graph.dart';
+import '../asset/id.dart';
+import '../asset_graph/graph.dart';
+import '../asset_graph/node.dart';
+import '../asset_graph/optional_output_tracker.dart';
+import '../package_graph/package_graph.dart';
 
 /// A lazily computed view of all the assets available after a build.
 ///

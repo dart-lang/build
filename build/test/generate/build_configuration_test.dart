@@ -5,7 +5,7 @@
 import 'package:_test_common/build_configs.dart';
 import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build/src/package_graph/apply_builders.dart';
 import 'package:test/test.dart';
 
 void main() {

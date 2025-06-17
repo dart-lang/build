@@ -4,9 +4,8 @@
 
 import 'dart:collection';
 
-import 'package:build/build.dart';
-// ignore: implementation_imports
-import 'package:build/src/internal.dart';
+import '../asset/id.dart';
+import '../state/filesystem.dart';
 
 /// Records inputs for a `BuildStep`.
 class InputTracker {

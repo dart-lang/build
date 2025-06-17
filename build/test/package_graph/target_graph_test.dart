@@ -7,9 +7,9 @@ library;
 
 import 'package:_test_common/package_graphs.dart';
 import 'package:build/build.dart';
+import 'package:build/src/package_graph/package_graph.dart';
 import 'package:build/src/package_graph/target_graph.dart';
 import 'package:build_config/build_config.dart';
-import 'package:build_runner_core/build_runner_core.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';

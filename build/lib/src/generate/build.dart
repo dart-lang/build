@@ -5,11 +5,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:build/build.dart';
-// ignore: implementation_imports
-import 'package:build/src/internal.dart';
-// ignore: implementation_imports
-import 'package:build/src/resolvers/internal.dart';
 // ignore: implementation_imports
 import 'package:build_runner/src/internal.dart';
 import 'package:crypto/crypto.dart';
@@ -17,25 +12,39 @@ import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
-import '../../../../build_runner_core/lib/src/asset/writer.dart';
-import '../../../../build_runner_core/lib/src/asset_graph/graph.dart';
-import '../../../../build_runner_core/lib/src/asset_graph/node.dart';
-import '../../../../build_runner_core/lib/src/asset_graph/optional_output_tracker.dart';
-import '../../../../build_runner_core/lib/src/asset_graph/post_process_build_step_id.dart';
-import '../../../../build_runner_core/lib/src/environment/build_environment.dart';
-import '../../../../build_runner_core/lib/src/logging/build_log.dart';
-import '../../../../build_runner_core/lib/src/logging/timed_activities.dart';
-import '../../../../build_runner_core/lib/src/performance_tracking/performance_tracking_resolvers.dart';
-import '../../../../build_runner_core/lib/src/util/build_dirs.dart';
-import '../../../../build_runner_core/lib/src/util/constants.dart';
+import '../asset/exceptions.dart';
+import '../asset/id.dart';
+import '../asset/reader.dart';
+import '../asset/writer.dart';
+import '../asset_graph/graph.dart';
+import '../asset_graph/node.dart';
+import '../asset_graph/optional_output_tracker.dart';
+import '../asset_graph/post_process_build_step_id.dart';
+import '../builder/post_process_builder.dart';
+import '../environment/build_environment.dart';
+import '../library_cycle_graph/asset_deps_loader.dart';
+import '../library_cycle_graph/library_cycle_graph.dart';
+import '../library_cycle_graph/library_cycle_graph_loader.dart';
+import '../logging/build_log.dart';
+import '../logging/timed_activities.dart';
+import '../performance_tracking/performance_tracking_resolvers.dart';
+import '../resolvers/analysis_driver_model.dart';
+import '../resource/resource.dart';
+import '../state/reader_state.dart';
+import '../state/reader_writer.dart';
+import '../util/build_dirs.dart';
+import '../util/constants.dart';
 import 'build_directory.dart';
 import 'build_phases.dart';
 import 'build_result.dart';
+import 'expected_outputs.dart';
 import 'finalized_assets_view.dart';
 import 'input_tracker.dart';
 import 'options.dart';
 import 'performance_tracker.dart';
 import 'phase.dart';
+import 'run_builder.dart';
+import 'run_post_process_builder.dart';
 import 'single_step_reader_writer.dart';
 
 /// A single build.

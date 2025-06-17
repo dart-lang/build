@@ -4,16 +4,17 @@
 
 import 'dart:async';
 
-import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:graphs/graphs.dart';
 
-import '../../../../build_runner_core/lib/src/validation/config_validation.dart';
+import '../builder/builder.dart';
+import '../builder/post_process_builder.dart';
 import '../generate/build_phases.dart';
 import '../generate/exceptions.dart';
 import '../generate/phase.dart';
 import '../logging/build_log.dart';
 import '../logging/build_log_logger.dart';
+import '../validation/config_validation.dart';
 import 'package_graph.dart';
 import 'target_graph.dart';
 

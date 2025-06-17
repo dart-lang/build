@@ -4,19 +4,21 @@
 
 import 'dart:async';
 
-import 'package:build/build.dart';
-// ignore: implementation_imports
-import 'package:build/src/internal.dart';
 import 'package:watcher/watcher.dart';
 
-import '../../../../build_runner_core/lib/src/asset/finalized_reader.dart';
-import '../../../../build_runner_core/lib/src/asset/writer.dart';
-import '../../../../build_runner_core/lib/src/asset_graph/graph.dart';
-import '../../../../build_runner_core/lib/src/changes/build_script_updates.dart';
-import '../../../../build_runner_core/lib/src/environment/build_environment.dart';
-import '../../../../build_runner_core/lib/src/logging/build_log.dart';
-import '../../../../build_runner_core/lib/src/package_graph/apply_builders.dart';
-import '../../../../build_runner_core/lib/src/util/constants.dart';
+import '../asset/finalized_reader.dart';
+import '../asset/id.dart';
+import '../asset/writer.dart';
+import '../asset_graph/graph.dart';
+import '../changes/build_script_updates.dart';
+import '../environment/build_environment.dart';
+import '../logging/build_log.dart';
+import '../package_graph/apply_builders.dart';
+import '../resource/resource.dart';
+import '../state/filesystem_cache.dart';
+import '../state/reader_state.dart';
+import '../state/reader_writer.dart';
+import '../util/constants.dart';
 import 'build.dart';
 import 'build_definition.dart';
 import 'build_directory.dart';

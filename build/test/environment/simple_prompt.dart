@@ -2,7 +2,9 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build/src/environment/build_environment.dart';
+import 'package:build/src/logging/build_log.dart';
+import 'package:build/src/package_graph/package_graph.dart';
 
 void main() async {
   var env = BuildEnvironment(

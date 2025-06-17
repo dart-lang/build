@@ -10,15 +10,24 @@ import 'dart:convert';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:async/async.dart';
-import 'package:build/build.dart';
-// ignore: implementation_imports
-import 'package:build/src/builder/build_step.dart';
-// ignore: implementation_imports
-import 'package:build/src/internal.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:package_config/package_config_types.dart';
 
+import '../analyzer/resolver.dart';
+import '../asset/exceptions.dart';
+import '../asset/id.dart';
+import '../builder/build_step.dart';
+import '../builder/exceptions.dart';
+import '../library_cycle_graph/phased_reader.dart';
+import '../resource/resource.dart';
+import '../state/asset_finder.dart';
+import '../state/asset_path_provider.dart';
+import '../state/filesystem.dart';
+import '../state/filesystem_cache.dart';
+import '../state/generated_asset_hider.dart';
+import '../state/reader_state.dart';
+import '../state/reader_writer.dart';
 import 'input_tracker.dart';
 import 'single_step_reader_writer.dart';
 

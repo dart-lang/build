@@ -7,7 +7,8 @@ library;
 import 'dart:io';
 
 import 'package:_test_common/common.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build/src/asset/reader_writer.dart';
+import 'package:build/src/package_graph/package_graph.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';

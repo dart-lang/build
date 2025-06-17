@@ -3,9 +3,9 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 
-import 'package:build/build.dart';
 import 'package:meta/meta.dart';
 
+import '../asset/id.dart';
 import 'performance_tracker.dart';
 
 /// The result of an individual build, this may be an incremental build or

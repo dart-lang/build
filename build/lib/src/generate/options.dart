@@ -4,17 +4,17 @@
 
 import 'dart:async';
 
-import 'package:build/build.dart';
-import 'package:build/experiments.dart';
-// ignore: implementation_imports
-import 'package:build/src/resolvers/resolver.dart';
 import 'package:build_config/build_config.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 
-import '../../../../build_runner_core/lib/src/logging/build_log.dart';
-import '../../../../build_runner_core/lib/src/package_graph/package_graph.dart';
-import '../../../../build_runner_core/lib/src/package_graph/target_graph.dart';
+import '../analyzer/resolver.dart';
+import '../asset/id.dart';
+import '../experiments.dart';
+import '../logging/build_log.dart';
+import '../package_graph/package_graph.dart';
+import '../package_graph/target_graph.dart';
+import '../resolvers/resolver.dart';
 import 'exceptions.dart';
 
 /// The default list of files visible for non-root packages.

@@ -4,13 +4,15 @@
 
 import 'dart:convert';
 
-import 'package:build/build.dart' show AssetId, PostProcessBuildStep;
-// ignore: implementation_imports
-import 'package:build/src/internal.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/serializer.dart';
 import 'package:crypto/crypto.dart';
 
+import '../asset/id.dart';
+import '../builder/post_process_build_step.dart';
+import '../library_cycle_graph/asset_deps.dart';
+import '../library_cycle_graph/phased_asset_deps.dart';
+import '../library_cycle_graph/phased_value.dart';
 import 'identity_serializer.dart';
 import 'node.dart';
 import 'post_process_build_step_id.dart';

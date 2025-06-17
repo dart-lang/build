@@ -2,10 +2,11 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
+
+import '../asset/id.dart';
 
 /// A filter on files to run through a Builder.
 class InputMatcher {

@@ -5,11 +5,11 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:build/build.dart' show AssetId;
 // ignore: implementation_imports
 import 'package:build_runner/src/internal.dart';
 import 'package:logging/logging.dart';
 
+import '../asset/id.dart';
 import '../generate/phase.dart';
 import 'ansi_buffer.dart';
 import 'build_log_configuration.dart';

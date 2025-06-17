@@ -3,11 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:isolate';
 
-// ignore: implementation_imports
-import 'package:build/src/generate/build_step_impl.dart';
-// ignore: implementation_imports
-import 'package:build/src/generate/single_step_reader_writer.dart';
-import 'package:build_runner_core/build_runner_core.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 
@@ -18,8 +13,11 @@ import '../asset/writer.dart';
 import '../builder/build_step.dart';
 import '../builder/builder.dart';
 import '../builder/logging.dart';
+import '../logging/build_log_logger.dart';
 import '../resource/resource.dart';
+import 'build_step_impl.dart';
 import 'expected_outputs.dart';
+import 'single_step_reader_writer.dart';
 
 /// Run [builder] with each asset in [inputs] as the primary input.
 ///

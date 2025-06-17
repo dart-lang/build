@@ -7,7 +7,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:async/async.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build/src/logging/build_log.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 

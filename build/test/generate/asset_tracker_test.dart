@@ -6,11 +6,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build/src/asset/reader_writer.dart';
 import 'package:build/src/asset_graph/graph.dart';
 import 'package:build/src/generate/asset_tracker.dart';
 import 'package:build/src/generate/build_phases.dart';
+import 'package:build/src/package_graph/package_graph.dart';
 import 'package:build/src/package_graph/target_graph.dart';
-import 'package:build_runner_core/build_runner_core.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';

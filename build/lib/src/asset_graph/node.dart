@@ -4,12 +4,12 @@
 
 import 'dart:convert';
 
-import 'package:build/build.dart' hide Builder;
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 import 'package:crypto/crypto.dart';
 
+import '../asset/id.dart';
 import 'post_process_build_step_id.dart';
 
 part 'node.g.dart';

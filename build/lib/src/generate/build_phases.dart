@@ -4,12 +4,12 @@
 
 import 'dart:convert';
 
-import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 
-import '../../../../build_runner_core/lib/src/logging/build_log.dart';
+import '../builder/builder.dart';
+import '../logging/build_log.dart';
 import 'exceptions.dart';
 import 'phase.dart';
 

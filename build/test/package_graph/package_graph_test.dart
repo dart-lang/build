@@ -4,7 +4,7 @@
 @TestOn('vm')
 library;
 
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build/src/package_graph/package_graph.dart';
 import 'package:package_config/package_config_types.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';

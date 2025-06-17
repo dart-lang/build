@@ -2,10 +2,11 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:collection/collection.dart';
 
+import '../builder/builder.dart';
+import '../builder/post_process_builder.dart';
 import 'input_matcher.dart';
 
 /// A "phase" in the build graph, which represents running a one or more

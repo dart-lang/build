@@ -19,7 +19,6 @@ import 'package:analyzer/error/error.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:async/async.dart';
-import 'package:build_runner_core/build_runner_core.dart';
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
@@ -32,6 +31,7 @@ import '../asset/exceptions.dart';
 import '../asset/id.dart';
 import '../builder/build_step.dart';
 import '../builder/logging.dart';
+import '../logging/timed_activities.dart';
 import 'analysis_driver.dart';
 import 'analysis_driver_filesystem.dart';
 import 'analysis_driver_model.dart';

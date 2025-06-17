@@ -7,6 +7,7 @@ library;
 
 import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
+import 'package:build/src/asset/finalized_reader.dart';
 import 'package:build/src/asset_graph/graph.dart';
 import 'package:build/src/asset_graph/node.dart';
 import 'package:build/src/asset_graph/post_process_build_step_id.dart';
@@ -14,7 +15,6 @@ import 'package:build/src/generate/build_phases.dart';
 import 'package:build/src/generate/options.dart';
 import 'package:build/src/generate/phase.dart';
 import 'package:build/src/package_graph/target_graph.dart';
-import 'package:build_runner_core/build_runner_core.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:test/test.dart';

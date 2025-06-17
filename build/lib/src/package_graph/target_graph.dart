@@ -4,10 +4,11 @@
 
 import 'dart:async';
 
-import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:glob/glob.dart';
 
+import '../asset/id.dart';
+import '../builder/logging.dart';
 import '../generate/input_matcher.dart';
 import '../generate/options.dart' show defaultNonRootVisibleAssets;
 import 'package_graph.dart';
