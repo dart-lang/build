@@ -468,7 +468,11 @@ class Build {
           primaryPackage: primaryInput.package,
         ),
         readerWriter: this.readerWriter,
-        inputTracker: InputTracker(this.readerWriter.filesystem),
+        inputTracker: InputTracker(
+          this.readerWriter.filesystem,
+          primaryInput: primaryInput,
+          builderLabel: phase.builderLabel,
+        ),
         assetsWritten: {},
       );
 
@@ -608,7 +612,10 @@ class Build {
         primaryPackage: input.package,
       ),
       readerWriter: this.readerWriter,
-      inputTracker: InputTracker(this.readerWriter.filesystem),
+      inputTracker: InputTracker(
+        this.readerWriter.filesystem,
+        primaryInput: input,
+      ),
       assetsWritten: {},
     );
 

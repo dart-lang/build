@@ -1,3 +1,9 @@
+## 3.1.0-wip
+
+- Add `inputsTrackedFor` and `resolverEntrypointsTrackedFor` to
+  `ReaderWriterTesting`, so tests can determine what each build step
+  read and resolved.
+
 ## 3.0.0
 
 Breaking changes:

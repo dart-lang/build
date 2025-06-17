@@ -90,6 +90,7 @@ void main() {
     await testBuilder(
       TestBuilder(
         build: (BuildStep buildStep, _) async {
+          if (!await buildStep.canRead(buildStep.inputId)) return;
           buildStep.reportUnusedAssets([unusedInput]);
         },
       ),
@@ -185,6 +186,148 @@ void main() {
       );
     },
   );
+
+  test('inputs are tracked by primary input and builder label', () async {
+    final result = await testBuilders(
+      [
+        _TestBuilder(
+          buildExtensions: {
+            '.dart': ['.o1'],
+          },
+          build: (step) async {
+            await step.readAsString(step.inputId);
+          },
+        ),
+        _TestBuilder(
+          buildExtensions: {
+            '.dart': ['.o2'],
+          },
+          build: (step) async {
+            await step.canRead(step.inputId.changeExtension('.other'));
+          },
+          builderLabel: 'TestBuilderReadsOther',
+        ),
+      ],
+      {'a|foo.dart': '', 'a|bar.dart': ''},
+    );
+
+    final testing = result.readerWriter.testing;
+
+    expect(testing.inputsTracked, {
+      AssetId('a', 'foo.dart'),
+      AssetId('a', 'bar.dart'),
+      AssetId('a', 'foo.other'),
+      AssetId('a', 'bar.other'),
+    });
+
+    expect(testing.inputsTrackedFor(primaryInput: AssetId('a', 'foo.dart')), {
+      AssetId('a', 'foo.dart'),
+      AssetId('a', 'foo.other'),
+    });
+    expect(testing.inputsTrackedFor(primaryInput: AssetId('a', 'bar.dart')), {
+      AssetId('a', 'bar.dart'),
+      AssetId('a', 'bar.other'),
+    });
+
+    expect(
+      testing.inputsTrackedFor(
+        primaryInput: AssetId('a', 'bar.dart'),
+        builderLabel: 'TestBuilder',
+      ),
+      {AssetId('a', 'bar.dart')},
+    );
+
+    expect(testing.inputsTrackedFor(builderLabel: 'TestBuilderReadsOther'), {
+      AssetId('a', 'foo.other'),
+      AssetId('a', 'bar.other'),
+    });
+
+    expect(
+      testing.inputsTrackedFor(
+        primaryInput: AssetId('a', 'bar.dart'),
+        builderLabel: 'TestBuilderReadsOther',
+      ),
+      {AssetId('a', 'bar.other')},
+    );
+  });
+
+  test('resolve entrypoints are tracked by primary input and '
+      'builder label', () async {
+    final result = await testBuilders(
+      [
+        _TestBuilder(
+          buildExtensions: {
+            '.dart': ['.o1'],
+          },
+          build: (step) async {
+            await step.resolver.libraryFor(step.inputId);
+          },
+        ),
+        _TestBuilder(
+          buildExtensions: {
+            '.dart': ['.o2'],
+          },
+          build: (step) async {
+            await step.resolver.libraryFor(
+              step.inputId.changeExtension('.other'),
+            );
+          },
+          builderLabel: 'TestBuilderReadsOther',
+        ),
+      ],
+      {
+        'a|foo.dart': '',
+        'a|bar.dart': '',
+        'a|foo.other': '',
+        'a|bar.other': '',
+      },
+    );
+
+    final testing = result.readerWriter.testing;
+
+    expect(testing.resolverEntrypointsTracked, {
+      AssetId('a', 'foo.dart'),
+      AssetId('a', 'bar.dart'),
+      AssetId('a', 'foo.other'),
+      AssetId('a', 'bar.other'),
+    });
+
+    expect(
+      testing.resolverEntrypointsTrackedFor(
+        primaryInput: AssetId('a', 'foo.dart'),
+      ),
+      {AssetId('a', 'foo.dart'), AssetId('a', 'foo.other')},
+    );
+    expect(
+      testing.resolverEntrypointsTrackedFor(
+        primaryInput: AssetId('a', 'bar.dart'),
+      ),
+      {AssetId('a', 'bar.dart'), AssetId('a', 'bar.other')},
+    );
+
+    expect(
+      testing.resolverEntrypointsTrackedFor(
+        primaryInput: AssetId('a', 'bar.dart'),
+        builderLabel: 'TestBuilder',
+      ),
+      {AssetId('a', 'bar.dart')},
+    );
+
+    expect(
+      testing.resolverEntrypointsTrackedFor(
+        builderLabel: 'TestBuilderReadsOther',
+      ),
+      {AssetId('a', 'foo.other'), AssetId('a', 'bar.other')},
+    );
+
+    expect(
+      testing.resolverEntrypointsTrackedFor(
+        primaryInput: AssetId('a', 'bar.dart'),
+        builderLabel: 'TestBuilderReadsOther',
+      ),
+      {AssetId('a', 'bar.other')},
+    );
+  });
 }
 
 /// Concatenates the contents of multiple text files into a single output.
@@ -208,4 +351,25 @@ class _ConcatBuilder implements Builder {
 
   @override
   Map<String, List<String>> buildExtensions;
+}
+
+// Like [TestBuilder], but no default behavior and buildLabel can be overridden.
+class _TestBuilder implements Builder {
+  @override
+  final Map<String, List<String>> buildExtensions;
+  final Future<void> Function(BuildStep) _build;
+  final String builderLabel;
+
+  _TestBuilder({
+    required this.buildExtensions,
+    required Future<void> Function(BuildStep) build,
+    String? builderLabel,
+  }) : _build = build,
+       builderLabel = builderLabel ?? 'TestBuilder';
+
+  @override
+  Future<void> build(BuildStep buildStep) => _build(buildStep);
+
+  @override
+  String toString() => builderLabel;
 }
