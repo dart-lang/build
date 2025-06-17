@@ -1,4 +1,4 @@
-## 9.0.1-wip
+## 9.0.1
 
 - Don't log stack traces for subclasses of `Exception`.
 - Bug fix: don't run builders with multiple outputs once per output.
