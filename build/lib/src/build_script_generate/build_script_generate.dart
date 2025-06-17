@@ -12,16 +12,11 @@ import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 
 import '../../build.dart' show AssetId, BuilderOptions;
-// ignore: implementation_imports
 import '../asset/reader_writer.dart';
-// ignore: implementation_imports
 import '../generate/exceptions.dart';
-// ignore: implementation_imports
 import '../logging/build_log.dart';
 import '../package_graph/build_config_overrides.dart';
-// ignore: implementation_imports
 import '../package_graph/package_graph.dart';
-// ignore: implementation_imports
 import '../util/constants.dart';
 import 'builder_ordering.dart';
 
@@ -46,7 +41,7 @@ Future<String> generateBuildScript() async {
               builders,
               refer(
                 'BuilderApplication',
-                'package:build_runner_core/build_runner_core.dart',
+                'package:build/src/package_graph/apply_builders.dart',
               ),
             ),
           )
@@ -239,25 +234,25 @@ Method _main() => Method((b) {
   );
   final isolateExitCode = refer(
     'buildProcessState.isolateExitCode',
-    'package:build_runner/src/build_script_generate/build_process_state.dart',
+    'package:build/src/build_script_generate/build_process_state.dart',
   );
   b.body = Block.of([
     refer(
       'buildProcessState.receive',
-      'package:build_runner/src/build_script_generate/build_process_state.dart',
+      'package:build/src/build_script_generate/build_process_state.dart',
     ).call([refer('sendPort')]).awaited.statement,
     isolateExitCode
         .assign(
           refer(
             'run',
-            'package:build_runner/build_runner.dart',
+            'package:build/src/entrypoint/run.dart',
           ).call([refer('args'), refer('_builders')]).awaited,
         )
         .statement,
     refer('exitCode', 'dart:io').assign(isolateExitCode).nullChecked.statement,
     refer(
       'buildProcessState.send',
-      'package:build_runner/src/build_script_generate/build_process_state.dart',
+      'package:build/src/build_script_generate/build_process_state.dart',
     ).call([refer('sendPort')]).awaited.statement,
   ]);
 });
@@ -296,7 +291,7 @@ Expression _applyBuilder(BuilderDefinition definition) {
   var import = _buildScriptImport(definition.import);
   return refer(
     'apply',
-    'package:build_runner_core/build_runner_core.dart',
+    'package:build/src/package_graph/apply_builders.dart',
   ).call([
     literalString(definition.key, raw: true),
     literalList([for (var f in definition.builderFactories) refer(f, import)]),
@@ -332,7 +327,7 @@ Expression _applyPostProcessBuilder(PostProcessBuilderDefinition definition) {
   var import = _buildScriptImport(definition.import);
   return refer(
     'applyPostProcess',
-    'package:build_runner_core/build_runner_core.dart',
+    'package:build/src/package_graph/apply_builders.dart',
   ).call([
     literalString(definition.key, raw: true),
     refer(definition.builderFactory, import),
@@ -364,22 +359,22 @@ Expression _findToExpression(BuilderDefinition definition) {
     case AutoApply.none:
       return refer(
         'toNoneByDefault',
-        'package:build_runner_core/build_runner_core.dart',
+        'package:build/src/package_graph/apply_builders.dart',
       ).call([]);
     case AutoApply.dependents:
       return refer(
         'toDependentsOf',
-        'package:build_runner_core/build_runner_core.dart',
+        'package:build/src/package_graph/apply_builders.dart',
       ).call([literalString(definition.package, raw: true)]);
     case AutoApply.allPackages:
       return refer(
         'toAllPackages',
-        'package:build_runner_core/build_runner_core.dart',
+        'package:build/src/package_graph/apply_builders.dart',
       ).call([]);
     case AutoApply.rootPackage:
       return refer(
         'toRoot',
-        'package:build_runner_core/build_runner_core.dart',
+        'package:build/src/package_graph/apply_builders.dart',
       ).call([]);
   }
 }
@@ -387,7 +382,7 @@ Expression _findToExpression(BuilderDefinition definition) {
 /// An expression creating a [BuilderOptions] from a json string.
 Expression _constructBuilderOptions(Map<String, dynamic> options) => refer(
   'BuilderOptions',
-  'package:build/build.dart',
+  'package:build/src/builder/builder.dart',
 ).constInstance([options.toExpression()]);
 
 /// Converts a Dart object to a source code representation.
