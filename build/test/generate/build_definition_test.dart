@@ -10,6 +10,7 @@ import 'package:_test_common/runner_asset_writer_spy.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build/src/asset_graph/graph.dart';
+import 'package:build/src/build_script_generate/build_process_state.dart';
 import 'package:build/src/environment/build_environment.dart';
 import 'package:build/src/generate/build_definition.dart';
 import 'package:build/src/generate/build_phases.dart';
@@ -20,8 +21,6 @@ import 'package:build/src/logging/build_log.dart';
 import 'package:build/src/package_graph/package_graph.dart';
 import 'package:build/src/util/constants.dart';
 import 'package:build_config/build_config.dart';
-// ignore: implementation_imports
-import 'package:build_runner/src/internal.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';

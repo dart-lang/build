@@ -5,8 +5,6 @@
 import 'dart:async';
 import 'dart:io';
 
-// ignore: implementation_imports
-import 'package:build_runner/src/internal.dart';
 import 'package:watcher/watcher.dart';
 
 import '../asset/id.dart';
@@ -14,6 +12,7 @@ import '../asset/writer.dart';
 import '../asset_graph/exceptions.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/graph_loader.dart';
+import '../build_script_generate/build_process_state.dart';
 import '../builder/logging.dart';
 import '../changes/build_script_updates.dart';
 import '../environment/build_environment.dart';

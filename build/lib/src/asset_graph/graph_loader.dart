@@ -5,12 +5,13 @@
 import 'dart:async';
 import 'dart:io';
 
-// ignore: implementation_imports
-import 'package:build_runner/src/build_script_generate/build_process_state.dart';
 import 'package:built_collection/built_collection.dart';
 
-import '../../build.dart';
-import '../../experiments.dart';
+import '../asset/id.dart';
+import '../asset/reader.dart';
+import '../asset/writer.dart';
+import '../build_script_generate/build_process_state.dart';
+import '../experiments.dart';
 import '../generate/build_phases.dart';
 import '../generate/exceptions.dart';
 import '../logging/build_log.dart';

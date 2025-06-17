@@ -1,14 +1,16 @@
-// Copyright (c) 2019, the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2018, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
-import 'package:build/src/entrypoint/base_command.dart' show lineLength;
-import 'package:build/src/entrypoint/clean.dart' show clean;
-import 'package:logging/logging.dart';
+
+import '../logging/build_log.dart';
+import '../util/constants.dart';
+import 'base_command.dart';
 
 class CleanCommand extends Command<int> {
   @override
@@ -16,7 +18,6 @@ class CleanCommand extends Command<int> {
 
   @override
   String get name => 'clean';
-  final logger = Logger('clean');
 
   @override
   String get description =>
@@ -26,5 +27,13 @@ class CleanCommand extends Command<int> {
   Future<int> run() async {
     clean();
     return 0;
+  }
+}
+
+void clean() {
+  buildLog.doing('Deleting the build cache.');
+  var generatedDir = Directory(cacheDir);
+  if (generatedDir.existsSync()) {
+    generatedDir.deleteSync(recursive: true);
   }
 }

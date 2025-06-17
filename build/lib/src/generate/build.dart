@@ -5,8 +5,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-// ignore: implementation_imports
-import 'package:build_runner/src/internal.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
@@ -20,6 +18,7 @@ import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../asset_graph/optional_output_tracker.dart';
 import '../asset_graph/post_process_build_step_id.dart';
+import '../build_script_generate/build_process_state.dart';
 import '../builder/post_process_builder.dart';
 import '../environment/build_environment.dart';
 import '../library_cycle_graph/asset_deps_loader.dart';

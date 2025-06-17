@@ -6,12 +6,12 @@ import 'dart:io' as _i11;
 import 'dart:isolate' as _i8;
 
 import 'package:build/build.dart' as _i7;
+import 'package:build/src/build_script_generate/build_process_state.dart'
+    as _i9;
+import 'package:build/src/entrypoint/run.dart' as _i10;
 import 'package:build/src/internal.dart' as _i1;
 import 'package:build_config/build_config.dart' as _i5;
 import 'package:build_modules/builders.dart' as _i6;
-import 'package:build_runner/build_runner.dart' as _i10;
-import 'package:build_runner/src/build_script_generate/build_process_state.dart'
-    as _i9;
 import 'package:build_test/builder.dart' as _i4;
 import 'package:build_web_compilers/builders.dart' as _i3;
 import 'package:provides_builder/builders.dart' as _i2;

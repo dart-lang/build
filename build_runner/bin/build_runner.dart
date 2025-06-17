@@ -7,12 +7,12 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
+import 'package:build/src/build_script_generate/bootstrap.dart';
+import 'package:build/src/build_script_generate/build_process_state.dart';
+import 'package:build/src/entrypoint/options.dart';
+import 'package:build/src/entrypoint/runner.dart';
 import 'package:build/src/logging/build_log.dart';
 import 'package:build/src/package_graph/package_graph.dart';
-import 'package:build_runner/src/build_script_generate/bootstrap.dart';
-import 'package:build_runner/src/build_script_generate/build_process_state.dart';
-import 'package:build_runner/src/entrypoint/options.dart';
-import 'package:build_runner/src/entrypoint/runner.dart';
 import 'package:io/ansi.dart';
 import 'package:io/io.dart';
 

@@ -4,10 +4,9 @@
 
 import 'dart:io';
 
-// ignore: implementation_imports
-import 'package:build_runner/src/internal.dart';
 import 'package:logging/logging.dart';
 
+import '../build_script_generate/build_process_state.dart';
 import 'ansi_buffer.dart';
 import 'build_log.dart';
 import 'build_log_messages.dart';

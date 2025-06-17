@@ -5,11 +5,10 @@
 import 'dart:async';
 import 'dart:math';
 
-// ignore: implementation_imports
-import 'package:build_runner/src/internal.dart';
 import 'package:logging/logging.dart';
 
 import '../asset/id.dart';
+import '../build_script_generate/build_process_state.dart';
 import '../generate/phase.dart';
 import 'ansi_buffer.dart';
 import 'build_log_configuration.dart';

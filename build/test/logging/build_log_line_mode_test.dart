@@ -3,10 +3,10 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+import 'package:build/src/build_script_generate/build_process_state.dart';
 import 'package:build/src/generate/phase.dart';
 import 'package:build/src/logging/build_log.dart';
 import 'package:build/src/logging/build_log_messages.dart';
-import 'package:build_runner/src/internal.dart';
 import 'package:test/test.dart';
 
 void main() {
