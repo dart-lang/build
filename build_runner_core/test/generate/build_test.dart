@@ -210,6 +210,25 @@ void main() {
         );
       });
 
+      test('runs once per input not once per output', () async {
+        var runs = 0;
+        final testBuilder = TestBuilder(
+          buildExtensions: {
+            '.txt': ['.txt.1', '.txt.2'],
+          },
+          extraWork: (_, _) {
+            ++runs;
+          },
+        );
+
+        await testPhases(
+          [applyToRoot(testBuilder)],
+          {'a|web/a.txt': ''},
+          outputs: {'a|web/a.txt.1': '', 'a|web/a.txt.2': ''},
+        );
+        expect(runs, 1);
+      });
+
       test('with a PostProcessBuilder', () async {
         await testPhases(
           [requiresPostProcessBuilderApplication, postCopyABuilderApplication],

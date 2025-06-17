@@ -310,7 +310,6 @@ class Build {
         // If `primaryInputs` is empty, the phase will only run lazily,
         // and might not run at all; so don't log it to start with.
         if (primaryInputs.isNotEmpty) {
-          primaryInputs.sort();
           primaryInputsByPhase[phase] = primaryInputs;
           primaryInputCountsByPhase[phase] = primaryInputs.length;
         }
@@ -382,7 +381,8 @@ class Build {
     String package,
     int phaseNumber,
   ) async {
-    var ids = <AssetId>[];
+    // Accumulate in a `Set` because inputs are found once per output.
+    var ids = <AssetId>{};
     var phase = buildPhases[phaseNumber];
     var packageNode = options.packageGraph[package]!;
 
@@ -406,7 +406,7 @@ class Build {
 
       ids.add(node.generatedNodeConfiguration!.primaryInput);
     }
-    return ids;
+    return ids.toList()..sort();
   }
 
   /// If [id] is a generated asset, ensures that it has been built.

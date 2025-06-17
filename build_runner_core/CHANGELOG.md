@@ -1,6 +1,7 @@
 ## 9.0.1-wip
 
 - Don't log stack traces for subclasses of `Exception`.
+- Bug fix: don't run builders with multiple outputs once per output.
 
 ## 9.0.0
 
