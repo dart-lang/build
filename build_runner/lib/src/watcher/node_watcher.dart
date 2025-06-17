@@ -4,7 +4,8 @@
 
 import 'dart:async';
 
-import 'package:build_runner_core/build_runner_core.dart';
+// ignore: implementation_imports
+import 'package:build/src/package_graph/package_graph.dart';
 import 'package:watcher/watcher.dart';
 
 import 'asset_change.dart';

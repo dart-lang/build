@@ -7,8 +7,13 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 // ignore: implementation_imports
+import 'package:build/src/asset/finalized_reader.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/build_result.dart';
+// ignore: implementation_imports
 import 'package:build/src/generate/performance_tracker.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+// ignore: implementation_imports
+import 'package:build/src/logging/build_log.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:mime/mime.dart';

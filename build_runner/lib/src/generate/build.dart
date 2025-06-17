@@ -6,7 +6,22 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+// ignore: implementation_imports
+import 'package:build/src/environment/build_environment.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/build_directory.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/build_result.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/build_runner.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/options.dart';
+// ignore: implementation_imports
+import 'package:build/src/logging/build_log.dart';
+// ignore: implementation_imports
+import 'package:build/src/package_graph/apply_builders.dart';
+// ignore: implementation_imports
+import 'package:build/src/package_graph/package_graph.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 import 'package:watcher/watcher.dart';

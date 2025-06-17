@@ -5,14 +5,15 @@
 import 'dart:async';
 import 'dart:mirrors';
 
-import 'package:build/build.dart';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
-import '../../../../build_runner_core/lib/src/logging/build_log.dart';
-import '../../../../build_runner_core/lib/src/package_graph/package_graph.dart';
+import '../asset/id.dart';
+import '../asset/reader.dart';
 import '../asset_graph/graph.dart';
+import '../logging/build_log.dart';
+import '../package_graph/package_graph.dart';
 
 /// Functionality for detecting if the build script itself or any of its
 /// transitive imports have changed.

@@ -7,11 +7,30 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 // ignore: implementation_imports
+import 'package:build/src/asset/finalized_reader.dart';
+// ignore: implementation_imports
+import 'package:build/src/asset/reader_writer.dart';
+// ignore: implementation_imports
 import 'package:build/src/asset_graph/graph.dart';
 // ignore: implementation_imports
+import 'package:build/src/environment/build_environment.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/build_directory.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/build_result.dart';
+// ignore: implementation_imports
 import 'package:build/src/generate/build_series.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/exceptions.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/options.dart';
+// ignore: implementation_imports
+import 'package:build/src/logging/build_log.dart';
+// ignore: implementation_imports
+import 'package:build/src/package_graph/apply_builders.dart';
+// ignore: implementation_imports
+import 'package:build/src/package_graph/package_graph.dart';
 import 'package:build_config/build_config.dart';
-import 'package:build_runner_core/build_runner_core.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
 import 'package:stream_transform/stream_transform.dart';

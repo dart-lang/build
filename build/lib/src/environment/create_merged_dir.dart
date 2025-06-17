@@ -6,17 +6,19 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:build/build.dart';
-// ignore: implementation_imports
-import 'package:build/src/internal.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
 
-import '../../../../build_runner_core/lib/src/logging/build_log.dart';
-import '../../../../build_runner_core/lib/src/logging/timed_activities.dart';
-import '../../../../build_runner_core/lib/src/package_graph/package_graph.dart';
+import '../asset/exceptions.dart';
+import '../asset/id.dart';
+import '../asset/reader.dart';
 import '../generate/build_directory.dart';
 import '../generate/finalized_assets_view.dart';
+import '../logging/build_log.dart';
+import '../logging/timed_activities.dart';
+import '../package_graph/package_graph.dart';
+import '../state/filesystem.dart';
+import '../state/reader_state.dart';
 import 'build_environment.dart';
 
 /// Pool for async file operations, we don't want to use too many file handles.

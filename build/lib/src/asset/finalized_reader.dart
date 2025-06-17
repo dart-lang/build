@@ -5,18 +5,19 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:build/build.dart';
-// ignore: implementation_imports
-import 'package:build/src/internal.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
-import '../../../../build_runner_core/lib/build_runner_core.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../asset_graph/optional_output_tracker.dart';
 import '../generate/build_phases.dart';
+import '../generate/options.dart';
 import '../package_graph/target_graph.dart';
+import '../state/asset_finder.dart';
+import 'exceptions.dart';
+import 'id.dart';
+import 'reader.dart';
 
 /// A view of the build output.
 ///

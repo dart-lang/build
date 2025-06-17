@@ -2,12 +2,11 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:build/build.dart';
-
-import '../../../../build_runner_core/lib/build_runner_core.dart';
-import '../../../../build_runner_core/lib/src/package_graph/target_graph.dart';
-import '../../../../build_runner_core/lib/src/util/build_dirs.dart';
+import '../asset/id.dart';
 import '../generate/build_phases.dart';
+import '../generate/options.dart';
+import '../package_graph/target_graph.dart';
+import '../util/build_dirs.dart';
 import 'graph.dart';
 import 'node.dart';
 

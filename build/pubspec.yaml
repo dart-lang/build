@@ -10,7 +10,7 @@ environment:
 dependencies:
   analyzer: '>=6.9.0 <8.0.0'
   async: ^2.5.0
-  build_runner_core: '9.0.1-wip'
+  build_runner: '2.5.0'
   built_collection: ^5.1.1
   built_value: ^8.9.5
   collection: ^1.17.0
@@ -24,6 +24,7 @@ dependencies:
   pub_semver: ^2.0.0
   path: ^1.8.0
   pool: ^1.5.0
+  watcher: ^1.0.0
   yaml: ^3.0.0
 
 dev_dependencies:

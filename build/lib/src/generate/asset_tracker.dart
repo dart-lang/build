@@ -6,17 +6,17 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:async/async.dart';
-import 'package:build/build.dart';
-// ignore: implementation_imports
-import 'package:build/src/internal.dart';
 import 'package:glob/glob.dart';
 import 'package:watcher/watcher.dart';
 
-import '../../../../build_runner_core/lib/src/asset_graph/graph.dart';
-import '../../../../build_runner_core/lib/src/asset_graph/node.dart';
-import '../../../../build_runner_core/lib/src/logging/timed_activities.dart';
-import '../../../../build_runner_core/lib/src/package_graph/target_graph.dart';
-import '../../../../build_runner_core/lib/src/util/constants.dart';
+import '../asset/id.dart';
+import '../asset/reader.dart';
+import '../asset_graph/graph.dart';
+import '../asset_graph/node.dart';
+import '../logging/timed_activities.dart';
+import '../package_graph/target_graph.dart';
+import '../state/reader_state.dart';
+import '../util/constants.dart';
 
 /// Finds build assets and computes changes to build assets.
 class AssetTracker {

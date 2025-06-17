@@ -10,7 +10,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:_test_common/common.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build/src/logging/build_log.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 

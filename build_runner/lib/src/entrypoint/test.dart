@@ -8,7 +8,16 @@ import 'dart:io';
 import 'package:args/command_runner.dart';
 import 'package:async/async.dart';
 import 'package:build/experiments.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/build_directory.dart';
+// ignore: implementation_imports
+import 'package:build/src/generate/build_result.dart';
+// ignore: implementation_imports
+import 'package:build/src/logging/build_log.dart';
+// ignore: implementation_imports
+import 'package:build/src/package_graph/package_graph.dart';
+// ignore: implementation_imports
+import 'package:build/src/util/constants.dart';
 import 'package:io/io.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';

@@ -6,7 +6,10 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:build/experiments.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+// ignore: implementation_imports
+import 'package:build/src/logging/build_log.dart';
+// ignore: implementation_imports
+import 'package:build/src/package_graph/package_graph.dart';
 import 'package:http_multi_server/http_multi_server.dart';
 import 'package:io/io.dart';
 import 'package:shelf/shelf_io.dart';

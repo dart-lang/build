@@ -7,8 +7,10 @@ import 'dart:convert';
 
 import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
+import 'package:build/src/generate/build_result.dart';
+import 'package:build/src/package_graph/apply_builders.dart';
+import 'package:build/src/package_graph/package_graph.dart';
 import 'package:build_runner/src/generate/build.dart' as build_impl;
-import 'package:build_runner_core/build_runner_core.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';

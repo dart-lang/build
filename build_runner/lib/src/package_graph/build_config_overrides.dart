@@ -6,9 +6,14 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 // ignore: implementation_imports
+import 'package:build/src/generate/exceptions.dart';
+// ignore: implementation_imports
 import 'package:build/src/internal.dart';
+// ignore: implementation_imports
+import 'package:build/src/logging/build_log.dart';
+// ignore: implementation_imports
+import 'package:build/src/package_graph/package_graph.dart';
 import 'package:build_config/build_config.dart';
-import 'package:build_runner_core/build_runner_core.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 

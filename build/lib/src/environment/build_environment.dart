@@ -5,15 +5,14 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:build/build.dart';
-
-import '../../../../build_runner_core/lib/src/asset/reader_writer.dart';
-import '../../../../build_runner_core/lib/src/asset/writer.dart';
-import '../../../../build_runner_core/lib/src/logging/build_log.dart';
-import '../../../../build_runner_core/lib/src/package_graph/package_graph.dart';
+import '../asset/reader.dart';
+import '../asset/reader_writer.dart';
+import '../asset/writer.dart';
 import '../generate/build_directory.dart';
 import '../generate/build_result.dart';
 import '../generate/finalized_assets_view.dart';
+import '../logging/build_log.dart';
+import '../package_graph/package_graph.dart';
 import 'create_merged_dir.dart';
 
 /// The I/O and UI environment that the build runs in.

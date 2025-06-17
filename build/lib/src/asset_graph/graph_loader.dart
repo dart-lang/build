@@ -5,19 +5,18 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:build/build.dart';
-import 'package:build/experiments.dart';
 // ignore: implementation_imports
-import 'package:build_runner/src/internal.dart';
+import 'package:build_runner/src/build_script_generate/build_process_state.dart';
 import 'package:built_collection/built_collection.dart';
 
-import '../../../../build_runner_core/lib/src/asset/writer.dart';
-import '../../../../build_runner_core/lib/src/logging/build_log.dart';
-import '../../../../build_runner_core/lib/src/package_graph/package_graph.dart';
-import '../../../../build_runner_core/lib/src/util/constants.dart';
-import '../../../../build_runner_core/lib/src/util/sdk_version_match.dart';
+import '../../build.dart';
+import '../../experiments.dart';
 import '../generate/build_phases.dart';
 import '../generate/exceptions.dart';
+import '../logging/build_log.dart';
+import '../package_graph/package_graph.dart';
+import '../util/constants.dart';
+import '../util/sdk_version_match.dart';
 import 'exceptions.dart';
 import 'graph.dart';
 
