@@ -1,3 +1,8 @@
+## 3.3.0-dev.1
+
+- Use `build` 3.0.0-dev.1.
+- Use `build_resolvers` 3.0.0-dev.1.
+
 ## 3.2.0
 
 - Fixes when passing a `readerWriter` to `testBuilders`: don't count initial
@@ -6,10 +11,6 @@
 - Add `readAllSourcesFromFilesystem` parameter to `resolveSources`. Set it to
   `true` to make the method behave as it did in `build_test` 2.2.0.
 - Fix to `resolveSources` error handling.
-
-## 3.1.1
-
-- Bug fix: stop parsing `testBuilder` asset paths as globs.
 
 ## 3.1.0
 

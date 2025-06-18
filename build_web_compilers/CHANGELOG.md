@@ -1,3 +1,7 @@
+## 4.2.0
+
+- Allow `build` 3.0.0.
+
 ## 4.1.6
 
 - Allow Dart SDK 3.9.x and 3.10 prerelease.

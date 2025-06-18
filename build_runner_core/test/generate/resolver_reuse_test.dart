@@ -55,21 +55,15 @@ void main() {
             // Check that the `.imported.dart` library is still reachable
             // through the resolver.
             var importedLibrary =
-                inputLibrary.definingCompilationUnit.libraryImports
+                inputLibrary.firstFragment.libraryImports2
                     .firstWhere(
-                      (l) => l
-                          .importedLibrary!
-                          .definingCompilationUnit
-                          .source
-                          .uri
-                          .path
-                          .endsWith('.imported.dart'),
+                      (l) => l.importedLibrary2!.uri.path.endsWith(
+                        '.imported.dart',
+                      ),
                     )
-                    .importedLibrary!;
+                    .importedLibrary2!;
             var classNames =
-                importedLibrary.definingCompilationUnit.classes
-                    .map((c) => c.name)
-                    .toList();
+                importedLibrary.classes.map((c) => c.name3).toList();
             return buildStep.writeAsString(
               buildStep.inputId.addExtension('.bar'),
               '$classNames',
@@ -121,7 +115,7 @@ void main() {
             build: (buildStep, _) async {
               var library = await buildStep.inputLibrary;
               var annotation =
-                  library.topLevelElements.single.metadata.single
+                  library.topLevelFunctions.single.metadata2.annotations.single
                       .computeConstantValue();
               await buildStep.writeAsString(
                 buildStep.inputId.changeExtension('.g2.dart'),

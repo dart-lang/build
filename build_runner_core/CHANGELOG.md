@@ -1,3 +1,8 @@
+## 9.2.0-dev.1
+
+- Use `build` 3.0.0-dev.1.
+- Use `build_resolvers` 3.0.0-dev.1.
+
 ## 9.1.2
 
 - Bug fix: fix incremental build when previous build had `package:` import of

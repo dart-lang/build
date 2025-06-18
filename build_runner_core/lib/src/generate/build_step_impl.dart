@@ -1,14 +1,13 @@
 // Copyright (c) 2017, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-// ignore_for_file: deprecated_member_use
 
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/element2.dart';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
 // ignore: implementation_imports
@@ -35,7 +34,7 @@ class BuildStepImpl implements BuildStep, AssetReaderState, AssetReaderWriter {
   final AssetId inputId;
 
   @override
-  Future<LibraryElement> get inputLibrary async {
+  Future<LibraryElement2> get inputLibrary async {
     if (_isComplete) throw BuildStepCompletedException();
     return resolver.libraryFor(inputId);
   }
@@ -256,15 +255,17 @@ class _DelayedResolver implements Resolver {
       (await _delegate).isLibrary(assetId);
 
   @override
-  Stream<LibraryElement> get libraries {
-    var completer = StreamCompleter<LibraryElement>();
+  Stream<LibraryElement2> get libraries {
+    var completer = StreamCompleter<LibraryElement2>();
     _delegate.then((r) => completer.setSourceStream(r.libraries));
     return completer.stream;
   }
 
   @override
-  Future<AstNode?> astNodeFor(Element element, {bool resolve = false}) async =>
-      (await _delegate).astNodeFor(element, resolve: resolve);
+  Future<AstNode?> astNodeFor(
+    Fragment fragment, {
+    bool resolve = false,
+  }) async => (await _delegate).astNodeFor(fragment, resolve: resolve);
 
   @override
   Future<CompilationUnit> compilationUnitFor(
@@ -276,7 +277,7 @@ class _DelayedResolver implements Resolver {
   );
 
   @override
-  Future<LibraryElement> libraryFor(
+  Future<LibraryElement2> libraryFor(
     AssetId assetId, {
     bool allowSyntaxErrors = false,
   }) async => (await _delegate).libraryFor(
@@ -285,10 +286,10 @@ class _DelayedResolver implements Resolver {
   );
 
   @override
-  Future<LibraryElement?> findLibraryByName(String libraryName) async =>
+  Future<LibraryElement2?> findLibraryByName(String libraryName) async =>
       (await _delegate).findLibraryByName(libraryName);
 
   @override
-  Future<AssetId> assetIdForElement(Element element) async =>
+  Future<AssetId> assetIdForElement(Element2 element) async =>
       (await _delegate).assetIdForElement(element);
 }

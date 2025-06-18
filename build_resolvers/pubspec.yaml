@@ -1,5 +1,5 @@
 name: build_resolvers
-version: 2.5.4
+version: 3.0.0-dev.1
 description: Resolve Dart code in a Builder
 repository: https://github.com/dart-lang/build/tree/master/build_resolvers
 resolution: workspace
@@ -8,10 +8,10 @@ environment:
   sdk: ^3.7.0
 
 dependencies:
-  analyzer: '>=6.9.0 <8.0.0'
+  analyzer: '>=7.4.0 <8.0.0'
   async: ^2.5.0
-  build: '2.5.4'
-  build_runner_core: '9.1.2'
+  build: '3.0.0-dev.1'
+  build_runner_core: '9.2.0-dev.1'
   collection: ^1.17.0
   convert: ^3.1.1
   crypto: ^3.0.0

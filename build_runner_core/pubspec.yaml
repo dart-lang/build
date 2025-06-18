@@ -1,5 +1,5 @@
 name: build_runner_core
-version: 9.1.2
+version: 9.2.0-dev.1
 description: Core tools to organize the structure of a build and run Builders.
 repository: https://github.com/dart-lang/build/tree/master/build_runner_core
 resolution: workspace
@@ -15,10 +15,10 @@ platforms:
 dependencies:
   analyzer: '>=6.9.0 <8.0.0'
   async: ^2.5.0
-  build: '2.5.4'
+  build: '3.0.0-dev.1'
   build_config: ^1.0.0
-  build_resolvers: '2.5.4'
-  build_runner: '2.5.4'
+  build_resolvers: '3.0.0-dev.1'
+  build_runner: '2.6.0-dev.1'
   built_collection: ^5.1.1
   built_value: ^8.10.1
   collection: ^1.15.0
@@ -40,9 +40,11 @@ dev_dependencies:
   _test_common:
     path: ../_test_common
   build_test: ^3.0.0
-  built_value_generator: ^8.10.1
+  # TODO(davidmorgan): add back when released for build 3.0.0.
+  # built_value_generator: ^8.10.1
   dart_flutter_team_lints: ^3.1.0
-  json_serializable: ^6.0.0
+  # TODO(davidmorgan): add back when released for build 3.0.0.
+  # json_serializable: ^6.0.0
   test: ^1.16.0
   test_descriptor: ^2.0.0
   test_process: ^2.0.0
