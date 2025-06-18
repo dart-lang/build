@@ -6,7 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/element2.dart';
 import 'package:build/build.dart';
 import 'package:build_runner_core/src/logging/build_log.dart';
 import 'package:build_runner_core/src/util/constants.dart';
@@ -495,8 +495,10 @@ class TestBuilder implements Builder {
         final library = await buildStep.resolver.libraryFor(resolve.assetId);
         for (final import in library.transitiveImports) {
           recordInput(
-            AssetId.resolve(import.source.uri),
-            import.source.exists() ? import.source.contents.data : null,
+            AssetId.resolve(import.uri),
+            import.firstFragment.source.exists()
+                ? import.firstFragment.source.contents.data
+                : null,
           );
         }
       } else {
@@ -571,16 +573,16 @@ extension AssetIdExtension on AssetId {
 }
 
 // ignore_for_file: deprecated_member_use
-extension TransitiveLibrariesExtension on LibraryElement {
+extension TransitiveLibrariesExtension on LibraryElement2 {
   /// Finds all transitive imports from this library, excluding SDK libraries.
-  Set<LibraryElement> get transitiveImports {
-    final result = Set<LibraryElement>.identity();
+  Set<LibraryElement2> get transitiveImports {
+    final result = Set<LibraryElement2>.identity();
     final work = [this];
 
     while (work.isNotEmpty) {
       final current = work.removeLast();
       // For each library found, add its direct dependencies.
-      for (final library in current.importedLibraries) {
+      for (final library in current.firstFragment.importedLibraries2) {
         if (library.isInSdk) continue;
         if (result.add(library)) {
           work.add(library);

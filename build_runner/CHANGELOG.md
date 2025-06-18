@@ -1,3 +1,8 @@
+## 2.6.0
+
+- Use `build` 3.0.0.
+- Use `build_resolvers` 3.0.0.
+
 ## 2.5.3
 
 - Bug fix: fix corner case with checked in generated output that could cause

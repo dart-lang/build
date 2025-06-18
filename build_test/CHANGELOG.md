@@ -1,6 +1,7 @@
-## 3.1.1
+## 3.2.0
 
-- Bug fix: stop parsing `testBuilder` asset paths as globs.
+- Use `build` 3.0.0.
+- Use `build_resolvers` 3.0.0.
 
 ## 3.1.0
 
