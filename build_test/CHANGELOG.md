@@ -1,4 +1,4 @@
-## 3.1.0-wip
+## 3.1.0
 
 - Add `inputsTrackedFor` and `resolverEntrypointsTrackedFor` to
   `ReaderWriterTesting`, so tests can determine what each build step
