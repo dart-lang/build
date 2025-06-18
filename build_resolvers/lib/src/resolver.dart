@@ -6,8 +6,6 @@
 
 import 'dart:async';
 import 'dart:collection';
-import 'dart:convert';
-import 'dart:io';
 import 'dart:isolate';
 
 import 'package:analyzer/dart/analysis/features.dart';
@@ -26,7 +24,6 @@ import 'package:collection/collection.dart' show IterableExtension;
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
-import 'package:yaml/yaml.dart';
 
 import 'analysis_driver.dart';
 import 'analysis_driver_filesystem.dart';
@@ -553,76 +550,13 @@ class AnalyzerResolvers implements Resolvers {
 void _warnOnLanguageVersionMismatch() async {
   if (sdkLanguageVersion <= ExperimentStatus.currentVersion) return;
 
-  HttpClient? client;
-  try {
-    client = HttpClient();
-    var request = await client.getUrl(
-      Uri.https('pub.dartlang.org', 'api/packages/analyzer'),
-    );
-    var response = await request.close();
-    var content = StringBuffer();
-    await response
-        .transform(utf8.decoder)
-        .listen(content.write)
-        .asFuture<void>();
-    var json = jsonDecode(content.toString()) as Map<String, Object?>;
-    var latestAnalyzer = (json['latest'] as Map<String, Object?>)['version'];
-    var analyzerPubspecPath = p.join(
-      await packagePath('analyzer'),
-      'pubspec.yaml',
-    );
-    var currentAnalyzer =
-        (loadYaml(await File(analyzerPubspecPath).readAsString())
-            as YamlMap)['version'];
-
-    if (latestAnalyzer == currentAnalyzer) {
-      log.warning('''
-The latest `analyzer` version may not fully support your current SDK version.
-
-Analyzer language version: ${ExperimentStatus.currentVersion}
-SDK language version: $sdkLanguageVersion
-
-Check for an open issue at:
-https://github.com/dart-lang/sdk/issues?q=is%3Aissue+is%3Aopen+No+published+analyzer+$sdkLanguageVersion
-and thumbs up and/or subscribe to the existing issue, or file a new issue at
-https://github.com/dart-lang/sdk/issues/new with the title
-"No published analyzer available for language version $sdkLanguageVersion".
-    ''');
-    } else {
-      var upgradeCommand =
-          isFlutter ? 'flutter packages upgrade' : 'dart pub upgrade';
-      log.warning('''
-Your current `analyzer` version may not fully support your current SDK version.
-
-Analyzer language version: ${ExperimentStatus.currentVersion}
-SDK language version: $sdkLanguageVersion
-
-Please update to the latest `analyzer` version ($latestAnalyzer) by running
-`$upgradeCommand`.
-
-If you are not getting the latest version by running the above command, you
-can try adding a constraint like the following to your pubspec to start
-diagnosing why you can't get the latest version:
-
-dev_dependencies:
-  analyzer: ^$latestAnalyzer
-''');
-    }
-  } catch (_) {
-    // Fall back on a basic message if we fail to detect the latest version for
-    // any reason.
-    log.warning('''
-Your current `analyzer` version may not fully support your current SDK version.
-
-Analyzer language version: ${ExperimentStatus.currentVersion}
-SDK language version: $sdkLanguageVersion
-
-Please ensure you are on the latest `analyzer` version, which can be seen at
-https://pub.dev/packages/analyzer.
-''');
-  } finally {
-    client?.close();
-  }
+  final upgradeCommand =
+      isFlutter ? 'flutter packages upgrade' : 'dart pub upgrade';
+  buildLog.warning(
+    'SDK language version $sdkLanguageVersion is newer than `analyzer` '
+    'language version ${ExperimentStatus.currentVersion}. '
+    'Run `$upgradeCommand`.',
+  );
 }
 
 /// The current feature set based on the current sdk version and enabled
@@ -630,7 +564,7 @@ https://pub.dev/packages/analyzer.
 FeatureSet _featureSet({List<String> enableExperiments = const []}) {
   if (enableExperiments.isNotEmpty &&
       sdkLanguageVersion > ExperimentStatus.currentVersion) {
-    log.warning('''
+    buildLog.warning('''
 Attempting to enable experiments `$enableExperiments`, but the current SDK
 language version does not match your `analyzer` package language version:
 
