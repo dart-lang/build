@@ -1,4 +1,4 @@
-## 9.1.0-wip
+## 9.1.0
 
 - More detailed tracking of reads for the benefit of `build_test`.
 

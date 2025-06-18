@@ -1,4 +1,4 @@
-## 2.5.2-wip
+## 2.5.2
 
 - Simplify warnings for outdated `analyzer`.
 
