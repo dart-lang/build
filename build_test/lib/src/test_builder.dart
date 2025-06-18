@@ -230,12 +230,7 @@ Future<TestBuilderResult> testBuilders(
   TestReaderWriter? readerWriter,
   bool enableLowResourceMode = false,
 }) async {
-  onLog ??=
-      (log) => printOnFailure(
-        '$log'
-        '${log.error == null ? '' : '  ${log.error}'}'
-        '${log.stackTrace == null ? '' : '  ${log.stackTrace}'}',
-      );
+  onLog ??= _printOnFailureOrPrint;
 
   var inputIds = {
     for (var descriptor in sourceAssets.keys) makeAssetId(descriptor),
@@ -369,4 +364,18 @@ class TestBuilderResult {
   final TestReaderWriter readerWriter;
 
   TestBuilderResult({required this.buildResult, required this.readerWriter});
+}
+
+void _printOnFailureOrPrint(LogRecord record) {
+  final message =
+      '$record'
+      '${record.error == null ? '' : '  ${record.error}'}'
+      '${record.stackTrace == null ? '' : '  ${record.stackTrace}'}';
+  try {
+    // This throws if a test is not currently running.
+    printOnFailure(message);
+  } catch (_) {
+    // Print instead.
+    print(message);
+  }
 }

@@ -10,7 +10,23 @@ import 'package:glob/glob.dart';
 import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
 
-void main() {
+Future<void> main() async {
+  // Default logging uses `printOnFailure` which crashes outside tests; check
+  // that it falls back to `print` outside tests.
+  final printed = <String>[];
+  await runZonedGuarded(
+    () async {
+      await testBuilder(TestBuilder(), {'a|lib/a.dart': ''}, rootPackage: 'a');
+    },
+    (_, _) {},
+    zoneSpecification: ZoneSpecification(
+      print: (_, _, _, string) {
+        printed.add(string);
+      },
+    ),
+  );
+  if (printed.isEmpty) throw StateError('Expected some prints.');
+
   test('can glob files in the root package', () async {
     var assets = {
       'a|lib/a.globPlaceholder': '',

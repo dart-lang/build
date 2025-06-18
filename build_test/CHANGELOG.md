@@ -5,6 +5,8 @@
   read and resolved.
 - Add `loadIsolateSources` to `ReaderWriterTesting`. It loads all real
   sources visible to the test into memory.
+- `testBuilder` default `onLog` now works outside of tests: it falls
+  back to `print` instead of crashing.
 
 ## 3.0.0
 
