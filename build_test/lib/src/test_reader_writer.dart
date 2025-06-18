@@ -32,12 +32,29 @@ abstract interface class ReaderWriterTesting {
   /// The assets that have been recorded as inputs of the build.
   Iterable<AssetId> get inputsTracked;
 
+  /// The assets that have been recorded as inputs of the build, filtered to
+  /// build steps for [primaryInput] and/or with [builderLabel].
+  ///
+  /// Builder labels are the builder names that appear in log output, for
+  /// example `source_gen:combining_builder`.
+  Iterable<AssetId> inputsTrackedFor({
+    AssetId? primaryInput,
+    String? builderLabel,
+  });
+
   /// The assets that the build resolved using the analyzer.
   ///
   /// Only the entrypoints are recorded, but all sources reachable transitively
   /// via its directives will be treated as dependencies of the build for
   /// invalidation purposes.
   Iterable<AssetId> get resolverEntrypointsTracked;
+
+  /// The assets that have been resolved using the analyzer, filtered to
+  /// build steps for [primaryInput] and/or with [builderLabel].
+  Iterable<AssetId> resolverEntrypointsTrackedFor({
+    AssetId? primaryInput,
+    String? builderLabel,
+  });
 
   /// The assets that have been read via the [TestReaderWriter]'s non-test
   /// APIs.
