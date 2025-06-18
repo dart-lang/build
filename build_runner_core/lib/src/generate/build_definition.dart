@@ -157,7 +157,7 @@ class _Loader {
               .where(inputSources.contains)
               .toSet();
       if (conflictsInDeps.isNotEmpty) {
-        log.severe(
+        buildLog.error(
           'There are existing files in dependencies which conflict '
           'with files that a Builder may produce. These must be removed or '
           'the Builders disabled before a build can continue: '

@@ -10,6 +10,7 @@ import 'package:glob/glob.dart';
 
 import '../generate/input_matcher.dart';
 import '../generate/options.dart' show defaultNonRootVisibleAssets;
+import '../logging/build_log.dart';
 import 'package_graph.dart';
 
 /// Like a [PackageGraph] but packages are further broken down into modules
@@ -105,7 +106,7 @@ class TargetGraph {
         );
         var missing = _missingSources(nodes, requiredIds);
         if (missing.isNotEmpty) {
-          log.warning(
+          buildLog.warning(
             'The package `${package.name}` does not include some required '
             'sources in any of its targets (see their build.yaml file).\n'
             'The missing sources are:\n'
