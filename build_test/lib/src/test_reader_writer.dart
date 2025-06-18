@@ -26,6 +26,9 @@ abstract interface class TestReaderWriter
 
 /// Access to [TestReaderWriter] state for testing.
 abstract interface class ReaderWriterTesting {
+  /// Loads all `lib` files visible to the current isolate into memory.
+  Future<void> loadIsolateSources();
+
   /// All the assets that exist on the [TestReaderWriter] in-memory filesystem.
   Iterable<AssetId> get assets;
 

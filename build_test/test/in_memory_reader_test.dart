@@ -59,5 +59,18 @@ void main() {
         );
       },
     );
+
+    test('load isolate sources', () async {
+      final readerWriter = InMemoryAssetReaderWriter();
+      await readerWriter.testing.loadIsolateSources();
+      expect(
+        readerWriter.testing.assets,
+        containsAll([
+          AssetId('build', 'lib/build.dart'),
+          AssetId('glob', 'lib/glob.dart'),
+          AssetId('test', 'lib/test.dart'),
+        ]),
+      );
+    });
   });
 }

@@ -17,6 +17,7 @@ import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
 import 'fake_watcher.dart';
+import 'package_reader.dart';
 import 'test_reader_writer.dart';
 
 /// The implementation behind [TestReaderWriter].
@@ -181,6 +182,19 @@ class _ReaderWriterTestingImpl implements ReaderWriterTesting {
   final InMemoryAssetReaderWriter _readerWriter;
 
   _ReaderWriterTestingImpl(this._readerWriter);
+
+  @override
+  Future<void> loadIsolateSources() async {
+    final reader = await PackageAssetReader.currentIsolate();
+    for (final package in reader.packageConfig.packages) {
+      await for (final id in reader.findAssets(
+        Glob('**'),
+        package: package.name,
+      )) {
+        await _readerWriter.writeAsBytes(id, await reader.readAsBytes(id));
+      }
+    }
+  }
 
   @override
   Iterable<AssetId> get assets =>

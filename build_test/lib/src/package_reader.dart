@@ -22,10 +22,11 @@ import 'package:stream_transform/stream_transform.dart';
 /// ```
 ///
 /// Doesn't implement [AssetReader]: for cases that need an [AssetReader],
-/// use this class to read the files then write them into an
-/// `InMemoryAssetReaderWriter`.
+/// use this class to read the files then write them into a `TestReaderWriter`.
+/// To copy all the sources see `TestReaderWriter.testing.loadIsolateSources`.
 class PackageAssetReader {
-  final PackageConfig _packageConfig;
+  /// The package config.
+  final PackageConfig packageConfig;
 
   /// What package is the originating build occurring in.
   final String? _rootPackage;
@@ -39,7 +40,7 @@ class PackageAssetReader {
   /// new PackageAssetReader(
   ///   await loadPackageConfigUri(await Isolate.packageConfig));
   /// ```
-  PackageAssetReader(this._packageConfig, [this._rootPackage]);
+  PackageAssetReader(this.packageConfig, [this._rootPackage]);
 
   /// A [PackageAssetReader] with a single [packageRoot] configured.
   ///
@@ -96,7 +97,7 @@ class PackageAssetReader {
   File? _resolve(AssetId id) {
     final uri = id.uri;
     if (uri.isScheme('package')) {
-      final uri = _packageConfig.resolve(id.uri);
+      final uri = packageConfig.resolve(id.uri);
       if (uri != null) {
         return File.fromUri(uri);
       }
@@ -112,7 +113,7 @@ class PackageAssetReader {
     final rootPackage = _rootPackage;
     final root =
         rootPackage != null
-            ? _packageConfig[rootPackage]?.root.toFilePath()
+            ? packageConfig[rootPackage]?.root.toFilePath()
             : null;
     if (root != null && Directory(p.join(root, 'lib')).existsSync()) {
       return root;
@@ -129,18 +130,25 @@ class PackageAssetReader {
         'explicit `package`.',
       );
     }
-    var packageLibDir = _packageConfig[package]?.packageUriRoot;
+    var packageLibDir = packageConfig[package]?.packageUriRoot;
     if (packageLibDir == null) return const Stream.empty();
-
-    var packageFiles = Directory.fromUri(packageLibDir)
-        .list(recursive: true)
-        .whereType<File>()
-        .map(
-          (f) =>
-              p.join('lib', p.relative(f.path, from: p.fromUri(packageLibDir))),
-        );
+    var result = const Stream<String>.empty();
+    final directory = Directory.fromUri(packageLibDir);
+    if (directory.existsSync()) {
+      result = result.merge(
+        Directory.fromUri(packageLibDir)
+            .list(recursive: true)
+            .whereType<File>()
+            .map(
+              (f) => p.join(
+                'lib',
+                p.relative(f.path, from: p.fromUri(packageLibDir)),
+              ),
+            ),
+      );
+    }
     if (package == _rootPackage) {
-      packageFiles = packageFiles.merge(
+      result = result.merge(
         Directory(_rootPackagePath)
             .list(recursive: true)
             .whereType<File>()
@@ -148,7 +156,7 @@ class PackageAssetReader {
             .where((p) => !(p.startsWith('packages/') || p.startsWith('lib/'))),
       );
     }
-    return packageFiles.where(glob.matches).map((p) => AssetId(package!, p));
+    return result.where(glob.matches).map((p) => AssetId(package!, p));
   }
 
   Future<bool> canRead(AssetId id) =>
