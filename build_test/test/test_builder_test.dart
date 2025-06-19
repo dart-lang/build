@@ -356,6 +356,18 @@ Future<void> main() async {
       outputs: {'a|foo.out': 'new input'},
     );
   });
+
+  test('input paths are not parsed as globs', () {
+    return testBuilder(
+      TestBuilder(
+        buildExtensions: {
+          '.in': ['.out'],
+        },
+      ),
+      {'a|[.in': 'input'},
+      outputs: {'a|[.out': 'input'},
+    );
+  });
 }
 
 /// Concatenates the contents of multiple text files into a single output.
