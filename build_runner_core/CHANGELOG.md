@@ -2,6 +2,8 @@
 
 - Bug fix: fix corner case with checked in generated output that could cause
   a crash.
+- Bug fix: during initial build cleanup, really delete files that correspond
+  to hidden generated files.
 
 ## 9.1.0
 
