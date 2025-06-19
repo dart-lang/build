@@ -70,4 +70,28 @@ void main() {
       expect(await tester.build(), Result(written: ['a.g']));
     });
   });
+
+  group('a <== a.g <== a.g.other', () {
+    setUp(() {
+      // Start with output source on disk that the build would not actually
+      // write: with the output of a previous build used as input.
+      //
+      // The order matters because it affects the codepath in `graph.dart`.
+      tester.sources(['a.g.other.g', 'a.g.other', 'a.g', 'a']);
+
+      tester.builder(from: '', to: '.g', outputIsVisible: true)
+        ..reads('')
+        ..writes('.g');
+      tester.builder(from: '.g', to: '.g.other', outputIsVisible: true)
+        ..reads('.g')
+        ..writes('.g.other');
+    });
+
+    test(
+      'can ignore multiple level pregenerated output from two builders',
+      () async {
+        expect(await tester.build(), Result(written: ['a.g', 'a.g.other']));
+      },
+    );
+  });
 }
