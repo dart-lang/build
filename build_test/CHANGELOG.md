@@ -1,3 +1,7 @@
+## 3.1.1-wip
+
+- Bug fix: stop parsing `testBuilder` asset paths as globs.
+
 ## 3.1.0
 
 - Add `inputsTrackedFor` and `resolverEntrypointsTrackedFor` to

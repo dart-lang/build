@@ -11,6 +11,7 @@ import 'package:build_resolvers/build_resolvers.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 // ignore: implementation_imports
 import 'package:build_runner_core/src/generate/build_series.dart';
+import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
@@ -312,7 +313,7 @@ Future<TestBuilderResult> testBuilders(
                         r'web/$web$',
                         ...inputIds
                             .where((id) => id.package == package)
-                            .map((id) => id.path),
+                            .map((id) => Glob.quote(id.path)),
                       ],
                     },
                   },
