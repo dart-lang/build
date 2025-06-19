@@ -124,7 +124,7 @@ class AssetGraph implements GeneratedAssetHider {
     );
     // Pre-emptively compute digests for the nodes we know have outputs.
     await graph._setDigests(
-      sources.where((id) => graph.get(id)!.primaryOutputs.isNotEmpty),
+      sources.where((id) => graph.get(id)?.primaryOutputs.isNotEmpty == true),
       digestReader,
     );
     // Always compute digests for all internal nodes.
@@ -481,6 +481,8 @@ class AssetGraph implements GeneratedAssetHider {
   ///
   /// If [placeholders] is supplied they will be added to [newSources] to create
   /// the full input set.
+  ///
+  /// May remove nodes if sources overlap with generated outputs.
   void _addOutputsForSources(
     BuildPhases buildPhases,
     Set<AssetId> newSources,

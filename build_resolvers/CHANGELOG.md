@@ -1,10 +1,14 @@
+## 2.5.3-wip
+
+- Use `build_runner_core` 9.1.1.
+
 ## 2.5.2
 
 - Simplify warnings for outdated `analyzer`.
 
 ## 2.5.1
 
-- Use `build_runner_core` 2.5.1.
+- Use `build_runner_core` 9.0.1.
 
 ## 2.5.0
 

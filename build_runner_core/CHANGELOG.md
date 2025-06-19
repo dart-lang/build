@@ -1,3 +1,8 @@
+## 9.1.1-wip
+
+- Bug fix: fix corner case with checked in generated output that could cause
+  a crash.
+
 ## 9.1.0
 
 - More detailed tracking of reads for the benefit of `build_test`.

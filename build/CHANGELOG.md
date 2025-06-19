@@ -1,3 +1,7 @@
+## 2.5.3-wip
+
+- Use `build_runner_core` 9.1.1.
+
 ## 2.5.2
 
 - Use `build_runner_core` 9.1.0.

@@ -1,3 +1,8 @@
+## 2.5.3-wip
+
+- Bug fix: fix corner case with checked in generated output that could cause
+  a crash.
+
 ## 2.5.2
 
 - Simplify warnings for outdated `analyzer`.
