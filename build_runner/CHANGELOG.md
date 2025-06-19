@@ -962,7 +962,7 @@ also work when you create an output directory.
 
 - Switch to use a `PollingDirectoryWatcher` on windows, which should fix file
   watching with the `--output` option. Follow along at
-  https://github.com/dart-lang/watcher/issues/52 for more details.
+  https://github.com/dart-lang/tools/issues/1713 for more details.
 
 ## 0.7.11
 

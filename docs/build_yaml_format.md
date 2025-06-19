@@ -13,7 +13,7 @@ key                      | value                                                
 targets                  | Map<String, [BuildTarget](#buildtarget)>                                   | a single target with the same name as the package
 builders                 | Map<String, [BuilderDefinition](#builderdefinition)>                       | empty
 post_process_builders    | Map<String, [PostProcessBuilderDefinition](#postprocessbuilderdefinition)> | empty
-global_options           | Map<String, [GlobalBuilderOptions](#globalBuilderOptions)>                 | empty
+global_options           | Map<String, [GlobalBuilderOptions](#globalbuilderoptions)>                 | empty
 additional_public_assets | List<String>                                                               | empty
 
 ## BuildTarget
