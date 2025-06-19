@@ -7,8 +7,6 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 // ignore: implementation_imports
-import 'package:build/src/internal.dart';
-// ignore: implementation_imports
 import 'package:build_runner/src/internal.dart';
 import 'package:watcher/watcher.dart';
 
@@ -167,10 +165,10 @@ class _Loader {
       }
 
       buildLog.doing('Doing initial build cleanup.');
-      await _initialBuildCleanup(
-        conflictingOutputs,
-        _environment.writer.copyWith(generatedAssetHider: assetGraph),
-      );
+      // Use a writer with no asset graph. If it had the asset graph, it would
+      // delete from the generated output location, but the aim is to delete
+      // from input sources.
+      await _initialBuildCleanup(conflictingOutputs, _environment.writer);
     }
 
     return BuildDefinition._(

@@ -344,6 +344,18 @@ Future<void> main() async {
       {AssetId('a', 'bar.other')},
     );
   });
+
+  test('pre-existing output is replaced by new generated output', () {
+    return testBuilder(
+      TestBuilder(
+        buildExtensions: {
+          '.in': ['.out'],
+        },
+      ),
+      {'a|foo.in': 'new input', 'a|foo.out': 'pre-existing output'},
+      outputs: {'a|foo.out': 'new input'},
+    );
+  });
 }
 
 /// Concatenates the contents of multiple text files into a single output.
