@@ -1,3 +1,8 @@
+## 3.2.0
+
+- Add `readAllSourcesFromFilesystem` parameter to `resolveSources`. Set it to
+  `true` to make the method behave as it did in `build_test` 2.2.0.
+
 ## 3.1.1
 
 - Bug fix: stop parsing `testBuilder` asset paths as globs.
