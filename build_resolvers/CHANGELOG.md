@@ -1,4 +1,4 @@
-## 2.5.3-wip
+## 2.5.3
 
 - Use `build_runner_core` 9.1.1.
 

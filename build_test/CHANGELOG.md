@@ -1,4 +1,4 @@
-## 3.1.1-wip
+## 3.1.1
 
 - Bug fix: stop parsing `testBuilder` asset paths as globs.
 
