@@ -8,6 +8,7 @@ import 'dart:isolate';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_resolvers/build_resolvers.dart';
+import 'package:glob/glob.dart';
 import 'package:package_config/package_config.dart';
 
 import 'package_reader.dart';
@@ -28,6 +29,7 @@ Future<T> resolveSource<T>(
   AssetId? inputId,
   PackageConfig? packageConfig,
   Set<AssetId>? nonInputsToReadFromFilesystem,
+  bool? readAllSourcesFromFilesystem,
   Resolvers? resolvers,
 }) {
   inputId ??= AssetId('_resolve_source', 'lib/_resolve_source.dart');
@@ -37,6 +39,7 @@ Future<T> resolveSource<T>(
     action,
     packageConfig: packageConfig,
     nonInputsToReadFromFilesystem: nonInputsToReadFromFilesystem,
+    readAllSourcesFromFilesystem: readAllSourcesFromFilesystem,
     resolverFor: inputId,
     resolvers: resolvers,
   );
@@ -83,6 +86,12 @@ Future<T> resolveSource<T>(
 /// - by default, [PackageAssetReader.currentIsolate]. A custom [packageConfig]
 /// may be provided to map files not visible to the current package's runtime.
 ///
+/// By default, only assets listed in [inputs] with value [useAssetReader] are
+/// read from the real filesystem. To read more real files: pass
+/// [nonInputsToReadFromFilesystem] for individual files, or
+/// [readAllSourcesFromFilesystem] to read all sources available with
+/// [packageConfig].
+///
 /// [assetReaderChecks], if provided, runs after the action completes and can be
 /// used to add expectations on the reader state.
 Future<T> resolveSources<T>(
@@ -90,6 +99,7 @@ Future<T> resolveSources<T>(
   FutureOr<T> Function(Resolver resolver) action, {
   PackageConfig? packageConfig,
   Set<AssetId>? nonInputsToReadFromFilesystem,
+  bool? readAllSourcesFromFilesystem,
   String? resolverFor,
   String? rootPackage,
   FutureOr<void> Function(TestReaderWriter)? assetReaderChecks,
@@ -105,6 +115,7 @@ Future<T> resolveSources<T>(
     action,
     packageConfig: packageConfig,
     nonInputsToReadFromFilesystem: nonInputsToReadFromFilesystem,
+    readAllSourcesFromFilesystem: readAllSourcesFromFilesystem,
     resolverFor: AssetId.parse(resolverFor ?? inputs.keys.first),
     assetReaderChecks: assetReaderChecks,
     resolvers: resolvers,
@@ -117,6 +128,7 @@ Future<T> resolveAsset<T>(
   FutureOr<T> Function(Resolver resolver) action, {
   PackageConfig? packageConfig,
   Set<AssetId>? nonInputsToReadFromFilesystem,
+  bool? readAllSourcesFromFilesystem,
   Future<void>? tearDown,
   Resolvers? resolvers,
 }) {
@@ -126,6 +138,7 @@ Future<T> resolveAsset<T>(
     action,
     packageConfig: packageConfig,
     nonInputsToReadFromFilesystem: nonInputsToReadFromFilesystem,
+    readAllSourcesFromFilesystem: readAllSourcesFromFilesystem,
     resolverFor: inputId,
     resolvers: resolvers,
   );
@@ -137,11 +150,12 @@ Future<T> resolveAsset<T>(
 /// instead read from the file system, otherwise the provided text is used as
 /// the contents of the asset.
 Future<T> _resolveAssets<T>(
-  Map<String, String> inputs,
+  Map<String, Object> inputs,
   String rootPackage,
   FutureOr<T> Function(Resolver resolver) action, {
   PackageConfig? packageConfig,
   Set<AssetId>? nonInputsToReadFromFilesystem,
+  bool? readAllSourcesFromFilesystem,
   AssetId? resolverFor,
   FutureOr<void> Function(TestReaderWriter)? assetReaderChecks,
   Resolvers? resolvers,
@@ -150,7 +164,6 @@ Future<T> _resolveAssets<T>(
       packageConfig ??
       await loadPackageConfigUri((await Isolate.packageConfig)!);
   final resolveBuilder = _ResolveSourceBuilder(action, resolverFor);
-
   // Replace any `useAssetReader` inputs with actual values.
   final inputAssetIds = inputs.keys.map(AssetId.parse).toList();
   final assetReader = PackageAssetReader(resolvedConfig, rootPackage);
@@ -161,10 +174,29 @@ Future<T> _resolveAssets<T>(
     }
   }
 
-  // Copy any additionally requested files from the filesystem to `inputs`.
-  if (nonInputsToReadFromFilesystem != null) {
-    for (final id in nonInputsToReadFromFilesystem) {
-      inputs[id.toString()] = await assetReader.readAsString(id);
+  if (nonInputsToReadFromFilesystem != null ||
+      readAllSourcesFromFilesystem == true) {
+    // Callers likely pass a `Map<String, String>`, expand to allow `Object`
+    // so files can be read as bytes, for non-String data files.
+    inputs = Map<String, Object>.from(inputs);
+
+    // Copy any additionally requested files from the filesystem to `inputs`.
+    if (nonInputsToReadFromFilesystem != null) {
+      for (final id in nonInputsToReadFromFilesystem) {
+        inputs[id.toString()] = await assetReader.readAsBytes(id);
+      }
+    }
+    if (readAllSourcesFromFilesystem == true) {
+      for (final package in assetReader.packageConfig.packages) {
+        await for (final id in assetReader.findAssets(
+          Glob('**'),
+          package: package.name,
+        )) {
+          try {
+            inputs[id.toString()] = await assetReader.readAsBytes(id);
+          } catch (_) {}
+        }
+      }
     }
   }
 
