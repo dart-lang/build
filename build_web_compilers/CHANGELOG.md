@@ -1,3 +1,7 @@
+## 4.2.0
+
+- Allow `build` 3.0.0.
+
 ## 4.1.5
 
 - Remove dependency on the deprecated `package:js`.
