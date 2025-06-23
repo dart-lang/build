@@ -1,3 +1,7 @@
+## 4.1.6
+
+- Allow Dart SDK 3.9.x and 3.10 prerelease.
+
 ## 4.1.5
 
 - Remove dependency on the deprecated `package:js`.

@@ -1,3 +1,7 @@
+## 5.0.14
+
+- Allow Dart SDK 3.9.x and 3.10 prerelease.
+
 ## 5.0.13
 
 - Allow Dart SDK 3.8.x and 3.9 prerelease.
