@@ -557,4 +557,26 @@ void main() {
       );
     });
   });
+
+  group('a.1 <== a.2, a.2 resolves: a.1 -> missing', () {
+    setUp(() {
+      tester.sources(['a.1', 'b']);
+      tester.importGraph({
+        'a.1': ['package:missing/missing'],
+      });
+      tester.builder(from: '.1', to: '.2')
+        ..reads('.1')
+        ..resolvesOther('a.1')
+        ..writes('.2');
+    });
+
+    test('a.2 is built', () async {
+      expect(await tester.build(), Result(written: ['a.2']));
+    });
+
+    test('no-op rebuild succeeds', () async {
+      await tester.build();
+      expect(await tester.build(), Result());
+    });
+  });
 }

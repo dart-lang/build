@@ -1,3 +1,8 @@
+## 2.5.4
+
+- Bug fix: fix incremental build when previous build had `package:` import of
+  a missing dep or a missing file.
+
 ## 2.5.3
 
 - Bug fix: fix corner case with checked in generated output that could cause

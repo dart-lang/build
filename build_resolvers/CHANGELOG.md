@@ -1,3 +1,7 @@
+## 2.5.4
+
+- Use `build_runner_core` 9.1.2.
+
 ## 2.5.3
 
 - Use `build_runner_core` 9.1.1.

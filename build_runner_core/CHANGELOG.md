@@ -1,3 +1,8 @@
+## 9.1.2
+
+- Bug fix: fix incremental build when previous build had `package:` import of
+  a missing dep or a missing file.
+
 ## 9.1.1
 
 - Bug fix: fix corner case with checked in generated output that could cause

@@ -451,6 +451,8 @@ class SingleStepReaderWriter extends AssetReader
 
     var node = _runningBuild.assetGraph.get(id);
     if (node == null) {
+      // Add to the graph for input tracking.
+      _runningBuild.assetGraph.add(AssetNode.missingSource(id));
       return PhasedValue.fixed('');
     }
 
