@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:glob/glob.dart';
+import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
 
@@ -367,6 +368,43 @@ Future<void> main() async {
       {'a|[.in': 'input'},
       outputs: {'a|[.out': 'input'},
     );
+  });
+
+  test('resolve isolate source', () async {
+    final readerWriter = TestReaderWriter(rootPackage: 'a');
+    await readerWriter.testing.loadIsolateSources();
+    final logs = <String>[];
+    await testBuilders(
+      [
+        TestBuilder(
+          build: (buildStep, _) async {
+            await buildStep.resolver.libraryFor(
+              AssetId('glob', 'lib/glob.dart'),
+            );
+            await buildStep.writeAsString(
+              buildStep.inputId.changeExtension('.g.dart'),
+              '',
+            );
+          },
+          buildExtensions: {
+            '.dart': ['.g.dart'],
+          },
+        ),
+      ],
+      {
+        'test_package|lib/a.dart': '''
+import 'package:glob/glob.dart';
+''',
+      },
+      readerWriter: readerWriter,
+      onLog: (record) {
+        if (record.level == Level.SEVERE) {
+          logs.add(record.toString());
+        }
+      },
+      outputs: {'test_package|lib/a.g.dart': ''},
+    );
+    expect(logs, isEmpty);
   });
 }
 

@@ -237,7 +237,16 @@ Future<TestBuilderResult> testBuilders(
     for (var descriptor in sourceAssets.keys) makeAssetId(descriptor),
   };
 
-  var allPackages = {for (var id in inputIds) id.package};
+  // Differentiate input packages and all packages. Builders run on input
+  // packages; they can read/resolve all packages. Additional packages are
+  // supplied by passing a `readerWriter`.
+  var inputPackages = {for (var id in inputIds) id.package};
+  final allPackages = inputPackages.toSet();
+  if (readerWriter != null) {
+    for (final asset in readerWriter.testing.assets) {
+      allPackages.add(asset.package);
+    }
+  }
   rootPackage ??= allPackages.first;
 
   readerWriter ??= TestReaderWriter(rootPackage: rootPackage);
@@ -302,7 +311,7 @@ Future<TestBuilderResult> testBuilders(
         // picking up `lib/**` but not all files in the package root.
         testingBuilderConfig
             ? {
-              for (final package in allPackages)
+              for (final package in inputPackages)
                 package: BuildConfig.fromMap(package, [], {
                   'targets': {
                     package: {
@@ -334,7 +343,7 @@ Future<TestBuilderResult> testBuilders(
       apply(
         builderName(builder),
         [(_) => builder],
-        (package) => package.name != r'$sdk',
+        (p) => inputPackages.contains(p.name),
         isOptional: optionalBuilders.contains(builder),
         hideOutput: !visibleOutputBuilders.contains(builder),
       ),

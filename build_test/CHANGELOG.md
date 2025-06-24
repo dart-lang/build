@@ -1,3 +1,9 @@
+## 3.1.2
+
+- Fixes when passing a `readerWriter` to `testBuilders`: don't count initial
+  assets as outputs; do set up packages for initial assets; only apply builders
+  to packages mentioned in `sourceAssets`.
+
 ## 3.1.1
 
 - Bug fix: stop parsing `testBuilder` asset paths as globs.

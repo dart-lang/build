@@ -191,7 +191,8 @@ class _ReaderWriterTestingImpl implements ReaderWriterTesting {
         Glob('**'),
         package: package.name,
       )) {
-        await _readerWriter.writeAsBytes(id, await reader.readAsBytes(id));
+        // Write via `testing` so it's not tracked as a builder output.
+        _readerWriter.testing.writeBytes(id, await reader.readAsBytes(id));
       }
     }
   }
