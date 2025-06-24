@@ -1,8 +1,11 @@
-## 3.1.2
+## 3.2.0
 
 - Fixes when passing a `readerWriter` to `testBuilders`: don't count initial
   assets as outputs; do set up packages for initial assets; only apply builders
   to packages mentioned in `sourceAssets`.
+- Add `readAllSourcesFromFilesystem` parameter to `resolveSources`. Set it to
+  `true` to make the method behave as it did in `build_test` 2.2.0.
+- Fix to `resolveSources` error handling.
 
 ## 3.1.1
 

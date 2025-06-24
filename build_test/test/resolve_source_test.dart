@@ -141,6 +141,27 @@ void main() {
         ),
       );
     });
+
+    test('all sources from real filesystem', () async {
+      await resolveSource(
+        r'''
+        library example;
+
+        import 'package:collection/collection.dart';
+
+        abstract class Foo implements Equality {}
+      ''',
+        readAllSourcesFromFilesystem: true,
+        (resolver) async {
+          var libExample = await resolver.findLibraryNotNull('example');
+          var classFoo = libExample.getClass('Foo')!;
+          expect(
+            classFoo.allSupertypes.map(_toStringId),
+            contains(endsWith(':collection#Equality')),
+          );
+        },
+      );
+    });
   });
 
   group('should resolveAsset', () {

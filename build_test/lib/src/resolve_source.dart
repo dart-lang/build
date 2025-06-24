@@ -8,6 +8,7 @@ import 'dart:isolate';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_resolvers/build_resolvers.dart';
+import 'package:glob/glob.dart';
 import 'package:package_config/package_config.dart';
 
 import 'package_reader.dart';
@@ -28,6 +29,7 @@ Future<T> resolveSource<T>(
   AssetId? inputId,
   PackageConfig? packageConfig,
   Set<AssetId>? nonInputsToReadFromFilesystem,
+  bool? readAllSourcesFromFilesystem,
   Resolvers? resolvers,
 }) {
   inputId ??= AssetId('_resolve_source', 'lib/_resolve_source.dart');
@@ -37,6 +39,7 @@ Future<T> resolveSource<T>(
     action,
     packageConfig: packageConfig,
     nonInputsToReadFromFilesystem: nonInputsToReadFromFilesystem,
+    readAllSourcesFromFilesystem: readAllSourcesFromFilesystem,
     resolverFor: inputId,
     resolvers: resolvers,
   );
@@ -83,6 +86,12 @@ Future<T> resolveSource<T>(
 /// - by default, [PackageAssetReader.currentIsolate]. A custom [packageConfig]
 /// may be provided to map files not visible to the current package's runtime.
 ///
+/// By default, only assets listed in [inputs] with value [useAssetReader] are
+/// read from the real filesystem. To read more real files: pass
+/// [nonInputsToReadFromFilesystem] for individual files, or
+/// [readAllSourcesFromFilesystem] to read all sources available with
+/// [packageConfig].
+///
 /// [assetReaderChecks], if provided, runs after the action completes and can be
 /// used to add expectations on the reader state.
 Future<T> resolveSources<T>(
@@ -90,6 +99,7 @@ Future<T> resolveSources<T>(
   FutureOr<T> Function(Resolver resolver) action, {
   PackageConfig? packageConfig,
   Set<AssetId>? nonInputsToReadFromFilesystem,
+  bool? readAllSourcesFromFilesystem,
   String? resolverFor,
   String? rootPackage,
   FutureOr<void> Function(TestReaderWriter)? assetReaderChecks,
@@ -105,6 +115,7 @@ Future<T> resolveSources<T>(
     action,
     packageConfig: packageConfig,
     nonInputsToReadFromFilesystem: nonInputsToReadFromFilesystem,
+    readAllSourcesFromFilesystem: readAllSourcesFromFilesystem,
     resolverFor: AssetId.parse(resolverFor ?? inputs.keys.first),
     assetReaderChecks: assetReaderChecks,
     resolvers: resolvers,
@@ -117,6 +128,7 @@ Future<T> resolveAsset<T>(
   FutureOr<T> Function(Resolver resolver) action, {
   PackageConfig? packageConfig,
   Set<AssetId>? nonInputsToReadFromFilesystem,
+  bool? readAllSourcesFromFilesystem,
   Future<void>? tearDown,
   Resolvers? resolvers,
 }) {
@@ -126,6 +138,7 @@ Future<T> resolveAsset<T>(
     action,
     packageConfig: packageConfig,
     nonInputsToReadFromFilesystem: nonInputsToReadFromFilesystem,
+    readAllSourcesFromFilesystem: readAllSourcesFromFilesystem,
     resolverFor: inputId,
     resolvers: resolvers,
   );
@@ -142,6 +155,7 @@ Future<T> _resolveAssets<T>(
   FutureOr<T> Function(Resolver resolver) action, {
   PackageConfig? packageConfig,
   Set<AssetId>? nonInputsToReadFromFilesystem,
+  bool? readAllSourcesFromFilesystem,
   AssetId? resolverFor,
   FutureOr<void> Function(TestReaderWriter)? assetReaderChecks,
   Resolvers? resolvers,
@@ -161,10 +175,21 @@ Future<T> _resolveAssets<T>(
     }
   }
 
+  final readerWriter = TestReaderWriter(rootPackage: rootPackage);
   // Copy any additionally requested files from the filesystem to `inputs`.
   if (nonInputsToReadFromFilesystem != null) {
     for (final id in nonInputsToReadFromFilesystem) {
-      inputs[id.toString()] = await assetReader.readAsString(id);
+      readerWriter.testing.writeBytes(id, await assetReader.readAsBytes(id));
+    }
+  }
+  if (readAllSourcesFromFilesystem == true) {
+    for (final package in assetReader.packageConfig.packages) {
+      await for (final id in assetReader.findAssets(
+        Glob('**'),
+        package: package.name,
+      )) {
+        readerWriter.testing.writeBytes(id, await assetReader.readAsBytes(id));
+      }
     }
   }
 
@@ -175,18 +200,25 @@ Future<T> _resolveAssets<T>(
           ? AnalyzerResolvers.sharedInstance
           : AnalyzerResolvers.custom(packageConfig: resolvedConfig);
 
-  final buildResult = await testBuilder(
+  await testBuilder(
     resolveBuilder,
     inputs,
+    readerWriter: readerWriter,
     resolvers: resolvers,
     packageConfig: packageConfig,
   );
-  final readerWriter = buildResult.readerWriter;
   if (assetReaderChecks != null) {
     assetReaderChecks(readerWriter);
   }
 
-  return resolveBuilder.onDone.future;
+  if (resolveBuilder.error == null) {
+    return resolveBuilder.result as T;
+  } else {
+    Error.throwWithStackTrace(
+      resolveBuilder.error!,
+      resolveBuilder.stackTrace!,
+    );
+  }
 }
 
 /// A [Builder] that is only used to retrieve a [Resolver] instance.
@@ -197,7 +229,9 @@ class _ResolveSourceBuilder<T> implements Builder {
   final FutureOr<T> Function(Resolver) _action;
   final AssetId? _resolverFor;
 
-  final onDone = Completer<T>();
+  T? result;
+  Object? error;
+  StackTrace? stackTrace;
 
   _ResolveSourceBuilder(this._action, this._resolverFor);
 
@@ -205,9 +239,10 @@ class _ResolveSourceBuilder<T> implements Builder {
   Future<void> build(BuildStep buildStep) async {
     if (_resolverFor != buildStep.inputId) return;
     try {
-      onDone.complete(await _action(buildStep.resolver));
+      result = await _action(buildStep.resolver);
     } catch (e, s) {
-      onDone.completeError(e, s);
+      error = e;
+      stackTrace = s;
     }
   }
 
