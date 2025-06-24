@@ -1,3 +1,8 @@
+## 2.6.0-dev.1
+
+- Use `build` 3.0.0-dev.
+- Use `build_resolvers` 3.0.0-dev.
+
 ## 2.5.4
 
 - Bug fix: fix incremental build when previous build had `package:` import of

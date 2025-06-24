@@ -70,7 +70,7 @@ class ResolvingBuilder implements Builder {
 
     await buildStep.writeAsString(info, '''
          Input ID: ${buildStep.inputId}
-     Member count: ${entryLib.topLevelElements.length}
+     Member count: ${entryLib.topLevelFunctions.length}
 Visible libraries: $visibleLibraries
 ''');
   }

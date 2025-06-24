@@ -1,12 +1,11 @@
 // Copyright (c) 2017, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-// ignore_for_file: deprecated_member_use
 
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/element2.dart';
 import 'package:package_config/package_config_types.dart';
 
 import '../analyzer/resolver.dart';
@@ -37,7 +36,7 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   ///     await step.resolver.libraryFor(step.inputId, allowSyntaxErrors: true);
   /// }
   /// ```
-  Future<LibraryElement> get inputLibrary;
+  Future<LibraryElement2> get inputLibrary;
 
   /// Gets an instance provided by [resource] which is guaranteed to be unique
   /// within a single build, and may be reused across build steps within a
