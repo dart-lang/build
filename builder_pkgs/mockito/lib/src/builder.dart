@@ -937,7 +937,7 @@ class _MockTargetGatherer {
     final className = interfaceElement.name3;
     final substitution = Substitution.fromInterfaceType(mockTarget.classType);
     final relevantMembers = _inheritanceManager
-        .getInterface2(interfaceElement)
+        .getInterface(interfaceElement)
         .map2
         .values
         .where((m) => !m.isPrivate && !m.isStatic)
@@ -1320,7 +1320,7 @@ class _MockClassInfo {
             [...typeToMock.typeArguments, ...?typeAlias?.typeArguments],
           );
           final members = inheritanceManager
-              .getInterface2(classToMock)
+              .getInterface(classToMock)
               .map2
               .values
               .map((member) => ExecutableMember.from(member, substitution));
