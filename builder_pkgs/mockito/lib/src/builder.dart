@@ -938,7 +938,7 @@ class _MockTargetGatherer {
     final substitution = Substitution.fromInterfaceType(mockTarget.classType);
     final relevantMembers = _inheritanceManager
         .getInterface(interfaceElement)
-        .map2
+        .map
         .values
         .where((m) => !m.isPrivate && !m.isStatic)
         .map((member) => ExecutableMember.from(member, substitution));
@@ -1321,7 +1321,7 @@ class _MockClassInfo {
           );
           final members = inheritanceManager
               .getInterface(classToMock)
-              .map2
+              .map
               .values
               .map((member) => ExecutableMember.from(member, substitution));
 
@@ -2043,14 +2043,14 @@ class _MockClassInfo {
     final method = parameter.enclosingElement2 as MethodElement2;
     final class_ = method.enclosingElement2 as InterfaceElement2;
     final name = Name(method.library2.uri, method.name3!);
-    final overriddenMethods = inheritanceManager.getOverridden4(class_, name);
+    final overriddenMethods = inheritanceManager.getOverridden(class_, name);
     if (overriddenMethods == null) {
       return type;
     }
     final allOverriddenMethods = Queue.of(overriddenMethods);
     while (allOverriddenMethods.isNotEmpty) {
       final overriddenMethod = allOverriddenMethods.removeFirst();
-      final secondaryOverrides = inheritanceManager.getOverridden4(
+      final secondaryOverrides = inheritanceManager.getOverridden(
         overriddenMethod.enclosingElement2 as InterfaceElement2,
         name,
       );
