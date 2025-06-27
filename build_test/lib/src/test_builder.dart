@@ -11,6 +11,8 @@ import 'package:build_resolvers/build_resolvers.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 // ignore: implementation_imports
 import 'package:build_runner_core/src/generate/build_series.dart';
+// ignore: implementation_imports
+import 'package:build_runner_core/src/generate/options.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
@@ -305,10 +307,10 @@ Future<TestBuilderResult> testBuilders(
     reportUnusedAssetsForInput: reportUnusedAssetsForInput,
     resolvers: resolvers,
     overrideBuildConfig:
-        // Override sources to all inputs, optionally restricted by
-        // [inputFilter] or [generateFor]. Or if [testingBuilderConfig] is
-        // false, use the defaults. These skip some files, for example
-        // picking up `lib/**` but not all files in the package root.
+        // Override sources to defaults plus all explicitly passed inputs,
+        // optionally restricted by [inputFilter] or [generateFor]. Or if
+        // [testingBuilderConfig] is false, use the defaults. These skip some
+        // files, for example picking up `lib/**` but not all files in the package root.
         testingBuilderConfig
             ? {
               for (final package in inputPackages)
@@ -320,6 +322,10 @@ Future<TestBuilderResult> testBuilders(
                         r'lib/$lib$',
                         r'test/$test$',
                         r'web/$web$',
+                        if (package == rootPackage)
+                          ...defaultRootPackageSources,
+                        if (package != rootPackage)
+                          ...defaultNonRootVisibleAssets,
                         ...inputIds
                             .where((id) => id.package == package)
                             .map((id) => Glob.quote(id.path)),
