@@ -1,3 +1,10 @@
+## 3.2.1
+
+- Files loaded from disk for `resolveSources` and `testBuilders` that are in
+  the same package as explicitly-passed test inputs are now loaded if they
+  match the default globs, such as `lib/**`, instead of ignored. This more
+  closely matches version 2 behavior.
+
 ## 3.2.0
 
 - Fixes when passing a `readerWriter` to `testBuilders`: don't count initial
