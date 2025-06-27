@@ -1,3 +1,10 @@
+## 3.3.0-dev.2
+
+- Files loaded from disk for `resolveSources` and `testBuilders` that are in
+  the same package as explicitly-passed test inputs are now loaded if they
+  match the default globs, such as `lib/**`, instead of ignored. This more
+  closely matches version 2 behavior.
+
 ## 3.3.0-dev.1
 
 - Use `build` 3.0.0-dev.1.
