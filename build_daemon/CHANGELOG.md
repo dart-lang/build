@@ -1,6 +1,7 @@
 ## 4.0.5-wip
 
 - Bump the min SDK to 3.7.0.
+- Remove unused dep: `analyzer`.
 
 ## 4.0.4
 
