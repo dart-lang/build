@@ -1,3 +1,7 @@
+## 5.0.16-wip
+
+- Remove unused dep: `build_config`.
+
 ## 5.0.15
 
 - Allow `build` 3.0.0.

@@ -1,3 +1,7 @@
+## 3.0.0-wip
+
+- Removed unused deps: `meta`, `pool`.
+
 ## 3.0.0-dev.1
 
 - Breaking: use the new `element2` APIs in `analyzer`. Builders that do

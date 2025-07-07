@@ -1,3 +1,8 @@
+## 3.3.0-wip
+
+- Remove unused deps: `async`, `convert`.
+- Remove unused dev_deps: `collection`.
+
 ## 3.3.0-dev.2
 
 - Files loaded from disk for `resolveSources` and `testBuilders` that are in

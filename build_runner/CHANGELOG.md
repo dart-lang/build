@@ -1,3 +1,9 @@
+## 2.6.0-wip
+
+- Remove unused deps: `analyzer`, `build_resolvers`, `collection`, `http`,
+  `js`, `meta`, `package_config`, `pool`, `web`, `yaml`.
+- Remove unused dev_deps: `http`, `package_config`, `web`.
+
 ## 2.6.0-dev.1
 
 - Use `build` 3.0.0-dev.

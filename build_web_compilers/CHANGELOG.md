@@ -1,3 +1,7 @@
+## 4.2.1-wip
+
+- Remove unused deps: `build_config`.
+
 ## 4.2.0
 
 - Allow `build` 3.0.0.

@@ -1,3 +1,7 @@
+## 3.0.0-wip
+
+- Remove unused deps: `graphs`, `logging`, `stream_transform`.
+
 ## 3.0.0-dev.1
 
 - Breaking: use the new `element2` APIs in `analyzer`. Builders that do
