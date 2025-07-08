@@ -6,12 +6,14 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 
 import '../generate/input_matcher.dart';
 import '../generate/options.dart' show defaultNonRootVisibleAssets;
 import '../logging/build_log.dart';
+import 'build_triggers.dart';
 import 'package_graph.dart';
 
 /// Like a [PackageGraph] but packages are further broken down into modules
@@ -37,11 +39,15 @@ class TargetGraph {
   /// The [BuildConfig] of the root package.
   final BuildConfig rootPackageConfig;
 
+  // The [BuildTriggers] accumulated across all packages.
+  final BuildTriggers buildTriggers;
+
   TargetGraph._(
     this.allModules,
     this.modulesByPackage,
     this._publicAssetsByPackage,
     this.rootPackageConfig,
+    this.buildTriggers,
   );
 
   /// Builds a [TargetGraph] from [packageGraph].
@@ -71,10 +77,23 @@ class TargetGraph {
     final publicAssetsByPackage = <String, InputMatcher>{};
     final modulesByPackage = <String, List<TargetNode>>{};
     late BuildConfig rootPackageConfig;
+    final buildTriggers = <String, Set<BuildTrigger>>{};
     for (final package in packageGraph.allPackages.values) {
       final config =
           overrideBuildConfig[package.name] ??
           await _packageBuildConfig(reader, package);
+
+      final triggersByBuilder = config.triggersByBuilder;
+      for (final entry in triggersByBuilder.entries) {
+        final builderName = entry.key;
+        (buildTriggers[builderName] ??= {}).addAll(
+          BuildTriggers.parseList(
+            packageName: package.name,
+            triggers: entry.value,
+          ),
+        );
+      }
+
       List<String> defaultInclude;
       if (package.isRoot) {
         defaultInclude = [
@@ -129,6 +148,11 @@ class TargetGraph {
       modulesByPackage,
       publicAssetsByPackage,
       rootPackageConfig,
+      BuildTriggers(
+        triggers: BuiltMap.from(
+          buildTriggers.map((k, v) => MapEntry(k, v.build())),
+        ),
+      ),
     );
   }
 

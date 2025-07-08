@@ -1,3 +1,11 @@
+## 2.7.0-wip
+
+- Performance: builders can choose to run only when "triggered". A builder runs
+  only if triggered if the option `run_only_if_triggered` is `true`. Triggers
+  are configured in new a top-level section of `build.yaml` called `triggers`.
+  See [the `build_config` docs](https://github.com/dart-lang/build/blob/master/build_config/README.md#triggers)
+  for more information.
+
 ## 2.6.0
 
 - Remove unused deps: `analyzer`, `build_resolvers`, `collection`, `http`,
