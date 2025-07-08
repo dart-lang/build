@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
@@ -233,7 +234,7 @@ Future<TestBuilderResult> testBuilders(
   TestReaderWriter? readerWriter,
   bool enableLowResourceMode = false,
 }) async {
-  onLog ??= _printOnFailureOrPrint;
+  onLog ??= _printOnFailureOrWrite;
 
   var inputIds = {
     for (var descriptor in sourceAssets.keys) makeAssetId(descriptor),
@@ -382,7 +383,7 @@ class TestBuilderResult {
   TestBuilderResult({required this.buildResult, required this.readerWriter});
 }
 
-void _printOnFailureOrPrint(LogRecord record) {
+void _printOnFailureOrWrite(LogRecord record) {
   final message =
       '$record'
       '${record.error == null ? '' : '  ${record.error}'}'
@@ -391,7 +392,8 @@ void _printOnFailureOrPrint(LogRecord record) {
     // This throws if a test is not currently running.
     printOnFailure(message);
   } catch (_) {
-    // Print instead.
-    print(message);
+    // Write instead. Don't `print` because that would hit the Zone print
+    // handler if logging from a builder.
+    stdout.writeln(message);
   }
 }

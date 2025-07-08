@@ -13,20 +13,8 @@ import 'package:test/test.dart';
 
 Future<void> main() async {
   // Default logging uses `printOnFailure` which crashes outside tests; check
-  // that it falls back to `print` outside tests.
-  final printed = <String>[];
-  await runZonedGuarded(
-    () async {
-      await testBuilder(TestBuilder(), {'a|lib/a.dart': ''}, rootPackage: 'a');
-    },
-    (_, _) {},
-    zoneSpecification: ZoneSpecification(
-      print: (_, _, _, string) {
-        printed.add(string);
-      },
-    ),
-  );
-  if (printed.isEmpty) throw StateError('Expected some prints.');
+  // that it falls back to something else outside tests.
+  await testBuilder(TestBuilder(), {'a|lib/a.dart': ''}, rootPackage: 'a');
 
   test('can glob files in the root package', () async {
     var assets = {

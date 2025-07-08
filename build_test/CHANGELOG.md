@@ -1,5 +1,7 @@
 ## 3.3.0-wip
 
+- Bug fix: don't crash when a builder logs during a `testBuilder` or
+  `resolveSource` call outside a test.
 - Remove unused deps: `async`, `convert`.
 - Remove unused dev_deps: `collection`.
 
