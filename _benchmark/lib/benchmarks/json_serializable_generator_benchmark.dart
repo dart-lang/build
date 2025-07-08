@@ -57,9 +57,20 @@ ${config.dependencyOverrides}
         libraryNumber,
         benchmarkSize: size,
       );
-      workspace.write(
-        'lib/$libraryName',
-        source: '''
+      if (config.config.mostlyNoCodegen && libraryNumber > 1) {
+        workspace.write(
+          'lib/$libraryName',
+          source: '''
+// ignore_for_file: unused_import
+${[for (final importName in importNames) "import '$importName';"].join('\n')}
+
+class Value {}
+''',
+        );
+      } else {
+        workspace.write(
+          'lib/$libraryName',
+          source: '''
 // ignore_for_file: unused_import
 import 'package:json_annotation/json_annotation.dart';
 
@@ -75,7 +86,8 @@ class Value {
   Map<String, dynamic> toJson() => _\$ValueToJson(this);
 }
 ''',
-      );
+        );
+      }
     }
   }
 }
