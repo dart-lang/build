@@ -60,6 +60,10 @@ class AssetGraph implements GeneratedAssetHider {
   final Map<String, Map<PostProcessBuildStepId, Set<AssetId>>>
   _postProcessBuildStepOutputs = {};
 
+  /// Digest of the previous build's `BuildTriggers`, or `null` if this is a
+  /// clean build.
+  Digest? previousBuildTriggersDigest;
+
   /// Digests from the previous build's [BuildPhases], or `null` if this is a
   /// clean build.
   BuiltList<Digest>? previousInBuildPhasesOptionsDigests;

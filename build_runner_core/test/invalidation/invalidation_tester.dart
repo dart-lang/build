@@ -27,6 +27,9 @@ class InvalidationTester {
   /// The source assets on disk before the first build.
   final Set<AssetId> _sourceAssets = {};
 
+  /// The `build.yaml` on disk before the first build, if any.
+  String? _buildYaml;
+
   /// Inputs that a builder might read.
   final List<String> _pickableInputs = [];
 
@@ -85,6 +88,11 @@ class InvalidationTester {
     for (final name in names) {
       _sourceAssets.add(name.assetId);
     }
+  }
+
+  /// Sets the `build.yaml` that will be on disk before the first build.
+  void buildYaml(String? contents) {
+    _buildYaml = contents;
   }
 
   void pickableInputs(Iterable<String> names) {
@@ -179,8 +187,14 @@ class InvalidationTester {
   /// For the initial build, do not pass [change] [delete] or [create].
   ///
   /// For subsequent builds, pass asset name [change] to change that asset;
-  /// [delete] to delete one; and/or [create] to create one.
-  Future<Result> build({String? change, String? delete, String? create}) async {
+  /// [delete] to delete one; [create] to create one; and/or [buildYaml] to update
+  /// the package `build.yaml`.
+  Future<Result> build({
+    String? change,
+    String? delete,
+    String? create,
+    String? buildYaml,
+  }) async {
     if (_logSetup) _setupLog.add('tester.build($change, $delete, $create)');
     final assets = <AssetId, String>{};
     if (readerWriter == null) {
@@ -190,6 +204,9 @@ class InvalidationTester {
       }
       for (final id in _sourceAssets) {
         assets[id] = '${_imports(id)}// initial source';
+      }
+      if (_buildYaml != null) {
+        assets[AssetId('pkg', 'build.yaml')] = _buildYaml!;
       }
     } else {
       // Create the new filesystem from the previous build state.
@@ -219,6 +236,9 @@ class InvalidationTester {
         throw StateError('Asset $create to create already exists in: $assets');
       }
       assets[create.assetId] = '${_imports(create.assetId)}// initial source';
+    }
+    if (buildYaml != null) {
+      assets[AssetId('pkg', 'build.yaml')] = buildYaml;
     }
 
     // Build and check what changed.
@@ -534,6 +554,10 @@ class TestBuilder implements Builder {
       }
     }
   }
+
+  // Name that will refer to the builder in `build.yaml`.
+  @override
+  String toString() => 'pkg:invalidation_tester_builder';
 }
 
 extension LogRecordExtension on LogRecord {

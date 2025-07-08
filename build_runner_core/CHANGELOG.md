@@ -1,5 +1,6 @@
 ## 9.3.0-wip
 
+- Add support for build.yaml `triggers`. See `build_runner` 2.7.0 for usage.
 - Remove interactive prompts for whether to delete files.
 - Ignore `-d` flag: always delete files as if `-d` was passed.
 
