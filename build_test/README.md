@@ -84,11 +84,16 @@ write individual sources to it from a `PackageAssetReader`, or write all sources
 to it with `loadIsolateSources`:
 
 ```dart
-final readerWriter = TestReaderWriter();
-await readerWriter.loadIsolateSources();
+final readerWriter = TestReaderWriter(rootPackage: 'test_package');
+await readerWriter.testing.loadIsolateSources();
 testBuilder(
   yourBuilder,
-  {} /* test assets here */,
+  {'test_package|lib/a.dart': '''
+import 'package:real_package/annotations.dart';
+
+@RealAnnotation()
+class TestClass {}
+'''},
   readerWriter: readerWriter,
 );
 ```
