@@ -25,9 +25,15 @@ class _SomeBuilder implements Builder {
   Future build(BuildStep buildStep) async {
     if (!await buildStep.canRead(buildStep.inputId)) return;
 
-    await buildStep.writeAsBytes(
+    final content = await buildStep.readAsString(buildStep.inputId);
+
+    if (content.contains('// resolve_me')) {
+      await buildStep.resolver.libraryFor(buildStep.inputId);
+    }
+
+    await buildStep.writeAsString(
       buildStep.inputId.changeExtension('.something.dart'),
-      buildStep.readAsBytes(buildStep.inputId),
+      content,
     );
   }
 }
