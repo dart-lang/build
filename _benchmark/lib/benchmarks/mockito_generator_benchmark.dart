@@ -17,6 +17,11 @@ class MockitoGeneratorBenchmark implements Benchmark {
 
   @override
   void create(RunConfig config) {
+    if (config.config.mostlyNoCodegen) {
+      throw UnsupportedError(
+        'Mockito benchmark does not support --mostly-no-codegen.',
+      );
+    }
     final workspace = config.workspace;
     final size = config.size;
 

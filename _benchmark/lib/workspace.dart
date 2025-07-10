@@ -60,7 +60,6 @@ class Workspace {
       'build_runner',
       'build',
       '-d',
-      if (config.useExperimentalResolver) '--use-experimental-resolver',
     ], workingDirectory: directory.path);
     var exitCode = await process.exitCode;
     if (exitCode == 0) {
@@ -81,7 +80,6 @@ class Workspace {
       'build_runner',
       'build',
       '-d',
-      if (config.useExperimentalResolver) '--use-experimental-resolver',
     ], workingDirectory: directory.path);
     exitCode = await process.exitCode;
     if (exitCode == 0) {
@@ -101,7 +99,6 @@ class Workspace {
       'build_runner',
       'build',
       '-d',
-      if (config.useExperimentalResolver) '--use-experimental-resolver',
     ], workingDirectory: directory.path);
     exitCode = await process.exitCode;
     if (exitCode == 0) {
