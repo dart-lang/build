@@ -6,11 +6,13 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:glob/glob.dart';
 
 import '../generate/input_matcher.dart';
 import '../generate/options.dart' show defaultNonRootVisibleAssets;
 import '../logging/build_log.dart';
+import 'build_triggers.dart';
 import 'package_graph.dart';
 
 /// Like a [PackageGraph] but packages are further broken down into modules
@@ -36,11 +38,17 @@ class TargetGraph {
   /// The [BuildConfig] of the root package.
   final BuildConfig rootPackageConfig;
 
+  // The [BuildTrigger]s accumulated across all packages.
+  final BuildTriggers buildTriggers;
+
+  /// The [BuildTriggers] accumulated across all packages.
+
   TargetGraph._(
     this.allModules,
     this.modulesByPackage,
     this._publicAssetsByPackage,
     this.rootPackageConfig,
+    this.buildTriggers,
   );
 
   /// Builds a [TargetGraph] from [packageGraph].
@@ -66,10 +74,34 @@ class TargetGraph {
     final publicAssetsByPackage = <String, InputMatcher>{};
     final modulesByPackage = <String, List<TargetNode>>{};
     late BuildConfig rootPackageConfig;
+    final buildTriggers = <String, Set<BuildTrigger>>{};
     for (final package in packageGraph.allPackages.values) {
       final config =
           overrideBuildConfig[package.name] ??
           await _packageBuildConfig(package);
+
+      final packageTriggers = config.triggers;
+      for (final entry in packageTriggers.entries) {
+        final triggerPackage = entry.key;
+        final triggers = entry.value;
+        if (triggers is List<Object?>) {
+          for (final triggerString in triggers) {
+            BuildTrigger? trigger;
+            if (triggerString is String) {
+              trigger = BuildTrigger.tryParse(triggerString);
+            }
+            if (trigger != null) {
+              (buildTriggers[triggerPackage] ??= {}).add(trigger);
+            } else {
+              throw BuildConfigParseException(
+                package.name,
+                'Invalid trigger: `$triggerString`',
+              );
+            }
+          }
+        }
+      }
+
       List<String> defaultInclude;
       if (package.isRoot) {
         defaultInclude = [
@@ -124,6 +156,11 @@ class TargetGraph {
       modulesByPackage,
       publicAssetsByPackage,
       rootPackageConfig,
+      BuildTriggers(
+        triggers: BuiltMap.from(
+          buildTriggers.map((k, v) => MapEntry(k, v.build())),
+        ),
+      ),
     );
   }
 
@@ -229,15 +266,19 @@ Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
     );
   } on ArgumentError // ignore: avoid_catching_errors
   catch (e) {
-    throw BuildConfigParseException(package.name, e);
+    throw BuildConfigParseException(package.name, e.toString());
   }
 }
 
 class BuildConfigParseException implements Exception {
   final String packageName;
-  final dynamic exception;
+  final String message;
 
-  BuildConfigParseException(this.packageName, this.exception);
+  BuildConfigParseException(this.packageName, this.message);
+
+  @override
+  String toString() =>
+      'Failed to parse `build.yaml` for $packageName. $message';
 }
 
 /// Returns the [sources] are not included in any [targets].

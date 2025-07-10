@@ -486,7 +486,7 @@ class Build {
           readerWriter,
         ),
       )) {
-        buildLog.skipStep(phase: phase, lazy: lazy);
+        buildLog.reuseStep(phase: phase, lazy: lazy);
         return <AssetId>[];
       }
 
@@ -502,20 +502,22 @@ class Build {
       }
 
       var reallyBuild = true;
-      final buildRunnerOptions = phase.builderOptions.config['build_runner'];
-      if (buildRunnerOptions != null) {
-        String? primaryInputSource;
-        final buildIfs = (buildRunnerOptions as Map)['build_if'];
-        if (buildIfs != null) {
-          for (final entry in (buildIfs as Map).entries) {
-            if (entry.key == 'primary_input_contains') {
-              primaryInputSource ??= await readerWriter.readAsString(
-                primaryInput,
-              );
-              if (!primaryInputSource.contains(entry.value as String)) {
-                reallyBuild = false;
-                break;
-              }
+      final runsIfTriggered =
+          phase.builderOptions.config['runs_only_if_triggered'];
+      if (runsIfTriggered == true) {
+        reallyBuild = false;
+        final buildTriggers = options.targetGraph.buildTriggers;
+
+        // TODO(davidmorgan): pull out and digest triggers per build label.
+        final thisBuilderTriggers = buildTriggers.triggers[phase.builderLabel];
+        if (thisBuilderTriggers != null) {
+          final primaryInputSource = await readerWriter.readAsString(
+            primaryInput,
+          );
+          for (final trigger in thisBuilderTriggers) {
+            if (trigger.triggersOnPrimaryInput(primaryInputSource)) {
+              reallyBuild = true;
+              break;
             }
           }
         }
@@ -574,7 +576,7 @@ class Build {
           lazy: lazy,
         );
       } else {
-        buildLog.skipStep(phase: phase, lazy: lazy);
+        buildLog.stepNotTriggered(phase: phase, lazy: lazy);
       }
 
       return readerWriter.assetsWritten;

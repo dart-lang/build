@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:graphs/graphs.dart';
 
 import '../generate/build_phases.dart';
@@ -14,6 +15,7 @@ import '../generate/phase.dart';
 import '../logging/build_log.dart';
 import '../logging/build_log_logger.dart';
 import '../validation/config_validation.dart';
+import 'build_triggers.dart';
 import 'package_graph.dart';
 import 'target_graph.dart';
 
