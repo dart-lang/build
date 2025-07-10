@@ -78,6 +78,8 @@ class BuildConfig {
 
   final List<String> additionalPublicAssets;
 
+  final Map<String, Object> triggers;
+
   /// The default config if you have no `build.yaml` file.
   factory BuildConfig.useDefault(
     String packageName,
@@ -148,6 +150,7 @@ class BuildConfig {
     Map<String, PostProcessBuilderDefinition>? postProcessBuilderDefinitions =
         const {},
     this.additionalPublicAssets = const [],
+    this.triggers = const {},
   }) : buildTargets =
            identical(buildTargets, BuildConfig._placeholderBuildTarget)
                ? {
