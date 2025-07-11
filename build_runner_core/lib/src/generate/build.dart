@@ -486,7 +486,7 @@ class Build {
           readerWriter,
         ),
       )) {
-        buildLog.skipStep(phase: phase, lazy: lazy);
+        buildLog.reuseStep(phase: phase, lazy: lazy);
         return <AssetId>[];
       }
 
@@ -501,30 +501,54 @@ class Build {
         unusedAssets.addAll(assets);
       }
 
+      var reallyBuild = true;
+      final runsIfTriggered =
+          phase.builderOptions.config['runs_only_if_triggered'];
+      if (runsIfTriggered == true) {
+        reallyBuild = false;
+        final buildTriggers = options.targetGraph.buildTriggers;
+
+        // TODO(davidmorgan): pull out and digest triggers per build label.
+        final thisBuilderTriggers = buildTriggers.triggers[phase.builderLabel];
+        if (thisBuilderTriggers != null) {
+          final primaryInputSource = await readerWriter.readAsString(
+            primaryInput,
+          );
+          for (final trigger in thisBuilderTriggers) {
+            if (trigger.triggersOnPrimaryInput(primaryInputSource)) {
+              reallyBuild = true;
+              break;
+            }
+          }
+        }
+      }
+
       final logger = buildLog.loggerFor(
         phase: phase,
         primaryInput: primaryInput,
         lazy: lazy,
       );
-      await TimedActivity.build.runAsync(
-        () => tracker.trackStage(
-          'Build',
-          () => runBuilder(
-            builder,
-            [primaryInput],
-            readerWriter,
-            readerWriter,
-            PerformanceTrackingResolvers(options.resolvers, tracker),
-            logger: logger,
-            resourceManager: resourceManager,
-            stageTracker: tracker,
-            reportUnusedAssetsForInput: reportUnusedAssetsForInput,
-            packageConfig: options.packageGraph.asPackageConfig,
-          ).catchError((void _) {
-            // Errors tracked through the logger.
-          }),
-        ),
-      );
+      if (reallyBuild) {
+        await TimedActivity.build.runAsync(
+          () => tracker.trackStage(
+            'Build',
+            () => runBuilder(
+              builder,
+              [primaryInput],
+              readerWriter,
+              readerWriter,
+              PerformanceTrackingResolvers(options.resolvers, tracker),
+              logger: logger,
+              resourceManager: resourceManager,
+              stageTracker: tracker,
+              reportUnusedAssetsForInput: reportUnusedAssetsForInput,
+              packageConfig: options.packageGraph.asPackageConfig,
+            ).catchError((void _) {
+              // Errors tracked through the logger.
+            }),
+          ),
+        );
+      }
 
       // Update the state for all the `builderOutputs` nodes based on what was
       // read and written.
@@ -542,14 +566,18 @@ class Build {
         ),
       );
 
-      buildLog.finishStep(
-        phase: phase,
-        anyOutputs: readerWriter.assetsWritten.isNotEmpty,
-        anyChangedOutputs: readerWriter.assetsWritten.any(
-          changedOutputs.contains,
-        ),
-        lazy: lazy,
-      );
+      if (reallyBuild) {
+        buildLog.finishStep(
+          phase: phase,
+          anyOutputs: readerWriter.assetsWritten.isNotEmpty,
+          anyChangedOutputs: readerWriter.assetsWritten.any(
+            changedOutputs.contains,
+          ),
+          lazy: lazy,
+        );
+      } else {
+        buildLog.stepNotTriggered(phase: phase, lazy: lazy);
+      }
 
       return readerWriter.assetsWritten;
     });
@@ -729,6 +757,8 @@ class Build {
       processedOutputs.add(output);
     }
   }
+
+  var once = false;
 
   /// Checks and returns whether any [outputs] need to be updated in
   /// [phaseNumber] for [primaryInput].

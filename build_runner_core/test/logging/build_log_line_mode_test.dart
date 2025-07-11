@@ -104,7 +104,7 @@ void main() {
         primaryInput: AssetId('pkg', 'lib/l3.dart'),
         lazy: false,
       );
-      buildLog.skipStep(phase: phases.keys.first, lazy: false);
+      buildLog.reuseStep(phase: phases.keys.first, lazy: false);
       buildLog.startStep(
         phase: phases.keys.first,
         primaryInput: AssetId('pkg', 'test/other.dart'),

@@ -18,6 +18,7 @@ BuildConfig _$BuildConfigFromJson(Map json) => $checkedCreate(
         'targets',
         'global_options',
         'additional_public_assets',
+        'triggers',
       ],
     );
     final val = BuildConfig(
@@ -53,6 +54,12 @@ BuildConfig _$BuildConfigFromJson(Map json) => $checkedCreate(
         'additional_public_assets',
         (v) =>
             (v as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],
+      ),
+      triggers: $checkedConvert(
+        'triggers',
+        (v) =>
+            (v as Map?)?.map((k, e) => MapEntry(k as String, e as Object)) ??
+            const {},
       ),
     );
     return val;

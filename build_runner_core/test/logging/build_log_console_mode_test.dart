@@ -157,7 +157,7 @@ Building, full build.'''),
         primaryInput: AssetId('pkg', 'lib/l3.dart'),
         lazy: false,
       );
-      buildLog.skipStep(phase: phases.keys.first, lazy: false);
+      buildLog.reuseStep(phase: phases.keys.first, lazy: false);
       expect(
         render(),
         padLinesRight('''
