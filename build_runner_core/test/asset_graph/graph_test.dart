@@ -9,6 +9,7 @@ import 'dart:convert';
 import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
+import 'package:build_runner_core/src/asset_graph/exceptions.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:build_runner_core/src/asset_graph/post_process_build_step_id.dart';
@@ -39,8 +40,8 @@ void main() {
       expect(graph.get(node.id), node);
     }
 
-    AssetNode testAddNode() {
-      var node = makeAssetNode();
+    AssetNode testAddNode(int number) {
+      var node = AssetNode.source(AssetId.parse('pkg|lib/a$number.dart'));
       expectNodeDoesNotExist(node);
       graph.add(node);
       expectNodeExists(node);
@@ -60,7 +61,7 @@ void main() {
 
       test('add, contains, get, allNodes', () {
         var expectedNodes = [
-          for (var i = 0; i < 5; i++) testAddNode(),
+          for (var i = 0; i < 5; i++) testAddNode(i),
           for (var id in placeholderIdsFor(fooPackageGraph)) graph.get(id),
         ];
         expect(graph.allNodes, unorderedEquals(expectedNodes));
@@ -69,7 +70,7 @@ void main() {
       test('remove', () {
         var nodes = <AssetNode>[];
         for (var i = 0; i < 5; i++) {
-          nodes.add(testAddNode());
+          nodes.add(testAddNode(i));
         }
         graph
           ..removeForTest(nodes[1].id)
@@ -98,7 +99,7 @@ void main() {
           results: [],
         );
         for (var n = 0; n < 5; n++) {
-          var node = makeAssetNode();
+          var node = AssetNode.source(AssetId.parse('pkg|lib/a$n.dart'));
           globNode = globNode.rebuild(
             (b) =>
                 b.globNodeState
@@ -163,14 +164,17 @@ void main() {
           var encoded = utf8.encode(json.encode(serialized));
           expect(
             () => AssetGraph.deserialize(encoded),
-            throwsCorruptedException,
+            throwsA(isA<AssetGraphCorruptedException>()),
           );
         },
       );
 
       test('Throws an AssetGraphCorruptedException on invalid json', () {
         var bytes = List.of(graph.serialize())..removeLast();
-        expect(() => AssetGraph.deserialize(bytes), throwsCorruptedException);
+        expect(
+          () => AssetGraph.deserialize(bytes),
+          throwsA(isA<AssetGraphCorruptedException>()),
+        );
       });
     });
 
@@ -421,7 +425,7 @@ void main() {
             fooPackageGraph,
             digestReader,
           ),
-          throwsA(duplicateAssetNodeException),
+          throwsA(isA<DuplicateAssetNodeException>()),
         );
       });
 
