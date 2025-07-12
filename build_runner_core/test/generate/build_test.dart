@@ -1285,19 +1285,13 @@ void main() {
     );
 
     // Source nodes
-    var aSourceNode = makeAssetNode(
-      'a|web/a.txt',
-      [],
-      computeDigest(AssetId('a', 'web/a.txt'), 'a'),
-    );
-    var bSourceNode = makeAssetNode(
-      'a|lib/b.txt',
-      [],
-      computeDigest(AssetId('a', 'lib/b.txt'), 'b'),
-    );
+    var aId = AssetId.parse('a|web/a.txt');
+    var aSourceNode = AssetNode.source(aId, digest: computeDigest(aId, 'a'));
+    var bId = AssetId.parse('a|lib/b.txt');
+    var bSourceNode = AssetNode.source(bId, digest: computeDigest(bId, 'b'));
 
     // Regular generated asset nodes.
-    var aCopyId = makeAssetId('a|web/a.txt.copy');
+    var aCopyId = AssetId.parse('a|web/a.txt.copy');
     var aCopyNode = AssetNode.generated(
       aCopyId,
       phaseNumber: 0,

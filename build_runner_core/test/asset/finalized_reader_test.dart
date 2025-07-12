@@ -42,15 +42,13 @@ void main() {
     });
 
     test('can not read deleted files', () async {
-      var notDeleted = makeAssetNode(
-        'a|web/a.txt',
-        [],
-        computeDigest(AssetId('a', 'web/a.txt'), 'a'),
+      var notDeleted = AssetNode.source(
+        AssetId.parse('a|web/a.txt'),
+        digest: computeDigest(AssetId('a', 'web/a.txt'), 'a'),
       );
-      var deleted = makeAssetNode(
-        'a|lib/b.txt',
-        [],
-        computeDigest(AssetId('a', 'lib/b.txt'), 'b'),
+      var deleted = AssetNode.source(
+        AssetId.parse('a|lib/b.txt'),
+        digest: computeDigest(AssetId('a', 'lib/b.txt'), 'b'),
       );
 
       deleted = deleted.rebuild(

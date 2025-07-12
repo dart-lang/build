@@ -3,18 +3,10 @@
 // BSD-style license that can be found in the LICENSE file.
 
 // ignore: implementation_imports
-import 'package:build_runner_core/src/asset_graph/exceptions.dart';
-// ignore: implementation_imports
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 // ignore: implementation_imports
 import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:test/test.dart';
-
-final Matcher throwsCorruptedException = throwsA(
-  const TypeMatcher<AssetGraphCorruptedException>(),
-);
-final Matcher duplicateAssetNodeException =
-    const TypeMatcher<DuplicateAssetNodeException>();
 
 Matcher equalsAssetGraph(AssetGraph expected) => _AssetGraphMatcher(expected);
 
