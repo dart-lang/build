@@ -4,6 +4,7 @@
 
 import 'package:build_config/build_config.dart';
 
+// TODO(davidmorgan): remove?
 Map<String, BuildConfig> parseBuildConfigs(
   Map<String, Map<String, dynamic>> configs,
 ) => Map<String, BuildConfig>.fromIterable(

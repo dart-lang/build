@@ -78,6 +78,7 @@ Future<TestBuildersResult> testPhases(
   Map<String, /*String|List<int>*/ Object>? outputs,
   PackageGraph? packageGraph,
   BuildStatus status = BuildStatus.success,
+  // TODO(davidmorgan): remove?
   Map<String, BuildConfig>? overrideBuildConfig,
   // A better way to "silence" logging than setting logLevel to OFF.
   void Function(LogRecord record) onLog = _printOnFailure,
@@ -147,8 +148,9 @@ Future<TestBuildersResult> testPhases(
   });
 
   var options = await BuildOptions.create(
-    deleteFilesByDefault: deleteFilesByDefault,
     packageGraph: packageGraph,
+    reader: readerWriter,
+    deleteFilesByDefault: deleteFilesByDefault,
     skipBuildScriptCheck: true,
     overrideBuildConfig: overrideBuildConfig ?? const {},
     enableLowResourcesMode: enableLowResourcesMode,

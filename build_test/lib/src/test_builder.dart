@@ -305,6 +305,7 @@ Future<TestBuilderResult> testBuilders(
 
   final buildOptions = await BuildOptions.create(
     packageGraph: packageGraph,
+    reader: readerWriter,
     reportUnusedAssetsForInput: reportUnusedAssetsForInput,
     resolvers: resolvers,
     overrideBuildConfig:

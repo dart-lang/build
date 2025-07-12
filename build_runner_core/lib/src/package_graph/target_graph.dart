@@ -45,6 +45,9 @@ class TargetGraph {
 
   /// Builds a [TargetGraph] from [packageGraph].
   ///
+  /// Pass [reader] to read package configs. Otherwise, default configs are
+  /// used.
+  ///
   /// The [overrideBuildConfig] map overrides the config for packages by name.
   ///
   /// The [defaultRootPackageSources] is the default `sources` list to use
@@ -57,6 +60,7 @@ class TargetGraph {
   /// warning is logged if this condition is not met.
   static Future<TargetGraph> forPackageGraph(
     PackageGraph packageGraph, {
+    AssetReader? reader,
     Map<String, BuildConfig> overrideBuildConfig = const {},
     required List<String> defaultRootPackageSources,
     List<String> requiredSourcePaths = const [],
@@ -69,7 +73,7 @@ class TargetGraph {
     for (final package in packageGraph.allPackages.values) {
       final config =
           overrideBuildConfig[package.name] ??
-          await _packageBuildConfig(package);
+          await _packageBuildConfig(reader, package);
       List<String> defaultInclude;
       if (package.isRoot) {
         defaultInclude = [
@@ -219,14 +223,23 @@ class TargetNode {
   String toString() => target.key;
 }
 
-Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
-  final dependencyNames = package.dependencies.map((n) => n.name);
+Future<BuildConfig> _packageBuildConfig(
+  AssetReader? reader,
+  PackageNode package,
+) async {
+  final dependencies = package.dependencies.map((n) => n.name).toList();
   try {
-    return await BuildConfig.fromBuildConfigDir(
-      package.name,
-      dependencyNames,
-      package.path,
-    );
+    final id = AssetId(package.name, 'build.yaml');
+    if (reader != null && await reader.canRead(id)) {
+      return BuildConfig.parse(
+        package.name,
+        dependencies,
+        await reader.readAsString(id),
+        configYamlPath: id.toString(),
+      );
+    } else {
+      return BuildConfig.useDefault(package.name, dependencies);
+    }
   } on ArgumentError // ignore: avoid_catching_errors
   catch (e) {
     throw BuildConfigParseException(package.name, e);

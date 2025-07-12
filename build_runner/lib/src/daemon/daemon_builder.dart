@@ -257,6 +257,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
     var buildOptions = await BuildOptions.create(
       packageGraph: packageGraph,
+      reader: daemonEnvironment.reader,
       deleteFilesByDefault: daemonOptions.deleteFilesByDefault,
       overrideBuildConfig: overrideBuildConfig,
       skipBuildScriptCheck: daemonOptions.skipBuildScriptCheck,
