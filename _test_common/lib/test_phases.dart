@@ -5,7 +5,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
-import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_test/build_test.dart';
 // ignore: implementation_imports
@@ -78,13 +77,11 @@ Future<TestBuildersResult> testPhases(
   Map<String, /*String|List<int>*/ Object>? outputs,
   PackageGraph? packageGraph,
   BuildStatus status = BuildStatus.success,
-  Map<String, BuildConfig>? overrideBuildConfig,
   // A better way to "silence" logging than setting logLevel to OFF.
   void Function(LogRecord record) onLog = _printOnFailure,
   bool checkBuildStatus = true,
   bool deleteFilesByDefault = true,
   bool enableLowResourcesMode = false,
-  Map<String, Map<String, dynamic>>? builderConfigOverrides,
   bool verbose = false,
   Set<BuildDirectory> buildDirs = const {},
   Set<BuildFilter> buildFilters = const {},
@@ -134,7 +131,6 @@ Future<TestBuildersResult> testPhases(
     }
   });
 
-  builderConfigOverrides ??= const {};
   var environment = BuildEnvironment(
     packageGraph,
     reader: readerWriter,
@@ -147,10 +143,10 @@ Future<TestBuildersResult> testPhases(
   });
 
   var options = await BuildOptions.create(
-    deleteFilesByDefault: deleteFilesByDefault,
     packageGraph: packageGraph,
+    reader: environment.reader,
+    deleteFilesByDefault: deleteFilesByDefault,
     skipBuildScriptCheck: true,
-    overrideBuildConfig: overrideBuildConfig ?? const {},
     enableLowResourcesMode: enableLowResourcesMode,
     logPerformanceDir: logPerformanceDir,
   );
@@ -160,7 +156,7 @@ Future<TestBuildersResult> testPhases(
     options,
     environment,
     builders,
-    builderConfigOverrides,
+    const {},
     isReleaseBuild: false,
   );
   result = await build.run(

@@ -1,5 +1,7 @@
 ## 3.3.0-wip
 
+- Read build configs using `AssetReader` so they're easier to test: you can now
+  pass in `build.yaml` like any other asset.
 - Bug fix: don't crash when a builder logs during a `testBuilder` or
   `resolveSource` call outside a test.
 - Remove unused deps: `async`, `convert`.

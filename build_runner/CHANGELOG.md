@@ -3,6 +3,7 @@
 - Remove unused deps: `analyzer`, `build_resolvers`, `collection`, `http`,
   `js`, `meta`, `package_config`, `pool`, `web`, `yaml`.
 - Remove unused dev_deps: `http`, `package_config`, `web`.
+- Testing: read build configs using `AssetReader` so they're easier to test.
 
 ## 2.6.0-dev.1
 

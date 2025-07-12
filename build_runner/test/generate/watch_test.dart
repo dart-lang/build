@@ -5,7 +5,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:_test_common/build_configs.dart';
 import 'package:_test_common/common.dart';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
@@ -110,18 +109,17 @@ void main() {
       test('rebuilds on file updates outside hardcoded sources', () async {
         var buildState = await startWatch(
           [copyABuildApplication],
-          {'a|test_files/a.txt': 'a'},
+          {
+            'a|test_files/a.txt': 'a',
+            'a|build.yaml': '''
+targets:
+  a:
+    sources:
+      - test_files/**
+''',
+          },
           readerWriter,
           packageGraph: packageGraph,
-          overrideBuildConfig: parseBuildConfigs({
-            'a': {
-              'targets': {
-                'a': {
-                  'sources': ['test_files/**'],
-                },
-              },
-            },
-          }),
         );
         var results = StreamQueue(buildState.buildResults);
 
@@ -179,18 +177,17 @@ void main() {
       test('rebuilds on new files outside hardcoded sources', () async {
         var buildState = await startWatch(
           [copyABuildApplication],
-          {'a|test_files/a.txt': 'a'},
+          {
+            'a|test_files/a.txt': 'a',
+            'a|build.yaml': '''
+targets:
+  a:
+    sources:
+      - test_files/**
+''',
+          },
           readerWriter,
           packageGraph: packageGraph,
-          overrideBuildConfig: parseBuildConfigs({
-            'a': {
-              'targets': {
-                'a': {
-                  'sources': ['test_files/**'],
-                },
-              },
-            },
-          }),
         );
         var results = StreamQueue(buildState.buildResults);
 
@@ -302,18 +299,18 @@ void main() {
       test('rebuilds on deleted files outside hardcoded sources', () async {
         var buildState = await startWatch(
           [copyABuildApplication],
-          {'a|test_files/a.txt': 'a', 'a|test_files/b.txt': 'b'},
+          {
+            'a|test_files/a.txt': 'a',
+            'a|test_files/b.txt': 'b',
+            'a|build.yaml': '''
+targets:
+  a:
+    sources:
+      - test_files/**
+''',
+          },
           readerWriter,
           packageGraph: packageGraph,
-          overrideBuildConfig: parseBuildConfigs({
-            'a': {
-              'targets': {
-                'a': {
-                  'sources': ['test_files/**'],
-                },
-              },
-            },
-          }),
         );
         var results = StreamQueue(buildState.buildResults);
 

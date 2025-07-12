@@ -143,13 +143,16 @@ class BuildOptions {
 
   /// Creates a [BuildOptions] with sane defaults.
   ///
+  /// Pass [reader] to read `build.yaml` files, otherwise defaults are used.
+  ///
   /// NOTE: If a custom [resolvers] instance is passed it must ensure that it
   /// enables [enabledExperiments] on any analysis options it creates.
   static Future<BuildOptions> create({
+    required PackageGraph packageGraph,
+    AssetReader? reader,
     Duration debounceDelay = const Duration(milliseconds: 250),
     bool deleteFilesByDefault = false,
     bool enableLowResourcesMode = false,
-    required PackageGraph packageGraph,
     Map<String, BuildConfig> overrideBuildConfig = const {},
     bool skipBuildScriptCheck = false,
     bool trackPerformance = false,
@@ -161,18 +164,14 @@ class BuildOptions {
     try {
       targetGraph = await TargetGraph.forPackageGraph(
         packageGraph,
+        reader: reader,
         overrideBuildConfig: overrideBuildConfig,
         defaultRootPackageSources: defaultRootPackageSources,
         requiredSourcePaths: [r'lib/$lib$'],
         requiredRootSourcePaths: [r'$package$', r'lib/$lib$'],
       );
     } on BuildConfigParseException catch (e) {
-      buildLog.error('''
-Failed to parse `build.yaml` for ${e.packageName}.
-
-If you believe you have gotten this message in error, especially if using a new
-feature, you may need to run `dart run build_runner clean` and then rebuild.
-''');
+      buildLog.error(e.toString());
       throw const CannotBuildException();
     }
 

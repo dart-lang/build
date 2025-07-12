@@ -82,8 +82,9 @@ Future<ServeHandler> watch(
     configKey: configKey,
   );
   var options = await BuildOptions.create(
-    deleteFilesByDefault: deleteFilesByDefault,
     packageGraph: packageGraph,
+    reader: environment.reader,
+    deleteFilesByDefault: deleteFilesByDefault,
     overrideBuildConfig: overrideBuildConfig,
     debounceDelay: debounceDelay,
     skipBuildScriptCheck: skipBuildScriptCheck,

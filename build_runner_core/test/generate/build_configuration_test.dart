@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:_test_common/build_configs.dart';
 import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
 import 'package:build_runner_core/build_runner_core.dart';
@@ -17,25 +16,22 @@ void main() {
       ),
     );
 
-    final buildConfigs = parseBuildConfigs({
-      'a': {
-        'targets': {
-          'a': {
-            'builders': {
-              'a:optioned_builder': {
-                'options': {'inputExtension': '.matches'},
-              },
-            },
-          },
-        },
-      },
-    });
     await testPhases(
       [
         apply('a:optioned_builder', [copyBuilder], toRoot(), hideOutput: false),
       ],
-      {'a|lib/file.nomatch': 'a', 'a|lib/file.matches': 'b'},
-      overrideBuildConfig: buildConfigs,
+      {
+        'a|lib/file.nomatch': 'a',
+        'a|lib/file.matches': 'b',
+        'a|build.yaml': '''
+targets:
+  a:
+    builders:
+      a:optioned_builder:
+        options:
+          inputExtension: .matches
+''',
+      },
       outputs: {'a|lib/file.copy': 'b'},
     );
   });

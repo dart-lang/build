@@ -92,8 +92,9 @@ Future<BuildResult> build(
     b.onLog = onLog;
   });
   var options = await BuildOptions.create(
-    deleteFilesByDefault: deleteFilesByDefault,
     packageGraph: packageGraph,
+    reader: environment.reader,
+    deleteFilesByDefault: deleteFilesByDefault,
     skipBuildScriptCheck: skipBuildScriptCheck,
     overrideBuildConfig: await findBuildConfigOverrides(
       packageGraph,
