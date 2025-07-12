@@ -143,13 +143,17 @@ class BuildOptions {
 
   /// Creates a [BuildOptions] with sane defaults.
   ///
+  /// Pass [reader] to read `build.yaml` files, otherwise defaults are used.
+  ///
   /// NOTE: If a custom [resolvers] instance is passed it must ensure that it
   /// enables [enabledExperiments] on any analysis options it creates.
   static Future<BuildOptions> create({
+    required PackageGraph packageGraph,
+    // TODO(davidmorgan): make required after cleaning up tests?
+    AssetReader? reader,
     Duration debounceDelay = const Duration(milliseconds: 250),
     bool deleteFilesByDefault = false,
     bool enableLowResourcesMode = false,
-    required PackageGraph packageGraph,
     Map<String, BuildConfig> overrideBuildConfig = const {},
     bool skipBuildScriptCheck = false,
     bool trackPerformance = false,
@@ -161,6 +165,7 @@ class BuildOptions {
     try {
       targetGraph = await TargetGraph.forPackageGraph(
         packageGraph,
+        reader: reader,
         overrideBuildConfig: overrideBuildConfig,
         defaultRootPackageSources: defaultRootPackageSources,
         requiredSourcePaths: [r'lib/$lib$'],
