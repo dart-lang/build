@@ -503,7 +503,7 @@ class Build {
 
       var reallyBuild = true;
       final runsIfTriggered =
-          phase.builderOptions.config['runs_only_if_triggered'];
+          phase.builderOptions.config['run_only_if_triggered'];
       if (runsIfTriggered == true) {
         reallyBuild = false;
         final buildTriggers = options.targetGraph.buildTriggers;
