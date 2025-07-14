@@ -8,7 +8,6 @@ import 'dart:async';
 
 import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
-import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:test/test.dart';
 
@@ -70,19 +69,14 @@ void main() {
             );
           },
         );
-        await testPhases(
+        await testBuilders(
           [
-            applyToRoot(optionalWithResolver, isOptional: true),
-            applyToRoot(
-              nonOptionalWritesImportedFile,
-              generateFor: const InputSet(include: ['lib/file.dart']),
-            ),
-            applyToRoot(
-              nonOptionalResolveImportedFile,
-              generateFor: const InputSet(include: ['lib/file.dart']),
-            ),
+            optionalWithResolver,
+            nonOptionalWritesImportedFile,
+            nonOptionalResolveImportedFile,
           ],
           {'a|lib/file.dart': 'import "file.imported.dart";'},
+          optionalBuilders: {optionalWithResolver},
           outputs: {
             'a|lib/file.dart.bar': '[SomeClass]',
             'a|lib/file.dart.foo': 'anything',
@@ -95,68 +89,58 @@ void main() {
     test('A hidden generated file does not poison resolving', () async {
       final slowBuilderCompleter = Completer<void>();
       final builders = [
-        applyToRoot(
-          TestBuilder(
-            buildExtensions: replaceExtension('.dart', '.g1.dart'),
-            build: (buildStep, _) async {
-              // Put the analysis driver into the bad state.
-              await buildStep.inputLibrary;
-              await buildStep.writeAsString(
-                buildStep.inputId.changeExtension('.g1.dart'),
-                'class Annotation {const Annotation();}',
-              );
-            },
-          ),
-          generateFor: const InputSet(include: ['lib/a.dart']),
+        TestBuilder(
+          buildExtensions: replaceExtension('.dart', '.g1.dart'),
+          build: (buildStep, _) async {
+            if (buildStep.inputId.path != 'lib/a.dart') return;
+            // Put the analysis driver into the bad state.
+            await buildStep.inputLibrary;
+            await buildStep.writeAsString(
+              buildStep.inputId.changeExtension('.g1.dart'),
+              'class Annotation {const Annotation();}',
+            );
+          },
         ),
-        applyToRoot(
-          TestBuilder(
-            buildExtensions: replaceExtension('.dart', '.g2.dart'),
-            build: (buildStep, _) async {
-              var library = await buildStep.inputLibrary;
-              var annotation =
-                  library.topLevelFunctions.single.metadata2.annotations.single
-                      .computeConstantValue();
-              await buildStep.writeAsString(
-                buildStep.inputId.changeExtension('.g2.dart'),
-                '//$annotation',
-              );
-              slowBuilderCompleter.complete();
-            },
-          ),
-          isOptional: true,
-          generateFor: const InputSet(include: ['lib/a.dart']),
+        TestBuilder(
+          buildExtensions: replaceExtension('.dart', '.g2.dart'),
+          build: (buildStep, _) async {
+            if (buildStep.inputId.path != 'lib/a.dart') return;
+            var library = await buildStep.inputLibrary;
+            var annotation =
+                library.topLevelFunctions.single.metadata2.annotations.single
+                    .computeConstantValue();
+            await buildStep.writeAsString(
+              buildStep.inputId.changeExtension('.g2.dart'),
+              '//$annotation',
+            );
+            slowBuilderCompleter.complete();
+          },
         ),
-        applyToRoot(
-          TestBuilder(
-            buildExtensions: replaceExtension('.dart', '.slow.dart'),
-            build: (buildStep, _) async {
-              // The test relies on `g2` generation running so that
-              // `slowBuilderCompleter` is completed. It's in an earlier phase,
-              // so it always _can_ run earlier, but it's not guaranteed. Read
-              // it so that it actually does run earlier.
-              await buildStep.canRead(AssetId('a', 'lib/a.g2.dart'));
-              await slowBuilderCompleter.future;
-              await buildStep.writeAsString(
-                buildStep.inputId.changeExtension('.slow.dart'),
-                '',
-              );
-            },
-          ),
-          isOptional: true,
-          generateFor: const InputSet(include: ['lib/b.dart']),
+        TestBuilder(
+          buildExtensions: replaceExtension('.dart', '.slow.dart'),
+          build: (buildStep, _) async {
+            if (buildStep.inputId.path != 'lib/b.dart') return;
+            // The test relies on `g2` generation running so that
+            // `slowBuilderCompleter` is completed. It's in an earlier phase,
+            // so it always _can_ run earlier, but it's not guaranteed. Read
+            // it so that it actually does run earlier.
+            await buildStep.canRead(AssetId('a', 'lib/a.g2.dart'));
+            await slowBuilderCompleter.future;
+            await buildStep.writeAsString(
+              buildStep.inputId.changeExtension('.slow.dart'),
+              '',
+            );
+          },
         ),
-        applyToRoot(
-          TestBuilder(
-            buildExtensions: replaceExtension('.dart', '.root'),
-            build: (buildStep, _) async {
-              await buildStep.inputLibrary;
-            },
-          ),
-          generateFor: const InputSet(include: ['lib/b.dart']),
+        TestBuilder(
+          buildExtensions: replaceExtension('.dart', '.root'),
+          build: (buildStep, _) async {
+            if (buildStep.inputId.path != 'lib/b.dart') return;
+            await buildStep.inputLibrary;
+          },
         ),
       ];
-      await testPhases(
+      await testBuilders(
         builders,
         {
           'a|lib/a.dart': '''
@@ -172,6 +156,7 @@ import 'a.g2.dart';
 import 'b.slow.dart';
 ''',
         },
+        optionalBuilders: {builders[1]},
         outputs: {
           'a|lib/a.g1.dart': 'class Annotation {const Annotation();}',
           'a|lib/a.g2.dart': '//Annotation ()',
