@@ -26,37 +26,35 @@ void main() {
   });
 
   test('should fail if a severe logged', () async {
-    await testPhases(
-      [applyToRoot(_LoggingBuilder(Level.SEVERE))],
-      {'a|lib/a.dart': ''},
-      packageGraph: buildPackageGraph({rootPackage('a'): []}),
-      checkBuildStatus: true,
-      status: BuildStatus.failure,
-      outputs: {'a|lib/a.dart.empty': ''},
+    expect(
+      (await testBuilders(
+        [_LoggingBuilder(Level.SEVERE)],
+        {'a|lib/a.dart': ''},
+        outputs: {'a|lib/a.dart.empty': ''},
+      )).buildResult.status,
+      BuildStatus.failure,
     );
   });
 
   test('should fail if a severe was logged on a previous build', () async {
-    var packageGraph = buildPackageGraph({rootPackage('a'): []});
-    var builder = _LoggingBuilder(Level.SEVERE);
-    var builders = [applyToRoot(builder)];
-    final result = await testPhases(
-      builders,
+    var result = await testBuilders(
+      [_LoggingBuilder(Level.SEVERE)],
       {'a|lib/a.dart': ''},
-      packageGraph: packageGraph,
-      checkBuildStatus: true,
-      status: BuildStatus.failure,
       outputs: {'a|lib/a.dart.empty': ''},
     );
-    await testPhases(
-      builders,
-      {},
-      resumeFrom: result,
-      packageGraph: packageGraph,
-      checkBuildStatus: true,
-      status: BuildStatus.failure,
-      outputs: {},
+    expect(result.buildResult.status, BuildStatus.failure);
+
+    final builder = _LoggingBuilder(Level.SEVERE);
+    result = await testBuilders(
+      [builder],
+      {'a|lib/a.dart': ''},
+      // Pass the output from the previous build, so the build resumes.
+      readerWriter: result.readerWriter,
+      outputs: {'a|lib/a.dart.empty': ''},
     );
+    expect(result.buildResult.status, BuildStatus.failure);
+    // Should have failed without actually building again.
+    expect(builder.built, false);
   });
 
   test(
@@ -145,11 +143,13 @@ void main() {
 
 class _LoggingBuilder implements Builder {
   Level level;
+  bool built = false;
 
   _LoggingBuilder(this.level);
 
   @override
   Future<void> build(BuildStep buildStep) async {
+    built = true;
     log.log(level, buildStep.inputId.toString());
     await buildStep.canRead(buildStep.inputId);
     await buildStep.writeAsString(buildStep.inputId.addExtension('.empty'), '');
