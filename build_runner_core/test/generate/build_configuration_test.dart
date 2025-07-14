@@ -11,15 +11,14 @@ void main() {
   test('uses builder options', () async {
     Builder copyBuilder(BuilderOptions options) => TestBuilder(
       buildExtensions: replaceExtension(
-        options.config['inputExtension'] as String,
+        options.config['inputExtension'] as String? ?? '',
         '.copy',
       ),
+      name: 'a:optioned_builder',
     );
 
-    await testPhases(
-      [
-        apply('a:optioned_builder', [copyBuilder], toRoot(), hideOutput: false),
-      ],
+    await testBuilderFactories(
+      [copyBuilder],
       {
         'a|lib/file.nomatch': 'a',
         'a|lib/file.matches': 'b',
@@ -32,6 +31,7 @@ targets:
           inputExtension: .matches
 ''',
       },
+      testingBuilderConfig: false,
       outputs: {'a|lib/file.copy': 'b'},
     );
   });
@@ -43,22 +43,10 @@ targets:
         options.isRoot ? '.root.copy' : '.dep.copy',
       ),
     );
-    var packageGraph = buildPackageGraph({
-      rootPackage('a'): ['b'],
-      package('b'): [],
-    });
-    await testPhases(
-      [
-        apply(
-          'a:optioned_builder',
-          [copyBuilder],
-          toAllPackages(),
-          hideOutput: true,
-        ),
-      ],
+    await testBuilderFactories(
+      [copyBuilder],
       {'a|lib/a.txt': 'a', 'b|lib/b.txt': 'b'},
-      outputs: {r'$$a|lib/a.root.copy': 'a', r'$$b|lib/b.dep.copy': 'b'},
-      packageGraph: packageGraph,
+      outputs: {r'a|lib/a.root.copy': 'a', r'b|lib/b.dep.copy': 'b'},
     );
   });
 }

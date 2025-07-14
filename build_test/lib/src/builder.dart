@@ -94,6 +94,7 @@ class TestBuilder implements Builder {
   @override
   final Map<String, List<String>> buildExtensions;
 
+  final String name;
   final BuildBehavior _build;
   final BuildBehavior? _extraWork;
 
@@ -113,6 +114,7 @@ class TestBuilder implements Builder {
     Map<String, List<String>>? buildExtensions,
     BuildBehavior? build,
     BuildBehavior? extraWork,
+    this.name = 'TestBuilder',
   }) : buildExtensions = buildExtensions ?? appendExtension('.copy'),
        _build = build ?? _defaultBehavior,
        _extraWork = extraWork;
@@ -125,4 +127,7 @@ class TestBuilder implements Builder {
     await _extraWork?.call(buildStep, buildExtensions);
     _buildsCompletedController.add(buildStep.inputId);
   }
+
+  @override
+  String toString() => name;
 }
