@@ -64,6 +64,7 @@ class BuildPhases {
       inBuildPhases.length + (postBuildPhase.builderActions.isEmpty ? 0 : 1);
 
   static Digest _computeDigest(Iterable<BuildPhase> phases) {
+    buildLog.debug(phases.toString());
     final digestSink = AccumulatorSink<Digest>();
     md5.startChunkedConversion(digestSink)
       ..add(phases.map((phase) => phase.identity).toList())

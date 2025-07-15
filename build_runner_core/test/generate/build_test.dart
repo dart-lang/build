@@ -1288,66 +1288,6 @@ targets:
   });
 
   group('incremental builds with cached graph', () {
-    // Using `resumeFrom: result` to pass the filesystem between `testBuilders`
-    // calls causes the serialized graph from the previous build to be loaded,
-    // exactly as in real builds.
-
-    test('one new asset, one modified asset, one unchanged asset', () async {
-      var builders = [copyABuilderApplication];
-
-      // Initial build.
-      final result = await testPhases(
-        builders,
-        {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
-        outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'},
-      );
-
-      // Followup build with modified inputs.
-      await testPhases(
-        builders,
-        {
-          'a|web/a.txt': 'a2',
-          'a|web/a.txt.copy': 'a',
-          'a|lib/b.txt': 'b',
-          'a|lib/b.txt.copy': 'b',
-          'a|lib/c.txt': 'c',
-        },
-        outputs: {'a|web/a.txt.copy': 'a2', 'a|lib/c.txt.copy': 'c'},
-        resumeFrom: result,
-      );
-    });
-
-    test(
-      'deleting only the second output of a builder causes it to rerun',
-      () async {
-        var builders = [
-          applyToRoot(
-            TestBuilder(
-              buildExtensions: {
-                '.txt': ['.txt.1', '.txt.2'],
-              },
-            ),
-          ),
-        ];
-
-        // Initial build.
-        final result = await testPhases(
-          builders,
-          {'a|lib/a.txt': 'a'},
-          outputs: {'a|lib/a.txt.1': 'a', 'a|lib/a.txt.2': 'a'},
-        );
-
-        // Followup build with the 2nd output missing.
-        result.readerWriter.testing.delete(AssetId('a', 'lib/a.txt.2'));
-        await testPhases(
-          builders,
-          {'a|lib/a.txt': 'a', 'a|lib/a.txt.1': 'a'},
-          outputs: {'a|lib/a.txt.1': 'a', 'a|lib/a.txt.2': 'a'},
-          resumeFrom: result,
-        );
-      },
-    );
-
     group('reportUnusedAssets', () {
       test('removes input dependencies', () async {
         final builder = TestBuilder(

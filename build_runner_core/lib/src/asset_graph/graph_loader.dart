@@ -74,6 +74,7 @@ class AssetGraphLoader {
     final enabledExperimentsChanged =
         cachedGraph.enabledExperiments != enabledExperiments.build();
     if (buildPhasesChanged || pkgVersionsChanged || enabledExperimentsChanged) {
+      buildLog.debug('${buildPhases.digest} ${cachedGraph.buildPhasesDigest}');
       buildLog.fullBuildBecause(FullBuildReason.incompatibleBuild);
       await Future.wait([
         writer.delete(assetGraphId),
