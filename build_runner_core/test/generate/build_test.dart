@@ -1209,25 +1209,15 @@ targets:
   test(
     "builders reading their output don't cause self-referential nodes",
     () async {
-      final result = await testPhases(
+      final result = await testBuilders(
         [
-          apply(
-            '',
-            [
-              (_) {
-                return TestBuilder(
-                  build: (step, _) async {
-                    final output = step.inputId.addExtension('.out');
-                    await step.writeAsString(output, 'a');
-                    await step.readAsString(output);
-                  },
-                  buildExtensions: appendExtension('.out', from: '.txt'),
-                );
-              },
-            ],
-            toRoot(),
-            isOptional: false,
-            hideOutput: false,
+          TestBuilder(
+            build: (step, _) async {
+              final output = step.inputId.addExtension('.out');
+              await step.writeAsString(output, 'a');
+              await step.readAsString(output);
+            },
+            buildExtensions: appendExtension('.out', from: '.txt'),
           ),
         ],
         {'a|lib/a.txt': 'a'},
