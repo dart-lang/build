@@ -498,13 +498,16 @@ targets:
       });
 
       test('previous outputs are cleaned up', () async {
-        final result = await testPhases(
-          [copyABuilderApplication],
+        final result = await testBuilders(
+          [testBuilder],
           {'a|web/a.txt': 'a'},
           outputs: {'a|web/a.txt.copy': 'a'},
         );
 
-        var copyId = makeAssetId('a|web/a.txt.copy');
+        final copyId = makeAssetId(
+          'a|.dart_tool/build/generated/a/web/a.txt.copy',
+        );
+        expect(result.readerWriter.testing.exists(copyId), isTrue);
 
         var canReadInBuild = Completer<bool>();
         var blockingCompleter = Completer<void>();
@@ -519,11 +522,10 @@ targets:
             await blockingCompleter.future;
           },
         );
-        var done = testPhases(
-          [applyToRoot(builder)],
+        var done = testBuilders(
+          [builder],
           {'a|web/a.txt': 'b'},
-          resumeFrom: result,
-          outputs: {'a|web/a.txt.copy': 'b'},
+          readerWriter: result.readerWriter,
         );
 
         // Before the build starts we should still see the asset, we haven't
@@ -584,19 +586,12 @@ additional_public_assets:
 
     group('reading assets outside of the root package', () {
       test('can read public non-lib assets', () async {
-        final packageGraph = buildPackageGraph({
-          rootPackage('a', path: 'a/'): ['b'],
-          package('b', path: 'a/b'): [],
-        });
-
         final builder = TestBuilder(
           build: copyFrom(makeAssetId('b|test/foo.bar')),
         );
 
-        await testPhases(
-          [
-            apply('', [(_) => builder], toPackage('a')),
-          ],
+        await testBuilders(
+          [builder],
           {
             'a|lib/a.foo': '',
             'b|test/foo.bar': 'content',
@@ -605,17 +600,14 @@ additional_public_assets:
   - test/**
 ''',
           },
-          packageGraph: packageGraph,
-          outputs: {r'$$a|lib/a.foo.copy': 'content'},
+          // Visible output so it only runs on the root package `a`.
+          visibleOutputBuilders: {builder},
+          outputs: {r'a|lib/a.foo.copy': 'content'},
+          testingBuilderConfig: false,
         );
       });
 
       test('reading private assets throws InvalidInputException', () {
-        final packageGraph = buildPackageGraph({
-          rootPackage('a', path: 'a/'): ['b'],
-          package('b', path: 'a/b'): [],
-        });
-
         final builder = TestBuilder(
           buildExtensions: const {
             '.txt': ['.copy'],
@@ -637,22 +629,14 @@ additional_public_assets:
           },
         );
 
-        return testPhases(
-          [
-            apply('', [(_) => builder], toPackage('a')),
-          ],
+        return testBuilders(
+          [builder],
           {'a|lib/foo.txt': "doesn't matter"},
-          packageGraph: packageGraph,
           outputs: {},
         );
       });
 
       test('canRead doesn\'t throw for invalid inputs or missing packages', () {
-        final packageGraph = buildPackageGraph({
-          rootPackage('a', path: 'a/'): ['b'],
-          package('b', path: 'a/b'): [],
-        });
-
         final builder = TestBuilder(
           buildExtensions: const {
             '.txt': ['.copy'],
@@ -669,12 +653,9 @@ additional_public_assets:
           },
         );
 
-        return testPhases(
-          [
-            apply('', [(_) => builder], toPackage('a')),
-          ],
+        return testBuilders(
+          [builder],
           {'a|lib/foo.txt': "doesn't matter"},
-          packageGraph: packageGraph,
           outputs: {},
         );
       });
@@ -683,21 +664,12 @@ additional_public_assets:
     test(
       'skips builders which would output files in non-root packages',
       () async {
-        final packageGraph = buildPackageGraph({
-          rootPackage('a', path: 'a/'): ['b'],
-          package('b', path: 'a/b'): [],
-        });
-        await testPhases(
-          [
-            apply(
-              '',
-              [(_) => TestBuilder()],
-              toPackage('b'),
-              hideOutput: false,
-            ),
-          ],
+        await testBuilders(
+          [testBuilder],
           {'b|lib/b.txt': 'b'},
-          packageGraph: packageGraph,
+          // Visible output so it only runs on the root package `a`.
+          visibleOutputBuilders: {testBuilder},
+          rootPackage: 'a',
           outputs: {},
         );
       },
@@ -731,45 +703,43 @@ additional_public_assets:
       });
 
       test('handles mixed hidden and non-hidden outputs', () async {
-        await testPhases(
+        final result = await testBuilders(
           [
-            applyToRoot(TestBuilder()),
-            applyToRoot(
-              TestBuilder(buildExtensions: appendExtension('.hiddencopy')),
-              hideOutput: true,
-            ),
+            testBuilder,
+            TestBuilder(buildExtensions: appendExtension('.hiddencopy')),
           ],
           {'a|lib/a.txt': 'a'},
-          packageGraph: packageGraph,
+          visibleOutputBuilders: {testBuilder},
           outputs: {
-            r'$$a|lib/a.txt.hiddencopy': 'a',
-            r'$$a|lib/a.txt.copy.hiddencopy': 'a',
+            r'a|lib/a.txt.hiddencopy': 'a',
+            r'a|lib/a.txt.copy.hiddencopy': 'a',
             r'a|lib/a.txt.copy': 'a',
           },
+        );
+        // Two of the outputs are under the generated output path.
+        expect(
+          result.readerWriter.testing.assets.where(
+            (a) => a.path.contains('.dart_tool/build/generated'),
+          ),
+          hasLength(2),
         );
       });
 
       test('allows reading hidden outputs from another package to create '
           'a non-hidden output', () async {
-        await testPhases(
-          [
-            apply(
-              'hidden_on_b',
-              [(_) => TestBuilder()],
-              toPackage('b'),
-              hideOutput: true,
-            ),
-            applyToRoot(
-              TestBuilder(
-                buildExtensions: appendExtension('.check_can_read'),
-                build: writeCanRead(makeAssetId('b|lib/b.txt.copy')),
-              ),
-            ),
-          ],
+        final builder1 = TestBuilder();
+        final builder2 = TestBuilder(
+          buildExtensions: appendExtension('.check_can_read'),
+          build: writeCanRead(makeAssetId('b|lib/b.txt.copy')),
+        );
+        await testBuilders(
+          [builder1, builder2],
           {'a|lib/a.txt': 'a', 'b|lib/b.txt': 'b'},
-          packageGraph: packageGraph,
+          visibleOutputBuilders: {builder2},
           outputs: {
-            r'$$b|lib/b.txt.copy': 'b',
+            r'a|lib/a.txt.copy': 'a',
+            r'a|lib/a.txt.copy.check_can_read': 'true',
+            r'b|lib/b.txt.copy': 'b',
             r'a|lib/a.txt.check_can_read': 'true',
           },
         );
@@ -777,20 +747,17 @@ additional_public_assets:
 
       test('allows reading hidden outputs from same package to create '
           'a non-hidden output', () async {
-        await testPhases(
-          [
-            applyToRoot(TestBuilder(), hideOutput: true),
-            applyToRoot(
-              TestBuilder(
-                buildExtensions: appendExtension('.check_can_read'),
-                build: writeCanRead(makeAssetId('a|lib/a.txt.copy')),
-              ),
-            ),
-          ],
+        final builder1 = TestBuilder();
+        final builder2 = TestBuilder(
+          buildExtensions: appendExtension('.check_can_read'),
+          build: writeCanRead(makeAssetId('a|lib/a.txt.copy')),
+        );
+        await testBuilders(
+          [builder1, builder2],
           {'a|lib/a.txt': 'a'},
-          packageGraph: packageGraph,
+          visibleOutputBuilders: {builder2},
           outputs: {
-            r'$$a|lib/a.txt.copy': 'a',
+            r'a|lib/a.txt.copy': 'a',
             r'a|lib/a.txt.copy.check_can_read': 'true',
             r'a|lib/a.txt.check_can_read': 'true',
           },
@@ -821,46 +788,21 @@ additional_public_assets:
     });
 
     test('can read files from external packages', () async {
-      var packageGraph = buildPackageGraph({
-        rootPackage('a'): ['b'],
-        package('b'): [],
-      });
-
-      var builders = [
-        apply(
-          '',
-          [
-            (_) => TestBuilder(
-              extraWork:
-                  (buildStep, _) =>
-                      buildStep.canRead(makeAssetId('b|lib/b.txt')),
-            ),
-          ],
-          toRoot(),
-          hideOutput: false,
-        ),
-      ];
-      await testPhases(
-        builders,
+      var builder = TestBuilder(
+        extraWork:
+            (buildStep, _) => buildStep.canRead(makeAssetId('b|lib/b.txt')),
+      );
+      await testBuilders(
+        [builder],
+        visibleOutputBuilders: {builder},
         {'a|lib/a.txt': 'a', 'b|lib/b.txt': 'b'},
         outputs: {'a|lib/a.txt.copy': 'a'},
-        packageGraph: packageGraph,
       );
     });
 
     test('can glob files from packages', () async {
-      final packageGraph = buildPackageGraph({
-        rootPackage('a', path: 'a/'): ['b'],
-        package('b', path: 'a/b/'): [],
-      });
-
-      var builders = [
-        apply('', [(_) => globBuilder], toRoot(), hideOutput: true),
-        apply('', [(_) => globBuilder], toPackage('b'), hideOutput: true),
-      ];
-
-      await testPhases(
-        builders,
+      await testBuilders(
+        [globBuilder],
         {
           'a|lib/a.globPlaceholder': '',
           'a|lib/a.txt': '',
@@ -872,16 +814,15 @@ additional_public_assets:
           'b|web/b.txt': '',
         },
         outputs: {
-          r'$$a|lib/a.matchingFiles': 'a|lib/a.txt\na|lib/b.txt\na|web/a.txt',
-          r'$$b|lib/b.matchingFiles': 'b|lib/c.txt\nb|lib/d.txt',
+          r'a|lib/a.matchingFiles': 'a|lib/a.txt\na|lib/b.txt\na|web/a.txt',
+          r'b|lib/b.matchingFiles': 'b|lib/c.txt\nb|lib/d.txt',
         },
-        packageGraph: packageGraph,
       );
     });
 
     test('can glob files with excludes applied', () async {
-      await testPhases(
-        [applyToRoot(globBuilder)],
+      await testBuilders(
+        [globBuilder],
         {
           'a|lib/a/1.txt': '',
           'a|lib/a/2.txt': '',
@@ -897,6 +838,7 @@ targets:
 ''',
         },
         outputs: {'a|lib/test.matchingFiles': 'a|lib/b/1.txt\na|lib/b/2.txt'},
+        testingBuilderConfig: false,
       );
     });
 
