@@ -393,23 +393,17 @@ targets:
       test('early step touches a not-yet-generated asset', () async {
         var copyId = AssetId('a', 'lib/file.a.copy');
         var builders = [
-          applyToRoot(
-            TestBuilder(
-              buildExtensions: appendExtension('.copy', from: '.b'),
-              extraWork: (buildStep, _) => buildStep.canRead(copyId),
-            ),
+          TestBuilder(
+            buildExtensions: appendExtension('.copy', from: '.b'),
+            extraWork: (buildStep, _) => buildStep.canRead(copyId),
           ),
-          applyToRoot(
-            TestBuilder(buildExtensions: appendExtension('.copy', from: '.a')),
-          ),
-          applyToRoot(
-            TestBuilder(
-              buildExtensions: appendExtension('.exists', from: '.a'),
-              build: writeCanRead(copyId),
-            ),
+          TestBuilder(buildExtensions: appendExtension('.copy', from: '.a')),
+          TestBuilder(
+            buildExtensions: appendExtension('.exists', from: '.a'),
+            build: writeCanRead(copyId),
           ),
         ];
-        await testPhases(
+        await testBuilders(
           builders,
           {'a|lib/file.a': 'a', 'a|lib/file.b': 'b'},
           outputs: {
@@ -428,32 +422,29 @@ targets:
           build: writeCanRead(aTxtId),
         );
         var builders = [
-          applyToRoot(firstBuilder),
-          applyToRoot(
-            TestBuilder(
-              buildExtensions: appendExtension('.exists', from: '.b'),
-              build: (_, _) => ready.future,
-              extraWork: writeCanRead(aTxtId),
-            ),
+          firstBuilder,
+          TestBuilder(
+            buildExtensions: appendExtension('.exists', from: '.b'),
+            build: (_, _) => ready.future,
+            extraWork: writeCanRead(aTxtId),
           ),
         ];
 
-        // Do an first build so a reader is created.
-        final result = await testPhases(builders, {'unused|lib/unused.a': ''});
-
-        // After the first builder runs, delete the asset from the reader and
-        // allow the 2nd builder to run.
+        // After the first builder runs, delete the asset from the in-memory
+        //filesystem and allow the 2nd builder to run.
+        final readerWriter = TestReaderWriter(rootPackage: 'a');
         unawaited(
           firstBuilder.buildsCompleted.first.then((id) {
-            result.readerWriter.testing.delete(aTxtId);
+            readerWriter.testing.delete(aTxtId);
             ready.complete();
           }),
         );
 
-        await testPhases(
+        await testBuilders(
           builders,
           {'a|lib/file.a': '', 'a|lib/file.b': ''},
-          resumeFrom: result,
+          readerWriter: readerWriter,
+          rootPackage: 'a',
           outputs: {
             'a|lib/file.a.exists': 'true',
             'a|lib/file.b.exists': 'true',
@@ -462,18 +453,15 @@ targets:
       });
 
       test('pre-existing outputs', () async {
-        final result = await testPhases(
+        final result = await testBuilders(
           [
-            copyABuilderApplication,
-            applyToRoot(
-              TestBuilder(
-                buildExtensions: appendExtension('.clone', from: '.copy'),
-              ),
+            testBuilder,
+            TestBuilder(
+              buildExtensions: appendExtension('.clone', from: '.copy'),
             ),
           ],
           {'a|web/a.txt': 'a', 'a|web/a.txt.copy': 'a'},
           outputs: {'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.clone': 'a'},
-          deleteFilesByDefault: true,
         );
 
         var graphId = makeAssetId('a|$assetGraphPath');
@@ -488,7 +476,6 @@ targets:
             makeAssetId('a|web/a.txt.copy'),
             makeAssetId('a|web/a.txt.copy.clone'),
             ...placeholders,
-            makeAssetId('a|.dart_tool/package_config.json'),
           ]),
         );
         expect(cachedGraph.sources, [makeAssetId('a|web/a.txt')]);
