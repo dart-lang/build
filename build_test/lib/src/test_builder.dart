@@ -394,7 +394,11 @@ Future<TestBuilderResult> testBuilderFactories(
                         if (package != rootPackage)
                           ...defaultNonRootVisibleAssets,
                         ...inputIds
-                            .where((id) => id.package == package)
+                            .where(
+                              (id) =>
+                                  id.package == package &&
+                                  !id.path.startsWith('.dart_tool/'),
+                            )
                             .map((id) => Glob.quote(id.path)),
                       ],
                     },

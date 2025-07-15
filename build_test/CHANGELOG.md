@@ -21,6 +21,8 @@
   `resolveSource` call outside a test.
 - Bug fix: in `testBuilder`, if no sources are passed, still treat `rootPackage`
   as an input package.
+- Bug fix: in `testBuilder`, if sources are passed under `.dart_tool`, don't mark
+  them as inputs.
 - Remove unused deps: `async`, `convert`.
 - Remove unused dev_deps: `collection`.
 

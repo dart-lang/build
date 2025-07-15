@@ -867,16 +867,12 @@ targets:
     });
 
     test('can\'t read files in .dart_tool', () async {
-      await testPhases(
-        [
-          apply('', [
-            (_) => TestBuilder(
-              build: copyFrom(makeAssetId('a|.dart_tool/any_file')),
-            ),
-          ], toRoot()),
-        ],
-        {'a|lib/a.txt': 'a', 'a|.dart_tool/any_file': 'content'},
-        status: BuildStatus.failure,
+      expect(
+        (await testBuilders(
+          [TestBuilder(build: copyFrom(makeAssetId('a|.dart_tool/any_file')))],
+          {'a|lib/a.txt': 'a', 'a|.dart_tool/any_file': 'content'},
+        )).buildResult.status,
+        BuildStatus.failure,
       );
     });
 
