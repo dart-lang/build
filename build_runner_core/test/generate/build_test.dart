@@ -5,7 +5,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
-import 'package:_test_common/build_configs.dart';
 import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
 // ignore: implementation_imports
@@ -429,30 +428,28 @@ void main() {
           ),
           postCopyABuilderApplication,
         ];
-        var buildConfigs = parseBuildConfigs({
-          'a': {
-            'targets': {
-              'a': {
-                'builders': {
-                  'a:clone_txt': {
-                    'generate_for': ['**/*.txt'],
-                  },
-                  'a:copy_web_clones': {
-                    'generate_for': ['web/*.txt.clone'],
-                  },
-                  'a:post_copy_builder': {
-                    'options': {'extension': '.custom.post'},
-                    'generate_for': ['web/*.txt'],
-                  },
-                },
-              },
-            },
-          },
-        });
         await testPhases(
           builders,
-          {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
-          overrideBuildConfig: buildConfigs,
+          {
+            'a|web/a.txt': 'a',
+            'a|lib/b.txt': 'b',
+            'a|build.yaml': r'''
+targets:
+  a:
+    builders:
+      a:clone.txt:
+        generate_for:
+          - "**/*.txt"
+      a:copy_web_clones:
+        generate_for:
+          - web/*.txt.clone
+      a:post_copy_builder:
+        options:
+          extension: .custom.post
+        generate_for:
+          - web/*.txt
+''',
+          },
           outputs: {
             'a|web/a.txt.copy': 'a',
             'a|web/a.txt.clone': 'a',
@@ -475,19 +472,17 @@ void main() {
             TestBuilder(buildExtensions: appendExtension('.2', from: '.1')),
           ),
         ];
-        var buildConfigs = parseBuildConfigs({
-          'a': {
-            'targets': {
-              r'$default': {
-                'sources': ['lib/*.txt'],
-              },
-            },
-          },
-        });
         await testPhases(
           builders,
-          {'a|lib/a.txt': 'a'},
-          overrideBuildConfig: buildConfigs,
+          {
+            'a|lib/a.txt': 'a',
+            'a|build.yaml': r'''
+targets:
+  $default:
+    sources:
+      - lib/*.txt
+''',
+          },
           outputs: {'a|lib/a.txt.1': 'a', 'a|lib/a.txt.1.2': 'a'},
         );
       });
@@ -677,14 +672,16 @@ void main() {
       test('builds hidden asset forming a custom public source', () async {
         final result = await testPhases(
           [applyToRoot(testBuilder, hideOutput: true)],
-          {'a|include/a.txt': 'a', 'a|lib/b.txt': 'b'},
+          {
+            'a|include/a.txt': 'a',
+            'a|lib/b.txt': 'b',
+            'a|build.yaml': '''
+additional_public_assets:
+  - include/**
+''',
+          },
           checkBuildStatus: false,
           buildDirs: {BuildDirectory('web')},
-          overrideBuildConfig: {
-            'a': BuildConfig.fromMap('a', const [], {
-              'additional_public_assets': ['include/**'],
-            }),
-          },
         );
 
         checkBuild(
@@ -710,13 +707,13 @@ void main() {
           [
             apply('', [(_) => builder], toPackage('a')),
           ],
-          {'a|lib/a.foo': '', 'b|test/foo.bar': 'content'},
-          overrideBuildConfig: {
-            'b': BuildConfig.parse(
-              'b',
-              [],
-              'additional_public_assets: ["test/**"]',
-            ),
+          {
+            'a|lib/a.foo': '',
+            'b|test/foo.bar': 'content',
+            'b|build.yaml': '''
+additional_public_assets:
+  - test/**
+''',
           },
           packageGraph: packageGraph,
           outputs: {r'$$a|lib/a.foo.copy': 'content'},
@@ -1001,18 +998,14 @@ void main() {
           'a|lib/b/1.txt': '',
           'a|lib/b/2.txt': '',
           'a|lib/test.globPlaceholder': '',
+          'a|build.yaml': r'''
+targets:
+  a:
+    sources:
+      exclude:
+        - lib/a/**
+''',
         },
-        overrideBuildConfig: parseBuildConfigs({
-          'a': {
-            'targets': {
-              'a': {
-                'sources': {
-                  'exclude': ['lib/a/**'],
-                },
-              },
-            },
-          },
-        }),
         outputs: {'a|lib/test.matchingFiles': 'a|lib/b/1.txt\na|lib/b/2.txt'},
       );
     });
@@ -1020,16 +1013,15 @@ void main() {
     test('can build on files outside the hardcoded sources', () async {
       await testPhases(
         [applyToRoot(TestBuilder())],
-        {'a|test_files/a.txt': 'a'},
-        overrideBuildConfig: parseBuildConfigs({
-          'a': {
-            'targets': {
-              'a': {
-                'sources': ['test_files/**'],
-              },
-            },
-          },
-        }),
+        {
+          'a|test_files/a.txt': 'a',
+          'a|build.yaml': '''
+targets:
+  a:
+    sources:
+      - test_files/**
+''',
+        },
         outputs: {'a|test_files/a.txt.copy': 'a'},
       );
     });

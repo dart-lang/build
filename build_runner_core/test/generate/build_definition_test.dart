@@ -136,6 +136,7 @@ targets:
       var packageGraph = await PackageGraph.forPath(pkgARoot);
       environment = BuildEnvironment(packageGraph);
       options = await BuildOptions.create(
+        reader: environment.reader,
         packageGraph: packageGraph,
         skipBuildScriptCheck: true,
       );
