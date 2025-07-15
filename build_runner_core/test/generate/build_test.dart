@@ -194,22 +194,17 @@ void main() {
       });
 
       test('with placeholder as input', () async {
-        await testPhases(
-          [
-            applyToRoot(
-              PlaceholderBuilder(
-                {'lib.txt': 'libText'}.build(),
-                inputPlaceholder: r'$lib$',
-              ),
-            ),
-            applyToRoot(
-              PlaceholderBuilder(
-                {'root.txt': 'rootText'}.build(),
-                inputPlaceholder: r'$package$',
-              ),
-            ),
-          ],
+        final builder1 = PlaceholderBuilder({
+          'lib.txt': 'libText',
+        }, inputExtension: r'$lib$');
+        final builder2 = PlaceholderBuilder({
+          'root.txt': 'rootText',
+        }, inputExtension: r'$package$');
+        await testBuilders(
+          [builder1, builder2],
           {},
+          visibleOutputBuilders: {builder1, builder2},
+          rootPackage: 'a',
           outputs: {'a|lib/lib.txt': 'libText', 'a|root.txt': 'rootText'},
         );
       });

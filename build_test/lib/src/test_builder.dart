@@ -297,10 +297,18 @@ Future<TestBuilderResult> testBuilderFactories(
     for (var descriptor in sourceAssets.keys) makeAssetId(descriptor),
   };
 
+  if (inputIds.isEmpty && rootPackage == null) {
+    throw ArgumentError(
+      '`sourceAssets` is empty so `rootPackage` must be specified, '
+      'but `rootPackage` is null.',
+    );
+  }
+
   // Differentiate input packages and all packages. Builders run on input
   // packages; they can read/resolve all packages. Additional packages are
   // supplied by passing a `readerWriter`.
-  var inputPackages = {for (var id in inputIds) id.package};
+  var inputPackages =
+      inputIds.isEmpty ? {rootPackage!} : {for (var id in inputIds) id.package};
   final allPackages = inputPackages.toSet();
   if (readerWriter != null) {
     for (final asset in readerWriter.testing.assets) {

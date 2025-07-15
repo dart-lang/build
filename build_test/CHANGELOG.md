@@ -19,6 +19,8 @@
   pass in `build.yaml` like any other asset.
 - Bug fix: don't crash when a builder logs during a `testBuilder` or
   `resolveSource` call outside a test.
+- Bug fix: in `testBuilder`, if no sources are passed, still treat `rootPackage`
+  as an input package.
 - Remove unused deps: `async`, `convert`.
 - Remove unused dev_deps: `collection`.
 
