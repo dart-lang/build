@@ -880,18 +880,14 @@ targets:
       'Overdeclared outputs are not treated as inputs to later steps',
       () async {
         var builders = [
-          applyToRoot(
-            TestBuilder(
-              buildExtensions: appendExtension('.unexpected'),
-              build: (_, _) {},
-            ),
+          TestBuilder(
+            buildExtensions: appendExtension('.unexpected'),
+            build: (_, _) {},
           ),
-          applyToRoot(
-            TestBuilder(buildExtensions: appendExtension('.expected')),
-          ),
-          applyToRoot(TestBuilder()),
+          TestBuilder(buildExtensions: appendExtension('.expected')),
+          TestBuilder(),
         ];
-        await testPhases(
+        await testBuilders(
           builders,
           {'a|lib/a.txt': 'a'},
           outputs: {
