@@ -194,12 +194,14 @@ void main() {
       });
 
       test('with placeholder as input', () async {
-        final builder1 = PlaceholderBuilder({
-          'lib.txt': 'libText',
-        }, inputExtension: r'$lib$');
-        final builder2 = PlaceholderBuilder({
-          'root.txt': 'rootText',
-        }, inputExtension: r'$package$');
+        final builder1 = PlaceholderBuilder(
+          {'lib.txt': 'libText'}.build(),
+          inputPlaceholder: r'$lib$',
+        );
+        final builder2 = PlaceholderBuilder(
+          {'root.txt': 'rootText'}.build(),
+          inputPlaceholder: r'$package$',
+        );
         await testBuilders(
           [builder1, builder2],
           {},
@@ -843,8 +845,14 @@ targets:
     });
 
     test('can build on files outside the hardcoded sources', () async {
-      await testPhases(
-        [applyToRoot(TestBuilder())],
+      await testBuilders(
+        [
+          TestBuilder(
+            buildExtensions: {
+              '.txt': ['.txt.copy'],
+            },
+          ),
+        ],
         {
           'a|test_files/a.txt': 'a',
           'a|build.yaml': '''
