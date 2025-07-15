@@ -1688,24 +1688,22 @@ targets:
 
     test('the entrypoint cannot be read by a builder', () async {
       var builders = [
-        applyToRoot(
-          TestBuilder(
-            buildExtensions: replaceExtension('.txt', '.hasEntrypoint'),
-            build: (buildStep, _) async {
-              var hasEntrypoint = await buildStep
-                  .findAssets(Glob('**'))
-                  .contains(
-                    makeAssetId('a|.dart_tool/build/entrypoint/build.dart'),
-                  );
-              await buildStep.writeAsString(
-                buildStep.inputId.changeExtension('.hasEntrypoint'),
-                '$hasEntrypoint',
-              );
-            },
-          ),
+        TestBuilder(
+          buildExtensions: replaceExtension('.txt', '.hasEntrypoint'),
+          build: (buildStep, _) async {
+            var hasEntrypoint = await buildStep
+                .findAssets(Glob('**'))
+                .contains(
+                  makeAssetId('a|.dart_tool/build/entrypoint/build.dart'),
+                );
+            await buildStep.writeAsString(
+              buildStep.inputId.changeExtension('.hasEntrypoint'),
+              '$hasEntrypoint',
+            );
+          },
         ),
       ];
-      await testPhases(
+      await testBuilders(
         builders,
         {
           'a|lib/a.txt': 'a',
@@ -1820,18 +1818,16 @@ targets:
 
     test('can have assets ending in a dot', () async {
       var builders = [
-        applyToRoot(
-          TestBuilder(
-            buildExtensions: {
-              '': ['copy'],
-            },
-            build: (step, _) async {
-              await step.writeAsString(step.allowedOutputs.single, 'out');
-            },
-          ),
+        TestBuilder(
+          buildExtensions: {
+            '': ['copy'],
+          },
+          build: (step, _) async {
+            await step.writeAsString(step.allowedOutputs.single, 'out');
+          },
         ),
       ];
-      await testPhases(
+      await testBuilders(
         builders,
         {'a|lib/a.': 'a'},
         outputs: {'a|lib/a.copy': 'out'},
