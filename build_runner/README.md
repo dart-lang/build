@@ -10,9 +10,6 @@
   <a href="https://pub.dev/documentation/build_runner/latest">
     <img src="https://img.shields.io/badge/dartdocs-latest-blue.svg" alt="Latest Dartdocs" />
   </a>
-  <a href="https://gitter.im/dart-lang/build">
-    <img src="https://badges.gitter.im/dart-lang/build.svg" alt="Join the chat on Gitter" />
-  </a>
 </p>
 
 The `build_runner` package provides a concrete way of generating files using
