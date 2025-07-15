@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 import 'dart:convert';
-import 'dart:ffi';
 import 'dart:io';
 
 import 'package:build/build.dart';
@@ -404,16 +403,34 @@ Future<TestBuilderResult> testBuilderFactories(
     deleteFilesByDefault: true,
   );
 
-  final buildSeries = await BuildSeries.create(buildOptions, environment, [
-    for (final builderFactory in builderFactories)
+  final builderApplications = <BuilderApplication>[];
+  for (final builderFactory in builderFactories) {
+    // The real build gets the name from the `build.yaml` where the builder is
+    // For tests, use the builder class name, or fall back if the test makes the
+    // builder factory throw.
+    String name;
+    try {
+      name = builderName(builderFactory(const BuilderOptions({})));
+    } catch (e) {
+      name = e.toString();
+    }
+    builderApplications.add(
       apply(
-        builderName(builderFactory(const BuilderOptions({}))),
+        name,
         [builderFactory],
         (p) => inputPackages.contains(p.name),
         isOptional: optionalBuilderFactories.contains(builderFactory),
         hideOutput: !visibleOutputBuilderFactories.contains(builderFactory),
       ),
-  ], {});
+    );
+  }
+
+  final buildSeries = await BuildSeries.create(
+    buildOptions,
+    environment,
+    builderApplications,
+    {},
+  );
 
   // Run the build.
   final buildResult = await buildSeries.run({});

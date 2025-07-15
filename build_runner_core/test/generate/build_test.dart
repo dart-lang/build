@@ -47,20 +47,12 @@ void main() {
 
   group('build', () {
     test('can log within a buildFactory', () async {
-      await testPhases(
+      await testBuilderFactories(
         [
-          apply(
-            '',
-            [
-              (_) {
-                log.info('I can log!');
-                return TestBuilder(buildExtensions: appendExtension('.1'));
-              },
-            ],
-            toRoot(),
-            isOptional: true,
-            hideOutput: false,
-          ),
+          (_) {
+            log.info('I can log!');
+            return TestBuilder(buildExtensions: appendExtension('.1'));
+          },
         ],
         {'a|web/a.txt': 'a'},
       );
@@ -68,27 +60,14 @@ void main() {
 
     test('Builder factories are only invoked once per application', () async {
       var invokedCount = 0;
-      final packageGraph = buildPackageGraph({
-        rootPackage('a'): ['b'],
-        package('b'): [],
-      });
-      await testPhases(
-        [
-          apply(
-            '',
-            [
-              (_) {
-                invokedCount += 1;
-                return TestBuilder();
-              },
-            ],
-            toAllPackages(),
-            isOptional: false,
-            hideOutput: true,
-          ),
-        ],
-        {},
-        packageGraph: packageGraph,
+      Builder builderFactory(_) {
+        invokedCount += 1;
+        return TestBuilder();
+      }
+
+      await testBuilderFactories(
+        [builderFactory],
+        {'a|lib/a.dart': '', 'b|lib/b.dart': ''},
       );
 
       // Once per package, including the SDK.
@@ -97,19 +76,11 @@ void main() {
 
     test('throws an error if the builderFactory fails', () async {
       expect(
-        () async => await testPhases(
+        () async => await testBuilderFactories(
           [
-            apply(
-              '',
-              [
-                (_) {
-                  throw StateError('some error');
-                },
-              ],
-              toRoot(),
-              isOptional: true,
-              hideOutput: false,
-            ),
+            (_) {
+              throw StateError('some error');
+            },
           ],
           {'a|web/a.txt': 'a'},
         ),
