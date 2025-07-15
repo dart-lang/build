@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+import 'package:built_collection/built_collection.dart';
 
 class CopyingPostProcessBuilder implements PostProcessBuilder {
   final String outputExtension;
@@ -38,27 +39,34 @@ class DelegatingBuilder implements Builder {
 }
 
 class PlaceholderBuilder extends Builder {
-  final String inputExtension;
-  final Map<String, String> outputExtensionsToContent;
+  final String inputPlaceholder;
+  final BuiltMap<String, String> outputFilenameToContent;
 
   @override
   Map<String, List<String>> get buildExtensions => {
-    inputExtension: outputExtensionsToContent.keys.toList(),
+    // Usually this map is input filename extensions to output filename
+    // extensions, for example `.dart` to `.g.dart`.
+    //
+    // But this builder is about placeholders, which are special keys that
+    // are not extensions. So: the key is a placeholder, and the values are
+    // full output filenames relative to the placeholder path.
+    inputPlaceholder: outputFilenameToContent.keys.toList(),
   };
 
   PlaceholderBuilder(
-    this.outputExtensionsToContent, {
-    this.inputExtension = r'$lib$',
+    this.outputFilenameToContent, {
+    this.inputPlaceholder = r'$lib$',
   });
 
   @override
   Future build(BuildStep buildStep) async {
-    outputExtensionsToContent.forEach((extension, content) {
-      buildStep.writeAsString(
-        _outputId(buildStep.inputId, inputExtension, extension),
+    for (final MapEntry(key: outputFilename, value: content)
+        in outputFilenameToContent.entries) {
+      await buildStep.writeAsString(
+        _outputId(buildStep.inputId, inputPlaceholder, outputFilename),
         content,
       );
-    });
+    }
   }
 }
 

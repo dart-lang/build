@@ -629,12 +629,13 @@ class TestBuildEnvironment implements BuildEnvironment {
   @override
   TestReaderWriter get writer => _readerWriter;
 
-  /// If true, this will throw a [NonInteractiveBuildException] for all calls to
+  /// Whether to throw a [NonInteractiveBuildException] for all calls to
   /// [prompt].
   final bool throwOnPrompt;
 
-  /// The next response for calls to [prompt]. Must be set before calling
-  /// [prompt].
+  /// The next response for calls to [prompt].
+  ///
+  /// Must be set before calling [prompt].
   set nextPromptResponse(int next) {
     assert(_nextPromptResponse == null);
     _nextPromptResponse = next;
@@ -647,7 +648,7 @@ class TestBuildEnvironment implements BuildEnvironment {
     this.throwOnPrompt = false,
   }) : _readerWriter = readerWriter ?? TestReaderWriter();
 
-  /// Prompt the user for input.
+  /// Prompts the user for input.
   ///
   /// The message and choices are displayed to the user and the index of the
   /// chosen option is returned.
@@ -657,9 +658,7 @@ class TestBuildEnvironment implements BuildEnvironment {
   @override
   Future<int> prompt(String message, List<String> choices) {
     if (throwOnPrompt) throw NonInteractiveBuildException();
-
-    assert(_nextPromptResponse != null);
-    return Future.value(_nextPromptResponse);
+    return Future.value(_nextPromptResponse!);
   }
 
   @override

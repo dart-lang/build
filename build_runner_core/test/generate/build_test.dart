@@ -18,6 +18,7 @@ import 'package:build_runner_core/src/asset_graph/post_process_build_step_id.dar
 import 'package:build_runner_core/src/generate/build_phases.dart';
 import 'package:build_runner_core/src/generate/options.dart'
     show defaultNonRootVisibleAssets;
+import 'package:built_collection/built_collection.dart';
 import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 
@@ -246,14 +247,16 @@ void main() {
         await testPhases(
           [
             applyToRoot(
-              PlaceholderBuilder({
-                'lib.txt': 'libText',
-              }, inputExtension: r'$lib$'),
+              PlaceholderBuilder(
+                {'lib.txt': 'libText'}.build(),
+                inputPlaceholder: r'$lib$',
+              ),
             ),
             applyToRoot(
-              PlaceholderBuilder({
-                'root.txt': 'rootText',
-              }, inputExtension: r'$package$'),
+              PlaceholderBuilder(
+                {'root.txt': 'rootText'}.build(),
+                inputPlaceholder: r'$package$',
+              ),
             ),
           ],
           {},
