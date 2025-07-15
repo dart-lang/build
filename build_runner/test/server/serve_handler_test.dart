@@ -139,7 +139,11 @@ void main() {
   });
 
   void addSource(String id, String content, {bool deleted = false}) {
-    var node = makeAssetNode(id, [], computeDigest(AssetId.parse(id), content));
+    final parsedId = AssetId.parse(id);
+    var node = AssetNode.source(
+      parsedId,
+      digest: computeDigest(parsedId, content),
+    );
     if (deleted) {
       node = node.rebuild((b) {
         b.deletedBy.add(

@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+import 'package:built_collection/built_collection.dart';
 
 class CopyingPostProcessBuilder implements PostProcessBuilder {
   final String outputExtension;
@@ -23,18 +24,6 @@ class CopyingPostProcessBuilder implements PostProcessBuilder {
   }
 }
 
-class DeletePostProcessBuilder implements PostProcessBuilder {
-  @override
-  final inputExtensions = ['.txt'];
-
-  DeletePostProcessBuilder();
-
-  @override
-  Future<void> build(PostProcessBuildStep buildStep) async {
-    buildStep.deletePrimaryInput();
-  }
-}
-
 /// A [Builder] which behaves exactly like it's [delegate] but has a different
 /// runtime type.
 class DelegatingBuilder implements Builder {
@@ -47,4 +36,48 @@ class DelegatingBuilder implements Builder {
 
   @override
   Future build(BuildStep buildStep) async => delegate.build(buildStep);
+}
+
+class PlaceholderBuilder extends Builder {
+  final String inputPlaceholder;
+  final BuiltMap<String, String> outputFilenameToContent;
+
+  @override
+  Map<String, List<String>> get buildExtensions => {
+    // Usually this map is input filename extensions to output filename
+    // extensions, for example `.dart` to `.g.dart`.
+    //
+    // But this builder is about placeholders, which are special keys that
+    // are not extensions. So: the key is a placeholder, and the values are
+    // full output filenames relative to the placeholder path.
+    inputPlaceholder: outputFilenameToContent.keys.toList(),
+  };
+
+  PlaceholderBuilder(
+    this.outputFilenameToContent, {
+    this.inputPlaceholder = r'$lib$',
+  });
+
+  @override
+  Future build(BuildStep buildStep) async {
+    for (final MapEntry(key: outputFilename, value: content)
+        in outputFilenameToContent.entries) {
+      await buildStep.writeAsString(
+        _outputId(buildStep.inputId, inputPlaceholder, outputFilename),
+        content,
+      );
+    }
+  }
+}
+
+AssetId _outputId(
+  AssetId inputId,
+  String inputExtension,
+  String outputExtension,
+) {
+  assert(inputId.path.endsWith(inputExtension));
+  var newPath =
+      inputId.path.substring(0, inputId.path.length - inputExtension.length) +
+      outputExtension;
+  return AssetId(inputId.package, newPath);
 }

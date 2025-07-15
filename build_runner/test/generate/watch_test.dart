@@ -418,9 +418,12 @@ targets:
           ..add(aTxtCopyNode)
           ..add(bCopyNode)
           ..add(
-            makeAssetNode('a|web/b.txt', [
-              bCopyNode.id,
-            ], computeDigest(bTxtId, 'b2')),
+            AssetNode.source(
+              AssetId.parse('a|web/b.txt'),
+              outputs: [bCopyNode.id],
+              primaryOutputs: [bCopyNode.id],
+              digest: computeDigest(bTxtId, 'b2'),
+            ),
           );
 
         var cCopyId = makeAssetId('a|web/c.txt.copy');
@@ -437,9 +440,12 @@ targets:
         expectedGraph
           ..add(cCopyNode)
           ..add(
-            makeAssetNode('a|web/c.txt', [
-              cCopyNode.id,
-            ], computeDigest(cTxtId, 'c')),
+            AssetNode.source(
+              AssetId.parse('a|web/c.txt'),
+              outputs: [cCopyNode.id],
+              primaryOutputs: [cCopyNode.id],
+              digest: computeDigest(cTxtId, 'c'),
+            ),
           );
 
         expect(cachedGraph, equalsAssetGraph(expectedGraph));
