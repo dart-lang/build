@@ -210,12 +210,10 @@ void main() {
       });
 
       test('one phase, one builder, one-to-many outputs', () async {
-        await testPhases(
+        await testBuilders(
           [
-            applyToRoot(
-              TestBuilder(
-                buildExtensions: appendExtension('.copy', numCopies: 2),
-              ),
+            TestBuilder(
+              buildExtensions: appendExtension('.copy', numCopies: 2),
             ),
           ],
           {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
@@ -229,14 +227,12 @@ void main() {
       });
 
       test('outputs with ^', () async {
-        await testPhases(
+        await testBuilders(
           [
-            applyToRoot(
-              TestBuilder(
-                buildExtensions: {
-                  '^pubspec.yaml': ['pubspec.yaml.copy'],
-                },
-              ),
+            TestBuilder(
+              buildExtensions: {
+                '^pubspec.yaml': ['pubspec.yaml.copy'],
+              },
             ),
           ],
           {'a|pubspec.yaml': 'a', 'a|lib/pubspec.yaml': 'a'},
@@ -245,14 +241,12 @@ void main() {
       });
 
       test('outputs with a capture group', () async {
-        await testPhases(
+        await testBuilders(
           [
-            applyToRoot(
-              TestBuilder(
-                buildExtensions: {
-                  'assets/{{}}.txt': ['lib/src/generated/{{}}.dart'],
-                },
-              ),
+            TestBuilder(
+              buildExtensions: {
+                'assets/{{}}.txt': ['lib/src/generated/{{}}.dart'],
+              },
             ),
           ],
           {'a|assets/nested/input/file.txt': 'a'},
@@ -261,25 +255,20 @@ void main() {
       });
 
       test('recognizes right optional builder with capture groups', () async {
-        await testPhases(
-          [
-            applyToRoot(
-              TestBuilder(
-                buildExtensions: {
-                  'assets/{{}}.txt': ['lib/src/generated/{{}}.dart'],
-                },
-              ),
-              isOptional: true,
-            ),
-            applyToRoot(
-              TestBuilder(
-                buildExtensions: {
-                  '.dart': ['.copy.dart'],
-                },
-              ),
-            ),
-          ],
+        final builder1 = TestBuilder(
+          buildExtensions: {
+            'assets/{{}}.txt': ['lib/src/generated/{{}}.dart'],
+          },
+        );
+        final builder2 = TestBuilder(
+          buildExtensions: {
+            '.dart': ['.copy.dart'],
+          },
+        );
+        await testBuilders(
+          [builder1, builder2],
           {'a|assets/nested/input/file.txt': 'a'},
+          optionalBuilders: {builder1},
           outputs: {
             'a|lib/src/generated/nested/input/file.dart': 'a',
             'a|lib/src/generated/nested/input/file.copy.dart': 'a',
@@ -290,25 +279,13 @@ void main() {
       test(
         'optional build actions don\'t run if their outputs aren\'t read',
         () async {
-          await testPhases(
-            [
-              apply(
-                '',
-                [(_) => TestBuilder(buildExtensions: appendExtension('.1'))],
-                toRoot(),
-                isOptional: true,
-              ),
-              apply(
-                'a:only_on_1',
-                [
-                  (_) => TestBuilder(
-                    buildExtensions: appendExtension('.copy', from: '.1'),
-                  ),
-                ],
-                toRoot(),
-                isOptional: true,
-              ),
-            ],
+          final builder1 = TestBuilder(buildExtensions: appendExtension('.1'));
+          final builder2 = TestBuilder(
+            buildExtensions: appendExtension('.copy', from: '.1'),
+          );
+          await testBuilders(
+            [builder1, builder2],
+            optionalBuilders: {builder1, builder2},
             {'a|lib/a.txt': 'a'},
             outputs: {},
           );
@@ -316,36 +293,17 @@ void main() {
       );
 
       test('optional build actions do run if their outputs are read', () async {
-        await testPhases(
-          [
-            apply(
-              '',
-              [(_) => TestBuilder(buildExtensions: appendExtension('.1'))],
-              toRoot(),
-              isOptional: true,
-              hideOutput: false,
-            ),
-            apply(
-              '',
-              [
-                (_) =>
-                    TestBuilder(buildExtensions: replaceExtension('.1', '.2')),
-              ],
-              toRoot(),
-              isOptional: true,
-              hideOutput: false,
-            ),
-            apply(
-              '',
-              [
-                (_) =>
-                    TestBuilder(buildExtensions: replaceExtension('.2', '.3')),
-              ],
-              toRoot(),
-              hideOutput: false,
-            ),
-          ],
+        final builder1 = TestBuilder(buildExtensions: appendExtension('.1'));
+        final builder2 = TestBuilder(
+          buildExtensions: replaceExtension('.1', '.2'),
+        );
+        final builder3 = TestBuilder(
+          buildExtensions: replaceExtension('.2', '.3'),
+        );
+        await testBuilders(
+          [builder1, builder2, builder3],
           {'a|web/a.txt': 'a'},
+          optionalBuilders: {builder1, builder2},
           outputs: {
             'a|web/a.txt.1': 'a',
             'a|web/a.txt.2': 'a',
@@ -412,16 +370,12 @@ targets:
       });
 
       test('allows running on generated inputs that do not match target '
-          'source globx', () async {
+          'source globs', () async {
         var builders = [
-          applyToRoot(
-            TestBuilder(buildExtensions: appendExtension('.1', from: '.txt')),
-          ),
-          applyToRoot(
-            TestBuilder(buildExtensions: appendExtension('.2', from: '.1')),
-          ),
+          TestBuilder(buildExtensions: appendExtension('.1', from: '.txt')),
+          TestBuilder(buildExtensions: appendExtension('.2', from: '.1')),
         ];
-        await testPhases(
+        await testBuilders(
           builders,
           {
             'a|lib/a.txt': 'a',
