@@ -1244,17 +1244,19 @@ targets:
         'a|lib/b.txt.copy': 'b',
       };
       // First run, nothing special.
-      final result = await testPhases(
-        [copyABuilderApplication],
+      var result = await testBuilders(
+        [TestBuilder()],
         inputs,
         outputs: outputs,
       );
-      // Second run, should have no outputs.
-      await testPhases(
-        [copyABuilderApplication],
-        inputs,
-        outputs: {},
-        resumeFrom: result,
+      // Second run, only output should be the asset graph.
+      for (final id in result.readerWriter.testing.assets) {
+        inputs[id.toString()] = await result.readerWriter.readAsString(id);
+      }
+      result = await testBuilders([TestBuilder()], inputs);
+      expect(
+        result.readerWriter.testing.assetsWritten.single.toString(),
+        contains('asset_graph.json'),
       );
     },
   );
@@ -1266,8 +1268,8 @@ targets:
       'a|lib/b.txt.copy': 'b',
     };
     // First run, nothing special.
-    final result = await testPhases(
-      [copyABuilderApplication],
+    final result = await testBuilders(
+      [TestBuilder()],
       inputs,
       outputs: outputs,
     );
@@ -1277,16 +1279,12 @@ targets:
     await result.readerWriter.delete(outputId);
 
     // Second run, should have no extra outputs.
-    var done = testPhases(
-      [copyABuilderApplication],
+    await testBuilders(
+      [TestBuilder()],
       inputs,
       outputs: outputs,
-      resumeFrom: result,
+      readerWriter: result.readerWriter,
     );
-    // Should block on user input.
-    await Future<void>.delayed(const Duration(seconds: 1));
-    // Now it should complete!
-    await done;
   });
 
   group('incremental builds with cached graph', () {
