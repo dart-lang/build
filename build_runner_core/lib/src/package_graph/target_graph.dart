@@ -228,7 +228,7 @@ Future<BuildConfig> _packageBuildConfig(
   AssetReader? reader,
   PackageNode package,
 ) async {
-  final dependencies = package.dependencies.map((n) => n.name).toList();
+  final dependencies = [for (final node in package.dependencies) node.name];
   try {
     final id = AssetId(package.name, 'build.yaml');
     if (reader != null && await reader.canRead(id)) {

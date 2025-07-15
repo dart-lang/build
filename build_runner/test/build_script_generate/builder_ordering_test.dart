@@ -224,7 +224,7 @@ void main() {
 
 Map<String, BuildConfig> parseBuildConfigs(
   Map<String, Map<String, dynamic>> configs,
-) => Map<String, BuildConfig>.fromIterable(
-  configs.keys,
-  value: (key) => BuildConfig.fromMap(key as String, [], configs[key]!),
-);
+) => {
+  for (final packageName in configs.keys)
+    packageName: BuildConfig.fromMap(packageName, [], configs[packageName]!),
+};
