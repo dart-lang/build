@@ -88,45 +88,37 @@ void main() {
       );
     });
 
-    test('throws an error if any output extensions match input extensions', () {
-      expect(
-        testPhases(
-          [
-            apply(
-              '',
-              [
-                expectAsync1(
-                  (_) => TestBuilder(
-                    buildExtensions: {
-                      '.dart': ['.g.dart', '.json'],
-                      '.json': ['.dart'],
-                    },
+    test(
+      'throws an error if any output extensions match input extensions',
+      () async {
+        await expectLater(
+          () async => await testBuilderFactories(
+            [
+              (_) => TestBuilder(
+                buildExtensions: {
+                  '.dart': ['.g.dart', '.json'],
+                  '.json': ['.dart'],
+                },
+              ),
+            ],
+            {'a|lib/a.dart': ''},
+          ),
+          throwsA(
+            isA<ArgumentError>()
+                .having((e) => e.name, 'name', 'TestBuilder.buildExtensions')
+                .having(
+                  (e) => e.message,
+                  'message',
+                  allOf(
+                    contains('.json'),
+                    contains('.dart'),
+                    isNot(contains('.g.dart')),
                   ),
                 ),
-              ],
-              toRoot(),
-              isOptional: false,
-              hideOutput: false,
-            ),
-          ],
-          {},
-          status: BuildStatus.failure,
-        ),
-        throwsA(
-          isA<ArgumentError>()
-              .having((e) => e.name, 'name', 'TestBuilder.buildExtensions')
-              .having(
-                (e) => e.message,
-                'message',
-                allOf(
-                  contains('.json'),
-                  contains('.dart'),
-                  isNot(contains('.g.dart')),
-                ),
-              ),
-        ),
-      );
-    });
+          ),
+        );
+      },
+    );
 
     test('runs a max of one concurrent action per phase', () async {
       var assets = <String, String>{};
@@ -136,34 +128,22 @@ void main() {
       var concurrentCount = 0;
       var maxConcurrentCount = 0;
       var reachedMax = Completer<void>();
-      await testPhases(
+      await testBuilders(
         [
-          apply(
-            '',
-            [
-              (_) {
-                return TestBuilder(
-                  build: (_, _) async {
-                    concurrentCount += 1;
-                    maxConcurrentCount = math.max(
-                      concurrentCount,
-                      maxConcurrentCount,
-                    );
-                    if (concurrentCount >= 1 && !reachedMax.isCompleted) {
-                      await Future<void>.delayed(
-                        const Duration(milliseconds: 100),
-                      );
-                      if (!reachedMax.isCompleted) reachedMax.complete(null);
-                    }
-                    await reachedMax.future;
-                    concurrentCount -= 1;
-                  },
-                );
-              },
-            ],
-            toRoot(),
-            isOptional: false,
-            hideOutput: false,
+          TestBuilder(
+            build: (_, _) async {
+              concurrentCount += 1;
+              maxConcurrentCount = math.max(
+                concurrentCount,
+                maxConcurrentCount,
+              );
+              if (concurrentCount >= 1 && !reachedMax.isCompleted) {
+                await Future<void>.delayed(const Duration(milliseconds: 100));
+                if (!reachedMax.isCompleted) reachedMax.complete(null);
+              }
+              await reachedMax.future;
+              concurrentCount -= 1;
+            },
           ),
         ],
         assets,
@@ -174,8 +154,8 @@ void main() {
 
     group('with root package inputs', () {
       test('one phase, one builder, one-to-one outputs', () async {
-        await testPhases(
-          [copyABuilderApplication],
+        await testBuilders(
+          [testBuilder],
           {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
           outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'},
         );
@@ -192,8 +172,8 @@ void main() {
           },
         );
 
-        await testPhases(
-          [applyToRoot(testBuilder)],
+        await testBuilders(
+          [testBuilder],
           {'a|web/a.txt': ''},
           outputs: {'a|web/a.txt.1': '', 'a|web/a.txt.2': ''},
         );
