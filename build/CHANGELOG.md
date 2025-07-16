@@ -1,4 +1,4 @@
-## 3.0.0-wip
+## 3.0.0-dev.2
 
 - Removed unused deps: `meta`, `pool`.
 

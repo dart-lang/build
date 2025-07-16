@@ -1,4 +1,4 @@
-## 9.2.0-wip
+## 9.2.0-dev.2
 
 - Removed unused dev_deps: `test_process`.
 - Bug fix: fix incremental build after build with import of missing package.

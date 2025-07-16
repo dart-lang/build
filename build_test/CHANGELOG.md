@@ -1,4 +1,4 @@
-## 3.3.0-wip
+## 3.3.0-dev.3
 
 - Read build configs using `AssetReader` so they're easier to test: you can now
   pass in `build.yaml` like any other asset.

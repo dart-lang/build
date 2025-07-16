@@ -1,4 +1,4 @@
-## 2.6.0-wip
+## 2.6.0-dev.2
 
 - Remove unused deps: `analyzer`, `build_resolvers`, `collection`, `http`,
   `js`, `meta`, `package_config`, `pool`, `web`, `yaml`.
