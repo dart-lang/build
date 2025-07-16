@@ -6,7 +6,7 @@ resolution: workspace
 
 dependencies:
   analyzer: ">=5.0.0 <8.0.0"
-  build: ^3.0.0-wip
+  build: ^3.0.0-dev.2
   # Not imported in code, but used to constrain `build.yaml` requirements
   build_config: ^1.0.0
   web: ^1.1.0
