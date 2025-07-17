@@ -1,3 +1,18 @@
+## 3.3.0
+
+- Read build configs using `AssetReader` so they're easier to test: you can now
+  pass in `build.yaml` like any other asset.
+- Bug fix: don't crash when a builder logs during a `testBuilder` or
+  `resolveSource` call outside a test.
+- Remove unused deps: `async`, `convert`.
+- Remove unused dev_deps: `collection`.
+- Files loaded from disk for `resolveSources` and `testBuilders` that are in
+  the same package as explicitly-passed test inputs are now loaded if they
+  match the default globs, such as `lib/**`, instead of ignored. This more
+  closely matches version 2 behavior.
+- Use `build` 3.0.0.
+- Use `build_resolvers` 3.0.0.
+
 ## 3.3.0-dev.3
 
 - Read build configs using `AssetReader` so they're easier to test: you can now
