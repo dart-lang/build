@@ -1,3 +1,8 @@
+## 5.5.0
+
+* Switch to `build` 3.0.0.
+* Require Dart SDK ^3.7.0.
+
 ## 5.5.0-dev
 
 * Switch to `build` 3.0.0-dev.
