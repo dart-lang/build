@@ -1,3 +1,11 @@
+## 3.0.0
+
+- Remove unused deps: `graphs`, `logging`, `stream_transform`.
+- Breaking: use the new `element2` APIs in `analyzer`. Builders that do
+  resolution need to switch to the new API, see
+  https://github.com/dart-lang/sdk/blob/main/pkg/analyzer/doc/element_model_migration_guide.md.
+  For questions please use https://github.com/dart-lang/build/discussions.
+
 ## 3.0.0-dev.2
 
 - Remove unused deps: `graphs`, `logging`, `stream_transform`.

@@ -1,3 +1,11 @@
+## 9.2.0
+
+- Removed unused dev_deps: `test_process`.
+- Bug fix: fix incremental build after build with import of missing package.
+- Testing: read build configs using `AssetReader` so they're easier to test.
+- Use `build` 3.0.0.
+- Use `build_resolvers` 3.0.0.
+
 ## 9.2.0-dev.2
 
 - Removed unused dev_deps: `test_process`.
