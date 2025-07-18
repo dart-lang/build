@@ -502,6 +502,7 @@ class Build {
       }
 
       var reallyBuild = true;
+      buildLog.debug(phase.builderOptions.config.toString());
       final runsIfTriggered =
           phase.builderOptions.config['run_only_if_triggered'];
       if (runsIfTriggered == true) {
@@ -757,8 +758,6 @@ class Build {
       processedOutputs.add(output);
     }
   }
-
-  var once = false;
 
   /// Checks and returns whether any [outputs] need to be updated in
   /// [phaseNumber] for [primaryInput].

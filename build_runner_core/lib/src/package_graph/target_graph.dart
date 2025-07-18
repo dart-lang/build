@@ -269,12 +269,14 @@ Future<BuildConfig> _packageBuildConfig(
   try {
     final id = AssetId(package.name, 'build.yaml');
     if (reader != null && await reader.canRead(id)) {
-      return BuildConfig.parse(
+      final result = BuildConfig.parse(
         package.name,
         dependencies,
         await reader.readAsString(id),
         configYamlPath: p.join(package.path, 'build.yaml'),
       );
+      buildLog.debug('build config: ${result.builderDefinitions}');
+      return result;
     } else {
       return BuildConfig.useDefault(package.name, dependencies);
     }

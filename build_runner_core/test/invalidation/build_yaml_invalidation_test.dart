@@ -33,13 +33,14 @@ void main() {
 targets:
   $default:
     builders:
-      TestBuilder:
+      pkg:invalidation_tester_builder:
         options:
           run_only_if_triggered: true
 ''');
       await tester.build();
       // TODO(davidmorgan): this should not update.
       expect(await tester.build(change: 'z'), Result(written: ['a.1', 'z.1']));
+      fail('');
     });
   });
 }

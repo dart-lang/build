@@ -547,6 +547,9 @@ class TestBuilder implements Builder {
       }
     }
   }
+
+  @override
+  String toString() => 'pkg:invalidation_tester_builder';
 }
 
 extension LogRecordExtension on LogRecord {
