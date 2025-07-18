@@ -85,10 +85,10 @@ class TargetGraph {
           overrideBuildConfig[package.name] ??
           await _packageBuildConfig(reader, package);
 
-      final packageTriggers = config.triggersByBuilder;
-      for (final entry in packageTriggers.entries) {
-        final triggerPackage = entry.key;
-        (buildTriggers[triggerPackage] ??= {}).addAll(
+      final triggersByBuilder = config.triggersByBuilder;
+      for (final entry in triggersByBuilder.entries) {
+        final builderName = entry.key;
+        (buildTriggers[builderName] ??= {}).addAll(
           BuildTriggers.parseList(
             packageName: package.name,
             triggers: entry.value,

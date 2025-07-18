@@ -53,14 +53,13 @@ class BuildTriggers {
       if (triggerString is String) {
         trigger = BuildTrigger.tryParse(triggerString);
       }
-      if (trigger != null) {
-        result.add(trigger);
-      } else {
+      if (trigger == null) {
         throw BuildConfigParseException(
           packageName,
           'Invalid trigger: `$triggerString`',
         );
       }
+      result.add(trigger);
     }
     return result;
   }

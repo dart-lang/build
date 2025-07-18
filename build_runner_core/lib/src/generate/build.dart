@@ -503,7 +503,7 @@ class Build {
         unusedAssets.addAll(assets);
       }
 
-      final runsAccordingToTriggers = await _runsAccordingToBuildTriggers(
+      final allowedByTriggers = await _allowedByTriggers(
         phase: phase,
         primaryInput: primaryInput,
       );
@@ -512,7 +512,7 @@ class Build {
         primaryInput: primaryInput,
         lazy: lazy,
       );
-      if (runsAccordingToTriggers) {
+      if (allowedByTriggers) {
         await TimedActivity.build.runAsync(
           () => tracker.trackStage(
             'Build',
@@ -550,7 +550,7 @@ class Build {
         ),
       );
 
-      if (runsAccordingToTriggers) {
+      if (allowedByTriggers) {
         buildLog.finishStep(
           phase: phase,
           anyOutputs: readerWriter.assetsWritten.isNotEmpty,
@@ -571,7 +571,7 @@ class Build {
   ///
   /// This means either the builder does not have `run_only_if_triggered: true`
   /// or it does run only if triggered and is triggered.
-  Future<bool> _runsAccordingToBuildTriggers({
+  Future<bool> _allowedByTriggers({
     required InBuildPhase phase,
     required AssetId primaryInput,
   }) async {
@@ -582,7 +582,7 @@ class Build {
     }
     final buildTriggers = options.targetGraph.buildTriggers[phase.builderLabel];
     if (buildTriggers == null) {
-      return true;
+      return false;
     }
     final primaryInputSource = await readerWriter.readAsString(primaryInput);
     for (final trigger in buildTriggers) {
