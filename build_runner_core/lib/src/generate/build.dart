@@ -230,6 +230,8 @@ class Build {
         var result = await _runPhases();
         buildLog.doing('Writing the asset graph.');
 
+        assetGraph.previousBuildTriggersDigest =
+            options.targetGraph.buildTriggers.digest;
         // Combine previous phased asset deps, if any, with the newly loaded
         // deps. Because of skipped builds, the newly loaded deps might just
         // say "not generated yet", in which case the old value is retained.
@@ -810,6 +812,11 @@ class Build {
       }
 
       if (assetGraph.cleanBuild) return true;
+
+      if (assetGraph.previousBuildTriggersDigest !=
+          options.targetGraph.buildTriggers.digest) {
+        return true;
+      }
 
       if (assetGraph.previousInBuildPhasesOptionsDigests![phaseNumber] !=
           assetGraph.inBuildPhasesOptionsDigests[phaseNumber]) {

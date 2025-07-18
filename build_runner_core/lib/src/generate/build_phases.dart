@@ -80,10 +80,8 @@ class BuildPhases {
     return result.build();
   }
 
-  static Digest _digestOf(BuilderOptions builderOptions) {
-    buildLog.debug('Digest ${builderOptions.config}');
-    return md5.convert(utf8.encode(json.encode(builderOptions.config)));
-  }
+  static Digest _digestOf(BuilderOptions builderOptions) =>
+      md5.convert(utf8.encode(json.encode(builderOptions.config)));
 
   /// Checks that outputs are to allowed locations.
   ///

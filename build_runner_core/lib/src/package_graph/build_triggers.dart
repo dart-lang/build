@@ -2,7 +2,10 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:convert';
+
 import 'package:built_collection/built_collection.dart';
+import 'package:crypto/crypto.dart';
 
 class BuildTriggers {
   final BuiltMap<String, BuiltSet<BuildTrigger>> triggers;
@@ -10,7 +13,7 @@ class BuildTriggers {
   BuildTriggers({required this.triggers});
 
   // TODO(davidmorgan): fix.
-  int get identity => triggers.toString().hashCode;
+  Digest get digest => md5.convert(utf8.encode(triggers.toString()));
 }
 
 abstract class BuildTrigger {
@@ -34,4 +37,7 @@ class ImportBuildTrigger implements BuildTrigger {
   bool triggersOnPrimaryInput(String source) {
     return source.contains(import);
   }
+
+  @override
+  String toString() => 'import $import';
 }
