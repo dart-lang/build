@@ -1,3 +1,15 @@
+## 3.4.0-wip
+
+- Add `testBuilderFactories`: like `testBuilders`, but provide the builder
+  factories instead of the builders. Use this to allow config read from
+  `build.yaml` to be passed in to the factory.
+- `TestBuilder` now accepts a `name`: this is the name that will be shown
+  in logging and can be used to refer to the builder in `build.yaml`.
+- More realistic test builds: in `resolveSources` and `testBuilders`, stop
+  builders reading from `.dart_tool`.
+- Bug fix: in `testBuilders`, configure the root package correctly when it
+  has no sources.
+
 ## 3.3.0
 
 - Read build configs using `AssetReader` so they're easier to test: you can now
