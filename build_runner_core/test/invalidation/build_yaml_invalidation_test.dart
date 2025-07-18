@@ -264,10 +264,6 @@ targets:
       pkg:invalidation_tester_builder:
         options:
           run_only_if_triggered: true
-
-triggers:
-  pkg:invalidation_tester_builder:
-    - import trigger/trigger.dart
 ''',
           ),
           Result(deleted: ['a.2']),

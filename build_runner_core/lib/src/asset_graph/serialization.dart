@@ -55,8 +55,9 @@ AssetGraph deserializeAssetGraph(List<int> bytes) {
     BuiltList<String>.from(serializedGraph['enabledExperiments'] as List),
   );
 
-  graph.previousBuildTriggersDigest =
-      _deserializeDigest(serializedGraph['buildTriggersDigest'] as String)!;
+  graph.previousBuildTriggersDigest = _deserializeDigest(
+    serializedGraph['buildTriggersDigest'] as String?,
+  );
 
   for (var serializedItem in serializedGraph['nodes'] as Iterable) {
     graph._add(_deserializeAssetNode(serializedItem as List));
@@ -105,7 +106,7 @@ List<int> serializeAssetGraph(AssetGraph graph) {
     'ids': identityAssetIdSerializer.serializedObjects,
     'dart_version': graph.dartVersion,
     'nodes': nodes,
-    'buildTriggersDigest': _serializeDigest(graph.previousBuildTriggersDigest!),
+    'buildTriggersDigest': _serializeDigest(graph.previousBuildTriggersDigest),
     'buildActionsDigest': _serializeDigest(graph.buildPhasesDigest),
     'packageLanguageVersions':
         graph.packageLanguageVersions
