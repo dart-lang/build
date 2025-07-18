@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 
+import '../logging/build_log.dart';
 import 'target_graph.dart';
 
 /// Triggers per builder.
@@ -61,6 +62,7 @@ class BuildTriggers {
       }
       result.add(trigger);
     }
+    buildLog.debug('Triggers: $result');
     return result;
   }
 }

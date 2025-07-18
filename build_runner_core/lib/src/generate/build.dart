@@ -504,6 +504,7 @@ class Build {
       }
 
       final allowedByTriggers = await _allowedByTriggers(
+        readerWriter: readerWriter,
         phase: phase,
         primaryInput: primaryInput,
       );
@@ -572,6 +573,7 @@ class Build {
   /// This means either the builder does not have `run_only_if_triggered: true`
   /// or it does run only if triggered and is triggered.
   Future<bool> _allowedByTriggers({
+    required SingleStepReaderWriter readerWriter,
     required InBuildPhase phase,
     required AssetId primaryInput,
   }) async {
