@@ -11,24 +11,10 @@ void main() {
   final customGeneratedDir = 'my-custom-dir';
   overrideGeneratedOutputDirectory(customGeneratedDir);
 
-  late PackageGraph packageGraph;
-
-  setUp(() {
-    packageGraph = buildPackageGraph({rootPackage('a', path: 'a/'): []});
-  });
-
   test('can output files to a custom generated dir', () async {
-    final result = await testPhases(
-      [
-        applyToRoot(
-          TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')),
-          hideOutput: true,
-        ),
-      ],
+    final result = await testBuilders(
+      [TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt'))],
       {'a|lib/a.txt': 'a'},
-      packageGraph: packageGraph,
-      outputs: {r'$$a|lib/a.txt.copy': 'a'},
-      expectedGeneratedDir: customGeneratedDir,
     );
     expect(
       result.readerWriter.testing.exists(
