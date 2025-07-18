@@ -160,6 +160,62 @@ Future<TestBuilderResult> testBuilder(
 
 /// Runs [builders] in a test environment.
 ///
+/// Calls [testBuilderFactories] with factories that each return a member of
+/// [builders], see that method for details.
+///
+/// Because build config is passed via factories, this method does not read
+/// build config. To test with build config, use [testBuilderFactories].
+Future<TestBuilderResult> testBuilders(
+  Iterable<Builder> builders,
+  Map<String, /*String|List<int>*/ Object> sourceAssets, {
+  Set<String>? generateFor,
+  bool Function(String assetId)? isInput,
+  String? rootPackage,
+  Map<String, /*String|List<int>|Matcher<List<int>>*/ Object>? outputs,
+  void Function(LogRecord log)? onLog,
+  void Function(AssetId, Iterable<AssetId>)? reportUnusedAssetsForInput,
+  PackageConfig? packageConfig,
+  Resolvers? resolvers,
+  Set<Builder> optionalBuilders = const {},
+  Set<Builder> visibleOutputBuilders = const {},
+  bool testingBuilderConfig = true,
+  TestReaderWriter? readerWriter,
+  bool enableLowResourceMode = false,
+}) {
+  final builderFactories = <BuilderFactory>[];
+  final optionalBuilderFactories = Set<BuilderFactory>.identity();
+  final visibleOutputBuilderFactories = Set<BuilderFactory>.identity();
+  for (final builder in builders) {
+    Builder builderFactory(_) => builder;
+    builderFactories.add(builderFactory);
+    if (optionalBuilders.contains(builder)) {
+      optionalBuilderFactories.add(builderFactory);
+    }
+    if (visibleOutputBuilders.contains(builder)) {
+      visibleOutputBuilderFactories.add(builderFactory);
+    }
+  }
+  return testBuilderFactories(
+    builderFactories,
+    sourceAssets,
+    generateFor: generateFor,
+    isInput: isInput,
+    rootPackage: rootPackage,
+    outputs: outputs,
+    onLog: onLog,
+    reportUnusedAssetsForInput: reportUnusedAssetsForInput,
+    packageConfig: packageConfig,
+    resolvers: resolvers,
+    optionalBuilderFactories: optionalBuilderFactories,
+    visibleOutputBuilderFactories: visibleOutputBuilderFactories,
+    testingBuilderConfig: testingBuilderConfig,
+    readerWriter: readerWriter,
+    enableLowResourceMode: enableLowResourceMode,
+  );
+}
+
+/// Runs [builderFactories] in a test environment.
+///
 /// The test environment supplies in-memory build [sourceAssets] to the builders
 /// under test.
 ///
@@ -197,12 +253,13 @@ Future<TestBuilderResult> testBuilder(
 /// Enabling of language experiments is supported through the
 /// `withEnabledExperiments` method from package:build.
 ///
-/// To mark a builder as optional, add it to [optionalBuilders]. Optional
-/// builders only run if their output is used by a non-optional builder.
+/// To mark a builder as optional, add its builder to
+/// [optionalBuilderFactories]. Optional builders only run if their output is
+/// used by a non-optional builder.
 ///
-/// To mark a builder's output as visible, add it to [visibleOutputBuilders].
-/// The builder then writes its outputs next to its input, instead of hidden
-/// under `.dart_tool`.
+/// To mark a builder's output as visible, add its factory to
+/// [visibleOutputBuilderFactories]. The builder then writes its outputs next to
+/// its input, instead of hidden under `.dart_tool`.
 ///
 /// The default builder config will be overwritten with one that causes the
 /// builder to run for all inputs. To use the default builder config instead,
@@ -217,8 +274,8 @@ Future<TestBuilderResult> testBuilder(
 /// Returns a [TestBuilderResult] with the [BuildResult] and the
 /// [TestReaderWriter] used for the build, which can be used for further
 /// checks.
-Future<TestBuilderResult> testBuilders(
-  Iterable<Builder> builders,
+Future<TestBuilderResult> testBuilderFactories(
+  Iterable<BuilderFactory> builderFactories,
   Map<String, /*String|List<int>*/ Object> sourceAssets, {
   Set<String>? generateFor,
   bool Function(String assetId)? isInput,
@@ -228,8 +285,8 @@ Future<TestBuilderResult> testBuilders(
   void Function(AssetId, Iterable<AssetId>)? reportUnusedAssetsForInput,
   PackageConfig? packageConfig,
   Resolvers? resolvers,
-  Set<Builder> optionalBuilders = const {},
-  Set<Builder> visibleOutputBuilders = const {},
+  Set<BuilderFactory> optionalBuilderFactories = const {},
+  Set<BuilderFactory> visibleOutputBuilderFactories = const {},
   bool testingBuilderConfig = true,
   TestReaderWriter? readerWriter,
   bool enableLowResourceMode = false,
@@ -240,10 +297,18 @@ Future<TestBuilderResult> testBuilders(
     for (var descriptor in sourceAssets.keys) makeAssetId(descriptor),
   };
 
+  if (inputIds.isEmpty && rootPackage == null) {
+    throw ArgumentError(
+      '`sourceAssets` is empty so `rootPackage` must be specified, '
+      'but `rootPackage` is null.',
+    );
+  }
+
   // Differentiate input packages and all packages. Builders run on input
   // packages; they can read/resolve all packages. Additional packages are
   // supplied by passing a `readerWriter`.
-  var inputPackages = {for (var id in inputIds) id.package};
+  var inputPackages =
+      inputIds.isEmpty ? {rootPackage!} : {for (var id in inputIds) id.package};
   final allPackages = inputPackages.toSet();
   if (readerWriter != null) {
     for (final asset in readerWriter.testing.assets) {
@@ -329,7 +394,11 @@ Future<TestBuilderResult> testBuilders(
                         if (package != rootPackage)
                           ...defaultNonRootVisibleAssets,
                         ...inputIds
-                            .where((id) => id.package == package)
+                            .where(
+                              (id) =>
+                                  id.package == package &&
+                                  !id.path.startsWith('.dart_tool/'),
+                            )
                             .map((id) => Glob.quote(id.path)),
                       ],
                     },
@@ -346,16 +415,34 @@ Future<TestBuilderResult> testBuilders(
     deleteFilesByDefault: true,
   );
 
-  final buildSeries = await BuildSeries.create(buildOptions, environment, [
-    for (final builder in builders)
+  final builderApplications = <BuilderApplication>[];
+  for (final builderFactory in builderFactories) {
+    // The real build gets the name from the `build.yaml` where the builder is
+    // For tests, use the builder class name, or fall back if the test makes the
+    // builder factory throw.
+    String name;
+    try {
+      name = builderName(builderFactory(const BuilderOptions({})));
+    } catch (e) {
+      name = e.toString();
+    }
+    builderApplications.add(
       apply(
-        builderName(builder),
-        [(_) => builder],
+        name,
+        [builderFactory],
         (p) => inputPackages.contains(p.name),
-        isOptional: optionalBuilders.contains(builder),
-        hideOutput: !visibleOutputBuilders.contains(builder),
+        isOptional: optionalBuilderFactories.contains(builderFactory),
+        hideOutput: !visibleOutputBuilderFactories.contains(builderFactory),
       ),
-  ], {});
+    );
+  }
+
+  final buildSeries = await BuildSeries.create(
+    buildOptions,
+    environment,
+    builderApplications,
+    {},
+  );
 
   // Run the build.
   final buildResult = await buildSeries.run({});

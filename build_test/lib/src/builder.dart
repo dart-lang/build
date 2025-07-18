@@ -94,6 +94,7 @@ class TestBuilder implements Builder {
   @override
   final Map<String, List<String>> buildExtensions;
 
+  final String name;
   final BuildBehavior _build;
   final BuildBehavior? _extraWork;
 
@@ -109,14 +110,24 @@ class TestBuilder implements Builder {
   final _buildsCompletedController = StreamController<AssetId>.broadcast();
   Stream<AssetId> get buildsCompleted => _buildsCompletedController.stream;
 
+  /// A test [Builder].
+  ///
+  /// Runs for all inputs and write outputs with  `.copy` appended. Or, pass
+  /// [buildExtensions] to specify input and output extensions.
+  ///
+  /// Copy its input to all possible outputs. Pass [build] to replace this
+  /// behavior, and/or [extraWork] to add additional behavior.
+  ///
+  /// Default name for logging and for `build.yaml` is `TestBuilder`. Pass
+  /// [name] to set the name.
   TestBuilder({
     Map<String, List<String>>? buildExtensions,
     BuildBehavior? build,
     BuildBehavior? extraWork,
+    this.name = 'TestBuilder',
   }) : buildExtensions = buildExtensions ?? appendExtension('.copy'),
        _build = build ?? _defaultBehavior,
        _extraWork = extraWork;
-
   @override
   Future build(BuildStep buildStep) async {
     if (!await buildStep.canRead(buildStep.inputId)) return;
@@ -125,4 +136,7 @@ class TestBuilder implements Builder {
     await _extraWork?.call(buildStep, buildExtensions);
     _buildsCompletedController.add(buildStep.inputId);
   }
+
+  @override
+  String toString() => name;
 }
