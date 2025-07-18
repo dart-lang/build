@@ -506,6 +506,7 @@ class Build {
       final runsIfTriggered =
           phase.builderOptions.config['run_only_if_triggered'];
       if (runsIfTriggered == true) {
+        buildLog.debug('Runs if triggered on $primaryInput');
         reallyBuild = false;
         final buildTriggers = options.targetGraph.buildTriggers;
 
@@ -515,12 +516,17 @@ class Build {
           final primaryInputSource = await readerWriter.readAsString(
             primaryInput,
           );
+          buildLog.debug(
+            'Checking triggers $thisBuilderTriggers on: $primaryInputSource',
+          );
           for (final trigger in thisBuilderTriggers) {
             if (trigger.triggersOnPrimaryInput(primaryInputSource)) {
               reallyBuild = true;
               break;
             }
           }
+        } else {
+          buildLog.debug('No triggers on $primaryInput');
         }
       }
 
