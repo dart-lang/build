@@ -55,7 +55,7 @@ BuildConfig _$BuildConfigFromJson(Map json) => $checkedCreate(
         (v) =>
             (v as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],
       ),
-      triggers: $checkedConvert(
+      triggersByBuilder: $checkedConvert(
         'triggers',
         (v) =>
             (v as Map?)?.map((k, e) => MapEntry(k as String, e as Object)) ??
@@ -70,5 +70,6 @@ BuildConfig _$BuildConfigFromJson(Map json) => $checkedCreate(
     'builderDefinitions': 'builders',
     'postProcessBuilderDefinitions': 'post_process_builders',
     'additionalPublicAssets': 'additional_public_assets',
+    'triggersByBuilder': 'triggers',
   },
 );

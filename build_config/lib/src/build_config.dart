@@ -78,7 +78,12 @@ class BuildConfig {
 
   final List<String> additionalPublicAssets;
 
-  final Map<String, Object> triggers;
+  /// Triggers for builders with the option `run_only_if_triggered`.
+  ///
+  /// Keys are builder names, values are not defined here: validity and meaning
+  /// is up to `build_runner`.
+  @JsonKey(name: 'triggers')
+  final Map<String, Object> triggersByBuilder;
 
   /// The default config if you have no `build.yaml` file.
   factory BuildConfig.useDefault(
@@ -150,7 +155,7 @@ class BuildConfig {
     Map<String, PostProcessBuilderDefinition>? postProcessBuilderDefinitions =
         const {},
     this.additionalPublicAssets = const [],
-    this.triggers = const {},
+    this.triggersByBuilder = const {},
   }) : buildTargets =
            identical(buildTargets, BuildConfig._placeholderBuildTarget)
                ? {

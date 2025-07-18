@@ -503,41 +503,16 @@ class Build {
         unusedAssets.addAll(assets);
       }
 
-      var reallyBuild = true;
-      buildLog.debug(phase.builderOptions.config.toString());
-      final runsIfTriggered =
-          phase.builderOptions.config['run_only_if_triggered'];
-      if (runsIfTriggered == true) {
-        buildLog.debug('Runs if triggered on $primaryInput');
-        reallyBuild = false;
-        final buildTriggers = options.targetGraph.buildTriggers;
-
-        // TODO(davidmorgan): pull out and digest triggers per build label.
-        final thisBuilderTriggers = buildTriggers.triggers[phase.builderLabel];
-        if (thisBuilderTriggers != null) {
-          final primaryInputSource = await readerWriter.readAsString(
-            primaryInput,
-          );
-          buildLog.debug(
-            'Checking triggers $thisBuilderTriggers on: $primaryInputSource',
-          );
-          for (final trigger in thisBuilderTriggers) {
-            if (trigger.triggersOnPrimaryInput(primaryInputSource)) {
-              reallyBuild = true;
-              break;
-            }
-          }
-        } else {
-          buildLog.debug('No triggers on $primaryInput');
-        }
-      }
-
+      final runsAccordingToTriggers = await _runsAccordingToBuildTriggers(
+        phase: phase,
+        primaryInput: primaryInput,
+      );
       final logger = buildLog.loggerFor(
         phase: phase,
         primaryInput: primaryInput,
         lazy: lazy,
       );
-      if (reallyBuild) {
+      if (runsAccordingToTriggers) {
         await TimedActivity.build.runAsync(
           () => tracker.trackStage(
             'Build',
@@ -575,7 +550,7 @@ class Build {
         ),
       );
 
-      if (reallyBuild) {
+      if (runsAccordingToTriggers) {
         buildLog.finishStep(
           phase: phase,
           anyOutputs: readerWriter.assetsWritten.isNotEmpty,
@@ -590,6 +565,32 @@ class Build {
 
       return readerWriter.assetsWritten;
     });
+  }
+
+  /// Whether build triggers allow [phase] to run on [primaryInput].
+  ///
+  /// This means either the builder does not have `run_only_if_triggered: true`
+  /// or it does run only if triggered and is triggered.
+  Future<bool> _runsAccordingToBuildTriggers({
+    required InBuildPhase phase,
+    required AssetId primaryInput,
+  }) async {
+    final runsIfTriggered =
+        phase.builderOptions.config['run_only_if_triggered'];
+    if (runsIfTriggered != true) {
+      return true;
+    }
+    final buildTriggers = options.targetGraph.buildTriggers[phase.builderLabel];
+    if (buildTriggers == null) {
+      return true;
+    }
+    final primaryInputSource = await readerWriter.readAsString(primaryInput);
+    for (final trigger in buildTriggers) {
+      if (trigger.triggersOnPrimaryInput(primaryInputSource)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   Future<Iterable<AssetId>> _runPostBuildPhase(

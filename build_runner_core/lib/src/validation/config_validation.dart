@@ -27,8 +27,7 @@ void validateBuilderConfig(
       if (!builderKeys.contains(key)) {
         buildLog.warning(
           'Configuring `$key` in target `${target.key}` but this '
-          'is not a known Builder.'
-          ' known are $builderKeys',
+          'is not a known Builder.',
         );
       }
     }

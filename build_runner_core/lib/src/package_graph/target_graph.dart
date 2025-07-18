@@ -85,26 +85,15 @@ class TargetGraph {
           overrideBuildConfig[package.name] ??
           await _packageBuildConfig(reader, package);
 
-      final packageTriggers = config.triggers;
+      final packageTriggers = config.triggersByBuilder;
       for (final entry in packageTriggers.entries) {
         final triggerPackage = entry.key;
-        final triggers = entry.value;
-        if (triggers is List<Object?>) {
-          for (final triggerString in triggers) {
-            BuildTrigger? trigger;
-            if (triggerString is String) {
-              trigger = BuildTrigger.tryParse(triggerString);
-            }
-            if (trigger != null) {
-              (buildTriggers[triggerPackage] ??= {}).add(trigger);
-            } else {
-              throw BuildConfigParseException(
-                package.name,
-                'Invalid trigger: `$triggerString`',
-              );
-            }
-          }
-        }
+        (buildTriggers[triggerPackage] ??= {}).addAll(
+          BuildTriggers.parseList(
+            packageName: package.name,
+            triggers: entry.value,
+          ),
+        );
       }
 
       List<String> defaultInclude;
@@ -269,14 +258,12 @@ Future<BuildConfig> _packageBuildConfig(
   try {
     final id = AssetId(package.name, 'build.yaml');
     if (reader != null && await reader.canRead(id)) {
-      final result = BuildConfig.parse(
+      return BuildConfig.parse(
         package.name,
         dependencies,
         await reader.readAsString(id),
         configYamlPath: p.join(package.path, 'build.yaml'),
       );
-      buildLog.debug('build config: ${result.builderDefinitions}');
-      return result;
     } else {
       return BuildConfig.useDefault(package.name, dependencies);
     }

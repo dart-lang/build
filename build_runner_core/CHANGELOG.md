@@ -1,3 +1,7 @@
+## 9.3.0-wip
+
+- Add support for build.yaml `triggers`. See `build_runner 2.7.0` for usage.
+
 ## 9.2.0
 
 - Removed unused dev_deps: `test_process`.

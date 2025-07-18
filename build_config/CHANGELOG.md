@@ -1,5 +1,6 @@
-## 1.1.3-wip
+## 1.2.0-wip
 
+- Add top level key `triggers`. See `build_runner 2.7.0` for usage.
 - Bump the min sdk to 3.7.0.
 - Remove unused dep: `yaml`.
 

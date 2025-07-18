@@ -183,7 +183,8 @@ class InvalidationTester {
   /// For the initial build, do not pass [change] [delete] or [create].
   ///
   /// For subsequent builds, pass asset name [change] to change that asset;
-  /// [delete] to delete one; and/or [create] to create one.
+  /// [delete] to delete one; [create] to create one; and/or [buildYaml] to update
+  /// the package `build.yaml`.
   Future<Result> build({
     String? change,
     String? delete,
@@ -548,6 +549,7 @@ class TestBuilder implements Builder {
     }
   }
 
+  // Name that will refer to the builder in `build.yaml`.
   @override
   String toString() => 'pkg:invalidation_tester_builder';
 }
