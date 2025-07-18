@@ -21,7 +21,11 @@ void main() {
         ..writes('.2');
     });
 
-    group('run only if triggered, without triggers', () {
+    test('a.2 is built', () async {
+      expect(await tester.build(), Result(written: ['a.2']));
+    });
+
+    group('with run_only_if_triggered, without triggers', () {
       setUp(() {
         tester.buildYaml(r'''
 targets:
@@ -48,7 +52,7 @@ targets:
       });
     });
 
-    group('run only if triggered, with trigger', () {
+    group('with run_only_if_triggered, with trigger', () {
       setUp(() {
         tester.buildYaml(r'''
 targets:
@@ -73,13 +77,201 @@ triggers:
 
       test('a.2 is rebuilt on primary input change', () async {
         await tester.build();
-        // TODO(davidmorgan): should not be rebuilt?
+        // TODO(davidmorgan): the primary input is currently counted as an input
+        // due to the directive check. It would be possible to optimize to only
+        // count "whether any directive matches" as an input, then this change
+        // would not trigger a rebuild.
         expect(await tester.build(change: 'a.1'), Result(written: ['a.2']));
       });
 
       test('a.2 is rebuilt on input change', () async {
         await tester.build();
         expect(await tester.build(change: 'z'), Result(written: ['a.2']));
+      });
+    });
+
+    group('with run_only_if_triggered, changes to triggers', () {
+      test('a.2 is not built', () async {
+        tester.buildYaml(r'''
+targets:
+  $default:
+    builders:
+      pkg:invalidation_tester_builder:
+        options:
+          run_only_if_triggered: true
+
+triggers:
+  pkg:invalidation_tester_builder:
+    - import trigger/trigger.dart
+''');
+        expect(await tester.build(), Result(written: []));
+      });
+
+      test('a.2 is built when triggering direct import is added', () async {
+        tester.buildYaml(r'''
+targets:
+  $default:
+    builders:
+      pkg:invalidation_tester_builder:
+        options:
+          run_only_if_triggered: true
+
+triggers:
+  pkg:invalidation_tester_builder:
+    - import trigger/trigger.dart
+''');
+        await tester.build();
+        tester.importGraph({
+          'a.1': ['package:trigger/trigger.dart'],
+        });
+        expect(await tester.build(change: 'a.1'), Result(written: ['a.2']));
+      });
+
+      test('a.2 is built when trigger is added for existing '
+          'direct import', () async {
+        tester.buildYaml(r'''
+targets:
+  $default:
+    builders:
+      pkg:invalidation_tester_builder:
+        options:
+          run_only_if_triggered: true
+''');
+        tester.importGraph({
+          'a.1': ['package:trigger/trigger.dart'],
+        });
+        await tester.build();
+        expect(
+          await tester.build(
+            buildYaml: r'''
+targets:
+  $default:
+    builders:
+      pkg:invalidation_tester_builder:
+        options:
+          run_only_if_triggered: true
+
+triggers:
+  pkg:invalidation_tester_builder:
+    - import trigger/trigger.dart
+''',
+          ),
+          Result(written: ['a.2']),
+        );
+      });
+
+      test('a.2 is removed when run_only_if_triggered is set '
+          'and no trigger', () async {
+        tester.buildYaml(r'''
+targets:
+  $default:
+    builders:
+      pkg:invalidation_tester_builder:
+        options:
+          run_only_if_triggered: false
+''');
+        expect(await tester.build(), Result(written: ['a.2']));
+        expect(
+          await tester.build(
+            buildYaml: r'''
+targets:
+  $default:
+    builders:
+      pkg:invalidation_tester_builder:
+        options:
+          run_only_if_triggered: true
+''',
+          ),
+          Result(deleted: ['a.2']),
+        );
+      });
+
+      test('a.2 is built when run_only_if_triggered is unset '
+          'and no trigger', () async {
+        tester.buildYaml(r'''
+targets:
+  $default:
+    builders:
+      pkg:invalidation_tester_builder:
+        options:
+          run_only_if_triggered: true
+
+triggers:
+  pkg:invalidation_tester_builder:
+    - import trigger/trigger.dart
+''');
+        expect(await tester.build(), Result(written: []));
+        expect(
+          await tester.build(
+            buildYaml: r'''
+targets:
+  $default:
+    builders:
+      pkg:invalidation_tester_builder:
+        options:
+          run_only_if_triggered: false
+''',
+          ),
+          Result(written: ['a.2']),
+        );
+      });
+
+      test('a.2 is deleted when triggering direct import is removed', () async {
+        tester.buildYaml(r'''
+targets:
+  $default:
+    builders:
+      pkg:invalidation_tester_builder:
+        options:
+          run_only_if_triggered: true
+
+triggers:
+  pkg:invalidation_tester_builder:
+    - import trigger/trigger.dart
+''');
+        tester.importGraph({
+          'a.1': ['package:trigger/trigger.dart'],
+        });
+        await tester.build();
+        tester.importGraph({'a.1': []});
+        expect(await tester.build(change: 'a.1'), Result(deleted: ['a.2']));
+      });
+
+      test('a.2 is deleted when trigger is removed for '
+          'existing import', () async {
+        tester.buildYaml(r'''
+targets:
+  $default:
+    builders:
+      pkg:invalidation_tester_builder:
+        options:
+          run_only_if_triggered: true
+
+triggers:
+  pkg:invalidation_tester_builder:
+    - import trigger/trigger.dart
+''');
+        tester.importGraph({
+          'a.1': ['package:trigger/trigger.dart'],
+        });
+        await tester.build();
+        expect(
+          await tester.build(
+            buildYaml: r'''
+targets:
+  $default:
+    builders:
+      pkg:invalidation_tester_builder:
+        options:
+          run_only_if_triggered: true
+
+triggers:
+  pkg:invalidation_tester_builder:
+    - import trigger/trigger.dart
+''',
+          ),
+          Result(deleted: ['a.2']),
+        );
       });
     });
   });
