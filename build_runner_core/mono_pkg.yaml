@@ -13,3 +13,7 @@ stages:
     os:
     - linux
     - windows
+- leak_check:
+  - group:
+    - command: ../tool/leak_check.sh
+    sdk: dev

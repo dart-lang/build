@@ -1,5 +1,5 @@
 #!/bin/bash
-# Created with package:mono_repo v6.6.2
+# Created with package:mono_repo v6.6.3
 
 # Support built in commands on windows out of the box.
 
@@ -74,6 +74,10 @@ for PKG in ${PKGS}; do
       command_1)
         echo 'dart run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random'
         dart run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        ;;
+      command_2)
+        echo '../tool/leak_check.sh'
+        ../tool/leak_check.sh || EXIT_CODE=$?
         ;;
       format)
         echo 'dart format --output=none --set-exit-if-changed .'

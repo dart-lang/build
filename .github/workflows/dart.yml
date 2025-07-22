@@ -1,4 +1,4 @@
-# Created with package:mono_repo v6.6.2
+# Created with package:mono_repo v6.6.3
 name: Dart CI
 on:
   push:
@@ -36,7 +36,7 @@ jobs:
         name: Checkout repository
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
       - name: mono_repo self validate
-        run: dart pub global activate mono_repo 6.6.2
+        run: dart pub global activate mono_repo 6.6.3
       - name: mono_repo self validate
         run: dart pub global run mono_repo generate --validate
   job_002:
@@ -1680,6 +1680,81 @@ jobs:
       - job_007
       - job_008
   job_045:
+    name: "leak_check; linux; Dart dev; PKG: build_runner_core; `../tool/leak_check.sh`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner_core;commands:command_2"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner_core
+            os:ubuntu-latest;pub-cache-hosted;sdk:dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@f0ead981b4d9a35b37f30d36160575d60931ec30
+        with:
+          sdk: dev
+      - id: checkout
+        name: Checkout repository
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+      - id: build_runner_core_pub_upgrade
+        name: build_runner_core; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_runner_core
+      - name: build_runner_core; ../tool/leak_check.sh
+        run: ../tool/leak_check.sh
+        if: "always() && steps.build_runner_core_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner_core
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
+      - job_009
+      - job_010
+      - job_011
+      - job_012
+      - job_013
+      - job_014
+      - job_015
+      - job_016
+      - job_017
+      - job_018
+      - job_019
+      - job_020
+      - job_021
+      - job_022
+      - job_023
+      - job_024
+      - job_025
+      - job_026
+      - job_027
+      - job_028
+      - job_029
+      - job_030
+      - job_031
+      - job_032
+      - job_033
+      - job_034
+      - job_035
+      - job_036
+      - job_037
+      - job_038
+      - job_039
+      - job_040
+      - job_041
+      - job_042
+      - job_043
+      - job_044
+  job_046:
     name: "e2e_test; linux; Dart dev; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1`"
     runs-on: ubuntu-latest
     steps:
@@ -1754,7 +1829,8 @@ jobs:
       - job_042
       - job_043
       - job_044
-  job_046:
+      - job_045
+  job_047:
     name: "e2e_test; linux; Dart dev; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1`"
     runs-on: ubuntu-latest
     steps:
@@ -1829,7 +1905,8 @@ jobs:
       - job_042
       - job_043
       - job_044
-  job_047:
+      - job_045
+  job_048:
     name: "e2e_test; linux; Dart dev; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1`"
     runs-on: ubuntu-latest
     steps:
@@ -1904,7 +1981,8 @@ jobs:
       - job_042
       - job_043
       - job_044
-  job_048:
+      - job_045
+  job_049:
     name: "e2e_test; linux; Dart dev; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1`"
     runs-on: ubuntu-latest
     steps:
@@ -1979,7 +2057,8 @@ jobs:
       - job_042
       - job_043
       - job_044
-  job_049:
+      - job_045
+  job_050:
     name: "e2e_test; linux; Dart dev; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1`"
     runs-on: ubuntu-latest
     steps:
@@ -2054,7 +2133,8 @@ jobs:
       - job_042
       - job_043
       - job_044
-  job_050:
+      - job_045
+  job_051:
     name: "e2e_test; linux; Dart main; PKG: _test; `dart test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -2129,7 +2209,8 @@ jobs:
       - job_042
       - job_043
       - job_044
-  job_051:
+      - job_045
+  job_052:
     name: "e2e_test; linux; Dart main; PKG: _test; `dart test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -2204,7 +2285,8 @@ jobs:
       - job_042
       - job_043
       - job_044
-  job_052:
+      - job_045
+  job_053:
     name: "e2e_test; linux; Dart main; PKG: _test; `dart test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -2279,7 +2361,8 @@ jobs:
       - job_042
       - job_043
       - job_044
-  job_053:
+      - job_045
+  job_054:
     name: "e2e_test; linux; Dart main; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1`"
     runs-on: ubuntu-latest
     steps:
@@ -2354,7 +2437,8 @@ jobs:
       - job_042
       - job_043
       - job_044
-  job_054:
+      - job_045
+  job_055:
     name: "e2e_test; linux; Dart main; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1`"
     runs-on: ubuntu-latest
     steps:
@@ -2429,7 +2513,8 @@ jobs:
       - job_042
       - job_043
       - job_044
-  job_055:
+      - job_045
+  job_056:
     name: "e2e_test; linux; Dart main; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1`"
     runs-on: ubuntu-latest
     steps:
@@ -2504,7 +2589,8 @@ jobs:
       - job_042
       - job_043
       - job_044
-  job_056:
+      - job_045
+  job_057:
     name: "e2e_test; linux; Dart main; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1`"
     runs-on: ubuntu-latest
     steps:
@@ -2579,7 +2665,8 @@ jobs:
       - job_042
       - job_043
       - job_044
-  job_057:
+      - job_045
+  job_058:
     name: "e2e_test; linux; Dart main; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1`"
     runs-on: ubuntu-latest
     steps:
@@ -2654,7 +2741,8 @@ jobs:
       - job_042
       - job_043
       - job_044
-  job_058:
+      - job_045
+  job_059:
     name: "e2e_test; windows; Dart main; PKG: _test; `dart test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -2719,7 +2807,8 @@ jobs:
       - job_042
       - job_043
       - job_044
-  job_059:
+      - job_045
+  job_060:
     name: "e2e_test; windows; Dart main; PKG: _test; `dart test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -2784,7 +2873,8 @@ jobs:
       - job_042
       - job_043
       - job_044
-  job_060:
+      - job_045
+  job_061:
     name: "e2e_test; windows; Dart main; PKG: _test; `dart test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -2849,7 +2939,8 @@ jobs:
       - job_042
       - job_043
       - job_044
-  job_061:
+      - job_045
+  job_062:
     name: "e2e_test_cron; linux; Dart main; PKG: _test; `dart test`"
     runs-on: ubuntu-latest
     if: "github.event_name == 'schedule'"
@@ -2941,7 +3032,8 @@ jobs:
       - job_058
       - job_059
       - job_060
-  job_062:
+      - job_061
+  job_063:
     name: "e2e_test_cron; windows; Dart main; PKG: _test; `dart test`"
     runs-on: windows-latest
     if: "github.event_name == 'schedule'"
@@ -3023,7 +3115,8 @@ jobs:
       - job_058
       - job_059
       - job_060
-  job_063:
+      - job_061
+  job_064:
     name: Notify failure
     runs-on: ubuntu-latest
     if: "(github.event_name == 'push' || github.event_name == 'schedule') && failure()"
@@ -3097,3 +3190,4 @@ jobs:
       - job_060
       - job_061
       - job_062
+      - job_063

@@ -22,6 +22,8 @@ import 'package:test/test.dart';
 /// to the path `lib/a.dart`; all names map to the package `pkg`. "Hidden" asset
 /// IDs under `.dart_tool` are mapped back to the same namespace.
 class InvalidationTester {
+  final bool testIsRunning;
+
   /// The source assets on disk before the first build.
   final Set<AssetId> _sourceAssets = {};
 
@@ -64,6 +66,8 @@ class InvalidationTester {
 
   /// Output number, for writing outputs that are different.
   int _outputNumber = 0;
+
+  InvalidationTester({this.testIsRunning = true});
 
   /// Starts logging test setup.
   ///
@@ -231,11 +235,13 @@ class InvalidationTester {
       testingBuilderConfig: false,
     );
     final logString = log.toString();
-    printOnFailure(
-      '=== build log #${++_buildNumber} ===\n\n'
-      '${_setupLog.map((l) => '  $l\n').join('')}'
-      '${logString.trimAndIndent}',
-    );
+    if (testIsRunning) {
+      printOnFailure(
+        '=== build log #${++_buildNumber} ===\n\n'
+        '${_setupLog.map((l) => '  $l\n').join('')}'
+        '${logString.trimAndIndent}',
+      );
+    }
     if (_logSetup) _setupLog.clear();
     readerWriter = testBuildResult.readerWriter;
 
