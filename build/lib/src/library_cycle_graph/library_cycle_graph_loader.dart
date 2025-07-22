@@ -73,8 +73,6 @@ class LibraryCycleGraphLoader {
   /// for its sorting, so earlier phases are processed first in [_nextIdToLoad].
   final SplayTreeMap<int, List<AssetId>> _idsToLoad = SplayTreeMap();
 
-  final List<(int, AssetId)> _loadingIds = [];
-
   /// All loaded library cycles, by asset.
   final Map<AssetId, PhasedValue<LibraryCycle>> _cycles = {};
 
@@ -136,7 +134,6 @@ class LibraryCycleGraphLoader {
     // Return the last ID from the list of IDs at this phase because it's
     // cheapest to remove in `_removeIdToLoad`.
     final result = first.value.last;
-    _loadingIds.add((first.key, result));
     return (first.key, result);
   }
 

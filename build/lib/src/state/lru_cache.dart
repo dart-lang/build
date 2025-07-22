@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:meta/meta.dart';
+
 /// A basic LRU Cache.
 class LruCache<K, V> {
   _Entry<K, V>? _head;
@@ -55,13 +57,15 @@ class LruCache<K, V> {
     _currentWeightTotal -= entry.weight;
     _entries.remove(key);
 
+    // Remove from linked list.
+    entry.previous?.next = entry.next;
+    entry.next?.previous = entry.previous;
+
     if (entry == _tail) {
       _tail = entry.next;
-      _tail?.previous = null;
     }
     if (entry == _head) {
       _head = entry.previous;
-      _head?.next = null;
     }
 
     return entry.value;
@@ -75,18 +79,26 @@ class LruCache<K, V> {
       _tail = link.next;
     }
 
-    if (link.previous != null) {
-      link.previous!.next = link.next;
-    }
-    if (link.next != null) {
-      link.next!.previous = link.previous;
-    }
+    // Remove from linked list.
+    link.previous?.next = link.next;
+    link.next?.previous = link.previous;
 
     _head?.next = link;
     link.previous = _head;
     _head = link;
     _tail ??= link;
     link.next = null;
+  }
+
+  @visibleForTesting
+  int get linkedListLength {
+    var result = 0;
+    var current = _head;
+    while (current != null) {
+      ++result;
+      current = current.previous;
+    }
+    return result;
   }
 }
 
