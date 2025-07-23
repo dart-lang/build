@@ -3,13 +3,13 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:mirrors';
 
 import 'package:build/build.dart';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
+import '../../mirrors.dart';
 import '../asset_graph/graph.dart';
 import '../logging/build_log.dart';
 import '../package_graph/package_graph.dart';
@@ -52,11 +52,15 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
     PackageGraph packageGraph,
     AssetGraph graph,
   ) async {
+    if (urisForThisScript == null) {
+      return _MirrorBuildScriptUpdates._(false, <AssetId>{});
+    }
+
     var supportsIncrementalRebuilds = true;
     Set<AssetId> allSources;
     try {
       allSources =
-          _urisForThisScript
+          urisForThisScript!()
               .map((id) => idForUri(id, packageGraph))
               .nonNulls
               .toSet();
@@ -88,9 +92,6 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
     }
     return _MirrorBuildScriptUpdates._(supportsIncrementalRebuilds, allSources);
   }
-
-  static Iterable<Uri> get _urisForThisScript =>
-      currentMirrorSystem().libraries.keys;
 
   /// Checks if the current running program has been updated, based on
   /// [updatedIds].

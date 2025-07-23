@@ -4,9 +4,11 @@
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:mirrors';
 
 import 'package:args/command_runner.dart';
 import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner_core/mirrors.dart' as build_runner_core_mirrors;
 import 'package:io/ansi.dart' as ansi;
 import 'package:io/io.dart' show ExitCode;
 
@@ -20,6 +22,8 @@ import 'runner.dart';
 /// Returns the exit code that should be set when the calling process exits. `0`
 /// implies success.
 Future<int> run(List<String> args, List<BuilderApplication> builders) async {
+  build_runner_core_mirrors.urisForThisScript =
+      () => currentMirrorSystem().libraries.keys;
   var runner = BuildCommandRunner(builders, await PackageGraph.forThisPackage())
     ..addCommand(CleanCommand());
   try {
