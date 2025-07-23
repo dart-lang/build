@@ -232,6 +232,61 @@ these options should be used rarely.
   and `applies_builder` to configure both ordering and ensure that steps are not
   skipped.
 
+## Triggers
+
+Triggers are a performance heuristic that allow builders to quickly decide
+_not_ to run.
+
+A builder runs only if triggered if the option `run_only_if_triggered` is
+`true`. This can be enabled for the builder:
+
+```yaml
+builders:
+  my_builder:
+    import: "package:my_package/builder.dart"
+    builder_factories: ["myBuilder"]
+    build_extensions: {".dart": [".my_package.dart"]}
+    defaults:
+      options:
+        run_only_if_triggered: true
+```
+
+Or, enabled/disabled in the `build.yaml` of the package applying the builder:
+
+```yaml
+targets:
+  $default:
+    builders:
+      my_package:my_builder:
+        options:
+          run_only_if_triggered: true # or `false`
+```
+
+Triggers are defined in a new top-level section called `triggers`:
+
+```yaml
+triggers:
+  my_package:my_builder:
+    - import my_package/my_builder_annotation.dart
+```
+
+An `import` triggers says that the builder only runs if there is a direct import
+of the specified library. Usually, this will be a library that defines the
+annotation that configures the generator.
+
+Triggers are collected from all packages in the codebase, not just packages
+defining or applying builders. This allows a package to provide new ways to
+trigger a builder from an unrelated package. For example, if
+`third_party_package` re-exports the annotation in
+`package:my_package/my_builder_annotation.dart` then it should also add a
+trigger:
+
+```yaml
+triggers:
+  my_package:my_builder:
+    - import third_party_package/annotations.dart
+```
+
 # Publishing `build.yaml` files
 
 `build.yaml` configuration should be published to pub with the package and

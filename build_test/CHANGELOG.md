@@ -1,3 +1,7 @@
+## 3.3.1-wip
+
+- Use `build_runner` 2.7.0.
+
 ## 3.3.0
 
 - Read build configs using `AssetReader` so they're easier to test: you can now
