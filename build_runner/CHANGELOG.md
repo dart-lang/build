@@ -1,3 +1,7 @@
+## 2.6.1-wip
+
+- Use `build` 3.0.1.
+
 ## 2.6.0
 
 - Remove unused deps: `analyzer`, `build_resolvers`, `collection`, `http`,

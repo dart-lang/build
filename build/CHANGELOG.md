@@ -1,3 +1,7 @@
+## 3.0.1-wip
+
+- Small improvements to RAM usage.
+
 ## 3.0.0
 
 - Removed unused deps: `meta`, `pool`.

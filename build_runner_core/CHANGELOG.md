@@ -1,3 +1,7 @@
+## 9.2.1-wip
+
+- Use `build` 3.0.1.
+
 ## 9.2.0
 
 - Removed unused dev_deps: `test_process`.

@@ -120,4 +120,36 @@ void main() {
       expect(cache['$i'], maxIndividualWeight);
     }
   });
+
+  test('removes also remove from linked list', () {
+    cache['a'] = 1;
+    expect(cache.linkedListLength, 1);
+    cache.remove('a');
+    expect(cache.linkedListLength, 0);
+  });
+
+  test('removes also remove from middle of linked list', () {
+    cache['a'] = 1;
+    cache['b'] = 1;
+    cache['c'] = 1;
+    expect(cache.linkedListLength, 3);
+    cache.remove('b');
+    expect(cache.linkedListLength, 2);
+  });
+
+  test('updates remove old from linked list', () {
+    cache['a'] = 1;
+    expect(cache.linkedListLength, 1);
+    cache['a'] = 2;
+    expect(cache.linkedListLength, 1);
+  });
+
+  test('updates remove old from middle of linked list', () {
+    cache['a'] = 1;
+    cache['b'] = 1;
+    cache['c'] = 1;
+    expect(cache.linkedListLength, 3);
+    cache['b'] = 2;
+    expect(cache.linkedListLength, 3);
+  });
 }
