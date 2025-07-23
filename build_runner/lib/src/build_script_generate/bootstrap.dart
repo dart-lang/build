@@ -73,6 +73,9 @@ Future<int> _generateAndRun(
         oldContents = buildScript.readAsStringSync();
       }
       var newContents = await generateBuildScript();
+      if (newContents == oldContents) {
+        buildLog.debug('same contents');
+      }
       // Only trigger a build script update if necessary.
       if (newContents != oldContents) {
         buildScript
@@ -183,7 +186,7 @@ Future<bool> _createKernelIfNeeded(List<String> experiments) async {
     }
   }
 
-  if (!kernelFile.existsSync()) {
+  if (!kernelFile.existsSync() || true) {
     final client = await FrontendServerClient.start(
       scriptLocation,
       scriptKernelCachedLocation,
@@ -196,9 +199,11 @@ Future<bool> _createKernelIfNeeded(List<String> experiments) async {
     var hadErrors = false;
     buildLog.doing('Compiling the build script.');
     try {
+      if (kernelCacheFile.existsSync()) kernelCacheFile.deleteSync();
       final result = await client.compile();
+      buildLog.debug(result.jsSourcesOutput.toString());
+      buildLog.debug('built ${kernelCacheFile.path}');
       hadErrors = result.errorCount > 0 || !kernelCacheFile.existsSync();
-
       // Note: We're logging all output with a single log call to keep
       // annotated source spans intact.
       final logOutput = result.compilerOutputLines.join('\n');
