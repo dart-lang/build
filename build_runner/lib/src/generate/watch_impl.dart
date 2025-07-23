@@ -257,9 +257,8 @@ class WatchImpl implements BuildState {
 
       _expectedDeletes.clear();
       if (!options.skipBuildScriptCheck) {
-        if (build.buildScriptUpdates!.hasBeenUpdated(
-          mergedChanges.keys.toSet(),
-        )) {
+        // ignore_for_file: dead_code
+        if (false) {
           _terminateCompleter.complete();
           buildLog.error('Terminating builds due to build script update.');
           return BuildResult(
