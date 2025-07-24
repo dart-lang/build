@@ -36,7 +36,9 @@ class GenerateBuildScript extends Command<int> {
       ..writeAsStringSync(buildScript.script);
     File(scriptDepsPath)
       ..createSync(recursive: true)
-      ..writeAsStringSync(buildScript.dependencyPaths.join('\n'));
+      ..writeAsStringSync(
+        '$scriptLocation: ${buildScript.dependencyPaths.join(' ')}',
+      );
     print(p.absolute(scriptLocation));
     return 0;
   }
