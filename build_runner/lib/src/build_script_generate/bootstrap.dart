@@ -78,7 +78,9 @@ Future<int> _generateAndRun(
           ..writeAsStringSync(newContents.script);
         File(scriptDepsPath)
           ..createSync(recursive: true)
-          ..writeAsStringSync(newContents.dependencyPaths.join('\n'));
+          ..writeAsStringSync(
+            '$scriptLocation: ${newContents.dependencyPaths.join(' ')}',
+          );
         // Delete the kernel file so it will be rebuilt.
         final kernelFile = File(scriptKernelLocation);
         if (kernelFile.existsSync()) {
