@@ -33,7 +33,10 @@ class GenerateBuildScript extends Command<int> {
     var buildScript = await generateBuildScript();
     File(scriptLocation)
       ..createSync(recursive: true)
-      ..writeAsStringSync(buildScript);
+      ..writeAsStringSync(buildScript.script);
+    File(scriptDepsPath)
+      ..createSync(recursive: true)
+      ..writeAsStringSync(buildScript.dependencyPaths.join('\n'));
     print(p.absolute(scriptLocation));
     return 0;
   }

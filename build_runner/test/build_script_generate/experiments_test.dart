@@ -17,8 +17,7 @@ void main() {
     final exitCode = await generateAndRun(
       [],
       experiments: ['records'],
-      generateBuildScript: () async {
-        return '''
+      script: '''
               // @dart=3.0
               import 'dart:io';
               import 'dart:isolate';
@@ -30,8 +29,7 @@ void main() {
                 buildProcessState.isolateExitCode = (x.\$2);
                 buildProcessState.send(sendPort);
               }
-              ''';
-      },
+              ''',
       logger: logger,
     );
     expect(exitCode, 2);

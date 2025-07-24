@@ -26,31 +26,29 @@ import 'build_script_generate.dart';
 /// Returns the exit code from running the build script.
 ///
 /// If an exit code of 75 is returned, this function should be re-ran.
+///
+/// Pass [script] to override the default build script for testing.
 Future<int> generateAndRun(
   List<String> args, {
   List<String>? experiments,
   Logger? logger,
-  Future<String> Function() generateBuildScript = generateBuildScript,
   void Function(Object error, StackTrace stackTrace) handleUncaughtError =
       _defaultHandleUncaughtError,
+  GeneratedScript? script,
 }) {
   return buildLog.runWithLoggerDisplay(
     logger,
-    () => _generateAndRun(
-      args,
-      experiments,
-      generateBuildScript,
-      handleUncaughtError,
-    ),
+    () =>
+        _generateAndRun(args, experiments, handleUncaughtError, script: script),
   );
 }
 
 Future<int> _generateAndRun(
   List<String> args,
   List<String>? experiments,
-  Future<String> Function() generateBuildScript,
-  void Function(Object error, StackTrace stackTrace) handleUncaughtError,
-) async {
+  void Function(Object error, StackTrace stackTrace) handleUncaughtError, {
+  GeneratedScript? script,
+}) async {
   experiments ??= [];
   ReceivePort? exitPort;
   ReceivePort? errorPort;
@@ -72,15 +70,15 @@ Future<int> _generateAndRun(
       if (buildScript.existsSync()) {
         oldContents = buildScript.readAsStringSync();
       }
-      var newContents = await generateBuildScript();
-      if (newContents == oldContents) {
-        buildLog.debug('same contents');
-      }
+      var newContents = script ?? await generateBuildScript();
       // Only trigger a build script update if necessary.
-      if (newContents != oldContents) {
+      if (newContents.script != oldContents) {
         buildScript
           ..createSync(recursive: true)
-          ..writeAsStringSync(newContents);
+          ..writeAsStringSync(newContents.script);
+        File(scriptDepsPath)
+          ..createSync(recursive: true)
+          ..writeAsStringSync(newContents.dependencyPaths.join('\n'));
         // Delete the kernel file so it will be rebuilt.
         final kernelFile = File(scriptKernelLocation);
         if (kernelFile.existsSync()) {
