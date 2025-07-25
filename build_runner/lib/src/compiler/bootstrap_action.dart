@@ -33,13 +33,17 @@ class BootstrapAction {
     final result = await run();
 
     if (result._inputPaths != null) {
-      File(_depsPath).writeAsStringSync(
-        '$outputPath: '
-        '${result._inputPaths.join(' ')}',
-      );
+      File(_depsPath)
+        ..createSync(recursive: true)
+        ..writeAsStringSync(
+          '$outputPath: '
+          '${result._inputPaths.join(' ')}',
+        );
     }
     if (result._content != null) {
-      File(outputPath).writeAsStringSync(result._content);
+      File(outputPath)
+        ..createSync(recursive: true)
+        ..writeAsStringSync(result._content);
     }
     File(_digestsPath).writeAsStringSync(computeDigests());
     return result;

@@ -8,22 +8,24 @@ import 'dart:io';
 import 'bootstrap_action.dart';
 
 void main(List<String> arguments) async {
-  await Compiler().compile(arguments[0]);
+  await Compiler().compile();
 }
 
 BootstrapAction compileToKernelBootstrapAction() => BootstrapAction(
-  outputPath: '.dart_tool/build/entrypoint/build.dart',
-  action: () => Compiler().compile('.dart_tool/build/entrypoint/build.dart'),
+  outputPath: '.dart_tool/build/entrypoint/build.dart.dill',
+  action: () => Compiler().compile(),
 );
 
 class Compiler {
-  Future<BootstrapActionResult> compile(String path) async {
+  Future<BootstrapActionResult> compile() async {
     final result = await Process.run('dart', [
       'compile',
       'kernel',
-      path,
+      '.dart_tool/build/entrypoint/build.dart',
+      '--output',
+      '.dart_tool/build/entrypoint/build.dart.dill',
       '--depfile',
-      '$path.deps',
+      '.dart_tool/build/entrypoint/build.dart.dill.deps',
     ]);
     if (result.exitCode != 0) {
       print('Compile failed: ${result.stdout} ${result.stderr}');
