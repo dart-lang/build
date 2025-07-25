@@ -13,6 +13,7 @@ import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 
+import '../compiler/bootstrap_action.dart';
 import '../package_graph/build_config_overrides.dart';
 import 'builder_ordering.dart';
 
@@ -25,6 +26,15 @@ const scriptKernelCachedLocation =
 const scriptKernelCachedSuffix = '.cached';
 
 final _lastShortFormatDartVersion = Version(3, 6, 0);
+
+BootstrapAction generateBuildScriptBootsrapAction() {
+  return BootstrapAction(
+    outputPath: scriptLocation,
+    action: generateBuildScript(),
+  );
+
+  throw '';
+}
 
 Future<GeneratedScript> generateBuildScript() async {
   buildLog.doing('Generating the build script.');
