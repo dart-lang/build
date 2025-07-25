@@ -13,6 +13,7 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:stack_trace/stack_trace.dart';
 
+import '../compiler/compiler.dart';
 import 'build_process_state.dart';
 import 'build_script_generate.dart';
 
@@ -67,7 +68,7 @@ Future<int> _generateAndRun(
     final buildScriptAction = generateBuildScriptBootstrapAction();
 
     try {
-      final result = await buildScriptAction.maybeRunAndWrite();
+      var result = await buildScriptAction.maybeRunAndWrite();
 
       buildLog.debug(result.toString());
 
@@ -102,7 +103,12 @@ Future<int> _generateAndRun(
       return ExitCode.config.code;
     }
 
-    if (!await _createKernelIfNeeded(experiments)) {
+    final dillAction = compileToKernelBootstrapAction();
+    final result = await dillAction.maybeRunAndWrite();
+    print(result);
+
+    if (!result.succeeded) {
+      print(result.messages);
       return buildProcessState.isolateExitCode = ExitCode.config.code;
     }
 

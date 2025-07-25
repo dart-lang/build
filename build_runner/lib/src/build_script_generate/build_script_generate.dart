@@ -76,6 +76,7 @@ ${library.accept(emitter)}
       ran: true,
       succeeded: true,
       content: script,
+      // TODO(davidmorgan): this should also include the current script+runtime.
       inputPaths: info.inputs,
     );
   } on FormatterException {
