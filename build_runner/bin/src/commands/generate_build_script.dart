@@ -30,15 +30,9 @@ class GenerateBuildScript extends Command<int> {
   @override
   Future<int> run() async {
     Logger.root.clearListeners();
-    var buildScript = await generateBuildScript();
-    File(scriptLocation)
-      ..createSync(recursive: true)
-      ..writeAsStringSync(buildScript.script);
-    File(scriptDepsPath)
-      ..createSync(recursive: true)
-      ..writeAsStringSync(
-        '$scriptLocation: ${buildScript.dependencyPaths.join(' ')}',
-      );
+    final action = generateBuildScriptBootstrapAction();
+    final result = await action.maybeRunAndWrite();
+    print(result);
     print(p.absolute(scriptLocation));
     return 0;
   }

@@ -64,8 +64,18 @@ Future<int> _generateAndRun(
     messagePort?.close();
     await errorListener?.cancel();
 
+    final buildScriptAction = generateBuildScriptBootstrapAction();
+
     try {
-      var buildScript = File(scriptLocation);
+      final result = await buildScriptAction.maybeRunAndWrite();
+
+      buildLog.debug(result.toString());
+
+      if (result.succeeded == false) {
+        return ExitCode.config.code;
+      }
+
+      /*var buildScript = File(scriptLocation);
       var oldContents = '';
       if (buildScript.existsSync()) {
         oldContents = buildScript.readAsStringSync();
@@ -87,7 +97,7 @@ Future<int> _generateAndRun(
           kernelFile.deleteSync();
         }
         buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
-      }
+      }*/
     } on CannotBuildException {
       return ExitCode.config.code;
     }

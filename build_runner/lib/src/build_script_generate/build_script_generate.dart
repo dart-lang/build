@@ -27,16 +27,14 @@ const scriptKernelCachedSuffix = '.cached';
 
 final _lastShortFormatDartVersion = Version(3, 6, 0);
 
-BootstrapAction generateBuildScriptBootsrapAction() {
+BootstrapAction generateBuildScriptBootstrapAction() {
   return BootstrapAction(
     outputPath: scriptLocation,
-    action: generateBuildScript(),
+    action: generateBuildScript,
   );
-
-  throw '';
 }
 
-Future<GeneratedScript> generateBuildScript() async {
+Future<BootstrapActionResult> generateBuildScript() async {
   buildLog.doing('Generating the build script.');
   final info = await findBuildScriptOptions();
   final builders = info.builderApplications;
@@ -74,7 +72,12 @@ Future<GeneratedScript> generateBuildScript() async {
 // build_runner >=2.4.16
 ${library.accept(emitter)}
 ''');
-    return GeneratedScript(script: script, dependencyPaths: info.inputs);
+    return BootstrapActionResult(
+      ran: true,
+      succeeded: true,
+      content: script,
+      inputPaths: info.inputs,
+    );
   } on FormatterException {
     buildLog.error(
       'Generated build script could not be parsed. '
