@@ -14,7 +14,6 @@ import '../asset/writer.dart';
 import '../asset_graph/exceptions.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/graph_loader.dart';
-import '../changes/build_script_updates.dart';
 import '../environment/build_environment.dart';
 import '../logging/build_log.dart';
 import '../util/constants.dart';
@@ -27,7 +26,6 @@ import 'options.dart';
 // not a build definition.
 class BuildDefinition {
   final AssetGraph assetGraph;
-  final BuildScriptUpdates? buildScriptUpdates;
 
   /// Whether this is a build starting from no previous state or outputs.
   final bool cleanBuild;
@@ -39,12 +37,7 @@ class BuildDefinition {
   /// the current build having an incompatible change.
   final Map<AssetId, ChangeType>? updates;
 
-  BuildDefinition._(
-    this.assetGraph,
-    this.buildScriptUpdates,
-    this.cleanBuild,
-    this.updates,
-  );
+  BuildDefinition._(this.assetGraph, this.cleanBuild, this.updates);
 
   static Future<BuildDefinition> prepareWorkspace(
     BuildEnvironment environment,
@@ -77,7 +70,6 @@ class _Loader {
     var cacheDirSources = await assetTracker.findCacheDirSources();
     var internalSources = await assetTracker.findInternalSources();
 
-    BuildScriptUpdates? buildScriptUpdates;
     Map<AssetId, ChangeType>? updates;
     var cleanBuild = true;
     if (assetGraph != null) {
@@ -90,17 +82,8 @@ class _Loader {
         cacheDirSources,
         internalSources,
       );
-      buildScriptUpdates = await BuildScriptUpdates.create(
-        _environment.reader,
-        _options.packageGraph,
-        assetGraph,
-        disabled: _options.skipBuildScriptCheck,
-      );
-
-      var buildScriptUpdated =
-          !_options.skipBuildScriptCheck &&
-          buildScriptUpdates.hasBeenUpdated(updates.keys.toSet());
-      if (buildScriptUpdated) {
+      // ignore_for_file: dead_code
+      if (false) {
         buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
         var deletedSourceOutputs = await assetGraph.deleteOutputs(
           _options.packageGraph,
@@ -115,7 +98,6 @@ class _Loader {
 
         inputSources.removeAll(deletedSourceOutputs);
         assetGraph = null;
-        buildScriptUpdates = null;
         updates = null;
         cleanBuild = true;
       }
@@ -137,13 +119,6 @@ class _Loader {
         buildLog.error(e.toString());
         throw const CannotBuildException();
       }
-      buildScriptUpdates = await BuildScriptUpdates.create(
-        _environment.reader,
-        _options.packageGraph,
-        assetGraph,
-        disabled: _options.skipBuildScriptCheck,
-      );
-
       conflictingOutputs =
           assetGraph.outputs
               .where((n) => n.package == _options.packageGraph.root.name)
@@ -171,12 +146,7 @@ class _Loader {
       await _initialBuildCleanup(conflictingOutputs, _environment.writer);
     }
 
-    return BuildDefinition._(
-      assetGraph,
-      buildScriptUpdates,
-      cleanBuild,
-      updates,
-    );
+    return BuildDefinition._(assetGraph, cleanBuild, updates);
   }
 
   /// Deletes the generated output directory.
