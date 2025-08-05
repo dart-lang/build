@@ -23,12 +23,11 @@ Matcher containsIgnoringFormatting(String expected) =>
 /// Matches a string that contains a given string, ignoring differences related
 /// to formatting: whitespace and trailing commas.
 class _ContainsIgnoringFormattingMatcher extends Matcher {
-  /// Matches one or more whitespace characters, or a trailing comma.
-  ///
-  /// A trailing comma is one followed by a closing bracket of some kind.
-  static final _whitespaceOrTrailingCommaPattern = RegExp(
-    r'\s+|,\s*(?=[)}\]])',
-  );
+  /// Matches one or more whitespace characters.
+  static final _whitespacePattern = RegExp(r'\s+');
+
+  /// Matches a trailing comma preceding a closing bracket character.
+  static final _trailingCommaPattern = RegExp(r',\s*([)}\]])');
 
   /// The string that the actual value must contain in order for the match to
   /// succeed.
@@ -50,10 +49,13 @@ class _ContainsIgnoringFormattingMatcher extends Matcher {
   /// Removes whitespace and trailing commas.
   ///
   /// Note that the result is not valid code because it means adjacent
-  /// identifiers and operators may be joined in ways that break the semantics.
+  ///.identifiers and operators may be joined in ways that break the semantics.
   /// The goal is not to produce an but valid version of the code, just to
   /// produce a string that will reliably match the actual string when it has
   /// also been stripped the same way.
   String _stripFormatting(String code) =>
-      code.replaceAll(_whitespaceOrTrailingCommaPattern, '');
+      code
+          .replaceAll(_whitespacePattern, '')
+          .replaceAllMapped(_trailingCommaPattern, (match) => match[1]!)
+          .trim();
 }

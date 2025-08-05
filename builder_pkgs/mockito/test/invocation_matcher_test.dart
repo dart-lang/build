@@ -175,7 +175,7 @@ void shouldFail(value, Matcher matcher, expected) {
     final matcher =
         expected is String
             ? equalsIgnoringWhitespace(expected)
-            : expected is Pattern
+            : expected is RegExp
             ? contains(expected)
             : expected;
     expect(collapseWhitespace(e.message!), matcher, reason: reason);

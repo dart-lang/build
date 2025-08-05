@@ -15,10 +15,11 @@
 @TestOn('vm')
 library;
 
+import 'dart:convert' show utf8;
+
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_test/build_test.dart';
-import 'package:logging/logging.dart';
 import 'package:mockito/src/builder.dart';
 import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
@@ -80,14 +81,13 @@ void main() {}
 };
 
 void main() {
-  late TestReaderWriter readerWriter;
+  late InMemoryAssetWriter writer;
 
   /// Test [MockBuilder] in a package which has opted into null safety.
   Future<void> testWithNonNullable(
     Map<String, String> sourceAssets, {
     Map<String, /*String|Matcher<List<int>>*/ Object>? outputs,
     Map<String, dynamic> config = const <String, dynamic>{},
-    void Function(LogRecord)? onLog,
   }) async {
     final packageConfig = PackageConfig([
       Package(
@@ -97,16 +97,12 @@ void main() {
         languageVersion: LanguageVersion(3, 3),
       ),
     ]);
-    final builder = buildMocks(BuilderOptions(config));
-    await testBuilders(
-      [builder],
-      visibleOutputBuilders: {builder},
+    await testBuilder(
+      buildMocks(BuilderOptions(config)),
       sourceAssets,
-      rootPackage: 'foo',
-      readerWriter: readerWriter,
+      writer: writer,
       outputs: outputs,
       packageConfig: packageConfig,
-      onLog: onLog,
     );
   }
 
@@ -122,17 +118,14 @@ void main() {
       ),
     ]);
 
-    final builder = buildMocks(BuilderOptions({}));
-    await testBuilders(
-      [builder],
-      visibleOutputBuilders: {builder},
+    await testBuilder(
+      buildMocks(BuilderOptions({})),
       sourceAssets,
-      rootPackage: 'foo',
-      readerWriter: readerWriter,
+      writer: writer,
       packageConfig: packageConfig,
     );
     final mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
-    return readerWriter.testing.readString(mocksAsset);
+    return utf8.decode(writer.assets[mocksAsset]!);
   }
 
   /// Test [MockBuilder] on a single source file, in a package which has opted
@@ -159,16 +152,16 @@ void main() {
     String sourceAssetText,
   ) async {
     await testWithNonNullable({
-      'foo|lib/foo.dart': sourceAssetText,
       ...annotationsAsset,
       ...simpleTestAsset,
+      'foo|lib/foo.dart': sourceAssetText,
     });
     final mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
-    return readerWriter.testing.readString(mocksAsset);
+    return utf8.decode(writer.assets[mocksAsset]!);
   }
 
   setUp(() {
-    readerWriter = TestReaderWriter(rootPackage: 'foo');
+    writer = InMemoryAssetWriter();
   });
 
   test(
@@ -613,14 +606,12 @@ void main() {
     },
   );
 
-  test(
-    'throws when given a parameter default value using a private type',
-    () async {
-      await _expectBuilderThrows(
-        assets: {
-          ...annotationsAsset,
-          ...simpleTestAsset,
-          'foo|lib/foo.dart': dedent(r'''
+  test('throws when given a parameter default value using a private type', () {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
       class Foo {
         void m([Bar a = const _Bar()]) {}
       }
@@ -629,19 +620,18 @@ void main() {
         const _Bar();
       }
       '''),
-        },
-        message: contains(
-          "Mockito cannot generate a valid override for method 'Foo.m'; "
-          "parameter 'a' causes a problem: default value has a private type: "
-          'asset:foo/lib/foo.dart#_Bar',
-        ),
-      );
-    },
-  );
+      },
+      message: contains(
+        "Mockito cannot generate a valid override for method 'Foo.m'; "
+        "parameter 'a' causes a problem: default value has a private type: "
+        'asset:foo/lib/foo.dart#_Bar',
+      ),
+    );
+  });
 
   test('throws when given a parameter default value using a private type, and '
-      'refers to the class-to-mock', () async {
-    await _expectBuilderThrows(
+      'refers to the class-to-mock', () {
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -666,8 +656,8 @@ void main() {
 
   test(
     'throws when given a parameter default value using a private constructor',
-    () async {
-      await _expectBuilderThrows(
+    () {
+      _expectBuilderThrows(
         assets: {
           ...annotationsAsset,
           ...simpleTestAsset,
@@ -689,8 +679,8 @@ void main() {
     },
   );
 
-  test('throws when given a parameter default value which is a type', () async {
-    await _expectBuilderThrows(
+  test('throws when given a parameter default value which is a type', () {
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -1388,7 +1378,7 @@ void main() {
         ''',
       });
       final mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
-      final mocksContent = readerWriter.testing.readString(mocksAsset);
+      final mocksContent = utf8.decode(writer.assets[mocksAsset]!);
       expect(mocksContent, contains("import 'dart:async' as _i3;"));
       expect(mocksContent, contains('m(_i3.Future<void>? a)'));
     },
@@ -1413,7 +1403,7 @@ void main() {
         ''',
       });
       final mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
-      final mocksContent = readerWriter.testing.readString(mocksAsset);
+      final mocksContent = utf8.decode(writer.assets[mocksAsset]!);
       expect(mocksContent, contains("import 'dart:async' as _i3;"));
       expect(mocksContent, contains('m(_i3.Future<void>? a)'));
     },
@@ -1523,7 +1513,7 @@ void main() {
         ''',
     });
     final mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
-    final mocksContent = readerWriter.testing.readString(mocksAsset);
+    final mocksContent = utf8.decode(writer.assets[mocksAsset]!);
     expect(mocksContent, contains("import 'package:foo/types.dart' as _i3;"));
     expect(mocksContent, contains('m(_i3.Bar? a)'));
   });
@@ -2690,27 +2680,14 @@ void main() {
     },
   );
 
-  test('creates dummy non-null RegExp return value', () async {
+  test('creates dummy non-null Stream return value', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
       abstract class Foo {
-        RegExp m();
+        Stream<int> m();
       }
       '''),
-      _containsAllOf("returnValue: RegExp('')"),
-    );
-  });
-
-  test('creates dummy non-null MapEntry<int, String> return value', () async {
-    await expectSingleNonNullableOutput(
-      dedent(r'''
-      abstract class Foo {
-        MapEntry<int, String> m();
-      }
-      '''),
-      _containsAllOf(
-        'returnValue: MapEntry<int, String>(0, _i3.dummyValue<String>(',
-      ),
+      _containsAllOf('returnValue: _i3.Stream<int>.empty()'),
     );
   });
 
@@ -3181,7 +3158,7 @@ void main() {
   });
 
   test('throws when GenerateMocks is given a class multiple times', () async {
-    await _expectBuilderThrows(
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         'foo|lib/foo.dart': dedent(r'''
@@ -3206,7 +3183,7 @@ void main() {
     'throws when GenerateMocks is given a class with a getter with a private '
     'return type',
     () async {
-      await _expectBuilderThrows(
+      _expectBuilderThrows(
         assets: {
           ...annotationsAsset,
           ...simpleTestAsset,
@@ -3230,7 +3207,7 @@ void main() {
     'throws when GenerateMocks is given a class with a setter with a private '
     'return type',
     () async {
-      await _expectBuilderThrows(
+      _expectBuilderThrows(
         assets: {
           ...annotationsAsset,
           ...simpleTestAsset,
@@ -3252,7 +3229,7 @@ void main() {
 
   test('throws when GenerateMocks is given a class with a method with a '
       'private return type', () async {
-    await _expectBuilderThrows(
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -3272,7 +3249,7 @@ void main() {
 
   test('throws when GenerateMocks is given a class with an inherited method '
       'with a private return type', () async {
-    await _expectBuilderThrows(
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -3293,7 +3270,7 @@ void main() {
 
   test('throws when GenerateMocks is given a class with a method with a '
       'type alias return type which refers to private types', () async {
-    await _expectBuilderThrows(
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -3316,7 +3293,7 @@ void main() {
     'throws when GenerateMocks is given a class with a method with a '
     'private type alias parameter type which refers to private types',
     () async {
-      await _expectBuilderThrows(
+      _expectBuilderThrows(
         assets: {
           ...annotationsAsset,
           ...simpleTestAsset,
@@ -3338,7 +3315,7 @@ void main() {
 
   test('throws when GenerateMocks is given a class with a method with a return '
       'type with private type arguments', () async {
-    await _expectBuilderThrows(
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -3358,7 +3335,7 @@ void main() {
 
   test('throws when GenerateMocks is given a class with a method with a return '
       'function type, with a private return type', () async {
-    await _expectBuilderThrows(
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -3378,7 +3355,7 @@ void main() {
 
   test('throws when GenerateMocks is given a class with a method with a '
       'private parameter type', () async {
-    await _expectBuilderThrows(
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -3398,7 +3375,7 @@ void main() {
 
   test('throws when GenerateMocks is given a class with a method with a '
       'parameter with private type arguments', () async {
-    await _expectBuilderThrows(
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -3418,7 +3395,7 @@ void main() {
 
   test('throws when GenerateMocks is given a class with a method with a '
       'function parameter type, with a private return type', () async {
-    await _expectBuilderThrows(
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -3438,7 +3415,7 @@ void main() {
 
   test('throws when GenerateMocks is given a class with a method with a return '
       'function type, with a private parameter type', () async {
-    await _expectBuilderThrows(
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -3460,7 +3437,7 @@ void main() {
     'throws when GenerateMocks is given a class with a type parameter with a '
     'private bound',
     () async {
-      await _expectBuilderThrows(
+      _expectBuilderThrows(
         assets: {
           ...annotationsAsset,
           ...simpleTestAsset,
@@ -3481,7 +3458,7 @@ void main() {
 
   test('throws when GenerateMocks is given a class with a method with a '
       'type parameter with a private bound', () async {
-    await _expectBuilderThrows(
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -3551,7 +3528,7 @@ void main() {
   );
 
   test('throws when GenerateMocks is missing an argument', () async {
-    await _expectBuilderThrows(
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         'foo|test/foo_test.dart': dedent('''
@@ -3566,7 +3543,7 @@ void main() {
   });
 
   test('throws when GenerateMocks is given a private class', () async {
-    await _expectBuilderThrows(
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         'foo|test/foo_test.dart': dedent('''
@@ -3581,7 +3558,7 @@ void main() {
   });
 
   test('throws when GenerateMocks references an unresolved type', () async {
-    await _expectBuilderThrows(
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         'foo|lib/foo.dart': dedent(r'''
@@ -3601,7 +3578,7 @@ void main() {
   test(
     'throws when two distinct classes with the same name are mocked',
     () async {
-      await _expectBuilderThrows(
+      _expectBuilderThrows(
         assets: {
           ...annotationsAsset,
           'foo|lib/a.dart': dedent(r'''
@@ -3628,7 +3605,7 @@ void main() {
   );
 
   test('throws when a mock class of the same name already exists', () async {
-    await _expectBuilderThrows(
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         'foo|lib/foo.dart': dedent(r'''
@@ -3650,7 +3627,7 @@ void main() {
   });
 
   test('throws when a mock class of class-to-mock already exists', () async {
-    await _expectBuilderThrows(
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         ...mockitoAssets,
@@ -3673,7 +3650,7 @@ void main() {
   });
 
   test('throws when GenerateMocks references a non-type', () async {
-    await _expectBuilderThrows(
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         'foo|test/foo_test.dart': dedent('''
@@ -3682,12 +3659,12 @@ void main() {
         void main() {}
         '''),
       },
-      message: contains('The "classes" argument includes a non-type: int (7)'),
+      message: 'The "classes" argument includes a non-type: int (7)',
     );
   });
 
   test('throws when GenerateMocks references a function typedef', () async {
-    await _expectBuilderThrows(
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -3695,12 +3672,12 @@ void main() {
         typedef Foo = void Function();
         '''),
       },
-      message: contains('Mockito cannot mock a non-class: Foo'),
+      message: 'Mockito cannot mock a non-class: Foo',
     );
   });
 
   test('throws when GenerateMocks references an enum', () async {
-    await _expectBuilderThrows(
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -3708,12 +3685,12 @@ void main() {
         enum Foo {}
         '''),
       },
-      message: contains("Mockito cannot mock an enum: 'Foo'"),
+      message: "Mockito cannot mock an enum: 'Foo'",
     );
   });
 
   test('throws when GenerateMocks references an extension', () async {
-    await _expectBuilderThrows(
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -3726,7 +3703,7 @@ void main() {
   });
 
   test('throws when GenerateMocks references a non-subtypeable type', () async {
-    await _expectBuilderThrows(
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         'foo|test/foo_test.dart': dedent('''
@@ -3740,7 +3717,7 @@ void main() {
   });
 
   test('throws when GenerateMocks references a sealed class', () async {
-    await _expectBuilderThrows(
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         'foo|test/foo_test.dart': dedent('''
@@ -3758,7 +3735,7 @@ void main() {
   test(
     'throws when GenerateMocks references sealed a class via typedef',
     () async {
-      await _expectBuilderThrows(
+      _expectBuilderThrows(
         assets: {
           ...annotationsAsset,
           'foo|test/foo_test.dart': dedent('''
@@ -3776,7 +3753,7 @@ void main() {
   );
 
   test('throws when GenerateMocks references a base class', () async {
-    await _expectBuilderThrows(
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         'foo|test/foo_test.dart': dedent('''
@@ -3792,7 +3769,7 @@ void main() {
   });
 
   test('throws when GenerateMocks references a final class', () async {
-    await _expectBuilderThrows(
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         'foo|test/foo_test.dart': dedent('''
@@ -4026,8 +4003,8 @@ void main() {
       );
     });
 
-    test('generation throws when the aliased type is nullable', () async {
-      await _expectBuilderThrows(
+    test('generation throws when the aliased type is nullable', () {
+      _expectBuilderThrows(
         assets: {
           ...annotationsAsset,
           'foo|lib/foo.dart': dedent(r'''
@@ -4196,43 +4173,36 @@ void main() {
         },
       );
       final mocksAsset = AssetId('foo', 'test/mocks/foo_test.mocks.dart');
-      final mocksContent = readerWriter.testing.readString(mocksAsset);
+      final mocksContent = utf8.decode(writer.assets[mocksAsset]!);
       expect(mocksContent, contains("import 'dart:async' as _i3;"));
       expect(mocksContent, contains('m(_i3.Future<void>? a)'));
     });
 
-    test('should throw if it has conflicting outputs', () async {
-      final logs = <String>[];
-      await testWithNonNullable(
-        {
-          ...annotationsAsset,
-          ...simpleTestAsset,
-          'foo|lib/foo.dart': '''
+    test('should throw if it has confilicting outputs', () async {
+      await expectLater(
+        testWithNonNullable(
+          {
+            ...annotationsAsset,
+            ...simpleTestAsset,
+            'foo|lib/foo.dart': '''
         import 'bar.dart';
         class Foo extends Bar {}
         ''',
-          'foo|lib/bar.dart': '''
+            'foo|lib/bar.dart': '''
         import 'dart:async';
         class Bar {
           m(Future<void> a) {}
         }
         ''',
-        },
-        config: {
-          'build_extensions': {
-            '^test/{{}}.dart': 'test/mocks/{{}}.mocks.dart',
-            'test/{{}}.dart': 'test/{{}}.something.mocks.dart',
           },
-        },
-        onLog: (r) {
-          if (r.level == Level.SEVERE) {
-            logs.add(r.toString());
-          }
-        },
-      );
-      expect(
-        logs,
-        contains(contains('conflicting outputs for `test/foo_test.dart`')),
+          config: {
+            'build_extensions': {
+              '^test/{{}}.dart': 'test/mocks/{{}}.mocks.dart',
+              'test/{{}}.dart': 'test/{{}}.something.mocks.dart',
+            },
+          },
+        ),
+        throwsArgumentError,
       );
       final mocksAsset = AssetId('foo', 'test/mocks/foo_test.mocks.dart');
       final otherMocksAsset = AssetId('foo', 'test/mocks/foo_test.mocks.dart');
@@ -4241,9 +4211,9 @@ void main() {
         'test/mocks/foo_test.something.mocks.dart',
       );
 
-      expect(readerWriter.testing.assets.contains(mocksAsset), false);
-      expect(readerWriter.testing.assets.contains(otherMocksAsset), false);
-      expect(readerWriter.testing.assets.contains(somethingMocksAsset), false);
+      expect(writer.assets.containsKey(mocksAsset), false);
+      expect(writer.assets.containsKey(otherMocksAsset), false);
+      expect(writer.assets.containsKey(somethingMocksAsset), false);
     });
 
     test('should throw if input is in incorrect format', () async {
@@ -4272,8 +4242,8 @@ void main() {
       final mocksAsset = AssetId('foo', 'test/mocks/foo_test.mocks.dart');
       final mocksAssetOriginal = AssetId('foo', 'test/foo_test.mocks.dart');
 
-      expect(readerWriter.testing.assets.contains(mocksAsset), false);
-      expect(readerWriter.testing.assets.contains(mocksAssetOriginal), false);
+      expect(writer.assets.containsKey(mocksAsset), false);
+      expect(writer.assets.containsKey(mocksAssetOriginal), false);
     });
 
     test('should throw if output is in incorrect format', () async {
@@ -4301,8 +4271,8 @@ void main() {
       );
       final mocksAsset = AssetId('foo', 'test/mocks/foo_test.mocks.dart');
       final mocksAssetOriginal = AssetId('foo', 'test/foo_test.mocks.dart');
-      expect(readerWriter.testing.assets.contains(mocksAsset), false);
-      expect(readerWriter.testing.assets.contains(mocksAssetOriginal), false);
+      expect(writer.assets.containsKey(mocksAsset), false);
+      expect(writer.assets.containsKey(mocksAssetOriginal), false);
     });
   });
 }
@@ -4316,12 +4286,12 @@ TypeMatcher<List<int>> _containsAllOf(String a, [String? b]) => decodedMatches(
 /// Expect that [testBuilder], given [assets], in a package which has opted into
 /// null safety, throws an [InvalidMockitoAnnotationException] with a message
 /// containing [message].
-Future<void> _expectBuilderThrows({
+void _expectBuilderThrows({
   required Map<String, String> assets,
   required dynamic /*String|Matcher<List<int>>*/ message,
   List<String> enabledExperiments = const [],
   LanguageVersion? languageVersion,
-}) async {
+}) {
   final packageConfig = PackageConfig([
     Package(
       'foo',
@@ -4331,42 +4301,45 @@ Future<void> _expectBuilderThrows({
     ),
   ]);
 
-  final logs = <String>[];
-  await withEnabledExperiments(
-    () => testBuilders(
-      [buildMocks(BuilderOptions({}))],
-      assets,
-      packageConfig: packageConfig,
-      rootPackage: 'foo',
-      onLog: (r) {
-        if (r.level == Level.SEVERE) {
-          logs.add(r.toString());
-        }
-      },
+  expect(
+    () => withEnabledExperiments(
+      () => testBuilder(
+        buildMocks(BuilderOptions({})),
+        assets,
+        packageConfig: packageConfig,
+      ),
+      enabledExperiments,
     ),
-    enabledExperiments,
+    throwsA(
+      TypeMatcher<InvalidMockitoAnnotationException>().having(
+        (e) => e.message,
+        'message',
+        message,
+      ),
+    ),
   );
-
-  expect(logs, contains(message));
 }
 
 /// Dedent [input], so that each line is shifted to the left, so that the first
 /// line is at the 0 column.
 String dedent(String input) {
-  final indentMatch = RegExp(r'^\s*').firstMatch(input)!;
-  if (indentMatch.end == 0) return input;
-  final indent = indentMatch[0]!;
-  return input.replaceAll(RegExp('^$indent', multiLine: true), '');
+  final indentMatch = RegExp(r'^(\s*)').firstMatch(input)!;
+  final indent = ''.padRight(indentMatch.group(1)!.length);
+  return input.splitMapJoin(
+    '\n',
+    onNonMatch: (s) => s.replaceFirst(RegExp('^$indent'), ''),
+  );
 }
 
 /// Dedent [input], so that each line is shifted to the left, so that the first
 /// line is at column 2 (starting position for a class member).
 String dedent2(String input) {
-  final indentMatch = RegExp(r'^\s{2,}').firstMatch(input)!;
-  if (indentMatch.end == 0) return input;
-  final indent = indentMatch[0];
-  return input.trimRight().replaceAll(
-    RegExp('^$indent', multiLine: true),
-    '  ',
-  );
+  final indentMatch = RegExp(r'^  (\s*)').firstMatch(input)!;
+  final indent = ''.padRight(indentMatch.group(1)!.length);
+  return input
+      .replaceFirst(RegExp(r'\s*$'), '')
+      .splitMapJoin(
+        '\n',
+        onNonMatch: (s) => s.replaceFirst(RegExp('^$indent'), ''),
+      );
 }

@@ -123,7 +123,6 @@ Map<Type, DummyBuilder> _defaultDummyBuilders = {
   Float32List: (_, _) => Float32List(0),
   Float64List: (_, _) => Float64List(0),
   ByteData: (_, _) => ByteData(0),
-  RegExp: (_, _) => RegExp(''),
   ...platformDummies,
 };
 
