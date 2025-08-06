@@ -1,6 +1,7 @@
-## 4.2.1-wip
+## 4.2.1
 
 - Remove unused deps: `build_config`.
+- Allow `analyzer` 8.0.0.
 
 ## 4.2.0
 
