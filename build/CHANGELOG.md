@@ -1,3 +1,7 @@
+## 3.0.2-wip
+
+- Use `build_runner_core` 9.3.0.
+
 ## 3.0.1
 
 - Small improvements to RAM usage.

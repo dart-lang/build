@@ -25,7 +25,10 @@ class LogDisplay {
   set _displayedLines(int displayedLines) =>
       buildProcessState.displayedLines = displayedLines;
 
-  void prompt(String message) {
+  // Interrupts block output and prints [message].
+  //
+  // The next block output will follow below [message].
+  void flushAndPrint(String message) {
     _displayedLines = 0;
     if (buildLog.configuration.onLog != null) {
       buildLog.configuration.onLog!(
@@ -69,7 +72,9 @@ class LogDisplay {
     _displayedLines = lines.length;
 
     if (block.overflowsConsole) {
-      prompt('Log overflowed the console, switching to line-by-line logging.');
+      flushAndPrint(
+        'Log overflowed the console, switching to line-by-line logging.',
+      );
       buildLog.configuration = buildLog.configuration.rebuild((b) {
         b.mode = BuildLogMode.simple;
       });

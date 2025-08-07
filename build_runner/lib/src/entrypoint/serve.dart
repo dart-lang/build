@@ -104,7 +104,6 @@ class ServeCommand extends WatchCommand {
 
     var handler = await watch(
       builderApplications,
-      deleteFilesByDefault: options.deleteFilesByDefault,
       enableLowResourcesMode: options.enableLowResourcesMode,
       configKey: options.configKey,
       buildDirs: options.buildDirs,

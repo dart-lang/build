@@ -29,8 +29,8 @@ import 'terminator.dart';
 
 Future<ServeHandler> watch(
   List<BuilderApplication> builders, {
-  bool? deleteFilesByDefault,
-  bool? assumeTty,
+  @Deprecated('Has no effect.') bool? deleteFilesByDefault,
+  @Deprecated('Has no effect.') bool? assumeTty,
   String? configKey,
   PackageGraph? packageGraph,
   AssetReader? reader,
@@ -56,7 +56,6 @@ Future<ServeHandler> watch(
   buildDirs ??= <BuildDirectory>{};
   buildFilters ??= <BuildFilter>{};
   debounceDelay ??= const Duration(milliseconds: 250);
-  deleteFilesByDefault ??= false;
   enableLowResourcesMode ??= false;
   outputSymlinksOnly ??= false;
   packageGraph ??= await PackageGraph.forThisPackage();
@@ -66,7 +65,6 @@ Future<ServeHandler> watch(
 
   var environment = BuildEnvironment(
     packageGraph,
-    assumeTty: assumeTty,
     outputSymlinksOnly: outputSymlinksOnly,
     reader: reader,
     writer: writer,
@@ -84,7 +82,6 @@ Future<ServeHandler> watch(
   var options = await BuildOptions.create(
     packageGraph: packageGraph,
     reader: environment.reader,
-    deleteFilesByDefault: deleteFilesByDefault,
     overrideBuildConfig: overrideBuildConfig,
     debounceDelay: debounceDelay,
     skipBuildScriptCheck: skipBuildScriptCheck,

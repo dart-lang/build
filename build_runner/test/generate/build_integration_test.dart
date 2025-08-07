@@ -703,15 +703,7 @@ main() async {
 
       var result = await runDart('a', 'tool/build.dart', args: ['build']);
 
-      expect(
-        result.exitCode,
-        isNot(0),
-        reason: 'build should fail due to conflicting outputs',
-      );
-      expect(
-        result.stdout,
-        allOf(contains('Conflicting outputs'), contains('web/a.txt.copy.copy')),
-      );
+      expect(result.exitCode, 0, reason: result.stderr as String);
     });
 
     test('Missing build_test dependency reports the right error', () async {

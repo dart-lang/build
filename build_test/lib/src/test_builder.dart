@@ -341,9 +341,6 @@ Future<TestBuilderResult> testBuilders(
     // didn't change. Skip it to allow testing with preserved state.
     skipBuildScriptCheck: true,
     enableLowResourcesMode: enableLowResourceMode,
-    // If a builder has visible output, it might need to be deleted. Do so
-    // without prompting.
-    deleteFilesByDefault: true,
   );
 
   final buildSeries = await BuildSeries.create(buildOptions, environment, [

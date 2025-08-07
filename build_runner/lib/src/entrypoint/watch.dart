@@ -62,7 +62,6 @@ class WatchCommand extends BuildRunnerCommand {
   Future<int> _run(WatchOptions options) async {
     var handler = await watch(
       builderApplications,
-      deleteFilesByDefault: options.deleteFilesByDefault,
       enableLowResourcesMode: options.enableLowResourcesMode,
       configKey: options.configKey,
       buildDirs: options.buildDirs,

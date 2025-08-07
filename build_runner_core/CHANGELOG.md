@@ -1,3 +1,8 @@
+## 9.3.0-wip
+
+- Remove interactive prompts for whether to delete files.
+- Ignore `-d` flag: always delete files as if `-d` was passed.
+
 ## 9.2.1
 
 - Use `build` 3.0.1.

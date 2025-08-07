@@ -108,7 +108,6 @@ class BuildFilter {
 
 /// Manages setting up consistent defaults for all options and build modes.
 class BuildOptions {
-  final bool deleteFilesByDefault;
   final bool enableLowResourcesMode;
 
   /// If present, the path to a directory to write performance logs to.
@@ -130,7 +129,6 @@ class BuildOptions {
 
   BuildOptions._({
     required this.debounceDelay,
-    required this.deleteFilesByDefault,
     required this.enableLowResourcesMode,
     required this.packageGraph,
     required this.skipBuildScriptCheck,
@@ -151,7 +149,6 @@ class BuildOptions {
     required PackageGraph packageGraph,
     AssetReader? reader,
     Duration debounceDelay = const Duration(milliseconds: 250),
-    bool deleteFilesByDefault = false,
     bool enableLowResourcesMode = false,
     Map<String, BuildConfig> overrideBuildConfig = const {},
     bool skipBuildScriptCheck = false,
@@ -192,7 +189,6 @@ class BuildOptions {
 
     return BuildOptions._(
       debounceDelay: debounceDelay,
-      deleteFilesByDefault: deleteFilesByDefault,
       enableLowResourcesMode: enableLowResourcesMode,
       packageGraph: packageGraph,
       skipBuildScriptCheck: skipBuildScriptCheck,

@@ -191,15 +191,6 @@ class BuildLog {
     }
   }
 
-  /// Logs a prompt that will be followed by an interactive question to the
-  /// user.
-  ///
-  /// In console mode this prints a message and resets tracking of displayed
-  /// lines, so the next display will not erase and rewrite over the prompt.
-  void prompt(String message) {
-    _display.prompt(message);
-  }
-
   /// Logs a `build_runner` info.
   void info(String message) {
     if (_display.displayingBlocks) {
@@ -260,7 +251,7 @@ class BuildLog {
 
   @Deprecated('Only for printf debugging, do not submit.')
   void debug(String message) {
-    _display.prompt('BuildLog.debug:$message');
+    _display.flushAndPrint('BuildLog.debug:$message');
   }
 
   _PhaseProgress _getProgress({
@@ -381,7 +372,7 @@ class BuildLog {
     _processDuration = Duration.zero;
     activities.clear();
     _messages.clear();
-    _display.prompt('\nStarting build #${++_buildNumber}.\n');
+    _display.flushAndPrint('\nStarting build #${++_buildNumber}.\n');
   }
 
   /// Logs that the build has started.

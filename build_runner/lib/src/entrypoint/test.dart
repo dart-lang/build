@@ -130,7 +130,6 @@ class TestCommand extends BuildRunnerCommand {
 
     var result = await build(
       builderApplications,
-      deleteFilesByDefault: options.deleteFilesByDefault,
       enableLowResourcesMode: options.enableLowResourcesMode,
       configKey: options.configKey,
       buildDirs: buildDirs,
