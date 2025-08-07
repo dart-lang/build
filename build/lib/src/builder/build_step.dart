@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+// ignore: deprecated_member_use until analyzer 7 support is dropped.
 import 'package:analyzer/dart/element/element2.dart';
 import 'package:package_config/package_config_types.dart';
 
@@ -36,6 +37,7 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   ///     await step.resolver.libraryFor(step.inputId, allowSyntaxErrors: true);
   /// }
   /// ```
+  // ignore: deprecated_member_use until analyzer 7 support is dropped.
   Future<LibraryElement2> get inputLibrary;
 
   /// Gets an instance provided by [resource] which is guaranteed to be unique
