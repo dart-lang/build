@@ -1,6 +1,7 @@
-## 3.0.1-wip
+## 3.0.1
 
 - Small improvements to RAM usage.
+- Allow `analyzer` 8.0.0.
 
 ## 3.0.0
 

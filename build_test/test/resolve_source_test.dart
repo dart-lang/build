@@ -197,7 +197,7 @@ void main() {
 }
 
 String _toStringId(InterfaceType t) =>
-    '${t.element.source.uri.toString().split('/').first}#${t.element.name}';
+    '${t.element3.library2.uri.toString().split('/').first}#${t.element.name}';
 
 extension on Resolver {
   Future<LibraryElement2> findLibraryNotNull(String name) async {

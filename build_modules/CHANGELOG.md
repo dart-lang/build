@@ -1,6 +1,7 @@
-## 5.0.16-wip
+## 5.0.16
 
 - Remove unused dep: `build_config`.
+- Allow `analyzer` 8.0.0.
 
 ## 5.0.15
 

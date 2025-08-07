@@ -668,7 +668,13 @@ void runTests(ResolversFactory resolversFactory) {
         },
         (resolver) async {
           var main = (await resolver.findLibraryByName('web.main'))!;
-          var meta = main.getClass2('Foo')!.supertype!.element.metadata[0];
+          var meta =
+              main
+                  .getClass2('Foo')!
+                  .supertype!
+                  .element3
+                  .metadata2
+                  .annotations[0];
           expect(meta, isNotNull);
           expect(meta.computeConstantValue()?.toIntValue(), 0);
         },
@@ -1139,8 +1145,7 @@ int? get x => 1;
             expect(color.type.element!.name, equals('Color'));
             expect(color.type.element!.library!.name, equals('dart.ui'));
             expect(
-              color.type.element!.library!.definingCompilationUnit.source.uri
-                  .toString(),
+              color.type.element3!.library2!.uri.toString(),
               equals('dart:ui'),
             );
           } else {
@@ -1268,7 +1273,7 @@ int? get x => 1;
         );
         expect(unit, isA<FunctionDeclaration>());
         expect(unit!.toSource(), 'main() {}');
-        expect((unit as FunctionDeclaration).declaredElement, isNull);
+        expect((unit as FunctionDeclaration).declaredFragment, isNull);
       }, resolvers: createResolvers());
     });
 
@@ -1283,7 +1288,11 @@ int? get x => 1;
           unit,
           isA<FunctionDeclaration>()
               .having((fd) => fd.toSource(), 'toSource()', 'main() {}')
-              .having((fd) => fd.declaredElement, 'declaredElement', isNotNull),
+              .having(
+                (fd) => fd.declaredFragment,
+                'declaredElement',
+                isNotNull,
+              ),
         );
       }, resolvers: createResolvers());
     });
@@ -1304,7 +1313,11 @@ int? get x => 1;
           (unit as CompilationUnit).declarations.single,
           isA<FunctionDeclaration>()
               .having((fd) => fd.toSource(), 'toSource()', 'main() {}')
-              .having((fd) => fd.declaredElement, 'declaredElement', isNotNull),
+              .having(
+                (fd) => fd.declaredFragment,
+                'declaredFragment',
+                isNotNull,
+              ),
         );
       });
     });
