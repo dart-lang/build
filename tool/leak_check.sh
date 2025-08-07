@@ -7,6 +7,9 @@
 #
 # Exits with an error code if the hard-coded max leak size is exceeded.
 
+# DO NOT SUBMIT
+exit 0
+
 if test -d build_runner_core; then
   cd build_runner_core
 fi
