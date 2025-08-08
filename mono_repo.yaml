@@ -3,18 +3,6 @@ self_validate: analyze_and_format
 
 github:
   cron: '0 0 * * 0' # “At 00:00 (UTC) on Sunday.”
-  on_completion:
-    - name: "Notify failure"
-      runs-on: ubuntu-latest
-      # Run only if other jobs have failed and this is a push or scheduled build.
-      if: (github.event_name == 'push' || github.event_name == 'schedule') && failure()
-      steps:
-        - run: >
-            curl -H "Content-Type: application/json" -X POST -d \
-              "{'text':'Build failed! ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}'}" \
-              "${CHAT_WEBHOOK_URL}"
-          env:
-            CHAT_WEBHOOK_URL: ${{ secrets.BUILD_AND_TEST_TEAM_CHAT_WEBHOOK_URL }}
   stages:
     - name: e2e_test_cron
       # Only run this stage for scheduled cron jobs
