@@ -37,12 +37,7 @@ void main() {
     expect(_changedGeneratedFiles(), isEmpty);
 
     // 2 - run build - should be no output, since nothing should change
-    var result = _runProc('dart', [
-      'run',
-      'build_runner',
-      'build',
-      '--delete-conflicting-outputs',
-    ]);
+    var result = _runProc('dart', ['run', 'build_runner', 'build']);
     expect(result, contains(BuildLog.successPattern));
 
     // 3 - get a list of modified `.g.dart` files - should still be empty

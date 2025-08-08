@@ -84,9 +84,6 @@ The available commands are `build`, `watch`, `serve`, and `test`.
 All the above commands support the following arguments:
 
 - `--help`: Print usage information for the command.
-- `--delete-conflicting-outputs`: Assume conflicting outputs in the users
-  package are from previous builds, and skip the user prompt that would usually
-  be provided.
 - `--[no-]fail-on-severe`: Whether to consider the build a failure on an error
   logged. By default this is false.
 - `--build-filter`: Build filters allow you to choose explicitly which files to

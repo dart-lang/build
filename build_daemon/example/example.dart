@@ -23,7 +23,6 @@ void main(List<String> args) async {
       'run',
       'build_runner',
       'daemon',
-      '--delete-conflicting-outputs',
     ], logHandler: print);
   } catch (e) {
     if (e is VersionSkew) {
