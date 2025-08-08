@@ -1,3 +1,8 @@
+## 2.7.0-wip
+
+- Remove interactive prompts for whether to delete files.
+- Ignore `-d` flag: always delete files as if `-d` was passed.
+
 ## 2.6.1
 
 - Use `build` 3.0.1.

@@ -49,8 +49,8 @@ import 'watch_impl.dart' as watch_impl;
 /// other things.
 Future<BuildResult> build(
   List<BuilderApplication> builders, {
-  bool? deleteFilesByDefault,
-  bool? assumeTty,
+  @Deprecated('Has no effect.') bool? deleteFilesByDefault,
+  @Deprecated('Has no effect.') bool? assumeTty,
   String? configKey,
   PackageGraph? packageGraph,
   AssetReader? reader,
@@ -73,7 +73,6 @@ Future<BuildResult> build(
   builderConfigOverrides ??= const {};
   buildDirs ??= <BuildDirectory>{};
   buildFilters ??= <BuildFilter>{};
-  deleteFilesByDefault ??= false;
   enableLowResourcesMode ??= false;
   isReleaseBuild ??= false;
   outputSymlinksOnly ??= false;
@@ -82,7 +81,6 @@ Future<BuildResult> build(
   trackPerformance ??= false;
   var environment = BuildEnvironment(
     packageGraph,
-    assumeTty: assumeTty,
     outputSymlinksOnly: outputSymlinksOnly,
     reader: reader,
     writer: writer,
@@ -94,7 +92,6 @@ Future<BuildResult> build(
   var options = await BuildOptions.create(
     packageGraph: packageGraph,
     reader: environment.reader,
-    deleteFilesByDefault: deleteFilesByDefault,
     skipBuildScriptCheck: skipBuildScriptCheck,
     overrideBuildConfig: await findBuildConfigOverrides(
       packageGraph,
@@ -149,8 +146,8 @@ Future<BuildResult> build(
 /// typically cause a shutdown).
 Future<ServeHandler> watch(
   List<BuilderApplication> builders, {
-  bool? deleteFilesByDefault,
-  bool? assumeTty,
+  @Deprecated('Has no effect.') bool? deleteFilesByDefault,
+  @Deprecated('Has no effect.') bool? assumeTty,
   String? configKey,
   PackageGraph? packageGraph,
   AssetReader? reader,
@@ -173,8 +170,6 @@ Future<ServeHandler> watch(
   Set<BuildFilter>? buildFilters,
 }) => watch_impl.watch(
   builders,
-  assumeTty: assumeTty,
-  deleteFilesByDefault: deleteFilesByDefault,
   configKey: configKey,
   packageGraph: packageGraph,
   reader: reader,

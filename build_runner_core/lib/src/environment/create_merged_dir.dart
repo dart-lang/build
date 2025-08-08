@@ -316,45 +316,11 @@ Future<bool> _cleanUpOutputDir(
   var manifestFile = File(p.join(outputPath, _manifestName));
   if (!manifestFile.existsSync()) {
     if (outputDir.listSync(recursive: false).isNotEmpty) {
-      var choices = [
-        'Leave the directory unchanged and skip writing the build output',
-        'Delete the directory and all contents',
-        'Leave the directory in place and write over any existing files',
-      ];
-      int choice;
-      try {
-        choice = await environment.prompt(
-          'Found existing directory `$outputPath` but no manifest file.\n'
-          'Please choose one of the following options:',
-          choices,
-        );
-      } on NonInteractiveBuildException catch (_) {
-        buildLog.error(
-          'Unable to create merged directory $outputPath. Choose a different '
-          'directory or delete the contents of that directory.',
-        );
-        return false;
-      }
-      switch (choice) {
-        case 0:
-          return false;
-        case 1:
-          try {
-            outputDir.deleteSync(recursive: true);
-          } catch (e) {
-            buildLog.error(
-              'Failed to delete output dir at `$outputPath` with error:\n\n'
-              '$e',
-            );
-            return false;
-          }
-          // Actually recreate the directory, but as an empty one.
-          outputDir.createSync();
-          break;
-        case 2:
-          // Just do nothing here, we overwrite files by default.
-          break;
-      }
+      buildLog.error(
+        'Unable to create merged directory $outputPath. Choose a different '
+        'directory or delete the contents of that directory.',
+      );
+      return false;
     }
   } else {
     var previousOutputs = manifestFile.readAsStringSync().split(

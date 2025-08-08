@@ -145,7 +145,6 @@ Future<TestBuildersResult> testPhases(
   var options = await BuildOptions.create(
     packageGraph: packageGraph,
     reader: environment.reader,
-    deleteFilesByDefault: deleteFilesByDefault,
     skipBuildScriptCheck: true,
     enableLowResourcesMode: enableLowResourcesMode,
     logPerformanceDir: logPerformanceDir,

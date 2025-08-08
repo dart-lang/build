@@ -7,24 +7,11 @@ import 'dart:async';
 import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
 import 'package:build_runner_core/src/generate/build_result.dart';
-import 'package:build_runner_core/src/generate/exceptions.dart';
 import 'package:build_runner_core/src/package_graph/apply_builders.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
 void main() {
-  test('fail if an output is on disk and !deleteFilesByDefault', () async {
-    expect(
-      testPhases(
-        [applyToRoot(TestBuilder())],
-        {'a|lib/a.dart': '', 'a|lib/a.dart.copy': ''},
-        packageGraph: buildPackageGraph({rootPackage('a'): []}),
-        deleteFilesByDefault: false,
-      ),
-      throwsA(const TypeMatcher<CannotBuildException>()),
-    );
-  });
-
   test('should fail if a severe logged', () async {
     await testPhases(
       [applyToRoot(_LoggingBuilder(Level.SEVERE))],

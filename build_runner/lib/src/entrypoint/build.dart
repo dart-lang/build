@@ -44,7 +44,6 @@ class BuildCommand extends BuildRunnerCommand {
     var result = await build(
       builderApplications,
       buildFilters: options.buildFilters,
-      deleteFilesByDefault: options.deleteFilesByDefault,
       enableLowResourcesMode: options.enableLowResourcesMode,
       configKey: options.configKey,
       buildDirs: options.buildDirs,

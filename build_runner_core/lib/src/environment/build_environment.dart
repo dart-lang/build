@@ -16,12 +16,10 @@ import '../logging/build_log.dart';
 import '../package_graph/package_graph.dart';
 import 'create_merged_dir.dart';
 
-/// The I/O and UI environment that the build runs in.
+/// The I/O environment that the build runs in.
 class BuildEnvironment {
   final AssetReader reader;
   final RunnerAssetWriter writer;
-
-  final bool _isInteractive;
 
   final bool _outputSymlinksOnly;
 
@@ -38,7 +36,6 @@ class BuildEnvironment {
   BuildEnvironment._(
     this.reader,
     this.writer,
-    this._isInteractive,
     this._outputSymlinksOnly,
     this._packageGraph,
     this._finalizeBuildOverride,
@@ -48,7 +45,6 @@ class BuildEnvironment {
       BuildEnvironment._(
         reader ?? this.reader,
         writer ?? this.writer,
-        _isInteractive,
         _outputSymlinksOnly,
         _packageGraph,
         _finalizeBuildOverride,
@@ -58,7 +54,6 @@ class BuildEnvironment {
     PackageGraph packageGraph, {
     AssetReader? reader,
     RunnerAssetWriter? writer,
-    bool? assumeTty,
     bool outputSymlinksOnly = false,
     Future<BuildResult> Function(
       BuildResult,
@@ -85,35 +80,10 @@ class BuildEnvironment {
     return BuildEnvironment._(
       reader,
       writer,
-      assumeTty == true || _canPrompt(),
       outputSymlinksOnly,
       packageGraph,
       finalizeBuildOverride,
     );
-  }
-
-  /// Prompt the user for input.
-  ///
-  /// The message and choices are displayed to the user and the index of the
-  /// chosen option is returned.
-  ///
-  /// If this environmment is non-interactive (such as when running in a test)
-  /// this method should throw [NonInteractiveBuildException].
-  Future<int> prompt(String message, List<String> choices) async {
-    if (!_isInteractive) throw NonInteractiveBuildException();
-    while (true) {
-      stdout.writeln('\n$message');
-      for (var i = 0, l = choices.length; i < l; i++) {
-        stdout.writeln('${i + 1} - ${choices[i]}');
-      }
-      final input = stdin.readLineSync()!;
-      final choice = int.tryParse(input) ?? -1;
-      if (choice > 0 && choice <= choices.length) return choice - 1;
-      stdout.writeln(
-        'Unrecognized option $input, '
-        'a number between 1 and ${choices.length} expected',
-      );
-    }
   }
 
   /// Invoked after each build, can modify the [BuildResult] in any way, even
@@ -162,11 +132,6 @@ class BuildEnvironment {
   }
 }
 
-bool _canPrompt() =>
-    stdioType(stdin) == StdioType.terminal &&
-    // Assume running inside a test if the code is running as a `data:` URI
-    Platform.script.scheme != 'data';
-
 BuildResult _convertToFailure(
   BuildResult previous, {
   FailureType? failureType,
@@ -176,7 +141,3 @@ BuildResult _convertToFailure(
   performance: previous.performance,
   failureType: failureType,
 );
-
-/// Thrown when the build attempts to prompt the users but no prompt is
-/// possible.
-class NonInteractiveBuildException implements Exception {}

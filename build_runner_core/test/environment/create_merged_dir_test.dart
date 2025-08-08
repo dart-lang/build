@@ -392,19 +392,13 @@ void main() {
 
     group('existing output dir handling', () {
       late File garbageFile;
-      late Directory emptyDirectory;
       setUp(() {
         garbageFile = File(p.join(tmpDir.path, 'garbage_file.txt'))
           ..createSync();
-        emptyDirectory = Directory(p.join(tmpDir.path, 'empty_directory'))
-          ..createSync();
       });
 
-      test('fails in non-interactive mode', () async {
-        environment = TestBuildEnvironment(
-          readerWriter: readerWriter,
-          throwOnPrompt: true,
-        );
+      test('fails the build', () async {
+        environment = TestBuildEnvironment(readerWriter: readerWriter);
         var success = await createMergedOutputDirectories(
           {BuildDirectory('', outputLocation: OutputLocation(tmpDir.path))},
           packageGraph,
@@ -414,26 +408,6 @@ void main() {
           false,
         );
         expect(success, isFalse);
-      });
-
-      test('can skip creating the directory', () async {
-        environment.nextPromptResponse = 0;
-        var success = await createMergedOutputDirectories(
-          {BuildDirectory('', outputLocation: OutputLocation(tmpDir.path))},
-          packageGraph,
-          environment,
-          readerWriter,
-          finalizedAssetsView,
-          false,
-        );
-        expect(
-          success,
-          isFalse,
-          reason:
-              'Skipping creation of the directory should be considered a '
-              'failure.',
-        );
-
         expect(
           garbageFile.existsSync(),
           isTrue,
@@ -445,78 +419,6 @@ void main() {
           isFalse,
           reason: 'Should not copy any files.',
         );
-      });
-
-      test('can delete the entire existing directory', () async {
-        environment.nextPromptResponse = 1;
-        var success = await createMergedOutputDirectories(
-          {BuildDirectory('', outputLocation: OutputLocation(tmpDir.path))},
-          packageGraph,
-          environment,
-          readerWriter,
-          finalizedAssetsView,
-          false,
-        );
-        expect(success, isTrue);
-
-        expect(garbageFile.existsSync(), isFalse);
-        _expectAllFiles(tmpDir);
-      });
-
-      test(
-        'outputs all root directories when emptry string is provided',
-        () async {
-          environment.nextPromptResponse = 1;
-          var success = await createMergedOutputDirectories(
-            {BuildDirectory('', outputLocation: OutputLocation(tmpDir.path))},
-            packageGraph,
-            environment,
-            readerWriter,
-            finalizedAssetsView,
-            false,
-          );
-          expect(success, isTrue);
-
-          _expectAllFiles(tmpDir);
-        },
-      );
-
-      test('fails if the input path is invalid', () async {
-        environment.nextPromptResponse = 1;
-        var success = await createMergedOutputDirectories(
-          {BuildDirectory('../', outputLocation: OutputLocation(tmpDir.path))},
-          packageGraph,
-          environment,
-          readerWriter,
-          finalizedAssetsView,
-          false,
-        );
-        expect(success, isFalse);
-      });
-
-      test('can merge into the existing directory', () async {
-        environment.nextPromptResponse = 2;
-        var success = await createMergedOutputDirectories(
-          {BuildDirectory('', outputLocation: OutputLocation(tmpDir.path))},
-          packageGraph,
-          environment,
-          readerWriter,
-          finalizedAssetsView,
-          false,
-        );
-        expect(success, isTrue);
-
-        expect(
-          garbageFile.existsSync(),
-          isTrue,
-          reason: 'Existing files should be left alone.',
-        );
-        expect(
-          emptyDirectory.existsSync(),
-          isTrue,
-          reason: 'Does not remove existing empty directories.',
-        );
-        _expectAllFiles(tmpDir);
       });
     });
 
@@ -616,10 +518,6 @@ void _expectAllFiles(Directory dir) {
 /// A [BuildEnvironment] for testing.
 ///
 /// Defaults to an empty [TestReaderWriter].
-///
-/// To handle prompts you must first set `nextPromptResponse`. Alternatively
-/// you can set `throwOnPrompt` to `true` to emulate a
-/// [NonInteractiveBuildException].
 class TestBuildEnvironment implements BuildEnvironment {
   final TestReaderWriter _readerWriter;
 
@@ -629,37 +527,8 @@ class TestBuildEnvironment implements BuildEnvironment {
   @override
   TestReaderWriter get writer => _readerWriter;
 
-  /// Whether to throw a [NonInteractiveBuildException] for all calls to
-  /// [prompt].
-  final bool throwOnPrompt;
-
-  /// The next response for calls to [prompt].
-  ///
-  /// Must be set before calling [prompt].
-  set nextPromptResponse(int next) {
-    assert(_nextPromptResponse == null);
-    _nextPromptResponse = next;
-  }
-
-  int? _nextPromptResponse;
-
-  TestBuildEnvironment({
-    TestReaderWriter? readerWriter,
-    this.throwOnPrompt = false,
-  }) : _readerWriter = readerWriter ?? TestReaderWriter();
-
-  /// Prompts the user for input.
-  ///
-  /// The message and choices are displayed to the user and the index of the
-  /// chosen option is returned.
-  ///
-  /// If this environmment is non-interactive (such as when running in a test)
-  /// this method should throw [NonInteractiveBuildException].
-  @override
-  Future<int> prompt(String message, List<String> choices) {
-    if (throwOnPrompt) throw NonInteractiveBuildException();
-    return Future.value(_nextPromptResponse!);
-  }
+  TestBuildEnvironment({TestReaderWriter? readerWriter})
+    : _readerWriter = readerWriter ?? TestReaderWriter();
 
   @override
   BuildEnvironment copyWith({RunnerAssetWriter? writer, AssetReader? reader}) =>
@@ -668,7 +537,6 @@ class TestBuildEnvironment implements BuildEnvironment {
             (writer as TestReaderWriter?) ??
             (reader as TestReaderWriter?) ??
             _readerWriter,
-        throwOnPrompt: throwOnPrompt,
       );
 
   @override

@@ -213,61 +213,11 @@ class _Loader {
   ) async {
     if (conflictingAssets.isEmpty) return;
 
-    // Skip the prompt if using this option.
-    if (_options.deleteFilesByDefault) {
-      buildLog.info(
-        'Deleting ${conflictingAssets.length} declared outputs '
-        'which already existed on disk.',
-      );
-      await Future.wait(conflictingAssets.map((id) => writer.delete(id)));
-      return;
-    }
-
-    // Prompt the user to delete files that are declared as outputs.
-    buildLog.prompt(
-      'Found ${conflictingAssets.length} declared outputs '
-      'which already exist on disk. This is likely because the'
-      '`$cacheDir` folder was deleted, or you are submitting generated '
-      'files to your source repository.',
+    buildLog.info(
+      'Deleting ${conflictingAssets.length} declared outputs '
+      'which already existed on disk.',
     );
-
-    var done = false;
-    while (!done) {
-      try {
-        var choice = await _environment.prompt('Delete these files?', [
-          'Delete',
-          'Cancel build',
-          'List conflicts',
-        ]);
-        switch (choice) {
-          case 0:
-            done = true;
-            await Future.wait(conflictingAssets.map((id) => writer.delete(id)));
-            break;
-          case 1:
-            buildLog.error(
-              'The build will not be able to contiue until the '
-              'conflicting assets are removed or the Builders which may '
-              'output them are disabled. The outputs are: '
-              '${conflictingAssets.map((a) => a.path).join('\n')}',
-            );
-            throw const CannotBuildException();
-          case 2:
-            buildLog.info('Conflicts:\n${conflictingAssets.join('\n')}');
-            // Logging should be sync :(
-            await Future(() {});
-        }
-      } on NonInteractiveBuildException {
-        buildLog.error(
-          'Conflicting outputs were detected and the build '
-          'is unable to prompt for permission to remove them. '
-          'These outputs must be removed manually or the build can be '
-          'run with `--delete-conflicting-outputs`. The outputs are: '
-          '${conflictingAssets.map((a) => a.path).join('\n')}',
-        );
-        throw const CannotBuildException();
-      }
-    }
+    await Future.wait(conflictingAssets.map((id) => writer.delete(id)));
   }
 }
 
