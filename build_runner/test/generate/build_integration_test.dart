@@ -65,11 +65,7 @@ main(List<String> args) async {
         ]).create();
 
         // Run a build and validate the full rebuild output.
-        var result = await runDart(
-          'a',
-          'tool/build.dart',
-          args: ['build', '--delete-conflicting-outputs'],
-        );
+        var result = await runDart('a', 'tool/build.dart', args: ['build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
         expect(
           result.stdout,
@@ -90,11 +86,7 @@ main(List<String> args) async {
           d.dir('tool', [d.file('build.dart', changedBuildScript)]),
         ]).create();
 
-        var result = await runDart(
-          'a',
-          'tool/build.dart',
-          args: ['build', '--delete-conflicting-outputs'],
-        );
+        var result = await runDart('a', 'tool/build.dart', args: ['build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
         expect(
           result.stdout,
