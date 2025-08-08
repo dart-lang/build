@@ -228,6 +228,9 @@ Future<void> expectTestsPass({
   List<String>? buildArgs,
   List<String>? testArgs,
 }) async {
+  // Skip on Windows due to Chrome test flakiness, see
+  // https://github.com/dart-lang/build/issues/4123.
+  if (Platform.isWindows) return;
   var result = await runTests(
     usePrecompiled: usePrecompiled,
     buildArgs: buildArgs,
