@@ -230,6 +230,8 @@ class Build {
         var result = await _runPhases();
         buildLog.doing('Writing the asset graph.');
 
+        assetGraph.previousBuildTriggersDigest =
+            options.targetGraph.buildTriggers.digest;
         // Combine previous phased asset deps, if any, with the newly loaded
         // deps. Because of skipped builds, the newly loaded deps might just
         // say "not generated yet", in which case the old value is retained.
@@ -501,30 +503,39 @@ class Build {
         unusedAssets.addAll(assets);
       }
 
+      // Pass `readerWriter` so that if `_allowedByTriggers` reads files to
+      // evaluate triggers then they are tracked as inputs.
+      final allowedByTriggers = await _allowedByTriggers(
+        readerWriter: readerWriter,
+        phase: phase,
+        primaryInput: primaryInput,
+      );
       final logger = buildLog.loggerFor(
         phase: phase,
         primaryInput: primaryInput,
         lazy: lazy,
       );
-      await TimedActivity.build.runAsync(
-        () => tracker.trackStage(
-          'Build',
-          () => runBuilder(
-            builder,
-            [primaryInput],
-            readerWriter,
-            readerWriter,
-            PerformanceTrackingResolvers(options.resolvers, tracker),
-            logger: logger,
-            resourceManager: resourceManager,
-            stageTracker: tracker,
-            reportUnusedAssetsForInput: reportUnusedAssetsForInput,
-            packageConfig: options.packageGraph.asPackageConfig,
-          ).catchError((void _) {
-            // Errors tracked through the logger.
-          }),
-        ),
-      );
+      if (allowedByTriggers) {
+        await TimedActivity.build.runAsync(
+          () => tracker.trackStage(
+            'Build',
+            () => runBuilder(
+              builder,
+              [primaryInput],
+              readerWriter,
+              readerWriter,
+              PerformanceTrackingResolvers(options.resolvers, tracker),
+              logger: logger,
+              resourceManager: resourceManager,
+              stageTracker: tracker,
+              reportUnusedAssetsForInput: reportUnusedAssetsForInput,
+              packageConfig: options.packageGraph.asPackageConfig,
+            ).catchError((void _) {
+              // Errors tracked through the logger.
+            }),
+          ),
+        );
+      }
 
       // Update the state for all the `builderOutputs` nodes based on what was
       // read and written.
@@ -542,17 +553,48 @@ class Build {
         ),
       );
 
-      buildLog.finishStep(
-        phase: phase,
-        anyOutputs: readerWriter.assetsWritten.isNotEmpty,
-        anyChangedOutputs: readerWriter.assetsWritten.any(
-          changedOutputs.contains,
-        ),
-        lazy: lazy,
-      );
+      if (allowedByTriggers) {
+        buildLog.finishStep(
+          phase: phase,
+          anyOutputs: readerWriter.assetsWritten.isNotEmpty,
+          anyChangedOutputs: readerWriter.assetsWritten.any(
+            changedOutputs.contains,
+          ),
+          lazy: lazy,
+        );
+      } else {
+        buildLog.stepNotTriggered(phase: phase, lazy: lazy);
+      }
 
       return readerWriter.assetsWritten;
     });
+  }
+
+  /// Whether build triggers allow [phase] to run on [primaryInput].
+  ///
+  /// This means either the builder does not have `run_only_if_triggered: true`
+  /// or it does run only if triggered and is triggered.
+  Future<bool> _allowedByTriggers({
+    required SingleStepReaderWriter readerWriter,
+    required InBuildPhase phase,
+    required AssetId primaryInput,
+  }) async {
+    final runsIfTriggered =
+        phase.builderOptions.config['run_only_if_triggered'];
+    if (runsIfTriggered != true) {
+      return true;
+    }
+    final buildTriggers = options.targetGraph.buildTriggers[phase.builderLabel];
+    if (buildTriggers == null) {
+      return false;
+    }
+    final primaryInputSource = await readerWriter.readAsString(primaryInput);
+    for (final trigger in buildTriggers) {
+      if (trigger.triggersOnPrimaryInput(primaryInputSource)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   Future<Iterable<AssetId>> _runPostBuildPhase(
@@ -775,6 +817,11 @@ class Build {
       }
 
       if (assetGraph.cleanBuild) return true;
+
+      if (assetGraph.previousBuildTriggersDigest !=
+          options.targetGraph.buildTriggers.digest) {
+        return true;
+      }
 
       if (assetGraph.previousInBuildPhasesOptionsDigests![phaseNumber] !=
           assetGraph.inBuildPhasesOptionsDigests[phaseNumber]) {

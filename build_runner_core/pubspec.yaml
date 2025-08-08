@@ -16,7 +16,7 @@ dependencies:
   analyzer: '>=6.9.0 <9.0.0'
   async: ^2.5.0
   build: '3.0.2-wip'
-  build_config: ^1.0.0
+  build_config: ^1.2.0-wip
   build_resolvers: '3.0.2-wip'
   build_runner: '2.7.0-wip'
   built_collection: ^5.1.1

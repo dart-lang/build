@@ -296,6 +296,27 @@ class BuildLog {
     }
   }
 
+  /// Logs that a build step was not triggered.
+  void stepNotTriggered({required InBuildPhase phase, required bool lazy}) {
+    final progress = _getProgress(phase: phase, lazy: lazy);
+    progress.notTriggered++;
+    progress.nextInput = null;
+    final phaseName = phase.name(lazy: lazy);
+    _tick();
+
+    // Usually the next step will immediately run and update with more useful
+    // information, so only display if this is the last for the builder.
+    if (progress.isFinished) {
+      if (_display.displayingBlocks) {
+        _display.block(render());
+      } else {
+        _display.message(Severity.info, _renderPhase(phaseName).toString());
+      }
+    }
+
+    _popPhase();
+  }
+
   /// Logs that a build step has been skipped during an incremental build.
   void skipStep({required InBuildPhase phase, required bool lazy}) {
     final progress = _getProgress(phase: phase, lazy: lazy);
@@ -514,6 +535,8 @@ class BuildLog {
       AnsiBuffer.reset,
       if (progress.inputs != 0) ' on ${progress.inputs.renderNamed('input')}',
       if (progress.skipped != 0) '${separator()}${progress.skipped} skipped',
+      if (progress.notTriggered != 0)
+        '${separator()}${progress.notTriggered} not triggered',
       if (progress.builtNew != 0) '${separator()}${progress.builtNew} output',
       if (progress.builtSame != 0) '${separator()}${progress.builtSame} same',
       if (progress.builtNothing != 0)
@@ -574,6 +597,9 @@ class _PhaseProgress {
   /// outputs are up to date.
   int skipped = 0;
 
+  /// Build steps with `run_only_if_triggered` that were not triggered.
+  int notTriggered = 0;
+
   /// Build steps that ran and output new or different output.
   int builtNew = 0;
 
@@ -589,7 +615,8 @@ class _PhaseProgress {
   _PhaseProgress();
 
   /// The number of build steps that have run in this phase.
-  int get runCount => skipped + builtNew + builtSame + builtNothing;
+  int get runCount =>
+      skipped + notTriggered + builtNew + builtSame + builtNothing;
 
   /// Whether this progress in displayed.
   ///

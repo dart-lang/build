@@ -167,6 +167,9 @@ class BuildOptions {
         requiredSourcePaths: [r'lib/$lib$'],
         requiredRootSourcePaths: [r'$package$', r'lib/$lib$'],
       );
+      if (targetGraph.buildTriggers.warningsByPackage.isNotEmpty) {
+        buildLog.warning(targetGraph.buildTriggers.renderWarnings);
+      }
     } on BuildConfigParseException catch (e) {
       buildLog.error(e.toString());
       throw const CannotBuildException();

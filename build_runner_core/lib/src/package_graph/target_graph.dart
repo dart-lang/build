@@ -12,6 +12,7 @@ import 'package:path/path.dart' as p;
 import '../generate/input_matcher.dart';
 import '../generate/options.dart' show defaultNonRootVisibleAssets;
 import '../logging/build_log.dart';
+import 'build_triggers.dart';
 import 'package_graph.dart';
 
 /// Like a [PackageGraph] but packages are further broken down into modules
@@ -37,11 +38,15 @@ class TargetGraph {
   /// The [BuildConfig] of the root package.
   final BuildConfig rootPackageConfig;
 
+  // The [BuildTriggers] accumulated across all packages.
+  final BuildTriggers buildTriggers;
+
   TargetGraph._(
     this.allModules,
     this.modulesByPackage,
     this._publicAssetsByPackage,
     this.rootPackageConfig,
+    this.buildTriggers,
   );
 
   /// Builds a [TargetGraph] from [packageGraph].
@@ -71,10 +76,13 @@ class TargetGraph {
     final publicAssetsByPackage = <String, InputMatcher>{};
     final modulesByPackage = <String, List<TargetNode>>{};
     late BuildConfig rootPackageConfig;
+    final configs = <String, BuildConfig>{};
     for (final package in packageGraph.allPackages.values) {
       final config =
           overrideBuildConfig[package.name] ??
           await _packageBuildConfig(reader, package);
+      configs[package.name] = config;
+
       List<String> defaultInclude;
       if (package.isRoot) {
         defaultInclude = [
@@ -129,6 +137,7 @@ class TargetGraph {
       modulesByPackage,
       publicAssetsByPackage,
       rootPackageConfig,
+      BuildTriggers.fromConfigs(configs),
     );
   }
 
