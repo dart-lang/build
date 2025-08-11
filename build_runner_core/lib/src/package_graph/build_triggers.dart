@@ -4,6 +4,7 @@
 
 import 'dart:convert';
 
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:build_config/build_config.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
@@ -80,7 +81,7 @@ class BuildTriggers {
   /// Parses [triggers], or throws a descriptive exception on failure.
   ///
   /// [triggers] is an `Object` read directly from yaml, to be valid it should
-  /// be a list of strings that parse with [BuildTrigger.tryParse].
+  /// be a list of strings that parse with [BuildTrigger._tryParse].
   static (Iterable<BuildTrigger>, List<String>) parseList({
     required Object triggers,
   }) {
@@ -96,7 +97,7 @@ class BuildTriggers {
       BuildTrigger? trigger;
       String? warning;
       if (triggerString is String) {
-        (trigger, warning) = BuildTrigger.tryParse(triggerString);
+        (trigger, warning) = BuildTrigger._tryParse(triggerString);
       }
       if (trigger != null) {
         result.add(trigger);
@@ -124,13 +125,13 @@ class BuildTriggers {
 }
 
 /// A build trigger: a heuristic that possibly skips running a build step based
-/// on the primary input source.
+/// on the parsed primary input.
 abstract class BuildTrigger {
   /// Parses a trigger, returning `null` on failure, optionally with a warning
   /// message.
   ///
   /// The only supported trigger is [ImportBuildTrigger].
-  static (BuildTrigger?, String?) tryParse(String trigger) {
+  static (BuildTrigger?, String?) _tryParse(String trigger) {
     if (trigger.startsWith('import ')) {
       trigger = trigger.substring('import '.length);
       final result = ImportBuildTrigger(trigger);
@@ -143,18 +144,21 @@ abstract class BuildTrigger {
     return (null, 'Invalid trigger: `$trigger`');
   }
 
-  bool triggersOnPrimaryInput(String source);
+  /// Whether the trigger matches on any of [compilationUnits].
+  ///
+  /// This will be called either with the primary input compilation unit or all
+  /// compilation units (parts) depending on [checksParts].
+  bool triggersOn(List<CompilationUnit> compilationUnits);
+
+  /// Whether [triggersOn] should be called with all compilation units, not just
+  /// the primary input.
+  bool get checksParts;
 }
 
 // Note: `built_value` generated toString is relied on for digests, and
 // equality for testing.
 
 /// A build trigger that checks for a direct import.
-///
-/// TODO(davidmorgan): this currently over-matches, it just checks for a
-/// matching substring. It's a heuristic so over matching is okay, but it might
-/// be better to actually parse directives and do a correct match because
-/// directives are needed when resolving source.
 abstract class ImportBuildTrigger
     implements
         Built<ImportBuildTrigger, ImportBuildTriggerBuilder>,
@@ -166,9 +170,21 @@ abstract class ImportBuildTrigger
   factory ImportBuildTrigger(String import) =>
       _$ImportBuildTrigger._(import: import);
 
+  @memoized
+  String get packageImport => 'package:$import';
+
   @override
-  bool triggersOnPrimaryInput(String source) {
-    return source.contains('package:$import');
+  bool get checksParts => false;
+
+  @override
+  bool triggersOn(List<CompilationUnit> compilationUnits) {
+    for (final compilationUnit in compilationUnits) {
+      for (final directive in compilationUnit.directives) {
+        if (directive is! ImportDirective) continue;
+        if (directive.uri.stringValue == packageImport) return true;
+      }
+    }
+    return false;
   }
 
   String? get warning =>
@@ -176,8 +192,6 @@ abstract class ImportBuildTrigger
 }
 
 /// A build trigger that checks for an annotation.
-///
-/// TODO(davidmorgan): like `ImportBuildTrigger` this over-matches.
 abstract class AnnotationBuildTrigger
     implements
         Built<AnnotationBuildTrigger, AnnotationBuildTriggerBuilder>,
@@ -190,8 +204,27 @@ abstract class AnnotationBuildTrigger
       _$AnnotationBuildTrigger._(annotation: annotation);
 
   @override
-  bool triggersOnPrimaryInput(String source) {
-    return source.contains('@$annotation');
+  bool get checksParts => true;
+
+  @override
+  bool triggersOn(List<CompilationUnit> compilationUnits) {
+    for (final compilationUnit in compilationUnits) {
+      for (final declaration in compilationUnit.declarations) {
+        for (final metadata in declaration.metadata) {
+          var name = metadata.name.name;
+          if (metadata.constructorName != null) {
+            name = '$name.${metadata.constructorName}';
+          }
+          if (annotation == name) return true;
+          final periodIndex = name.indexOf('.');
+          if (periodIndex != -1) {
+            name = name.substring(periodIndex + 1);
+            if (annotation == name) return true;
+          }
+        }
+      }
+    }
+    return false;
   }
 
   String? get warning =>

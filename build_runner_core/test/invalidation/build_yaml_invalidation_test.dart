@@ -67,7 +67,7 @@ triggers:
     - import trigger/trigger.dart
 ''');
         tester.importGraph({
-          'a.1': ['package:trigger/trigger.dart'],
+          'a.1': ['package:trigger/trigger'],
         });
       });
 
@@ -122,7 +122,7 @@ triggers:
 ''');
         await tester.build();
         tester.importGraph({
-          'a.1': ['package:trigger/trigger.dart'],
+          'a.1': ['package:trigger/trigger'],
         });
         expect(await tester.build(change: 'a.1'), Result(written: ['a.2']));
       });
@@ -138,7 +138,7 @@ targets:
           run_only_if_triggered: true
 ''');
         tester.importGraph({
-          'a.1': ['package:trigger/trigger.dart'],
+          'a.1': ['package:trigger/trigger'],
         });
         await tester.build();
         expect(
@@ -230,7 +230,7 @@ triggers:
     - import trigger/trigger.dart
 ''');
         tester.importGraph({
-          'a.1': ['package:trigger/trigger.dart'],
+          'a.1': ['package:trigger/trigger'],
         });
         await tester.build();
         tester.importGraph({'a.1': []});
@@ -252,7 +252,7 @@ triggers:
     - import trigger/trigger.dart
 ''');
         tester.importGraph({
-          'a.1': ['package:trigger/trigger.dart'],
+          'a.1': ['package:trigger/trigger'],
         });
         await tester.build();
         expect(

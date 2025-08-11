@@ -273,6 +273,7 @@ triggers:
 
 An `annotation` trigger causes the builder to run if an annotation is used.
 So, `- annotation MyAnnotation` is a check for `@MyAnnotation` being used.
+A part file included from a library is also checked for the annotation.
 
 An `import` trigger says that the builder runs if there is a direct import
 of the specified library. This might be useful if a builder can run on code

@@ -9,12 +9,16 @@ part of 'build_triggers.dart';
 class _$ImportBuildTrigger extends ImportBuildTrigger {
   @override
   final String import;
+  String? __packageImport;
 
   factory _$ImportBuildTrigger([
     void Function(ImportBuildTriggerBuilder)? updates,
   ]) => (ImportBuildTriggerBuilder()..update(updates))._build();
 
   _$ImportBuildTrigger._({required this.import}) : super._();
+  @override
+  String get packageImport => __packageImport ??= super.packageImport;
+
   @override
   ImportBuildTrigger rebuild(
     void Function(ImportBuildTriggerBuilder) updates,
@@ -122,6 +126,12 @@ class _$AnnotationBuildTrigger extends AnnotationBuildTrigger {
     _$hash = $jc(_$hash, annotation.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
+  }
+
+  @override
+  String toString() {
+    return (newBuiltValueToStringHelper(r'AnnotationBuildTrigger')
+      ..add('annotation', annotation)).toString();
   }
 }
 

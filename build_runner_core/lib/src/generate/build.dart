@@ -5,6 +5,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:analyzer/dart/analysis/utilities.dart';
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:build/build.dart';
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
@@ -589,12 +591,45 @@ class Build {
       return false;
     }
     final primaryInputSource = await readerWriter.readAsString(primaryInput);
+    final compilationUnit = _parseCompilationUnit(primaryInputSource);
+    List<CompilationUnit>? compilationUnits;
     for (final trigger in buildTriggers) {
-      if (trigger.triggersOnPrimaryInput(primaryInputSource)) {
-        return true;
+      if (trigger.checksParts) {
+        compilationUnits ??= await _readAndParseCompilationUnits(
+          readerWriter,
+          primaryInput,
+          compilationUnit,
+        );
+        if (trigger.triggersOn(compilationUnits)) return true;
+      } else {
+        if (trigger.triggersOn([compilationUnit])) return true;
       }
     }
     return false;
+  }
+
+  /// TODO(davidmorgan): cache parse results, share with deps parsing and
+  /// builder parsing.
+  static CompilationUnit _parseCompilationUnit(String content) {
+    return parseString(content: content, throwIfDiagnostics: false).unit;
+  }
+
+  static Future<List<CompilationUnit>> _readAndParseCompilationUnits(
+    AssetReader reader,
+    AssetId id,
+    CompilationUnit compilationUnit,
+  ) async {
+    final result = [compilationUnit];
+    for (var directive in compilationUnit.directives) {
+      if (directive is! PartDirective) continue;
+      final partId = AssetId.resolve(
+        Uri.parse(directive.uri.stringValue!),
+        from: id,
+      );
+      if (!await reader.canRead(partId)) continue;
+      result.add(_parseCompilationUnit(await reader.readAsString(partId)));
+    }
+    return result;
   }
 
   Future<Iterable<AssetId>> _runPostBuildPhase(
