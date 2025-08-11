@@ -1,46 +1,50 @@
-Defines the basic pieces of how a build happens and how they interact.
+_Questions? Suggestions? Found a bug? Please 
+[file an issue](https://github.com/dart-lang/build/issues) or
+ [start a discussion](https://github.com/dart-lang/build/discussions)._
 
-## [`Builder`][dartdoc:Builder]
+Package for writing code generators, called _builders_, that run with
+[build_runner](https://pub.dev/packages/build_runner). 
 
-The business logic for code generation. Most consumers of the `build` package
-will create custom implementations of `Builder`.
+- [See also: source_gen](#see-also-source_gen)
+- [The `Builder` interface](#the-builder-interface)
+   - [Using the analyzer](#using-the-analyzer)
+- [Examples](#examples)
 
-## [`BuildStep`][dartdoc:BuildStep]
+## See also: source_gen
 
-The way a `Builder` interacts with the outside world. Defines the unit of work
-and allows reading/writing files and resolving Dart source code.
+The [source_gen](https://pub.dev/packages/source_gen) package provides helpers
+for writing common types of builder, for example builders that are triggered by
+a particular annotation.
 
-## [`Resolver`][dartdoc:Resolver] class
+Most builders should use `source_gen`, but it's still useful to learn about the
+underlying `Builder` interface that `source_gen` plugs into.
 
-An interface into the dart [analyzer][pub:analyzer] to allow resolution of code
-that needs static analysis and/or code generation.
+## The `Builder` interface
 
-## Implementing your own Builders
-
-A `Builder` gets invoked one by one on it's inputs, and may read other files and
-output new files based on those inputs.
-
-The basic API looks like this:
+A builder implements the
+[Builder](https://pub.dev/documentation/build/latest/build/Builder-class.html)
+interface.
 
 ```dart
 abstract class Builder {
-  /// You can only output files that are configured here by suffix substitution.
-  /// You are not required to output all of these files, but no other builder
-  /// may declare the same outputs.
+  /// Declares inputs and outputs by extension.
   Map<String, List<String>> get buildExtensions;
 
-  /// This is where you build and output files.
+  /// Builds all outputs for a single input.
   FutureOr<void> build(BuildStep buildStep);
 }
 ```
 
-Here is an implementation of a `Builder` which just copies files to other files
-with the same name, but an additional extension:
+Its `buildExtensions` getter declares what inputs it runs on and what outputs
+it might produce.
+
+During a build its `build` method gets called once per matching input.
+
+It uses `buildStep` to read, analyze and write files.
+
+For example, here is a builder that copies input `.txt` files to `.txt.copy` files:
 
 ```dart
-import 'package:build/build.dart';
-
-/// A really simple [Builder], it just makes copies of .txt files!
 class CopyBuilder implements Builder {
   @override
   final buildExtensions = const {
@@ -49,106 +53,34 @@ class CopyBuilder implements Builder {
 
   @override
   Future<void> build(BuildStep buildStep) async {
-    // Each `buildStep` has a single input.
-    var inputId = buildStep.inputId;
+    // Create the output ID from the build step input ID.
+    final inputId = buildStep.inputId;
+    final outputId = inputId.addExtension('.copy');
 
-    // Create a new target `AssetId` based on the old one.
-    var copy = inputId.addExtension('.copy');
-    var contents = await buildStep.readAsString(inputId);
-
-    // Write out the new asset.
-    await buildStep.writeAsString(copy, contents);
+    // Read from the input, write to the output.
+    final contents = await buildStep.readAsString(inputId);
+    await buildStep.writeAsString(outputId, contents);
   }
 }
 ```
 
-It should be noted that you should _never_ touch the file system directly. Go
-through the `buildStep#readAsString` and `buildStep#writeAsString` methods in
-order to read and write assets. This is what enables the package to track all of
-your dependencies and do incremental rebuilds. It is also what enables your
-[`Builder`][dartdoc:Builder] to run on different environments.
+Outputs are optional. For example, a builder that is activated by a particular
+annotation will output nothing if it does not find that annotation.
 
 ### Using the analyzer
 
-If you need to do analyzer resolution, you can use the `BuildStep#resolver`
-object. This makes sure that all `Builder`s in the system share the same
-analysis context, which greatly speeds up the overall system when multiple
-`Builder`s are doing resolution.
+The `buildStep` passed to `build` gives easy access to the analyzer for
+processing Dart source code.
 
-Here is an example of a `Builder` which uses the `resolve` method:
+Use `buildStep.resolver.compilationUnitFor` to parse a single source file, or
+`libraryFor` to fully resolve it. This can be used to introspect the full API
+of the source code the builder is running on. For example, a builder can learn
+enough about a class's field and field types to correctly serialize it.
 
-```dart
-import 'package:build/build.dart';
+## Examples
 
-class ResolvingCopyBuilder implements Builder {
-  // Take a `.dart` file as input so that the Resolver has code to resolve
-  @override
-  final buildExtensions = const {
-    '.dart': ['.dart.copy']
-  };
+There are some simple examples
+[in the build repo](https://github.com/dart-lang/build/blob/master/example).
 
-  @override
-  Future<void> build(BuildStep buildStep) async {
-    // Get the `LibraryElement` for the primary input.
-    var entryLib = await buildStep.inputLibrary;
-    // Resolves all libraries reachable from the primary input.
-    var resolver = buildStep.resolver;
-    // Get a `LibraryElement` for another asset.
-    var libFromAsset = await resolver.libraryFor(
-        AssetId.resolve(Uri.parse('some_import.dart'),
-        from: buildStep.inputId));
-    // Or get a `LibraryElement` by name.
-    var libByName = await resolver.findLibraryByName('my.library');
-  }
-}
-```
-
-Once you have gotten a `LibraryElement` using one of the methods on `Resolver`,
-you are now just using the regular `analyzer` package to explore your app.
-
-### Sharing expensive objects across build steps
-
-The build package includes a `Resource` class, which can give you an instance
-of an expensive object that is guaranteed to be unique across builds, but may
-be re-used by multiple build steps within a single build (to the extent that
-the implementation allows). It also gives you a way of disposing of your
-resource at the end of its lifecycle.
-
-The `Resource<T>` constructor takes a single required argument which is a
-factory function that returns a `FutureOr<T>`. There is also a named argument
-`dispose` which is called at the end of life for the resource, with the
-instance that should be disposed. This returns a `FutureOr<dynamic>`.
-
-So a simple example `Resource` would look like this:
-
-```dart
-final resource = Resource(
-  () => createMyExpensiveResource(),
-  dispose: (instance) async {
-    await instance.doSomeCleanup();
-  });
-```
-
-You can get an instance of the underlying resource by using the
-`BuildStep#fetchResource` method, whose type signature looks like
-`Future<T> fetchResource<T>(Resource<T>)`.
-
-**Important Note**: It may be tempting to try and use a `Resource` instance to
-cache information from previous build steps (or even assets), but this should
-be avoided because it can break the soundness of the build, and may introduce
-subtle bugs for incremental builds (remember the whole build doesn't run every
-time!). The `build` package relies on the `BuildStep#canRead` and
-`BuildStep#readAs*` methods to track build step dependencies, so sidestepping
-those can and will break the dependency tracking, resulting in inconsistent and
-stale assets.
-
-## Features and bugs
-
-Please file feature requests and bugs at the [issue tracker][tracker].
-
-[tracker]: https://github.com/dart-lang/build/issues
-
-[dartdoc:Builder]: https://pub.dev/documentation/build/latest/build/Builder-class.html
-[dartdoc:BuildStep]: https://pub.dev/documentation/build/latest/build/BuildStep-class.html
-[dartdoc:Resolver]: https://pub.dev/documentation/build/latest/build/Resolver-class.html
-[pub:analyzer]: https://pub.dev/packages/analyzer
+For real examples of builders, see the list of popular builders in the
+[build_runner package documentation](https://pub.dev/packages/build_runner).

@@ -2,6 +2,7 @@
 
 - Use `build` 3.0.2.
 - Use `build_runner` 2.7.0.
+- Documentation revamp.
 
 ## 3.3.1
 

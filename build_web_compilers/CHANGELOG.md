@@ -1,3 +1,7 @@
+## 4.2.2-wip
+
+- Documentation revamp.
+
 ## 4.2.1
 
 - Remove unused deps: `build_config`.
