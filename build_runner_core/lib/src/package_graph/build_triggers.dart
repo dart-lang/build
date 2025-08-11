@@ -211,10 +211,25 @@ abstract class AnnotationBuildTrigger
     for (final compilationUnit in compilationUnits) {
       for (final declaration in compilationUnit.declarations) {
         for (final metadata in declaration.metadata) {
+          // An annotation can have zero, one or two periods:
+          //
+          // ```
+          // @Foo()
+          // @import_prefix.Foo()
+          // @Foo.namedConstructor()
+          // @import_prefix.Foo.namedConstructor()
+          // ```
+          //
+          // `metadata.name.name` contains everything up to but not including
+          // the second period and last name part, if any.
           var name = metadata.name.name;
+          // If there are two periods, `metadata.constructorName` is set to
+          // the last name part, so appending it to `name` gives the full name
+          // as per the examples above.
           if (metadata.constructorName != null) {
             name = '$name.${metadata.constructorName}';
           }
+
           if (annotation == name) return true;
           final periodIndex = name.indexOf('.');
           if (periodIndex != -1) {

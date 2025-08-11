@@ -211,6 +211,23 @@ class Foo{}
     });
   });
 
+  test('matches prefix like class name', () {
+    // Import prefixes and class names can't be distinguished in syntax, so
+    // an import prefix matches the same as a class name. In practice this
+    // doesn't matter much because they use different case conventions.
+    final trigger = AnnotationBuildTrigger('import_prefix.Bar');
+    expect(
+      trigger.triggersOn(
+        parse('''
+import "other.dart" as import_prefix;
+@import_prefix.Bar()
+class Foo{}
+'''),
+      ),
+      true,
+    );
+  });
+
   group('annotation triggers', () {
     test('stop builder if missing', () async {
       final result = await testBuilders(
