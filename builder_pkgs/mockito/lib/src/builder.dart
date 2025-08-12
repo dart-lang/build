@@ -144,7 +144,9 @@ class MockBuilder implements Builder {
       // The generator has to occasionally implement sealed classes
       b.body.add(Code('// ignore_for_file: subtype_of_sealed_class\n'));
       // The generator has to occasionally implement internal members.
-      b.body.add(Code('// ignore_for_file: invalid_use_of_internal_member\n\n'));
+      b.body.add(
+        Code('// ignore_for_file: invalid_use_of_internal_member\n\n'),
+      );
       b.body.addAll(mockLibraryInfo.fakeClasses);
       b.body.addAll(mockLibraryInfo.mockClasses);
     });
@@ -2756,8 +2758,8 @@ extension NamedTypeExtension on ast.NamedType {
   String get qualifiedName {
     final importPrefix = this.importPrefix;
     if (importPrefix != null) {
-      return '${importPrefix.name.lexeme}.${name2.lexeme}';
+      return '${importPrefix.name.lexeme}.${name.lexeme}';
     }
-    return name2.lexeme;
+    return name.lexeme;
   }
 }
