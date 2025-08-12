@@ -21,30 +21,31 @@ Usually, a builder adds some capability to your code that is inconvenient to
 add and maintain in pure Dart. Examples include serialization, data classes,
 data binding, dependency injection, and mocking.
 
-Here are some popular builders and the capabilities they add:
+Here is a selection of the most-used builders on [pub.dev](https://pub.dev).
+Except as noted, they are not owned or specifically endorsed by Google.
 
-|Builder|Adds capabilities|
-|-|-|
+|Builder|Adds capabilities|Notes|
+|-|-|-
 |[auto_route_generator](https://pub.dev/packages/auto_route)|Flutter navigation|
-|[built_value_generator](https://pub.dev/packages/built_value)|data classes with JSON serialization|
-|[chopper_generator](https://pub.dev/packages/chopper_generator)|REST HTTP client|
+|[built_value_generator](https://pub.dev/packages/built_value)|data classes with JSON serialization|[Flutter Favourite](https://docs.flutter.dev/packages-and-plugins/favorites) by&nbsp;Google
+|[chopper_generator](https://pub.dev/packages/chopper_generator)|REST HTTP client|[Flutter Favourite](https://docs.flutter.dev/packages-and-plugins/favorites)
 |[copy_with_extension_gen](https://pub.dev/packages/copy_with_extension_gen)|`copyWith` extension methods|
 |[dart_mappable_builder](https://pub.dev/packages/dart_mappable)|data classes with JSON serialization|
 |[drift_dev](https://pub.dev/packages/drift_dev)|reactive data binding and SQL|
 |[envied_generator](https://pub.dev/packages/envied)|environment variable bindings|
-|[freezed](https://pub.dev/packages/freezed)|data classes, tagged unions, nested classes, cloning|
+|[freezed](https://pub.dev/packages/freezed)|data classes, tagged unions, nested classes, cloning|[Flutter Favourite](https://docs.flutter.dev/packages-and-plugins/favorites)
 |[flutter_gen_runner](https://pub.dev/packages/flutter_gen_runner)|Flutter asset bindings|
-|[go_router_builder](https://pub.dev/packages/go_router_builder)|Flutter navigation|
+|[go_router_builder](https://pub.dev/packages/go_router_builder)|Flutter navigation|by&nbsp;Google
 |[hive_ce_generator](https://pub.dev/packages/hive_ce)|key-value database|
 |[injectable_generator](https://pub.dev/packages/injectable_generator)|dependency injecton|
-|[json_serializable](https://pub.dev/packages/json_serializable)|JSON serialization|
-|[mockito](https://pub.dev/packages/mockito)|mocks and fakes for testing|
+|[json_serializable](https://pub.dev/packages/json_serializable)|JSON serialization|[Flutter Favourite](https://docs.flutter.dev/packages-and-plugins/favorites) by&nbsp;Google
+|[mockito](https://pub.dev/packages/mockito)|mocks and fakes for testing|by&nbsp;Google
 |[retrofit_generator](https://pub.dev/packages/retrofit_generator)|REST HTTP client|
-|[riverpod_generator](https://pub.dev/packages/riverpod)|reactive caching and data binding|
+|[riverpod_generator](https://pub.dev/packages/riverpod)|reactive caching and data binding|[Flutter Favourite](https://docs.flutter.dev/packages-and-plugins/favorites)
 |[slang_build_runner](https://pub.dev/packages/slang)|type-safe i18n|
 |[swagger_dart_code_generator](https://pub.dev/packages/swagger_dart_code_generator)|dart types from Swagger/OpenAPI schemas|
 |[theme_tailor](https://pub.dev/packages/theme_tailor)|Flutter themes and extensions|
-|[webdev](https://pub.dev/packages/webdev)|compilation to javascript|
+|[webdev](https://pub.dev/packages/webdev)|compilation to javascript|by&nbsp;Google
 
 ## Getting started
 
