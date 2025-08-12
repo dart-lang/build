@@ -51,8 +51,8 @@ class BuildLogMessages {
   bool hasMessages({required String? phaseName}) =>
       _phaseNamesWithMessages.contains(phaseName);
 
-  List<AnsiBufferLine> render() {
-    final result = <AnsiBufferLine>[];
+  RenderResult render() {
+    final result = RenderResult();
 
     final buildRunnerCategories = <MapEntry<_MessageCategory, List<Message>>>[];
     for (final entry in _messageByCategory.entries) {
@@ -72,40 +72,50 @@ class BuildLogMessages {
     return result;
   }
 
-  List<AnsiBufferLine> _renderCategory(
+  RenderResult _renderCategory(
     MapEntry<_MessageCategory, List<Message>> entry,
   ) {
-    final result = <AnsiBufferLine>[];
     final category = entry.key;
     final context = category.context;
+
+    final messages = _messageByCategory[category]!;
+    final failed = messages.any(
+      (message) => message.severity == Severity.error,
+    );
+
+    final result = <AnsiBufferLine>[];
     result.add(
       AnsiBufferLine([
-        'log output for ',
+        if (context != null) ...[
+          failed ? AnsiBuffer.boldRed : AnsiBuffer.bold,
+          context,
+          AnsiBuffer.reset,
+          ' ',
+        ],
         AnsiBuffer.bold,
         category.phaseName ?? 'build_runner',
         AnsiBuffer.reset,
-        if (context != null) ...[
-          ' on ',
-          AnsiBuffer.bold,
-          context,
-          AnsiBuffer.reset,
-        ],
       ]),
     );
 
-    for (final message in _messageByCategory[category]!) {
+    for (final message in messages) {
       var first = true;
       for (final line in message.text.split('\n')) {
         result.add(
           AnsiBufferLine([
+            if (message.severity == Severity.error) AnsiBuffer.boldRed,
             first ? message.severity.prefix : '  ',
+            if (message.severity == Severity.error) AnsiBuffer.reset,
             line,
           ], hangingIndent: 2),
         );
         first = false;
       }
     }
-    return result;
+
+    return failed
+        ? RenderResult.failed(result)
+        : RenderResult.succeeded(result);
   }
 }
 
@@ -176,4 +186,22 @@ enum Severity {
     Severity.warning => 'W ',
     Severity.error => 'E ',
   };
+}
+
+class RenderResult {
+  final List<AnsiBufferLine> warningLines;
+  final List<AnsiBufferLine> errorLines;
+
+  RenderResult() : warningLines = [], errorLines = [];
+  RenderResult.failed(List<AnsiBufferLine> lines)
+    : errorLines = lines,
+      warningLines = [];
+  RenderResult.succeeded(List<AnsiBufferLine> lines)
+    : warningLines = lines,
+      errorLines = [];
+
+  void addAll(RenderResult other) {
+    warningLines.addAll(other.warningLines);
+    errorLines.addAll(other.errorLines);
+  }
 }
