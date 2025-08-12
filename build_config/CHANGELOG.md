@@ -1,5 +1,8 @@
-## 1.1.3-wip
+## 1.2.0-wip
 
+- Add top level key `triggers`. See
+  [the docs](https://github.com/dart-lang/build/blob/master/build_config/README.md#triggers)
+  for more information.
 - Bump the min sdk to 3.7.0.
 - Remove unused dep: `yaml`.
 
