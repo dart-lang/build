@@ -1,24 +1,12 @@
-<p align="center">
-  Web compilers for users of <a href="https://pub.dev/packages/build"><code>package:build</code></a>.
-  <br>
-  <a href="https://github.com/dart-lang/build/labels/package%3Abuild_web_compilers">
-    <img src="https://img.shields.io/github/issues-raw/dart-lang/build/package%3Abuild_web_compilers.svg" alt="Issues related to build_web_compilers" />
-  </a>
-  <a href="https://pub.dev/packages/build_web_compilers">
-    <img src="https://img.shields.io/pub/v/build_web_compilers.svg" alt="Pub Package Version" />
-  </a>
-  <a href="https://pub.dev/documentation/build_web_compilers/latest">
-    <img src="https://img.shields.io/badge/dartdocs-latest-blue.svg" alt="Latest Dartdocs" />
-  </a>
-  <a href="https://gitter.im/dart-lang/build">
-    <img src="https://badges.gitter.im/dart-lang/build.svg" alt="Join the chat on Gitter" />
-  </a>
-</p>
-
-* [Installation](#installation)
-* [Usage](#usage)
-* [Configuration](#configuration)
-* [Manual Usage](#manual-usage)
+  _Questions? Suggestions? Found a bug? Please 
+[file an issue](https://github.com/dart-lang/build/issues) or
+ [start a discussion](https://github.com/dart-lang/build/discussions)._
+  
+  Web compilers for [build_runner](https://pub.dev/packages/build_runner).
+  
+- [Installation](#installation)
+- [Usage](#usage)
+- [Configuration](#configuration)
 
 ## Installation
 
@@ -232,80 +220,6 @@ targets:
               args:
                 - -DSOME_VAR=some value
                 - -DANOTHER_VAR=true
-```
-
-### Legacy builder options
-
-Previous versions of `build_web_compilers` only supported a single enabled
-compiler that would be enabled with the `compiler` option.
-If you only want to use `dart2js` for all builds, you can use that option:
-
-```yaml
-targets:
-  $default:
-    builders:
-      build_web_compilers:entrypoint:
-        # These are globs for the entrypoints you want to compile.
-        generate_for:
-        - test/**.browser_test.dart
-        - web/**.dart
-        options:
-          compiler: dart2js
-          # List any dart2js specific args here, or omit it.
-          dart2js_args:
-          - -O2
-```
-
-Similarly, only compiling with `dart2wasm`:
-
-```yaml
-targets:
-  $default:
-    builders:
-      build_web_compilers:entrypoint:
-        options:
-          compiler: dart2wasm
-          # List flags that should be forwarded to `dart compile wasm`
-          dart2wasm_args:
-          - -O2
-```
-
-When no option is set, the `compiler` option is implicitly set to `dart2js` on
-release builds and to `dartdevc` otherwise.
-Note that the `compilers` option takes precedence over the `compiler` option
-when set.
-
-## Manual Usage
-
-If you are using a custom build script, you will need to add the following
-builder applications to what you already have, almost certainly at the end of
-the list (unless you need to post-process the js files).
-
-```dart
-[
-    apply(
-        'build_web_compilers:ddc',
-        [
-        (_) => new ModuleBuilder(),
-        (_) => new UnlinkedSummaryBuilder(),
-        (_) => new LinkedSummaryBuilder(),
-        (_) => new DevCompilerBuilder()
-        ],
-        toAllPackages(),
-        // Recommended, but not required. This makes it so only modules that are
-        // imported by entrypoints get compiled.
-        isOptional: true,
-        hideOutput: true),
-    apply('build_web_compilers:entrypoint',
-        // You can also use `WebCompiler.Dart2Js`. If you don't care about
-        // dartdevc at all you may also omit the previous builder application
-        // entirely.
-        [(_) => new WebEntrypointBuilder(WebCompiler.DartDevc)], toRoot(),
-        hideOutput: true,
-        // These globs should match your entrypoints only.
-        defaultGenerateFor: const InputSet(
-            include: const ['web/**', 'test/**.browser_test.dart'])),
-]
 ```
 
 [development dependency]: https://dart.dev/tools/pub/dependencies#dev-dependencies

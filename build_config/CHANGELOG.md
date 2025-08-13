@@ -5,6 +5,7 @@
   for more information.
 - Bump the min sdk to 3.7.0.
 - Remove unused dep: `yaml`.
+- Documentation revamp.
 
 ## 1.1.2
 

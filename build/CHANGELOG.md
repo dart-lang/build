@@ -1,6 +1,7 @@
 ## 3.0.2-wip
 
 - Use `build_runner_core` 9.3.0.
+- Documentation revamp.
 
 ## 3.0.1
 
