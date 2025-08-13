@@ -7,24 +7,18 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_runner_core/build_runner_core.dart';
-// ignore: implementation_imports
-import 'package:build_runner_core/src/generate/performance_tracker.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
-import 'package:timing/timing.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../entrypoint/options.dart';
 import '../generate/watch_impl.dart';
-import 'asset_graph_handler.dart';
 import 'path_to_asset_id.dart';
 
-const _performancePath = r'$perf';
-final _graphPath = r'$graph';
 final _assetsDigestPath = r'$assetDigests';
 final _buildUpdatesProtocol = r'$buildUpdates';
 final entrypointExtensionMarker = '/* ENTRYPOINT_EXTENTION_MARKER */';
@@ -42,45 +36,27 @@ enum PerfSortOrder {
 
 ServeHandler createServeHandler(WatchImpl watch) {
   var rootPackage = watch.packageGraph.root.name;
-  var assetGraphHanderCompleter = Completer<AssetGraphHandler>();
   var assetHandlerCompleter = Completer<AssetHandler>();
   watch.reader
       .then((reader) async {
         assetHandlerCompleter.complete(AssetHandler(reader, rootPackage));
-        assetGraphHanderCompleter.complete(
-          AssetGraphHandler(reader, rootPackage, watch.assetGraph!),
-        );
       })
       .catchError((_) {}); // These errors are separately handled.
-  return ServeHandler._(
-    watch,
-    assetHandlerCompleter.future,
-    assetGraphHanderCompleter.future,
-    rootPackage,
-  );
+  return ServeHandler._(watch, assetHandlerCompleter.future, rootPackage);
 }
 
 class ServeHandler implements BuildState {
   final WatchImpl _state;
-  BuildResult? _lastBuildResult;
   final String _rootPackage;
 
   final Future<AssetHandler> _assetHandler;
-  final Future<AssetGraphHandler> _assetGraphHandler;
 
   final BuildUpdatesWebSocketHandler _webSocketHandler;
 
-  ServeHandler._(
-    this._state,
-    this._assetHandler,
-    this._assetGraphHandler,
-    this._rootPackage,
-  ) : _webSocketHandler = BuildUpdatesWebSocketHandler(_state) {
+  ServeHandler._(this._state, this._assetHandler, this._rootPackage)
+    : _webSocketHandler = BuildUpdatesWebSocketHandler(_state) {
     _state.buildResults
-        .listen((result) {
-          _lastBuildResult = result;
-          _webSocketHandler.emitUpdateMessage(result);
-        })
+        .listen(_webSocketHandler.emitUpdateMessage)
         .onDone(_webSocketHandler.close);
   }
 
@@ -115,18 +91,8 @@ class ServeHandler implements BuildState {
     cascade = cascade.add(_blockOnCurrentBuild).add((
       shelf.Request request,
     ) async {
-      if (request.url.path == _performancePath) {
-        return _performanceHandler(request);
-      }
       if (request.url.path == _assetsDigestPath) {
         return _assetsDigestHandler(request, rootDir);
-      }
-      if (request.url.path.startsWith(_graphPath)) {
-        var graphHandler = await _assetGraphHandler;
-        return await graphHandler.handle(
-          request.change(path: _graphPath),
-          rootDir,
-        );
       }
       var assetHandler = await _assetHandler;
       return assetHandler.handle(request, rootDir: rootDir);
@@ -148,43 +114,6 @@ class ServeHandler implements BuildState {
   Future<shelf.Response> _blockOnCurrentBuild(void _) async {
     await currentBuild;
     return shelf.Response.notFound('');
-  }
-
-  shelf.Response _performanceHandler(shelf.Request request) {
-    var hideSkipped = false;
-    var detailedSlices = false;
-    var slicesResolution = 5;
-    var sortOrder = PerfSortOrder.startTimeAsc;
-    var filter = request.url.queryParameters['filter'] ?? '';
-    if (request.url.queryParameters['hideSkipped']?.toLowerCase() == 'true') {
-      hideSkipped = true;
-    }
-    if (request.url.queryParameters['detailedSlices']?.toLowerCase() ==
-        'true') {
-      detailedSlices = true;
-    }
-    if (request.url.queryParameters.containsKey('slicesResolution')) {
-      slicesResolution = int.parse(
-        request.url.queryParameters['slicesResolution']!,
-      );
-    }
-    if (request.url.queryParameters.containsKey('sortOrder')) {
-      sortOrder =
-          PerfSortOrder.values[int.parse(
-            request.url.queryParameters['sortOrder']!,
-          )];
-    }
-    return shelf.Response.ok(
-      _renderPerformance(
-        _lastBuildResult!.performance!,
-        hideSkipped,
-        detailedSlices,
-        slicesResolution,
-        sortOrder,
-        filter,
-      ),
-      headers: {HttpHeaders.contentTypeHeader: 'text/html'},
-    );
   }
 
   Future<shelf.Response> _assetsDigestHandler(
@@ -453,282 +382,6 @@ class AssetHandler {
     return '$message';
   }
 }
-
-String _renderPerformance(
-  BuildPerformance performance,
-  bool hideSkipped,
-  bool detailedSlices,
-  int slicesResolution,
-  PerfSortOrder sortOrder,
-  String filter,
-) {
-  try {
-    var rows = StringBuffer();
-    final resolution = Duration(milliseconds: slicesResolution);
-    var count = 0,
-        maxSlices = 1,
-        max = 0,
-        min =
-            performance.stopTime.millisecondsSinceEpoch -
-            performance.startTime.millisecondsSinceEpoch;
-
-    void writeRow(
-      BuilderActionPerformance action,
-      BuilderActionStagePerformance stage,
-      TimeSlice slice,
-    ) {
-      var actionKey = '${action.builderKey}:${action.primaryInput}';
-      var tooltip =
-          '<div class=perf-tooltip>'
-          '<p><b>Builder:</b> ${action.builderKey}</p>'
-          '<p><b>Input:</b> ${action.primaryInput}</p>'
-          '<p><b>Stage:</b> ${stage.label}</p>'
-          '<p><b>Stage time:</b> '
-          // ignore: lines_longer_than_80_chars
-          '${stage.startTime.difference(performance.startTime).inMilliseconds / 1000}s - '
-          '${stage.stopTime.difference(performance.startTime).inMilliseconds / 1000}s</p>'
-          '<p><b>Stage real duration:</b> ${stage.duration.inMilliseconds / 1000} seconds</p>'
-          '<p><b>Stage user duration:</b> ${stage.innerDuration.inMilliseconds / 1000} seconds</p>';
-      if (slice != stage) {
-        tooltip +=
-            '<p><b>Slice time:</b> '
-            // ignore: lines_longer_than_80_chars
-            '${slice.startTime.difference(performance.startTime).inMilliseconds / 1000}s - '
-            '${slice.stopTime.difference(performance.startTime).inMilliseconds / 1000}s</p>'
-            '<p><b>Slice duration:</b> ${slice.duration.inMilliseconds / 1000} seconds</p>';
-      }
-      tooltip += '</div>';
-      var start =
-          slice.startTime.millisecondsSinceEpoch -
-          performance.startTime.millisecondsSinceEpoch;
-      var end =
-          slice.stopTime.millisecondsSinceEpoch -
-          performance.startTime.millisecondsSinceEpoch;
-
-      if (min > start) min = start;
-      if (max < end) max = end;
-
-      rows.writeln(
-        '          ["$actionKey", "${stage.label}", "$tooltip", $start, '
-        '$end],',
-      );
-      ++count;
-    }
-
-    final filterRegex = filter.isNotEmpty ? RegExp(filter) : null;
-
-    final actions =
-        performance.actions
-            .where(
-              (action) =>
-                  !hideSkipped ||
-                  action.stages.any((stage) => stage.label == 'Build'),
-            )
-            .where(
-              (action) =>
-                  filterRegex == null ||
-                  filterRegex.hasMatch(
-                    '${action.builderKey}:${action.primaryInput}',
-                  ),
-            )
-            .toList();
-
-    int Function(BuilderActionPerformance, BuilderActionPerformance) comparator;
-    switch (sortOrder) {
-      case PerfSortOrder.startTimeAsc:
-        comparator = (a1, a2) => a1.startTime.compareTo(a2.startTime);
-        break;
-      case PerfSortOrder.startTimeDesc:
-        comparator = (a1, a2) => a2.startTime.compareTo(a1.startTime);
-        break;
-      case PerfSortOrder.stopTimeAsc:
-        comparator = (a1, a2) => a1.stopTime.compareTo(a2.stopTime);
-        break;
-      case PerfSortOrder.stopTimeDesc:
-        comparator = (a1, a2) => a2.stopTime.compareTo(a1.stopTime);
-        break;
-      case PerfSortOrder.durationAsc:
-        comparator = (a1, a2) => a1.duration.compareTo(a2.duration);
-        break;
-      case PerfSortOrder.durationDesc:
-        comparator = (a1, a2) => a2.duration.compareTo(a1.duration);
-        break;
-      case PerfSortOrder.innerDurationAsc:
-        comparator = (a1, a2) => a1.innerDuration.compareTo(a2.innerDuration);
-        break;
-      case PerfSortOrder.innerDurationDesc:
-        comparator = (a1, a2) => a2.innerDuration.compareTo(a1.innerDuration);
-        break;
-    }
-    actions.sort(comparator);
-
-    for (var action in actions) {
-      if (hideSkipped &&
-          !action.stages.any((stage) => stage.label == 'Build')) {
-        continue;
-      }
-      for (var stage in action.stages) {
-        if (!detailedSlices) {
-          writeRow(action, stage, stage);
-          continue;
-        }
-        var slices = stage.slices.fold<List<TimeSlice>>([], (list, slice) {
-          if (list.isNotEmpty &&
-              slice.startTime.difference(list.last.stopTime) < resolution) {
-            // concat with previous if gap less than resolution
-            list.last = TimeSlice(list.last.startTime, slice.stopTime);
-          } else {
-            if (list.length > 1 && list.last.duration < resolution) {
-              // remove previous if its duration less than resolution
-              list.last = slice;
-            } else {
-              list.add(slice);
-            }
-          }
-          return list;
-        });
-        if (slices.isNotEmpty) {
-          for (var slice in slices) {
-            writeRow(action, stage, slice);
-          }
-        } else {
-          writeRow(action, stage, stage);
-        }
-        if (maxSlices < slices.length) maxSlices = slices.length;
-      }
-    }
-    if (max - min < 1000) {
-      rows.writeln(
-        '          ['
-        '"https://github.com/google/google-visualization-issues/issues/2269"'
-        ', "", "", $min, ${min + 1000}]',
-      );
-    }
-    return '''
-  <html>
-    <head>
-      <script src="https://www.gstatic.com/charts/loader.js"></script>
-      <script>
-        google.charts.load('current', {'packages':['timeline']});
-        google.charts.setOnLoadCallback(drawChart);
-        function drawChart() {
-          var container = document.getElementById('timeline');
-          var chart = new google.visualization.Timeline(container);
-          var dataTable = new google.visualization.DataTable();
-
-          dataTable.addColumn({ type: 'string', id: 'ActionKey' });
-          dataTable.addColumn({ type: 'string', id: 'Stage' });
-          dataTable.addColumn({ type: 'string', role: 'tooltip', p: { html: true } });
-          dataTable.addColumn({ type: 'number', id: 'Start' });
-          dataTable.addColumn({ type: 'number', id: 'End' });
-          dataTable.addRows([
-  $rows
-          ]);
-
-          console.log('rendering', $count, 'blocks, max', $maxSlices,
-            'slices in stage, resolution', $slicesResolution, 'ms');
-          var options = {
-            tooltip: { isHtml: true }
-          };
-          var statusText = document.getElementById('status');
-          var timeoutId;
-          var updateFunc = function () {
-              if (timeoutId) {
-                  // don't schedule more than one at a time
-                  return;
-              }
-              statusText.innerText = 'Drawing table...';
-              console.time('draw-time');
-
-              timeoutId = setTimeout(function () {
-                  chart.draw(dataTable, options);
-                  console.timeEnd('draw-time');
-                  statusText.innerText = '';
-                  timeoutId = null;
-              });
-          };
-
-          updateFunc();
-
-          window.addEventListener('resize', updateFunc);
-        }
-      </script>
-      <style>
-      html, body {
-        width: 100%;
-        height: 100%;
-        margin: 0;
-      }
-
-      body {
-        display: flex;
-        flex-direction: column;
-      }
-
-      #timeline {
-        display: flex;
-        flex-direction: row;
-        flex: 1;
-      }
-      .controls-header p {
-        display: inline-block;
-        margin: 0.5em;
-      }
-      .perf-tooltip {
-        margin: 0.5em;
-      }
-      </style>
-    </head>
-    <body>
-      <form class="controls-header" action="/$_performancePath" onchange="this.submit()">
-        <p><label><input type="checkbox" name="hideSkipped" value="true" ${hideSkipped ? 'checked' : ''}> Hide Skipped Actions</label></p>
-        <p><label><input type="checkbox" name="detailedSlices" value="true" ${detailedSlices ? 'checked' : ''}> Show Async Slices</label></p>
-        <p>Sort by: <select name="sortOrder">
-          <option value="0" ${sortOrder.index == 0 ? 'selected' : ''}>Start Time Asc</option>
-          <option value="1" ${sortOrder.index == 1 ? 'selected' : ''}>Start Time Desc</option>
-          <option value="2" ${sortOrder.index == 2 ? 'selected' : ''}>Stop Time Asc</option>
-          <option value="3" ${sortOrder.index == 3 ? 'selected' : ''}>Stop Time Desc</option>
-          <option value="5" ${sortOrder.index == 4 ? 'selected' : ''}>Real Duration Asc</option>
-          <option value="5" ${sortOrder.index == 5 ? 'selected' : ''}>Real Duration Desc</option>
-          <option value="6" ${sortOrder.index == 6 ? 'selected' : ''}>User Duration Asc</option>
-          <option value="7" ${sortOrder.index == 7 ? 'selected' : ''}>User Duration Desc</option>
-        </select></p>
-        <p>Slices Resolution: <select name="slicesResolution">
-          <option value="0" ${slicesResolution == 0 ? 'selected' : ''}>0</option>
-          <option value="1" ${slicesResolution == 1 ? 'selected' : ''}>1</option>
-          <option value="3" ${slicesResolution == 3 ? 'selected' : ''}>3</option>
-          <option value="5" ${slicesResolution == 5 ? 'selected' : ''}>5</option>
-          <option value="10" ${slicesResolution == 10 ? 'selected' : ''}>10</option>
-          <option value="15" ${slicesResolution == 15 ? 'selected' : ''}>15</option>
-          <option value="20" ${slicesResolution == 20 ? 'selected' : ''}>20</option>
-          <option value="25" ${slicesResolution == 25 ? 'selected' : ''}>25</option>
-        </select></p>
-        <p>Filter (RegExp): <input type="text" name="filter" value="$filter"></p>
-        <p id="status"></p>
-      </form>
-      <div id="timeline"></div>
-    </body>
-  </html>
-  ''';
-  } on UnimplementedError // ignore: avoid_catching_errors
-  catch (_) {
-    return _enablePerformanceTracking;
-  } on UnsupportedError // ignore: avoid_catching_errors
-  catch (_) {
-    return _enablePerformanceTracking;
-  }
-}
-
-final _enablePerformanceTracking = '''
-<html>
-  <body>
-    <p>
-      Performance information not available, you must pass the
-      `--track-performance` command line arg to enable performance tracking.
-    </p>
-  <body>
-</html>
-''';
 
 /// [shelf.Middleware] that logs all requests, inspired by [shelf.logRequests].
 shelf.Handler _logRequests(shelf.Handler innerHandler) {

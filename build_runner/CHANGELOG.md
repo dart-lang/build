@@ -8,6 +8,7 @@
 - Remove interactive prompts for whether to delete files.
 - Ignore `-d` flag: always delete files as if `-d` was passed.
 - Remove `--use-polling-watcher` flag.
+- Remove `build_runner serve` mode `$graph` and `$perf` handlers.
 - Documentation revamp.
 - Bug fix: delete transitive generated outputs as well as direct generated
   outputs. So, a generated file now gets deleted if its input was a generated
