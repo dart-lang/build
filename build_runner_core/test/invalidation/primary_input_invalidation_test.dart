@@ -170,13 +170,7 @@ void main() {
     test('change a, on rebuild a.1 is not output, a.2 is deleted', () async {
       expect(await tester.build(), Result(written: ['a.1', 'a.2']));
       tester.skipOutput('a.1');
-      expect(
-        await tester.build(change: 'a'),
-        // TODO(davidmorgan): this would be the correct result, see
-        // https://github.com/dart-lang/build/issues/3875.
-        // Result(deleted: ['a.1', 'a.2']),
-        Result(deleted: ['a.1']),
-      );
+      expect(await tester.build(change: 'a'), Result(deleted: ['a.1', 'a.2']));
     });
   });
 
@@ -221,13 +215,7 @@ void main() {
     test('change a, on rebuild a.1 is not output, a.2 is deleted', () async {
       expect(await tester.build(), Result(written: ['a.1', 'a.2']));
       tester.skipOutput('a.1');
-      expect(
-        await tester.build(change: 'a'),
-        // TODO(davidmorgan): this would be the correct result, see
-        // https://github.com/dart-lang/build/issues/3875.
-        // Result(deleted: ['a.1', 'a.2']),
-        Result(deleted: ['a.1']),
-      );
+      expect(await tester.build(change: 'a'), Result(deleted: ['a.1', 'a.2']));
     });
   });
 
@@ -355,10 +343,7 @@ void main() {
       tester.skipOutput('a.2');
       expect(
         await tester.build(change: 'a'),
-        // TODO(davidmorgan): this would be the correct result, see
-        // https://github.com/dart-lang/build/issues/3875.
-        // Result(written: ['a.1'], deleted: ['a.2', 'a.3', 'a.4']),
-        Result(written: ['a.1'], deleted: ['a.2']),
+        Result(written: ['a.1'], deleted: ['a.2', 'a.3', 'a.4']),
       );
     });
   });

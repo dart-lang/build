@@ -784,8 +784,6 @@ class Build {
   void _markOutputsSkipped(Iterable<AssetId> outputs) {
     for (final output in outputs) {
       assetGraph.updateNode(output, (nodeBuilder) {
-        // TODO(davidmorgan): deleting the file here may be the fix for
-        // https://github.com/dart-lang/build/issues/3875.
         nodeBuilder.digest = null;
         nodeBuilder.generatedNodeState.result = null;
       });
@@ -797,8 +795,6 @@ class Build {
   Future<void> _markOutputsTransitivelyFailed(Iterable<AssetId> outputs) async {
     for (final output in outputs) {
       assetGraph.updateNode(output, (nodeBuilder) {
-        // TODO(davidmorgan): deleting the file here may be the fix for
-        // https://github.com/dart-lang/build/issues/3875.
         nodeBuilder.digest = null;
         nodeBuilder.generatedNodeState.result = false;
         nodeBuilder.generatedNodeState.errors.clear();
@@ -830,6 +826,7 @@ class Build {
       // If the primary input has been deleted, the build is skipped.
       if (deletedAssets.contains(primaryInput)) {
         if (primaryInputNode.type == NodeType.missingSource) {
+          await _cleanUpStaleOutputs(outputs);
           _markOutputsSkipped(outputs);
           return false;
         }
@@ -846,6 +843,7 @@ class Build {
         // If the primary input succeeded but was not output, this build is
         // skipped.
         if (!primaryInputNode.wasOutput) {
+          await _cleanUpStaleOutputs(outputs);
           _markOutputsSkipped(outputs);
           return false;
         }

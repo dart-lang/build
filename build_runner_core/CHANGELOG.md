@@ -3,6 +3,9 @@
 - Add support for build.yaml `triggers`. See `build_runner` 2.7.0 for usage.
 - Remove interactive prompts for whether to delete files.
 - Ignore `-d` flag: always delete files as if `-d` was passed.
+- Bug fix: delete transitive generated outputs as well as direct generated
+  outputs. So, a generated file now gets deleted if its input was a generated
+  file that is no longer output.
 
 ## 9.2.1
 
