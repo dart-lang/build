@@ -28,7 +28,7 @@ Except as noted, they are not owned or specifically endorsed by Google.
 |-|-|-
 |[auto_route_generator](https://pub.dev/packages/auto_route)|Flutter navigation|
 |[built_value_generator](https://pub.dev/packages/built_value)|data classes with JSON serialization|[Flutter Favourite](https://docs.flutter.dev/packages-and-plugins/favorites) by&nbsp;Google
-|[chopper_generator](https://pub.dev/packages/chopper_generator)|REST HTTP client|[Flutter Favourite](https://docs.flutter.dev/packages-and-plugins/favorites)
+|[chopper_generator](https://pub.dev/packages/chopper)|REST HTTP client|[Flutter Favourite](https://docs.flutter.dev/packages-and-plugins/favorites)
 |[copy_with_extension_gen](https://pub.dev/packages/copy_with_extension_gen)|`copyWith` extension methods|
 |[dart_mappable_builder](https://pub.dev/packages/dart_mappable)|data classes with JSON serialization|
 |[drift_dev](https://pub.dev/packages/drift_dev)|reactive data binding and SQL|
