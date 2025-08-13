@@ -11,9 +11,6 @@ import 'package:build_config/build_config.dart';
 import 'package:build_daemon/constants.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:path/path.dart' as p;
-import 'package:watcher/watcher.dart';
-
-import '../generate/directory_watcher_factory.dart';
 
 const buildFilterOption = 'build-filter';
 const configOption = 'config';
@@ -31,7 +28,6 @@ const releaseOption = 'release';
 const trackPerformanceOption = 'track-performance';
 const skipBuildScriptCheckOption = 'skip-build-script-check';
 const symlinkOption = 'symlink';
-const usePollingWatcherOption = 'use-polling-watcher';
 const verboseOption = 'verbose';
 
 enum BuildUpdatesOption { none, liveReload }
@@ -141,7 +137,6 @@ class DaemonOptions extends WatchOptions {
     required super.builderConfigOverrides,
     required super.isReleaseBuild,
     required super.logPerformanceDir,
-    required super.usePollingWatcher,
     required super.enableExperiments,
   }) : super._();
 
@@ -187,22 +182,13 @@ class DaemonOptions extends WatchOptions {
       ),
       isReleaseBuild: argResults[releaseOption] as bool,
       logPerformanceDir: argResults[logPerformanceOption] as String?,
-      usePollingWatcher: argResults[usePollingWatcherOption] as bool,
       enableExperiments: argResults[enableExperimentOption] as List<String>,
     );
   }
 }
 
 class WatchOptions extends SharedOptions {
-  final bool usePollingWatcher;
-
-  DirectoryWatcher Function(String) get directoryWatcherFactory =>
-      usePollingWatcher
-          ? pollingDirectoryWatcherFactory
-          : defaultDirectoryWatcherFactory;
-
   WatchOptions._({
-    required this.usePollingWatcher,
     required super.buildFilters,
     required super.enableLowResourcesMode,
     required super.configKey,
@@ -240,7 +226,6 @@ class WatchOptions extends SharedOptions {
         ),
         isReleaseBuild: argResults[releaseOption] as bool,
         logPerformanceDir: argResults[logPerformanceOption] as String?,
-        usePollingWatcher: argResults[usePollingWatcherOption] as bool,
         enableExperiments: argResults[enableExperimentOption] as List<String>,
       );
 }
@@ -268,7 +253,6 @@ class ServeOptions extends WatchOptions {
     required super.builderConfigOverrides,
     required super.isReleaseBuild,
     required super.logPerformanceDir,
-    required super.usePollingWatcher,
     required super.enableExperiments,
   }) : super._();
 
@@ -349,7 +333,6 @@ class ServeOptions extends WatchOptions {
       ),
       isReleaseBuild: argResults[releaseOption] as bool,
       logPerformanceDir: argResults[logPerformanceOption] as String?,
-      usePollingWatcher: argResults[usePollingWatcherOption] as bool,
       enableExperiments: argResults[enableExperimentOption] as List<String>,
     );
   }

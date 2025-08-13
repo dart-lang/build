@@ -115,7 +115,6 @@ class ServeCommand extends WatchCommand {
       builderConfigOverrides: options.builderConfigOverrides,
       isReleaseBuild: options.isReleaseBuild,
       logPerformanceDir: options.logPerformanceDir,
-      directoryWatcherFactory: options.directoryWatcherFactory,
       buildFilters: options.buildFilters,
     );
 

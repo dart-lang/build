@@ -7,6 +7,7 @@
   for more information.
 - Remove interactive prompts for whether to delete files.
 - Ignore `-d` flag: always delete files as if `-d` was passed.
+- Remove `--use-polling-watcher` flag.
 - Documentation revamp.
 
 ## 2.6.1

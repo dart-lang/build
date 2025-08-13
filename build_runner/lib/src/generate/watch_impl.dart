@@ -38,7 +38,7 @@ Future<ServeHandler> watch(
   Resolvers? resolvers,
   void Function(LogRecord)? onLog,
   Duration? debounceDelay,
-  required DirectoryWatcher Function(String) directoryWatcherFactory,
+  DirectoryWatcher Function(String)? directoryWatcherFactory,
   Stream<ProcessSignal>? terminateEventStream,
   bool? skipBuildScriptCheck,
   bool? enableLowResourcesMode,
@@ -129,7 +129,7 @@ WatchImpl _runWatch(
   List<BuilderApplication> builders,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
   Future until,
-  DirectoryWatcher Function(String) directoryWatcherFactory,
+  DirectoryWatcher Function(String)? directoryWatcherFactory,
   String? configKey,
   bool willCreateOutputDirs,
   Set<BuildDirectory> buildDirs,
@@ -160,7 +160,7 @@ class WatchImpl implements BuildState {
   final Duration _debounceDelay;
 
   /// Injectable factory for creating directory watchers.
-  final DirectoryWatcher Function(String) _directoryWatcherFactory;
+  final DirectoryWatcher Function(String)? _directoryWatcherFactory;
 
   /// Whether or not we will be creating any output directories.
   ///

@@ -9,7 +9,6 @@ import 'package:build/build.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
-import 'package:watcher/watcher.dart';
 
 import '../package_graph/build_config_overrides.dart';
 import '../server/server.dart';
@@ -136,9 +135,6 @@ Future<BuildResult> build(
 /// keep changing with less than that amount of time apart, builds will be put
 /// off.
 ///
-/// The [directoryWatcherFactory] allows you to inject a way of creating custom
-/// `DirectoryWatcher`s. By default a normal `DirectoryWatcher` will be used.
-///
 /// The [terminateEventStream] is a stream which can send termination events.
 /// By default the [ProcessSignal.sigint] stream is used. In this mode, the
 /// first event will allow any ongoing builds to finish, and then the program
@@ -156,7 +152,6 @@ Future<ServeHandler> watch(
   Level? logLevel,
   void Function(LogRecord)? onLog,
   Duration? debounceDelay,
-  required DirectoryWatcher Function(String) directoryWatcherFactory,
   Stream<ProcessSignal>? terminateEventStream,
   bool? enableLowResourcesMode,
   Set<BuildDirectory>? buildDirs,
@@ -177,7 +172,6 @@ Future<ServeHandler> watch(
   resolvers: resolvers,
   onLog: onLog,
   debounceDelay: debounceDelay,
-  directoryWatcherFactory: directoryWatcherFactory,
   terminateEventStream: terminateEventStream,
   enableLowResourcesMode: enableLowResourcesMode,
   buildDirs: buildDirs,
