@@ -274,28 +274,22 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     );
 
     // Only actually used for the AutoChangeProvider.
-    Stream<List<WatchEvent>> graphEvents() => PackageGraphWatcher(
-          packageGraph,
-          watch:
-              (node) => PackageNodeWatcher(
-                node,
-                watch: daemonOptions.directoryWatcherFactory,
+    Stream<List<WatchEvent>> graphEvents() =>
+        PackageGraphWatcher(packageGraph, watch: PackageNodeWatcher.new)
+            .watch()
+            .asyncWhere(
+              (change) => shouldProcess(
+                change,
+                buildSeries.assetGraph,
+                buildOptions,
+                // Assume we will create an outputDir.
+                true,
+                expectedDeletes,
+                environment.reader,
               ),
-        )
-        .watch()
-        .asyncWhere(
-          (change) => shouldProcess(
-            change,
-            buildSeries.assetGraph,
-            buildOptions,
-            // Assume we will create an outputDir.
-            true,
-            expectedDeletes,
-            environment.reader,
-          ),
-        )
-        .map((data) => WatchEvent(data.type, '${data.id}'))
-        .debounceBuffer(buildOptions.debounceDelay);
+            )
+            .map((data) => WatchEvent(data.type, '${data.id}'))
+            .debounceBuffer(buildOptions.debounceDelay);
 
     var changeProvider =
         daemonOptions.buildMode == BuildMode.Auto

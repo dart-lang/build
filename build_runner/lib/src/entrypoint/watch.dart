@@ -27,17 +27,6 @@ class WatchCommand extends BuildRunnerCommand {
       'Builds the specified targets, watching the file system for updates and '
       'rebuilding as appropriate.';
 
-  WatchCommand() {
-    argParser.addFlag(
-      usePollingWatcherOption,
-      help:
-          'Use a polling watcher instead of the current platforms default '
-          'watcher implementation. This should generally only be used if '
-          'you are having problems with the default watcher, as it is '
-          'generally less efficient.',
-    );
-  }
-
   @override
   WatchOptions readOptions() => WatchOptions.fromParsedArgs(
     argResults!,
@@ -73,7 +62,6 @@ class WatchCommand extends BuildRunnerCommand {
       builderConfigOverrides: options.builderConfigOverrides,
       isReleaseBuild: options.isReleaseBuild,
       logPerformanceDir: options.logPerformanceDir,
-      directoryWatcherFactory: options.directoryWatcherFactory,
       buildFilters: options.buildFilters,
     );
 

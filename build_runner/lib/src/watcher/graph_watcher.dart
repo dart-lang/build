@@ -54,11 +54,7 @@ class PackageGraphWatcher {
               ) {
                 buildLog.error(
                   buildLog.renderThrowable(
-                    'Error from directory watcher for '
-                    'package:${w.node.name}\n\n'
-                    'If you see this consistently then it is recommended that '
-                    'you enable the polling file watcher with '
-                    '--use-polling-watcher.',
+                    'Failed to watch files in package:${w.node.name}.',
                     e,
                   ),
                 );
