@@ -120,12 +120,12 @@ Future<bool> _createMergedOutputDir(
       return false;
     }
 
-    var outputAssets = <AssetId>[];
+    var outputPaths = <String>[];
     if (!outputDirExists) {
       await outputDir.create(recursive: true);
     }
 
-    outputAssets.addAll(
+    outputPaths.addAll(
       await Future.wait([
         for (var id in builtAssets)
           _writeAsset(
@@ -154,24 +154,23 @@ Future<bool> _createMergedOutputDir(
       }
     }
 
-    var paths = outputAssets.map((id) => id.path).toList()..sort();
-    var content = paths.join(_manifestSeparator);
-    await _writeAsString(
-      outputDir,
-      AssetId(packageGraph.root.name, _manifestName),
-      content,
-    );
+    outputPaths.sort();
+    var content = outputPaths
+        // Normalize path separators for the manifest.
+        .map((path) => path.replaceAll(r'\', '/'))
+        .join(_manifestSeparator);
+    await _writeAsString(outputDir, _manifestName, content);
 
     return true;
   } on FileSystemException catch (e) {
     if (e.osError?.errorCode != 1314) rethrow;
-    var devModeLink =
+    final devModeLink =
         'https://docs.microsoft.com/en-us/windows/uwp/get-started/'
         'enable-your-device-for-development';
     buildLog.error(
-      'Unable to create symlink ${e.path}. Note that to create '
-      'symlinks on windows you need to either run in a console with admin '
-      'privileges or enable developer mode (see $devModeLink).',
+      'Failed to create merged output directory with symlinks. '
+      'To allow creation of symlinks run in a console with admin privileges '
+      'or enable developer mode following $devModeLink.',
     );
     return false;
   }
@@ -186,12 +185,14 @@ Future<bool> _createMergedOutputDir(
 /// package uri are equivalent.
 ///
 /// All other fields are left as is.
-Future<AssetId> _writeModifiedPackageConfig(
+///
+/// Returns the relative path that was written to.
+Future<String> _writeModifiedPackageConfig(
   String rootPackage,
   PackageGraph packageGraph,
   Directory outputDir,
 ) async {
-  var packageConfig = <String, Object?>{
+  final packageConfig = <String, Object?>{
     'configVersion': 2,
     'packages': [
       for (var package in packageGraph.allPackages.values)
@@ -208,9 +209,9 @@ Future<AssetId> _writeModifiedPackageConfig(
         },
     ],
   };
-  var packageConfigId = AssetId(rootPackage, '.dart_tool/package_config.json');
-  await _writeAsString(outputDir, packageConfigId, jsonEncode(packageConfig));
-  return packageConfigId;
+  final packageConfigPath = '.dart_tool/package_config.json';
+  await _writeAsString(outputDir, packageConfigPath, jsonEncode(packageConfig));
+  return packageConfigPath;
 }
 
 Set<String> _findRootDirs(Iterable<AssetId> allAssets, String outputPath) {
@@ -225,7 +226,10 @@ Set<String> _findRootDirs(Iterable<AssetId> allAssets, String outputPath) {
   return rootDirs;
 }
 
-Future<AssetId> _writeAsset(
+/// Writes [id] to [outputDir].
+///
+/// Returns the relative path under [outputDir] that it was written to.
+Future<String> _writeAsset(
   AssetId id,
   Directory outputDir,
   String root,
@@ -250,19 +254,18 @@ Future<AssetId> _writeAsset(
       }
     }
 
-    var outputId = AssetId(packageGraph.root.name, assetPath);
     try {
       if (symlinkOnly) {
         // We assert at the top of `createMergedOutputDirectories` that the
         // reader filesystem is `IoFilesystem`, so symlinks make sense.
-        await Link(_filePathFor(outputDir, outputId)).create(
+        await Link(_filePathFor(outputDir, assetPath)).create(
           reader.assetPathProvider.pathFor(
             reader.generatedAssetHider.maybeHide(id, packageGraph.root.name),
           ),
           recursive: true,
         );
       } else {
-        await _writeAsBytes(outputDir, outputId, await reader.readAsBytes(id));
+        await _writeAsBytes(outputDir, assetPath, await reader.readAsBytes(id));
       }
     } on AssetNotFoundException catch (e) {
       if (!p.basename(id.path).startsWith('.')) {
@@ -275,32 +278,25 @@ Future<AssetId> _writeAsset(
         rethrow;
       }
     }
-    return outputId;
+    return assetPath;
   });
 }
 
-Future<void> _writeAsBytes(Directory outputDir, AssetId id, List<int> bytes) =>
-    _fileFor(outputDir, id).then((file) => file.writeAsBytes(bytes));
+Future<void> _writeAsBytes(Directory outputDir, String path, List<int> bytes) =>
+    _fileFor(outputDir, path).then((file) => file.writeAsBytes(bytes));
 
-Future<void> _writeAsString(Directory outputDir, AssetId id, String contents) =>
-    _fileFor(outputDir, id).then((file) => file.writeAsString(contents));
+Future<void> _writeAsString(
+  Directory outputDir,
+  String path,
+  String contents,
+) => _fileFor(outputDir, path).then((file) => file.writeAsString(contents));
 
-Future<File> _fileFor(Directory outputDir, AssetId id) {
-  return File(_filePathFor(outputDir, id)).create(recursive: true);
+Future<File> _fileFor(Directory outputDir, String path) {
+  return File(_filePathFor(outputDir, path)).create(recursive: true);
 }
 
-String _filePathFor(Directory outputDir, AssetId id) {
-  String relativePath;
-  if (id.path.startsWith('lib')) {
-    relativePath = p.join(
-      'packages',
-      id.package,
-      p.joinAll(p.url.split(id.path).skip(1)),
-    );
-  } else {
-    relativePath = id.path;
-  }
-  return p.join(outputDir.path, relativePath);
+String _filePathFor(Directory outputDir, String path) {
+  return p.join(outputDir.path, path);
 }
 
 /// Checks for a manifest file in [outputDir] and deletes all referenced files.

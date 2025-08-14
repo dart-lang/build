@@ -36,6 +36,8 @@ void main() {
     final sources = {
       makeAssetId('a|lib/a.txt'): 'a',
       makeAssetId('a|web/b.txt'): 'b',
+      // Regression test for https://github.com/dart-lang/build/issues/4135.
+      makeAssetId('a|web/lib.txt'): 'lib',
       makeAssetId('b|lib/c.txt'): 'c',
       makeAssetId('b|test/outside.txt'): 'not in lib',
       makeAssetId('a|foo/d.txt'): 'd',

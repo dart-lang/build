@@ -13,6 +13,7 @@
 - Bug fix: delete transitive generated outputs as well as direct generated
   outputs. So, a generated file now gets deleted if its input was a generated
   file that is no longer output.
+- Bug fix: fix crash creating a merged output dir with a file called `lib`.
 
 ## 2.6.1
 
