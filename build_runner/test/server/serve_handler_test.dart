@@ -18,7 +18,6 @@ import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:build_runner_core/src/asset_graph/post_process_build_step_id.dart';
 import 'package:build_runner_core/src/generate/build_phases.dart';
 import 'package:build_runner_core/src/generate/options.dart';
-import 'package:build_runner_core/src/generate/performance_tracker.dart';
 import 'package:build_runner_core/src/package_graph/target_graph.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
@@ -274,55 +273,6 @@ void main() {
     await serveHandler.handlerFor('web', logRequests: true)(
       Request('GET', Uri.parse('http://server.com/index.html')),
     );
-  });
-
-  group(r'/$perf', () {
-    test('serves some sort of page if enabled', () async {
-      var tracker = BuildPerformanceTracker();
-      tracker.track(() {
-        var actionTracker = tracker.addBuilderAction(
-          makeAssetId('a|web/a.txt'),
-          'test_builder',
-        );
-        actionTracker.track(() {
-          actionTracker.trackStage('SomeLabel', () {});
-        });
-      });
-      watchImpl.addFutureResult(
-        Future.value(
-          BuildResult(BuildStatus.success, [], performance: tracker),
-        ),
-      );
-      await Future(() {});
-      var response = await serveHandler.handlerFor('web')(
-        Request('GET', Uri.parse(r'http://server.com/$perf')),
-      );
-
-      expect(response.statusCode, HttpStatus.ok);
-      expect(
-        await response.readAsString(),
-        allOf(contains('test_builder:a|web/a.txt'), contains('SomeLabel')),
-      );
-    });
-
-    test('serves an error page if not enabled', () async {
-      watchImpl.addFutureResult(
-        Future.value(
-          BuildResult(
-            BuildStatus.success,
-            [],
-            performance: BuildPerformanceTracker.noOp(),
-          ),
-        ),
-      );
-      await Future(() {});
-      var response = await serveHandler.handlerFor('web')(
-        Request('GET', Uri.parse(r'http://server.com/$perf')),
-      );
-
-      expect(response.statusCode, HttpStatus.ok);
-      expect(await response.readAsString(), contains('--track-performance'));
-    });
   });
 
   test('serve asset digests', () async {
