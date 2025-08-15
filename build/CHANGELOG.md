@@ -2,6 +2,7 @@
 
 - Use `build_runner_core` 9.3.0.
 - Documentation revamp.
+- Allow `meta` 1.16.0.
 
 ## 3.0.1
 
