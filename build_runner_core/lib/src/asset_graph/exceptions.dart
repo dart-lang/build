@@ -7,23 +7,19 @@ import 'package:build/build.dart';
 class DuplicateAssetNodeException implements Exception {
   final String rootPackage;
   final AssetId assetId;
-  final String initialBuilderLabel;
-  final String newBuilderLabel;
+  final String builder1;
+  final String builder2;
 
   DuplicateAssetNodeException(
     this.rootPackage,
     this.assetId,
-    this.initialBuilderLabel,
-    this.newBuilderLabel,
+    this.builder1,
+    this.builder2,
   );
   @override
   String toString() {
-    final friendlyAsset =
-        assetId.package == rootPackage ? assetId.path : assetId.uri;
-    return 'Both $initialBuilderLabel and $newBuilderLabel may output '
-        '$friendlyAsset. Potential outputs must be unique across all builders. '
-        'See https://github.com/dart-lang/build/blob/master/docs/faq.md'
-        '#why-do-builders-need-unique-outputs';
+    final id = assetId.package == rootPackage ? assetId.path : assetId.uri;
+    return 'Builders $builder1 and $builder2 outputs collide: $id';
   }
 }
 
