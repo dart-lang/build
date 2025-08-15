@@ -419,7 +419,11 @@ class BuildLog {
       _display.block(render());
       _display.flush();
     } else {
-      _display.message(Severity.info, _status.join(''));
+      _display.message(
+        Severity.info,
+        // Removes ANSI codes if necessary.
+        AnsiBufferLine(_status).toString(),
+      );
     }
   }
 
@@ -498,14 +502,22 @@ class BuildLog {
     if (displayedProgressEntries.isNotEmpty) {
       result.writeLine([]);
     }
+
+    final renderedMessages = _messages.render();
+    if (renderedMessages.warningLines.isNotEmpty) {
+      for (final line in renderedMessages.warningLines) {
+        result.write(line);
+      }
+      result.writeEmptyLine();
+    }
+
     if (_status.isNotEmpty) {
       result.writeLine(_status);
     }
 
-    final renderedMessages = _messages.render();
-    if (renderedMessages.isNotEmpty) {
+    if (renderedMessages.errorLines.isNotEmpty) {
       result.writeEmptyLine();
-      for (final line in renderedMessages) {
+      for (final line in renderedMessages.errorLines) {
         result.write(line);
       }
     }

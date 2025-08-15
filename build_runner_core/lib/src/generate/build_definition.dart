@@ -212,11 +212,6 @@ class _Loader {
     RunnerAssetWriter writer,
   ) async {
     if (conflictingAssets.isEmpty) return;
-
-    buildLog.info(
-      'Deleting ${conflictingAssets.length} declared outputs '
-      'which already existed on disk.',
-    );
     await Future.wait(conflictingAssets.map((id) => writer.delete(id)));
   }
 }

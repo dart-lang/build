@@ -95,18 +95,21 @@ void main() {
         context: 'file1',
         severity: Severity.info,
       );
-      expect(messages.render().map((l) => l.toString()).toList(), [
-        'log output for phase1 on file1',
-        'E message1',
-        'W message3',
-        'log output for phase2 on file1',
+      final rendered = messages.render();
+      expect(rendered.warningLines.map((l) => l.toString()).toList(), [
+        'file1 phase2',
         '  message2',
         '  message6',
-        'log output for phase1 on file2',
+        'file2 phase1',
         '  message4',
-        'log output for build_runner',
+        'build_runner',
         'W message0',
         '  message5',
+      ]);
+      expect(rendered.errorLines.map((l) => l.toString()).toList(), [
+        'file1 phase1',
+        'E message1',
+        'W message3',
       ]);
     });
   });
