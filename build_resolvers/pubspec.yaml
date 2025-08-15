@@ -13,8 +13,6 @@ dependencies:
   build: '3.0.2-wip'
   build_runner_core: '9.3.0-wip'
   collection: ^1.17.0
-  convert: ^3.1.1
-  crypto: ^3.0.0
   package_config: ^2.0.0
   path: ^1.8.0
   pool: ^1.5.0
