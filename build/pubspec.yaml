@@ -18,7 +18,7 @@ dependencies:
   glob: ^2.0.0
   graphs: ^2.2.0
   logging: ^1.0.0
-  meta: ^1.17.0
+  meta: ^1.16.0
   package_config: ^2.1.0
   path: ^1.8.0
 
