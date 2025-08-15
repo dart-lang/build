@@ -126,12 +126,24 @@ class ServeHandler implements BuildState {
     var rootPackage = _state.packageGraph.root.name;
     var results = <String, String>{};
     for (final path in assertPathList) {
-      try {
-        var assetId = pathToAssetId(rootPackage, rootDir, p.url.split(path));
-        var digest = await reader.digest(assetId);
-        results[path] = digest.toString();
-      } on AssetNotFoundException {
+      final assetIds = pathToAssetIds(rootPackage, rootDir, p.url.split(path));
+      AssetId? assetId;
+      for (final id in assetIds) {
+        try {
+          if (await reader.canRead(id)) {
+            assetId = id;
+            break;
+          }
+        } on AssetNotFoundException {
+          // Try the next one.
+        }
+      }
+
+      if (assetId == null) {
         results.remove(path);
+      } else {
+        final digest = await reader.digest(assetId);
+        results[path] = digest.toString();
       }
     }
     return shelf.Response.ok(
@@ -281,22 +293,33 @@ class AssetHandler {
       (request.url.path.endsWith('/') || request.url.path.isEmpty)
           ? _handle(
             request,
-            pathToAssetId(_rootPackage, rootDir, [
-              ...request.url.pathSegments,
+            pathToAssetIds(_rootPackage, rootDir, [
+              ...request.url.pathSegments.where((p) => p.isNotEmpty),
               'index.html',
             ]),
             fallbackToDirectoryList: true,
           )
           : _handle(
             request,
-            pathToAssetId(_rootPackage, rootDir, request.url.pathSegments),
+            pathToAssetIds(_rootPackage, rootDir, request.url.pathSegments),
           );
 
   Future<shelf.Response> _handle(
     shelf.Request request,
-    AssetId assetId, {
+    List<AssetId> assetIds, {
     bool fallbackToDirectoryList = false,
   }) async {
+    // Use the first of [assetIds] that exists.
+    AssetId? assetId;
+    for (final id in assetIds) {
+      if (await _reader.canRead(id)) {
+        assetId = id;
+        break;
+      }
+    }
+    // Or if none exists, report an error about the first one.
+    assetId ??= assetIds.first;
+
     try {
       try {
         if (!await _reader.canRead(assetId)) {
@@ -375,10 +398,6 @@ class AssetHandler {
         ..writeAll(result, '\n')
         ..writeln();
     }
-    message.write(
-      ' See https://github.com/dart-lang/build/blob/master/docs/faq.md'
-      '#why-cant-i-see-a-file-i-know-exists',
-    );
     return '$message';
   }
 }

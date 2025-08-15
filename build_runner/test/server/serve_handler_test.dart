@@ -162,6 +162,57 @@ void main() {
     expect(await response.readAsString(), 'content');
   });
 
+  test('serves package files for /packages/<package name>', () async {
+    addSource('a|lib/a.html', 'content');
+    var response = await serveHandler.handlerFor('web')(
+      Request('GET', Uri.parse('http://server.com/packages/a/a.html')),
+    );
+    expect(await response.readAsString(), 'content');
+  });
+
+  test('serves packages for /anywhere/packages/<package name>', () async {
+    addSource('a|lib/a.html', 'content');
+    var response = await serveHandler.handlerFor('web')(
+      Request('GET', Uri.parse('http://server.com/anywhere/packages/a/a.html')),
+    );
+    expect(await response.readAsString(), 'content');
+  });
+
+  test('servers actual files before from packages for /packages/...', () async {
+    // Match in `web` takes precedence over match in packages.
+    addSource('a|lib/a.html', 'package_content');
+    addSource('a|web/packages/a/a.html', 'web_content');
+    var responseA = await serveHandler.handlerFor('web')(
+      Request('GET', Uri.parse('http://server.com/packages/a/a.html')),
+    );
+    expect(await responseA.readAsString(), 'web_content');
+
+    // Fall back to match in packages.
+    addSource('b|lib/b.html', 'package_content');
+    var responseB = await serveHandler.handlerFor('web')(
+      Request('GET', Uri.parse('http://server.com/packages/b/b.html')),
+    );
+    expect(await responseB.readAsString(), 'package_content');
+  });
+
+  test(
+    'serves index.html for actual folder called packages from /packages/`',
+    () async {
+      addSource('a|web/packages/index.html', 'content');
+      var response = await serveHandler.handlerFor('web')(
+        Request('GET', Uri.parse('http://server.com/packages/')),
+      );
+      expect(await response.readAsString(), 'content');
+    },
+  );
+
+  test('serves nothing from /packages/` if missing', () async {
+    var response = await serveHandler.handlerFor('web')(
+      Request('GET', Uri.parse('http://server.com/packages/')),
+    );
+    expect(response.statusCode, HttpStatus.notFound);
+  });
+
   test('caching with etags works', () async {
     addSource('a|web/index.html', 'content');
     var handler = serveHandler.handlerFor('web');

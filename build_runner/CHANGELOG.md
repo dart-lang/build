@@ -1,3 +1,9 @@
+## 2.7.1-wip
+
+- Bug fix: with `build_runner serve`, special handling of paths containing
+  `/packages/` was hiding actual folders called `packages`. Serve the actual
+  folders first, before trying the package lookup.
+
 ## 2.7.0
 
 - Performance: builders can choose to run only when "triggered". A builder runs
