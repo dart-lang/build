@@ -31,7 +31,7 @@ class AssetId implements Comparable<AssetId> {
   /// The [path] will be normalized: any backslashes will be replaced with
   /// forward slashes (regardless of host OS) and "." and ".." will be removed
   /// where possible.
-  AssetId(this.package, String path) : path = _normalizePath(path);
+  AssetId(this.package, String path) : path = _normalizePathCached(path);
 
   /// Creates a new [AssetId] from an [uri] String.
   ///
@@ -89,22 +89,28 @@ class AssetId implements Comparable<AssetId> {
   /// forward slashes (regardless of host OS) and "." and ".." will be removed
   /// where possible.
   factory AssetId.parse(String description) {
-    var parts = description.split('|');
-    if (parts.length != 2) {
+    var idx = description.indexOf('|');
+    if (idx < 0) {
       throw FormatException('Could not parse "$description".');
-    }
-
-    if (parts[0].isEmpty) {
+    } else if (idx == 0) {
       throw FormatException(
         'Cannot have empty package name in "$description".',
       );
     }
 
-    if (parts[1].isEmpty) {
+    var pack = description.substring(0, idx);
+
+    var path = description.substring(idx + 1);
+    if (path.isEmpty) {
       throw FormatException('Cannot have empty path in "$description".');
     }
 
-    return AssetId(parts[0], parts[1]);
+    var idx2 = path.indexOf('|');
+    if (idx2 >= 0) {
+      throw FormatException('Could not parse "$description".');
+    }
+
+    return AssetId(pack, path);
   }
 
   /// A `package:` URI suitable for use directly with other systems if this
@@ -148,6 +154,12 @@ class AssetId implements Comparable<AssetId> {
   /// Serializes this [AssetId] to an object that can be sent across isolates
   /// and passed to [AssetId.deserialize].
   Object serialize() => [package, path];
+}
+
+final _normalizePathCache = <String, String>{};
+
+String _normalizePathCached(String path) {
+  return _normalizePathCache[path] ??= _normalizePath(path);
 }
 
 String _normalizePath(String path) {
