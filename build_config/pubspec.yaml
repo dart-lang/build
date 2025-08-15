@@ -1,5 +1,5 @@
 name: build_config
-version: 1.2.0-wip
+version: 1.2.0
 description: >-
   Format definition and support for parsing `build.yaml` configuration.
 repository: https://github.com/dart-lang/build/tree/master/build_config

@@ -1,4 +1,4 @@
-## 2.7.0-wip
+## 2.7.0
 
 - Performance: builders can choose to run only when "triggered". A builder runs
   only if triggered if the option `run_only_if_triggered` is `true`. Triggers

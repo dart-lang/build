@@ -1,4 +1,4 @@
-## 1.2.0-wip
+## 1.2.0
 
 - Add top level key `triggers`. See
   [the docs](https://github.com/dart-lang/build/blob/master/build_config/README.md#triggers)
