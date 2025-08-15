@@ -62,8 +62,6 @@ Skipping compiling ${buildStep.inputId} with ddc because some of its
 transitive libraries have sdk dependencies that not supported on this platform:
 
 $librariesString
-
-https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-skipped-compiling-warnings
 ''');
     return;
   }
