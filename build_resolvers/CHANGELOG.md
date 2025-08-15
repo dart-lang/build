@@ -2,6 +2,8 @@
 
 - Use `build` 3.0.2.
 - Use `build_runner` 2.7.0.
+- Remove unused `TransitiveDigestsBuilder`.
+- Remove unused deps: `convert`, `crypto`.
 
 ## 3.0.1
 
