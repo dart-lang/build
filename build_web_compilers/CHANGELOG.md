@@ -1,4 +1,4 @@
-## 4.2.2-wip
+## 4.2.2
 
 - Documentation revamp.
 

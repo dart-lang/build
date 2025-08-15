@@ -1,4 +1,4 @@
-## 9.3.0-wip
+## 9.3.0
 
 - Add support for build.yaml `triggers`. See `build_runner` 2.7.0 for usage.
 - Remove interactive prompts for whether to delete files.
