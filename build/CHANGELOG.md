@@ -1,3 +1,7 @@
+## 3.0.3-wip
+
+- Use `build_runner_core` 9.3.1.
+
 ## 3.0.2
 
 - Use `build_runner_core` 9.3.0.

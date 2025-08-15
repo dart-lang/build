@@ -5,18 +5,27 @@
 import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 
-AssetId pathToAssetId(
+/// Converts [pathSegments] to `AssetId`s.
+///
+/// A path segment of `packages` is special, it is followed by a path segment
+/// giving the package name then path segments giving the path under `lib`.
+/// In this case, two `AssetId`s are returned: one ignoring the package mapping
+/// then one with the package mapping.
+List<AssetId> pathToAssetIds(
   String rootPackage,
   String rootDir,
   List<String> pathSegments,
 ) {
-  var packagesIndex = pathSegments.indexOf('packages');
-  return packagesIndex >= 0
-      ? AssetId(
-        pathSegments[packagesIndex + 1],
-        p.join('lib', p.joinAll(pathSegments.sublist(packagesIndex + 2))),
-      )
-      : AssetId(rootPackage, p.joinAll([rootDir, ...pathSegments]));
+  final result = <AssetId>[
+    AssetId(rootPackage, p.joinAll([rootDir, ...pathSegments])),
+  ];
+  final packagesIndex = pathSegments.indexOf('packages');
+  if (packagesIndex >= 0 && pathSegments.length - packagesIndex > 2) {
+    final package = pathSegments[packagesIndex + 1];
+    final path = p.joinAll(pathSegments.sublist(packagesIndex + 2));
+    result.add(AssetId(package, p.join('lib', path)));
+  }
+  return result;
 }
 
 /// Returns null for paths that neither a lib nor starts from a rootDir

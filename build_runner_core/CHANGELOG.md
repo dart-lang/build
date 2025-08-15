@@ -1,3 +1,7 @@
+## 9.3.1-wip
+
+- Use `build_runner` 2.7.1.
+
 ## 9.3.0
 
 - Add support for build.yaml `triggers`. See `build_runner` 2.7.0 for usage.
