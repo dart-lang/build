@@ -13,10 +13,12 @@ import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 
+import '../compiler/bootstrap_action.dart';
 import '../package_graph/build_config_overrides.dart';
 import 'builder_ordering.dart';
 
 const scriptLocation = '$entryPointDir/build.dart';
+const scriptDepsPath = '$entryPointDir/build.dart.deps';
 const scriptKernelLocation = '$scriptLocation$scriptKernelSuffix';
 const scriptKernelSuffix = '.dill';
 const scriptKernelCachedLocation =
@@ -25,7 +27,14 @@ const scriptKernelCachedSuffix = '.cached';
 
 final _lastShortFormatDartVersion = Version(3, 6, 0);
 
-Future<String> generateBuildScript() async {
+BootstrapAction generateBuildScriptBootstrapAction() {
+  return BootstrapAction(
+    outputPath: scriptLocation,
+    action: generateBuildScript,
+  );
+}
+
+Future<BootstrapActionResult> generateBuildScript() async {
   buildLog.doing('Generating the build script.');
   final info = await findBuildScriptOptions();
   final builders = info.builderApplications;
@@ -55,13 +64,20 @@ Future<String> generateBuildScript() async {
     // the host<->isolate relationship changed in a breaking way, for example
     // if command line args or messages passed via sendports have changed
     // in a breaking way.
-    return DartFormatter(languageVersion: _lastShortFormatDartVersion).format(
-      '''
+    final script = DartFormatter(
+      languageVersion: _lastShortFormatDartVersion,
+    ).format('''
 // @dart=${_lastShortFormatDartVersion.major}.${_lastShortFormatDartVersion.minor}
 // ignore_for_file: directives_ordering
 // build_runner >=2.4.16
 ${library.accept(emitter)}
-''',
+''');
+    return BootstrapActionResult(
+      ran: true,
+      succeeded: true,
+      content: script,
+      // TODO(davidmorgan): this should also include the current script+runtime.
+      inputPaths: info.inputs,
     );
   } on FormatterException {
     buildLog.error(
@@ -195,13 +211,20 @@ Future<BuildScriptInfo> findBuildScriptOptions({
       _applyPostProcessBuilder(builder),
   ];
 
-  return BuildScriptInfo(applications);
+  final inputs = <String>[];
+  for (final package in packageGraph.allPackages.values) {
+    inputs.add('${package.path}/build.yaml');
+  }
+  inputs.sort();
+
+  return BuildScriptInfo(inputs, applications);
 }
 
 class BuildScriptInfo {
+  final List<String> inputs;
   final Iterable<Expression> builderApplications;
 
-  BuildScriptInfo(this.builderApplications);
+  BuildScriptInfo(this.inputs, this.builderApplications);
 }
 
 /// A method forwarding to `run`.
@@ -408,4 +431,11 @@ extension ConvertToExpression on Object? {
       return literal(this);
     }
   }
+}
+
+class GeneratedScript {
+  String script;
+  List<String> dependencyPaths;
+
+  GeneratedScript({required this.script, required this.dependencyPaths});
 }

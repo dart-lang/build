@@ -13,6 +13,7 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:stack_trace/stack_trace.dart';
 
+import '../compiler/compiler.dart';
 import 'build_process_state.dart';
 import 'build_script_generate.dart';
 
@@ -26,31 +27,29 @@ import 'build_script_generate.dart';
 /// Returns the exit code from running the build script.
 ///
 /// If an exit code of 75 is returned, this function should be re-ran.
+///
+/// Pass [script] to override the default build script for testing.
 Future<int> generateAndRun(
   List<String> args, {
   List<String>? experiments,
   Logger? logger,
-  Future<String> Function() generateBuildScript = generateBuildScript,
   void Function(Object error, StackTrace stackTrace) handleUncaughtError =
       _defaultHandleUncaughtError,
+  GeneratedScript? script,
 }) {
   return buildLog.runWithLoggerDisplay(
     logger,
-    () => _generateAndRun(
-      args,
-      experiments,
-      generateBuildScript,
-      handleUncaughtError,
-    ),
+    () =>
+        _generateAndRun(args, experiments, handleUncaughtError, script: script),
   );
 }
 
 Future<int> _generateAndRun(
   List<String> args,
   List<String>? experiments,
-  Future<String> Function() generateBuildScript,
-  void Function(Object error, StackTrace stackTrace) handleUncaughtError,
-) async {
+  void Function(Object error, StackTrace stackTrace) handleUncaughtError, {
+  GeneratedScript? script,
+}) async {
   experiments ??= [];
   ReceivePort? exitPort;
   ReceivePort? errorPort;
@@ -66,30 +65,50 @@ Future<int> _generateAndRun(
     messagePort?.close();
     await errorListener?.cancel();
 
+    final buildScriptAction = generateBuildScriptBootstrapAction();
+
     try {
-      var buildScript = File(scriptLocation);
+      var result = await buildScriptAction.maybeRunAndWrite();
+
+      buildLog.debug(result.toString());
+
+      if (result.succeeded == false) {
+        return ExitCode.config.code;
+      }
+
+      /*var buildScript = File(scriptLocation);
       var oldContents = '';
       if (buildScript.existsSync()) {
         oldContents = buildScript.readAsStringSync();
       }
-      var newContents = await generateBuildScript();
+      var newContents = script ?? await generateBuildScript();
       // Only trigger a build script update if necessary.
-      if (newContents != oldContents) {
+      if (newContents.script != oldContents) {
         buildScript
           ..createSync(recursive: true)
-          ..writeAsStringSync(newContents);
+          ..writeAsStringSync(newContents.script);
+        File(scriptDepsPath)
+          ..createSync(recursive: true)
+          ..writeAsStringSync(
+            '$scriptLocation: ${newContents.dependencyPaths.join(' ')}',
+          );
         // Delete the kernel file so it will be rebuilt.
         final kernelFile = File(scriptKernelLocation);
         if (kernelFile.existsSync()) {
           kernelFile.deleteSync();
         }
         buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
-      }
+      }*/
     } on CannotBuildException {
       return ExitCode.config.code;
     }
 
-    if (!await _createKernelIfNeeded(experiments)) {
+    final dillAction = compileToKernelBootstrapAction();
+    final result = await dillAction.maybeRunAndWrite();
+    print(result);
+
+    if (!result.succeeded) {
+      print(result.messages);
       return buildProcessState.isolateExitCode = ExitCode.config.code;
     }
 
@@ -183,7 +202,7 @@ Future<bool> _createKernelIfNeeded(List<String> experiments) async {
     }
   }
 
-  if (!kernelFile.existsSync()) {
+  if (!kernelFile.existsSync() || true) {
     final client = await FrontendServerClient.start(
       scriptLocation,
       scriptKernelCachedLocation,
@@ -196,9 +215,11 @@ Future<bool> _createKernelIfNeeded(List<String> experiments) async {
     var hadErrors = false;
     buildLog.doing('Compiling the build script.');
     try {
+      if (kernelCacheFile.existsSync()) kernelCacheFile.deleteSync();
       final result = await client.compile();
+      buildLog.debug(result.jsSourcesOutput.toString());
+      buildLog.debug('built ${kernelCacheFile.path}');
       hadErrors = result.errorCount > 0 || !kernelCacheFile.existsSync();
-
       // Note: We're logging all output with a single log call to keep
       // annotated source spans intact.
       final logOutput = result.compilerOutputLines.join('\n');
