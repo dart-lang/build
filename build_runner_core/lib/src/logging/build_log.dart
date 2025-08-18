@@ -2,13 +2,11 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:async';
 import 'dart:math';
 
 import 'package:build/build.dart' show AssetId;
 // ignore: implementation_imports
 import 'package:build_runner/src/internal.dart';
-import 'package:logging/logging.dart';
 
 import '../generate/phase.dart';
 import 'ansi_buffer.dart';
@@ -147,36 +145,6 @@ class BuildLog {
   /// described by [context].
   BuildLogLogger loggerForOther(String context) =>
       BuildLogLogger(context: context);
-
-  /// Runs [function] with all output sent to [logger] instead of the default
-  /// display.
-  ///
-  /// If [logger] is `null`, just runs [function].
-  Future<T> runWithLoggerDisplay<T>(
-    Logger? logger,
-    Future<T> Function() function,
-  ) async {
-    final previousOnLog = configuration.onLog;
-    if (logger != null) {
-      configuration = configuration.rebuild((b) {
-        b.onLog =
-            (record) => logger.log(
-              record.level,
-              record.message,
-              record.error,
-              record.stackTrace,
-              record.zone,
-            );
-      });
-    }
-    try {
-      return await function();
-    } finally {
-      if (logger != null) {
-        configuration = configuration.rebuild((b) => b..onLog = previousOnLog);
-      }
-    }
-  }
 
   /// Logs why `build_runner` needs to do a full build.
   ///
