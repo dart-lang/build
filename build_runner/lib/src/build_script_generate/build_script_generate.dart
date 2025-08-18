@@ -72,32 +72,8 @@ ${library.accept(emitter)}
   }
 }
 
-/// Finds expressions to create all the `BuilderApplication` instances that
-/// should be applied packages in the build.
-///
-/// Adds `apply` expressions based on the BuildefDefinitions from any package
-/// which has a `build.yaml`.
-///
-/// Optionally, a custom [packageGraph] and [buildConfigOverrides] can be used
-/// to change which packages and build configurations are considered.
-/// By default, the [PackageGraph.forThisPackage] will be used and configuration
-/// overrides will be loaded from the root package.
-Future<Iterable<Expression>> findBuilderApplications({
-  PackageGraph? packageGraph,
-  Map<String, BuildConfig>? buildConfigOverrides,
-}) async {
-  final info = await findBuildScriptOptions(
-    packageGraph: packageGraph,
-    buildConfigOverrides: buildConfigOverrides,
-  );
-  return info.builderApplications;
-}
-
-Future<BuildScriptInfo> findBuildScriptOptions({
-  PackageGraph? packageGraph,
-  Map<String, BuildConfig>? buildConfigOverrides,
-}) async {
-  packageGraph ??= await PackageGraph.forThisPackage();
+Future<BuildScriptInfo> findBuildScriptOptions() async {
+  final packageGraph = await PackageGraph.forThisPackage();
   final orderedPackages = stronglyConnectedComponents<PackageNode>(
     [packageGraph.root],
     (node) => node.dependencies,
@@ -105,11 +81,7 @@ Future<BuildScriptInfo> findBuildScriptOptions({
     hashCode: (n) => n.name.hashCode,
   ).expand((c) => c);
   var reader = ReaderWriter(packageGraph);
-  var overrides =
-      buildConfigOverrides ??= await findBuildConfigOverrides(
-        packageGraph,
-        reader,
-      );
+  var overrides = await findBuildConfigOverrides(packageGraph, reader);
   Future<BuildConfig> packageBuildConfig(PackageNode package) async {
     if (overrides.containsKey(package.name)) {
       return overrides[package.name]!;
@@ -141,7 +113,7 @@ Future<BuildScriptInfo> findBuildScriptOptions({
       // Make sure package is known in packageGraph (when present),
       // otherwise PackageNotFoundException will be thrown down the road
       final pkg = AssetId.resolve(Uri.parse(import)).package;
-      if (packageGraph?.allPackages.containsKey(pkg) ?? true) {
+      if (packageGraph.allPackages.containsKey(pkg)) {
         return true;
       }
       buildLog.warning(
@@ -152,7 +124,7 @@ Future<BuildScriptInfo> findBuildScriptOptions({
       return false;
     }
     // ignore: avoid_dynamic_calls
-    return definition.package == packageGraph!.root.name;
+    return definition.package == packageGraph.root.name;
   }
 
   final orderedConfigs = await Future.wait(

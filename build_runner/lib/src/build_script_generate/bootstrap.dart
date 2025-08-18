@@ -9,7 +9,6 @@ import 'dart:isolate';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:frontend_server_client/frontend_server_client.dart';
 import 'package:io/io.dart';
-import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:stack_trace/stack_trace.dart';
 
@@ -28,20 +27,8 @@ import 'build_script_generate.dart';
 Future<int> generateAndRun(
   List<String> args, {
   List<String>? experiments,
-  Logger? logger,
   String? script,
-}) {
-  return buildLog.runWithLoggerDisplay(
-    logger,
-    () => _generateAndRun(args, experiments, script),
-  );
-}
-
-Future<int> _generateAndRun(
-  List<String> args,
-  List<String>? experiments,
-  String? script,
-) async {
+}) async {
   experiments ??= [];
   ReceivePort? exitPort;
   ReceivePort? errorPort;

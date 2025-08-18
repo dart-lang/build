@@ -7,13 +7,10 @@
 library;
 
 import 'package:build_runner/src/build_script_generate/bootstrap.dart';
-import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
 void main() {
   test('build scripts can use experiments', () async {
-    final logger = Logger.detached('test')..level = Level.ALL;
-    logger.onRecord.listen((r) => printOnFailure(r.message));
     final exitCode = await generateAndRun(
       [],
       experiments: ['records'],
@@ -30,7 +27,6 @@ void main() {
                 buildProcessState.send(sendPort);
               }
               ''',
-      logger: logger,
     );
     expect(exitCode, 2);
   });
