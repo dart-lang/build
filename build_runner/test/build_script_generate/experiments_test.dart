@@ -6,7 +6,7 @@
 @TestOn('vm')
 library;
 
-import 'package:build_runner/build_script_generate.dart';
+import 'package:build_runner/src/build_script_generate/bootstrap.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
@@ -17,8 +17,7 @@ void main() {
     final exitCode = await generateAndRun(
       [],
       experiments: ['records'],
-      generateBuildScript: () async {
-        return '''
+      script: '''
               // @dart=3.0
               import 'dart:io';
               import 'dart:isolate';
@@ -30,8 +29,7 @@ void main() {
                 buildProcessState.isolateExitCode = (x.\$2);
                 buildProcessState.send(sendPort);
               }
-              ''';
-      },
+              ''',
       logger: logger,
     );
     expect(exitCode, 2);
