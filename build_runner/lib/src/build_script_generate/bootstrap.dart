@@ -18,38 +18,29 @@ import 'build_script_generate.dart';
 
 /// Generates the build script, precompiles it if needed, and runs it.
 ///
-/// The [handleUncaughtError] function will be invoked when the build script
-/// terminates with an uncaught error.
-///
 /// Will retry once on [IsolateSpawnException]s to handle SDK updates.
 ///
 /// Returns the exit code from running the build script.
 ///
 /// If an exit code of 75 is returned, this function should be re-ran.
+///
+/// Pass [script] to override the default build script for testing.
 Future<int> generateAndRun(
   List<String> args, {
   List<String>? experiments,
   Logger? logger,
-  Future<String> Function() generateBuildScript = generateBuildScript,
-  void Function(Object error, StackTrace stackTrace) handleUncaughtError =
-      _defaultHandleUncaughtError,
+  String? script,
 }) {
   return buildLog.runWithLoggerDisplay(
     logger,
-    () => _generateAndRun(
-      args,
-      experiments,
-      generateBuildScript,
-      handleUncaughtError,
-    ),
+    () => _generateAndRun(args, experiments, script),
   );
 }
 
 Future<int> _generateAndRun(
   List<String> args,
   List<String>? experiments,
-  Future<String> Function() generateBuildScript,
-  void Function(Object error, StackTrace stackTrace) handleUncaughtError,
+  String? script,
 ) async {
   experiments ??= [];
   ReceivePort? exitPort;
@@ -72,7 +63,7 @@ Future<int> _generateAndRun(
       if (buildScript.existsSync()) {
         oldContents = buildScript.readAsStringSync();
       }
-      var newContents = await generateBuildScript();
+      var newContents = script ?? await generateBuildScript();
       // Only trigger a build script update if necessary.
       if (newContents != oldContents) {
         buildScript
@@ -101,7 +92,7 @@ Future<int> _generateAndRun(
       final error = e[0] ?? TypeError();
       final trace = Trace.parse(e[1] as String? ?? '').terse;
 
-      handleUncaughtError(error, trace);
+      _handleUncaughtError(error, trace);
       if (buildProcessState.isolateExitCode == null ||
           buildProcessState.isolateExitCode == 0) {
         buildProcessState.isolateExitCode = 1;
@@ -273,7 +264,7 @@ Future<bool> _checkImportantPackageDepsAndExperiments(
   return true;
 }
 
-void _defaultHandleUncaughtError(Object error, StackTrace stackTrace) {
+void _handleUncaughtError(Object error, StackTrace stackTrace) {
   stderr
     ..writeln('\n\nYou have hit a bug in build_runner')
     ..writeln(

@@ -6,7 +6,7 @@ library;
 
 import 'dart:io';
 
-import 'package:build_runner/build_script_generate.dart';
+import 'package:build_runner/src/build_script_generate/bootstrap.dart';
 import 'package:build_runner/src/build_script_generate/build_process_state.dart';
 import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
 import 'package:build_runner_core/build_runner_core.dart';
@@ -28,8 +28,7 @@ void main() {
     test('writes dill', () async {
       await generateAndRun(
         [],
-        generateBuildScript:
-            () async => '''
+        script: '''
 import 'dart:isolate';
 import 'package:build_runner/src/build_script_generate/build_process_state.dart';
 
@@ -55,9 +54,9 @@ void main(_, [SendPort? sendPort]) async {
 ''';
 
       buildProcessState.isolateExitCode = 6;
-      await generateAndRun([], generateBuildScript: () async => script);
+      await generateAndRun([], script: script);
       expect(buildProcessState.isolateExitCode, 7);
-      await generateAndRun([], generateBuildScript: () async => script);
+      await generateAndRun([], script: script);
       expect(buildProcessState.isolateExitCode, 8);
     });
 
@@ -65,8 +64,7 @@ void main(_, [SendPort? sendPort]) async {
       expect(
         await generateAndRun(
           [],
-          generateBuildScript:
-              () async => '''
+          script: '''
 import 'dart:isolate';
 import 'package:build_runner/src/build_script_generate/build_process_state.dart';
 
@@ -84,8 +82,7 @@ void main(_, [SendPort? sendPort]) async {
       expect(
         await generateAndRun(
           [],
-          generateBuildScript:
-              () async => '''
+          script: '''
 import 'dart:isolate';
 import 'package:build_runner/src/build_script_generate/build_process_state.dart';
 
@@ -109,8 +106,7 @@ void main(_, [SendPort? sendPort]) async {
         expect(
           await generateAndRun(
             [],
-            generateBuildScript:
-                () async => '''
+            script: '''
 import 'dart:isolate';
 import 'package:build_runner/src/build_script_generate/build_process_state.dart';
 
@@ -132,8 +128,7 @@ void main(_, [SendPort? sendPort]) async {
         expect(
           await generateAndRun(
             [],
-            generateBuildScript:
-                () async => '''
+            script: '''
 import 'dart:isolate';
 import 'package:build_runner/src/build_script_generate/build_process_state.dart';
 
@@ -148,35 +143,5 @@ void main(_, [SendPort? sendPort]) async {
         );
       },
     );
-
-    test('invokes custom error function', () async {
-      Object? error;
-      StackTrace? stackTrace;
-
-      await expectLater(
-        generateAndRun(
-          [],
-          generateBuildScript: () async {
-            return '''
-import 'dart:isolate';
-import 'package:build_runner/src/build_script_generate/build_process_state.dart';
-
-void main(_, [SendPort? sendPort]) async {
-  await buildProcessState.receive(sendPort);
-  throw 'expected error';
-}
-''';
-          },
-          handleUncaughtError: (err, trace) {
-            error = err;
-            stackTrace = trace;
-          },
-        ),
-        completion(1),
-      );
-
-      expect(error, 'expected error');
-      expect(stackTrace, isNotNull);
-    });
   });
 }
