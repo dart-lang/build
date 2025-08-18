@@ -7,8 +7,8 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
-import 'package:build_runner/src/build_script_generate/bootstrap.dart';
-import 'package:build_runner/src/build_script_generate/build_process_state.dart';
+import 'package:build_runner/src/bootstrapper/bootstrapper.dart';
+import 'package:build_runner/src/bootstrapper/build_process_state.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner/src/entrypoint/runner.dart';
 import 'package:build_runner_core/build_runner_core.dart';
@@ -94,7 +94,7 @@ Future<void> main(List<String> args) async {
           b.mode = BuildLogMode.daemon;
         });
     }
-    while ((exitCode = await generateAndRun(args, experiments: experiments)) ==
-        ExitCode.tempFail.code) {}
+    exitCode = await Bootstrapper().run(args, experiments: experiments);
+    return;
   }
 }

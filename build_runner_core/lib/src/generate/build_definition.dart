@@ -3,7 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:io';
+
+// import 'dart:io';
 
 import 'package:build/build.dart';
 // ignore: implementation_imports
@@ -14,10 +15,9 @@ import '../asset/writer.dart';
 import '../asset_graph/exceptions.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/graph_loader.dart';
-import '../changes/build_script_updates.dart';
 import '../environment/build_environment.dart';
 import '../logging/build_log.dart';
-import '../util/constants.dart';
+// import '../util/constants.dart';
 import 'asset_tracker.dart';
 import 'build_phases.dart';
 import 'exceptions.dart';
@@ -27,7 +27,7 @@ import 'options.dart';
 // not a build definition.
 class BuildDefinition {
   final AssetGraph assetGraph;
-  final BuildScriptUpdates? buildScriptUpdates;
+  final Bootstrapper bootstrapper;
 
   /// Whether this is a build starting from no previous state or outputs.
   final bool cleanBuild;
@@ -41,7 +41,7 @@ class BuildDefinition {
 
   BuildDefinition._(
     this.assetGraph,
-    this.buildScriptUpdates,
+    this.bootstrapper,
     this.cleanBuild,
     this.updates,
   );
@@ -77,7 +77,17 @@ class _Loader {
     var cacheDirSources = await assetTracker.findCacheDirSources();
     var internalSources = await assetTracker.findInternalSources();
 
-    BuildScriptUpdates? buildScriptUpdates;
+    final bootstrapper = Bootstrapper();
+    if (await bootstrapper.needsRebuild()) {
+      buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
+      /*var deletedSourceOutputs = await assetGraph.deleteOutputs(
+          _options.packageGraph,
+          _environment.writer,
+        );
+        await _deleteGeneratedDir();*/
+      throw const BuildScriptChangedException();
+    }
+
     Map<AssetId, ChangeType>? updates;
     var cleanBuild = true;
     if (assetGraph != null) {
@@ -90,35 +100,6 @@ class _Loader {
         cacheDirSources,
         internalSources,
       );
-      buildScriptUpdates = await BuildScriptUpdates.create(
-        _environment.reader,
-        _options.packageGraph,
-        assetGraph,
-        disabled: _options.skipBuildScriptCheck,
-      );
-
-      var buildScriptUpdated =
-          !_options.skipBuildScriptCheck &&
-          buildScriptUpdates.hasBeenUpdated(updates.keys.toSet());
-      if (buildScriptUpdated) {
-        buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
-        var deletedSourceOutputs = await assetGraph.deleteOutputs(
-          _options.packageGraph,
-          _environment.writer,
-        );
-        await _deleteGeneratedDir();
-
-        if (_runningFromSnapshot) {
-          // We have to be regenerated if running from a snapshot.
-          throw const BuildScriptChangedException();
-        }
-
-        inputSources.removeAll(deletedSourceOutputs);
-        assetGraph = null;
-        buildScriptUpdates = null;
-        updates = null;
-        cleanBuild = true;
-      }
     }
 
     if (assetGraph == null) {
@@ -137,12 +118,6 @@ class _Loader {
         buildLog.error(e.toString());
         throw const CannotBuildException();
       }
-      buildScriptUpdates = await BuildScriptUpdates.create(
-        _environment.reader,
-        _options.packageGraph,
-        assetGraph,
-        disabled: _options.skipBuildScriptCheck,
-      );
 
       conflictingOutputs =
           assetGraph.outputs
@@ -171,21 +146,16 @@ class _Loader {
       await _initialBuildCleanup(conflictingOutputs, _environment.writer);
     }
 
-    return BuildDefinition._(
-      assetGraph,
-      buildScriptUpdates,
-      cleanBuild,
-      updates,
-    );
+    return BuildDefinition._(assetGraph, bootstrapper, cleanBuild, updates);
   }
 
   /// Deletes the generated output directory.
-  Future<void> _deleteGeneratedDir() async {
+  /*Future<void> _deleteGeneratedDir() async {
     var generatedDir = Directory(generatedOutputDirectory);
     if (await generatedDir.exists()) {
       await generatedDir.delete(recursive: true);
     }
-  }
+  }*/
 
   /// Returns which sources and builder options changed, and the [ChangeType]
   /// describing whether they where added, removed or modified.
@@ -220,5 +190,3 @@ class _Loader {
     await Future.wait(conflictingAssets.map((id) => writer.delete(id)));
   }
 }
-
-bool get _runningFromSnapshot => !Platform.script.path.endsWith('.dart');

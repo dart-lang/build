@@ -121,9 +121,6 @@ class BuildOptions {
   /// Watch mode options.
   Duration debounceDelay;
 
-  /// For testing only, skips the build script updates check.
-  bool skipBuildScriptCheck;
-
   /// Listener for when builders report unused assets.
   void Function(AssetId, Iterable<AssetId>)? reportUnusedAssetsForInput;
 
@@ -131,7 +128,6 @@ class BuildOptions {
     required this.debounceDelay,
     required this.enableLowResourcesMode,
     required this.packageGraph,
-    required this.skipBuildScriptCheck,
     required this.trackPerformance,
     required this.targetGraph,
     required this.logPerformanceDir,
@@ -194,7 +190,6 @@ class BuildOptions {
       debounceDelay: debounceDelay,
       enableLowResourcesMode: enableLowResourcesMode,
       packageGraph: packageGraph,
-      skipBuildScriptCheck: skipBuildScriptCheck,
       trackPerformance: trackPerformance,
       targetGraph: targetGraph,
       logPerformanceDir: logPerformanceDir,

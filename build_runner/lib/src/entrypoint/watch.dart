@@ -8,7 +8,7 @@ import 'package:build/experiments.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
 
-import '../build_script_generate/build_process_state.dart';
+import '../bootstrapper/build_process_state.dart';
 import '../generate/build.dart';
 import 'base_command.dart';
 import 'options.dart';

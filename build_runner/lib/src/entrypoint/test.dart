@@ -14,7 +14,7 @@ import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 
-import '../build_script_generate/build_process_state.dart';
+import '../bootstrapper/build_process_state.dart';
 import '../generate/build.dart';
 import 'base_command.dart';
 import 'options.dart';

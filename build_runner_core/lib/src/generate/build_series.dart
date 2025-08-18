@@ -7,12 +7,13 @@ import 'dart:async';
 import 'package:build/build.dart';
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
+// ignore: implementation_imports
+import 'package:build_runner/src/internal.dart';
 import 'package:watcher/watcher.dart';
 
 import '../asset/finalized_reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
-import '../changes/build_script_updates.dart';
 import '../environment/build_environment.dart';
 import '../logging/build_log.dart';
 import '../package_graph/apply_builders.dart';
@@ -39,7 +40,7 @@ import 'options.dart';
 class BuildSeries {
   final BuildEnvironment environment;
   final AssetGraph assetGraph;
-  final BuildScriptUpdates? buildScriptUpdates;
+  final Bootstrapper bootstrapper;
   final BuildOptions options;
   final BuildPhases buildPhases;
 
@@ -66,7 +67,7 @@ class BuildSeries {
   BuildSeries._(
     this.environment,
     this.assetGraph,
-    this.buildScriptUpdates,
+    this.bootstrapper,
     this.options,
     this.buildPhases,
     this.finalizedReader,
@@ -173,7 +174,7 @@ class BuildSeries {
     var build = BuildSeries._(
       environment,
       buildDefinition.assetGraph,
-      buildDefinition.buildScriptUpdates,
+      buildDefinition.bootstrapper,
       options,
       buildPhases,
       finalizedReader,

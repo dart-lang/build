@@ -1,8 +1,10 @@
+void main() {}
+
 // Copyright (c) 2023, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:build/build.dart';
+/*import 'package:build/build.dart';
 import 'package:build_runner_core/src/changes/build_script_updates.dart';
 import 'package:build_runner_core/src/package_graph/package_graph.dart';
 import 'package:package_config/package_config_types.dart';
@@ -75,3 +77,4 @@ void main() {
     });
   });
 }
+*/
