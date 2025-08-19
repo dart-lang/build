@@ -16,7 +16,6 @@ import 'package:io/ansi.dart';
 import 'package:io/io.dart';
 
 import 'src/commands/clean.dart';
-import 'src/commands/generate_build_script.dart';
 
 Future<void> main(List<String> args) async {
   // Use the actual command runner to parse the args and immediately print the
@@ -26,7 +25,7 @@ Future<void> main(List<String> args) async {
     [],
     await PackageGraph.forThisPackage(),
   );
-  var localCommands = [CleanCommand(), GenerateBuildScript()];
+  var localCommands = [CleanCommand()];
   var localCommandNames = localCommands.map((c) => c.name).toSet();
   for (var command in localCommands) {
     commandRunner.addCommand(command);

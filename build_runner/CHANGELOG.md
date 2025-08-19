@@ -3,7 +3,9 @@
 - Bug fix: with `build_runner serve`, special handling of paths containing
   `/packages/` was hiding actual folders called `packages`. Serve the actual
   folders first, before trying the package lookup.
-- Remove `lib/build_script_generate.dart` and `bin/graph_inspector.dart`.
+- Remove undocumented / unused features: `lib/build_script_generate.dart`,
+  `bin/graph_inspector.dart`, `build_runner doctor` and
+  `build_runner generate-build-script` commands.
 
 ## 2.7.0
 

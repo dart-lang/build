@@ -11,7 +11,6 @@ import 'package:build_runner_core/build_runner_core.dart';
 import 'base_command.dart' show lineLength;
 import 'build.dart';
 import 'daemon.dart';
-import 'doctor.dart';
 import 'run_script.dart';
 import 'serve.dart';
 import 'test.dart';
@@ -33,7 +32,6 @@ class BuildCommandRunner extends CommandRunner<int> {
       super('build_runner', 'Unified interface for running Dart builds.') {
     addCommand(BuildCommand());
     addCommand(DaemonCommand());
-    addCommand(DoctorCommand());
     addCommand(RunCommand());
     addCommand(ServeCommand());
     addCommand(TestCommand(packageGraph));
