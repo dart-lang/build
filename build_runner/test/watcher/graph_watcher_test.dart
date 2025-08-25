@@ -60,7 +60,7 @@ void main() {
         },
       );
 
-      final events = <AssetChange>[];
+      final events = <AssetChange?>[];
       unawaited(watcher.watch().forEach(events.add));
       await watcher.ready;
 

@@ -277,6 +277,9 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     Stream<List<WatchEvent>> graphEvents() =>
         PackageGraphWatcher(packageGraph, watch: PackageNodeWatcher.new)
             .watch()
+            // TODO(davidmorgan): do something with the nulls, which indicate
+            // "watcher dropped events and restarted".
+            .whereNotNull()
             .asyncWhere(
               (change) => shouldProcess(
                 change,

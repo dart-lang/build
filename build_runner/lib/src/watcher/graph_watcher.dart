@@ -33,18 +33,22 @@ class PackageGraphWatcher {
   }) : _strategy = watch ?? _default;
 
   /// Returns a stream of records for assets that changed in the package graph.
-  Stream<AssetChange> watch() {
+  ///
+  /// A `null` event indicates that the watcher failed: watching will continue
+  /// but some events are missing.
+  Stream<AssetChange?> watch() {
     assert(!_isWatching);
     _isWatching = true;
     return LazyStream(_watch);
   }
 
-  Stream<AssetChange> _watch() {
+  Stream<AssetChange?> _watch() {
     final allWatchers =
         _graph.allPackages.values
             .where((node) => node.dependencyType == DependencyType.path)
             .map(_strategy)
             .toList();
+    final restartsController = StreamController<AssetChange?>();
     final filteredEvents =
         allWatchers
             .map(
@@ -52,12 +56,19 @@ class PackageGraphWatcher {
                 Object e,
                 StackTrace s,
               ) {
-                buildLog.error(
-                  buildLog.renderThrowable(
-                    'Failed to watch files in package:${w.node.name}.',
-                    e,
-                  ),
-                );
+                if (e is FileSystemException &&
+                    e.message.startsWith(
+                      'Directory watcher closed unexpectedly',
+                    )) {
+                  restartsController.add(null);
+                } else {
+                  buildLog.error(
+                    buildLog.renderThrowable(
+                      'Failed to watch files in package:${w.node.name}.',
+                      e,
+                    ),
+                  );
+                }
               }),
             )
             .toList();
@@ -69,12 +80,13 @@ class PackageGraphWatcher {
       );
       _readyCompleter.complete();
     }();
-    return StreamGroup.merge(filteredEvents);
+    return StreamGroup.merge([...filteredEvents, restartsController.stream]);
   }
 
-  bool Function(AssetChange) _nestedPathFilter(PackageNode rootNode) {
+  bool Function(AssetChange?) _nestedPathFilter(PackageNode rootNode) {
     final ignorePaths = _nestedPaths(rootNode);
-    return (change) => !ignorePaths.any(change.id.path.startsWith);
+    return (change) =>
+        change == null || !ignorePaths.any(change.id.path.startsWith);
   }
 
   // Returns a set of all package paths that are "nested" within a node.

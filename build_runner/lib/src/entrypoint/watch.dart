@@ -49,25 +49,30 @@ class WatchCommand extends BuildRunnerCommand {
   }
 
   Future<int> _run(WatchOptions options) async {
-    var handler = await watch(
-      builderApplications,
-      enableLowResourcesMode: options.enableLowResourcesMode,
-      configKey: options.configKey,
-      buildDirs: options.buildDirs,
-      outputSymlinksOnly: options.outputSymlinksOnly,
-      packageGraph: packageGraph,
-      trackPerformance: options.trackPerformance,
-      skipBuildScriptCheck: options.skipBuildScriptCheck,
-      verbose: options.verbose,
-      builderConfigOverrides: options.builderConfigOverrides,
-      isReleaseBuild: options.isReleaseBuild,
-      logPerformanceDir: options.logPerformanceDir,
-      buildFilters: options.buildFilters,
-    );
+    while (true) {
+      final handler = await watch(
+        builderApplications,
+        enableLowResourcesMode: options.enableLowResourcesMode,
+        configKey: options.configKey,
+        buildDirs: options.buildDirs,
+        outputSymlinksOnly: options.outputSymlinksOnly,
+        packageGraph: packageGraph,
+        trackPerformance: options.trackPerformance,
+        skipBuildScriptCheck: options.skipBuildScriptCheck,
+        verbose: options.verbose,
+        builderConfigOverrides: options.builderConfigOverrides,
+        isReleaseBuild: options.isReleaseBuild,
+        logPerformanceDir: options.logPerformanceDir,
+        buildFilters: options.buildFilters,
+      );
 
-    final completer = Completer<int>();
-    handleBuildResultsStream(handler.buildResults, completer);
-    return completer.future;
+      final completer = Completer<int>();
+      handleBuildResultsStream(handler.buildResults, completer);
+      final result = await completer.future;
+      if (result != ExitCode.tempFail.code) {
+        return result;
+      }
+    }
   }
 
   /// Listens to [buildResults], handling certain types of errors and completing
@@ -83,6 +88,9 @@ class WatchCommand extends BuildRunnerCommand {
           completer.completeError(const BuildScriptChangedException());
         } else if (result.failureType == FailureType.buildConfigChanged) {
           completer.completeError(const BuildConfigChangedException());
+        } else if (result.failureType == FailureType.watcherRestarted) {
+          // TODO(davidmorgan): don't communicate using errors.
+          completer.complete(ExitCode.tempFail.code);
         }
       }
     });

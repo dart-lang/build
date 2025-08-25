@@ -291,6 +291,22 @@ class WatchImpl implements BuildState {
     );
     graphWatcher
         .watch()
+        .where((change) {
+          if (change == null) {
+            controller.add(
+              BuildResult(
+                BuildStatus.failure,
+                [],
+                failureType: FailureType.watcherRestarted,
+              ),
+            );
+            _terminateCompleter.complete();
+            return false;
+          } else {
+            return true;
+          }
+        })
+        .whereNotNull()
         .asyncMap<AssetChange>((change) {
           // Delay any events until the first build is completed.
           if (firstBuildCompleter.isCompleted) return change;
