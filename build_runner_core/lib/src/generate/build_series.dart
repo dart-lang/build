@@ -16,7 +16,6 @@ import '../changes/build_script_updates.dart';
 import '../environment/build_environment.dart';
 import '../logging/build_log.dart';
 import '../package_graph/apply_builders.dart';
-import '../util/constants.dart';
 import 'build.dart';
 import 'build_definition.dart';
 import 'build_directory.dart';
@@ -140,10 +139,6 @@ class BuildSeries {
     Map<String, Map<String, dynamic>> builderConfigOverrides, {
     bool isReleaseBuild = false,
   }) async {
-    // Don't allow any changes to the generated asset directory after this
-    // point.
-    lockGeneratedOutputDirectory();
-
     var buildPhases = await createBuildPhases(
       options.targetGraph,
       builders,

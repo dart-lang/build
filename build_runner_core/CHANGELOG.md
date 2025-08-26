@@ -1,6 +1,7 @@
 ## 9.3.1-wip
 
 - Use `build_runner` 2.7.1.
+- Remove `overrideGeneratedOutputDirectory`, `pubBinary`.
 
 ## 9.3.0
 
