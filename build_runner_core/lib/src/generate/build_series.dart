@@ -56,15 +56,8 @@ class BuildSeries {
 
   // State that is initialized by `_prepare` and changes after the build.
 
-  /// Whether the next build is the first build.
-  late bool _firstBuild;
-
-  /// For the first build only, updates from the previous serialized build
-  /// state.
-  ///
-  /// Null after the first build, or if there was no serialized build state, or
-  /// if the serialized build state was discarded.
-  Map<AssetId, ChangeType>? updatesFromLoad;
+  /// The updates that were found during `_prepare`.
+  Map<AssetId, ChangeType>? _updates;
 
   BuildSeries._({
     required BuildOptions options,
@@ -118,8 +111,7 @@ class BuildSeries {
     );
     buildScriptUpdates = buildDefinition.buildScriptUpdates;
     assetGraph = buildDefinition.assetGraph;
-    _firstBuild = true;
-    updatesFromLoad = buildDefinition.updates;
+    _updates = buildDefinition.updates ?? {};
 
     finalizedReader = FinalizedReader(
       _environment.reader.copyWith(
@@ -135,28 +127,15 @@ class BuildSeries {
   Future<void> beforeExit() => _resourceManager.beforeExit();
 
   /// Runs a single build.
-  ///
-  /// For the first build, pass any changes since the `BuildSeries` was created
-  /// as [updates]. If the first build happens immediately then pass empty
-  /// `updates`.
-  ///
-  /// For further builds, pass the changes since the previous builds as
-  /// [updates].
-  Future<BuildResult> run(
-    Map<AssetId, ChangeType> updates, {
+  Future<BuildResult> run({
     Set<BuildDirectory> buildDirs = const <BuildDirectory>{},
     Set<BuildFilter> buildFilters = const {},
   }) async {
-    if (_firstBuild) {
-      if (updatesFromLoad != null) {
-        updates = updatesFromLoad!..addAll(updates);
-        updatesFromLoad = null;
-      }
-    } else {
-      if (updatesFromLoad != null) {
-        throw StateError('Only first build can have updates from load.');
-      }
+    if (_updates == null) {
+      await _prepare();
     }
+    final updates = _updates!;
+    _updates = null;
 
     final readerWriter = _environment.reader.copyWith(
       generatedAssetHider: assetGraph,
@@ -186,7 +165,6 @@ class BuildSeries {
       deleteWriter: deleteWriter,
       resourceManager: _resourceManager,
     );
-    if (_firstBuild) _firstBuild = false;
     final result = await build.run(updates);
     _options.resolvers.reset();
     return result;

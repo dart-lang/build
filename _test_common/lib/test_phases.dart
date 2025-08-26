@@ -158,11 +158,7 @@ Future<TestBuildersResult> testPhases(
     const {},
     isReleaseBuild: false,
   );
-  result = await build.run(
-    {},
-    buildDirs: buildDirs,
-    buildFilters: buildFilters,
-  );
+  result = await build.run(buildDirs: buildDirs, buildFilters: buildFilters);
   await build.beforeExit();
 
   if (checkBuildStatus) {

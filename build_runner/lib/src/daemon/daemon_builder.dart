@@ -27,7 +27,6 @@ import '../entrypoint/options.dart';
 import '../package_graph/build_config_overrides.dart';
 import '../watcher/asset_change.dart';
 import '../watcher/change_filter.dart';
-import '../watcher/collect_changes.dart';
 import '../watcher/graph_watcher.dart';
 import '../watcher/node_watcher.dart';
 import 'change_providers.dart';
@@ -130,9 +129,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     Iterable<AssetId>? outputs;
 
     try {
-      var mergedChanges = collectChanges([changes]);
+      // var mergedChanges = collectChanges([changes]);
       var result = await _buildSeries.run(
-        mergedChanges,
         buildDirs: buildDirs,
         buildFilters: buildFilters,
       );

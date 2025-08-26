@@ -355,7 +355,7 @@ Future<TestBuilderResult> testBuilders(
   ], {});
 
   // Run the build.
-  final buildResult = await buildSeries.run({});
+  final buildResult = await buildSeries.run();
 
   // Do cleanup that would usually happen on process exit.
   await buildSeries.beforeExit();

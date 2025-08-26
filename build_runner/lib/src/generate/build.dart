@@ -112,7 +112,6 @@ Future<BuildResult> build(
       isReleaseBuild: isReleaseBuild,
     );
     var result = await build.run(
-      {},
       buildDirs: buildDirs,
       buildFilters: buildFilters,
     );
