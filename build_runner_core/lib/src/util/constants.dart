@@ -15,14 +15,6 @@ final String assetGraphPath = assetGraphPathFor(_scriptPath);
 String assetGraphPathFor(String path) =>
     '$cacheDir/${_scriptHashFor(path)}/asset_graph.json';
 
-/// Relative path to the directory which holds serialized versions of errors
-/// reported during previous builds.
-final errorCachePath = p.join(
-  cacheDir,
-  _scriptHashFor(_scriptPath),
-  'error_cache',
-);
-
 final String _scriptPath =
     Platform.script.scheme == 'file'
         ? p.url.joinAll(
@@ -36,39 +28,7 @@ final String _scriptPath =
 const entryPointDir = '$cacheDir/entrypoint';
 
 /// The directory to which hidden assets will be written.
-String get generatedOutputDirectory => '$cacheDir/$_generatedOutputDirectory';
-
-/// Locks the generated directory name for the duration of this process.
-///
-/// This should be invoked before any builds start.
-void lockGeneratedOutputDirectory() => _generatedOutputDirectoryIsLocked = true;
-
-/// The default generated dir name. Can be modified with
-/// [overrideGeneratedOutputDirectory].
-String _generatedOutputDirectory = 'generated';
-
-/// Whether or not the [generatedOutputDirectory] is locked. This must be `true`
-/// before you can access [generatedOutputDirectory];
-bool _generatedOutputDirectoryIsLocked = false;
-
-/// Overrides the generated directory name.
-///
-/// This is interpreted as a relative path under the [cacheDir].
-void overrideGeneratedOutputDirectory(String path) {
-  if (_generatedOutputDirectory != 'generated') {
-    throw StateError('You can only override the generated dir once.');
-  } else if (_generatedOutputDirectoryIsLocked) {
-    throw StateError(
-      'Attempted to override the generated dir after it was locked.',
-    );
-  } else if (!p.isRelative(path)) {
-    throw StateError(
-      'Only relative paths are accepted for the generated dir '
-      'but got `$path`.',
-    );
-  }
-  _generatedOutputDirectory = path;
-}
+String get generatedOutputDirectory => '$cacheDir/generated';
 
 /// Relative path to the cache directory from the root package dir.
 const String cacheDir = '.dart_tool/build';
@@ -87,10 +47,6 @@ String _scriptHashFor(String path) =>
           ),
         )
         .toString();
-
-/// The name of the pub binary on the current platform.
-@Deprecated('The pub binary is deprecated')
-final pubBinary = p.join(sdkBin, Platform.isWindows ? 'pub.bat' : 'pub');
 
 /// The dart binary from the current sdk.
 final dartBinary = p.join(sdkBin, 'dart');
