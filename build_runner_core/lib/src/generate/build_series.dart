@@ -36,16 +36,28 @@ import 'options.dart';
 /// this serialized state is not actually used: the `AssetGraph` instance
 /// already in memory is used directly.
 class BuildSeries {
-  final BuildEnvironment environment;
-  final AssetGraph assetGraph;
-  final BuildScriptUpdates? buildScriptUpdates;
-  final BuildOptions options;
-  final BuildPhases buildPhases;
+  // Configuration.
+  final BuildOptions _options;
+  final BuildEnvironment _environment;
+  final List<BuilderApplication> _builders;
+  final Map<String, Map<String, dynamic>> _builderConfigOverrides;
+  final bool isReleaseBuild;
 
-  final FinalizedReader finalizedReader;
-  final AssetReaderWriter readerWriter;
-  late final RunnerAssetWriter deleteWriter;
-  final ResourceManager resourceManager = ResourceManager();
+  // State that is kept forever.
+  final FilesystemCache _cache;
+  final ResourceManager _resourceManager = ResourceManager();
+
+  // State that is initialized by `_prepare` then kept.
+
+  late BuildPhases _buildPhases;
+  late AssetGraph assetGraph;
+  late BuildScriptUpdates? buildScriptUpdates;
+  late FinalizedReader finalizedReader;
+
+  // State that is initialized by `_prepare` and changes after the build.
+
+  /// Whether the next build is the first build.
+  late bool _firstBuild;
 
   /// For the first build only, updates from the previous serialized build
   /// state.
@@ -54,41 +66,73 @@ class BuildSeries {
   /// if the serialized build state was discarded.
   Map<AssetId, ChangeType>? updatesFromLoad;
 
-  /// Whether this is or was a build starting from no previous state or outputs.
-  final bool cleanBuild;
+  BuildSeries._({
+    required BuildOptions options,
+    required BuildEnvironment environment,
+    required List<BuilderApplication> builders,
+    required Map<String, Map<String, dynamic>> builderConfigOverrides,
+    required this.isReleaseBuild,
+  }) : _builderConfigOverrides = builderConfigOverrides,
+       _builders = builders,
+       _environment = environment,
+       _options = options,
+       _cache =
+           options.enableLowResourcesMode
+               ? const PassthroughFilesystemCache()
+               : InMemoryFilesystemCache();
 
-  /// Whether the next build is the first build.
-  bool firstBuild = true;
-
-  Future<void> beforeExit() => resourceManager.beforeExit();
-
-  BuildSeries._(
-    this.environment,
-    this.assetGraph,
-    this.buildScriptUpdates,
-    this.options,
-    this.buildPhases,
-    this.finalizedReader,
-    this.cleanBuild,
-    this.updatesFromLoad,
-  ) : readerWriter = environment.reader.copyWith(
-        generatedAssetHider: assetGraph,
-        cache:
-            options.enableLowResourcesMode
-                ? const PassthroughFilesystemCache()
-                : InMemoryFilesystemCache(),
-      ) {
-    // Prefer to use `readerWriter` for deletes if possible, so deletes can go
-    // to the write cache.
-    // TODO(davidmorgan): clean up setup so it's always possible.
-    if (readerWriter is RunnerAssetWriter) {
-      deleteWriter = readerWriter as RunnerAssetWriter;
-    } else {
-      deleteWriter = environment.writer.copyWith(
-        generatedAssetHider: assetGraph,
-      );
-    }
+  static Future<BuildSeries> create(
+    BuildOptions options,
+    BuildEnvironment environment,
+    List<BuilderApplication> builders,
+    Map<String, Map<String, dynamic>> builderConfigOverrides, {
+    bool isReleaseBuild = false,
+  }) async {
+    final result = BuildSeries._(
+      options: options,
+      environment: environment,
+      builders: builders,
+      builderConfigOverrides: builderConfigOverrides,
+      isReleaseBuild: isReleaseBuild,
+    );
+    await result._prepare();
+    return result;
   }
+
+  Future<void> _prepare() async {
+    _buildPhases = await createBuildPhases(
+      _options.targetGraph,
+      _builders,
+      _builderConfigOverrides,
+      isReleaseBuild,
+    );
+    if (_buildPhases.inBuildPhases.isEmpty &&
+        _buildPhases.postBuildPhase.builderActions.isEmpty) {
+      buildLog.warning('Nothing to build.');
+    }
+
+    final buildDefinition = await BuildDefinition.prepareWorkspace(
+      _environment,
+      _options,
+      _buildPhases,
+    );
+    buildScriptUpdates = buildDefinition.buildScriptUpdates;
+    assetGraph = buildDefinition.assetGraph;
+    _firstBuild = true;
+    updatesFromLoad = buildDefinition.updates;
+
+    finalizedReader = FinalizedReader(
+      _environment.reader.copyWith(
+        generatedAssetHider: buildDefinition.assetGraph,
+      ),
+      buildDefinition.assetGraph,
+      _options.targetGraph,
+      _buildPhases,
+      _options.packageGraph.root.name,
+    );
+  }
+
+  Future<void> beforeExit() => _resourceManager.beforeExit();
 
   /// Runs a single build.
   ///
@@ -103,7 +147,7 @@ class BuildSeries {
     Set<BuildDirectory> buildDirs = const <BuildDirectory>{},
     Set<BuildFilter> buildFilters = const {},
   }) async {
-    if (firstBuild) {
+    if (_firstBuild) {
       if (updatesFromLoad != null) {
         updates = updatesFromLoad!..addAll(updates);
         updatesFromLoad = null;
@@ -114,67 +158,37 @@ class BuildSeries {
       }
     }
 
+    final readerWriter = _environment.reader.copyWith(
+      generatedAssetHider: assetGraph,
+      cache: _cache,
+    );
+    // Prefer to use `readerWriter` for deletes if possible, so deletes can go
+    // to the write cache.
+    // TODO(davidmorgan): clean up setup so it's always possible.
+    final RunnerAssetWriter deleteWriter;
+    if (readerWriter is RunnerAssetWriter) {
+      deleteWriter = readerWriter as RunnerAssetWriter;
+    } else {
+      deleteWriter = _environment.writer.copyWith(
+        generatedAssetHider: assetGraph,
+      );
+    }
+
     finalizedReader.reset(BuildDirectory.buildPaths(buildDirs), buildFilters);
     final build = Build(
-      environment: environment,
-      options: options,
-      buildPhases: buildPhases,
+      environment: _environment,
+      options: _options,
+      buildPhases: _buildPhases,
       assetGraph: assetGraph,
       buildDirs: buildDirs,
       buildFilters: buildFilters,
       readerWriter: readerWriter,
       deleteWriter: deleteWriter,
-      resourceManager: resourceManager,
+      resourceManager: _resourceManager,
     );
-    if (firstBuild) firstBuild = false;
+    if (_firstBuild) _firstBuild = false;
     final result = await build.run(updates);
-    options.resolvers.reset();
+    _options.resolvers.reset();
     return result;
-  }
-
-  static Future<BuildSeries> create(
-    BuildOptions options,
-    BuildEnvironment environment,
-    List<BuilderApplication> builders,
-    Map<String, Map<String, dynamic>> builderConfigOverrides, {
-    bool isReleaseBuild = false,
-  }) async {
-    var buildPhases = await createBuildPhases(
-      options.targetGraph,
-      builders,
-      builderConfigOverrides,
-      isReleaseBuild,
-    );
-    if (buildPhases.inBuildPhases.isEmpty &&
-        buildPhases.postBuildPhase.builderActions.isEmpty) {
-      buildLog.warning('Nothing to build.');
-    }
-
-    var buildDefinition = await BuildDefinition.prepareWorkspace(
-      environment,
-      options,
-      buildPhases,
-    );
-
-    var finalizedReader = FinalizedReader(
-      environment.reader.copyWith(
-        generatedAssetHider: buildDefinition.assetGraph,
-      ),
-      buildDefinition.assetGraph,
-      options.targetGraph,
-      buildPhases,
-      options.packageGraph.root.name,
-    );
-    var build = BuildSeries._(
-      environment,
-      buildDefinition.assetGraph,
-      buildDefinition.buildScriptUpdates,
-      options,
-      buildPhases,
-      finalizedReader,
-      buildDefinition.cleanBuild,
-      buildDefinition.updates,
-    );
-    return build;
   }
 }

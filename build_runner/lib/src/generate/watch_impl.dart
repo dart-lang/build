@@ -185,10 +185,12 @@ class WatchImpl implements BuildState {
   /// Pending expected delete events from the build.
   final Set<AssetId> _expectedDeletes = <AssetId>{};
 
-  final _readerCompleter = Completer<FinalizedReader>();
+  /// Completes when first build has finished.
+  final _firstBuildCompleter = Completer<void>();
 
-  /// Completes with an error if we fail to initialize.
-  Future<FinalizedReader> get reader => _readerCompleter.future;
+  /// Completes with an error if the first build fails.
+  Future<FinalizedReader> get reader =>
+      _firstBuildCompleter.future.then((_) => _buildSeries!.finalizedReader);
 
   WatchImpl(
     BuildOptions options,
@@ -333,7 +335,7 @@ class WatchImpl implements BuildState {
           return change;
         })
         .asyncWhere((change) {
-          assert(_readerCompleter.isCompleted);
+          assert(_firstBuildCompleter.isCompleted);
           return shouldProcess(
             change,
             assetGraph!,
@@ -398,7 +400,7 @@ class WatchImpl implements BuildState {
         _terminateCompleter.complete();
 
         firstBuild = BuildResult(BuildStatus.failure, []);
-        _readerCompleter.completeError(e, s);
+        _firstBuildCompleter.completeError(e, s);
       } on BuildScriptChangedException catch (e, s) {
         _terminateCompleter.complete();
 
@@ -407,11 +409,11 @@ class WatchImpl implements BuildState {
           [],
           failureType: FailureType.buildScriptChanged,
         );
-        _readerCompleter.completeError(e, s);
+        _firstBuildCompleter.completeError(e, s);
       }
       if (build != null) {
-        assert(!_readerCompleter.isCompleted);
-        _readerCompleter.complete(build.finalizedReader);
+        assert(!_firstBuildCompleter.isCompleted);
+        _firstBuildCompleter.complete();
       }
       // It is possible this is already closed if the user kills the process
       // early, which results in an exception without this check.
