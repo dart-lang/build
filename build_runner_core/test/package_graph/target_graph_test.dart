@@ -10,6 +10,7 @@ import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/package_graph/target_graph.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
@@ -40,26 +41,27 @@ void main() {
       TargetGraph.forPackageGraph(
         packageGraph,
         defaultRootPackageSources: ['**'],
-        overrideBuildConfig: {
-          'a': BuildConfig.fromMap(
-            'a',
-            ['b'],
+        overrideBuildConfig:
             {
-              'targets': {
-                r'$default': {
-                  'sources': ['lib/**'],
+              'a': BuildConfig.fromMap(
+                'a',
+                ['b'],
+                {
+                  'targets': {
+                    r'$default': {
+                      'sources': ['lib/**'],
+                    },
+                  },
                 },
-              },
-            },
-          ),
-          'b': BuildConfig.fromMap('b', [], {
-            'targets': {
-              r'$default': {
-                'sources': ['web/**'],
-              },
-            },
-          }),
-        },
+              ),
+              'b': BuildConfig.fromMap('b', [], {
+                'targets': {
+                  r'$default': {
+                    'sources': ['web/**'],
+                  },
+                },
+              }),
+            }.build(),
         requiredSourcePaths: [r'lib/$lib$'],
         requiredRootSourcePaths: [r'lib/$lib$', r'$package$'],
       );
@@ -160,13 +162,14 @@ void main() {
       final targetGraph = await TargetGraph.forPackageGraph(
         packages,
         defaultRootPackageSources: ['**'],
-        overrideBuildConfig: {
-          'b': BuildConfig.parse(
-            'b',
-            [],
-            'additional_public_assets: ["test/**"]',
-          ),
-        },
+        overrideBuildConfig:
+            {
+              'b': BuildConfig.parse(
+                'b',
+                [],
+                'additional_public_assets: ["test/**"]',
+              ),
+            }.build(),
       );
 
       expect(

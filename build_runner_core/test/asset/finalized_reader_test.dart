@@ -15,6 +15,7 @@ import 'package:build_runner_core/src/generate/build_phases.dart';
 import 'package:build_runner_core/src/generate/options.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
 import 'package:build_runner_core/src/package_graph/target_graph.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:test/test.dart';
@@ -97,14 +98,17 @@ void main() {
         targetGraph,
         BuildPhases([InBuildPhase(TestBuilder(), 'a', isOptional: false)]),
         'a',
-      )..reset({'web'}, {});
+      )..reset({'web'}.build(), BuiltSet());
       expect(
         await reader.unreadableReason(id),
         UnreadableReason.failed,
         reason: 'Should report a failure if no build filters apply',
       );
 
-      reader.reset({'web'}, {BuildFilter(Glob('b'), Glob('foo'))});
+      reader.reset(
+        {'web'}.build(),
+        {BuildFilter(Glob('b'), Glob('foo'))}.build(),
+      );
       expect(
         await reader.unreadableReason(id),
         UnreadableReason.notOutput,

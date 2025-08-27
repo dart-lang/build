@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:built_collection/built_collection.dart';
 
 import '../asset/reader_writer.dart';
 import '../asset/writer.dart';
@@ -17,6 +18,8 @@ import '../package_graph/package_graph.dart';
 import 'create_merged_dir.dart';
 
 /// The I/O environment that the build runs in.
+///
+/// TODO(davidmorgan): merge into `BuildOptions` and `TestOverrides`.
 class BuildEnvironment {
   final AssetReader reader;
   final RunnerAssetWriter writer;
@@ -29,7 +32,7 @@ class BuildEnvironment {
     BuildResult,
     FinalizedAssetsView,
     AssetReader,
-    Set<BuildDirectory>,
+    BuiltSet<BuildDirectory>,
   )?
   _finalizeBuildOverride;
 
@@ -59,7 +62,7 @@ class BuildEnvironment {
       BuildResult,
       FinalizedAssetsView,
       AssetReader,
-      Set<BuildDirectory>,
+      BuiltSet<BuildDirectory>,
     )?
     finalizeBuildOverride,
   }) {
@@ -100,7 +103,7 @@ class BuildEnvironment {
     BuildResult buildResult,
     FinalizedAssetsView finalizedAssetsView,
     AssetReader reader,
-    Set<BuildDirectory> buildDirs,
+    BuiltSet<BuildDirectory> buildDirs,
   ) async {
     if (_finalizeBuildOverride != null) {
       return _finalizeBuildOverride(

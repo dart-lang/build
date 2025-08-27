@@ -14,6 +14,7 @@ import 'package:build/src/internal.dart';
 import 'package:build_resolvers/src/internal.dart';
 // ignore: implementation_imports
 import 'package:build_runner/src/internal.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
@@ -44,10 +45,10 @@ import 'single_step_reader_writer.dart';
 class Build {
   // Configuration.
   final BuildEnvironment environment;
-  final BuildOptions options;
+  final BuildConfiguration options;
   final BuildPhases buildPhases;
-  final Set<BuildDirectory> buildDirs;
-  final Set<BuildFilter> buildFilters;
+  final BuiltSet<BuildDirectory> buildDirs;
+  final BuiltSet<BuildFilter> buildFilters;
 
   // Collaborators.
   final ResourceManager resourceManager;

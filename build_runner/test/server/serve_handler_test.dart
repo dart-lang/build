@@ -9,7 +9,6 @@ import 'dart:io';
 import 'package:_test_common/common.dart';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
-import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner/src/generate/watch_impl.dart';
 import 'package:build_runner/src/server/server.dart';
 import 'package:build_runner_core/build_runner_core.dart';
@@ -237,17 +236,11 @@ void main() {
   test('caching with etags takes into account injected JS', () async {
     addSource('a|web/some.js', '$entrypointExtensionMarker\nalert(1)');
     var noReloadEtag =
-        (await serveHandler.handlerFor(
-          'web',
-          buildUpdates: BuildUpdatesOption.none,
-        )(
+        (await serveHandler.handlerFor('web', liveReload: false)(
           Request('GET', Uri.parse('http://server.com/some.js')),
         )).headers[HttpHeaders.etagHeader];
     var liveReloadEtag =
-        (await serveHandler.handlerFor(
-          'web',
-          buildUpdates: BuildUpdatesOption.liveReload,
-        )(
+        (await serveHandler.handlerFor('web', liveReload: true)(
           Request('GET', Uri.parse('http://server.com/some.js')),
         )).headers[HttpHeaders.etagHeader];
     expect(noReloadEtag, isNot(liveReloadEtag));
@@ -355,14 +348,14 @@ void main() {
   group('build updates', () {
     void createBuildUpdatesGroup(
       String groupName,
-      String injectionMarker,
-      BuildUpdatesOption buildUpdates,
-    ) => group(groupName, () {
+      String injectionMarker, {
+      required bool liveReload,
+    }) => group(groupName, () {
       test('injects client code if enabled', () async {
         addSource('a|web/some.js', '$entrypointExtensionMarker\nalert(1)');
         var response = await serveHandler.handlerFor(
           'web',
-          buildUpdates: buildUpdates,
+          liveReload: liveReload,
         )(Request('GET', Uri.parse('http://server.com/some.js')));
         expect(await response.readAsString(), contains(injectionMarker));
       });
@@ -379,7 +372,7 @@ void main() {
         addSource('a|web/some.html', '$entrypointExtensionMarker\n<br>some');
         var response = await serveHandler.handlerFor(
           'web',
-          buildUpdates: buildUpdates,
+          liveReload: liveReload,
         )(Request('GET', Uri.parse('http://server.com/some.html')));
         expect(await response.readAsString(), isNot(contains(injectionMarker)));
       });
@@ -388,7 +381,7 @@ void main() {
         addSource('a|web/some.js', 'alert(1)');
         var response = await serveHandler.handlerFor(
           'web',
-          buildUpdates: buildUpdates,
+          liveReload: liveReload,
         )(Request('GET', Uri.parse('http://server.com/some.js')));
         expect(await response.readAsString(), isNot(contains(injectionMarker)));
       });
@@ -397,7 +390,7 @@ void main() {
         addSource('a|web/index.html', 'content');
         var uri = Uri.parse('ws://server.com/');
         expect(
-          serveHandler.handlerFor('web', buildUpdates: buildUpdates)(
+          serveHandler.handlerFor('web', liveReload: liveReload)(
             Request(
               'GET',
               uri,
@@ -418,7 +411,7 @@ void main() {
     createBuildUpdatesGroup(
       'live-reload',
       'live_reload_client',
-      BuildUpdatesOption.liveReload,
+      liveReload: true,
     );
 
     test('reject websocket connection if disabled', () async {

@@ -9,10 +9,11 @@ import 'package:build/build.dart';
 import 'package:build/src/internal.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 
-Future<Map<String, BuildConfig>> findBuildConfigOverrides(
+Future<BuiltMap<String, BuildConfig>> findBuildConfigOverrides(
   PackageGraph packageGraph,
   AssetReader reader, {
   String? configKey,
@@ -64,5 +65,5 @@ Future<Map<String, BuildConfig>> findBuildConfigOverrides(
     }
     configs[packageGraph.root.name] = config;
   }
-  return configs;
+  return configs.build();
 }

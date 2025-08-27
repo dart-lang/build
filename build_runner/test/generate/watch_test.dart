@@ -9,12 +9,14 @@ import 'package:_test_common/common.dart';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
-import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
+import 'package:build_runner/src/commands/build_options.dart';
+import 'package:build_runner/src/commands/watch_command.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:build_runner_core/src/generate/build_phases.dart';
 import 'package:build_test/src/in_memory_reader_writer.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
@@ -1148,20 +1150,25 @@ Future<BuildState> startWatch(
   });
   FakeWatcher watcherFactory(String path) => FakeWatcher(path);
 
-  var state = await watch_impl.watch(
-    builders,
-    configKey: configKey,
-    deleteFilesByDefault: true,
-    debounceDelay: _debounceDelay,
-    directoryWatcherFactory: watcherFactory,
-    overrideBuildConfig: overrideBuildConfig,
-    reader: readerWriter,
-    writer: readerWriter,
-    packageGraph: packageGraph,
-    terminateEventStream: _terminateWatchController!.stream,
-    onLog: onLog,
-    skipBuildScriptCheck: true,
-  );
+  final state =
+      await WatchCommand(
+        builders: builders.toBuiltList(),
+        buildOptions: BuildOptions.forTests(
+          configKey: configKey,
+          skipBuildScriptCheck: true,
+        ),
+        testingOverrides: TestingOverrides(
+          buildConfig: overrideBuildConfig.build(),
+          directoryWatcherFactory: watcherFactory,
+          debounceDelay: _debounceDelay,
+          onLog: onLog,
+          packageGraph: packageGraph,
+          reader: readerWriter,
+          terminateEventStream: _terminateWatchController!.stream,
+          writer: readerWriter,
+        ),
+      ).watch();
+
   // Some tests need access to `reader` so we expose it through an expando.
   _readerForState[state] = readerWriter;
   return state;

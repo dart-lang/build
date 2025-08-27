@@ -7,8 +7,10 @@ import 'dart:convert';
 
 import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
-import 'package:build_runner/src/generate/build.dart' as build_impl;
+import 'package:build_runner/src/commands/build_command.dart';
+import 'package:build_runner/src/commands/build_options.dart';
 import 'package:build_runner_core/build_runner_core.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
@@ -40,7 +42,6 @@ builders:
         },
         packageConfigId: packageConfigId,
         configKey: 'cool',
-        logLevel: Level.WARNING,
         onLog: logs.add,
         packageGraph: packageGraph,
       );
@@ -62,7 +63,6 @@ Future<BuildResult> _doBuild(
   required AssetId packageConfigId,
   PackageGraph? packageGraph,
   void Function(LogRecord)? onLog,
-  Level? logLevel,
   String? configKey,
 }) async {
   onLog ??= (_) {};
@@ -75,17 +75,19 @@ Future<BuildResult> _doBuild(
   });
   await readerWriter.writeAsString(packageConfigId, jsonEncode(_packageConfig));
 
-  return await build_impl.build(
-    builders,
-    configKey: configKey,
-    deleteFilesByDefault: true,
-    reader: readerWriter,
-    writer: readerWriter,
-    packageGraph: packageGraph,
-    logLevel: logLevel,
-    onLog: onLog,
-    skipBuildScriptCheck: true,
-  );
+  return await BuildCommand(
+    builders: builders.build(),
+    buildOptions: BuildOptions.forTests(
+      configKey: configKey,
+      skipBuildScriptCheck: true,
+    ),
+    testingOverrides: TestingOverrides(
+      reader: readerWriter,
+      writer: readerWriter,
+      packageGraph: packageGraph,
+      onLog: onLog,
+    ),
+  ).build();
 }
 
 const _packageConfig = {

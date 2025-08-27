@@ -48,14 +48,14 @@ class BuildDefinition {
 
   static Future<BuildDefinition> prepareWorkspace(
     BuildEnvironment environment,
-    BuildOptions options,
+    BuildConfiguration options,
     BuildPhases buildPhases,
   ) => _Loader(environment, options, buildPhases).prepareWorkspace();
 }
 
 class _Loader {
   final BuildPhases _buildPhases;
-  final BuildOptions _options;
+  final BuildConfiguration _options;
   final BuildEnvironment _environment;
 
   _Loader(this._environment, this._options, this._buildPhases);

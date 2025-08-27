@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:graphs/graphs.dart';
 
 import '../generate/build_phases.dart';
@@ -290,7 +291,7 @@ class BuilderApplication {
 Future<BuildPhases> createBuildPhases(
   TargetGraph targetGraph,
   Iterable<BuilderApplication> builderApplications,
-  Map<String, Map<String, dynamic>> builderConfigOverrides,
+  BuiltMap<String, BuiltMap<String, dynamic>> builderConfigOverrides,
   bool isReleaseMode,
 ) async {
   validateBuilderConfig(
@@ -309,7 +310,7 @@ Future<BuildPhases> createBuildPhases(
     ),
   );
   for (final key in builderConfigOverrides.keys) {
-    final overrides = BuilderOptions(builderConfigOverrides[key]!);
+    final overrides = BuilderOptions(builderConfigOverrides[key]!.asMap());
     globalOptions[key] = (globalOptions[key] ?? BuilderOptions.empty)
         .overrideWith(overrides);
   }

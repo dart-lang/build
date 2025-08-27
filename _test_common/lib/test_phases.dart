@@ -9,6 +9,7 @@ import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_test/build_test.dart';
 // ignore: implementation_imports
 import 'package:build_test/src/in_memory_reader_writer.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
@@ -142,7 +143,7 @@ Future<TestBuildersResult> testPhases(
     b.verbose = verbose;
   });
 
-  var options = await BuildOptions.create(
+  var options = await BuildConfiguration.create(
     packageGraph: packageGraph,
     reader: environment.reader,
     skipBuildScriptCheck: true,
@@ -154,14 +155,14 @@ Future<TestBuildersResult> testPhases(
   var build = await BuildRunner.create(
     options,
     environment,
-    builders,
-    const {},
+    builders.build(),
+    BuiltMap(),
     isReleaseBuild: false,
   );
   result = await build.run(
     {},
-    buildDirs: buildDirs,
-    buildFilters: buildFilters,
+    buildDirs: buildDirs.build(),
+    buildFilters: buildFilters.build(),
   );
   await build.beforeExit();
 

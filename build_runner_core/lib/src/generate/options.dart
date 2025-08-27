@@ -8,6 +8,7 @@ import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_resolvers/build_resolvers.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 
@@ -107,7 +108,8 @@ class BuildFilter {
 }
 
 /// Manages setting up consistent defaults for all options and build modes.
-class BuildOptions {
+/// TODO(davidmorgan): merge into `BuildOptions`.
+class BuildConfiguration {
   final bool enableLowResourcesMode;
 
   /// If present, the path to a directory to write performance logs to.
@@ -127,7 +129,7 @@ class BuildOptions {
   /// Listener for when builders report unused assets.
   void Function(AssetId, Iterable<AssetId>)? reportUnusedAssetsForInput;
 
-  BuildOptions._({
+  BuildConfiguration._({
     required this.debounceDelay,
     required this.enableLowResourcesMode,
     required this.packageGraph,
@@ -139,24 +141,25 @@ class BuildOptions {
     this.reportUnusedAssetsForInput,
   });
 
-  /// Creates a [BuildOptions] with sane defaults.
+  /// Creates a [BuildConfiguration] with sane defaults.
   ///
   /// Pass [reader] to read `build.yaml` files, otherwise defaults are used.
   ///
   /// NOTE: If a custom [resolvers] instance is passed it must ensure that it
   /// enables [enabledExperiments] on any analysis options it creates.
-  static Future<BuildOptions> create({
+  static Future<BuildConfiguration> create({
     required PackageGraph packageGraph,
     AssetReader? reader,
-    Duration debounceDelay = const Duration(milliseconds: 250),
+    Duration? debounceDelay,
     bool enableLowResourcesMode = false,
-    Map<String, BuildConfig> overrideBuildConfig = const {},
+    BuiltMap<String, BuildConfig>? overrideBuildConfig,
     bool skipBuildScriptCheck = false,
     bool trackPerformance = false,
     String? logPerformanceDir,
     Resolvers? resolvers,
     void Function(AssetId, Iterable<AssetId>)? reportUnusedAssetsForInput,
   }) async {
+    debounceDelay ??= const Duration(milliseconds: 250);
     TargetGraph targetGraph;
     try {
       targetGraph = await TargetGraph.forPackageGraph(
@@ -190,7 +193,7 @@ class BuildOptions {
     }
     resolvers ??= AnalyzerResolvers.sharedInstance;
 
-    return BuildOptions._(
+    return BuildConfiguration._(
       debounceDelay: debounceDelay,
       enableLowResourcesMode: enableLowResourcesMode,
       packageGraph: packageGraph,

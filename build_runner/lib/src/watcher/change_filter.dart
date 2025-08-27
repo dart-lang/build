@@ -19,7 +19,7 @@ import 'asset_change.dart';
 FutureOr<bool> shouldProcess(
   AssetChange change,
   AssetGraph assetGraph,
-  BuildOptions buildOptions,
+  BuildConfiguration buildOptions,
   bool willCreateOutputDir,
   Set<AssetId> expectedDeletes,
   AssetReader reader,

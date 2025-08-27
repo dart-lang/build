@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+import 'package:built_collection/built_collection.dart';
 
 import '../../build_runner_core.dart';
 import '../generate/build_phases.dart';
@@ -34,8 +35,8 @@ class OptionalOutputTracker {
   final _checkedOutputs = <AssetId, bool>{};
   final AssetGraph _assetGraph;
   final TargetGraph _targetGraph;
-  final Set<String> _buildDirs;
-  final Set<BuildFilter> _buildFilters;
+  final BuiltSet<String> _buildDirs;
+  final BuiltSet<BuildFilter> _buildFilters;
   final BuildPhases _buildPhases;
 
   OptionalOutputTracker(

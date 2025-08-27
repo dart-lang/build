@@ -20,10 +20,12 @@ import 'package:build_runner_core/build_runner_core.dart'
 import 'package:build_runner_core/src/generate/asset_tracker.dart';
 // ignore: implementation_imports
 import 'package:build_runner_core/src/generate/build_series.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
-import '../entrypoint/options.dart';
+import '../commands/build_options.dart';
+import '../commands/daemon_options.dart';
 import '../package_graph/build_config_overrides.dart';
 import '../watcher/asset_change.dart';
 import '../watcher/change_filter.dart';
@@ -37,7 +39,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   final _buildResults = StreamController<BuildResults>();
 
   final BuildSeries _buildSeries;
-  final BuildOptions _buildOptions;
+  final BuildConfiguration _buildConfiguration;
   final StreamController<ServerLog> _outputStreamController;
   final ChangeProvider changeProvider;
 
@@ -48,7 +50,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
   BuildRunnerDaemonBuilder._(
     this._buildSeries,
-    this._buildOptions,
+    this._buildConfiguration,
     this._outputStreamController,
     this.changeProvider,
   ) : logs = _outputStreamController.stream.asBroadcastStream();
@@ -78,7 +80,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
             )
             .toList();
 
-    if (!_buildOptions.skipBuildScriptCheck &&
+    if (!_buildConfiguration.skipBuildScriptCheck &&
         _buildSeries.buildScriptUpdates!.hasBeenUpdated(
           changes.map<AssetId>((change) => change.id).toSet(),
         )) {
@@ -109,20 +111,23 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       if (target.buildFilters != null && target.buildFilters!.isNotEmpty) {
         buildFilters.addAll([
           for (var pattern in target.buildFilters!)
-            BuildFilter.fromArg(pattern, _buildOptions.packageGraph.root.name),
+            BuildFilter.fromArg(
+              pattern,
+              _buildConfiguration.packageGraph.root.name,
+            ),
         ]);
       } else {
         buildFilters
           ..add(
             BuildFilter.fromArg(
               'package:*/**',
-              _buildOptions.packageGraph.root.name,
+              _buildConfiguration.packageGraph.root.name,
             ),
           )
           ..add(
             BuildFilter.fromArg(
               '${target.target}/**',
-              _buildOptions.packageGraph.root.name,
+              _buildConfiguration.packageGraph.root.name,
             ),
           );
       }
@@ -133,8 +138,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       var mergedChanges = collectChanges([changes]);
       var result = await _buildSeries.run(
         mergedChanges,
-        buildDirs: buildDirs,
-        buildFilters: buildFilters,
+        buildDirs: buildDirs.build(),
+        buildFilters: buildFilters.build(),
       );
       var interestedInOutputs = targets.any(
         (e) => e is DefaultBuildTarget && e.reportChangedAssets,
@@ -226,7 +231,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
   static Future<BuildRunnerDaemonBuilder> create(
     PackageGraph packageGraph,
-    List<BuilderApplication> builders,
+    BuiltList<BuilderApplication> builders,
+    BuildOptions buildOptions,
     DaemonOptions daemonOptions,
   ) async {
     var expectedDeletes = <AssetId>{};
@@ -234,10 +240,10 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
     var environment = BuildEnvironment(
       packageGraph,
-      outputSymlinksOnly: daemonOptions.outputSymlinksOnly,
+      outputSymlinksOnly: buildOptions.outputSymlinksOnly,
     );
     buildLog.configuration = buildLog.configuration.rebuild((b) {
-      b.verbose = daemonOptions.verbose;
+      b.verbose = buildOptions.verbose;
       b.onLog = (record) {
         outputStreamController.add(ServerLog.fromLogRecord(record));
       };
@@ -252,25 +258,25 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     var overrideBuildConfig = await findBuildConfigOverrides(
       packageGraph,
       daemonEnvironment.reader,
-      configKey: daemonOptions.configKey,
+      configKey: buildOptions.configKey,
     );
 
-    var buildOptions = await BuildOptions.create(
+    var buildConfiguration = await BuildConfiguration.create(
       packageGraph: packageGraph,
       reader: daemonEnvironment.reader,
       overrideBuildConfig: overrideBuildConfig,
-      skipBuildScriptCheck: daemonOptions.skipBuildScriptCheck,
-      enableLowResourcesMode: daemonOptions.enableLowResourcesMode,
-      trackPerformance: daemonOptions.trackPerformance,
-      logPerformanceDir: daemonOptions.logPerformanceDir,
+      skipBuildScriptCheck: buildOptions.skipBuildScriptCheck,
+      enableLowResourcesMode: buildOptions.enableLowResourcesMode,
+      trackPerformance: buildOptions.trackPerformance,
+      logPerformanceDir: buildOptions.logPerformanceDir,
     );
 
     var buildSeries = await BuildSeries.create(
-      buildOptions,
+      buildConfiguration,
       daemonEnvironment,
       builders,
-      daemonOptions.builderConfigOverrides,
-      isReleaseBuild: daemonOptions.isReleaseBuild,
+      buildOptions.builderConfigOverrides,
+      isReleaseBuild: buildOptions.isReleaseBuild,
     );
 
     // Only actually used for the AutoChangeProvider.
@@ -281,7 +287,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
               (change) => shouldProcess(
                 change,
                 buildSeries.assetGraph,
-                buildOptions,
+                buildConfiguration,
                 // Assume we will create an outputDir.
                 true,
                 expectedDeletes,
@@ -289,19 +295,22 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
               ),
             )
             .map((data) => WatchEvent(data.type, '${data.id}'))
-            .debounceBuffer(buildOptions.debounceDelay);
+            .debounceBuffer(buildConfiguration.debounceDelay);
 
     var changeProvider =
         daemonOptions.buildMode == BuildMode.Auto
             ? AutoChangeProviderImpl(graphEvents())
             : ManualChangeProviderImpl(
-              AssetTracker(daemonEnvironment.reader, buildOptions.targetGraph),
+              AssetTracker(
+                daemonEnvironment.reader,
+                buildConfiguration.targetGraph,
+              ),
               buildSeries.assetGraph,
             );
 
     return BuildRunnerDaemonBuilder._(
       buildSeries,
-      buildOptions,
+      buildConfiguration,
       outputStreamController,
       changeProvider,
     );

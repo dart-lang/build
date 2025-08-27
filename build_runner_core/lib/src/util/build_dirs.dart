@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+import 'package:built_collection/built_collection.dart';
 
 import '../generate/options.dart';
 import '../generate/phase.dart';
@@ -22,11 +23,12 @@ import '../package_graph/target_graph.dart';
 ///   `id.path` must start with one of the specified directory names.
 bool shouldBuildForDirs(
   AssetId id, {
-  required Set<String> buildDirs,
+  required BuiltSet<String> buildDirs,
   required BuildPhase phase,
   required TargetGraph targetGraph,
-  Set<BuildFilter> buildFilters = const {},
+  BuiltSet<BuildFilter>? buildFilters,
 }) {
+  buildFilters ??= BuiltSet();
   if (buildFilters.isEmpty) {
     // Build asset if: It's built to source, it's public or if it's matched by
     // a build directory.
