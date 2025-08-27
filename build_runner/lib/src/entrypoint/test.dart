@@ -10,9 +10,6 @@ import 'package:async/async.dart';
 import 'package:build/experiments.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
-import 'package:path/path.dart' as p;
-import 'package:pub_semver/pub_semver.dart';
-import 'package:pubspec_parse/pubspec_parse.dart';
 
 import '../build_script_generate/build_process_state.dart';
 import '../generate/build.dart';
@@ -22,12 +19,7 @@ import 'options.dart';
 /// A command that does a single build and then runs tests using the compiled
 /// assets.
 class TestCommand extends BuildRunnerCommand {
-  TestCommand(PackageGraph packageGraph)
-    : super(
-        // Use symlinks by default, if package:test supports it.
-        symlinksDefault:
-            _packageTestSupportsSymlinks(packageGraph) && !Platform.isWindows,
-      );
+  TestCommand() : super(symlinksDefault: !Platform.isWindows);
 
   @override
   String get invocation =>
@@ -167,15 +159,6 @@ class TestCommand extends BuildRunnerCommand {
     _ensureProcessExit(testProcess);
     return testProcess.exitCode;
   }
-}
-
-bool _packageTestSupportsSymlinks(PackageGraph packageGraph) {
-  var testPackage = packageGraph['test'];
-  if (testPackage == null) return false;
-  var pubspecPath = p.join(testPackage.path, 'pubspec.yaml');
-  var pubspec = Pubspec.parse(File(pubspecPath).readAsStringSync());
-  if (pubspec.version == null) return false;
-  return pubspec.version! >= Version(1, 3, 0);
 }
 
 void _ensureBuildTestDependency(PackageGraph packageGraph) {

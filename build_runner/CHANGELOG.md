@@ -6,6 +6,7 @@
 - Remove undocumented / unused features: `lib/build_script_generate.dart`,
   `bin/graph_inspector.dart`, `build_runner doctor` and
   `build_runner generate-build-script` commands.
+- Remove deps on `pubspec_parse` and `timing`.
 
 ## 2.7.0
 
