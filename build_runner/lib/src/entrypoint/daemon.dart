@@ -13,7 +13,7 @@ import 'package:build_daemon/data/serializers.dart';
 import 'package:build_daemon/data/server_log.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 
-import '../build_script_generate/build_process_state.dart';
+import '../bootstrapper/build_process_state.dart';
 import '../daemon/asset_server.dart';
 import '../daemon/constants.dart';
 import '../daemon/daemon_builder.dart';

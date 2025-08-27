@@ -34,6 +34,8 @@ abstract class PhasedReader {
   /// current phase.
   Future<String?> readAtPhase(AssetId id);
 
+  //
+
   /// Whether [id] is a generated asset that changes between [phase] and
   /// [comparedToPhase].
   ///

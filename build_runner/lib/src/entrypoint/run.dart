@@ -10,6 +10,8 @@ import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/ansi.dart' as ansi;
 import 'package:io/io.dart' show ExitCode;
 
+// hi
+
 import '../build_script_generate/build_script_generate.dart';
 import 'clean.dart';
 import 'runner.dart';

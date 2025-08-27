@@ -17,7 +17,7 @@ import 'package:logging/logging.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
-import '../build_script_generate/build_process_state.dart';
+import '../bootstrapper/build_process_state.dart';
 import '../package_graph/build_config_overrides.dart';
 import '../server/server.dart';
 import '../watcher/asset_change.dart';
@@ -253,18 +253,14 @@ class WatchImpl implements BuildState {
       var mergedChanges = collectChanges(changes);
 
       _expectedDeletes.clear();
-      if (!options.skipBuildScriptCheck) {
-        if (build.buildScriptUpdates!.hasBeenUpdated(
-          mergedChanges.keys.toSet(),
-        )) {
-          _terminateCompleter.complete();
-          buildLog.error('Terminating builds due to build script update.');
-          return BuildResult(
-            BuildStatus.failure,
-            [],
-            failureType: FailureType.buildScriptChanged,
-          );
-        }
+      if (await build.bootstrapper.needsRebuild()) {
+        _terminateCompleter.complete();
+        buildLog.error('Terminating builds due to build script update.');
+        return BuildResult(
+          BuildStatus.failure,
+          [],
+          failureType: FailureType.buildScriptChanged,
+        );
       }
       return build.run(
         mergedChanges,
@@ -272,6 +268,8 @@ class WatchImpl implements BuildState {
         buildFilters: _buildFilters,
       );
     }
+
+    //
 
     var terminate = Future.any([until, _terminateCompleter.future]).then((_) {
       buildLog.info('Terminating. No further builds will be scheduled.');
