@@ -4,9 +4,6 @@
 
 import 'dart:async';
 
-import 'package:build/build.dart';
-import 'package:watcher/watcher.dart';
-
 import '../environment/build_environment.dart';
 import '../package_graph/apply_builders.dart';
 import 'build_directory.dart';
@@ -20,11 +17,10 @@ class BuildRunner {
 
   Future<void> beforeExit() => _build.beforeExit();
 
-  Future<BuildResult> run(
-    Map<AssetId, ChangeType> updates, {
+  Future<BuildResult> run({
     Set<BuildDirectory> buildDirs = const <BuildDirectory>{},
     Set<BuildFilter> buildFilters = const {},
-  }) => _build.run(updates, buildDirs: buildDirs, buildFilters: buildFilters);
+  }) => _build.run(buildDirs: buildDirs, buildFilters: buildFilters);
 
   static Future<BuildRunner> create(
     BuildOptions options,

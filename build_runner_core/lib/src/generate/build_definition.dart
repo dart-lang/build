@@ -29,9 +29,6 @@ class BuildDefinition {
   final AssetGraph assetGraph;
   final BuildScriptUpdates? buildScriptUpdates;
 
-  /// Whether this is a build starting from no previous state or outputs.
-  final bool cleanBuild;
-
   /// When reusing serialized state from a previous build: the file updates
   /// since that build.
   ///
@@ -39,12 +36,7 @@ class BuildDefinition {
   /// the current build having an incompatible change.
   final Map<AssetId, ChangeType>? updates;
 
-  BuildDefinition._(
-    this.assetGraph,
-    this.buildScriptUpdates,
-    this.cleanBuild,
-    this.updates,
-  );
+  BuildDefinition._(this.assetGraph, this.buildScriptUpdates, this.updates);
 
   static Future<BuildDefinition> prepareWorkspace(
     BuildEnvironment environment,
@@ -79,9 +71,7 @@ class _Loader {
 
     BuildScriptUpdates? buildScriptUpdates;
     Map<AssetId, ChangeType>? updates;
-    var cleanBuild = true;
     if (assetGraph != null) {
-      cleanBuild = false;
       buildLog.doing('Checking for updates.');
       updates = await _computeUpdates(
         assetGraph,
@@ -117,7 +107,6 @@ class _Loader {
         assetGraph = null;
         buildScriptUpdates = null;
         updates = null;
-        cleanBuild = true;
       }
     }
 
@@ -171,12 +160,7 @@ class _Loader {
       await _initialBuildCleanup(conflictingOutputs, _environment.writer);
     }
 
-    return BuildDefinition._(
-      assetGraph,
-      buildScriptUpdates,
-      cleanBuild,
-      updates,
-    );
+    return BuildDefinition._(assetGraph, buildScriptUpdates, updates);
   }
 
   /// Deletes the generated output directory.
