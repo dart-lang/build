@@ -2,8 +2,15 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:io';
+
 import 'package:build/build.dart';
+import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
+
+const multiRootScheme = 'org-dartlang-app';
+final sdkDir = p.dirname(p.dirname(Platform.resolvedExecutable));
+final packagesFilePath = p.join('.dart_tool', 'package_config.json');
 
 final defaultAnalysisOptionsId = AssetId(
   'build_modules',
@@ -16,6 +23,10 @@ String defaultAnalysisOptionsArg(ScratchSpace scratchSpace) =>
 enum ModuleStrategy { fine, coarse }
 
 ModuleStrategy moduleStrategy(BuilderOptions options) {
+  // The DDC Library Bundle module system only supports fine modules.
+  if (options.config['web-hot-reload'] as bool? ?? false) {
+    return ModuleStrategy.fine;
+  }
   var config = options.config['strategy'] as String? ?? 'coarse';
   switch (config) {
     case 'coarse':

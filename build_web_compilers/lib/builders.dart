@@ -8,6 +8,7 @@ import 'package:collection/collection.dart';
 
 import 'build_web_compilers.dart';
 import 'src/common.dart';
+import 'src/ddc_frontend_server_builder.dart';
 import 'src/sdk_js_compile_builder.dart';
 import 'src/sdk_js_copy_builder.dart';
 
@@ -15,7 +16,7 @@ import 'src/sdk_js_copy_builder.dart';
 Builder webEntrypointBuilder(BuilderOptions options) =>
     WebEntrypointBuilder.fromOptions(options);
 
-// Ddc related builders
+// DDC related builders
 Builder ddcMetaModuleBuilder(BuilderOptions options) =>
     MetaModuleBuilder.forOptions(ddcPlatform, options);
 Builder ddcMetaModuleCleanBuilder(BuilderOptions _) =>
@@ -26,11 +27,23 @@ Builder ddcBuilder(BuilderOptions options) {
   validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc');
   _ensureSameDdcOptions(options);
 
+  if (_readWebHotReloadOption(options)) {
+    final entrypoint = _readEntrypoint(options);
+    if (entrypoint == null) {
+      throw StateError(
+        "DDC's Frontend Server configuration requires the "
+        '`entrypoint` to be specified in the `build.yaml`.',
+      );
+    }
+    return DdcFrontendServerBuilder(entrypoint: entrypoint);
+  }
+
   return DevCompilerBuilder(
     useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
     generateFullDill: _readGenerateFullDillOption(options),
     emitDebugSymbols: _readEmitDebugSymbolsOption(options),
     canaryFeatures: _readCanaryOption(options),
+    ddcModules: _readWebHotReloadOption(options),
     sdkKernelPath: sdkDdcKernelPath,
     trackUnusedInputs: _readTrackInputsCompilerOption(options),
     platform: ddcPlatform,
@@ -58,7 +71,9 @@ Builder sdkJsCopyRequirejs(BuilderOptions _) => SdkJsCopyBuilder();
 Builder sdkJsCompile(BuilderOptions options) => SdkJsCompileBuilder(
   sdkKernelPath: 'lib/_internal/ddc_platform.dill',
   outputPath: 'lib/src/dev_compiler/dart_sdk.js',
-  canaryFeatures: _readCanaryOption(options),
+  canaryFeatures:
+      _readWebHotReloadOption(options) || _readCanaryOption(options),
+  usesWebHotReload: _readWebHotReloadOption(options),
 );
 
 // Dart2js related builders
@@ -135,6 +150,14 @@ bool _readTrackInputsCompilerOption(BuilderOptions options) {
   return options.config[_trackUnusedInputsCompilerOption] as bool? ?? true;
 }
 
+String? _readEntrypoint(BuilderOptions options) {
+  return options.config[_entrypoint] as String?;
+}
+
+bool _readWebHotReloadOption(BuilderOptions options) {
+  return options.config[_webHotReloadOption] as bool? ?? false;
+}
+
 Map<String, String> _readEnvironmentOption(BuilderOptions options) {
   final environment = options.config[_environmentOption] as Map? ?? const {};
   return environment.map((key, value) => MapEntry('$key', '$value'));
@@ -147,6 +170,8 @@ const _emitDebugSymbolsOption = 'emit-debug-symbols';
 const _canaryOption = 'canary';
 const _trackUnusedInputsCompilerOption = 'track-unused-inputs';
 const _environmentOption = 'environment';
+const _entrypoint = 'entrypoint';
+const _webHotReloadOption = 'web-hot-reload';
 
 const _supportedOptions = [
   _environmentOption,
@@ -155,4 +180,6 @@ const _supportedOptions = [
   _emitDebugSymbolsOption,
   _canaryOption,
   _trackUnusedInputsCompilerOption,
+  _entrypoint,
+  _webHotReloadOption,
 ];

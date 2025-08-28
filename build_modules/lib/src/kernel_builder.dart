@@ -17,11 +17,10 @@ import 'package:scratch_space/scratch_space.dart';
 import 'package:stream_transform/stream_transform.dart';
 
 import '../build_modules.dart';
+import 'common.dart';
 import 'errors.dart';
 import 'module_cache.dart';
 import 'workers.dart';
-
-const multiRootScheme = 'org-dartlang-app';
 
 /// A builder which can output kernel files for a given sdk.
 ///
@@ -177,13 +176,12 @@ Future<void> _createKernel({
     await scratchSpace.ensureAssets(allAssetIds, buildStep);
 
     if (trackUnusedInputs) {
-      usedInputsFile =
-          await File(
-            p.join(
-              (await Directory.systemTemp.createTemp('kernel_builder_')).path,
-              'used_inputs.txt',
-            ),
-          ).create();
+      usedInputsFile = await File(
+        p.join(
+          (await Directory.systemTemp.createTemp('kernel_builder_')).path,
+          'used_inputs.txt',
+        ),
+      ).create();
       kernelInputPathToId = {};
     }
 
@@ -210,12 +208,11 @@ Future<void> _createKernel({
     var frontendWorker = await buildStep.fetchResource(frontendDriverResource);
     var response = await frontendWorker.doWork(
       request,
-      trackWork:
-          (response) => buildStep.trackStage(
-            'Kernel Generate',
-            () => response,
-            isExternal: true,
-          ),
+      trackWork: (response) => buildStep.trackStage(
+        'Kernel Generate',
+        () => response,
+        isExternal: true,
+      ),
     );
     if (response.exitCode != EXIT_CODE_OK || !await outputFile.exists()) {
       throw KernelException(
@@ -268,12 +265,11 @@ Future<void> reportUnusedKernelInputs(
   if (usedPaths.isEmpty || usedPaths.first == '') return;
 
   String? firstMissingInputPath;
-  var usedIds =
-      usedPaths.map((usedPath) {
-        var id = inputPathToId[usedPath];
-        if (id == null) firstMissingInputPath ??= usedPath;
-        return id;
-      }).toSet();
+  var usedIds = usedPaths.map((usedPath) {
+    var id = inputPathToId[usedPath];
+    if (id == null) firstMissingInputPath ??= usedPath;
+    return id;
+  }).toSet();
 
   if (firstMissingInputPath != null) {
     log.warning(
@@ -427,7 +423,7 @@ Future<void> _addRequestArguments(
   request.arguments.addAll([
     '--dart-sdk-summary=${Uri.file(p.join(sdkDir, sdkKernelPath))}',
     '--output=${outputFile.path}',
-    '--packages-file=$multiRootScheme:///${p.join('.dart_tool', 'package_config.json')}',
+    '--packages-file=$multiRootScheme:///$packagesFilePath',
     '--multi-root-scheme=$multiRootScheme',
     '--exclude-non-sources',
     summaryOnly ? '--summary-only' : '--no-summary-only',
@@ -455,9 +451,8 @@ Future<void> _addRequestArguments(
 }
 
 String _sourceArg(AssetId id) {
-  var uri =
-      id.path.startsWith('lib')
-          ? canonicalUriFor(id)
-          : '$multiRootScheme:///${id.path}';
+  var uri = id.path.startsWith('lib')
+      ? canonicalUriFor(id)
+      : '$multiRootScheme:///${id.path}';
   return '--source=$uri';
 }

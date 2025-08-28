@@ -17,13 +17,6 @@ import '../builders.dart';
 import 'common.dart';
 import 'errors.dart';
 
-final jsModuleErrorsExtension = '.ddc.js.errors';
-final jsModuleExtension = '.ddc.js';
-final jsSourceMapExtension = '.ddc.js.map';
-final metadataExtension = '.ddc.js.metadata';
-final symbolsExtension = '.ddc.js.symbols';
-final fullKernelExtension = '.ddc.full.dill';
-
 /// A builder which can output ddc modules!
 class DevCompilerBuilder implements Builder {
   final bool useIncrementalCompiler;
@@ -49,6 +42,9 @@ class DevCompilerBuilder implements Builder {
 
   /// Enables canary features in DDC.
   final bool canaryFeatures;
+
+  /// Emits code with the DDC module system.
+  final bool ddcModules;
 
   final bool trackUnusedInputs;
 
@@ -79,6 +75,7 @@ class DevCompilerBuilder implements Builder {
     this.generateFullDill = false,
     this.emitDebugSymbols = false,
     this.canaryFeatures = false,
+    this.ddcModules = false,
     this.trackUnusedInputs = false,
     required this.platform,
     String? sdkKernelPath,
@@ -133,6 +130,7 @@ class DevCompilerBuilder implements Builder {
         generateFullDill,
         emitDebugSymbols,
         canaryFeatures,
+        ddcModules,
         trackUnusedInputs,
         platformSdk,
         sdkKernelPath,
@@ -155,6 +153,7 @@ Future<void> _createDevCompilerModule(
   bool generateFullDill,
   bool emitDebugSymbols,
   bool canaryFeatures,
+  bool ddcModules,
   bool trackUnusedInputs,
   String dartSdk,
   String sdkKernelPath,
@@ -190,76 +189,72 @@ Future<void> _createDevCompilerModule(
   File? usedInputsFile;
 
   if (trackUnusedInputs) {
-    usedInputsFile =
-        await File(
-          p.join(
-            (await Directory.systemTemp.createTemp('ddk_builder_')).path,
-            'used_inputs.txt',
-          ),
-        ).create();
+    usedInputsFile = await File(
+      p.join(
+        (await Directory.systemTemp.createTemp('ddk_builder_')).path,
+        'used_inputs.txt',
+      ),
+    ).create();
     kernelInputPathToId = {};
   }
 
-  var request =
-      WorkRequest()
-        ..arguments.addAll([
-          '--dart-sdk-summary=$sdkSummary',
-          '--modules=amd',
-          '--no-summarize',
-          if (generateFullDill) '--experimental-output-compiled-kernel',
-          if (emitDebugSymbols) '--emit-debug-symbols',
-          if (canaryFeatures) '--canary',
-          '-o',
-          jsOutputFile.path,
-          debugMode ? '--source-map' : '--no-source-map',
-          for (var dep in transitiveDeps) _summaryArg(dep),
-          '--packages=$multiRootScheme:///.dart_tool/package_config.json',
-          '--module-name=${ddcModuleName(jsId)}',
-          '--multi-root-scheme=$multiRootScheme',
-          '--multi-root=.',
-          '--track-widget-creation',
-          '--inline-source-map',
-          '--libraries-file=${p.toUri(librariesPath)}',
-          '--experimental-emit-debug-metadata',
-          if (useIncrementalCompiler) ...[
-            '--reuse-compiler-result',
-            '--use-incremental-compiler',
-          ],
-          if (usedInputsFile != null)
-            '--used-inputs-file=${usedInputsFile.uri.toFilePath()}',
-          for (var source in module.sources) _sourceArg(source),
-          for (var define in environment.entries)
-            '-D${define.key}=${define.value}',
-          for (var experiment in enabledExperiments)
-            '--enable-experiment=$experiment',
-        ])
-        ..inputs.add(
-          Input()
-            ..path = sdkSummary
-            ..digest = [0],
-        )
-        ..inputs.addAll(
-          await Future.wait(
-            transitiveKernelDeps.map((dep) async {
-              var file = scratchSpace.fileFor(dep);
-              if (kernelInputPathToId != null) {
-                kernelInputPathToId[file.uri.toString()] = dep;
-              }
-              return Input()
-                ..path = file.path
-                ..digest = (await buildStep.digest(dep)).bytes;
-            }),
-          ),
-        );
+  var request = WorkRequest()
+    ..arguments.addAll([
+      '--dart-sdk-summary=$sdkSummary',
+      '--modules=${ddcModules ? 'ddc' : 'amd'}',
+      '--no-summarize',
+      if (generateFullDill) '--experimental-output-compiled-kernel',
+      if (emitDebugSymbols) '--emit-debug-symbols',
+      if (canaryFeatures) '--canary',
+      '-o',
+      jsOutputFile.path,
+      debugMode ? '--source-map' : '--no-source-map',
+      for (var dep in transitiveDeps) _summaryArg(dep),
+      '--packages=$multiRootScheme:///.dart_tool/package_config.json',
+      '--module-name=${ddcModuleName(jsId)}',
+      '--multi-root-scheme=$multiRootScheme',
+      '--multi-root=.',
+      '--track-widget-creation',
+      '--inline-source-map',
+      '--libraries-file=${p.toUri(librariesPath)}',
+      '--experimental-emit-debug-metadata',
+      if (useIncrementalCompiler) ...[
+        '--reuse-compiler-result',
+        '--use-incremental-compiler',
+      ],
+      if (usedInputsFile != null)
+        '--used-inputs-file=${usedInputsFile.uri.toFilePath()}',
+      for (var source in module.sources) sourceArg(source),
+      for (var define in environment.entries) '-D${define.key}=${define.value}',
+      for (var experiment in enabledExperiments)
+        '--enable-experiment=$experiment',
+    ])
+    ..inputs.add(
+      Input()
+        ..path = sdkSummary
+        ..digest = [0],
+    )
+    ..inputs.addAll(
+      await Future.wait(
+        transitiveKernelDeps.map((dep) async {
+          var file = scratchSpace.fileFor(dep);
+          if (kernelInputPathToId != null) {
+            kernelInputPathToId[file.uri.toString()] = dep;
+          }
+          return Input()
+            ..path = file.path
+            ..digest = (await buildStep.digest(dep)).bytes;
+        }),
+      ),
+    );
 
   try {
     var driverResource = dartdevkDriverResource;
     var driver = await buildStep.fetchResource(driverResource);
     var response = await driver.doWork(
       request,
-      trackWork:
-          (response) =>
-              buildStep.trackStage('Compile', () => response, isExternal: true),
+      trackWork: (response) =>
+          buildStep.trackStage('Compile', () => response, isExternal: true),
     );
 
     // TODO(jakemac53): Fix the ddc worker mode so it always sends back a bad
@@ -301,7 +296,7 @@ Future<void> _createDevCompilerModule(
       var file = scratchSpace.fileFor(metadataId);
       var content = await file.readAsString();
       var json = jsonDecode(content) as Map<String, Object?>;
-      _fixMetadataSources(json, scratchSpace.tempDir.uri);
+      fixMetadataSources(json, scratchSpace.tempDir.uri);
       await buildStep.writeAsString(metadataId, jsonEncode(json));
 
       // Copy the symbols output, modifying its contents to remove the temp
@@ -334,56 +329,4 @@ String _summaryArg(Module module) {
     module.primarySource.changeExtension(jsModuleExtension),
   );
   return '--summary=${scratchSpace.fileFor(kernelAsset).path}=$moduleName';
-}
-
-/// The url to compile for a source.
-///
-/// Use the package: path for files under lib and the full absolute path for
-/// other files.
-String _sourceArg(AssetId id) {
-  var uri = canonicalUriFor(id);
-  return uri.startsWith('package:') ? uri : '$multiRootScheme:///${id.path}';
-}
-
-/// The module name according to ddc for [jsId] which represents the real js
-/// module file.
-String ddcModuleName(AssetId jsId) {
-  var jsPath =
-      jsId.path.startsWith('lib/')
-          ? jsId.path.replaceFirst('lib/', 'packages/${jsId.package}/')
-          : jsId.path;
-  return jsPath.substring(0, jsPath.length - jsModuleExtension.length);
-}
-
-void _fixMetadataSources(Map<String, dynamic> json, Uri scratchUri) {
-  String updatePath(String path) =>
-      Uri.parse(path).path.replaceAll(scratchUri.path, '');
-
-  var sourceMapUri = json['sourceMapUri'] as String?;
-  if (sourceMapUri != null) {
-    json['sourceMapUri'] = updatePath(sourceMapUri);
-  }
-
-  var moduleUri = json['moduleUri'] as String?;
-  if (moduleUri != null) {
-    json['moduleUri'] = updatePath(moduleUri);
-  }
-
-  var fullDillUri = json['fullDillUri'] as String?;
-  if (fullDillUri != null) {
-    json['fullDillUri'] = updatePath(fullDillUri);
-  }
-
-  var libraries = json['libraries'] as List<Object?>?;
-  if (libraries != null) {
-    for (var lib in libraries) {
-      var libraryJson = lib as Map<String, Object?>?;
-      if (libraryJson != null) {
-        var fileUri = libraryJson['fileUri'] as String?;
-        if (fileUri != null) {
-          libraryJson['fileUri'] = updatePath(fileUri);
-        }
-      }
-    }
-  }
 }

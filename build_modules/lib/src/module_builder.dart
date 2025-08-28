@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:collection/collection.dart';
 
+import 'meta_module_builder.dart';
 import 'meta_module_clean_builder.dart';
 import 'module_cache.dart';
 import 'module_library.dart';
@@ -32,12 +33,12 @@ class ModuleBuilder implements Builder {
 
   @override
   Future build(BuildStep buildStep) async {
-    final cleanMetaModules = await buildStep.fetchResource(metaModuleCache);
+    final metaModules = await buildStep.fetchResource(metaModuleCache);
     final metaModule =
-        (await cleanMetaModules.find(
+        (await metaModules.find(
           AssetId(
             buildStep.inputId.package,
-            'lib/${metaModuleCleanExtension(_platform)}',
+            'lib/${metaModuleExtension(_platform)}',
           ),
           buildStep,
         ))!;

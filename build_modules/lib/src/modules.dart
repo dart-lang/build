@@ -148,6 +148,7 @@ class Module {
   Future<List<Module>> computeTransitiveDependencies(
     BuildStep buildStep, {
     bool throwIfUnsupported = false,
+    bool computeStronglyConnectedComponents = true,
   }) async {
     final modules = await buildStep.fetchResource(moduleCache);
     var transitiveDeps = <AssetId, Module>{};
@@ -183,13 +184,16 @@ class Module {
     if (throwIfUnsupported && unsupportedModules.isNotEmpty) {
       throw UnsupportedModules(unsupportedModules);
     }
-    var orderedModules = stronglyConnectedComponents<Module>(
-      transitiveDeps.values,
-      (m) => m.directDependencies.map((s) => transitiveDeps[s]!),
-      equals: (a, b) => a.primarySource == b.primarySource,
-      hashCode: (m) => m.primarySource.hashCode,
-    );
-    return orderedModules.map((c) => c.single).toList();
+    if (computeStronglyConnectedComponents) {
+      var orderedModules = stronglyConnectedComponents<Module>(
+        transitiveDeps.values,
+        (m) => m.directDependencies.map((s) => transitiveDeps[s]!),
+        equals: (a, b) => a.primarySource == b.primarySource,
+        hashCode: (m) => m.primarySource.hashCode,
+      );
+      return orderedModules.map((c) => c.single).toList();
+    }
+    return transitiveDeps.values.toList();
   }
 }
 

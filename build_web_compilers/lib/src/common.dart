@@ -9,6 +9,14 @@ import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
 
+final multiRootScheme = 'org-dartlang-app';
+final jsModuleErrorsExtension = '.ddc.js.errors';
+final jsModuleExtension = '.ddc.js';
+final jsSourceMapExtension = '.ddc.js.map';
+final metadataExtension = '.ddc.js.metadata';
+final symbolsExtension = '.ddc.js.symbols';
+final fullKernelExtension = '.ddc.full.dill';
+
 final defaultAnalysisOptionsId = AssetId(
   'build_modules',
   'lib/src/analysis_options.default.yaml',
@@ -50,6 +58,15 @@ void validateOptions(
   }
 }
 
+/// The url to compile for a source.
+///
+/// Use the package: path for files under lib and the full absolute path for
+/// other files.
+String sourceArg(AssetId id) {
+  var uri = canonicalUriFor(id);
+  return uri.startsWith('package:') ? uri : '$multiRootScheme:///${id.path}';
+}
+
 /// If [id] exists, assume it is a source map and fix up the source uris from
 /// it so they make sense in a browser context, then write the modified version
 /// using [writer].
@@ -84,4 +101,68 @@ Future<void> fixAndCopySourceMap(
     }
     await writer.writeAsString(id, jsonEncode(json));
   }
+}
+
+void fixMetadataSources(Map<String, dynamic> json, Uri scratchUri) {
+  String updatePath(String path) =>
+      Uri.parse(path).path.replaceAll(scratchUri.path, '');
+
+  var sourceMapUri = json['sourceMapUri'] as String?;
+  if (sourceMapUri != null) {
+    json['sourceMapUri'] = updatePath(sourceMapUri);
+  }
+
+  var moduleUri = json['moduleUri'] as String?;
+  if (moduleUri != null) {
+    json['moduleUri'] = updatePath(moduleUri);
+  }
+
+  var fullDillUri = json['fullDillUri'] as String?;
+  if (fullDillUri != null) {
+    json['fullDillUri'] = updatePath(fullDillUri);
+  }
+
+  var libraries = json['libraries'] as List<Object?>?;
+  if (libraries != null) {
+    for (var lib in libraries) {
+      var libraryJson = lib as Map<String, Object?>?;
+      if (libraryJson != null) {
+        var fileUri = libraryJson['fileUri'] as String?;
+        if (fileUri != null) {
+          libraryJson['fileUri'] = updatePath(fileUri);
+        }
+      }
+    }
+  }
+}
+
+/// The module name according to ddc for [jsId] which represents the real js
+/// module file.
+String ddcModuleName(AssetId jsId) {
+  var jsPath =
+      jsId.path.startsWith('lib/')
+          ? jsId.path.replaceFirst('lib/', 'packages/${jsId.package}/')
+          : jsId.path;
+  return jsPath.substring(0, jsPath.length - jsModuleExtension.length);
+}
+
+String ddcLibraryId(AssetId jsId) {
+  var jsPath =
+      jsId.path.startsWith('lib/')
+          ? jsId.path.replaceFirst('lib/', 'package:${jsId.package}/')
+          : '$multiRootScheme://${jsId.path}';
+  var prefix = jsPath.substring(0, jsPath.length - jsModuleExtension.length);
+  return '$prefix.dart';
+}
+
+AssetId changeAssetIdExtension(
+  AssetId inputId,
+  String inputExtension,
+  String outputExtension,
+) {
+  assert(inputId.path.endsWith(inputExtension));
+  var newPath =
+      inputId.path.substring(0, inputId.path.length - inputExtension.length) +
+      outputExtension;
+  return AssetId(inputId.package, newPath);
 }

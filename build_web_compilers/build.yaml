@@ -24,6 +24,7 @@ builders:
         - lib/src/dev_compiler/dart_sdk.js
         - lib/src/dev_compiler/dart_sdk.js.map
         - lib/src/dev_compiler/require.js
+        - lib/src/dev_compiler/ddc_module_loader.js
     is_optional: True
     auto_apply: none
     runs_before: ["build_web_compilers:entrypoint"]
