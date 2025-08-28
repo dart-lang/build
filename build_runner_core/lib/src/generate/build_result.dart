@@ -59,6 +59,7 @@ class FailureType {
   static final cantCreate = FailureType._(73);
   static final buildConfigChanged = FailureType._(75);
   static final buildScriptChanged = FailureType._(75);
+  static final watcherRestarted = FailureType._(75);
   final int exitCode;
   FailureType._(this.exitCode);
 }

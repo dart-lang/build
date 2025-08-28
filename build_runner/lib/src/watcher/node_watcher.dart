@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:watcher/watcher.dart';
@@ -29,9 +30,22 @@ class PackageNodeWatcher {
     : _strategy = watch ?? _default;
 
   /// Returns a stream of records for assets that change recursively.
-  Stream<AssetChange> watch() {
+  /*Stream<AssetChange> watch() {
     _watcher = _strategy(node.path);
     final events = _watcher.events;
     return events.map((e) => AssetChange.fromEvent(node, e));
+  }*/
+
+  Stream<AssetChange> watch() {
+    _watcher = _strategy(node.path);
+    final events = _watcher.events;
+    final result = StreamController<AssetChange>();
+    events.listen((e) => result.add(AssetChange.fromEvent(node, e)));
+    Timer.periodic(const Duration(seconds: 20), (_) {
+      result.addError(
+        const FileSystemException('Directory watcher closed unexpectedly'),
+      );
+    });
+    return result.stream;
   }
 }
