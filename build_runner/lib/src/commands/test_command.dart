@@ -66,15 +66,19 @@ Please update your dev_dependencies section of your pubspec.yaml:
       final result =
           await BuildCommand(
             builders: builders,
-            buildOptions: buildOptions.copyWithBuildDirectory(
-              BuildDirectory(
-                'test',
-                outputLocation: OutputLocation(
-                  tempPath,
-                  useSymlinks: buildOptions.outputSymlinksOnly,
-                  hoist: false,
-                ),
-              ),
+            buildOptions: buildOptions.copyWith(
+              buildDirs: buildOptions.buildDirs.rebuild((b) {
+                b.add(
+                  BuildDirectory(
+                    'test',
+                    outputLocation: OutputLocation(
+                      tempPath,
+                      useSymlinks: buildOptions.outputSymlinksOnly,
+                      hoist: false,
+                    ),
+                  ),
+                );
+              }),
             ),
             testingOverrides: testingOverrides,
           ).run();

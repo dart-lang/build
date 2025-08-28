@@ -4,6 +4,7 @@
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 
@@ -19,7 +20,7 @@ class InputMatcher {
   /// Null or empty means exclude nothing.
   final List<Glob>? excludeGlobs;
 
-  InputMatcher(InputSet inputSet, {List<String>? defaultInclude})
+  InputMatcher(InputSet inputSet, {BuiltList<String>? defaultInclude})
     : includeGlobs =
           (inputSet.include ?? defaultInclude)?.map(Glob.new).toList(),
       excludeGlobs = inputSet.exclude?.map(Glob.new).toList();

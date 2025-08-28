@@ -7,14 +7,15 @@ import 'dart:io';
 
 import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
-import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/optional_output_tracker.dart';
 import 'package:build_runner_core/src/asset_graph/post_process_build_step_id.dart';
 import 'package:build_runner_core/src/environment/create_merged_dir.dart';
+import 'package:build_runner_core/src/generate/build_directory.dart';
 import 'package:build_runner_core/src/generate/build_phases.dart';
-import 'package:build_runner_core/src/generate/options.dart';
+import 'package:build_runner_core/src/generate/finalized_assets_view.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
+import 'package:build_runner_core/src/options/testing_overrides.dart';
 import 'package:build_runner_core/src/package_graph/target_graph.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
@@ -66,7 +67,6 @@ void main() {
     late TargetGraph targetGraph;
     late Directory tmpDir;
     late Directory anotherTmpDir;
-    late TestBuildEnvironment environment;
     late TestReaderWriter readerWriter;
     late OptionalOutputTracker optionalOutputTracker;
     late FinalizedAssetsView finalizedAssetsView;
@@ -76,7 +76,6 @@ void main() {
       for (final source in sources.entries) {
         readerWriter.testing.writeString(source.key, source.value);
       }
-      environment = TestBuildEnvironment(readerWriter: readerWriter);
       graph = await AssetGraph.build(
         phases,
         sources.keys.toSet(),
@@ -85,8 +84,10 @@ void main() {
         readerWriter,
       );
       targetGraph = await TargetGraph.forPackageGraph(
-        packageGraph,
-        defaultRootPackageSources: defaultNonRootVisibleAssets,
+        packageGraph: packageGraph,
+        testingOverrides: TestingOverrides(
+          defaultRootPackageSources: defaultNonRootVisibleAssets,
+        ),
       );
       optionalOutputTracker = OptionalOutputTracker(
         graph,
@@ -124,7 +125,6 @@ void main() {
           BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
         packageGraph,
-        environment,
         readerWriter,
         finalizedAssetsView,
         false,
@@ -147,7 +147,6 @@ void main() {
           BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
         packageGraph,
-        environment,
         readerWriter,
         finalizedAssetsView,
         false,
@@ -175,7 +174,6 @@ void main() {
           ),
         }.build(),
         packageGraph,
-        environment,
         readerWriter,
         finalizedAssetsView,
         false,
@@ -193,7 +191,6 @@ void main() {
           BuildDirectory('foo', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
         packageGraph,
-        environment,
         readerWriter,
         finalizedAssetsView,
         false,
@@ -206,7 +203,6 @@ void main() {
       var success = await createMergedOutputDirectories(
         {BuildDirectory('web'), BuildDirectory('foo')}.build(),
         packageGraph,
-        environment,
         readerWriter,
         finalizedAssetsView,
         false,
@@ -220,7 +216,6 @@ void main() {
           BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
         packageGraph,
-        environment,
         readerWriter,
         finalizedAssetsView,
         false,
@@ -241,7 +236,6 @@ void main() {
           ),
         }.build(),
         packageGraph,
-        environment,
         readerWriter,
         finalizedAssetsView,
         false,
@@ -256,7 +250,6 @@ void main() {
           BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
         packageGraph,
-        environment,
         readerWriter,
         finalizedAssetsView,
         false,
@@ -276,7 +269,6 @@ void main() {
           ),
         }.build(),
         packageGraph,
-        environment,
         readerWriter,
         finalizedAssetsView,
         false,
@@ -304,7 +296,6 @@ void main() {
           BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
         packageGraph,
-        environment,
         readerWriter,
         finalizedAssetsView,
         false,
@@ -323,7 +314,6 @@ void main() {
           ),
         }.build(),
         packageGraph,
-        environment,
         readerWriter,
         finalizedAssetsView,
         false,
@@ -356,7 +346,6 @@ void main() {
           BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
         packageGraph,
-        environment,
         readerWriter,
         finalizedAssetsView,
         false,
@@ -385,7 +374,6 @@ void main() {
           BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
         packageGraph,
-        environment,
         readerWriter,
         finalizedAssetsView,
         false,
@@ -415,13 +403,11 @@ void main() {
       });
 
       test('fails the build', () async {
-        environment = TestBuildEnvironment(readerWriter: readerWriter);
         var success = await createMergedOutputDirectories(
           {
             BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
           }.build(),
           packageGraph,
-          environment,
           readerWriter,
           finalizedAssetsView,
           false,
@@ -448,7 +434,6 @@ void main() {
             BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
           }.build(),
           packageGraph,
-          environment,
           readerWriter,
           finalizedAssetsView,
           false,
@@ -470,7 +455,6 @@ void main() {
             BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
           }.build(),
           packageGraph,
-          environment,
           readerWriter,
           finalizedAssetsView,
           false,
@@ -536,37 +520,4 @@ void _expectAllFiles(Directory dir) {
     ]),
   };
   _expectFiles(expectedFiles, dir);
-}
-
-/// A [BuildEnvironment] for testing.
-///
-/// Defaults to an empty [TestReaderWriter].
-class TestBuildEnvironment implements BuildEnvironment {
-  final TestReaderWriter _readerWriter;
-
-  @override
-  TestReaderWriter get reader => _readerWriter;
-
-  @override
-  TestReaderWriter get writer => _readerWriter;
-
-  TestBuildEnvironment({TestReaderWriter? readerWriter})
-    : _readerWriter = readerWriter ?? TestReaderWriter();
-
-  @override
-  BuildEnvironment copyWith({RunnerAssetWriter? writer, AssetReader? reader}) =>
-      TestBuildEnvironment(
-        readerWriter:
-            (writer as TestReaderWriter?) ??
-            (reader as TestReaderWriter?) ??
-            _readerWriter,
-      );
-
-  @override
-  Future<BuildResult> finalizeBuild(
-    BuildResult buildResult,
-    FinalizedAssetsView finalizedAssetsView,
-    AssetReader reader,
-    BuiltSet<BuildDirectory> buildDirs,
-  ) => Future.value(buildResult);
 }

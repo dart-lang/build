@@ -33,10 +33,10 @@ enum PerfSortOrder {
   innerDurationDesc,
 }
 
-ServeHandler createServeHandler(WatchImpl watch) {
+ServeHandler createServeHandler(Watcher watch) {
   var rootPackage = watch.packageGraph.root.name;
   var assetHandlerCompleter = Completer<AssetHandler>();
-  watch.reader
+  watch.finalizedReader
       .then((reader) async {
         assetHandlerCompleter.complete(AssetHandler(reader, rootPackage));
       })
@@ -45,7 +45,7 @@ ServeHandler createServeHandler(WatchImpl watch) {
 }
 
 class ServeHandler implements BuildState {
-  final WatchImpl _state;
+  final Watcher _state;
   final String _rootPackage;
 
   final Future<AssetHandler> _assetHandler;
@@ -115,7 +115,7 @@ class ServeHandler implements BuildState {
     shelf.Request request,
     String rootDir,
   ) async {
-    final reader = await _state.reader;
+    final reader = await _state.finalizedReader;
     var assertPathList =
         (jsonDecode(await request.readAsString()) as List).cast<String>();
     var rootPackage = _state.packageGraph.root.name;
@@ -170,7 +170,7 @@ class BuildUpdatesWebSocketHandler {
   })
   _handlerFactory;
   final _internalHandlers = <String, shelf.Handler>{};
-  final WatchImpl _state;
+  final Watcher _state;
 
   BuildUpdatesWebSocketHandler(
     this._state, [
@@ -191,7 +191,7 @@ class BuildUpdatesWebSocketHandler {
 
   Future emitUpdateMessage(BuildResult buildResult) async {
     if (buildResult.status != BuildStatus.success) return;
-    final reader = await _state.reader;
+    final reader = await _state.finalizedReader;
     final digests = <AssetId, String>{};
     for (var assetId in buildResult.outputs) {
       var digest = await reader.digest(assetId);

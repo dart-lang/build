@@ -3,9 +3,10 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build_runner/src/internal.dart';
 import 'package:built_collection/built_collection.dart';
 
-import '../../build_runner_core.dart';
 import '../generate/build_phases.dart';
 import '../package_graph/target_graph.dart';
 import '../util/build_dirs.dart';

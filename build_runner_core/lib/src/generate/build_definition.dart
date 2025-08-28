@@ -15,13 +15,13 @@ import '../asset_graph/exceptions.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/graph_loader.dart';
 import '../changes/build_script_updates.dart';
-import '../environment/build_environment.dart';
 import '../logging/build_log.dart';
+import '../package_graph/package_graph.dart';
+import '../package_graph/target_graph.dart';
 import '../util/constants.dart';
 import 'asset_tracker.dart';
 import 'build_phases.dart';
 import 'exceptions.dart';
-import 'options.dart';
 
 // TODO(davidmorgan): rename/refactor this, it's now just about loading state,
 // not a build definition.
@@ -46,33 +46,54 @@ class BuildDefinition {
     this.updates,
   );
 
-  static Future<BuildDefinition> prepareWorkspace(
-    BuildEnvironment environment,
-    BuildConfiguration options,
-    BuildPhases buildPhases,
-  ) => _Loader(environment, options, buildPhases).prepareWorkspace();
+  static Future<BuildDefinition> prepareWorkspace({
+    required PackageGraph packageGraph,
+    required TargetGraph targetGraph,
+    required AssetReader reader,
+    required RunnerAssetWriter writer,
+    required BuildPhases buildPhases,
+    required bool skipBuildScriptCheck,
+  }) =>
+      _Loader(
+        packageGraph,
+        targetGraph,
+        reader,
+        writer,
+        buildPhases,
+        skipBuildScriptCheck,
+      ).prepareWorkspace();
 }
 
 class _Loader {
-  final BuildPhases _buildPhases;
-  final BuildConfiguration _options;
-  final BuildEnvironment _environment;
+  final PackageGraph packageGraph;
+  final TargetGraph targetGraph;
+  final AssetReader reader;
+  final RunnerAssetWriter writer;
+  final BuildPhases buildPhases;
+  final bool skipBuildScriptCheck;
 
-  _Loader(this._environment, this._options, this._buildPhases);
+  _Loader(
+    this.packageGraph,
+    this.targetGraph,
+    this.reader,
+    this.writer,
+    this.buildPhases,
+    this.skipBuildScriptCheck,
+  );
 
   Future<BuildDefinition> prepareWorkspace() async {
-    _buildPhases.checkOutputLocations(_options.packageGraph.root.name);
+    buildPhases.checkOutputLocations(packageGraph.root.name);
 
     final assetGraphLoader = AssetGraphLoader(
-      reader: _environment.reader,
-      writer: _environment.writer,
-      buildPhases: _buildPhases,
-      packageGraph: _options.packageGraph,
+      reader: reader,
+      writer: writer,
+      buildPhases: buildPhases,
+      packageGraph: packageGraph,
     );
 
     var assetGraph = await assetGraphLoader.load();
 
-    var assetTracker = AssetTracker(_environment.reader, _options.targetGraph);
+    var assetTracker = AssetTracker(reader, targetGraph);
     var inputSources = await assetTracker.findInputSources();
     var cacheDirSources = await assetTracker.findCacheDirSources();
     var internalSources = await assetTracker.findInternalSources();
@@ -91,20 +112,20 @@ class _Loader {
         internalSources,
       );
       buildScriptUpdates = await BuildScriptUpdates.create(
-        _environment.reader,
-        _options.packageGraph,
+        reader,
+        packageGraph,
         assetGraph,
-        disabled: _options.skipBuildScriptCheck,
+        disabled: skipBuildScriptCheck,
       );
 
       var buildScriptUpdated =
-          !_options.skipBuildScriptCheck &&
+          !skipBuildScriptCheck &&
           buildScriptUpdates.hasBeenUpdated(updates.keys.toSet());
       if (buildScriptUpdated) {
         buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
         var deletedSourceOutputs = await assetGraph.deleteOutputs(
-          _options.packageGraph,
-          _environment.writer,
+          packageGraph,
+          writer,
         );
         await _deleteGeneratedDir();
 
@@ -127,31 +148,31 @@ class _Loader {
       late Set<AssetId> conflictingOutputs;
       try {
         assetGraph = await AssetGraph.build(
-          _buildPhases,
+          buildPhases,
           inputSources,
           internalSources,
-          _options.packageGraph,
-          _environment.reader,
+          packageGraph,
+          reader,
         );
       } on DuplicateAssetNodeException catch (e) {
         buildLog.error(e.toString());
         throw const CannotBuildException();
       }
       buildScriptUpdates = await BuildScriptUpdates.create(
-        _environment.reader,
-        _options.packageGraph,
+        reader,
+        packageGraph,
         assetGraph,
-        disabled: _options.skipBuildScriptCheck,
+        disabled: skipBuildScriptCheck,
       );
 
       conflictingOutputs =
           assetGraph.outputs
-              .where((n) => n.package == _options.packageGraph.root.name)
+              .where((n) => n.package == packageGraph.root.name)
               .where(inputSources.contains)
               .toSet();
       final conflictsInDeps =
           assetGraph.outputs
-              .where((n) => n.package != _options.packageGraph.root.name)
+              .where((n) => n.package != packageGraph.root.name)
               .where(inputSources.contains)
               .toSet();
       if (conflictsInDeps.isNotEmpty) {
@@ -168,7 +189,7 @@ class _Loader {
       // Use a writer with no asset graph. If it had the asset graph, it would
       // delete from the generated output location, but the aim is to delete
       // from input sources.
-      await _initialBuildCleanup(conflictingOutputs, _environment.writer);
+      await _initialBuildCleanup(conflictingOutputs, writer);
     }
 
     return BuildDefinition._(

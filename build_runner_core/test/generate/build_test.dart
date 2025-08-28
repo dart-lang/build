@@ -10,13 +10,12 @@ import 'package:build/build.dart';
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
 import 'package:build_config/build_config.dart';
+// ignore: implementation_imports
+import 'package:build_runner/src/internal.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:build_runner_core/src/asset_graph/post_process_build_step_id.dart';
-import 'package:build_runner_core/src/generate/build_phases.dart';
-import 'package:build_runner_core/src/generate/options.dart'
-    show defaultNonRootVisibleAssets;
 import 'package:built_collection/built_collection.dart';
 import 'package:glob/glob.dart';
 import 'package:test/test.dart';
@@ -573,7 +572,6 @@ targets:
           ],
           {'a|web/a.txt': 'a', 'a|web/a.txt.copy': 'a'},
           outputs: {'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.clone': 'a'},
-          deleteFilesByDefault: true,
         );
 
         var graphId = makeAssetId('a|$assetGraphPath');

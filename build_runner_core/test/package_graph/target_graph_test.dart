@@ -9,7 +9,6 @@ import 'package:_test_common/package_graphs.dart';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
-import 'package:build_runner_core/src/package_graph/target_graph.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
@@ -39,31 +38,31 @@ void main() {
       var packageGraph = PackageGraph.fromRoot(packageA);
 
       TargetGraph.forPackageGraph(
-        packageGraph,
-        defaultRootPackageSources: ['**'],
-        overrideBuildConfig:
-            {
-              'a': BuildConfig.fromMap(
-                'a',
-                ['b'],
-                {
-                  'targets': {
-                    r'$default': {
-                      'sources': ['lib/**'],
+        packageGraph: packageGraph,
+        testingOverrides: TestingOverrides(
+          defaultRootPackageSources: ['**'].build(),
+          buildConfig:
+              {
+                'a': BuildConfig.fromMap(
+                  'a',
+                  ['b'],
+                  {
+                    'targets': {
+                      r'$default': {
+                        'sources': ['lib/**'],
+                      },
                     },
                   },
-                },
-              ),
-              'b': BuildConfig.fromMap('b', [], {
-                'targets': {
-                  r'$default': {
-                    'sources': ['web/**'],
+                ),
+                'b': BuildConfig.fromMap('b', [], {
+                  'targets': {
+                    r'$default': {
+                      'sources': ['web/**'],
+                    },
                   },
-                },
-              }),
-            }.build(),
-        requiredSourcePaths: [r'lib/$lib$'],
-        requiredRootSourcePaths: [r'lib/$lib$', r'$package$'],
+                }),
+              }.build(),
+        ),
       );
 
       expect(
@@ -112,8 +111,10 @@ void main() {
 
     test('for root package', () async {
       final targetGraph = await TargetGraph.forPackageGraph(
-        packages,
-        defaultRootPackageSources: ['**'],
+        packageGraph: packages,
+        testingOverrides: TestingOverrides(
+          defaultRootPackageSources: ['**'].build(),
+        ),
       );
 
       expect(
@@ -133,8 +134,10 @@ void main() {
 
     test('for non-root package with default configuration', () async {
       final targetGraph = await TargetGraph.forPackageGraph(
-        packages,
-        defaultRootPackageSources: ['**'],
+        packageGraph: packages,
+        testingOverrides: TestingOverrides(
+          defaultRootPackageSources: ['**'].build(),
+        ),
       );
 
       expect(
@@ -160,16 +163,18 @@ void main() {
 
     test('for non-root package exposing additional assets', () async {
       final targetGraph = await TargetGraph.forPackageGraph(
-        packages,
-        defaultRootPackageSources: ['**'],
-        overrideBuildConfig:
-            {
-              'b': BuildConfig.parse(
-                'b',
-                [],
-                'additional_public_assets: ["test/**"]',
-              ),
-            }.build(),
+        packageGraph: packages,
+        testingOverrides: TestingOverrides(
+          defaultRootPackageSources: ['**'].build(),
+          buildConfig:
+              {
+                'b': BuildConfig.parse(
+                  'b',
+                  [],
+                  'additional_public_assets: ["test/**"]',
+                ),
+              }.build(),
+        ),
       );
 
       expect(

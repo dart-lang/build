@@ -9,11 +9,9 @@ import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_resolvers/build_resolvers.dart';
+// ignore: implementation_imports
+import 'package:build_runner/src/internal.dart';
 import 'package:build_runner_core/build_runner_core.dart';
-// ignore: implementation_imports
-import 'package:build_runner_core/src/generate/build_series.dart';
-// ignore: implementation_imports
-import 'package:build_runner_core/src/generate/options.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
@@ -290,26 +288,12 @@ Future<TestBuilderResult> testBuilders(
   }
   final packageGraph = PackageGraph.fromRoot(rootNode);
 
-  final environment = BuildEnvironment(
-    packageGraph,
+  final testingOverrides = TestingOverrides(
+    packageGraph: packageGraph,
     reader: readerWriter,
     writer: readerWriter,
-  );
-
-  String builderName(Builder builder) {
-    final result = builder.toString();
-    if (result.startsWith("Instance of '") && result.endsWith("'")) {
-      return result.substring("Instance of '".length, result.length - 1);
-    }
-    return result;
-  }
-
-  final buildOptions = await BuildConfiguration.create(
-    packageGraph: packageGraph,
-    reader: environment.reader,
-    reportUnusedAssetsForInput: reportUnusedAssetsForInput,
     resolvers: resolvers,
-    overrideBuildConfig:
+    buildConfig:
         // Override sources to defaults plus all explicitly passed inputs,
         // optionally restricted by [inputFilter] or [generateFor]. Or if
         // [testingBuilderConfig] is false, use the defaults. These skip some
@@ -338,27 +322,40 @@ Future<TestBuilderResult> testBuilders(
                 }),
             }.build()
             : null,
-    // Tests always trigger the "build script updated" check, even if it
-    // didn't change. Skip it to allow testing with preserved state.
-    skipBuildScriptCheck: true,
-    enableLowResourcesMode: enableLowResourceMode,
+    reportUnusedAssetsForInput: reportUnusedAssetsForInput,
   );
 
-  final buildSeries = await BuildSeries.create(
-    buildOptions,
-    environment,
-    [
-      for (final builder in builders)
-        apply(
-          builderName(builder),
-          [(_) => builder],
-          (p) => inputPackages.contains(p.name),
-          isOptional: optionalBuilders.contains(builder),
-          hideOutput: !visibleOutputBuilders.contains(builder),
-        ),
-    ].build(),
-    BuiltMap(),
+  String builderName(Builder builder) {
+    final result = builder.toString();
+    if (result.startsWith("Instance of '") && result.endsWith("'")) {
+      return result.substring("Instance of '".length, result.length - 1);
+    }
+    return result;
+  }
+
+  final buildPlan = await BuildPlan.load(
+    builders:
+        [
+          for (final builder in builders)
+            apply(
+              builderName(builder),
+              [(_) => builder],
+              (p) => inputPackages.contains(p.name),
+              isOptional: optionalBuilders.contains(builder),
+              hideOutput: !visibleOutputBuilders.contains(builder),
+            ),
+        ].build(),
+    // ignore: invalid_use_of_visible_for_testing_member
+    buildOptions: BuildOptions.forTests(
+      enableLowResourcesMode: enableLowResourceMode,
+      // Tests always trigger the "build script updated" check, even if it
+      // didn't change. Skip it to allow testing with preserved state.
+      skipBuildScriptCheck: true,
+    ),
+    testingOverrides: testingOverrides,
   );
+
+  final buildSeries = await BuildSeries.create(buildPlan: buildPlan);
 
   // Run the build.
   final buildResult = await buildSeries.run({});

@@ -9,10 +9,10 @@ import 'package:build_runner_core/build_runner_core.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:io/io.dart';
 
+import '../build_plan.dart';
 import '../build_script_generate/build_process_state.dart';
 import '../generate/terminator.dart';
 import '../generate/watch_impl.dart';
-import '../package_graph/build_config_overrides.dart';
 import '../server/server.dart';
 import 'build_options.dart';
 import 'build_runner_command.dart';
@@ -45,61 +45,28 @@ class WatchCommand implements BuildRunnerCommand {
       b.verbose = buildOptions.verbose;
       b.onLog = testingOverrides.onLog;
     });
-    final packageGraph =
-        testingOverrides.packageGraph ?? await PackageGraph.forThisPackage();
-    final environment = BuildEnvironment(
-      packageGraph,
-      outputSymlinksOnly: buildOptions.outputSymlinksOnly,
-      reader: testingOverrides.reader,
-      writer: testingOverrides.writer,
-    );
-    buildLog.configuration = buildLog.configuration.rebuild((b) {
-      b.mode = BuildLogMode.build;
-      b.verbose = buildOptions.verbose;
-      b.onLog = testingOverrides.onLog;
-    });
-    final options = await BuildConfiguration.create(
-      packageGraph: packageGraph,
-      reader: environment.reader,
-      overrideBuildConfig:
-          testingOverrides.buildConfig ??
-          await findBuildConfigOverrides(
-            packageGraph,
-            environment.reader,
-            configKey: buildOptions.configKey,
-          ),
-      debounceDelay: testingOverrides.debounceDelay,
-      skipBuildScriptCheck: buildOptions.skipBuildScriptCheck,
-      enableLowResourcesMode: buildOptions.enableLowResourcesMode,
-      trackPerformance: buildOptions.trackPerformance,
-      logPerformanceDir: buildOptions.logPerformanceDir,
-      resolvers: testingOverrides.resolvers,
+    final buildPlan = await BuildPlan.load(
+      builders: builders,
+      buildOptions: buildOptions,
+      testingOverrides: testingOverrides,
     );
     var terminator = Terminator(testingOverrides.terminateEventStream);
 
-    var watch = runWatch(
-      options,
-      environment,
-      builders,
-      buildOptions.builderConfigOverrides,
-      terminator.shouldTerminate,
-      testingOverrides.directoryWatcherFactory,
-      buildOptions.configKey,
-      buildOptions.buildDirs.any(
+    var watcher = Watcher(
+      buildPlan: buildPlan,
+      until: terminator.shouldTerminate,
+      willCreateOutputDirs: buildOptions.buildDirs.any(
         (target) => target.outputLocation?.path.isNotEmpty ?? false,
       ),
-      buildOptions.buildDirs,
-      buildOptions.buildFilters,
-      isReleaseMode: buildOptions.isReleaseBuild,
     );
 
     unawaited(
-      watch.buildResults.drain<void>().then((_) async {
+      watcher.buildResults.drain<void>().then((_) async {
         await terminator.cancel();
       }),
     );
 
-    return createServeHandler(watch);
+    return createServeHandler(watcher);
   }
 }
 

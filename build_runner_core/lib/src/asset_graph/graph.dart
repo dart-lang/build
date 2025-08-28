@@ -17,9 +17,10 @@ import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:watcher/watcher.dart';
 
-import '../../build_runner_core.dart';
+import '../asset/writer.dart';
 import '../generate/build_phases.dart';
 import '../generate/phase.dart';
+import '../package_graph/package_graph.dart';
 import '../util/constants.dart';
 import 'exceptions.dart';
 import 'node.dart';

@@ -5,16 +5,57 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:build_config/build_config.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 
+import '../generate/exceptions.dart';
 import '../generate/input_matcher.dart';
-import '../generate/options.dart' show defaultNonRootVisibleAssets;
 import '../logging/build_log.dart';
+import '../options/testing_overrides.dart';
 import 'build_triggers.dart';
 import 'package_graph.dart';
+
+/// The default list of files visible for non-root packages.
+///
+/// This is also the default list of files for targets in non-root packages when
+/// an explicit include is not provided.
+final BuiltList<String> defaultNonRootVisibleAssets =
+    [
+      'CHANGELOG*',
+      'lib/**',
+      'bin/**',
+      'LICENSE*',
+      'pubspec.yaml',
+      'README*',
+    ].build();
+
+/// The default list of files to include when an explicit include is not
+/// provided.
+///
+/// This should be a superset of [defaultNonRootVisibleAssets].
+final BuiltList<String> defaultRootPackageSources =
+    [
+      'assets/**',
+      'benchmark/**',
+      'bin/**',
+      'CHANGELOG*',
+      'example/**',
+      'lib/**',
+      'test/**',
+      'integration_test/**',
+      'tool/**',
+      'web/**',
+      'node/**',
+      'LICENSE*',
+      'pubspec.yaml',
+      'pubspec.lock',
+      'README*',
+      r'$package$',
+    ].build();
 
 /// Like a [PackageGraph] but packages are further broken down into modules
 /// based on build config.
@@ -52,73 +93,95 @@ class TargetGraph {
 
   /// Builds a [TargetGraph] from [packageGraph].
   ///
-  /// Pass [reader] to read package configs. Otherwise, default configs are
-  /// used.
+  /// Pass [testingOverrides] to override `reader`, `buildConfig` or
+  /// `defaultRootPackageSources`.
   ///
-  /// The [overrideBuildConfig] map overrides the config for packages by name.
-  ///
-  /// The [defaultRootPackageSources] is the default `sources` list to use
-  /// for targets in the root package.
-  ///
-  /// All [requiredSourcePaths] should appear in non-root packages. A warning
-  /// is logged if this condition is not met.
-  ///
-  /// All [requiredRootSourcePaths] should appear in the root package. A
-  /// warning is logged if this condition is not met.
-  static Future<TargetGraph> forPackageGraph(
-    PackageGraph packageGraph, {
+  /// Yaml files will only be loaded if `reader` is set or is overridden
+  /// in `testingOverrides`.
+  static Future<TargetGraph> forPackageGraph({
+    required PackageGraph packageGraph,
     AssetReader? reader,
-    BuiltMap<String, BuildConfig>? overrideBuildConfig,
-    required List<String> defaultRootPackageSources,
-    List<String> requiredSourcePaths = const [],
-    List<String> requiredRootSourcePaths = const [],
+    String? configKey,
+    TestingOverrides? testingOverrides,
+  }) async {
+    reader = testingOverrides?.reader ?? reader;
+    try {
+      return _tryForPackageGraph(
+        packageGraph: packageGraph,
+        reader: reader,
+        configKey: configKey,
+        testingOverrides: testingOverrides,
+      );
+    } on BuildConfigParseException catch (e) {
+      buildLog.error(e.toString());
+      throw const CannotBuildException();
+    }
+  }
+
+  static Future<TargetGraph> _tryForPackageGraph({
+    required PackageGraph packageGraph,
+    AssetReader? reader,
+    String? configKey,
+    TestingOverrides? testingOverrides,
   }) async {
     final modulesByKey = <String, TargetNode>{};
     final publicAssetsByPackage = <String, InputMatcher>{};
     final modulesByPackage = <String, List<TargetNode>>{};
     late BuildConfig rootPackageConfig;
     final configs = <String, BuildConfig>{};
+    final configOverrides =
+        testingOverrides?.buildConfig ??
+        (reader == null
+            ? null
+            : await findBuildConfigOverrides(
+              packageGraph: packageGraph,
+              reader: reader,
+              configKey: configKey,
+            ));
     for (final package in packageGraph.allPackages.values) {
       final config =
-          overrideBuildConfig?[package.name] ??
+          configOverrides?[package.name] ??
           await _packageBuildConfig(reader, package);
       configs[package.name] = config;
 
-      List<String> defaultInclude;
+      BuiltList<String> defaultInclude;
       if (package.isRoot) {
-        defaultInclude = [
-          ...defaultRootPackageSources,
-          ...config.additionalPublicAssets,
-        ];
+        defaultInclude =
+            [
+              ...defaultRootPackageSources,
+              ...config.additionalPublicAssets,
+            ].build();
         rootPackageConfig = config;
       } else if (package.name == r'$sdk') {
-        defaultInclude = const [
-          'lib/dev_compiler/**.js',
-          'lib/_internal/**.sum',
-        ];
+        defaultInclude =
+            const ['lib/dev_compiler/**.js', 'lib/_internal/**.sum'].build();
       } else {
-        defaultInclude = [
-          ...defaultNonRootVisibleAssets,
-          ...config.additionalPublicAssets,
-        ];
+        defaultInclude =
+            [
+              ...defaultNonRootVisibleAssets,
+              ...config.additionalPublicAssets,
+            ].build();
       }
       publicAssetsByPackage[package.name] = InputMatcher(
         const InputSet(),
-        defaultInclude: [
-          ...defaultNonRootVisibleAssets, // public by default
-          ...config.additionalPublicAssets, // user-defined public assets
-        ],
+        defaultInclude:
+            [
+              ...defaultNonRootVisibleAssets, // public by default
+              ...config.additionalPublicAssets, // user-defined public assets
+            ].build(),
       );
       final nodes = config.buildTargets.values.map(
         (target) => TargetNode(target, package, defaultInclude: defaultInclude),
       );
       if (package.name != r'$sdk') {
-        var requiredPackagePaths =
+        final requiredSourcePaths = const [r'lib/$lib$'];
+        final requiredRootSourcePaths = const [r'$package$', r'lib/$lib$'];
+        final requiredPackagePaths =
             package.isRoot ? requiredRootSourcePaths : requiredSourcePaths;
-        var requiredIds = requiredPackagePaths.map(
+        final requiredIds = requiredPackagePaths.map(
           (path) => AssetId(package.name, path),
         );
-        var missing = _missingSources(nodes, requiredIds);
+        final missing = _missingSources(nodes, requiredIds);
         if (missing.isNotEmpty) {
           buildLog.warning(
             'The package `${package.name}` does not include some required '
@@ -133,12 +196,18 @@ class TargetGraph {
         modulesByPackage.putIfAbsent(node.target.package, () => []).add(node);
       }
     }
+
+    final buildTriggers = BuildTriggers.fromConfigs(configs);
+
+    if (buildTriggers.warningsByPackage.isNotEmpty) {
+      buildLog.warning(buildTriggers.renderWarnings);
+    }
     return TargetGraph._(
       modulesByKey,
       modulesByPackage,
       publicAssetsByPackage,
       rootPackageConfig,
-      BuildTriggers.fromConfigs(configs),
+      buildTriggers,
     );
   }
 
@@ -220,11 +289,14 @@ class TargetNode {
   List<Glob> get sourceIncludes => _sourcesMatcher.includeGlobs!;
   final InputMatcher _sourcesMatcher;
 
-  TargetNode(this.target, this.package, {required List<String> defaultInclude})
-    : _sourcesMatcher = InputMatcher(
-        target.sources,
-        defaultInclude: defaultInclude,
-      );
+  TargetNode(
+    this.target,
+    this.package, {
+    required BuiltList<String> defaultInclude,
+  }) : _sourcesMatcher = InputMatcher(
+         target.sources,
+         defaultInclude: defaultInclude,
+       );
 
   bool excludesSource(AssetId id) => _sourcesMatcher.excludes(id);
 
@@ -273,3 +345,58 @@ Iterable<AssetId> _missingSources(
   Iterable<TargetNode> targets,
   Iterable<AssetId> sources,
 ) => sources.where((s) => !targets.any((t) => t.matchesSource(s)));
+
+Future<BuiltMap<String, BuildConfig>> findBuildConfigOverrides({
+  required PackageGraph packageGraph,
+  required AssetReader? reader,
+  required String? configKey,
+}) async {
+  final configs = <String, BuildConfig>{};
+  final configFiles = reader!.assetFinder.find(
+    Glob('*.build.yaml'),
+    package: packageGraph.root.name,
+  );
+  await for (final id in configFiles) {
+    final packageName = p.basename(id.path).split('.').first;
+    final packageNode = packageGraph.allPackages[packageName];
+    if (packageNode == null) {
+      buildLog.warning(
+        'A build config override is provided for $packageName but '
+        'that package does not exist. '
+        'Remove the ${p.basename(id.path)} override or add a dependency '
+        'on $packageName.',
+      );
+      continue;
+    }
+    final yaml = await reader.readAsString(id);
+    final config = BuildConfig.parse(
+      packageName,
+      packageNode.dependencies.map((n) => n.name),
+      yaml,
+      configYamlPath: id.path,
+    );
+    configs[packageName] = config;
+  }
+  if (configKey != null) {
+    final id = AssetId(packageGraph.root.name, 'build.$configKey.yaml');
+    if (!await reader.canRead(id)) {
+      buildLog.warning('Cannot find ${id.path} for specified config.');
+      throw const CannotBuildException();
+    }
+    final yaml = await reader.readAsString(id);
+    final config = BuildConfig.parse(
+      packageGraph.root.name,
+      packageGraph.root.dependencies.map((n) => n.name),
+      yaml,
+      configYamlPath: id.path,
+    );
+    if (config.builderDefinitions.isNotEmpty) {
+      buildLog.warning(
+        'Ignoring `builders` configuration in `build.$configKey.yaml` - '
+        'overriding builder configuration is not supported.',
+      );
+    }
+    configs[packageGraph.root.name] = config;
+  }
+  return configs.build();
+}
