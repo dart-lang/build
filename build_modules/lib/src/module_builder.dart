@@ -23,7 +23,13 @@ String moduleExtension(DartPlatform platform) => '.${platform.name}.module';
 class ModuleBuilder implements Builder {
   final DartPlatform _platform;
 
-  ModuleBuilder(this._platform)
+  /// True if we use raw modules instead of clean modules.
+  ///
+  /// Clean meta modules are only used for DDC's AMD module system due its
+  /// requirement that self-referential libraries be bundled.
+  final bool useRawMetaModules;
+
+  ModuleBuilder(this._platform, {this.useRawMetaModules = false})
     : buildExtensions = {
         '.dart': [moduleExtension(_platform)],
       };
@@ -34,12 +40,13 @@ class ModuleBuilder implements Builder {
   @override
   Future build(BuildStep buildStep) async {
     final metaModules = await buildStep.fetchResource(metaModuleCache);
+    var metaModuleExtensionString =
+        useRawMetaModules
+            ? metaModuleExtension(_platform)
+            : metaModuleCleanExtension(_platform);
     final metaModule =
         (await metaModules.find(
-          AssetId(
-            buildStep.inputId.package,
-            'lib/${metaModuleExtension(_platform)}',
-          ),
+          AssetId(buildStep.inputId.package, 'lib/$metaModuleExtensionString'),
           buildStep,
         ))!;
     var outputModule = metaModule.modules.firstWhereOrNull(

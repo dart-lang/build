@@ -9,6 +9,7 @@ import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
 
 const multiRootScheme = 'org-dartlang-app';
+const webHotReloadOption = 'web-hot-reload';
 final sdkDir = p.dirname(p.dirname(Platform.resolvedExecutable));
 final packagesFilePath = p.join('.dart_tool', 'package_config.json');
 
@@ -23,8 +24,10 @@ String defaultAnalysisOptionsArg(ScratchSpace scratchSpace) =>
 enum ModuleStrategy { fine, coarse }
 
 ModuleStrategy moduleStrategy(BuilderOptions options) {
-  // The DDC Library Bundle module system only supports fine modules.
-  if (options.config['web-hot-reload'] as bool? ?? false) {
+  // DDC's Library Bundle module system only supports fine modules since it must
+  // align with the Frontend Server's library management scheme.
+  var usesWebHotReload = options.config[webHotReloadOption] as bool? ?? false;
+  if (usesWebHotReload) {
     return ModuleStrategy.fine;
   }
   var config = options.config['strategy'] as String? ?? 'coarse';

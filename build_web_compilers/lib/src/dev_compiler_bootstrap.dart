@@ -9,13 +9,11 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
-import 'package:glob/glob.dart';
 // ignore: no_leading_underscores_for_library_prefixes
 import 'package:path/path.dart' as _p;
 import 'package:pool/pool.dart';
 
 import 'common.dart';
-import 'dev_compiler_builder.dart';
 import 'platforms.dart';
 import 'web_entrypoint_builder.dart';
 
@@ -25,8 +23,8 @@ _p.Context get _context => _p.url;
 final _modulePartialExtension = _context.withoutExtension(jsModuleExtension);
 
 final stackTraceMapperPath =
-    "packages/build_web_compilers/src/"
-    "dev_compiler_stack_trace/stack_trace_mapper.dart.js";
+    'packages/build_web_compilers/src/'
+    'dev_compiler_stack_trace/stack_trace_mapper.dart.js';
 
 /// Bootstraps a ddc application, creating the main entrypoint as well as the
 /// bootstrap and digest entrypoints.

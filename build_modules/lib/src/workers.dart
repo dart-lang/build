@@ -3,11 +3,9 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'dart:math' show min;
 
-import 'package:bazel_worker/bazel_worker.dart';
 import 'package:bazel_worker/driver.dart';
 import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
@@ -17,9 +15,10 @@ import 'frontend_server_driver.dart';
 import 'scratch_space.dart';
 
 // If no terminal is attached, prevent a new one from launching.
-final _processMode = stdin.hasTerminal
-    ? ProcessStartMode.normal
-    : ProcessStartMode.detachedWithStdio;
+final _processMode =
+    stdin.hasTerminal
+        ? ProcessStartMode.normal
+        : ProcessStartMode.detachedWithStdio;
 
 /// Completes once the dartdevk workers have been shut down.
 Future<void> get dartdevkWorkersAreDone =>

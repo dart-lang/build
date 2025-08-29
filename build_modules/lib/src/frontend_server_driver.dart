@@ -204,7 +204,10 @@ class PersistentFrontendServer {
 
   void recordCompilerOutput(CompilerOutput output) {
     if (output.errorCount != 0 || output.errorMessage != null) {
-      throw StateError('Attempting to record compiler output with errors.');
+      throw StateError(
+        'Attempting to record compiler output with errors: '
+        '${output.errorMessage}',
+      );
     }
     final outputDillPath = outputDillUri.toFilePath();
     final codeFile = File('$outputDillPath.sources');
