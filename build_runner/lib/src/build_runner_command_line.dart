@@ -104,11 +104,9 @@ class BuildRunnerCommandLine {
   /// The number of arguments in [rest] that are from before any `--` on the
   /// command line.
   int get restArgumentsBeforeSeparator {
-    final restArgumentsAfterSeparator =
-        arguments.contains('--')
-            ? arguments.skipWhile((a) => a != '--').skip(1).length
-            : 0;
-    return rest.length - restArgumentsAfterSeparator;
+    final index = arguments.indexOf('--') + 1;
+    final numArgumentsAfter = (index > 0) ? arguments.length - index : 0;
+    return rest.length - numArgumentsAfter;
   }
 }
 
