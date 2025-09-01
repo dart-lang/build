@@ -7,6 +7,7 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:build_runner_core/build_runner_core.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:frontend_server_client/frontend_server_client.dart';
 import 'package:io/io.dart';
 import 'package:path/path.dart' as p;
@@ -25,11 +26,11 @@ import 'build_script_generate.dart';
 ///
 /// Pass [script] to override the default build script for testing.
 Future<int> generateAndRun(
-  List<String> args, {
-  List<String>? experiments,
+  Iterable<String> arguments, {
+  Iterable<String>? experiments,
   String? script,
 }) async {
-  experiments ??= [];
+  experiments ??= BuiltList();
   ReceivePort? exitPort;
   ReceivePort? errorPort;
   RawReceivePort? messagePort;
@@ -88,7 +89,7 @@ Future<int> generateAndRun(
     try {
       await Isolate.spawnUri(
         Uri.file(p.absolute(scriptKernelLocation)),
-        args,
+        arguments.toBuiltList().asList(),
         messagePort.sendPort,
         errorsAreFatal: true,
         onExit: exitPort.sendPort,
@@ -144,7 +145,7 @@ Future<int> generateAndRun(
 ///   they used to, see https://github.com/dart-lang/build/issues/1929.
 ///
 /// Returns `true` on success or `false` on failure.
-Future<bool> _createKernelIfNeeded(List<String> experiments) async {
+Future<bool> _createKernelIfNeeded(Iterable<String> experiments) async {
   var assetGraphFile = File(assetGraphPathFor(scriptKernelLocation));
   var kernelFile = File(scriptKernelLocation);
   var kernelCacheFile = File(scriptKernelCachedLocation);
@@ -166,7 +167,7 @@ Future<bool> _createKernelIfNeeded(List<String> experiments) async {
       scriptLocation,
       scriptKernelCachedLocation,
       'lib/_internal/vm_platform_strong.dill',
-      enabledExperiments: experiments,
+      enabledExperiments: experiments.toBuiltList().asList(),
       printIncrementalDependencies: false,
       packagesJson: (await Isolate.packageConfig)!.toFilePath(),
     );
@@ -224,7 +225,7 @@ final _previousLocationsFile = File(
 /// pre-emptively resolve them by precompiling the build script again, see
 /// https://github.com/dart-lang/build/issues/1929.
 Future<bool> _checkImportantPackageDepsAndExperiments(
-  List<String> experiments,
+  Iterable<String> experiments,
 ) async {
   var currentLocations = await Future.wait(
     _importantPackages.map(

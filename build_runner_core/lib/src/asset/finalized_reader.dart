@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'package:build/build.dart';
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
@@ -32,7 +33,7 @@ class FinalizedReader {
   final String _rootPackage;
   final BuildPhases _buildPhases;
 
-  void reset(Set<String> buildDirs, Set<BuildFilter> buildFilters) {
+  void reset(BuiltSet<String> buildDirs, BuiltSet<BuildFilter> buildFilters) {
     _optionalOutputTracker = OptionalOutputTracker(
       _assetGraph,
       _targetGraph,

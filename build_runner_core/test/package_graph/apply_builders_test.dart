@@ -11,6 +11,7 @@ import 'package:build_runner_core/src/generate/exceptions.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
 import 'package:build_runner_core/src/package_graph/apply_builders.dart';
 import 'package:build_runner_core/src/package_graph/target_graph.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -27,9 +28,14 @@ void main() {
       var builderApplications = [
         apply('b:cool_builder', [CoolBuilder.new], toAllPackages()),
       ];
-      var phases = await createBuildPhases(targetGraph, builderApplications, {
-        'b:cool_builder': {'option_a': 'a', 'option_c': 'c'},
-      }, false);
+      var phases = await createBuildPhases(
+        targetGraph,
+        builderApplications,
+        {
+          'b:cool_builder': {'option_a': 'a', 'option_c': 'c'}.build(),
+        }.build(),
+        false,
+      );
       for (final phase in phases.inBuildPhases) {
         expect((phase.builder as CoolBuilder).optionA, equals('a'));
         expect((phase.builder as CoolBuilder).optionB, equals('defaultB'));
@@ -46,23 +52,24 @@ void main() {
         });
         await runInBuildConfigZone(
           () async {
-            var overrides = {
-              'a': BuildConfig(
-                packageName: 'a',
-                buildTargets: {
-                  'a:a': BuildTarget(dependencies: {'b:b'}),
-                },
-                globalOptions: {
-                  'b:cool_builder': GlobalBuilderConfig(
-                    options: const {
-                      'option_a': 'global a',
-                      'option_b': 'global b',
+            var overrides =
+                {
+                  'a': BuildConfig(
+                    packageName: 'a',
+                    buildTargets: {
+                      'a:a': BuildTarget(dependencies: {'b:b'}),
                     },
-                    releaseOptions: const {'option_b': 'release global b'},
+                    globalOptions: {
+                      'b:cool_builder': GlobalBuilderConfig(
+                        options: const {
+                          'option_a': 'global a',
+                          'option_b': 'global b',
+                        },
+                        releaseOptions: const {'option_b': 'release global b'},
+                      ),
+                    },
                   ),
-                },
-              ),
-            };
+                }.build();
             var targetGraph = await TargetGraph.forPackageGraph(
               packageGraph,
               defaultRootPackageSources: ['**'],
@@ -75,8 +82,8 @@ void main() {
               targetGraph,
               builderApplications,
               {
-                'b:cool_builder': {'option_c': '--define c'},
-              },
+                'b:cool_builder': {'option_c': '--define c'}.build(),
+              }.build(),
               true,
             );
             for (final phase in phases.inBuildPhases) {
@@ -115,7 +122,7 @@ void main() {
       var phases = await createBuildPhases(
         targetGraph,
         builderApplications,
-        {},
+        BuiltMap(),
         false,
       );
       expect(phases, hasLength(1));
@@ -143,7 +150,7 @@ void main() {
       var phases = await createBuildPhases(
         targetGraph,
         builderApplications,
-        {},
+        BuiltMap(),
         false,
       );
       expect(phases, hasLength(2));
@@ -180,7 +187,7 @@ void main() {
       var phases = await createBuildPhases(
         targetGraph,
         builderApplications,
-        {},
+        BuiltMap(),
         false,
       );
       expect(phases, hasLength(1));
@@ -225,7 +232,7 @@ void main() {
         var phases = await createBuildPhases(
           targetGraph,
           builderApplications,
-          {},
+          BuiltMap(),
           false,
         );
         expect(phases, hasLength(2));
@@ -249,14 +256,15 @@ void main() {
       });
       await runInBuildConfigZone(
         () async {
-          var overrides = {
-            'a': BuildConfig(
-              packageName: 'a',
-              buildTargets: {
-                'a:a': BuildTarget(dependencies: {'b:not_default'}),
-              },
-            ),
-          };
+          var overrides =
+              {
+                'a': BuildConfig(
+                  packageName: 'a',
+                  buildTargets: {
+                    'a:a': BuildTarget(dependencies: {'b:not_default'}),
+                  },
+                ),
+              }.build();
           var targetGraph = await TargetGraph.forPackageGraph(
             packageGraph,
             defaultRootPackageSources: ['**'],
@@ -266,8 +274,12 @@ void main() {
             apply('b:cool_builder', [CoolBuilder.new], toAllPackages()),
           ];
           expect(
-            () =>
-                createBuildPhases(targetGraph, builderApplications, {}, false),
+            () => createBuildPhases(
+              targetGraph,
+              builderApplications,
+              BuiltMap(),
+              false,
+            ),
             throwsA(const TypeMatcher<CannotBuildException>()),
           );
         },
@@ -288,17 +300,18 @@ void main() {
           () => TargetGraph.forPackageGraph(
             packageGraph,
             defaultRootPackageSources: ['**'],
-            overrideBuildConfig: {
-              'a': BuildConfig(
-                packageName: 'a',
-                buildTargets: {
-                  'a|a': BuildTarget(
-                    autoApplyBuilders: false,
-                    builders: builderConfigs,
+            overrideBuildConfig:
+                {
+                  'a': BuildConfig(
+                    packageName: 'a',
+                    buildTargets: {
+                      'a|a': BuildTarget(
+                        autoApplyBuilders: false,
+                        builders: builderConfigs,
+                      ),
+                    },
                   ),
-                },
-              ),
-            },
+                }.build(),
           ),
           'a',
           [],
@@ -315,7 +328,7 @@ void main() {
         return await createBuildPhases(
           targetGraph,
           builderApplications,
-          {},
+          BuiltMap(),
           false,
         );
       }
@@ -394,8 +407,12 @@ void main() {
     ];
 
     expect(
-      () =>
-          createBuildPhases(targetGraph, builderApplications, const {}, false),
+      () => createBuildPhases(
+        targetGraph,
+        builderApplications,
+        BuiltMap(),
+        false,
+      ),
       throwsA(isArgumentError),
     );
   });

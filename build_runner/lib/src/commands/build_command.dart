@@ -1,0 +1,84 @@
+// Copyright (c) 2025, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+import 'package:build/experiments.dart';
+import 'package:build_runner_core/build_runner_core.dart';
+import 'package:built_collection/built_collection.dart';
+import 'package:io/io.dart';
+
+import '../build_script_generate/build_process_state.dart';
+import '../package_graph/build_config_overrides.dart';
+import 'build_options.dart';
+import 'build_runner_command.dart';
+
+class BuildCommand implements BuildRunnerCommand {
+  final BuiltList<BuilderApplication> builders;
+  final BuildOptions buildOptions;
+  final TestingOverrides testingOverrides;
+
+  BuildCommand({
+    required this.builders,
+    required this.buildOptions,
+    this.testingOverrides = const TestingOverrides(),
+  });
+
+  @override
+  Future<int> run() =>
+      withEnabledExperiments(_run, buildOptions.enableExperiments.asList());
+
+  Future<int> _run() async {
+    var result = await build();
+    if (result.status == BuildStatus.success) {
+      return ExitCode.success.code;
+    } else {
+      return result.failureType?.exitCode ?? 1;
+    }
+  }
+
+  Future<BuildResult> build() async {
+    buildLog.configuration = buildLog.configuration.rebuild((b) {
+      b.mode = BuildLogMode.build;
+      b.verbose = buildOptions.verbose;
+      b.onLog = testingOverrides.onLog;
+    });
+    final packageGraph =
+        testingOverrides.packageGraph ?? await PackageGraph.forThisPackage();
+    var environment = BuildEnvironment(
+      packageGraph,
+      outputSymlinksOnly: buildOptions.outputSymlinksOnly,
+      reader: testingOverrides.reader,
+      writer: testingOverrides.writer,
+    );
+    var options = await BuildConfiguration.create(
+      packageGraph: packageGraph,
+      reader: environment.reader,
+      skipBuildScriptCheck: buildOptions.skipBuildScriptCheck,
+      overrideBuildConfig:
+          testingOverrides.buildConfig ??
+          await findBuildConfigOverrides(
+            packageGraph,
+            environment.reader,
+            configKey: buildOptions.configKey,
+          ),
+      enableLowResourcesMode: buildOptions.enableLowResourcesMode,
+      trackPerformance: buildOptions.trackPerformance,
+      logPerformanceDir: buildOptions.logPerformanceDir,
+      resolvers: testingOverrides.resolvers,
+    );
+    var build = await BuildRunner.create(
+      options,
+      environment,
+      builders,
+      buildOptions.builderConfigOverrides,
+      isReleaseBuild: buildOptions.isReleaseBuild,
+    );
+    var result = await build.run(
+      {},
+      buildDirs: buildOptions.buildDirs,
+      buildFilters: buildOptions.buildFilters,
+    );
+    await build.beforeExit();
+    return result;
+  }
+}

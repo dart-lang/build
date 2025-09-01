@@ -15,7 +15,6 @@ import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
-import '../entrypoint/options.dart';
 import '../generate/watch_impl.dart';
 import 'path_to_asset_id.dart';
 
@@ -69,7 +68,7 @@ class ServeHandler implements BuildState {
   shelf.Handler handlerFor(
     String rootDir, {
     bool logRequests = false,
-    BuildUpdatesOption buildUpdates = BuildUpdatesOption.none,
+    bool liveReload = false,
   }) {
     if (p.url.split(rootDir).length != 1 || rootDir == '.') {
       throw ArgumentError.value(
@@ -85,7 +84,7 @@ class ServeHandler implements BuildState {
       _warnForEmptyDirectory(rootDir);
     });
     var cascade = shelf.Cascade();
-    if (buildUpdates != BuildUpdatesOption.none) {
+    if (liveReload) {
       cascade = cascade.add(_webSocketHandler.createHandlerByRootDir(rootDir));
     }
     cascade = cascade.add(_blockOnCurrentBuild).add((
@@ -101,12 +100,8 @@ class ServeHandler implements BuildState {
     if (logRequests) {
       pipeline = pipeline.addMiddleware(_logRequests);
     }
-    switch (buildUpdates) {
-      case BuildUpdatesOption.liveReload:
-        pipeline = pipeline.addMiddleware(_injectLiveReloadClientCode);
-        break;
-      case BuildUpdatesOption.none:
-        break;
+    if (liveReload) {
+      pipeline = pipeline.addMiddleware(_injectLiveReloadClientCode);
     }
     return pipeline.addHandler(cascade.handler);
   }

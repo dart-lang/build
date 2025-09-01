@@ -17,13 +17,14 @@ export 'src/generate/exceptions.dart'
         BuildScriptChangedException,
         CannotBuildException;
 export 'src/generate/finalized_assets_view.dart' show FinalizedAssetsView;
-export 'src/generate/options.dart' show BuildFilter, BuildOptions;
+export 'src/generate/options.dart' show BuildConfiguration, BuildFilter;
 export 'src/generate/performance_tracker.dart'
     show BuildPerformance, BuildPhasePerformance, BuilderActionPerformance;
 export 'src/logging/build_log.dart';
 export 'src/logging/build_log_configuration.dart';
 export 'src/logging/build_log_logger.dart';
 export 'src/logging/timed_activities.dart';
+export 'src/options/testing_overrides.dart';
 export 'src/package_graph/apply_builders.dart'
     show
         BuilderApplication,

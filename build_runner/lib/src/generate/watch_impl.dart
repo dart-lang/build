@@ -3,117 +3,23 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 // ignore: implementation_imports
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 // ignore: implementation_imports
 import 'package:build_runner_core/src/generate/build_series.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
-import 'package:logging/logging.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
-import '../build_script_generate/build_process_state.dart';
-import '../package_graph/build_config_overrides.dart';
-import '../server/server.dart';
 import '../watcher/asset_change.dart';
 import '../watcher/change_filter.dart';
 import '../watcher/collect_changes.dart';
 import '../watcher/graph_watcher.dart';
 import '../watcher/node_watcher.dart';
-import 'terminator.dart';
-
-Future<ServeHandler> watch(
-  List<BuilderApplication> builders, {
-  @Deprecated('Has no effect.') bool? deleteFilesByDefault,
-  @Deprecated('Has no effect.') bool? assumeTty,
-  String? configKey,
-  PackageGraph? packageGraph,
-  AssetReader? reader,
-  RunnerAssetWriter? writer,
-  Resolvers? resolvers,
-  void Function(LogRecord)? onLog,
-  Duration? debounceDelay,
-  DirectoryWatcher Function(String)? directoryWatcherFactory,
-  Stream<ProcessSignal>? terminateEventStream,
-  bool? skipBuildScriptCheck,
-  bool? enableLowResourcesMode,
-  Map<String, BuildConfig>? overrideBuildConfig,
-  Set<BuildDirectory>? buildDirs,
-  bool? outputSymlinksOnly,
-  bool? trackPerformance,
-  bool? verbose,
-  Map<String, Map<String, dynamic>>? builderConfigOverrides,
-  bool? isReleaseBuild,
-  String? logPerformanceDir,
-  Set<BuildFilter>? buildFilters,
-}) async {
-  builderConfigOverrides ??= const {};
-  buildDirs ??= <BuildDirectory>{};
-  buildFilters ??= <BuildFilter>{};
-  debounceDelay ??= const Duration(milliseconds: 250);
-  enableLowResourcesMode ??= false;
-  outputSymlinksOnly ??= false;
-  packageGraph ??= await PackageGraph.forThisPackage();
-  skipBuildScriptCheck ??= false;
-  trackPerformance ??= false;
-  verbose ??= false;
-
-  var environment = BuildEnvironment(
-    packageGraph,
-    outputSymlinksOnly: outputSymlinksOnly,
-    reader: reader,
-    writer: writer,
-  );
-  buildLog.configuration = buildLog.configuration.rebuild((b) {
-    b.mode = BuildLogMode.build;
-    b.verbose = verbose;
-    b.onLog = onLog;
-  });
-  overrideBuildConfig ??= await findBuildConfigOverrides(
-    packageGraph,
-    environment.reader,
-    configKey: configKey,
-  );
-  var options = await BuildOptions.create(
-    packageGraph: packageGraph,
-    reader: environment.reader,
-    overrideBuildConfig: overrideBuildConfig,
-    debounceDelay: debounceDelay,
-    skipBuildScriptCheck: skipBuildScriptCheck,
-    enableLowResourcesMode: enableLowResourcesMode,
-    trackPerformance: trackPerformance,
-    logPerformanceDir: logPerformanceDir,
-    resolvers: resolvers,
-  );
-  var terminator = Terminator(terminateEventStream);
-
-  var watch = _runWatch(
-    options,
-    environment,
-    builders,
-    builderConfigOverrides,
-    terminator.shouldTerminate,
-    directoryWatcherFactory,
-    configKey,
-    buildDirs.any((target) => target.outputLocation?.path.isNotEmpty ?? false),
-    buildDirs,
-    buildFilters,
-    isReleaseMode: isReleaseBuild ?? false,
-  );
-
-  unawaited(
-    watch.buildResults.drain<void>().then((_) async {
-      await terminator.cancel();
-    }),
-  );
-
-  return createServeHandler(watch);
-}
 
 /// Repeatedly run builds as files change on disk until [until] fires.
 ///
@@ -123,20 +29,20 @@ Future<ServeHandler> watch(
 ///
 /// The [BuildState.buildResults] stream will end after the final build has been
 /// run.
-WatchImpl _runWatch(
-  BuildOptions options,
+WatchImpl runWatch(
+  BuildConfiguration configuration,
   BuildEnvironment environment,
-  List<BuilderApplication> builders,
-  Map<String, Map<String, dynamic>> builderConfigOverrides,
+  BuiltList<BuilderApplication> builders,
+  BuiltMap<String, BuiltMap<String, dynamic>> builderConfigOverrides,
   Future until,
   DirectoryWatcher Function(String)? directoryWatcherFactory,
   String? configKey,
   bool willCreateOutputDirs,
-  Set<BuildDirectory> buildDirs,
-  Set<BuildFilter> buildFilters, {
+  BuiltSet<BuildDirectory> buildDirs,
+  BuiltSet<BuildFilter> buildFilters, {
   bool isReleaseMode = false,
 }) => WatchImpl(
-  options,
+  configuration,
   environment,
   builders,
   builderConfigOverrides,
@@ -174,10 +80,10 @@ class WatchImpl implements BuildState {
   final PackageGraph packageGraph;
 
   /// The directories to build upon file changes and where to output them.
-  final Set<BuildDirectory> _buildDirs;
+  final BuiltSet<BuildDirectory> _buildDirs;
 
   /// Filters for specific files to build.
-  final Set<BuildFilter> _buildFilters;
+  final BuiltSet<BuildFilter> _buildFilters;
 
   @override
   Future<BuildResult>? currentBuild;
@@ -191,10 +97,10 @@ class WatchImpl implements BuildState {
   Future<FinalizedReader> get reader => _readerCompleter.future;
 
   WatchImpl(
-    BuildOptions options,
+    BuildConfiguration configuration,
     BuildEnvironment environment,
-    List<BuilderApplication> builders,
-    Map<String, Map<String, dynamic>> builderConfigOverrides,
+    BuiltList<BuilderApplication> builders,
+    BuiltMap<String, BuiltMap<String, dynamic>> builderConfigOverrides,
     Future until,
     this._directoryWatcherFactory,
     this._configKey,
@@ -202,11 +108,11 @@ class WatchImpl implements BuildState {
     this._buildDirs,
     this._buildFilters, {
     bool isReleaseMode = false,
-  }) : _debounceDelay = options.debounceDelay,
-       packageGraph = options.packageGraph {
+  }) : _debounceDelay = configuration.debounceDelay,
+       packageGraph = configuration.packageGraph {
     buildResults =
         _run(
-          options,
+          configuration,
           environment,
           builders,
           builderConfigOverrides,
@@ -224,10 +130,10 @@ class WatchImpl implements BuildState {
   ///
   /// File watchers are scheduled synchronously.
   Stream<BuildResult> _run(
-    BuildOptions options,
+    BuildConfiguration options,
     BuildEnvironment environment,
-    List<BuilderApplication> builders,
-    Map<String, Map<String, dynamic>> builderConfigOverrides,
+    BuiltList<BuilderApplication> builders,
+    BuiltMap<String, BuiltMap<String, dynamic>> builderConfigOverrides,
     Future until, {
     bool isReleaseMode = false,
   }) {

@@ -97,7 +97,6 @@ main(List<String> args) async {
         reason: result.stderr as String,
       );
       expect(result.stdout, contains('Must specify an executable to run.'));
-      expect(result.stdout, contains('Usage: build_runner run'));
     });
 
     test('extension must be .dart', () async {

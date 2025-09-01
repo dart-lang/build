@@ -14,6 +14,7 @@ import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/generate/build_series.dart';
 // ignore: implementation_imports
 import 'package:build_runner_core/src/generate/options.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
@@ -303,7 +304,7 @@ Future<TestBuilderResult> testBuilders(
     return result;
   }
 
-  final buildOptions = await BuildOptions.create(
+  final buildOptions = await BuildConfiguration.create(
     packageGraph: packageGraph,
     reader: environment.reader,
     reportUnusedAssetsForInput: reportUnusedAssetsForInput,
@@ -335,24 +336,29 @@ Future<TestBuilderResult> testBuilders(
                     },
                   },
                 }),
-            }
-            : const {},
+            }.build()
+            : null,
     // Tests always trigger the "build script updated" check, even if it
     // didn't change. Skip it to allow testing with preserved state.
     skipBuildScriptCheck: true,
     enableLowResourcesMode: enableLowResourceMode,
   );
 
-  final buildSeries = await BuildSeries.create(buildOptions, environment, [
-    for (final builder in builders)
-      apply(
-        builderName(builder),
-        [(_) => builder],
-        (p) => inputPackages.contains(p.name),
-        isOptional: optionalBuilders.contains(builder),
-        hideOutput: !visibleOutputBuilders.contains(builder),
-      ),
-  ], {});
+  final buildSeries = await BuildSeries.create(
+    buildOptions,
+    environment,
+    [
+      for (final builder in builders)
+        apply(
+          builderName(builder),
+          [(_) => builder],
+          (p) => inputPackages.contains(p.name),
+          isOptional: optionalBuilders.contains(builder),
+          hideOutput: !visibleOutputBuilders.contains(builder),
+        ),
+    ].build(),
+    BuiltMap(),
+  );
 
   // Run the build.
   final buildResult = await buildSeries.run({});

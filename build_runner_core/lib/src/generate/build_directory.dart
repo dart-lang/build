@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:built_collection/built_collection.dart';
+
 class BuildDirectory {
   final String directory;
   final OutputLocation? outputLocation;
@@ -16,11 +18,11 @@ class BuildDirectory {
   @override
   int get hashCode => Object.hash(directory, outputLocation);
 
-  static Set<String> buildPaths(Set<BuildDirectory> buildDirs) =>
+  static BuiltSet<String> buildPaths(BuiltSet<BuildDirectory> buildDirs) =>
       // The empty string means build everything.
       buildDirs.any((b) => b.directory == '')
-          ? <String>{}
-          : buildDirs.map((b) => b.directory).toSet();
+          ? BuiltSet()
+          : buildDirs.map((b) => b.directory).toBuiltSet();
 }
 
 class OutputLocation {

@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build_config/build_config.dart';
+import 'package:built_collection/built_collection.dart';
 
 import '../logging/build_log.dart';
 import '../package_graph/apply_builders.dart';
@@ -11,7 +12,7 @@ import '../package_graph/apply_builders.dart';
 void validateBuilderConfig(
   Iterable<BuilderApplication> builders,
   BuildConfig rootPackageConfig,
-  Map<String, Map<String, dynamic>> builderConfigOverrides,
+  BuiltMap<String, BuiltMap<String, dynamic>> builderConfigOverrides,
 ) {
   final builderKeys = builders.map((b) => b.builderKey).toSet();
   for (final key in builderConfigOverrides.keys) {

@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:build/build.dart';
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:watcher/watcher.dart';
 
 import '../asset/finalized_reader.dart';
@@ -39,7 +40,7 @@ class BuildSeries {
   final BuildEnvironment environment;
   final AssetGraph assetGraph;
   final BuildScriptUpdates? buildScriptUpdates;
-  final BuildOptions options;
+  final BuildConfiguration options;
   final BuildPhases buildPhases;
 
   final FinalizedReader finalizedReader;
@@ -100,9 +101,11 @@ class BuildSeries {
   /// [updates].
   Future<BuildResult> run(
     Map<AssetId, ChangeType> updates, {
-    Set<BuildDirectory> buildDirs = const <BuildDirectory>{},
-    Set<BuildFilter> buildFilters = const {},
+    BuiltSet<BuildDirectory>? buildDirs,
+    BuiltSet<BuildFilter>? buildFilters,
   }) async {
+    buildDirs ??= BuiltSet();
+    buildFilters ??= BuiltSet();
     if (firstBuild) {
       if (updatesFromLoad != null) {
         updates = updatesFromLoad!..addAll(updates);
@@ -133,10 +136,10 @@ class BuildSeries {
   }
 
   static Future<BuildSeries> create(
-    BuildOptions options,
+    BuildConfiguration options,
     BuildEnvironment environment,
-    List<BuilderApplication> builders,
-    Map<String, Map<String, dynamic>> builderConfigOverrides, {
+    BuiltList<BuilderApplication> builders,
+    BuiltMap<String, BuiltMap<String, dynamic>> builderConfigOverrides, {
     bool isReleaseBuild = false,
   }) async {
     var buildPhases = await createBuildPhases(

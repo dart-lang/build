@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 
@@ -67,7 +68,7 @@ class TargetGraph {
   static Future<TargetGraph> forPackageGraph(
     PackageGraph packageGraph, {
     AssetReader? reader,
-    Map<String, BuildConfig> overrideBuildConfig = const {},
+    BuiltMap<String, BuildConfig>? overrideBuildConfig,
     required List<String> defaultRootPackageSources,
     List<String> requiredSourcePaths = const [],
     List<String> requiredRootSourcePaths = const [],
@@ -79,7 +80,7 @@ class TargetGraph {
     final configs = <String, BuildConfig>{};
     for (final package in packageGraph.allPackages.values) {
       final config =
-          overrideBuildConfig[package.name] ??
+          overrideBuildConfig?[package.name] ??
           await _packageBuildConfig(reader, package);
       configs[package.name] = config;
 

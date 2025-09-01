@@ -10,7 +10,7 @@ import 'package:http_multi_server/http_multi_server.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 
-import '../entrypoint/options.dart';
+import '../commands/daemon_options.dart';
 import '../server/server.dart';
 import 'daemon_builder.dart';
 

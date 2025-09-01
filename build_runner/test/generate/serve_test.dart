@@ -7,9 +7,11 @@ import 'dart:io';
 
 import 'package:_test_common/common.dart';
 import 'package:async/async.dart';
-import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
+import 'package:build_runner/src/commands/build_options.dart';
+import 'package:build_runner/src/commands/watch_command.dart';
 import 'package:build_runner/src/server/server.dart';
 import 'package:build_runner_core/build_runner_core.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:path/path.dart' as path;
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
@@ -151,7 +153,7 @@ StreamController<ProcessSignal>? _terminateServeController;
 
 /// Start serving files and running builds.
 Future<ServeHandler> createHandler(
-  List<BuilderApplication> builders,
+  Iterable<BuilderApplication> builders,
   Map<String, String> inputs,
   PackageGraph packageGraph,
   TestReaderWriter readerWriter,
@@ -166,18 +168,21 @@ Future<ServeHandler> createHandler(
   );
   FakeWatcher watcherFactory(String path) => FakeWatcher(path);
 
-  return watch_impl.watch(
-    builders,
-    deleteFilesByDefault: true,
-    debounceDelay: _debounceDelay,
-    directoryWatcherFactory: watcherFactory,
-    reader: readerWriter,
-    writer: readerWriter,
-    packageGraph: packageGraph,
-    terminateEventStream: _terminateServeController!.stream,
-    onLog: (_) {},
-    skipBuildScriptCheck: true,
+  final watchCommand = WatchCommand(
+    builders: builders.toBuiltList(),
+    buildOptions: BuildOptions.forTests(skipBuildScriptCheck: true),
+    testingOverrides: TestingOverrides(
+      directoryWatcherFactory: watcherFactory,
+      debounceDelay: _debounceDelay,
+      onLog: (_) {},
+      packageGraph: packageGraph,
+      reader: readerWriter,
+      terminateEventStream: _terminateServeController!.stream,
+      writer: readerWriter,
+    ),
   );
+
+  return watchCommand.watch();
 }
 
 /// Tells the program to terminate.

@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:watcher/watcher.dart';
 
 import '../environment/build_environment.dart';
@@ -14,6 +15,7 @@ import 'build_result.dart';
 import 'build_series.dart';
 import 'options.dart';
 
+// TODO(davidmorgan): remove this class.
 class BuildRunner {
   final BuildSeries _build;
   BuildRunner._(this._build);
@@ -22,15 +24,15 @@ class BuildRunner {
 
   Future<BuildResult> run(
     Map<AssetId, ChangeType> updates, {
-    Set<BuildDirectory> buildDirs = const <BuildDirectory>{},
-    Set<BuildFilter> buildFilters = const {},
+    BuiltSet<BuildDirectory>? buildDirs,
+    BuiltSet<BuildFilter>? buildFilters,
   }) => _build.run(updates, buildDirs: buildDirs, buildFilters: buildFilters);
 
   static Future<BuildRunner> create(
-    BuildOptions options,
+    BuildConfiguration options,
     BuildEnvironment environment,
-    List<BuilderApplication> builders,
-    Map<String, Map<String, dynamic>> builderConfigOverrides, {
+    BuiltList<BuilderApplication> builders,
+    BuiltMap<String, BuiltMap<String, dynamic>> builderConfigOverrides, {
     bool isReleaseBuild = false,
   }) async {
     return BuildRunner._(

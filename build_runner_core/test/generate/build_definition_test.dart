@@ -19,6 +19,7 @@ import 'package:build_runner_core/src/generate/build_phases.dart';
 import 'package:build_runner_core/src/generate/options.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
 import 'package:build_runner_core/src/util/constants.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
@@ -35,7 +36,7 @@ void main() {
   });
 
   group('BuildDefinition.prepareWorkspace', () {
-    late BuildOptions options;
+    late BuildConfiguration options;
     late BuildEnvironment environment;
     late String pkgARoot;
     late String pkgBRoot;
@@ -135,7 +136,7 @@ targets:
       ]).create();
       var packageGraph = await PackageGraph.forPath(pkgARoot);
       environment = BuildEnvironment(packageGraph);
-      options = await BuildOptions.create(
+      options = await BuildConfiguration.create(
         reader: environment.reader,
         packageGraph: packageGraph,
         skipBuildScriptCheck: true,
@@ -450,7 +451,7 @@ targets:
         buildLog.configuration = buildLog.configuration.rebuild((b) {
           b.onLog = logs.add;
         });
-        options = await BuildOptions.create(
+        options = await BuildConfiguration.create(
           packageGraph: options.packageGraph,
           skipBuildScriptCheck: true,
         );
@@ -768,7 +769,7 @@ targets:
         environment = BuildEnvironment(packageGraph);
         var writerSpy = RunnerAssetWriterSpy(environment.writer);
         environment = environment.copyWith(writer: writerSpy);
-        options = await BuildOptions.create(
+        options = await BuildConfiguration.create(
           packageGraph: packageGraph,
           skipBuildScriptCheck: true,
         );
@@ -825,7 +826,7 @@ targets:
             }),
           );
 
-          var newOptions = await BuildOptions.create(
+          var newOptions = await BuildConfiguration.create(
             packageGraph: await PackageGraph.forPath(pkgARoot),
             skipBuildScriptCheck: true,
           );
@@ -858,7 +859,7 @@ targets:
 
         var graph = await createFile(assetGraphPath, assetGraph.serialize());
 
-        var newOptions = await BuildOptions.create(
+        var newOptions = await BuildConfiguration.create(
           packageGraph: aPackageGraph,
           skipBuildScriptCheck: true,
         );
@@ -895,20 +896,21 @@ targets:
       // https://github.com/dart-lang/build/issues/1042
       test('a missing sources/include does not cause an error', () async {
         var rootPkg = options.packageGraph.root.name;
-        options = await BuildOptions.create(
+        options = await BuildConfiguration.create(
           packageGraph: options.packageGraph,
-          overrideBuildConfig: {
-            rootPkg: BuildConfig.fromMap(rootPkg, [], {
-              'targets': {
-                'another': <String, dynamic>{},
-                '\$default': {
-                  'sources': {
-                    'exclude': ['lib/src/**'],
+          overrideBuildConfig:
+              {
+                rootPkg: BuildConfig.fromMap(rootPkg, [], {
+                  'targets': {
+                    'another': <String, dynamic>{},
+                    '\$default': {
+                      'sources': {
+                        'exclude': ['lib/src/**'],
+                      },
+                    },
                   },
-                },
-              },
-            }),
-          },
+                }),
+              }.build(),
         );
 
         expect(
@@ -925,20 +927,21 @@ targets:
         'a missing sources/include results in the default sources',
         () async {
           var rootPkg = options.packageGraph.root.name;
-          options = await BuildOptions.create(
+          options = await BuildConfiguration.create(
             packageGraph: options.packageGraph,
-            overrideBuildConfig: {
-              rootPkg: BuildConfig.fromMap(rootPkg, [], {
-                'targets': {
-                  'another': <String, dynamic>{},
-                  '\$default': {
-                    'sources': {
-                      'exclude': ['lib/src/**'],
+            overrideBuildConfig:
+                {
+                  rootPkg: BuildConfig.fromMap(rootPkg, [], {
+                    'targets': {
+                      'another': <String, dynamic>{},
+                      '\$default': {
+                        'sources': {
+                          'exclude': ['lib/src/**'],
+                        },
+                      },
                     },
-                  },
-                },
-              }),
-            },
+                  }),
+                }.build(),
           );
           expect(
             options.targetGraph.allModules['$rootPkg:another']!.sourceIncludes
@@ -955,18 +958,19 @@ targets:
 
       test('allows a target config with empty sources list', () async {
         var rootPkg = options.packageGraph.root.name;
-        options = await BuildOptions.create(
+        options = await BuildConfiguration.create(
           packageGraph: options.packageGraph,
-          overrideBuildConfig: {
-            rootPkg: BuildConfig.fromMap(rootPkg, [], {
-              'targets': {
-                'another': <String, dynamic>{},
-                '\$default': {
-                  'sources': {'include': <String>[]},
-                },
-              },
-            }),
-          },
+          overrideBuildConfig:
+              {
+                rootPkg: BuildConfig.fromMap(rootPkg, [], {
+                  'targets': {
+                    'another': <String, dynamic>{},
+                    '\$default': {
+                      'sources': {'include': <String>[]},
+                    },
+                  },
+                }),
+              }.build(),
         );
         expect(
           BuildDefinition.prepareWorkspace(

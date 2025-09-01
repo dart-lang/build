@@ -1,4 +1,4 @@
-// Copyright (c) 2019, the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2025, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
@@ -12,67 +12,46 @@ import 'package:build_daemon/daemon.dart';
 import 'package:build_daemon/data/serializers.dart';
 import 'package:build_daemon/data/server_log.dart';
 import 'package:build_runner_core/build_runner_core.dart';
+import 'package:built_collection/built_collection.dart';
 
 import '../build_script_generate/build_process_state.dart';
 import '../daemon/asset_server.dart';
 import '../daemon/constants.dart';
 import '../daemon/daemon_builder.dart';
-import 'options.dart';
-import 'watch.dart';
+import 'build_options.dart';
+import 'build_runner_command.dart';
+import 'daemon_options.dart';
 
-/// A command that starts the Build Daemon.
-class DaemonCommand extends WatchCommand {
-  @override
-  String get description => 'Starts the build daemon.';
+class DaemonCommand implements BuildRunnerCommand {
+  final BuiltList<BuilderApplication> builders;
+  final BuiltList<String> arguments;
+  final BuildOptions buildOptions;
+  final DaemonOptions daemonOptions;
+  final TestingOverrides testingOverrides;
 
-  @override
-  bool get hidden => true;
-
-  @override
-  String get name => 'daemon';
-
-  DaemonCommand() {
-    argParser
-      ..addOption(
-        buildModeFlag,
-        help: 'Specify the build mode of the daemon, e.g. auto or manual.',
-        defaultsTo: 'BuildMode.Auto',
-      )
-      ..addFlag(
-        logRequestsOption,
-        defaultsTo: false,
-        negatable: false,
-        help: 'Enables logging for each request to the server.',
-      );
-  }
+  DaemonCommand({
+    required this.builders,
+    required this.arguments,
+    required this.buildOptions,
+    required this.daemonOptions,
+    this.testingOverrides = const TestingOverrides(),
+  });
 
   @override
-  DaemonOptions readOptions() => DaemonOptions.fromParsedArgs(
-    argResults!,
-    argResults!.rest,
-    packageGraph.root.name,
-    this,
-  );
+  Future<int> run() =>
+      withEnabledExperiments(_run, buildOptions.enableExperiments.asList());
 
-  @override
-  Future<int> run() async {
+  Future<int> _run() async {
     buildLog.configuration = buildLog.configuration.rebuild((b) {
       b.mode = BuildLogMode.daemon;
+      b.verbose = buildOptions.verbose;
     });
-    var options = readOptions();
-    return withEnabledExperiments(
-      () => _run(options),
-      options.enableExperiments,
-    );
-  }
-
-  Future<int> _run(DaemonOptions options) async {
-    var workingDirectory = Directory.current.path;
-    var daemon = Daemon(workingDirectory);
-    var requestedOptions = argResults!.arguments.toSet();
+    final workingDirectory = Directory.current.path;
+    final daemon = Daemon(workingDirectory);
+    final requestedOptions = arguments.toSet();
     if (!daemon.hasLock) {
-      var runningOptions = await daemon.currentOptions();
-      var version = await daemon.runningVersion();
+      final runningOptions = await daemon.currentOptions();
+      final version = await daemon.runningVersion();
       if (version != currentVersion) {
         stdout
           ..writeln('Running Version: $version')
@@ -108,15 +87,17 @@ $logStartMarker
 ${jsonEncode(serializers.serialize(ServerLog.fromLogRecord(record)))}
 $logEndMarker''');
       });
+      final packageGraph = await PackageGraph.forThisPackage();
       builder = await BuildRunnerDaemonBuilder.create(
         packageGraph,
-        builderApplications,
-        options,
+        builders,
+        buildOptions,
+        daemonOptions,
       );
 
       // Forward server logs to daemon command STDIO.
       var logSub = builder.logs.listen((log) {
-        if (log.level > Level.INFO || options.verbose) {
+        if (log.level > Level.INFO || buildOptions.verbose) {
           var buffer = StringBuffer(log.message);
           if (log.error != null) buffer.writeln(log.error);
           if (log.stackTrace != null) buffer.writeln(log.stackTrace);
@@ -126,7 +107,7 @@ $logEndMarker''');
         }
       });
       var server = await AssetServer.run(
-        options,
+        daemonOptions,
         builder,
         packageGraph.root.name,
       );

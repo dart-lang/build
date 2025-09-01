@@ -9,6 +9,7 @@ import 'dart:io';
 import 'package:build/build.dart';
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
 
@@ -29,7 +30,7 @@ const _manifestSeparator = '\n';
 ///
 /// Returns whether it succeeded or not.
 Future<bool> createMergedOutputDirectories(
-  Set<BuildDirectory> buildDirs,
+  BuiltSet<BuildDirectory> buildDirs,
   PackageGraph packageGraph,
   BuildEnvironment environment,
   AssetReader reader,
@@ -76,7 +77,7 @@ Future<bool> createMergedOutputDirectories(
   });
 }
 
-Set<String> _conflicts(Set<BuildDirectory> buildDirs) {
+Set<String> _conflicts(BuiltSet<BuildDirectory> buildDirs) {
   final seen = <String>{};
   final conflicts = <String>{};
   var outputLocations = buildDirs.map((d) => d.outputLocation?.path).nonNulls;
