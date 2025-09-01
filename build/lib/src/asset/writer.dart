@@ -27,29 +27,3 @@ abstract class AssetWriter {
     Encoding encoding = utf8,
   });
 }
-
-/// An [AssetWriter] which tracks all [assetsWritten] during its lifetime.
-class AssetWriterSpy implements AssetWriter {
-  final AssetWriter _delegate;
-  final _assetsWritten = <AssetId>{};
-
-  AssetWriterSpy(this._delegate);
-
-  Iterable<AssetId> get assetsWritten => _assetsWritten;
-
-  @override
-  Future<void> writeAsBytes(AssetId id, List<int> bytes) {
-    _assetsWritten.add(id);
-    return _delegate.writeAsBytes(id, bytes);
-  }
-
-  @override
-  Future<void> writeAsString(
-    AssetId id,
-    String contents, {
-    Encoding encoding = utf8,
-  }) {
-    _assetsWritten.add(id);
-    return _delegate.writeAsString(id, contents, encoding: encoding);
-  }
-}

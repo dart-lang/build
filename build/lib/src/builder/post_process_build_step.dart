@@ -21,6 +21,7 @@ PostProcessBuildStep postProcessBuildStep(
 
 /// A simplified [BuildStep] which can only read its primary input, and can't
 /// get a [Resolver] or any [Resource]s, at least for now.
+// TODO make abstract, move impl
 class PostProcessBuildStep {
   final AssetId inputId;
 

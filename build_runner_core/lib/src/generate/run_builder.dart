@@ -127,6 +127,10 @@ extension on PackageConfig {
   }
 }
 
+abstract class StageTracker {
+  T trackStage<T>(String label, T Function() action, {bool isExternal = false});
+}
+
 class NoOpStageTracker implements StageTracker {
   static const StageTracker instance = NoOpStageTracker._();
 

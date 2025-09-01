@@ -2,13 +2,10 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 
-import '../asset/id.dart';
-import '../asset/reader.dart';
-import '../asset/writer.dart';
-import '../builder/post_process_build_step.dart';
+import '../logging/build_log_logger.dart';
 
 /// Run [builder] with [inputId] as the primary input.
 ///
