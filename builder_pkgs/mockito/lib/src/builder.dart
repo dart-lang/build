@@ -142,9 +142,7 @@ class MockBuilder implements Builder {
       // The generator appends a suffix to fake classes
       b.body.add(Code('// ignore_for_file: camel_case_types\n'));
       // The generator has to occasionally implement sealed classes
-      b.body.add(Code('// ignore_for_file: subtype_of_sealed_class\n'));
-      // The generator has to occasionally implement internal members.
-      b.body.add(Code('// ignore_for_file: invalid_use_of_internal_member\n\n'));
+      b.body.add(Code('// ignore_for_file: subtype_of_sealed_class\n\n'));
       b.body.addAll(mockLibraryInfo.fakeClasses);
       b.body.addAll(mockLibraryInfo.mockClasses);
     });
