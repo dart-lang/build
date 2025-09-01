@@ -7,7 +7,7 @@ export 'src/asset/exceptions.dart';
 export 'src/asset/id.dart';
 export 'src/asset/reader.dart';
 export 'src/asset/writer.dart';
-export 'src/builder/build_step.dart' hide NoOpStageTracker;
+export 'src/builder/build_step.dart';
 export 'src/builder/builder.dart';
 export 'src/builder/exceptions.dart';
 export 'src/builder/file_deleting_builder.dart' show FileDeletingBuilder;

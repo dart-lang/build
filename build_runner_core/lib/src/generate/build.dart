@@ -7,7 +7,7 @@ import 'dart:convert';
 
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:build/build.dart';
+import 'package:build/build.dart' hide runBuilder;
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
 import 'package:build_resolvers/build_resolvers.dart';
@@ -42,6 +42,7 @@ import 'finalized_assets_view.dart';
 import 'input_tracker.dart';
 import 'performance_tracker.dart';
 import 'phase.dart';
+import 'run_builder.dart';
 import 'single_step_reader_writer.dart';
 
 /// A single build.

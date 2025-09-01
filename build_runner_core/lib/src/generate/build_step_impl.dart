@@ -13,14 +13,13 @@ import 'package:analyzer/dart/element/element2.dart';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
 // ignore: implementation_imports
-import 'package:build/src/builder/build_step.dart';
-// ignore: implementation_imports
 import 'package:build/src/internal.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:package_config/package_config_types.dart';
 
 import 'input_tracker.dart';
+import 'run_builder.dart';
 import 'single_step_reader_writer.dart';
 
 /// A single step in the build processes.
