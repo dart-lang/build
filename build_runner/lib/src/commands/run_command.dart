@@ -65,15 +65,19 @@ class RunCommand implements BuildRunnerCommand {
     final result =
         await BuildCommand(
           builders: builders,
-          buildOptions: buildOptions.copyWithBuildDirectory(
-            BuildDirectory(
-              '',
-              outputLocation: OutputLocation(
-                tempPath,
-                useSymlinks: buildOptions.outputSymlinksOnly,
-                hoist: false,
-              ),
-            ),
+          buildOptions: buildOptions.copyWith(
+            buildDirs: buildOptions.buildDirs.rebuild((b) {
+              b.add(
+                BuildDirectory(
+                  '',
+                  outputLocation: OutputLocation(
+                    tempPath,
+                    useSymlinks: buildOptions.outputSymlinksOnly,
+                    hoist: false,
+                  ),
+                ),
+              );
+            }),
           ),
           testingOverrides: testingOverrides,
         ).run();

@@ -13,7 +13,6 @@ import 'package:built_collection/built_collection.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
 
-import '../environment/build_environment.dart';
 import '../generate/build_directory.dart';
 import '../generate/finalized_assets_view.dart';
 import '../logging/build_log.dart';
@@ -32,7 +31,6 @@ const _manifestSeparator = '\n';
 Future<bool> createMergedOutputDirectories(
   BuiltSet<BuildDirectory> buildDirs,
   PackageGraph packageGraph,
-  BuildEnvironment environment,
   AssetReader reader,
   FinalizedAssetsView finalizedAssetsView,
   bool outputSymlinksOnly,
@@ -62,7 +60,6 @@ Future<bool> createMergedOutputDirectories(
           outputLocation.path,
           target.directory,
           packageGraph,
-          environment,
           reader,
           finalizedAssetsView,
           // TODO(grouma) - retrieve symlink information from target only.
@@ -91,7 +88,6 @@ Future<bool> _createMergedOutputDir(
   String outputPath,
   String? root,
   PackageGraph packageGraph,
-  BuildEnvironment environment,
   AssetReader reader,
   FinalizedAssetsView finalizedOutputsView,
   bool symlinkOnly,
@@ -110,7 +106,7 @@ Future<bool> _createMergedOutputDir(
     var outputDir = Directory(outputPath);
     var outputDirExists = await outputDir.exists();
     if (outputDirExists) {
-      if (!await _cleanUpOutputDir(outputDir, environment)) return false;
+      if (!await _cleanUpOutputDir(outputDir)) return false;
     }
     var builtAssets = finalizedOutputsView.allAssets(rootDir: root).toList();
     if (root != '' &&
@@ -305,10 +301,7 @@ String _filePathFor(Directory outputDir, String path) {
 /// Prompts the user with a few options if no manifest file is found.
 ///
 /// Returns whether or not the directory was successfully cleaned up.
-Future<bool> _cleanUpOutputDir(
-  Directory outputDir,
-  BuildEnvironment environment,
-) async {
+Future<bool> _cleanUpOutputDir(Directory outputDir) async {
   var outputPath = outputDir.path;
   var manifestFile = File(p.join(outputPath, _manifestName));
   if (!manifestFile.existsSync()) {

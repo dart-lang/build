@@ -10,6 +10,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:build/build.dart';
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
+import 'package:build_resolvers/build_resolvers.dart';
 // ignore: implementation_imports
 import 'package:build_resolvers/src/internal.dart';
 // ignore: implementation_imports
@@ -25,9 +26,12 @@ import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../asset_graph/optional_output_tracker.dart';
 import '../asset_graph/post_process_build_step_id.dart';
-import '../environment/build_environment.dart';
+import '../environment/create_merged_dir.dart';
 import '../logging/build_log.dart';
 import '../logging/timed_activities.dart';
+import '../options/testing_overrides.dart';
+import '../package_graph/package_graph.dart';
+import '../package_graph/target_graph.dart';
 import '../performance_tracking/performance_tracking_resolvers.dart';
 import '../util/build_dirs.dart';
 import '../util/constants.dart';
@@ -36,19 +40,13 @@ import 'build_phases.dart';
 import 'build_result.dart';
 import 'finalized_assets_view.dart';
 import 'input_tracker.dart';
-import 'options.dart';
 import 'performance_tracker.dart';
 import 'phase.dart';
 import 'single_step_reader_writer.dart';
 
 /// A single build.
 class Build {
-  // Configuration.
-  final BuildEnvironment environment;
-  final BuildConfiguration options;
-  final BuildPhases buildPhases;
-  final BuiltSet<BuildDirectory> buildDirs;
-  final BuiltSet<BuildFilter> buildFilters;
+  final BuildPlan buildPlan;
 
   // Collaborators.
   final ResourceManager resourceManager;
@@ -111,17 +109,13 @@ class Build {
   final Map<LibraryCycleGraph, bool> changedGraphs = Map.identity();
 
   Build({
-    required this.environment,
-    required this.options,
-    required this.buildPhases,
-    required this.buildDirs,
-    required this.buildFilters,
+    required this.buildPlan,
     required this.readerWriter,
     required this.deleteWriter,
     required this.resourceManager,
     required this.assetGraph,
   }) : performanceTracker =
-           options.trackPerformance
+           buildPlan.buildOptions.trackPerformance
                ? BuildPerformanceTracker()
                : BuildPerformanceTracker.noOp(),
        previousDepsLoader =
@@ -129,19 +123,25 @@ class Build {
                ? null
                : AssetDepsLoader.fromDeps(assetGraph.previousPhasedAssetDeps!);
 
+  BuildOptions get buildOptions => buildPlan.buildOptions;
+  TestingOverrides get testingOverrides => buildPlan.testingOverrides;
+  PackageGraph get packageGraph => buildPlan.packageGraph;
+  TargetGraph get targetGraph => buildPlan.targetGraph;
+  BuildPhases get buildPhases => buildPlan.buildPhases;
+
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
     if (!assetGraph.cleanBuild) {
       buildLog.fullBuildBecause(FullBuildReason.none);
     }
     buildLog.configuration = buildLog.configuration.rebuild(
-      (b) => b..rootPackageName = options.packageGraph.root.name,
+      (b) => b..rootPackageName = packageGraph.root.name,
     );
     var result = await _safeBuild(updates);
     var optionalOutputTracker = OptionalOutputTracker(
       assetGraph,
-      options.targetGraph,
-      BuildDirectory.buildPaths(buildDirs),
-      buildFilters,
+      targetGraph,
+      BuildDirectory.buildPaths(buildPlan.buildOptions.buildDirs),
+      buildPlan.buildOptions.buildFilters,
       buildPhases,
     );
     if (result.status == BuildStatus.success) {
@@ -177,22 +177,22 @@ class Build {
     }
     readerWriter.cache.flush();
     await resourceManager.disposeAll();
-    result = await environment.finalizeBuild(
+    result = await _finalizeBuild(
       result,
-      FinalizedAssetsView(
-        assetGraph,
-        options.packageGraph,
-        optionalOutputTracker,
-      ),
+      FinalizedAssetsView(assetGraph, packageGraph, optionalOutputTracker),
       readerWriter,
-      buildDirs,
+      buildPlan.buildOptions.buildDirs,
     );
+    _resolvers.reset();
     buildLog.finishBuild(
       result: result.status == BuildStatus.success,
       outputs: result.outputs.length,
     );
     return result;
   }
+
+  Resolvers get _resolvers =>
+      testingOverrides.resolvers ?? AnalyzerResolvers.sharedInstance;
 
   Future<void> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
     changedInputs.clear();
@@ -211,7 +211,7 @@ class Build {
     final deleted = await assetGraph.updateAndInvalidate(
       buildPhases,
       updates,
-      options.packageGraph.root.name,
+      packageGraph.root.name,
       _delete,
       readerWriter,
     );
@@ -234,7 +234,7 @@ class Build {
         buildLog.doing('Writing the asset graph.');
 
         assetGraph.previousBuildTriggersDigest =
-            options.targetGraph.buildTriggers.digest;
+            targetGraph.buildTriggers.digest;
         // Combine previous phased asset deps, if any, with the newly loaded
         // deps. Because of skipped builds, the newly loaded deps might just
         // say "not generated yet", in which case the old value is retained.
@@ -246,7 +246,7 @@ class Build {
                 );
         assetGraph.previousPhasedAssetDeps = updatedPhasedAssetDeps;
         await readerWriter.writeAsBytes(
-          AssetId(options.packageGraph.root.name, assetGraphPath),
+          AssetId(packageGraph.root.name, assetGraphPath),
           assetGraph.serialize(),
         );
         // Phases options don't change during a build series, so for all
@@ -258,21 +258,18 @@ class Build {
             assetGraph.postBuildActionsOptionsDigests;
 
         // Log performance information if requested
-        if (options.logPerformanceDir != null) {
+        if (buildOptions.logPerformanceDir != null) {
           buildLog.doing('Writing the performance log.');
           assert(result.performance != null);
           var now = DateTime.now();
           var logPath = p.join(
-            options.logPerformanceDir!,
+            buildOptions.logPerformanceDir!,
             '${now.year}-${_twoDigits(now.month)}-${_twoDigits(now.day)}'
             '_${_twoDigits(now.hour)}-${_twoDigits(now.minute)}-'
             '${_twoDigits(now.second)}',
           );
           buildLog.info('Writing performance log to $logPath');
-          var performanceLogId = AssetId(
-            options.packageGraph.root.name,
-            logPath,
-          );
+          var performanceLogId = AssetId(packageGraph.root.name, logPath);
           var serialized = jsonEncode(result.performance);
           await readerWriter.writeAsString(performanceLogId, serialized);
         }
@@ -389,17 +386,17 @@ class Build {
     // Accumulate in a `Set` because inputs are found once per output.
     var ids = <AssetId>{};
     var phase = buildPhases[phaseNumber];
-    var packageNode = options.packageGraph[package]!;
+    var packageNode = packageGraph[package]!;
 
     for (final node in assetGraph
         .outputsForPhase(package, phaseNumber)
         .toList(growable: false)) {
       if (!shouldBuildForDirs(
         node.id,
-        buildDirs: BuildDirectory.buildPaths(buildDirs),
-        buildFilters: buildFilters,
+        buildDirs: BuildDirectory.buildPaths(buildPlan.buildOptions.buildDirs),
+        buildFilters: buildPlan.buildOptions.buildFilters,
         phase: phase,
-        targetGraph: options.targetGraph,
+        targetGraph: targetGraph,
       )) {
         continue;
       }
@@ -407,7 +404,7 @@ class Build {
       // Don't build for inputs that aren't visible. This can happen for
       // placeholder nodes like `test/$test$` that are added to each package,
       // since the test dir is not part of the build for non-root packages.
-      if (!options.targetGraph.isVisibleInBuild(node.id, packageNode)) continue;
+      if (!targetGraph.isVisibleInBuild(node.id, packageNode)) continue;
 
       ids.add(node.generatedNodeConfiguration!.primaryInput);
     }
@@ -459,8 +456,8 @@ class Build {
     return tracker.track(() async {
       final readerWriter = SingleStepReaderWriter(
         runningBuild: RunningBuild(
-          packageGraph: options.packageGraph,
-          targetGraph: options.targetGraph,
+          packageGraph: packageGraph,
+          targetGraph: targetGraph,
           assetGraph: assetGraph,
           nodeBuilder: _buildOutput,
           assetIsProcessedOutput: processedOutputs.contains,
@@ -502,7 +499,7 @@ class Build {
 
       final unusedAssets = <AssetId>{};
       void reportUnusedAssetsForInput(AssetId input, Iterable<AssetId> assets) {
-        options.reportUnusedAssetsForInput?.call(input, assets);
+        testingOverrides.reportUnusedAssetsForInput?.call(input, assets);
         unusedAssets.addAll(assets);
       }
 
@@ -527,12 +524,12 @@ class Build {
               [primaryInput],
               readerWriter,
               readerWriter,
-              PerformanceTrackingResolvers(options.resolvers, tracker),
+              PerformanceTrackingResolvers(_resolvers, tracker),
               logger: logger,
               resourceManager: resourceManager,
               stageTracker: tracker,
               reportUnusedAssetsForInput: reportUnusedAssetsForInput,
-              packageConfig: options.packageGraph.asPackageConfig,
+              packageConfig: packageGraph.asPackageConfig,
             ).catchError((void _) {
               // Errors tracked through the logger.
             }),
@@ -587,7 +584,7 @@ class Build {
     if (runsIfTriggered != true) {
       return true;
     }
-    final buildTriggers = options.targetGraph.buildTriggers[phase.builderLabel];
+    final buildTriggers = targetGraph.buildTriggers[phase.builderLabel];
     if (buildTriggers == null) {
       return false;
     }
@@ -677,8 +674,8 @@ class Build {
     var inputNode = assetGraph.get(input)!;
     var readerWriter = SingleStepReaderWriter(
       runningBuild: RunningBuild(
-        packageGraph: options.packageGraph,
-        targetGraph: options.targetGraph,
+        packageGraph: packageGraph,
+        targetGraph: targetGraph,
         assetGraph: assetGraph,
         nodeBuilder: _buildOutput,
         assetIsProcessedOutput: processedOutputs.contains,
@@ -853,7 +850,7 @@ class Build {
       if (assetGraph.cleanBuild) return true;
 
       if (assetGraph.previousBuildTriggersDigest !=
-          options.targetGraph.buildTriggers.digest) {
+          targetGraph.buildTriggers.digest) {
         return true;
       }
 
@@ -1218,6 +1215,60 @@ class Build {
   }
 
   Future _delete(AssetId id) => deleteWriter.delete(id);
+
+  /// Invoked after each build, can modify the [BuildResult] in any way, even
+  /// converting it to a failure.
+  ///
+  /// The [finalizedAssetsView] can only be used until the returned [Future]
+  /// completes, it will expire afterwords since it can no longer guarantee a
+  /// consistent state.
+  ///
+  /// By default this returns the original result.
+  ///
+  /// Any operation may be performed, as determined by environment.
+  Future<BuildResult> _finalizeBuild(
+    BuildResult buildResult,
+    FinalizedAssetsView finalizedAssetsView,
+    AssetReader reader,
+    BuiltSet<BuildDirectory> buildDirs,
+  ) async {
+    if (testingOverrides.finalizeBuild != null) {
+      return testingOverrides.finalizeBuild!(
+        buildResult,
+        finalizedAssetsView,
+        reader,
+        buildDirs,
+      );
+    }
+    if (buildDirs.any(
+          (target) => target.outputLocation?.path.isNotEmpty ?? false,
+        ) &&
+        buildResult.status == BuildStatus.success) {
+      if (!await createMergedOutputDirectories(
+        buildDirs,
+        packageGraph,
+        reader,
+        finalizedAssetsView,
+        buildOptions.outputSymlinksOnly,
+      )) {
+        return _convertToFailure(
+          buildResult,
+          failureType: FailureType.cantCreate,
+        );
+      }
+    }
+    return buildResult;
+  }
 }
 
 String _twoDigits(int n) => '$n'.padLeft(2, '0');
+
+BuildResult _convertToFailure(
+  BuildResult previous, {
+  FailureType? failureType,
+}) => BuildResult(
+  BuildStatus.failure,
+  previous.outputs,
+  performance: previous.performance,
+  failureType: failureType,
+);

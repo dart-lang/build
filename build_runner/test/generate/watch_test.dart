@@ -14,7 +14,6 @@ import 'package:build_runner/src/commands/watch_command.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
-import 'package:build_runner_core/src/generate/build_phases.dart';
 import 'package:build_test/src/in_memory_reader_writer.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:logging/logging.dart';

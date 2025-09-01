@@ -12,6 +12,7 @@ import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
 import '../build_runner_command_line.dart';
+import 'build_filter.dart';
 
 /// The command line options common to all `build_runner` commands that do a
 /// build.
@@ -105,29 +106,32 @@ class BuildOptions {
       enableExperiments: commandLine.enableExperiments!,
       enableLowResourcesMode: commandLine.lowResourcesMode!,
       isReleaseBuild: commandLine.release!,
-      logPerformanceDir: commandLine.logPerformance,
+      logPerformanceDir: _parseLogPerformance(commandLine),
       outputSymlinksOnly: commandLine.symlink!,
       skipBuildScriptCheck: commandLine.skipBuildScriptCheck!,
-      trackPerformance: commandLine.trackPerformance!,
+      trackPerformance:
+          commandLine.trackPerformance! || commandLine.logPerformance != null,
       verbose: commandLine.verbose!,
     );
   }
 
-  BuildOptions copyWithBuildDirectory(BuildDirectory buildDirectory) =>
-      BuildOptions(
-        buildDirs: buildDirs.rebuild((b) => b..add(buildDirectory)),
-        builderConfigOverrides: builderConfigOverrides,
-        buildFilters: buildFilters,
-        configKey: configKey,
-        enableExperiments: enableExperiments,
-        enableLowResourcesMode: enableLowResourcesMode,
-        isReleaseBuild: isReleaseBuild,
-        logPerformanceDir: logPerformanceDir,
-        outputSymlinksOnly: outputSymlinksOnly,
-        skipBuildScriptCheck: skipBuildScriptCheck,
-        trackPerformance: trackPerformance,
-        verbose: verbose,
-      );
+  BuildOptions copyWith({
+    BuiltSet<BuildDirectory>? buildDirs,
+    BuiltSet<BuildFilter>? buildFilters,
+  }) => BuildOptions(
+    buildDirs: buildDirs ?? this.buildDirs,
+    builderConfigOverrides: builderConfigOverrides,
+    buildFilters: buildFilters ?? this.buildFilters,
+    configKey: configKey,
+    enableExperiments: enableExperiments,
+    enableLowResourcesMode: enableLowResourcesMode,
+    isReleaseBuild: isReleaseBuild,
+    logPerformanceDir: logPerformanceDir,
+    outputSymlinksOnly: outputSymlinksOnly,
+    skipBuildScriptCheck: skipBuildScriptCheck,
+    trackPerformance: trackPerformance,
+    verbose: verbose,
+  );
 }
 
 /// Returns build directories with output information parsed from output
@@ -271,4 +275,18 @@ BuiltSet<BuildFilter> _parseBuildFilters(
           '`package:` uri.\n\n$e',
     );
   }
+}
+
+String? _parseLogPerformance(BuildRunnerCommandLine commandLine) {
+  final logPerformance = commandLine.logPerformance;
+  if (logPerformance == null) return null;
+  if (!p.isWithin(p.current, logPerformance)) {
+    throw UsageException(
+      'Performance logs may only be output under the root '
+      'package, but got `$logPerformance` which is not.',
+
+      commandLine.usage,
+    );
+  }
+  return logPerformance;
 }

@@ -19,7 +19,7 @@ import 'asset_change.dart';
 FutureOr<bool> shouldProcess(
   AssetChange change,
   AssetGraph assetGraph,
-  BuildConfiguration buildOptions,
+  TargetGraph targetGraph,
   bool willCreateOutputDir,
   Set<AssetId> expectedDeletes,
   AssetReader reader,
@@ -38,7 +38,7 @@ FutureOr<bool> shouldProcess(
     }
   } else {
     if (change.type != ChangeType.ADD) return false;
-    if (!buildOptions.targetGraph.anyMatchesAsset(change.id)) return false;
+    if (!targetGraph.anyMatchesAsset(change.id)) return false;
   }
   if (_isExpectedDelete(change, expectedDeletes)) return false;
   return true;

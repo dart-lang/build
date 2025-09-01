@@ -13,7 +13,6 @@ import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 
-import '../package_graph/build_config_overrides.dart';
 import 'builder_ordering.dart';
 
 const scriptLocation = '$entryPointDir/build.dart';
@@ -81,7 +80,11 @@ Future<BuildScriptInfo> findBuildScriptOptions() async {
     hashCode: (n) => n.name.hashCode,
   ).expand((c) => c);
   var reader = ReaderWriter(packageGraph);
-  var overrides = await findBuildConfigOverrides(packageGraph, reader);
+  var overrides = await findBuildConfigOverrides(
+    packageGraph: packageGraph,
+    reader: reader,
+    configKey: null,
+  );
   Future<BuildConfig> packageBuildConfig(PackageNode package) async {
     if (overrides.containsKey(package.name)) {
       return overrides[package.name]!;

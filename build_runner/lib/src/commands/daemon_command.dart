@@ -14,6 +14,7 @@ import 'package:build_daemon/data/server_log.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:built_collection/built_collection.dart';
 
+import '../build_plan.dart';
 import '../build_script_generate/build_process_state.dart';
 import '../daemon/asset_server.dart';
 import '../daemon/constants.dart';
@@ -72,7 +73,6 @@ class DaemonCommand implements BuildRunnerCommand {
       }
     } else {
       stdout.writeln('Starting daemon...');
-      BuildRunnerDaemonBuilder builder;
       // Ensure we capture any logs that happen during startup.
       //
       // These are serialized between special `<log-record>` and `</log-record>`
@@ -87,12 +87,15 @@ $logStartMarker
 ${jsonEncode(serializers.serialize(ServerLog.fromLogRecord(record)))}
 $logEndMarker''');
       });
-      final packageGraph = await PackageGraph.forThisPackage();
-      builder = await BuildRunnerDaemonBuilder.create(
-        packageGraph,
-        builders,
-        buildOptions,
-        daemonOptions,
+
+      final buildPlan = await BuildPlan.load(
+        builders: builders,
+        buildOptions: buildOptions,
+        testingOverrides: testingOverrides,
+      );
+      final builder = await BuildRunnerDaemonBuilder.create(
+        buildPlan: buildPlan,
+        daemonOptions: daemonOptions,
       );
 
       // Forward server logs to daemon command STDIO.
@@ -109,7 +112,7 @@ $logEndMarker''');
       var server = await AssetServer.run(
         daemonOptions,
         builder,
-        packageGraph.root.name,
+        buildPlan.packageGraph.root.name,
       );
       File(
         assetServerPortFilePath(workingDirectory),

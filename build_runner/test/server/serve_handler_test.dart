@@ -15,9 +15,6 @@ import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:build_runner_core/src/asset_graph/post_process_build_step_id.dart';
-import 'package:build_runner_core/src/generate/build_phases.dart';
-import 'package:build_runner_core/src/generate/options.dart';
-import 'package:build_runner_core/src/package_graph/target_graph.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
@@ -119,10 +116,7 @@ void main() {
         FinalizedReader(
           readerWriter,
           assetGraph,
-          await TargetGraph.forPackageGraph(
-            packageGraph,
-            defaultRootPackageSources: defaultRootPackageSources,
-          ),
+          await TargetGraph.forPackageGraph(packageGraph: packageGraph),
           BuildPhases([]),
           'a',
         ),
@@ -599,7 +593,7 @@ void main() {
   });
 }
 
-class MockWatchImpl implements WatchImpl {
+class MockWatchImpl implements Watcher {
   @override
   final AssetGraph assetGraph;
 
@@ -624,13 +618,13 @@ class MockWatchImpl implements WatchImpl {
   final PackageGraph packageGraph;
 
   @override
-  final Future<FinalizedReader> reader;
+  final Future<FinalizedReader> finalizedReader;
 
   void addFutureResult(Future<BuildResult> result) {
     _futureBuildResultsController.add(result);
   }
 
-  MockWatchImpl(this.reader, this.packageGraph, this.assetGraph) {
+  MockWatchImpl(this.finalizedReader, this.packageGraph, this.assetGraph) {
     var firstBuild = Completer<BuildResult>();
     _currentBuild = firstBuild.future;
     _futureBuildResultsController.stream.listen((futureBuildResult) {
@@ -641,6 +635,9 @@ class MockWatchImpl implements WatchImpl {
         ..then(_buildResultsController.add);
     });
   }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class FakeRequest with Fake implements Request {}

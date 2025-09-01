@@ -9,6 +9,7 @@ import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/src/generate/build_phases.dart';
 import 'package:build_runner_core/src/generate/exceptions.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
+import 'package:build_runner_core/src/options/testing_overrides.dart';
 import 'package:build_runner_core/src/package_graph/apply_builders.dart';
 import 'package:build_runner_core/src/package_graph/target_graph.dart';
 import 'package:built_collection/built_collection.dart';
@@ -22,8 +23,10 @@ void main() {
         package('b'): [],
       });
       var targetGraph = await TargetGraph.forPackageGraph(
-        packageGraph,
-        defaultRootPackageSources: const ['**'],
+        packageGraph: packageGraph,
+        testingOverrides: TestingOverrides(
+          defaultRootPackageSources: ['**'].build(),
+        ),
       );
       var builderApplications = [
         apply('b:cool_builder', [CoolBuilder.new], toAllPackages()),
@@ -71,9 +74,11 @@ void main() {
                   ),
                 }.build();
             var targetGraph = await TargetGraph.forPackageGraph(
-              packageGraph,
-              defaultRootPackageSources: ['**'],
-              overrideBuildConfig: overrides,
+              packageGraph: packageGraph,
+              testingOverrides: TestingOverrides(
+                defaultRootPackageSources: ['**'].build(),
+                buildConfig: overrides,
+              ),
             );
             var builderApplications = [
               apply('b:cool_builder', [CoolBuilder.new], toAllPackages()),
@@ -113,8 +118,10 @@ void main() {
         package('b'): [],
       });
       var targetGraph = await TargetGraph.forPackageGraph(
-        packageGraph,
-        defaultRootPackageSources: ['**'],
+        packageGraph: packageGraph,
+        testingOverrides: TestingOverrides(
+          defaultRootPackageSources: ['**'].build(),
+        ),
       );
       var builderApplications = [
         apply('b:cool_builder', [CoolBuilder.new], toDependentsOf('b')),
@@ -135,8 +142,10 @@ void main() {
         package('b'): [],
       });
       var targetGraph = await TargetGraph.forPackageGraph(
-        packageGraph,
-        defaultRootPackageSources: ['**'],
+        packageGraph: packageGraph,
+        testingOverrides: TestingOverrides(
+          defaultRootPackageSources: ['**'].build(),
+        ),
       );
       var builderApplications = [
         apply(
@@ -173,8 +182,10 @@ void main() {
         package('c'): [],
       });
       var targetGraph = await TargetGraph.forPackageGraph(
-        packageGraph,
-        defaultRootPackageSources: ['**'],
+        packageGraph: packageGraph,
+        testingOverrides: TestingOverrides(
+          defaultRootPackageSources: ['**'].build(),
+        ),
       );
       var builderApplications = [
         apply(
@@ -212,8 +223,10 @@ void main() {
           package('c'): [],
         });
         var targetGraph = await TargetGraph.forPackageGraph(
-          packageGraph,
-          defaultRootPackageSources: ['**'],
+          packageGraph: packageGraph,
+          testingOverrides: TestingOverrides(
+            defaultRootPackageSources: ['**'].build(),
+          ),
         );
         var builderApplications = [
           apply(
@@ -266,9 +279,11 @@ void main() {
                 ),
               }.build();
           var targetGraph = await TargetGraph.forPackageGraph(
-            packageGraph,
-            defaultRootPackageSources: ['**'],
-            overrideBuildConfig: overrides,
+            packageGraph: packageGraph,
+            testingOverrides: TestingOverrides(
+              defaultRootPackageSources: ['**'].build(),
+              buildConfig: overrides,
+            ),
           );
           var builderApplications = [
             apply('b:cool_builder', [CoolBuilder.new], toAllPackages()),
@@ -298,20 +313,22 @@ void main() {
         });
         var targetGraph = await runInBuildConfigZone(
           () => TargetGraph.forPackageGraph(
-            packageGraph,
-            defaultRootPackageSources: ['**'],
-            overrideBuildConfig:
-                {
-                  'a': BuildConfig(
-                    packageName: 'a',
-                    buildTargets: {
-                      'a|a': BuildTarget(
-                        autoApplyBuilders: false,
-                        builders: builderConfigs,
-                      ),
-                    },
-                  ),
-                }.build(),
+            packageGraph: packageGraph,
+            testingOverrides: TestingOverrides(
+              defaultRootPackageSources: ['**'].build(),
+              buildConfig:
+                  {
+                    'a': BuildConfig(
+                      packageName: 'a',
+                      buildTargets: {
+                        'a|a': BuildTarget(
+                          autoApplyBuilders: false,
+                          builders: builderConfigs,
+                        ),
+                      },
+                    ),
+                  }.build(),
+            ),
           ),
           'a',
           [],
@@ -393,8 +410,10 @@ void main() {
   test('does not allow post process builders with capturing inputs', () async {
     var packageGraph = buildPackageGraph({rootPackage('a'): []});
     var targetGraph = await TargetGraph.forPackageGraph(
-      packageGraph,
-      defaultRootPackageSources: const ['**'],
+      packageGraph: packageGraph,
+      testingOverrides: TestingOverrides(
+        defaultRootPackageSources: ['**'].build(),
+      ),
     );
     var builderApplications = [
       apply(

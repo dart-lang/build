@@ -7,6 +7,8 @@ import 'dart:async';
 import 'package:build/build.dart';
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
+// ignore: implementation_imports
+import 'package:build_runner/src/internal.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:watcher/watcher.dart';
 
@@ -14,15 +16,10 @@ import '../asset/finalized_reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../changes/build_script_updates.dart';
-import '../environment/build_environment.dart';
-import '../logging/build_log.dart';
-import '../package_graph/apply_builders.dart';
 import 'build.dart';
 import 'build_definition.dart';
 import 'build_directory.dart';
-import 'build_phases.dart';
 import 'build_result.dart';
-import 'options.dart';
 
 /// A series of builds with the same configuration.
 ///
@@ -37,11 +34,10 @@ import 'options.dart';
 /// this serialized state is not actually used: the `AssetGraph` instance
 /// already in memory is used directly.
 class BuildSeries {
-  final BuildEnvironment environment;
+  final BuildPlan buildPlan;
+
   final AssetGraph assetGraph;
   final BuildScriptUpdates? buildScriptUpdates;
-  final BuildConfiguration options;
-  final BuildPhases buildPhases;
 
   final FinalizedReader finalizedReader;
   final AssetReaderWriter readerWriter;
@@ -64,18 +60,16 @@ class BuildSeries {
   Future<void> beforeExit() => resourceManager.beforeExit();
 
   BuildSeries._(
-    this.environment,
+    this.buildPlan,
     this.assetGraph,
     this.buildScriptUpdates,
-    this.options,
-    this.buildPhases,
     this.finalizedReader,
     this.cleanBuild,
     this.updatesFromLoad,
-  ) : readerWriter = environment.reader.copyWith(
+  ) : readerWriter = buildPlan.reader.copyWith(
         generatedAssetHider: assetGraph,
         cache:
-            options.enableLowResourcesMode
+            buildPlan.buildOptions.enableLowResourcesMode
                 ? const PassthroughFilesystemCache()
                 : InMemoryFilesystemCache(),
       ) {
@@ -85,9 +79,7 @@ class BuildSeries {
     if (readerWriter is RunnerAssetWriter) {
       deleteWriter = readerWriter as RunnerAssetWriter;
     } else {
-      deleteWriter = environment.writer.copyWith(
-        generatedAssetHider: assetGraph,
-      );
+      deleteWriter = buildPlan.writer.copyWith(generatedAssetHider: assetGraph);
     }
   }
 
@@ -104,8 +96,8 @@ class BuildSeries {
     BuiltSet<BuildDirectory>? buildDirs,
     BuiltSet<BuildFilter>? buildFilters,
   }) async {
-    buildDirs ??= BuiltSet();
-    buildFilters ??= BuiltSet();
+    buildDirs ??= buildPlan.buildOptions.buildDirs;
+    buildFilters ??= buildPlan.buildOptions.buildFilters;
     if (firstBuild) {
       if (updatesFromLoad != null) {
         updates = updatesFromLoad!..addAll(updates);
@@ -119,61 +111,43 @@ class BuildSeries {
 
     finalizedReader.reset(BuildDirectory.buildPaths(buildDirs), buildFilters);
     final build = Build(
-      environment: environment,
-      options: options,
-      buildPhases: buildPhases,
+      buildPlan: buildPlan.copyWith(
+        buildDirs: buildDirs,
+        buildFilters: buildFilters,
+      ),
       assetGraph: assetGraph,
-      buildDirs: buildDirs,
-      buildFilters: buildFilters,
       readerWriter: readerWriter,
       deleteWriter: deleteWriter,
       resourceManager: resourceManager,
     );
     if (firstBuild) firstBuild = false;
     final result = await build.run(updates);
-    options.resolvers.reset();
     return result;
   }
 
-  static Future<BuildSeries> create(
-    BuildConfiguration options,
-    BuildEnvironment environment,
-    BuiltList<BuilderApplication> builders,
-    BuiltMap<String, BuiltMap<String, dynamic>> builderConfigOverrides, {
-    bool isReleaseBuild = false,
-  }) async {
-    var buildPhases = await createBuildPhases(
-      options.targetGraph,
-      builders,
-      builderConfigOverrides,
-      isReleaseBuild,
-    );
-    if (buildPhases.inBuildPhases.isEmpty &&
-        buildPhases.postBuildPhase.builderActions.isEmpty) {
-      buildLog.warning('Nothing to build.');
-    }
-
+  static Future<BuildSeries> create({required BuildPlan buildPlan}) async {
     var buildDefinition = await BuildDefinition.prepareWorkspace(
-      environment,
-      options,
-      buildPhases,
+      packageGraph: buildPlan.packageGraph,
+      targetGraph: buildPlan.targetGraph,
+      reader: buildPlan.reader,
+      writer: buildPlan.writer,
+      buildPhases: buildPlan.buildPhases,
+      skipBuildScriptCheck: buildPlan.buildOptions.skipBuildScriptCheck,
     );
 
     var finalizedReader = FinalizedReader(
-      environment.reader.copyWith(
+      buildPlan.reader.copyWith(
         generatedAssetHider: buildDefinition.assetGraph,
       ),
       buildDefinition.assetGraph,
-      options.targetGraph,
-      buildPhases,
-      options.packageGraph.root.name,
+      buildPlan.targetGraph,
+      buildPlan.buildPhases,
+      buildPlan.packageGraph.root.name,
     );
     var build = BuildSeries._(
-      environment,
+      buildPlan,
       buildDefinition.assetGraph,
       buildDefinition.buildScriptUpdates,
-      options,
-      buildPhases,
       finalizedReader,
       buildDefinition.cleanBuild,
       buildDefinition.updates,
