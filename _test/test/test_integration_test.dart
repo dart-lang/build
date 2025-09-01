@@ -5,6 +5,8 @@
 @TestOn('vm')
 library;
 
+import 'dart:io';
+
 import 'package:io/io.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -36,6 +38,9 @@ void main() {
   );
 
   test('Failing tests print mapped stack traces', () async {
+    // Skip on Windows due to Chrome test flakiness, see
+    // https://github.com/dart-lang/build/issues/4123.
+    if (Platform.isWindows) return;
     var result = await runTests(
       testArgs: ['--run-skipped', 'test/hello_world_test.dart'],
     );
