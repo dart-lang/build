@@ -51,9 +51,6 @@ class BuildSeries {
   /// if the serialized build state was discarded.
   Map<AssetId, ChangeType>? updatesFromLoad;
 
-  /// Whether this is or was a build starting from no previous state or outputs.
-  final bool cleanBuild;
-
   /// Whether the next build is the first build.
   bool firstBuild = true;
 
@@ -64,7 +61,6 @@ class BuildSeries {
     this.assetGraph,
     this.buildScriptUpdates,
     this.finalizedReader,
-    this.cleanBuild,
     this.updatesFromLoad,
   ) : readerWriter = buildPlan.reader.copyWith(
         generatedAssetHider: assetGraph,
@@ -149,7 +145,6 @@ class BuildSeries {
       buildDefinition.assetGraph,
       buildDefinition.buildScriptUpdates,
       finalizedReader,
-      buildDefinition.cleanBuild,
       buildDefinition.updates,
     );
     return build;
