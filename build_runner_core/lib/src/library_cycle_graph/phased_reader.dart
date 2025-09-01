@@ -2,7 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import '../asset/id.dart';
+import 'package:build/build.dart';
+
 import 'phased_value.dart';
 
 /// Asset reader that views the build at one specific phase.

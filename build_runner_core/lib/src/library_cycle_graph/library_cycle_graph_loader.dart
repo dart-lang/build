@@ -5,9 +5,9 @@
 import 'dart:collection';
 import 'dart:math';
 
+import 'package:build/build.dart';
 import 'package:graphs/graphs.dart';
 
-import '../asset/id.dart';
 import 'asset_deps.dart';
 import 'asset_deps_loader.dart';
 import 'library_cycle.dart';

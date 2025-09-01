@@ -7,15 +7,22 @@ import 'dart:convert';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
-// ignore: implementation_imports
-import 'package:build/src/internal.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
+import '../library_cycle_graph/phased_reader.dart';
+import '../library_cycle_graph/phased_value.dart';
 import '../package_graph/package_graph.dart';
 import '../package_graph/target_graph.dart';
+import '../state/asset_finder.dart';
+import '../state/asset_path_provider.dart';
+import '../state/filesystem.dart';
+import '../state/filesystem_cache.dart';
+import '../state/generated_asset_hider.dart';
+import '../state/reader_state.dart';
+import '../state/reader_writer.dart';
 import 'input_tracker.dart';
 import 'phase.dart';
 

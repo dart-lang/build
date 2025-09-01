@@ -5,13 +5,12 @@
 import 'dart:io';
 
 import 'package:build/build.dart';
-// ignore: implementation_imports
-import 'package:build/src/internal.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
+import '../state/asset_path_provider.dart';
 import '../util/constants.dart';
 
 /// The SDK package, we filter this to the core libs and dev compiler

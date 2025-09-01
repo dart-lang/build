@@ -17,8 +17,13 @@ export 'src/generate/exceptions.dart'
         BuildScriptChangedException,
         CannotBuildException;
 export 'src/generate/finalized_assets_view.dart' show FinalizedAssetsView;
+export 'src/generate/input_tracker.dart';
 export 'src/generate/performance_tracker.dart'
     show BuildPerformance, BuildPhasePerformance, BuilderActionPerformance;
+export 'src/generate/run_builder.dart';
+export 'src/library_cycle_graph/asset_deps_loader.dart';
+export 'src/library_cycle_graph/library_cycle_graph_loader.dart';
+export 'src/library_cycle_graph/phased_asset_deps.dart';
 export 'src/logging/build_log.dart';
 export 'src/logging/build_log_configuration.dart';
 export 'src/logging/build_log_logger.dart';
@@ -40,6 +45,12 @@ export 'src/package_graph/apply_builders.dart'
 export 'src/package_graph/apply_builders.dart';
 export 'src/package_graph/package_graph.dart';
 export 'src/package_graph/target_graph.dart';
+export 'src/state/asset_finder.dart';
+export 'src/state/asset_path_provider.dart';
+export 'src/state/filesystem.dart';
+export 'src/state/filesystem_cache.dart';
+export 'src/state/generated_asset_hider.dart';
+export 'src/state/reader_state.dart';
 export 'src/util/constants.dart'
     show
         assetGraphPath,

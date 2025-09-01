@@ -1,5 +1,11 @@
 ## 3.0.3-wip
 
+- Deprecate `runBuilder`. It has been moved to `package:build_runner_core` and
+  will be deleted from `package:build`. Please note: the currently supported
+  ways to run builders are using `build_runner` on the command line or
+  `build_test` in tests. If you need ongoing support for a different way to run
+  builders please get in touch at
+  https://github.com/dart-lang/build/discussions.
 - Use `build_runner_core` 9.3.1.
 
 ## 3.0.2

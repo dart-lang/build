@@ -8,8 +8,6 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build/experiments.dart' as experiments_zone;
-// ignore: implementation_imports
-import 'package:build/src/internal.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/serializer.dart';
 import 'package:crypto/crypto.dart';
@@ -20,7 +18,9 @@ import 'package:watcher/watcher.dart';
 import '../asset/writer.dart';
 import '../generate/build_phases.dart';
 import '../generate/phase.dart';
+import '../library_cycle_graph/phased_asset_deps.dart';
 import '../package_graph/package_graph.dart';
+import '../state/generated_asset_hider.dart';
 import '../util/constants.dart';
 import 'exceptions.dart';
 import 'node.dart';

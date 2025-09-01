@@ -7,8 +7,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
-// ignore: implementation_imports
-import 'package:build/src/internal.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
@@ -18,6 +16,8 @@ import '../generate/finalized_assets_view.dart';
 import '../logging/build_log.dart';
 import '../logging/timed_activities.dart';
 import '../package_graph/package_graph.dart';
+import '../state/filesystem.dart';
+import '../state/reader_state.dart';
 
 /// Pool for async file operations, we don't want to use too many file handles.
 final _descriptorPool = Pool(32);

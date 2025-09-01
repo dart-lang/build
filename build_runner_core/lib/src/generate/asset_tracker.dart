@@ -7,8 +7,6 @@ import 'dart:io';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
-// ignore: implementation_imports
-import 'package:build/src/internal.dart';
 import 'package:glob/glob.dart';
 import 'package:watcher/watcher.dart';
 
@@ -16,6 +14,7 @@ import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../logging/timed_activities.dart';
 import '../package_graph/target_graph.dart';
+import '../state/reader_state.dart';
 import '../util/constants.dart';
 
 /// Finds build assets and computes changes to build assets.

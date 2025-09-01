@@ -5,7 +5,7 @@
 import 'dart:convert';
 
 import 'package:build/build.dart';
-import 'package:build/src/state/filesystem_cache.dart';
+import 'package:build_runner_core/src/state/filesystem_cache.dart';
 import 'package:test/test.dart';
 
 void main() {

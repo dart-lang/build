@@ -7,8 +7,6 @@ import 'dart:math' as math;
 
 import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
-// ignore: implementation_imports
-import 'package:build/src/internal.dart';
 import 'package:build_config/build_config.dart';
 // ignore: implementation_imports
 import 'package:build_runner/src/internal.dart';

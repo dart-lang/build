@@ -6,8 +6,6 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 // ignore: implementation_imports
-import 'package:build/src/internal.dart';
-// ignore: implementation_imports
 import 'package:build_runner/src/internal.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:watcher/watcher.dart';
@@ -16,6 +14,9 @@ import '../asset/finalized_reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../changes/build_script_updates.dart';
+import '../state/filesystem_cache.dart';
+import '../state/reader_state.dart';
+import '../state/reader_writer.dart';
 import 'build.dart';
 import 'build_definition.dart';
 import 'build_directory.dart';

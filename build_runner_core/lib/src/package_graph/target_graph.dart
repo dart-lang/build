@@ -5,8 +5,6 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-// ignore: implementation_imports
-import 'package:build/src/internal.dart';
 import 'package:build_config/build_config.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:glob/glob.dart';
@@ -16,6 +14,7 @@ import '../generate/exceptions.dart';
 import '../generate/input_matcher.dart';
 import '../logging/build_log.dart';
 import '../options/testing_overrides.dart';
+import '../state/reader_state.dart';
 import 'build_triggers.dart';
 import 'package_graph.dart';
 

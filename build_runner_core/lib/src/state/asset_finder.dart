@@ -3,9 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 
+import 'package:build/build.dart';
 import 'package:glob/glob.dart';
-
-import '../asset/id.dart';
 
 abstract interface class AssetFinder {
   /// Returns all readable assets matching [glob] under [package].

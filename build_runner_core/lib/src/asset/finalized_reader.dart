@@ -7,8 +7,6 @@ import 'dart:convert';
 
 import 'package:build/build.dart';
 // ignore: implementation_imports
-import 'package:build/src/internal.dart';
-// ignore: implementation_imports
 import 'package:build_runner/src/internal.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
@@ -19,6 +17,7 @@ import '../asset_graph/node.dart';
 import '../asset_graph/optional_output_tracker.dart';
 import '../generate/build_phases.dart';
 import '../package_graph/target_graph.dart';
+import '../state/asset_finder.dart';
 
 /// A view of the build output.
 ///
