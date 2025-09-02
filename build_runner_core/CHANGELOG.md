@@ -1,4 +1,4 @@
-## 9.3.1-wip
+## 9.3.1
 
 - Move `runBuilder` to here from `package:build`. Please note that all of
   `build_runner_core` is intended to be internal to `build_runner`: the
@@ -7,6 +7,7 @@
   builders please get in touch at
   https://github.com/dart-lang/build/discussions.
 - Similarly, move `runPostProcessBuilder` to here from `package:build`.
+- Use `build` 3.1.0.
 - Use `build_runner` 2.7.1.
 - Remove `overrideGeneratedOutputDirectory`, `pubBinary`.
 
