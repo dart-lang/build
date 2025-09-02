@@ -10,8 +10,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/error/error.dart';
 
-import '../asset/id.dart';
-import '../builder/build_step.dart';
+import 'asset_id.dart';
+import 'build_step.dart';
 
 /// Standard interface for resolving Dart source code as part of a build.
 abstract class Resolver {

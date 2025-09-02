@@ -9,11 +9,11 @@ import 'dart:convert';
 import 'package:analyzer/dart/element/element2.dart';
 import 'package:package_config/package_config_types.dart';
 
-import '../analyzer/resolver.dart';
-import '../asset/id.dart';
-import '../asset/reader.dart';
-import '../asset/writer.dart';
-import '../resource/resource.dart';
+import 'asset_id.dart';
+import 'reader.dart';
+import 'resolver.dart';
+import 'resource.dart';
+import 'writer.dart';
 
 /// A single step in a build process.
 ///

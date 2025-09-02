@@ -4,11 +4,10 @@
 
 import 'dart:convert';
 
-import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
-import 'id.dart';
+import 'asset_id.dart';
 
 /// Standard interface for reading an asset within in a package.
 ///
@@ -47,12 +46,5 @@ abstract class AssetReader {
   ///
   /// Similar to [readAsBytes], `digest` throws an exception if the asset can't
   /// be found or if it's an invalid input.
-  Future<Digest> digest(AssetId id) async {
-    var digestSink = AccumulatorSink<Digest>();
-    md5.startChunkedConversion(digestSink)
-      ..add(await readAsBytes(id))
-      ..add(id.toString().codeUnits)
-      ..close();
-    return digestSink.events.first;
-  }
+  Future<Digest> digest(AssetId id);
 }

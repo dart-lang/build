@@ -1,3 +1,7 @@
+## 9.3.2
+
+- Use `build` 4.0.0.
+
 ## 9.3.1
 
 - Move `runBuilder` to here from `package:build`. Please note that all of

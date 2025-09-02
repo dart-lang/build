@@ -1,3 +1,7 @@
+## 1.1.1
+
+- Allow `build` 4.0.0.
+
 ## 1.1.0
 
 - Bump the min sdk to 3.7.0.

@@ -1,3 +1,7 @@
+## 5.0.17
+
+- Allow `build` 4.0.0.
+
 ## 5.0.16
 
 - Remove unused dep: `build_config`.

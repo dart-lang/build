@@ -1,3 +1,8 @@
+## 3.3.4
+
+- Use `build` 4.0.0.
+- Use `build_runner` 2.7.2.
+
 ## 3.3.3
 
 - Use `build` 3.1.0.

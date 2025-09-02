@@ -6,7 +6,7 @@ library;
 
 import 'dart:async';
 
-import 'package:build/build.dart' hide runBuilder;
+import 'package:build/build.dart';
 import 'package:build_runner_core/src/generate/run_builder.dart';
 import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config_types.dart';

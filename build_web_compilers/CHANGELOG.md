@@ -1,3 +1,7 @@
+## 4.2.3
+
+- Allow `build` 4.0.0.
+
 ## 4.2.2
 
 - Documentation revamp.
