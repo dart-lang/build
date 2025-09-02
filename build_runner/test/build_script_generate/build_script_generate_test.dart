@@ -19,7 +19,6 @@ void main() {
             'build',
             'build_config',
             'build_daemon',
-            'build_resolvers',
             'build_runner',
             'build_runner_core',
             'code_builder',
