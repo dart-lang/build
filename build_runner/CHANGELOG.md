@@ -1,4 +1,4 @@
-## 2.7.1-wip
+## 2.7.1
 
 - Bug fix: with `build_runner serve`, special handling of paths containing
   `/packages/` was hiding actual folders called `packages`. Serve the actual
@@ -7,6 +7,7 @@
   `bin/graph_inspector.dart`, `build_runner doctor` and
   `build_runner generate-build-script` commands.
 - Remove deps on `pubspec_parse` and `timing`.
+- Use `build` 3.1.0.
 
 ## 2.7.0
 

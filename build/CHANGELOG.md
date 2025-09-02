@@ -1,4 +1,4 @@
-## 3.0.3-wip
+## 3.1.0
 
 - Deprecate `runBuilder`. It has been moved to `package:build_runner_core` and
   will be removed from `package:build`. Please note: the currently supported

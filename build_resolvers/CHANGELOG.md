@@ -1,6 +1,6 @@
-## 3.0.3-wip
+## 3.0.3
 
-- Use `build` 3.0.3.
+- Use `build` 3.1.0.
 - Use `build_runner` 2.7.1.
 
 ## 3.0.2
