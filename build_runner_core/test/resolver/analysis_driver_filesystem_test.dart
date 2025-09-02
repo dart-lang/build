@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:build_resolvers/src/analysis_driver_filesystem.dart';
+import 'package:build_runner_core/src/resolver/analysis_driver_filesystem.dart';
 import 'package:test/test.dart';
 
 void main() {

@@ -8,7 +8,6 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_config/build_config.dart';
-import 'package:build_resolvers/build_resolvers.dart';
 // ignore: implementation_imports
 import 'package:build_runner/src/internal.dart';
 import 'package:build_runner_core/build_runner_core.dart';

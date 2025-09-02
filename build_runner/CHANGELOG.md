@@ -1,3 +1,7 @@
+## 2.7.3-wip
+
+- Use `build_runner_core` 9.4.0.
+
 ## 2.7.2
 
 - Use `build` 4.0.0.

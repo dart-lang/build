@@ -13,11 +13,11 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
-import 'package:build_resolvers/src/analysis_driver.dart';
-import 'package:build_resolvers/src/analysis_driver_model.dart';
-import 'package:build_resolvers/src/resolver.dart';
-import 'package:build_resolvers/src/sdk_summary.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner_core/src/generate/run_builder.dart';
+import 'package:build_runner_core/src/resolver/analysis_driver.dart';
+import 'package:build_runner_core/src/resolver/analysis_driver_model.dart';
+import 'package:build_runner_core/src/resolver/resolver.dart';
+import 'package:build_runner_core/src/resolver/sdk_summary.dart';
 import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
@@ -343,19 +343,19 @@ void runTests(ResolversFactory resolversFactory) {
       await resolveSources(
         {'a|web/main.dart': 'main() {}'},
         nonInputsToReadFromFilesystem: {
-          AssetId('build_resolvers', 'lib/build_resolvers.dart'),
+          AssetId('build_runner_core', 'lib/build_runner_core.dart'),
         },
         (resolver) async {
           var buildResolversId = AssetId(
-            'build_resolvers',
-            'lib/build_resolvers.dart',
+            'build_runner_core',
+            'lib/build_runner_core.dart',
           );
           var lib = await resolver.libraryFor(buildResolversId);
           var currentPackageConfig = await loadPackageConfigUri(
             (await Isolate.packageConfig)!,
           );
           var expectedVersion =
-              currentPackageConfig['build_resolvers']!.languageVersion!;
+              currentPackageConfig['build_runner_core']!.languageVersion!;
           expect(lib.languageVersion.effective.major, expectedVersion.major);
           expect(lib.languageVersion.effective.minor, expectedVersion.minor);
         },

@@ -45,6 +45,7 @@ export 'src/package_graph/apply_builders.dart'
 export 'src/package_graph/apply_builders.dart';
 export 'src/package_graph/package_graph.dart';
 export 'src/package_graph/target_graph.dart';
+export 'src/resolver/resolver.dart';
 export 'src/state/asset_finder.dart';
 export 'src/state/asset_path_provider.dart';
 export 'src/state/filesystem.dart';

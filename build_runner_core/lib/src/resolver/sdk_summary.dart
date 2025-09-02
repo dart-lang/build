@@ -7,9 +7,9 @@ import 'dart:io';
 
 import 'package:analyzer/dart/sdk/build_sdk_summary.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
-import 'package:build_runner_core/build_runner_core.dart';
 import 'package:path/path.dart' as p;
 
+import '../logging/timed_activities.dart';
 import 'resolver.dart' show packagePath;
 
 /// `true` if the currently running dart was provided by the Flutter SDK.
@@ -83,7 +83,7 @@ Future<String> defaultSdkSummaryGenerator() async {
   return p.absolute(summaryPath);
 }
 
-final _packageDepsToCheck = ['analyzer', 'build_resolvers'];
+final _packageDepsToCheck = ['analyzer', 'build_runner_core'];
 
 Future<bool> _checkDeps(
   File versionsFile,
