@@ -1,3 +1,7 @@
+## 5.5.1
+
+* Allow `source_gen: ">=3.0.0 <5.0.0"`.
+
 ## 5.5.0
 
 * Switch to `build` 3.0.0.
