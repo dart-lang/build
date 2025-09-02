@@ -6,7 +6,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:build_runner_core/build_runner_core.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:mime/mime.dart';
@@ -15,7 +14,10 @@ import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import '../asset/finalized_reader.dart';
+import '../generate/build_result.dart';
 import '../generate/watch_impl.dart';
+import '../logging/build_log.dart';
 import 'path_to_asset_id.dart';
 
 final _assetsDigestPath = r'$assetDigests';

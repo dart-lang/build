@@ -88,8 +88,6 @@ class RunConfig {
     path: $buildRepoPath/build_modules
   build_runner:
     path: $buildRepoPath/build_runner
-  build_runner_core:
-    path: $buildRepoPath/build_runner_core
   build_test:
     path: $buildRepoPath/build_test
   build_web_compilers:

@@ -7,7 +7,6 @@ import 'dart:convert';
 import 'package:build/build.dart';
 // ignore: implementation_imports
 import 'package:build_runner/src/internal.dart';
-import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_test/build_test.dart';
 // ignore: implementation_imports
 import 'package:build_test/src/in_memory_reader_writer.dart';

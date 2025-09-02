@@ -5,11 +5,10 @@
 import 'dart:async';
 
 import 'package:build_daemon/change_provider.dart';
-// ignore: implementation_imports
-import 'package:build_runner_core/src/asset_graph/graph.dart';
-// ignore: implementation_imports
-import 'package:build_runner_core/src/generate/asset_tracker.dart';
 import 'package:watcher/watcher.dart' show WatchEvent;
+
+import '../asset_graph/graph.dart';
+import '../generate/asset_tracker.dart';
 
 /// Continually updates the [changes] stream as watch events are seen on the
 /// input stream.

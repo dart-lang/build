@@ -4,9 +4,9 @@
 
 import 'dart:async';
 
-import 'package:build_runner_core/build_runner_core.dart';
 import 'package:watcher/watcher.dart';
 
+import '../package_graph/package_graph.dart';
 import 'asset_change.dart';
 
 Watcher _default(String path) => Watcher(path);

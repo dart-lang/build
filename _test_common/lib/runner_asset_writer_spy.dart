@@ -6,7 +6,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+// ignore: implementation_imports
+import 'package:build_runner/src/internal.dart';
 
 class RunnerAssetWriterSpy implements RunnerAssetWriter {
   final RunnerAssetWriter _delegate;

@@ -14,7 +14,6 @@ const _buildPackages = [
   'build_daemon',
   'build_modules',
   'build_runner',
-  'build_runner_core',
   'build_test',
   'build_web_compilers',
   'scratch_space',

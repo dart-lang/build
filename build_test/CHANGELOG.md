@@ -2,6 +2,7 @@
 
 - Use `build_runner_core` 9.4.0.
 - Remove unused dep: `build_resolvers`.
+- Remove unused dep: `build_runner_core`.
 
 ## 3.3.4
 

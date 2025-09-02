@@ -11,20 +11,20 @@ import 'package:build_daemon/daemon_builder.dart';
 import 'package:build_daemon/data/build_status.dart';
 import 'package:build_daemon/data/build_target.dart' hide OutputLocation;
 import 'package:build_daemon/data/server_log.dart';
-import 'package:build_runner_core/build_runner_core.dart'
-    as core
-    show BuildStatus;
-import 'package:build_runner_core/build_runner_core.dart'
-    hide BuildResult, BuildStatus;
-// ignore: implementation_imports
-import 'package:build_runner_core/src/generate/asset_tracker.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
+import '../asset/finalized_reader.dart';
+import '../asset/reader_writer.dart';
 import '../build_plan.dart';
 import '../commands/build_filter.dart';
 import '../commands/daemon_options.dart';
+import '../generate/asset_tracker.dart' show AssetTracker;
+import '../generate/build_directory.dart';
+import '../generate/build_result.dart' as core;
+import '../generate/build_series.dart';
+import '../logging/build_log.dart';
 import '../watcher/asset_change.dart';
 import '../watcher/change_filter.dart';
 import '../watcher/collect_changes.dart';
@@ -32,7 +32,7 @@ import '../watcher/graph_watcher.dart';
 import '../watcher/node_watcher.dart';
 import 'change_providers.dart';
 
-/// A Daemon Builder that uses build_runner_core for building.
+/// A Daemon Builder that builds with `build_runner`.
 class BuildRunnerDaemonBuilder implements DaemonBuilder {
   final _buildResults = StreamController<BuildResults>();
 

@@ -13,14 +13,17 @@ platforms:
   macos:
 
 dependencies:
+  analyzer: '>=7.4.0 <9.0.0'
   args: ^2.0.0
   async: ^2.5.0
   build: '4.0.0'
   build_config: ">=1.2.0 <1.3.0"
   build_daemon: ^4.0.0
-  build_runner_core: '9.4.0-wip'
   built_collection: ^5.1.1
+  built_value: ^8.10.1
   code_builder: ^4.2.0
+  collection: ^1.15.0
+  convert: ^3.0.0
   crypto: ^3.0.0
   dart_style: '>=2.3.7 <4.0.0'
   frontend_server_client: ">=3.0.0 <5.0.0"
@@ -28,15 +31,19 @@ dependencies:
   graphs: ^2.2.0
   http_multi_server: ^3.0.0
   io: ^1.0.0
+  json_annotation: ^4.8.1
   logging: ^1.0.0
   meta: ^1.16.0
   mime: '>=1.0.0 <3.0.0'
+  package_config: ^2.0.0
   path: ^1.8.0
+  pool: ^1.5.0
   pub_semver: ^2.0.0
   shelf: ^1.0.0
   shelf_web_socket: ">=1.0.0 <4.0.0"
   stack_trace: ^1.10.0
   stream_transform: ^2.0.0
+  timing: ^1.0.0
   watcher: ^1.0.0
   web_socket_channel: ">=2.3.0 <4.0.0"
   yaml: ^3.0.0
@@ -48,7 +55,6 @@ dev_dependencies:
   build_web_compilers: ^4.0.0
   dart_flutter_team_lints: ^3.1.0
   http: ^1.2.2
-  package_config: ^2.0.0
   stream_channel: ^2.0.0
   test: ^1.25.5
   test_descriptor: ^2.0.0

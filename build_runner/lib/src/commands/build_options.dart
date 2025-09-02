@@ -6,12 +6,12 @@ import 'dart:convert';
 
 import 'package:args/command_runner.dart';
 import 'package:build_config/build_config.dart';
-import 'package:build_runner_core/build_runner_core.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
 import '../build_runner_command_line.dart';
+import '../generate/build_directory.dart';
 import 'build_filter.dart';
 
 /// The command line options common to all `build_runner` commands that do a

@@ -11,7 +11,7 @@ import 'dart:io';
 
 import 'package:_test_common/common.dart';
 import 'package:async/async.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner/src/logging/build_log.dart';
 import 'package:io/io.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -28,7 +28,6 @@ void main() {
           'build_daemon',
           'build_modules',
           'build_runner',
-          'build_runner_core',
           'build_test',
           'build_web_compilers',
           'code_builder',

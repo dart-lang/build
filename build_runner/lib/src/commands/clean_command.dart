@@ -4,9 +4,10 @@
 
 import 'dart:io';
 
-import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
 
+import '../logging/build_log.dart';
+import '../util/constants.dart';
 import 'build_runner_command.dart';
 
 class CleanCommand implements BuildRunnerCommand {

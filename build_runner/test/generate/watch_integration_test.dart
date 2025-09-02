@@ -10,7 +10,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:_test_common/common.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner/src/logging/build_log.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
@@ -19,7 +19,7 @@ late Stream<String> stdOutLines;
 
 final String originalBuildContent = '''
 import 'package:build_runner/build_runner.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner/src/package_graph/apply_builders.dart';
 import 'package:build_test/build_test.dart';
 
 main() async {
@@ -41,7 +41,6 @@ void main() {
             'build_config',
             'build_daemon',
             'build_runner',
-            'build_runner_core',
             'build_test',
             'code_builder',
             'glob',

@@ -7,7 +7,8 @@ import 'dart:isolate';
 
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+// ignore: implementation_imports
+import 'package:build_runner/src/internal.dart';
 import 'package:glob/glob.dart';
 import 'package:package_config/package_config.dart';
 

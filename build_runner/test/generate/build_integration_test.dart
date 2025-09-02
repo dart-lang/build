@@ -20,7 +20,7 @@ void main() {
       var originalBuildContent = '''
 import 'dart:io';
 import 'package:build_runner/build_runner.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner/src/package_graph/apply_builders.dart';
 import 'package:build_test/build_test.dart';
 
 main(List<String> args) async {
@@ -37,7 +37,6 @@ main(List<String> args) async {
               'build_config',
               'build_daemon',
               'build_runner',
-              'build_runner_core',
               'build_test',
               'code_builder',
               'glob',
@@ -198,7 +197,6 @@ main(List<String> args) async {
               'build_config',
               'build_daemon',
               'build_runner',
-              'build_runner_core',
               'build_test',
               'code_builder',
               'glob',
@@ -209,7 +207,7 @@ main(List<String> args) async {
             d.file('build.dart', '''
 import 'dart:io';
 import 'package:build_runner/build_runner.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner/src/package_graph/apply_builders.dart';
 import 'package:build_test/build_test.dart';
 
 main(List<String> args) async {
@@ -278,7 +276,6 @@ main(List<String> args) async {
               'build_config',
               'build_daemon',
               'build_runner',
-              'build_runner_core',
               'build_test',
               'code_builder',
               'glob',
@@ -290,7 +287,7 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner/src/package_graph/apply_builders.dart';
 import 'package:build_test/build_test.dart';
 import 'package:glob/glob.dart';
 
@@ -390,7 +387,6 @@ main() async {
               'build_config',
               'build_daemon',
               'build_runner',
-              'build_runner_core',
               'build_test',
               'code_builder',
               'glob',
@@ -402,7 +398,7 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner/src/package_graph/apply_builders.dart';
 import 'package:build_test/build_test.dart';
 import 'package:glob/glob.dart';
 
@@ -461,7 +457,7 @@ class OverDeclaringGlobbingBuilder extends GlobbingBuilder {
       final buildContent = '''
 import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner/src/package_graph/apply_builders.dart';
 import 'package:build_test/build_test.dart';
 
 main(List<String> args) async {
@@ -505,7 +501,6 @@ main(List<String> args) async {
               'build_config',
               'build_daemon',
               'build_runner',
-              'build_runner_core',
               'build_test',
               'code_builder',
             ],
@@ -543,7 +538,7 @@ targets:
     final buildContent = '''
 import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner/src/package_graph/apply_builders.dart';
 import 'package:build_test/build_test.dart';
 
 main(List<String> args) async {
@@ -564,7 +559,6 @@ main(List<String> args) async {
             'build_config',
             'build_daemon',
             'build_runner',
-            'build_runner_core',
             'build_test',
             'code_builder',
           ],
@@ -596,7 +590,6 @@ targets:
             'build_config',
             'build_daemon',
             'build_runner',
-            'build_runner_core',
             'build_test',
             'code_builder',
           ],
@@ -626,7 +619,6 @@ global_options:
             'build_config',
             'build_daemon',
             'build_runner',
-            'build_runner_core',
             'build_test',
             'code_builder',
           ],
@@ -654,7 +646,6 @@ global_options:
             'build_config',
             'build_daemon',
             'build_runner',
-            'build_runner_core',
             'build_test',
             'code_builder',
             'glob',
@@ -665,7 +656,7 @@ global_options:
 import 'dart:io';
 
 import 'package:build_runner/build_runner.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner/src/package_graph/apply_builders.dart';
 import 'package:build_test/build_test.dart';
 
 main() async {
@@ -698,7 +689,6 @@ main() async {
             'build_config',
             'build_daemon',
             'build_runner',
-            'build_runner_core',
             'code_builder',
           ],
         ),
@@ -728,7 +718,6 @@ main() async {
             'build_config',
             'build_daemon',
             'build_runner',
-            'build_runner_core',
             'build_test',
             'code_builder',
           ],

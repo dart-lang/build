@@ -3,11 +3,19 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:build_runner_core/build_runner_core.dart';
 import 'package:built_collection/built_collection.dart';
 
+import 'asset/reader_writer.dart';
+import 'asset/writer.dart';
 import 'commands/build_filter.dart';
 import 'commands/build_options.dart';
+import 'generate/build_directory.dart';
+import 'generate/build_phases.dart';
+import 'logging/build_log.dart';
+import 'options/testing_overrides.dart';
+import 'package_graph/apply_builders.dart';
+import 'package_graph/package_graph.dart';
+import 'package_graph/target_graph.dart';
 
 /// Options and derived configuration for a build.
 class BuildPlan {

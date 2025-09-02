@@ -6,7 +6,7 @@ import 'dart:async';
 import 'dart:io';
 
 // ignore: implementation_imports
-import 'package:build_runner_core/src/util/constants.dart';
+import 'package:build_runner/src/util/constants.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';

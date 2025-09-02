@@ -1,5 +1,5 @@
 name: build_modules
-version: 5.0.17
+version: 5.0.18-wip
 description: >-
   Builders to analyze and split Dart code into individually compilable modules
   based on imports.
@@ -30,7 +30,6 @@ dev_dependencies:
   b:
     path: test/fixtures/b
   build_runner: ^2.0.0
-  build_runner_core: ^9.0.0
   build_test: ^3.1.0
 # TODO(davidmorgan): add back when it's released for build 3.0.0.
 #  json_serializable: ^6.9.1

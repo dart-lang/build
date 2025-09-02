@@ -10,7 +10,6 @@ import 'package:build/experiments.dart';
 import 'package:build_config/build_config.dart';
 // ignore: implementation_imports
 import 'package:build_runner/src/internal.dart';
-import 'package:build_runner_core/build_runner_core.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';

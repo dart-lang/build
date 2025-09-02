@@ -20,7 +20,6 @@ void main() {
             'build_config',
             'build_daemon',
             'build_runner',
-            'build_runner_core',
             'code_builder',
           ],
         ),

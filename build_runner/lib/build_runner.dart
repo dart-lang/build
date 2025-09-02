@@ -2,10 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:build_runner_core/build_runner_core.dart'
-    show BuilderApplication;
-
 import 'src/build_runner.dart' show BuildRunner;
+import 'src/package_graph/apply_builders.dart';
 
 export 'src/daemon/constants.dart' show assetServerPort;
 

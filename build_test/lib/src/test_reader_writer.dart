@@ -4,7 +4,8 @@
 import 'dart:typed_data';
 
 import 'package:build/build.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+// ignore: implementation_imports
+import 'package:build_runner/src/internal.dart';
 
 import 'fake_watcher.dart';
 import 'in_memory_reader_writer.dart';

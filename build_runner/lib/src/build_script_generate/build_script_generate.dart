@@ -6,13 +6,18 @@ import 'dart:async';
 
 import 'package:build/build.dart' show AssetId, BuilderOptions;
 import 'package:build_config/build_config.dart';
-import 'package:build_runner_core/build_runner_core.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
 import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 
+import '../asset/reader_writer.dart';
+import '../generate/exceptions.dart';
+import '../logging/build_log.dart';
+import '../package_graph/package_graph.dart';
+import '../package_graph/target_graph.dart';
+import '../util/constants.dart';
 import 'builder_ordering.dart';
 
 const scriptLocation = '$entryPointDir/build.dart';
@@ -36,7 +41,7 @@ Future<String> generateBuildScript() async {
               builders,
               refer(
                 'BuilderApplication',
-                'package:build_runner_core/build_runner_core.dart',
+                'package:build_runner/src/package_graph/apply_builders.dart',
               ),
             ),
           )
@@ -262,7 +267,7 @@ Expression _applyBuilder(BuilderDefinition definition) {
   var import = _buildScriptImport(definition.import);
   return refer(
     'apply',
-    'package:build_runner_core/build_runner_core.dart',
+    'package:build_runner/src/package_graph/apply_builders.dart',
   ).call([
     literalString(definition.key, raw: true),
     literalList([for (var f in definition.builderFactories) refer(f, import)]),
@@ -298,7 +303,7 @@ Expression _applyPostProcessBuilder(PostProcessBuilderDefinition definition) {
   var import = _buildScriptImport(definition.import);
   return refer(
     'applyPostProcess',
-    'package:build_runner_core/build_runner_core.dart',
+    'package:build_runner/src/package_graph/apply_builders.dart',
   ).call([
     literalString(definition.key, raw: true),
     refer(definition.builderFactory, import),
@@ -330,22 +335,22 @@ Expression _findToExpression(BuilderDefinition definition) {
     case AutoApply.none:
       return refer(
         'toNoneByDefault',
-        'package:build_runner_core/build_runner_core.dart',
+        'package:build_runner/src/package_graph/apply_builders.dart',
       ).call([]);
     case AutoApply.dependents:
       return refer(
         'toDependentsOf',
-        'package:build_runner_core/build_runner_core.dart',
+        'package:build_runner/src/package_graph/apply_builders.dart',
       ).call([literalString(definition.package, raw: true)]);
     case AutoApply.allPackages:
       return refer(
         'toAllPackages',
-        'package:build_runner_core/build_runner_core.dart',
+        'package:build_runner/src/package_graph/apply_builders.dart',
       ).call([]);
     case AutoApply.rootPackage:
       return refer(
         'toRoot',
-        'package:build_runner_core/build_runner_core.dart',
+        'package:build_runner/src/package_graph/apply_builders.dart',
       ).call([]);
   }
 }
