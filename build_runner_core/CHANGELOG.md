@@ -1,3 +1,8 @@
+## 9.4.0-wip
+
+- Move code from `build_resolvers` into `build_runner_core`.
+- Remove unused dep: `build_resolvers`.
+
 ## 9.3.2
 
 - Use `build` 4.0.0.

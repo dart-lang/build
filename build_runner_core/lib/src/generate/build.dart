@@ -8,9 +8,6 @@ import 'dart:convert';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:build/build.dart';
-import 'package:build_resolvers/build_resolvers.dart';
-// ignore: implementation_imports
-import 'package:build_resolvers/src/internal.dart';
 // ignore: implementation_imports
 import 'package:build_runner/src/internal.dart';
 import 'package:built_collection/built_collection.dart';
@@ -34,6 +31,8 @@ import '../options/testing_overrides.dart';
 import '../package_graph/package_graph.dart';
 import '../package_graph/target_graph.dart';
 import '../performance_tracking/performance_tracking_resolvers.dart';
+import '../resolver/analysis_driver_model.dart';
+import '../resolver/resolver.dart';
 import '../state/reader_state.dart';
 import '../state/reader_writer.dart';
 import '../util/build_dirs.dart';

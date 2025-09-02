@@ -7,7 +7,7 @@ import 'dart:isolate';
 
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
-import 'package:build_resolvers/build_resolvers.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:glob/glob.dart';
 import 'package:package_config/package_config.dart';
 

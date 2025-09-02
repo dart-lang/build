@@ -86,8 +86,6 @@ class RunConfig {
     path: $buildRepoPath/build_config
   build_modules:
     path: $buildRepoPath/build_modules
-  build_resolvers:
-    path: $buildRepoPath/build_resolvers
   build_runner:
     path: $buildRepoPath/build_runner
   build_runner_core:

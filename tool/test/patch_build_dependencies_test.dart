@@ -33,7 +33,7 @@ dependencies:
 
 dev_dependencies:
   bar: ^1.2.3
-dependency_overrides: {build: {path: ${_packagePath('build')}}, build_config: {path: ${_packagePath('build_config')}}, build_daemon: {path: ${_packagePath('build_daemon')}}, build_modules: {path: ${_packagePath('build_modules')}}, build_resolvers: {path: ${_packagePath('build_resolvers')}}, build_runner: {path: ${_packagePath('build_runner')}}, build_runner_core: {path: ${_packagePath('build_runner_core')}}, build_test: {path: ${_packagePath('build_test')}}, build_web_compilers: {path: ${_packagePath('build_web_compilers')}}, scratch_space: {path: ${_packagePath('scratch_space')}}}
+dependency_overrides: {build: {path: ${_packagePath('build')}}, build_config: {path: ${_packagePath('build_config')}}, build_daemon: {path: ${_packagePath('build_daemon')}}, build_modules: {path: ${_packagePath('build_modules')}}, build_runner: {path: ${_packagePath('build_runner')}}, build_runner_core: {path: ${_packagePath('build_runner_core')}}, build_test: {path: ${_packagePath('build_test')}}, build_web_compilers: {path: ${_packagePath('build_web_compilers')}}, scratch_space: {path: ${_packagePath('scratch_space')}}}
 ''',
     );
   });
@@ -78,8 +78,6 @@ dependency_overrides:
     path: ${_packagePath('build_daemon')}
   build_modules:
     path: ${_packagePath('build_modules')}
-  build_resolvers:
-    path: ${_packagePath('build_resolvers')}
   build_runner_core:
     path: ${_packagePath('build_runner_core')}
   build_test:
