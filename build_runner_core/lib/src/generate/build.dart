@@ -7,7 +7,7 @@ import 'dart:convert';
 
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:build/build.dart' hide runBuilder, runPostProcessBuilder;
+import 'package:build/build.dart';
 import 'package:build_resolvers/build_resolvers.dart';
 // ignore: implementation_imports
 import 'package:build_resolvers/src/internal.dart';

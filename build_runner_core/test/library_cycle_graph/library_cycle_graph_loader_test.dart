@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:math';
 
-import 'package:build/src/asset/id.dart';
+import 'package:build/src/asset_id.dart';
 import 'package:build_runner_core/src/library_cycle_graph/asset_deps.dart';
 import 'package:build_runner_core/src/library_cycle_graph/asset_deps_loader.dart';
 import 'package:build_runner_core/src/library_cycle_graph/library_cycle.dart';

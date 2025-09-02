@@ -7,7 +7,7 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 
-import '../../build.dart';
+import '../build.dart';
 
 /// A simplified [BuildStep] which can only read its primary input, and can't
 /// get a [Resolver] or any [Resource]s.

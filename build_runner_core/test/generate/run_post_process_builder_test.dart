@@ -3,11 +3,10 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+import 'package:build_runner_core/src/generate/run_post_process_builder.dart';
 import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
-
-import '../common/builders.dart';
 
 void main() {
   group('runPostProcessBuilder', () {
@@ -82,4 +81,36 @@ void main() {
       );
     });
   });
+}
+
+/// A [PostProcessBuilder] which copies `.txt` files to `.txt.copy`.
+class CopyingPostProcessBuilder implements PostProcessBuilder {
+  final String outputExtension;
+
+  @override
+  final inputExtensions = ['.txt'];
+
+  CopyingPostProcessBuilder({this.outputExtension = '.copy'});
+
+  @override
+  Future<void> build(PostProcessBuildStep buildStep) async {
+    await buildStep.writeAsString(
+      buildStep.inputId.addExtension(outputExtension),
+      await buildStep.readInputAsString(),
+    );
+  }
+}
+
+/// A [PostProcessBuilder] which deletes all `.txt` files in the target it is
+/// run on.
+class DeletePostProcessBuilder implements PostProcessBuilder {
+  @override
+  final inputExtensions = ['.txt'];
+
+  DeletePostProcessBuilder();
+
+  @override
+  Future<void> build(PostProcessBuildStep buildStep) async {
+    buildStep.deletePrimaryInput();
+  }
 }

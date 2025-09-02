@@ -13,6 +13,7 @@ import 'package:meta/meta.dart';
 import 'package:timing/timing.dart';
 
 import 'phase.dart';
+import 'run_builder.dart';
 
 part 'performance_tracker.g.dart';
 

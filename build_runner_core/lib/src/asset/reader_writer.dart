@@ -6,6 +6,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:convert/convert.dart';
+import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:glob/list_local_fs.dart';
 import 'package:path/path.dart' as path;
@@ -177,6 +179,16 @@ class ReaderWriter extends AssetReader
       );
     });
     return Future.value();
+  }
+
+  @override
+  Future<Digest> digest(AssetId id) async {
+    var digestSink = AccumulatorSink<Digest>();
+    md5.startChunkedConversion(digestSink)
+      ..add(await readAsBytes(id))
+      ..add(id.toString().codeUnits)
+      ..close();
+    return digestSink.events.first;
   }
 
   @override

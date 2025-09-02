@@ -17,6 +17,7 @@ import 'package:build_resolvers/src/analysis_driver.dart';
 import 'package:build_resolvers/src/analysis_driver_model.dart';
 import 'package:build_resolvers/src/resolver.dart';
 import 'package:build_resolvers/src/sdk_summary.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';

@@ -1,8 +1,9 @@
 // Copyright (c) 2017, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-import '../asset/id.dart';
-import '../builder/builder.dart';
+
+import 'asset_id.dart';
+import 'builder.dart';
 
 /// Collects the expected AssetIds created by [builder] when given [input] based
 /// on the extension configuration.

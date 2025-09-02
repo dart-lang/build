@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:convert';
 
-import 'id.dart';
+import 'asset_id.dart';
 
 /// Standard interface for writing an asset into a package's outputs.
 abstract class AssetWriter {
@@ -26,31 +26,4 @@ abstract class AssetWriter {
     String contents, {
     Encoding encoding = utf8,
   });
-}
-
-/// An [AssetWriter] which tracks all [assetsWritten] during its lifetime.
-@Deprecated('This class will be deleted without replacement in 4.0.0.')
-class AssetWriterSpy implements AssetWriter {
-  final AssetWriter _delegate;
-  final _assetsWritten = <AssetId>{};
-
-  AssetWriterSpy(this._delegate);
-
-  Iterable<AssetId> get assetsWritten => _assetsWritten;
-
-  @override
-  Future<void> writeAsBytes(AssetId id, List<int> bytes) {
-    _assetsWritten.add(id);
-    return _delegate.writeAsBytes(id, bytes);
-  }
-
-  @override
-  Future<void> writeAsString(
-    AssetId id,
-    String contents, {
-    Encoding encoding = utf8,
-  }) {
-    _assetsWritten.add(id);
-    return _delegate.writeAsString(id, contents, encoding: encoding);
-  }
 }

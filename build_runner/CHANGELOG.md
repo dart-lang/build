@@ -1,3 +1,7 @@
+## 2.7.2
+
+- Use `build` 4.0.0.
+
 ## 2.7.1
 
 - Bug fix: with `build_runner serve`, special handling of paths containing

@@ -1,3 +1,9 @@
+## 4.0.0
+
+- Remove methods and classes deprecated in `4.0.0`.
+- Make `AssetReader.digest` abstract.
+- Remove unused deps: `async`, `build_runner_core`, `convert`.
+
 ## 3.1.0
 
 - Deprecate `runBuilder`. It has been moved to `package:build_runner_core` and
