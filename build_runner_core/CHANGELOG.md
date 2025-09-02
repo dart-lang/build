@@ -6,6 +6,7 @@
   `build_test` in tests. If you need ongoing support for a different way to run
   builders please get in touch at
   https://github.com/dart-lang/build/discussions.
+- Similarly, move `runPostProcessBuilder` to here from `package:build`.
 - Use `build_runner` 2.7.1.
 - Remove `overrideGeneratedOutputDirectory`, `pubBinary`.
 

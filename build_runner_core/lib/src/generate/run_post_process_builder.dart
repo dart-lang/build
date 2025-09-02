@@ -2,15 +2,11 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-// ignore: implementation_imports
-import 'package:build_runner_core/src/generate/run_post_process_builder.dart'
-    as build_runner_core;
+import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 
-import '../asset/id.dart';
-import '../asset/reader.dart';
-import '../asset/writer.dart';
-import '../builder/post_process_builder.dart';
+import '../logging/build_log_logger.dart';
+import 'post_process_build_step_impl.dart';
 
 /// Run [builder] with [inputId] as the primary input.
 ///
@@ -18,15 +14,6 @@ import '../builder/post_process_builder.dart';
 /// If an asset should not be written this function should throw.
 /// [deleteAsset] should remove the asset from the build system, it will not be
 /// deleted on disk since the `writer` has no mechanism for delete.
-@Deprecated('''
-This method has moved to `package:build_runner_core` and will be
-deleted from `package:build` in 4.0.0.
-
-The currently supported ways to run builders are using `build_runner`
-on the command line or `build_test` in tests. If you need ongoing
-support for a different way to run builders please get in touch at
-https://github.com/dart-lang/build/discussions.
-''')
 Future<void> runPostProcessBuilder(
   PostProcessBuilder builder,
   AssetId inputId,
@@ -35,12 +22,19 @@ Future<void> runPostProcessBuilder(
   Logger logger, {
   required void Function(AssetId) addAsset,
   required void Function(AssetId) deleteAsset,
-}) => build_runner_core.runPostProcessBuilder(
-  builder,
-  inputId,
-  reader,
-  writer,
-  logger,
-  addAsset: addAsset,
-  deleteAsset: deleteAsset,
-);
+}) async {
+  await BuildLogLogger.scopeLogAsync(() async {
+    var buildStep = PostProcessBuildStepImpl(
+      inputId,
+      reader,
+      writer,
+      addAsset,
+      deleteAsset,
+    );
+    try {
+      await builder.build(buildStep);
+    } finally {
+      await buildStep.complete();
+    }
+  }, logger);
+}

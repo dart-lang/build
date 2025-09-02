@@ -29,6 +29,7 @@ abstract class AssetWriter {
 }
 
 /// An [AssetWriter] which tracks all [assetsWritten] during its lifetime.
+@Deprecated('This class will be deleted without replacement in 4.0.0.')
 class AssetWriterSpy implements AssetWriter {
   final AssetWriter _delegate;
   final _assetsWritten = <AssetId>{};

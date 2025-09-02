@@ -12,13 +12,15 @@ import '../analyzer/resolver.dart';
 import '../asset/id.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
-import '../builder/build_step.dart';
 import '../builder/builder.dart';
 import '../resource/resource.dart';
 
+export 'package:build_runner_core/src/generate/run_builder.dart'
+    show StageTracker;
+
 @Deprecated('''
 This method has moved to `package:build_runner_core` and will be
-deleted from `package:build`.
+removed from `package:build` in 4.0.0.
 
 The currently supported ways to run builders are using `build_runner`
 on the command line or `build_test` in tests. If you need ongoing
@@ -33,7 +35,7 @@ Future<void> runBuilder(
   Resolvers? resolvers, {
   Logger? logger,
   ResourceManager? resourceManager,
-  StageTracker? stageTracker,
+  build_runner_core.StageTracker? stageTracker,
   void Function(AssetId input, Iterable<AssetId> assets)?
   reportUnusedAssetsForInput,
   PackageConfig? packageConfig,
