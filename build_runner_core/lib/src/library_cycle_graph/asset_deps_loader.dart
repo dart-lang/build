@@ -4,8 +4,8 @@
 
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:build/build.dart';
 
-import '../asset/id.dart';
 import 'asset_deps.dart';
 import 'phased_asset_deps.dart';
 import 'phased_reader.dart';

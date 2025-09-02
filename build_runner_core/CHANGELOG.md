@@ -1,5 +1,11 @@
 ## 9.3.1-wip
 
+- Move `runBuilder` to here from `package:build`. Please note that all of
+  `build_runner_core` is intended to be internal to `build_runner`: the
+  supported ways to run builders are `build_runner` on the command line and
+  `build_test` in tests. If you need ongoing support for a different way to run
+  builders please get in touch at
+  https://github.com/dart-lang/build/discussions.
 - Use `build_runner` 2.7.1.
 - Remove `overrideGeneratedOutputDirectory`, `pubBinary`.
 

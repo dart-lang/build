@@ -11,14 +11,10 @@ dependencies:
   analyzer: '>=7.4.0 <9.0.0'
   async: ^2.5.0
   build_runner_core: '9.3.1-wip'
-  built_collection: ^5.1.1
-  built_value: ^8.9.5
   convert: ^3.0.0
   crypto: ^3.0.0
   glob: ^2.0.0
-  graphs: ^2.2.0
   logging: ^1.0.0
-  meta: ^1.16.0
   package_config: ^2.1.0
   path: ^1.8.0
 

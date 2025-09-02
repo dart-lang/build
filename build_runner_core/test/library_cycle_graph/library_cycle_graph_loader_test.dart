@@ -4,12 +4,12 @@
 import 'dart:math';
 
 import 'package:build/src/asset/id.dart';
-import 'package:build/src/library_cycle_graph/asset_deps.dart';
-import 'package:build/src/library_cycle_graph/asset_deps_loader.dart';
-import 'package:build/src/library_cycle_graph/library_cycle.dart';
-import 'package:build/src/library_cycle_graph/library_cycle_graph.dart';
-import 'package:build/src/library_cycle_graph/library_cycle_graph_loader.dart';
-import 'package:build/src/library_cycle_graph/phased_value.dart';
+import 'package:build_runner_core/src/library_cycle_graph/asset_deps.dart';
+import 'package:build_runner_core/src/library_cycle_graph/asset_deps_loader.dart';
+import 'package:build_runner_core/src/library_cycle_graph/library_cycle.dart';
+import 'package:build_runner_core/src/library_cycle_graph/library_cycle_graph.dart';
+import 'package:build_runner_core/src/library_cycle_graph/library_cycle_graph_loader.dart';
+import 'package:build_runner_core/src/library_cycle_graph/phased_value.dart';
 import 'package:test/test.dart';
 
 void main() {

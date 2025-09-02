@@ -4,12 +4,10 @@
 
 import 'dart:convert';
 
+import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
-import '../asset/id.dart';
-import '../asset/reader.dart';
-import '../asset/writer.dart';
 import 'asset_finder.dart';
 import 'asset_path_provider.dart';
 import 'filesystem.dart';

@@ -7,9 +7,7 @@ import 'dart:convert';
 
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:build/build.dart';
-// ignore: implementation_imports
-import 'package:build/src/internal.dart';
+import 'package:build/build.dart' hide runBuilder;
 import 'package:build_resolvers/build_resolvers.dart';
 // ignore: implementation_imports
 import 'package:build_resolvers/src/internal.dart';
@@ -27,12 +25,17 @@ import '../asset_graph/node.dart';
 import '../asset_graph/optional_output_tracker.dart';
 import '../asset_graph/post_process_build_step_id.dart';
 import '../environment/create_merged_dir.dart';
+import '../library_cycle_graph/asset_deps_loader.dart';
+import '../library_cycle_graph/library_cycle_graph.dart';
+import '../library_cycle_graph/library_cycle_graph_loader.dart';
 import '../logging/build_log.dart';
 import '../logging/timed_activities.dart';
 import '../options/testing_overrides.dart';
 import '../package_graph/package_graph.dart';
 import '../package_graph/target_graph.dart';
 import '../performance_tracking/performance_tracking_resolvers.dart';
+import '../state/reader_state.dart';
+import '../state/reader_writer.dart';
 import '../util/build_dirs.dart';
 import '../util/constants.dart';
 import 'build_directory.dart';
@@ -42,6 +45,7 @@ import 'finalized_assets_view.dart';
 import 'input_tracker.dart';
 import 'performance_tracker.dart';
 import 'phase.dart';
+import 'run_builder.dart';
 import 'single_step_reader_writer.dart';
 
 /// A single build.

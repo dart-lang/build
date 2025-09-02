@@ -4,7 +4,7 @@
 @Timeout(Duration(seconds: 10))
 library;
 
-import 'package:build/src/state/lru_cache.dart';
+import 'package:build_runner_core/src/state/lru_cache.dart';
 import 'package:test/test.dart';
 
 void main() {
