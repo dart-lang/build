@@ -11,6 +11,7 @@ import 'builder.dart';
 /// **Note**: All builders are ran without ordering guarantees. Thus, none of
 /// the builders can use the outputs of other builders in this group. All
 /// builders must also have distinct outputs.
+@Deprecated('This class will be deleted without replacement in 4.0.0.')
 class MultiplexingBuilder implements Builder {
   final Iterable<Builder> _builders;
 

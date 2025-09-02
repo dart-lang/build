@@ -3,17 +3,35 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 
-class RunnerAssetWriterSpy extends AssetWriterSpy implements RunnerAssetWriter {
+class RunnerAssetWriterSpy implements RunnerAssetWriter {
   final RunnerAssetWriter _delegate;
+  final _assetsWritten = <AssetId>{};
 
   final _assetsDeleted = <AssetId>{};
   Iterable<AssetId> get assetsDeleted => _assetsDeleted;
 
-  RunnerAssetWriterSpy(this._delegate) : super(_delegate);
+  RunnerAssetWriterSpy(this._delegate);
+
+  @override
+  Future<void> writeAsBytes(AssetId id, List<int> bytes) {
+    _assetsWritten.add(id);
+    return _delegate.writeAsBytes(id, bytes);
+  }
+
+  @override
+  Future<void> writeAsString(
+    AssetId id,
+    String contents, {
+    Encoding encoding = utf8,
+  }) {
+    _assetsWritten.add(id);
+    return _delegate.writeAsString(id, contents, encoding: encoding);
+  }
 
   @override
   Future<void> delete(AssetId id) {

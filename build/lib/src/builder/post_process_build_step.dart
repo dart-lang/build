@@ -5,90 +5,35 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:async/async.dart';
-import 'package:crypto/crypto.dart' show Digest;
+import 'package:crypto/crypto.dart';
 
 import '../../build.dart';
 
-// This is not exported to hack around a package-private constructor.
-PostProcessBuildStep postProcessBuildStep(
-  AssetId inputId,
-  AssetReader reader,
-  AssetWriter writer,
-  void Function(AssetId) addAsset,
-  void Function(AssetId) deleteAsset,
-) => PostProcessBuildStep._(inputId, reader, writer, addAsset, deleteAsset);
-
 /// A simplified [BuildStep] which can only read its primary input, and can't
-/// get a [Resolver] or any [Resource]s, at least for now.
-class PostProcessBuildStep {
-  final AssetId inputId;
+/// get a [Resolver] or any [Resource]s.
+abstract class PostProcessBuildStep {
+  AssetId get inputId;
 
-  final AssetReader _reader;
-  final AssetWriter _writer;
-  final void Function(AssetId) _addAsset;
-  final void Function(AssetId) _deleteAsset;
+  Future<Digest> digest(AssetId id);
 
-  /// The result of any writes which are starting during this step.
-  final _writeResults = <Future<Result<void>>>[];
+  Future<List<int>> readInputAsBytes();
 
-  PostProcessBuildStep._(
-    this.inputId,
-    this._reader,
-    this._writer,
-    this._addAsset,
-    this._deleteAsset,
-  );
+  Future<String> readInputAsString({Encoding encoding = utf8});
 
-  Future<Digest> digest(AssetId id) =>
-      inputId == id
-          ? _reader.digest(id)
-          : Future.error(InvalidInputException(id));
-
-  Future<List<int>> readInputAsBytes() => _reader.readAsBytes(inputId);
-
-  Future<String> readInputAsString({Encoding encoding = utf8}) =>
-      _reader.readAsString(inputId, encoding: encoding);
-
-  Future<void> writeAsBytes(AssetId id, FutureOr<List<int>> bytes) {
-    _addAsset(id);
-    var done = _futureOrWrite(
-      bytes,
-      (List<int> b) => _writer.writeAsBytes(id, b),
-    );
-    _writeResults.add(Result.capture(done));
-    return done;
-  }
+  Future<void> writeAsBytes(AssetId id, FutureOr<List<int>> bytes);
 
   Future<void> writeAsString(
     AssetId id,
     FutureOr<String> content, {
     Encoding encoding = utf8,
-  }) {
-    _addAsset(id);
-    var done = _futureOrWrite(
-      content,
-      (String c) => _writer.writeAsString(id, c, encoding: encoding),
-    );
-    _writeResults.add(Result.capture(done));
-    return done;
-  }
+  });
 
   /// Marks an asset for deletion in the post process step.
-  void deletePrimaryInput() {
-    _deleteAsset(inputId);
-  }
+  void deletePrimaryInput();
 
   /// Waits for work to finish and cleans up resources.
   ///
   /// This method should be called after a build has completed. After the
   /// returned [Future] completes then all outputs have been written.
-  Future<void> complete() async {
-    await Future.wait(_writeResults.map(Result.release));
-  }
+  Future<void> complete();
 }
-
-Future<void> _futureOrWrite<T>(
-  FutureOr<T> content,
-  Future<void> Function(T content) write,
-) => (content is Future<T>) ? content.then(write) : write(content);

@@ -13,10 +13,9 @@ export 'src/builder/exceptions.dart';
 export 'src/builder/file_deleting_builder.dart' show FileDeletingBuilder;
 export 'src/builder/logging.dart' show log;
 export 'src/builder/multiplexing_builder.dart';
-export 'src/builder/post_process_build_step.dart' show PostProcessBuildStep;
-export 'src/builder/post_process_builder.dart'
-    show PostProcessBuilder, PostProcessBuilderFactory;
+export 'src/builder/post_process_build_step.dart';
+export 'src/builder/post_process_builder.dart';
 export 'src/generate/expected_outputs.dart';
 export 'src/generate/run_builder.dart';
-export 'src/generate/run_post_process_builder.dart' show runPostProcessBuilder;
+export 'src/generate/run_post_process_builder.dart';
 export 'src/resource/resource.dart';

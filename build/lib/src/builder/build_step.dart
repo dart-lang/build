@@ -135,7 +135,3 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   /// [readAsBytes] or [readAsString].
   Future<PackageConfig> get packageConfig;
 }
-
-abstract class StageTracker {
-  T trackStage<T>(String label, T Function() action, {bool isExternal = false});
-}
