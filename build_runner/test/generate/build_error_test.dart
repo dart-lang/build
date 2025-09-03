@@ -4,12 +4,13 @@
 
 import 'dart:async';
 
-import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
 import 'package:build_runner/src/generate/build_result.dart';
 import 'package:build_runner/src/package_graph/apply_builders.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
+
+import '../common/common.dart';
 
 void main() {
   test('should fail if a severe logged', () async {

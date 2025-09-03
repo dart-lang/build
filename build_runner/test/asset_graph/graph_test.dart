@@ -6,7 +6,6 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
-import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner/src/asset_graph/exceptions.dart';
@@ -18,6 +17,8 @@ import 'package:build_runner/src/generate/phase.dart';
 import 'package:crypto/crypto.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
+
+import '../common/common.dart';
 
 void main() {
   late TestReaderWriter digestReader;

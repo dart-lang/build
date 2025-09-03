@@ -5,7 +5,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
 import 'package:build_runner/src/commands/build_command.dart';
 import 'package:build_runner/src/commands/build_options.dart';
@@ -17,6 +16,8 @@ import 'package:built_collection/built_collection.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
+
+import '../common/common.dart';
 
 void main() {
   // Basic phases/phase groups which get used in many tests

@@ -9,7 +9,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:_test_common/common.dart';
 import 'package:build_daemon/client.dart';
 import 'package:build_daemon/constants.dart';
 import 'package:build_daemon/data/build_status.dart';
@@ -20,6 +19,8 @@ import 'package:build_runner/src/util/constants.dart' show dartBinary;
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
+
+import '../common/common.dart';
 
 void main() {
   Process? daemonProcess;

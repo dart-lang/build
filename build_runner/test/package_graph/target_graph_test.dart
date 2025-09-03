@@ -5,7 +5,6 @@
 @TestOn('vm')
 library;
 
-import 'package:_test_common/package_graphs.dart';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner/src/options/testing_overrides.dart';
@@ -16,6 +15,8 @@ import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
+
+import '../common/package_graphs.dart';
 
 void main() {
   group('TargetGraph.forPackageGraph', () {

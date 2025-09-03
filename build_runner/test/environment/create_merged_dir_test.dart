@@ -5,7 +5,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
 import 'package:build_runner/src/asset_graph/optional_output_tracker.dart';
@@ -21,6 +20,8 @@ import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
+
+import '../common/common.dart';
 
 void main() {
   group('createMergedDir', () {
