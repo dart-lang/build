@@ -9,13 +9,14 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:_test_common/common.dart';
 import 'package:async/async.dart';
 import 'package:build_runner/src/logging/build_log.dart';
 import 'package:io/io.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
+
+import '../common/common.dart';
 
 void main() {
   setUpAll(() async {

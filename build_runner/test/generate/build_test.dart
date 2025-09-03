@@ -5,7 +5,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
-import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
@@ -25,6 +24,8 @@ import 'package:build_runner/src/util/constants.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:glob/glob.dart';
 import 'package:test/test.dart';
+
+import '../common/common.dart';
 
 void main() {
   /// Basic phases/phase groups which get used in many tests

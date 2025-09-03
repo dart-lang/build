@@ -4,10 +4,11 @@
 @Timeout.factor(4)
 library;
 
-import 'package:_test_common/descriptors.dart';
-import 'package:_test_common/sdk.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
+
+import '../common/descriptors.dart';
+import '../common/sdk.dart';
 
 void main() {
   group('validation', () {

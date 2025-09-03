@@ -2,10 +2,11 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
 import 'package:build_runner/src/package_graph/apply_builders.dart';
 import 'package:test/test.dart';
+
+import '../common/common.dart';
 
 void main() {
   test('uses builder options', () async {

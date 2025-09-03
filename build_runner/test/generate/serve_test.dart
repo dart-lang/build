@@ -5,7 +5,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:_test_common/common.dart';
 import 'package:async/async.dart';
 import 'package:build_runner/src/commands/build_options.dart';
 import 'package:build_runner/src/commands/watch_command.dart';
@@ -17,6 +16,8 @@ import 'package:built_collection/built_collection.dart';
 import 'package:path/path.dart' as path;
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
+
+import '../common/common.dart';
 
 void main() {
   group('ServeHandler', () {

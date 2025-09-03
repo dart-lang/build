@@ -6,12 +6,13 @@ library;
 
 import 'dart:io';
 
-import 'package:_test_common/common.dart';
 import 'package:build_runner/src/asset/reader_writer.dart';
 import 'package:build_runner/src/package_graph/package_graph.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
+
+import '../common/common.dart';
 
 final newLine = Platform.isWindows ? '\r\n' : '\n';
 

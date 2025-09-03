@@ -9,7 +9,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
 import 'package:build_runner/src/commands/build_options.dart';
 import 'package:build_runner/src/commands/watch_command.dart';
@@ -21,6 +20,8 @@ import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
+
+import '../common/common.dart';
 
 void main() {
   late FutureOr<Response> Function(Request) handler;

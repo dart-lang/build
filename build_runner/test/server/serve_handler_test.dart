@@ -6,7 +6,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:_test_common/common.dart';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:build_runner/src/asset/finalized_reader.dart';
@@ -26,6 +25,8 @@ import 'package:stream_channel/stream_channel.dart';
 import 'package:test/fake.dart';
 import 'package:test/test.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+
+import '../common/common.dart';
 
 class FakeSink extends DelegatingStreamSink implements WebSocketSink {
   final FakeWebSocketChannel _channel;

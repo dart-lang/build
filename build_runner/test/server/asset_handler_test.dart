@@ -4,7 +4,6 @@
 
 import 'dart:io';
 
-import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
 import 'package:build_runner/src/asset/finalized_reader.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
@@ -16,6 +15,8 @@ import 'package:build_runner/src/server/server.dart';
 import 'package:crypto/crypto.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
+
+import '../common/common.dart';
 
 void main() {
   late AssetHandler handler;

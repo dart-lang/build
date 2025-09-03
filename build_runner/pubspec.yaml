@@ -49,8 +49,6 @@ dependencies:
   yaml: ^3.0.0
 
 dev_dependencies:
-  _test_common:
-    path: ../_test_common
   build_test: ^3.0.0
   build_web_compilers: ^4.0.0
   dart_flutter_team_lints: ^3.1.0

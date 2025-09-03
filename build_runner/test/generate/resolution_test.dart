@@ -6,11 +6,12 @@
 
 import 'dart:async';
 
-import 'package:_test_common/test_phases.dart';
 import 'package:build/build.dart';
 import 'package:build_runner/src/logging/build_log.dart';
 import 'package:build_runner/src/package_graph/apply_builders.dart';
 import 'package:test/test.dart';
+
+import '../common/test_phases.dart';
 
 void main() {
   setUp(() {

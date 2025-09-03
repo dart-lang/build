@@ -152,16 +152,16 @@ jobs:
         if: "always() && steps.scratch_space_pub_upgrade.conclusion == 'success'"
         working-directory: scratch_space
   job_004:
-    name: "analyze_and_format; linux; Dart dev; PKGS: _test_common, build; `dart analyze --fatal-infos .`"
+    name: "analyze_and_format; linux; Dart dev; PKG: build; `dart analyze --fatal-infos .`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_test_common-build;commands:analyze"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build;commands:analyze"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_test_common-build
+            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build
             os:ubuntu-latest;pub-cache-hosted;sdk:dev
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
@@ -172,15 +172,6 @@ jobs:
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
-      - id: _test_common_pub_upgrade
-        name: _test_common; dart pub upgrade
-        run: dart pub upgrade
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: _test_common
-      - name: "_test_common; dart analyze --fatal-infos ."
-        run: dart analyze --fatal-infos .
-        if: "always() && steps._test_common_pub_upgrade.conclusion == 'success'"
-        working-directory: _test_common
       - id: build_pub_upgrade
         name: build; dart pub upgrade
         run: dart pub upgrade

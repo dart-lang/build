@@ -5,9 +5,10 @@
 @Tags(['integration'])
 library;
 
-import 'package:_test_common/common.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
+
+import '../common/common.dart';
 
 void main() {
   group('clean command', () {

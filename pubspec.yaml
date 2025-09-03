@@ -9,7 +9,6 @@ workspace:
 - _benchmark
 - _test
 - _test/pkgs/provides_builder
-- _test_common
 - build
 - build_config
 - build_daemon
