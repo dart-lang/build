@@ -46,95 +46,8 @@ class BuildRunner {
        builders = builders?.toBuiltList();
 
   Future<int> run() async {
-    final maybeCommandLine = await BuildRunnerCommandLine.parse(arguments);
-    if (maybeCommandLine == null) return ExitCode.success.code;
-    commandLine = maybeCommandLine;
-
-    // Option parsing depends on the package name in `pubspec.yaml`.
-    // Fortunately, `dart run build_runner` checks that `pubspec.yaml` is
-    // present and valid, so there must be a `name`.
-    final rootPackage =
-        (loadYaml(File(p.join(p.current, 'pubspec.yaml')).readAsStringSync())
-                as YamlMap)['name']!
-            as String;
-
     try {
-      if (commandLine.type.requiresBuilders && builders == null) {
-        return await _runWithBuilders();
-      }
-
-      BuildRunnerCommand command;
-      switch (commandLine.type) {
-        case CommandType.build:
-          command = BuildCommand(
-            builders: builders!,
-            buildOptions: BuildOptions.parse(
-              commandLine,
-              restIsBuildDirs: true,
-              rootPackage: rootPackage,
-            ),
-          );
-
-        case CommandType.clean:
-          command = CleanCommand();
-
-        case CommandType.daemon:
-          command = DaemonCommand(
-            arguments: commandLine.arguments,
-            builders: builders!,
-            buildOptions: BuildOptions.parse(
-              commandLine,
-              restIsBuildDirs: false,
-              rootPackage: rootPackage,
-            ),
-            daemonOptions: DaemonOptions.parse(commandLine),
-          );
-
-        case CommandType.run:
-          command = RunCommand(
-            builders: builders!,
-            buildOptions: BuildOptions.parse(
-              commandLine,
-              restIsBuildDirs: false,
-              rootPackage: rootPackage,
-            ),
-            runOptions: RunOptions.parse(commandLine),
-          );
-
-        case CommandType.serve:
-          command = ServeCommand(
-            builders: builders!,
-            buildOptions: BuildOptions.parse(
-              commandLine,
-              restIsBuildDirs: true,
-              rootPackage: rootPackage,
-            ),
-            serveOptions: ServeOptions.parse(commandLine),
-          );
-
-        case CommandType.test:
-          command = TestCommand(
-            builders: builders!,
-            buildOptions: BuildOptions.parse(
-              commandLine,
-              restIsBuildDirs: false,
-              rootPackage: rootPackage,
-            ),
-            testOptions: TestOptions.parse(commandLine),
-          );
-
-        case CommandType.watch:
-          command = WatchCommand(
-            builders: builders!,
-            buildOptions: BuildOptions.parse(
-              commandLine,
-              restIsBuildDirs: true,
-              rootPackage: rootPackage,
-            ),
-          );
-      }
-
-      return await command.run();
+      return await _runOrThrow();
     } on UsageException catch (e) {
       print(ansi.red.wrap(e.message));
       print('');
@@ -156,6 +69,97 @@ class BuildRunner {
     } on BuildConfigChangedException {
       return ExitCode.tempFail.code;
     }
+  }
+
+  Future<int> _runOrThrow() async {
+    final maybeCommandLine = await BuildRunnerCommandLine.parse(arguments);
+    if (maybeCommandLine == null) return ExitCode.success.code;
+    commandLine = maybeCommandLine;
+
+    // Option parsing depends on the package name in `pubspec.yaml`.
+    // Fortunately, `dart run build_runner` checks that `pubspec.yaml` is
+    // present and valid, so there must be a `name`.
+    final rootPackage =
+        (loadYaml(File(p.join(p.current, 'pubspec.yaml')).readAsStringSync())
+                as YamlMap)['name']!
+            as String;
+
+    if (commandLine.type.requiresBuilders && builders == null) {
+      return await _runWithBuilders();
+    }
+
+    BuildRunnerCommand command;
+    switch (commandLine.type) {
+      case CommandType.build:
+        command = BuildCommand(
+          builders: builders!,
+          buildOptions: BuildOptions.parse(
+            commandLine,
+            restIsBuildDirs: true,
+            rootPackage: rootPackage,
+          ),
+        );
+
+      case CommandType.clean:
+        command = CleanCommand();
+
+      case CommandType.daemon:
+        command = DaemonCommand(
+          arguments: commandLine.arguments,
+          builders: builders!,
+          buildOptions: BuildOptions.parse(
+            commandLine,
+            restIsBuildDirs: false,
+            rootPackage: rootPackage,
+          ),
+          daemonOptions: DaemonOptions.parse(commandLine),
+        );
+
+      case CommandType.run:
+        command = RunCommand(
+          builders: builders!,
+          buildOptions: BuildOptions.parse(
+            commandLine,
+            restIsBuildDirs: false,
+            rootPackage: rootPackage,
+          ),
+          runOptions: RunOptions.parse(commandLine),
+        );
+
+      case CommandType.serve:
+        command = ServeCommand(
+          builders: builders!,
+          buildOptions: BuildOptions.parse(
+            commandLine,
+            restIsBuildDirs: true,
+            rootPackage: rootPackage,
+          ),
+          serveOptions: ServeOptions.parse(commandLine),
+        );
+
+      case CommandType.test:
+        command = TestCommand(
+          builders: builders!,
+          buildOptions: BuildOptions.parse(
+            commandLine,
+            restIsBuildDirs: false,
+            rootPackage: rootPackage,
+          ),
+          testOptions: TestOptions.parse(commandLine),
+        );
+
+      case CommandType.watch:
+        command = WatchCommand(
+          builders: builders!,
+          buildOptions: BuildOptions.parse(
+            commandLine,
+            restIsBuildDirs: true,
+            rootPackage: rootPackage,
+          ),
+        );
+    }
+
+    return await command.run();
   }
 
   /// Builds and runs `build_runner` with the configured builders.
