@@ -4,13 +4,13 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:build_runner_core/build_runner_core.dart';
-// ignore: implementation_imports
-import 'package:build_runner_core/src/asset_graph/graph.dart';
-// ignore: implementation_imports
-import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:watcher/watcher.dart';
 
+import '../asset_graph/graph.dart';
+import '../asset_graph/node.dart';
+import '../package_graph/target_graph.dart';
+import '../state/reader_state.dart';
+import '../util/constants.dart';
 import 'asset_change.dart';
 
 /// Returns if a given asset change should be considered for building.

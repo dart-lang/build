@@ -5,19 +5,25 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:build_runner_core/build_runner_core.dart';
-// ignore: implementation_imports
-import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:crypto/crypto.dart';
 import 'package:stream_transform/stream_transform.dart';
 
+import '../asset/finalized_reader.dart';
+import '../asset/reader_writer.dart';
+import '../asset_graph/graph.dart';
 import '../build_plan.dart';
 import '../commands/build_options.dart';
+import '../logging/build_log.dart';
+import '../options/testing_overrides.dart';
+import '../package_graph/package_graph.dart';
 import '../watcher/asset_change.dart';
 import '../watcher/change_filter.dart';
 import '../watcher/collect_changes.dart';
 import '../watcher/graph_watcher.dart';
 import '../watcher/node_watcher.dart';
+import 'build_result.dart';
+import 'build_series.dart';
+import 'exceptions.dart';
 
 class Watcher implements BuildState {
   late final BuildPlan buildPlan;

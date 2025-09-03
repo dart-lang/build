@@ -10,7 +10,8 @@ import 'dart:isolate';
 import 'package:_test_common/sdk.dart';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner/src/logging/build_log.dart';
+import 'package:build_runner/src/util/constants.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:stack_trace/stack_trace.dart';
@@ -113,7 +114,6 @@ Future<BuildTool> package(
         'build_config',
         'build_daemon',
         'build_runner',
-        'build_runner_core',
         'code_builder',
       ],
       pathDependencies: {
@@ -152,7 +152,6 @@ Future<BuildTool> packageWithBuildScript(
         'build_config',
         'build_daemon',
         'build_runner',
-        'build_runner_core',
         'build_test',
         'code_builder',
       ],
@@ -195,7 +194,7 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner/src/package_graph/apply_builders.dart';
 import 'package:build_test/build_test.dart';
 
 ${_builders(callingScript)}

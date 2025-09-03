@@ -9,7 +9,7 @@ import 'dart:io';
 import 'package:build_runner/src/build_script_generate/bootstrap.dart';
 import 'package:build_runner/src/build_script_generate/build_process_state.dart';
 import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner/src/util/constants.dart';
 import 'package:test/test.dart';
 
 // These tests write to the real `build_runner/.dart_tool/build/entrypoint`

@@ -1,3 +1,7 @@
+## 5.0.18-wip
+
+- Remove unused dev depencency: `build_runner_core`.
+
 ## 5.0.17
 
 - Allow `build` 4.0.0.

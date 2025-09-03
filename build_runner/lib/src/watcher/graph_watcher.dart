@@ -6,8 +6,9 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:async/async.dart';
-import 'package:build_runner_core/build_runner_core.dart';
 
+import '../logging/build_log.dart';
+import '../package_graph/package_graph.dart';
 import 'asset_change.dart';
 import 'node_watcher.dart';
 

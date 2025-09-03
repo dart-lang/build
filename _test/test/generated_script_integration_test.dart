@@ -13,7 +13,7 @@ import 'common/utils.dart';
 
 void main() {
   setUpAll(() async {
-    await runCommand(['generate-build-script']);
+    await runCommand(['build', 'missing-folder']);
   });
 
   test('Generates a build script matching the golden', () {

@@ -3,9 +3,9 @@
 // BSD-style license that can be found in the LICENSE file.
 
 // ignore: implementation_imports
-import 'package:build_runner_core/src/asset_graph/graph.dart';
+import 'package:build_runner/src/asset_graph/graph.dart';
 // ignore: implementation_imports
-import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_runner/src/asset_graph/node.dart';
 import 'package:test/test.dart';
 
 Matcher equalsAssetGraph(AssetGraph expected) => _AssetGraphMatcher(expected);

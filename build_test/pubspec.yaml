@@ -11,7 +11,6 @@ dependencies:
   build: '4.0.0'
   build_config: ^1.0.0
   build_runner: '2.7.3-wip'
-  build_runner_core: '9.4.0-wip'
   built_collection: ^5.1.1
   crypto: ^3.0.0
   glob: ^2.0.0

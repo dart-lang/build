@@ -11,7 +11,6 @@ import 'package:build_daemon/constants.dart';
 import 'package:build_daemon/daemon.dart';
 import 'package:build_daemon/data/serializers.dart';
 import 'package:build_daemon/data/server_log.dart';
-import 'package:build_runner_core/build_runner_core.dart';
 import 'package:built_collection/built_collection.dart';
 
 import '../build_plan.dart';
@@ -19,6 +18,9 @@ import '../build_script_generate/build_process_state.dart';
 import '../daemon/asset_server.dart';
 import '../daemon/constants.dart';
 import '../daemon/daemon_builder.dart';
+import '../logging/build_log.dart';
+import '../options/testing_overrides.dart';
+import '../package_graph/apply_builders.dart';
 import 'build_options.dart';
 import 'build_runner_command.dart';
 import 'daemon_options.dart';

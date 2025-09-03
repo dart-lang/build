@@ -5,7 +5,6 @@
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
-import 'package:build_runner_core/build_runner_core.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:io/ansi.dart' as ansi;
 import 'package:io/io.dart';
@@ -28,6 +27,10 @@ import 'commands/serve_options.dart';
 import 'commands/test_command.dart';
 import 'commands/test_options.dart';
 import 'commands/watch_command.dart';
+import 'generate/exceptions.dart';
+import 'logging/build_log.dart';
+import 'package_graph/apply_builders.dart';
+import 'util/constants.dart';
 
 /// The `build_runner` tool.
 class BuildRunner {

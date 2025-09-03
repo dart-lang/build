@@ -6,13 +6,15 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:build_runner_core/build_runner_core.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:frontend_server_client/frontend_server_client.dart';
 import 'package:io/io.dart';
 import 'package:path/path.dart' as p;
 import 'package:stack_trace/stack_trace.dart';
 
+import '../generate/exceptions.dart';
+import '../logging/build_log.dart';
+import '../util/constants.dart';
 import 'build_process_state.dart';
 import 'build_script_generate.dart';
 
