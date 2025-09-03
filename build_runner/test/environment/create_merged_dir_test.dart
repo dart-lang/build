@@ -68,12 +68,12 @@ void main() {
     late TargetGraph targetGraph;
     late Directory tmpDir;
     late Directory anotherTmpDir;
-    late TestReaderWriter readerWriter;
+    late InternalTestReaderWriter readerWriter;
     late OptionalOutputTracker optionalOutputTracker;
     late FinalizedAssetsView finalizedAssetsView;
 
     setUp(() async {
-      readerWriter = TestReaderWriter();
+      readerWriter = InternalTestReaderWriter();
       for (final source in sources.entries) {
         readerWriter.testing.writeString(source.key, source.value);
       }

@@ -10,11 +10,11 @@ import 'package:built_collection/built_collection.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 
+import '../asset/reader_writer.dart';
 import '../generate/exceptions.dart';
 import '../generate/input_matcher.dart';
 import '../logging/build_log.dart';
 import '../options/testing_overrides.dart';
-import '../state/reader_state.dart';
 import 'build_triggers.dart';
 import 'package_graph.dart';
 
@@ -99,15 +99,15 @@ class TargetGraph {
   /// in `testingOverrides`.
   static Future<TargetGraph> forPackageGraph({
     required PackageGraph packageGraph,
-    AssetReader? reader,
+    ReaderWriter? readerWriter,
     String? configKey,
     TestingOverrides? testingOverrides,
   }) async {
-    reader = testingOverrides?.reader ?? reader;
+    readerWriter = testingOverrides?.readerWriter ?? readerWriter;
     try {
       return _tryForPackageGraph(
         packageGraph: packageGraph,
-        reader: reader,
+        readerWriter: readerWriter,
         configKey: configKey,
         testingOverrides: testingOverrides,
       );
@@ -119,7 +119,7 @@ class TargetGraph {
 
   static Future<TargetGraph> _tryForPackageGraph({
     required PackageGraph packageGraph,
-    AssetReader? reader,
+    ReaderWriter? readerWriter,
     String? configKey,
     TestingOverrides? testingOverrides,
   }) async {
@@ -130,17 +130,17 @@ class TargetGraph {
     final configs = <String, BuildConfig>{};
     final configOverrides =
         testingOverrides?.buildConfig ??
-        (reader == null
+        (readerWriter == null
             ? null
             : await findBuildConfigOverrides(
               packageGraph: packageGraph,
-              reader: reader,
+              readerWriter: readerWriter,
               configKey: configKey,
             ));
     for (final package in packageGraph.allPackages.values) {
       final config =
           configOverrides?[package.name] ??
-          await _packageBuildConfig(reader, package);
+          await _packageBuildConfig(readerWriter, package);
       configs[package.name] = config;
 
       BuiltList<String> defaultInclude;
@@ -306,17 +306,17 @@ class TargetNode {
 }
 
 Future<BuildConfig> _packageBuildConfig(
-  AssetReader? reader,
+  ReaderWriter? readerWriter,
   PackageNode package,
 ) async {
   final dependencies = [for (final node in package.dependencies) node.name];
   try {
     final id = AssetId(package.name, 'build.yaml');
-    if (reader != null && await reader.canRead(id)) {
+    if (readerWriter != null && await readerWriter.canRead(id)) {
       return BuildConfig.parse(
         package.name,
         dependencies,
-        await reader.readAsString(id),
+        await readerWriter.readAsString(id),
         configYamlPath: p.join(package.path, 'build.yaml'),
       );
     } else {
@@ -347,11 +347,11 @@ Iterable<AssetId> _missingSources(
 
 Future<BuiltMap<String, BuildConfig>> findBuildConfigOverrides({
   required PackageGraph packageGraph,
-  required AssetReader? reader,
+  required ReaderWriter? readerWriter,
   required String? configKey,
 }) async {
   final configs = <String, BuildConfig>{};
-  final configFiles = reader!.assetFinder.find(
+  final configFiles = readerWriter!.assetFinder.find(
     Glob('*.build.yaml'),
     package: packageGraph.root.name,
   );
@@ -367,7 +367,7 @@ Future<BuiltMap<String, BuildConfig>> findBuildConfigOverrides({
       );
       continue;
     }
-    final yaml = await reader.readAsString(id);
+    final yaml = await readerWriter.readAsString(id);
     final config = BuildConfig.parse(
       packageName,
       packageNode.dependencies.map((n) => n.name),
@@ -378,11 +378,11 @@ Future<BuiltMap<String, BuildConfig>> findBuildConfigOverrides({
   }
   if (configKey != null) {
     final id = AssetId(packageGraph.root.name, 'build.$configKey.yaml');
-    if (!await reader.canRead(id)) {
+    if (!await readerWriter.canRead(id)) {
       buildLog.warning('Cannot find ${id.path} for specified config.');
       throw const CannotBuildException();
     }
-    final yaml = await reader.readAsString(id);
+    final yaml = await readerWriter.readAsString(id);
     final config = BuildConfig.parse(
       packageGraph.root.name,
       packageGraph.root.dependencies.map((n) => n.name),

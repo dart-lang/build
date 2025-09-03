@@ -2,11 +2,9 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 
 import 'asset/reader_writer.dart';
-import 'asset/writer.dart';
 import 'commands/build_filter.dart';
 import 'commands/build_options.dart';
 import 'generate/build_directory.dart';
@@ -24,8 +22,7 @@ class BuildPlan {
   final TestingOverrides testingOverrides;
 
   final PackageGraph packageGraph;
-  final AssetReader reader;
-  final RunnerAssetWriter writer;
+  final ReaderWriter readerWriter;
   final TargetGraph targetGraph;
   final BuildPhases buildPhases;
 
@@ -34,16 +31,15 @@ class BuildPlan {
     required this.buildOptions,
     required this.testingOverrides,
     required this.packageGraph,
-    required this.reader,
-    required this.writer,
+    required this.readerWriter,
     required this.targetGraph,
     required this.buildPhases,
   });
 
   /// Loads a build plan.
   ///
-  /// Loads the package strucure and build configuration; prepares [reader]
-  /// and [writer] and deduces the [buildPhases] that will run.
+  /// Loads the package strucure and build configuration; prepares
+  /// [readerWriter] and deduces the [buildPhases] that will run.
   static Future<BuildPlan> load({
     required BuiltList<BuilderApplication> builders,
     required BuildOptions buildOptions,
@@ -52,17 +48,11 @@ class BuildPlan {
     final packageGraph =
         testingOverrides.packageGraph ?? await PackageGraph.forThisPackage();
 
-    var reader = testingOverrides.reader;
-    var writer = testingOverrides.writer;
-
-    if (reader == null || writer == null) {
-      final readerWriter = ReaderWriter(packageGraph);
-      reader ??= readerWriter;
-      writer ??= readerWriter;
-    }
+    final readerWriter =
+        testingOverrides.readerWriter ?? ReaderWriter(packageGraph);
 
     final targetGraph = await TargetGraph.forPackageGraph(
-      reader: reader,
+      readerWriter: readerWriter,
       packageGraph: packageGraph,
       testingOverrides: testingOverrides,
       configKey: buildOptions.configKey,
@@ -84,8 +74,7 @@ class BuildPlan {
       buildOptions: buildOptions,
       testingOverrides: testingOverrides,
       packageGraph: packageGraph,
-      reader: reader,
-      writer: writer,
+      readerWriter: readerWriter,
       targetGraph: targetGraph,
       buildPhases: buildPhases,
     );
@@ -94,8 +83,7 @@ class BuildPlan {
   BuildPlan copyWith({
     BuiltSet<BuildDirectory>? buildDirs,
     BuiltSet<BuildFilter>? buildFilters,
-    AssetReader? reader,
-    RunnerAssetWriter? writer,
+    ReaderWriter? readerWriter,
   }) => BuildPlan(
     builders: builders,
     buildOptions: buildOptions.copyWith(
@@ -105,8 +93,7 @@ class BuildPlan {
     testingOverrides: testingOverrides,
     packageGraph: packageGraph,
     targetGraph: targetGraph,
-    reader: reader ?? this.reader,
-    writer: writer ?? this.writer,
+    readerWriter: readerWriter ?? this.readerWriter,
     buildPhases: buildPhases,
   );
 }

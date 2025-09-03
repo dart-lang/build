@@ -8,12 +8,14 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:build_runner/src/generate/run_builder.dart';
-import 'package:build_test/build_test.dart';
+import 'package:build_runner/src/generate/single_step_reader_writer.dart';
 import 'package:package_config/package_config_types.dart';
 import 'package:test/test.dart';
 
+import '../common/common.dart';
+
 void main() {
-  late TestReaderWriter readerWriter;
+  late InternalTestReaderWriter readerWriter;
   final primary = makeAssetId('a|web/primary.txt');
   final inputs = {primary: 'foo'};
   late Resource resource;
@@ -31,7 +33,7 @@ void main() {
     builder = TestBuilder(
       extraWork: (buildStep, _) => buildStep.fetchResource(resource),
     );
-    readerWriter = TestReaderWriter();
+    readerWriter = InternalTestReaderWriter();
     addAssets(inputs, readerWriter);
   });
 
@@ -43,8 +45,7 @@ void main() {
       await runBuilder(
         builder,
         inputs.keys,
-        readerWriter,
-        readerWriter,
+        SingleStepReaderWriter.fakeFor(readerWriter),
         null,
         resourceManager: resourceManager,
       );
@@ -70,7 +71,12 @@ void main() {
 
   group('With a default ResourceManager', () {
     setUp(() async {
-      await runBuilder(builder, inputs.keys, readerWriter, readerWriter, null);
+      await runBuilder(
+        builder,
+        inputs.keys,
+        SingleStepReaderWriter.fakeFor(readerWriter),
+        null,
+      );
     });
 
     test('disposes the default resource manager', () async {
@@ -108,15 +114,19 @@ void main() {
     });
 
     test('from default', () async {
-      await runBuilder(builder, inputs.keys, readerWriter, readerWriter, null);
+      await runBuilder(
+        builder,
+        inputs.keys,
+        SingleStepReaderWriter.fakeFor(readerWriter),
+        null,
+      );
     });
 
     test('when provided', () async {
       await runBuilder(
         builder,
         inputs.keys,
-        readerWriter,
-        readerWriter,
+        SingleStepReaderWriter.fakeFor(readerWriter),
         null,
         packageConfig: PackageConfig([
           Package(

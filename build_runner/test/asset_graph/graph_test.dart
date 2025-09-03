@@ -21,11 +21,11 @@ import 'package:watcher/watcher.dart';
 import '../common/common.dart';
 
 void main() {
-  late TestReaderWriter digestReader;
+  late InternalTestReaderWriter digestReader;
   final fooPackageGraph = buildPackageGraph({rootPackage('foo'): []});
 
   setUp(() async {
-    digestReader = TestReaderWriter();
+    digestReader = InternalTestReaderWriter();
   });
 
   group('AssetGraph', () {

@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 export 'asset/reader_writer.dart';
-export 'asset/writer.dart';
 export 'build_plan.dart';
 export 'build_script_generate/build_process_state.dart';
 export 'build_script_generate/build_script_generate.dart';
@@ -26,5 +25,4 @@ export 'state/asset_path_provider.dart';
 export 'state/filesystem.dart';
 export 'state/filesystem_cache.dart';
 export 'state/generated_asset_hider.dart';
-export 'state/reader_state.dart';
 export 'util/constants.dart';

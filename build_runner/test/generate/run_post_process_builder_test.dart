@@ -4,13 +4,15 @@
 
 import 'package:build/build.dart';
 import 'package:build_runner/src/generate/run_post_process_builder.dart';
-import 'package:build_test/build_test.dart';
+import 'package:build_runner/src/generate/single_step_reader_writer.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
+import '../common/common.dart';
+
 void main() {
   group('runPostProcessBuilder', () {
-    late TestReaderWriter readerWriter;
+    late InternalTestReaderWriter readerWriter;
     final copyBuilder = CopyingPostProcessBuilder();
     final deleteBuilder = DeletePostProcessBuilder();
     final aTxt = makeAssetId('a|lib/a.txt');
@@ -23,7 +25,7 @@ void main() {
     void deleteAsset(AssetId id) => deletes[id] = true;
 
     setUp(() async {
-      readerWriter = TestReaderWriter()..testing.writeString(aTxt, 'a');
+      readerWriter = InternalTestReaderWriter()..testing.writeString(aTxt, 'a');
       adds.clear();
       deletes.clear();
     });
@@ -32,8 +34,7 @@ void main() {
       await runPostProcessBuilder(
         copyBuilder,
         aTxt,
-        readerWriter,
-        readerWriter,
+        SingleStepReaderWriter.fakeFor(readerWriter),
         logger,
         addAsset: addAsset,
         deleteAsset: deleteAsset,
@@ -41,8 +42,7 @@ void main() {
       await runPostProcessBuilder(
         deleteBuilder,
         aTxt,
-        readerWriter,
-        readerWriter,
+        SingleStepReaderWriter.fakeFor(readerWriter),
         logger,
         addAsset: addAsset,
         deleteAsset: deleteAsset,
@@ -55,8 +55,7 @@ void main() {
       await runPostProcessBuilder(
         copyBuilder,
         aTxt,
-        readerWriter,
-        readerWriter,
+        SingleStepReaderWriter.fakeFor(readerWriter),
         logger,
         addAsset: addAsset,
         deleteAsset: deleteAsset,
@@ -71,8 +70,7 @@ void main() {
         () => runPostProcessBuilder(
           copyBuilder,
           aTxt,
-          readerWriter,
-          readerWriter,
+          SingleStepReaderWriter.fakeFor(readerWriter),
           logger,
           addAsset: (id) => throw InvalidOutputException(id, ''),
           deleteAsset: deleteAsset,

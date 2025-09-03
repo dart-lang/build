@@ -25,7 +25,7 @@ import '../common/common.dart';
 
 void main() {
   late FutureOr<Response> Function(Request) handler;
-  late TestReaderWriter readerWriter;
+  late InternalTestReaderWriter readerWriter;
   late StreamSubscription subscription;
   late Completer<BuildResult> nextBuild;
   late StreamController<ProcessSignal> terminateController;
@@ -35,7 +35,7 @@ void main() {
   setUp(() async {
     final graph = buildPackageGraph({rootPackage('example', path: path): []});
     readerWriter =
-        TestReaderWriter(rootPackage: 'example')
+        InternalTestReaderWriter(rootPackage: 'example')
           ..testing.writeString(
             AssetId('example', 'web/initial.txt'),
             'initial',
@@ -68,8 +68,7 @@ void main() {
           ),
           testingOverrides: TestingOverrides(
             packageGraph: graph,
-            reader: readerWriter,
-            writer: readerWriter,
+            readerWriter: readerWriter,
             onLog:
                 (record) => printOnFailure(
                   '[${record.level}] '

@@ -17,13 +17,6 @@ import 'package:glob/glob.dart';
 import 'package:package_config/package_config_types.dart';
 
 import '../library_cycle_graph/phased_reader.dart';
-import '../state/asset_finder.dart';
-import '../state/asset_path_provider.dart';
-import '../state/filesystem.dart';
-import '../state/filesystem_cache.dart';
-import '../state/generated_asset_hider.dart';
-import '../state/reader_state.dart';
-import '../state/reader_writer.dart';
 import 'input_tracker.dart';
 import 'run_builder.dart';
 import 'single_step_reader_writer.dart';
@@ -32,7 +25,7 @@ import 'single_step_reader_writer.dart';
 ///
 /// This represents a single input and its expected and real outputs. It also
 /// handles tracking of dependencies.
-class BuildStepImpl implements BuildStep, AssetReaderState, AssetReaderWriter {
+class BuildStepImpl implements BuildStep {
   final Resolvers? _resolvers;
   final StageTracker _stageTracker;
 
@@ -79,40 +72,6 @@ class BuildStepImpl implements BuildStep, AssetReaderState, AssetReaderWriter {
   }) : allowedOutputs = UnmodifiableSetView(expectedOutputs.toSet()),
        _stageTracker = stageTracker ?? NoOpStageTracker.instance,
        _reportUnusedAssets = reportUnusedAssets;
-
-  @override
-  BuildStepImpl copyWith({
-    FilesystemCache? cache,
-    GeneratedAssetHider? generatedAssetHider,
-  }) => BuildStepImpl(
-    inputId,
-    allowedOutputs,
-    _readerWriter.copyWith(
-      cache: cache,
-      generatedAssetHider: generatedAssetHider,
-    ),
-    _resolvers,
-    _resourceManager,
-    _resolvePackageConfig,
-    stageTracker: _stageTracker,
-    reportUnusedAssets: _reportUnusedAssets,
-  );
-
-  @override
-  AssetFinder get assetFinder => _readerWriter.assetFinder;
-
-  @override
-  AssetPathProvider get assetPathProvider => _readerWriter.assetPathProvider;
-
-  @override
-  GeneratedAssetHider get generatedAssetHider =>
-      _readerWriter.generatedAssetHider;
-
-  @override
-  Filesystem get filesystem => _readerWriter.filesystem;
-
-  @override
-  FilesystemCache get cache => _readerWriter.cache;
 
   InputTracker get inputTracker => _readerWriter.inputTracker;
 

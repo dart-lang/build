@@ -19,28 +19,22 @@ import '../state/asset_path_provider.dart';
 import '../state/filesystem.dart';
 import '../state/filesystem_cache.dart';
 import '../state/generated_asset_hider.dart';
-import '../state/reader_state.dart';
-import '../state/reader_writer.dart';
 import '../util/constants.dart';
-import 'writer.dart';
 
-/// Pluggable [AssetReader] and [AssetWriter].
-class ReaderWriter extends AssetReader
-    implements AssetReaderState, RunnerAssetWriter, AssetReaderWriter {
+/// File operations during a build.
+///
+/// [AssetReader] and [AssetWriter] are the builder-facing file operations APIs,
+/// and are implemented here so that `TestReaderWriter` can offer them.
+class ReaderWriter implements AssetReader, AssetWriter {
   /// The package the generator is running for.
   ///
   /// Deletes are only allowed within this package.
   final String rootPackage;
 
-  @override
   final AssetFinder assetFinder;
-  @override
   final AssetPathProvider assetPathProvider;
-  @override
   final GeneratedAssetHider generatedAssetHider;
-  @override
   final Filesystem filesystem;
-  @override
   final FilesystemCache cache;
 
   final void Function(AssetId)? onDelete;
@@ -71,7 +65,6 @@ class ReaderWriter extends AssetReader
     required this.onDelete,
   });
 
-  @override
   ReaderWriter copyWith({
     FilesystemCache? cache,
     GeneratedAssetHider? generatedAssetHider,
@@ -141,10 +134,6 @@ class ReaderWriter extends AssetReader
     );
   }
 
-  // This is only for generators, so only `BuildStep` needs to implement it.
-  @override
-  Stream<AssetId> findAssets(Glob glob) => throw UnimplementedError();
-
   // [AssetWriter] methods.
 
   @override
@@ -191,7 +180,6 @@ class ReaderWriter extends AssetReader
     return digestSink.events.first;
   }
 
-  @override
   Future<void> delete(AssetId id) {
     TimedActivity.write.run(() {
       onDelete?.call(id);
@@ -219,7 +207,6 @@ class ReaderWriter extends AssetReader
     return Future.value();
   }
 
-  @override
   Future<void> deleteDirectory(AssetId id) {
     TimedActivity.write.run(() {
       final path = _pathFor(id);
@@ -227,6 +214,10 @@ class ReaderWriter extends AssetReader
     });
     return Future.value();
   }
+
+  // This is only for builders, so only `BuildStep` needs to implement it.
+  @override
+  Stream<AssetId> findAssets(Glob glob) => throw UnimplementedError();
 }
 
 /// [AssetFinder] that uses [PackageGraph] to map packages to paths, then

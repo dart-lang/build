@@ -16,7 +16,6 @@ import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
 import '../asset/finalized_reader.dart';
-import '../asset/reader_writer.dart';
 import '../build_plan.dart';
 import '../commands/build_filter.dart';
 import '../commands/daemon_options.dart';
@@ -229,7 +228,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       };
     });
     buildPlan = buildPlan.copyWith(
-      writer: (buildPlan.writer as ReaderWriter).copyWith(
+      readerWriter: buildPlan.readerWriter.copyWith(
         onDelete: expectedDeletes.add,
       ),
     );
@@ -250,7 +249,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
             // Assume we will create an outputDir.
             true,
             expectedDeletes,
-            buildPlan.reader,
+            buildPlan.readerWriter,
           ),
         )
         .map((data) => WatchEvent(data.type, '${data.id}'))
@@ -263,7 +262,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         daemonOptions.buildMode == BuildMode.Auto
             ? AutoChangeProviderImpl(graphEvents())
             : ManualChangeProviderImpl(
-              AssetTracker(buildPlan.reader, buildPlan.targetGraph),
+              AssetTracker(buildPlan.readerWriter, buildPlan.targetGraph),
               buildSeries.assetGraph,
             );
 

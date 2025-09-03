@@ -19,7 +19,6 @@ import 'package:build_runner/src/generate/performance_tracker.dart';
 import 'package:build_runner/src/package_graph/apply_builders.dart';
 import 'package:build_runner/src/package_graph/package_graph.dart';
 import 'package:build_runner/src/package_graph/target_graph.dart';
-import 'package:build_runner/src/state/reader_state.dart';
 import 'package:build_runner/src/util/constants.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:glob/glob.dart';

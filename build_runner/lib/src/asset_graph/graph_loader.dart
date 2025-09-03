@@ -9,7 +9,7 @@ import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:built_collection/built_collection.dart';
 
-import '../asset/writer.dart';
+import '../asset/reader_writer.dart';
 import '../build_script_generate/build_process_state.dart';
 import '../generate/build_phases.dart';
 import '../generate/exceptions.dart';
@@ -22,14 +22,12 @@ import 'graph.dart';
 
 /// Loads and verifies an [AssetGraph].
 class AssetGraphLoader {
-  final AssetReader reader;
-  final RunnerAssetWriter writer;
+  final ReaderWriter readerWriter;
   final PackageGraph packageGraph;
   final BuildPhases buildPhases;
 
   AssetGraphLoader({
-    required this.reader,
-    required this.writer,
+    required this.readerWriter,
     required this.packageGraph,
     required this.buildPhases,
   });
@@ -48,7 +46,7 @@ class AssetGraphLoader {
   Future<AssetGraph?> load() async {
     buildLog.doing('Reading the asset graph.');
     final assetGraphId = AssetId(packageGraph.root.name, assetGraphPath);
-    if (!await reader.canRead(assetGraphId)) {
+    if (!await readerWriter.canRead(assetGraphId)) {
       return null;
     }
 
@@ -57,14 +55,16 @@ class AssetGraphLoader {
     } on AssetGraphCorruptedException catch (_) {
       // Start fresh if the cached asset_graph cannot be deserialized
       buildLog.fullBuildBecause(FullBuildReason.incompatibleAssetGraph);
-      await Future.wait([writer.deleteDirectory(_generatedOutputDirectoryId)]);
+      await Future.wait([
+        readerWriter.deleteDirectory(_generatedOutputDirectoryId),
+      ]);
       return null;
     }
   }
 
   Future<AssetGraph?> _load(AssetId assetGraphId) async {
     final cachedGraph = AssetGraph.deserialize(
-      await reader.readAsBytes(assetGraphId),
+      await readerWriter.readAsBytes(assetGraphId),
     );
     final buildPhasesChanged =
         buildPhases.digest != cachedGraph.buildPhasesDigest;
@@ -75,9 +75,9 @@ class AssetGraphLoader {
     if (buildPhasesChanged || pkgVersionsChanged || enabledExperimentsChanged) {
       buildLog.fullBuildBecause(FullBuildReason.incompatibleBuild);
       await Future.wait([
-        writer.delete(assetGraphId),
-        cachedGraph.deleteOutputs(packageGraph, writer),
-        writer.deleteDirectory(_generatedOutputDirectoryId),
+        readerWriter.delete(assetGraphId),
+        cachedGraph.deleteOutputs(packageGraph, readerWriter),
+        readerWriter.deleteDirectory(_generatedOutputDirectoryId),
       ]);
       if (_runningFromSnapshot) {
         throw const BuildScriptChangedException();
@@ -87,9 +87,9 @@ class AssetGraphLoader {
     if (!isSameSdkVersion(cachedGraph.dartVersion, Platform.version)) {
       buildLog.fullBuildBecause(FullBuildReason.incompatibleBuild);
       await Future.wait([
-        writer.delete(assetGraphId),
-        cachedGraph.deleteOutputs(packageGraph, writer),
-        writer.deleteDirectory(_generatedOutputDirectoryId),
+        readerWriter.delete(assetGraphId),
+        cachedGraph.deleteOutputs(packageGraph, readerWriter),
+        readerWriter.deleteDirectory(_generatedOutputDirectoryId),
       ]);
       if (_runningFromSnapshot) {
         throw const BuildScriptChangedException();

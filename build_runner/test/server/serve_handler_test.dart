@@ -102,13 +102,15 @@ class FakeWebSocketChannel extends StreamChannelMixin
 
 void main() {
   late ServeHandler serveHandler;
-  late TestReaderWriter readerWriter;
+  late InternalTestReaderWriter readerWriter;
   late MockWatchImpl watchImpl;
   late AssetGraph assetGraph;
 
   setUp(() async {
     final packageGraph = buildPackageGraph({rootPackage('a'): []});
-    readerWriter = TestReaderWriter(rootPackage: packageGraph.root.name);
+    readerWriter = InternalTestReaderWriter(
+      rootPackage: packageGraph.root.name,
+    );
     assetGraph = await AssetGraph.build(
       BuildPhases([]),
       <AssetId>{},

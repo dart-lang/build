@@ -9,7 +9,6 @@ import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner/src/asset/reader_writer.dart';
-import 'package:build_runner/src/asset/writer.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
 import 'package:build_runner/src/build_script_generate/build_process_state.dart';
 import 'package:build_runner/src/generate/build_definition.dart';
@@ -31,7 +30,6 @@ import 'package:test_descriptor/test_descriptor.dart' as d;
 import 'package:watcher/watcher.dart';
 
 import '../common/common.dart';
-import '../common/runner_asset_writer_spy.dart';
 
 void main() {
   final languageVersion = LanguageVersion(2, 0);
@@ -47,8 +45,7 @@ void main() {
 
     late PackageGraph packageGraph;
     late TargetGraph targetGraph;
-    late AssetReader reader;
-    late RunnerAssetWriter writer;
+    late ReaderWriter readerWriter;
 
     Future<File> createFile(String path, dynamic contents) async {
       var file = File(p.join(pkgARoot, path));
@@ -144,12 +141,10 @@ targets:
       ]).create();
 
       packageGraph = await PackageGraph.forPath(pkgARoot);
-      final readerWriter = ReaderWriter(packageGraph);
-      reader = readerWriter;
-      writer = readerWriter;
+      readerWriter = ReaderWriter(packageGraph);
       targetGraph = await TargetGraph.forPackageGraph(
         packageGraph: packageGraph,
-        reader: reader,
+        readerWriter: readerWriter,
       );
     });
 
@@ -166,7 +161,7 @@ targets:
           {makeAssetId('a|lib/a.txt'), makeAssetId('a|lib/b.txt')},
           <AssetId>{},
           aPackageGraph,
-          reader,
+          readerWriter,
         );
         var generatedAId = makeAssetId('a|lib/a.txt.copy');
         originalAssetGraph.updateNode(generatedAId, (nodeBuilder) {
@@ -180,8 +175,7 @@ targets:
         var buildDefinition = await BuildDefinition.prepareWorkspace(
           packageGraph: packageGraph,
           targetGraph: targetGraph,
-          reader: reader,
-          writer: writer,
+          readerWriter: readerWriter,
           buildPhases: buildPhases,
           skipBuildScriptCheck: true,
         );
@@ -203,7 +197,7 @@ targets:
           <AssetId>{},
           <AssetId>{},
           aPackageGraph,
-          reader,
+          readerWriter,
         );
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());
@@ -212,8 +206,7 @@ targets:
         var buildDefinition = await BuildDefinition.prepareWorkspace(
           packageGraph: packageGraph,
           targetGraph: targetGraph,
-          reader: reader,
-          writer: writer,
+          readerWriter: readerWriter,
           buildPhases: buildPhases,
           skipBuildScriptCheck: true,
         );
@@ -237,7 +230,7 @@ targets:
           {aTxt},
           <AssetId>{},
           aPackageGraph,
-          reader,
+          readerWriter,
         );
 
         // pretend a build happened
@@ -250,8 +243,7 @@ targets:
         var buildDefinition = await BuildDefinition.prepareWorkspace(
           packageGraph: packageGraph,
           targetGraph: targetGraph,
-          reader: reader,
-          writer: writer,
+          readerWriter: readerWriter,
           buildPhases: buildPhases,
           skipBuildScriptCheck: true,
         );
@@ -273,7 +265,7 @@ targets:
           {makeAssetId('a|lib/test.txt')},
           <AssetId>{},
           aPackageGraph,
-          reader,
+          readerWriter,
         );
         var generatedSrcId = makeAssetId('a|lib/test.txt.copy');
         originalAssetGraph.updateNode(generatedSrcId, (nodeBuilder) {
@@ -286,8 +278,7 @@ targets:
         var buildDefinition = await BuildDefinition.prepareWorkspace(
           packageGraph: packageGraph,
           targetGraph: targetGraph,
-          reader: reader,
-          writer: writer,
+          readerWriter: readerWriter,
           buildPhases: buildPhases,
           skipBuildScriptCheck: true,
         );
@@ -319,7 +310,7 @@ targets:
           {makeAssetId('a|lib/a.txt')},
           <AssetId>{},
           aPackageGraph,
-          reader,
+          readerWriter,
         );
         var generatedACopyId = makeAssetId('a|lib/a.txt.copy');
         var generatedACloneId = makeAssetId('a|lib/a.txt.clone');
@@ -351,8 +342,7 @@ targets:
         var buildDefinition = await BuildDefinition.prepareWorkspace(
           packageGraph: packageGraph,
           targetGraph: targetGraph,
-          reader: reader,
-          writer: writer,
+          readerWriter: readerWriter,
           buildPhases: newBuildPhases,
           skipBuildScriptCheck: true,
         );
@@ -391,7 +381,7 @@ targets:
           <AssetId>{},
           <AssetId>{},
           aPackageGraph,
-          reader,
+          readerWriter,
         );
         var expectedIds = placeholderIdsFor(aPackageGraph);
         expect(
@@ -404,8 +394,7 @@ targets:
         var buildDefinition = await BuildDefinition.prepareWorkspace(
           packageGraph: packageGraph,
           targetGraph: targetGraph,
-          reader: reader,
-          writer: writer,
+          readerWriter: readerWriter,
           buildPhases: buildPhases,
           skipBuildScriptCheck: true,
         );
@@ -418,8 +407,7 @@ targets:
         var buildDefinition = await BuildDefinition.prepareWorkspace(
           packageGraph: packageGraph,
           targetGraph: targetGraph,
-          reader: reader,
-          writer: writer,
+          readerWriter: readerWriter,
           buildPhases: BuildPhases([]),
           skipBuildScriptCheck: true,
         );
@@ -434,8 +422,7 @@ targets:
         var buildDefinition = await BuildDefinition.prepareWorkspace(
           packageGraph: packageGraph,
           targetGraph: targetGraph,
-          reader: reader,
-          writer: writer,
+          readerWriter: readerWriter,
           buildPhases: buildPhases,
           skipBuildScriptCheck: true,
         );
@@ -453,8 +440,7 @@ targets:
         var buildDefinition = await BuildDefinition.prepareWorkspace(
           packageGraph: packageGraph,
           targetGraph: targetGraph,
-          reader: reader,
-          writer: writer,
+          readerWriter: readerWriter,
           buildPhases: buildPhases,
           skipBuildScriptCheck: true,
         );
@@ -470,8 +456,7 @@ targets:
         var buildDefinition = await BuildDefinition.prepareWorkspace(
           packageGraph: packageGraph,
           targetGraph: targetGraph,
-          reader: reader,
-          writer: writer,
+          readerWriter: readerWriter,
           buildPhases: BuildPhases([]),
           skipBuildScriptCheck: true,
         );
@@ -503,7 +488,7 @@ targets:
           <AssetId>{},
           <AssetId>{},
           aPackageGraph,
-          reader,
+          readerWriter,
         );
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());
@@ -522,8 +507,7 @@ targets:
           () => BuildDefinition.prepareWorkspace(
             packageGraph: packageGraph,
             targetGraph: targetGraph,
-            reader: reader,
-            writer: writer,
+            readerWriter: readerWriter,
             buildPhases: buildPhases,
             skipBuildScriptCheck: true,
           ),
@@ -548,7 +532,7 @@ targets:
             <AssetId>{},
             <AssetId>{},
             aPackageGraph,
-            reader,
+            readerWriter,
           );
 
           await createFile(assetGraphPath, originalAssetGraph.serialize());
@@ -565,8 +549,7 @@ targets:
             () => BuildDefinition.prepareWorkspace(
               packageGraph: packageGraph,
               targetGraph: targetGraph,
-              reader: reader,
-              writer: writer,
+              readerWriter: readerWriter,
               buildPhases: buildPhases,
               skipBuildScriptCheck: true,
             ),
@@ -590,7 +573,7 @@ targets:
           <AssetId>{},
           <AssetId>{},
           aPackageGraph,
-          reader,
+          readerWriter,
         );
 
         var bytes = originalAssetGraph.serialize();
@@ -604,8 +587,7 @@ targets:
           () => BuildDefinition.prepareWorkspace(
             packageGraph: packageGraph,
             targetGraph: targetGraph,
-            reader: reader,
-            writer: writer,
+            readerWriter: readerWriter,
             buildPhases: buildPhases,
             skipBuildScriptCheck: true,
           ),
@@ -636,7 +618,7 @@ targets:
             <AssetId>{},
             <AssetId>{},
             aPackageGraph,
-            reader,
+            readerWriter,
           );
 
           await createFile(assetGraphPath, originalAssetGraph.serialize());
@@ -655,8 +637,7 @@ targets:
           var buildDefinition = await BuildDefinition.prepareWorkspace(
             packageGraph: packageGraph,
             targetGraph: targetGraph,
-            reader: reader,
-            writer: writer,
+            readerWriter: readerWriter,
             buildPhases: buildPhases,
             skipBuildScriptCheck: true,
           );
@@ -693,7 +674,7 @@ targets:
             <AssetId>{},
             <AssetId>{},
             aPackageGraph,
-            reader,
+            readerWriter,
           );
 
           await createFile(assetGraphPath, originalAssetGraph.serialize());
@@ -711,8 +692,7 @@ targets:
           var buildDefinition = await BuildDefinition.prepareWorkspace(
             packageGraph: packageGraph,
             targetGraph: targetGraph,
-            reader: reader,
-            writer: writer,
+            readerWriter: readerWriter,
             buildPhases: buildPhases,
             skipBuildScriptCheck: true,
           );
@@ -740,14 +720,12 @@ targets:
         var aTxt = AssetId('a', 'lib/a.txt');
         await createFile(aTxt.path, 'hello');
 
-        var writerSpy = RunnerAssetWriterSpy(writer);
-
         var originalAssetGraph = await AssetGraph.build(
           buildPhases,
           <AssetId>{aTxt},
           <AssetId>{},
           aPackageGraph,
-          reader,
+          readerWriter,
         );
 
         var aTxtCopy = AssetId('a', 'lib/a.txt.copy');
@@ -769,18 +747,18 @@ targets:
           ),
         ]);
 
+        expect(await readerWriter.canRead(aTxtCopy), true);
         await expectLater(
           () => BuildDefinition.prepareWorkspace(
             packageGraph: packageGraph,
             targetGraph: targetGraph,
-            reader: reader,
-            writer: writerSpy,
+            readerWriter: readerWriter,
             buildPhases: buildPhases,
             skipBuildScriptCheck: true,
           ),
           throwsA(const TypeMatcher<BuildScriptChangedException>()),
         );
-        expect(writerSpy.assetsDeleted, contains(aTxtCopy));
+        expect(await readerWriter.canRead(aTxtCopy), false);
       });
 
       test('invalidates the graph if the root package name changes', () async {
@@ -795,7 +773,7 @@ targets:
           <AssetId>{aTxt},
           <AssetId>{},
           aPackageGraph,
-          reader,
+          readerWriter,
         );
 
         var aTxtCopy = AssetId('a', 'lib/a.txt.copy');
@@ -819,24 +797,23 @@ targets:
         );
 
         packageGraph = await PackageGraph.forPath(pkgARoot);
-        final readerWriter = ReaderWriter(packageGraph);
-        reader = readerWriter;
-        var writerSpy = RunnerAssetWriterSpy(readerWriter);
+        readerWriter = ReaderWriter(packageGraph);
         buildPhases = BuildPhases([
           InBuildPhase(TestBuilder(), 'c', hideOutput: false),
         ]);
+
+        expect(await readerWriter.canRead(AssetId('c', aTxtCopy.path)), true);
         await expectLater(
           () => BuildDefinition.prepareWorkspace(
             packageGraph: packageGraph,
             targetGraph: targetGraph,
-            reader: reader,
-            writer: writerSpy,
+            readerWriter: readerWriter,
             buildPhases: buildPhases,
             skipBuildScriptCheck: true,
           ),
           throwsA(const TypeMatcher<BuildScriptChangedException>()),
         );
-        expect(writerSpy.assetsDeleted, contains(AssetId('c', aTxtCopy.path)));
+        expect(await readerWriter.canRead(AssetId('c', aTxtCopy.path)), false);
       });
 
       test(
@@ -847,7 +824,7 @@ targets:
             <AssetId>{},
             {AssetId('a', '.dart_tool/package_config.json')},
             aPackageGraph,
-            reader,
+            readerWriter,
           );
 
           var graph = await createFile(assetGraphPath, assetGraph.serialize());
@@ -883,8 +860,7 @@ targets:
             () => BuildDefinition.prepareWorkspace(
               packageGraph: packageGraph,
               targetGraph: targetGraph,
-              reader: reader,
-              writer: writer,
+              readerWriter: readerWriter,
               buildPhases: BuildPhases([]),
               skipBuildScriptCheck: true,
             ),
@@ -903,7 +879,7 @@ targets:
             <AssetId>{},
             <AssetId>{},
             aPackageGraph,
-            reader,
+            readerWriter,
           ),
           ['a'],
         );
@@ -915,8 +891,7 @@ targets:
           () => BuildDefinition.prepareWorkspace(
             packageGraph: packageGraph,
             targetGraph: targetGraph,
-            reader: reader,
-            writer: writer,
+            readerWriter: readerWriter,
             buildPhases: BuildPhases([]),
             skipBuildScriptCheck: true,
           ),
@@ -937,8 +912,7 @@ targets:
           BuildDefinition.prepareWorkspace(
             packageGraph: packageGraph,
             targetGraph: targetGraph,
-            reader: reader,
-            writer: writer,
+            readerWriter: readerWriter,
             buildPhases: BuildPhases([]),
             skipBuildScriptCheck: true,
           ),
@@ -1037,8 +1011,7 @@ targets:
           BuildDefinition.prepareWorkspace(
             packageGraph: packageGraph,
             targetGraph: targetGraph,
-            reader: reader,
-            writer: writer,
+            readerWriter: readerWriter,
             buildPhases: BuildPhases([]),
             skipBuildScriptCheck: true,
           ),

@@ -10,14 +10,17 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:build_runner/src/asset/reader_writer.dart';
 import 'package:build_runner/src/generate/build_step_impl.dart';
 import 'package:build_runner/src/generate/run_builder.dart';
 import 'package:build_runner/src/generate/single_step_reader_writer.dart';
 import 'package:build_runner/src/logging/build_log.dart';
 import 'package:build_runner/src/resolver/resolver.dart';
-import 'package:build_test/build_test.dart';
+import 'package:build_runner/src/state/filesystem.dart';
 import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
+
+import '../common/common.dart';
 
 void main() {
   late ResourceManager resourceManager;
@@ -37,13 +40,13 @@ void main() {
     late List<AssetId> outputs;
 
     setUp(() {
-      var reader = TestReaderWriter();
+      var readerWriter = InternalTestReaderWriter();
       primary = makeAssetId();
       outputs = List.generate(5, (index) => makeAssetId());
       buildStep = BuildStepImpl(
         primary,
         outputs,
-        SingleStepReaderWriter.from(reader: reader, writer: reader),
+        SingleStepReaderWriter.fakeFor(readerWriter),
         AnalyzerResolvers.custom(),
         resourceManager,
         _unsupported,
@@ -90,10 +93,10 @@ void main() {
   });
 
   group('with in memory file system', () {
-    late TestReaderWriter readerWriter;
+    late InternalTestReaderWriter readerWriter;
 
     setUp(() {
-      readerWriter = TestReaderWriter();
+      readerWriter = InternalTestReaderWriter();
     });
 
     test('tracks outputs created by a builder', () async {
@@ -105,7 +108,7 @@ void main() {
       var buildStep = BuildStepImpl(
         primary,
         [outputId],
-        SingleStepReaderWriter.from(reader: readerWriter, writer: readerWriter),
+        SingleStepReaderWriter.fakeFor(readerWriter),
         AnalyzerResolvers.custom(),
         resourceManager,
         _unsupported,
@@ -136,10 +139,7 @@ void main() {
         var buildStep = BuildStepImpl(
           primary,
           [],
-          SingleStepReaderWriter.from(
-            reader: readerWriter,
-            writer: readerWriter,
-          ),
+          SingleStepReaderWriter.fakeFor(readerWriter),
           AnalyzerResolvers.custom(),
           resourceManager,
           _unsupported,
@@ -167,22 +167,19 @@ void main() {
 
   group('With slow writes', () {
     late BuildStepImpl buildStep;
-    late SlowAssetWriter assetWriter;
+    late SlowReaderWriter readerWriter;
     late AssetId outputId;
     late String outputContent;
 
     setUp(() async {
       var primary = makeAssetId();
-      assetWriter = SlowAssetWriter();
+      readerWriter = SlowReaderWriter();
       outputId = makeAssetId('a|test.txt');
       outputContent = '$outputId';
       buildStep = BuildStepImpl(
         primary,
         [outputId],
-        SingleStepReaderWriter.from(
-          reader: TestReaderWriter(),
-          writer: assetWriter,
-        ),
+        SingleStepReaderWriter.fakeFor(readerWriter),
         AnalyzerResolvers.custom(),
         resourceManager,
         _unsupported,
@@ -203,7 +200,7 @@ void main() {
         false,
         reason: 'File has not written, should not be complete',
       );
-      assetWriter.finishWrite();
+      readerWriter.finishWrite();
       await Future(() {});
       expect(isComplete, true, reason: 'File is written, should be complete');
     });
@@ -230,7 +227,7 @@ void main() {
         false,
         reason: 'File has not written, should not be complete',
       );
-      assetWriter.finishWrite();
+      readerWriter.finishWrite();
       await Future(() {});
       expect(isComplete, true, reason: 'File is written, should be complete');
     });
@@ -242,13 +239,13 @@ void main() {
     late AssetId output;
 
     setUp(() {
-      var reader = TestReaderWriter();
+      var readerWriter = InternalTestReaderWriter();
       primary = makeAssetId();
       output = makeAssetId();
       buildStep = BuildStepImpl(
         primary,
         [output],
-        SingleStepReaderWriter.from(reader: reader, writer: reader),
+        SingleStepReaderWriter.fakeFor(readerWriter),
         AnalyzerResolvers.custom(),
         resourceManager,
         _unsupported,
@@ -263,12 +260,12 @@ void main() {
   });
 
   test('reportUnusedAssets forwards calls if provided', () {
-    var reader = TestReaderWriter();
+    var readerWriter = InternalTestReaderWriter();
     var unused = <AssetId>{};
     var buildStep = BuildStepImpl(
       makeAssetId(),
       [],
-      SingleStepReaderWriter.from(reader: reader, writer: reader),
+      SingleStepReaderWriter.fakeFor(readerWriter),
       AnalyzerResolvers.custom(),
       resourceManager,
       _unsupported,
@@ -280,7 +277,8 @@ void main() {
   });
 }
 
-class SlowAssetWriter implements AssetWriter {
+class SlowReaderWriter implements ReaderWriter {
+  final InternalTestReaderWriter _delegate = InternalTestReaderWriter();
   final _writeCompleter = Completer<void>();
 
   void finishWrite() {
@@ -297,6 +295,12 @@ class SlowAssetWriter implements AssetWriter {
     FutureOr<String> contents, {
     Encoding encoding = utf8,
   }) => _writeCompleter.future;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  @override
+  Filesystem get filesystem => _delegate.filesystem;
 }
 
 Future<PackageConfig> _unsupported() {

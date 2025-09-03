@@ -21,7 +21,7 @@ import '../common/common.dart';
 void main() {
   late AssetHandler handler;
   late FinalizedReader reader;
-  late TestReaderWriter delegate;
+  late InternalTestReaderWriter delegate;
   late AssetGraph graph;
 
   setUp(() async {
@@ -30,9 +30,9 @@ void main() {
       <AssetId>{},
       <AssetId>{},
       buildPackageGraph({rootPackage('a'): []}),
-      TestReaderWriter(),
+      InternalTestReaderWriter(),
     );
-    delegate = TestReaderWriter();
+    delegate = InternalTestReaderWriter();
     final packageGraph = buildPackageGraph({rootPackage('a'): []});
     reader = FinalizedReader(
       delegate,

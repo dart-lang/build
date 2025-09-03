@@ -9,7 +9,7 @@ import 'package:build/build.dart';
 import 'package:build_runner/src/internal.dart';
 import 'package:build_test/build_test.dart';
 // ignore: implementation_imports
-import 'package:build_test/src/in_memory_reader_writer.dart';
+import 'package:build_test/src/internal_test_reader_writer.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
@@ -92,14 +92,11 @@ Future<TestBuildersResult> testPhases(
   packageGraph ??= buildPackageGraph({rootPackage('a'): []});
   var readerWriter =
       resumeFrom == null
-          ? TestReaderWriter(rootPackage: packageGraph.root.name)
+          ? InternalTestReaderWriter(rootPackage: packageGraph.root.name)
           : resumeFrom.readerWriter;
 
-  // Cast because this is not part of public `test_builder` API.
   if (onDelete != null) {
-    readerWriter = (readerWriter as InMemoryAssetReaderWriter).copyWith(
-      onDelete: onDelete,
-    );
+    readerWriter = readerWriter.copyWith(onDelete: onDelete);
   }
 
   var pkgConfigId = AssetId(
@@ -150,8 +147,7 @@ Future<TestBuildersResult> testPhases(
     ),
     testingOverrides: TestingOverrides(
       packageGraph: packageGraph,
-      reader: readerWriter,
-      writer: readerWriter,
+      readerWriter: readerWriter,
     ),
   );
 
@@ -216,7 +212,7 @@ void checkBuild(
 
 class TestBuildersResult {
   final BuildResult buildResult;
-  final TestReaderWriter readerWriter;
+  final InternalTestReaderWriter readerWriter;
 
   TestBuildersResult({required this.buildResult, required this.readerWriter});
 }

@@ -14,15 +14,17 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_runner/src/generate/run_builder.dart';
+import 'package:build_runner/src/generate/single_step_reader_writer.dart';
 import 'package:build_runner/src/resolver/analysis_driver.dart';
 import 'package:build_runner/src/resolver/analysis_driver_model.dart';
 import 'package:build_runner/src/resolver/resolver.dart';
 import 'package:build_runner/src/resolver/sdk_summary.dart';
-import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
+
+import '../common/common.dart';
 
 void main() {
   for (final resolversFactory in [
@@ -1103,14 +1105,13 @@ int? get x => 1;
       },
     );
 
-    final readerWriter = TestReaderWriter();
+    final readerWriter = InternalTestReaderWriter();
 
     readerWriter.testing.writeString(makeAssetId('a|lib/a.dart'), '');
     await runBuilder(
       builder,
       [makeAssetId('a|lib/a.dart')],
-      readerWriter,
-      readerWriter,
+      SingleStepReaderWriter.fakeFor(readerWriter),
       resolvers,
     );
 
@@ -1118,8 +1119,7 @@ int? get x => 1;
     await runBuilder(
       builder,
       [makeAssetId('a|lib/b.dart')],
-      readerWriter,
-      readerWriter,
+      SingleStepReaderWriter.fakeFor(readerWriter),
       resolvers,
     );
   });
@@ -1159,7 +1159,7 @@ int? get x => 1;
   });
 
   test('generated part files are not considered libraries', () async {
-    var readerWriter = TestReaderWriter();
+    var readerWriter = InternalTestReaderWriter();
     var input = AssetId('a', 'lib/input.dart');
     readerWriter.testing.writeString(input, "part 'input.a.dart';");
 
@@ -1185,19 +1185,23 @@ int? get x => 1;
       },
     );
     var resolvers = createResolvers();
-    await runBuilder(builder, [input], readerWriter, readerWriter, resolvers);
+    await runBuilder(
+      builder,
+      [input],
+      SingleStepReaderWriter.fakeFor(readerWriter),
+      resolvers,
+    );
 
     await runBuilder(
       builder,
       [input.changeExtension('.a.dart')],
-      readerWriter,
-      readerWriter,
+      SingleStepReaderWriter.fakeFor(readerWriter),
       resolvers,
     );
   });
 
   test('missing files are not considered libraries', () async {
-    var readerWriter = TestReaderWriter();
+    var readerWriter = InternalTestReaderWriter();
     var input = AssetId('a', 'lib/input.dart');
     readerWriter.testing.writeString(input, 'void doStuff() {}');
 
@@ -1215,13 +1219,18 @@ int? get x => 1;
       }),
     );
     var resolvers = createResolvers();
-    await runBuilder(builder, [input], readerWriter, readerWriter, resolvers);
+    await runBuilder(
+      builder,
+      [input],
+      SingleStepReaderWriter.fakeFor(readerWriter),
+      resolvers,
+    );
   });
 
   test(
     'assets with extensions other than `.dart` are not considered libraries',
     () async {
-      var readerWriter = TestReaderWriter();
+      var readerWriter = InternalTestReaderWriter();
       var input = AssetId('a', 'lib/input.dart');
       readerWriter.testing.writeString(input, 'void doStuff() {}');
 
@@ -1239,7 +1248,12 @@ int? get x => 1;
         }),
       );
       var resolvers = createResolvers();
-      await runBuilder(builder, [input], readerWriter, readerWriter, resolvers);
+      await runBuilder(
+        builder,
+        [input],
+        SingleStepReaderWriter.fakeFor(readerWriter),
+        resolvers,
+      );
     },
   );
 

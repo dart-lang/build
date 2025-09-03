@@ -84,10 +84,10 @@ Future<BuildScriptInfo> findBuildScriptOptions() async {
     equals: (a, b) => a.name == b.name,
     hashCode: (n) => n.name.hashCode,
   ).expand((c) => c);
-  var reader = ReaderWriter(packageGraph);
-  var overrides = await findBuildConfigOverrides(
+  final readerWriter = ReaderWriter(packageGraph);
+  final overrides = await findBuildConfigOverrides(
     packageGraph: packageGraph,
-    reader: reader,
+    readerWriter: readerWriter,
     configKey: null,
   );
   Future<BuildConfig> packageBuildConfig(PackageNode package) async {

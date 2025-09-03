@@ -10,19 +10,19 @@ import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import 'package:watcher/watcher.dart';
 
+import '../asset/reader_writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../logging/timed_activities.dart';
 import '../package_graph/target_graph.dart';
-import '../state/reader_state.dart';
 import '../util/constants.dart';
 
 /// Finds build assets and computes changes to build assets.
 class AssetTracker {
-  final AssetReader _reader;
+  final ReaderWriter _readerWriter;
   final TargetGraph _targetGraph;
 
-  AssetTracker(this._reader, this._targetGraph);
+  AssetTracker(this._readerWriter, this._targetGraph);
 
   /// Checks for and returns any file system changes compared to the current
   /// state of the asset graph.
@@ -60,7 +60,7 @@ class AssetTracker {
       '.dart_tool/package_config.json',
     );
 
-    if (await _reader.canRead(packageConfigId)) {
+    if (await _readerWriter.canRead(packageConfigId)) {
       ids.add(packageConfigId);
     }
     return ids;
@@ -114,8 +114,8 @@ class AssetTracker {
       var node = assetGraph.get(id)!;
       var originalDigest = node.digest;
       if (originalDigest == null) continue;
-      _reader.cache.invalidate([id]);
-      var currentDigest = await _reader.digest(id);
+      _readerWriter.cache.invalidate([id]);
+      var currentDigest = await _readerWriter.digest(id);
       if (currentDigest != originalDigest) {
         updates[id] = ChangeType.MODIFY;
       }
@@ -159,7 +159,7 @@ class AssetTracker {
   ///
   /// Ideally we would warn but in practice the default sources list will give
   /// this error a lot and it would be noisy.
-  Stream<AssetId> _listIdsSafe(Glob glob, {String? package}) => _reader
+  Stream<AssetId> _listIdsSafe(Glob glob, {String? package}) => _readerWriter
       .assetFinder
       .find(glob, package: package)
       .handleError(

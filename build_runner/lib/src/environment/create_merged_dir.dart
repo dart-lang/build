@@ -11,13 +11,13 @@ import 'package:built_collection/built_collection.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
 
+import '../asset/reader_writer.dart';
 import '../generate/build_directory.dart';
 import '../generate/finalized_assets_view.dart';
 import '../logging/build_log.dart';
 import '../logging/timed_activities.dart';
 import '../package_graph/package_graph.dart';
 import '../state/filesystem.dart';
-import '../state/reader_state.dart';
 
 /// Pool for async file operations, we don't want to use too many file handles.
 final _descriptorPool = Pool(32);
@@ -31,7 +31,7 @@ const _manifestSeparator = '\n';
 Future<bool> createMergedOutputDirectories(
   BuiltSet<BuildDirectory> buildDirs,
   PackageGraph packageGraph,
-  AssetReader reader,
+  ReaderWriter reader,
   FinalizedAssetsView finalizedAssetsView,
   bool outputSymlinksOnly,
 ) async {
@@ -88,7 +88,7 @@ Future<bool> _createMergedOutputDir(
   String outputPath,
   String? root,
   PackageGraph packageGraph,
-  AssetReader reader,
+  ReaderWriter readerWriter,
   FinalizedAssetsView finalizedOutputsView,
   bool symlinkOnly,
   bool hoist,
@@ -130,7 +130,7 @@ Future<bool> _createMergedOutputDir(
             outputDir,
             root,
             packageGraph,
-            reader,
+            readerWriter,
             symlinkOnly,
             hoist,
           ),
@@ -231,7 +231,7 @@ Future<String> _writeAsset(
   Directory outputDir,
   String root,
   PackageGraph packageGraph,
-  AssetReader reader,
+  ReaderWriter readerWriter,
   bool symlinkOnly,
   bool hoist,
 ) {
@@ -256,13 +256,20 @@ Future<String> _writeAsset(
         // We assert at the top of `createMergedOutputDirectories` that the
         // reader filesystem is `IoFilesystem`, so symlinks make sense.
         await Link(_filePathFor(outputDir, assetPath)).create(
-          reader.assetPathProvider.pathFor(
-            reader.generatedAssetHider.maybeHide(id, packageGraph.root.name),
+          readerWriter.assetPathProvider.pathFor(
+            readerWriter.generatedAssetHider.maybeHide(
+              id,
+              packageGraph.root.name,
+            ),
           ),
           recursive: true,
         );
       } else {
-        await _writeAsBytes(outputDir, assetPath, await reader.readAsBytes(id));
+        await _writeAsBytes(
+          outputDir,
+          assetPath,
+          await readerWriter.readAsBytes(id),
+        );
       }
     } on AssetNotFoundException catch (e) {
       if (!p.basename(id.path).startsWith('.')) {

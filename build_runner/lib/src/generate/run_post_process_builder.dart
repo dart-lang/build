@@ -7,6 +7,7 @@ import 'package:logging/logging.dart';
 
 import '../logging/build_log_logger.dart';
 import 'post_process_build_step_impl.dart';
+import 'single_step_reader_writer.dart';
 
 /// Run [builder] with [inputId] as the primary input.
 ///
@@ -17,8 +18,7 @@ import 'post_process_build_step_impl.dart';
 Future<void> runPostProcessBuilder(
   PostProcessBuilder builder,
   AssetId inputId,
-  AssetReader reader,
-  AssetWriter writer,
+  SingleStepReaderWriter readerWriter,
   Logger logger, {
   required void Function(AssetId) addAsset,
   required void Function(AssetId) deleteAsset,
@@ -26,8 +26,7 @@ Future<void> runPostProcessBuilder(
   await BuildLogLogger.scopeLogAsync(() async {
     var buildStep = PostProcessBuildStepImpl(
       inputId,
-      reader,
-      writer,
+      readerWriter,
       addAsset,
       deleteAsset,
     );
