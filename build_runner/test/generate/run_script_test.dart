@@ -7,10 +7,11 @@ library;
 
 import 'dart:convert';
 
-import 'package:_test_common/common.dart';
 import 'package:io/io.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
+
+import '../common/common.dart';
 
 void main() {
   group('run_script validation tests', () {
@@ -39,7 +40,7 @@ void main(List<String> args) {
       var originalBuildContent = '''
 import 'dart:io';
 import 'package:build_runner/build_runner.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner/src/package_graph/apply_builders.dart';
 import 'package:build_test/build_test.dart';
 
 main(List<String> args) async {
@@ -62,9 +63,7 @@ main(List<String> args) async {
             'build',
             'build_config',
             'build_daemon',
-            'build_resolvers',
             'build_runner',
-            'build_runner_core',
             'build_test',
             'code_builder',
             'glob',
@@ -97,7 +96,6 @@ main(List<String> args) async {
         reason: result.stderr as String,
       );
       expect(result.stdout, contains('Must specify an executable to run.'));
-      expect(result.stdout, contains('Usage: build_runner run'));
     });
 
     test('extension must be .dart', () async {

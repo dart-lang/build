@@ -1,3 +1,67 @@
+## 2.7.3-wip
+
+- Bug fix: fix incorrect display of some "usage" messages.
+- Move code from `build_resolvers` into `build_runner`.
+- Move code from `build_runner_core` into `build_runner`.
+- Remove unused deps: `build_resolvers`, `build_runner_core`.
+
+## 2.7.2
+
+- Use `build` 4.0.0.
+
+## 2.7.1
+
+- Bug fix: with `build_runner serve`, special handling of paths containing
+  `/packages/` was hiding actual folders called `packages`. Serve the actual
+  folders first, before trying the package lookup.
+- Remove undocumented / unused features: `lib/build_script_generate.dart`,
+  `bin/graph_inspector.dart`, `build_runner doctor` and
+  `build_runner generate-build-script` commands.
+- Remove deps on `pubspec_parse` and `timing`.
+- Use `build` 3.1.0.
+
+## 2.7.0
+
+- Performance: builders can choose to run only when "triggered". A builder runs
+  only if triggered if the option `run_only_if_triggered` is `true`. Triggers
+  are configured in new a top-level section of `build.yaml` called `triggers`.
+  See [the `build_config` docs](https://pub.dev/packages/build_config#triggers)
+  for more information.
+- Remove interactive prompts for whether to delete files.
+- Ignore `-d` flag: always delete files as if `-d` was passed.
+- Remove `--use-polling-watcher` flag.
+- Remove `build_runner serve` mode `$graph` and `$perf` handlers.
+- Documentation revamp.
+- Bug fix: delete transitive generated outputs as well as direct generated
+  outputs. So, a generated file now gets deleted if its input was a generated
+  file that is no longer output.
+- Bug fix: fix crash creating a merged output dir with a file called `lib`.
+
+## 2.6.1
+
+- Use `build` 3.0.1.
+
+## 2.6.0
+
+- Remove unused deps: `analyzer`, `build_resolvers`, `collection`, `http`,
+  `js`, `meta`, `package_config`, `pool`, `web`, `yaml`.
+- Remove unused dev_deps: `http`, `package_config`, `web`.
+- Testing: read build configs using `AssetReader` so they're easier to test.
+- Use `build` 3.0.0.
+- Use `build_resolvers` 3.0.0.
+
+## 2.6.0-dev.2
+
+- Remove unused deps: `analyzer`, `build_resolvers`, `collection`, `http`,
+  `js`, `meta`, `package_config`, `pool`, `web`, `yaml`.
+- Remove unused dev_deps: `http`, `package_config`, `web`.
+- Testing: read build configs using `AssetReader` so they're easier to test.
+
+## 2.6.0-dev.1
+
+- Use `build` 3.0.0-dev.
+- Use `build_resolvers` 3.0.0-dev.
+
 ## 2.5.4
 
 - Bug fix: fix incremental build when previous build had `package:` import of

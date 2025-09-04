@@ -91,8 +91,6 @@ Skipping compiling ${buildStep.inputId} with dart2wasm because some of its
 transitive libraries have sdk dependencies that are not supported on this platform:
 
 $librariesString
-
-https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-skipped-compiling-warnings
 ''');
       return const Dart2WasmBootstrapResult.didNotCompile();
     }

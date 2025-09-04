@@ -6,20 +6,18 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:_test_common/common.dart';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
-import 'package:build_runner/src/entrypoint/options.dart';
+import 'package:build_runner/src/asset/finalized_reader.dart';
+import 'package:build_runner/src/asset_graph/graph.dart';
+import 'package:build_runner/src/asset_graph/node.dart';
+import 'package:build_runner/src/asset_graph/post_process_build_step_id.dart';
+import 'package:build_runner/src/generate/build_phases.dart';
+import 'package:build_runner/src/generate/build_result.dart';
 import 'package:build_runner/src/generate/watch_impl.dart';
+import 'package:build_runner/src/package_graph/package_graph.dart';
+import 'package:build_runner/src/package_graph/target_graph.dart';
 import 'package:build_runner/src/server/server.dart';
-import 'package:build_runner_core/build_runner_core.dart';
-import 'package:build_runner_core/src/asset_graph/graph.dart';
-import 'package:build_runner_core/src/asset_graph/node.dart';
-import 'package:build_runner_core/src/asset_graph/post_process_build_step_id.dart';
-import 'package:build_runner_core/src/generate/build_phases.dart';
-import 'package:build_runner_core/src/generate/options.dart';
-import 'package:build_runner_core/src/generate/performance_tracker.dart';
-import 'package:build_runner_core/src/package_graph/target_graph.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
@@ -27,6 +25,8 @@ import 'package:stream_channel/stream_channel.dart';
 import 'package:test/fake.dart';
 import 'package:test/test.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+
+import '../common/common.dart';
 
 class FakeSink extends DelegatingStreamSink implements WebSocketSink {
   final FakeWebSocketChannel _channel;
@@ -121,10 +121,7 @@ void main() {
         FinalizedReader(
           readerWriter,
           assetGraph,
-          await TargetGraph.forPackageGraph(
-            packageGraph,
-            defaultRootPackageSources: defaultRootPackageSources,
-          ),
+          await TargetGraph.forPackageGraph(packageGraph: packageGraph),
           BuildPhases([]),
           'a',
         ),
@@ -139,7 +136,11 @@ void main() {
   });
 
   void addSource(String id, String content, {bool deleted = false}) {
-    var node = makeAssetNode(id, [], computeDigest(AssetId.parse(id), content));
+    final parsedId = AssetId.parse(id);
+    var node = AssetNode.source(
+      parsedId,
+      digest: computeDigest(parsedId, content),
+    );
     if (deleted) {
       node = node.rebuild((b) {
         b.deletedBy.add(
@@ -157,6 +158,57 @@ void main() {
       Request('GET', Uri.parse('http://server.com/index.html')),
     );
     expect(await response.readAsString(), 'content');
+  });
+
+  test('serves package files for /packages/<package name>', () async {
+    addSource('a|lib/a.html', 'content');
+    var response = await serveHandler.handlerFor('web')(
+      Request('GET', Uri.parse('http://server.com/packages/a/a.html')),
+    );
+    expect(await response.readAsString(), 'content');
+  });
+
+  test('serves packages for /anywhere/packages/<package name>', () async {
+    addSource('a|lib/a.html', 'content');
+    var response = await serveHandler.handlerFor('web')(
+      Request('GET', Uri.parse('http://server.com/anywhere/packages/a/a.html')),
+    );
+    expect(await response.readAsString(), 'content');
+  });
+
+  test('servers actual files before from packages for /packages/...', () async {
+    // Match in `web` takes precedence over match in packages.
+    addSource('a|lib/a.html', 'package_content');
+    addSource('a|web/packages/a/a.html', 'web_content');
+    var responseA = await serveHandler.handlerFor('web')(
+      Request('GET', Uri.parse('http://server.com/packages/a/a.html')),
+    );
+    expect(await responseA.readAsString(), 'web_content');
+
+    // Fall back to match in packages.
+    addSource('b|lib/b.html', 'package_content');
+    var responseB = await serveHandler.handlerFor('web')(
+      Request('GET', Uri.parse('http://server.com/packages/b/b.html')),
+    );
+    expect(await responseB.readAsString(), 'package_content');
+  });
+
+  test(
+    'serves index.html for actual folder called packages from /packages/`',
+    () async {
+      addSource('a|web/packages/index.html', 'content');
+      var response = await serveHandler.handlerFor('web')(
+        Request('GET', Uri.parse('http://server.com/packages/')),
+      );
+      expect(await response.readAsString(), 'content');
+    },
+  );
+
+  test('serves nothing from /packages/` if missing', () async {
+    var response = await serveHandler.handlerFor('web')(
+      Request('GET', Uri.parse('http://server.com/packages/')),
+    );
+    expect(response.statusCode, HttpStatus.notFound);
   });
 
   test('caching with etags works', () async {
@@ -183,17 +235,11 @@ void main() {
   test('caching with etags takes into account injected JS', () async {
     addSource('a|web/some.js', '$entrypointExtensionMarker\nalert(1)');
     var noReloadEtag =
-        (await serveHandler.handlerFor(
-          'web',
-          buildUpdates: BuildUpdatesOption.none,
-        )(
+        (await serveHandler.handlerFor('web', liveReload: false)(
           Request('GET', Uri.parse('http://server.com/some.js')),
         )).headers[HttpHeaders.etagHeader];
     var liveReloadEtag =
-        (await serveHandler.handlerFor(
-          'web',
-          buildUpdates: BuildUpdatesOption.liveReload,
-        )(
+        (await serveHandler.handlerFor('web', liveReload: true)(
           Request('GET', Uri.parse('http://server.com/some.js')),
         )).headers[HttpHeaders.etagHeader];
     expect(noReloadEtag, isNot(liveReloadEtag));
@@ -272,55 +318,6 @@ void main() {
     );
   });
 
-  group(r'/$perf', () {
-    test('serves some sort of page if enabled', () async {
-      var tracker = BuildPerformanceTracker();
-      tracker.track(() {
-        var actionTracker = tracker.addBuilderAction(
-          makeAssetId('a|web/a.txt'),
-          'test_builder',
-        );
-        actionTracker.track(() {
-          actionTracker.trackStage('SomeLabel', () {});
-        });
-      });
-      watchImpl.addFutureResult(
-        Future.value(
-          BuildResult(BuildStatus.success, [], performance: tracker),
-        ),
-      );
-      await Future(() {});
-      var response = await serveHandler.handlerFor('web')(
-        Request('GET', Uri.parse(r'http://server.com/$perf')),
-      );
-
-      expect(response.statusCode, HttpStatus.ok);
-      expect(
-        await response.readAsString(),
-        allOf(contains('test_builder:a|web/a.txt'), contains('SomeLabel')),
-      );
-    });
-
-    test('serves an error page if not enabled', () async {
-      watchImpl.addFutureResult(
-        Future.value(
-          BuildResult(
-            BuildStatus.success,
-            [],
-            performance: BuildPerformanceTracker.noOp(),
-          ),
-        ),
-      );
-      await Future(() {});
-      var response = await serveHandler.handlerFor('web')(
-        Request('GET', Uri.parse(r'http://server.com/$perf')),
-      );
-
-      expect(response.statusCode, HttpStatus.ok);
-      expect(await response.readAsString(), contains('--track-performance'));
-    });
-  });
-
   test('serve asset digests', () async {
     addSource('a|web/index.html', 'content1');
     addSource('a|lib/some.dart.js', 'content2');
@@ -350,14 +347,14 @@ void main() {
   group('build updates', () {
     void createBuildUpdatesGroup(
       String groupName,
-      String injectionMarker,
-      BuildUpdatesOption buildUpdates,
-    ) => group(groupName, () {
+      String injectionMarker, {
+      required bool liveReload,
+    }) => group(groupName, () {
       test('injects client code if enabled', () async {
         addSource('a|web/some.js', '$entrypointExtensionMarker\nalert(1)');
         var response = await serveHandler.handlerFor(
           'web',
-          buildUpdates: buildUpdates,
+          liveReload: liveReload,
         )(Request('GET', Uri.parse('http://server.com/some.js')));
         expect(await response.readAsString(), contains(injectionMarker));
       });
@@ -374,7 +371,7 @@ void main() {
         addSource('a|web/some.html', '$entrypointExtensionMarker\n<br>some');
         var response = await serveHandler.handlerFor(
           'web',
-          buildUpdates: buildUpdates,
+          liveReload: liveReload,
         )(Request('GET', Uri.parse('http://server.com/some.html')));
         expect(await response.readAsString(), isNot(contains(injectionMarker)));
       });
@@ -383,7 +380,7 @@ void main() {
         addSource('a|web/some.js', 'alert(1)');
         var response = await serveHandler.handlerFor(
           'web',
-          buildUpdates: buildUpdates,
+          liveReload: liveReload,
         )(Request('GET', Uri.parse('http://server.com/some.js')));
         expect(await response.readAsString(), isNot(contains(injectionMarker)));
       });
@@ -392,7 +389,7 @@ void main() {
         addSource('a|web/index.html', 'content');
         var uri = Uri.parse('ws://server.com/');
         expect(
-          serveHandler.handlerFor('web', buildUpdates: buildUpdates)(
+          serveHandler.handlerFor('web', liveReload: liveReload)(
             Request(
               'GET',
               uri,
@@ -413,7 +410,7 @@ void main() {
     createBuildUpdatesGroup(
       'live-reload',
       'live_reload_client',
-      BuildUpdatesOption.liveReload,
+      liveReload: true,
     );
 
     test('reject websocket connection if disabled', () async {
@@ -601,7 +598,7 @@ void main() {
   });
 }
 
-class MockWatchImpl implements WatchImpl {
+class MockWatchImpl implements Watcher {
   @override
   final AssetGraph assetGraph;
 
@@ -626,13 +623,13 @@ class MockWatchImpl implements WatchImpl {
   final PackageGraph packageGraph;
 
   @override
-  final Future<FinalizedReader> reader;
+  final Future<FinalizedReader> finalizedReader;
 
   void addFutureResult(Future<BuildResult> result) {
     _futureBuildResultsController.add(result);
   }
 
-  MockWatchImpl(this.reader, this.packageGraph, this.assetGraph) {
+  MockWatchImpl(this.finalizedReader, this.packageGraph, this.assetGraph) {
     var firstBuild = Completer<BuildResult>();
     _currentBuild = firstBuild.future;
     _futureBuildResultsController.stream.listen((futureBuildResult) {
@@ -643,6 +640,9 @@ class MockWatchImpl implements WatchImpl {
         ..then(_buildResultsController.add);
     });
   }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class FakeRequest with Fake implements Request {}

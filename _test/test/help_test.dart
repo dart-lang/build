@@ -13,56 +13,52 @@ import 'common/utils.dart';
 
 void main() {
   test('dart run build_runner help', () async {
-    await _testHelpCommand([
-      'help',
-    ], checkContent: 'Unified interface for running Dart builds.');
-    await _testHelpCommand([
-      '--help',
-    ], checkContent: 'Unified interface for running Dart builds.');
+    await _testHelpCommand(['help'], checkContent: 'Dart build tool.');
+    await _testHelpCommand(['--help'], checkContent: 'Dart build tool.');
   });
 
   test('dart run build_runner build --help', () async {
     await _testHelpCommand([
       'build',
       '--help',
-    ], checkContent: 'Performs a single build on the specified targets');
+    ], checkContent: 'Builds the current package.');
     await _testHelpCommand([
       'help',
       'build',
-    ], checkContent: 'Performs a single build on the specified targets');
+    ], checkContent: 'Builds the current package.');
   });
 
   test('dart run build_runner serve --help', () async {
     await _testHelpCommand([
       'serve',
       '--help',
-    ], checkContent: 'Runs a development server');
+    ], checkContent: 'Continuously builds and serves the current package.');
     await _testHelpCommand([
       'help',
       'serve',
-    ], checkContent: 'Runs a development server');
+    ], checkContent: 'Continuously builds and serves the current package.');
   });
 
   test('dart run build_runner test --help', () async {
     await _testHelpCommand([
       'test',
       '--help',
-    ], checkContent: 'and then runs tests using');
+    ], checkContent: 'Builds the current package then runs tests.');
     await _testHelpCommand([
       'help',
       'test',
-    ], checkContent: 'and then runs tests using');
+    ], checkContent: 'Builds the current package then runs tests.');
   });
 
   test('dart run build_runner watch --help', () async {
     await _testHelpCommand([
       'watch',
       '--help',
-    ], checkContent: 'watching the file system for updates');
+    ], checkContent: 'Continuously builds the current package.');
     await _testHelpCommand([
       'help',
       'watch',
-    ], checkContent: 'watching the file system for updates');
+    ], checkContent: 'Continuously builds the current package.');
   });
 }
 

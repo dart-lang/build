@@ -7,7 +7,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner/src/internal.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_process/test_process.dart';
@@ -213,6 +213,8 @@ Future<void> expectTestsFail({
   List<String>? buildArgs,
   List<String>? testArgs,
 }) async {
+  // Skip on Windows due to Chrome test flakiness, see
+  // https://github.com/dart-lang/build/issues/4123.
   var result = await runTests(
     usePrecompiled: usePrecompiled,
     buildArgs: buildArgs,
@@ -228,6 +230,9 @@ Future<void> expectTestsPass({
   List<String>? buildArgs,
   List<String>? testArgs,
 }) async {
+  // Skip on Windows due to Chrome test flakiness, see
+  // https://github.com/dart-lang/build/issues/4123.
+  if (Platform.isWindows) return;
   var result = await runTests(
     usePrecompiled: usePrecompiled,
     buildArgs: buildArgs,

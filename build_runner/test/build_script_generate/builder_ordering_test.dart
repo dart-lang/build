@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:_test_common/build_configs.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner/src/build_script_generate/builder_ordering.dart';
 import 'package:test/test.dart';
@@ -222,3 +221,10 @@ void main() {
     });
   });
 }
+
+Map<String, BuildConfig> parseBuildConfigs(
+  Map<String, Map<String, dynamic>> configs,
+) => {
+  for (final packageName in configs.keys)
+    packageName: BuildConfig.fromMap(packageName, [], configs[packageName]!),
+};

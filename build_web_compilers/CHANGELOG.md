@@ -1,3 +1,20 @@
+## 4.2.3
+
+- Allow `build` 4.0.0.
+
+## 4.2.2
+
+- Documentation revamp.
+
+## 4.2.1
+
+- Remove unused deps: `build_config`.
+- Allow `analyzer` 8.0.0.
+
+## 4.2.0
+
+- Allow `build` 3.0.0.
+
 ## 4.1.6
 
 - Allow Dart SDK 3.9.x and 3.10 prerelease.

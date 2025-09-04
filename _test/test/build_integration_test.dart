@@ -7,8 +7,7 @@ library;
 
 import 'dart:io';
 
-import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner/src/internal.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -143,6 +142,24 @@ void main() {
           contains(BuildLog.successPattern),
         ]),
       );
+    });
+
+    test('incremental build after resolve missing import', () async {
+      final dartSource = File(p.join('lib', 'app.dart'));
+      dartSource.writeAsStringSync(
+        // Trigger resolving source in pkgs/provides_builder/lib/builders.dart.
+        '// resolve_me\n'
+        // Resolve an import that does not exist.
+        "import 'package:missing/missing.dart';\n"
+        '${dartSource.readAsStringSync()}',
+      );
+      await runBuild();
+
+      // Rebuild and check the previously-missing import does not cause a crash.
+      dartSource.writeAsStringSync('//\n${dartSource.readAsStringSync()}');
+
+      final result = await runBuild();
+      expect(result.stdout, isNot(contains('PackageNotFoundException')));
     });
   });
 }

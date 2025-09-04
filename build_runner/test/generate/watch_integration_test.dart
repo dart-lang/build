@@ -9,21 +9,22 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:_test_common/common.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner/src/logging/build_log.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
+
+import '../common/common.dart';
 
 late Process process;
 late Stream<String> stdOutLines;
 
 final String originalBuildContent = '''
 import 'package:build_runner/build_runner.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner/src/package_graph/apply_builders.dart';
 import 'package:build_test/build_test.dart';
 
 main() async {
-  await run(['watch', '--delete-conflicting-outputs', '-o', 'output_dir'], [
+  await run(['watch', '-o', 'output_dir'], [
     applyToRoot(new TestBuilder(
         buildExtensions: appendExtension('.copy', from: '.txt')))
   ]);
@@ -40,9 +41,7 @@ void main() {
             'build',
             'build_config',
             'build_daemon',
-            'build_resolvers',
             'build_runner',
-            'build_runner_core',
             'build_test',
             'code_builder',
             'glob',

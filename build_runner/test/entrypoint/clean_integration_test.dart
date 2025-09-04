@@ -5,9 +5,10 @@
 @Tags(['integration'])
 library;
 
-import 'package:_test_common/common.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
+
+import '../common/common.dart';
 
 void main() {
   group('clean command', () {
@@ -19,9 +20,7 @@ void main() {
             'build',
             'build_config',
             'build_daemon',
-            'build_resolvers',
             'build_runner',
-            'build_runner_core',
             'build_test',
             'code_builder',
             'glob',
@@ -54,7 +53,7 @@ void main() {
 
 const buildFile = '''
 import 'package:build_runner/build_runner.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner/src/package_graph/apply_builders.dart';
 import 'package:build_test/build_test.dart';
 
 main(List<String> args) async {

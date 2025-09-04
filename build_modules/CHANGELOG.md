@@ -1,3 +1,20 @@
+## 5.0.18-wip
+
+- Remove unused dev depencency: `build_runner_core`.
+
+## 5.0.17
+
+- Allow `build` 4.0.0.
+
+## 5.0.16
+
+- Remove unused dep: `build_config`.
+- Allow `analyzer` 8.0.0.
+
+## 5.0.15
+
+- Allow `build` 3.0.0.
+
 ## 5.0.14
 
 - Allow Dart SDK 3.9.x and 3.10 prerelease.

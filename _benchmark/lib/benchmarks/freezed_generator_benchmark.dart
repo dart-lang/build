@@ -60,9 +60,20 @@ ${config.dependencyOverrides}
         libraryNumber,
         benchmarkSize: size,
       );
-      workspace.write(
-        'lib/$libraryName',
-        source: '''
+      if (config.config.mostlyNoCodegen && libraryNumber > 1) {
+        workspace.write(
+          'lib/$libraryName',
+          source: '''
+// ignore_for_file: unused_import
+${[for (final importName in importNames) "import '$importName';"].join('\n')}
+
+class Value {}
+''',
+        );
+      } else {
+        workspace.write(
+          'lib/$libraryName',
+          source: '''
 // ignore_for_file: unused_import
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -75,7 +86,8 @@ class Value with _\$Value {
   const factory Value() = _Value;
 }
 ''',
-      );
+        );
+      }
     }
   }
 }

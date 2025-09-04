@@ -7,11 +7,7 @@ import 'dart:typed_data';
 
 import 'package:build/build.dart';
 // ignore: implementation_imports
-import 'package:build/src/internal.dart';
-// ignore: implementation_imports
-import 'package:build_runner_core/src/asset/reader_writer.dart';
-// ignore: implementation_imports
-import 'package:build_runner_core/src/generate/input_tracker.dart';
+import 'package:build_runner/src/internal.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
@@ -191,7 +187,8 @@ class _ReaderWriterTestingImpl implements ReaderWriterTesting {
         Glob('**'),
         package: package.name,
       )) {
-        await _readerWriter.writeAsBytes(id, await reader.readAsBytes(id));
+        // Write via `testing` so it's not tracked as a builder output.
+        _readerWriter.testing.writeBytes(id, await reader.readAsBytes(id));
       }
     }
   }

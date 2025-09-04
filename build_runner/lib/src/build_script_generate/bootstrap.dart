@@ -6,52 +6,33 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:frontend_server_client/frontend_server_client.dart';
 import 'package:io/io.dart';
-import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:stack_trace/stack_trace.dart';
 
+import '../generate/exceptions.dart';
+import '../logging/build_log.dart';
+import '../util/constants.dart';
 import 'build_process_state.dart';
 import 'build_script_generate.dart';
 
 /// Generates the build script, precompiles it if needed, and runs it.
-///
-/// The [handleUncaughtError] function will be invoked when the build script
-/// terminates with an uncaught error.
 ///
 /// Will retry once on [IsolateSpawnException]s to handle SDK updates.
 ///
 /// Returns the exit code from running the build script.
 ///
 /// If an exit code of 75 is returned, this function should be re-ran.
+///
+/// Pass [script] to override the default build script for testing.
 Future<int> generateAndRun(
-  List<String> args, {
-  List<String>? experiments,
-  Logger? logger,
-  Future<String> Function() generateBuildScript = generateBuildScript,
-  void Function(Object error, StackTrace stackTrace) handleUncaughtError =
-      _defaultHandleUncaughtError,
-}) {
-  return buildLog.runWithLoggerDisplay(
-    logger,
-    () => _generateAndRun(
-      args,
-      experiments,
-      generateBuildScript,
-      handleUncaughtError,
-    ),
-  );
-}
-
-Future<int> _generateAndRun(
-  List<String> args,
-  List<String>? experiments,
-  Future<String> Function() generateBuildScript,
-  void Function(Object error, StackTrace stackTrace) handleUncaughtError,
-) async {
-  experiments ??= [];
+  Iterable<String> arguments, {
+  Iterable<String>? experiments,
+  String? script,
+}) async {
+  experiments ??= BuiltList();
   ReceivePort? exitPort;
   ReceivePort? errorPort;
   RawReceivePort? messagePort;
@@ -72,7 +53,7 @@ Future<int> _generateAndRun(
       if (buildScript.existsSync()) {
         oldContents = buildScript.readAsStringSync();
       }
-      var newContents = await generateBuildScript();
+      var newContents = script ?? await generateBuildScript();
       // Only trigger a build script update if necessary.
       if (newContents != oldContents) {
         buildScript
@@ -101,7 +82,7 @@ Future<int> _generateAndRun(
       final error = e[0] ?? TypeError();
       final trace = Trace.parse(e[1] as String? ?? '').terse;
 
-      handleUncaughtError(error, trace);
+      _handleUncaughtError(error, trace);
       if (buildProcessState.isolateExitCode == null ||
           buildProcessState.isolateExitCode == 0) {
         buildProcessState.isolateExitCode = 1;
@@ -110,7 +91,7 @@ Future<int> _generateAndRun(
     try {
       await Isolate.spawnUri(
         Uri.file(p.absolute(scriptKernelLocation)),
-        args,
+        arguments.toBuiltList().asList(),
         messagePort.sendPort,
         errorsAreFatal: true,
         onExit: exitPort.sendPort,
@@ -166,7 +147,7 @@ Future<int> _generateAndRun(
 ///   they used to, see https://github.com/dart-lang/build/issues/1929.
 ///
 /// Returns `true` on success or `false` on failure.
-Future<bool> _createKernelIfNeeded(List<String> experiments) async {
+Future<bool> _createKernelIfNeeded(Iterable<String> experiments) async {
   var assetGraphFile = File(assetGraphPathFor(scriptKernelLocation));
   var kernelFile = File(scriptKernelLocation);
   var kernelCacheFile = File(scriptKernelCachedLocation);
@@ -188,7 +169,7 @@ Future<bool> _createKernelIfNeeded(List<String> experiments) async {
       scriptLocation,
       scriptKernelCachedLocation,
       'lib/_internal/vm_platform_strong.dill',
-      enabledExperiments: experiments,
+      enabledExperiments: experiments.toBuiltList().asList(),
       printIncrementalDependencies: false,
       packagesJson: (await Isolate.packageConfig)!.toFilePath(),
     );
@@ -246,7 +227,7 @@ final _previousLocationsFile = File(
 /// pre-emptively resolve them by precompiling the build script again, see
 /// https://github.com/dart-lang/build/issues/1929.
 Future<bool> _checkImportantPackageDepsAndExperiments(
-  List<String> experiments,
+  Iterable<String> experiments,
 ) async {
   var currentLocations = await Future.wait(
     _importantPackages.map(
@@ -273,7 +254,7 @@ Future<bool> _checkImportantPackageDepsAndExperiments(
   return true;
 }
 
-void _defaultHandleUncaughtError(Object error, StackTrace stackTrace) {
+void _handleUncaughtError(Object error, StackTrace stackTrace) {
   stderr
     ..writeln('\n\nYou have hit a bug in build_runner')
     ..writeln(

@@ -9,7 +9,6 @@ library;
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:build_runner_core/build_runner_core.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -37,13 +36,8 @@ void main() {
     expect(_changedGeneratedFiles(), isEmpty);
 
     // 2 - run build - should be no output, since nothing should change
-    var result = _runProc('dart', [
-      'run',
-      'build_runner',
-      'build',
-      '--delete-conflicting-outputs',
-    ]);
-    expect(result, contains(BuildLog.successPattern));
+    var result = _runProc('dart', ['run', 'build_runner', 'build']);
+    expect(result, contains('Built with build_runner'));
 
     // 3 - get a list of modified `.g.dart` files - should still be empty
     expect(_changedGeneratedFiles(), isEmpty);

@@ -56,9 +56,20 @@ ${config.dependencyOverrides}
         libraryNumber,
         benchmarkSize: size,
       );
-      workspace.write(
-        'lib/$libraryName',
-        source: '''
+      if (config.config.mostlyNoCodegen && libraryNumber > 1) {
+        workspace.write(
+          'lib/$libraryName',
+          source: '''
+// ignore_for_file: unused_import
+${[for (final importName in importNames) "import '$importName';"].join('\n')}
+
+class Value {}
+''',
+        );
+      } else {
+        workspace.write(
+          'lib/$libraryName',
+          source: '''
 // ignore_for_file: unused_import
 import 'package:built_value/built_value.dart';
 
@@ -71,7 +82,8 @@ abstract class Value implements Built<Value, ValueBuilder> {
   factory Value(void Function(ValueBuilder) updates) = _\$Value;
 }
 ''',
-      );
+        );
+      }
     }
   }
 }

@@ -1,14 +1,32 @@
-# Customizing builds
+_Questions? Suggestions? Found a bug? Please 
+[file an issue](https://github.com/dart-lang/build/issues) or
+ [start a discussion](https://github.com/dart-lang/build/discussions)._
 
-Customizing the build behavior of a package is done  by creating a `build.yaml`
-file, which describes your configuration.
+Configuration file format for
+[build_runner](https://pub.dev/packages/build_runner)
+builds.
 
-The full format is described in the
+- [See also: build_yaml_format.md](#see-also-build_yaml_formatmd)
+- [Dividing a package into build targets](#dividing-a-package-into-build-targets)
+- [Configuring builders applied to your package](#configuring-builders-applied-to-your-package)
+- [Configuring builders globally](#configuring-builders-globally)
+- [Defining builders to apply to depenents](#defining-builders-to-apply-to-dependents)
+- [Defining post process builders](#defining-post-process-builders)
+- [Adjusting builder ordering](#adjusting-builder-ordering)
+- [Triggers](#triggers)
+- [Publishing build.yaml files](#publishing-buildyaml-files)
+- [FAQ](#faq)
+   - [How do I avoid running builders on unnecessary inputs?](#how-do-i-avoid-running-builders-on-unnecessary-inputs)
+   - [How is the configuration for a builder resolved?](#how-is-the-configuration-for-a-builder-resolved)
+   - [How can I include additional sources in my build?](#how-can-i-include-additional-sources-in-my-build)
+
+## See also: build_yaml_format.md
+
+See also
 [docs/build_yaml_format.md](https://github.com/dart-lang/build/blob/master/docs/build_yaml_format.md)
-file, while this documentation is more focused on specific usage scenarios of
-the file.
+for a more technical description of the format.
 
-## Dividing a package into Build targets
+## Dividing a package into build targets
 
 When a `Builder` should be applied to a subset of files in a package the package
 can be broken up into multiple 'targets'. Targets are configured in the
@@ -35,7 +53,8 @@ Each target may also contain the following keys:
   (from the `pubspec.yaml`).
 - **builders**: Map, Optional. See "configuring builders" below.
 
-## Configuring `Builder`s applied to your package
+## Configuring builders applied to your package
+
 Each target can specify a `builders` key which configures the builders which are
 applied to that target. The value is a Map from builder to configuration for
 that builder. The key is in the format `'$packageName:$builderName'`. The
@@ -63,7 +82,7 @@ configuration may have the following keys:
   depending on the particular builder. The values in this map override Builder
   defaults or non mode-specific options when the build is done in release mode.
 
-## Configuring `Builder`s globally
+## Configuring builders globally
 Target level builder options can be overridden globally across all packages with
 the `global_options` section. These options are applied _after_ all Builder
 defaults and target level configuration, and _before_ `--define` command line
@@ -83,7 +102,7 @@ arguments.
   depending on the particular builder. The values in this map override all other
   values per-key when the build is done in release mode.
 
-## Defining `Builder`s to apply to dependents
+## Defining builders to apply to dependents
 
 If users of your package need to apply some code generation to their package,
 then you can define `Builder`s and have those applied to packages with a
@@ -158,7 +177,7 @@ builders:
         some_key: "Some value the users will want in release mode"
 ```
 
-## Defining `PostProcessBuilder`s
+## Defining post process builders
 
 `PostProcessBuilder`s are configured similarly to normal `Builder`s, but they
 have some different/missing options.
@@ -209,7 +228,7 @@ post_process_builders:
 
 [adjusting builder ordering]: #adjusting-builder-ordering
 
-### Adjusting Builder Ordering
+## Adjusting builder ordering
 
 Both `required_inputs` and `runs_before` can be used to tweak the order that
 Builders run in on a given target. These work by indicating a given builder is a
@@ -232,7 +251,82 @@ these options should be used rarely.
   and `applies_builder` to configure both ordering and ensure that steps are not
   skipped.
 
-# Publishing `build.yaml` files
+## Triggers
+
+Triggers are a performance heuristic that allow builders to quickly decide
+_not_ to run.
+
+A builder runs only if triggered if the option `run_only_if_triggered` is
+`true`. This can be enabled for the builder:
+
+```yaml
+builders:
+  my_builder:
+    import: "package:my_package/builder.dart"
+    builder_factories: ["myBuilder"]
+    build_extensions: {".dart": [".my_package.dart"]}
+    defaults:
+      options:
+        run_only_if_triggered: true
+```
+
+Or, enabled/disabled in the `build.yaml` of the package applying the builder:
+
+```yaml
+targets:
+  $default:
+    builders:
+      my_package:my_builder:
+        options:
+          run_only_if_triggered: true # or `false`
+```
+
+Triggers are defined in a new top-level section called `triggers`:
+
+```yaml
+triggers:
+  my_package:my_builder:
+    - annotation MyAnnotation
+    - import my_package/my_builder_annotation.dart
+```
+
+An `annotation` trigger causes the builder to run if an annotation is used.
+So, `- annotation MyAnnotation` is a check for `@MyAnnotation` being used.
+A part file included from a library is also checked for the annotation.
+
+An `import` trigger says that the builder runs if there is a direct import
+of the specified library. This might be useful if a builder can run on code
+without annotations, for example on all classes that `implement` a particular
+type. Then, the import of the type used to trigger generation can be the
+trigger.
+
+Only one trigger has to match for the builder to run; adding more triggers
+can never prevent a builder from running. So, a builder usually only needs
+either an `import` trigger or an `annotation` trigger, not both.
+
+Triggers are collected from all packages in the codebase, not just packages
+defining or applying builders. This allows a package to provide new ways to
+trigger a builder from an unrelated package. For example, if
+`third_party_package` re-exports the annotation in
+`package:my_package/my_builder_annotation.dart` then it should also add a
+trigger:
+
+```yaml
+triggers:
+  my_package:my_builder:
+    - import third_party_package/annotations.dart
+```
+
+Or, if `third_party_package` defines a new constant `NewAnnotation` that can be
+used as an annotation for `my_builder`, it should add a trigger:
+
+```yaml
+triggers:
+  my_package:my_builder:
+    - annotation NewAnnotation
+```
+
+## Publishing `build.yaml` files
 
 `build.yaml` configuration should be published to pub with the package and
 checked in to source control. Whenever a package is published with a
@@ -240,3 +334,99 @@ checked in to source control. Whenever a package is published with a
 the package consuming the config has a compatible version. Breaking version
 changes which do not impact the configuration file format will be clearly marked
 in the changelog.
+
+## FAQ
+
+### How do I avoid running builders on unnecessary inputs?
+
+You can skip unnecessary inputs and so speed up your build using the
+`generate_for` option of the builder:
+
+```
+targets:
+  $default:
+    builders:
+      # Typically the builder key is just the package name, run
+      # `dart run build_runner doctor` to check your config.
+      <builder-key>:
+        generate_for:
+          # Example glob for only the Dart files under `lib/models`
+          - lib/models/*.dart
+```
+
+### How is the configuration for a builder resolved?
+
+Builders are constructed with a map of options which is resolved from the
+builder specified defaults and user overrides. The configuration is specific to
+a `target` and build mode. The configuration is "merged" one by one, where
+the higher precedence configuration overrides values by String key. The order
+of precedence from lowest to highest is:
+
+-   Builder defaults without a mode.
+-   Builder defaults by mode.
+-   Target configuration without a mode.
+-   Target configuration by mode.
+-   Global options without a mode.
+-   Global options by mode.
+-   Options specified on the command line.
+
+For example:
+
+```yaml
+builders:
+  some_builder:
+    # Some required fields omitted
+    defaults:
+      options:
+        some_option: "Priority 0"
+      release_options:
+        some_option: "Priority 1"
+      dev_options:
+        some_option: "Priority 1"
+targets:
+  $default:
+    builders:
+      some_package:some_builder:
+        options:
+          some_option: "Priority 2"
+        release_options:
+          some_option: "Priority 3"
+        dev_options:
+          some_option: "Priority 3"
+
+global_options:
+  some_package:some_builder:
+    options:
+      some_option: "Priority 4"
+    release_options:
+      some_option: "Priority 5"
+    dev_options:
+      some_option: "Priority 5"
+```
+
+And when running the build:
+
+```
+dart run build_runner build --define=some_package:some_builder=some_option="Priority 6"
+```
+
+### How can I include additional sources in my build?
+
+The `build_runner` package defaults the included source files to directories
+derived from the
+[package layout conventions](https://dart.dev/tools/pub/package-layout).
+
+If you have additional files which you would like to be included as part of the
+build, you can do that  with the `sources` field on the `$default` target:
+
+```yaml
+targets:
+  $default:
+    sources:
+      - my_custom_sources/**
+      - lib/**
+      - web/**
+      # Note that it is important to include these in the default target.
+      - pubspec.*
+      - $package$
+```

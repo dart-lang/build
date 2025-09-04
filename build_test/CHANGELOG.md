@@ -1,6 +1,85 @@
-## 3.1.1
+## 3.4.0-wip
 
-- Bug fix: stop parsing `testBuilder` asset paths as globs.
+- Support post process builders in `testBuilders`. And, add `appliesBuilders`
+  so that builders can apply post process builders.
+- Add `testBuilderFactories`: like `testBuilders`, but provide the builder
+  factories instead of the builders. Use this to allow config read from
+  `build.yaml` to be passed in to the factory.
+- `TestBuilder` now accepts a `name`: this is the name that will be shown
+  in logging and can be used to refer to the builder in `build.yaml`.
+- More realistic test builds: in `resolveSources` and `testBuilders`, stop
+  builders reading from `.dart_tool`.
+- Bug fix: in `testBuilders`, configure the root package correctly when it
+  has no sources.
+- Use `build_runner_core` 9.4.0.
+- Remove unused dep: `build_resolvers`.
+- Remove unused dep: `build_runner_core`.
+
+## 3.3.4
+
+- Use `build` 4.0.0.
+- Use `build_runner` 2.7.2.
+
+## 3.3.3
+
+- Use `build` 3.1.0.
+- Use `build_runner` 2.7.1.
+
+## 3.3.2
+
+- Use `build` 3.0.2.
+- Use `build_runner` 2.7.0.
+- Documentation revamp.
+
+## 3.3.1
+
+- Use `build` 3.0.1.
+- Allow `analyzer` 8.0.0.
+
+## 3.3.0
+
+- Read build configs using `AssetReader` so they're easier to test: you can now
+  pass in `build.yaml` like any other asset.
+- Bug fix: don't crash when a builder logs during a `testBuilder` or
+  `resolveSource` call outside a test.
+- Remove unused deps: `async`, `convert`.
+- Remove unused dev_deps: `collection`.
+- Files loaded from disk for `resolveSources` and `testBuilders` that are in
+  the same package as explicitly-passed test inputs are now loaded if they
+  match the default globs, such as `lib/**`, instead of ignored. This more
+  closely matches version 2 behavior.
+- Use `build` 3.0.0.
+- Use `build_resolvers` 3.0.0.
+
+## 3.3.0-dev.3
+
+- Read build configs using `AssetReader` so they're easier to test: you can now
+  pass in `build.yaml` like any other asset.
+- Bug fix: don't crash when a builder logs during a `testBuilder` or
+  `resolveSource` call outside a test.
+- Remove unused deps: `async`, `convert`.
+- Remove unused dev_deps: `collection`.
+
+## 3.3.0-dev.2
+
+- Files loaded from disk for `resolveSources` and `testBuilders` that are in
+  the same package as explicitly-passed test inputs are now loaded if they
+  match the default globs, such as `lib/**`, instead of ignored. This more
+  closely matches version 2 behavior.
+
+## 3.3.0-dev.1
+
+- Use `build` 3.0.0-dev.1.
+- Use `build_resolvers` 3.0.0-dev.1.
+
+## 3.2.0
+
+- Fixes when passing a `readerWriter` to `testBuilders`: don't count initial
+  assets as outputs; do set up packages for initial assets; only apply builders
+  to packages mentioned in `sourceAssets`.
+- Add `readAllSourcesFromFilesystem` parameter to `resolveSources`. Set it to
+  `true` to make the method behave as it did in `build_test` 2.2.0.
+- Fix to `resolveSources` error handling.
 
 ## 3.1.0
 

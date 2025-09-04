@@ -25,6 +25,14 @@ final commandRunner =
         'build-repo-path',
         help: 'Path to build repo to benchmark.',
       )
+      ..argParser.addMultiOption(
+        'dependency-override-path',
+        help:
+            'Set a dependency override in generated pubspec.yaml, for '
+            'benchmarking local changes to builders. Example: '
+            '--dependency-override=built_value_generator='
+            '/path/to/local/package',
+      )
       ..argParser.addOption(
         'generator',
         help: 'Generator to benchmark.',
@@ -48,8 +56,8 @@ final commandRunner =
         allowed: Shape.values.map((e) => e.name).toList(),
       )
       ..argParser.addFlag(
-        'use-experimental-resolver',
-        help: 'Whether to pass `--use-experimental-resolver` to build_runner.',
+        'mostly-no-codegen',
+        help: 'Whether to generate mostly source with no codegen.',
       );
 
 Future<void> main(List<String> arguments) async {

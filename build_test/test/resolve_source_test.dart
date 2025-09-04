@@ -7,7 +7,7 @@
 import 'dart:async';
 
 import 'package:analyzer/dart/analysis/results.dart';
-import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
@@ -22,7 +22,7 @@ void main() {
 
         class Foo {}
       ''', (resolver) => resolver.findLibraryNotNull('example'));
-      expect(libExample.getClass('Foo'), isNotNull);
+      expect(libExample.getClass2('Foo'), isNotNull);
     });
 
     test('a simple dart file with dart: dependencies', () async {
@@ -33,7 +33,7 @@ void main() {
 
         abstract class Foo implements LinkedHashMap {}
       ''', (resolver) => resolver.findLibraryNotNull('example'));
-      var classFoo = libExample.getClass('Foo')!;
+      var classFoo = libExample.getClass2('Foo')!;
       expect(
         classFoo.allSupertypes.map(_toStringId),
         contains('dart:collection#LinkedHashMap'),
@@ -55,7 +55,7 @@ void main() {
         },
         (resolver) => resolver.findLibraryNotNull('example'),
       );
-      var classFoo = libExample.getClass('Foo')!;
+      var classFoo = libExample.getClass2('Foo')!;
       expect(
         classFoo.allSupertypes.map(_toStringId),
         contains(endsWith(':collection#Equality')),
@@ -81,7 +81,7 @@ void main() {
         (resolver) => resolver.findLibraryNotNull('example'),
         resolverFor: mock,
       );
-      final type = library.getClass('ExamplePrime');
+      final type = library.getClass2('ExamplePrime');
       expect(type, isNotNull);
       expect(type!.supertype!.element.name, 'Example');
     });
@@ -101,7 +101,7 @@ void main() {
         },
         (resolver) async {
           var libExample = await resolver.findLibraryNotNull('example');
-          var classFoo = libExample.getClass('Foo')!;
+          var classFoo = libExample.getClass2('Foo')!;
           expect(
             classFoo.allSupertypes.map(_toStringId),
             contains(endsWith(':collection#Equality')),
@@ -129,7 +129,9 @@ void main() {
         inputId: AssetId('a', 'invalid.dart'),
       );
       var errors =
-          await libExample.session.getErrors(libExample.source.fullName)
+          await libExample.session.getErrors(
+                libExample.firstFragment.source.fullName,
+              )
               as ErrorsResult;
       expect(
         errors.errors.map((e) => e.message),
@@ -141,6 +143,27 @@ void main() {
         ),
       );
     });
+
+    test('all sources from real filesystem', () async {
+      await resolveSource(
+        r'''
+        library example;
+
+        import 'package:collection/collection.dart';
+
+        abstract class Foo implements Equality {}
+      ''',
+        readAllSourcesFromFilesystem: true,
+        (resolver) async {
+          var libExample = await resolver.findLibraryNotNull('example');
+          var classFoo = libExample.getClass2('Foo')!;
+          expect(
+            classFoo.allSupertypes.map(_toStringId),
+            contains(endsWith(':collection#Equality')),
+          );
+        },
+      );
+    });
   });
 
   group('should resolveAsset', () {
@@ -150,7 +173,7 @@ void main() {
         asset,
         (resolver) => resolver.findLibraryNotNull('example_lib'),
       );
-      expect(libExample.getClass('Example'), isNotNull);
+      expect(libExample.getClass2('Example'), isNotNull);
     });
   });
 
@@ -174,10 +197,10 @@ void main() {
 }
 
 String _toStringId(InterfaceType t) =>
-    '${t.element.source.uri.toString().split('/').first}#${t.element.name}';
+    '${t.element3.library2.uri.toString().split('/').first}#${t.element.name}';
 
 extension on Resolver {
-  Future<LibraryElement> findLibraryNotNull(String name) async {
+  Future<LibraryElement2> findLibraryNotNull(String name) async {
     return (await findLibraryByName(name))!;
   }
 }

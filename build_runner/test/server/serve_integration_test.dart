@@ -9,14 +9,19 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
-import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner/src/commands/build_options.dart';
+import 'package:build_runner/src/commands/watch_command.dart';
+import 'package:build_runner/src/generate/build_result.dart';
+import 'package:build_runner/src/options/testing_overrides.dart';
+import 'package:build_runner/src/package_graph/apply_builders.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
+
+import '../common/common.dart';
 
 void main() {
   late FutureOr<Response> Function(Request) handler;
@@ -54,21 +59,26 @@ void main() {
           );
 
     terminateController = StreamController<ProcessSignal>();
-    final server = await watch_impl.watch(
-      [applyToRoot(const UppercaseBuilder())],
-      packageGraph: graph,
-      reader: readerWriter,
-      writer: readerWriter,
-      verbose: true,
-      onLog:
-          (record) => printOnFailure(
-            '[${record.level}] '
-            '${record.loggerName}: ${record.message}',
+    final server =
+        await WatchCommand(
+          builders: [applyToRoot(const UppercaseBuilder())].build(),
+          buildOptions: BuildOptions.forTests(
+            verbose: true,
+            skipBuildScriptCheck: true,
           ),
-      directoryWatcherFactory: FakeWatcher.new,
-      terminateEventStream: terminateController.stream,
-      skipBuildScriptCheck: true,
-    );
+          testingOverrides: TestingOverrides(
+            packageGraph: graph,
+            reader: readerWriter,
+            writer: readerWriter,
+            onLog:
+                (record) => printOnFailure(
+                  '[${record.level}] '
+                  '${record.loggerName}: ${record.message}',
+                ),
+            directoryWatcherFactory: FakeWatcher.new,
+            terminateEventStream: terminateController.stream,
+          ),
+        ).watch();
     handler = server.handlerFor('web', logRequests: true);
 
     nextBuild = Completer<BuildResult>();
@@ -137,96 +147,6 @@ void main() {
     await nextBuild.future;
     final response = await handler(Request('GET', getNew));
     expect(await response.readAsString(), 'NEW');
-  });
-
-  group(r'/$graph', () {
-    FutureOr<Response> requestGraphPath(String path) =>
-        handler(Request('GET', Uri.parse('http://localhost/\$graph$path')));
-
-    for (var slashOrNot in ['', '/']) {
-      test('/\$graph$slashOrNot should (try to) send the HTML page', () async {
-        expect(
-          requestGraphPath(slashOrNot),
-          throwsA(
-            isA<AssetNotFoundException>().having(
-              (e) => e.assetId,
-              'assetId',
-              AssetId.parse('build_runner|lib/src/server/graph_viz.html'),
-            ),
-          ),
-        );
-      });
-    }
-
-    void test404(String testName, String path, String expected) {
-      test(testName, () async {
-        var response = await requestGraphPath(path);
-
-        expect(response.statusCode, 404);
-        expect(await response.readAsString(), expected);
-      });
-    }
-
-    test404('404s on an unsupported URL', '/bob', 'Bad request: "bob".');
-    test404(
-      '404s on an unsupported URL',
-      '/bob/?q=bob',
-      'Bad request: "bob/?q=bob".',
-    );
-    test404('empty query causes 404', '?=', 'Bad request: "?=".');
-    test404(
-      'bad asset query',
-      '?q=bob|bob',
-      'Could not find asset in build graph: bob|bob',
-    );
-    test404(
-      'bad path query',
-      '?q=bob/bob',
-      'Could not find asset for path "bob/bob". Tried:\n'
-          '- example|bob/bob\n'
-          '- example|web/bob/bob',
-    );
-    test404(
-      'valid path, 2nd try',
-      '?q=bob/initial.txt',
-      'Could not find asset for path "bob/initial.txt". Tried:\n'
-          '- example|bob/initial.txt\n'
-          '- example|web/bob/initial.txt',
-    );
-
-    void testSuccess(String testName, String path, String expectedId) {
-      test(testName, () async {
-        var response = await requestGraphPath(path);
-
-        var output = await response.readAsString();
-        expect(response.statusCode, 200, reason: output);
-        var json = jsonDecode(output) as Map<String, dynamic>;
-
-        expect(json, containsPair('primary', containsPair('id', expectedId)));
-      });
-    }
-
-    testSuccess('valid path', '?q=web/initial.txt', 'example|web/initial.txt');
-    testSuccess(
-      'valid path, leading slash',
-      '?q=/web/initial.txt',
-      'example|web/initial.txt',
-    );
-    testSuccess(
-      'valid path, assuming root',
-      '?q=initial.txt',
-      'example|web/initial.txt',
-    );
-    testSuccess(
-      'valid path, assuming root, leading slash',
-      '?q=/initial.txt',
-      'example|web/initial.txt',
-    );
-    testSuccess(
-      'valid AssetId',
-      '?q=example|web/initial.txt',
-      'example|web/initial.txt',
-    );
   });
 }
 

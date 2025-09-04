@@ -5,21 +5,27 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:_test_common/build_configs.dart';
-import 'package:_test_common/common.dart';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
-import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
-import 'package:build_runner_core/build_runner_core.dart';
-import 'package:build_runner_core/src/asset_graph/graph.dart';
-import 'package:build_runner_core/src/asset_graph/node.dart';
-import 'package:build_runner_core/src/generate/build_phases.dart';
+import 'package:build_runner/src/asset_graph/graph.dart';
+import 'package:build_runner/src/asset_graph/node.dart';
+import 'package:build_runner/src/commands/build_options.dart';
+import 'package:build_runner/src/commands/watch_command.dart';
+import 'package:build_runner/src/generate/build_phases.dart';
+import 'package:build_runner/src/generate/build_result.dart';
+import 'package:build_runner/src/options/testing_overrides.dart';
+import 'package:build_runner/src/package_graph/apply_builders.dart';
+import 'package:build_runner/src/package_graph/package_graph.dart';
+import 'package:build_runner/src/util/constants.dart';
 import 'package:build_test/src/in_memory_reader_writer.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
+
+import '../common/common.dart';
 
 void main() {
   /// Basic phases/phase groups which get used in many tests
@@ -110,18 +116,17 @@ void main() {
       test('rebuilds on file updates outside hardcoded sources', () async {
         var buildState = await startWatch(
           [copyABuildApplication],
-          {'a|test_files/a.txt': 'a'},
+          {
+            'a|test_files/a.txt': 'a',
+            'a|build.yaml': '''
+targets:
+  a:
+    sources:
+      - test_files/**
+''',
+          },
           readerWriter,
           packageGraph: packageGraph,
-          overrideBuildConfig: parseBuildConfigs({
-            'a': {
-              'targets': {
-                'a': {
-                  'sources': ['test_files/**'],
-                },
-              },
-            },
-          }),
         );
         var results = StreamQueue(buildState.buildResults);
 
@@ -179,18 +184,17 @@ void main() {
       test('rebuilds on new files outside hardcoded sources', () async {
         var buildState = await startWatch(
           [copyABuildApplication],
-          {'a|test_files/a.txt': 'a'},
+          {
+            'a|test_files/a.txt': 'a',
+            'a|build.yaml': '''
+targets:
+  a:
+    sources:
+      - test_files/**
+''',
+          },
           readerWriter,
           packageGraph: packageGraph,
-          overrideBuildConfig: parseBuildConfigs({
-            'a': {
-              'targets': {
-                'a': {
-                  'sources': ['test_files/**'],
-                },
-              },
-            },
-          }),
         );
         var results = StreamQueue(buildState.buildResults);
 
@@ -302,18 +306,18 @@ void main() {
       test('rebuilds on deleted files outside hardcoded sources', () async {
         var buildState = await startWatch(
           [copyABuildApplication],
-          {'a|test_files/a.txt': 'a', 'a|test_files/b.txt': 'b'},
+          {
+            'a|test_files/a.txt': 'a',
+            'a|test_files/b.txt': 'b',
+            'a|build.yaml': '''
+targets:
+  a:
+    sources:
+      - test_files/**
+''',
+          },
           readerWriter,
           packageGraph: packageGraph,
-          overrideBuildConfig: parseBuildConfigs({
-            'a': {
-              'targets': {
-                'a': {
-                  'sources': ['test_files/**'],
-                },
-              },
-            },
-          }),
         );
         var results = StreamQueue(buildState.buildResults);
 
@@ -421,9 +425,12 @@ void main() {
           ..add(aTxtCopyNode)
           ..add(bCopyNode)
           ..add(
-            makeAssetNode('a|web/b.txt', [
-              bCopyNode.id,
-            ], computeDigest(bTxtId, 'b2')),
+            AssetNode.source(
+              AssetId.parse('a|web/b.txt'),
+              outputs: [bCopyNode.id],
+              primaryOutputs: [bCopyNode.id],
+              digest: computeDigest(bTxtId, 'b2'),
+            ),
           );
 
         var cCopyId = makeAssetId('a|web/c.txt.copy');
@@ -440,9 +447,12 @@ void main() {
         expectedGraph
           ..add(cCopyNode)
           ..add(
-            makeAssetNode('a|web/c.txt', [
-              cCopyNode.id,
-            ], computeDigest(cTxtId, 'c')),
+            AssetNode.source(
+              AssetId.parse('a|web/c.txt'),
+              outputs: [cCopyNode.id],
+              primaryOutputs: [cCopyNode.id],
+              digest: computeDigest(cTxtId, 'c'),
+            ),
           );
 
         expect(cachedGraph, equalsAssetGraph(expectedGraph));
@@ -1145,20 +1155,25 @@ Future<BuildState> startWatch(
   });
   FakeWatcher watcherFactory(String path) => FakeWatcher(path);
 
-  var state = await watch_impl.watch(
-    builders,
-    configKey: configKey,
-    deleteFilesByDefault: true,
-    debounceDelay: _debounceDelay,
-    directoryWatcherFactory: watcherFactory,
-    overrideBuildConfig: overrideBuildConfig,
-    reader: readerWriter,
-    writer: readerWriter,
-    packageGraph: packageGraph,
-    terminateEventStream: _terminateWatchController!.stream,
-    onLog: onLog,
-    skipBuildScriptCheck: true,
-  );
+  final state =
+      await WatchCommand(
+        builders: builders.toBuiltList(),
+        buildOptions: BuildOptions.forTests(
+          configKey: configKey,
+          skipBuildScriptCheck: true,
+        ),
+        testingOverrides: TestingOverrides(
+          buildConfig: overrideBuildConfig.build(),
+          directoryWatcherFactory: watcherFactory,
+          debounceDelay: _debounceDelay,
+          onLog: onLog,
+          packageGraph: packageGraph,
+          reader: readerWriter,
+          terminateEventStream: _terminateWatchController!.stream,
+          writer: readerWriter,
+        ),
+      ).watch();
+
   // Some tests need access to `reader` so we expose it through an expando.
   _readerForState[state] = readerWriter;
   return state;

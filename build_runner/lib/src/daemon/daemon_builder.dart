@@ -11,20 +11,20 @@ import 'package:build_daemon/daemon_builder.dart';
 import 'package:build_daemon/data/build_status.dart';
 import 'package:build_daemon/data/build_target.dart' hide OutputLocation;
 import 'package:build_daemon/data/server_log.dart';
-import 'package:build_runner_core/build_runner_core.dart'
-    as core
-    show BuildStatus;
-import 'package:build_runner_core/build_runner_core.dart'
-    hide BuildResult, BuildStatus;
-// ignore: implementation_imports
-import 'package:build_runner_core/src/generate/asset_tracker.dart';
-// ignore: implementation_imports
-import 'package:build_runner_core/src/generate/build_series.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
-import '../entrypoint/options.dart';
-import '../package_graph/build_config_overrides.dart';
+import '../asset/finalized_reader.dart';
+import '../asset/reader_writer.dart';
+import '../build_plan.dart';
+import '../commands/build_filter.dart';
+import '../commands/daemon_options.dart';
+import '../generate/asset_tracker.dart' show AssetTracker;
+import '../generate/build_directory.dart';
+import '../generate/build_result.dart' as core;
+import '../generate/build_series.dart';
+import '../logging/build_log.dart';
 import '../watcher/asset_change.dart';
 import '../watcher/change_filter.dart';
 import '../watcher/collect_changes.dart';
@@ -32,12 +32,12 @@ import '../watcher/graph_watcher.dart';
 import '../watcher/node_watcher.dart';
 import 'change_providers.dart';
 
-/// A Daemon Builder that uses build_runner_core for building.
+/// A Daemon Builder that builds with `build_runner`.
 class BuildRunnerDaemonBuilder implements DaemonBuilder {
   final _buildResults = StreamController<BuildResults>();
 
+  final BuildPlan _buildPlan;
   final BuildSeries _buildSeries;
-  final BuildOptions _buildOptions;
   final StreamController<ServerLog> _outputStreamController;
   final ChangeProvider changeProvider;
 
@@ -47,8 +47,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   final Stream<ServerLog> logs;
 
   BuildRunnerDaemonBuilder._(
+    this._buildPlan,
     this._buildSeries,
-    this._buildOptions,
     this._outputStreamController,
     this.changeProvider,
   ) : logs = _outputStreamController.stream.asBroadcastStream();
@@ -65,6 +65,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   final _buildScriptUpdateCompleter = Completer<void>();
   Future<void> get buildScriptUpdated => _buildScriptUpdateCompleter.future;
 
+  String get _packageName => _buildPlan.packageGraph.root.name;
+
   @override
   Future<void> build(
     Set<BuildTarget> targets,
@@ -78,7 +80,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
             )
             .toList();
 
-    if (!_buildOptions.skipBuildScriptCheck &&
+    if (!_buildPlan.buildOptions.skipBuildScriptCheck &&
         _buildSeries.buildScriptUpdates!.hasBeenUpdated(
           changes.map<AssetId>((change) => change.id).toSet(),
         )) {
@@ -109,22 +111,12 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       if (target.buildFilters != null && target.buildFilters!.isNotEmpty) {
         buildFilters.addAll([
           for (var pattern in target.buildFilters!)
-            BuildFilter.fromArg(pattern, _buildOptions.packageGraph.root.name),
+            BuildFilter.fromArg(pattern, _packageName),
         ]);
       } else {
         buildFilters
-          ..add(
-            BuildFilter.fromArg(
-              'package:*/**',
-              _buildOptions.packageGraph.root.name,
-            ),
-          )
-          ..add(
-            BuildFilter.fromArg(
-              '${target.target}/**',
-              _buildOptions.packageGraph.root.name,
-            ),
-          );
+          ..add(BuildFilter.fromArg('package:*/**', _packageName))
+          ..add(BuildFilter.fromArg('${target.target}/**', _packageName));
       }
     }
     Iterable<AssetId>? outputs;
@@ -133,8 +125,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       var mergedChanges = collectChanges([changes]);
       var result = await _buildSeries.run(
         mergedChanges,
-        buildDirs: buildDirs,
-        buildFilters: buildFilters,
+        buildDirs: buildDirs.build(),
+        buildFilters: buildFilters.build(),
       );
       var interestedInOutputs = targets.any(
         (e) => e is DefaultBuildTarget && e.reportChangedAssets,
@@ -224,90 +216,60 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     _buildResults.add(BuildResults((b) => b..results.addAll(results)));
   }
 
-  static Future<BuildRunnerDaemonBuilder> create(
-    PackageGraph packageGraph,
-    List<BuilderApplication> builders,
-    DaemonOptions daemonOptions,
-  ) async {
+  static Future<BuildRunnerDaemonBuilder> create({
+    required BuildPlan buildPlan,
+    required DaemonOptions daemonOptions,
+  }) async {
     var expectedDeletes = <AssetId>{};
     var outputStreamController = StreamController<ServerLog>(sync: true);
 
-    var environment = BuildEnvironment(
-      packageGraph,
-      outputSymlinksOnly: daemonOptions.outputSymlinksOnly,
-    );
     buildLog.configuration = buildLog.configuration.rebuild((b) {
-      b.verbose = daemonOptions.verbose;
       b.onLog = (record) {
         outputStreamController.add(ServerLog.fromLogRecord(record));
       };
     });
-
-    var daemonEnvironment = environment.copyWith(
-      writer: (environment.writer as ReaderWriter).copyWith(
+    buildPlan = buildPlan.copyWith(
+      writer: (buildPlan.writer as ReaderWriter).copyWith(
         onDelete: expectedDeletes.add,
       ),
     );
 
-    var overrideBuildConfig = await findBuildConfigOverrides(
-      packageGraph,
-      daemonEnvironment.reader,
-      configKey: daemonOptions.configKey,
-    );
-
-    var buildOptions = await BuildOptions.create(
-      packageGraph: packageGraph,
-      deleteFilesByDefault: daemonOptions.deleteFilesByDefault,
-      overrideBuildConfig: overrideBuildConfig,
-      skipBuildScriptCheck: daemonOptions.skipBuildScriptCheck,
-      enableLowResourcesMode: daemonOptions.enableLowResourcesMode,
-      trackPerformance: daemonOptions.trackPerformance,
-      logPerformanceDir: daemonOptions.logPerformanceDir,
-    );
-
-    var buildSeries = await BuildSeries.create(
-      buildOptions,
-      daemonEnvironment,
-      builders,
-      daemonOptions.builderConfigOverrides,
-      isReleaseBuild: daemonOptions.isReleaseBuild,
-    );
+    final buildSeries = await BuildSeries.create(buildPlan: buildPlan);
 
     // Only actually used for the AutoChangeProvider.
     Stream<List<WatchEvent>> graphEvents() => PackageGraphWatcher(
-          packageGraph,
-          watch:
-              (node) => PackageNodeWatcher(
-                node,
-                watch: daemonOptions.directoryWatcherFactory,
-              ),
+          buildPlan.packageGraph,
+          watch: PackageNodeWatcher.new,
         )
         .watch()
         .asyncWhere(
           (change) => shouldProcess(
             change,
             buildSeries.assetGraph,
-            buildOptions,
+            buildPlan.targetGraph,
             // Assume we will create an outputDir.
             true,
             expectedDeletes,
-            environment.reader,
+            buildPlan.reader,
           ),
         )
         .map((data) => WatchEvent(data.type, '${data.id}'))
-        .debounceBuffer(buildOptions.debounceDelay);
+        .debounceBuffer(
+          buildPlan.testingOverrides.debounceDelay ??
+              const Duration(milliseconds: 250),
+        );
 
     var changeProvider =
         daemonOptions.buildMode == BuildMode.Auto
             ? AutoChangeProviderImpl(graphEvents())
             : ManualChangeProviderImpl(
-              AssetTracker(daemonEnvironment.reader, buildOptions.targetGraph),
+              AssetTracker(buildPlan.reader, buildPlan.targetGraph),
               buildSeries.assetGraph,
             );
 
     return BuildRunnerDaemonBuilder._(
+      buildPlan,
       buildSeries,
-      buildOptions,
       outputStreamController,
       changeProvider,
     );

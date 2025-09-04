@@ -5,8 +5,8 @@ environment:
 resolution: workspace
 
 dependencies:
-  analyzer: ">=5.0.0 <8.0.0"
-  build: ^2.0.0
+  analyzer: ">=5.0.0 <9.0.0"
+  build: ^4.0.0
   # Not imported in code, but used to constrain `build.yaml` requirements
   build_config: ^1.0.0
   web: ^1.1.0
