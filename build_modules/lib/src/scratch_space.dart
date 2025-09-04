@@ -84,7 +84,7 @@ final scratchSpaceResource = Resource<ScratchSpace>(
   },
 );
 
-/// Modifies all package uris in [rootConfig] to work with the sctrach_space
+/// Modifies all package uris in [rootConfig] to work with the scratch_space
 /// layout. These are uris of the form `../packages/<package-name>`.
 ///
 /// Also modifies the `packageUri` for each package to be empty since the
@@ -110,12 +110,12 @@ String _scratchSpacePackageConfig(String rootConfig, Uri packageConfigUri) {
       rootUri = rootUri.replace(path: '${rootUri.path}/');
     }
     // We expect to see exactly one package where the root uri is equal to
-    // the current directory, and that is the current packge.
+    // the current directory, and that is the current package.
     if (rootUri == _currentDirUri) {
       assert(!foundRoot);
       foundRoot = true;
-      package['rootUri'] = '../';
-      package['packageUri'] = '../packages/${package['name']}/';
+      package['packageUri'] = '';
+      package['rootUri'] = '../packages/${package['name']}/';
     } else {
       package['rootUri'] = '../packages/${package['name']}/';
       package.remove('packageUri');

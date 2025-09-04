@@ -61,13 +61,17 @@ class DdcFrontendServerBuilder implements Builder {
 
   /// Compile [module] with Frontend Server.
   Future<void> _compile(Module module, BuildStep buildStep) async {
+    var transitiveAssets = await buildStep.trackStage(
+      'CollectTransitiveDeps',
+      () => module.computeTransitiveAssets(buildStep),
+    );
     final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
     // Resolve the 'real' entrypoint we'll pass to FES for compilation.
     final webEntrypointAsset = AssetId.resolve(Uri.parse(entrypoint));
     await buildStep.trackStage(
       'EnsureAssets',
       () => scratchSpace.ensureAssets([
-        ...module.sources,
+        ...transitiveAssets,
         webEntrypointAsset,
       ], buildStep),
     );
@@ -81,7 +85,11 @@ class DdcFrontendServerBuilder implements Builder {
       frontendServerProxyDriverResource,
     );
     driver.init(frontendServer);
-    await driver.requestModule(sourceArg(webEntrypointAsset));
+    final invalidatedFileUris = [for (var source in module.sources) source.uri];
+    await driver.recompileAndRecord(
+      sourceArg(ddcEntrypointId),
+      invalidatedFileUris,
+    );
     final outputFile = scratchSpace.fileFor(jsOutputId);
     // Write an empty file if this file was deemed extraneous by FES.
     if (!!await outputFile.exists()) {

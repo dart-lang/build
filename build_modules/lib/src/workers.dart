@@ -141,7 +141,7 @@ final persistentFrontendServerResource = Resource<PersistentFrontendServer>(
       __persistentFrontendServer ??= await PersistentFrontendServer.start(
         sdkRoot: sdkDir,
         fileSystemRoot: scratchSpace.tempDir.uri,
-        packagesFile: Uri.parse(packagesFilePath),
+        packagesFile: scratchSpace.tempDir.uri.resolve(packagesFilePath),
       ),
   beforeExit: () async {
     await __persistentFrontendServer?.shutdown();

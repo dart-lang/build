@@ -195,6 +195,55 @@ class Module {
     }
     return transitiveDeps.values.toList();
   }
+  /// Returns all [AssetId]s in the transitive dependencies of this module in
+  /// no specific order.
+  ///
+  /// Throws a [MissingModulesException] if there are any missing modules. This
+  /// typically means that somebody is trying to import a non-existing file.
+  ///
+  /// If [throwIfUnsupported] is `true`, then an [UnsupportedModules]
+  /// will be thrown if there are any modules that are not supported.
+  Future<Set<AssetId>> computeTransitiveAssets(
+    BuildStep buildStep, {
+    bool throwIfUnsupported = false,
+  }) async {
+    final modules = await buildStep.fetchResource(moduleCache);
+    var transitiveDeps = <AssetId, Module>{};
+    var modulesToCrawl = {primarySource};
+    var missingModuleSources = <AssetId>{};
+    var unsupportedModules = <Module>{};
+    var seenSources = <AssetId>{};
+
+    while (modulesToCrawl.isNotEmpty) {
+      var next = modulesToCrawl.last;
+      modulesToCrawl.remove(next);
+      if (transitiveDeps.containsKey(next)) continue;
+      var nextModuleId = next.changeExtension(moduleExtension(platform));
+      var module = await modules.find(nextModuleId, buildStep);
+      if (module == null || module.isMissing) {
+        missingModuleSources.add(next);
+        continue;
+      }
+      if (throwIfUnsupported && !module.isSupported) {
+        unsupportedModules.add(module);
+      }
+      transitiveDeps[next] = module;
+      modulesToCrawl.addAll(module.directDependencies);
+      seenSources.addAll(module.sources);
+    }
+
+    if (missingModuleSources.isNotEmpty) {
+      throw await MissingModulesException.create(
+        missingModuleSources,
+        transitiveDeps.values.toList()..add(this),
+        buildStep,
+      );
+    }
+    if (throwIfUnsupported && unsupportedModules.isNotEmpty) {
+      throw UnsupportedModules(unsupportedModules);
+    }
+    return seenSources;
+  }
 }
 
 class _AssetIdConverter implements JsonConverter<AssetId, List> {

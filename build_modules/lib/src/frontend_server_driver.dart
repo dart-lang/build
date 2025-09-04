@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+// ignore_for_file: constant_identifier_names
+
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
@@ -24,19 +26,35 @@ final frontendServerSnapshotPath = p.join(
   'frontend_server_aot.dart.snapshot',
 );
 
+/// A driver that proxies build requests to a [PersistentFrontendServer]
+/// instance.
 class FrontendServerProxyDriver {
   PersistentFrontendServer? _frontendServer;
   final _requestQueue = Queue<_CompilationRequest>();
   bool _isProcessing = false;
+  CompilerOutput? _cachedOutput;
 
   void init(PersistentFrontendServer frontendServer) {
     _frontendServer = frontendServer;
   }
 
-  Future<CompilerOutput> requestModule(String entryPoint) async {
+  Future<CompilerOutput> compileAndRecord(String entryPoint) async {
     var compilerOutput = await compile(entryPoint);
     if (compilerOutput == null) {
       throw Exception('Frontend Server failed to compile $entryPoint');
+    }
+    _frontendServer!.recordCompilerOutput(compilerOutput);
+    _frontendServer!.writeCompilerOutput(compilerOutput);
+    return compilerOutput;
+  }
+
+  Future<CompilerOutput> recompileAndRecord(
+    String entryPoint,
+    List<Uri> invalidatedFiles,
+  ) async {
+    var compilerOutput = await recompile(entryPoint, invalidatedFiles);
+    if (compilerOutput == null) {
+      throw Exception('Frontend Server failed to recompile $entryPoint');
     }
     _frontendServer!.recordCompilerOutput(compilerOutput);
     _frontendServer!.writeCompilerOutput(compilerOutput);
@@ -70,12 +88,22 @@ class FrontendServerProxyDriver {
     CompilerOutput? output;
     try {
       if (request is _CompileRequest) {
-        output = await _frontendServer!.compile(request.entryPoint);
+        _cachedOutput =
+            output = await _frontendServer!.compile(request.entryPoint);
       } else if (request is _RecompileRequest) {
-        output = await _frontendServer!.recompile(
-          request.entryPoint,
-          request.invalidatedFiles,
-        );
+        // Compile the first [_RecompileRequest] as a [_CompileRequest] to warm
+        // up the Frontend Server.
+        if (_cachedOutput == null) {
+          output =
+              _cachedOutput = await _frontendServer!.compile(
+                request.entryPoint,
+              );
+        } else {
+          output = await _frontendServer!.recompile(
+            request.entryPoint,
+            request.invalidatedFiles,
+          );
+        }
       }
       if (output != null && output.errorCount == 0) {
         _frontendServer!.accept();
@@ -113,13 +141,14 @@ class _RecompileRequest extends _CompilationRequest {
   _RecompileRequest(this.entryPoint, this.invalidatedFiles, super.completer);
 }
 
+/// A single instance of the Frontend Server that persists across
+/// compile/recompile requests.
 class PersistentFrontendServer {
   Process? _server;
   final StdoutHandler _stdoutHandler;
   final StreamController<String> _stdinController;
   final Uri outputDillUri;
   final WebMemoryFilesystem _fileSystem;
-  CompilerOutput? _cachedOutput;
 
   PersistentFrontendServer._(
     this._server,
@@ -175,13 +204,8 @@ class PersistentFrontendServer {
 
   Future<CompilerOutput?> compile(String entryPoint) {
     _stdoutHandler.reset();
-    if (_cachedOutput != null) {
-      return Future.value(_cachedOutput);
-    }
     _stdinController.add('compile $entryPoint');
-    return _stdoutHandler.compilerOutput!.future.then(
-      (output) => _cachedOutput = output,
-    );
+    return _stdoutHandler.compilerOutput!.future;
   }
 
   Future<CompilerOutput?> recompile(
@@ -252,7 +276,7 @@ class CompilerOutput {
   final String? errorMessage;
 }
 
-// A simple in-memory filesystem for handling frontend server's compiled
+// A simple in-memory filesystem for handling the Frontend Server's compiled
 // output.
 class WebMemoryFilesystem {
   /// The root directory's URI from which JS file are being served.
@@ -261,9 +285,6 @@ class WebMemoryFilesystem {
   final Map<String, Uint8List> files = {};
   final Map<String, Uint8List> sourcemaps = {};
   final Map<String, Uint8List> metadata = {};
-
-  // Holds all files that have already been written.
-  Set<String> writtenFiles = {};
 
   final List<LibraryInfo> libraries = [];
 
@@ -279,10 +300,6 @@ class WebMemoryFilesystem {
     );
     var filesToWrite = {...files, ...sourcemaps, ...metadata};
     filesToWrite.forEach((path, content) {
-      if (!writtenFiles.add(path)) {
-        // This file was already written between calls to `clearWritableState`.
-        return;
-      }
       final outputFileUri = outputDirectoryUri.resolve(path);
       var outputFilePath = outputFileUri.toFilePath().replaceFirst(
         '.dart.lib.js',
@@ -295,7 +312,6 @@ class WebMemoryFilesystem {
     if (clearWritableState) {
       files.clear();
       sourcemaps.clear();
-      writtenFiles.clear();
     }
   }
 
@@ -360,7 +376,7 @@ class WebMemoryFilesystem {
           fileName.length - '.lib.js'.length,
         );
       }
-      final fullyResolvedFileUri = jsRootUri.resolve('$fileName');
+      final fullyResolvedFileUri = jsRootUri.resolve(fileName);
       // TODO(markzipan): This is a simple hack to resolve kernel library URIs
       // from JS files and might not generalize.
       var libraryName = dartFileName;
@@ -430,7 +446,7 @@ class LibraryInfo {
 
 enum StdoutState { CollectDiagnostic, CollectDependencies }
 
-/// Handles stdin/stdout communication with the frontend server.
+/// Handles stdin/stdout communication with the Frontend Server.
 class StdoutHandler {
   StdoutHandler({required Logger logger}) : _logger = logger {
     reset();
