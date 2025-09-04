@@ -155,7 +155,79 @@ Future<TestBuilderResult> testBuilder(
   );
 }
 
-/// Runs [builders] in a test environment.
+/// Runs [builders] and [postProcessBuilders] in a test environment.
+///
+/// Calls [testBuilderFactories] with factories that each return a member of
+/// [builders] and [postProcessBuilders], see that method for details.
+///
+/// By default builders will be configured with a test-oriented builder config
+/// that causes builders to run for all files. To instead use the default
+/// `build_runner` config pass [testingBuilderConfig] `false`. To read
+/// `build.yaml` files passed in `sourceAssets`, use [testBuilderFactories]
+/// directly.
+Future<TestBuilderResult> testBuilders(
+  Iterable<Builder> builders,
+  Map<String, /*String|List<int>*/ Object> sourceAssets, {
+  Iterable<PostProcessBuilder> postProcessBuilders = const [],
+  Set<String>? generateFor,
+  bool Function(String assetId)? isInput,
+  String? rootPackage,
+  Map<String, /*String|List<int>|Matcher<List<int>>*/ Object>? outputs,
+  void Function(LogRecord log)? onLog,
+  void Function(AssetId, Iterable<AssetId>)? reportUnusedAssetsForInput,
+  PackageConfig? packageConfig,
+  Resolvers? resolvers,
+  Set<Builder> optionalBuilders = const {},
+  Set<Builder> visibleOutputBuilders = const {},
+  Map<Builder, List<String>> appliesBuilders = const {},
+  bool testingBuilderConfig = true,
+  TestReaderWriter? readerWriter,
+  bool enableLowResourceMode = false,
+}) {
+  final builderFactories = <BuilderFactory>[];
+  final optionalBuilderFactories = Set<BuilderFactory>.identity();
+  final visibleOutputBuilderFactories = Set<BuilderFactory>.identity();
+  final appliesBuildersToFactories = <BuilderFactory, List<String>>{};
+  for (final builder in builders) {
+    Builder builderFactory(_) => builder;
+    builderFactories.add(builderFactory);
+    if (optionalBuilders.contains(builder)) {
+      optionalBuilderFactories.add(builderFactory);
+    }
+    if (visibleOutputBuilders.contains(builder)) {
+      visibleOutputBuilderFactories.add(builderFactory);
+    }
+    if (appliesBuilders.containsKey(builder)) {
+      appliesBuildersToFactories[builderFactory] = appliesBuilders[builder]!;
+    }
+  }
+  final postProcessBuilderFactories = <PostProcessBuilderFactory>[];
+  for (final postProcessBuilder in postProcessBuilders) {
+    postProcessBuilderFactories.add((_) => postProcessBuilder);
+  }
+  return testBuilderFactories(
+    builderFactories,
+    sourceAssets,
+    postProcessBuilderFactories: postProcessBuilderFactories,
+    generateFor: generateFor,
+    isInput: isInput,
+    rootPackage: rootPackage,
+    outputs: outputs,
+    onLog: onLog,
+    reportUnusedAssetsForInput: reportUnusedAssetsForInput,
+    packageConfig: packageConfig,
+    resolvers: resolvers,
+    optionalBuilderFactories: optionalBuilderFactories,
+    visibleOutputBuilderFactories: visibleOutputBuilderFactories,
+    appliesBuilders: appliesBuildersToFactories,
+    testingBuilderConfig: testingBuilderConfig,
+    readerWriter: readerWriter,
+    enableLowResourceMode: enableLowResourceMode,
+  );
+}
+
+/// Runs builders from [builderFactories] and [postProcessBuilderFactories] in a
+/// test environment.
 ///
 /// The test environment supplies in-memory build [sourceAssets] to the builders
 /// under test.
@@ -194,16 +266,19 @@ Future<TestBuilderResult> testBuilder(
 /// Enabling of language experiments is supported through the
 /// `withEnabledExperiments` method from package:build.
 ///
-/// To mark a builder as optional, add it to [optionalBuilders]. Optional
-/// builders only run if their output is used by a non-optional builder.
+/// To mark a builder as optional, add it to [optionalBuilderFactories].
+/// Optional builders only run if their output is used by a non-optional
+/// builder.
 ///
-/// To mark a builder's output as visible, add it to [visibleOutputBuilders].
-/// The builder then writes its outputs next to its input, instead of hidden
-/// under `.dart_tool`.
+/// To mark a builder's output as visible, add it to
+/// [visibleOutputBuilderFactories]. The builder then writes its outputs next to
+/// its input, instead of hidden under `.dart_tool`.
 ///
-/// The default builder config will be overwritten with one that causes the
-/// builder to run for all inputs. To use the default builder config instead,
-/// set [testingBuilderConfig] to `false`.
+/// To cause a builder to apply another builder, as `applies_builders` in
+/// `build.yaml`, pass [appliesBuilders].
+///
+/// To override the default builder config with one that causes the builders to
+/// run for all inputs, set [testingBuilderConfig] `true`.
 ///
 /// Optionally pass [readerWriter] to set the filesystem that will be used
 /// during the build. Before the build, [sourceAssets] will be written to it.
@@ -214,9 +289,10 @@ Future<TestBuilderResult> testBuilder(
 /// Returns a [TestBuilderResult] with the [BuildResult] and the
 /// [TestReaderWriter] used for the build, which can be used for further
 /// checks.
-Future<TestBuilderResult> testBuilders(
-  Iterable<Builder> builders,
+Future<TestBuilderResult> testBuilderFactories(
+  Iterable<BuilderFactory> builderFactories,
   Map<String, /*String|List<int>*/ Object> sourceAssets, {
+  Iterable<PostProcessBuilderFactory> postProcessBuilderFactories = const [],
   Set<String>? generateFor,
   bool Function(String assetId)? isInput,
   String? rootPackage,
@@ -225,8 +301,9 @@ Future<TestBuilderResult> testBuilders(
   void Function(AssetId, Iterable<AssetId>)? reportUnusedAssetsForInput,
   PackageConfig? packageConfig,
   Resolvers? resolvers,
-  Set<Builder> optionalBuilders = const {},
-  Set<Builder> visibleOutputBuilders = const {},
+  Set<BuilderFactory> optionalBuilderFactories = const {},
+  Set<BuilderFactory> visibleOutputBuilderFactories = const {},
+  Map<BuilderFactory, List<String>> appliesBuilders = const {},
   bool testingBuilderConfig = true,
   TestReaderWriter? readerWriter,
   bool enableLowResourceMode = false,
@@ -237,10 +314,18 @@ Future<TestBuilderResult> testBuilders(
     for (var descriptor in sourceAssets.keys) makeAssetId(descriptor),
   };
 
+  if (inputIds.isEmpty && rootPackage == null) {
+    throw ArgumentError(
+      '`sourceAssets` is empty so `rootPackage` must be specified, '
+      'but `rootPackage` is null.',
+    );
+  }
+
   // Differentiate input packages and all packages. Builders run on input
   // packages; they can read/resolve all packages. Additional packages are
   // supplied by passing a `readerWriter`.
-  var inputPackages = {for (var id in inputIds) id.package};
+  var inputPackages =
+      inputIds.isEmpty ? {rootPackage!} : {for (var id in inputIds) id.package};
   final allPackages = inputPackages.toSet();
   if (readerWriter != null) {
     for (final asset in readerWriter.testing.assets) {
@@ -312,7 +397,11 @@ Future<TestBuilderResult> testBuilders(
                         if (package != rootPackage)
                           ...defaultNonRootVisibleAssets,
                         ...inputIds
-                            .where((id) => id.package == package)
+                            .where(
+                              (id) =>
+                                  id.package == package &&
+                                  !id.path.startsWith('.dart_tool/'),
+                            )
                             .map((id) => Glob.quote(id.path)),
                       ],
                     },
@@ -323,7 +412,7 @@ Future<TestBuilderResult> testBuilders(
     reportUnusedAssetsForInput: reportUnusedAssetsForInput,
   );
 
-  String builderName(Builder builder) {
+  String builderName(Object builder) {
     final result = builder.toString();
     if (result.startsWith("Instance of '") && result.endsWith("'")) {
       return result.substring("Instance of '".length, result.length - 1);
@@ -331,18 +420,40 @@ Future<TestBuilderResult> testBuilders(
     return result;
   }
 
+  final builderApplications = <BuilderApplication>[];
+  for (final builderFactory in builderFactories) {
+    // The real build gets the name from the `build.yaml` where the builder is
+    // For tests, use the builder class name, or fall back if the test makes the
+    // builder factory throw.
+    String name;
+    try {
+      name = builderName(builderFactory(const BuilderOptions({})));
+    } catch (e) {
+      name = e.toString();
+    }
+    builderApplications.add(
+      apply(
+        name,
+        [builderFactory],
+        (p) => inputPackages.contains(p.name),
+        isOptional: optionalBuilderFactories.contains(builderFactory),
+        hideOutput: !visibleOutputBuilderFactories.contains(builderFactory),
+        appliesBuilders: appliesBuilders[builderFactory] ?? [],
+      ),
+    );
+  }
+  for (final postProcessBuiderFactory in postProcessBuilderFactories) {
+    String name;
+    try {
+      name = builderName(postProcessBuiderFactory(const BuilderOptions({})));
+    } catch (e) {
+      name = e.toString();
+    }
+    builderApplications.add(applyPostProcess(name, postProcessBuiderFactory));
+  }
+
   final buildPlan = await BuildPlan.load(
-    builders:
-        [
-          for (final builder in builders)
-            apply(
-              builderName(builder),
-              [(_) => builder],
-              (p) => inputPackages.contains(p.name),
-              isOptional: optionalBuilders.contains(builder),
-              hideOutput: !visibleOutputBuilders.contains(builder),
-            ),
-        ].build(),
+    builders: builderApplications.build(),
     // ignore: invalid_use_of_visible_for_testing_member
     buildOptions: BuildOptions.forTests(
       enableLowResourcesMode: enableLowResourceMode,

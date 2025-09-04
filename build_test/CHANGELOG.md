@@ -1,5 +1,16 @@
-## 3.3.5-wip
+## 3.4.0-wip
 
+- Support post process builders in `testBuilders`. And, add `appliesBuilders`
+  so that builders can apply post process builders.
+- Add `testBuilderFactories`: like `testBuilders`, but provide the builder
+  factories instead of the builders. Use this to allow config read from
+  `build.yaml` to be passed in to the factory.
+- `TestBuilder` now accepts a `name`: this is the name that will be shown
+  in logging and can be used to refer to the builder in `build.yaml`.
+- More realistic test builds: in `resolveSources` and `testBuilders`, stop
+  builders reading from `.dart_tool`.
+- Bug fix: in `testBuilders`, configure the root package correctly when it
+  has no sources.
 - Use `build_runner_core` 9.4.0.
 - Remove unused dep: `build_resolvers`.
 - Remove unused dep: `build_runner_core`.
