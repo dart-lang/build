@@ -835,7 +835,7 @@ void main() {
       '''),
       _containsAllOf(
         'int get m => (super.noSuchMethod(',
-        'set m(int? _m) => super.noSuchMethod(',
+        'set m(int? value) => super.noSuchMethod(',
       ),
     );
   });
@@ -2401,10 +2401,10 @@ void main() {
             ) as int);
       '''),
         dedent2('''
-        set m(int? _m) => super.noSuchMethod(
+        set m(int? value) => super.noSuchMethod(
               Invocation.setter(
                 #m,
-                _m,
+                value,
               ),
               returnValueForMissingStub: null,
             );
@@ -2429,10 +2429,10 @@ void main() {
             ) as int);
         '''),
         dedent2('''
-        set m(int? _m) => super.noSuchMethod(
+        set m(int? value) => super.noSuchMethod(
               Invocation.setter(
                 #m,
-                _m,
+                value,
               ),
               returnValueForMissingStub: null,
             );
