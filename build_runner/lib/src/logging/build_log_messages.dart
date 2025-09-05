@@ -100,12 +100,13 @@ class BuildLogMessages {
 
     for (final message in messages) {
       var first = true;
+      final isError = message.severity == Severity.error;
       for (final line in message.text.split('\n')) {
         result.add(
           AnsiBufferLine([
-            if (message.severity == Severity.error) AnsiBuffer.boldRed,
+            if (isError) AnsiBuffer.boldRed,
             first ? message.severity.prefix : '  ',
-            if (message.severity == Severity.error) AnsiBuffer.reset,
+            if (isError) AnsiBuffer.reset,
             line,
           ], hangingIndent: 2),
         );
