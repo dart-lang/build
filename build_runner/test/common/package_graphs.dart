@@ -7,7 +7,7 @@ import 'package:build_runner/src/internal.dart';
 import 'package:package_config/package_config.dart';
 
 PackageGraph buildPackageGraph(Map<PackageNode, Iterable<String>> packages) {
-  var packagesByName = Map<String, PackageNode>.fromIterable(
+  final packagesByName = Map<String, PackageNode>.fromIterable(
     packages.keys,
     key: (p) => (p as PackageNode).name,
   );
@@ -16,7 +16,7 @@ PackageGraph buildPackageGraph(Map<PackageNode, Iterable<String>> packages) {
       packages[package]!.map((name) => packagesByName[name]!),
     );
   }
-  var root = packages.keys.singleWhere((n) => n.isRoot);
+  final root = packages.keys.singleWhere((n) => n.isRoot);
   return PackageGraph.fromRoot(root);
 }
 

@@ -48,7 +48,7 @@ void checkOutputs(
   TestReaderWriter writer, {
   AssetId Function(AssetId id) mapAssetIds = _passThrough,
 }) {
-  var modifiableActualAssets = Set.of(actualAssets);
+  final modifiableActualAssets = Set.of(actualAssets);
 
   // Ignore asset graph.
   modifiableActualAssets.removeWhere((id) => id.path.endsWith(assetGraphPath));
@@ -61,7 +61,7 @@ void checkOutputs(
             contentsMatcher is Matcher,
       );
 
-      var assetId = makeAssetId(serializedId);
+      final assetId = makeAssetId(serializedId);
 
       // Check that the asset was produced.
       expect(
@@ -91,7 +91,7 @@ void checkOutputs(
           );
         }
       }
-      var actual = writer.testing.readBytes(mappedAssetId);
+      final actual = writer.testing.readBytes(mappedAssetId);
       Object expected;
       if (contentsMatcher is String) {
         expected = utf8.decode(actual);
@@ -310,8 +310,8 @@ Future<TestBuilderResult> testBuilderFactories(
 }) async {
   onLog ??= _printOnFailureOrWrite;
 
-  var inputIds = {
-    for (var descriptor in sourceAssets.keys) makeAssetId(descriptor),
+  final inputIds = {
+    for (final descriptor in sourceAssets.keys) makeAssetId(descriptor),
   };
 
   if (inputIds.isEmpty && rootPackage == null) {
@@ -324,8 +324,10 @@ Future<TestBuilderResult> testBuilderFactories(
   // Differentiate input packages and all packages. Builders run on input
   // packages; they can read/resolve all packages. Additional packages are
   // supplied by passing a `readerWriter`.
-  var inputPackages =
-      inputIds.isEmpty ? {rootPackage!} : {for (var id in inputIds) id.package};
+  final inputPackages =
+      inputIds.isEmpty
+          ? {rootPackage!}
+          : {for (final id in inputIds) id.package};
   final allPackages = inputPackages.toSet();
   if (readerWriter != null) {
     for (final asset in readerWriter.testing.assets) {
@@ -337,7 +339,7 @@ Future<TestBuilderResult> testBuilderFactories(
   readerWriter ??= TestReaderWriter(rootPackage: rootPackage);
 
   sourceAssets.forEach((serializedId, contents) {
-    var id = makeAssetId(serializedId);
+    final id = makeAssetId(serializedId);
     if (contents is String) {
       readerWriter!.testing.writeString(id, contents);
     } else if (contents is List<int>) {

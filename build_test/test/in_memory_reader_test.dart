@@ -49,7 +49,7 @@ void main() {
     test(
       '#findAssets should be able to list files in non-root packages',
       () async {
-        var otherLibAsset = AssetId('other', 'lib/other.dart');
+        final otherLibAsset = AssetId('other', 'lib/other.dart');
         readerWriter.testing.writeString(otherLibAsset, 'otherLibAsset');
         expect(
           await readerWriter.assetFinder

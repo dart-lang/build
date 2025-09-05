@@ -21,7 +21,7 @@ void main() {
       fromBytesCalls = {};
       final resource = DecodingCache.resource<String>(
         (bytes) {
-          var decoded = utf8.decode(bytes);
+          final decoded = utf8.decode(bytes);
           fromBytesCalls.putIfAbsent(decoded, () => 0);
           fromBytesCalls[decoded] = fromBytesCalls[decoded]! + 1;
           return decoded;

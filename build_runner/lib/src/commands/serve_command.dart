@@ -110,7 +110,7 @@ class ServeCommand implements BuildRunnerCommand {
         'args in <dir>[:<port>] format.',
       );
     } else {
-      for (var target in serveOptions.serveTargets) {
+      for (final target in serveOptions.serveTargets) {
         buildLog.info(
           'Serving `${target.dir}` on '
           'http://${serveOptions.hostname}:${target.port}',

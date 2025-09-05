@@ -21,7 +21,7 @@ void main() {
   test(
     'Can build and run a single test with --precompiled and --build-filter',
     () async {
-      var buildArgs = ['--build-filter', 'test/hello_world_test.*.dart.js'];
+      final buildArgs = ['--build-filter', 'test/hello_world_test.*.dart.js'];
       await expectTestsPass(
         usePrecompiled: true,
         testArgs: ['test/hello_world_test.dart'],
@@ -41,7 +41,7 @@ void main() {
     // Skip on Windows due to Chrome test flakiness, see
     // https://github.com/dart-lang/build/issues/4123.
     if (Platform.isWindows) return;
-    var result = await runTests(
+    final result = await runTests(
       testArgs: ['--run-skipped', 'test/hello_world_test.dart'],
     );
     expect(

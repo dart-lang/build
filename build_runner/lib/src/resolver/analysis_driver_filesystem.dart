@@ -92,7 +92,7 @@ class AnalysisDriverFilesystem implements UriResolver, ResourceProvider {
     final assetId = parseAsset(uri);
     if (assetId == null) return null;
 
-    var file = getFile(assetPath(assetId));
+    final file = getFile(assetPath(assetId));
     return FileSource(file, assetId.uri);
   }
 

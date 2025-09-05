@@ -63,7 +63,7 @@ class RunCommand implements BuildRunnerCommand {
             .toFilePath();
 
     // Use a completer to determine the exit code.
-    var exitCodeCompleter = Completer<int>();
+    final exitCodeCompleter = Completer<int>();
 
     final result =
         await BuildCommand(
@@ -91,8 +91,11 @@ class RunCommand implements BuildRunnerCommand {
     }
 
     // Find the path of the script to run.
-    var scriptPath = p.join(tempPath, runOptions.script);
-    var packageConfigPath = p.join(tempPath, '.dart_tool/package_config.json');
+    final scriptPath = p.join(tempPath, runOptions.script);
+    final packageConfigPath = p.join(
+      tempPath,
+      '.dart_tool/package_config.json',
+    );
 
     // Create two ReceivePorts, so that we can quit when the isolate is done.
     //
@@ -148,7 +151,7 @@ class RunCommand implements BuildRunnerCommand {
       return ExitCode.ioError.code;
     } finally {
       // Clean up the output dir.
-      var dir = Directory(tempPath);
+      final dir = Directory(tempPath);
       if (await dir.exists()) await dir.delete(recursive: true);
 
       onExit.close();

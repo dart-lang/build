@@ -33,7 +33,7 @@ void main() {
     });
 
     group('basic package ', () {
-      var basicPkgPath = 'test/fixtures/basic_pkg/';
+      final basicPkgPath = 'test/fixtures/basic_pkg/';
 
       setUp(() async {
         graph = await PackageGraph.forPath(basicPkgPath);
@@ -82,7 +82,7 @@ void main() {
     });
 
     group('package with dev dependencies', () {
-      var withDevDepsPkgPath = 'test/fixtures/with_dev_deps';
+      final withDevDepsPkgPath = 'test/fixtures/with_dev_deps';
 
       setUp(() async {
         graph = await PackageGraph.forPath(withDevDepsPkgPath);
@@ -131,7 +131,7 @@ void main() {
     });
 
     group('package with flutter dependencies', () {
-      var withFlutterDeps = 'test/fixtures/flutter_pkg';
+      final withFlutterDeps = 'test/fixtures/flutter_pkg';
 
       setUp(() async {
         graph = await PackageGraph.forPath(withFlutterDeps);
@@ -156,13 +156,13 @@ void main() {
     });
 
     test('custom creation via fromRoot', () {
-      var a = PackageNode('a', '/a', DependencyType.path, null, isRoot: true);
-      var b = PackageNode('b', '/b', DependencyType.path, null);
-      var c = PackageNode('c', '/c', DependencyType.path, null);
-      var d = PackageNode('d', '/d', DependencyType.path, null);
+      final a = PackageNode('a', '/a', DependencyType.path, null, isRoot: true);
+      final b = PackageNode('b', '/b', DependencyType.path, null);
+      final c = PackageNode('c', '/c', DependencyType.path, null);
+      final d = PackageNode('d', '/d', DependencyType.path, null);
       a.dependencies.addAll([b, d]);
       b.dependencies.add(c);
-      var graph = PackageGraph.fromRoot(a);
+      final graph = PackageGraph.fromRoot(a);
       expect(graph.root, a);
       expect(
         graph.allPackages,
@@ -188,7 +188,7 @@ void main() {
   });
 
   group('workspace ', () {
-    var workspaceFixturePath = 'test/fixtures/workspace';
+    final workspaceFixturePath = 'test/fixtures/workspace';
 
     test('Loads all packages in workspace. Has correct root', () async {
       Matcher packageNodeEquals(PackageNode node) => isA<PackageNode>()
@@ -205,21 +205,21 @@ void main() {
           );
 
       final graph = await PackageGraph.forPath('$workspaceFixturePath/pkgs/a');
-      var a = PackageNode(
+      final a = PackageNode(
         'a',
         '$workspaceFixturePath/pkgs/a',
         DependencyType.path,
         null,
         isRoot: true,
       );
-      var b = PackageNode(
+      final b = PackageNode(
         'b',
         '$workspaceFixturePath/pkgs/b',
         DependencyType.path,
         null,
       );
       a.dependencies.add(b);
-      var workspace = PackageNode(
+      final workspace = PackageNode(
         'workspace',
         workspaceFixturePath,
         DependencyType.path,

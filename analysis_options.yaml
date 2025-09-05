@@ -12,3 +12,8 @@ analyzer:
     - "dart2js_test/**"
     # Common top level directories containing generated files in any package.
     - ".dart_tool/**"
+
+linter:
+  rules:
+    - prefer_final_in_for_each
+    - prefer_final_locals

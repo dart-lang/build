@@ -18,7 +18,7 @@ void main() {
   String pkgRoot;
   try {
     pkgRoot = _runProc('git', ['rev-parse', '--show-toplevel']);
-    var currentDir = Directory.current.resolveSymbolicLinksSync();
+    final currentDir = Directory.current.resolveSymbolicLinksSync();
     if (!p.isWithin(pkgRoot, currentDir)) {
       throw StateError(
         'Expected the git root ($pkgRoot) '
@@ -36,7 +36,7 @@ void main() {
     expect(_changedGeneratedFiles(), isEmpty);
 
     // 2 - run build - should be no output, since nothing should change
-    var result = _runProc('dart', ['run', 'build_runner', 'build']);
+    final result = _runProc('dart', ['run', 'build_runner', 'build']);
     expect(result, contains('Built with build_runner'));
 
     // 3 - get a list of modified `.g.dart` files - should still be empty
@@ -47,7 +47,7 @@ void main() {
 final _whitespace = RegExp(r'\s');
 
 Set<String> _changedGeneratedFiles() {
-  var output = _runProc('git', ['status', '--porcelain']);
+  final output = _runProc('git', ['status', '--porcelain']);
 
   return LineSplitter.split(output)
       .map((line) => line.split(_whitespace).last)
@@ -56,7 +56,7 @@ Set<String> _changedGeneratedFiles() {
 }
 
 String _runProc(String proc, List<String> args) {
-  var result = Process.runSync(proc, args);
+  final result = Process.runSync(proc, args);
 
   if (result.exitCode != 0) {
     throw ProcessException(
@@ -66,7 +66,7 @@ String _runProc(String proc, List<String> args) {
       result.exitCode,
     );
   }
-  var stderr = result.stderr as String;
+  final stderr = result.stderr as String;
   if (stderr.isNotEmpty) print('stderr: $stderr');
 
   return (result.stdout as String).trim();

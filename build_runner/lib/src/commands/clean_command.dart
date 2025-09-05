@@ -14,7 +14,7 @@ class CleanCommand implements BuildRunnerCommand {
   @override
   Future<int> run() async {
     buildLog.doing('Deleting the build cache.');
-    var generatedDir = Directory(cacheDir);
+    final generatedDir = Directory(cacheDir);
     if (generatedDir.existsSync()) {
       generatedDir.deleteSync(recursive: true);
     }

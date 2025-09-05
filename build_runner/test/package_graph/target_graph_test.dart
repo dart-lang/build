@@ -21,24 +21,24 @@ import '../common/package_graphs.dart';
 void main() {
   group('TargetGraph.forPackageGraph', () {
     test('warns if required sources are missing', () {
-      var logs = <LogRecord>[];
-      var listener = Logger.root.onRecord.listen(logs.add);
+      final logs = <LogRecord>[];
+      final listener = Logger.root.onRecord.listen(logs.add);
       addTearDown(listener.cancel);
 
-      var packageB = PackageNode(
+      final packageB = PackageNode(
         'b',
         '/fakeB',
         DependencyType.path,
         LanguageVersion(0, 0),
       );
-      var packageA = PackageNode(
+      final packageA = PackageNode(
         'a',
         '/fakeA',
         DependencyType.path,
         LanguageVersion(0, 0),
         isRoot: true,
       )..dependencies.add(packageB);
-      var packageGraph = PackageGraph.fromRoot(packageA);
+      final packageGraph = PackageGraph.fromRoot(packageA);
 
       TargetGraph.forPackageGraph(
         packageGraph: packageGraph,

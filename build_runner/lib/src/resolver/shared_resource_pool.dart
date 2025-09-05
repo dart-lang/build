@@ -41,7 +41,7 @@ class SharedResourcePool extends Pool {
     }
     _sharedResourceCount++;
     _sharedResource ??= request();
-    var resource = await _sharedResource!;
+    final resource = await _sharedResource!;
 
     try {
       return await callback();

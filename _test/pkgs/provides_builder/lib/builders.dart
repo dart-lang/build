@@ -49,7 +49,7 @@ class _SomePostProcessBuilder extends PostProcessBuilder {
 
   @override
   Future<void> build(PostProcessBuildStep buildStep) async {
-    var content = defaultContent ?? await buildStep.readInputAsString();
+    final content = defaultContent ?? await buildStep.readInputAsString();
     await buildStep.writeAsString(
       buildStep.inputId.changeExtension('.txt.post'),
       content,

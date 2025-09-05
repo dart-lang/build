@@ -50,7 +50,7 @@ class AnsiBuffer {
     int? lastWhitespaceIndex;
     int? lastWhitespaceLengthIgnoringAnsi;
 
-    for (var item in items) {
+    for (final item in items) {
       if (_isAnsi(item)) {
         if (_showingAnsi) {
           buffer.write(item);
@@ -58,7 +58,7 @@ class AnsiBuffer {
         continue;
       }
 
-      for (var character in item.codeUnits) {
+      for (final character in item.codeUnits) {
         lengthIgnoringAnsi++;
         buffer.writeCharCode(
           character == _nbspCodeUnit ? _spaceCodeUnit : character,

@@ -12,7 +12,7 @@ String assetServerPortFilePath(String workingDirectory) =>
 
 /// Returns the port of the daemon asset server.
 int assetServerPort(String workingDirectory) {
-  var portFile = File(assetServerPortFilePath(workingDirectory));
+  final portFile = File(assetServerPortFilePath(workingDirectory));
   if (!portFile.existsSync()) {
     throw Exception('Unable to read daemon asset port file.');
   }

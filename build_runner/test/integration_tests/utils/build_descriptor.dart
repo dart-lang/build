@@ -63,7 +63,7 @@ Future<d.Descriptor> packageWithBuilders(
   Iterable<TestBuilderDefinition> builders, {
   String name = 'provides_builders',
 }) async {
-  var frameCaller = Frame.caller().uri;
+  final frameCaller = Frame.caller().uri;
   return d.dir(name, [
     await _pubspecWithDeps(
       name,
@@ -118,7 +118,7 @@ Future<BuildTool> package(
         'code_builder',
       ],
       pathDependencies: {
-        for (var o in otherPackages) o.name: p.join(d.sandbox, o.name),
+        for (final o in otherPackages) o.name: p.join(d.sandbox, o.name),
       },
     ),
     ...packageContents,
@@ -144,7 +144,7 @@ Future<BuildTool> packageWithBuildScript(
   Iterable<TestBuilderDefinition> builders, {
   Iterable<d.Descriptor> contents = const [],
 }) async {
-  var frameCaller = Frame.caller().uri;
+  final frameCaller = Frame.caller().uri;
   await d.dir('a', [
     await _pubspecWithDeps(
       'a',
@@ -239,7 +239,7 @@ Future<d.FileDescriptor> _pubspecWithDeps(
   Map<String, String> pathDependencies = const {},
   Map<String, String> versionDependencies = const {},
 }) async {
-  var packageConfig = await loadPackageConfigUri(
+  final packageConfig = await loadPackageConfigUri(
     (await Isolate.packageConfig)!,
   );
   pathDependencies = Map.of(pathDependencies);
@@ -265,7 +265,7 @@ d.FileDescriptor _pubspec(
   Map<String, String> pathDependencies = const {},
   Map<String, String> versionDependencies = const {},
 }) {
-  var buffer =
+  final buffer =
       StringBuffer()
         ..writeln('name: $name')
         ..writeln('environment:')
@@ -313,7 +313,7 @@ class BuildTool {
     List<String> args = const [],
     int expectExitCode = 0,
   }) async {
-    var process = await TestProcess.start(_executable, [
+    final process = await TestProcess.start(_executable, [
       ..._baseArgs,
       'build',
       ...args,

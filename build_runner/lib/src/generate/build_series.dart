@@ -110,7 +110,7 @@ class BuildSeries {
   }
 
   static Future<BuildSeries> create({required BuildPlan buildPlan}) async {
-    var buildDefinition = await BuildDefinition.prepareWorkspace(
+    final buildDefinition = await BuildDefinition.prepareWorkspace(
       packageGraph: buildPlan.packageGraph,
       targetGraph: buildPlan.targetGraph,
       readerWriter: buildPlan.readerWriter,
@@ -118,7 +118,7 @@ class BuildSeries {
       skipBuildScriptCheck: buildPlan.buildOptions.skipBuildScriptCheck,
     );
 
-    var finalizedReader = FinalizedReader(
+    final finalizedReader = FinalizedReader(
       buildPlan.readerWriter.copyWith(
         generatedAssetHider: buildDefinition.assetGraph,
       ),
@@ -127,7 +127,7 @@ class BuildSeries {
       buildPlan.buildPhases,
       buildPlan.packageGraph.root.name,
     );
-    var build = BuildSeries._(
+    final build = BuildSeries._(
       buildPlan,
       buildDefinition.assetGraph,
       buildDefinition.buildScriptUpdates,

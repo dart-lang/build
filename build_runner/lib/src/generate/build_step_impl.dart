@@ -134,7 +134,7 @@ class BuildStepImpl implements BuildStep {
   Future<void> writeAsBytes(AssetId id, FutureOr<List<int>> bytes) {
     if (_isComplete) throw BuildStepCompletedException();
     _checkOutput(id);
-    var done = _futureOrWrite(
+    final done = _futureOrWrite(
       bytes,
       (List<int> b) => _readerWriter.writeAsBytes(id, b),
     );
@@ -150,7 +150,7 @@ class BuildStepImpl implements BuildStep {
   }) {
     if (_isComplete) throw BuildStepCompletedException();
     _checkOutput(id);
-    var done = _futureOrWrite(
+    final done = _futureOrWrite(
       content,
       (String c) => _readerWriter.writeAsString(id, c, encoding: encoding),
     );
@@ -222,7 +222,7 @@ class _DelayedResolver implements Resolver {
 
   @override
   Stream<LibraryElement2> get libraries {
-    var completer = StreamCompleter<LibraryElement2>();
+    final completer = StreamCompleter<LibraryElement2>();
     _delegate.then((r) => completer.setSourceStream(r.libraries));
     return completer.stream;
   }

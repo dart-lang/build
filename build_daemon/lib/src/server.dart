@@ -74,7 +74,7 @@ class Server {
 
   /// Starts listening for build daemon clients.
   Future<int> listen() async {
-    var handler = webSocketHandler((WebSocketChannel channel, _) async {
+    final handler = webSocketHandler((WebSocketChannel channel, _) async {
       channel.stream.listen(
         (message) async {
           dynamic request;
@@ -94,12 +94,12 @@ class Server {
           } else if (request is BuildRequest) {
             // We can only get explicit build requests if we have a manual
             // change provider.
-            var changeProvider = _changeProvider;
-            var changes =
+            final changeProvider = _changeProvider;
+            final changes =
                 changeProvider is ManualChangeProvider
                     ? await changeProvider.collectChanges()
                     : <WatchEvent>[];
-            var targets =
+            final targets =
                 changes.isEmpty
                     ? _buildTargetManager.targets
                     : _buildTargetManager.targetsForChanges(changes);
@@ -111,7 +111,7 @@ class Server {
         },
       );
     });
-    var server = _server = await HttpMultiServer.loopback(0);
+    final server = _server = await HttpMultiServer.loopback(0);
     // Serve requests in an error zone to prevent failures
     // when running from another error zone.
     runZonedGuarded(() => serveRequests(server, handler), (e, s) {
@@ -122,7 +122,7 @@ class Server {
 
   Future<void> stop({String message = '', int failureType = 0}) async {
     if (message.isNotEmpty && failureType != 0) {
-      for (var connection in _buildTargetManager.allChannels) {
+      for (final connection in _buildTargetManager.allChannels) {
         connection.sink.add(
           jsonEncode(
             _serializers.serialize(
@@ -138,7 +138,7 @@ class Server {
     _timeout.cancel();
     await _server?.close(force: true);
     await _builder.stop();
-    for (var sub in _subs) {
+    for (final sub in _subs) {
       await sub.cancel();
     }
     await _outputStreamController.close();
@@ -157,8 +157,8 @@ class Server {
     _subs
       ..add(
         _builder.logs.listen((log) {
-          var message = jsonEncode(_serializers.serialize(log));
-          for (var channel in _interestedChannels) {
+          final message = jsonEncode(_serializers.serialize(log));
+          for (final channel in _interestedChannels) {
             channel.sink.add(message);
           }
         }),
@@ -168,9 +168,9 @@ class Server {
           // Don't serialize or send changed assets if the client isn't
           // interested in them.
           String? message, messageWithoutChangedAssets;
-          for (var channel in _interestedChannels) {
-            var targets = _buildTargetManager.targetsFor(channel);
-            var wantsChangedAssets = targets.any(
+          for (final channel in _interestedChannels) {
+            final targets = _buildTargetManager.targetsFor(channel);
+            final wantsChangedAssets = targets.any(
               (e) => e is DefaultBuildTarget && e.reportChangedAssets,
             );
             String messageForChannel;
@@ -191,8 +191,8 @@ class Server {
       )
       ..add(
         _logs.listen((log) {
-          var message = jsonEncode(_serializers.serialize(log));
-          for (var channel in _interestedChannels) {
+          final message = jsonEncode(_serializers.serialize(log));
+          for (final channel in _interestedChannels) {
             channel.sink.add(message);
           }
         }),
@@ -203,10 +203,10 @@ class Server {
     _subs.add(
       changes
           .asyncMapBuffer((changesLists) async {
-            var changes = changesLists.expand((x) => x).toList();
+            final changes = changesLists.expand((x) => x).toList();
             if (changes.isEmpty) return;
             if (_buildTargetManager.targets.isEmpty) return;
-            var buildTargets = _buildTargetManager.targetsForChanges(changes);
+            final buildTargets = _buildTargetManager.targetsForChanges(changes);
             if (buildTargets.isEmpty) return;
             await _build(buildTargets, changes);
           })

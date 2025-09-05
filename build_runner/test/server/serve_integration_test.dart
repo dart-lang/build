@@ -106,8 +106,8 @@ void main() {
       for (var i = 0; i < 512; i++)
         (() async => await handler(Request('GET', getHello)))(),
     ];
-    var responses = await Future.wait(futures);
-    for (var response in responses) {
+    final responses = await Future.wait(futures);
+    for (final response in responses) {
       expect(await response.readAsString(), startsWith('large'));
     }
   });

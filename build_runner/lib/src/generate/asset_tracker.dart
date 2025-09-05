@@ -27,9 +27,9 @@ class AssetTracker {
   /// Checks for and returns any file system changes compared to the current
   /// state of the asset graph.
   Future<Map<AssetId, ChangeType>> collectChanges(AssetGraph assetGraph) async {
-    var inputSources = await findInputSources();
-    var generatedSources = await findCacheDirSources();
-    var internalSources = await findInternalSources();
+    final inputSources = await findInputSources();
+    final generatedSources = await findCacheDirSources();
+    final internalSources = await findInternalSources();
     return computeSourceUpdates(
       inputSources,
       generatedSources,
@@ -54,8 +54,8 @@ class AssetTracker {
 
   /// Returns all the internal sources, such as those under [entryPointDir].
   Future<Set<AssetId>> findInternalSources() async {
-    var ids = await _listIdsSafe(Glob('$entryPointDir/**')).toSet();
-    var packageConfigId = AssetId(
+    final ids = await _listIdsSafe(Glob('$entryPointDir/**')).toSet();
+    final packageConfigId = AssetId(
       _targetGraph.rootPackageConfig.packageName,
       '.dart_tool/package_config.json',
     );
@@ -80,21 +80,21 @@ class AssetTracker {
           ..addAll(inputSources)
           ..addAll(generatedSources)
           ..addAll(internalSources);
-    var updates = <AssetId, ChangeType>{};
+    final updates = <AssetId, ChangeType>{};
     void addUpdates(Iterable<AssetId> assets, ChangeType type) {
-      for (var asset in assets) {
+      for (final asset in assets) {
         updates[asset] = type;
       }
     }
 
-    var newSources = inputSources.difference(
+    final newSources = inputSources.difference(
       assetGraph.allNodes
           .where((node) => node.isTrackedInput)
           .map((node) => node.id)
           .toSet(),
     );
     addUpdates(newSources, ChangeType.ADD);
-    var removedAssets = assetGraph.allNodes
+    final removedAssets = assetGraph.allNodes
         .where((n) {
           if (!n.isFile) return false;
           if (n.type == NodeType.generated) {
@@ -107,15 +107,15 @@ class AssetTracker {
 
     addUpdates(removedAssets, ChangeType.REMOVE);
 
-    var originalGraphSources = assetGraph.sources.toSet();
-    var preExistingSources = originalGraphSources.intersection(inputSources)
+    final originalGraphSources = assetGraph.sources.toSet();
+    final preExistingSources = originalGraphSources.intersection(inputSources)
       ..addAll(internalSources.where(assetGraph.contains));
     for (final id in preExistingSources) {
-      var node = assetGraph.get(id)!;
-      var originalDigest = node.digest;
+      final node = assetGraph.get(id)!;
+      final originalDigest = node.digest;
       if (originalDigest == null) continue;
       _readerWriter.cache.invalidate([id]);
-      var currentDigest = await _readerWriter.digest(id);
+      final currentDigest = await _readerWriter.digest(id);
       if (currentDigest != originalDigest) {
         updates[id] = ChangeType.MODIFY;
       }
@@ -138,17 +138,17 @@ class AssetTracker {
   }
 
   Stream<AssetId> _listGeneratedAssetIds() {
-    var glob = Glob('$generatedOutputDirectory/**');
+    final glob = Glob('$generatedOutputDirectory/**');
 
     return _listIdsSafe(glob)
         .map((id) {
-          var packagePath = id.path.substring(
+          final packagePath = id.path.substring(
             generatedOutputDirectory.length + 1,
           );
-          var firstSlash = packagePath.indexOf('/');
+          final firstSlash = packagePath.indexOf('/');
           if (firstSlash == -1) return null;
-          var package = packagePath.substring(0, firstSlash);
-          var path = packagePath.substring(firstSlash + 1);
+          final package = packagePath.substring(0, firstSlash);
+          final path = packagePath.substring(firstSlash + 1);
           return AssetId(package, path);
         })
         .where((id) => id != null)

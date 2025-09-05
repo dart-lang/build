@@ -8,9 +8,9 @@ import 'builder.dart';
 /// Collects the expected AssetIds created by [builder] when given [input] based
 /// on the extension configuration.
 Iterable<AssetId> expectedOutputs(Builder builder, AssetId input) sync* {
-  for (var parsedExtension in builder._parsedExtensions) {
-    var outputs = parsedExtension.matchingOutputsFor(input);
-    for (var output in outputs) {
+  for (final parsedExtension in builder._parsedExtensions) {
+    final outputs = parsedExtension.matchingOutputsFor(input);
+    for (final output in outputs) {
       if (output == input) {
         throw ArgumentError(
           'The builder `$builder` declares an output "$output" which is '

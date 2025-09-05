@@ -151,7 +151,7 @@ class _BuildPerformanceTrackerImpl extends SimpleAsyncTimeTracker
     Future<Iterable<AssetId>> Function() runPhase,
   ) {
     assert(isTracking);
-    var tracker = BuildPhaseTracker(action);
+    final tracker = BuildPhaseTracker(action);
     _phases.add(tracker);
     return tracker.track(runPhase);
   }
@@ -165,7 +165,7 @@ class _BuildPerformanceTrackerImpl extends SimpleAsyncTimeTracker
     String builderKey,
   ) {
     assert(isTracking);
-    var tracker = BuilderActionTracker(primaryInput, builderKey);
+    final tracker = BuilderActionTracker(primaryInput, builderKey);
     _actions.add(tracker);
     return tracker;
   }
@@ -287,7 +287,7 @@ class _BuilderActionTrackerImpl extends SimpleAsyncTimeTracker
     T Function() action, {
     bool isExternal = false,
   }) {
-    var tracker =
+    final tracker =
         isExternal
             ? BuilderActionStageSimpleTracker(label)
             : BuilderActionStageAsyncTracker(label);

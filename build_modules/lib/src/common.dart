@@ -16,7 +16,7 @@ String defaultAnalysisOptionsArg(ScratchSpace scratchSpace) =>
 enum ModuleStrategy { fine, coarse }
 
 ModuleStrategy moduleStrategy(BuilderOptions options) {
-  var config = options.config['strategy'] as String? ?? 'coarse';
+  final config = options.config['strategy'] as String? ?? 'coarse';
   switch (config) {
     case 'coarse':
       return ModuleStrategy.coarse;
@@ -35,7 +35,7 @@ void validateOptions(
   List<String> supportedOptions,
   String builderKey,
 ) {
-  var unsupportedOptions = config.keys.where(
+  final unsupportedOptions = config.keys.where(
     (o) => !supportedOptions.contains(o),
   );
   if (unsupportedOptions.isNotEmpty) {

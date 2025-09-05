@@ -38,7 +38,7 @@ Future<void> runBuilder(
   PackageConfig? packageConfig,
 }) async {
   stageTracker ??= NoOpStageTracker.instance;
-  var shouldDisposeResourceManager = resourceManager == null;
+  final shouldDisposeResourceManager = resourceManager == null;
   final resources = resourceManager ?? ResourceManager();
   logger ??= Logger('runBuilder');
 
@@ -66,9 +66,9 @@ Future<void> runBuilder(
 
   //TODO(nbosch) check overlapping outputs?
   Future<void> buildForInput(AssetId input) async {
-    var outputs = expectedOutputs(builder, input);
+    final outputs = expectedOutputs(builder, input);
     if (outputs.isEmpty) return;
-    var buildStep = BuildStepImpl(
+    final buildStep = BuildStepImpl(
       input,
       outputs,
       readerWriter,

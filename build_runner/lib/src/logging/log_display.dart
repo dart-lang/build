@@ -57,7 +57,7 @@ class LogDisplay {
       return;
     }
 
-    var lines = block.lines;
+    final lines = block.lines;
 
     // https://en.wikipedia.org/wiki/ANSI_escape_code#:~:text=Cursor%20Previous
     // Moves cursor to the beginning of the line n lines up.

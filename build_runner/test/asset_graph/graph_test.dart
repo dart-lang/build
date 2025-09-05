@@ -42,7 +42,7 @@ void main() {
     }
 
     AssetNode testAddNode(int number) {
-      var node = AssetNode.source(AssetId.parse('pkg|lib/a$number.dart'));
+      final node = AssetNode.source(AssetId.parse('pkg|lib/a$number.dart'));
       expectNodeDoesNotExist(node);
       graph.add(node);
       expectNodeExists(node);
@@ -61,15 +61,15 @@ void main() {
       });
 
       test('add, contains, get, allNodes', () {
-        var expectedNodes = [
+        final expectedNodes = [
           for (var i = 0; i < 5; i++) testAddNode(i),
-          for (var id in placeholderIdsFor(fooPackageGraph)) graph.get(id),
+          for (final id in placeholderIdsFor(fooPackageGraph)) graph.get(id),
         ];
         expect(graph.allNodes, unorderedEquals(expectedNodes));
       });
 
       test('remove', () {
-        var nodes = <AssetNode>[];
+        final nodes = <AssetNode>[];
         for (var i = 0; i < 5; i++) {
           nodes.add(testAddNode(i));
         }
@@ -107,7 +107,7 @@ void main() {
                   ..inputs.add(node.id)
                   ..results.add(node.id),
           );
-          var phaseNum = n;
+          final phaseNum = n;
           final postProcessBuildStep = PostProcessBuildStepId(
             input: node.id,
             actionNumber: n,
@@ -129,7 +129,7 @@ void main() {
               );
             }
 
-            var syntheticNode = AssetNode.missingSource(makeAssetId());
+            final syntheticNode = AssetNode.missingSource(makeAssetId());
 
             generatedNode = generatedNode.rebuild(
               (b) => b.generatedNodeState.inputs.addAll([
@@ -146,8 +146,8 @@ void main() {
         }
         graph.add(globNode);
 
-        var encoded = graph.serialize();
-        var decoded = AssetGraph.deserialize(encoded);
+        final encoded = graph.serialize();
+        final decoded = AssetGraph.deserialize(encoded);
         expect(decoded, equalsAssetGraph(graph));
         expect(
           decoded.allPostProcessBuildStepOutputs,
@@ -158,11 +158,11 @@ void main() {
       test(
         'Throws an AssetGraphCorruptedException if versions dont match up',
         () {
-          var bytes = graph.serialize();
-          var serialized =
+          final bytes = graph.serialize();
+          final serialized =
               json.decode(utf8.decode(bytes)) as Map<String, dynamic>;
           serialized['version'] = -1;
-          var encoded = utf8.encode(json.encode(serialized));
+          final encoded = utf8.encode(json.encode(serialized));
           expect(
             () => AssetGraph.deserialize(encoded),
             throwsA(isA<AssetGraphCorruptedException>()),
@@ -171,7 +171,7 @@ void main() {
       );
 
       test('Throws an AssetGraphCorruptedException on invalid json', () {
-        var bytes = List.of(graph.serialize())..removeLast();
+        final bytes = List.of(graph.serialize())..removeLast();
         expect(
           () => AssetGraph.deserialize(bytes),
           throwsA(isA<AssetGraphCorruptedException>()),
@@ -180,7 +180,7 @@ void main() {
     });
 
     group('with buildPhases', () {
-      var targetSources = const InputSet(exclude: ['excluded.txt']);
+      final targetSources = const InputSet(exclude: ['excluded.txt']);
       final buildPhases = BuildPhases(
         [
           InBuildPhase(
@@ -243,7 +243,7 @@ void main() {
         expect(graph.postProcessBuildStepIds(package: 'foo'), {
           expectedBuildStepId,
         });
-        var node = graph.get(primaryInputId)!;
+        final node = graph.get(primaryInputId)!;
         expect(node.primaryOutputs, [primaryOutputId]);
         expect(graph.computeOutputs()[node.id] ?? <AssetId>{}, isEmpty);
         expect(
@@ -252,7 +252,7 @@ void main() {
           reason: 'Nodes with outputs should get an eager digest.',
         );
 
-        var excludedNode = graph.get(excludedInputId);
+        final excludedNode = graph.get(excludedInputId);
         expect(excludedNode, isNotNull);
         expect(
           excludedNode!.digest,
@@ -262,7 +262,7 @@ void main() {
 
         expect(graph.get(internalId)?.type, NodeType.internal);
 
-        var primaryOutputNode = graph.get(primaryOutputId)!;
+        final primaryOutputNode = graph.get(primaryOutputId)!;
         // Didn't actually do a build yet so this starts out empty.
         expect(primaryOutputNode.generatedNodeState!.inputs, isEmpty);
         expect(
@@ -277,7 +277,7 @@ void main() {
 
       group('updateAndInvalidate', () {
         test('add new primary input', () async {
-          var changes = {AssetId('foo', 'new.txt'): ChangeType.ADD};
+          final changes = {AssetId('foo', 'new.txt'): ChangeType.ADD};
           await graph.updateAndInvalidate(
             buildPhases,
             changes,
@@ -286,7 +286,7 @@ void main() {
             digestReader,
           );
           expect(graph.contains(AssetId('foo', 'new.txt.copy')), isTrue);
-          var newBuildStepId = PostProcessBuildStepId(
+          final newBuildStepId = PostProcessBuildStepId(
             input: primaryInputId,
             actionNumber: 0,
           );
@@ -297,8 +297,8 @@ void main() {
         });
 
         test('delete old primary input', () async {
-          var changes = {primaryInputId: ChangeType.REMOVE};
-          var deletes = <AssetId>[];
+          final changes = {primaryInputId: ChangeType.REMOVE};
+          final deletes = <AssetId>[];
           expect(graph.contains(primaryOutputId), isTrue);
           await graph.updateAndInvalidate(
             buildPhases,
@@ -314,8 +314,8 @@ void main() {
         });
 
         test('modify primary input', () async {
-          var changes = {primaryInputId: ChangeType.MODIFY};
-          var deletes = <AssetId>[];
+          final changes = {primaryInputId: ChangeType.MODIFY};
+          final deletes = <AssetId>[];
           expect(graph.contains(primaryOutputId), isTrue);
           // pretend a build happened
           graph.updateNode(primaryOutputId, (nodeBuilder) {
@@ -335,11 +335,11 @@ void main() {
         });
 
         test('add new primary input which replaces a synthetic node', () async {
-          var syntheticNode = AssetNode.missingSource(syntheticId);
+          final syntheticNode = AssetNode.missingSource(syntheticId);
           graph.add(syntheticNode);
           expect(graph.get(syntheticId), syntheticNode);
 
-          var changes = {syntheticId: ChangeType.ADD};
+          final changes = {syntheticId: ChangeType.ADD};
           await graph.updateAndInvalidate(
             buildPhases,
             changes,
@@ -353,7 +353,7 @@ void main() {
           expect(graph.contains(syntheticOutputId), isTrue);
           expect(graph.get(syntheticOutputId)!.type, NodeType.generated);
 
-          var newAnchor = PostProcessBuildStepId(
+          final newAnchor = PostProcessBuildStepId(
             input: syntheticId,
             actionNumber: 0,
           );
@@ -366,11 +366,11 @@ void main() {
         test(
           'add new generated asset which replaces a synthetic node',
           () async {
-            var syntheticNode = AssetNode.missingSource(syntheticOutputId);
+            final syntheticNode = AssetNode.missingSource(syntheticOutputId);
             graph.add(syntheticNode);
             expect(graph.get(syntheticOutputId), syntheticNode);
 
-            var changes = {syntheticId: ChangeType.ADD};
+            final changes = {syntheticId: ChangeType.ADD};
             await graph.updateAndInvalidate(
               buildPhases,
               changes,
@@ -388,8 +388,8 @@ void main() {
         test(
           'removing nodes deletes primary outputs and secondary edges',
           () async {
-            var secondaryId = makeAssetId('foo|secondary.txt');
-            var secondaryNode = AssetNode.source(secondaryId);
+            final secondaryId = makeAssetId('foo|secondary.txt');
+            final secondaryNode = AssetNode.source(secondaryId);
 
             graph.updateNode(primaryOutputId, (nodeBuilder) {
               nodeBuilder.generatedNodeState.inputs.add(secondaryNode.id);
@@ -398,7 +398,7 @@ void main() {
             graph.add(secondaryNode);
             expect(graph.get(secondaryId), secondaryNode);
 
-            var changes = {primaryInputId: ChangeType.REMOVE};
+            final changes = {primaryInputId: ChangeType.REMOVE};
             await graph.updateAndInvalidate(
               buildPhases,
               changes,

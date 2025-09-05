@@ -50,7 +50,7 @@ dependencies:
   //
   // So the merged config will have the two things needed: `build` packages
   // not broken by local changes, and whatever generators are needed.
-  var mergedConfig = PackageConfig(
+  final mergedConfig = PackageConfig(
     json.decode(
           File.fromUri(
             Directory.current.uri.resolve('../.dart_tool/package_config.json'),

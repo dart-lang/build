@@ -28,42 +28,44 @@ class TestBootstrapBuilder extends Builder {
 
   @override
   Future<void> build(BuildStep buildStep) async {
-    var id = buildStep.inputId;
-    var contents = await buildStep.readAsString(id);
-    var assetPath =
+    final id = buildStep.inputId;
+    final contents = await buildStep.readAsString(id);
+    final assetPath =
         id.pathSegments.first == 'lib'
             ? p.url.join('packages', id.package, id.path)
             : id.path;
 
-    var vmRuntimes = [Runtime.vm];
-    var browserRuntimes =
+    final vmRuntimes = [Runtime.vm];
+    final browserRuntimes =
         Runtime.builtIn.where((r) => r.isBrowser == true).toList();
-    var nodeRuntimes = [Runtime.nodeJS];
-    var config = await _ConfigLoader.instance.load(id.package, buildStep);
+    final nodeRuntimes = [Runtime.nodeJS];
+    final config = await _ConfigLoader.instance.load(id.package, buildStep);
     if (config != null) {
-      for (var customRuntime in config.defineRuntimes.values) {
-        var parent = customRuntime.parent;
+      for (final customRuntime in config.defineRuntimes.values) {
+        final parent = customRuntime.parent;
         if (vmRuntimes.any((r) => r.identifier == parent)) {
-          var runtime = vmRuntimes.firstWhere((r) => r.identifier == parent);
+          final runtime = vmRuntimes.firstWhere((r) => r.identifier == parent);
           vmRuntimes.add(
             runtime.extend(customRuntime.name, customRuntime.identifier),
           );
         } else if (browserRuntimes.any((r) => r.identifier == parent)) {
-          var runtime = browserRuntimes.firstWhere(
+          final runtime = browserRuntimes.firstWhere(
             (r) => r.identifier == parent,
           );
           browserRuntimes.add(
             runtime.extend(customRuntime.name, customRuntime.identifier),
           );
         } else if (nodeRuntimes.any((r) => r.identifier == parent)) {
-          var runtime = nodeRuntimes.firstWhere((r) => r.identifier == parent);
+          final runtime = nodeRuntimes.firstWhere(
+            (r) => r.identifier == parent,
+          );
           nodeRuntimes.add(
             runtime.extend(customRuntime.name, customRuntime.identifier),
           );
         }
       }
     }
-    var metadata = parseMetadata(
+    final metadata = parseMetadata(
       assetPath,
       contents,
       vmRuntimes
@@ -136,17 +138,17 @@ class _ConfigLoader {
   final _configDigestByPackage = <String, Digest>{};
 
   Future<Configuration?> load(String package, AssetReader reader) async {
-    var customConfigId = AssetId(package, 'dart_test.yaml');
+    final customConfigId = AssetId(package, 'dart_test.yaml');
     if (!await reader.canRead(customConfigId)) return null;
 
-    var digest = await reader.digest(customConfigId);
+    final digest = await reader.digest(customConfigId);
     if (_configDigestByPackage[package] == digest) {
       assert(_configByPackage[package] != null);
       return _configByPackage[package];
     }
     _configDigestByPackage[package] = digest;
     return _configByPackage[package] = () async {
-      var content = await reader.readAsString(customConfigId);
+      final content = await reader.readAsString(customConfigId);
       return Configuration.loadFromString(
         content,
         sourceUrl: customConfigId.uri,

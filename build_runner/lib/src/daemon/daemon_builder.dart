@@ -71,8 +71,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     Set<BuildTarget> targets,
     Iterable<WatchEvent> fileChanges,
   ) async {
-    var defaultTargets = targets.cast<DefaultBuildTarget>();
-    var changes =
+    final defaultTargets = targets.cast<DefaultBuildTarget>();
+    final changes =
         fileChanges
             .map<AssetChange>(
               (change) => AssetChange(AssetId.parse(change.path), change.type),
@@ -88,13 +88,13 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       }
       return;
     }
-    var targetNames = targets.map((t) => t.target).toSet();
+    final targetNames = targets.map((t) => t.target).toSet();
     _logMessage(Level.INFO, 'About to build ${targetNames.toList()}...');
     _signalStart(targetNames);
-    var results = <BuildResult>[];
-    var buildDirs = <BuildDirectory>{};
-    var buildFilters = <BuildFilter>{};
-    for (var target in defaultTargets) {
+    final results = <BuildResult>[];
+    final buildDirs = <BuildDirectory>{};
+    final buildFilters = <BuildFilter>{};
+    for (final target in defaultTargets) {
       OutputLocation? outputLocation;
       if (target.outputLocation != null) {
         final targetOutputLocation = target.outputLocation!;
@@ -109,7 +109,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       );
       if (target.buildFilters != null && target.buildFilters!.isNotEmpty) {
         buildFilters.addAll([
-          for (var pattern in target.buildFilters!)
+          for (final pattern in target.buildFilters!)
             BuildFilter.fromArg(pattern, _packageName),
         ]);
       } else {
@@ -121,21 +121,21 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     Iterable<AssetId>? outputs;
 
     try {
-      var mergedChanges = collectChanges([changes]);
-      var result = await _buildSeries.run(
+      final mergedChanges = collectChanges([changes]);
+      final result = await _buildSeries.run(
         mergedChanges,
         buildDirs: buildDirs.build(),
         buildFilters: buildFilters.build(),
       );
-      var interestedInOutputs = targets.any(
+      final interestedInOutputs = targets.any(
         (e) => e is DefaultBuildTarget && e.reportChangedAssets,
       );
 
       if (interestedInOutputs) {
-        outputs = {for (var change in changes) change.id, ...result.outputs};
+        outputs = {for (final change in changes) change.id, ...result.outputs};
       }
 
-      for (var target in targets) {
+      for (final target in targets) {
         if (result.status == core.BuildStatus.success) {
           // TODO(grouma) - Can we notify if a target was cached?
           results.add(
@@ -159,7 +159,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         }
       }
     } catch (e) {
-      for (var target in targets) {
+      for (final target in targets) {
         results.add(
           DefaultBuildResult((b) {
             b.status = BuildStatus.failed;
@@ -203,8 +203,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
   void _signalStart(Iterable<String> targets) {
     _buildingCompleter = Completer();
-    var results = <BuildResult>[];
-    for (var target in targets) {
+    final results = <BuildResult>[];
+    for (final target in targets) {
       results.add(
         DefaultBuildResult((b) {
           b.status = BuildStatus.started;
@@ -219,8 +219,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     required BuildPlan buildPlan,
     required DaemonOptions daemonOptions,
   }) async {
-    var expectedDeletes = <AssetId>{};
-    var outputStreamController = StreamController<ServerLog>(sync: true);
+    final expectedDeletes = <AssetId>{};
+    final outputStreamController = StreamController<ServerLog>(sync: true);
 
     buildLog.configuration = buildLog.configuration.rebuild((b) {
       b.onLog = (record) {
@@ -258,7 +258,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
               const Duration(milliseconds: 250),
         );
 
-    var changeProvider =
+    final changeProvider =
         daemonOptions.buildMode == BuildMode.Auto
             ? AutoChangeProviderImpl(graphEvents())
             : ManualChangeProviderImpl(

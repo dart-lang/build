@@ -54,7 +54,7 @@ class DecodingCache<T> {
 
   void _dispose() {
     _cached.removeWhere((_, entry) => entry.digest == null);
-    for (var entry in _cached.values) {
+    for (final entry in _cached.values) {
       entry.needsCheck = true;
     }
   }
@@ -77,7 +77,7 @@ class DecodingCache<T> {
       entry = _cached[id]!;
       if (entry.needsCheck) {
         await (entry.onGoingCheck ??= () async {
-          var previousDigest =
+          final previousDigest =
               entry.digest == null ? null : await Result.release(entry.digest!);
           entry.digest = Result.capture(reader.digest(id));
           if (await Result.release(entry.digest!) != previousDigest) {

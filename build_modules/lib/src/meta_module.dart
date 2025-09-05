@@ -20,7 +20,7 @@ part 'meta_module.g.dart';
 ///
 /// Throws an [ArgumentError] if [path] is just a filename with no directory.
 String _topLevelDir(String path) {
-  var parts = p.url.split(p.url.normalize(path));
+  final parts = p.url.split(p.url.normalize(path));
   String? error;
   if (parts.length == 1) {
     error = 'The path `$path` does not contain a directory.';
@@ -42,18 +42,18 @@ Module _moduleForComponent(
 ) {
   // Name components based on first alphabetically sorted node, preferring
   // public srcs (not under lib/src).
-  var sources = componentLibraries.map((n) => n.id).toSet();
-  var nonSrcIds = sources.where((id) => !id.path.startsWith('lib/src/'));
-  var primaryId =
+  final sources = componentLibraries.map((n) => n.id).toSet();
+  final nonSrcIds = sources.where((id) => !id.path.startsWith('lib/src/'));
+  final primaryId =
       nonSrcIds.isNotEmpty ? nonSrcIds.reduce(_min) : sources.reduce(_min);
   // Expand to include all the part files of each node, these aren't
   // included as individual `_AssetNodes`s in `connectedComponents`.
   sources.addAll(componentLibraries.expand((n) => n.parts));
-  var directDependencies =
+  final directDependencies =
       <AssetId>{}
         ..addAll(componentLibraries.expand((n) => n.depsForPlatform(platform)))
         ..removeAll(sources);
-  var isSupported = componentLibraries
+  final isSupported = componentLibraries
       .expand((l) => l.sdkDeps)
       .every(platform.supportsLibrary);
   return Module(primaryId, sources, directDependencies, platform, isSupported);
@@ -65,15 +65,15 @@ Set<AssetId> _localTransitiveDeps(
   Module module,
   Map<AssetId, Module> assetsToModules,
 ) {
-  var localTransitiveDeps = <AssetId>{};
+  final localTransitiveDeps = <AssetId>{};
   var nextIds = module.directDependencies;
-  var seenIds = <AssetId>{};
+  final seenIds = <AssetId>{};
   while (nextIds.isNotEmpty) {
-    var ids = nextIds;
+    final ids = nextIds;
     seenIds.addAll(ids);
     nextIds = <AssetId>{};
-    for (var id in ids) {
-      var module = assetsToModules[id];
+    for (final id in ids) {
+      final module = assetsToModules[id];
       if (module == null) continue; // Skip non-local modules
       if (localTransitiveDeps.add(module.primarySource)) {
         nextIds.addAll(module.directDependencies.difference(seenIds));
@@ -89,15 +89,15 @@ Map<AssetId, Set<AssetId>> _findReverseEntrypointDeps(
   Iterable<Module> entrypointModules,
   Iterable<Module> modules,
 ) {
-  var reverseDeps = <AssetId, Set<AssetId>>{};
-  var assetsToModules = <AssetId, Module>{};
-  for (var module in modules) {
-    for (var assetId in module.sources) {
+  final reverseDeps = <AssetId, Set<AssetId>>{};
+  final assetsToModules = <AssetId, Module>{};
+  for (final module in modules) {
+    for (final assetId in module.sources) {
       assetsToModules[assetId] = module;
     }
   }
-  for (var module in entrypointModules) {
-    for (var moduleDep in _localTransitiveDeps(module, assetsToModules)) {
+  for (final module in entrypointModules) {
+    for (final moduleDep in _localTransitiveDeps(module, assetsToModules)) {
       reverseDeps
           .putIfAbsent(moduleDep, () => <AssetId>{})
           .add(module.primarySource);
@@ -116,32 +116,32 @@ Map<AssetId, Set<AssetId>> _findReverseEntrypointDeps(
 ///   * Else merge it into with others that are depended on by the same set of
 ///   entrypoints
 List<Module> _mergeModules(Iterable<Module> modules, Set<AssetId> entrypoints) {
-  var entrypointModules =
+  final entrypointModules =
       modules.where((m) => m.sources.any(entrypoints.contains)).toList();
 
   // Groups of modules that can be merged into an existing entrypoint module.
-  var entrypointModuleGroups = {
-    for (var m in entrypointModules) m.primarySource: [m],
+  final entrypointModuleGroups = {
+    for (final m in entrypointModules) m.primarySource: [m],
   };
 
   // Maps modules to entrypoint modules that transitively depend on them.
-  var modulesToEntryPoints = _findReverseEntrypointDeps(
+  final modulesToEntryPoints = _findReverseEntrypointDeps(
     entrypointModules,
     modules,
   );
 
   // Modules which are not depended on by any entrypoint
-  var standaloneModules = <Module>[];
+  final standaloneModules = <Module>[];
 
   // Modules which are merged with others.
-  var mergedModules = <String, List<Module>>{};
+  final mergedModules = <String, List<Module>>{};
 
-  for (var module in modules) {
+  for (final module in modules) {
     // Skip entrypoint modules.
     if (entrypointModuleGroups.containsKey(module.primarySource)) continue;
 
     // The entry points that transitively import this module.
-    var entrypointIds = modulesToEntryPoints[module.primarySource];
+    final entrypointIds = modulesToEntryPoints[module.primarySource];
 
     // If no entrypoint imports the module, just leave it alone.
     if (entrypointIds == null || entrypointIds.isEmpty) {
@@ -152,7 +152,9 @@ List<Module> _mergeModules(Iterable<Module> modules, Set<AssetId> entrypoints) {
     // If there are multiple entry points for a given resource we must create
     // a new shared module. Use `$` to signal that it is a shared module.
     if (entrypointIds.length > 1) {
-      var mId = (entrypointIds.toList()..sort()).map((m) => m.path).join('\$');
+      final mId = (entrypointIds.toList()..sort())
+          .map((m) => m.path)
+          .join('\$');
       mergedModules.putIfAbsent(mId, () => []).add(module);
     } else {
       entrypointModuleGroups[entrypointIds.single]!.add(module);
@@ -160,9 +162,9 @@ List<Module> _mergeModules(Iterable<Module> modules, Set<AssetId> entrypoints) {
   }
 
   return [
-    for (var module in mergedModules.values)
+    for (final module in mergedModules.values)
       _withConsistentPrimarySource(Module.merge(module)),
-    for (var module in entrypointModuleGroups.values) Module.merge(module),
+    for (final module in entrypointModuleGroups.values) Module.merge(module),
     ...standaloneModules,
   ];
 }
@@ -196,7 +198,7 @@ List<Module> _computeModules(
   DartPlatform platform,
 ) {
   assert(() {
-    var dir = _topLevelDir(libraries.values.first.id.path);
+    final dir = _topLevelDir(libraries.values.first.id.path);
     return libraries.values.every((l) => _topLevelDir(l.id.path) == dir);
   }());
 
@@ -238,8 +240,8 @@ class MetaModule {
     ModuleStrategy strategy,
     DartPlatform platform,
   ) async {
-    var libraries = <ModuleLibrary>[];
-    for (var id in libraryIds) {
+    final libraries = <ModuleLibrary>[];
+    for (final id in libraryIds) {
       libraries.add(
         ModuleLibrary.deserialize(
           id.changeExtension('').changeExtension('.dart'),
@@ -261,14 +263,14 @@ MetaModule _coarseModulesForLibraries(
   List<ModuleLibrary> libraries,
   DartPlatform platform,
 ) {
-  var librariesByDirectory = <String, Map<AssetId, ModuleLibrary>>{};
-  for (var library in libraries) {
+  final librariesByDirectory = <String, Map<AssetId, ModuleLibrary>>{};
+  for (final library in libraries) {
     final dir = _topLevelDir(library.id.path);
     (librariesByDirectory[dir] ??= {})[library.id] = library;
   }
 
   final modules = [
-    for (var libraries in librariesByDirectory.values)
+    for (final libraries in librariesByDirectory.values)
       ..._computeModules(libraries, platform),
   ];
   _sortModules(modules);
@@ -280,8 +282,8 @@ MetaModule _fineModulesForLibraries(
   List<ModuleLibrary> libraries,
   DartPlatform platform,
 ) {
-  var modules = [
-    for (var library in libraries)
+  final modules = [
+    for (final library in libraries)
       Module(
         library.id,
         [...library.parts, library.id],

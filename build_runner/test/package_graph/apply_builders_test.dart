@@ -19,20 +19,20 @@ import '../common/common.dart';
 void main() {
   group('apply_builders.createBuildPhases', () {
     test('builderConfigOverrides overrides builder config globally', () async {
-      var packageGraph = buildPackageGraph({
+      final packageGraph = buildPackageGraph({
         rootPackage('a'): ['b'],
         package('b'): [],
       });
-      var targetGraph = await TargetGraph.forPackageGraph(
+      final targetGraph = await TargetGraph.forPackageGraph(
         packageGraph: packageGraph,
         testingOverrides: TestingOverrides(
           defaultRootPackageSources: ['**'].build(),
         ),
       );
-      var builderApplications = [
+      final builderApplications = [
         apply('b:cool_builder', [CoolBuilder.new], toAllPackages()),
       ];
-      var phases = await createBuildPhases(
+      final phases = await createBuildPhases(
         targetGraph,
         builderApplications,
         {
@@ -50,13 +50,13 @@ void main() {
     test(
       'applies root package global options before builderConfigOverrides',
       () async {
-        var packageGraph = buildPackageGraph({
+        final packageGraph = buildPackageGraph({
           rootPackage('a'): ['b'],
           package('b'): [],
         });
         await runInBuildConfigZone(
           () async {
-            var overrides =
+            final overrides =
                 {
                   'a': BuildConfig(
                     packageName: 'a',
@@ -74,17 +74,17 @@ void main() {
                     },
                   ),
                 }.build();
-            var targetGraph = await TargetGraph.forPackageGraph(
+            final targetGraph = await TargetGraph.forPackageGraph(
               packageGraph: packageGraph,
               testingOverrides: TestingOverrides(
                 defaultRootPackageSources: ['**'].build(),
                 buildConfig: overrides,
               ),
             );
-            var builderApplications = [
+            final builderApplications = [
               apply('b:cool_builder', [CoolBuilder.new], toAllPackages()),
             ];
-            var phases = await createBuildPhases(
+            final phases = await createBuildPhases(
               targetGraph,
               builderApplications,
               {
@@ -114,20 +114,20 @@ void main() {
     );
 
     test('honors package filter', () async {
-      var packageGraph = buildPackageGraph({
+      final packageGraph = buildPackageGraph({
         rootPackage('a'): ['b'],
         package('b'): [],
       });
-      var targetGraph = await TargetGraph.forPackageGraph(
+      final targetGraph = await TargetGraph.forPackageGraph(
         packageGraph: packageGraph,
         testingOverrides: TestingOverrides(
           defaultRootPackageSources: ['**'].build(),
         ),
       );
-      var builderApplications = [
+      final builderApplications = [
         apply('b:cool_builder', [CoolBuilder.new], toDependentsOf('b')),
       ];
-      var phases = await createBuildPhases(
+      final phases = await createBuildPhases(
         targetGraph,
         builderApplications,
         BuiltMap(),
@@ -138,17 +138,17 @@ void main() {
     });
 
     test('honors appliesBuilders', () async {
-      var packageGraph = buildPackageGraph({
+      final packageGraph = buildPackageGraph({
         rootPackage('a'): ['b'],
         package('b'): [],
       });
-      var targetGraph = await TargetGraph.forPackageGraph(
+      final targetGraph = await TargetGraph.forPackageGraph(
         packageGraph: packageGraph,
         testingOverrides: TestingOverrides(
           defaultRootPackageSources: ['**'].build(),
         ),
       );
-      var builderApplications = [
+      final builderApplications = [
         apply(
           'b:cool_builder',
           [CoolBuilder.new],
@@ -157,7 +157,7 @@ void main() {
         ),
         apply('b:not_by_default', [(_) => TestBuilder()], toNoneByDefault()),
       ];
-      var phases = await createBuildPhases(
+      final phases = await createBuildPhases(
         targetGraph,
         builderApplications,
         BuiltMap(),
@@ -177,18 +177,18 @@ void main() {
     });
 
     test('skips non-hidden builders on non-root packages', () async {
-      var packageGraph = buildPackageGraph({
+      final packageGraph = buildPackageGraph({
         rootPackage('a'): ['b', 'c'],
         package('b'): ['c'],
         package('c'): [],
       });
-      var targetGraph = await TargetGraph.forPackageGraph(
+      final targetGraph = await TargetGraph.forPackageGraph(
         packageGraph: packageGraph,
         testingOverrides: TestingOverrides(
           defaultRootPackageSources: ['**'].build(),
         ),
       );
-      var builderApplications = [
+      final builderApplications = [
         apply(
           'c:cool_builder',
           [CoolBuilder.new],
@@ -196,7 +196,7 @@ void main() {
           hideOutput: false,
         ),
       ];
-      var phases = await createBuildPhases(
+      final phases = await createBuildPhases(
         targetGraph,
         builderApplications,
         BuiltMap(),
@@ -218,18 +218,18 @@ void main() {
     test(
       'skips builders which apply non-hidden builders on non-root packages',
       () async {
-        var packageGraph = buildPackageGraph({
+        final packageGraph = buildPackageGraph({
           rootPackage('a'): ['b', 'c'],
           package('b'): ['c'],
           package('c'): [],
         });
-        var targetGraph = await TargetGraph.forPackageGraph(
+        final targetGraph = await TargetGraph.forPackageGraph(
           packageGraph: packageGraph,
           testingOverrides: TestingOverrides(
             defaultRootPackageSources: ['**'].build(),
           ),
         );
-        var builderApplications = [
+        final builderApplications = [
           apply(
             'c:cool_builder',
             [CoolBuilder.new],
@@ -243,7 +243,7 @@ void main() {
             hideOutput: false,
           ),
         ];
-        var phases = await createBuildPhases(
+        final phases = await createBuildPhases(
           targetGraph,
           builderApplications,
           BuiltMap(),
@@ -264,13 +264,13 @@ void main() {
     );
 
     test('returns empty phases if a dependency is missing', () async {
-      var packageGraph = buildPackageGraph({
+      final packageGraph = buildPackageGraph({
         rootPackage('a'): ['b'],
         package('b'): [],
       });
       await runInBuildConfigZone(
         () async {
-          var overrides =
+          final overrides =
               {
                 'a': BuildConfig(
                   packageName: 'a',
@@ -279,14 +279,14 @@ void main() {
                   },
                 ),
               }.build();
-          var targetGraph = await TargetGraph.forPackageGraph(
+          final targetGraph = await TargetGraph.forPackageGraph(
             packageGraph: packageGraph,
             testingOverrides: TestingOverrides(
               defaultRootPackageSources: ['**'].build(),
               buildConfig: overrides,
             ),
           );
-          var builderApplications = [
+          final builderApplications = [
             apply('b:cool_builder', [CoolBuilder.new], toAllPackages()),
           ];
           expect(
@@ -308,11 +308,11 @@ void main() {
       Future<BuildPhases> createPhases({
         Map<String, TargetBuilderConfig>? builderConfigs,
       }) async {
-        var packageGraph = buildPackageGraph({
+        final packageGraph = buildPackageGraph({
           rootPackage('a'): ['b'],
           package('b'): [],
         });
-        var targetGraph = await runInBuildConfigZone(
+        final targetGraph = await runInBuildConfigZone(
           () => TargetGraph.forPackageGraph(
             packageGraph: packageGraph,
             testingOverrides: TestingOverrides(
@@ -334,7 +334,7 @@ void main() {
           'a',
           [],
         );
-        var builderApplications = [
+        final builderApplications = [
           apply(
             'b:cool_builder',
             [CoolBuilder.new],
@@ -352,12 +352,12 @@ void main() {
       }
 
       test('can be disabled for a target', () async {
-        var phases = await createPhases();
+        final phases = await createPhases();
         expect(phases.inBuildPhases, isEmpty);
       });
 
       test('individual builders can still be enabled', () async {
-        var phases = await createPhases(
+        final phases = await createPhases(
           builderConfigs: {
             'b:cool_builder_2': TargetBuilderConfig(isEnabled: true),
           },
@@ -378,7 +378,7 @@ void main() {
       test(
         'enabling a builder also enables other builders it applies',
         () async {
-          var phases = await createPhases(
+          final phases = await createPhases(
             builderConfigs: {
               'b:cool_builder': TargetBuilderConfig(isEnabled: true),
             },
@@ -409,14 +409,14 @@ void main() {
   });
 
   test('does not allow post process builders with capturing inputs', () async {
-    var packageGraph = buildPackageGraph({rootPackage('a'): []});
-    var targetGraph = await TargetGraph.forPackageGraph(
+    final packageGraph = buildPackageGraph({rootPackage('a'): []});
+    final targetGraph = await TargetGraph.forPackageGraph(
       packageGraph: packageGraph,
       testingOverrides: TestingOverrides(
         defaultRootPackageSources: ['**'].build(),
       ),
     );
-    var builderApplications = [
+    final builderApplications = [
       apply(
         'a:regular',
         [(_) => TestBuilder()],

@@ -48,7 +48,7 @@ void main() {
     late ReaderWriter readerWriter;
 
     Future<File> createFile(String path, dynamic contents) async {
-      var file = File(p.join(pkgARoot, path));
+      final file = File(p.join(pkgARoot, path));
       expect(await file.exists(), isFalse);
       await file.create(recursive: true);
       if (contents is String) {
@@ -61,19 +61,19 @@ void main() {
     }
 
     Future<void> deleteFile(String path) async {
-      var file = File(p.join(pkgARoot, path));
+      final file = File(p.join(pkgARoot, path));
       expect(await file.exists(), isTrue);
       await file.delete();
     }
 
     Future<void> modifyFile(String path, String contents) async {
-      var file = File(p.join(pkgARoot, path));
+      final file = File(p.join(pkgARoot, path));
       expect(await file.exists(), isTrue);
       await file.writeAsString(contents);
     }
 
     Future<String> readFile(String path) async {
-      var file = File(p.join(pkgARoot, path));
+      final file = File(p.join(pkgARoot, path));
       expect(await file.exists(), isTrue);
       return file.readAsString();
     }
@@ -152,18 +152,18 @@ targets:
       test('for deleted source and generated nodes', () async {
         await createFile(p.join('lib', 'a.txt'), 'a');
         await createFile(p.join('lib', 'b.txt'), 'b');
-        var buildPhases = BuildPhases([
+        final buildPhases = BuildPhases([
           InBuildPhase(TestBuilder(), 'a', hideOutput: false),
         ]);
 
-        var originalAssetGraph = await AssetGraph.build(
+        final originalAssetGraph = await AssetGraph.build(
           buildPhases,
           {makeAssetId('a|lib/a.txt'), makeAssetId('a|lib/b.txt')},
           <AssetId>{},
           aPackageGraph,
           readerWriter,
         );
-        var generatedAId = makeAssetId('a|lib/a.txt.copy');
+        final generatedAId = makeAssetId('a|lib/a.txt.copy');
         originalAssetGraph.updateNode(generatedAId, (nodeBuilder) {
           nodeBuilder.digest = Digest([]);
           nodeBuilder.generatedNodeState.result = true;
@@ -172,7 +172,7 @@ targets:
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
         await deleteFile(p.join('lib', 'b.txt'));
-        var buildDefinition = await BuildDefinition.prepareWorkspace(
+        final buildDefinition = await BuildDefinition.prepareWorkspace(
           packageGraph: packageGraph,
           targetGraph: targetGraph,
           readerWriter: readerWriter,
@@ -188,11 +188,11 @@ targets:
       });
 
       test('for new sources', () async {
-        var buildPhases = BuildPhases([
+        final buildPhases = BuildPhases([
           InBuildPhase(TestBuilder(), 'a', hideOutput: true),
         ]);
 
-        var originalAssetGraph = await AssetGraph.build(
+        final originalAssetGraph = await AssetGraph.build(
           buildPhases,
           <AssetId>{},
           <AssetId>{},
@@ -203,7 +203,7 @@ targets:
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
         await createFile(p.join('lib', 'a.txt'), 'a');
-        var buildDefinition = await BuildDefinition.prepareWorkspace(
+        final buildDefinition = await BuildDefinition.prepareWorkspace(
           packageGraph: packageGraph,
           targetGraph: targetGraph,
           readerWriter: readerWriter,
@@ -218,14 +218,14 @@ targets:
       });
 
       test('for changed sources', () async {
-        var aTxt = AssetId('a', 'lib/a.txt');
-        var aTxtCopy = AssetId('a', 'lib/a.txt.copy');
+        final aTxt = AssetId('a', 'lib/a.txt');
+        final aTxtCopy = AssetId('a', 'lib/a.txt.copy');
         await createFile(p.join('lib', 'a.txt'), 'a');
-        var buildPhases = BuildPhases([
+        final buildPhases = BuildPhases([
           InBuildPhase(TestBuilder(), 'a', hideOutput: true),
         ]);
 
-        var originalAssetGraph = await AssetGraph.build(
+        final originalAssetGraph = await AssetGraph.build(
           buildPhases,
           {aTxt},
           <AssetId>{},
@@ -240,7 +240,7 @@ targets:
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
         await modifyFile(p.join('lib', 'a.txt'), 'b');
-        var buildDefinition = await BuildDefinition.prepareWorkspace(
+        final buildDefinition = await BuildDefinition.prepareWorkspace(
           packageGraph: packageGraph,
           targetGraph: targetGraph,
           readerWriter: readerWriter,
@@ -256,18 +256,18 @@ targets:
 
       test('retains non-output generated nodes', () async {
         await createFile(p.join('lib', 'test.txt'), 'a');
-        var buildPhases = BuildPhases([
+        final buildPhases = BuildPhases([
           InBuildPhase(TestBuilder(build: (_, _) {}), 'a', hideOutput: true),
         ]);
 
-        var originalAssetGraph = await AssetGraph.build(
+        final originalAssetGraph = await AssetGraph.build(
           buildPhases,
           {makeAssetId('a|lib/test.txt')},
           <AssetId>{},
           aPackageGraph,
           readerWriter,
         );
-        var generatedSrcId = makeAssetId('a|lib/test.txt.copy');
+        final generatedSrcId = makeAssetId('a|lib/test.txt.copy');
         originalAssetGraph.updateNode(generatedSrcId, (nodeBuilder) {
           nodeBuilder.digest = null;
           nodeBuilder.generatedNodeState.result = true;
@@ -275,7 +275,7 @@ targets:
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
-        var buildDefinition = await BuildDefinition.prepareWorkspace(
+        final buildDefinition = await BuildDefinition.prepareWorkspace(
           packageGraph: packageGraph,
           targetGraph: targetGraph,
           readerWriter: readerWriter,
@@ -289,8 +289,8 @@ targets:
         await createFile(p.join('lib', 'a.txt'), 'a');
         await createFile(p.join('lib', 'a.txt.copy'), 'a');
         await createFile(p.join('lib', 'a.txt.clone'), 'a');
-        var inputSources = const InputSet(include: ['lib/a.txt']);
-        var buildPhases = BuildPhases([
+        final inputSources = const InputSet(include: ['lib/a.txt']);
+        final buildPhases = BuildPhases([
           InBuildPhase(
             TestBuilder(),
             'a',
@@ -305,16 +305,16 @@ targets:
           ),
         ]);
 
-        var originalAssetGraph = await AssetGraph.build(
+        final originalAssetGraph = await AssetGraph.build(
           buildPhases,
           {makeAssetId('a|lib/a.txt')},
           <AssetId>{},
           aPackageGraph,
           readerWriter,
         );
-        var generatedACopyId = makeAssetId('a|lib/a.txt.copy');
-        var generatedACloneId = makeAssetId('a|lib/a.txt.clone');
-        for (var id in [generatedACopyId, generatedACloneId]) {
+        final generatedACopyId = makeAssetId('a|lib/a.txt.copy');
+        final generatedACloneId = makeAssetId('a|lib/a.txt.clone');
+        for (final id in [generatedACopyId, generatedACloneId]) {
           originalAssetGraph.updateNode(id, (nodeBuilder) {
             nodeBuilder.digest = Digest([]);
             nodeBuilder.generatedNodeState.result = true;
@@ -324,7 +324,7 @@ targets:
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
         // Same as before, but change the `BuilderOptions` for the first phase.
-        var newBuildPhases = BuildPhases([
+        final newBuildPhases = BuildPhases([
           InBuildPhase(
             TestBuilder(),
             'a',
@@ -339,7 +339,7 @@ targets:
             hideOutput: false,
           ),
         ]);
-        var buildDefinition = await BuildDefinition.prepareWorkspace(
+        final buildDefinition = await BuildDefinition.prepareWorkspace(
           packageGraph: packageGraph,
           targetGraph: targetGraph,
           readerWriter: readerWriter,
@@ -347,7 +347,7 @@ targets:
           skipBuildScriptCheck: true,
         );
 
-        var newAssetGraph = buildDefinition.assetGraph;
+        final newAssetGraph = buildDefinition.assetGraph;
         expect(
           newAssetGraph.inBuildPhasesOptionsDigests[0],
           isNot(newAssetGraph.previousInBuildPhasesOptionsDigests![0]),
@@ -361,12 +361,12 @@ targets:
 
     group('assetGraph', () {
       test('doesn\'t capture unrecognized cacheDir files as inputs', () async {
-        var generatedId = AssetId(
+        final generatedId = AssetId(
           'a',
           p.url.join(generatedOutputDirectory, 'a', 'lib', 'test.txt'),
         );
         await createFile(generatedId.path, 'a');
-        var buildPhases = BuildPhases([
+        final buildPhases = BuildPhases([
           InBuildPhase(
             TestBuilder(
               buildExtensions: appendExtension('.copy', from: '.txt'),
@@ -376,14 +376,14 @@ targets:
           ),
         ]);
 
-        var assetGraph = await AssetGraph.build(
+        final assetGraph = await AssetGraph.build(
           buildPhases,
           <AssetId>{},
           <AssetId>{},
           aPackageGraph,
           readerWriter,
         );
-        var expectedIds = placeholderIdsFor(aPackageGraph);
+        final expectedIds = placeholderIdsFor(aPackageGraph);
         expect(
           assetGraph.allNodes.map((node) => node.id),
           unorderedEquals(expectedIds),
@@ -391,7 +391,7 @@ targets:
 
         await createFile(assetGraphPath, assetGraph.serialize());
 
-        var buildDefinition = await BuildDefinition.prepareWorkspace(
+        final buildDefinition = await BuildDefinition.prepareWorkspace(
           packageGraph: packageGraph,
           targetGraph: targetGraph,
           readerWriter: readerWriter,
@@ -403,8 +403,11 @@ targets:
       });
 
       test('includes generated entrypoint', () async {
-        var entryPoint = AssetId('a', p.url.join(entryPointDir, 'build.dart'));
-        var buildDefinition = await BuildDefinition.prepareWorkspace(
+        final entryPoint = AssetId(
+          'a',
+          p.url.join(entryPointDir, 'build.dart'),
+        );
+        final buildDefinition = await BuildDefinition.prepareWorkspace(
           packageGraph: packageGraph,
           targetGraph: targetGraph,
           readerWriter: readerWriter,
@@ -415,11 +418,14 @@ targets:
       });
 
       test('does not run Builders on generated entrypoint', () async {
-        var entryPoint = AssetId('a', p.url.join(entryPointDir, 'build.dart'));
-        var buildPhases = BuildPhases([
+        final entryPoint = AssetId(
+          'a',
+          p.url.join(entryPointDir, 'build.dart'),
+        );
+        final buildPhases = BuildPhases([
           InBuildPhase(TestBuilder(), 'a', hideOutput: true),
         ]);
-        var buildDefinition = await BuildDefinition.prepareWorkspace(
+        final buildDefinition = await BuildDefinition.prepareWorkspace(
           packageGraph: packageGraph,
           targetGraph: targetGraph,
           readerWriter: readerWriter,
@@ -436,15 +442,15 @@ targets:
         await createFile(p.join('lib', 'a.txt'), 'a');
         await createFile(p.join('lib', 'excluded', 'b.txt'), 'b');
 
-        var buildPhases = BuildPhases([InBuildPhase(TestBuilder(), 'a')]);
-        var buildDefinition = await BuildDefinition.prepareWorkspace(
+        final buildPhases = BuildPhases([InBuildPhase(TestBuilder(), 'a')]);
+        final buildDefinition = await BuildDefinition.prepareWorkspace(
           packageGraph: packageGraph,
           targetGraph: targetGraph,
           readerWriter: readerWriter,
           buildPhases: buildPhases,
           skipBuildScriptCheck: true,
         );
-        var assetGraph = buildDefinition.assetGraph;
+        final assetGraph = buildDefinition.assetGraph;
         expect(assetGraph.contains(AssetId('a', 'lib/a.txt')), isTrue);
         expect(
           assetGraph.contains(AssetId('a', 'lib/excluded/b.txt')),
@@ -453,14 +459,14 @@ targets:
       });
 
       test('does\'nt include non-lib sources in targets in deps', () async {
-        var buildDefinition = await BuildDefinition.prepareWorkspace(
+        final buildDefinition = await BuildDefinition.prepareWorkspace(
           packageGraph: packageGraph,
           targetGraph: targetGraph,
           readerWriter: readerWriter,
           buildPhases: BuildPhases([]),
           skipBuildScriptCheck: true,
         );
-        var assetGraph = buildDefinition.assetGraph;
+        final assetGraph = buildDefinition.assetGraph;
         expect(assetGraph.contains(AssetId('b', 'lib/some_lib.dart')), isTrue);
         expect(
           assetGraph.contains(AssetId('b', 'test/some_test.dart')),
@@ -470,7 +476,7 @@ targets:
     });
 
     group('invalidation', () {
-      var logs = <LogRecord>[];
+      final logs = <LogRecord>[];
       setUp(() async {
         logs.clear();
         buildLog.configuration = buildLog.configuration.rebuild((b) {
@@ -483,7 +489,7 @@ targets:
           InBuildPhase(TestBuilder(), 'a', hideOutput: true),
         ]);
 
-        var originalAssetGraph = await AssetGraph.build(
+        final originalAssetGraph = await AssetGraph.build(
           buildPhases,
           <AssetId>{},
           <AssetId>{},
@@ -527,7 +533,7 @@ targets:
             InBuildPhase(TestBuilder(), 'a', hideOutput: true),
           ]);
 
-          var originalAssetGraph = await AssetGraph.build(
+          final originalAssetGraph = await AssetGraph.build(
             buildPhases,
             <AssetId>{},
             <AssetId>{},
@@ -564,11 +570,11 @@ targets:
       );
 
       test('invalidates the graph if the dart sdk version changes', () async {
-        var buildPhases = BuildPhases([
+        final buildPhases = BuildPhases([
           InBuildPhase(TestBuilder(), 'a', hideOutput: true),
         ]);
 
-        var originalAssetGraph = await AssetGraph.build(
+        final originalAssetGraph = await AssetGraph.build(
           buildPhases,
           <AssetId>{},
           <AssetId>{},
@@ -576,11 +582,11 @@ targets:
           readerWriter,
         );
 
-        var bytes = originalAssetGraph.serialize();
-        var serialized =
+        final bytes = originalAssetGraph.serialize();
+        final serialized =
             json.decode(utf8.decode(bytes)) as Map<String, dynamic>;
         serialized['dart_version'] = 'some_fake_version';
-        var encoded = utf8.encode(json.encode(serialized));
+        final encoded = utf8.encode(json.encode(serialized));
         await createFile(assetGraphPath, encoded);
 
         await expectLater(
@@ -613,7 +619,7 @@ targets:
             ),
           ]);
 
-          var originalAssetGraph = await AssetGraph.build(
+          final originalAssetGraph = await AssetGraph.build(
             buildPhases,
             <AssetId>{},
             <AssetId>{},
@@ -634,7 +640,7 @@ targets:
           ]);
           logs.clear();
 
-          var buildDefinition = await BuildDefinition.prepareWorkspace(
+          final buildDefinition = await BuildDefinition.prepareWorkspace(
             packageGraph: packageGraph,
             targetGraph: targetGraph,
             readerWriter: readerWriter,
@@ -650,7 +656,7 @@ targets:
             isFalse,
           );
 
-          var newAssetGraph = buildDefinition.assetGraph;
+          final newAssetGraph = buildDefinition.assetGraph;
           expect(
             originalAssetGraph.buildPhasesDigest,
             equals(newAssetGraph.buildPhasesDigest),
@@ -669,7 +675,7 @@ targets:
             ),
           ]);
 
-          var originalAssetGraph = await AssetGraph.build(
+          final originalAssetGraph = await AssetGraph.build(
             buildPhases,
             <AssetId>{},
             <AssetId>{},
@@ -689,7 +695,7 @@ targets:
           ]);
           logs.clear();
 
-          var buildDefinition = await BuildDefinition.prepareWorkspace(
+          final buildDefinition = await BuildDefinition.prepareWorkspace(
             packageGraph: packageGraph,
             targetGraph: targetGraph,
             readerWriter: readerWriter,
@@ -705,7 +711,7 @@ targets:
             isFalse,
           );
 
-          var newAssetGraph = buildDefinition.assetGraph;
+          final newAssetGraph = buildDefinition.assetGraph;
           expect(
             originalAssetGraph.buildPhasesDigest,
             equals(newAssetGraph.buildPhasesDigest),
@@ -717,10 +723,10 @@ targets:
         var buildPhases = BuildPhases([
           InBuildPhase(TestBuilder(), 'a', hideOutput: false),
         ]);
-        var aTxt = AssetId('a', 'lib/a.txt');
+        final aTxt = AssetId('a', 'lib/a.txt');
         await createFile(aTxt.path, 'hello');
 
-        var originalAssetGraph = await AssetGraph.build(
+        final originalAssetGraph = await AssetGraph.build(
           buildPhases,
           <AssetId>{aTxt},
           <AssetId>{},
@@ -728,7 +734,7 @@ targets:
           readerWriter,
         );
 
-        var aTxtCopy = AssetId('a', 'lib/a.txt.copy');
+        final aTxtCopy = AssetId('a', 'lib/a.txt.copy');
         // Pretend we already output this without actually running a build.
         originalAssetGraph.updateNode(aTxtCopy, (nodeBuilder) {
           nodeBuilder.digest = Digest([]);
@@ -765,10 +771,10 @@ targets:
         var buildPhases = BuildPhases([
           InBuildPhase(TestBuilder(), 'a', hideOutput: false),
         ]);
-        var aTxt = AssetId('a', 'lib/a.txt');
+        final aTxt = AssetId('a', 'lib/a.txt');
         await createFile(aTxt.path, 'hello');
 
-        var originalAssetGraph = await AssetGraph.build(
+        final originalAssetGraph = await AssetGraph.build(
           buildPhases,
           <AssetId>{aTxt},
           <AssetId>{},
@@ -776,7 +782,7 @@ targets:
           readerWriter,
         );
 
-        var aTxtCopy = AssetId('a', 'lib/a.txt.copy');
+        final aTxtCopy = AssetId('a', 'lib/a.txt.copy');
         // Pretend we already output this without actually running a build.
         originalAssetGraph.updateNode(aTxtCopy, (nodeBuilder) {
           nodeBuilder.digest = Digest([]);
@@ -819,7 +825,7 @@ targets:
       test(
         'invalidates the graph if the language version of a package changes',
         () async {
-          var assetGraph = await AssetGraph.build(
+          final assetGraph = await AssetGraph.build(
             BuildPhases([]),
             <AssetId>{},
             {AssetId('a', '.dart_tool/package_config.json')},
@@ -827,7 +833,10 @@ targets:
             readerWriter,
           );
 
-          var graph = await createFile(assetGraphPath, assetGraph.serialize());
+          final graph = await createFile(
+            assetGraphPath,
+            assetGraph.serialize(),
+          );
 
           await modifyFile(
             '.dart_tool/package_config.json',
@@ -884,7 +893,7 @@ targets:
           ['a'],
         );
 
-        var graph = await createFile(assetGraphPath, assetGraph.serialize());
+        final graph = await createFile(assetGraphPath, assetGraph.serialize());
         packageGraph = aPackageGraph;
 
         await expectLater(
@@ -922,7 +931,7 @@ targets:
 
       // https://github.com/dart-lang/build/issues/1042
       test('a missing sources/include does not cause an error', () async {
-        var rootPkg = packageGraph.root.name;
+        final rootPkg = packageGraph.root.name;
         final targetGraph = await TargetGraph.forPackageGraph(
           packageGraph: packageGraph,
           testingOverrides: TestingOverrides(
@@ -955,7 +964,7 @@ targets:
       test(
         'a missing sources/include results in the default sources',
         () async {
-          var rootPkg = packageGraph.root.name;
+          final rootPkg = packageGraph.root.name;
           final targetGraph = await TargetGraph.forPackageGraph(
             packageGraph: packageGraph,
             testingOverrides: TestingOverrides(
@@ -990,7 +999,7 @@ targets:
       );
 
       test('allows a target config with empty sources list', () async {
-        var rootPkg = packageGraph.root.name;
+        final rootPkg = packageGraph.root.name;
         final targetGraph = await TargetGraph.forPackageGraph(
           packageGraph: packageGraph,
           testingOverrides: TestingOverrides(

@@ -36,7 +36,7 @@ class FakeWatcher implements DirectoryWatcher {
   /// Notify all active watchers of [event] if their [FakeWatcher#path] matches.
   /// The path will also be adjusted to remove the path.
   static void notifyWatchers(WatchEvent event) {
-    for (var watcher in watchers) {
+    for (final watcher in watchers) {
       if (event.path.startsWith(watcher.path)) {
         watcher._eventsController.add(WatchEvent(event.type, event.path));
       }

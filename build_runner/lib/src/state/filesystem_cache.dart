@@ -146,7 +146,7 @@ class InMemoryFilesystemCache implements FilesystemCache {
     if (_pendingWrites.isNotEmpty) {
       throw StateError("Can't invalidate while there are pending writes.");
     }
-    for (var id in ids) {
+    for (final id in ids) {
       _existsCache.remove(id);
       _bytesContentCache.remove(id);
       _stringContentCache.remove(id);

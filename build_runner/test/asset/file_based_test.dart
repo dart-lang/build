@@ -111,20 +111,20 @@ void main() async {
     });
 
     test('digests are different for different file contents', () async {
-      var helloDigest = await readerWriter.digest(
+      final helloDigest = await readerWriter.digest(
         makeAssetId('basic_pkg|lib/hello.txt'),
       );
-      var aDigest = await readerWriter.digest(makeAssetId('a|lib/a.txt'));
+      final aDigest = await readerWriter.digest(makeAssetId('a|lib/a.txt'));
       expect(helloDigest, isNot(equals(aDigest)));
     });
 
     test(
       'digests are identical for identical file contents and assets',
       () async {
-        var helloDigest = await readerWriter.digest(
+        final helloDigest = await readerWriter.digest(
           makeAssetId('basic_pkg|lib/hello.txt'),
         );
-        var aDigest = await readerWriter.digest(
+        final aDigest = await readerWriter.digest(
           makeAssetId('basic_pkg|lib/hello.txt'),
         );
         expect(helloDigest, equals(aDigest));
@@ -133,10 +133,10 @@ void main() async {
 
     test('digests are different for identical file contents and different '
         'assets', () async {
-      var helloDigest = await readerWriter.digest(
+      final helloDigest = await readerWriter.digest(
         makeAssetId('basic_pkg|lib/hello.txt'),
       );
-      var aDigest = await readerWriter.digest(
+      final aDigest = await readerWriter.digest(
         makeAssetId('basic_pkg|web/hello.txt'),
       );
       expect(helloDigest, isNot(equals(aDigest)));
@@ -150,10 +150,10 @@ void main() async {
     });
 
     test('can output and delete files in the application package', () async {
-      var id = makeAssetId('basic_pkg|test_file.txt');
-      var content = 'test';
+      final id = makeAssetId('basic_pkg|test_file.txt');
+      final content = 'test';
       await readerWriter.writeAsString(id, content);
-      var file = File(path.join('test', 'fixtures', id.package, id.path));
+      final file = File(path.join('test', 'fixtures', id.package, id.path));
       expect(await file.exists(), isTrue);
       expect(await file.readAsString(), content);
 

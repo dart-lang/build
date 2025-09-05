@@ -48,12 +48,12 @@ Future<int> generateAndRun(
     await errorListener?.cancel();
 
     try {
-      var buildScript = File(scriptLocation);
+      final buildScript = File(scriptLocation);
       var oldContents = '';
       if (buildScript.existsSync()) {
         oldContents = buildScript.readAsStringSync();
       }
-      var newContents = script ?? await generateBuildScript();
+      final newContents = script ?? await generateBuildScript();
       // Only trigger a build script update if necessary.
       if (newContents != oldContents) {
         buildScript
@@ -148,9 +148,9 @@ Future<int> generateAndRun(
 ///
 /// Returns `true` on success or `false` on failure.
 Future<bool> _createKernelIfNeeded(Iterable<String> experiments) async {
-  var assetGraphFile = File(assetGraphPathFor(scriptKernelLocation));
-  var kernelFile = File(scriptKernelLocation);
-  var kernelCacheFile = File(scriptKernelCachedLocation);
+  final assetGraphFile = File(assetGraphPathFor(scriptKernelLocation));
+  final kernelFile = File(scriptKernelLocation);
+  final kernelCacheFile = File(scriptKernelCachedLocation);
 
   if (kernelFile.existsSync()) {
     if (!assetGraphFile.existsSync()) {
@@ -229,14 +229,14 @@ final _previousLocationsFile = File(
 Future<bool> _checkImportantPackageDepsAndExperiments(
   Iterable<String> experiments,
 ) async {
-  var currentLocations = await Future.wait(
+  final currentLocations = await Future.wait(
     _importantPackages.map(
       (pkg) => Isolate.resolvePackageUri(
         Uri(scheme: 'package', path: '$pkg/fake.dart'),
       ),
     ),
   );
-  var fileContents = currentLocations
+  final fileContents = currentLocations
       .map((uri) => '$uri')
       .followedBy(experiments)
       .join('\n');

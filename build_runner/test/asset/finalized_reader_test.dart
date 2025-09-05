@@ -47,7 +47,7 @@ void main() {
     });
 
     test('can not read deleted files', () async {
-      var notDeleted = AssetNode.source(
+      final notDeleted = AssetNode.source(
         AssetId.parse('a|web/a.txt'),
         digest: computeDigest(AssetId('a', 'web/a.txt'), 'a'),
       );
@@ -68,7 +68,7 @@ void main() {
         ..add(notDeleted)
         ..add(deleted);
 
-      var delegate = InternalTestReaderWriter();
+      final delegate = InternalTestReaderWriter();
       delegate.testing.writeString(notDeleted.id, '');
       delegate.testing.writeString(deleted.id, '');
 
@@ -84,8 +84,8 @@ void main() {
     });
 
     test('Failure nodes interact well with build filters ', () async {
-      var id = AssetId('a', 'web/a.txt');
-      var node = AssetNode.generated(
+      final id = AssetId('a', 'web/a.txt');
+      final node = AssetNode.generated(
         id,
         phaseNumber: 0,
         result: false,
@@ -94,7 +94,7 @@ void main() {
         isHidden: true,
       );
       graph.add(node);
-      var delegate = InternalTestReaderWriter();
+      final delegate = InternalTestReaderWriter();
       delegate.testing.writeString(id, '');
       reader = FinalizedReader(
         delegate,

@@ -28,11 +28,11 @@ void main() {
 
   group('--config', () {
     test('warns override config defines builders', () async {
-      var logs = <LogRecord>[];
+      final logs = <LogRecord>[];
       final packageGraph = buildPackageGraph({
         rootPackage('a', path: path.absolute('a')): [],
       });
-      var result = await _doBuild(
+      final result = await _doBuild(
         [copyABuildApplication],
         {
           'a|build.yaml': '',

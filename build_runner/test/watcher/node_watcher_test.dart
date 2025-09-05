@@ -40,8 +40,8 @@ void main() {
     }
 
     test('should emit a changed asset', () async {
-      var node = PackageNode('a', p.join(tmpDir.path, 'a'), null, null);
-      var nodeWatcher = PackageNodeWatcher(node);
+      final node = PackageNode('a', p.join(tmpDir.path, 'a'), null, null);
+      final nodeWatcher = PackageNodeWatcher(node);
 
       initFiles(node);
 
@@ -59,13 +59,13 @@ void main() {
     });
 
     test('should also respect relative watch URLs', () async {
-      var node = PackageNode(
+      final node = PackageNode(
         'a',
         p.relative(p.join(tmpDir.path, 'a'), from: p.current),
         null,
         null,
       );
-      var nodeWatcher = PackageNodeWatcher(node);
+      final nodeWatcher = PackageNodeWatcher(node);
 
       initFiles(node);
 

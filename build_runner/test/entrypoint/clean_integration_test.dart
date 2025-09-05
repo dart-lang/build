@@ -33,7 +33,11 @@ void main() {
       await pubGet('a');
 
       // Run a build and validate the output.
-      var buildResult = await runDart('a', 'tool/build.dart', args: ['build']);
+      final buildResult = await runDart(
+        'a',
+        'tool/build.dart',
+        args: ['build'],
+      );
       expect(buildResult.exitCode, 0);
       await d.dir('a', [
         d.dir('web', [d.file('a.txt.copy', 'a')]),
@@ -42,7 +46,11 @@ void main() {
     });
 
     test('cleans up .dart_tool', () async {
-      var cleanResult = await runDart('a', 'tool/build.dart', args: ['clean']);
+      final cleanResult = await runDart(
+        'a',
+        'tool/build.dart',
+        args: ['clean'],
+      );
       expect(cleanResult.exitCode, 0);
       await d.dir('a', [
         d.dir('.dart_tool', [d.nothing('build')]),

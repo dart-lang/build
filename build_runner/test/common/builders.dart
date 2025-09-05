@@ -76,7 +76,7 @@ AssetId _outputId(
   String outputExtension,
 ) {
   assert(inputId.path.endsWith(inputExtension));
-  var newPath =
+  final newPath =
       inputId.path.substring(0, inputId.path.length - inputExtension.length) +
       outputExtension;
   return AssetId(inputId.package, newPath);

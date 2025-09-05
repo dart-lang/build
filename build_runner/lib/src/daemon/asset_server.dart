@@ -28,8 +28,8 @@ class AssetServer {
     BuildRunnerDaemonBuilder builder,
     String rootPackage,
   ) async {
-    var server = await HttpMultiServer.loopback(0);
-    var cascade = Cascade()
+    final server = await HttpMultiServer.loopback(0);
+    final cascade = Cascade()
         .add((_) async {
           await builder.building;
           return Response.notFound('');

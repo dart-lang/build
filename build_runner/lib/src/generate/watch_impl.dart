@@ -78,14 +78,14 @@ class Watcher implements BuildState {
   ///
   /// File watchers are scheduled synchronously.
   Stream<BuildResult> _run(Future until) {
-    var firstBuildCompleter = Completer<BuildResult>();
+    final firstBuildCompleter = Completer<BuildResult>();
     currentBuild = firstBuildCompleter.future;
-    var controller = StreamController<BuildResult>();
+    final controller = StreamController<BuildResult>();
 
     Future<BuildResult> doBuild(List<List<AssetChange>> changes) async {
       buildLog.nextBuild();
-      var build = _buildSeries!;
-      var mergedChanges = collectChanges(changes);
+      final build = _buildSeries!;
+      final mergedChanges = collectChanges(changes);
 
       _expectedDeletes.clear();
       if (!buildOptions.skipBuildScriptCheck) {
@@ -104,7 +104,7 @@ class Watcher implements BuildState {
       return build.run(mergedChanges);
     }
 
-    var terminate = Future.any([until, _terminateCompleter.future]).then((_) {
+    final terminate = Future.any([until, _terminateCompleter.future]).then((_) {
       buildLog.info('Terminating. No further builds will be scheduled.');
     });
 
@@ -115,7 +115,7 @@ class Watcher implements BuildState {
     );
 
     // Start watching files immediately, before the first build is even started.
-    var graphWatcher = PackageGraphWatcher(
+    final graphWatcher = PackageGraphWatcher(
       packageGraph,
       watch:
           (node) => PackageNodeWatcher(
@@ -131,9 +131,9 @@ class Watcher implements BuildState {
           return firstBuildCompleter.future.then((_) => change);
         })
         .asyncMap<AssetChange>((change) {
-          var id = change.id;
+          final id = change.id;
           if (id == rootPackageConfigId) {
-            var digest = originalRootPackageConfigDigest!;
+            final digest = originalRootPackageConfigDigest!;
             // Kill future builds if the root packages file changes.
             //
             // We retry the reads for a little bit to handle the case where a
@@ -262,7 +262,7 @@ class Watcher implements BuildState {
 /// If it still doesn't exist after 1 second then throws an
 /// [AssetNotFoundException].
 Future<List<int>> _readOnceExists(AssetId id, ReaderWriter readerWriter) async {
-  var watch = Stopwatch()..start();
+  final watch = Stopwatch()..start();
   var tryAgain = true;
   while (tryAgain) {
     if (await readerWriter.canRead(id)) {

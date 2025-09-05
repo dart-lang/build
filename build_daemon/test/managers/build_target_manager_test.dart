@@ -11,29 +11,29 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 void main() {
   test('can add build targets', () {
-    var manager = BuildTargetManager();
-    var channel = DummyChannel();
-    var target = DefaultBuildTarget((b) => b..target = 'foo');
+    final manager = BuildTargetManager();
+    final channel = DummyChannel();
+    final target = DefaultBuildTarget((b) => b..target = 'foo');
     expect(manager.targets.isEmpty, isTrue);
     manager.addBuildTarget(target, channel);
     expect(manager.targets.map((target) => target.target), contains('foo'));
   });
 
   test('returns an empty set when no channels are interested', () {
-    var manager = BuildTargetManager();
-    var target = DefaultBuildTarget((b) => b..target = 'foo');
-    var targetB = DefaultBuildTarget((b) => b..target = 'bar');
-    var channel = DummyChannel();
+    final manager = BuildTargetManager();
+    final target = DefaultBuildTarget((b) => b..target = 'foo');
+    final targetB = DefaultBuildTarget((b) => b..target = 'bar');
+    final channel = DummyChannel();
     manager.addBuildTarget(target, channel);
     expect(manager.channels(targetB), isEmpty);
   });
 
   test('can return all connected channels', () {
-    var manager = BuildTargetManager();
-    var target = DefaultBuildTarget((b) => b..target = 'foo');
-    var targetB = DefaultBuildTarget((b) => b..target = 'bar');
-    var channelA = DummyChannel();
-    var channelB = DummyChannel();
+    final manager = BuildTargetManager();
+    final target = DefaultBuildTarget((b) => b..target = 'foo');
+    final targetB = DefaultBuildTarget((b) => b..target = 'bar');
+    final channelA = DummyChannel();
+    final channelB = DummyChannel();
     manager
       ..addBuildTarget(target, channelA)
       ..addBuildTarget(targetB, channelB);
@@ -47,13 +47,13 @@ void main() {
   });
 
   test('when a channel is removed the corresponding target is removed', () {
-    var manager = BuildTargetManager();
-    var channelA = DummyChannel();
-    var channelB = DummyChannel();
-    var targetA = DefaultBuildTarget((b) => b..target = 'foo');
+    final manager = BuildTargetManager();
+    final channelA = DummyChannel();
+    final channelB = DummyChannel();
+    final targetA = DefaultBuildTarget((b) => b..target = 'foo');
     manager.addBuildTarget(targetA, channelA);
     expect(manager.targets.map((target) => target.target), contains('foo'));
-    var targetB = DefaultBuildTarget((b) => b..target = 'bar');
+    final targetB = DefaultBuildTarget((b) => b..target = 'bar');
     manager.addBuildTarget(targetB, channelB);
     expect(manager.targets.isNotEmpty, isTrue);
     manager.removeChannel(channelA);
@@ -65,10 +65,10 @@ void main() {
 
   test('when multiple channels are listening to a target, '
       'it is only removed when both channels are removed', () {
-    var manager = BuildTargetManager();
-    var channelA = DummyChannel();
-    var channelB = DummyChannel();
-    var target = DefaultBuildTarget((b) => b..target = 'foo');
+    final manager = BuildTargetManager();
+    final channelA = DummyChannel();
+    final channelB = DummyChannel();
+    final target = DefaultBuildTarget((b) => b..target = 'foo');
     manager
       ..addBuildTarget(target, channelA)
       ..addBuildTarget(target, channelB);
@@ -81,16 +81,16 @@ void main() {
 
   test('a build target will be reused if the target and the blackListPattern '
       'is the same', () {
-    var manager = BuildTargetManager();
-    var channelA = DummyChannel();
-    var channelB = DummyChannel();
-    var targetA = DefaultBuildTarget(
+    final manager = BuildTargetManager();
+    final channelA = DummyChannel();
+    final channelB = DummyChannel();
+    final targetA = DefaultBuildTarget(
       (b) =>
           b
             ..target = 'foo'
             ..blackListPatterns.replace([RegExp('bar')]),
     );
-    var targetB = DefaultBuildTarget(
+    final targetB = DefaultBuildTarget(
       (b) =>
           b
             ..target = 'foo'
@@ -103,11 +103,11 @@ void main() {
   });
 
   test('different blackListPatterns result in different build targets', () {
-    var manager = BuildTargetManager();
-    var channelA = DummyChannel();
-    var channelB = DummyChannel();
-    var targetA = DefaultBuildTarget((b) => b..target = 'foo');
-    var targetB = DefaultBuildTarget(
+    final manager = BuildTargetManager();
+    final channelA = DummyChannel();
+    final channelB = DummyChannel();
+    final targetA = DefaultBuildTarget((b) => b..target = 'foo');
+    final targetB = DefaultBuildTarget(
       (b) =>
           b
             ..target = 'foo'
@@ -122,9 +122,9 @@ void main() {
   test(
     'correctly uses the blackListPattern to filter build targets for changes',
     () {
-      var manager = BuildTargetManager();
-      var channel = DummyChannel();
-      var target = DefaultBuildTarget(
+      final manager = BuildTargetManager();
+      final channel = DummyChannel();
+      final target = DefaultBuildTarget(
         (b) =>
             b
               ..target = 'foo'
