@@ -29,12 +29,12 @@ final scratchSpaceResource = Resource<ScratchSpace>(
       scratchSpace.tempDir.createSync(recursive: true);
       scratchSpace.exists = true;
     }
-    var packageConfigFile = File(
+    final packageConfigFile = File(
       p.join(scratchSpace.tempDir.path, '.dart_tool', 'package_config.json'),
     );
     if (!packageConfigFile.existsSync()) {
-      var originalConfigFile = File.fromUri((await Isolate.packageConfig)!);
-      var packageConfigContents = _scratchSpacePackageConfig(
+      final originalConfigFile = File.fromUri((await Isolate.packageConfig)!);
+      final packageConfigContents = _scratchSpacePackageConfig(
         originalConfigFile.readAsStringSync(),
         originalConfigFile.absolute.uri,
       );
@@ -72,7 +72,7 @@ final scratchSpaceResource = Resource<ScratchSpace>(
         }
         return;
       } on FileSystemException {
-        var delayMs = math.pow(10, numTries).floor();
+        final delayMs = math.pow(10, numTries).floor();
         _logger.info(
           'Failed to delete temp dir ${scratchSpace.tempDir.path}, '
           'retrying in ${delayMs}ms',
@@ -92,18 +92,18 @@ final scratchSpaceResource = Resource<ScratchSpace>(
 ///
 /// Returns the new file contents.
 String _scratchSpacePackageConfig(String rootConfig, Uri packageConfigUri) {
-  var parsedRootConfig = jsonDecode(rootConfig) as Map<String, dynamic>;
-  var version = parsedRootConfig['configVersion'] as int;
+  final parsedRootConfig = jsonDecode(rootConfig) as Map<String, dynamic>;
+  final version = parsedRootConfig['configVersion'] as int;
   if (version != 2) {
     throw UnsupportedError(
       'Unsupported package_config.json version, got $version but only '
       'version 2 is supported.',
     );
   }
-  var packages =
+  final packages =
       (parsedRootConfig['packages'] as List).cast<Map<String, dynamic>>();
   var foundRoot = false;
-  for (var package in packages) {
+  for (final package in packages) {
     var rootUri = packageConfigUri.resolve(package['rootUri'] as String);
     if (!rootUri.path.endsWith('/') && _currentDirUri.path.endsWith('/')) {
       rootUri = rootUri.replace(path: '${rootUri.path}/');

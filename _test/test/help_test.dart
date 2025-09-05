@@ -63,13 +63,13 @@ void main() {
 }
 
 Future<void> _testHelpCommand(List<String> args, {String? checkContent}) async {
-  var asyncResult = runCommand(args);
+  final asyncResult = runCommand(args);
   expect(
     asyncResult,
     completes,
     reason: 'should not cause the auto build script to hang',
   );
-  var result = await asyncResult;
+  final result = await asyncResult;
   expect(
     result.exitCode,
     equals(0),

@@ -20,9 +20,9 @@ void main() {
 
   List<AssetId> makeAssets(Map<String, String> assetDescriptors) {
     reader = TestReaderWriter();
-    var assets = <AssetId>{};
+    final assets = <AssetId>{};
     assetDescriptors.forEach((serializedId, content) {
-      var id = AssetId.parse(serializedId);
+      final id = AssetId.parse(serializedId);
       reader.testing.writeString(id, content);
       assets.add(id);
     });
@@ -60,7 +60,7 @@ void main() {
   }
 
   test('no strongly connected components, one shared lib', () async {
-    var assets = makeAssets({
+    final assets = makeAssets({
       'myapp|lib/a.dart': '''
             import 'b.dart';
             import 'src/c.dart';
@@ -74,23 +74,23 @@ void main() {
       'myapp|lib/src/d.dart': '',
     });
 
-    var a = AssetId('myapp', 'lib/a.dart');
-    var b = AssetId('myapp', 'lib/b.dart');
-    var c = AssetId('myapp', 'lib/src/c.dart');
-    var d = AssetId('myapp', 'lib/src/d.dart');
+    final a = AssetId('myapp', 'lib/a.dart');
+    final b = AssetId('myapp', 'lib/b.dart');
+    final c = AssetId('myapp', 'lib/src/c.dart');
+    final d = AssetId('myapp', 'lib/src/d.dart');
 
-    var expectedModules = [
+    final expectedModules = [
       matchesModule(Module(a, [a], [b, c], defaultPlatform, true)),
       matchesModule(Module(b, [b], [c], defaultPlatform, true)),
       matchesModule(Module(c, [c, d], [], defaultPlatform, true)),
     ];
 
-    var meta = await metaModuleFromSources(reader, assets);
+    final meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
   test('single strongly connected component', () async {
-    var assets = makeAssets({
+    final assets = makeAssets({
       'myapp|lib/a.dart': '''
             import 'b.dart';
             import 'src/c.dart';
@@ -103,20 +103,20 @@ void main() {
           ''',
     });
 
-    var a = AssetId('myapp', 'lib/a.dart');
-    var b = AssetId('myapp', 'lib/b.dart');
-    var c = AssetId('myapp', 'lib/src/c.dart');
+    final a = AssetId('myapp', 'lib/a.dart');
+    final b = AssetId('myapp', 'lib/b.dart');
+    final c = AssetId('myapp', 'lib/src/c.dart');
 
-    var expectedModules = [
+    final expectedModules = [
       matchesModule(Module(a, [a, b, c], [], defaultPlatform, true)),
     ];
 
-    var meta = await metaModuleFromSources(reader, assets);
+    final meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
   test('multiple strongly connected components', () async {
-    var assets = makeAssets({
+    final assets = makeAssets({
       'myapp|lib/a.dart': '''
             import 'src/c.dart';
             import 'src/e.dart';
@@ -143,45 +143,45 @@ void main() {
       'myapp|lib/src/g.dart': '',
     });
 
-    var a = AssetId('myapp', 'lib/a.dart');
-    var b = AssetId('myapp', 'lib/b.dart');
-    var c = AssetId('myapp', 'lib/src/c.dart');
-    var d = AssetId('myapp', 'lib/src/d.dart');
-    var e = AssetId('myapp', 'lib/src/e.dart');
-    var g = AssetId('myapp', 'lib/src/g.dart');
-    var f = AssetId('myapp', 'lib/src/f.dart');
+    final a = AssetId('myapp', 'lib/a.dart');
+    final b = AssetId('myapp', 'lib/b.dart');
+    final c = AssetId('myapp', 'lib/src/c.dart');
+    final d = AssetId('myapp', 'lib/src/d.dart');
+    final e = AssetId('myapp', 'lib/src/e.dart');
+    final g = AssetId('myapp', 'lib/src/g.dart');
+    final f = AssetId('myapp', 'lib/src/f.dart');
 
-    var expectedModules = [
+    final expectedModules = [
       matchesModule(Module(a, [a, c], [g, e], defaultPlatform, true)),
       matchesModule(Module(b, [b, d], [c, e, g], defaultPlatform, true)),
       matchesModule(Module(e, [e, g, f], [], defaultPlatform, true)),
     ];
 
-    var meta = await metaModuleFromSources(reader, assets);
+    final meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
   test('ignores external assets', () async {
-    var assets = makeAssets({
+    final assets = makeAssets({
       'myapp|lib/a.dart': '''
             import 'package:b/b.dart';
           ''',
     });
 
-    var a = AssetId('myapp', 'lib/a.dart');
-    var b = AssetId('b', 'lib/b.dart');
+    final a = AssetId('myapp', 'lib/a.dart');
+    final b = AssetId('b', 'lib/b.dart');
 
-    var expectedModules = [
+    final expectedModules = [
       matchesModule(Module(a, [a], [b], defaultPlatform, true)),
     ];
 
-    var meta = await metaModuleFromSources(reader, assets);
+    final meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
   test('components can be merged into entrypoints, but other entrypoints are '
       'left alone', () async {
-    var assets = makeAssets({
+    final assets = makeAssets({
       'myapp|lib/a.dart': '''
             import 'b.dart';
             import 'src/c.dart';
@@ -193,22 +193,22 @@ void main() {
       'myapp|lib/src/d.dart': '',
     });
 
-    var a = AssetId('myapp', 'lib/a.dart');
-    var b = AssetId('myapp', 'lib/b.dart');
-    var c = AssetId('myapp', 'lib/src/c.dart');
-    var d = AssetId('myapp', 'lib/src/d.dart');
+    final a = AssetId('myapp', 'lib/a.dart');
+    final b = AssetId('myapp', 'lib/b.dart');
+    final c = AssetId('myapp', 'lib/src/c.dart');
+    final d = AssetId('myapp', 'lib/src/d.dart');
 
-    var expectedModules = [
+    final expectedModules = [
       matchesModule(Module(a, [a, c, d], [b], defaultPlatform, true)),
       matchesModule(Module(b, [b], [], defaultPlatform, true)),
     ];
 
-    var meta = await metaModuleFromSources(reader, assets);
+    final meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
   test('multiple shared libs', () async {
-    var assets = makeAssets({
+    final assets = makeAssets({
       'myapp|lib/a.dart': '''
             import 'src/d.dart';
             import 'src/e.dart';
@@ -232,14 +232,14 @@ void main() {
           ''',
     });
 
-    var a = AssetId('myapp', 'lib/a.dart');
-    var b = AssetId('myapp', 'lib/b.dart');
-    var c = AssetId('myapp', 'lib/c.dart');
-    var d = AssetId('myapp', 'lib/src/d.dart');
-    var e = AssetId('myapp', 'lib/src/e.dart');
-    var f = AssetId('myapp', 'lib/src/f.dart');
+    final a = AssetId('myapp', 'lib/a.dart');
+    final b = AssetId('myapp', 'lib/b.dart');
+    final c = AssetId('myapp', 'lib/c.dart');
+    final d = AssetId('myapp', 'lib/src/d.dart');
+    final e = AssetId('myapp', 'lib/src/e.dart');
+    final f = AssetId('myapp', 'lib/src/f.dart');
 
-    var expectedModules = [
+    final expectedModules = [
       matchesModule(Module(a, [a], [d, e, f], defaultPlatform, true)),
       matchesModule(Module(b, [b], [d, e], defaultPlatform, true)),
       matchesModule(Module(c, [c], [d, f], defaultPlatform, true)),
@@ -248,12 +248,12 @@ void main() {
       matchesModule(Module(f, [f], [d], defaultPlatform, true)),
     ];
 
-    var meta = await metaModuleFromSources(reader, assets);
+    final meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
   test('part files are merged into the parent libraries component', () async {
-    var assets = makeAssets({
+    final assets = makeAssets({
       'myapp|lib/a.dart': '''
             library a;
 
@@ -268,22 +268,22 @@ void main() {
           ''',
     });
 
-    var a = AssetId('myapp', 'lib/a.dart');
-    var ap = AssetId('myapp', 'lib/a.part.dart');
-    var sap = AssetId('myapp', 'lib/src/a.part.dart');
+    final a = AssetId('myapp', 'lib/a.dart');
+    final ap = AssetId('myapp', 'lib/a.part.dart');
+    final sap = AssetId('myapp', 'lib/src/a.part.dart');
 
-    var expectedModules = [
+    final expectedModules = [
       matchesModule(Module(a, [a, ap, sap], [], defaultPlatform, true)),
     ];
 
-    var meta = await metaModuleFromSources(reader, assets);
+    final meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
   test(
     'libs that aren\'t imported by entrypoints get their own modules',
     () async {
-      var assets = makeAssets({
+      final assets = makeAssets({
         'myapp|lib/a.dart': '',
         'myapp|lib/src/a.dart': '''
             import 'c.dart';
@@ -296,24 +296,24 @@ void main() {
           ''',
       });
 
-      var a = AssetId('myapp', 'lib/a.dart');
-      var sa = AssetId('myapp', 'lib/src/a.dart');
-      var b = AssetId('myapp', 'lib/src/b.dart');
-      var c = AssetId('myapp', 'lib/src/c.dart');
+      final a = AssetId('myapp', 'lib/a.dart');
+      final sa = AssetId('myapp', 'lib/src/a.dart');
+      final b = AssetId('myapp', 'lib/src/b.dart');
+      final c = AssetId('myapp', 'lib/src/c.dart');
 
-      var expectedModules = [
+      final expectedModules = [
         matchesModule(Module(a, [a], [], defaultPlatform, true)),
         matchesModule(Module(b, [b, c], [], defaultPlatform, true)),
         matchesModule(Module(sa, [sa], [c], defaultPlatform, true)),
       ];
 
-      var meta = await metaModuleFromSources(reader, assets);
+      final meta = await metaModuleFromSources(reader, assets);
       expect(meta.modules, unorderedMatches(expectedModules));
     },
   );
 
   test('shared lib, only files with a `main` are entry points', () async {
-    var assets = makeAssets({
+    final assets = makeAssets({
       'myapp|web/a.dart': '''
             import 'b.dart';
             import 'c.dart';
@@ -331,23 +331,23 @@ void main() {
       'myapp|web/d.dart': '',
     });
 
-    var a = AssetId('myapp', 'web/a.dart');
-    var b = AssetId('myapp', 'web/b.dart');
-    var c = AssetId('myapp', 'web/c.dart');
-    var d = AssetId('myapp', 'web/d.dart');
+    final a = AssetId('myapp', 'web/a.dart');
+    final b = AssetId('myapp', 'web/b.dart');
+    final c = AssetId('myapp', 'web/c.dart');
+    final d = AssetId('myapp', 'web/d.dart');
 
-    var expectedModules = [
+    final expectedModules = [
       matchesModule(Module(a, [a], [b, c], defaultPlatform, true)),
       matchesModule(Module(b, [b], [c], defaultPlatform, true)),
       matchesModule(Module(c, [c, d], [], defaultPlatform, true)),
     ];
 
-    var meta = await metaModuleFromSources(reader, assets);
+    final meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
   test('strongly connected component under web', () async {
-    var assets = makeAssets({
+    final assets = makeAssets({
       'myapp|web/a.dart': '''
             import 'b.dart';
 
@@ -371,25 +371,25 @@ void main() {
             void main() {}
           ''',
     });
-    var a = AssetId('myapp', 'web/a.dart');
-    var b = AssetId('myapp', 'web/b.dart');
-    var c = AssetId('myapp', 'web/c.dart');
-    var d = AssetId('myapp', 'web/d.dart');
-    var e = AssetId('myapp', 'web/e.dart');
+    final a = AssetId('myapp', 'web/a.dart');
+    final b = AssetId('myapp', 'web/b.dart');
+    final c = AssetId('myapp', 'web/c.dart');
+    final d = AssetId('myapp', 'web/d.dart');
+    final e = AssetId('myapp', 'web/e.dart');
 
-    var expectedModules = [
+    final expectedModules = [
       matchesModule(Module(a, [a, b], [c], defaultPlatform, true)),
       matchesModule(Module(c, [c, d], [], defaultPlatform, true)),
       matchesModule(Module(e, [e], [d], defaultPlatform, true)),
     ];
 
-    var meta = await metaModuleFromSources(reader, assets);
+    final meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
   test('conditional import directives are added to module dependencies based '
       'on platform', () async {
-    var assets = makeAssets({
+    final assets = makeAssets({
       'myapp|web/a.dart': '''
         import 'default.dart'
         if (dart.library.ui) 'ui.dart'
@@ -408,17 +408,17 @@ void main() {
       ''',
     });
 
-    var primaryId = AssetId('myapp', 'web/a.dart');
-    var defaultId = AssetId('myapp', 'web/default.dart');
-    var htmlId = AssetId('myapp', 'web/html.dart');
-    var ioId = AssetId('myapp', 'web/io.dart');
-    var uiId = AssetId('myapp', 'web/ui.dart');
+    final primaryId = AssetId('myapp', 'web/a.dart');
+    final defaultId = AssetId('myapp', 'web/default.dart');
+    final htmlId = AssetId('myapp', 'web/html.dart');
+    final ioId = AssetId('myapp', 'web/io.dart');
+    final uiId = AssetId('myapp', 'web/ui.dart');
 
-    var htmlPlatform = DartPlatform.register('html', ['html']);
-    var ioPlatform = DartPlatform.register('io', ['io']);
-    var uiPlatform = DartPlatform.register('ui', ['ui']);
+    final htmlPlatform = DartPlatform.register('html', ['html']);
+    final ioPlatform = DartPlatform.register('io', ['io']);
+    final uiPlatform = DartPlatform.register('ui', ['ui']);
 
-    var expectedModulesForPlatform = {
+    final expectedModulesForPlatform = {
       htmlPlatform: [
         matchesModule(
           Module(primaryId, [primaryId], [htmlId], htmlPlatform, true),
@@ -444,8 +444,8 @@ void main() {
       ],
     };
 
-    for (var platform in expectedModulesForPlatform.keys) {
-      var meta = await metaModuleFromSources(
+    for (final platform in expectedModulesForPlatform.keys) {
+      final meta = await metaModuleFromSources(
         reader,
         assets,
         platform: platform,
@@ -459,19 +459,19 @@ void main() {
   });
 
   test('libraries can import themselves via empty import', () async {
-    var assets = makeAssets({
+    final assets = makeAssets({
       'myapp|lib/a.dart': '''
             import 'a.dart';
           ''',
     });
 
-    var a = AssetId('myapp', 'lib/a.dart');
+    final a = AssetId('myapp', 'lib/a.dart');
 
-    var expectedModules = [
+    final expectedModules = [
       matchesModule(Module(a, [a], [], defaultPlatform, true)),
     ];
 
-    var meta = await metaModuleFromSources(reader, assets);
+    final meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 }

@@ -54,9 +54,9 @@ class WatchCommand implements BuildRunnerCommand {
       buildOptions: buildOptions,
       testingOverrides: testingOverrides,
     );
-    var terminator = Terminator(testingOverrides.terminateEventStream);
+    final terminator = Terminator(testingOverrides.terminateEventStream);
 
-    var watcher = Watcher(
+    final watcher = Watcher(
       buildPlan: buildPlan,
       until: terminator.shouldTerminate,
       willCreateOutputDirs: buildOptions.buildDirs.any(
@@ -80,7 +80,7 @@ void handleBuildResultsStream(
   Stream<BuildResult> buildResults,
   Completer<int> completer,
 ) async {
-  var subscription = buildResults.listen((result) {
+  final subscription = buildResults.listen((result) {
     if (completer.isCompleted) return;
     if (result.status == BuildStatus.failure) {
       if (result.failureType == FailureType.buildScriptChanged) {

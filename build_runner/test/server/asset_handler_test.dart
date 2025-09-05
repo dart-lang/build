@@ -60,7 +60,7 @@ void main() {
 
   test('can not read deleted nodes', () async {
     addAsset('a|web/index.html', 'content', deleted: true);
-    var response = await handler.handle(
+    final response = await handler.handle(
       Request('GET', Uri.parse('http://server.com/index.html')),
       rootDir: 'web',
     );
@@ -70,7 +70,7 @@ void main() {
 
   test('can read from the root package', () async {
     addAsset('a|web/index.html', 'content');
-    var response = await handler.handle(
+    final response = await handler.handle(
       Request('GET', Uri.parse('http://server.com/index.html')),
       rootDir: 'web',
     );
@@ -79,7 +79,7 @@ void main() {
 
   test('can read from dependencies', () async {
     addAsset('b|lib/b.dart', 'content');
-    var response = await handler.handle(
+    final response = await handler.handle(
       Request('GET', Uri.parse('http://server.com/packages/b/b.dart')),
       rootDir: 'web',
     );
@@ -88,7 +88,7 @@ void main() {
 
   test('properly sets charset for dart content', () async {
     addAsset('b|lib/b.dart', 'content');
-    var response = await handler.handle(
+    final response = await handler.handle(
       Request('GET', Uri.parse('http://server.com/packages/b/b.dart')),
       rootDir: 'web',
     );
@@ -97,7 +97,7 @@ void main() {
 
   test('can read from dependencies nested under top-level dir', () async {
     addAsset('b|lib/b.dart', 'content');
-    var response = await handler.handle(
+    final response = await handler.handle(
       Request('GET', Uri.parse('http://server.com/packages/b/b.dart')),
       rootDir: 'web',
     );
@@ -106,7 +106,7 @@ void main() {
 
   test('defaults to index.html if path is empty', () async {
     addAsset('a|web/index.html', 'content');
-    var response = await handler.handle(
+    final response = await handler.handle(
       Request('GET', Uri.parse('http://server.com/')),
       rootDir: 'web',
     );
@@ -115,7 +115,7 @@ void main() {
 
   test('defaults to index.html if URI ends with slash', () async {
     addAsset('a|web/sub/index.html', 'content');
-    var response = await handler.handle(
+    final response = await handler.handle(
       Request('GET', Uri.parse('http://server.com/sub/')),
       rootDir: 'web',
     );
@@ -124,7 +124,7 @@ void main() {
 
   test('does not default to index.html if URI does not end in slash', () async {
     addAsset('a|web/sub/index.html', 'content');
-    var response = await handler.handle(
+    final response = await handler.handle(
       Request('GET', Uri.parse('http://server.com/sub')),
       rootDir: 'web',
     );
@@ -142,7 +142,7 @@ void main() {
         primaryInput: AssetId('a', 'web/main.dart'),
       ),
     );
-    var response = await handler.handle(
+    final response = await handler.handle(
       Request('GET', Uri.parse('http://server.com/main.ddc.js')),
       rootDir: 'web',
     );
@@ -151,7 +151,7 @@ void main() {
 
   test('Supports HEAD requests', () async {
     addAsset('a|web/index.html', 'content');
-    var response = await handler.handle(
+    final response = await handler.handle(
       Request('HEAD', Uri.parse('http://server.com/index.html')),
       rootDir: 'web',
     );

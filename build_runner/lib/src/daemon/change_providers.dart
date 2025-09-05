@@ -29,7 +29,7 @@ class ManualChangeProviderImpl implements ManualChangeProvider {
 
   @override
   Future<List<WatchEvent>> collectChanges() async {
-    var updates = await _assetTracker.collectChanges(_assetGraph);
+    final updates = await _assetTracker.collectChanges(_assetGraph);
     return List.of(
       updates.entries.map((entry) => WatchEvent(entry.value, '${entry.key}')),
     );

@@ -23,7 +23,7 @@ void main() {
         // can be read by a later non-optional phase, and the optional phase
         // starts later we need to avoid hiding that file from the later-phased
         //  reader.
-        var optionalWithResolver = TestBuilder(
+        final optionalWithResolver = TestBuilder(
           buildExtensions: appendExtension('.foo'),
           build: (buildStep, _) async {
             // Use the resolver so ensure that the entry point is crawled
@@ -36,7 +36,7 @@ void main() {
             );
           },
         );
-        var nonOptionalWritesImportedFile = TestBuilder(
+        final nonOptionalWritesImportedFile = TestBuilder(
           buildExtensions: replaceExtension('.dart', '.imported.dart'),
           build:
               (buildStep, _) => buildStep.writeAsString(
@@ -44,16 +44,16 @@ void main() {
                 'class SomeClass {}',
               ),
         );
-        var nonOptionalResolveImportedFile = TestBuilder(
+        final nonOptionalResolveImportedFile = TestBuilder(
           buildExtensions: appendExtension('.bar'),
           build: (buildStep, _) async {
             // Fetch the resolver so the imports get crawled.
-            var inputLibrary = await buildStep.inputLibrary;
+            final inputLibrary = await buildStep.inputLibrary;
             // Force the optional builder to run
             await buildStep.canRead(buildStep.inputId.addExtension('.foo'));
             // Check that the `.imported.dart` library is still reachable
             // through the resolver.
-            var importedLibrary =
+            final importedLibrary =
                 inputLibrary.firstFragment.libraryImports2
                     .firstWhere(
                       (l) => l.importedLibrary2!.uri.path.endsWith(
@@ -61,7 +61,7 @@ void main() {
                       ),
                     )
                     .importedLibrary2!;
-            var classNames =
+            final classNames =
                 importedLibrary.classes.map((c) => c.name3).toList();
             return buildStep.writeAsString(
               buildStep.inputId.addExtension('.bar'),
@@ -105,8 +105,8 @@ void main() {
           buildExtensions: replaceExtension('.dart', '.g2.dart'),
           build: (buildStep, _) async {
             if (buildStep.inputId.path != 'lib/a.dart') return;
-            var library = await buildStep.inputLibrary;
-            var annotation =
+            final library = await buildStep.inputLibrary;
+            final annotation =
                 library.topLevelFunctions.single.metadata2.annotations.single
                     .computeConstantValue();
             await buildStep.writeAsString(

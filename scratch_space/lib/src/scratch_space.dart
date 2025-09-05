@@ -60,8 +60,8 @@ class ScratchSpace {
     AssetWriter writer, {
     bool requireContent = false,
   }) async {
-    var file = fileFor(id);
-    var bytes = await _descriptorPool.withResource(file.readAsBytes);
+    final file = fileFor(id);
+    final bytes = await _descriptorPool.withResource(file.readAsBytes);
     if (requireContent && bytes.isEmpty) throw EmptyOutputException(id);
     await writer.writeAsBytes(id, bytes);
   }
@@ -103,10 +103,10 @@ class ScratchSpace {
       throw StateError('Tried to use a deleted ScratchSpace!');
     }
 
-    var futures =
+    final futures =
         assetIds.map((id) async {
-          var digest = await reader.digest(id);
-          var existing = _digests[id];
+          final digest = await reader.digest(id);
+          final existing = _digests[id];
           if (digest == existing) {
             await _pendingWrites[id];
             return;
@@ -117,7 +117,7 @@ class ScratchSpace {
             await _pendingWrites.putIfAbsent(
               id,
               () => _descriptorPool.withResource(() async {
-                var file = fileFor(id);
+                final file = fileFor(id);
                 if (await file.exists()) {
                   await file.delete();
                 }
@@ -148,7 +148,7 @@ class ScratchSpace {
 /// otherwise it just returns [id#path].
 String canonicalUriFor(AssetId id) {
   if (topLevelDir(id.path) == 'lib') {
-    var packagePath = p.url.join(
+    final packagePath = p.url.join(
       id.package,
       p.url.joinAll(p.url.split(id.path).skip(1)),
     );

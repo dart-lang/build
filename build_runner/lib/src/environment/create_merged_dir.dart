@@ -44,7 +44,7 @@ Future<bool> createMergedOutputDirectories(
       );
       return false;
     }
-    var conflictingOutputs = _conflicts(buildDirs);
+    final conflictingOutputs = _conflicts(buildDirs);
     if (conflictingOutputs.isNotEmpty) {
       buildLog.error(
         'Unable to create merged directory. '
@@ -53,8 +53,8 @@ Future<bool> createMergedOutputDirectories(
       return false;
     }
 
-    for (var target in buildDirs) {
-      var outputLocation = target.outputLocation;
+    for (final target in buildDirs) {
+      final outputLocation = target.outputLocation;
       if (outputLocation != null) {
         if (!await _createMergedOutputDir(
           outputLocation.path,
@@ -77,8 +77,8 @@ Future<bool> createMergedOutputDirectories(
 Set<String> _conflicts(BuiltSet<BuildDirectory> buildDirs) {
   final seen = <String>{};
   final conflicts = <String>{};
-  var outputLocations = buildDirs.map((d) => d.outputLocation?.path).nonNulls;
-  for (var location in outputLocations) {
+  final outputLocations = buildDirs.map((d) => d.outputLocation?.path).nonNulls;
+  for (final location in outputLocations) {
     if (!seen.add(location)) conflicts.add(location);
   }
   return conflicts;
@@ -95,7 +95,7 @@ Future<bool> _createMergedOutputDir(
 ) async {
   try {
     if (root == null) return false;
-    var absoluteRoot = p.join(packageGraph.root.path, root);
+    final absoluteRoot = p.join(packageGraph.root.path, root);
     if (absoluteRoot != packageGraph.root.path &&
         !p.isWithin(packageGraph.root.path, absoluteRoot)) {
       buildLog.error(
@@ -103,12 +103,12 @@ Future<bool> _createMergedOutputDir(
       );
       return false;
     }
-    var outputDir = Directory(outputPath);
-    var outputDirExists = await outputDir.exists();
+    final outputDir = Directory(outputPath);
+    final outputDirExists = await outputDir.exists();
     if (outputDirExists) {
       if (!await _cleanUpOutputDir(outputDir)) return false;
     }
-    var builtAssets = finalizedOutputsView.allAssets(rootDir: root).toList();
+    final builtAssets = finalizedOutputsView.allAssets(rootDir: root).toList();
     if (root != '' &&
         !builtAssets
             .where((id) => id.package == packageGraph.root.name)
@@ -117,14 +117,14 @@ Future<bool> _createMergedOutputDir(
       return false;
     }
 
-    var outputPaths = <String>[];
+    final outputPaths = <String>[];
     if (!outputDirExists) {
       await outputDir.create(recursive: true);
     }
 
     outputPaths.addAll(
       await Future.wait([
-        for (var id in builtAssets)
+        for (final id in builtAssets)
           _writeAsset(
             id,
             outputDir,
@@ -143,8 +143,8 @@ Future<bool> _createMergedOutputDir(
     );
 
     if (!hoist) {
-      for (var dir in _findRootDirs(builtAssets, outputPath)) {
-        var link = Link(p.join(outputDir.path, dir, 'packages'));
+      for (final dir in _findRootDirs(builtAssets, outputPath)) {
+        final link = Link(p.join(outputDir.path, dir, 'packages'));
         if (!link.existsSync()) {
           link.createSync(p.join('..', 'packages'), recursive: true);
         }
@@ -152,7 +152,7 @@ Future<bool> _createMergedOutputDir(
     }
 
     outputPaths.sort();
-    var content = outputPaths
+    final content = outputPaths
         // Normalize path separators for the manifest.
         .map((path) => path.replaceAll(r'\', '/'))
         .join(_manifestSeparator);
@@ -192,7 +192,7 @@ Future<String> _writeModifiedPackageConfig(
   final packageConfig = <String, Object?>{
     'configVersion': 2,
     'packages': [
-      for (var package in packageGraph.allPackages.values)
+      for (final package in packageGraph.allPackages.values)
         {
           'name': package.name,
           'rootUri':
@@ -212,11 +212,11 @@ Future<String> _writeModifiedPackageConfig(
 }
 
 Set<String> _findRootDirs(Iterable<AssetId> allAssets, String outputPath) {
-  var rootDirs = <String>{};
-  for (var id in allAssets) {
-    var parts = p.url.split(id.path);
+  final rootDirs = <String>{};
+  for (final id in allAssets) {
+    final parts = p.url.split(id.path);
     if (parts.length == 1) continue;
-    var dir = parts.first;
+    final dir = parts.first;
     if (dir == outputPath || dir == 'lib') continue;
     rootDirs.add(parts.first);
   }
@@ -309,8 +309,8 @@ String _filePathFor(Directory outputDir, String path) {
 ///
 /// Returns whether or not the directory was successfully cleaned up.
 Future<bool> _cleanUpOutputDir(Directory outputDir) async {
-  var outputPath = outputDir.path;
-  var manifestFile = File(p.join(outputPath, _manifestName));
+  final outputPath = outputDir.path;
+  final manifestFile = File(p.join(outputPath, _manifestName));
   if (!manifestFile.existsSync()) {
     if (outputDir.listSync(recursive: false).isNotEmpty) {
       buildLog.error(
@@ -320,12 +320,12 @@ Future<bool> _cleanUpOutputDir(Directory outputDir) async {
       return false;
     }
   } else {
-    var previousOutputs = manifestFile.readAsStringSync().split(
+    final previousOutputs = manifestFile.readAsStringSync().split(
       _manifestSeparator,
     );
 
-    for (var path in previousOutputs) {
-      var file = File(p.join(outputPath, path));
+    for (final path in previousOutputs) {
+      final file = File(p.join(outputPath, path));
       if (file.existsSync()) file.deleteSync();
     }
     _cleanEmptyDirectories(outputPath, previousOutputs);
@@ -339,7 +339,7 @@ void _cleanEmptyDirectories(
   String outputPath,
   Iterable<String> removedFilePaths,
 ) {
-  for (var directory
+  for (final directory
       in removedFilePaths
           .map((path) => p.join(outputPath, p.dirname(path)))
           .toSet()) {
@@ -352,7 +352,7 @@ void _cleanEmptyDirectories(
 void _deleteUp(String from, String to) {
   var directoryPath = from;
   while (p.isWithin(to, directoryPath)) {
-    var directory = Directory(directoryPath);
+    final directory = Directory(directoryPath);
     if (!directory.existsSync() || directory.listSync().isNotEmpty) return;
     directory.deleteSync();
     directoryPath = p.dirname(directoryPath);

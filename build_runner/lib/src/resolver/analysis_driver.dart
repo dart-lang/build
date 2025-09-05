@@ -39,7 +39,7 @@ Packages _buildAnalyzerPackages(
   PackageConfig packageConfig,
   ResourceProvider resourceProvider,
 ) => Packages({
-  for (var package in packageConfig.packages)
+  for (final package in packageConfig.packages)
     package.name: Package(
       name: package.name,
       languageVersion:
@@ -74,6 +74,6 @@ Packages _buildAnalyzerPackages(
 
 /// The language version of the current sdk parsed from the [Platform.version].
 final sdkLanguageVersion = () {
-  var sdkVersion = Version.parse(Platform.version.split(' ').first);
+  final sdkVersion = Version.parse(Platform.version.split(' ').first);
   return Version(sdkVersion.major, sdkVersion.minor, 0);
 }();

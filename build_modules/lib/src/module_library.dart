@@ -74,13 +74,13 @@ class ModuleLibrary {
     bool isEntryPoint,
     CompilationUnit parsed,
   ) {
-    var deps = <AssetId>{};
-    var parts = <AssetId>{};
-    var sdkDeps = <String>{};
-    var conditionalDeps = <Map<String, AssetId>>[];
-    for (var directive in parsed.directives) {
+    final deps = <AssetId>{};
+    final parts = <AssetId>{};
+    final sdkDeps = <String>{};
+    final conditionalDeps = <Map<String, AssetId>>[];
+    for (final directive in parsed.directives) {
       if (directive is! UriBasedDirective) continue;
-      var path = directive.uri.stringValue;
+      final path = directive.uri.stringValue;
       if (path == null) continue;
 
       List<Configuration>? conditionalDirectiveConfigurations;
@@ -91,7 +91,7 @@ class ModuleLibrary {
         conditionalDirectiveConfigurations = directive.configurations;
       }
 
-      var uri = Uri.parse(path);
+      final uri = Uri.parse(path);
       if (uri.isScheme('dart-ext')) {
         // TODO: What should we do for native extensions?
         continue;
@@ -103,16 +103,16 @@ class ModuleLibrary {
         sdkDeps.add(uri.path);
         continue;
       }
-      var linkedId = AssetId.resolve(uri, from: id);
+      final linkedId = AssetId.resolve(uri, from: id);
       if (directive is PartDirective) {
         parts.add(linkedId);
         continue;
       }
 
       if (conditionalDirectiveConfigurations != null) {
-        var conditions = <String, AssetId>{r'$default': linkedId};
-        for (var condition in conditionalDirectiveConfigurations) {
-          var uriString = condition.uri.stringValue;
+        final conditions = <String, AssetId>{r'$default': linkedId};
+        for (final condition in conditionalDirectiveConfigurations) {
+          final uriString = condition.uri.stringValue;
           var parsedUri = uriString == null ? null : Uri.parse(uriString);
           _checkValidConditionalImport(parsedUri, id, directive);
           parsedUri = parsedUri!;
@@ -188,7 +188,7 @@ class ModuleLibrary {
   /// Importable libraries can be round tripped to a String. Non-importable
   /// libraries should not be printed or parsed.
   factory ModuleLibrary.deserialize(AssetId id, String encoded) {
-    var json = jsonDecode(encoded) as Map<String, Object?>;
+    final json = jsonDecode(encoded) as Map<String, Object?>;
 
     return ModuleLibrary._(
       id,
@@ -226,7 +226,7 @@ class ModuleLibrary {
   List<AssetId> depsForPlatform(DartPlatform platform) {
     AssetId depForConditions(Map<String, AssetId> conditions) {
       var selectedImport = conditions[r'$default']!;
-      for (var condition in conditions.keys) {
+      for (final condition in conditions.keys) {
         if (condition == r'$default') continue;
         if (!condition.startsWith('dart.library.')) {
           throw UnsupportedError(
@@ -234,7 +234,7 @@ class ModuleLibrary {
             'dart.library.<name> constants are supported.',
           );
         }
-        var library = condition.substring('dart.library.'.length);
+        final library = condition.substring('dart.library.'.length);
         if (platform.supportsLibrary(library)) {
           selectedImport = conditions[condition]!;
           break;
@@ -245,7 +245,7 @@ class ModuleLibrary {
 
     return [
       ..._deps,
-      for (var conditions in conditionalDeps) depForConditions(conditions),
+      for (final conditions in conditionalDeps) depForConditions(conditions),
     ];
   }
 }

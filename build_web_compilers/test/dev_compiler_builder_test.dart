@@ -54,7 +54,7 @@ void main() {
     };
 
     setUp(() async {
-      var listener = Logger.root.onRecord.listen(
+      final listener = Logger.root.onRecord.listen(
         (r) => printOnFailure('$r\n${r.error}\n${r.stackTrace}'),
       );
       addTearDown(listener.cancel);
@@ -68,7 +68,7 @@ void main() {
       );
     });
 
-    for (var trackUnusedInputs in [true, false]) {
+    for (final trackUnusedInputs in [true, false]) {
       test('can compile ddc modules under lib and web and '
           '${trackUnusedInputs ? 'track' : 'not track'} '
           'unused inputs', () async {
@@ -78,7 +78,7 @@ void main() {
           trackUnusedInputs: trackUnusedInputs,
         );
 
-        var expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
+        final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
           'a|lib/a$jsModuleExtension': decodedMatches(contains('hello')),
           'a|lib/a$jsSourceMapExtension': decodedMatches(contains('a.dart')),
           'a|lib/a$metadataExtension': isNotNull,
@@ -92,7 +92,7 @@ void main() {
           'b|lib/b$metadataExtension': isNotNull,
         });
 
-        var reportedUnused = <AssetId, Iterable<AssetId>>{};
+        final reportedUnused = <AssetId, Iterable<AssetId>>{};
         await testBuilders(
           [...startingBuilders, builder],
           startingAssets,
@@ -124,7 +124,7 @@ void main() {
         platform: ddcPlatform,
         environment: {'foo': 'zap'},
       );
-      var expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
+      final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
         'a|lib/a$jsModuleExtension': isNotNull,
         'a|lib/a$jsSourceMapExtension': isNotNull,
         'a|lib/a$metadataExtension': isNotNull,
@@ -149,7 +149,7 @@ void main() {
         platform: ddcPlatform,
         canaryFeatures: true,
       );
-      var expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
+      final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
         'a|lib/a$jsModuleExtension': decodedMatches(contains('canary')),
         'a|lib/a$jsSourceMapExtension': isNotNull,
         'a|lib/a$metadataExtension': isNotNull,
@@ -169,7 +169,7 @@ void main() {
 
     test('does not enable DDC canary features by default', () async {
       final builder = DevCompilerBuilder(platform: ddcPlatform);
-      var expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
+      final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
         'a|lib/a$jsModuleExtension': decodedMatches(isNot(contains('canary'))),
         'a|lib/a$jsSourceMapExtension': isNotNull,
         'a|lib/a$metadataExtension': isNotNull,
@@ -192,7 +192,7 @@ void main() {
         platform: ddcPlatform,
         generateFullDill: true,
       );
-      var expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
+      final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
         'a|lib/a$fullKernelExtension': isNotNull,
         'a|lib/a$jsModuleExtension': isNotNull,
         'a|lib/a$jsSourceMapExtension': isNotNull,
@@ -215,7 +215,7 @@ void main() {
 
     test('does not generate full dill by default', () async {
       final builder = DevCompilerBuilder(platform: ddcPlatform);
-      var expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
+      final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
         'a|lib/a$jsModuleExtension': isNotNull,
         'a|lib/a$jsSourceMapExtension': isNotNull,
         'a|lib/a$metadataExtension': isNotNull,
@@ -238,7 +238,7 @@ void main() {
         platform: ddcPlatform,
         emitDebugSymbols: true,
       );
-      var expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
+      final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
         'a|lib/a$jsModuleExtension': isNotNull,
         'a|lib/a$jsSourceMapExtension': isNotNull,
         'a|lib/a$metadataExtension': isNotNull,
@@ -261,7 +261,7 @@ void main() {
 
     test('does not emit debug symbols by default', () async {
       final builder = DevCompilerBuilder(platform: ddcPlatform);
-      var expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
+      final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
         'b|lib/b$jsModuleExtension': isNotNull,
         'b|lib/b$jsSourceMapExtension': isNotNull,
         'b|lib/b$metadataExtension': isNotNull,
@@ -281,7 +281,7 @@ void main() {
 
     test('strips scratch paths from metadata', () async {
       final builder = DevCompilerBuilder(platform: ddcPlatform);
-      var expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
+      final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
         'a|lib/a$jsModuleExtension': isNotNull,
         'a|lib/a$jsSourceMapExtension': isNotNull,
         'a|lib/a$metadataExtension': decodedMatches(isNot(contains('scratch'))),
@@ -309,7 +309,7 @@ void main() {
           'a|web/index.dart': 'int x = "hello";',
           'build_modules|lib/src/analysis_options.default.yaml': '',
         };
-        var expectedOutputs = {
+        final expectedOutputs = {
           'a|lib/.ddc.meta_module.clean': isNotNull,
           'a|lib/.ddc.meta_module.raw': isNotNull,
           'a|web/index.ddc.dill': isNotNull,
@@ -321,7 +321,7 @@ void main() {
           'build_modules|lib/.ddc.meta_module.clean': isNotNull,
           'build_modules|lib/.ddc.meta_module.raw': isNotNull,
         };
-        var logs = <LogRecord>[];
+        final logs = <LogRecord>[];
         await testBuilders(
           [
             const ModuleLibraryBuilder(),
@@ -358,7 +358,7 @@ void main() {
           'a|web/index.dart': "import 'package:a/a.dart'",
           'build_modules|lib/src/analysis_options.default.yaml': '',
         };
-        var expectedOutputs = {
+        final expectedOutputs = {
           'a|lib/.ddc.meta_module.clean': isNotNull,
           'a|lib/.ddc.meta_module.raw': isNotNull,
           'a|web/index$jsModuleErrorsExtension': decodedMatches(
@@ -369,7 +369,7 @@ void main() {
           'build_modules|lib/.ddc.meta_module.clean': isNotNull,
           'build_modules|lib/.ddc.meta_module.raw': isNotNull,
         };
-        var logs = <LogRecord>[];
+        final logs = <LogRecord>[];
         await testBuilders(
           [
             const ModuleLibraryBuilder(),

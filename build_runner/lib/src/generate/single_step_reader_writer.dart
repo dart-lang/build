@@ -260,7 +260,7 @@ class SingleStepReaderWriter implements PhasedReader {
       return _delegate.assetFinder.find(glob, package: package);
     }
 
-    var streamCompleter = StreamCompleter<AssetId>();
+    final streamCompleter = StreamCompleter<AssetId>();
 
     _buildGlobNode(glob.pattern).then((globNodeId) {
       inputTracker.add(globNodeId);
@@ -278,7 +278,7 @@ class SingleStepReaderWriter implements PhasedReader {
   /// Note that [id] must exist in the asset graph.
   FutureOr<Digest> _ensureDigest(AssetId id) {
     if (_runningBuild == null) return _delegate.digest(id);
-    var node = _runningBuild.assetGraph.get(id)!;
+    final node = _runningBuild.assetGraph.get(id)!;
     if (node.digest != null) return node.digest!;
     return _delegate.digest(id).then((digest) {
       _runningBuild.assetGraph.updateNode(id, (nodeBuilder) {
@@ -338,7 +338,7 @@ class SingleStepReaderWriter implements PhasedReader {
   /// available; if not, adds one. Then, gets the built glob from
   /// `runningBuild.globNodeBuilder`, which might return an existing result.
   Future<AssetId> _buildGlobNode(String glob) async {
-    var globNodeId = AssetNode.createGlobNodeId(
+    final globNodeId = AssetNode.createGlobNodeId(
       _runningBuildStep!.primaryPackage,
       glob,
       _runningBuildStep.phaseNumber,

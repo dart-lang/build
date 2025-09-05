@@ -47,7 +47,7 @@ void main() {
             'lib/a${moduleExtension(platform)}': ['.transitive'],
           },
           build: expectAsync2((buildStep, _) async {
-            var transitiveDeps =
+            final transitiveDeps =
                 (await rootModule.computeTransitiveDependencies(
                   buildStep,
                 )).map((m) => m.primarySource).toList();

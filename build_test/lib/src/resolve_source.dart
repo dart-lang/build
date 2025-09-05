@@ -170,7 +170,7 @@ Future<T> _resolveAssets<T>(
   final inputAssetIds = inputs.keys.map(AssetId.parse).toList();
   final assetReader = PackageAssetReader(resolvedConfig, rootPackage);
   for (final assetId in inputAssetIds) {
-    var assetValue = inputs[assetId.toString()]!;
+    final assetValue = inputs[assetId.toString()]!;
     if (assetValue == useAssetReader) {
       inputs[assetId.toString()] = await assetReader.readAsString(assetId);
     }

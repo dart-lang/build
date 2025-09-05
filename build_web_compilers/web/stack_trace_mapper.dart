@@ -40,10 +40,10 @@ import 'source_map_stack_trace.dart';
 /// - Strips the top level directory if its not `packages`
 List<String> fixSourceMapSources(List<String> uris) {
   return uris.map((source) {
-    var uri = Uri.parse(source);
+    final uri = Uri.parse(source);
     // We only want to rewrite multi-root scheme uris.
     if (uri.scheme.isEmpty) return source;
-    var newSegments =
+    final newSegments =
         uri.pathSegments.first == 'packages'
             ? uri.pathSegments
             : uri.pathSegments.skip(1);
@@ -97,26 +97,26 @@ class LazyMapping extends Mapping {
     }
 
     if (!_bundle.containsMapping(uri)) {
-      var rawMap = _provider(uri);
-      var parsedMap =
+      final rawMap = _provider(uri);
+      final parsedMap =
           (rawMap is String ? jsonDecode(rawMap) : rawMap)
               as Map<String, Object?>?;
       if (parsedMap != null) {
         parsedMap['sources'] = fixSourceMapSources(
           (parsedMap['sources'] as List).cast(),
         );
-        var mapping =
+        final mapping =
             parse(jsonEncode(parsedMap)) as SingleMapping
               ..targetUrl = uri
               ..sourceRoot = '${p.dirname(uri)}/';
         _bundle.addMapping(mapping);
       }
     }
-    var span = _bundle.spanFor(line, column, files: files, uri: uri);
+    final span = _bundle.spanFor(line, column, files: files, uri: uri);
     // TODO(jacobr): we shouldn't have to filter out invalid sourceUrl entries
     // here.
     if (span == null || span.start.sourceUrl == null) return null;
-    var pathSegments = span.start.sourceUrl!.pathSegments;
+    final pathSegments = span.start.sourceUrl!.pathSegments;
     if (pathSegments.isNotEmpty && pathSegments.last == 'null') return null;
     return span;
   }
@@ -132,7 +132,7 @@ String mapper(String rawStackTrace) {
     // to start the application.
     throw StateError('Source maps are not done loading.');
   }
-  var trace = Trace.parse(rawStackTrace);
+  final trace = Trace.parse(rawStackTrace);
   return mapStackTrace(_mapping!, trace, roots: roots).toString();
 }
 

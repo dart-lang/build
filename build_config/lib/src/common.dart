@@ -22,7 +22,7 @@ T runInBuildConfigZone<T>(
 );
 
 String get currentPackage {
-  var package = Zone.current[_packageZoneKey] as String?;
+  final package = Zone.current[_packageZoneKey] as String?;
   if (package == null) {
     throw StateError(
       'Must be running inside a build config zone, which can be done using '
@@ -33,7 +33,7 @@ String get currentPackage {
 }
 
 List<String> get currentPackageDefaultDependencies {
-  var defaultDependencies =
+  final defaultDependencies =
       Zone.current[_defaultDependenciesZoneKey] as List<String>?;
   if (defaultDependencies == null) {
     throw StateError(

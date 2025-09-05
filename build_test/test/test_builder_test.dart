@@ -17,14 +17,14 @@ Future<void> main() async {
   await testBuilder(TestBuilder(), {'a|lib/a.dart': ''}, rootPackage: 'a');
 
   test('can glob files in the root package', () async {
-    var assets = {
+    final assets = {
       'a|lib/a.globPlaceholder': '',
       'a|lib/a.txt': '',
       'a|lib/b.txt': '',
       'a|lib/c.txt': '',
       'a|lib/d.txt': '',
     };
-    var expectedOutputs = {
+    final expectedOutputs = {
       'a|lib/a.matchingFiles':
           'a|lib/a.txt\na|lib/b.txt\na|lib/c.txt\na|lib/d.txt',
     };
@@ -37,7 +37,7 @@ Future<void> main() async {
   });
 
   test('can glob files in non-root and root packages', () async {
-    var assets = {
+    final assets = {
       'a|lib/a.globPlaceholder': '',
       'a|lib/a.txt': '',
       'a|lib/b.txt': '',
@@ -47,7 +47,7 @@ Future<void> main() async {
       'b|lib/c.txt': '',
       'b|lib/d.txt': '',
     };
-    var expectedOutputs = {
+    final expectedOutputs = {
       'a|lib/a.matchingFiles': decodedMatches(
         allOf(contains('a|lib/a.txt'), contains('a|lib/b.txt')),
       ),
@@ -69,15 +69,15 @@ Future<void> main() async {
   group('can output special placeholder outpout files', () {
     const placeholders = ['lib', 'web', 'test'];
 
-    for (var dir in placeholders) {
+    for (final dir in placeholders) {
       test('using the special "$dir" sset', () async {
-        var assets = {
+        final assets = {
           'a|data/1.txt': '1',
           'a|data/2.txt': '2',
           'a|data/3.txt': '3',
         };
 
-        var outputs = {'a|$dir/concat.txt': '1\n2\n3\n'};
+        final outputs = {'a|$dir/concat.txt': '1\n2\n3\n'};
 
         await testBuilder(
           _ConcatBuilder(dir),
@@ -90,8 +90,8 @@ Future<void> main() async {
   });
 
   test('can capture reportUnusedAssets calls', () async {
-    var unusedInput = AssetId('a', 'lib/unused.txt');
-    var recorded = <AssetId, Iterable<AssetId>>{};
+    final unusedInput = AssetId('a', 'lib/unused.txt');
+    final recorded = <AssetId, Iterable<AssetId>>{};
     await testBuilder(
       TestBuilder(
         build: (BuildStep buildStep, _) async {
@@ -156,7 +156,7 @@ Future<void> main() async {
   test(
     'can resolve with specified language versions from a PackageConfig',
     () async {
-      var packageConfig = PackageConfig([
+      final packageConfig = PackageConfig([
         Package(
           'a',
           Uri.file('/a/'),

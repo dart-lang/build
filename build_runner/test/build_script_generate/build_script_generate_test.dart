@@ -40,7 +40,11 @@ builders:
 '''),
         ]).create();
 
-        var result = await runPub('a', 'run', args: ['build_runner', 'build']);
+        final result = await runPub(
+          'a',
+          'run',
+          args: ['build_runner', 'build'],
+        );
         expect(result.stderr, isEmpty);
         expect(
           result.stdout,
@@ -59,7 +63,11 @@ builders:
 '''),
         ]).create();
 
-        var result = await runPub('a', 'run', args: ['build_runner', 'build']);
+        final result = await runPub(
+          'a',
+          'run',
+          args: ['build_runner', 'build'],
+        );
         expect(result.stderr, isEmpty);
         expect(
           result.stdout,
@@ -92,7 +100,11 @@ builders:
     build_extensions: {"foo": ["bar"]}
 '''),
         ]).create();
-        var result = await runPub('a', 'run', args: ['build_runner', 'build']);
+        final result = await runPub(
+          'a',
+          'run',
+          args: ['build_runner', 'build'],
+        );
         expect(result.stderr, isEmpty);
         expect(result.stdout, contains('could not be parsed'));
       });
@@ -107,7 +119,11 @@ builders:
     build_extensions: {"foo": ["bar"]}
 '''),
         ]).create();
-        var result = await runPub('a', 'run', args: ['build_runner', 'build']);
+        final result = await runPub(
+          'a',
+          'run',
+          args: ['build_runner', 'build'],
+        );
         expect(result.stderr, isEmpty);
         expect(
           result.stdout,
@@ -129,7 +145,7 @@ global_options:
 '''),
       ]).create();
 
-      var result = await runPub('a', 'run', args: ['build_runner', 'build']);
+      final result = await runPub('a', 'run', args: ['build_runner', 'build']);
       expect(result.stderr, isEmpty);
       expect(
         result.stdout,

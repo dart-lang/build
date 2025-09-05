@@ -23,7 +23,7 @@ FutureOr<bool> shouldProcess(
   ReaderWriter readerWriter,
 ) {
   if (_isCacheFile(change) && !assetGraph.contains(change.id)) return false;
-  var node = assetGraph.get(change.id);
+  final node = assetGraph.get(change.id);
   if (node != null) {
     if (!willCreateOutputDir && !node.changesRequireRebuild) return false;
     if (_isAddOrEditOnGeneratedFile(node, change.type)) return false;

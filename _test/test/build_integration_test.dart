@@ -22,30 +22,30 @@ void main() {
 
   group('PostProcessBuilder', () {
     test('creates expected outputs', () async {
-      var generated = await readGeneratedFileAsString(
+      final generated = await readGeneratedFileAsString(
         '_test/lib/hello.txt.post',
       );
-      var original = await File('lib/hello.txt').readAsString();
+      final original = await File('lib/hello.txt').readAsString();
       expect(generated, equals(original));
     });
 
     test('can be configured with build.yaml', () async {
       await runBuild(trailingArgs: ['--config', 'post_process']);
-      var generated = await readGeneratedFileAsString(
+      final generated = await readGeneratedFileAsString(
         '_test/lib/hello.txt.post',
       );
       expect(generated, equals('goodbye'));
     });
 
     test('can be configured with --define', () async {
-      var content = 'cool';
+      final content = 'cool';
       await runBuild(
         trailingArgs: [
           '--define',
           'provides_builder:some_post_process_builder=default_content=$content',
         ],
       );
-      var generated = await readGeneratedFileAsString(
+      final generated = await readGeneratedFileAsString(
         '_test/lib/hello.txt.post',
       );
       expect(generated, equals(content));
@@ -57,14 +57,16 @@ void main() {
       await replaceAllInFile('lib/hello.txt', 'hello', 'goodbye');
       result = await runBuild();
       expect(result.stdout, contains('wrote 1 output'));
-      var content = await readGeneratedFileAsString('_test/lib/hello.txt.post');
+      final content = await readGeneratedFileAsString(
+        '_test/lib/hello.txt.post',
+      );
       expect(content, contains('goodbye'));
     });
   });
 
   group('experiments', () {
     test('can serve a single app with experiments enabled', () async {
-      var result = await runBuild(
+      final result = await runBuild(
         trailingArgs: ['--enable-experiment=fake-experiment'],
       );
 
@@ -126,10 +128,10 @@ void main() {
     });
 
     test('Re-snapshots if there is no asset graph', () async {
-      var assetGraph = assetGraphPathFor(scriptKernelLocation);
+      final assetGraph = assetGraphPathFor(scriptKernelLocation);
       await File(assetGraph).delete();
 
-      var nextBuild = await runBuild();
+      final nextBuild = await runBuild();
       expect(
         (nextBuild.stdout as String).split('\n'),
         containsAllInOrder([

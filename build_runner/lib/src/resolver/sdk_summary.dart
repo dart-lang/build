@@ -33,7 +33,7 @@ final _dartUiPath = p.normalize(
 /// validate we are running under a typical dart package and not a custom
 /// environment).
 Future<String> defaultSdkSummaryGenerator() async {
-  var dartToolPath = '.dart_tool';
+  final dartToolPath = '.dart_tool';
   if (!await Directory(dartToolPath).exists()) {
     throw StateError(
       'The default analyzer resolver can only be used when the current '
@@ -41,14 +41,14 @@ Future<String> defaultSdkSummaryGenerator() async {
     );
   }
 
-  var cacheDir = p.join(dartToolPath, 'build_resolvers');
-  var summaryPath = p.join(cacheDir, 'sdk.sum');
-  var depsFile = File('$summaryPath.deps');
-  var summaryFile = File(summaryPath);
+  final cacheDir = p.join(dartToolPath, 'build_resolvers');
+  final summaryPath = p.join(cacheDir, 'sdk.sum');
+  final depsFile = File('$summaryPath.deps');
+  final summaryFile = File(summaryPath);
 
-  var currentDeps = {
+  final currentDeps = {
     'sdk': Platform.version,
-    for (var package in _packageDepsToCheck)
+    for (final package in _packageDepsToCheck)
       package: await packagePath(package),
   };
 
@@ -89,12 +89,12 @@ Future<bool> _checkDeps(
   File versionsFile,
   Map<String, Object?> currentDeps,
 ) async {
-  var previous =
+  final previous =
       jsonDecode(await versionsFile.readAsString()) as Map<String, Object?>;
 
   if (previous.keys.length != currentDeps.keys.length) return false;
 
-  for (var entry in previous.entries) {
+  for (final entry in previous.entries) {
     if (entry.value != currentDeps[entry.key]) return false;
   }
 

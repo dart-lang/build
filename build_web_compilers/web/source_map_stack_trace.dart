@@ -30,21 +30,21 @@ StackTrace mapStackTrace(
     );
   }
 
-  var trace = Trace.from(stackTrace);
+  final trace = Trace.from(stackTrace);
   return Trace(
     trace.frames.map((frame) {
       // If there's no line information, there's no way to translate this frame.
       // We could return it as-is, but these lines are usually not useful
       // anyway.
-      var line = frame.line;
+      final line = frame.line;
       if (line == null) return null;
 
       // If there's no column, try using the first column of the line.
-      var column = frame.column ?? 0;
+      final column = frame.column ?? 0;
 
       // Subtract 1 because stack traces use 1-indexed lines and columns and
       // source maps uses 0-indexed.
-      var span = sourceMap.spanFor(
+      final span = sourceMap.spanFor(
         line - 1,
         column - 1,
         uri: frame.uri.toString(),
@@ -55,14 +55,14 @@ StackTrace mapStackTrace(
       if (span == null) return null;
 
       var sourceUrl = span.sourceUrl.toString();
-      for (var root in roots) {
+      for (final root in roots) {
         if (root != null && p.url.isWithin(root, sourceUrl)) {
-          var relative = p.url.relative(sourceUrl, from: root);
+          final relative = p.url.relative(sourceUrl, from: root);
           if (relative.contains('dart:')) {
             sourceUrl = relative.substring(relative.indexOf('dart:'));
             break;
           }
-          var packageRoot = '$root/packages';
+          final packageRoot = '$root/packages';
           if (p.url.isWithin(packageRoot, sourceUrl)) {
             sourceUrl =
                 'package:${p.url.relative(sourceUrl, from: packageRoot)}';
@@ -99,9 +99,9 @@ final escapedPound = '\$35';
 /// TODO(https://github.com/dart-lang/sdk/issues/38869): Remove this logic when
 /// DDC stack trace deobfuscation is overhauled.
 String _prettifyMember(String member) {
-  var last = member.lastIndexOf('.');
+  final last = member.lastIndexOf('.');
   if (last < 0) return member;
-  var suffix = member.substring(last + 1);
+  final suffix = member.substring(last + 1);
   member = suffix == 'fn' ? member : suffix;
   // We avoid unescaping the entire member here due to DDC's deduping mechanism
   // introducing trailing $N.
@@ -112,9 +112,9 @@ String _prettifyMember(String member) {
 /// Reformats a JS member name as an extension method invocation.
 String _prettifyExtension(String member) {
   var isSetter = false;
-  var pipeIndex = member.indexOf('|');
-  var spaceIndex = member.indexOf(' ');
-  var poundIndex = member.indexOf('escapedPound');
+  final pipeIndex = member.indexOf('|');
+  final spaceIndex = member.indexOf(' ');
+  final poundIndex = member.indexOf('escapedPound');
   if (spaceIndex >= 0) {
     // Here member is a static field or static getter/setter.
     isSetter = member.substring(0, spaceIndex) == 'set';
@@ -124,7 +124,7 @@ String _prettifyExtension(String member) {
     isSetter = member.substring(pipeIndex + 1, poundIndex) == 'set';
     member = member.replaceRange(pipeIndex + 1, poundIndex + 3, '');
   } else {
-    var body = member.substring(pipeIndex + 1, member.length);
+    final body = member.substring(pipeIndex + 1, member.length);
     if (body.startsWith('unary') || body.startsWith('\$')) {
       // Here member's an operator, so it's safe to unescape everything lazily.
       member = _unescape(member);

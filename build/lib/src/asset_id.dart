@@ -57,7 +57,7 @@ class AssetId implements Comparable<AssetId> {
   /// `asset:` uris have the format '$package/$path', including the top level
   /// directory.
   factory AssetId.resolve(Uri uri, {AssetId? from}) {
-    var resolved =
+    final resolved =
         uri.hasScheme
             ? uri
             : from != null
@@ -90,7 +90,7 @@ class AssetId implements Comparable<AssetId> {
   /// forward slashes (regardless of host OS) and "." and ".." will be removed
   /// where possible.
   factory AssetId.parse(String description) {
-    var parts = description.split('|');
+    final parts = description.split('|');
     if (parts.length != 2) {
       throw FormatException('Could not parse "$description".');
     }
@@ -129,7 +129,7 @@ class AssetId implements Comparable<AssetId> {
 
   @override
   int compareTo(AssetId other) {
-    var packageComp = package.compareTo(other.package);
+    final packageComp = package.compareTo(other.package);
     if (packageComp != 0) return packageComp;
     return path.compareTo(other.path);
   }

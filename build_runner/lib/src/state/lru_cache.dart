@@ -24,7 +24,7 @@ class LruCache<K, V> {
   );
 
   V? operator [](K key) {
-    var entry = _entries[key];
+    final entry = _entries[key];
     if (entry == null) return null;
 
     _promote(entry);
@@ -33,7 +33,7 @@ class LruCache<K, V> {
 
   void operator []=(K key, V value) {
     remove(key);
-    var entry = _Entry(key, value, _computeWeight(value));
+    final entry = _Entry(key, value, _computeWeight(value));
     // Don't cache at all if above the individual weight max.
     if (entry.weight > _individualWeightMax) {
       return;
@@ -51,7 +51,7 @@ class LruCache<K, V> {
   /// Removes the value at [key] from the cache, and returns the value if it
   /// existed.
   V? remove(K key) {
-    var entry = _entries[key];
+    final entry = _entries[key];
     if (entry == null) return null;
 
     _currentWeightTotal -= entry.weight;

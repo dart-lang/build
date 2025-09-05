@@ -35,9 +35,9 @@ final int _defaultMaxWorkers = min((Platform.numberOfProcessors / 2).ceil(), 4);
 const _maxWorkersEnvVar = 'BUILD_MAX_WORKERS_PER_TASK';
 
 final int maxWorkersPerTask = () {
-  var toParse =
+  final toParse =
       Platform.environment[_maxWorkersEnvVar] ?? '$_defaultMaxWorkers';
-  var parsed = int.tryParse(toParse);
+  final parsed = int.tryParse(toParse);
   if (parsed == null) {
     log.warning(
       'Invalid value for $_maxWorkersEnvVar environment variable, '

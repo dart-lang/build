@@ -11,7 +11,7 @@ void main() {
   glyph.ascii = false;
 
   test('for missing default target', () {
-    var buildYaml = r'''
+    final buildYaml = r'''
 targets:
   not_package_name:
     sources: ["lib/**"]
@@ -26,7 +26,7 @@ line 2, column 3 of build.yaml: Unsupported value for "targets". Must specify a 
   });
 
   test('for bad build extensions', () {
-    var buildYaml = r'''
+    final buildYaml = r'''
 builders:
   some_builder:
     build_extensions:
@@ -46,7 +46,7 @@ line 4, column 7 of build.yaml: Unsupported value for "build_extensions". May no
   });
 
   test('for null generate_for globs', () {
-    var buildYaml = r'''
+    final buildYaml = r'''
 targets:
   $default:
     builders:
@@ -63,7 +63,7 @@ line 6, column 9 of build.yaml: Unsupported value for "generate_for". Include gl
   ╵''');
   });
   test('for empty generate_for globs', () {
-    var buildYaml = r'''
+    final buildYaml = r'''
 targets:
   $default:
     builders:
@@ -81,7 +81,7 @@ line 6, column 9 of build.yaml: Unsupported value for "generate_for". Include gl
   });
 
   test('for null exclude globs', () {
-    var buildYaml = r'''
+    final buildYaml = r'''
 targets:
   $default:
     builders:
@@ -100,7 +100,7 @@ line 7, column 11 of build.yaml: Unsupported value for "exclude". type 'Null' is
   });
 
   test('for empty exclude globs', () {
-    var buildYaml = r'''
+    final buildYaml = r'''
 targets:
   $default:
     builders:
@@ -119,7 +119,7 @@ line 6, column 11 of build.yaml: Unsupported value for "generate_for". Exclude g
   });
 
   test('for null builder config', () {
-    var buildYaml = r'''
+    final buildYaml = r'''
 targets:
   $default:
     builders:

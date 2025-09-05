@@ -23,10 +23,10 @@ class BuildFilter {
   ///
   /// Globs are supported in package names and paths.
   factory BuildFilter.fromArg(String arg, String rootPackage) {
-    var uri = Uri.parse(arg);
+    final uri = Uri.parse(arg);
     if (uri.scheme == 'package') {
-      var package = uri.pathSegments.first;
-      var glob = Glob(p.url.joinAll(['lib', ...uri.pathSegments.skip(1)]));
+      final package = uri.pathSegments.first;
+      final glob = Glob(p.url.joinAll(['lib', ...uri.pathSegments.skip(1)]));
       return BuildFilter(Glob(package), glob);
     } else if (uri.scheme.isEmpty) {
       return BuildFilter(Glob(rootPackage), Glob(uri.path));

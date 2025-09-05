@@ -12,9 +12,9 @@ import 'asset_change.dart';
 /// For example, if an asset was added then immediately deleted, no event will
 /// be recorded for the given asset.
 Map<AssetId, ChangeType> collectChanges(List<List<AssetChange>> changes) {
-  var changeMap = <AssetId, ChangeType>{};
-  for (var change in changes.expand((l) => l)) {
-    var originalChangeType = changeMap[change.id];
+  final changeMap = <AssetId, ChangeType>{};
+  for (final change in changes.expand((l) => l)) {
+    final originalChangeType = changeMap[change.id];
     if (originalChangeType != null) {
       switch (originalChangeType) {
         case ChangeType.ADD:

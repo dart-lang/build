@@ -186,7 +186,7 @@ class BuildRunner {
 
 /// Deletes the asset graph for the current build script from disk.
 void _deleteAssetGraph() {
-  var graph = File(assetGraphPath);
+  final graph = File(assetGraphPath);
   if (graph.existsSync()) {
     graph.deleteSync();
   }
@@ -197,8 +197,8 @@ void _deleteAssetGraph() {
 /// This should only happen if the current script is a snapshot, and it has
 /// been invalidated.
 void _invalidateSelf() {
-  var kernelPath = Platform.script.toFilePath();
-  var kernelFile = File(kernelPath);
+  final kernelPath = Platform.script.toFilePath();
+  final kernelFile = File(kernelPath);
   if (kernelFile.existsSync()) {
     kernelFile.renameSync('$kernelPath$scriptKernelCachedSuffix');
   }

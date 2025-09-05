@@ -86,7 +86,7 @@ Future<void> _startServer(
               .transform(const LineSplitter())
               .asBroadcastStream();
 
-  var stdErrLines =
+  final stdErrLines =
       proc.stderr
           .transform(utf8.decoder)
           .transform(const LineSplitter())
@@ -106,7 +106,7 @@ Future<void> stopServer({bool? cleanUp}) async {
   final process = _process;
   if (process != null) {
     expect(process.kill(), true);
-    var exitCode = process.exitCode;
+    final exitCode = process.exitCode;
     _process = null;
     await exitCode;
   }
@@ -120,7 +120,7 @@ Future<void> stopServer({bool? cleanUp}) async {
 /// Checks whether the current git client is "clean" (no pending changes) for
 /// this package directory.
 bool _gitIsClean() {
-  var gitStatus =
+  final gitStatus =
       Process.runSync('git', ['status', '.', '--porcelain']).stdout as String;
   return gitStatus.isEmpty;
 }
@@ -131,7 +131,7 @@ bool _gitIsClean() {
 /// This also calls `addTearDown` with a method that will reset the current git
 /// state for this directory after running the test.
 void ensureCleanGitClient() {
-  var gitWasClean = _gitIsClean();
+  final gitWasClean = _gitIsClean();
   expect(
     gitWasClean,
     isTrue,
@@ -194,7 +194,7 @@ Future<TestProcess> _runTests(
 }) async {
   usePrecompiled ??= true;
   if (usePrecompiled) {
-    var args =
+    final args =
         scriptArgs.toList()
           ..add('test')
           ..add('--verbose')
@@ -203,7 +203,7 @@ Future<TestProcess> _runTests(
           ..addAll([...?testArgs, '-p', 'chrome', '-r', 'expanded']);
     return TestProcess.start(executable, args);
   } else {
-    var args = ['run', 'test', '--pub-serve', '8081', ...?testArgs];
+    final args = ['run', 'test', '--pub-serve', '8081', ...?testArgs];
     return TestProcess.start('dart', args);
   }
 }
@@ -215,7 +215,7 @@ Future<void> expectTestsFail({
 }) async {
   // Skip on Windows due to Chrome test flakiness, see
   // https://github.com/dart-lang/build/issues/4123.
-  var result = await runTests(
+  final result = await runTests(
     usePrecompiled: usePrecompiled,
     buildArgs: buildArgs,
     testArgs: testArgs,
@@ -233,12 +233,12 @@ Future<void> expectTestsPass({
   // Skip on Windows due to Chrome test flakiness, see
   // https://github.com/dart-lang/build/issues/4123.
   if (Platform.isWindows) return;
-  var result = await runTests(
+  final result = await runTests(
     usePrecompiled: usePrecompiled,
     buildArgs: buildArgs,
     testArgs: testArgs,
   );
-  var allLines = await result.stdout.rest.toList();
+  final allLines = await result.stdout.rest.toList();
   expect(allLines, contains(contains('All tests passed!')));
   if (expectedNumRan != null) {
     expect(allLines, contains(contains('+$expectedNumRan')));
@@ -248,27 +248,27 @@ Future<void> expectTestsPass({
 }
 
 Future<void> createFile(String path, String contents) async {
-  var file = File(path);
+  final file = File(path);
   expect(await file.exists(), isFalse);
   await file.create(recursive: true);
   await file.writeAsString(contents);
 }
 
 Future<void> deleteFile(String path) async {
-  var file = File(path);
+  final file = File(path);
   expect(await file.exists(), isTrue);
   await file.delete();
 }
 
 Future<String> readGeneratedFileAsString(String path) async {
-  var file = File(p.join(_generatedDir.path, path));
+  final file = File(p.join(_generatedDir.path, path));
   expect(await file.exists(), isTrue);
   return file.readAsString();
 }
 
 Future<void> replaceAllInFile(String path, Pattern from, String replace) async {
-  var file = File(path);
+  final file = File(path);
   expect(await file.exists(), isTrue);
-  var content = await file.readAsString();
+  final content = await file.readAsString();
   await file.writeAsString(content.replaceAll(from, replace));
 }

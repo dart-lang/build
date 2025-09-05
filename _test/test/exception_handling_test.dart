@@ -11,7 +11,7 @@ import 'common/utils.dart';
 
 void main() {
   test('Exceptions from the isolate are handled properly', () async {
-    var asyncResult = runBuild(trailingArgs: ['--config', 'throws']);
+    final asyncResult = runBuild(trailingArgs: ['--config', 'throws']);
     expect(
       asyncResult,
       completes,
@@ -19,7 +19,7 @@ void main() {
           'Wrapper script should not hang if the isolate has an unhandled '
           'error.',
     );
-    var result = await asyncResult;
+    final result = await asyncResult;
     expect(
       result.stdout,
       contains('Throwing on purpose cause you asked for it!'),

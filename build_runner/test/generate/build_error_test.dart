@@ -96,7 +96,7 @@ void main() {
             build: expectAsync2((buildStep, _) async {
               // Attempts to read the file that came from a failing build step
               // and hides the exception.
-              var failedFile = buildStep.inputId.changeExtension('.failed');
+              final failedFile = buildStep.inputId.changeExtension('.failed');
               await expectLater(
                 buildStep.readAsString(failedFile),
                 throwsA(anything),

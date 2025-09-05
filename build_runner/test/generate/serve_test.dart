@@ -52,13 +52,13 @@ void main() {
     });
 
     test('does basic builds', () async {
-      var handler = await createHandler(
+      final handler = await createHandler(
         [applyToRoot(TestBuilder())],
         {'a|web/a.txt': 'a'},
         packageGraph,
         readerWriter,
       );
-      var results = StreamQueue(handler.buildResults);
+      final results = StreamQueue(handler.buildResults);
       var result = await results.next;
       checkBuild(
         result,
@@ -77,21 +77,21 @@ void main() {
     });
 
     test('blocks serving files until the build is done', () async {
-      var buildBlocker1 = Completer<void>();
+      final buildBlocker1 = Completer<void>();
       var nextBuildBlocker = buildBlocker1.future;
 
-      var handler = await createHandler(
+      final handler = await createHandler(
         [applyToRoot(TestBuilder(extraWork: (_, _) => nextBuildBlocker))],
         {'a|web/a.txt': 'a'},
         packageGraph,
         readerWriter,
       );
-      var webHandler = handler.handlerFor('web');
-      var results = StreamQueue(handler.buildResults);
+      final webHandler = handler.handlerFor('web');
+      final results = StreamQueue(handler.buildResults);
       // Give the build enough time to get started.
       await wait(100);
 
-      var request = Request('GET', Uri.parse('http://localhost:8000/a.txt'));
+      final request = Request('GET', Uri.parse('http://localhost:8000/a.txt'));
       unawaited(
         (webHandler(request) as Future<Response>).then(
           expectAsync1((Response response) {
@@ -113,7 +113,7 @@ void main() {
       );
 
       /// Next request completes right away.
-      var buildBlocker2 = Completer<void>();
+      final buildBlocker2 = Completer<void>();
       unawaited(
         (webHandler(request) as Future<Response>).then(
           expectAsync1((response) {
@@ -128,7 +128,7 @@ void main() {
       await readerWriter.writeAsString(makeAssetId('a|web/a.txt'), 'b');
       // Give the build enough time to get started.
       await wait(500);
-      var done = Completer<void>();
+      final done = Completer<void>();
       unawaited(
         (webHandler(request) as Future<Response>).then(
           expectAsync1((response) {

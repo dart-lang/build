@@ -141,10 +141,10 @@ class BuildOptions {
 /// root input directory and the second value output directory.
 /// If no delimeter is provided the root input directory will be null.
 Set<BuildDirectory> _parseBuildDirs(BuildRunnerCommandLine commandLine) {
-  var outputs = commandLine.outputs;
+  final outputs = commandLine.outputs;
   if (outputs == null) return <BuildDirectory>{};
-  var result = <BuildDirectory>{};
-  var outputPaths = <String>{};
+  final result = <BuildDirectory>{};
+  final outputPaths = <String>{};
 
   void checkExisting(String outputDir) {
     if (outputPaths.contains(outputDir)) {
@@ -157,10 +157,10 @@ Set<BuildDirectory> _parseBuildDirs(BuildRunnerCommandLine commandLine) {
     outputPaths.add(outputDir);
   }
 
-  for (var option in commandLine.outputs!) {
-    var split = option.split(':');
+  for (final option in commandLine.outputs!) {
+    final split = option.split(':');
     if (split.length == 1) {
-      var output = split.first;
+      final output = split.first;
       checkExisting(output);
       result.add(
         BuildDirectory(
@@ -169,9 +169,9 @@ Set<BuildDirectory> _parseBuildDirs(BuildRunnerCommandLine commandLine) {
         ),
       );
     } else if (split.length >= 2) {
-      var output = split.sublist(1).join(':');
+      final output = split.sublist(1).join(':');
       checkExisting(output);
-      var root = split.first;
+      final root = split.first;
       if (root.contains('/')) {
         throw ArgumentError.value(
           option,
@@ -191,14 +191,14 @@ Set<BuildDirectory> _parseBuildDirs(BuildRunnerCommandLine commandLine) {
 Set<BuildDirectory> _parsePositionalBuildDirs(
   BuildRunnerCommandLine commandLine,
 ) => {
-  for (var arg in commandLine.rest)
+  for (final arg in commandLine.rest)
     BuildDirectory(_checkTopLevel(commandLine, arg)),
 };
 
 /// Throws a [UsageException] if [arg] looks like anything other than a top
 /// level directory.
 String _checkTopLevel(BuildRunnerCommandLine commandLine, String arg) {
-  var parts = p.split(arg);
+  final parts = p.split(arg);
   if (parts.length > 1 || arg == '.') {
     throw UsageException(
       'Only top level directories such as `web` or `test` are allowed as '
@@ -226,7 +226,7 @@ BuiltMap<String, BuiltMap<String, dynamic>> _parseBuilderConfigOverrides(
         '$expectedFormat',
       );
     } else if (parts.length > 3) {
-      var rest = parts.sublist(2);
+      final rest = parts.sublist(2);
       parts
         ..removeRange(2, parts.length)
         ..add(rest.join('='));
@@ -261,11 +261,11 @@ BuiltSet<BuildFilter> _parseBuildFilters(
   BuildRunnerCommandLine commandLine, {
   required String rootPackage,
 }) {
-  var filterArgs = commandLine.buildFilter;
+  final filterArgs = commandLine.buildFilter;
   if (filterArgs == null || filterArgs.isEmpty) return BuiltSet();
   try {
     return {
-      for (var arg in filterArgs) BuildFilter.fromArg(arg, rootPackage),
+      for (final arg in filterArgs) BuildFilter.fromArg(arg, rootPackage),
     }.build();
   } on FormatException catch (e) {
     throw ArgumentError.value(

@@ -52,7 +52,7 @@ class PackageGraph implements AssetPathProvider {
     final allPackages = <String, PackageNode>{root.name: root};
 
     void addDeps(PackageNode package) {
-      for (var dep in package.dependencies) {
+      for (final dep in package.dependencies) {
         if (allPackages.containsKey(dep.name)) continue;
         allPackages[dep.name] = dep;
         addDeps(dep);
@@ -201,7 +201,7 @@ class PackageGraph implements AssetPathProvider {
 
   @override
   String pathFor(AssetId id) {
-    var package = this[id.package];
+    final package = this[id.package];
     if (package == null) {
       throw PackageNotFoundException(id.package);
     }
@@ -210,8 +210,8 @@ class PackageGraph implements AssetPathProvider {
 
   @override
   String toString() {
-    var buffer = StringBuffer();
-    for (var package in allPackages.values) {
+    final buffer = StringBuffer();
+    for (final package in allPackages.values) {
       buffer.writeln('$package');
     }
     return buffer.toString();
@@ -311,7 +311,7 @@ Map<String, List<String>> _parsePackageDependencies(
 
 /// Gets the deps from a yaml file, omitting dependency_overrides.
 List<String> _depsFromYaml(YamlMap yaml, {bool isRoot = false}) {
-  var deps = <String>{
+  final deps = <String>{
     ..._stringKeys(yaml['dependencies'] as Map?),
     if (isRoot) ..._stringKeys(yaml['dev_dependencies'] as Map?),
   };
@@ -326,8 +326,8 @@ Iterable<String> _stringKeys(Map? m) =>
 
 /// Should point to the top level directory for the package.
 YamlMap _pubspecForPath(String absolutePath) {
-  var pubspecPath = p.join(absolutePath, 'pubspec.yaml');
-  var pubspec = File(pubspecPath);
+  final pubspecPath = p.join(absolutePath, 'pubspec.yaml');
+  final pubspec = File(pubspecPath);
   if (!pubspec.existsSync()) {
     throw StateError(
       'Unable to generate package graph, no `$pubspecPath` found.',

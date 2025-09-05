@@ -20,7 +20,7 @@ import 'data/shutdown_notification.dart';
 import 'src/file_wait.dart';
 
 Future<int> _existingPort(String workingDirectory) async {
-  var portFile = File(portFilePath(workingDirectory));
+  final portFile = File(portFilePath(workingDirectory));
   if (!await waitForFile(portFile)) throw MissingPortFile();
   return int.parse(portFile.readAsStringSync());
 }
@@ -39,7 +39,7 @@ Future<void> _handleDaemonStartup(
       );
     },
   );
-  var stdout =
+  final stdout =
       process.stdout
           .transform(utf8.decoder)
           .transform(const LineSplitter())
@@ -52,7 +52,7 @@ Future<void> _handleDaemonStartup(
   // and the `logEndMarker` as a `ServerLog`. Everything else is considered a
   // normal INFO level log.
   StringBuffer? nextLogRecord;
-  var sub = stdout.where((line) => !_isActionMessage(line)).listen((line) {
+  final sub = stdout.where((line) => !_isActionMessage(line)).listen((line) {
     if (nextLogRecord != null) {
       if (line == logEndMarker) {
         try {
@@ -88,7 +88,7 @@ Future<void> _handleDaemonStartup(
     }
   });
 
-  var daemonAction = await stdout.firstWhere(
+  final daemonAction = await stdout.firstWhere(
     _isActionMessage,
     orElse: () => throw StateError('Unable to start build daemon.'),
   );
@@ -125,7 +125,7 @@ class BuildDaemonClient {
   ) : _channel = IOWebSocketChannel.connect('ws://localhost:$port') {
     _channel.stream
         .listen((data) {
-          var message = _serializers.deserialize(jsonDecode(data as String));
+          final message = _serializers.deserialize(jsonDecode(data as String));
           if (message is ServerLog) {
             logHandler(message);
           } else if (message is BuildResults) {
@@ -161,7 +161,7 @@ class BuildDaemonClient {
   /// Note this will wait for any ongoing build to finish before starting a new
   /// one.
   void startBuild() {
-    var request = BuildRequest();
+    final request = BuildRequest();
     _channel.sink.add(jsonEncode(_serializers.serialize(request)));
   }
 
@@ -180,12 +180,12 @@ class BuildDaemonClient {
     BuildMode buildMode = BuildMode.Auto,
   }) async {
     logHandler ??= (_) {};
-    var daemonSerializers = serializersOverride ?? serializers;
+    final daemonSerializers = serializersOverride ?? serializers;
 
-    var daemonArgs = daemonCommand.sublist(1)
+    final daemonArgs = daemonCommand.sublist(1)
       ..add('--$buildModeFlag=$buildMode');
 
-    var process = await Process.start(
+    final process = await Process.start(
       daemonCommand.first,
       daemonArgs,
       mode: ProcessStartMode.detachedWithStdio,

@@ -40,7 +40,7 @@ void main() {
     late List<AssetId> outputs;
 
     setUp(() {
-      var readerWriter = InternalTestReaderWriter();
+      final readerWriter = InternalTestReaderWriter();
       primary = makeAssetId();
       outputs = List.generate(5, (index) => makeAssetId());
       buildStep = BuildStepImpl(
@@ -54,7 +54,7 @@ void main() {
     });
 
     test('doesnt allow non-expected outputs', () {
-      var id = makeAssetId();
+      final id = makeAssetId();
       expect(
         () => buildStep.writeAsString(id, '$id'),
         throwsA(const TypeMatcher<UnexpectedOutputException>()),
@@ -70,9 +70,9 @@ void main() {
     });
 
     test('fetchResource can fetch resources', () async {
-      var expected = 1;
-      var intResource = Resource(() => expected);
-      var actual = await buildStep.fetchResource(intResource);
+      final expected = 1;
+      final intResource = Resource(() => expected);
+      final actual = await buildStep.fetchResource(intResource);
       expect(actual, expected);
     });
 
@@ -100,12 +100,12 @@ void main() {
     });
 
     test('tracks outputs created by a builder', () async {
-      var builder = TestBuilder();
-      var primary = makeAssetId('a|web/primary.txt');
-      var inputs = {primary: 'foo'};
+      final builder = TestBuilder();
+      final primary = makeAssetId('a|web/primary.txt');
+      final inputs = {primary: 'foo'};
       addAssets(inputs, readerWriter);
-      var outputId = AssetId.parse('$primary.copy');
-      var buildStep = BuildStepImpl(
+      final outputId = AssetId.parse('$primary.copy');
+      final buildStep = BuildStepImpl(
         primary,
         [outputId],
         SingleStepReaderWriter.fakeFor(readerWriter),
@@ -123,7 +123,7 @@ void main() {
 
     group('resolve', () {
       test('can resolve assets', () async {
-        var inputs = {
+        final inputs = {
           makeAssetId('a|web/a.dart'): '''
               library a;
 
@@ -135,8 +135,8 @@ void main() {
         };
         addAssets(inputs, readerWriter);
 
-        var primary = makeAssetId('a|web/a.dart');
-        var buildStep = BuildStepImpl(
+        final primary = makeAssetId('a|web/a.dart');
+        final buildStep = BuildStepImpl(
           primary,
           [],
           SingleStepReaderWriter.fakeFor(readerWriter),
@@ -144,9 +144,9 @@ void main() {
           resourceManager,
           _unsupported,
         );
-        var resolver = buildStep.resolver;
+        final resolver = buildStep.resolver;
 
-        var aLib = await resolver.libraryFor(primary);
+        final aLib = await resolver.libraryFor(primary);
         expect(aLib.name3, 'a');
         expect(aLib.firstFragment.libraryImports2.length, 2);
         expect(
@@ -156,7 +156,7 @@ void main() {
           isTrue,
         );
 
-        var bLib = await resolver.findLibraryByName('b');
+        final bLib = await resolver.findLibraryByName('b');
         expect(bLib!.name3, 'b');
         expect(bLib.firstFragment.libraryImports2.length, 1);
 
@@ -172,7 +172,7 @@ void main() {
     late String outputContent;
 
     setUp(() async {
-      var primary = makeAssetId();
+      final primary = makeAssetId();
       readerWriter = SlowReaderWriter();
       outputId = makeAssetId('a|test.txt');
       outputContent = '$outputId';
@@ -206,7 +206,7 @@ void main() {
     });
 
     test('Completes only after async writes finish', () async {
-      var outputCompleter = Completer<String>();
+      final outputCompleter = Completer<String>();
       unawaited(buildStep.writeAsString(outputId, outputCompleter.future));
       var isComplete = false;
       unawaited(
@@ -239,7 +239,7 @@ void main() {
     late AssetId output;
 
     setUp(() {
-      var readerWriter = InternalTestReaderWriter();
+      final readerWriter = InternalTestReaderWriter();
       primary = makeAssetId();
       output = makeAssetId();
       buildStep = BuildStepImpl(
@@ -260,9 +260,9 @@ void main() {
   });
 
   test('reportUnusedAssets forwards calls if provided', () {
-    var readerWriter = InternalTestReaderWriter();
-    var unused = <AssetId>{};
-    var buildStep = BuildStepImpl(
+    final readerWriter = InternalTestReaderWriter();
+    final unused = <AssetId>{};
+    final buildStep = BuildStepImpl(
       makeAssetId(),
       [],
       SingleStepReaderWriter.fakeFor(readerWriter),
@@ -271,7 +271,7 @@ void main() {
       _unsupported,
       reportUnusedAssets: unused.addAll,
     );
-    var reported = [makeAssetId(), makeAssetId(), makeAssetId()];
+    final reported = [makeAssetId(), makeAssetId(), makeAssetId()];
     buildStep.reportUnusedAssets(reported);
     expect(unused, equals(reported));
   });

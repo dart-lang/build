@@ -113,7 +113,7 @@ class InternalTestReaderWriter extends ReaderWriter
   @override
   Future writeAsBytes(AssetId id, List<int> bytes) async {
     assetsWritten.add(id);
-    var type = testing.exists(id) ? ChangeType.MODIFY : ChangeType.ADD;
+    final type = testing.exists(id) ? ChangeType.MODIFY : ChangeType.ADD;
     await super.writeAsBytes(id, bytes);
     FakeWatcher.notifyWatchers(
       WatchEvent(type, p.absolute(id.package, p.fromUri(id.path))),
@@ -127,7 +127,7 @@ class InternalTestReaderWriter extends ReaderWriter
     Encoding encoding = utf8,
   }) async {
     assetsWritten.add(id);
-    var type = testing.exists(id) ? ChangeType.MODIFY : ChangeType.ADD;
+    final type = testing.exists(id) ? ChangeType.MODIFY : ChangeType.ADD;
     await super.writeAsString(id, contents, encoding: encoding);
     FakeWatcher.notifyWatchers(
       WatchEvent(type, p.absolute(id.package, p.fromUri(id.path))),

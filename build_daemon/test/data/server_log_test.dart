@@ -8,7 +8,7 @@ import 'package:test/test.dart';
 void main() {
   group('Levels', () {
     test('are comparable', () {
-      for (var matcher in [lessThan, lessThanOrEqualTo]) {
+      for (final matcher in [lessThan, lessThanOrEqualTo]) {
         expect(Level.FINEST, matcher(Level.FINER));
         expect(Level.FINER, matcher(Level.FINE));
         expect(Level.FINE, matcher(Level.CONFIG));
@@ -18,7 +18,7 @@ void main() {
         expect(Level.SEVERE, matcher(Level.SHOUT));
       }
 
-      for (var matcher in [greaterThan, greaterThanOrEqualTo]) {
+      for (final matcher in [greaterThan, greaterThanOrEqualTo]) {
         expect(Level.SHOUT, matcher(Level.SEVERE));
         expect(Level.SEVERE, matcher(Level.WARNING));
         expect(Level.WARNING, matcher(Level.INFO));
@@ -28,7 +28,7 @@ void main() {
         expect(Level.FINER, matcher(Level.FINEST));
       }
 
-      for (var level in Level.values) {
+      for (final level in Level.values) {
         expect(level, lessThanOrEqualTo(level));
         expect(level, greaterThanOrEqualTo(level));
       }
