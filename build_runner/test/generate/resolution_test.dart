@@ -8,10 +8,8 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:build_runner/src/logging/build_log.dart';
-import 'package:build_runner/src/package_graph/apply_builders.dart';
+import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
-
-import '../common/test_phases.dart';
 
 void main() {
   setUp(() {
@@ -19,8 +17,8 @@ void main() {
   });
 
   test('should resolve a dart file with a part file', () async {
-    await testPhases(
-      [applyToRoot(ListClassesAndHierarchyBuilder())],
+    await testBuilders(
+      [ListClassesAndHierarchyBuilder()],
       {
         'a|lib/a.dart': r'''
         library a;
