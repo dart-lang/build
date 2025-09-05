@@ -127,13 +127,13 @@ void main() {
     );
 
     test('runs a max of one concurrent action per phase', () async {
-      var assets = <String, String>{};
+      final assets = <String, String>{};
       for (var i = 0; i < 2; i++) {
         assets['a|web/$i.txt'] = '$i';
       }
       var concurrentCount = 0;
       var maxConcurrentCount = 0;
-      var reachedMax = Completer<void>();
+      final reachedMax = Completer<void>();
       await testBuilders(
         [
           TestBuilder(
@@ -330,7 +330,7 @@ void main() {
       });
 
       test('multiple mixed build actions with custom build config', () async {
-        var builders = [
+        final builders = [
           copyABuilderApplication,
           apply(
             'a:clone_txt',
@@ -388,7 +388,7 @@ targets:
 
       test('allows running on generated inputs that do not match target '
           'source globs', () async {
-        var builders = [
+        final builders = [
           TestBuilder(buildExtensions: appendExtension('.1', from: '.txt')),
           TestBuilder(buildExtensions: appendExtension('.2', from: '.1')),
         ];
@@ -408,8 +408,8 @@ targets:
       });
 
       test('early step touches a not-yet-generated asset', () async {
-        var copyId = AssetId('a', 'lib/file.a.copy');
-        var builders = [
+        final copyId = AssetId('a', 'lib/file.a.copy');
+        final builders = [
           TestBuilder(
             buildExtensions: appendExtension('.copy', from: '.b'),
             extraWork: (buildStep, _) => buildStep.canRead(copyId),
@@ -432,13 +432,13 @@ targets:
       });
 
       test('asset is deleted mid-build, use cached canRead result', () async {
-        var aTxtId = AssetId('a', 'lib/file.a');
-        var ready = Completer<void>();
-        var firstBuilder = TestBuilder(
+        final aTxtId = AssetId('a', 'lib/file.a');
+        final ready = Completer<void>();
+        final firstBuilder = TestBuilder(
           buildExtensions: appendExtension('.exists', from: '.a'),
           build: writeCanRead(aTxtId),
         );
-        var builders = [
+        final builders = [
           firstBuilder,
           TestBuilder(
             buildExtensions: appendExtension('.exists', from: '.b'),
@@ -483,9 +483,9 @@ targets:
           outputs: {'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.clone': 'a'},
         );
 
-        var graphId = makeAssetId('a|$assetGraphPath');
+        final graphId = makeAssetId('a|$assetGraphPath');
         expect(result.readerWriter.testing.exists(graphId), isTrue);
-        var cachedGraph = AssetGraph.deserialize(
+        final cachedGraph = AssetGraph.deserialize(
           result.readerWriter.testing.readBytes(graphId),
         );
         expect(
@@ -529,9 +529,9 @@ targets:
         );
         expect(result.readerWriter.testing.exists(copyId), isTrue);
 
-        var canReadInBuild = Completer<bool>();
-        var blockingCompleter = Completer<void>();
-        var builder = TestBuilder(
+        final canReadInBuild = Completer<bool>();
+        final blockingCompleter = Completer<void>();
+        final builder = TestBuilder(
           buildExtensions: appendExtension('.copy', from: '.txt'),
           build: (buildStep, _) async {
             canReadInBuild.complete(await buildStep.canRead(copyId));
@@ -542,7 +542,7 @@ targets:
             await blockingCompleter.future;
           },
         );
-        var done = testBuilders(
+        final done = testBuilders(
           [builder],
           {'a|web/a.txt': 'b'},
           readerWriter: result.readerWriter,
@@ -553,7 +553,7 @@ targets:
         expect(result.readerWriter.testing.exists(copyId), isTrue);
 
         // But we should delete it before actually running the builder.
-        var inputId = makeAssetId('a|web/a.txt');
+        final inputId = makeAssetId('a|web/a.txt');
         await builder.buildInputs.firstWhere((id) => id == inputId);
 
         // Because of write caching, it's not deleted from `readerWriter`.
@@ -808,7 +808,7 @@ additional_public_assets:
     });
 
     test('can read files from external packages', () async {
-      var builder = TestBuilder(
+      final builder = TestBuilder(
         extraWork:
             (buildStep, _) => buildStep.canRead(makeAssetId('b|lib/b.txt')),
       );
@@ -897,7 +897,7 @@ targets:
     test(
       'Overdeclared outputs are not treated as inputs to later steps',
       () async {
-        var builders = [
+        final builders = [
           TestBuilder(
             buildExtensions: appendExtension('.unexpected'),
             build: (_, _) {},
@@ -980,10 +980,10 @@ targets:
         outputs: {'a|web/a.txt.copy': 'a'},
         logPerformanceDir: 'perf',
       );
-      var logs =
+      final logs =
           await result.readerWriter.assetFinder.find(Glob('perf/**')).toList();
       expect(logs.length, 1);
-      var perf = BuildPerformance.fromJson(
+      final perf = BuildPerformance.fromJson(
         jsonDecode(await result.readerWriter.readAsString(logs.first))
             as Map<String, dynamic>,
       );
@@ -992,7 +992,7 @@ targets:
     });
 
     group('buildFilters', () {
-      var packageGraphWithDep = buildPackageGraph({
+      final packageGraphWithDep = buildPackageGraph({
         package('b'): [],
         rootPackage('a'): ['b'],
       });
@@ -1112,13 +1112,13 @@ targets:
       },
     );
 
-    var graphId = makeAssetId('a|$assetGraphPath');
+    final graphId = makeAssetId('a|$assetGraphPath');
     expect(result.readerWriter.testing.exists(graphId), isTrue);
-    var cachedGraph = AssetGraph.deserialize(
+    final cachedGraph = AssetGraph.deserialize(
       result.readerWriter.testing.readBytes(graphId),
     );
 
-    var expectedGraph = await AssetGraph.build(
+    final expectedGraph = await AssetGraph.build(
       BuildPhases([]),
       <AssetId>{},
       {makeAssetId('a|.dart_tool/package_config.json')},
@@ -1127,14 +1127,14 @@ targets:
     );
 
     // Source nodes
-    var aId = AssetId.parse('a|web/a.txt');
+    final aId = AssetId.parse('a|web/a.txt');
     var aSourceNode = AssetNode.source(aId, digest: computeDigest(aId, 'a'));
-    var bId = AssetId.parse('a|lib/b.txt');
+    final bId = AssetId.parse('a|lib/b.txt');
     var bSourceNode = AssetNode.source(bId, digest: computeDigest(bId, 'b'));
 
     // Regular generated asset nodes.
-    var aCopyId = AssetId.parse('a|web/a.txt.copy');
-    var aCopyNode = AssetNode.generated(
+    final aCopyId = AssetId.parse('a|web/a.txt.copy');
+    final aCopyNode = AssetNode.generated(
       aCopyId,
       phaseNumber: 0,
       primaryInput: makeAssetId('a|web/a.txt'),
@@ -1147,8 +1147,8 @@ targets:
       (b) => b..primaryOutputs.add(aCopyNode.id),
     );
 
-    var bCopyId = makeAssetId('a|lib/b.txt.copy'); //;
-    var bCopyNode = AssetNode.generated(
+    final bCopyId = makeAssetId('a|lib/b.txt.copy'); //;
+    final bCopyNode = AssetNode.generated(
       bCopyId,
       phaseNumber: 0,
       primaryInput: makeAssetId('a|lib/b.txt'),
@@ -1162,16 +1162,16 @@ targets:
     );
 
     // Post build generates asset nodes.
-    var aPostProcessBuildStepId = PostProcessBuildStepId(
+    final aPostProcessBuildStepId = PostProcessBuildStepId(
       input: aSourceNode.id,
       actionNumber: 0,
     );
-    var bPostProcessBuildStepId = PostProcessBuildStepId(
+    final bPostProcessBuildStepId = PostProcessBuildStepId(
       input: bSourceNode.id,
       actionNumber: 0,
     );
 
-    var aPostCopyNode = AssetNode.generated(
+    final aPostCopyNode = AssetNode.generated(
       makeAssetId('a|web/a.txt.post'),
       phaseNumber: 1,
       primaryInput: makeAssetId('a|web/a.txt'),
@@ -1186,7 +1186,7 @@ targets:
       (b) => b..primaryOutputs.add(aPostCopyNode.id),
     );
 
-    var bPostCopyNode = AssetNode.generated(
+    final bPostCopyNode = AssetNode.generated(
       makeAssetId('a|lib/b.txt.post'),
       phaseNumber: 1,
       primaryInput: makeAssetId('a|lib/b.txt'),
@@ -1256,8 +1256,8 @@ targets:
   test(
     'outputs from previous full builds shouldn\'t be inputs to later ones',
     () async {
-      var inputs = <String, String>{'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'};
-      var outputs = <String, String>{
+      final inputs = <String, String>{'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'};
+      final outputs = <String, String>{
         'a|web/a.txt.copy': 'a',
         'a|lib/b.txt.copy': 'b',
       };
@@ -1280,8 +1280,8 @@ targets:
   );
 
   test('can recover from a deleted asset_graph.json cache', () async {
-    var inputs = <String, String>{'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'};
-    var outputs = <String, String>{
+    final inputs = <String, String>{'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'};
+    final outputs = <String, String>{
       'a|web/a.txt.copy': 'a',
       'a|lib/b.txt.copy': 'b',
     };
@@ -1293,7 +1293,7 @@ targets:
     );
 
     // Delete the `asset_graph.json` file!
-    var outputId = makeAssetId('a|$assetGraphPath');
+    final outputId = makeAssetId('a|$assetGraphPath');
     await (result.readerWriter as ReaderWriter).delete(outputId);
 
     // Second run, should have no extra outputs.
@@ -1313,9 +1313,9 @@ targets:
           // Add two extra deps, but remove one since we decided not to use
           // it.
           build: (BuildStep buildStep, _) async {
-            var usedId = buildStep.inputId.addExtension('.used');
+            final usedId = buildStep.inputId.addExtension('.used');
 
-            var content =
+            final content =
                 await buildStep.readAsString(buildStep.inputId) +
                 await buildStep.readAsString(usedId);
             await buildStep.writeAsString(
@@ -1323,12 +1323,12 @@ targets:
               content,
             );
 
-            var unusedId = buildStep.inputId.addExtension('.unused');
+            final unusedId = buildStep.inputId.addExtension('.unused');
             await buildStep.canRead(unusedId);
             buildStep.reportUnusedAssets([unusedId]);
           },
         );
-        var builders = [applyToRoot(builder)];
+        final builders = [applyToRoot(builder)];
 
         // Initial build.
         final result = await testPhases(
@@ -1388,11 +1388,11 @@ targets:
           // it.
           extraWork: (BuildStep buildStep, _) async {
             buildStep.reportUnusedAssets([buildStep.inputId]);
-            var usedId = buildStep.inputId.addExtension('.used');
+            final usedId = buildStep.inputId.addExtension('.used');
             await buildStep.canRead(usedId);
           },
         );
-        var builders = [applyToRoot(builder)];
+        final builders = [applyToRoot(builder)];
 
         // Initial build.
         final result = await testPhases(
@@ -1433,7 +1433,7 @@ targets:
               buildStep.reportUnusedAssets([buildStep.inputId]);
             },
           );
-          var builders = [applyToRoot(builder)];
+          final builders = [applyToRoot(builder)];
 
           // Initial build.
           final result = await testPhases(
@@ -1451,7 +1451,7 @@ targets:
             resumeFrom: result,
           );
 
-          var graph = AssetGraph.deserialize(
+          final graph = AssetGraph.deserialize(
             result.readerWriter.testing.readBytes(
               makeAssetId('a|$assetGraphPath'),
             ),
@@ -1465,7 +1465,7 @@ targets:
     });
 
     test('graph/file system get cleaned up for deleted inputs', () async {
-      var builders = [
+      final builders = [
         copyABuilderApplication,
         applyToRoot(
           TestBuilder(buildExtensions: replaceExtension('.copy', '.clone')),
@@ -1489,12 +1489,12 @@ targets:
       );
 
       /// Should be deleted using the writer, and converted to missingSource.
-      var newGraph = AssetGraph.deserialize(
+      final newGraph = AssetGraph.deserialize(
         result.readerWriter.testing.readBytes(makeAssetId('a|$assetGraphPath')),
       );
-      var aNodeId = makeAssetId('a|lib/a.txt');
-      var aCopyNodeId = makeAssetId('a|lib/a.txt.copy');
-      var aCloneNodeId = makeAssetId('a|lib/a.txt.copy.clone');
+      final aNodeId = makeAssetId('a|lib/a.txt');
+      final aCopyNodeId = makeAssetId('a|lib/a.txt.copy');
+      final aCloneNodeId = makeAssetId('a|lib/a.txt.copy.clone');
       expect(newGraph.get(aNodeId)!.type, NodeType.missingSource);
       expect(newGraph.get(aCopyNodeId)!.type, NodeType.missingSource);
       expect(newGraph.contains(aCloneNodeId), isFalse);
@@ -1504,7 +1504,7 @@ targets:
     });
 
     test('no outputs if no changed sources', () async {
-      var builders = [copyABuilderApplication];
+      final builders = [copyABuilderApplication];
 
       // Initial build.
       final result = await testPhases(
@@ -1518,7 +1518,7 @@ targets:
     });
 
     test('no outputs if no changed sources using `hideOutput: true`', () async {
-      var builders = [
+      final builders = [
         apply('', [(_) => TestBuilder()], toRoot(), hideOutput: true),
       ];
 
@@ -1574,13 +1574,13 @@ targets:
       );
 
       // Read cached graph and validate.
-      var graph = AssetGraph.deserialize(
+      final graph = AssetGraph.deserialize(
         result.readerWriter.testing.readBytes(makeAssetId('a|$assetGraphPath')),
       );
-      var outputNode = graph.get(makeAssetId('a|lib/file.a.copy'))!;
-      var fileANode = graph.get(makeAssetId('a|lib/file.a'))!;
-      var fileBNode = graph.get(makeAssetId('a|lib/file.b'))!;
-      var fileCNode = graph.get(makeAssetId('a|lib/file.c'))!;
+      final outputNode = graph.get(makeAssetId('a|lib/file.a.copy'))!;
+      final fileANode = graph.get(makeAssetId('a|lib/file.a'))!;
+      final fileBNode = graph.get(makeAssetId('a|lib/file.b'))!;
+      final fileCNode = graph.get(makeAssetId('a|lib/file.c'))!;
       expect(
         outputNode.generatedNodeState!.inputs,
         unorderedEquals([fileANode.id, fileCNode.id]),
@@ -1592,7 +1592,7 @@ targets:
     });
 
     test('Ouputs aren\'t rebuilt if their inputs didn\'t change', () async {
-      var builders = [
+      final builders = [
         applyToRoot(
           TestBuilder(
             buildExtensions: appendExtension('.copy', from: '.a'),
@@ -1629,7 +1629,7 @@ targets:
     });
 
     test('no implicit dependency on primary input contents', () async {
-      var builders = [applyToRoot(SiblingCopyBuilder())];
+      final builders = [applyToRoot(SiblingCopyBuilder())];
 
       // Initial build.
       var result = await testPhases(
@@ -1668,12 +1668,12 @@ targets:
   group('regression tests', () {
     test('a failed output on a primary input which is not output in later '
         'builds', () async {
-      var builders = [
+      final builders = [
         applyToRoot(
           TestBuilder(
             buildExtensions: replaceExtension('.source', '.g1'),
             build: (buildStep, _) async {
-              var content = await buildStep.readAsString(buildStep.inputId);
+              final content = await buildStep.readAsString(buildStep.inputId);
               if (content == 'true') {
                 await buildStep.writeAsString(
                   buildStep.inputId.changeExtension('.g1'),
@@ -1705,11 +1705,11 @@ targets:
     });
 
     test('the entrypoint cannot be read by a builder', () async {
-      var builders = [
+      final builders = [
         TestBuilder(
           buildExtensions: replaceExtension('.txt', '.hasEntrypoint'),
           build: (buildStep, _) async {
-            var hasEntrypoint = await buildStep
+            final hasEntrypoint = await buildStep
                 .findAssets(Glob('**'))
                 .contains(
                   makeAssetId('a|.dart_tool/build/entrypoint/build.dart'),
@@ -1732,12 +1732,12 @@ targets:
     });
 
     test('primary outputs are reran when failures are fixed', () async {
-      var builders = [
+      final builders = [
         applyToRoot(
           TestBuilder(
             buildExtensions: replaceExtension('.source', '.g1'),
             build: (buildStep, _) async {
-              var content = await buildStep.readAsString(buildStep.inputId);
+              final content = await buildStep.readAsString(buildStep.inputId);
               if (content == 'true') {
                 throw StateError('Failed!!!');
               } else {
@@ -1795,7 +1795,7 @@ targets:
         resumeFrom: result,
       );
 
-      var finalGraph = AssetGraph.deserialize(
+      final finalGraph = AssetGraph.deserialize(
         result.readerWriter.testing.readBytes(AssetId('a', assetGraphPath)),
       );
 
@@ -1815,7 +1815,7 @@ targets:
 
     test('a glob should not be an output of an anchor node', () async {
       // https://github.com/dart-lang/build/issues/2017
-      var builders = [
+      final builders = [
         apply(
           'test_builder',
           [
@@ -1835,7 +1835,7 @@ targets:
     });
 
     test('can have assets ending in a dot', () async {
-      var builders = [
+      final builders = [
         TestBuilder(
           buildExtensions: {
             '': ['copy'],
@@ -1864,7 +1864,7 @@ class SiblingCopyBuilder extends Builder {
 
   @override
   Future build(BuildStep buildStep) async {
-    var sibling = buildStep.inputId.addExtension('.sibling');
+    final sibling = buildStep.inputId.addExtension('.sibling');
     await buildStep.writeAsString(
       buildStep.inputId.addExtension('.new'),
       await buildStep.readAsString(sibling),
