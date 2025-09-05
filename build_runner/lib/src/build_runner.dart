@@ -11,11 +11,12 @@ import 'package:io/io.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
+import 'bootstrap/apply_builders.dart';
+import 'bootstrap/bootstrap.dart';
+import 'bootstrap/build_script_generate.dart';
+import 'build_plan/build_options.dart';
 import 'build_runner_command_line.dart';
-import 'build_script_generate/bootstrap.dart';
-import 'build_script_generate/build_script_generate.dart';
 import 'commands/build_command.dart';
-import 'commands/build_options.dart';
 import 'commands/build_runner_command.dart';
 import 'commands/clean_command.dart';
 import 'commands/daemon_command.dart';
@@ -27,10 +28,9 @@ import 'commands/serve_options.dart';
 import 'commands/test_command.dart';
 import 'commands/test_options.dart';
 import 'commands/watch_command.dart';
-import 'generate/exceptions.dart';
+import 'constants.dart';
+import 'exceptions.dart';
 import 'logging/build_log.dart';
-import 'package_graph/apply_builders.dart';
-import 'util/constants.dart';
 
 /// The `build_runner` tool.
 class BuildRunner {

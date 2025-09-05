@@ -6,7 +6,7 @@ import 'dart:io';
 
 import 'package:logging/logging.dart';
 
-import '../build_script_generate/build_process_state.dart';
+import '../bootstrap/build_process_state.dart';
 import 'ansi_buffer.dart';
 import 'build_log.dart';
 import 'build_log_messages.dart';

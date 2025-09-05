@@ -6,8 +6,8 @@ import 'dart:io';
 
 import 'package:io/io.dart';
 
+import '../constants.dart';
 import '../logging/build_log.dart';
-import '../util/constants.dart';
 import 'build_runner_command.dart';
 
 class CleanCommand implements BuildRunnerCommand {
