@@ -211,11 +211,6 @@ class _Loader {
     ReaderWriter readerWriter,
   ) async {
     if (conflictingAssets.isEmpty) return;
-
-    buildLog.info(
-      'Deleting ${conflictingAssets.length} declared outputs '
-      'which already existed on disk.',
-    );
     await Future.wait(conflictingAssets.map((id) => readerWriter.delete(id)));
   }
 }
