@@ -5,7 +5,7 @@
 import 'package:built_value/built_value.dart';
 import 'package:logging/logging.dart';
 
-import '../build_script_generate/build_process_state.dart';
+import '../bootstrap/build_process_state.dart';
 
 part 'build_log_configuration.g.dart';
 

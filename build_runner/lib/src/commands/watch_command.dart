@@ -3,23 +3,23 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:build/experiments.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:io/io.dart';
 
-import '../build_plan.dart';
-import '../build_script_generate/build_process_state.dart';
-import '../generate/build_result.dart';
-import '../generate/exceptions.dart';
-import '../generate/terminator.dart';
-import '../generate/watch_impl.dart';
+import '../bootstrap/apply_builders.dart';
+import '../bootstrap/build_process_state.dart';
+import '../build/build_result.dart';
+import '../build_plan/build_options.dart';
+import '../build_plan/build_plan.dart';
+import '../build_plan/testing_overrides.dart';
+import '../exceptions.dart';
 import '../logging/build_log.dart';
-import '../options/testing_overrides.dart';
-import '../package_graph/apply_builders.dart';
-import '../server/server.dart';
-import 'build_options.dart';
 import 'build_runner_command.dart';
+import 'serve/server.dart';
+import 'watch/watcher.dart';
 
 class WatchCommand implements BuildRunnerCommand {
   final BuiltList<BuilderApplication> builders;
@@ -92,4 +92,36 @@ void handleBuildResultsStream(
   });
   await subscription.asFuture<void>();
   if (!completer.isCompleted) completer.complete(ExitCode.success.code);
+}
+
+/// Fires [shouldTerminate] once a `SIGINT` is intercepted.
+///
+/// The `SIGINT` stream can optionally be replaced with another Stream in the
+/// constructor. [cancel] should be called after work is finished. If multiple
+/// events are receieved on the terminate event stream before work is finished
+/// the process will be terminated with [exit].
+class Terminator {
+  /// A Future that fires when a signal has been received indicating that builds
+  /// should stop.
+  final Future shouldTerminate;
+  final StreamSubscription _subscription;
+
+  factory Terminator([Stream<ProcessSignal>? terminateEventStream]) {
+    final shouldTerminate = Completer<void>();
+    terminateEventStream ??= ProcessSignal.sigint.watch();
+    var numEventsSeen = 0;
+    final terminateListener = terminateEventStream.listen((_) {
+      numEventsSeen++;
+      if (numEventsSeen == 1) {
+        shouldTerminate.complete();
+      } else {
+        exit(2);
+      }
+    });
+    return Terminator._(shouldTerminate.future, terminateListener);
+  }
+
+  Terminator._(this.shouldTerminate, this._subscription);
+
+  Future cancel() => _subscription.cancel();
 }

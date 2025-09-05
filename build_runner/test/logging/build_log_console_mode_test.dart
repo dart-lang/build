@@ -3,8 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:build_runner/src/build_script_generate/build_process_state.dart';
-import 'package:build_runner/src/generate/phase.dart';
+import 'package:build_runner/src/bootstrap/build_process_state.dart';
+import 'package:build_runner/src/build_plan/phase.dart';
 import 'package:build_runner/src/logging/ansi_buffer.dart';
 import 'package:build_runner/src/logging/build_log.dart';
 import 'package:build_runner/src/logging/build_log_messages.dart';
