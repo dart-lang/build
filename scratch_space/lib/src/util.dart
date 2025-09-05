@@ -8,7 +8,7 @@ import 'package:path/path.dart' as p;
 ///
 /// Throws an [ArgumentError] if [uri] reaches above the top level directory.
 String? topLevelDir(String uri) {
-  var parts = p.url.split(p.url.normalize(uri));
+  final parts = p.url.split(p.url.normalize(uri));
   if (parts.first == '..') {
     throw ArgumentError(
       'Cannot compute top level dir for path `$uri` '

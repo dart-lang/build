@@ -102,7 +102,7 @@ void main() {
         packageGraph,
         optionalOutputTracker,
       );
-      for (var id in graph.outputs) {
+      for (final id in graph.outputs) {
         graph.updateNode(id, (nodeBuilder) {
           nodeBuilder.digest = Digest([]);
           nodeBuilder.generatedNodeState.result = true;
@@ -121,7 +121,7 @@ void main() {
     });
 
     test('creates a valid merged output directory', () async {
-      var success = await createMergedOutputDirectories(
+      final success = await createMergedOutputDirectories(
         {
           BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
@@ -136,14 +136,14 @@ void main() {
     });
 
     test('doesnt write deleted files', () async {
-      var node = graph.get(AssetId('b', 'lib/c.txt.copy'))!;
+      final node = graph.get(AssetId('b', 'lib/c.txt.copy'))!;
       graph.updateNode(node.id, (nodeBuilder) {
         nodeBuilder.deletedBy.add(
           PostProcessBuildStepId(input: node.id, actionNumber: 1),
         );
       });
 
-      var success = await createMergedOutputDirectories(
+      final success = await createMergedOutputDirectories(
         {
           BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
@@ -154,7 +154,7 @@ void main() {
       );
       expect(success, isTrue);
 
-      var file = File(p.join(tmpDir.path, 'packages/b/c.txt.copy'));
+      final file = File(p.join(tmpDir.path, 'packages/b/c.txt.copy'));
       expect(file.existsSync(), isFalse);
     });
 
@@ -166,7 +166,7 @@ void main() {
     });
 
     test('can create multiple merged directories', () async {
-      var success = await createMergedOutputDirectories(
+      final success = await createMergedOutputDirectories(
         {
           BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
           BuildDirectory(
@@ -186,7 +186,7 @@ void main() {
     });
 
     test('errors if there are conflicting directories', () async {
-      var success = await createMergedOutputDirectories(
+      final success = await createMergedOutputDirectories(
         {
           BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path)),
           BuildDirectory('foo', outputLocation: OutputLocation(tmpDir.path)),
@@ -201,7 +201,7 @@ void main() {
     });
 
     test('succeeds if no output directory requested ', () async {
-      var success = await createMergedOutputDirectories(
+      final success = await createMergedOutputDirectories(
         {BuildDirectory('web'), BuildDirectory('foo')}.build(),
         packageGraph,
         readerWriter,
@@ -212,7 +212,7 @@ void main() {
     });
 
     test('removes the provided root from the output path', () async {
-      var success = await createMergedOutputDirectories(
+      final success = await createMergedOutputDirectories(
         {
           BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
@@ -223,13 +223,13 @@ void main() {
       );
       expect(success, isTrue);
 
-      var webFiles = <String, dynamic>{'b.txt': 'b', 'b.txt.copy': 'b'};
+      final webFiles = <String, dynamic>{'b.txt': 'b', 'b.txt.copy': 'b'};
 
       _expectFiles(webFiles, tmpDir);
     });
 
     test('skips output directories with no assets', () async {
-      var success = await createMergedOutputDirectories(
+      final success = await createMergedOutputDirectories(
         {
           BuildDirectory(
             'no_assets_here',
@@ -246,7 +246,7 @@ void main() {
     });
 
     test('does not output the input directory', () async {
-      var success = await createMergedOutputDirectories(
+      final success = await createMergedOutputDirectories(
         {
           BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
@@ -261,7 +261,7 @@ void main() {
     });
 
     test('outputs the packages when input root is provided', () async {
-      var success = await createMergedOutputDirectories(
+      final success = await createMergedOutputDirectories(
         {
           BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path)),
           BuildDirectory(
@@ -276,7 +276,7 @@ void main() {
       );
       expect(success, isTrue);
 
-      var webFiles = <String, dynamic>{
+      final webFiles = <String, dynamic>{
         'packages/a/a.txt': 'a',
         'packages/a/a.txt.copy': 'a',
         'packages/b/c.txt': 'c',
@@ -292,7 +292,7 @@ void main() {
     });
 
     test('does not nest packages symlinks with no root', () async {
-      var success = await createMergedOutputDirectories(
+      final success = await createMergedOutputDirectories(
         {
           BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
@@ -306,7 +306,7 @@ void main() {
     });
 
     test('only outputs files contained in the provided root', () async {
-      var success = await createMergedOutputDirectories(
+      final success = await createMergedOutputDirectories(
         {
           BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path)),
           BuildDirectory(
@@ -321,13 +321,13 @@ void main() {
       );
       expect(success, isTrue);
 
-      var webFiles = <String, dynamic>{'b.txt': 'b', 'b.txt.copy': 'b'};
+      final webFiles = <String, dynamic>{'b.txt': 'b', 'b.txt.copy': 'b'};
 
-      var webNoFiles = <String>{}..addAll(['d.txt', 'd.txt.copy']);
+      final webNoFiles = <String>{}..addAll(['d.txt', 'd.txt.copy']);
 
-      var fooFiles = <String, dynamic>{'d.txt': 'd', 'd.txt.copy': 'd'};
+      final fooFiles = <String, dynamic>{'d.txt': 'd', 'd.txt.copy': 'd'};
 
-      var fooNoFiles = <String>{}..addAll(['b.txt', 'b.txt.copy']);
+      final fooNoFiles = <String>{}..addAll(['b.txt', 'b.txt.copy']);
 
       _expectFiles(webFiles, tmpDir);
       _expectNoFiles(webNoFiles, tmpDir);
@@ -342,7 +342,7 @@ void main() {
         nodeBuilder.generatedNodeState.result = null;
       });
 
-      var success = await createMergedOutputDirectories(
+      final success = await createMergedOutputDirectories(
         {
           BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
@@ -353,7 +353,7 @@ void main() {
       );
       expect(success, isTrue);
 
-      var file = File(p.join(tmpDir.path, 'packages/b/c.txt.copy'));
+      final file = File(p.join(tmpDir.path, 'packages/b/c.txt.copy'));
       expect(file.existsSync(), isFalse);
     });
 
@@ -370,7 +370,7 @@ void main() {
         packageGraph,
         optionalOutputTracker,
       );
-      var success = await createMergedOutputDirectories(
+      final success = await createMergedOutputDirectories(
         {
           BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
@@ -381,7 +381,7 @@ void main() {
       );
       expect(success, isTrue);
 
-      var expectedFiles = <String, dynamic>{
+      final expectedFiles = <String, dynamic>{
         'foo/d.txt': 'd',
         'foo/d.txt.copy': 'd',
         'packages/a/a.txt': 'a',
@@ -404,7 +404,7 @@ void main() {
       });
 
       test('fails the build', () async {
-        var success = await createMergedOutputDirectories(
+        final success = await createMergedOutputDirectories(
           {
             BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
           }.build(),
@@ -419,7 +419,7 @@ void main() {
           isTrue,
           reason: 'Should not delete existing files.',
         );
-        var file = File(p.join(tmpDir.path, 'web/b.txt'));
+        final file = File(p.join(tmpDir.path, 'web/b.txt'));
         expect(
           file.existsSync(),
           isFalse,
@@ -441,7 +441,7 @@ void main() {
         );
         expect(success, isTrue);
         final removes = ['a|lib/a.txt', 'a|lib/a.txt.copy'];
-        for (var remove in removes) {
+        for (final remove in removes) {
           graph.updateNode(makeAssetId(remove), (nodeBuilder) {
             nodeBuilder.deletedBy.add(
               PostProcessBuildStepId(
@@ -461,7 +461,7 @@ void main() {
           false,
         );
         expect(success, isTrue);
-        var packageADir = p.join(tmpDir.path, 'packages', 'a');
+        final packageADir = p.join(tmpDir.path, 'packages', 'a');
         expect(Directory(packageADir).existsSync(), isFalse);
       });
     });
@@ -474,7 +474,7 @@ String _expectedPackageConfig(
 ) => jsonEncode({
   'configVersion': 2,
   'packages': [
-    for (var package in packages)
+    for (final package in packages)
       if (package == rootPackage)
         {'name': package, 'rootUri': '../', 'packageUri': 'packages/$package'}
       else
@@ -487,7 +487,7 @@ void _expectFiles(Map<String, dynamic> expectedFiles, Directory dir) {
     expectedFiles.keys.map(contains).toList(),
   );
   expectedFiles.forEach((path, content) {
-    var file = File(p.join(dir.path, path));
+    final file = File(p.join(dir.path, path));
     expect(file.existsSync(), isTrue, reason: 'Missing file at $path.');
     expect(
       file.readAsStringSync(),
@@ -498,14 +498,14 @@ void _expectFiles(Map<String, dynamic> expectedFiles, Directory dir) {
 }
 
 void _expectNoFiles(Set<String> expectedFiles, Directory dir) {
-  for (var path in expectedFiles) {
-    var file = File(p.join(dir.path, path));
+  for (final path in expectedFiles) {
+    final file = File(p.join(dir.path, path));
     expect(!file.existsSync(), isTrue, reason: 'File found at $path.');
   }
 }
 
 void _expectAllFiles(Directory dir) {
-  var expectedFiles = <String, dynamic>{
+  final expectedFiles = <String, dynamic>{
     'foo/d.txt': 'd',
     'foo/d.txt.copy': 'd',
     'packages/a/a.txt': 'a',

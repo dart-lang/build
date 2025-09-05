@@ -41,7 +41,7 @@ class BuildLogLogger implements Logger {
   ///
   /// Completes with the first error or result of `fn`, whichever comes first.
   static Future<T> scopeLogAsync<T>(Future<T> Function() fn, Logger log) {
-    var done = Completer<T>();
+    final done = Completer<T>();
     runZonedGuarded(
       fn,
       (e, st) {

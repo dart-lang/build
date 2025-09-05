@@ -13,12 +13,12 @@ class CopyBuilder implements Builder {
   @override
   Future build(BuildStep buildStep) async {
     // Each [buildStep] has a single input.
-    var inputId = buildStep.inputId;
+    final inputId = buildStep.inputId;
 
     // Create a new target [AssetId] based on the old one.
-    var contents = await buildStep.readAsString(inputId);
+    final contents = await buildStep.readAsString(inputId);
 
-    var copy = inputId.addExtension('.copy');
+    final copy = inputId.addExtension('.copy');
 
     // Write out the new asset.
     await buildStep.writeAsString(copy, '// Copied from $inputId\n$contents');
@@ -60,13 +60,13 @@ class ResolvingBuilder implements Builder {
   @override
   Future build(BuildStep buildStep) async {
     // Get the `LibraryElement` for the primary input.
-    var entryLib = await buildStep.inputLibrary;
+    final entryLib = await buildStep.inputLibrary;
 
     // Resolves all libraries reachable from the primary input.
-    var resolver = buildStep.resolver;
-    var visibleLibraries = await resolver.libraries.length;
+    final resolver = buildStep.resolver;
+    final visibleLibraries = await resolver.libraries.length;
 
-    var info = buildStep.inputId.addExtension('.info');
+    final info = buildStep.inputId.addExtension('.info');
 
     await buildStep.writeAsString(info, '''
          Input ID: ${buildStep.inputId}

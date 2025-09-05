@@ -22,7 +22,7 @@ void main() {
     // The expected output of running the generated file
     // will be "it works!".
     setUp(() async {
-      var executableFileContent = '''
+      final executableFileContent = '''
 import 'dart:io';
 
 void main(List<String> args) {
@@ -37,7 +37,7 @@ void main(List<String> args) {
   }
 }
       ''';
-      var originalBuildContent = '''
+      final originalBuildContent = '''
 import 'dart:io';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_runner/src/package_graph/apply_builders.dart';
@@ -85,7 +85,7 @@ main(List<String> args) async {
 
     test('at least one argument must be provided', () async {
       // Should throw error 64.
-      var result = await runDart(
+      final result = await runDart(
         'a',
         'tool/build.dart',
         args: ['run', '--output', 'build'],
@@ -100,7 +100,7 @@ main(List<String> args) async {
 
     test('extension must be .dart', () async {
       // Should throw error 64.
-      var result = await runDart(
+      final result = await runDart(
         'a',
         'tool/build.dart',
         args: ['run', 'bin/main.txt.copy', '--output', 'build'],
@@ -118,7 +118,7 @@ main(List<String> args) async {
 
     test('target file must actually exist', () async {
       // Should throw error 64.
-      var result = await runDart(
+      final result = await runDart(
         'a',
         'tool/build.dart',
         args: ['run', 'bin/nonexistent.dart', '--output', 'build'],
@@ -139,12 +139,12 @@ main(List<String> args) async {
 
     test('runs the built version of the desired script', () async {
       // Run the generated script, and examine its output.
-      var result = await runDart(
+      final result = await runDart(
         'a',
         'tool/build.dart',
         args: ['run', 'bin/main.copy.dart', '--output', 'build'],
       );
-      var lastLine =
+      final lastLine =
           const LineSplitter().convert(result.stdout as String).last.trim();
       expect(result.exitCode, 0, reason: result.stderr as String);
       expect(lastLine, 'it works!', reason: result.stderr as String);
@@ -152,12 +152,12 @@ main(List<String> args) async {
 
     test('runs even if no output directory is given', () async {
       // Verify that the script runs (it'll be generated into a temp dir)
-      var result = await runDart(
+      final result = await runDart(
         'a',
         'tool/build.dart',
         args: ['run', 'bin/main.copy.dart'],
       );
-      var lastLine =
+      final lastLine =
           const LineSplitter().convert(result.stdout as String).last.trim();
       expect(result.exitCode, 0, reason: result.stderr as String);
       expect(lastLine, 'it works!', reason: result.stderr as String);
@@ -165,7 +165,7 @@ main(List<String> args) async {
 
     test('passes input args', () async {
       // Run the generated script, and examine its output.
-      var result = await runDart(
+      final result = await runDart(
         'a',
         'tool/build.dart',
         args: [
@@ -179,7 +179,7 @@ main(List<String> args) async {
           'c',
         ],
       );
-      var lastLine =
+      final lastLine =
           const LineSplitter().convert(result.stdout as String).last.trim();
       expect(result.exitCode, 0, reason: result.stderr as String);
       expect(lastLine, 'a;b;c', reason: result.stderr as String);
@@ -187,7 +187,7 @@ main(List<String> args) async {
 
     test('errors thrown in script result in non-zero exit', () async {
       // Run the generated script, and examine its output.
-      var result = await runDart(
+      final result = await runDart(
         'a',
         'tool/build.dart',
         args: ['run', 'bin/main.copy.dart', '--output', 'build', '--', 'throw'],
@@ -200,7 +200,7 @@ main(List<String> args) async {
     // TODO (thosakwe): Test for stack trace
     test('stack trace from errors is displayed in verbose mode', () async {
       // Run the generated script, and examine its output.
-      var result = await runDart(
+      final result = await runDart(
         'a',
         'tool/build.dart',
         args: [

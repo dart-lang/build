@@ -210,7 +210,7 @@ String _builderLabel(Object builder) {
 /// Change "angular:angular" to "angular".
 String _simpleBuilderKey(String builderKey) {
   if (!builderKey.contains(':')) return builderKey;
-  var parts = builderKey.split(':');
+  final parts = builderKey.split(':');
   if (parts[0] == parts[1]) return parts[0];
   return builderKey;
 }

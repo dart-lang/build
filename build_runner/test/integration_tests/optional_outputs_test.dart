@@ -57,7 +57,7 @@ void main() {
 
   group('serve', () {
     test('only serves assets that were actually required', () async {
-      var server = await buildTool.serve();
+      final server = await buildTool.serve();
       await server.started;
 
       await server.expect404('a.txt.copy');

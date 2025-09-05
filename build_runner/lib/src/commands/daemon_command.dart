@@ -101,9 +101,9 @@ $logEndMarker''');
       );
 
       // Forward server logs to daemon command STDIO.
-      var logSub = builder.logs.listen((log) {
+      final logSub = builder.logs.listen((log) {
         if (log.level > Level.INFO || buildOptions.verbose) {
-          var buffer = StringBuffer(log.message);
+          final buffer = StringBuffer(log.message);
           if (log.error != null) buffer.writeln(log.error);
           if (log.stackTrace != null) buffer.writeln(log.stackTrace);
           stderr.writeln(buffer);
@@ -111,7 +111,7 @@ $logEndMarker''');
           stdout.writeln(log.message);
         }
       });
-      var server = await AssetServer.run(
+      final server = await AssetServer.run(
         daemonOptions,
         builder,
         buildPlan.packageGraph.root.name,

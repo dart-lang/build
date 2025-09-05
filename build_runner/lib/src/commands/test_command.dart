@@ -103,7 +103,7 @@ Please update your dev_dependencies section of your pubspec.yaml:
   /// Runs tests using [precompiledPath] as the precompiled test directory.
   Future<int> _runTests(String precompiledPath) async {
     stdout.writeln('Running tests...\n');
-    var testProcess = await Process.start(dartBinary, [
+    final testProcess = await Process.start(dartBinary, [
       'run',
       'test',
       '--precompiled',

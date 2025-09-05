@@ -65,12 +65,12 @@ void main() {
     test(
       'Serves a directory list when it fails to fallback on index.html',
       () async {
-        var request = await httpClient.get(
+        final request = await httpClient.get(
           'localhost',
           8080,
           'dir_without_index/',
         );
-        var firstResponse = await request.close();
+        final firstResponse = await request.close();
         expect(firstResponse.statusCode, HttpStatus.notFound);
         expect(
           await utf8.decodeStream(firstResponse.cast<List<int>>()),
@@ -85,8 +85,8 @@ void main() {
       });
 
       test('ddc errors can be fixed', () async {
-        var path = p.join('test', 'common', 'message.dart');
-        var error = nextStdOutLine(
+        final path = p.join('test', 'common', 'message.dart');
+        final error = nextStdOutLine(
           'Error compiling dartdevc module:'
           '_test|test/common/message.ddc.js',
         );
@@ -102,7 +102,7 @@ void main() {
       });
 
       test('build errors can be fixed', () async {
-        var path = p.join('lib', 'expected.fail');
+        final path = p.join('lib', 'expected.fail');
 
         var nextBuild = nextFailedBuild;
         await createFile(path, 'some error');
@@ -114,63 +114,63 @@ void main() {
       });
 
       test('can hit the server and get cached results', () async {
-        var firstRequest = await httpClient.get(
+        final firstRequest = await httpClient.get(
           'localhost',
           8080,
           'main.dart.js',
         );
-        var firstResponse = await firstRequest.close();
+        final firstResponse = await firstRequest.close();
         expect(firstResponse.statusCode, HttpStatus.ok);
-        var etag = firstResponse.headers[HttpHeaders.etagHeader];
+        final etag = firstResponse.headers[HttpHeaders.etagHeader];
         expect(etag, isNotNull);
 
-        var cachedRequest = await httpClient.get(
+        final cachedRequest = await httpClient.get(
           'localhost',
           8080,
           'main.dart.js',
         );
         cachedRequest.headers.add(HttpHeaders.ifNoneMatchHeader, etag!);
-        var cachedResponse = await cachedRequest.close();
+        final cachedResponse = await cachedRequest.close();
         expect(cachedResponse.statusCode, HttpStatus.notModified);
       });
 
       group('regression tests', () {
         test('can get changes to files not read during build', () async {
-          var firstRequest = await httpClient.get(
+          final firstRequest = await httpClient.get(
             'localhost',
             8080,
             'index.html',
           );
-          var firstResponse = await firstRequest.close();
+          final firstResponse = await firstRequest.close();
           expect(firstResponse.statusCode, HttpStatus.ok);
-          var etag = firstResponse.headers[HttpHeaders.etagHeader];
+          final etag = firstResponse.headers[HttpHeaders.etagHeader];
           expect(etag, isNotNull);
 
-          var cachedRequest = await httpClient.get(
+          final cachedRequest = await httpClient.get(
               'localhost',
               8080,
               'index.html',
             )
             ..headers.add(HttpHeaders.ifNoneMatchHeader, etag!);
-          var cachedResponse = await cachedRequest.close();
+          final cachedResponse = await cachedRequest.close();
           expect(cachedResponse.statusCode, HttpStatus.notModified);
 
-          var nextBuild = nextSuccessfulBuild;
+          final nextBuild = nextSuccessfulBuild;
           await replaceAllInFile(
             'web/index.html',
             'integration tests',
             'modified example',
           );
           await nextBuild;
-          var changedRequest = await httpClient.get(
+          final changedRequest = await httpClient.get(
               'localhost',
               8080,
               'index.html',
             )
             ..headers.add(HttpHeaders.ifNoneMatchHeader, etag);
-          var changedResponse = await changedRequest.close();
+          final changedResponse = await changedRequest.close();
           expect(changedResponse.statusCode, HttpStatus.ok);
-          var newEtag = changedResponse.headers[HttpHeaders.etagHeader];
+          final newEtag = changedResponse.headers[HttpHeaders.etagHeader];
           expect(newEtag, isNot(etag));
         });
       });
@@ -192,7 +192,7 @@ void main() {
       await stopServer();
     });
 
-    var response =
+    final response =
         await (await httpClient.get(
           'localhost',
           8080,
@@ -200,11 +200,11 @@ void main() {
         )).close();
     expect(response.statusCode, HttpStatus.ok);
 
-    var badResponse =
+    final badResponse =
         await (await httpClient.get('localhost', 8080, 'main.dart.js')).close();
     expect(badResponse.statusCode, HttpStatus.notFound);
 
-    var ddcFileResponse =
+    final ddcFileResponse =
         await (await httpClient.get('localhost', 8080, 'main.ddc.js')).close();
     expect(await utf8.decodeStream(ddcFileResponse), contains('"goodbye"'));
   });
@@ -245,7 +245,7 @@ void main() {
     }
 
     const n = 1000;
-    var futures = [
+    final futures = [
       for (var i = 0; i < n; i++) read('main.ddc.js'),
       for (var i = 0; i < n; i++) read('main.ddc.js.map'),
       for (var i = 0; i < n; i++) read('main.ddc.dill'),

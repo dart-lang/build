@@ -172,7 +172,7 @@ class BuilderApplication {
     BuilderOptions? defaultReleaseOptions,
     Iterable<String> appliesBuilders = const [],
   }) {
-    var phaseFactories =
+    final phaseFactories =
         builderFactories.map((builderFactory) {
           return (
             PackageNode package,
@@ -257,7 +257,7 @@ class BuilderApplication {
       );
       if (builder == null) throw const CannotBuildException();
       _validatePostProcessBuilder(builder);
-      var builderAction = PostBuildAction(
+      final builderAction = PostBuildAction(
         builder,
         package.name,
         builderOptions: optionsWithDefaults,
@@ -470,14 +470,14 @@ BuilderOptions _options(Map<String, dynamic>? options) =>
     options?.isEmpty ?? true ? BuilderOptions.empty : BuilderOptions(options!);
 
 void _validateBuilder(Builder builder) {
-  var inputExtensions = builder.buildExtensions.keys.toSet();
-  var matching = inputExtensions.intersection(
+  final inputExtensions = builder.buildExtensions.keys.toSet();
+  final matching = inputExtensions.intersection(
     // https://github.com/dart-lang/linter/issues/4336
     // ignore: collection_methods_unrelated_type
-    {for (var outputs in builder.buildExtensions.values) ...outputs},
+    {for (final outputs in builder.buildExtensions.values) ...outputs},
   );
   if (matching.isNotEmpty) {
-    var mapDescription = builder.buildExtensions.entries
+    final mapDescription = builder.buildExtensions.entries
         .map((e) => '${e.key}: ${e.value},')
         .join('\n');
     throw ArgumentError.value(

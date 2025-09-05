@@ -27,7 +27,7 @@ class AssetChange {
 
   static String _normalizeRelativePath(PackageNode package, WatchEvent event) {
     final pkgPath = package.path;
-    var absoluteEventPath =
+    final absoluteEventPath =
         p.isAbsolute(event.path) ? event.path : p.absolute(event.path);
     if (!p.isWithin(pkgPath, absoluteEventPath)) {
       throw ArgumentError('"$absoluteEventPath" is not in "$pkgPath".');

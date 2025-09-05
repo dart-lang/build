@@ -36,7 +36,7 @@ class Config {
     allowFailures: argResults['allow-failures'] as bool,
     buildRepoPath: argResults['build-repo-path'] as String?,
     dependencyOverridePaths: {
-      for (var s in argResults['dependency-override-path'] as List<String>)
+      for (final s in argResults['dependency-override-path'] as List<String>)
         s.split('=')[0]: s.split('=')[1],
     },
     generator: Generator.values.singleWhere(

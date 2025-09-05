@@ -18,7 +18,7 @@ import '../common/common.dart';
 void main() {
   group('build integration tests', () {
     group('build script', () {
-      var originalBuildContent = '''
+      final originalBuildContent = '''
 import 'dart:io';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_runner/src/package_graph/apply_builders.dart';
@@ -50,7 +50,7 @@ main(List<String> args) async {
         await pubGet('a');
 
         // Run a build and validate the output.
-        var result = await runDart('a', 'tool/build.dart', args: ['build']);
+        final result = await runDart('a', 'tool/build.dart', args: ['build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
         await d.dir('a', [
           d.dir('web', [d.file('a.txt.copy', 'a')]),
@@ -64,7 +64,7 @@ main(List<String> args) async {
         ]).create();
 
         // Run a build and validate the full rebuild output.
-        var result = await runDart('a', 'tool/build.dart', args: ['build']);
+        final result = await runDart('a', 'tool/build.dart', args: ['build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
         expect(
           result.stdout,
@@ -77,7 +77,7 @@ main(List<String> args) async {
 
       test('updates can change extensions', () async {
         // Update the extension from .copy to .copy2
-        var changedBuildScript = originalBuildContent.replaceFirst(
+        final changedBuildScript = originalBuildContent.replaceFirst(
           'TestBuilder()',
           "TestBuilder(buildExtensions: appendExtension('.copy2'))",
         );
@@ -85,7 +85,7 @@ main(List<String> args) async {
           d.dir('tool', [d.file('build.dart', changedBuildScript)]),
         ]).create();
 
-        var result = await runDart('a', 'tool/build.dart', args: ['build']);
+        final result = await runDart('a', 'tool/build.dart', args: ['build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
         expect(
           result.stdout,
@@ -101,7 +101,7 @@ main(List<String> args) async {
 
       test('--output creates a merged directory', () async {
         // Run a build and validate the full rebuild output.
-        var result = await runDart(
+        final result = await runDart(
           'a',
           'tool/build.dart',
           args: ['build', '--output', 'build'],
@@ -119,7 +119,7 @@ main(List<String> args) async {
           d.dir('web', [d.file('b.txt', 'b')]),
         ]).create();
         // Run a build and validate the full rebuild output.
-        var result = await runDart(
+        final result = await runDart(
           'a',
           'tool/build.dart',
           args: [
@@ -142,7 +142,7 @@ main(List<String> args) async {
         await d.dir('a', [
           d.dir('build', [d.file('non_empty', 'blah')]),
         ]).create();
-        var result = await runDart(
+        final result = await runDart(
           'a',
           'tool/build.dart',
           args: ['build', '--output', 'build'],
@@ -154,7 +154,7 @@ main(List<String> args) async {
         '--output creates a merged directory from the provided root',
         () async {
           // Run a build and validate the full rebuild output.
-          var result = await runDart(
+          final result = await runDart(
             'a',
             'tool/build.dart',
             args: ['build', '--output', 'web:build'],
@@ -170,7 +170,7 @@ main(List<String> args) async {
         'multiple --output options create multiple merged directories',
         () async {
           // Run a build and validate the full rebuild output.
-          var result = await runDart(
+          final result = await runDart(
             'a',
             'tool/build.dart',
             args: ['build', '--output', 'build', '--output', 'foo'],
@@ -309,7 +309,7 @@ main() async {
         await pubGet('a');
 
         // Run a build and validate the output.
-        var result = await runDart('a', 'tool/build.dart', args: ['build']);
+        final result = await runDart('a', 'tool/build.dart', args: ['build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
         await d.dir('a', [
           d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt')]),
@@ -323,7 +323,7 @@ main() async {
         ]).create();
 
         // Run a new build and validate.
-        var result = await runDart('a', 'tool/build.dart', args: ['build']);
+        final result = await runDart('a', 'tool/build.dart', args: ['build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
         expect(result.stdout, contains('wrote 1 output'));
         await d.dir('a', [
@@ -338,7 +338,7 @@ main() async {
         File(p.join(d.sandbox, 'a', 'web', 'a.txt')).deleteSync();
 
         // Run a new build and validate.
-        var result = await runDart('a', 'tool/build.dart', args: ['build']);
+        final result = await runDart('a', 'tool/build.dart', args: ['build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
         expect(result.stdout, contains('wrote 1 output'));
         await d.dir('a', [
@@ -354,7 +354,7 @@ main() async {
         ]).create();
 
         // Run a new build and validate.
-        var result = await runDart('a', 'tool/build.dart', args: ['build']);
+        final result = await runDart('a', 'tool/build.dart', args: ['build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
         expect(result.stdout, contains('wrote 0 outputs'));
         await d.dir('a', [
@@ -369,7 +369,7 @@ main() async {
         ]).create();
 
         // Run a new build and validate.
-        var result = await runDart('a', 'tool/build.dart', args: ['build']);
+        final result = await runDart('a', 'tool/build.dart', args: ['build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
         expect(result.stdout, contains('wrote 0 outputs'));
         await d.dir('a', [
@@ -430,7 +430,7 @@ class OverDeclaringGlobbingBuilder extends GlobbingBuilder {
         await pubGet('a');
 
         // Run a build and validate the output.
-        var result = await runDart('a', 'tool/build.dart', args: ['build']);
+        final result = await runDart('a', 'tool/build.dart', args: ['build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
         expect(result.stdout, contains('wrote 0 outputs'));
         await d.dir('a', [
@@ -445,7 +445,7 @@ class OverDeclaringGlobbingBuilder extends GlobbingBuilder {
         ]).create();
 
         // Run a new build and validate.
-        var result = await runDart('a', 'tool/build.dart', args: ['build']);
+        final result = await runDart('a', 'tool/build.dart', args: ['build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
         expect(result.stdout, contains('wrote 1 output'));
         await d.dir('a', [
@@ -577,7 +577,7 @@ targets:
 
       await pubGet('a');
 
-      var result = await runBuild();
+      final result = await runBuild();
 
       expect(result, contains('not a known Builder'));
     });
@@ -606,7 +606,7 @@ global_options:
 
       await pubGet('a');
 
-      var result = await runBuild();
+      final result = await runBuild();
 
       expect(result, contains('not a known Builder'));
     });
@@ -630,7 +630,7 @@ global_options:
 
       await pubGet('a');
 
-      var result = await runBuild(extraArgs: ['--define=bad:key=foo=bar']);
+      final result = await runBuild(extraArgs: ['--define=bad:key=foo=bar']);
 
       expect(result, contains('not a known Builder'));
     });
@@ -676,7 +676,7 @@ main() async {
 
       await pubGet('a');
 
-      var result = await runDart('a', 'tool/build.dart', args: ['build']);
+      final result = await runDart('a', 'tool/build.dart', args: ['build']);
 
       expect(result.exitCode, 0, reason: result.stderr as String);
     });
@@ -697,7 +697,7 @@ main() async {
       ]).create();
 
       await pubGet('a');
-      var result = await runPub('a', 'run', args: ['build_runner', 'test']);
+      final result = await runPub('a', 'run', args: ['build_runner', 'test']);
 
       expect(
         result.exitCode,
@@ -727,9 +727,13 @@ main() async {
       ]).create();
 
       await pubGet('a');
-      var result = await startPub('a', 'run', args: ['build_runner', 'serve']);
+      final result = await startPub(
+        'a',
+        'run',
+        args: ['build_runner', 'serve'],
+      );
       addTearDown(result.kill);
-      var error = 'Missing dev dependency on package:build_web_compilers';
+      final error = 'Missing dev dependency on package:build_web_compilers';
 
       await for (final log in result.stdout.transform(utf8.decoder)) {
         if (log.contains(error)) {
@@ -743,8 +747,8 @@ main() async {
 }
 
 Future<String> runBuild({List<String> extraArgs = const []}) async {
-  var buildArgs = ['build', '-o', 'build', ...extraArgs];
-  var result = await runDart('a', 'tool/build.dart', args: buildArgs);
+  final buildArgs = ['build', '-o', 'build', ...extraArgs];
+  final result = await runDart('a', 'tool/build.dart', args: buildArgs);
   expect(result.exitCode, 0, reason: '${result.stdout}\n${result.stderr}');
   printOnFailure('${result.stdout}\n${result.stderr}');
   return '${result.stdout}';

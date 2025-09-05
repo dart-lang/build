@@ -138,7 +138,7 @@ class Build {
       (b) => b..rootPackageName = packageGraph.root.name,
     );
     var result = await _safeBuild(updates);
-    var optionalOutputTracker = OptionalOutputTracker(
+    final optionalOutputTracker = OptionalOutputTracker(
       assetGraph,
       targetGraph,
       BuildDirectory.buildPaths(buildPlan.buildOptions.buildDirs),
@@ -231,7 +231,7 @@ class Build {
         }
 
         buildLog.startBuild();
-        var result = await _runPhases();
+        final result = await _runPhases();
         buildLog.doing('Writing the asset graph.');
 
         assetGraph.previousBuildTriggersDigest =
@@ -262,16 +262,16 @@ class Build {
         if (buildOptions.logPerformanceDir != null) {
           buildLog.doing('Writing the performance log.');
           assert(result.performance != null);
-          var now = DateTime.now();
-          var logPath = p.join(
+          final now = DateTime.now();
+          final logPath = p.join(
             buildOptions.logPerformanceDir!,
             '${now.year}-${_twoDigits(now.month)}-${_twoDigits(now.day)}'
             '_${_twoDigits(now.hour)}-${_twoDigits(now.minute)}-'
             '${_twoDigits(now.second)}',
           );
           buildLog.info('Writing performance log to $logPath');
-          var performanceLogId = AssetId(packageGraph.root.name, logPath);
-          var serialized = jsonEncode(result.performance);
+          final performanceLogId = AssetId(packageGraph.root.name, logPath);
+          final serialized = jsonEncode(result.performance);
           await readerWriter.writeAsString(performanceLogId, serialized);
         }
 
@@ -326,7 +326,7 @@ class Build {
         phaseNum < buildPhases.inBuildPhases.length;
         phaseNum++
       ) {
-        var phase = buildPhases.inBuildPhases[phaseNum];
+        final phase = buildPhases.inBuildPhases[phaseNum];
         final primaryInputs = primaryInputsByPhase[phase];
         if (primaryInputs == null || primaryInputs.isEmpty) continue;
 
@@ -385,9 +385,9 @@ class Build {
     int phaseNumber,
   ) async {
     // Accumulate in a `Set` because inputs are found once per output.
-    var ids = <AssetId>{};
-    var phase = buildPhases[phaseNumber];
-    var packageNode = packageGraph[package]!;
+    final ids = <AssetId>{};
+    final phase = buildPhases[phaseNumber];
+    final packageNode = packageGraph[package]!;
 
     for (final node in assetGraph
         .outputsForPhase(package, phaseNumber)
@@ -450,7 +450,7 @@ class Build {
   }) async {
     buildLog.startStep(phase: phase, primaryInput: primaryInput, lazy: lazy);
     final builder = phase.builder;
-    var tracker = performanceTracker.addBuilderAction(
+    final tracker = performanceTracker.addBuilderAction(
       primaryInput,
       phase.builderLabel,
     );
@@ -617,7 +617,7 @@ class Build {
     CompilationUnit compilationUnit,
   ) async {
     final result = [compilationUnit];
-    for (var directive in compilationUnit.directives) {
+    for (final directive in compilationUnit.directives) {
       if (directive is! PartDirective) continue;
       final partId = AssetId.resolve(
         Uri.parse(directive.uri.stringValue!),
@@ -671,9 +671,9 @@ class Build {
     PostProcessBuilder builder,
     PostProcessBuildStepId postProcessBuildStepId,
   ) async {
-    var input = postProcessBuildStepId.input;
-    var inputNode = assetGraph.get(input)!;
-    var stepReaderWriter = SingleStepReaderWriter(
+    final input = postProcessBuildStepId.input;
+    final inputNode = assetGraph.get(input)!;
+    final stepReaderWriter = SingleStepReaderWriter(
       runningBuild: RunningBuild(
         packageGraph: packageGraph,
         targetGraph: targetGraph,
@@ -724,7 +724,7 @@ class Build {
         if (assetGraph.contains(assetId)) {
           throw InvalidOutputException(assetId, 'Asset already exists');
         }
-        var node = AssetNode.generated(
+        final node = AssetNode.generated(
           assetId,
           primaryInput: input,
           isHidden: true,
@@ -756,7 +756,7 @@ class Build {
       outputs: outputs,
     );
 
-    var assetsWritten = stepReaderWriter.assetsWritten.toSet();
+    final assetsWritten = stepReaderWriter.assetsWritten.toSet();
 
     // Reset the state for all the output nodes based on what was read and
     // written.
@@ -857,13 +857,13 @@ class Build {
 
       if (newPrimaryInputs.contains(primaryInput)) return true;
 
-      for (var output in outputs) {
+      for (final output in outputs) {
         if (deletedAssets.contains(output)) return true;
       }
 
       // Build results are the same across outputs, so just check the first
       // output.
-      var firstOutput = assetGraph.get(outputs.first)!;
+      final firstOutput = assetGraph.get(outputs.first)!;
       final firstOutputState = firstOutput.generatedNodeState!;
 
       if (firstOutputState.result == null) return true;

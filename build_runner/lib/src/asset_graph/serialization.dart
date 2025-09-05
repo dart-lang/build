@@ -29,8 +29,8 @@ AssetGraph deserializeAssetGraph(List<int> bytes) {
     ),
   );
 
-  var packageLanguageVersions = {
-    for (var entry
+  final packageLanguageVersions = {
+    for (final entry
         in (serializedGraph['packageLanguageVersions'] as Map<String, dynamic>)
             .entries)
       entry.key:
@@ -38,7 +38,7 @@ AssetGraph deserializeAssetGraph(List<int> bytes) {
               ? LanguageVersion.parse(entry.value as String)
               : null,
   };
-  var graph = AssetGraph._fromSerialized(
+  final graph = AssetGraph._fromSerialized(
     _deserializeDigest(serializedGraph['buildActionsDigest'] as String)!,
     serializers.deserialize(
           serializedGraph['inBuildPhasesOptionsDigests'],
@@ -59,7 +59,7 @@ AssetGraph deserializeAssetGraph(List<int> bytes) {
     serializedGraph['buildTriggersDigest'] as String?,
   );
 
-  for (var serializedItem in serializedGraph['nodes'] as Iterable) {
+  for (final serializedItem in serializedGraph['nodes'] as Iterable) {
     graph._add(_deserializeAssetNode(serializedItem as List));
   }
 
@@ -101,7 +101,7 @@ List<int> serializeAssetGraph(AssetGraph graph) {
     graph.previousPhasedAssetDeps,
   );
 
-  var result = <String, dynamic>{
+  final result = <String, dynamic>{
     'version': _version,
     'ids': identityAssetIdSerializer.serializedObjects,
     'dart_version': graph.dartVersion,

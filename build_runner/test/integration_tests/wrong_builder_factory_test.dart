@@ -32,7 +32,7 @@ void main() {
     test(
       'warns when builder definition produces invalid build script',
       () async {
-        var result = await buildTool.build(
+        final result = await buildTool.build(
           expectExitCode: ExitCode.config.code,
         );
         expect(result, emitsThrough(contains('Undefined name \'wrongKey\'')));

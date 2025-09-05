@@ -213,7 +213,7 @@ class AnalyzerResolver implements ReleasableResolver {
     if (assetId.extension != '.dart') return false;
     return _driverPool.withResource(() async {
       if (!_driver.isUriOfExistingFile(assetId.uri)) return false;
-      var result =
+      final result =
           _driver.currentSession.getFile(
                 AnalysisDriverFilesystem.assetPath(assetId),
               )
@@ -230,10 +230,10 @@ class AnalyzerResolver implements ReleasableResolver {
       // library and can't be resolved like this.
       return null;
     }
-    var path = library.firstFragment.source.fullName;
+    final path = library.firstFragment.source.fullName;
 
     return _driverPool.withResource(() async {
-      var session = _driver.currentSession;
+      final session = _driver.currentSession;
       if (resolve) {
         final result =
             await session.getResolvedLibrary(path) as ResolvedLibraryResult;
@@ -264,9 +264,9 @@ class AnalyzerResolver implements ReleasableResolver {
         throw AssetNotFoundException(assetId);
       }
 
-      var path = AnalysisDriverFilesystem.assetPath(assetId);
+      final path = AnalysisDriverFilesystem.assetPath(assetId);
 
-      var parsedResult =
+      final parsedResult =
           _driver.currentSession.getParsedUnit(path) as ParsedUnitResult;
       if (!allowSyntaxErrors &&
           parsedResult.errors.any((e) => e.severity == Severity.error)) {
@@ -285,13 +285,13 @@ class AnalyzerResolver implements ReleasableResolver {
     // resource to allow concurrent reads.
     final library = await _readAndWritePool.withSharedResource(
       () => _driverPool.withResource(() async {
-        var uri = assetId.uri;
+        final uri = assetId.uri;
         if (!_driver.isUriOfExistingFile(uri)) {
           throw AssetNotFoundException(assetId);
         }
 
-        var path = AnalysisDriverFilesystem.assetPath(assetId);
-        var parsedResult = _driver.currentSession.getParsedUnit(path);
+        final path = AnalysisDriverFilesystem.assetPath(assetId);
+        final parsedResult = _driver.currentSession.getParsedUnit(path);
         if (parsedResult is! ParsedUnitResult || parsedResult.isPart) {
           throw NonLibraryAssetException(assetId);
         }
@@ -513,7 +513,7 @@ class AnalyzerResolvers implements Resolvers {
             _packageConfig ??= await loadPackageConfigUri(
               (await Isolate.packageConfig)!,
             );
-        var driver = await analysisDriver(
+        final driver = await analysisDriver(
           _analysisDriverModel,
           _analysisOptions,
           await _sdkSummaryGenerator(),
@@ -590,7 +590,9 @@ current version by running `pub deps`.
 }
 
 Future<String> packagePath(String package) async {
-  var libRoot = await Isolate.resolvePackageUri(Uri.parse('package:$package/'));
+  final libRoot = await Isolate.resolvePackageUri(
+    Uri.parse('package:$package/'),
+  );
   return p.dirname(p.fromUri(libRoot));
 }
 

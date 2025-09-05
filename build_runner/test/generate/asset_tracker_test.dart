@@ -35,7 +35,7 @@ void main() {
           ),
         ]),
       ]).create();
-      var packageGraph = PackageGraph.fromRoot(
+      final packageGraph = PackageGraph.fromRoot(
         PackageNode(
           'a',
           p.join(d.sandbox, 'a'),
@@ -44,8 +44,8 @@ void main() {
           isRoot: true,
         ),
       );
-      var reader = ReaderWriter(packageGraph);
-      var aId = AssetId('a', 'web/a.txt');
+      final reader = ReaderWriter(packageGraph);
+      final aId = AssetId('a', 'web/a.txt');
       assetGraph = await AssetGraph.build(
         BuildPhases([]),
         {aId},
@@ -60,14 +60,14 @@ void main() {
         nodeBuilder.digest = digest;
       });
 
-      var targetGraph = await TargetGraph.forPackageGraph(
+      final targetGraph = await TargetGraph.forPackageGraph(
         packageGraph: packageGraph,
         testingOverrides: TestingOverrides(
           defaultRootPackageSources: ['web/**'].build(),
         ),
       );
       assetTracker = AssetTracker(reader, targetGraph);
-      var updates = await assetTracker.collectChanges(assetGraph);
+      final updates = await assetTracker.collectChanges(assetGraph);
       await assetGraph.updateAndInvalidate(
         BuildPhases([]),
         updates,

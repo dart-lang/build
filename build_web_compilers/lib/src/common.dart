@@ -31,7 +31,7 @@ void validateOptions(
   String builderKey, {
   List<String> deprecatedOptions = const [],
 }) {
-  var unsupported = config.keys.where(
+  final unsupported = config.keys.where(
     (o) => !supportedOptions.contains(o) && !deprecatedOptions.contains(o),
   );
   if (unsupported.isNotEmpty) {
@@ -41,7 +41,7 @@ void validateOptions(
       'only $supportedOptions are supported options, but got',
     );
   }
-  var deprecated = config.keys.where(deprecatedOptions.contains);
+  final deprecated = config.keys.where(deprecatedOptions.contains);
   if (deprecated.isNotEmpty) {
     log.warning(
       'Found deprecated options ${deprecated.join(', ')}. These no '
@@ -63,21 +63,21 @@ Future<void> fixAndCopySourceMap(
 ) async {
   // Copied to `web/stack_trace_mapper.dart`, these need to be kept in sync.
   String fixMappedSource(String source) {
-    var uri = Uri.parse(source);
+    final uri = Uri.parse(source);
     // We only want to rewrite multi-root scheme uris.
     if (uri.scheme.isEmpty) return source;
-    var newSegments =
+    final newSegments =
         uri.pathSegments.first == 'packages'
             ? uri.pathSegments
             : uri.pathSegments.skip(1);
     return Uri(path: p.url.joinAll(['/', ...newSegments])).toString();
   }
 
-  var file = scratchSpace.fileFor(id);
+  final file = scratchSpace.fileFor(id);
   if (await file.exists()) {
-    var content = await file.readAsString();
-    var json = jsonDecode(content) as Map<String, Object?>;
-    var sources = json['sources'] as List<Object?>;
+    final content = await file.readAsString();
+    final json = jsonDecode(content) as Map<String, Object?>;
+    final sources = json['sources'] as List<Object?>;
     // Modify `sources` in place for fewer allocations.
     for (var i = 0; i < sources.length; i++) {
       sources[i] = fixMappedSource(sources[i] as String);

@@ -45,7 +45,7 @@ class PostProcessBuildStepImpl implements PostProcessBuildStep {
   @override
   Future<void> writeAsBytes(AssetId id, FutureOr<List<int>> bytes) {
     _addAsset(id);
-    var done = _futureOrWrite(
+    final done = _futureOrWrite(
       bytes,
       (List<int> b) => _readerWriter.writeAsBytes(id, b),
     );
@@ -60,7 +60,7 @@ class PostProcessBuildStepImpl implements PostProcessBuildStep {
     Encoding encoding = utf8,
   }) {
     _addAsset(id);
-    var done = _futureOrWrite(
+    final done = _futureOrWrite(
       content,
       (String c) => _readerWriter.writeAsString(id, c, encoding: encoding),
     );

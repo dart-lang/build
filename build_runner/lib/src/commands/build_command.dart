@@ -32,7 +32,7 @@ class BuildCommand implements BuildRunnerCommand {
       withEnabledExperiments(_run, buildOptions.enableExperiments.asList());
 
   Future<int> _run() async {
-    var result = await build();
+    final result = await build();
     if (result.status == BuildStatus.success) {
       return ExitCode.success.code;
     } else {

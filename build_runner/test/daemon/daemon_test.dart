@@ -33,7 +33,7 @@ void main() {
           ..reportChangedAssets = true,
   );
   final testTarget = DefaultBuildTarget((b) => b..target = 'test');
-  var clients = <BuildDaemonClient>[];
+  final clients = <BuildDaemonClient>[];
 
   setUp(() async {
     await d.dir('a', [
@@ -78,7 +78,7 @@ main() {
     // We use `addTearDown` to ensure this runs before the temp dir gets
     // cleaned up, otherwise there is a race condition that causes flaky tests.
     addTearDown(() async {
-      for (var client in clients) {
+      for (final client in clients) {
         await client.close();
       }
       clients.clear();
@@ -92,7 +92,7 @@ main() {
     BuildMode buildMode = BuildMode.Auto,
     List<String> options = const [],
   }) {
-    var args = ['run', 'build_runner', 'daemon', ...options];
+    final args = ['run', 'build_runner', 'daemon', ...options];
     printOnFailure('Starting client in: ${workspace()}');
     return BuildDaemonClient.connect(
       workspace(),
@@ -107,14 +107,14 @@ main() {
     List<String> options = const [],
     bool expectFailure = false,
   }) async {
-    var args = [
+    final args = [
       'build_runner',
       'daemon',
       '--$buildModeFlag=$buildMode',
       ...options,
     ];
     printOnFailure('Starting daemon in: ${workspace()}');
-    var daemon = daemonProcess = await startPub('a', 'run', args: args);
+    final daemon = daemonProcess = await startPub('a', 'run', args: args);
     stdoutLines =
         daemon.stdout
             .transform(const Utf8Decoder())
@@ -151,7 +151,7 @@ main() {
       skip: 'https://github.com/dart-lang/build/issues/3438',
       () async {
         await startDaemon();
-        var client =
+        final client =
             await startClient()
               ..registerBuildTarget(webTarget)
               ..startBuild();
@@ -180,7 +180,7 @@ main() {
       'does not shut down down on build script change when configured',
       () async {
         await startDaemon(options: ['--skip-build-script-check']);
-        var client =
+        final client =
             await startClient(options: ['--skip-build-script-check'])
               ..registerBuildTarget(webTarget)
               ..startBuild();
@@ -216,7 +216,7 @@ main() {
 
     test('can build in manual mode', () async {
       await startDaemon(buildMode: BuildMode.Manual);
-      var client =
+      final client =
           await startClient(buildMode: BuildMode.Manual)
             ..registerBuildTarget(webTarget)
             ..startBuild();
@@ -231,7 +231,7 @@ main() {
 
     test('auto build mode automatically builds on file change', () async {
       await startDaemon();
-      var client =
+      final client =
           await startClient()
             ..registerBuildTarget(webTarget);
       clients.add(client);
@@ -258,7 +258,7 @@ main() {
       'manual build mode does not automatically build on file change',
       () async {
         await startDaemon(buildMode: BuildMode.Manual);
-        var client = await startClient(buildMode: BuildMode.Manual)
+        final client = await startClient(buildMode: BuildMode.Manual)
           ..registerBuildTarget(webTarget);
         clients.add(client);
         // Let the target request propagate.
@@ -274,20 +274,20 @@ main() {
           ]),
         ]).create();
         // There shouldn't be any build results.
-        var buildResults = await client.buildResults.first
+        final buildResults = await client.buildResults.first
             .then<BuildResults?>((r) => r)
             .timeout(const Duration(seconds: 2), onTimeout: () => null);
         expect(buildResults, isNull);
         client.startBuild();
-        var startedResult = await client.buildResults.first;
+        final startedResult = await client.buildResults.first;
         expect(
           startedResult.results.first.status,
           BuildStatus.started,
           reason: 'Should do a build once requested',
         );
-        var succeededResult = await client.buildResults.first;
+        final succeededResult = await client.buildResults.first;
         expect(succeededResult.results.first.status, BuildStatus.succeeded);
-        var ddcContent =
+        final ddcContent =
             await File(
               p.join(
                 d.sandbox,
@@ -305,12 +305,12 @@ main() {
     );
 
     test('can build to outputs', () async {
-      var outputDir = Directory(p.join(d.sandbox, 'a', 'deploy'));
+      final outputDir = Directory(p.join(d.sandbox, 'a', 'deploy'));
       expect(outputDir.existsSync(), isFalse);
       await startDaemon();
       // Start the client with the same options to prevent OptionSkew.
       // In the future this should be an option on the target.
-      var client =
+      final client =
           await startClient()
             ..registerBuildTarget(
               DefaultBuildTarget(
@@ -342,7 +342,7 @@ main() {
 
     test('notifies upon build start', () async {
       await startDaemon();
-      var client =
+      final client =
           await startClient()
             ..registerBuildTarget(webTarget)
             ..startBuild();
@@ -364,7 +364,7 @@ main() {
 
     test('can complete builds', () async {
       await startDaemon();
-      var client =
+      final client =
           await startClient()
             ..registerBuildTarget(webTarget)
             ..startBuild();
@@ -391,11 +391,11 @@ main() {
     test('allows multiple clients to connect and build', () async {
       await startDaemon();
 
-      var clientA = await startClient();
+      final clientA = await startClient();
       clientA.registerBuildTarget(webTarget);
       clients.add(clientA);
 
-      var clientB =
+      final clientB =
           await startClient()
             ..registerBuildTarget(testTarget)
             ..startBuild();
@@ -403,7 +403,7 @@ main() {
 
       // Both clients should be notified.
       await clientA.buildResults.first;
-      var buildResultsB = await clientB.buildResults.firstWhere(
+      final buildResultsB = await clientB.buildResults.firstWhere(
         (b) => b.results.first.status != BuildStatus.started,
       );
 
@@ -426,7 +426,7 @@ main() {
 
       test('can build specific outputs', () async {
         await startDaemon(buildMode: BuildMode.Manual);
-        var client =
+        final client =
             await startClient(buildMode: BuildMode.Manual)
               ..registerBuildTarget(
                 DefaultBuildTarget(

@@ -14,6 +14,7 @@ class AnsiBuffer {
   static const String nbsp = '\u00A0';
   static const reset = '\x1B[0m';
   static const bold = '\x1B[1m';
+  static const boldRed = '\x1B[1;31m';
   static const _nbspCodeUnit = 0xA0;
   static const _spaceCodeUnit = 32;
 
@@ -50,7 +51,7 @@ class AnsiBuffer {
     int? lastWhitespaceIndex;
     int? lastWhitespaceLengthIgnoringAnsi;
 
-    for (var item in items) {
+    for (final item in items) {
       if (_isAnsi(item)) {
         if (_showingAnsi) {
           buffer.write(item);
@@ -58,7 +59,7 @@ class AnsiBuffer {
         continue;
       }
 
-      for (var character in item.codeUnits) {
+      for (final character in item.codeUnits) {
         lengthIgnoringAnsi++;
         buffer.writeCharCode(
           character == _nbspCodeUnit ? _spaceCodeUnit : character,
@@ -127,7 +128,7 @@ class AnsiBuffer {
 
   /// Removes all ANSI constants from [string], for testing.
   static String removeAnsi(String string) =>
-      string.replaceAll(reset, '').replaceAll(bold, '');
+      string.replaceAll(reset, '').replaceAll(bold, '').replaceAll(boldRed, '');
 }
 
 /// A line for writing to an [AnsiBuffer].
@@ -167,7 +168,9 @@ class AnsiBufferLine {
 }
 
 bool _isAnsi(String item) =>
-    item == AnsiBuffer.reset || item == AnsiBuffer.bold;
+    item == AnsiBuffer.reset ||
+    item == AnsiBuffer.bold ||
+    item == AnsiBuffer.boldRed;
 
 bool get _showingAnsi =>
     buildLog.configuration.forceAnsiConsoleForTesting ??

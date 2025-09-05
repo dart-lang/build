@@ -156,7 +156,7 @@ void main() {
 
   test('can get handlers for a subdirectory', () async {
     addSource('a|web/index.html', 'content');
-    var response = await serveHandler.handlerFor('web')(
+    final response = await serveHandler.handlerFor('web')(
       Request('GET', Uri.parse('http://server.com/index.html')),
     );
     expect(await response.readAsString(), 'content');
@@ -164,7 +164,7 @@ void main() {
 
   test('serves package files for /packages/<package name>', () async {
     addSource('a|lib/a.html', 'content');
-    var response = await serveHandler.handlerFor('web')(
+    final response = await serveHandler.handlerFor('web')(
       Request('GET', Uri.parse('http://server.com/packages/a/a.html')),
     );
     expect(await response.readAsString(), 'content');
@@ -172,7 +172,7 @@ void main() {
 
   test('serves packages for /anywhere/packages/<package name>', () async {
     addSource('a|lib/a.html', 'content');
-    var response = await serveHandler.handlerFor('web')(
+    final response = await serveHandler.handlerFor('web')(
       Request('GET', Uri.parse('http://server.com/anywhere/packages/a/a.html')),
     );
     expect(await response.readAsString(), 'content');
@@ -182,14 +182,14 @@ void main() {
     // Match in `web` takes precedence over match in packages.
     addSource('a|lib/a.html', 'package_content');
     addSource('a|web/packages/a/a.html', 'web_content');
-    var responseA = await serveHandler.handlerFor('web')(
+    final responseA = await serveHandler.handlerFor('web')(
       Request('GET', Uri.parse('http://server.com/packages/a/a.html')),
     );
     expect(await responseA.readAsString(), 'web_content');
 
     // Fall back to match in packages.
     addSource('b|lib/b.html', 'package_content');
-    var responseB = await serveHandler.handlerFor('web')(
+    final responseB = await serveHandler.handlerFor('web')(
       Request('GET', Uri.parse('http://server.com/packages/b/b.html')),
     );
     expect(await responseB.readAsString(), 'package_content');
@@ -199,7 +199,7 @@ void main() {
     'serves index.html for actual folder called packages from /packages/`',
     () async {
       addSource('a|web/packages/index.html', 'content');
-      var response = await serveHandler.handlerFor('web')(
+      final response = await serveHandler.handlerFor('web')(
         Request('GET', Uri.parse('http://server.com/packages/')),
       );
       expect(await response.readAsString(), 'content');
@@ -207,7 +207,7 @@ void main() {
   );
 
   test('serves nothing from /packages/` if missing', () async {
-    var response = await serveHandler.handlerFor('web')(
+    final response = await serveHandler.handlerFor('web')(
       Request('GET', Uri.parse('http://server.com/packages/')),
     );
     expect(response.statusCode, HttpStatus.notFound);
@@ -215,15 +215,15 @@ void main() {
 
   test('caching with etags works', () async {
     addSource('a|web/index.html', 'content');
-    var handler = serveHandler.handlerFor('web');
-    var requestUri = Uri.parse('http://server.com/index.html');
-    var firstResponse = await handler(Request('GET', requestUri));
-    var etag = firstResponse.headers[HttpHeaders.etagHeader];
+    final handler = serveHandler.handlerFor('web');
+    final requestUri = Uri.parse('http://server.com/index.html');
+    final firstResponse = await handler(Request('GET', requestUri));
+    final etag = firstResponse.headers[HttpHeaders.etagHeader];
     expect(etag, isNotNull);
     expect(firstResponse.statusCode, HttpStatus.ok);
     expect(await firstResponse.readAsString(), 'content');
 
-    var cachedResponse = await handler(
+    final cachedResponse = await handler(
       Request(
         'GET',
         requestUri,
@@ -236,11 +236,11 @@ void main() {
 
   test('caching with etags takes into account injected JS', () async {
     addSource('a|web/some.js', '$entrypointExtensionMarker\nalert(1)');
-    var noReloadEtag =
+    final noReloadEtag =
         (await serveHandler.handlerFor('web', liveReload: false)(
           Request('GET', Uri.parse('http://server.com/some.js')),
         )).headers[HttpHeaders.etagHeader];
-    var liveReloadEtag =
+    final liveReloadEtag =
         (await serveHandler.handlerFor('web', liveReload: true)(
           Request('GET', Uri.parse('http://server.com/some.js')),
         )).headers[HttpHeaders.etagHeader];
@@ -271,7 +271,7 @@ void main() {
     });
 
     test('serves successful assets', () async {
-      var response = await serveHandler.handlerFor('web')(
+      final response = await serveHandler.handlerFor('web')(
         Request('GET', Uri.parse('http://server.com/index.html')),
       );
 
@@ -279,7 +279,7 @@ void main() {
     });
 
     test('rejects requests for failed assets', () async {
-      var response = await serveHandler.handlerFor('web')(
+      final response = await serveHandler.handlerFor('web')(
         Request('GET', Uri.parse('http://server.com/main.ddc.js')),
       );
 
@@ -324,7 +324,7 @@ void main() {
     addSource('a|web/index.html', 'content1');
     addSource('a|lib/some.dart.js', 'content2');
     addSource('a|lib/another.dart.js', 'content3');
-    var response = await serveHandler.handlerFor('web')(
+    final response = await serveHandler.handlerFor('web')(
       Request(
         'GET',
         Uri.parse('http://server.com/\$assetDigests'),
@@ -354,7 +354,7 @@ void main() {
     }) => group(groupName, () {
       test('injects client code if enabled', () async {
         addSource('a|web/some.js', '$entrypointExtensionMarker\nalert(1)');
-        var response = await serveHandler.handlerFor(
+        final response = await serveHandler.handlerFor(
           'web',
           liveReload: liveReload,
         )(Request('GET', Uri.parse('http://server.com/some.js')));
@@ -363,7 +363,7 @@ void main() {
 
       test('doesn\'t inject client code if disabled', () async {
         addSource('a|web/some.js', '$entrypointExtensionMarker\nalert(1)');
-        var response = await serveHandler.handlerFor('web')(
+        final response = await serveHandler.handlerFor('web')(
           Request('GET', Uri.parse('http://server.com/some.js')),
         );
         expect(await response.readAsString(), isNot(contains(injectionMarker)));
@@ -371,7 +371,7 @@ void main() {
 
       test('doesn\'t inject client code in non-js files', () async {
         addSource('a|web/some.html', '$entrypointExtensionMarker\n<br>some');
-        var response = await serveHandler.handlerFor(
+        final response = await serveHandler.handlerFor(
           'web',
           liveReload: liveReload,
         )(Request('GET', Uri.parse('http://server.com/some.html')));
@@ -380,7 +380,7 @@ void main() {
 
       test('doesn\'t inject client code in non-marked files', () async {
         addSource('a|web/some.js', 'alert(1)');
-        var response = await serveHandler.handlerFor(
+        final response = await serveHandler.handlerFor(
           'web',
           liveReload: liveReload,
         )(Request('GET', Uri.parse('http://server.com/some.js')));
@@ -389,7 +389,7 @@ void main() {
 
       test('expect websocket connection if enabled', () async {
         addSource('a|web/index.html', 'content');
-        var uri = Uri.parse('ws://server.com/');
+        final uri = Uri.parse('ws://server.com/');
         expect(
           serveHandler.handlerFor('web', liveReload: liveReload)(
             Request(
@@ -417,7 +417,7 @@ void main() {
 
     test('reject websocket connection if disabled', () async {
       addSource('a|web/index.html', 'content');
-      var response = await serveHandler.handlerFor('web')(
+      final response = await serveHandler.handlerFor('web')(
         Request(
           'GET',
           Uri.parse('ws://server.com/'),
@@ -454,10 +454,10 @@ void main() {
           WebSocketChannel serverChannel,
           String rootDir,
         ) async {
-          var mockResponse = await handler.createHandlerByRootDir(rootDir)(
+          final mockResponse = await handler.createHandlerByRootDir(rootDir)(
             FakeRequest(),
           );
-          var onConnect =
+          final onConnect =
               mockResponse.context['onConnect']
                   as void Function(WebSocketChannel, String);
           onConnect(serverChannel, '');
@@ -514,7 +514,7 @@ void main() {
       test('emits build results digests', () async {
         addSource('a|web/index.html', 'content1');
         addSource('a|lib/some.dart.js', 'content2');
-        var indexHash =
+        final indexHash =
             computeDigest(
               AssetId('a', 'web/index.html'),
               'content1',
@@ -551,7 +551,7 @@ void main() {
         addSource('a|web1/index.html', 'content1');
         addSource('a|web2/index.html', 'content2');
         addSource('a|lib/some.dart.js', 'content3');
-        var someDartHash =
+        final someDartHash =
             computeDigest(
               AssetId('a', 'lib/some.dart.js'),
               'content3',
@@ -632,7 +632,7 @@ class MockWatchImpl implements Watcher {
   }
 
   MockWatchImpl(this.finalizedReader, this.packageGraph, this.assetGraph) {
-    var firstBuild = Completer<BuildResult>();
+    final firstBuild = Completer<BuildResult>();
     _currentBuild = firstBuild.future;
     _futureBuildResultsController.stream.listen((futureBuildResult) {
       if (!firstBuild.isCompleted) {

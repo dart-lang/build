@@ -79,10 +79,10 @@ class _Loader {
 
     var assetGraph = await assetGraphLoader.load();
 
-    var assetTracker = AssetTracker(readerWriter, targetGraph);
-    var inputSources = await assetTracker.findInputSources();
-    var cacheDirSources = await assetTracker.findCacheDirSources();
-    var internalSources = await assetTracker.findInternalSources();
+    final assetTracker = AssetTracker(readerWriter, targetGraph);
+    final inputSources = await assetTracker.findInputSources();
+    final cacheDirSources = await assetTracker.findCacheDirSources();
+    final internalSources = await assetTracker.findInternalSources();
 
     BuildScriptUpdates? buildScriptUpdates;
     Map<AssetId, ChangeType>? updates;
@@ -102,12 +102,12 @@ class _Loader {
         disabled: skipBuildScriptCheck,
       );
 
-      var buildScriptUpdated =
+      final buildScriptUpdated =
           !skipBuildScriptCheck &&
           buildScriptUpdates.hasBeenUpdated(updates.keys.toSet());
       if (buildScriptUpdated) {
         buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
-        var deletedSourceOutputs = await assetGraph.deleteOutputs(
+        final deletedSourceOutputs = await assetGraph.deleteOutputs(
           packageGraph,
           readerWriter,
         );
@@ -180,7 +180,7 @@ class _Loader {
 
   /// Deletes the generated output directory.
   Future<void> _deleteGeneratedDir() async {
-    var generatedDir = Directory(generatedOutputDirectory);
+    final generatedDir = Directory(generatedOutputDirectory);
     if (await generatedDir.exists()) {
       await generatedDir.delete(recursive: true);
     }
@@ -195,7 +195,7 @@ class _Loader {
     Set<AssetId> cacheDirSources,
     Set<AssetId> internalSources,
   ) async {
-    var updates = await assetTracker.computeSourceUpdates(
+    final updates = await assetTracker.computeSourceUpdates(
       inputSources,
       cacheDirSources,
       internalSources,
@@ -211,11 +211,6 @@ class _Loader {
     ReaderWriter readerWriter,
   ) async {
     if (conflictingAssets.isEmpty) return;
-
-    buildLog.info(
-      'Deleting ${conflictingAssets.length} declared outputs '
-      'which already existed on disk.',
-    );
     await Future.wait(conflictingAssets.map((id) => readerWriter.delete(id)));
   }
 }

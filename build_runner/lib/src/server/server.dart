@@ -36,8 +36,8 @@ enum PerfSortOrder {
 }
 
 ServeHandler createServeHandler(Watcher watch) {
-  var rootPackage = watch.packageGraph.root.name;
-  var assetHandlerCompleter = Completer<AssetHandler>();
+  final rootPackage = watch.packageGraph.root.name;
+  final assetHandlerCompleter = Completer<AssetHandler>();
   watch.finalizedReader
       .then((reader) async {
         assetHandlerCompleter.complete(AssetHandler(reader, rootPackage));
@@ -95,7 +95,7 @@ class ServeHandler implements BuildState {
       if (request.url.path == _assetsDigestPath) {
         return _assetsDigestHandler(request, rootDir);
       }
-      var assetHandler = await _assetHandler;
+      final assetHandler = await _assetHandler;
       return assetHandler.handle(request, rootDir: rootDir);
     });
     var pipeline = const shelf.Pipeline();
@@ -118,10 +118,10 @@ class ServeHandler implements BuildState {
     String rootDir,
   ) async {
     final reader = await _state.finalizedReader;
-    var assertPathList =
+    final assertPathList =
         (jsonDecode(await request.readAsString()) as List).cast<String>();
-    var rootPackage = _state.packageGraph.root.name;
-    var results = <String, String>{};
+    final rootPackage = _state.packageGraph.root.name;
+    final results = <String, String>{};
     for (final path in assertPathList) {
       final assetIds = pathToAssetIds(rootPackage, rootDir, p.url.split(path));
       AssetId? assetId;
@@ -195,19 +195,19 @@ class BuildUpdatesWebSocketHandler {
     if (buildResult.status != BuildStatus.success) return;
     final reader = await _state.finalizedReader;
     final digests = <AssetId, String>{};
-    for (var assetId in buildResult.outputs) {
-      var digest = await reader.digest(assetId);
+    for (final assetId in buildResult.outputs) {
+      final digest = await reader.digest(assetId);
       digests[assetId] = digest.toString();
     }
-    for (var rootDir in connectionsByRootDir.keys) {
-      var resultMap = <String, String?>{};
-      for (var assetId in digests.keys) {
-        var path = assetIdToPath(assetId, rootDir);
+    for (final rootDir in connectionsByRootDir.keys) {
+      final resultMap = <String, String?>{};
+      for (final assetId in digests.keys) {
+        final path = assetIdToPath(assetId, rootDir);
         if (path != null) {
           resultMap[path] = digests[assetId];
         }
       }
-      for (var connection in connectionsByRootDir[rootDir]!) {
+      for (final connection in connectionsByRootDir[rootDir]!) {
         connection.sink.add(jsonEncode(resultMap));
       }
     }
@@ -218,7 +218,7 @@ class BuildUpdatesWebSocketHandler {
     String? protocol,
     String rootDir,
   ) async {
-    var connections = connectionsByRootDir.putIfAbsent(rootDir, () => [])
+    final connections = connectionsByRootDir.putIfAbsent(rootDir, () => [])
       ..add(webSocket);
     await webSocket.stream.drain<void>();
     connections.remove(webSocket);
@@ -249,10 +249,10 @@ shelf.Handler Function(shelf.Handler) _injectBuildUpdatesClientCode(
     var body = await response.readAsString();
     if (body.startsWith(entrypointExtensionMarker)) {
       body += _buildUpdatesInjectedJS(scriptName);
-      var originalEtag = response.headers[HttpHeaders.etagHeader];
+      final originalEtag = response.headers[HttpHeaders.etagHeader];
       if (originalEtag != null) {
-        var newEtag = base64.encode(md5.convert(body.codeUnits).bytes);
-        var newHeaders = Map.of(response.headers);
+        final newEtag = base64.encode(md5.convert(body.codeUnits).bytes);
+        final newHeaders = Map.of(response.headers);
         newHeaders[HttpHeaders.etagHeader] = newEtag;
 
         if (request.headers[HttpHeaders.ifNoneMatchHeader] == newEtag) {
@@ -320,7 +320,7 @@ class AssetHandler {
     try {
       try {
         if (!await _reader.canRead(assetId)) {
-          var reason = await _reader.unreadableReason(assetId);
+          final reason = await _reader.unreadableReason(assetId);
           switch (reason) {
             case UnreadableReason.failed:
               return shelf.Response.internalServerError(
@@ -344,12 +344,12 @@ class AssetHandler {
         return shelf.Response.notFound('Not Found');
       }
 
-      var etag = base64.encode((await _reader.digest(assetId)).bytes);
+      final etag = base64.encode((await _reader.digest(assetId)).bytes);
       var contentType = _typeResolver.lookup(assetId.path);
       if (contentType == 'text/x-dart') {
         contentType = '$contentType; charset=utf-8';
       }
-      var headers = <String, Object>{
+      final headers = <String, Object>{
         if (contentType != null) HttpHeaders.contentTypeHeader: contentType,
         HttpHeaders.etagHeader: etag,
         // We always want this revalidated, which requires specifying both
@@ -382,11 +382,11 @@ class AssetHandler {
   }
 
   Future<String> _findDirectoryList(AssetId from) async {
-    var directoryPath = p.url.dirname(from.path);
-    var glob = p.url.join(directoryPath, '*');
-    var result =
+    final directoryPath = p.url.dirname(from.path);
+    final glob = p.url.join(directoryPath, '*');
+    final result =
         await _reader.assetFinder.find(Glob(glob)).map((a) => a.path).toList();
-    var message = StringBuffer('Could not find ${from.path}');
+    final message = StringBuffer('Could not find ${from.path}');
     if (result.isEmpty) {
       message.write(' or any files in $directoryPath. ');
     } else {
@@ -402,12 +402,13 @@ class AssetHandler {
 /// [shelf.Middleware] that logs all requests, inspired by [shelf.logRequests].
 shelf.Handler _logRequests(shelf.Handler innerHandler) {
   return (shelf.Request request) async {
-    var startTime = DateTime.now();
-    var watch = Stopwatch()..start();
+    final startTime = DateTime.now();
+    final watch = Stopwatch()..start();
     try {
-      var response = await innerHandler(request);
-      var logFn = response.statusCode >= 500 ? buildLog.warning : buildLog.info;
-      var msg = _requestLabel(
+      final response = await innerHandler(request);
+      final logFn =
+          response.statusCode >= 500 ? buildLog.warning : buildLog.info;
+      final msg = _requestLabel(
         startTime,
         response.statusCode,
         request.requestedUri,
@@ -418,7 +419,7 @@ shelf.Handler _logRequests(shelf.Handler innerHandler) {
       return response;
     } catch (error, stackTrace) {
       if (error is shelf.HijackException) rethrow;
-      var msg = _requestLabel(
+      final msg = _requestLabel(
         startTime,
         500,
         request.requestedUri,

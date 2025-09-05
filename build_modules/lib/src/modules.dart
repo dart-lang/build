@@ -150,17 +150,17 @@ class Module {
     bool throwIfUnsupported = false,
   }) async {
     final modules = await buildStep.fetchResource(moduleCache);
-    var transitiveDeps = <AssetId, Module>{};
-    var modulesToCrawl = {primarySource};
-    var missingModuleSources = <AssetId>{};
-    var unsupportedModules = <Module>{};
+    final transitiveDeps = <AssetId, Module>{};
+    final modulesToCrawl = {primarySource};
+    final missingModuleSources = <AssetId>{};
+    final unsupportedModules = <Module>{};
 
     while (modulesToCrawl.isNotEmpty) {
-      var next = modulesToCrawl.last;
+      final next = modulesToCrawl.last;
       modulesToCrawl.remove(next);
       if (transitiveDeps.containsKey(next)) continue;
-      var nextModuleId = next.changeExtension(moduleExtension(platform));
-      var module = await modules.find(nextModuleId, buildStep);
+      final nextModuleId = next.changeExtension(moduleExtension(platform));
+      final module = await modules.find(nextModuleId, buildStep);
       if (module == null || module.isMissing) {
         missingModuleSources.add(next);
         continue;
@@ -183,7 +183,7 @@ class Module {
     if (throwIfUnsupported && unsupportedModules.isNotEmpty) {
       throw UnsupportedModules(unsupportedModules);
     }
-    var orderedModules = stronglyConnectedComponents<Module>(
+    final orderedModules = stronglyConnectedComponents<Module>(
       transitiveDeps.values,
       (m) => m.directDependencies.map((s) => transitiveDeps[s]!),
       equals: (a, b) => a.primarySource == b.primarySource,

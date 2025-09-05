@@ -46,7 +46,7 @@ class Daemon {
   ///
   /// Null if one isn't running.
   Future<String?> runningVersion() async {
-    var versionFile = File(versionFilePath(_workingDirectory));
+    final versionFile = File(versionFilePath(_workingDirectory));
     if (!await waitForFile(versionFile)) return null;
     return versionFile.readAsStringSync();
   }
@@ -55,7 +55,7 @@ class Daemon {
   ///
   /// Null if one isn't running.
   Future<Set<String>> currentOptions() async {
-    var optionsFile = File(optionsFilePath(_workingDirectory));
+    final optionsFile = File(optionsFilePath(_workingDirectory));
     if (!await waitForFile(optionsFile)) return <String>{};
     return optionsFile.readAsLinesSync().toSet();
   }
@@ -74,7 +74,7 @@ class Daemon {
     _createVersionFile();
     _createOptionsFile(options);
 
-    var server =
+    final server =
         _server = Server(
           builder,
           timeout,
@@ -82,7 +82,7 @@ class Daemon {
           serializersOverride: serializersOverride,
           shouldBuild: shouldBuild,
         );
-    var port = await server.listen();
+    final port = await server.listen();
     _createPortFile(port);
 
     unawaited(
@@ -97,7 +97,7 @@ class Daemon {
     await _sub?.cancel();
     // We need to close the lock prior to deleting the file.
     _lock?.closeSync();
-    var workspace = Directory(daemonWorkspace(_workingDirectory));
+    final workspace = Directory(daemonWorkspace(_workingDirectory));
     if (workspace.existsSync()) {
       workspace.deleteSync(recursive: true);
     }
@@ -130,7 +130,7 @@ class Daemon {
 RandomAccessFile? _tryGetLock(String workingDirectory) {
   try {
     _createDaemonWorkspace(workingDirectory);
-    var lock = File(
+    final lock = File(
       lockFilePath(workingDirectory),
     ).openSync(mode: FileMode.write)..lockSync();
     return lock;

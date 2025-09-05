@@ -54,7 +54,7 @@ class FinalizedReader {
   /// Returns a reason why [id] is not readable, or null if it is readable.
   Future<UnreadableReason?> unreadableReason(AssetId id) async {
     if (!_assetGraph.contains(id)) return UnreadableReason.notFound;
-    var node = _assetGraph.get(id)!;
+    final node = _assetGraph.get(id)!;
     if (_optionalOutputTracker != null &&
         !_optionalOutputTracker!.isRequired(node.id)) {
       return UnreadableReason.notOutput;
@@ -101,14 +101,14 @@ class FinalizedReader {
   }
 
   Stream<AssetId> _findAssets(Glob glob, String? _) async* {
-    var potentialNodes =
+    final potentialNodes =
         _assetGraph
             .packageNodes(_rootPackage)
             .where((n) => glob.matches(n.id.path))
             .toList();
-    var potentialIds = potentialNodes.map((n) => n.id).toList();
+    final potentialIds = potentialNodes.map((n) => n.id).toList();
 
-    for (var id in potentialIds) {
+    for (final id in potentialIds) {
       if (await _delegate.canRead(id)) {
         yield id;
       }
@@ -120,7 +120,7 @@ class FinalizedReader {
   ///
   /// Note that [id] must exist in the asset graph.
   FutureOr<Digest> _ensureDigest(AssetId id) {
-    var node = _assetGraph.get(id)!;
+    final node = _assetGraph.get(id)!;
     if (node.digest != null) return node.digest!;
     return _delegate.digest(id).then((digest) {
       _assetGraph.updateNode(id, (nodeBuilder) {

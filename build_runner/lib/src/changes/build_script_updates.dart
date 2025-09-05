@@ -65,7 +65,7 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
               .map((id) => idForUri(id, packageGraph))
               .nonNulls
               .toSet();
-      var missing = allSources.firstWhereOrNull((id) => !graph.contains(id));
+      final missing = allSources.firstWhereOrNull((id) => !graph.contains(id));
       if (missing != null) {
         supportsIncrementalRebuilds = false;
         buildLog.warning(
@@ -76,7 +76,7 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
         );
       } else {
         // Make sure we are tracking changes for all ids in [allSources].
-        for (var id in allSources) {
+        for (final id in allSources) {
           final node = graph.get(id)!;
           if (node.digest == null) {
             final digest = await readerWriter.digest(id);
@@ -124,7 +124,7 @@ AssetId? idForUri(Uri uri, PackageGraph packageGraph) {
       // TODO: check for sdk updates!
       break;
     case 'package':
-      var parts = uri.pathSegments;
+      final parts = uri.pathSegments;
       return AssetId(
         parts[0],
         p.url.joinAll(['lib', ...parts.getRange(1, parts.length)]),
@@ -141,7 +141,7 @@ AssetId? idForUri(Uri uri, PackageGraph packageGraph) {
         );
       }
       // The `AssetId` constructor normalizes this path to a URI style.
-      var relativePath = p.relative(
+      final relativePath = p.relative(
         uri.toFilePath(),
         from: package.root.toFilePath(),
       );

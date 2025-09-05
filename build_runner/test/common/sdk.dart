@@ -18,7 +18,7 @@ final bool supportsUnsoundNullSafety =
 /// Runs `pub get` on [package] (which is assumed to be in a directory with
 /// that name under the [d.sandbox] directory).
 Future<ProcessResult> pubGet(String package, {bool offline = true}) async {
-  var pubGetresult = await runPub(
+  final pubGetresult = await runPub(
     package,
     'get',
     args: offline ? ['--offline'] : [],

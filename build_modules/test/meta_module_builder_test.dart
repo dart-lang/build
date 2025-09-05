@@ -12,12 +12,12 @@ import 'package:test/test.dart';
 import 'matchers.dart';
 
 void main() {
-  var testPlatform = DartPlatform.register('test', ['dart:async']);
+  final testPlatform = DartPlatform.register('test', ['dart:async']);
 
   test('can serialize meta modules', () async {
-    var assetA = AssetId('a', 'lib/a.dart');
-    var moduleA = Module(assetA, [assetA], <AssetId>[], testPlatform, true);
-    var metaA = MetaModule([moduleA]);
+    final assetA = AssetId('a', 'lib/a.dart');
+    final moduleA = Module(assetA, [assetA], <AssetId>[], testPlatform, true);
+    final metaA = MetaModule([moduleA]);
     await testBuilder(
       MetaModuleBuilder(testPlatform),
       {
@@ -34,11 +34,17 @@ void main() {
 
   group('isSupported', () {
     test('is false for libraries that import dart:io on web', () async {
-      var assetA = AssetId('a', 'lib/a.dart');
-      var assetB = AssetId('a', 'lib/b.dart');
-      var moduleA = Module(assetA, [assetA], <AssetId>[], testPlatform, true);
-      var moduleB = Module(assetB, [assetB], <AssetId>[], testPlatform, false);
-      var metaA = MetaModule([moduleA, moduleB]);
+      final assetA = AssetId('a', 'lib/a.dart');
+      final assetB = AssetId('a', 'lib/b.dart');
+      final moduleA = Module(assetA, [assetA], <AssetId>[], testPlatform, true);
+      final moduleB = Module(
+        assetB,
+        [assetB],
+        <AssetId>[],
+        testPlatform,
+        false,
+      );
+      final metaA = MetaModule([moduleA, moduleB]);
       await testBuilder(
         MetaModuleBuilder(testPlatform),
         {
@@ -57,16 +63,16 @@ void main() {
     test(
       'is false for connected components that import dart:io on web',
       () async {
-        var assetA = AssetId('a', 'lib/a.dart');
-        var assetB = AssetId('a', 'lib/b.dart');
-        var moduleA = Module(
+        final assetA = AssetId('a', 'lib/a.dart');
+        final assetB = AssetId('a', 'lib/b.dart');
+        final moduleA = Module(
           assetA,
           [assetA, assetB],
           <AssetId>[],
           testPlatform,
           false,
         );
-        var metaA = MetaModule([moduleA]);
+        final metaA = MetaModule([moduleA]);
         await testBuilder(
           MetaModuleBuilder(testPlatform),
           {
@@ -90,16 +96,16 @@ void main() {
     );
 
     test('is false for coarse modules that import dart:io on web', () async {
-      var assetA = AssetId('a', 'lib/a.dart');
-      var assetB = AssetId('a', 'lib/src/b.dart');
-      var moduleA = Module(
+      final assetA = AssetId('a', 'lib/a.dart');
+      final assetB = AssetId('a', 'lib/src/b.dart');
+      final moduleA = Module(
         assetA,
         [assetA, assetB],
         <AssetId>[],
         testPlatform,
         false,
       );
-      var metaA = MetaModule([moduleA]);
+      final metaA = MetaModule([moduleA]);
       await testBuilder(
         MetaModuleBuilder(testPlatform),
         {
@@ -119,17 +125,23 @@ void main() {
     });
 
     test('does not look at dependencies', () async {
-      var assetA = AssetId('a', 'lib/a.dart');
-      var assetB = AssetId('a', 'lib/b.dart');
-      var moduleA = Module(
+      final assetA = AssetId('a', 'lib/a.dart');
+      final assetB = AssetId('a', 'lib/b.dart');
+      final moduleA = Module(
         assetA,
         [assetA],
         <AssetId>[assetB],
         testPlatform,
         true,
       );
-      var moduleB = Module(assetB, [assetB], <AssetId>[], testPlatform, false);
-      var metaA = MetaModule([moduleA, moduleB]);
+      final moduleB = Module(
+        assetB,
+        [assetB],
+        <AssetId>[],
+        testPlatform,
+        false,
+      );
+      final metaA = MetaModule([moduleA, moduleB]);
       await testBuilder(
         MetaModuleBuilder(testPlatform),
         {

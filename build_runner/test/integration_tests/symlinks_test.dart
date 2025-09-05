@@ -85,7 +85,7 @@ void main() {
       'watches a linked file',
       skip: 'Watcher package does not support watching symlink targets',
       () async {
-        var server = await buildTool.serve();
+        final server = await buildTool.serve();
         await server.nextSuccessfulBuild;
         await expectGeneratedContent('linked');
 

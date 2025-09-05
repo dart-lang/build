@@ -96,7 +96,7 @@ class _InMemoryAssetDepsLoader implements AssetDepsLoader {
 
   @override
   Future<PhasedValue<AssetDeps>> load(AssetId id) {
-    var result = phasedAssetDeps.assetDeps[id];
+    final result = phasedAssetDeps.assetDeps[id];
     if (result == null) return _empty;
     return Future.value(result);
   }

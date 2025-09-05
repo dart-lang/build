@@ -172,7 +172,7 @@ class ReaderWriter implements AssetReader, AssetWriter {
 
   @override
   Future<Digest> digest(AssetId id) async {
-    var digestSink = AccumulatorSink<Digest>();
+    final digestSink = AccumulatorSink<Digest>();
     md5.startChunkedConversion(digestSink)
       ..add(await readAsBytes(id))
       ..add(id.toString().codeUnits)
@@ -188,7 +188,7 @@ class ReaderWriter implements AssetReader, AssetWriter {
       // package folder, and it's allowed to delete them. So for assets in a
       // different package, check if the path has mapped onto the generated
       // output path, and if so allow the deleted.
-      var generatedOutputPath = assetPathProvider.pathFor(
+      final generatedOutputPath = assetPathProvider.pathFor(
         AssetId(rootPackage, generatedOutputDirectory),
       );
       if (id.package != rootPackage && !path.startsWith(generatedOutputPath)) {
@@ -231,7 +231,7 @@ class PackageGraphAssetFinder implements AssetFinder {
 
   @override
   Stream<AssetId> find(Glob glob, {String? package}) {
-    var packageNode =
+    final packageNode =
         package == null ? packageGraph.root : packageGraph[package];
     if (packageNode == null) {
       throw ArgumentError(
@@ -249,8 +249,8 @@ class PackageGraphAssetFinder implements AssetFinder {
 
   /// Creates an [AssetId] for [file], which is a part of [packageNode].
   static AssetId _fileToAssetId(File file, PackageNode packageNode) {
-    var filePath = path.normalize(file.absolute.path);
-    var relativePath = path.relative(filePath, from: packageNode.path);
+    final filePath = path.normalize(file.absolute.path);
+    final relativePath = path.relative(filePath, from: packageNode.path);
     return AssetId(packageNode.name, relativePath);
   }
 }

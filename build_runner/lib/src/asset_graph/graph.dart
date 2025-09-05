@@ -113,13 +113,13 @@ class AssetGraph implements GeneratedAssetHider {
     PackageGraph packageGraph,
     ReaderWriter readerWriter,
   ) async {
-    var graph = AssetGraph._(
+    final graph = AssetGraph._(
       buildPhases,
       Platform.version,
       packageGraph.languageVersions,
       experiments_zone.enabledExperiments.build(),
     );
-    var placeholders = graph._addPlaceHolderNodes(packageGraph);
+    final placeholders = graph._addPlaceHolderNodes(packageGraph);
     graph._addSources(sources);
     graph._addOutputsForSources(
       buildPhases,
@@ -154,7 +154,7 @@ class AssetGraph implements GeneratedAssetHider {
 
   /// Gets the [AssetNode] for [id], if one exists.
   AssetNode? get(AssetId id) {
-    var pkg = _nodesByPackage[id.package];
+    final pkg = _nodesByPackage[id.package];
     if (pkg == null) return null;
     return pkg[id.path];
   }
@@ -205,7 +205,7 @@ class AssetGraph implements GeneratedAssetHider {
   /// Returns the updated node: if it replaces an [AssetNode.missingSource] then
   /// `outputs` and `primaryOutputs` are copied to it from that.
   AssetNode _add(AssetNode node) {
-    var existing = get(node.id);
+    final existing = get(node.id);
     if (existing != null) {
       if (existing.type == NodeType.missingSource) {
         _nodesByPackage[existing.id.package]!.remove(existing.id.path);
@@ -229,15 +229,15 @@ class AssetGraph implements GeneratedAssetHider {
 
   /// Adds [assetIds] as [AssetNode.internal].
   void _addInternalSources(Set<AssetId> assetIds) {
-    for (var id in assetIds) {
+    for (final id in assetIds) {
       _add(AssetNode.internal(id));
     }
   }
 
   /// Adds [AssetNode.placeholder]s for every package in [packageGraph].
   Set<AssetId> _addPlaceHolderNodes(PackageGraph packageGraph) {
-    var placeholders = placeholderIdsFor(packageGraph);
-    for (var id in placeholders) {
+    final placeholders = placeholderIdsFor(packageGraph);
+    for (final id in placeholders) {
       _add(AssetNode.placeholder(id));
     }
     return placeholders;
@@ -270,10 +270,10 @@ class AssetGraph implements GeneratedAssetHider {
   /// Removes post build applications with removed assets as inputs.
   void _setMissingRecursive(AssetId id, {Set<AssetId>? removedIds}) {
     removedIds ??= <AssetId>{};
-    var node = get(id);
+    final node = get(id);
     if (node == null) return;
     removedIds.add(id);
-    for (var output in node.primaryOutputs.toList()) {
+    for (final output in node.primaryOutputs.toList()) {
       _setMissingRecursive(output, removedIds: removedIds);
     }
     updateNode(id, (nodeBuilder) {
@@ -289,10 +289,10 @@ class AssetGraph implements GeneratedAssetHider {
   /// Removes [id] and its transitive`primaryOutput`s from the graph.
   void _removeRecursive(AssetId id, {Set<AssetId>? removedIds}) {
     removedIds ??= <AssetId>{};
-    var node = get(id);
+    final node = get(id);
     if (node == null) return;
     if (removedIds.add(id)) {
-      for (var output in node.primaryOutputs.toList()) {
+      for (final output in node.primaryOutputs.toList()) {
         _removeRecursive(output, removedIds: removedIds);
       }
       _nodesByPackage[id.package]!.remove(id.path);
@@ -384,9 +384,9 @@ class AssetGraph implements GeneratedAssetHider {
     Future Function(AssetId id) delete,
     ReaderWriter readerWriter,
   ) async {
-    var newIds = <AssetId>{};
-    var modifyIds = <AssetId>{};
-    var removeIds = <AssetId>{};
+    final newIds = <AssetId>{};
+    final modifyIds = <AssetId>{};
+    final removeIds = <AssetId>{};
     updates.forEach((id, changeType) {
       if (changeType != ChangeType.ADD && get(id) == null) return;
       switch (changeType) {
@@ -404,8 +404,8 @@ class AssetGraph implements GeneratedAssetHider {
 
     _addSources(newIds);
 
-    var newAndModifiedNodes = [
-      for (var id in modifyIds.followedBy(newIds)) get(id)!,
+    final newAndModifiedNodes = [
+      for (final id in modifyIds.followedBy(newIds)) get(id)!,
     ];
     // Pre-emptively compute digests for the new and modified nodes we know have
     // outputs.
@@ -422,7 +422,7 @@ class AssetGraph implements GeneratedAssetHider {
 
     // Compute generated nodes that will no longer be output because their
     // primary input was deleted. Delete them.
-    var transitiveRemovedIds = <AssetId>{};
+    final transitiveRemovedIds = <AssetId>{};
     void addTransitivePrimaryOutputs(AssetId id) {
       if (transitiveRemovedIds.add(id)) {
         get(id)!.primaryOutputs.forEach(addTransitivePrimaryOutputs);
@@ -435,7 +435,7 @@ class AssetGraph implements GeneratedAssetHider {
         addTransitivePrimaryOutputs(id);
       }
     }
-    var idsToDelete = Set<AssetId>.from(transitiveRemovedIds)
+    final idsToDelete = Set<AssetId>.from(transitiveRemovedIds)
       ..removeAll(removeIds);
     await Future.wait(idsToDelete.map(delete));
 
@@ -464,7 +464,7 @@ class AssetGraph implements GeneratedAssetHider {
     if (action is InBuildPhase) {
       if (!action.builder.hasOutputFor(input)) return false;
     } else if (action is PostBuildAction) {
-      var inputExtensions = action.builder.inputExtensions;
+      final inputExtensions = action.builder.inputExtensions;
       if (!inputExtensions.any(input.path.endsWith)) {
         return false;
       }
@@ -494,7 +494,7 @@ class AssetGraph implements GeneratedAssetHider {
     String rootPackage, {
     Set<AssetId>? placeholders,
   }) {
-    var allInputs = Set<AssetId>.from(newSources);
+    final allInputs = Set<AssetId>.from(newSources);
     if (placeholders != null) allInputs.addAll(placeholders);
     for (
       var phaseNum = 0;
@@ -527,19 +527,19 @@ class AssetGraph implements GeneratedAssetHider {
     BuildPhases buildPhases,
     String rootPackage,
   ) {
-    var phaseOutputs = <AssetId>{};
-    var inputs =
+    final phaseOutputs = <AssetId>{};
+    final inputs =
         allInputs.where((input) => _actionMatches(phase, input)).toList();
-    for (var input in inputs) {
+    for (final input in inputs) {
       // We might have deleted some inputs during this loop, if they turned
       // out to be generated assets.
       if (!allInputs.contains(input)) continue;
-      var outputs = expectedOutputs(phase.builder, input);
+      final outputs = expectedOutputs(phase.builder, input);
       phaseOutputs.addAll(outputs);
       updateNode(input, (nodeBuilder) {
         nodeBuilder.primaryOutputs.addAll(outputs);
       });
-      var deleted = _addGeneratedOutputs(
+      final deleted = _addGeneratedOutputs(
         outputs,
         phaseNum,
         buildPhases,
@@ -562,9 +562,9 @@ class AssetGraph implements GeneratedAssetHider {
     Set<AssetId> allInputs,
   ) {
     var actionNumber = 0;
-    for (var action in phase.builderActions) {
-      var inputs = allInputs.where((input) => _actionMatches(action, input));
-      for (var input in inputs) {
+    for (final action in phase.builderActions) {
+      final inputs = allInputs.where((input) => _actionMatches(action, input));
+      for (final input in inputs) {
         updatePostProcessBuildStep(
           PostProcessBuildStepId(input: input, actionNumber: actionNumber),
           outputs: {},
@@ -590,9 +590,9 @@ class AssetGraph implements GeneratedAssetHider {
     required AssetId primaryInput,
     required bool isHidden,
   }) {
-    var removed = <AssetId>{};
+    final removed = <AssetId>{};
     Map<AssetId, Set<AssetId>>? computedOutputsBeforeRemoves;
-    for (var output in outputs) {
+    for (final output in outputs) {
       AssetNode? existing;
       // When any outputs aren't hidden we can pick up old generated outputs as
       // regular `AssetNode`s, we need to delete them and all their primary
@@ -614,7 +614,7 @@ class AssetGraph implements GeneratedAssetHider {
         _removeRecursive(output, removedIds: removed);
       }
 
-      var newNode = AssetNode.generated(
+      final newNode = AssetNode.generated(
         output,
         phaseNumber: phaseNumber,
         primaryInput: primaryInput,
@@ -647,7 +647,7 @@ class AssetGraph implements GeneratedAssetHider {
   ///
   /// Nodes that track inputs are [AssetNode.generated] or [AssetNode.glob].
   void _addInput(Iterable<AssetId> outputs, AssetId input) {
-    for (var output in outputs) {
+    for (final output in outputs) {
       updateNodeIfPresent(output, (nodeBuilder) {
         if (nodeBuilder.type == NodeType.generated) {
           nodeBuilder.generatedNodeState.inputs.add(input);
@@ -685,10 +685,10 @@ class AssetGraph implements GeneratedAssetHider {
     PackageGraph packageGraph,
     ReaderWriter readerWriter,
   ) async {
-    var deletedSources = <AssetId>[];
+    final deletedSources = <AssetId>[];
     // Delete all the non-hidden outputs.
     for (final id in outputs) {
-      var node = get(id)!;
+      final node = get(id)!;
       final nodeConfiguration = node.generatedNodeConfiguration!;
       if (node.wasOutput && !nodeConfiguration.isHidden) {
         var idToDelete = id;

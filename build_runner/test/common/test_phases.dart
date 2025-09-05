@@ -99,15 +99,15 @@ Future<TestBuildersResult> testPhases(
     readerWriter = readerWriter.copyWith(onDelete: onDelete);
   }
 
-  var pkgConfigId = AssetId(
+  final pkgConfigId = AssetId(
     packageGraph.root.name,
     '.dart_tool/package_config.json',
   );
   if (!await readerWriter.canRead(pkgConfigId)) {
-    var packageConfig = {
+    final packageConfig = {
       'configVersion': 2,
       'packages': [
-        for (var pkgNode in packageGraph.allPackages.values)
+        for (final pkgNode in packageGraph.allPackages.values)
           {
             'name': pkgNode.name,
             'rootUri': pkgNode.path,
@@ -120,7 +120,7 @@ Future<TestBuildersResult> testPhases(
   }
 
   inputs.forEach((serializedId, contents) {
-    var id = makeAssetId(serializedId);
+    final id = makeAssetId(serializedId);
     if (contents is String) {
       readerWriter.testing.writeString(id, contents);
     } else if (contents is List<int>) {

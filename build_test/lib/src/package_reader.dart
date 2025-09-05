@@ -130,7 +130,7 @@ class PackageAssetReader {
         'explicit `package`.',
       );
     }
-    var packageLibDir = packageConfig[package]?.packageUriRoot;
+    final packageLibDir = packageConfig[package]?.packageUriRoot;
     if (packageLibDir == null) return const Stream.empty();
     var result = const Stream<String>.empty();
     final directory = Directory.fromUri(packageLibDir);

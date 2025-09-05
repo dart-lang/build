@@ -58,11 +58,11 @@ void main() {
       );
     });
 
-    for (var trackUnusedInputs in [true, false]) {
+    for (final trackUnusedInputs in [true, false]) {
       test('can output kernel summaries for modules under lib and web '
           '${trackUnusedInputs ? 'tracking' : 'not tracking'} '
           'unused inputs', () async {
-        var builder = KernelBuilder(
+        final builder = KernelBuilder(
           platform: platform,
           outputExtension: kernelOutputExtension,
           summaryOnly: true,
@@ -71,7 +71,7 @@ void main() {
           trackUnusedInputs: trackUnusedInputs,
         );
 
-        var expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
+        final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
           'a|web/index$kernelOutputExtension': containsAllInOrder(
             utf8.encode('web/index.dart'),
           ),
@@ -83,7 +83,7 @@ void main() {
           ),
         });
 
-        var reportedUnused = <AssetId, Iterable<AssetId>>{};
+        final reportedUnused = <AssetId, Iterable<AssetId>>{};
         await testBuilders(
           [...startingBuilders, builder],
           startingAssets,
@@ -146,7 +146,7 @@ void main() {
     test(
       'print an error if there are any missing transitive modules',
       () async {
-        var logs = <LogRecord>[];
+        final logs = <LogRecord>[];
         await testBuilders(
           startingBuilders,
           startingAssets,

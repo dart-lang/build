@@ -33,8 +33,8 @@ String toJSIdentifier(String name) {
   // Escape any invalid characters
   StringBuffer? buffer;
   for (var i = 0; i < name.length; i++) {
-    var ch = name[i];
-    var needsEscape = ch == r'$' || _invalidCharInIdentifier.hasMatch(ch);
+    final ch = name[i];
+    final needsEscape = ch == r'$' || _invalidCharInIdentifier.hasMatch(ch);
     if (needsEscape && buffer == null) {
       buffer = StringBuffer(name.substring(0, i));
     }
@@ -43,7 +43,7 @@ String toJSIdentifier(String name) {
     }
   }
 
-  var result = buffer != null ? '$buffer' : name;
+  final result = buffer != null ? '$buffer' : name;
   // Ensure the identifier first character is not numeric and that the whole
   // identifier is not a keyword.
   if (result.startsWith(RegExp('[0-9]')) || invalidVariableName(result)) {

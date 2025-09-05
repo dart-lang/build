@@ -155,8 +155,10 @@ Future<BuildScriptInfo> findBuildScriptOptions() async {
 
   // Validate the builder keys in the global builder config, these should always
   // refer to actual builders.
-  var allBuilderKeys = {for (var definition in orderedBuilders) definition.key};
-  for (var globalBuilderConfig in rootBuildConfig.globalOptions.entries) {
+  final allBuilderKeys = {
+    for (final definition in orderedBuilders) definition.key,
+  };
+  for (final globalBuilderConfig in rootBuildConfig.globalOptions.entries) {
     void checkBuilderKey(String builderKey) {
       if (allBuilderKeys.contains(builderKey)) return;
       buildLog.warning(
@@ -170,8 +172,8 @@ Future<BuildScriptInfo> findBuildScriptOptions() async {
   }
 
   final applications = [
-    for (var builder in orderedBuilders) _applyBuilder(builder),
-    for (var builder in postProcessBuilderDefinitions)
+    for (final builder in orderedBuilders) _applyBuilder(builder),
+    for (final builder in postProcessBuilderDefinitions)
       _applyPostProcessBuilder(builder),
   ];
 
@@ -264,13 +266,15 @@ Expression _applyBuilder(BuilderDefinition definition) {
     if (definition.appliesBuilders.isNotEmpty)
       'appliesBuilders': _rawStringList(definition.appliesBuilders),
   };
-  var import = _buildScriptImport(definition.import);
+  final import = _buildScriptImport(definition.import);
   return refer(
     'apply',
     'package:build_runner/src/package_graph/apply_builders.dart',
   ).call([
     literalString(definition.key, raw: true),
-    literalList([for (var f in definition.builderFactories) refer(f, import)]),
+    literalList([
+      for (final f in definition.builderFactories) refer(f, import),
+    ]),
     _findToExpression(definition),
   ], namedArgs);
 }
@@ -300,7 +304,7 @@ Expression _applyPostProcessBuilder(PostProcessBuilderDefinition definition) {
         definition.defaults.releaseOptions,
       ),
   };
-  var import = _buildScriptImport(definition.import);
+  final import = _buildScriptImport(definition.import);
   return refer(
     'applyPostProcess',
     'package:build_runner/src/package_graph/apply_builders.dart',
@@ -311,7 +315,7 @@ Expression _applyPostProcessBuilder(PostProcessBuilderDefinition definition) {
 }
 
 Expression _rawStringList(List<String> strings) =>
-    literalConstList([for (var s in strings) literalString(s, raw: true)]);
+    literalConstList([for (final s in strings) literalString(s, raw: true)]);
 
 /// Returns the actual import to put in the generated script based on an import
 /// found in the build.yaml.

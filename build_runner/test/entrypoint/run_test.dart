@@ -85,8 +85,8 @@ main() {
     List<String> args, {
     StreamSink<String>? stdoutSink,
   }) async {
-    var process = await startPub('a', 'run', args: args);
-    var stdoutLines =
+    final process = await startPub('a', 'run', args: args);
+    final stdoutLines =
         process.stdout
             .transform(const Utf8Decoder())
             .transform(const LineSplitter())
@@ -95,10 +95,10 @@ main() {
             stdoutSink?.add(line);
             printOnFailure(line);
           });
-    var queue = StreamQueue(stdoutLines);
+    final queue = StreamQueue(stdoutLines);
     if (command == 'serve' || command == 'watch') {
       while (await queue.hasNext) {
-        var nextLine = await queue.next;
+        final nextLine = await queue.next;
         if (nextLine.contains(BuildLog.successPattern)) {
           process.kill();
           await process.exitCode;
@@ -111,14 +111,14 @@ main() {
       }
       throw StateError('Build process exited without success or failure.');
     }
-    var result = await process.exitCode;
+    final result = await process.exitCode;
     return result;
   }
 
   group('Building explicit output directories', () {
     void testBasicBuildCommand(String command) {
       test('is supported by the $command command', () async {
-        var args = ['build_runner', command, 'web'];
+        final args = ['build_runner', command, 'web'];
         expect(await runSingleBuild(command, args), ExitCode.success.code);
         expectOutput('web/main.dart.js', exists: true);
         expectOutput(
@@ -130,8 +130,8 @@ main() {
 
     void testBuildCommandWithOutput(String command) {
       test('works with -o and the $command command', () async {
-        var outputDirName = 'foo';
-        var args = [
+        final outputDirName = 'foo';
+        final args = [
           'build_runner',
           command,
           'web',
@@ -142,19 +142,19 @@ main() {
         expectOutput('web/main.dart.js', exists: true);
         expectOutput('test/hello_test.dart.browser_test.dart.js', exists: true);
 
-        var outputDir = Directory(p.join(d.sandbox, 'a', 'foo'));
+        final outputDir = Directory(p.join(d.sandbox, 'a', 'foo'));
         await outputDir.delete(recursive: true);
       });
     }
 
-    for (var command in ['build', 'serve', 'watch']) {
+    for (final command in ['build', 'serve', 'watch']) {
       testBasicBuildCommand(command);
       testBuildCommandWithOutput(command);
     }
 
     test('is not supported for the test command', () async {
-      var command = 'test';
-      var args = ['build_runner', command, 'web'];
+      final command = 'test';
+      final args = ['build_runner', command, 'web'];
       expect(await runSingleBuild(command, args), ExitCode.usage.code);
 
       args.addAll(['--', '-p chrome']);
@@ -163,17 +163,17 @@ main() {
   });
 
   test('test builds only the test directory by default', () async {
-    var command = 'test';
-    var args = ['build_runner', command];
+    final command = 'test';
+    final args = ['build_runner', command];
     expect(await runSingleBuild(command, args), ExitCode.success.code);
     expectOutput('web/main.dart.js', exists: false);
     expectOutput('test/hello_test.dart.browser_test.dart.js', exists: true);
   });
 
   test('hoists output correctly even with --symlink', () async {
-    var command = 'build';
-    var outputDirName = 'foo';
-    var args = [
+    final command = 'build';
+    final outputDirName = 'foo';
+    final args = [
       'build_runner',
       command,
       '-o',
@@ -181,7 +181,7 @@ main() {
       '--symlink',
     ];
     expect(await runSingleBuild(command, args), ExitCode.success.code);
-    var outputDir = Directory(p.join(d.sandbox, 'a', 'foo'));
+    final outputDir = Directory(p.join(d.sandbox, 'a', 'foo'));
     expect(
       File(p.join(outputDir.path, 'web', 'main.dart.js')).existsSync(),
       isFalse,
@@ -192,9 +192,16 @@ main() {
   });
 
   test('Duplicate output directories give a nice error', () async {
-    var command = 'build';
-    var args = ['build_runner', command, '-o', 'web:build', '-o', 'test:build'];
-    var stdoutController = StreamController<String>();
+    final command = 'build';
+    final args = [
+      'build_runner',
+      command,
+      '-o',
+      'web:build',
+      '-o',
+      'test:build',
+    ];
+    final stdoutController = StreamController<String>();
     expect(
       await runSingleBuild(command, args, stdoutSink: stdoutController.sink),
       ExitCode.usage.code,
@@ -212,9 +219,9 @@ main() {
   });
 
   test('Build directories have to be top level dirs', () async {
-    var command = 'build';
-    var args = ['build_runner', command, '-o', 'foo/bar:build'];
-    var stdoutController = StreamController<String>();
+    final command = 'build';
+    final args = ['build_runner', command, '-o', 'foo/bar:build'];
+    final stdoutController = StreamController<String>();
     expect(
       await runSingleBuild(command, args, stdoutSink: stdoutController.sink),
       ExitCode.usage.code,
@@ -232,10 +239,10 @@ main() {
   });
 
   test('Handles socket errors gracefully', () async {
-    var server = await HttpServer.bind('localhost', 8080);
+    final server = await HttpServer.bind('localhost', 8080);
     addTearDown(server.close);
 
-    var process = await runPub(
+    final process = await runPub(
       'a',
       'run',
       args: ['build_runner', 'serve', 'web:8080'],

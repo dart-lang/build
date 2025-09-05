@@ -18,10 +18,10 @@ class Terminator {
   final StreamSubscription _subscription;
 
   factory Terminator([Stream<ProcessSignal>? terminateEventStream]) {
-    var shouldTerminate = Completer<void>();
+    final shouldTerminate = Completer<void>();
     terminateEventStream ??= ProcessSignal.sigint.watch();
     var numEventsSeen = 0;
-    var terminateListener = terminateEventStream.listen((_) {
+    final terminateListener = terminateEventStream.listen((_) {
       numEventsSeen++;
       if (numEventsSeen == 1) {
         shouldTerminate.complete();

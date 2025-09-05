@@ -41,20 +41,20 @@ class MetaModuleBuilder implements Builder {
   Future build(BuildStep buildStep) async {
     if (buildStep.inputId.package == r'$sdk') return;
 
-    var libraryAssets =
+    final libraryAssets =
         await buildStep.findAssets(Glob('**$moduleLibraryExtension')).toList();
 
-    var metaModule = await MetaModule.forLibraries(
+    final metaModule = await MetaModule.forLibraries(
       buildStep,
       libraryAssets,
       strategy,
       _platform,
     );
-    var id = AssetId(
+    final id = AssetId(
       buildStep.inputId.package,
       'lib/${metaModuleExtension(_platform)}',
     );
-    var metaModules = await buildStep.fetchResource(metaModuleCache);
+    final metaModules = await buildStep.fetchResource(metaModuleCache);
     await metaModules.write(id, buildStep, metaModule);
   }
 }
