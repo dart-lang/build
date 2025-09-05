@@ -386,7 +386,11 @@ class BuildLog {
       _display.block(render());
       _display.flush();
     } else {
-      _display.message(Severity.info, _status.join(''));
+      _display.message(
+        Severity.info,
+        // Removes ANSI codes if necessary.
+        AnsiBufferLine(_status).toString(),
+      );
     }
   }
 
@@ -456,23 +460,33 @@ class BuildLog {
         .fold(0, max);
     final indent = maxProgressWidth + 1;
 
-    for (final entry in displayedProgressEntries) {
-      final phaseName = entry.key;
-
-      result.write(_renderPhase(phaseName).withHangingIndent(indent));
-    }
-
     if (displayedProgressEntries.isNotEmpty) {
-      result.writeLine([]);
+      for (final entry in displayedProgressEntries) {
+        final phaseName = entry.key;
+
+        result.write(_renderPhase(phaseName).withHangingIndent(indent));
+      }
+      result.writeEmptyLine();
     }
+
+    final renderedMessages = _messages.render();
+
+    // Log output blocks with no errors show before the status line.
+    if (renderedMessages.nonFailureLines.isNotEmpty) {
+      for (final line in renderedMessages.nonFailureLines) {
+        result.write(line);
+      }
+      result.writeEmptyLine();
+    }
+
     if (_status.isNotEmpty) {
       result.writeLine(_status);
     }
 
-    final renderedMessages = _messages.render();
-    if (renderedMessages.isNotEmpty) {
-      result.writeEmptyLine();
-      for (final line in renderedMessages) {
+    // Log output blocks that do have errors show after the status line.
+    if (renderedMessages.failureLines.isNotEmpty) {
+      if (_status.isNotEmpty) result.writeEmptyLine();
+      for (final line in renderedMessages.failureLines) {
         result.write(line);
       }
     }
