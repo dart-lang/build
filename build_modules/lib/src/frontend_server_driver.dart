@@ -38,43 +38,49 @@ class FrontendServerProxyDriver {
     _frontendServer = frontendServer;
   }
 
-  Future<CompilerOutput> compileAndRecord(String entryPoint) async {
-    var compilerOutput = await compile(entryPoint);
-    if (compilerOutput == null) {
-      throw Exception('Frontend Server failed to compile $entryPoint');
-    }
-    _frontendServer!.recordCompilerOutput(compilerOutput);
-    _frontendServer!.writeCompilerOutput(compilerOutput);
-    return compilerOutput;
-  }
-
+  /// Sends a recompile request to the Frontend Server at [entrypoint] with
+  /// [invalidatedFiles].
+  ///
+  /// The initial recompile request is treated as a full compile.
+  ///
+  /// [filesToWrite] contains JS files that should be written to the filesystem.
+  /// If left empty, all files are written.
   Future<CompilerOutput> recompileAndRecord(
-    String entryPoint,
+    String entrypoint,
     List<Uri> invalidatedFiles,
+    Iterable<String> filesToWrite,
   ) async {
-    var compilerOutput = await recompile(entryPoint, invalidatedFiles);
+    var compilerOutput = await recompile(entrypoint, invalidatedFiles);
     if (compilerOutput == null) {
-      throw Exception('Frontend Server failed to recompile $entryPoint');
+      throw Exception('Frontend Server failed to recompile $entrypoint');
     }
-    _frontendServer!.recordCompilerOutput(compilerOutput);
-    _frontendServer!.writeCompilerOutput(compilerOutput);
+    if (compilerOutput.errorCount != 0 || compilerOutput.errorMessage != null) {
+      throw Exception(
+        'Frontend Server encountered errors during compilation: '
+        '${compilerOutput.errorMessage}',
+      );
+    }
+    _frontendServer!.recordFiles();
+    for (var file in filesToWrite) {
+      _frontendServer!.writeFile(file);
+    }
     return compilerOutput;
   }
 
-  Future<CompilerOutput?> compile(String entryPoint) async {
+  Future<CompilerOutput?> compile(String entrypoint) async {
     final completer = Completer<CompilerOutput?>();
-    _requestQueue.add(_CompileRequest(entryPoint, completer));
+    _requestQueue.add(_CompileRequest(entrypoint, completer));
     if (!_isProcessing) _processQueue();
     return completer.future;
   }
 
   Future<CompilerOutput?> recompile(
-    String entryPoint,
+    String entrypoint,
     List<Uri> invalidatedFiles,
   ) async {
     final completer = Completer<CompilerOutput?>();
     _requestQueue.add(
-      _RecompileRequest(entryPoint, invalidatedFiles, completer),
+      _RecompileRequest(entrypoint, invalidatedFiles, completer),
     );
     if (!_isProcessing) _processQueue();
     return completer.future;
@@ -89,18 +95,18 @@ class FrontendServerProxyDriver {
     try {
       if (request is _CompileRequest) {
         _cachedOutput =
-            output = await _frontendServer!.compile(request.entryPoint);
+            output = await _frontendServer!.compile(request.entrypoint);
       } else if (request is _RecompileRequest) {
         // Compile the first [_RecompileRequest] as a [_CompileRequest] to warm
         // up the Frontend Server.
         if (_cachedOutput == null) {
           output =
               _cachedOutput = await _frontendServer!.compile(
-                request.entryPoint,
+                request.entrypoint,
               );
         } else {
           output = await _frontendServer!.recompile(
-            request.entryPoint,
+            request.entrypoint,
             request.invalidatedFiles,
           );
         }
@@ -131,14 +137,14 @@ abstract class _CompilationRequest {
 }
 
 class _CompileRequest extends _CompilationRequest {
-  final String entryPoint;
-  _CompileRequest(this.entryPoint, super.completer);
+  final String entrypoint;
+  _CompileRequest(this.entrypoint, super.completer);
 }
 
 class _RecompileRequest extends _CompilationRequest {
-  final String entryPoint;
+  final String entrypoint;
   final List<Uri> invalidatedFiles;
-  _RecompileRequest(this.entryPoint, this.invalidatedFiles, super.completer);
+  _RecompileRequest(this.entrypoint, this.invalidatedFiles, super.completer);
 }
 
 /// A single instance of the Frontend Server that persists across
@@ -202,19 +208,19 @@ class PersistentFrontendServer {
     );
   }
 
-  Future<CompilerOutput?> compile(String entryPoint) {
+  Future<CompilerOutput?> compile(String entrypoint) {
     _stdoutHandler.reset();
-    _stdinController.add('compile $entryPoint');
+    _stdinController.add('compile $entrypoint');
     return _stdoutHandler.compilerOutput!.future;
   }
 
   Future<CompilerOutput?> recompile(
-    String entryPoint,
+    String entrypoint,
     List<Uri> invalidatedFiles,
   ) {
     _stdoutHandler.reset();
     final inputKey = const Uuid().v4();
-    _stdinController.add('recompile $entryPoint $inputKey');
+    _stdinController.add('recompile $entrypoint $inputKey');
     for (final file in invalidatedFiles) {
       _stdinController.add(file.toString());
     }
@@ -226,13 +232,8 @@ class PersistentFrontendServer {
     _stdinController.add('accept');
   }
 
-  void recordCompilerOutput(CompilerOutput output) {
-    if (output.errorCount != 0 || output.errorMessage != null) {
-      throw StateError(
-        'Attempting to record compiler output with errors: '
-        '${output.errorMessage}',
-      );
-    }
+  /// Records all modified files into the in-memory filesystem.
+  void recordFiles() {
     final outputDillPath = outputDillUri.toFilePath();
     final codeFile = File('$outputDillPath.sources');
     final manifestFile = File('$outputDillPath.json');
@@ -246,6 +247,10 @@ class PersistentFrontendServer {
       throw StateError('Attempting to write compiler output with errors.');
     }
     _fileSystem.writeToDisk(_fileSystem.jsRootUri);
+  }
+
+  void writeFile(String fileName) {
+    _fileSystem.writeFileToDisk(_fileSystem.jsRootUri, fileName);
   }
 
   Future<void> shutdown() async {
@@ -290,16 +295,57 @@ class WebMemoryFilesystem {
 
   WebMemoryFilesystem(this.jsRootUri);
 
+  /// Clears all files registered in the filesystem.
+  void clearWritableState() {
+    files.clear();
+    sourcemaps.clear();
+    metadata.clear();
+  }
+
   /// Writes the entirety of this filesystem to [outputDirectoryUri].
-  ///
-  /// [clearWritableState] Should only be set on a reload or restart.
-  void writeToDisk(Uri outputDirectoryUri, {bool clearWritableState = false}) {
+  void writeToDisk(Uri outputDirectoryUri) {
     assert(
       Directory.fromUri(outputDirectoryUri).existsSync(),
       '$outputDirectoryUri does not exist.',
     );
     var filesToWrite = {...files, ...sourcemaps, ...metadata};
-    filesToWrite.forEach((path, content) {
+    _writeToDisk(outputDirectoryUri, filesToWrite);
+  }
+
+  /// Writes [fileName] and its associated sourcemap and metadata files to
+  /// [outputDirectoryUri].
+  void writeFileToDisk(Uri outputDirectoryUri, String fileName) {
+    assert(
+      Directory.fromUri(outputDirectoryUri).existsSync(),
+      '$outputDirectoryUri does not exist.',
+    );
+    var sourceFile = fileName;
+    if (sourceFile.startsWith('package:')) {
+      sourceFile =
+          'packages/${sourceFile.substring('package:'.length, sourceFile.length)}';
+    } else if (sourceFile.startsWith('$multiRootScheme:///')) {
+      sourceFile = sourceFile.substring(
+        '$multiRootScheme:///'.length,
+        sourceFile.length,
+      );
+    }
+    var sourceMapFile = '$sourceFile.map';
+    var metadataFile = '$sourceFile.metadata';
+    var filesToWrite = {
+      sourceFile: files[sourceFile]!,
+      sourceMapFile: sourcemaps[sourceMapFile]!,
+      metadataFile: metadata[metadataFile]!,
+    };
+
+    _writeToDisk(outputDirectoryUri, filesToWrite);
+  }
+
+  /// Writes [rawFilesToWrite] to [outputDirectoryUri].
+  void _writeToDisk(
+    Uri outputDirectoryUri,
+    Map<String, Uint8List> rawFilesToWrite,
+  ) {
+    rawFilesToWrite.forEach((path, content) {
       final outputFileUri = outputDirectoryUri.resolve(path);
       var outputFilePath = outputFileUri.toFilePath().replaceFirst(
         '.dart.lib.js',
@@ -309,10 +355,6 @@ class WebMemoryFilesystem {
       outputFile.createSync(recursive: true);
       outputFile.writeAsBytesSync(content);
     });
-    if (clearWritableState) {
-      files.clear();
-      sourcemaps.clear();
-    }
   }
 
   /// Update the filesystem with the provided source and manifest files.

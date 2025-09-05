@@ -66,17 +66,13 @@ class DdcFrontendServerBuilder implements Builder {
       () => module.computeTransitiveAssets(buildStep),
     );
     final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
-    // Resolve the 'real' entrypoint we'll pass to FES for compilation.
-    final webEntrypointAsset = AssetId.resolve(Uri.parse(entrypoint));
     await buildStep.trackStage(
       'EnsureAssets',
-      () => scratchSpace.ensureAssets([
-        ...transitiveAssets,
-        webEntrypointAsset,
-      ], buildStep),
+      () => scratchSpace.ensureAssets(transitiveAssets, buildStep),
     );
     var ddcEntrypointId = module.primarySource;
     var jsOutputId = ddcEntrypointId.changeExtension(jsModuleExtension);
+    var jsFESOutputId = ddcEntrypointId.changeExtension('.dart.lib.js');
 
     final frontendServer = await buildStep.fetchResource(
       persistentFrontendServerResource,
@@ -85,13 +81,18 @@ class DdcFrontendServerBuilder implements Builder {
       frontendServerProxyDriverResource,
     );
     driver.init(frontendServer);
-    final invalidatedFileUris = [for (var source in module.sources) source.uri];
+
+    // Request from the Frontend Server exactly the JS file requested by
+    // build_runner. Frontend Server's recompilation logic will avoid
+    // extraneous recompilation.
+    var invalidatedFiles = [ddcEntrypointId.uri];
     await driver.recompileAndRecord(
       sourceArg(ddcEntrypointId),
-      invalidatedFileUris,
+      invalidatedFiles,
+      [sourceArg(jsFESOutputId)],
     );
     final outputFile = scratchSpace.fileFor(jsOutputId);
-    // Write an empty file if this file was deemed extraneous by FES.
+    // Write an empty file if this output was deemed extraneous by FES.
     if (!!await outputFile.exists()) {
       await outputFile.create(recursive: true);
     }
