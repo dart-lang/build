@@ -6,8 +6,8 @@ import 'dart:math';
 
 import 'package:build/build.dart' show AssetId;
 
-import '../build_script_generate/build_process_state.dart';
-import '../generate/phase.dart';
+import '../bootstrap/build_process_state.dart';
+import '../build_plan/phase.dart';
 import 'ansi_buffer.dart';
 import 'build_log_configuration.dart';
 import 'build_log_logger.dart';

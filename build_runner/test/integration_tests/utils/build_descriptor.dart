@@ -9,8 +9,8 @@ import 'dart:isolate';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
+import 'package:build_runner/src/constants.dart';
 import 'package:build_runner/src/logging/build_log.dart';
-import 'package:build_runner/src/util/constants.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:stack_trace/stack_trace.dart';
@@ -195,7 +195,7 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
-import 'package:build_runner/src/package_graph/apply_builders.dart';
+import 'package:build_runner/src/bootstrap/apply_builders.dart';
 import 'package:build_test/build_test.dart';
 
 ${_builders(callingScript)}
