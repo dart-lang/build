@@ -1,4 +1,4 @@
-## 3.4.0-wip
+## 3.4.0
 
 - Support post process builders in `testBuilders`. And, add `appliesBuilders`
   so that builders can apply post process builders.
