@@ -1,4 +1,4 @@
-## 2.7.3-wip
+## 2.8.0
 
 - Make errors more prominent in log output, highlight in red.
 - Remove "deleting declared outputs" warning.
