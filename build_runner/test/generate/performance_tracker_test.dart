@@ -7,9 +7,9 @@ import 'dart:convert';
 import 'package:build/build.dart';
 import 'package:build_runner/src/generate/performance_tracker.dart';
 import 'package:build_runner/src/generate/phase.dart';
+import 'package:build_runner/src/generate/timing.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
-import 'package:timing/src/clock.dart';
 
 void main() {
   group('PerformanceTracker', () {

@@ -10,10 +10,10 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
-import 'package:timing/timing.dart';
 
 import 'phase.dart';
 import 'run_builder.dart';
+import 'timing.dart';
 
 part 'performance_tracker.g.dart';
 

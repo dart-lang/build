@@ -1,9 +1,12 @@
 ## 2.7.3-wip
 
+- Make errors more prominent in log output, highlight in red.
+- Remove "deleting declared outputs" warning.
 - Bug fix: fix incorrect display of some "usage" messages.
 - Move code from `build_resolvers` into `build_runner`.
 - Move code from `build_runner_core` into `build_runner`.
-- Remove unused deps: `build_resolvers`, `build_runner_core`.
+- Move code from `timing` into `build_runner`.
+- Remove unused deps: `build_resolvers`, `build_runner_core`, `timing`.
 
 ## 2.7.2
 
