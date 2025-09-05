@@ -18,9 +18,9 @@ import 'test_reader_writer.dart';
 
 /// The implementation behind [TestReaderWriter].
 ///
-/// It exposes `build_runner` internals and should not be used directly outside
-/// this package.
-class InMemoryAssetReaderWriter extends ReaderWriter
+/// It exposes `build_runner` internals and so is only for use in `build_test`
+/// and `build_runner`.
+class InternalTestReaderWriter extends ReaderWriter
     implements TestReaderWriter {
   /// Assets read directly from this reader/writer.
   final Set<AssetId> assetsRead;
@@ -33,9 +33,9 @@ class InMemoryAssetReaderWriter extends ReaderWriter
   /// Create a new asset reader/writer.
   ///
   /// If provided [rootPackage] is the default package when globbing for files.
-  factory InMemoryAssetReaderWriter({String? rootPackage}) {
+  factory InternalTestReaderWriter({String? rootPackage}) {
     final filesystem = InMemoryFilesystem();
-    return InMemoryAssetReaderWriter.using(
+    return InternalTestReaderWriter.using(
       assetsRead: {},
       assetsWritten: {},
       rootPackage: rootPackage ?? 'unset',
@@ -49,7 +49,7 @@ class InMemoryAssetReaderWriter extends ReaderWriter
     );
   }
 
-  InMemoryAssetReaderWriter.using({
+  InternalTestReaderWriter.using({
     required this.assetsRead,
     required this.assetsWritten,
     required super.rootPackage,
@@ -65,11 +65,11 @@ class InMemoryAssetReaderWriter extends ReaderWriter
   }
 
   @override
-  InMemoryAssetReaderWriter copyWith({
+  InternalTestReaderWriter copyWith({
     FilesystemCache? cache,
     GeneratedAssetHider? generatedAssetHider,
     void Function(AssetId)? onDelete,
-  }) => InMemoryAssetReaderWriter.using(
+  }) => InternalTestReaderWriter.using(
     assetsRead: assetsRead,
     assetsWritten: assetsWritten,
     rootPackage: rootPackage,
@@ -175,7 +175,7 @@ class InMemoryAssetFinder implements AssetFinder {
 }
 
 class _ReaderWriterTestingImpl implements ReaderWriterTesting {
-  final InMemoryAssetReaderWriter _readerWriter;
+  final InternalTestReaderWriter _readerWriter;
 
   _ReaderWriterTestingImpl(this._readerWriter);
 

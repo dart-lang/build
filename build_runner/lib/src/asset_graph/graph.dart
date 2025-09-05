@@ -15,7 +15,7 @@ import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:watcher/watcher.dart';
 
-import '../asset/writer.dart';
+import '../asset/reader_writer.dart';
 import '../generate/build_phases.dart';
 import '../generate/phase.dart';
 import '../library_cycle_graph/phased_asset_deps.dart';
@@ -111,7 +111,7 @@ class AssetGraph implements GeneratedAssetHider {
     Set<AssetId> sources,
     Set<AssetId> internalSources,
     PackageGraph packageGraph,
-    AssetReader digestReader,
+    ReaderWriter readerWriter,
   ) async {
     var graph = AssetGraph._(
       buildPhases,
@@ -130,11 +130,11 @@ class AssetGraph implements GeneratedAssetHider {
     // Pre-emptively compute digests for the nodes we know have outputs.
     await graph._setDigests(
       sources.where((id) => graph.get(id)?.primaryOutputs.isNotEmpty == true),
-      digestReader,
+      readerWriter,
     );
     // Always compute digests for all internal nodes.
     graph._addInternalSources(internalSources);
-    await graph._setDigests(internalSources, digestReader);
+    await graph._setDigests(internalSources, readerWriter);
     return graph;
   }
 
@@ -251,14 +251,14 @@ class AssetGraph implements GeneratedAssetHider {
     }
   }
 
-  /// Uses [digestReader] to compute the [Digest] for nodes with [ids] and set
+  /// Uses [readerWriter] to compute the [Digest] for nodes with [ids] and set
   /// the `lastKnownDigest` field.
   Future<void> _setDigests(
     Iterable<AssetId> ids,
-    AssetReader digestReader,
+    ReaderWriter readerWriter,
   ) async {
     for (final id in ids) {
-      final digest = await digestReader.digest(id);
+      final digest = await readerWriter.digest(id);
       updateNode(id, (nodeBuilder) {
         nodeBuilder.digest = digest;
       });
@@ -382,7 +382,7 @@ class AssetGraph implements GeneratedAssetHider {
     Map<AssetId, ChangeType> updates,
     String rootPackage,
     Future Function(AssetId id) delete,
-    AssetReader digestReader,
+    ReaderWriter readerWriter,
   ) async {
     var newIds = <AssetId>{};
     var modifyIds = <AssetId>{};
@@ -417,7 +417,7 @@ class AssetGraph implements GeneratedAssetHider {
                 (node.primaryOutputs.isNotEmpty || node.digest != null),
           )
           .map((node) => node.id),
-      digestReader,
+      readerWriter,
     );
 
     // Compute generated nodes that will no longer be output because their
@@ -683,7 +683,7 @@ class AssetGraph implements GeneratedAssetHider {
   /// Returns the assets that were deleted.
   Future<Iterable<AssetId>> deleteOutputs(
     PackageGraph packageGraph,
-    RunnerAssetWriter writer,
+    ReaderWriter readerWriter,
   ) async {
     var deletedSources = <AssetId>[];
     // Delete all the non-hidden outputs.
@@ -700,7 +700,7 @@ class AssetGraph implements GeneratedAssetHider {
           idToDelete = AssetId(packageGraph.root.name, id.path);
         }
         deletedSources.add(idToDelete);
-        await writer.delete(idToDelete);
+        await readerWriter.delete(idToDelete);
       }
     }
     return deletedSources;

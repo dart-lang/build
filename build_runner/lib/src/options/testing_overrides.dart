@@ -10,7 +10,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:logging/logging.dart';
 import 'package:watcher/watcher.dart';
 
-import '../asset/writer.dart';
+import '../asset/reader_writer.dart';
 import '../generate/build_directory.dart';
 import '../generate/build_result.dart';
 import '../generate/finalized_assets_view.dart';
@@ -25,17 +25,16 @@ class TestingOverrides {
   final Future<BuildResult> Function(
     BuildResult,
     FinalizedAssetsView,
-    AssetReader reader,
+    ReaderWriter readerWriter,
     BuiltSet<BuildDirectory>,
   )?
   finalizeBuild;
   final void Function(LogRecord)? onLog;
   final PackageGraph? packageGraph;
-  final AssetReader? reader;
+  final ReaderWriter? readerWriter;
   final void Function(AssetId, Iterable<AssetId>)? reportUnusedAssetsForInput;
   final Resolvers? resolvers;
   final Stream<ProcessSignal>? terminateEventStream;
-  final RunnerAssetWriter? writer;
 
   const TestingOverrides({
     this.buildConfig,
@@ -45,10 +44,9 @@ class TestingOverrides {
     this.finalizeBuild,
     this.onLog,
     this.packageGraph,
-    this.reader,
+    this.readerWriter,
     this.reportUnusedAssetsForInput,
     this.resolvers,
     this.terminateEventStream,
-    this.writer,
   });
 }

@@ -10,6 +10,7 @@ import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
+import '../asset/reader_writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../library_cycle_graph/phased_reader.dart';
@@ -17,12 +18,6 @@ import '../library_cycle_graph/phased_value.dart';
 import '../package_graph/package_graph.dart';
 import '../package_graph/target_graph.dart';
 import '../state/asset_finder.dart';
-import '../state/asset_path_provider.dart';
-import '../state/filesystem.dart';
-import '../state/filesystem_cache.dart';
-import '../state/generated_asset_hider.dart';
-import '../state/reader_state.dart';
-import '../state/reader_writer.dart';
 import 'input_tracker.dart';
 import 'phase.dart';
 
@@ -97,8 +92,7 @@ class RunningBuildStep {
   });
 }
 
-/// An [AssetReader] with a lifetime equivalent to that of a single step in a
-/// build.
+/// File operations for a single step in a build.
 ///
 /// A step is a single Builder and primary input (or package for package
 /// builders) combination.
@@ -108,15 +102,13 @@ class RunningBuildStep {
 ///
 /// Tracks the assets and globs read during this step for input dependency
 /// tracking.
-class SingleStepReaderWriter extends AssetReader
-    implements AssetReaderState, AssetReaderWriter, PhasedReader {
-  @override
+class SingleStepReaderWriter implements PhasedReader {
   late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);
 
   final RunningBuild? _runningBuild;
   final RunningBuildStep? _runningBuildStep;
 
-  final AssetReaderWriter _delegate;
+  final ReaderWriter _delegate;
 
   final InputTracker inputTracker;
 
@@ -126,7 +118,7 @@ class SingleStepReaderWriter extends AssetReader
   SingleStepReaderWriter({
     required RunningBuild? runningBuild,
     required RunningBuildStep? runningBuildStep,
-    required AssetReaderWriter readerWriter,
+    required ReaderWriter readerWriter,
     required this.inputTracker,
     required this.assetsWritten,
   }) : _runningBuild = runningBuild,
@@ -150,72 +142,15 @@ class SingleStepReaderWriter extends AssetReader
     }
   }
 
-  @override
-  SingleStepReaderWriter copyWith({
-    FilesystemCache? cache,
-    GeneratedAssetHider? generatedAssetHider,
-  }) => SingleStepReaderWriter(
-    runningBuild: _runningBuild,
-    runningBuildStep: _runningBuildStep,
-    readerWriter: _delegate.copyWith(
-      cache: cache,
-      generatedAssetHider: generatedAssetHider,
-    ),
-    inputTracker: inputTracker,
-    assetsWritten: assetsWritten,
-  );
-
-  /// Constructs a `SingleStepReaderWriter` from [reader] and [writer].
-  ///
-  /// If [reader] and [writer] are the same `SingleStepReaderWriter`, returns
-  /// it directly without creating a new instance. This is helpful when a real
-  /// `SingleStepReaderWriter` is passed as `AssetReader` and `AssetWriter`
-  /// through public-facing APIs.
-  ///
-  /// Otherwise, this constructor is for a cut down use case where the generator
-  /// runs outside of a build, which is mostly for testing.
-  factory SingleStepReaderWriter.from({
-    required AssetReader reader,
-    required AssetWriter writer,
-  }) {
-    AssetReaderWriter readerWriter;
-    if (identical(reader, writer) && reader is AssetReaderWriter) {
-      readerWriter = reader;
-    } else {
-      readerWriter = DelegatingAssetReaderWriter(
-        reader: reader,
-        writer: writer,
-      );
-    }
-
-    if (readerWriter is SingleStepReaderWriter) {
-      return readerWriter;
-    } else {
-      return SingleStepReaderWriter.fakeFor(readerWriter);
-    }
-  }
-
-  factory SingleStepReaderWriter.fakeFor(AssetReaderWriter assetReaderWriter) {
+  factory SingleStepReaderWriter.fakeFor(ReaderWriter readerWriter) {
     return SingleStepReaderWriter(
       runningBuild: null,
       runningBuildStep: null,
-      readerWriter: assetReaderWriter,
-      inputTracker: InputTracker(assetReaderWriter.filesystem),
+      readerWriter: readerWriter,
+      inputTracker: InputTracker(readerWriter.filesystem),
       assetsWritten: {},
     );
   }
-
-  @override
-  AssetPathProvider get assetPathProvider => _delegate.assetPathProvider;
-
-  @override
-  GeneratedAssetHider get generatedAssetHider => _delegate.generatedAssetHider;
-
-  @override
-  Filesystem get filesystem => _delegate.filesystem;
-
-  @override
-  FilesystemCache get cache => _delegate.cache;
 
   @override
   int get phase => _runningBuildStep?.phaseNumber ?? 0;
@@ -266,7 +201,6 @@ class SingleStepReaderWriter extends AssetReader
     return readability.canRead;
   }
 
-  @override
   Future<bool> canRead(AssetId id, {bool track = true}) async {
     final isReadable = await _isReadable(
       id,
@@ -290,7 +224,6 @@ class SingleStepReaderWriter extends AssetReader
     return true;
   }
 
-  @override
   Future<Digest> digest(AssetId id) async {
     final isReadable = await _isReadable(id);
 
@@ -300,7 +233,6 @@ class SingleStepReaderWriter extends AssetReader
     return _ensureDigest(id);
   }
 
-  @override
   Future<List<int>> readAsBytes(AssetId id) async {
     final isReadable = await _isReadable(id);
     if (!isReadable) {
@@ -310,7 +242,6 @@ class SingleStepReaderWriter extends AssetReader
     return _delegate.readAsBytes(id);
   }
 
-  @override
   Future<String> readAsString(
     AssetId id, {
     Encoding encoding = utf8,
@@ -323,10 +254,6 @@ class SingleStepReaderWriter extends AssetReader
     await _ensureDigest(id);
     return _delegate.readAsString(id, encoding: encoding);
   }
-
-  // This is only for generators, so only `BuildStep` needs to implement it.
-  @override
-  Stream<AssetId> findAssets(Glob glob) => throw UnimplementedError();
 
   Stream<AssetId> _findAssets(Glob glob, String? package) {
     if (_runningBuild == null) {
@@ -429,13 +356,11 @@ class SingleStepReaderWriter extends AssetReader
     return globNodeId;
   }
 
-  @override
   Future<void> writeAsBytes(AssetId id, List<int> bytes) {
     assetsWritten.add(id);
     return _delegate.writeAsBytes(id, bytes);
   }
 
-  @override
   Future<void> writeAsString(
     AssetId id,
     String contents, {

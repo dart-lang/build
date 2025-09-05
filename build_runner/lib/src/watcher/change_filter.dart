@@ -6,10 +6,10 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:watcher/watcher.dart';
 
+import '../asset/reader_writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../package_graph/target_graph.dart';
-import '../state/reader_state.dart';
 import '../util/constants.dart';
 import 'asset_change.dart';
 
@@ -20,7 +20,7 @@ FutureOr<bool> shouldProcess(
   TargetGraph targetGraph,
   bool willCreateOutputDir,
   Set<AssetId> expectedDeletes,
-  AssetReader reader,
+  ReaderWriter readerWriter,
 ) {
   if (_isCacheFile(change) && !assetGraph.contains(change.id)) return false;
   var node = assetGraph.get(change.id);
@@ -29,8 +29,8 @@ FutureOr<bool> shouldProcess(
     if (_isAddOrEditOnGeneratedFile(node, change.type)) return false;
     if (change.type == ChangeType.MODIFY) {
       // Was it really modified or just touched?
-      reader.cache.invalidate([change.id]);
-      return reader
+      readerWriter.cache.invalidate([change.id]);
+      return readerWriter
           .digest(change.id)
           .then((newDigest) => node.digest != newDigest);
     }

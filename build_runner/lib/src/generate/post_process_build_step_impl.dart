@@ -9,12 +9,13 @@ import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:crypto/crypto.dart' show Digest;
 
+import 'single_step_reader_writer.dart';
+
 class PostProcessBuildStepImpl implements PostProcessBuildStep {
   @override
   final AssetId inputId;
 
-  final AssetReader _reader;
-  final AssetWriter _writer;
+  final SingleStepReaderWriter _readerWriter;
   final void Function(AssetId) _addAsset;
   final void Function(AssetId) _deleteAsset;
 
@@ -23,8 +24,7 @@ class PostProcessBuildStepImpl implements PostProcessBuildStep {
 
   PostProcessBuildStepImpl(
     this.inputId,
-    this._reader,
-    this._writer,
+    this._readerWriter,
     this._addAsset,
     this._deleteAsset,
   );
@@ -32,22 +32,22 @@ class PostProcessBuildStepImpl implements PostProcessBuildStep {
   @override
   Future<Digest> digest(AssetId id) =>
       inputId == id
-          ? _reader.digest(id)
+          ? _readerWriter.digest(id)
           : Future.error(InvalidInputException(id));
 
   @override
-  Future<List<int>> readInputAsBytes() => _reader.readAsBytes(inputId);
+  Future<List<int>> readInputAsBytes() => _readerWriter.readAsBytes(inputId);
 
   @override
   Future<String> readInputAsString({Encoding encoding = utf8}) =>
-      _reader.readAsString(inputId, encoding: encoding);
+      _readerWriter.readAsString(inputId, encoding: encoding);
 
   @override
   Future<void> writeAsBytes(AssetId id, FutureOr<List<int>> bytes) {
     _addAsset(id);
     var done = _futureOrWrite(
       bytes,
-      (List<int> b) => _writer.writeAsBytes(id, b),
+      (List<int> b) => _readerWriter.writeAsBytes(id, b),
     );
     _writeResults.add(Result.capture(done));
     return done;
@@ -62,7 +62,7 @@ class PostProcessBuildStepImpl implements PostProcessBuildStep {
     _addAsset(id);
     var done = _futureOrWrite(
       content,
-      (String c) => _writer.writeAsString(id, c, encoding: encoding),
+      (String c) => _readerWriter.writeAsString(id, c, encoding: encoding),
     );
     _writeResults.add(Result.capture(done));
     return done;

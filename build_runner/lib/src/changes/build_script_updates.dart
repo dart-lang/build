@@ -10,6 +10,7 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
+import '../asset/reader_writer.dart';
 import '../asset_graph/graph.dart';
 import '../logging/build_log.dart';
 import '../package_graph/package_graph.dart';
@@ -21,19 +22,23 @@ abstract class BuildScriptUpdates {
   /// [updatedIds].
   bool hasBeenUpdated(Set<AssetId> updatedIds);
 
-  /// Creates a [BuildScriptUpdates] object, using [reader] to ensure that
+  /// Creates a [BuildScriptUpdates] object, using [readerWriter] to ensure that
   /// the [assetGraph] is tracking digests for all transitive sources.
   ///
   /// If [disabled] is `true` then all checks are skipped and
   /// [hasBeenUpdated] will always return `false`.
   static Future<BuildScriptUpdates> create(
-    AssetReader reader,
+    ReaderWriter readerWriter,
     PackageGraph packageGraph,
     AssetGraph assetGraph, {
     bool disabled = false,
   }) async {
     if (disabled) return _NoopBuildScriptUpdates();
-    return _MirrorBuildScriptUpdates.create(reader, packageGraph, assetGraph);
+    return _MirrorBuildScriptUpdates.create(
+      readerWriter,
+      packageGraph,
+      assetGraph,
+    );
   }
 }
 
@@ -48,7 +53,7 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
   );
 
   static Future<BuildScriptUpdates> create(
-    AssetReader reader,
+    ReaderWriter readerWriter,
     PackageGraph packageGraph,
     AssetGraph graph,
   ) async {
@@ -74,7 +79,7 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
         for (var id in allSources) {
           final node = graph.get(id)!;
           if (node.digest == null) {
-            final digest = await reader.digest(id);
+            final digest = await readerWriter.digest(id);
             graph.updateNode(id, (nodeBuilder) {
               nodeBuilder.digest = digest;
             });

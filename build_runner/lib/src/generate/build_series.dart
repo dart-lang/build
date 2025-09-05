@@ -9,14 +9,12 @@ import 'package:built_collection/built_collection.dart';
 import 'package:watcher/watcher.dart';
 
 import '../asset/finalized_reader.dart';
-import '../asset/writer.dart';
+import '../asset/reader_writer.dart';
 import '../asset_graph/graph.dart';
 import '../build_plan.dart';
 import '../changes/build_script_updates.dart';
 import '../commands/build_filter.dart';
 import '../state/filesystem_cache.dart';
-import '../state/reader_state.dart';
-import '../state/reader_writer.dart';
 import 'build.dart';
 import 'build_definition.dart';
 import 'build_directory.dart';
@@ -41,8 +39,7 @@ class BuildSeries {
   final BuildScriptUpdates? buildScriptUpdates;
 
   final FinalizedReader finalizedReader;
-  final AssetReaderWriter readerWriter;
-  late final RunnerAssetWriter deleteWriter;
+  final ReaderWriter readerWriter;
   final ResourceManager resourceManager = ResourceManager();
 
   /// For the first build only, updates from the previous serialized build
@@ -63,22 +60,13 @@ class BuildSeries {
     this.buildScriptUpdates,
     this.finalizedReader,
     this.updatesFromLoad,
-  ) : readerWriter = buildPlan.reader.copyWith(
+  ) : readerWriter = buildPlan.readerWriter.copyWith(
         generatedAssetHider: assetGraph,
         cache:
             buildPlan.buildOptions.enableLowResourcesMode
                 ? const PassthroughFilesystemCache()
                 : InMemoryFilesystemCache(),
-      ) {
-    // Prefer to use `readerWriter` for deletes if possible, so deletes can go
-    // to the write cache.
-    // TODO(davidmorgan): clean up setup so it's always possible.
-    if (readerWriter is RunnerAssetWriter) {
-      deleteWriter = readerWriter as RunnerAssetWriter;
-    } else {
-      deleteWriter = buildPlan.writer.copyWith(generatedAssetHider: assetGraph);
-    }
-  }
+      );
 
   /// Runs a single build.
   ///
@@ -114,7 +102,6 @@ class BuildSeries {
       ),
       assetGraph: assetGraph,
       readerWriter: readerWriter,
-      deleteWriter: deleteWriter,
       resourceManager: resourceManager,
     );
     if (firstBuild) firstBuild = false;
@@ -126,14 +113,13 @@ class BuildSeries {
     var buildDefinition = await BuildDefinition.prepareWorkspace(
       packageGraph: buildPlan.packageGraph,
       targetGraph: buildPlan.targetGraph,
-      reader: buildPlan.reader,
-      writer: buildPlan.writer,
+      readerWriter: buildPlan.readerWriter,
       buildPhases: buildPlan.buildPhases,
       skipBuildScriptCheck: buildPlan.buildOptions.skipBuildScriptCheck,
     );
 
     var finalizedReader = FinalizedReader(
-      buildPlan.reader.copyWith(
+      buildPlan.readerWriter.copyWith(
         generatedAssetHider: buildDefinition.assetGraph,
       ),
       buildDefinition.assetGraph,

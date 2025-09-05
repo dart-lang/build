@@ -73,7 +73,9 @@ Future<BuildResult> _doBuild(
   packageGraph ??= buildPackageGraph({
     rootPackage('a', path: path.absolute('a')): [],
   });
-  final readerWriter = TestReaderWriter(rootPackage: packageGraph.root.name);
+  final readerWriter = InternalTestReaderWriter(
+    rootPackage: packageGraph.root.name,
+  );
   inputs.forEach((serializedId, contents) {
     readerWriter.writeAsString(makeAssetId(serializedId), contents);
   });
@@ -86,8 +88,7 @@ Future<BuildResult> _doBuild(
       skipBuildScriptCheck: true,
     ),
     testingOverrides: TestingOverrides(
-      reader: readerWriter,
-      writer: readerWriter,
+      readerWriter: readerWriter,
       packageGraph: packageGraph,
       onLog: onLog,
     ),

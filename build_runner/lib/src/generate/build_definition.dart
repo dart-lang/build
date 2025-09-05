@@ -8,7 +8,7 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:watcher/watcher.dart';
 
-import '../asset/writer.dart';
+import '../asset/reader_writer.dart';
 import '../asset_graph/exceptions.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/graph_loader.dart';
@@ -40,16 +40,14 @@ class BuildDefinition {
   static Future<BuildDefinition> prepareWorkspace({
     required PackageGraph packageGraph,
     required TargetGraph targetGraph,
-    required AssetReader reader,
-    required RunnerAssetWriter writer,
+    required ReaderWriter readerWriter,
     required BuildPhases buildPhases,
     required bool skipBuildScriptCheck,
   }) =>
       _Loader(
         packageGraph,
         targetGraph,
-        reader,
-        writer,
+        readerWriter,
         buildPhases,
         skipBuildScriptCheck,
       ).prepareWorkspace();
@@ -58,16 +56,14 @@ class BuildDefinition {
 class _Loader {
   final PackageGraph packageGraph;
   final TargetGraph targetGraph;
-  final AssetReader reader;
-  final RunnerAssetWriter writer;
+  final ReaderWriter readerWriter;
   final BuildPhases buildPhases;
   final bool skipBuildScriptCheck;
 
   _Loader(
     this.packageGraph,
     this.targetGraph,
-    this.reader,
-    this.writer,
+    this.readerWriter,
     this.buildPhases,
     this.skipBuildScriptCheck,
   );
@@ -76,15 +72,14 @@ class _Loader {
     buildPhases.checkOutputLocations(packageGraph.root.name);
 
     final assetGraphLoader = AssetGraphLoader(
-      reader: reader,
-      writer: writer,
+      readerWriter: readerWriter,
       buildPhases: buildPhases,
       packageGraph: packageGraph,
     );
 
     var assetGraph = await assetGraphLoader.load();
 
-    var assetTracker = AssetTracker(reader, targetGraph);
+    var assetTracker = AssetTracker(readerWriter, targetGraph);
     var inputSources = await assetTracker.findInputSources();
     var cacheDirSources = await assetTracker.findCacheDirSources();
     var internalSources = await assetTracker.findInternalSources();
@@ -101,7 +96,7 @@ class _Loader {
         internalSources,
       );
       buildScriptUpdates = await BuildScriptUpdates.create(
-        reader,
+        readerWriter,
         packageGraph,
         assetGraph,
         disabled: skipBuildScriptCheck,
@@ -114,7 +109,7 @@ class _Loader {
         buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
         var deletedSourceOutputs = await assetGraph.deleteOutputs(
           packageGraph,
-          writer,
+          readerWriter,
         );
         await _deleteGeneratedDir();
 
@@ -140,14 +135,14 @@ class _Loader {
           inputSources,
           internalSources,
           packageGraph,
-          reader,
+          readerWriter,
         );
       } on DuplicateAssetNodeException catch (e) {
         buildLog.error(e.toString());
         throw const CannotBuildException();
       }
       buildScriptUpdates = await BuildScriptUpdates.create(
-        reader,
+        readerWriter,
         packageGraph,
         assetGraph,
         disabled: skipBuildScriptCheck,
@@ -177,7 +172,7 @@ class _Loader {
       // Use a writer with no asset graph. If it had the asset graph, it would
       // delete from the generated output location, but the aim is to delete
       // from input sources.
-      await _initialBuildCleanup(conflictingOutputs, writer);
+      await _initialBuildCleanup(conflictingOutputs, readerWriter);
     }
 
     return BuildDefinition._(assetGraph, buildScriptUpdates, updates);
@@ -213,7 +208,7 @@ class _Loader {
   /// no cached graph).
   Future<void> _initialBuildCleanup(
     Set<AssetId> conflictingAssets,
-    RunnerAssetWriter writer,
+    ReaderWriter readerWriter,
   ) async {
     if (conflictingAssets.isEmpty) return;
 
@@ -221,7 +216,7 @@ class _Loader {
       'Deleting ${conflictingAssets.length} declared outputs '
       'which already existed on disk.',
     );
-    await Future.wait(conflictingAssets.map((id) => writer.delete(id)));
+    await Future.wait(conflictingAssets.map((id) => readerWriter.delete(id)));
   }
 }
 

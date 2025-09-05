@@ -18,7 +18,6 @@ import 'package:build_runner/src/options/testing_overrides.dart';
 import 'package:build_runner/src/package_graph/apply_builders.dart';
 import 'package:build_runner/src/package_graph/package_graph.dart';
 import 'package:build_runner/src/util/constants.dart';
-import 'package:build_test/src/in_memory_reader_writer.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
@@ -36,10 +35,12 @@ void main() {
   final packageGraph = buildPackageGraph({
     rootPackage('a', path: path.absolute('a')): [],
   });
-  late TestReaderWriter readerWriter;
+  late InternalTestReaderWriter readerWriter;
 
   setUp(() async {
-    readerWriter = TestReaderWriter(rootPackage: packageGraph.root.name);
+    readerWriter = InternalTestReaderWriter(
+      rootPackage: packageGraph.root.name,
+    );
     await readerWriter.writeAsString(
       packageConfigId,
       jsonEncode(_packageConfig),
@@ -607,7 +608,7 @@ targets:
           await readerWriter.delete(packageConfigId);
 
           // Wait for it to try reading the file twice to ensure it will retry.
-          await (_readerForState[buildState] as InMemoryAssetReaderWriter)
+          await (_readerForState[buildState] as InternalTestReaderWriter)
               .onCanRead
               .where((id) => id == packageConfigId)
               .take(2)
@@ -1143,7 +1144,7 @@ StreamController<ProcessSignal>? _terminateWatchController;
 Future<BuildState> startWatch(
   List<BuilderApplication> builders,
   Map<String, String> inputs,
-  TestReaderWriter readerWriter, {
+  InternalTestReaderWriter readerWriter, {
   required PackageGraph packageGraph,
   Map<String, BuildConfig> overrideBuildConfig = const {},
   void Function(LogRecord)? onLog,
@@ -1168,9 +1169,8 @@ Future<BuildState> startWatch(
           debounceDelay: _debounceDelay,
           onLog: onLog,
           packageGraph: packageGraph,
-          reader: readerWriter,
+          readerWriter: readerWriter,
           terminateEventStream: _terminateWatchController!.stream,
-          writer: readerWriter,
         ),
       ).watch();
 

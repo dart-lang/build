@@ -28,8 +28,7 @@ import 'single_step_reader_writer.dart';
 Future<void> runBuilder(
   Builder builder,
   Iterable<AssetId> inputs,
-  AssetReader assetReader,
-  AssetWriter assetWriter,
+  SingleStepReaderWriter readerWriter,
   Resolvers? resolvers, {
   Logger? logger,
   ResourceManager? resourceManager,
@@ -72,12 +71,7 @@ Future<void> runBuilder(
     var buildStep = BuildStepImpl(
       input,
       outputs,
-      // If there a build running, `assetReader` and `assetWriter` are already a
-      // `SingleStepReaderWriter` instance integrated with the build; the `from`
-      // factory just passes it through.
-      //
-      // If there is no build running, this creates a fake build step.
-      SingleStepReaderWriter.from(reader: assetReader, writer: assetWriter),
+      readerWriter,
       resolvers,
       resources,
       loadPackageConfig,

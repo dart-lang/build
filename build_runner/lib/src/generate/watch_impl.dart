@@ -57,15 +57,9 @@ class Watcher implements BuildState {
     required this.willCreateOutputDirs,
   }) {
     this.buildPlan = buildPlan.copyWith(
-      writer: (buildPlan.writer as ReaderWriter).copyWith(
+      readerWriter: buildPlan.readerWriter.copyWith(
         onDelete: _expectedDeletes.add,
       ),
-      reader:
-          buildPlan.reader is ReaderWriter
-              ? (buildPlan.reader as ReaderWriter).copyWith(
-                onDelete: _expectedDeletes.add,
-              )
-              : buildPlan.reader,
     );
     buildResults = _run(until).asBroadcastStream();
   }
@@ -73,7 +67,7 @@ class Watcher implements BuildState {
   BuildOptions get buildOptions => buildPlan.buildOptions;
   TestingOverrides get testingOverrides => buildPlan.testingOverrides;
   PackageGraph get packageGraph => buildPlan.packageGraph;
-  AssetReader get reader => buildPlan.reader;
+  ReaderWriter get readerWriter => buildPlan.readerWriter;
 
   @override
   late final Stream<BuildResult> buildResults;
@@ -144,7 +138,7 @@ class Watcher implements BuildState {
             //
             // We retry the reads for a little bit to handle the case where a
             // user runs `pub get` and it hasn't been re-written yet.
-            return _readOnceExists(id, reader).then((bytes) {
+            return _readOnceExists(id, readerWriter).then((bytes) {
               if (md5.convert(bytes) != digest) {
                 _terminateCompleter.complete();
                 buildLog.error(
@@ -180,7 +174,7 @@ class Watcher implements BuildState {
             buildPlan.targetGraph,
             willCreateOutputDirs,
             _expectedDeletes,
-            reader,
+            readerWriter,
           );
         })
         .debounceBuffer(
@@ -208,9 +202,9 @@ class Watcher implements BuildState {
     () async {
       buildLog.doing('Waiting for file watchers to be ready.');
       await graphWatcher.ready;
-      if (await reader.canRead(rootPackageConfigId)) {
+      if (await readerWriter.canRead(rootPackageConfigId)) {
         originalRootPackageConfigDigest = md5.convert(
-          await reader.readAsBytes(rootPackageConfigId),
+          await readerWriter.readAsBytes(rootPackageConfigId),
         );
       } else {
         buildLog.warning(
@@ -263,16 +257,16 @@ class Watcher implements BuildState {
   final _packageBuildYamlRegexp = RegExp(r'^[a-z0-9_]+\.build\.yaml$');
 }
 
-/// Reads [id] using [reader], waiting for it to exist for up to 1 second.
+/// Reads [id] using [readerWriter], waiting for it to exist for up to 1 second.
 ///
 /// If it still doesn't exist after 1 second then throws an
 /// [AssetNotFoundException].
-Future<List<int>> _readOnceExists(AssetId id, AssetReader reader) async {
+Future<List<int>> _readOnceExists(AssetId id, ReaderWriter readerWriter) async {
   var watch = Stopwatch()..start();
   var tryAgain = true;
   while (tryAgain) {
-    if (await reader.canRead(id)) {
-      return reader.readAsBytes(id);
+    if (await readerWriter.canRead(id)) {
+      return readerWriter.readAsBytes(id);
     }
     tryAgain = watch.elapsedMilliseconds < 1000;
     await Future<void>.delayed(const Duration(milliseconds: 100));

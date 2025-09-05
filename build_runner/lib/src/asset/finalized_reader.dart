@@ -17,6 +17,7 @@ import '../commands/build_filter.dart';
 import '../generate/build_phases.dart';
 import '../package_graph/target_graph.dart';
 import '../state/asset_finder.dart';
+import 'reader_writer.dart';
 
 /// A view of the build output.
 ///
@@ -25,7 +26,7 @@ import '../state/asset_finder.dart';
 class FinalizedReader {
   late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);
 
-  final AssetReader _delegate;
+  final ReaderWriter _delegate;
   final AssetGraph _assetGraph;
   final TargetGraph _targetGraph;
   OptionalOutputTracker? _optionalOutputTracker;

@@ -14,7 +14,7 @@ import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
-import '../asset/writer.dart';
+import '../asset/reader_writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../asset_graph/optional_output_tracker.dart';
@@ -34,8 +34,6 @@ import '../package_graph/target_graph.dart';
 import '../performance_tracking/performance_tracking_resolvers.dart';
 import '../resolver/analysis_driver_model.dart';
 import '../resolver/resolver.dart';
-import '../state/reader_state.dart';
-import '../state/reader_writer.dart';
 import '../util/build_dirs.dart';
 import '../util/constants.dart';
 import 'build_directory.dart';
@@ -55,8 +53,7 @@ class Build {
 
   // Collaborators.
   final ResourceManager resourceManager;
-  final AssetReaderWriter readerWriter;
-  final RunnerAssetWriter deleteWriter;
+  final ReaderWriter readerWriter;
   final LibraryCycleGraphLoader previousLibraryCycleGraphLoader =
       LibraryCycleGraphLoader();
   final AssetDepsLoader? previousDepsLoader;
@@ -116,7 +113,6 @@ class Build {
   Build({
     required this.buildPlan,
     required this.readerWriter,
-    required this.deleteWriter,
     required this.resourceManager,
     required this.assetGraph,
   }) : performanceTracker =
@@ -528,7 +524,6 @@ class Build {
               builder,
               [primaryInput],
               readerWriter,
-              readerWriter,
               PerformanceTrackingResolvers(_resolvers, tracker),
               logger: logger,
               resourceManager: resourceManager,
@@ -551,7 +546,6 @@ class Build {
             primaryInput,
             builderOutputs,
             readerWriter,
-            readerWriter.inputTracker,
             logger.errors,
             unusedAssets: unusedAssets,
           ),
@@ -618,7 +612,7 @@ class Build {
   }
 
   static Future<List<CompilationUnit>> _readAndParseCompilationUnits(
-    AssetReader reader,
+    SingleStepReaderWriter stepReaderWriter,
     AssetId id,
     CompilationUnit compilationUnit,
   ) async {
@@ -629,8 +623,10 @@ class Build {
         Uri.parse(directive.uri.stringValue!),
         from: id,
       );
-      if (!await reader.canRead(partId)) continue;
-      result.add(_parseCompilationUnit(await reader.readAsString(partId)));
+      if (!await stepReaderWriter.canRead(partId)) continue;
+      result.add(
+        _parseCompilationUnit(await stepReaderWriter.readAsString(partId)),
+      );
     }
     return result;
   }
@@ -677,7 +673,7 @@ class Build {
   ) async {
     var input = postProcessBuildStepId.input;
     var inputNode = assetGraph.get(input)!;
-    var readerWriter = SingleStepReaderWriter(
+    var stepReaderWriter = SingleStepReaderWriter(
       runningBuild: RunningBuild(
         packageGraph: packageGraph,
         targetGraph: targetGraph,
@@ -691,22 +687,19 @@ class Build {
         buildPhase: buildPhases.postBuildPhase,
         primaryPackage: input.package,
       ),
-      readerWriter: this.readerWriter,
-      inputTracker: InputTracker(
-        this.readerWriter.filesystem,
-        primaryInput: input,
-      ),
+      readerWriter: readerWriter,
+      inputTracker: InputTracker(readerWriter.filesystem, primaryInput: input),
       assetsWritten: {},
     );
 
     if (!await _postProcessBuildStepShouldRun(
       postProcessBuildStepId,
-      readerWriter,
+      stepReaderWriter,
     )) {
       return <AssetId>[];
     }
     // Clear input tracking accumulated during `_buildShouldRun`.
-    readerWriter.inputTracker.clear();
+    stepReaderWriter.inputTracker.clear();
 
     // Clean out the impacts of the previous run.
     final existingOutputs = assetGraph.postProcessBuildStepOutputs(
@@ -725,8 +718,7 @@ class Build {
     await runPostProcessBuilder(
       builder,
       input,
-      readerWriter,
-      readerWriter,
+      stepReaderWriter,
       logger,
       addAsset: (assetId) {
         if (assetGraph.contains(assetId)) {
@@ -764,7 +756,7 @@ class Build {
       outputs: outputs,
     );
 
-    var assetsWritten = readerWriter.assetsWritten.toSet();
+    var assetsWritten = stepReaderWriter.assetsWritten.toSet();
 
     // Reset the state for all the output nodes based on what was read and
     // written.
@@ -775,8 +767,7 @@ class Build {
     await _setOutputsState(
       input,
       assetsWritten,
-      readerWriter,
-      readerWriter.inputTracker,
+      stepReaderWriter,
       logger.errors,
     );
 
@@ -814,7 +805,7 @@ class Build {
     int phaseNumber,
     AssetId primaryInput,
     Iterable<AssetId> outputs,
-    AssetReader reader,
+    SingleStepReaderWriter readerWriter,
   ) async {
     return await TimedActivity.track.runAsync(() async {
       // Update state for primary input if needed.
@@ -1031,7 +1022,7 @@ class Build {
   /// It should run if its builder options changed or its input changed.
   Future<bool> _postProcessBuildStepShouldRun(
     PostProcessBuildStepId buildStepId,
-    AssetReader reader,
+    SingleStepReaderWriter stepReaderWriter,
   ) async {
     final input = buildStepId.input;
     final node = assetGraph.get(input)!;
@@ -1172,13 +1163,13 @@ class Build {
   Future<void> _setOutputsState(
     AssetId input,
     Iterable<AssetId> outputs,
-    SingleStepReaderWriter readerWriter,
-    InputTracker inputTracker,
+    SingleStepReaderWriter stepReaderWriter,
     Iterable<String> errors, {
     Set<AssetId>? unusedAssets,
   }) async {
     if (outputs.isEmpty) return;
-    var usedInputs =
+    final inputTracker = stepReaderWriter.inputTracker;
+    final usedInputs =
         unusedAssets != null && unusedAssets.isNotEmpty
             ? inputTracker.inputs.difference(unusedAssets)
             : inputTracker.inputs;
@@ -1186,8 +1177,8 @@ class Build {
     final result = errors.isEmpty;
 
     for (final output in outputs) {
-      final wasOutput = readerWriter.assetsWritten.contains(output);
-      final digest = wasOutput ? await this.readerWriter.digest(output) : null;
+      final wasOutput = stepReaderWriter.assetsWritten.contains(output);
+      final digest = wasOutput ? await readerWriter.digest(output) : null;
       var outputNode = assetGraph.get(output)!;
 
       // A transition from (missing or failed) to (written and not failed) is
@@ -1219,7 +1210,7 @@ class Build {
     }
   }
 
-  Future _delete(AssetId id) => deleteWriter.delete(id);
+  Future _delete(AssetId id) => readerWriter.delete(id);
 
   /// Invoked after each build, can modify the [BuildResult] in any way, even
   /// converting it to a failure.
@@ -1234,14 +1225,14 @@ class Build {
   Future<BuildResult> _finalizeBuild(
     BuildResult buildResult,
     FinalizedAssetsView finalizedAssetsView,
-    AssetReader reader,
+    ReaderWriter readerWriter,
     BuiltSet<BuildDirectory> buildDirs,
   ) async {
     if (testingOverrides.finalizeBuild != null) {
       return testingOverrides.finalizeBuild!(
         buildResult,
         finalizedAssetsView,
-        reader,
+        readerWriter,
         buildDirs,
       );
     }
@@ -1252,7 +1243,7 @@ class Build {
       if (!await createMergedOutputDirectories(
         buildDirs,
         packageGraph,
-        reader,
+        readerWriter,
         finalizedAssetsView,
         buildOptions.outputSymlinksOnly,
       )) {

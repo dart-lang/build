@@ -42,7 +42,7 @@ void main() {
         <AssetId>{},
         <AssetId>{},
         packageGraph,
-        TestReaderWriter(),
+        InternalTestReaderWriter(),
       );
     });
 
@@ -68,7 +68,7 @@ void main() {
         ..add(notDeleted)
         ..add(deleted);
 
-      var delegate = TestReaderWriter();
+      var delegate = InternalTestReaderWriter();
       delegate.testing.writeString(notDeleted.id, '');
       delegate.testing.writeString(deleted.id, '');
 
@@ -94,7 +94,7 @@ void main() {
         isHidden: true,
       );
       graph.add(node);
-      var delegate = TestReaderWriter();
+      var delegate = InternalTestReaderWriter();
       delegate.testing.writeString(id, '');
       reader = FinalizedReader(
         delegate,

@@ -17,7 +17,7 @@ import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
 
 import 'assets.dart';
-import 'in_memory_reader_writer.dart';
+import 'internal_test_reader_writer.dart';
 import 'test_reader_writer.dart';
 
 AssetId _passThrough(AssetId id) => id;
@@ -78,7 +78,7 @@ void checkOutputs(
         if (!writer.testing.exists(mappedAssetId)) {
           // Then try the usual mapping for generated assets.
           mappedAssetId = AssetId(
-            (writer as InMemoryAssetReaderWriter).rootPackage,
+            (writer as InternalTestReaderWriter).rootPackage,
             '.dart_tool/build/generated/${assetId.package}/${assetId.path}',
           );
         }
@@ -373,8 +373,7 @@ Future<TestBuilderResult> testBuilderFactories(
 
   final testingOverrides = TestingOverrides(
     packageGraph: packageGraph,
-    reader: readerWriter,
-    writer: readerWriter,
+    readerWriter: readerWriter as InternalTestReaderWriter,
     resolvers: resolvers,
     buildConfig:
         // Override sources to defaults plus all explicitly passed inputs,
