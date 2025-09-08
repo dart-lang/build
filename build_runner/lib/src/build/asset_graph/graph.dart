@@ -102,8 +102,10 @@ class AssetGraph implements GeneratedAssetHider {
     this.enabledExperiments,
   );
 
-  /// Deserializes this graph.
-  factory AssetGraph.deserialize(List<int> serializedGraph) =>
+  /// Deserializes an [AssetGraph] from a [Map].
+  ///
+  /// Returns `null` if deserialization fails.
+  static AssetGraph? deserialize(List<int> serializedGraph) =>
       deserializeAssetGraph(serializedGraph);
 
   static Future<AssetGraph> build(

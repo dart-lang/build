@@ -485,9 +485,10 @@ targets:
 
         final graphId = makeAssetId('a|$assetGraphPath');
         expect(result.readerWriter.testing.exists(graphId), isTrue);
-        final cachedGraph = AssetGraph.deserialize(
-          result.readerWriter.testing.readBytes(graphId),
-        );
+        final cachedGraph =
+            AssetGraph.deserialize(
+              result.readerWriter.testing.readBytes(graphId),
+            )!;
         expect(
           cachedGraph.allNodes.map((node) => node.id),
           unorderedEquals([
@@ -1114,9 +1115,8 @@ targets:
 
     final graphId = makeAssetId('a|$assetGraphPath');
     expect(result.readerWriter.testing.exists(graphId), isTrue);
-    final cachedGraph = AssetGraph.deserialize(
-      result.readerWriter.testing.readBytes(graphId),
-    );
+    final cachedGraph =
+        AssetGraph.deserialize(result.readerWriter.testing.readBytes(graphId))!;
 
     final expectedGraph = await AssetGraph.build(
       BuildPhases([]),
@@ -1243,9 +1243,10 @@ targets:
       );
 
       final graphId = makeAssetId('a|$assetGraphPath');
-      final cachedGraph = AssetGraph.deserialize(
-        result.readerWriter.testing.readBytes(graphId),
-      );
+      final cachedGraph =
+          AssetGraph.deserialize(
+            result.readerWriter.testing.readBytes(graphId),
+          )!;
       final outputId = AssetId('a', 'lib/a.txt.out');
 
       final outputNode = cachedGraph.get(outputId)!;
@@ -1451,11 +1452,12 @@ targets:
             resumeFrom: result,
           );
 
-          final graph = AssetGraph.deserialize(
-            result.readerWriter.testing.readBytes(
-              makeAssetId('a|$assetGraphPath'),
-            ),
-          );
+          final graph =
+              AssetGraph.deserialize(
+                result.readerWriter.testing.readBytes(
+                  makeAssetId('a|$assetGraphPath'),
+                ),
+              )!;
           expect(
             graph.get(makeAssetId('a|lib/a.txt.copy'))!.type,
             NodeType.missingSource,
@@ -1489,9 +1491,12 @@ targets:
       );
 
       /// Should be deleted using the writer, and converted to missingSource.
-      final newGraph = AssetGraph.deserialize(
-        result.readerWriter.testing.readBytes(makeAssetId('a|$assetGraphPath')),
-      );
+      final newGraph =
+          AssetGraph.deserialize(
+            result.readerWriter.testing.readBytes(
+              makeAssetId('a|$assetGraphPath'),
+            ),
+          )!;
       final aNodeId = makeAssetId('a|lib/a.txt');
       final aCopyNodeId = makeAssetId('a|lib/a.txt.copy');
       final aCloneNodeId = makeAssetId('a|lib/a.txt.copy.clone');
@@ -1574,9 +1579,12 @@ targets:
       );
 
       // Read cached graph and validate.
-      final graph = AssetGraph.deserialize(
-        result.readerWriter.testing.readBytes(makeAssetId('a|$assetGraphPath')),
-      );
+      final graph =
+          AssetGraph.deserialize(
+            result.readerWriter.testing.readBytes(
+              makeAssetId('a|$assetGraphPath'),
+            ),
+          )!;
       final outputNode = graph.get(makeAssetId('a|lib/file.a.copy'))!;
       final fileANode = graph.get(makeAssetId('a|lib/file.a'))!;
       final fileBNode = graph.get(makeAssetId('a|lib/file.b'))!;
@@ -1795,9 +1803,10 @@ targets:
         resumeFrom: result,
       );
 
-      final finalGraph = AssetGraph.deserialize(
-        result.readerWriter.testing.readBytes(AssetId('a', assetGraphPath)),
-      );
+      final finalGraph =
+          AssetGraph.deserialize(
+            result.readerWriter.testing.readBytes(AssetId('a', assetGraphPath)),
+          )!;
 
       expect(
         finalGraph.get(AssetId('a', 'web/a.g1'))!.generatedNodeState!.result,

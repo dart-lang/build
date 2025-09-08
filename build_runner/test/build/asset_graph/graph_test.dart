@@ -147,7 +147,7 @@ void main() {
         graph.add(globNode);
 
         final encoded = graph.serialize();
-        final decoded = AssetGraph.deserialize(encoded);
+        final decoded = AssetGraph.deserialize(encoded)!;
         expect(decoded, equalsAssetGraph(graph));
         expect(
           decoded.allPostProcessBuildStepOutputs,
@@ -163,19 +163,13 @@ void main() {
               json.decode(utf8.decode(bytes)) as Map<String, dynamic>;
           serialized['version'] = -1;
           final encoded = utf8.encode(json.encode(serialized));
-          expect(
-            () => AssetGraph.deserialize(encoded),
-            throwsA(isA<AssetGraphCorruptedException>()),
-          );
+          expect(AssetGraph.deserialize(encoded), null);
         },
       );
 
       test('Throws an AssetGraphCorruptedException on invalid json', () {
         final bytes = List.of(graph.serialize())..removeLast();
-        expect(
-          () => AssetGraph.deserialize(bytes),
-          throwsA(isA<AssetGraphCorruptedException>()),
-        );
+        expect(AssetGraph.deserialize(bytes), null);
       });
     });
 

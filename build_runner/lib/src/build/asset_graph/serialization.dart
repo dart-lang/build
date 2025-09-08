@@ -11,17 +11,17 @@ part of 'graph.dart';
 const _version = 31;
 
 /// Deserializes an [AssetGraph] from a [Map].
-AssetGraph deserializeAssetGraph(List<int> bytes) {
+///
+/// Returns `null` if deserialization fails.
+AssetGraph? deserializeAssetGraph(List<int> bytes) {
   dynamic serializedGraph;
   try {
     serializedGraph = jsonDecode(utf8.decode(bytes));
   } on FormatException {
-    throw AssetGraphCorruptedException();
+    return null;
   }
-  if (serializedGraph is! Map) throw AssetGraphCorruptedException();
-  if (serializedGraph['version'] != _version) {
-    throw AssetGraphCorruptedException();
-  }
+  if (serializedGraph is! Map) return null;
+  if (serializedGraph['version'] != _version) return null;
 
   identityAssetIdSerializer.deserializeWithObjects(
     (serializedGraph['ids'] as List).map(

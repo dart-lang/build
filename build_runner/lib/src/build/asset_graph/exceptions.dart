@@ -22,5 +22,3 @@ class DuplicateAssetNodeException implements Exception {
     return 'Builders $builder1 and $builder2 outputs collide: $id';
   }
 }
-
-class AssetGraphCorruptedException implements Exception {}

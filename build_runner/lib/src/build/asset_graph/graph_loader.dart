@@ -16,7 +16,6 @@ import '../../constants.dart';
 import '../../exceptions.dart';
 import '../../io/reader_writer.dart';
 import '../../logging/build_log.dart';
-import 'exceptions.dart';
 import 'graph.dart';
 
 /// Loads and verifies an [AssetGraph].
@@ -48,10 +47,10 @@ class AssetGraphLoader {
     if (!await readerWriter.canRead(assetGraphId)) {
       return null;
     }
-
-    try {
-      return await _load(assetGraphId);
-    } on AssetGraphCorruptedException catch (_) {
+    final cachedGraph = AssetGraph.deserialize(
+      await readerWriter.readAsBytes(assetGraphId),
+    );
+    if (cachedGraph == null) {
       // Start fresh if the cached asset_graph cannot be deserialized
       buildLog.fullBuildBecause(FullBuildReason.incompatibleAssetGraph);
       await Future.wait([
@@ -59,12 +58,6 @@ class AssetGraphLoader {
       ]);
       return null;
     }
-  }
-
-  Future<AssetGraph?> _load(AssetId assetGraphId) async {
-    final cachedGraph = AssetGraph.deserialize(
-      await readerWriter.readAsBytes(assetGraphId),
-    );
     final buildPhasesChanged =
         buildPhases.digest != cachedGraph.buildPhasesDigest;
     final pkgVersionsChanged =
