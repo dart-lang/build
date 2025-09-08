@@ -2,10 +2,10 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'src/bootstrap/apply_builders.dart';
 import 'src/build_runner.dart' show BuildRunner;
-import 'src/package_graph/apply_builders.dart';
 
-export 'src/daemon/constants.dart' show assetServerPort;
+export 'src/commands/daemon/constants.dart' show assetServerPort;
 
 /// Runs `build_runner` with [arguments] and [builders].
 ///

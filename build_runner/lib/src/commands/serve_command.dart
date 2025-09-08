@@ -11,12 +11,12 @@ import 'package:http_multi_server/http_multi_server.dart';
 import 'package:io/io.dart';
 import 'package:shelf/shelf_io.dart';
 
-import '../build_script_generate/build_process_state.dart';
+import '../bootstrap/apply_builders.dart';
+import '../bootstrap/build_process_state.dart';
+import '../build_plan/build_options.dart';
+import '../build_plan/package_graph.dart';
+import '../build_plan/testing_overrides.dart';
 import '../logging/build_log.dart';
-import '../options/testing_overrides.dart';
-import '../package_graph/apply_builders.dart';
-import '../package_graph/package_graph.dart';
-import 'build_options.dart';
 import 'build_runner_command.dart';
 import 'serve_options.dart';
 import 'watch_command.dart';
