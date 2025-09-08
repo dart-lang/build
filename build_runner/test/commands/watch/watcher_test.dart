@@ -394,9 +394,10 @@ targets:
           readerWriter: readerWriter,
         );
 
-        final cachedGraph = AssetGraph.deserialize(
-          readerWriter.testing.readBytes(makeAssetId('a|$assetGraphPath')),
-        );
+        final cachedGraph =
+            AssetGraph.deserialize(
+              readerWriter.testing.readBytes(makeAssetId('a|$assetGraphPath')),
+            )!;
 
         final expectedGraph = await AssetGraph.build(
           BuildPhases([]),
