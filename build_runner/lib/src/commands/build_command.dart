@@ -52,6 +52,11 @@ class BuildCommand implements BuildRunnerCommand {
       buildOptions: buildOptions,
       testingOverrides: testingOverrides,
     );
+    await buildPlan.deletePreviousBuildOutputs();
+    if (buildPlan.restartIsNeeded) {
+      return BuildResult.buildScriptChanged();
+    }
+
     final build = await BuildSeries.create(buildPlan: buildPlan);
     final result = await build.run({});
     await build.beforeExit();

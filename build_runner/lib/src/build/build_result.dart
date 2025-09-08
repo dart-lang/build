@@ -48,6 +48,12 @@ Build Failed :(
 ''';
     }
   }
+
+  factory BuildResult.buildScriptChanged() => BuildResult(
+    BuildStatus.failure,
+    const [],
+    failureType: FailureType.buildScriptChanged,
+  );
 }
 
 /// The status of a build.

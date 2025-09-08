@@ -87,7 +87,6 @@ Please update your dev_dependencies section of your pubspec.yaml:
             ),
             testingOverrides: testingOverrides,
           ).run();
-
       if (result != ExitCode.success.code) {
         stdout.writeln('Skipping tests due to build failure');
         return result;

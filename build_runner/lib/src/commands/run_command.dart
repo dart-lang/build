@@ -84,7 +84,6 @@ class RunCommand implements BuildRunnerCommand {
           ),
           testingOverrides: testingOverrides,
         ).run();
-
     if (result != ExitCode.success.code) {
       buildLog.warning('Skipping script run due to build failure.');
       return result;

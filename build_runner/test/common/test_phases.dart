@@ -150,6 +150,7 @@ Future<TestBuildersResult> testPhases(
       readerWriter: readerWriter,
     ),
   );
+  await buildPlan.deletePreviousBuildOutputs();
 
   BuildResult result;
   final build = await BuildSeries.create(buildPlan: buildPlan);

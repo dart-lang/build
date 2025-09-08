@@ -74,6 +74,7 @@ class ServeCommand implements BuildRunnerCommand {
             buildOptions: buildOptions,
             testingOverrides: testingOverrides,
           ).watch();
+      if (handler == null) return ExitCode.tempFail.code;
 
       servers.forEach((target, server) {
         serveRequests(

@@ -38,22 +38,28 @@ class WatchCommand implements BuildRunnerCommand {
 
   Future<int> _run() async {
     final handler = await watch();
+    if (handler == null) return ExitCode.tempFail.code;
     final completer = Completer<int>();
     handleBuildResultsStream(handler.buildResults, completer);
     return completer.future;
   }
 
-  Future<ServeHandler> watch() async {
+  /// Watches files, or returns `null` if a restart is required.
+  Future<ServeHandler?> watch() async {
     buildLog.configuration = buildLog.configuration.rebuild((b) {
       b.mode = BuildLogMode.build;
       b.verbose = buildOptions.verbose;
       b.onLog = testingOverrides.onLog;
     });
+
     final buildPlan = await BuildPlan.load(
       builders: builders,
       buildOptions: buildOptions,
       testingOverrides: testingOverrides,
     );
+    await buildPlan.deletePreviousBuildOutputs();
+    if (buildPlan.restartIsNeeded) return null;
+
     final terminator = Terminator(testingOverrides.terminateEventStream);
 
     final watcher = Watcher(

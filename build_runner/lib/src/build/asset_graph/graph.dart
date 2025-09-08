@@ -32,7 +32,7 @@ part 'serialization.dart';
 /// All the [AssetId]s involved in a build, and all of their outputs.
 class AssetGraph implements GeneratedAssetHider {
   /// All the [AssetNode]s in the graph, indexed by package and then path.
-  final _nodesByPackage = <String, Map<String, AssetNode>>{};
+  final Map<String, Map<String, AssetNode>> _nodesByPackage;
 
   /// A [Digest] of the build actions this graph was originally created with.
   ///
@@ -59,7 +59,7 @@ class AssetGraph implements GeneratedAssetHider {
   /// Created with empty outputs at the start of the build if it's a new build
   /// step; or deserialized with previous build outputs if it has run before.
   final Map<String, Map<PostProcessBuildStepId, Set<AssetId>>>
-  _postProcessBuildStepOutputs = {};
+  _postProcessBuildStepOutputs;
 
   /// Digest of the previous build's `BuildTriggers`, or `null` if this is a
   /// clean build.
@@ -91,7 +91,9 @@ class AssetGraph implements GeneratedAssetHider {
   ) : buildPhasesDigest = buildPhases.digest,
       inBuildPhasesOptionsDigests = buildPhases.inBuildPhasesOptionsDigests,
       postBuildActionsOptionsDigests =
-          buildPhases.postBuildActionsOptionsDigests;
+          buildPhases.postBuildActionsOptionsDigests,
+      _nodesByPackage = {},
+      _postProcessBuildStepOutputs = {};
 
   AssetGraph._fromSerialized(
     this.buildPhasesDigest,
@@ -100,6 +102,43 @@ class AssetGraph implements GeneratedAssetHider {
     this.dartVersion,
     this.packageLanguageVersions,
     this.enabledExperiments,
+  ) : _nodesByPackage = {},
+      _postProcessBuildStepOutputs = {};
+
+  AssetGraph._with({
+    required Map<String, Map<String, AssetNode>> nodesByPackage,
+    required this.buildPhasesDigest,
+    required this.dartVersion,
+    required this.enabledExperiments,
+    required this.packageLanguageVersions,
+    required Map<AssetId, Set<AssetId>>? outputs,
+    required Map<String, Map<PostProcessBuildStepId, Set<AssetId>>>
+    postProcessBuildStepOutputs,
+    required this.previousBuildTriggersDigest,
+    required this.previousInBuildPhasesOptionsDigests,
+    required this.inBuildPhasesOptionsDigests,
+    required this.previousPostBuildActionsOptionsDigests,
+    required this.postBuildActionsOptionsDigests,
+    required this.previousPhasedAssetDeps,
+  }) : _nodesByPackage = nodesByPackage,
+       _postProcessBuildStepOutputs = postProcessBuildStepOutputs;
+
+  @visibleForTesting
+  AssetGraph copyWith({String? dartVersion}) => AssetGraph._with(
+    nodesByPackage: _nodesByPackage,
+    buildPhasesDigest: buildPhasesDigest,
+    dartVersion: dartVersion ?? this.dartVersion,
+    enabledExperiments: enabledExperiments,
+    packageLanguageVersions: packageLanguageVersions,
+    outputs: _outputs,
+    postProcessBuildStepOutputs: _postProcessBuildStepOutputs,
+    previousBuildTriggersDigest: previousBuildTriggersDigest,
+    previousInBuildPhasesOptionsDigests: previousInBuildPhasesOptionsDigests,
+    inBuildPhasesOptionsDigests: inBuildPhasesOptionsDigests,
+    previousPostBuildActionsOptionsDigests:
+        previousPostBuildActionsOptionsDigests,
+    postBuildActionsOptionsDigests: postBuildActionsOptionsDigests,
+    previousPhasedAssetDeps: previousPhasedAssetDeps,
   );
 
   /// Deserializes an [AssetGraph] from a [Map].
@@ -687,7 +726,16 @@ class AssetGraph implements GeneratedAssetHider {
     PackageGraph packageGraph,
     ReaderWriter readerWriter,
   ) async {
-    final deletedSources = <AssetId>[];
+    final result = outputsToDelete(packageGraph);
+    for (final id in outputsToDelete(packageGraph)) {
+      await readerWriter.delete(id);
+    }
+    return result;
+  }
+
+  /// Returns outputs that were written to the source tree.
+  Iterable<AssetId> outputsToDelete(PackageGraph packageGraph) {
+    final result = <AssetId>[];
     // Delete all the non-hidden outputs.
     for (final id in outputs) {
       final node = get(id)!;
@@ -701,11 +749,10 @@ class AssetGraph implements GeneratedAssetHider {
         if (packageGraph[id.package] == null) {
           idToDelete = AssetId(packageGraph.root.name, id.path);
         }
-        deletedSources.add(idToDelete);
-        await readerWriter.delete(idToDelete);
+        result.add(idToDelete);
       }
     }
-    return deletedSources;
+    return result;
   }
 }
 
