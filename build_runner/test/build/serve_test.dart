@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:async/async.dart';
 import 'package:build_runner/src/bootstrap/apply_builders.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
+import 'package:build_runner/src/build_plan/builder_application.dart';
 import 'package:build_runner/src/build_plan/package_graph.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
 import 'package:build_runner/src/commands/serve/server.dart';

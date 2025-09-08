@@ -11,9 +11,9 @@ import 'package:http_multi_server/http_multi_server.dart';
 import 'package:io/io.dart';
 import 'package:shelf/shelf_io.dart';
 
-import '../bootstrap/apply_builders.dart';
 import '../bootstrap/build_process_state.dart';
 import '../build_plan/build_options.dart';
+import '../build_plan/builder_application.dart';
 import '../build_plan/package_graph.dart';
 import '../build_plan/testing_overrides.dart';
 import '../logging/build_log.dart';

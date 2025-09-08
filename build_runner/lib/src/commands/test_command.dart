@@ -10,10 +10,10 @@ import 'package:build/experiments.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:io/io.dart';
 
-import '../bootstrap/apply_builders.dart';
 import '../bootstrap/build_process_state.dart';
 import '../build_plan/build_directory.dart';
 import '../build_plan/build_options.dart';
+import '../build_plan/builder_application.dart';
 import '../build_plan/package_graph.dart';
 import '../build_plan/testing_overrides.dart';
 import '../constants.dart';

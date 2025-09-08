@@ -2,89 +2,90 @@
 // ignore_for_file: directives_ordering
 // build_runner >=2.4.16
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:build_runner/src/bootstrap/apply_builders.dart' as _i1;
-import 'package:provides_builder/builders.dart' as _i2;
-import 'package:build_web_compilers/builders.dart' as _i3;
-import 'package:build_test/builder.dart' as _i4;
-import 'package:build_config/build_config.dart' as _i5;
-import 'package:build_modules/builders.dart' as _i6;
-import 'package:build/build.dart' as _i7;
-import 'dart:isolate' as _i8;
-import 'package:build_runner/src/bootstrap/build_process_state.dart' as _i9;
-import 'package:build_runner/build_runner.dart' as _i10;
-import 'dart:io' as _i11;
+import 'package:build_runner/src/build_plan/builder_application.dart' as _i1;
+import 'package:build_runner/src/bootstrap/apply_builders.dart' as _i2;
+import 'package:provides_builder/builders.dart' as _i3;
+import 'package:build_web_compilers/builders.dart' as _i4;
+import 'package:build_test/builder.dart' as _i5;
+import 'package:build_config/build_config.dart' as _i6;
+import 'package:build_modules/builders.dart' as _i7;
+import 'package:build/build.dart' as _i8;
+import 'dart:isolate' as _i9;
+import 'package:build_runner/src/bootstrap/build_process_state.dart' as _i10;
+import 'package:build_runner/build_runner.dart' as _i11;
+import 'dart:io' as _i12;
 
 final _builders = <_i1.BuilderApplication>[
-  _i1.apply(
+  _i2.apply(
     r'provides_builder:throwing_builder',
-    [_i2.throwingBuilder],
-    _i1.toDependentsOf(r'provides_builder'),
+    [_i3.throwingBuilder],
+    _i2.toDependentsOf(r'provides_builder'),
     hideOutput: true,
   ),
-  _i1.apply(
+  _i2.apply(
     r'provides_builder:some_not_applied_builder',
-    [_i2.notApplied],
-    _i1.toNoneByDefault(),
+    [_i3.notApplied],
+    _i2.toNoneByDefault(),
     hideOutput: true,
   ),
-  _i1.apply(
+  _i2.apply(
     r'provides_builder:some_builder',
-    [_i2.someBuilder],
-    _i1.toDependentsOf(r'provides_builder'),
+    [_i3.someBuilder],
+    _i2.toDependentsOf(r'provides_builder'),
     hideOutput: true,
     appliesBuilders: const [r'provides_builder:some_post_process_builder'],
   ),
-  _i1.apply(
+  _i2.apply(
     r'build_web_compilers:sdk_js',
     [
-      _i3.sdkJsCompile,
-      _i3.sdkJsCopyRequirejs,
+      _i4.sdkJsCompile,
+      _i4.sdkJsCopyRequirejs,
     ],
-    _i1.toNoneByDefault(),
+    _i2.toNoneByDefault(),
     isOptional: true,
     hideOutput: true,
   ),
-  _i1.apply(
+  _i2.apply(
     r'build_test:test_bootstrap',
     [
-      _i4.debugIndexBuilder,
-      _i4.debugTestBuilder,
-      _i4.testBootstrapBuilder,
+      _i5.debugIndexBuilder,
+      _i5.debugTestBuilder,
+      _i5.testBootstrapBuilder,
     ],
-    _i1.toRoot(),
+    _i2.toRoot(),
     hideOutput: true,
-    defaultGenerateFor: const _i5.InputSet(include: [
+    defaultGenerateFor: const _i6.InputSet(include: [
       r'$package$',
       r'test/**',
     ]),
   ),
-  _i1.apply(
+  _i2.apply(
     r'build_modules:module_library',
-    [_i6.moduleLibraryBuilder],
-    _i1.toAllPackages(),
+    [_i7.moduleLibraryBuilder],
+    _i2.toAllPackages(),
     isOptional: true,
     hideOutput: true,
     appliesBuilders: const [r'build_modules:module_cleanup'],
   ),
-  _i1.apply(
+  _i2.apply(
     r'build_web_compilers:ddc_modules',
     [
-      _i3.ddcMetaModuleBuilder,
-      _i3.ddcMetaModuleCleanBuilder,
-      _i3.ddcModuleBuilder,
+      _i4.ddcMetaModuleBuilder,
+      _i4.ddcMetaModuleCleanBuilder,
+      _i4.ddcModuleBuilder,
     ],
-    _i1.toNoneByDefault(),
+    _i2.toNoneByDefault(),
     isOptional: true,
     hideOutput: true,
     appliesBuilders: const [r'build_modules:module_cleanup'],
   ),
-  _i1.apply(
+  _i2.apply(
     r'build_web_compilers:ddc',
     [
-      _i3.ddcKernelBuilder,
-      _i3.ddcBuilder,
+      _i4.ddcKernelBuilder,
+      _i4.ddcBuilder,
     ],
-    _i1.toAllPackages(),
+    _i2.toAllPackages(),
     isOptional: true,
     hideOutput: true,
     appliesBuilders: const [
@@ -94,36 +95,36 @@ final _builders = <_i1.BuilderApplication>[
       r'build_web_compilers:dart_source_cleanup',
     ],
   ),
-  _i1.apply(
+  _i2.apply(
     r'build_web_compilers:dart2wasm_modules',
     [
-      _i3.dart2wasmMetaModuleBuilder,
-      _i3.dart2wasmMetaModuleCleanBuilder,
-      _i3.dart2wasmModuleBuilder,
+      _i4.dart2wasmMetaModuleBuilder,
+      _i4.dart2wasmMetaModuleCleanBuilder,
+      _i4.dart2wasmModuleBuilder,
     ],
-    _i1.toNoneByDefault(),
+    _i2.toNoneByDefault(),
     isOptional: true,
     hideOutput: true,
     appliesBuilders: const [r'build_modules:module_cleanup'],
   ),
-  _i1.apply(
+  _i2.apply(
     r'build_web_compilers:dart2js_modules',
     [
-      _i3.dart2jsMetaModuleBuilder,
-      _i3.dart2jsMetaModuleCleanBuilder,
-      _i3.dart2jsModuleBuilder,
+      _i4.dart2jsMetaModuleBuilder,
+      _i4.dart2jsMetaModuleCleanBuilder,
+      _i4.dart2jsModuleBuilder,
     ],
-    _i1.toNoneByDefault(),
+    _i2.toNoneByDefault(),
     isOptional: true,
     hideOutput: true,
     appliesBuilders: const [r'build_modules:module_cleanup'],
   ),
-  _i1.apply(
+  _i2.apply(
     r'build_web_compilers:entrypoint',
-    [_i3.webEntrypointBuilder],
-    _i1.toRoot(),
+    [_i4.webEntrypointBuilder],
+    _i2.toRoot(),
     hideOutput: true,
-    defaultGenerateFor: const _i5.InputSet(
+    defaultGenerateFor: const _i6.InputSet(
       include: [
         r'web/**',
         r'test/**.dart.browser_test.dart',
@@ -135,47 +136,47 @@ final _builders = <_i1.BuilderApplication>[
         r'test/**.vm_test.dart',
       ],
     ),
-    defaultOptions: const _i7.BuilderOptions(<String, dynamic>{
+    defaultOptions: const _i8.BuilderOptions(<String, dynamic>{
       r'dart2js_args': <dynamic>[r'--minify']
     }),
-    defaultDevOptions: const _i7.BuilderOptions(<String, dynamic>{
+    defaultDevOptions: const _i8.BuilderOptions(<String, dynamic>{
       r'dart2wasm_args': <dynamic>[r'--enable-asserts'],
       r'dart2js_args': <dynamic>[r'--enable-asserts'],
     }),
     defaultReleaseOptions:
-        const _i7.BuilderOptions(<String, dynamic>{r'compiler': r'dart2js'}),
+        const _i8.BuilderOptions(<String, dynamic>{r'compiler': r'dart2js'}),
     appliesBuilders: const [r'build_web_compilers:dart2js_archive_extractor'],
   ),
-  _i1.applyPostProcess(
+  _i2.applyPostProcess(
     r'build_modules:module_cleanup',
-    _i6.moduleCleanup,
+    _i7.moduleCleanup,
   ),
-  _i1.applyPostProcess(
+  _i2.applyPostProcess(
     r'build_web_compilers:dart2js_archive_extractor',
-    _i3.dart2jsArchiveExtractor,
+    _i4.dart2jsArchiveExtractor,
     defaultReleaseOptions:
-        const _i7.BuilderOptions(<String, dynamic>{r'filter_outputs': true}),
+        const _i8.BuilderOptions(<String, dynamic>{r'filter_outputs': true}),
   ),
-  _i1.applyPostProcess(
+  _i2.applyPostProcess(
     r'build_web_compilers:dart_source_cleanup',
-    _i3.dartSourceCleanup,
+    _i4.dartSourceCleanup,
     defaultReleaseOptions:
-        const _i7.BuilderOptions(<String, dynamic>{r'enabled': true}),
+        const _i8.BuilderOptions(<String, dynamic>{r'enabled': true}),
   ),
-  _i1.applyPostProcess(
+  _i2.applyPostProcess(
     r'provides_builder:some_post_process_builder',
-    _i2.somePostProcessBuilder,
+    _i3.somePostProcessBuilder,
   ),
 ];
 void main(
   List<String> args, [
-  _i8.SendPort? sendPort,
+  _i9.SendPort? sendPort,
 ]) async {
-  await _i9.buildProcessState.receive(sendPort);
-  _i9.buildProcessState.isolateExitCode = await _i10.run(
+  await _i10.buildProcessState.receive(sendPort);
+  _i10.buildProcessState.isolateExitCode = await _i11.run(
     args,
     _builders,
   );
-  _i11.exitCode = _i9.buildProcessState.isolateExitCode!;
-  await _i9.buildProcessState.send(sendPort);
+  _i12.exitCode = _i10.buildProcessState.isolateExitCode!;
+  await _i10.buildProcessState.send(sendPort);
 }
