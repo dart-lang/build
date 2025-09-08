@@ -29,7 +29,7 @@ name: none
 environment:
   sdk: ^3.7.0
 dependencies:
-  build_runner: '2.4.15'
+  build_runner: '2.8.0'
   build_test: any
 ''');
   Process.runSync('dart', ['pub', 'get'], workingDirectory: tempDirectory.path);
@@ -64,9 +64,7 @@ dependencies:
     'build',
     'build_config',
     'build_daemon',
-    'build_resolvers',
     'build_runner',
-    'build_runner_core',
     'build_test',
   ]) {
     final packageConfig = pubConfig.packageNamed(package);

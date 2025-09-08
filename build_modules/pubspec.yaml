@@ -31,8 +31,7 @@ dev_dependencies:
     path: test/fixtures/b
   build_runner: ^2.0.0
   build_test: ^3.1.0
-# TODO(davidmorgan): add back when it's released for build 3.0.0.
-#  json_serializable: ^6.9.1
+  json_serializable: ^6.9.5
   test: ^1.16.0
 
 topics:

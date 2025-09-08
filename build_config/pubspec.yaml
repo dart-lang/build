@@ -16,8 +16,7 @@ dependencies:
 
 dev_dependencies:
   build_runner: ^2.0.0
-  # TODO(davidmorgan): add back when released for build 3.0.0.
-  # json_serializable: ^6.0.0
+  json_serializable: ^6.9.5
   term_glyph: ^1.2.0
   test: ^1.16.0
 
