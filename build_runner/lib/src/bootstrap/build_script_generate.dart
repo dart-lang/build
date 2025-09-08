@@ -41,7 +41,7 @@ Future<String> generateBuildScript() async {
               builders,
               refer(
                 'BuilderApplication',
-                'package:build_runner/src/bootstrap/apply_builders.dart',
+                'package:build_runner/src/build_plan/builder_application.dart',
               ),
             ),
           )

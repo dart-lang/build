@@ -13,10 +13,10 @@ import 'package:build_daemon/data/serializers.dart';
 import 'package:build_daemon/data/server_log.dart';
 import 'package:built_collection/built_collection.dart';
 
-import '../bootstrap/apply_builders.dart';
 import '../bootstrap/build_process_state.dart';
 import '../build_plan/build_options.dart';
 import '../build_plan/build_plan.dart';
+import '../build_plan/builder_application.dart';
 import '../build_plan/testing_overrides.dart';
 import '../logging/build_log.dart';
 import 'build_runner_command.dart';

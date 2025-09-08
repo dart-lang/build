@@ -4,13 +4,13 @@
 
 import 'package:built_collection/built_collection.dart';
 
-import '../bootstrap/apply_builders.dart';
 import '../io/reader_writer.dart';
 import '../logging/build_log.dart';
 import 'build_directory.dart';
 import 'build_filter.dart';
 import 'build_options.dart';
 import 'build_phases.dart';
+import 'builder_application.dart';
 import 'package_graph.dart';
 import 'target_graph.dart';
 import 'testing_overrides.dart';

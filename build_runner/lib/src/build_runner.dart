@@ -11,10 +11,10 @@ import 'package:io/io.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
-import 'bootstrap/apply_builders.dart';
 import 'bootstrap/bootstrap.dart';
 import 'bootstrap/build_script_generate.dart';
 import 'build_plan/build_options.dart';
+import 'build_plan/builder_application.dart';
 import 'build_runner_command_line.dart';
 import 'commands/build_command.dart';
 import 'commands/build_runner_command.dart';
