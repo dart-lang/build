@@ -1,3 +1,7 @@
+## 2.8.1-wip
+
+- Bug fix: require `args` 2.5.0.
+
 ## 2.8.0
 
 - Make errors more prominent in log output, highlight in red.
