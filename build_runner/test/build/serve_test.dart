@@ -187,7 +187,7 @@ Future<ServeHandler> createHandler(
     ),
   );
 
-  return watchCommand.watch();
+  return (await watchCommand.watch())!;
 }
 
 /// Tells the program to terminate.

@@ -111,6 +111,7 @@ class BuildSeries {
 
   static Future<BuildSeries> create({required BuildPlan buildPlan}) async {
     final buildDefinition = await BuildDefinition.prepareWorkspace(
+      assetGraph: buildPlan.takeAssetGraph(),
       packageGraph: buildPlan.packageGraph,
       targetGraph: buildPlan.targetGraph,
       readerWriter: buildPlan.readerWriter,

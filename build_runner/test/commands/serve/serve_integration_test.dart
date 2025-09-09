@@ -60,7 +60,7 @@ void main() {
 
     terminateController = StreamController<ProcessSignal>();
     final server =
-        await WatchCommand(
+        (await WatchCommand(
           builders: [applyToRoot(const UppercaseBuilder())].build(),
           buildOptions: BuildOptions.forTests(
             verbose: true,
@@ -77,7 +77,7 @@ void main() {
             directoryWatcherFactory: FakeWatcher.new,
             terminateEventStream: terminateController.stream,
           ),
-        ).watch();
+        ).watch())!;
     handler = server.handlerFor('web', logRequests: true);
 
     nextBuild = Completer<BuildResult>();

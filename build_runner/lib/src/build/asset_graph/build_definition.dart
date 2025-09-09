@@ -20,7 +20,6 @@ import '../../io/reader_writer.dart';
 import '../../logging/build_log.dart';
 import 'exceptions.dart';
 import 'graph.dart';
-import 'graph_loader.dart';
 
 // TODO(davidmorgan): rename/refactor this, it's now just about loading state,
 // not a build definition.
@@ -37,7 +36,11 @@ class BuildDefinition {
 
   BuildDefinition._(this.assetGraph, this.buildScriptUpdates, this.updates);
 
+  /// Prepares a new asset graph.
+  ///
+  /// Pass the deserialized [assetGraph] from the previous build if available.
   static Future<BuildDefinition> prepareWorkspace({
+    required AssetGraph? assetGraph,
     required PackageGraph packageGraph,
     required TargetGraph targetGraph,
     required ReaderWriter readerWriter,
@@ -45,6 +48,7 @@ class BuildDefinition {
     required bool skipBuildScriptCheck,
   }) =>
       _Loader(
+        assetGraph,
         packageGraph,
         targetGraph,
         readerWriter,
@@ -54,6 +58,7 @@ class BuildDefinition {
 }
 
 class _Loader {
+  final AssetGraph? assetGraph;
   final PackageGraph packageGraph;
   final TargetGraph targetGraph;
   final ReaderWriter readerWriter;
@@ -61,6 +66,7 @@ class _Loader {
   final bool skipBuildScriptCheck;
 
   _Loader(
+    this.assetGraph,
     this.packageGraph,
     this.targetGraph,
     this.readerWriter,
@@ -69,16 +75,6 @@ class _Loader {
   );
 
   Future<BuildDefinition> prepareWorkspace() async {
-    buildPhases.checkOutputLocations(packageGraph.root.name);
-
-    final assetGraphLoader = AssetGraphLoader(
-      readerWriter: readerWriter,
-      buildPhases: buildPhases,
-      packageGraph: packageGraph,
-    );
-
-    var assetGraph = await assetGraphLoader.load();
-
     final assetTracker = AssetTracker(readerWriter, targetGraph);
     final inputSources = await assetTracker.findInputSources();
     final cacheDirSources = await assetTracker.findCacheDirSources();
@@ -86,6 +82,7 @@ class _Loader {
 
     BuildScriptUpdates? buildScriptUpdates;
     Map<AssetId, ChangeType>? updates;
+    var assetGraph = this.assetGraph;
     if (assetGraph != null) {
       buildLog.doing('Checking for updates.');
       updates = await _computeUpdates(
@@ -125,8 +122,29 @@ class _Loader {
       }
     }
 
-    if (assetGraph == null) {
+    if (assetGraph != null) {
+      // Prepare the asset graph for reuse. Move old build phases digests to
+      // "previous" fields, set the new ones. These are used to check for phases
+      // to fully rerun due to changed options.
+      assetGraph.previousInBuildPhasesOptionsDigests =
+          assetGraph.inBuildPhasesOptionsDigests;
+      assetGraph.inBuildPhasesOptionsDigests =
+          buildPhases.inBuildPhasesOptionsDigests;
+      assetGraph.previousPostBuildActionsOptionsDigests =
+          assetGraph.postBuildActionsOptionsDigests;
+      assetGraph.postBuildActionsOptionsDigests =
+          buildPhases.postBuildActionsOptionsDigests;
+    } else {
       buildLog.doing('Creating the asset graph.');
+
+      // Clear any incompatible generated output and asset graph.
+      await readerWriter.deleteDirectory(
+        packageGraph.generatedOutputDirectoryId,
+      );
+      final assetGraphId = AssetId(packageGraph.root.name, assetGraphPath);
+      if (await readerWriter.canRead(assetGraphId)) {
+        await readerWriter.delete(assetGraphId);
+      }
 
       late Set<AssetId> conflictingOutputs;
       try {
@@ -216,3 +234,8 @@ class _Loader {
 }
 
 bool get _runningFromSnapshot => !Platform.script.path.endsWith('.dart');
+
+extension _PackageGraphExtensions on PackageGraph {
+  AssetId get generatedOutputDirectoryId =>
+      AssetId(root.name, generatedOutputDirectory);
+}

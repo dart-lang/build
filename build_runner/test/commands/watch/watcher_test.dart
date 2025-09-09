@@ -1159,7 +1159,7 @@ Future<BuildState> startWatch(
   FakeWatcher watcherFactory(String path) => FakeWatcher(path);
 
   final state =
-      await WatchCommand(
+      (await WatchCommand(
         builders: builders.toBuiltList(),
         buildOptions: BuildOptions.forTests(
           configKey: configKey,
@@ -1174,7 +1174,7 @@ Future<BuildState> startWatch(
           readerWriter: readerWriter,
           terminateEventStream: _terminateWatchController!.stream,
         ),
-      ).watch();
+      ).watch())!;
 
   // Some tests need access to `reader` so we expose it through an expando.
   _readerForState[state] = readerWriter;

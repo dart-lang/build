@@ -12,6 +12,7 @@ import 'package:build_daemon/daemon.dart';
 import 'package:build_daemon/data/serializers.dart';
 import 'package:build_daemon/data/server_log.dart';
 import 'package:built_collection/built_collection.dart';
+import 'package:io/io.dart';
 
 import '../bootstrap/build_process_state.dart';
 import '../build_plan/build_options.dart';
@@ -95,6 +96,9 @@ $logEndMarker''');
         buildOptions: buildOptions,
         testingOverrides: testingOverrides,
       );
+      await buildPlan.deletePreviousBuildOutputs();
+      if (buildPlan.restartIsNeeded) return ExitCode.tempFail.code;
+
       final builder = await BuildRunnerDaemonBuilder.create(
         buildPlan: buildPlan,
         daemonOptions: daemonOptions,
