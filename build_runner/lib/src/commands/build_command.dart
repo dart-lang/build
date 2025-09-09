@@ -52,7 +52,7 @@ class BuildCommand implements BuildRunnerCommand {
       buildOptions: buildOptions,
       testingOverrides: testingOverrides,
     );
-    await buildPlan.deletePreviousBuildOutputs();
+    await buildPlan.deleteFilesAndFolders();
     if (buildPlan.restartIsNeeded) {
       return BuildResult.buildScriptChanged();
     }

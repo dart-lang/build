@@ -464,7 +464,7 @@ Future<TestBuilderResult> testBuilderFactories(
     ),
     testingOverrides: testingOverrides,
   );
-  await buildPlan.deletePreviousBuildOutputs();
+  await buildPlan.deleteFilesAndFolders();
 
   final buildSeries = await BuildSeries.create(buildPlan: buildPlan);
 

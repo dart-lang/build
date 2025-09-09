@@ -141,6 +141,22 @@ class AssetGraph implements GeneratedAssetHider {
     previousPhasedAssetDeps: previousPhasedAssetDeps,
   );
 
+  /// Copies the graph prepared for the next build with [buildPhases].
+  AssetGraph copyForNextBuild(BuildPhases buildPhases) {
+    // TODO(davidmorgan): clean up so there is a way to copy safely without
+    // serializing then deserializing.
+    final result = AssetGraph.deserialize(serialize())!;
+    result.previousInBuildPhasesOptionsDigests =
+        result.inBuildPhasesOptionsDigests;
+    result.inBuildPhasesOptionsDigests =
+        buildPhases.inBuildPhasesOptionsDigests;
+    result.previousPostBuildActionsOptionsDigests =
+        result.postBuildActionsOptionsDigests;
+    result.postBuildActionsOptionsDigests =
+        buildPhases.postBuildActionsOptionsDigests;
+    return result;
+  }
+
   /// Deserializes an [AssetGraph] from a [Map].
   ///
   /// Returns `null` if deserialization fails.
@@ -717,20 +733,6 @@ class AssetGraph implements GeneratedAssetHider {
       );
     }
     return id;
-  }
-
-  /// Deletes outputs that were written to the source tree.
-  ///
-  /// Returns the assets that were deleted.
-  Future<Iterable<AssetId>> deleteOutputs(
-    PackageGraph packageGraph,
-    ReaderWriter readerWriter,
-  ) async {
-    final result = outputsToDelete(packageGraph);
-    for (final id in outputsToDelete(packageGraph)) {
-      await readerWriter.delete(id);
-    }
-    return result;
   }
 
   /// Returns outputs that were written to the source tree.

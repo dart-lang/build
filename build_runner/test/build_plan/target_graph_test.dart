@@ -107,14 +107,14 @@ void main() {
   group('target graph reports visible assets', () {
     final a = rootPackage('a');
     final b = package('b');
-    final packages = buildPackageGraph({
+    final packageGraph = buildPackageGraph({
       a: ['b'],
       b: [],
     });
 
     test('for root package', () async {
       final targetGraph = await TargetGraph.forPackageGraph(
-        packageGraph: packages,
+        packageGraph: packageGraph,
         testingOverrides: TestingOverrides(
           defaultRootPackageSources: ['**'].build(),
         ),
@@ -137,7 +137,7 @@ void main() {
 
     test('for non-root package with default configuration', () async {
       final targetGraph = await TargetGraph.forPackageGraph(
-        packageGraph: packages,
+        packageGraph: packageGraph,
         testingOverrides: TestingOverrides(
           defaultRootPackageSources: ['**'].build(),
         ),
@@ -166,7 +166,7 @@ void main() {
 
     test('for non-root package exposing additional assets', () async {
       final targetGraph = await TargetGraph.forPackageGraph(
-        packageGraph: packages,
+        packageGraph: packageGraph,
         testingOverrides: TestingOverrides(
           defaultRootPackageSources: ['**'].build(),
           buildConfig:
@@ -194,6 +194,72 @@ void main() {
       expect(
         targetGraph.allModules['b:b']!.sourceIncludes,
         contains(isA<Glob>().having((e) => e.pattern, 'pattern', 'test/**')),
+      );
+    });
+
+    // https://github.com/dart-lang/build/issues/1042
+    test('a missing sources/include does not cause an error', () async {
+      final rootPkg = packageGraph.root.name;
+      final targetGraph = await TargetGraph.forPackageGraph(
+        packageGraph: packageGraph,
+        testingOverrides: TestingOverrides(
+          buildConfig:
+              {
+                rootPkg: BuildConfig.fromMap(rootPkg, [], {
+                  'targets': {
+                    'another': <String, dynamic>{},
+                    '\$default': {
+                      'sources': {
+                        'exclude': ['lib/src/**'],
+                      },
+                    },
+                  },
+                }),
+              }.build(),
+        ),
+      );
+
+      expect(
+        targetGraph.allModules['$rootPkg:another']!.sourceIncludes,
+        isNotEmpty,
+      );
+      expect(
+        targetGraph.allModules['$rootPkg:$rootPkg']!.sourceIncludes,
+        isNotEmpty,
+      );
+    });
+
+    test('a missing sources/include results in the default sources', () async {
+      final rootPkg = packageGraph.root.name;
+      final targetGraph = await TargetGraph.forPackageGraph(
+        packageGraph: packageGraph,
+        testingOverrides: TestingOverrides(
+          buildConfig:
+              {
+                rootPkg: BuildConfig.fromMap(rootPkg, [], {
+                  'targets': {
+                    'another': <String, dynamic>{},
+                    '\$default': {
+                      'sources': {
+                        'exclude': ['lib/src/**'],
+                      },
+                    },
+                  },
+                }),
+              }.build(),
+        ),
+      );
+      expect(
+        targetGraph.allModules['$rootPkg:another']!.sourceIncludes.map(
+          (glob) => glob.pattern,
+        ),
+        defaultRootPackageSources,
+      );
+      expect(
+        targetGraph.allModules['$rootPkg:$rootPkg']!.sourceIncludes.map(
+          (glob) => glob.pattern,
+        ),
+        defaultRootPackageSources,
       );
     });
   });

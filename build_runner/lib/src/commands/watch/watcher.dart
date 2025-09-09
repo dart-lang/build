@@ -224,16 +224,8 @@ class Watcher implements BuildState {
 
         firstBuild = BuildResult(BuildStatus.failure, []);
         _readerCompleter.completeError(e, s);
-      } on BuildScriptChangedException catch (e, s) {
-        _terminateCompleter.complete();
-
-        firstBuild = BuildResult(
-          BuildStatus.failure,
-          [],
-          failureType: FailureType.buildScriptChanged,
-        );
-        _readerCompleter.completeError(e, s);
       }
+
       if (build != null) {
         assert(!_readerCompleter.isCompleted);
         _readerCompleter.complete(build.finalizedReader);
