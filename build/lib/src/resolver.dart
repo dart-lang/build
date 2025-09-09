@@ -15,7 +15,7 @@ import 'build_step.dart';
 
 /// Standard interface for resolving Dart source code as part of a build.
 abstract class Resolver {
-  /// Returns whether [assetId] represents an Dart library file.
+  /// Returns whether [assetId] represents a Dart library file.
   ///
   /// This will be `false` in the case where the file is not Dart source code,
   /// or is a `part of` file (not a standalone Dart library).
