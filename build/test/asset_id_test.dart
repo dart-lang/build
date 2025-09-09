@@ -18,6 +18,10 @@ void main() {
       final id = AssetId('app', r'path\to/asset.txt');
       expect(id.path, equals('path/to/asset.txt'));
     });
+
+    test('allows empty package and path', () {
+      AssetId('', '');
+    });
   });
 
   group('parse', () {
@@ -29,14 +33,6 @@ void main() {
 
     test("throws if there are multiple '|'", () {
       expect(() => AssetId.parse('app|path|wtf'), throwsFormatException);
-    });
-
-    test("throws if the package name is empty '|'", () {
-      expect(() => AssetId.parse('|asset.txt'), throwsFormatException);
-    });
-
-    test("throws if the path is empty '|'", () {
-      expect(() => AssetId.parse('app|'), throwsFormatException);
     });
 
     test('normalizes the path', () {
@@ -141,6 +137,25 @@ void main() {
       expect(
         AssetId('foo', 'lib/#bar.dart').uri,
         Uri.parse('package:foo/%23bar.dart'),
+      );
+    });
+  });
+
+  group('changeExtension', () {
+    test('replaces everything from the last dot', () {
+      expect(
+        AssetId('foo', 'lib/bar.dart').changeExtension('.other'),
+        AssetId('foo', 'lib/bar.other'),
+      );
+
+      expect(
+        AssetId('foo', 'lib/bar.1.dart').changeExtension('.other'),
+        AssetId('foo', 'lib/bar.1.other'),
+      );
+
+      expect(
+        AssetId('foo', 'lib/bar').changeExtension('.other'),
+        AssetId('foo', 'lib/bar.other'),
       );
     });
   });

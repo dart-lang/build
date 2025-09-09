@@ -1,6 +1,7 @@
 ## 2.8.1-wip
 
 - Bug fix: require `args` 2.5.0.
+- Use `build` ^4.0.0.
 
 ## 2.8.0
 
