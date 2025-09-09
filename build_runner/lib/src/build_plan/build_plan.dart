@@ -47,7 +47,7 @@ class BuildPlan {
   /// If the old asset graph needs deleting prior to a restart it's also
   /// included here.
   ///
-  /// Call[deletePreviousBuildOutputs] to delete them.
+  /// Call [deletePreviousBuildOutputs] to delete them.
   final BuiltList<AssetId> previousBuildOutputs;
 
   BuildPlan({
