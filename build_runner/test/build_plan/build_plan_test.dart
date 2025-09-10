@@ -4,8 +4,8 @@
 
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
+import 'package:build_config/build_config.dart';
 import 'package:build_runner/src/bootstrap/apply_builders.dart';
-import 'package:build_runner/src/build/asset_graph/build_definition.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
 import 'package:build_runner/src/build_plan/build_plan.dart';
 import 'package:build_runner/src/build_plan/package_graph.dart';
@@ -15,20 +15,25 @@ import 'package:build_runner/src/io/reader_writer.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:test/test.dart';
+import 'package:watcher/watcher.dart';
 
 import '../common/common.dart';
 
 void main() {
   group('BuildPlan', () {
     final rootPackage = 'a';
-    final asset = AssetId(rootPackage, 'lib/a.dart');
+    final assetId = AssetId(rootPackage, 'lib/a.dart');
+    final outputId = AssetId('a', 'lib/a.dart.copy');
+    final assetId2 = AssetId(rootPackage, 'lib/an.other');
     final assetGraphId = AssetId(rootPackage, assetGraphPath);
+
+    late PackageGraph packageGraph;
     late ReaderWriter readerWriter;
     late BuildOptions buildOptions;
     late TestingOverrides testingOverrides;
 
     setUp(() {
-      final packageGraph = PackageGraph.fromRoot(
+      packageGraph = PackageGraph.fromRoot(
         PackageNode(
           rootPackage,
           '/$rootPackage',
@@ -38,8 +43,12 @@ void main() {
         ),
       );
       readerWriter = InternalTestReaderWriter(rootPackage: rootPackage);
-      readerWriter.writeAsString(asset, '// a.dart');
-      buildOptions = BuildOptions.forTests();
+      readerWriter.writeAsString(assetId, '// a.dart');
+      readerWriter.writeAsString(assetId2, '// other');
+      buildOptions = BuildOptions.forTests(
+        // Script check doesn't work in tests, skip it.
+        skipBuildScriptCheck: true,
+      );
       testingOverrides = TestingOverrides(
         readerWriter: readerWriter,
         packageGraph: packageGraph,
@@ -52,7 +61,7 @@ void main() {
         buildOptions: buildOptions,
         testingOverrides: testingOverrides,
       );
-      expect(buildPlan.takeAssetGraph(), null);
+      expect(buildPlan.takePreviousAssetGraph(), null);
     });
 
     test('loads previous asset graph', () async {
@@ -61,15 +70,7 @@ void main() {
         buildOptions: buildOptions,
         testingOverrides: testingOverrides,
       );
-      final assetGraph =
-          (await BuildDefinition.prepareWorkspace(
-            assetGraph: null,
-            packageGraph: buildPlan.packageGraph,
-            targetGraph: buildPlan.targetGraph,
-            readerWriter: readerWriter,
-            buildPhases: buildPlan.buildPhases,
-            skipBuildScriptCheck: true,
-          )).assetGraph;
+      final assetGraph = buildPlan.takeAssetGraph();
       await readerWriter.writeAsBytes(assetGraphId, assetGraph.serialize());
 
       buildPlan = await BuildPlan.load(
@@ -77,7 +78,7 @@ void main() {
         buildOptions: buildOptions,
         testingOverrides: testingOverrides,
       );
-      final loadedGraph = buildPlan.takeAssetGraph();
+      final loadedGraph = buildPlan.takePreviousAssetGraph();
       expect(loadedGraph.toString(), assetGraph.toString());
     });
 
@@ -87,15 +88,7 @@ void main() {
         buildOptions: buildOptions,
         testingOverrides: testingOverrides,
       );
-      final assetGraph =
-          (await BuildDefinition.prepareWorkspace(
-            assetGraph: null,
-            packageGraph: buildPlan.packageGraph,
-            targetGraph: buildPlan.targetGraph,
-            readerWriter: readerWriter,
-            buildPhases: buildPlan.buildPhases,
-            skipBuildScriptCheck: true,
-          )).assetGraph;
+      final assetGraph = buildPlan.takeAssetGraph();
       await readerWriter.writeAsBytes(assetGraphId, assetGraph.serialize());
 
       buildPlan = await BuildPlan.load(
@@ -111,18 +104,11 @@ void main() {
         testingOverrides: testingOverrides,
       );
 
-      expect(buildPlan.takeAssetGraph(), null);
+      expect(buildPlan.takePreviousAssetGraph(), null);
 
-      // The old graph gets deleted when a new one is created.
+      // The old graph is in [BuildPlan#filesToDelete] because it's invalid.
       expect(await readerWriter.canRead(assetGraphId), true);
-      await BuildDefinition.prepareWorkspace(
-        assetGraph: null,
-        packageGraph: buildPlan.packageGraph,
-        targetGraph: buildPlan.targetGraph,
-        readerWriter: readerWriter,
-        buildPhases: buildPlan.buildPhases,
-        skipBuildScriptCheck: true,
-      );
+      await buildPlan.deleteFilesAndFolders();
       expect(await readerWriter.canRead(assetGraphId), false);
     });
 
@@ -141,17 +127,9 @@ void main() {
         buildOptions: buildOptions,
         testingOverrides: testingOverrides,
       );
-      final assetGraph =
-          (await BuildDefinition.prepareWorkspace(
-            assetGraph: null,
-            packageGraph: buildPlan.packageGraph,
-            targetGraph: buildPlan.targetGraph,
-            readerWriter: readerWriter,
-            buildPhases: buildPlan.buildPhases,
-            skipBuildScriptCheck: true,
-          )).assetGraph;
+      final assetGraph = buildPlan.takeAssetGraph();
+
       // Write an output and add it to the asset graph as if it was built.
-      final outputId = AssetId('a', 'lib/a.dart.copy');
       await readerWriter.writeAsString(outputId, '// output');
       assetGraph.updateNode(outputId, (b) {
         b.digest = Digest([]);
@@ -171,12 +149,12 @@ void main() {
         testingOverrides: testingOverrides,
       );
 
-      expect(buildPlan.takeAssetGraph(), null);
-      expect(buildPlan.previousBuildOutputs, isNotEmpty);
+      expect(buildPlan.takePreviousAssetGraph(), null);
+      expect(buildPlan.filesToDelete, isNotEmpty);
 
       // `BuildPlan` can delete lost outputs.
       expect(await readerWriter.canRead(outputId), true);
-      await buildPlan.deletePreviousBuildOutputs();
+      await buildPlan.deleteFilesAndFolders();
       expect(await readerWriter.canRead(outputId), false);
     });
 
@@ -186,15 +164,7 @@ void main() {
         buildOptions: buildOptions,
         testingOverrides: testingOverrides,
       );
-      final assetGraph =
-          (await BuildDefinition.prepareWorkspace(
-            assetGraph: null,
-            packageGraph: buildPlan.packageGraph,
-            targetGraph: buildPlan.targetGraph,
-            readerWriter: readerWriter,
-            buildPhases: buildPlan.buildPhases,
-            skipBuildScriptCheck: true,
-          )).assetGraph;
+      final assetGraph = buildPlan.takeAssetGraph();
       await readerWriter.writeAsBytes(assetGraphId, assetGraph.serialize());
 
       buildPlan = await BuildPlan.load(
@@ -210,7 +180,7 @@ void main() {
         testingOverrides: testingOverrides,
       );
 
-      expect(buildPlan.takeAssetGraph(), null);
+      expect(buildPlan.takePreviousAssetGraph(), null);
     });
 
     test('discards previous asset graph if packages changed', () async {
@@ -219,15 +189,7 @@ void main() {
         buildOptions: buildOptions,
         testingOverrides: testingOverrides,
       );
-      final assetGraph =
-          (await BuildDefinition.prepareWorkspace(
-            assetGraph: null,
-            packageGraph: buildPlan.packageGraph,
-            targetGraph: buildPlan.targetGraph,
-            readerWriter: readerWriter,
-            buildPhases: buildPlan.buildPhases,
-            skipBuildScriptCheck: true,
-          )).assetGraph;
+      final assetGraph = buildPlan.takeAssetGraph();
       await readerWriter.writeAsBytes(assetGraphId, assetGraph.serialize());
 
       final packageGraph2 = PackageGraph.fromRoot(
@@ -243,7 +205,7 @@ void main() {
         testingOverrides: testingOverrides2,
       );
 
-      expect(buildPlan.takeAssetGraph(), null);
+      expect(buildPlan.takePreviousAssetGraph(), null);
     });
 
     test(
@@ -254,15 +216,7 @@ void main() {
           buildOptions: buildOptions,
           testingOverrides: testingOverrides,
         );
-        final assetGraph =
-            (await BuildDefinition.prepareWorkspace(
-              assetGraph: null,
-              packageGraph: buildPlan.packageGraph,
-              targetGraph: buildPlan.targetGraph,
-              readerWriter: readerWriter,
-              buildPhases: buildPlan.buildPhases,
-              skipBuildScriptCheck: true,
-            )).assetGraph;
+        final assetGraph = buildPlan.takeAssetGraph();
         await readerWriter.writeAsBytes(assetGraphId, assetGraph.serialize());
 
         buildPlan = await withEnabledExperiments(
@@ -274,8 +228,106 @@ void main() {
           ['an_experiment'],
         );
 
-        expect(buildPlan.takeAssetGraph(), null);
+        expect(buildPlan.takePreviousAssetGraph(), null);
       },
     );
+
+    test('reports updates', () async {
+      var buildPlan = await BuildPlan.load(
+        builders: [applyToRoot(TestBuilder())].build(),
+        buildOptions: buildOptions,
+        testingOverrides: testingOverrides,
+      );
+      final assetGraph = buildPlan.takeAssetGraph();
+
+      // Write an output and add it to the asset graph as if it was built.
+      await readerWriter.writeAsString(outputId, '// output');
+      assetGraph.updateNode(outputId, (b) {
+        b.digest = Digest([]);
+      });
+
+      await readerWriter.writeAsBytes(assetGraphId, assetGraph.serialize());
+
+      // Remove source.
+      await readerWriter.delete(assetId);
+      // Change source.
+      await readerWriter.writeAsString(assetId2, 'changed');
+      // Add source.
+      final assetId3 = AssetId(rootPackage, 'lib/new.dart');
+      await readerWriter.writeAsString(assetId3, '');
+
+      // Remove generated.
+      await readerWriter.delete(outputId);
+
+      buildPlan = await BuildPlan.load(
+        builders: [applyToRoot(TestBuilder())].build(),
+        buildOptions: buildOptions,
+        testingOverrides: testingOverrides,
+      );
+
+      expect(buildPlan.updates!.asMap(), <AssetId, ChangeType>{
+        assetId: ChangeType.REMOVE,
+        assetId2: ChangeType.MODIFY,
+        assetId3: ChangeType.ADD,
+        outputId: ChangeType.REMOVE,
+      });
+    });
+
+    test('applies target glob from build config', () async {
+      final buildConfig1 = runInBuildConfigZone(
+        () {
+          return BuildConfig(
+            packageName: rootPackage,
+            buildTargets: {
+              '$rootPackage|$rootPackage': BuildTarget(
+                sources: const InputSet(include: ['**/*.dart']),
+              ),
+            },
+          );
+        },
+        rootPackage,
+        [],
+      );
+      final buildPlan1 = await BuildPlan.load(
+        builders: [applyToRoot(TestBuilder())].build(),
+        buildOptions: buildOptions,
+        testingOverrides: TestingOverrides(
+          readerWriter: readerWriter,
+          packageGraph: packageGraph,
+          buildConfig: {rootPackage: buildConfig1}.build(),
+        ),
+      );
+      final assetGraph1 = buildPlan1.takeAssetGraph();
+      // Matches the only `*.dart` source.
+      expect(assetGraph1.sources, <AssetId>{assetId});
+
+      // Same again but now glob `*.other`.
+      final buildConfig2 = runInBuildConfigZone(
+        () {
+          return BuildConfig(
+            packageName: rootPackage,
+            buildTargets: {
+              '$rootPackage|$rootPackage': BuildTarget(
+                sources: const InputSet(include: ['**/*.other']),
+              ),
+            },
+          );
+        },
+        rootPackage,
+        [],
+      );
+      final buildPlan2 = await BuildPlan.load(
+        builders: [applyToRoot(TestBuilder())].build(),
+        buildOptions: buildOptions,
+        testingOverrides: TestingOverrides(
+          readerWriter: readerWriter,
+          packageGraph: packageGraph,
+          buildConfig: {rootPackage: buildConfig2}.build(),
+        ),
+      );
+      final assetGraph2 = buildPlan2.takeAssetGraph();
+      // Matches the only `*.other` source.
+      expect(assetGraph2.sources, <AssetId>{assetId2});
+    });
   });
 }

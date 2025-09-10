@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+import 'package:build_config/build_config.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/phase.dart';
 import 'package:test/test.dart';
@@ -62,6 +63,58 @@ void main() {
       ]);
 
       expect(buildPhases1.digest, buildPhases2.digest);
+    });
+
+    test('options digest changes on builder options change', () {
+      // Changes to builder code is checked via changes to the build script and
+      // deps, not by `BuildPhases`.
+      final buildPhases1 = BuildPhases([InBuildPhase(TestBuilder(), 'a')]);
+      final buildPhases2 = BuildPhases([
+        InBuildPhase(
+          TestBuilder(),
+          'a',
+          builderOptions: const BuilderOptions({'a': 'b'}),
+        ),
+      ]);
+
+      expect(
+        buildPhases1.inBuildPhasesOptionsDigests,
+        isNot(buildPhases2.inBuildPhasesOptionsDigests),
+      );
+    });
+
+    test('options digest changes on post builder options change', () {
+      // Changes to builder code is checked via changes to the build script and
+      // deps, not by `BuildPhases`.
+      final buildPhases1 = BuildPhases(
+        [],
+        PostBuildPhase([
+          PostBuildAction(
+            const FileDeletingBuilder(['']),
+            'a',
+            builderOptions: const BuilderOptions({}),
+            targetSources: const InputSet(),
+            generateFor: const InputSet(),
+          ),
+        ]),
+      );
+      final buildPhases2 = BuildPhases(
+        [],
+        PostBuildPhase([
+          PostBuildAction(
+            const FileDeletingBuilder(['']),
+            'a',
+            builderOptions: const BuilderOptions({'a': 'b'}),
+            targetSources: const InputSet(),
+            generateFor: const InputSet(),
+          ),
+        ]),
+      );
+
+      expect(
+        buildPhases1.postBuildActionsOptionsDigests,
+        isNot(buildPhases2.postBuildActionsOptionsDigests),
+      );
     });
   });
 }

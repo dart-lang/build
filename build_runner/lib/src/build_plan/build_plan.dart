@@ -7,10 +7,16 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:built_collection/built_collection.dart';
+import 'package:watcher/watcher.dart';
 
 import '../bootstrap/build_process_state.dart';
+import '../bootstrap/build_script_updates.dart';
+import '../build/asset_graph/exceptions.dart';
 import '../build/asset_graph/graph.dart';
 import '../constants.dart';
+import '../exceptions.dart';
+import '../io/asset_tracker.dart';
+import '../io/generated_asset_hider.dart';
 import '../io/reader_writer.dart';
 import '../logging/build_log.dart';
 import 'build_directory.dart';
@@ -33,22 +39,28 @@ class BuildPlan {
   final TargetGraph targetGraph;
   final BuildPhases buildPhases;
 
-  final AssetGraph? _assetGraph;
-  bool _assetGraphWasTaken;
+  final AssetGraph? _previousAssetGraph;
+  bool _previousAssetGraphWasTaken;
   final bool restartIsNeeded;
 
-  /// Outputs from the previous build that should be deleted before restarting
-  /// or before doing another build.
+  final BuildScriptUpdates? buildScriptUpdates;
+  final AssetGraph _assetGraph;
+  bool _assetGraphWasTaken;
+  final BuiltMap<AssetId, ChangeType>? updates;
+
+  /// Files to delete before restarting or before the next build.
   ///
-  /// It includes generated outputs of the previous build, which might not be
-  /// findable later because they might not be outputs of the current build due
-  /// to changes to configuration.
+  /// - Outputs from the previous build.
+  /// - Files on disk that conflict with outputs of the current build.
+  /// - The asset graph, if it's invalid.
   ///
-  /// If the old asset graph needs deleting prior to a restart it's also
-  /// included here.
+  /// Call [deleteFilesAndFolders] to delete them.
+  final BuiltList<AssetId> filesToDelete;
+
+  /// Folders to delete before restarting or before the next build.
   ///
-  /// Call [deletePreviousBuildOutputs] to delete them.
-  final BuiltList<AssetId> previousBuildOutputs;
+  /// Call [deleteFilesAndFolders] to delete them.
+  final BuiltList<AssetId> foldersToDelete;
 
   BuildPlan({
     required this.builders,
@@ -58,11 +70,18 @@ class BuildPlan {
     required this.readerWriter,
     required this.targetGraph,
     required this.buildPhases,
-    required AssetGraph? assetGraph,
-    required bool assetGraphWasTaken,
+    required AssetGraph? previousAssetGraph,
+    required bool previousAssetGraphWasTaken,
     required this.restartIsNeeded,
-    required this.previousBuildOutputs,
-  }) : _assetGraph = assetGraph,
+    required this.buildScriptUpdates,
+    required AssetGraph assetGraph,
+    required bool assetGraphWasTaken,
+    required this.updates,
+    required this.filesToDelete,
+    required this.foldersToDelete,
+  }) : _previousAssetGraph = previousAssetGraph,
+       _previousAssetGraphWasTaken = previousAssetGraphWasTaken,
+       _assetGraph = assetGraph,
        _assetGraphWasTaken = assetGraphWasTaken;
 
   /// Loads a build plan.
@@ -73,9 +92,11 @@ class BuildPlan {
   ///
   /// If the asset graph indicates a restart is needed, [restartIsNeeded] will
   /// be set. Otherwise, if it's valid, the deserialized asset graph is
-  /// available from [takeAssetGraph]. In any case, any outputs that it
-  /// indicates should be deleted are loaded to [previousBuildOutputs].
-  /// Call [deletePreviousBuildOutputs] to delete them.
+  /// available from [takePreviousAssetGraph].
+  ///
+  /// Files that should be deleted before restarting or building are accumulated
+  /// in [filesToDelete] and [foldersToDelete]. Call [deleteFilesAndFolders] to
+  /// delete them.
   static Future<BuildPlan> load({
     required BuiltList<BuilderApplication> builders,
     required BuildOptions buildOptions,
@@ -107,48 +128,162 @@ class BuildPlan {
     }
 
     buildLog.doing('Reading the asset graph.');
-    AssetGraph? assetGraph;
+    AssetGraph? previousAssetGraph;
     var restartIsNeeded = false;
-    var previousBuildOutputs = BuiltList<AssetId>();
+    final filesToDelete = <AssetId>{};
+    final foldersToDelete = <AssetId>{};
+
     final assetGraphId = AssetId(packageGraph.root.name, assetGraphPath);
+    final generatedOutputDirectoryId = AssetId(
+      packageGraph.root.name,
+      generatedOutputDirectory,
+    );
+
     if (await readerWriter.canRead(assetGraphId)) {
-      assetGraph = AssetGraph.deserialize(
+      previousAssetGraph = AssetGraph.deserialize(
         await readerWriter.readAsBytes(assetGraphId),
       );
-      if (assetGraph == null) {
+      if (previousAssetGraph == null) {
         buildLog.fullBuildBecause(FullBuildReason.incompatibleAssetGraph);
       } else {
         final buildPhasesChanged =
-            buildPhases.digest != assetGraph.buildPhasesDigest;
+            buildPhases.digest != previousAssetGraph.buildPhasesDigest;
         final pkgVersionsChanged =
-            assetGraph.packageLanguageVersions != packageGraph.languageVersions;
+            previousAssetGraph.packageLanguageVersions !=
+            packageGraph.languageVersions;
         final enabledExperimentsChanged =
-            assetGraph.enabledExperiments != enabledExperiments.build();
+            previousAssetGraph.enabledExperiments != enabledExperiments.build();
         if (buildPhasesChanged ||
             pkgVersionsChanged ||
             enabledExperimentsChanged ||
-            !isSameSdkVersion(assetGraph.dartVersion, Platform.version)) {
+            !isSameSdkVersion(
+              previousAssetGraph.dartVersion,
+              Platform.version,
+            )) {
           buildLog.fullBuildBecause(FullBuildReason.incompatibleBuild);
+          // Mark old outputs for deletion.
+          filesToDelete.addAll(
+            previousAssetGraph.outputsToDelete(packageGraph),
+          );
 
           // If running from snapshot, the changes mean the current snapshot
           // might be out of date and needs rebuilding. If not, the changes have
-          // presumably already been picked up in the currently-running script.
-          restartIsNeeded = _runningFromSnapshot;
+          // presumably already been picked up in the currently-running script,
+          // so continue to build a new asset graph from scrach.
+          restartIsNeeded |= _runningFromSnapshot;
 
-          // In all cases, outputs of the previous build should be deleted as
-          // they might not be findable within the current build.
-          //
-          // Only if restarting, the asset graph needs deleting before restart
-          // to prevent looping restarts. If not restarting, it will be deleted
-          // when the new asset graph is created.
-          final outputsToDelete = ListBuilder<AssetId>();
-          outputsToDelete.addAll(assetGraph.outputsToDelete(packageGraph));
-          if (restartIsNeeded) outputsToDelete.add(assetGraphId);
-
-          previousBuildOutputs = outputsToDelete.build();
-          assetGraph = null;
+          // Discard the invalid asset graph so that a new one will be created
+          // from scratch, and delete it so that the same will happen if
+          // restarting.
+          filesToDelete.add(assetGraphId);
+          previousAssetGraph = null;
         }
       }
+    }
+
+    // If there was no previous asset graph or it was invalid, start by deleting
+    // the generated output directory.
+    if (previousAssetGraph == null) {
+      foldersToDelete.add(generatedOutputDirectoryId);
+    }
+
+    final assetTracker = AssetTracker(readerWriter, targetGraph);
+    final inputSources = await assetTracker.findInputSources();
+    final cacheDirSources = await assetTracker.findCacheDirSources();
+    final internalSources = await assetTracker.findInternalSources();
+
+    AssetGraph? assetGraph;
+    BuildScriptUpdates? buildScriptUpdates;
+    Map<AssetId, ChangeType>? updates;
+    if (previousAssetGraph != null) {
+      buildLog.doing('Checking for updates.');
+      updates = await assetTracker.computeSourceUpdates(
+        inputSources,
+        cacheDirSources,
+        internalSources,
+        previousAssetGraph,
+      );
+      buildScriptUpdates = await BuildScriptUpdates.create(
+        readerWriter,
+        packageGraph,
+        previousAssetGraph,
+        disabled: buildOptions.skipBuildScriptCheck,
+      );
+
+      final buildScriptUpdated =
+          !buildOptions.skipBuildScriptCheck &&
+          buildScriptUpdates.hasBeenUpdated(updates.keys.toSet());
+      if (buildScriptUpdated) {
+        buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
+        // Mark old outputs for deletion.
+        filesToDelete.addAll(previousAssetGraph.outputsToDelete(packageGraph));
+        foldersToDelete.add(generatedOutputDirectoryId);
+
+        // If running from snapshot, the changes mean the current snapshot
+        // might be out of date and needs rebuilding. If not, the changes have
+        // presumably already been picked up in the currently-running script,
+        // so continue to build a new asset graph from scratch.
+        restartIsNeeded |= _runningFromSnapshot;
+
+        // Discard the invalid asset graph so that a new one will be created
+        // from scratch, and mark it for deletion so that the same will happen
+        // if restarting.
+        previousAssetGraph = null;
+        filesToDelete.add(assetGraphId);
+
+        // Discard state tied to the invalid asset graph.
+        buildScriptUpdates = null;
+        updates = null;
+      } else {
+        assetGraph = previousAssetGraph.copyForNextBuild(buildPhases);
+      }
+    }
+
+    if (assetGraph == null) {
+      buildLog.doing('Creating the asset graph.');
+
+      // Files marked for deletion are not inputs.
+      inputSources.removeAll(filesToDelete);
+
+      try {
+        assetGraph = await AssetGraph.build(
+          buildPhases,
+          inputSources,
+          internalSources,
+          packageGraph,
+          readerWriter,
+        );
+      } on DuplicateAssetNodeException catch (e) {
+        buildLog.error(e.toString());
+        throw const CannotBuildException();
+      }
+      buildScriptUpdates = await BuildScriptUpdates.create(
+        readerWriter,
+        packageGraph,
+        assetGraph,
+        disabled: buildOptions.skipBuildScriptCheck,
+      );
+      final conflictsInDeps =
+          assetGraph.outputs
+              .where((n) => n.package != packageGraph.root.name)
+              .where(inputSources.contains)
+              .toSet();
+      if (conflictsInDeps.isNotEmpty) {
+        buildLog.error(
+          'There are existing files in dependencies which conflict '
+          'with files that a Builder may produce. These must be removed or '
+          'the Builders disabled before a build can continue: '
+          '${conflictsInDeps.map((a) => a.uri).join('\n')}',
+        );
+        throw const CannotBuildException();
+      }
+
+      filesToDelete.addAll(
+        assetGraph.outputs
+            .where((n) => n.package == packageGraph.root.name)
+            .where(inputSources.contains)
+            .toSet(),
+      );
     }
 
     return BuildPlan(
@@ -159,10 +294,15 @@ class BuildPlan {
       readerWriter: readerWriter,
       targetGraph: targetGraph,
       buildPhases: buildPhases,
+      previousAssetGraph: previousAssetGraph,
+      previousAssetGraphWasTaken: false,
+      restartIsNeeded: restartIsNeeded,
+      buildScriptUpdates: buildScriptUpdates,
       assetGraph: assetGraph,
       assetGraphWasTaken: false,
-      restartIsNeeded: restartIsNeeded,
-      previousBuildOutputs: previousBuildOutputs,
+      updates: updates?.build(),
+      filesToDelete: filesToDelete.toBuiltList(),
+      foldersToDelete: foldersToDelete.toBuiltList(),
     );
   }
 
@@ -181,10 +321,15 @@ class BuildPlan {
     targetGraph: targetGraph,
     readerWriter: readerWriter ?? this.readerWriter,
     buildPhases: buildPhases,
+    previousAssetGraph: _previousAssetGraph,
+    previousAssetGraphWasTaken: _previousAssetGraphWasTaken,
+    restartIsNeeded: restartIsNeeded,
+    buildScriptUpdates: buildScriptUpdates,
     assetGraph: _assetGraph,
     assetGraphWasTaken: _assetGraphWasTaken,
-    restartIsNeeded: restartIsNeeded,
-    previousBuildOutputs: previousBuildOutputs,
+    updates: updates,
+    filesToDelete: filesToDelete,
+    foldersToDelete: foldersToDelete,
   );
 
   /// Takes the loaded [AssetGraph], which may be `null` if none could be
@@ -192,17 +337,38 @@ class BuildPlan {
   ///
   /// Subsequent calls will throw. This is because [AssetGraph] is mutable, so
   /// the initial loaded state is only available once.
-  AssetGraph? takeAssetGraph() {
+  AssetGraph? takePreviousAssetGraph() {
+    if (_previousAssetGraphWasTaken) throw StateError('Already taken.');
+    _previousAssetGraphWasTaken = true;
+    return _previousAssetGraph;
+  }
+
+  /// Takes the [AssetGraph] for the build.
+  ///
+  /// Subsequent calls will throw. This is because [AssetGraph] is mutable, so
+  /// the initial state is only available once.
+  AssetGraph takeAssetGraph() {
     if (_assetGraphWasTaken) throw StateError('Already taken.');
     _assetGraphWasTaken = true;
     return _assetGraph;
   }
 
-  Future<void> deletePreviousBuildOutputs() async {
-    for (final id in previousBuildOutputs) {
-      if (await readerWriter.canRead(id)) {
-        await readerWriter.delete(id);
+  Future<void> deleteFilesAndFolders() async {
+    buildLog.doing('Doing initial build cleanup.');
+
+    // Hidden outputs are deleted if needed by deleting the entire folder. So,
+    // only outputs in the source folder need to be deleted explicitly. Use a
+    // `ReaderWriter` that only acts on the source folder.
+    final cleanupReaderWriter = readerWriter.copyWith(
+      generatedAssetHider: const NoopGeneratedAssetHider(),
+    );
+    for (final id in filesToDelete) {
+      if (await cleanupReaderWriter.canRead(id)) {
+        await cleanupReaderWriter.delete(id);
       }
+    }
+    for (final id in foldersToDelete) {
+      await cleanupReaderWriter.deleteDirectory(id);
     }
   }
 }

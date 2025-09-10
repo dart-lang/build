@@ -15,7 +15,6 @@ import '../build_plan/build_plan.dart';
 import '../io/filesystem_cache.dart';
 import '../io/finalized_reader.dart';
 import '../io/reader_writer.dart';
-import 'asset_graph/build_definition.dart';
 import 'asset_graph/graph.dart';
 import 'build.dart';
 import 'build_result.dart';
@@ -47,7 +46,7 @@ class BuildSeries {
   ///
   /// Null after the first build, or if there was no serialized build state, or
   /// if the serialized build state was discarded.
-  Map<AssetId, ChangeType>? updatesFromLoad;
+  BuiltMap<AssetId, ChangeType>? updatesFromLoad;
 
   /// Whether the next build is the first build.
   bool firstBuild = true;
@@ -85,7 +84,7 @@ class BuildSeries {
     buildFilters ??= buildPlan.buildOptions.buildFilters;
     if (firstBuild) {
       if (updatesFromLoad != null) {
-        updates = updatesFromLoad!..addAll(updates);
+        updates = updatesFromLoad!.toMap()..addAll(updates);
         updatesFromLoad = null;
       }
     } else {
@@ -110,30 +109,20 @@ class BuildSeries {
   }
 
   static Future<BuildSeries> create({required BuildPlan buildPlan}) async {
-    final buildDefinition = await BuildDefinition.prepareWorkspace(
-      assetGraph: buildPlan.takeAssetGraph(),
-      packageGraph: buildPlan.packageGraph,
-      targetGraph: buildPlan.targetGraph,
-      readerWriter: buildPlan.readerWriter,
-      buildPhases: buildPlan.buildPhases,
-      skipBuildScriptCheck: buildPlan.buildOptions.skipBuildScriptCheck,
-    );
-
+    final assetGraph = buildPlan.takeAssetGraph();
     final finalizedReader = FinalizedReader(
-      buildPlan.readerWriter.copyWith(
-        generatedAssetHider: buildDefinition.assetGraph,
-      ),
-      buildDefinition.assetGraph,
+      buildPlan.readerWriter.copyWith(generatedAssetHider: assetGraph),
+      assetGraph,
       buildPlan.targetGraph,
       buildPlan.buildPhases,
       buildPlan.packageGraph.root.name,
     );
     final build = BuildSeries._(
       buildPlan,
-      buildDefinition.assetGraph,
-      buildDefinition.buildScriptUpdates,
+      assetGraph,
+      buildPlan.buildScriptUpdates,
       finalizedReader,
-      buildDefinition.updates,
+      buildPlan.updates,
     );
     return build;
   }

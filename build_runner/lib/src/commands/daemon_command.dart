@@ -96,7 +96,7 @@ $logEndMarker''');
         buildOptions: buildOptions,
         testingOverrides: testingOverrides,
       );
-      await buildPlan.deletePreviousBuildOutputs();
+      await buildPlan.deleteFilesAndFolders();
       if (buildPlan.restartIsNeeded) return ExitCode.tempFail.code;
 
       final builder = await BuildRunnerDaemonBuilder.create(

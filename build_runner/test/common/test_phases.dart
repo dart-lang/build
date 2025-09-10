@@ -150,7 +150,7 @@ Future<TestBuildersResult> testPhases(
       readerWriter: readerWriter,
     ),
   );
-  await buildPlan.deletePreviousBuildOutputs();
+  await buildPlan.deleteFilesAndFolders();
 
   BuildResult result;
   final build = await BuildSeries.create(buildPlan: buildPlan);

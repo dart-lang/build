@@ -12,7 +12,6 @@ import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
 import 'bootstrap/bootstrap.dart';
-import 'bootstrap/build_script_generate.dart';
 import 'build_plan/build_options.dart';
 import 'build_plan/builder_application.dart';
 import 'build_runner_command_line.dart';
@@ -28,7 +27,6 @@ import 'commands/serve_options.dart';
 import 'commands/test_command.dart';
 import 'commands/test_options.dart';
 import 'commands/watch_command.dart';
-import 'constants.dart';
 import 'exceptions.dart';
 import 'logging/build_log.dart';
 
@@ -60,14 +58,6 @@ class BuildRunner {
     } on CannotBuildException {
       // A message should have already been logged.
       return ExitCode.config.code;
-    } on BuildScriptChangedException {
-      // TODO(davidmorgan): handle cleanup where the condition is discovered,
-      // not here.
-      _deleteAssetGraph();
-      if (_runningFromKernel) _invalidateSelf();
-      return ExitCode.tempFail.code;
-    } on BuildConfigChangedException {
-      return ExitCode.tempFail.code;
     }
   }
 
@@ -183,26 +173,3 @@ class BuildRunner {
     }
   }
 }
-
-/// Deletes the asset graph for the current build script from disk.
-void _deleteAssetGraph() {
-  final graph = File(assetGraphPath);
-  if (graph.existsSync()) {
-    graph.deleteSync();
-  }
-}
-
-/// Deletes the current running script.
-///
-/// This should only happen if the current script is a snapshot, and it has
-/// been invalidated.
-void _invalidateSelf() {
-  final kernelPath = Platform.script.toFilePath();
-  final kernelFile = File(kernelPath);
-  if (kernelFile.existsSync()) {
-    kernelFile.renameSync('$kernelPath$scriptKernelCachedSuffix');
-  }
-}
-
-bool get _runningFromKernel =>
-    !Platform.script.path.endsWith(scriptKernelSuffix);

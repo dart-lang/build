@@ -15,7 +15,6 @@ import '../build_plan/build_options.dart';
 import '../build_plan/build_plan.dart';
 import '../build_plan/builder_application.dart';
 import '../build_plan/testing_overrides.dart';
-import '../exceptions.dart';
 import '../logging/build_log.dart';
 import 'build_runner_command.dart';
 import 'serve/server.dart';
@@ -57,7 +56,7 @@ class WatchCommand implements BuildRunnerCommand {
       buildOptions: buildOptions,
       testingOverrides: testingOverrides,
     );
-    await buildPlan.deletePreviousBuildOutputs();
+    await buildPlan.deleteFilesAndFolders();
     if (buildPlan.restartIsNeeded) return null;
 
     final terminator = Terminator(testingOverrides.terminateEventStream);
@@ -89,10 +88,9 @@ void handleBuildResultsStream(
   final subscription = buildResults.listen((result) {
     if (completer.isCompleted) return;
     if (result.status == BuildStatus.failure) {
-      if (result.failureType == FailureType.buildScriptChanged) {
-        completer.completeError(const BuildScriptChangedException());
-      } else if (result.failureType == FailureType.buildConfigChanged) {
-        completer.completeError(const BuildConfigChangedException());
+      if (result.failureType == FailureType.buildScriptChanged ||
+          result.failureType == FailureType.buildConfigChanged) {
+        completer.complete(ExitCode.tempFail.code);
       }
     }
   });
