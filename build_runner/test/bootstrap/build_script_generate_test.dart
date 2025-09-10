@@ -29,29 +29,6 @@ void main() {
     });
 
     group('of builder imports', () {
-      test('warn about deprecated ../ style imports', () async {
-        await d.dir('a', [
-          d.file('build.yaml', '''
-builders:
-  fake:
-    import: "../../../tool/builder.dart"
-    builder_factories: ["myFactory"]
-    build_extensions: {"foo": ["bar"]}
-'''),
-        ]).create();
-
-        final result = await runPub(
-          'a',
-          'run',
-          args: ['build_runner', 'build'],
-        );
-        expect(result.stderr, isEmpty);
-        expect(
-          result.stdout,
-          contains('The `../` import syntax in build.yaml is now deprecated'),
-        );
-      });
-
       test('support package relative imports', () async {
         await d.dir('a', [
           d.file('build.yaml', '''
@@ -69,13 +46,6 @@ builders:
           args: ['build_runner', 'build'],
         );
         expect(result.stderr, isEmpty);
-        expect(
-          result.stdout,
-          isNot(
-            contains('The `../` import syntax in build.yaml is now deprecated'),
-          ),
-        );
-
         await d.dir('a', [
           d.dir('.dart_tool', [
             d.dir('build', [
@@ -108,31 +78,6 @@ builders:
         expect(result.stderr, isEmpty);
         expect(result.stdout, contains('could not be parsed'));
       });
-
-      test('warn when import not present in packageGraph', () async {
-        await d.dir('a', [
-          d.file('build.yaml', '''
-builders:
-  fake:
-    import: "package:unknown_package/import.dart"
-    builder_factories: ["myFactory"]
-    build_extensions: {"foo": ["bar"]}
-'''),
-        ]).create();
-        final result = await runPub(
-          'a',
-          'run',
-          args: ['build_runner', 'build'],
-        );
-        expect(result.stderr, isEmpty);
-        expect(
-          result.stdout,
-          contains(
-            'Could not load imported package "unknown_package" '
-            'for definition "a:fake".',
-          ),
-        );
-      });
     });
 
     test('checks builder keys in global_options', () async {
@@ -150,13 +95,10 @@ global_options:
       expect(
         result.stdout,
         allOf(
+          contains('Ignoring `global_options` for unknown builder `a:a`.'),
           contains(
-            'Invalid builder key `a:a` found in global_options config of '
-            'build.yaml. This configuration will have no effect.',
-          ),
-          contains(
-            'Invalid builder key `b:b` found in global_options config of '
-            'build.yaml. This configuration will have no effect.',
+            'Ignoring `runs_before` in `global_options` '
+            'referencing unknown builder `b:b`.',
           ),
         ),
       );

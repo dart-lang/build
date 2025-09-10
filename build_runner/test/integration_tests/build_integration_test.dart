@@ -579,7 +579,12 @@ targets:
 
       final result = await runBuild();
 
-      expect(result, contains('not a known Builder'));
+      expect(
+        result,
+        contains(
+          'Ignoring options for unknown builder `bad:builder` in target `a:a`.',
+        ),
+      );
     });
 
     test('warns on invalid builder key in global options', () async {
@@ -608,7 +613,12 @@ global_options:
 
       final result = await runBuild();
 
-      expect(result, contains('not a known Builder'));
+      expect(
+        result,
+        contains(
+          'Ignoring `global_options` for unknown builder `bad:builder`.',
+        ),
+      );
     });
 
     test('warns on invalid builder key --define', () async {
@@ -632,7 +642,10 @@ global_options:
 
       final result = await runBuild(extraArgs: ['--define=bad:key=foo=bar']);
 
-      expect(result, contains('not a known Builder'));
+      expect(
+        result,
+        contains('Ignoring options overrides for unknown builder `bad:key`.'),
+      );
     });
   });
 
