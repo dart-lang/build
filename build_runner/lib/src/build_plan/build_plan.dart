@@ -161,7 +161,7 @@ class BuildPlan {
               Platform.version,
             )) {
           buildLog.fullBuildBecause(FullBuildReason.incompatibleBuild);
-          // Delete old outputs.
+          // Mark old outputs for deletion.
           filesToDelete.addAll(
             previousAssetGraph.outputsToDelete(packageGraph),
           );
@@ -215,12 +215,8 @@ class BuildPlan {
           buildScriptUpdates.hasBeenUpdated(updates.keys.toSet());
       if (buildScriptUpdated) {
         buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
-        // Delete old outputs.
-        final deletedSourceOutputs = previousAssetGraph.outputsToDelete(
-          packageGraph,
-        );
-        filesToDelete.addAll(deletedSourceOutputs);
-        inputSources.removeAll(deletedSourceOutputs);
+        // Mark old outputs for deletion.
+        filesToDelete.addAll(previousAssetGraph.outputsToDelete(packageGraph));
         foldersToDelete.add(generatedOutputDirectoryId);
 
         // If running from snapshot, the changes mean the current snapshot
@@ -230,8 +226,8 @@ class BuildPlan {
         restartIsNeeded |= _runningFromSnapshot;
 
         // Discard the invalid asset graph so that a new one will be created
-        // from scratch, and delete it so that the same will happen if
-        // restarting.
+        // from scratch, and mark it for deletion so that the same will happen
+        // if restarting.
         previousAssetGraph = null;
         filesToDelete.add(assetGraphId);
 
@@ -245,7 +241,10 @@ class BuildPlan {
 
     if (assetGraph == null) {
       buildLog.doing('Creating the asset graph.');
+
+      // Files marked for deletion are not inputs.
       inputSources.removeAll(filesToDelete);
+
       try {
         assetGraph = await AssetGraph.build(
           buildPhases,
