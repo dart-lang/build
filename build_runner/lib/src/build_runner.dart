@@ -11,7 +11,7 @@ import 'package:io/io.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
-import 'bootstrap/bootstrap.dart';
+import 'bootstrap/bootstrapper.dart';
 import 'build_plan/build_options.dart';
 import 'build_plan/builder_application.dart';
 import 'build_runner_command_line.dart';
@@ -161,10 +161,12 @@ class BuildRunner {
       b.mode = commandLine.type.buildLogMode;
     });
 
+    final bootstrapper = Bootstrapper();
+
     // Build and run, retrying if the nested `build_runner` invocation exits
     // with exit code `tempFail`.
     while (true) {
-      exitCode = await generateAndRun(
+      exitCode = await bootstrapper.run(
         arguments,
         experiments: commandLine.enableExperiments,
       );

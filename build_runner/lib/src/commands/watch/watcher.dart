@@ -89,9 +89,7 @@ class Watcher implements BuildState {
 
       _expectedDeletes.clear();
       if (!buildOptions.skipBuildScriptCheck) {
-        if (build.buildScriptUpdates!.hasBeenUpdated(
-          mergedChanges.keys.toSet(),
-        )) {
+        if (await buildPlan.bootstrapper.needsRebuild()) {
           _terminateCompleter.complete();
           buildLog.error('Terminating builds due to build script update.');
           return BuildResult(

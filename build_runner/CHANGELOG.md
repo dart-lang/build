@@ -1,5 +1,6 @@
 ## 2.8.1-wip
 
+- Remove use of `dart:mirrors`.
 - Improved warnings when an option is specified for an unknown builder.
 - Bug fix: require `args` 2.5.0.
 - Use `build` ^4.0.0.

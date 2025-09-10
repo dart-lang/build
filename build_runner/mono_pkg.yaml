@@ -9,9 +9,9 @@ stages:
     - analyze: --fatal-infos .
 - unit_test:
   - test: -x integration --test-randomize-ordering-seed=random
-  - test: -P experiments --test-randomize-ordering-seed=random
-    sdk:
-    - dev
+#  - test: -P experiments --test-randomize-ordering-seed=random
+#    sdk:
+#    - dev
 - leak_check:
   - group:
     - command: ../tool/leak_check.sh

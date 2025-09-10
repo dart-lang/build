@@ -29,7 +29,14 @@ const scriptKernelCachedSuffix = '.cached';
 
 final _lastShortFormatDartVersion = Version(3, 6, 0);
 
-Future<String> generateBuildScript() async {
+class GenerateScriptResult {
+  String content;
+  List<String> inputs;
+
+  GenerateScriptResult({required this.content, required this.inputs});
+}
+
+Future<GenerateScriptResult> generateBuildScript() async {
   buildLog.doing('Generating the build script.');
   final info = await findBuildScriptOptions();
   final builders = info.builderApplications;
@@ -59,13 +66,16 @@ Future<String> generateBuildScript() async {
     // the host<->isolate relationship changed in a breaking way, for example
     // if command line args or messages passed via sendports have changed
     // in a breaking way.
-    return DartFormatter(languageVersion: _lastShortFormatDartVersion).format(
-      '''
+    return GenerateScriptResult(
+      inputs: info.inputs,
+      content: DartFormatter(
+        languageVersion: _lastShortFormatDartVersion,
+      ).format('''
 // @dart=${_lastShortFormatDartVersion.major}.${_lastShortFormatDartVersion.minor}
 // ignore_for_file: directives_ordering
 // build_runner >=2.4.16
 ${library.accept(emitter)}
-''',
+'''),
     );
   } on FormatterException {
     buildLog.error(
@@ -142,13 +152,20 @@ Future<BuildScriptInfo> findBuildScriptOptions() async {
       _applyPostProcessBuilder(builder),
   ];
 
-  return BuildScriptInfo(applications);
+  final inputs = <String>[];
+  for (final package in packageGraph.allPackages.values) {
+    inputs.add('${package.path}/build.yaml');
+  }
+  inputs.sort();
+
+  return BuildScriptInfo(inputs: inputs, builderApplications: applications);
 }
 
 class BuildScriptInfo {
+  final List<String> inputs;
   final Iterable<Expression> builderApplications;
 
-  BuildScriptInfo(this.builderApplications);
+  BuildScriptInfo({required this.inputs, required this.builderApplications});
 }
 
 /// A method forwarding to `run`.
@@ -165,25 +182,15 @@ Method _main() => Method((b) {
       });
     }),
   );
-  b.optionalParameters.add(
-    Parameter((b) {
-      b.name = 'sendPort';
-      b.type = TypeReference((b) {
-        b.symbol = 'SendPort';
-        b.url = 'dart:isolate';
-        b.isNullable = true;
-      });
-    }),
-  );
   final isolateExitCode = refer(
     'buildProcessState.isolateExitCode',
     'package:build_runner/src/bootstrap/build_process_state.dart',
   );
   b.body = Block.of([
     refer(
-      'buildProcessState.receive',
+      'buildProcessState.read',
       'package:build_runner/src/bootstrap/build_process_state.dart',
-    ).call([refer('sendPort')]).awaited.statement,
+    ).call([]).statement,
     isolateExitCode
         .assign(
           refer(
@@ -194,9 +201,9 @@ Method _main() => Method((b) {
         .statement,
     refer('exitCode', 'dart:io').assign(isolateExitCode).nullChecked.statement,
     refer(
-      'buildProcessState.send',
+      'buildProcessState.write',
       'package:build_runner/src/bootstrap/build_process_state.dart',
-    ).call([refer('sendPort')]).awaited.statement,
+    ).call([]).statement,
   ]);
 });
 
