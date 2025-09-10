@@ -6,14 +6,19 @@ import 'dart:io';
 
 import 'package:built_collection/built_collection.dart';
 
+import 'build_process_state.dart';
+
 // TODO(davidmorgan): pass state.
 // TODO(davidmorgan): handle uncaught errors--in `run` method?
 class Runner {
   Future<int> run(BuiltList<String> arguments) async {
+    buildProcessState.write();
     final process = await Process.start('dart', [
       '.dart_tool/build/entrypoint/build.dart.dill',
       ...arguments,
     ], mode: ProcessStartMode.inheritStdio);
-    return process.exitCode;
+    final result = await process.exitCode;
+    buildProcessState.read();
+    return result;
   }
 }

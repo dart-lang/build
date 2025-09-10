@@ -8,8 +8,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:io/io.dart';
 import 'package:package_config/package_config.dart';
 
-import '../logging/build_log.dart';
-import 'build_script_generate.dart';
+import '../internal.dart';
 import 'compiler.dart';
 import 'depfiles.dart';
 import 'runner.dart';
@@ -17,6 +16,7 @@ import 'runner.dart';
 // DO NOT SUBMIT
 // ignore_for_file: deprecated_member_use
 // ignore_for_file: only_throw_errors
+//
 
 class Bootstrapper {
   final Depfile buildRunnerDepfile = Depfile(
@@ -77,6 +77,18 @@ class Bootstrapper {
       _checkBuildRunner();
       await _checkBuildSource(force: buildRunnerHasChanged!);
       await _checkBuildDill();
+
+      if (buildRunnerHasChanged! ||
+          buildYamlHasChanged! ||
+          buildDillHasChanged!) {
+        // TODO separate script changes from yaml changes?
+        if (buildYamlHasChanged!) {
+          buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
+        } else {
+          buildLog.fullBuildBecause(FullBuildReason.incompatibleBuild);
+        }
+        buildProcessState.outputsAreFromStaleBuildScript = true;
+      }
 
       final exitCode = await Runner().run(arguments);
       if (exitCode != ExitCode.tempFail.code) {
