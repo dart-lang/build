@@ -39,9 +39,9 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   /// A [Resolver] that can parse or resolve any Dart source code visible to
   /// this build step.
   ///
-  /// That means all source in all transitive deps of the current package,
-  /// all source files in the current package and all output from builders that
-  /// run _before_ the current builder in the current build.
+  /// That means all source files in all transitive deps of the current package,
+  /// all source files in the current package and all files output by builders
+  /// that run _before_ the current builder in the current build.
   Resolver get resolver;
 
   /// Reads the bytes from [id].
@@ -92,8 +92,10 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   /// Writes [bytes] to [id].
   ///
   /// The [id] must be one of [allowedOutputs] or an `UnexpectedOutputException`
-  /// is thrown. And, this must be the first write to it, or an
-  /// `InvalidOutputException` is thrown.
+  /// is thrown.
+  ///
+  /// The [id] must not have been written before or an `InvalidOutputException`
+  /// is thrown.
   @override
   Future<void> writeAsBytes(AssetId id, FutureOr<List<int>> bytes);
 
@@ -122,7 +124,7 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   ///
   /// You can specify [action] as [isExternal] (waiting for some external
   /// resource like network, process or file IO). In that case [action] will
-  /// be tracked as single time slice from the beginning of the stage until
+  /// be tracked as a single time slice from the beginning of the stage until
   /// completion of the `Future` returned by [action].
   ///
   /// Otherwise all separate time slices of asynchronous execution will be
@@ -136,8 +138,8 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   /// Indicates that [ids] were read but their content has no impact on the
   /// outputs of this step.
   ///
-  /// If [ids] change then `build_runner` might optimize by skipping running
-  /// this step.
+  /// If [ids] change then `build_runner` might optimize by not running this
+  /// step.
   void reportUnusedAssets(Iterable<AssetId> ids);
 
   /// The [PackageConfig] of the current isolate.

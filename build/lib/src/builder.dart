@@ -68,11 +68,12 @@ class BuilderOptions {
   /// Returns a new set of options with keys from [other] overriding options in
   /// this instance.
   ///
-  /// Config values are overridden at a per-key granularity. There is no value
-  /// level merging. If [other] is `null` then this instance is returned
-  /// directly.
+  /// Config values are overridden at a per-key granularity, there is no
+  /// value-level merging.
   ///
-  /// The `isRoot` value is overridden to value from [other].
+  /// If [other] is `null` then this instance is returned directly.
+  ///
+  /// The `isRoot` value is overridden to the value from [other].
   BuilderOptions overrideWith(BuilderOptions? other) {
     // ignore: avoid_returning_this
     if (other == null) return this;
@@ -98,7 +99,7 @@ abstract class Builder {
 
   /// Mapping from input file extension to output file extensions.
   ///
-  /// All input sources matching any key in this map will be passed as build
+  /// All input sources matching any key in this map will be passed as a build
   /// step to this builder. Only files with the same basename and an extension
   /// from the values in this map are expected as outputs.
   ///
