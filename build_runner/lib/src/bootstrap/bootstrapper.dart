@@ -145,7 +145,7 @@ class Bootstrapper {
       buildDillHasChanged = true;
 
       final result = await compiler.compile();
-      if (!result.succeeded) throw 'failed';
+      if (!result.succeeded) throw 'failed: ${result.messages}';
       // TODO(davidmorgan): this is weird.
       dillDepfile.loadDeps();
       dillDepfile.write();

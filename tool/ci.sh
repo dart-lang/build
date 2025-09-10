@@ -112,26 +112,22 @@ for PKG in ${PKGS}; do
         dart test -x integration --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
       test_07)
-        echo 'dart test -P experiments --test-randomize-ordering-seed=random'
-        dart test -P experiments --test-randomize-ordering-seed=random || EXIT_CODE=$?
-        ;;
-      test_08)
         echo 'dart test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1'
         dart test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1 || EXIT_CODE=$?
         ;;
-      test_09)
+      test_08)
         echo 'dart test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1'
         dart test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1 || EXIT_CODE=$?
         ;;
-      test_10)
+      test_09)
         echo 'dart test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1'
         dart test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1 || EXIT_CODE=$?
         ;;
-      test_11)
+      test_10)
         echo 'dart test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1'
         dart test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1 || EXIT_CODE=$?
         ;;
-      test_12)
+      test_11)
         echo 'dart test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1'
         dart test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1 || EXIT_CODE=$?
         ;;

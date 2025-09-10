@@ -10,10 +10,9 @@ import 'package:build_test/builder.dart' as _i5;
 import 'package:build_config/build_config.dart' as _i6;
 import 'package:build_modules/builders.dart' as _i7;
 import 'package:build/build.dart' as _i8;
-import 'dart:isolate' as _i9;
-import 'package:build_runner/src/bootstrap/build_process_state.dart' as _i10;
-import 'package:build_runner/build_runner.dart' as _i11;
-import 'dart:io' as _i12;
+import 'package:build_runner/src/bootstrap/build_process_state.dart' as _i9;
+import 'package:build_runner/build_runner.dart' as _i10;
+import 'dart:io' as _i11;
 
 final _builders = <_i1.BuilderApplication>[
   _i2.apply(
@@ -168,15 +167,12 @@ final _builders = <_i1.BuilderApplication>[
     _i3.somePostProcessBuilder,
   ),
 ];
-void main(
-  List<String> args, [
-  _i9.SendPort? sendPort,
-]) async {
-  await _i10.buildProcessState.receive(sendPort);
-  _i10.buildProcessState.isolateExitCode = await _i11.run(
+void main(List<String> args) async {
+  _i9.buildProcessState.read();
+  _i9.buildProcessState.isolateExitCode = await _i10.run(
     args,
     _builders,
   );
-  _i12.exitCode = _i10.buildProcessState.isolateExitCode!;
-  await _i10.buildProcessState.send(sendPort);
+  _i11.exitCode = _i9.buildProcessState.isolateExitCode!;
+  _i9.buildProcessState.write();
 }
