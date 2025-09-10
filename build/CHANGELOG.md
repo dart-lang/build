@@ -1,3 +1,7 @@
+## 4.0.1-wip
+
+- Improvements to dartdoc.
+
 ## 4.0.0
 
 - Remove methods and classes deprecated in `4.0.0`.
