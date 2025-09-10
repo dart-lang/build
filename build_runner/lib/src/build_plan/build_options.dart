@@ -26,6 +26,7 @@ class BuildOptions {
   final bool isReleaseBuild;
   final String? logPerformanceDir;
   final bool outputSymlinksOnly;
+  // TODO remove?
   final bool skipBuildScriptCheck;
   final bool trackPerformance;
   final bool verbose;
