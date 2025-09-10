@@ -8,6 +8,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:io/io.dart';
 import 'package:package_config/package_config.dart';
 
+import '../exceptions.dart';
 import '../internal.dart';
 import 'compiler.dart';
 import 'depfiles.dart';
@@ -119,6 +120,7 @@ class Bootstrapper {
   Future<void> _checkBuildSource({required bool force}) async {
     if (!force && buildSourceDepfile.outputIsUpToDate()) {
       buildLog.debug('build script up to date');
+      // Generate the build script anyway so warnings are issued.
       buildYamlHasChanged = false;
     } else {
       buildLog.debug('build script update (force: $force)');
@@ -145,7 +147,16 @@ class Bootstrapper {
       buildDillHasChanged = true;
 
       final result = await compiler.compile();
-      if (!result.succeeded) throw 'failed: ${result.messages}';
+      if (!result.succeeded) {
+        if (result.messages != null) {
+          buildLog.error(result.messages!);
+        }
+        buildLog.error(
+          'Failed to compile build script. '
+          'Check builder definitions and generated script $scriptLocation.',
+        );
+        throw const CannotBuildException();
+      }
       // TODO(davidmorgan): this is weird.
       dillDepfile.loadDeps();
       dillDepfile.write();

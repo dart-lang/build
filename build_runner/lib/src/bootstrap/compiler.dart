@@ -27,10 +27,8 @@ class Compiler {
       '--depfile',
       '.dart_tool/build/entrypoint/build.dart.dill.deps',
     ]);
-    if (result.exitCode != 0) {
-      print('Compile failed: ${result.stdout} ${result.stderr}');
-      return CompileResult(messages: result.stderr as String);
-    }
-    return CompileResult(messages: null);
+    return CompileResult(
+      messages: result.exitCode == 0 ? null : result.stderr as String,
+    );
   }
 }

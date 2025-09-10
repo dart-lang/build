@@ -59,7 +59,7 @@ class Depfile {
       }
     }
 
-    inputs = seenPaths.toList()..sort();
+    inputs.addAll(seenPaths.toList()..sort());
   }
 
   bool outputIsUpToDate() {
