@@ -12,4 +12,7 @@ export 'src/commands/daemon/constants.dart' show assetServerPort;
 /// The `build_runner` tool generates a script `.dart_tool/build/entrypoint/build.dart` that
 /// depends on the builders so it can pass in [builderFactories].
 Future<int> run(List<String> arguments, BuilderFactories builderFactories) =>
-    BuildRunner(arguments: arguments, builderFactories: builderFactories).run();
+Future<int> run(List<String> arguments, List<BuilderApplication> builders) {
+  Bootstrapper.runningFromBuildScript = true;
+  return BuildRunner(arguments: arguments, builderFactories: builderFactories).run();
+}

@@ -69,10 +69,25 @@ void main() async {
     );
     expect(tester.read(fakeGeneratedOutput), null);
 
-    // "Core packages" location changed.
+    // Move `build_runner` into the test workspace, rebuilds because
+    // locations changed.
+    tester.copyPackage('build_runner');
+    tester.writePackage(
+      name: 'root_pkg',
+      pathDependencies: ['builder_pkg', 'build_runner'],
+      files: {'web/a.txt': 'a'},
+    );
+    output = await tester.run('root_pkg', 'dart run build_runner build');
+    expect(output, contains('Building, full build because builders changed.'));
+
+    // No change, no rebuild.
+    output = await tester.run('root_pkg', 'dart run build_runner build');
+    expect(output, contains('wrote 0 outputs'));
+
+    // Change `build_runner` source, rebuilds.
     tester.update(
-      'root_pkg/.dart_tool/build/entrypoint/.packageLocations',
-      (txt) => '$txt\n',
+      'build_runner/lib/build_runner.dart',
+      (script) => '$script\n',
     );
     output = await tester.run('root_pkg', 'dart run build_runner build');
     expect(output, contains('Building, full build because builders changed.'));

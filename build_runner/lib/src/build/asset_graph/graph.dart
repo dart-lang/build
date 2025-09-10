@@ -38,15 +38,19 @@ class AssetGraph implements GeneratedAssetHider {
   ///
   /// When an [AssetGraph] is deserialized we check whether or not it matches
   /// the new [BuildPhase]s and throw away the graph if it doesn't.
+  // TODO: remove?
   final Digest buildPhasesDigest;
 
   /// The [Platform.version] this graph was created with.
+  // TODO: remove?
   final String dartVersion;
 
   /// The Dart language experiments that were enabled when this graph was
   /// originally created from the [build] constructor.
+  // TODO: remove?
   final BuiltList<String> enabledExperiments;
 
+  // TODO: remove?
   final BuiltMap<String, LanguageVersion?> packageLanguageVersions;
 
   /// The result of [computeOutputs] for reuse, or `null` if outputs have not

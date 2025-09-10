@@ -2,15 +2,12 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:io';
-
 import 'package:build/build.dart';
-import 'package:build/experiments.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:watcher/watcher.dart';
 
+import '../bootstrap/bootstrapper.dart';
 import '../bootstrap/build_process_state.dart';
-import '../bootstrap/build_script_updates.dart';
 import '../build/asset_graph/exceptions.dart';
 import '../build/asset_graph/graph.dart';
 import '../constants.dart';
@@ -41,9 +38,8 @@ class BuildPlan {
 
   final AssetGraph? _previousAssetGraph;
   bool _previousAssetGraphWasTaken;
-  final bool restartIsNeeded;
 
-  final BuildScriptUpdates? buildScriptUpdates;
+  final Bootstrapper bootstrapper;
   final AssetGraph _assetGraph;
   bool _assetGraphWasTaken;
   final BuiltMap<AssetId, ChangeType>? updates;
@@ -72,8 +68,7 @@ class BuildPlan {
     required this.buildPhases,
     required AssetGraph? previousAssetGraph,
     required bool previousAssetGraphWasTaken,
-    required this.restartIsNeeded,
-    required this.buildScriptUpdates,
+    required this.bootstrapper,
     required AssetGraph assetGraph,
     required bool assetGraphWasTaken,
     required this.updates,
@@ -90,9 +85,8 @@ class BuildPlan {
   /// [readerWriter], deduces the [buildPhases] that will run, deserializes and
   /// checks the `AssetGraph`.
   ///
-  /// If the asset graph indicates a restart is needed, [restartIsNeeded] will
-  /// be set. Otherwise, if it's valid, the deserialized asset graph is
-  /// available from [takePreviousAssetGraph].
+  /// If it's valid, the deserialized asset graph is available from
+  /// [takePreviousAssetGraph].
   ///
   /// Files that should be deleted before restarting or building are accumulated
   /// in [filesToDelete] and [foldersToDelete]. Call [deleteFilesAndFolders] to
@@ -158,45 +152,21 @@ class BuildPlan {
       );
       if (previousAssetGraph == null) {
         buildLog.fullBuildBecause(FullBuildReason.incompatibleAssetGraph);
-      } else {
-        final buildPhasesChanged =
-            buildPhases.digest != previousAssetGraph.buildPhasesDigest;
-        final pkgVersionsChanged =
-            previousAssetGraph.packageLanguageVersions !=
-            packageGraph.languageVersions;
-        final enabledExperimentsChanged =
-            previousAssetGraph.enabledExperiments != enabledExperiments.build();
-        if (buildPhasesChanged ||
-            pkgVersionsChanged ||
-            enabledExperimentsChanged ||
-            !isSameSdkVersion(
-              previousAssetGraph.dartVersion,
-              Platform.version,
-            )) {
-          buildLog.fullBuildBecause(FullBuildReason.incompatibleBuild);
-          // Mark old outputs for deletion.
-          filesToDelete.addAll(
-            previousAssetGraph.outputsToDelete(packageGraph),
-          );
-
-          // If running from snapshot, the changes mean the current snapshot
-          // might be out of date and needs rebuilding. If not, the changes have
-          // presumably already been picked up in the currently-running script,
-          // so continue to build a new asset graph from scrach.
-          restartIsNeeded |= _runningFromSnapshot;
-
-          // Discard the invalid asset graph so that a new one will be created
-          // from scratch, and delete it so that the same will happen if
-          // restarting.
-          filesToDelete.add(assetGraphId);
-          previousAssetGraph = null;
-        }
       }
     }
 
+    if (buildProcessState.outputsAreFromStaleBuildScript &&
+        previousAssetGraph != null) {
+      // There is an asset graph it's from a stale script, use it only for
+      // cleanup. Mark old outputs for deletion and discard the graph.
+      filesToDelete.addAll(previousAssetGraph.outputsToDelete(packageGraph));
+      previousAssetGraph = null;
+    }
+
     // If there was no previous asset graph or it was invalid, start by deleting
-    // the generated output directory.
+    // the graph and the generated output directory.
     if (previousAssetGraph == null) {
+      filesToDelete.add(assetGraphId);
       foldersToDelete.add(generatedOutputDirectoryId);
     }
 
@@ -206,7 +176,6 @@ class BuildPlan {
     final internalSources = await assetTracker.findInternalSources();
 
     AssetGraph? assetGraph;
-    BuildScriptUpdates? buildScriptUpdates;
     Map<AssetId, ChangeType>? updates;
     if (previousAssetGraph != null) {
       buildLog.doing('Checking for updates.');
@@ -216,40 +185,7 @@ class BuildPlan {
         internalSources,
         previousAssetGraph,
       );
-      buildScriptUpdates = await BuildScriptUpdates.create(
-        readerWriter,
-        packageGraph,
-        previousAssetGraph,
-        disabled: buildOptions.skipBuildScriptCheck,
-      );
-
-      final buildScriptUpdated =
-          !buildOptions.skipBuildScriptCheck &&
-          buildScriptUpdates.hasBeenUpdated(updates.keys.toSet());
-      if (buildScriptUpdated) {
-        buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
-        // Mark old outputs for deletion.
-        filesToDelete.addAll(previousAssetGraph.outputsToDelete(packageGraph));
-        foldersToDelete.add(generatedOutputDirectoryId);
-
-        // If running from snapshot, the changes mean the current snapshot
-        // might be out of date and needs rebuilding. If not, the changes have
-        // presumably already been picked up in the currently-running script,
-        // so continue to build a new asset graph from scratch.
-        restartIsNeeded |= _runningFromSnapshot;
-
-        // Discard the invalid asset graph so that a new one will be created
-        // from scratch, and mark it for deletion so that the same will happen
-        // if restarting.
-        previousAssetGraph = null;
-        filesToDelete.add(assetGraphId);
-
-        // Discard state tied to the invalid asset graph.
-        buildScriptUpdates = null;
-        updates = null;
-      } else {
-        assetGraph = previousAssetGraph.copyForNextBuild(buildPhases);
-      }
+      assetGraph = previousAssetGraph.copyForNextBuild(buildPhases);
     }
 
     if (assetGraph == null) {
@@ -270,12 +206,6 @@ class BuildPlan {
         buildLog.error(e.toString());
         throw const CannotBuildException();
       }
-      buildScriptUpdates = await BuildScriptUpdates.create(
-        readerWriter,
-        packageGraph,
-        assetGraph,
-        disabled: buildOptions.skipBuildScriptCheck,
-      );
       final conflictsInDeps =
           assetGraph.outputs
               .where((n) => n.package != packageGraph.root.name)
@@ -309,8 +239,7 @@ class BuildPlan {
       buildPhases: buildPhases,
       previousAssetGraph: previousAssetGraph,
       previousAssetGraphWasTaken: false,
-      restartIsNeeded: restartIsNeeded,
-      buildScriptUpdates: buildScriptUpdates,
+      bootstrapper: Bootstrapper(),
       assetGraph: assetGraph,
       assetGraphWasTaken: false,
       updates: updates?.build(),
@@ -336,8 +265,7 @@ class BuildPlan {
     buildPhases: buildPhases,
     previousAssetGraph: _previousAssetGraph,
     previousAssetGraphWasTaken: _previousAssetGraphWasTaken,
-    restartIsNeeded: restartIsNeeded,
-    buildScriptUpdates: buildScriptUpdates,
+    bootstrapper: bootstrapper,
     assetGraph: _assetGraph,
     assetGraphWasTaken: _assetGraphWasTaken,
     updates: updates,
@@ -388,5 +316,3 @@ class BuildPlan {
 
 bool isSameSdkVersion(String? thisVersion, String? thatVersion) =>
     thisVersion?.split(' ').first == thatVersion?.split(' ').first;
-
-bool get _runningFromSnapshot => !Platform.script.path.endsWith('.dart');

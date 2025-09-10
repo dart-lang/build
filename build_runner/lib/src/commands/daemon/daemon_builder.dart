@@ -79,10 +79,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
             )
             .toList();
 
-    if (!_buildPlan.buildOptions.skipBuildScriptCheck &&
-        _buildSeries.buildScriptUpdates!.hasBeenUpdated(
-          changes.map<AssetId>((change) => change.id).toSet(),
-        )) {
+    if (await _buildPlan.bootstrapper.needsRebuild()) {
       if (!_buildScriptUpdateCompleter.isCompleted) {
         _buildScriptUpdateCompleter.complete();
       }
