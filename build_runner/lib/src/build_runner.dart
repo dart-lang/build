@@ -11,7 +11,6 @@ import 'package:io/io.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
-import 'bootstrap/bootstrap.dart';
 import 'bootstrap/bootstrapper.dart';
 import 'build_plan/build_options.dart';
 import 'build_plan/builder_application.dart';

@@ -9,8 +9,8 @@ import 'package:build/experiments.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:watcher/watcher.dart';
 
+import '../bootstrap/bootstrapper.dart';
 import '../bootstrap/build_process_state.dart';
-import '../bootstrap/build_script_updates.dart';
 import '../build/asset_graph/exceptions.dart';
 import '../build/asset_graph/graph.dart';
 import '../constants.dart';
@@ -43,7 +43,7 @@ class BuildPlan {
   bool _previousAssetGraphWasTaken;
   final bool restartIsNeeded;
 
-  final BuildScriptUpdates? buildScriptUpdates;
+  final Bootstrapper bootstrapper;
   final AssetGraph _assetGraph;
   bool _assetGraphWasTaken;
   final BuiltMap<AssetId, ChangeType>? updates;
@@ -73,7 +73,7 @@ class BuildPlan {
     required AssetGraph? previousAssetGraph,
     required bool previousAssetGraphWasTaken,
     required this.restartIsNeeded,
-    required this.buildScriptUpdates,
+    required this.bootstrapper,
     required AssetGraph assetGraph,
     required bool assetGraphWasTaken,
     required this.updates,
@@ -192,8 +192,9 @@ class BuildPlan {
     final cacheDirSources = await assetTracker.findCacheDirSources();
     final internalSources = await assetTracker.findInternalSources();
 
+    final bootstrapper = Bootstrapper();
+
     AssetGraph? assetGraph;
-    BuildScriptUpdates? buildScriptUpdates;
     Map<AssetId, ChangeType>? updates;
     if (previousAssetGraph != null) {
       buildLog.doing('Checking for updates.');
@@ -203,27 +204,19 @@ class BuildPlan {
         internalSources,
         previousAssetGraph,
       );
-      buildScriptUpdates = await BuildScriptUpdates.create(
-        readerWriter,
-        packageGraph,
-        previousAssetGraph,
-        disabled: buildOptions.skipBuildScriptCheck,
-      );
 
-      final buildScriptUpdated =
-          !buildOptions.skipBuildScriptCheck &&
-          buildScriptUpdates.hasBeenUpdated(updates.keys.toSet());
-      if (buildScriptUpdated) {
+      if (await bootstrapper.needsRebuild()) {
         buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
         // Mark old outputs for deletion.
         filesToDelete.addAll(previousAssetGraph.outputsToDelete(packageGraph));
         foldersToDelete.add(generatedOutputDirectoryId);
 
+        // TODO: update comment
         // If running from snapshot, the changes mean the current snapshot
         // might be out of date and needs rebuilding. If not, the changes have
         // presumably already been picked up in the currently-running script,
         // so continue to build a new asset graph from scratch.
-        restartIsNeeded |= _runningFromSnapshot;
+        restartIsNeeded |= bootstrapper.runningFromBuildScript();
 
         // Discard the invalid asset graph so that a new one will be created
         // from scratch, and mark it for deletion so that the same will happen
@@ -232,7 +225,6 @@ class BuildPlan {
         filesToDelete.add(assetGraphId);
 
         // Discard state tied to the invalid asset graph.
-        buildScriptUpdates = null;
         updates = null;
       } else {
         assetGraph = previousAssetGraph.copyForNextBuild(buildPhases);
@@ -257,12 +249,6 @@ class BuildPlan {
         buildLog.error(e.toString());
         throw const CannotBuildException();
       }
-      buildScriptUpdates = await BuildScriptUpdates.create(
-        readerWriter,
-        packageGraph,
-        assetGraph,
-        disabled: buildOptions.skipBuildScriptCheck,
-      );
       final conflictsInDeps =
           assetGraph.outputs
               .where((n) => n.package != packageGraph.root.name)
@@ -297,7 +283,7 @@ class BuildPlan {
       previousAssetGraph: previousAssetGraph,
       previousAssetGraphWasTaken: false,
       restartIsNeeded: restartIsNeeded,
-      buildScriptUpdates: buildScriptUpdates,
+      bootstrapper: bootstrapper,
       assetGraph: assetGraph,
       assetGraphWasTaken: false,
       updates: updates?.build(),
@@ -324,7 +310,7 @@ class BuildPlan {
     previousAssetGraph: _previousAssetGraph,
     previousAssetGraphWasTaken: _previousAssetGraphWasTaken,
     restartIsNeeded: restartIsNeeded,
-    buildScriptUpdates: buildScriptUpdates,
+    bootstrapper: bootstrapper,
     assetGraph: _assetGraph,
     assetGraphWasTaken: _assetGraphWasTaken,
     updates: updates,

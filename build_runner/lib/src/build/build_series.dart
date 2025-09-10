@@ -8,7 +8,6 @@ import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:watcher/watcher.dart';
 
-import '../bootstrap/build_script_updates.dart';
 import '../build_plan/build_directory.dart';
 import '../build_plan/build_filter.dart';
 import '../build_plan/build_plan.dart';
@@ -33,10 +32,7 @@ import 'build_result.dart';
 /// already in memory is used directly.
 class BuildSeries {
   final BuildPlan buildPlan;
-
   final AssetGraph assetGraph;
-  final BuildScriptUpdates? buildScriptUpdates;
-
   final FinalizedReader finalizedReader;
   final ReaderWriter readerWriter;
   final ResourceManager resourceManager = ResourceManager();
@@ -56,7 +52,6 @@ class BuildSeries {
   BuildSeries._(
     this.buildPlan,
     this.assetGraph,
-    this.buildScriptUpdates,
     this.finalizedReader,
     this.updatesFromLoad,
   ) : readerWriter = buildPlan.readerWriter.copyWith(
@@ -120,7 +115,6 @@ class BuildSeries {
     final build = BuildSeries._(
       buildPlan,
       assetGraph,
-      buildPlan.buildScriptUpdates,
       finalizedReader,
       buildPlan.updates,
     );
