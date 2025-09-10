@@ -137,7 +137,7 @@ Future<BuildPhases> createBuildPhases(
   BuiltMap<String, BuiltMap<String, dynamic>> builderConfigOverrides,
   bool isReleaseMode,
 ) async {
-  validateBuilderConfig(
+  warnForUnknownBuilders(
     builderApplications,
     targetGraph.rootPackageConfig,
     builderConfigOverrides,
@@ -312,8 +312,8 @@ Map<String, List<BuilderApplication>> _applyWith(
 BuilderOptions _options(Map<String, dynamic>? options) =>
     options?.isEmpty ?? true ? BuilderOptions.empty : BuilderOptions(options!);
 
-/// Checks that all configuration is for valid builder keys.
-void validateBuilderConfig(
+/// Warns about configuration related to unknown builders.
+void warnForUnknownBuilders(
   Iterable<BuilderApplication> builders,
   BuildConfig rootPackageConfig,
   BuiltMap<String, BuiltMap<String, dynamic>> builderConfigOverrides,
@@ -322,8 +322,8 @@ void validateBuilderConfig(
   for (final key in builderConfigOverrides.keys) {
     if (!builderKeys.contains(key)) {
       buildLog.warning(
-        'Overriding configuration for `$key` but this is not a '
-        'known Builder',
+        'Ignoring options overrides for '
+        'unknown builder `$key`.',
       );
     }
   }
@@ -331,18 +331,25 @@ void validateBuilderConfig(
     for (final key in target.builders.keys) {
       if (!builderKeys.contains(key)) {
         buildLog.warning(
-          'Configuring `$key` in target `${target.key}` but this '
-          'is not a known Builder.',
+          'Ignoring options for unknown builder `$key` '
+          'in target `${target.key}`.',
         );
       }
     }
   }
   for (final key in rootPackageConfig.globalOptions.keys) {
     if (!builderKeys.contains(key)) {
-      buildLog.warning(
-        'Configuring `$key` in global options but this is not a '
-        'known Builder.',
-      );
+      buildLog.warning('Ignoring `global_options` for unknown builder `$key`.');
+    }
+  }
+  for (final value in rootPackageConfig.globalOptions.values) {
+    for (final key in value.runsBefore) {
+      if (!builderKeys.contains(key)) {
+        buildLog.warning(
+          'Ignoring `runs_before` in `global_options` '
+          'referencing unknown builder `$key`.',
+        );
+      }
     }
   }
 }

@@ -4,7 +4,7 @@
 
 import 'dart:async';
 
-import 'package:build/build.dart' show AssetId, BuilderOptions;
+import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
@@ -110,29 +110,12 @@ Future<BuildScriptInfo> findBuildScriptOptions() async {
     }
   }
 
-  // TODO: Remove the dynamic calls here. We don't have a shared interface
-  // today and rely on dynamic calls instead which is bad.
-  bool isValidDefinition(dynamic definition) {
-    // Filter out builderDefinitions with relative imports that aren't
-    // from the root package, because they will never work.
+  bool isPackageImportOrForRoot(dynamic definition) {
     // ignore: avoid_dynamic_calls
     final import = definition.import as String;
-    if (import.startsWith('package:')) {
-      // Make sure package is known in packageGraph (when present),
-      // otherwise PackageNotFoundException will be thrown down the road
-      final pkg = AssetId.resolve(Uri.parse(import)).package;
-      if (packageGraph.allPackages.containsKey(pkg)) {
-        return true;
-      }
-      buildLog.warning(
-        'Could not load imported package "$pkg" for definition '
-        // ignore: avoid_dynamic_calls
-        '"${definition.key}".',
-      );
-      return false;
-    }
     // ignore: avoid_dynamic_calls
-    return definition.package == packageGraph.root.name;
+    final package = definition.package as String;
+    return import.startsWith('package:') || package == packageGraph.root.name;
   }
 
   final orderedConfigs = await Future.wait(
@@ -140,7 +123,7 @@ Future<BuildScriptInfo> findBuildScriptOptions() async {
   );
   final builderDefinitions = orderedConfigs
       .expand((c) => c.builderDefinitions.values)
-      .where(isValidDefinition);
+      .where(isPackageImportOrForRoot);
 
   final rootBuildConfig = orderedConfigs.last;
   final orderedBuilders =
@@ -151,25 +134,7 @@ Future<BuildScriptInfo> findBuildScriptOptions() async {
 
   final postProcessBuilderDefinitions = orderedConfigs
       .expand((c) => c.postProcessBuilderDefinitions.values)
-      .where(isValidDefinition);
-
-  // Validate the builder keys in the global builder config, these should always
-  // refer to actual builders.
-  final allBuilderKeys = {
-    for (final definition in orderedBuilders) definition.key,
-  };
-  for (final globalBuilderConfig in rootBuildConfig.globalOptions.entries) {
-    void checkBuilderKey(String builderKey) {
-      if (allBuilderKeys.contains(builderKey)) return;
-      buildLog.warning(
-        'Invalid builder key `$builderKey` found in global_options config of '
-        'build.yaml. This configuration will have no effect.',
-      );
-    }
-
-    checkBuilderKey(globalBuilderConfig.key);
-    globalBuilderConfig.value.runsBefore.forEach(checkBuilderKey);
-  }
+      .where(isPackageImportOrForRoot);
 
   final applications = [
     for (final builder in orderedBuilders) _applyBuilder(builder),
@@ -320,14 +285,9 @@ Expression _rawStringList(List<String> strings) =>
 /// Returns the actual import to put in the generated script based on an import
 /// found in the build.yaml.
 String _buildScriptImport(String import) {
-  if (import.startsWith('package:')) {
-    return import;
-  } else if (import.startsWith('../') || import.startsWith('/')) {
-    buildLog.warning(
-      'The `../` import syntax in build.yaml is now deprecated, '
-      'instead do a normal relative import as if it was from the root of '
-      'the package. Found `$import` in your `build.yaml` file.',
-    );
+  if (import.startsWith('package:') ||
+      import.startsWith('../') ||
+      import.startsWith('/')) {
     return import;
   } else {
     return p.url.relative(import, from: p.url.dirname(scriptLocation));
