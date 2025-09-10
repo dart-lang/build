@@ -53,12 +53,15 @@ Future<int> generateAndRun(
       if (buildScript.existsSync()) {
         oldContents = buildScript.readAsStringSync();
       }
-      final newContents = script ?? await generateBuildScript();
+      if (script == null) {
+        final generateScriptResult = await generateBuildScript();
+        script = generateScriptResult.content;
+      }
       // Only trigger a build script update if necessary.
-      if (newContents != oldContents) {
+      if (script != oldContents) {
         buildScript
           ..createSync(recursive: true)
-          ..writeAsStringSync(newContents);
+          ..writeAsStringSync(script);
         // Delete the kernel file so it will be rebuilt.
         final kernelFile = File(scriptKernelLocation);
         if (kernelFile.existsSync()) {
