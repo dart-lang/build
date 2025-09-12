@@ -96,44 +96,44 @@ for PKG in ${PKGS}; do
         dart test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
       test_03)
-        echo 'dart test'
-        dart test || EXIT_CODE=$?
-        ;;
-      test_04)
         echo 'dart test --test-randomize-ordering-seed=random'
         dart test --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
-      test_05)
+      test_04)
         echo 'dart test -P presubmit --test-randomize-ordering-seed=random'
         dart test -P presubmit --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
-      test_06)
-        echo 'dart test -x integration --test-randomize-ordering-seed=random'
-        dart test -x integration --test-randomize-ordering-seed=random || EXIT_CODE=$?
+      test_05)
+        echo 'dart test -x integration -x slow --test-randomize-ordering-seed=random'
+        dart test -x integration -x slow --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
-      test_07)
+      test_06)
         echo 'dart test -P experiments --test-randomize-ordering-seed=random'
         dart test -P experiments --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
+      test_07)
+        echo 'dart test -t integration --test-randomize-ordering-seed=random'
+        dart test -t integration --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        ;;
       test_08)
-        echo 'dart test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1'
-        dart test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1 || EXIT_CODE=$?
+        echo 'dart test -t slow --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random -j 1'
+        dart test -t slow --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random -j 1 || EXIT_CODE=$?
         ;;
       test_09)
-        echo 'dart test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1'
-        dart test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1 || EXIT_CODE=$?
+        echo 'dart test -t slow --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random -j 1'
+        dart test -t slow --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random -j 1 || EXIT_CODE=$?
         ;;
       test_10)
-        echo 'dart test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1'
-        dart test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1 || EXIT_CODE=$?
+        echo 'dart test -t slow --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random -j 1'
+        dart test -t slow --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random -j 1 || EXIT_CODE=$?
         ;;
       test_11)
-        echo 'dart test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1'
-        dart test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1 || EXIT_CODE=$?
+        echo 'dart test -t slow --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random -j 1'
+        dart test -t slow --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random -j 1 || EXIT_CODE=$?
         ;;
       test_12)
-        echo 'dart test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1'
-        dart test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1 || EXIT_CODE=$?
+        echo 'dart test -t slow --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random -j 1'
+        dart test -t slow --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random -j 1 || EXIT_CODE=$?
         ;;
       *)
         echo -e "\033[31mUnknown TASK '${TASK}' - TERMINATING JOB\033[0m"

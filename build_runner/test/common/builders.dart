@@ -24,20 +24,6 @@ class CopyingPostProcessBuilder implements PostProcessBuilder {
   }
 }
 
-/// A [Builder] which behaves exactly like it's [delegate] but has a different
-/// runtime type.
-class DelegatingBuilder implements Builder {
-  final Builder delegate;
-
-  DelegatingBuilder(this.delegate);
-
-  @override
-  Map<String, List<String>> get buildExtensions => delegate.buildExtensions;
-
-  @override
-  Future build(BuildStep buildStep) async => delegate.build(buildStep);
-}
-
 class PlaceholderBuilder extends Builder {
   final String inputPlaceholder;
   final BuiltMap<String, String> outputFilenameToContent;

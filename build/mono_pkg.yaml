@@ -1,19 +1,12 @@
 sdk:
-- pubspec
 - dev
+
+os:
+- linux
 
 stages:
 - analyze_and_format:
+  - format
   - analyze: --fatal-infos .
-  - format:
-    sdk:
-    - dev
 - unit_test:
   - test: --test-randomize-ordering-seed=random
-    os:
-    - linux
-    - windows
-
-cache:
-  directories:
-  - .dart_tool/build
