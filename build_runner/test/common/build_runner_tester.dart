@@ -5,6 +5,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:typed_data';
 
 import 'package:async/async.dart';
 import 'package:build_runner/src/logging/build_log.dart';
@@ -66,6 +67,12 @@ class BuildRunnerTester {
   String? read(String path) {
     final file = File(p.join(tempDirectory.path, path));
     return file.existsSync() ? file.readAsStringSync() : null;
+  }
+
+  /// Reads workspace-relative [path], or returns `null` if it does not exist.
+  Uint8List? readBytes(String path) {
+    final file = File(p.join(tempDirectory.path, path));
+    return file.existsSync() ? file.readAsBytesSync() : null;
   }
 
   /// Writes [contents] to workspace-relative [path].
@@ -223,24 +230,39 @@ class BuildRunnerProcess {
     _port = port;
   }
 
-  /// Requests [path] from the server and expects it returns a 404
-  /// response.
-  Future<void> expect404(String path) async {
-    if (_port == null) throw StateError('Call expectServing first.');
-    final request = await _client.get('localhost', _port!, path);
-    final response = await request.close();
-    test.expect(response.statusCode, 404);
-    await response.drain<void>();
+  /// Requests [path] from the server and expects it returns
+  /// [expectResponseCode].
+  ///
+  /// Returns the response content.
+  Future<String> fetchContent(
+    String path, {
+    int expectResponseCode = 200,
+  }) async {
+    final response = await fetch(path, expectResponseCode: expectResponseCode);
+    return await utf8.decodeStream(response.cast<List<int>>());
   }
 
-  /// Requests [path] from the server and expects it returns a 200
-  /// response with the body [content].
-  Future<void> expectContent(String path, String content) async {
+  /// Requests [path] from the server and expects it returns
+  /// [expectResponseCode].
+  ///
+  /// Optionally, pass [headers] to set on the request.
+  ///
+  /// Returns the full response.
+  Future<HttpClientResponse> fetch(
+    String path, {
+    Map<String, String>? headers,
+    int expectResponseCode = 200,
+  }) async {
     if (_port == null) throw StateError('Call expectServing first.');
     final request = await _client.get('localhost', _port!, path);
+    if (headers != null) {
+      for (final entry in headers.entries) {
+        request.headers.add(entry.key, entry.value);
+      }
+    }
     final response = await request.close();
-    test.expect(response.statusCode, 200);
-    test.expect(await utf8.decodeStream(response.cast<List<int>>()), content);
+    test.expect(response.statusCode, expectResponseCode);
+    return response;
   }
 }
 

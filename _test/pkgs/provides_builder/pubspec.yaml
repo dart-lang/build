@@ -1,9 +1,0 @@
-name: provides_builder
-resolution: workspace
-environment:
-  sdk: ^3.7.0
-publish_to: none
-
-dependencies:
-  build:
-    path: ../../../build

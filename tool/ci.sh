@@ -67,15 +67,7 @@ for PKG in ${PKGS}; do
         echo 'dart analyze --fatal-infos .'
         dart analyze --fatal-infos . || EXIT_CODE=$?
         ;;
-      command_0)
-        echo 'dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random'
-        dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random || EXIT_CODE=$?
-        ;;
-      command_1)
-        echo 'dart run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random'
-        dart run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random || EXIT_CODE=$?
-        ;;
-      command_2)
+      command)
         echo '../tool/leak_check.sh'
         ../tool/leak_check.sh || EXIT_CODE=$?
         ;;
@@ -84,44 +76,36 @@ for PKG in ${PKGS}; do
         dart format --output=none --set-exit-if-changed . || EXIT_CODE=$?
         ;;
       test_0)
-        echo 'dart test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random'
-        dart test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random || EXIT_CODE=$?
-        ;;
-      test_1)
-        echo 'dart test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random'
-        dart test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random || EXIT_CODE=$?
-        ;;
-      test_2)
-        echo 'dart test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random'
-        dart test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random || EXIT_CODE=$?
-        ;;
-      test_3)
         echo 'dart test --test-randomize-ordering-seed=random'
         dart test --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
-      test_4)
+      test_1)
         echo 'dart test -P presubmit --test-randomize-ordering-seed=random'
         dart test -P presubmit --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
-      test_5)
-        echo 'dart test -x integration1 -x integration2 -x integration3 --test-randomize-ordering-seed=random'
-        dart test -x integration1 -x integration2 -x integration3 --test-randomize-ordering-seed=random || EXIT_CODE=$?
+      test_2)
+        echo 'dart test -x integration1 -x integration2 -x integration3 -x integration4 --test-randomize-ordering-seed=random'
+        dart test -x integration1 -x integration2 -x integration3 -x integration4 --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
-      test_6)
+      test_3)
         echo 'dart test -P experiments --test-randomize-ordering-seed=random'
         dart test -P experiments --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
-      test_7)
+      test_4)
         echo 'dart test -t integration1 --test-randomize-ordering-seed=random'
         dart test -t integration1 --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
-      test_8)
+      test_5)
         echo 'dart test -t integration2 --test-randomize-ordering-seed=random'
         dart test -t integration2 --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
-      test_9)
+      test_6)
         echo 'dart test -t integration3 --test-randomize-ordering-seed=random'
         dart test -t integration3 --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        ;;
+      test_7)
+        echo 'dart test -t integration4 --test-randomize-ordering-seed=random'
+        dart test -t integration4 --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
       *)
         echo -e "\033[31mUnknown TASK '${TASK}' - TERMINATING JOB\033[0m"
