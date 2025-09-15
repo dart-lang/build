@@ -7,7 +7,6 @@ library;
 
 import 'dart:io';
 
-import 'package:build_runner/src/internal.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -125,25 +124,6 @@ void main() {
 
       await runBuild(trailingArgs: ['--output', 'build']);
       expect(dartSource.existsSync(), true);
-    });
-
-    test('Re-snapshots if there is no asset graph', () async {
-      final assetGraph = assetGraphPathFor(scriptKernelLocation);
-      await File(assetGraph).delete();
-
-      final nextBuild = await runBuild();
-      expect(
-        (nextBuild.stdout as String).split('\n'),
-        containsAllInOrder([
-          contains('Generating the build script'),
-          contains('Compiling the build script.'),
-          contains('Creating the asset graph.'),
-          contains(
-            'Building, full build because there is no valid asset graph.',
-          ),
-          contains(BuildLog.successPattern),
-        ]),
-      );
     });
 
     test('incremental build after resolve missing import', () async {

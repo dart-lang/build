@@ -1,12 +1,5 @@
 # See https://github.com/google/mono_repo.dart for details on this file
 self_validate: analyze_and_format
 
-github:
-  cron: '0 0 * * 0' # “At 00:00 (UTC) on Sunday.”
-  stages:
-    - name: e2e_test_cron
-      # Only run this stage for scheduled cron jobs
-      if: github.event_name == 'schedule'
-
 merge_stages:
 - analyze_and_format

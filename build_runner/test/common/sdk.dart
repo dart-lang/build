@@ -8,12 +8,8 @@ import 'dart:io';
 // ignore: implementation_imports
 import 'package:build_runner/src/constants.dart';
 import 'package:path/path.dart' as p;
-import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
-
-final bool supportsUnsoundNullSafety =
-    Version.parse(Platform.version.split(' ').first).major == 2;
 
 /// Runs `pub get` on [package] (which is assumed to be in a directory with
 /// that name under the [d.sandbox] directory).
@@ -56,18 +52,6 @@ Future<ProcessResult> runDart(
   String script, {
   Iterable<String>? args,
 }) => Process.run(dartBinary, [
-  script,
-  ...?args,
-], workingDirectory: p.join(d.sandbox, package));
-
-/// Starts the `dart` script [script] in [package] with [args].
-///
-/// The [script] should be a relative path under [package].
-Future<Process> startDart(
-  String package,
-  String script, {
-  Iterable<String>? args,
-}) => Process.start(dartBinary, [
   script,
   ...?args,
 ], workingDirectory: p.join(d.sandbox, package));
