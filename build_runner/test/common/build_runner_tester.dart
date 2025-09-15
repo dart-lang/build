@@ -175,8 +175,9 @@ ${result.stdout}${result.stderr}===
 
 /// A running `build_runner` process.
 class BuildRunnerProcess {
-  late final HttpClient _client = HttpClient();
   final TestProcess process;
+  late final HttpClient _client = HttpClient();
+  int? _port;
 
   BuildRunnerProcess(this.process);
 
@@ -188,8 +189,8 @@ class BuildRunnerProcess {
   ///
   /// If the process exits instead, the test fails immediately.
   ///
-  /// Otherwise, waits until [pattern] appears.
-  Future<void> expect(Pattern pattern, {Pattern? failOn}) async {
+  /// Otherwise, waits until [pattern] appears, returns the matching line.
+  Future<String> expect(Pattern pattern, {Pattern? failOn}) async {
     failOn ??= BuildLog.failurePattern;
     while (true) {
       String? line;
@@ -202,26 +203,36 @@ class BuildRunnerProcess {
       if (line.contains(failOn)) {
         fail('While expecting `$pattern`, got `$failOn`.');
       }
-      if (line.contains(pattern)) return;
+      if (line.contains(pattern)) return line;
     }
   }
 
   /// Kills the process.
   Future<void> kill() => process.kill();
 
-  /// Requests [path] from the default server and expects it returns a 404
+  // Expects the server to log that it is serving, records the port.
+  Future<void> expectServing() async {
+    final regexp = RegExp('Serving `web` on http://localhost:([0-9]+)');
+    final line = await expect(regexp);
+    final port = int.parse(regexp.firstMatch(line)!.group(1)!);
+    _port = port;
+  }
+
+  /// Requests [path] from the server and expects it returns a 404
   /// response.
   Future<void> expect404(String path) async {
-    final request = await _client.get('localhost', 8080, path);
+    if (_port == null) throw StateError('Call expectServing first.');
+    final request = await _client.get('localhost', _port!, path);
     final response = await request.close();
     test.expect(response.statusCode, 404);
     await response.drain<void>();
   }
 
-  /// Requests [path] from the default server and expects it returns a 200
+  /// Requests [path] from the server and expects it returns a 200
   /// response with the body [content].
   Future<void> expectContent(String path, String content) async {
-    final request = await _client.get('localhost', 8080, path);
+    if (_port == null) throw StateError('Call expectServing first.');
+    final request = await _client.get('localhost', _port!, path);
     final response = await request.close();
     test.expect(response.statusCode, 200);
     test.expect(await utf8.decodeStream(response.cast<List<int>>()), content);

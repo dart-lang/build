@@ -2,8 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-// TODO(davidmorgan): find unused port so this can run in parallel.
-@Tags(['slow'])
+@Tags(['integration'])
 library;
 
 import 'package:build_runner/src/logging/build_log.dart';
@@ -24,9 +23,13 @@ void main() async {
       files: {'web/a.txt': 'a', 'web/b.txt': 'b'},
     );
 
-    final serve = await tester.start('root_pkg', 'dart run build_runner serve');
+    final serve = await tester.start(
+      'root_pkg',
+      'dart run build_runner serve web:0',
+    );
 
     // Initial build produces no output as the copy is not required.
+    await serve.expectServing();
     await serve.expect(BuildLog.successPattern);
     await serve.expect404('a.txt.copy');
 

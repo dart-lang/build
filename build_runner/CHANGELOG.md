@@ -1,5 +1,7 @@
 ## 2.8.1-wip
 
+- Print the port that gets picked if you pass 0 for a port number, for example
+  with `dart run build_runner serve web:0`.
 - Improved warnings when an option is specified for an unknown builder.
 - Bug fix: require `args` 2.5.0.
 - Use `build` ^4.0.0.
