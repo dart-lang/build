@@ -9,17 +9,19 @@ stages:
   - format
   - analyze: --fatal-infos .
 - unit_test:
-  - test: -x integration -x slow --test-randomize-ordering-seed=random
+  - test: -x integration1 -x integration2 -x integration3 --test-randomize-ordering-seed=random
   - test: -P experiments --test-randomize-ordering-seed=random
-  - test: -t integration --test-randomize-ordering-seed=random
+  - test: -t integration1 --test-randomize-ordering-seed=random
+    os:
+    - linux
+    - windows
+  - test: -t integration2 --test-randomize-ordering-seed=random
+    os:
+    - linux
+    - windows
+  - test: -t integration3 --test-randomize-ordering-seed=random
     os:
     - linux
     - windows
 - leak_check:
   - command: ../tool/leak_check.sh
-- e2e_test:
-  - test: -t slow --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random -j 1
-  - test: -t slow --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random -j 1
-  - test: -t slow --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random -j 1
-  - test: -t slow --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random -j 1
-  - test: -t slow --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random -j 1

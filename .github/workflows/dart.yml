@@ -353,7 +353,7 @@ jobs:
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build;commands:test_03"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build;commands:test_3"
           restore-keys: |
             os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build
             os:ubuntu-latest;pub-cache-hosted;sdk:dev
@@ -387,7 +387,7 @@ jobs:
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_config;commands:test_03"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_config;commands:test_3"
           restore-keys: |
             os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_config
             os:ubuntu-latest;pub-cache-hosted;sdk:dev
@@ -421,7 +421,7 @@ jobs:
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_daemon;commands:test_03"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_daemon;commands:test_3"
           restore-keys: |
             os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_daemon
             os:ubuntu-latest;pub-cache-hosted;sdk:dev
@@ -455,7 +455,7 @@ jobs:
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_test;commands:test_03"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_test;commands:test_3"
           restore-keys: |
             os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_test
             os:ubuntu-latest;pub-cache-hosted;sdk:dev
@@ -489,7 +489,7 @@ jobs:
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_web_compilers;commands:test_03"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_web_compilers;commands:test_3"
           restore-keys: |
             os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_web_compilers
             os:ubuntu-latest;pub-cache-hosted;sdk:dev
@@ -523,7 +523,7 @@ jobs:
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:scratch_space;commands:test_03"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:scratch_space;commands:test_3"
           restore-keys: |
             os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:scratch_space
             os:ubuntu-latest;pub-cache-hosted;sdk:dev
@@ -557,7 +557,7 @@ jobs:
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_modules;commands:test_04"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_modules;commands:test_4"
           restore-keys: |
             os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_modules
             os:ubuntu-latest;pub-cache-hosted;sdk:dev
@@ -591,7 +591,7 @@ jobs:
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:test_06"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:test_6"
           restore-keys: |
             os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner
             os:ubuntu-latest;pub-cache-hosted;sdk:dev
@@ -618,14 +618,14 @@ jobs:
       - job_002
       - job_003
   job_014:
-    name: "unit_test; linux; PKG: build_runner; `dart test -t integration --test-randomize-ordering-seed=random`"
+    name: "unit_test; linux; PKG: build_runner; `dart test -t integration1 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:test_07"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:test_7"
           restore-keys: |
             os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner
             os:ubuntu-latest;pub-cache-hosted;sdk:dev
@@ -643,8 +643,8 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
-      - name: "build_runner; dart test -t integration --test-randomize-ordering-seed=random"
-        run: "dart test -t integration --test-randomize-ordering-seed=random"
+      - name: "build_runner; dart test -t integration1 --test-randomize-ordering-seed=random"
+        run: "dart test -t integration1 --test-randomize-ordering-seed=random"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner
     needs:
@@ -652,14 +652,14 @@ jobs:
       - job_002
       - job_003
   job_015:
-    name: "unit_test; linux; PKG: build_runner; `dart test -x integration -x slow --test-randomize-ordering-seed=random`"
+    name: "unit_test; linux; PKG: build_runner; `dart test -t integration2 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:test_05"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:test_8"
           restore-keys: |
             os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner
             os:ubuntu-latest;pub-cache-hosted;sdk:dev
@@ -677,8 +677,8 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
-      - name: "build_runner; dart test -x integration -x slow --test-randomize-ordering-seed=random"
-        run: "dart test -x integration -x slow --test-randomize-ordering-seed=random"
+      - name: "build_runner; dart test -t integration2 --test-randomize-ordering-seed=random"
+        run: "dart test -t integration2 --test-randomize-ordering-seed=random"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner
     needs:
@@ -686,6 +686,74 @@ jobs:
       - job_002
       - job_003
   job_016:
+    name: "unit_test; linux; PKG: build_runner; `dart test -t integration3 --test-randomize-ordering-seed=random`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:test_9"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner
+            os:ubuntu-latest;pub-cache-hosted;sdk:dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@f0ead981b4d9a35b37f30d36160575d60931ec30
+        with:
+          sdk: dev
+      - id: checkout
+        name: Checkout repository
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+      - id: build_runner_pub_upgrade
+        name: build_runner; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_runner
+      - name: "build_runner; dart test -t integration3 --test-randomize-ordering-seed=random"
+        run: "dart test -t integration3 --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner
+    needs:
+      - job_001
+      - job_002
+      - job_003
+  job_017:
+    name: "unit_test; linux; PKG: build_runner; `dart test -x integration1 -x integration2 -x integration3 --test-randomize-ordering-seed=random`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:test_5"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner
+            os:ubuntu-latest;pub-cache-hosted;sdk:dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@f0ead981b4d9a35b37f30d36160575d60931ec30
+        with:
+          sdk: dev
+      - id: checkout
+        name: Checkout repository
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+      - id: build_runner_pub_upgrade
+        name: build_runner; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_runner
+      - name: "build_runner; dart test -x integration1 -x integration2 -x integration3 --test-randomize-ordering-seed=random"
+        run: "dart test -x integration1 -x integration2 -x integration3 --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner
+    needs:
+      - job_001
+      - job_002
+      - job_003
+  job_018:
     name: "unit_test; windows; PKG: _test; `dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -709,7 +777,7 @@ jobs:
       - job_001
       - job_002
       - job_003
-  job_017:
+  job_019:
     name: "unit_test; windows; PKG: build_daemon; `dart test --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -733,8 +801,8 @@ jobs:
       - job_001
       - job_002
       - job_003
-  job_018:
-    name: "unit_test; windows; PKG: build_runner; `dart test -t integration --test-randomize-ordering-seed=random`"
+  job_020:
+    name: "unit_test; windows; PKG: build_runner; `dart test -t integration1 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
       - name: Setup Dart SDK
@@ -749,15 +817,63 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
-      - name: "build_runner; dart test -t integration --test-randomize-ordering-seed=random"
-        run: "dart test -t integration --test-randomize-ordering-seed=random"
+      - name: "build_runner; dart test -t integration1 --test-randomize-ordering-seed=random"
+        run: "dart test -t integration1 --test-randomize-ordering-seed=random"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner
     needs:
       - job_001
       - job_002
       - job_003
-  job_019:
+  job_021:
+    name: "unit_test; windows; PKG: build_runner; `dart test -t integration2 --test-randomize-ordering-seed=random`"
+    runs-on: windows-latest
+    steps:
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@f0ead981b4d9a35b37f30d36160575d60931ec30
+        with:
+          sdk: dev
+      - id: checkout
+        name: Checkout repository
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+      - id: build_runner_pub_upgrade
+        name: build_runner; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_runner
+      - name: "build_runner; dart test -t integration2 --test-randomize-ordering-seed=random"
+        run: "dart test -t integration2 --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner
+    needs:
+      - job_001
+      - job_002
+      - job_003
+  job_022:
+    name: "unit_test; windows; PKG: build_runner; `dart test -t integration3 --test-randomize-ordering-seed=random`"
+    runs-on: windows-latest
+    steps:
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@f0ead981b4d9a35b37f30d36160575d60931ec30
+        with:
+          sdk: dev
+      - id: checkout
+        name: Checkout repository
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+      - id: build_runner_pub_upgrade
+        name: build_runner; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_runner
+      - name: "build_runner; dart test -t integration3 --test-randomize-ordering-seed=random"
+        run: "dart test -t integration3 --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner
+    needs:
+      - job_001
+      - job_002
+      - job_003
+  job_023:
     name: "leak_check; linux; PKG: build_runner; `../tool/leak_check.sh`"
     runs-on: ubuntu-latest
     steps:
@@ -806,7 +922,11 @@ jobs:
       - job_016
       - job_017
       - job_018
-  job_020:
+      - job_019
+      - job_020
+      - job_021
+      - job_022
+  job_024:
     name: "e2e_test; linux; PKG: _test; `dart test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -814,7 +934,7 @@ jobs:
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_test;commands:test_00"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_test;commands:test_0"
           restore-keys: |
             os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_test
             os:ubuntu-latest;pub-cache-hosted;sdk:dev
@@ -856,7 +976,11 @@ jobs:
       - job_017
       - job_018
       - job_019
-  job_021:
+      - job_020
+      - job_021
+      - job_022
+      - job_023
+  job_025:
     name: "e2e_test; linux; PKG: _test; `dart test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -864,7 +988,7 @@ jobs:
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_test;commands:test_01"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_test;commands:test_1"
           restore-keys: |
             os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_test
             os:ubuntu-latest;pub-cache-hosted;sdk:dev
@@ -906,7 +1030,11 @@ jobs:
       - job_017
       - job_018
       - job_019
-  job_022:
+      - job_020
+      - job_021
+      - job_022
+      - job_023
+  job_026:
     name: "e2e_test; linux; PKG: _test; `dart test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -914,7 +1042,7 @@ jobs:
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_test;commands:test_02"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_test;commands:test_2"
           restore-keys: |
             os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_test
             os:ubuntu-latest;pub-cache-hosted;sdk:dev
@@ -956,257 +1084,11 @@ jobs:
       - job_017
       - job_018
       - job_019
-  job_023:
-    name: "e2e_test; linux; PKG: build_runner; `dart test -t slow --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random -j 1`"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:test_08"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
-      - name: Setup Dart SDK
-        uses: dart-lang/setup-dart@f0ead981b4d9a35b37f30d36160575d60931ec30
-        with:
-          sdk: dev
-      - id: checkout
-        name: Checkout repository
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
-      - id: build_runner_pub_upgrade
-        name: build_runner; dart pub upgrade
-        run: dart pub upgrade
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_runner
-      - name: "build_runner; dart test -t slow --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random -j 1"
-        run: "dart test -t slow --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random -j 1"
-        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
-        working-directory: build_runner
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-      - job_009
-      - job_010
-      - job_011
-      - job_012
-      - job_013
-      - job_014
-      - job_015
-      - job_016
-      - job_017
-      - job_018
-      - job_019
-  job_024:
-    name: "e2e_test; linux; PKG: build_runner; `dart test -t slow --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random -j 1`"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:test_09"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
-      - name: Setup Dart SDK
-        uses: dart-lang/setup-dart@f0ead981b4d9a35b37f30d36160575d60931ec30
-        with:
-          sdk: dev
-      - id: checkout
-        name: Checkout repository
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
-      - id: build_runner_pub_upgrade
-        name: build_runner; dart pub upgrade
-        run: dart pub upgrade
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_runner
-      - name: "build_runner; dart test -t slow --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random -j 1"
-        run: "dart test -t slow --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random -j 1"
-        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
-        working-directory: build_runner
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-      - job_009
-      - job_010
-      - job_011
-      - job_012
-      - job_013
-      - job_014
-      - job_015
-      - job_016
-      - job_017
-      - job_018
-      - job_019
-  job_025:
-    name: "e2e_test; linux; PKG: build_runner; `dart test -t slow --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random -j 1`"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:test_10"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
-      - name: Setup Dart SDK
-        uses: dart-lang/setup-dart@f0ead981b4d9a35b37f30d36160575d60931ec30
-        with:
-          sdk: dev
-      - id: checkout
-        name: Checkout repository
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
-      - id: build_runner_pub_upgrade
-        name: build_runner; dart pub upgrade
-        run: dart pub upgrade
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_runner
-      - name: "build_runner; dart test -t slow --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random -j 1"
-        run: "dart test -t slow --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random -j 1"
-        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
-        working-directory: build_runner
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-      - job_009
-      - job_010
-      - job_011
-      - job_012
-      - job_013
-      - job_014
-      - job_015
-      - job_016
-      - job_017
-      - job_018
-      - job_019
-  job_026:
-    name: "e2e_test; linux; PKG: build_runner; `dart test -t slow --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random -j 1`"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:test_11"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
-      - name: Setup Dart SDK
-        uses: dart-lang/setup-dart@f0ead981b4d9a35b37f30d36160575d60931ec30
-        with:
-          sdk: dev
-      - id: checkout
-        name: Checkout repository
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
-      - id: build_runner_pub_upgrade
-        name: build_runner; dart pub upgrade
-        run: dart pub upgrade
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_runner
-      - name: "build_runner; dart test -t slow --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random -j 1"
-        run: "dart test -t slow --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random -j 1"
-        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
-        working-directory: build_runner
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-      - job_009
-      - job_010
-      - job_011
-      - job_012
-      - job_013
-      - job_014
-      - job_015
-      - job_016
-      - job_017
-      - job_018
-      - job_019
+      - job_020
+      - job_021
+      - job_022
+      - job_023
   job_027:
-    name: "e2e_test; linux; PKG: build_runner; `dart test -t slow --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random -j 1`"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:test_12"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
-      - name: Setup Dart SDK
-        uses: dart-lang/setup-dart@f0ead981b4d9a35b37f30d36160575d60931ec30
-        with:
-          sdk: dev
-      - id: checkout
-        name: Checkout repository
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
-      - id: build_runner_pub_upgrade
-        name: build_runner; dart pub upgrade
-        run: dart pub upgrade
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_runner
-      - name: "build_runner; dart test -t slow --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random -j 1"
-        run: "dart test -t slow --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random -j 1"
-        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
-        working-directory: build_runner
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-      - job_009
-      - job_010
-      - job_011
-      - job_012
-      - job_013
-      - job_014
-      - job_015
-      - job_016
-      - job_017
-      - job_018
-      - job_019
-  job_028:
     name: "e2e_test; windows; PKG: _test; `dart test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -1246,7 +1128,11 @@ jobs:
       - job_017
       - job_018
       - job_019
-  job_029:
+      - job_020
+      - job_021
+      - job_022
+      - job_023
+  job_028:
     name: "e2e_test; windows; PKG: _test; `dart test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -1286,7 +1172,11 @@ jobs:
       - job_017
       - job_018
       - job_019
-  job_030:
+      - job_020
+      - job_021
+      - job_022
+      - job_023
+  job_029:
     name: "e2e_test; windows; PKG: _test; `dart test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -1326,3 +1216,7 @@ jobs:
       - job_017
       - job_018
       - job_019
+      - job_020
+      - job_021
+      - job_022
+      - job_023
