@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-// TODO(davidmorgan): find unused port so this can run in parallel.
 @Tags(['integration'])
 library;
 
@@ -29,26 +28,26 @@ void main() async {
       'Missing dev dependency on package:build_web_compilers, '
       'which is required to serve Dart compiled to JavaScript.',
     );
-    await serve.expect('Found no known web directories to serve');
+    await serve.expect('Nothing to serve.');
     await serve.kill();
 
     // Create some source to serve.
     tester.write('root_pkg/web/a.txt', 'a');
 
-    // Start a server on the same port, serve, check the error.
-    final server = await HttpServer.bind('localhost', 8080);
+    // Start a server serve on the same port, check the error.
+    final server = await HttpServer.bind('localhost', 0);
     addTearDown(server.close);
     final output = await tester.run(
       'root_pkg',
-      'dart run build_runner serve web:8080',
+      'dart run build_runner serve web:${server.port}',
       expectExitCode: ExitCode.osError.code,
     );
     expect(
       output,
       allOf(
-        contains('Error starting server'),
-        contains('8080'),
-        contains('address is already in use'),
+        contains('Failed to start server'),
+        contains('${server.port}'),
+        contains('address in use'),
       ),
     );
     await server.close();

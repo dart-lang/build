@@ -58,9 +58,8 @@ class ServeCommand implements BuildRunnerCommand {
       } on SocketException catch (e) {
         if (e.address != null && e.port != null) {
           buildLog.error(
-            'Error starting server at ${e.address!.address}:${e.port}, address '
-            'is already in use. Please kill the server running on that port or '
-            'serve on a different port and restart this process.',
+            'Failed to start server on ${e.address!.address}:${e.port}, '
+            'address in use.',
           );
         } else {
           buildLog.error('Error starting server on ${serveOptions.hostname}.');
@@ -92,7 +91,18 @@ class ServeCommand implements BuildRunnerCommand {
 
       final completer = Completer<int>();
       handleBuildResultsStream(handler.buildResults, completer);
-      _logServerPorts();
+
+      if (serveOptions.serveTargets.isEmpty) {
+        buildLog.warning('Nothing to serve.');
+      } else {
+        for (final target in serveOptions.serveTargets) {
+          final port = servers[target]!.port;
+          buildLog.info(
+            'Serving `${target.dir}` on http://${serveOptions.hostname}:$port',
+          );
+        }
+      }
+
       await handler.currentBuild;
       return await completer.future;
     } finally {
@@ -101,36 +111,18 @@ class ServeCommand implements BuildRunnerCommand {
       );
     }
   }
-
-  void _logServerPorts() async {
-    // Warn if in serve mode with no servers.
-    if (serveOptions.serveTargets.isEmpty) {
-      buildLog.warning(
-        'Found no known web directories to serve, but running in `serve` '
-        'mode. You may expliclity provide a directory to serve with trailing '
-        'args in <dir>[:<port>] format.',
-      );
-    } else {
-      for (final target in serveOptions.serveTargets) {
-        buildLog.info(
-          'Serving `${target.dir}` on '
-          'http://${serveOptions.hostname}:${target.port}',
-        );
-      }
-    }
-  }
 }
 
 void _ensureBuildWebCompilersDependency(PackageGraph packageGraph) {
   if (!packageGraph.allPackages.containsKey('build_web_compilers')) {
     buildLog.warning('''
-    Missing dev dependency on package:build_web_compilers, which is required to serve Dart compiled to JavaScript.
+Missing dev dependency on package:build_web_compilers, which is required to serve Dart compiled to JavaScript.
 
-    Please update your dev_dependencies section of your pubspec.yaml:
+Please update your dev_dependencies section of your pubspec.yaml:
 
-    dev_dependencies:
-      build_runner: any
-      build_test: any
-      build_web_compilers: any''');
+dev_dependencies:
+  build_runner: any
+  build_test: any
+  build_web_compilers: any''');
   }
 }

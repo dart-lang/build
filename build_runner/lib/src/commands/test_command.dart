@@ -60,11 +60,11 @@ Missing dev dependency on package:build_test, which is required to run tests.
 
 Please update your dev_dependencies section of your pubspec.yaml:
 
-  dev_dependencies:
-    build_runner: any
-    build_test: any
-    # If you need to run web tests, you will also need this dependency.
-    build_web_compilers: any''');
+dev_dependencies:
+  build_runner: any
+  build_test: any
+  # If you need to run web tests, you will also need this dependency.
+  build_web_compilers: any''');
         return ExitCode.config.code;
       }
 
