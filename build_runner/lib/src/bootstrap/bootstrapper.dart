@@ -20,6 +20,8 @@ import 'runner.dart';
 //
 
 class Bootstrapper {
+  static bool runningFromBuildScript = false;
+
   final Depfile buildRunnerDepfile = Depfile(
     depfilePath: '.dart_tool/build/entrypoint/build_runner.deps',
     digestPath: '.dart_tool/build/entrypoint/build_runner.digest',
@@ -44,14 +46,8 @@ class Bootstrapper {
   bool? buildYamlHasChanged;
   bool? buildDillHasChanged;
 
-  bool runningFromBuildScript() {
-    return StackTrace.current.toString().contains(
-      '.dart_tool/build/entrypoint/build.dart',
-    );
-  }
-
   Future<bool> needsRebuild() async {
-    if (!runningFromBuildScript()) return false;
+    if (!runningFromBuildScript) return false;
     buildLog.debug(Platform.script.toString());
     // TODO(davidmorgan): fix for workspace, error handling.
     config ??= (await findPackageConfig(Directory.current, recurse: true))!;

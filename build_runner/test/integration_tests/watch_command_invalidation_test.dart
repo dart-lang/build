@@ -30,7 +30,6 @@ void main() async {
 
     // Builder change.
     tester.update('builder_pkg/lib/builder.dart', (script) => '$script\n');
-    await watch.expect('Terminating builds due to build script update');
     await watch.expect('Compiling the build script');
     await watch.expect('Creating the asset graph');
     await watch.expect(BuildLog.successPattern);
@@ -38,7 +37,6 @@ void main() async {
 
     // Builder config change.
     tester.write('root_pkg/build.yaml', '# new file, nothing here');
-    await watch.expect('Terminating builds due to root_pkg:build.yaml update');
     await watch.expect(BuildLog.successPattern);
     expect(tester.read('root_pkg/web/a.txt.copy'), 'a');
 
