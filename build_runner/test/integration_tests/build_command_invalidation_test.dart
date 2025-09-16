@@ -5,12 +5,8 @@
 @Tags(['integration2'])
 library;
 
-import 'dart:io';
-import 'dart:isolate';
-
 import 'package:build_runner/src/bootstrap/build_script_generate.dart';
 import 'package:build_runner/src/constants.dart';
-import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
 
 import '../common/common.dart';
