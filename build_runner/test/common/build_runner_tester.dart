@@ -9,6 +9,7 @@ import 'dart:typed_data';
 
 import 'package:async/async.dart';
 import 'package:build_runner/src/logging/build_log.dart';
+import 'package:io/io.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart' as test;
@@ -62,6 +63,12 @@ class BuildRunnerTester {
     dependencies: fixturePackage.dependencies,
     pathDependencies: fixturePackage.pathDependencies,
   );
+
+  void copyPackage(String package) {
+    final sourcePath = pubspecs.packageConfig[package]!.root.toFilePath();
+    final destinationPath = p.join(tempDirectory.path, package);
+    copyPathSync(sourcePath, destinationPath);
+  }
 
   /// Reads workspace-relative [path], or returns `null` if it does not exist.
   String? read(String path) {
