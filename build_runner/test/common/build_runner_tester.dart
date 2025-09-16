@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:async/async.dart';
 import 'package:build_runner/src/logging/build_log.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
@@ -176,12 +177,16 @@ ${result.stdout}${result.stderr}===
 /// A running `build_runner` process.
 class BuildRunnerProcess {
   final TestProcess process;
+  final StreamQueue<String> _outputs;
   late final HttpClient _client = HttpClient();
   int? _port;
 
-  BuildRunnerProcess(this.process);
+  BuildRunnerProcess(this.process)
+    : _outputs = StreamQueue(
+        StreamGroup.merge([process.stdoutStream(), process.stderrStream()]),
+      );
 
-  /// Expects [pattern] to appear in the process's stdout.
+  /// Expects [pattern] to appear in the process's stdout or stderr.
   ///
   /// If [failOn] is encountered instead, the test fails immediately. It
   /// defaults to [BuildLog.failurePattern] so that `expect` will stop if the
@@ -195,7 +200,7 @@ class BuildRunnerProcess {
     while (true) {
       String? line;
       try {
-        line = await process.stdout.next;
+        line = await _outputs.next;
       } catch (_) {
         throw fail('While expecting `$pattern`, process exited.');
       }

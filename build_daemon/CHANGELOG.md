@@ -2,6 +2,7 @@
 
 - Bump the min SDK to 3.7.0.
 - Remove unused dep: `analyzer`.
+- Add `connectUnchecked` for use in tests.
 
 ## 4.0.4
 

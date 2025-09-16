@@ -3,9 +3,11 @@ presets:
     include_tags: experiments
 
 tags:
-  slow:
-    timeout: 16x
-  integration:
+  integration1:
+    timeout: 4x
+  integration2:
+    timeout: 4x
+  integration3:
     timeout: 4x
   experiments:
     skip: 'Only ran if `-P experiments` is passed'

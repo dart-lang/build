@@ -169,6 +169,9 @@ class BuildDaemonClient {
 
   /// Connects to the current daemon instance.
   ///
+  /// The options of the running daemon are checked against [daemonCommand].
+  /// If there is a mismatch, an exception is thrown.
+  ///
   /// If one is not running, a new daemon instance will be started.
   static Future<BuildDaemonClient> connect(
     String workingDirectory,
@@ -180,8 +183,6 @@ class BuildDaemonClient {
     BuildMode buildMode = BuildMode.Auto,
   }) async {
     logHandler ??= (_) {};
-    final daemonSerializers = serializersOverride ?? serializers;
-
     final daemonArgs = daemonCommand.sublist(1)
       ..add('--$buildModeFlag=$buildMode');
 
@@ -196,6 +197,26 @@ class BuildDaemonClient {
 
     await _handleDaemonStartup(process, logHandler);
 
+    return connectUnchecked(
+      workingDirectory,
+      serializersOverride: serializersOverride,
+      logHandler: logHandler,
+    );
+  }
+
+  /// Connects to the current daemon instance.
+  ///
+  /// Does not check the options the daemon is running with, so this is
+  /// primarily useful in tests where the daemon has just been launched.
+  ///
+  /// To connect and check the options, use [connect].
+  static Future<BuildDaemonClient> connectUnchecked(
+    String workingDirectory, {
+    Serializers? serializersOverride,
+    void Function(ServerLog)? logHandler,
+  }) async {
+    logHandler ??= (_) {};
+    final daemonSerializers = serializersOverride ?? serializers;
     return BuildDaemonClient._(
       await _existingPort(workingDirectory),
       daemonSerializers,
