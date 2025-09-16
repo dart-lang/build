@@ -56,6 +56,7 @@ class BuildRunner {
       print(ansi.red.wrap(e.toString()));
       return ExitCode.usage.code;
     } on CannotBuildException {
+      buildLog.debug('got CannotBuildException');
       // A message should have already been logged.
       return ExitCode.config.code;
     }
@@ -75,6 +76,7 @@ class BuildRunner {
             as String;
 
     if (commandLine.type.requiresBuilders && builders == null) {
+      buildLog.debug('run with builders');
       return await _runWithBuilders();
     }
 
@@ -161,17 +163,9 @@ class BuildRunner {
       b.mode = commandLine.type.buildLogMode;
     });
 
-    final bootstrapper = Bootstrapper();
-
-    // Build and run, retrying if the nested `build_runner` invocation exits
-    // with exit code `tempFail`.
-    while (true) {
-      exitCode = await bootstrapper.run(
-        arguments,
-        experiments: commandLine.enableExperiments,
-      );
-
-      if (exitCode != ExitCode.tempFail.code) return exitCode;
-    }
+    return await Bootstrapper().run(
+      arguments,
+      experiments: commandLine.enableExperiments,
+    );
   }
 }

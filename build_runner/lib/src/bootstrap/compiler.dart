@@ -27,8 +27,9 @@ class Compiler {
       '--depfile',
       '.dart_tool/build/entrypoint/build.dart.dill.deps',
     ]);
-    return CompileResult(
-      messages: result.exitCode == 0 ? null : result.stderr as String,
-    );
+    var output = result.stderr as String;
+    output =
+        output.replaceAll('Bad state: Generating kernel failed!', '').trim();
+    return CompileResult(messages: result.exitCode == 0 ? null : output);
   }
 }
