@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build_config/build_config.dart';
-import 'package:build_runner/src/bootstrap/builder_ordering.dart';
+import 'package:build_runner/src/build_plan/builder_ordering.dart';
 import 'package:test/test.dart';
 
 void main() {

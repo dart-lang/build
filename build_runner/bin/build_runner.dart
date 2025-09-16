@@ -5,4 +5,4 @@
 import 'package:build_runner/src/build_runner.dart';
 
 Future<void> main(List<String> arguments) =>
-    BuildRunner(arguments: arguments, builders: null).run();
+    BuildRunner(arguments: arguments, builderFactories: null).run();

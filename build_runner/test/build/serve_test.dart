@@ -6,9 +6,10 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:async/async.dart';
-import 'package:build_runner/src/bootstrap/apply_builders.dart';
+import 'package:build_runner/src/build_plan/apply_builders.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
 import 'package:build_runner/src/build_plan/builder_application.dart';
+import 'package:build_runner/src/build_plan/builder_factories.dart';
 import 'package:build_runner/src/build_plan/package_graph.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
 import 'package:build_runner/src/commands/serve/server.dart';
@@ -175,9 +176,10 @@ Future<ServeHandler> createHandler(
   FakeWatcher watcherFactory(String path) => FakeWatcher(path);
 
   final watchCommand = WatchCommand(
-    builders: builders.toBuiltList(),
+    builderFactories: BuilderFactories(),
     buildOptions: BuildOptions.forTests(skipBuildScriptCheck: true),
     testingOverrides: TestingOverrides(
+      builderApplications: builders.toBuiltList(),
       directoryWatcherFactory: watcherFactory,
       debounceDelay: _debounceDelay,
       onLog: (_) {},

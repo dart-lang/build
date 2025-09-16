@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/experiments.dart';
-import 'package:built_collection/built_collection.dart';
 import 'package:io/io.dart';
 
 import '../bootstrap/build_process_state.dart';
@@ -11,18 +10,18 @@ import '../build/build_result.dart';
 import '../build/build_series.dart';
 import '../build_plan/build_options.dart';
 import '../build_plan/build_plan.dart';
-import '../build_plan/builder_application.dart';
+import '../build_plan/builder_factories.dart';
 import '../build_plan/testing_overrides.dart';
 import '../logging/build_log.dart';
 import 'build_runner_command.dart';
 
 class BuildCommand implements BuildRunnerCommand {
-  final BuiltList<BuilderApplication> builders;
+  final BuilderFactories builderFactories;
   final BuildOptions buildOptions;
   final TestingOverrides testingOverrides;
 
   BuildCommand({
-    required this.builders,
+    required this.builderFactories,
     required this.buildOptions,
     this.testingOverrides = const TestingOverrides(),
   });
@@ -48,7 +47,7 @@ class BuildCommand implements BuildRunnerCommand {
     });
 
     final buildPlan = await BuildPlan.load(
-      builders: builders,
+      builderFactories: builderFactories,
       buildOptions: buildOptions,
       testingOverrides: testingOverrides,
     );

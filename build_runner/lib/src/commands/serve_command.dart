@@ -6,14 +6,13 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:build/experiments.dart';
-import 'package:built_collection/built_collection.dart';
 import 'package:http_multi_server/http_multi_server.dart';
 import 'package:io/io.dart';
 import 'package:shelf/shelf_io.dart';
 
 import '../bootstrap/build_process_state.dart';
 import '../build_plan/build_options.dart';
-import '../build_plan/builder_application.dart';
+import '../build_plan/builder_factories.dart';
 import '../build_plan/package_graph.dart';
 import '../build_plan/testing_overrides.dart';
 import '../logging/build_log.dart';
@@ -22,13 +21,13 @@ import 'serve_options.dart';
 import 'watch_command.dart';
 
 class ServeCommand implements BuildRunnerCommand {
-  final BuiltList<BuilderApplication> builders;
+  final BuilderFactories builderFactories;
   final BuildOptions buildOptions;
   final ServeOptions serveOptions;
   final TestingOverrides testingOverrides;
 
   ServeCommand({
-    required this.builders,
+    required this.builderFactories,
     required this.buildOptions,
     required this.serveOptions,
     this.testingOverrides = const TestingOverrides(),
@@ -69,7 +68,7 @@ class ServeCommand implements BuildRunnerCommand {
 
       final handler =
           await WatchCommand(
-            builders: builders,
+            builderFactories: builderFactories,
             buildOptions: buildOptions,
             testingOverrides: testingOverrides,
           ).watch();

@@ -13,7 +13,7 @@ import 'package:yaml/yaml.dart';
 
 import 'bootstrap/bootstrap.dart';
 import 'build_plan/build_options.dart';
-import 'build_plan/builder_application.dart';
+import 'build_plan/builder_factories.dart';
 import 'build_runner_command_line.dart';
 import 'commands/build_command.dart';
 import 'commands/build_runner_command.dart';
@@ -32,16 +32,15 @@ import 'logging/build_log.dart';
 
 /// The `build_runner` tool.
 class BuildRunner {
-  final BuiltList<BuilderApplication>? builders;
+  final BuilderFactories? builderFactories;
   final BuiltList<String> arguments;
 
   late final BuildRunnerCommandLine commandLine;
 
   BuildRunner({
     required Iterable<String> arguments,
-    required Iterable<BuilderApplication>? builders,
-  }) : arguments = arguments.toBuiltList(),
-       builders = builders?.toBuiltList();
+    required this.builderFactories,
+  }) : arguments = arguments.toBuiltList();
 
   Future<int> run() async {
     try {
@@ -74,7 +73,7 @@ class BuildRunner {
                 as YamlMap)['name']!
             as String;
 
-    if (commandLine.type.requiresBuilders && builders == null) {
+    if (commandLine.type.requiresBuilders && builderFactories == null) {
       return await _runWithBuilders();
     }
 
@@ -82,7 +81,7 @@ class BuildRunner {
     switch (commandLine.type) {
       case CommandType.build:
         command = BuildCommand(
-          builders: builders!,
+          builderFactories: builderFactories!,
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: true,
@@ -96,7 +95,7 @@ class BuildRunner {
       case CommandType.daemon:
         command = DaemonCommand(
           arguments: commandLine.arguments,
-          builders: builders!,
+          builderFactories: builderFactories!,
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: false,
@@ -107,7 +106,7 @@ class BuildRunner {
 
       case CommandType.run:
         command = RunCommand(
-          builders: builders!,
+          builderFactories: builderFactories!,
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: false,
@@ -118,7 +117,7 @@ class BuildRunner {
 
       case CommandType.serve:
         command = ServeCommand(
-          builders: builders!,
+          builderFactories: builderFactories!,
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: true,
@@ -129,7 +128,7 @@ class BuildRunner {
 
       case CommandType.test:
         command = TestCommand(
-          builders: builders!,
+          builderFactories: builderFactories!,
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: false,
@@ -140,7 +139,7 @@ class BuildRunner {
 
       case CommandType.watch:
         command = WatchCommand(
-          builders: builders!,
+          builderFactories: builderFactories!,
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: true,
@@ -154,8 +153,8 @@ class BuildRunner {
 
   /// Builds and runs `build_runner` with the configured builders.
   ///
-  /// The nested `build_runner` invocation reaches [run] with [builders] set,
-  /// so it runs the command instead of bootstrapping.
+  /// The nested `build_runner` invocation reaches [run] with [builderFactories]
+  /// set, so it runs the command instead of bootstrapping.
   Future<int> _runWithBuilders() async {
     buildLog.configuration = buildLog.configuration.rebuild((b) {
       b.mode = commandLine.type.buildLogMode;

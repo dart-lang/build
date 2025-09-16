@@ -134,7 +134,7 @@ Future<TestBuildersResult> testPhases(
   });
 
   final buildPlan = await BuildPlan.load(
-    builders: builders.build(),
+    builderFactories: BuilderFactories(),
     // ignore: invalid_use_of_visible_for_testing_member
     buildOptions: BuildOptions.forTests(
       buildDirs: buildDirs.build(),
@@ -146,6 +146,7 @@ Future<TestBuildersResult> testPhases(
       verbose: verbose,
     ),
     testingOverrides: TestingOverrides(
+      builderApplications: builders.build(),
       packageGraph: packageGraph,
       readerWriter: readerWriter,
     ),
