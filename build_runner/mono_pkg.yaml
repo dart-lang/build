@@ -8,8 +8,8 @@ stages:
 - analyze_and_format:
   - format
   - analyze: --fatal-infos .
-- unit_test:
-  - test: -x integration1 -x integration2 -x integration3 --test-randomize-ordering-seed=random
+- test:
+  - test: -x integration1 -x integration2 -x integration3 -x integration4 --test-randomize-ordering-seed=random
   - test: -P experiments --test-randomize-ordering-seed=random
   - test: -t integration1 --test-randomize-ordering-seed=random
     os:
@@ -23,5 +23,8 @@ stages:
     os:
     - linux
     - windows
-- leak_check:
+  - test: -t integration4 --test-randomize-ordering-seed=random
+    os:
+    - linux
+    - windows
   - command: ../tool/leak_check.sh

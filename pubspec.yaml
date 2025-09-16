@@ -7,8 +7,6 @@ dev_dependencies:
 
 workspace:
 - _benchmark
-- _test
-- _test/pkgs/provides_builder
 - build
 - build_config
 - build_daemon

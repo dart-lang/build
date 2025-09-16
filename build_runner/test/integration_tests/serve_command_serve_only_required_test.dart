@@ -31,17 +31,17 @@ void main() async {
     // Initial build produces no output as the copy is not required.
     await serve.expectServing();
     await serve.expect(BuildLog.successPattern);
-    await serve.expect404('a.txt.copy');
+    await serve.fetch('a.txt.copy', expectResponseCode: 404);
 
     // Read a copy so that it is now required.
     tester.write('root_pkg/web/new.read', 'root_pkg|web/a.txt.copy');
     await serve.expect(BuildLog.successPattern);
-    await serve.expectContent('a.txt.copy', 'a');
+    expect(await serve.fetchContent('a.txt.copy'), 'a');
 
     // Stop requiring the copy and it is no longer served.
     tester.delete('root_pkg/web/new.read');
     await serve.expect(BuildLog.successPattern);
-    await serve.expect404('a.txt.copy');
+    await serve.fetch('a.txt.copy', expectResponseCode: 404);
 
     // But it is not removed from the source tree.
     expect(tester.readFileTree('root_pkg/web'), {
