@@ -8,5 +8,5 @@ stages:
 - analyze_and_format:
   - format
   - analyze: --fatal-infos .
-- unit_test:
+- test:
   - test: -P presubmit --test-randomize-ordering-seed=random

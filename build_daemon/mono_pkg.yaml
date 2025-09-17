@@ -8,7 +8,7 @@ stages:
 - analyze_and_format:
   - format
   - analyze: --fatal-infos .
-- unit_test:
+- test:
   - test: --test-randomize-ordering-seed=random
     os:
     - linux
