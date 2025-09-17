@@ -238,6 +238,9 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
           watch: PackageNodeWatcher.new,
         )
         .watch()
+        .where((event) {
+          return event.id.path != '.dart_tool/build/entrypoint/state.json';
+        })
         .asyncWhere(
           (change) => shouldProcess(
             change,

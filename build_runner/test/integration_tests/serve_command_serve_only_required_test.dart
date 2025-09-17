@@ -49,7 +49,5 @@ void main() async {
       'a.txt.copy': 'a',
       'b.txt': 'b',
     });
-
-    await serve.kill();
   });
 }

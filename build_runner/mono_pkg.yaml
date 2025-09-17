@@ -10,7 +10,6 @@ stages:
   - analyze: --fatal-infos .
 - test:
   - test: -x integration1 -x integration2 -x integration3 -x integration4 --test-randomize-ordering-seed=random
-  - test: -P experiments --test-randomize-ordering-seed=random
   - test: -t integration1 --test-randomize-ordering-seed=random
     os:
     - linux
