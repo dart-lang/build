@@ -49,17 +49,17 @@ class Bootstrapper {
 
   Future<int> run(
     BuiltList<String> arguments, {
-    BuiltList<String>? experiments,
+    Iterable<String>? experiments,
   }) async {
     while (true) {
       // TODO(davidmorgan): fix for workspace, error handling.
       config = (await findPackageConfig(Directory.current, recurse: true))!;
 
       await _regenerateBuildScript();
-      await _checkBuildDill();
+      await _checkBuildDill(experiments: experiments);
 
       if (buildDillHasChanged!) {
-        buildLog.fullBuildBecause(FullBuildReason.incompatibleBuild);
+        buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
         buildProcessState.outputsAreFromStaleBuildScript = true;
       }
 
@@ -71,21 +71,18 @@ class Bootstrapper {
   }
 
   Future<void> _regenerateBuildScript() async {
-    final buildScript = await generateBuildScript();
+    final buildScript = await generateBuildScript(log: false);
     final path = '.dart_tool/build/entrypoint/build.dart';
     final existingBuildScript =
         File(path).existsSync() ? File(path).readAsStringSync() : '';
-    if (buildScript == existingBuildScript) {
-      buildLog.debug('no change to build script');
-    } else {
-      buildLog.debug('build script changes');
+    if (buildScript != existingBuildScript) {
       File(path)
         ..createSync(recursive: true)
         ..writeAsStringSync(buildScript);
     }
   }
 
-  Future<void> _checkBuildDill() async {
+  Future<void> _checkBuildDill({Iterable<String>? experiments}) async {
     final compiler = Compiler();
     if (dillDepfile.outputIsUpToDate()) {
       buildLog.debug('dill up to date');
@@ -94,7 +91,7 @@ class Bootstrapper {
       buildLog.debug('dill update');
       buildDillHasChanged = true;
 
-      final result = await compiler.compile();
+      final result = await compiler.compile(experiments: experiments);
       if (!result.succeeded) {
         if (result.messages != null) {
           buildLog.error(result.messages!);

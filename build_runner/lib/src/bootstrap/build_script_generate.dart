@@ -27,8 +27,8 @@ const scriptKernelCachedSuffix = '.cached';
 
 final _lastShortFormatDartVersion = Version(3, 6, 0);
 
-Future<String> generateBuildScript() async {
-  buildLog.doing('Generating the build script.');
+Future<String> generateBuildScript({bool log = true}) async {
+  if (log) buildLog.doing('Generating the build script.');
   final builderFactories = await loadBuilderFactories();
   final library = Library(
     (b) => b.body.addAll([

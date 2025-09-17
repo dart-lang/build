@@ -16,7 +16,8 @@ class CompileResult {
 
 // TODO(davidmorgan): experiments.
 class Compiler {
-  Future<CompileResult> compile() async {
+  Future<CompileResult> compile({Iterable<String>? experiments}) async {
+    buildLog.debug('compile with $experiments');
     buildLog.doing('Compiling the build script.');
     final result = await Process.run('dart', [
       'compile',
@@ -26,10 +27,28 @@ class Compiler {
       '.dart_tool/build/entrypoint/build.dart.dill',
       '--depfile',
       '.dart_tool/build/entrypoint/build.dart.dill.deps',
+      if (experiments != null)
+        for (final experiment in experiments) '--enable-experiment=$experiment',
     ]);
-    var output = result.stderr as String;
-    output =
-        output.replaceAll('Bad state: Generating kernel failed!', '').trim();
-    return CompileResult(messages: result.exitCode == 0 ? null : output);
+
+    if (result.exitCode == 0) {
+      final stdout = result.stdout as String;
+      if (stdout.contains('Unknown experiment:')) {
+        if (File('.dart_tool/build/entrypoint/build.dart.dill').existsSync()) {
+          File('.dart_tool/build/entrypoint/build.dart.dill').deleteSync();
+        }
+        final messages = stdout
+            .split('\n')
+            .where((e) => e.startsWith('Unknown experiment'))
+            .map((l) => '$l\n')
+            .join('');
+        return CompileResult(messages: messages);
+      }
+    }
+
+    var stderr = result.stderr as String;
+    stderr =
+        stderr.replaceAll('Bad state: Generating kernel failed!', '').trim();
+    return CompileResult(messages: result.exitCode == 0 ? null : stderr);
   }
 }

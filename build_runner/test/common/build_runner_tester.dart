@@ -215,6 +215,9 @@ class BuildRunnerProcess {
       fail('While expecting no output, got `$line`.');
     } on TimeoutException catch (_) {
       // Expected.
+    } on TestFailure catch (_) {
+      // Thrown by `fail`.
+      rethrow;
     } catch (_) {
       fail('While expecting no output, process exited.');
     }

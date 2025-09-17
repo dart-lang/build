@@ -11,7 +11,7 @@ import 'package:test/test.dart';
 import '../common/common.dart';
 
 void main() async {
-  test('watch command invalidation', () async {
+  test('watch command', () async {
     final pubspecs = await Pubspecs.load();
     final tester = BuildRunnerTester(pubspecs);
 
