@@ -89,7 +89,7 @@ void main() {
       skip: true,
       () async {
         var buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories(),
+          builderFactories: BuilderFactories(),
           buildOptions: buildOptions,
           testingOverrides: testingOverrides,
         );
@@ -97,18 +97,18 @@ void main() {
         await readerWriter.writeAsBytes(assetGraphId, assetGraph.serialize());
 
         buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories(),
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides.copyWith(
-          builderApplications:
-              [
-                applyToRoot(TestBuilder()),
-                // Apply a second builder so build phases change.
-                applyToRoot(
-                  TestBuilder(buildExtensions: appendExtension('.copy2')),
-                ),
-              ].build(),
-        ),
+          builderFactories: BuilderFactories(),
+          buildOptions: buildOptions,
+          testingOverrides: testingOverrides.copyWith(
+            builderApplications:
+                [
+                  applyToRoot(TestBuilder()),
+                  // Apply a second builder so build phases change.
+                  applyToRoot(
+                    TestBuilder(buildExtensions: appendExtension('.copy2')),
+                  ),
+                ].build(),
+          ),
         );
 
         expect(buildPlan.takePreviousAssetGraph(), null);
@@ -175,7 +175,7 @@ void main() {
       skip: true,
       () async {
         var buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories(),
+          builderFactories: BuilderFactories(),
           buildOptions: buildOptions,
           testingOverrides: testingOverrides,
         );
@@ -183,19 +183,19 @@ void main() {
         await readerWriter.writeAsBytes(assetGraphId, assetGraph.serialize());
 
         buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories(),
+          builderFactories: BuilderFactories(),
 
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides.copyWith(
-          builderApplications:
-              [
-                applyToRoot(TestBuilder()),
-                // Apply a second builder so build phases change.
-                applyToRoot(
-                  TestBuilder(buildExtensions: appendExtension('.copy2')),
-                ),
-              ].build(),
-        ),
+          buildOptions: buildOptions,
+          testingOverrides: testingOverrides.copyWith(
+            builderApplications:
+                [
+                  applyToRoot(TestBuilder()),
+                  // Apply a second builder so build phases change.
+                  applyToRoot(
+                    TestBuilder(buildExtensions: appendExtension('.copy2')),
+                  ),
+                ].build(),
+          ),
         );
 
         expect(buildPlan.takePreviousAssetGraph(), null);
@@ -207,7 +207,7 @@ void main() {
       skip: true,
       () async {
         var buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories(),
+          builderFactories: BuilderFactories(),
           buildOptions: buildOptions,
           testingOverrides: testingOverrides,
         );
@@ -217,11 +217,11 @@ void main() {
         final packageGraph2 = PackageGraph.fromRoot(
           PackageNode('b', '/b', DependencyType.path, null, isRoot: true),
         );
-      final testingOverrides2 = testingOverrides.copyWith(
+        final testingOverrides2 = testingOverrides.copyWith(
           packageGraph: packageGraph2,
         );
         buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories(),
+          builderFactories: BuilderFactories(),
           buildOptions: buildOptions,
           testingOverrides: testingOverrides2,
         );

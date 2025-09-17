@@ -79,7 +79,9 @@ class Bootstrapper {
       buildLog.debug('no change to build script');
     } else {
       buildLog.debug('build script changes');
-      File(path).writeAsStringSync(buildScript);
+      File(path)
+        ..createSync(recursive: true)
+        ..writeAsStringSync(buildScript);
     }
   }
 

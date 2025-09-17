@@ -2,7 +2,10 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:io';
+
 import 'package:build/build.dart';
+import 'package:build/experiments.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:watcher/watcher.dart';
 
@@ -44,6 +47,8 @@ class BuildPlan {
   bool _assetGraphWasTaken;
   final BuiltMap<AssetId, ChangeType>? updates;
 
+  final bool restartIsNeeded;
+
   /// Files to delete before restarting or before the next build.
   ///
   /// - Outputs from the previous build.
@@ -74,6 +79,7 @@ class BuildPlan {
     required this.updates,
     required this.filesToDelete,
     required this.foldersToDelete,
+    required this.restartIsNeeded,
   }) : _previousAssetGraph = previousAssetGraph,
        _previousAssetGraphWasTaken = previousAssetGraphWasTaken,
        _assetGraph = assetGraph,
@@ -152,6 +158,33 @@ class BuildPlan {
       );
       if (previousAssetGraph == null) {
         buildLog.fullBuildBecause(FullBuildReason.incompatibleAssetGraph);
+      } else {
+        final buildPhasesChanged =
+            buildPhases.digest != previousAssetGraph.buildPhasesDigest;
+        final pkgVersionsChanged =
+            previousAssetGraph.packageLanguageVersions !=
+            packageGraph.languageVersions;
+        final enabledExperimentsChanged =
+            previousAssetGraph.enabledExperiments != enabledExperiments.build();
+        if (buildPhasesChanged ||
+            pkgVersionsChanged ||
+            enabledExperimentsChanged ||
+            !isSameSdkVersion(
+              previousAssetGraph.dartVersion,
+              Platform.version,
+            )) {
+          buildLog.fullBuildBecause(FullBuildReason.incompatibleBuild);
+          // Mark old outputs for deletion.
+          filesToDelete.addAll(
+            previousAssetGraph.outputsToDelete(packageGraph),
+          );
+
+          // Discard the invalid asset graph so that a new one will be created
+          // from scratch, and delete it so that the same will happen if
+          // restarting.
+          filesToDelete.add(assetGraphId);
+          previousAssetGraph = null;
+        }
       }
     }
 
@@ -245,6 +278,7 @@ class BuildPlan {
       updates: updates?.build(),
       filesToDelete: filesToDelete.toBuiltList(),
       foldersToDelete: foldersToDelete.toBuiltList(),
+      restartIsNeeded: restartIsNeeded,
     );
   }
 
@@ -271,6 +305,7 @@ class BuildPlan {
     updates: updates,
     filesToDelete: filesToDelete,
     foldersToDelete: foldersToDelete,
+    restartIsNeeded: restartIsNeeded,
   );
 
   /// Takes the loaded [AssetGraph], which may be `null` if none could be
