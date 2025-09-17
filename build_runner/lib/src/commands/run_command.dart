@@ -7,14 +7,13 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:build/experiments.dart';
-import 'package:built_collection/built_collection.dart';
 import 'package:io/io.dart';
 import 'package:path/path.dart' as p;
 
 import '../bootstrap/build_process_state.dart';
 import '../build_plan/build_directory.dart';
 import '../build_plan/build_options.dart';
-import '../build_plan/builder_application.dart';
+import '../build_plan/builder_factories.dart';
 import '../build_plan/testing_overrides.dart';
 import '../logging/build_log.dart';
 import 'build_command.dart';
@@ -22,13 +21,13 @@ import 'build_runner_command.dart';
 import 'run_options.dart';
 
 class RunCommand implements BuildRunnerCommand {
-  final BuiltList<BuilderApplication> builders;
+  final BuilderFactories builderFactories;
   final BuildOptions buildOptions;
   final RunOptions runOptions;
   final TestingOverrides testingOverrides;
 
   RunCommand({
-    required this.builders,
+    required this.builderFactories,
     required this.buildOptions,
     required this.runOptions,
     this.testingOverrides = const TestingOverrides(),
@@ -67,7 +66,7 @@ class RunCommand implements BuildRunnerCommand {
 
     final result =
         await BuildCommand(
-          builders: builders,
+          builderFactories: builderFactories,
           buildOptions: buildOptions.copyWith(
             buildDirs: buildOptions.buildDirs.rebuild((b) {
               b.add(

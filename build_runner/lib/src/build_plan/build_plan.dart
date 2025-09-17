@@ -23,14 +23,14 @@ import 'build_directory.dart';
 import 'build_filter.dart';
 import 'build_options.dart';
 import 'build_phases.dart';
-import 'builder_application.dart';
+import 'builder_factories.dart';
 import 'package_graph.dart';
 import 'target_graph.dart';
 import 'testing_overrides.dart';
 
 /// Options and derived configuration for a build.
 class BuildPlan {
-  final BuiltList<BuilderApplication> builders;
+  final BuilderFactories builderFactories;
   final BuildOptions buildOptions;
   final TestingOverrides testingOverrides;
 
@@ -63,7 +63,7 @@ class BuildPlan {
   final BuiltList<AssetId> foldersToDelete;
 
   BuildPlan({
-    required this.builders,
+    required this.builderFactories,
     required this.buildOptions,
     required this.testingOverrides,
     required this.packageGraph,
@@ -98,7 +98,7 @@ class BuildPlan {
   /// in [filesToDelete] and [foldersToDelete]. Call [deleteFilesAndFolders] to
   /// delete them.
   static Future<BuildPlan> load({
-    required BuiltList<BuilderApplication> builders,
+    required BuilderFactories builderFactories,
     required BuildOptions buildOptions,
     required TestingOverrides testingOverrides,
   }) async {
@@ -115,9 +115,23 @@ class BuildPlan {
       configKey: buildOptions.configKey,
     );
 
+    var builderApplications =
+        testingOverrides.builderApplications ??
+        await builderFactories.createBuilderApplications(
+          packageGraph: packageGraph,
+          readerWriter: readerWriter,
+        );
+
+    var restartIsNeeded = false;
+    if (builderApplications == null) {
+      restartIsNeeded = true;
+      buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
+      builderApplications = BuiltList();
+    }
+
     final buildPhases = await createBuildPhases(
       targetGraph,
-      builders,
+      builderApplications,
       buildOptions.builderConfigOverrides,
       buildOptions.isReleaseBuild,
     );
@@ -129,7 +143,6 @@ class BuildPlan {
 
     buildLog.doing('Reading the asset graph.');
     AssetGraph? previousAssetGraph;
-    var restartIsNeeded = false;
     final filesToDelete = <AssetId>{};
     final foldersToDelete = <AssetId>{};
 
@@ -287,7 +300,7 @@ class BuildPlan {
     }
 
     return BuildPlan(
-      builders: builders,
+      builderFactories: builderFactories,
       buildOptions: buildOptions,
       testingOverrides: testingOverrides,
       packageGraph: packageGraph,
@@ -311,7 +324,7 @@ class BuildPlan {
     BuiltSet<BuildFilter>? buildFilters,
     ReaderWriter? readerWriter,
   }) => BuildPlan(
-    builders: builders,
+    builderFactories: builderFactories,
     buildOptions: buildOptions.copyWith(
       buildDirs: buildDirs,
       buildFilters: buildFilters,

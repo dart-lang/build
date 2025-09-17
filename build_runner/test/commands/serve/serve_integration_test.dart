@@ -7,9 +7,10 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:build_runner/src/bootstrap/apply_builders.dart';
 import 'package:build_runner/src/build/build_result.dart';
+import 'package:build_runner/src/build_plan/apply_builders.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
+import 'package:build_runner/src/build_plan/builder_factories.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
 import 'package:build_runner/src/commands/watch_command.dart';
 import 'package:built_collection/built_collection.dart';
@@ -58,12 +59,14 @@ void main() {
     terminateController = StreamController<ProcessSignal>();
     final server =
         (await WatchCommand(
-          builders: [applyToRoot(const UppercaseBuilder())].build(),
+          builderFactories: BuilderFactories(),
           buildOptions: BuildOptions.forTests(
             verbose: true,
             skipBuildScriptCheck: true,
           ),
           testingOverrides: TestingOverrides(
+            builderApplications:
+                [applyToRoot(const UppercaseBuilder())].build(),
             packageGraph: graph,
             readerWriter: readerWriter,
             onLog:

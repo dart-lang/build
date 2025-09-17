@@ -373,46 +373,6 @@ Future<TestBuilderResult> testBuilderFactories(
   }
   final packageGraph = PackageGraph.fromRoot(rootNode);
 
-  final testingOverrides = TestingOverrides(
-    packageGraph: packageGraph,
-    readerWriter: readerWriter as InternalTestReaderWriter,
-    resolvers: resolvers,
-    buildConfig:
-        // Override sources to defaults plus all explicitly passed inputs,
-        // optionally restricted by [inputFilter] or [generateFor]. Or if
-        // [testingBuilderConfig] is false, use the defaults. These skip some
-        // files, for example picking up `lib/**` but not all files in the package root.
-        testingBuilderConfig
-            ? {
-              for (final package in inputPackages)
-                package: BuildConfig.fromMap(package, [], {
-                  'targets': {
-                    package: {
-                      'sources': [
-                        r'\$package$',
-                        r'lib/$lib$',
-                        r'test/$test$',
-                        r'web/$web$',
-                        if (package == rootPackage)
-                          ...defaultRootPackageSources,
-                        if (package != rootPackage)
-                          ...defaultNonRootVisibleAssets,
-                        ...inputIds
-                            .where(
-                              (id) =>
-                                  id.package == package &&
-                                  !id.path.startsWith('.dart_tool/'),
-                            )
-                            .map((id) => Glob.quote(id.path)),
-                      ],
-                    },
-                  },
-                }),
-            }.build()
-            : null,
-    reportUnusedAssetsForInput: reportUnusedAssetsForInput,
-  );
-
   String builderName(Object builder) {
     final result = builder.toString();
     if (result.startsWith("Instance of '") && result.endsWith("'")) {
@@ -453,8 +413,49 @@ Future<TestBuilderResult> testBuilderFactories(
     builderApplications.add(applyPostProcess(name, postProcessBuiderFactory));
   }
 
+  final testingOverrides = TestingOverrides(
+    builderApplications: builderApplications.build(),
+    packageGraph: packageGraph,
+    readerWriter: readerWriter as InternalTestReaderWriter,
+    resolvers: resolvers,
+    buildConfig:
+        // Override sources to defaults plus all explicitly passed inputs,
+        // optionally restricted by [inputFilter] or [generateFor]. Or if
+        // [testingBuilderConfig] is false, use the defaults. These skip some
+        // files, for example picking up `lib/**` but not all files in the package root.
+        testingBuilderConfig
+            ? {
+              for (final package in inputPackages)
+                package: BuildConfig.fromMap(package, [], {
+                  'targets': {
+                    package: {
+                      'sources': [
+                        r'\$package$',
+                        r'lib/$lib$',
+                        r'test/$test$',
+                        r'web/$web$',
+                        if (package == rootPackage)
+                          ...defaultRootPackageSources,
+                        if (package != rootPackage)
+                          ...defaultNonRootVisibleAssets,
+                        ...inputIds
+                            .where(
+                              (id) =>
+                                  id.package == package &&
+                                  !id.path.startsWith('.dart_tool/'),
+                            )
+                            .map((id) => Glob.quote(id.path)),
+                      ],
+                    },
+                  },
+                }),
+            }.build()
+            : null,
+    reportUnusedAssetsForInput: reportUnusedAssetsForInput,
+  );
+
   final buildPlan = await BuildPlan.load(
-    builders: builderApplications.build(),
+    builderFactories: BuilderFactories(),
     // ignore: invalid_use_of_visible_for_testing_member
     buildOptions: BuildOptions.forTests(
       enableLowResourcesMode: enableLowResourceMode,

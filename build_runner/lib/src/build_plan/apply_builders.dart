@@ -5,12 +5,12 @@
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 
-import '../build_plan/builder_application.dart';
-import '../build_plan/package_graph.dart';
-import '../build_plan/phase.dart';
 import '../exceptions.dart';
 import '../logging/build_log.dart';
 import '../logging/build_log_logger.dart';
+import 'builder_application.dart';
+import 'package_graph.dart';
+import 'phase.dart';
 
 /// Run a builder on all packages in the package graph.
 PackageFilter toAllPackages() => (_) => true;
@@ -70,7 +70,7 @@ BuilderApplication applyToRoot(
 /// because it matches [filter] or because it was enabled manually.
 BuilderApplication apply(
   String builderKey,
-  List<BuilderFactory> builderFactories,
+  Iterable<BuilderFactory> builderFactories,
   PackageFilter filter, {
   bool isOptional = false,
   bool hideOutput = true,
@@ -115,7 +115,7 @@ BuilderApplication applyPostProcess(
 
 BuilderApplication _forBuilder(
   String builderKey,
-  List<BuilderFactory> builderFactories,
+  Iterable<BuilderFactory> builderFactories,
   PackageFilter filter, {
   bool isOptional = false,
   bool hideOutput = true,

@@ -14,10 +14,12 @@ import '../build/build_result.dart';
 import '../build/finalized_assets_view.dart';
 import '../io/reader_writer.dart';
 import 'build_directory.dart';
+import 'builder_application.dart';
 import 'package_graph.dart';
 
 /// Settings that are not user-visible: they are overriden only for testing.
 class TestingOverrides {
+  final BuiltList<BuilderApplication>? builderApplications;
   final BuiltMap<String, BuildConfig>? buildConfig;
   final Duration? debounceDelay;
   final BuiltList<String>? defaultRootPackageSources;
@@ -37,6 +39,7 @@ class TestingOverrides {
   final Stream<ProcessSignal>? terminateEventStream;
 
   const TestingOverrides({
+    this.builderApplications,
     this.buildConfig,
     this.debounceDelay,
     this.defaultRootPackageSources,
@@ -49,4 +52,23 @@ class TestingOverrides {
     this.resolvers,
     this.terminateEventStream,
   });
+
+  TestingOverrides copyWith({
+    BuiltList<BuilderApplication>? builderApplications,
+    BuiltMap<String, BuildConfig>? buildConfig,
+    PackageGraph? packageGraph,
+  }) => TestingOverrides(
+    builderApplications: builderApplications ?? this.builderApplications,
+    buildConfig: buildConfig ?? this.buildConfig,
+    debounceDelay: debounceDelay,
+    defaultRootPackageSources: defaultRootPackageSources,
+    directoryWatcherFactory: directoryWatcherFactory,
+    finalizeBuild: finalizeBuild,
+    onLog: onLog,
+    packageGraph: packageGraph ?? this.packageGraph,
+    readerWriter: readerWriter,
+    reportUnusedAssetsForInput: reportUnusedAssetsForInput,
+    resolvers: resolvers,
+    terminateEventStream: terminateEventStream,
+  );
 }

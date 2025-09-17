@@ -4,7 +4,6 @@
 
 import 'dart:async';
 
-import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
@@ -18,7 +17,6 @@ import '../constants.dart';
 import '../exceptions.dart';
 import '../io/reader_writer.dart';
 import '../logging/build_log.dart';
-import 'builder_ordering.dart';
 
 const scriptLocation = '$entryPointDir/build.dart';
 const scriptKernelLocation = '$scriptLocation$scriptKernelSuffix';
@@ -31,19 +29,20 @@ final _lastShortFormatDartVersion = Version(3, 6, 0);
 
 Future<String> generateBuildScript() async {
   buildLog.doing('Generating the build script.');
-  final info = await findBuildScriptOptions();
-  final builders = info.builderApplications;
+  final builderFactories = await loadBuilderFactories();
   final library = Library(
     (b) => b.body.addAll([
-      declareFinal('_builders')
+      declareFinal('_builderFactories')
           .assign(
-            literalList(
-              builders,
-              refer(
-                'BuilderApplication',
-                'package:build_runner/src/build_plan/builder_application.dart',
+            refer(
+              'BuilderFactories',
+              'package:build_runner/src/build_plan/builder_factories.dart',
+            ).call([], {
+              'builderFactories': literalMap(builderFactories.builderFactories),
+              'postProcessBuilderFactories': literalMap(
+                builderFactories.postProcessBuilderFactories,
               ),
-            ),
+            }),
           )
           .statement,
       _main(),
@@ -76,7 +75,7 @@ ${library.accept(emitter)}
   }
 }
 
-Future<BuildScriptInfo> findBuildScriptOptions() async {
+Future<BuilderFactoriesExpressions> loadBuilderFactories() async {
   final packageGraph = await PackageGraph.forThisPackage();
   final orderedPackages = stronglyConnectedComponents<PackageNode>(
     [packageGraph.root],
@@ -118,37 +117,42 @@ Future<BuildScriptInfo> findBuildScriptOptions() async {
     return import.startsWith('package:') || package == packageGraph.root.name;
   }
 
-  final orderedConfigs = await Future.wait(
+  final buildConfigs = await Future.wait(
     orderedPackages.map(packageBuildConfig),
   );
-  final builderDefinitions = orderedConfigs
-      .expand((c) => c.builderDefinitions.values)
-      .where(isPackageImportOrForRoot);
+  final builderDefinitions =
+      buildConfigs
+          .expand((c) => c.builderDefinitions.values)
+          .where(isPackageImportOrForRoot)
+          .toList()
+        ..sort((a, b) => a.key.compareTo(b.key));
+  final postProcessBuilderDefinitions =
+      buildConfigs
+          .expand((c) => c.postProcessBuilderDefinitions.values)
+          .where(isPackageImportOrForRoot)
+          .toList()
+        ..sort((a, b) => a.key.compareTo(b.key));
 
-  final rootBuildConfig = orderedConfigs.last;
-  final orderedBuilders =
-      findBuilderOrder(
-        builderDefinitions,
-        rootBuildConfig.globalOptions,
-      ).toList();
-
-  final postProcessBuilderDefinitions = orderedConfigs
-      .expand((c) => c.postProcessBuilderDefinitions.values)
-      .where(isPackageImportOrForRoot);
-
-  final applications = [
-    for (final builder in orderedBuilders) _applyBuilder(builder),
-    for (final builder in postProcessBuilderDefinitions)
-      _applyPostProcessBuilder(builder),
-  ];
-
-  return BuildScriptInfo(applications);
+  return BuilderFactoriesExpressions(
+    builderFactories: {
+      for (final builder in builderDefinitions)
+        builder.key: _builderFactories(builder),
+    },
+    postProcessBuilderFactories: {
+      for (final postProcessBuilder in postProcessBuilderDefinitions)
+        postProcessBuilder.key: _postProcessBuilderFactory(postProcessBuilder),
+    },
+  );
 }
 
-class BuildScriptInfo {
-  final Iterable<Expression> builderApplications;
+class BuilderFactoriesExpressions {
+  final Map<String, Expression> builderFactories;
+  final Map<String, Expression> postProcessBuilderFactories;
 
-  BuildScriptInfo(this.builderApplications);
+  BuilderFactoriesExpressions({
+    required this.builderFactories,
+    required this.postProcessBuilderFactories,
+  });
 }
 
 /// A method forwarding to `run`.
@@ -189,7 +193,7 @@ Method _main() => Method((b) {
           refer(
             'run',
             'package:build_runner/build_runner.dart',
-          ).call([refer('args'), refer('_builders')]).awaited,
+          ).call([refer('args'), refer('_builderFactories')]).awaited,
         )
         .statement,
     refer('exitCode', 'dart:io').assign(isolateExitCode).nullChecked.statement,
@@ -200,87 +204,19 @@ Method _main() => Method((b) {
   ]);
 });
 
-/// An expression calling `apply` with appropriate setup for a Builder.
-Expression _applyBuilder(BuilderDefinition definition) {
-  final namedArgs = {
-    if (definition.isOptional) 'isOptional': literalTrue,
-    if (definition.buildTo == BuildTo.cache)
-      'hideOutput': literalTrue
-    else
-      'hideOutput': literalFalse,
-    if (!identical(definition.defaults.generateFor, InputSet.anything))
-      'defaultGenerateFor': refer(
-        'InputSet',
-        'package:build_config/build_config.dart',
-      ).constInstance([], {
-        if (definition.defaults.generateFor.include != null)
-          'include': _rawStringList(definition.defaults.generateFor.include!),
-        if (definition.defaults.generateFor.exclude != null)
-          'exclude': _rawStringList(definition.defaults.generateFor.exclude!),
-      }),
-    if (definition.defaults.options.isNotEmpty)
-      'defaultOptions': _constructBuilderOptions(definition.defaults.options),
-    if (definition.defaults.devOptions.isNotEmpty)
-      'defaultDevOptions': _constructBuilderOptions(
-        definition.defaults.devOptions,
-      ),
-    if (definition.defaults.releaseOptions.isNotEmpty)
-      'defaultReleaseOptions': _constructBuilderOptions(
-        definition.defaults.releaseOptions,
-      ),
-    if (definition.appliesBuilders.isNotEmpty)
-      'appliesBuilders': _rawStringList(definition.appliesBuilders),
-  };
+/// The `List` of `BuilderFactory` declared in [definition].
+Expression _builderFactories(BuilderDefinition definition) {
   final import = _buildScriptImport(definition.import);
-  return refer(
-    'apply',
-    'package:build_runner/src/bootstrap/apply_builders.dart',
-  ).call([
-    literalString(definition.key, raw: true),
-    literalList([
-      for (final f in definition.builderFactories) refer(f, import),
-    ]),
-    _findToExpression(definition),
-  ], namedArgs);
+  return literalList([
+    for (final f in definition.builderFactories) refer(f, import),
+  ]);
 }
 
-/// An expression calling `applyPostProcess` with appropriate setup for a
-/// PostProcessBuilder.
-Expression _applyPostProcessBuilder(PostProcessBuilderDefinition definition) {
-  final namedArgs = {
-    if (!identical(definition.defaults.generateFor, InputSet.anything))
-      'defaultGenerateFor': refer(
-        'InputSet',
-        'package:build_config/build_config.dart',
-      ).constInstance([], {
-        if (definition.defaults.generateFor.include != null)
-          'include': _rawStringList(definition.defaults.generateFor.include!),
-        if (definition.defaults.generateFor.exclude != null)
-          'exclude': _rawStringList(definition.defaults.generateFor.exclude!),
-      }),
-    if (definition.defaults.options.isNotEmpty)
-      'defaultOptions': _constructBuilderOptions(definition.defaults.options),
-    if (definition.defaults.devOptions.isNotEmpty)
-      'defaultDevOptions': _constructBuilderOptions(
-        definition.defaults.devOptions,
-      ),
-    if (definition.defaults.releaseOptions.isNotEmpty)
-      'defaultReleaseOptions': _constructBuilderOptions(
-        definition.defaults.releaseOptions,
-      ),
-  };
+/// The `PostProcessBuilderFactory` declared in [definition].
+Expression _postProcessBuilderFactory(PostProcessBuilderDefinition definition) {
   final import = _buildScriptImport(definition.import);
-  return refer(
-    'applyPostProcess',
-    'package:build_runner/src/bootstrap/apply_builders.dart',
-  ).call([
-    literalString(definition.key, raw: true),
-    refer(definition.builderFactory, import),
-  ], namedArgs);
+  return refer(definition.builderFactory, import);
 }
-
-Expression _rawStringList(List<String> strings) =>
-    literalConstList([for (final s in strings) literalString(s, raw: true)]);
 
 /// Returns the actual import to put in the generated script based on an import
 /// found in the build.yaml.
@@ -291,65 +227,5 @@ String _buildScriptImport(String import) {
     return import;
   } else {
     return p.url.relative(import, from: p.url.dirname(scriptLocation));
-  }
-}
-
-Expression _findToExpression(BuilderDefinition definition) {
-  switch (definition.autoApply) {
-    case AutoApply.none:
-      return refer(
-        'toNoneByDefault',
-        'package:build_runner/src/bootstrap/apply_builders.dart',
-      ).call([]);
-    case AutoApply.dependents:
-      return refer(
-        'toDependentsOf',
-        'package:build_runner/src/bootstrap/apply_builders.dart',
-      ).call([literalString(definition.package, raw: true)]);
-    case AutoApply.allPackages:
-      return refer(
-        'toAllPackages',
-        'package:build_runner/src/bootstrap/apply_builders.dart',
-      ).call([]);
-    case AutoApply.rootPackage:
-      return refer(
-        'toRoot',
-        'package:build_runner/src/bootstrap/apply_builders.dart',
-      ).call([]);
-  }
-}
-
-/// An expression creating a [BuilderOptions] from a json string.
-Expression _constructBuilderOptions(Map<String, dynamic> options) => refer(
-  'BuilderOptions',
-  'package:build/build.dart',
-).constInstance([options.toExpression()]);
-
-/// Converts a Dart object to a source code representation.
-///
-/// This is similar to [literal] from `package:code_builder`, except that it
-/// always writes raw string literals.
-extension ConvertToExpression on Object? {
-  Expression toExpression() {
-    final $this = this;
-
-    if ($this is Map) {
-      return literalMap(
-        {
-          for (final entry in $this.cast<Object?, Object?>().entries)
-            entry.key.toExpression(): entry.value.toExpression(),
-        },
-        refer('String'),
-        refer('dynamic'),
-      );
-    } else if ($this is List) {
-      return literalList([
-        for (final entry in $this.cast<Object?>()) entry.toExpression(),
-      ], refer('dynamic'));
-    } else if ($this is String) {
-      return literalString($this, raw: true);
-    } else {
-      return literal(this);
-    }
   }
 }
