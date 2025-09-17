@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
@@ -13,7 +14,6 @@ import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart' as test;
 import 'package:test/test.dart';
-import 'package:test_process/test_process.dart';
 
 import 'fixture_packages.dart';
 
@@ -171,7 +171,7 @@ ${result.stdout}${result.stderr}===
   Future<BuildRunnerProcess> start(String directory, String commandLine) async {
     final args = commandLine.split(' ');
     final command = args.removeAt(0);
-    final process = await TestProcess.start(
+    final process = await Process.start(
       command,
       args,
       workingDirectory: p.join(tempDirectory.path, directory),
@@ -183,15 +183,35 @@ ${result.stdout}${result.stderr}===
 
 /// A running `build_runner` process.
 class BuildRunnerProcess {
-  final TestProcess process;
+  final Process process;
   final StreamQueue<String> _outputs;
   late final HttpClient _client = HttpClient();
   int? _port;
 
   BuildRunnerProcess(this.process)
     : _outputs = StreamQueue(
-        StreamGroup.merge([process.stdoutStream(), process.stderrStream()]),
+        StreamGroup.merge([
+          process.stdout
+              .transform(utf8.decoder)
+              .transform(const LineSplitter()),
+          process.stderr
+              .transform(utf8.decoder)
+              .transform(const LineSplitter()),
+        ]),
       );
+
+  /// Expects nothing new on stdout or stderr for [duration].
+  Future<void> expectNoOutput(Duration duration) async {
+    printOnFailure('--- $_testLine expects no output');
+    try {
+      final line = await _outputs.next.timeout(duration);
+      fail('While expecting no output, got `$line`.');
+    } on TimeoutException catch (_) {
+      // Expected.
+    } catch (_) {
+      fail('While expecting no output, process exited.');
+    }
+  }
 
   /// Expects [pattern] to appear in the process's stdout or stderr.
   ///
@@ -202,12 +222,21 @@ class BuildRunnerProcess {
   /// If the process exits instead, the test fails immediately.
   ///
   /// Otherwise, waits until [pattern] appears, returns the matching line.
+  ///
+  /// Throws if the process appears to be stuck or done: if it outputs nothing
+  /// for 30s.
   Future<String> expect(Pattern pattern, {Pattern? failOn}) async {
+    printOnFailure(
+      '--- $_testLine expects `$pattern`'
+      '${failOn == null ? '' : ', failOn: `$failOn`'}',
+    );
     failOn ??= BuildLog.failurePattern;
     while (true) {
       String? line;
       try {
-        line = await _outputs.next;
+        line = await _outputs.next.timeout(const Duration(seconds: 30));
+      } on TimeoutException catch (_) {
+        throw fail('While expecting `$pattern`, timed out after 30s.');
       } catch (_) {
         throw fail('While expecting `$pattern`, process exited.');
       }
@@ -219,8 +248,23 @@ class BuildRunnerProcess {
     }
   }
 
+  String get _testLine {
+    var result =
+        StackTrace.current
+            .toString()
+            .split('\n')
+            .where((l) => l.contains('_test.dart'))
+            .first;
+    result = result.substring(result.lastIndexOf('/') + 1);
+    result = result.substring(0, result.lastIndexOf(':'));
+    return result;
+  }
+
   /// Kills the process.
-  Future<void> kill() => process.kill();
+  Future<void> kill() async {
+    process.kill();
+    await process.exitCode;
+  }
 
   // Expects the server to log that it is serving, records the port.
   Future<void> expectServing() async {
