@@ -86,6 +86,8 @@ class Watcher implements BuildState {
       final build = _buildSeries!;
       final mergedChanges = collectChanges(changes);
 
+      buildLog.debug('changes: $changes');
+
       _expectedDeletes.clear();
       return build.run(mergedChanges);
     }
@@ -107,6 +109,9 @@ class Watcher implements BuildState {
           // Delay any events until the first build is completed.
           if (firstBuildCompleter.isCompleted) return change;
           return firstBuildCompleter.future.then((_) => change);
+        })
+        .where((event) {
+          return event.id.path != '.dart_tool/build/entrypoint/state.json';
         })
         .debounceBuffer(
           testingOverrides.debounceDelay ?? const Duration(milliseconds: 250),

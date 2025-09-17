@@ -36,14 +36,12 @@ class Bootstrapper {
 
   Future<bool> needsRebuild() async {
     if (!runningFromBuildScript) return false;
-    buildLog.debug(Platform.script.toString());
     // TODO(davidmorgan): fix for workspace, error handling.
     config ??= (await findPackageConfig(Directory.current, recurse: true))!;
 
     // TODO(davidmorgan): is this the right thing to check?
     await _regenerateBuildScript();
     final result = !dillDepfile.outputIsUpToDate();
-    buildLog.debug('needsRebuild? $result');
     return result;
   }
 
@@ -85,10 +83,8 @@ class Bootstrapper {
   Future<void> _checkBuildDill({Iterable<String>? experiments}) async {
     final compiler = Compiler();
     if (dillDepfile.outputIsUpToDate()) {
-      buildLog.debug('dill up to date');
       buildDillHasChanged = false;
     } else {
-      buildLog.debug('dill update');
       buildDillHasChanged = true;
 
       final result = await compiler.compile(experiments: experiments);
