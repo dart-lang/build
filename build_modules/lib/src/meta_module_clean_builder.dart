@@ -43,20 +43,20 @@ class MetaModuleCleanBuilder implements Builder {
 
   @override
   Future build(BuildStep buildStep) async {
-    var assetToModule = (await buildStep.fetchResource(
+    final assetToModule = (await buildStep.fetchResource(
       _assetToModule,
     )).putIfAbsent(_platform, () => {});
-    var assetToPrimary = (await buildStep.fetchResource(
+    final assetToPrimary = (await buildStep.fetchResource(
       _assetToPrimary,
     )).putIfAbsent(_platform, () => {});
-    var modules = await _transitiveModules(
+    final modules = await _transitiveModules(
       buildStep,
       buildStep.inputId,
       assetToModule,
       assetToPrimary,
       _platform,
     );
-    var connectedComponents = stronglyConnectedComponents<Module>(
+    final connectedComponents = stronglyConnectedComponents<Module>(
       modules,
       (m) => m.directDependencies.map(
         (d) =>
@@ -71,7 +71,7 @@ class MetaModuleCleanBuilder implements Builder {
     bool primarySourceInPackage(Module m) =>
         m.primarySource.package == buildStep.inputId.package;
     // Ensure deterministic output by sorting the modules.
-    var cleanModules = SplayTreeSet<Module>(
+    final cleanModules = SplayTreeSet<Module>(
       (a, b) => a.primarySource.compareTo(b.primarySource),
     )..addAll(connectedComponents.map(merge).where(primarySourceInPackage));
     await buildStep.writeAsString(
@@ -107,23 +107,23 @@ Future<Set<Module>> _transitiveModules(
   Map<AssetId, AssetId> assetToPrimary,
   DartPlatform platform,
 ) async {
-  var dependentModules = <Module>{};
+  final dependentModules = <Module>{};
   // Ensures we only process a meta file once.
-  var seenMetas = <AssetId>{}..add(metaAsset);
-  var metaModules = await buildStep.fetchResource(metaModuleCache);
-  var meta = (await metaModules.find(buildStep.inputId, buildStep))!;
-  var nextModules = List.of(meta.modules);
+  final seenMetas = <AssetId>{}..add(metaAsset);
+  final metaModules = await buildStep.fetchResource(metaModuleCache);
+  final meta = (await metaModules.find(buildStep.inputId, buildStep))!;
+  final nextModules = List.of(meta.modules);
   while (nextModules.isNotEmpty) {
-    var module = nextModules.removeLast();
+    final module = nextModules.removeLast();
     dependentModules.add(module);
-    for (var source in module.sources) {
+    for (final source in module.sources) {
       assetToModule[source] = module;
       // The asset to primary map will be updated when the merged modules are
       // created. This is why we can't use the assetToModule map.
       assetToPrimary[source] = module.primarySource;
     }
-    for (var dep in module.directDependencies) {
-      var depMetaAsset = AssetId(
+    for (final dep in module.directDependencies) {
+      final depMetaAsset = AssetId(
         dep.package,
         'lib/${metaModuleExtension(platform)}',
       );
@@ -142,7 +142,7 @@ Future<Set<Module>> _transitiveModules(
         );
         continue;
       }
-      var depMeta = (await metaModules.find(depMetaAsset, buildStep))!;
+      final depMeta = (await metaModules.find(depMetaAsset, buildStep))!;
       nextModules.addAll(depMeta.modules);
     }
   }
@@ -158,19 +158,19 @@ Module _mergeComponent(
   Map<AssetId, AssetId> assetToPrimary,
   DartPlatform platform,
 ) {
-  var sources = <AssetId>{};
-  var deps = <AssetId>{};
+  final sources = <AssetId>{};
+  final deps = <AssetId>{};
   // Sort the modules to deterministicly select the primary source.
-  var components = SplayTreeSet<Module>(
+  final components = SplayTreeSet<Module>(
     (a, b) => a.primarySource.compareTo(b.primarySource),
   )..addAll(connectedComponent);
-  var primarySource = components.first.primarySource;
+  final primarySource = components.first.primarySource;
   var isSupported = true;
-  for (var module in connectedComponent) {
+  for (final module in connectedComponent) {
     sources.addAll(module.sources);
     isSupported = isSupported && module.isSupported;
-    for (var dep in module.directDependencies) {
-      var primaryDep = assetToPrimary[dep];
+    for (final dep in module.directDependencies) {
+      final primaryDep = assetToPrimary[dep];
       if (primaryDep == null) continue;
       // This dep is now merged into sources so skip it.
       if (!components
@@ -181,14 +181,14 @@ Module _mergeComponent(
     }
   }
   // Update map so that sources now point to the merged module.
-  var mergedModule = Module(
+  final mergedModule = Module(
     primarySource,
     sources,
     deps,
     platform,
     isSupported,
   );
-  for (var source in mergedModule.sources) {
+  for (final source in mergedModule.sources) {
     assetToPrimary[source] = mergedModule.primarySource;
   }
   return mergedModule;

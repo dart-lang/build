@@ -26,11 +26,11 @@ enum ModuleStrategy { fine, coarse }
 ModuleStrategy moduleStrategy(BuilderOptions options) {
   // DDC's Library Bundle module system only supports fine modules since it must
   // align with the Frontend Server's library management scheme.
-  var usesWebHotReload = options.config[webHotReloadOption] as bool? ?? false;
+  final usesWebHotReload = options.config[webHotReloadOption] as bool? ?? false;
   if (usesWebHotReload) {
     return ModuleStrategy.fine;
   }
-  var config = options.config['strategy'] as String? ?? 'coarse';
+  final config = options.config['strategy'] as String? ?? 'coarse';
   switch (config) {
     case 'coarse':
       return ModuleStrategy.coarse;
@@ -49,7 +49,7 @@ void validateOptions(
   List<String> supportedOptions,
   String builderKey,
 ) {
-  var unsupportedOptions = config.keys.where(
+  final unsupportedOptions = config.keys.where(
     (o) => !supportedOptions.contains(o),
   );
   if (unsupportedOptions.isNotEmpty) {

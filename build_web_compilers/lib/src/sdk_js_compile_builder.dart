@@ -92,8 +92,8 @@ Future<void> _createDevCompilerModule(
   bool canaryFeatures,
   bool usesWebHotReload,
 ) async {
-  var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
-  var jsOutputFile = scratchSpace.fileFor(jsOutputId);
+  final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
+  final jsOutputFile = scratchSpace.fileFor(jsOutputId);
 
   ProcessResult result;
   try {
@@ -105,7 +105,7 @@ Future<void> _createDevCompilerModule(
       'snapshots',
       'dartdevc_aot.dart.snapshot',
     );
-    var execSuffix = Platform.isWindows ? '.exe' : '';
+    final execSuffix = Platform.isWindows ? '.exe' : '';
     var dartPath = p.join(sdkDir, 'bin', 'dartaotruntime$execSuffix');
     if (!File(snapshotPath).existsSync()) {
       snapshotPath = p.join(
@@ -130,7 +130,7 @@ Future<void> _createDevCompilerModule(
     throw DartDevcCompilationException(jsOutputId, e.toString());
   }
 
-  var message = '${result.stdout}${result.stderr}'
+  final message = '${result.stdout}${result.stderr}'
       .replaceAll('${scratchSpace.tempDir.path}/', '')
       .replaceAll('org-dartlang-sdk:///', '');
   if (result.exitCode != EXIT_CODE_OK ||

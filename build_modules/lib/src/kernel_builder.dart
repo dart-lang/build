@@ -92,7 +92,7 @@ class KernelBuilder implements Builder {
 
   @override
   Future build(BuildStep buildStep) async {
-    var module = Module.fromJson(
+    final module = Module.fromJson(
       json.decode(await buildStep.readAsString(buildStep.inputId))
           as Map<String, dynamic>,
     );
@@ -144,11 +144,11 @@ Future<void> _createKernel({
   required bool trackUnusedInputs,
   required Iterable<String> experiments,
 }) async {
-  var request = WorkRequest();
-  var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
-  var outputId = module.primarySource.changeExtension(outputExtension);
-  var outputFile = scratchSpace.fileFor(outputId);
-  var kernelDeps = <AssetId>[];
+  final request = WorkRequest();
+  final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
+  final outputId = module.primarySource.changeExtension(outputExtension);
+  final outputFile = scratchSpace.fileFor(outputId);
+  final kernelDeps = <AssetId>[];
 
   // Maps the inputs paths we provide to the kernel worker to asset ids,
   // if `trackUnusedInputs` is `true`.
@@ -158,7 +158,7 @@ Future<void> _createKernel({
   File? usedInputsFile;
 
   await buildStep.trackStage('CollectDeps', () async {
-    var sourceDeps = <AssetId>[];
+    final sourceDeps = <AssetId>[];
 
     await _findModuleDeps(
       module,
@@ -168,7 +168,7 @@ Future<void> _createKernel({
       outputExtension,
     );
 
-    var allAssetIds = <AssetId>{
+    final allAssetIds = <AssetId>{
       ...module.sources,
       ...kernelDeps,
       ...sourceDeps,
@@ -176,12 +176,13 @@ Future<void> _createKernel({
     await scratchSpace.ensureAssets(allAssetIds, buildStep);
 
     if (trackUnusedInputs) {
-      usedInputsFile = await File(
-        p.join(
-          (await Directory.systemTemp.createTemp('kernel_builder_')).path,
-          'used_inputs.txt',
-        ),
-      ).create();
+      usedInputsFile =
+          await File(
+            p.join(
+              (await Directory.systemTemp.createTemp('kernel_builder_')).path,
+              'used_inputs.txt',
+            ),
+          ).create();
       kernelInputPathToId = {};
     }
 
@@ -205,14 +206,17 @@ Future<void> _createKernel({
 
   // We need to make sure and clean up the temp dir, even if we fail to compile.
   try {
-    var frontendWorker = await buildStep.fetchResource(frontendDriverResource);
-    var response = await frontendWorker.doWork(
+    final frontendWorker = await buildStep.fetchResource(
+      frontendDriverResource,
+    );
+    final response = await frontendWorker.doWork(
       request,
-      trackWork: (response) => buildStep.trackStage(
-        'Kernel Generate',
-        () => response,
-        isExternal: true,
-      ),
+      trackWork:
+          (response) => buildStep.trackStage(
+            'Kernel Generate',
+            () => response,
+            isExternal: true,
+          ),
     );
     if (response.exitCode != EXIT_CODE_OK || !await outputFile.exists()) {
       throw KernelException(
@@ -261,15 +265,16 @@ Future<void> reportUnusedKernelInputs(
   Map<String, AssetId> inputPathToId,
   BuildStep buildStep,
 ) async {
-  var usedPaths = await usedInputsFile.readAsLines();
+  final usedPaths = await usedInputsFile.readAsLines();
   if (usedPaths.isEmpty || usedPaths.first == '') return;
 
   String? firstMissingInputPath;
-  var usedIds = usedPaths.map((usedPath) {
-    var id = inputPathToId[usedPath];
-    if (id == null) firstMissingInputPath ??= usedPath;
-    return id;
-  }).toSet();
+  final usedIds =
+      usedPaths.map((usedPath) {
+        final id = inputPathToId[usedPath];
+        if (id == null) firstMissingInputPath ??= usedPath;
+        return id;
+      }).toSet();
 
   if (firstMissingInputPath != null) {
     log.warning(
@@ -321,13 +326,15 @@ Future<List<Module>> _resolveTransitiveModules(
   Module root,
   BuildStep buildStep,
 ) async {
-  var missing = <AssetId>{};
-  var modules =
+  final missing = <AssetId>{};
+  final modules =
       await crawlAsync<AssetId, Module?>(
             [root.primarySource],
             (id) => buildStep.fetchResource(moduleCache).then((c) async {
-              var moduleId = id.changeExtension(moduleExtension(root.platform));
-              var module = await c.find(moduleId, buildStep);
+              final moduleId = id.changeExtension(
+                moduleExtension(root.platform),
+              );
+              final module = await c.find(moduleId, buildStep);
               if (module == null) {
                 missing.add(moduleId);
               } else if (module.isMissing) {
@@ -405,13 +412,13 @@ Future<void> _addRequestArguments(
   Map<String, AssetId>? kernelInputPathToId,
 }) async {
   // Add all kernel outlines as summary inputs, with digests.
-  var inputs = await Future.wait(
+  final inputs = await Future.wait(
     transitiveKernelDeps.map((id) async {
-      var relativePath = p.url.relative(
+      final relativePath = p.url.relative(
         scratchSpace.fileFor(id).uri.path,
         from: scratchSpace.tempDir.uri.path,
       );
-      var path = '$multiRootScheme:///$relativePath';
+      final path = '$multiRootScheme:///$relativePath';
       if (kernelInputPathToId != null) {
         kernelInputPathToId[path] = id;
       }
@@ -435,10 +442,10 @@ Future<void> _addRequestArguments(
     ],
     if (usedInputsFile != null)
       '--used-inputs=${usedInputsFile.uri.toFilePath()}',
-    for (var input in inputs)
+    for (final input in inputs)
       '--input-${summaryOnly ? 'summary' : 'linked'}=${input.path}',
-    for (var experiment in experiments) '--enable-experiment=$experiment',
-    for (var source in module.sources) _sourceArg(source),
+    for (final experiment in experiments) '--enable-experiment=$experiment',
+    for (final source in module.sources) _sourceArg(source),
   ]);
 
   request.inputs.addAll([
@@ -451,8 +458,9 @@ Future<void> _addRequestArguments(
 }
 
 String _sourceArg(AssetId id) {
-  var uri = id.path.startsWith('lib')
-      ? canonicalUriFor(id)
-      : '$multiRootScheme:///${id.path}';
+  final uri =
+      id.path.startsWith('lib')
+          ? canonicalUriFor(id)
+          : '$multiRootScheme:///${id.path}';
   return '--source=$uri';
 }

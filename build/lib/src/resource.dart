@@ -113,7 +113,7 @@ class Resource<T> {
   /// retained for the next build.
   Future<void> _dispose(ResourceManager manager) {
     assert(_instanceByManager.containsKey(manager));
-    var oldInstance = _instanceByManager[manager]!;
+    final oldInstance = _instanceByManager[manager]!;
     if (_userDispose != null) {
       return oldInstance.then(_userDispose);
     } else {
@@ -149,7 +149,7 @@ class ResourceManager {
 
   /// Disposes of all [Resource]s fetched since the last call to [disposeAll].
   Future<void> disposeAll() {
-    var done = Future.wait(_resources.map((r) => r._dispose(this)));
+    final done = Future.wait(_resources.map((r) => r._dispose(this)));
     _resources.clear();
     return done.then((_) => null);
   }

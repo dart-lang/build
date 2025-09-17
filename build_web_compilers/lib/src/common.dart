@@ -39,7 +39,7 @@ void validateOptions(
   String builderKey, {
   List<String> deprecatedOptions = const [],
 }) {
-  var unsupported = config.keys.where(
+  final unsupported = config.keys.where(
     (o) => !supportedOptions.contains(o) && !deprecatedOptions.contains(o),
   );
   if (unsupported.isNotEmpty) {
@@ -49,7 +49,7 @@ void validateOptions(
       'only $supportedOptions are supported options, but got',
     );
   }
-  var deprecated = config.keys.where(deprecatedOptions.contains);
+  final deprecated = config.keys.where(deprecatedOptions.contains);
   if (deprecated.isNotEmpty) {
     log.warning(
       'Found deprecated options ${deprecated.join(', ')}. These no '
@@ -63,7 +63,7 @@ void validateOptions(
 /// Use the package: path for files under lib and the full absolute path for
 /// other files.
 String sourceArg(AssetId id) {
-  var uri = canonicalUriFor(id);
+  final uri = canonicalUriFor(id);
   return uri.startsWith('package:') ? uri : '$multiRootScheme:///${id.path}';
 }
 
@@ -80,21 +80,21 @@ Future<void> fixAndCopySourceMap(
 ) async {
   // Copied to `web/stack_trace_mapper.dart`, these need to be kept in sync.
   String fixMappedSource(String source) {
-    var uri = Uri.parse(source);
+    final uri = Uri.parse(source);
     // We only want to rewrite multi-root scheme uris.
     if (uri.scheme.isEmpty) return source;
-    var newSegments =
+    final newSegments =
         uri.pathSegments.first == 'packages'
             ? uri.pathSegments
             : uri.pathSegments.skip(1);
     return Uri(path: p.url.joinAll(['/', ...newSegments])).toString();
   }
 
-  var file = scratchSpace.fileFor(id);
+  final file = scratchSpace.fileFor(id);
   if (await file.exists()) {
-    var content = await file.readAsString();
-    var json = jsonDecode(content) as Map<String, Object?>;
-    var sources = json['sources'] as List<Object?>;
+    final content = await file.readAsString();
+    final json = jsonDecode(content) as Map<String, Object?>;
+    final sources = json['sources'] as List<Object?>;
     // Modify `sources` in place for fewer allocations.
     for (var i = 0; i < sources.length; i++) {
       sources[i] = fixMappedSource(sources[i] as String);
@@ -107,27 +107,27 @@ void fixMetadataSources(Map<String, dynamic> json, Uri scratchUri) {
   String updatePath(String path) =>
       Uri.parse(path).path.replaceAll(scratchUri.path, '');
 
-  var sourceMapUri = json['sourceMapUri'] as String?;
+  final sourceMapUri = json['sourceMapUri'] as String?;
   if (sourceMapUri != null) {
     json['sourceMapUri'] = updatePath(sourceMapUri);
   }
 
-  var moduleUri = json['moduleUri'] as String?;
+  final moduleUri = json['moduleUri'] as String?;
   if (moduleUri != null) {
     json['moduleUri'] = updatePath(moduleUri);
   }
 
-  var fullDillUri = json['fullDillUri'] as String?;
+  final fullDillUri = json['fullDillUri'] as String?;
   if (fullDillUri != null) {
     json['fullDillUri'] = updatePath(fullDillUri);
   }
 
-  var libraries = json['libraries'] as List<Object?>?;
+  final libraries = json['libraries'] as List<Object?>?;
   if (libraries != null) {
-    for (var lib in libraries) {
-      var libraryJson = lib as Map<String, Object?>?;
+    for (final lib in libraries) {
+      final libraryJson = lib as Map<String, Object?>?;
       if (libraryJson != null) {
-        var fileUri = libraryJson['fileUri'] as String?;
+        final fileUri = libraryJson['fileUri'] as String?;
         if (fileUri != null) {
           libraryJson['fileUri'] = updatePath(fileUri);
         }
@@ -139,7 +139,7 @@ void fixMetadataSources(Map<String, dynamic> json, Uri scratchUri) {
 /// The module name according to ddc for [jsId] which represents the real js
 /// module file.
 String ddcModuleName(AssetId jsId) {
-  var jsPath =
+  final jsPath =
       jsId.path.startsWith('lib/')
           ? jsId.path.replaceFirst('lib/', 'packages/${jsId.package}/')
           : jsId.path;
@@ -147,11 +147,11 @@ String ddcModuleName(AssetId jsId) {
 }
 
 String ddcLibraryId(AssetId jsId) {
-  var jsPath =
+  final jsPath =
       jsId.path.startsWith('lib/')
           ? jsId.path.replaceFirst('lib/', 'package:${jsId.package}/')
           : '$multiRootScheme://${jsId.path}';
-  var prefix = jsPath.substring(0, jsPath.length - jsModuleExtension.length);
+  final prefix = jsPath.substring(0, jsPath.length - jsModuleExtension.length);
   return '$prefix.dart';
 }
 
@@ -161,7 +161,7 @@ AssetId changeAssetIdExtension(
   String outputExtension,
 ) {
   assert(inputId.path.endsWith(inputExtension));
-  var newPath =
+  final newPath =
       inputId.path.substring(0, inputId.path.length - inputExtension.length) +
       outputExtension;
   return AssetId(inputId.package, newPath);

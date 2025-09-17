@@ -57,6 +57,41 @@ void main() {
     });
   });
 
+  group('a.1+(y, z) <-- a.2', () {
+    setUp(() {
+      tester.sources(['a.1', 'y', 'z']);
+      tester.builder(from: '.1', to: '.2')
+        ..readsOther('y')
+        ..readsOther('z')
+        ..writes('.2');
+    });
+
+    test('a.2 is built', () async {
+      expect(await tester.build(), Result(written: ['a.2']));
+    });
+
+    test('change y, a.2 is rebuilt', () async {
+      await tester.build();
+      expect(await tester.build(change: 'y'), Result(written: ['a.2']));
+    });
+
+    test('change z, a.2 is rebuilt', () async {
+      await tester.build();
+      expect(await tester.build(change: 'z'), Result(written: ['a.2']));
+    });
+
+    test('delete z, a.2 is rebuilt', () async {
+      await tester.build();
+      expect(await tester.build(delete: 'z'), Result(written: ['a.2']));
+    });
+
+    test('create z, a.2 is rebuilt', () async {
+      tester.sources(['a.1']);
+      expect(await tester.build(), Result(written: ['a.2']));
+      expect(await tester.build(create: 'z'), Result(written: ['a.2']));
+    });
+  });
+
   group('a.1 <== a.2, b.3+(a.2) <== b.4', () {
     setUp(() {
       tester.sources(['a.1', 'b.3']);

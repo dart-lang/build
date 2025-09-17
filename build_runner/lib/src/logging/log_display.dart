@@ -6,7 +6,7 @@ import 'dart:io';
 
 import 'package:logging/logging.dart';
 
-import '../build_script_generate/build_process_state.dart';
+import '../bootstrap/build_process_state.dart';
 import 'ansi_buffer.dart';
 import 'build_log.dart';
 import 'build_log_messages.dart';
@@ -57,7 +57,7 @@ class LogDisplay {
       return;
     }
 
-    var lines = block.lines;
+    final lines = block.lines;
 
     // https://en.wikipedia.org/wiki/ANSI_escape_code#:~:text=Cursor%20Previous
     // Moves cursor to the beginning of the line n lines up.

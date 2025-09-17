@@ -12,28 +12,29 @@ import 'package:build_daemon/daemon.dart';
 import 'package:build_daemon/data/serializers.dart';
 import 'package:build_daemon/data/server_log.dart';
 import 'package:built_collection/built_collection.dart';
+import 'package:io/io.dart';
 
-import '../build_plan.dart';
-import '../build_script_generate/build_process_state.dart';
-import '../daemon/asset_server.dart';
-import '../daemon/constants.dart';
-import '../daemon/daemon_builder.dart';
+import '../bootstrap/build_process_state.dart';
+import '../build_plan/build_options.dart';
+import '../build_plan/build_plan.dart';
+import '../build_plan/builder_factories.dart';
+import '../build_plan/testing_overrides.dart';
 import '../logging/build_log.dart';
-import '../options/testing_overrides.dart';
-import '../package_graph/apply_builders.dart';
-import 'build_options.dart';
 import 'build_runner_command.dart';
+import 'daemon/asset_server.dart';
+import 'daemon/constants.dart';
+import 'daemon/daemon_builder.dart';
 import 'daemon_options.dart';
 
 class DaemonCommand implements BuildRunnerCommand {
-  final BuiltList<BuilderApplication> builders;
+  final BuilderFactories builderFactories;
   final BuiltList<String> arguments;
   final BuildOptions buildOptions;
   final DaemonOptions daemonOptions;
   final TestingOverrides testingOverrides;
 
   DaemonCommand({
-    required this.builders,
+    required this.builderFactories,
     required this.arguments,
     required this.buildOptions,
     required this.daemonOptions,
@@ -91,19 +92,22 @@ $logEndMarker''');
       });
 
       final buildPlan = await BuildPlan.load(
-        builders: builders,
+        builderFactories: builderFactories,
         buildOptions: buildOptions,
         testingOverrides: testingOverrides,
       );
+      await buildPlan.deleteFilesAndFolders();
+      if (buildPlan.restartIsNeeded) return ExitCode.tempFail.code;
+
       final builder = await BuildRunnerDaemonBuilder.create(
         buildPlan: buildPlan,
         daemonOptions: daemonOptions,
       );
 
       // Forward server logs to daemon command STDIO.
-      var logSub = builder.logs.listen((log) {
+      final logSub = builder.logs.listen((log) {
         if (log.level > Level.INFO || buildOptions.verbose) {
-          var buffer = StringBuffer(log.message);
+          final buffer = StringBuffer(log.message);
           if (log.error != null) buffer.writeln(log.error);
           if (log.stackTrace != null) buffer.writeln(log.stackTrace);
           stderr.writeln(buffer);
@@ -111,7 +115,7 @@ $logEndMarker''');
           stdout.writeln(log.message);
         }
       });
-      var server = await AssetServer.run(
+      final server = await AssetServer.run(
         daemonOptions,
         builder,
         buildPlan.packageGraph.root.name,

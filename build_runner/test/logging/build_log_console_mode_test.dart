@@ -3,8 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:build_runner/src/build_script_generate/build_process_state.dart';
-import 'package:build_runner/src/generate/phase.dart';
+import 'package:build_runner/src/bootstrap/build_process_state.dart';
+import 'package:build_runner/src/build_plan/phase.dart';
 import 'package:build_runner/src/logging/ansi_buffer.dart';
 import 'package:build_runner/src/logging/build_log.dart';
 import 'package:build_runner/src/logging/build_log_messages.dart';
@@ -62,7 +62,7 @@ columns because it will not fit.'''),
         padLinesRight('''
 Some setup.
 
-log output for build_runner
+build_runner
   Some info.
 W A warning.
 W Another warning.
@@ -238,15 +238,16 @@ Building, full build.'''),
 0s builder1 on 10 inputs; pkg|lib/l0.dart
 0s builder2 on 15 inputs
 
-Building, full build.
-
-log output for builder1 on lib/l0.dart
+lib/l0.dart builder1
   Some info.
   Some more info.
-log output for builder2 on lib/l1.dart
+
+Building, full build.
+
+lib/l1.dart builder2
 W A warning.
 E An error.
-log output for builder2 on lib/l3.dart
+lib/l3.dart builder2
 E An error.'''),
       );
 
@@ -275,17 +276,18 @@ E An error.'''),
 0s builder2 on 15 inputs
 0s builder1 (lazy): 1 no-op
 
-Building, full build.
-
-log output for builder1 on lib/l0.dart
+lib/l0.dart builder1
   Some info.
   Some more info.
-log output for builder2 on lib/l1.dart
+
+Building, full build.
+
+lib/l1.dart builder2
 W A warning.
 E An error.
-log output for builder2 on lib/l3.dart
+lib/l3.dart builder2
 E An error.
-log output for builder1 (lazy) on lib/l3.dart
+lib/l3.dart builder1 (lazy)
 E An error.'''),
       );
     });
@@ -343,11 +345,12 @@ E An error.'''),
 0s builder1 on 1 input: 1 output
 0s builder2 on 1 input: 1 output
 
+lib/l0.dart builder1
+  Some info.
+
 Built with build_runner in 0s with warnings; wrote 2 outputs.
 
-log output for builder1 on lib/l0.dart
-  Some info.
-log output for builder2 on lib/l0.dart
+lib/l0.dart builder2
 W A warning.
 E An error.'''),
       );

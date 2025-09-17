@@ -11,11 +11,11 @@ import 'package:io/io.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
+import 'bootstrap/bootstrap.dart';
+import 'build_plan/build_options.dart';
+import 'build_plan/builder_factories.dart';
 import 'build_runner_command_line.dart';
-import 'build_script_generate/bootstrap.dart';
-import 'build_script_generate/build_script_generate.dart';
 import 'commands/build_command.dart';
-import 'commands/build_options.dart';
 import 'commands/build_runner_command.dart';
 import 'commands/clean_command.dart';
 import 'commands/daemon_command.dart';
@@ -27,23 +27,20 @@ import 'commands/serve_options.dart';
 import 'commands/test_command.dart';
 import 'commands/test_options.dart';
 import 'commands/watch_command.dart';
-import 'generate/exceptions.dart';
+import 'exceptions.dart';
 import 'logging/build_log.dart';
-import 'package_graph/apply_builders.dart';
-import 'util/constants.dart';
 
 /// The `build_runner` tool.
 class BuildRunner {
-  final BuiltList<BuilderApplication>? builders;
+  final BuilderFactories? builderFactories;
   final BuiltList<String> arguments;
 
   late final BuildRunnerCommandLine commandLine;
 
   BuildRunner({
     required Iterable<String> arguments,
-    required Iterable<BuilderApplication>? builders,
-  }) : arguments = arguments.toBuiltList(),
-       builders = builders?.toBuiltList();
+    required this.builderFactories,
+  }) : arguments = arguments.toBuiltList();
 
   Future<int> run() async {
     try {
@@ -60,14 +57,6 @@ class BuildRunner {
     } on CannotBuildException {
       // A message should have already been logged.
       return ExitCode.config.code;
-    } on BuildScriptChangedException {
-      // TODO(davidmorgan): handle cleanup where the condition is discovered,
-      // not here.
-      _deleteAssetGraph();
-      if (_runningFromKernel) _invalidateSelf();
-      return ExitCode.tempFail.code;
-    } on BuildConfigChangedException {
-      return ExitCode.tempFail.code;
     }
   }
 
@@ -84,7 +73,7 @@ class BuildRunner {
                 as YamlMap)['name']!
             as String;
 
-    if (commandLine.type.requiresBuilders && builders == null) {
+    if (commandLine.type.requiresBuilders && builderFactories == null) {
       return await _runWithBuilders();
     }
 
@@ -92,7 +81,7 @@ class BuildRunner {
     switch (commandLine.type) {
       case CommandType.build:
         command = BuildCommand(
-          builders: builders!,
+          builderFactories: builderFactories!,
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: true,
@@ -106,7 +95,7 @@ class BuildRunner {
       case CommandType.daemon:
         command = DaemonCommand(
           arguments: commandLine.arguments,
-          builders: builders!,
+          builderFactories: builderFactories!,
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: false,
@@ -117,7 +106,7 @@ class BuildRunner {
 
       case CommandType.run:
         command = RunCommand(
-          builders: builders!,
+          builderFactories: builderFactories!,
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: false,
@@ -128,7 +117,7 @@ class BuildRunner {
 
       case CommandType.serve:
         command = ServeCommand(
-          builders: builders!,
+          builderFactories: builderFactories!,
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: true,
@@ -139,7 +128,7 @@ class BuildRunner {
 
       case CommandType.test:
         command = TestCommand(
-          builders: builders!,
+          builderFactories: builderFactories!,
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: false,
@@ -150,7 +139,7 @@ class BuildRunner {
 
       case CommandType.watch:
         command = WatchCommand(
-          builders: builders!,
+          builderFactories: builderFactories!,
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: true,
@@ -164,8 +153,8 @@ class BuildRunner {
 
   /// Builds and runs `build_runner` with the configured builders.
   ///
-  /// The nested `build_runner` invocation reaches [run] with [builders] set,
-  /// so it runs the command instead of bootstrapping.
+  /// The nested `build_runner` invocation reaches [run] with [builderFactories]
+  /// set, so it runs the command instead of bootstrapping.
   Future<int> _runWithBuilders() async {
     buildLog.configuration = buildLog.configuration.rebuild((b) {
       b.mode = commandLine.type.buildLogMode;
@@ -183,26 +172,3 @@ class BuildRunner {
     }
   }
 }
-
-/// Deletes the asset graph for the current build script from disk.
-void _deleteAssetGraph() {
-  var graph = File(assetGraphPath);
-  if (graph.existsSync()) {
-    graph.deleteSync();
-  }
-}
-
-/// Deletes the current running script.
-///
-/// This should only happen if the current script is a snapshot, and it has
-/// been invalidated.
-void _invalidateSelf() {
-  var kernelPath = Platform.script.toFilePath();
-  var kernelFile = File(kernelPath);
-  if (kernelFile.existsSync()) {
-    kernelFile.renameSync('$kernelPath$scriptKernelCachedSuffix');
-  }
-}
-
-bool get _runningFromKernel =>
-    !Platform.script.path.endsWith(scriptKernelSuffix);

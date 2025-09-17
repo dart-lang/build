@@ -1,13 +1,12 @@
 sdk:
-- main
+- dev
+
+os:
+- linux
 
 stages:
 - analyze_and_format:
-  - group:
-    - format
-    - analyze: --fatal-infos .
-- unit_test:
+  - format
+  - analyze: --fatal-infos .
+- test:
   - test: --test-randomize-ordering-seed=random
-    os:
-    - linux
-    - windows

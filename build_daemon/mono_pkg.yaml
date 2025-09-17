@@ -1,15 +1,14 @@
 sdk:
 - dev
-- pubspec
+
+os:
+- linux
 
 stages:
 - analyze_and_format:
-  - group:
-    - format
-    - analyze: --fatal-infos .
-    sdk:
-    - dev
-- unit_test:
+  - format
+  - analyze: --fatal-infos .
+- test:
   - test: --test-randomize-ordering-seed=random
     os:
     - linux

@@ -43,9 +43,9 @@ Future<void> bootstrapDdc(
   // Ensures that the sdk resources are built and available.
   await _ensureResources(buildStep, requiredAssets);
 
-  var dartEntrypointId = buildStep.inputId;
-  var moduleId = buildStep.inputId.changeExtension(moduleExtension(platform));
-  var module = Module.fromJson(
+  final dartEntrypointId = buildStep.inputId;
+  final moduleId = buildStep.inputId.changeExtension(moduleExtension(platform));
+  final module = Module.fromJson(
     json.decode(await buildStep.readAsString(moduleId)) as Map<String, dynamic>,
   );
 
@@ -58,7 +58,7 @@ Future<void> bootstrapDdc(
       computeStronglyConnectedComponents: !usesWebHotReload,
     );
   } on UnsupportedModules catch (e) {
-    var librariesString = (await e.exactLibraries(buildStep).toList())
+    final librariesString = (await e.exactLibraries(buildStep).toList())
         .map(
           (lib) => AssetId(
             lib.id.package,
@@ -74,12 +74,12 @@ $librariesString
 ''');
     return;
   }
-  var jsId = module.primarySource.changeExtension(jsModuleExtension);
-  var appModuleName = ddcModuleName(jsId);
-  var appDigestsOutput = dartEntrypointId.changeExtension(
+  final jsId = module.primarySource.changeExtension(jsModuleExtension);
+  final appModuleName = ddcModuleName(jsId);
+  final appDigestsOutput = dartEntrypointId.changeExtension(
     digestsEntrypointExtension,
   );
-  var mergedMetadataOutput = dartEntrypointId.changeExtension(
+  final mergedMetadataOutput = dartEntrypointId.changeExtension(
     mergedMetadataExtension,
   );
 
@@ -93,23 +93,23 @@ $librariesString
   // See https://github.com/dart-lang/sdk/issues/27262 for the root issue
   // which will allow us to not rely on the naming schemes that dartdevc uses
   // internally, but instead specify our own.
-  var oldAppModuleScope = toJSIdentifier(
+  final oldAppModuleScope = toJSIdentifier(
     _context.withoutExtension(_context.basename(buildStep.inputId.path)),
   );
 
   // Like above but with a package-relative entrypoint.
-  var appModuleScope = pathToJSIdentifier(
+  final appModuleScope = pathToJSIdentifier(
     _context.withoutExtension(buildStep.inputId.path),
   );
 
-  var bootstrapId = dartEntrypointId.changeExtension(ddcBootstrapExtension);
-  var bootstrapEndId = dartEntrypointId.changeExtension(
+  final bootstrapId = dartEntrypointId.changeExtension(ddcBootstrapExtension);
+  final bootstrapEndId = dartEntrypointId.changeExtension(
     ddcBootstrapEndExtension,
   );
 
-  var dartEntrypointParts = _context.split(dartEntrypointId.path);
-  var packageName = module.primarySource.package;
-  var entrypointLibraryName =
+  final dartEntrypointParts = _context.split(dartEntrypointId.path);
+  final packageName = module.primarySource.package;
+  final entrypointLibraryName =
       usesWebHotReload
           ? _context.joinAll([
             // Convert to a package: uri for files under lib.
@@ -123,10 +123,10 @@ $librariesString
             ...dartEntrypointParts.skip(1),
           ]);
 
-  var entrypointJsId = dartEntrypointId.changeExtension(entrypointExtension);
+  final entrypointJsId = dartEntrypointId.changeExtension(entrypointExtension);
 
   // Map from module name to module path for custom modules.
-  var modulePaths = SplayTreeMap<String, String>();
+  final modulePaths = SplayTreeMap<String, String>();
   String entrypointJsContent;
   String bootstrapContent;
   String bootstrapEndContent;
@@ -134,18 +134,18 @@ $librariesString
     final ddcSdkUrl =
         r'packages/build_web_compilers/src/dev_compiler/dart_sdk.js';
     modulePaths['dart_sdk'] = ddcSdkUrl;
-    for (var jsId in transitiveJsModules) {
+    for (final jsId in transitiveJsModules) {
       // Strip out the top level dir from the path for any module, and set it to
       // `packages/` for lib modules. We set baseUrl to `/` to simplify things,
       // and we only allow you to serve top level directories.
-      var moduleName = ddcModuleName(jsId);
-      var libraryId = ddcLibraryId(jsId);
+      final moduleName = ddcModuleName(jsId);
+      final libraryId = ddcLibraryId(jsId);
       modulePaths[libraryId] =
           jsId.path.startsWith('lib')
               ? '$moduleName$jsModuleExtension'
               : _context.joinAll(_context.split(jsId.path).skip(1));
     }
-    var bootstrapEndModuleName = _context.relative(
+    final bootstrapEndModuleName = _context.relative(
       bootstrapId.path,
       from: _context.dirname(bootstrapEndId.path),
     );
@@ -154,7 +154,7 @@ $librariesString
       nativeNullAssertions: nativeNullAssertions ?? false,
       onLoadEndBootstrap: bootstrapEndModuleName,
     );
-    var bootstrapModuleName = _context.relative(
+    final bootstrapModuleName = _context.relative(
       bootstrapId.path,
       from: _context.dirname(dartEntrypointId.path),
     );
@@ -172,18 +172,18 @@ $librariesString
   } else {
     modulePaths['dart_sdk'] =
         r'packages/build_web_compilers/src/dev_compiler/dart_sdk';
-    for (var jsId in transitiveJsModules) {
+    for (final jsId in transitiveJsModules) {
       // Strip out the top level dir from the path for any module, and set it to
       // `packages/` for lib modules. We set baseUrl to `/` to simplify things,
       // and we only allow you to serve top level directories.
-      var moduleName = ddcModuleName(jsId);
+      final moduleName = ddcModuleName(jsId);
       modulePaths[moduleName] = _context.withoutExtension(
         jsId.path.startsWith('lib')
             ? '$moduleName$jsModuleExtension'
             : _context.joinAll(_context.split(jsId.path).skip(1)),
       );
     }
-    var bootstrapModuleName = _context.withoutExtension(
+    final bootstrapModuleName = _context.withoutExtension(
       _context.relative(
         bootstrapId.path,
         from: _context.dirname(dartEntrypointId.path),
@@ -223,9 +223,9 @@ $librariesString
 
   // Output the digests and merged_metadata for transitive modules.
   // These can be consumed for hot reloads and debugging.
-  var mergedMetadataContent = StringBuffer();
-  var moduleDigests = <String, String>{};
-  for (var jsId in transitiveJsModules) {
+  final mergedMetadataContent = StringBuffer();
+  final moduleDigests = <String, String>{};
+  for (final jsId in transitiveJsModules) {
     mergedMetadataContent.writeln(
       await buildStep.readAsString(jsId.changeExtension('.js.metadata')),
     );
@@ -253,15 +253,15 @@ Future<List<AssetId>> _ensureTransitiveJsModules(
   bool computeStronglyConnectedComponents = true,
 }) async {
   // Collect all the modules this module depends on, plus this module.
-  var transitiveDeps = await module.computeTransitiveDependencies(
+  final transitiveDeps = await module.computeTransitiveDependencies(
     buildStep,
     throwIfUnsupported: true,
     computeStronglyConnectedComponents: computeStronglyConnectedComponents,
   );
 
-  var jsModules = [
+  final jsModules = [
     module.primarySource.changeExtension(jsModuleExtension),
-    for (var dep in transitiveDeps)
+    for (final dep in transitiveDeps)
       dep.primarySource.changeExtension(jsModuleExtension),
   ];
   // Check that each module is readable, and warn otherwise.
@@ -270,7 +270,7 @@ Future<List<AssetId>> _ensureTransitiveJsModules(
       if (await _lazyBuildPool.withResource(() => buildStep.canRead(jsId))) {
         return;
       }
-      var errorsId = jsId.addExtension('.errors');
+      final errorsId = jsId.addExtension('.errors');
       await buildStep.canRead(errorsId);
       log.warning(
         'Unable to read $jsId, check your console or the '
@@ -294,7 +294,7 @@ String _appBootstrap({
   required String oldModuleScope,
   required bool? nativeNullAssertions,
 }) {
-  var nativeAssertsCode =
+  final nativeAssertsCode =
       nativeNullAssertions == null
           ? ''
           : 'dart_sdk.dart.nativeNonNullAsserts($nativeNullAssertions);';
@@ -629,7 +629,7 @@ Future<void> _ensureResources(
   BuildStep buildStep,
   Iterable<AssetId> resources,
 ) async {
-  for (var resource in resources) {
+  for (final resource in resources) {
     if (!await buildStep.canRead(resource)) {
       throw StateError('Unable to locate required sdk resource $resource');
     }

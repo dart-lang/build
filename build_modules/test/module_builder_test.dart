@@ -17,21 +17,27 @@ void main() {
   final platform = DartPlatform.register('test', ['dart:async']);
 
   test('can serialize modules and only output for primary sources', () async {
-    var assetA = AssetId('a', 'lib/a.dart');
-    var assetB = AssetId('a', 'lib/b.dart');
-    var assetC = AssetId('a', 'lib/c.dart');
-    var assetD = AssetId('a', 'lib/d.dart');
-    var assetE = AssetId('a', 'lib/e.dart');
-    var moduleA = Module(assetA, [assetA], <AssetId>[], platform, true);
-    var moduleB = Module(assetB, [assetB, assetC], <AssetId>[], platform, true);
-    var moduleD = Module(
+    final assetA = AssetId('a', 'lib/a.dart');
+    final assetB = AssetId('a', 'lib/b.dart');
+    final assetC = AssetId('a', 'lib/c.dart');
+    final assetD = AssetId('a', 'lib/d.dart');
+    final assetE = AssetId('a', 'lib/e.dart');
+    final moduleA = Module(assetA, [assetA], <AssetId>[], platform, true);
+    final moduleB = Module(
+      assetB,
+      [assetB, assetC],
+      <AssetId>[],
+      platform,
+      true,
+    );
+    final moduleD = Module(
       assetD,
       [assetD, assetE],
       <AssetId>[],
       platform,
       false,
     );
-    var metaModule = MetaModule([moduleA, moduleB, moduleD]);
+    final metaModule = MetaModule([moduleA, moduleB, moduleD]);
     await testBuilder(
       ModuleBuilder(platform),
       {

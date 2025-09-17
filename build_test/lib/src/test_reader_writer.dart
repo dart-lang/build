@@ -4,11 +4,9 @@
 import 'dart:typed_data';
 
 import 'package:build/build.dart';
-// ignore: implementation_imports
-import 'package:build_runner/src/internal.dart';
 
 import 'fake_watcher.dart';
-import 'in_memory_reader_writer.dart';
+import 'internal_test_reader_writer.dart';
 
 /// In-memory implementation of [AssetReader] and [AssetWriter].
 ///
@@ -20,10 +18,9 @@ import 'in_memory_reader_writer.dart';
 ///
 /// You must pass a `rootPackage` if the `TestReaderWriter` will be used in
 /// a build. This specifies which package `build_runner` is running in.
-abstract interface class TestReaderWriter
-    implements AssetReader, RunnerAssetWriter {
+abstract interface class TestReaderWriter implements AssetReader, AssetWriter {
   factory TestReaderWriter({String? rootPackage}) =>
-      InMemoryAssetReaderWriter(rootPackage: rootPackage);
+      InternalTestReaderWriter(rootPackage: rootPackage);
 
   ReaderWriterTesting get testing;
 }

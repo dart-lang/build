@@ -17,7 +17,7 @@ import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
 
 import 'assets.dart';
-import 'in_memory_reader_writer.dart';
+import 'internal_test_reader_writer.dart';
 import 'test_reader_writer.dart';
 
 AssetId _passThrough(AssetId id) => id;
@@ -48,7 +48,7 @@ void checkOutputs(
   TestReaderWriter writer, {
   AssetId Function(AssetId id) mapAssetIds = _passThrough,
 }) {
-  var modifiableActualAssets = Set.of(actualAssets);
+  final modifiableActualAssets = Set.of(actualAssets);
 
   // Ignore asset graph.
   modifiableActualAssets.removeWhere((id) => id.path.endsWith(assetGraphPath));
@@ -61,7 +61,7 @@ void checkOutputs(
             contentsMatcher is Matcher,
       );
 
-      var assetId = makeAssetId(serializedId);
+      final assetId = makeAssetId(serializedId);
 
       // Check that the asset was produced.
       expect(
@@ -78,7 +78,7 @@ void checkOutputs(
         if (!writer.testing.exists(mappedAssetId)) {
           // Then try the usual mapping for generated assets.
           mappedAssetId = AssetId(
-            (writer as InMemoryAssetReaderWriter).rootPackage,
+            (writer as InternalTestReaderWriter).rootPackage,
             '.dart_tool/build/generated/${assetId.package}/${assetId.path}',
           );
         }
@@ -91,7 +91,7 @@ void checkOutputs(
           );
         }
       }
-      var actual = writer.testing.readBytes(mappedAssetId);
+      final actual = writer.testing.readBytes(mappedAssetId);
       Object expected;
       if (contentsMatcher is String) {
         expected = utf8.decode(actual);
@@ -310,8 +310,8 @@ Future<TestBuilderResult> testBuilderFactories(
 }) async {
   onLog ??= _printOnFailureOrWrite;
 
-  var inputIds = {
-    for (var descriptor in sourceAssets.keys) makeAssetId(descriptor),
+  final inputIds = {
+    for (final descriptor in sourceAssets.keys) makeAssetId(descriptor),
   };
 
   if (inputIds.isEmpty && rootPackage == null) {
@@ -324,8 +324,10 @@ Future<TestBuilderResult> testBuilderFactories(
   // Differentiate input packages and all packages. Builders run on input
   // packages; they can read/resolve all packages. Additional packages are
   // supplied by passing a `readerWriter`.
-  var inputPackages =
-      inputIds.isEmpty ? {rootPackage!} : {for (var id in inputIds) id.package};
+  final inputPackages =
+      inputIds.isEmpty
+          ? {rootPackage!}
+          : {for (final id in inputIds) id.package};
   final allPackages = inputPackages.toSet();
   if (readerWriter != null) {
     for (final asset in readerWriter.testing.assets) {
@@ -337,7 +339,7 @@ Future<TestBuilderResult> testBuilderFactories(
   readerWriter ??= TestReaderWriter(rootPackage: rootPackage);
 
   sourceAssets.forEach((serializedId, contents) {
-    var id = makeAssetId(serializedId);
+    final id = makeAssetId(serializedId);
     if (contents is String) {
       readerWriter!.testing.writeString(id, contents);
     } else if (contents is List<int>) {
@@ -370,47 +372,6 @@ Future<TestBuilderResult> testBuilderFactories(
     );
   }
   final packageGraph = PackageGraph.fromRoot(rootNode);
-
-  final testingOverrides = TestingOverrides(
-    packageGraph: packageGraph,
-    reader: readerWriter,
-    writer: readerWriter,
-    resolvers: resolvers,
-    buildConfig:
-        // Override sources to defaults plus all explicitly passed inputs,
-        // optionally restricted by [inputFilter] or [generateFor]. Or if
-        // [testingBuilderConfig] is false, use the defaults. These skip some
-        // files, for example picking up `lib/**` but not all files in the package root.
-        testingBuilderConfig
-            ? {
-              for (final package in inputPackages)
-                package: BuildConfig.fromMap(package, [], {
-                  'targets': {
-                    package: {
-                      'sources': [
-                        r'\$package$',
-                        r'lib/$lib$',
-                        r'test/$test$',
-                        r'web/$web$',
-                        if (package == rootPackage)
-                          ...defaultRootPackageSources,
-                        if (package != rootPackage)
-                          ...defaultNonRootVisibleAssets,
-                        ...inputIds
-                            .where(
-                              (id) =>
-                                  id.package == package &&
-                                  !id.path.startsWith('.dart_tool/'),
-                            )
-                            .map((id) => Glob.quote(id.path)),
-                      ],
-                    },
-                  },
-                }),
-            }.build()
-            : null,
-    reportUnusedAssetsForInput: reportUnusedAssetsForInput,
-  );
 
   String builderName(Object builder) {
     final result = builder.toString();
@@ -452,8 +413,49 @@ Future<TestBuilderResult> testBuilderFactories(
     builderApplications.add(applyPostProcess(name, postProcessBuiderFactory));
   }
 
+  final testingOverrides = TestingOverrides(
+    builderApplications: builderApplications.build(),
+    packageGraph: packageGraph,
+    readerWriter: readerWriter as InternalTestReaderWriter,
+    resolvers: resolvers,
+    buildConfig:
+        // Override sources to defaults plus all explicitly passed inputs,
+        // optionally restricted by [inputFilter] or [generateFor]. Or if
+        // [testingBuilderConfig] is false, use the defaults. These skip some
+        // files, for example picking up `lib/**` but not all files in the package root.
+        testingBuilderConfig
+            ? {
+              for (final package in inputPackages)
+                package: BuildConfig.fromMap(package, [], {
+                  'targets': {
+                    package: {
+                      'sources': [
+                        r'\$package$',
+                        r'lib/$lib$',
+                        r'test/$test$',
+                        r'web/$web$',
+                        if (package == rootPackage)
+                          ...defaultRootPackageSources,
+                        if (package != rootPackage)
+                          ...defaultNonRootVisibleAssets,
+                        ...inputIds
+                            .where(
+                              (id) =>
+                                  id.package == package &&
+                                  !id.path.startsWith('.dart_tool/'),
+                            )
+                            .map((id) => Glob.quote(id.path)),
+                      ],
+                    },
+                  },
+                }),
+            }.build()
+            : null,
+    reportUnusedAssetsForInput: reportUnusedAssetsForInput,
+  );
+
   final buildPlan = await BuildPlan.load(
-    builders: builderApplications.build(),
+    builderFactories: BuilderFactories(),
     // ignore: invalid_use_of_visible_for_testing_member
     buildOptions: BuildOptions.forTests(
       enableLowResourcesMode: enableLowResourceMode,
@@ -463,6 +465,7 @@ Future<TestBuilderResult> testBuilderFactories(
     ),
     testingOverrides: testingOverrides,
   );
+  await buildPlan.deleteFilesAndFolders();
 
   final buildSeries = await BuildSeries.create(buildPlan: buildPlan);
 

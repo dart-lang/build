@@ -86,7 +86,7 @@ Future<void> main() async {
 
       // Initial random import graph.
       final importGraph = {
-        for (var source in pickableInputs) source: randomImportList(),
+        for (final source in pickableInputs) source: randomImportList(),
       };
       tester.importGraph(importGraph);
 

@@ -1,9 +1,10 @@
 sdk:
-- pubspec
 - dev
+
+os:
+- linux
 
 stages:
 - analyze_and_format:
-  - group:
-    - format
-    - analyze: --fatal-infos .
+  - format
+  - analyze: --fatal-infos .

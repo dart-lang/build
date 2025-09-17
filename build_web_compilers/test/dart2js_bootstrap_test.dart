@@ -94,7 +94,7 @@ void main() {
           'dart2js_args': ['--no-source-maps'],
         }),
       );
-      var expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
+      final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
         'a|web/index.dart.js.tar.gz': anything,
         'a|web/index.dart.js': anything,
       });
@@ -116,7 +116,7 @@ void main() {
         }
       ''',
     };
-    var expectedOutputs = {
+    final expectedOutputs = {
       'a|lib/.dart2js.meta_module.clean': isNotNull,
       'a|lib/.dart2js.meta_module.raw': isNotNull,
       'a|lib/index.dart.js.map': isNotNull,

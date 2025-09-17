@@ -210,7 +210,7 @@ Map<String, BuildTarget> _buildTargetsFromJson(Map? json) {
   if (json == null) {
     return BuildConfig._placeholderBuildTarget;
   }
-  var targets = json.map(
+  final targets = json.map(
     (key, target) => MapEntry(
       normalizeTargetKeyDefinition(key as String, currentPackage),
       BuildTarget.fromJson(target as Map),

@@ -157,11 +157,11 @@ final class EntrypointBuilderOptions {
       webHotReloadOption,
     ];
 
-    var config = options.config;
-    var nativeNullAssertions =
+    final config = options.config;
+    final nativeNullAssertions =
         options.config[nativeNullAssertionsOption] as bool?;
-    var usesWebHotReload = options.config[webHotReloadOption] as bool?;
-    var compilers = <EnabledEntrypointCompiler>[];
+    final usesWebHotReload = options.config[webHotReloadOption] as bool?;
+    final compilers = <EnabledEntrypointCompiler>[];
 
     validateOptions(
       config,
@@ -175,11 +175,11 @@ final class EntrypointBuilderOptions {
     // dart2js + dart2wasm). Since the default builder configuration doesn't
     // use the compilers key, we preserve backwards compatibility.
     if (config.containsKey(compilersOption)) {
-      var configuredCompilers =
+      final configuredCompilers =
           (config[compilersOption] as Map?)?.cast<String, Map?>() ?? const {};
       var hasDart2Wasm = false;
 
-      for (var MapEntry(:key, :value) in configuredCompilers.entries) {
+      for (final MapEntry(:key, :value) in configuredCompilers.entries) {
         const extensionOption = 'extension';
         const argsOption = 'args';
         const supportedOptions = [extensionOption, argsOption];
@@ -189,7 +189,7 @@ final class EntrypointBuilderOptions {
           'build_web_compilers:entrypoint',
         );
 
-        var compiler = WebCompiler.fromOptionName(key);
+        final compiler = WebCompiler.fromOptionName(key);
         compilers.add(
           EnabledEntrypointCompiler(
             compiler: compiler,
@@ -212,9 +212,9 @@ final class EntrypointBuilderOptions {
         defaultLoaderOption = '.dart.js';
       }
     } else {
-      var compilerName = config[compilerOption] as String? ?? 'dartdevc';
+      final compilerName = config[compilerOption] as String? ?? 'dartdevc';
 
-      var compiler = WebCompiler.fromOptionName(compilerName);
+      final compiler = WebCompiler.fromOptionName(compilerName);
       compilers.add(
         EnabledEntrypointCompiler(
           compiler: compiler,
@@ -283,14 +283,14 @@ final class EntrypointBuilderOptions {
   static List<String> _parseCompilerOptions(Object? from, String key) {
     return switch (from) {
       null => const [],
-      List list => list.map((arg) => '$arg').toList(),
-      String other =>
+      final List list => list.map((arg) => '$arg').toList(),
+      final String other =>
         throw ArgumentError.value(
           other,
           key,
           'There may have been a failure decoding as JSON, expected a list.',
         ),
-      var other => throw ArgumentError.value(other, key, 'Expected a list'),
+      final other => throw ArgumentError.value(other, key, 'Expected a list'),
     };
   }
 }
@@ -314,8 +314,8 @@ class WebEntrypointBuilder implements Builder {
 
   @override
   Future<void> build(BuildStep buildStep) async {
-    var dartEntrypointId = buildStep.inputId;
-    var isAppEntrypoint = await _isAppEntryPoint(dartEntrypointId, buildStep);
+    final dartEntrypointId = buildStep.inputId;
+    final isAppEntrypoint = await _isAppEntryPoint(dartEntrypointId, buildStep);
     if (!isAppEntrypoint) return;
 
     final compilationSteps = <Future>[];
@@ -365,7 +365,7 @@ class WebEntrypointBuilder implements Builder {
     }
     await Future.wait(compilationSteps);
     if (_generateLoader(buildStep.inputId, dart2WasmResult)
-        case (var id, var loader)?) {
+        case (final id, final loader)?) {
       await buildStep.writeAsString(id, loader);
     }
   }
@@ -374,22 +374,22 @@ class WebEntrypointBuilder implements Builder {
     AssetId input,
     Dart2WasmBootstrapResult? dart2WasmResult,
   ) {
-    var loaderExtension = options.loaderExtension;
-    var wasmCompiler = options.optionsFor(WebCompiler.Dart2Wasm);
+    final loaderExtension = options.loaderExtension;
+    final wasmCompiler = options.optionsFor(WebCompiler.Dart2Wasm);
     if (loaderExtension == null || wasmCompiler == null) {
       // Generating the loader has been disabled or no loader is necessary.
       return null;
     }
 
-    var loaderId = input.changeExtension(options.loaderExtension!);
-    var basename = p.url.basenameWithoutExtension(input.path);
+    final loaderId = input.changeExtension(options.loaderExtension!);
+    final basename = p.url.basenameWithoutExtension(input.path);
 
     // Are we compiling to JavaScript in addition to wasm?
-    var jsCompiler =
+    final jsCompiler =
         options.optionsFor(WebCompiler.Dart2Js) ??
         options.optionsFor(WebCompiler.DartDevc);
 
-    var loaderResult = StringBuffer('''
+    final loaderResult = StringBuffer('''
 (async () => {
 const thisScript = document.currentScript;
 
@@ -444,7 +444,7 @@ Future<bool> _isAppEntryPoint(AssetId dartId, AssetReader reader) async {
   assert(dartId.extension == '.dart');
   // Skip reporting errors here, dartdevc will report them later with nicer
   // formatting.
-  var parsed =
+  final parsed =
       parseString(
         content: await reader.readAsString(dartId),
         throwIfDiagnostics: false,

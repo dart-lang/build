@@ -1,25 +1,30 @@
 sdk:
-- pubspec
 - dev
+
+os:
+- linux
 
 stages:
 - analyze_and_format:
-  - group:
-    - format
-    - analyze: --fatal-infos .
-- unit_test:
-  - test: -x integration --test-randomize-ordering-seed=random
+  - format
+  - analyze: --fatal-infos .
+- test:
+  - test: -x integration1 -x integration2 -x integration3 -x integration4 --test-randomize-ordering-seed=random
   - test: -P experiments --test-randomize-ordering-seed=random
-    sdk:
-    - dev
-- leak_check:
-  - group:
-    - command: ../tool/leak_check.sh
-    sdk: dev
-- e2e_test:
-  # TODO: enable stack trace chaining https://github.com/dart-lang/build/issues/2894
-  - test: -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1
-  - test: -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1
-  - test: -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1
-  - test: -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1
-  - test: -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1
+  - test: -t integration1 --test-randomize-ordering-seed=random
+    os:
+    - linux
+    - windows
+  - test: -t integration2 --test-randomize-ordering-seed=random
+    os:
+    - linux
+    - windows
+  - test: -t integration3 --test-randomize-ordering-seed=random
+    os:
+    - linux
+    - windows
+  - test: -t integration4 --test-randomize-ordering-seed=random
+    os:
+    - linux
+    - windows
+  - command: ../tool/leak_check.sh

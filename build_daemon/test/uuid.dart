@@ -16,7 +16,7 @@ import 'dart:math' show Random;
 // TODO: replace with a MUCH more simple, random string that matches
 //               the use case.
 String generateV4UUID() {
-  var special = 8 + _random.nextInt(4);
+  final special = 8 + _random.nextInt(4);
 
   return '${_bitsDigits(16, 4)}${_bitsDigits(16, 4)}-'
       '${_bitsDigits(16, 4)}-'

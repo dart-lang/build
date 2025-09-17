@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:build_test/src/in_memory_reader_writer.dart';
+import 'package:build_test/src/internal_test_reader_writer.dart';
 import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 
@@ -13,11 +13,11 @@ void main() {
     final libAsset = AssetId(packageName, 'lib/some_pkg.dart');
     final testAsset = AssetId(packageName, 'test/some_test.dart');
 
-    late InMemoryAssetReaderWriter readerWriter;
+    late InternalTestReaderWriter readerWriter;
 
     setUp(() {
       readerWriter =
-          InMemoryAssetReaderWriter(rootPackage: packageName)
+          InternalTestReaderWriter(rootPackage: packageName)
             ..testing.writeString(libAsset, 'libAsset')
             ..testing.writeString(testAsset, 'testAsset');
     });
@@ -25,7 +25,7 @@ void main() {
     test(
       '#findAssets should throw if rootPackage and package are not supplied',
       () {
-        readerWriter = InMemoryAssetReaderWriter();
+        readerWriter = InternalTestReaderWriter();
         expect(
           () => readerWriter.assetFinder.find(Glob('lib/*.dart')),
           throwsUnsupportedError,
@@ -49,7 +49,7 @@ void main() {
     test(
       '#findAssets should be able to list files in non-root packages',
       () async {
-        var otherLibAsset = AssetId('other', 'lib/other.dart');
+        final otherLibAsset = AssetId('other', 'lib/other.dart');
         readerWriter.testing.writeString(otherLibAsset, 'otherLibAsset');
         expect(
           await readerWriter.assetFinder
@@ -61,7 +61,7 @@ void main() {
     );
 
     test('load isolate sources', () async {
-      final readerWriter = InMemoryAssetReaderWriter();
+      final readerWriter = InternalTestReaderWriter();
       await readerWriter.testing.loadIsolateSources();
       expect(
         readerWriter.testing.assets,

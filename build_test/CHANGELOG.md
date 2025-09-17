@@ -1,4 +1,9 @@
-## 3.4.0-wip
+## 3.4.1-wip
+
+- Use `build_runner` 2.8.1-wip.
+- Use `build` 4.0.1-wip.
+
+## 3.4.0
 
 - Support post process builders in `testBuilders`. And, add `appliesBuilders`
   so that builders can apply post process builders.

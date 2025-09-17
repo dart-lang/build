@@ -20,7 +20,7 @@ void main() {
     late ScratchSpace scratchSpace;
     late TestReaderWriter readerWriter;
 
-    var allAssets = [
+    final allAssets = [
       'dep|lib/dep.dart',
       'myapp|lib/myapp.dart',
       'myapp|web/main.dart',
@@ -55,23 +55,23 @@ void main() {
     });
 
     test('Can read files from a ScratchSpace', () async {
-      for (var id in allAssets.keys) {
-        var file = scratchSpace.fileFor(id);
+      for (final id in allAssets.keys) {
+        final file = scratchSpace.fileFor(id);
         expect(file.existsSync(), isTrue);
         expect(file.readAsStringSync(), equals('$id'));
       }
     });
 
     test('Files in a ScratchSpace have standard dart layout', () async {
-      for (var id in allAssets.keys) {
-        var file = scratchSpace.fileFor(id);
+      for (final id in allAssets.keys) {
+        final file = scratchSpace.fileFor(id);
 
-        var relativeFilePath = p.relative(
+        final relativeFilePath = p.relative(
           file.path,
           from: scratchSpace.tempDir.path,
         );
         if (topLevelDir(id.path) == 'lib') {
-          var expectedPackagesPath = p.join(
+          final expectedPackagesPath = p.join(
             'packages',
             id.package,
             p.relative(id.path, from: 'lib'),
@@ -85,12 +85,12 @@ void main() {
 
     test('Can copy outputs back from the ScratchSpace', () async {
       // Write a fake output to the dir.
-      var outputId = AssetId('myapp', 'lib/output.txt');
-      var outputFile = scratchSpace.fileFor(outputId);
-      var outputContent = 'test!';
+      final outputId = AssetId('myapp', 'lib/output.txt');
+      final outputFile = scratchSpace.fileFor(outputId);
+      final outputContent = 'test!';
       await outputFile.writeAsString(outputContent);
 
-      var writer = TestReaderWriter();
+      final writer = TestReaderWriter();
       await scratchSpace.copyOutput(outputId, writer);
 
       expect(writer.testing.readString(outputId), outputContent);
@@ -98,8 +98,8 @@ void main() {
 
     test('Can delete a ScratchSpace', () async {
       await scratchSpace.delete();
-      for (var id in allAssets.keys) {
-        var file = scratchSpace.fileFor(id);
+      for (final id in allAssets.keys) {
+        final file = scratchSpace.fileFor(id);
         expect(file.existsSync(), isFalse);
       }
       expect(scratchSpace.tempDir.existsSync(), isFalse);
@@ -124,8 +124,8 @@ void main() {
         () async {
           // Recursively "reads" from the previous numeric file until it gets
           // to 0, using the scratchSpace.
-          var reader = RecursiveScratchSpaceAssetReader(scratchSpace);
-          var first = AssetId('a', 'lib/100');
+          final reader = RecursiveScratchSpaceAssetReader(scratchSpace);
+          final first = AssetId('a', 'lib/100');
           expect(await reader.readAsBytes(first), utf8.encode('0'));
         },
       );
@@ -167,9 +167,9 @@ class RecursiveScratchSpaceAssetReader implements AssetReader {
 
   @override
   Future<List<int>> readAsBytes(AssetId id) async {
-    var idNum = int.parse(p.split(id.path).last);
+    final idNum = int.parse(p.split(id.path).last);
     if (idNum > 0) {
-      var readFrom = AssetId(id.package, 'lib/${idNum - 1}');
+      final readFrom = AssetId(id.package, 'lib/${idNum - 1}');
       await scratchSpace.ensureAssets([readFrom], this);
       return scratchSpace.fileFor(readFrom).readAsBytes();
     } else {

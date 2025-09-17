@@ -17,7 +17,7 @@ import 'package:test/test.dart';
 void main() {
   group('resolveSource can resolve', () {
     test('a simple dart file', () async {
-      var libExample = await resolveSource(r'''
+      final libExample = await resolveSource(r'''
         library example;
 
         class Foo {}
@@ -26,14 +26,14 @@ void main() {
     });
 
     test('a simple dart file with dart: dependencies', () async {
-      var libExample = await resolveSource(r'''
+      final libExample = await resolveSource(r'''
         library example;
 
         import 'dart:collection';
 
         abstract class Foo implements LinkedHashMap {}
       ''', (resolver) => resolver.findLibraryNotNull('example'));
-      var classFoo = libExample.getClass2('Foo')!;
+      final classFoo = libExample.getClass2('Foo')!;
       expect(
         classFoo.allSupertypes.map(_toStringId),
         contains('dart:collection#LinkedHashMap'),
@@ -41,7 +41,7 @@ void main() {
     });
 
     test('a simple dart file package: dependencies', () async {
-      var libExample = await resolveSource(
+      final libExample = await resolveSource(
         r'''
         library example;
 
@@ -55,7 +55,7 @@ void main() {
         },
         (resolver) => resolver.findLibraryNotNull('example'),
       );
-      var classFoo = libExample.getClass2('Foo')!;
+      final classFoo = libExample.getClass2('Foo')!;
       expect(
         classFoo.allSupertypes.map(_toStringId),
         contains(endsWith(':collection#Equality')),
@@ -100,8 +100,8 @@ void main() {
           AssetId('collection', 'lib/src/equality.dart'),
         },
         (resolver) async {
-          var libExample = await resolver.findLibraryNotNull('example');
-          var classFoo = libExample.getClass2('Foo')!;
+          final libExample = await resolver.findLibraryNotNull('example');
+          final classFoo = libExample.getClass2('Foo')!;
           expect(
             classFoo.allSupertypes.map(_toStringId),
             contains(endsWith(':collection#Equality')),
@@ -111,7 +111,7 @@ void main() {
     });
 
     test('with specified language versions from a PackageConfig', () async {
-      var packageConfig = PackageConfig([
+      final packageConfig = PackageConfig([
         Package(
           'a',
           Uri.file('/a/'),
@@ -119,7 +119,7 @@ void main() {
           languageVersion: LanguageVersion(3, 5),
         ),
       ]);
-      var libExample = await resolveSource(
+      final libExample = await resolveSource(
         r'''
         library example;
         int x = 1_000;
@@ -128,7 +128,7 @@ void main() {
         packageConfig: packageConfig,
         inputId: AssetId('a', 'invalid.dart'),
       );
-      var errors =
+      final errors =
           await libExample.session.getErrors(
                 libExample.firstFragment.source.fullName,
               )
@@ -155,8 +155,8 @@ void main() {
       ''',
         readAllSourcesFromFilesystem: true,
         (resolver) async {
-          var libExample = await resolver.findLibraryNotNull('example');
-          var classFoo = libExample.getClass2('Foo')!;
+          final libExample = await resolver.findLibraryNotNull('example');
+          final classFoo = libExample.getClass2('Foo')!;
           expect(
             classFoo.allSupertypes.map(_toStringId),
             contains(endsWith(':collection#Equality')),
@@ -168,8 +168,8 @@ void main() {
 
   group('should resolveAsset', () {
     test('asset:build_test/test/_files/example_lib.dart', () async {
-      var asset = AssetId('build_test', 'test/_files/example_lib.dart');
-      var libExample = await resolveAsset(
+      final asset = AssetId('build_test', 'test/_files/example_lib.dart');
+      final libExample = await resolveAsset(
         asset,
         (resolver) => resolver.findLibraryNotNull('example_lib'),
       );
@@ -179,7 +179,7 @@ void main() {
 
   group('error handling', () {
     test('getting the library for a part file', () async {
-      var partAsset = AssetId('build_test', 'test/_files/example_part.dart');
+      final partAsset = AssetId('build_test', 'test/_files/example_part.dart');
       await resolveAsset(partAsset, (resolver) async {
         expect(
           () => resolver.libraryFor(partAsset),

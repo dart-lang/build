@@ -103,7 +103,7 @@ class DevCompilerBuilder implements Builder {
 
   @override
   Future build(BuildStep buildStep) async {
-    var module = Module.fromJson(
+    final module = Module.fromJson(
       json.decode(await buildStep.readAsString(buildStep.inputId))
           as Map<String, dynamic>,
     );
@@ -161,24 +161,24 @@ Future<void> _createDevCompilerModule(
   Map<String, String> environment, {
   bool debugMode = true,
 }) async {
-  var transitiveDeps = await buildStep.trackStage(
+  final transitiveDeps = await buildStep.trackStage(
     'CollectTransitiveDeps',
     () => module.computeTransitiveDependencies(buildStep),
   );
-  var transitiveKernelDeps = [
-    for (var dep in transitiveDeps)
+  final transitiveKernelDeps = [
+    for (final dep in transitiveDeps)
       dep.primarySource.changeExtension(ddcKernelExtension),
   ];
-  var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
+  final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
 
-  var allAssetIds = <AssetId>{...module.sources, ...transitiveKernelDeps};
+  final allAssetIds = <AssetId>{...module.sources, ...transitiveKernelDeps};
   await buildStep.trackStage(
     'EnsureAssets',
     () => scratchSpace.ensureAssets(allAssetIds, buildStep),
   );
-  var jsId = module.primarySource.changeExtension(jsModuleExtension);
-  var jsOutputFile = scratchSpace.fileFor(jsId);
-  var sdkSummary = p.url.join(dartSdk, sdkKernelPath);
+  final jsId = module.primarySource.changeExtension(jsModuleExtension);
+  final jsOutputFile = scratchSpace.fileFor(jsId);
+  final sdkSummary = p.url.join(dartSdk, sdkKernelPath);
 
   // Maps the inputs paths we provide to the ddc worker to asset ids, if
   // `trackUnusedInputs` is `true`.
@@ -189,78 +189,82 @@ Future<void> _createDevCompilerModule(
   File? usedInputsFile;
 
   if (trackUnusedInputs) {
-    usedInputsFile = await File(
-      p.join(
-        (await Directory.systemTemp.createTemp('ddk_builder_')).path,
-        'used_inputs.txt',
-      ),
-    ).create();
+    usedInputsFile =
+        await File(
+          p.join(
+            (await Directory.systemTemp.createTemp('ddk_builder_')).path,
+            'used_inputs.txt',
+          ),
+        ).create();
     kernelInputPathToId = {};
   }
 
-  var request = WorkRequest()
-    ..arguments.addAll([
-      '--dart-sdk-summary=$sdkSummary',
-      '--modules=${ddcModules ? 'ddc' : 'amd'}',
-      '--no-summarize',
-      if (generateFullDill) '--experimental-output-compiled-kernel',
-      if (emitDebugSymbols) '--emit-debug-symbols',
-      if (canaryFeatures) '--canary',
-      '-o',
-      jsOutputFile.path,
-      debugMode ? '--source-map' : '--no-source-map',
-      for (var dep in transitiveDeps) _summaryArg(dep),
-      '--packages=$multiRootScheme:///.dart_tool/package_config.json',
-      '--module-name=${ddcModuleName(jsId)}',
-      '--multi-root-scheme=$multiRootScheme',
-      '--multi-root=.',
-      '--track-widget-creation',
-      '--inline-source-map',
-      '--libraries-file=${p.toUri(librariesPath)}',
-      '--experimental-emit-debug-metadata',
-      if (useIncrementalCompiler) ...[
-        '--reuse-compiler-result',
-        '--use-incremental-compiler',
-      ],
-      if (usedInputsFile != null)
-        '--used-inputs-file=${usedInputsFile.uri.toFilePath()}',
-      for (var source in module.sources) sourceArg(source),
-      for (var define in environment.entries) '-D${define.key}=${define.value}',
-      for (var experiment in enabledExperiments)
-        '--enable-experiment=$experiment',
-    ])
-    ..inputs.add(
-      Input()
-        ..path = sdkSummary
-        ..digest = [0],
-    )
-    ..inputs.addAll(
-      await Future.wait(
-        transitiveKernelDeps.map((dep) async {
-          var file = scratchSpace.fileFor(dep);
-          if (kernelInputPathToId != null) {
-            kernelInputPathToId[file.uri.toString()] = dep;
-          }
-          return Input()
-            ..path = file.path
-            ..digest = (await buildStep.digest(dep)).bytes;
-        }),
-      ),
-    );
+  final request =
+      WorkRequest()
+        ..arguments.addAll([
+          '--dart-sdk-summary=$sdkSummary',
+          '--modules=${ddcModules ? 'ddc' : 'amd'}',
+          '--no-summarize',
+          if (generateFullDill) '--experimental-output-compiled-kernel',
+          if (emitDebugSymbols) '--emit-debug-symbols',
+          if (canaryFeatures) '--canary',
+          '-o',
+          jsOutputFile.path,
+          debugMode ? '--source-map' : '--no-source-map',
+          for (var dep in transitiveDeps) _summaryArg(dep),
+          '--packages=$multiRootScheme:///.dart_tool/package_config.json',
+          '--module-name=${ddcModuleName(jsId)}',
+          '--multi-root-scheme=$multiRootScheme',
+          '--multi-root=.',
+          '--track-widget-creation',
+          '--inline-source-map',
+          '--libraries-file=${p.toUri(librariesPath)}',
+          '--experimental-emit-debug-metadata',
+          if (useIncrementalCompiler) ...[
+            '--reuse-compiler-result',
+            '--use-incremental-compiler',
+          ],
+          if (usedInputsFile != null)
+            '--used-inputs-file=${usedInputsFile.uri.toFilePath()}',
+          for (var source in module.sources) sourceArg(source),
+          for (var define in environment.entries)
+            '-D${define.key}=${define.value}',
+          for (var experiment in enabledExperiments)
+            '--enable-experiment=$experiment',
+        ])
+        ..inputs.add(
+          Input()
+            ..path = sdkSummary
+            ..digest = [0],
+        )
+        ..inputs.addAll(
+          await Future.wait(
+            transitiveKernelDeps.map((dep) async {
+              var file = scratchSpace.fileFor(dep);
+              if (kernelInputPathToId != null) {
+                kernelInputPathToId[file.uri.toString()] = dep;
+              }
+              return Input()
+                ..path = file.path
+                ..digest = (await buildStep.digest(dep)).bytes;
+            }),
+          ),
+        );
 
   try {
-    var driverResource = dartdevkDriverResource;
-    var driver = await buildStep.fetchResource(driverResource);
-    var response = await driver.doWork(
+    final driverResource = dartdevkDriverResource;
+    final driver = await buildStep.fetchResource(driverResource);
+    final response = await driver.doWork(
       request,
-      trackWork: (response) =>
-          buildStep.trackStage('Compile', () => response, isExternal: true),
+      trackWork:
+          (response) =>
+              buildStep.trackStage('Compile', () => response, isExternal: true),
     );
 
     // TODO(jakemac53): Fix the ddc worker mode so it always sends back a bad
     // status code if something failed. Today we just make sure there is an
     // output JS file to verify it was successful.
-    var message = response.output
+    final message = response.output
         .replaceAll('${scratchSpace.tempDir.path}/', '')
         .replaceAll('$multiRootScheme:///', '');
     if (response.exitCode != EXIT_CODE_OK ||
@@ -277,7 +281,7 @@ Future<void> _createDevCompilerModule(
     await scratchSpace.copyOutput(jsId, buildStep);
 
     if (generateFullDill) {
-      var currentFullKernelId = module.primarySource.changeExtension(
+      final currentFullKernelId = module.primarySource.changeExtension(
         fullKernelExtension,
       );
       await scratchSpace.copyOutput(currentFullKernelId, buildStep);
@@ -292,17 +296,21 @@ Future<void> _createDevCompilerModule(
 
       // Copy the metadata output, modifying its contents to remove the temp
       // directory from paths
-      var metadataId = module.primarySource.changeExtension(metadataExtension);
-      var file = scratchSpace.fileFor(metadataId);
-      var content = await file.readAsString();
-      var json = jsonDecode(content) as Map<String, Object?>;
+      final metadataId = module.primarySource.changeExtension(
+        metadataExtension,
+      );
+      final file = scratchSpace.fileFor(metadataId);
+      final content = await file.readAsString();
+      final json = jsonDecode(content) as Map<String, Object?>;
       fixMetadataSources(json, scratchSpace.tempDir.uri);
       await buildStep.writeAsString(metadataId, jsonEncode(json));
 
       // Copy the symbols output, modifying its contents to remove the temp
       // directory from paths
       if (emitDebugSymbols) {
-        var symbolsId = module.primarySource.changeExtension(symbolsExtension);
+        final symbolsId = module.primarySource.changeExtension(
+          symbolsExtension,
+        );
         await scratchSpace.copyOutput(symbolsId, buildStep);
       }
     }

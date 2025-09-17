@@ -6,15 +6,15 @@ import 'dart:io';
 
 import 'package:io/io.dart';
 
+import '../constants.dart';
 import '../logging/build_log.dart';
-import '../util/constants.dart';
 import 'build_runner_command.dart';
 
 class CleanCommand implements BuildRunnerCommand {
   @override
   Future<int> run() async {
     buildLog.doing('Deleting the build cache.');
-    var generatedDir = Directory(cacheDir);
+    final generatedDir = Directory(cacheDir);
     if (generatedDir.existsSync()) {
       generatedDir.deleteSync(recursive: true);
     }

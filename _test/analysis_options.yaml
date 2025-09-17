@@ -1,7 +1,0 @@
-include: ../analysis_options.yaml
-
-analyzer:
-  exclude:
-    # Exclude this here because if added to ../analysis_options.yaml it also
-    # excludes package:build.
-    - "build/**"

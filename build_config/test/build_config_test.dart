@@ -8,7 +8,7 @@ import 'package:test/test.dart';
 
 void main() {
   test('build.yaml can be parsed', () {
-    var buildConfig = BuildConfig.parse('example', ['a', 'b'], buildYaml);
+    final buildConfig = BuildConfig.parse('example', ['a', 'b'], buildYaml);
     expectBuildTargets(buildConfig.buildTargets, {
       'example:a': createBuildTarget(
         'example',
@@ -100,7 +100,7 @@ void main() {
   });
 
   test('build.yaml can omit a targets section', () {
-    var buildConfig = BuildConfig.parse('example', [
+    final buildConfig = BuildConfig.parse('example', [
       'a',
       'b',
     ], buildYamlNoTargets);
@@ -131,7 +131,7 @@ void main() {
   });
 
   test('build.yaml can be empty', () {
-    var buildConfig = BuildConfig.parse('example', ['a', 'b'], '');
+    final buildConfig = BuildConfig.parse('example', ['a', 'b'], '');
     expectBuildTargets(buildConfig.buildTargets, {
       'example:example': createBuildTarget(
         'example',
@@ -147,7 +147,7 @@ void main() {
   });
 
   test('build.yaml can use | separator in builder keys', () {
-    var buildConfig = BuildConfig.parse(
+    final buildConfig = BuildConfig.parse(
       'example',
       ['a', 'b'],
       '''
@@ -264,7 +264,7 @@ void expectBuilderDefinitions(
   Map<String, BuilderDefinition> expected,
 ) {
   expect(actual.keys, unorderedEquals(expected.keys));
-  for (var p in actual.keys) {
+  for (final p in actual.keys) {
     expect(actual[p], _matchesBuilderDefinition(expected[p]!));
   }
 }
@@ -274,7 +274,7 @@ void expectPostProcessBuilderDefinitions(
   Map<String, PostProcessBuilderDefinition> expected,
 ) {
   expect(actual.keys, unorderedEquals(expected.keys));
-  for (var p in actual.keys) {
+  for (final p in actual.keys) {
     expect(actual[p], _matchesPostProcessBuilderDefinition(expected[p]!));
   }
 }
@@ -284,7 +284,7 @@ void expectGlobalOptions(
   Map<String, GlobalBuilderConfig> expected,
 ) {
   expect(actual.keys, unorderedEquals(expected.keys));
-  for (var p in actual.keys) {
+  for (final p in actual.keys) {
     expect(actual[p], _matchesGlobalBuilderConfig(expected[p]!));
   }
 }
@@ -376,7 +376,7 @@ void expectBuildTargets(
   Map<String, BuildTarget> expected,
 ) {
   expect(actual.keys, unorderedEquals(expected.keys));
-  for (var p in actual.keys) {
+  for (final p in actual.keys) {
     expect(actual[p], _matchesBuildTarget(expected[p]!));
   }
 }
@@ -433,7 +433,7 @@ BuildTarget createBuildTarget(
 }) {
   return runInBuildConfigZone(
     () {
-      var target = BuildTarget(
+      final target = BuildTarget(
         autoApplyBuilders: autoApplyBuilders,
         builders: builders,
         dependencies: dependencies,
@@ -466,7 +466,7 @@ BuilderDefinition createBuilderDefinition(
 }) {
   return runInBuildConfigZone(
     () {
-      var definition = BuilderDefinition(
+      final definition = BuilderDefinition(
         builderFactories: builderFactories,
         autoApply: autoApply,
         isOptional: isOptional,
@@ -496,7 +496,7 @@ PostProcessBuilderDefinition createPostProcessBuilderDefinition(
 }) {
   return runInBuildConfigZone(
     () {
-      var definition = PostProcessBuilderDefinition(
+      final definition = PostProcessBuilderDefinition(
         builderFactory: builderFactory,
         import: import,
         defaults: defaults,

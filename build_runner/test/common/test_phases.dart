@@ -9,7 +9,7 @@ import 'package:build/build.dart';
 import 'package:build_runner/src/internal.dart';
 import 'package:build_test/build_test.dart';
 // ignore: implementation_imports
-import 'package:build_test/src/in_memory_reader_writer.dart';
+import 'package:build_test/src/internal_test_reader_writer.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
@@ -92,25 +92,22 @@ Future<TestBuildersResult> testPhases(
   packageGraph ??= buildPackageGraph({rootPackage('a'): []});
   var readerWriter =
       resumeFrom == null
-          ? TestReaderWriter(rootPackage: packageGraph.root.name)
+          ? InternalTestReaderWriter(rootPackage: packageGraph.root.name)
           : resumeFrom.readerWriter;
 
-  // Cast because this is not part of public `test_builder` API.
   if (onDelete != null) {
-    readerWriter = (readerWriter as InMemoryAssetReaderWriter).copyWith(
-      onDelete: onDelete,
-    );
+    readerWriter = readerWriter.copyWith(onDelete: onDelete);
   }
 
-  var pkgConfigId = AssetId(
+  final pkgConfigId = AssetId(
     packageGraph.root.name,
     '.dart_tool/package_config.json',
   );
   if (!await readerWriter.canRead(pkgConfigId)) {
-    var packageConfig = {
+    final packageConfig = {
       'configVersion': 2,
       'packages': [
-        for (var pkgNode in packageGraph.allPackages.values)
+        for (final pkgNode in packageGraph.allPackages.values)
           {
             'name': pkgNode.name,
             'rootUri': pkgNode.path,
@@ -123,7 +120,7 @@ Future<TestBuildersResult> testPhases(
   }
 
   inputs.forEach((serializedId, contents) {
-    var id = makeAssetId(serializedId);
+    final id = makeAssetId(serializedId);
     if (contents is String) {
       readerWriter.testing.writeString(id, contents);
     } else if (contents is List<int>) {
@@ -137,7 +134,7 @@ Future<TestBuildersResult> testPhases(
   });
 
   final buildPlan = await BuildPlan.load(
-    builders: builders.build(),
+    builderFactories: BuilderFactories(),
     // ignore: invalid_use_of_visible_for_testing_member
     buildOptions: BuildOptions.forTests(
       buildDirs: buildDirs.build(),
@@ -149,11 +146,12 @@ Future<TestBuildersResult> testPhases(
       verbose: verbose,
     ),
     testingOverrides: TestingOverrides(
+      builderApplications: builders.build(),
       packageGraph: packageGraph,
-      reader: readerWriter,
-      writer: readerWriter,
+      readerWriter: readerWriter,
     ),
   );
+  await buildPlan.deleteFilesAndFolders();
 
   BuildResult result;
   final build = await BuildSeries.create(buildPlan: buildPlan);
@@ -216,7 +214,7 @@ void checkBuild(
 
 class TestBuildersResult {
   final BuildResult buildResult;
-  final TestReaderWriter readerWriter;
+  final InternalTestReaderWriter readerWriter;
 
   TestBuildersResult({required this.buildResult, required this.readerWriter});
 }

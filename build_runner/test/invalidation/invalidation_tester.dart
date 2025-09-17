@@ -8,8 +8,8 @@ import 'dart:math';
 
 import 'package:analyzer/dart/element/element2.dart';
 import 'package:build/build.dart';
+import 'package:build_runner/src/constants.dart';
 import 'package:build_runner/src/logging/build_log.dart';
-import 'package:build_runner/src/util/constants.dart';
 import 'package:build_test/build_test.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';

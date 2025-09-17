@@ -85,7 +85,7 @@ void main() {
           'native_null_assertions': false,
         }),
       );
-      var expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
+      final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
         'a|web/index.dart.bootstrap.js': decodedMatches(
           allOf([
             // Maps non-lib modules to remove the top level dir.
@@ -188,7 +188,7 @@ void main() {
         // Add a fake asset so that the build_web_compilers package exists.
         'build_web_compilers|fake.txt': '',
       };
-      var expectedOutputs = {
+      final expectedOutputs = {
         'a|lib/.ddc.meta_module.clean': isNotNull,
         'a|lib/.ddc.meta_module.raw': isNotNull,
         'a|lib/app.dart.bootstrap.js': decodedMatches(
@@ -223,8 +223,8 @@ void main() {
 
     test('can enable canary features for SDK', () async {
       final builder = sdkJsCompile(const BuilderOptions({'canary': true}));
-      var sdkAssets = <String, Object>{'build_web_compilers|fake.txt': ''};
-      var expectedOutputs = {
+      final sdkAssets = <String, Object>{'build_web_compilers|fake.txt': ''};
+      final expectedOutputs = {
         'build_web_compilers|lib/src/dev_compiler/dart_sdk.js': decodedMatches(
           contains('canary'),
         ),
@@ -235,8 +235,8 @@ void main() {
 
     test('does not enable canary features for SDK by default', () async {
       final builder = sdkJsCompile(const BuilderOptions({}));
-      var sdkAssets = <String, Object>{'build_web_compilers|fake.txt': ''};
-      var expectedOutputs = {
+      final sdkAssets = <String, Object>{'build_web_compilers|fake.txt': ''};
+      final expectedOutputs = {
         'build_web_compilers|lib/src/dev_compiler/dart_sdk.js': decodedMatches(
           isNot(contains('canary')),
         ),

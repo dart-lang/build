@@ -30,8 +30,8 @@ class EncodedMetaModuleMatcher extends Matcher {
       actual = utf8.decode(actual);
     }
     if (actual is! String) return false;
-    var jSon = json.decode(actual) as Map<String, dynamic>;
-    var meta = MetaModule.fromJson(jSon);
+    final jSon = json.decode(actual) as Map<String, dynamic>;
+    final meta = MetaModule.fromJson(jSon);
     return unorderedMatches(
       expected.modules.map(matchesModule),
     ).matches(meta.modules, description);
@@ -96,8 +96,8 @@ class EncodedModuleMatcher extends Matcher {
       actual = utf8.decode(actual);
     }
     if (actual is! String) return false;
-    var jSon = json.decode(actual) as Map<String, dynamic>;
-    var module = Module.fromJson(jSon);
+    final jSon = json.decode(actual) as Map<String, dynamic>;
+    final module = Module.fromJson(jSon);
     return ModuleMatcher(expected).matches(module, description);
   }
 
