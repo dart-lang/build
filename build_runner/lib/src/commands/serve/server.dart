@@ -35,37 +35,24 @@ enum PerfSortOrder {
   innerDurationDesc,
 }
 
-ServeHandler createServeHandler(Watcher watch) {
-  final rootPackage = watch.packageGraph.root.name;
-  final assetHandlerCompleter = Completer<AssetHandler>();
-  watch.finalizedReader
-      .then((reader) async {
-        assetHandlerCompleter.complete(AssetHandler(reader, rootPackage));
-      })
-      .catchError((_) {}); // These errors are separately handled.
-  return ServeHandler._(watch, assetHandlerCompleter.future, rootPackage);
-}
-
 class ServeHandler implements BuildState {
-  final Watcher _state;
+  final Watcher _watcher;
   final String _rootPackage;
-
-  final Future<AssetHandler> _assetHandler;
 
   final BuildUpdatesWebSocketHandler _webSocketHandler;
 
-  ServeHandler._(this._state, this._assetHandler, this._rootPackage)
-    : _webSocketHandler = BuildUpdatesWebSocketHandler(_state) {
-    _state.buildResults
+  ServeHandler(this._watcher, this._rootPackage)
+    : _webSocketHandler = BuildUpdatesWebSocketHandler(_watcher) {
+    _watcher.buildResults
         .listen(_webSocketHandler.emitUpdateMessage)
         .onDone(_webSocketHandler.close);
   }
 
   @override
-  Future<BuildResult>? get currentBuild => _state.currentBuild;
+  Future<BuildResult>? get currentBuild => _watcher.currentBuild;
 
   @override
-  Stream<BuildResult> get buildResults => _state.buildResults;
+  Stream<BuildResult> get buildResults => _watcher.buildResults;
 
   shelf.Handler handlerFor(
     String rootDir, {
@@ -79,10 +66,10 @@ class ServeHandler implements BuildState {
         'Only top level directories such as `web` or `test` can be served, got',
       );
     }
-    _state.currentBuild?.then((_) {
+    _watcher.currentBuild?.then((_) {
       // If the first build fails with a handled exception, we might not have
       // an asset graph and can't do this check.
-      if (_state.assetGraph == null) return;
+      if (_watcher.assetGraph == null) return;
       _warnForEmptyDirectory(rootDir);
     });
     var cascade = shelf.Cascade();
@@ -95,7 +82,10 @@ class ServeHandler implements BuildState {
       if (request.url.path == _assetsDigestPath) {
         return _assetsDigestHandler(request, rootDir);
       }
-      final assetHandler = await _assetHandler;
+      final assetHandler = AssetHandler(
+        await _watcher.finalizedReader,
+        _rootPackage,
+      );
       return assetHandler.handle(request, rootDir: rootDir);
     });
     var pipeline = const shelf.Pipeline();
@@ -117,10 +107,10 @@ class ServeHandler implements BuildState {
     shelf.Request request,
     String rootDir,
   ) async {
-    final reader = await _state.finalizedReader;
+    final reader = await _watcher.finalizedReader;
     final assertPathList =
         (jsonDecode(await request.readAsString()) as List).cast<String>();
-    final rootPackage = _state.packageGraph.root.name;
+    final rootPackage = _watcher.packageGraph.root.name;
     final results = <String, String>{};
     for (final path in assertPathList) {
       final assetIds = pathToAssetIds(rootPackage, rootDir, p.url.split(path));
@@ -150,7 +140,7 @@ class ServeHandler implements BuildState {
   }
 
   void _warnForEmptyDirectory(String rootDir) {
-    if (!_state.assetGraph!
+    if (!_watcher.assetGraph!
         .packageNodes(_rootPackage)
         .any((n) => n.id.path.startsWith('$rootDir/'))) {
       buildLog.warning(

@@ -18,9 +18,11 @@ void main() async {
     final pubspecs = await Pubspecs.load();
     final tester = BuildRunnerTester(pubspecs);
 
+    tester.writeFixturePackage(FixturePackages.copyBuilder());
     tester.writePackage(
       name: 'root_pkg',
       dependencies: ['build_runner'],
+      pathDependencies: ['builder_pkg'],
       files: {},
     );
 

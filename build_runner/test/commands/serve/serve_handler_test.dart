@@ -103,7 +103,7 @@ class FakeWebSocketChannel extends StreamChannelMixin
 void main() {
   late ServeHandler serveHandler;
   late InternalTestReaderWriter readerWriter;
-  late MockWatchImpl watchImpl;
+  late MockWatchImpl watcher;
   late AssetGraph assetGraph;
 
   setUp(() async {
@@ -117,7 +117,7 @@ void main() {
       packageGraph,
       readerWriter,
     );
-    watchImpl = MockWatchImpl(
+    watcher = MockWatchImpl(
       Future.value(
         FinalizedReader(
           readerWriter,
@@ -130,10 +130,8 @@ void main() {
       packageGraph,
       assetGraph,
     );
-    serveHandler = createServeHandler(watchImpl);
-    watchImpl.addFutureResult(
-      Future.value(BuildResult(BuildStatus.success, [])),
-    );
+    serveHandler = ServeHandler(watcher, packageGraph.root.name);
+    watcher.addFutureResult(Future.value(BuildResult(BuildStatus.success, [])));
   });
 
   void addSource(String id, String content, {bool deleted = false}) {
@@ -264,7 +262,7 @@ void main() {
           primaryInput: AssetId('a', 'web/main.dart'),
         ),
       );
-      watchImpl.addFutureResult(
+      watcher.addFutureResult(
         Future.value(BuildResult(BuildStatus.failure, [])),
       );
     });
@@ -462,7 +460,7 @@ void main() {
           onConnect(serverChannel, '');
         };
 
-        handler = BuildUpdatesWebSocketHandler(watchImpl, mockHandlerFactory);
+        handler = BuildUpdatesWebSocketHandler(watcher, mockHandlerFactory);
 
         (serverChannel1, clientChannel1) = createFakes();
         (serverChannel2, clientChannel2) = createFakes();

@@ -496,7 +496,6 @@ targets:
             makeAssetId('a|web/a.txt.copy'),
             makeAssetId('a|web/a.txt.copy.clone'),
             ...placeholders,
-            makeAssetId('a|.dart_tool/package_config.json'),
           ]),
         );
         expect(cachedGraph.sources, [makeAssetId('a|web/a.txt')]);
@@ -1120,7 +1119,7 @@ targets:
 
     final expectedGraph = await AssetGraph.build(
       BuildPhases([]),
-      {makeAssetId('a|.dart_tool/package_config.json')},
+      {},
       buildPackageGraph({rootPackage('a'): []}),
       result.readerWriter,
     );
