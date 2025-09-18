@@ -58,7 +58,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   @override
   Stream<BuildResults> get builds => _buildResults.stream;
 
-  FinalizedReader get reader => _buildSeries.finalizedReader!;
+  FinalizedReader? get reader => _buildSeries.finalizedReader;
 
   final _buildScriptUpdateCompleter = Completer<void>();
   Future<void> get buildScriptUpdated => _buildScriptUpdateCompleter.future;
@@ -261,7 +261,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
             ? AutoChangeProviderImpl(graphEvents())
             : ManualChangeProviderImpl(
               AssetTracker(buildPlan.readerWriter, buildPlan.targetGraph),
-              buildSeries.assetGraph!,
+              () => buildSeries.assetGraph,
             );
 
     return BuildRunnerDaemonBuilder._(
