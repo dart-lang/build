@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:glob/glob.dart';
 import 'package:watcher/watcher.dart';
 
@@ -26,7 +27,9 @@ class AssetTracker {
 
   /// Checks for and returns any file system changes compared to the current
   /// state of the asset graph.
-  Future<Map<AssetId, ChangeType>> collectChanges(AssetGraph assetGraph) async {
+  Future<BuiltMap<AssetId, ChangeType>> collectChanges(
+    AssetGraph assetGraph,
+  ) async {
     final inputSources = await findInputSources();
     final generatedSources = await findCacheDirSources();
     return computeSourceUpdates(inputSources, generatedSources, assetGraph);
@@ -49,7 +52,7 @@ class AssetTracker {
   /// Finds the asset changes which have happened while unwatched between builds
   /// by taking a difference between the assets in the graph and the assets on
   /// disk.
-  Future<Map<AssetId, ChangeType>> computeSourceUpdates(
+  Future<BuiltMap<AssetId, ChangeType>> computeSourceUpdates(
     Set<AssetId> inputSources,
     Set<AssetId> generatedSources,
     AssetGraph assetGraph,
@@ -58,7 +61,7 @@ class AssetTracker {
         <AssetId>{}
           ..addAll(inputSources)
           ..addAll(generatedSources);
-    final updates = <AssetId, ChangeType>{};
+    final updates = MapBuilder<AssetId, ChangeType>();
     void addUpdates(Iterable<AssetId> assets, ChangeType type) {
       for (final asset in assets) {
         updates[asset] = type;
@@ -97,7 +100,7 @@ class AssetTracker {
         updates[id] = ChangeType.MODIFY;
       }
     }
-    return updates;
+    return updates.build();
   }
 
   Stream<AssetId> _listAssetIds(TargetNode targetNode) {

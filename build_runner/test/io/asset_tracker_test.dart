@@ -49,7 +49,6 @@ void main() {
       assetGraph = await AssetGraph.build(
         BuildPhases([]),
         {aId},
-        <AssetId>{},
         packageGraph,
         reader,
       );
@@ -77,8 +76,8 @@ void main() {
       );
       // We should see no changes initially other than new sdk sources
       expect(
-        updates..removeWhere(
-          (id, type) => id.package == r'$sdk' && type == ChangeType.ADD,
+        updates.entries.where(
+          (e) => e.key.package == r'$sdk' && e.value == ChangeType.ADD,
         ),
         isEmpty,
       );

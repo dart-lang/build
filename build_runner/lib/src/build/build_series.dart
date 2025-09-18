@@ -42,13 +42,6 @@ class BuildSeries {
   BuildSeries(this.buildPlan);
 
   /// Runs a single build.
-  ///
-  /// For the first build, pass any changes since the `BuildSeries` was created
-  /// as [updates]. If the first build happens immediately then pass empty
-  /// `updates`.
-  ///
-  /// For further builds, pass the changes since the previous builds as
-  /// [updates].
   Future<BuildResult> run({
     BuiltSet<BuildDirectory>? buildDirs,
     BuiltSet<BuildFilter>? buildFilters,

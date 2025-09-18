@@ -215,7 +215,7 @@ class BuildPlan {
     final cacheDirSources = await assetTracker.findCacheDirSources();
 
     AssetGraph? assetGraph;
-    Map<AssetId, ChangeType>? updates;
+    BuiltMap<AssetId, ChangeType>? updates;
     if (previousAssetGraph != null) {
       // buildLog.doing('Checking for updates.');
       updates = await assetTracker.computeSourceUpdates(
@@ -292,7 +292,7 @@ class BuildPlan {
       bootstrapper: Bootstrapper(),
       assetGraph: assetGraph,
       assetGraphWasTaken: false,
-      updates: updates?.build(),
+      updates: updates,
       filesToDelete: filesToDelete.toBuiltList(),
       foldersToDelete: foldersToDelete.toBuiltList(),
       restartIsNeeded: restartIsNeeded,

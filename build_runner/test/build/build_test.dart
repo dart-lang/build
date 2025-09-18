@@ -1120,7 +1120,6 @@ targets:
 
     final expectedGraph = await AssetGraph.build(
       BuildPhases([]),
-      <AssetId>{},
       {makeAssetId('a|.dart_tool/package_config.json')},
       buildPackageGraph({rootPackage('a'): []}),
       result.readerWriter,

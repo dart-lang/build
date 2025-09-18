@@ -14,6 +14,7 @@ import 'package:build_runner/src/build/asset_graph/node.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/phase.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
@@ -53,7 +54,6 @@ void main() {
       setUp(() async {
         graph = await AssetGraph.build(
           BuildPhases([]),
-          <AssetId>{},
           <AssetId>{},
           fooPackageGraph,
           digestReader,
@@ -200,9 +200,6 @@ void main() {
       final primaryOutputId = makeAssetId('foo|file.txt.copy');
       final syntheticId = makeAssetId('foo|synthetic.txt');
       final syntheticOutputId = makeAssetId('foo|synthetic.txt.copy');
-      final internalId = makeAssetId(
-        'foo|.dart_tool/build/entrypoint/serve.dart',
-      );
       final placeholders = placeholderIdsFor(fooPackageGraph);
       final expectedBuildStepId = PostProcessBuildStepId(
         input: primaryInputId,
@@ -210,13 +207,13 @@ void main() {
       );
 
       setUp(() async {
-        for (final id in [primaryInputId, internalId]) {
-          digestReader.testing.writeString(id, 'contents of $id');
-        }
+        digestReader.testing.writeString(
+          primaryInputId,
+          'contents of $primaryInputId',
+        );
         graph = await AssetGraph.build(
           buildPhases,
           {primaryInputId, excludedInputId},
-          {internalId},
           fooPackageGraph,
           digestReader,
         );
@@ -230,7 +227,6 @@ void main() {
             primaryInputId,
             excludedInputId,
             primaryOutputId,
-            internalId,
             ...placeholders,
           ]),
         );
@@ -254,8 +250,6 @@ void main() {
           reason: 'Nodes with no output shouldn\'t get an eager digest.',
         );
 
-        expect(graph.get(internalId)?.type, NodeType.internal);
-
         final primaryOutputNode = graph.get(primaryOutputId)!;
         // Didn't actually do a build yet so this starts out empty.
         expect(primaryOutputNode.generatedNodeState!.inputs, isEmpty);
@@ -274,7 +268,7 @@ void main() {
           final changes = {AssetId('foo', 'new.txt'): ChangeType.ADD};
           await graph.updateAndInvalidate(
             buildPhases,
-            changes,
+            changes.build(),
             'foo',
             (_) async {},
             digestReader,
@@ -296,7 +290,7 @@ void main() {
           expect(graph.contains(primaryOutputId), isTrue);
           await graph.updateAndInvalidate(
             buildPhases,
-            changes,
+            changes.build(),
             'foo',
             (id) async => deletes.add(id),
             digestReader,
@@ -317,7 +311,7 @@ void main() {
           });
           await graph.updateAndInvalidate(
             buildPhases,
-            changes,
+            changes.build(),
             'foo',
             (id) async => deletes.add(id),
             digestReader,
@@ -336,7 +330,7 @@ void main() {
           final changes = {syntheticId: ChangeType.ADD};
           await graph.updateAndInvalidate(
             buildPhases,
-            changes,
+            changes.build(),
             'foo',
             (_) async {},
             digestReader,
@@ -367,7 +361,7 @@ void main() {
             final changes = {syntheticId: ChangeType.ADD};
             await graph.updateAndInvalidate(
               buildPhases,
-              changes,
+              changes.build(),
               'foo',
               (_) async {},
               digestReader,
@@ -395,7 +389,7 @@ void main() {
             final changes = {primaryInputId: ChangeType.REMOVE};
             await graph.updateAndInvalidate(
               buildPhases,
-              changes,
+              changes.build(),
               'foo',
               (_) => Future.value(null),
               digestReader,
@@ -416,7 +410,6 @@ void main() {
           () => AssetGraph.build(
             BuildPhases(List.filled(2, InBuildPhase(TestBuilder(), 'foo'))),
             {makeAssetId('foo|file')},
-            <AssetId>{},
             fooPackageGraph,
             digestReader,
           ),
@@ -465,7 +458,6 @@ void main() {
               ),
             ]),
             sources,
-            <AssetId>{},
             fooPackageGraph,
             digestReader,
           );
@@ -512,7 +504,6 @@ void main() {
               ),
             ]),
             sources,
-            <AssetId>{},
             fooPackageGraph,
             digestReader,
           );
@@ -550,7 +541,6 @@ void main() {
           final graph = await AssetGraph.build(
             buildPhases,
             {source},
-            <AssetId>{},
             packageGraph,
             digestReader,
           );
@@ -568,7 +558,7 @@ void main() {
 
           await graph.updateAndInvalidate(
             buildPhases,
-            {renamedSource: ChangeType.ADD, source: ChangeType.REMOVE},
+            {renamedSource: ChangeType.ADD, source: ChangeType.REMOVE}.build(),
             'a',
             (_) async {},
             digestReader,

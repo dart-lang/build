@@ -92,10 +92,6 @@ targets:
 ''');
     await watch.expect('wrote 1 output');
 
-    //await watch.expect('Terminating builds due to root_pkg:build.yaml update');
-    //await watch.expect(BuildLog.successPattern);
-    //expect(tester.read('root_pkg/web/a.txt.copy'), 'updated');
-
     // Builder config change, update a file but it has no effect.
     tester.update('root_pkg/build.yaml', (yaml) => '$yaml\n');
     await watch.expectNoOutput(const Duration(seconds: 1));
