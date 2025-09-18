@@ -154,8 +154,8 @@ Future<TestBuildersResult> testPhases(
   await buildPlan.deleteFilesAndFolders();
 
   BuildResult result;
-  final build = await BuildSeries.create(buildPlan: buildPlan);
-  result = await build.run({});
+  final build = BuildSeries(buildPlan);
+  result = await build.run();
   await build.beforeExit();
 
   if (checkBuildStatus) {

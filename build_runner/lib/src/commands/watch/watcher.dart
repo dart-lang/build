@@ -20,7 +20,6 @@ import '../../io/reader_writer.dart';
 import '../../logging/build_log.dart';
 import 'asset_change.dart';
 import 'change_filter.dart';
-import 'collect_changes.dart';
 import 'graph_watcher.dart';
 import 'node_watcher.dart';
 
@@ -48,7 +47,10 @@ class Watcher implements BuildState {
   final _readerCompleter = Completer<FinalizedReader>();
 
   /// Completes with an error if we fail to initialize.
-  Future<FinalizedReader> get finalizedReader => _readerCompleter.future;
+  Future<FinalizedReader> get finalizedReader async {
+    await _readerCompleter.future;
+    return _buildSeries!.finalizedReader!;
+  }
 
   Watcher({
     required BuildPlan buildPlan,
@@ -82,14 +84,11 @@ class Watcher implements BuildState {
     final controller = StreamController<BuildResult>();
 
     Future<BuildResult> doBuild(List<List<AssetChange>> changes) async {
-      buildLog.nextBuild();
       final build = _buildSeries!;
-      final mergedChanges = collectChanges(changes);
-
-      buildLog.debug('changes: $changes');
+      //final mergedChanges = collectChanges(changes);
 
       _expectedDeletes.clear();
-      return build.run(mergedChanges);
+      return build.run();
     }
 
     final terminate = Future.any([until, _terminateCompleter.future]);
@@ -127,10 +126,6 @@ class Watcher implements BuildState {
               ),
             );
           }
-          return changes;
-        })
-        .asyncMap((changes) async {
-          assert(_readerCompleter.isCompleted);
           final result = <AssetChange>[];
           for (final change in changes) {
             if (await shouldProcess(
@@ -146,7 +141,6 @@ class Watcher implements BuildState {
           }
           return result;
         })
-        .where((changes) => changes.isNotEmpty)
         .takeUntil(terminate)
         .asyncMapBuffer(
           (changes) =>
@@ -173,9 +167,9 @@ class Watcher implements BuildState {
       BuildResult firstBuild;
       BuildSeries? build;
       try {
-        build = _buildSeries = await BuildSeries.create(buildPlan: buildPlan);
+        build = _buildSeries = BuildSeries(buildPlan);
 
-        firstBuild = await build.run({});
+        firstBuild = await build.run();
       } on CannotBuildException catch (e, s) {
         _terminateCompleter.complete();
 

@@ -170,7 +170,6 @@ class AssetGraph implements GeneratedAssetHider {
   static Future<AssetGraph> build(
     BuildPhases buildPhases,
     Set<AssetId> sources,
-    Set<AssetId> internalSources,
     PackageGraph packageGraph,
     ReaderWriter readerWriter,
   ) async {
@@ -193,9 +192,6 @@ class AssetGraph implements GeneratedAssetHider {
       sources.where((id) => graph.get(id)?.primaryOutputs.isNotEmpty == true),
       readerWriter,
     );
-    // Always compute digests for all internal nodes.
-    graph._addInternalSources(internalSources);
-    await graph._setDigests(internalSources, readerWriter);
     return graph;
   }
 
@@ -286,13 +282,6 @@ class AssetGraph implements GeneratedAssetHider {
     }
 
     return node;
-  }
-
-  /// Adds [assetIds] as [AssetNode.internal].
-  void _addInternalSources(Set<AssetId> assetIds) {
-    for (final id in assetIds) {
-      _add(AssetNode.internal(id));
-    }
   }
 
   /// Adds [AssetNode.placeholder]s for every package in [packageGraph].
@@ -440,7 +429,7 @@ class AssetGraph implements GeneratedAssetHider {
   /// Returns the set of [AssetId]s that were deleted.
   Future<Set<AssetId>> updateAndInvalidate(
     BuildPhases buildPhases,
-    Map<AssetId, ChangeType> updates,
+    BuiltMap<AssetId, ChangeType> updates,
     String rootPackage,
     Future Function(AssetId id) delete,
     ReaderWriter readerWriter,

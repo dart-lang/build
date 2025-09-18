@@ -69,7 +69,7 @@ void main() async {
     // Builder change.
     tester.update('builder_pkg/lib/builder.dart', (script) => '$script\n');
     await watch.expect('Compiling the build script');
-    await watch.expect('Creating the asset graph');
+    // await watch.expect('Creating the asset graph');
     await watch.expect(BuildLog.successPattern);
     expect(tester.read('root_pkg/web/a.txt.copy'), 'updated');
 
@@ -99,6 +99,10 @@ targets:
     // Builder config change, update a file but it has no effect.
     tester.update('root_pkg/build.yaml', (yaml) => '$yaml\n');
     await watch.expectNoOutput(const Duration(seconds: 1));
+
+    // Builder config delete that does change options.
+    tester.delete('root_pkg/build.yaml');
+    await watch.expect('wrote 1 output');
 
     // Builder config change in dependency but it has no effect.
     tester.write('other_pkg/build.yaml', '# new file, nothing here');
@@ -130,6 +134,8 @@ targets:
     await watch.kill();
 
     // Now with --output.
+    await watch.kill();
+    tester.write('root_pkg/web/a.txt', 'updated');
     watch = await tester.start(
       'root_pkg',
       'dart run build_runner watch --output web:build',

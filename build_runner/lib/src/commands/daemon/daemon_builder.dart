@@ -26,7 +26,6 @@ import '../../logging/build_log.dart';
 import '../daemon_options.dart';
 import '../watch/asset_change.dart';
 import '../watch/change_filter.dart';
-import '../watch/collect_changes.dart';
 import '../watch/graph_watcher.dart';
 import '../watch/node_watcher.dart';
 import 'change_providers.dart';
@@ -59,7 +58,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   @override
   Stream<BuildResults> get builds => _buildResults.stream;
 
-  FinalizedReader get reader => _buildSeries.finalizedReader;
+  FinalizedReader get reader => _buildSeries.finalizedReader!;
 
   final _buildScriptUpdateCompleter = Completer<void>();
   Future<void> get buildScriptUpdated => _buildScriptUpdateCompleter.future;
@@ -118,9 +117,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     Iterable<AssetId>? outputs;
 
     try {
-      final mergedChanges = collectChanges([changes]);
+      // final mergedChanges = collectChanges([changes]);
       final result = await _buildSeries.run(
-        mergedChanges,
         buildDirs: buildDirs.build(),
         buildFilters: buildFilters.build(),
       );
@@ -230,7 +228,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       ),
     );
 
-    final buildSeries = await BuildSeries.create(buildPlan: buildPlan);
+    final buildSeries = BuildSeries(buildPlan);
 
     // Only actually used for the AutoChangeProvider.
     Stream<List<WatchEvent>> graphEvents() => PackageGraphWatcher(
@@ -244,7 +242,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         .asyncWhere(
           (change) => shouldProcess(
             change,
-            buildSeries.assetGraph,
+            buildSeries.assetGraph!,
             buildPlan.targetGraph,
             // Assume we will create an outputDir.
             true,
@@ -263,7 +261,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
             ? AutoChangeProviderImpl(graphEvents())
             : ManualChangeProviderImpl(
               AssetTracker(buildPlan.readerWriter, buildPlan.targetGraph),
-              buildSeries.assetGraph,
+              buildSeries.assetGraph!,
             );
 
     return BuildRunnerDaemonBuilder._(

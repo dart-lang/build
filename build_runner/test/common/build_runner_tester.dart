@@ -272,7 +272,10 @@ class BuildRunnerProcess {
 
   /// Kills the process.
   Future<void> kill() async {
+    process.kill(ProcessSignal.sigint);
+    await Future<void>.delayed(const Duration(milliseconds: 100));
     process.kill();
+    _outputs.rest.listen((line) => printOnFailure('Output after kill: $line'));
     await process.exitCode;
   }
 

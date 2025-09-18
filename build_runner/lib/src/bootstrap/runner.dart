@@ -17,6 +17,11 @@ class Runner {
       '.dart_tool/build/entrypoint/build.dart.dill',
       ...arguments,
     ], mode: ProcessStartMode.inheritStdio);
+
+    ProcessSignal.sigint.watch().listen((_) {
+      process.kill();
+    });
+
     final result = await process.exitCode;
     buildProcessState.read();
     return result;

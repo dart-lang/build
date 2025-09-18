@@ -48,6 +48,7 @@ class BuildPlan {
   final BuiltMap<AssetId, ChangeType>? updates;
 
   final bool restartIsNeeded;
+  final bool buildIsNeeded;
 
   /// Files to delete before restarting or before the next build.
   ///
@@ -80,6 +81,7 @@ class BuildPlan {
     required this.filesToDelete,
     required this.foldersToDelete,
     required this.restartIsNeeded,
+    required this.buildIsNeeded,
   }) : _previousAssetGraph = previousAssetGraph,
        _previousAssetGraphWasTaken = previousAssetGraphWasTaken,
        _assetGraph = assetGraph,
@@ -141,7 +143,7 @@ class BuildPlan {
       buildLog.warning('Nothing to build.');
     }
 
-    buildLog.doing('Reading the asset graph.');
+    // buildLog.doing('Reading the asset graph.');
     AssetGraph? previousAssetGraph;
     final filesToDelete = <AssetId>{};
     final foldersToDelete = <AssetId>{};
@@ -152,12 +154,14 @@ class BuildPlan {
       generatedOutputDirectory,
     );
 
+    var buildIsNeeded = false;
     if (await readerWriter.canRead(assetGraphId)) {
       previousAssetGraph = AssetGraph.deserialize(
         await readerWriter.readAsBytes(assetGraphId),
       );
       if (previousAssetGraph == null) {
         buildLog.fullBuildBecause(FullBuildReason.incompatibleAssetGraph);
+        buildIsNeeded = true;
       } else {
         final buildPhasesChanged =
             buildPhases.digest != previousAssetGraph.buildPhasesDigest;
@@ -174,6 +178,7 @@ class BuildPlan {
               Platform.version,
             )) {
           buildLog.fullBuildBecause(FullBuildReason.incompatibleBuild);
+          buildIsNeeded = true;
           // Mark old outputs for deletion.
           filesToDelete.addAll(
             previousAssetGraph.outputsToDelete(packageGraph),
@@ -194,6 +199,8 @@ class BuildPlan {
       // cleanup. Mark old outputs for deletion and discard the graph.
       filesToDelete.addAll(previousAssetGraph.outputsToDelete(packageGraph));
       previousAssetGraph = null;
+      buildProcessState.outputsAreFromStaleBuildScript = false;
+      buildIsNeeded = true;
     }
 
     // If there was no previous asset graph or it was invalid, start by deleting
@@ -206,23 +213,34 @@ class BuildPlan {
     final assetTracker = AssetTracker(readerWriter, targetGraph);
     final inputSources = await assetTracker.findInputSources();
     final cacheDirSources = await assetTracker.findCacheDirSources();
-    final internalSources = await assetTracker.findInternalSources();
 
     AssetGraph? assetGraph;
     Map<AssetId, ChangeType>? updates;
     if (previousAssetGraph != null) {
-      buildLog.doing('Checking for updates.');
+      // buildLog.doing('Checking for updates.');
       updates = await assetTracker.computeSourceUpdates(
         inputSources,
         cacheDirSources,
-        internalSources,
         previousAssetGraph,
       );
       assetGraph = previousAssetGraph.copyForNextBuild(buildPhases);
+      if (updates.isNotEmpty) {
+        buildIsNeeded = true;
+      }
+
+      if (assetGraph.previousBuildTriggersDigest !=
+          targetGraph.buildTriggers.digest) {
+        buildIsNeeded = true;
+      }
+
+      if (assetGraph.previousInBuildPhasesOptionsDigests !=
+          assetGraph.inBuildPhasesOptionsDigests) {
+        buildIsNeeded = true;
+      }
     }
 
     if (assetGraph == null) {
-      buildLog.doing('Creating the asset graph.');
+      // buildLog.doing('Creating the asset graph.');
 
       // Files marked for deletion are not inputs.
       inputSources.removeAll(filesToDelete);
@@ -231,7 +249,6 @@ class BuildPlan {
         assetGraph = await AssetGraph.build(
           buildPhases,
           inputSources,
-          internalSources,
           packageGraph,
           readerWriter,
         );
@@ -279,8 +296,15 @@ class BuildPlan {
       filesToDelete: filesToDelete.toBuiltList(),
       foldersToDelete: foldersToDelete.toBuiltList(),
       restartIsNeeded: restartIsNeeded,
+      buildIsNeeded: buildIsNeeded,
     );
   }
+
+  Future<BuildPlan> reload() => load(
+    builderFactories: builderFactories,
+    buildOptions: buildOptions,
+    testingOverrides: testingOverrides,
+  );
 
   BuildPlan copyWith({
     BuiltSet<BuildDirectory>? buildDirs,
@@ -306,6 +330,7 @@ class BuildPlan {
     filesToDelete: filesToDelete,
     foldersToDelete: foldersToDelete,
     restartIsNeeded: restartIsNeeded,
+    buildIsNeeded: buildIsNeeded,
   );
 
   /// Takes the loaded [AssetGraph], which may be `null` if none could be

@@ -130,7 +130,7 @@ class Build {
   TargetGraph get targetGraph => buildPlan.targetGraph;
   BuildPhases get buildPhases => buildPlan.buildPhases;
 
-  Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
+  Future<BuildResult> run(BuiltMap<AssetId, ChangeType> updates) async {
     if (!assetGraph.cleanBuild) {
       buildLog.fullBuildBecause(FullBuildReason.none);
     }
@@ -195,7 +195,7 @@ class Build {
   Resolvers get _resolvers =>
       testingOverrides.resolvers ?? AnalyzerResolvers.sharedInstance;
 
-  Future<void> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
+  Future<void> _updateAssetGraph(BuiltMap<AssetId, ChangeType> updates) async {
     changedInputs.clear();
     deletedAssets.clear();
     for (final update in updates.entries) {
@@ -221,7 +221,7 @@ class Build {
 
   /// Runs a build inside a zone with an error handler and stack chain
   /// capturing.
-  Future<BuildResult> _safeBuild(Map<AssetId, ChangeType> updates) {
+  Future<BuildResult> _safeBuild(BuiltMap<AssetId, ChangeType> updates) {
     final done = Completer<BuildResult>();
     runZonedGuarded(
       () async {
@@ -246,6 +246,7 @@ class Build {
                   AnalysisDriverModel.sharedInstance.phasedAssetDeps(),
                 );
         assetGraph.previousPhasedAssetDeps = updatedPhasedAssetDeps;
+
         await readerWriter.writeAsBytes(
           AssetId(packageGraph.root.name, assetGraphPath),
           assetGraph.serialize(),
