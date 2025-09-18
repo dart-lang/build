@@ -27,8 +27,8 @@ const scriptKernelCachedSuffix = '.cached';
 
 final _lastShortFormatDartVersion = Version(3, 6, 0);
 
-Future<String> generateBuildScript() async {
-  buildLog.doing('Generating the build script.');
+Future<String> generateBuildScript({bool log = true}) async {
+  if (log) buildLog.doing('Generating the build script.');
   final builderFactories = await loadBuilderFactories();
   final library = Library(
     (b) => b.body.addAll([
@@ -169,25 +169,15 @@ Method _main() => Method((b) {
       });
     }),
   );
-  b.optionalParameters.add(
-    Parameter((b) {
-      b.name = 'sendPort';
-      b.type = TypeReference((b) {
-        b.symbol = 'SendPort';
-        b.url = 'dart:isolate';
-        b.isNullable = true;
-      });
-    }),
-  );
   final isolateExitCode = refer(
     'buildProcessState.isolateExitCode',
     'package:build_runner/src/bootstrap/build_process_state.dart',
   );
   b.body = Block.of([
     refer(
-      'buildProcessState.receive',
+      'buildProcessState.read',
       'package:build_runner/src/bootstrap/build_process_state.dart',
-    ).call([refer('sendPort')]).awaited.statement,
+    ).call([]).statement,
     isolateExitCode
         .assign(
           refer(
@@ -198,9 +188,9 @@ Method _main() => Method((b) {
         .statement,
     refer('exitCode', 'dart:io').assign(isolateExitCode).nullChecked.statement,
     refer(
-      'buildProcessState.send',
+      'buildProcessState.write',
       'package:build_runner/src/bootstrap/build_process_state.dart',
-    ).call([refer('sendPort')]).awaited.statement,
+    ).call([]).statement,
   ]);
 });
 

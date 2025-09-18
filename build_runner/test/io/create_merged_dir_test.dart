@@ -80,7 +80,6 @@ void main() {
       graph = await AssetGraph.build(
         phases,
         sources.keys.toSet(),
-        <AssetId>{},
         packageGraph,
         readerWriter,
       );

@@ -34,7 +34,7 @@ class AssetServer {
           await builder.building;
           return Response.notFound('');
         })
-        .add(AssetHandler(builder.reader, rootPackage).handle);
+        .add((request) => _handle(builder, rootPackage, request));
 
     var pipeline = const Pipeline();
     if (options.logRequests) {
@@ -45,5 +45,16 @@ class AssetServer {
 
     shelf_io.serveRequests(server, pipeline.addHandler(cascade.handler));
     return AssetServer._(server);
+  }
+
+  static Future<Response> _handle(
+    BuildRunnerDaemonBuilder builder,
+    String rootPackage,
+    Request request,
+  ) async {
+    final reader = builder.reader;
+    if (reader == null) return Response.notFound('');
+    final handler = AssetHandler(reader, rootPackage);
+    return handler.handle(request);
   }
 }

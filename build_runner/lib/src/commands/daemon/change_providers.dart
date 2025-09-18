@@ -22,14 +22,16 @@ class AutoChangeProviderImpl implements AutoChangeProvider {
 /// Computes changes with a file scan when requested by a call to
 /// [collectChanges].
 class ManualChangeProviderImpl implements ManualChangeProvider {
-  final AssetGraph _assetGraph;
+  final AssetGraph? Function() _assetGraph;
   final AssetTracker _assetTracker;
 
   ManualChangeProviderImpl(this._assetTracker, this._assetGraph);
 
   @override
   Future<List<WatchEvent>> collectChanges() async {
-    final updates = await _assetTracker.collectChanges(_assetGraph);
+    final assetGraph = _assetGraph();
+    if (assetGraph == null) return [];
+    final updates = await _assetTracker.collectChanges(assetGraph);
     return List.of(
       updates.entries.map((entry) => WatchEvent(entry.value, '${entry.key}')),
     );

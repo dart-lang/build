@@ -56,8 +56,6 @@ class WatchCommand implements BuildRunnerCommand {
       testingOverrides: testingOverrides,
     );
     await buildPlan.deleteFilesAndFolders();
-    if (buildPlan.restartIsNeeded) return null;
-
     final terminator = Terminator(testingOverrides.terminateEventStream);
 
     final watcher = Watcher(
@@ -74,7 +72,7 @@ class WatchCommand implements BuildRunnerCommand {
       }),
     );
 
-    return createServeHandler(watcher);
+    return ServeHandler(watcher, buildPlan.packageGraph.root.name);
   }
 }
 

@@ -10,6 +10,7 @@ import 'dart:typed_data';
 
 import 'package:async/async.dart';
 import 'package:build_runner/src/logging/build_log.dart';
+import 'package:io/io.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart' as test;
@@ -62,6 +63,12 @@ class BuildRunnerTester {
     dependencies: fixturePackage.dependencies,
     pathDependencies: fixturePackage.pathDependencies,
   );
+
+  void copyPackage(String package) {
+    final sourcePath = pubspecs.packageConfig[package]!.root.toFilePath();
+    final destinationPath = p.join(tempDirectory.path, package);
+    copyPathSync(sourcePath, destinationPath);
+  }
 
   /// Reads workspace-relative [path], or returns `null` if it does not exist.
   String? read(String path) {
@@ -208,6 +215,9 @@ class BuildRunnerProcess {
       fail('While expecting no output, got `$line`.');
     } on TimeoutException catch (_) {
       // Expected.
+    } on TestFailure catch (_) {
+      // Thrown by `fail`.
+      rethrow;
     } catch (_) {
       fail('While expecting no output, process exited.');
     }
@@ -262,7 +272,10 @@ class BuildRunnerProcess {
 
   /// Kills the process.
   Future<void> kill() async {
+    process.kill(ProcessSignal.sigint);
+    await Future<void>.delayed(const Duration(milliseconds: 100));
     process.kill();
+    _outputs.rest.listen((line) => printOnFailure('Output after kill: $line'));
     await process.exitCode;
   }
 

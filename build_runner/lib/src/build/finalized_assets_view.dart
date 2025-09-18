@@ -72,7 +72,7 @@ bool _shouldSkipNode(
     if (node.id.package != packageGraph.root.name) return true;
   }
 
-  if (node.type == NodeType.internal || node.type == NodeType.glob) return true;
+  if (node.type == NodeType.glob) return true;
   if (node.type == NodeType.generated) {
     if (!node.wasOutput || node.generatedNodeState!.result == false) {
       return true;

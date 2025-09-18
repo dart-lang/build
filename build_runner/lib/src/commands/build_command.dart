@@ -52,12 +52,8 @@ class BuildCommand implements BuildRunnerCommand {
       testingOverrides: testingOverrides,
     );
     await buildPlan.deleteFilesAndFolders();
-    if (buildPlan.restartIsNeeded) {
-      return BuildResult.buildScriptChanged();
-    }
-
-    final build = await BuildSeries.create(buildPlan: buildPlan);
-    final result = await build.run({});
+    final build = BuildSeries(buildPlan);
+    final result = await build.run();
     await build.beforeExit();
     return result;
   }
