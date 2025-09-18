@@ -5,12 +5,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:analyzer/dart/analysis/utilities.dart';
-import 'package:analyzer/dart/ast/ast.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
-import 'package:package_config/package_config.dart';
-import 'package:path/path.dart' as p;
 
 class Depfile {
   final String depfilePath;
@@ -27,39 +23,6 @@ class Depfile {
 
   void addDeps(Iterable<String> inputs) {
     this.inputs.addAll(inputs);
-  }
-
-  void addScriptDeps({
-    required String scriptPath,
-    required PackageConfig packageConfig,
-  }) {
-    final seenPaths = <String>{scriptPath};
-    final nextPaths = [scriptPath];
-
-    while (nextPaths.isNotEmpty) {
-      final nextPath = nextPaths.removeLast();
-      final dirname = p.dirname(nextPath);
-
-      final file = File(nextPath);
-      final content = file.existsSync() ? file.readAsStringSync() : null;
-      if (content == null) continue;
-      final parsed =
-          parseString(content: content, throwIfDiagnostics: false).unit;
-      for (final directive in parsed.directives) {
-        if (directive is! UriBasedDirective) continue;
-        final uri = directive.uri.stringValue;
-        if (uri == null) continue;
-        final parsedUri = Uri.parse(uri);
-        if (parsedUri.scheme == 'dart') continue;
-        final path =
-            parsedUri.scheme == 'package'
-                ? packageConfig.resolve(parsedUri)!.toFilePath()
-                : p.canonicalize(p.join(dirname, parsedUri.path));
-        if (seenPaths.add(path)) nextPaths.add(path);
-      }
-    }
-
-    inputs.addAll(seenPaths.toList()..sort());
   }
 
   bool outputIsUpToDate() {
