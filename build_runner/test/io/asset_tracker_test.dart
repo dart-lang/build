@@ -66,7 +66,7 @@ void main() {
         ),
       );
       assetTracker = AssetTracker(reader, targetGraph);
-      final updates = await assetTracker.collectChanges(assetGraph);
+      var updates = await assetTracker.collectChanges(assetGraph);
       await assetGraph.updateAndInvalidate(
         BuildPhases([]),
         updates,
@@ -75,18 +75,18 @@ void main() {
         reader,
       );
       // We should see no changes initially other than new sdk sources
-      expect(
-        updates.entries.where(
-          (e) => e.key.package == r'$sdk' && e.value == ChangeType.ADD,
-        ),
-        isEmpty,
-      );
+      updates = updates.rebuild((b) {
+        b.removeWhere(
+          (id, type) => id.package == r'$sdk' && type == ChangeType.ADD,
+        );
+      });
+      expect(updates, isEmpty);
     });
 
     test('Collects file edits', () async {
       File(p.join(d.sandbox, 'a', 'web', 'a.txt')).writeAsStringSync('goodbye');
 
-      expect(await assetTracker.collectChanges(assetGraph), {
+      expect((await assetTracker.collectChanges(assetGraph)).asMap(), {
         AssetId('a', 'web/a.txt'): ChangeType.MODIFY,
       });
     });
@@ -94,7 +94,7 @@ void main() {
     test('Collects new files', () async {
       File(p.join(d.sandbox, 'a', 'web', 'b.txt')).writeAsStringSync('yo!');
 
-      expect(await assetTracker.collectChanges(assetGraph), {
+      expect((await assetTracker.collectChanges(assetGraph)).asMap(), {
         AssetId('a', 'web/b.txt'): ChangeType.ADD,
       });
     });
@@ -102,7 +102,7 @@ void main() {
     test('Collects deleted files', () async {
       File(p.join(d.sandbox, 'a', 'web', 'a.txt')).deleteSync();
 
-      expect(await assetTracker.collectChanges(assetGraph), {
+      expect((await assetTracker.collectChanges(assetGraph)).asMap(), {
         AssetId('a', 'web/a.txt'): ChangeType.REMOVE,
       });
     });
