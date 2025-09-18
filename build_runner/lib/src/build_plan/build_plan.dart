@@ -2,10 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:io';
-
 import 'package:build/build.dart';
-import 'package:build/experiments.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:watcher/watcher.dart';
 
@@ -163,20 +160,7 @@ class BuildPlan {
         buildLog.fullBuildBecause(FullBuildReason.incompatibleAssetGraph);
         buildIsNeeded = true;
       } else {
-        final buildPhasesChanged =
-            buildPhases.digest != previousAssetGraph.buildPhasesDigest;
-        final pkgVersionsChanged =
-            previousAssetGraph.packageLanguageVersions !=
-            packageGraph.languageVersions;
-        final enabledExperimentsChanged =
-            previousAssetGraph.enabledExperiments != enabledExperiments.build();
-        if (buildPhasesChanged ||
-            pkgVersionsChanged ||
-            enabledExperimentsChanged ||
-            !isSameSdkVersion(
-              previousAssetGraph.dartVersion,
-              Platform.version,
-            )) {
+        if (buildPhases.digest != previousAssetGraph.buildPhasesDigest) {
           buildLog.fullBuildBecause(FullBuildReason.incompatibleBuild);
           buildIsNeeded = true;
           // Mark old outputs for deletion.
@@ -373,6 +357,3 @@ class BuildPlan {
     }
   }
 }
-
-bool isSameSdkVersion(String? thisVersion, String? thatVersion) =>
-    thisVersion?.split(' ').first == thatVersion?.split(' ').first;

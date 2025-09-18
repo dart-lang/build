@@ -8,7 +8,7 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 31;
+const _version = 32;
 
 /// Deserializes an [AssetGraph] from a [Map].
 ///
@@ -29,15 +29,6 @@ AssetGraph? deserializeAssetGraph(List<int> bytes) {
     ),
   );
 
-  final packageLanguageVersions = {
-    for (final entry
-        in (serializedGraph['packageLanguageVersions'] as Map<String, dynamic>)
-            .entries)
-      entry.key:
-          entry.value != null
-              ? LanguageVersion.parse(entry.value as String)
-              : null,
-  };
   final graph = AssetGraph._fromSerialized(
     _deserializeDigest(serializedGraph['buildActionsDigest'] as String)!,
     serializers.deserialize(
@@ -50,9 +41,6 @@ AssetGraph? deserializeAssetGraph(List<int> bytes) {
           specifiedType: const FullType(BuiltList, [FullType(Digest)]),
         )
         as BuiltList<Digest>,
-    serializedGraph['dart_version'] as String,
-    packageLanguageVersions.build(),
-    BuiltList<String>.from(serializedGraph['enabledExperiments'] as List),
   );
 
   graph.previousBuildTriggersDigest = _deserializeDigest(
@@ -104,15 +92,9 @@ List<int> serializeAssetGraph(AssetGraph graph) {
   final result = <String, dynamic>{
     'version': _version,
     'ids': identityAssetIdSerializer.serializedObjects,
-    'dart_version': graph.dartVersion,
     'nodes': nodes,
     'buildTriggersDigest': _serializeDigest(graph.previousBuildTriggersDigest),
     'buildActionsDigest': _serializeDigest(graph.buildPhasesDigest),
-    'packageLanguageVersions':
-        graph.packageLanguageVersions
-            .map((pkg, version) => MapEntry(pkg, version?.toString()))
-            .toMap(),
-    'enabledExperiments': graph.enabledExperiments.toList(),
     'postProcessOutputs': serializers.serialize(
       graph._postProcessBuildStepOutputs,
       specifiedType: postProcessBuildStepOutputsFullType,

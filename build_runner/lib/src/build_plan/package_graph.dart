@@ -5,7 +5,6 @@
 import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:built_collection/built_collection.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
@@ -191,13 +190,6 @@ class PackageGraph implements AssetPathProvider {
 
   /// Shorthand to get a package by name.
   PackageNode? operator [](String packageName) => allPackages[packageName];
-
-  /// Map from package name to package language version.
-  BuiltMap<String, LanguageVersion?> get languageVersions =>
-      {
-        for (final package in allPackages.values)
-          package.name: package.languageVersion,
-      }.build();
 
   @override
   String pathFor(AssetId id) {

@@ -4,15 +4,12 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:build/experiments.dart' as experiments_zone;
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/serializer.dart';
 import 'package:crypto/crypto.dart';
 import 'package:meta/meta.dart';
-import 'package:package_config/package_config.dart';
 import 'package:watcher/watcher.dart';
 
 import '../../build_plan/build_phases.dart';
@@ -40,18 +37,6 @@ class AssetGraph implements GeneratedAssetHider {
   /// the new [BuildPhase]s and throw away the graph if it doesn't.
   // TODO: remove?
   final Digest buildPhasesDigest;
-
-  /// The [Platform.version] this graph was created with.
-  // TODO: remove?
-  final String dartVersion;
-
-  /// The Dart language experiments that were enabled when this graph was
-  /// originally created from the [build] constructor.
-  // TODO: remove?
-  final BuiltList<String> enabledExperiments;
-
-  // TODO: remove?
-  final BuiltMap<String, LanguageVersion?> packageLanguageVersions;
 
   /// The result of [computeOutputs] for reuse, or `null` if outputs have not
   /// been computed.
@@ -87,12 +72,8 @@ class AssetGraph implements GeneratedAssetHider {
   /// clean build.
   PhasedAssetDeps? previousPhasedAssetDeps;
 
-  AssetGraph._(
-    BuildPhases buildPhases,
-    this.dartVersion,
-    this.packageLanguageVersions,
-    this.enabledExperiments,
-  ) : buildPhasesDigest = buildPhases.digest,
+  AssetGraph._(BuildPhases buildPhases)
+    : buildPhasesDigest = buildPhases.digest,
       inBuildPhasesOptionsDigests = buildPhases.inBuildPhasesOptionsDigests,
       postBuildActionsOptionsDigests =
           buildPhases.postBuildActionsOptionsDigests,
@@ -103,18 +84,12 @@ class AssetGraph implements GeneratedAssetHider {
     this.buildPhasesDigest,
     this.inBuildPhasesOptionsDigests,
     this.postBuildActionsOptionsDigests,
-    this.dartVersion,
-    this.packageLanguageVersions,
-    this.enabledExperiments,
   ) : _nodesByPackage = {},
       _postProcessBuildStepOutputs = {};
 
   AssetGraph._with({
     required Map<String, Map<String, AssetNode>> nodesByPackage,
     required this.buildPhasesDigest,
-    required this.dartVersion,
-    required this.enabledExperiments,
-    required this.packageLanguageVersions,
     required Map<AssetId, Set<AssetId>>? outputs,
     required Map<String, Map<PostProcessBuildStepId, Set<AssetId>>>
     postProcessBuildStepOutputs,
@@ -131,9 +106,6 @@ class AssetGraph implements GeneratedAssetHider {
   AssetGraph copyWith({String? dartVersion}) => AssetGraph._with(
     nodesByPackage: _nodesByPackage,
     buildPhasesDigest: buildPhasesDigest,
-    dartVersion: dartVersion ?? this.dartVersion,
-    enabledExperiments: enabledExperiments,
-    packageLanguageVersions: packageLanguageVersions,
     outputs: _outputs,
     postProcessBuildStepOutputs: _postProcessBuildStepOutputs,
     previousBuildTriggersDigest: previousBuildTriggersDigest,
@@ -173,12 +145,7 @@ class AssetGraph implements GeneratedAssetHider {
     PackageGraph packageGraph,
     ReaderWriter readerWriter,
   ) async {
-    final graph = AssetGraph._(
-      buildPhases,
-      Platform.version,
-      packageGraph.languageVersions,
-      experiments_zone.enabledExperiments.build(),
-    );
+    final graph = AssetGraph._(buildPhases);
     final placeholders = graph._addPlaceHolderNodes(packageGraph);
     graph._addSources(sources);
     graph._addOutputsForSources(
