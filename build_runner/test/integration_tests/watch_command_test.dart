@@ -134,7 +134,6 @@ targets:
     await watch.kill();
 
     // Now with --output.
-    await watch.kill();
     tester.write('root_pkg/web/a.txt', 'updated');
     watch = await tester.start(
       'root_pkg',

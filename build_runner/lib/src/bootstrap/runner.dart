@@ -2,11 +2,14 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:built_collection/built_collection.dart';
 
 import 'build_process_state.dart';
+
+final List<StreamSubscription<Object>> subscriptions = [];
 
 // TODO(davidmorgan): pass state.
 // TODO(davidmorgan): handle uncaught errors--in `run` method?
@@ -18,12 +21,19 @@ class Runner {
       ...arguments,
     ], mode: ProcessStartMode.inheritStdio);
 
-    ProcessSignal.sigint.watch().listen((_) {
+    final subscription = ProcessSignal.sigint.watch().listen((_) {
       process.kill();
     });
+    subscriptions.add(subscription);
 
     final result = await process.exitCode;
     buildProcessState.read();
     return result;
+  }
+
+  static void close() {
+    for (final subscription in subscriptions) {
+      subscription.cancel();
+    }
   }
 }
