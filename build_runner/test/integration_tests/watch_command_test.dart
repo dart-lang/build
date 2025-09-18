@@ -77,31 +77,36 @@ void main() async {
     output = await tester.run('root_pkg', 'dart run build_runner build');
     expect(output, contains('wrote 0 outputs'));
 
-    // Builder config change, add a file.
-    /*tester.write('root_pkg/build.yaml', '# new file, nothing here');
-    await watch.expect('Terminating builds due to root_pkg:build.yaml update');
-    await watch.expect(BuildLog.successPattern);
-    expect(tester.read('root_pkg/web/a.txt.copy'), 'updated');
+    // Builder config change, add a file but it has no effect.
+    tester.write('root_pkg/build.yaml', '# new file, nothing here');
+    await watch.expectNoOutput(const Duration(seconds: 1));
 
-    // Builder config change, update a file.
+    // Builder config change that does change options.
+    tester.write('root_pkg/build.yaml', r'''
+targets:
+  $default:
+    builders:
+      builder_pkg:test_builder:
+        options:
+          some_option: "any value"
+''');
+    await watch.expect('wrote 1 output');
+
+    //await watch.expect('Terminating builds due to root_pkg:build.yaml update');
+    //await watch.expect(BuildLog.successPattern);
+    //expect(tester.read('root_pkg/web/a.txt.copy'), 'updated');
+
+    // Builder config change, update a file but it has no effect.
     tester.update('root_pkg/build.yaml', (yaml) => '$yaml\n');
-    await watch.expect('Terminating builds due to root_pkg:build.yaml update');
-    await watch.expect(BuildLog.successPattern);
-    expect(tester.read('root_pkg/web/a.txt.copy'), 'updated');
+    await watch.expectNoOutput(const Duration(seconds: 1));
 
-    // Builder config change in dependency.
+    // Builder config change in dependency but it has no effect.
     tester.write('other_pkg/build.yaml', '# new file, nothing here');
-    await watch.expect('Terminating builds due to other_pkg:build.yaml update');
-    await watch.expect(BuildLog.successPattern);
-    expect(tester.read('root_pkg/web/a.txt.copy'), 'updated');
+    await watch.expectNoOutput(const Duration(seconds: 1));
 
-    // Builder config change in root overriding dependency.
+    // Builder config change in root overriding dependency but it has no effect.
     tester.write('root_pkg/other_pkg.build.yaml', '# new file, nothing here');
-    await watch.expect(
-      'Terminating builds due to root_pkg:other_pkg.build.yaml update',
-    );
-    await watch.expect(BuildLog.successPattern);
-    expect(tester.read('root_pkg/web/a.txt.copy'), 'updated');*/
+    await watch.expectNoOutput(const Duration(seconds: 1));
 
     // State on disk is updated so `build` knows to do nothing.
     output = await tester.run('root_pkg', 'dart run build_runner build');
