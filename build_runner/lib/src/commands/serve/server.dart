@@ -263,7 +263,7 @@ window.\$dartLoader.forceLoadModule('packages/build_runner/src/commands/serve/$s
 ''';
 
 class AssetHandler {
-  final Future<FinalizedReader?> Function() _reader;
+  final Future<FinalizedReader> Function() _reader;
   final String _rootPackage;
 
   final _typeResolver = MimeTypeResolver();
@@ -291,7 +291,6 @@ class AssetHandler {
     bool fallbackToDirectoryList = false,
   }) async {
     final reader = await _reader();
-    if (reader == null) return shelf.Response.notFound('');
 
     // Use the first of [assetIds] that exists.
     AssetId? assetId;
@@ -372,7 +371,6 @@ class AssetHandler {
     final directoryPath = p.url.dirname(from.path);
     final glob = p.url.join(directoryPath, '*');
     final reader = await _reader();
-    if (reader == null) return '';
 
     final result =
         await reader.assetFinder.find(Glob(glob)).map((a) => a.path).toList();

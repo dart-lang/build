@@ -84,6 +84,7 @@ void main() {
 
       reader = FinalizedReader(
         readerWriter: readerWriter,
+        assetGraph: assetGraph,
         optionalOutputTracker: optionalOutputTracker,
       );
       expect(await reader.canRead(notDeleted.id), true);
@@ -117,6 +118,7 @@ void main() {
       );
       reader = FinalizedReader(
         readerWriter: readerWriter,
+        assetGraph: assetGraph,
         optionalOutputTracker: optionalOutputTracker,
       );
       expect(
@@ -134,6 +136,7 @@ void main() {
       );
       reader = FinalizedReader(
         readerWriter: readerWriter,
+        assetGraph: assetGraph,
         optionalOutputTracker: optionalOutputTracker,
       );
 

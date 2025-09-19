@@ -12,14 +12,11 @@ import 'package:build_runner/src/build/asset_graph/graph.dart';
 import 'package:build_runner/src/build/asset_graph/node.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
 import 'package:build_runner/src/build/build_result.dart';
-import 'package:build_runner/src/build/optional_output_tracker.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/package_graph.dart';
-import 'package:build_runner/src/build_plan/target_graph.dart';
 import 'package:build_runner/src/commands/serve/server.dart';
 import 'package:build_runner/src/commands/watch/watcher.dart';
 import 'package:build_runner/src/io/finalized_reader.dart';
-import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
@@ -108,8 +105,6 @@ void main() {
   late MockWatchImpl watchImpl;
   late PackageGraph packageGraph;
   late AssetGraph assetGraph;
-  late TargetGraph targetGraph;
-  late BuildPhases buildPhases;
   late FinalizedReader finalizedReader;
 
   setUp(() async {
@@ -126,18 +121,10 @@ void main() {
     );
     watchImpl = MockWatchImpl(packageGraph, assetGraph);
     serveHandler = ServeHandler(watchImpl);
-    targetGraph = await TargetGraph.forPackageGraph(packageGraph: packageGraph);
-    buildPhases = BuildPhases([]);
-    final optionalOutputTracker = OptionalOutputTracker(
-      assetGraph,
-      targetGraph,
-      BuiltSet(),
-      BuiltSet(),
-      buildPhases,
-    );
     finalizedReader = FinalizedReader(
       readerWriter: readerWriter,
-      optionalOutputTracker: optionalOutputTracker,
+      assetGraph: assetGraph,
+      optionalOutputTracker: null,
     );
     watchImpl.addFutureResult(
       Future.value(

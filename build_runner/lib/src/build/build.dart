@@ -121,6 +121,7 @@ class Build {
 
   late final _finalizedReader = FinalizedReader(
     readerWriter: readerWriter,
+    assetGraph: assetGraph,
     optionalOutputTracker: _optionalOutputTracker,
   );
 

@@ -8,6 +8,7 @@ import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
+import '../build/asset_graph/graph.dart';
 import '../build/asset_graph/node.dart';
 import '../build/optional_output_tracker.dart';
 import 'asset_finder.dart';
@@ -21,19 +22,24 @@ class FinalizedReader {
   late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);
 
   final ReaderWriter? _readerWriter;
+  final AssetGraph? _assetGraph;
   final OptionalOutputTracker? optionalOutputTracker;
 
-  FinalizedReader.empty() : _readerWriter = null, optionalOutputTracker = null;
+  FinalizedReader.empty()
+    : _readerWriter = null,
+      _assetGraph = null,
+      optionalOutputTracker = null;
 
   FinalizedReader({
     required ReaderWriter readerWriter,
+    required AssetGraph assetGraph,
     required this.optionalOutputTracker,
-  }) : _readerWriter = readerWriter;
+  }) : _assetGraph = assetGraph,
+       _readerWriter = readerWriter;
 
   /// Returns a reason why [id] is not readable, or null if it is readable.
   Future<UnreadableReason?> unreadableReason(AssetId id) async {
-    final assetGraph = optionalOutputTracker?.assetGraph;
-
+    final assetGraph = _assetGraph;
     if (assetGraph == null || !assetGraph.contains(id)) {
       return UnreadableReason.notFound;
     }
@@ -78,7 +84,7 @@ class FinalizedReader {
 
   Stream<AssetId> _findAssets(Glob glob, String? _) async* {
     final potentialNodes =
-        optionalOutputTracker!.assetGraph
+        _assetGraph!
             .packageNodes(_readerWriter!.rootPackage)
             .where((n) => glob.matches(n.id.path))
             .toList();
@@ -96,7 +102,7 @@ class FinalizedReader {
   ///
   /// Note that [id] must exist in the asset graph.
   FutureOr<Digest> _ensureDigest(AssetId id) {
-    final assetGraph = optionalOutputTracker!.assetGraph;
+    final assetGraph = _assetGraph!;
     final readerWriter = _readerWriter!;
     final node = assetGraph.get(id)!;
     if (node.digest != null) return node.digest!;

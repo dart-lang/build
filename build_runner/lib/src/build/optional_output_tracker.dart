@@ -33,14 +33,14 @@ import 'build_dirs.dart';
 // TODO(davidmorgan): can this be removed?
 class OptionalOutputTracker {
   final _checkedOutputs = <AssetId, bool>{};
-  final AssetGraph assetGraph;
+  final AssetGraph _assetGraph;
   final TargetGraph _targetGraph;
   final BuiltSet<String> _buildDirs;
   final BuiltSet<BuildFilter> _buildFilters;
   final BuildPhases _buildPhases;
 
   OptionalOutputTracker(
-    this.assetGraph,
+    this._assetGraph,
     this._targetGraph,
     this._buildDirs,
     this._buildFilters,
@@ -58,7 +58,7 @@ class OptionalOutputTracker {
     if (currentlyChecking.contains(output)) return false;
     currentlyChecking.add(output);
 
-    final node = assetGraph.get(output)!;
+    final node = _assetGraph.get(output)!;
     if (node.type != NodeType.generated) return true;
     final nodeConfiguration = node.generatedNodeConfiguration!;
     final phase = _buildPhases[nodeConfiguration.phaseNumber];
@@ -75,10 +75,10 @@ class OptionalOutputTracker {
     return _checkedOutputs.putIfAbsent(
       output,
       () =>
-          (assetGraph.computeOutputs()[node.id] ?? <AssetId>{}).any(
+          (_assetGraph.computeOutputs()[node.id] ?? <AssetId>{}).any(
             (o) => isRequired(o, currentlyChecking),
           ) ||
-          assetGraph
+          _assetGraph
               .outputsForPhase(output.package, nodeConfiguration.phaseNumber)
               .where(
                 (n) =>

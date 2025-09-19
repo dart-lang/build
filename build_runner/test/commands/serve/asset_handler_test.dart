@@ -8,12 +8,9 @@ import 'package:build/build.dart';
 import 'package:build_runner/src/build/asset_graph/graph.dart';
 import 'package:build_runner/src/build/asset_graph/node.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
-import 'package:build_runner/src/build/optional_output_tracker.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
-import 'package:build_runner/src/build_plan/target_graph.dart';
 import 'package:build_runner/src/commands/serve/server.dart';
 import 'package:build_runner/src/io/finalized_reader.dart';
-import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
@@ -24,10 +21,10 @@ void main() {
   late AssetHandler handler;
   late FinalizedReader reader;
   late InternalTestReaderWriter readerWriter;
-  late AssetGraph graph;
+  late AssetGraph assetGraph;
 
   setUp(() async {
-    graph = await AssetGraph.build(
+    assetGraph = await AssetGraph.build(
       BuildPhases([]),
       <AssetId>{},
       <AssetId>{},
@@ -35,17 +32,10 @@ void main() {
       InternalTestReaderWriter(),
     );
     readerWriter = InternalTestReaderWriter();
-    final packageGraph = buildPackageGraph({rootPackage('a'): []});
-    final optionalOutputTracker = OptionalOutputTracker(
-      graph,
-      await TargetGraph.forPackageGraph(packageGraph: packageGraph),
-      BuiltSet(),
-      BuiltSet(),
-      BuildPhases([]),
-    );
     reader = FinalizedReader(
       readerWriter: readerWriter,
-      optionalOutputTracker: optionalOutputTracker,
+      assetGraph: assetGraph,
+      optionalOutputTracker: null,
     );
     handler = AssetHandler(() async => reader, 'a');
   });
@@ -60,7 +50,7 @@ void main() {
         );
       });
     }
-    graph.add(node);
+    assetGraph.add(node);
     readerWriter.testing.writeString(node.id, content);
   }
 
@@ -138,7 +128,7 @@ void main() {
   });
 
   test('Fails request for failed outputs', () async {
-    graph.add(
+    assetGraph.add(
       AssetNode.generated(
         AssetId('a', 'web/main.ddc.js'),
         phaseNumber: 0,
