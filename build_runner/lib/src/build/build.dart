@@ -25,6 +25,7 @@ import '../build_plan/target_graph.dart';
 import '../build_plan/testing_overrides.dart';
 import '../constants.dart';
 import '../io/create_merged_dir.dart';
+import '../io/finalized_reader.dart';
 import '../io/reader_writer.dart';
 import '../logging/build_log.dart';
 import '../logging/timed_activities.dart';
@@ -370,11 +371,21 @@ class Build {
         (Future<Iterable<AssetId>> lazyOuts) async =>
             outputs.addAll(await lazyOuts),
       );
+
+      final finalizedReader = FinalizedReader(
+        readerWriter,
+        assetGraph,
+        targetGraph,
+        buildPhases,
+        packageGraph.root.name,
+      );
+
       // Assume success, `_assetGraph.failedOutputs` will be checked later.
       return BuildResult(
         BuildStatus.success,
         outputs,
         performance: performanceTracker,
+        finalizedReader: finalizedReader,
       );
     });
   }

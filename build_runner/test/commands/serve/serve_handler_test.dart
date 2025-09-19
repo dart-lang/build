@@ -14,10 +14,8 @@ import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.da
 import 'package:build_runner/src/build/build_result.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/package_graph.dart';
-import 'package:build_runner/src/build_plan/target_graph.dart';
 import 'package:build_runner/src/commands/serve/server.dart';
 import 'package:build_runner/src/commands/watch/watcher.dart';
-import 'package:build_runner/src/io/finalized_reader.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
@@ -118,20 +116,8 @@ void main() {
       packageGraph,
       readerWriter,
     );
-    watchImpl = MockWatchImpl(
-      Future.value(
-        FinalizedReader(
-          readerWriter,
-          assetGraph,
-          await TargetGraph.forPackageGraph(packageGraph: packageGraph),
-          BuildPhases([]),
-          'a',
-        ),
-      ),
-      packageGraph,
-      assetGraph,
-    );
-    serveHandler = createServeHandler(watchImpl);
+    watchImpl = MockWatchImpl(packageGraph, assetGraph);
+    serveHandler = ServeHandler(watchImpl);
     watchImpl.addFutureResult(
       Future.value(BuildResult(BuildStatus.success, [])),
     );
@@ -463,7 +449,7 @@ void main() {
           onConnect(serverChannel, '');
         };
 
-        handler = BuildUpdatesWebSocketHandler(watchImpl, mockHandlerFactory);
+        handler = BuildUpdatesWebSocketHandler(mockHandlerFactory);
 
         (serverChannel1, clientChannel1) = createFakes();
         (serverChannel2, clientChannel2) = createFakes();
@@ -607,9 +593,10 @@ class MockWatchImpl implements Watcher {
   Future<BuildResult>? _currentBuild;
 
   @override
-  Future<BuildResult>? get currentBuild => _currentBuild;
+  Future<BuildResult> get currentBuildResult => _currentBuild!;
+
   @override
-  set currentBuild(Future<BuildResult>? _) =>
+  set currentBuildResult(Future<BuildResult>? _) =>
       throw UnsupportedError('unsupported!');
 
   final _futureBuildResultsController = StreamController<Future<BuildResult>>();
@@ -624,14 +611,11 @@ class MockWatchImpl implements Watcher {
   @override
   final PackageGraph packageGraph;
 
-  @override
-  final Future<FinalizedReader> finalizedReader;
-
   void addFutureResult(Future<BuildResult> result) {
     _futureBuildResultsController.add(result);
   }
 
-  MockWatchImpl(this.finalizedReader, this.packageGraph, this.assetGraph) {
+  MockWatchImpl(this.packageGraph, this.assetGraph) {
     final firstBuild = Completer<BuildResult>();
     _currentBuild = firstBuild.future;
     _futureBuildResultsController.stream.listen((futureBuildResult) {

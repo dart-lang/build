@@ -74,7 +74,7 @@ class WatchCommand implements BuildRunnerCommand {
       }),
     );
 
-    return createServeHandler(watcher);
+    return ServeHandler(watcher);
   }
 }
 

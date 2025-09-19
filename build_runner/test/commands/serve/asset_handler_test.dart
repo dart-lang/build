@@ -41,7 +41,7 @@ void main() {
       BuildPhases([]),
       'a',
     );
-    handler = AssetHandler(reader, 'a');
+    handler = AssetHandler(() async => reader, 'a');
   });
 
   void addAsset(String id, String content, {bool deleted = false}) {

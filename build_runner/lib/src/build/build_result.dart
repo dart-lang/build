@@ -1,11 +1,11 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:meta/meta.dart';
 
+import '../io/finalized_reader.dart';
 import 'performance_tracker.dart';
 
 /// The result of an individual build, this may be an incremental build or
@@ -20,6 +20,9 @@ class BuildResult {
   /// All outputs created/updated during this build.
   final List<AssetId> outputs;
 
+  // The build output.
+  final FinalizedReader? finalizedReader;
+
   /// The [BuildPerformance] broken out by build action, may be `null`.
   @experimental
   final BuildPerformance? performance;
@@ -27,6 +30,7 @@ class BuildResult {
   BuildResult(
     this.status,
     List<AssetId> outputs, {
+    this.finalizedReader,
     this.performance,
     FailureType? failureType,
   }) : outputs = List.unmodifiable(outputs),
@@ -67,9 +71,4 @@ class FailureType {
   static final buildScriptChanged = FailureType._(75);
   final int exitCode;
   FailureType._(this.exitCode);
-}
-
-abstract class BuildState {
-  Future<BuildResult>? get currentBuild;
-  Stream<BuildResult> get buildResults;
 }
