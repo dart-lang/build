@@ -8,14 +8,15 @@ import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:watcher/watcher.dart';
 
-import '../bootstrap/build_script_updates.dart';
 import '../build_plan/build_directory.dart';
 import '../build_plan/build_filter.dart';
 import '../build_plan/build_plan.dart';
+import '../io/asset_tracker.dart';
+import '../io/build_output_reader.dart';
 import '../io/filesystem_cache.dart';
-import '../io/finalized_reader.dart';
 import '../io/reader_writer.dart';
 import 'asset_graph/graph.dart';
+import 'asset_graph/node.dart';
 import 'build.dart';
 import 'build_result.dart';
 
@@ -32,40 +33,85 @@ import 'build_result.dart';
 /// this serialized state is not actually used: the `AssetGraph` instance
 /// already in memory is used directly.
 class BuildSeries {
-  final BuildPlan buildPlan;
+  final BuildPlan _buildPlan;
 
-  final AssetGraph assetGraph;
-  final BuildScriptUpdates? buildScriptUpdates;
+  final AssetGraph _assetGraph;
 
-  final FinalizedReader finalizedReader;
-  final ReaderWriter readerWriter;
-  final ResourceManager resourceManager = ResourceManager();
+  final ReaderWriter _readerWriter;
+  final ResourceManager _resourceManager = ResourceManager();
 
   /// For the first build only, updates from the previous serialized build
   /// state.
   ///
   /// Null after the first build, or if there was no serialized build state, or
   /// if the serialized build state was discarded.
-  BuiltMap<AssetId, ChangeType>? updatesFromLoad;
+  BuiltMap<AssetId, ChangeType>? _updatesFromLoad;
+
+  final StreamController<BuildResult> _buildResultsController =
+      StreamController.broadcast();
 
   /// Whether the next build is the first build.
   bool firstBuild = true;
 
-  Future<void> beforeExit() => resourceManager.beforeExit();
+  BuildSeries._({
+    required BuildPlan buildPlan,
+    required AssetGraph assetGraph,
+    required ReaderWriter readerWriter,
+    required BuiltMap<AssetId, ChangeType>? updatesFromLoad,
+  }) : _buildPlan = buildPlan,
+       _assetGraph = assetGraph,
+       _readerWriter = readerWriter,
+       _updatesFromLoad = updatesFromLoad;
 
-  BuildSeries._(
-    this.buildPlan,
-    this.assetGraph,
-    this.buildScriptUpdates,
-    this.finalizedReader,
-    this.updatesFromLoad,
-  ) : readerWriter = buildPlan.readerWriter.copyWith(
-        generatedAssetHider: assetGraph,
-        cache:
-            buildPlan.buildOptions.enableLowResourcesMode
-                ? const PassthroughFilesystemCache()
-                : InMemoryFilesystemCache(),
-      );
+  factory BuildSeries(BuildPlan buildPlan) {
+    final assetGraph = buildPlan.takeAssetGraph();
+    final readerWriter = buildPlan.readerWriter.copyWith(
+      generatedAssetHider: assetGraph,
+      cache:
+          buildPlan.buildOptions.enableLowResourcesMode
+              ? const PassthroughFilesystemCache()
+              : InMemoryFilesystemCache(),
+    );
+    return BuildSeries._(
+      buildPlan: buildPlan,
+      assetGraph: assetGraph,
+      readerWriter: readerWriter,
+      updatesFromLoad: buildPlan.updates,
+    );
+  }
+
+  /// Broadcast stream of build results.
+  Stream<BuildResult> get buildResults => _buildResultsController.stream;
+  Future<BuildResult>? _currentBuildResult;
+
+  bool _hasBuildScriptChanged(Set<AssetId> changes) {
+    if (_buildPlan.buildOptions.skipBuildScriptCheck) return false;
+    if (_buildPlan.buildScriptUpdates == null) return true;
+    return _buildPlan.buildScriptUpdates!.hasBeenUpdated(changes);
+  }
+
+  AssetNode? lookupNode(AssetId id) {
+    return _assetGraph.contains(id) ? _assetGraph.get(id) : null;
+  }
+
+  Future<List<WatchEvent>> checkForChanges() async {
+    final updates = await AssetTracker(
+      _buildPlan.readerWriter,
+      _buildPlan.targetGraph,
+    ).collectChanges(_assetGraph);
+    return List.of(
+      updates.entries.map((entry) => WatchEvent(entry.value, '${entry.key}')),
+    );
+  }
+
+  /// If a build is running, the build result when it's done.
+  ///
+  /// If no build has ever run, returns the first build result when it's
+  /// available.
+  ///
+  /// If a build has run, the most recent build result.
+  Future<BuildResult> get currentBuildResult =>
+      _currentBuildResult ?? buildResults.first;
 
   /// Runs a single build.
   ///
@@ -80,50 +126,47 @@ class BuildSeries {
     BuiltSet<BuildDirectory>? buildDirs,
     BuiltSet<BuildFilter>? buildFilters,
   }) async {
-    buildDirs ??= buildPlan.buildOptions.buildDirs;
-    buildFilters ??= buildPlan.buildOptions.buildFilters;
+    if (_hasBuildScriptChanged(updates.keys.toSet())) {
+      return BuildResult(
+        status: BuildStatus.failure,
+        failureType: FailureType.buildScriptChanged,
+        buildOutputReader: BuildOutputReader(
+          buildPlan: _buildPlan,
+          readerWriter: _readerWriter,
+          assetGraph: _assetGraph,
+        ),
+      );
+    }
+
+    buildDirs ??= _buildPlan.buildOptions.buildDirs;
+    buildFilters ??= _buildPlan.buildOptions.buildFilters;
     if (firstBuild) {
-      if (updatesFromLoad != null) {
-        updates = updatesFromLoad!.toMap()..addAll(updates);
-        updatesFromLoad = null;
+      if (_updatesFromLoad != null) {
+        updates = _updatesFromLoad!.toMap()..addAll(updates);
+        _updatesFromLoad = null;
       }
     } else {
-      if (updatesFromLoad != null) {
+      if (_updatesFromLoad != null) {
         throw StateError('Only first build can have updates from load.');
       }
     }
 
-    finalizedReader.reset(BuildDirectory.buildPaths(buildDirs), buildFilters);
     final build = Build(
-      buildPlan: buildPlan.copyWith(
+      buildPlan: _buildPlan.copyWith(
         buildDirs: buildDirs,
         buildFilters: buildFilters,
       ),
-      assetGraph: assetGraph,
-      readerWriter: readerWriter,
-      resourceManager: resourceManager,
+      assetGraph: _assetGraph,
+      readerWriter: _readerWriter,
+      resourceManager: _resourceManager,
     );
     if (firstBuild) firstBuild = false;
-    final result = await build.run(updates);
+
+    _currentBuildResult = build.run(updates);
+    final result = await _currentBuildResult!;
+    _buildResultsController.add(result);
     return result;
   }
 
-  static Future<BuildSeries> create({required BuildPlan buildPlan}) async {
-    final assetGraph = buildPlan.takeAssetGraph();
-    final finalizedReader = FinalizedReader(
-      buildPlan.readerWriter.copyWith(generatedAssetHider: assetGraph),
-      assetGraph,
-      buildPlan.targetGraph,
-      buildPlan.buildPhases,
-      buildPlan.packageGraph.root.name,
-    );
-    final build = BuildSeries._(
-      buildPlan,
-      assetGraph,
-      buildPlan.buildScriptUpdates,
-      finalizedReader,
-      buildPlan.updates,
-    );
-    return build;
-  }
+  Future<void> beforeExit() => _resourceManager.beforeExit();
 }

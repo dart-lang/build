@@ -10,10 +10,8 @@ import 'package:built_collection/built_collection.dart';
 import 'package:logging/logging.dart';
 import 'package:watcher/watcher.dart';
 
-import '../build/build_result.dart';
-import '../build/finalized_assets_view.dart';
 import '../io/reader_writer.dart';
-import 'build_directory.dart';
+import 'build_phases.dart';
 import 'builder_application.dart';
 import 'package_graph.dart';
 
@@ -21,16 +19,10 @@ import 'package_graph.dart';
 class TestingOverrides {
   final BuiltList<BuilderApplication>? builderApplications;
   final BuiltMap<String, BuildConfig>? buildConfig;
+  final BuildPhases? buildPhases;
   final Duration? debounceDelay;
   final BuiltList<String>? defaultRootPackageSources;
   final DirectoryWatcher Function(String)? directoryWatcherFactory;
-  final Future<BuildResult> Function(
-    BuildResult,
-    FinalizedAssetsView,
-    ReaderWriter readerWriter,
-    BuiltSet<BuildDirectory>,
-  )?
-  finalizeBuild;
   final void Function(LogRecord)? onLog;
   final PackageGraph? packageGraph;
   final ReaderWriter? readerWriter;
@@ -41,10 +33,10 @@ class TestingOverrides {
   const TestingOverrides({
     this.builderApplications,
     this.buildConfig,
+    this.buildPhases,
     this.debounceDelay,
     this.defaultRootPackageSources,
     this.directoryWatcherFactory,
-    this.finalizeBuild,
     this.onLog,
     this.packageGraph,
     this.readerWriter,
@@ -60,10 +52,10 @@ class TestingOverrides {
   }) => TestingOverrides(
     builderApplications: builderApplications ?? this.builderApplications,
     buildConfig: buildConfig ?? this.buildConfig,
+    buildPhases: buildPhases,
     debounceDelay: debounceDelay,
     defaultRootPackageSources: defaultRootPackageSources,
     directoryWatcherFactory: directoryWatcherFactory,
-    finalizeBuild: finalizeBuild,
     onLog: onLog,
     packageGraph: packageGraph ?? this.packageGraph,
     readerWriter: readerWriter,

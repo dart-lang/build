@@ -15,7 +15,7 @@ import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../build/build_result.dart';
-import '../../io/finalized_reader.dart';
+import '../../io/build_output_reader.dart';
 import '../../logging/build_log.dart';
 import '../watch/watcher.dart';
 import 'path_to_asset_id.dart';
@@ -35,37 +35,21 @@ enum PerfSortOrder {
   innerDurationDesc,
 }
 
-ServeHandler createServeHandler(Watcher watch) {
-  final rootPackage = watch.packageGraph.root.name;
-  final assetHandlerCompleter = Completer<AssetHandler>();
-  watch.finalizedReader
-      .then((reader) async {
-        assetHandlerCompleter.complete(AssetHandler(reader, rootPackage));
-      })
-      .catchError((_) {}); // These errors are separately handled.
-  return ServeHandler._(watch, assetHandlerCompleter.future, rootPackage);
-}
-
-class ServeHandler implements BuildState {
-  final Watcher _state;
-  final String _rootPackage;
-
-  final Future<AssetHandler> _assetHandler;
+class ServeHandler {
+  final Watcher _watcher;
 
   final BuildUpdatesWebSocketHandler _webSocketHandler;
 
-  ServeHandler._(this._state, this._assetHandler, this._rootPackage)
-    : _webSocketHandler = BuildUpdatesWebSocketHandler(_state) {
-    _state.buildResults
+  ServeHandler(this._watcher)
+    : _webSocketHandler = BuildUpdatesWebSocketHandler() {
+    _watcher.buildResults
         .listen(_webSocketHandler.emitUpdateMessage)
         .onDone(_webSocketHandler.close);
   }
 
-  @override
-  Future<BuildResult>? get currentBuild => _state.currentBuild;
+  Future<BuildResult>? get currentBuildResult => _watcher.currentBuildResult;
 
-  @override
-  Stream<BuildResult> get buildResults => _state.buildResults;
+  Stream<BuildResult> get buildResults => _watcher.buildResults;
 
   shelf.Handler handlerFor(
     String rootDir, {
@@ -79,12 +63,6 @@ class ServeHandler implements BuildState {
         'Only top level directories such as `web` or `test` can be served, got',
       );
     }
-    _state.currentBuild?.then((_) {
-      // If the first build fails with a handled exception, we might not have
-      // an asset graph and can't do this check.
-      if (_state.assetGraph == null) return;
-      _warnForEmptyDirectory(rootDir);
-    });
     var cascade = shelf.Cascade();
     if (liveReload) {
       cascade = cascade.add(_webSocketHandler.createHandlerByRootDir(rootDir));
@@ -95,7 +73,10 @@ class ServeHandler implements BuildState {
       if (request.url.path == _assetsDigestPath) {
         return _assetsDigestHandler(request, rootDir);
       }
-      final assetHandler = await _assetHandler;
+      final assetHandler = AssetHandler(
+        () async => (await _watcher.currentBuildResult).buildOutputReader,
+        _watcher.packageGraph.root.name,
+      );
       return assetHandler.handle(request, rootDir: rootDir);
     });
     var pipeline = const shelf.Pipeline();
@@ -109,7 +90,7 @@ class ServeHandler implements BuildState {
   }
 
   Future<shelf.Response> _blockOnCurrentBuild(void _) async {
-    await currentBuild;
+    await currentBuildResult;
     return shelf.Response.notFound('');
   }
 
@@ -117,10 +98,11 @@ class ServeHandler implements BuildState {
     shelf.Request request,
     String rootDir,
   ) async {
-    final reader = await _state.finalizedReader;
+    final buildResult = await _watcher.currentBuildResult;
+    final reader = buildResult.buildOutputReader;
     final assertPathList =
         (jsonDecode(await request.readAsString()) as List).cast<String>();
-    final rootPackage = _state.packageGraph.root.name;
+    final rootPackage = _watcher.packageGraph.root.name;
     final results = <String, String>{};
     for (final path in assertPathList) {
       final assetIds = pathToAssetIds(rootPackage, rootDir, p.url.split(path));
@@ -148,18 +130,6 @@ class ServeHandler implements BuildState {
       headers: {HttpHeaders.contentTypeHeader: 'application/json'},
     );
   }
-
-  void _warnForEmptyDirectory(String rootDir) {
-    if (!_state.assetGraph!
-        .packageNodes(_rootPackage)
-        .any((n) => n.id.path.startsWith('$rootDir/'))) {
-      buildLog.warning(
-        'Requested a server for `$rootDir` but this directory '
-        'has no assets in the build. You may need to add some sources or '
-        'include this directory in some target in your `build.yaml`.',
-      );
-    }
-  }
 }
 
 /// Class that manages web socket connection handler to inform clients about
@@ -172,12 +142,8 @@ class BuildUpdatesWebSocketHandler {
   })
   _handlerFactory;
   final _internalHandlers = <String, shelf.Handler>{};
-  final Watcher _state;
 
-  BuildUpdatesWebSocketHandler(
-    this._state, [
-    this._handlerFactory = webSocketHandler,
-  ]);
+  BuildUpdatesWebSocketHandler([this._handlerFactory = webSocketHandler]);
 
   shelf.Handler createHandlerByRootDir(String rootDir) {
     if (!_internalHandlers.containsKey(rootDir)) {
@@ -193,7 +159,7 @@ class BuildUpdatesWebSocketHandler {
 
   Future emitUpdateMessage(BuildResult buildResult) async {
     if (buildResult.status != BuildStatus.success) return;
-    final reader = await _state.finalizedReader;
+    final reader = buildResult.buildOutputReader;
     final digests = <AssetId, String>{};
     for (final assetId in buildResult.outputs) {
       final digest = await reader.digest(assetId);
@@ -279,7 +245,7 @@ window.\$dartLoader.forceLoadModule('packages/build_runner/src/commands/serve/$s
 ''';
 
 class AssetHandler {
-  final FinalizedReader _reader;
+  final Future<BuildOutputReader> Function() _reader;
   final String _rootPackage;
 
   final _typeResolver = MimeTypeResolver();
@@ -306,10 +272,12 @@ class AssetHandler {
     List<AssetId> assetIds, {
     bool fallbackToDirectoryList = false,
   }) async {
+    final reader = await _reader();
+
     // Use the first of [assetIds] that exists.
     AssetId? assetId;
     for (final id in assetIds) {
-      if (await _reader.canRead(id)) {
+      if (await reader.canRead(id)) {
         assetId = id;
         break;
       }
@@ -319,8 +287,8 @@ class AssetHandler {
 
     try {
       try {
-        if (!await _reader.canRead(assetId)) {
-          final reason = await _reader.unreadableReason(assetId);
+        if (!await reader.canRead(assetId)) {
+          final reason = await reader.unreadableReason(assetId);
           switch (reason) {
             case UnreadableReason.failed:
               return shelf.Response.internalServerError(
@@ -344,7 +312,7 @@ class AssetHandler {
         return shelf.Response.notFound('Not Found');
       }
 
-      final etag = base64.encode((await _reader.digest(assetId)).bytes);
+      final etag = base64.encode((await reader.digest(assetId)).bytes);
       var contentType = _typeResolver.lookup(assetId.path);
       if (contentType == 'text/x-dart') {
         contentType = '$contentType; charset=utf-8';
@@ -366,7 +334,7 @@ class AssetHandler {
       }
       List<int>? body;
       if (request.method != 'HEAD') {
-        body = await _reader.readAsBytes(assetId);
+        body = await reader.readAsBytes(assetId);
         headers[HttpHeaders.contentLengthHeader] = '${body.length}';
       }
       return shelf.Response.ok(body, headers: headers);
@@ -384,8 +352,10 @@ class AssetHandler {
   Future<String> _findDirectoryList(AssetId from) async {
     final directoryPath = p.url.dirname(from.path);
     final glob = p.url.join(directoryPath, '*');
+    final reader = await _reader();
+
     final result =
-        await _reader.assetFinder.find(Glob(glob)).map((a) => a.path).toList();
+        await reader.assetFinder.find(Glob(glob)).map((a) => a.path).toList();
     final message = StringBuffer('Could not find ${from.path}');
     if (result.isEmpty) {
       message.write(' or any files in $directoryPath. ');

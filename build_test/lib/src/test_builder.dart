@@ -467,7 +467,7 @@ Future<TestBuilderResult> testBuilderFactories(
   );
   await buildPlan.deleteFilesAndFolders();
 
-  final buildSeries = await BuildSeries.create(buildPlan: buildPlan);
+  final buildSeries = BuildSeries(buildPlan);
 
   // Run the build.
   final buildResult = await buildSeries.run({});
