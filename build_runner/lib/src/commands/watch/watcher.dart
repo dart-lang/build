@@ -8,7 +8,6 @@ import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
 import 'package:stream_transform/stream_transform.dart';
 
-import '../../build/asset_graph/graph.dart';
 import '../../build/build_result.dart';
 import '../../build/build_series.dart';
 import '../../build_plan/build_options.dart';
@@ -28,8 +27,6 @@ class Watcher {
   late final BuildPlan buildPlan;
 
   BuildSeries? _buildSeries;
-
-  AssetGraph? get assetGraph => _buildSeries?.assetGraph;
 
   /// Whether or not we will be creating any output directories.
   ///
@@ -76,28 +73,11 @@ class Watcher {
 
     Future<BuildResult> doBuild(List<List<AssetChange>> changes) async {
       buildLog.nextBuild();
-      final build = _buildSeries!;
+      final buildSeries = _buildSeries!;
       final mergedChanges = collectChanges(changes);
 
       _expectedDeletes.clear();
-      if (!buildOptions.skipBuildScriptCheck) {
-        if (build.buildScriptUpdates!.hasBeenUpdated(
-          mergedChanges.keys.toSet(),
-        )) {
-          _terminateCompleter.complete();
-          buildLog.error('Terminating builds due to build script update.');
-          return BuildResult(
-            status: BuildStatus.failure,
-            failureType: FailureType.buildScriptChanged,
-            buildOutputReader: BuildOutputReader(
-              buildPlan: buildPlan,
-              readerWriter: readerWriter,
-              assetGraph: assetGraph!,
-            ),
-          );
-        }
-      }
-      return build.run(mergedChanges);
+      return buildSeries.run(mergedChanges);
     }
 
     final terminate = Future.any([until, _terminateCompleter.future]).then((_) {
@@ -165,7 +145,7 @@ class Watcher {
         .asyncWhere((change) {
           return shouldProcess(
             change,
-            assetGraph!,
+            _buildSeries!.lookupNode,
             buildPlan.targetGraph,
             willCreateOutputDirs,
             _expectedDeletes,
@@ -178,6 +158,10 @@ class Watcher {
         .takeUntil(terminate)
         .asyncMapBuffer((changes) => currentBuildResult = doBuild(changes))
         .listen((BuildResult result) {
+          if (result.failureType == FailureType.buildScriptChanged) {
+            _terminateCompleter.complete();
+            buildLog.error('Terminating builds due to build script update.');
+          }
           if (controller.isClosed) return;
           controller.add(result);
         })
@@ -206,7 +190,7 @@ class Watcher {
 
       BuildResult firstBuild;
       BuildSeries? build;
-      build = _buildSeries = await BuildSeries.create(buildPlan: buildPlan);
+      build = _buildSeries = BuildSeries(buildPlan);
       firstBuild = await build.run({});
       // It is possible this is already closed if the user kills the process
       // early, which results in an exception without this check.

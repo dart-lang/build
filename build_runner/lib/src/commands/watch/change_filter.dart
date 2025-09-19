@@ -6,7 +6,6 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:watcher/watcher.dart';
 
-import '../../build/asset_graph/graph.dart';
 import '../../build/asset_graph/node.dart';
 import '../../build_plan/target_graph.dart';
 import '../../constants.dart';
@@ -16,14 +15,14 @@ import 'asset_change.dart';
 /// Returns if a given asset change should be considered for building.
 FutureOr<bool> shouldProcess(
   AssetChange change,
-  AssetGraph assetGraph,
+  AssetNode? Function(AssetId) lookupNode,
   TargetGraph targetGraph,
   bool willCreateOutputDir,
   Set<AssetId> expectedDeletes,
   ReaderWriter readerWriter,
 ) {
-  if (_isCacheFile(change) && !assetGraph.contains(change.id)) return false;
-  final node = assetGraph.get(change.id);
+  final node = lookupNode(change.id);
+  if (_isCacheFile(change) && node == null) return false;
   if (node != null) {
     if (!willCreateOutputDir && !node.changesRequireRebuild) return false;
     if (_isAddOrEditOnGeneratedFile(node, change.type)) return false;

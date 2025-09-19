@@ -63,12 +63,6 @@ class ServeHandler {
         'Only top level directories such as `web` or `test` can be served, got',
       );
     }
-    _watcher.currentBuildResult.then((_) {
-      // If the first build fails with a handled exception, we might not have
-      // an asset graph and can't do this check.
-      if (_watcher.assetGraph == null) return;
-      _warnForEmptyDirectory(rootDir);
-    });
     var cascade = shelf.Cascade();
     if (liveReload) {
       cascade = cascade.add(_webSocketHandler.createHandlerByRootDir(rootDir));
@@ -135,18 +129,6 @@ class ServeHandler {
       jsonEncode(results),
       headers: {HttpHeaders.contentTypeHeader: 'application/json'},
     );
-  }
-
-  void _warnForEmptyDirectory(String rootDir) {
-    if (!_watcher.assetGraph!
-        .packageNodes(_watcher.packageGraph.root.name)
-        .any((n) => n.id.path.startsWith('$rootDir/'))) {
-      buildLog.warning(
-        'Requested a server for `$rootDir` but this directory '
-        'has no assets in the build. You may need to add some sources or '
-        'include this directory in some target in your `build.yaml`.',
-      );
-    }
   }
 }
 

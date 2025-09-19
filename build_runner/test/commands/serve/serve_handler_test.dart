@@ -120,7 +120,7 @@ void main() {
       packageGraph,
       readerWriter,
     );
-    watchImpl = MockWatchImpl(packageGraph, assetGraph);
+    watchImpl = MockWatchImpl(packageGraph);
     serveHandler = ServeHandler(watchImpl);
     finalizedReader = BuildOutputReader.graphOnly(
       readerWriter: readerWriter,
@@ -639,9 +639,6 @@ void main() {
 }
 
 class MockWatchImpl implements Watcher {
-  @override
-  final AssetGraph assetGraph;
-
   Future<BuildResult>? _currentBuild;
 
   @override
@@ -667,7 +664,7 @@ class MockWatchImpl implements Watcher {
     _futureBuildResultsController.add(result);
   }
 
-  MockWatchImpl(this.packageGraph, this.assetGraph) {
+  MockWatchImpl(this.packageGraph) {
     final firstBuild = Completer<BuildResult>();
     _currentBuild = firstBuild.future;
     _futureBuildResultsController.stream.listen((futureBuildResult) {

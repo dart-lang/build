@@ -56,9 +56,9 @@ class BuildCommand implements BuildRunnerCommand {
       return BuildResult.buildScriptChanged();
     }
 
-    final build = await BuildSeries.create(buildPlan: buildPlan);
-    final result = await build.run({});
-    await build.beforeExit();
+    final buildSeries = BuildSeries(buildPlan);
+    final result = await buildSeries.run({});
+    await buildSeries.beforeExit();
     return result;
   }
 }
