@@ -15,8 +15,7 @@ import '../../build_plan/build_options.dart';
 import '../../build_plan/build_plan.dart';
 import '../../build_plan/package_graph.dart';
 import '../../build_plan/testing_overrides.dart';
-import '../../exceptions.dart';
-import '../../io/finalized_reader.dart';
+import '../../io/build_output_reader.dart';
 import '../../io/reader_writer.dart';
 import '../../logging/build_log.dart';
 import 'asset_change.dart';
@@ -25,7 +24,7 @@ import 'collect_changes.dart';
 import 'graph_watcher.dart';
 import 'node_watcher.dart';
 
-class Watcher implements BuildState {
+class Watcher {
   late final BuildPlan buildPlan;
 
   BuildSeries? _buildSeries;
@@ -40,16 +39,10 @@ class Watcher implements BuildState {
   /// Should complete when we need to kill the build.
   final _terminateCompleter = Completer<void>();
 
-  @override
-  Future<BuildResult>? currentBuild;
+  late Future<BuildResult> currentBuildResult;
 
   /// Pending expected delete events from the build.
   final Set<AssetId> _expectedDeletes = <AssetId>{};
-
-  final _readerCompleter = Completer<FinalizedReader>();
-
-  /// Completes with an error if we fail to initialize.
-  Future<FinalizedReader> get finalizedReader => _readerCompleter.future;
 
   Watcher({
     required BuildPlan buildPlan,
@@ -69,7 +62,6 @@ class Watcher implements BuildState {
   PackageGraph get packageGraph => buildPlan.packageGraph;
   ReaderWriter get readerWriter => buildPlan.readerWriter;
 
-  @override
   late final Stream<BuildResult> buildResults;
 
   /// Runs a build any time relevant files change.
@@ -79,7 +71,7 @@ class Watcher implements BuildState {
   /// File watchers are scheduled synchronously.
   Stream<BuildResult> _run(Future until) {
     final firstBuildCompleter = Completer<BuildResult>();
-    currentBuild = firstBuildCompleter.future;
+    currentBuildResult = firstBuildCompleter.future;
     final controller = StreamController<BuildResult>();
 
     Future<BuildResult> doBuild(List<List<AssetChange>> changes) async {
@@ -95,9 +87,13 @@ class Watcher implements BuildState {
           _terminateCompleter.complete();
           buildLog.error('Terminating builds due to build script update.');
           return BuildResult(
-            BuildStatus.failure,
-            [],
+            status: BuildStatus.failure,
             failureType: FailureType.buildScriptChanged,
+            buildOutputReader: BuildOutputReader(
+              buildPlan: buildPlan,
+              readerWriter: readerWriter,
+              assetGraph: assetGraph!,
+            ),
           );
         }
       }
@@ -152,9 +148,9 @@ class Watcher implements BuildState {
               _isPackageBuildYamlOverride(id)) {
             controller.add(
               BuildResult(
-                BuildStatus.failure,
-                [],
+                status: BuildStatus.failure,
                 failureType: FailureType.buildConfigChanged,
+                buildOutputReader: BuildOutputReader.empty(),
               ),
             );
 
@@ -167,7 +163,6 @@ class Watcher implements BuildState {
           return change;
         })
         .asyncWhere((change) {
-          assert(_readerCompleter.isCompleted);
           return shouldProcess(
             change,
             assetGraph!,
@@ -181,17 +176,13 @@ class Watcher implements BuildState {
           testingOverrides.debounceDelay ?? const Duration(milliseconds: 250),
         )
         .takeUntil(terminate)
-        .asyncMapBuffer(
-          (changes) =>
-              currentBuild = doBuild(changes)
-                ..whenComplete(() => currentBuild = null),
-        )
+        .asyncMapBuffer((changes) => currentBuildResult = doBuild(changes))
         .listen((BuildResult result) {
           if (controller.isClosed) return;
           controller.add(result);
         })
         .onDone(() async {
-          await currentBuild;
+          await currentBuildResult;
           await _buildSeries?.beforeExit();
           if (!controller.isClosed) await controller.close();
           buildLog.info('Builds finished. Safe to exit\n');
@@ -215,21 +206,8 @@ class Watcher implements BuildState {
 
       BuildResult firstBuild;
       BuildSeries? build;
-      try {
-        build = _buildSeries = await BuildSeries.create(buildPlan: buildPlan);
-
-        firstBuild = await build.run({});
-      } on CannotBuildException catch (e, s) {
-        _terminateCompleter.complete();
-
-        firstBuild = BuildResult(BuildStatus.failure, []);
-        _readerCompleter.completeError(e, s);
-      }
-
-      if (build != null) {
-        assert(!_readerCompleter.isCompleted);
-        _readerCompleter.complete(build.finalizedReader);
-      }
+      build = _buildSeries = await BuildSeries.create(buildPlan: buildPlan);
+      firstBuild = await build.run({});
       // It is possible this is already closed if the user kills the process
       // early, which results in an exception without this check.
       if (!controller.isClosed) controller.add(firstBuild);

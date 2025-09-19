@@ -147,7 +147,8 @@ class TargetGraph {
       if (package.isRoot) {
         defaultInclude =
             [
-              ...defaultRootPackageSources,
+              ...(testingOverrides?.defaultRootPackageSources ??
+                  defaultRootPackageSources),
               ...config.additionalPublicAssets,
             ].build();
         rootPackageConfig = config;

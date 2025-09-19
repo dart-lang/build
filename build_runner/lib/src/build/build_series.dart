@@ -13,7 +13,6 @@ import '../build_plan/build_directory.dart';
 import '../build_plan/build_filter.dart';
 import '../build_plan/build_plan.dart';
 import '../io/filesystem_cache.dart';
-import '../io/finalized_reader.dart';
 import '../io/reader_writer.dart';
 import 'asset_graph/graph.dart';
 import 'build.dart';
@@ -37,7 +36,6 @@ class BuildSeries {
   final AssetGraph assetGraph;
   final BuildScriptUpdates? buildScriptUpdates;
 
-  final FinalizedReader finalizedReader;
   final ReaderWriter readerWriter;
   final ResourceManager resourceManager = ResourceManager();
 
@@ -48,6 +46,9 @@ class BuildSeries {
   /// if the serialized build state was discarded.
   BuiltMap<AssetId, ChangeType>? updatesFromLoad;
 
+  final StreamController<BuildResult> _buildResultsController =
+      StreamController.broadcast();
+
   /// Whether the next build is the first build.
   bool firstBuild = true;
 
@@ -57,7 +58,6 @@ class BuildSeries {
     this.buildPlan,
     this.assetGraph,
     this.buildScriptUpdates,
-    this.finalizedReader,
     this.updatesFromLoad,
   ) : readerWriter = buildPlan.readerWriter.copyWith(
         generatedAssetHider: assetGraph,
@@ -66,6 +66,19 @@ class BuildSeries {
                 ? const PassthroughFilesystemCache()
                 : InMemoryFilesystemCache(),
       );
+
+  /// Broadcast stream of build results.
+  Stream<BuildResult> get buildResults => _buildResultsController.stream;
+  Future<BuildResult>? _currentBuildResult;
+
+  /// If a build is running, the build result when it's done.
+  ///
+  /// If no build has ever run, returns the first build result when it's
+  /// available.
+  ///
+  /// If a build has run, the most recent build result.
+  Future<BuildResult> get currentBuildResult =>
+      _currentBuildResult ?? buildResults.first;
 
   /// Runs a single build.
   ///
@@ -93,7 +106,6 @@ class BuildSeries {
       }
     }
 
-    finalizedReader.reset(BuildDirectory.buildPaths(buildDirs), buildFilters);
     final build = Build(
       buildPlan: buildPlan.copyWith(
         buildDirs: buildDirs,
@@ -104,24 +116,19 @@ class BuildSeries {
       resourceManager: resourceManager,
     );
     if (firstBuild) firstBuild = false;
-    final result = await build.run(updates);
+
+    _currentBuildResult = build.run(updates);
+    final result = await _currentBuildResult!;
+    _buildResultsController.add(result);
     return result;
   }
 
   static Future<BuildSeries> create({required BuildPlan buildPlan}) async {
     final assetGraph = buildPlan.takeAssetGraph();
-    final finalizedReader = FinalizedReader(
-      buildPlan.readerWriter.copyWith(generatedAssetHider: assetGraph),
-      assetGraph,
-      buildPlan.targetGraph,
-      buildPlan.buildPhases,
-      buildPlan.packageGraph.root.name,
-    );
     final build = BuildSeries._(
       buildPlan,
       assetGraph,
       buildPlan.buildScriptUpdates,
-      finalizedReader,
       buildPlan.updates,
     );
     return build;

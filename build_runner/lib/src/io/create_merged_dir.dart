@@ -11,11 +11,11 @@ import 'package:built_collection/built_collection.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
 
-import '../build/finalized_assets_view.dart';
 import '../build_plan/build_directory.dart';
 import '../build_plan/package_graph.dart';
 import '../logging/build_log.dart';
 import '../logging/timed_activities.dart';
+import 'build_output_reader.dart';
 import 'filesystem.dart';
 import 'reader_writer.dart';
 
@@ -28,16 +28,17 @@ const _manifestSeparator = '\n';
 /// Creates merged output directories for each [OutputLocation].
 ///
 /// Returns whether it succeeded or not.
-Future<bool> createMergedOutputDirectories(
-  BuiltSet<BuildDirectory> buildDirs,
-  PackageGraph packageGraph,
-  ReaderWriter reader,
-  FinalizedAssetsView finalizedAssetsView,
-  bool outputSymlinksOnly,
-) async {
+Future<bool> createMergedOutputDirectories({
+  required BuiltSet<BuildDirectory> buildDirs,
+  required PackageGraph packageGraph,
+  required bool outputSymlinksOnly,
+  required BuildOutputReader buildOutputReader,
+  required ReaderWriter readerWriter,
+}) async {
   buildLog.doing('Writing the output directory.');
+
   return await TimedActivity.write.runAsync(() async {
-    if (outputSymlinksOnly && reader.filesystem is! IoFilesystem) {
+    if (outputSymlinksOnly && readerWriter.filesystem is! IoFilesystem) {
       buildLog.error(
         'The current environment does not support symlinks, but symlinks were '
         'requested.',
@@ -57,14 +58,14 @@ Future<bool> createMergedOutputDirectories(
       final outputLocation = target.outputLocation;
       if (outputLocation != null) {
         if (!await _createMergedOutputDir(
-          outputLocation.path,
-          target.directory,
-          packageGraph,
-          reader,
-          finalizedAssetsView,
+          buildOutputReader: buildOutputReader,
+          packageGraph: packageGraph,
+          outputPath: outputLocation.path,
+          root: target.directory,
           // TODO(grouma) - retrieve symlink information from target only.
-          outputSymlinksOnly || outputLocation.useSymlinks,
-          outputLocation.hoist,
+          symlinkOnly: outputSymlinksOnly || outputLocation.useSymlinks,
+          hoist: outputLocation.hoist,
+          readerWriter: readerWriter,
         )) {
           return false;
         }
@@ -84,17 +85,16 @@ Set<String> _conflicts(BuiltSet<BuildDirectory> buildDirs) {
   return conflicts;
 }
 
-Future<bool> _createMergedOutputDir(
-  String outputPath,
-  String? root,
-  PackageGraph packageGraph,
-  ReaderWriter readerWriter,
-  FinalizedAssetsView finalizedOutputsView,
-  bool symlinkOnly,
-  bool hoist,
-) async {
+Future<bool> _createMergedOutputDir({
+  required String outputPath,
+  required String root,
+  required PackageGraph packageGraph,
+  required bool symlinkOnly,
+  required bool hoist,
+  required BuildOutputReader buildOutputReader,
+  required ReaderWriter readerWriter,
+}) async {
   try {
-    if (root == null) return false;
     final absoluteRoot = p.join(packageGraph.root.path, root);
     if (absoluteRoot != packageGraph.root.path &&
         !p.isWithin(packageGraph.root.path, absoluteRoot)) {
@@ -108,7 +108,7 @@ Future<bool> _createMergedOutputDir(
     if (outputDirExists) {
       if (!await _cleanUpOutputDir(outputDir)) return false;
     }
-    final builtAssets = finalizedOutputsView.allAssets(rootDir: root).toList();
+    final builtAssets = buildOutputReader.allAssets(rootDir: root).toList();
     if (root != '' &&
         !builtAssets
             .where((id) => id.package == packageGraph.root.name)
