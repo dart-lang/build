@@ -129,12 +129,14 @@ class BuildPlan {
       builderApplications = BuiltList();
     }
 
-    final buildPhases = await createBuildPhases(
-      targetGraph,
-      builderApplications,
-      buildOptions.builderConfigOverrides,
-      buildOptions.isReleaseBuild,
-    );
+    final buildPhases =
+        testingOverrides.buildPhases ??
+        await createBuildPhases(
+          targetGraph,
+          builderApplications,
+          buildOptions.builderConfigOverrides,
+          buildOptions.isReleaseBuild,
+        );
     buildPhases.checkOutputLocations(packageGraph.root.name);
     if (buildPhases.inBuildPhases.isEmpty &&
         buildPhases.postBuildPhase.builderActions.isEmpty) {

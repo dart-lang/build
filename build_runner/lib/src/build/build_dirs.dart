@@ -5,6 +5,7 @@
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 
+import '../build_plan/build_directory.dart';
 import '../build_plan/build_filter.dart';
 import '../build_plan/phase.dart';
 import '../build_plan/target_graph.dart';
@@ -23,18 +24,20 @@ import '../build_plan/target_graph.dart';
 ///   `id.path` must start with one of the specified directory names.
 bool shouldBuildForDirs(
   AssetId id, {
-  required BuiltSet<String> buildDirs,
+  required BuiltSet<BuildDirectory> buildDirs,
   required BuildPhase phase,
   required TargetGraph targetGraph,
   BuiltSet<BuildFilter>? buildFilters,
 }) {
+  // Empty paths means "build everything".
+  final paths = BuildDirectory.buildPaths(buildDirs);
   buildFilters ??= BuiltSet();
   if (buildFilters.isEmpty) {
     // Build asset if: It's built to source, it's public or if it's matched by
     // a build directory.
     return !phase.hideOutput ||
-        buildDirs.isEmpty ||
-        buildDirs.any(id.path.startsWith) ||
+        paths.isEmpty ||
+        paths.any(id.path.startsWith) ||
         targetGraph.isPublicAsset(id);
   } else {
     // Don't build assets not matched by build filters
@@ -44,8 +47,8 @@ bool shouldBuildForDirs(
 
     // In filtered assets, build the public ones or those inside a build
     // directory.
-    return buildDirs.isEmpty ||
-        buildDirs.any(id.path.startsWith) ||
+    return paths.isEmpty ||
+        paths.any(id.path.startsWith) ||
         targetGraph.isPublicAsset(id);
   }
 }

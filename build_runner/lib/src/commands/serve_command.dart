@@ -102,7 +102,7 @@ class ServeCommand implements BuildRunnerCommand {
         }
       }
 
-      await handler.currentBuild;
+      await handler.currentBuildResult;
       return await completer.future;
     } finally {
       await Future.wait(
