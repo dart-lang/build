@@ -10,10 +10,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:logging/logging.dart';
 import 'package:watcher/watcher.dart';
 
-import '../build/build_result.dart';
-import '../build/finalized_assets_view.dart';
 import '../io/reader_writer.dart';
-import 'build_directory.dart';
 import 'builder_application.dart';
 import 'package_graph.dart';
 
@@ -24,13 +21,6 @@ class TestingOverrides {
   final Duration? debounceDelay;
   final BuiltList<String>? defaultRootPackageSources;
   final DirectoryWatcher Function(String)? directoryWatcherFactory;
-  final Future<BuildResult> Function(
-    BuildResult,
-    FinalizedAssetsView,
-    ReaderWriter readerWriter,
-    BuiltSet<BuildDirectory>,
-  )?
-  finalizeBuild;
   final void Function(LogRecord)? onLog;
   final PackageGraph? packageGraph;
   final ReaderWriter? readerWriter;
@@ -44,7 +34,6 @@ class TestingOverrides {
     this.debounceDelay,
     this.defaultRootPackageSources,
     this.directoryWatcherFactory,
-    this.finalizeBuild,
     this.onLog,
     this.packageGraph,
     this.readerWriter,
@@ -63,7 +52,6 @@ class TestingOverrides {
     debounceDelay: debounceDelay,
     defaultRootPackageSources: defaultRootPackageSources,
     directoryWatcherFactory: directoryWatcherFactory,
-    finalizeBuild: finalizeBuild,
     onLog: onLog,
     packageGraph: packageGraph ?? this.packageGraph,
     readerWriter: readerWriter,

@@ -9,6 +9,7 @@ import 'package:build/build.dart';
 import 'package:build_runner/src/build/asset_graph/graph.dart';
 import 'package:build_runner/src/build/asset_graph/node.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
+import 'package:build_runner/src/build/optional_output_tracker.dart';
 import 'package:build_runner/src/build_plan/build_filter.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/phase.dart';
@@ -25,8 +26,10 @@ import '../common/common.dart';
 void main() {
   group('FinalizedReader', () {
     FinalizedReader reader;
-    late AssetGraph graph;
+    late AssetGraph assetGraph;
     late TargetGraph targetGraph;
+    late OptionalOutputTracker optionalOutputTracker;
+    late BuildPhases buildPhases;
 
     setUp(() async {
       final packageGraph = buildPackageGraph({rootPackage('a'): []});
@@ -36,13 +39,20 @@ void main() {
           defaultRootPackageSources: defaultNonRootVisibleAssets,
         ),
       );
-
-      graph = await AssetGraph.build(
+      assetGraph = await AssetGraph.build(
         BuildPhases([]),
         <AssetId>{},
         <AssetId>{},
         packageGraph,
         InternalTestReaderWriter(),
+      );
+      buildPhases = BuildPhases([]);
+      optionalOutputTracker = OptionalOutputTracker(
+        assetGraph,
+        targetGraph,
+        BuiltSet(),
+        BuiltSet(),
+        buildPhases,
       );
     });
 
@@ -64,20 +74,17 @@ void main() {
               ),
       );
 
-      graph
+      assetGraph
         ..add(notDeleted)
         ..add(deleted);
 
-      final delegate = InternalTestReaderWriter();
-      delegate.testing.writeString(notDeleted.id, '');
-      delegate.testing.writeString(deleted.id, '');
+      final readerWriter = InternalTestReaderWriter();
+      readerWriter.testing.writeString(notDeleted.id, '');
+      readerWriter.testing.writeString(deleted.id, '');
 
       reader = FinalizedReader(
-        delegate,
-        graph,
-        targetGraph,
-        BuildPhases([]),
-        'a',
+        readerWriter: readerWriter,
+        optionalOutputTracker: optionalOutputTracker,
       );
       expect(await reader.canRead(notDeleted.id), true);
       expect(await reader.canRead(deleted.id), false);
@@ -93,26 +100,43 @@ void main() {
         primaryInput: AssetId('a', 'web/a.dart'),
         isHidden: true,
       );
-      graph.add(node);
-      final delegate = InternalTestReaderWriter();
-      delegate.testing.writeString(id, '');
-      reader = FinalizedReader(
-        delegate,
-        graph,
+      assetGraph.add(node);
+      final readerWriter = InternalTestReaderWriter();
+      readerWriter.testing.writeString(id, '');
+
+      buildPhases = BuildPhases([
+        InBuildPhase(TestBuilder(), 'a', isOptional: false),
+      ]);
+
+      optionalOutputTracker = OptionalOutputTracker(
+        assetGraph,
         targetGraph,
-        BuildPhases([InBuildPhase(TestBuilder(), 'a', isOptional: false)]),
-        'a',
-      )..reset({'web'}.build(), BuiltSet());
+        BuiltSet({'web'}.build()),
+        BuiltSet(),
+        buildPhases,
+      );
+      reader = FinalizedReader(
+        readerWriter: readerWriter,
+        optionalOutputTracker: optionalOutputTracker,
+      );
       expect(
         await reader.unreadableReason(id),
         UnreadableReason.failed,
         reason: 'Should report a failure if no build filters apply',
       );
 
-      reader.reset(
-        {'web'}.build(),
+      optionalOutputTracker = OptionalOutputTracker(
+        assetGraph,
+        targetGraph,
+        BuiltSet({'web'}.build()),
         {BuildFilter(Glob('b'), Glob('foo'))}.build(),
+        buildPhases,
       );
+      reader = FinalizedReader(
+        readerWriter: readerWriter,
+        optionalOutputTracker: optionalOutputTracker,
+      );
+
       expect(
         await reader.unreadableReason(id),
         UnreadableReason.notOutput,

@@ -111,6 +111,19 @@ class Build {
   /// transitive source.
   final Map<LibraryCycleGraph, bool> changedGraphs = Map.identity();
 
+  late final _optionalOutputTracker = OptionalOutputTracker(
+    assetGraph,
+    targetGraph,
+    BuildDirectory.buildPaths(buildPlan.buildOptions.buildDirs),
+    buildPlan.buildOptions.buildFilters,
+    buildPhases,
+  );
+
+  late final _finalizedReader = FinalizedReader(
+    readerWriter: readerWriter,
+    optionalOutputTracker: _optionalOutputTracker,
+  );
+
   Build({
     required this.buildPlan,
     required this.readerWriter,
@@ -139,13 +152,6 @@ class Build {
       (b) => b..rootPackageName = packageGraph.root.name,
     );
     var result = await _safeBuild(updates);
-    final optionalOutputTracker = OptionalOutputTracker(
-      assetGraph,
-      targetGraph,
-      BuildDirectory.buildPaths(buildPlan.buildOptions.buildDirs),
-      buildPlan.buildOptions.buildFilters,
-      buildPhases,
-    );
     if (result.status == BuildStatus.success) {
       final failures = <AssetNode>[];
       for (final output in processedOutputs) {
@@ -170,18 +176,13 @@ class Build {
             logger.severe(error);
           }
         }
-        result = BuildResult(
-          BuildStatus.failure,
-          result.outputs,
-          performance: result.performance,
-        );
+        result = result.copyWith(buildStatus: BuildStatus.failure);
       }
     }
     readerWriter.cache.flush();
     await resourceManager.disposeAll();
     result = await _finalizeBuild(
       result,
-      FinalizedAssetsView(assetGraph, packageGraph, optionalOutputTracker),
       readerWriter,
       buildPlan.buildOptions.buildDirs,
     );
@@ -283,7 +284,13 @@ class Build {
           buildLog.error(
             buildLog.renderThrowable('Unhandled build failure!', e, st),
           );
-          done.complete(BuildResult(BuildStatus.failure, []));
+          done.complete(
+            BuildResult(
+              BuildStatus.failure,
+              [],
+              finalizedReader: _finalizedReader,
+            ),
+          );
         }
       },
     );
@@ -372,20 +379,12 @@ class Build {
             outputs.addAll(await lazyOuts),
       );
 
-      final finalizedReader = FinalizedReader(
-        readerWriter,
-        assetGraph,
-        targetGraph,
-        buildPhases,
-        packageGraph.root.name,
-      );
-
       // Assume success, `_assetGraph.failedOutputs` will be checked later.
       return BuildResult(
         BuildStatus.success,
         outputs,
         performance: performanceTracker,
-        finalizedReader: finalizedReader,
+        finalizedReader: _finalizedReader,
       );
     });
   }
@@ -1226,7 +1225,7 @@ class Build {
   /// Invoked after each build, can modify the [BuildResult] in any way, even
   /// converting it to a failure.
   ///
-  /// The [finalizedAssetsView] can only be used until the returned [Future]
+  /// The [FinalizedAssetsView] can only be used until the returned [Future]
   /// completes, it will expire afterwords since it can no longer guarantee a
   /// consistent state.
   ///
@@ -1235,18 +1234,9 @@ class Build {
   /// Any operation may be performed, as determined by environment.
   Future<BuildResult> _finalizeBuild(
     BuildResult buildResult,
-    FinalizedAssetsView finalizedAssetsView,
     ReaderWriter readerWriter,
     BuiltSet<BuildDirectory> buildDirs,
   ) async {
-    if (testingOverrides.finalizeBuild != null) {
-      return testingOverrides.finalizeBuild!(
-        buildResult,
-        finalizedAssetsView,
-        readerWriter,
-        buildDirs,
-      );
-    }
     if (buildDirs.any(
           (target) => target.outputLocation?.path.isNotEmpty ?? false,
         ) &&
@@ -1255,11 +1245,15 @@ class Build {
         buildDirs,
         packageGraph,
         readerWriter,
-        finalizedAssetsView,
+        FinalizedAssetsView(
+          assetGraph,
+          packageGraph,
+          buildResult.finalizedReader.optionalOutputTracker!,
+        ),
         buildOptions.outputSymlinksOnly,
       )) {
-        return _convertToFailure(
-          buildResult,
+        return buildResult.copyWith(
+          buildStatus: BuildStatus.failure,
           failureType: FailureType.cantCreate,
         );
       }
@@ -1269,13 +1263,3 @@ class Build {
 }
 
 String _twoDigits(int n) => '$n'.padLeft(2, '0');
-
-BuildResult _convertToFailure(
-  BuildResult previous, {
-  FailureType? failureType,
-}) => BuildResult(
-  BuildStatus.failure,
-  previous.outputs,
-  performance: previous.performance,
-  failureType: failureType,
-);

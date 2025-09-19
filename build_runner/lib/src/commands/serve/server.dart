@@ -80,7 +80,7 @@ class ServeHandler {
         return _assetsDigestHandler(request, rootDir);
       }
       final assetHandler = AssetHandler(
-        () async => (await _watcher.currentBuildResult).finalizedReader!,
+        () async => (await _watcher.currentBuildResult).finalizedReader,
         _watcher.packageGraph.root.name,
       );
       return assetHandler.handle(request, rootDir: rootDir);
@@ -106,7 +106,6 @@ class ServeHandler {
   ) async {
     final buildResult = await _watcher.currentBuildResult;
     final reader = buildResult.finalizedReader;
-    if (reader == null) return shelf.Response.notFound('');
     final assertPathList =
         (jsonDecode(await request.readAsString()) as List).cast<String>();
     final rootPackage = _watcher.packageGraph.root.name;
@@ -178,7 +177,7 @@ class BuildUpdatesWebSocketHandler {
 
   Future emitUpdateMessage(BuildResult buildResult) async {
     if (buildResult.status != BuildStatus.success) return;
-    final reader = buildResult.finalizedReader!;
+    final reader = buildResult.finalizedReader;
     final digests = <AssetId, String>{};
     for (final assetId in buildResult.outputs) {
       final digest = await reader.digest(assetId);

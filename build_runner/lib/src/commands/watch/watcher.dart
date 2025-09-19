@@ -44,8 +44,6 @@ class Watcher {
   /// Pending expected delete events from the build.
   final Set<AssetId> _expectedDeletes = <AssetId>{};
 
-  final _readerCompleter = Completer<FinalizedReader>();
-
   Watcher({
     required BuildPlan buildPlan,
     required Future until,
@@ -92,6 +90,7 @@ class Watcher {
             BuildStatus.failure,
             [],
             failureType: FailureType.buildScriptChanged,
+            finalizedReader: FinalizedReader.empty(),
           );
         }
       }
@@ -149,6 +148,7 @@ class Watcher {
                 BuildStatus.failure,
                 [],
                 failureType: FailureType.buildConfigChanged,
+                finalizedReader: FinalizedReader.empty(),
               ),
             );
 
@@ -161,7 +161,6 @@ class Watcher {
           return change;
         })
         .asyncWhere((change) {
-          assert(_readerCompleter.isCompleted);
           return shouldProcess(
             change,
             assetGraph!,

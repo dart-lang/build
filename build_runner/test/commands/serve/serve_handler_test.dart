@@ -12,10 +12,14 @@ import 'package:build_runner/src/build/asset_graph/graph.dart';
 import 'package:build_runner/src/build/asset_graph/node.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
 import 'package:build_runner/src/build/build_result.dart';
+import 'package:build_runner/src/build/optional_output_tracker.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/package_graph.dart';
+import 'package:build_runner/src/build_plan/target_graph.dart';
 import 'package:build_runner/src/commands/serve/server.dart';
 import 'package:build_runner/src/commands/watch/watcher.dart';
+import 'package:build_runner/src/io/finalized_reader.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
@@ -102,10 +106,14 @@ void main() {
   late ServeHandler serveHandler;
   late InternalTestReaderWriter readerWriter;
   late MockWatchImpl watchImpl;
+  late PackageGraph packageGraph;
   late AssetGraph assetGraph;
+  late TargetGraph targetGraph;
+  late BuildPhases buildPhases;
+  late FinalizedReader finalizedReader;
 
   setUp(() async {
-    final packageGraph = buildPackageGraph({rootPackage('a'): []});
+    packageGraph = buildPackageGraph({rootPackage('a'): []});
     readerWriter = InternalTestReaderWriter(
       rootPackage: packageGraph.root.name,
     );
@@ -118,8 +126,23 @@ void main() {
     );
     watchImpl = MockWatchImpl(packageGraph, assetGraph);
     serveHandler = ServeHandler(watchImpl);
+    targetGraph = await TargetGraph.forPackageGraph(packageGraph: packageGraph);
+    buildPhases = BuildPhases([]);
+    final optionalOutputTracker = OptionalOutputTracker(
+      assetGraph,
+      targetGraph,
+      BuiltSet(),
+      BuiltSet(),
+      buildPhases,
+    );
+    finalizedReader = FinalizedReader(
+      readerWriter: readerWriter,
+      optionalOutputTracker: optionalOutputTracker,
+    );
     watchImpl.addFutureResult(
-      Future.value(BuildResult(BuildStatus.success, [])),
+      Future.value(
+        BuildResult(BuildStatus.success, [], finalizedReader: finalizedReader),
+      ),
     );
   });
 
@@ -252,7 +275,13 @@ void main() {
         ),
       );
       watchImpl.addFutureResult(
-        Future.value(BuildResult(BuildStatus.failure, [])),
+        Future.value(
+          BuildResult(
+            BuildStatus.failure,
+            [],
+            finalizedReader: finalizedReader,
+          ),
+        ),
       );
     });
 
@@ -467,7 +496,13 @@ void main() {
         expect(clientChannel2.stream, emitsInOrder(['{}', emitsDone]));
         await createMockConnection(serverChannel1, 'web');
         await createMockConnection(serverChannel2, 'web');
-        await handler.emitUpdateMessage(BuildResult(BuildStatus.success, []));
+        await handler.emitUpdateMessage(
+          BuildResult(
+            BuildStatus.success,
+            [],
+            finalizedReader: finalizedReader,
+          ),
+        );
         await clientChannel1.sink.close();
         await clientChannel2.sink.close();
       });
@@ -477,16 +512,34 @@ void main() {
         expect(clientChannel2.stream, emitsInOrder(['{}', emitsDone]));
         await createMockConnection(serverChannel1, 'web');
         await createMockConnection(serverChannel2, 'web');
-        await handler.emitUpdateMessage(BuildResult(BuildStatus.success, []));
+        await handler.emitUpdateMessage(
+          BuildResult(
+            BuildStatus.success,
+            [],
+            finalizedReader: finalizedReader,
+          ),
+        );
         await clientChannel2.sink.close();
-        await handler.emitUpdateMessage(BuildResult(BuildStatus.success, []));
+        await handler.emitUpdateMessage(
+          BuildResult(
+            BuildStatus.success,
+            [],
+            finalizedReader: finalizedReader,
+          ),
+        );
         await clientChannel1.sink.close();
       });
 
       test('emits only on successful builds', () async {
         expect(clientChannel1.stream, emitsDone);
         await createMockConnection(serverChannel1, 'web');
-        await handler.emitUpdateMessage(BuildResult(BuildStatus.failure, []));
+        await handler.emitUpdateMessage(
+          BuildResult(
+            BuildStatus.failure,
+            [],
+            finalizedReader: finalizedReader,
+          ),
+        );
         await clientChannel1.sink.close();
       });
 
@@ -522,13 +575,15 @@ void main() {
         );
         await createMockConnection(serverChannel1, 'web');
         await handler.emitUpdateMessage(
-          BuildResult(BuildStatus.success, [AssetId('a', 'web/index.html')]),
+          BuildResult(BuildStatus.success, [
+            AssetId('a', 'web/index.html'),
+          ], finalizedReader: finalizedReader),
         );
         await handler.emitUpdateMessage(
           BuildResult(BuildStatus.success, [
             AssetId('a', 'web/index.html'),
             AssetId('a', 'lib/some.dart.js'),
-          ]),
+          ], finalizedReader: finalizedReader),
         );
         await clientChannel1.sink.close();
       });
@@ -577,7 +632,7 @@ void main() {
             AssetId('a', 'web1/index.html'),
             AssetId('a', 'web2/index.html'),
             AssetId('a', 'lib/some.dart.js'),
-          ]),
+          ], finalizedReader: finalizedReader),
         );
         await clientChannel1.sink.close();
         await clientChannel2.sink.close();

@@ -8,10 +8,12 @@ import 'package:build/build.dart';
 import 'package:build_runner/src/build/asset_graph/graph.dart';
 import 'package:build_runner/src/build/asset_graph/node.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
+import 'package:build_runner/src/build/optional_output_tracker.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/target_graph.dart';
 import 'package:build_runner/src/commands/serve/server.dart';
 import 'package:build_runner/src/io/finalized_reader.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
@@ -21,7 +23,7 @@ import '../../common/common.dart';
 void main() {
   late AssetHandler handler;
   late FinalizedReader reader;
-  late InternalTestReaderWriter delegate;
+  late InternalTestReaderWriter readerWriter;
   late AssetGraph graph;
 
   setUp(() async {
@@ -32,14 +34,18 @@ void main() {
       buildPackageGraph({rootPackage('a'): []}),
       InternalTestReaderWriter(),
     );
-    delegate = InternalTestReaderWriter();
+    readerWriter = InternalTestReaderWriter();
     final packageGraph = buildPackageGraph({rootPackage('a'): []});
-    reader = FinalizedReader(
-      delegate,
+    final optionalOutputTracker = OptionalOutputTracker(
       graph,
       await TargetGraph.forPackageGraph(packageGraph: packageGraph),
+      BuiltSet(),
+      BuiltSet(),
       BuildPhases([]),
-      'a',
+    );
+    reader = FinalizedReader(
+      readerWriter: readerWriter,
+      optionalOutputTracker: optionalOutputTracker,
     );
     handler = AssetHandler(() async => reader, 'a');
   });
@@ -55,7 +61,7 @@ void main() {
       });
     }
     graph.add(node);
-    delegate.testing.writeString(node.id, content);
+    readerWriter.testing.writeString(node.id, content);
   }
 
   test('can not read deleted nodes', () async {

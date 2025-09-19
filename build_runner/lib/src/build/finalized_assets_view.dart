@@ -11,16 +11,10 @@ import 'asset_graph/node.dart';
 import 'optional_output_tracker.dart';
 
 /// A lazily computed view of all the assets available after a build.
-///
-/// Note that this class has a limited lifetime during which it is available,
-/// and should not be used outside of the scope in which it is given. It will
-/// throw a [StateError] if you attempt to use it once it has expired.
 class FinalizedAssetsView {
   final AssetGraph _assetGraph;
   final PackageGraph _packageGraph;
-  final OptionalOutputTracker _optionalOutputTracker;
-
-  bool _expired = false;
+  final OptionalOutputTracker? _optionalOutputTracker;
 
   FinalizedAssetsView(
     this._assetGraph,
@@ -29,11 +23,7 @@ class FinalizedAssetsView {
   );
 
   List<AssetId> allAssets({String? rootDir}) {
-    if (_expired) {
-      throw StateError(
-        'Cannot use a FinalizedAssetsView after it has expired!',
-      );
-    }
+    if (_optionalOutputTracker == null) return [];
     return _assetGraph.allNodes
         .map((node) {
           if (_shouldSkipNode(
@@ -48,11 +38,6 @@ class FinalizedAssetsView {
         })
         .whereType<AssetId>()
         .toList();
-  }
-
-  void markExpired() {
-    assert(!_expired);
-    _expired = true;
   }
 }
 

@@ -21,7 +21,7 @@ class BuildResult {
   final List<AssetId> outputs;
 
   // The build output.
-  final FinalizedReader? finalizedReader;
+  final FinalizedReader finalizedReader;
 
   /// The [BuildPerformance] broken out by build action, may be `null`.
   @experimental
@@ -30,7 +30,7 @@ class BuildResult {
   BuildResult(
     this.status,
     List<AssetId> outputs, {
-    this.finalizedReader,
+    required this.finalizedReader,
     this.performance,
     FailureType? failureType,
   }) : outputs = List.unmodifiable(outputs),
@@ -38,6 +38,16 @@ class BuildResult {
            failureType == null && status == BuildStatus.failure
                ? FailureType.general
                : failureType;
+
+  BuildResult copyWith({BuildStatus? buildStatus, FailureType? failureType}) =>
+      BuildResult(
+        buildStatus ?? status,
+        outputs,
+        finalizedReader: finalizedReader,
+        performance: performance,
+        failureType: failureType ?? this.failureType,
+      );
+
   @override
   String toString() {
     if (status == BuildStatus.success) {
@@ -57,6 +67,7 @@ Build Failed :(
     BuildStatus.failure,
     const [],
     failureType: FailureType.buildScriptChanged,
+    finalizedReader: FinalizedReader.empty(),
   );
 }
 
