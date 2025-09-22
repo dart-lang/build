@@ -24,19 +24,12 @@ void main() {
       });
     });
 
-    test('simple status', () {
-      buildLog.doing('Generating build script.');
-      expect(lines, ['  Generating build script.']);
-    });
-
     test('build_runner info, warnings and errors', () {
-      buildLog.doing('Some setup.');
       buildLog.info('Some info.');
       buildLog.warning('A warning.');
       buildLog.warning('Another warning.');
       buildLog.error('An error.');
       expect(lines, [
-        '  Some setup.',
         '  Some info.',
         'W A warning.',
         'W Another warning.',
@@ -45,7 +38,6 @@ void main() {
     });
 
     test('phase progress', () {
-      buildLog.startBuild();
       final phases = _createPhases({'builder1': 10, 'builder2': 15});
       buildLog.startPhases(phases);
       buildLog.startStep(
@@ -53,10 +45,7 @@ void main() {
         primaryInput: AssetId('pkg', 'lib/l0.dart'),
         lazy: false,
       );
-      expect(lines, [
-        '  Building, full build.',
-        '  0s builder1 on 10 inputs; pkg|lib/l0.dart',
-      ]);
+      expect(lines, ['  0s builder1 on 10 inputs; pkg|lib/l0.dart']);
 
       buildLog.finishStep(
         phase: phases.keys.first,
@@ -70,7 +59,6 @@ void main() {
         lazy: false,
       );
       expect(lines, [
-        '  Building, full build.',
         '  0s builder1 on 10 inputs; pkg|lib/l0.dart',
         '  0s builder1 on 10 inputs: 1 output; pkg|lib/l1.dart',
       ]);
@@ -93,7 +81,6 @@ void main() {
         lazy: false,
       );
       expect(lines, [
-        '  Building, full build.',
         '  0s builder1 on 10 inputs; pkg|lib/l0.dart',
         '  0s builder1 on 10 inputs: 1 output; pkg|lib/l1.dart',
         '  0s builder1 on 10 inputs: 1 output, 1 same; pkg|lib/l2.dart',
@@ -117,7 +104,6 @@ void main() {
         anyChangedOutputs: true,
       );
       expect(lines, [
-        '  Building, full build.',
         '  0s builder1 on 10 inputs; pkg|lib/l0.dart',
         '  0s builder1 on 10 inputs: 1 output; pkg|lib/l1.dart',
         '  0s builder1 on 10 inputs: 1 output, 1 same; pkg|lib/l2.dart',
@@ -131,7 +117,6 @@ void main() {
         b.mode = BuildLogMode.build;
       });
 
-      buildLog.startBuild();
       final phases = _createPhases({'builder1': 10, 'builder2': 15});
       buildLog.startPhases(phases);
       buildLog.startStep(
@@ -174,7 +159,6 @@ void main() {
       );
 
       expect(lines, [
-        '  Building, full build.',
         '  0s builder1 on 10 inputs; pkg|lib/l0.dart',
         '  builder1 on lib/l0.dart:\n'
             'Some info.',
@@ -207,7 +191,6 @@ void main() {
       );
 
       expect(lines, [
-        '  Building, full build.',
         '  0s builder1 on 10 inputs; pkg|lib/l0.dart',
         '  builder1 on lib/l0.dart:\n'
             'Some info.',
@@ -229,8 +212,6 @@ void main() {
       buildLog.configuration = buildLog.configuration.rebuild((b) {
         b.mode = BuildLogMode.build;
       });
-      buildLog.fullBuildBecause(FullBuildReason.none);
-      buildLog.startBuild();
       final phases = _createPhases({'builder1': 1, 'builder2': 1});
       buildLog.startPhases(phases);
       buildLog.startStep(
@@ -276,7 +257,6 @@ void main() {
       buildLog.finishBuild(result: true, outputs: 2);
 
       expect(lines, [
-        '  Building, incremental build.',
         '  0s builder1 on 1 input; pkg|lib/l0.dart',
         '  builder1 on lib/l0.dart:\n'
             'Some info.',

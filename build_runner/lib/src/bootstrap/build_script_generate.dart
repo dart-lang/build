@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:build_config/build_config.dart';
 import 'package:code_builder/code_builder.dart';
@@ -27,8 +28,13 @@ const scriptKernelCachedSuffix = '.cached';
 
 final _lastShortFormatDartVersion = Version(3, 6, 0);
 
+Future<bool> hasGeneratedBuildScriptChanged() async {
+  final script = await generateBuildScript();
+  final file = File(scriptLocation);
+  return !file.existsSync() || file.readAsStringSync() != script;
+}
+
 Future<String> generateBuildScript() async {
-  buildLog.doing('Generating the build script.');
   final builderFactories = await loadBuilderFactories();
   final library = Library(
     (b) => b.body.addAll([

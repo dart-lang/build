@@ -14,7 +14,6 @@ import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
-import '../bootstrap/build_process_state.dart';
 import '../build_plan/build_options.dart';
 import '../build_plan/build_phases.dart';
 import '../build_plan/build_plan.dart';
@@ -137,9 +136,6 @@ class Build {
   BuildPhases get buildPhases => buildPlan.buildPhases;
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
-    if (!assetGraph.cleanBuild) {
-      buildLog.fullBuildBecause(FullBuildReason.none);
-    }
     buildLog.configuration = buildLog.configuration.rebuild(
       (b) => b..rootPackageName = packageGraph.root.name,
     );
@@ -234,14 +230,11 @@ class Build {
     final done = Completer<BuildResult>();
     runZonedGuarded(
       () async {
-        buildLog.doing('Updating the asset graph.');
         if (!assetGraph.cleanBuild) {
           await _updateAssetGraph(updates);
         }
 
-        buildLog.startBuild();
         final result = await _runPhases();
-        buildLog.doing('Writing the asset graph.');
 
         assetGraph.previousBuildTriggersDigest =
             targetGraph.buildTriggers.digest;
@@ -269,7 +262,6 @@ class Build {
 
         // Log performance information if requested
         if (buildOptions.logPerformanceDir != null) {
-          buildLog.doing('Writing the performance log.');
           assert(result.performance != null);
           final now = DateTime.now();
           final logPath = p.join(
@@ -365,7 +357,6 @@ class Build {
       }
 
       // Post build phase.
-      buildLog.doing('Running the post build.');
       if (buildPhases.postBuildPhase.builderActions.isNotEmpty) {
         outputs.addAll(
           await performanceTracker.trackBuildPhase(

@@ -9,7 +9,6 @@ import 'package:build/experiments.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:watcher/watcher.dart';
 
-import '../bootstrap/build_process_state.dart';
 import '../bootstrap/build_script_updates.dart';
 import '../build/asset_graph/exceptions.dart';
 import '../build/asset_graph/graph.dart';
@@ -125,7 +124,6 @@ class BuildPlan {
     var restartIsNeeded = false;
     if (builderApplications == null) {
       restartIsNeeded = true;
-      buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
       builderApplications = BuiltList();
     }
 
@@ -139,11 +137,8 @@ class BuildPlan {
         );
     buildPhases.checkOutputLocations(packageGraph.root.name);
     if (buildPhases.inBuildPhases.isEmpty &&
-        buildPhases.postBuildPhase.builderActions.isEmpty) {
-      buildLog.warning('Nothing to build.');
-    }
+        buildPhases.postBuildPhase.builderActions.isEmpty) {}
 
-    buildLog.doing('Reading the asset graph.');
     AssetGraph? previousAssetGraph;
     final filesToDelete = <AssetId>{};
     final foldersToDelete = <AssetId>{};
@@ -158,9 +153,7 @@ class BuildPlan {
       previousAssetGraph = AssetGraph.deserialize(
         await readerWriter.readAsBytes(assetGraphId),
       );
-      if (previousAssetGraph == null) {
-        buildLog.fullBuildBecause(FullBuildReason.incompatibleAssetGraph);
-      } else {
+      if (previousAssetGraph != null) {
         final buildPhasesChanged =
             buildPhases.digest != previousAssetGraph.buildPhasesDigest;
         final pkgVersionsChanged =
@@ -175,7 +168,6 @@ class BuildPlan {
               previousAssetGraph.dartVersion,
               Platform.version,
             )) {
-          buildLog.fullBuildBecause(FullBuildReason.incompatibleBuild);
           // Mark old outputs for deletion.
           filesToDelete.addAll(
             previousAssetGraph.outputsToDelete(packageGraph),
@@ -211,7 +203,6 @@ class BuildPlan {
     BuildScriptUpdates? buildScriptUpdates;
     Map<AssetId, ChangeType>? updates;
     if (previousAssetGraph != null) {
-      buildLog.doing('Checking for updates.');
       updates = await assetTracker.computeSourceUpdates(
         inputSources,
         cacheDirSources,
@@ -229,7 +220,6 @@ class BuildPlan {
           !buildOptions.skipBuildScriptCheck &&
           buildScriptUpdates.hasBeenUpdated(updates.keys.toSet());
       if (buildScriptUpdated) {
-        buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
         // Mark old outputs for deletion.
         filesToDelete.addAll(previousAssetGraph.outputsToDelete(packageGraph));
         foldersToDelete.add(generatedOutputDirectoryId);
@@ -255,8 +245,6 @@ class BuildPlan {
     }
 
     if (assetGraph == null) {
-      buildLog.doing('Creating the asset graph.');
-
       // Files marked for deletion are not inputs.
       inputSources.removeAll(filesToDelete);
 
@@ -369,8 +357,6 @@ class BuildPlan {
   }
 
   Future<void> deleteFilesAndFolders() async {
-    buildLog.doing('Doing initial build cleanup.');
-
     // Hidden outputs are deleted if needed by deleting the entire folder. So,
     // only outputs in the source folder need to be deleted explicitly. Use a
     // `ReaderWriter` that only acts on the source folder.
@@ -386,6 +372,19 @@ class BuildPlan {
       await cleanupReaderWriter.deleteDirectory(id);
     }
   }
+
+  /// Reloads the build plan.
+  ///
+  /// Works just like a new load of the build plan, but supresses the usual log
+  /// output.
+  ///
+  /// The caller must call [deleteFilesAndFolders] on the result and check
+  /// [restartIsNeeded].
+  Future<BuildPlan> reload() => BuildPlan.load(
+    builderFactories: builderFactories,
+    buildOptions: buildOptions,
+    testingOverrides: testingOverrides,
+  );
 }
 
 bool isSameSdkVersion(String? thisVersion, String? thatVersion) =>

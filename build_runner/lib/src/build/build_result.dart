@@ -78,7 +78,6 @@ enum BuildStatus { success, failure }
 class FailureType {
   static final general = FailureType._(1);
   static final cantCreate = FailureType._(73);
-  static final buildConfigChanged = FailureType._(75);
   static final buildScriptChanged = FailureType._(75);
   final int exitCode;
   FailureType._(this.exitCode);

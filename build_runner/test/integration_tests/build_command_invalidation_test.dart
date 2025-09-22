@@ -40,7 +40,6 @@ void main() async {
     tester.update('builder_pkg/lib/builder.dart', (script) => '$script\n');
     tester.write(fakeGeneratedOutput, '');
     output = await tester.run('root_pkg', 'dart run build_runner build');
-    expect(output, contains('Building, full build because builders changed.'));
     expect(output, contains('wrote 1 output'));
     expect(tester.read(fakeGeneratedOutput), null);
 
@@ -63,10 +62,7 @@ void main() async {
     );
     tester.write(fakeGeneratedOutput, '');
     output = await tester.run('root_pkg', 'dart run build_runner build');
-    expect(
-      output,
-      contains('Building, full build because there is no valid asset graph.'),
-    );
+    expect(output, contains('wrote 1 output'));
     expect(tester.read(fakeGeneratedOutput), null);
 
     // "Core packages" location changed.
@@ -75,6 +71,6 @@ void main() async {
       (txt) => '$txt\n',
     );
     output = await tester.run('root_pkg', 'dart run build_runner build');
-    expect(output, contains('Building, full build because builders changed.'));
+    expect(output, contains('wrote 0 outputs'));
   });
 }

@@ -84,8 +84,7 @@ void handleBuildResultsStream(
   final subscription = buildResults.listen((result) {
     if (completer.isCompleted) return;
     if (result.status == BuildStatus.failure) {
-      if (result.failureType == FailureType.buildScriptChanged ||
-          result.failureType == FailureType.buildConfigChanged) {
+      if (result.failureType == FailureType.buildScriptChanged) {
         completer.complete(ExitCode.tempFail.code);
       }
     }
