@@ -8,13 +8,15 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:build_runner/src/build/asset_graph/graph.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
-import 'package:build_runner/src/build/finalized_assets_view.dart';
-import 'package:build_runner/src/build/optional_output_tracker.dart';
 import 'package:build_runner/src/build_plan/build_directory.dart';
+import 'package:build_runner/src/build_plan/build_options.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
+import 'package:build_runner/src/build_plan/build_plan.dart';
+import 'package:build_runner/src/build_plan/builder_factories.dart';
 import 'package:build_runner/src/build_plan/phase.dart';
 import 'package:build_runner/src/build_plan/target_graph.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
+import 'package:build_runner/src/io/build_output_reader.dart';
 import 'package:build_runner/src/io/create_merged_dir.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
@@ -25,6 +27,7 @@ import '../common/common.dart';
 
 void main() {
   group('createMergedDir', () {
+    late BuildPlan buildPlan;
     late AssetGraph graph;
     final phases = BuildPhases([
       InBuildPhase(
@@ -34,6 +37,7 @@ void main() {
       InBuildPhase(
         TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')),
         'b',
+        hideOutput: true,
       ),
     ]);
     final sources = {
@@ -65,43 +69,34 @@ void main() {
       rootPackage('a'): ['b'],
       package('b'): [],
     });
-    late TargetGraph targetGraph;
     late Directory tmpDir;
     late Directory anotherTmpDir;
     late InternalTestReaderWriter readerWriter;
-    late OptionalOutputTracker optionalOutputTracker;
-    late FinalizedAssetsView finalizedAssetsView;
+    late BuildOutputReader buildOutputReader;
 
     setUp(() async {
-      readerWriter = InternalTestReaderWriter();
+      readerWriter = InternalTestReaderWriter(rootPackage: 'a');
       for (final source in sources.entries) {
         readerWriter.testing.writeString(source.key, source.value);
       }
-      graph = await AssetGraph.build(
-        phases,
-        sources.keys.toSet(),
-        <AssetId>{},
-        packageGraph,
-        readerWriter,
-      );
-      targetGraph = await TargetGraph.forPackageGraph(
-        packageGraph: packageGraph,
+      buildPlan = await BuildPlan.load(
+        builderFactories: BuilderFactories(),
+        buildOptions: BuildOptions.forTests(),
         testingOverrides: TestingOverrides(
-          defaultRootPackageSources: defaultNonRootVisibleAssets,
+          buildPhases: phases,
+          defaultRootPackageSources:
+              [...defaultRootPackageSources, 'foo/**'].build(),
+          readerWriter: readerWriter,
+          packageGraph: packageGraph,
         ),
       );
-      optionalOutputTracker = OptionalOutputTracker(
-        graph,
-        targetGraph,
-        BuiltSet(),
-        BuiltSet(),
-        phases,
+      graph = buildPlan.takeAssetGraph();
+      buildOutputReader = BuildOutputReader(
+        buildPlan: buildPlan,
+        readerWriter: readerWriter,
+        assetGraph: graph,
       );
-      finalizedAssetsView = FinalizedAssetsView(
-        graph,
-        packageGraph,
-        optionalOutputTracker,
-      );
+
       for (final id in graph.outputs) {
         graph.updateNode(id, (nodeBuilder) {
           nodeBuilder.digest = Digest([]);
@@ -122,13 +117,14 @@ void main() {
 
     test('creates a valid merged output directory', () async {
       final success = await createMergedOutputDirectories(
-        {
-          BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
-        }.build(),
-        packageGraph,
-        readerWriter,
-        finalizedAssetsView,
-        false,
+        buildDirs:
+            {
+              BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
+            }.build(),
+        packageGraph: packageGraph,
+        readerWriter: readerWriter,
+        buildOutputReader: buildOutputReader,
+        outputSymlinksOnly: false,
       );
       expect(success, isTrue);
 
@@ -144,13 +140,14 @@ void main() {
       });
 
       final success = await createMergedOutputDirectories(
-        {
-          BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
-        }.build(),
-        packageGraph,
-        readerWriter,
-        finalizedAssetsView,
-        false,
+        buildDirs:
+            {
+              BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
+            }.build(),
+        packageGraph: packageGraph,
+        readerWriter: readerWriter,
+        buildOutputReader: buildOutputReader,
+        outputSymlinksOnly: false,
       );
       expect(success, isTrue);
 
@@ -160,24 +157,25 @@ void main() {
 
     test('does not include non-lib files from non-root packages', () {
       expect(
-        finalizedAssetsView.allAssets(),
+        buildOutputReader.allAssets(),
         isNot(contains(makeAssetId('b|test/outside.txt'))),
       );
     });
 
     test('can create multiple merged directories', () async {
       final success = await createMergedOutputDirectories(
-        {
-          BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
-          BuildDirectory(
-            '',
-            outputLocation: OutputLocation(anotherTmpDir.path),
-          ),
-        }.build(),
-        packageGraph,
-        readerWriter,
-        finalizedAssetsView,
-        false,
+        buildDirs:
+            {
+              BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
+              BuildDirectory(
+                '',
+                outputLocation: OutputLocation(anotherTmpDir.path),
+              ),
+            }.build(),
+        packageGraph: packageGraph,
+        readerWriter: readerWriter,
+        buildOutputReader: buildOutputReader,
+        outputSymlinksOnly: false,
       );
       expect(success, isTrue);
 
@@ -187,14 +185,21 @@ void main() {
 
     test('errors if there are conflicting directories', () async {
       final success = await createMergedOutputDirectories(
-        {
-          BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path)),
-          BuildDirectory('foo', outputLocation: OutputLocation(tmpDir.path)),
-        }.build(),
-        packageGraph,
-        readerWriter,
-        finalizedAssetsView,
-        false,
+        buildDirs:
+            {
+              BuildDirectory(
+                'web',
+                outputLocation: OutputLocation(tmpDir.path),
+              ),
+              BuildDirectory(
+                'foo',
+                outputLocation: OutputLocation(tmpDir.path),
+              ),
+            }.build(),
+        packageGraph: packageGraph,
+        readerWriter: readerWriter,
+        buildOutputReader: buildOutputReader,
+        outputSymlinksOnly: false,
       );
       expect(success, isFalse);
       expect(Directory(tmpDir.path).listSync(), isEmpty);
@@ -202,24 +207,24 @@ void main() {
 
     test('succeeds if no output directory requested ', () async {
       final success = await createMergedOutputDirectories(
-        {BuildDirectory('web'), BuildDirectory('foo')}.build(),
-        packageGraph,
-        readerWriter,
-        finalizedAssetsView,
-        false,
+        buildDirs: {BuildDirectory('web'), BuildDirectory('foo')}.build(),
+        packageGraph: packageGraph,
+        readerWriter: readerWriter,
+        buildOutputReader: buildOutputReader,
+        outputSymlinksOnly: false,
       );
       expect(success, isTrue);
     });
 
     test('removes the provided root from the output path', () async {
       final success = await createMergedOutputDirectories(
-        {
-          BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path)),
-        }.build(),
-        packageGraph,
-        readerWriter,
-        finalizedAssetsView,
-        false,
+        buildDirs:
+            {BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path))}
+                .build(),
+        packageGraph: packageGraph,
+        readerWriter: readerWriter,
+        buildOutputReader: buildOutputReader,
+        outputSymlinksOnly: false,
       );
       expect(success, isTrue);
 
@@ -230,16 +235,17 @@ void main() {
 
     test('skips output directories with no assets', () async {
       final success = await createMergedOutputDirectories(
-        {
-          BuildDirectory(
-            'no_assets_here',
-            outputLocation: OutputLocation(tmpDir.path),
-          ),
-        }.build(),
-        packageGraph,
-        readerWriter,
-        finalizedAssetsView,
-        false,
+        buildDirs:
+            {
+              BuildDirectory(
+                'no_assets_here',
+                outputLocation: OutputLocation(tmpDir.path),
+              ),
+            }.build(),
+        packageGraph: packageGraph,
+        readerWriter: readerWriter,
+        buildOutputReader: buildOutputReader,
+        outputSymlinksOnly: false,
       );
       expect(success, isFalse);
       expect(Directory(tmpDir.path).listSync(), isEmpty);
@@ -247,13 +253,13 @@ void main() {
 
     test('does not output the input directory', () async {
       final success = await createMergedOutputDirectories(
-        {
-          BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path)),
-        }.build(),
-        packageGraph,
-        readerWriter,
-        finalizedAssetsView,
-        false,
+        buildDirs:
+            {BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path))}
+                .build(),
+        packageGraph: packageGraph,
+        readerWriter: readerWriter,
+        buildOutputReader: buildOutputReader,
+        outputSymlinksOnly: false,
       );
       expect(success, isTrue);
 
@@ -262,17 +268,21 @@ void main() {
 
     test('outputs the packages when input root is provided', () async {
       final success = await createMergedOutputDirectories(
-        {
-          BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path)),
-          BuildDirectory(
-            'foo',
-            outputLocation: OutputLocation(anotherTmpDir.path),
-          ),
-        }.build(),
-        packageGraph,
-        readerWriter,
-        finalizedAssetsView,
-        false,
+        buildDirs:
+            {
+              BuildDirectory(
+                'web',
+                outputLocation: OutputLocation(tmpDir.path),
+              ),
+              BuildDirectory(
+                'foo',
+                outputLocation: OutputLocation(anotherTmpDir.path),
+              ),
+            }.build(),
+        packageGraph: packageGraph,
+        readerWriter: readerWriter,
+        buildOutputReader: buildOutputReader,
+        outputSymlinksOnly: false,
       );
       expect(success, isTrue);
 
@@ -293,13 +303,14 @@ void main() {
 
     test('does not nest packages symlinks with no root', () async {
       final success = await createMergedOutputDirectories(
-        {
-          BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
-        }.build(),
-        packageGraph,
-        readerWriter,
-        finalizedAssetsView,
-        false,
+        buildDirs:
+            {
+              BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
+            }.build(),
+        packageGraph: packageGraph,
+        readerWriter: readerWriter,
+        buildOutputReader: buildOutputReader,
+        outputSymlinksOnly: false,
       );
       expect(success, isTrue);
       _expectNoFiles(<String>{'packages/packages/a/a.txt'}, tmpDir);
@@ -307,17 +318,21 @@ void main() {
 
     test('only outputs files contained in the provided root', () async {
       final success = await createMergedOutputDirectories(
-        {
-          BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path)),
-          BuildDirectory(
-            'foo',
-            outputLocation: OutputLocation(anotherTmpDir.path),
-          ),
-        }.build(),
-        packageGraph,
-        readerWriter,
-        finalizedAssetsView,
-        false,
+        buildDirs:
+            {
+              BuildDirectory(
+                'web',
+                outputLocation: OutputLocation(tmpDir.path),
+              ),
+              BuildDirectory(
+                'foo',
+                outputLocation: OutputLocation(anotherTmpDir.path),
+              ),
+            }.build(),
+        packageGraph: packageGraph,
+        readerWriter: readerWriter,
+        buildOutputReader: buildOutputReader,
+        outputSymlinksOnly: false,
       );
       expect(success, isTrue);
 
@@ -343,13 +358,14 @@ void main() {
       });
 
       final success = await createMergedOutputDirectories(
-        {
-          BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
-        }.build(),
-        packageGraph,
-        readerWriter,
-        finalizedAssetsView,
-        false,
+        buildDirs:
+            {
+              BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
+            }.build(),
+        packageGraph: packageGraph,
+        readerWriter: readerWriter,
+        buildOutputReader: buildOutputReader,
+        outputSymlinksOnly: false,
       );
       expect(success, isTrue);
 
@@ -358,26 +374,22 @@ void main() {
     });
 
     test('doesnt always write files not matching outputDirs', () async {
-      optionalOutputTracker = OptionalOutputTracker(
-        graph,
-        targetGraph,
-        {'foo'}.build(),
-        BuiltSet(),
-        phases,
-      );
-      finalizedAssetsView = FinalizedAssetsView(
-        graph,
-        packageGraph,
-        optionalOutputTracker,
+      buildOutputReader = BuildOutputReader(
+        buildPlan: buildPlan.copyWith(
+          buildDirs: {BuildDirectory('foo')}.build(),
+        ),
+        readerWriter: readerWriter,
+        assetGraph: graph,
       );
       final success = await createMergedOutputDirectories(
-        {
-          BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
-        }.build(),
-        packageGraph,
-        readerWriter,
-        finalizedAssetsView,
-        false,
+        buildDirs:
+            {
+              BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
+            }.build(),
+        packageGraph: packageGraph,
+        readerWriter: readerWriter,
+        buildOutputReader: buildOutputReader,
+        outputSymlinksOnly: false,
       );
       expect(success, isTrue);
 
@@ -405,13 +417,14 @@ void main() {
 
       test('fails the build', () async {
         final success = await createMergedOutputDirectories(
-          {
-            BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
-          }.build(),
-          packageGraph,
-          readerWriter,
-          finalizedAssetsView,
-          false,
+          buildDirs:
+              {
+                BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
+              }.build(),
+          packageGraph: packageGraph,
+          readerWriter: readerWriter,
+          buildOutputReader: buildOutputReader,
+          outputSymlinksOnly: false,
         );
         expect(success, isFalse);
         expect(
@@ -431,13 +444,14 @@ void main() {
     group('Empty directory cleanup', () {
       test('removes directories that become empty', () async {
         var success = await createMergedOutputDirectories(
-          {
-            BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
-          }.build(),
-          packageGraph,
-          readerWriter,
-          finalizedAssetsView,
-          false,
+          buildDirs:
+              {
+                BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
+              }.build(),
+          packageGraph: packageGraph,
+          readerWriter: readerWriter,
+          buildOutputReader: buildOutputReader,
+          outputSymlinksOnly: false,
         );
         expect(success, isTrue);
         final removes = ['a|lib/a.txt', 'a|lib/a.txt.copy'];
@@ -452,13 +466,14 @@ void main() {
           });
         }
         success = await createMergedOutputDirectories(
-          {
-            BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
-          }.build(),
-          packageGraph,
-          readerWriter,
-          finalizedAssetsView,
-          false,
+          buildDirs:
+              {
+                BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
+              }.build(),
+          packageGraph: packageGraph,
+          readerWriter: readerWriter,
+          buildOutputReader: buildOutputReader,
+          outputSymlinksOnly: false,
         );
         expect(success, isTrue);
         final packageADir = p.join(tmpDir.path, 'packages', 'a');
