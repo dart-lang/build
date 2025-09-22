@@ -63,9 +63,6 @@ class WatchCommand implements BuildRunnerCommand {
     final watcher = Watcher(
       buildPlan: buildPlan,
       until: terminator.shouldTerminate,
-      willCreateOutputDirs: buildOptions.buildDirs.any(
-        (target) => target.outputLocation?.path.isNotEmpty ?? false,
-      ),
     );
 
     unawaited(

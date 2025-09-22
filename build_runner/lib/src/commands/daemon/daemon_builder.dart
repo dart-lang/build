@@ -20,11 +20,9 @@ import '../../build/build_series.dart';
 import '../../build_plan/build_directory.dart';
 import '../../build_plan/build_filter.dart';
 import '../../build_plan/build_plan.dart';
-import '../../io/asset_tracker.dart' show AssetTracker;
 import '../../logging/build_log.dart';
 import '../daemon_options.dart';
 import '../watch/asset_change.dart';
-import '../watch/change_filter.dart';
 import '../watch/collect_changes.dart';
 import '../watch/graph_watcher.dart';
 import '../watch/node_watcher.dart';
@@ -76,15 +74,6 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
             )
             .toList();
 
-    if (!_buildPlan.buildOptions.skipBuildScriptCheck &&
-        buildSeries.buildScriptUpdates!.hasBeenUpdated(
-          changes.map<AssetId>((change) => change.id).toSet(),
-        )) {
-      if (!_buildScriptUpdateCompleter.isCompleted) {
-        _buildScriptUpdateCompleter.complete();
-      }
-      return;
-    }
     final targetNames = targets.map((t) => t.target).toSet();
     _logMessage(Level.INFO, 'About to build ${targetNames.toList()}...');
     _signalStart(targetNames);
@@ -124,6 +113,12 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         buildDirs: buildDirs.build(),
         buildFilters: buildFilters.build(),
       );
+      if (result.failureType == core.FailureType.buildScriptChanged) {
+        if (!_buildScriptUpdateCompleter.isCompleted) {
+          _buildScriptUpdateCompleter.complete();
+        }
+        return;
+      }
       final interestedInOutputs = targets.any(
         (e) => e is DefaultBuildTarget && e.reportChangedAssets,
       );
@@ -230,7 +225,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       ),
     );
 
-    final buildSeries = await BuildSeries.create(buildPlan: buildPlan);
+    final buildSeries = BuildSeries(buildPlan);
 
     // Only actually used for the AutoChangeProvider.
     Stream<List<WatchEvent>> graphEvents() => PackageGraphWatcher(
@@ -239,15 +234,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         )
         .watch()
         .asyncWhere(
-          (change) => shouldProcess(
-            change,
-            buildSeries.assetGraph,
-            buildPlan.targetGraph,
-            // Assume we will create an outputDir.
-            true,
-            expectedDeletes,
-            buildPlan.readerWriter,
-          ),
+          (change) => buildSeries.shouldProcess(change, expectedDeletes),
         )
         .map((data) => WatchEvent(data.type, '${data.id}'))
         .debounceBuffer(
@@ -258,10 +245,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     final changeProvider =
         daemonOptions.buildMode == BuildMode.Auto
             ? AutoChangeProviderImpl(graphEvents())
-            : ManualChangeProviderImpl(
-              AssetTracker(buildPlan.readerWriter, buildPlan.targetGraph),
-              buildSeries.assetGraph,
-            );
+            : ManualChangeProviderImpl(buildSeries.checkForChanges);
 
     return BuildRunnerDaemonBuilder._(
       buildPlan,

@@ -30,6 +30,10 @@ class BuildOptions {
   final bool trackPerformance;
   final bool verbose;
 
+  late final bool anyMergedOutputDirectory = buildDirs.any(
+    (target) => target.outputLocation?.path.isNotEmpty ?? false,
+  );
+
   BuildOptions({
     required this.buildDirs,
     required this.builderConfigOverrides,
