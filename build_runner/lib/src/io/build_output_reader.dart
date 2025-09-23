@@ -161,7 +161,7 @@ class BuildOutputReader {
       if (node.id.package != _buildPlan.packageGraph.root.name) return true;
     }
 
-    if (node.type == NodeType.internal || node.type == NodeType.glob) {
+    if (node.type == NodeType.glob) {
       return true;
     }
     if (node.type == NodeType.generated) {

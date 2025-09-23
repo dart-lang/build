@@ -26,7 +26,6 @@ dependencies:
   convert: ^3.0.0
   crypto: ^3.0.0
   dart_style: '>=2.3.7 <4.0.0'
-  frontend_server_client: ">=3.0.0 <5.0.0"
   glob: ^2.0.0
   graphs: ^2.2.0
   http_multi_server: ^3.0.0
@@ -41,7 +40,6 @@ dependencies:
   pub_semver: ^2.0.0
   shelf: ^1.0.0
   shelf_web_socket: ">=1.0.0 <4.0.0"
-  stack_trace: ^1.10.0
   stream_transform: ^2.0.0
   watcher: ^1.0.0
   web_socket_channel: ">=2.3.0 <4.0.0"

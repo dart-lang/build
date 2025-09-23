@@ -85,10 +85,7 @@ Future<BuildResult> _doBuild(
 
   return await BuildCommand(
     builderFactories: BuilderFactories(),
-    buildOptions: BuildOptions.forTests(
-      configKey: configKey,
-      skipBuildScriptCheck: true,
-    ),
+    buildOptions: BuildOptions.forTests(configKey: configKey),
     testingOverrides: TestingOverrides(
       builderApplications: builders.build(),
       readerWriter: readerWriter,

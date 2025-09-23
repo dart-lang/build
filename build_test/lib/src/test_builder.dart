@@ -459,9 +459,6 @@ Future<TestBuilderResult> testBuilderFactories(
     // ignore: invalid_use_of_visible_for_testing_member
     buildOptions: BuildOptions.forTests(
       enableLowResourcesMode: enableLowResourceMode,
-      // Tests always trigger the "build script updated" check, even if it
-      // didn't change. Skip it to allow testing with preserved state.
-      skipBuildScriptCheck: true,
     ),
     testingOverrides: testingOverrides,
   );
@@ -473,7 +470,7 @@ Future<TestBuilderResult> testBuilderFactories(
   final buildResult = await buildSeries.run({});
 
   // Do cleanup that would usually happen on process exit.
-  await buildSeries.beforeExit();
+  await buildSeries.close();
 
   // Stop logging.
   buildLog.configuration = buildLog.configuration.rebuild((b) {

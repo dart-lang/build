@@ -29,13 +29,7 @@ class AssetTracker {
   Future<Map<AssetId, ChangeType>> collectChanges(AssetGraph assetGraph) async {
     final inputSources = await findInputSources();
     final generatedSources = await findCacheDirSources();
-    final internalSources = await findInternalSources();
-    return computeSourceUpdates(
-      inputSources,
-      generatedSources,
-      internalSources,
-      assetGraph,
-    );
+    return computeSourceUpdates(inputSources, generatedSources, assetGraph);
   }
 
   /// Returns the all the sources found in the cache directory.
@@ -52,34 +46,18 @@ class AssetTracker {
     );
   }
 
-  /// Returns all the internal sources, such as those under [entryPointDir].
-  Future<Set<AssetId>> findInternalSources() async {
-    final ids = await _listIdsSafe(Glob('$entryPointDir/**')).toSet();
-    final packageConfigId = AssetId(
-      _targetGraph.rootPackageConfig.packageName,
-      '.dart_tool/package_config.json',
-    );
-
-    if (await _readerWriter.canRead(packageConfigId)) {
-      ids.add(packageConfigId);
-    }
-    return ids;
-  }
-
   /// Finds the asset changes which have happened while unwatched between builds
   /// by taking a difference between the assets in the graph and the assets on
   /// disk.
   Future<Map<AssetId, ChangeType>> computeSourceUpdates(
     Set<AssetId> inputSources,
     Set<AssetId> generatedSources,
-    Set<AssetId> internalSources,
     AssetGraph assetGraph,
   ) async {
     final allSources =
         <AssetId>{}
           ..addAll(inputSources)
-          ..addAll(generatedSources)
-          ..addAll(internalSources);
+          ..addAll(generatedSources);
     final updates = <AssetId, ChangeType>{};
     void addUpdates(Iterable<AssetId> assets, ChangeType type) {
       for (final asset in assets) {
@@ -108,8 +86,7 @@ class AssetTracker {
     addUpdates(removedAssets, ChangeType.REMOVE);
 
     final originalGraphSources = assetGraph.sources.toSet();
-    final preExistingSources = originalGraphSources.intersection(inputSources)
-      ..addAll(internalSources.where(assetGraph.contains));
+    final preExistingSources = originalGraphSources.intersection(inputSources);
     for (final id in preExistingSources) {
       final node = assetGraph.get(id)!;
       final originalDigest = node.digest;

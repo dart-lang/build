@@ -58,7 +58,7 @@ class BuildCommand implements BuildRunnerCommand {
 
     final buildSeries = BuildSeries(buildPlan);
     final result = await buildSeries.run({});
-    await buildSeries.beforeExit();
+    await buildSeries.close();
     return result;
   }
 }

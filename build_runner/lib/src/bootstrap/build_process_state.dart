@@ -3,6 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'dart:isolate';
 
 /// State for the whole build process.
@@ -16,10 +18,15 @@ class BuildProcessState {
   final List<void Function()> _beforeSends = [];
   final List<void Function()> _afterReceives = [];
 
-  /// The exit code of the most recent build script isolate, or `null` if there
-  /// was none or it is currently running.
-  int? get isolateExitCode => _state['isolateExitCode'] as int?;
-  set isolateExitCode(int? value) => _state['isolateExitCode'] = value;
+  /// For `buildLog`, console output capabilities.
+  ///
+  /// If not already set, sets from the current process stdio on get.
+  StdioCapabilities get stdio {
+    _state['stdioCapabilities'] ??= StdioCapabilities().serialize();
+    return StdioCapabilities.deserialize(
+      _state['stdioCapabilities'] as Map<String, Object?>,
+    );
+  }
 
   /// For `buildLog`, the log mode.
   BuildLogMode get buildLogMode => BuildLogMode.values.singleWhere(
@@ -47,31 +54,25 @@ class BuildProcessState {
     _beforeSends.add(function);
   }
 
-  /// Sends `this` to [sendPort].
-  Future<void> send(SendPort? sendPort) async {
+  String serialize() {
     for (final beforeSend in _beforeSends) {
       beforeSend();
     }
-    sendPort?.send(_state);
+    return json.encode(_state);
   }
 
   void doAfterReceive(void Function() function) {
     _afterReceives.add(function);
   }
 
-  /// Receives `this` from [sendPort], by sending a `SendPort` then listening
-  /// on its corresponding `ReceivePort`.
-  Future<void> receive(SendPort? sendPort) async {
-    if (sendPort == null) {
-      _state.clear();
-      return;
-    }
-    final receivePort = ReceivePort();
-    sendPort.send(receivePort.sendPort);
-    final received = await receivePort.first;
+  void deserializeAndSet(String serialized) async {
+    var data = <String, Object?>{};
+    try {
+      data = json.decode(serialized) as Map<String, Object?>;
+    } catch (_) {}
     _state
       ..clear()
-      ..addAll(received as Map<String, Object?>);
+      ..addAll(data);
     for (final afterReceive in _afterReceives) {
       afterReceive();
     }
@@ -109,4 +110,34 @@ enum BuildLogMode {
   /// If a console is available, progress is shown and updated in place instead
   /// of line by line logging.
   build,
+}
+
+/// The stdio capabilities of the parent process.
+///
+/// The child can't interact directly with parent stdio but should render
+/// output for it.
+class StdioCapabilities {
+  final bool hasTerminal;
+  final bool supportsAnsiEscapes;
+  final int terminalLines;
+  final int terminalColumns;
+
+  StdioCapabilities()
+    : hasTerminal = stdout.hasTerminal,
+      supportsAnsiEscapes = stdout.supportsAnsiEscapes,
+      terminalLines = stdout.hasTerminal ? stdout.terminalLines : 0,
+      terminalColumns = stdout.hasTerminal ? stdout.terminalColumns : 80;
+
+  StdioCapabilities.deserialize(Map<String, Object?> serialized)
+    : hasTerminal = serialized['hasTerminal'] as bool,
+      supportsAnsiEscapes = serialized['supportsAnsiEscapes'] as bool,
+      terminalLines = serialized['terminalLines'] as int,
+      terminalColumns = serialized['terminalColumns'] as int;
+
+  Map<String, Object?> serialize() => {
+    'hasTerminal': hasTerminal,
+    'supportsAnsiEscapes': supportsAnsiEscapes,
+    'terminalLines': terminalLines,
+    'terminalColumns': terminalColumns,
+  };
 }

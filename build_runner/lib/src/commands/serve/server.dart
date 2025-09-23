@@ -36,11 +36,12 @@ enum PerfSortOrder {
 }
 
 class ServeHandler {
+  final String rootPackage;
   final Watcher _watcher;
 
   final BuildUpdatesWebSocketHandler _webSocketHandler;
 
-  ServeHandler(this._watcher)
+  ServeHandler(this.rootPackage, this._watcher)
     : _webSocketHandler = BuildUpdatesWebSocketHandler() {
     _watcher.buildResults
         .listen(_webSocketHandler.emitUpdateMessage)
@@ -75,7 +76,7 @@ class ServeHandler {
       }
       final assetHandler = AssetHandler(
         () async => (await _watcher.currentBuildResult).buildOutputReader,
-        _watcher.packageGraph.root.name,
+        rootPackage,
       );
       return assetHandler.handle(request, rootDir: rootDir);
     });
@@ -102,7 +103,6 @@ class ServeHandler {
     final reader = buildResult.buildOutputReader;
     final assertPathList =
         (jsonDecode(await request.readAsString()) as List).cast<String>();
-    final rootPackage = _watcher.packageGraph.root.name;
     final results = <String, String>{};
     for (final path in assertPathList) {
       final assetIds = pathToAssetIds(rootPackage, rootDir, p.url.split(path));

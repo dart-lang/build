@@ -49,7 +49,6 @@ void main() {
       assetGraph = await AssetGraph.build(
         BuildPhases([]),
         {aId},
-        <AssetId>{},
         packageGraph,
         reader,
       );

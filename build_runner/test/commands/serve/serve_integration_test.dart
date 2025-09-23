@@ -60,10 +60,7 @@ void main() {
     final server =
         (await WatchCommand(
           builderFactories: BuilderFactories(),
-          buildOptions: BuildOptions.forTests(
-            verbose: true,
-            skipBuildScriptCheck: true,
-          ),
+          buildOptions: BuildOptions.forTests(verbose: true),
           testingOverrides: TestingOverrides(
             builderApplications:
                 [applyToRoot(const UppercaseBuilder())].build(),
