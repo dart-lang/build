@@ -11,6 +11,15 @@ import 'package:path/path.dart' as p;
 /// Relative path to the asset graph from the root package dir.
 final String assetGraphPath = assetGraphPathFor(_scriptPath);
 
+/// Relative path to the directory containing shared resources for this build
+/// (from the root package dir).
+final String sharedBuildResourcesDirPath = sharedBuildResourcesDirFor(
+  _scriptPath,
+);
+
+String sharedBuildResourcesDirFor(String path) =>
+    '$cacheDir/${_scriptHashFor(path)}/shared/';
+
 /// Relative path to the asset graph for a build script at [path]
 String assetGraphPathFor(String path) =>
     '$cacheDir/${_scriptHashFor(path)}/asset_graph.json';
@@ -25,7 +34,7 @@ final String _scriptPath =
 /// Directory containing automatically generated build entrypoints.
 ///
 /// Files in this directory must be read to do build script invalidation.
-const entryPointDir = '$cacheDir/entrypoint';
+const String entryPointDir = '$cacheDir/entrypoint';
 
 /// The directory to which hidden assets will be written.
 String get generatedOutputDirectory => '$cacheDir/generated';

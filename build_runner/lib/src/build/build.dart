@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
@@ -225,6 +226,22 @@ class Build {
     final done = Completer<BuildResult>();
     runZonedGuarded(
       () async {
+        final sharedBuildResourcesDir = await Directory(
+          sharedBuildResourcesDirPath,
+        ).create(recursive: true);
+        final currentSharedBuildResourcesDir = await sharedBuildResourcesDir
+            .createTemp('shared');
+        final currentBuildUpdatesFile = File.fromUri(
+          currentSharedBuildResourcesDir.uri.resolve('updates'),
+        );
+        await currentBuildUpdatesFile.create();
+
+        await currentBuildUpdatesFile.writeAsString(
+          json.encode({
+            for (final MapEntry(:key, :value) in updates.entries)
+              '${key.uri}': value.toString(),
+          }),
+        );
         buildLog.doing('Updating the asset graph.');
         if (!assetGraph.cleanBuild) {
           await _updateAssetGraph(updates);

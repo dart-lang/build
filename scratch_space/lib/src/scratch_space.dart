@@ -98,10 +98,14 @@ class ScratchSpace {
   /// Any asset that is under a `lib` dir will be output under a `packages`
   /// directory corresponding to its package, and any other assets are output
   /// directly under the temp dir using their unmodified path.
-  Future<void> ensureAssets(Iterable<AssetId> assetIds, AssetReader reader) {
+  Future<Set<AssetId>> ensureAssets(
+    Iterable<AssetId> assetIds,
+    AssetReader reader,
+  ) {
     if (!exists) {
       throw StateError('Tried to use a deleted ScratchSpace!');
     }
+    final result = <AssetId>{};
 
     final futures =
         assetIds.map((id) async {
@@ -112,6 +116,7 @@ class ScratchSpace {
             return;
           }
           _digests[id] = digest;
+          result.add(id);
 
           try {
             await _pendingWrites.putIfAbsent(
@@ -131,7 +136,7 @@ class ScratchSpace {
           }
         }).toList();
 
-    return Future.wait(futures);
+    return Future.wait(futures).then<Set<AssetId>>((_) => result);
   }
 
   /// Returns the actual [File] in this environment corresponding to [id].

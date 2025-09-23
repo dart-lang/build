@@ -4,9 +4,11 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
+import 'package:build_runner/build_runner.dart';
 
 import 'common.dart';
 import 'errors.dart';
@@ -30,11 +32,11 @@ class DdcFrontendServerBuilder implements Builder {
 
   @override
   Future<void> build(BuildStep buildStep) async {
-    var moduleContents = await buildStep.readAsString(buildStep.inputId);
+    final moduleContents = await buildStep.readAsString(buildStep.inputId);
     final module = Module.fromJson(
       json.decode(moduleContents) as Map<String, dynamic>,
     );
-    var ddcEntrypointId = module.primarySource;
+    final ddcEntrypointId = module.primarySource;
     // Entrypoints always have a `.module` file for ease of looking them up,
     // but they might not be the primary source.
     if (ddcEntrypointId.changeExtension(moduleExtension(ddcPlatform)) !=
@@ -61,18 +63,23 @@ class DdcFrontendServerBuilder implements Builder {
 
   /// Compile [module] with Frontend Server.
   Future<void> _compile(Module module, BuildStep buildStep) async {
-    var transitiveAssets = await buildStep.trackStage(
+    final transitiveAssets = await buildStep.trackStage(
       'CollectTransitiveDeps',
       () => module.computeTransitiveAssets(buildStep),
     );
     final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
-    await buildStep.trackStage(
+    final webEntrypointAsset = AssetId.resolve(Uri.parse(entrypoint));
+    final changedAssets = await buildStep.trackStage(
       'EnsureAssets',
-      () => scratchSpace.ensureAssets(transitiveAssets, buildStep),
+      () => scratchSpace.ensureAssets([
+        webEntrypointAsset,
+        ...transitiveAssets,
+      ], buildStep),
     );
-    var ddcEntrypointId = module.primarySource;
-    var jsOutputId = ddcEntrypointId.changeExtension(jsModuleExtension);
-    var jsFESOutputId = ddcEntrypointId.changeExtension('.dart.lib.js');
+    final changedAssetUris = [for (final asset in changedAssets) asset.uri];
+    final ddcEntrypointId = module.primarySource;
+    final jsOutputId = ddcEntrypointId.changeExtension(jsModuleExtension);
+    final jsFESOutputId = ddcEntrypointId.changeExtension('.dart.lib.js');
 
     final frontendServer = await buildStep.fetchResource(
       persistentFrontendServerResource,
@@ -82,12 +89,36 @@ class DdcFrontendServerBuilder implements Builder {
     );
     driver.init(frontendServer);
 
+    final sharedBuildResourcesDir = Directory(sharedBuildResourcesDirPath);
+    if (!sharedBuildResourcesDir.existsSync()) {
+      throw StateError(
+        'Unable to read updated assets from $sharedBuildResourcesDir',
+      );
+    }
+    final changedAssetsUrisFromFile = <Uri>[];
+    for (final entity in sharedBuildResourcesDir.listSync(recursive: true)) {
+      if (entity is File) {
+        final updatedAssetsJson =
+            jsonDecode(entity.readAsStringSync()) as Map<String, dynamic>;
+        final currentUpdatedAssetsUris = [
+          for (final entry in updatedAssetsJson.entries) Uri.parse(entry.key),
+        ];
+        changedAssetsUrisFromFile.addAll(currentUpdatedAssetsUris);
+      }
+    }
+
+    print('updatedAssetsUris $changedAssetsUrisFromFile');
+    print('changedAssetUris $changedAssetUris');
+
     // Request from the Frontend Server exactly the JS file requested by
     // build_runner. Frontend Server's recompilation logic will avoid
     // extraneous recompilation.
-    var invalidatedFiles = [ddcEntrypointId.uri];
+    final invalidatedFiles = [
+      ddcEntrypointId.uri,
+      ...changedAssetsUrisFromFile,
+    ];
     await driver.recompileAndRecord(
-      sourceArg(ddcEntrypointId),
+      sourceArg(webEntrypointAsset),
       invalidatedFiles,
       [sourceArg(jsFESOutputId)],
     );
@@ -105,10 +136,10 @@ class DdcFrontendServerBuilder implements Builder {
 
     // Copy the metadata output, modifying its contents to remove the temp
     // directory from paths
-    var metadataId = ddcEntrypointId.changeExtension(metadataExtension);
-    var file = scratchSpace.fileFor(metadataId);
-    var content = await file.readAsString();
-    var json = jsonDecode(content) as Map<String, Object?>;
+    final metadataId = ddcEntrypointId.changeExtension(metadataExtension);
+    final file = scratchSpace.fileFor(metadataId);
+    final content = await file.readAsString();
+    final json = jsonDecode(content) as Map<String, Object?>;
     fixMetadataSources(json, scratchSpace.tempDir.uri);
     await buildStep.writeAsString(metadataId, jsonEncode(json));
   }

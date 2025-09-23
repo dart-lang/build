@@ -6,6 +6,7 @@ import 'src/build_plan/builder_factories.dart';
 import 'src/build_runner.dart' show BuildRunner;
 
 export 'src/commands/daemon/constants.dart' show assetServerPort;
+export 'src/constants.dart' show sharedBuildResourcesDirPath;
 
 /// Runs `build_runner` with [arguments] and [builderFactories].
 ///
