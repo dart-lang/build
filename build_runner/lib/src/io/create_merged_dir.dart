@@ -35,8 +35,6 @@ Future<bool> createMergedOutputDirectories({
   required BuildOutputReader buildOutputReader,
   required ReaderWriter readerWriter,
 }) async {
-  buildLog.doing('Writing the output directory.');
-
   return await TimedActivity.write.runAsync(() async {
     if (outputSymlinksOnly && readerWriter.filesystem is! IoFilesystem) {
       buildLog.error(

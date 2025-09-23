@@ -64,7 +64,6 @@ Future<int> generateAndRun(
         if (kernelFile.existsSync()) {
           kernelFile.deleteSync();
         }
-        buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
       }
     } on CannotBuildException {
       return ExitCode.config.code;
@@ -109,8 +108,6 @@ Future<int> generateAndRun(
         );
         messagePort.sendPort.send(ExitCode.config.code);
         exitPort.sendPort.send(null);
-      } else {
-        buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
       }
       File(scriptKernelLocation).renameSync(scriptKernelCachedLocation);
     }
@@ -157,10 +154,8 @@ Future<bool> _createKernelIfNeeded(Iterable<String> experiments) async {
       // If we failed to serialize an asset graph for the snapshot, then we
       // don't want to re-use it because we can't check if it is up to date.
       kernelFile.renameSync(scriptKernelCachedLocation);
-      buildLog.fullBuildBecause(FullBuildReason.incompatibleAssetGraph);
     } else if (!await _checkImportantPackageDepsAndExperiments(experiments)) {
       kernelFile.renameSync(scriptKernelCachedLocation);
-      buildLog.fullBuildBecause(FullBuildReason.incompatibleScript);
     }
   }
 
@@ -175,7 +170,6 @@ Future<bool> _createKernelIfNeeded(Iterable<String> experiments) async {
     );
 
     var hadErrors = false;
-    buildLog.doing('Compiling the build script.');
     try {
       final result = await client.compile();
       hadErrors = result.errorCount > 0 || !kernelCacheFile.existsSync();

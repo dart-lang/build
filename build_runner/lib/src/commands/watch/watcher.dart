@@ -14,7 +14,6 @@ import '../../build_plan/build_options.dart';
 import '../../build_plan/build_plan.dart';
 import '../../build_plan/package_graph.dart';
 import '../../build_plan/testing_overrides.dart';
-import '../../io/build_output_reader.dart';
 import '../../io/reader_writer.dart';
 import '../../logging/build_log.dart';
 import 'asset_change.dart';
@@ -62,7 +61,6 @@ class Watcher {
     final controller = StreamController<BuildResult>();
 
     Future<BuildResult> doBuild(List<List<AssetChange>> changes) async {
-      buildLog.nextBuild();
       final buildSeries = _buildSeries!;
       final mergedChanges = collectChanges(changes);
 
@@ -70,9 +68,7 @@ class Watcher {
       return buildSeries.run(mergedChanges);
     }
 
-    final terminate = Future.any([until, _terminateCompleter.future]).then((_) {
-      buildLog.info('Terminating. No further builds will be scheduled.');
-    });
+    final terminate = Future.any([until, _terminateCompleter.future]);
 
     Digest? originalRootPackageConfigDigest;
     final rootPackageConfigId = AssetId(
@@ -107,28 +103,9 @@ class Watcher {
             return _readOnceExists(id, readerWriter).then((bytes) {
               if (md5.convert(bytes) != digest) {
                 _terminateCompleter.complete();
-                buildLog.error(
-                  'Terminating builds due to package graph update.',
-                );
               }
               return change;
             });
-          } else if (_isBuildYaml(id) ||
-              _isConfiguredBuildYaml(id) ||
-              _isPackageBuildYamlOverride(id)) {
-            controller.add(
-              BuildResult(
-                status: BuildStatus.failure,
-                failureType: FailureType.buildConfigChanged,
-                buildOutputReader: BuildOutputReader.empty(),
-              ),
-            );
-
-            // Kill future builds if the build.yaml files change.
-            _terminateCompleter.complete();
-            buildLog.error(
-              'Terminating builds due to ${id.package}:${id.path} update.',
-            );
           }
           return change;
         })
@@ -143,7 +120,6 @@ class Watcher {
         .listen((BuildResult result) {
           if (result.failureType == FailureType.buildScriptChanged) {
             _terminateCompleter.complete();
-            buildLog.error('Terminating builds due to build script update.');
           }
           if (controller.isClosed) return;
           controller.add(result);
@@ -152,13 +128,11 @@ class Watcher {
           await currentBuildResult;
           await _buildSeries?.beforeExit();
           if (!controller.isClosed) await controller.close();
-          buildLog.info('Builds finished. Safe to exit\n');
         });
 
     // Schedule the actual first build for the future so we can return the
     // stream synchronously.
     () async {
-      buildLog.doing('Waiting for file watchers to be ready.');
       await graphWatcher.ready;
       if (await readerWriter.canRead(rootPackageConfigId)) {
         originalRootPackageConfigDigest = md5.convert(
@@ -183,15 +157,6 @@ class Watcher {
 
     return controller.stream;
   }
-
-  bool _isBuildYaml(AssetId id) => id.path == 'build.yaml';
-  bool _isConfiguredBuildYaml(AssetId id) =>
-      id.package == packageGraph.root.name &&
-      id.path == 'build.${buildOptions.configKey}.yaml';
-  bool _isPackageBuildYamlOverride(AssetId id) =>
-      id.package == packageGraph.root.name &&
-      id.path.contains(_packageBuildYamlRegexp);
-  final _packageBuildYamlRegexp = RegExp(r'^[a-z0-9_]+\.build\.yaml$');
 }
 
 /// Reads [id] using [readerWriter], waiting for it to exist for up to 1 second.

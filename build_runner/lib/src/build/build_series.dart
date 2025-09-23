@@ -8,15 +8,16 @@ import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:watcher/watcher.dart';
 
+import '../bootstrap/build_script_generate.dart';
 import '../build_plan/build_directory.dart';
 import '../build_plan/build_filter.dart';
 import '../build_plan/build_plan.dart';
 import '../commands/watch/asset_change.dart';
 import '../constants.dart';
 import '../io/asset_tracker.dart';
-import '../io/build_output_reader.dart';
 import '../io/filesystem_cache.dart';
 import '../io/reader_writer.dart';
+import '../logging/build_log.dart';
 import 'asset_graph/graph.dart';
 import 'asset_graph/node.dart';
 import 'build.dart';
@@ -35,11 +36,10 @@ import 'build_result.dart';
 /// this serialized state is not actually used: the `AssetGraph` instance
 /// already in memory is used directly.
 class BuildSeries {
-  final BuildPlan _buildPlan;
+  BuildPlan _buildPlan;
+  AssetGraph _assetGraph;
+  ReaderWriter _readerWriter;
 
-  final AssetGraph _assetGraph;
-
-  final ReaderWriter _readerWriter;
   final ResourceManager _resourceManager = ResourceManager();
 
   /// For the first build only, updates from the previous serialized build
@@ -105,19 +105,21 @@ class BuildSeries {
       return false;
     }
 
-    final node =
-        _assetGraph.contains(change.id) ? _assetGraph.get(change.id) : null;
+    final id = change.id;
+    if (_isBuildConfiguration(id)) return true;
+
+    final node = _assetGraph.contains(id) ? _assetGraph.get(id) : null;
 
     // Changes to files that are not currently part of the build.
     if (node == null) {
       // Ignore under `.dart_tool/build`.
-      if (change.id.path.startsWith(cacheDir)) return false;
+      if (id.path.startsWith(cacheDir)) return false;
 
       // Ignore modifications and deletes.
       if (change.type != ChangeType.ADD) return false;
 
       // It's an add: return whether it's a new input.
-      return _buildPlan.targetGraph.anyMatchesAsset(change.id);
+      return _buildPlan.targetGraph.anyMatchesAsset(id);
     }
 
     // Changes to files that are part of the build.
@@ -136,14 +138,20 @@ class BuildSeries {
 
     // For modifications, confirm that the content actually changed.
     if (change.type == ChangeType.MODIFY) {
-      _readerWriter.cache.invalidate([change.id]);
-      final newDigest = await _readerWriter.digest(change.id);
+      _readerWriter.cache.invalidate([id]);
+      final newDigest = await _readerWriter.digest(id);
       return node.digest != newDigest;
     }
 
     // It's an add of "missing source" node or a deletion of an input.
     return true;
   }
+
+  bool _isBuildConfiguration(AssetId id) =>
+      id.path == 'build.yaml' ||
+      id.path.endsWith('.build.yaml') ||
+      (id.package == _buildPlan.packageGraph.root.name &&
+          id.path == 'build.${_buildPlan.buildOptions.configKey}.yaml');
 
   Future<List<WatchEvent>> checkForChanges() async {
     final updates = await AssetTracker(
@@ -178,14 +186,29 @@ class BuildSeries {
     BuiltSet<BuildFilter>? buildFilters,
   }) async {
     if (_hasBuildScriptChanged(updates.keys.toSet())) {
-      return BuildResult(
-        status: BuildStatus.failure,
-        failureType: FailureType.buildScriptChanged,
-        buildOutputReader: BuildOutputReader(
-          buildPlan: _buildPlan,
-          readerWriter: _readerWriter,
-          assetGraph: _assetGraph,
-        ),
+      return BuildResult.buildScriptChanged();
+    }
+
+    if (updates.keys.any(_isBuildConfiguration)) {
+      _buildPlan = await _buildPlan.reload();
+      await _buildPlan.deleteFilesAndFolders();
+      // A config change might have caused new builders to be needed, which
+      // needs a restart to change the build script.
+      if (_buildPlan.restartIsNeeded) {
+        return BuildResult.buildScriptChanged();
+      }
+      // A config change might have changed builder factories, which needs a
+      // restart to change the build script.
+      if (await hasGeneratedBuildScriptChanged()) {
+        return BuildResult.buildScriptChanged();
+      }
+      _assetGraph = _buildPlan.takeAssetGraph();
+      _readerWriter = _buildPlan.readerWriter.copyWith(
+        generatedAssetHider: _assetGraph,
+        cache:
+            _buildPlan.buildOptions.enableLowResourcesMode
+                ? const PassthroughFilesystemCache()
+                : InMemoryFilesystemCache(),
       );
     }
 
@@ -202,6 +225,7 @@ class BuildSeries {
       }
     }
 
+    if (!firstBuild) buildLog.nextBuild();
     final build = Build(
       buildPlan: _buildPlan.copyWith(
         buildDirs: buildDirs,
