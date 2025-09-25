@@ -88,6 +88,7 @@ void main() {
     // Start client.
     var client = await BuildDaemonClient.connectUnchecked(
       p.join(tester.tempDirectory.path, 'root_pkg'),
+      logHandler: (event) => printOnFailure('(0) ${event.message}'),
     );
     addTearDown(client.close);
 
@@ -134,6 +135,7 @@ void main() {
     // Builds.
     client = await BuildDaemonClient.connectUnchecked(
       p.join(tester.tempDirectory.path, 'root_pkg'),
+      logHandler: (event) => printOnFailure('(1) ${event.message}'),
     );
     addTearDown(client.close);
     client.registerBuildTarget(webTarget);
@@ -170,12 +172,14 @@ void main() {
     await daemon.expect(readyToConnectLog);
     client = await BuildDaemonClient.connectUnchecked(
       p.join(tester.tempDirectory.path, 'root_pkg'),
+      logHandler: (event) => printOnFailure('(2) ${event.message}'),
     );
     results = StreamQueue(client.buildResults);
     addTearDown(client.close);
     // Connect to it twice to check both clients are notified later.
     final client2 = await BuildDaemonClient.connectUnchecked(
       p.join(tester.tempDirectory.path, 'root_pkg'),
+      logHandler: (event) => printOnFailure('(3) ${event.message}'),
     );
     final results2 = StreamQueue(client2.buildResults);
     addTearDown(client2.close);
