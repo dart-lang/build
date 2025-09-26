@@ -33,7 +33,7 @@ Builder ddcModuleBuilder(BuilderOptions options) {
   _ensureSameDdcHotReloadOptions(options);
   return ModuleBuilder(
     ddcPlatform,
-    useRawMetaModules: _readWebHotReloadOption(options),
+    usesWebHotReload: _readWebHotReloadOption(options),
   );
 }
 

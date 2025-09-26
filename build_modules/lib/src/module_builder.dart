@@ -14,6 +14,7 @@ import 'module_library.dart';
 import 'module_library_builder.dart' show moduleLibraryExtension;
 import 'modules.dart';
 import 'platform.dart';
+import 'scratch_space.dart';
 
 /// The extension for serialized module assets.
 String moduleExtension(DartPlatform platform) => '.${platform.name}.module';
@@ -23,13 +24,15 @@ String moduleExtension(DartPlatform platform) => '.${platform.name}.module';
 class ModuleBuilder implements Builder {
   final DartPlatform _platform;
 
-  /// True if we use raw modules instead of clean modules.
+  /// Emits DDC code with the Library Bundle module system, which supports hot
+  /// reload.
   ///
+  /// If set, this builder will consume raw meta modules (instead of clean).
   /// Clean meta modules are only used for DDC's AMD module system due its
   /// requirement that self-referential libraries be bundled.
-  final bool useRawMetaModules;
+  final bool usesWebHotReload;
 
-  ModuleBuilder(this._platform, {this.useRawMetaModules = false})
+  ModuleBuilder(this._platform, {this.usesWebHotReload = false})
     : buildExtensions = {
         '.dart': [moduleExtension(_platform)],
       };
@@ -40,8 +43,8 @@ class ModuleBuilder implements Builder {
   @override
   Future build(BuildStep buildStep) async {
     final metaModules = await buildStep.fetchResource(metaModuleCache);
-    var metaModuleExtensionString =
-        useRawMetaModules
+    final metaModuleExtensionString =
+        usesWebHotReload
             ? metaModuleExtension(_platform)
             : metaModuleCleanExtension(_platform);
     final metaModule =
@@ -52,19 +55,25 @@ class ModuleBuilder implements Builder {
     var outputModule = metaModule.modules.firstWhereOrNull(
       (m) => m.primarySource == buildStep.inputId,
     );
-    if (outputModule == null) {
-      final serializedLibrary = await buildStep.readAsString(
-        buildStep.inputId.changeExtension(moduleLibraryExtension),
+    final serializedLibrary = await buildStep.readAsString(
+      buildStep.inputId.changeExtension(moduleLibraryExtension),
+    );
+    final libraryModule = ModuleLibrary.deserialize(
+      buildStep.inputId,
+      serializedLibrary,
+    );
+    final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
+    if (usesWebHotReload &&
+        libraryModule.isEntryPoint &&
+        libraryModule.hasMain) {
+      // We must save the main entrypoint as the recompilation target for the
+      // Frontend Server before any JS files are emitted.
+      scratchSpace.entrypointAssetId = libraryModule.id;
+    }
+    if (outputModule == null && libraryModule.hasMain) {
+      outputModule = metaModule.modules.firstWhere(
+        (m) => m.sources.contains(buildStep.inputId),
       );
-      final libraryModule = ModuleLibrary.deserialize(
-        buildStep.inputId,
-        serializedLibrary,
-      );
-      if (libraryModule.hasMain) {
-        outputModule = metaModule.modules.firstWhere(
-          (m) => m.sources.contains(buildStep.inputId),
-        );
-      }
     }
     if (outputModule == null) return;
     final modules = await buildStep.fetchResource(moduleCache);
@@ -73,5 +82,13 @@ class ModuleBuilder implements Builder {
       buildStep,
       outputModule,
     );
+    if (usesWebHotReload) {
+      // All sources must be declared before the Frontend Server is invoked, as
+      // it only accepts the main entrypoint as its compilation target.
+      await buildStep.trackStage(
+        'EnsureAssets',
+        () => scratchSpace.ensureAssets(outputModule!.sources, buildStep),
+      );
+    }
   }
 }

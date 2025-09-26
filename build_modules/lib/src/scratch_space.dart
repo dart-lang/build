@@ -44,6 +44,9 @@ final scratchSpaceResource = Resource<ScratchSpace>(
     }
     return scratchSpace;
   },
+  dispose: (scratchSpace) {
+    scratchSpace.dispose();
+  },
   beforeExit: () async {
     // The workers are running inside the scratch space, so wait for them to
     // shut down before deleting it.

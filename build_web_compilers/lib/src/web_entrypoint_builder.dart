@@ -327,7 +327,7 @@ class WebEntrypointBuilder implements Builder {
           compilationSteps.add(
             Future(() async {
               try {
-                var usesWebHotReload = options.usesWebHotReload;
+                final usesWebHotReload = options.usesWebHotReload;
                 await bootstrapDdc(
                   buildStep,
                   nativeNullAssertions: options.nativeNullAssertions,

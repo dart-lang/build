@@ -97,6 +97,7 @@ class FrontendServerProxyDriver {
         _cachedOutput =
             output = await _frontendServer!.compile(request.entrypoint);
       } else if (request is _RecompileRequest) {
+        print("PROCESSING ${request.entrypoint} ${request.invalidatedFiles}");
         // Compile the first [_RecompileRequest] as a [_CompileRequest] to warm
         // up the Frontend Server.
         if (_cachedOutput == null) {
@@ -113,7 +114,12 @@ class FrontendServerProxyDriver {
       }
       if (output != null && output.errorCount == 0) {
         _frontendServer!.accept();
+      } else {
+        // We must await [reject]'s output, but we swallow the output since it
+        // doesn't provide useful information.
+        await _frontendServer!.reject();
       }
+      print('OUTCOME ${output?.errorCount} ${output?.errorMessage}');
       request.completer.complete(output);
     } catch (e, s) {
       request.completer.completeError(e, s);
@@ -209,11 +215,13 @@ class PersistentFrontendServer {
   }
 
   Future<CompilerOutput?> compile(String entrypoint) {
+    print("COMPILE");
     _stdoutHandler.reset();
     _stdinController.add('compile $entrypoint');
     return _stdoutHandler.compilerOutput!.future;
   }
 
+  /// Either [accept] or [reject] should be called after every [recompile] call.
   Future<CompilerOutput?> recompile(
     String entrypoint,
     List<Uri> invalidatedFiles,
@@ -230,6 +238,12 @@ class PersistentFrontendServer {
 
   void accept() {
     _stdinController.add('accept');
+  }
+
+  Future<CompilerOutput?> reject() {
+    _stdoutHandler.reset(expectSources: false);
+    _stdinController.add('reject');
+    return _stdoutHandler.compilerOutput!.future;
   }
 
   /// Records all modified files into the in-memory filesystem.
@@ -505,6 +519,7 @@ class StdoutHandler {
   var _errorBuffer = StringBuffer();
 
   void handler(String message) {
+    print("FES $message");
     const kResultPrefix = 'result ';
     if (boundaryKey == null && message.startsWith(kResultPrefix)) {
       boundaryKey = message.substring(kResultPrefix.length);
@@ -546,7 +561,7 @@ class StdoutHandler {
         _logger.info(message);
         _errorBuffer.writeln(message);
       case StdoutState.CollectDiagnostic:
-        _logger.info(message);
+        _logger.warning(message);
         _errorBuffer.writeln(message);
       case StdoutState.CollectDependencies:
         switch (message[0]) {
@@ -565,7 +580,6 @@ class StdoutHandler {
   void reset({
     bool suppressCompilerMessages = false,
     bool expectSources = true,
-    bool readFile = false,
   }) {
     boundaryKey = null;
     compilerOutput = Completer<CompilerOutput?>();

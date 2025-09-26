@@ -68,14 +68,15 @@ class DdcFrontendServerBuilder implements Builder {
       () => module.computeTransitiveAssets(buildStep),
     );
     final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
-    final webEntrypointAsset = AssetId.resolve(Uri.parse(entrypoint));
-    final changedAssets = await buildStep.trackStage(
+    final webEntrypointAsset = scratchSpace.entrypointAssetId;
+    await buildStep.trackStage(
       'EnsureAssets',
       () => scratchSpace.ensureAssets([
         webEntrypointAsset,
         ...transitiveAssets,
       ], buildStep),
     );
+    final changedAssets = scratchSpace.changedFilesInBuild;
     final changedAssetUris = [for (final asset in changedAssets) asset.uri];
     final ddcEntrypointId = module.primarySource;
     final jsOutputId = ddcEntrypointId.changeExtension(jsModuleExtension);
@@ -95,31 +96,13 @@ class DdcFrontendServerBuilder implements Builder {
         'Unable to read updated assets from $sharedBuildResourcesDir',
       );
     }
-    final changedAssetsUrisFromFile = <Uri>[];
-    for (final entity in sharedBuildResourcesDir.listSync(recursive: true)) {
-      if (entity is File) {
-        final updatedAssetsJson =
-            jsonDecode(entity.readAsStringSync()) as Map<String, dynamic>;
-        final currentUpdatedAssetsUris = [
-          for (final entry in updatedAssetsJson.entries) Uri.parse(entry.key),
-        ];
-        changedAssetsUrisFromFile.addAll(currentUpdatedAssetsUris);
-      }
-    }
-
-    print('updatedAssetsUris $changedAssetsUrisFromFile');
-    print('changedAssetUris $changedAssetUris');
 
     // Request from the Frontend Server exactly the JS file requested by
     // build_runner. Frontend Server's recompilation logic will avoid
     // extraneous recompilation.
-    final invalidatedFiles = [
-      ddcEntrypointId.uri,
-      ...changedAssetsUrisFromFile,
-    ];
     await driver.recompileAndRecord(
       sourceArg(webEntrypointAsset),
-      invalidatedFiles,
+      changedAssetUris,
       [sourceArg(jsFESOutputId)],
     );
     final outputFile = scratchSpace.fileFor(jsOutputId);
