@@ -46,10 +46,7 @@ void main() {
       readerWriter = InternalTestReaderWriter(rootPackage: rootPackage);
       readerWriter.writeAsString(assetId, '// a.dart');
       readerWriter.writeAsString(assetId2, '// other');
-      buildOptions = BuildOptions.forTests(
-        // Script check doesn't work in tests, skip it.
-        skipBuildScriptCheck: true,
-      );
+      buildOptions = BuildOptions.forTests();
       testingOverrides = TestingOverrides(
         builderApplications: [applyToRoot(TestBuilder())].build(),
         readerWriter: readerWriter,

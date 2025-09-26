@@ -2,7 +2,11 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:io';
+
 import 'package:build_runner/src/build_runner.dart';
 
-Future<void> main(List<String> arguments) =>
-    BuildRunner(arguments: arguments, builderFactories: null).run();
+Future<void> main(List<String> arguments) async {
+  exitCode =
+      await BuildRunner(arguments: arguments, builderFactories: null).run();
+}

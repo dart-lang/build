@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:io';
 
 import 'package:build_config/build_config.dart';
 import 'package:code_builder/code_builder.dart';
@@ -20,19 +19,8 @@ import '../io/reader_writer.dart';
 import '../logging/build_log.dart';
 
 const scriptLocation = '$entryPointDir/build.dart';
-const scriptKernelLocation = '$scriptLocation$scriptKernelSuffix';
-const scriptKernelSuffix = '.dill';
-const scriptKernelCachedLocation =
-    '$scriptKernelLocation$scriptKernelCachedSuffix';
-const scriptKernelCachedSuffix = '.cached';
 
 final _lastShortFormatDartVersion = Version(3, 6, 0);
-
-Future<bool> hasGeneratedBuildScriptChanged() async {
-  final script = await generateBuildScript();
-  final file = File(scriptLocation);
-  return !file.existsSync() || file.readAsStringSync() != script;
-}
 
 Future<String> generateBuildScript() async {
   final builderFactories = await loadBuilderFactories();
@@ -175,38 +163,16 @@ Method _main() => Method((b) {
       });
     }),
   );
-  b.optionalParameters.add(
-    Parameter((b) {
-      b.name = 'sendPort';
-      b.type = TypeReference((b) {
-        b.symbol = 'SendPort';
-        b.url = 'dart:isolate';
-        b.isNullable = true;
-      });
-    }),
-  );
-  final isolateExitCode = refer(
-    'buildProcessState.isolateExitCode',
-    'package:build_runner/src/bootstrap/build_process_state.dart',
-  );
   b.body = Block.of([
-    refer(
-      'buildProcessState.receive',
-      'package:build_runner/src/bootstrap/build_process_state.dart',
-    ).call([refer('sendPort')]).awaited.statement,
-    isolateExitCode
+    refer('exitCode', 'dart:io')
         .assign(
           refer(
-            'run',
-            'package:build_runner/build_runner.dart',
+            'ChildProcess.run',
+            'package:build_runner/src/bootstrap/processes.dart',
           ).call([refer('args'), refer('_builderFactories')]).awaited,
         )
+        .nullChecked
         .statement,
-    refer('exitCode', 'dart:io').assign(isolateExitCode).nullChecked.statement,
-    refer(
-      'buildProcessState.send',
-      'package:build_runner/src/bootstrap/build_process_state.dart',
-    ).call([refer('sendPort')]).awaited.statement,
   ]);
 });
 

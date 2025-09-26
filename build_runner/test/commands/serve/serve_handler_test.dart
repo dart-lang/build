@@ -116,12 +116,11 @@ void main() {
     assetGraph = await AssetGraph.build(
       BuildPhases([]),
       <AssetId>{},
-      <AssetId>{},
       packageGraph,
       readerWriter,
     );
-    watchImpl = MockWatchImpl(packageGraph);
-    serveHandler = ServeHandler(watchImpl);
+    watchImpl = MockWatchImpl();
+    serveHandler = ServeHandler(packageGraph.root.name, watchImpl);
     finalizedReader = BuildOutputReader.graphOnly(
       readerWriter: readerWriter,
       assetGraph: assetGraph,
@@ -644,27 +643,17 @@ class MockWatchImpl implements Watcher {
   @override
   Future<BuildResult> get currentBuildResult => _currentBuild!;
 
-  @override
-  set currentBuildResult(Future<BuildResult>? _) =>
-      throw UnsupportedError('unsupported!');
-
   final _futureBuildResultsController = StreamController<Future<BuildResult>>();
   final _buildResultsController = StreamController<BuildResult>();
 
   @override
   Stream<BuildResult> get buildResults => _buildResultsController.stream;
-  @override
-  set buildResults(Stream<BuildResult> _) =>
-      throw UnsupportedError('unsupported!');
-
-  @override
-  final PackageGraph packageGraph;
 
   void addFutureResult(Future<BuildResult> result) {
     _futureBuildResultsController.add(result);
   }
 
-  MockWatchImpl(this.packageGraph) {
+  MockWatchImpl() {
     final firstBuild = Completer<BuildResult>();
     _currentBuild = firstBuild.future;
     _futureBuildResultsController.stream.listen((futureBuildResult) {

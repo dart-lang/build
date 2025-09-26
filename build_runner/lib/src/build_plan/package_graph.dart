@@ -205,7 +205,11 @@ class PackageGraph implements AssetPathProvider {
     if (package == null) {
       throw PackageNotFoundException(id.package);
     }
-    return p.join(package.path, id.path);
+    var path = id.path;
+    if (Platform.pathSeparator != '/') {
+      path = path.replaceAll('/', Platform.pathSeparator);
+    }
+    return p.join(package.path, path);
   }
 
   @override

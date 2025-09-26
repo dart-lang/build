@@ -10,6 +10,7 @@ import 'dart:typed_data';
 
 import 'package:async/async.dart';
 import 'package:build_runner/src/logging/build_log.dart';
+import 'package:io/io.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart' as test;
@@ -62,6 +63,12 @@ class BuildRunnerTester {
     dependencies: fixturePackage.dependencies,
     pathDependencies: fixturePackage.pathDependencies,
   );
+
+  void copyPackage(String package) {
+    final sourcePath = pubspecs.packageConfig[package]!.root.toFilePath();
+    final destinationPath = p.join(tempDirectory.path, package);
+    copyPathSync(sourcePath, destinationPath);
+  }
 
   /// Reads workspace-relative [path], or returns `null` if it does not exist.
   String? read(String path) {
@@ -148,6 +155,7 @@ class BuildRunnerTester {
     String directory,
     String commandLine, {
     int expectExitCode = 0,
+    Map<String, String>? environment,
   }) async {
     final args = commandLine.split(' ');
     final command = args.removeAt(0);
@@ -155,6 +163,7 @@ class BuildRunnerTester {
       command,
       args,
       workingDirectory: p.join(tempDirectory.path, directory),
+      environment: environment,
     );
     final output = '''
 === $directory: $commandLine
@@ -176,8 +185,9 @@ ${result.stdout}${result.stderr}===
       args,
       workingDirectory: p.join(tempDirectory.path, directory),
     );
-    addTearDown(process.kill);
-    return BuildRunnerProcess(process);
+    final result = BuildRunnerProcess(process);
+    addTearDown(result.kill);
+    return result;
   }
 }
 
@@ -187,6 +197,7 @@ class BuildRunnerProcess {
   final StreamQueue<String> _outputs;
   late final HttpClient _client = HttpClient();
   int? _port;
+  Future<void>? _killResult;
 
   BuildRunnerProcess(this.process)
     : _outputs = StreamQueue(
@@ -270,9 +281,16 @@ class BuildRunnerProcess {
   }
 
   /// Kills the process.
-  Future<void> kill() async {
+  Future<void> kill() {
+    return _killResult ??= _kill();
+  }
+
+  Future<void> _kill() async {
     process.kill();
+    _outputs.rest.listen((line) => printOnFailure('Output after kill: $line'));
     await process.exitCode;
+    // Wait a few seconds for child process cleanup.
+    await Future<void>.delayed(const Duration(seconds: 2));
   }
 
   Future<int> get exitCode => process.exitCode;

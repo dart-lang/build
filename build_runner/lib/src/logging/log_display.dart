@@ -45,8 +45,8 @@ class LogDisplay {
       buildLog.configuration.forceConsoleWidthForTesting != null ||
       (buildLog.configuration.onLog == null &&
           buildLog.configuration.mode == BuildLogMode.build &&
-          stdout.hasTerminal &&
-          stdout.supportsAnsiEscapes);
+          buildProcessState.stdio.hasTerminal &&
+          buildProcessState.stdio.supportsAnsiEscapes);
 
   /// Displays [block] to the console.
   ///

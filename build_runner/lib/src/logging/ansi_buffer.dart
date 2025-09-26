@@ -2,11 +2,11 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:io';
 import 'dart:math';
 
 import 'package:collection/collection.dart';
 
+import '../bootstrap/build_process_state.dart';
 import 'build_log.dart';
 
 /// A buffer that wraps text taking into account ANSI escape codes.
@@ -24,11 +24,14 @@ class AnsiBuffer {
   /// The width that the buffer wraps to.
   static int get width =>
       buildLog.configuration.forceConsoleWidthForTesting ??
-      (stdout.hasTerminal ? stdout.terminalColumns : 80);
+      (buildProcessState.stdio.hasTerminal
+          ? buildProcessState.stdio.terminalColumns
+          : 80);
 
   /// Whether [lines] is taller than the console.
   bool get overflowsConsole =>
-      stdout.hasTerminal && stdout.terminalLines < lines.length;
+      buildProcessState.stdio.hasTerminal &&
+      buildProcessState.stdio.terminalLines < lines.length;
 
   /// Writes [items] as a line prefixed with [indent], wraps to console width;
   /// on wrapping, indents by [hangingIndent].
@@ -174,4 +177,5 @@ bool _isAnsi(String item) =>
 
 bool get _showingAnsi =>
     buildLog.configuration.forceAnsiConsoleForTesting ??
-    (stdout.hasTerminal && stdout.supportsAnsiEscapes);
+    (buildProcessState.stdio.hasTerminal &&
+        buildProcessState.stdio.supportsAnsiEscapes);

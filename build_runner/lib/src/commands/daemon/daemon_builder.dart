@@ -167,7 +167,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
   @override
   Future<void> stop() async {
-    await buildSeries.beforeExit();
+    await buildSeries.close();
   }
 
   void _logMessage(Level level, String message) => _outputStreamController.add(
@@ -233,13 +233,19 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
           watch: PackageNodeWatcher.new,
         )
         .watch()
-        .asyncWhere(
-          (change) => buildSeries.shouldProcess(change, expectedDeletes),
-        )
-        .map((data) => WatchEvent(data.type, '${data.id}'))
         .debounceBuffer(
           buildPlan.testingOverrides.debounceDelay ??
               const Duration(milliseconds: 250),
+        )
+        .asyncMap(
+          (changes) => buildSeries.filterChanges(changes, expectedDeletes),
+        )
+        .where((changes) => changes.isNotEmpty)
+        .map(
+          (changes) =>
+              changes
+                  .map((change) => WatchEvent(change.type, '${change.id}'))
+                  .toList(),
         );
 
     final changeProvider =

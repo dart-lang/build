@@ -26,7 +26,6 @@ class BuildOptions {
   final bool isReleaseBuild;
   final String? logPerformanceDir;
   final bool outputSymlinksOnly;
-  final bool skipBuildScriptCheck;
   final bool trackPerformance;
   final bool verbose;
 
@@ -44,7 +43,6 @@ class BuildOptions {
     required this.isReleaseBuild,
     required this.logPerformanceDir,
     required this.outputSymlinksOnly,
-    required this.skipBuildScriptCheck,
     required this.trackPerformance,
     required this.verbose,
   });
@@ -64,7 +62,6 @@ class BuildOptions {
     bool? isReleaseBuild,
     String? logPerformanceDir,
     bool? outputSymlinksOnly,
-    bool? skipBuildScriptCheck,
     bool? trackPerformance,
     bool? verbose,
   }) => BuildOptions(
@@ -77,7 +74,6 @@ class BuildOptions {
     isReleaseBuild: isReleaseBuild ?? false,
     logPerformanceDir: logPerformanceDir,
     outputSymlinksOnly: outputSymlinksOnly ?? false,
-    skipBuildScriptCheck: skipBuildScriptCheck ?? false,
     trackPerformance: trackPerformance ?? false,
     verbose: verbose ?? false,
   );
@@ -112,7 +108,6 @@ class BuildOptions {
       isReleaseBuild: commandLine.release!,
       logPerformanceDir: _parseLogPerformance(commandLine),
       outputSymlinksOnly: commandLine.symlink!,
-      skipBuildScriptCheck: commandLine.skipBuildScriptCheck!,
       trackPerformance:
           commandLine.trackPerformance! || commandLine.logPerformance != null,
       verbose: commandLine.verbose!,
@@ -132,7 +127,6 @@ class BuildOptions {
     isReleaseBuild: isReleaseBuild,
     logPerformanceDir: logPerformanceDir,
     outputSymlinksOnly: outputSymlinksOnly,
-    skipBuildScriptCheck: skipBuildScriptCheck,
     trackPerformance: trackPerformance,
     verbose: verbose,
   );
