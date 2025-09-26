@@ -6,19 +6,14 @@
 
 import 'dart:math' show Random;
 
-/// A UUID generator.
+/// A random workspace path.
 ///
-/// The generated values are 128 bit numbers encoded in a specific string
-/// format.
-///
-/// Generate a version 4 (random) uuid. This is a uuid scheme that only uses
-/// random numbers as the source of the generated uuid.
-// TODO: replace with a MUCH more simple, random string that matches
-//               the use case.
-String generateV4UUID() {
+/// It's an absolute path, so it won't be interpreted differently based on the
+/// current working directory.
+String randomWorkspace() {
   final special = 8 + _random.nextInt(4);
 
-  return '${_bitsDigits(16, 4)}${_bitsDigits(16, 4)}-'
+  return '/${_bitsDigits(16, 4)}${_bitsDigits(16, 4)}-'
       '${_bitsDigits(16, 4)}-'
       '4${_bitsDigits(12, 3)}-'
       '${_printDigits(special, 1)}${_bitsDigits(12, 3)}-'
