@@ -127,6 +127,8 @@ class ParentProcess {
           'Wait-Process -Id $parentPid; Stop-Process -Id $childPid -Force',
         ]);
       } else {
+        // The default shell on MacOS is zsh, but it also has an old version of
+        // bash that is sufficient for this script.
         return await Process.start('bash', [
           '-c',
           'while kill -0 $parentPid; do sleep 1; done; kill -9 $childPid',

@@ -1717,9 +1717,7 @@ targets:
           build: (buildStep, _) async {
             final hasEntrypoint = await buildStep
                 .findAssets(Glob('**'))
-                .contains(
-                  makeAssetId('a|.dart_tool/build/entrypoint/build.dart'),
-                );
+                .contains(makeAssetId('a|$entrypointScriptPath'));
             await buildStep.writeAsString(
               buildStep.inputId.changeExtension('.hasEntrypoint'),
               '$hasEntrypoint',
@@ -1729,10 +1727,7 @@ targets:
       ];
       await testBuilders(
         builders,
-        {
-          'a|lib/a.txt': 'a',
-          'a|.dart_tool/build/entrypoint/build.dart': 'some build script',
-        },
+        {'a|lib/a.txt': 'a', 'a|$entrypointScriptPath': 'some build script'},
         outputs: {'a|lib/a.hasEntrypoint': 'false'},
       );
     });

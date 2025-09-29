@@ -18,8 +18,6 @@ import '../exceptions.dart';
 import '../io/reader_writer.dart';
 import '../logging/build_log.dart';
 
-const scriptLocation = '$entryPointDir/build.dart';
-
 final _lastShortFormatDartVersion = Version(3, 6, 0);
 
 Future<String> generateBuildScript() async {
@@ -198,6 +196,6 @@ String _buildScriptImport(String import) {
       import.startsWith('/')) {
     return import;
   } else {
-    return p.url.relative(import, from: p.url.dirname(scriptLocation));
+    return p.url.relative(import, from: p.url.dirname(entrypointScriptPath));
   }
 }

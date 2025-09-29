@@ -5,6 +5,7 @@
 @Tags(['integration1'])
 library;
 
+import 'package:build_runner/src/internal.dart';
 import 'package:io/io.dart';
 import 'package:test/test.dart';
 
@@ -93,7 +94,7 @@ builders:
       expectExitCode: ExitCode.config.code,
     );
     expect(
-      tester.read('root_pkg/.dart_tool/build/entrypoint/build.dart'),
+      tester.read('root_pkg/$entrypointScriptPath'),
       contains("import '../../../tool/missing_builder.dart'"),
     );
   });

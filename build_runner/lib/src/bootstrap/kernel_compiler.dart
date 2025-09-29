@@ -4,14 +4,19 @@
 
 import 'dart:io';
 
+import '../constants.dart';
 import 'depfile.dart';
 import 'processes.dart';
+
+const entrypointDillPath = '$entrypointScriptPath.dill';
+const entrypointDillDepfilePath = '$entrypointScriptPath.dill.deps';
+const entrypointDillDigestPath = '$entrypointScriptPath.dill.digest';
 
 /// Compiles the build script to kernel.
 class KernelCompiler {
   final Depfile _outputDepfile = Depfile(
-    depfilePath: '.dart_tool/build/entrypoint/build.dart.dill.deps',
-    digestPath: '.dart_tool/build/entrypoint/build.dart.dill.digest',
+    depfilePath: entrypointDillDepfilePath,
+    digestPath: entrypointDillDigestPath,
   );
 
   /// Checks freshness of the build script compiled kernel.
@@ -28,11 +33,11 @@ class KernelCompiler {
     final result = await ParentProcess.run(dart, [
       'compile',
       'kernel',
-      '.dart_tool/build/entrypoint/build.dart',
+      entrypointScriptPath,
       '--output',
-      '.dart_tool/build/entrypoint/build.dart.dill',
+      entrypointDillPath,
       '--depfile',
-      '.dart_tool/build/entrypoint/build.dart.dill.deps',
+      entrypointDillDepfilePath,
       if (experiments != null)
         for (final experiment in experiments) '--enable-experiment=$experiment',
     ]);
@@ -42,8 +47,8 @@ class KernelCompiler {
 
       // Convert "unknown experiment" warnings to errors.
       if (stdout.contains('Unknown experiment:')) {
-        if (File('.dart_tool/build/entrypoint/build.dart.dill').existsSync()) {
-          File('.dart_tool/build/entrypoint/build.dart.dill').deleteSync();
+        if (File(entrypointDillPath).existsSync()) {
+          File(entrypointDillPath).deleteSync();
         }
         final messages = stdout
             .split('\n')
@@ -52,9 +57,8 @@ class KernelCompiler {
             .join('');
         return CompileResult(messages: messages);
       }
-    }
 
-    if (result.exitCode == 0) {
+      // Update depfile digest on successful compile.
       _outputDepfile.writeDigest();
     }
 

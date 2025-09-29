@@ -12,7 +12,7 @@ import 'build_runner_command.dart';
 class CleanCommand implements BuildRunnerCommand {
   @override
   Future<int> run() async {
-    final generatedDir = Directory(cacheDir);
+    final generatedDir = Directory(cacheDirectoryPath);
     if (generatedDir.existsSync()) {
       generatedDir.deleteSync(recursive: true);
     }

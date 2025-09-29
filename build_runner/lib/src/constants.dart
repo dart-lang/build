@@ -6,19 +6,18 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
-/// Relative path to the asset graph from the root package dir.
-final String assetGraphPath = '$cacheDir/asset_graph.json';
+/// Relative path to the cache directory from the root package dir.
+const String cacheDirectoryPath = '.dart_tool/build';
 
-/// Directory containing automatically generated build entrypoints.
-///
-/// Files in this directory must be read to do build script invalidation.
-const entryPointDir = '$cacheDir/entrypoint';
+// Entrypoint directory, script, dill and depfile.
+const entrypointDirectoryPath = '$cacheDirectoryPath/entrypoint';
+const entrypointScriptPath = '$entrypointDirectoryPath/build.dart';
+
+/// Relative path to the asset graph from the root package dir.
+final String assetGraphPath = '$cacheDirectoryPath/asset_graph.json';
 
 /// The directory to which hidden assets will be written.
-String get generatedOutputDirectory => '$cacheDir/generated';
-
-/// Relative path to the cache directory from the root package dir.
-const String cacheDir = '.dart_tool/build';
+String get generatedOutputDirectory => '$cacheDirectoryPath/generated';
 
 /// The dart binary from the current sdk.
 final dartBinary = p.join(sdkBin, 'dart');

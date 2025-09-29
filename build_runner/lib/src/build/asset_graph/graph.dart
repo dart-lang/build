@@ -718,7 +718,7 @@ class AssetGraph implements GeneratedAssetHider {
   @override
   AssetId maybeHide(AssetId id, String rootPackage) {
     if (id.path.startsWith(generatedOutputDirectory) ||
-        id.path.startsWith(cacheDir)) {
+        id.path.startsWith(cacheDirectoryPath)) {
       return id;
     }
     if (!contains(id)) {

@@ -5,6 +5,7 @@
 @Tags(['integration2'])
 library;
 
+import 'package:build_runner/src/constants.dart';
 import 'package:test/test.dart';
 
 import '../common/common.dart';
@@ -21,10 +22,7 @@ void main() async {
     );
 
     await tester.run('root_pkg', 'dart run build_runner build');
-    expect(
-      tester.read('root_pkg/.dart_tool/build/entrypoint/build.dart'),
-      isNotNull,
-    );
+    expect(tester.read('root_pkg/$entrypointScriptPath'), isNotNull);
     await tester.run('root_pkg', 'dart run build_runner clean');
     expect(tester.readFileTree('root_pkg/.dart_tool/build'), isNull);
   });

@@ -7,6 +7,8 @@ library;
 
 import 'dart:io';
 
+import 'package:build_runner/src/bootstrap/kernel_compiler.dart';
+import 'package:build_runner/src/constants.dart';
 import 'package:test/test.dart';
 
 import '../common/common.dart';
@@ -40,7 +42,7 @@ void main() async {
     // `stdout.write` is used instead of print to avoid introducing a line
     // ending difference on Windows.
 
-    tester.write('root_pkg/.dart_tool/build/entrypoint/build.dart', r'''
+    tester.write('root_pkg/$entrypointScriptPath', r'''
 import 'dart:io';
 void main() {
   stdout.write('build.dart main\n');
@@ -48,10 +50,7 @@ void main() {
 ''');
     var output = await tester.run('root_pkg', 'dart run root_pkg:compile');
     expect(output, contains('CompileResult(succeeded: true, messages: null)'));
-    output = await tester.run(
-      'root_pkg',
-      'dart .dart_tool/build/entrypoint/build.dart.dill',
-    );
+    output = await tester.run('root_pkg', 'dart $entrypointDillPath');
     expect(output, contains('build.dart main'));
 
     // No changes, no rebuild.
@@ -59,7 +58,7 @@ void main() {
     expect(output, contains('fresh'));
 
     // Rebuilds if output was removed.
-    tester.delete('root_pkg/.dart_tool/build/entrypoint/build.dart.dill');
+    tester.delete('root_pkg/$entrypointDillPath');
     output = await tester.run('root_pkg', 'dart run root_pkg:compile');
     expect(output, contains('succeeded: true'));
 
@@ -68,7 +67,7 @@ void main() {
     expect(output, contains('fresh'));
 
     // Rebuilds if input source was changed.
-    tester.write('root_pkg/.dart_tool/build/entrypoint/build.dart', r'''
+    tester.write('root_pkg/$entrypointScriptPath', r'''
 import 'dart:io';
 void main() {
   stdout.write('updated build.dart main\n');
@@ -76,10 +75,7 @@ void main() {
 ''');
     output = await tester.run('root_pkg', 'dart run root_pkg:compile');
     expect(output, contains('succeeded: true'));
-    output = await tester.run(
-      'root_pkg',
-      'dart .dart_tool/build/entrypoint/build.dart.dill',
-    );
+    output = await tester.run('root_pkg', 'dart $entrypointDillPath');
     expect(output, contains('updated build.dart main'));
 
     // No changes, no rebuild.
@@ -102,7 +98,7 @@ void main() {
     expect(output, contains('fresh'));
 
     // Rebuild that introduces an error.
-    tester.write('root_pkg/.dart_tool/build/entrypoint/build.dart', r'''
+    tester.write('root_pkg/$entrypointScriptPath', r'''
 import 'dart:io';
 void main() {
   invalid code
@@ -118,7 +114,7 @@ void main() {
     expect(output, contains('invalid code'));
 
     // Fix the error.
-    tester.write('root_pkg/.dart_tool/build/entrypoint/build.dart', r'''
+    tester.write('root_pkg/$entrypointScriptPath', r'''
 import 'dart:io';
 void main() {
   stdout.write('build.dart main #3\n');
@@ -127,14 +123,11 @@ void main() {
 
     output = await tester.run('root_pkg', 'dart run root_pkg:compile');
     expect(output, contains('succeeded: true'));
-    output = await tester.run(
-      'root_pkg',
-      'dart .dart_tool/build/entrypoint/build.dart.dill',
-    );
+    output = await tester.run('root_pkg', 'dart $entrypointDillPath');
     expect(output, contains('build.dart main #3'));
 
     // Depfiles are handled correctly if spaces are in the names.
-    tester.write('root_pkg/.dart_tool/build/entrypoint/build.dart', r'''
+    tester.write('root_pkg/$entrypointScriptPath', r'''
 import 'dart:io';
 import 'other file.dart';
 void main() {

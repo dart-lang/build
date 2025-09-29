@@ -56,14 +56,15 @@ class Bootstrapper {
           }
           buildLog.error(
             'Failed to compile build script. '
-            'Check builder definitions and generated script $scriptLocation.',
+            'Check builder definitions and generated script '
+            '$entrypointScriptPath.',
           );
           throw const CannotBuildException();
         }
       }
 
       final result = await ParentProcess.runAndSend(
-        script: '.dart_tool/build/entrypoint/build.dart.dill',
+        script: entrypointDillPath,
         arguments: arguments,
         message: buildProcessState.serialize(),
       );
@@ -81,9 +82,9 @@ class Bootstrapper {
   /// Reads before write so the file is not written if there is no change.
   Future<void> _writeBuildScript() async {
     final buildScript = await generateBuildScript();
-    final path = '.dart_tool/build/entrypoint/build.dart';
+    final path = entrypointScriptPath;
     final existingBuildScript =
-        File(path).existsSync() ? File(path).readAsStringSync() : '';
+        File(path).existsSync() ? File(path).readAsStringSync() : null;
     if (buildScript != existingBuildScript) {
       File(path)
         ..createSync(recursive: true)
@@ -93,7 +94,12 @@ class Bootstrapper {
 
   /// Checks freshness of the entrypoint script compiled to kernel.
   Future<FreshnessResult> checkKernelFreshness() async {
-    if (!ChildProcess.isRunning) return FreshnessResult(outputIsFresh: true);
+    if (!ChildProcess.isRunning) {
+      // Any real use or realistic test has a child process; so this is only hit
+      // in small tests. Return "fresh" so nothing related to recompiling is
+      // triggered.
+      return FreshnessResult(outputIsFresh: true);
+    }
     await _writeBuildScript();
     return _compiler.checkFreshness();
   }
@@ -101,7 +107,12 @@ class Bootstrapper {
   /// Whether [path] is a dependency of the entrypoint script compiled to
   /// kernel.
   bool isKernelDependency(String path) {
-    if (!ChildProcess.isRunning) return false;
+    if (!ChildProcess.isRunning) {
+      // Any real use or realistic test has a child process; so this is only hit
+      // in small tests. Return "not a dependency" so nothing related to
+      // recompiling is triggered.
+      return false;
+    }
     return _compiler.isDependency(path);
   }
 }

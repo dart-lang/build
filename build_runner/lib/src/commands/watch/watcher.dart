@@ -46,7 +46,7 @@ class Watcher {
   ///
   /// File watchers are scheduled synchronously.
   void _run(Future<void> until) async {
-    final terminate = Future.any([until, _buildSeries.closed]);
+    final terminate = Future.any([until, _buildSeries.closing]);
 
     // Start watching files immediately, before the first build is even started.
     final graphWatcher = PackageGraphWatcher(

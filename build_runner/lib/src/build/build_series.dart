@@ -51,7 +51,7 @@ class BuildSeries {
   final StreamController<BuildResult> _buildResultsController =
       StreamController.broadcast();
 
-  final Completer<void> _closedCompleter = Completer();
+  final Completer<void> _closingCompleter = Completer();
 
   /// Whether the next build is the first build.
   bool firstBuild = true;
@@ -87,10 +87,10 @@ class BuildSeries {
   Stream<BuildResult> get buildResults => _buildResultsController.stream;
   Future<BuildResult>? _currentBuildResult;
 
-  /// A future that completes when [closed] is called.
+  /// A future that completes when [close] is called.
   ///
   /// Then, no further builds are allowed.
-  Future<void> get closed => _closedCompleter.future;
+  Future<void> get closing => _closingCompleter.future;
 
   /// Filters [changes] to only changes that might trigger a build.
   ///
@@ -111,7 +111,7 @@ class BuildSeries {
         result.add(change);
         continue;
       }
-      if (id.path.startsWith(entryPointDir)) {
+      if (id.path.startsWith(entrypointDirectoryPath)) {
         continue;
       }
 
@@ -130,7 +130,7 @@ class BuildSeries {
       // Changes to files that are not currently part of the build.
       if (node == null) {
         // Ignore under `.dart_tool/build`.
-        if (id.path.startsWith(cacheDir)) continue;
+        if (id.path.startsWith(cacheDirectoryPath)) continue;
 
         // Ignore modifications and deletes.
         if (change.type != ChangeType.ADD) continue;
@@ -211,7 +211,7 @@ class BuildSeries {
     BuiltSet<BuildDirectory>? buildDirs,
     BuiltSet<BuildFilter>? buildFilters,
   }) async {
-    if (_closedCompleter.isCompleted) {
+    if (_closingCompleter.isCompleted) {
       throw StateError('BuildSeries was closed.');
     }
 
@@ -278,15 +278,19 @@ class BuildSeries {
 
   /// Ends the build series.
   ///
-  /// First, any currently-running build is waited for.
+  /// First, [closing] is completed and new builds are prohibited.
   ///
-  /// Then: resource cleanup is done, [buildResults] is closed and no further
-  /// builds are allowed.
+  /// Then, any currently-running build is waited for, followed by cleanup of
+  /// any resources via [ResourceManager.beforeExit].
+  ///
+  /// Finally, [buildResults] is closed.
   Future<void> close() async {
-    if (_closedCompleter.isCompleted) return;
-    _closedCompleter.complete();
+    if (_closingCompleter.isCompleted) return;
+    _closingCompleter.complete();
     await _currentBuildResult;
-    await _buildResultsController.close();
     await _resourceManager.beforeExit();
+
+    // Close the results stream last: this indicates that cleanup is done.
+    await _buildResultsController.close();
   }
 }
