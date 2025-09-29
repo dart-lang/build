@@ -150,7 +150,7 @@ void _ensureSameDdcOptions(BuilderOptions options) {
 }
 
 void _ensureSameDdcHotReloadOptions(BuilderOptions options) {
-  var webHotReload = _readWebHotReloadOption(options);
+  final webHotReload = _readWebHotReloadOption(options);
   if (_lastWebHotReloadValue != null) {
     if (webHotReload != _lastWebHotReloadValue) {
       throw ArgumentError(

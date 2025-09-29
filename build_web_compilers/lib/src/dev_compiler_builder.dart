@@ -11,7 +11,6 @@ import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:path/path.dart' as p;
-import 'package:scratch_space/scratch_space.dart';
 
 import '../builders.dart';
 import 'common.dart';
@@ -211,7 +210,7 @@ Future<void> _createDevCompilerModule(
           '-o',
           jsOutputFile.path,
           debugMode ? '--source-map' : '--no-source-map',
-          for (var dep in transitiveDeps) _summaryArg(dep),
+          for (final dep in transitiveDeps) _summaryArg(dep),
           '--packages=$multiRootScheme:///.dart_tool/package_config.json',
           '--module-name=${ddcModuleName(jsId)}',
           '--multi-root-scheme=$multiRootScheme',
@@ -226,10 +225,10 @@ Future<void> _createDevCompilerModule(
           ],
           if (usedInputsFile != null)
             '--used-inputs-file=${usedInputsFile.uri.toFilePath()}',
-          for (var source in module.sources) sourceArg(source),
-          for (var define in environment.entries)
+          for (final source in module.sources) sourceArg(source),
+          for (final define in environment.entries)
             '-D${define.key}=${define.value}',
-          for (var experiment in enabledExperiments)
+          for (final experiment in enabledExperiments)
             '--enable-experiment=$experiment',
         ])
         ..inputs.add(
@@ -240,7 +239,7 @@ Future<void> _createDevCompilerModule(
         ..inputs.addAll(
           await Future.wait(
             transitiveKernelDeps.map((dep) async {
-              var file = scratchSpace.fileFor(dep);
+              final file = scratchSpace.fileFor(dep);
               if (kernelInputPathToId != null) {
                 kernelInputPathToId[file.uri.toString()] = dep;
               }

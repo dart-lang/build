@@ -5,7 +5,6 @@
 import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:build_modules/src/meta_module.dart';
-import 'package:build_modules/src/module_library.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 

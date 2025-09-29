@@ -50,7 +50,7 @@ class FrontendServerProxyDriver {
     List<Uri> invalidatedFiles,
     Iterable<String> filesToWrite,
   ) async {
-    var compilerOutput = await recompile(entrypoint, invalidatedFiles);
+    final compilerOutput = await recompile(entrypoint, invalidatedFiles);
     if (compilerOutput == null) {
       throw Exception('Frontend Server failed to recompile $entrypoint');
     }
@@ -61,7 +61,7 @@ class FrontendServerProxyDriver {
       );
     }
     _frontendServer!.recordFiles();
-    for (var file in filesToWrite) {
+    for (final file in filesToWrite) {
       _frontendServer!.writeFile(file);
     }
     return compilerOutput;
@@ -97,7 +97,6 @@ class FrontendServerProxyDriver {
         _cachedOutput =
             output = await _frontendServer!.compile(request.entrypoint);
       } else if (request is _RecompileRequest) {
-        print("PROCESSING ${request.entrypoint} ${request.invalidatedFiles}");
         // Compile the first [_RecompileRequest] as a [_CompileRequest] to warm
         // up the Frontend Server.
         if (_cachedOutput == null) {
@@ -119,7 +118,6 @@ class FrontendServerProxyDriver {
         // doesn't provide useful information.
         await _frontendServer!.reject();
       }
-      print('OUTCOME ${output?.errorCount} ${output?.errorMessage}');
       request.completer.complete(output);
     } catch (e, s) {
       request.completer.completeError(e, s);
@@ -194,7 +192,7 @@ class PersistentFrontendServer {
       '--output-incremental-dill=${outputDillUri.toFilePath()}',
     ];
     final process = await Process.start(dartaotruntimePath, args);
-    var fileSystem = WebMemoryFilesystem(fileSystemRoot);
+    final fileSystem = WebMemoryFilesystem(fileSystemRoot);
     final stdoutHandler = StdoutHandler(logger: _log);
     process.stdout
         .transform(utf8.decoder)
@@ -215,7 +213,6 @@ class PersistentFrontendServer {
   }
 
   Future<CompilerOutput?> compile(String entrypoint) {
-    print("COMPILE");
     _stdoutHandler.reset();
     _stdinController.add('compile $entrypoint');
     return _stdoutHandler.compilerOutput!.future;
@@ -322,7 +319,7 @@ class WebMemoryFilesystem {
       Directory.fromUri(outputDirectoryUri).existsSync(),
       '$outputDirectoryUri does not exist.',
     );
-    var filesToWrite = {...files, ...sourcemaps, ...metadata};
+    final filesToWrite = {...files, ...sourcemaps, ...metadata};
     _writeToDisk(outputDirectoryUri, filesToWrite);
   }
 
@@ -343,9 +340,9 @@ class WebMemoryFilesystem {
         sourceFile.length,
       );
     }
-    var sourceMapFile = '$sourceFile.map';
-    var metadataFile = '$sourceFile.metadata';
-    var filesToWrite = {
+    final sourceMapFile = '$sourceFile.map';
+    final metadataFile = '$sourceFile.metadata';
+    final filesToWrite = {
       sourceFile: files[sourceFile]!,
       sourceMapFile: sourcemaps[sourceMapFile]!,
       metadataFile: metadata[metadataFile]!,
@@ -361,7 +358,7 @@ class WebMemoryFilesystem {
   ) {
     rawFilesToWrite.forEach((path, content) {
       final outputFileUri = outputDirectoryUri.resolve(path);
-      var outputFilePath = outputFileUri.toFilePath().replaceFirst(
+      final outputFilePath = outputFileUri.toFilePath().replaceFirst(
         '.dart.lib.js',
         '.ddc.js',
       );
@@ -437,8 +434,11 @@ class WebMemoryFilesystem {
       // from JS files and might not generalize.
       var libraryName = dartFileName;
       if (libraryName.startsWith('packages/')) {
-        libraryName =
-            'package:${libraryName.substring('packages/'.length, libraryName.length)}';
+        final libraryNameWithoutPrefix = libraryName.substring(
+          'packages/'.length,
+          libraryName.length,
+        );
+        libraryName = 'package:$libraryNameWithoutPrefix';
       } else {
         libraryName = '$multiRootScheme:///$libraryName';
       }
@@ -519,7 +519,6 @@ class StdoutHandler {
   var _errorBuffer = StringBuffer();
 
   void handler(String message) {
-    print("FES $message");
     const kResultPrefix = 'result ';
     if (boundaryKey == null && message.startsWith(kResultPrefix)) {
       boundaryKey = message.substring(kResultPrefix.length);

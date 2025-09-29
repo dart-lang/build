@@ -29,7 +29,6 @@ dev_dependencies:
     path: ../build_modules/test/fixtures/a
   b:
     path: ../build_modules/test/fixtures/b
-  build_runner: ^2.0.0
   build_test: ^3.0.0
   c:
     path: test/fixtures/c

@@ -687,13 +687,13 @@ String generateDDCLibraryBundleBootstrapScript({
   required bool isWindows,
   required Map<String, String> scriptIdsToPath,
 }) {
-  var scriptsJs = StringBuffer();
+  final scriptsJs = StringBuffer();
   scriptIdsToPath.forEach((id, path) {
     scriptsJs.write('{"src": "$path", "id": "$id"},\n');
   });
   // Write the "true" main boostrapper last as part of the loader's convention.
   scriptsJs.write('{"src": "$mainBoostrapperUrl", "id": "data-main"}\n');
-  var boostrapScript = '''
+  final boostrapScript = '''
 // Save the current directory so we can access it in a closure.
 var _currentDirectory = (function () {
   var _url = document.currentScript.src;
