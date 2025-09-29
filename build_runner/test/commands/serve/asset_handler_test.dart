@@ -9,9 +9,8 @@ import 'package:build_runner/src/build/asset_graph/graph.dart';
 import 'package:build_runner/src/build/asset_graph/node.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
-import 'package:build_runner/src/build_plan/target_graph.dart';
 import 'package:build_runner/src/commands/serve/server.dart';
-import 'package:build_runner/src/io/finalized_reader.dart';
+import 'package:build_runner/src/io/build_output_reader.dart';
 import 'package:crypto/crypto.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
@@ -20,28 +19,24 @@ import '../../common/common.dart';
 
 void main() {
   late AssetHandler handler;
-  late FinalizedReader reader;
-  late InternalTestReaderWriter delegate;
-  late AssetGraph graph;
+  late BuildOutputReader reader;
+  late InternalTestReaderWriter readerWriter;
+  late AssetGraph assetGraph;
 
   setUp(() async {
-    graph = await AssetGraph.build(
+    assetGraph = await AssetGraph.build(
       BuildPhases([]),
       <AssetId>{},
       <AssetId>{},
       buildPackageGraph({rootPackage('a'): []}),
       InternalTestReaderWriter(),
     );
-    delegate = InternalTestReaderWriter();
-    final packageGraph = buildPackageGraph({rootPackage('a'): []});
-    reader = FinalizedReader(
-      delegate,
-      graph,
-      await TargetGraph.forPackageGraph(packageGraph: packageGraph),
-      BuildPhases([]),
-      'a',
+    readerWriter = InternalTestReaderWriter();
+    reader = BuildOutputReader.graphOnly(
+      readerWriter: readerWriter,
+      assetGraph: assetGraph,
     );
-    handler = AssetHandler(reader, 'a');
+    handler = AssetHandler(() async => reader, 'a');
   });
 
   void addAsset(String id, String content, {bool deleted = false}) {
@@ -54,8 +49,8 @@ void main() {
         );
       });
     }
-    graph.add(node);
-    delegate.testing.writeString(node.id, content);
+    assetGraph.add(node);
+    readerWriter.testing.writeString(node.id, content);
   }
 
   test('can not read deleted nodes', () async {
@@ -132,7 +127,7 @@ void main() {
   });
 
   test('Fails request for failed outputs', () async {
-    graph.add(
+    assetGraph.add(
       AssetNode.generated(
         AssetId('a', 'web/main.ddc.js'),
         phaseNumber: 0,

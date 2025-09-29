@@ -4,7 +4,6 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
@@ -15,8 +14,6 @@ import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
-import '../bootstrap/build_process_state.dart';
-import '../build_plan/build_directory.dart';
 import '../build_plan/build_options.dart';
 import '../build_plan/build_phases.dart';
 import '../build_plan/build_plan.dart';
@@ -25,6 +22,7 @@ import '../build_plan/phase.dart';
 import '../build_plan/target_graph.dart';
 import '../build_plan/testing_overrides.dart';
 import '../constants.dart';
+import '../io/build_output_reader.dart';
 import '../io/create_merged_dir.dart';
 import '../io/reader_writer.dart';
 import '../logging/build_log.dart';
@@ -34,12 +32,10 @@ import 'asset_graph/node.dart';
 import 'asset_graph/post_process_build_step_id.dart';
 import 'build_dirs.dart';
 import 'build_result.dart';
-import 'finalized_assets_view.dart';
 import 'input_tracker.dart';
 import 'library_cycle_graph/asset_deps_loader.dart';
 import 'library_cycle_graph/library_cycle_graph.dart';
 import 'library_cycle_graph/library_cycle_graph_loader.dart';
-import 'optional_output_tracker.dart';
 import 'performance_tracker.dart';
 import 'performance_tracking_resolvers.dart';
 import 'resolver/analysis_driver_model.dart';
@@ -111,6 +107,9 @@ class Build {
   /// transitive source.
   final Map<LibraryCycleGraph, bool> changedGraphs = Map.identity();
 
+  /// The build output.
+  final BuildOutputReader buildOutputReader;
+
   Build({
     required this.buildPlan,
     required this.readerWriter,
@@ -123,7 +122,12 @@ class Build {
        previousDepsLoader =
            assetGraph.previousPhasedAssetDeps == null
                ? null
-               : AssetDepsLoader.fromDeps(assetGraph.previousPhasedAssetDeps!);
+               : AssetDepsLoader.fromDeps(assetGraph.previousPhasedAssetDeps!),
+       buildOutputReader = BuildOutputReader(
+         buildPlan: buildPlan,
+         readerWriter: readerWriter,
+         assetGraph: assetGraph,
+       );
 
   BuildOptions get buildOptions => buildPlan.buildOptions;
   TestingOverrides get testingOverrides => buildPlan.testingOverrides;
@@ -132,20 +136,10 @@ class Build {
   BuildPhases get buildPhases => buildPlan.buildPhases;
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
-    if (!assetGraph.cleanBuild) {
-      buildLog.fullBuildBecause(FullBuildReason.none);
-    }
     buildLog.configuration = buildLog.configuration.rebuild(
       (b) => b..rootPackageName = packageGraph.root.name,
     );
     var result = await _safeBuild(updates);
-    final optionalOutputTracker = OptionalOutputTracker(
-      assetGraph,
-      targetGraph,
-      BuildDirectory.buildPaths(buildPlan.buildOptions.buildDirs),
-      buildPlan.buildOptions.buildFilters,
-      buildPhases,
-    );
     if (result.status == BuildStatus.success) {
       final failures = <AssetNode>[];
       for (final output in processedOutputs) {
@@ -170,21 +164,31 @@ class Build {
             logger.severe(error);
           }
         }
-        result = BuildResult(
-          BuildStatus.failure,
-          result.outputs,
-          performance: result.performance,
-        );
+        result = result.copyWith(status: BuildStatus.failure);
       }
     }
     readerWriter.cache.flush();
     await resourceManager.disposeAll();
-    result = await _finalizeBuild(
-      result,
-      FinalizedAssetsView(assetGraph, packageGraph, optionalOutputTracker),
-      readerWriter,
-      buildPlan.buildOptions.buildDirs,
-    );
+
+    // If requested, create output directories. If that fails, fail the build.
+    if (buildPlan.buildOptions.buildDirs.any(
+          (target) => target.outputLocation?.path.isNotEmpty ?? false,
+        ) &&
+        result.status == BuildStatus.success) {
+      if (!await createMergedOutputDirectories(
+        packageGraph: packageGraph,
+        outputSymlinksOnly: buildOptions.outputSymlinksOnly,
+        buildDirs: buildOptions.buildDirs,
+        buildOutputReader: buildOutputReader,
+        readerWriter: readerWriter,
+      )) {
+        result = result.copyWith(
+          status: BuildStatus.failure,
+          failureType: FailureType.cantCreate,
+        );
+      }
+    }
+
     _resolvers.reset();
     buildLog.finishBuild(
       result: result.status == BuildStatus.success,
@@ -226,30 +230,11 @@ class Build {
     final done = Completer<BuildResult>();
     runZonedGuarded(
       () async {
-        final sharedBuildResourcesDir = await Directory(
-          sharedBuildResourcesDirPath,
-        ).create(recursive: true);
-        final currentSharedBuildResourcesDir = await sharedBuildResourcesDir
-            .createTemp('shared');
-        final currentBuildUpdatesFile = File.fromUri(
-          currentSharedBuildResourcesDir.uri.resolve('updates'),
-        );
-        await currentBuildUpdatesFile.create();
-
-        await currentBuildUpdatesFile.writeAsString(
-          json.encode({
-            for (final MapEntry(:key, :value) in updates.entries)
-              '${key.uri}': value.toString(),
-          }),
-        );
-        buildLog.doing('Updating the asset graph.');
         if (!assetGraph.cleanBuild) {
           await _updateAssetGraph(updates);
         }
 
-        buildLog.startBuild();
         final result = await _runPhases();
-        buildLog.doing('Writing the asset graph.');
 
         assetGraph.previousBuildTriggersDigest =
             targetGraph.buildTriggers.digest;
@@ -277,7 +262,6 @@ class Build {
 
         // Log performance information if requested
         if (buildOptions.logPerformanceDir != null) {
-          buildLog.doing('Writing the performance log.');
           assert(result.performance != null);
           final now = DateTime.now();
           final logPath = p.join(
@@ -299,7 +283,13 @@ class Build {
           buildLog.error(
             buildLog.renderThrowable('Unhandled build failure!', e, st),
           );
-          done.complete(BuildResult(BuildStatus.failure, []));
+          done.complete(
+            BuildResult(
+              status: BuildStatus.failure,
+              outputs: BuiltList(),
+              buildOutputReader: buildOutputReader,
+            ),
+          );
         }
       },
     );
@@ -367,7 +357,6 @@ class Build {
       }
 
       // Post build phase.
-      buildLog.doing('Running the post build.');
       if (buildPhases.postBuildPhase.builderActions.isNotEmpty) {
         outputs.addAll(
           await performanceTracker.trackBuildPhase(
@@ -389,9 +378,10 @@ class Build {
       );
       // Assume success, `_assetGraph.failedOutputs` will be checked later.
       return BuildResult(
-        BuildStatus.success,
-        outputs,
+        status: BuildStatus.success,
+        outputs: outputs.build(),
         performance: performanceTracker,
+        buildOutputReader: buildOutputReader,
       );
     });
   }
@@ -411,7 +401,7 @@ class Build {
         .toList(growable: false)) {
       if (!shouldBuildForDirs(
         node.id,
-        buildDirs: BuildDirectory.buildPaths(buildPlan.buildOptions.buildDirs),
+        buildDirs: buildPlan.buildOptions.buildDirs,
         buildFilters: buildPlan.buildOptions.buildFilters,
         phase: phase,
         targetGraph: targetGraph,
@@ -1228,60 +1218,6 @@ class Build {
   }
 
   Future _delete(AssetId id) => readerWriter.delete(id);
-
-  /// Invoked after each build, can modify the [BuildResult] in any way, even
-  /// converting it to a failure.
-  ///
-  /// The [finalizedAssetsView] can only be used until the returned [Future]
-  /// completes, it will expire afterwords since it can no longer guarantee a
-  /// consistent state.
-  ///
-  /// By default this returns the original result.
-  ///
-  /// Any operation may be performed, as determined by environment.
-  Future<BuildResult> _finalizeBuild(
-    BuildResult buildResult,
-    FinalizedAssetsView finalizedAssetsView,
-    ReaderWriter readerWriter,
-    BuiltSet<BuildDirectory> buildDirs,
-  ) async {
-    if (testingOverrides.finalizeBuild != null) {
-      return testingOverrides.finalizeBuild!(
-        buildResult,
-        finalizedAssetsView,
-        readerWriter,
-        buildDirs,
-      );
-    }
-    if (buildDirs.any(
-          (target) => target.outputLocation?.path.isNotEmpty ?? false,
-        ) &&
-        buildResult.status == BuildStatus.success) {
-      if (!await createMergedOutputDirectories(
-        buildDirs,
-        packageGraph,
-        readerWriter,
-        finalizedAssetsView,
-        buildOptions.outputSymlinksOnly,
-      )) {
-        return _convertToFailure(
-          buildResult,
-          failureType: FailureType.cantCreate,
-        );
-      }
-    }
-    return buildResult;
-  }
 }
 
 String _twoDigits(int n) => '$n'.padLeft(2, '0');
-
-BuildResult _convertToFailure(
-  BuildResult previous, {
-  FailureType? failureType,
-}) => BuildResult(
-  BuildStatus.failure,
-  previous.outputs,
-  performance: previous.performance,
-  failureType: failureType,
-);

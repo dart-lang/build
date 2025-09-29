@@ -145,19 +145,6 @@ class BuildLog {
   BuildLogLogger loggerForOther(String context) =>
       BuildLogLogger(context: context);
 
-  /// Logs why `build_runner` needs to do a full build.
-  ///
-  /// The reason will be displayed when [startBuild] is called.
-  void fullBuildBecause(FullBuildReason reason) {
-    if (buildProcessState.fullBuildReason == FullBuildReason.clean) {
-      buildProcessState.fullBuildReason = reason;
-    }
-    _tick();
-    if (_display.displayingBlocks) {
-      _display.block(render());
-    }
-  }
-
   /// Logs a `build_runner` info.
   void info(String message) {
     if (_display.displayingBlocks) {
@@ -338,19 +325,6 @@ class BuildLog {
     _popPhase();
   }
 
-  /// Describe what `build_runner` is doing.
-  ///
-  /// Logs the task, or in console mode updates the status line.
-  void doing(String task) {
-    if (_display.displayingBlocks) {
-      _status = [task];
-      _tick();
-      _display.block(render());
-    } else {
-      _display.message(Severity.info, task);
-    }
-  }
-
   /// For `watch` and `serve` modes, logs that a new build (not the initial
   /// build) has started.
   ///
@@ -360,12 +334,8 @@ class BuildLog {
     _processDuration = Duration.zero;
     activities.clear();
     _messages.clear();
+    _status.clear();
     _display.flushAndPrint('\nStarting build #${++_buildNumber}.\n');
-  }
-
-  /// Logs that the build has started.
-  void startBuild() {
-    doing('Building, ${buildProcessState.fullBuildReason.message}.');
   }
 
   /// Logs that the build has finished with [result] and the count of [outputs].
@@ -466,26 +436,26 @@ class BuildLog {
 
         result.write(_renderPhase(phaseName).withHangingIndent(indent));
       }
-      result.writeEmptyLine();
     }
 
     final renderedMessages = _messages.render();
 
     // Log output blocks with no errors show before the status line.
     if (renderedMessages.nonFailureLines.isNotEmpty) {
+      if (result.lines.isNotEmpty) result.writeEmptyLine();
       for (final line in renderedMessages.nonFailureLines) {
         result.write(line);
       }
-      result.writeEmptyLine();
     }
 
     if (_status.isNotEmpty) {
+      if (result.lines.isNotEmpty) result.writeEmptyLine();
       result.writeLine(_status);
     }
 
     // Log output blocks that do have errors show after the status line.
     if (renderedMessages.failureLines.isNotEmpty) {
-      if (_status.isNotEmpty) result.writeEmptyLine();
+      if (result.lines.isNotEmpty) result.writeEmptyLine();
       for (final line in renderedMessages.failureLines) {
         result.write(line);
       }

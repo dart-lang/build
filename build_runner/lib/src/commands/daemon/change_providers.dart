@@ -7,9 +7,6 @@ import 'dart:async';
 import 'package:build_daemon/change_provider.dart';
 import 'package:watcher/watcher.dart' show WatchEvent;
 
-import '../../build/asset_graph/graph.dart';
-import '../../io/asset_tracker.dart';
-
 /// Continually updates the [changes] stream as watch events are seen on the
 /// input stream.
 class AutoChangeProviderImpl implements AutoChangeProvider {
@@ -22,16 +19,12 @@ class AutoChangeProviderImpl implements AutoChangeProvider {
 /// Computes changes with a file scan when requested by a call to
 /// [collectChanges].
 class ManualChangeProviderImpl implements ManualChangeProvider {
-  final AssetGraph _assetGraph;
-  final AssetTracker _assetTracker;
+  final Future<List<WatchEvent>> Function() _function;
 
-  ManualChangeProviderImpl(this._assetTracker, this._assetGraph);
+  ManualChangeProviderImpl(this._function);
 
   @override
   Future<List<WatchEvent>> collectChanges() async {
-    final updates = await _assetTracker.collectChanges(_assetGraph);
-    return List.of(
-      updates.entries.map((entry) => WatchEvent(entry.value, '${entry.key}')),
-    );
+    return _function();
   }
 }

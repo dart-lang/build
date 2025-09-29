@@ -11,15 +11,6 @@ import 'package:path/path.dart' as p;
 /// Relative path to the asset graph from the root package dir.
 final String assetGraphPath = assetGraphPathFor(_scriptPath);
 
-/// Relative path to the directory containing shared resources for this build
-/// (from the root package dir).
-final String sharedBuildResourcesDirPath = sharedBuildResourcesDirFor(
-  _scriptPath,
-);
-
-String sharedBuildResourcesDirFor(String path) =>
-    '$cacheDir/${_scriptHashFor(path)}/shared/';
-
 /// Relative path to the asset graph for a build script at [path]
 String assetGraphPathFor(String path) =>
     '$cacheDir/${_scriptHashFor(path)}/asset_graph.json';

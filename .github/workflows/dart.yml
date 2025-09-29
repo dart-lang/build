@@ -736,6 +736,142 @@ jobs:
       - job_002
       - job_003
   job_018:
+    name: "test; macos; PKG: build_runner; `dart test -t integration1 --test-randomize-ordering-seed=random`"
+    runs-on: macos-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:macos-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:test_4"
+          restore-keys: |
+            os:macos-latest;pub-cache-hosted;sdk:dev;packages:build_runner
+            os:macos-latest;pub-cache-hosted;sdk:dev
+            os:macos-latest;pub-cache-hosted
+            os:macos-latest
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@f0ead981b4d9a35b37f30d36160575d60931ec30
+        with:
+          sdk: dev
+      - id: checkout
+        name: Checkout repository
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+      - id: build_runner_pub_upgrade
+        name: build_runner; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_runner
+      - name: "build_runner; dart test -t integration1 --test-randomize-ordering-seed=random"
+        run: "dart test -t integration1 --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner
+    needs:
+      - job_001
+      - job_002
+      - job_003
+  job_019:
+    name: "test; macos; PKG: build_runner; `dart test -t integration2 --test-randomize-ordering-seed=random`"
+    runs-on: macos-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:macos-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:test_5"
+          restore-keys: |
+            os:macos-latest;pub-cache-hosted;sdk:dev;packages:build_runner
+            os:macos-latest;pub-cache-hosted;sdk:dev
+            os:macos-latest;pub-cache-hosted
+            os:macos-latest
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@f0ead981b4d9a35b37f30d36160575d60931ec30
+        with:
+          sdk: dev
+      - id: checkout
+        name: Checkout repository
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+      - id: build_runner_pub_upgrade
+        name: build_runner; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_runner
+      - name: "build_runner; dart test -t integration2 --test-randomize-ordering-seed=random"
+        run: "dart test -t integration2 --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner
+    needs:
+      - job_001
+      - job_002
+      - job_003
+  job_020:
+    name: "test; macos; PKG: build_runner; `dart test -t integration3 --test-randomize-ordering-seed=random`"
+    runs-on: macos-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:macos-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:test_6"
+          restore-keys: |
+            os:macos-latest;pub-cache-hosted;sdk:dev;packages:build_runner
+            os:macos-latest;pub-cache-hosted;sdk:dev
+            os:macos-latest;pub-cache-hosted
+            os:macos-latest
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@f0ead981b4d9a35b37f30d36160575d60931ec30
+        with:
+          sdk: dev
+      - id: checkout
+        name: Checkout repository
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+      - id: build_runner_pub_upgrade
+        name: build_runner; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_runner
+      - name: "build_runner; dart test -t integration3 --test-randomize-ordering-seed=random"
+        run: "dart test -t integration3 --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner
+    needs:
+      - job_001
+      - job_002
+      - job_003
+  job_021:
+    name: "test; macos; PKG: build_runner; `dart test -t integration4 --test-randomize-ordering-seed=random`"
+    runs-on: macos-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:macos-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:test_7"
+          restore-keys: |
+            os:macos-latest;pub-cache-hosted;sdk:dev;packages:build_runner
+            os:macos-latest;pub-cache-hosted;sdk:dev
+            os:macos-latest;pub-cache-hosted
+            os:macos-latest
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@f0ead981b4d9a35b37f30d36160575d60931ec30
+        with:
+          sdk: dev
+      - id: checkout
+        name: Checkout repository
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+      - id: build_runner_pub_upgrade
+        name: build_runner; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_runner
+      - name: "build_runner; dart test -t integration4 --test-randomize-ordering-seed=random"
+        run: "dart test -t integration4 --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner
+    needs:
+      - job_001
+      - job_002
+      - job_003
+  job_022:
     name: "test; windows; PKG: build_daemon; `dart test --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -759,7 +895,7 @@ jobs:
       - job_001
       - job_002
       - job_003
-  job_019:
+  job_023:
     name: "test; windows; PKG: build_runner; `dart test -t integration1 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -783,7 +919,7 @@ jobs:
       - job_001
       - job_002
       - job_003
-  job_020:
+  job_024:
     name: "test; windows; PKG: build_runner; `dart test -t integration2 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -807,7 +943,7 @@ jobs:
       - job_001
       - job_002
       - job_003
-  job_021:
+  job_025:
     name: "test; windows; PKG: build_runner; `dart test -t integration3 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -831,7 +967,7 @@ jobs:
       - job_001
       - job_002
       - job_003
-  job_022:
+  job_026:
     name: "test; windows; PKG: build_runner; `dart test -t integration4 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:

@@ -8,54 +8,33 @@ import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
 import 'package:stream_transform/stream_transform.dart';
 
-import '../../build/asset_graph/graph.dart';
 import '../../build/build_result.dart';
 import '../../build/build_series.dart';
 import '../../build_plan/build_options.dart';
 import '../../build_plan/build_plan.dart';
 import '../../build_plan/package_graph.dart';
 import '../../build_plan/testing_overrides.dart';
-import '../../exceptions.dart';
-import '../../io/finalized_reader.dart';
 import '../../io/reader_writer.dart';
 import '../../logging/build_log.dart';
 import 'asset_change.dart';
-import 'change_filter.dart';
 import 'collect_changes.dart';
 import 'graph_watcher.dart';
 import 'node_watcher.dart';
 
-class Watcher implements BuildState {
+class Watcher {
   late final BuildPlan buildPlan;
 
   BuildSeries? _buildSeries;
 
-  AssetGraph? get assetGraph => _buildSeries?.assetGraph;
-
-  /// Whether or not we will be creating any output directories.
-  ///
-  /// If not, then we don't care about source edits that don't have outputs.
-  final bool willCreateOutputDirs;
-
   /// Should complete when we need to kill the build.
   final _terminateCompleter = Completer<void>();
 
-  @override
-  Future<BuildResult>? currentBuild;
+  late Future<BuildResult> currentBuildResult;
 
   /// Pending expected delete events from the build.
   final Set<AssetId> _expectedDeletes = <AssetId>{};
 
-  final _readerCompleter = Completer<FinalizedReader>();
-
-  /// Completes with an error if we fail to initialize.
-  Future<FinalizedReader> get finalizedReader => _readerCompleter.future;
-
-  Watcher({
-    required BuildPlan buildPlan,
-    required Future until,
-    required this.willCreateOutputDirs,
-  }) {
+  Watcher({required BuildPlan buildPlan, required Future until}) {
     this.buildPlan = buildPlan.copyWith(
       readerWriter: buildPlan.readerWriter.copyWith(
         onDelete: _expectedDeletes.add,
@@ -69,7 +48,6 @@ class Watcher implements BuildState {
   PackageGraph get packageGraph => buildPlan.packageGraph;
   ReaderWriter get readerWriter => buildPlan.readerWriter;
 
-  @override
   late final Stream<BuildResult> buildResults;
 
   /// Runs a build any time relevant files change.
@@ -79,34 +57,18 @@ class Watcher implements BuildState {
   /// File watchers are scheduled synchronously.
   Stream<BuildResult> _run(Future until) {
     final firstBuildCompleter = Completer<BuildResult>();
-    currentBuild = firstBuildCompleter.future;
+    currentBuildResult = firstBuildCompleter.future;
     final controller = StreamController<BuildResult>();
 
     Future<BuildResult> doBuild(List<List<AssetChange>> changes) async {
-      buildLog.nextBuild();
-      final build = _buildSeries!;
+      final buildSeries = _buildSeries!;
       final mergedChanges = collectChanges(changes);
 
       _expectedDeletes.clear();
-      if (!buildOptions.skipBuildScriptCheck) {
-        if (build.buildScriptUpdates!.hasBeenUpdated(
-          mergedChanges.keys.toSet(),
-        )) {
-          _terminateCompleter.complete();
-          buildLog.error('Terminating builds due to build script update.');
-          return BuildResult(
-            BuildStatus.failure,
-            [],
-            failureType: FailureType.buildScriptChanged,
-          );
-        }
-      }
-      return build.run(mergedChanges);
+      return buildSeries.run(mergedChanges);
     }
 
-    final terminate = Future.any([until, _terminateCompleter.future]).then((_) {
-      buildLog.info('Terminating. No further builds will be scheduled.');
-    });
+    final terminate = Future.any([until, _terminateCompleter.future]);
 
     Digest? originalRootPackageConfigDigest;
     final rootPackageConfigId = AssetId(
@@ -141,66 +103,36 @@ class Watcher implements BuildState {
             return _readOnceExists(id, readerWriter).then((bytes) {
               if (md5.convert(bytes) != digest) {
                 _terminateCompleter.complete();
-                buildLog.error(
-                  'Terminating builds due to package graph update.',
-                );
               }
               return change;
             });
-          } else if (_isBuildYaml(id) ||
-              _isConfiguredBuildYaml(id) ||
-              _isPackageBuildYamlOverride(id)) {
-            controller.add(
-              BuildResult(
-                BuildStatus.failure,
-                [],
-                failureType: FailureType.buildConfigChanged,
-              ),
-            );
-
-            // Kill future builds if the build.yaml files change.
-            _terminateCompleter.complete();
-            buildLog.error(
-              'Terminating builds due to ${id.package}:${id.path} update.',
-            );
           }
           return change;
         })
         .asyncWhere((change) {
-          assert(_readerCompleter.isCompleted);
-          return shouldProcess(
-            change,
-            assetGraph!,
-            buildPlan.targetGraph,
-            willCreateOutputDirs,
-            _expectedDeletes,
-            readerWriter,
-          );
+          return _buildSeries!.shouldProcess(change, _expectedDeletes);
         })
         .debounceBuffer(
           testingOverrides.debounceDelay ?? const Duration(milliseconds: 250),
         )
         .takeUntil(terminate)
-        .asyncMapBuffer(
-          (changes) =>
-              currentBuild = doBuild(changes)
-                ..whenComplete(() => currentBuild = null),
-        )
+        .asyncMapBuffer((changes) => currentBuildResult = doBuild(changes))
         .listen((BuildResult result) {
+          if (result.failureType == FailureType.buildScriptChanged) {
+            _terminateCompleter.complete();
+          }
           if (controller.isClosed) return;
           controller.add(result);
         })
         .onDone(() async {
-          await currentBuild;
+          await currentBuildResult;
           await _buildSeries?.beforeExit();
           if (!controller.isClosed) await controller.close();
-          buildLog.info('Builds finished. Safe to exit\n');
         });
 
     // Schedule the actual first build for the future so we can return the
     // stream synchronously.
     () async {
-      buildLog.doing('Waiting for file watchers to be ready.');
       await graphWatcher.ready;
       if (await readerWriter.canRead(rootPackageConfigId)) {
         originalRootPackageConfigDigest = md5.convert(
@@ -215,21 +147,8 @@ class Watcher implements BuildState {
 
       BuildResult firstBuild;
       BuildSeries? build;
-      try {
-        build = _buildSeries = await BuildSeries.create(buildPlan: buildPlan);
-
-        firstBuild = await build.run({});
-      } on CannotBuildException catch (e, s) {
-        _terminateCompleter.complete();
-
-        firstBuild = BuildResult(BuildStatus.failure, []);
-        _readerCompleter.completeError(e, s);
-      }
-
-      if (build != null) {
-        assert(!_readerCompleter.isCompleted);
-        _readerCompleter.complete(build.finalizedReader);
-      }
+      build = _buildSeries = BuildSeries(buildPlan);
+      firstBuild = await build.run({});
       // It is possible this is already closed if the user kills the process
       // early, which results in an exception without this check.
       if (!controller.isClosed) controller.add(firstBuild);
@@ -238,15 +157,6 @@ class Watcher implements BuildState {
 
     return controller.stream;
   }
-
-  bool _isBuildYaml(AssetId id) => id.path == 'build.yaml';
-  bool _isConfiguredBuildYaml(AssetId id) =>
-      id.package == packageGraph.root.name &&
-      id.path == 'build.${buildOptions.configKey}.yaml';
-  bool _isPackageBuildYamlOverride(AssetId id) =>
-      id.package == packageGraph.root.name &&
-      id.path.contains(_packageBuildYamlRegexp);
-  final _packageBuildYamlRegexp = RegExp(r'^[a-z0-9_]+\.build\.yaml$');
 }
 
 /// Reads [id] using [readerWriter], waiting for it to exist for up to 1 second.

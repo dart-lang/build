@@ -44,6 +44,17 @@ var _username = Platform.environment['USER'] ?? '';
 String daemonWorkspace(String workingDirectory) {
   final segments = [Directory.systemTemp.path];
   if (_username.isNotEmpty) segments.add(_username);
+
+  // Canonicalize the working directory so it can be used as a key. First
+  // `p.canonicalize` which makes it absolute but does not resolve symlinks.
+  workingDirectory = p.canonicalize(workingDirectory);
+  // Now resolve symlinks.
+  try {
+    workingDirectory = Directory(workingDirectory).resolveSymbolicLinksSync();
+  } on FileSystemException catch (_) {
+    // Probably the directory does not exist because this is a test, ignore.
+  }
+
   final workingDirHash = base64UrlEncode(
     md5.convert(workingDirectory.codeUnits).bytes,
   );

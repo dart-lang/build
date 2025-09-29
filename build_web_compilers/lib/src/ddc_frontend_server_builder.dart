@@ -90,13 +90,6 @@ class DdcFrontendServerBuilder implements Builder {
     );
     driver.init(frontendServer);
 
-    final sharedBuildResourcesDir = Directory(sharedBuildResourcesDirPath);
-    if (!sharedBuildResourcesDir.existsSync()) {
-      throw StateError(
-        'Unable to read updated assets from $sharedBuildResourcesDir',
-      );
-    }
-
     // Request from the Frontend Server exactly the JS file requested by
     // build_runner. Frontend Server's recompilation logic will avoid
     // extraneous recompilation.

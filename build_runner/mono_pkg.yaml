@@ -14,17 +14,21 @@ stages:
   - test: -t integration1 --test-randomize-ordering-seed=random
     os:
     - linux
+    - macos
     - windows
   - test: -t integration2 --test-randomize-ordering-seed=random
     os:
     - linux
+    - macos
     - windows
   - test: -t integration3 --test-randomize-ordering-seed=random
     os:
     - linux
+    - macos
     - windows
   - test: -t integration4 --test-randomize-ordering-seed=random
     os:
     - linux
+    - macos
     - windows
   - command: ../tool/leak_check.sh

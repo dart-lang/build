@@ -33,14 +33,6 @@ class BuildProcessState {
   int get displayedLines => (_state['displayedLines'] as int?) ?? 0;
   set displayedLines(int? value) => _state['displayedLines'] = value;
 
-  /// For `buildLog`, the reason why a full build was needed.
-  FullBuildReason get fullBuildReason => FullBuildReason.values.singleWhere(
-    (v) => v.name == _state['fullBuildReason'],
-    orElse: () => FullBuildReason.clean,
-  );
-  set fullBuildReason(FullBuildReason buildType) =>
-      _state['fullBuildReason'] = buildType.name;
-
   /// For `buildLog`, the elapsed time since the process started.
   int get elapsedMillis => _state['elapsedMillis'] as int? ?? 0;
   set elapsedMillis(int elapsedMillis) =>
@@ -102,20 +94,6 @@ class BuildProcessState {
     });
     return result;
   }
-}
-
-/// Reason why `build_runner` will do a full build; or `none` for an
-/// incremental build.
-enum FullBuildReason {
-  clean('full build'),
-  incompatibleScript('full build because builders changed'),
-  incompatibleAssetGraph('full build because there is no valid asset graph'),
-  incompatibleBuild('full build because target changed'),
-  none('incremental build');
-
-  const FullBuildReason(this.message);
-
-  final String message;
 }
 
 /// The `BuildLog` mode for the process.

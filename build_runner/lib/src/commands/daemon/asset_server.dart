@@ -34,7 +34,14 @@ class AssetServer {
           await builder.building;
           return Response.notFound('');
         })
-        .add(AssetHandler(builder.reader, rootPackage).handle);
+        .add(
+          AssetHandler(
+            () async =>
+                (await builder.buildSeries.currentBuildResult)
+                    .buildOutputReader,
+            rootPackage,
+          ).handle,
+        );
 
     var pipeline = const Pipeline();
     if (options.logRequests) {

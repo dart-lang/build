@@ -63,9 +63,6 @@ class WatchCommand implements BuildRunnerCommand {
     final watcher = Watcher(
       buildPlan: buildPlan,
       until: terminator.shouldTerminate,
-      willCreateOutputDirs: buildOptions.buildDirs.any(
-        (target) => target.outputLocation?.path.isNotEmpty ?? false,
-      ),
     );
 
     unawaited(
@@ -74,7 +71,7 @@ class WatchCommand implements BuildRunnerCommand {
       }),
     );
 
-    return createServeHandler(watcher);
+    return ServeHandler(watcher);
   }
 }
 
@@ -87,8 +84,7 @@ void handleBuildResultsStream(
   final subscription = buildResults.listen((result) {
     if (completer.isCompleted) return;
     if (result.status == BuildStatus.failure) {
-      if (result.failureType == FailureType.buildScriptChanged ||
-          result.failureType == FailureType.buildConfigChanged) {
+      if (result.failureType == FailureType.buildScriptChanged) {
         completer.complete(ExitCode.tempFail.code);
       }
     }

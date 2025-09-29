@@ -203,13 +203,22 @@ class BuildRunnerProcess {
   /// Expects nothing new on stdout or stderr for [duration].
   Future<void> expectNoOutput(Duration duration) async {
     printOnFailure('--- $_testLine expects no output');
-    try {
-      final line = await _outputs.next.timeout(duration);
-      fail('While expecting no output, got `$line`.');
-    } on TimeoutException catch (_) {
-      // Expected.
-    } catch (_) {
-      fail('While expecting no output, process exited.');
+    final output = <String>[];
+    final stopwatch = Stopwatch()..start();
+    while (stopwatch.elapsed < duration) {
+      try {
+        output.add(await _outputs.next.timeout(duration - stopwatch.elapsed));
+      } on TimeoutException catch (_) {
+        // Expected.
+      } catch (_) {
+        fail('While expecting no output, process exited.');
+      }
+    }
+
+    if (output.isNotEmpty) {
+      fail(
+        'While expecting no output, got:\n\n===\n${output.join('\n')}\n===\n',
+      );
     }
   }
 
@@ -265,6 +274,8 @@ class BuildRunnerProcess {
     process.kill();
     await process.exitCode;
   }
+
+  Future<int> get exitCode => process.exitCode;
 
   // Expects the server to log that it is serving, records the port.
   Future<void> expectServing() async {
