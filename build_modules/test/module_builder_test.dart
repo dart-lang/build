@@ -48,8 +48,14 @@ void main() {
         'a|lib/${metaModuleCleanExtension(platform)}': jsonEncode(
           metaModule.toJson(),
         ),
+        'a|lib/a$moduleLibraryExtension':
+            ModuleLibrary.fromSource(assetA, '').serialize(),
+        'a|lib/b$moduleLibraryExtension':
+            ModuleLibrary.fromSource(assetB, '').serialize(),
         'a|lib/c$moduleLibraryExtension':
             ModuleLibrary.fromSource(assetC, '').serialize(),
+        'a|lib/d$moduleLibraryExtension':
+            ModuleLibrary.fromSource(assetD, '').serialize(),
         'a|lib/e$moduleLibraryExtension':
             ModuleLibrary.fromSource(assetE, '').serialize(),
       },
@@ -77,7 +83,6 @@ void main() {
       true,
     );
     final moduleC = Module(assetC, [assetC], <AssetId>[], platform, true);
-
     final moduleD = Module(
       assetD,
       [assetD, assetE],
@@ -86,7 +91,13 @@ void main() {
       false,
     );
     final moduleE = Module(assetE, [assetE], <AssetId>[], platform, true);
-    final metaModule = MetaModule([moduleA, moduleB, moduleD]);
+    final metaModule = MetaModule([
+      moduleA,
+      moduleB,
+      moduleC,
+      moduleD,
+      moduleE,
+    ]);
     await testBuilder(
       ModuleBuilder(platform, usesWebHotReload: true),
       {
@@ -95,11 +106,17 @@ void main() {
         'a|lib/c.dart': '',
         'a|lib/d.dart': '',
         'a|lib/e.dart': '',
-        'a|lib/${metaModuleCleanExtension(platform)}': jsonEncode(
+        'a|lib/${metaModuleExtension(platform)}': jsonEncode(
           metaModule.toJson(),
         ),
+        'a|lib/a$moduleLibraryExtension':
+            ModuleLibrary.fromSource(assetA, '').serialize(),
+        'a|lib/b$moduleLibraryExtension':
+            ModuleLibrary.fromSource(assetB, '').serialize(),
         'a|lib/c$moduleLibraryExtension':
             ModuleLibrary.fromSource(assetC, '').serialize(),
+        'a|lib/d$moduleLibraryExtension':
+            ModuleLibrary.fromSource(assetD, '').serialize(),
         'a|lib/e$moduleLibraryExtension':
             ModuleLibrary.fromSource(assetE, '').serialize(),
       },
