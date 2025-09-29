@@ -31,7 +31,7 @@ const String entryPointDir = '$cacheDir/entrypoint';
 String get generatedOutputDirectory => '$cacheDir/generated';
 
 /// Relative path to the cache directory from the root package dir.
-const String cacheDir = '.dart_tool/build';
+const cacheDir = '.dart_tool/build';
 
 /// Returns a hash for a given Dart script path.
 ///

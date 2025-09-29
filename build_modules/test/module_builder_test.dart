@@ -60,4 +60,56 @@ void main() {
       },
     );
   });
+
+  test('can serialize modules and output all modules when strongly connected '
+      'components are disabled', () async {
+    final assetA = AssetId('a', 'lib/a.dart');
+    final assetB = AssetId('a', 'lib/b.dart');
+    final assetC = AssetId('a', 'lib/c.dart');
+    final assetD = AssetId('a', 'lib/d.dart');
+    final assetE = AssetId('a', 'lib/e.dart');
+    final moduleA = Module(assetA, [assetA], <AssetId>[], platform, true);
+    final moduleB = Module(
+      assetB,
+      [assetB, assetC],
+      <AssetId>[],
+      platform,
+      true,
+    );
+    final moduleC = Module(assetC, [assetC], <AssetId>[], platform, true);
+
+    final moduleD = Module(
+      assetD,
+      [assetD, assetE],
+      <AssetId>[],
+      platform,
+      false,
+    );
+    final moduleE = Module(assetE, [assetE], <AssetId>[], platform, true);
+    final metaModule = MetaModule([moduleA, moduleB, moduleD]);
+    await testBuilder(
+      ModuleBuilder(platform, usesWebHotReload: true),
+      {
+        'a|lib/a.dart': '',
+        'a|lib/b.dart': '',
+        'a|lib/c.dart': '',
+        'a|lib/d.dart': '',
+        'a|lib/e.dart': '',
+        'a|lib/${metaModuleCleanExtension(platform)}': jsonEncode(
+          metaModule.toJson(),
+        ),
+        'a|lib/c$moduleLibraryExtension':
+            ModuleLibrary.fromSource(assetC, '').serialize(),
+        'a|lib/e$moduleLibraryExtension':
+            ModuleLibrary.fromSource(assetE, '').serialize(),
+      },
+      outputs: {
+        'a|lib/a${moduleExtension(platform)}': encodedMatchesModule(moduleA),
+        'a|lib/b${moduleExtension(platform)}': encodedMatchesModule(moduleB),
+        'a|lib/c${moduleExtension(platform)}': encodedMatchesModule(moduleC),
+        'a|lib/d${moduleExtension(platform)}': encodedMatchesModule(moduleD),
+        'a|lib/e${moduleExtension(platform)}': encodedMatchesModule(moduleE),
+      },
+    );
+  });
 }

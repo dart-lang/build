@@ -66,7 +66,7 @@ String toJSIdentifier(String name) {
 /// Also handles invalid variable names in strict mode, like "arguments".
 bool invalidVariableName(String keyword, {bool strictMode = true}) {
   switch (keyword) {
-    // https: //262.ecma-international.org/6.0/#sec-reserved-words
+    // https://262.ecma-international.org/6.0/#sec-reserved-words
     case 'true':
     case 'false':
     case 'null':

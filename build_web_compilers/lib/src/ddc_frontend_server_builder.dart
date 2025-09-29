@@ -12,7 +12,7 @@ import 'common.dart';
 import 'errors.dart';
 import 'platforms.dart';
 
-/// A builder which can compile DDC modules with the Frontend Server.
+/// A builder that compiles DDC modules with the Frontend Server.
 class DdcFrontendServerBuilder implements Builder {
   final String entrypoint;
 
@@ -74,8 +74,9 @@ class DdcFrontendServerBuilder implements Builder {
         ...transitiveAssets,
       ], buildStep),
     );
-    final changedAssets = scratchSpace.changedFilesInBuild;
-    final changedAssetUris = [for (final asset in changedAssets) asset.uri];
+    final changedAssetUris = [
+      for (final asset in scratchSpace.changedFilesInBuild) asset.uri,
+    ];
     final ddcEntrypointId = module.primarySource;
     final jsOutputId = ddcEntrypointId.changeExtension(jsModuleExtension);
     final jsFESOutputId = ddcEntrypointId.changeExtension('.dart.lib.js');
