@@ -141,7 +141,6 @@ Future<TestBuildersResult> testPhases(
       buildFilters: buildFilters.build(),
       enableLowResourcesMode: enableLowResourcesMode,
       logPerformanceDir: logPerformanceDir,
-      skipBuildScriptCheck: true,
       trackPerformance: logPerformanceDir != null,
       verbose: verbose,
     ),
@@ -154,9 +153,9 @@ Future<TestBuildersResult> testPhases(
   await buildPlan.deleteFilesAndFolders();
 
   BuildResult result;
-  final build = BuildSeries(buildPlan);
-  result = await build.run({});
-  await build.beforeExit();
+  final buildSeries = BuildSeries(buildPlan);
+  result = await buildSeries.run({}, recentlyBootstrapped: true);
+  await buildSeries.close();
 
   if (checkBuildStatus) {
     checkBuild(

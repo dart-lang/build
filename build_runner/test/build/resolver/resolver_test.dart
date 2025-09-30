@@ -345,12 +345,12 @@ void runTests(ResolversFactory resolversFactory) {
       await resolveSources(
         {'a|web/main.dart': 'main() {}'},
         nonInputsToReadFromFilesystem: {
-          AssetId('build_runner', 'lib/build_runner.dart'),
+          AssetId('build_runner', 'lib/src/build_runner.dart'),
         },
         (resolver) async {
           final buildResolversId = AssetId(
             'build_runner',
-            'lib/build_runner.dart',
+            'lib/src/build_runner.dart',
           );
           final lib = await resolver.libraryFor(buildResolversId);
           final currentPackageConfig = await loadPackageConfigUri(

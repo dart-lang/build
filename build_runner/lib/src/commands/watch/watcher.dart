@@ -5,173 +5,89 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:crypto/crypto.dart';
 import 'package:stream_transform/stream_transform.dart';
 
 import '../../build/build_result.dart';
 import '../../build/build_series.dart';
-import '../../build_plan/build_options.dart';
 import '../../build_plan/build_plan.dart';
-import '../../build_plan/package_graph.dart';
-import '../../build_plan/testing_overrides.dart';
-import '../../io/reader_writer.dart';
-import '../../logging/build_log.dart';
 import 'asset_change.dart';
 import 'collect_changes.dart';
 import 'graph_watcher.dart';
 import 'node_watcher.dart';
 
 class Watcher {
-  late final BuildPlan buildPlan;
-
-  BuildSeries? _buildSeries;
-
-  /// Should complete when we need to kill the build.
-  final _terminateCompleter = Completer<void>();
-
-  late Future<BuildResult> currentBuildResult;
+  final BuildPlan _buildPlan;
+  final BuildSeries _buildSeries;
 
   /// Pending expected delete events from the build.
-  final Set<AssetId> _expectedDeletes = <AssetId>{};
+  final Set<AssetId> _expectedDeletes;
 
-  Watcher({required BuildPlan buildPlan, required Future until}) {
-    this.buildPlan = buildPlan.copyWith(
+  Watcher._(this._buildPlan, this._buildSeries, this._expectedDeletes);
+
+  factory Watcher({required BuildPlan buildPlan, required Future<void> until}) {
+    final expectedDeletes = <AssetId>{};
+    buildPlan = buildPlan.copyWith(
       readerWriter: buildPlan.readerWriter.copyWith(
-        onDelete: _expectedDeletes.add,
+        onDelete: expectedDeletes.add,
       ),
     );
-    buildResults = _run(until).asBroadcastStream();
+    final buildSeries = BuildSeries(buildPlan);
+    final result = Watcher._(buildPlan, buildSeries, expectedDeletes);
+    result._run(until);
+    return result;
   }
 
-  BuildOptions get buildOptions => buildPlan.buildOptions;
-  TestingOverrides get testingOverrides => buildPlan.testingOverrides;
-  PackageGraph get packageGraph => buildPlan.packageGraph;
-  ReaderWriter get readerWriter => buildPlan.readerWriter;
-
-  late final Stream<BuildResult> buildResults;
+  Stream<BuildResult> get buildResults => _buildSeries.buildResults;
+  Future<BuildResult> get currentBuildResult => _buildSeries.currentBuildResult;
 
   /// Runs a build any time relevant files change.
   ///
   /// Only one build will run at a time, and changes are batched.
   ///
   /// File watchers are scheduled synchronously.
-  Stream<BuildResult> _run(Future until) {
-    final firstBuildCompleter = Completer<BuildResult>();
-    currentBuildResult = firstBuildCompleter.future;
-    final controller = StreamController<BuildResult>();
-
-    Future<BuildResult> doBuild(List<List<AssetChange>> changes) async {
-      final buildSeries = _buildSeries!;
-      final mergedChanges = collectChanges(changes);
-
-      _expectedDeletes.clear();
-      return buildSeries.run(mergedChanges);
-    }
-
-    final terminate = Future.any([until, _terminateCompleter.future]);
-
-    Digest? originalRootPackageConfigDigest;
-    final rootPackageConfigId = AssetId(
-      packageGraph.root.name,
-      '.dart_tool/package_config.json',
-    );
+  void _run(Future<void> until) async {
+    final terminate = Future.any([until, _buildSeries.closing]);
 
     // Start watching files immediately, before the first build is even started.
     final graphWatcher = PackageGraphWatcher(
-      packageGraph,
+      _buildPlan.packageGraph,
       watch:
           (node) => PackageNodeWatcher(
             node,
-            watch: testingOverrides.directoryWatcherFactory,
+            watch: _buildPlan.testingOverrides.directoryWatcherFactory,
           ),
     );
     graphWatcher
         .watch()
-        .asyncMap<AssetChange>((change) {
-          // Delay any events until the first build is completed.
-          if (firstBuildCompleter.isCompleted) return change;
-          return firstBuildCompleter.future.then((_) => change);
-        })
-        .asyncMap<AssetChange>((change) {
-          final id = change.id;
-          if (id == rootPackageConfigId) {
-            final digest = originalRootPackageConfigDigest!;
-            // Kill future builds if the root packages file changes.
-            //
-            // We retry the reads for a little bit to handle the case where a
-            // user runs `pub get` and it hasn't been re-written yet.
-            return _readOnceExists(id, readerWriter).then((bytes) {
-              if (md5.convert(bytes) != digest) {
-                _terminateCompleter.complete();
-              }
-              return change;
-            });
-          }
+        .asyncMap<AssetChange>((change) async {
+          // Delay any events until the current build is completed.
+          await currentBuildResult;
           return change;
         })
-        .asyncWhere((change) {
-          return _buildSeries!.shouldProcess(change, _expectedDeletes);
-        })
         .debounceBuffer(
-          testingOverrides.debounceDelay ?? const Duration(milliseconds: 250),
+          _buildPlan.testingOverrides.debounceDelay ??
+              const Duration(milliseconds: 250),
         )
+        .asyncMap(
+          (changes) => _buildSeries.filterChanges(changes, _expectedDeletes),
+        )
+        .where((changes) => changes.isNotEmpty)
         .takeUntil(terminate)
-        .asyncMapBuffer((changes) => currentBuildResult = doBuild(changes))
-        .listen((BuildResult result) {
-          if (result.failureType == FailureType.buildScriptChanged) {
-            _terminateCompleter.complete();
-          }
-          if (controller.isClosed) return;
-          controller.add(result);
-        })
-        .onDone(() async {
-          await currentBuildResult;
-          await _buildSeries?.beforeExit();
-          if (!controller.isClosed) await controller.close();
-        });
+        .asyncMapBuffer(_doBuild)
+        .drain<void>()
+        .ignore();
 
-    // Schedule the actual first build for the future so we can return the
-    // stream synchronously.
-    () async {
-      await graphWatcher.ready;
-      if (await readerWriter.canRead(rootPackageConfigId)) {
-        originalRootPackageConfigDigest = md5.convert(
-          await readerWriter.readAsBytes(rootPackageConfigId),
-        );
-      } else {
-        buildLog.warning(
-          'Root package config not readable, manual restarts will be needed '
-          'after running `pub upgrade`.',
-        );
-      }
-
-      BuildResult firstBuild;
-      BuildSeries? build;
-      build = _buildSeries = BuildSeries(buildPlan);
-      firstBuild = await build.run({});
-      // It is possible this is already closed if the user kills the process
-      // early, which results in an exception without this check.
-      if (!controller.isClosed) controller.add(firstBuild);
-      firstBuildCompleter.complete(firstBuild);
-    }();
-
-    return controller.stream;
+    await graphWatcher.ready;
+    await _buildSeries.run({}, recentlyBootstrapped: true);
   }
-}
 
-/// Reads [id] using [readerWriter], waiting for it to exist for up to 1 second.
-///
-/// If it still doesn't exist after 1 second then throws an
-/// [AssetNotFoundException].
-Future<List<int>> _readOnceExists(AssetId id, ReaderWriter readerWriter) async {
-  final watch = Stopwatch()..start();
-  var tryAgain = true;
-  while (tryAgain) {
-    if (await readerWriter.canRead(id)) {
-      return readerWriter.readAsBytes(id);
-    }
-    tryAgain = watch.elapsedMilliseconds < 1000;
-    await Future<void>.delayed(const Duration(milliseconds: 100));
+  Future<BuildResult> _doBuild(List<List<AssetChange>> changes) async {
+    final mergedChanges = collectChanges(changes);
+    _expectedDeletes.clear();
+    final result = await _buildSeries.run(
+      mergedChanges,
+      recentlyBootstrapped: false,
+    );
+    return result;
   }
-  throw AssetNotFoundException(id);
 }

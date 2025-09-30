@@ -496,7 +496,6 @@ targets:
             makeAssetId('a|web/a.txt.copy'),
             makeAssetId('a|web/a.txt.copy.clone'),
             ...placeholders,
-            makeAssetId('a|.dart_tool/package_config.json'),
           ]),
         );
         expect(cachedGraph.sources, [makeAssetId('a|web/a.txt')]);
@@ -1121,7 +1120,6 @@ targets:
     final expectedGraph = await AssetGraph.build(
       BuildPhases([]),
       <AssetId>{},
-      {makeAssetId('a|.dart_tool/package_config.json')},
       buildPackageGraph({rootPackage('a'): []}),
       result.readerWriter,
     );
@@ -1719,9 +1717,7 @@ targets:
           build: (buildStep, _) async {
             final hasEntrypoint = await buildStep
                 .findAssets(Glob('**'))
-                .contains(
-                  makeAssetId('a|.dart_tool/build/entrypoint/build.dart'),
-                );
+                .contains(makeAssetId('a|$entrypointScriptPath'));
             await buildStep.writeAsString(
               buildStep.inputId.changeExtension('.hasEntrypoint'),
               '$hasEntrypoint',
@@ -1731,10 +1727,7 @@ targets:
       ];
       await testBuilders(
         builders,
-        {
-          'a|lib/a.txt': 'a',
-          'a|.dart_tool/build/entrypoint/build.dart': 'some build script',
-        },
+        {'a|lib/a.txt': 'a', 'a|$entrypointScriptPath': 'some build script'},
         outputs: {'a|lib/a.hasEntrypoint': 'false'},
       );
     });

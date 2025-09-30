@@ -53,7 +53,6 @@ class BuildRunnerCommandLine {
   final BuiltList<String>? outputs;
   final bool? release;
   final bool? trackPerformance;
-  final bool? skipBuildScriptCheck;
   final bool? symlink;
   final bool? verbose;
 
@@ -76,7 +75,6 @@ class BuildRunnerCommandLine {
       outputs = argResults.listNamed(outputOption),
       release = argResults.boolNamed(releaseOption),
       trackPerformance = argResults.boolNamed(trackPerformanceOption),
-      skipBuildScriptCheck = argResults.boolNamed(skipBuildScriptCheckOption),
       symlink = argResults.boolNamed(symlinkOption),
       verbose = argResults.boolNamed(verboseOption);
 
@@ -131,7 +129,6 @@ const lowResourcesModeOption = 'low-resources-mode';
 const outputOption = 'output';
 const releaseOption = 'release';
 const trackPerformanceOption = 'track-performance';
-const skipBuildScriptCheckOption = 'skip-build-script-check';
 const symlinkOption = 'symlink';
 const verboseOption = 'verbose';
 
@@ -142,7 +139,10 @@ class _CommandRunner extends CommandRunner<BuildRunnerCommandLine> {
     : super(
         'build_runner',
         'Dart build tool.',
-        usageLineLength: stdout.hasTerminal ? stdout.terminalColumns : 80,
+        usageLineLength:
+            buildProcessState.stdio.hasTerminal
+                ? buildProcessState.stdio.terminalColumns
+                : 80,
       ) {
     addCommand(_build);
     addCommand(_clean);
@@ -206,14 +206,6 @@ class _Build extends Command<BuildRunnerCommandLine> {
         help:
             'A directory to write performance logs to, must be in the '
             'current package. Implies `--track-performance`.',
-      )
-      ..addFlag(
-        skipBuildScriptCheckOption,
-        help:
-            r'Skip validation for the digests of files imported by the '
-            'build script.',
-        hide: true,
-        defaultsTo: false,
       )
       ..addMultiOption(
         outputOption,

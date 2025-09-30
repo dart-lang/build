@@ -8,7 +8,6 @@ import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:watcher/watcher.dart';
 
-import '../bootstrap/build_script_generate.dart';
 import '../build_plan/build_directory.dart';
 import '../build_plan/build_filter.dart';
 import '../build_plan/build_plan.dart';
@@ -52,6 +51,8 @@ class BuildSeries {
   final StreamController<BuildResult> _buildResultsController =
       StreamController.broadcast();
 
+  final Completer<void> _closingCompleter = Completer();
+
   /// Whether the next build is the first build.
   bool firstBuild = true;
 
@@ -86,65 +87,90 @@ class BuildSeries {
   Stream<BuildResult> get buildResults => _buildResultsController.stream;
   Future<BuildResult>? _currentBuildResult;
 
-  bool _hasBuildScriptChanged(Set<AssetId> changes) {
-    if (_buildPlan.buildOptions.skipBuildScriptCheck) return false;
-    if (_buildPlan.buildScriptUpdates == null) return true;
-    return _buildPlan.buildScriptUpdates!.hasBeenUpdated(changes);
-  }
+  /// A future that completes when [close] is called.
+  ///
+  /// Then, no further builds are allowed.
+  Future<void> get closing => _closingCompleter.future;
 
-  /// Returns whether [change] might trigger a build.
+  /// Filters [changes] to only changes that might trigger a build.
   ///
   /// Pass expected deletes in [expectedDeletes]. Expected deletes do not
   /// trigger a build. A delete that matches is removed from the set.
-  Future<bool> shouldProcess(
-    AssetChange change,
+  Future<List<AssetChange>> filterChanges(
+    List<AssetChange> changes,
     Set<AssetId> expectedDeletes,
   ) async {
-    // Ignore any expected delete once.
-    if (change.type == ChangeType.REMOVE && expectedDeletes.remove(change.id)) {
-      return false;
+    final result = <AssetChange>[];
+    for (final change in changes) {
+      final id = change.id;
+
+      // Changes to the entrypoint are handled via depfiles.
+      if (_buildPlan.bootstrapper.isKernelDependency(
+        _buildPlan.packageGraph.pathFor(id),
+      )) {
+        result.add(change);
+        continue;
+      }
+      if (id.path.startsWith(entrypointDirectoryPath)) {
+        continue;
+      }
+
+      // Ignore any expected delete once.
+      if (change.type == ChangeType.REMOVE && expectedDeletes.remove(id)) {
+        continue;
+      }
+
+      if (_isBuildConfiguration(id)) {
+        result.add(change);
+        continue;
+      }
+
+      final node = _assetGraph.contains(id) ? _assetGraph.get(id) : null;
+
+      // Changes to files that are not currently part of the build.
+      if (node == null) {
+        // Ignore under `.dart_tool/build`.
+        if (id.path.startsWith(cacheDirectoryPath)) continue;
+
+        // Ignore modifications and deletes.
+        if (change.type != ChangeType.ADD) continue;
+
+        // It's an add: handle if it's a new input.
+        if (_buildPlan.targetGraph.anyMatchesAsset(id)) {
+          result.add(change);
+        }
+        continue;
+      }
+
+      // Changes to files that are part of the build.
+
+      // If not copying to a merged output directory, ignore changes to files
+      // with no outputs.
+      if (!_buildPlan.buildOptions.anyMergedOutputDirectory &&
+          !node.changesRequireRebuild) {
+        continue;
+      }
+
+      // Ignore creation or modification of outputs.
+      if (node.type == NodeType.generated && change.type != ChangeType.REMOVE) {
+        continue;
+      }
+
+      // For modifications, confirm that the content actually changed.
+      if (change.type == ChangeType.MODIFY) {
+        _readerWriter.cache.invalidate([id]);
+        final newDigest = await _readerWriter.digest(id);
+        if (node.digest != newDigest) {
+          result.add(change);
+        }
+        continue;
+      }
+
+      // It's an add of "missing source" node or a deletion of an input.
+      result.add(change);
     }
 
-    final id = change.id;
-    if (_isBuildConfiguration(id)) return true;
-
-    final node = _assetGraph.contains(id) ? _assetGraph.get(id) : null;
-
-    // Changes to files that are not currently part of the build.
-    if (node == null) {
-      // Ignore under `.dart_tool/build`.
-      if (id.path.startsWith(cacheDir)) return false;
-
-      // Ignore modifications and deletes.
-      if (change.type != ChangeType.ADD) return false;
-
-      // It's an add: return whether it's a new input.
-      return _buildPlan.targetGraph.anyMatchesAsset(id);
-    }
-
-    // Changes to files that are part of the build.
-
-    // If not copying to a merged output directory, ignore changes to files with
-    // no outputs.
-    if (!_buildPlan.buildOptions.anyMergedOutputDirectory &&
-        !node.changesRequireRebuild) {
-      return false;
-    }
-
-    // Ignore creation or modification of outputs.
-    if (node.type == NodeType.generated && change.type != ChangeType.REMOVE) {
-      return false;
-    }
-
-    // For modifications, confirm that the content actually changed.
-    if (change.type == ChangeType.MODIFY) {
-      _readerWriter.cache.invalidate([id]);
-      final newDigest = await _readerWriter.digest(id);
-      return node.digest != newDigest;
-    }
-
-    // It's an add of "missing source" node or a deletion of an input.
-    return true;
+    return result;
   }
 
   bool _isBuildConfiguration(AssetId id) =>
@@ -180,13 +206,32 @@ class BuildSeries {
   ///
   /// For further builds, pass the changes since the previous builds as
   /// [updates].
+  ///
+  /// Set [recentlyBootstrapped] to skip doing checks that are done during
+  /// bootstrapping. If [recentlyBootstrapped] then [updates] must be empty.
   Future<BuildResult> run(
     Map<AssetId, ChangeType> updates, {
+    required bool recentlyBootstrapped,
     BuiltSet<BuildDirectory>? buildDirs,
     BuiltSet<BuildFilter>? buildFilters,
   }) async {
-    if (_hasBuildScriptChanged(updates.keys.toSet())) {
-      return BuildResult.buildScriptChanged();
+    if (_closingCompleter.isCompleted) {
+      throw StateError('BuildSeries was closed.');
+    }
+
+    if (recentlyBootstrapped) {
+      if (updates.isNotEmpty) {
+        throw StateError('`recentlyBootstrapped` but updates not empty.');
+      }
+    } else {
+      final kernelFreshness = await _buildPlan.bootstrapper
+          .checkKernelFreshness(digestsAreFresh: false);
+      if (!kernelFreshness.outputIsFresh) {
+        final result = BuildResult.buildScriptChanged();
+        _buildResultsController.add(result);
+        await close();
+        return result;
+      }
     }
 
     if (updates.keys.any(_isBuildConfiguration)) {
@@ -195,12 +240,10 @@ class BuildSeries {
       // A config change might have caused new builders to be needed, which
       // needs a restart to change the build script.
       if (_buildPlan.restartIsNeeded) {
-        return BuildResult.buildScriptChanged();
-      }
-      // A config change might have changed builder factories, which needs a
-      // restart to change the build script.
-      if (await hasGeneratedBuildScriptChanged()) {
-        return BuildResult.buildScriptChanged();
+        final result = BuildResult.buildScriptChanged();
+        _buildResultsController.add(result);
+        await close();
+        return result;
       }
       _assetGraph = _buildPlan.takeAssetGraph();
       _readerWriter = _buildPlan.readerWriter.copyWith(
@@ -243,5 +286,21 @@ class BuildSeries {
     return result;
   }
 
-  Future<void> beforeExit() => _resourceManager.beforeExit();
+  /// Ends the build series.
+  ///
+  /// First, [closing] is completed and new builds are prohibited.
+  ///
+  /// Then, any currently-running build is waited for, followed by cleanup of
+  /// any resources via [ResourceManager.beforeExit].
+  ///
+  /// Finally, [buildResults] is closed.
+  Future<void> close() async {
+    if (_closingCompleter.isCompleted) return;
+    _closingCompleter.complete();
+    await _currentBuildResult;
+    await _resourceManager.beforeExit();
+
+    // Close the results stream last: this indicates that cleanup is done.
+    await _buildResultsController.close();
+  }
 }

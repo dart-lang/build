@@ -54,7 +54,6 @@ void main() {
         graph = await AssetGraph.build(
           BuildPhases([]),
           <AssetId>{},
-          <AssetId>{},
           fooPackageGraph,
           digestReader,
         );
@@ -200,9 +199,6 @@ void main() {
       final primaryOutputId = makeAssetId('foo|file.txt.copy');
       final syntheticId = makeAssetId('foo|synthetic.txt');
       final syntheticOutputId = makeAssetId('foo|synthetic.txt.copy');
-      final internalId = makeAssetId(
-        'foo|.dart_tool/build/entrypoint/serve.dart',
-      );
       final placeholders = placeholderIdsFor(fooPackageGraph);
       final expectedBuildStepId = PostProcessBuildStepId(
         input: primaryInputId,
@@ -210,13 +206,13 @@ void main() {
       );
 
       setUp(() async {
-        for (final id in [primaryInputId, internalId]) {
-          digestReader.testing.writeString(id, 'contents of $id');
-        }
+        digestReader.testing.writeString(
+          primaryInputId,
+          'contents of $primaryInputId',
+        );
         graph = await AssetGraph.build(
           buildPhases,
           {primaryInputId, excludedInputId},
-          {internalId},
           fooPackageGraph,
           digestReader,
         );
@@ -230,7 +226,6 @@ void main() {
             primaryInputId,
             excludedInputId,
             primaryOutputId,
-            internalId,
             ...placeholders,
           ]),
         );
@@ -253,8 +248,6 @@ void main() {
           isNull,
           reason: 'Nodes with no output shouldn\'t get an eager digest.',
         );
-
-        expect(graph.get(internalId)?.type, NodeType.internal);
 
         final primaryOutputNode = graph.get(primaryOutputId)!;
         // Didn't actually do a build yet so this starts out empty.
@@ -416,7 +409,6 @@ void main() {
           () => AssetGraph.build(
             BuildPhases(List.filled(2, InBuildPhase(TestBuilder(), 'foo'))),
             {makeAssetId('foo|file')},
-            <AssetId>{},
             fooPackageGraph,
             digestReader,
           ),
@@ -465,7 +457,6 @@ void main() {
               ),
             ]),
             sources,
-            <AssetId>{},
             fooPackageGraph,
             digestReader,
           );
@@ -512,7 +503,6 @@ void main() {
               ),
             ]),
             sources,
-            <AssetId>{},
             fooPackageGraph,
             digestReader,
           );
@@ -550,7 +540,6 @@ void main() {
           final graph = await AssetGraph.build(
             buildPhases,
             {source},
-            <AssetId>{},
             packageGraph,
             digestReader,
           );

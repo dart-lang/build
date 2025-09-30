@@ -177,7 +177,7 @@ Future<ServeHandler> createHandler(
 
   final watchCommand = WatchCommand(
     builderFactories: BuilderFactories(),
-    buildOptions: BuildOptions.forTests(skipBuildScriptCheck: true),
+    buildOptions: BuildOptions.forTests(),
     testingOverrides: TestingOverrides(
       builderApplications: builders.toBuiltList(),
       directoryWatcherFactory: watcherFactory,
