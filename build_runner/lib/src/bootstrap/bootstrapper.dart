@@ -93,12 +93,21 @@ class Bootstrapper {
   }
 
   /// Checks freshness of the entrypoint script compiled to kernel.
-  Future<FreshnessResult> checkKernelFreshness() async {
+  ///
+  /// Set [assumeFreshDigests] to use existing digests if they are available on
+  /// disk.
+  Future<FreshnessResult> checkKernelFreshness({
+    bool assumeFreshDigests = false,
+  }) async {
     if (!ChildProcess.isRunning) {
       // Any real use or realistic test has a child process; so this is only hit
       // in small tests. Return "fresh" so nothing related to recompiling is
       // triggered.
       return FreshnessResult(outputIsFresh: true);
+    }
+    if (assumeFreshDigests) {
+      final maybeResult = _compiler.checkFreshness(assumeFreshDigests: true);
+      if (maybeResult.outputIsFresh) return maybeResult;
     }
     await _writeBuildScript();
     return _compiler.checkFreshness();

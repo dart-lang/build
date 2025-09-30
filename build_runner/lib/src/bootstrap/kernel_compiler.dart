@@ -20,7 +20,11 @@ class KernelCompiler {
   );
 
   /// Checks freshness of the build script compiled kernel.
-  FreshnessResult checkFreshness() => _outputDepfile.checkFreshness();
+  ///
+  /// Set [assumeFreshDigests] to use existing digests if they are available on
+  /// disk.
+  FreshnessResult checkFreshness({bool assumeFreshDigests = false}) =>
+      _outputDepfile.checkFreshness(assumeFreshDigests: assumeFreshDigests);
 
   /// Checks whether [path] in a dependency of the build script compiled kernel.
   ///

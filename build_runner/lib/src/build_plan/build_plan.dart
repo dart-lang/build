@@ -96,14 +96,20 @@ class BuildPlan {
   /// Files that should be deleted before restarting or building are accumulated
   /// in [filesToDelete] and [foldersToDelete]. Call [deleteFilesAndFolders] to
   /// delete them.
+  ///
+  /// Set [assumeFreshDigests] to use existing digests if they are available on
+  /// disk.
   static Future<BuildPlan> load({
     required BuilderFactories builderFactories,
     required BuildOptions buildOptions,
     required TestingOverrides testingOverrides,
+    bool assumeFreshDigests = false,
   }) async {
     final bootstrapper = Bootstrapper();
     var restartIsNeeded = false;
-    final kernelFreshness = await bootstrapper.checkKernelFreshness();
+    final kernelFreshness = await bootstrapper.checkKernelFreshness(
+      assumeFreshDigests: assumeFreshDigests,
+    );
     if (!kernelFreshness.outputIsFresh) {
       restartIsNeeded = true;
     }

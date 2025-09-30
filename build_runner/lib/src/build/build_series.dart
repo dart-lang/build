@@ -206,17 +206,22 @@ class BuildSeries {
   ///
   /// For further builds, pass the changes since the previous builds as
   /// [updates].
+  ///
+  /// Set [assumeFreshDigests] to use existing digests if they are available on
+  /// disk.
   Future<BuildResult> run(
     Map<AssetId, ChangeType> updates, {
     BuiltSet<BuildDirectory>? buildDirs,
     BuiltSet<BuildFilter>? buildFilters,
+    bool assumeFreshDigests = false,
   }) async {
     if (_closingCompleter.isCompleted) {
       throw StateError('BuildSeries was closed.');
     }
 
-    final kernelFreshness =
-        await _buildPlan.bootstrapper.checkKernelFreshness();
+    final kernelFreshness = await _buildPlan.bootstrapper.checkKernelFreshness(
+      assumeFreshDigests: assumeFreshDigests,
+    );
     if (!kernelFreshness.outputIsFresh) {
       final result = BuildResult.buildScriptChanged();
       _buildResultsController.add(result);

@@ -112,6 +112,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         mergedChanges,
         buildDirs: buildDirs.build(),
         buildFilters: buildFilters.build(),
+        assumeFreshDigests: false,
       );
       if (result.failureType == core.FailureType.buildScriptChanged) {
         if (!_buildScriptUpdateCompleter.isCompleted) {

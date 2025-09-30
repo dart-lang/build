@@ -25,12 +25,20 @@ class Depfile {
   /// Checks whether the output mentioned in the depfile is fresh.
   ///
   /// It is fresh if it has not changed and none of its inputs have changed.
-  FreshnessResult checkFreshness() {
+  ///
+  /// Set [assumeFreshDigests] to use existing digests if they are available on
+  /// disk.
+  FreshnessResult checkFreshness({bool assumeFreshDigests = false}) {
     final depsFile = File(depfilePath);
     if (!depsFile.existsSync()) return FreshnessResult(outputIsFresh: false);
     final digestFile = File(digestPath);
     if (!digestFile.existsSync()) return FreshnessResult(outputIsFresh: false);
     final digests = digestFile.readAsStringSync();
+
+    if (assumeFreshDigests) {
+      return FreshnessResult(outputIsFresh: true, digest: digests);
+    }
+
     final expectedDigests = _computeDigest();
     return digests == expectedDigests
         ? FreshnessResult(outputIsFresh: true, digest: digests)
