@@ -48,7 +48,7 @@ class Bootstrapper {
       await _writeBuildScript();
 
       // Compile if there was any change.
-      if (!_compiler.checkFreshness().outputIsFresh) {
+      if (!_compiler.checkFreshness(digestsAreFresh: false).outputIsFresh) {
         final result = await _compiler.compile(experiments: experiments);
         if (!result.succeeded) {
           if (result.messages != null) {
@@ -93,15 +93,25 @@ class Bootstrapper {
   }
 
   /// Checks freshness of the entrypoint script compiled to kernel.
-  Future<FreshnessResult> checkKernelFreshness() async {
+  ///
+  /// Set [digestsAreFresh] if digests were very recently updated. Then, they
+  /// will be re-used from disk if possible instead of recomputed.
+  Future<FreshnessResult> checkKernelFreshness({
+    required bool digestsAreFresh,
+  }) async {
     if (!ChildProcess.isRunning) {
       // Any real use or realistic test has a child process; so this is only hit
       // in small tests. Return "fresh" so nothing related to recompiling is
       // triggered.
       return FreshnessResult(outputIsFresh: true);
     }
+    if (digestsAreFresh) {
+      final maybeResult = _compiler.checkFreshness(digestsAreFresh: true);
+      if (maybeResult.outputIsFresh) return maybeResult;
+      // Digest file must be missing, continue to compile.
+    }
     await _writeBuildScript();
-    return _compiler.checkFreshness();
+    return _compiler.checkFreshness(digestsAreFresh: false);
   }
 
   /// Whether [path] is a dependency of the entrypoint script compiled to

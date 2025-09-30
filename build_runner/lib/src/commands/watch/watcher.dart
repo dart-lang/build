@@ -78,13 +78,16 @@ class Watcher {
         .ignore();
 
     await graphWatcher.ready;
-    await _buildSeries.run({});
+    await _buildSeries.run({}, recentlyBootstrapped: true);
   }
 
   Future<BuildResult> _doBuild(List<List<AssetChange>> changes) async {
     final mergedChanges = collectChanges(changes);
     _expectedDeletes.clear();
-    final result = await _buildSeries.run(mergedChanges);
+    final result = await _buildSeries.run(
+      mergedChanges,
+      recentlyBootstrapped: false,
+    );
     return result;
   }
 }

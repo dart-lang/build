@@ -206,8 +206,12 @@ class BuildSeries {
   ///
   /// For further builds, pass the changes since the previous builds as
   /// [updates].
+  ///
+  /// Set [recentlyBootstrapped] to skip doing checks that are done during
+  /// bootstrapping. If [recentlyBootstrapped] then [updates] must be empty.
   Future<BuildResult> run(
     Map<AssetId, ChangeType> updates, {
+    required bool recentlyBootstrapped,
     BuiltSet<BuildDirectory>? buildDirs,
     BuiltSet<BuildFilter>? buildFilters,
   }) async {
@@ -215,13 +219,19 @@ class BuildSeries {
       throw StateError('BuildSeries was closed.');
     }
 
-    final kernelFreshness =
-        await _buildPlan.bootstrapper.checkKernelFreshness();
-    if (!kernelFreshness.outputIsFresh) {
-      final result = BuildResult.buildScriptChanged();
-      _buildResultsController.add(result);
-      await close();
-      return result;
+    if (recentlyBootstrapped) {
+      if (updates.isNotEmpty) {
+        throw StateError('`recentlyBootstrapped` but updates not empty.');
+      }
+    } else {
+      final kernelFreshness = await _buildPlan.bootstrapper
+          .checkKernelFreshness(digestsAreFresh: false);
+      if (!kernelFreshness.outputIsFresh) {
+        final result = BuildResult.buildScriptChanged();
+        _buildResultsController.add(result);
+        await close();
+        return result;
+      }
     }
 
     if (updates.keys.any(_isBuildConfiguration)) {

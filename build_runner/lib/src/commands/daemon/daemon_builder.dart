@@ -110,6 +110,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       final mergedChanges = collectChanges([changes]);
       final result = await buildSeries.run(
         mergedChanges,
+        recentlyBootstrapped: false,
         buildDirs: buildDirs.build(),
         buildFilters: buildFilters.build(),
       );

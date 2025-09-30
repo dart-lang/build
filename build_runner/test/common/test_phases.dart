@@ -154,7 +154,7 @@ Future<TestBuildersResult> testPhases(
 
   BuildResult result;
   final buildSeries = BuildSeries(buildPlan);
-  result = await buildSeries.run({});
+  result = await buildSeries.run({}, recentlyBootstrapped: true);
   await buildSeries.close();
 
   if (checkBuildStatus) {

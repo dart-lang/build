@@ -21,7 +21,11 @@ class KernelCompiler {
   );
 
   /// Checks freshness of the build script compiled kernel.
-  FreshnessResult checkFreshness() => _outputDepfile.checkFreshness();
+  ///
+  /// Set [digestsAreFresh] if digests were very recently updated. Then, they
+  /// will be re-used from disk if possible instead of recomputed.
+  FreshnessResult checkFreshness({required bool digestsAreFresh}) =>
+      _outputDepfile.checkFreshness(digestsAreFresh: digestsAreFresh);
 
   /// Checks whether [path] in a dependency of the build script compiled kernel.
   ///
