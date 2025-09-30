@@ -8,19 +8,19 @@ import 'package:test/test.dart';
 void main() {
   group('Depfile', () {
     test('parses', () async {
-      expect(
-        Depfile.parse('''
-output: input1 input2
-'''),
-        ['output', 'input1', 'input2'],
-      );
+      expect(Depfile.parse('output: input1 input2\n'), [
+        'output',
+        'input1',
+        'input2',
+      ]);
     });
 
     test('parses when filenames have spaces and backslashes', () async {
       expect(
-        Depfile.parse(r'''
-output: input1 input2 input\ with\ space input4 path\\input5
-'''),
+        Depfile.parse(
+          r'output: input1 input2 input\ with\ space input4 path\\input5'
+          '\n',
+        ),
         [
           'output',
           'input1',
