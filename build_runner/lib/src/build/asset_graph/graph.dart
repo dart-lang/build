@@ -34,6 +34,11 @@ class AssetGraph implements GeneratedAssetHider {
   /// All the [AssetNode]s in the graph, indexed by package and then path.
   final Map<String, Map<String, AssetNode>> _nodesByPackage;
 
+  /// A digest of the generated build script kernel and inputs, if available.
+  ///
+  /// May be `null` in tests.
+  final String? kernelDigest;
+
   /// A [Digest] of the build actions this graph was originally created with.
   ///
   /// When an [AssetGraph] is deserialized we check whether or not it matches
@@ -84,6 +89,7 @@ class AssetGraph implements GeneratedAssetHider {
   PhasedAssetDeps? previousPhasedAssetDeps;
 
   AssetGraph._(
+    this.kernelDigest,
     BuildPhases buildPhases,
     this.dartVersion,
     this.packageLanguageVersions,
@@ -96,6 +102,7 @@ class AssetGraph implements GeneratedAssetHider {
       _postProcessBuildStepOutputs = {};
 
   AssetGraph._fromSerialized(
+    this.kernelDigest,
     this.buildPhasesDigest,
     this.inBuildPhasesOptionsDigests,
     this.postBuildActionsOptionsDigests,
@@ -107,6 +114,7 @@ class AssetGraph implements GeneratedAssetHider {
 
   AssetGraph._with({
     required Map<String, Map<String, AssetNode>> nodesByPackage,
+    required this.kernelDigest,
     required this.buildPhasesDigest,
     required this.dartVersion,
     required this.enabledExperiments,
@@ -126,6 +134,7 @@ class AssetGraph implements GeneratedAssetHider {
   @visibleForTesting
   AssetGraph copyWith({String? dartVersion}) => AssetGraph._with(
     nodesByPackage: _nodesByPackage,
+    kernelDigest: kernelDigest,
     buildPhasesDigest: buildPhasesDigest,
     dartVersion: dartVersion ?? this.dartVersion,
     enabledExperiments: enabledExperiments,
@@ -166,11 +175,12 @@ class AssetGraph implements GeneratedAssetHider {
   static Future<AssetGraph> build(
     BuildPhases buildPhases,
     Set<AssetId> sources,
-    Set<AssetId> internalSources,
     PackageGraph packageGraph,
-    ReaderWriter readerWriter,
-  ) async {
+    ReaderWriter readerWriter, {
+    String? kernelDigest,
+  }) async {
     final graph = AssetGraph._(
+      kernelDigest,
       buildPhases,
       Platform.version,
       packageGraph.languageVersions,
@@ -189,9 +199,6 @@ class AssetGraph implements GeneratedAssetHider {
       sources.where((id) => graph.get(id)?.primaryOutputs.isNotEmpty == true),
       readerWriter,
     );
-    // Always compute digests for all internal nodes.
-    graph._addInternalSources(internalSources);
-    await graph._setDigests(internalSources, readerWriter);
     return graph;
   }
 
@@ -282,13 +289,6 @@ class AssetGraph implements GeneratedAssetHider {
     }
 
     return node;
-  }
-
-  /// Adds [assetIds] as [AssetNode.internal].
-  void _addInternalSources(Set<AssetId> assetIds) {
-    for (final id in assetIds) {
-      _add(AssetNode.internal(id));
-    }
   }
 
   /// Adds [AssetNode.placeholder]s for every package in [packageGraph].
@@ -718,7 +718,7 @@ class AssetGraph implements GeneratedAssetHider {
   @override
   AssetId maybeHide(AssetId id, String rootPackage) {
     if (id.path.startsWith(generatedOutputDirectory) ||
-        id.path.startsWith(cacheDir)) {
+        id.path.startsWith(cacheDirectoryPath)) {
       return id;
     }
     if (!contains(id)) {

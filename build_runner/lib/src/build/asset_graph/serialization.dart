@@ -8,7 +8,7 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 31;
+const _version = 32;
 
 /// Deserializes an [AssetGraph] from a [Map].
 ///
@@ -39,6 +39,7 @@ AssetGraph? deserializeAssetGraph(List<int> bytes) {
               : null,
   };
   final graph = AssetGraph._fromSerialized(
+    serializedGraph['kernelDigest'] as String?,
     _deserializeDigest(serializedGraph['buildActionsDigest'] as String)!,
     serializers.deserialize(
           serializedGraph['inBuildPhasesOptionsDigests'],
@@ -106,6 +107,7 @@ List<int> serializeAssetGraph(AssetGraph graph) {
     'ids': identityAssetIdSerializer.serializedObjects,
     'dart_version': graph.dartVersion,
     'nodes': nodes,
+    'kernelDigest': graph.kernelDigest,
     'buildTriggersDigest': _serializeDigest(graph.previousBuildTriggersDigest),
     'buildActionsDigest': _serializeDigest(graph.buildPhasesDigest),
     'packageLanguageVersions':

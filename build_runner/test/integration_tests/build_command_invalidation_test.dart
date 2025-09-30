@@ -5,8 +5,7 @@
 @Tags(['integration2'])
 library;
 
-import 'package:build_runner/src/bootstrap/build_script_generate.dart';
-import 'package:build_runner/src/constants.dart';
+import 'package:build_runner/src/constants.dart' as constants;
 import 'package:test/test.dart';
 
 import '../common/common.dart';
@@ -54,8 +53,7 @@ void main() async {
     expect(tester.read('root_pkg/web/a.txt.copy2'), 'a');
 
     // Asset graph version mismatch.
-    final assetGraphPath =
-        'root_pkg/${assetGraphPathFor(scriptKernelLocation)}';
+    final assetGraphPath = 'root_pkg/${constants.assetGraphPath}';
     tester.update(
       assetGraphPath,
       (json) => json.replaceAll('"version":', '"version":1'),
@@ -65,12 +63,27 @@ void main() async {
     expect(output, contains('wrote 1 output'));
     expect(tester.read(fakeGeneratedOutput), null);
 
-    // "Core packages" location changed.
-    tester.update(
-      'root_pkg/.dart_tool/build/entrypoint/.packageLocations',
-      (txt) => '$txt\n',
+    // Move `build_runner` into the test workspace, rebuilds because
+    // locations changed.
+    tester.copyPackage('build_runner');
+    tester.writePackage(
+      name: 'root_pkg',
+      pathDependencies: ['builder_pkg', 'build_runner'],
+      files: {'web/a.txt': 'a'},
     );
     output = await tester.run('root_pkg', 'dart run build_runner build');
+    expect(output, contains('wrote 1 output'));
+
+    // No change, no rebuild.
+    output = await tester.run('root_pkg', 'dart run build_runner build');
     expect(output, contains('wrote 0 outputs'));
+
+    // Change `build_runner` source, rebuilds.
+    tester.update(
+      'build_runner/lib/src/build_runner.dart',
+      (script) => '$script\n',
+    );
+    output = await tester.run('root_pkg', 'dart run build_runner build');
+    expect(output, contains('wrote 1 output'));
   });
 }

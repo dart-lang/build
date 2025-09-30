@@ -129,12 +129,13 @@ targets:
     output = await tester.run('root_pkg', 'dart run build_runner build');
     expect(output, contains('wrote 0 outputs'));
 
-    // Change to `package_config.json` causes the watcher to exit.
+    // No-op change to `package_config.json` causes a build.
     tester.update(
       'root_pkg/.dart_tool/package_config.json',
       (script) => '$script\n',
     );
-    expect(await watch.exitCode, ExitCode.success.code);
+    await watch.expect(BuildLog.successPattern);
+    await watch.kill();
 
     // Now with --output.
     watch = await tester.start(

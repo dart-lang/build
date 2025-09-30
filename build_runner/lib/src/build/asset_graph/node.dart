@@ -20,7 +20,6 @@ class NodeType extends EnumClass {
 
   static const NodeType generated = _$generated;
   static const NodeType glob = _$glob;
-  static const NodeType internal = _$internal;
   static const NodeType placeholder = _$placeholder;
   static const NodeType source = _$source;
   static const NodeType missingSource = _$missingSource;
@@ -79,15 +78,9 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   /// Whether this asset is a normal, readable file.
   ///
   /// Does not guarantee that the file currently exists.
-  bool get isFile =>
-      type == NodeType.generated ||
-      type == NodeType.source ||
-      type == NodeType.internal;
+  bool get isFile => type == NodeType.generated || type == NodeType.source;
 
   /// Whether this node is tracked as an input in the asset graph.
-  ///
-  /// [NodeType.internal] nodes are a dependency of _all_ builders, so they are
-  /// inputs but not tracked inputs.
   bool get isTrackedInput =>
       type == NodeType.generated ||
       type == NodeType.source ||
@@ -100,23 +93,9 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
 
   /// Whether changes to this node will have any effect on other nodes.
   bool get changesRequireRebuild =>
-      type == NodeType.internal ||
-      type == NodeType.glob ||
-      type == NodeType.missingSource ||
-      digest != null;
+      type == NodeType.glob || type == NodeType.missingSource || digest != null;
 
   factory AssetNode([void Function(AssetNodeBuilder) updates]) = _$AssetNode;
-
-  /// An internal asset.
-  ///
-  /// Examples: `build_runner` generated entrypoint, package config.
-  ///
-  /// They are "inputs" to the entire build, so they are never explicitly
-  /// tracked as inputs.
-  factory AssetNode.internal(AssetId id) => AssetNode((b) {
-    b.id = id;
-    b.type = NodeType.internal;
-  });
 
   /// A manually-written source file.
   factory AssetNode.source(
