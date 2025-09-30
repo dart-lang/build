@@ -58,6 +58,7 @@ class Depfile {
   }
 
   String _computeDigest() {
+    print('compute digests');
     final depsFile = File(depfilePath).readAsStringSync();
     final paths = parse(depsFile);
     _depfilePaths = paths.toSet();
@@ -93,6 +94,7 @@ class Depfile {
     final digestSink = AccumulatorSink<Digest>();
     final result = md5.startChunkedConversion(digestSink);
     for (final dep in deps) {
+      if (dep.contains('.dill')) continue;
       final file = File(dep);
       if (file.existsSync()) {
         result.add([1]);

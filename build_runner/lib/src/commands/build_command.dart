@@ -50,6 +50,7 @@ class BuildCommand implements BuildRunnerCommand {
       builderFactories: builderFactories,
       buildOptions: buildOptions,
       testingOverrides: testingOverrides,
+      assumeFreshDigests: true,
     );
     await buildPlan.deleteFilesAndFolders();
     if (buildPlan.restartIsNeeded) {
