@@ -15,6 +15,7 @@ const entrypointDillDigestPath = '$entrypointScriptPath.dill.digest';
 /// Compiles the build script to kernel.
 class KernelCompiler {
   final Depfile _outputDepfile = Depfile(
+    outputPath: entrypointDillPath,
     depfilePath: entrypointDillDepfilePath,
     digestPath: entrypointDillDigestPath,
   );
