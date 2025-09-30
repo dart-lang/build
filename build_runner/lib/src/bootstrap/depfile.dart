@@ -14,18 +14,25 @@ import 'package:meta/meta.dart';
 /// It contains the output path followed by a colon then a space-separated list
 /// of input paths. Spaces in paths are backslash-escaped.
 class Depfile {
+  final String outputPath;
   final String depfilePath;
   final String digestPath;
 
-  /// Input and output paths parsed from the depfile.
+  /// Input paths parsed from the depfile.
   Set<String>? _depfilePaths;
 
-  Depfile({required this.depfilePath, required this.digestPath});
+  Depfile({
+    required this.outputPath,
+    required this.depfilePath,
+    required this.digestPath,
+  });
 
-  /// Checks whether the output mentioned in the depfile is fresh.
+  /// Checks whether the inputs mentioned in the depfile are fresh.
   ///
   /// It is fresh if it has not changed and none of its inputs have changed.
   FreshnessResult checkFreshness() {
+    final outputFile = File(outputPath);
+    if (!outputFile.existsSync()) return FreshnessResult(outputIsFresh: false);
     final depsFile = File(depfilePath);
     if (!depsFile.existsSync()) return FreshnessResult(outputIsFresh: false);
     final digestFile = File(digestPath);
@@ -43,8 +50,8 @@ class Depfile {
   /// [writeDigest], throws if neither was called.
   bool isDependency(String path) => _depfilePaths!.contains(path);
 
-  /// Writes a digest of all input files and the output file mentioned in
-  /// [depfilePath] to [digestPath].
+  /// Writes a digest of all input files mentioned in [depfilePath] to
+  /// [digestPath].
   void writeDigest() {
     File(digestPath).writeAsStringSync(_computeDigest());
   }
@@ -71,11 +78,7 @@ class Depfile {
         .split(' ')
         .map((item) => item.replaceAll('\u0000', ' '));
 
-    var outputPath = items.first;
-    // Strip off trailing ':'.
-    outputPath = outputPath.substring(0, outputPath.length - 1);
-    final result = [outputPath];
-    result.addAll(items.skip(1));
+    final result = items.skip(1).toList();
     // File ends in a newline.
     result.last = result.last.substring(0, result.last.length - 1);
     return result;
