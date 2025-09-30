@@ -29,8 +29,12 @@ class Depfile {
 
   /// Checks whether the inputs mentioned in the depfile are fresh.
   ///
-  /// It is fresh if it has not changed and none of its inputs have changed.
-  FreshnessResult checkFreshness() {
+  /// They are fresh if the output exists, the depfile exists, the digest file
+  /// exists and none of the input files has changed.
+  ///
+  /// Set [digestsAreFresh] if digests were very recently updated. Then, they
+  /// will be re-used from disk if possible instead of recomputed.
+  FreshnessResult checkFreshness({required bool digestsAreFresh}) {
     final outputFile = File(outputPath);
     if (!outputFile.existsSync()) return FreshnessResult(outputIsFresh: false);
     final depsFile = File(depfilePath);
@@ -38,7 +42,14 @@ class Depfile {
     final digestFile = File(digestPath);
     if (!digestFile.existsSync()) return FreshnessResult(outputIsFresh: false);
     final digests = digestFile.readAsStringSync();
-    final expectedDigests = _computeDigest();
+
+    if (digestsAreFresh) {
+      _depfilePaths ??= _readPaths();
+      return FreshnessResult(outputIsFresh: true, digest: digests);
+    }
+
+    _depfilePaths = _readPaths();
+    final expectedDigests = _digestPaths();
     return digests == expectedDigests
         ? FreshnessResult(outputIsFresh: true, digest: digests)
         : FreshnessResult(outputIsFresh: false);
@@ -53,18 +64,18 @@ class Depfile {
   /// Writes a digest of all input files mentioned in [depfilePath] to
   /// [digestPath].
   void writeDigest() {
-    File(digestPath).writeAsStringSync(_computeDigest());
+    _depfilePaths = _readPaths();
+    File(digestPath).writeAsStringSync(_digestPaths());
   }
 
-  String _computeDigest() {
+  /// Reads input paths from the depfile.
+  Set<String> _readPaths() {
     final depsFile = File(depfilePath).readAsStringSync();
-    final paths = parse(depsFile);
-    _depfilePaths = paths.toSet();
-    return _digestPaths(paths);
+    return parse(depsFile);
   }
 
   @visibleForTesting
-  static List<String> parse(String deps) {
+  static Set<String> parse(String deps) {
     // The depfile has the output path followed by a colon then a
     // space-separated list of input paths. Backslashes and spaces in paths are
     // backslash escaped.
@@ -75,19 +86,25 @@ class Depfile {
         .replaceAll(r'\ ', '\u0000')
         // And unescape backslashes.
         .replaceAll(r'\\', r'\')
-        .split(' ')
-        .map((item) => item.replaceAll('\u0000', ' '));
+        .split(' ');
 
-    final result = items.skip(1).toList();
-    // File ends in a newline.
-    result.last = result.last.substring(0, result.last.length - 1);
+    final result = <String>{};
+    // The first item is the output path, skip it.
+    for (var i = 1; i != items.length; ++i) {
+      final item = items[i];
+      final path = item.replaceAll('\u0000', ' ');
+      // File ends in a newline.
+      result.add(
+        i == items.length - 1 ? path.substring(0, path.length - 1) : path,
+      );
+    }
     return result;
   }
 
-  String _digestPaths(Iterable<String> deps) {
+  String _digestPaths() {
     final digestSink = AccumulatorSink<Digest>();
     final result = md5.startChunkedConversion(digestSink);
-    for (final dep in deps) {
+    for (final dep in _depfilePaths!) {
       final file = File(dep);
       if (file.existsSync()) {
         result.add([1]);

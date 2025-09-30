@@ -27,7 +27,7 @@ import 'dart:io';
 import 'package:build_runner/src/bootstrap/kernel_compiler.dart';
 void main() async {
   final compiler = KernelCompiler();
-  if (compiler.checkFreshness().outputIsFresh) {
+  if (compiler.checkFreshness(digestsAreFresh: false).outputIsFresh) {
     stdout.write('fresh\n');
   } else {
     stdout.write('compiling\n');

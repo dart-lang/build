@@ -96,14 +96,20 @@ class BuildPlan {
   /// Files that should be deleted before restarting or building are accumulated
   /// in [filesToDelete] and [foldersToDelete]. Call [deleteFilesAndFolders] to
   /// delete them.
+  ///
+  /// Set [recentlyBootstrapped] to false to do checks that are also done during
+  /// bootstrapping.
   static Future<BuildPlan> load({
     required BuilderFactories builderFactories,
     required BuildOptions buildOptions,
     required TestingOverrides testingOverrides,
+    bool recentlyBootstrapped = true,
   }) async {
     final bootstrapper = Bootstrapper();
     var restartIsNeeded = false;
-    final kernelFreshness = await bootstrapper.checkKernelFreshness();
+    final kernelFreshness = await bootstrapper.checkKernelFreshness(
+      digestsAreFresh: recentlyBootstrapped,
+    );
     if (!kernelFreshness.outputIsFresh) {
       restartIsNeeded = true;
     }
@@ -350,8 +356,8 @@ class BuildPlan {
 
   /// Reloads the build plan.
   ///
-  /// Works just like a new load of the build plan, but supresses the usual log
-  /// output.
+  /// Works just like a new load of the build plan, but sets
+  /// `recentlyBootstrapped` to `false` to redo checks from bootstrapping.
   ///
   /// The caller must call [deleteFilesAndFolders] on the result and check
   /// [restartIsNeeded].
@@ -359,6 +365,7 @@ class BuildPlan {
     builderFactories: builderFactories,
     buildOptions: buildOptions,
     testingOverrides: testingOverrides,
+    recentlyBootstrapped: false,
   );
 }
 

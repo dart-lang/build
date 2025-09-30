@@ -467,7 +467,7 @@ Future<TestBuilderResult> testBuilderFactories(
   final buildSeries = BuildSeries(buildPlan);
 
   // Run the build.
-  final buildResult = await buildSeries.run({});
+  final buildResult = await buildSeries.run({}, recentlyBootstrapped: true);
 
   // Do cleanup that would usually happen on process exit.
   await buildSeries.close();
