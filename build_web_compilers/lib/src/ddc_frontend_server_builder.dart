@@ -14,9 +14,7 @@ import 'platforms.dart';
 
 /// A builder that compiles DDC modules with the Frontend Server.
 class DdcFrontendServerBuilder implements Builder {
-  final String entrypoint;
-
-  DdcFrontendServerBuilder({required this.entrypoint});
+  DdcFrontendServerBuilder();
 
   @override
   final Map<String, List<String>> buildExtensions = {

@@ -47,14 +47,7 @@ Builder ddcBuilder(BuilderOptions options) {
   _ensureSameDdcOptions(options);
 
   if (_readWebHotReloadOption(options)) {
-    final entrypoint = _readEntrypoint(options);
-    if (entrypoint == null) {
-      throw StateError(
-        "DDC's Frontend Server configuration requires the "
-        '`entrypoint` to be specified in the `build.yaml`.',
-      );
-    }
-    return DdcFrontendServerBuilder(entrypoint: entrypoint);
+    return DdcFrontendServerBuilder();
   }
 
   return DevCompilerBuilder(
@@ -190,10 +183,6 @@ bool _readTrackInputsCompilerOption(BuilderOptions options) {
   return options.config[_trackUnusedInputsCompilerOption] as bool? ?? true;
 }
 
-String? _readEntrypoint(BuilderOptions options) {
-  return options.config[_entrypoint] as String?;
-}
-
 bool _readWebHotReloadOption(BuilderOptions options) {
   return options.config[_webHotReloadOption] as bool? ?? false;
 }
@@ -211,7 +200,6 @@ const _emitDebugSymbolsOption = 'emit-debug-symbols';
 const _canaryOption = 'canary';
 const _trackUnusedInputsCompilerOption = 'track-unused-inputs';
 const _environmentOption = 'environment';
-const _entrypoint = 'entrypoint';
 const _webHotReloadOption = 'web-hot-reload';
 
 const _supportedOptions = [
@@ -221,6 +209,5 @@ const _supportedOptions = [
   _emitDebugSymbolsOption,
   _canaryOption,
   _trackUnusedInputsCompilerOption,
-  _entrypoint,
   _webHotReloadOption,
 ];
