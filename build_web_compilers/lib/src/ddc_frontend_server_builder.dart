@@ -50,9 +50,7 @@ class DdcFrontendServerBuilder implements Builder {
 
     try {
       await _compile(module, buildStep);
-    } on DartDevcCompilationException catch (e) {
-      await handleError(e);
-    } on MissingModulesException catch (e) {
+    } catch (e) {
       await handleError(e);
     }
   }
