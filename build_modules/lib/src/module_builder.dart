@@ -63,13 +63,6 @@ class ModuleBuilder implements Builder {
       serializedLibrary,
     );
     final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
-    if (usesWebHotReload &&
-        libraryModule.isEntryPoint &&
-        libraryModule.hasMain) {
-      // We must save the main entrypoint as the recompilation target for the
-      // Frontend Server before any JS files are emitted.
-      scratchSpace.entrypointAssetId = libraryModule.id;
-    }
     if (outputModule == null && libraryModule.hasMain) {
       outputModule = metaModule.modules.firstWhere(
         (m) => m.sources.contains(buildStep.inputId),

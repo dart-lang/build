@@ -1,6 +1,8 @@
 targets:
   $default:
     builders:
+      build_web_compilers:entrypoint_marker:
+        enabled: true
       build_web_compilers:entrypoint:
         options:
           compiler: dart2js
@@ -146,6 +148,18 @@ builders:
         compiler: dart2js
     applies_builders:
       - build_web_compilers:dart2js_archive_extractor
+  entrypoint_marker:
+    import: "package:build_web_compilers/builders.dart"
+    builder_factories:
+      - webEntrypointMarkerBuilder
+    build_extensions:
+      $web$:
+        - .web.entrypoint.json
+    required_inputs:
+      - .dart
+    build_to: cache
+    auto_apply: root_package
+    runs_before: ["build_web_compilers:ddc"]
   _stack_trace_mapper_copy:
     import: "tool/copy_builder.dart"
     builder_factories:

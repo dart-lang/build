@@ -11,12 +11,16 @@ import 'src/common.dart';
 import 'src/ddc_frontend_server_builder.dart';
 import 'src/sdk_js_compile_builder.dart';
 import 'src/sdk_js_copy_builder.dart';
+import 'src/web_entrypoint_marker_builder.dart';
 
 // Shared entrypoint builder
 Builder webEntrypointBuilder(BuilderOptions options) {
   _ensureSameDdcHotReloadOptions(options);
   return WebEntrypointBuilder.fromOptions(options);
 }
+
+Builder webEntrypointMarkerBuilder(BuilderOptions options) =>
+    WebEntrypointMarkerBuilder();
 
 // DDC related builders
 Builder ddcMetaModuleBuilder(BuilderOptions options) {
