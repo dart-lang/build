@@ -129,6 +129,14 @@ class FrontendServerProxyDriver {
     }
   }
 
+  /// Clears the proxy driver's state between invocations of separate apps.
+  void reset() {
+    _requestQueue.clear();
+    _isProcessing = false;
+    _cachedOutput = null;
+    _frontendServer?.reset();
+  }
+
   Future<void> terminate() async {
     await _frontendServer!.shutdown();
     _frontendServer = null;
@@ -241,6 +249,11 @@ class PersistentFrontendServer {
     _stdoutHandler.reset(expectSources: false);
     _stdinController.add('reject');
     return _stdoutHandler.compilerOutput!.future;
+  }
+
+  void reset() {
+    _stdoutHandler.reset();
+    _stdinController.add('reset');
   }
 
   /// Records all modified files into the in-memory filesystem.
