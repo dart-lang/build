@@ -1,7 +1,7 @@
-## 3.4.1-wip
+## 3.4.1
 
-- Use `build_runner` 2.8.1-wip.
-- Use `build` 4.0.1-wip.
+- Use `build_runner` 2.9.0.
+- Use `build` 4.0.1.
 
 ## 3.4.0
 

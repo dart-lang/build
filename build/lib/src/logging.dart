@@ -21,7 +21,7 @@ final _default = Logger('build.fallback');
 ///
 /// At [Level.WARNING] but below [Level.SEVERE] is called a "warning".
 ///
-/// Warnings are aways shown, and the final build status will indicate that
+/// Warnings are always shown, and the final build status will indicate that
 /// the build completed with warnings.
 ///
 /// At or above [Level.SEVERE] is an "error".

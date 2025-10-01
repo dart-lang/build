@@ -1,11 +1,12 @@
-## 2.8.1-wip
+## 2.9.0
 
-- Rewrite bootstrap code to remove use of `dart:mirrors`.
-- Watch mode: handle builder code and config changes without exiting.
+- Watch mode: handle builder code and config changes without recompiling or
+  exiting.
 - Remove log output about `build_runner` internals.
 - Print the port that gets picked if you pass 0 for a port number, for example
   with `dart run build_runner serve web:0`.
-- Improved warnings when an option is specified for an unknown builder.
+- Improve warnings when an option is specified for an unknown builder.
+- Rewrite bootstrap code to remove use of `dart:mirrors`.
 - Bug fix: require `args` 2.5.0.
 
 ## 2.8.0

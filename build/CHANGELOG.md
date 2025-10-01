@@ -1,4 +1,4 @@
-## 4.0.1-wip
+## 4.0.1
 
 - Improvements to dartdoc.
 

@@ -1,5 +1,5 @@
 name: build
-version: 4.0.1-wip
+version: 4.0.1
 description: A package for authoring build_runner compatible code generators.
 repository: https://github.com/dart-lang/build/tree/master/build
 resolution: workspace
