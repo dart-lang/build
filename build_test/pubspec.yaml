@@ -1,6 +1,6 @@
 name: build_test
 description: Utilities for writing unit tests of Builders.
-version: 3.4.1-wip
+version: 3.4.1
 repository: https://github.com/dart-lang/build/tree/master/build_test
 resolution: workspace
 
@@ -8,9 +8,9 @@ environment:
   sdk: ^3.7.0
 
 dependencies:
-  build: '4.0.1-wip'
+  build: '4.0.1'
   build_config: ^1.0.0
-  build_runner: '2.8.1-wip'
+  build_runner: '2.9.0'
   built_collection: ^5.1.1
   crypto: ^3.0.0
   glob: ^2.0.0
