@@ -6,7 +6,6 @@ import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
-import 'package:build_runner/src/build/build_result.dart';
 import 'package:build_runner/src/build_plan/build_triggers.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
@@ -250,7 +249,7 @@ triggers:
         outputs: {},
         testingBuilderConfig: false,
       );
-      expect(result.buildResult.status, BuildStatus.success);
+      expect(result.succeeded, true);
     });
 
     test('trigger builder in same file', () async {
@@ -295,7 +294,7 @@ triggers:
         outputs: {},
         testingBuilderConfig: false,
       );
-      expect(result.buildResult.status, BuildStatus.success);
+      expect(result.succeeded, true);
     });
 
     test('trigger builder in part file', () async {

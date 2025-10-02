@@ -889,8 +889,8 @@ targets:
         (await testBuilders(
           [TestBuilder(build: copyFrom(makeAssetId('a|.dart_tool/any_file')))],
           {'a|lib/a.txt': 'a', 'a|.dart_tool/any_file': 'content'},
-        )).buildResult.status,
-        BuildStatus.failure,
+        )).succeeded,
+        false,
       );
     });
 

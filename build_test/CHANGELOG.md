@@ -1,3 +1,10 @@
+## 3.5.0-wip
+
+- Improve `TestBuilderResult`: add `succeeded`, `outputs` and `errors`.
+  Deprecate `buildResult` in favor of these new members.
+- Add `verbose` to `testBuilders` and related methods. Like the command line
+  flag it enables info logging from builders.
+
 ## 3.4.1
 
 - Use `build_runner` 2.9.0.

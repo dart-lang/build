@@ -394,6 +394,95 @@ import 'package:glob/glob.dart';
     );
     expect(logs, isEmpty);
   });
+
+  test('info messages are not logged, warnings are', () async {
+    final logs = <String>[];
+    await testBuilders(
+      [
+        TestBuilder(
+          build: (buildStep, _) async {
+            log.info('not logged by default');
+            log.warning('is logged by default');
+          },
+          buildExtensions: {
+            '.dart': ['.g.dart'],
+          },
+        ),
+      ],
+      {'test_package|lib/a.dart': ''},
+      onLog: (record) {
+        logs.add(record.toString());
+      },
+    );
+    expect(logs.join('\n'), isNot(contains('not logged by default')));
+    expect(logs.join('\n'), contains('is logged by default'));
+  });
+
+  test('info messages are logged if `verbose`', () async {
+    final logs = <String>[];
+    await testBuilders(
+      [
+        TestBuilder(
+          build: (buildStep, _) async {
+            log.info('is now logged');
+          },
+          buildExtensions: {
+            '.dart': ['.g.dart'],
+          },
+        ),
+      ],
+      {'test_package|lib/a.dart': ''},
+      onLog: (record) {
+        logs.add(record.toString());
+      },
+      verbose: true,
+    );
+    expect(logs.join('\n'), contains('is now logged'));
+  });
+
+  test('severe messages are logged and returned as errors', () async {
+    final logs = <String>[];
+    final result = await testBuilders(
+      [
+        TestBuilder(
+          build: (buildStep, _) async {
+            log.severe('some error');
+          },
+          buildExtensions: {
+            '.dart': ['.g.dart'],
+          },
+        ),
+      ],
+      {'test_package|lib/a.dart': ''},
+      onLog: (record) {
+        if (record.level == Level.SEVERE) logs.add(record.toString());
+      },
+    );
+    expect(logs.join('\n'), contains('some error'));
+    expect(result.errors.join('\n'), contains('some error'));
+  });
+
+  test('exceptions are logged and returned as errors', () async {
+    final logs = <String>[];
+    final result = await testBuilders(
+      [
+        TestBuilder(
+          build: (buildStep, _) async {
+            throw Exception('some exception');
+          },
+          buildExtensions: {
+            '.dart': ['.g.dart'],
+          },
+        ),
+      ],
+      {'test_package|lib/a.dart': ''},
+      onLog: (record) {
+        if (record.level == Level.SEVERE) logs.add(record.toString());
+      },
+    );
+    expect(logs.join('\n'), contains('Exception: some exception'));
+    expect(result.errors.join('\n'), contains('Exception: some exception'));
+  });
 }
 
 /// Concatenates the contents of multiple text files into a single output.

@@ -5,7 +5,6 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:build_runner/src/build/build_result.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
@@ -25,7 +24,7 @@ void main() {
       readerWriter: readerWriter,
       enableLowResourceMode: true,
     );
-    expect(result.buildResult.status, BuildStatus.success);
+    expect(result.succeeded, true);
   });
 
   test('with caching writes wait until build completion', () async {
@@ -40,7 +39,7 @@ void main() {
       readerWriter: readerWriter,
       enableLowResourceMode: false,
     );
-    expect(result.buildResult.status, BuildStatus.success);
+    expect(result.succeeded, true);
     expect(
       readerWriter.testing.assets,
       containsAll([
@@ -66,7 +65,7 @@ void main() {
       readerWriter: readerWriter,
       enableLowResourceMode: false,
     );
-    expect(result.buildResult.status, BuildStatus.success);
+    expect(result.succeeded, true);
   });
 }
 

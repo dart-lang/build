@@ -18,6 +18,9 @@ class BuildResult {
   /// The type of failure.
   final FailureType? failureType;
 
+  /// Errors reported.
+  final BuiltList<String> errors;
+
   /// All outputs created/updated during this build.
   final BuiltList<AssetId> outputs;
 
@@ -30,6 +33,7 @@ class BuildResult {
 
   BuildResult({
     required this.status,
+    BuiltList<String>? errors,
     BuiltList<AssetId>? outputs,
     required this.buildOutputReader,
     this.performance,
@@ -38,16 +42,21 @@ class BuildResult {
            failureType == null && status == BuildStatus.failure
                ? FailureType.general
                : failureType,
+       errors = errors ?? BuiltList(),
        outputs = outputs ?? BuiltList();
 
-  BuildResult copyWith({BuildStatus? status, FailureType? failureType}) =>
-      BuildResult(
-        status: status ?? this.status,
-        outputs: outputs,
-        buildOutputReader: buildOutputReader,
-        performance: performance,
-        failureType: failureType ?? this.failureType,
-      );
+  BuildResult copyWith({
+    BuildStatus? status,
+    FailureType? failureType,
+    BuiltList<String>? errors,
+  }) => BuildResult(
+    status: status ?? this.status,
+    errors: errors ?? this.errors,
+    outputs: outputs,
+    buildOutputReader: buildOutputReader,
+    performance: performance,
+    failureType: failureType ?? this.failureType,
+  );
 
   @override
   String toString() {
