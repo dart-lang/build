@@ -190,9 +190,11 @@ class Build {
     }
 
     _resolvers.reset();
-    buildLog.finishBuild(
-      result: result.status == BuildStatus.success,
-      outputs: result.outputs.length,
+    result = result.copyWith(
+      errors: buildLog.finishBuild(
+        result: result.status == BuildStatus.success,
+        outputs: result.outputs.length,
+      ),
     );
     return result;
   }

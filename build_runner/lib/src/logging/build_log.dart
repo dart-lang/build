@@ -5,6 +5,7 @@
 import 'dart:math';
 
 import 'package:build/build.dart' show AssetId;
+import 'package:built_collection/built_collection.dart';
 
 import '../bootstrap/build_process_state.dart';
 import '../build_plan/phase.dart';
@@ -66,6 +67,9 @@ class BuildLog {
 
   /// The messages logged, bucketed by build phase.
   final BuildLogMessages _messages = BuildLogMessages();
+
+  /// Errors logged.
+  final ListBuilder<String> _errors = ListBuilder();
 
   /// Progress by build phase.
   final Map<String, _PhaseProgress> _phaseProgress = {};
@@ -167,6 +171,7 @@ class BuildLog {
 
   /// Logs an `build_runner` error.
   void error(String message) {
+    _errors.add(message);
     if (_display.displayingBlocks) {
       _messages.add(severity: Severity.error, message);
       _display.block(render());
@@ -182,6 +187,7 @@ class BuildLog {
     String? phaseName,
     String? context,
   }) {
+    if (severity == Severity.error) _errors.add(message);
     if (_display.displayingBlocks) {
       _messages.add(
         severity: severity,
@@ -339,7 +345,9 @@ class BuildLog {
   }
 
   /// Logs that the build has finished with [result] and the count of [outputs].
-  void finishBuild({required bool result, required int outputs}) {
+  ///
+  /// Returns the list of errors logged.
+  BuiltList<String> finishBuild({required bool result, required int outputs}) {
     _tick();
     final displayingBlocks = _display.displayingBlocks;
     _status = [
@@ -362,6 +370,10 @@ class BuildLog {
         AnsiBufferLine(_status).toString(),
       );
     }
+
+    final errors = _errors.build();
+    _errors.clear();
+    return errors;
   }
 
   /// Renders [message] with optional [error] and [stackTrace].

@@ -5,7 +5,6 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:build_runner/src/build/build_result.dart';
 import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
@@ -14,14 +13,13 @@ import '../common/common.dart';
 
 void main() {
   test('should fail if a severe logged', () async {
-    expect(
-      (await testBuilders(
-        [_LoggingBuilder(Level.SEVERE)],
-        {'a|lib/a.dart': ''},
-        outputs: {'a|lib/a.dart.empty': ''},
-      )).buildResult.status,
-      BuildStatus.failure,
+    final result = await testBuilders(
+      [_LoggingBuilder(Level.SEVERE)],
+      {'a|lib/a.dart': ''},
+      outputs: {'a|lib/a.dart.empty': ''},
     );
+    expect(result.succeeded, false);
+    expect(result.errors, ['Log message for a|lib/a.dart.']);
   });
 
   test('should fail if a severe was logged on a previous build', () async {
@@ -30,7 +28,8 @@ void main() {
       {'a|lib/a.dart': ''},
       outputs: {'a|lib/a.dart.empty': ''},
     );
-    expect(result.buildResult.status, BuildStatus.failure);
+    expect(result.succeeded, false);
+    expect(result.errors, ['Log message for a|lib/a.dart.']);
 
     final builder = _LoggingBuilder(Level.SEVERE);
     result = await testBuilders(
@@ -40,7 +39,8 @@ void main() {
       readerWriter: result.readerWriter,
       outputs: {'a|lib/a.dart.empty': ''},
     );
-    expect(result.buildResult.status, BuildStatus.failure);
+    expect(result.succeeded, false);
+    expect(result.errors, ['Log message for a|lib/a.dart.']);
     // Should have failed without actually building again.
     expect(builder.built, false);
   });
@@ -53,7 +53,8 @@ void main() {
         {'a|lib/a.dart': ''},
         outputs: {'a|lib/a.dart.empty': ''},
       );
-      expect(result.buildResult.status, BuildStatus.failure);
+      expect(result.succeeded, false);
+      expect(result.errors, ['Log message for a|lib/a.dart.']);
 
       result = await testBuilders(
         [_LoggingBuilder(Level.WARNING)],
@@ -62,18 +63,18 @@ void main() {
         readerWriter: result.readerWriter,
         outputs: {'a|lib/a.dart.empty': ''},
       );
-      expect(result.buildResult.status, BuildStatus.success);
+      expect(result.succeeded, true);
+      expect(result.errors, isEmpty);
     },
   );
 
   test('should fail if an exception is thrown', () async {
-    expect(
-      (await testBuilders(
-        [TestBuilder(build: (_, _) => throw Exception('Some build failure'))],
-        {'a|lib/a.txt': ''},
-      )).buildResult.status,
-      BuildStatus.failure,
+    final result = await testBuilders(
+      [TestBuilder(build: (_, _) => throw Exception('Some build failure'))],
+      {'a|lib/a.txt': ''},
     );
+    expect(result.succeeded, false);
+    expect(result.errors, ['Exception: Some build failure']);
   });
 
   test(
@@ -110,7 +111,8 @@ void main() {
         ],
         {'a|lib/a.txt': ''},
       );
-      expect(result.buildResult.status, BuildStatus.failure);
+      expect(result.succeeded, false);
+      expect(result.errors, ['Wrote an output then failed']);
     },
   );
 }
@@ -124,7 +126,7 @@ class _LoggingBuilder implements Builder {
   @override
   Future<void> build(BuildStep buildStep) async {
     built = true;
-    log.log(level, buildStep.inputId.toString());
+    log.log(level, 'Log message for ${buildStep.inputId}.');
     await buildStep.canRead(buildStep.inputId);
     await buildStep.writeAsString(buildStep.inputId.addExtension('.empty'), '');
   }

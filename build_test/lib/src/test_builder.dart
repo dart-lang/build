@@ -137,6 +137,7 @@ Future<TestBuilderResult> testBuilder(
   PackageConfig? packageConfig,
   Resolvers? resolvers,
   TestReaderWriter? readerWriter,
+  bool verbose = false,
   bool enableLowResourceMode = false,
 }) async {
   return testBuilders(
@@ -151,6 +152,7 @@ Future<TestBuilderResult> testBuilder(
     packageConfig: packageConfig,
     resolvers: resolvers,
     readerWriter: readerWriter,
+    verbose: verbose,
     enableLowResourceMode: enableLowResourceMode,
   );
 }
@@ -182,6 +184,7 @@ Future<TestBuilderResult> testBuilders(
   Map<Builder, List<String>> appliesBuilders = const {},
   bool testingBuilderConfig = true,
   TestReaderWriter? readerWriter,
+  bool verbose = false,
   bool enableLowResourceMode = false,
 }) {
   final builderFactories = <BuilderFactory>[];
@@ -222,6 +225,7 @@ Future<TestBuilderResult> testBuilders(
     appliesBuilders: appliesBuildersToFactories,
     testingBuilderConfig: testingBuilderConfig,
     readerWriter: readerWriter,
+    verbose: verbose,
     enableLowResourceMode: enableLowResourceMode,
   );
 }
@@ -283,6 +287,9 @@ Future<TestBuilderResult> testBuilders(
 /// Optionally pass [readerWriter] to set the filesystem that will be used
 /// during the build. Before the build, [sourceAssets] will be written to it.
 ///
+/// Optionally pass [verbose], which acts like the command line flag: it enables
+/// info logging from builders.
+///
 /// Optionally pass [enableLowResourceMode], which acts like the command
 /// line flag; in particular it disables file caching.
 ///
@@ -306,6 +313,7 @@ Future<TestBuilderResult> testBuilderFactories(
   Map<BuilderFactory, List<String>> appliesBuilders = const {},
   bool testingBuilderConfig = true,
   TestReaderWriter? readerWriter,
+  bool verbose = false,
   bool enableLowResourceMode = false,
 }) async {
   onLog ??= _printOnFailureOrWrite;
@@ -352,6 +360,7 @@ Future<TestBuilderResult> testBuilderFactories(
 
   buildLog.configuration = buildLog.configuration.rebuild((b) {
     b.onLog = onLog;
+    b.verbose = verbose;
   });
   resolvers ??=
       packageConfig == null && enabledExperiments.isEmpty
@@ -459,6 +468,7 @@ Future<TestBuilderResult> testBuilderFactories(
     // ignore: invalid_use_of_visible_for_testing_member
     buildOptions: BuildOptions.forTests(
       enableLowResourcesMode: enableLowResourceMode,
+      verbose: verbose,
     ),
     testingOverrides: testingOverrides,
   );
@@ -487,8 +497,22 @@ Future<TestBuilderResult> testBuilderFactories(
 }
 
 class TestBuilderResult {
+  @Deprecated('Use `succeeded`, `outputs` and `errors` instead.')
   final BuildResult buildResult;
   final TestReaderWriter readerWriter;
+
+  bool get succeeded => buildResult.status == BuildStatus.success;
+
+  /// The files that were written.
+  ///
+  /// If the build was an incremental build, outputs of the previous build that
+  /// are reused are _not_ included here.
+  BuiltList<AssetId> get outputs => buildResult.outputs;
+
+  /// The errors that were shown.
+  ///
+  /// If the build failed there must be at least one error.
+  BuiltList<String> get errors => buildResult.errors;
 
   TestBuilderResult({required this.buildResult, required this.readerWriter});
 }
