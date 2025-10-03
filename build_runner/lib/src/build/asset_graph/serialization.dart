@@ -53,7 +53,9 @@ AssetGraph? deserializeAssetGraph(List<int> bytes) {
         as BuiltList<Digest>,
     serializedGraph['dart_version'] as String,
     packageLanguageVersions.build(),
-    BuiltList<String>.from(serializedGraph['enabledExperiments'] as List),
+    BuiltList<String>.of(
+      (serializedGraph['enabledExperiments'] as List).cast(),
+    ),
   );
 
   graph.previousBuildTriggersDigest = _deserializeDigest(
