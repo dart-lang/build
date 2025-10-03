@@ -2690,14 +2690,27 @@ void main() {
     },
   );
 
-  test('creates dummy non-null Stream return value', () async {
+  test('creates dummy non-null RegExp return value', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
       abstract class Foo {
-        Stream<int> m();
+        RegExp m();
       }
       '''),
-      _containsAllOf('returnValue: _i3.Stream<int>.empty()'),
+      _containsAllOf("returnValue: RegExp('')"),
+    );
+  });
+
+  test('creates dummy non-null MapEntry<int, String> return value', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      abstract class Foo {
+        MapEntry<int, String> m();
+      }
+      '''),
+      _containsAllOf(
+        'returnValue: MapEntry<int, String>(0, _i3.dummyValue<String>(',
+      ),
     );
   });
 
@@ -4340,23 +4353,20 @@ Future<void> _expectBuilderThrows({
 /// Dedent [input], so that each line is shifted to the left, so that the first
 /// line is at the 0 column.
 String dedent(String input) {
-  final indentMatch = RegExp(r'^(\s*)').firstMatch(input)!;
-  final indent = ''.padRight(indentMatch.group(1)!.length);
-  return input.splitMapJoin(
-    '\n',
-    onNonMatch: (s) => s.replaceFirst(RegExp('^$indent'), ''),
-  );
+  final indentMatch = RegExp(r'^\s*').firstMatch(input)!;
+  if (indentMatch.end == 0) return input;
+  final indent = indentMatch[0]!;
+  return input.replaceAll(RegExp('^$indent', multiLine: true), '');
 }
 
 /// Dedent [input], so that each line is shifted to the left, so that the first
 /// line is at column 2 (starting position for a class member).
 String dedent2(String input) {
-  final indentMatch = RegExp(r'^  (\s*)').firstMatch(input)!;
-  final indent = ''.padRight(indentMatch.group(1)!.length);
-  return input
-      .replaceFirst(RegExp(r'\s*$'), '')
-      .splitMapJoin(
-        '\n',
-        onNonMatch: (s) => s.replaceFirst(RegExp('^$indent'), ''),
-      );
+  final indentMatch = RegExp(r'^\s{2,}').firstMatch(input)!;
+  if (indentMatch.end == 0) return input;
+  final indent = indentMatch[0];
+  return input.trimRight().replaceAll(
+    RegExp('^$indent', multiLine: true),
+    '  ',
+  );
 }

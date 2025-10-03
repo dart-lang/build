@@ -1,3 +1,7 @@
+## 5.6.0
+
+* Add dummy values for `RegExp` and `MapEntry`.
+
 ## 5.5.1
 
 * Require `analyzer: ^8.1.0`.

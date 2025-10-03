@@ -1758,7 +1758,7 @@ class _MockClassInfo {
     } else if (type.isDartTypedDataSealed) {
       // These types (XXXList + ByteData) from dart:typed_data are
       // sealed, e.g. "non-subtypeable", but they
-      // have predicatble constructors; each has an unnamed constructor which
+      // have predictable constructors; each has an unnamed constructor which
       // takes a single int argument.
       return referImported(
         type.element.name!,
@@ -1766,6 +1766,26 @@ class _MockClassInfo {
       ).call([literalNum(0)]);
       // TODO(srawlins): Do other types from typed_data have a "non-subtypeable"
       // restriction as well?
+    } else if (type.element.library.isDartCore) {
+      if (type.element.name == 'RegExp') {
+        return referImported('RegExp', 'dart:core').call([literalString('')]);
+      }
+      if (type.element.name == 'MapEntry') {
+        assert(typeArguments.length == 2);
+        final keyType = typeArguments[0];
+        final valueType = typeArguments[1];
+        return TypeReference((b) {
+          b
+            ..symbol = 'MapEntry'
+            ..url = 'dart:core';
+          b.types
+            ..add(_typeReference(keyType))
+            ..add(_typeReference(valueType));
+        }).call([
+          _dummyValue(keyType, invocation),
+          _dummyValue(valueType, invocation),
+        ]);
+      }
     }
 
     // This class is unknown; we must likely generate a fake class, and return
