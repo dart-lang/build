@@ -159,7 +159,9 @@ builders:
       - .dart
     build_to: cache
     auto_apply: root_package
-    runs_before: ["build_web_compilers:ddc"]
+    applies_builders:
+      - build_web_compilers:entrypoint
+    runs_before: ["build_web_compilers:ddc", "build_web_compilers:ddc_modules"]
   _stack_trace_mapper_copy:
     import: "tool/copy_builder.dart"
     builder_factories:
