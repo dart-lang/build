@@ -274,4 +274,10 @@ class _ReaderWriterTestingImpl implements ReaderWriterTesting {
   void delete(AssetId id) => _readerWriter.filesystem.deleteSync(
     _readerWriter.assetPathProvider.pathFor(id),
   );
+
+  @override
+  void reset() {
+    _readerWriter.assetsRead.clear();
+    _readerWriter.assetsWritten.clear();
+  }
 }
