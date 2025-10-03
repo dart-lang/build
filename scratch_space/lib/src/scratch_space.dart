@@ -21,11 +21,20 @@ class ScratchSpace {
   /// Whether or not this scratch space still exists.
   bool exists = true;
 
+  /// The built app's main entrypoint file.
+  ///
+  /// This must be set before any asset builders run when compiling with DDC and
+  /// hot reload.
+  late AssetId entrypointAssetId;
+
   /// The `packages` directory under the temp directory.
   final Directory packagesDir;
 
   /// The temp directory at the root of this [ScratchSpace].
   final Directory tempDir;
+
+  /// Holds all files that have been locally modified in this build.
+  final changedFilesInBuild = <AssetId>{};
 
   // Assets which have a file created but are still being written to.
   final _pendingWrites = <AssetId, Future<void>>{};
@@ -92,6 +101,8 @@ class ScratchSpace {
   /// Copies [assetIds] to [tempDir] if they don't exist, using [reader] to
   /// read assets and mark dependencies.
   ///
+  /// Locally updated assets will be recorded in [changedFilesInBuild].
+  ///
   /// Note that [BuildStep] implements [AssetReader] and that is typically
   /// what you will want to pass in.
   ///
@@ -102,7 +113,6 @@ class ScratchSpace {
     if (!exists) {
       throw StateError('Tried to use a deleted ScratchSpace!');
     }
-
     final futures =
         assetIds.map((id) async {
           final digest = await reader.digest(id);
@@ -110,6 +120,9 @@ class ScratchSpace {
           if (digest == existing) {
             await _pendingWrites[id];
             return;
+          }
+          if (existing != null) {
+            changedFilesInBuild.add(id);
           }
           _digests[id] = digest;
 
@@ -140,6 +153,11 @@ class ScratchSpace {
   /// with [id] to make sure it is actually present.
   File fileFor(AssetId id) =>
       File(p.join(tempDir.path, p.normalize(_relativePathFor(id))));
+
+  /// Performs cleanup required across builds.
+  void dispose() {
+    changedFilesInBuild.clear();
+  }
 }
 
 /// Returns a canonical uri for [id].

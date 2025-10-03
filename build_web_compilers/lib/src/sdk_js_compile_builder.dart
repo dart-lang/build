@@ -42,12 +42,17 @@ class SdkJsCompileBuilder implements Builder {
   /// Enables canary features in DDC.
   final bool canaryFeatures;
 
+  /// Emits DDC code with the Library Bundle module system, which supports hot
+  /// reload.
+  final bool usesWebHotReload;
+
   SdkJsCompileBuilder({
     required this.sdkKernelPath,
     required String outputPath,
     String? librariesPath,
     String? platformSdk,
     required this.canaryFeatures,
+    required this.usesWebHotReload,
   }) : platformSdk = platformSdk ?? sdkDir,
        librariesPath =
            librariesPath ??
@@ -72,6 +77,7 @@ class SdkJsCompileBuilder implements Builder {
       librariesPath,
       jsOutputId,
       canaryFeatures,
+      usesWebHotReload,
     );
   }
 }
@@ -84,6 +90,7 @@ Future<void> _createDevCompilerModule(
   String librariesPath,
   AssetId jsOutputId,
   bool canaryFeatures,
+  bool usesWebHotReload,
 ) async {
   final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
   final jsOutputFile = scratchSpace.fileFor(jsOutputId);
@@ -112,8 +119,8 @@ Future<void> _createDevCompilerModule(
     result = await Process.run(dartPath, [
       snapshotPath,
       '--multi-root-scheme=org-dartlang-sdk',
-      '--modules=amd',
-      if (canaryFeatures) '--canary',
+      '--modules=${usesWebHotReload ? 'ddc' : 'amd'}',
+      if (canaryFeatures || usesWebHotReload) '--canary',
       '--module-name=dart_sdk',
       '-o',
       jsOutputFile.path,
