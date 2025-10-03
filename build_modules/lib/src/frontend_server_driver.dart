@@ -220,17 +220,17 @@ class PersistentFrontendServer {
     );
   }
 
-  Future<CompilerOutput?> compile(String entrypoint) {
+  Future<CompilerOutput?> compile(String entrypoint) async {
     _stdoutHandler.reset();
     _stdinController.add('compile $entrypoint');
-    return _stdoutHandler.compilerOutput!.future;
+    return await _stdoutHandler.compilerOutput!.future;
   }
 
   /// Either [accept] or [reject] should be called after every [recompile] call.
   Future<CompilerOutput?> recompile(
     String entrypoint,
     List<Uri> invalidatedFiles,
-  ) {
+  ) async {
     _stdoutHandler.reset();
     final inputKey = const Uuid().v4();
     _stdinController.add('recompile $entrypoint $inputKey');
@@ -238,17 +238,17 @@ class PersistentFrontendServer {
       _stdinController.add(file.toString());
     }
     _stdinController.add(inputKey);
-    return _stdoutHandler.compilerOutput!.future;
+    return await _stdoutHandler.compilerOutput!.future;
   }
 
   void accept() {
     _stdinController.add('accept');
   }
 
-  Future<CompilerOutput?> reject() {
+  Future<CompilerOutput?> reject() async {
     _stdoutHandler.reset(expectSources: false);
     _stdinController.add('reject');
-    return _stdoutHandler.compilerOutput!.future;
+    return await _stdoutHandler.compilerOutput!.future;
   }
 
   void reset() {
@@ -279,8 +279,8 @@ class PersistentFrontendServer {
 
   Future<void> shutdown() async {
     _stdinController.add('quit');
-    await _stdinController.close();
     await _server?.exitCode;
+    await _stdinController.close();
     _server = null;
   }
 }

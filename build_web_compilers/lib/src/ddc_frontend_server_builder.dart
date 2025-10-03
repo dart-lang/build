@@ -9,7 +9,6 @@ import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
 
 import 'common.dart';
-import 'errors.dart';
 import 'platforms.dart';
 
 /// A builder that compiles DDC modules with the Frontend Server.
