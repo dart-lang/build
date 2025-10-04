@@ -1,3 +1,8 @@
+## 4.2.5
+
+- Add support for `force_js=true` query parameter when both wasm and js builds
+  are enabled.
+
 ## 4.2.4
 
 - Allow Dart SDK 3.10.x and 3.11 prerelease.
