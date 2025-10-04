@@ -26,9 +26,11 @@ class ParentProcess {
     required String script,
     required Iterable<String> arguments,
     required String message,
+    required bool debug,
   }) async {
     final process = await _startWithReaper(Platform.resolvedExecutable, [
       'run',
+      if (debug) ...['--observe', '--pause-isolates-on-start'],
       script,
       ...arguments,
     ]);

@@ -55,6 +55,7 @@ class BuildRunnerCommandLine {
   final bool? trackPerformance;
   final bool? symlink;
   final bool? verbose;
+  final bool? debugBuilders;
 
   static Future<BuildRunnerCommandLine?> parse(Iterable<String> arguments) =>
       _CommandRunner().run(arguments);
@@ -76,7 +77,8 @@ class BuildRunnerCommandLine {
       release = argResults.boolNamed(releaseOption),
       trackPerformance = argResults.boolNamed(trackPerformanceOption),
       symlink = argResults.boolNamed(symlinkOption),
-      verbose = argResults.boolNamed(verboseOption);
+      verbose = argResults.boolNamed(verboseOption),
+      debugBuilders = argResults.boolNamed(debugBuildersOption);
 
   String get usage {
     // Calling `usage` only works if the command has been added to a
@@ -131,6 +133,7 @@ const releaseOption = 'release';
 const trackPerformanceOption = 'track-performance';
 const symlinkOption = 'symlink';
 const verboseOption = 'verbose';
+const debugBuildersOption = 'debug-builders';
 
 /// [CommandRunner] that returns a [BuildRunnerCommandLine] without actually
 /// running it.
@@ -252,6 +255,14 @@ class _Build extends Command<BuildRunnerCommandLine> {
       ..addMultiOption(
         enableExperimentOption,
         help: 'A list of dart language experiments to enable.',
+      )
+      ..addFlag(
+        debugBuildersOption,
+        defaultsTo: false,
+        negatable: true,
+        help:
+            'Start the inner build script with debugging flag, allowing a '
+            'debugger to be attached to it.',
       );
   }
 
