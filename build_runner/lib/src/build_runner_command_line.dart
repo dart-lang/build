@@ -261,8 +261,8 @@ class _Build extends Command<BuildRunnerCommandLine> {
         defaultsTo: false,
         negatable: true,
         help:
-            'Start the inner build script with debugging flag, allowing a '
-            'debugger to be attached to it.',
+            'Start the inner build script in a paused state and with the VM '
+            'service enabled, allowing a debugger to be attached to it.',
       );
   }
 
