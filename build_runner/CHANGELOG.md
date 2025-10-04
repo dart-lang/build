@@ -1,6 +1,8 @@
 ## 2.9.1-wip
 
 - Internal changes for `build_test`.
+- Add the `debug-builders` flag. It starts builders in a paused state and
+  prints a VM service URL, allowing debuggers to attach.
 
 ## 2.9.0
 
