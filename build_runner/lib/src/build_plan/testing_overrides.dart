@@ -29,6 +29,7 @@ class TestingOverrides {
   final void Function(AssetId, Iterable<AssetId>)? reportUnusedAssetsForInput;
   final Resolvers? resolvers;
   final Stream<ProcessSignal>? terminateEventStream;
+  final bool flattenOutput;
 
   const TestingOverrides({
     this.builderApplications,
@@ -43,6 +44,7 @@ class TestingOverrides {
     this.reportUnusedAssetsForInput,
     this.resolvers,
     this.terminateEventStream,
+    this.flattenOutput = false,
   });
 
   TestingOverrides copyWith({
@@ -62,5 +64,6 @@ class TestingOverrides {
     reportUnusedAssetsForInput: reportUnusedAssetsForInput,
     resolvers: resolvers,
     terminateEventStream: terminateEventStream,
+    flattenOutput: flattenOutput,
   );
 }

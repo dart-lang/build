@@ -139,6 +139,7 @@ Future<TestBuilderResult> testBuilder(
   TestReaderWriter? readerWriter,
   bool verbose = false,
   bool enableLowResourceMode = false,
+  bool flattenOutput = false,
 }) async {
   return testBuilders(
     [builder],
@@ -154,6 +155,7 @@ Future<TestBuilderResult> testBuilder(
     readerWriter: readerWriter,
     verbose: verbose,
     enableLowResourceMode: enableLowResourceMode,
+    flattenOutput: flattenOutput,
   );
 }
 
@@ -186,6 +188,7 @@ Future<TestBuilderResult> testBuilders(
   TestReaderWriter? readerWriter,
   bool verbose = false,
   bool enableLowResourceMode = false,
+  bool flattenOutput = false,
 }) {
   final builderFactories = <BuilderFactory>[];
   final optionalBuilderFactories = Set<BuilderFactory>.identity();
@@ -227,6 +230,7 @@ Future<TestBuilderResult> testBuilders(
     readerWriter: readerWriter,
     verbose: verbose,
     enableLowResourceMode: enableLowResourceMode,
+    flattenOutput: flattenOutput,
   );
 }
 
@@ -293,6 +297,11 @@ Future<TestBuilderResult> testBuilders(
 /// Optionally pass [enableLowResourceMode], which acts like the command
 /// line flag; in particular it disables file caching.
 ///
+/// By default generated outputs are written to the `TestReaderWriter` where
+/// they would be written in a real `build_runner` build, which means "hidden"
+/// outputs go in the `.dart_tool/build/generated` folder in the root package.
+/// Pass [flattenOutput] to instead output next to each package source.
+///
 /// Returns a [TestBuilderResult] with the [BuildResult] and the
 /// [TestReaderWriter] used for the build, which can be used for further
 /// checks.
@@ -315,6 +324,7 @@ Future<TestBuilderResult> testBuilderFactories(
   TestReaderWriter? readerWriter,
   bool verbose = false,
   bool enableLowResourceMode = false,
+  bool flattenOutput = false,
 }) async {
   onLog ??= _printOnFailureOrWrite;
 
@@ -412,14 +422,14 @@ Future<TestBuilderResult> testBuilderFactories(
       ),
     );
   }
-  for (final postProcessBuiderFactory in postProcessBuilderFactories) {
+  for (final postProcessBuilderFactory in postProcessBuilderFactories) {
     String name;
     try {
-      name = builderName(postProcessBuiderFactory(const BuilderOptions({})));
+      name = builderName(postProcessBuilderFactory(const BuilderOptions({})));
     } catch (e) {
       name = e.toString();
     }
-    builderApplications.add(applyPostProcess(name, postProcessBuiderFactory));
+    builderApplications.add(applyPostProcess(name, postProcessBuilderFactory));
   }
 
   final testingOverrides = TestingOverrides(
@@ -461,6 +471,7 @@ Future<TestBuilderResult> testBuilderFactories(
             }.build()
             : null,
     reportUnusedAssetsForInput: reportUnusedAssetsForInput,
+    flattenOutput: flattenOutput,
   );
 
   final buildPlan = await BuildPlan.load(

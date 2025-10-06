@@ -4,6 +4,9 @@
   Deprecate `buildResult` in favor of these new members.
 - Add `verbose` to `testBuilders` and related methods. Like the command line
   flag it enables info logging from builders.
+- Add `flattenOutput` to `testBuilders`. Use it for a less realistic but simpler
+  build in which generated outputs are always written directly to each package
+  instead of "hidden" output being written to `.dart_tool/build/generated`.
 
 ## 3.4.1
 
