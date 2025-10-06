@@ -1,4 +1,4 @@
-_Questions? Suggestions? Found a bug? Please 
+_Questions? Suggestions? Found a bug? Please
 [file an issue](https://github.com/dart-lang/build/issues) or
  [start a discussion](https://github.com/dart-lang/build/discussions)._
 
@@ -203,3 +203,14 @@ targets:
 For advanced use cases it's possible to write your own builder.
 
 Get started with the [build package documentation](https://pub.dev/packages/build).
+For testing builders, see the [`build_test` package](https://pub.dev/packages/build_test).
+
+## Debugging builds
+
+To debug the build process, note that `build_runner` spawns a child process to run
+the build.
+Options used to spawn this process can be customized, which allows attaching a debugger:
+
+```shell
+dart run build_runner build --dart-jit-vm-arg=--observe --dart-jit-vm-arg=--pause-isolates-on-start
+```

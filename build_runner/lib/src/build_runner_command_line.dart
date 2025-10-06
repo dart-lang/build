@@ -45,6 +45,7 @@ class BuildRunnerCommandLine {
   final String? config;
   final BuiltList<String>? defines;
   final BuiltList<String>? enableExperiments;
+  final BuiltList<String>? jitVmArgs;
   final String? hostname;
   final bool? liveReload;
   final String? logPerformance;
@@ -55,7 +56,6 @@ class BuildRunnerCommandLine {
   final bool? trackPerformance;
   final bool? symlink;
   final bool? verbose;
-  final bool? debugBuilders;
 
   static Future<BuildRunnerCommandLine?> parse(Iterable<String> arguments) =>
       _CommandRunner().run(arguments);
@@ -68,6 +68,7 @@ class BuildRunnerCommandLine {
       config = argResults.stringNamed(configOption),
       defines = argResults.listNamed(defineOption),
       enableExperiments = argResults.listNamed(enableExperimentOption),
+      jitVmArgs = argResults.listNamed(dartJitVmArgOption),
       hostname = argResults.stringNamed(hostnameOption),
       liveReload = argResults.boolNamed(liveReloadOption),
       logPerformance = argResults.stringNamed(logPerformanceOption),
@@ -77,8 +78,7 @@ class BuildRunnerCommandLine {
       release = argResults.boolNamed(releaseOption),
       trackPerformance = argResults.boolNamed(trackPerformanceOption),
       symlink = argResults.boolNamed(symlinkOption),
-      verbose = argResults.boolNamed(verboseOption),
-      debugBuilders = argResults.boolNamed(debugBuildersOption);
+      verbose = argResults.boolNamed(verboseOption);
 
   String get usage {
     // Calling `usage` only works if the command has been added to a
@@ -123,6 +123,7 @@ const configOption = 'config';
 const defineOption = 'define';
 const deleteFilesByDefaultOption = 'delete-conflicting-outputs';
 const enableExperimentOption = 'enable-experiment';
+const dartJitVmArgOption = 'dart-jit-vm-arg';
 const hostnameOption = 'hostname';
 const liveReloadOption = 'live-reload';
 const logPerformanceOption = 'log-performance';
@@ -133,7 +134,6 @@ const releaseOption = 'release';
 const trackPerformanceOption = 'track-performance';
 const symlinkOption = 'symlink';
 const verboseOption = 'verbose';
-const debugBuildersOption = 'debug-builders';
 
 /// [CommandRunner] that returns a [BuildRunnerCommandLine] without actually
 /// running it.
@@ -256,13 +256,14 @@ class _Build extends Command<BuildRunnerCommandLine> {
         enableExperimentOption,
         help: 'A list of dart language experiments to enable.',
       )
-      ..addFlag(
-        debugBuildersOption,
-        defaultsTo: false,
-        negatable: true,
+      ..addMultiOption(
+        dartJitVmArgOption,
         help:
-            'Start the inner build script in a paused state and with the VM '
-            'service enabled, allowing a debugger to be attached to it.',
+            'Flags to pass to `dart run` when launching the inner build '
+            'script\n.'
+            'For example, `--dart-jit-vm-arg "--observe" '
+            '--dart-jit-vm-arg "--pause-isolates-on-start"` would start the '
+            'build script with a debugger attached to it.',
       );
   }
 

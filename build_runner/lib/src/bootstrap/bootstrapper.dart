@@ -42,6 +42,7 @@ class Bootstrapper {
   Future<int> run(
     BuiltList<String> arguments, {
     bool debug = false,
+    required Iterable<String> jitVmArgs,
     Iterable<String>? experiments,
   }) async {
     while (true) {
@@ -68,7 +69,7 @@ class Bootstrapper {
         script: entrypointDillPath,
         arguments: arguments,
         message: buildProcessState.serialize(),
-        debug: debug,
+        jitVmArgs: jitVmArgs,
       );
       buildProcessState.deserializeAndSet(result.message);
       final exitCode = result.exitCode;
