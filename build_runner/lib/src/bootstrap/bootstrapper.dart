@@ -41,7 +41,6 @@ class Bootstrapper {
   /// they do not exist or have the wrong types.
   Future<int> run(
     BuiltList<String> arguments, {
-    bool debug = false,
     required Iterable<String> jitVmArgs,
     Iterable<String>? experiments,
   }) async {
