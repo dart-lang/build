@@ -1,7 +1,7 @@
-## 4.2.5
+## 4.3.0
 
-- Add support for `force_js=true` query parameter when both wasm and js builds
-  are enabled.
+- When both wasm and js builds are enabled you can now add force_js=true
+  to the URL in your browser to load the js build.
 
 ## 4.2.4
 
