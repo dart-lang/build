@@ -34,6 +34,7 @@ Future<void> main() async {
   final processResult = await ParentProcess.runAndSend(
       script: 'bin/child.dart',
       arguments: [],
+      jitVmArgs: [],
       message: 'payload');
   stdout.write(
       'Parent received: '
@@ -78,6 +79,7 @@ Future<void> main() async {
   await ParentProcess.runAndSend(
       script: 'bin/child.dart',
       arguments: [],
+      jitVmArgs: [],
       message: 'payload');
 }
 ''');
