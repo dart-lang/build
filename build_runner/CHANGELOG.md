@@ -1,5 +1,7 @@
 ## 2.9.1-wip
 
+- Require `analyzer` 8.0.0. Remove use of deprecated `analyzer` members, use
+  their recommended and compatible replacements.
 - Internal changes for `build_test`.
 - Add the `--dart-jit-vm-arg` option. Its values are passed to `dart run` when
   a build script is started in JIT mode. This allows specifying options to
