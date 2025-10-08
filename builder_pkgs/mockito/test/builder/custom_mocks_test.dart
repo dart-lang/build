@@ -15,10 +15,9 @@
 @TestOn('vm')
 library;
 
-import 'dart:convert' show utf8;
-
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
+import 'package:logging/logging.dart';
 import 'package:mockito/src/builder.dart';
 import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
@@ -86,7 +85,7 @@ void main() {}
 };
 
 void main() {
-  late InMemoryAssetWriter writer;
+  late TestReaderWriter readerWriter;
 
   /// Builds with [MockBuilder] in a package which has opted into null safety,
   /// returning the content of the generated mocks library.
@@ -99,18 +98,21 @@ void main() {
         languageVersion: LanguageVersion(3, 3),
       ),
     ]);
-    await testBuilder(
-      buildMocks(BuilderOptions({})),
+    final builder = buildMocks(BuilderOptions({}));
+    await testBuilders(
+      [builder],
+      visibleOutputBuilders: {builder},
       sourceAssets,
-      writer: writer,
+      rootPackage: 'foo',
+      readerWriter: readerWriter,
       packageConfig: packageConfig,
     );
     final mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
-    return utf8.decode(writer.assets[mocksAsset]!);
+    return readerWriter.testing.readString(mocksAsset);
   }
 
   setUp(() {
-    writer = InMemoryAssetWriter();
+    readerWriter = TestReaderWriter(rootPackage: 'foo');
   });
 
   test('generates a generic mock class without type arguments', () async {
@@ -985,7 +987,7 @@ void main() {
     'throws when GenerateMocks is given a class with a type parameter with a '
     'private bound',
     () async {
-      _expectBuilderThrows(
+      await _expectBuilderThrows(
         assets: {
           ...annotationsAsset,
           'foo|lib/foo.dart': dedent(r'''
@@ -1010,7 +1012,7 @@ void main() {
   );
 
   test('throws when MockSpec() is missing a type argument', () async {
-    _expectBuilderThrows(
+    await _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         'foo|test/foo_test.dart': dedent('''
@@ -1027,7 +1029,7 @@ void main() {
   });
 
   test('throws when MockSpec() is given an unknown type argument', () async {
-    _expectBuilderThrows(
+    await _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         'foo|test/foo_test.dart': dedent('''
@@ -1042,7 +1044,7 @@ void main() {
   });
 
   test('throws when MockSpec uses a private class', () async {
-    _expectBuilderThrows(
+    await _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         'foo|test/foo_test.dart': dedent('''
@@ -1059,7 +1061,7 @@ void main() {
   test(
     'throws when two distinct classes with the same name are mocked',
     () async {
-      _expectBuilderThrows(
+      await _expectBuilderThrows(
         assets: {
           ...annotationsAsset,
           'foo|lib/a.dart': dedent(r'''
@@ -1087,7 +1089,7 @@ void main() {
   );
 
   test('throws when a mock class of the same name already exists', () async {
-    _expectBuilderThrows(
+    await _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         'foo|lib/foo.dart': dedent(r'''
@@ -1109,7 +1111,7 @@ void main() {
   });
 
   test('throws when a mock class of class-to-mock already exists', () async {
-    _expectBuilderThrows(
+    await _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         ...mockitoAssets,
@@ -1132,7 +1134,7 @@ void main() {
   });
 
   test('throws when MockSpec references a function typedef', () async {
-    _expectBuilderThrows(
+    await _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -1140,12 +1142,12 @@ void main() {
         typedef Foo = void Function();
         '''),
       },
-      message: 'Mockito cannot mock a non-class: Foo',
+      message: contains('Mockito cannot mock a non-class: Foo'),
     );
   });
 
   test('throws when MockSpec references an enum', () async {
-    _expectBuilderThrows(
+    await _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -1153,12 +1155,12 @@ void main() {
         enum Foo {}
         '''),
       },
-      message: "Mockito cannot mock an enum: 'Foo'",
+      message: contains("Mockito cannot mock an enum: 'Foo'"),
     );
   });
 
   test('throws when MockSpec references a non-subtypeable type', () async {
-    _expectBuilderThrows(
+    await _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         'foo|test/foo_test.dart': dedent('''
@@ -1172,7 +1174,7 @@ void main() {
   });
 
   test('throws when GenerateMocks references a sealed class', () async {
-    _expectBuilderThrows(
+    await _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         'foo|test/foo_test.dart': dedent('''
@@ -1190,7 +1192,7 @@ void main() {
   test(
     'throws when GenerateMocks references sealed a class via typedef',
     () async {
-      _expectBuilderThrows(
+      await _expectBuilderThrows(
         assets: {
           ...annotationsAsset,
           'foo|test/foo_test.dart': dedent('''
@@ -1208,7 +1210,7 @@ void main() {
   );
 
   test('throws when GenerateMocks references a base class', () async {
-    _expectBuilderThrows(
+    await _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         'foo|test/foo_test.dart': dedent('''
@@ -1224,7 +1226,7 @@ void main() {
   });
 
   test('throws when GenerateMocks references a final class', () async {
-    _expectBuilderThrows(
+    await _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         'foo|test/foo_test.dart': dedent('''
@@ -1240,7 +1242,7 @@ void main() {
   });
 
   test('throws when MockSpec mixes in dynamic', () async {
-    _expectBuilderThrows(
+    await _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         'foo|lib/foo.dart': dedent('''
@@ -1258,7 +1260,7 @@ void main() {
   });
 
   test('throws when MockSpec mixes in a private type', () async {
-    _expectBuilderThrows(
+    await _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         'foo|lib/foo.dart': dedent('''
@@ -1278,7 +1280,7 @@ void main() {
   });
 
   test('throws when type argument is unknown type', () async {
-    _expectBuilderThrows(
+    await _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         'foo|lib/foo.dart': dedent('''
@@ -1639,8 +1641,8 @@ void main() {
       });
     });
 
-    test('generation throws when the aliased type is nullable', () {
-      _expectBuilderThrows(
+    test('generation throws when the aliased type is nullable', () async {
+      await _expectBuilderThrows(
         assets: {
           ...annotationsAsset,
           'foo|lib/foo.dart': dedent(r'''
@@ -1823,20 +1825,22 @@ void main() {
 
 /// Expect that [testBuilder], given [assets], throws an
 /// [InvalidMockitoAnnotationException] with a message containing [message].
-void _expectBuilderThrows({
+Future<void> _expectBuilderThrows({
   required Map<String, String> assets,
   required dynamic /*String|Matcher<List<int>>*/ message,
-}) {
-  expect(
-    () async => await testBuilder(buildMocks(BuilderOptions({})), assets),
-    throwsA(
-      TypeMatcher<InvalidMockitoAnnotationException>().having(
-        (e) => e.message,
-        'message',
-        message,
-      ),
-    ),
+}) async {
+  final logs = <String>[];
+  await testBuilders(
+    [buildMocks(BuilderOptions({}))],
+    assets,
+    rootPackage: 'foo',
+    onLog: (r) {
+      if (r.level == Level.SEVERE) {
+        logs.add(r.toString());
+      }
+    },
   );
+  expect(logs, contains(message));
 }
 
 /// Dedent [input], so that each line is shifted to the left, so that the first

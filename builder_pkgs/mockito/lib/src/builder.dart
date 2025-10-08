@@ -2353,15 +2353,15 @@ class _MockClassInfo {
   /// in the extended type parameter scope, passing type references for
   /// [typeParameters] (both with and without bound) as arguments.
   /// If [typeFormalsHack] is not `null`, it will be used to build the
-  /// type references instead of [typeParameters]. This is needed while
-  /// building method overrides, since sometimes
-  /// [ExecutableMember.typeParameters] can contain inconsistency if a type
-  /// parameter refers to itself in its bound. See
-  /// https://github.com/dart-lang/mockito/issues/658. So we have to
-  /// pass `ExecutableMember.type.typeFormals` instead, that seem to be
-  /// always correct. Unfortunately we can't just use the latter everywhere,
-  /// since `type.typeFormals` don't contain default arguments' values
-  /// and we need that for code generation.
+  /// type references instead of [typeParameters].
+  ///
+  /// This is needed while building method overrides, since sometimes
+  /// [typeParameters] can contain inconsistency if a type parameter refers to
+  /// itself in its bound. See https://github.com/dart-lang/mockito/issues/658.
+  /// So we have to pass `ExecutableMember.type.typeFormals` instead, that seem
+  /// to be always correct. Unfortunately we can't just use the latter
+  /// everywhere, since `type.typeFormals` don't contain default arguments'
+  /// values and we need that for code generation.
   T _withTypeParameters<T>(
     Iterable<TypeParameterElement> typeParameters,
     T Function(Iterable<TypeReference>, Iterable<TypeReference>) body, {
