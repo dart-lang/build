@@ -5,8 +5,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-// ignore: deprecated_member_use until analyzer 7 support is dropped.
-import 'package:analyzer/dart/element/element2.dart';
+import 'package:analyzer/dart/element/element.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:package_config/package_config_types.dart';
@@ -33,8 +32,7 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   ///
   /// To resolve allowing syntax errors, instead use
   /// `resolver.libraryFor(buildStep.inputId, allowSyntaxErrors: true)`.
-  // ignore: deprecated_member_use until analyzer 7 support is dropped.
-  Future<LibraryElement2> get inputLibrary;
+  Future<LibraryElement> get inputLibrary;
 
   /// A [Resolver] that can parse or resolve any Dart source code visible to
   /// this build step.
