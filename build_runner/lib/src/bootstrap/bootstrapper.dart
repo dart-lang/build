@@ -41,6 +41,7 @@ class Bootstrapper {
   /// they do not exist or have the wrong types.
   Future<int> run(
     BuiltList<String> arguments, {
+    required Iterable<String> jitVmArgs,
     Iterable<String>? experiments,
   }) async {
     while (true) {
@@ -67,6 +68,7 @@ class Bootstrapper {
         script: entrypointDillPath,
         arguments: arguments,
         message: buildProcessState.serialize(),
+        jitVmArgs: jitVmArgs,
       );
       buildProcessState.deserializeAndSet(result.message);
       final exitCode = result.exitCode;

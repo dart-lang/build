@@ -45,6 +45,7 @@ class BuildRunnerCommandLine {
   final String? config;
   final BuiltList<String>? defines;
   final BuiltList<String>? enableExperiments;
+  final BuiltList<String>? jitVmArgs;
   final String? hostname;
   final bool? liveReload;
   final String? logPerformance;
@@ -67,6 +68,7 @@ class BuildRunnerCommandLine {
       config = argResults.stringNamed(configOption),
       defines = argResults.listNamed(defineOption),
       enableExperiments = argResults.listNamed(enableExperimentOption),
+      jitVmArgs = argResults.listNamed(dartJitVmArgOption),
       hostname = argResults.stringNamed(hostnameOption),
       liveReload = argResults.boolNamed(liveReloadOption),
       logPerformance = argResults.stringNamed(logPerformanceOption),
@@ -121,6 +123,7 @@ const configOption = 'config';
 const defineOption = 'define';
 const deleteFilesByDefaultOption = 'delete-conflicting-outputs';
 const enableExperimentOption = 'enable-experiment';
+const dartJitVmArgOption = 'dart-jit-vm-arg';
 const hostnameOption = 'hostname';
 const liveReloadOption = 'live-reload';
 const logPerformanceOption = 'log-performance';
@@ -252,6 +255,15 @@ class _Build extends Command<BuildRunnerCommandLine> {
       ..addMultiOption(
         enableExperimentOption,
         help: 'A list of dart language experiments to enable.',
+      )
+      ..addMultiOption(
+        dartJitVmArgOption,
+        help:
+            'Flags to pass to `dart run` when launching the inner build '
+            'script\n.'
+            'For example, `--dart-jit-vm-arg "--observe" '
+            '--dart-jit-vm-arg "--pause-isolates-on-start"` would start the '
+            'build script with a debugger attached to it.',
       );
   }
 

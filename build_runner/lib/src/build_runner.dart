@@ -162,6 +162,7 @@ class BuildRunner {
 
     return await Bootstrapper().run(
       arguments,
+      jitVmArgs: commandLine.jitVmArgs ?? const Iterable.empty(),
       experiments: commandLine.enableExperiments,
     );
   }

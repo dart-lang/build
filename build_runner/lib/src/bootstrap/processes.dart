@@ -20,15 +20,21 @@ class ParentProcess {
   /// Runs Dart [script] with [arguments], sends it [message], listens for and
   /// returns the response.
   ///
+  /// When the underlying script is run with `dart run`, the [jitVmArgs] are
+  /// forwarded to the Dart VM. This can be used to e.g. start the VM with
+  /// debugging options.
+  ///
   /// The child process should use [ChildProcess] to communicate with the
   /// parent.
   static Future<RunAndSendResult> runAndSend({
     required String script,
     required Iterable<String> arguments,
     required String message,
+    required Iterable<String> jitVmArgs,
   }) async {
     final process = await _startWithReaper(Platform.resolvedExecutable, [
       'run',
+      ...jitVmArgs,
       script,
       ...arguments,
     ]);

@@ -1,6 +1,9 @@
 ## 2.9.1-wip
 
 - Internal changes for `build_test`.
+- Add the `--dart-jit-vm-arg` option. Its values are passed to `dart run` when
+  a build script is started in JIT mode. This allows specifying options to
+  attach a debugger to builders.
 
 ## 2.9.0
 
