@@ -12,8 +12,6 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:analyzer/error/error.dart';
-// ignore: implementation_imports
-import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
@@ -27,6 +25,7 @@ import '../../logging/timed_activities.dart';
 import 'analysis_driver.dart';
 import 'analysis_driver_filesystem.dart';
 import 'analysis_driver_model.dart';
+import 'build_resolvers.dart';
 import 'sdk_summary.dart';
 import 'shared_resource_pool.dart';
 

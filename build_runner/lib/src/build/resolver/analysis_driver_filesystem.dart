@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:io' as io;
+
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -28,7 +30,12 @@ class AnalysisDriverFilesystem implements UriResolver, ResourceProvider {
   /// Reads the data previously written to [path].
   ///
   /// Throws if ![exists].
-  String read(String path) => _data[path]!;
+  String read(String path) {
+    if (path.contains('/sdk/')) {
+      return io.File(path).readAsStringSync();
+    }
+    return _data[path]!;
+  }
 
   /// Deletes the data previously written to [path].
   ///
@@ -171,6 +178,9 @@ class _Resource implements File, Folder {
   @override
   String get shortName => filesystem.pathContext.basename(path);
 
+  @override
+  Folder get parent => _Resource(filesystem, p.dirname(path));
+
   // `File` methods.
   @override
   Uint8List readAsBytesSync() {
@@ -197,6 +207,14 @@ class _Resource implements File, Folder {
   @override
   bool contains(String path) =>
       filesystem.pathContext.isWithin(this.path, path);
+
+  @override
+  File getChildAssumingFile(String relPath) =>
+      _Resource(filesystem, '$path/$relPath');
+
+  @override
+  Folder getChildAssumingFolder(String relPath) =>
+      _Resource(filesystem, '$path/$relPath');
 
   // Most `File` and/or `Folder` methods are not needed.
 
