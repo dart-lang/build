@@ -8,10 +8,8 @@ analyzer:
     # TODO(davidmorgan): update code for this lint.
     discarded_futures: ignore
   exclude:
-    # Prevents extra work during some e2e test runs.
-    - "dart2js_test/**"
-    # Common top level directories containing generated files in any package.
     - ".dart_tool/**"
+    - "build_runner/test/fixtures/**"
 
 linter:
   rules:
