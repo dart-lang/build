@@ -1,0 +1,28 @@
+name: built_value_loop_0100
+publish_to: none
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  built_value: any
+
+dev_dependencies:
+  build_runner: any
+  built_value_generator: any
+  
+dependency_overrides:
+  build:
+    path: /usr/local/google/home/davidmorgan/git/build/_benchmark/../build
+  build_config:
+    path: /usr/local/google/home/davidmorgan/git/build/_benchmark/../build_config
+  build_modules:
+    path: /usr/local/google/home/davidmorgan/git/build/_benchmark/../build_modules
+  build_runner:
+    path: /usr/local/google/home/davidmorgan/git/build/_benchmark/../build_runner
+  build_test:
+    path: /usr/local/google/home/davidmorgan/git/build/_benchmark/../build_test
+  build_web_compilers:
+    path: /usr/local/google/home/davidmorgan/git/build/_benchmark/../build_web_compilers
+
+
