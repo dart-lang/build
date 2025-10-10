@@ -52,5 +52,11 @@ dev_dependencies:
   test: ^1.25.5
   test_descriptor: ^2.0.0
 
+dependency_overrides:
+  analyzer:
+    path: ../../dart-sdk/sdk/pkg/analyzer
+  _fe_analyzer_shared:
+    path: ../../dart-sdk/sdk/pkg/_fe_analyzer_shared
+
 topics:
  - build-runner
