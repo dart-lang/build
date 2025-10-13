@@ -5,14 +5,13 @@
 import 'dart:io';
 
 import 'package:analyzer/file_system/file_system.dart' show ResourceProvider;
-// ignore: implementation_imports
-import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:package_config/package_config.dart' show PackageConfig;
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 
 import 'analysis_driver_filesystem.dart';
 import 'analysis_driver_model.dart';
+import 'build_resolvers.dart';
 
 /// Builds an [AnalysisDriverForPackageBuild] backed by a summary SDK.
 ///
