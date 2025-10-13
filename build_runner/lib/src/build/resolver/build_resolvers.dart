@@ -5,6 +5,7 @@
 // ignore_for_file: implementation_imports
 
 import 'dart:io';
+import 'dart:io' as io;
 import 'dart:typed_data';
 
 import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
@@ -22,7 +23,9 @@ import 'package:analyzer/src/dart/sdk/sdk.dart';
 import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/summary/summary_sdk.dart';
 import 'package:analyzer/src/summary2/package_bundle_format.dart';
+import 'package:package_config/package_config_types.dart';
 import 'package:path/path.dart' as p;
+import 'package:yaml/yaml.dart';
 
 export 'package:analyzer/dart/analysis/analysis_options.dart'
     show AnalysisOptions;
@@ -54,11 +57,33 @@ AnalysisDriverForPackageBuild createAnalysisDriver({
   final sdkBundle = PackageBundleReader(sdkSummaryBytes);
   final bundleSdk = SummaryBasedDartSdk.forBundle(sdkBundle);
 
-  final runningDarkSdkPath = p.dirname(p.dirname(Platform.resolvedExecutable));
-  final sdk = FolderBasedDartSdk(
+  final runningDartSdkPath = p.dirname(p.dirname(Platform.resolvedExecutable));
+
+  AbstractDartSdk sdk = FolderBasedDartSdk(
     resourceProvider,
-    resourceProvider.getFolder(runningDarkSdkPath),
+    resourceProvider.getFolder(runningDartSdkPath),
   );
+
+  final dartUiPath = p.normalize(
+    p.join(runningDartSdkPath, '..', 'pkg', 'sky_engine', 'lib'),
+  );
+  final isFlutter =
+      Platform.version.contains('flutter') ||
+      Directory(dartUiPath).existsSync();
+  if (isFlutter) {
+    final embedderYamlPath = p.join(dartUiPath, '_embedder.yaml');
+    final content = io.File(embedderYamlPath).readAsStringSync();
+    final map = loadYaml(content) as YamlMap;
+    final embedderSdk = EmbedderSdk(resourceProvider, {
+      resourceProvider.getFolder(p.dirname(embedderYamlPath)): map,
+    }, languageVersion: sdk.languageVersion);
+    for (final library in embedderSdk.sdkLibraries) {
+      final uriStr = library.shortName;
+      if (sdk.libraryMap.getLibrary(uriStr) == null) {
+        sdk.libraryMap.setLibrary(uriStr, library);
+      }
+    }
+  }
 
   //final sourceFactory = SourceFactory([DartUriResolver(sdk), ...uriResolvers]);
   final sourceFactory = SourceFactory([DartUriResolver(sdk), ...uriResolvers]);

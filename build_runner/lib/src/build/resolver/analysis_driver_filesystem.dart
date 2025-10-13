@@ -2,9 +2,9 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:convert';
 import 'dart:io' as io;
 
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:analyzer/file_system/file_system.dart';
@@ -31,10 +31,12 @@ class AnalysisDriverFilesystem implements UriResolver, ResourceProvider {
   ///
   /// Throws if ![exists].
   String read(String path) {
-    if (path.contains('/sdk/')) {
+    if (path.contains('/sdk/') || path.contains('/dart-sdk/')) {
       return io.File(path).readAsStringSync();
     }
-    return _data[path]!;
+    final result = _data[path];
+    if (result == null) throw ArgumentError('Path does not exist: $path');
+    return result;
   }
 
   /// Deletes the data previously written to [path].
@@ -192,6 +194,9 @@ class _Resource implements File, Folder {
 
   @override
   String readAsStringSync() => filesystem.read(path);
+
+  @override
+  String canonicalizePath(String path) => path;
 
   // Analyzer methods such as `CompilationUnitElement.source` provide access to
   // source and return a `TimestampedData` with this value.
