@@ -45,6 +45,12 @@ class BuildProcessState {
   set elapsedMillis(int elapsedMillis) =>
       _state['elapsedMillis'] = elapsedMillis;
 
+  /// The package config URI.
+  String get packageConfigUri {
+    _state['packageConfigUri'] ??= Isolate.packageConfigSync!.toString();
+    return _state['packageConfigUri'] as String;
+  }
+
   void resetForTests() {
     _state.clear();
   }
@@ -55,6 +61,10 @@ class BuildProcessState {
   }
 
   String serialize() {
+    // Set any unset values that should be set by the parent process.
+    stdio;
+    packageConfigUri;
+
     for (final beforeSend in _beforeSends) {
       beforeSend();
     }

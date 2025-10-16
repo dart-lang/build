@@ -300,7 +300,7 @@ E An error.'''),
 lib/l0.dart builder1
   Some info.
 
-Built with build_runner in 0s with warnings; wrote 2 outputs.
+Built with build_runner/jit in 0s with warnings; wrote 2 outputs.
 
 lib/l0.dart builder2
 W A warning.

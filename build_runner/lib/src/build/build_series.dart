@@ -109,7 +109,7 @@ class BuildSeries {
       final id = change.id;
 
       // Changes to the entrypoint are handled via depfiles.
-      if (_buildPlan.bootstrapper.isKernelDependency(
+      if (_buildPlan.bootstrapper.isCompileDependency(
         _buildPlan.packageGraph.pathFor(id),
       )) {
         result.add(change);
@@ -229,7 +229,7 @@ class BuildSeries {
       }
     } else {
       final kernelFreshness = await _buildPlan.bootstrapper
-          .checkKernelFreshness(digestsAreFresh: false);
+          .checkCompileFreshness(digestsAreFresh: false);
       if (!kernelFreshness.outputIsFresh) {
         final result = BuildResult.buildScriptChanged();
         _buildResultsController.add(result);

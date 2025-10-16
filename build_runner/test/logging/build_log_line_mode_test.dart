@@ -267,7 +267,7 @@ void main() {
         'E builder2 on lib/l0.dart:\n'
             'An error.',
         '  0s builder2 on 1 input: 1 output',
-        '  Built with build_runner in 0s; wrote 2 outputs.',
+        '  Built with build_runner/jit in 0s; wrote 2 outputs.',
       ]);
     });
   });

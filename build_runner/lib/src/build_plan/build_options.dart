@@ -23,6 +23,8 @@ class BuildOptions {
   final String? configKey;
   final BuiltList<String> enableExperiments;
   final bool enableLowResourcesMode;
+  final bool forceAot;
+  final bool forceJit;
   final bool isReleaseBuild;
   final String? logPerformanceDir;
   final bool outputSymlinksOnly;
@@ -40,6 +42,8 @@ class BuildOptions {
     required this.configKey,
     required this.enableExperiments,
     required this.enableLowResourcesMode,
+    required this.forceAot,
+    required this.forceJit,
     required this.isReleaseBuild,
     required this.logPerformanceDir,
     required this.outputSymlinksOnly,
@@ -53,6 +57,8 @@ class BuildOptions {
   /// command line arg parsing configuration.
   @visibleForTesting
   factory BuildOptions.forTests({
+    bool? forceAot,
+    bool? forceJit,
     BuiltMap<String, BuiltMap<String, Object?>>? builderConfigOverrides,
     BuiltSet<BuildDirectory>? buildDirs,
     BuiltSet<BuildFilter>? buildFilters,
@@ -71,6 +77,8 @@ class BuildOptions {
     configKey: configKey,
     enableExperiments: enableExperiments ?? BuiltList(),
     enableLowResourcesMode: enableLowResourcesMode ?? false,
+    forceAot: forceAot ?? false,
+    forceJit: forceJit ?? false,
     isReleaseBuild: isReleaseBuild ?? false,
     logPerformanceDir: logPerformanceDir,
     outputSymlinksOnly: outputSymlinksOnly ?? false,
@@ -91,7 +99,7 @@ class BuildOptions {
     required String rootPackage,
     required bool restIsBuildDirs,
   }) {
-    return BuildOptions(
+    final result = BuildOptions(
       buildDirs:
           {
             ..._parseBuildDirs(commandLine),
@@ -105,6 +113,8 @@ class BuildOptions {
       configKey: commandLine.config,
       enableExperiments: commandLine.enableExperiments!,
       enableLowResourcesMode: commandLine.lowResourcesMode!,
+      forceAot: commandLine.forceAot!,
+      forceJit: commandLine.forceJit!,
       isReleaseBuild: commandLine.release!,
       logPerformanceDir: _parseLogPerformance(commandLine),
       outputSymlinksOnly: commandLine.symlink!,
@@ -112,6 +122,14 @@ class BuildOptions {
           commandLine.trackPerformance! || commandLine.logPerformance != null,
       verbose: commandLine.verbose!,
     );
+
+    if (result.forceAot && result.forceJit) {
+      throw UsageException(
+        'Only one compile mode can be used, got --force-aot and --force-jit.',
+        commandLine.usage,
+      );
+    }
+    return result;
   }
 
   BuildOptions copyWith({
@@ -124,6 +142,8 @@ class BuildOptions {
     configKey: configKey,
     enableExperiments: enableExperiments,
     enableLowResourcesMode: enableLowResourcesMode,
+    forceAot: forceAot,
+    forceJit: forceJit,
     isReleaseBuild: isReleaseBuild,
     logPerformanceDir: logPerformanceDir,
     outputSymlinksOnly: outputSymlinksOnly,

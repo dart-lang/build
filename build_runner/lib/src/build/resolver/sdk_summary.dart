@@ -7,10 +7,11 @@ import 'dart:io';
 
 import 'package:analyzer/dart/sdk/build_sdk_summary.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
+import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 
+import '../../bootstrap/build_process_state.dart';
 import '../../logging/timed_activities.dart';
-import 'resolver.dart' show packagePath;
 
 /// `true` if the currently running dart was provided by the Flutter SDK.
 final isFlutter =
@@ -45,6 +46,14 @@ Future<String> defaultSdkSummaryGenerator() async {
   final summaryPath = p.join(cacheDir, 'sdk.sum');
   final depsFile = File('$summaryPath.deps');
   final summaryFile = File(summaryPath);
+
+  final packageConfig = await loadPackageConfigUri(
+    Uri.parse(buildProcessState.packageConfigUri),
+  );
+  Future<String> packagePath(String package) async {
+    final libRoot = packageConfig.resolve(Uri.parse('package:$package/'));
+    return p.dirname(p.fromUri(libRoot));
+  }
 
   final currentDeps = {
     'sdk': Platform.version,
