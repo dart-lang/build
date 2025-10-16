@@ -37,7 +37,7 @@ class KernelCompiler {
     final dart = Platform.resolvedExecutable;
     final result = await ParentProcess.run(dart, [
       'compile',
-      'kernel',
+      'aot-snapshot',
       entrypointScriptPath,
       '--output',
       entrypointDillPath,

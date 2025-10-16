@@ -32,8 +32,12 @@ class ParentProcess {
     required String message,
     required Iterable<String> jitVmArgs,
   }) async {
-    final process = await _startWithReaper(Platform.resolvedExecutable, [
-      'run',
+    var binary = Platform.resolvedExecutable;
+    if (binary.endsWith('/dart')) {
+      binary = binary.substring(0, binary.length - '/dart'.length);
+      binary = '$binary/dartaotruntime';
+    }
+    final process = await _startWithReaper(binary, [
       ...jitVmArgs,
       script,
       ...arguments,
