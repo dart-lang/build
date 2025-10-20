@@ -1,4 +1,4 @@
-## 4.0.5-wip
+## 4.1.0
 
 - Bug fix: resolve symlinks when identifying workspaces, so symlinks can't
   cause the same workspace to be treated as a different workspace.

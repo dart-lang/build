@@ -1,4 +1,4 @@
-## 3.5.0-wip
+## 3.5.0
 
 - Improve `TestBuilderResult`: add `succeeded`, `outputs` and `errors`.
   Deprecate `buildResult` in favor of these new members.
