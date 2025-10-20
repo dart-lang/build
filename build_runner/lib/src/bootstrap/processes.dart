@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:meta/meta.dart';
+import 'package:path/path.dart' as p;
 
 import '../build_plan/builder_factories.dart';
 import '../build_runner.dart';
@@ -20,9 +21,10 @@ class ParentProcess {
   /// Runs Dart [script] with [arguments], sends it [message], listens for and
   /// returns the response.
   ///
-  /// When the underlying script is run with `dart run`, the [jitVmArgs] are
-  /// forwarded to the Dart VM. This can be used to e.g. start the VM with
-  /// debugging options.
+  /// [script] can be a kernel file or Dart source.
+  ///
+  /// The [jitVmArgs] are forwarded to the Dart VM. This can be used to e.g.
+  /// start the VM with debugging options.
   ///
   /// The child process should use [ChildProcess] to communicate with the
   /// parent.
@@ -32,12 +34,39 @@ class ParentProcess {
     required String message,
     required Iterable<String> jitVmArgs,
   }) async {
-    final process = await _startWithReaper(Platform.resolvedExecutable, [
-      'run',
-      ...jitVmArgs,
-      script,
-      ...arguments,
-    ]);
+    return await _runAndSend(
+      executable: Platform.resolvedExecutable,
+      arguments: ['run', ...jitVmArgs, script, ...arguments],
+      message: message,
+    );
+  }
+
+  /// Runs Dart [aotSnapshot] with [arguments], sends it [message], listens for
+  /// and returns the response.
+  ///
+  /// The child process should use [ChildProcess] to communicate with the
+  /// parent.
+  static Future<RunAndSendResult> runAotSnapshotAndSend({
+    required String aotSnapshot,
+    required Iterable<String> arguments,
+    required String message,
+  }) async {
+    return await _runAndSend(
+      executable: p.join(
+        p.dirname(Platform.resolvedExecutable),
+        'dartaotruntime',
+      ),
+      arguments: [aotSnapshot, ...arguments],
+      message: message,
+    );
+  }
+
+  static Future<RunAndSendResult> _runAndSend({
+    required String executable,
+    required List<String> arguments,
+    required String message,
+  }) async {
+    final process = await _startWithReaper(executable, arguments);
 
     // Copy output from the child stdout and stderr to current stdout and
     // stderr. The child response is sent on stdout after `_sentinal`, so watch
@@ -155,8 +184,8 @@ class RunAndSendResult {
   RunAndSendResult({required this.exitCode, required this.message});
 }
 
-/// Methods for child processes launched with [ParentProcess.runAndSend] to
-/// communicate with the parent.
+/// Methods for child processes launched with [ParentProcess.runAndSend]
+/// or [ParentProcess.runAotSnapshotAndSend] to communicate with the parent.
 class ChildProcess {
   static bool _isRunning = false;
 

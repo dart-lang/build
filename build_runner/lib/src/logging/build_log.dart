@@ -2,10 +2,12 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:io';
 import 'dart:math';
 
 import 'package:build/build.dart' show AssetId;
 import 'package:built_collection/built_collection.dart';
+import 'package:path/path.dart' as p;
 
 import '../bootstrap/build_process_state.dart';
 import '../build_plan/phase.dart';
@@ -352,6 +354,7 @@ class BuildLog {
     final displayingBlocks = _display.displayingBlocks;
     _status = [
       result ? successPattern : failurePattern,
+      p.basename(Platform.resolvedExecutable) == 'dart' ? '/jit' : '/aot',
       ' in ',
       renderDuration(_processDuration),
       if (_messages.hasWarnings) ' with warnings',

@@ -19,9 +19,9 @@ import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:package_config/package_config.dart';
-import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
 
+import '../../bootstrap/build_process_state.dart';
 import '../../logging/build_log.dart';
 import '../../logging/timed_activities.dart';
 import 'analysis_driver.dart';
@@ -508,7 +508,7 @@ class AnalyzerResolvers implements Resolvers {
         _warnOnLanguageVersionMismatch();
         final loadedConfig =
             _packageConfig ??= await loadPackageConfigUri(
-              (await Isolate.packageConfig)!,
+              Uri.parse(buildProcessState.packageConfigUri),
             );
         final driver = await analysisDriver(
           _analysisDriverModel,
@@ -584,13 +584,6 @@ current version by running `pub deps`.
     sdkLanguageVersion: sdkLanguageVersion,
     flags: enableExperiments,
   );
-}
-
-Future<String> packagePath(String package) async {
-  final libRoot = await Isolate.resolvePackageUri(
-    Uri.parse('package:$package/'),
-  );
-  return p.dirname(p.fromUri(libRoot));
 }
 
 /// Wraps [pool] so resource use is timed as [TimedActivity.analyze].

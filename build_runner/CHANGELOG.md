@@ -1,11 +1,17 @@
 ## 2.9.1-wip
 
-- Require `analyzer` 8.0.0. Remove use of deprecated `analyzer` members, use
-  their recommended and compatible replacements.
-- Internal changes for `build_test`.
+- Add AOT compilation of builders. A future release will AOT compile builders
+  automatically, for this release it's behind a flag. AOT compiled builders
+  start up faster and have higher throughput, for faster builds overall.
+  Builders that use `dart:mirrors` cannot be AOT compiled.
+- Add `force-aot` flag to AOT compile builders.
+- Add `force-jit` flag to force the current default of JIT compiling builders.
 - Add the `--dart-jit-vm-arg` option. Its values are passed to `dart run` when
   a build script is started in JIT mode. This allows specifying options to
   attach a debugger to builders.
+- Require `analyzer` 8.0.0. Remove use of deprecated `analyzer` members, use
+  their recommended and compatible replacements.
+- Internal changes for `build_test`.
 
 ## 2.9.0
 

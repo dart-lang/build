@@ -45,6 +45,8 @@ class BuildRunnerCommandLine {
   final String? config;
   final BuiltList<String>? defines;
   final BuiltList<String>? enableExperiments;
+  final bool? forceAot;
+  final bool? forceJit;
   final BuiltList<String>? jitVmArgs;
   final String? hostname;
   final bool? liveReload;
@@ -68,6 +70,8 @@ class BuildRunnerCommandLine {
       config = argResults.stringNamed(configOption),
       defines = argResults.listNamed(defineOption),
       enableExperiments = argResults.listNamed(enableExperimentOption),
+      forceAot = argResults.boolNamed(forceAotOption),
+      forceJit = argResults.boolNamed(forceJitOption),
       jitVmArgs = argResults.listNamed(dartJitVmArgOption),
       hostname = argResults.stringNamed(hostnameOption),
       liveReload = argResults.boolNamed(liveReloadOption),
@@ -123,6 +127,8 @@ const configOption = 'config';
 const defineOption = 'define';
 const deleteFilesByDefaultOption = 'delete-conflicting-outputs';
 const enableExperimentOption = 'enable-experiment';
+const forceAotOption = 'force-aot';
+const forceJitOption = 'force-jit';
 const dartJitVmArgOption = 'dart-jit-vm-arg';
 const hostnameOption = 'hostname';
 const liveReloadOption = 'live-reload';
@@ -197,6 +203,18 @@ class _Build extends Command<BuildRunnerCommandLine> {
         negatable: true,
         defaultsTo: true,
         hide: true,
+      )
+      ..addFlag(
+        forceAotOption,
+        defaultsTo: false,
+        negatable: false,
+        help: 'Compiles builders with AOT mode for faster builds.',
+      )
+      ..addFlag(
+        forceJitOption,
+        defaultsTo: false,
+        negatable: false,
+        help: 'Compiles builders with JIT mode.',
       )
       ..addFlag(
         trackPerformanceOption,

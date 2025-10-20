@@ -105,9 +105,11 @@ class BuildPlan {
     required TestingOverrides testingOverrides,
     bool recentlyBootstrapped = true,
   }) async {
-    final bootstrapper = Bootstrapper();
+    final bootstrapper = Bootstrapper(
+      compileAot: buildOptions.forceAot ? true : false,
+    );
     var restartIsNeeded = false;
-    final kernelFreshness = await bootstrapper.checkKernelFreshness(
+    final kernelFreshness = await bootstrapper.checkCompileFreshness(
       digestsAreFresh: recentlyBootstrapped,
     );
     if (!kernelFreshness.outputIsFresh) {
