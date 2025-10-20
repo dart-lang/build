@@ -1,4 +1,4 @@
-## 2.9.1-wip
+## 2.10.0
 
 - Add AOT compilation of builders. A future release will AOT compile builders
   automatically, for this release it's behind a flag. AOT compiled builders
@@ -15,8 +15,7 @@
 
 ## 2.9.0
 
-- Watch mode: handle builder code and config changes without recompiling or
-  exiting.
+- Watch mode: handle builder config changes without recompiling or exiting.
 - Remove log output about `build_runner` internals.
 - Print the port that gets picked if you pass 0 for a port number, for example
   with `dart run build_runner serve web:0`.
