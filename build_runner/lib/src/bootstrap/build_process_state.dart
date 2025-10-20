@@ -46,10 +46,9 @@ class BuildProcessState {
       _state['elapsedMillis'] = elapsedMillis;
 
   /// The package config URI.
-  String get packageConfigUri {
-    _state['packageConfigUri'] ??= Isolate.packageConfigSync!.toString();
-    return _state['packageConfigUri'] as String;
-  }
+  String get packageConfigUri =>
+      (_state['packageConfigUri'] ??= Isolate.packageConfigSync!.toString())
+          as String;
 
   void resetForTests() {
     _state.clear();

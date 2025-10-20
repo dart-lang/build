@@ -125,7 +125,8 @@ class BuildOptions {
 
     if (result.forceAot && result.forceJit) {
       throw UsageException(
-        'Only one compile mode can be used, got --force-aot and --force-jit.',
+        'Only one compile mode can be used, '
+        'got --$forceAotOption and --$forceJitOption.',
         commandLine.usage,
       );
     }

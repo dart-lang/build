@@ -54,8 +54,7 @@ class KernelCompiler implements Compiler {
         final messages = stdout
             .split('\n')
             .where((e) => e.startsWith('Unknown experiment'))
-            .map((l) => '$l\n')
-            .join('');
+            .join('\n');
         return CompileResult(messages: messages);
       }
 
