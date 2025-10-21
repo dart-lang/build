@@ -38,10 +38,7 @@ abstract class BuildPhase {
 /// An "action" in the build graph which represents running a single builder
 /// on a set of sources.
 abstract class BuildAction {
-  /// Either a [Builder] or a [PostProcessBuilder].
-  dynamic get builder;
-  String get builderLabel;
-  BuilderOptions get builderOptions;
+  BuilderOptions get options;
   InputMatcher get generateFor;
   String get package;
   InputMatcher get targetSources;
@@ -49,12 +46,21 @@ abstract class BuildAction {
 
 /// A [BuildPhase] that uses a single [Builder] to generate files.
 class InBuildPhase extends BuildPhase implements BuildAction {
-  @override
   final Builder builder;
+
+  /// The key with which the builder is referred to in `build.yaml` files.
+  ///
+  /// It's `<package>:<name>`, for example `built_value_generator:built_value`.
+  final String key;
+
+  /// The name displayed in logs.
+  ///
+  /// It's the same as [key] except that if package name and builder name are
+  /// the same then the duplication and colon are removed.
+  final String displayName;
+
   @override
-  final String builderLabel;
-  @override
-  final BuilderOptions builderOptions;
+  final BuilderOptions options;
   @override
   final InputMatcher generateFor;
   @override
@@ -70,10 +76,11 @@ class InBuildPhase extends BuildPhase implements BuildAction {
   InBuildPhase._(
     this.package,
     this.builder,
-    this.builderOptions, {
+    this.options, {
     required this.targetSources,
     required this.generateFor,
-    required this.builderLabel,
+    required this.displayName,
+    required this.key,
     this.isOptional = false,
     this.hideOutput = false,
   });
@@ -89,25 +96,23 @@ class InBuildPhase extends BuildPhase implements BuildAction {
   ///
   /// [hideOutput] specifies that the generated asses should be placed in the
   /// build cache rather than the source tree.
-  InBuildPhase(
-    Builder builder,
-    String package, {
-    String? builderKey,
+  InBuildPhase({
+    required Builder builder,
+    required String key,
+    required String package,
     InputSet targetSources = const InputSet(),
     InputSet generateFor = const InputSet(),
-    BuilderOptions builderOptions = const BuilderOptions({}),
+    BuilderOptions options = const BuilderOptions({}),
     bool isOptional = false,
     bool hideOutput = false,
   }) : this._(
          package,
          builder,
-         builderOptions,
+         options,
          targetSources: InputMatcher(targetSources),
          generateFor: InputMatcher(generateFor),
-         builderLabel:
-             builderKey == null || builderKey.isEmpty
-                 ? _builderLabel(builder)
-                 : _simpleBuilderKey(builderKey),
+         key: key,
+         displayName: _simpleBuilderKey(key),
          isOptional: isOptional,
          hideOutput: hideOutput,
        );
@@ -117,14 +122,14 @@ class InBuildPhase extends BuildPhase implements BuildAction {
     final settings = <String>[];
     if (isOptional) settings.add('optional');
     if (hideOutput) settings.add('hidden');
-    var result = '$builderLabel on $targetSources in $package';
+    var result = '$displayName on $targetSources in $package';
     if (settings.isNotEmpty) result += ' $settings';
     return result;
   }
 
   @override
   int get identity => _deepEquals.hash([
-    builderLabel,
+    displayName,
     builder.buildExtensions,
     package,
     targetSources,
@@ -162,12 +167,10 @@ class PostBuildPhase implements BuildPhase {
 /// Part of a larger [PostBuildPhase], applies a single
 /// [PostProcessBuilder] to a single [package] with some additional options.
 class PostBuildAction implements BuildAction {
-  @override
   final PostProcessBuilder builder;
-  @override
   final String builderLabel;
   @override
-  final BuilderOptions builderOptions;
+  final BuilderOptions options;
   @override
   final InputMatcher generateFor;
   @override
@@ -175,17 +178,13 @@ class PostBuildAction implements BuildAction {
   @override
   final InputMatcher targetSources;
 
-  PostBuildAction(
-    this.builder,
-    this.package, {
-    String? builderKey,
-    required this.builderOptions,
+  PostBuildAction({
+    required this.builder,
+    required this.package,
+    required this.options,
     required InputSet targetSources,
     required InputSet generateFor,
-  }) : builderLabel =
-           builderKey == null || builderKey.isEmpty
-               ? _builderLabel(builder)
-               : _simpleBuilderKey(builderKey),
+  }) : builderLabel = _builderLabel(builder),
        targetSources = InputMatcher(targetSources),
        generateFor = InputMatcher(generateFor);
 

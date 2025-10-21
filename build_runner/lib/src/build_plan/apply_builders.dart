@@ -114,7 +114,7 @@ BuilderApplication applyPostProcess(
 );
 
 BuilderApplication _forBuilder(
-  String builderKey,
+  String key,
   Iterable<BuilderFactory> builderFactories,
   PackageFilter filter, {
   bool isOptional = false,
@@ -149,24 +149,24 @@ BuilderApplication _forBuilder(
 
           final builder = BuildLogLogger.scopeLogSync(
             () => builderFactory(optionsWithDefaults),
-            buildLog.loggerForOther(builderKey),
+            buildLog.loggerForOther(key),
           );
           if (builder == null) throw const CannotBuildException();
           _validateBuilder(builder);
           return InBuildPhase(
-            builder,
-            package.name,
-            builderKey: builderKey,
+            builder: builder,
+            key: key,
+            package: package.name,
             targetSources: targetSources,
             generateFor: generateFor,
-            builderOptions: optionsWithDefaults,
+            options: optionsWithDefaults,
             hideOutput: hideOutput,
             isOptional: isOptional,
           );
         };
       }).toList();
   return BuilderApplication(
-    builderKey,
+    key,
     phaseFactories,
     filter,
     hideOutput,
@@ -211,9 +211,9 @@ BuilderApplication _forPostProcessBuilder(
     if (builder == null) throw const CannotBuildException();
     _validatePostProcessBuilder(builder);
     final builderAction = PostBuildAction(
-      builder,
-      package.name,
-      builderOptions: optionsWithDefaults,
+      builder: builder,
+      package: package.name,
+      options: optionsWithDefaults,
       generateFor: generateFor,
       targetSources: targetSources,
     );

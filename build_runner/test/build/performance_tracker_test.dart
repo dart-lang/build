@@ -41,7 +41,16 @@ void main() {
       await scopedTrack(() async {
         final packages = ['a', 'b', 'c'];
         final builder = TestBuilder();
-        phases = packages.map((p) => InBuildPhase(builder, p)).toList();
+        phases =
+            packages
+                .map(
+                  (p) => InBuildPhase(
+                    builder: builder,
+                    key: 'TestBuilder',
+                    package: p,
+                  ),
+                )
+                .toList();
 
         for (final phase in phases) {
           final package = phase.package;
@@ -54,7 +63,7 @@ void main() {
       expect(
         tracker.phases.map((p) => p.builderKeys),
         orderedEquals(
-          phases.map((phase) => orderedEquals([phase.builderLabel])),
+          phases.map((phase) => orderedEquals([phase.displayName])),
         ),
       );
 

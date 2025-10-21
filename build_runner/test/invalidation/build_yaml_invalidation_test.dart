@@ -31,7 +31,7 @@ void main() {
 targets:
   $default:
     builders:
-      pkg:invalidation_tester_builder:
+      invalidation_tester_builder:invalidation_tester_builder:
         options:
           run_only_if_triggered: true
 ''');
@@ -58,12 +58,12 @@ targets:
 targets:
   $default:
     builders:
-      pkg:invalidation_tester_builder:
+      invalidation_tester_builder:invalidation_tester_builder:
         options:
           run_only_if_triggered: true
 
 triggers:
-  pkg:invalidation_tester_builder:
+  invalidation_tester_builder:invalidation_tester_builder:
     - import trigger/trigger.dart
 ''');
         tester.importGraph({
@@ -96,12 +96,12 @@ triggers:
 targets:
   $default:
     builders:
-      pkg:invalidation_tester_builder:
+      invalidation_tester_builder:invalidation_tester_builder:
         options:
           run_only_if_triggered: true
 
 triggers:
-  pkg:invalidation_tester_builder:
+  invalidation_tester_builder:invalidation_tester_builder:
     - import trigger/trigger.dart
 ''');
         expect(await tester.build(), Result(written: []));
@@ -112,12 +112,12 @@ triggers:
 targets:
   $default:
     builders:
-      pkg:invalidation_tester_builder:
+      invalidation_tester_builder:invalidation_tester_builder:
         options:
           run_only_if_triggered: true
 
 triggers:
-  pkg:invalidation_tester_builder:
+  invalidation_tester_builder:invalidation_tester_builder:
     - import trigger/trigger.dart
 ''');
         await tester.build();
@@ -133,7 +133,7 @@ triggers:
 targets:
   $default:
     builders:
-      pkg:invalidation_tester_builder:
+      invalidation_tester_builder:invalidation_tester_builder:
         options:
           run_only_if_triggered: true
 ''');
@@ -147,12 +147,12 @@ targets:
 targets:
   $default:
     builders:
-      pkg:invalidation_tester_builder:
+      invalidation_tester_builder:invalidation_tester_builder:
         options:
           run_only_if_triggered: true
 
 triggers:
-  pkg:invalidation_tester_builder:
+  invalidation_tester_builder:invalidation_tester_builder:
     - import trigger/trigger.dart
 ''',
           ),
@@ -166,7 +166,7 @@ triggers:
 targets:
   $default:
     builders:
-      pkg:invalidation_tester_builder:
+      invalidation_tester_builder:invalidation_tester_builder:
         options:
           run_only_if_triggered: false
 ''');
@@ -177,7 +177,7 @@ targets:
 targets:
   $default:
     builders:
-      pkg:invalidation_tester_builder:
+      invalidation_tester_builder:invalidation_tester_builder:
         options:
           run_only_if_triggered: true
 ''',
@@ -192,12 +192,12 @@ targets:
 targets:
   $default:
     builders:
-      pkg:invalidation_tester_builder:
+      invalidation_tester_builder:invalidation_tester_builder:
         options:
           run_only_if_triggered: true
 
 triggers:
-  pkg:invalidation_tester_builder:
+  invalidation_tester_builder:invalidation_tester_builder:
     - import trigger/trigger.dart
 ''');
         expect(await tester.build(), Result(written: []));
@@ -207,7 +207,7 @@ triggers:
 targets:
   $default:
     builders:
-      pkg:invalidation_tester_builder:
+      invalidation_tester_builder:invalidation_tester_builder:
         options:
           run_only_if_triggered: false
 ''',
@@ -221,12 +221,12 @@ targets:
 targets:
   $default:
     builders:
-      pkg:invalidation_tester_builder:
+      invalidation_tester_builder:invalidation_tester_builder:
         options:
           run_only_if_triggered: true
 
 triggers:
-  pkg:invalidation_tester_builder:
+  invalidation_tester_builder:invalidation_tester_builder:
     - import trigger/trigger.dart
 ''');
         tester.importGraph({
@@ -243,12 +243,12 @@ triggers:
 targets:
   $default:
     builders:
-      pkg:invalidation_tester_builder:
+      invalidation_tester_builder:invalidation_tester_builder:
         options:
           run_only_if_triggered: true
 
 triggers:
-  pkg:invalidation_tester_builder:
+  invalidation_tester_builder:invalidation_tester_builder:
     - import trigger/trigger.dart
 ''');
         tester.importGraph({
@@ -261,7 +261,7 @@ triggers:
 targets:
   $default:
     builders:
-      pkg:invalidation_tester_builder:
+      invalidation_tester_builder:invalidation_tester_builder:
         options:
           run_only_if_triggered: true
 ''',

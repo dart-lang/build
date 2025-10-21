@@ -31,12 +31,18 @@ void main() {
     late AssetGraph graph;
     final phases = BuildPhases([
       InBuildPhase(
-        TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')),
-        'a',
+        builder: TestBuilder(
+          buildExtensions: appendExtension('.copy', from: '.txt'),
+        ),
+        key: 'TestBuilder',
+        package: 'a',
       ),
       InBuildPhase(
-        TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')),
-        'b',
+        builder: TestBuilder(
+          buildExtensions: appendExtension('.copy', from: '.txt'),
+        ),
+        key: 'TestBuilder',
+        package: 'b',
         hideOutput: true,
       ),
     ]);

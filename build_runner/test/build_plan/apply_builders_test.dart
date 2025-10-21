@@ -367,11 +367,7 @@ void main() {
           phases.inBuildPhases.first,
           isA<InBuildPhase>()
               .having((p) => p.package, 'package', 'a')
-              .having(
-                (p) => p.builderLabel,
-                'builderLabel',
-                'b:cool_builder_2',
-              ),
+              .having((p) => p.displayName, 'builderLabel', 'b:cool_builder_2'),
         );
       });
 
@@ -390,14 +386,14 @@ void main() {
               isA<InBuildPhase>()
                   .having((p) => p.package, 'package', 'a')
                   .having(
-                    (p) => p.builderLabel,
+                    (p) => p.displayName,
                     'builderLabel',
                     'b:cool_builder',
                   ),
               isA<InBuildPhase>()
                   .having((p) => p.package, 'package', 'a')
                   .having(
-                    (p) => p.builderLabel,
+                    (p) => p.displayName,
                     'builderLabel',
                     'b:cool_builder_2',
                   ),

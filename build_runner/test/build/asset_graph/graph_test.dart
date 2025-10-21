@@ -177,19 +177,20 @@ void main() {
       final buildPhases = BuildPhases(
         [
           InBuildPhase(
-            TestBuilder(
+            builder: TestBuilder(
               buildExtensions: appendExtension('.copy', from: '.txt'),
             ),
-            'foo',
+            key: 'TestBuilder',
+            package: 'foo',
             targetSources: targetSources,
           ),
         ],
         PostBuildPhase([
           PostBuildAction(
-            CopyingPostProcessBuilder(outputExtension: '.post'),
-            'foo',
+            builder: CopyingPostProcessBuilder(outputExtension: '.post'),
+            package: 'foo',
             targetSources: targetSources,
-            builderOptions: const BuilderOptions({}),
+            options: const BuilderOptions({}),
             generateFor: const InputSet(),
           ),
         ]),
@@ -407,7 +408,16 @@ void main() {
       test('overlapping build phases cause an error', () async {
         expect(
           () => AssetGraph.build(
-            BuildPhases(List.filled(2, InBuildPhase(TestBuilder(), 'foo'))),
+            BuildPhases(
+              List.filled(
+                2,
+                InBuildPhase(
+                  builder: TestBuilder(),
+                  key: 'TestBuilder',
+                  package: 'foo',
+                ),
+              ),
+            ),
             {makeAssetId('foo|file')},
             fooPackageGraph,
             digestReader,
@@ -435,24 +445,27 @@ void main() {
           final graph = await AssetGraph.build(
             BuildPhases([
               InBuildPhase(
-                TestBuilder(
+                builder: TestBuilder(
                   buildExtensions: replaceExtension('.txt', '.a.txt'),
                 ),
-                'foo',
+                key: 'TestBuilder',
+                package: 'foo',
                 hideOutput: false,
               ),
               InBuildPhase(
-                TestBuilder(
+                builder: TestBuilder(
                   buildExtensions: replaceExtension('.txt', '.b.txt'),
                 ),
-                'foo',
+                key: 'TestBuilder',
+                package: 'foo',
                 hideOutput: false,
               ),
               InBuildPhase(
-                TestBuilder(
+                builder: TestBuilder(
                   buildExtensions: replaceExtension('.a.b.txt', '.a.b.c.txt'),
                 ),
-                'foo',
+                key: 'TestBuilder',
+                package: 'foo',
                 hideOutput: false,
               ),
             ]),
@@ -491,14 +504,18 @@ void main() {
           final graph = await AssetGraph.build(
             BuildPhases([
               InBuildPhase(
-                TestBuilder(
+                builder: TestBuilder(
                   buildExtensions: appendExtension('.1', from: '.txt'),
                 ),
-                'foo',
+                key: 'TestBuilder',
+                package: 'foo',
               ),
               InBuildPhase(
-                TestBuilder(buildExtensions: appendExtension('.2', from: '.1')),
-                'foo',
+                builder: TestBuilder(
+                  buildExtensions: appendExtension('.2', from: '.1'),
+                ),
+                key: 'TestBuilder',
+                package: 'foo',
                 targetSources: const InputSet(include: ['lib/*.txt']),
               ),
             ]),
@@ -524,16 +541,18 @@ void main() {
           final toBeGeneratedDart = AssetId('a', 'lib/A.g.dart');
           final buildPhases = BuildPhases([
             InBuildPhase(
-              TestBuilder(
+              builder: TestBuilder(
                 buildExtensions: replaceExtension('.dart', '.g.part'),
               ),
-              'a',
+              key: 'TestBuilder',
+              package: 'a',
             ),
             InBuildPhase(
-              TestBuilder(
+              builder: TestBuilder(
                 buildExtensions: replaceExtension('.g.part', '.g.dart'),
               ),
-              'a',
+              key: 'TestBuilder',
+              package: 'a',
             ),
           ]);
           final packageGraph = buildPackageGraph({rootPackage('a'): []});

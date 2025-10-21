@@ -461,7 +461,7 @@ class Build {
     final builder = phase.builder;
     final tracker = performanceTracker.addBuilderAction(
       primaryInput,
-      phase.builderLabel,
+      phase.displayName,
     );
     return tracker.track(() async {
       final readerWriter = SingleStepReaderWriter(
@@ -483,7 +483,7 @@ class Build {
         inputTracker: InputTracker(
           this.readerWriter.filesystem,
           primaryInput: primaryInput,
-          builderLabel: phase.builderLabel,
+          builderLabel: phase.displayName,
         ),
         assetsWritten: {},
       );
@@ -587,12 +587,11 @@ class Build {
     required InBuildPhase phase,
     required AssetId primaryInput,
   }) async {
-    final runsIfTriggered =
-        phase.builderOptions.config['run_only_if_triggered'];
+    final runsIfTriggered = phase.options.config['run_only_if_triggered'];
     if (runsIfTriggered != true) {
       return true;
     }
-    final buildTriggers = targetGraph.buildTriggers[phase.builderLabel];
+    final buildTriggers = targetGraph.buildTriggers[phase.key];
     if (buildTriggers == null) {
       return false;
     }

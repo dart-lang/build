@@ -104,7 +104,12 @@ void main() {
       readerWriter.testing.writeString(id, '');
 
       buildPhases = BuildPhases([
-        InBuildPhase(TestBuilder(), 'a', isOptional: false),
+        InBuildPhase(
+          builder: TestBuilder(),
+          key: 'TestBuilder',
+          package: 'a',
+          isOptional: false,
+        ),
       ]);
 
       var buildPlan = await BuildPlan.load(
