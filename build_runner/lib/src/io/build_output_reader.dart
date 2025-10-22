@@ -106,12 +106,11 @@ class BuildOutputReader {
 
   Stream<AssetId> _findAssets(Glob glob, String? _) async* {
     if (_assetGraph == null || _readerWriter == null) return;
-    final potentialNodes =
+    final potentialIds =
         _assetGraph
-            .packageNodes(_readerWriter.rootPackage)
-            .where((n) => glob.matches(n.id.path))
+            .packageFileIds(_readerWriter.rootPackage)
+            .where((n) => glob.matches(n.path))
             .toList();
-    final potentialIds = potentialNodes.map((n) => n.id).toList();
 
     for (final id in potentialIds) {
       if (await _readerWriter.canRead(id)) {

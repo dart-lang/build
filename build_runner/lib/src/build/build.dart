@@ -1111,15 +1111,14 @@ class Build {
       // Other types of file that match the glob.
       final otherInputs = <AssetId>[];
 
-      for (final node in assetGraph.packageNodes(
+      for (final id in assetGraph.packageFileIds(
         globId.package,
         prefix: prefix,
       )) {
-        if (node.isFile &&
-            node.isTrackedInput &&
-            // Generated nodes are only considered at all if they are output in
-            // an earlier phase.
-            (node.type != NodeType.generated ||
+        final node = assetGraph.get(id)!;
+        // Generated nodes are only considered at all if they are output in
+        // an earlier phase.
+        if ((node.type != NodeType.generated ||
                 node.generatedNodeConfiguration!.phaseNumber <
                     globNodeConfiguration.phaseNumber) &&
             glob.matches(node.id.path)) {

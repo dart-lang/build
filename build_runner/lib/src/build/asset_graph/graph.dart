@@ -31,10 +31,9 @@ part 'serialization.dart';
 
 /// All the [AssetId]s involved in a build, and all of their outputs.
 class AssetGraph implements GeneratedAssetHider {
-  /// All the [AssetNode]s in the graph, indexed by package and then path.
-  final Map<String, Map<String, AssetNode>> _nodesByPackage;
+  final Map<AssetId, AssetNode> _nodes;
 
-  final _sortedNodesByPackage = <String, List<AssetNode>>{};
+  Map<String, List<AssetId>>? _fileIdsByPackage;
 
   /// A digest of the generated build script kernel and inputs, if available.
   ///
@@ -100,7 +99,7 @@ class AssetGraph implements GeneratedAssetHider {
       inBuildPhasesOptionsDigests = buildPhases.inBuildPhasesOptionsDigests,
       postBuildActionsOptionsDigests =
           buildPhases.postBuildActionsOptionsDigests,
-      _nodesByPackage = {},
+      _nodes = {},
       _postProcessBuildStepOutputs = {};
 
   AssetGraph._fromSerialized(
@@ -111,11 +110,11 @@ class AssetGraph implements GeneratedAssetHider {
     this.dartVersion,
     this.packageLanguageVersions,
     this.enabledExperiments,
-  ) : _nodesByPackage = {},
+  ) : _nodes = {},
       _postProcessBuildStepOutputs = {};
 
   AssetGraph._with({
-    required Map<String, Map<String, AssetNode>> nodesByPackage,
+    required Map<AssetId, AssetNode> nodes,
     required this.kernelDigest,
     required this.buildPhasesDigest,
     required this.dartVersion,
@@ -130,12 +129,12 @@ class AssetGraph implements GeneratedAssetHider {
     required this.previousPostBuildActionsOptionsDigests,
     required this.postBuildActionsOptionsDigests,
     required this.previousPhasedAssetDeps,
-  }) : _nodesByPackage = nodesByPackage,
+  }) : _nodes = nodes,
        _postProcessBuildStepOutputs = postProcessBuildStepOutputs;
 
   @visibleForTesting
   AssetGraph copyWith({String? dartVersion}) => AssetGraph._with(
-    nodesByPackage: _nodesByPackage,
+    nodes: _nodes,
     kernelDigest: kernelDigest,
     buildPhasesDigest: buildPhasesDigest,
     dartVersion: dartVersion ?? this.dartVersion,
@@ -215,15 +214,10 @@ class AssetGraph implements GeneratedAssetHider {
   bool get cleanBuild => previousInBuildPhasesOptionsDigests == null;
 
   /// Checks if [id] exists in the graph.
-  bool contains(AssetId id) =>
-      _nodesByPackage[id.package]?.containsKey(id.path) ?? false;
+  bool contains(AssetId id) => _nodes.containsKey(id);
 
   /// Gets the [AssetNode] for [id], if one exists.
-  AssetNode? get(AssetId id) {
-    final pkg = _nodesByPackage[id.package];
-    if (pkg == null) return null;
-    return pkg[id.path];
-  }
+  AssetNode? get(AssetId id) => _nodes[id];
 
   /// Updates a node in the graph with [updates].
   ///
@@ -234,7 +228,7 @@ class AssetGraph implements GeneratedAssetHider {
     final node = get(id);
     if (node == null) throw StateError('Missing node: $id');
     final updatedNode = node.rebuild(updates);
-    _nodesByPackage[id.package]![id.path] = updatedNode;
+    _nodes[id] = updatedNode;
 
     if (node.inputs != updatedNode.inputs) {
       _outputs = null;
@@ -255,7 +249,7 @@ class AssetGraph implements GeneratedAssetHider {
     final node = get(id);
     if (node == null) return null;
     final updatedNode = node.rebuild(updates);
-    _nodesByPackage[id.package]![id.path] = updatedNode;
+    _nodes[id] = updatedNode;
 
     if (node.inputs != updatedNode.inputs) {
       _outputs = null;
@@ -274,7 +268,7 @@ class AssetGraph implements GeneratedAssetHider {
     final existing = get(node.id);
     if (existing != null) {
       if (existing.type == NodeType.missingSource) {
-        _nodesByPackage[existing.id.package]!.remove(existing.id.path);
+        _nodes.remove(existing.id);
         node = node.rebuild((b) {
           b.primaryOutputs.addAll(existing.primaryOutputs);
         });
@@ -285,11 +279,10 @@ class AssetGraph implements GeneratedAssetHider {
         );
       }
     }
-    _nodesByPackage.putIfAbsent(node.id.package, () => {})[node.id.path] = node;
+    _nodes[node.id] = node;
     if (node.inputs?.isNotEmpty ?? false) {
       _outputs = null;
     }
-
     return node;
   }
 
@@ -305,6 +298,7 @@ class AssetGraph implements GeneratedAssetHider {
   /// Adds [assetIds] as [AssetNode.source] to this graph, and returns the newly
   /// created nodes.
   void _addSources(Set<AssetId> assetIds) {
+    _fileIdsByPackage = null;
     for (final id in assetIds) {
       _add(AssetNode.source(id));
     }
@@ -347,6 +341,7 @@ class AssetGraph implements GeneratedAssetHider {
 
   /// Removes [id] and its transitive`primaryOutput`s from the graph.
   void _removeRecursive(AssetId id, {Set<AssetId>? removedIds}) {
+    _fileIdsByPackage = null;
     removedIds ??= <AssetId>{};
     final node = get(id);
     if (node == null) return;
@@ -354,7 +349,7 @@ class AssetGraph implements GeneratedAssetHider {
       for (final output in node.primaryOutputs.toList()) {
         _removeRecursive(output, removedIds: removedIds);
       }
-      _nodesByPackage[id.package]!.remove(id.path);
+      _nodes.remove(id);
     }
   }
 
@@ -381,26 +376,32 @@ class AssetGraph implements GeneratedAssetHider {
   }
 
   /// All nodes in the graph, whether source files or generated outputs.
-  Iterable<AssetNode> get allNodes =>
-      _nodesByPackage.values.expand((pkdIds) => pkdIds.values);
+  Iterable<AssetNode> get allNodes => _nodes.values;
 
-  /// All nodes in the graph for `package`.
-  Iterable<AssetNode> packageNodes(String package, {String prefix = ''}) {
-    final values = _nodesByPackage[package]?.values;
-    if (values == null) return const [];
-    if (prefix.isEmpty) return values;
+  /// All IDs for file nodes in the graph for `package`.
+  Iterable<AssetId> packageFileIds(String package, {String prefix = ''}) {
+    if (_fileIdsByPackage == null) {
+      _fileIdsByPackage = {};
+      for (final value in _nodes.values) {
+        if (value.isFile) {
+          _fileIdsByPackage!
+              .putIfAbsent(value.id.package, () => [])
+              .add(value.id);
+        }
+      }
+      for (final list in _fileIdsByPackage!.values) {
+        list.sort();
+      }
+    }
+    final ids = _fileIdsByPackage![package];
+    if (ids == null) return const [];
+    if (prefix.isEmpty) return ids;
 
-    final sortedNodes =
-        _sortedNodesByPackage[package] ??=
-            values.toList()..sort((a, b) => a.id.path.compareTo(b.id.path));
-    final first = _findFirst(
-      sortedNodes,
-      (node) => node.id.path.compareTo(prefix) >= 0,
-    );
+    final first = _findFirst(ids, (id) => id.path.compareTo(prefix) >= 0);
     if (first == -1) return const [];
-    return sortedNodes
-        .getRange(first, sortedNodes.length)
-        .takeWhile((node) => node.id.path.startsWith(prefix));
+    return ids
+        .getRange(first, ids.length)
+        .takeWhile((id) => id.path.startsWith(prefix));
   }
 
   /// Returns the index of the first element in [list] for which [check] is
@@ -410,7 +411,7 @@ class AssetGraph implements GeneratedAssetHider {
   /// [check] is true are in a contiguous block.
   ///
   /// Returns -1 if no element is found.
-  static int _findFirst(List<AssetNode> list, bool Function(AssetNode) check) {
+  static int _findFirst(List<AssetId> list, bool Function(AssetId) check) {
     var min = 0;
     var max = list.length;
     while (min < max) {
@@ -457,11 +458,13 @@ class AssetGraph implements GeneratedAssetHider {
 
   /// All the generated outputs for a particular phase.
   Iterable<AssetNode> outputsForPhase(String package, int phase) =>
-      packageNodes(package).where(
-        (n) =>
-            n.type == NodeType.generated &&
-            n.generatedNodeConfiguration!.phaseNumber == phase,
-      );
+      packageFileIds(package)
+          .map((id) => get(id)!)
+          .where(
+            (n) =>
+                n.type == NodeType.generated &&
+                n.generatedNodeConfiguration!.phaseNumber == phase,
+          );
 
   /// All the source files in the graph.
   Iterable<AssetId> get sources =>
@@ -591,6 +594,7 @@ class AssetGraph implements GeneratedAssetHider {
     String rootPackage, {
     Set<AssetId>? placeholders,
   }) {
+    _fileIdsByPackage = null;
     final allInputs = Set<AssetId>.from(newSources);
     if (placeholders != null) allInputs.addAll(placeholders);
     for (
@@ -734,11 +738,14 @@ class AssetGraph implements GeneratedAssetHider {
   /// Removes a generated node that was output by a post process build step.
   /// TODO(davidmorgan): look at removing them from the graph altogether.
   void removePostProcessOutput(AssetId id) {
-    _nodesByPackage[id.package]!.remove(id.path);
+    _fileIdsByPackage = null;
+    _nodes.remove(id);
   }
 
-  void removeForTest(AssetId id) =>
-      _nodesByPackage[id.package]?.remove(id.path);
+  void removeForTest(AssetId id) {
+    _fileIdsByPackage = null;
+    _nodes.remove(id);
+  }
 
   /// Adds [input] to all [outputs] if they track inputs.
   ///
