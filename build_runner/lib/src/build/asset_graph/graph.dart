@@ -34,6 +34,8 @@ class AssetGraph implements GeneratedAssetHider {
   /// All the [AssetNode]s in the graph, indexed by package and then path.
   final Map<String, Map<String, AssetNode>> _nodesByPackage;
 
+  final _sortedNodesByPackage = <String, List<AssetNode>>{};
+
   /// A digest of the generated build script kernel and inputs, if available.
   ///
   /// May be `null` in tests.
@@ -383,8 +385,46 @@ class AssetGraph implements GeneratedAssetHider {
       _nodesByPackage.values.expand((pkdIds) => pkdIds.values);
 
   /// All nodes in the graph for `package`.
-  Iterable<AssetNode> packageNodes(String package) =>
-      _nodesByPackage[package]?.values ?? [];
+  Iterable<AssetNode> packageNodes(String package, {String prefix = ''}) {
+    final values = _nodesByPackage[package]?.values;
+    if (values == null) return const [];
+    if (prefix.isEmpty) return values;
+
+    final sortedNodes =
+        _sortedNodesByPackage[package] ??=
+            values.toList()..sort((a, b) => a.id.path.compareTo(b.id.path));
+    final first = _findFirst(
+      sortedNodes,
+      (node) => node.id.path.compareTo(prefix) >= 0,
+    );
+    if (first == -1) return const [];
+    return sortedNodes
+        .getRange(first, sortedNodes.length)
+        .takeWhile((node) => node.id.path.startsWith(prefix));
+  }
+
+  /// Returns the index of the first element in [list] for which [check] is
+  /// true.
+  ///
+  /// Assumes that the list is sorted in a way that all elements for which
+  /// [check] is true are in a contiguous block.
+  ///
+  /// Returns -1 if no element is found.
+  static int _findFirst(List<AssetNode> list, bool Function(AssetNode) check) {
+    var min = 0;
+    var max = list.length;
+    while (min < max) {
+      final mid = min + ((max - min) >> 1);
+      final element = list[mid];
+      if (check(element)) {
+        max = mid;
+      } else {
+        min = mid + 1;
+      }
+    }
+    if (min >= list.length || !check(list[min])) return -1;
+    return min;
+  }
 
   /// All the post process build steps for `package`.
   Iterable<PostProcessBuildStepId> postProcessBuildStepIds({

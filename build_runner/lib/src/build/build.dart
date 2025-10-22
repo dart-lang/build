@@ -1104,13 +1104,17 @@ class Build {
       final globNodeConfiguration =
           assetGraph.get(globId)!.globNodeConfiguration!;
       final glob = Glob(globNodeConfiguration.glob);
+      final prefix = glob.prefix;
 
       // Generated files that match the glob.
       final generatedFileInputs = <AssetId>[];
       // Other types of file that match the glob.
       final otherInputs = <AssetId>[];
 
-      for (final node in assetGraph.packageNodes(globId.package)) {
+      for (final node in assetGraph.packageNodes(
+        globId.package,
+        prefix: prefix,
+      )) {
         if (node.isFile &&
             node.isTrackedInput &&
             // Generated nodes are only considered at all if they are output in
@@ -1222,3 +1226,11 @@ class Build {
 }
 
 String _twoDigits(int n) => '$n'.padLeft(2, '0');
+
+extension GlobExtension on Glob {
+  String get prefix {
+    final index = pattern.indexOf('*');
+    if (index == -1) return '';
+    return pattern.substring(0, index);
+  }
+}
