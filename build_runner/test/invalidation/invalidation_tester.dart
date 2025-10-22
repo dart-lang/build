@@ -557,7 +557,8 @@ class TestBuilder implements Builder {
 
   // Name that will refer to the builder in `build.yaml`.
   @override
-  String toString() => 'pkg:invalidation_tester_builder';
+  String toString() =>
+      'invalidation_tester_builder:invalidation_tester_builder';
 }
 
 extension LogRecordExtension on LogRecord {

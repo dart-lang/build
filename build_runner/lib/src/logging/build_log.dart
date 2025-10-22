@@ -546,7 +546,7 @@ extension _IntExtension on int {
 
 extension _PhaseExtension on InBuildPhase {
   String name({required bool lazy}) =>
-      lazy ? '$builderLabel (lazy)' : builderLabel;
+      lazy ? '$displayName (lazy)' : displayName;
 }
 
 /// Progress metrics tracked for each build phase.

@@ -664,8 +664,8 @@ class AssetGraph implements GeneratedAssetHider {
             existing.id,
             buildPhases
                 .inBuildPhases[existingConfiguration.phaseNumber]
-                .builderLabel,
-            buildPhases.inBuildPhases[phaseNumber].builderLabel,
+                .displayName,
+            buildPhases.inBuildPhases[phaseNumber].displayName,
           );
         }
         _removeRecursive(output, removedIds: removed);

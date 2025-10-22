@@ -285,9 +285,9 @@ Map<InBuildPhase, int> _createPhases(Map<String, int> countsByName) {
 
 class _TestPhase implements InBuildPhase {
   @override
-  final String builderLabel;
+  final String displayName;
 
-  _TestPhase(this.builderLabel);
+  _TestPhase(this.displayName);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

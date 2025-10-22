@@ -1,3 +1,9 @@
+## 2.10.1-wip
+
+- Bug fix: look up triggers in the `triggers` section of `build.yaml` using the
+  full name. For the case in which the builder name matched the package name,
+  the abbreviated name was being used instead.
+
 ## 2.10.0
 
 - Add AOT compilation of builders. A future release will AOT compile builders
