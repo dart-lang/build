@@ -1110,15 +1110,13 @@ class Build {
       // Other types of file that match the glob.
       final otherInputs = <AssetId>[];
 
-      for (final node in assetGraph.packageNodes(globId.package)) {
-        if (node.isFile &&
-            node.isTrackedInput &&
-            // Generated nodes are only considered at all if they are output in
-            // an earlier phase.
-            (node.type != NodeType.generated ||
-                node.generatedNodeConfiguration!.phaseNumber <
-                    globNodeConfiguration.phaseNumber) &&
-            glob.matches(node.id.path)) {
+      for (final id in assetGraph.packageFileIds(globId.package, glob: glob)) {
+        final node = assetGraph.get(id)!;
+        // Generated nodes are only considered at all if they are output in
+        // an earlier phase.
+        if (node.type != NodeType.generated ||
+            node.generatedNodeConfiguration!.phaseNumber <
+                globNodeConfiguration.phaseNumber) {
           if (node.type == NodeType.generated) {
             generatedFileInputs.add(node.id);
           } else {

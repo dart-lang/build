@@ -63,7 +63,7 @@ AssetGraph? deserializeAssetGraph(List<int> bytes) {
   );
 
   for (final serializedItem in serializedGraph['nodes'] as Iterable) {
-    graph._add(_deserializeAssetNode(serializedItem as List));
+    graph._nodes.add(_deserializeAssetNode(serializedItem as List));
   }
 
   final postProcessOutputs =
