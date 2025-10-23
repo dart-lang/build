@@ -19,6 +19,22 @@ class Nodes {
   /// Sorted nodes by package, or `null` if they have not been computed.
   Map<String, List<AssetId>>? _sortedFileIdsByPackage;
 
+  /// Whether [_sortedFileIdsByPackage] has already been calculated during
+  /// this build.
+  ///
+  /// Sorted file IDs are calculated at most once per build as files are not
+  /// added or removed during the build. This bool is used to check and throw if
+  /// that does not hold.
+  ///
+  /// Note that "missing source" IDs are added during the build, but they don't
+  /// count as files. Post process build steps can delete their input but that
+  /// happens after the last possible use of `_sortedFileIdsByPackage` because
+  /// post process steps can't glob for files.
+  ///
+  /// After the build and before the next build files can be added or removed,
+  /// [clearComputationResults] will be called to reset.
+  bool _sortedFileIdsByPackageWasComputed = false;
+
   Nodes();
 
   /// Whether [id] is in the graph.
@@ -138,9 +154,21 @@ class Nodes {
   String _simpleGlobPrefix(Glob glob) {
     final pattern = glob.pattern;
     for (var i = 0; i != pattern.length; ++i) {
-      final char = pattern.codeUnitAt(i);
-      if (_specialGlobCharsCodeUnits.contains(char)) {
-        return pattern.substring(0, i);
+      final codeUnit = pattern.codeUnitAt(i);
+
+      /// Code units signalling the start of non-literal content in a glob
+      /// pattern, see: https://pub.dev/packages/glob
+      ///
+      /// Checked in nodes_test.dart:
+      ///
+      /// `expect(r'*?[\{'.codeUnits, [42, 63, 91, 92, 123])`
+      switch (codeUnit) {
+        case 42:
+        case 63:
+        case 91:
+        case 92:
+        case 123:
+          return pattern.substring(0, i);
       }
     }
     return pattern;
@@ -150,6 +178,12 @@ class Nodes {
   ///
   /// An asset ID is a file if [AssetNode.isFile].
   Map<String, List<AssetId>> _computeSortedFileIdsByPackage() {
+    if (_sortedFileIdsByPackageWasComputed) {
+      throw StateError(
+        'Sorted file IDs by package were already computed this build.',
+      );
+    }
+    _sortedFileIdsByPackageWasComputed = true;
     final result = <String, List<AssetId>>{};
     for (final value in _nodes.values) {
       if (value.isFile) {
@@ -166,7 +200,7 @@ class Nodes {
   /// fields on glob and generated nodes.
   ///
   /// The result is cached until any node is updated with different `inputs` or
-  /// [clearOutputs] is called.
+  /// [clearComputationResults] is called.
   Map<AssetId, Set<AssetId>> computeOutputs() {
     if (_outputs != null) return _outputs!;
     final result = <AssetId, Set<AssetId>>{};
@@ -184,23 +218,13 @@ class Nodes {
     return _outputs = result;
   }
 
-  /// Clears the cached result of [computeOutputs].
-  void clearOutputs() {
+  /// Call this after modifications to the graph and before the next build, to
+  /// reset computed values.
+  void clearComputationResults() {
     _outputs = null;
+    _sortedFileIdsByPackageWasComputed = false;
   }
 }
-
-/// Code units of characters signalling the start of non-literal content in a
-/// glob pattern.
-///
-/// See: https://pub.dev/packages/glob
-final _specialGlobCharsCodeUnits = [
-  '*'.codeUnitAt(0),
-  '?'.codeUnitAt(0),
-  '['.codeUnitAt(0),
-  '{'.codeUnitAt(0),
-  r'\'.codeUnitAt(0),
-];
 
 /// Extension on `List<AssetId>` that assumes the list is sorted so it can do a
 /// binary search.

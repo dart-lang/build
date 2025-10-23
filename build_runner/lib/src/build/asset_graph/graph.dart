@@ -408,7 +408,7 @@ class AssetGraph implements GeneratedAssetHider {
 
     _addOutputsForSources(buildPhases, newIds, rootPackage);
 
-    _nodes.clearOutputs();
+    _nodes.clearComputationResults();
     return idsToDelete;
   }
 

@@ -121,4 +121,8 @@ void main() {
       expect(list.filterToPrefix('e'), isEmpty);
     });
   });
+
+  test('glob special character codes', () {
+    expect(r'*?[\{'.codeUnits, [42, 63, 91, 92, 123]);
+  });
 }
