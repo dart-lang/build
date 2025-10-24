@@ -9,8 +9,6 @@ import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_config/build_config.dart';
 // ignore: implementation_imports
-import 'package:build_runner/src/build/asset_graph/graph.dart';
-// ignore: implementation_imports
 import 'package:build_runner/src/internal.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:glob/glob.dart';
@@ -139,10 +137,8 @@ Future<TestBuilderResult> testBuilder(
   PackageConfig? packageConfig,
   Resolvers? resolvers,
   TestReaderWriter? readerWriter,
-  AssetGraph? assetGraph,
   bool verbose = false,
   bool enableLowResourceMode = false,
-  bool performCleanup = true,
 }) async {
   return testBuilders(
     [builder],
@@ -156,10 +152,8 @@ Future<TestBuilderResult> testBuilder(
     packageConfig: packageConfig,
     resolvers: resolvers,
     readerWriter: readerWriter,
-    assetGraph: assetGraph,
     verbose: verbose,
     enableLowResourceMode: enableLowResourceMode,
-    performCleanup: performCleanup,
   );
 }
 
@@ -190,10 +184,8 @@ Future<TestBuilderResult> testBuilders(
   Map<Builder, List<String>> appliesBuilders = const {},
   bool testingBuilderConfig = true,
   TestReaderWriter? readerWriter,
-  AssetGraph? assetGraph,
   bool verbose = false,
   bool enableLowResourceMode = false,
-  bool performCleanup = true,
 }) {
   final builderFactories = <BuilderFactory>[];
   final optionalBuilderFactories = Set<BuilderFactory>.identity();
@@ -235,7 +227,6 @@ Future<TestBuilderResult> testBuilders(
     readerWriter: readerWriter,
     verbose: verbose,
     enableLowResourceMode: enableLowResourceMode,
-    performCleanup: performCleanup,
   );
 }
 
@@ -322,10 +313,8 @@ Future<TestBuilderResult> testBuilderFactories(
   Map<BuilderFactory, List<String>> appliesBuilders = const {},
   bool testingBuilderConfig = true,
   TestReaderWriter? readerWriter,
-  AssetGraph? assetGraph,
   bool verbose = false,
   bool enableLowResourceMode = false,
-  bool performCleanup = true,
 }) async {
   onLog ??= _printOnFailureOrWrite;
 
@@ -355,18 +344,16 @@ Future<TestBuilderResult> testBuilderFactories(
   }
   rootPackage ??= allPackages.first;
 
-  // Only write source assets if this is a new build (non-incremental).
-  if (readerWriter == null) {
-    readerWriter = TestReaderWriter(rootPackage: rootPackage);
-    sourceAssets.forEach((serializedId, contents) {
-      final id = makeAssetId(serializedId);
-      if (contents is String) {
-        readerWriter!.testing.writeString(id, contents);
-      } else if (contents is List<int>) {
-        readerWriter!.testing.writeBytes(id, contents);
-      }
-    });
-  }
+  readerWriter ??= TestReaderWriter(rootPackage: rootPackage);
+
+  sourceAssets.forEach((serializedId, contents) {
+    final id = makeAssetId(serializedId);
+    if (contents is String) {
+      readerWriter!.testing.writeString(id, contents);
+    } else if (contents is List<int>) {
+      readerWriter!.testing.writeBytes(id, contents);
+    }
+  });
 
   final inputFilter = isInput ?? generateFor?.contains ?? (_) => true;
   inputIds.retainWhere((id) => inputFilter('$id'));
@@ -487,17 +474,13 @@ Future<TestBuilderResult> testBuilderFactories(
   );
   await buildPlan.deleteFilesAndFolders();
 
-  final previousAssetGraph = assetGraph ?? buildPlan.takePreviousAssetGraph();
-
   final buildSeries = BuildSeries(buildPlan);
 
   // Run the build.
   final buildResult = await buildSeries.run({}, recentlyBootstrapped: true);
 
-  if (performCleanup) {
-    // Do cleanup that would usually happen on process exit.
-    await buildSeries.close();
-  }
+  // Do cleanup that would usually happen on process exit.
+  await buildSeries.close();
 
   // Stop logging.
   buildLog.configuration = buildLog.configuration.rebuild((b) {
@@ -509,7 +492,6 @@ Future<TestBuilderResult> testBuilderFactories(
 
   return TestBuilderResult(
     buildResult: buildResult,
-    assetGraph: previousAssetGraph,
     readerWriter: readerWriter,
   );
 }
@@ -518,7 +500,6 @@ class TestBuilderResult {
   @Deprecated('Use `succeeded`, `outputs` and `errors` instead.')
   final BuildResult buildResult;
   final TestReaderWriter readerWriter;
-  final AssetGraph? assetGraph;
 
   bool get succeeded => buildResult.status == BuildStatus.success;
 
@@ -533,11 +514,7 @@ class TestBuilderResult {
   /// If the build failed there must be at least one error.
   BuiltList<String> get errors => buildResult.errors;
 
-  TestBuilderResult({
-    required this.buildResult,
-    required this.readerWriter,
-    this.assetGraph,
-  });
+  TestBuilderResult({required this.buildResult, required this.readerWriter});
 }
 
 void _printOnFailureOrWrite(LogRecord record) {
