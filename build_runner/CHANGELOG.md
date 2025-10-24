@@ -1,5 +1,9 @@
 ## 2.10.1-wip
 
+- Performance: improve `findAssets` scalability, making it much faster for
+  prefix matches in packages with thousands of files or more. One specific use
+  case that is now faster is builders that use `source_gen` shared parts, for
+  example `built_value` and `json_serializable`.
 - Bug fix: look up triggers in the `triggers` section of `build.yaml` using the
   full name. For the case in which the builder name matched the package name,
   the abbreviated name was being used instead.
