@@ -28,11 +28,12 @@ void main() async {
         'root_pkg/.dart_tool/build/generated/fake_output';
 
     // First build.
-    await tester.run('root_pkg', 'dart run build_runner build');
+    var output = await tester.run('root_pkg', 'dart run build_runner build');
+    expect(output, contains('build_runner/jit'));
     expect(tester.read('root_pkg/web/a.txt.copy'), 'a');
 
     // With no changes, no rebuild.
-    var output = await tester.run('root_pkg', 'dart run build_runner build');
+    output = await tester.run('root_pkg', 'dart run build_runner build');
     expect(output, contains('wrote 0 outputs'));
 
     // Change the build script, rebuilds.

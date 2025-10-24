@@ -354,7 +354,7 @@ class BuildLog {
     final displayingBlocks = _display.displayingBlocks;
     _status = [
       result ? successPattern : failurePattern,
-      p.basename(Platform.resolvedExecutable) == 'dart' ? '/jit' : '/aot',
+      _isJit ? '/jit' : '/aot',
       ' in ',
       renderDuration(_processDuration),
       if (_messages.hasWarnings) ' with warnings',
@@ -377,6 +377,11 @@ class BuildLog {
     final errors = _errors.build();
     _errors.clear();
     return errors;
+  }
+
+  static bool get _isJit {
+    final executable = p.basename(Platform.resolvedExecutable);
+    return executable == 'dart' || executable == 'dart.exe';
   }
 
   /// Renders [message] with optional [error] and [stackTrace].
