@@ -148,6 +148,7 @@ class Module {
   Future<List<Module>> computeTransitiveDependencies(
     BuildStep buildStep, {
     bool throwIfUnsupported = false,
+    bool computeStronglyConnectedComponents = true,
   }) async {
     final modules = await buildStep.fetchResource(moduleCache);
     final transitiveDeps = <AssetId, Module>{};
@@ -183,13 +184,67 @@ class Module {
     if (throwIfUnsupported && unsupportedModules.isNotEmpty) {
       throw UnsupportedModules(unsupportedModules);
     }
-    final orderedModules = stronglyConnectedComponents<Module>(
-      transitiveDeps.values,
-      (m) => m.directDependencies.map((s) => transitiveDeps[s]!),
-      equals: (a, b) => a.primarySource == b.primarySource,
-      hashCode: (m) => m.primarySource.hashCode,
-    );
-    return orderedModules.map((c) => c.single).toList();
+
+    if (computeStronglyConnectedComponents) {
+      final orderedModules = stronglyConnectedComponents<Module>(
+        transitiveDeps.values,
+        (m) => m.directDependencies.map((s) => transitiveDeps[s]!),
+        equals: (a, b) => a.primarySource == b.primarySource,
+        hashCode: (m) => m.primarySource.hashCode,
+      );
+      return orderedModules.map((c) => c.single).toList();
+    }
+    return transitiveDeps.values.toList();
+  }
+
+  /// Returns all [AssetId]s in the transitive dependencies of this module in
+  /// no specific order.
+  ///
+  /// Throws a [MissingModulesException] if there are any missing modules. This
+  /// typically means that somebody is trying to import a non-existing file.
+  ///
+  /// If [throwIfUnsupported] is `true`, then an [UnsupportedModules]
+  /// will be thrown if there are any modules that are not supported.
+  Future<Set<AssetId>> computeTransitiveAssets(
+    BuildStep buildStep, {
+    bool throwIfUnsupported = false,
+  }) async {
+    final modules = await buildStep.fetchResource(moduleCache);
+    final transitiveDeps = <AssetId, Module>{};
+    final modulesToCrawl = {primarySource};
+    final missingModuleSources = <AssetId>{};
+    final unsupportedModules = <Module>{};
+    final seenSources = <AssetId>{};
+
+    while (modulesToCrawl.isNotEmpty) {
+      final next = modulesToCrawl.last;
+      modulesToCrawl.remove(next);
+      if (transitiveDeps.containsKey(next)) continue;
+      final nextModuleId = next.changeExtension(moduleExtension(platform));
+      final module = await modules.find(nextModuleId, buildStep);
+      if (module == null || module.isMissing) {
+        missingModuleSources.add(next);
+        continue;
+      }
+      if (throwIfUnsupported && !module.isSupported) {
+        unsupportedModules.add(module);
+      }
+      transitiveDeps[next] = module;
+      modulesToCrawl.addAll(module.directDependencies);
+      seenSources.addAll(module.sources);
+    }
+
+    if (missingModuleSources.isNotEmpty) {
+      throw await MissingModulesException.create(
+        missingModuleSources,
+        transitiveDeps.values.toList()..add(this),
+        buildStep,
+      );
+    }
+    if (throwIfUnsupported && unsupportedModules.isNotEmpty) {
+      throw UnsupportedModules(unsupportedModules);
+    }
+    return seenSources;
   }
 }
 

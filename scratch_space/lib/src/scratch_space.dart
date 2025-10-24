@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:collection';
 import 'dart:io';
 
 import 'package:build/build.dart';
@@ -27,6 +28,11 @@ class ScratchSpace {
   /// The temp directory at the root of this [ScratchSpace].
   final Directory tempDir;
 
+  /// Contains assets that changed between calls to [ensureAssets].
+  ///
+  /// Cleared at the end of every build.
+  final _changedFilesInBuild = <AssetId>{};
+
   // Assets which have a file created but are still being written to.
   final _pendingWrites = <AssetId, Future<void>>{};
 
@@ -43,6 +49,9 @@ class ScratchSpace {
               .resolveSymbolicLinksSync(),
         ),
       );
+
+  Iterable<AssetId> get changedFilesInBuild =>
+      UnmodifiableSetView(_changedFilesInBuild);
 
   /// Copies [id] from the tmp dir and writes it back using the [writer].
   ///
@@ -92,6 +101,9 @@ class ScratchSpace {
   /// Copies [assetIds] to [tempDir] if they don't exist, using [reader] to
   /// read assets and mark dependencies.
   ///
+  /// Assets that have changed since the last time they were seen by
+  /// [ensureAssets] are added to [_changedFilesInBuild].
+  ///
   /// Note that [BuildStep] implements [AssetReader] and that is typically
   /// what you will want to pass in.
   ///
@@ -102,7 +114,6 @@ class ScratchSpace {
     if (!exists) {
       throw StateError('Tried to use a deleted ScratchSpace!');
     }
-
     final futures =
         assetIds.map((id) async {
           final digest = await reader.digest(id);
@@ -110,6 +121,9 @@ class ScratchSpace {
           if (digest == existing) {
             await _pendingWrites[id];
             return;
+          }
+          if (existing != null) {
+            _changedFilesInBuild.add(id);
           }
           _digests[id] = digest;
 
@@ -140,6 +154,11 @@ class ScratchSpace {
   /// with [id] to make sure it is actually present.
   File fileFor(AssetId id) =>
       File(p.join(tempDir.path, p.normalize(_relativePathFor(id))));
+
+  /// Performs cleanup required across builds.
+  void dispose() {
+    _changedFilesInBuild.clear();
+  }
 }
 
 /// Returns a canonical uri for [id].

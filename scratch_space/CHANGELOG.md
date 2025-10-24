@@ -1,3 +1,6 @@
+## 1.2.0
+- Adding `changedFilesInBuild`, which contains all modified files encountered since the last `ensureAssets` call, and `dispose`.
+
 ## 1.1.1
 
 - Allow `build` 4.0.0.

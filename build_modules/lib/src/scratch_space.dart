@@ -44,11 +44,15 @@ final scratchSpaceResource = Resource<ScratchSpace>(
     }
     return scratchSpace;
   },
+  dispose: (scratchSpace) {
+    scratchSpace.dispose();
+  },
   beforeExit: () async {
     // The workers are running inside the scratch space, so wait for them to
     // shut down before deleting it.
     await dartdevkWorkersAreDone;
     await frontendWorkersAreDone;
+    await frontendServerProxyWorkersAreDone;
     // Attempt to clean up the scratch space. Even after waiting for the workers
     // to shut down we might get file system exceptions on windows for an
     // arbitrary amount of time, so do retries with an exponential backoff.
@@ -83,7 +87,7 @@ final scratchSpaceResource = Resource<ScratchSpace>(
   },
 );
 
-/// Modifies all package uris in [rootConfig] to work with the sctrach_space
+/// Modifies all package uris in [rootConfig] to work with the scratch_space
 /// layout. These are uris of the form `../packages/<package-name>`.
 ///
 /// Also modifies the `packageUri` for each package to be empty since the
@@ -109,12 +113,12 @@ String _scratchSpacePackageConfig(String rootConfig, Uri packageConfigUri) {
       rootUri = rootUri.replace(path: '${rootUri.path}/');
     }
     // We expect to see exactly one package where the root uri is equal to
-    // the current directory, and that is the current packge.
+    // the current directory, and that is the current package.
     if (rootUri == _currentDirUri) {
       assert(!foundRoot);
       foundRoot = true;
-      package['rootUri'] = '../';
-      package['packageUri'] = '../packages/${package['name']}/';
+      package['packageUri'] = '';
+      package['rootUri'] = '../packages/${package['name']}/';
     } else {
       package['rootUri'] = '../packages/${package['name']}/';
       package.remove('packageUri');
