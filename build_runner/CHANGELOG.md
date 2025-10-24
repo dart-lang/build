@@ -1,4 +1,4 @@
-## 2.10.1-wip
+## 2.10.1
 
 - Performance: improve `findAssets` scalability, making it much faster for
   prefix matches in packages with thousands of files or more. One specific use
