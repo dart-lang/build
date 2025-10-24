@@ -140,38 +140,13 @@ class Nodes {
     if (list == null) return const [];
     if (glob == null) return list;
 
-    final simplePrefix = _simpleGlobPrefix(glob);
+    final simplePrefix = simpleGlobPrefix(glob);
     Iterable<AssetId> result = list;
     if (simplePrefix.isNotEmpty) {
       result = list.filterToPrefix(simplePrefix);
     }
 
     return result.where((id) => glob.matches(id.path));
-  }
-
-  /// The prefix of the [glob] pattern up to but not including the first special
-  /// character.
-  String _simpleGlobPrefix(Glob glob) {
-    final pattern = glob.pattern;
-    for (var i = 0; i != pattern.length; ++i) {
-      final codeUnit = pattern.codeUnitAt(i);
-
-      /// Code units signalling the start of non-literal content in a glob
-      /// pattern, see: https://pub.dev/packages/glob
-      ///
-      /// Checked in nodes_test.dart:
-      ///
-      /// `expect(r'*?[\{'.codeUnits, [42, 63, 91, 92, 123])`
-      switch (codeUnit) {
-        case 42:
-        case 63:
-        case 91:
-        case 92:
-        case 123:
-          return pattern.substring(0, i);
-      }
-    }
-    return pattern;
   }
 
   /// Computes a `Map` from package names to sorted IDs of files in the package.
@@ -261,3 +236,32 @@ extension ListOfAssetIdsExtension on List<AssetId> {
     return min;
   }
 }
+
+/// The prefix of the [glob] pattern up to but not including the first special
+/// character.
+@visibleForTesting
+String simpleGlobPrefix(Glob glob) {
+  final pattern = glob.pattern;
+  for (var i = 0; i != pattern.length; ++i) {
+    final codeUnit = pattern.codeUnitAt(i);
+
+    /// Code units signalling the start of non-literal content in a glob
+    /// pattern, see: https://pub.dev/packages/glob
+    if (codeUnit == $STAR ||
+        codeUnit == $QUESTION ||
+        codeUnit == $OPEN_SQUARE_BRACKET ||
+        codeUnit == $BACKSLASH ||
+        codeUnit == $OPEN_CURLY_BRACKET) {
+      return pattern.substring(0, i);
+    }
+  }
+  return pattern;
+}
+
+// Constants copied from `fe_analyzer_shared`.
+// ignore_for_file: constant_identifier_names
+const int $STAR = 42;
+const int $QUESTION = 63;
+const int $OPEN_SQUARE_BRACKET = 91;
+const int $BACKSLASH = 92;
+const int $OPEN_CURLY_BRACKET = 123;

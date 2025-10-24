@@ -122,7 +122,13 @@ void main() {
     });
   });
 
-  test('glob special character codes', () {
-    expect(r'*?[\{'.codeUnits, [42, 63, 91, 92, 123]);
+  test('simpleGlobPrefix', () {
+    expect(simpleGlobPrefix(Glob('*def')), '');
+    expect(simpleGlobPrefix(Glob('abc*def')), 'abc');
+    expect(simpleGlobPrefix(Glob('abc?def')), 'abc');
+    expect(simpleGlobPrefix(Glob('abc{def,ghi}')), 'abc');
+    expect(simpleGlobPrefix(Glob('abc[def]')), 'abc');
+    expect(simpleGlobPrefix(Glob(r'abc\def')), 'abc');
+    expect(simpleGlobPrefix(Glob(r'abcdef*')), 'abcdef');
   });
 }
