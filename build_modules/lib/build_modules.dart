@@ -4,6 +4,8 @@
 
 export 'src/ddc_names.dart';
 export 'src/errors.dart' show MissingModulesException, UnsupportedModules;
+export 'src/frontend_server_resources.dart'
+    show frontendServerState, frontendServerStateResource;
 export 'src/kernel_builder.dart' show KernelBuilder, reportUnusedKernelInputs;
 export 'src/meta_module_builder.dart'
     show MetaModuleBuilder, metaModuleExtension;

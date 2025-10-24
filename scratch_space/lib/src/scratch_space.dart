@@ -22,12 +22,6 @@ class ScratchSpace {
   /// Whether or not this scratch space still exists.
   bool exists = true;
 
-  /// The built app's main entrypoint file.
-  ///
-  /// This must be set before any asset builders run when compiling with DDC and
-  /// hot reload.
-  late AssetId entrypointAssetId;
-
   /// The `packages` directory under the temp directory.
   final Directory packagesDir;
 

@@ -17,8 +17,9 @@ class WebEntrypointMarkerBuilder implements Builder {
 
   @override
   Future<void> build(BuildStep buildStep) async {
-    final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
-
+    final frontendServerState = await buildStep.fetchResource(
+      frontendServerStateResource,
+    );
     final webAssets = await buildStep.findAssets(Glob('web/**')).toList();
     final webEntrypointJson = <String, dynamic>{};
 
@@ -31,7 +32,7 @@ class WebEntrypointMarkerBuilder implements Builder {
         if (moduleLibrary.hasMain && moduleLibrary.isEntryPoint) {
           // We must save the main entrypoint as the recompilation target for
           // the Frontend Server before any JS files are emitted.
-          scratchSpace.entrypointAssetId = asset;
+          frontendServerState.entrypointAssetId = asset;
           webEntrypointJson['entrypoint'] = asset.uri.toString();
           break;
         }

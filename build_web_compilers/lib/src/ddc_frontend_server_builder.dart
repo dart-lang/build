@@ -60,8 +60,11 @@ class DdcFrontendServerBuilder implements Builder {
       'CollectTransitiveDeps',
       () => module.computeTransitiveAssets(buildStep),
     );
+    final frontendServerState = await buildStep.fetchResource(
+      frontendServerStateResource,
+    );
     final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
-    final webEntrypointAsset = scratchSpace.entrypointAssetId;
+    final webEntrypointAsset = frontendServerState.entrypointAssetId;
     await buildStep.trackStage(
       'EnsureAssets',
       () => scratchSpace.ensureAssets([
