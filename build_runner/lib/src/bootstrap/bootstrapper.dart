@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:built_collection/built_collection.dart';
@@ -9,6 +10,8 @@ import 'package:io/io.dart';
 
 import '../exceptions.dart';
 import '../internal.dart';
+import 'aot_compiler.dart';
+import 'compiler.dart';
 import 'depfile.dart';
 import 'kernel_compiler.dart';
 import 'processes.dart';
@@ -24,9 +27,14 @@ import 'processes.dart';
 /// contents of all these files so they can be checked for freshness later.
 ///
 /// The entrypoint script is launched using [ParentProcess.runAndSend]
-/// which passes initial state to it and received updated state when it exits.
+/// or [ParentProcess.runAotSnapshotAndSend] which passes initial state to it
+/// and receives updated state when it exits.
 class Bootstrapper {
-  final KernelCompiler _compiler = KernelCompiler();
+  final bool compileAot;
+  final Compiler _compiler;
+
+  Bootstrapper({required this.compileAot})
+    : _compiler = compileAot ? AotCompiler() : KernelCompiler();
 
   /// Generates the entrypoint script, compiles it and runs it with [arguments].
   ///
@@ -41,6 +49,7 @@ class Bootstrapper {
   /// they do not exist or have the wrong types.
   Future<int> run(
     BuiltList<String> arguments, {
+    required Iterable<String> jitVmArgs,
     Iterable<String>? experiments,
   }) async {
     while (true) {
@@ -51,23 +60,46 @@ class Bootstrapper {
       if (!_compiler.checkFreshness(digestsAreFresh: false).outputIsFresh) {
         final result = await _compiler.compile(experiments: experiments);
         if (!result.succeeded) {
-          if (result.messages != null) {
+          final bool failedDueToMirrors;
+          if (result.messages == null) {
+            failedDueToMirrors = false;
+          } else {
             buildLog.error(result.messages!);
+            failedDueToMirrors =
+                compileAot && result.messages!.contains('dart:mirrors');
           }
-          buildLog.error(
-            'Failed to compile build script. '
-            'Check builder definitions and generated script '
-            '$entrypointScriptPath.',
-          );
+          if (failedDueToMirrors) {
+            // TODO(davidmorgan): when build_runner manages use of AOT compile
+            // this will be an automatic fallback to JIT instead of a message.
+            buildLog.error(
+              'Failed to compile build script. A configured builder '
+              'uses `dart:mirrors` and cannot be compiled AOT. Try again '
+              'without --force-aot to use a JIT compile.',
+            );
+          } else {
+            buildLog.error(
+              'Failed to compile build script. '
+              'Check builder definitions and generated script '
+              '$entrypointScriptPath.',
+            );
+          }
           throw const CannotBuildException();
         }
       }
 
-      final result = await ParentProcess.runAndSend(
-        script: entrypointDillPath,
-        arguments: arguments,
-        message: buildProcessState.serialize(),
-      );
+      final result =
+          compileAot
+              ? await ParentProcess.runAotSnapshotAndSend(
+                aotSnapshot: entrypointAotPath,
+                arguments: arguments,
+                message: buildProcessState.serialize(),
+              )
+              : await ParentProcess.runAndSend(
+                script: entrypointDillPath,
+                arguments: arguments,
+                message: buildProcessState.serialize(),
+                jitVmArgs: jitVmArgs,
+              );
       buildProcessState.deserializeAndSet(result.message);
       final exitCode = result.exitCode;
 
@@ -92,11 +124,11 @@ class Bootstrapper {
     }
   }
 
-  /// Checks freshness of the entrypoint script compiled to kernel.
+  /// Checks freshness of the compiled entrypoint script.
   ///
   /// Set [digestsAreFresh] if digests were very recently updated. Then, they
   /// will be re-used from disk if possible instead of recomputed.
-  Future<FreshnessResult> checkKernelFreshness({
+  Future<FreshnessResult> checkCompileFreshness({
     required bool digestsAreFresh,
   }) async {
     if (!ChildProcess.isRunning) {
@@ -114,9 +146,8 @@ class Bootstrapper {
     return _compiler.checkFreshness(digestsAreFresh: false);
   }
 
-  /// Whether [path] is a dependency of the entrypoint script compiled to
-  /// kernel.
-  bool isKernelDependency(String path) {
+  /// Whether [path] is a dependency of the compiled entrypoint script.
+  bool isCompileDependency(String path) {
     if (!ChildProcess.isRunning) {
       // Any real use or realistic test has a child process; so this is only hit
       // in small tests. Return "not a dependency" so nothing related to

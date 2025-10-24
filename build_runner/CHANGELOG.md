@@ -1,11 +1,32 @@
-## 2.9.1-wip
+## 2.10.1
 
+- Performance: improve `findAssets` scalability, making it much faster for
+  prefix matches in packages with thousands of files or more. One specific use
+  case that is now faster is builders that use `source_gen` shared parts, for
+  example `built_value` and `json_serializable`.
+- Bug fix: look up triggers in the `triggers` section of `build.yaml` using the
+  full name. For the case in which the builder name matched the package name,
+  the abbreviated name was being used instead.
+- Bug fix: fix incorrect log `with build_runner/aot` on Windows with JIT.
+
+## 2.10.0
+
+- Add AOT compilation of builders. A future release will AOT compile builders
+  automatically, for this release it's behind a flag. AOT compiled builders
+  start up faster and have higher throughput, for faster builds overall.
+  Builders that use `dart:mirrors` cannot be AOT compiled.
+- Add `force-aot` flag to AOT compile builders.
+- Add `force-jit` flag to force the current default of JIT compiling builders.
+- Add the `--dart-jit-vm-arg` option. Its values are passed to `dart run` when
+  a build script is started in JIT mode. This allows specifying options to
+  attach a debugger to builders.
+- Require `analyzer` 8.0.0. Remove use of deprecated `analyzer` members, use
+  their recommended and compatible replacements.
 - Internal changes for `build_test`.
 
 ## 2.9.0
 
-- Watch mode: handle builder code and config changes without recompiling or
-  exiting.
+- Watch mode: handle builder config changes without recompiling or exiting.
 - Remove log output about `build_runner` internals.
 - Print the port that gets picked if you pass 0 for a port number, for example
   with `dart run build_runner serve web:0`.

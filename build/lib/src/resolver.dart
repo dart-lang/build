@@ -2,12 +2,11 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-// ignore_for_file: deprecated_member_use until analyzer 7 support is dropped.
-
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/session.dart';
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/dart/element/element2.dart';
+import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:analyzer/error/error.dart';
 
 import 'asset_id.dart';
@@ -30,7 +29,7 @@ abstract class Resolver {
   ///  - Every public `dart:` library part of the SDK.
   ///  - All libraries recursively accessible from the mentioned sources, for
   ///    instance because due to imports or exports.
-  Stream<LibraryElement2> get libraries;
+  Stream<LibraryElement> get libraries;
 
   /// Returns the parsed [AstNode] for [fragment].
   ///
@@ -62,7 +61,7 @@ abstract class Resolver {
   /// * Throws [NonLibraryAssetException] if [assetId] is not a Dart library.
   /// * If the [assetId] has syntax errors, and [allowSyntaxErrors] is set to
   ///   `false` (the default), throws a [SyntaxErrorInAssetException].
-  Future<LibraryElement2> libraryFor(
+  Future<LibraryElement> libraryFor(
     AssetId assetId, {
     bool allowSyntaxErrors = false,
   });
@@ -77,7 +76,7 @@ abstract class Resolver {
   /// **NOTE**: In general, its recommended to use [libraryFor] with an absolute
   /// asset id instead of a named identifier that has the possibility of not
   /// being unique.
-  Future<LibraryElement2?> findLibraryByName(String libraryName);
+  Future<LibraryElement?> findLibraryByName(String libraryName);
 
   /// Returns the [AssetId] of the Dart library or part declaring [element].
   ///
@@ -87,7 +86,7 @@ abstract class Resolver {
   ///
   /// The returned asset is not necessarily the asset that should be imported to
   /// use the element, it may be a part file instead of the library.
-  Future<AssetId> assetIdForElement(Element2 element);
+  Future<AssetId> assetIdForElement(Element element);
 }
 
 /// A resolver that should be manually released at the end of a build step.
@@ -139,7 +138,7 @@ class SyntaxErrorInAssetException implements Exception {
   ///
   /// In addition to the asset itself, the resolver also considers syntax errors
   /// in part files.
-  final List<AnalysisResultWithErrors> filesWithErrors;
+  final List<AnalysisResultWithDiagnostics> filesWithErrors;
 
   SyntaxErrorInAssetException(this.assetId, this.filesWithErrors)
     : assert(filesWithErrors.isNotEmpty);
@@ -149,23 +148,23 @@ class SyntaxErrorInAssetException implements Exception {
   /// This only contains syntax errors since most semantic errors are expected
   /// during a build (e.g. due to missing part files that haven't been generated
   /// yet).
-  Iterable<AnalysisError> get syntaxErrors {
+  Iterable<Diagnostic> get syntaxErrors {
     return filesWithErrors
-        .expand((result) => result.errors)
+        .expand((result) => result.diagnostics)
         .where(_isSyntaxError);
   }
 
   /// A map from [syntaxErrors] to per-file results
-  Map<AnalysisError, AnalysisResultWithErrors> get errorToResult {
+  Map<Diagnostic, AnalysisResultWithDiagnostics> get errorToResult {
     return {
       for (final file in filesWithErrors)
-        for (final error in file.errors)
+        for (final error in file.diagnostics)
           if (_isSyntaxError(error)) error: file,
     };
   }
 
-  bool _isSyntaxError(AnalysisError error) {
-    return error.errorCode.type == ErrorType.SYNTACTIC_ERROR;
+  bool _isSyntaxError(Diagnostic diagnostic) {
+    return diagnostic.diagnosticCode.type == DiagnosticType.SYNTACTIC_ERROR;
   }
 
   @override

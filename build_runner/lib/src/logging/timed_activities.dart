@@ -37,7 +37,7 @@ extension type TimedActivity(String name) {
   ///
   /// Only lazy builds, which means builds that are triggered by a required
   /// build, are tracked in this way.
-  TimedActivity.lazyPhase(InBuildPhase phase) : name = phase.builderLabel;
+  TimedActivity.lazyPhase(InBuildPhase phase) : name = phase.displayName;
 
   /// Runs [function] attributing the time spent to this activity.
   ///

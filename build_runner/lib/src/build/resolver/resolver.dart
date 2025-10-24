@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-// ignore_for_file: deprecated_member_use until analyzer 7 support is dropped.
-
 import 'dart:async';
 import 'dart:collection';
 import 'dart:isolate';
@@ -11,7 +9,7 @@ import 'dart:isolate';
 import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/dart/element/element2.dart';
+import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:analyzer/error/error.dart';
 // ignore: implementation_imports
@@ -21,9 +19,9 @@ import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:package_config/package_config.dart';
-import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
 
+import '../../bootstrap/build_process_state.dart';
 import '../../logging/build_log.dart';
 import '../../logging/timed_activities.dart';
 import 'analysis_driver.dart';
@@ -49,11 +47,11 @@ class PerActionResolver implements ReleasableResolver {
     this._step,
   );
 
-  Stream<LibraryElement2> get _librariesFromEntrypoints async* {
+  Stream<LibraryElement> get _librariesFromEntrypoints async* {
     await _resolveIfNecessary(_step.inputId, transitive: true);
 
-    final seen = <LibraryElement2>{};
-    final toVisit = Queue<LibraryElement2>();
+    final seen = <LibraryElement>{};
+    final toVisit = Queue<LibraryElement>();
 
     // keep a copy of entry points in case [_resolveIfNecessary] is called
     // before this stream is done.
@@ -74,11 +72,11 @@ class PerActionResolver implements ReleasableResolver {
       // model manually.
       yield current;
       final toCrawl =
-          current.firstFragment.libraryImports2
-              .map((import) => import.importedLibrary2)
+          current.firstFragment.libraryImports
+              .map((import) => import.importedLibrary)
               .followedBy(
-                current.firstFragment.libraryExports2.map(
-                  (export) => export.exportedLibrary2,
+                current.firstFragment.libraryExports.map(
+                  (export) => export.exportedLibrary,
                 ),
               )
               .nonNulls
@@ -90,16 +88,16 @@ class PerActionResolver implements ReleasableResolver {
   }
 
   @override
-  Stream<LibraryElement2> get libraries async* {
+  Stream<LibraryElement> get libraries async* {
     yield* _delegate.sdkLibraries;
     yield* _librariesFromEntrypoints.where((library) => !library.isInSdk);
   }
 
   @override
-  Future<LibraryElement2?> findLibraryByName(String libraryName) =>
+  Future<LibraryElement?> findLibraryByName(String libraryName) =>
       _step.trackStage('findLibraryByName $libraryName', () async {
         await for (final library in libraries) {
-          if (library.name3 == libraryName) return library;
+          if (library.name == libraryName) return library;
         }
         return null;
       });
@@ -135,7 +133,7 @@ class PerActionResolver implements ReleasableResolver {
   });
 
   @override
-  Future<LibraryElement2> libraryFor(
+  Future<LibraryElement> libraryFor(
     AssetId assetId, {
     bool allowSyntaxErrors = false,
   }) => _step.trackStage('libraryFor $assetId', () async {
@@ -189,7 +187,7 @@ class PerActionResolver implements ReleasableResolver {
   }
 
   @override
-  Future<AssetId> assetIdForElement(Element2 element) =>
+  Future<AssetId> assetIdForElement(Element element) =>
       _delegate.assetIdForElement(element);
 }
 
@@ -199,7 +197,7 @@ class AnalyzerResolver implements ReleasableResolver {
   final AnalyzeActivityPool _driverPool;
   final SharedResourcePool _readAndWritePool;
 
-  Future<List<LibraryElement2>>? _sdkLibraries;
+  Future<List<LibraryElement>>? _sdkLibraries;
 
   AnalyzerResolver(
     this._driver,
@@ -269,7 +267,7 @@ class AnalyzerResolver implements ReleasableResolver {
       final parsedResult =
           _driver.currentSession.getParsedUnit(path) as ParsedUnitResult;
       if (!allowSyntaxErrors &&
-          parsedResult.errors.any((e) => e.severity == Severity.error)) {
+          parsedResult.diagnostics.any((e) => e.severity == Severity.error)) {
         throw SyntaxErrorInAssetException(assetId, [parsedResult]);
       }
       return parsedResult.unit;
@@ -277,7 +275,7 @@ class AnalyzerResolver implements ReleasableResolver {
   }
 
   @override
-  Future<LibraryElement2> libraryFor(
+  Future<LibraryElement> libraryFor(
     AssetId assetId, {
     bool allowSyntaxErrors = false,
   }) async {
@@ -302,21 +300,19 @@ class AnalyzerResolver implements ReleasableResolver {
     );
 
     if (!allowSyntaxErrors) {
-      final errors = await _syntacticErrorsFor(library.element2);
+      final errors = await _syntacticErrorsFor(library.element);
       if (errors.isNotEmpty) {
         throw SyntaxErrorInAssetException(assetId, errors);
       }
     }
 
-    return library.element2;
+    return library.element;
   }
 
   /// Finds syntax errors in files related to the [element].
   ///
   /// This includes the main library and existing part files.
-  Future<List<ErrorsResult>> _syntacticErrorsFor(
-    LibraryElement2 element,
-  ) async {
+  Future<List<ErrorsResult>> _syntacticErrorsFor(LibraryElement element) async {
     final existingSources = <Source>[];
 
     for (final fragment in element.fragments) {
@@ -335,8 +331,9 @@ class AnalyzerResolver implements ReleasableResolver {
       for (final path in paths) {
         final result = await _driver.currentSession.getErrors(path);
         if (result is ErrorsResult &&
-            result.errors.any(
-              (error) => error.errorCode.type == ErrorType.SYNTACTIC_ERROR,
+            result.diagnostics.any(
+              (error) =>
+                  error.diagnosticCode.type == DiagnosticType.SYNTACTIC_ERROR,
             )) {
           relevantResults.add(result);
         }
@@ -351,13 +348,13 @@ class AnalyzerResolver implements ReleasableResolver {
   void release() {}
 
   @override
-  Stream<LibraryElement2> get libraries {
+  Stream<LibraryElement> get libraries {
     // We don't know what libraries to expose without leaking libraries written
     // by later phases.
     throw UnimplementedError();
   }
 
-  Stream<LibraryElement2> get sdkLibraries {
+  Stream<LibraryElement> get sdkLibraries {
     final loadLibraries =
         _sdkLibraries ??= Future.sync(() {
           final publicSdkUris = _driver.sdkLibraryUris.where(
@@ -370,7 +367,7 @@ class AnalyzerResolver implements ReleasableResolver {
                 final result =
                     await _driver.currentSession.getLibraryByUri(uri.toString())
                         as LibraryElementResult;
-                return result.element2;
+                return result.element;
               });
             }),
           );
@@ -380,28 +377,28 @@ class AnalyzerResolver implements ReleasableResolver {
   }
 
   @override
-  Future<LibraryElement2> findLibraryByName(String libraryName) {
+  Future<LibraryElement> findLibraryByName(String libraryName) {
     // We don't know what libraries to expose without leaking libraries written
     // by later phases.
     throw UnimplementedError();
   }
 
   @override
-  Future<AssetId> assetIdForElement(Element2 element) async {
-    if (element is MultiplyDefinedElement2) {
-      throw UnresolvableAssetException('${element.name3} is ambiguous');
+  Future<AssetId> assetIdForElement(Element element) async {
+    if (element is MultiplyDefinedElement) {
+      throw UnresolvableAssetException('${element.name} is ambiguous');
     }
 
     final source = element.firstFragment.libraryFragment?.source;
     if (source == null) {
       throw UnresolvableAssetException(
-        '${element.name3} does not have a source',
+        '${element.name} does not have a source',
       );
     }
 
     final uri = source.uri;
     if (!uri.isScheme('package') && !uri.isScheme('asset')) {
-      throw UnresolvableAssetException('${element.name3} in ${source.uri}');
+      throw UnresolvableAssetException('${element.name} in ${source.uri}');
     }
     return AssetId.resolve(source.uri);
   }
@@ -511,7 +508,7 @@ class AnalyzerResolvers implements Resolvers {
         _warnOnLanguageVersionMismatch();
         final loadedConfig =
             _packageConfig ??= await loadPackageConfigUri(
-              (await Isolate.packageConfig)!,
+              Uri.parse(buildProcessState.packageConfigUri),
             );
         final driver = await analysisDriver(
           _analysisDriverModel,
@@ -587,13 +584,6 @@ current version by running `pub deps`.
     sdkLanguageVersion: sdkLanguageVersion,
     flags: enableExperiments,
   );
-}
-
-Future<String> packagePath(String package) async {
-  final libRoot = await Isolate.resolvePackageUri(
-    Uri.parse('package:$package/'),
-  );
-  return p.dirname(p.fromUri(libRoot));
 }
 
 /// Wraps [pool] so resource use is timed as [TimedActivity.analyze].

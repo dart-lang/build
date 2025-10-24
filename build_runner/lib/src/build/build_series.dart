@@ -15,6 +15,7 @@ import '../commands/watch/asset_change.dart';
 import '../constants.dart';
 import '../io/asset_tracker.dart';
 import '../io/filesystem_cache.dart';
+import '../io/generated_asset_hider.dart';
 import '../io/reader_writer.dart';
 import '../logging/build_log.dart';
 import 'asset_graph/graph.dart';
@@ -69,7 +70,10 @@ class BuildSeries {
   factory BuildSeries(BuildPlan buildPlan) {
     final assetGraph = buildPlan.takeAssetGraph();
     final readerWriter = buildPlan.readerWriter.copyWith(
-      generatedAssetHider: assetGraph,
+      generatedAssetHider:
+          buildPlan.testingOverrides.flattenOutput
+              ? const NoopGeneratedAssetHider()
+              : assetGraph,
       cache:
           buildPlan.buildOptions.enableLowResourcesMode
               ? const PassthroughFilesystemCache()
@@ -105,7 +109,7 @@ class BuildSeries {
       final id = change.id;
 
       // Changes to the entrypoint are handled via depfiles.
-      if (_buildPlan.bootstrapper.isKernelDependency(
+      if (_buildPlan.bootstrapper.isCompileDependency(
         _buildPlan.packageGraph.pathFor(id),
       )) {
         result.add(change);
@@ -225,7 +229,7 @@ class BuildSeries {
       }
     } else {
       final kernelFreshness = await _buildPlan.bootstrapper
-          .checkKernelFreshness(digestsAreFresh: false);
+          .checkCompileFreshness(digestsAreFresh: false);
       if (!kernelFreshness.outputIsFresh) {
         final result = BuildResult.buildScriptChanged();
         _buildResultsController.add(result);
@@ -247,7 +251,10 @@ class BuildSeries {
       }
       _assetGraph = _buildPlan.takeAssetGraph();
       _readerWriter = _buildPlan.readerWriter.copyWith(
-        generatedAssetHider: _assetGraph,
+        generatedAssetHider:
+            _buildPlan.testingOverrides.flattenOutput
+                ? const NoopGeneratedAssetHider()
+                : _assetGraph,
         cache:
             _buildPlan.buildOptions.enableLowResourcesMode
                 ? const PassthroughFilesystemCache()

@@ -222,7 +222,7 @@ class BuildPhaseTracker extends SimpleAsyncTimeTracker
   BuildPhaseTracker(BuildPhase action)
     : builderKeys =
           action is InBuildPhase
-              ? [action.builderLabel]
+              ? [action.displayName]
               : (action as PostBuildPhase).builderActions
                   .map((action) => action.builderLabel)
                   .toList();

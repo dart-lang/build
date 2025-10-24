@@ -2,14 +2,12 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-// ignore_for_file: deprecated_member_use until analyzer 7 support is dropped.
-
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/dart/element/element2.dart';
+import 'package:analyzer/dart/element/element.dart';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
@@ -34,7 +32,7 @@ class BuildStepImpl implements BuildStep {
   final AssetId inputId;
 
   @override
-  Future<LibraryElement2> get inputLibrary async {
+  Future<LibraryElement> get inputLibrary async {
     if (_isComplete) throw BuildStepCompletedException();
     return resolver.libraryFor(inputId);
   }
@@ -221,8 +219,8 @@ class _DelayedResolver implements Resolver {
       (await _delegate).isLibrary(assetId);
 
   @override
-  Stream<LibraryElement2> get libraries {
-    final completer = StreamCompleter<LibraryElement2>();
+  Stream<LibraryElement> get libraries {
+    final completer = StreamCompleter<LibraryElement>();
     _delegate.then((r) => completer.setSourceStream(r.libraries));
     return completer.stream;
   }
@@ -243,7 +241,7 @@ class _DelayedResolver implements Resolver {
   );
 
   @override
-  Future<LibraryElement2> libraryFor(
+  Future<LibraryElement> libraryFor(
     AssetId assetId, {
     bool allowSyntaxErrors = false,
   }) async => (await _delegate).libraryFor(
@@ -252,10 +250,10 @@ class _DelayedResolver implements Resolver {
   );
 
   @override
-  Future<LibraryElement2?> findLibraryByName(String libraryName) async =>
+  Future<LibraryElement?> findLibraryByName(String libraryName) async =>
       (await _delegate).findLibraryByName(libraryName);
 
   @override
-  Future<AssetId> assetIdForElement(Element2 element) async =>
+  Future<AssetId> assetIdForElement(Element element) async =>
       (await _delegate).assetIdForElement(element);
 }

@@ -79,7 +79,7 @@ class BuildPhases {
   static BuiltList<Digest> _digestsOf(Iterable<BuildAction> actions) {
     final result = ListBuilder<Digest>();
     for (final action in actions) {
-      result.add(_digestOf(action.builderOptions));
+      result.add(_digestOf(action.options));
     }
     return result.build();
   }
@@ -103,7 +103,7 @@ class BuildPhases {
       // This should happen only with a manual build script since the build
       // script generation filters these out.
       buildLog.error(
-        'A build phase (${action.builderLabel}) is attempting '
+        'A build phase (${action.displayName}) is attempting '
         'to operate on package "${action.package}", but the build script '
         'is located in package "$root". It\'s not valid to attempt to '
         'generate files for another package unless the BuilderApplication'

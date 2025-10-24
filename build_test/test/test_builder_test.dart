@@ -483,6 +483,40 @@ import 'package:glob/glob.dart';
     expect(logs.join('\n'), contains('Exception: some exception'));
     expect(result.errors.join('\n'), contains('Exception: some exception'));
   });
+
+  test('restricts inputs to `generateFor`', () {
+    return testBuilder(
+      TestBuilder(),
+      {'a|a.txt': '', 'a|b.txt': ''},
+      generateFor: {'a|a.txt'},
+      outputs: {'a|a.txt.copy': ''},
+    );
+  });
+
+  test('output is under `.dart_tool` by default', () async {
+    final result = await testBuilder(
+      TestBuilder(),
+      {'a|a.txt': ''},
+      outputs: {'a|a.txt.copy': ''},
+    );
+    expect(
+      result.readerWriter.testing.assets,
+      contains(AssetId('a', '.dart_tool/build/generated/a/a.txt.copy')),
+    );
+  });
+
+  test('output is flattened with `flattenOutput`', () async {
+    final result = await testBuilder(
+      TestBuilder(),
+      {'a|a.txt': ''},
+      outputs: {'a|a.txt.copy': ''},
+      flattenOutput: true,
+    );
+    expect(
+      result.readerWriter.testing.assets,
+      contains(AssetId('a', 'a.txt.copy')),
+    );
+  });
 }
 
 /// Concatenates the contents of multiple text files into a single output.

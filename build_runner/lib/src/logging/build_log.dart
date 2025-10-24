@@ -2,10 +2,12 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:io';
 import 'dart:math';
 
 import 'package:build/build.dart' show AssetId;
 import 'package:built_collection/built_collection.dart';
+import 'package:path/path.dart' as p;
 
 import '../bootstrap/build_process_state.dart';
 import '../build_plan/phase.dart';
@@ -352,6 +354,7 @@ class BuildLog {
     final displayingBlocks = _display.displayingBlocks;
     _status = [
       result ? successPattern : failurePattern,
+      _isJit ? '/jit' : '/aot',
       ' in ',
       renderDuration(_processDuration),
       if (_messages.hasWarnings) ' with warnings',
@@ -374,6 +377,11 @@ class BuildLog {
     final errors = _errors.build();
     _errors.clear();
     return errors;
+  }
+
+  static bool get _isJit {
+    final executable = p.basename(Platform.resolvedExecutable);
+    return executable == 'dart' || executable == 'dart.exe';
   }
 
   /// Renders [message] with optional [error] and [stackTrace].
@@ -543,7 +551,7 @@ extension _IntExtension on int {
 
 extension _PhaseExtension on InBuildPhase {
   String name({required bool lazy}) =>
-      lazy ? '$builderLabel (lazy)' : builderLabel;
+      lazy ? '$displayName (lazy)' : displayName;
 }
 
 /// Progress metrics tracked for each build phase.

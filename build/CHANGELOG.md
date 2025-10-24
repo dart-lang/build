@@ -1,3 +1,8 @@
+## 4.0.2
+
+- Require `analyzer` 8.0.0. Remove use of deprecated `analyzer` members, use
+  their recommended and compatible replacements.
+
 ## 4.0.1
 
 - Improvements to dartdoc.

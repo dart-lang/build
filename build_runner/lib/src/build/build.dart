@@ -461,7 +461,7 @@ class Build {
     final builder = phase.builder;
     final tracker = performanceTracker.addBuilderAction(
       primaryInput,
-      phase.builderLabel,
+      phase.displayName,
     );
     return tracker.track(() async {
       final readerWriter = SingleStepReaderWriter(
@@ -483,7 +483,7 @@ class Build {
         inputTracker: InputTracker(
           this.readerWriter.filesystem,
           primaryInput: primaryInput,
-          builderLabel: phase.builderLabel,
+          builderLabel: phase.displayName,
         ),
         assetsWritten: {},
       );
@@ -587,12 +587,11 @@ class Build {
     required InBuildPhase phase,
     required AssetId primaryInput,
   }) async {
-    final runsIfTriggered =
-        phase.builderOptions.config['run_only_if_triggered'];
+    final runsIfTriggered = phase.options.config['run_only_if_triggered'];
     if (runsIfTriggered != true) {
       return true;
     }
-    final buildTriggers = targetGraph.buildTriggers[phase.builderLabel];
+    final buildTriggers = targetGraph.buildTriggers[phase.key];
     if (buildTriggers == null) {
       return false;
     }
@@ -1111,15 +1110,13 @@ class Build {
       // Other types of file that match the glob.
       final otherInputs = <AssetId>[];
 
-      for (final node in assetGraph.packageNodes(globId.package)) {
-        if (node.isFile &&
-            node.isTrackedInput &&
-            // Generated nodes are only considered at all if they are output in
-            // an earlier phase.
-            (node.type != NodeType.generated ||
-                node.generatedNodeConfiguration!.phaseNumber <
-                    globNodeConfiguration.phaseNumber) &&
-            glob.matches(node.id.path)) {
+      for (final id in assetGraph.packageFileIds(globId.package, glob: glob)) {
+        final node = assetGraph.get(id)!;
+        // Generated nodes are only considered at all if they are output in
+        // an earlier phase.
+        if (node.type != NodeType.generated ||
+            node.generatedNodeConfiguration!.phaseNumber <
+                globNodeConfiguration.phaseNumber) {
           if (node.type == NodeType.generated) {
             generatedFileInputs.add(node.id);
           } else {

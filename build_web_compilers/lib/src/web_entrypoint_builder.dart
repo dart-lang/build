@@ -410,7 +410,9 @@ function relativeURL(ref) {
               '[0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 95, 1, 120, 0]))';
 
       loaderResult.writeln('''
-if ($supportCheck) {
+const searchParams = new URLSearchParams(window.location.search);
+const forceJS = searchParams.get('force_js');
+if (!forceJS && $supportCheck) {
 ''');
     }
 
