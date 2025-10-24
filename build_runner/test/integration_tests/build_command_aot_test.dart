@@ -23,11 +23,15 @@ void main() async {
     );
 
     // First build.
-    await tester.run('root_pkg', 'dart run build_runner build --force-aot');
+    var output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-aot',
+    );
+    expect(output, contains('with build_runner/aot'));
     expect(tester.read('root_pkg/web/a.txt.copy'), 'a');
 
     // With no changes, no rebuild.
-    var output = await tester.run(
+    output = await tester.run(
       'root_pkg',
       'dart run build_runner build --force-aot',
     );

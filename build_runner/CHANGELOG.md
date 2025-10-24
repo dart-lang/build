@@ -7,6 +7,7 @@
 - Bug fix: look up triggers in the `triggers` section of `build.yaml` using the
   full name. For the case in which the builder name matched the package name,
   the abbreviated name was being used instead.
+- Bug fix: fix incorrect log `with build_runner/aot` on Windows with JIT.
 
 ## 2.10.0
 
