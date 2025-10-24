@@ -22,7 +22,7 @@ dependencies:
   json_annotation: ^4.3.0
   logging: ^1.0.0
   path: ^1.8.0
-  scratch_space: ^1.0.0
+  scratch_space: ^1.2.0
   stream_transform: ^2.0.0
   uuid: ^4.4.2
 

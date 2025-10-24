@@ -19,9 +19,6 @@ final String assetGraphPath = '$cacheDirectoryPath/asset_graph.json';
 /// The directory to which hidden assets will be written.
 String get generatedOutputDirectory => '$cacheDirectoryPath/generated';
 
-/// Relative path to the cache directory from the root package dir.
-const cacheDir = '.dart_tool/build';
-
 /// The dart binary from the current sdk.
 final dartBinary = p.join(sdkBin, 'dart');
 

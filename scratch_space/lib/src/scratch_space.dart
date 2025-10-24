@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:collection';
 import 'dart:io';
 
 import 'package:build/build.dart';
@@ -33,8 +34,10 @@ class ScratchSpace {
   /// The temp directory at the root of this [ScratchSpace].
   final Directory tempDir;
 
-  /// Holds all files that have been locally modified in this build.
-  final changedFilesInBuild = <AssetId>{};
+  /// Contains assets that changed between calls to [ensureAssets].
+  ///
+  /// Cleared at the end of every build.
+  final _changedFilesInBuild = <AssetId>{};
 
   // Assets which have a file created but are still being written to.
   final _pendingWrites = <AssetId, Future<void>>{};
@@ -52,6 +55,9 @@ class ScratchSpace {
               .resolveSymbolicLinksSync(),
         ),
       );
+
+  Iterable<AssetId> get changedFilesInBuild =>
+      UnmodifiableSetView(_changedFilesInBuild);
 
   /// Copies [id] from the tmp dir and writes it back using the [writer].
   ///
@@ -101,7 +107,8 @@ class ScratchSpace {
   /// Copies [assetIds] to [tempDir] if they don't exist, using [reader] to
   /// read assets and mark dependencies.
   ///
-  /// Locally updated assets will be recorded in [changedFilesInBuild].
+  /// Assets that have changed since the last time they were seen by
+  /// [ensureAssets] are added to [_changedFilesInBuild].
   ///
   /// Note that [BuildStep] implements [AssetReader] and that is typically
   /// what you will want to pass in.
@@ -122,7 +129,7 @@ class ScratchSpace {
             return;
           }
           if (existing != null) {
-            changedFilesInBuild.add(id);
+            _changedFilesInBuild.add(id);
           }
           _digests[id] = digest;
 
@@ -156,7 +163,7 @@ class ScratchSpace {
 
   /// Performs cleanup required across builds.
   void dispose() {
-    changedFilesInBuild.clear();
+    _changedFilesInBuild.clear();
   }
 }
 

@@ -19,7 +19,7 @@ dependencies:
   logging: ^1.0.0
   path: ^1.8.0
   pool: ^1.5.0
-  scratch_space: ^1.0.0
+  scratch_space: ^1.2.0
   source_maps: ^0.10.10
   source_span: ^1.8.0
   stack_trace: ^1.10.0
