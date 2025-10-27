@@ -65,6 +65,8 @@ void main() {
       'build_web_compilers|lib/.ddc.meta_module.raw': isNotNull,
       'build_web_compilers|lib/src/dev_compiler/dart_sdk.js.map': isNotNull,
       'build_web_compilers|lib/src/dev_compiler/dart_sdk.js': isNotNull,
+      'build_web_compilers|lib/src/dev_compiler/ddc_module_loader.js':
+          isNotNull,
       'build_web_compilers|lib/src/dev_compiler/require.js': isNotNull,
     };
 
@@ -102,6 +104,7 @@ void main() {
             isNot(contains('lib/a')),
           ]),
         ),
+        'a|web/index.dart.bootstrap.end.js': isEmpty,
         'a|web/index.dart.ddc_merged_metadata': isNotEmpty,
         'a|web/index.dart.js': decodedMatches(contains('index.dart.bootstrap')),
         'a|web/index.digests': decodedMatches(contains('packages/')),
@@ -157,6 +160,7 @@ void main() {
             contains('if (childName === "b.dart")'),
           ]),
         ),
+        'a|web/b.dart.bootstrap.end.js': isEmpty,
         'a|web/b.dart.ddc_merged_metadata': isNotNull,
         'a|web/b.dart.js': isNotNull,
         'a|web/b.ddc.module': isNotNull,
@@ -166,6 +170,8 @@ void main() {
         'build_web_compilers|lib/.ddc.meta_module.raw': isNotNull,
         'build_web_compilers|lib/src/dev_compiler/dart_sdk.js.map': isNotNull,
         'build_web_compilers|lib/src/dev_compiler/dart_sdk.js': isNotNull,
+        'build_web_compilers|lib/src/dev_compiler/ddc_module_loader.js':
+            isNotNull,
         'build_web_compilers|lib/src/dev_compiler/require.js': isNotNull,
       };
 
@@ -198,6 +204,7 @@ void main() {
             contains('if (childName === "package:a/app.dart")'),
           ]),
         ),
+        'a|lib/app.dart.bootstrap.end.js': isEmpty,
         'a|lib/app.dart.ddc_merged_metadata': isNotEmpty,
         'a|lib/app.dart.js': isNotEmpty,
         'a|lib/app.ddc.dill': isNotNull,
@@ -211,6 +218,8 @@ void main() {
         'build_web_compilers|lib/.ddc.meta_module.raw': isNotNull,
         'build_web_compilers|lib/src/dev_compiler/dart_sdk.js.map': isNotNull,
         'build_web_compilers|lib/src/dev_compiler/dart_sdk.js': isNotNull,
+        'build_web_compilers|lib/src/dev_compiler/ddc_module_loader.js':
+            isNotNull,
         'build_web_compilers|lib/src/dev_compiler/require.js': isNotNull,
       };
 
