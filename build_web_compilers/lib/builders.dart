@@ -20,6 +20,7 @@ Builder webEntrypointBuilder(BuilderOptions options) {
 }
 
 Builder webEntrypointMarkerBuilder(BuilderOptions options) {
+  _ensureSameDdcHotReloadOptions(options);
   return WebEntrypointMarkerBuilder(
     usesWebHotReload: _readWebHotReloadOption(options),
   );
