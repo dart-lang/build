@@ -92,7 +92,4 @@ abstract interface class ReaderWriterTesting {
 
   /// Deletes [id] from the [TestReaderWriter] in-memory filesystem.
   void delete(AssetId id);
-
-  /// Resets state in this [TestReaderWriter] between rebuilds.
-  void reset();
 }
