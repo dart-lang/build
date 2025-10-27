@@ -1,3 +1,8 @@
+## 4.4.0
+
+- Add DDC + Frontend Server compilation support to existing builders.
+- Add new builders: `DdcFrontendServerBuilder` and `WebEntrypointMarkerBuilder`. 
+
 ## 4.3.0
 
 - When both wasm and js builds are enabled you can now add force_js=true

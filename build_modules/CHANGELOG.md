@@ -1,6 +1,11 @@
+## 5.1
+
+- Add drivers and state resources required for DDC + Frontend Server compilation.
+- Add an option to disable strongly connected components for determining module boundaries.
+
 ## 5.0.18
 
-- Remove unused dev depencency: `build_runner_core`.
+- Remove unused dev dependency: `build_runner_core`.
 - Allow Dart SDK 3.10.x and 3.11 prerelease.
 
 ## 5.0.17
