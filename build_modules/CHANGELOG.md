@@ -1,4 +1,4 @@
-## 5.1
+## 5.1.0
 
 - Add drivers and state resources required for DDC + Frontend Server compilation.
 - Add an option to disable strongly connected components for determining module boundaries.
