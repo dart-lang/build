@@ -10,6 +10,14 @@ import 'package:glob/glob.dart';
 
 /// A builder that gathers information about a web target's 'main' entrypoint.
 class WebEntrypointMarkerBuilder implements Builder {
+  /// Records state (such as the web entrypoint) required when compiling DDC
+  /// with the Library Bundle module system.
+  ///
+  /// A no-op if [usesWebHotReload] is not set.
+  final bool usesWebHotReload;
+
+  WebEntrypointMarkerBuilder({this.usesWebHotReload = false});
+
   @override
   final buildExtensions = const {
     r'$web$': ['.web.entrypoint.json'],
@@ -17,6 +25,8 @@ class WebEntrypointMarkerBuilder implements Builder {
 
   @override
   Future<void> build(BuildStep buildStep) async {
+    if (!usesWebHotReload) return;
+
     final frontendServerState = await buildStep.fetchResource(
       frontendServerStateResource,
     );

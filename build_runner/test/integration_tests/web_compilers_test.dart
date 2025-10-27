@@ -188,6 +188,9 @@ void main() {
     build_web_compilers|entrypoint:
       options:
         web-hot-reload: true
+    build_web_compilers|entrypoint_marker:
+      options:
+        web-hot-reload: true
     build_web_compilers|ddc:
       options:
         web-hot-reload: true
@@ -300,6 +303,9 @@ void main() {
     build_web_compilers|entrypoint:
       options:
         web-hot-reload: true
+    build_web_compilers|entrypoint_marker:
+      options:
+        web-hot-reload: true
     build_web_compilers|ddc:
       options:
         web-hot-reload: true
@@ -392,6 +398,9 @@ void main() {
       options:
         web-hot-reload: true
     build_web_compilers|entrypoint:
+      options:
+        web-hot-reload: true
+    build_web_compilers|entrypoint_marker:
       options:
         web-hot-reload: true
     build_web_compilers|ddc:

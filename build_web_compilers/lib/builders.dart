@@ -19,8 +19,11 @@ Builder webEntrypointBuilder(BuilderOptions options) {
   return WebEntrypointBuilder.fromOptions(options);
 }
 
-Builder webEntrypointMarkerBuilder(BuilderOptions options) =>
-    WebEntrypointMarkerBuilder();
+Builder webEntrypointMarkerBuilder(BuilderOptions options) {
+  return WebEntrypointMarkerBuilder(
+    usesWebHotReload: _readWebHotReloadOption(options),
+  );
+}
 
 // DDC related builders
 Builder ddcMetaModuleBuilder(BuilderOptions options) {
@@ -152,8 +155,11 @@ void _ensureSameDdcHotReloadOptions(BuilderOptions options) {
     if (webHotReload != _lastWebHotReloadValue) {
       throw ArgumentError(
         '`web-hot-reload` must be configured the same across the following '
-        'builders: build_web_compilers:ddc, build_web_compilers|sdk_js, '
-        'build_web_compilers|entrypoint, and build_web_compilers|ddc_modules.'
+        'builders: build_web_compilers:ddc, '
+        'build_web_compilers|sdk_js, '
+        'build_web_compilers|entrypoint, '
+        'build_web_compilers|entrypoint_marker, '
+        'and build_web_compilers|ddc_modules.'
         '\n\nPlease use the `global_options` section in '
         '`build.yaml` or the `--define` flag to set global options.',
       );
