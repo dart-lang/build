@@ -6,7 +6,6 @@
 library;
 
 import 'package:build_runner/src/logging/build_log.dart';
-import 'package:io/io.dart';
 import 'package:test/test.dart';
 
 import '../common/common.dart';
@@ -178,7 +177,23 @@ $yaml
     build_extensions: {'.txt': ['']}
 ''',
     );
-    await watch.expect('Failed to compile build script.');
-    expect(await watch.exitCode, ExitCode.config.code);
+    await watch.expect(
+      'Failed to compile build script. '
+      'Check builder definitions and generated script '
+      '.dart_tool/build/entrypoint/build.dart. '
+      'Retrying.',
+    );
+
+    // Restore the correct build script and it gets compiled and runs.
+    tester.write('builder_pkg/build.yaml', '''
+builders:
+  test_builder:
+    import: 'package:builder_pkg/builder.dart'
+    builder_factories: ['testBuilderFactory2']
+    build_extensions: {'.txt': ['.txt.copy']}
+    auto_apply: root_package
+    build_to: source
+''');
+    await watch.expect(BuildLog.successPattern);
   });
 }

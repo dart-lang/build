@@ -165,6 +165,9 @@ class BuildRunner {
       arguments,
       jitVmArgs: commandLine.jitVmArgs ?? const Iterable.empty(),
       experiments: commandLine.enableExperiments,
+      retryCompileFailures:
+          commandLine.type == CommandType.watch ||
+          commandLine.type == CommandType.serve,
     );
   }
 }
