@@ -91,6 +91,7 @@ void main() {
         ),
         'a|web/index.dart.js.tar.gz': isNotNull,
         'a|web/index.dart2js.js': decodedMatches(contains('Hello world!')),
+        'a|web/index.dart2js.js.map': isNotNull,
         'a|web/index.mjs': isNotNull,
         'a|web/index.wasm.map': isNotNull,
         'a|web/index.wasm': isNotNull,
@@ -108,6 +109,7 @@ void main() {
     final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
       'a|web/index.dart.js.tar.gz': isNotNull,
       'a|web/index.dart2js.js': decodedMatches(contains('Hello world!')),
+      'a|web/index.dart2js.js.map': isNotNull,
       'a|web/index.mjs': isNotNull,
       'a|web/index.wasm.map': isNotNull,
       'a|web/index.wasm': isNotNull,

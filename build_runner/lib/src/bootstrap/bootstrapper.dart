@@ -51,6 +51,7 @@ class Bootstrapper {
     BuiltList<String> arguments, {
     required Iterable<String> jitVmArgs,
     Iterable<String>? experiments,
+    bool retryCompileFailures = false,
   }) async {
     while (true) {
       // Write build script based on current config read from disk.
@@ -80,9 +81,11 @@ class Bootstrapper {
             buildLog.error(
               'Failed to compile build script. '
               'Check builder definitions and generated script '
-              '$entrypointScriptPath.',
+              '$entrypointScriptPath.'
+              '${retryCompileFailures ? ' Retrying.' : ''}',
             );
           }
+          if (retryCompileFailures) continue;
           throw const CannotBuildException();
         }
       }

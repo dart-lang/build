@@ -1,3 +1,7 @@
+## 2.10.2-wip
+
+- In "serve" and "watch" modes, retry failed compiles instead of exiting.
+
 ## 2.10.1
 
 - Performance: improve `findAssets` scalability, making it much faster for
