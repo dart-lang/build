@@ -93,6 +93,7 @@ class PackageGraph implements AssetPathProvider {
     // where a package config was found. It doesn't seem possible to obtain this
     // directly with package:package_config.
     while (true) {
+      //buildLog.debug('!!!! $rootDir');
       packageConfig = await findPackageConfig(
         Directory(rootDir),
         recurse: false,
@@ -113,6 +114,10 @@ class PackageGraph implements AssetPathProvider {
         'Unable to find package config for package at $packagePath.',
       );
     }
+    /*buildLog.debug(
+      'loading dependency types from $rootDir, vs ''
+      ${packageConfig.packages.map((p) => p.name).toList()..sort()}',
+    );*/
     final dependencyTypes = _parseDependencyTypes(rootDir);
 
     final nodes = <String, PackageNode>{};
@@ -157,6 +162,7 @@ class PackageGraph implements AssetPathProvider {
     final packageDependencies = _parsePackageDependencies(
       packageConfig.packages.where((p) => p.name != rootPackageName),
     );
+    // print('packageDependencies: $packageDependencies');s
     for (final packageName in packageDependencies.keys) {
       packageNode(packageName).dependencies.addAll(
         packageDependencies[packageName]!.map(
@@ -164,7 +170,29 @@ class PackageGraph implements AssetPathProvider {
         ),
       );
     }
-    return PackageGraph._(rootNode, nodes);
+
+    final actuallyUsedNodes = {rootNode};
+    var changed = true;
+    while (changed) {
+      changed = false;
+      for (final node in actuallyUsedNodes.toList()) {
+        for (final dep in node.dependencies) {
+          if (!actuallyUsedNodes.contains(dep)) {
+            actuallyUsedNodes.add(dep);
+            changed = true;
+          }
+        }
+      }
+    }
+
+    // print('Now we have ${actuallyUsedNodes.map((n) => n.name).toList()}');
+
+    return PackageGraph._(
+      rootNode,
+      Map.fromEntries(
+        nodes.entries.where((e) => actuallyUsedNodes.contains(e.value)),
+      ),
+    );
   }
 
   /// Creates a [PackageGraph] for the package in which you are currently
