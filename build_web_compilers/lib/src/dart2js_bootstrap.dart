@@ -131,7 +131,11 @@ $librariesString
     final archive = Archive();
     await for (final jsFile in fileGlob.list(root: rootDir)) {
       if (jsFile.path.endsWith(entrypointExtension) ||
-          jsFile.path.endsWith(jsEntrypointSourceMapExtension)) {
+          jsFile.path.endsWith(
+            onlyCompiler
+                ? jsEntrypointSourceMapExtension
+                : dart2jsEntrypointSourceMapExtension,
+          )) {
         // These are explicitly output, and are not part of the archive.
         continue;
       }
