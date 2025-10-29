@@ -136,8 +136,10 @@ void fixMetadataSources(Map<String, dynamic> json, Uri scratchUri) {
   }
 }
 
-/// The module name according to ddc for [jsId] which represents the real js
-/// module file.
+/// The module name of [jsId] corresponding to the actual key used by DDC in its
+/// boostrapper (which may contain path prefixes).
+///
+/// Corresponds to the library name for the Library Bundler module system.
 String ddcModuleName(AssetId jsId) {
   final jsPath =
       jsId.path.startsWith('lib/')
