@@ -1,4 +1,4 @@
-## 4.3.1
+## 4.3.2
 - Fix Dart2JS adding extraneous sourcemaps to its archive when both wasm and js are enabled.
 
 ## 4.3.1
