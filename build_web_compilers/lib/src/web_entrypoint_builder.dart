@@ -22,6 +22,7 @@ const wasmExtension = '.wasm';
 const wasmSourceMapExtension = '.wasm.map';
 const moduleJsExtension = '.mjs';
 const jsEntrypointSourceMapExtension = '.dart.js.map';
+const dart2jsEntrypointSourceMapExtension = '.dart2js.js.map';
 const jsEntrypointArchiveExtension = '.dart.js.tar.gz';
 const digestsEntrypointExtension = '.digests';
 const mergedMetadataExtension = '.dart.ddc_merged_metadata';
@@ -256,6 +257,7 @@ final class EntrypointBuilderOptions {
         if (optionsFor(WebCompiler.Dart2Js) case final dart2js?) ...[
           dart2js.extension,
           jsEntrypointSourceMapExtension,
+          dart2jsEntrypointSourceMapExtension,
           jsEntrypointArchiveExtension,
         ],
         if (optionsFor(WebCompiler.Dart2Wasm) case final dart2wasm?) ...[
@@ -331,6 +333,7 @@ class WebEntrypointBuilder implements Builder {
               buildStep,
               compiler.compilerArguments,
               nativeNullAssertions: options.nativeNullAssertions,
+              onlyCompiler: options.compilers.length == 1,
               entrypointExtension: compiler.extension,
             ),
           );
