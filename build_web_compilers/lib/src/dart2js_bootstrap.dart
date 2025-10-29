@@ -20,16 +20,20 @@ import 'platforms.dart';
 import 'web_entrypoint_builder.dart';
 
 /// Compiles an the primary input of [buildStep] with dart2js.
+///
+/// [onlyCompiler] indicates that Dart2JS is the only compiler enabled.
 Future<void> bootstrapDart2Js(
   BuildStep buildStep,
   List<String> dart2JsArgs, {
   required bool? nativeNullAssertions,
+  required bool onlyCompiler,
   String entrypointExtension = jsEntrypointExtension,
 }) => _resourcePool.withResource(
   () => _bootstrapDart2Js(
     buildStep,
     dart2JsArgs,
     nativeNullAssertions: nativeNullAssertions,
+    onlyCompiler: onlyCompiler,
     entrypointExtension: entrypointExtension,
   ),
 );
@@ -38,6 +42,7 @@ Future<void> _bootstrapDart2Js(
   BuildStep buildStep,
   List<String> dart2JsArgs, {
   required bool? nativeNullAssertions,
+  required bool onlyCompiler,
   required String entrypointExtension,
 }) async {
   final dartEntrypointId = buildStep.inputId;
@@ -155,7 +160,11 @@ $librariesString
     // these as part of the archive because they already have asset nodes.
     await scratchSpace.copyOutput(jsOutputId, buildStep);
     await fixAndCopySourceMap(
-      dartEntrypointId.changeExtension(jsEntrypointSourceMapExtension),
+      dartEntrypointId.changeExtension(
+        onlyCompiler
+            ? jsEntrypointSourceMapExtension
+            : dart2jsEntrypointSourceMapExtension,
+      ),
       scratchSpace,
       buildStep,
     );

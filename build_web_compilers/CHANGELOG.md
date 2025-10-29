@@ -1,3 +1,6 @@
+## 4.3.1
+- Fix Dart2JS sourcemaps not being written when both wasm and js are enabled.
+
 ## 4.3.0
 
 - When both wasm and js builds are enabled you can now add force_js=true
