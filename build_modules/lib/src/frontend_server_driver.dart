@@ -44,20 +44,17 @@ class FrontendServerProxyDriver {
   ///
   /// [filesToWrite] contains JS files that should be written to the filesystem.
   /// If left empty, all files are written.
-  Future<CompilerOutput> recompileAndRecord(
+  Future<CompilerOutput?> recompileAndRecord(
     String entrypoint,
     List<Uri> invalidatedFiles,
     Iterable<String> filesToWrite,
   ) async {
     final compilerOutput = await recompile(entrypoint, invalidatedFiles);
-    if (compilerOutput == null) {
-      throw Exception('Frontend Server failed to recompile $entrypoint');
-    }
-    if (compilerOutput.errorCount != 0 || compilerOutput.errorMessage != null) {
-      throw Exception(
-        'Frontend Server encountered errors during compilation: '
-        '${compilerOutput.errorMessage}',
-      );
+    if (compilerOutput == null ||
+        compilerOutput.errorCount != 0 ||
+        compilerOutput.errorMessage != null) {
+      // Don't update the Frontend Server's state if an error occurred.
+      return compilerOutput;
     }
     _frontendServer!.recordFiles();
     for (final file in filesToWrite) {

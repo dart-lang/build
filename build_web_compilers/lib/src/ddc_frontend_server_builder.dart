@@ -9,6 +9,7 @@ import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
 
 import 'common.dart';
+import 'errors.dart';
 import 'platforms.dart';
 
 /// A builder that compiles DDC modules with the Frontend Server.
@@ -49,7 +50,9 @@ class DdcFrontendServerBuilder implements Builder {
 
     try {
       await _compile(module, buildStep);
-    } catch (e) {
+    } on FrontendServerCompilationException catch (e) {
+      await handleError(e);
+    } on MissingModulesException catch (e) {
       await handleError(e);
     }
   }
@@ -90,11 +93,23 @@ class DdcFrontendServerBuilder implements Builder {
     // Request from the Frontend Server exactly the JS file requested by
     // build_runner. Frontend Server's recompilation logic will avoid
     // extraneous recompilation.
-    await driver.recompileAndRecord(
+    final compilerOutput = await driver.recompileAndRecord(
       sourceArg(webEntrypointAsset),
       changedAssetUris,
       [sourceArg(jsFESOutputId)],
     );
+    if (compilerOutput == null) {
+      throw FrontendServerCompilationException(
+        webEntrypointAsset,
+        'Frontend Server produced no output.',
+      );
+    }
+    if (compilerOutput.errorCount != 0 || compilerOutput.errorMessage != null) {
+      throw FrontendServerCompilationException(
+        webEntrypointAsset,
+        compilerOutput.errorMessage!,
+      );
+    }
     final outputFile = scratchSpace.fileFor(jsOutputId);
     // Write an empty file if this output was deemed extraneous by FES.
     if (!!await outputFile.exists()) {

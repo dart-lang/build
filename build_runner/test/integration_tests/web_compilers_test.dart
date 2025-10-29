@@ -459,9 +459,7 @@ class Foo<T>{}
 var helloWorld = 'Hello Dash!';
 ''');
     await watch.expect(
-      RegExp(
-        r'Frontend Server encountered errors during compilation.*Limitation',
-      ),
+      'Hot reload rejected due to unsupported changes',
       expectFailure: true,
     );
 

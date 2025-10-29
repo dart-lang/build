@@ -166,7 +166,7 @@ void main() {
       );
 
       expect(output, isNotNull);
-      expect(output.errorCount, 0);
+      expect(output!.errorCount, 0);
 
       final jsOutputFile = File(
         jsFESOutputPath.replaceFirst('.dart.lib.js', '.ddc.js'),

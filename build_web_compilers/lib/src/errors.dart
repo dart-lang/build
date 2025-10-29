@@ -26,3 +26,11 @@ class DartDevcCompilationException extends _WorkerException {
 
   DartDevcCompilationException(super.jsId, super.error);
 }
+
+/// An [Exception] that is thrown when DDC + Frontend Server compilation fails.
+class FrontendServerCompilationException extends _WorkerException {
+  @override
+  final String message = 'Error compiling DDC with Frontend Server';
+
+  FrontendServerCompilationException(super.jsId, super.error);
+}
