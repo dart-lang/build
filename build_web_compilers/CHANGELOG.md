@@ -3,6 +3,9 @@
 - Add DDC + Frontend Server compilation support to existing builders.
 - Add new builders: `DdcFrontendServerBuilder` and `WebEntrypointMarkerBuilder`. 
 
+## 4.3.2
+- Fix Dart2JS adding extraneous sourcemaps to its archive when both wasm and js are enabled.
+
 ## 4.3.1
 - Fix Dart2JS sourcemaps not being written when both wasm and js are enabled.
 
