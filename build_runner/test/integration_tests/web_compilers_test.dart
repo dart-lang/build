@@ -153,6 +153,9 @@ void main() {
     expect(tester.read('root_pkg/build/unused.dart'), null);
   }, timeout: defaultTimeout);
 
+  // TODO(davidmorgan): the remaining tests are integration tests of
+  // the web compilers themselves, support testing like this outside the
+  // `build_runner` package.
   test('DDC compiled with the Frontend Server', () async {
     final pubspecs = await Pubspecs.load();
     final tester = BuildRunnerTester(pubspecs);
