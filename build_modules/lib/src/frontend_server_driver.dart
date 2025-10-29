@@ -15,7 +15,6 @@ import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
 import 'common.dart';
-import 'ddc_names.dart' as ddc_names;
 
 final _log = Logger('FrontendServerProxy');
 final dartaotruntimePath = p.join(sdkDir, 'bin', 'dartaotruntime');
@@ -315,8 +314,6 @@ class WebMemoryFilesystem {
   final Map<String, Uint8List> sourcemaps = {};
   final Map<String, Uint8List> metadata = {};
 
-  final List<LibraryInfo> libraries = [];
-
   WebMemoryFilesystem(this.jsRootUri);
 
   /// Clears all files registered in the filesystem.
@@ -399,7 +396,6 @@ class WebMemoryFilesystem {
     final metadataBytes = metadataFile.readAsBytesSync();
 
     for (final filePath in manifest.keys) {
-      final fileUri = Uri.file(filePath);
       final Map<String, dynamic> offsets =
           Map.castFrom<dynamic, dynamic, String, Object?>(
             manifest[filePath] as Map,
@@ -432,36 +428,6 @@ class WebMemoryFilesystem {
       final fileName =
           filePath.startsWith('/') ? filePath.substring(1) : filePath;
       files[fileName] = byteView;
-      final moduleName = ddc_names.libraryUriToJsIdentifier(fileUri);
-      // TODO(markzipan): This is an overly simple heuristic to resolve the
-      // original Dart file. Replace this if it no longer holds.
-      var dartFileName = fileName;
-      if (dartFileName.endsWith('.lib.js')) {
-        dartFileName = fileName.substring(
-          0,
-          fileName.length - '.lib.js'.length,
-        );
-      }
-      final fullyResolvedFileUri = jsRootUri.resolve(fileName);
-      // TODO(markzipan): This is a simple hack to resolve kernel library URIs
-      // from JS files and might not generalize.
-      var libraryName = dartFileName;
-      if (libraryName.startsWith('packages/')) {
-        final libraryNameWithoutPrefix = libraryName.substring(
-          'packages/'.length,
-          libraryName.length,
-        );
-        libraryName = 'package:$libraryNameWithoutPrefix';
-      } else {
-        libraryName = '$multiRootScheme:///$libraryName';
-      }
-      final libraryInfo = LibraryInfo(
-        moduleName: moduleName,
-        libraryName: libraryName,
-        dartSourcePath: dartFileName,
-        jsSourcePath: fullyResolvedFileUri.toFilePath(),
-      );
-      libraries.add(libraryInfo);
       updatedFiles.add(fileName);
 
       final sourcemapStart = sourcemapOffsets[0];
@@ -492,25 +458,6 @@ class WebMemoryFilesystem {
     }
     return updatedFiles;
   }
-}
-
-/// Bundles information associated with a DDC library.
-class LibraryInfo {
-  final String moduleName;
-  final String libraryName;
-  final String dartSourcePath;
-  final String jsSourcePath;
-
-  LibraryInfo({
-    required this.moduleName,
-    required this.libraryName,
-    required this.dartSourcePath,
-    required this.jsSourcePath,
-  });
-
-  @override
-  String toString() =>
-      'LibraryInfo($moduleName, $libraryName, $dartSourcePath, $jsSourcePath)';
 }
 
 enum StdoutState { CollectDiagnostic, CollectDependencies }

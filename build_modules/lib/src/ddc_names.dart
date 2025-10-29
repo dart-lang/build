@@ -7,17 +7,6 @@ import 'package:path/path.dart' as p;
 /// Logic in this file must be synchronized with their namesakes in DDC at:
 /// pkg/dev_compiler/lib/src/compiler/js_names.dart
 
-bool isSdkInternalRuntimeUri(Uri importUri) {
-  return importUri.isScheme('dart') && importUri.path == '_runtime';
-}
-
-String libraryUriToJsIdentifier(Uri importUri) {
-  if (importUri.isScheme('dart')) {
-    return isSdkInternalRuntimeUri(importUri) ? 'dart' : importUri.path;
-  }
-  return pathToJSIdentifier(p.withoutExtension(importUri.pathSegments.last));
-}
-
 /// Transforms a path to a valid JS identifier.
 ///
 /// For backwards compatibility, if this pattern is changed,
