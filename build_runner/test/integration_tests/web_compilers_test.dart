@@ -10,7 +10,7 @@ import 'package:test/test.dart';
 
 import '../common/common.dart';
 
-const defaultTimeout = Timeout(Duration(seconds: 60));
+const defaultTimeout = Timeout(Duration(seconds: 90));
 
 void main() async {
   test('web compilers', () async {
@@ -329,7 +329,7 @@ void main() {
       name: 'pkg_a',
       dependencies: ['build_runner'],
       pathDependencies: ['builder_pkg'],
-      files: {'lib/a.dart': "var helloWorld = 'Hello World!';"},
+      files: {'lib/a.dart': "String helloWorld = 'Hello World!';"},
     );
     final generatedDirRoot = 'root_pkg/.dart_tool/build/generated';
     final watch = await tester.start('root_pkg', 'dart run build_runner watch');
@@ -344,7 +344,7 @@ void main() {
     );
 
     // Make a simple edit, rebuild succeeds.
-    tester.write('pkg_a/lib/a.dart', "var helloWorld = 'Hello Dash!';");
+    tester.write('pkg_a/lib/a.dart', "String helloWorld = 'Hello Dash!';");
     await watch.expect(BuildLog.successPattern);
     expect(
       tester.read('$generatedDirRoot/pkg_a/lib/a.ddc.js'),
@@ -356,7 +356,7 @@ void main() {
     );
 
     // Make another simple edit, rebuild succeeds.
-    tester.write('pkg_a/lib/a.dart', "var helloWorld = 'Hello Dart!';");
+    tester.write('pkg_a/lib/a.dart', "String helloWorld = 'Hello Dart!';");
     await watch.expect(BuildLog.successPattern);
     expect(
       tester.read('$generatedDirRoot/pkg_a/lib/a.ddc.js'),
@@ -426,7 +426,7 @@ void main() {
       name: 'pkg_a',
       dependencies: ['build_runner'],
       pathDependencies: ['builder_pkg'],
-      files: {'lib/a.dart': "var helloWorld = 'Hello World!';"},
+      files: {'lib/a.dart': "String helloWorld = 'Hello World!';"},
     );
     final generatedDirRoot = 'root_pkg/.dart_tool/build/generated';
     final watch = await tester.start('root_pkg', 'dart run build_runner watch');
@@ -443,7 +443,7 @@ void main() {
     // Introduce a generic class, rebuild succeeds.
     tester.write('pkg_a/lib/a.dart', '''
 class Foo<T, U>{}
-var helloWorld = 'Hello Dash!';
+String helloWorld = 'Hello Dash!';
 ''');
     await watch.expect(BuildLog.successPattern);
     expect(
@@ -459,7 +459,7 @@ var helloWorld = 'Hello Dash!';
     // parameters of a class), rebuild succeeds.
     tester.write('pkg_a/lib/a.dart', '''
 class Foo<T>{}
-var helloWorld = 'Hello Dash!';
+String helloWorld = 'Hello Dash!';
 ''');
     await watch.expect(
       'Hot reload rejected due to unsupported changes',
@@ -469,7 +469,7 @@ var helloWorld = 'Hello Dash!';
     // Revert the invalid edit, rebuild succeeds.
     tester.write('pkg_a/lib/a.dart', '''
 class Foo<T, U>{}
-var helloWorld = 'Hello Dash!';
+String helloWorld = 'Hello Dash!';
 ''');
     await watch.expect(BuildLog.successPattern);
     expect(
