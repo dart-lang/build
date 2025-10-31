@@ -146,7 +146,6 @@ void main() {
     results = StreamQueue(client.buildResults);
     expect((await results.next).results.single.status, BuildStatus.started);
     expect((await results.next).results.single.status, BuildStatus.succeeded);
-    print('bb');
 
     // File change does not cause a build.
     tester.update('root_pkg/lib/message.dart', (script) => '$script\n');
@@ -156,8 +155,6 @@ void main() {
           .timeout(const Duration(seconds: 2), onTimeout: () => null),
       null,
     );
-
-    print('aa');
 
     // The next test needs a fresh daemon so cause this one to close by changing
     // the builder.
@@ -171,29 +168,22 @@ void main() {
     tester.write('root_pkg/web/main3.dart', "void main() {print('hi'); }");
 
     // Start a new daemon, connect to it.
-    print('rrr');
-
     daemon = await tester.start(
       'root_pkg',
       'dart run build_runner daemon --build-mode=BuildMode.Manual',
     );
     await daemon.expect(readyToConnectLog);
-    print('zzz');
-
     client = await BuildDaemonClient.connectUnchecked(
       p.join(tester.tempDirectory.path, 'root_pkg'),
       logHandler: (event) => printOnFailure('(2) ${event.message}'),
     );
-    print('aaa');
     results = StreamQueue(client.buildResults);
     addTearDown(client.close);
-    print('bbb');
     // Connect to it twice to check both clients are notified later.
     final client2 = await BuildDaemonClient.connectUnchecked(
       p.join(tester.tempDirectory.path, 'root_pkg'),
       logHandler: (event) => printOnFailure('(3) ${event.message}'),
     );
-    print('ccc');
     final results2 = StreamQueue(client2.buildResults);
     addTearDown(client2.close);
 
