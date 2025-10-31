@@ -178,7 +178,11 @@ class PersistentFrontendServer {
     required Uri packagesFile,
   }) async {
     final outputDillUri = fileSystemRoot.resolve('output.dill');
-    final platformDill = p.join(sdkDir, 'lib', '_internal', 'ddc_outline.dill');
+    // [platformDill] must be passed to the Frontend Server with a 'file:'
+    // prefix to pass schema checks with Windows drive letters.
+    final platformDill = Uri.file(
+      p.join(sdkDir, 'lib', '_internal', 'ddc_outline.dill'),
+    );
     final args = [
       frontendServerSnapshotPath,
       '--sdk-root=$sdkRoot',
