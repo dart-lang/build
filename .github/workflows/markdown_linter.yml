@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3
-      - uses: tcort/github-action-markdown-link-check@75e8eff79b17a74255f5d39b8e8fe66b9ce891f6
+      - uses: tcort/github-action-markdown-link-check@f3d33029dca1c4a24b87e2df648f9f4604ef6533
         with:
           use-quiet-mode: 'yes'
           config-file: 'mlc_config.json'
