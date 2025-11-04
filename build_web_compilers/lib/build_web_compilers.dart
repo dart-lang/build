@@ -3,15 +3,15 @@
 // BSD-style license that can be found in the LICENSE file.
 
 export 'src/archive_extractor.dart' show Dart2JsArchiveExtractor;
-export 'src/dev_compiler_builder.dart'
+export 'src/common.dart'
     show
-        DevCompilerBuilder,
         fullKernelExtension,
         jsModuleErrorsExtension,
         jsModuleExtension,
         jsSourceMapExtension,
         metadataExtension,
         symbolsExtension;
+export 'src/dev_compiler_builder.dart' show DevCompilerBuilder;
 export 'src/platforms.dart'
     show dart2jsPlatform, dart2wasmPlatform, ddcPlatform;
 export 'src/web_entrypoint_builder.dart'

@@ -18,6 +18,8 @@ import 'package:test/test.dart';
 
 import '../common/common.dart';
 
+const defaultTimeout = Timeout(Duration(seconds: 90));
+
 void main() async {
   final webTarget = DefaultBuildTarget((b) {
     b.target = 'web';
@@ -40,6 +42,7 @@ void main() async {
         'build_runner',
         'build_web_compilers',
         'build_test',
+        'scratch_space',
       ],
       pathDependencies: ['builder_pkg'],
       files: {
@@ -212,5 +215,5 @@ void main() {
     // Check the second client was notified too.
     expect((await results2.next).results.single.status, BuildStatus.started);
     expect((await results2.next).results.single.status, BuildStatus.succeeded);
-  });
+  }, timeout: defaultTimeout);
 }

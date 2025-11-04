@@ -17,11 +17,10 @@ import 'package:scratch_space/scratch_space.dart';
 import 'package:stream_transform/stream_transform.dart';
 
 import '../build_modules.dart';
+import 'common.dart';
 import 'errors.dart';
 import 'module_cache.dart';
 import 'workers.dart';
-
-const multiRootScheme = 'org-dartlang-app';
 
 /// A builder which can output kernel files for a given sdk.
 ///
@@ -431,7 +430,7 @@ Future<void> _addRequestArguments(
   request.arguments.addAll([
     '--dart-sdk-summary=${Uri.file(p.join(sdkDir, sdkKernelPath))}',
     '--output=${outputFile.path}',
-    '--packages-file=$multiRootScheme:///${p.join('.dart_tool', 'package_config.json')}',
+    '--packages-file=$multiRootScheme:///$packagesFilePath',
     '--multi-root-scheme=$multiRootScheme',
     '--exclude-non-sources',
     summaryOnly ? '--summary-only' : '--no-summary-only',

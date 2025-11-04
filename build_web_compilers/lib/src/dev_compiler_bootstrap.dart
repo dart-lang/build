@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
@@ -12,8 +13,7 @@ import 'package:build_modules/build_modules.dart';
 import 'package:path/path.dart' as _p;
 import 'package:pool/pool.dart';
 
-import 'ddc_names.dart';
-import 'dev_compiler_builder.dart';
+import 'common.dart';
 import 'platforms.dart';
 import 'web_entrypoint_builder.dart';
 
@@ -21,6 +21,10 @@ import 'web_entrypoint_builder.dart';
 _p.Context get _context => _p.url;
 
 final _modulePartialExtension = _context.withoutExtension(jsModuleExtension);
+
+final stackTraceMapperPath =
+    'packages/build_web_compilers/src/'
+    'dev_compiler_stack_trace/stack_trace_mapper.dart.js';
 
 /// Bootstraps a ddc application, creating the main entrypoint as well as the
 /// bootstrap and digest entrypoints.
@@ -33,6 +37,7 @@ Future<void> bootstrapDdc(
   Iterable<AssetId> requiredAssets = const [],
   String entrypointExtension = jsEntrypointExtension,
   required bool? nativeNullAssertions,
+  bool usesWebHotReload = false,
 }) async {
   platform = ddcPlatform;
   // Ensures that the sdk resources are built and available.
@@ -47,7 +52,11 @@ Future<void> bootstrapDdc(
   // First, ensure all transitive modules are built.
   List<AssetId> transitiveJsModules;
   try {
-    transitiveJsModules = await _ensureTransitiveJsModules(module, buildStep);
+    transitiveJsModules = await _ensureTransitiveJsModules(
+      module,
+      buildStep,
+      computeStronglyConnectedComponents: !usesWebHotReload,
+    );
   } on UnsupportedModules catch (e) {
     final librariesString = (await e.exactLibraries(buildStep).toList())
         .map(
@@ -93,69 +102,124 @@ $librariesString
     _context.withoutExtension(buildStep.inputId.path),
   );
 
-  // Map from module name to module path for custom modules.
-  final modulePaths = SplayTreeMap.of({
-    'dart_sdk': r'packages/build_web_compilers/src/dev_compiler/dart_sdk',
-  });
-  for (final jsId in transitiveJsModules) {
-    // Strip out the top level dir from the path for any module, and set it to
-    // `packages/` for lib modules. We set baseUrl to `/` to simplify things,
-    // and we only allow you to serve top level directories.
-    final moduleName = ddcModuleName(jsId);
-    modulePaths[moduleName] = _context.withoutExtension(
-      jsId.path.startsWith('lib')
-          ? '$moduleName$jsModuleExtension'
-          : _context.joinAll(_context.split(jsId.path).skip(1)),
-    );
-  }
-
   final bootstrapId = dartEntrypointId.changeExtension(ddcBootstrapExtension);
-  final bootstrapModuleName = _context.withoutExtension(
-    _context.relative(
-      bootstrapId.path,
-      from: _context.dirname(dartEntrypointId.path),
-    ),
+  final bootstrapEndId = dartEntrypointId.changeExtension(
+    ddcBootstrapEndExtension,
   );
 
   final dartEntrypointParts = _context.split(dartEntrypointId.path);
-  final entrypointLibraryName = _context.joinAll([
-    // Convert to a package: uri for files under lib.
-    if (dartEntrypointParts.first == 'lib')
-      'package:${module.primarySource.package}',
-    // Strip top-level directory from the path.
-    ...dartEntrypointParts.skip(1),
-  ]);
+  final packageName = module.primarySource.package;
+  final entrypointLibraryName =
+      usesWebHotReload
+          ? _context.joinAll([
+            // Convert to a package: uri for files under lib.
+            if (dartEntrypointParts.first == 'lib') 'package:$packageName',
+            ...dartEntrypointParts,
+          ])
+          : _context.joinAll([
+            // Convert to a package: uri for files under lib.
+            if (dartEntrypointParts.first == 'lib') 'package:$packageName',
+            // Strip top-level directory from the path.
+            ...dartEntrypointParts.skip(1),
+          ]);
 
-  final bootstrapContent =
-      StringBuffer('$_entrypointExtensionMarker\n(function() {\n')
-        ..write(
-          _dartLoaderSetup(
-            modulePaths,
-            _p.url.relative(
-              appDigestsOutput.path,
-              from: _p.url.dirname(bootstrapId.path),
-            ),
-          ),
-        )
-        ..write(_requireJsConfig)
-        ..write(
-          _appBootstrap(
-            bootstrapModuleName: bootstrapModuleName,
-            entrypointLibraryName: entrypointLibraryName,
-            moduleName: appModuleName,
-            moduleScope: appModuleScope,
-            nativeNullAssertions: nativeNullAssertions,
-            oldModuleScope: oldAppModuleScope,
-          ),
-        );
+  final entrypointJsId = dartEntrypointId.changeExtension(entrypointExtension);
 
-  await buildStep.writeAsString(bootstrapId, bootstrapContent.toString());
+  // Map from module name to module path for custom modules.
+  final modulePaths = SplayTreeMap<String, String>();
+  String entrypointJsContent;
+  String bootstrapContent;
+  String bootstrapEndContent;
+  if (usesWebHotReload) {
+    final ddcSdkUrl =
+        r'packages/build_web_compilers/src/dev_compiler/dart_sdk.js';
+    modulePaths['dart_sdk'] = ddcSdkUrl;
+    for (final jsId in transitiveJsModules) {
+      // Strip out the top level dir from the path for any module, and set it to
+      // `packages/` for lib modules. We set baseUrl to `/` to simplify things,
+      // and we only allow you to serve top level directories.
+      final moduleName = ddcModuleName(jsId);
+      final libraryId = ddcLibraryId(jsId);
+      modulePaths[libraryId] =
+          jsId.path.startsWith('lib')
+              ? '$moduleName$jsModuleExtension'
+              : _context.joinAll(_context.split(jsId.path).skip(1));
+    }
+    final bootstrapEndModuleName = _context.relative(
+      bootstrapId.path,
+      from: _context.dirname(bootstrapEndId.path),
+    );
+    bootstrapContent = generateDDCLibraryBundleMainModule(
+      entrypoint: entrypointLibraryName,
+      nativeNullAssertions: nativeNullAssertions ?? false,
+      onLoadEndBootstrap: bootstrapEndModuleName,
+    );
+    final bootstrapModuleName = _context.relative(
+      bootstrapId.path,
+      from: _context.dirname(dartEntrypointId.path),
+    );
+    entrypointJsContent = generateDDCLibraryBundleBootstrapScript(
+      entrypoint: entrypointLibraryName,
+      ddcSdkUrl: ddcSdkUrl,
+      ddcModuleLoaderUrl:
+          'packages/build_web_compilers/src/dev_compiler/ddc_module_loader.js',
+      mainBoostrapperUrl: bootstrapModuleName,
+      mapperUrl: stackTraceMapperPath,
+      isWindows: Platform.isWindows,
+      scriptIdsToPath: modulePaths,
+    );
+    bootstrapEndContent = generateDDCLibraryBundleOnLoadEndBootstrap();
+  } else {
+    modulePaths['dart_sdk'] =
+        r'packages/build_web_compilers/src/dev_compiler/dart_sdk';
+    for (final jsId in transitiveJsModules) {
+      // Strip out the top level dir from the path for any module, and set it to
+      // `packages/` for lib modules. We set baseUrl to `/` to simplify things,
+      // and we only allow you to serve top level directories.
+      final moduleName = ddcModuleName(jsId);
+      modulePaths[moduleName] = _context.withoutExtension(
+        jsId.path.startsWith('lib')
+            ? '$moduleName$jsModuleExtension'
+            : _context.joinAll(_context.split(jsId.path).skip(1)),
+      );
+    }
+    final bootstrapModuleName = _context.withoutExtension(
+      _context.relative(
+        bootstrapId.path,
+        from: _context.dirname(dartEntrypointId.path),
+      ),
+    );
+    entrypointJsContent = _entryPointJs(bootstrapModuleName);
+    bootstrapContent =
+        (StringBuffer('$_entrypointExtensionMarker\n(function() {\n')
+              ..write(
+                _dartLoaderSetup(
+                  modulePaths,
+                  _p.url.relative(
+                    appDigestsOutput.path,
+                    from: _p.url.dirname(bootstrapId.path),
+                  ),
+                ),
+              )
+              ..write(_requireJsConfig)
+              ..write(
+                _appBootstrap(
+                  bootstrapModuleName: bootstrapModuleName,
+                  entrypointLibraryName: entrypointLibraryName,
+                  moduleName: appModuleName,
+                  moduleScope: appModuleScope,
+                  nativeNullAssertions: nativeNullAssertions,
+                  oldModuleScope: oldAppModuleScope,
+                ),
+              ))
+            .toString();
+    // Unused for the AMD module system.
+    bootstrapEndContent = '';
+  }
 
-  final entrypointJsContent = _entryPointJs(bootstrapModuleName);
-  await buildStep.writeAsString(
-    dartEntrypointId.changeExtension(entrypointExtension),
-    entrypointJsContent,
-  );
+  await buildStep.writeAsString(entrypointJsId, entrypointJsContent);
+  await buildStep.writeAsString(bootstrapId, bootstrapContent);
+  await buildStep.writeAsString(bootstrapEndId, bootstrapEndContent);
 
   // Output the digests and merged_metadata for transitive modules.
   // These can be consumed for hot reloads and debugging.
@@ -185,12 +249,14 @@ final _lazyBuildPool = Pool(16);
 /// unsupported modules.
 Future<List<AssetId>> _ensureTransitiveJsModules(
   Module module,
-  BuildStep buildStep,
-) async {
+  BuildStep buildStep, {
+  bool computeStronglyConnectedComponents = true,
+}) async {
   // Collect all the modules this module depends on, plus this module.
   final transitiveDeps = await module.computeTransitiveDependencies(
     buildStep,
     throwIfUnsupported: true,
+    computeStronglyConnectedComponents: computeStronglyConnectedComponents,
   );
 
   final jsModules = [
@@ -277,8 +343,7 @@ String _entryPointJs(String bootstrapModuleName) => '''
   $_currentDirectoryScript
   $_baseUrlScript
 
-  var mapperUri = baseUrl + "packages/build_web_compilers/src/" +
-      "dev_compiler_stack_trace/stack_trace_mapper.dart.js";
+  var mapperUri = baseUrl + "$stackTraceMapperPath";
   var requireUri = baseUrl +
       "packages/build_web_compilers/src/dev_compiler/require.js";
   var mainUri = _currentDirectory + "$bootstrapModuleName";
@@ -570,3 +635,260 @@ Future<void> _ensureResources(
     }
   }
 }
+
+const _simpleLoaderScript = r'''
+window.$dartCreateScript = (function() {
+  // Find the nonce value. (Note, this is only computed once.)
+  var scripts = Array.from(document.getElementsByTagName("script"));
+  var nonce;
+  scripts.some(
+      script => (nonce = script.nonce || script.getAttribute("nonce")));
+  // If present, return a closure that automatically appends the nonce.
+  if (nonce) {
+    return function() {
+      var script = document.createElement("script");
+      script.nonce = nonce;
+      return script;
+    };
+  } else {
+    return function() {
+      return document.createElement("script");
+    };
+  }
+})();
+
+// Loads a module [relativeUrl] relative to [root].
+//
+// If not specified, [root] defaults to the directory serving the main app.
+var forceLoadModule = function (relativeUrl, root) {
+  var actualRoot = root ?? _currentDirectory;
+  return new Promise(function(resolve, reject) {
+    var script = self.$dartCreateScript();
+    let policy = {
+      createScriptURL: function(src) {return src;}
+    };
+    if (self.trustedTypes && self.trustedTypes.createPolicy) {
+      policy = self.trustedTypes.createPolicy('dartDdcModuleUrl', policy);
+    }
+    script.onload = resolve;
+    script.onerror = reject;
+    script.src = policy.createScriptURL(actualRoot + relativeUrl);
+    document.head.appendChild(script);
+  });
+};
+''';
+
+String generateDDCLibraryBundleBootstrapScript({
+  required String entrypoint,
+  required String ddcSdkUrl,
+  required String ddcModuleLoaderUrl,
+  required String mainBoostrapperUrl,
+  required String mapperUrl,
+  required bool isWindows,
+  required Map<String, String> scriptIdsToPath,
+}) {
+  final scriptsJs = StringBuffer();
+  scriptIdsToPath.forEach((id, path) {
+    scriptsJs.write('{"src": "$path", "id": "$id"},\n');
+  });
+  // Write the "true" main boostrapper last as part of the loader's convention.
+  scriptsJs.write('{"src": "$mainBoostrapperUrl", "id": "data-main"}\n');
+  final boostrapScript = '''
+// Save the current directory so we can access it in a closure.
+  let _currentDirectory = (function () {
+    let _url = document.currentScript.src;
+    let lastSlash = _url.lastIndexOf('/');
+    if (lastSlash == -1) return _url;
+    let currentDirectory = _url.substring(0, lastSlash + 1);
+    return currentDirectory;
+  })();
+
+  let trimmedDirectory = _currentDirectory.endsWith("/") ?
+    _currentDirectory.substring(0, _currentDirectory.length - 1)
+    : _currentDirectory;
+
+$_simpleLoaderScript
+
+(function() {
+  let appName = "$multiRootScheme:///$entrypoint";
+
+  // Load pre-requisite DDC scripts. We intentionally use invalid names to avoid
+  // namespace clashes.
+  let prerequisiteScripts = [
+    {
+      "src": "$ddcModuleLoaderUrl",
+      "id": "ddc_module_loader \x00"
+    },
+    {
+      "src": "$mapperUrl",
+      "id": "dart_stack_trace_mapper \x00"
+    }
+  ];
+
+  // Load ddc_module_loader.js to access DDC's module loader API.
+  let prerequisiteLoads = [];
+  for (let i = 0; i < prerequisiteScripts.length; i++) {
+    prerequisiteLoads.push(forceLoadModule(prerequisiteScripts[i].src));
+  }
+  Promise.all(prerequisiteLoads).then((_) => afterPrerequisiteLogic());
+
+  // Save the current script so we can access it in a closure.
+  var _currentScript = document.currentScript;
+
+  // Create a policy if needed to load the files during a hot restart.
+  let policy = {
+    createScriptURL: function(src) {return src;}
+  };
+  if (self.trustedTypes && self.trustedTypes.createPolicy) {
+    policy = self.trustedTypes.createPolicy('dartDdcModuleUrl', policy);
+  }
+
+  var afterPrerequisiteLogic = function() {
+    window.\$dartLoader.rootDirectories.push(_currentDirectory);
+    let scripts = [${scriptsJs.toString()}];
+
+    let loadConfig = new window.\$dartLoader.LoadConfiguration();
+    // TODO(srujzs): Verify this is sufficient for Windows.
+    loadConfig.isWindows = $isWindows;
+    loadConfig.root = trimmedDirectory;
+    loadConfig.bootstrapScript = scripts[scripts.length - 1];
+
+    loadConfig.loadScriptFn = function(loader) {
+      loader.addScriptsToQueue(scripts, null);
+      loader.loadEnqueuedModules();
+    }
+    loadConfig.ddcEventForLoadStart = /* LOAD_ALL_MODULES_START */ 1;
+    loadConfig.ddcEventForLoadedOk = /* LOAD_ALL_MODULES_END_OK */ 2;
+    loadConfig.ddcEventForLoadedError = /* LOAD_ALL_MODULES_END_ERROR */ 3;
+
+    let loader = new window.\$dartLoader.DDCLoader(loadConfig);
+
+    // Record prerequisite scripts' fully resolved URLs.
+    prerequisiteScripts.forEach(script => loader.registerScript(script));
+
+    // Note: these variables should only be used in non-multi-app scenarios
+    // since they can be arbitrarily overridden based on multi-app load order.
+    window.\$dartLoader.loadConfig = loadConfig;
+    window.\$dartLoader.loader = loader;
+
+    // Begin loading libraries
+    loader.nextAttempt();
+
+    // Set up stack trace mapper.
+    if (window.\$dartStackTraceUtility &&
+        !window.\$dartStackTraceUtility.ready) {
+      window.\$dartStackTraceUtility.ready = true;
+      window.\$dartStackTraceUtility.setSourceMapProvider(function(url) {
+        var baseUrl = window.location.protocol + '//' + window.location.host;
+        url = url.replace(baseUrl + '/', '');
+        if (url == 'dart_sdk.js') {
+          return dartDevEmbedder.debugger.getSourceMap('dart_sdk');
+        }
+        url = url.replace(".lib.js", "");
+        return dartDevEmbedder.debugger.getSourceMap(url);
+      });
+    }
+
+    let currentUri = _currentScript.src;
+    // We should have written a file containing all the scripts that need to be
+    // reloaded into the page. This is then read when a hot restart is triggered
+    // in DDC via the `\$dartReloadModifiedModules` callback.
+    let restartScripts = _currentDirectory + 'restart_scripts.json';
+
+    if (!window.\$dartReloadModifiedModules) {
+      window.\$dartReloadModifiedModules = (function(appName, callback) {
+        var xhttp = new XMLHttpRequest();
+        xhttp.withCredentials = true;
+        xhttp.onreadystatechange = function() {
+          // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/readyState
+          if (this.readyState == 4 && this.status == 200 || this.status == 304) {
+            var scripts = JSON.parse(this.responseText);
+            var numToLoad = 0;
+            var numLoaded = 0;
+            for (var i = 0; i < scripts.length; i++) {
+              var script = scripts[i];
+              if (script.id == null) continue;
+              var src = script.src.toString();
+              var oldSrc = window.\$dartLoader.moduleIdToUrl.get(script.id);
+
+              // We might actually load from a different uri, delete the old one
+              // just to be sure.
+              window.\$dartLoader.urlToModuleId.delete(oldSrc);
+
+              window.\$dartLoader.moduleIdToUrl.set(script.id, src);
+              window.\$dartLoader.urlToModuleId.set(src, script.id);
+
+              numToLoad++;
+
+              var el = document.getElementById(script.id);
+              if (el) el.remove();
+              el = window.\$dartCreateScript();
+              el.src = policy.createScriptURL(src);
+              el.async = false;
+              el.defer = true;
+              el.id = script.id;
+              el.onload = function() {
+                numLoaded++;
+                if (numToLoad == numLoaded) callback();
+              };
+              document.head.appendChild(el);
+            }
+            // Call `callback` right away if we found no updated scripts.
+            if (numToLoad == 0) callback();
+          }
+        };
+        xhttp.open("GET", restartScripts, true);
+        xhttp.send();
+      });
+    }
+  };
+})();
+''';
+  return boostrapScript;
+}
+
+String generateDDCLibraryBundleMainModule({
+  required String entrypoint,
+  required bool nativeNullAssertions,
+  required String onLoadEndBootstrap,
+}) {
+  // The typo below in "EXTENTION" is load-bearing, package:build depends on it.
+  return '''
+/* ENTRYPOINT_EXTENTION_MARKER */
+
+(function() {
+  let appName = "$multiRootScheme:///$entrypoint";
+  dartDevEmbedder.debugger.registerDevtoolsFormatter();
+
+  // Set up a final script that lets us know when all scripts have been loaded.
+  // Only then can we call the main method.
+  let onLoadEndSrc = '$onLoadEndBootstrap';
+  window.\$dartLoader.loadConfig.bootstrapScript = {
+    src: onLoadEndSrc,
+    id: onLoadEndSrc,
+  };
+  window.\$dartLoader.loadConfig.tryLoadBootstrapScript = true;
+  // Should be called by $onLoadEndBootstrap once all the scripts have been
+  // loaded.
+  window.$_onLoadEndCallback = function() {
+    let child = {};
+    child.main = function() {
+      let sdkOptions = {
+        nativeNonNullAsserts: $nativeNullAssertions,
+      };
+      dartDevEmbedder.runMain(appName, sdkOptions);
+    }
+    /* MAIN_EXTENSION_MARKER */
+    child.main();
+  }
+  // Call this immediately in build_web_compilers.
+  window.$_onLoadEndCallback();
+})();
+''';
+}
+
+String generateDDCLibraryBundleOnLoadEndBootstrap() {
+  return '''window.$_onLoadEndCallback();''';
+}
+
+const _onLoadEndCallback = r'$onLoadEndCallback';

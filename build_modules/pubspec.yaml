@@ -1,5 +1,5 @@
 name: build_modules
-version: 5.0.18
+version: 5.1.0
 description: >-
   Builders to analyze and split Dart code into individually compilable modules
   based on imports.
@@ -16,13 +16,15 @@ dependencies:
   build: '>=2.0.0 <5.0.0'
   collection: ^1.15.0
   crypto: ^3.0.0
+  file: ^7.0.1
   glob: ^2.0.0
   graphs: ^2.0.0
   json_annotation: ^4.3.0
   logging: ^1.0.0
   path: ^1.8.0
-  scratch_space: ^1.0.0
+  scratch_space: ^1.2.0
   stream_transform: ^2.0.0
+  uuid: ^4.4.2
 
 dev_dependencies:
   a:

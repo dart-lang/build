@@ -11,18 +11,10 @@ import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:path/path.dart' as p;
-import 'package:scratch_space/scratch_space.dart';
 
 import '../builders.dart';
 import 'common.dart';
 import 'errors.dart';
-
-final jsModuleErrorsExtension = '.ddc.js.errors';
-final jsModuleExtension = '.ddc.js';
-final jsSourceMapExtension = '.ddc.js.map';
-final metadataExtension = '.ddc.js.metadata';
-final symbolsExtension = '.ddc.js.symbols';
-final fullKernelExtension = '.ddc.full.dill';
 
 /// A builder which can output ddc modules!
 class DevCompilerBuilder implements Builder {
@@ -49,6 +41,9 @@ class DevCompilerBuilder implements Builder {
 
   /// Enables canary features in DDC.
   final bool canaryFeatures;
+
+  /// Emits code with the DDC module system.
+  final bool ddcModules;
 
   final bool trackUnusedInputs;
 
@@ -79,6 +74,7 @@ class DevCompilerBuilder implements Builder {
     this.generateFullDill = false,
     this.emitDebugSymbols = false,
     this.canaryFeatures = false,
+    this.ddcModules = false,
     this.trackUnusedInputs = false,
     required this.platform,
     String? sdkKernelPath,
@@ -133,6 +129,7 @@ class DevCompilerBuilder implements Builder {
         generateFullDill,
         emitDebugSymbols,
         canaryFeatures,
+        ddcModules,
         trackUnusedInputs,
         platformSdk,
         sdkKernelPath,
@@ -155,6 +152,7 @@ Future<void> _createDevCompilerModule(
   bool generateFullDill,
   bool emitDebugSymbols,
   bool canaryFeatures,
+  bool ddcModules,
   bool trackUnusedInputs,
   String dartSdk,
   String sdkKernelPath,
@@ -204,7 +202,7 @@ Future<void> _createDevCompilerModule(
       WorkRequest()
         ..arguments.addAll([
           '--dart-sdk-summary=$sdkSummary',
-          '--modules=amd',
+          '--modules=${ddcModules ? 'ddc' : 'amd'}',
           '--no-summarize',
           if (generateFullDill) '--experimental-output-compiled-kernel',
           if (emitDebugSymbols) '--emit-debug-symbols',
@@ -227,7 +225,7 @@ Future<void> _createDevCompilerModule(
           ],
           if (usedInputsFile != null)
             '--used-inputs-file=${usedInputsFile.uri.toFilePath()}',
-          for (final source in module.sources) _sourceArg(source),
+          for (final source in module.sources) sourceArg(source),
           for (final define in environment.entries)
             '-D${define.key}=${define.value}',
           for (final experiment in enabledExperiments)
@@ -303,7 +301,7 @@ Future<void> _createDevCompilerModule(
       final file = scratchSpace.fileFor(metadataId);
       final content = await file.readAsString();
       final json = jsonDecode(content) as Map<String, Object?>;
-      _fixMetadataSources(json, scratchSpace.tempDir.uri);
+      fixMetadataSources(json, scratchSpace.tempDir.uri);
       await buildStep.writeAsString(metadataId, jsonEncode(json));
 
       // Copy the symbols output, modifying its contents to remove the temp
@@ -338,56 +336,4 @@ String _summaryArg(Module module) {
     module.primarySource.changeExtension(jsModuleExtension),
   );
   return '--summary=${scratchSpace.fileFor(kernelAsset).path}=$moduleName';
-}
-
-/// The url to compile for a source.
-///
-/// Use the package: path for files under lib and the full absolute path for
-/// other files.
-String _sourceArg(AssetId id) {
-  final uri = canonicalUriFor(id);
-  return uri.startsWith('package:') ? uri : '$multiRootScheme:///${id.path}';
-}
-
-/// The module name according to ddc for [jsId] which represents the real js
-/// module file.
-String ddcModuleName(AssetId jsId) {
-  final jsPath =
-      jsId.path.startsWith('lib/')
-          ? jsId.path.replaceFirst('lib/', 'packages/${jsId.package}/')
-          : jsId.path;
-  return jsPath.substring(0, jsPath.length - jsModuleExtension.length);
-}
-
-void _fixMetadataSources(Map<String, dynamic> json, Uri scratchUri) {
-  String updatePath(String path) =>
-      Uri.parse(path).path.replaceAll(scratchUri.path, '');
-
-  final sourceMapUri = json['sourceMapUri'] as String?;
-  if (sourceMapUri != null) {
-    json['sourceMapUri'] = updatePath(sourceMapUri);
-  }
-
-  final moduleUri = json['moduleUri'] as String?;
-  if (moduleUri != null) {
-    json['moduleUri'] = updatePath(moduleUri);
-  }
-
-  final fullDillUri = json['fullDillUri'] as String?;
-  if (fullDillUri != null) {
-    json['fullDillUri'] = updatePath(fullDillUri);
-  }
-
-  final libraries = json['libraries'] as List<Object?>?;
-  if (libraries != null) {
-    for (final lib in libraries) {
-      final libraryJson = lib as Map<String, Object?>?;
-      if (libraryJson != null) {
-        final fileUri = libraryJson['fileUri'] as String?;
-        if (fileUri != null) {
-          libraryJson['fileUri'] = updatePath(fileUri);
-        }
-      }
-    }
-  }
 }

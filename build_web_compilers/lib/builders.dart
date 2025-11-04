@@ -8,29 +8,58 @@ import 'package:collection/collection.dart';
 
 import 'build_web_compilers.dart';
 import 'src/common.dart';
+import 'src/ddc_frontend_server_builder.dart';
 import 'src/sdk_js_compile_builder.dart';
 import 'src/sdk_js_copy_builder.dart';
+import 'src/web_entrypoint_marker_builder.dart';
 
 // Shared entrypoint builder
-Builder webEntrypointBuilder(BuilderOptions options) =>
-    WebEntrypointBuilder.fromOptions(options);
+Builder webEntrypointBuilder(BuilderOptions options) {
+  _ensureSameDdcHotReloadOptions(options);
+  return WebEntrypointBuilder.fromOptions(options);
+}
 
-// Ddc related builders
-Builder ddcMetaModuleBuilder(BuilderOptions options) =>
-    MetaModuleBuilder.forOptions(ddcPlatform, options);
-Builder ddcMetaModuleCleanBuilder(BuilderOptions _) =>
-    MetaModuleCleanBuilder(ddcPlatform);
-Builder ddcModuleBuilder(BuilderOptions _) => ModuleBuilder(ddcPlatform);
+Builder webEntrypointMarkerBuilder(BuilderOptions options) {
+  _ensureSameDdcHotReloadOptions(options);
+  return WebEntrypointMarkerBuilder(
+    usesWebHotReload: _readWebHotReloadOption(options),
+  );
+}
+
+// DDC related builders
+Builder ddcMetaModuleBuilder(BuilderOptions options) {
+  _ensureSameDdcHotReloadOptions(options);
+  return MetaModuleBuilder.forOptions(ddcPlatform, options);
+}
+
+Builder ddcMetaModuleCleanBuilder(BuilderOptions options) {
+  _ensureSameDdcHotReloadOptions(options);
+  return MetaModuleCleanBuilder(ddcPlatform);
+}
+
+Builder ddcModuleBuilder(BuilderOptions options) {
+  _ensureSameDdcHotReloadOptions(options);
+  return ModuleBuilder(
+    ddcPlatform,
+    usesWebHotReload: _readWebHotReloadOption(options),
+  );
+}
 
 Builder ddcBuilder(BuilderOptions options) {
   validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc');
+  _ensureSameDdcHotReloadOptions(options);
   _ensureSameDdcOptions(options);
+
+  if (_readWebHotReloadOption(options)) {
+    return DdcFrontendServerBuilder();
+  }
 
   return DevCompilerBuilder(
     useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
     generateFullDill: _readGenerateFullDillOption(options),
     emitDebugSymbols: _readEmitDebugSymbolsOption(options),
     canaryFeatures: _readCanaryOption(options),
+    ddcModules: _readWebHotReloadOption(options),
     sdkKernelPath: sdkDdcKernelPath,
     trackUnusedInputs: _readTrackInputsCompilerOption(options),
     platform: ddcPlatform,
@@ -42,6 +71,7 @@ final ddcKernelExtension = '.ddc.dill';
 
 Builder ddcKernelBuilder(BuilderOptions options) {
   validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc');
+  _ensureSameDdcHotReloadOptions(options);
   _ensureSameDdcOptions(options);
 
   return KernelBuilder(
@@ -55,11 +85,16 @@ Builder ddcKernelBuilder(BuilderOptions options) {
 }
 
 Builder sdkJsCopyRequirejs(BuilderOptions _) => SdkJsCopyBuilder();
-Builder sdkJsCompile(BuilderOptions options) => SdkJsCompileBuilder(
-  sdkKernelPath: 'lib/_internal/ddc_platform.dill',
-  outputPath: 'lib/src/dev_compiler/dart_sdk.js',
-  canaryFeatures: _readCanaryOption(options),
-);
+Builder sdkJsCompile(BuilderOptions options) {
+  _ensureSameDdcHotReloadOptions(options);
+  return SdkJsCompileBuilder(
+    sdkKernelPath: 'lib/_internal/ddc_platform.dill',
+    outputPath: 'lib/src/dev_compiler/dart_sdk.js',
+    canaryFeatures:
+        _readWebHotReloadOption(options) || _readCanaryOption(options),
+    usesWebHotReload: _readWebHotReloadOption(options),
+  );
+}
 
 // Dart2js related builders
 Builder dart2jsMetaModuleBuilder(BuilderOptions options) =>
@@ -115,6 +150,26 @@ void _ensureSameDdcOptions(BuilderOptions options) {
   }
 }
 
+void _ensureSameDdcHotReloadOptions(BuilderOptions options) {
+  final webHotReload = _readWebHotReloadOption(options);
+  if (_lastWebHotReloadValue != null) {
+    if (webHotReload != _lastWebHotReloadValue) {
+      throw ArgumentError(
+        '`web-hot-reload` must be configured the same across the following '
+        'builders: build_web_compilers:ddc, '
+        'build_web_compilers|sdk_js, '
+        'build_web_compilers|entrypoint, '
+        'build_web_compilers|entrypoint_marker, '
+        'and build_web_compilers|ddc_modules.'
+        '\n\nPlease use the `global_options` section in '
+        '`build.yaml` or the `--define` flag to set global options.',
+      );
+    }
+  } else {
+    _lastWebHotReloadValue = webHotReload;
+  }
+}
+
 bool _readUseIncrementalCompilerOption(BuilderOptions options) {
   return options.config[_useIncrementalCompilerOption] as bool? ?? true;
 }
@@ -135,18 +190,24 @@ bool _readTrackInputsCompilerOption(BuilderOptions options) {
   return options.config[_trackUnusedInputsCompilerOption] as bool? ?? true;
 }
 
+bool _readWebHotReloadOption(BuilderOptions options) {
+  return options.config[_webHotReloadOption] as bool? ?? false;
+}
+
 Map<String, String> _readEnvironmentOption(BuilderOptions options) {
   final environment = options.config[_environmentOption] as Map? ?? const {};
   return environment.map((key, value) => MapEntry('$key', '$value'));
 }
 
 Map<String, dynamic>? _previousDdcConfig;
+bool? _lastWebHotReloadValue;
 const _useIncrementalCompilerOption = 'use-incremental-compiler';
 const _generateFullDillOption = 'generate-full-dill';
 const _emitDebugSymbolsOption = 'emit-debug-symbols';
 const _canaryOption = 'canary';
 const _trackUnusedInputsCompilerOption = 'track-unused-inputs';
 const _environmentOption = 'environment';
+const _webHotReloadOption = 'web-hot-reload';
 
 const _supportedOptions = [
   _environmentOption,
@@ -155,4 +216,5 @@ const _supportedOptions = [
   _emitDebugSymbolsOption,
   _canaryOption,
   _trackUnusedInputsCompilerOption,
+  _webHotReloadOption,
 ];

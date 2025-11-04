@@ -17,6 +17,7 @@ import 'dart2wasm_bootstrap.dart';
 import 'dev_compiler_bootstrap.dart';
 
 const ddcBootstrapExtension = '.dart.bootstrap.js';
+const ddcBootstrapEndExtension = '.dart.bootstrap.end.js';
 const jsEntrypointExtension = '.dart.js';
 const wasmExtension = '.wasm';
 const wasmSourceMapExtension = '.wasm.map';
@@ -123,10 +124,16 @@ final class EntrypointBuilderOptions {
   /// necessary.
   final String? loaderExtension;
 
+  /// Whether or not to emit DDC entrypoints that support web hot reload.
+  ///
+  /// Web hot reload is only supported for DDC's Library Bundle module system.
+  final bool usesWebHotReload;
+
   EntrypointBuilderOptions({
     required this.compilers,
     this.nativeNullAssertions,
     this.loaderExtension,
+    this.usesWebHotReload = false,
   });
 
   factory EntrypointBuilderOptions.fromOptions(BuilderOptions options) {
@@ -138,6 +145,7 @@ final class EntrypointBuilderOptions {
     const dart2wasmArgsOption = 'dart2wasm_args';
     const nativeNullAssertionsOption = 'native_null_assertions';
     const loaderOption = 'loader';
+    const webHotReloadOption = 'web-hot-reload';
     String? defaultLoaderOption;
 
     const supportedOptions = [
@@ -147,11 +155,13 @@ final class EntrypointBuilderOptions {
       nativeNullAssertionsOption,
       dart2wasmArgsOption,
       loaderOption,
+      webHotReloadOption,
     ];
 
     final config = options.config;
     final nativeNullAssertions =
         options.config[nativeNullAssertionsOption] as bool?;
+    final usesWebHotReload = options.config[webHotReloadOption] as bool?;
     final compilers = <EnabledEntrypointCompiler>[];
 
     validateOptions(
@@ -238,6 +248,7 @@ final class EntrypointBuilderOptions {
           config.containsKey(loaderOption)
               ? config[loaderOption] as String?
               : defaultLoaderOption,
+      usesWebHotReload: usesWebHotReload ?? false,
     );
   }
 
@@ -250,6 +261,7 @@ final class EntrypointBuilderOptions {
       '.dart': [
         if (optionsFor(WebCompiler.DartDevc) case final ddc?) ...[
           ddcBootstrapExtension,
+          ddcBootstrapEndExtension,
           mergedMetadataExtension,
           digestsEntrypointExtension,
           ddc.extension,
@@ -317,10 +329,15 @@ class WebEntrypointBuilder implements Builder {
           compilationSteps.add(
             Future(() async {
               try {
+                final usesWebHotReload = options.usesWebHotReload;
                 await bootstrapDdc(
                   buildStep,
                   nativeNullAssertions: options.nativeNullAssertions,
-                  requiredAssets: _ddcSdkResources,
+                  requiredAssets:
+                      usesWebHotReload
+                          ? _ddcLibraryBundleSdkResources
+                          : _ddcSdkResources,
+                  usesWebHotReload: usesWebHotReload,
                 );
               } on MissingModulesException catch (e) {
                 log.severe('$e');
@@ -451,8 +468,16 @@ Future<bool> _isAppEntryPoint(AssetId dartId, AssetReader reader) async {
 }
 
 /// Files copied from the SDK that are required at runtime to run a DDC
-/// application.
+/// application with the AMD module system.
 final _ddcSdkResources = [
   AssetId('build_web_compilers', 'lib/src/dev_compiler/dart_sdk.js'),
   AssetId('build_web_compilers', 'lib/src/dev_compiler/require.js'),
+];
+
+/// Files copied from the SDK that are required at runtime to run a DDC
+/// application with the Library Bundle module system (which supports hot
+/// reload).
+final _ddcLibraryBundleSdkResources = [
+  AssetId('build_web_compilers', 'lib/src/dev_compiler/dart_sdk.js'),
+  AssetId('build_web_compilers', 'lib/src/dev_compiler/ddc_module_loader.js'),
 ];

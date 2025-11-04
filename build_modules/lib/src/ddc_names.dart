@@ -1,13 +1,13 @@
-// Copyright (c) 2018, the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2025, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:path/path.dart' as p;
 
+/// Logic in this file must be synchronized with their namesakes in DDC at:
+/// pkg/dev_compiler/lib/src/compiler/js_names.dart
+
 /// Transforms a path to a valid JS identifier.
-///
-/// This logic must be synchronized with [pathToJSIdentifier] in DDC at:
-/// pkg/dev_compiler/lib/src/compiler/module_builder.dart
 ///
 /// For backwards compatibility, if this pattern is changed,
 /// dev_compiler_bootstrap.dart must be updated to accept both old and new
@@ -35,12 +35,11 @@ String toJSIdentifier(String name) {
   for (var i = 0; i < name.length; i++) {
     final ch = name[i];
     final needsEscape = ch == r'$' || _invalidCharInIdentifier.hasMatch(ch);
-    if (needsEscape && buffer == null) {
-      buffer = StringBuffer(name.substring(0, i));
+    if (needsEscape) {
+      buffer ??= StringBuffer(name.substring(0, i));
     }
-    if (buffer != null) {
-      buffer.write(needsEscape ? '\$${ch.codeUnits.join("")}' : ch);
-    }
+
+    buffer?.write(needsEscape ? '\$${ch.codeUnits.join("")}' : ch);
   }
 
   final result = buffer != null ? '$buffer' : name;
@@ -56,7 +55,11 @@ String toJSIdentifier(String name) {
 /// Also handles invalid variable names in strict mode, like "arguments".
 bool invalidVariableName(String keyword, {bool strictMode = true}) {
   switch (keyword) {
-    // http://www.ecma-international.org/ecma-262/6.0/#sec-future-reserved-words
+    // https://262.ecma-international.org/6.0/#sec-reserved-words
+    case 'true':
+    case 'false':
+    case 'null':
+    // https://262.ecma-international.org/6.0/#sec-keywords
     case 'await':
     case 'break':
     case 'case':
@@ -79,7 +82,6 @@ bool invalidVariableName(String keyword, {bool strictMode = true}) {
     case 'import':
     case 'in':
     case 'instanceof':
-    case 'let':
     case 'new':
     case 'return':
     case 'super':
@@ -99,6 +101,7 @@ bool invalidVariableName(String keyword, {bool strictMode = true}) {
     // http://www.ecma-international.org/ecma-262/6.0/#sec-identifiers-static-semantics-early-errors
     case 'implements':
     case 'interface':
+    case 'let':
     case 'package':
     case 'private':
     case 'protected':
