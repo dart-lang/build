@@ -57,8 +57,12 @@ class FrontendServerProxyDriver {
       return compilerOutput;
     }
     _frontendServer!.recordFiles();
-    for (final file in filesToWrite) {
-      _frontendServer!.writeFile(file);
+    if (filesToWrite.isEmpty) {
+      _frontendServer!.writeAllFiles();
+    } else {
+      for (final file in filesToWrite) {
+        _frontendServer!.writeFile(file);
+      }
     }
     return compilerOutput;
   }
@@ -266,11 +270,8 @@ class PersistentFrontendServer {
     _fileSystem.update(codeFile, manifestFile, sourcemapFile, metadataFile);
   }
 
-  void writeCompilerOutput(CompilerOutput output) {
-    if (output.errorCount != 0 || output.errorMessage != null) {
-      throw StateError('Attempting to write compiler output with errors.');
-    }
-    _fileSystem.writeToDisk(_fileSystem.jsRootUri);
+  void writeAllFiles() {
+    _fileSystem.writeAllFilesToDisk(_fileSystem.jsRootUri);
   }
 
   void writeFile(String fileName) {
@@ -325,7 +326,7 @@ class WebMemoryFilesystem {
   }
 
   /// Writes the entirety of this filesystem to [outputDirectoryUri].
-  void writeToDisk(Uri outputDirectoryUri) {
+  void writeAllFilesToDisk(Uri outputDirectoryUri) {
     assert(
       Directory.fromUri(outputDirectoryUri).existsSync(),
       '$outputDirectoryUri does not exist.',
@@ -336,6 +337,9 @@ class WebMemoryFilesystem {
 
   /// Writes [fileName] and its associated sourcemap and metadata files to
   /// [outputDirectoryUri].
+  ///
+  /// [fileName] is the file path of the compiled JS file being requested.
+  /// Source maps and metadata files will be pulled in based on this name.
   void writeFileToDisk(Uri outputDirectoryUri, String fileName) {
     assert(
       Directory.fromUri(outputDirectoryUri).existsSync(),
@@ -362,7 +366,8 @@ class WebMemoryFilesystem {
     _writeToDisk(outputDirectoryUri, filesToWrite);
   }
 
-  /// Writes [rawFilesToWrite] to [outputDirectoryUri].
+  /// Writes [rawFilesToWrite] to [outputDirectoryUri], where [rawFilesToWrite]
+  /// is a map of file paths to their contents.
   void _writeToDisk(
     Uri outputDirectoryUri,
     Map<String, Uint8List> rawFilesToWrite,
