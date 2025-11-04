@@ -1,6 +1,6 @@
 name: build_test
 description: Utilities for writing unit tests of Builders.
-version: 3.5.2-wip
+version: 3.5.3-wip
 repository: https://github.com/dart-lang/build/tree/master/build_test
 resolution: workspace
 
