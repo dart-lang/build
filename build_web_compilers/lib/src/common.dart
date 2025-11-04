@@ -152,7 +152,7 @@ String ddcLibraryId(AssetId jsId) {
   final jsPath =
       jsId.path.startsWith('lib/')
           ? jsId.path.replaceFirst('lib/', 'package:${jsId.package}/')
-          : '$multiRootScheme://${jsId.path}';
+          : '$multiRootScheme:///${jsId.path}';
   final prefix = jsPath.substring(0, jsPath.length - jsModuleExtension.length);
   return '$prefix.dart';
 }

@@ -695,13 +695,17 @@ String generateDDCLibraryBundleBootstrapScript({
   scriptsJs.write('{"src": "$mainBoostrapperUrl", "id": "data-main"}\n');
   final boostrapScript = '''
 // Save the current directory so we can access it in a closure.
-var _currentDirectory = (function () {
-  var _url = document.currentScript.src;
-  var lastSlash = _url.lastIndexOf('/');
-  if (lastSlash == -1) return _url;
-  var currentDirectory = _url.substring(0, lastSlash + 1);
-  return currentDirectory;
-})();
+  let _currentDirectory = (function () {
+    let _url = document.currentScript.src;
+    let lastSlash = _url.lastIndexOf('/');
+    if (lastSlash == -1) return _url;
+    let currentDirectory = _url.substring(0, lastSlash + 1);
+    return currentDirectory;
+  })();
+
+  let trimmedDirectory = _currentDirectory.endsWith("/") ?
+    _currentDirectory.substring(0, _currentDirectory.length - 1)
+    : _currentDirectory;
 
 $_simpleLoaderScript
 
@@ -746,7 +750,7 @@ $_simpleLoaderScript
     let loadConfig = new window.\$dartLoader.LoadConfiguration();
     // TODO(srujzs): Verify this is sufficient for Windows.
     loadConfig.isWindows = $isWindows;
-    loadConfig.root = _currentDirectory;
+    loadConfig.root = trimmedDirectory;
     loadConfig.bootstrapScript = scripts[scripts.length - 1];
 
     loadConfig.loadScriptFn = function(loader) {

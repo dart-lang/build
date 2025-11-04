@@ -179,7 +179,7 @@ class PersistentFrontendServer {
   }) async {
     final outputDillUri = fileSystemRoot.resolve('output.dill');
     // [platformDill] must be passed to the Frontend Server with a 'file:'
-    // prefix to pass schema checks with Windows drive letters.
+    // prefix to pass schema checks for Windows drive letters.
     final platformDill = Uri.file(
       p.join(sdkDir, 'lib', '_internal', 'ddc_outline.dill'),
     );
