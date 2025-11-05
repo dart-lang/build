@@ -245,28 +245,8 @@ class BuildRunnerProcess {
   ///
   /// Throws if the process appears to be stuck or done: if it outputs nothing
   /// for 30s.
-  Future<void> expect(Pattern pattern, {Pattern? failOn}) async {
-    printOnFailure(
-      '--- $_testLine expects `$pattern`'
-      '${failOn == null ? '' : ', failOn: `$failOn`'}',
-    );
-    failOn ??= BuildLog.failurePattern;
-    while (true) {
-      String? line;
-      try {
-        line = await _outputs.next.timeout(const Duration(seconds: 30));
-      } on TimeoutException catch (_) {
-        throw fail('While expecting `$pattern`, timed out after 30s.');
-      } catch (_) {
-        throw fail('While expecting `$pattern`, process exited.');
-      }
-      printOnFailure(line);
-      if (line.contains(pattern)) return;
-      if (line.contains(failOn)) {
-        fail('While expecting `$pattern`, got `$failOn`.');
-      }
-    }
-  }
+  Future<void> expect(Pattern pattern, {Pattern? failOn}) async =>
+      expectAndGetLine(pattern, failOn: failOn);
 
   /// Expects [pattern] to appear in the process's stdout or stderr.
   ///
