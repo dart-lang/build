@@ -1,3 +1,7 @@
+## 5.1.1
+
+- Fix re-add `multiRootScheme` to build_modules exports.
+
 ## 5.1.0
 
 - Add drivers and state resources required for DDC + Frontend Server compilation.

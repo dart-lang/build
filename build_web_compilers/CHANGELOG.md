@@ -1,3 +1,7 @@
+## 4.4.1
+
+- Read `multiRootScheme` from `build_modules`.
+
 ## 4.4.0
 
 - Add DDC + Frontend Server compilation support to existing builders.
