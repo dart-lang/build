@@ -1,7 +1,3 @@
-## 2.10.3-wip
-
-- Testing: Split expects into three modes, which return nothing, a line, or several concatenated lines.
-
 ## 2.10.2-wip
 
 - In "serve" and "watch" modes, retry failed compiles instead of exiting.
