@@ -6,10 +6,10 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build_modules/build_modules.dart' show multiRootScheme;
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
 
-final multiRootScheme = 'org-dartlang-app';
 final jsModuleErrorsExtension = '.ddc.js.errors';
 final jsModuleExtension = '.ddc.js';
 final jsSourceMapExtension = '.ddc.js.map';

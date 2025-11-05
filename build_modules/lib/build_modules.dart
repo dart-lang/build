@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+export 'src/common.dart' show multiRootScheme;
 export 'src/ddc_names.dart';
 export 'src/errors.dart' show MissingModulesException, UnsupportedModules;
 export 'src/frontend_server_resources.dart'
