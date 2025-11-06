@@ -239,8 +239,20 @@ class BuildRunnerProcess {
   /// defaults to [BuildLog.failurePattern] so that `expect` will stop if the
   /// process reports a build failure.
   ///
-  /// if [expectFailure] is set, then both [pattern] and [failOn] must be
-  /// encountered for the test to pass.
+  /// If the process exits instead, the test fails immediately.
+  ///
+  /// Otherwise, waits until [pattern] appears, then completes.
+  ///
+  /// Throws if the process appears to be stuck or done: if it outputs nothing
+  /// for 30s.
+  Future<void> expect(Pattern pattern, {Pattern? failOn}) async =>
+      expectAndGetLine(pattern, failOn: failOn);
+
+  /// Expects [pattern] to appear in the process's stdout or stderr.
+  ///
+  /// If [failOn] is encountered instead, the test fails immediately. It
+  /// defaults to [BuildLog.failurePattern] so that `expect` will stop if the
+  /// process reports a build failure.
   ///
   /// If the process exits instead, the test fails immediately.
   ///
@@ -248,53 +260,62 @@ class BuildRunnerProcess {
   ///
   /// Throws if the process appears to be stuck or done: if it outputs nothing
   /// for 30s.
-  Future<String> expect(
-    Pattern pattern, {
-    Pattern? failOn,
-    bool expectFailure = false,
-  }) async {
+  Future<String> expectAndGetLine(Pattern pattern, {Pattern? failOn}) async {
     printOnFailure(
       '--- $_testLine expects `$pattern`'
-      '${failOn == null ? '' : ', failOn: `$failOn`'}'
-      '${expectFailure ? ', expectFailure: true' : ''}',
+      '${failOn == null ? '' : ', failOn: `$failOn`'}',
     );
     failOn ??= BuildLog.failurePattern;
-
-    final expectsMessage =
-        expectFailure
-            ? '`$pattern` with failure matching (`$failOn`)'
-            : '`$pattern`';
-
-    var failureSeen = false;
-    var patternSeen = false;
     while (true) {
       String? line;
       try {
         line = await _outputs.next.timeout(const Duration(seconds: 30));
       } on TimeoutException catch (_) {
-        throw fail('While expecting $expectsMessage, timed out after 30s.');
+        throw fail('While expecting `$pattern`, timed out after 30s.');
       } catch (_) {
-        throw fail('While expecting $expectsMessage, process exited.');
+        throw fail('While expecting `$pattern`, process exited.');
       }
       printOnFailure(line);
+      if (line.contains(pattern)) return line;
       if (line.contains(failOn)) {
-        failureSeen = true;
+        fail('While expecting `$pattern`, got `$failOn`.');
       }
-      if (line.contains(pattern)) {
-        patternSeen = true;
-      }
+    }
+  }
 
-      if (expectFailure) {
-        if (patternSeen && failureSeen) {
-          return line;
-        }
-      } else {
-        if (failureSeen) {
-          fail('While expecting $expectsMessage, got `$failOn`.');
-        }
-        if (patternSeen) {
-          return line;
-        }
+  /// Expects [pattern] to appear in the process's stdout or stderr.
+  ///
+  /// If [failOn] is encountered instead, the test fails immediately. It
+  /// defaults to [BuildLog.failurePattern] so that `expect` will stop if the
+  /// process reports a build failure.
+  ///
+  /// If the process exits instead, the test fails immediately.
+  ///
+  /// Otherwise, waits until [pattern] appears, returns all text seen.
+  ///
+  /// Throws if the process appears to be stuck or done: if it outputs nothing
+  /// for 30s.
+  Future<String> expectAndGetBlock(Pattern pattern, {Pattern? failOn}) async {
+    printOnFailure(
+      '--- $_testLine expects `$pattern`'
+      '${failOn == null ? '' : ', failOn: `$failOn`'}',
+    );
+    failOn ??= BuildLog.failurePattern;
+    final lines = StringBuffer();
+    while (true) {
+      String? line;
+      try {
+        line = await _outputs.next.timeout(const Duration(seconds: 30));
+        lines.writeln(line);
+      } on TimeoutException catch (_) {
+        throw fail('While expecting `$pattern`, timed out after 30s.');
+      } catch (_) {
+        throw fail('While expecting `$pattern`, process exited.');
+      }
+      printOnFailure(line);
+      if (line.contains(pattern)) return lines.toString();
+      if (line.contains(failOn)) {
+        fail('While expecting `$pattern`, got `$failOn`.');
       }
     }
   }
@@ -329,7 +350,7 @@ class BuildRunnerProcess {
   // Expects the server to log that it is serving, records the port.
   Future<void> expectServing() async {
     final regexp = RegExp('Serving `web` on http://localhost:([0-9]+)');
-    final line = await expect(regexp);
+    final line = await expectAndGetLine(regexp);
     final port = int.parse(regexp.firstMatch(line)!.group(1)!);
     _port = port;
   }

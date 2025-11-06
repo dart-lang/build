@@ -461,9 +461,10 @@ String helloWorld = 'Hello Dash!';
 class Foo<T>{}
 String helloWorld = 'Hello Dash!';
 ''');
-    await watch.expect(
-      'Hot reload rejected due to unsupported changes',
-      expectFailure: true,
+    final errorText = await watch.expectAndGetBlock(BuildLog.failurePattern);
+    expect(
+      errorText,
+      contains('Hot reload rejected due to unsupported changes'),
     );
 
     // Revert the invalid edit, rebuild succeeds.

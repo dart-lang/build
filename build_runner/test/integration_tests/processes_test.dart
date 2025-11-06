@@ -93,9 +93,13 @@ void main() async {
 }
 ''');
     var process = await tester.start('root_pkg', 'dart run root_pkg:parent');
-    var parentLine = await process.expect(RegExp(r'Parent is running\. \d+'));
+    var parentLine = await process.expectAndGetLine(
+      RegExp(r'Parent is running\. \d+'),
+    );
     var parentPid = int.parse(parentLine.split(' ').last);
-    final childLine = await process.expect(RegExp(r'Child is waiting\. \d+'));
+    final childLine = await process.expectAndGetLine(
+      RegExp(r'Child is waiting\. \d+'),
+    );
     var childPid = int.parse(childLine.split(' ').last);
 
     expect(processIsRunning(parentPid), true);
@@ -128,7 +132,9 @@ void main() async {
 }
 ''');
     process = await tester.start('root_pkg', 'dart run root_pkg:parent');
-    parentLine = await process.expect(RegExp(r'Parent is running\. \d+'));
+    parentLine = await process.expectAndGetLine(
+      RegExp(r'Parent is running\. \d+'),
+    );
     parentPid = int.parse(parentLine.split(' ').last);
 
     while (tester.read('root_pkg/pid.txt') == null) {
