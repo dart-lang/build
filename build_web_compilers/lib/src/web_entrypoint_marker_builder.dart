@@ -30,6 +30,10 @@ class WebEntrypointMarkerBuilder implements Builder {
     final frontendServerState = await buildStep.fetchResource(
       frontendServerStateResource,
     );
+    final webEntrypointAsset = AssetId(
+      buildStep.inputId.package,
+      'web/.web.entrypoint.json',
+    );
     final webAssets = await buildStep.findAssets(Glob('web/**')).toList();
     final webEntrypointJson = <String, dynamic>{};
 
@@ -43,14 +47,14 @@ class WebEntrypointMarkerBuilder implements Builder {
           // We must save the main entrypoint as the recompilation target for
           // the Frontend Server before any JS files are emitted.
           frontendServerState.entrypointAssetId = asset;
-          webEntrypointJson['entrypoint'] = asset.uri.toString();
+          webEntrypointJson['entrypoint'] = asset.toString();
           break;
         }
       }
     }
 
     await buildStep.writeAsString(
-      AssetId(buildStep.inputId.package, 'web/.web.entrypoint.json'),
+      webEntrypointAsset,
       jsonEncode(webEntrypointJson),
     );
   }

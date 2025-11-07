@@ -13,7 +13,7 @@ class FrontendServerState {
   ///
   /// This must be set before any asset builders run when compiling with DDC and
   /// hot reload.
-  late AssetId entrypointAssetId;
+  AssetId? entrypointAssetId;
 }
 
 /// A shared [Resource] for a [FrontendServerState].
