@@ -1,3 +1,7 @@
+## 4.4.2
+
+- Fixes DDC + FES not reading the entrypoint when serving a prebuilt app.
+
 ## 4.4.1
 
 - Read `multiRootScheme` from `build_modules`.
