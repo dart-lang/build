@@ -1,5 +1,5 @@
 name: build_daemon
-version:  4.1.0
+version:  4.1.1
 description: A daemon for running Dart builds.
 repository: https://github.com/dart-lang/build/tree/master/build_daemon
 resolution: workspace

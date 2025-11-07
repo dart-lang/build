@@ -1,3 +1,7 @@
+## 4.1.1
+
+- Bug fix: daemon process shuts down on internal error.
+
 ## 4.1.0
 
 - Bug fix: resolve symlinks when identifying workspaces, so symlinks can't
