@@ -195,7 +195,12 @@ class BuildDaemonClient {
       includeParentEnvironment: includeParentEnvironment,
     );
 
-    await _handleDaemonStartup(process, logHandler);
+    try {
+      await _handleDaemonStartup(process, logHandler);
+    } catch (_) {
+      process.kill();
+      rethrow;
+    }
 
     return connectUnchecked(
       workingDirectory,
