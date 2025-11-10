@@ -1,5 +1,6 @@
-## 2.10.3-wip
+## 2.10.2
 
+- Bug fix: fix issue with webdev failing due to a modification during a build.
 - In "serve" and "watch" modes, retry failed compiles instead of exiting.
 
 ## 2.10.1
