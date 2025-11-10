@@ -66,8 +66,31 @@ class DdcFrontendServerBuilder implements Builder {
     final frontendServerState = await buildStep.fetchResource(
       frontendServerStateResource,
     );
+
+    if (frontendServerState.entrypointAssetId == null) {
+      // Reuse the recorded entrypoint asset if it was generated in a previous
+      // build.
+      final webEntrypointAsset = AssetId(
+        buildStep.inputId.package,
+        'web/.web.entrypoint.json',
+      );
+      if (await buildStep.canRead(webEntrypointAsset)) {
+        final contents =
+            json.decode(await buildStep.readAsString(webEntrypointAsset))
+                as Map<String, dynamic>;
+        frontendServerState.entrypointAssetId = AssetId.parse(
+          contents['entrypoint'] as String,
+        );
+      } else {
+        log.severe(
+          'Unable to read entrypoint when building ${buildStep.inputId}.',
+        );
+        return;
+      }
+    }
+
     final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
-    final webEntrypointAsset = frontendServerState.entrypointAssetId;
+    final webEntrypointAsset = frontendServerState.entrypointAssetId!;
     await buildStep.trackStage(
       'EnsureAssets',
       () => scratchSpace.ensureAssets([
@@ -127,8 +150,8 @@ class DdcFrontendServerBuilder implements Builder {
     final metadataId = ddcEntrypointId.changeExtension(metadataExtension);
     final file = scratchSpace.fileFor(metadataId);
     final content = await file.readAsString();
-    final json = jsonDecode(content) as Map<String, Object?>;
-    fixMetadataSources(json, scratchSpace.tempDir.uri);
-    await buildStep.writeAsString(metadataId, jsonEncode(json));
+    final metadataJson = jsonDecode(content) as Map<String, Object?>;
+    fixMetadataSources(metadataJson, scratchSpace.tempDir.uri);
+    await buildStep.writeAsString(metadataId, jsonEncode(metadataJson));
   }
 }
