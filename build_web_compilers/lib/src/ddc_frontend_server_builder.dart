@@ -82,9 +82,10 @@ class DdcFrontendServerBuilder implements Builder {
           contents['entrypoint'] as String,
         );
       } else {
-        throw Exception(
+        log.severe(
           'Unable to read entrypoint when building ${buildStep.inputId}.',
         );
+        return;
       }
     }
 
