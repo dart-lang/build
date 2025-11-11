@@ -162,8 +162,8 @@ class BuildSeries {
 
       // For modifications, confirm that the content actually changed.
       if (change.type == ChangeType.MODIFY) {
-        _readerWriter.cache.invalidate([id]);
-        final newDigest = await _readerWriter.digest(id);
+        // Use `_buildPlan.readerWriter` which has no cache to do a real read.
+        final newDigest = await _buildPlan.readerWriter.digest(id);
         if (node.digest != newDigest) {
           result.add(change);
         }
