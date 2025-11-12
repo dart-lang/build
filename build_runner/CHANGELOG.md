@@ -2,6 +2,8 @@
 
 - Bug fix: fix crash when you run `dart run build_runner build` in a
   subdirectory of a package.
+- Bug fix: in a workspace, generate for transitive dependencies of the current
+  package instead of for all packages in the workspace.
 
 ## 2.10.2
 
