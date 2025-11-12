@@ -192,7 +192,7 @@ void main() {
   group('workspace ', () {
     final workspaceFixturePath = p.absolute('test/fixtures/workspace');
 
-    test('Loads all packages in workspace. Has correct root', () async {
+    test('loads only dependent packages, has correct root', () async {
       Matcher packageNodeEquals(PackageNode node) => isA<PackageNode>()
           .having((c) => c.path, 'path', node.path)
           .having(
@@ -223,17 +223,10 @@ void main() {
         null,
       );
       a.dependencies.add(b);
-      final workspace = PackageNode(
-        'workspace',
-        workspaceFixturePath,
-        DependencyType.path,
-        null,
-      );
 
       expect(graph.allPackages, {
         'a': packageNodeEquals(a),
         'b': packageNodeEquals(b),
-        'workspace': packageNodeEquals(workspace),
         r'$sdk': anything,
       });
 

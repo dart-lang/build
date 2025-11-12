@@ -43,6 +43,8 @@ class BuildRunnerTester {
     required Map<String, String> files,
     List<String>? dependencies,
     List<String>? pathDependencies,
+    List<String>? workspaceDependencies,
+    bool inWorkspace = false,
   }) {
     _writeDirectory(
       name: name,
@@ -51,6 +53,8 @@ class BuildRunnerTester {
           name: name,
           dependencies: dependencies,
           pathDependencies: pathDependencies,
+          workspaceDependencies: workspaceDependencies,
+          inWorkspace: inWorkspace,
         ),
         ...files,
       },
@@ -410,22 +414,35 @@ class Pubspecs {
   /// The specified [pathDependencies] are included as path dependencies onto
   /// peer folders. This allows to add a dependency onto another package that
   /// will be written using `writePackage`.
+  ///
+  /// The specified [workspaceDependencies] are included as "any" dependencies.
+  /// They should be in the workspace so they can be resolved from there.
+  ///
+  /// If [inWorkspace] then `resolution: workspace`.
   String pubspec({
     required String name,
     List<String>? dependencies,
     List<String>? pathDependencies,
+    List<String>? workspaceDependencies,
+    bool inWorkspace = false,
   }) {
     dependencies ??= [];
     pathDependencies ??= [];
+    workspaceDependencies ??= [];
 
     final result = StringBuffer('''
 name: $name
+${inWorkspace ? 'resolution: workspace' : ''}
 environment:
   sdk: '>=3.7.0 <4.0.0'
 dependencies:
 ''');
 
-    for (final package in [...dependencies, ...pathDependencies]) {
+    for (final package in [
+      ...dependencies,
+      ...pathDependencies,
+      ...workspaceDependencies,
+    ]) {
       result.writeln('  $package: any');
     }
 

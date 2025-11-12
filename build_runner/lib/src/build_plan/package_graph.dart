@@ -155,7 +155,31 @@ class PackageGraph implements AssetPathProvider {
         ),
       );
     }
-    return PackageGraph._(rootNode, nodes);
+
+    // A workspace can have packages that are not depended on by [rootPackage].
+    // Compute transitive dependencies and filter to that.
+    Set<PackageNode>? usedNodes;
+    if (workspacePath != null) {
+      usedNodes = {rootNode};
+      final queue = [rootNode];
+      while (queue.isNotEmpty) {
+        final node = queue.removeLast();
+        for (final dep in node.dependencies) {
+          if (usedNodes.add(dep)) {
+            queue.add(dep);
+          }
+        }
+      }
+    }
+
+    return PackageGraph._(
+      rootNode,
+      usedNodes == null
+          ? nodes
+          : Map.fromEntries(
+            nodes.entries.where((e) => usedNodes!.contains(e.value)),
+          ),
+    );
   }
 
   /// Creates a [PackageGraph] for the package in which you are currently
