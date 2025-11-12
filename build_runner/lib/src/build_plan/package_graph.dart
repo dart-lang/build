@@ -12,6 +12,7 @@ import 'package:yaml/yaml.dart';
 
 import '../constants.dart';
 import '../io/asset_path_provider.dart';
+import '../logging/build_log.dart';
 
 /// The SDK package, we filter this to the core libs and dev compiler
 /// resources.
@@ -67,6 +68,8 @@ class PackageGraph implements AssetPathProvider {
   /// Creates a [PackageGraph] for the package whose top level directory lives
   /// at [packagePath] (no trailing slash).
   static Future<PackageGraph> forPath(String packagePath) async {
+    buildLog.debug('forPath $packagePath');
+
     /// Read in the pubspec file and parse it as yaml.
     final pubspec = File(p.join(packagePath, 'pubspec.yaml'));
     if (!pubspec.existsSync()) {

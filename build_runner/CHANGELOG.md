@@ -1,3 +1,8 @@
+## 2.10.3-wip
+
+- Bug fix: fix crash when you run `dart run build_runner build` in a
+  subdirectory of a package.
+
 ## 2.10.2
 
 - Bug fix: fix issue with webdev failing due to a modification during a build.
