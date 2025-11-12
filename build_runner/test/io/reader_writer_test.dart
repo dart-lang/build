@@ -10,6 +10,7 @@ import 'package:build_runner/src/build_plan/package_graph.dart';
 import 'package:build_runner/src/io/reader_writer.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as path;
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 import '../common/common.dart';
@@ -17,7 +18,9 @@ import '../common/common.dart';
 final newLine = Platform.isWindows ? '\r\n' : '\n';
 
 void main() async {
-  final packageGraph = await PackageGraph.forPath('test/fixtures/basic_pkg');
+  final packageGraph = await PackageGraph.forPath(
+    p.absolute('test/fixtures/basic_pkg'),
+  );
 
   group('ReaderWriter', () {
     final readerWriter = ReaderWriter(packageGraph);

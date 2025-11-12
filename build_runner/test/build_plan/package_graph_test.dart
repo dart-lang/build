@@ -33,7 +33,7 @@ void main() {
     });
 
     group('basic package ', () {
-      final basicPkgPath = 'test/fixtures/basic_pkg/';
+      final basicPkgPath = p.absolute('test/fixtures/basic_pkg/');
 
       setUp(() async {
         graph = await PackageGraph.forPath(basicPkgPath);
@@ -82,7 +82,7 @@ void main() {
     });
 
     group('package with dev dependencies', () {
-      final withDevDepsPkgPath = 'test/fixtures/with_dev_deps';
+      final withDevDepsPkgPath = p.absolute('test/fixtures/with_dev_deps');
 
       setUp(() async {
         graph = await PackageGraph.forPath(withDevDepsPkgPath);
@@ -131,7 +131,7 @@ void main() {
     });
 
     group('package with flutter dependencies', () {
-      final withFlutterDeps = 'test/fixtures/flutter_pkg';
+      final withFlutterDeps = p.absolute('test/fixtures/flutter_pkg');
 
       setUp(() async {
         graph = await PackageGraph.forPath(withFlutterDeps);
@@ -172,7 +172,9 @@ void main() {
 
     test('missing pubspec throws on create', () {
       expect(
-        () => PackageGraph.forPath(p.join('test', 'fixtures', 'no_pubspec')),
+        () => PackageGraph.forPath(
+          p.absolute(p.join('test', 'fixtures', 'no_pubspec')),
+        ),
         throwsA(anything),
       );
     });
@@ -180,7 +182,7 @@ void main() {
     test('missing .dart_tool/package_config.json file throws on create', () {
       expect(
         () => PackageGraph.forPath(
-          p.join('test', 'fixtures', 'no_packages_file'),
+          p.absolute(p.join('test', 'fixtures', 'no_packages_file')),
         ),
         throwsA(anything),
       );
@@ -188,7 +190,7 @@ void main() {
   });
 
   group('workspace ', () {
-    final workspaceFixturePath = 'test/fixtures/workspace';
+    final workspaceFixturePath = p.absolute('test/fixtures/workspace');
 
     test('Loads all packages in workspace. Has correct root', () async {
       Matcher packageNodeEquals(PackageNode node) => isA<PackageNode>()
@@ -204,7 +206,9 @@ void main() {
             node.dependencyType,
           );
 
-      final graph = await PackageGraph.forPath('$workspaceFixturePath/pkgs/a');
+      final graph = await PackageGraph.forPath(
+        p.absolute('$workspaceFixturePath/pkgs/a'),
+      );
       final a = PackageNode(
         'a',
         '$workspaceFixturePath/pkgs/a',
