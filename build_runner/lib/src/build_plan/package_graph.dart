@@ -2,17 +2,18 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
+import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
 import '../constants.dart';
 import '../io/asset_path_provider.dart';
-import '../logging/build_log.dart';
 
 /// The SDK package, we filter this to the core libs and dev compiler
 /// resources.
@@ -65,67 +66,53 @@ class PackageGraph implements AssetPathProvider {
     return PackageGraph._(root, allPackages);
   }
 
-  /// Creates a [PackageGraph] for the package whose top level directory lives
-  /// at [packagePath] (no trailing slash).
+  /// Loads the package graph for the package at absolute path [packagePath].
+  ///
+  /// Assumes `pubspec.yaml` exists and has a name, as this is checked by
+  /// `dart run`.
+  @visibleForTesting
   static Future<PackageGraph> forPath(String packagePath) async {
-    buildLog.debug('forPath $packagePath');
-
-    /// Read in the pubspec file and parse it as yaml.
-    final pubspec = File(p.join(packagePath, 'pubspec.yaml'));
-    if (!pubspec.existsSync()) {
-      throw StateError(
-        'Unable to generate package graph, no `pubspec.yaml` found. '
-        'This program must be ran from the root directory of your package.',
+    var packageConfigFile = File(
+      p.join(packagePath, '.dart_tool', 'package_config.json'),
+    );
+    String? workspacePath;
+    if (!packageConfigFile.existsSync()) {
+      final workspaceRefFile = File(
+        p.join(packagePath, '.dart_tool', 'pub', 'workspace_ref.json'),
       );
-    }
-    final rootPubspec = _pubspecForPath(packagePath);
-    final rootPackageName = rootPubspec['name'] as String?;
-    if (rootPackageName == null) {
-      throw StateError(
-        'The current package has no name, please add one to the '
-        'pubspec.yaml.',
-      );
-    }
-
-    // The path of the directory that contains .dart_tool/package_config.json.
-    //
-    // Should also contain `pubspec.lock`.
-    var rootDir = packagePath;
-    PackageConfig? packageConfig;
-    // Manually recurse through parent directories, to obtain the [rootDir]
-    // where a package config was found. It doesn't seem possible to obtain this
-    // directly with package:package_config.
-    while (true) {
-      packageConfig = await findPackageConfig(
-        Directory(rootDir),
-        recurse: false,
-      );
-      if (packageConfig != null) {
-        break;
+      if (workspaceRefFile.existsSync()) {
+        final workspaceRef =
+            (json.decode(workspaceRefFile.readAsStringSync())
+                    as Map<String, Object?>)['workspaceRoot']
+                as String;
+        workspacePath = p.canonicalize(
+          p.join(p.dirname(workspaceRefFile.path), workspaceRef),
+        );
+        packageConfigFile = File(
+          p.join(workspacePath, '.dart_tool', 'package_config.json'),
+        );
       }
-      final next = p.dirname(rootDir);
-      if (next == rootDir) {
-        // We have reached the file system root.
-        break;
-      }
-      rootDir = next;
     }
 
-    if (packageConfig == null) {
-      throw StateError(
-        'Unable to find package config for package at $packagePath.',
-      );
+    if (!packageConfigFile.existsSync()) {
+      throw StateError('Failed to find package_config.json.');
     }
-    final dependencyTypes = _parseDependencyTypes(rootDir);
+
+    final packageConfig = await loadPackageConfig(packageConfigFile);
 
     final nodes = <String, PackageNode>{};
-    // A consistent package order _should_ mean a consistent order of build
-    // phases. It's not a guarantee, but also not required for correctness, only
-    // an optimization.
-    final consistentlyOrderedPackages =
+    final packages =
         packageConfig.packages.toList()
           ..sort((a, b) => a.name.compareTo(b.name));
-    for (final package in consistentlyOrderedPackages) {
+
+    final rootPubspec = _pubspecForPath(packagePath);
+    final rootPackageName = rootPubspec['name']! as String;
+    final pubspecLockFile = File(
+      p.join(workspacePath ?? packagePath, 'pubspec.lock'),
+    );
+    final dependencyTypes = _parseDependencyTypes(pubspecLockFile);
+
+    for (final package in packages) {
       final isRoot = package.name == rootPackageName;
       nodes[package.name] = PackageNode(
         package.name,
@@ -137,6 +124,7 @@ class PackageGraph implements AssetPathProvider {
         isRoot: isRoot,
       );
     }
+
     PackageNode packageNode(String package, {String? parent}) {
       final node = nodes[package];
       if (node == null) {
@@ -270,16 +258,9 @@ enum DependencyType { github, path, hosted }
 
 /// Parse the `pubspec.lock` file and return a Map from package name to the type
 /// of dependency.
-Map<String, DependencyType> _parseDependencyTypes(String rootPackagePath) {
-  final pubspecLock = File(p.join(rootPackagePath, 'pubspec.lock'));
-  if (!pubspecLock.existsSync()) {
-    throw StateError(
-      'Unable to generate package graph, no `pubspec.lock` found. '
-      'This program must be ran from the root directory of your package.',
-    );
-  }
+Map<String, DependencyType> _parseDependencyTypes(File pubspecLockFile) {
   final dependencyTypes = <String, DependencyType>{};
-  final dependencies = loadYaml(pubspecLock.readAsStringSync()) as YamlMap;
+  final dependencies = loadYaml(pubspecLockFile.readAsStringSync()) as YamlMap;
   final packages = dependencies['packages'] as YamlMap;
   for (final packageName in packages.keys) {
     final source = (packages[packageName] as YamlMap)['source'];
@@ -303,7 +284,7 @@ DependencyType _dependencyTypeFromSource(String source) {
   throw ArgumentError('Unable to determine dependency type:\n$source');
 }
 
-/// Read the pubspec for each package in [packages] and finds it's
+/// Read the pubspec for each package in [packages] and finds its
 /// dependencies.
 Map<String, List<String>> _parsePackageDependencies(
   Iterable<Package> packages,
