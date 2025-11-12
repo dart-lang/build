@@ -67,7 +67,17 @@ class BuildRunner {
 
     // Option parsing depends on the package name in `pubspec.yaml`.
     // Fortunately, `dart run build_runner` checks that `pubspec.yaml` is
-    // present and valid, so there must be a `name`.
+    // present in the current or a parent directory, and that it's valid, so
+    // there must be a `name`.
+    //
+    // Start by changing the current directory to the package root.
+    while (!File(p.join(Directory.current.path, 'pubspec.yaml')).existsSync()) {
+      final parent = Directory.current.parent;
+      if (parent.path == Directory.current.path) {
+        throw StateError('Missing pubspec.yaml.');
+      }
+      Directory.current = parent;
+    }
     final rootPackage =
         (loadYaml(File(p.join(p.current, 'pubspec.yaml')).readAsStringSync())
                 as YamlMap)['name']!
