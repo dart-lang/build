@@ -161,15 +161,12 @@ class PackageGraph implements AssetPathProvider {
     Set<PackageNode>? usedNodes;
     if (workspacePath != null) {
       usedNodes = {rootNode};
-      final discoveredNodes = <PackageNode>{rootNode};
-      while (discoveredNodes.isNotEmpty) {
-        final discoveredNodesList = discoveredNodes.toList();
-        discoveredNodes.clear();
-        for (final node in discoveredNodesList) {
-          for (final dep in node.dependencies) {
-            if (usedNodes.add(dep)) {
-              discoveredNodes.add(dep);
-            }
+      final queue = [rootNode];
+      while (queue.isNotEmpty) {
+        final node = queue.removeLast();
+        for (final dep in node.dependencies) {
+          if (usedNodes.add(dep)) {
+            queue.add(dep);
           }
         }
       }
