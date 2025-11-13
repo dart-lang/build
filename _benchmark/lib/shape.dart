@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:math';
+
 import 'benchmark.dart';
 
 /// The shape of the dependency graph.
@@ -26,7 +28,10 @@ enum Shape {
   ///
   /// Considered in alphanumeric order, each one has a dependency on the one
   /// before. The first library depends on `app.dart`.
-  backwards;
+  backwards,
+
+  /// Randomly connected libraries.
+  random;
 
   Iterable<String> importNames(
     int libraryNumber, {
@@ -59,6 +64,21 @@ enum Shape {
               benchmarkSize: benchmarkSize,
             ),
         ];
+      case Shape.random:
+        // Use random.nextInt(random.nextInt(...)) to get a distribution of
+        // imports biased towards lower number libraries, which is more
+        // realistic than flat random imports.
+        final numberOfImports = _random.nextInt(_random.nextInt(10) + 1);
+        return [
+          if (_random.nextInt(libraryNumber + 1) == 0) 'app.dart',
+          for (var i = 0; i != numberOfImports; ++i)
+            Benchmarks.libraryName(
+              _random.nextInt(_random.nextInt(benchmarkSize + 1) + 1) + 1,
+              benchmarkSize: benchmarkSize,
+            ),
+        ];
     }
   }
 }
+
+final _random = Random(0);
