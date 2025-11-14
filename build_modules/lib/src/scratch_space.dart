@@ -33,7 +33,7 @@ final scratchSpaceResource = Resource<ScratchSpace>(
       p.join(scratchSpace.tempDir.path, '.dart_tool', 'package_config.json'),
     );
     if (!packageConfigFile.existsSync()) {
-      final originalConfigFile = File.fromUri((await Isolate.packageConfig)!);
+      final originalConfigFile = await _findPackageConfig();
       final packageConfigContents = _scratchSpacePackageConfig(
         originalConfigFile.readAsStringSync(),
         originalConfigFile.absolute.uri,
@@ -134,3 +134,26 @@ String _scratchSpacePackageConfig(String rootConfig, Uri packageConfigUri) {
 }
 
 final Uri _currentDirUri = Directory.current.uri;
+
+/// Returns [Isolate.packageConfig], or finds the file if it's `null`.
+///
+/// The `null` case is hit when the builder is AOT compiled. The build runs
+/// within the package being built, so search upwards for the package config.
+Future<File> _findPackageConfig() async {
+  final result = await Isolate.packageConfig;
+  if (result != null) return File(result.toFilePath());
+  var directory = Directory.current;
+  while (true) {
+    final packageConfigFile = File(
+      p.join(directory.path, '.dart_tool', 'package_config.json'),
+    );
+    if (packageConfigFile.existsSync()) {
+      return packageConfigFile;
+    }
+    final parent = directory.parent;
+    if (parent.path == directory.path) {
+      throw StateError('Failed to find package_config.json.');
+    }
+    directory = parent;
+  }
+}
