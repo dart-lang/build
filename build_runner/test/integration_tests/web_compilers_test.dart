@@ -10,7 +10,7 @@ import 'package:test/test.dart';
 
 import '../common/common.dart';
 
-const defaultTimeout = Timeout(Duration(seconds: 90));
+const defaultTimeout = Timeout(Duration(minutes: 3));
 
 void main() async {
   test('web compilers', () async {
@@ -53,6 +53,12 @@ void main() {
 ''',
         'web/unused.dart': '',
       },
+    );
+
+    // Initial build AOT.
+    await tester.run(
+      'root_pkg',
+      'dart run build_runner build --output web:build --force-aot',
     );
 
     // Initial build.
