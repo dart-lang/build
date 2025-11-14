@@ -73,7 +73,7 @@ enum Shape {
           if (_random.nextInt(libraryNumber + 1) == 0) 'app.dart',
           for (var i = 0; i != numberOfImports; ++i)
             Benchmarks.libraryName(
-              _random.nextInt(_random.nextInt(benchmarkSize + 1) + 1) + 1,
+              _random.nextInt(_random.nextInt(benchmarkSize) + 1),
               benchmarkSize: benchmarkSize,
             ),
         ];
