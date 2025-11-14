@@ -1,4 +1,4 @@
-## 2.10.3-wip
+## 2.10.3
 
 - Performance: improve scalability with the number of library cycles, making
   builds much faster for some large codebases.
