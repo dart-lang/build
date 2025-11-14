@@ -37,6 +37,16 @@ void main() {
       ]);
     });
 
+    test('compile progress', () {
+      buildLog.logCompile(isAot: false, function: () async {});
+      expect(lines, ['  0s compiling builders/jit']);
+      buildLog.logCompile(isAot: true, function: () async {});
+      expect(lines, [
+        '  0s compiling builders/jit',
+        '  0s compiling builders/aot',
+      ]);
+    });
+
     test('phase progress', () {
       final phases = _createPhases({'builder1': 10, 'builder2': 15});
       buildLog.startPhases(phases);

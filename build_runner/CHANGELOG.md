@@ -1,3 +1,8 @@
+## 2.11.0-wip
+
+- Add logging of builder compilation so you can tell how much time is spent
+  on the JIT or AOT compile. Explicitly log restarts to recompile builders.
+
 ## 2.10.3
 
 - Performance: improve scalability with the number of library cycles, making
