@@ -341,23 +341,20 @@ class LibraryCycleGraphLoader {
   ///
   /// A [_graphs] entry will be created for each ID in [newCycles].
   void _buildGraphs(int phase, {required List<LibraryCycle> newCycles}) {
-    // Build lookup from ID to [LibraryCycle] including new and existing cycles.
-    final existingCycles = <LibraryCycle>[];
-    for (final phasedCycle in _cycles.values) {
-      if (phasedCycle.isExpiredAt(phase: phase)) continue;
-      existingCycles.add(phasedCycle.valueAt(phase: phase));
-    }
+    // Cycles by ID at the current phase.
     final cycleById = <AssetId, LibraryCycle>{};
-    for (final cycle in existingCycles) {
-      for (final id in cycle.ids) {
-        cycleById[id] = cycle;
-      }
-    }
     for (final cycle in newCycles) {
       for (final id in cycle.ids) {
         cycleById[id] = cycle;
       }
     }
+
+    /// Lookups up [id] in [cycleById], falling back to [_cycles] if it's not
+    /// present.
+    LibraryCycle lookupLibraryCycle(AssetId id) =>
+        cycleById.putIfAbsent(id, () {
+          return _cycles[id]!.valueAt(phase: phase);
+        });
 
     // Create the graph for each cycle in [newCycles].
     for (final root in newCycles) {
@@ -379,7 +376,7 @@ class LibraryCycleGraphLoader {
       for (final id in root.ids) {
         final assetDeps = _assetDeps[id]!.valueAt(phase: phase);
         for (final dep in assetDeps.deps) {
-          final depCycle = cycleById[dep]!;
+          final depCycle = lookupLibraryCycle(dep);
           if (identical(depCycle, root)) continue;
           if (alreadyAddedChildren.add(depCycle)) {
             final childGraph = _graphs[dep]!.expiringValueAt(phase: phase);

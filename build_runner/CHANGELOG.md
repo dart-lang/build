@@ -1,5 +1,7 @@
 ## 2.10.3-wip
 
+- Performance: improve scalability with the number of library cycles, making
+  builds much faster for some large codebases.
 - Bug fix: fix crash when you run `dart run build_runner build` in a
   subdirectory of a package.
 - Bug fix: in a workspace, generate for transitive dependencies of the current
