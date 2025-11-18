@@ -1,3 +1,7 @@
+## 5.1.2
+
+- Make compatible with `dart run build_runner build --force-aot`.
+
 ## 5.1.1
 
 - Fix re-add `multiRootScheme` to build_modules exports.
