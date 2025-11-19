@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-// ignore_for_file: deprecated_member_use
-
 import 'dart:io' show Platform;
 import 'dart:isolate';
 
@@ -69,13 +67,13 @@ void runTests(ResolversFactory resolversFactory) {
       },
       (resolver) async {
         final lib = await resolver.libraryFor(entryPoint);
-        expect(lib.firstFragment.libraryImports2.length, 2);
+        expect(lib.firstFragment.libraryImports.length, 2);
         final libA =
             lib
-              ..firstFragment.libraryImports2
-                  .where((l) => l.importedLibrary2!.name3 == 'a')
+              ..firstFragment.libraryImports
+                  .where((l) => l.importedLibrary!.name == 'a')
                   .single;
-        expect(libA.getClass2('Foo'), isNull);
+        expect(libA.getClass('Foo'), isNull);
       },
       resolvers: createResolvers(),
     );
@@ -113,13 +111,13 @@ void runTests(ResolversFactory resolversFactory) {
       },
       (resolver) async {
         final lib = await resolver.libraryFor(entryPoint);
-        expect(lib.firstFragment.libraryImports2.length, 2);
+        expect(lib.firstFragment.libraryImports.length, 2);
         final libB =
             lib
-              ..firstFragment.libraryImports2
-                  .where((l) => l.importedLibrary2!.name3 == 'b')
+              ..firstFragment.libraryImports
+                  .where((l) => l.importedLibrary!.name == 'b')
                   .single;
-        expect(libB.getClass2('Foo'), isNull);
+        expect(libB.getClass('Foo'), isNull);
       },
       resolvers: createResolvers(),
     );
@@ -162,8 +160,8 @@ void runTests(ResolversFactory resolversFactory) {
       },
       (resolver) async {
         final lib = await resolver.libraryFor(entryPoint);
-        expect(lib.getClass2('A'), isNotNull);
-        expect(lib.getClass2('B'), isNull);
+        expect(lib.getClass('A'), isNotNull);
+        expect(lib.getClass('B'), isNull);
       },
       resolvers: resolvers,
     );
@@ -179,8 +177,8 @@ void runTests(ResolversFactory resolversFactory) {
       },
       (resolver) async {
         final lib = await resolver.libraryFor(entryPoint);
-        expect(lib.getClass2('A'), isNull);
-        expect(lib.getClass2('B'), isNotNull);
+        expect(lib.getClass('A'), isNull);
+        expect(lib.getClass('B'), isNotNull);
       },
       resolvers: resolvers,
     );
@@ -200,8 +198,8 @@ void runTests(ResolversFactory resolversFactory) {
       },
       (resolver) async {
         final lib = await resolver.libraryFor(entryPoint);
-        expect(lib.getClass2('A'), isNotNull);
-        expect(lib.getClass2('B'), isNull);
+        expect(lib.getClass('A'), isNotNull);
+        expect(lib.getClass('B'), isNull);
       },
       resolvers: resolvers,
     );
@@ -221,8 +219,8 @@ void runTests(ResolversFactory resolversFactory) {
       },
       (resolver) async {
         final lib = await resolver.libraryFor(entryPoint);
-        expect(lib.getClass2('A'), isNull);
-        expect(lib.getClass2('B'), isNotNull);
+        expect(lib.getClass('A'), isNull);
+        expect(lib.getClass('B'), isNotNull);
       },
       resolvers: resolvers,
     );
@@ -246,14 +244,14 @@ void runTests(ResolversFactory resolversFactory) {
     final sourcesWithoutB = Map.of(sources)..remove('a|web/b.dart');
     await resolveSources(sourcesWithoutB, (resolver) async {
       final lib = await resolver.libraryFor(entryPoint);
-      final clazz = lib.getClass2('A');
+      final clazz = lib.getClass('A');
       expect(clazz, isNotNull);
       expect(clazz!.interfaces, isEmpty);
     }, resolvers: resolvers);
 
     await resolveSources(sources, (resolver) async {
       final lib = await resolver.libraryFor(entryPoint);
-      final clazz = lib.getClass2('A');
+      final clazz = lib.getClass('A');
       expect(clazz, isNotNull);
       expect(clazz!.interfaces, hasLength(1));
       expect(clazz.interfaces.first.getDisplayString(), 'C');
@@ -454,21 +452,21 @@ void runTests(ResolversFactory resolversFactory) {
         expect(main, isNotNull);
 
         final other = await resolver.libraryFor(otherId);
-        expect(other.name3, 'other');
+        expect(other.name, 'other');
       });
     });
 
     test('are included in library stream', () {
       return runWith((resolver) async {
         await expectLater(
-          resolver.libraries.map((l) => l.name3),
+          resolver.libraries.map((l) => l.name),
           neverEmits('other'),
         );
 
         await resolver.libraryFor(otherId);
 
         await expectLater(
-          resolver.libraries.map((l) => l.name3),
+          resolver.libraries.map((l) => l.name),
           emitsThrough('other'),
         );
       });
@@ -516,7 +514,7 @@ void runTests(ResolversFactory resolversFactory) {
         },
         (resolver) async {
           final lib = await resolver.libraryFor(entryPoint);
-          final clazz = lib.getClass2('A');
+          final clazz = lib.getClass('A');
           expect(clazz, isNotNull);
           expect(clazz!.interfaces, isEmpty);
         },
@@ -537,7 +535,7 @@ void runTests(ResolversFactory resolversFactory) {
         },
         (resolver) async {
           final lib = await resolver.libraryFor(entryPoint);
-          final clazz = lib.getClass2('A');
+          final clazz = lib.getClass('A');
           expect(clazz, isNotNull);
           expect(clazz!.interfaces, hasLength(1));
           expect(clazz.interfaces.first.getDisplayString(), 'B');
@@ -562,7 +560,7 @@ void runTests(ResolversFactory resolversFactory) {
         },
         (resolver) async {
           final lib = await resolver.libraryFor(entryPoint);
-          final clazz = lib.getClass2('A');
+          final clazz = lib.getClass('A');
           expect(clazz, isNotNull);
           expect(clazz!.interfaces, hasLength(1));
           expect(clazz.interfaces.first.getDisplayString(), 'B');
@@ -582,7 +580,7 @@ void runTests(ResolversFactory resolversFactory) {
         },
         (resolver) async {
           final lib = await resolver.libraryFor(entryPoint);
-          final clazz = lib.getClass2('A');
+          final clazz = lib.getClass('A');
           expect(clazz, isNotNull);
           expect(clazz!.interfaces, isEmpty);
         },
@@ -608,7 +606,7 @@ void runTests(ResolversFactory resolversFactory) {
           final libs =
               await resolver.libraries.where((l) => !l.isInSdk).toList();
           expect(
-            libs.map((l) => l.name3),
+            libs.map((l) => l.name),
             unorderedEquals(['a.main', 'a.a', 'a.b', 'a.c', 'a.d']),
           );
         },
@@ -673,12 +671,7 @@ void runTests(ResolversFactory resolversFactory) {
         (resolver) async {
           final main = (await resolver.findLibraryByName('web.main'))!;
           final meta =
-              main
-                  .getClass2('Foo')!
-                  .supertype!
-                  .element3
-                  .metadata2
-                  .annotations[0];
+              main.getClass('Foo')!.supertype!.element.metadata.annotations[0];
           expect(meta, isNotNull);
           expect(meta.computeConstantValue()?.toIntValue(), 0);
         },
@@ -700,8 +693,7 @@ void runTests(ResolversFactory resolversFactory) {
                 import 'package:a/a.dart'; ''',
         },
         (resolver) async {
-          final libs =
-              await resolver.libraries.map((lib) => lib.name3).toList();
+          final libs = await resolver.libraries.map((lib) => lib.name).toList();
           expect(libs.contains('a'), isTrue);
           expect(libs.contains('b'), isTrue);
         },
@@ -725,8 +717,8 @@ void runTests(ResolversFactory resolversFactory) {
         (resolver) async {
           final entry = await resolver.libraryFor(AssetId('a', 'lib/a.dart'));
           final classDefinition =
-              entry.firstFragment.libraryImports2
-                  .map((l) => l.importedLibrary2!.getClass2('SomeClass'))
+              entry.firstFragment.libraryImports
+                  .map((l) => l.importedLibrary!.getClass('SomeClass'))
                   .singleWhere((c) => c != null)!;
           expect(
             await resolver.assetIdForElement(classDefinition),
@@ -758,11 +750,11 @@ void runTests(ResolversFactory resolversFactory) {
           final entry = await resolver.libraryFor(AssetId('a', 'lib/a.dart'));
           final element =
               entry.topLevelFunctions
-                  .firstWhere((e) => e.name3 == 'main')
-                  .metadata2
+                  .firstWhere((e) => e.name == 'main')
+                  .metadata
                   .annotations
                   .single
-                  .element2!;
+                  .element!;
           await expectLater(
             () => resolver.assetIdForElement(element),
             throwsA(isA<UnresolvableAssetException>()),
@@ -795,7 +787,7 @@ int? get x => 1;
             );
             final errors =
                 await lib.session.getErrors('/a/web/main.dart') as ErrorsResult;
-            expect(errors.errors, isEmpty);
+            expect(errors.diagnostics, isEmpty);
           },
           resolvers: createResolvers(),
         ),
@@ -819,7 +811,7 @@ int? get x => 1;
             await resolver.assetIdForElement(lib),
           );
           expect(
-            await newLib.session.getResolvedLibraryByElement2(newLib),
+            await newLib.session.getResolvedLibraryByElement(newLib),
             isA<ResolvedLibraryResult>(),
           );
         }, resolvers: resolvers);
@@ -1042,7 +1034,7 @@ int? get x => 1;
     await resolveSources({'a|lib/a.dart': ''}, (resolver) async {
       final convert = await resolver.findLibraryByName('dart.convert');
       expect(convert, isNotNull);
-      expect(convert!.getClass2('Codec'), isNotNull);
+      expect(convert!.getClass('Codec'), isNotNull);
       final allLibraries = await resolver.libraries.toList();
       expect(
         allLibraries.map((e) => e.uri.toString()),
@@ -1141,14 +1133,14 @@ int? get x => 1;
         },
         (resolver) async {
           final entry = await resolver.libraryFor(AssetId('a', 'lib/a.dart'));
-          final classDefinition = entry.getClass2('MyClass')!;
-          final color = classDefinition.getField2('color')!;
+          final classDefinition = entry.getClass('MyClass')!;
+          final color = classDefinition.getField('color')!;
 
           if (isFlutter) {
             expect(color.type.element!.name, equals('Color'));
             expect(color.type.element!.library!.name, equals('dart.ui'));
             expect(
-              color.type.element3!.library2!.uri.toString(),
+              color.type.element!.library!.uri.toString(),
               equals('dart:ui'),
             );
           } else {

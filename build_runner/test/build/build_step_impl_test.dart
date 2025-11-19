@@ -1,7 +1,6 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-// ignore_for_file: deprecated_member_use
 
 @TestOn('vm')
 library;
@@ -147,18 +146,18 @@ void main() {
         final resolver = buildStep.resolver;
 
         final aLib = await resolver.libraryFor(primary);
-        expect(aLib.name3, 'a');
-        expect(aLib.firstFragment.libraryImports2.length, 2);
+        expect(aLib.name, 'a');
+        expect(aLib.firstFragment.libraryImports.length, 2);
         expect(
-          aLib.firstFragment.libraryImports2.any(
-            (import) => import.importedLibrary2!.name3 == 'b',
+          aLib.firstFragment.libraryImports.any(
+            (import) => import.importedLibrary!.name == 'b',
           ),
           isTrue,
         );
 
         final bLib = await resolver.findLibraryByName('b');
-        expect(bLib!.name3, 'b');
-        expect(bLib.firstFragment.libraryImports2.length, 1);
+        expect(bLib!.name, 'b');
+        expect(bLib.firstFragment.libraryImports.length, 1);
 
         await buildStep.complete();
       });

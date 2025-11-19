@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-// ignore_for_file: deprecated_member_use
-
 import 'dart:async';
 
 import 'package:build/build.dart';
@@ -57,7 +55,7 @@ class ListClassesAndHierarchyBuilder implements Builder {
     final outputId = buildStep.inputId.changeExtension('.txt');
     for (final type in types) {
       output
-        ..write('${type.name3}: [')
+        ..write('${type.name}: [')
         ..writeAll(type.allSupertypes.map((t) => t.element.name), ', ')
         ..writeln(']');
     }
