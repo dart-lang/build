@@ -2,12 +2,10 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-// ignore_for_file: deprecated_member_use
-
 import 'dart:async';
 
 import 'package:analyzer/dart/analysis/results.dart';
-import 'package:analyzer/dart/element/element2.dart';
+import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
@@ -22,7 +20,7 @@ void main() {
 
         class Foo {}
       ''', (resolver) => resolver.findLibraryNotNull('example'));
-      expect(libExample.getClass2('Foo'), isNotNull);
+      expect(libExample.getClass('Foo'), isNotNull);
     });
 
     test('a simple dart file with dart: dependencies', () async {
@@ -33,7 +31,7 @@ void main() {
 
         abstract class Foo implements LinkedHashMap {}
       ''', (resolver) => resolver.findLibraryNotNull('example'));
-      final classFoo = libExample.getClass2('Foo')!;
+      final classFoo = libExample.getClass('Foo')!;
       expect(
         classFoo.allSupertypes.map(_toStringId),
         contains('dart:collection#LinkedHashMap'),
@@ -55,7 +53,7 @@ void main() {
         },
         (resolver) => resolver.findLibraryNotNull('example'),
       );
-      final classFoo = libExample.getClass2('Foo')!;
+      final classFoo = libExample.getClass('Foo')!;
       expect(
         classFoo.allSupertypes.map(_toStringId),
         contains(endsWith(':collection#Equality')),
@@ -81,7 +79,7 @@ void main() {
         (resolver) => resolver.findLibraryNotNull('example'),
         resolverFor: mock,
       );
-      final type = library.getClass2('ExamplePrime');
+      final type = library.getClass('ExamplePrime');
       expect(type, isNotNull);
       expect(type!.supertype!.element.name, 'Example');
     });
@@ -101,7 +99,7 @@ void main() {
         },
         (resolver) async {
           final libExample = await resolver.findLibraryNotNull('example');
-          final classFoo = libExample.getClass2('Foo')!;
+          final classFoo = libExample.getClass('Foo')!;
           expect(
             classFoo.allSupertypes.map(_toStringId),
             contains(endsWith(':collection#Equality')),
@@ -134,7 +132,7 @@ void main() {
               )
               as ErrorsResult;
       expect(
-        errors.errors.map((e) => e.message),
+        errors.diagnostics.map((e) => e.message),
         contains(
           contains(
             'This requires the \'digit-separators\' language feature to be '
@@ -156,7 +154,7 @@ void main() {
         readAllSourcesFromFilesystem: true,
         (resolver) async {
           final libExample = await resolver.findLibraryNotNull('example');
-          final classFoo = libExample.getClass2('Foo')!;
+          final classFoo = libExample.getClass('Foo')!;
           expect(
             classFoo.allSupertypes.map(_toStringId),
             contains(endsWith(':collection#Equality')),
@@ -173,7 +171,7 @@ void main() {
         asset,
         (resolver) => resolver.findLibraryNotNull('example_lib'),
       );
-      expect(libExample.getClass2('Example'), isNotNull);
+      expect(libExample.getClass('Example'), isNotNull);
     });
   });
 
@@ -197,10 +195,10 @@ void main() {
 }
 
 String _toStringId(InterfaceType t) =>
-    '${t.element3.library2.uri.toString().split('/').first}#${t.element.name}';
+    '${t.element.library.uri.toString().split('/').first}#${t.element.name}';
 
 extension on Resolver {
-  Future<LibraryElement2> findLibraryNotNull(String name) async {
+  Future<LibraryElement> findLibraryNotNull(String name) async {
     return (await findLibraryByName(name))!;
   }
 }

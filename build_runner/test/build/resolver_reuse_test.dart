@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-// ignore_for_file: deprecated_member_use
-
 import 'dart:async';
 
 import 'package:build/build.dart';
@@ -54,15 +52,15 @@ void main() {
             // Check that the `.imported.dart` library is still reachable
             // through the resolver.
             final importedLibrary =
-                inputLibrary.firstFragment.libraryImports2
+                inputLibrary.firstFragment.libraryImports
                     .firstWhere(
-                      (l) => l.importedLibrary2!.uri.path.endsWith(
+                      (l) => l.importedLibrary!.uri.path.endsWith(
                         '.imported.dart',
                       ),
                     )
-                    .importedLibrary2!;
+                    .importedLibrary!;
             final classNames =
-                importedLibrary.classes.map((c) => c.name3).toList();
+                importedLibrary.classes.map((c) => c.name).toList();
             return buildStep.writeAsString(
               buildStep.inputId.addExtension('.bar'),
               '$classNames',
@@ -107,7 +105,7 @@ void main() {
             if (buildStep.inputId.path != 'lib/a.dart') return;
             final library = await buildStep.inputLibrary;
             final annotation =
-                library.topLevelFunctions.single.metadata2.annotations.single
+                library.topLevelFunctions.single.metadata.annotations.single
                     .computeConstantValue();
             await buildStep.writeAsString(
               buildStep.inputId.changeExtension('.g2.dart'),
