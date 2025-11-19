@@ -1,3 +1,7 @@
+## 4.0.3
+
+- Allow `analyzer` 9.0.0.
+
 ## 4.0.2
 
 - Require `analyzer` 8.0.0. Remove use of deprecated `analyzer` members, use

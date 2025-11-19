@@ -1,3 +1,7 @@
+## 5.1.3
+
+- Allow `analyzer` 9.0.0.
+
 ## 5.1.2
 
 - Make compatible with `dart run build_runner build --force-aot`.
