@@ -1,3 +1,7 @@
+## 4.4.3
+
+- Allow `analyzer` 9.0.0.
+
 ## 4.4.2
 
 - Fixes DDC + FES not reading the entrypoint when serving a prebuilt app.

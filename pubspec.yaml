@@ -21,3 +21,9 @@ workspace:
 - build_modules/test/fixtures/b
 - build_web_compilers/test/fixtures/c
 - build_web_compilers/test/fixtures/d
+
+# Test with analyzer 9.0.0 because users of build_runner can use it. The
+# workspace is held back by a dev_dependency on source_gen which is not
+# released for 9.0.0 yet.
+dependency_overrides:
+  analyzer: ^9.0.0

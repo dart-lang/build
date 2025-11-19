@@ -1,3 +1,7 @@
+## 2.10.4
+
+- Allow `analyzer` 9.0.0.
+
 ## 2.10.3
 
 - Performance: improve scalability with the number of library cycles, making
