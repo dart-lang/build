@@ -33,8 +33,8 @@ Except as noted, they are not owned or specifically endorsed by Google.
 |[dart_mappable_builder](https://pub.dev/packages/dart_mappable)|data classes with JSON serialization|
 |[drift_dev](https://pub.dev/packages/drift_dev)|reactive data binding and SQL|
 |[envied_generator](https://pub.dev/packages/envied)|environment variable bindings|
-|[freezed](https://pub.dev/packages/freezed)|data classes, tagged unions, nested classes, cloning|[Flutter Favourite](https://docs.flutter.dev/packages-and-plugins/favorites)
 |[flutter_gen_runner](https://pub.dev/packages/flutter_gen_runner)|Flutter asset bindings|
+|[freezed](https://pub.dev/packages/freezed)|data classes, tagged unions, nested classes, cloning|[Flutter Favourite](https://docs.flutter.dev/packages-and-plugins/favorites)
 |[go_router_builder](https://pub.dev/packages/go_router_builder)|Flutter navigation|by&nbsp;Google
 |[hive_ce_generator](https://pub.dev/packages/hive_ce)|key-value database|
 |[injectable_generator](https://pub.dev/packages/injectable_generator)|dependency injecton|
