@@ -1,3 +1,7 @@
+## 5.1.4
+
+- Allow Dart SDK 3.11.x and 3.12 prerelease.
+
 ## 5.1.3
 
 - Allow `analyzer` 9.0.0.
