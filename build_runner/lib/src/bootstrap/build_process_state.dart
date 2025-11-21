@@ -45,6 +45,20 @@ class BuildProcessState {
   set elapsedMillis(int elapsedMillis) =>
       _state['elapsedMillis'] = elapsedMillis;
 
+  // For `buildLog`, the JIT compile progress.
+  Object? get jitCompileProgress => _state['jitCompileProgress'];
+  set jitCompileProgress(Object? jitCompileProgress) =>
+      _state['jitCompileProgress'] = jitCompileProgress;
+
+  // For `buildLog`, the AOT compile progress.
+  Object? get aotCompileProgress => _state['aotCompileProgress'];
+  set aotCompileProgress(Object? aotCompileProgress) =>
+      _state['aotCompileProgress'] = aotCompileProgress;
+
+  // For `buildLog`, the build number.
+  int get buildNumber => _state['buildNumber'] as int? ?? 1;
+  set buildNumber(int buildNumber) => _state['buildNumber'] = buildNumber;
+
   /// The package config URI.
   String get packageConfigUri =>
       (_state['packageConfigUri'] ??= Isolate.packageConfigSync!.toString())

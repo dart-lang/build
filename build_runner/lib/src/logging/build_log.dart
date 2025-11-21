@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
@@ -73,6 +74,12 @@ class BuildLog {
   /// Errors logged.
   final ListBuilder<String> _errors = ListBuilder();
 
+  /// JIT compile progress, if there was a JIT compile.
+  _CompileProgress? _jitCompileProgress;
+
+  /// AOT compile progress, if there was an AOT compile.
+  _CompileProgress? _aotCompileProgress;
+
   /// Progress by build phase.
   final Map<String, _PhaseProgress> _phaseProgress = {};
 
@@ -102,6 +109,9 @@ class BuildLog {
     buildProcessState.doBeforeSend(() {
       buildProcessState.elapsedMillis = _processDuration.inMilliseconds;
       buildProcessState.buildLogMode = configuration.mode;
+      buildProcessState.jitCompileProgress = _jitCompileProgress?.serialize();
+      buildProcessState.aotCompileProgress = _aotCompileProgress?.serialize();
+      buildProcessState.buildNumber = _buildNumber;
     });
     void updateFromProcessState() {
       _processDuration = Duration(
@@ -110,6 +120,13 @@ class BuildLog {
       configuration = configuration.rebuild((b) {
         b.mode = buildProcessState.buildLogMode;
       });
+      _jitCompileProgress = _CompileProgress.deserialize(
+        buildProcessState.jitCompileProgress,
+      );
+      _aotCompileProgress = _CompileProgress.deserialize(
+        buildProcessState.aotCompileProgress,
+      );
+      _buildNumber = buildProcessState.buildNumber;
     }
 
     updateFromProcessState();
@@ -226,6 +243,59 @@ class BuildLog {
     );
   }
 
+  Future<T> logCompile<T>({
+    required bool isAot,
+    required Future<T> Function() function,
+  }) async {
+    final progress = _CompileProgress();
+    if (isAot) {
+      _aotCompileProgress = progress;
+    } else {
+      _jitCompileProgress = progress;
+    }
+    _compileTick(isAot: isAot, firstTick: true, lastTick: false);
+
+    final timer = Timer.periodic(
+      const Duration(milliseconds: 100),
+      (_) => _compileTick(isAot: isAot, firstTick: false, lastTick: false),
+    );
+    try {
+      return await function();
+    } finally {
+      timer.cancel();
+      _compileTick(isAot: isAot, firstTick: false, lastTick: true);
+    }
+  }
+
+  void _compileTick({
+    required bool isAot,
+    required bool firstTick,
+    required bool lastTick,
+  }) {
+    final duration = _stopwatch.elapsed;
+    _stopwatch.reset();
+    _processDuration += duration;
+
+    if (!firstTick) {
+      if (isAot) {
+        _aotCompileProgress!.duration += duration;
+      } else {
+        _jitCompileProgress!.duration += duration;
+      }
+    }
+
+    if (_shouldShowProgressNow || lastTick) {
+      if (_display.displayingBlocks) {
+        _display.block(render());
+      } else {
+        _display.message(
+          Severity.info,
+          _renderCompiling(isAot: isAot).toString(),
+        );
+      }
+    }
+  }
+
   /// Sets up logging of build phases with the number of primary inputs matching
   /// for each required phase.
   void startPhases(Map<InBuildPhase, int> primaryInputCountsByPhase) {
@@ -337,13 +407,16 @@ class BuildLog {
   /// build) has started.
   ///
   /// Clears timings and messages.
-  void nextBuild() {
+  void nextBuild({bool recompilingBuilders = false}) {
     _stopwatch.reset();
     _processDuration = Duration.zero;
     activities.clear();
     _messages.clear();
     _status.clear();
-    _display.flushAndPrint('\nStarting build #${++_buildNumber}.\n');
+    _display.flushAndPrint(
+      '\nStarting build #${++_buildNumber}'
+      '${recompilingBuilders ? ' with updated builders' : ''}.\n',
+    );
   }
 
   /// Logs that the build has finished with [result] and the count of [outputs].
@@ -373,6 +446,10 @@ class BuildLog {
         AnsiBufferLine(_status).toString(),
       );
     }
+
+    _processDuration = Duration.zero;
+    _jitCompileProgress = null;
+    _aotCompileProgress = null;
 
     final errors = _errors.build();
     _errors.clear();
@@ -442,6 +519,13 @@ class BuildLog {
   AnsiBuffer render() {
     final result = AnsiBuffer();
 
+    if (_jitCompileProgress != null) {
+      result.write(_renderCompiling(isAot: false));
+    }
+    if (_aotCompileProgress != null) {
+      result.write(_renderCompiling(isAot: true));
+    }
+
     final displayedProgressEntries = _phaseProgress.entries.where(
       (e) => e.value.isDisplayed || _messages.hasMessages(phaseName: e.key),
     );
@@ -484,8 +568,20 @@ class BuildLog {
     return result;
   }
 
+  AnsiBufferLine _renderCompiling({required bool isAot}) {
+    final progress = isAot ? _aotCompileProgress! : _jitCompileProgress!;
+    return AnsiBufferLine([
+      renderDuration(progress.duration),
+      ' ',
+      AnsiBuffer.bold,
+      'compiling builders',
+      AnsiBuffer.reset,
+      '/${isAot ? 'aot' : 'jit'}',
+    ]);
+  }
+
   /// Renders a line describing the progress of [phaseName].
-  AnsiBufferLine _renderPhase(String phaseName, {int padDuration = 0}) {
+  AnsiBufferLine _renderPhase(String phaseName) {
     final activities = this.activities.render(phaseName: phaseName);
 
     var firstSeparator = true;
@@ -499,7 +595,7 @@ class BuildLog {
 
     final progress = _phaseProgress[phaseName]!;
     return AnsiBufferLine([
-      renderDuration(progress.duration).padLeft(padDuration),
+      renderDuration(progress.duration),
       ' ',
       AnsiBuffer.bold,
       phaseName,
@@ -552,6 +648,19 @@ extension _IntExtension on int {
 extension _PhaseExtension on InBuildPhase {
   String name({required bool lazy}) =>
       lazy ? '$displayName (lazy)' : displayName;
+}
+
+/// Compile progress.
+class _CompileProgress {
+  Duration duration = Duration.zero;
+
+  Object? serialize() => duration.inMilliseconds;
+
+  static _CompileProgress? deserialize(Object? serialized) {
+    if (serialized == null) return null;
+    return _CompileProgress()
+      ..duration = Duration(milliseconds: serialized as int);
+  }
 }
 
 /// Progress metrics tracked for each build phase.

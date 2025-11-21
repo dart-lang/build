@@ -59,7 +59,10 @@ class Bootstrapper {
 
       // Compile if there was any change.
       if (!_compiler.checkFreshness(digestsAreFresh: false).outputIsFresh) {
-        final result = await _compiler.compile(experiments: experiments);
+        final result = await buildLog.logCompile(
+          isAot: compileAot,
+          function: () => _compiler.compile(experiments: experiments),
+        );
         if (!result.succeeded) {
           final bool failedDueToMirrors;
           if (result.messages == null) {
@@ -109,6 +112,8 @@ class Bootstrapper {
       if (exitCode != ExitCode.tempFail.code) {
         return exitCode;
       }
+
+      buildLog.nextBuild(recompilingBuilders: true);
     }
   }
 
