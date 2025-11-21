@@ -55,18 +55,19 @@ class ModuleBuilder implements Builder {
     var outputModule = metaModule.modules.firstWhereOrNull(
       (m) => m.primarySource == buildStep.inputId,
     );
-    final serializedLibrary = await buildStep.readAsString(
-      buildStep.inputId.changeExtension(moduleLibraryExtension),
-    );
-    final libraryModule = ModuleLibrary.deserialize(
-      buildStep.inputId,
-      serializedLibrary,
-    );
-    final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
-    if (outputModule == null && libraryModule.hasMain) {
-      outputModule = metaModule.modules.firstWhere(
-        (m) => m.sources.contains(buildStep.inputId),
+    if (outputModule == null) {
+      final serializedLibrary = await buildStep.readAsString(
+        buildStep.inputId.changeExtension(moduleLibraryExtension),
       );
+      final libraryModule = ModuleLibrary.deserialize(
+        buildStep.inputId,
+        serializedLibrary,
+      );
+      if (libraryModule.hasMain) {
+        outputModule = metaModule.modules.firstWhere(
+          (m) => m.sources.contains(buildStep.inputId),
+        );
+      }
     }
     if (outputModule == null) return;
     final modules = await buildStep.fetchResource(moduleCache);
@@ -76,6 +77,7 @@ class ModuleBuilder implements Builder {
       outputModule,
     );
     if (usesWebHotReload) {
+      final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
       // All sources must be declared before the Frontend Server is invoked, as
       // it only accepts the main entrypoint as its compilation target.
       await buildStep.trackStage(
