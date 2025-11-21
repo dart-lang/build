@@ -1,3 +1,6 @@
+## 5.1.4
+- Fix module_builder reading DDC modules for non-primary dart libraries.
+
 ## 5.1.3
 
 - Allow `analyzer` 9.0.0.
