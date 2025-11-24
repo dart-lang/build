@@ -1,5 +1,7 @@
 ## 5.1.4
+
 - Fix module_builder reading DDC modules for non-primary dart libraries.
+- Allow Dart SDK 3.11.x and 3.12 prerelease.
 
 ## 5.1.3
 

@@ -7,7 +7,7 @@ repository: https://github.com/dart-lang/build/tree/master/build_modules
 resolution: workspace
 
 environment:
-  sdk: '>=3.7.0 <3.11.0-z'
+  sdk: '>=3.7.0 <3.12.0-z'
 
 dependencies:
   analyzer: '>=5.1.0 <10.0.0'
