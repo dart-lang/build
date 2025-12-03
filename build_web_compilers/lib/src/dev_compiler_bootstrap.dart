@@ -793,40 +793,41 @@ $_simpleLoaderScript
     // We should have written a file containing all the scripts that need to be
     // reloaded into the page. This is then read when a hot restart is triggered
     // in DDC via the `\$dartReloadModifiedModules` callback.
-    let restartScripts = _currentDirectory + 'restart_scripts.json';
+    let reloadedSources = _currentDirectory + 'reloaded_sources.json';
 
     if (!window.\$dartReloadModifiedModules) {
       window.\$dartReloadModifiedModules = (function(appName, callback) {
-        var xhttp = new XMLHttpRequest();
+        const xhttp = new XMLHttpRequest();
         xhttp.withCredentials = true;
         xhttp.onreadystatechange = function() {
           // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/readyState
           if (this.readyState == 4 && this.status == 200 || this.status == 304) {
-            var scripts = JSON.parse(this.responseText);
-            var numToLoad = 0;
-            var numLoaded = 0;
-            for (var i = 0; i < scripts.length; i++) {
-              var script = scripts[i];
-              if (script.id == null) continue;
-              var src = script.src.toString();
-              var oldSrc = window.\$dartLoader.moduleIdToUrl.get(script.id);
+            const scripts = JSON.parse(this.responseText);
+            let numToLoad = 0;
+            let numLoaded = 0;
+            for (let i = 0; i < scripts.length; i++) {
+              const script = scripts[i];
+              const module = script.module;
+              if (module == null) continue;
+              const src = script.src;
+              const oldSrc = window.\$dartLoader.moduleIdToUrl.get(module);
 
               // We might actually load from a different uri, delete the old one
               // just to be sure.
               window.\$dartLoader.urlToModuleId.delete(oldSrc);
 
-              window.\$dartLoader.moduleIdToUrl.set(script.id, src);
-              window.\$dartLoader.urlToModuleId.set(src, script.id);
+              window.\$dartLoader.moduleIdToUrl.set(module, src);
+              window.\$dartLoader.urlToModuleId.set(src, module);
 
               numToLoad++;
 
-              var el = document.getElementById(script.id);
+              let el = document.getElementById(module);
               if (el) el.remove();
               el = window.\$dartCreateScript();
               el.src = policy.createScriptURL(src);
               el.async = false;
               el.defer = true;
-              el.id = script.id;
+              el.id = module;
               el.onload = function() {
                 numLoaded++;
                 if (numToLoad == numLoaded) callback();
@@ -837,7 +838,7 @@ $_simpleLoaderScript
             if (numToLoad == 0) callback();
           }
         };
-        xhttp.open("GET", restartScripts, true);
+        xhttp.open("GET", reloadedSources, true);
         xhttp.send();
       });
     }
