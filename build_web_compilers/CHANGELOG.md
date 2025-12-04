@@ -1,3 +1,7 @@
+## 4.4.5
+
+- Updating DDC's bootstrapper to be consistent with the rest of the ecosystem.
+
 ## 4.4.4
 
 - Allow Dart SDK 3.11.x and 3.12 prerelease.
