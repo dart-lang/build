@@ -28,6 +28,8 @@ Future<void> bootstrapDart2Js(
   required bool? nativeNullAssertions,
   required bool onlyCompiler,
   String entrypointExtension = jsEntrypointExtension,
+  String? librariesPath,
+  bool silenceUnsupportedModulesWarnings = false,
 }) => _resourcePool.withResource(
   () => _bootstrapDart2Js(
     buildStep,
@@ -35,6 +37,8 @@ Future<void> bootstrapDart2Js(
     nativeNullAssertions: nativeNullAssertions,
     onlyCompiler: onlyCompiler,
     entrypointExtension: entrypointExtension,
+    librariesPath: librariesPath,
+    silenceUnsupportedModulesWarnings: silenceUnsupportedModulesWarnings,
   ),
 );
 
@@ -44,6 +48,8 @@ Future<void> _bootstrapDart2Js(
   required bool? nativeNullAssertions,
   required bool onlyCompiler,
   required String entrypointExtension,
+  String? librariesPath,
+  bool silenceUnsupportedModulesWarnings = false,
 }) async {
   final dartEntrypointId = buildStep.inputId;
   final moduleId = dartEntrypointId.changeExtension(
@@ -59,7 +65,7 @@ Future<void> _bootstrapDart2Js(
     try {
       allDeps = (await module.computeTransitiveDependencies(
         buildStep,
-        throwIfUnsupported: true,
+        throwIfUnsupported: !silenceUnsupportedModulesWarnings,
       ))..add(module);
     } on UnsupportedModules catch (e) {
       final librariesString = (await e.exactLibraries(buildStep).toList())
@@ -97,7 +103,8 @@ $librariesString
               : dartUri.path.substring(1),
         ) +
         entrypointExtension;
-    final librariesSpec = p.joinAll([sdkDir, 'lib', 'libraries.json']);
+    final librariesSpec =
+        librariesPath ?? p.joinAll([sdkDir, 'lib', 'libraries.json']);
     _validateUserArgs(dart2JsArgs);
     args =
         dart2JsArgs.toList()..addAll([

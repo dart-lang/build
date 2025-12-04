@@ -129,11 +129,24 @@ final class EntrypointBuilderOptions {
   /// Web hot reload is only supported for DDC's Library Bundle module system.
   final bool usesWebHotReload;
 
+  /// The absolute path to the libraries file for the current platform.
+  ///
+  /// If not provided, defaults to "lib/libraries.json" in the sdk directory.
+  final String? librariesPath;
+
+  /// Whether or not to silence unsupported modules warnings.
+  ///
+  /// If `true` then native core library imports that are not officially
+  /// supported by the current platform will be silently allowed.
+  final bool silenceUnsupportedModulesWarnings;
+
   EntrypointBuilderOptions({
     required this.compilers,
     this.nativeNullAssertions,
     this.loaderExtension,
     this.usesWebHotReload = false,
+    this.librariesPath,
+    this.silenceUnsupportedModulesWarnings = false,
   });
 
   factory EntrypointBuilderOptions.fromOptions(BuilderOptions options) {
@@ -146,6 +159,9 @@ final class EntrypointBuilderOptions {
     const nativeNullAssertionsOption = 'native_null_assertions';
     const loaderOption = 'loader';
     const webHotReloadOption = 'web-hot-reload';
+    const librariesPathOption = 'libraries_path';
+    const silenceUnsupportedModulesWarningsOption =
+        'silence_unsupported_modules_warnings';
     String? defaultLoaderOption;
 
     const supportedOptions = [
@@ -156,12 +172,17 @@ final class EntrypointBuilderOptions {
       dart2wasmArgsOption,
       loaderOption,
       webHotReloadOption,
+      librariesPathOption,
+      silenceUnsupportedModulesWarningsOption,
     ];
 
     final config = options.config;
     final nativeNullAssertions =
         options.config[nativeNullAssertionsOption] as bool?;
     final usesWebHotReload = options.config[webHotReloadOption] as bool?;
+    final librariesPath = options.config[librariesPathOption] as String?;
+    final silenceUnsupportedModulesWarnings =
+        options.config[silenceUnsupportedModulesWarningsOption] as bool?;
     final compilers = <EnabledEntrypointCompiler>[];
 
     validateOptions(
@@ -249,6 +270,9 @@ final class EntrypointBuilderOptions {
               ? config[loaderOption] as String?
               : defaultLoaderOption,
       usesWebHotReload: usesWebHotReload ?? false,
+      librariesPath: librariesPath,
+      silenceUnsupportedModulesWarnings:
+          silenceUnsupportedModulesWarnings ?? false,
     );
   }
 
@@ -338,6 +362,8 @@ class WebEntrypointBuilder implements Builder {
                           ? _ddcLibraryBundleSdkResources
                           : _ddcSdkResources,
                   usesWebHotReload: usesWebHotReload,
+                  silenceUnsupportedModulesWarnings:
+                      options.silenceUnsupportedModulesWarnings,
                 );
               } on MissingModulesException catch (e) {
                 log.severe('$e');
@@ -352,6 +378,9 @@ class WebEntrypointBuilder implements Builder {
               nativeNullAssertions: options.nativeNullAssertions,
               onlyCompiler: options.compilers.length == 1,
               entrypointExtension: compiler.extension,
+              librariesPath: options.librariesPath,
+              silenceUnsupportedModulesWarnings:
+                  options.silenceUnsupportedModulesWarnings,
             ),
           );
         case WebCompiler.Dart2Wasm:
@@ -361,6 +390,8 @@ class WebEntrypointBuilder implements Builder {
                 buildStep,
                 compiler.compilerArguments,
                 compiler.extension,
+                silenceUnsupportedModulesWarnings:
+                    options.silenceUnsupportedModulesWarnings,
               );
             }),
           );

@@ -25,7 +25,6 @@ const _coreLibraries = [
 /// Additional libraries supported by both ddc and dart2js.
 const _additionalWebLibraries = [
   'html',
-  'html',
   'html_common',
   'indexed_db',
   'svg',
@@ -37,13 +36,29 @@ const _additionalWebLibraries = [
 /// Additional libraries supported by dart2wasm.
 const _additionalWasmLibraries = ['ffi'];
 
-const _jsCompilerLibraries = [..._coreLibraries, ..._additionalWebLibraries];
+// These intentionally throw if [initializePlatforms] wasn't called first.
+final ddcPlatform = DartPlatform.byName('ddc');
+final dart2jsPlatform = DartPlatform.byName('dart2js');
+final dart2wasmPlatform = DartPlatform.byName('dart2wasm');
 
-final ddcPlatform = DartPlatform.register('ddc', _jsCompilerLibraries);
-
-final dart2jsPlatform = DartPlatform.register('dart2js', _jsCompilerLibraries);
-
-final dart2wasmPlatform = DartPlatform.register('dart2wasm', [
-  ..._coreLibraries,
-  ..._additionalWasmLibraries,
-]);
+/// Registers the platforms with [DartPlatform].
+///
+/// Must be called before [ddcPlatform], [dart2jsPlatform], or
+/// [dart2wasmPlatform] is used.
+void initializePlatforms([List<String> additionalCoreLibraries = const []]) {
+  DartPlatform.register('ddc', [
+    ..._coreLibraries,
+    ..._additionalWebLibraries,
+    ...additionalCoreLibraries,
+  ]);
+  DartPlatform.register('dart2js', [
+    ..._coreLibraries,
+    ..._additionalWebLibraries,
+    ...additionalCoreLibraries,
+  ]);
+  DartPlatform.register('dart2wasm', [
+    ..._coreLibraries,
+    ..._additionalWasmLibraries,
+    ...additionalCoreLibraries,
+  ]);
+}

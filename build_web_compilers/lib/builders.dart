@@ -9,17 +9,20 @@ import 'package:collection/collection.dart';
 import 'build_web_compilers.dart';
 import 'src/common.dart';
 import 'src/ddc_frontend_server_builder.dart';
+import 'src/platforms.dart';
 import 'src/sdk_js_compile_builder.dart';
 import 'src/sdk_js_copy_builder.dart';
 import 'src/web_entrypoint_marker_builder.dart';
 
 // Shared entrypoint builder
 Builder webEntrypointBuilder(BuilderOptions options) {
+  _ensureSamePlatformOptions(options);
   _ensureSameDdcHotReloadOptions(options);
   return WebEntrypointBuilder.fromOptions(options);
 }
 
 Builder webEntrypointMarkerBuilder(BuilderOptions options) {
+  _ensureSamePlatformOptions(options);
   _ensureSameDdcHotReloadOptions(options);
   return WebEntrypointMarkerBuilder(
     usesWebHotReload: _readWebHotReloadOption(options),
@@ -28,16 +31,19 @@ Builder webEntrypointMarkerBuilder(BuilderOptions options) {
 
 // DDC related builders
 Builder ddcMetaModuleBuilder(BuilderOptions options) {
+  _ensureSamePlatformOptions(options);
   _ensureSameDdcHotReloadOptions(options);
   return MetaModuleBuilder.forOptions(ddcPlatform, options);
 }
 
 Builder ddcMetaModuleCleanBuilder(BuilderOptions options) {
+  _ensureSamePlatformOptions(options);
   _ensureSameDdcHotReloadOptions(options);
   return MetaModuleCleanBuilder(ddcPlatform);
 }
 
 Builder ddcModuleBuilder(BuilderOptions options) {
+  _ensureSamePlatformOptions(options);
   _ensureSameDdcHotReloadOptions(options);
   return ModuleBuilder(
     ddcPlatform,
@@ -47,6 +53,7 @@ Builder ddcModuleBuilder(BuilderOptions options) {
 
 Builder ddcBuilder(BuilderOptions options) {
   validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc');
+  _ensureSamePlatformOptions(options);
   _ensureSameDdcHotReloadOptions(options);
   _ensureSameDdcOptions(options);
 
@@ -60,9 +67,11 @@ Builder ddcBuilder(BuilderOptions options) {
     emitDebugSymbols: _readEmitDebugSymbolsOption(options),
     canaryFeatures: _readCanaryOption(options),
     ddcModules: _readWebHotReloadOption(options),
-    sdkKernelPath: sdkDdcKernelPath,
     trackUnusedInputs: _readTrackInputsCompilerOption(options),
     platform: ddcPlatform,
+    sdkKernelPath: _readDdcKernelPathOption(options),
+    librariesPath: _readLibrariesPathOption(options),
+    platformSdk: _readPlatformSdkOption(options),
     environment: _readEnvironmentOption(options),
   );
 }
@@ -71,16 +80,19 @@ final ddcKernelExtension = '.ddc.dill';
 
 Builder ddcKernelBuilder(BuilderOptions options) {
   validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc');
+  _ensureSamePlatformOptions(options);
   _ensureSameDdcHotReloadOptions(options);
   _ensureSameDdcOptions(options);
 
   return KernelBuilder(
     summaryOnly: true,
-    sdkKernelPath: sdkDdcKernelPath,
+    sdkKernelPath: _readDdcKernelPathOption(options),
     outputExtension: ddcKernelExtension,
     platform: ddcPlatform,
+    librariesPath: _readLibrariesPathOption(options),
     useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
     trackUnusedInputs: _readTrackInputsCompilerOption(options),
+    platformSdk: _readPlatformSdkOption(options),
   );
 }
 
@@ -93,26 +105,44 @@ Builder sdkJsCompile(BuilderOptions options) {
     canaryFeatures:
         _readWebHotReloadOption(options) || _readCanaryOption(options),
     usesWebHotReload: _readWebHotReloadOption(options),
+    usePrebuiltSdkFromPath: _readUsePrebuiltSdkFromPathOption(options),
   );
 }
 
 // Dart2js related builders
-Builder dart2jsMetaModuleBuilder(BuilderOptions options) =>
-    MetaModuleBuilder.forOptions(dart2jsPlatform, options);
-Builder dart2jsMetaModuleCleanBuilder(BuilderOptions _) =>
-    MetaModuleCleanBuilder(dart2jsPlatform);
-Builder dart2jsModuleBuilder(BuilderOptions _) =>
-    ModuleBuilder(dart2jsPlatform);
+Builder dart2jsMetaModuleBuilder(BuilderOptions options) {
+  _ensureSamePlatformOptions(options);
+  return MetaModuleBuilder.forOptions(dart2jsPlatform, options);
+}
+
+Builder dart2jsMetaModuleCleanBuilder(BuilderOptions options) {
+  _ensureSamePlatformOptions(options);
+  return MetaModuleCleanBuilder(dart2jsPlatform);
+}
+
+Builder dart2jsModuleBuilder(BuilderOptions options) {
+  _ensureSamePlatformOptions(options);
+  return ModuleBuilder(dart2jsPlatform);
+}
+
 PostProcessBuilder dart2jsArchiveExtractor(BuilderOptions options) =>
     Dart2JsArchiveExtractor.fromOptions(options);
 
 // Dart2wasm related builders
-Builder dart2wasmMetaModuleBuilder(BuilderOptions options) =>
-    MetaModuleBuilder.forOptions(dart2wasmPlatform, options);
-Builder dart2wasmMetaModuleCleanBuilder(BuilderOptions _) =>
-    MetaModuleCleanBuilder(dart2wasmPlatform);
-Builder dart2wasmModuleBuilder(BuilderOptions _) =>
-    ModuleBuilder(dart2wasmPlatform);
+Builder dart2wasmMetaModuleBuilder(BuilderOptions options) {
+  _ensureSamePlatformOptions(options);
+  return MetaModuleBuilder.forOptions(dart2wasmPlatform, options);
+}
+
+Builder dart2wasmMetaModuleCleanBuilder(BuilderOptions options) {
+  _ensureSamePlatformOptions(options);
+  return MetaModuleCleanBuilder(dart2wasmPlatform);
+}
+
+Builder dart2wasmModuleBuilder(BuilderOptions options) {
+  _ensureSamePlatformOptions(options);
+  return ModuleBuilder(dart2wasmPlatform);
+}
 
 // General purpose builders
 PostProcessBuilder dartSourceCleanup(BuilderOptions options) =>
@@ -170,6 +200,29 @@ void _ensureSameDdcHotReloadOptions(BuilderOptions options) {
   }
 }
 
+void _ensureSamePlatformOptions(BuilderOptions options) {
+  final additionalCoreLibraries = _readAdditionalCoreLibrariesOption(options);
+  if (_lastAdditionalCoreLibraries == null) {
+    initializePlatforms(additionalCoreLibraries);
+    _lastAdditionalCoreLibraries = additionalCoreLibraries;
+  } else if (!const ListEquality<String>().equals(
+    _lastAdditionalCoreLibraries,
+    additionalCoreLibraries,
+  )) {
+    throw ArgumentError(
+      '`additional-core-libraries` must be configured the same across the '
+      'following builders: build_web_compilers:ddc, '
+      'build_web_compilers|entrypoint, '
+      'build_web_compilers|entrypoint_marker, '
+      'build_web_compilers|ddc_modules, '
+      'build_web_compilers|dart2js_modules, '
+      'build_web_compilers|dart2wasm_modules.'
+      '\n\nPlease use the `global_options` section in '
+      '`build.yaml` or the `--define` flag to set global options.',
+    );
+  }
+}
+
 bool _readUseIncrementalCompilerOption(BuilderOptions options) {
   return options.config[_useIncrementalCompilerOption] as bool? ?? true;
 }
@@ -194,6 +247,28 @@ bool _readWebHotReloadOption(BuilderOptions options) {
   return options.config[_webHotReloadOption] as bool? ?? false;
 }
 
+List<String> _readAdditionalCoreLibrariesOption(BuilderOptions options) {
+  return (options.config[_additionalCoreLibrariesOption] as List<Object?>?)
+          ?.cast<String>() ??
+      [];
+}
+
+String _readDdcKernelPathOption(BuilderOptions options) {
+  return options.config[_ddcKernelPathOption] as String? ?? sdkDdcKernelPath;
+}
+
+String? _readLibrariesPathOption(BuilderOptions options) {
+  return options.config[_librariesPathOption] as String?;
+}
+
+String? _readPlatformSdkOption(BuilderOptions options) {
+  return options.config[_platformSdkOption] as String?;
+}
+
+String? _readUsePrebuiltSdkFromPathOption(BuilderOptions options) {
+  return options.config[_usePrebuiltSdkFromPathOption] as String?;
+}
+
 Map<String, String> _readEnvironmentOption(BuilderOptions options) {
   final environment = options.config[_environmentOption] as Map? ?? const {};
   return environment.map((key, value) => MapEntry('$key', '$value'));
@@ -201,6 +276,7 @@ Map<String, String> _readEnvironmentOption(BuilderOptions options) {
 
 Map<String, dynamic>? _previousDdcConfig;
 bool? _lastWebHotReloadValue;
+List<String>? _lastAdditionalCoreLibraries;
 const _useIncrementalCompilerOption = 'use-incremental-compiler';
 const _generateFullDillOption = 'generate-full-dill';
 const _emitDebugSymbolsOption = 'emit-debug-symbols';
@@ -208,6 +284,11 @@ const _canaryOption = 'canary';
 const _trackUnusedInputsCompilerOption = 'track-unused-inputs';
 const _environmentOption = 'environment';
 const _webHotReloadOption = 'web-hot-reload';
+const _additionalCoreLibrariesOption = 'additional-core-libraries';
+const _ddcKernelPathOption = 'ddc-kernel-path';
+const _librariesPathOption = 'libraries-path';
+const _platformSdkOption = 'platform-sdk';
+const _usePrebuiltSdkFromPathOption = 'use-prebuilt-sdk-from-path';
 
 const _supportedOptions = [
   _environmentOption,
@@ -217,4 +298,8 @@ const _supportedOptions = [
   _canaryOption,
   _trackUnusedInputsCompilerOption,
   _webHotReloadOption,
+  _additionalCoreLibrariesOption,
+  _ddcKernelPathOption,
+  _librariesPathOption,
+  _platformSdkOption,
 ];
