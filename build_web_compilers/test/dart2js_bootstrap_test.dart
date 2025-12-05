@@ -12,6 +12,7 @@ import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
 void main() {
+  initializePlatforms();
   final platform = dart2jsPlatform;
 
   late StreamSubscription<LogRecord> logSubscription;
@@ -142,4 +143,93 @@ void main() {
       outputs: expectedOutputs,
     );
   });
+
+  test('throws on unsupported platform library imports', () async {
+    final assets = {
+      'a|lib/index.dart': '''
+        import 'dart:io';
+        main() {
+          print('hello world');
+        }
+      ''',
+    };
+    final expectedOutputs = {
+      'a|lib/.dart2js.meta_module.clean': isNotNull,
+      'a|lib/.dart2js.meta_module.raw': isNotNull,
+      'a|lib/index.dart2js.module': isNotNull,
+      'a|lib/index.module.library': isNotNull,
+    };
+    final logs = <LogRecord>[];
+    await testBuilders(
+      [
+        const ModuleLibraryBuilder(),
+        MetaModuleBuilder(platform),
+        MetaModuleCleanBuilder(platform),
+        ModuleBuilder(platform),
+        WebEntrypointBuilder.fromOptions(
+          const BuilderOptions({
+            'compiler': 'dart2js',
+            'native_null_assertions': false,
+          }),
+        ),
+      ],
+      assets,
+      outputs: expectedOutputs,
+      onLog: logs.add,
+    );
+    expect(
+      logs,
+      contains(
+        isA<LogRecord>().having(
+          (r) => r.message,
+          'message',
+          contains(
+            'Skipping compiling a|lib/index.dart with dart2js because some of '
+            'its\ntransitive libraries have sdk dependencies that are not '
+            'supported on this platform:\n\na|lib/index.dart',
+          ),
+        ),
+      ),
+    );
+  });
+
+  test(
+    'ignores unsupported platform library imports when silence flag is set',
+    () async {
+      final assets = {
+        'a|lib/index.dart': '''
+        import 'dart:io';
+        main() {
+          print('hello world');
+        }
+      ''',
+      };
+      final expectedOutputs = {
+        'a|lib/.dart2js.meta_module.clean': isNotNull,
+        'a|lib/.dart2js.meta_module.raw': isNotNull,
+        'a|lib/index.dart.js.map': isNotNull,
+        'a|lib/index.dart.js.tar.gz': isNotNull,
+        'a|lib/index.dart.js': decodedMatches(contains('world')),
+        'a|lib/index.dart2js.module': isNotNull,
+        'a|lib/index.module.library': isNotNull,
+      };
+      await testBuilders(
+        [
+          const ModuleLibraryBuilder(),
+          MetaModuleBuilder(platform),
+          MetaModuleCleanBuilder(platform),
+          ModuleBuilder(platform),
+          WebEntrypointBuilder.fromOptions(
+            const BuilderOptions({
+              'compiler': 'dart2js',
+              'native_null_assertions': false,
+              'silence_unsupported_modules_warnings': true,
+            }),
+          ),
+        ],
+        assets,
+        outputs: expectedOutputs,
+      );
+    },
+  );
 }

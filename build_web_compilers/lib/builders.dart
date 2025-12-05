@@ -9,7 +9,6 @@ import 'package:collection/collection.dart';
 import 'build_web_compilers.dart';
 import 'src/common.dart';
 import 'src/ddc_frontend_server_builder.dart';
-import 'src/platforms.dart';
 import 'src/sdk_js_compile_builder.dart';
 import 'src/sdk_js_copy_builder.dart';
 import 'src/web_entrypoint_marker_builder.dart';

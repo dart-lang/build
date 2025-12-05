@@ -44,11 +44,23 @@ final ddcPlatform = DartPlatform.byName('ddc');
 final dart2jsPlatform = DartPlatform.byName('dart2js');
 final dart2wasmPlatform = DartPlatform.byName('dart2wasm');
 
+bool? _useAdditionalUiLibraries;
+
 /// Registers the platforms with [DartPlatform].
 ///
 /// Must be called before [ddcPlatform], [dart2jsPlatform], or
 /// [dart2wasmPlatform] is used.
 void initializePlatforms([bool useAdditionalUiLibraries = false]) {
+  if (_useAdditionalUiLibraries != null) {
+    if (_useAdditionalUiLibraries != useAdditionalUiLibraries) {
+      throw ArgumentError(
+        'Function initializePlatforms() called multiple times with different '
+        'values. Make sure to call it always with the same value.',
+      );
+    }
+    return;
+  }
+  _useAdditionalUiLibraries = useAdditionalUiLibraries;
   DartPlatform.register('ddc', [
     ..._coreLibraries,
     ..._additionalWebLibraries,
