@@ -201,16 +201,13 @@ void _ensureSameDdcHotReloadOptions(BuilderOptions options) {
 }
 
 void _ensureSamePlatformOptions(BuilderOptions options) {
-  final additionalCoreLibraries = _readAdditionalCoreLibrariesOption(options);
-  if (_lastAdditionalCoreLibraries == null) {
-    initializePlatforms(additionalCoreLibraries);
-    _lastAdditionalCoreLibraries = additionalCoreLibraries;
-  } else if (!const ListEquality<String>().equals(
-    _lastAdditionalCoreLibraries,
-    additionalCoreLibraries,
-  )) {
+  final useUiLibraries = _readUseUiLibrariesOption(options);
+  if (_lastUseUiLibrariesValue == null) {
+    initializePlatforms(useUiLibraries);
+    _lastUseUiLibrariesValue = useUiLibraries;
+  } else if (_lastUseUiLibrariesValue != useUiLibraries) {
     throw ArgumentError(
-      '`additional-core-libraries` must be configured the same across the '
+      '`use-ui-libraries` must be configured the same across the '
       'following builders: build_web_compilers:ddc, '
       'build_web_compilers|entrypoint, '
       'build_web_compilers|entrypoint_marker, '
@@ -247,10 +244,8 @@ bool _readWebHotReloadOption(BuilderOptions options) {
   return options.config[_webHotReloadOption] as bool? ?? false;
 }
 
-List<String> _readAdditionalCoreLibrariesOption(BuilderOptions options) {
-  return (options.config[_additionalCoreLibrariesOption] as List<Object?>?)
-          ?.cast<String>() ??
-      [];
+bool _readUseUiLibrariesOption(BuilderOptions options) {
+  return options.config[_useUiLibrariesOption] as bool? ?? false;
 }
 
 String _readDdcKernelPathOption(BuilderOptions options) {
@@ -276,7 +271,7 @@ Map<String, String> _readEnvironmentOption(BuilderOptions options) {
 
 Map<String, dynamic>? _previousDdcConfig;
 bool? _lastWebHotReloadValue;
-List<String>? _lastAdditionalCoreLibraries;
+bool? _lastUseUiLibrariesValue;
 const _useIncrementalCompilerOption = 'use-incremental-compiler';
 const _generateFullDillOption = 'generate-full-dill';
 const _emitDebugSymbolsOption = 'emit-debug-symbols';
@@ -284,7 +279,7 @@ const _canaryOption = 'canary';
 const _trackUnusedInputsCompilerOption = 'track-unused-inputs';
 const _environmentOption = 'environment';
 const _webHotReloadOption = 'web-hot-reload';
-const _additionalCoreLibrariesOption = 'additional-core-libraries';
+const _useUiLibrariesOption = 'use-ui-libraries';
 const _ddcKernelPathOption = 'ddc-kernel-path';
 const _librariesPathOption = 'libraries-path';
 const _platformSdkOption = 'platform-sdk';
@@ -298,7 +293,7 @@ const _supportedOptions = [
   _canaryOption,
   _trackUnusedInputsCompilerOption,
   _webHotReloadOption,
-  _additionalCoreLibrariesOption,
+  _useUiLibrariesOption,
   _ddcKernelPathOption,
   _librariesPathOption,
   _platformSdkOption,

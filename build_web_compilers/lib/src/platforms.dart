@@ -36,6 +36,9 @@ const _additionalWebLibraries = [
 /// Additional libraries supported by dart2wasm.
 const _additionalWasmLibraries = ['ffi'];
 
+/// Additional libraries supported by the Flutter SDK.
+const _additionalUiLibraries = ['ui', 'ui_web'];
+
 // These intentionally throw if [initializePlatforms] wasn't called first.
 final ddcPlatform = DartPlatform.byName('ddc');
 final dart2jsPlatform = DartPlatform.byName('dart2js');
@@ -45,20 +48,20 @@ final dart2wasmPlatform = DartPlatform.byName('dart2wasm');
 ///
 /// Must be called before [ddcPlatform], [dart2jsPlatform], or
 /// [dart2wasmPlatform] is used.
-void initializePlatforms([List<String> additionalCoreLibraries = const []]) {
+void initializePlatforms([bool useAdditionalUiLibraries = false]) {
   DartPlatform.register('ddc', [
     ..._coreLibraries,
     ..._additionalWebLibraries,
-    ...additionalCoreLibraries,
+    if (useAdditionalUiLibraries) ..._additionalUiLibraries,
   ]);
   DartPlatform.register('dart2js', [
     ..._coreLibraries,
     ..._additionalWebLibraries,
-    ...additionalCoreLibraries,
+    if (useAdditionalUiLibraries) ..._additionalUiLibraries,
   ]);
   DartPlatform.register('dart2wasm', [
     ..._coreLibraries,
     ..._additionalWasmLibraries,
-    ...additionalCoreLibraries,
+    if (useAdditionalUiLibraries) ..._additionalUiLibraries,
   ]);
 }
