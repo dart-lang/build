@@ -194,7 +194,7 @@ void main() {
   });
 
   test(
-    'ignores unsupported platform library imports when silence flag is set',
+    'ignores unsupported platform library imports when allow flag is set',
     () async {
       final assets = {
         'a|lib/index.dart': '''
@@ -223,7 +223,7 @@ void main() {
             const BuilderOptions({
               'compiler': 'dart2js',
               'native_null_assertions': false,
-              'silence_unsupported_modules_warnings': true,
+              'unsafe_allow_unsupported_modules': true,
             }),
           ),
         ],

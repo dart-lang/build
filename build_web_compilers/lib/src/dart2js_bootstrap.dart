@@ -29,7 +29,7 @@ Future<void> bootstrapDart2Js(
   required bool onlyCompiler,
   String entrypointExtension = jsEntrypointExtension,
   String? librariesPath,
-  bool silenceUnsupportedModulesWarnings = false,
+  bool unsafeAllowUnsupportedModules = false,
 }) => _resourcePool.withResource(
   () => _bootstrapDart2Js(
     buildStep,
@@ -38,7 +38,7 @@ Future<void> bootstrapDart2Js(
     onlyCompiler: onlyCompiler,
     entrypointExtension: entrypointExtension,
     librariesPath: librariesPath,
-    silenceUnsupportedModulesWarnings: silenceUnsupportedModulesWarnings,
+    unsafeAllowUnsupportedModules: unsafeAllowUnsupportedModules,
   ),
 );
 
@@ -49,7 +49,7 @@ Future<void> _bootstrapDart2Js(
   required bool onlyCompiler,
   required String entrypointExtension,
   String? librariesPath,
-  bool silenceUnsupportedModulesWarnings = false,
+  bool unsafeAllowUnsupportedModules = false,
 }) async {
   final dartEntrypointId = buildStep.inputId;
   final moduleId = dartEntrypointId.changeExtension(
@@ -65,7 +65,7 @@ Future<void> _bootstrapDart2Js(
     try {
       allDeps = (await module.computeTransitiveDependencies(
         buildStep,
-        throwIfUnsupported: !silenceUnsupportedModulesWarnings,
+        throwIfUnsupported: !unsafeAllowUnsupportedModules,
       ))..add(module);
     } on UnsupportedModules catch (e) {
       final librariesString = (await e.exactLibraries(buildStep).toList())

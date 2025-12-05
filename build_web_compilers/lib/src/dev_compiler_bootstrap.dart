@@ -37,7 +37,7 @@ Future<void> bootstrapDdc(
   String entrypointExtension = jsEntrypointExtension,
   required bool? nativeNullAssertions,
   bool usesWebHotReload = false,
-  bool silenceUnsupportedModulesWarnings = false,
+  bool unsafeAllowUnsupportedModules = false,
 }) async {
   // Ensures that the sdk resources are built and available.
   await _ensureResources(buildStep, requiredAssets);
@@ -57,7 +57,7 @@ Future<void> bootstrapDdc(
       module,
       buildStep,
       computeStronglyConnectedComponents: !usesWebHotReload,
-      throwIfUnsupported: !silenceUnsupportedModulesWarnings,
+      throwIfUnsupported: !unsafeAllowUnsupportedModules,
     );
   } on UnsupportedModules catch (e) {
     final librariesString = (await e.exactLibraries(buildStep).toList())

@@ -134,11 +134,11 @@ final class EntrypointBuilderOptions {
   /// If not provided, defaults to "lib/libraries.json" in the sdk directory.
   final String? librariesPath;
 
-  /// Whether or not to silence unsupported modules warnings.
+  /// Whether or not to allow unsupported modules.
   ///
   /// If `true` then native core library imports that are not officially
   /// supported by the current platform will be silently allowed.
-  final bool silenceUnsupportedModulesWarnings;
+  final bool unsafeAllowUnsupportedModules;
 
   EntrypointBuilderOptions({
     required this.compilers,
@@ -146,7 +146,7 @@ final class EntrypointBuilderOptions {
     this.loaderExtension,
     this.usesWebHotReload = false,
     this.librariesPath,
-    this.silenceUnsupportedModulesWarnings = false,
+    this.unsafeAllowUnsupportedModules = false,
   });
 
   factory EntrypointBuilderOptions.fromOptions(BuilderOptions options) {
@@ -160,8 +160,8 @@ final class EntrypointBuilderOptions {
     const loaderOption = 'loader';
     const webHotReloadOption = 'web-hot-reload';
     const librariesPathOption = 'libraries_path';
-    const silenceUnsupportedModulesWarningsOption =
-        'silence_unsupported_modules_warnings';
+    const unsafeAllowUnsupportedModulesOption =
+        'unsafe_allow_unsupported_modules';
     String? defaultLoaderOption;
 
     const supportedOptions = [
@@ -173,7 +173,7 @@ final class EntrypointBuilderOptions {
       loaderOption,
       webHotReloadOption,
       librariesPathOption,
-      silenceUnsupportedModulesWarningsOption,
+      unsafeAllowUnsupportedModulesOption,
       'use-ui-libraries',
     ];
 
@@ -182,8 +182,8 @@ final class EntrypointBuilderOptions {
         options.config[nativeNullAssertionsOption] as bool?;
     final usesWebHotReload = options.config[webHotReloadOption] as bool?;
     final librariesPath = options.config[librariesPathOption] as String?;
-    final silenceUnsupportedModulesWarnings =
-        options.config[silenceUnsupportedModulesWarningsOption] as bool?;
+    final unsafeAllowUnsupportedModules =
+        options.config[unsafeAllowUnsupportedModulesOption] as bool?;
     final compilers = <EnabledEntrypointCompiler>[];
 
     validateOptions(
@@ -272,8 +272,7 @@ final class EntrypointBuilderOptions {
               : defaultLoaderOption,
       usesWebHotReload: usesWebHotReload ?? false,
       librariesPath: librariesPath,
-      silenceUnsupportedModulesWarnings:
-          silenceUnsupportedModulesWarnings ?? false,
+      unsafeAllowUnsupportedModules: unsafeAllowUnsupportedModules ?? false,
     );
   }
 
@@ -363,8 +362,8 @@ class WebEntrypointBuilder implements Builder {
                           ? _ddcLibraryBundleSdkResources
                           : _ddcSdkResources,
                   usesWebHotReload: usesWebHotReload,
-                  silenceUnsupportedModulesWarnings:
-                      options.silenceUnsupportedModulesWarnings,
+                  unsafeAllowUnsupportedModules:
+                      options.unsafeAllowUnsupportedModules,
                 );
               } on MissingModulesException catch (e) {
                 log.severe('$e');
@@ -380,8 +379,8 @@ class WebEntrypointBuilder implements Builder {
               onlyCompiler: options.compilers.length == 1,
               entrypointExtension: compiler.extension,
               librariesPath: options.librariesPath,
-              silenceUnsupportedModulesWarnings:
-                  options.silenceUnsupportedModulesWarnings,
+              unsafeAllowUnsupportedModules:
+                  options.unsafeAllowUnsupportedModules,
             ),
           );
         case WebCompiler.Dart2Wasm:
@@ -391,8 +390,8 @@ class WebEntrypointBuilder implements Builder {
                 buildStep,
                 compiler.compilerArguments,
                 compiler.extension,
-                silenceUnsupportedModulesWarnings:
-                    options.silenceUnsupportedModulesWarnings,
+                unsafeAllowUnsupportedModules:
+                    options.unsafeAllowUnsupportedModules,
               );
             }),
           );
