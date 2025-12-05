@@ -174,6 +174,7 @@ final class EntrypointBuilderOptions {
       webHotReloadOption,
       librariesPathOption,
       silenceUnsupportedModulesWarningsOption,
+      'use-ui-libraries',
     ];
 
     final config = options.config;

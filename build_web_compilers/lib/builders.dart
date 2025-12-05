@@ -211,6 +211,7 @@ void _ensureSamePlatformOptions(BuilderOptions options) {
       'following builders: build_web_compilers:ddc, '
       'build_web_compilers|entrypoint, '
       'build_web_compilers|entrypoint_marker, '
+      'build_web_compilers|ddc, '
       'build_web_compilers|ddc_modules, '
       'build_web_compilers|dart2js_modules, '
       'build_web_compilers|dart2wasm_modules.'
