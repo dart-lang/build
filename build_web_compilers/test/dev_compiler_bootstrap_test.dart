@@ -2,14 +2,18 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:io';
+
 import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:build_test/build_test.dart';
 import 'package:build_web_compilers/build_web_compilers.dart';
 import 'package:build_web_compilers/builders.dart';
+import 'package:file/memory.dart';
 import 'package:test/test.dart';
 
 void main() {
+  initializePlatforms();
   final startingBuilders = {
     // Uses the real sdk copy builder to copy required files from the SDK.
     sdkJsCopyRequirejs(const BuilderOptions({})),
@@ -252,6 +256,28 @@ void main() {
         'build_web_compilers|lib/src/dev_compiler/dart_sdk.js.map': isNotEmpty,
       };
       await testBuilder(builder, sdkAssets, outputs: expectedOutputs);
+    });
+
+    test('can use prebuilt sdk from path', () async {
+      final builder = sdkJsCompile(
+        const BuilderOptions({'use-prebuilt-sdk-from-path': 'path/to/sdk'}),
+      );
+      final sdkAssets = <String, Object>{'build_web_compilers|fake.txt': ''};
+      final expectedOutputs = {
+        'build_web_compilers|lib/src/dev_compiler/dart_sdk.js': decodedMatches(
+          'prebuilt-sdk',
+        ),
+        'build_web_compilers|lib/src/dev_compiler/dart_sdk.js.map':
+            decodedMatches('prebuilt-sdk-map'),
+      };
+      final fs = MemoryFileSystem();
+      fs.directory('path/to/sdk')
+        ..createSync(recursive: true)
+        ..childFile('dart_sdk.js').writeAsStringSync('prebuilt-sdk')
+        ..childFile('dart_sdk.js.map').writeAsStringSync('prebuilt-sdk-map');
+      await IOOverrides.runZoned(createFile: fs.file, () async {
+        await testBuilder(builder, sdkAssets, outputs: expectedOutputs);
+      });
     });
   });
 }

@@ -45,13 +45,15 @@ final class Dart2WasmBootstrapResult {
 Future<Dart2WasmBootstrapResult> bootstrapDart2Wasm(
   BuildStep buildStep,
   List<String> additionalArguments,
-  String javaScriptModuleExtension,
-) async {
+  String javaScriptModuleExtension, {
+  bool unsafeAllowUnsupportedModules = false,
+}) async {
   return await _resourcePool.withResource(
     () => _bootstrapDart2Wasm(
       buildStep,
       additionalArguments,
       javaScriptModuleExtension,
+      unsafeAllowUnsupportedModules: unsafeAllowUnsupportedModules,
     ),
   );
 }
@@ -59,8 +61,9 @@ Future<Dart2WasmBootstrapResult> bootstrapDart2Wasm(
 Future<Dart2WasmBootstrapResult> _bootstrapDart2Wasm(
   BuildStep buildStep,
   List<String> additionalArguments,
-  String javaScriptModuleExtension,
-) async {
+  String javaScriptModuleExtension, {
+  bool unsafeAllowUnsupportedModules = false,
+}) async {
   final dartEntrypointId = buildStep.inputId;
   final moduleId = dartEntrypointId.changeExtension(
     moduleExtension(dart2wasmPlatform),
@@ -75,7 +78,7 @@ Future<Dart2WasmBootstrapResult> _bootstrapDart2Wasm(
     try {
       allDeps = (await module.computeTransitiveDependencies(
         buildStep,
-        throwIfUnsupported: true,
+        throwIfUnsupported: !unsafeAllowUnsupportedModules,
       ))..add(module);
     } on UnsupportedModules catch (e) {
       final librariesString = (await e.exactLibraries(buildStep).toList())

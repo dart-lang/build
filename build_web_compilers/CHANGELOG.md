@@ -1,3 +1,7 @@
+## 4.4.6
+
+- Add build options to customize the SDK used for compiling to js and wasm.
+
 ## 4.4.5
 
 - Updating DDC's bootstrapper to be consistent with the rest of the ecosystem.

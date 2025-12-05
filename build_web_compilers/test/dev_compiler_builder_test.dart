@@ -11,6 +11,8 @@ import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
 void main() {
+  initializePlatforms();
+
   group('error free project', () {
     final startingAssets = {
       'a|lib/a.dart': r'''

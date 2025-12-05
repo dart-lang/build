@@ -13,6 +13,6 @@ export 'src/common.dart'
         symbolsExtension;
 export 'src/dev_compiler_builder.dart' show DevCompilerBuilder;
 export 'src/platforms.dart'
-    show dart2jsPlatform, dart2wasmPlatform, ddcPlatform;
+    show dart2jsPlatform, dart2wasmPlatform, ddcPlatform, initializePlatforms;
 export 'src/web_entrypoint_builder.dart'
     show WebCompiler, WebEntrypointBuilder, ddcBootstrapExtension;
