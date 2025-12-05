@@ -42,8 +42,8 @@ class DevCompilerBuilder implements Builder {
   /// Enables canary features in DDC.
   final bool canaryFeatures;
 
-  /// Emits code with the DDC module system.
-  final bool ddcModules;
+  /// Emits code with the DDC Library Bundle module system.
+  final bool ddcLibraryBundle;
 
   final bool trackUnusedInputs;
 
@@ -74,7 +74,7 @@ class DevCompilerBuilder implements Builder {
     this.generateFullDill = false,
     this.emitDebugSymbols = false,
     this.canaryFeatures = false,
-    this.ddcModules = false,
+    this.ddcLibraryBundle = false,
     this.trackUnusedInputs = false,
     required this.platform,
     String? sdkKernelPath,
@@ -129,7 +129,7 @@ class DevCompilerBuilder implements Builder {
         generateFullDill,
         emitDebugSymbols,
         canaryFeatures,
-        ddcModules,
+        ddcLibraryBundle,
         trackUnusedInputs,
         platformSdk,
         sdkKernelPath,
@@ -152,7 +152,7 @@ Future<void> _createDevCompilerModule(
   bool generateFullDill,
   bool emitDebugSymbols,
   bool canaryFeatures,
-  bool ddcModules,
+  bool ddcLibraryBundle,
   bool trackUnusedInputs,
   String dartSdk,
   String sdkKernelPath,
@@ -202,11 +202,11 @@ Future<void> _createDevCompilerModule(
       WorkRequest()
         ..arguments.addAll([
           '--dart-sdk-summary=$sdkSummary',
-          '--modules=${ddcModules ? 'ddc' : 'amd'}',
+          '--modules=${ddcLibraryBundle ? 'ddc' : 'amd'}',
           '--no-summarize',
           if (generateFullDill) '--experimental-output-compiled-kernel',
           if (emitDebugSymbols) '--emit-debug-symbols',
-          if (canaryFeatures) '--canary',
+          if (canaryFeatures || ddcLibraryBundle) '--canary',
           '-o',
           jsOutputFile.path,
           debugMode ? '--source-map' : '--no-source-map',

@@ -38,6 +38,7 @@ Future<void> bootstrapDdc(
   String entrypointExtension = jsEntrypointExtension,
   required bool? nativeNullAssertions,
   bool usesWebHotReload = false,
+  bool ddcLibraryBundle = false,
 }) async {
   platform = ddcPlatform;
   // Ensures that the sdk resources are built and available.
@@ -110,7 +111,7 @@ $librariesString
   final dartEntrypointParts = _context.split(dartEntrypointId.path);
   final packageName = module.primarySource.package;
   final entrypointLibraryName =
-      usesWebHotReload
+      ddcLibraryBundle
           ? _context.joinAll([
             // Convert to a package: uri for files under lib.
             if (dartEntrypointParts.first == 'lib') 'package:$packageName',
@@ -130,7 +131,8 @@ $librariesString
   String entrypointJsContent;
   String bootstrapContent;
   String bootstrapEndContent;
-  if (usesWebHotReload) {
+  print(ddcLibraryBundle);
+  if (ddcLibraryBundle) {
     final ddcSdkUrl =
         r'packages/build_web_compilers/src/dev_compiler/dart_sdk.js';
     modulePaths['dart_sdk'] = ddcSdkUrl;
