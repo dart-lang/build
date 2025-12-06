@@ -1,3 +1,7 @@
+## 4.4.6
+
+- Adding support for DDC's Library Bundle module system.
+
 ## 4.4.5
 
 - Updating DDC's bootstrapper to be consistent with the rest of the ecosystem.
