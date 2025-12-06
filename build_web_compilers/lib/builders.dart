@@ -59,7 +59,9 @@ Builder ddcBuilder(BuilderOptions options) {
     generateFullDill: _readGenerateFullDillOption(options),
     emitDebugSymbols: _readEmitDebugSymbolsOption(options),
     canaryFeatures: _readCanaryOption(options),
-    ddcModules: _readWebHotReloadOption(options),
+    ddcLibraryBundle:
+        _readDdcLibraryBundleOption(options) ||
+        _readWebHotReloadOption(options),
     sdkKernelPath: sdkDdcKernelPath,
     trackUnusedInputs: _readTrackInputsCompilerOption(options),
     platform: ddcPlatform,
@@ -92,7 +94,9 @@ Builder sdkJsCompile(BuilderOptions options) {
     outputPath: 'lib/src/dev_compiler/dart_sdk.js',
     canaryFeatures:
         _readWebHotReloadOption(options) || _readCanaryOption(options),
-    usesWebHotReload: _readWebHotReloadOption(options),
+    ddcLibraryBundle:
+        _readDdcLibraryBundleOption(options) ||
+        _readWebHotReloadOption(options),
   );
 }
 
@@ -194,6 +198,10 @@ bool _readWebHotReloadOption(BuilderOptions options) {
   return options.config[_webHotReloadOption] as bool? ?? false;
 }
 
+bool _readDdcLibraryBundleOption(BuilderOptions options) {
+  return options.config[_ddcLibraryBundleOption] as bool? ?? false;
+}
+
 Map<String, String> _readEnvironmentOption(BuilderOptions options) {
   final environment = options.config[_environmentOption] as Map? ?? const {};
   return environment.map((key, value) => MapEntry('$key', '$value'));
@@ -208,6 +216,7 @@ const _canaryOption = 'canary';
 const _trackUnusedInputsCompilerOption = 'track-unused-inputs';
 const _environmentOption = 'environment';
 const _webHotReloadOption = 'web-hot-reload';
+const _ddcLibraryBundleOption = 'ddc-library-bundle';
 
 const _supportedOptions = [
   _environmentOption,
@@ -217,4 +226,5 @@ const _supportedOptions = [
   _canaryOption,
   _trackUnusedInputsCompilerOption,
   _webHotReloadOption,
+  _ddcLibraryBundleOption,
 ];
