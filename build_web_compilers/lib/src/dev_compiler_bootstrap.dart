@@ -131,7 +131,6 @@ $librariesString
   String entrypointJsContent;
   String bootstrapContent;
   String bootstrapEndContent;
-  print(ddcLibraryBundle);
   if (ddcLibraryBundle) {
     final ddcSdkUrl =
         r'packages/build_web_compilers/src/dev_compiler/dart_sdk.js';
@@ -148,8 +147,8 @@ $librariesString
               : _context.joinAll(_context.split(jsId.path).skip(1));
     }
     final bootstrapEndModuleName = _context.relative(
-      bootstrapId.path,
-      from: _context.dirname(bootstrapEndId.path),
+      bootstrapEndId.path,
+      from: _context.dirname(bootstrapId.path),
     );
     bootstrapContent = generateDDCLibraryBundleMainModule(
       entrypoint: entrypointLibraryName,
