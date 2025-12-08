@@ -58,7 +58,8 @@ Builder ddcBuilder(BuilderOptions options) {
     useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
     generateFullDill: _readGenerateFullDillOption(options),
     emitDebugSymbols: _readEmitDebugSymbolsOption(options),
-    canaryFeatures: _readCanaryOption(options),
+    canaryFeatures:
+        _readCanaryOption(options) || _readWebHotReloadOption(options),
     ddcLibraryBundle:
         _readDdcLibraryBundleOption(options) ||
         _readWebHotReloadOption(options),
@@ -93,7 +94,7 @@ Builder sdkJsCompile(BuilderOptions options) {
     sdkKernelPath: 'lib/_internal/ddc_platform.dill',
     outputPath: 'lib/src/dev_compiler/dart_sdk.js',
     canaryFeatures:
-        _readWebHotReloadOption(options) || _readCanaryOption(options),
+        _readCanaryOption(options) || _readWebHotReloadOption(options),
     ddcLibraryBundle:
         _readDdcLibraryBundleOption(options) ||
         _readWebHotReloadOption(options),
