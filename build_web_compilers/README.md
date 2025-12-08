@@ -164,6 +164,33 @@ targets:
 
 In this case, you need to use another builder or a predefined loader instead.
 
+### Advanced SDK Customization
+
+The following options allow you to customize the Dart SDK used for compiling to
+js and wasm. They are intended for advanced use cases and should be used with
+caution.
+
+<details>
+<summary>Expand to see configuration options.</summary>
+
+```yaml
+global_options:
+  build_web_compilers:ddc:
+    options:
+      use-ui-libraries: false
+      platform-sdk: /path/to/platform_sdk/
+      ddc-kernel-path: relative/path/to/kernel_summary
+      libraries-path: /path/to/libraries.json
+  build_web_compilers:entrypoint:
+    options:
+      use-ui-libraries: false
+      libraries-path: /path/to/libraries.json
+  build_web_compilers:sdk_js:
+    options:
+      use-prebuilt-sdk-from-path: /path/to/prebuilt/sdk_js/
+```
+</details>
+
 ### Configuring -D environment variables
 
 dartdevc is a modular compiler, so in order to ensure consistent builds

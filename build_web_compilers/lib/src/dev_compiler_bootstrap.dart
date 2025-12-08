@@ -33,18 +33,19 @@ final stackTraceMapperPath =
 /// available to the app by making them inputs of this build action.
 Future<void> bootstrapDdc(
   BuildStep buildStep, {
-  DartPlatform? platform,
   Iterable<AssetId> requiredAssets = const [],
   String entrypointExtension = jsEntrypointExtension,
   required bool? nativeNullAssertions,
   bool usesWebHotReload = false,
+  bool unsafeAllowUnsupportedModules = false,
 }) async {
-  platform = ddcPlatform;
   // Ensures that the sdk resources are built and available.
   await _ensureResources(buildStep, requiredAssets);
 
   final dartEntrypointId = buildStep.inputId;
-  final moduleId = buildStep.inputId.changeExtension(moduleExtension(platform));
+  final moduleId = buildStep.inputId.changeExtension(
+    moduleExtension(ddcPlatform),
+  );
   final module = Module.fromJson(
     json.decode(await buildStep.readAsString(moduleId)) as Map<String, dynamic>,
   );
@@ -56,6 +57,7 @@ Future<void> bootstrapDdc(
       module,
       buildStep,
       computeStronglyConnectedComponents: !usesWebHotReload,
+      throwIfUnsupported: !unsafeAllowUnsupportedModules,
     );
   } on UnsupportedModules catch (e) {
     final librariesString = (await e.exactLibraries(buildStep).toList())
@@ -251,11 +253,12 @@ Future<List<AssetId>> _ensureTransitiveJsModules(
   Module module,
   BuildStep buildStep, {
   bool computeStronglyConnectedComponents = true,
+  bool throwIfUnsupported = true,
 }) async {
   // Collect all the modules this module depends on, plus this module.
   final transitiveDeps = await module.computeTransitiveDependencies(
     buildStep,
-    throwIfUnsupported: true,
+    throwIfUnsupported: throwIfUnsupported,
     computeStronglyConnectedComponents: computeStronglyConnectedComponents,
   );
 

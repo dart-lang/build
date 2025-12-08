@@ -25,7 +25,6 @@ const _coreLibraries = [
 /// Additional libraries supported by both ddc and dart2js.
 const _additionalWebLibraries = [
   'html',
-  'html',
   'html_common',
   'indexed_db',
   'svg',
@@ -37,13 +36,44 @@ const _additionalWebLibraries = [
 /// Additional libraries supported by dart2wasm.
 const _additionalWasmLibraries = ['ffi'];
 
-const _jsCompilerLibraries = [..._coreLibraries, ..._additionalWebLibraries];
+/// Additional libraries supported by the Flutter SDK.
+const _additionalUiLibraries = ['ui', 'ui_web'];
 
-final ddcPlatform = DartPlatform.register('ddc', _jsCompilerLibraries);
+// These intentionally throw if [initializePlatforms] wasn't called first.
+final ddcPlatform = DartPlatform.byName('ddc');
+final dart2jsPlatform = DartPlatform.byName('dart2js');
+final dart2wasmPlatform = DartPlatform.byName('dart2wasm');
 
-final dart2jsPlatform = DartPlatform.register('dart2js', _jsCompilerLibraries);
+bool? _useAdditionalUiLibraries;
 
-final dart2wasmPlatform = DartPlatform.register('dart2wasm', [
-  ..._coreLibraries,
-  ..._additionalWasmLibraries,
-]);
+/// Registers the platforms with [DartPlatform].
+///
+/// Must be called before [ddcPlatform], [dart2jsPlatform], or
+/// [dart2wasmPlatform] is used.
+void initializePlatforms([bool useAdditionalUiLibraries = false]) {
+  if (_useAdditionalUiLibraries != null) {
+    if (_useAdditionalUiLibraries != useAdditionalUiLibraries) {
+      throw ArgumentError(
+        'Function initializePlatforms() called multiple times with different '
+        'values. Make sure to call it always with the same value.',
+      );
+    }
+    return;
+  }
+  _useAdditionalUiLibraries = useAdditionalUiLibraries;
+  DartPlatform.register('ddc', [
+    ..._coreLibraries,
+    ..._additionalWebLibraries,
+    if (useAdditionalUiLibraries) ..._additionalUiLibraries,
+  ]);
+  DartPlatform.register('dart2js', [
+    ..._coreLibraries,
+    ..._additionalWebLibraries,
+    if (useAdditionalUiLibraries) ..._additionalUiLibraries,
+  ]);
+  DartPlatform.register('dart2wasm', [
+    ..._coreLibraries,
+    ..._additionalWasmLibraries,
+    if (useAdditionalUiLibraries) ..._additionalUiLibraries,
+  ]);
+}
