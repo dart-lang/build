@@ -1,6 +1,8 @@
-## 4.4.6
-
+## 4.4.7
 - Adding support for DDC's Library Bundle module system.
+
+## 4.4.6
+- Add build options to customize the SDK used for compiling to js and wasm.
 
 ## 4.4.5
 

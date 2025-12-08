@@ -45,6 +45,12 @@ class SdkJsCompileBuilder implements Builder {
   /// Emits DDC code using its Library Bundle module system.
   final bool ddcLibraryBundle;
 
+  /// An optional directory path that contains prebuilt sdk files.
+  ///
+  /// If provided, skips compilation and copies the sdk and
+  /// source map files to the output.
+  final String? usePrebuiltSdkFromPath;
+
   SdkJsCompileBuilder({
     required this.sdkKernelPath,
     required String outputPath,
@@ -52,6 +58,7 @@ class SdkJsCompileBuilder implements Builder {
     String? platformSdk,
     required this.canaryFeatures,
     required this.ddcLibraryBundle,
+    this.usePrebuiltSdkFromPath,
   }) : platformSdk = platformSdk ?? sdkDir,
        librariesPath =
            librariesPath ??
@@ -69,15 +76,19 @@ class SdkJsCompileBuilder implements Builder {
 
   @override
   Future build(BuildStep buildStep) async {
-    await _createDevCompilerModule(
-      buildStep,
-      platformSdk,
-      sdkKernelPath,
-      librariesPath,
-      jsOutputId,
-      canaryFeatures,
-      ddcLibraryBundle,
-    );
+    if (usePrebuiltSdkFromPath case final String sdkPath) {
+      await _copyPrebuiltSdk(buildStep, sdkPath, jsOutputId);
+    } else {
+      await _createDevCompilerModule(
+        buildStep,
+        platformSdk,
+        sdkKernelPath,
+        librariesPath,
+        jsOutputId,
+        canaryFeatures,
+        ddcLibraryBundle,
+      );
+    }
   }
 }
 
@@ -149,5 +160,36 @@ Future<void> _createDevCompilerModule(
     jsOutputId.changeExtension(_jsSourceMapExtension),
     scratchSpace,
     buildStep,
+  );
+}
+
+/// Copy the prebuilt SDK to the output.
+Future<void> _copyPrebuiltSdk(
+  BuildStep buildStep,
+  String sdkPath,
+  AssetId jsOutputId,
+) async {
+  final sdkFile = File(p.join(sdkPath, 'dart_sdk.js'));
+  if (!sdkFile.existsSync()) {
+    throw ArgumentError(
+      'Prebuilt SDK file "dart_sdk.js" '
+      'does not exist at $sdkPath',
+    );
+  }
+
+  await buildStep.writeAsBytes(jsOutputId, await sdkFile.readAsBytes());
+
+  final sourceMapFile = File(p.join(sdkPath, 'dart_sdk.js.map'));
+  if (!sourceMapFile.existsSync()) {
+    log.warning(
+      'Prebuilt SDK source map file "dart_sdk.js.map" '
+      'does not exist at $sdkPath',
+    );
+    return;
+  }
+
+  await buildStep.writeAsBytes(
+    jsOutputId.changeExtension(_jsSourceMapExtension),
+    await sourceMapFile.readAsBytes(),
   );
 }

@@ -9,6 +9,7 @@ import 'package:build_web_compilers/build_web_compilers.dart';
 import 'package:test/test.dart';
 
 void main() {
+  initializePlatforms();
   final startingAssets = {
     'a|web/index.dart': '''
         void main() {
