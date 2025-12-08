@@ -223,7 +223,7 @@ void main() {
             const BuilderOptions({
               'compiler': 'dart2js',
               'native_null_assertions': false,
-              'unsafe_allow_unsupported_modules': true,
+              'unsafe-allow-unsupported-modules': true,
             }),
           ),
         ],
