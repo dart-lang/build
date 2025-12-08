@@ -159,9 +159,9 @@ final class EntrypointBuilderOptions {
     const nativeNullAssertionsOption = 'native_null_assertions';
     const loaderOption = 'loader';
     const webHotReloadOption = 'web-hot-reload';
-    const librariesPathOption = 'libraries_path';
+    const librariesPathOption = 'libraries-path';
     const unsafeAllowUnsupportedModulesOption =
-        'unsafe_allow_unsupported_modules';
+        'unsafe-allow-unsupported-modules';
     String? defaultLoaderOption;
 
     const supportedOptions = [
