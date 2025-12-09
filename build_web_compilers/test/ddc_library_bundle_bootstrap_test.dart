@@ -132,6 +132,7 @@ void main() {
         );
       });
     });
+
     group('regression tests', () {
       test('root dart file is not the primary source, #2269', () async {
         final builder = WebEntrypointBuilder.fromOptions(defaultBuilderOptions);
