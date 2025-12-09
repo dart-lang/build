@@ -1,6 +1,6 @@
 ## 5.1.5
 
-- Adding support for DDC's Library Bundle module system.
+- Add support for DDC's Library Bundle module system.
 
 ## 5.1.4
 
