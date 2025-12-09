@@ -81,12 +81,12 @@ class SdkJsCompileBuilder implements Builder {
     } else {
       await _createDevCompilerModule(
         buildStep,
-        platformSdk,
-        sdkKernelPath,
-        librariesPath,
         jsOutputId,
-        canaryFeatures,
-        ddcLibraryBundle,
+        dartSdk: platformSdk,
+        sdkKernelPath: sdkKernelPath,
+        librariesPath: librariesPath,
+        canaryFeatures: canaryFeatures,
+        ddcLibraryBundle: ddcLibraryBundle,
       );
     }
   }
@@ -95,13 +95,13 @@ class SdkJsCompileBuilder implements Builder {
 /// Compile the sdk module with the dev compiler.
 Future<void> _createDevCompilerModule(
   BuildStep buildStep,
-  String dartSdk,
-  String sdkKernelPath,
-  String librariesPath,
-  AssetId jsOutputId,
-  bool canaryFeatures,
-  bool ddcLibraryBundle,
-) async {
+  AssetId jsOutputId, {
+  required String dartSdk,
+  required String sdkKernelPath,
+  required String librariesPath,
+  required bool canaryFeatures,
+  required bool ddcLibraryBundle,
+}) async {
   final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
   final jsOutputFile = scratchSpace.fileFor(jsOutputId);
 

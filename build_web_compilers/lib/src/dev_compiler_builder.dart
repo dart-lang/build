@@ -125,16 +125,16 @@ class DevCompilerBuilder implements Builder {
       await _createDevCompilerModule(
         module,
         buildStep,
-        useIncrementalCompiler,
-        generateFullDill,
-        emitDebugSymbols,
-        canaryFeatures,
-        ddcLibraryBundle,
-        trackUnusedInputs,
-        platformSdk,
-        sdkKernelPath,
-        librariesPath,
         environment,
+        useIncrementalCompiler: useIncrementalCompiler,
+        generateFullDill: generateFullDill,
+        emitDebugSymbols: emitDebugSymbols,
+        canaryFeatures: canaryFeatures,
+        ddcLibraryBundle: ddcLibraryBundle,
+        trackUnusedInputs: trackUnusedInputs,
+        dartSdk: platformSdk,
+        sdkKernelPath: sdkKernelPath,
+        librariesPath: librariesPath,
       );
     } on DartDevcCompilationException catch (e) {
       await handleError(e);
@@ -148,16 +148,16 @@ class DevCompilerBuilder implements Builder {
 Future<void> _createDevCompilerModule(
   Module module,
   BuildStep buildStep,
-  bool useIncrementalCompiler,
-  bool generateFullDill,
-  bool emitDebugSymbols,
-  bool canaryFeatures,
-  bool ddcLibraryBundle,
-  bool trackUnusedInputs,
-  String dartSdk,
-  String sdkKernelPath,
-  String librariesPath,
   Map<String, String> environment, {
+  required bool useIncrementalCompiler,
+  required bool generateFullDill,
+  required bool emitDebugSymbols,
+  required bool canaryFeatures,
+  required bool ddcLibraryBundle,
+  required bool trackUnusedInputs,
+  required String dartSdk,
+  required String sdkKernelPath,
+  required String librariesPath,
   bool debugMode = true,
 }) async {
   final transitiveDeps = await buildStep.trackStage(
