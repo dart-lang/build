@@ -1,6 +1,6 @@
 ## 5.1.5
 
-- Add support for DDC's Library Bundle module system.
+- Add support for DDC's Library Bundle module system, which is compatible with web hot reload. This is not yet enabled by default.
 
 ## 5.1.4
 

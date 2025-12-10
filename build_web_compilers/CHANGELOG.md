@@ -1,5 +1,5 @@
 ## 4.4.7
-- Add support for DDC's Library Bundle module system.
+- Add support for DDC's Library Bundle module system, which is compatible with web hot reload. This is not yet enabled by default.
 
 ## 4.4.6
 - Add build options to customize the SDK used for compiling to js and wasm.
