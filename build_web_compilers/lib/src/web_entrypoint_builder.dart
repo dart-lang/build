@@ -188,9 +188,11 @@ final class EntrypointBuilderOptions {
     final config = options.config;
     final nativeNullAssertions =
         options.config[nativeNullAssertionsOption] as bool?;
-    final usesWebHotReload = options.config[webHotReloadOption] as bool?;
+    final usesWebHotReload =
+        options.config[webHotReloadOption] as bool? ?? false;
     final usesDdcLibraryBundle =
-        usesWebHotReload ?? options.config[ddcLibraryBundleOption] as bool?;
+        usesWebHotReload ||
+        (options.config[ddcLibraryBundleOption] as bool? ?? true);
     final librariesPath = options.config[librariesPathOption] as String?;
     final unsafeAllowUnsupportedModules =
         options.config[unsafeAllowUnsupportedModulesOption] as bool?;
@@ -281,8 +283,8 @@ final class EntrypointBuilderOptions {
           config.containsKey(loaderOption)
               ? config[loaderOption] as String?
               : defaultLoaderOption,
-      usesWebHotReload: usesWebHotReload ?? true,
-      ddcLibraryBundle: usesDdcLibraryBundle ?? true,
+      usesWebHotReload: usesWebHotReload,
+      ddcLibraryBundle: usesDdcLibraryBundle,
       librariesPath: librariesPath,
       unsafeAllowUnsupportedModules: unsafeAllowUnsupportedModules ?? false,
     );
