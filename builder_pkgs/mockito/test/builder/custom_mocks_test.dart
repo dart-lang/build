@@ -1846,10 +1846,8 @@ Future<void> _expectBuilderThrows({
 /// Dedent [input], so that each line is shifted to the left, so that the first
 /// line is at the 0 column.
 String dedent(String input) {
-  final indentMatch = RegExp(r'^(\s*)').firstMatch(input)!;
-  final indent = ''.padRight(indentMatch.group(1)!.length);
-  return input.splitMapJoin(
-    '\n',
-    onNonMatch: (s) => s.replaceFirst(RegExp('^$indent'), ''),
-  );
+  final indentMatch = RegExp(r'^\s*').firstMatch(input)!;
+  if (indentMatch.end == 0) return input;
+  final indent = indentMatch[0]!;
+  return input.replaceAll(RegExp('^$indent', multiLine: true), '');
 }
