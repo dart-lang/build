@@ -250,7 +250,7 @@ bool _readWebHotReloadOption(BuilderOptions options) {
 }
 
 bool _readDdcLibraryBundleOption(BuilderOptions options) {
-  return options.config[_ddcLibraryBundleOption] as bool? ?? false;
+  return options.config[_ddcLibraryBundleOption] as bool? ?? true;
 }
 
 bool _readUseUiLibrariesOption(BuilderOptions options) {

@@ -149,7 +149,7 @@ final class EntrypointBuilderOptions {
     this.nativeNullAssertions,
     this.loaderExtension,
     this.usesWebHotReload = false,
-    this.ddcLibraryBundle = false,
+    this.ddcLibraryBundle = true,
     this.librariesPath,
     this.unsafeAllowUnsupportedModules = false,
   });
@@ -281,8 +281,8 @@ final class EntrypointBuilderOptions {
           config.containsKey(loaderOption)
               ? config[loaderOption] as String?
               : defaultLoaderOption,
-      usesWebHotReload: usesWebHotReload ?? false,
-      ddcLibraryBundle: usesDdcLibraryBundle ?? false,
+      usesWebHotReload: usesWebHotReload ?? true,
+      ddcLibraryBundle: usesDdcLibraryBundle ?? true,
       librariesPath: librariesPath,
       unsafeAllowUnsupportedModules: unsafeAllowUnsupportedModules ?? false,
     );
