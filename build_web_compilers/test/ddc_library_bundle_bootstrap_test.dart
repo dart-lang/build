@@ -16,6 +16,8 @@ final defaultBuilderOptions = const BuilderOptions({
 });
 
 void main() {
+  initializePlatforms();
+
   final startingBuilders = {
     // Uses the real sdk copy builder to copy required files from the SDK.
     sdkJsCopyRequirejs(const BuilderOptions({})),
