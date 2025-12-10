@@ -16,6 +16,8 @@ final builderOptions = const BuilderOptions({
 });
 
 void main() {
+  initializePlatforms();
+
   group('DDC Library Bundle:', () {
     group('error free project', () {
       final startingAssets = {
