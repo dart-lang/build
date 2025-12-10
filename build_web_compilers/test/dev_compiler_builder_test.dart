@@ -10,9 +10,11 @@ import 'package:build_web_compilers/builders.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
+const ddcLibraryBundle = false;
+
 final builderOptions = const BuilderOptions({
   'track-unused-inputs': false,
-  'ddc-library-bundle': true,
+  'ddc-library-bundle': ddcLibraryBundle,
 });
 
 void main() {
@@ -83,7 +85,7 @@ void main() {
           platform: ddcPlatform,
           useIncrementalCompiler: trackUnusedInputs,
           trackUnusedInputs: trackUnusedInputs,
-          ddcLibraryBundle: false,
+          ddcLibraryBundle: ddcLibraryBundle,
         );
 
         final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
@@ -131,7 +133,7 @@ void main() {
       final builder = DevCompilerBuilder(
         platform: ddcPlatform,
         environment: {'foo': 'zap'},
-        ddcLibraryBundle: false,
+        ddcLibraryBundle: ddcLibraryBundle,
       );
       final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
         'a|lib/a$jsModuleExtension': isNotNull,
@@ -157,7 +159,7 @@ void main() {
       final builder = DevCompilerBuilder(
         platform: ddcPlatform,
         canaryFeatures: true,
-        ddcLibraryBundle: false,
+        ddcLibraryBundle: ddcLibraryBundle,
       );
       final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
         'a|lib/a$jsModuleExtension': decodedMatches(contains('canary')),
@@ -180,7 +182,7 @@ void main() {
     test('does not enable DDC canary features by default', () async {
       final builder = DevCompilerBuilder(
         platform: ddcPlatform,
-        ddcLibraryBundle: false,
+        ddcLibraryBundle: ddcLibraryBundle,
       );
       final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
         'a|lib/a$jsModuleExtension': decodedMatches(isNot(contains('canary'))),
@@ -204,7 +206,7 @@ void main() {
       final builder = DevCompilerBuilder(
         platform: ddcPlatform,
         generateFullDill: true,
-        ddcLibraryBundle: false,
+        ddcLibraryBundle: ddcLibraryBundle,
       );
       final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
         'a|lib/a$fullKernelExtension': isNotNull,
@@ -230,7 +232,7 @@ void main() {
     test('does not generate full dill by default', () async {
       final builder = DevCompilerBuilder(
         platform: ddcPlatform,
-        ddcLibraryBundle: false,
+        ddcLibraryBundle: ddcLibraryBundle,
       );
       final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
         'a|lib/a$jsModuleExtension': isNotNull,
@@ -254,7 +256,7 @@ void main() {
       final builder = DevCompilerBuilder(
         platform: ddcPlatform,
         emitDebugSymbols: true,
-        ddcLibraryBundle: false,
+        ddcLibraryBundle: ddcLibraryBundle,
       );
       final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
         'a|lib/a$jsModuleExtension': isNotNull,
@@ -280,7 +282,7 @@ void main() {
     test('does not emit debug symbols by default', () async {
       final builder = DevCompilerBuilder(
         platform: ddcPlatform,
-        ddcLibraryBundle: false,
+        ddcLibraryBundle: ddcLibraryBundle,
       );
       final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
         'b|lib/b$jsModuleExtension': isNotNull,
@@ -303,7 +305,7 @@ void main() {
     test('strips scratch paths from metadata', () async {
       final builder = DevCompilerBuilder(
         platform: ddcPlatform,
-        ddcLibraryBundle: false,
+        ddcLibraryBundle: ddcLibraryBundle,
       );
       final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
         'a|lib/a$jsModuleExtension': isNotNull,
@@ -353,7 +355,10 @@ void main() {
             MetaModuleCleanBuilder(ddcPlatform),
             ModuleBuilder(ddcPlatform),
             ddcKernelBuilder(builderOptions),
-            DevCompilerBuilder(platform: ddcPlatform, ddcLibraryBundle: false),
+            DevCompilerBuilder(
+              platform: ddcPlatform,
+              ddcLibraryBundle: ddcLibraryBundle,
+            ),
           ],
           assets,
           outputs: expectedOutputs,
@@ -399,7 +404,10 @@ void main() {
             MetaModuleCleanBuilder(ddcPlatform),
             ModuleBuilder(ddcPlatform),
             ddcKernelBuilder(builderOptions),
-            DevCompilerBuilder(platform: ddcPlatform, ddcLibraryBundle: false),
+            DevCompilerBuilder(
+              platform: ddcPlatform,
+              ddcLibraryBundle: ddcLibraryBundle,
+            ),
           ],
           assets,
           outputs: expectedOutputs,

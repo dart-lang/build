@@ -37,7 +37,7 @@ Future<void> bootstrapDdc(
   String entrypointExtension = jsEntrypointExtension,
   required bool? nativeNullAssertions,
   bool usesWebHotReload = false,
-  bool ddcLibraryBundle = true,
+  bool ddcLibraryBundle = false,
   bool unsafeAllowUnsupportedModules = false,
 }) async {
   // Ensures that the sdk resources are built and available.

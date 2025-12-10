@@ -12,9 +12,11 @@ import 'package:build_web_compilers/builders.dart';
 import 'package:file/memory.dart';
 import 'package:test/test.dart';
 
+const ddcLibraryBundle = false;
+
 final defaultBuilderOptions = const BuilderOptions({
   'compiler': 'dartdevc',
-  'ddc-library-bundle': false,
+  'ddc-library-bundle': ddcLibraryBundle,
   'native_null_assertions': false,
 });
 
@@ -29,7 +31,10 @@ void main() {
     MetaModuleCleanBuilder(ddcPlatform),
     ModuleBuilder(ddcPlatform),
     ddcKernelBuilder(const BuilderOptions({})),
-    DevCompilerBuilder(platform: ddcPlatform, ddcLibraryBundle: false),
+    DevCompilerBuilder(
+      platform: ddcPlatform,
+      ddcLibraryBundle: ddcLibraryBundle,
+    ),
   };
 
   group('simple project', () {
