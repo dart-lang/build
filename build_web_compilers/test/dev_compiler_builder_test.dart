@@ -10,6 +10,11 @@ import 'package:build_web_compilers/builders.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
+final builderOptions = const BuilderOptions({
+  'track-unused-inputs': false,
+  'ddc-library-bundle': true,
+});
+
 void main() {
   initializePlatforms();
 
@@ -37,7 +42,7 @@ void main() {
       MetaModuleBuilder(ddcPlatform),
       MetaModuleCleanBuilder(ddcPlatform),
       ModuleBuilder(ddcPlatform),
-      ddcKernelBuilder(const BuilderOptions({'track-unused-inputs': false})),
+      ddcKernelBuilder(builderOptions),
     ];
     final startingExpectedOutputs = <String, Object>{
       'a|lib/.ddc.meta_module.clean': isNotNull,
@@ -78,6 +83,7 @@ void main() {
           platform: ddcPlatform,
           useIncrementalCompiler: trackUnusedInputs,
           trackUnusedInputs: trackUnusedInputs,
+          ddcLibraryBundle: false,
         );
 
         final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
@@ -125,6 +131,7 @@ void main() {
       final builder = DevCompilerBuilder(
         platform: ddcPlatform,
         environment: {'foo': 'zap'},
+        ddcLibraryBundle: false,
       );
       final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
         'a|lib/a$jsModuleExtension': isNotNull,
@@ -150,6 +157,7 @@ void main() {
       final builder = DevCompilerBuilder(
         platform: ddcPlatform,
         canaryFeatures: true,
+        ddcLibraryBundle: false,
       );
       final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
         'a|lib/a$jsModuleExtension': decodedMatches(contains('canary')),
@@ -170,7 +178,10 @@ void main() {
     });
 
     test('does not enable DDC canary features by default', () async {
-      final builder = DevCompilerBuilder(platform: ddcPlatform);
+      final builder = DevCompilerBuilder(
+        platform: ddcPlatform,
+        ddcLibraryBundle: false,
+      );
       final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
         'a|lib/a$jsModuleExtension': decodedMatches(isNot(contains('canary'))),
         'a|lib/a$jsSourceMapExtension': isNotNull,
@@ -193,6 +204,7 @@ void main() {
       final builder = DevCompilerBuilder(
         platform: ddcPlatform,
         generateFullDill: true,
+        ddcLibraryBundle: false,
       );
       final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
         'a|lib/a$fullKernelExtension': isNotNull,
@@ -216,7 +228,10 @@ void main() {
     });
 
     test('does not generate full dill by default', () async {
-      final builder = DevCompilerBuilder(platform: ddcPlatform);
+      final builder = DevCompilerBuilder(
+        platform: ddcPlatform,
+        ddcLibraryBundle: false,
+      );
       final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
         'a|lib/a$jsModuleExtension': isNotNull,
         'a|lib/a$jsSourceMapExtension': isNotNull,
@@ -239,6 +254,7 @@ void main() {
       final builder = DevCompilerBuilder(
         platform: ddcPlatform,
         emitDebugSymbols: true,
+        ddcLibraryBundle: false,
       );
       final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
         'a|lib/a$jsModuleExtension': isNotNull,
@@ -262,7 +278,10 @@ void main() {
     });
 
     test('does not emit debug symbols by default', () async {
-      final builder = DevCompilerBuilder(platform: ddcPlatform);
+      final builder = DevCompilerBuilder(
+        platform: ddcPlatform,
+        ddcLibraryBundle: false,
+      );
       final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
         'b|lib/b$jsModuleExtension': isNotNull,
         'b|lib/b$jsSourceMapExtension': isNotNull,
@@ -282,7 +301,10 @@ void main() {
     });
 
     test('strips scratch paths from metadata', () async {
-      final builder = DevCompilerBuilder(platform: ddcPlatform);
+      final builder = DevCompilerBuilder(
+        platform: ddcPlatform,
+        ddcLibraryBundle: false,
+      );
       final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
         'a|lib/a$jsModuleExtension': isNotNull,
         'a|lib/a$jsSourceMapExtension': isNotNull,
@@ -330,10 +352,8 @@ void main() {
             MetaModuleBuilder(ddcPlatform),
             MetaModuleCleanBuilder(ddcPlatform),
             ModuleBuilder(ddcPlatform),
-            ddcKernelBuilder(
-              const BuilderOptions({'track-unused-inputs': false}),
-            ),
-            DevCompilerBuilder(platform: ddcPlatform),
+            ddcKernelBuilder(builderOptions),
+            DevCompilerBuilder(platform: ddcPlatform, ddcLibraryBundle: false),
           ],
           assets,
           outputs: expectedOutputs,
@@ -378,10 +398,8 @@ void main() {
             MetaModuleBuilder(ddcPlatform),
             MetaModuleCleanBuilder(ddcPlatform),
             ModuleBuilder(ddcPlatform),
-            ddcKernelBuilder(
-              const BuilderOptions({'track-unused-inputs': false}),
-            ),
-            DevCompilerBuilder(platform: ddcPlatform),
+            ddcKernelBuilder(builderOptions),
+            DevCompilerBuilder(platform: ddcPlatform, ddcLibraryBundle: false),
           ],
           assets,
           outputs: expectedOutputs,
