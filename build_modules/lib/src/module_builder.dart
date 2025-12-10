@@ -24,12 +24,12 @@ String moduleExtension(DartPlatform platform) => '.${platform.name}.module';
 class ModuleBuilder implements Builder {
   final DartPlatform _platform;
 
-  /// Emits DDC code with the Library Bundle module system, which supports hot
-  /// reload.
-  ///
   /// If set, this builder will consume raw meta modules (instead of clean).
-  /// Clean meta modules are only used for DDC's AMD module system due its
-  /// requirement that self-referential libraries be bundled.
+  ///
+  /// Clean meta modules cannot be used when compiling with the Frontend Server
+  /// due to potentially divergent bundling strategies between it and
+  /// build_runner. Additionally, bundling isn't required in DDC's Library
+  /// Bundle module system.
   final bool usesWebHotReload;
 
   ModuleBuilder(this._platform, {this.usesWebHotReload = false})

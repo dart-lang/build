@@ -126,8 +126,12 @@ final class EntrypointBuilderOptions {
 
   /// Whether or not to emit DDC entrypoints that support web hot reload.
   ///
-  /// Web hot reload is only supported for DDC's Library Bundle module system.
+  /// Only supported for DDC's Library Bundle module system.
   final bool usesWebHotReload;
+
+  /// Whether or not to emit DDC entrypoints that target the DDC Library Bundle
+  /// module system.
+  final bool ddcLibraryBundle;
 
   /// The absolute path to the libraries file for the current platform.
   ///
@@ -145,6 +149,7 @@ final class EntrypointBuilderOptions {
     this.nativeNullAssertions,
     this.loaderExtension,
     this.usesWebHotReload = false,
+    this.ddcLibraryBundle = false,
     this.librariesPath,
     this.unsafeAllowUnsupportedModules = false,
   });
@@ -159,9 +164,11 @@ final class EntrypointBuilderOptions {
     const nativeNullAssertionsOption = 'native_null_assertions';
     const loaderOption = 'loader';
     const webHotReloadOption = 'web-hot-reload';
+    const ddcLibraryBundleOption = 'ddc-library-bundle';
     const librariesPathOption = 'libraries-path';
     const unsafeAllowUnsupportedModulesOption =
         'unsafe-allow-unsupported-modules';
+
     String? defaultLoaderOption;
 
     const supportedOptions = [
@@ -172,6 +179,7 @@ final class EntrypointBuilderOptions {
       dart2wasmArgsOption,
       loaderOption,
       webHotReloadOption,
+      ddcLibraryBundleOption,
       librariesPathOption,
       unsafeAllowUnsupportedModulesOption,
       'use-ui-libraries',
@@ -181,9 +189,12 @@ final class EntrypointBuilderOptions {
     final nativeNullAssertions =
         options.config[nativeNullAssertionsOption] as bool?;
     final usesWebHotReload = options.config[webHotReloadOption] as bool?;
+    final usesDdcLibraryBundle =
+        usesWebHotReload ?? options.config[ddcLibraryBundleOption] as bool?;
     final librariesPath = options.config[librariesPathOption] as String?;
     final unsafeAllowUnsupportedModules =
         options.config[unsafeAllowUnsupportedModulesOption] as bool?;
+
     final compilers = <EnabledEntrypointCompiler>[];
 
     validateOptions(
@@ -271,6 +282,7 @@ final class EntrypointBuilderOptions {
               ? config[loaderOption] as String?
               : defaultLoaderOption,
       usesWebHotReload: usesWebHotReload ?? false,
+      ddcLibraryBundle: usesDdcLibraryBundle ?? false,
       librariesPath: librariesPath,
       unsafeAllowUnsupportedModules: unsafeAllowUnsupportedModules ?? false,
     );
@@ -354,14 +366,17 @@ class WebEntrypointBuilder implements Builder {
             Future(() async {
               try {
                 final usesWebHotReload = options.usesWebHotReload;
+                final usesDdcLibraryBundle =
+                    options.ddcLibraryBundle || usesWebHotReload;
                 await bootstrapDdc(
                   buildStep,
                   nativeNullAssertions: options.nativeNullAssertions,
                   requiredAssets:
-                      usesWebHotReload
+                      usesDdcLibraryBundle
                           ? _ddcLibraryBundleSdkResources
                           : _ddcSdkResources,
                   usesWebHotReload: usesWebHotReload,
+                  ddcLibraryBundle: usesDdcLibraryBundle,
                   unsafeAllowUnsupportedModules:
                       options.unsafeAllowUnsupportedModules,
                 );

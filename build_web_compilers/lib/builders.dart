@@ -64,8 +64,11 @@ Builder ddcBuilder(BuilderOptions options) {
     useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
     generateFullDill: _readGenerateFullDillOption(options),
     emitDebugSymbols: _readEmitDebugSymbolsOption(options),
-    canaryFeatures: _readCanaryOption(options),
-    ddcModules: _readWebHotReloadOption(options),
+    canaryFeatures:
+        _readCanaryOption(options) || _readWebHotReloadOption(options),
+    ddcLibraryBundle:
+        _readDdcLibraryBundleOption(options) ||
+        _readWebHotReloadOption(options),
     trackUnusedInputs: _readTrackInputsCompilerOption(options),
     platform: ddcPlatform,
     sdkKernelPath: _readDdcKernelPathOption(options),
@@ -102,8 +105,10 @@ Builder sdkJsCompile(BuilderOptions options) {
     sdkKernelPath: 'lib/_internal/ddc_platform.dill',
     outputPath: 'lib/src/dev_compiler/dart_sdk.js',
     canaryFeatures:
-        _readWebHotReloadOption(options) || _readCanaryOption(options),
-    usesWebHotReload: _readWebHotReloadOption(options),
+        _readCanaryOption(options) || _readWebHotReloadOption(options),
+    ddcLibraryBundle:
+        _readDdcLibraryBundleOption(options) ||
+        _readWebHotReloadOption(options),
     usePrebuiltSdkFromPath: _readUsePrebuiltSdkFromPathOption(options),
   );
 }
@@ -244,6 +249,10 @@ bool _readWebHotReloadOption(BuilderOptions options) {
   return options.config[_webHotReloadOption] as bool? ?? false;
 }
 
+bool _readDdcLibraryBundleOption(BuilderOptions options) {
+  return options.config[_ddcLibraryBundleOption] as bool? ?? false;
+}
+
 bool _readUseUiLibrariesOption(BuilderOptions options) {
   return options.config[_useUiLibrariesOption] as bool? ?? false;
 }
@@ -279,6 +288,7 @@ const _canaryOption = 'canary';
 const _trackUnusedInputsCompilerOption = 'track-unused-inputs';
 const _environmentOption = 'environment';
 const _webHotReloadOption = 'web-hot-reload';
+const _ddcLibraryBundleOption = 'ddc-library-bundle';
 const _useUiLibrariesOption = 'use-ui-libraries';
 const _ddcKernelPathOption = 'ddc-kernel-path';
 const _librariesPathOption = 'libraries-path';
@@ -293,8 +303,10 @@ const _supportedOptions = [
   _canaryOption,
   _trackUnusedInputsCompilerOption,
   _webHotReloadOption,
+  _ddcLibraryBundleOption,
   _useUiLibrariesOption,
   _ddcKernelPathOption,
   _librariesPathOption,
   _platformSdkOption,
+  _usePrebuiltSdkFromPathOption,
 ];

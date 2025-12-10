@@ -42,9 +42,8 @@ class SdkJsCompileBuilder implements Builder {
   /// Enables canary features in DDC.
   final bool canaryFeatures;
 
-  /// Emits DDC code with the Library Bundle module system, which supports hot
-  /// reload.
-  final bool usesWebHotReload;
+  /// Emits DDC code using its Library Bundle module system.
+  final bool ddcLibraryBundle;
 
   /// An optional directory path that contains prebuilt sdk files.
   ///
@@ -58,7 +57,7 @@ class SdkJsCompileBuilder implements Builder {
     String? librariesPath,
     String? platformSdk,
     required this.canaryFeatures,
-    required this.usesWebHotReload,
+    required this.ddcLibraryBundle,
     this.usePrebuiltSdkFromPath,
   }) : platformSdk = platformSdk ?? sdkDir,
        librariesPath =
@@ -82,12 +81,12 @@ class SdkJsCompileBuilder implements Builder {
     } else {
       await _createDevCompilerModule(
         buildStep,
-        platformSdk,
-        sdkKernelPath,
-        librariesPath,
         jsOutputId,
-        canaryFeatures,
-        usesWebHotReload,
+        dartSdk: platformSdk,
+        sdkKernelPath: sdkKernelPath,
+        librariesPath: librariesPath,
+        canaryFeatures: canaryFeatures,
+        ddcLibraryBundle: ddcLibraryBundle,
       );
     }
   }
@@ -96,13 +95,13 @@ class SdkJsCompileBuilder implements Builder {
 /// Compile the sdk module with the dev compiler.
 Future<void> _createDevCompilerModule(
   BuildStep buildStep,
-  String dartSdk,
-  String sdkKernelPath,
-  String librariesPath,
-  AssetId jsOutputId,
-  bool canaryFeatures,
-  bool usesWebHotReload,
-) async {
+  AssetId jsOutputId, {
+  required String dartSdk,
+  required String sdkKernelPath,
+  required String librariesPath,
+  required bool canaryFeatures,
+  required bool ddcLibraryBundle,
+}) async {
   final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
   final jsOutputFile = scratchSpace.fileFor(jsOutputId);
 
@@ -130,8 +129,8 @@ Future<void> _createDevCompilerModule(
     result = await Process.run(dartPath, [
       snapshotPath,
       '--multi-root-scheme=org-dartlang-sdk',
-      '--modules=${usesWebHotReload ? 'ddc' : 'amd'}',
-      if (canaryFeatures || usesWebHotReload) '--canary',
+      '--modules=${ddcLibraryBundle ? 'ddc' : 'amd'}',
+      if (canaryFeatures || ddcLibraryBundle) '--canary',
       '--module-name=dart_sdk',
       '-o',
       jsOutputFile.path,
