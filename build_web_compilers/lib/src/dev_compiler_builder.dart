@@ -74,7 +74,7 @@ class DevCompilerBuilder implements Builder {
     this.generateFullDill = false,
     this.emitDebugSymbols = false,
     this.canaryFeatures = false,
-    this.ddcLibraryBundle = false,
+    this.ddcLibraryBundle = true,
     this.trackUnusedInputs = false,
     required this.platform,
     String? sdkKernelPath,
