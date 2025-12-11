@@ -54,3 +54,10 @@ dev_dependencies:
 
 topics:
  - build-runner
+
+dependency_overrides:
+  watcher:
+    git:
+      url: https://github.com/dart-lang/tools
+      ref: 97014f33a2aad59385df73f25baf9c304ca5c866
+      path: pkgs/watcher
