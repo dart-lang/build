@@ -715,6 +715,7 @@ class InvocationMatcher {
     if (roleArg is ArgMatcher) {
       return roleArg.matcher.matches(actArg, {});
     } else {
+      if (actArg is SmartFake) return false;
       return equals(roleArg).matches(actArg, {});
     }
   }
