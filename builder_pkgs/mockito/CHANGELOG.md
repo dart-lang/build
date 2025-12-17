@@ -1,7 +1,10 @@
-## 5.6.1
+## 5.6.2
 
 * Avoid exceptions from equality operators when comparing query arguments to
   `SmartFake` actual arguments.
+
+## 5.6.1
+
 * Allow `analyzer: >=8.1.0 <10.0.0`.
 
 ## 5.6.0
