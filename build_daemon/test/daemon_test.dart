@@ -234,11 +234,7 @@ Future<Process> _runDaemon(
     }
       ''').create();
   final args = [
-    ...Platform.executableArguments,
-    if (!Platform.executableArguments.any(
-      (arg) => arg.startsWith('--packages'),
-    ))
-      '--packages=${(await Isolate.packageConfig)!.path}',
+    '--packages=${(await Isolate.packageConfig)!.path}',
     'test.dart',
   ];
   final process = await Process.start(
