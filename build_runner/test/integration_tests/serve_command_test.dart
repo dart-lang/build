@@ -36,10 +36,7 @@ void main() async {
     tester.write('root_pkg/web/a.txt', 'a');
     tester.write('root_pkg/web/subdirectory/b.txt', 'b');
     serve = await tester.start('root_pkg', 'dart run build_runner serve web:0');
-    await serve.expectServing();
-
-    // Initial build.
-    await serve.expect(BuildLog.successPattern);
+    await serve.expectServingAndBuildSuccess();
 
     // Serves directory index as 404 for subdirectory without index.html.
     expect(
