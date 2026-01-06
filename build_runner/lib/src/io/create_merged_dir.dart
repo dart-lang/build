@@ -93,9 +93,10 @@ Future<bool> _createMergedOutputDir({
   required ReaderWriter readerWriter,
 }) async {
   try {
-    final absoluteRoot = p.join(packageGraph.root.path, root);
-    if (absoluteRoot != packageGraph.root.path &&
-        !p.isWithin(packageGraph.root.path, absoluteRoot)) {
+    // TODO
+    final absoluteRoot = p.join(packageGraph.currentPackage.path, root);
+    if (absoluteRoot != packageGraph.currentPackage.path &&
+        !p.isWithin(packageGraph.currentPackage.path, absoluteRoot)) {
       buildLog.error(
         'Invalid dir to build `$root`, must be within the package root.',
       );
@@ -109,7 +110,7 @@ Future<bool> _createMergedOutputDir({
     final builtAssets = buildOutputReader.allAssets(rootDir: root).toList();
     if (root != '' &&
         !builtAssets
-            .where((id) => id.package == packageGraph.root.name)
+            .where((id) => id.package == packageGraph.currentPackage.name)
             .any((id) => p.isWithin(root, id.path))) {
       buildLog.error('No assets exist in $root, skipping output.');
       return false;
@@ -133,7 +134,7 @@ Future<bool> _createMergedOutputDir({
             hoist,
           ),
         _writeModifiedPackageConfig(
-          packageGraph.root.name,
+          packageGraph.currentPackage.name,
           packageGraph,
           outputDir,
         ),
@@ -243,7 +244,7 @@ Future<String> _writeAsset(
       );
     } else {
       assetPath = id.path;
-      assert(id.package == packageGraph.root.name);
+      assert(id.package == packageGraph.currentPackage.name);
       if (hoist && p.isWithin(root, id.path)) {
         assetPath = p.relative(id.path, from: root);
       }
@@ -257,7 +258,7 @@ Future<String> _writeAsset(
           readerWriter.assetPathProvider.pathFor(
             readerWriter.generatedAssetHider.maybeHide(
               id,
-              packageGraph.root.name,
+              packageGraph.currentPackage.name,
             ),
           ),
           recursive: true,

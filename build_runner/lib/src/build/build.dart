@@ -132,12 +132,12 @@ class Build {
   BuildOptions get buildOptions => buildPlan.buildOptions;
   TestingOverrides get testingOverrides => buildPlan.testingOverrides;
   PackageGraph get packageGraph => buildPlan.packageGraph;
-  TargetGraph get targetGraph => buildPlan.targetGraph;
+  Iterable<TargetGraph> get targetGraphs => buildPlan.targetGraphs;
   BuildPhases get buildPhases => buildPlan.buildPhases;
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
     buildLog.configuration = buildLog.configuration.rebuild(
-      (b) => b..rootPackageName = packageGraph.root.name,
+      (b) => b..currentPackageName = packageGraph.currentPackage.name,
     );
     var result = await _safeBuild(updates);
     if (result.status == BuildStatus.success) {
@@ -219,7 +219,7 @@ class Build {
     final deleted = await assetGraph.updateAndInvalidate(
       buildPhases,
       updates,
-      packageGraph.root.name,
+      packageGraph.currentPackage.name,
       _delete,
       readerWriter,
     );
@@ -239,7 +239,8 @@ class Build {
         final result = await _runPhases();
 
         assetGraph.previousBuildTriggersDigest =
-            targetGraph.buildTriggers.digest;
+            // TODO: check!
+            targetGraphs.first.buildTriggers.digest;
         // Combine previous phased asset deps, if any, with the newly loaded
         // deps. Because of skipped builds, the newly loaded deps might just
         // say "not generated yet", in which case the old value is retained.
@@ -251,7 +252,7 @@ class Build {
                 );
         assetGraph.previousPhasedAssetDeps = updatedPhasedAssetDeps;
         await readerWriter.writeAsBytes(
-          AssetId(packageGraph.root.name, assetGraphPath),
+          AssetId(packageGraph.currentPackage.name, assetGraphPath),
           assetGraph.serialize(),
         );
         // Phases options don't change during a build series, so for all
@@ -273,7 +274,10 @@ class Build {
             '${_twoDigits(now.second)}',
           );
           buildLog.info('Writing performance log to $logPath');
-          final performanceLogId = AssetId(packageGraph.root.name, logPath);
+          final performanceLogId = AssetId(
+            packageGraph.currentPackage.name,
+            logPath,
+          );
           final serialized = jsonEncode(result.performance);
           await readerWriter.writeAsString(performanceLogId, serialized);
         }
@@ -406,7 +410,8 @@ class Build {
         buildDirs: buildPlan.buildOptions.buildDirs,
         buildFilters: buildPlan.buildOptions.buildFilters,
         phase: phase,
-        targetGraph: targetGraph,
+        // TODO: DO NOT SUBMIT
+        targetGraph: targetGraphs.first,
       )) {
         continue;
       }
@@ -414,7 +419,8 @@ class Build {
       // Don't build for inputs that aren't visible. This can happen for
       // placeholder nodes like `test/$test$` that are added to each package,
       // since the test dir is not part of the build for non-root packages.
-      if (!targetGraph.isVisibleInBuild(node.id, packageNode)) continue;
+      // TODO: DO NOT SUBMIT
+      if (!targetGraphs.first.isVisibleInBuild(node.id, packageNode)) continue;
 
       ids.add(node.generatedNodeConfiguration!.primaryInput);
     }
@@ -467,7 +473,8 @@ class Build {
       final readerWriter = SingleStepReaderWriter(
         runningBuild: RunningBuild(
           packageGraph: packageGraph,
-          targetGraph: targetGraph,
+          // TODO: DO NOT SUBMIT
+          targetGraph: targetGraphs.first,
           assetGraph: assetGraph,
           nodeBuilder: _buildOutput,
           assetIsProcessedOutput: processedOutputs.contains,
@@ -591,7 +598,8 @@ class Build {
     if (runsIfTriggered != true) {
       return true;
     }
-    final buildTriggers = targetGraph.buildTriggers[phase.key];
+    // TODO: DO NOT SUBMIT
+    final buildTriggers = targetGraphs.first.buildTriggers[phase.key];
     if (buildTriggers == null) {
       return false;
     }
@@ -684,7 +692,8 @@ class Build {
     final stepReaderWriter = SingleStepReaderWriter(
       runningBuild: RunningBuild(
         packageGraph: packageGraph,
-        targetGraph: targetGraph,
+        // TODO: DO NOT SUBMIT
+        targetGraph: targetGraphs.first,
         assetGraph: assetGraph,
         nodeBuilder: _buildOutput,
         assetIsProcessedOutput: processedOutputs.contains,
@@ -854,7 +863,8 @@ class Build {
       if (assetGraph.cleanBuild) return true;
 
       if (assetGraph.previousBuildTriggersDigest !=
-          targetGraph.buildTriggers.digest) {
+          // TODO: DO NOT SUBMIT
+          targetGraphs.first.buildTriggers.digest) {
         return true;
       }
 

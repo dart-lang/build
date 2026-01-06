@@ -70,7 +70,7 @@ ${library.accept(emitter)}
 Future<BuilderFactoriesExpressions> loadBuilderFactories() async {
   final packageGraph = await PackageGraph.forThisPackage();
   final orderedPackages = stronglyConnectedComponents<PackageNode>(
-    [packageGraph.root],
+    packageGraph.packagesToBuild,
     (node) => node.dependencies,
     equals: (a, b) => a.name == b.name,
     hashCode: (n) => n.name.hashCode,
@@ -78,6 +78,8 @@ Future<BuilderFactoriesExpressions> loadBuilderFactories() async {
   final readerWriter = ReaderWriter(packageGraph);
   final overrides = await findBuildConfigOverrides(
     packageGraph: packageGraph,
+    // TODO
+    packageToBuild: packageGraph.currentPackage.name,
     readerWriter: readerWriter,
     configKey: null,
   );
@@ -106,7 +108,8 @@ Future<BuilderFactoriesExpressions> loadBuilderFactories() async {
     final import = definition.import as String;
     // ignore: avoid_dynamic_calls
     final package = definition.package as String;
-    return import.startsWith('package:') || package == packageGraph.root.name;
+    return import.startsWith('package:') ||
+        package == packageGraph.currentPackage.name;
   }
 
   final buildConfigs = await Future.wait(

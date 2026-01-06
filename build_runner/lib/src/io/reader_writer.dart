@@ -46,7 +46,8 @@ class ReaderWriter implements AssetReader, AssetWriter {
   ///
   /// Use [copyWith] to change settings such as caching.
   factory ReaderWriter(PackageGraph packageGraph) => ReaderWriter.using(
-    rootPackage: packageGraph.root.name,
+    // TODO
+    rootPackage: packageGraph.currentPackage.name,
     assetFinder: PackageGraphAssetFinder(packageGraph),
     assetPathProvider: packageGraph,
     generatedAssetHider: const NoopGeneratedAssetHider(),
@@ -232,7 +233,8 @@ class PackageGraphAssetFinder implements AssetFinder {
   @override
   Stream<AssetId> find(Glob glob, {String? package}) {
     final packageNode =
-        package == null ? packageGraph.root : packageGraph[package];
+        // TODO
+        package == null ? packageGraph.currentPackage : packageGraph[package];
     if (packageNode == null) {
       throw ArgumentError(
         "Could not find package '$package' which was listed as "

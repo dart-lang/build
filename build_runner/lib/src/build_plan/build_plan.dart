@@ -22,6 +22,7 @@ import 'build_directory.dart';
 import 'build_filter.dart';
 import 'build_options.dart';
 import 'build_phases.dart';
+import 'builder_application.dart';
 import 'builder_factories.dart';
 import 'package_graph.dart';
 import 'target_graph.dart';
@@ -35,7 +36,7 @@ class BuildPlan {
 
   final PackageGraph packageGraph;
   final ReaderWriter readerWriter;
-  final TargetGraph targetGraph;
+  final Iterable<TargetGraph> targetGraphs;
   final BuildPhases buildPhases;
 
   final AssetGraph? _previousAssetGraph;
@@ -67,7 +68,7 @@ class BuildPlan {
     required this.testingOverrides,
     required this.packageGraph,
     required this.readerWriter,
-    required this.targetGraph,
+    required this.targetGraphs,
     required this.buildPhases,
     required AssetGraph? previousAssetGraph,
     required bool previousAssetGraphWasTaken,
@@ -122,44 +123,65 @@ class BuildPlan {
     final readerWriter =
         testingOverrides.readerWriter ?? ReaderWriter(packageGraph);
 
-    final targetGraph = await TargetGraph.forPackageGraph(
-      readerWriter: readerWriter,
-      packageGraph: packageGraph,
-      testingOverrides: testingOverrides,
-      configKey: buildOptions.configKey,
-    );
+    final targetGraphsAndBuilderApplications =
+        <(TargetGraph, Iterable<BuilderApplication>)>[];
 
-    var builderApplications =
-        testingOverrides.builderApplications ??
-        await builderFactories.createBuilderApplications(
-          packageGraph: packageGraph,
-          readerWriter: readerWriter,
-        );
+    buildLog.debug(packageGraph.packagesToBuild.toString());
 
-    if (builderApplications == null) {
-      restartIsNeeded = true;
-      builderApplications = BuiltList();
+    for (final packageToBuild in packageGraph.packagesToBuild.map(
+      (node) => node.name,
+    )) {
+      final targetGraph = await TargetGraph.forPackageGraph(
+        readerWriter: readerWriter,
+        packageGraph: packageGraph,
+        packageToBuild: packageToBuild,
+        testingOverrides: testingOverrides,
+        configKey: buildOptions.configKey,
+      );
+
+      var builderApplications =
+          testingOverrides.builderApplications ??
+          await builderFactories.createBuilderApplications(
+            packageGraph: packageGraph,
+            packageToBuild: packageToBuild,
+            readerWriter: readerWriter,
+          );
+
+      if (builderApplications == null) {
+        restartIsNeeded = true;
+        builderApplications = BuiltList();
+      }
+
+      targetGraphsAndBuilderApplications.add((
+        targetGraph,
+        builderApplications,
+      ));
     }
 
     final buildPhases =
         testingOverrides.buildPhases ??
         await createBuildPhases(
-          targetGraph,
-          builderApplications,
+          targetGraphsAndBuilderApplications.build(),
           buildOptions.builderConfigOverrides,
           buildOptions.isReleaseBuild,
         );
-    buildPhases.checkOutputLocations(packageGraph.root.name);
+    // TODO DO NOT SUBMIT
+    // buildPhases.checkOutputLocations(packageGraph.currentPackage.name);
     if (buildPhases.inBuildPhases.isEmpty &&
         buildPhases.postBuildPhase.builderActions.isEmpty) {}
+
+    buildLog.debug(buildPhases.inBuildPhases.toString());
 
     AssetGraph? previousAssetGraph;
     final filesToDelete = <AssetId>{};
     final foldersToDelete = <AssetId>{};
 
-    final assetGraphId = AssetId(packageGraph.root.name, assetGraphPath);
+    final assetGraphId = AssetId(
+      packageGraph.currentPackage.name,
+      assetGraphPath,
+    );
     final generatedOutputDirectoryId = AssetId(
-      packageGraph.root.name,
+      packageGraph.currentPackage.name,
       generatedOutputDirectory,
     );
 
@@ -203,7 +225,10 @@ class BuildPlan {
       foldersToDelete.add(generatedOutputDirectoryId);
     }
 
-    final assetTracker = AssetTracker(readerWriter, targetGraph);
+    final targetGraphs = targetGraphsAndBuilderApplications.map(
+      (record) => record.$1,
+    );
+    final assetTracker = AssetTracker(readerWriter, targetGraphs);
     final inputSources = await assetTracker.findInputSources();
     final cacheDirSources = await assetTracker.findCacheDirSources();
 
@@ -251,7 +276,8 @@ class BuildPlan {
       }
       final conflictsInDeps =
           assetGraph.outputs
-              .where((n) => n.package != packageGraph.root.name)
+              // TODO
+              .where((n) => n.package != packageGraph.currentPackage.name)
               .where(inputSources.contains)
               .toSet();
       if (conflictsInDeps.isNotEmpty) {
@@ -266,7 +292,8 @@ class BuildPlan {
 
       filesToDelete.addAll(
         assetGraph.outputs
-            .where((n) => n.package == packageGraph.root.name)
+            // TODO
+            .where((n) => n.package == packageGraph.currentPackage.name)
             .where(inputSources.contains)
             .toSet(),
       );
@@ -278,7 +305,7 @@ class BuildPlan {
       testingOverrides: testingOverrides,
       packageGraph: packageGraph,
       readerWriter: readerWriter,
-      targetGraph: targetGraph,
+      targetGraphs: targetGraphs,
       buildPhases: buildPhases,
       previousAssetGraph: previousAssetGraph,
       previousAssetGraphWasTaken: false,
@@ -304,7 +331,7 @@ class BuildPlan {
     ),
     testingOverrides: testingOverrides,
     packageGraph: packageGraph,
-    targetGraph: targetGraph,
+    targetGraphs: targetGraphs,
     readerWriter: readerWriter ?? this.readerWriter,
     buildPhases: buildPhases,
     previousAssetGraph: _previousAssetGraph,

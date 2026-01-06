@@ -41,7 +41,7 @@ void main() {
           p.join(d.sandbox, 'a'),
           DependencyType.path,
           LanguageVersion(2, 6),
-          isRoot: true,
+          build: true,
         ),
       );
       final reader = ReaderWriter(packageGraph);

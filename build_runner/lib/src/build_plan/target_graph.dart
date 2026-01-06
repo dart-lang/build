@@ -76,8 +76,8 @@ class TargetGraph {
   /// included in the build.
   final Map<String, InputMatcher> _publicAssetsByPackage;
 
-  /// The [BuildConfig] of the root package.
-  final BuildConfig rootPackageConfig;
+  /// The [BuildConfig] of the package to build.
+  final BuildConfig packageToBuildConfig;
 
   // The [BuildTriggers] accumulated across all packages.
   final BuildTriggers buildTriggers;
@@ -86,7 +86,7 @@ class TargetGraph {
     this.allModules,
     this.modulesByPackage,
     this._publicAssetsByPackage,
-    this.rootPackageConfig,
+    this.packageToBuildConfig,
     this.buildTriggers,
   );
 
@@ -99,6 +99,7 @@ class TargetGraph {
   /// in `testingOverrides`.
   static Future<TargetGraph> forPackageGraph({
     required PackageGraph packageGraph,
+    required String packageToBuild,
     ReaderWriter? readerWriter,
     String? configKey,
     TestingOverrides? testingOverrides,
@@ -107,6 +108,7 @@ class TargetGraph {
     try {
       return _tryForPackageGraph(
         packageGraph: packageGraph,
+        packageToBuild: packageToBuild,
         readerWriter: readerWriter,
         configKey: configKey,
         testingOverrides: testingOverrides,
@@ -119,6 +121,7 @@ class TargetGraph {
 
   static Future<TargetGraph> _tryForPackageGraph({
     required PackageGraph packageGraph,
+    required String packageToBuild,
     ReaderWriter? readerWriter,
     String? configKey,
     TestingOverrides? testingOverrides,
@@ -134,6 +137,7 @@ class TargetGraph {
             ? null
             : await findBuildConfigOverrides(
               packageGraph: packageGraph,
+              packageToBuild: packageToBuild,
               readerWriter: readerWriter,
               configKey: configKey,
             ));
@@ -144,7 +148,7 @@ class TargetGraph {
       configs[package.name] = config;
 
       BuiltList<String> defaultInclude;
-      if (package.isRoot) {
+      if (package.name == packageToBuild) {
         defaultInclude =
             [
               ...(testingOverrides?.defaultRootPackageSources ??
@@ -177,7 +181,7 @@ class TargetGraph {
         final requiredSourcePaths = const [r'lib/$lib$'];
         final requiredRootSourcePaths = const [r'$package$', r'lib/$lib$'];
         final requiredPackagePaths =
-            package.isRoot ? requiredRootSourcePaths : requiredSourcePaths;
+            package.build ? requiredRootSourcePaths : requiredSourcePaths;
         final requiredIds = requiredPackagePaths.map(
           (path) => AssetId(package.name, path),
         );
@@ -218,7 +222,7 @@ class TargetGraph {
   /// Obtains a list of glob patterns describing all valid input assets defined
   /// in the [package].
   List<String> validInputsFor(PackageNode package) {
-    if (package.isRoot) {
+    if (package.build) {
       // There are no restrictions for the root package
       return ['**/*'];
     } else {
@@ -249,7 +253,7 @@ class TargetGraph {
     assert(id.package == enclosingPackage.name);
 
     // All assets in the root package are included in the build
-    if (enclosingPackage.isRoot) return true;
+    if (enclosingPackage.build) return true;
 
     // For other packages, the asset must be marked as public
     return _matcherForNonRoot(enclosingPackage).matches(id);
@@ -275,7 +279,7 @@ class TargetGraph {
   }
 
   InputMatcher _matcherForNonRoot(PackageNode node) {
-    assert(!node.isRoot);
+    assert(!node.build);
     return _publicAssetsByPackage[node.name] ?? _defaultMatcherForNonRoot;
   }
 }
@@ -298,9 +302,11 @@ class TargetNode {
          defaultInclude: defaultInclude,
        );
 
-  bool excludesSource(AssetId id) => _sourcesMatcher.excludes(id);
+  bool excludesSource(AssetId id) =>
+      id.package == package.name && _sourcesMatcher.excludes(id);
 
-  bool matchesSource(AssetId id) => _sourcesMatcher.matches(id);
+  bool matchesSource(AssetId id) =>
+      id.package == package.name && _sourcesMatcher.matches(id);
 
   @override
   String toString() => target.key;
@@ -348,13 +354,14 @@ Iterable<AssetId> _missingSources(
 
 Future<BuiltMap<String, BuildConfig>> findBuildConfigOverrides({
   required PackageGraph packageGraph,
+  required String packageToBuild,
   required ReaderWriter? readerWriter,
   required String? configKey,
 }) async {
   final configs = <String, BuildConfig>{};
   final configFiles = readerWriter!.assetFinder.find(
     Glob('*.build.yaml'),
-    package: packageGraph.root.name,
+    package: packageToBuild,
   );
   await for (final id in configFiles) {
     final packageName = p.basename(id.path).split('.').first;
@@ -378,15 +385,15 @@ Future<BuiltMap<String, BuildConfig>> findBuildConfigOverrides({
     configs[packageName] = config;
   }
   if (configKey != null) {
-    final id = AssetId(packageGraph.root.name, 'build.$configKey.yaml');
+    final id = AssetId(packageToBuild, 'build.$configKey.yaml');
     if (!await readerWriter.canRead(id)) {
       buildLog.warning('Cannot find ${id.path} for specified config.');
       throw const CannotBuildException();
     }
     final yaml = await readerWriter.readAsString(id);
     final config = BuildConfig.parse(
-      packageGraph.root.name,
-      packageGraph.root.dependencies.map((n) => n.name),
+      packageToBuild,
+      packageGraph[packageToBuild]!.dependencies.map((n) => n.name),
       yaml,
       configYamlPath: id.path,
     );
@@ -396,7 +403,7 @@ Future<BuiltMap<String, BuildConfig>> findBuildConfigOverrides({
         'overriding builder configuration is not supported.',
       );
     }
-    configs[packageGraph.root.name] = config;
+    configs[packageToBuild] = config;
   }
   return configs.build();
 }

@@ -40,7 +40,7 @@ void main() {
           '/$rootPackage',
           DependencyType.path,
           null,
-          isRoot: true,
+          build: true,
         ),
       );
       readerWriter = InternalTestReaderWriter(rootPackage: rootPackage);
@@ -201,7 +201,7 @@ void main() {
       await readerWriter.writeAsBytes(assetGraphId, assetGraph.serialize());
 
       final packageGraph2 = PackageGraph.fromRoot(
-        PackageNode('b', '/b', DependencyType.path, null, isRoot: true),
+        PackageNode('b', '/b', DependencyType.path, null, build: true),
       );
       final testingOverrides2 = testingOverrides.copyWith(
         packageGraph: packageGraph2,

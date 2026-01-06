@@ -43,16 +43,18 @@ class BuilderFactories {
   /// date and a restart is needed.
   Future<BuiltList<BuilderApplication>?> createBuilderApplications({
     required PackageGraph packageGraph,
+    required String packageToBuild,
     required ReaderWriter readerWriter,
   }) async {
     final orderedPackages = stronglyConnectedComponents<PackageNode>(
-      [packageGraph.root],
+      packageGraph.packagesToBuild,
       (node) => node.dependencies,
       equals: (a, b) => a.name == b.name,
       hashCode: (n) => n.name.hashCode,
     ).expand((c) => c);
     final overrides = await findBuildConfigOverrides(
       packageGraph: packageGraph,
+      packageToBuild: packageToBuild,
       readerWriter: readerWriter,
       configKey: null,
     );
@@ -82,7 +84,8 @@ class BuilderFactories {
       final import = definition.import as String;
       // ignore: avoid_dynamic_calls
       final package = definition.package as String;
-      return import.startsWith('package:') || package == packageGraph.root.name;
+      return import.startsWith('package:') ||
+          package == packageGraph.currentPackage.name;
     }
 
     final orderedConfigs = await Future.wait(

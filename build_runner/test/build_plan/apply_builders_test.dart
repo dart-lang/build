@@ -107,8 +107,10 @@ void main() {
               );
             }
           },
-          packageGraph.root.name,
-          packageGraph.root.dependencies.map((node) => node.name).toList(),
+          packageGraph.currentPackage.name,
+          packageGraph.currentPackage.dependencies
+              .map((node) => node.name)
+              .toList(),
         );
       },
     );
@@ -299,8 +301,10 @@ void main() {
             throwsA(const TypeMatcher<CannotBuildException>()),
           );
         },
-        packageGraph.root.name,
-        packageGraph.root.dependencies.map((node) => node.name).toList(),
+        packageGraph.currentPackage.name,
+        packageGraph.currentPackage.dependencies
+            .map((node) => node.name)
+            .toList(),
       );
     });
 

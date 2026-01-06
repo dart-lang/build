@@ -19,7 +19,12 @@ void main() {
       });
 
       test('root', () {
-        expectPkg(graph.root, 'build_runner', '', DependencyType.path);
+        expectPkg(
+          graph.currentPackage,
+          'build_runner',
+          '',
+          DependencyType.path,
+        );
       });
 
       test('asPackageConfig', () {
@@ -54,12 +59,13 @@ void main() {
       });
 
       test('root', () {
-        expectPkg(graph.root, 'basic_pkg', basicPkgPath, DependencyType.path, [
-          graph['a']!,
-          graph['b']!,
-          graph['c']!,
-          graph['d']!,
-        ]);
+        expectPkg(
+          graph.currentPackage,
+          'basic_pkg',
+          basicPkgPath,
+          DependencyType.path,
+          [graph['a']!, graph['b']!, graph['c']!, graph['d']!],
+        );
       });
 
       test('dependency', () {
@@ -102,7 +108,7 @@ void main() {
       test('dev deps are contained in deps of root pkg, but not others', () {
         // Package `b` shows as a dep because this is the root package.
         expectPkg(
-          graph.root,
+          graph.currentPackage,
           'with_dev_deps',
           withDevDepsPkgPath,
           DependencyType.path,
@@ -156,14 +162,14 @@ void main() {
     });
 
     test('custom creation via fromRoot', () {
-      final a = PackageNode('a', '/a', DependencyType.path, null, isRoot: true);
+      final a = PackageNode('a', '/a', DependencyType.path, null, build: true);
       final b = PackageNode('b', '/b', DependencyType.path, null);
       final c = PackageNode('c', '/c', DependencyType.path, null);
       final d = PackageNode('d', '/d', DependencyType.path, null);
       a.dependencies.addAll([b, d]);
       b.dependencies.add(c);
       final graph = PackageGraph.fromRoot(a);
-      expect(graph.root, a);
+      expect(graph.currentPackage, a);
       expect(
         graph.allPackages,
         equals({'a': a, 'b': b, 'c': c, 'd': d, r'$sdk': anything}),
@@ -214,7 +220,7 @@ void main() {
         '$workspaceFixturePath/pkgs/a',
         DependencyType.path,
         null,
-        isRoot: true,
+        build: true,
       );
       final b = PackageNode(
         'b',
@@ -230,7 +236,7 @@ void main() {
         r'$sdk': anything,
       });
 
-      expect(graph.root, packageNodeEquals(a));
+      expect(graph.currentPackage, packageNodeEquals(a));
     });
   });
 }

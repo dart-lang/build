@@ -31,7 +31,8 @@ void main() {
     setUp(() async {
       _terminateServeController = StreamController();
       readerWriter = InternalTestReaderWriter(
-        rootPackage: packageGraph.root.name,
+        // TODO
+        rootPackage: packageGraph.currentPackage.name,
       );
       await readerWriter.writeAsString(
         makeAssetId('a|.dart_tool/package_config.json'),

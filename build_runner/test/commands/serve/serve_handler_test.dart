@@ -111,7 +111,7 @@ void main() {
   setUp(() async {
     packageGraph = buildPackageGraph({rootPackage('a'): []});
     readerWriter = InternalTestReaderWriter(
-      rootPackage: packageGraph.root.name,
+      rootPackage: packageGraph.currentPackage.name,
     );
     assetGraph = await AssetGraph.build(
       BuildPhases([]),
@@ -120,7 +120,7 @@ void main() {
       readerWriter,
     );
     watchImpl = MockWatchImpl();
-    serveHandler = ServeHandler(packageGraph.root.name, watchImpl);
+    serveHandler = ServeHandler(packageGraph.currentPackage.name, watchImpl);
     finalizedReader = BuildOutputReader.graphOnly(
       readerWriter: readerWriter,
       assetGraph: assetGraph,

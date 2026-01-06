@@ -92,7 +92,9 @@ Future<TestBuildersResult> testPhases(
   packageGraph ??= buildPackageGraph({rootPackage('a'): []});
   var readerWriter =
       resumeFrom == null
-          ? InternalTestReaderWriter(rootPackage: packageGraph.root.name)
+          ? InternalTestReaderWriter(
+            rootPackage: packageGraph.currentPackage.name,
+          )
           : resumeFrom.readerWriter;
 
   if (onDelete != null) {
@@ -100,7 +102,7 @@ Future<TestBuildersResult> testPhases(
   }
 
   final pkgConfigId = AssetId(
-    packageGraph.root.name,
+    packageGraph.currentPackage.name,
     '.dart_tool/package_config.json',
   );
   if (!await readerWriter.canRead(pkgConfigId)) {
@@ -163,7 +165,7 @@ Future<TestBuildersResult> testPhases(
       outputs: outputs,
       readerWriter: readerWriter,
       status: status,
-      rootPackage: packageGraph.root.name,
+      rootPackage: packageGraph.currentPackage.name,
     );
   }
 
