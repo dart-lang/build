@@ -29,8 +29,7 @@ void main() async {
     );
 
     // Initial build produces no output as the copy is not required.
-    await serve.expectServing();
-    await serve.expect(BuildLog.successPattern);
+    await serve.expectServingAndBuildSuccess();
     await serve.fetch('a.txt.copy', expectResponseCode: 404);
 
     // Read a copy so that it is now required.
