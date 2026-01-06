@@ -30,6 +30,7 @@ class BuildOptions {
   final bool outputSymlinksOnly;
   final bool trackPerformance;
   final bool verbose;
+  final bool workspace;
 
   late final bool anyMergedOutputDirectory = buildDirs.any(
     (target) => target.outputLocation?.path.isNotEmpty ?? false,
@@ -49,6 +50,7 @@ class BuildOptions {
     required this.outputSymlinksOnly,
     required this.trackPerformance,
     required this.verbose,
+    required this.workspace,
   });
 
   /// Creates with defaults that mostly match the real defaults.
@@ -70,6 +72,7 @@ class BuildOptions {
     bool? outputSymlinksOnly,
     bool? trackPerformance,
     bool? verbose,
+    bool? workspace,
   }) => BuildOptions(
     builderConfigOverrides: builderConfigOverrides ?? BuiltMap(),
     buildDirs: buildDirs ?? BuiltSet(),
@@ -84,6 +87,7 @@ class BuildOptions {
     outputSymlinksOnly: outputSymlinksOnly ?? false,
     trackPerformance: trackPerformance ?? false,
     verbose: verbose ?? false,
+    workspace: workspace ?? false,
   );
 
   /// Parses [commandLine].
@@ -121,6 +125,7 @@ class BuildOptions {
       trackPerformance:
           commandLine.trackPerformance! || commandLine.logPerformance != null,
       verbose: commandLine.verbose!,
+      workspace: commandLine.workspace!,
     );
 
     if (result.forceAot && result.forceJit) {
@@ -150,6 +155,7 @@ class BuildOptions {
     outputSymlinksOnly: outputSymlinksOnly,
     trackPerformance: trackPerformance,
     verbose: verbose,
+    workspace: workspace,
   );
 }
 

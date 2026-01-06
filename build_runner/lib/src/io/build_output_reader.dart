@@ -154,7 +154,10 @@ class BuildOutputReader {
     // from the root package.
     if (!node.id.path.startsWith('lib/')) {
       if (rootDir != null && !p.isWithin(rootDir, node.id.path)) return true;
-      if (node.id.package != _buildPlan.packageGraph.root.name) return true;
+      // TODO
+      if (node.id.package != _buildPlan.packageGraph.currentPackage.name) {
+        return true;
+      }
     }
 
     if (node.type == NodeType.glob) {
@@ -193,7 +196,8 @@ class BuildOutputReader {
           buildDirs: _buildPlan.buildOptions.buildDirs,
           buildFilters: _buildPlan.buildOptions.buildFilters,
           phase: phase,
-          targetGraph: _buildPlan.targetGraph,
+          // TODO: DO NOT SUBMIT
+          targetGraph: _buildPlan.targetGraphs.first,
         )) {
       return true;
     }

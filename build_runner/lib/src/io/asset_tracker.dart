@@ -20,9 +20,9 @@ import 'reader_writer.dart';
 /// Finds build assets and computes changes to build assets.
 class AssetTracker {
   final ReaderWriter _readerWriter;
-  final TargetGraph _targetGraph;
+  final Iterable<TargetGraph> _targetGraphs;
 
-  AssetTracker(this._readerWriter, this._targetGraph);
+  AssetTracker(this._readerWriter, this._targetGraphs);
 
   /// Checks for and returns any file system changes compared to the current
   /// state of the asset graph.
@@ -39,7 +39,8 @@ class AssetTracker {
   /// Returns the set of original package inputs on disk.
   Future<Set<AssetId>> findInputSources() {
     final targets = Stream<TargetNode>.fromIterable(
-      _targetGraph.allModules.values,
+      // TODO: dedup before glob?
+      _targetGraphs.expand((t) => t.allModules.values),
     );
     return TimedActivity.read.runAsync(
       () => targets.asyncExpand(_listAssetIds).toSet(),
@@ -107,7 +108,9 @@ class AssetTracker {
           targetNode.sourceIncludes.map(
             (glob) => _listIdsSafe(glob, package: targetNode.package.name)
                 .where(
-                  (id) => _targetGraph.isVisibleInBuild(id, targetNode.package),
+                  (id) => _targetGraphs.any(
+                    (t) => t.isVisibleInBuild(id, targetNode.package),
+                  ),
                 )
                 .where((id) => !targetNode.excludesSource(id)),
           ),

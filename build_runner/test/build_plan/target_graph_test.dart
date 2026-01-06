@@ -36,7 +36,7 @@ void main() {
         '/fakeA',
         DependencyType.path,
         LanguageVersion(0, 0),
-        isRoot: true,
+        build: true,
       )..dependencies.add(packageB);
       final packageGraph = PackageGraph.fromRoot(packageA);
 
@@ -199,7 +199,7 @@ void main() {
 
     // https://github.com/dart-lang/build/issues/1042
     test('a missing sources/include does not cause an error', () async {
-      final rootPkg = packageGraph.root.name;
+      final rootPkg = packageGraph.currentPackage.name;
       final targetGraph = await TargetGraph.forPackageGraph(
         packageGraph: packageGraph,
         testingOverrides: TestingOverrides(
@@ -230,7 +230,7 @@ void main() {
     });
 
     test('a missing sources/include results in the default sources', () async {
-      final rootPkg = packageGraph.root.name;
+      final rootPkg = packageGraph.currentPackage.name;
       final targetGraph = await TargetGraph.forPackageGraph(
         packageGraph: packageGraph,
         testingOverrides: TestingOverrides(

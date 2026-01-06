@@ -187,7 +187,7 @@ class AssetGraph implements GeneratedAssetHider {
     graph._addOutputsForSources(
       buildPhases,
       sources,
-      packageGraph.root.name,
+      packageGraph.currentPackage.name,
       placeholders: placeholders,
     );
     // Pre-emptively compute digests for the nodes we know have outputs.
@@ -448,7 +448,7 @@ class AssetGraph implements GeneratedAssetHider {
   void _addOutputsForSources(
     BuildPhases buildPhases,
     Set<AssetId> newSources,
-    String rootPackage, {
+    String currentPackage, {
     Set<AssetId>? placeholders,
   }) {
     final allInputs = Set<AssetId>.from(newSources);
@@ -464,7 +464,7 @@ class AssetGraph implements GeneratedAssetHider {
           phaseNum,
           allInputs,
           buildPhases,
-          rootPackage,
+          currentPackage,
         ),
       );
     }
@@ -482,7 +482,7 @@ class AssetGraph implements GeneratedAssetHider {
     int phaseNum,
     Set<AssetId> allInputs,
     BuildPhases buildPhases,
-    String rootPackage,
+    String currentPackage,
   ) {
     final phaseOutputs = <AssetId>{};
     final inputs =
@@ -500,7 +500,7 @@ class AssetGraph implements GeneratedAssetHider {
         outputs,
         phaseNum,
         buildPhases,
-        rootPackage,
+        currentPackage,
         primaryInput: input,
         isHidden: phase.hideOutput,
       );
@@ -543,7 +543,7 @@ class AssetGraph implements GeneratedAssetHider {
     Iterable<AssetId> outputs,
     int phaseNumber,
     BuildPhases buildPhases,
-    String rootPackage, {
+    String currentPackage, {
     required AssetId primaryInput,
     required bool isHidden,
   }) {
@@ -560,7 +560,7 @@ class AssetGraph implements GeneratedAssetHider {
         if (existing.type == NodeType.generated) {
           final existingConfiguration = existing.generatedNodeConfiguration!;
           throw DuplicateAssetNodeException(
-            rootPackage,
+            currentPackage,
             existing.id,
             buildPhases
                 .inBuildPhases[existingConfiguration.phaseNumber]
@@ -644,7 +644,8 @@ class AssetGraph implements GeneratedAssetHider {
         //
         // In that case we change `idToDelete` to be in the root package.
         if (packageGraph[id.package] == null) {
-          idToDelete = AssetId(packageGraph.root.name, id.path);
+          // TODO
+          idToDelete = AssetId(packageGraph.currentPackage.name, id.path);
         }
         result.add(idToDelete);
       }

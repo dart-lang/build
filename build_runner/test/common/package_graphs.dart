@@ -15,7 +15,7 @@ PackageGraph buildPackageGraph(Map<PackageNode, Iterable<String>> packages) {
       packages[package]!.map((name) => packagesByName[name]!),
     );
   }
-  final root = packages.keys.singleWhere((n) => n.isRoot);
+  final root = packages.keys.singleWhere((n) => n.build);
   return PackageGraph.fromRoot(root);
 }
 
@@ -40,5 +40,5 @@ PackageNode rootPackage(
   path ?? '/$packageName',
   DependencyType.path,
   languageVersion,
-  isRoot: true,
+  build: true,
 );

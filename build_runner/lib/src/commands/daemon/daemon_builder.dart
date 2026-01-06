@@ -59,7 +59,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   final _buildScriptUpdateCompleter = Completer<void>();
   Future<void> get buildScriptUpdated => _buildScriptUpdateCompleter.future;
 
-  String get _packageName => _buildPlan.packageGraph.root.name;
+  String get _packageName => _buildPlan.packageGraph.currentPackage.name;
 
   @override
   Future<void> build(

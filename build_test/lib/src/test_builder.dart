@@ -383,7 +383,7 @@ Future<TestBuilderResult> testBuilderFactories(
     '/$rootPackage',
     DependencyType.path,
     null,
-    isRoot: true,
+    build: true,
   );
   for (final otherPackage in allPackages.where((p) => p != rootPackage)) {
     rootNode.dependencies.add(

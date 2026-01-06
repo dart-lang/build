@@ -132,65 +132,72 @@ class BuildPhases {
 /// dependency on some other package by choosing the appropriate
 /// [BuilderApplication].
 Future<BuildPhases> createBuildPhases(
-  TargetGraph targetGraph,
-  Iterable<BuilderApplication> builderApplications,
+  BuiltList<(TargetGraph, Iterable<BuilderApplication>)>
+  targetGraphsAndBuilderApplications,
   BuiltMap<String, BuiltMap<String, dynamic>> builderConfigOverrides,
   bool isReleaseMode,
 ) async {
-  warnForUnknownBuilders(
-    builderApplications,
-    targetGraph.rootPackageConfig,
-    builderConfigOverrides,
-  );
-  final globalOptions = targetGraph.rootPackageConfig.globalOptions.map(
-    (key, config) => MapEntry(
-      key,
-      _options(config.options).overrideWith(
-        isReleaseMode
-            ? _options(config.releaseOptions)
-            : _options(config.devOptions),
-      ),
-    ),
-  );
-  for (final key in builderConfigOverrides.keys) {
-    final overrides = BuilderOptions(builderConfigOverrides[key]!.asMap());
-    globalOptions[key] = (globalOptions[key] ?? BuilderOptions.empty)
-        .overrideWith(overrides);
-  }
+  final expandedPhases = <BuildPhase>[];
+  for (final targetGraphAndBuilderApplications
+      in targetGraphsAndBuilderApplications) {
+    final targetGraph = targetGraphAndBuilderApplications.$1;
+    final builderApplications = targetGraphAndBuilderApplications.$2;
 
-  final cycles = stronglyConnectedComponents<TargetNode>(
-    targetGraph.allModules.values,
-    (node) => node.target.dependencies.map((key) {
-      if (!targetGraph.allModules.containsKey(key)) {
-        buildLog.error(
-          '${node.target.key} declares a dependency on $key '
-          'but it does not exist.',
-        );
-        throw const CannotBuildException();
-      }
-      return targetGraph.allModules[key]!;
-    }),
-    equals: (a, b) => a.target.key == b.target.key,
-    hashCode: (node) => node.target.key.hashCode,
-  );
-  final applyWith = _applyWith(builderApplications);
-  final allBuilders = Map<String, BuilderApplication>.fromIterable(
-    builderApplications,
-    key: (b) => (b as BuilderApplication).builderKey,
-  );
-  final expandedPhases =
-      cycles
-          .expand(
-            (cycle) => _createBuildPhasesWithinCycle(
-              cycle,
-              builderApplications,
-              globalOptions,
-              applyWith,
-              allBuilders,
-              isReleaseMode,
-            ),
-          )
-          .toList();
+    warnForUnknownBuilders(
+      builderApplications,
+      targetGraph.packageToBuildConfig,
+      builderConfigOverrides,
+    );
+    final globalOptions = targetGraph.packageToBuildConfig.globalOptions.map(
+      (key, config) => MapEntry(
+        key,
+        _options(config.options).overrideWith(
+          isReleaseMode
+              ? _options(config.releaseOptions)
+              : _options(config.devOptions),
+        ),
+      ),
+    );
+    for (final key in builderConfigOverrides.keys) {
+      final overrides = BuilderOptions(builderConfigOverrides[key]!.asMap());
+      globalOptions[key] = (globalOptions[key] ?? BuilderOptions.empty)
+          .overrideWith(overrides);
+    }
+
+    final cycles = stronglyConnectedComponents<TargetNode>(
+      targetGraph.allModules.values,
+      (node) => node.target.dependencies.map((key) {
+        if (!targetGraph.allModules.containsKey(key)) {
+          buildLog.error(
+            '${node.target.key} declares a dependency on $key '
+            'but it does not exist.',
+          );
+          throw const CannotBuildException();
+        }
+        return targetGraph.allModules[key]!;
+      }),
+      equals: (a, b) => a.target.key == b.target.key,
+      hashCode: (node) => node.target.key.hashCode,
+    );
+    final applyWith = _applyWith(builderApplications);
+    final allBuilders = Map<String, BuilderApplication>.fromIterable(
+      builderApplications,
+      key: (b) => (b as BuilderApplication).builderKey,
+    );
+    expandedPhases.addAll(
+      cycles.expand(
+        (cycle) => _createBuildPhasesWithinCycle(
+          rootPackageName: targetGraph.packageToBuildConfig.packageName,
+          cycle,
+          builderApplications,
+          globalOptions,
+          applyWith,
+          allBuilders,
+          isReleaseMode,
+        ),
+      ),
+    );
+  }
 
   final inBuildPhases = expandedPhases.whereType<InBuildPhase>();
 
@@ -217,9 +224,11 @@ Iterable<BuildPhase> _createBuildPhasesWithinCycle(
   Map<String, BuilderOptions> globalOptions,
   Map<String, List<BuilderApplication>> applyWith,
   Map<String, BuilderApplication> allBuilders,
-  bool isReleaseMode,
-) => builderApplications.expand(
+  bool isReleaseMode, {
+  required String rootPackageName,
+}) => builderApplications.expand(
   (builderApplication) => _createBuildPhasesForBuilderInCycle(
+    rootPackageName: rootPackageName,
     cycle,
     builderApplication,
     globalOptions[builderApplication.builderKey] ?? BuilderOptions.empty,
@@ -235,14 +244,16 @@ Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
   BuilderOptions globalOptionOverrides,
   Map<String, List<BuilderApplication>> applyWith,
   Map<String, BuilderApplication> allBuilders,
-  bool isReleaseMode,
-) {
+  bool isReleaseMode, {
+  required String rootPackageName,
+}) {
   TargetBuilderConfig? targetConfig(TargetNode node) =>
       node.target.builders[builderApplication.builderKey];
   return builderApplication.buildPhaseFactories.expand(
     (createPhase) => cycle
         .where(
           (targetNode) => _shouldApply(
+            rootPackageName: rootPackageName,
             builderApplication,
             targetNode,
             applyWith,
@@ -273,13 +284,14 @@ bool _shouldApply(
   BuilderApplication builderApplication,
   TargetNode node,
   Map<String, List<BuilderApplication>> applyWith,
-  Map<String, BuilderApplication> allBuilders,
-) {
+  Map<String, BuilderApplication> allBuilders, {
+  required String rootPackageName,
+}) {
   if (!(builderApplication.hideOutput &&
           builderApplication.appliesBuilders.every(
             (b) => allBuilders[b]?.hideOutput ?? true,
           )) &&
-      !node.package.isRoot) {
+      node.package.name != rootPackageName) {
     return false;
   }
   final builderConfig = node.target.builders[builderApplication.builderKey];
@@ -290,8 +302,13 @@ bool _shouldApply(
       node.target.autoApplyBuilders && builderApplication.filter(node.package);
   return shouldAutoApply ||
       (applyWith[builderApplication.builderKey] ?? const []).any(
-        (anchorBuilder) =>
-            _shouldApply(anchorBuilder, node, applyWith, allBuilders),
+        (anchorBuilder) => _shouldApply(
+          rootPackageName: rootPackageName,
+          anchorBuilder,
+          node,
+          applyWith,
+          allBuilders,
+        ),
       );
 }
 

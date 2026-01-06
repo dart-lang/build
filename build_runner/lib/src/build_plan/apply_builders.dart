@@ -33,7 +33,7 @@ PackageFilter toPackages(Set<String> packages) =>
 PackageFilter toAll(Iterable<PackageFilter> filters) =>
     (p) => filters.any((f) => f(p));
 
-PackageFilter toRoot() => (p) => p.isRoot;
+PackageFilter toRoot() => (p) => p.build;
 
 /// Apply [builder] to the root package.
 ///
@@ -141,7 +141,7 @@ BuilderApplication _forBuilder(
                 isReleaseBuild ? defaultReleaseOptions : defaultDevOptions,
               )
               .overrideWith(options);
-          if (package.isRoot) {
+          if (package.build) {
             optionsWithDefaults = optionsWithDefaults.overrideWith(
               BuilderOptions.forRoot,
             );
@@ -198,7 +198,7 @@ BuilderApplication _forPostProcessBuilder(
           isReleaseBuild ? defaultReleaseOptions : defaultDevOptions,
         )
         .overrideWith(options);
-    if (package.isRoot) {
+    if (package.build) {
       optionsWithDefaults = optionsWithDefaults.overrideWith(
         BuilderOptions.forRoot,
       );

@@ -21,10 +21,10 @@ abstract class BuildLogConfiguration
   /// If set, normal output is turned off.
   void Function(LogRecord)? get onLog;
 
-  /// The root package of the build.
+  /// The package that `build_runner` is running in.
   ///
   /// If set, the package name will be omitted when rendering asset ids.
-  String? get rootPackageName;
+  String? get currentPackageName;
 
   /// Whether progress updates are throtled.
   bool get throttleProgressUpdates;

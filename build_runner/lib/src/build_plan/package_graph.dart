@@ -26,8 +26,12 @@ final _sdkPackageNode = PackageNode(
 
 /// A graph of the package dependencies for an application.
 class PackageGraph implements AssetPathProvider {
-  /// The root application package.
-  final PackageNode root;
+  /// The package in the directory where `build_runner` is running.
+  final PackageNode currentPackage;
+
+  /// The packages for which the build will run.
+  Iterable<PackageNode> get packagesToBuild =>
+      allPackages.values.where((p) => p.build);
 
   /// All [PackageNode]s indexed by package name.
   final Map<String, PackageNode> allPackages;
@@ -35,17 +39,14 @@ class PackageGraph implements AssetPathProvider {
   /// A [PackageConfig] representation of this package graph.
   final PackageConfig asPackageConfig;
 
-  PackageGraph._(this.root, Map<String, PackageNode> allPackages)
+  PackageGraph._(this.currentPackage, Map<String, PackageNode> allPackages)
     : asPackageConfig = _packagesToConfig(allPackages.values),
       allPackages = Map.unmodifiable(
         Map<String, PackageNode>.from(allPackages)
           ..putIfAbsent(r'$sdk', () => _sdkPackageNode),
       ) {
-    if (!root.isRoot) {
-      throw ArgumentError('Root node must indicate `isRoot`');
-    }
-    if (allPackages.values.where((n) => n != root).any((n) => n.isRoot)) {
-      throw ArgumentError('No nodes other than the root may indicate `isRoot`');
+    if (!currentPackage.build) {
+      throw ArgumentError('Root node must set `build`');
     }
   }
 
@@ -105,15 +106,20 @@ class PackageGraph implements AssetPathProvider {
         packageConfig.packages.toList()
           ..sort((a, b) => a.name.compareTo(b.name));
 
-    final rootPubspec = _pubspecForPath(packagePath);
-    final rootPackageName = rootPubspec['name']! as String;
+    final currentPubspec = _pubspecForPath(packagePath);
+    final currentPackageName = currentPubspec['name']! as String;
     final pubspecLockFile = File(
       p.join(workspacePath ?? packagePath, 'pubspec.lock'),
     );
     final dependencyTypes = _parseDependencyTypes(pubspecLockFile);
 
     for (final package in packages) {
-      final isRoot = package.name == rootPackageName;
+      final build =
+          package.name == currentPackageName ||
+          // TODO: DO NOT SUBMIT
+          // TODO: check whether in workspace, check --workspace flag
+          package.name == 'dep_pkg' ||
+          package.name == 'other_pkg';
       nodes[package.name] = PackageNode(
         package.name,
         package.root.toFilePath(),
@@ -121,7 +127,7 @@ class PackageGraph implements AssetPathProvider {
         // dependency.
         dependencyTypes[package.name] ?? DependencyType.path,
         package.languageVersion,
-        isRoot: isRoot,
+        build: build,
       );
     }
 
@@ -137,16 +143,16 @@ class PackageGraph implements AssetPathProvider {
       return node;
     }
 
-    final rootNode = packageNode(rootPackageName);
-    rootNode.dependencies.addAll(
+    final currentPackageNode = packageNode(currentPackageName);
+    currentPackageNode.dependencies.addAll(
       _depsFromYaml(
-        rootPubspec,
+        currentPubspec,
         isRoot: true,
-      ).map((n) => packageNode(n, parent: rootPackageName)),
+      ).map((n) => packageNode(n, parent: currentPackageName)),
     );
 
     final packageDependencies = _parsePackageDependencies(
-      packageConfig.packages.where((p) => p.name != rootPackageName),
+      packageConfig.packages.where((p) => p.name != currentPackageName),
     );
     for (final packageName in packageDependencies.keys) {
       packageNode(packageName).dependencies.addAll(
@@ -156,12 +162,12 @@ class PackageGraph implements AssetPathProvider {
       );
     }
 
-    // A workspace can have packages that are not depended on by [rootPackage].
-    // Compute transitive dependencies and filter to that.
+    // A workspace can have packages that are not depended on by
+    // [currentPackage]. Compute transitive dependencies and filter to that.
     Set<PackageNode>? usedNodes;
     if (workspacePath != null) {
-      usedNodes = {rootNode};
-      final queue = [rootNode];
+      usedNodes = {...nodes.values.where((n) => n.build)};
+      final queue = [...usedNodes];
       while (queue.isNotEmpty) {
         final node = queue.removeLast();
         for (final dep in node.dependencies) {
@@ -173,7 +179,7 @@ class PackageGraph implements AssetPathProvider {
     }
 
     return PackageGraph._(
-      rootNode,
+      currentPackageNode,
       usedNodes == null
           ? nodes
           : Map.fromEntries(
@@ -255,8 +261,8 @@ class PackageNode {
   /// Paths are platform dependent.
   final String path;
 
-  /// Whether this node is the [PackageGraph.root].
-  final bool isRoot;
+  /// Whether this package should be built.
+  final bool build;
 
   final LanguageVersion? languageVersion;
 
@@ -265,7 +271,7 @@ class PackageNode {
     String path,
     this.dependencyType,
     this.languageVersion, {
-    this.isRoot = false,
+    this.build = false,
   }) : path = p.canonicalize(path);
 
   @override

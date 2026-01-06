@@ -140,7 +140,7 @@ class BuildSeries {
         if (change.type != ChangeType.ADD) continue;
 
         // It's an add: handle if it's a new input.
-        if (_buildPlan.targetGraph.anyMatchesAsset(id)) {
+        if (_buildPlan.targetGraphs.any((t) => t.anyMatchesAsset(id))) {
           result.add(change);
         }
         continue;
@@ -180,13 +180,14 @@ class BuildSeries {
   bool _isBuildConfiguration(AssetId id) =>
       id.path == 'build.yaml' ||
       id.path.endsWith('.build.yaml') ||
-      (id.package == _buildPlan.packageGraph.root.name &&
+      // TODO
+      (id.package == _buildPlan.packageGraph.currentPackage.name &&
           id.path == 'build.${_buildPlan.buildOptions.configKey}.yaml');
 
   Future<List<WatchEvent>> checkForChanges() async {
     final updates = await AssetTracker(
       _buildPlan.readerWriter,
-      _buildPlan.targetGraph,
+      _buildPlan.targetGraphs,
     ).collectChanges(_assetGraph);
     return List.of(
       updates.entries.map((entry) => WatchEvent(entry.value, '${entry.key}')),
