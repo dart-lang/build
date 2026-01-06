@@ -122,16 +122,11 @@ BuilderApplication _applyBuilder(
   BuilderDefinition definition,
   BuiltList<BuilderFactory> builderFactories,
 ) {
-  final filter = switch (definition.autoApply) {
-    AutoApply.none => toNoneByDefault(),
-    AutoApply.dependents => toDependentsOf(definition.package),
-    AutoApply.allPackages => toAllPackages(),
-    AutoApply.rootPackage => toRoot(),
-  };
   return apply(
+    definition.package,
     definition.key,
     builderFactories,
-    filter,
+    definition.autoApply,
     isOptional: definition.isOptional,
     hideOutput: definition.buildTo == BuildTo.cache,
     defaultGenerateFor: definition.defaults.generateFor,
@@ -147,6 +142,7 @@ BuilderApplication _applyPostProcessBuilder(
   PostProcessBuilderFactory postProcessBuilderFactory,
 ) {
   return applyPostProcess(
+    definition.package,
     definition.key,
     postProcessBuilderFactory,
     defaultGenerateFor: definition.defaults.generateFor,

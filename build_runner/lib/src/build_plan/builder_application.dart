@@ -17,8 +17,6 @@ typedef BuildPhaseFactory =
       bool isReleaseBuild,
     );
 
-typedef PackageFilter = bool Function(PackageNode node);
-
 /// A description of which packages need a given [Builder] or
 /// [PostProcessBuilder] applied.
 class BuilderApplication {
@@ -26,12 +24,15 @@ class BuilderApplication {
   /// [PostProcessBuilder]s that should be applied.
   final List<BuildPhaseFactory> buildPhaseFactories;
 
-  /// Determines whether a given package needs builder applied.
-  final PackageFilter filter;
+  /// Determines which packages a builder is automatically applied to.
+  final AutoApply autoApply;
 
   /// Builder keys which, when applied to a target, will also apply this Builder
-  /// even if [filter] does not match.
+  /// even if [autoApply] does not match.
   final Iterable<String> appliesBuilders;
+
+  /// The package the builder is in.
+  final String builderPackage;
 
   /// A uniqe key for this builder.
   ///
@@ -41,11 +42,26 @@ class BuilderApplication {
   /// Whether generated assets should be placed in the build cache.
   final bool hideOutput;
 
-  const BuilderApplication(
+  BuilderApplication(
+    this.builderPackage,
     this.builderKey,
     this.buildPhaseFactories,
-    this.filter,
+    this.autoApply,
     this.hideOutput,
     this.appliesBuilders,
   );
+
+  /// Whether this builder application is auto applied to [package].
+  bool autoAppliesTo(PackageNode package) {
+    switch (autoApply) {
+      case AutoApply.none:
+        return false;
+      case AutoApply.allPackages:
+        return true;
+      case AutoApply.rootPackage:
+        return package.isRoot;
+      case AutoApply.dependents:
+        return package.dependencies.any((p) => p.name == builderPackage);
+    }
+  }
 }

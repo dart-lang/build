@@ -412,13 +412,17 @@ Future<TestBuilderResult> testBuilderFactories(
       name = e.toString();
     }
     builderApplications.add(
-      apply(
-        name,
-        [builderFactory],
-        (p) => inputPackages.contains(p.name),
-        isOptional: optionalBuilderFactories.contains(builderFactory),
-        hideOutput: !visibleOutputBuilderFactories.contains(builderFactory),
-        appliesBuilders: appliesBuilders[builderFactory] ?? [],
+      _ApplyBuilderApplicationToPackages(
+        delegate: apply(
+          '',
+          name,
+          [builderFactory],
+          AutoApply.allPackages,
+          isOptional: optionalBuilderFactories.contains(builderFactory),
+          hideOutput: !visibleOutputBuilderFactories.contains(builderFactory),
+          appliesBuilders: appliesBuilders[builderFactory] ?? [],
+        ),
+        applyToPackages: inputPackages,
       ),
     );
   }
@@ -429,7 +433,9 @@ Future<TestBuilderResult> testBuilderFactories(
     } catch (e) {
       name = e.toString();
     }
-    builderApplications.add(applyPostProcess(name, postProcessBuilderFactory));
+    builderApplications.add(
+      applyPostProcess('', name, postProcessBuilderFactory),
+    );
   }
 
   final testingOverrides = TestingOverrides(
@@ -541,4 +547,43 @@ void _printOnFailureOrWrite(LogRecord record) {
     // handler if logging from a builder.
     stdout.writeln(message);
   }
+}
+
+/// Wraps a [BuilderApplication] to make it apply to a specific set of packages.
+///
+/// This is used to create a test-only config that applies a builder to exactly
+/// packages that contain explicitly specified inputs.
+class _ApplyBuilderApplicationToPackages implements BuilderApplication {
+  BuilderApplication delegate;
+  final Set<String> applyToPackages;
+
+  _ApplyBuilderApplicationToPackages({
+    required this.delegate,
+    required this.applyToPackages,
+  });
+
+  @override
+  bool autoAppliesTo(PackageNode package) =>
+      applyToPackages.contains(package.name);
+
+  // Delegate everything else.
+
+  @override
+  Iterable<String> get appliesBuilders => delegate.appliesBuilders;
+
+  @override
+  AutoApply get autoApply => delegate.autoApply;
+
+  @override
+  List<BuildPhaseFactory> get buildPhaseFactories =>
+      delegate.buildPhaseFactories;
+
+  @override
+  String get builderKey => delegate.builderKey;
+
+  @override
+  String get builderPackage => delegate.builderPackage;
+
+  @override
+  bool get hideOutput => delegate.hideOutput;
 }

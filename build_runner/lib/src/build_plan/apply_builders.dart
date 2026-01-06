@@ -12,29 +12,6 @@ import 'builder_application.dart';
 import 'package_graph.dart';
 import 'phase.dart';
 
-/// Run a builder on all packages in the package graph.
-PackageFilter toAllPackages() => (_) => true;
-
-/// Require manual configuration to opt in to a builder.
-PackageFilter toNoneByDefault() => (_) => false;
-
-/// Run a builder on all packages with an immediate dependency on [packageName].
-PackageFilter toDependentsOf(String packageName) =>
-    (p) => p.dependencies.any((d) => d.name == packageName);
-
-/// Run a builder on a single package.
-PackageFilter toPackage(String package) => (p) => p.name == package;
-
-/// Run a builder on a collection of packages.
-PackageFilter toPackages(Set<String> packages) =>
-    (p) => packages.contains(p.name);
-
-/// Run a builders if the package matches any of [filters]
-PackageFilter toAll(Iterable<PackageFilter> filters) =>
-    (p) => filters.any((f) => f(p));
-
-PackageFilter toRoot() => (p) => p.isRoot;
-
 /// Apply [builder] to the root package.
 ///
 /// Creates a `BuilderApplication` which corresponds to an empty builder key so
@@ -46,15 +23,16 @@ BuilderApplication applyToRoot(
   InputSet generateFor = const InputSet(),
 }) => _forBuilder(
   '',
+  '',
   [(_) => builder],
-  toRoot(),
+  AutoApply.rootPackage,
   isOptional: isOptional,
   hideOutput: hideOutput,
   defaultGenerateFor: generateFor,
 );
 
 /// Apply each builder from [builderFactories] to the packages matching
-/// [filter].
+/// [autoApply].
 ///
 /// If the builder should only run on a subset of files within a target pass
 /// globs to [defaultGenerateFor]. This can be overridden by any target which
@@ -67,11 +45,12 @@ BuilderApplication applyToRoot(
 ///
 /// Any existing Builders which match a key in [appliesBuilders] will
 /// automatically be applied to any target which runs this Builder, whether
-/// because it matches [filter] or because it was enabled manually.
+/// because it matches [autoApply] or because it was enabled manually.
 BuilderApplication apply(
+  String builderPackage,
   String builderKey,
   Iterable<BuilderFactory> builderFactories,
-  PackageFilter filter, {
+  AutoApply autoApply, {
   bool isOptional = false,
   bool hideOutput = true,
   InputSet defaultGenerateFor = const InputSet(),
@@ -80,9 +59,10 @@ BuilderApplication apply(
   BuilderOptions? defaultReleaseOptions,
   Iterable<String> appliesBuilders = const [],
 }) => _forBuilder(
+  builderPackage,
   builderKey,
   builderFactories,
-  filter,
+  autoApply,
   isOptional: isOptional,
   hideOutput: hideOutput,
   defaultGenerateFor: defaultGenerateFor,
@@ -98,6 +78,7 @@ BuilderApplication apply(
 /// aren't configurable for these types of builders. They are never optional and
 /// always hidden.
 BuilderApplication applyPostProcess(
+  String builderPackage,
   String builderKey,
   PostProcessBuilderFactory builderFactory, {
   InputSet defaultGenerateFor = const InputSet(),
@@ -105,6 +86,7 @@ BuilderApplication applyPostProcess(
   BuilderOptions? defaultDevOptions,
   BuilderOptions? defaultReleaseOptions,
 }) => _forPostProcessBuilder(
+  builderPackage,
   builderKey,
   builderFactory,
   defaultGenerateFor: defaultGenerateFor,
@@ -114,9 +96,10 @@ BuilderApplication applyPostProcess(
 );
 
 BuilderApplication _forBuilder(
+  String builderPackage,
   String key,
   Iterable<BuilderFactory> builderFactories,
-  PackageFilter filter, {
+  AutoApply autoApply, {
   bool isOptional = false,
   bool hideOutput = true,
   InputSet defaultGenerateFor = const InputSet(),
@@ -166,9 +149,10 @@ BuilderApplication _forBuilder(
         };
       }).toList();
   return BuilderApplication(
+    builderPackage,
     key,
     phaseFactories,
-    filter,
+    autoApply,
     hideOutput,
     appliesBuilders,
   );
@@ -177,6 +161,7 @@ BuilderApplication _forBuilder(
 /// Note that these builder applications each create their own phase, but they
 /// will all eventually be merged into a single phase.
 BuilderApplication _forPostProcessBuilder(
+  String builderPackage,
   String builderKey,
   PostProcessBuilderFactory builderFactory, {
   InputSet defaultGenerateFor = const InputSet(),
@@ -221,9 +206,10 @@ BuilderApplication _forPostProcessBuilder(
   }
 
   return BuilderApplication(
+    builderPackage,
     builderKey,
     [phaseFactory],
-    toNoneByDefault(),
+    AutoApply.none,
     true,
     [],
   );
