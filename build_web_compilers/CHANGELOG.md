@@ -1,4 +1,4 @@
-## 4.4.7
+## 4.4.7-wip
 - Add support for DDC's Library Bundle module system, which is compatible with web hot reload. This is not yet enabled by default.
 
 ## 4.4.6
