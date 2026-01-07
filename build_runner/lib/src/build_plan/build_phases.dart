@@ -287,7 +287,8 @@ bool _shouldApply(
     return builderConfig!.isEnabled;
   }
   final shouldAutoApply =
-      node.target.autoApplyBuilders && builderApplication.filter(node.package);
+      node.target.autoApplyBuilders &&
+      builderApplication.autoAppliesTo(node.package);
   return shouldAutoApply ||
       (applyWith[builderApplication.builderKey] ?? const []).any(
         (anchorBuilder) =>

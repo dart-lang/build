@@ -30,7 +30,7 @@ void main() {
         ),
       );
       final builderApplications = [
-        apply('b:cool_builder', [CoolBuilder.new], toAllPackages()),
+        apply('b', 'b:cool_builder', [CoolBuilder.new], AutoApply.allPackages),
       ];
       final phases = await createBuildPhases(
         targetGraph,
@@ -82,7 +82,9 @@ void main() {
               ),
             );
             final builderApplications = [
-              apply('b:cool_builder', [CoolBuilder.new], toAllPackages()),
+              apply('b', 'b:cool_builder', [
+                CoolBuilder.new,
+              ], AutoApply.allPackages),
             ];
             final phases = await createBuildPhases(
               targetGraph,
@@ -125,7 +127,7 @@ void main() {
         ),
       );
       final builderApplications = [
-        apply('b:cool_builder', [CoolBuilder.new], toDependentsOf('b')),
+        apply('b', 'b:cool_builder', [CoolBuilder.new], AutoApply.dependents),
       ];
       final phases = await createBuildPhases(
         targetGraph,
@@ -150,12 +152,13 @@ void main() {
       );
       final builderApplications = [
         apply(
+          'b',
           'b:cool_builder',
           [CoolBuilder.new],
-          toDependentsOf('b'),
+          AutoApply.dependents,
           appliesBuilders: ['b:not_by_default'],
         ),
-        apply('b:not_by_default', [(_) => TestBuilder()], toNoneByDefault()),
+        apply('b', 'b:not_by_default', [(_) => TestBuilder()], AutoApply.none),
       ];
       final phases = await createBuildPhases(
         targetGraph,
@@ -190,9 +193,10 @@ void main() {
       );
       final builderApplications = [
         apply(
+          'c',
           'c:cool_builder',
           [CoolBuilder.new],
-          toDependentsOf('c'),
+          AutoApply.dependents,
           hideOutput: false,
         ),
       ];
@@ -231,15 +235,17 @@ void main() {
         );
         final builderApplications = [
           apply(
+            'c',
             'c:cool_builder',
             [CoolBuilder.new],
-            toDependentsOf('c'),
+            AutoApply.dependents,
             appliesBuilders: ['c:not_by_default'],
           ),
           apply(
+            'c',
             'c:not_by_default',
             [(_) => TestBuilder()],
-            toNoneByDefault(),
+            AutoApply.none,
             hideOutput: false,
           ),
         ];
@@ -287,7 +293,9 @@ void main() {
             ),
           );
           final builderApplications = [
-            apply('b:cool_builder', [CoolBuilder.new], toAllPackages()),
+            apply('b', 'b:cool_builder', [
+              CoolBuilder.new,
+            ], AutoApply.allPackages),
           ];
           expect(
             () => createBuildPhases(
@@ -336,12 +344,15 @@ void main() {
         );
         final builderApplications = [
           apply(
+            'b',
             'b:cool_builder',
             [CoolBuilder.new],
-            toDependentsOf('b'),
+            AutoApply.dependents,
             appliesBuilders: ['b:cool_builder_2'],
           ),
-          apply('b:cool_builder_2', [CoolBuilder.new], toDependentsOf('b')),
+          apply('b', 'b:cool_builder_2', [
+            CoolBuilder.new,
+          ], AutoApply.dependents),
         ];
         return await createBuildPhases(
           targetGraph,
@@ -414,12 +425,13 @@ void main() {
     );
     final builderApplications = [
       apply(
+        'a',
         'a:regular',
         [(_) => TestBuilder()],
-        toAllPackages(),
+        AutoApply.allPackages,
         appliesBuilders: ['a:post'],
       ),
-      applyPostProcess('a:post', (_) => _InvalidPostProcessBuilder()),
+      applyPostProcess('a', 'a:post', (_) => _InvalidPostProcessBuilder()),
     ];
 
     expect(

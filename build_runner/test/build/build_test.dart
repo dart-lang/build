@@ -34,13 +34,15 @@ void main() {
   );
   final copyABuilderApplication = applyToRoot(testBuilder);
   final requiresPostProcessBuilderApplication = apply(
+    '',
     'test_builder',
     [(_) => testBuilder],
-    toRoot(),
+    AutoApply.rootPackage,
     appliesBuilders: ['a:post_copy_builder'],
     hideOutput: false,
   );
   final postCopyABuilderApplication = applyPostProcess(
+    'a',
     'a:post_copy_builder',
     (options) => CopyingPostProcessBuilder(
       outputExtension: options.config['extension'] as String? ?? '.post',
@@ -76,7 +78,8 @@ void main() {
         {'a|lib/a.dart': '', 'b|lib/b.dart': ''},
       );
 
-      // Once per package, including the SDK.
+      // Once per package with inputs, once in `test_builder.dart` to get the
+      // builder name.
       expect(invokedCount, 3);
     });
 
@@ -333,21 +336,23 @@ void main() {
         final builders = [
           copyABuilderApplication,
           apply(
+            'a',
             'a:clone_txt',
             [(_) => TestBuilder(buildExtensions: appendExtension('.clone'))],
-            toRoot(),
+            AutoApply.rootPackage,
             isOptional: true,
             hideOutput: false,
             appliesBuilders: ['a:post_copy_builder'],
           ),
           apply(
+            'a',
             'a:copy_web_clones',
             [
               (_) => TestBuilder(
                 buildExtensions: appendExtension('.copy', numCopies: 2),
               ),
             ],
-            toRoot(),
+            AutoApply.rootPackage,
             hideOutput: false,
           ),
           postCopyABuilderApplication,
@@ -709,8 +714,9 @@ additional_public_assets:
           [
             apply(
               '',
+              '',
               [(_) => TestBuilder()],
-              toPackage('b'),
+              AutoApply.allPackages,
               hideOutput: true,
               appliesBuilders: ['a:post_copy_builder'],
             ),
@@ -787,7 +793,13 @@ additional_public_assets:
       test('Will not delete from non-root packages', () async {
         await testPhases(
           [
-            apply('', [(_) => TestBuilder()], toPackage('b'), hideOutput: true),
+            apply(
+              '',
+              '',
+              [(_) => TestBuilder()],
+              AutoApply.allPackages,
+              hideOutput: true,
+            ),
           ],
           {
             'b|lib/b.txt': 'b',
@@ -969,9 +981,10 @@ targets:
       final result = await testPhases(
         [
           apply(
+            '',
             'test_builder',
             [(_) => TestBuilder()],
-            toRoot(),
+            AutoApply.rootPackage,
             isOptional: false,
             hideOutput: false,
           ),
@@ -1002,8 +1015,9 @@ targets:
           [
             apply(
               '',
+              '',
               [(_) => TestBuilder()],
-              toAllPackages(),
+              AutoApply.allPackages,
               defaultGenerateFor: const InputSet(include: ['**/*.txt']),
             ),
           ],
@@ -1034,8 +1048,9 @@ targets:
           [
             apply(
               '',
+              '',
               [(_) => TestBuilder()],
-              toAllPackages(),
+              AutoApply.allPackages,
               defaultGenerateFor: const InputSet(include: ['**/*.txt']),
             ),
           ],
@@ -1052,8 +1067,9 @@ targets:
           [
             apply(
               '',
+              '',
               [(_) => TestBuilder()],
-              toAllPackages(),
+              AutoApply.allPackages,
               defaultGenerateFor: const InputSet(include: ['**/*.txt']),
             ),
           ],
@@ -1085,8 +1101,9 @@ targets:
           [
             apply(
               '',
+              '',
               [(_) => TestBuilder()],
-              toAllPackages(),
+              AutoApply.allPackages,
               defaultGenerateFor: const InputSet(include: ['**/*.txt']),
             ),
           ],
@@ -1522,7 +1539,13 @@ targets:
 
     test('no outputs if no changed sources using `hideOutput: true`', () async {
       final builders = [
-        apply('', [(_) => TestBuilder()], toRoot(), hideOutput: true),
+        apply(
+          '',
+          '',
+          [(_) => TestBuilder()],
+          AutoApply.rootPackage,
+          hideOutput: true,
+        ),
       ];
 
       // Initial build.
@@ -1819,6 +1842,7 @@ targets:
       // https://github.com/dart-lang/build/issues/2017
       final builders = [
         apply(
+          '',
           'test_builder',
           [
             (_) => TestBuilder(
@@ -1827,10 +1851,14 @@ targets:
               },
             ),
           ],
-          toRoot(),
+          AutoApply.rootPackage,
           appliesBuilders: ['a|copy_builder'],
         ),
-        applyPostProcess('a|copy_builder', (_) => CopyingPostProcessBuilder()),
+        applyPostProcess(
+          '',
+          'a|copy_builder',
+          (_) => CopyingPostProcessBuilder(),
+        ),
       ];
       // A build does not crash in `_cleanUpStaleOutputs`
       await testPhases(builders, {'a|lib/a.txt': 'a'});
