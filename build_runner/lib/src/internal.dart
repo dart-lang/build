@@ -8,7 +8,6 @@ export 'build/build_result.dart';
 export 'build/build_series.dart';
 export 'build/input_tracker.dart';
 export 'build/resolver/resolver.dart';
-export 'build_plan/apply_builders.dart';
 export 'build_plan/build_directory.dart';
 export 'build_plan/build_filter.dart';
 export 'build_plan/build_options.dart';

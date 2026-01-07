@@ -22,8 +22,8 @@ class BuilderFactories {
   /// Post process builder factories by builder key.
   final BuiltMap<String, PostProcessBuilderFactory> postProcessBuilderFactories;
 
-  BuilderFactories({
-    Map<String, List<BuilderFactory>>? builderFactories,
+  BuilderFactories(
+    Map<String, List<BuilderFactory>> builderFactories, {
     Map<String, PostProcessBuilderFactory>? postProcessBuilderFactories,
   }) : builderFactories =
            (builderFactories ?? {})
@@ -34,13 +34,16 @@ class BuilderFactories {
        postProcessBuilderFactories =
            (postProcessBuilderFactories ?? {}).build();
 
+  factory BuilderFactories.oneFactory(String key, BuilderFactory factory) =>
+      BuilderFactories({
+        key: [factory],
+      });
+
   /// Creates with one empty-named builder for use with `testPhases`.
   @visibleForTesting
-  factory BuilderFactories.forTesting(Builder builder) => BuilderFactories(
-    builderFactories: {
-      '': [(_) => builder],
-    },
-  );
+  factory BuilderFactories.forTesting(Builder builder) => BuilderFactories({
+    '': [(_) => builder],
+  });
 
   /// Creates [BuilderDefinition]s for the configuration in `build.yaml` in
   /// each package in [packageGraph].
@@ -116,10 +119,10 @@ class BuilderFactories {
 
     final result = ListBuilder<BuilderDefinition>();
     for (final builder in orderedBuilders) {
-      result.add(BuilderDefinition(builder));
+      result.add(BuilderDefinition.fromConfig(builder));
     }
     for (final builder in postProcessBuilderDefinitions) {
-      result.add(BuilderDefinition.postProcess(builder));
+      result.add(BuilderDefinition.fromPostProcessConfig(builder));
     }
     return result.build();
   }

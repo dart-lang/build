@@ -5,7 +5,7 @@
 import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:build_config/build_config.dart';
+import 'package:build_config/build_config.dart' as build_config;
 import 'package:built_collection/built_collection.dart';
 import 'package:logging/logging.dart';
 import 'package:watcher/watcher.dart';
@@ -18,7 +18,7 @@ import 'package_graph.dart';
 /// Settings that are not user-visible: they are overriden only for testing.
 class TestingOverrides {
   final BuiltList<BuilderDefinition>? builderApplications;
-  final BuiltMap<String, BuildConfig>? buildConfig;
+  final BuiltMap<String, build_config.BuildConfig>? buildConfig;
   final BuildPhases? buildPhases;
   final Duration? debounceDelay;
   final BuiltList<String>? defaultRootPackageSources;
@@ -49,7 +49,7 @@ class TestingOverrides {
 
   TestingOverrides copyWith({
     BuiltList<BuilderDefinition>? builderApplications,
-    BuiltMap<String, BuildConfig>? buildConfig,
+    BuiltMap<String, build_config.BuildConfig>? buildConfig,
     PackageGraph? packageGraph,
   }) => TestingOverrides(
     builderApplications: builderApplications ?? this.builderApplications,

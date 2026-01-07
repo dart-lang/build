@@ -5,7 +5,7 @@
 import 'dart:convert';
 
 import 'package:build/build.dart';
-import 'package:build_config/build_config.dart';
+import 'package:build_config/build_config.dart' as build_config;
 import 'package:built_collection/built_collection.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
@@ -122,7 +122,7 @@ class BuildPhases {
   }
 }
 
-/// Creates a [BuildPhase] to apply each builder in [builderApplications] to
+/// Creates a [BuildPhase] to apply each builder in [builderDefinitions] to
 /// each target in [targetGraph] such that all builders are run for dependencies
 /// before moving on to later packages.
 ///
@@ -136,12 +136,12 @@ class BuildPhases {
 Future<BuildPhases> createBuildPhases(
   BuilderFactories builderFactories,
   TargetGraph targetGraph,
-  Iterable<BuilderDefinition> builderApplications,
+  Iterable<BuilderDefinition> builderDefinitions,
   BuiltMap<String, BuiltMap<String, dynamic>> builderConfigOverrides,
   bool isReleaseMode,
 ) async {
   warnForUnknownBuilders(
-    builderApplications,
+    builderDefinitions,
     targetGraph.rootPackageConfig,
     builderConfigOverrides,
   );
@@ -176,10 +176,10 @@ Future<BuildPhases> createBuildPhases(
     equals: (a, b) => a.target.key == b.target.key,
     hashCode: (node) => node.target.key.hashCode,
   );
-  final applyWith = _applyWith(builderApplications);
+  final applyWith = _applyWith(builderDefinitions);
   final allBuilders = Map<String, BuilderDefinition>.fromIterable(
-    builderApplications,
-    key: (b) => (b as BuilderDefinition).builderKey,
+    builderDefinitions,
+    key: (b) => (b as BuilderDefinition).key,
   );
   final expandedPhases =
       cycles
@@ -187,7 +187,7 @@ Future<BuildPhases> createBuildPhases(
             (cycle) => _createBuildPhasesWithinCycle(
               builderFactories,
               cycle,
-              builderApplications,
+              builderDefinitions,
               globalOptions,
               applyWith,
               allBuilders,
@@ -228,7 +228,7 @@ Iterable<BuildPhase> _createBuildPhasesWithinCycle(
     builderFactories,
     cycle,
     builderApplication,
-    globalOptions[builderApplication.builderKey] ?? BuilderOptions.empty,
+    globalOptions[builderApplication.key] ?? BuilderOptions.empty,
     applyWith,
     allBuilders,
     isReleaseMode,
@@ -244,10 +244,10 @@ Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
   Map<String, BuilderDefinition> allBuilders,
   bool isReleaseMode,
 ) {
-  TargetBuilderConfig? targetConfig(TargetNode node) =>
-      node.target.builders[builderApplication.builderKey];
+  build_config.TargetBuilderConfig? targetConfig(TargetNode node) =>
+      node.target.builders[builderApplication.key];
   final builderFactories =
-      builderFactoriesByName.builderFactories[builderApplication.builderKey];
+      builderFactoriesByName.builderFactories[builderApplication.key];
   if (builderFactories != null) {
     return builderFactories.expand(
       (builderFactory) => cycle
@@ -288,16 +288,17 @@ Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
 
             final builder = BuildLogLogger.scopeLogSync(
               () => builderFactory(optionsWithDefaults),
-              buildLog.loggerForOther(builderApplication.builderKey),
+              buildLog.loggerForOther(builderApplication.key),
             );
             if (builder == null) throw const CannotBuildException();
             _validateBuilder(builder);
             return InBuildPhase(
               builder: builder,
-              key: builderApplication.builderKey,
+              key: builderApplication.key,
               package: package.name,
               targetSources: node.target.sources,
-              generateFor: generateFor ?? const InputSet() /* TODO */,
+              generateFor:
+                  generateFor ?? const build_config.InputSet() /* TODO */,
               options: optionsWithDefaults,
               hideOutput: builderApplication.hideOutput,
               isOptional: builderApplication.isOptional,
@@ -307,7 +308,7 @@ Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
   }
   final postProcessBuilderFactory =
       builderFactoriesByName.postProcessBuilderFactories[builderApplication
-          .builderKey];
+          .key];
   if (postProcessBuilderFactory != null) {
     return cycle
         .where(
@@ -347,7 +348,7 @@ Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
 
           final builder = BuildLogLogger.scopeLogSync(
             () => postProcessBuilderFactory(optionsWithDefaults),
-            buildLog.loggerForOther(builderApplication.builderKey),
+            buildLog.loggerForOther(builderApplication.key),
           );
           if (builder == null) throw const CannotBuildException();
           _validatePostProcessBuilder(builder);
@@ -356,7 +357,8 @@ Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
             builder: builder,
             package: package.name,
             options: optionsWithDefaults,
-            generateFor: generateFor ?? const InputSet() /* TODO */,
+            generateFor:
+                generateFor ?? const build_config.InputSet() /* TODO */,
             targetSources: node.target.sources,
           );
           return PostBuildPhase([builderAction]);
@@ -379,7 +381,7 @@ bool _shouldApply(
       !node.package.isRoot) {
     return false;
   }
-  final builderConfig = node.target.builders[builderApplication.builderKey];
+  final builderConfig = node.target.builders[builderApplication.key];
   if (builderConfig?.isEnabled != null) {
     return builderConfig!.isEnabled;
   }
@@ -387,7 +389,7 @@ bool _shouldApply(
       node.target.autoApplyBuilders &&
       builderApplication.autoAppliesTo(node.package);
   return shouldAutoApply ||
-      (applyWith[builderApplication.builderKey] ?? const []).any(
+      (applyWith[builderApplication.key] ?? const []).any(
         (anchorBuilder) =>
             _shouldApply(anchorBuilder, node, applyWith, allBuilders),
       );
@@ -413,10 +415,10 @@ BuilderOptions _options(Map<String, dynamic>? options) =>
 /// Warns about configuration related to unknown builders.
 void warnForUnknownBuilders(
   Iterable<BuilderDefinition> builders,
-  BuildConfig rootPackageConfig,
+  build_config.BuildConfig rootPackageConfig,
   BuiltMap<String, BuiltMap<String, dynamic>> builderConfigOverrides,
 ) {
-  final builderKeys = builders.map((b) => b.builderKey).toSet();
+  final builderKeys = builders.map((b) => b.key).toSet();
   for (final key in builderConfigOverrides.keys) {
     if (!builderKeys.contains(key)) {
       buildLog.warning(

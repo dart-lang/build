@@ -7,7 +7,7 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
-import 'package:build_config/build_config.dart';
+import 'package:build_config/build_config.dart' as build_config;
 // ignore: implementation_imports
 import 'package:build_runner/src/internal.dart';
 import 'package:built_collection/built_collection.dart';
@@ -414,14 +414,23 @@ Future<TestBuilderResult> testBuilderFactories(
     }
     builderApplications.add(
       _ApplyBuilderApplicationToPackages(
-        delegate: apply(
+        // ignore: invalid_use_of_visible_for_testing_member
+        delegate: BuilderDefinition(
+          name,
+          autoApply: build_config.AutoApply.allPackages,
+          isOptional: optionalBuilderFactories.contains(builderFactory),
+          hideOutput: !visibleOutputBuilderFactories.contains(builderFactory),
+          appliesBuilders: appliesBuilders[builderFactory] ?? const [],
+        ),
+
+        /*apply(
           '',
           name,
           AutoApply.allPackages,
           isOptional: optionalBuilderFactories.contains(builderFactory),
           hideOutput: !visibleOutputBuilderFactories.contains(builderFactory),
           appliesBuilders: appliesBuilders[builderFactory] ?? [],
-        ),
+        ),*/
         applyToPackages: inputPackages,
       ),
     );
@@ -437,7 +446,8 @@ Future<TestBuilderResult> testBuilderFactories(
     } catch (e) {
       name = e.toString();
     }
-    builderApplications.add(applyPostProcess('', name));
+    // TODO add
+    // builderApplications.add(applyPostProcess('', name));
     // TODO: check for duplicate
     postProcessBuilderNameToBuilderFactory[name] = postProcessBuilderFactory;
   }
@@ -455,7 +465,7 @@ Future<TestBuilderResult> testBuilderFactories(
         testingBuilderConfig
             ? {
               for (final package in inputPackages)
-                package: BuildConfig.fromMap(package, [], {
+                package: build_config.BuildConfig.fromMap(package, [], {
                   'targets': {
                     package: {
                       'sources': [
@@ -486,7 +496,7 @@ Future<TestBuilderResult> testBuilderFactories(
 
   final buildPlan = await BuildPlan.load(
     builderFactories: BuilderFactories(
-      builderFactories: builderNameToBuilderFactory,
+      builderNameToBuilderFactory,
       postProcessBuilderFactories: postProcessBuilderNameToBuilderFactory,
     ),
     // ignore: invalid_use_of_visible_for_testing_member
@@ -576,16 +586,19 @@ class _ApplyBuilderApplicationToPackages implements BuilderDefinition {
   // Delegate everything else.
 
   @override
-  Iterable<String> get appliesBuilders => delegate.appliesBuilders;
+  bool get isPostProcessBuilder => delegate.isPostProcessBuilder;
 
   @override
-  AutoApply get autoApply => delegate.autoApply;
+  BuiltList<String> get appliesBuilders => delegate.appliesBuilders;
 
   @override
-  String get builderKey => delegate.builderKey;
+  build_config.AutoApply get autoApply => delegate.autoApply;
 
   @override
-  String get builderPackage => delegate.builderPackage;
+  String get key => delegate.key;
+
+  @override
+  String get package => delegate.package;
 
   @override
   bool get hideOutput => delegate.hideOutput;
