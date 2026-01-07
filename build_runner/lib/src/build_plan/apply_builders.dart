@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:build_config/build_config.dart';
+import 'package:build_config/build_config.dart' as build_config;
 
 import 'builder_application.dart';
 
@@ -11,14 +11,14 @@ import 'builder_application.dart';
 ///
 /// Creates a `BuilderApplication` which corresponds to an empty builder key so
 /// that no other `build.yaml` based configuration will apply.
-BuilderApplication applyToRoot({
+BuilderDefinition applyToRoot({
   bool isOptional = false,
   bool hideOutput = false,
-  InputSet generateFor = const InputSet(),
+  build_config.InputSet generateFor = const build_config.InputSet(),
 }) => _forBuilder(
   '',
   '',
-  AutoApply.rootPackage,
+  build_config.AutoApply.rootPackage,
   isOptional: isOptional,
   hideOutput: hideOutput,
   defaultGenerateFor: generateFor,
@@ -38,13 +38,13 @@ BuilderApplication applyToRoot({
 /// Any existing Builders which match a key in [appliesBuilders] will
 /// automatically be applied to any target which runs this Builder, whether
 /// because it matches [autoApply] or because it was enabled manually.
-BuilderApplication apply(
+BuilderDefinition apply(
   String builderPackage,
   String builderKey,
-  AutoApply autoApply, {
+  build_config.AutoApply autoApply, {
   bool isOptional = false,
   bool hideOutput = true,
-  InputSet defaultGenerateFor = const InputSet(),
+  build_config.InputSet defaultGenerateFor = const build_config.InputSet(),
   BuilderOptions defaultOptions = BuilderOptions.empty,
   BuilderOptions? defaultDevOptions,
   BuilderOptions? defaultReleaseOptions,
@@ -67,10 +67,10 @@ BuilderApplication apply(
 /// Does not provide options for `isOptional` or `hideOutput` because they
 /// aren't configurable for these types of builders. They are never optional and
 /// always hidden.
-BuilderApplication applyPostProcess(
+BuilderDefinition applyPostProcess(
   String builderPackage,
   String builderKey, {
-  InputSet defaultGenerateFor = const InputSet(),
+  build_config.InputSet defaultGenerateFor = const build_config.InputSet(),
   BuilderOptions defaultOptions = BuilderOptions.empty,
   BuilderOptions? defaultDevOptions,
   BuilderOptions? defaultReleaseOptions,
@@ -83,44 +83,44 @@ BuilderApplication applyPostProcess(
   defaultReleaseOptions: defaultReleaseOptions,
 );
 
-BuilderApplication _forBuilder(
+BuilderDefinition _forBuilder(
   String builderPackage,
   String key,
-  AutoApply autoApply, {
+  build_config.AutoApply autoApply, {
   bool isOptional = false,
   bool hideOutput = true,
-  InputSet defaultGenerateFor = const InputSet(),
+  build_config.InputSet defaultGenerateFor = const build_config.InputSet(),
   BuilderOptions defaultOptions = BuilderOptions.empty,
   BuilderOptions? defaultDevOptions,
   BuilderOptions? defaultReleaseOptions,
   Iterable<String> appliesBuilders = const [],
 }) {
-  return BuilderApplication(
-    builderPackage,
-    key,
-    autoApply,
-    hideOutput,
-    isOptional,
-    appliesBuilders,
+  return BuilderDefinition(
+    builderPackage: builderPackage,
+    builderKey: key,
+    autoApply: autoApply,
+    hideOutput: hideOutput,
+    isOptional: isOptional,
+    appliesBuilders: appliesBuilders,
   );
 }
 
 /// Note that these builder applications each create their own phase, but they
 /// will all eventually be merged into a single phase.
-BuilderApplication _forPostProcessBuilder(
+BuilderDefinition _forPostProcessBuilder(
   String builderPackage,
   String builderKey, {
-  InputSet defaultGenerateFor = const InputSet(),
+  build_config.InputSet defaultGenerateFor = const build_config.InputSet(),
   BuilderOptions defaultOptions = BuilderOptions.empty,
   BuilderOptions? defaultDevOptions,
   BuilderOptions? defaultReleaseOptions,
 }) {
-  return BuilderApplication(
-    builderPackage,
-    builderKey,
-    AutoApply.none,
-    true,
-    false,
-    [],
+  return BuilderDefinition(
+    builderPackage: builderPackage,
+    builderKey: builderKey,
+    autoApply: AutoApply.none,
+    hideOutput: true,
+    isOptional: false,
+    appliesBuilders: [],
   );
 }

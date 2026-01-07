@@ -3,13 +3,12 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:build_config/build_config.dart';
+import 'package:build_config/build_config.dart' as build_config;
 import 'package:built_collection/built_collection.dart';
 import 'package:graphs/graphs.dart';
 import 'package:meta/meta.dart';
 
 import '../io/reader_writer.dart';
-import 'apply_builders.dart';
 import 'builder_application.dart';
 import 'builder_ordering.dart';
 import 'package_graph.dart';
@@ -43,7 +42,7 @@ class BuilderFactories {
     },
   );
 
-  /// Creates [BuilderApplication]s for the configuration in `build.yaml` in
+  /// Creates [BuilderDefinition]s for the configuration in `build.yaml` in
   /// each package in [packageGraph].
   ///
   /// The builders specified in the configuration must be present in
@@ -51,7 +50,7 @@ class BuilderFactories {
   /// `null` is returned to indicate that the current build script is out of
   /// date and a restart is needed.
   /// TODO: move out
-  static Future<BuiltList<BuilderApplication>?> createBuilderApplications({
+  static Future<BuiltList<BuilderDefinition>?> createBuilderApplications({
     required PackageGraph packageGraph,
     required ReaderWriter readerWriter,
   }) async {
@@ -67,12 +66,14 @@ class BuilderFactories {
       configKey: null,
     );
 
-    Future<BuildConfig> packageBuildConfig(PackageNode package) async {
+    Future<build_config.BuildConfig> packageBuildConfig(
+      PackageNode package,
+    ) async {
       if (overrides.containsKey(package.name)) {
         return overrides[package.name]!;
       }
       try {
-        return await BuildConfig.fromBuildConfigDir(
+        return await build_config.BuildConfig.fromBuildConfigDir(
           package.name,
           package.dependencies.map((n) => n.name),
           package.path,
@@ -80,7 +81,7 @@ class BuilderFactories {
       } on ArgumentError // ignore: avoid_catching_errors
       catch (_) {
         // During the build an error will be logged.
-        return BuildConfig.useDefault(
+        return build_config.BuildConfig.useDefault(
           package.name,
           package.dependencies.map((n) => n.name),
         );
@@ -113,41 +114,13 @@ class BuilderFactories {
         .expand((c) => c.postProcessBuilderDefinitions.values)
         .where(isPackageImportOrForRoot);
 
-    final result = ListBuilder<BuilderApplication>();
+    final result = ListBuilder<BuilderDefinition>();
     for (final builder in orderedBuilders) {
-      result.add(_applyBuilder(builder));
+      result.add(BuilderDefinition(builder));
     }
     for (final builder in postProcessBuilderDefinitions) {
-      result.add(_applyPostProcessBuilder(builder));
+      result.add(BuilderDefinition.postProcess(builder));
     }
     return result.build();
   }
-}
-
-BuilderApplication _applyBuilder(BuilderDefinition definition) {
-  return apply(
-    definition.package,
-    definition.key,
-    definition.autoApply,
-    isOptional: definition.isOptional,
-    hideOutput: definition.buildTo == BuildTo.cache,
-    defaultGenerateFor: definition.defaults.generateFor,
-    defaultOptions: BuilderOptions(definition.defaults.options),
-    defaultDevOptions: BuilderOptions(definition.defaults.devOptions),
-    defaultReleaseOptions: BuilderOptions(definition.defaults.releaseOptions),
-    appliesBuilders: definition.appliesBuilders,
-  );
-}
-
-BuilderApplication _applyPostProcessBuilder(
-  PostProcessBuilderDefinition definition,
-) {
-  return applyPostProcess(
-    definition.package,
-    definition.key,
-    defaultGenerateFor: definition.defaults.generateFor,
-    defaultOptions: BuilderOptions(definition.defaults.options),
-    defaultDevOptions: BuilderOptions(definition.defaults.devOptions),
-    defaultReleaseOptions: BuilderOptions(definition.defaults.releaseOptions),
-  );
 }

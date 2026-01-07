@@ -60,7 +60,7 @@ builders:
 }
 
 Future<BuildResult> _doBuild(
-  List<BuilderApplication> builders,
+  List<BuilderDefinition> builders,
   Map<String, String> inputs, {
   required AssetId packageConfigId,
   PackageGraph? packageGraph,

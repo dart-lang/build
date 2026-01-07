@@ -400,7 +400,7 @@ Future<TestBuilderResult> testBuilderFactories(
     return result;
   }
 
-  final builderApplications = <BuilderApplication>[];
+  final builderApplications = <BuilderDefinition>[];
   final builderNameToBuilderFactory = <String, List<BuilderFactory>>{};
   for (final builderFactory in builderFactories) {
     // The real build gets the name from the `build.yaml` where the builder is
@@ -556,12 +556,12 @@ void _printOnFailureOrWrite(LogRecord record) {
   }
 }
 
-/// Wraps a [BuilderApplication] to make it apply to a specific set of packages.
+/// Wraps a [BuilderDefinition] to make it apply to a specific set of packages.
 ///
 /// This is used to create a test-only config that applies a builder to exactly
 /// packages that contain explicitly specified inputs.
-class _ApplyBuilderApplicationToPackages implements BuilderApplication {
-  BuilderApplication delegate;
+class _ApplyBuilderApplicationToPackages implements BuilderDefinition {
+  BuilderDefinition delegate;
   final Set<String> applyToPackages;
 
   _ApplyBuilderApplicationToPackages({

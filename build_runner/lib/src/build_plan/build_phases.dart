@@ -132,11 +132,11 @@ class BuildPhases {
 ///
 /// Builders may be filtered, for instance to run only on package which have a
 /// dependency on some other package by choosing the appropriate
-/// [BuilderApplication].
+/// [BuilderDefinition].
 Future<BuildPhases> createBuildPhases(
   BuilderFactories builderFactories,
   TargetGraph targetGraph,
-  Iterable<BuilderApplication> builderApplications,
+  Iterable<BuilderDefinition> builderApplications,
   BuiltMap<String, BuiltMap<String, dynamic>> builderConfigOverrides,
   bool isReleaseMode,
 ) async {
@@ -177,9 +177,9 @@ Future<BuildPhases> createBuildPhases(
     hashCode: (node) => node.target.key.hashCode,
   );
   final applyWith = _applyWith(builderApplications);
-  final allBuilders = Map<String, BuilderApplication>.fromIterable(
+  final allBuilders = Map<String, BuilderDefinition>.fromIterable(
     builderApplications,
-    key: (b) => (b as BuilderApplication).builderKey,
+    key: (b) => (b as BuilderDefinition).builderKey,
   );
   final expandedPhases =
       cycles
@@ -218,10 +218,10 @@ Future<BuildPhases> createBuildPhases(
 Iterable<BuildPhase> _createBuildPhasesWithinCycle(
   BuilderFactories builderFactories,
   Iterable<TargetNode> cycle,
-  Iterable<BuilderApplication> builderApplications,
+  Iterable<BuilderDefinition> builderApplications,
   Map<String, BuilderOptions> globalOptions,
-  Map<String, List<BuilderApplication>> applyWith,
-  Map<String, BuilderApplication> allBuilders,
+  Map<String, List<BuilderDefinition>> applyWith,
+  Map<String, BuilderDefinition> allBuilders,
   bool isReleaseMode,
 ) => builderApplications.expand(
   (builderApplication) => _createBuildPhasesForBuilderInCycle(
@@ -238,10 +238,10 @@ Iterable<BuildPhase> _createBuildPhasesWithinCycle(
 Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
   BuilderFactories builderFactoriesByName,
   Iterable<TargetNode> cycle,
-  BuilderApplication builderApplication,
+  BuilderDefinition builderApplication,
   BuilderOptions globalOptionOverrides,
-  Map<String, List<BuilderApplication>> applyWith,
-  Map<String, BuilderApplication> allBuilders,
+  Map<String, List<BuilderDefinition>> applyWith,
+  Map<String, BuilderDefinition> allBuilders,
   bool isReleaseMode,
 ) {
   TargetBuilderConfig? targetConfig(TargetNode node) =>
@@ -367,10 +367,10 @@ Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
 }
 
 bool _shouldApply(
-  BuilderApplication builderApplication,
+  BuilderDefinition builderApplication,
   TargetNode node,
-  Map<String, List<BuilderApplication>> applyWith,
-  Map<String, BuilderApplication> allBuilders,
+  Map<String, List<BuilderDefinition>> applyWith,
+  Map<String, BuilderDefinition> allBuilders,
 ) {
   if (!(builderApplication.hideOutput &&
           builderApplication.appliesBuilders.every(
@@ -395,10 +395,10 @@ bool _shouldApply(
 
 /// Inverts the dependency map from 'applies builders' to 'applied with
 /// builders'.
-Map<String, List<BuilderApplication>> _applyWith(
-  Iterable<BuilderApplication> builderApplications,
+Map<String, List<BuilderDefinition>> _applyWith(
+  Iterable<BuilderDefinition> builderApplications,
 ) {
-  final applyWith = <String, List<BuilderApplication>>{};
+  final applyWith = <String, List<BuilderDefinition>>{};
   for (final builderApplication in builderApplications) {
     for (final alsoApply in builderApplication.appliesBuilders) {
       applyWith.putIfAbsent(alsoApply, () => []).add(builderApplication);
@@ -412,7 +412,7 @@ BuilderOptions _options(Map<String, dynamic>? options) =>
 
 /// Warns about configuration related to unknown builders.
 void warnForUnknownBuilders(
-  Iterable<BuilderApplication> builders,
+  Iterable<BuilderDefinition> builders,
   BuildConfig rootPackageConfig,
   BuiltMap<String, BuiltMap<String, dynamic>> builderConfigOverrides,
 ) {

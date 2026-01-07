@@ -165,7 +165,7 @@ StreamController<ProcessSignal>? _terminateServeController;
 /// Start serving files and running builds.
 Future<ServeHandler> createHandler(
   BuilderFactories builderFactories,
-  Iterable<BuilderApplication> builders,
+  Iterable<BuilderDefinition> builders,
   Map<String, String> inputs,
   PackageGraph packageGraph,
   InternalTestReaderWriter readerWriter,

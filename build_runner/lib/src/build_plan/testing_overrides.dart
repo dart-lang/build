@@ -17,7 +17,7 @@ import 'package_graph.dart';
 
 /// Settings that are not user-visible: they are overriden only for testing.
 class TestingOverrides {
-  final BuiltList<BuilderApplication>? builderApplications;
+  final BuiltList<BuilderDefinition>? builderApplications;
   final BuiltMap<String, BuildConfig>? buildConfig;
   final BuildPhases? buildPhases;
   final Duration? debounceDelay;
@@ -48,7 +48,7 @@ class TestingOverrides {
   });
 
   TestingOverrides copyWith({
-    BuiltList<BuilderApplication>? builderApplications,
+    BuiltList<BuilderDefinition>? builderApplications,
     BuiltMap<String, BuildConfig>? buildConfig,
     PackageGraph? packageGraph,
   }) => TestingOverrides(
