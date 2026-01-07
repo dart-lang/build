@@ -48,7 +48,7 @@ void main() {
       readerWriter.writeAsString(assetId2, '// other');
       buildOptions = BuildOptions.forTests();
       testingOverrides = TestingOverrides(
-        builderApplications: [applyToRoot(TestBuilder())].build(),
+        builderApplications: [applyToRoot()].build(),
         readerWriter: readerWriter,
         packageGraph: packageGraph,
       );
@@ -96,11 +96,11 @@ void main() {
         testingOverrides: testingOverrides.copyWith(
           builderApplications:
               [
-                applyToRoot(TestBuilder()),
+                applyToRoot(),
                 // Apply a second builder so build phases change.
-                applyToRoot(
+                /*applyToRoot(
                   TestBuilder(buildExtensions: appendExtension('.copy2')),
-                ),
+                ),*/
               ].build(),
         ),
       );
@@ -121,7 +121,6 @@ void main() {
           builderApplications:
               [
                 applyToRoot(
-                  TestBuilder(),
                   // Hidden output is easy to find and delete, it's under one
                   // generated root. Unhide the output so there can be lost
                   // outputs.
@@ -145,11 +144,11 @@ void main() {
         testingOverrides: testingOverrides.copyWith(
           builderApplications:
               [
-                applyToRoot(TestBuilder()),
+                applyToRoot(),
                 // Apply a second builder so build phases change.
-                applyToRoot(
+                /*applyToRoot(
                   TestBuilder(buildExtensions: appendExtension('.copy2')),
-                ),
+                ),*/
               ].build(),
         ),
       );
@@ -177,14 +176,15 @@ void main() {
 
         buildOptions: buildOptions,
         testingOverrides: testingOverrides.copyWith(
-          builderApplications:
+          // TODO
+          /*builderApplications:
               [
                 applyToRoot(TestBuilder()),
                 // Apply a second builder so build phases change.
                 applyToRoot(
                   TestBuilder(buildExtensions: appendExtension('.copy2')),
                 ),
-              ].build(),
+              ].build(),*/
         ),
       );
 

@@ -55,7 +55,8 @@ void main() {
 
     test('does basic builds', () async {
       final handler = await createHandler(
-        [applyToRoot(TestBuilder())],
+        BuilderFactories.forTesting(TestBuilder()),
+        [applyToRoot()],
         {'a|web/a.txt': 'a'},
         packageGraph,
         readerWriter,
@@ -83,7 +84,10 @@ void main() {
       var nextBuildBlocker = buildBlocker1.future;
 
       final handler = await createHandler(
-        [applyToRoot(TestBuilder(extraWork: (_, _) => nextBuildBlocker))],
+        BuilderFactories.forTesting(
+          TestBuilder(extraWork: (_, _) => nextBuildBlocker),
+        ),
+        [applyToRoot()],
         {'a|web/a.txt': 'a'},
         packageGraph,
         readerWriter,
@@ -160,6 +164,7 @@ StreamController<ProcessSignal>? _terminateServeController;
 
 /// Start serving files and running builds.
 Future<ServeHandler> createHandler(
+  BuilderFactories builderFactories,
   Iterable<BuilderApplication> builders,
   Map<String, String> inputs,
   PackageGraph packageGraph,
@@ -176,7 +181,7 @@ Future<ServeHandler> createHandler(
   FakeWatcher watcherFactory(String path) => FakeWatcher(path);
 
   final watchCommand = WatchCommand(
-    builderFactories: BuilderFactories(),
+    builderFactories: builderFactories,
     buildOptions: BuildOptions.forTests(),
     testingOverrides: TestingOverrides(
       builderApplications: builders.toBuiltList(),

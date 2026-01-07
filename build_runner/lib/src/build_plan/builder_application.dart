@@ -6,24 +6,10 @@ import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 
 import 'package_graph.dart';
-import 'phase.dart';
-
-typedef BuildPhaseFactory =
-    BuildPhase Function(
-      PackageNode package,
-      BuilderOptions options,
-      InputSet targetSources,
-      InputSet? generateFor,
-      bool isReleaseBuild,
-    );
 
 /// A description of which packages need a given [Builder] or
 /// [PostProcessBuilder] applied.
 class BuilderApplication {
-  /// Factories that create [BuildPhase]s for all [Builder]s or
-  /// [PostProcessBuilder]s that should be applied.
-  final List<BuildPhaseFactory> buildPhaseFactories;
-
   /// Determines which packages a builder is automatically applied to.
   final AutoApply autoApply;
 
@@ -42,12 +28,14 @@ class BuilderApplication {
   /// Whether generated assets should be placed in the build cache.
   final bool hideOutput;
 
+  final bool isOptional;
+
   BuilderApplication(
     this.builderPackage,
     this.builderKey,
-    this.buildPhaseFactories,
     this.autoApply,
     this.hideOutput,
+    this.isOptional,
     this.appliesBuilders,
   );
 

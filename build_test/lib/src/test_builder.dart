@@ -401,6 +401,7 @@ Future<TestBuilderResult> testBuilderFactories(
   }
 
   final builderApplications = <BuilderApplication>[];
+  final builderNameToBuilderFactory = <String, List<BuilderFactory>>{};
   for (final builderFactory in builderFactories) {
     // The real build gets the name from the `build.yaml` where the builder is
     // For tests, use the builder class name, or fall back if the test makes the
@@ -416,7 +417,6 @@ Future<TestBuilderResult> testBuilderFactories(
         delegate: apply(
           '',
           name,
-          [builderFactory],
           AutoApply.allPackages,
           isOptional: optionalBuilderFactories.contains(builderFactory),
           hideOutput: !visibleOutputBuilderFactories.contains(builderFactory),
@@ -425,7 +425,11 @@ Future<TestBuilderResult> testBuilderFactories(
         applyToPackages: inputPackages,
       ),
     );
+    // TODO: check for duplicate
+    builderNameToBuilderFactory[name] = [builderFactory];
   }
+  final postProcessBuilderNameToBuilderFactory =
+      <String, PostProcessBuilderFactory>{};
   for (final postProcessBuilderFactory in postProcessBuilderFactories) {
     String name;
     try {
@@ -433,9 +437,9 @@ Future<TestBuilderResult> testBuilderFactories(
     } catch (e) {
       name = e.toString();
     }
-    builderApplications.add(
-      applyPostProcess('', name, postProcessBuilderFactory),
-    );
+    builderApplications.add(applyPostProcess('', name));
+    // TODO: check for duplicate
+    postProcessBuilderNameToBuilderFactory[name] = postProcessBuilderFactory;
   }
 
   final testingOverrides = TestingOverrides(
@@ -481,7 +485,10 @@ Future<TestBuilderResult> testBuilderFactories(
   );
 
   final buildPlan = await BuildPlan.load(
-    builderFactories: BuilderFactories(),
+    builderFactories: BuilderFactories(
+      builderFactories: builderNameToBuilderFactory,
+      postProcessBuilderFactories: postProcessBuilderNameToBuilderFactory,
+    ),
     // ignore: invalid_use_of_visible_for_testing_member
     buildOptions: BuildOptions.forTests(
       enableLowResourcesMode: enableLowResourceMode,
@@ -575,10 +582,6 @@ class _ApplyBuilderApplicationToPackages implements BuilderApplication {
   AutoApply get autoApply => delegate.autoApply;
 
   @override
-  List<BuildPhaseFactory> get buildPhaseFactories =>
-      delegate.buildPhaseFactories;
-
-  @override
   String get builderKey => delegate.builderKey;
 
   @override
@@ -586,4 +589,7 @@ class _ApplyBuilderApplicationToPackages implements BuilderApplication {
 
   @override
   bool get hideOutput => delegate.hideOutput;
+
+  @override
+  bool get isOptional => delegate.isOptional;
 }

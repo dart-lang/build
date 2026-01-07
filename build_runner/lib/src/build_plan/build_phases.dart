@@ -13,7 +13,9 @@ import 'package:graphs/graphs.dart';
 
 import '../exceptions.dart';
 import '../logging/build_log.dart';
+import '../logging/build_log_logger.dart';
 import 'builder_application.dart';
+import 'builder_factories.dart';
 import 'phase.dart';
 import 'target_graph.dart';
 
@@ -132,6 +134,7 @@ class BuildPhases {
 /// dependency on some other package by choosing the appropriate
 /// [BuilderApplication].
 Future<BuildPhases> createBuildPhases(
+  BuilderFactories builderFactories,
   TargetGraph targetGraph,
   Iterable<BuilderApplication> builderApplications,
   BuiltMap<String, BuiltMap<String, dynamic>> builderConfigOverrides,
@@ -182,6 +185,7 @@ Future<BuildPhases> createBuildPhases(
       cycles
           .expand(
             (cycle) => _createBuildPhasesWithinCycle(
+              builderFactories,
               cycle,
               builderApplications,
               globalOptions,
@@ -212,6 +216,7 @@ Future<BuildPhases> createBuildPhases(
 }
 
 Iterable<BuildPhase> _createBuildPhasesWithinCycle(
+  BuilderFactories builderFactories,
   Iterable<TargetNode> cycle,
   Iterable<BuilderApplication> builderApplications,
   Map<String, BuilderOptions> globalOptions,
@@ -220,6 +225,7 @@ Iterable<BuildPhase> _createBuildPhasesWithinCycle(
   bool isReleaseMode,
 ) => builderApplications.expand(
   (builderApplication) => _createBuildPhasesForBuilderInCycle(
+    builderFactories,
     cycle,
     builderApplication,
     globalOptions[builderApplication.builderKey] ?? BuilderOptions.empty,
@@ -230,6 +236,7 @@ Iterable<BuildPhase> _createBuildPhasesWithinCycle(
 );
 
 Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
+  BuilderFactories builderFactoriesByName,
   Iterable<TargetNode> cycle,
   BuilderApplication builderApplication,
   BuilderOptions globalOptionOverrides,
@@ -239,8 +246,70 @@ Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
 ) {
   TargetBuilderConfig? targetConfig(TargetNode node) =>
       node.target.builders[builderApplication.builderKey];
-  return builderApplication.buildPhaseFactories.expand(
-    (createPhase) => cycle
+  final builderFactories =
+      builderFactoriesByName.builderFactories[builderApplication.builderKey];
+  if (builderFactories != null) {
+    return builderFactories.expand(
+      (builderFactory) => cycle
+          .where(
+            (targetNode) => _shouldApply(
+              builderApplication,
+              targetNode,
+              applyWith,
+              allBuilders,
+            ),
+          )
+          .map((node) {
+            final builderConfig = targetConfig(node);
+            final options = _options(builderConfig?.options)
+                .overrideWith(
+                  isReleaseMode
+                      ? _options(builderConfig?.releaseOptions)
+                      : _options(builderConfig?.devOptions),
+                )
+                .overrideWith(globalOptionOverrides);
+
+            final package = node.package;
+            final generateFor = builderConfig?.generateFor;
+            var optionsWithDefaults = options;
+
+            // TODO
+            // generateFor ??= defaultGenerateFor;
+            /*var optionsWithDefaults = defaultOptions
+              .overrideWith(
+                isReleaseBuild ? defaultReleaseOptions : defaultDevOptions,
+              )
+              .overrideWith(options);*/
+            if (package.isRoot) {
+              optionsWithDefaults = optionsWithDefaults.overrideWith(
+                BuilderOptions.forRoot,
+              );
+            }
+
+            final builder = BuildLogLogger.scopeLogSync(
+              () => builderFactory(optionsWithDefaults),
+              buildLog.loggerForOther(builderApplication.builderKey),
+            );
+            if (builder == null) throw const CannotBuildException();
+            _validateBuilder(builder);
+            return InBuildPhase(
+              builder: builder,
+              key: builderApplication.builderKey,
+              package: package.name,
+              targetSources: node.target.sources,
+              generateFor: generateFor ?? const InputSet() /* TODO */,
+              options: optionsWithDefaults,
+              hideOutput: builderApplication.hideOutput,
+              isOptional: builderApplication.isOptional,
+            );
+          }),
+    );
+  }
+  final postProcessBuilderFactory =
+      builderFactoriesByName.postProcessBuilderFactories[builderApplication
+          .builderKey];
+  if (postProcessBuilderFactory != null) {
+    return cycle
         .where(
           (targetNode) => _shouldApply(
             builderApplication,
@@ -258,15 +327,43 @@ Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
                     : _options(builderConfig?.devOptions),
               )
               .overrideWith(globalOptionOverrides);
-          return createPhase(
-            node.package,
-            options,
-            node.target.sources,
-            builderConfig?.generateFor,
-            isReleaseMode,
+
+          final package = node.package;
+          final generateFor = builderConfig?.generateFor;
+          var optionsWithDefaults = options;
+
+          // TODO
+          // generateFor ??= defaultGenerateFor;
+          /*var optionsWithDefaults = defaultOptions
+              .overrideWith(
+                isReleaseBuild ? defaultReleaseOptions : defaultDevOptions,
+              )
+              .overrideWith(options);*/
+          if (package.isRoot) {
+            optionsWithDefaults = optionsWithDefaults.overrideWith(
+              BuilderOptions.forRoot,
+            );
+          }
+
+          final builder = BuildLogLogger.scopeLogSync(
+            () => postProcessBuilderFactory(optionsWithDefaults),
+            buildLog.loggerForOther(builderApplication.builderKey),
           );
-        }),
-  );
+          if (builder == null) throw const CannotBuildException();
+          _validatePostProcessBuilder(builder);
+
+          final builderAction = PostBuildAction(
+            builder: builder,
+            package: package.name,
+            options: optionsWithDefaults,
+            generateFor: generateFor ?? const InputSet() /* TODO */,
+            targetSources: node.target.sources,
+          );
+          return PostBuildPhase([builderAction]);
+        });
+  }
+
+  throw 'whoops';
 }
 
 bool _shouldApply(
@@ -352,5 +449,39 @@ void warnForUnknownBuilders(
         );
       }
     }
+  }
+}
+
+void _validateBuilder(Builder builder) {
+  final inputExtensions = builder.buildExtensions.keys.toSet();
+  final matching = inputExtensions.intersection(
+    // https://github.com/dart-lang/linter/issues/4336
+    // ignore: collection_methods_unrelated_type
+    {for (final outputs in builder.buildExtensions.values) ...outputs},
+  );
+  if (matching.isNotEmpty) {
+    final mapDescription = builder.buildExtensions.entries
+        .map((e) => '${e.key}: ${e.value},')
+        .join('\n');
+    throw ArgumentError.value(
+      '{ $mapDescription }',
+      '${builder.runtimeType}.buildExtensions',
+      'Output extensions must not match any input extensions, but got '
+          'the following overlapping output extensions: $matching',
+    );
+  }
+}
+
+void _validatePostProcessBuilder(PostProcessBuilder builder) {
+  // Regular builders may use `{{}}` to define a capture group in build
+  // extensions. We don't currently support this syntax for post process
+  // builders.
+  if (builder.inputExtensions.any((input) => input.contains('{{}}'))) {
+    throw ArgumentError(
+      '${builder.runtimeType}.buildInputs contains capture groups (`{{}}`), '
+      'which is not currently supported for post-process builders. \n'
+      'Try generalizing input extensions and manually skip uninteresting '
+      'assets in the `build()` method.',
+    );
   }
 }

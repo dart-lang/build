@@ -5,34 +5,26 @@
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 
-import '../exceptions.dart';
-import '../logging/build_log.dart';
-import '../logging/build_log_logger.dart';
 import 'builder_application.dart';
-import 'package_graph.dart';
-import 'phase.dart';
 
 /// Apply [builder] to the root package.
 ///
 /// Creates a `BuilderApplication` which corresponds to an empty builder key so
 /// that no other `build.yaml` based configuration will apply.
-BuilderApplication applyToRoot(
-  Builder builder, {
+BuilderApplication applyToRoot({
   bool isOptional = false,
   bool hideOutput = false,
   InputSet generateFor = const InputSet(),
 }) => _forBuilder(
   '',
   '',
-  [(_) => builder],
   AutoApply.rootPackage,
   isOptional: isOptional,
   hideOutput: hideOutput,
   defaultGenerateFor: generateFor,
 );
 
-/// Apply each builder from [builderFactories] to the packages matching
-/// [autoApply].
+/// Apply the builder with [builderKey] to the packages matching [autoApply].
 ///
 /// If the builder should only run on a subset of files within a target pass
 /// globs to [defaultGenerateFor]. This can be overridden by any target which
@@ -49,7 +41,6 @@ BuilderApplication applyToRoot(
 BuilderApplication apply(
   String builderPackage,
   String builderKey,
-  Iterable<BuilderFactory> builderFactories,
   AutoApply autoApply, {
   bool isOptional = false,
   bool hideOutput = true,
@@ -61,7 +52,6 @@ BuilderApplication apply(
 }) => _forBuilder(
   builderPackage,
   builderKey,
-  builderFactories,
   autoApply,
   isOptional: isOptional,
   hideOutput: hideOutput,
@@ -79,8 +69,7 @@ BuilderApplication apply(
 /// always hidden.
 BuilderApplication applyPostProcess(
   String builderPackage,
-  String builderKey,
-  PostProcessBuilderFactory builderFactory, {
+  String builderKey, {
   InputSet defaultGenerateFor = const InputSet(),
   BuilderOptions defaultOptions = BuilderOptions.empty,
   BuilderOptions? defaultDevOptions,
@@ -88,7 +77,6 @@ BuilderApplication applyPostProcess(
 }) => _forPostProcessBuilder(
   builderPackage,
   builderKey,
-  builderFactory,
   defaultGenerateFor: defaultGenerateFor,
   defaultOptions: defaultOptions,
   defaultDevOptions: defaultDevOptions,
@@ -98,7 +86,6 @@ BuilderApplication applyPostProcess(
 BuilderApplication _forBuilder(
   String builderPackage,
   String key,
-  Iterable<BuilderFactory> builderFactories,
   AutoApply autoApply, {
   bool isOptional = false,
   bool hideOutput = true,
@@ -108,52 +95,12 @@ BuilderApplication _forBuilder(
   BuilderOptions? defaultReleaseOptions,
   Iterable<String> appliesBuilders = const [],
 }) {
-  final phaseFactories =
-      builderFactories.map((builderFactory) {
-        return (
-          PackageNode package,
-          BuilderOptions options,
-          InputSet targetSources,
-          InputSet? generateFor,
-          bool isReleaseBuild,
-        ) {
-          generateFor ??= defaultGenerateFor;
-
-          var optionsWithDefaults = defaultOptions
-              .overrideWith(
-                isReleaseBuild ? defaultReleaseOptions : defaultDevOptions,
-              )
-              .overrideWith(options);
-          if (package.isRoot) {
-            optionsWithDefaults = optionsWithDefaults.overrideWith(
-              BuilderOptions.forRoot,
-            );
-          }
-
-          final builder = BuildLogLogger.scopeLogSync(
-            () => builderFactory(optionsWithDefaults),
-            buildLog.loggerForOther(key),
-          );
-          if (builder == null) throw const CannotBuildException();
-          _validateBuilder(builder);
-          return InBuildPhase(
-            builder: builder,
-            key: key,
-            package: package.name,
-            targetSources: targetSources,
-            generateFor: generateFor,
-            options: optionsWithDefaults,
-            hideOutput: hideOutput,
-            isOptional: isOptional,
-          );
-        };
-      }).toList();
   return BuilderApplication(
     builderPackage,
     key,
-    phaseFactories,
     autoApply,
     hideOutput,
+    isOptional,
     appliesBuilders,
   );
 }
@@ -162,89 +109,18 @@ BuilderApplication _forBuilder(
 /// will all eventually be merged into a single phase.
 BuilderApplication _forPostProcessBuilder(
   String builderPackage,
-  String builderKey,
-  PostProcessBuilderFactory builderFactory, {
+  String builderKey, {
   InputSet defaultGenerateFor = const InputSet(),
   BuilderOptions defaultOptions = BuilderOptions.empty,
   BuilderOptions? defaultDevOptions,
   BuilderOptions? defaultReleaseOptions,
 }) {
-  PostBuildPhase phaseFactory(
-    PackageNode package,
-    BuilderOptions options,
-    InputSet targetSources,
-    InputSet? generateFor,
-    bool isReleaseBuild,
-  ) {
-    generateFor ??= defaultGenerateFor;
-
-    var optionsWithDefaults = defaultOptions
-        .overrideWith(
-          isReleaseBuild ? defaultReleaseOptions : defaultDevOptions,
-        )
-        .overrideWith(options);
-    if (package.isRoot) {
-      optionsWithDefaults = optionsWithDefaults.overrideWith(
-        BuilderOptions.forRoot,
-      );
-    }
-
-    final builder = BuildLogLogger.scopeLogSync(
-      () => builderFactory(optionsWithDefaults),
-      buildLog.loggerForOther(builderKey),
-    );
-    if (builder == null) throw const CannotBuildException();
-    _validatePostProcessBuilder(builder);
-    final builderAction = PostBuildAction(
-      builder: builder,
-      package: package.name,
-      options: optionsWithDefaults,
-      generateFor: generateFor,
-      targetSources: targetSources,
-    );
-    return PostBuildPhase([builderAction]);
-  }
-
   return BuilderApplication(
     builderPackage,
     builderKey,
-    [phaseFactory],
     AutoApply.none,
     true,
+    false,
     [],
   );
-}
-
-void _validateBuilder(Builder builder) {
-  final inputExtensions = builder.buildExtensions.keys.toSet();
-  final matching = inputExtensions.intersection(
-    // https://github.com/dart-lang/linter/issues/4336
-    // ignore: collection_methods_unrelated_type
-    {for (final outputs in builder.buildExtensions.values) ...outputs},
-  );
-  if (matching.isNotEmpty) {
-    final mapDescription = builder.buildExtensions.entries
-        .map((e) => '${e.key}: ${e.value},')
-        .join('\n');
-    throw ArgumentError.value(
-      '{ $mapDescription }',
-      '${builder.runtimeType}.buildExtensions',
-      'Output extensions must not match any input extensions, but got '
-          'the following overlapping output extensions: $matching',
-    );
-  }
-}
-
-void _validatePostProcessBuilder(PostProcessBuilder builder) {
-  // Regular builders may use `{{}}` to define a capture group in build
-  // extensions. We don't currently support this syntax for post process
-  // builders.
-  if (builder.inputExtensions.any((input) => input.contains('{{}}'))) {
-    throw ArgumentError(
-      '${builder.runtimeType}.buildInputs contains capture groups (`{{}}`), '
-      'which is not currently supported for post-process builders. \n'
-      'Try generalizing input extensions and manually skip uninteresting '
-      'assets in the `build()` method.',
-    );
-  }
 }

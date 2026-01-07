@@ -131,7 +131,7 @@ class BuildPlan {
 
     var builderApplications =
         testingOverrides.builderApplications ??
-        await builderFactories.createBuilderApplications(
+        await BuilderFactories.createBuilderApplications(
           packageGraph: packageGraph,
           readerWriter: readerWriter,
         );
@@ -144,6 +144,7 @@ class BuildPlan {
     final buildPhases =
         testingOverrides.buildPhases ??
         await createBuildPhases(
+          builderFactories,
           targetGraph,
           builderApplications,
           buildOptions.builderConfigOverrides,

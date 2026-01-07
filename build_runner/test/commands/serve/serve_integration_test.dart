@@ -59,11 +59,14 @@ void main() {
     terminateController = StreamController<ProcessSignal>();
     final server =
         (await WatchCommand(
-          builderFactories: BuilderFactories(),
+          builderFactories: BuilderFactories(
+            builderFactories: {
+              '': [(_) => const UppercaseBuilder()],
+            },
+          ),
           buildOptions: BuildOptions.forTests(verbose: true),
           testingOverrides: TestingOverrides(
-            builderApplications:
-                [applyToRoot(const UppercaseBuilder())].build(),
+            builderApplications: [applyToRoot()].build(),
             packageGraph: graph,
             readerWriter: readerWriter,
             onLog:

@@ -73,6 +73,7 @@ void _printOnFailure(LogRecord record) {
 /// TODO(davidmorgan): this overlaps with the newer `testBuilders` in
 /// `package:build_test`, can they be unified?
 Future<TestBuildersResult> testPhases(
+  BuilderFactories builderFactories,
   List<BuilderApplication> builders,
   Map<String, /*String|List<int>*/ Object> inputs, {
   TestBuildersResult? resumeFrom,
@@ -134,7 +135,7 @@ Future<TestBuildersResult> testPhases(
   });
 
   final buildPlan = await BuildPlan.load(
-    builderFactories: BuilderFactories(),
+    builderFactories: builderFactories,
     // ignore: invalid_use_of_visible_for_testing_member
     buildOptions: BuildOptions.forTests(
       buildDirs: buildDirs.build(),

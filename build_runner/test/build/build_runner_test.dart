@@ -22,10 +22,6 @@ import 'package:test/test.dart';
 import '../common/common.dart';
 
 void main() {
-  // Basic phases/phase groups which get used in many tests
-  final copyABuildApplication = applyToRoot(
-    TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')),
-  );
   final packageConfigId = makeAssetId('a|.dart_tool/package_config.json');
 
   group('--config', () {
@@ -35,7 +31,7 @@ void main() {
         rootPackage('a', path: path.absolute('a')): [],
       });
       final result = await _doBuild(
-        [copyABuildApplication],
+        [],
         {
           'a|build.yaml': '',
           'a|build.cool.yaml': '''

@@ -6,6 +6,7 @@ import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:graphs/graphs.dart';
+import 'package:meta/meta.dart';
 
 import '../io/reader_writer.dart';
 import 'apply_builders.dart';
@@ -34,6 +35,14 @@ class BuilderFactories {
        postProcessBuilderFactories =
            (postProcessBuilderFactories ?? {}).build();
 
+  /// Creates with one empty-named builder for use with `testPhases`.
+  @visibleForTesting
+  factory BuilderFactories.forTesting(Builder builder) => BuilderFactories(
+    builderFactories: {
+      '': [(_) => builder],
+    },
+  );
+
   /// Creates [BuilderApplication]s for the configuration in `build.yaml` in
   /// each package in [packageGraph].
   ///
@@ -41,7 +50,8 @@ class BuilderFactories {
   /// [builderFactories] or [postProcessBuilderFactories]. If they are not,
   /// `null` is returned to indicate that the current build script is out of
   /// date and a restart is needed.
-  Future<BuiltList<BuilderApplication>?> createBuilderApplications({
+  /// TODO: move out
+  static Future<BuiltList<BuilderApplication>?> createBuilderApplications({
     required PackageGraph packageGraph,
     required ReaderWriter readerWriter,
   }) async {
@@ -105,27 +115,19 @@ class BuilderFactories {
 
     final result = ListBuilder<BuilderApplication>();
     for (final builder in orderedBuilders) {
-      final factory = builderFactories[builder.key];
-      if (factory == null) return null;
-      result.add(_applyBuilder(builder, factory));
+      result.add(_applyBuilder(builder));
     }
     for (final builder in postProcessBuilderDefinitions) {
-      final factory = postProcessBuilderFactories[builder.key];
-      if (factory == null) return null;
-      result.add(_applyPostProcessBuilder(builder, factory));
+      result.add(_applyPostProcessBuilder(builder));
     }
     return result.build();
   }
 }
 
-BuilderApplication _applyBuilder(
-  BuilderDefinition definition,
-  BuiltList<BuilderFactory> builderFactories,
-) {
+BuilderApplication _applyBuilder(BuilderDefinition definition) {
   return apply(
     definition.package,
     definition.key,
-    builderFactories,
     definition.autoApply,
     isOptional: definition.isOptional,
     hideOutput: definition.buildTo == BuildTo.cache,
@@ -139,12 +141,10 @@ BuilderApplication _applyBuilder(
 
 BuilderApplication _applyPostProcessBuilder(
   PostProcessBuilderDefinition definition,
-  PostProcessBuilderFactory postProcessBuilderFactory,
 ) {
   return applyPostProcess(
     definition.package,
     definition.key,
-    postProcessBuilderFactory,
     defaultGenerateFor: definition.defaults.generateFor,
     defaultOptions: BuilderOptions(definition.defaults.options),
     defaultDevOptions: BuilderOptions(definition.defaults.devOptions),
