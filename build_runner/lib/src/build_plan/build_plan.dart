@@ -21,7 +21,9 @@ import '../logging/build_log.dart';
 import 'build_directory.dart';
 import 'build_filter.dart';
 import 'build_options.dart';
+import 'build_phase_creator.dart';
 import 'build_phases.dart';
+import 'builder_definition.dart';
 import 'builder_factories.dart';
 import 'package_graph.dart';
 import 'target_graph.dart';
@@ -129,26 +131,29 @@ class BuildPlan {
       configKey: buildOptions.configKey,
     );
 
-    var builderApplications =
-        testingOverrides.builderApplications ??
-        await builderFactories.createBuilderApplications(
+    var builderDefinitions =
+        testingOverrides.builderDefinitions ??
+        await BuilderDefinition.load(
           packageGraph: packageGraph,
           readerWriter: readerWriter,
         );
 
-    if (builderApplications == null) {
+    // Check that there is a factory available for every builder, if not the
+    // config has changed since the script was written and a restart is needed.
+    if (!builderFactories.hasFactoriesFor(builderDefinitions)) {
       restartIsNeeded = true;
-      builderApplications = BuiltList();
+      builderDefinitions = BuiltList();
     }
 
     final buildPhases =
         testingOverrides.buildPhases ??
-        await createBuildPhases(
-          targetGraph,
-          builderApplications,
-          buildOptions.builderConfigOverrides,
-          buildOptions.isReleaseBuild,
-        );
+        await BuildPhaseCreator(
+          builderFactories: builderFactories,
+          targetGraph: targetGraph,
+          builderDefinitions: builderDefinitions,
+          builderConfigOverrides: buildOptions.builderConfigOverrides,
+          isReleaseBuild: buildOptions.isReleaseBuild,
+        ).createBuildPhases();
     buildPhases.checkOutputLocations(packageGraph.root.name);
     if (buildPhases.inBuildPhases.isEmpty &&
         buildPhases.postBuildPhase.builderActions.isEmpty) {}

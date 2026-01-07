@@ -6,16 +6,18 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:build/build.dart';
-import 'package:build_config/build_config.dart';
+import 'package:build_config/build_config.dart'
+    hide AutoApply, BuilderDefinition, TargetBuilderConfigDefaults;
 import 'package:build_runner/src/build/asset_graph/graph.dart';
 import 'package:build_runner/src/build/asset_graph/node.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
 import 'package:build_runner/src/build/build_result.dart';
 import 'package:build_runner/src/build/performance_tracker.dart';
-import 'package:build_runner/src/build_plan/apply_builders.dart';
 import 'package:build_runner/src/build_plan/build_directory.dart';
 import 'package:build_runner/src/build_plan/build_filter.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
+import 'package:build_runner/src/build_plan/builder_definition.dart';
+import 'package:build_runner/src/build_plan/builder_factories.dart';
 import 'package:build_runner/src/build_plan/package_graph.dart';
 import 'package:build_runner/src/build_plan/target_graph.dart';
 import 'package:build_runner/src/constants.dart';
@@ -32,21 +34,28 @@ void main() {
   final testBuilder = TestBuilder(
     buildExtensions: appendExtension('.copy', from: '.txt'),
   );
-  final copyABuilderApplication = applyToRoot(testBuilder);
-  final requiresPostProcessBuilderApplication = apply(
-    '',
+  final requiresPostProcessBuilderDefinition = BuilderDefinition(
     'test_builder',
-    [(_) => testBuilder],
-    AutoApply.rootPackage,
+    autoApply: AutoApply.rootPackage,
     appliesBuilders: ['a:post_copy_builder'],
     hideOutput: false,
+    isOptional: false,
   );
-  final postCopyABuilderApplication = applyPostProcess(
-    'a',
+  final postCopyABuilderDefinition = BuilderDefinition(
     'a:post_copy_builder',
-    (options) => CopyingPostProcessBuilder(
-      outputExtension: options.config['extension'] as String? ?? '.post',
-    ),
+    isPostProcessBuilder: true,
+  );
+  final builderFactories = BuilderFactories(
+    {
+      '': [(_) => testBuilder],
+      'test_builder': [(_) => testBuilder],
+    },
+    postProcessBuilderFactories: {
+      'a:post_copy_builder':
+          (options) => CopyingPostProcessBuilder(
+            outputExtension: options.config['extension'] as String? ?? '.post',
+          ),
+    },
   );
   final globBuilder = GlobbingBuilder(Glob('**.txt'));
   final placeholders = placeholderIdsFor(
@@ -229,13 +238,14 @@ void main() {
 
       test('one phase, one builder, one-to-many outputs', () async {
         await testPhases(
-          [
-            applyToRoot(
-              TestBuilder(
+          BuilderFactories({
+            '': [
+              (_) => TestBuilder(
                 buildExtensions: appendExtension('.copy', numCopies: 2),
               ),
-            ),
-          ],
+            ],
+          }),
+          [BuilderDefinition('')],
           {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
           outputs: {
             'a|web/a.txt.copy.0': 'a',
@@ -334,30 +344,37 @@ void main() {
 
       test('multiple mixed build actions with custom build config', () async {
         final builders = [
-          copyABuilderApplication,
-          apply(
-            'a',
+          BuilderDefinition(''),
+          BuilderDefinition(
             'a:clone_txt',
-            [(_) => TestBuilder(buildExtensions: appendExtension('.clone'))],
-            AutoApply.rootPackage,
+            autoApply: AutoApply.rootPackage,
             isOptional: true,
             hideOutput: false,
             appliesBuilders: ['a:post_copy_builder'],
           ),
-          apply(
-            'a',
+          BuilderDefinition(
             'a:copy_web_clones',
-            [
-              (_) => TestBuilder(
-                buildExtensions: appendExtension('.copy', numCopies: 2),
-              ),
-            ],
-            AutoApply.rootPackage,
+            autoApply: AutoApply.rootPackage,
             hideOutput: false,
           ),
-          postCopyABuilderApplication,
+          postCopyABuilderDefinition,
         ];
         await testPhases(
+          BuilderFactories(
+            {
+              '': [(_) => TestBuilder()],
+              'a:clone_txt': [
+                (_) => TestBuilder(buildExtensions: appendExtension('.clone')),
+              ],
+              'a:copy_web_clones': [
+                (_) => TestBuilder(
+                  buildExtensions: appendExtension('.copy', numCopies: 2),
+                ),
+              ],
+            },
+            postProcessBuilderFactories:
+                builderFactories.postProcessBuilderFactories.toMap(),
+          ),
           builders,
           {
             'a|web/a.txt': 'a',
@@ -476,14 +493,19 @@ targets:
 
       test('pre-existing outputs', () async {
         final result = await testPhases(
-          [
-            copyABuilderApplication,
-            applyToRoot(
-              TestBuilder(
+          BuilderFactories({
+            '': [
+              (_) => TestBuilder(
+                buildExtensions: appendExtension('.copy', from: '.txt'),
+              ),
+            ],
+            'b2': [
+              (_) => TestBuilder(
                 buildExtensions: appendExtension('.clone', from: '.copy'),
               ),
-            ),
-          ],
+            ],
+          }),
+          [BuilderDefinition(''), BuilderDefinition('b2')],
           {'a|web/a.txt': 'a', 'a|web/a.txt.copy': 'a'},
           outputs: {'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.clone': 'a'},
         );
@@ -515,7 +537,8 @@ targets:
 
       test('in low resources mode', () async {
         await testPhases(
-          [copyABuilderApplication],
+          builderFactories,
+          [BuilderDefinition('')],
           {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
           outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'},
           enableLowResourcesMode: true,
@@ -573,7 +596,8 @@ targets:
 
       test('does not build hidden non-lib assets by default', () async {
         final result = await testPhases(
-          [applyToRoot(testBuilder, hideOutput: true)],
+          builderFactories,
+          [BuilderDefinition('', hideOutput: true)],
           {'a|example/a.txt': 'a', 'a|lib/b.txt': 'b'},
           checkBuildStatus: false,
           buildDirs: {BuildDirectory('web')},
@@ -588,7 +612,8 @@ targets:
 
       test('builds hidden asset forming a custom public source', () async {
         final result = await testPhases(
-          [applyToRoot(testBuilder, hideOutput: true)],
+          builderFactories,
+          [BuilderDefinition('', hideOutput: true)],
           {
             'a|include/a.txt': 'a',
             'a|lib/b.txt': 'b',
@@ -711,16 +736,15 @@ additional_public_assets:
       });
       test('can output files in non-root packages', () async {
         await testPhases(
+          builderFactories,
           [
-            apply(
+            BuilderDefinition(
               '',
-              '',
-              [(_) => TestBuilder()],
-              AutoApply.allPackages,
+              autoApply: AutoApply.allPackages,
               hideOutput: true,
               appliesBuilders: ['a:post_copy_builder'],
             ),
-            postCopyABuilderApplication,
+            postCopyABuilderDefinition,
           ],
           {'b|lib/b.txt': 'b'},
           packageGraph: packageGraph,
@@ -792,12 +816,11 @@ additional_public_assets:
 
       test('Will not delete from non-root packages', () async {
         await testPhases(
+          builderFactories,
           [
-            apply(
+            BuilderDefinition(
               '',
-              '',
-              [(_) => TestBuilder()],
-              AutoApply.allPackages,
+              autoApply: AutoApply.allPackages,
               hideOutput: true,
             ),
           ],
@@ -931,14 +954,10 @@ targets:
 
     test('can build files from one dir when building another dir', () async {
       await testPhases(
-        [
-          applyToRoot(
-            TestBuilder(),
-            generateFor: const InputSet(include: ['test/*.txt']),
-            hideOutput: true,
-          ),
-          applyToRoot(
-            TestBuilder(
+        BuilderFactories({
+          '': [(_) => TestBuilder()],
+          'b2': [
+            (_) => TestBuilder(
               buildExtensions: appendExtension('.copy', from: '.txt'),
               extraWork: (buildStep, _) async {
                 // Should not trigger a.txt.copy to be built.
@@ -947,8 +966,22 @@ targets:
                 await buildStep.readAsString(AssetId('a', 'test/b.txt.copy'));
               },
             ),
-            generateFor: const InputSet(include: ['web/*.txt']),
+          ],
+        }),
+        [
+          BuilderDefinition(
+            '',
             hideOutput: true,
+            targetBuilderConfigDefaults: const TargetBuilderConfigDefaults(
+              generateFor: InputSet(include: ['test/*.txt']),
+            ),
+          ),
+          BuilderDefinition(
+            'b2',
+            hideOutput: true,
+            targetBuilderConfigDefaults: const TargetBuilderConfigDefaults(
+              generateFor: InputSet(include: ['web/*.txt']),
+            ),
           ),
         ],
         {'a|test/a.txt': 'a', 'a|test/b.txt': 'b', 'a|web/a.txt': 'a'},
@@ -962,11 +995,14 @@ targets:
       'build to source builders are always ran regardless of buildDirs',
       () async {
         await testPhases(
+          builderFactories,
           [
-            applyToRoot(
-              TestBuilder(),
-              generateFor: const InputSet(include: ['**/*.txt']),
+            BuilderDefinition(
+              '',
               hideOutput: false,
+              targetBuilderConfigDefaults: const TargetBuilderConfigDefaults(
+                generateFor: InputSet(include: ['**/*.txt']),
+              ),
             ),
           ],
           {'a|test/a.txt': 'a', 'a|web/a.txt': 'a'},
@@ -979,12 +1015,11 @@ targets:
 
     test('can output performance logs', () async {
       final result = await testPhases(
+        builderFactories,
         [
-          apply(
-            '',
+          BuilderDefinition(
             'test_builder',
-            [(_) => TestBuilder()],
-            AutoApply.rootPackage,
+            autoApply: AutoApply.rootPackage,
             isOptional: false,
             hideOutput: false,
           ),
@@ -1012,13 +1047,14 @@ targets:
 
       test('explicit files by uri and path', () async {
         await testPhases(
+          builderFactories,
           [
-            apply(
+            BuilderDefinition(
               '',
-              '',
-              [(_) => TestBuilder()],
-              AutoApply.allPackages,
-              defaultGenerateFor: const InputSet(include: ['**/*.txt']),
+              autoApply: AutoApply.allPackages,
+              targetBuilderConfigDefaults: const TargetBuilderConfigDefaults(
+                generateFor: InputSet(include: ['**/*.txt']),
+              ),
             ),
           ],
           {
@@ -1045,13 +1081,14 @@ targets:
 
       test('with package globs', () async {
         await testPhases(
+          builderFactories,
           [
-            apply(
+            BuilderDefinition(
               '',
-              '',
-              [(_) => TestBuilder()],
-              AutoApply.allPackages,
-              defaultGenerateFor: const InputSet(include: ['**/*.txt']),
+              autoApply: AutoApply.allPackages,
+              targetBuilderConfigDefaults: const TargetBuilderConfigDefaults(
+                generateFor: InputSet(include: ['**/*.txt']),
+              ),
             ),
           ],
           {'a|lib/a.txt': '', 'b|lib/a.txt': ''},
@@ -1064,13 +1101,14 @@ targets:
 
       test('with path globs', () async {
         await testPhases(
+          builderFactories,
           [
-            apply(
+            BuilderDefinition(
               '',
-              '',
-              [(_) => TestBuilder()],
-              AutoApply.allPackages,
-              defaultGenerateFor: const InputSet(include: ['**/*.txt']),
+              autoApply: AutoApply.allPackages,
+              targetBuilderConfigDefaults: const TargetBuilderConfigDefaults(
+                generateFor: InputSet(include: ['**/*.txt']),
+              ),
             ),
           ],
           {
@@ -1098,13 +1136,14 @@ targets:
 
       test('with package and path globs', () async {
         await testPhases(
+          builderFactories,
           [
-            apply(
+            BuilderDefinition(
               '',
-              '',
-              [(_) => TestBuilder()],
-              AutoApply.allPackages,
-              defaultGenerateFor: const InputSet(include: ['**/*.txt']),
+              autoApply: AutoApply.allPackages,
+              targetBuilderConfigDefaults: const TargetBuilderConfigDefaults(
+                generateFor: InputSet(include: ['**/*.txt']),
+              ),
             ),
           ],
           {'a|lib/a.txt': '', 'b|lib/b.txt': ''},
@@ -1119,7 +1158,8 @@ targets:
 
   test('tracks dependency graph in a asset_graph.json file', () async {
     final result = await testPhases(
-      [requiresPostProcessBuilderApplication, postCopyABuilderApplication],
+      builderFactories,
+      [requiresPostProcessBuilderDefinition, postCopyABuilderDefinition],
       {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
       outputs: {
         'a|web/a.txt.copy': 'a',
@@ -1324,31 +1364,36 @@ targets:
   group('incremental builds with cached graph', () {
     group('reportUnusedAssets', () {
       test('removes input dependencies', () async {
-        final builder = TestBuilder(
-          buildExtensions: appendExtension('.copy', from: '.txt'),
-          // Add two extra deps, but remove one since we decided not to use
-          // it.
-          build: (BuildStep buildStep, _) async {
-            final usedId = buildStep.inputId.addExtension('.used');
+        final builderFactories = BuilderFactories({
+          '': [
+            (_) => TestBuilder(
+              buildExtensions: appendExtension('.copy', from: '.txt'),
+              // Add two extra deps, but remove one since we decided not to use
+              // it.
+              build: (BuildStep buildStep, _) async {
+                final usedId = buildStep.inputId.addExtension('.used');
 
-            final content =
-                await buildStep.readAsString(buildStep.inputId) +
-                await buildStep.readAsString(usedId);
-            await buildStep.writeAsString(
-              buildStep.inputId.addExtension('.copy'),
-              content,
-            );
+                final content =
+                    await buildStep.readAsString(buildStep.inputId) +
+                    await buildStep.readAsString(usedId);
+                await buildStep.writeAsString(
+                  buildStep.inputId.addExtension('.copy'),
+                  content,
+                );
 
-            final unusedId = buildStep.inputId.addExtension('.unused');
-            await buildStep.canRead(unusedId);
-            buildStep.reportUnusedAssets([unusedId]);
-          },
-        );
-        final builders = [applyToRoot(builder)];
+                final unusedId = buildStep.inputId.addExtension('.unused');
+                await buildStep.canRead(unusedId);
+                buildStep.reportUnusedAssets([unusedId]);
+              },
+            ),
+          ],
+        });
+        final builderDefinitions = [BuilderDefinition('', hideOutput: false)];
 
         // Initial build.
         final result = await testPhases(
-          builders,
+          builderFactories,
+          builderDefinitions,
           {
             'a|lib/a.txt': 'a',
             'a|lib/a.txt.used': 'b',
@@ -1359,7 +1404,8 @@ targets:
 
         // Followup build with modified unused inputs should have no outputs.
         await testPhases(
-          builders,
+          builderFactories,
+          builderDefinitions,
           {
             'a|lib/a.txt': 'a',
             'a|lib/a.txt.used': 'b',
@@ -1372,7 +1418,8 @@ targets:
 
         // And now modify a real input.
         await testPhases(
-          builders,
+          builderFactories,
+          builderDefinitions,
           {
             'a|lib/a.txt': 'a',
             'a|lib/a.txt.used': 'e',
@@ -1385,7 +1432,8 @@ targets:
 
         // Finally modify the primary input.
         await testPhases(
-          builders,
+          builderFactories,
+          builderDefinitions,
           {
             'a|lib/a.txt': 'f',
             'a|lib/a.txt.used': 'e',
@@ -1398,28 +1446,34 @@ targets:
       });
 
       test('allows marking the primary input as unused', () async {
-        final builder = TestBuilder(
-          buildExtensions: appendExtension('.copy', from: '.txt'),
-          // Add two extra deps, but remove one since we decided not to use
-          // it.
-          extraWork: (BuildStep buildStep, _) async {
-            buildStep.reportUnusedAssets([buildStep.inputId]);
-            final usedId = buildStep.inputId.addExtension('.used');
-            await buildStep.canRead(usedId);
-          },
-        );
-        final builders = [applyToRoot(builder)];
+        final builderFactories = BuilderFactories({
+          '': [
+            (_) => TestBuilder(
+              buildExtensions: appendExtension('.copy', from: '.txt'),
+              // Add two extra deps, but remove one since we decided not to use
+              // it.
+              extraWork: (BuildStep buildStep, _) async {
+                buildStep.reportUnusedAssets([buildStep.inputId]);
+                final usedId = buildStep.inputId.addExtension('.used');
+                await buildStep.canRead(usedId);
+              },
+            ),
+          ],
+        });
+        final builderDefinitions = [BuilderDefinition('', hideOutput: false)];
 
         // Initial build.
         final result = await testPhases(
-          builders,
+          builderFactories,
+          builderDefinitions,
           {'a|lib/a.txt': 'a', 'a|lib/a.txt.used': ''},
           outputs: {'a|lib/a.txt.copy': 'a'},
         );
 
         // Followup build with modified primary input should have no outputs.
         await testPhases(
-          builders,
+          builderFactories,
+          builderDefinitions,
           {'a|lib/a.txt': 'b', 'a|lib/a.txt.used': '', 'a|lib/a.txt.copy': 'a'},
           outputs: {},
           resumeFrom: result,
@@ -1427,7 +1481,8 @@ targets:
 
         // But modifying other inputs still causes a rebuild.
         await testPhases(
-          builders,
+          builderFactories,
+          builderDefinitions,
           {
             'a|lib/a.txt': 'b',
             'a|lib/a.txt.used': 'b',
@@ -1441,19 +1496,23 @@ targets:
       test(
         'marking the primary input as unused still tracks if it is deleted',
         () async {
-          final builder = TestBuilder(
-            buildExtensions: appendExtension('.copy', from: '.txt'),
-            // Add two extra deps, but remove one since we decided not to use
-            // it.
-            extraWork: (BuildStep buildStep, _) async {
-              buildStep.reportUnusedAssets([buildStep.inputId]);
-            },
-          );
-          final builders = [applyToRoot(builder)];
-
+          final builderFactories = BuilderFactories({
+            '': [
+              (_) => TestBuilder(
+                buildExtensions: appendExtension('.copy', from: '.txt'),
+                // Add two extra deps, but remove one since we decided not to
+                // use it.
+                extraWork: (BuildStep buildStep, _) async {
+                  buildStep.reportUnusedAssets([buildStep.inputId]);
+                },
+              ),
+            ],
+          });
+          final builderDefinitions = [BuilderDefinition('', hideOutput: false)];
           // Initial build.
           final result = await testPhases(
-            builders,
+            builderFactories,
+            builderDefinitions,
             {'a|lib/a.txt': 'a'},
             outputs: {'a|lib/a.txt.copy': 'a'},
           );
@@ -1461,7 +1520,8 @@ targets:
           // Delete the primary input, the output shoud still be deleted
           result.readerWriter.testing.delete(AssetId('a', 'lib/a.txt'));
           await testPhases(
-            builders,
+            builderFactories,
+            builderDefinitions,
             {'a|lib/a.txt.copy': 'a'},
             outputs: {},
             resumeFrom: result,
@@ -1482,16 +1542,25 @@ targets:
     });
 
     test('graph/file system get cleaned up for deleted inputs', () async {
-      final builders = [
-        copyABuilderApplication,
-        applyToRoot(
-          TestBuilder(buildExtensions: replaceExtension('.copy', '.clone')),
-        ),
+      final builderFactories = BuilderFactories({
+        '': [(_) => TestBuilder()],
+        'b2': [
+          (_) => TestBuilder(
+            buildExtensions: {
+              '.txt': ['.txt.clone'],
+            },
+          ),
+        ],
+      });
+      final builderDefinitions = [
+        BuilderDefinition('', hideOutput: false),
+        BuilderDefinition('b2', hideOutput: false),
       ];
 
       // Initial build.
       final result = await testPhases(
-        builders,
+        builderFactories,
+        builderDefinitions,
         {'a|lib/a.txt': 'a'},
         outputs: {'a|lib/a.txt.copy': 'a', 'a|lib/a.txt.clone': 'a'},
       );
@@ -1499,7 +1568,8 @@ targets:
       // Followup build with deleted input + cached graph.
       result.readerWriter.testing.delete(AssetId('a', 'lib/a.txt'));
       await testPhases(
-        builders,
+        builderFactories,
+        builderDefinitions,
         {'a|lib/a.txt.copy': 'a', 'a|lib/a.txt.clone': 'a'},
         outputs: {},
         resumeFrom: result,
@@ -1524,33 +1594,38 @@ targets:
     });
 
     test('no outputs if no changed sources', () async {
-      final builders = [copyABuilderApplication];
-
+      final builderDefinitions = [BuilderDefinition('', hideOutput: false)];
       // Initial build.
       final result = await testPhases(
-        builders,
+        builderFactories,
+        builderDefinitions,
         {'a|web/a.txt': 'a'},
         outputs: {'a|web/a.txt.copy': 'a'},
       );
 
       // Followup build with same sources + cached graph.
-      await testPhases(builders, {}, outputs: {}, resumeFrom: result);
+      await testPhases(
+        builderFactories,
+        builderDefinitions,
+        {},
+        outputs: {},
+        resumeFrom: result,
+      );
     });
 
     test('no outputs if no changed sources using `hideOutput: true`', () async {
-      final builders = [
-        apply(
+      final builderDefinitions = [
+        BuilderDefinition(
           '',
-          '',
-          [(_) => TestBuilder()],
-          AutoApply.rootPackage,
+          autoApply: AutoApply.rootPackage,
           hideOutput: true,
         ),
       ];
 
       // Initial build.
       final result = await testPhases(
-        builders,
+        builderFactories,
+        builderDefinitions,
         {'a|web/a.txt': 'a'},
         // Note that `testBuilders` converts generated cache dir paths to the
         // original ones for matching.
@@ -1558,20 +1633,28 @@ targets:
       );
 
       // Followup build with same sources + cached graph.
-      await testPhases(builders, {}, outputs: {}, resumeFrom: result);
+      await testPhases(
+        builderFactories,
+        builderDefinitions,
+        {},
+        outputs: {},
+        resumeFrom: result,
+      );
     });
 
     test('inputs/outputs are updated if they change', () async {
+      final builderDefinitions = [BuilderDefinition('', hideOutput: false)];
       // Initial build.
       final result = await testPhases(
-        [
-          applyToRoot(
-            TestBuilder(
+        BuilderFactories({
+          '': [
+            (_) => TestBuilder(
               buildExtensions: appendExtension('.copy', from: '.a'),
               build: copyFrom(makeAssetId('a|lib/file.b')),
             ),
-          ),
-        ],
+          ],
+        }),
+        builderDefinitions,
         {'a|lib/file.a': 'a', 'a|lib/file.b': 'b', 'a|lib/file.c': 'c'},
         outputs: {'a|lib/file.a.copy': 'b'},
       );
@@ -1579,14 +1662,15 @@ targets:
       // Followup build with same sources + cached graph, but configure the
       // builder to read a different file.
       await testPhases(
-        [
-          applyToRoot(
-            TestBuilder(
+        BuilderFactories({
+          '': [
+            (_) => TestBuilder(
               buildExtensions: appendExtension('.copy', from: '.a'),
               build: copyFrom(makeAssetId('a|lib/file.c')),
             ),
-          ),
-        ],
+          ],
+        }),
+        builderDefinitions,
         {
           'a|lib/file.a': 'a',
           'a|lib/file.a.copy': 'b',
@@ -1621,23 +1705,28 @@ targets:
     });
 
     test('Ouputs aren\'t rebuilt if their inputs didn\'t change', () async {
-      final builders = [
-        applyToRoot(
-          TestBuilder(
+      final builderFactories = BuilderFactories({
+        '': [
+          (_) => TestBuilder(
             buildExtensions: appendExtension('.copy', from: '.a'),
             build: copyFrom(makeAssetId('a|lib/file.b')),
           ),
-        ),
-        applyToRoot(
-          TestBuilder(
+        ],
+        'b2': [
+          (_) => TestBuilder(
             buildExtensions: appendExtension('.copy', from: '.a.copy'),
           ),
-        ),
+        ],
+      });
+      final builderDefinitions = [
+        BuilderDefinition(''),
+        BuilderDefinition('b2'),
       ];
 
       // Initial build.
       final result = await testPhases(
-        builders,
+        builderFactories,
+        builderDefinitions,
         {'a|lib/file.a': 'a', 'a|lib/file.b': 'b'},
         outputs: {'a|lib/file.a.copy': 'b', 'a|lib/file.a.copy.copy': 'b'},
       );
@@ -1645,7 +1734,8 @@ targets:
       // Modify the primary input of `file.a.copy`, but its output doesn't
       // change so `file.a.copy.copy` shouldn't be rebuilt.
       await testPhases(
-        builders,
+        builderFactories,
+        builderDefinitions,
         {
           'a|lib/file.a': 'a2',
           'a|lib/file.b': 'b',
@@ -1658,11 +1748,15 @@ targets:
     });
 
     test('no implicit dependency on primary input contents', () async {
-      final builders = [applyToRoot(SiblingCopyBuilder())];
+      final builderFactories = BuilderFactories({
+        '': [(_) => SiblingCopyBuilder()],
+      });
+      final builderDefinitions = [BuilderDefinition('', hideOutput: false)];
 
       // Initial build.
       var result = await testPhases(
-        builders,
+        builderFactories,
+        builderDefinitions,
         {'a|web/a.txt': 'a', 'a|web/a.txt.sibling': 'sibling'},
         outputs: {'a|web/a.txt.new': 'sibling'},
       );
@@ -1670,7 +1764,8 @@ targets:
       // Followup build with cached graph and a changed primary input, but the
       // actual file that was read has not changed.
       result = await testPhases(
-        builders,
+        builderFactories,
+        builderDefinitions,
         {
           'a|web/a.txt': 'b',
           'a|web/a.txt.sibling': 'sibling',
@@ -1682,7 +1777,8 @@ targets:
 
       // And now try modifying the sibling to make sure that still works.
       await testPhases(
-        builders,
+        builderFactories,
+        builderDefinitions,
         {
           'a|web/a.txt': 'b',
           'a|web/a.txt.sibling': 'new!',
@@ -1697,9 +1793,9 @@ targets:
   group('regression tests', () {
     test('a failed output on a primary input which is not output in later '
         'builds', () async {
-      final builders = [
-        applyToRoot(
-          TestBuilder(
+      final builderFactories = BuilderFactories({
+        '': [
+          (_) => TestBuilder(
             buildExtensions: replaceExtension('.source', '.g1'),
             build: (buildStep, _) async {
               final content = await buildStep.readAsString(buildStep.inputId);
@@ -1711,22 +1807,27 @@ targets:
               }
             },
           ),
-        ),
-        applyToRoot(
-          TestBuilder(
+        ],
+        'b2': [
+          (_) => TestBuilder(
             buildExtensions: replaceExtension('.g1', '.g2'),
             build: (buildStep, _) {
               throw StateError('Fails always');
             },
           ),
-        ),
+        ],
+      });
+      final builderDefinitions = [
+        BuilderDefinition(''),
+        BuilderDefinition('b2'),
       ];
-      final result = await testPhases(builders, {
+      final result = await testPhases(builderFactories, builderDefinitions, {
         'a|lib/a.source': 'true',
       }, status: BuildStatus.failure);
 
       await testPhases(
-        builders,
+        builderFactories,
+        builderDefinitions,
         {'a|lib/a.source': 'false'},
         outputs: {},
         resumeFrom: result,
@@ -1756,9 +1857,9 @@ targets:
     });
 
     test('primary outputs are reran when failures are fixed', () async {
-      final builders = [
-        applyToRoot(
-          TestBuilder(
+      final builderFactories = BuilderFactories({
+        '': [
+          (_) => TestBuilder(
             buildExtensions: replaceExtension('.source', '.g1'),
             build: (buildStep, _) async {
               final content = await buildStep.readAsString(buildStep.inputId);
@@ -1772,10 +1873,9 @@ targets:
               }
             },
           ),
-          isOptional: true,
-        ),
-        applyToRoot(
-          TestBuilder(
+        ],
+        'b2': [
+          (_) => TestBuilder(
             buildExtensions: replaceExtension('.g1', '.g2'),
             build: (buildStep, _) async {
               await buildStep.writeAsString(
@@ -1784,10 +1884,9 @@ targets:
               );
             },
           ),
-          isOptional: true,
-        ),
-        applyToRoot(
-          TestBuilder(
+        ],
+        'b3': [
+          (_) => TestBuilder(
             buildExtensions: replaceExtension('.g2', '.g3'),
             build: (buildStep, _) async {
               await buildStep.writeAsString(
@@ -1796,14 +1895,20 @@ targets:
               );
             },
           ),
-        ),
+        ],
+      });
+      final builderDefinitions = [
+        BuilderDefinition('', isOptional: true),
+        BuilderDefinition('b2', isOptional: true),
+        BuilderDefinition('b3'),
       ];
-      var result = await testPhases(builders, {
+      var result = await testPhases(builderFactories, builderDefinitions, {
         'a|web/a.source': 'true',
       }, status: BuildStatus.failure);
 
       result = await testPhases(
-        builders,
+        builderFactories,
+        builderDefinitions,
         {'a|web/a.source': 'false'},
         outputs: {'a|web/a.g1': '', 'a|web/a.g2': '', 'a|web/a.g3': ''},
         resumeFrom: result,
@@ -1812,7 +1917,8 @@ targets:
       // Make sure if we mark the original node as a failure again, that we
       // also mark all its primary outputs as failures.
       await testPhases(
-        builders,
+        builderFactories,
+        builderDefinitions,
         {'a|web/a.source': 'true'},
         outputs: {},
         status: BuildStatus.failure,
@@ -1840,28 +1946,33 @@ targets:
 
     test('a glob should not be an output of an anchor node', () async {
       // https://github.com/dart-lang/build/issues/2017
-      final builders = [
-        apply(
-          '',
-          'test_builder',
-          [
+      final builderFactories = BuilderFactories(
+        {
+          '': [
             (_) => TestBuilder(
               build: (buildStep, _) {
                 buildStep.findAssets(Glob('**'));
               },
             ),
           ],
-          AutoApply.rootPackage,
+        },
+        postProcessBuilderFactories: {
+          'a|copy_builder': (_) => CopyingPostProcessBuilder(),
+        },
+      );
+      final builderDefinitions = [
+        BuilderDefinition(
+          '',
+          hideOutput: false,
           appliesBuilders: ['a|copy_builder'],
         ),
-        applyPostProcess(
-          '',
-          'a|copy_builder',
-          (_) => CopyingPostProcessBuilder(),
-        ),
+        BuilderDefinition('a|copy_builder', isPostProcessBuilder: true),
       ];
+
       // A build does not crash in `_cleanUpStaleOutputs`
-      await testPhases(builders, {'a|lib/a.txt': 'a'});
+      await testPhases(builderFactories, builderDefinitions, {
+        'a|lib/a.txt': 'a',
+      });
     });
 
     test('can have assets ending in a dot', () async {

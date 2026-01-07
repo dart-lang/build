@@ -8,8 +8,8 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_runner/src/build/build_result.dart';
-import 'package:build_runner/src/build_plan/apply_builders.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
+import 'package:build_runner/src/build_plan/builder_definition.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
 import 'package:build_runner/src/commands/watch_command.dart';
@@ -59,11 +59,12 @@ void main() {
     terminateController = StreamController<ProcessSignal>();
     final server =
         (await WatchCommand(
-          builderFactories: BuilderFactories(),
+          builderFactories: BuilderFactories({
+            '': [(_) => const UppercaseBuilder()],
+          }),
           buildOptions: BuildOptions.forTests(verbose: true),
           testingOverrides: TestingOverrides(
-            builderApplications:
-                [applyToRoot(const UppercaseBuilder())].build(),
+            builderDefinitions: [BuilderDefinition('')].build(),
             packageGraph: graph,
             readerWriter: readerWriter,
             onLog:
