@@ -34,7 +34,6 @@ void main() {
   final testBuilder = TestBuilder(
     buildExtensions: appendExtension('.copy', from: '.txt'),
   );
-  final copyABuilderDefinition = BuilderDefinition('test_builder');
   final requiresPostProcessBuilderDefinition = BuilderDefinition(
     'test_builder',
     autoApply: AutoApply.rootPackage,
@@ -1705,26 +1704,29 @@ targets:
       expect(computedOutputs[fileCNode.id]!, unorderedEquals([outputNode.id]));
     });
 
-    /*/*/*/*/*test('Ouputs aren\'t rebuilt if their inputs didn\'t change', () async {
-      /*final builders = [
-        applyToRoot(
-          TestBuilder(
+    test('Ouputs aren\'t rebuilt if their inputs didn\'t change', () async {
+      final builderFactories = BuilderFactories({
+        '': [
+          (_) => TestBuilder(
             buildExtensions: appendExtension('.copy', from: '.a'),
             build: copyFrom(makeAssetId('a|lib/file.b')),
           ),
-        ),
-        applyToRoot(
-          TestBuilder(
+        ],
+        'b2': [
+          (_) => TestBuilder(
             buildExtensions: appendExtension('.copy', from: '.a.copy'),
           ),
-        ),
-      ];*/
+        ],
+      });
+      final builderDefinitions = [
+        BuilderDefinition(''),
+        BuilderDefinition('b2'),
+      ];
 
       // Initial build.
       final result = await testPhases(
         builderFactories,
-        //builders,
-        [applyToRoot()],
+        builderDefinitions,
         {'a|lib/file.a': 'a', 'a|lib/file.b': 'b'},
         outputs: {'a|lib/file.a.copy': 'b', 'a|lib/file.a.copy.copy': 'b'},
       );
@@ -1733,8 +1735,7 @@ targets:
       // change so `file.a.copy.copy` shouldn't be rebuilt.
       await testPhases(
         builderFactories,
-        // builders,
-        [applyToRoot()],
+        builderDefinitions,
         {
           'a|lib/file.a': 'a2',
           'a|lib/file.b': 'b',
@@ -1747,13 +1748,15 @@ targets:
     });
 
     test('no implicit dependency on primary input contents', () async {
-      final builders = [applyToRoot(/*SiblingCopyBuilder()*/)];
+      final builderFactories = BuilderFactories({
+        '': [(_) => SiblingCopyBuilder()],
+      });
+      final builderDefinitions = [BuilderDefinition('', hideOutput: false)];
 
       // Initial build.
       var result = await testPhases(
         builderFactories,
-        // builders,
-        [applyToRoot()],
+        builderDefinitions,
         {'a|web/a.txt': 'a', 'a|web/a.txt.sibling': 'sibling'},
         outputs: {'a|web/a.txt.new': 'sibling'},
       );
@@ -1762,7 +1765,7 @@ targets:
       // actual file that was read has not changed.
       result = await testPhases(
         builderFactories,
-        builders,
+        builderDefinitions,
         {
           'a|web/a.txt': 'b',
           'a|web/a.txt.sibling': 'sibling',
@@ -1775,7 +1778,7 @@ targets:
       // And now try modifying the sibling to make sure that still works.
       await testPhases(
         builderFactories,
-        builders,
+        builderDefinitions,
         {
           'a|web/a.txt': 'b',
           'a|web/a.txt.sibling': 'new!',
@@ -1790,9 +1793,9 @@ targets:
   group('regression tests', () {
     test('a failed output on a primary input which is not output in later '
         'builds', () async {
-      /*final builders = [
-        applyToRoot(
-          TestBuilder(
+      final builderFactories = BuilderFactories({
+        '': [
+          (_) => TestBuilder(
             buildExtensions: replaceExtension('.source', '.g1'),
             build: (buildStep, _) async {
               final content = await buildStep.readAsString(buildStep.inputId);
@@ -1804,28 +1807,27 @@ targets:
               }
             },
           ),
-        ),
-        applyToRoot(
-          TestBuilder(
+        ],
+        'b2': [
+          (_) => TestBuilder(
             buildExtensions: replaceExtension('.g1', '.g2'),
             build: (buildStep, _) {
               throw StateError('Fails always');
             },
           ),
-        ),
-      ];*/
-      final result = await testPhases(
-        builderFactories,
-        // builders,
-        [applyToRoot()],
-        {'a|lib/a.source': 'true'},
-        status: BuildStatus.failure,
-      );
+        ],
+      });
+      final builderDefinitions = [
+        BuilderDefinition(''),
+        BuilderDefinition('b2'),
+      ];
+      final result = await testPhases(builderFactories, builderDefinitions, {
+        'a|lib/a.source': 'true',
+      }, status: BuildStatus.failure);
 
       await testPhases(
         builderFactories,
-        // builders,
-        [applyToRoot()],
+        builderDefinitions,
         {'a|lib/a.source': 'false'},
         outputs: {},
         resumeFrom: result,
@@ -1855,9 +1857,9 @@ targets:
     });
 
     test('primary outputs are reran when failures are fixed', () async {
-      /*final builders = [
-        applyToRoot(
-          TestBuilder(
+      final builderFactories = BuilderFactories({
+        '': [
+          (_) => TestBuilder(
             buildExtensions: replaceExtension('.source', '.g1'),
             build: (buildStep, _) async {
               final content = await buildStep.readAsString(buildStep.inputId);
@@ -1871,10 +1873,9 @@ targets:
               }
             },
           ),
-          isOptional: true,
-        ),
-        applyToRoot(
-          TestBuilder(
+        ],
+        'b2': [
+          (_) => TestBuilder(
             buildExtensions: replaceExtension('.g1', '.g2'),
             build: (buildStep, _) async {
               await buildStep.writeAsString(
@@ -1883,10 +1884,9 @@ targets:
               );
             },
           ),
-          isOptional: true,
-        ),
-        applyToRoot(
-          TestBuilder(
+        ],
+        'b3': [
+          (_) => TestBuilder(
             buildExtensions: replaceExtension('.g2', '.g3'),
             build: (buildStep, _) async {
               await buildStep.writeAsString(
@@ -1895,20 +1895,20 @@ targets:
               );
             },
           ),
-        ),
-      ];*/
-      var result = await testPhases(
-        builderFactories,
-        //builders
-        [applyToRoot()],
-        {'a|web/a.source': 'true'},
-        status: BuildStatus.failure,
-      );
+        ],
+      });
+      final builderDefinitions = [
+        BuilderDefinition('', isOptional: true),
+        BuilderDefinition('b2', isOptional: true),
+        BuilderDefinition('b3'),
+      ];
+      var result = await testPhases(builderFactories, builderDefinitions, {
+        'a|web/a.source': 'true',
+      }, status: BuildStatus.failure);
 
       result = await testPhases(
         builderFactories,
-        //builders,
-        [applyToRoot()],
+        builderDefinitions,
         {'a|web/a.source': 'false'},
         outputs: {'a|web/a.g1': '', 'a|web/a.g2': '', 'a|web/a.g3': ''},
         resumeFrom: result,
@@ -1918,8 +1918,7 @@ targets:
       // also mark all its primary outputs as failures.
       await testPhases(
         builderFactories,
-        //builders,
-        [applyToRoot()],
+        builderDefinitions,
         {'a|web/a.source': 'true'},
         outputs: {},
         status: BuildStatus.failure,
@@ -1947,33 +1946,33 @@ targets:
 
     test('a glob should not be an output of an anchor node', () async {
       // https://github.com/dart-lang/build/issues/2017
-      final builders = [
-        apply(
-          '',
-          'test_builder',
-          /*[
+      final builderFactories = BuilderFactories(
+        {
+          '': [
             (_) => TestBuilder(
               build: (buildStep, _) {
                 buildStep.findAssets(Glob('**'));
               },
             ),
-          ],*/
-          AutoApply.rootPackage,
+          ],
+        },
+        postProcessBuilderFactories: {
+          'a|copy_builder': (_) => CopyingPostProcessBuilder(),
+        },
+      );
+      final builderDefinitions = [
+        BuilderDefinition(
+          '',
+          hideOutput: false,
           appliesBuilders: ['a|copy_builder'],
         ),
-        applyPostProcess(
-          '',
-          'a|copy_builder',
-          //(_) => CopyingPostProcessBuilder(),
-        ),
+        BuilderDefinition('a|copy_builder', isPostProcessBuilder: true),
       ];
+
       // A build does not crash in `_cleanUpStaleOutputs`
-      await testPhases(
-        builderFactories,
-        //builders,
-        [applyToRoot()],
-        {'a|lib/a.txt': 'a'},
-      );
+      await testPhases(builderFactories, builderDefinitions, {
+        'a|lib/a.txt': 'a',
+      });
     });
 
     test('can have assets ending in a dot', () async {
@@ -1992,7 +1991,7 @@ targets:
         {'a|lib/a.': 'a'},
         outputs: {'a|lib/a.copy': 'out'},
       );
-    });*/*/*/*/*/
+    });
   });
 }
 
