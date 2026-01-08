@@ -137,10 +137,12 @@ class BuildPlan {
           readerWriter: readerWriter,
         );
 
-    // TODO: replace with a check for missing builders.
-    if (builderDefinitions == null) {
-      restartIsNeeded = true;
-      builderDefinitions = BuiltList();
+    for (final builderDefinition in builderDefinitions) {
+      if (!builderFactories.hasBuilder(builderDefinition.key)) {
+        restartIsNeeded = true;
+        builderDefinitions = BuiltList();
+        break;
+      }
     }
 
     final buildPhases =

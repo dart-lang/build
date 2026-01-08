@@ -26,21 +26,32 @@ class BuildPhaseCreator {
 
   final Map<String, BuilderDefinition> _builderDefinitionByKey = {};
 
+  /// For each builder key, the builders that apply that builder.
+  ///
+  /// This is the reverse of what is specified in `build.yaml`, which is the
+  /// list of applied builders for each builder.
+  final Map<String, List<BuilderDefinition>> _builderAppliersByKey = {};
+
   BuildPhaseCreator({
     required this.builderFactories,
     required this.targetGraph,
-    required this.builderDefinitions,
+    required Iterable<BuilderDefinition> builderDefinitions,
     required this.builderConfigOverrides,
     required this.isReleaseBuild,
-  }) {
+  }) : builderDefinitions = builderDefinitions.toBuiltList() {
     for (final builderDefinition in builderDefinitions) {
       _builderDefinitionByKey[builderDefinition.key] = builderDefinition;
+      for (final alsoApply in builderDefinition.appliesBuilders) {
+        _builderAppliersByKey
+            .putIfAbsent(alsoApply, () => [])
+            .add(builderDefinition);
+      }
     }
   }
 
   /// Creates a [BuildPhase] to apply each builder in [builderDefinitions] to
-  /// each target in [targetGraph] such that all builders are run for dependencies
-  /// before moving on to later packages.
+  /// each target in [targetGraph] such that all builders are run for
+  /// dependencies before moving on to later packages.
   ///
   /// When there is a package cycle the builders are applied to each packages
   /// within the cycle before moving on to packages that depend on any package
@@ -86,198 +97,165 @@ class BuildPhaseCreator {
       equals: (a, b) => a.target.key == b.target.key,
       hashCode: (node) => node.target.key.hashCode,
     );
-    final applyWith = _buildersAppliedByMap(builderDefinitions);
-    final expandedPhases =
-        cycles
-            .expand(
-              (cycle) => _createBuildPhasesWithinCycle(
-                builderFactories,
-                cycle,
-                builderDefinitions,
-                globalOptions,
-                applyWith,
-                isReleaseBuild,
-              ),
-            )
-            .toList();
 
-    final inBuildPhases = expandedPhases.whereType<InBuildPhase>();
-    final postBuildPhases = expandedPhases.whereType<PostBuildPhase>().toList();
-    final collapsedPostBuildPhase = <PostBuildPhase>[];
-    if (postBuildPhases.isNotEmpty) {
-      collapsedPostBuildPhase.add(
-        postBuildPhases.fold<PostBuildPhase>(PostBuildPhase([]), (
-          previous,
-          next,
-        ) {
-          previous.builderActions.addAll(next.builderActions);
-          return previous;
-        }),
-      );
+    final inBuildPhases = <InBuildPhase>[];
+    final postBuildActions = <PostBuildAction>[];
+    for (final cycle in cycles) {
+      for (final builderDefinition in builderDefinitions) {
+        for (final phase in _createBuildPhasesForBuilderInCycle(
+          cycle,
+          builderDefinition,
+          globalOptions[builderDefinition.key] ?? BuilderOptions.empty,
+        )) {
+          if (phase is InBuildPhase) {
+            inBuildPhases.add(phase);
+          } else if (phase is PostBuildPhase) {
+            postBuildActions.addAll(phase.builderActions);
+          } else {
+            throw StateError(phase.toString());
+          }
+        }
+      }
     }
 
-    return BuildPhases(inBuildPhases, collapsedPostBuildPhase.singleOrNull);
+    return BuildPhases(
+      inBuildPhases,
+      postBuildActions.isEmpty ? null : PostBuildPhase(postBuildActions),
+    );
   }
 
-  Iterable<BuildPhase> _createBuildPhasesWithinCycle(
-    BuilderFactories builderFactories,
-    Iterable<TargetNode> cycle,
-    Iterable<BuilderDefinition> builderApplications,
-    Map<String, BuilderOptions> globalOptions,
-    Map<String, List<BuilderDefinition>> applyWith,
-    bool isReleaseMode,
-  ) => builderApplications.expand(
-    (builderApplication) => _createBuildPhasesForBuilderInCycle(
-      builderFactories,
-      cycle,
-      builderApplication,
-      globalOptions[builderApplication.key] ?? BuilderOptions.empty,
-      applyWith,
-      isReleaseMode,
-    ),
-  );
-
   Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
-    BuilderFactories builderFactoriesByName,
     Iterable<TargetNode> cycle,
     BuilderDefinition builderDefinition,
     BuilderOptions globalOptionOverrides,
-    Map<String, List<BuilderDefinition>> applyWith,
-    bool isReleaseMode,
   ) {
     build_config.TargetBuilderConfig? targetConfig(TargetNode node) =>
         node.target.builders[builderDefinition.key];
     final builderFactories =
-        builderFactoriesByName.builderFactories[builderDefinition.key];
+        this.builderFactories.builderFactories[builderDefinition.key];
     if (builderFactories != null) {
-      return builderFactories.expand(
-        (builderFactory) => cycle
-            .where(
-              (targetNode) =>
-                  _shouldApply(builderDefinition, targetNode, applyWith),
-            )
-            .map((node) {
-              final builderConfig = targetConfig(node);
-              final options = (builderConfig?.options)
-                  .toBuilderOptions()
-                  .overrideWith(
-                    isReleaseMode
-                        ? builderConfig?.releaseOptions.toBuilderOptions()
-                        : builderConfig?.devOptions.toBuilderOptions(),
-                  )
-                  .overrideWith(globalOptionOverrides);
+      final result = <BuildPhase>[];
+      for (final builderFactory in builderFactories) {
+        for (final node in cycle) {
+          if (!_shouldApply(builderDefinition, node)) continue;
 
-              final package = node.package;
-              final generateFor = builderConfig?.generateFor;
-              var optionsWithDefaults = options;
+          final builderConfig = targetConfig(node);
+          final options = (builderConfig?.options)
+              .toBuilderOptions()
+              .overrideWith(
+                isReleaseBuild
+                    ? builderConfig?.releaseOptions.toBuilderOptions()
+                    : builderConfig?.devOptions.toBuilderOptions(),
+              )
+              .overrideWith(globalOptionOverrides);
 
-              // TODO
-              /*var optionsWithDefaults = defaultOptions
+          final package = node.package;
+          final generateFor = builderConfig?.generateFor;
+          var optionsWithDefaults = options;
+
+          // TODO
+          /*var optionsWithDefaults = defaultOptions
               .overrideWith(
                 isReleaseBuild ? defaultReleaseOptions : defaultDevOptions,
               )
               .overrideWith(options);*/
-              if (package.isRoot) {
-                optionsWithDefaults = optionsWithDefaults.overrideWith(
-                  BuilderOptions.forRoot,
-                );
-              }
-
-              final builder = BuildLogLogger.scopeLogSync(
-                () => builderFactory(optionsWithDefaults),
-                buildLog.loggerForOther(builderDefinition.key),
-              );
-              if (builder == null) throw const CannotBuildException();
-              _validateBuilder(builder);
-              return InBuildPhase(
-                builder: builder,
-                key: builderDefinition.key,
-                package: package.name,
-                targetSources: node.target.sources,
-                generateFor:
-                    generateFor ??
-                    builderDefinition.targetBuilderConfigDefaults.generateFor,
-                options: optionsWithDefaults,
-                hideOutput: builderDefinition.hideOutput,
-                isOptional: builderDefinition.isOptional,
-              );
-            }),
-      );
-    }
-    final postProcessBuilderFactory =
-        builderFactoriesByName.postProcessBuilderFactories[builderDefinition
-            .key];
-    if (postProcessBuilderFactory != null) {
-      return cycle
-          .where(
-            (targetNode) =>
-                _shouldApply(builderDefinition, targetNode, applyWith),
-          )
-          .map((node) {
-            final builderConfig = targetConfig(node);
-            final options = (builderConfig?.options)
-                .toBuilderOptions()
-                .overrideWith(
-                  isReleaseMode
-                      ? builderConfig?.releaseOptions.toBuilderOptions()
-                      : builderConfig?.devOptions.toBuilderOptions(),
-                )
-                .overrideWith(globalOptionOverrides);
-
-            final package = node.package;
-            final generateFor = builderConfig?.generateFor;
-
-            var optionsWithDefaults = BuilderOptions(
-                  builderDefinition.targetBuilderConfigDefaults.options,
-                )
-                .overrideWith(
-                  isReleaseMode
-                      ? BuilderOptions(
-                        builderDefinition
-                            .targetBuilderConfigDefaults
-                            .releaseOptions,
-                      )
-                      : BuilderOptions(
-                        builderDefinition
-                            .targetBuilderConfigDefaults
-                            .devOptions,
-                      ),
-                )
-                .overrideWith(options);
-            if (package.isRoot) {
-              optionsWithDefaults = optionsWithDefaults.overrideWith(
-                BuilderOptions.forRoot,
-              );
-            }
-
-            final builder = BuildLogLogger.scopeLogSync(
-              () => postProcessBuilderFactory(optionsWithDefaults),
-              buildLog.loggerForOther(builderDefinition.key),
+          if (package.isRoot) {
+            optionsWithDefaults = optionsWithDefaults.overrideWith(
+              BuilderOptions.forRoot,
             );
-            if (builder == null) throw const CannotBuildException();
-            _validatePostProcessBuilder(builder);
+          }
 
-            final builderAction = PostBuildAction(
+          final builder = BuildLogLogger.scopeLogSync(
+            () => builderFactory(optionsWithDefaults),
+            buildLog.loggerForOther(builderDefinition.key),
+          );
+          if (builder == null) throw const CannotBuildException();
+          _validateBuilder(builder);
+          result.add(
+            InBuildPhase(
               builder: builder,
+              key: builderDefinition.key,
               package: package.name,
-              options: optionsWithDefaults,
+              targetSources: node.target.sources,
               generateFor:
                   generateFor ??
                   builderDefinition.targetBuilderConfigDefaults.generateFor,
-              targetSources: node.target.sources,
-            );
-            return PostBuildPhase([builderAction]);
-          });
+              options: optionsWithDefaults,
+              hideOutput: builderDefinition.hideOutput,
+              isOptional: builderDefinition.isOptional,
+            ),
+          );
+        }
+      }
+      return result;
+    }
+    final postProcessBuilderFactory =
+        this.builderFactories.postProcessBuilderFactories[builderDefinition
+            .key];
+    if (postProcessBuilderFactory != null) {
+      final result = <PostBuildPhase>[];
+      for (final node in cycle) {
+        if (!_shouldApply(builderDefinition, node)) continue;
+
+        final builderConfig = targetConfig(node);
+        final options = (builderConfig?.options)
+            .toBuilderOptions()
+            .overrideWith(
+              isReleaseBuild
+                  ? builderConfig?.releaseOptions.toBuilderOptions()
+                  : builderConfig?.devOptions.toBuilderOptions(),
+            )
+            .overrideWith(globalOptionOverrides);
+
+        final package = node.package;
+        final generateFor = builderConfig?.generateFor;
+
+        var optionsWithDefaults = BuilderOptions(
+              builderDefinition.targetBuilderConfigDefaults.options,
+            )
+            .overrideWith(
+              isReleaseBuild
+                  ? BuilderOptions(
+                    builderDefinition
+                        .targetBuilderConfigDefaults
+                        .releaseOptions,
+                  )
+                  : BuilderOptions(
+                    builderDefinition.targetBuilderConfigDefaults.devOptions,
+                  ),
+            )
+            .overrideWith(options);
+        if (package.isRoot) {
+          optionsWithDefaults = optionsWithDefaults.overrideWith(
+            BuilderOptions.forRoot,
+          );
+        }
+
+        final builder = BuildLogLogger.scopeLogSync(
+          () => postProcessBuilderFactory(optionsWithDefaults),
+          buildLog.loggerForOther(builderDefinition.key),
+        );
+        if (builder == null) throw const CannotBuildException();
+        _validatePostProcessBuilder(builder);
+
+        final builderAction = PostBuildAction(
+          builder: builder,
+          package: package.name,
+          options: optionsWithDefaults,
+          generateFor:
+              generateFor ??
+              builderDefinition.targetBuilderConfigDefaults.generateFor,
+          targetSources: node.target.sources,
+        );
+        result.add(PostBuildPhase([builderAction]));
+      }
+      return result;
     }
 
     throw StateError('Missing builder: ${builderDefinition.key}');
   }
 
-  bool _shouldApply(
-    BuilderDefinition builderDefinition,
-    TargetNode node,
-    Map<String, List<BuilderDefinition>> applyWith,
-  ) {
+  bool _shouldApply(BuilderDefinition builderDefinition, TargetNode node) {
     if (!(builderDefinition.hideOutput &&
             builderDefinition.appliesBuilders.every(
               (b) => _builderDefinitionByKey[b]?.hideOutput ?? true,
@@ -293,8 +271,8 @@ class BuildPhaseCreator {
         node.target.autoApplyBuilders &&
         builderDefinition.autoAppliesTo(node.package);
     return shouldAutoApply ||
-        (applyWith[builderDefinition.key] ?? const []).any(
-          (anchorBuilder) => _shouldApply(anchorBuilder, node, applyWith),
+        (_builderAppliersByKey[builderDefinition.key] ?? const []).any(
+          (anchorBuilder) => _shouldApply(anchorBuilder, node),
         );
   }
 }
@@ -302,22 +280,6 @@ class BuildPhaseCreator {
 extension BuilderOptionsExtension on Map<String, dynamic>? {
   BuilderOptions toBuilderOptions() =>
       this?.isEmpty ?? true ? BuilderOptions.empty : BuilderOptions(this!);
-}
-
-/// Returns a map from builder to the list of builders that apply that builder.
-///
-/// This is the reverse of what is specified in `build.yaml`, which is the list
-/// of applied builders for each builder.
-Map<String, List<BuilderDefinition>> _buildersAppliedByMap(
-  BuiltList<BuilderDefinition> builderDefinitions,
-) {
-  final applyWith = <String, List<BuilderDefinition>>{};
-  for (final builderDefinition in builderDefinitions) {
-    for (final alsoApply in builderDefinition.appliesBuilders) {
-      applyWith.putIfAbsent(alsoApply, () => []).add(builderDefinition);
-    }
-  }
-  return applyWith;
 }
 
 /// Warns about configuration related to unknown builders.

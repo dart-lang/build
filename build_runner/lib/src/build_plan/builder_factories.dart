@@ -33,6 +33,10 @@ class BuilderFactories {
        postProcessBuilderFactories =
            (postProcessBuilderFactories ?? {}).build();
 
+  bool hasBuilder(String key) =>
+      builderFactories.containsKey(key) ||
+      postProcessBuilderFactories.containsKey(key);
+
   /// Creates [BuilderDefinition]s for the configuration in `build.yaml` in
   /// each package in [packageGraph].
   ///
@@ -41,7 +45,7 @@ class BuilderFactories {
   /// `null` is returned to indicate that the current build script is out of
   /// date and a restart is needed.
   /// TODO: move out
-  static Future<BuiltList<BuilderDefinition>?> createBuilderDefinitions({
+  static Future<BuiltList<BuilderDefinition>> createBuilderDefinitions({
     required PackageGraph packageGraph,
     required ReaderWriter readerWriter,
   }) async {

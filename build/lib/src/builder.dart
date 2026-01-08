@@ -65,12 +65,6 @@ class BuilderOptions {
 
   const BuilderOptions(this.config, {this.isRoot = false});
 
-  static BuilderOptions? from(
-    Map<String, dynamic> config, {
-    bool isRoot = false,
-  }) =>
-      config?.isEmpty ?? true ? BuilderOptions.empty : BuilderOptions(config!);
-
   /// Returns a new set of options with keys from [other] overriding options in
   /// this instance.
   ///
