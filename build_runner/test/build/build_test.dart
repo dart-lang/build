@@ -1500,8 +1500,8 @@ targets:
             '': [
               (_) => TestBuilder(
                 buildExtensions: appendExtension('.copy', from: '.txt'),
-                // Add two extra deps, but remove one since we decided not to use
-                // it.
+                // Add two extra deps, but remove one since we decided not to
+                // use it.
                 extraWork: (BuildStep buildStep, _) async {
                   buildStep.reportUnusedAssets([buildStep.inputId]);
                 },

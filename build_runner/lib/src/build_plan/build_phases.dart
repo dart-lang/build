@@ -108,7 +108,7 @@ class BuildPhases {
         'A build phase (${action.displayName}) is attempting '
         'to operate on package "${action.package}", but the build script '
         'is located in package "$root". It\'s not valid to attempt to '
-        'generate files for another package unless the BuilderDefinition'
+        'generate files for another package unless the BuilderDefinition '
         'specified "hideOutput".',
       );
       throw const CannotBuildException();
@@ -324,15 +324,22 @@ Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
 
           final package = node.package;
           final generateFor = builderConfig?.generateFor;
-          var optionsWithDefaults = options;
 
-          // TODO
-          // generateFor ??= defaultGenerateFor;
-          /*var optionsWithDefaults = defaultOptions
-              .overrideWith(
-                isReleaseBuild ? defaultReleaseOptions : defaultDevOptions,
+          var optionsWithDefaults = BuilderOptions(
+                builderDefinition.targetBuilderConfigDefaults.options,
               )
-              .overrideWith(options);*/
+              .overrideWith(
+                isReleaseMode
+                    ? BuilderOptions(
+                      builderDefinition
+                          .targetBuilderConfigDefaults
+                          .releaseOptions,
+                    )
+                    : BuilderOptions(
+                      builderDefinition.targetBuilderConfigDefaults.devOptions,
+                    ),
+              )
+              .overrideWith(options);
           if (package.isRoot) {
             optionsWithDefaults = optionsWithDefaults.overrideWith(
               BuilderOptions.forRoot,
@@ -359,7 +366,7 @@ Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
         });
   }
 
-  throw 'whoops';
+  throw StateError('Missing builder: ${builderDefinition.key}');
 }
 
 bool _shouldApply(
