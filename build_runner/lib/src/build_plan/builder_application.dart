@@ -48,7 +48,7 @@ class BuilderDefinition {
     String? package,
     this.autoApply = AutoApply.rootPackage,
     Iterable<String> appliesBuilders = const [],
-    bool hideOutput = false,
+    bool hideOutput = true,
     bool isOptional = false,
     this.targetBuilderConfigDefaults = const TargetBuilderConfigDefaults(),
   }) : appliesBuilders = appliesBuilders.toBuiltList(),

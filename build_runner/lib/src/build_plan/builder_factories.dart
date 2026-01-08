@@ -6,7 +6,6 @@ import 'package:build/build.dart';
 import 'package:build_config/build_config.dart' as build_config;
 import 'package:built_collection/built_collection.dart';
 import 'package:graphs/graphs.dart';
-import 'package:meta/meta.dart';
 
 import '../io/reader_writer.dart';
 import 'builder_application.dart';
