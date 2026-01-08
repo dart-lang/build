@@ -21,6 +21,7 @@ import '../logging/build_log.dart';
 import 'build_directory.dart';
 import 'build_filter.dart';
 import 'build_options.dart';
+import 'build_phase_creator.dart';
 import 'build_phases.dart';
 import 'builder_factories.dart';
 import 'package_graph.dart';
@@ -129,27 +130,28 @@ class BuildPlan {
       configKey: buildOptions.configKey,
     );
 
-    var builderApplications =
+    var builderDefinitions =
         testingOverrides.builderDefinitions ??
-        await BuilderFactories.createBuilderApplications(
+        await BuilderFactories.createBuilderDefinitions(
           packageGraph: packageGraph,
           readerWriter: readerWriter,
         );
 
-    if (builderApplications == null) {
+    // TODO: replace with a check for missing builders.
+    if (builderDefinitions == null) {
       restartIsNeeded = true;
-      builderApplications = BuiltList();
+      builderDefinitions = BuiltList();
     }
 
     final buildPhases =
         testingOverrides.buildPhases ??
-        await createBuildPhases(
-          builderFactories,
-          targetGraph,
-          builderApplications,
-          buildOptions.builderConfigOverrides,
-          buildOptions.isReleaseBuild,
-        );
+        await BuildPhaseCreator(
+          builderFactories: builderFactories,
+          targetGraph: targetGraph,
+          builderDefinitions: builderDefinitions,
+          builderConfigOverrides: buildOptions.builderConfigOverrides,
+          isReleaseBuild: buildOptions.isReleaseBuild,
+        ).createBuildPhases();
     buildPhases.checkOutputLocations(packageGraph.root.name);
     if (buildPhases.inBuildPhases.isEmpty &&
         buildPhases.postBuildPhase.builderActions.isEmpty) {}

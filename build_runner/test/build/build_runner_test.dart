@@ -8,7 +8,7 @@ import 'dart:convert';
 import 'package:build/build.dart';
 import 'package:build_runner/src/build/build_result.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
-import 'package:build_runner/src/build_plan/builder_application.dart';
+import 'package:build_runner/src/build_plan/builder_definition.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
 import 'package:build_runner/src/build_plan/package_graph.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';

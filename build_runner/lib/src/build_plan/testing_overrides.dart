@@ -12,7 +12,7 @@ import 'package:watcher/watcher.dart';
 
 import '../io/reader_writer.dart';
 import 'build_phases.dart';
-import 'builder_application.dart';
+import 'builder_definition.dart';
 import 'package_graph.dart';
 
 /// Settings that are not user-visible: they are overriden only for testing.

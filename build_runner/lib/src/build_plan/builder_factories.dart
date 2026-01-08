@@ -8,7 +8,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:graphs/graphs.dart';
 
 import '../io/reader_writer.dart';
-import 'builder_application.dart';
+import 'builder_definition.dart';
 import 'builder_ordering.dart';
 import 'package_graph.dart';
 import 'target_graph.dart';
@@ -41,7 +41,7 @@ class BuilderFactories {
   /// `null` is returned to indicate that the current build script is out of
   /// date and a restart is needed.
   /// TODO: move out
-  static Future<BuiltList<BuilderDefinition>?> createBuilderApplications({
+  static Future<BuiltList<BuilderDefinition>?> createBuilderDefinitions({
     required PackageGraph packageGraph,
     required ReaderWriter readerWriter,
   }) async {

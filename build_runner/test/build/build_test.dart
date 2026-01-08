@@ -16,7 +16,7 @@ import 'package:build_runner/src/build/performance_tracker.dart';
 import 'package:build_runner/src/build_plan/build_directory.dart';
 import 'package:build_runner/src/build_plan/build_filter.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
-import 'package:build_runner/src/build_plan/builder_application.dart';
+import 'package:build_runner/src/build_plan/builder_definition.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
 import 'package:build_runner/src/build_plan/package_graph.dart';
 import 'package:build_runner/src/build_plan/target_graph.dart';

@@ -13,7 +13,7 @@ export 'build_plan/build_filter.dart';
 export 'build_plan/build_options.dart';
 export 'build_plan/build_phases.dart';
 export 'build_plan/build_plan.dart';
-export 'build_plan/builder_application.dart';
+export 'build_plan/builder_definition.dart';
 export 'build_plan/builder_factories.dart';
 export 'build_plan/package_graph.dart';
 export 'build_plan/target_graph.dart';
