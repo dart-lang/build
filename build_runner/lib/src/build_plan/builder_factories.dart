@@ -26,24 +26,13 @@ class BuilderFactories {
     Map<String, List<BuilderFactory>> builderFactories, {
     Map<String, PostProcessBuilderFactory>? postProcessBuilderFactories,
   }) : builderFactories =
-           (builderFactories ?? {})
+           builderFactories
                .map<String, BuiltList<BuilderFactory>>(
                  (k, v) => MapEntry(k, v.build()),
                )
                .build(),
        postProcessBuilderFactories =
            (postProcessBuilderFactories ?? {}).build();
-
-  factory BuilderFactories.oneFactory(String key, BuilderFactory factory) =>
-      BuilderFactories({
-        key: [factory],
-      });
-
-  /// Creates with one empty-named builder for use with `testPhases`.
-  @visibleForTesting
-  factory BuilderFactories.forTesting(Builder builder) => BuilderFactories({
-    '': [(_) => builder],
-  });
 
   /// Creates [BuilderDefinition]s for the configuration in `build.yaml` in
   /// each package in [packageGraph].

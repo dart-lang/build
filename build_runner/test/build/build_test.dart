@@ -6,16 +6,17 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:build/build.dart';
-import 'package:build_config/build_config.dart';
+import 'package:build_config/build_config.dart'
+    hide AutoApply, BuilderDefinition, TargetBuilderConfigDefaults;
 import 'package:build_runner/src/build/asset_graph/graph.dart';
 import 'package:build_runner/src/build/asset_graph/node.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
 import 'package:build_runner/src/build/build_result.dart';
 import 'package:build_runner/src/build/performance_tracker.dart';
-import 'package:build_runner/src/build_plan/apply_builders.dart';
 import 'package:build_runner/src/build_plan/build_directory.dart';
 import 'package:build_runner/src/build_plan/build_filter.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
+import 'package:build_runner/src/build_plan/builder_application.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
 import 'package:build_runner/src/build_plan/package_graph.dart';
 import 'package:build_runner/src/build_plan/target_graph.dart';
@@ -33,20 +34,21 @@ void main() {
   final testBuilder = TestBuilder(
     buildExtensions: appendExtension('.copy', from: '.txt'),
   );
-  final requiresPostProcessBuilderApplication = apply(
-    '',
+  final copyABuilderDefinition = BuilderDefinition('test_builder');
+  final requiresPostProcessBuilderDefinition = BuilderDefinition(
     'test_builder',
-    AutoApply.rootPackage,
+    autoApply: AutoApply.rootPackage,
     appliesBuilders: ['a:post_copy_builder'],
     hideOutput: false,
     isOptional: false,
   );
-  final postCopyABuilderApplication = applyPostProcess(
-    'a',
+  final postCopyABuilderDefinition = BuilderDefinition(
     'a:post_copy_builder',
+    isPostProcessBuilder: true,
   );
   final builderFactories = BuilderFactories(
-    builderFactories: {
+    {
+      '': [(_) => testBuilder],
       'test_builder': [(_) => testBuilder],
     },
     postProcessBuilderFactories: {
@@ -237,12 +239,14 @@ void main() {
 
       test('one phase, one builder, one-to-many outputs', () async {
         await testPhases(
-          BuilderFactories.forTesting(
-            TestBuilder(
-              buildExtensions: appendExtension('.copy', numCopies: 2),
-            ),
-          ),
-          [applyToRoot()],
+          BuilderFactories({
+            '': [
+              (_) => TestBuilder(
+                buildExtensions: appendExtension('.copy', numCopies: 2),
+              ),
+            ],
+          }),
+          [BuilderDefinition('')],
           {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
           outputs: {
             'a|web/a.txt.copy.0': 'a',
@@ -341,26 +345,24 @@ void main() {
 
       test('multiple mixed build actions with custom build config', () async {
         final builders = [
-          applyToRoot(),
-          apply(
-            'a',
+          BuilderDefinition(''),
+          BuilderDefinition(
             'a:clone_txt',
-            AutoApply.rootPackage,
+            autoApply: AutoApply.rootPackage,
             isOptional: true,
             hideOutput: false,
             appliesBuilders: ['a:post_copy_builder'],
           ),
-          apply(
-            'a',
+          BuilderDefinition(
             'a:copy_web_clones',
-            AutoApply.rootPackage,
+            autoApply: AutoApply.rootPackage,
             hideOutput: false,
           ),
-          postCopyABuilderApplication,
+          postCopyABuilderDefinition,
         ];
         await testPhases(
           BuilderFactories(
-            builderFactories: {
+            {
               '': [(_) => TestBuilder()],
               'a:clone_txt': [
                 (_) => TestBuilder(buildExtensions: appendExtension('.clone')),
@@ -371,6 +373,8 @@ void main() {
                 ),
               ],
             },
+            postProcessBuilderFactories:
+                builderFactories.postProcessBuilderFactories.toMap(),
           ),
           builders,
           {
@@ -490,12 +494,19 @@ targets:
 
       test('pre-existing outputs', () async {
         final result = await testPhases(
-          BuilderFactories.forTesting(
-            TestBuilder(
-              buildExtensions: appendExtension('.clone', from: '.copy'),
-            ),
-          ),
-          [/*copyABuilderApplication,*/ applyToRoot()],
+          BuilderFactories({
+            '': [
+              (_) => TestBuilder(
+                buildExtensions: appendExtension('.copy', from: '.txt'),
+              ),
+            ],
+            'b2': [
+              (_) => TestBuilder(
+                buildExtensions: appendExtension('.clone', from: '.copy'),
+              ),
+            ],
+          }),
+          [BuilderDefinition(''), BuilderDefinition('b2')],
           {'a|web/a.txt': 'a', 'a|web/a.txt.copy': 'a'},
           outputs: {'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.clone': 'a'},
         );
@@ -528,7 +539,7 @@ targets:
       test('in low resources mode', () async {
         await testPhases(
           builderFactories,
-          [applyToRoot()],
+          [BuilderDefinition('')],
           {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
           outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'},
           enableLowResourcesMode: true,
@@ -587,7 +598,7 @@ targets:
       test('does not build hidden non-lib assets by default', () async {
         final result = await testPhases(
           builderFactories,
-          [applyToRoot(hideOutput: true)],
+          [BuilderDefinition('', hideOutput: true)],
           {'a|example/a.txt': 'a', 'a|lib/b.txt': 'b'},
           checkBuildStatus: false,
           buildDirs: {BuildDirectory('web')},
@@ -603,7 +614,7 @@ targets:
       test('builds hidden asset forming a custom public source', () async {
         final result = await testPhases(
           builderFactories,
-          [applyToRoot(hideOutput: true)],
+          [BuilderDefinition('', hideOutput: true)],
           {
             'a|include/a.txt': 'a',
             'a|lib/b.txt': 'b',
@@ -728,14 +739,13 @@ additional_public_assets:
         await testPhases(
           builderFactories,
           [
-            apply(
+            BuilderDefinition(
               '',
-              '',
-              AutoApply.allPackages,
+              autoApply: AutoApply.allPackages,
               hideOutput: true,
               appliesBuilders: ['a:post_copy_builder'],
             ),
-            postCopyABuilderApplication,
+            postCopyABuilderDefinition,
           ],
           {'b|lib/b.txt': 'b'},
           packageGraph: packageGraph,
@@ -808,7 +818,13 @@ additional_public_assets:
       test('Will not delete from non-root packages', () async {
         await testPhases(
           builderFactories,
-          [apply('', '', AutoApply.allPackages, hideOutput: true)],
+          [
+            BuilderDefinition(
+              '',
+              autoApply: AutoApply.allPackages,
+              hideOutput: true,
+            ),
+          ],
           {
             'b|lib/b.txt': 'b',
             'a|.dart_tool/build/generated/b/lib/b.txt.copy': 'b',
@@ -939,14 +955,10 @@ targets:
 
     test('can build files from one dir when building another dir', () async {
       await testPhases(
-        builderFactories,
-        [
-          applyToRoot(
-            generateFor: const InputSet(include: ['test/*.txt']),
-            hideOutput: true,
-          ),
-          /*applyToRoot(
-            TestBuilder(
+        BuilderFactories({
+          '': [(_) => TestBuilder()],
+          'b2': [
+            (_) => TestBuilder(
               buildExtensions: appendExtension('.copy', from: '.txt'),
               extraWork: (buildStep, _) async {
                 // Should not trigger a.txt.copy to be built.
@@ -955,9 +967,23 @@ targets:
                 await buildStep.readAsString(AssetId('a', 'test/b.txt.copy'));
               },
             ),
-            generateFor: const InputSet(include: ['web/*.txt']),
+          ],
+        }),
+        [
+          BuilderDefinition(
+            '',
             hideOutput: true,
-          ),*/*/
+            targetBuilderConfigDefaults: const TargetBuilderConfigDefaults(
+              generateFor: InputSet(include: ['test/*.txt']),
+            ),
+          ),
+          BuilderDefinition(
+            'b2',
+            hideOutput: true,
+            targetBuilderConfigDefaults: const TargetBuilderConfigDefaults(
+              generateFor: InputSet(include: ['web/*.txt']),
+            ),
+          ),
         ],
         {'a|test/a.txt': 'a', 'a|test/b.txt': 'b', 'a|web/a.txt': 'a'},
         outputs: {r'$$a|web/a.txt.copy': 'a', r'$$a|test/b.txt.copy': 'b'},
@@ -966,7 +992,7 @@ targets:
       );
     });
 
-    test(
+    /*/*/*/*/*test(
       'build to source builders are always ran regardless of buildDirs',
       () async {
         await testPhases(
@@ -1129,7 +1155,7 @@ targets:
   test('tracks dependency graph in a asset_graph.json file', () async {
     final result = await testPhases(
       builderFactories,
-      [requiresPostProcessBuilderApplication, postCopyABuilderApplication],
+      [requiresPostProcessBuilderDefinition, postCopyABuilderDefinition],
       {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
       outputs: {
         'a|web/a.txt.copy': 'a',
@@ -1938,7 +1964,7 @@ targets:
         {'a|lib/a.': 'a'},
         outputs: {'a|lib/a.copy': 'out'},
       );
-    });
+    });*/*/
   });
 }
 

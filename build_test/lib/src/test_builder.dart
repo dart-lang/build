@@ -400,7 +400,7 @@ Future<TestBuilderResult> testBuilderFactories(
     return result;
   }
 
-  final builderApplications = <BuilderDefinition>[];
+  final builderDefinitions = <BuilderDefinition>[];
   final builderNameToBuilderFactory = <String, List<BuilderFactory>>{};
   for (final builderFactory in builderFactories) {
     // The real build gets the name from the `build.yaml` where the builder is
@@ -412,8 +412,12 @@ Future<TestBuilderResult> testBuilderFactories(
     } catch (e) {
       name = e.toString();
     }
-    builderApplications.add(
-      _ApplyBuilderApplicationToPackages(
+    // TODO
+    while (builderNameToBuilderFactory.containsKey(name)) {
+      name = '${name}_';
+    }
+    builderDefinitions.add(
+      _ApplyBuilderDefinitionToPackages(
         // ignore: invalid_use_of_visible_for_testing_member
         delegate: BuilderDefinition(
           name,
@@ -446,14 +450,20 @@ Future<TestBuilderResult> testBuilderFactories(
     } catch (e) {
       name = e.toString();
     }
-    // TODO add
-    // builderApplications.add(applyPostProcess('', name));
+    // TODO
+    while (postProcessBuilderNameToBuilderFactory.containsKey(name)) {
+      name = '${name}_';
+    }
+    builderDefinitions.add(
+      // ignore: invalid_use_of_visible_for_testing_member
+      BuilderDefinition(name, isPostProcessBuilder: true),
+    );
     // TODO: check for duplicate
     postProcessBuilderNameToBuilderFactory[name] = postProcessBuilderFactory;
   }
 
   final testingOverrides = TestingOverrides(
-    builderDefinitions: builderApplications.build(),
+    builderDefinitions: builderDefinitions.build(),
     packageGraph: packageGraph,
     readerWriter: readerWriter as InternalTestReaderWriter,
     resolvers: resolvers,
@@ -570,11 +580,11 @@ void _printOnFailureOrWrite(LogRecord record) {
 ///
 /// This is used to create a test-only config that applies a builder to exactly
 /// packages that contain explicitly specified inputs.
-class _ApplyBuilderApplicationToPackages implements BuilderDefinition {
+class _ApplyBuilderDefinitionToPackages implements BuilderDefinition {
   BuilderDefinition delegate;
   final Set<String> applyToPackages;
 
-  _ApplyBuilderApplicationToPackages({
+  _ApplyBuilderDefinitionToPackages({
     required this.delegate,
     required this.applyToPackages,
   });
@@ -605,4 +615,8 @@ class _ApplyBuilderApplicationToPackages implements BuilderDefinition {
 
   @override
   bool get isOptional => delegate.isOptional;
+
+  @override
+  build_config.TargetBuilderConfigDefaults get targetBuilderConfigDefaults =>
+      delegate.targetBuilderConfigDefaults;
 }

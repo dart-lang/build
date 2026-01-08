@@ -3,10 +3,16 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build_config/build_config.dart' as build_config;
+import 'package:build_config/build_config.dart'
+    show AutoApply, TargetBuilderConfigDefaults;
+
 import 'package:built_collection/built_collection.dart';
 import 'package:meta/meta.dart';
 
 import 'package_graph.dart';
+
+export 'package:build_config/build_config.dart'
+    show AutoApply, TargetBuilderConfigDefaults;
 
 /// A builder definition read from `build.yaml` using
 /// [build_config.BuilderDefinition] or
@@ -33,6 +39,8 @@ class BuilderDefinition {
   /// Whether the builder is skipped if nothing uses its output.
   final bool isOptional;
 
+  final TargetBuilderConfigDefaults targetBuilderConfigDefaults;
+
   @visibleForTesting
   BuilderDefinition(
     this.key, {
@@ -40,10 +48,13 @@ class BuilderDefinition {
     String? package,
     this.autoApply = AutoApply.rootPackage,
     Iterable<String> appliesBuilders = const [],
-    this.hideOutput = false,
-    this.isOptional = false,
+    bool hideOutput = false,
+    bool isOptional = false,
+    this.targetBuilderConfigDefaults = const TargetBuilderConfigDefaults(),
   }) : appliesBuilders = appliesBuilders.toBuiltList(),
-       package = package ?? (key.contains(':') ? key.split(':').first : '');
+       package = package ?? (key.contains(':') ? key.split(':').first : ''),
+       hideOutput = isPostProcessBuilder ? true : hideOutput,
+       isOptional = isPostProcessBuilder ? false : isOptional;
 
   BuilderDefinition.fromConfig(build_config.BuilderDefinition builderDefinition)
     : isPostProcessBuilder = false,
@@ -52,7 +63,8 @@ class BuilderDefinition {
       autoApply = builderDefinition.autoApply,
       appliesBuilders = builderDefinition.appliesBuilders.build(),
       hideOutput = builderDefinition.buildTo == build_config.BuildTo.cache,
-      isOptional = builderDefinition.isOptional;
+      isOptional = builderDefinition.isOptional,
+      targetBuilderConfigDefaults = builderDefinition.defaults;
 
   BuilderDefinition.fromPostProcessConfig(
     build_config.PostProcessBuilderDefinition builderDefinition,
@@ -62,7 +74,8 @@ class BuilderDefinition {
       autoApply = build_config.AutoApply.allPackages,
       appliesBuilders = BuiltList(),
       hideOutput = true,
-      isOptional = false;
+      isOptional = false,
+      targetBuilderConfigDefaults = builderDefinition.defaults;
 
   /// Whether this builder application is auto applied to [package].
   bool autoAppliesTo(PackageNode package) {
@@ -78,5 +91,3 @@ class BuilderDefinition {
     }
   }
 }
-
-typedef AutoApply = build_config.AutoApply;

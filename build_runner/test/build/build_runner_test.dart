@@ -7,7 +7,6 @@ import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build_runner/src/build/build_result.dart';
-import 'package:build_runner/src/build_plan/apply_builders.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
 import 'package:build_runner/src/build_plan/builder_application.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
@@ -80,7 +79,7 @@ Future<BuildResult> _doBuild(
   await readerWriter.writeAsString(packageConfigId, jsonEncode(_packageConfig));
 
   return await BuildCommand(
-    builderFactories: BuilderFactories(),
+    builderFactories: BuilderFactories({}),
     buildOptions: BuildOptions.forTests(configKey: configKey),
     testingOverrides: TestingOverrides(
       builderDefinitions: builders.build(),

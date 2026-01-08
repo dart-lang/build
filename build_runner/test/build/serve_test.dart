@@ -6,7 +6,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:async/async.dart';
-import 'package:build_runner/src/build_plan/apply_builders.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
 import 'package:build_runner/src/build_plan/builder_application.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
@@ -55,8 +54,10 @@ void main() {
 
     test('does basic builds', () async {
       final handler = await createHandler(
-        BuilderFactories.forTesting(TestBuilder()),
-        [applyToRoot()],
+        BuilderFactories({
+          '': [(_) => TestBuilder()],
+        }),
+        [BuilderDefinition('')],
         {'a|web/a.txt': 'a'},
         packageGraph,
         readerWriter,
@@ -84,10 +85,10 @@ void main() {
       var nextBuildBlocker = buildBlocker1.future;
 
       final handler = await createHandler(
-        BuilderFactories.forTesting(
-          TestBuilder(extraWork: (_, _) => nextBuildBlocker),
-        ),
-        [applyToRoot()],
+        BuilderFactories({
+          '': [(_) => TestBuilder(extraWork: (_, _) => nextBuildBlocker)],
+        }),
+        [BuilderDefinition('')],
         {'a|web/a.txt': 'a'},
         packageGraph,
         readerWriter,

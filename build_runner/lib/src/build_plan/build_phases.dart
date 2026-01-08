@@ -108,14 +108,8 @@ class BuildPhases {
         'A build phase (${action.displayName}) is attempting '
         'to operate on package "${action.package}", but the build script '
         'is located in package "$root". It\'s not valid to attempt to '
-        'generate files for another package unless the BuilderApplication'
-        'specified "hideOutput".'
-        '\n\n'
-        'Did you mean to write:\n'
-        '  new BuilderApplication(..., toRoot())\n'
-        'or\n'
-        '  new BuilderApplication(..., hideOutput: true)\n'
-        '... instead?',
+        'generate files for another package unless the BuilderDefinition'
+        'specified "hideOutput".',
       );
       throw const CannotBuildException();
     }
@@ -238,22 +232,22 @@ Iterable<BuildPhase> _createBuildPhasesWithinCycle(
 Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
   BuilderFactories builderFactoriesByName,
   Iterable<TargetNode> cycle,
-  BuilderDefinition builderApplication,
+  BuilderDefinition builderDefinition,
   BuilderOptions globalOptionOverrides,
   Map<String, List<BuilderDefinition>> applyWith,
   Map<String, BuilderDefinition> allBuilders,
   bool isReleaseMode,
 ) {
   build_config.TargetBuilderConfig? targetConfig(TargetNode node) =>
-      node.target.builders[builderApplication.key];
+      node.target.builders[builderDefinition.key];
   final builderFactories =
-      builderFactoriesByName.builderFactories[builderApplication.key];
+      builderFactoriesByName.builderFactories[builderDefinition.key];
   if (builderFactories != null) {
     return builderFactories.expand(
       (builderFactory) => cycle
           .where(
             (targetNode) => _shouldApply(
-              builderApplication,
+              builderDefinition,
               targetNode,
               applyWith,
               allBuilders,
@@ -274,7 +268,6 @@ Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
             var optionsWithDefaults = options;
 
             // TODO
-            // generateFor ??= defaultGenerateFor;
             /*var optionsWithDefaults = defaultOptions
               .overrideWith(
                 isReleaseBuild ? defaultReleaseOptions : defaultDevOptions,
@@ -288,32 +281,32 @@ Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
 
             final builder = BuildLogLogger.scopeLogSync(
               () => builderFactory(optionsWithDefaults),
-              buildLog.loggerForOther(builderApplication.key),
+              buildLog.loggerForOther(builderDefinition.key),
             );
             if (builder == null) throw const CannotBuildException();
             _validateBuilder(builder);
             return InBuildPhase(
               builder: builder,
-              key: builderApplication.key,
+              key: builderDefinition.key,
               package: package.name,
               targetSources: node.target.sources,
               generateFor:
-                  generateFor ?? const build_config.InputSet() /* TODO */,
+                  generateFor ??
+                  builderDefinition.targetBuilderConfigDefaults.generateFor,
               options: optionsWithDefaults,
-              hideOutput: builderApplication.hideOutput,
-              isOptional: builderApplication.isOptional,
+              hideOutput: builderDefinition.hideOutput,
+              isOptional: builderDefinition.isOptional,
             );
           }),
     );
   }
   final postProcessBuilderFactory =
-      builderFactoriesByName.postProcessBuilderFactories[builderApplication
-          .key];
+      builderFactoriesByName.postProcessBuilderFactories[builderDefinition.key];
   if (postProcessBuilderFactory != null) {
     return cycle
         .where(
           (targetNode) => _shouldApply(
-            builderApplication,
+            builderDefinition,
             targetNode,
             applyWith,
             allBuilders,
@@ -348,7 +341,7 @@ Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
 
           final builder = BuildLogLogger.scopeLogSync(
             () => postProcessBuilderFactory(optionsWithDefaults),
-            buildLog.loggerForOther(builderApplication.key),
+            buildLog.loggerForOther(builderDefinition.key),
           );
           if (builder == null) throw const CannotBuildException();
           _validatePostProcessBuilder(builder);
@@ -358,7 +351,8 @@ Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
             package: package.name,
             options: optionsWithDefaults,
             generateFor:
-                generateFor ?? const build_config.InputSet() /* TODO */,
+                generateFor ??
+                builderDefinition.targetBuilderConfigDefaults.generateFor,
             targetSources: node.target.sources,
           );
           return PostBuildPhase([builderAction]);
@@ -369,27 +363,27 @@ Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
 }
 
 bool _shouldApply(
-  BuilderDefinition builderApplication,
+  BuilderDefinition builderDefinition,
   TargetNode node,
   Map<String, List<BuilderDefinition>> applyWith,
   Map<String, BuilderDefinition> allBuilders,
 ) {
-  if (!(builderApplication.hideOutput &&
-          builderApplication.appliesBuilders.every(
+  if (!(builderDefinition.hideOutput &&
+          builderDefinition.appliesBuilders.every(
             (b) => allBuilders[b]?.hideOutput ?? true,
           )) &&
       !node.package.isRoot) {
     return false;
   }
-  final builderConfig = node.target.builders[builderApplication.key];
+  final builderConfig = node.target.builders[builderDefinition.key];
   if (builderConfig?.isEnabled != null) {
     return builderConfig!.isEnabled;
   }
   final shouldAutoApply =
       node.target.autoApplyBuilders &&
-      builderApplication.autoAppliesTo(node.package);
+      builderDefinition.autoAppliesTo(node.package);
   return shouldAutoApply ||
-      (applyWith[builderApplication.key] ?? const []).any(
+      (applyWith[builderDefinition.key] ?? const []).any(
         (anchorBuilder) =>
             _shouldApply(anchorBuilder, node, applyWith, allBuilders),
       );
@@ -398,12 +392,12 @@ bool _shouldApply(
 /// Inverts the dependency map from 'applies builders' to 'applied with
 /// builders'.
 Map<String, List<BuilderDefinition>> _applyWith(
-  Iterable<BuilderDefinition> builderApplications,
+  Iterable<BuilderDefinition> builderDefinitions,
 ) {
   final applyWith = <String, List<BuilderDefinition>>{};
-  for (final builderApplication in builderApplications) {
-    for (final alsoApply in builderApplication.appliesBuilders) {
-      applyWith.putIfAbsent(alsoApply, () => []).add(builderApplication);
+  for (final builderDefinition in builderDefinitions) {
+    for (final alsoApply in builderDefinition.appliesBuilders) {
+      applyWith.putIfAbsent(alsoApply, () => []).add(builderDefinition);
     }
   }
   return applyWith;
