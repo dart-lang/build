@@ -4,10 +4,10 @@
 
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
-import 'package:build_config/build_config.dart';
-import 'package:build_runner/src/build_plan/apply_builders.dart';
+import 'package:build_config/build_config.dart' hide BuilderDefinition;
 import 'package:build_runner/src/build_plan/build_options.dart';
 import 'package:build_runner/src/build_plan/build_plan.dart';
+import 'package:build_runner/src/build_plan/builder_application.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
 import 'package:build_runner/src/build_plan/package_graph.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
@@ -31,6 +31,7 @@ void main() {
     late PackageGraph packageGraph;
     late ReaderWriter readerWriter;
     late BuildOptions buildOptions;
+    late BuilderFactories builderFactories;
     late TestingOverrides testingOverrides;
 
     setUp(() {
@@ -47,8 +48,12 @@ void main() {
       readerWriter.writeAsString(assetId, '// a.dart');
       readerWriter.writeAsString(assetId2, '// other');
       buildOptions = BuildOptions.forTests();
+      builderFactories = BuilderFactories({
+        '': [(_) => TestBuilder()],
+        'b2': [(_) => TestBuilder(buildExtensions: appendExtension('.copy2'))],
+      });
       testingOverrides = TestingOverrides(
-        builderApplications: [applyToRoot()].build(),
+        builderDefinitions: [BuilderDefinition('')].build(),
         readerWriter: readerWriter,
         packageGraph: packageGraph,
       );
@@ -56,7 +61,7 @@ void main() {
 
     test('loads with no asset graph', () async {
       final buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories(),
+        builderFactories: builderFactories,
         buildOptions: buildOptions,
         testingOverrides: testingOverrides,
       );
@@ -65,7 +70,7 @@ void main() {
 
     test('loads previous asset graph', () async {
       var buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories(),
+        builderFactories: builderFactories,
         buildOptions: buildOptions,
         testingOverrides: testingOverrides,
       );
@@ -73,7 +78,7 @@ void main() {
       await readerWriter.writeAsBytes(assetGraphId, assetGraph.serialize());
 
       buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories(),
+        builderFactories: builderFactories,
         buildOptions: buildOptions,
         testingOverrides: testingOverrides,
       );
@@ -83,7 +88,7 @@ void main() {
 
     test('discards previous asset graph if build phases changed', () async {
       var buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories(),
+        builderFactories: builderFactories,
         buildOptions: buildOptions,
         testingOverrides: testingOverrides,
       );
@@ -91,16 +96,14 @@ void main() {
       await readerWriter.writeAsBytes(assetGraphId, assetGraph.serialize());
 
       buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories(),
+        builderFactories: builderFactories,
         buildOptions: buildOptions,
         testingOverrides: testingOverrides.copyWith(
-          builderApplications:
+          builderDefinitions:
               [
-                applyToRoot(),
+                BuilderDefinition(''),
                 // Apply a second builder so build phases change.
-                /*applyToRoot(
-                  TestBuilder(buildExtensions: appendExtension('.copy2')),
-                ),*/
+                BuilderDefinition('b2'),
               ].build(),
         ),
       );
@@ -115,12 +118,13 @@ void main() {
 
     test('tracks lost outputs if build phases changed', () async {
       var buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories(),
+        builderFactories: builderFactories,
         buildOptions: buildOptions,
         testingOverrides: testingOverrides.copyWith(
-          builderApplications:
+          builderDefinitions:
               [
-                applyToRoot(
+                BuilderDefinition(
+                  '',
                   // Hidden output is easy to find and delete, it's under one
                   // generated root. Unhide the output so there can be lost
                   // outputs.
@@ -139,16 +143,14 @@ void main() {
       await readerWriter.writeAsBytes(assetGraphId, assetGraph.serialize());
 
       buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories(),
+        builderFactories: builderFactories,
         buildOptions: buildOptions,
         testingOverrides: testingOverrides.copyWith(
-          builderApplications:
+          builderDefinitions:
               [
-                applyToRoot(),
+                BuilderDefinition(''),
                 // Apply a second builder so build phases change.
-                /*applyToRoot(
-                  TestBuilder(buildExtensions: appendExtension('.copy2')),
-                ),*/
+                BuilderDefinition('b2'),
               ].build(),
         ),
       );
@@ -164,7 +166,7 @@ void main() {
 
     test('discards previous asset graph if SDK version changed', () async {
       var buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories(),
+        builderFactories: builderFactories,
         buildOptions: buildOptions,
         testingOverrides: testingOverrides,
       );
@@ -172,19 +174,11 @@ void main() {
       await readerWriter.writeAsBytes(assetGraphId, assetGraph.serialize());
 
       buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories(),
-
+        builderFactories: builderFactories,
         buildOptions: buildOptions,
         testingOverrides: testingOverrides.copyWith(
-          // TODO
-          /*builderApplications:
-              [
-                applyToRoot(TestBuilder()),
-                // Apply a second builder so build phases change.
-                applyToRoot(
-                  TestBuilder(buildExtensions: appendExtension('.copy2')),
-                ),
-              ].build(),*/
+          builderDefinitions:
+              [BuilderDefinition(''), BuilderDefinition('b2')].build(),
         ),
       );
 
@@ -193,7 +187,7 @@ void main() {
 
     test('discards previous asset graph if packages changed', () async {
       var buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories(),
+        builderFactories: builderFactories,
         buildOptions: buildOptions,
         testingOverrides: testingOverrides,
       );
@@ -207,7 +201,7 @@ void main() {
         packageGraph: packageGraph2,
       );
       buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories(),
+        builderFactories: builderFactories,
         buildOptions: buildOptions,
         testingOverrides: testingOverrides2,
       );
@@ -219,7 +213,7 @@ void main() {
       'discards previous asset graph if enabled experiments changed',
       () async {
         var buildPlan = await BuildPlan.load(
-          builderFactories: BuilderFactories(),
+          builderFactories: builderFactories,
           buildOptions: buildOptions,
           testingOverrides: testingOverrides,
         );
@@ -228,7 +222,7 @@ void main() {
 
         buildPlan = await withEnabledExperiments(
           () => BuildPlan.load(
-            builderFactories: BuilderFactories(),
+            builderFactories: builderFactories,
             buildOptions: buildOptions,
             testingOverrides: testingOverrides,
           ),
@@ -241,7 +235,7 @@ void main() {
 
     test('reports updates', () async {
       var buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories(),
+        builderFactories: builderFactories,
         buildOptions: buildOptions,
         testingOverrides: testingOverrides,
       );
@@ -267,7 +261,7 @@ void main() {
       await readerWriter.delete(outputId);
 
       buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories(),
+        builderFactories: builderFactories,
         buildOptions: buildOptions,
         testingOverrides: testingOverrides,
       );
@@ -296,7 +290,7 @@ void main() {
         [],
       );
       final buildPlan1 = await BuildPlan.load(
-        builderFactories: BuilderFactories(),
+        builderFactories: builderFactories,
         buildOptions: buildOptions,
         testingOverrides: testingOverrides.copyWith(
           buildConfig: {rootPackage: buildConfig1}.build(),
@@ -322,7 +316,7 @@ void main() {
         [],
       );
       final buildPlan2 = await BuildPlan.load(
-        builderFactories: BuilderFactories(),
+        builderFactories: builderFactories,
         buildOptions: buildOptions,
         testingOverrides: testingOverrides.copyWith(
           buildConfig: {rootPackage: buildConfig2}.build(),

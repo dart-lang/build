@@ -130,7 +130,7 @@ class BuildPlan {
     );
 
     var builderApplications =
-        testingOverrides.builderApplications ??
+        testingOverrides.builderDefinitions ??
         await BuilderFactories.createBuilderApplications(
           packageGraph: packageGraph,
           readerWriter: readerWriter,

@@ -184,7 +184,7 @@ Future<ServeHandler> createHandler(
     builderFactories: builderFactories,
     buildOptions: BuildOptions.forTests(),
     testingOverrides: TestingOverrides(
-      builderApplications: builders.toBuiltList(),
+      builderDefinitions: builders.toBuiltList(),
       directoryWatcherFactory: watcherFactory,
       debounceDelay: _debounceDelay,
       onLog: (_) {},

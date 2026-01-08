@@ -83,7 +83,7 @@ Future<BuildResult> _doBuild(
     builderFactories: BuilderFactories(),
     buildOptions: BuildOptions.forTests(configKey: configKey),
     testingOverrides: TestingOverrides(
-      builderApplications: builders.build(),
+      builderDefinitions: builders.build(),
       readerWriter: readerWriter,
       packageGraph: packageGraph,
       onLog: onLog,

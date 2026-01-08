@@ -64,7 +64,7 @@ void main() {
           }),
           buildOptions: BuildOptions.forTests(verbose: true),
           testingOverrides: TestingOverrides(
-            builderApplications: [BuilderDefinition('')].build(),
+            builderDefinitions: [BuilderDefinition('')].build(),
             packageGraph: graph,
             readerWriter: readerWriter,
             onLog:

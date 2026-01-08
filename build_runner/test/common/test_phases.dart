@@ -146,7 +146,7 @@ Future<TestBuildersResult> testPhases(
       verbose: verbose,
     ),
     testingOverrides: TestingOverrides(
-      builderApplications: builders.build(),
+      builderDefinitions: builders.build(),
       packageGraph: packageGraph,
       readerWriter: readerWriter,
     ),

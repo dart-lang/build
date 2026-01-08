@@ -453,7 +453,7 @@ Future<TestBuilderResult> testBuilderFactories(
   }
 
   final testingOverrides = TestingOverrides(
-    builderApplications: builderApplications.build(),
+    builderDefinitions: builderApplications.build(),
     packageGraph: packageGraph,
     readerWriter: readerWriter as InternalTestReaderWriter,
     resolvers: resolvers,

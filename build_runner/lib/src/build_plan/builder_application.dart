@@ -38,7 +38,7 @@ class BuilderDefinition {
     this.key, {
     this.isPostProcessBuilder = false,
     String? package,
-    this.autoApply = AutoApply.none,
+    this.autoApply = AutoApply.rootPackage,
     Iterable<String> appliesBuilders = const [],
     this.hideOutput = false,
     this.isOptional = false,

@@ -98,7 +98,7 @@ class BuilderDefinition {
            target != null
                ? normalizeTargetKeyUsage(target, currentPackage)
                : null,
-       autoApply = autoApply ?? AutoApply.none,
+       autoApply = autoApply ?? AutoApply.rootPackage,
        requiredInputs = requiredInputs?.toList() ?? const [],
        runsBefore =
            runsBefore
