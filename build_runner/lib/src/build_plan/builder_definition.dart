@@ -24,7 +24,8 @@ export 'package:build_config/build_config.dart'
 class BuilderDefinition {
   /// Whether this is a post process builder.
   ///
-  /// If so, [hideOutput] is always `true`, [isOptional] is always false.
+  /// If so, [hideOutput] is always `true`, [isOptional] is always false and
+  /// [autoApply] is always [AutoApply.none].
   final bool isPostProcessBuilder;
 
   /// The package the builder is in.
@@ -54,12 +55,13 @@ class BuilderDefinition {
     this.key, {
     this.isPostProcessBuilder = false,
     String? package,
-    this.autoApply = AutoApply.rootPackage,
+    AutoApply autoApply = AutoApply.rootPackage,
     Iterable<String> appliesBuilders = const [],
     bool hideOutput = true,
     bool isOptional = false,
     this.targetBuilderConfigDefaults = const TargetBuilderConfigDefaults(),
   }) : appliesBuilders = appliesBuilders.toBuiltList(),
+       autoApply = isPostProcessBuilder ? AutoApply.none : autoApply,
        package = package ?? (key.contains(':') ? key.split(':').first : ''),
        hideOutput = isPostProcessBuilder ? true : hideOutput,
        isOptional = isPostProcessBuilder ? false : isOptional;
