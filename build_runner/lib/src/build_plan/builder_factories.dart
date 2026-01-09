@@ -3,15 +3,9 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:build_config/build_config.dart' as build_config;
 import 'package:built_collection/built_collection.dart';
-import 'package:graphs/graphs.dart';
 
-import '../io/reader_writer.dart';
 import 'builder_definition.dart';
-import 'builder_ordering.dart';
-import 'package_graph.dart';
-import 'target_graph.dart';
 
 /// The builder code plugged into `build_runner`.
 class BuilderFactories {
@@ -33,7 +27,22 @@ class BuilderFactories {
        postProcessBuilderFactories =
            (postProcessBuilderFactories ?? {}).build();
 
-  bool hasBuilder(String key) =>
-      builderFactories.containsKey(key) ||
-      postProcessBuilderFactories.containsKey(key);
+  /// Whether there are factories for all definitions in [builderDefinitions].
+  ///
+  /// Factories must be of the correct type: post process builder or normal
+  /// builder.
+  bool hasFactoriesFor(Iterable<BuilderDefinition> builderDefinitions) {
+    for (final builderDefinition in builderDefinitions) {
+      if (builderDefinition.isPostProcessBuilder) {
+        if (!postProcessBuilderFactories.containsKey(builderDefinition.key)) {
+          return false;
+        }
+      } else {
+        if (!builderFactories.containsKey(builderDefinition.key)) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
 }

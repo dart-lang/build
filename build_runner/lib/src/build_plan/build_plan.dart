@@ -140,12 +140,9 @@ class BuildPlan {
 
     // Check that there is a factory available for every builder, if not the
     // config has changed since the script was written and a restart is needed.
-    for (final builderDefinition in builderDefinitions) {
-      if (!builderFactories.hasBuilder(builderDefinition.key)) {
-        restartIsNeeded = true;
-        builderDefinitions = BuiltList();
-        break;
-      }
+    if (!builderFactories.hasFactoriesFor(builderDefinitions)) {
+      restartIsNeeded = true;
+      builderDefinitions = BuiltList();
     }
 
     final buildPhases =

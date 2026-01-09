@@ -102,18 +102,22 @@ class BuildPhaseCreator {
     final postBuildActions = <PostBuildAction>[];
     for (final cycle in cycles) {
       for (final builderDefinition in builderDefinitions) {
-        for (final phase in _createBuildPhasesForBuilderInCycle(
-          cycle,
-          builderDefinition,
-          globalOptions[builderDefinition.key] ?? BuilderOptions.empty,
-        )) {
-          if (phase is InBuildPhase) {
-            inBuildPhases.add(phase);
-          } else if (phase is PostBuildPhase) {
-            postBuildActions.addAll(phase.builderActions);
-          } else {
-            throw StateError(phase.toString());
-          }
+        if (builderDefinition.isPostProcessBuilder) {
+          postBuildActions.addAll(
+            _createPostBuildActions(
+              cycle,
+              builderDefinition,
+              globalOptions[builderDefinition.key] ?? BuilderOptions.empty,
+            ),
+          );
+        } else {
+          inBuildPhases.addAll(
+            _createInBuildPhases(
+              cycle,
+              builderDefinition,
+              globalOptions[builderDefinition.key] ?? BuilderOptions.empty,
+            ),
+          );
         }
       }
     }
@@ -124,86 +128,18 @@ class BuildPhaseCreator {
     );
   }
 
-  Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
+  List<InBuildPhase> _createInBuildPhases(
     Iterable<TargetNode> cycle,
     BuilderDefinition builderDefinition,
     BuilderOptions globalOptionOverrides,
   ) {
-    build_config.TargetBuilderConfig? targetConfig(TargetNode node) =>
-        node.target.builders[builderDefinition.key];
     final builderFactories =
-        this.builderFactories.builderFactories[builderDefinition.key];
-    if (builderFactories != null) {
-      final result = <BuildPhase>[];
-      for (final builderFactory in builderFactories) {
-        for (final node in cycle) {
-          if (!_shouldApply(builderDefinition, node)) continue;
-
-          final builderConfig = targetConfig(node);
-          final options = (builderConfig?.options)
-              .toBuilderOptions()
-              .overrideWith(
-                isReleaseBuild
-                    ? builderConfig?.releaseOptions.toBuilderOptions()
-                    : builderConfig?.devOptions.toBuilderOptions(),
-              )
-              .overrideWith(globalOptionOverrides);
-
-          final package = node.package;
-          final generateFor = builderConfig?.generateFor;
-          var optionsWithDefaults = BuilderOptions(
-            builderDefinition.targetBuilderConfigDefaults.options,
-          )
-              .overrideWith(
-                isReleaseBuild
-                    ? BuilderOptions(
-                        builderDefinition
-                            .targetBuilderConfigDefaults.releaseOptions,
-                      )
-                    : BuilderOptions(
-                        builderDefinition.targetBuilderConfigDefaults.devOptions,
-                      ),
-              )
-              .overrideWith(options);
-          if (package.isRoot) {
-            optionsWithDefaults = optionsWithDefaults.overrideWith(
-              BuilderOptions.forRoot,
-            );
-          }
-
-          final builder = BuildLogLogger.scopeLogSync(
-            () => builderFactory(optionsWithDefaults),
-            buildLog.loggerForOther(builderDefinition.key),
-          );
-          if (builder == null) throw const CannotBuildException();
-          _validateBuilder(builder);
-          result.add(
-            InBuildPhase(
-              builder: builder,
-              key: builderDefinition.key,
-              package: package.name,
-              targetSources: node.target.sources,
-              generateFor:
-                  generateFor ??
-                  builderDefinition.targetBuilderConfigDefaults.generateFor,
-              options: optionsWithDefaults,
-              hideOutput: builderDefinition.hideOutput,
-              isOptional: builderDefinition.isOptional,
-            ),
-          );
-        }
-      }
-      return result;
-    }
-    final postProcessBuilderFactory =
-        this.builderFactories.postProcessBuilderFactories[builderDefinition
-            .key];
-    if (postProcessBuilderFactory != null) {
-      final result = <PostBuildPhase>[];
+        this.builderFactories.builderFactories[builderDefinition.key]!;
+    final result = <InBuildPhase>[];
+    for (final builderFactory in builderFactories) {
       for (final node in cycle) {
         if (!_shouldApply(builderDefinition, node)) continue;
-
-        final builderConfig = targetConfig(node);
+        final builderConfig = node.target.builders[builderDefinition.key];
         final options = (builderConfig?.options)
             .toBuilderOptions()
             .overrideWith(
@@ -215,7 +151,6 @@ class BuildPhaseCreator {
 
         final package = node.package;
         final generateFor = builderConfig?.generateFor;
-
         var optionsWithDefaults = BuilderOptions(
               builderDefinition.targetBuilderConfigDefaults.options,
             )
@@ -238,27 +173,93 @@ class BuildPhaseCreator {
         }
 
         final builder = BuildLogLogger.scopeLogSync(
-          () => postProcessBuilderFactory(optionsWithDefaults),
+          () => builderFactory(optionsWithDefaults),
           buildLog.loggerForOther(builderDefinition.key),
         );
         if (builder == null) throw const CannotBuildException();
-        _validatePostProcessBuilder(builder);
-
-        final builderAction = PostBuildAction(
-          builder: builder,
-          package: package.name,
-          options: optionsWithDefaults,
-          generateFor:
-              generateFor ??
-              builderDefinition.targetBuilderConfigDefaults.generateFor,
-          targetSources: node.target.sources,
+        _validateBuilder(builder);
+        result.add(
+          InBuildPhase(
+            builder: builder,
+            key: builderDefinition.key,
+            package: package.name,
+            targetSources: node.target.sources,
+            generateFor:
+                generateFor ??
+                builderDefinition.targetBuilderConfigDefaults.generateFor,
+            options: optionsWithDefaults,
+            hideOutput: builderDefinition.hideOutput,
+            isOptional: builderDefinition.isOptional,
+          ),
         );
-        result.add(PostBuildPhase([builderAction]));
       }
-      return result;
+    }
+    return result;
+  }
+
+  List<PostBuildAction> _createPostBuildActions(
+    Iterable<TargetNode> cycle,
+    BuilderDefinition builderDefinition,
+    BuilderOptions globalOptionOverrides,
+  ) {
+    final postProcessBuilderFactory =
+        builderFactories.postProcessBuilderFactories[builderDefinition.key]!;
+    final result = <PostBuildAction>[];
+    for (final node in cycle) {
+      if (!_shouldApply(builderDefinition, node)) continue;
+
+      final builderConfig = node.target.builders[builderDefinition.key];
+      final options = (builderConfig?.options)
+          .toBuilderOptions()
+          .overrideWith(
+            isReleaseBuild
+                ? builderConfig?.releaseOptions.toBuilderOptions()
+                : builderConfig?.devOptions.toBuilderOptions(),
+          )
+          .overrideWith(globalOptionOverrides);
+
+      final package = node.package;
+      final generateFor = builderConfig?.generateFor;
+
+      var optionsWithDefaults = BuilderOptions(
+            builderDefinition.targetBuilderConfigDefaults.options,
+          )
+          .overrideWith(
+            isReleaseBuild
+                ? BuilderOptions(
+                  builderDefinition.targetBuilderConfigDefaults.releaseOptions,
+                )
+                : BuilderOptions(
+                  builderDefinition.targetBuilderConfigDefaults.devOptions,
+                ),
+          )
+          .overrideWith(options);
+      if (package.isRoot) {
+        optionsWithDefaults = optionsWithDefaults.overrideWith(
+          BuilderOptions.forRoot,
+        );
+      }
+
+      final builder = BuildLogLogger.scopeLogSync(
+        () => postProcessBuilderFactory(optionsWithDefaults),
+        buildLog.loggerForOther(builderDefinition.key),
+      );
+      if (builder == null) throw const CannotBuildException();
+      _validatePostProcessBuilder(builder);
+
+      final builderAction = PostBuildAction(
+        builder: builder,
+        package: package.name,
+        options: optionsWithDefaults,
+        generateFor:
+            generateFor ??
+            builderDefinition.targetBuilderConfigDefaults.generateFor,
+        targetSources: node.target.sources,
+      );
+      result.add(builderAction);
     }
 
-    throw StateError('Missing builder: ${builderDefinition.key}');
+    return result;
   }
 
   bool _shouldApply(BuilderDefinition builderDefinition, TargetNode node) {
