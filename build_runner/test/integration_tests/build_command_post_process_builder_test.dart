@@ -36,6 +36,10 @@ post_process_builders:
     defaults:
       options:
         output_extension: ".post"
+      dev_options:
+        extra_content: "(default dev)"
+      release_options:
+        extra_content: "(default release)"
 ''',
         'lib/builder.dart': '''
 import 'package:build/build.dart';
@@ -43,7 +47,9 @@ import 'package:build/build.dart';
 TestBuilder testBuilder(BuilderOptions options)
     => TestBuilder();
 TestPostProcessBuilder testPostProcessBuilder(BuilderOptions options)
-    => TestPostProcessBuilder(options.config['output_extension'] as String);
+    => TestPostProcessBuilder(
+        options.config['output_extension'] as String,
+        options.config['extra_content'] as String);
 
 class TestBuilder implements Builder {
   @override
@@ -55,8 +61,8 @@ class TestBuilder implements Builder {
 
 class TestPostProcessBuilder implements PostProcessBuilder {
   final String outputExtension;
-
-  TestPostProcessBuilder(this.outputExtension);
+  final String extraContent;
+  TestPostProcessBuilder(this.outputExtension, this.extraContent);
 
   @override
   List<String> get inputExtensions => ['.txt'];
@@ -65,7 +71,7 @@ class TestPostProcessBuilder implements PostProcessBuilder {
   Future<void> build(PostProcessBuildStep buildStep) async {
     await buildStep.writeAsString(
         buildStep.inputId.addExtension(outputExtension),
-        await buildStep.readInputAsString(),
+        await buildStep.readInputAsString() + extraContent,
     );
   }
 }
@@ -83,7 +89,7 @@ class TestPostProcessBuilder implements PostProcessBuilder {
     await tester.run('root_pkg', 'dart run build_runner build --output build');
     expect(tester.readFileTree('root_pkg/build/packages/root_pkg'), {
       'a.txt': 'a',
-      'a.txt.post': 'a',
+      'a.txt.post': 'a(default dev)',
     });
 
     // No rebuild if nothing changed.
@@ -103,6 +109,17 @@ class TestPostProcessBuilder implements PostProcessBuilder {
     // Restore the original input.
     tester.write('root_pkg/lib/a.txt', 'a');
 
+    // Release build.
+    await tester.run(
+      'root_pkg',
+      'dart run build_runner build '
+          '--output build --release',
+    );
+    expect(tester.readFileTree('root_pkg/build/packages/root_pkg'), {
+      'a.txt': 'a',
+      'a.txt.post': 'a(default release)',
+    });
+
     // Configure via `build.yaml`.
     tester.write('root_pkg/build.yaml', r'''
 targets:
@@ -111,11 +128,15 @@ targets:
       builder_pkg:test_post_process_builder:
         options:
           output_extension: ".other_post"
+        dev_options:
+          extra_content: "(yaml dev)"
+        release_options:
+          extra_content: "(yaml release)"
 ''');
     await tester.run('root_pkg', 'dart run build_runner build --output build');
     expect(tester.readFileTree('root_pkg/build/packages/root_pkg'), {
       'a.txt': 'a',
-      'a.txt.other_post': 'a',
+      'a.txt.other_post': 'a(yaml dev)',
     });
 
     // Configure with `--define`.
@@ -127,7 +148,19 @@ targets:
     );
     expect(tester.readFileTree('root_pkg/build/packages/root_pkg'), {
       'a.txt': 'a',
-      'a.txt.third_post': 'a',
+      'a.txt.third_post': 'a(yaml dev)',
+    });
+
+    // Configure with `--define` and `--release`.
+    await tester.run(
+      'root_pkg',
+      'dart run build_runner build --output build '
+          '--define=builder_pkg:test_post_process_builder=output_extension='
+          '.third_post --release',
+    );
+    expect(tester.readFileTree('root_pkg/build/packages/root_pkg'), {
+      'a.txt': 'a',
+      'a.txt.third_post': 'a(yaml release)',
     });
   });
 }

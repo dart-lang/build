@@ -7,9 +7,8 @@ import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build_runner/src/build/build_result.dart';
-import 'package:build_runner/src/build_plan/apply_builders.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
-import 'package:build_runner/src/build_plan/builder_application.dart';
+import 'package:build_runner/src/build_plan/builder_definition.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
 import 'package:build_runner/src/build_plan/package_graph.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
@@ -22,10 +21,6 @@ import 'package:test/test.dart';
 import '../common/common.dart';
 
 void main() {
-  // Basic phases/phase groups which get used in many tests
-  final copyABuildApplication = applyToRoot(
-    TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')),
-  );
   final packageConfigId = makeAssetId('a|.dart_tool/package_config.json');
 
   group('--config', () {
@@ -35,7 +30,7 @@ void main() {
         rootPackage('a', path: path.absolute('a')): [],
       });
       final result = await _doBuild(
-        [copyABuildApplication],
+        [],
         {
           'a|build.yaml': '',
           'a|build.cool.yaml': '''
@@ -64,7 +59,7 @@ builders:
 }
 
 Future<BuildResult> _doBuild(
-  List<BuilderApplication> builders,
+  List<BuilderDefinition> builders,
   Map<String, String> inputs, {
   required AssetId packageConfigId,
   PackageGraph? packageGraph,
@@ -84,10 +79,10 @@ Future<BuildResult> _doBuild(
   await readerWriter.writeAsString(packageConfigId, jsonEncode(_packageConfig));
 
   return await BuildCommand(
-    builderFactories: BuilderFactories(),
+    builderFactories: BuilderFactories({}),
     buildOptions: BuildOptions.forTests(configKey: configKey),
     testingOverrides: TestingOverrides(
-      builderApplications: builders.build(),
+      builderDefinitions: builders.build(),
       readerWriter: readerWriter,
       packageGraph: packageGraph,
       onLog: onLog,

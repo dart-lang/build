@@ -5,19 +5,19 @@
 import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:build_config/build_config.dart';
+import 'package:build_config/build_config.dart' hide BuilderDefinition;
 import 'package:built_collection/built_collection.dart';
 import 'package:logging/logging.dart';
 import 'package:watcher/watcher.dart';
 
 import '../io/reader_writer.dart';
 import 'build_phases.dart';
-import 'builder_application.dart';
+import 'builder_definition.dart';
 import 'package_graph.dart';
 
 /// Settings that are not user-visible: they are overriden only for testing.
 class TestingOverrides {
-  final BuiltList<BuilderApplication>? builderApplications;
+  final BuiltList<BuilderDefinition>? builderDefinitions;
   final BuiltMap<String, BuildConfig>? buildConfig;
   final BuildPhases? buildPhases;
   final Duration? debounceDelay;
@@ -32,7 +32,7 @@ class TestingOverrides {
   final bool flattenOutput;
 
   const TestingOverrides({
-    this.builderApplications,
+    this.builderDefinitions,
     this.buildConfig,
     this.buildPhases,
     this.debounceDelay,
@@ -48,11 +48,11 @@ class TestingOverrides {
   });
 
   TestingOverrides copyWith({
-    BuiltList<BuilderApplication>? builderApplications,
+    BuiltList<BuilderDefinition>? builderDefinitions,
     BuiltMap<String, BuildConfig>? buildConfig,
     PackageGraph? packageGraph,
   }) => TestingOverrides(
-    builderApplications: builderApplications ?? this.builderApplications,
+    builderDefinitions: builderDefinitions ?? this.builderDefinitions,
     buildConfig: buildConfig ?? this.buildConfig,
     buildPhases: buildPhases,
     debounceDelay: debounceDelay,

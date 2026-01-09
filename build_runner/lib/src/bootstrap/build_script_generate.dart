@@ -29,12 +29,14 @@ Future<String> generateBuildScript() async {
             refer(
               'BuilderFactories',
               'package:build_runner/src/build_plan/builder_factories.dart',
-            ).call([], {
-              'builderFactories': literalMap(builderFactories.builderFactories),
-              'postProcessBuilderFactories': literalMap(
-                builderFactories.postProcessBuilderFactories,
-              ),
-            }),
+            ).call(
+              [literalMap(builderFactories.builderFactories)],
+              {
+                'postProcessBuilderFactories': literalMap(
+                  builderFactories.postProcessBuilderFactories,
+                ),
+              },
+            ),
           )
           .statement,
       _main(),

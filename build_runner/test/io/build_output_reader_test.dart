@@ -73,7 +73,7 @@ void main() {
       readerWriter.testing.writeString(deleted.id, '');
 
       final buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories(),
+        builderFactories: BuilderFactories({}),
         buildOptions: BuildOptions.forTests(),
         testingOverrides: TestingOverrides(
           buildPhases: buildPhases,
@@ -113,7 +113,7 @@ void main() {
       ]);
 
       var buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories(),
+        builderFactories: BuilderFactories({}),
         buildOptions: BuildOptions.forTests(
           buildDirs: {BuildDirectory('web')}.build(),
         ),
@@ -136,7 +136,7 @@ void main() {
       );
 
       buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories(),
+        builderFactories: BuilderFactories({}),
         buildOptions: BuildOptions.forTests(
           buildDirs: {BuildDirectory('web')}.build(),
           buildFilters: {BuildFilter(Glob('b'), Glob('foo'))}.build(),

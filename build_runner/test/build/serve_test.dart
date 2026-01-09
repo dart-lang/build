@@ -6,9 +6,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:async/async.dart';
-import 'package:build_runner/src/build_plan/apply_builders.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
-import 'package:build_runner/src/build_plan/builder_application.dart';
+import 'package:build_runner/src/build_plan/builder_definition.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
 import 'package:build_runner/src/build_plan/package_graph.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
@@ -55,7 +54,10 @@ void main() {
 
     test('does basic builds', () async {
       final handler = await createHandler(
-        [applyToRoot(TestBuilder())],
+        BuilderFactories({
+          '': [(_) => TestBuilder()],
+        }),
+        [BuilderDefinition('')],
         {'a|web/a.txt': 'a'},
         packageGraph,
         readerWriter,
@@ -83,7 +85,10 @@ void main() {
       var nextBuildBlocker = buildBlocker1.future;
 
       final handler = await createHandler(
-        [applyToRoot(TestBuilder(extraWork: (_, _) => nextBuildBlocker))],
+        BuilderFactories({
+          '': [(_) => TestBuilder(extraWork: (_, _) => nextBuildBlocker)],
+        }),
+        [BuilderDefinition('')],
         {'a|web/a.txt': 'a'},
         packageGraph,
         readerWriter,
@@ -160,7 +165,8 @@ StreamController<ProcessSignal>? _terminateServeController;
 
 /// Start serving files and running builds.
 Future<ServeHandler> createHandler(
-  Iterable<BuilderApplication> builders,
+  BuilderFactories builderFactories,
+  Iterable<BuilderDefinition> builders,
   Map<String, String> inputs,
   PackageGraph packageGraph,
   InternalTestReaderWriter readerWriter,
@@ -176,10 +182,10 @@ Future<ServeHandler> createHandler(
   FakeWatcher watcherFactory(String path) => FakeWatcher(path);
 
   final watchCommand = WatchCommand(
-    builderFactories: BuilderFactories(),
+    builderFactories: builderFactories,
     buildOptions: BuildOptions.forTests(),
     testingOverrides: TestingOverrides(
-      builderApplications: builders.toBuiltList(),
+      builderDefinitions: builders.toBuiltList(),
       directoryWatcherFactory: watcherFactory,
       debounceDelay: _debounceDelay,
       onLog: (_) {},
