@@ -7,9 +7,13 @@ import 'package:build_config/build_config.dart'
     show AutoApply, TargetBuilderConfigDefaults;
 
 import 'package:built_collection/built_collection.dart';
+import 'package:graphs/graphs.dart';
 import 'package:meta/meta.dart';
 
+import '../io/reader_writer.dart';
+import 'builder_ordering.dart';
 import 'package_graph.dart';
+import 'target_graph.dart';
 
 export 'package:build_config/build_config.dart'
     show AutoApply, TargetBuilderConfigDefaults;
@@ -18,6 +22,9 @@ export 'package:build_config/build_config.dart'
 /// [build_config.BuilderDefinition] or
 /// [build_config.PostProcessBuilderDefinition].
 class BuilderDefinition {
+  /// Whether this is a post process builder.
+  ///
+  /// If so, [hideOutput] is always `true`, [isOptional] is always false.
   final bool isPostProcessBuilder;
 
   /// The package the builder is in.
@@ -39,6 +46,7 @@ class BuilderDefinition {
   /// Whether the builder is skipped if nothing uses its output.
   final bool isOptional;
 
+  /// The defaults specified in `build.yaml` for this builder.
   final TargetBuilderConfigDefaults targetBuilderConfigDefaults;
 
   @visibleForTesting
@@ -89,5 +97,81 @@ class BuilderDefinition {
       case AutoApply.dependents:
         return package.dependencies.any((p) => p.name == this.package);
     }
+  }
+
+  /// Loads [BuilderDefinition]s for the configuration in `build.yaml` in
+  /// each package in [packageGraph].
+  static Future<BuiltList<BuilderDefinition>> load({
+    required PackageGraph packageGraph,
+    required ReaderWriter readerWriter,
+  }) async {
+    final orderedPackages = stronglyConnectedComponents<PackageNode>(
+      [packageGraph.root],
+      (node) => node.dependencies,
+      equals: (a, b) => a.name == b.name,
+      hashCode: (n) => n.name.hashCode,
+    ).expand((c) => c);
+    final overrides = await findBuildConfigOverrides(
+      packageGraph: packageGraph,
+      readerWriter: readerWriter,
+      configKey: null,
+    );
+
+    Future<build_config.BuildConfig> packageBuildConfig(
+      PackageNode package,
+    ) async {
+      if (overrides.containsKey(package.name)) {
+        return overrides[package.name]!;
+      }
+      try {
+        return await build_config.BuildConfig.fromBuildConfigDir(
+          package.name,
+          package.dependencies.map((n) => n.name),
+          package.path,
+        );
+      } on ArgumentError // ignore: avoid_catching_errors
+      catch (_) {
+        // During the build an error will be logged.
+        return build_config.BuildConfig.useDefault(
+          package.name,
+          package.dependencies.map((n) => n.name),
+        );
+      }
+    }
+
+    bool isPackageImportOrForRoot(dynamic definition) {
+      // ignore: avoid_dynamic_calls
+      final import = definition.import as String;
+      // ignore: avoid_dynamic_calls
+      final package = definition.package as String;
+      return import.startsWith('package:') || package == packageGraph.root.name;
+    }
+
+    final orderedConfigs = await Future.wait(
+      orderedPackages.map(packageBuildConfig),
+    );
+    final builderDefinitions = orderedConfigs
+        .expand((c) => c.builderDefinitions.values)
+        .where(isPackageImportOrForRoot);
+
+    final rootBuildConfig = orderedConfigs.last;
+    final orderedBuilders =
+        findBuilderOrder(
+          builderDefinitions,
+          rootBuildConfig.globalOptions,
+        ).toList();
+
+    final postProcessBuilderDefinitions = orderedConfigs
+        .expand((c) => c.postProcessBuilderDefinitions.values)
+        .where(isPackageImportOrForRoot);
+
+    final result = ListBuilder<BuilderDefinition>();
+    for (final builder in orderedBuilders) {
+      result.add(BuilderDefinition.fromConfig(builder));
+    }
+    for (final builder in postProcessBuilderDefinitions) {
+      result.add(BuilderDefinition.fromPostProcessConfig(builder));
+    }
+    return result.build();
   }
 }

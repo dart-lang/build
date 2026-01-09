@@ -23,6 +23,7 @@ import 'build_filter.dart';
 import 'build_options.dart';
 import 'build_phase_creator.dart';
 import 'build_phases.dart';
+import 'builder_definition.dart';
 import 'builder_factories.dart';
 import 'package_graph.dart';
 import 'target_graph.dart';
@@ -132,11 +133,13 @@ class BuildPlan {
 
     var builderDefinitions =
         testingOverrides.builderDefinitions ??
-        await BuilderFactories.createBuilderDefinitions(
+        await BuilderDefinition.load(
           packageGraph: packageGraph,
           readerWriter: readerWriter,
         );
 
+    // Check that there is a factory available for every builder, if not the
+    // config has changed since the script was written and a restart is needed.
     for (final builderDefinition in builderDefinitions) {
       if (!builderFactories.hasBuilder(builderDefinition.key)) {
         restartIsNeeded = true;

@@ -412,10 +412,7 @@ Future<TestBuilderResult> testBuilderFactories(
     } catch (e) {
       name = e.toString();
     }
-    // TODO
-    while (builderNameToBuilderFactory.containsKey(name)) {
-      name = '${name}_';
-    }
+    name = _firstNameNotIn(name, builderNameToBuilderFactory.keys.toSet());
     builderDefinitions.add(
       _ApplyBuilderDefinitionToPackages(
         // ignore: invalid_use_of_visible_for_testing_member
@@ -426,19 +423,9 @@ Future<TestBuilderResult> testBuilderFactories(
           hideOutput: !visibleOutputBuilderFactories.contains(builderFactory),
           appliesBuilders: appliesBuilders[builderFactory] ?? const [],
         ),
-
-        /*apply(
-          '',
-          name,
-          AutoApply.allPackages,
-          isOptional: optionalBuilderFactories.contains(builderFactory),
-          hideOutput: !visibleOutputBuilderFactories.contains(builderFactory),
-          appliesBuilders: appliesBuilders[builderFactory] ?? [],
-        ),*/
         applyToPackages: inputPackages,
       ),
     );
-    // TODO: check for duplicate
     builderNameToBuilderFactory[name] = [builderFactory];
   }
   final postProcessBuilderNameToBuilderFactory =
@@ -450,15 +437,14 @@ Future<TestBuilderResult> testBuilderFactories(
     } catch (e) {
       name = e.toString();
     }
-    // TODO
-    while (postProcessBuilderNameToBuilderFactory.containsKey(name)) {
-      name = '${name}_';
-    }
+    name = _firstNameNotIn(
+      name,
+      postProcessBuilderNameToBuilderFactory.keys.toSet(),
+    );
     builderDefinitions.add(
       // ignore: invalid_use_of_visible_for_testing_member
       BuilderDefinition(name, isPostProcessBuilder: true),
     );
-    // TODO: check for duplicate
     postProcessBuilderNameToBuilderFactory[name] = postProcessBuilderFactory;
   }
 
@@ -619,4 +605,21 @@ class _ApplyBuilderDefinitionToPackages implements BuilderDefinition {
   @override
   build_config.TargetBuilderConfigDefaults get targetBuilderConfigDefaults =>
       delegate.targetBuilderConfigDefaults;
+}
+
+/// Returns [name] if it is not in [existingNames], or return a modified version
+/// not in [existingNames].
+///
+/// In previous `build_test` implementations the test builder names were not
+/// used, so tests could pass multiple builders with the same name and
+/// they would all be used. This is used to force names to be different to
+/// preserve this behavior.
+String _firstNameNotIn(String name, Set<String> existingNames) {
+  if (!existingNames.contains(name)) return name;
+  var i = 1;
+  while (true) {
+    final possibleResult = '${name}_$i';
+    if (!existingNames.contains(possibleResult)) return possibleResult;
+    ++i;
+  }
 }

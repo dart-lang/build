@@ -26,17 +26,27 @@ builders:
     build_extensions: {'.txt': ['.txt.copy']}
     auto_apply: root_package
     build_to: source
+    defaults:
+      options:
+        copy_from: root_pkg|web/a.txt
+      dev_options:
+        extra_content: "(default dev)"
+      release_options:
+        extra_content: "(default release)"
 ''',
         'lib/builder.dart': '''
 import 'package:build/build.dart';
 
 Builder testBuilderFactory(BuilderOptions options) =>
-    TestBuilder(AssetId.parse(options.config['copy_from'] as String));
+    TestBuilder(
+        AssetId.parse(options.config['copy_from'] as String),
+        options.config['extra_content'] as String? ?? '');
 
 class TestBuilder implements Builder {
   final AssetId copyFrom;
+  final String extraContent;
 
-  TestBuilder(this.copyFrom);
+  TestBuilder(this.copyFrom, this.extraContent);
 
   @override
   Map<String, List<String>> get buildExtensions => {'.txt': ['.txt.copy']};
@@ -45,7 +55,7 @@ class TestBuilder implements Builder {
   Future<void> build(BuildStep buildStep) async {
     buildStep.writeAsString(
         buildStep.inputId.addExtension('.copy'),
-        await buildStep.readAsString(copyFrom),
+        await buildStep.readAsString(copyFrom) + extraContent,
     );
   }
 }''',
@@ -55,30 +65,50 @@ class TestBuilder implements Builder {
       name: 'root_pkg',
       dependencies: ['build_runner'],
       pathDependencies: ['builder_pkg'],
-      files: {
-        'build.yaml': r'''
+      files: {'web/a.txt': 'a', 'web/b.txt': 'b'},
+    );
+
+    // Default dev build.
+    await tester.run('root_pkg', 'dart run build_runner build');
+    expect(tester.read('root_pkg/web/a.txt.copy'), 'a(default dev)');
+
+    // Default release build.
+    await tester.run('root_pkg', 'dart run build_runner build --release');
+    expect(tester.read('root_pkg/web/a.txt.copy'), 'a(default release)');
+
+    // Configure via `build.yaml`.
+    tester.write('root_pkg/build.yaml', r'''
 targets:
   $default:
     builders:
       builder_pkg:test_builder:
         options:
           copy_from: root_pkg|web/b.txt
-''',
-        'web/a.txt': 'a',
-        'web/b.txt': 'b',
-      },
-    );
-
-    // Config in `build.yaml` is the default.
+        dev_options:
+          extra_content: "(yaml dev)"
+        release_options:
+          extra_content: "(yaml release)"
+''');
     await tester.run('root_pkg', 'dart run build_runner build');
-    expect(tester.read('root_pkg/web/a.txt.copy'), 'b');
+    expect(tester.read('root_pkg/web/a.txt.copy'), 'b(yaml dev)');
 
-    // Override it with `--define`.
+    await tester.run('root_pkg', 'dart run build_runner build --release');
+    expect(tester.read('root_pkg/web/a.txt.copy'), 'b(yaml release)');
+
+    // Override with `--define`.
     await tester.run(
       'root_pkg',
       'dart run build_runner build '
           '--define=builder_pkg:test_builder=copy_from=root_pkg|web/a.txt',
     );
-    expect(tester.read('root_pkg/web/a.txt.copy'), 'a');
+    expect(tester.read('root_pkg/web/a.txt.copy'), 'a(yaml dev)');
+
+    // Override with `--define` and `--release`.
+    await tester.run(
+      'root_pkg',
+      'dart run build_runner build --release '
+          '--define=builder_pkg:test_builder=copy_from=root_pkg|web/a.txt',
+    );
+    expect(tester.read('root_pkg/web/a.txt.copy'), 'a(yaml release)');
   });
 }

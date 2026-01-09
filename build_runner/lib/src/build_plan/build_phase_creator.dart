@@ -151,14 +151,20 @@ class BuildPhaseCreator {
 
           final package = node.package;
           final generateFor = builderConfig?.generateFor;
-          var optionsWithDefaults = options;
-
-          // TODO
-          /*var optionsWithDefaults = defaultOptions
+          var optionsWithDefaults = BuilderOptions(
+            builderDefinition.targetBuilderConfigDefaults.options,
+          )
               .overrideWith(
-                isReleaseBuild ? defaultReleaseOptions : defaultDevOptions,
+                isReleaseBuild
+                    ? BuilderOptions(
+                        builderDefinition
+                            .targetBuilderConfigDefaults.releaseOptions,
+                      )
+                    : BuilderOptions(
+                        builderDefinition.targetBuilderConfigDefaults.devOptions,
+                      ),
               )
-              .overrideWith(options);*/
+              .overrideWith(options);
           if (package.isRoot) {
             optionsWithDefaults = optionsWithDefaults.overrideWith(
               BuilderOptions.forRoot,
