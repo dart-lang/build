@@ -86,6 +86,18 @@ void main() {
       expect(loadedGraph.toString(), assetGraph.toString());
     });
 
+    test('requires restart if a factory is missing', () async {
+      final buildPlan = await BuildPlan.load(
+        builderFactories: builderFactories,
+        buildOptions: buildOptions,
+        testingOverrides: testingOverrides.copyWith(
+          builderDefinitions: [BuilderDefinition('missing')].build(),
+        ),
+      );
+      expect(buildPlan.buildPhases.inBuildPhases.isEmpty, true);
+      expect(buildPlan.restartIsNeeded, true);
+    });
+
     test('discards previous asset graph if build phases changed', () async {
       var buildPlan = await BuildPlan.load(
         builderFactories: builderFactories,
