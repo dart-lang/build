@@ -1,3 +1,7 @@
+## 5.6.3
+
+* Allow `analyzer: >=8.1.0 <11.0.0`.
+
 ## 5.6.2
 
 * Avoid exceptions from equality operators when comparing query arguments to
