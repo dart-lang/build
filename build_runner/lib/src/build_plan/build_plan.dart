@@ -133,7 +133,7 @@ class BuildPlan {
 
     var builderDefinitions =
         testingOverrides.builderDefinitions ??
-        await BuilderDefinition.load(
+        await AbstractBuilderDefinition.load(
           packageGraph: packageGraph,
           readerWriter: readerWriter,
         );

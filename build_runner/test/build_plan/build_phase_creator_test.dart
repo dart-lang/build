@@ -5,7 +5,7 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart'
-    hide AutoApply, BuilderDefinition;
+    hide AutoApply, BuilderDefinition, PostProcessBuilderDefinition;
 import 'package:build_runner/src/build_plan/build_phase_creator.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/builder_definition.dart';
@@ -463,7 +463,7 @@ void main() {
             autoApply: AutoApply.allPackages,
             appliesBuilders: ['a:post'],
           ),
-          BuilderDefinition('a:post', isPostProcessBuilder: true),
+          PostProcessBuilderDefinition('a:post'),
         ];
 
         expect(

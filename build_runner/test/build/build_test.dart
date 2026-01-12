@@ -7,7 +7,11 @@ import 'dart:math' as math;
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart'
-    hide AutoApply, BuilderDefinition, TargetBuilderConfigDefaults;
+    hide
+        AutoApply,
+        BuilderDefinition,
+        PostProcessBuilderDefinition,
+        TargetBuilderConfigDefaults;
 import 'package:build_runner/src/build/asset_graph/graph.dart';
 import 'package:build_runner/src/build/asset_graph/node.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
@@ -41,9 +45,8 @@ void main() {
     hideOutput: false,
     isOptional: false,
   );
-  final postCopyABuilderDefinition = BuilderDefinition(
+  final postCopyABuilderDefinition = PostProcessBuilderDefinition(
     'a:post_copy_builder',
-    isPostProcessBuilder: true,
   );
   final builderFactories = BuilderFactories(
     {
@@ -1966,7 +1969,7 @@ targets:
           hideOutput: false,
           appliesBuilders: ['a|copy_builder'],
         ),
-        BuilderDefinition('a|copy_builder', isPostProcessBuilder: true),
+        PostProcessBuilderDefinition('a|copy_builder'),
       ];
 
       // A build does not crash in `_cleanUpStaleOutputs`

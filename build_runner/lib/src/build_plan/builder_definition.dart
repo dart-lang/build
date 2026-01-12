@@ -18,92 +18,20 @@ import 'target_graph.dart';
 export 'package:build_config/build_config.dart'
     show AutoApply, TargetBuilderConfigDefaults;
 
-/// A builder definition read from `build.yaml` using
-/// [build_config.BuilderDefinition] or
-/// [build_config.PostProcessBuilderDefinition].
-class BuilderDefinition {
-  /// Whether this is a post process builder.
-  ///
-  /// If so, [hideOutput] is always `true`, [isOptional] is always false and
-  /// [autoApply] is always [AutoApply.none].
-  final bool isPostProcessBuilder;
+/// A [BuilderDefinition] or a [PostProcessBuilderDefinition].
+sealed class AbstractBuilderDefinition {
+  /// The builder key in the form `package:name`.
+  String get key;
 
   /// The package the builder is in.
-  final String package;
-
-  /// The builder key in the form `package:name`.
-  final String key;
-
-  /// Determines which packages a builder is automatically applied to.
-  final AutoApply autoApply;
-
-  /// Builder keys which, when applied to a target, will also apply this Builder
-  /// even if [autoApply] does not match.
-  final BuiltList<String> appliesBuilders;
-
-  /// Whether generated assets should be placed in the build cache.
-  final bool hideOutput;
-
-  /// Whether the builder is skipped if nothing uses its output.
-  final bool isOptional;
+  String get package;
 
   /// The defaults specified in `build.yaml` for this builder.
-  final TargetBuilderConfigDefaults targetBuilderConfigDefaults;
-
-  @visibleForTesting
-  BuilderDefinition(
-    this.key, {
-    this.isPostProcessBuilder = false,
-    String? package,
-    AutoApply autoApply = AutoApply.rootPackage,
-    Iterable<String> appliesBuilders = const [],
-    bool hideOutput = true,
-    bool isOptional = false,
-    this.targetBuilderConfigDefaults = const TargetBuilderConfigDefaults(),
-  }) : appliesBuilders = appliesBuilders.toBuiltList(),
-       autoApply = isPostProcessBuilder ? AutoApply.none : autoApply,
-       package = package ?? (key.contains(':') ? key.split(':').first : ''),
-       hideOutput = isPostProcessBuilder ? true : hideOutput,
-       isOptional = isPostProcessBuilder ? false : isOptional;
-
-  BuilderDefinition.fromConfig(build_config.BuilderDefinition builderDefinition)
-    : isPostProcessBuilder = false,
-      package = builderDefinition.package,
-      key = builderDefinition.key,
-      autoApply = builderDefinition.autoApply,
-      appliesBuilders = builderDefinition.appliesBuilders.build(),
-      hideOutput = builderDefinition.buildTo == build_config.BuildTo.cache,
-      isOptional = builderDefinition.isOptional,
-      targetBuilderConfigDefaults = builderDefinition.defaults;
-
-  BuilderDefinition.fromPostProcessConfig(
-    build_config.PostProcessBuilderDefinition builderDefinition,
-  ) : isPostProcessBuilder = true,
-      package = builderDefinition.package,
-      key = builderDefinition.key,
-      autoApply = build_config.AutoApply.allPackages,
-      appliesBuilders = BuiltList(),
-      hideOutput = true,
-      isOptional = false,
-      targetBuilderConfigDefaults = builderDefinition.defaults;
-
-  /// Whether this builder application is auto applied to [package].
-  bool autoAppliesTo(PackageNode package) {
-    switch (autoApply) {
-      case AutoApply.none:
-        return false;
-      case AutoApply.allPackages:
-        return true;
-      case AutoApply.rootPackage:
-        return package.isRoot;
-      case AutoApply.dependents:
-        return package.dependencies.any((p) => p.name == this.package);
-    }
-  }
+  TargetBuilderConfigDefaults get targetBuilderConfigDefaults;
 
   /// Loads [BuilderDefinition]s for the configuration in `build.yaml` in
   /// each package in [packageGraph].
-  static Future<BuiltList<BuilderDefinition>> load({
+  static Future<BuiltList<AbstractBuilderDefinition>> load({
     required PackageGraph packageGraph,
     required ReaderWriter readerWriter,
   }) async {
@@ -167,13 +95,103 @@ class BuilderDefinition {
         .expand((c) => c.postProcessBuilderDefinitions.values)
         .where(isPackageImportOrForRoot);
 
-    final result = ListBuilder<BuilderDefinition>();
+    final result = ListBuilder<AbstractBuilderDefinition>();
     for (final builder in orderedBuilders) {
       result.add(BuilderDefinition.fromConfig(builder));
     }
     for (final builder in postProcessBuilderDefinitions) {
-      result.add(BuilderDefinition.fromPostProcessConfig(builder));
+      result.add(PostProcessBuilderDefinition.fromConfig(builder));
     }
     return result.build();
   }
+}
+
+/// A builder definition read from `build.yaml` using
+/// [build_config.BuilderDefinition].
+class BuilderDefinition implements AbstractBuilderDefinition {
+  @override
+  final String key;
+
+  @override
+  final String package;
+
+  @override
+  final TargetBuilderConfigDefaults targetBuilderConfigDefaults;
+
+  /// Determines which packages a builder is automatically applied to.
+  final AutoApply autoApply;
+
+  /// Builder keys which, when applied to a target, will also apply this Builder
+  /// even if [autoApply] does not match.
+  final BuiltList<String> appliesBuilders;
+
+  /// Whether generated assets should be placed in the build cache.
+  final bool hideOutput;
+
+  /// Whether the builder is skipped if nothing uses its output.
+  final bool isOptional;
+
+  @visibleForTesting
+  BuilderDefinition(
+    this.key, {
+    String? package,
+    this.autoApply = AutoApply.rootPackage,
+    Iterable<String> appliesBuilders = const [],
+    this.hideOutput = true,
+    this.isOptional = false,
+    this.targetBuilderConfigDefaults = const TargetBuilderConfigDefaults(),
+  }) : package = package ?? (key.contains(':') ? key.split(':').first : ''),
+       appliesBuilders = appliesBuilders.toBuiltList();
+
+  factory BuilderDefinition.fromConfig(
+    build_config.BuilderDefinition builderDefinition,
+  ) => BuilderDefinition(
+    builderDefinition.key,
+    package: builderDefinition.package,
+    autoApply: builderDefinition.autoApply,
+    appliesBuilders: builderDefinition.appliesBuilders,
+    hideOutput: builderDefinition.buildTo == build_config.BuildTo.cache,
+    isOptional: builderDefinition.isOptional,
+    targetBuilderConfigDefaults: builderDefinition.defaults,
+  );
+
+  /// Whether this builder application is auto applied to [package].
+  bool autoAppliesTo(PackageNode package) {
+    switch (autoApply) {
+      case AutoApply.none:
+        return false;
+      case AutoApply.allPackages:
+        return true;
+      case AutoApply.rootPackage:
+        return package.isRoot;
+      case AutoApply.dependents:
+        return package.dependencies.any((p) => p.name == this.package);
+    }
+  }
+}
+
+/// A post process builder definition read from `build.yaml` using
+/// [build_config.PostProcessBuilderDefinition]
+class PostProcessBuilderDefinition implements AbstractBuilderDefinition {
+  @override
+  final String key;
+
+  @override
+  final String package;
+
+  @override
+  final TargetBuilderConfigDefaults targetBuilderConfigDefaults;
+
+  @visibleForTesting
+  PostProcessBuilderDefinition(
+    this.key, {
+    String? package,
+    this.targetBuilderConfigDefaults = const TargetBuilderConfigDefaults(),
+  }) : package = package ?? (key.contains(':') ? key.split(':').first : '');
+
+  PostProcessBuilderDefinition.fromConfig(
+    build_config.PostProcessBuilderDefinition builderDefinition,
+  ) : package = builderDefinition.package,
+      key = builderDefinition.key,
+      targetBuilderConfigDefaults = builderDefinition.defaults;
 }

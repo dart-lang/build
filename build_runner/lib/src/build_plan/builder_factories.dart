@@ -31,16 +31,17 @@ class BuilderFactories {
   ///
   /// Factories must be of the correct type: post process builder or normal
   /// builder.
-  bool hasFactoriesFor(Iterable<BuilderDefinition> builderDefinitions) {
+  bool hasFactoriesFor(Iterable<AbstractBuilderDefinition> builderDefinitions) {
     for (final builderDefinition in builderDefinitions) {
-      if (builderDefinition.isPostProcessBuilder) {
-        if (!postProcessBuilderFactories.containsKey(builderDefinition.key)) {
-          return false;
-        }
-      } else {
-        if (!builderFactories.containsKey(builderDefinition.key)) {
-          return false;
-        }
+      switch (builderDefinition) {
+        case BuilderDefinition _:
+          if (!builderFactories.containsKey(builderDefinition.key)) {
+            return false;
+          }
+        case PostProcessBuilderDefinition _:
+          if (!postProcessBuilderFactories.containsKey(builderDefinition.key)) {
+            return false;
+          }
       }
     }
     return true;

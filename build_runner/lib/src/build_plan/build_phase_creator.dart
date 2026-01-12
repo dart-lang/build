@@ -20,31 +20,36 @@ import 'target_graph.dart';
 class BuildPhaseCreator {
   final BuilderFactories builderFactories;
   final TargetGraph targetGraph;
-  final BuiltList<BuilderDefinition> builderDefinitions;
+  final BuiltList<AbstractBuilderDefinition> builderDefinitions;
   final BuiltMap<String, BuiltMap<String, dynamic>> builderConfigOverrides;
   final bool isReleaseBuild;
 
+  /// Builder definitions by key, excluding post process builders.
   final Map<String, BuilderDefinition> _builderDefinitionByKey = {};
 
   /// For each builder key, the builders that apply that builder.
   ///
   /// This is the reverse of what is specified in `build.yaml`, which is the
   /// list of applied builders for each builder.
+  ///
+  /// Post process builders can be applied, but cannot be appliers.
   final Map<String, List<BuilderDefinition>> _builderAppliersByKey = {};
 
   BuildPhaseCreator({
     required this.builderFactories,
     required this.targetGraph,
-    required Iterable<BuilderDefinition> builderDefinitions,
+    required Iterable<AbstractBuilderDefinition> builderDefinitions,
     required this.builderConfigOverrides,
     required this.isReleaseBuild,
   }) : builderDefinitions = builderDefinitions.toBuiltList() {
     for (final builderDefinition in builderDefinitions) {
-      _builderDefinitionByKey[builderDefinition.key] = builderDefinition;
-      for (final alsoApply in builderDefinition.appliesBuilders) {
-        _builderAppliersByKey
-            .putIfAbsent(alsoApply, () => [])
-            .add(builderDefinition);
+      if (builderDefinition is BuilderDefinition) {
+        _builderDefinitionByKey[builderDefinition.key] = builderDefinition;
+        for (final alsoApply in builderDefinition.appliesBuilders) {
+          _builderAppliersByKey
+              .putIfAbsent(alsoApply, () => [])
+              .add(builderDefinition);
+        }
       }
     }
   }
@@ -102,22 +107,24 @@ class BuildPhaseCreator {
     final postBuildActions = <PostBuildAction>[];
     for (final cycle in cycles) {
       for (final builderDefinition in builderDefinitions) {
-        if (builderDefinition.isPostProcessBuilder) {
-          postBuildActions.addAll(
-            _createPostBuildActions(
-              cycle,
-              builderDefinition,
-              globalOptions[builderDefinition.key] ?? BuilderOptions.empty,
-            ),
-          );
-        } else {
-          inBuildPhases.addAll(
-            _createInBuildPhases(
-              cycle,
-              builderDefinition,
-              globalOptions[builderDefinition.key] ?? BuilderOptions.empty,
-            ),
-          );
+        switch (builderDefinition) {
+          case BuilderDefinition _:
+            inBuildPhases.addAll(
+              _createInBuildPhases(
+                cycle,
+                builderDefinition,
+                globalOptions[builderDefinition.key] ?? BuilderOptions.empty,
+              ),
+            );
+            break;
+          case PostProcessBuilderDefinition _:
+            postBuildActions.addAll(
+              _createPostBuildActions(
+                cycle,
+                builderDefinition,
+                globalOptions[builderDefinition.key] ?? BuilderOptions.empty,
+              ),
+            );
         }
       }
     }
@@ -175,7 +182,7 @@ class BuildPhaseCreator {
 
   List<PostBuildAction> _createPostBuildActions(
     Iterable<TargetNode> cycle,
-    BuilderDefinition builderDefinition,
+    PostProcessBuilderDefinition builderDefinition,
     BuilderOptions globalOptionOverrides,
   ) {
     final postProcessBuilderFactory =
@@ -254,12 +261,21 @@ class BuildPhaseCreator {
   }
 
   /// Whether [builderDefinition] applies to [node].
-  bool _shouldApply(BuilderDefinition builderDefinition, TargetNode node) {
-    if (!node.package.isRoot) {
-      // If the package is not root, only hidden output is allowed. Return
-      // `false` if the builder or any builder it applies has non-hidden output.
+  ///
+  /// Post process builders don't auto apply themselves: they can be explicitly
+  /// enabled or they can be applied by another builder that auto applies.
+  bool _shouldApply(
+    AbstractBuilderDefinition builderDefinition,
+    TargetNode node,
+  ) {
+    // If the package is not root, only hidden output is allowed. Return
+    // `false` if the builder or any builder it applies has non-hidden output.
+    // Post process builder output is always hidden, so skip the check.
+    if (builderDefinition is BuilderDefinition && !node.package.isRoot) {
       if (!(builderDefinition.hideOutput &&
           builderDefinition.appliesBuilders.every(
+            // Post process builders are not in the map, replace `null` with
+            // `true` because post process builders always hide their output.
             (b) => _builderDefinitionByKey[b]?.hideOutput ?? true,
           ))) {
         return false;
@@ -274,6 +290,7 @@ class BuildPhaseCreator {
     // the package.
     final shouldAutoApply =
         node.target.autoApplyBuilders &&
+        builderDefinition is BuilderDefinition &&
         builderDefinition.autoAppliesTo(node.package);
     return shouldAutoApply ||
         (_builderAppliersByKey[builderDefinition.key] ?? const []).any(
@@ -289,7 +306,7 @@ extension BuilderOptionsExtension on Map<String, dynamic>? {
 
 /// Warns about configuration related to unknown builders.
 void warnForUnknownBuilders(
-  Iterable<BuilderDefinition> builders,
+  Iterable<AbstractBuilderDefinition> builders,
   build_config.BuildConfig rootPackageConfig,
   BuiltMap<String, BuiltMap<String, dynamic>> builderConfigOverrides,
 ) {

@@ -74,7 +74,7 @@ void _printOnFailure(LogRecord record) {
 /// `package:build_test`, can they be unified?
 Future<TestBuildersResult> testPhases(
   BuilderFactories builderFactories,
-  List<BuilderDefinition> builders,
+  List<AbstractBuilderDefinition> builders,
   Map<String, /*String|List<int>*/ Object> inputs, {
   TestBuildersResult? resumeFrom,
   Map<String, /*String|List<int>*/ Object>? outputs,

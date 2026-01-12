@@ -400,7 +400,7 @@ Future<TestBuilderResult> testBuilderFactories(
     return result;
   }
 
-  final builderDefinitions = <BuilderDefinition>[];
+  final builderDefinitions = <AbstractBuilderDefinition>[];
   final builderNameToBuilderFactory = <String, List<BuilderFactory>>{};
   for (final builderFactory in builderFactories) {
     // The real build gets the name from the `build.yaml` where the builder is
@@ -443,7 +443,7 @@ Future<TestBuilderResult> testBuilderFactories(
     );
     builderDefinitions.add(
       // ignore: invalid_use_of_visible_for_testing_member
-      BuilderDefinition(name, isPostProcessBuilder: true),
+      PostProcessBuilderDefinition(name),
     );
     postProcessBuilderNameToBuilderFactory[name] = postProcessBuilderFactory;
   }
@@ -580,9 +580,6 @@ class _ApplyBuilderDefinitionToPackages implements BuilderDefinition {
       applyToPackages.contains(package.name);
 
   // Delegate everything else.
-
-  @override
-  bool get isPostProcessBuilder => delegate.isPostProcessBuilder;
 
   @override
   BuiltList<String> get appliesBuilders => delegate.appliesBuilders;

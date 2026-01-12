@@ -17,7 +17,7 @@ import 'package_graph.dart';
 
 /// Settings that are not user-visible: they are overriden only for testing.
 class TestingOverrides {
-  final BuiltList<BuilderDefinition>? builderDefinitions;
+  final BuiltList<AbstractBuilderDefinition>? builderDefinitions;
   final BuiltMap<String, BuildConfig>? buildConfig;
   final BuildPhases? buildPhases;
   final Duration? debounceDelay;
