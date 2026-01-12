@@ -7,7 +7,7 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
-import 'package:build_config/build_config.dart';
+import 'package:build_config/build_config.dart' as build_config;
 // ignore: implementation_imports
 import 'package:build_runner/src/internal.dart';
 import 'package:built_collection/built_collection.dart';
@@ -400,7 +400,8 @@ Future<TestBuilderResult> testBuilderFactories(
     return result;
   }
 
-  final builderApplications = <BuilderApplication>[];
+  final builderDefinitions = <AbstractBuilderDefinition>[];
+  final builderNameToBuilderFactory = <String, List<BuilderFactory>>{};
   for (final builderFactory in builderFactories) {
     // The real build gets the name from the `build.yaml` where the builder is
     // For tests, use the builder class name, or fall back if the test makes the
@@ -411,21 +412,24 @@ Future<TestBuilderResult> testBuilderFactories(
     } catch (e) {
       name = e.toString();
     }
-    builderApplications.add(
-      _ApplyBuilderApplicationToPackages(
-        delegate: apply(
-          '',
+    name = _firstNameNotIn(name, builderNameToBuilderFactory.keys.toSet());
+    builderDefinitions.add(
+      _ApplyBuilderDefinitionToPackages(
+        // ignore: invalid_use_of_visible_for_testing_member
+        delegate: BuilderDefinition(
           name,
-          [builderFactory],
-          AutoApply.allPackages,
+          autoApply: build_config.AutoApply.allPackages,
           isOptional: optionalBuilderFactories.contains(builderFactory),
           hideOutput: !visibleOutputBuilderFactories.contains(builderFactory),
-          appliesBuilders: appliesBuilders[builderFactory] ?? [],
+          appliesBuilders: appliesBuilders[builderFactory] ?? const [],
         ),
         applyToPackages: inputPackages,
       ),
     );
+    builderNameToBuilderFactory[name] = [builderFactory];
   }
+  final postProcessBuilderNameToBuilderFactory =
+      <String, PostProcessBuilderFactory>{};
   for (final postProcessBuilderFactory in postProcessBuilderFactories) {
     String name;
     try {
@@ -433,13 +437,19 @@ Future<TestBuilderResult> testBuilderFactories(
     } catch (e) {
       name = e.toString();
     }
-    builderApplications.add(
-      applyPostProcess('', name, postProcessBuilderFactory),
+    name = _firstNameNotIn(
+      name,
+      postProcessBuilderNameToBuilderFactory.keys.toSet(),
     );
+    builderDefinitions.add(
+      // ignore: invalid_use_of_visible_for_testing_member
+      PostProcessBuilderDefinition(name),
+    );
+    postProcessBuilderNameToBuilderFactory[name] = postProcessBuilderFactory;
   }
 
   final testingOverrides = TestingOverrides(
-    builderApplications: builderApplications.build(),
+    builderDefinitions: builderDefinitions.build(),
     packageGraph: packageGraph,
     readerWriter: readerWriter as InternalTestReaderWriter,
     resolvers: resolvers,
@@ -451,7 +461,7 @@ Future<TestBuilderResult> testBuilderFactories(
         testingBuilderConfig
             ? {
               for (final package in inputPackages)
-                package: BuildConfig.fromMap(package, [], {
+                package: build_config.BuildConfig.fromMap(package, [], {
                   'targets': {
                     package: {
                       'sources': [
@@ -481,7 +491,10 @@ Future<TestBuilderResult> testBuilderFactories(
   );
 
   final buildPlan = await BuildPlan.load(
-    builderFactories: BuilderFactories(),
+    builderFactories: BuilderFactories(
+      builderNameToBuilderFactory,
+      postProcessBuilderFactories: postProcessBuilderNameToBuilderFactory,
+    ),
     // ignore: invalid_use_of_visible_for_testing_member
     buildOptions: BuildOptions.forTests(
       enableLowResourcesMode: enableLowResourceMode,
@@ -549,15 +562,15 @@ void _printOnFailureOrWrite(LogRecord record) {
   }
 }
 
-/// Wraps a [BuilderApplication] to make it apply to a specific set of packages.
+/// Wraps a [BuilderDefinition] to make it apply to a specific set of packages.
 ///
 /// This is used to create a test-only config that applies a builder to exactly
 /// packages that contain explicitly specified inputs.
-class _ApplyBuilderApplicationToPackages implements BuilderApplication {
-  BuilderApplication delegate;
+class _ApplyBuilderDefinitionToPackages implements BuilderDefinition {
+  BuilderDefinition delegate;
   final Set<String> applyToPackages;
 
-  _ApplyBuilderApplicationToPackages({
+  _ApplyBuilderDefinitionToPackages({
     required this.delegate,
     required this.applyToPackages,
   });
@@ -569,21 +582,41 @@ class _ApplyBuilderApplicationToPackages implements BuilderApplication {
   // Delegate everything else.
 
   @override
-  Iterable<String> get appliesBuilders => delegate.appliesBuilders;
+  BuiltList<String> get appliesBuilders => delegate.appliesBuilders;
 
   @override
-  AutoApply get autoApply => delegate.autoApply;
+  build_config.AutoApply get autoApply => delegate.autoApply;
 
   @override
-  List<BuildPhaseFactory> get buildPhaseFactories =>
-      delegate.buildPhaseFactories;
+  String get key => delegate.key;
 
   @override
-  String get builderKey => delegate.builderKey;
-
-  @override
-  String get builderPackage => delegate.builderPackage;
+  String get package => delegate.package;
 
   @override
   bool get hideOutput => delegate.hideOutput;
+
+  @override
+  bool get isOptional => delegate.isOptional;
+
+  @override
+  build_config.TargetBuilderConfigDefaults get targetBuilderConfigDefaults =>
+      delegate.targetBuilderConfigDefaults;
+}
+
+/// Returns [name] if it is not in [existingNames], or return a modified version
+/// not in [existingNames].
+///
+/// In previous `build_test` implementations the test builder names were not
+/// used, so tests could pass multiple builders with the same name and
+/// they would all be used. This is used to force names to be different to
+/// preserve this behavior.
+String _firstNameNotIn(String name, Set<String> existingNames) {
+  if (!existingNames.contains(name)) return name;
+  var i = 1;
+  while (true) {
+    final possibleResult = '${name}_$i';
+    if (!existingNames.contains(possibleResult)) return possibleResult;
+    ++i;
+  }
 }

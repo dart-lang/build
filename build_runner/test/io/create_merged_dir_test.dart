@@ -86,7 +86,7 @@ void main() {
         readerWriter.testing.writeString(source.key, source.value);
       }
       buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories(),
+        builderFactories: BuilderFactories({}),
         buildOptions: BuildOptions.forTests(),
         testingOverrides: TestingOverrides(
           buildPhases: phases,

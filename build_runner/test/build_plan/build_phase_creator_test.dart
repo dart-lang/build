@@ -4,9 +4,12 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:build_config/build_config.dart';
-import 'package:build_runner/src/build_plan/apply_builders.dart';
+import 'package:build_config/build_config.dart'
+    hide AutoApply, BuilderDefinition, PostProcessBuilderDefinition;
+import 'package:build_runner/src/build_plan/build_phase_creator.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
+import 'package:build_runner/src/build_plan/builder_definition.dart';
+import 'package:build_runner/src/build_plan/builder_factories.dart';
 import 'package:build_runner/src/build_plan/phase.dart';
 import 'package:build_runner/src/build_plan/target_graph.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
@@ -17,7 +20,7 @@ import 'package:test/test.dart';
 import '../common/common.dart';
 
 void main() {
-  group('apply_builders.createBuildPhases', () {
+  group('BuildPhaseCreator', () {
     test('builderConfigOverrides overrides builder config globally', () async {
       final packageGraph = buildPackageGraph({
         rootPackage('a'): ['b'],
@@ -29,17 +32,24 @@ void main() {
           defaultRootPackageSources: ['**'].build(),
         ),
       );
-      final builderApplications = [
-        apply('b', 'b:cool_builder', [CoolBuilder.new], AutoApply.allPackages),
-      ];
-      final phases = await createBuildPhases(
-        targetGraph,
-        builderApplications,
-        {
-          'b:cool_builder': {'option_a': 'a', 'option_c': 'c'}.build(),
-        }.build(),
-        false,
-      );
+      final phases =
+          await BuildPhaseCreator(
+            builderFactories: BuilderFactories({
+              'b:cool_builder': [CoolBuilder.new],
+            }),
+            targetGraph: targetGraph,
+            builderDefinitions: [
+              BuilderDefinition(
+                'b:cool_builder',
+                autoApply: AutoApply.allPackages,
+              ),
+            ],
+            builderConfigOverrides:
+                {
+                  'b:cool_builder': {'option_a': 'a', 'option_c': 'c'}.build(),
+                }.build(),
+            isReleaseBuild: false,
+          ).createBuildPhases();
       for (final phase in phases.inBuildPhases) {
         expect((phase.builder as CoolBuilder).optionA, equals('a'));
         expect((phase.builder as CoolBuilder).optionB, equals('defaultB'));
@@ -81,19 +91,24 @@ void main() {
                 buildConfig: overrides,
               ),
             );
-            final builderApplications = [
-              apply('b', 'b:cool_builder', [
-                CoolBuilder.new,
-              ], AutoApply.allPackages),
-            ];
-            final phases = await createBuildPhases(
-              targetGraph,
-              builderApplications,
-              {
-                'b:cool_builder': {'option_c': '--define c'}.build(),
-              }.build(),
-              true,
-            );
+            final phases =
+                await BuildPhaseCreator(
+                  builderFactories: BuilderFactories({
+                    'b:cool_builder': [CoolBuilder.new],
+                  }),
+                  targetGraph: targetGraph,
+                  builderDefinitions: [
+                    BuilderDefinition(
+                      'b:cool_builder',
+                      autoApply: AutoApply.allPackages,
+                    ),
+                  ],
+                  builderConfigOverrides:
+                      {
+                        'b:cool_builder': {'option_c': '--define c'}.build(),
+                      }.build(),
+                  isReleaseBuild: true,
+                ).createBuildPhases();
             for (final phase in phases.inBuildPhases) {
               expect(
                 (phase.builder as CoolBuilder).optionA,
@@ -126,15 +141,21 @@ void main() {
           defaultRootPackageSources: ['**'].build(),
         ),
       );
-      final builderApplications = [
-        apply('b', 'b:cool_builder', [CoolBuilder.new], AutoApply.dependents),
-      ];
-      final phases = await createBuildPhases(
-        targetGraph,
-        builderApplications,
-        BuiltMap(),
-        false,
-      );
+      final phases =
+          await BuildPhaseCreator(
+            builderFactories: BuilderFactories({
+              'b:cool_builder': [CoolBuilder.new],
+            }),
+            targetGraph: targetGraph,
+            builderDefinitions: [
+              BuilderDefinition(
+                'b:cool_builder',
+                autoApply: AutoApply.dependents,
+              ),
+            ],
+            builderConfigOverrides: BuiltMap(),
+            isReleaseBuild: false,
+          ).createBuildPhases();
       expect(phases, hasLength(1));
       expect(phases.inBuildPhases.first.package, 'a');
     });
@@ -150,22 +171,25 @@ void main() {
           defaultRootPackageSources: ['**'].build(),
         ),
       );
-      final builderApplications = [
-        apply(
-          'b',
+      final builderDefinitions = [
+        BuilderDefinition(
           'b:cool_builder',
-          [CoolBuilder.new],
-          AutoApply.dependents,
+          autoApply: AutoApply.dependents,
           appliesBuilders: ['b:not_by_default'],
         ),
-        apply('b', 'b:not_by_default', [(_) => TestBuilder()], AutoApply.none),
+        BuilderDefinition('b:not_by_default', autoApply: AutoApply.none),
       ];
-      final phases = await createBuildPhases(
-        targetGraph,
-        builderApplications,
-        BuiltMap(),
-        false,
-      );
+      final phases =
+          await BuildPhaseCreator(
+            builderFactories: BuilderFactories({
+              'b:cool_builder': [CoolBuilder.new],
+              'b:not_by_default': [(_) => TestBuilder()],
+            }),
+            targetGraph: targetGraph,
+            builderDefinitions: builderDefinitions,
+            builderConfigOverrides: BuiltMap(),
+            isReleaseBuild: false,
+          ).createBuildPhases();
       expect(phases, hasLength(2));
       expect(
         phases.inBuildPhases,
@@ -191,21 +215,22 @@ void main() {
           defaultRootPackageSources: ['**'].build(),
         ),
       );
-      final builderApplications = [
-        apply(
-          'c',
-          'c:cool_builder',
-          [CoolBuilder.new],
-          AutoApply.dependents,
-          hideOutput: false,
-        ),
-      ];
-      final phases = await createBuildPhases(
-        targetGraph,
-        builderApplications,
-        BuiltMap(),
-        false,
-      );
+      final phases =
+          await BuildPhaseCreator(
+            builderFactories: BuilderFactories({
+              'c:cool_builder': [CoolBuilder.new],
+            }),
+            targetGraph: targetGraph,
+            builderDefinitions: [
+              BuilderDefinition(
+                'c:cool_builder',
+                autoApply: AutoApply.dependents,
+                hideOutput: false,
+              ),
+            ],
+            builderConfigOverrides: BuiltMap(),
+            isReleaseBuild: false,
+          ).createBuildPhases();
       expect(phases, hasLength(1));
       expect(
         phases.inBuildPhases,
@@ -233,28 +258,29 @@ void main() {
             defaultRootPackageSources: ['**'].build(),
           ),
         );
-        final builderApplications = [
-          apply(
-            'c',
+        final builderDefinitions = [
+          BuilderDefinition(
             'c:cool_builder',
-            [CoolBuilder.new],
-            AutoApply.dependents,
+            autoApply: AutoApply.dependents,
             appliesBuilders: ['c:not_by_default'],
           ),
-          apply(
-            'c',
+          BuilderDefinition(
             'c:not_by_default',
-            [(_) => TestBuilder()],
-            AutoApply.none,
+            autoApply: AutoApply.none,
             hideOutput: false,
           ),
         ];
-        final phases = await createBuildPhases(
-          targetGraph,
-          builderApplications,
-          BuiltMap(),
-          false,
-        );
+        final phases =
+            await BuildPhaseCreator(
+              builderFactories: BuilderFactories({
+                'c:cool_builder': [CoolBuilder.new],
+                'c:not_by_default': [(_) => TestBuilder()],
+              }),
+              targetGraph: targetGraph,
+              builderDefinitions: builderDefinitions,
+              builderConfigOverrides: BuiltMap(),
+              isReleaseBuild: false,
+            ).createBuildPhases();
         expect(phases, hasLength(2));
         expect(
           phases.inBuildPhases,
@@ -292,18 +318,22 @@ void main() {
               buildConfig: overrides,
             ),
           );
-          final builderApplications = [
-            apply('b', 'b:cool_builder', [
-              CoolBuilder.new,
-            ], AutoApply.allPackages),
-          ];
           expect(
-            () => createBuildPhases(
-              targetGraph,
-              builderApplications,
-              BuiltMap(),
-              false,
-            ),
+            () =>
+                BuildPhaseCreator(
+                  builderFactories: BuilderFactories({
+                    'b:cool_builder': [CoolBuilder.new],
+                  }),
+                  targetGraph: targetGraph,
+                  builderDefinitions: [
+                    BuilderDefinition(
+                      'b:cool_builder',
+                      autoApply: AutoApply.allPackages,
+                    ),
+                  ],
+                  builderConfigOverrides: BuiltMap(),
+                  isReleaseBuild: false,
+                ).createBuildPhases(),
             throwsA(const TypeMatcher<CannotBuildException>()),
           );
         },
@@ -342,24 +372,27 @@ void main() {
           'a',
           [],
         );
-        final builderApplications = [
-          apply(
-            'b',
+        final builderDefinitions = [
+          BuilderDefinition(
             'b:cool_builder',
-            [CoolBuilder.new],
-            AutoApply.dependents,
+            autoApply: AutoApply.dependents,
             appliesBuilders: ['b:cool_builder_2'],
           ),
-          apply('b', 'b:cool_builder_2', [
-            CoolBuilder.new,
-          ], AutoApply.dependents),
+          BuilderDefinition(
+            'b:cool_builder_2',
+            autoApply: AutoApply.dependents,
+          ),
         ];
-        return await createBuildPhases(
-          targetGraph,
-          builderApplications,
-          BuiltMap(),
-          false,
-        );
+        return await BuildPhaseCreator(
+          builderFactories: BuilderFactories({
+            'b:cool_builder': [CoolBuilder.new],
+            'b:cool_builder_2': [CoolBuilder.new],
+          }),
+          targetGraph: targetGraph,
+          builderDefinitions: builderDefinitions,
+          builderConfigOverrides: BuiltMap(),
+          isReleaseBuild: false,
+        ).createBuildPhases();
       }
 
       test('can be disabled for a target', () async {
@@ -413,35 +446,45 @@ void main() {
         },
       );
     });
-  });
 
-  test('does not allow post process builders with capturing inputs', () async {
-    final packageGraph = buildPackageGraph({rootPackage('a'): []});
-    final targetGraph = await TargetGraph.forPackageGraph(
-      packageGraph: packageGraph,
-      testingOverrides: TestingOverrides(
-        defaultRootPackageSources: ['**'].build(),
-      ),
-    );
-    final builderApplications = [
-      apply(
-        'a',
-        'a:regular',
-        [(_) => TestBuilder()],
-        AutoApply.allPackages,
-        appliesBuilders: ['a:post'],
-      ),
-      applyPostProcess('a', 'a:post', (_) => _InvalidPostProcessBuilder()),
-    ];
+    test(
+      'does not allow post process builders with capturing inputs',
+      () async {
+        final packageGraph = buildPackageGraph({rootPackage('a'): []});
+        final targetGraph = await TargetGraph.forPackageGraph(
+          packageGraph: packageGraph,
+          testingOverrides: TestingOverrides(
+            defaultRootPackageSources: ['**'].build(),
+          ),
+        );
+        final builderDefinitions = [
+          BuilderDefinition(
+            'a:regular',
+            autoApply: AutoApply.allPackages,
+            appliesBuilders: ['a:post'],
+          ),
+          PostProcessBuilderDefinition('a:post'),
+        ];
 
-    expect(
-      () => createBuildPhases(
-        targetGraph,
-        builderApplications,
-        BuiltMap(),
-        false,
-      ),
-      throwsA(isArgumentError),
+        expect(
+          () =>
+              BuildPhaseCreator(
+                builderFactories: BuilderFactories(
+                  {
+                    'a:regular': [CoolBuilder.new],
+                  },
+                  postProcessBuilderFactories: {
+                    'a:post': (_) => _InvalidPostProcessBuilder(),
+                  },
+                ),
+                targetGraph: targetGraph,
+                builderDefinitions: builderDefinitions,
+                builderConfigOverrides: BuiltMap(),
+                isReleaseBuild: false,
+              ).createBuildPhases(),
+          throwsA(isArgumentError),
+        );
+      },
     );
   });
 }
