@@ -1,6 +1,7 @@
-## 4.4.7-wip
+## 4.4.7
 
 - Add support for DDC's Library Bundle module system, which is compatible with web hot reload. This is not yet enabled by default.
+- Minor updates to flag resolution logic.
 - Allow `analyzer` 10.0.0.
 
 ## 4.4.6

@@ -12,18 +12,29 @@ import 'package:build_web_compilers/builders.dart';
 import 'package:file/memory.dart';
 import 'package:test/test.dart';
 
+const ddcLibraryBundle = false;
+
+final defaultBuilderOptions = const BuilderOptions({
+  'compiler': 'dartdevc',
+  'ddc-library-bundle': ddcLibraryBundle,
+  'native_null_assertions': false,
+});
+
 void main() {
   initializePlatforms();
   final startingBuilders = {
     // Uses the real sdk copy builder to copy required files from the SDK.
     sdkJsCopyRequirejs(const BuilderOptions({})),
-    sdkJsCompile(const BuilderOptions({})),
+    sdkJsCompile(defaultBuilderOptions),
     const ModuleLibraryBuilder(),
     MetaModuleBuilder(ddcPlatform),
     MetaModuleCleanBuilder(ddcPlatform),
     ModuleBuilder(ddcPlatform),
     ddcKernelBuilder(const BuilderOptions({})),
-    DevCompilerBuilder(platform: ddcPlatform),
+    DevCompilerBuilder(
+      platform: ddcPlatform,
+      ddcLibraryBundle: ddcLibraryBundle,
+    ),
   };
 
   group('simple project', () {
@@ -85,12 +96,7 @@ void main() {
     test('can bootstrap dart entrypoints', () async {
       // Just do some basic sanity checking, integration tests will validate
       // things actually work.
-      final builder = WebEntrypointBuilder.fromOptions(
-        const BuilderOptions({
-          'compiler': 'dartdevc',
-          'native_null_assertions': false,
-        }),
-      );
+      final builder = WebEntrypointBuilder.fromOptions(defaultBuilderOptions);
       final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
         'a|web/index.dart.bootstrap.js': decodedMatches(
           allOf([
@@ -122,12 +128,7 @@ void main() {
   });
   group('regression tests', () {
     test('root dart file is not the primary source, #2269', () async {
-      final builder = WebEntrypointBuilder.fromOptions(
-        const BuilderOptions({
-          'compiler': 'dartdevc',
-          'native_null_assertions': false,
-        }),
-      );
+      final builder = WebEntrypointBuilder.fromOptions(defaultBuilderOptions);
       final assets = {
         // Becomes the primary source for the module, since it we alpha-sort.
         'a|web/a.dart': '''
@@ -187,12 +188,7 @@ void main() {
     });
 
     test('root dart file is under lib', () async {
-      final builder = WebEntrypointBuilder.fromOptions(
-        const BuilderOptions({
-          'compiler': 'dartdevc',
-          'native_null_assertions': false,
-        }),
-      );
+      final builder = WebEntrypointBuilder.fromOptions(defaultBuilderOptions);
       final assets = {
         'a|lib/app.dart': 'void main() {}',
         // Add a fake asset so that the build_web_compilers package exists.
@@ -235,7 +231,9 @@ void main() {
     });
 
     test('can enable canary features for SDK', () async {
-      final builder = sdkJsCompile(const BuilderOptions({'canary': true}));
+      final builder = sdkJsCompile(
+        const BuilderOptions({'canary': true, 'ddc-library-bundle': false}),
+      );
       final sdkAssets = <String, Object>{'build_web_compilers|fake.txt': ''};
       final expectedOutputs = {
         'build_web_compilers|lib/src/dev_compiler/dart_sdk.js': decodedMatches(
@@ -247,7 +245,7 @@ void main() {
     });
 
     test('does not enable canary features for SDK by default', () async {
-      final builder = sdkJsCompile(const BuilderOptions({}));
+      final builder = sdkJsCompile(defaultBuilderOptions);
       final sdkAssets = <String, Object>{'build_web_compilers|fake.txt': ''};
       final expectedOutputs = {
         'build_web_compilers|lib/src/dev_compiler/dart_sdk.js': decodedMatches(
@@ -260,7 +258,10 @@ void main() {
 
     test('can use prebuilt sdk from path', () async {
       final builder = sdkJsCompile(
-        const BuilderOptions({'use-prebuilt-sdk-from-path': 'path/to/sdk'}),
+        const BuilderOptions({
+          'use-prebuilt-sdk-from-path': 'path/to/sdk',
+          'ddc-library-bundle': false,
+        }),
       );
       final sdkAssets = <String, Object>{'build_web_compilers|fake.txt': ''};
       final expectedOutputs = {
