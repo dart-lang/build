@@ -1,6 +1,6 @@
-## 3.5.5-wip
+## 3.5.5
 
-- Use `build_runner` 2.11.0.
+- Use `build_runner` 2.10.5.
 
 ## 3.5.4
 

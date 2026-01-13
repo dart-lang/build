@@ -1,5 +1,5 @@
 name: build
-version: 4.0.3
+version: 4.0.4
 description: A package for authoring build_runner compatible code generators.
 repository: https://github.com/dart-lang/build/tree/master/build
 resolution: workspace
@@ -8,7 +8,7 @@ environment:
   sdk: ^3.7.0
 
 dependencies:
-  analyzer: '>=8.0.0 <10.0.0'
+  analyzer: '>=8.0.0 <11.0.0'
   crypto: ^3.0.0
   glob: ^2.0.0
   logging: ^1.0.0

@@ -1,7 +1,8 @@
-## 2.11.0-wip
+## 2.10.5
 
 - Add logging of builder compilation so you can tell how much time is spent
   on the JIT or AOT compile. Explicitly log restarts to recompile builders.
+- Allow `analyzer` 10.0.0.
 
 ## 2.10.4
 
