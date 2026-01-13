@@ -21,3 +21,10 @@ workspace:
 - build_modules/test/fixtures/b
 - build_web_compilers/test/fixtures/c
 - build_web_compilers/test/fixtures/d
+
+dependency_overrides:
+  analyzer: ^10.0.0
+  dart_style:
+    git:
+      url: https://github.com/dart-lang/dart_style.git
+      ref: af2e770
