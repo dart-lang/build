@@ -1,3 +1,7 @@
+## 4.0.4
+
+- Allow `analyzer` 10.0.0.
+
 ## 4.0.3
 
 - Allow `analyzer` 9.0.0.

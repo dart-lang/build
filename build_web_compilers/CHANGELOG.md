@@ -1,6 +1,8 @@
 ## 4.4.7
+
 - Add support for DDC's Library Bundle module system, which is compatible with web hot reload. This is not yet enabled by default.
 - Minor updates to flag resolution logic.
+- Allow `analyzer` 10.0.0.
 
 ## 4.4.6
 - Add build options to customize the SDK used for compiling to js and wasm.
@@ -31,9 +33,11 @@
 - Add new builders: `DdcFrontendServerBuilder` and `WebEntrypointMarkerBuilder`. 
 
 ## 4.3.2
+
 - Fix Dart2JS adding extraneous sourcemaps to its archive when both wasm and js are enabled.
 
 ## 4.3.1
+
 - Fix Dart2JS sourcemaps not being written when both wasm and js are enabled.
 
 ## 4.3.0

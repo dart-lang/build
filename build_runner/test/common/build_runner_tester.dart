@@ -351,12 +351,29 @@ class BuildRunnerProcess {
 
   Future<int> get exitCode => process.exitCode;
 
-  // Expects the server to log that it is serving, records the port.
-  Future<void> expectServing() async {
-    final regexp = RegExp('Serving `web` on http://localhost:([0-9]+)');
-    final line = await expectAndGetLine(regexp);
-    final port = int.parse(regexp.firstMatch(line)!.group(1)!);
-    _port = port;
+  /// Expects the server to log that it is serving, records the port.
+  ///
+  /// Build success can be logged before or after serving, checks that the build
+  /// succeeded allowing either order.
+  Future<void> expectServingAndBuildSuccess() async {
+    final servingRegexp = RegExp('Serving `web` on http://localhost:([0-9]+)');
+
+    var seenServing = false;
+    var seenSuccess = false;
+
+    while (!(seenServing && seenSuccess)) {
+      final line = await expectAndGetLine(
+        RegExp('${servingRegexp.pattern}|${BuildLog.successPattern}'),
+      );
+      final servingMatch = servingRegexp.firstMatch(line);
+      if (servingMatch != null) {
+        seenServing = true;
+        final port = int.parse(servingMatch.group(1)!);
+        _port = port;
+      } else {
+        seenSuccess = true;
+      }
+    }
   }
 
   /// Requests [path] from the server and expects it returns

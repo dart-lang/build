@@ -1,5 +1,5 @@
 name: build_modules
-version: 5.1.5
+version: 5.1.6
 description: >-
   Builders to analyze and split Dart code into individually compilable modules
   based on imports.
@@ -10,7 +10,7 @@ environment:
   sdk: '>=3.7.0 <3.12.0-z'
 
 dependencies:
-  analyzer: '>=5.1.0 <10.0.0'
+  analyzer: '>=5.1.0 <11.0.0'
   async: ^2.5.0
   bazel_worker: ^1.0.0
   build: '>=2.0.0 <5.0.0'
@@ -33,8 +33,7 @@ dev_dependencies:
     path: test/fixtures/b
   build_runner: ^2.0.0
   build_test: ^3.1.0
-# TODO(davidmorgan): add back when it's released for build 3.0.0.
-#  json_serializable: ^6.9.1
+  json_serializable: ^6.9.1
   test: ^1.16.0
 
 topics:

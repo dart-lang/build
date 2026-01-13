@@ -1,3 +1,7 @@
+## 5.1.6
+
+- Allow `analyzer` 10.0.0.
+
 ## 5.1.5
 
 - Add support for DDC's Library Bundle module system, which is compatible with web hot reload. This is not yet enabled by default.
