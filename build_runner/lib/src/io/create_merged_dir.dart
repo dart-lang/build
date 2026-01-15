@@ -93,9 +93,9 @@ Future<bool> _createMergedOutputDir({
   required ReaderWriter readerWriter,
 }) async {
   try {
-    final absoluteRoot = p.join(buildPackages.root.path, root);
-    if (absoluteRoot != buildPackages.root.path &&
-        !p.isWithin(buildPackages.root.path, absoluteRoot)) {
+    final absoluteRoot = p.join(buildPackages.outputRoot.path, root);
+    if (absoluteRoot != buildPackages.outputRoot.path &&
+        !p.isWithin(buildPackages.outputRoot.path, absoluteRoot)) {
       buildLog.error(
         'Invalid dir to build `$root`, must be within the package root.',
       );
@@ -109,7 +109,7 @@ Future<bool> _createMergedOutputDir({
     final builtAssets = buildOutputReader.allAssets(rootDir: root).toList();
     if (root != '' &&
         !builtAssets
-            .where((id) => id.package == buildPackages.root.name)
+            .where((id) => id.package == buildPackages.outputRoot.name)
             .any((id) => p.isWithin(root, id.path))) {
       buildLog.error('No assets exist in $root, skipping output.');
       return false;
@@ -133,7 +133,7 @@ Future<bool> _createMergedOutputDir({
             hoist,
           ),
         _writeModifiedPackageConfig(
-          buildPackages.root.name,
+          buildPackages.outputRoot.name,
           buildPackages,
           outputDir,
         ),
@@ -243,7 +243,7 @@ Future<String> _writeAsset(
       );
     } else {
       assetPath = id.path;
-      assert(id.package == buildPackages.root.name);
+      assert(id.package == buildPackages.outputRoot.name);
       if (hoist && p.isWithin(root, id.path)) {
         assetPath = p.relative(id.path, from: root);
       }
@@ -255,10 +255,8 @@ Future<String> _writeAsset(
         // reader filesystem is `IoFilesystem`, so symlinks make sense.
         await Link(_filePathFor(outputDir, assetPath)).create(
           readerWriter.assetPathProvider.pathFor(
-            readerWriter.generatedAssetHider.maybeHide(
-              id,
-              buildPackages.root.name,
-            ),
+            id,
+            hide: readerWriter.generatedAssetHider.isHidden(id),
           ),
           recursive: true,
         );

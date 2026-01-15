@@ -18,7 +18,7 @@ BuildPackages createBuildPackages(
     );
   }
   final root = packages.keys.singleWhere((n) => n.isRoot);
-  return BuildPackages.fromRoot(root);
+  return BuildPackages.fromCurrent(root);
 }
 
 BuildPackage package(

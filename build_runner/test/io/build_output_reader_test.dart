@@ -36,7 +36,7 @@ void main() {
     late BuildPhases buildPhases;
 
     setUp(() async {
-      readerWriter = InternalTestReaderWriter(rootPackage: 'a');
+      readerWriter = InternalTestReaderWriter(buildCachePackage: 'a');
       buildPackages = createBuildPackages({rootPackage('a'): []});
       assetGraph = await AssetGraph.build(
         BuildPhases([]),

@@ -22,8 +22,24 @@ final _sdkPackage = BuildPackage(r'$sdk', sdkPath, null, isEditable: false);
 
 /// The [BuildPackage]s in the build.
 class BuildPackages implements AssetPathProvider {
-  /// The root application package.
-  final BuildPackage root;
+  /// The current package.
+  ///
+  /// If set, this is both the root package and the package where the build
+  /// script will be generated.
+  ///
+  /// TODO(davidmorgan): when workspace support is added there will be
+  /// no current package.
+  final BuildPackage? current;
+
+  /// The package where output that does not belong to a specific package is
+  /// written.
+  ///
+  /// This includes the build cache under `.dart_tool/build/generated`, and any
+  /// tool output such as logs.
+  ///
+  /// TODO(davidmorgan): when workspace support is added this will be a
+  /// fake package at the workspace root.
+  final BuildPackage outputRoot;
 
   /// All [BuildPackage]s indexed by package name.
   final Map<String, BuildPackage> allPackages;
@@ -31,25 +47,33 @@ class BuildPackages implements AssetPathProvider {
   /// A [PackageConfig] representation of this package graph.
   final PackageConfig asPackageConfig;
 
-  BuildPackages._(this.root, Map<String, BuildPackage> allPackages)
-    : asPackageConfig = _packagesToConfig(allPackages.values),
-      allPackages = Map.unmodifiable(
-        Map<String, BuildPackage>.from(allPackages)
-          ..putIfAbsent(r'$sdk', () => _sdkPackage),
-      ) {
-    if (!root.isRoot) {
+  final BuiltSet<String> allowedOutputPackages;
+
+  BuildPackages._({
+    required this.current,
+    required this.outputRoot,
+    required Map<String, BuildPackage> allPackages,
+  }) : asPackageConfig = _packagesToConfig(allPackages.values),
+       allPackages = Map.unmodifiable(
+         Map<String, BuildPackage>.from(allPackages)
+           ..putIfAbsent(r'$sdk', () => _sdkPackage),
+       ),
+       // TODO(davidmorgan): when workspace support is added there will be
+       // no current package, set the list of output packages.
+       allowedOutputPackages = {if (current != null) current.name}.build() {
+    if (!current!.isRoot) {
       throw ArgumentError('Root package must indicate `isRoot`');
     }
-    if (allPackages.values.where((n) => n != root).any((n) => n.isRoot)) {
+    if (allPackages.values.where((n) => n != current).any((n) => n.isRoot)) {
       throw ArgumentError(
         'No packages other than the root may indicate `isRoot`',
       );
     }
   }
 
-  /// Creates a [BuildPackages] given the [root] [BuildPackage].
-  factory BuildPackages.fromRoot(BuildPackage root) {
-    final allPackages = <String, BuildPackage>{root.name: root};
+  /// Creates a [BuildPackages] given the [current] [BuildPackage].
+  factory BuildPackages.fromCurrent(BuildPackage current) {
+    final allPackages = <String, BuildPackage>{current.name: current};
 
     void addDeps(BuildPackage package) {
       for (final dep in package.dependencies) {
@@ -59,9 +83,13 @@ class BuildPackages implements AssetPathProvider {
       }
     }
 
-    addDeps(root);
+    addDeps(current);
 
-    return BuildPackages._(root, allPackages);
+    return BuildPackages._(
+      current: current,
+      outputRoot: current,
+      allPackages: allPackages,
+    );
   }
 
   /// Loads the package graph for the package at absolute path [packagePath].
@@ -103,15 +131,15 @@ class BuildPackages implements AssetPathProvider {
         packageConfig.packages.toList()
           ..sort((a, b) => a.name.compareTo(b.name));
 
-    final rootPubspec = _pubspecForPath(packagePath);
-    final rootPackageName = rootPubspec['name']! as String;
+    final currentPubspec = _pubspecForPath(packagePath);
+    final currentPackageName = currentPubspec['name']! as String;
     final pubspecLockFile = File(
       p.join(workspacePath ?? packagePath, 'pubspec.lock'),
     );
     final fixedPackages = _parseFixedPackages(pubspecLockFile);
 
     for (final packageConfig in packageConfigs) {
-      final isRoot = packageConfig.name == rootPackageName;
+      final isRoot = packageConfig.name == currentPackageName;
       buildPackages[packageConfig.name] = BuildPackage(
         packageConfig.name,
         packageConfig.root.toFilePath(),
@@ -133,16 +161,16 @@ class BuildPackages implements AssetPathProvider {
       return buildPackage;
     }
 
-    final rootPackage = createPackage(rootPackageName);
-    rootPackage.dependencies.addAll(
+    final currentPackage = createPackage(currentPackageName);
+    currentPackage.dependencies.addAll(
       _depsFromYaml(
-        rootPubspec,
+        currentPubspec,
         isRoot: true,
-      ).map((n) => createPackage(n, parent: rootPackageName)),
+      ).map((n) => createPackage(n, parent: currentPackageName)),
     );
 
     final packageDependencies = _parsePackageDependencies(
-      packageConfig.packages.where((p) => p.name != rootPackageName),
+      packageConfig.packages.where((p) => p.name != currentPackageName),
     );
     for (final packageName in packageDependencies.keys) {
       createPackage(packageName).dependencies.addAll(
@@ -156,8 +184,8 @@ class BuildPackages implements AssetPathProvider {
     // Compute transitive dependencies and filter to that.
     Set<BuildPackage>? usedPackages;
     if (workspacePath != null) {
-      usedPackages = {rootPackage};
-      final queue = [rootPackage];
+      usedPackages = {currentPackage};
+      final queue = [currentPackage];
       while (queue.isNotEmpty) {
         final package = queue.removeLast();
         for (final dep in package.dependencies) {
@@ -169,12 +197,16 @@ class BuildPackages implements AssetPathProvider {
     }
 
     return BuildPackages._(
-      rootPackage,
-      usedPackages == null
-          ? buildPackages
-          : Map.fromEntries(
-            buildPackages.entries.where((e) => usedPackages!.contains(e.value)),
-          ),
+      current: currentPackage,
+      outputRoot: currentPackage,
+      allPackages:
+          usedPackages == null
+              ? buildPackages
+              : Map.fromEntries(
+                buildPackages.entries.where(
+                  (e) => usedPackages!.contains(e.value),
+                ),
+              ),
     );
   }
 
@@ -211,8 +243,24 @@ class BuildPackages implements AssetPathProvider {
       }.build();
 
   @override
-  String pathFor(AssetId id) {
-    final package = this[id.package];
+  String pathFor(
+    AssetId id, {
+    required bool hide,
+    bool checkDeleteAllowed = false,
+  }) {
+    if (checkDeleteAllowed && !hide) {
+      if (!allowedOutputPackages.contains(id.package)) {
+        throw InvalidOutputException(
+          id,
+          'Should not delete assets outside of package(s): '
+          '${allowedOutputPackages.join(', ')}',
+        );
+      }
+    }
+    if (hide) {
+      id = AssetPathProvider.hide(id, outputRoot.name);
+    }
+    final package = allPackages[id.package];
     if (package == null) {
       throw PackageNotFoundException(id.package);
     }
@@ -222,6 +270,10 @@ class BuildPackages implements AssetPathProvider {
     }
     return p.join(package.path, path);
   }
+
+  @override
+  bool isHiddenPath(String path) =>
+      path.startsWith(p.join(outputRoot.path, generatedOutputDirectory));
 
   @override
   String toString() {

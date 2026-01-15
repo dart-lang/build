@@ -41,7 +41,9 @@ class BuildTriggers {
   /// Digest that changes if any trigger changes.
   Digest get digest => md5.convert(utf8.encode(triggers.toString()));
 
-  static BuildTriggers fromConfigs(Map<String, BuildConfig> configByPackage) {
+  static BuildTriggers fromConfigs(
+    BuiltMap<String, BuildConfig> configByPackage,
+  ) {
     final buildTriggers = <String, Set<BuildTrigger>>{};
     final warningsByPackage = <String, List<String>>{};
     for (final entry in configByPackage.entries) {

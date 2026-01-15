@@ -26,7 +26,7 @@ class AssetServer {
   static Future<AssetServer> run(
     DaemonOptions options,
     BuildRunnerDaemonBuilder builder,
-    String rootPackage,
+    String buildCachePackage,
   ) async {
     final server = await HttpMultiServer.loopback(0);
     final cascade = Cascade()
@@ -39,7 +39,7 @@ class AssetServer {
             () async =>
                 (await builder.buildSeries.currentBuildResult)
                     .buildOutputReader,
-            rootPackage,
+            buildCachePackage,
           ).handle,
         );
 
