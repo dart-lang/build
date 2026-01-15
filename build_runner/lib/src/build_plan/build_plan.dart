@@ -18,6 +18,7 @@ import '../io/asset_tracker.dart';
 import '../io/generated_asset_hider.dart';
 import '../io/reader_writer.dart';
 import '../logging/build_log.dart';
+import 'build_configs.dart';
 import 'build_directory.dart';
 import 'build_filter.dart';
 import 'build_options.dart';
@@ -26,7 +27,6 @@ import 'build_phases.dart';
 import 'builder_definition.dart';
 import 'builder_factories.dart';
 import 'package_graph.dart';
-import 'target_graph.dart';
 import 'testing_overrides.dart';
 
 /// Options and derived configuration for a build.
@@ -37,7 +37,7 @@ class BuildPlan {
 
   final PackageGraph packageGraph;
   final ReaderWriter readerWriter;
-  final TargetGraph targetGraph;
+  final BuildConfigs buildConfigs;
   final BuildPhases buildPhases;
 
   final AssetGraph? _previousAssetGraph;
@@ -69,7 +69,7 @@ class BuildPlan {
     required this.testingOverrides,
     required this.packageGraph,
     required this.readerWriter,
-    required this.targetGraph,
+    required this.buildConfigs,
     required this.buildPhases,
     required AssetGraph? previousAssetGraph,
     required bool previousAssetGraphWasTaken,
@@ -124,7 +124,7 @@ class BuildPlan {
     final readerWriter =
         testingOverrides.readerWriter ?? ReaderWriter(packageGraph);
 
-    final targetGraph = await TargetGraph.forPackageGraph(
+    final buildConfigs = await BuildConfigs.load(
       readerWriter: readerWriter,
       packageGraph: packageGraph,
       testingOverrides: testingOverrides,
@@ -149,7 +149,8 @@ class BuildPlan {
         testingOverrides.buildPhases ??
         await BuildPhaseCreator(
           builderFactories: builderFactories,
-          targetGraph: targetGraph,
+          packageGraph: packageGraph,
+          buildConfigs: buildConfigs,
           builderDefinitions: builderDefinitions,
           builderConfigOverrides: buildOptions.builderConfigOverrides,
           isReleaseBuild: buildOptions.isReleaseBuild,
@@ -208,7 +209,7 @@ class BuildPlan {
       foldersToDelete.add(generatedOutputDirectoryId);
     }
 
-    final assetTracker = AssetTracker(readerWriter, targetGraph);
+    final assetTracker = AssetTracker(readerWriter, packageGraph, buildConfigs);
     final inputSources = await assetTracker.findInputSources();
     final cacheDirSources = await assetTracker.findCacheDirSources();
 
@@ -283,7 +284,7 @@ class BuildPlan {
       testingOverrides: testingOverrides,
       packageGraph: packageGraph,
       readerWriter: readerWriter,
-      targetGraph: targetGraph,
+      buildConfigs: buildConfigs,
       buildPhases: buildPhases,
       previousAssetGraph: previousAssetGraph,
       previousAssetGraphWasTaken: false,
@@ -309,7 +310,7 @@ class BuildPlan {
     ),
     testingOverrides: testingOverrides,
     packageGraph: packageGraph,
-    targetGraph: targetGraph,
+    buildConfigs: buildConfigs,
     readerWriter: readerWriter ?? this.readerWriter,
     buildPhases: buildPhases,
     previousAssetGraph: _previousAssetGraph,

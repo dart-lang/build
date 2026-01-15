@@ -5,13 +5,13 @@
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 
+import '../build_plan/build_configs.dart';
 import '../build_plan/build_directory.dart';
 import '../build_plan/build_filter.dart';
 import '../build_plan/phase.dart';
-import '../build_plan/target_graph.dart';
 
 /// Returns whether or not [id] should be built based upon [buildDirs],
-/// [phase], [targetGraph], and optional [buildFilters].
+/// [phase], [buildConfigs], and optional [buildFilters].
 ///
 /// The logic for this is as follows:
 ///
@@ -19,14 +19,14 @@ import '../build_plan/target_graph.dart';
 ///   explicitly matches one of the filters.
 /// - If no [buildFilters] are supplied, then the old behavior applies - all
 ///   build to source builders and all public assets (according to
-///   [TargetGraph.isPublicAsset]) are always built.
+///   [BuildConfigs.isPublicAsset]) are always built.
 /// - Regardless of the [buildFilters] setting, if [buildDirs] is supplied then
 ///   `id.path` must start with one of the specified directory names.
 bool shouldBuildForDirs(
   AssetId id, {
   required BuiltSet<BuildDirectory> buildDirs,
   required BuildPhase phase,
-  required TargetGraph targetGraph,
+  required BuildConfigs buildConfigs,
   BuiltSet<BuildFilter>? buildFilters,
 }) {
   // Empty paths means "build everything".
@@ -38,7 +38,7 @@ bool shouldBuildForDirs(
     return !phase.hideOutput ||
         paths.isEmpty ||
         paths.any(id.path.startsWith) ||
-        targetGraph.isPublicAsset(id);
+        buildConfigs.isPublicAsset(id);
   } else {
     // Don't build assets not matched by build filters
     if (!buildFilters.any((f) => f.matches(id))) {
@@ -49,6 +49,6 @@ bool shouldBuildForDirs(
     // directory.
     return paths.isEmpty ||
         paths.any(id.path.startsWith) ||
-        targetGraph.isPublicAsset(id);
+        buildConfigs.isPublicAsset(id);
   }
 }

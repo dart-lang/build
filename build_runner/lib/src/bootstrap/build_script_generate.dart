@@ -11,8 +11,8 @@ import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 
+import '../build_plan/build_configs.dart';
 import '../build_plan/package_graph.dart';
-import '../build_plan/target_graph.dart';
 import '../constants.dart';
 import '../exceptions.dart';
 import '../io/reader_writer.dart';

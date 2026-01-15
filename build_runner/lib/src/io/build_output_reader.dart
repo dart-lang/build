@@ -193,7 +193,7 @@ class BuildOutputReader {
           buildDirs: _buildPlan.buildOptions.buildDirs,
           buildFilters: _buildPlan.buildOptions.buildFilters,
           phase: phase,
-          targetGraph: _buildPlan.targetGraph,
+          buildConfigs: _buildPlan.buildConfigs,
         )) {
       return true;
     }

@@ -7,9 +7,9 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_runner/src/build/asset_graph/graph.dart';
+import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/package_graph.dart';
-import 'package:build_runner/src/build_plan/target_graph.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
 import 'package:build_runner/src/io/asset_tracker.dart';
 import 'package:build_runner/src/io/reader_writer.dart';
@@ -59,13 +59,13 @@ void main() {
         nodeBuilder.digest = digest;
       });
 
-      final targetGraph = await TargetGraph.forPackageGraph(
+      final buildConfigs = await BuildConfigs.load(
         packageGraph: packageGraph,
         testingOverrides: TestingOverrides(
           defaultRootPackageSources: ['web/**'].build(),
         ),
       );
-      assetTracker = AssetTracker(reader, targetGraph);
+      assetTracker = AssetTracker(reader, packageGraph, buildConfigs);
       final updates = await assetTracker.collectChanges(assetGraph);
       await assetGraph.updateAndInvalidate(
         BuildPhases([]),

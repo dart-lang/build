@@ -14,12 +14,12 @@ import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
+import '../build_plan/build_configs.dart';
 import '../build_plan/build_options.dart';
 import '../build_plan/build_phases.dart';
 import '../build_plan/build_plan.dart';
 import '../build_plan/package_graph.dart';
 import '../build_plan/phase.dart';
-import '../build_plan/target_graph.dart';
 import '../build_plan/testing_overrides.dart';
 import '../constants.dart';
 import '../io/build_output_reader.dart';
@@ -132,7 +132,7 @@ class Build {
   BuildOptions get buildOptions => buildPlan.buildOptions;
   TestingOverrides get testingOverrides => buildPlan.testingOverrides;
   PackageGraph get packageGraph => buildPlan.packageGraph;
-  TargetGraph get targetGraph => buildPlan.targetGraph;
+  BuildConfigs get buildConfigs => buildPlan.buildConfigs;
   BuildPhases get buildPhases => buildPlan.buildPhases;
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
@@ -239,7 +239,7 @@ class Build {
         final result = await _runPhases();
 
         assetGraph.previousBuildTriggersDigest =
-            targetGraph.buildTriggers.digest;
+            buildConfigs.buildTriggers.digest;
         // Combine previous phased asset deps, if any, with the newly loaded
         // deps. Because of skipped builds, the newly loaded deps might just
         // say "not generated yet", in which case the old value is retained.
@@ -406,7 +406,7 @@ class Build {
         buildDirs: buildPlan.buildOptions.buildDirs,
         buildFilters: buildPlan.buildOptions.buildFilters,
         phase: phase,
-        targetGraph: targetGraph,
+        buildConfigs: buildConfigs,
       )) {
         continue;
       }
@@ -414,7 +414,7 @@ class Build {
       // Don't build for inputs that aren't visible. This can happen for
       // placeholder nodes like `test/$test$` that are added to each package,
       // since the test dir is not part of the build for non-root packages.
-      if (!targetGraph.isVisibleInBuild(node.id, packageNode)) continue;
+      if (!buildConfigs.isVisibleInBuild(node.id, packageNode)) continue;
 
       ids.add(node.generatedNodeConfiguration!.primaryInput);
     }
@@ -467,7 +467,7 @@ class Build {
       final readerWriter = SingleStepReaderWriter(
         runningBuild: RunningBuild(
           packageGraph: packageGraph,
-          targetGraph: targetGraph,
+          buildConfigs: buildConfigs,
           assetGraph: assetGraph,
           nodeBuilder: _buildOutput,
           assetIsProcessedOutput: processedOutputs.contains,
@@ -591,7 +591,7 @@ class Build {
     if (runsIfTriggered != true) {
       return true;
     }
-    final buildTriggers = targetGraph.buildTriggers[phase.key];
+    final buildTriggers = buildConfigs.buildTriggers[phase.key];
     if (buildTriggers == null) {
       return false;
     }
@@ -684,7 +684,7 @@ class Build {
     final stepReaderWriter = SingleStepReaderWriter(
       runningBuild: RunningBuild(
         packageGraph: packageGraph,
-        targetGraph: targetGraph,
+        buildConfigs: buildConfigs,
         assetGraph: assetGraph,
         nodeBuilder: _buildOutput,
         assetIsProcessedOutput: processedOutputs.contains,
@@ -854,7 +854,7 @@ class Build {
       if (assetGraph.cleanBuild) return true;
 
       if (assetGraph.previousBuildTriggersDigest !=
-          targetGraph.buildTriggers.digest) {
+          buildConfigs.buildTriggers.digest) {
         return true;
       }
 
