@@ -22,11 +22,11 @@ import 'build_configs.dart';
 import 'build_directory.dart';
 import 'build_filter.dart';
 import 'build_options.dart';
+import 'build_packages.dart';
 import 'build_phase_creator.dart';
 import 'build_phases.dart';
 import 'builder_definition.dart';
 import 'builder_factories.dart';
-import 'package_graph.dart';
 import 'testing_overrides.dart';
 
 /// Options and derived configuration for a build.
@@ -35,7 +35,7 @@ class BuildPlan {
   final BuildOptions buildOptions;
   final TestingOverrides testingOverrides;
 
-  final PackageGraph packageGraph;
+  final BuildPackages buildPackages;
   final ReaderWriter readerWriter;
   final BuildConfigs buildConfigs;
   final BuildPhases buildPhases;
@@ -67,7 +67,7 @@ class BuildPlan {
     required this.builderFactories,
     required this.buildOptions,
     required this.testingOverrides,
-    required this.packageGraph,
+    required this.buildPackages,
     required this.readerWriter,
     required this.buildConfigs,
     required this.buildPhases,
@@ -118,15 +118,15 @@ class BuildPlan {
       restartIsNeeded = true;
     }
 
-    final packageGraph =
-        testingOverrides.packageGraph ?? await PackageGraph.forThisPackage();
+    final buildPackages =
+        testingOverrides.buildPackages ?? await BuildPackages.forThisPackage();
 
     final readerWriter =
-        testingOverrides.readerWriter ?? ReaderWriter(packageGraph);
+        testingOverrides.readerWriter ?? ReaderWriter(buildPackages);
 
     final buildConfigs = await BuildConfigs.load(
       readerWriter: readerWriter,
-      packageGraph: packageGraph,
+      buildPackages: buildPackages,
       testingOverrides: testingOverrides,
       configKey: buildOptions.configKey,
     );
@@ -134,7 +134,7 @@ class BuildPlan {
     var builderDefinitions =
         testingOverrides.builderDefinitions ??
         await AbstractBuilderDefinition.load(
-          packageGraph: packageGraph,
+          buildPackages: buildPackages,
           readerWriter: readerWriter,
         );
 
@@ -149,13 +149,13 @@ class BuildPlan {
         testingOverrides.buildPhases ??
         await BuildPhaseCreator(
           builderFactories: builderFactories,
-          packageGraph: packageGraph,
+          buildPackages: buildPackages,
           buildConfigs: buildConfigs,
           builderDefinitions: builderDefinitions,
           builderConfigOverrides: buildOptions.builderConfigOverrides,
           isReleaseBuild: buildOptions.isReleaseBuild,
         ).createBuildPhases();
-    buildPhases.checkOutputLocations(packageGraph.root.name);
+    buildPhases.checkOutputLocations(buildPackages.root.name);
     if (buildPhases.inBuildPhases.isEmpty &&
         buildPhases.postBuildPhase.builderActions.isEmpty) {}
 
@@ -163,9 +163,9 @@ class BuildPlan {
     final filesToDelete = <AssetId>{};
     final foldersToDelete = <AssetId>{};
 
-    final assetGraphId = AssetId(packageGraph.root.name, assetGraphPath);
+    final assetGraphId = AssetId(buildPackages.root.name, assetGraphPath);
     final generatedOutputDirectoryId = AssetId(
-      packageGraph.root.name,
+      buildPackages.root.name,
       generatedOutputDirectory,
     );
 
@@ -178,7 +178,7 @@ class BuildPlan {
             buildPhases.digest != previousAssetGraph.buildPhasesDigest;
         final pkgVersionsChanged =
             previousAssetGraph.packageLanguageVersions !=
-            packageGraph.languageVersions;
+            buildPackages.languageVersions;
         final enabledExperimentsChanged =
             previousAssetGraph.enabledExperiments != enabledExperiments.build();
         if (buildPhasesChanged ||
@@ -192,7 +192,7 @@ class BuildPlan {
             previousAssetGraph.kernelDigest != kernelFreshness.digest) {
           // Mark old outputs for deletion.
           filesToDelete.addAll(
-            previousAssetGraph.outputsToDelete(packageGraph),
+            previousAssetGraph.outputsToDelete(buildPackages),
           );
 
           // Discard the invalid asset graph so that a new one will be created
@@ -209,7 +209,11 @@ class BuildPlan {
       foldersToDelete.add(generatedOutputDirectoryId);
     }
 
-    final assetTracker = AssetTracker(readerWriter, packageGraph, buildConfigs);
+    final assetTracker = AssetTracker(
+      readerWriter,
+      buildPackages,
+      buildConfigs,
+    );
     final inputSources = await assetTracker.findInputSources();
     final cacheDirSources = await assetTracker.findCacheDirSources();
 
@@ -225,7 +229,7 @@ class BuildPlan {
 
       if (restartIsNeeded) {
         // Mark old outputs for deletion.
-        filesToDelete.addAll(previousAssetGraph.outputsToDelete(packageGraph));
+        filesToDelete.addAll(previousAssetGraph.outputsToDelete(buildPackages));
         foldersToDelete.add(generatedOutputDirectoryId);
 
         // Discard the invalid asset graph so that a new one will be created
@@ -248,7 +252,7 @@ class BuildPlan {
           kernelDigest: kernelFreshness.digest,
           buildPhases,
           inputSources,
-          packageGraph,
+          buildPackages,
           readerWriter,
         );
       } on DuplicateAssetNodeException catch (e) {
@@ -257,7 +261,7 @@ class BuildPlan {
       }
       final conflictsInDeps =
           assetGraph.outputs
-              .where((n) => n.package != packageGraph.root.name)
+              .where((n) => n.package != buildPackages.root.name)
               .where(inputSources.contains)
               .toSet();
       if (conflictsInDeps.isNotEmpty) {
@@ -272,7 +276,7 @@ class BuildPlan {
 
       filesToDelete.addAll(
         assetGraph.outputs
-            .where((n) => n.package == packageGraph.root.name)
+            .where((n) => n.package == buildPackages.root.name)
             .where(inputSources.contains)
             .toSet(),
       );
@@ -282,7 +286,7 @@ class BuildPlan {
       builderFactories: builderFactories,
       buildOptions: buildOptions,
       testingOverrides: testingOverrides,
-      packageGraph: packageGraph,
+      buildPackages: buildPackages,
       readerWriter: readerWriter,
       buildConfigs: buildConfigs,
       buildPhases: buildPhases,
@@ -309,7 +313,7 @@ class BuildPlan {
       buildFilters: buildFilters,
     ),
     testingOverrides: testingOverrides,
-    packageGraph: packageGraph,
+    buildPackages: buildPackages,
     buildConfigs: buildConfigs,
     readerWriter: readerWriter ?? this.readerWriter,
     buildPhases: buildPhases,

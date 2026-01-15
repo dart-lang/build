@@ -31,7 +31,9 @@ void main() {
   final path = p.absolute('example');
 
   setUp(() async {
-    final graph = buildPackageGraph({rootPackage('example', path: path): []});
+    final buildPackages = createBuildPackages({
+      rootPackage('example', path: path): [],
+    });
     readerWriter =
         InternalTestReaderWriter(rootPackage: 'example')
           ..testing.writeString(
@@ -65,7 +67,7 @@ void main() {
           buildOptions: BuildOptions.forTests(verbose: true),
           testingOverrides: TestingOverrides(
             builderDefinitions: [BuilderDefinition('')].build(),
-            packageGraph: graph,
+            buildPackages: buildPackages,
             readerWriter: readerWriter,
             onLog:
                 (record) => printOnFailure(

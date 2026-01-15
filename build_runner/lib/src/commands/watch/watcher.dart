@@ -11,9 +11,9 @@ import '../../build/build_result.dart';
 import '../../build/build_series.dart';
 import '../../build_plan/build_plan.dart';
 import 'asset_change.dart';
+import 'build_package_watcher.dart';
+import 'build_packages_watcher.dart';
 import 'collect_changes.dart';
-import 'graph_watcher.dart';
-import 'node_watcher.dart';
 
 class Watcher {
   final BuildPlan _buildPlan;
@@ -49,11 +49,11 @@ class Watcher {
     final terminate = Future.any([until, _buildSeries.closing]);
 
     // Start watching files immediately, before the first build is even started.
-    final graphWatcher = PackageGraphWatcher(
-      _buildPlan.packageGraph,
+    final graphWatcher = BuildPackagesWatcher(
+      _buildPlan.buildPackages,
       watch:
-          (node) => PackageNodeWatcher(
-            node,
+          (buildPackage) => BuildPackageWatcher(
+            buildPackage,
             watch: _buildPlan.testingOverrides.directoryWatcherFactory,
           ),
     );

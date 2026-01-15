@@ -12,7 +12,8 @@ import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 
 import '../build_plan/build_configs.dart';
-import '../build_plan/package_graph.dart';
+import '../build_plan/build_package.dart';
+import '../build_plan/build_packages.dart';
 import '../constants.dart';
 import '../exceptions.dart';
 import '../io/reader_writer.dart';
@@ -70,20 +71,20 @@ ${library.accept(emitter)}
 }
 
 Future<BuilderFactoriesExpressions> loadBuilderFactories() async {
-  final packageGraph = await PackageGraph.forThisPackage();
-  final orderedPackages = stronglyConnectedComponents<PackageNode>(
-    [packageGraph.root],
-    (node) => node.dependencies,
+  final buildPackages = await BuildPackages.forThisPackage();
+  final orderedPackages = stronglyConnectedComponents<BuildPackage>(
+    [buildPackages.root],
+    (buildPackage) => buildPackage.dependencies,
     equals: (a, b) => a.name == b.name,
     hashCode: (n) => n.name.hashCode,
   ).expand((c) => c);
-  final readerWriter = ReaderWriter(packageGraph);
+  final readerWriter = ReaderWriter(buildPackages);
   final overrides = await findBuildConfigOverrides(
-    packageGraph: packageGraph,
+    buildPackages: buildPackages,
     readerWriter: readerWriter,
     configKey: null,
   );
-  Future<BuildConfig> packageBuildConfig(PackageNode package) async {
+  Future<BuildConfig> packageBuildConfig(BuildPackage package) async {
     if (overrides.containsKey(package.name)) {
       return overrides[package.name]!;
     }
@@ -108,7 +109,7 @@ Future<BuilderFactoriesExpressions> loadBuilderFactories() async {
     final import = definition.import as String;
     // ignore: avoid_dynamic_calls
     final package = definition.package as String;
-    return import.startsWith('package:') || package == packageGraph.root.name;
+    return import.startsWith('package:') || package == buildPackages.root.name;
   }
 
   final buildConfigs = await Future.wait(

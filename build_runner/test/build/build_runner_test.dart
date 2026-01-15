@@ -8,8 +8,8 @@ import 'dart:convert';
 import 'package:build/build.dart';
 import 'package:build_runner/src/build/build_result.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
+import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
-import 'package:build_runner/src/build_plan/package_graph.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
 import 'package:build_runner/src/commands/build_command.dart';
 import 'package:built_collection/built_collection.dart';
@@ -25,7 +25,7 @@ void main() {
   group('--config', () {
     test('warns override config defines builders', () async {
       final logs = <LogRecord>[];
-      final packageGraph = buildPackageGraph({
+      final buildPackages = createBuildPackages({
         rootPackage('a', path: path.absolute('a')): [],
       });
       final result = await _doBuild(
@@ -42,7 +42,7 @@ builders:
         packageConfigId: packageConfigId,
         configKey: 'cool',
         onLog: logs.add,
-        packageGraph: packageGraph,
+        buildPackages: buildPackages,
       );
       expect(result.status, BuildStatus.success);
       expect(
@@ -59,16 +59,16 @@ builders:
 Future<BuildResult> _doBuild(
   Map<String, String> inputs, {
   required AssetId packageConfigId,
-  PackageGraph? packageGraph,
+  BuildPackages? buildPackages,
   void Function(LogRecord)? onLog,
   String? configKey,
 }) async {
   onLog ??= (_) {};
-  packageGraph ??= buildPackageGraph({
+  buildPackages ??= createBuildPackages({
     rootPackage('a', path: path.absolute('a')): [],
   });
   final readerWriter = InternalTestReaderWriter(
-    rootPackage: packageGraph.root.name,
+    rootPackage: buildPackages.root.name,
   );
   inputs.forEach((serializedId, contents) {
     readerWriter.writeAsString(makeAssetId(serializedId), contents);
@@ -81,7 +81,7 @@ Future<BuildResult> _doBuild(
     testingOverrides: TestingOverrides(
       builderDefinitions: BuiltList(),
       readerWriter: readerWriter,
-      packageGraph: packageGraph,
+      buildPackages: buildPackages,
       onLog: onLog,
     ),
   ).build();

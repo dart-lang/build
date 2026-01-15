@@ -13,10 +13,11 @@ import 'package:path/path.dart' as p;
 import '../exceptions.dart';
 import '../io/reader_writer.dart';
 import '../logging/build_log.dart';
+import 'build_package.dart';
+import 'build_packages.dart';
 import 'build_target.dart';
 import 'build_triggers.dart';
 import 'input_matcher.dart';
-import 'package_graph.dart';
 import 'testing_overrides.dart';
 
 /// Build configuration loaded from all `build.yaml` files in the build.
@@ -52,7 +53,7 @@ class BuildConfigs {
     this._publicAssetsByPackage,
   );
 
-  /// Loads [BuildConfigs] for [packageGraph].
+  /// Loads [BuildConfigs] for [buildPackages].
   ///
   /// Pass [testingOverrides] to override `reader`, `buildConfig` or
   /// `defaultRootPackageSources`.
@@ -60,15 +61,15 @@ class BuildConfigs {
   /// Yaml files will only be loaded if `reader` is set or is overridden
   /// in `testingOverrides`.
   static Future<BuildConfigs> load({
-    required PackageGraph packageGraph,
+    required BuildPackages buildPackages,
     ReaderWriter? readerWriter,
     String? configKey,
     TestingOverrides? testingOverrides,
   }) async {
     readerWriter = testingOverrides?.readerWriter ?? readerWriter;
     try {
-      return _tryForPackageGraph(
-        packageGraph: packageGraph,
+      return _tryLoad(
+        buildPackages: buildPackages,
         readerWriter: readerWriter,
         configKey: configKey,
         testingOverrides: testingOverrides,
@@ -79,8 +80,8 @@ class BuildConfigs {
     }
   }
 
-  static Future<BuildConfigs> _tryForPackageGraph({
-    required PackageGraph packageGraph,
+  static Future<BuildConfigs> _tryLoad({
+    required BuildPackages buildPackages,
     ReaderWriter? readerWriter,
     String? configKey,
     TestingOverrides? testingOverrides,
@@ -95,11 +96,11 @@ class BuildConfigs {
         (readerWriter == null
             ? null
             : await findBuildConfigOverrides(
-              packageGraph: packageGraph,
+              buildPackages: buildPackages,
               readerWriter: readerWriter,
               configKey: configKey,
             ));
-    for (final package in packageGraph.allPackages.values) {
+    for (final package in buildPackages.allPackages.values) {
       final config =
           configOverrides?[package.name] ??
           await _packageBuildConfig(readerWriter, package);
@@ -132,7 +133,7 @@ class BuildConfigs {
               ...config.additionalPublicAssets, // user-defined public assets
             ].build(),
       );
-      final nodes = config.buildTargets.values.map(
+      final buildTargets = config.buildTargets.values.map(
         (target) => BuildTarget(target, defaultInclude: defaultInclude),
       );
       if (package.name != r'$sdk') {
@@ -143,7 +144,7 @@ class BuildConfigs {
         final requiredIds = requiredPackagePaths.map(
           (path) => AssetId(package.name, path),
         );
-        final missing = _missingSources(nodes, requiredIds);
+        final missing = _missingSources(buildTargets, requiredIds);
         if (missing.isNotEmpty) {
           buildLog.warning(
             'The package `${package.name}` does not include some required '
@@ -153,9 +154,9 @@ class BuildConfigs {
           );
         }
       }
-      for (final node in nodes) {
-        targetsByKey[node.key] = node;
-        targetsByPackage.add(node.package, node);
+      for (final buildTarget in buildTargets) {
+        targetsByKey[buildTarget.key] = buildTarget;
+        targetsByPackage.add(buildTarget.package, buildTarget);
       }
     }
 
@@ -179,7 +180,7 @@ class BuildConfigs {
 
   /// Obtains a list of glob patterns describing all valid input assets defined
   /// in the [package].
-  List<String> validInputsFor(PackageNode package) {
+  List<String> validInputsFor(BuildPackage package) {
     if (package.isRoot) {
       // There are no restrictions for the root package
       return ['**/*'];
@@ -207,7 +208,7 @@ class BuildConfigs {
   /// For instance, an asset id can be visible in the build even if the
   /// referenced asset doesn't exist. Assets that aren't part of any target
   /// would also be visible without being readable.
-  bool isVisibleInBuild(AssetId id, PackageNode enclosingPackage) {
+  bool isVisibleInBuild(AssetId id, BuildPackage enclosingPackage) {
     assert(id.package == enclosingPackage.name);
 
     // All assets in the root package are included in the build
@@ -236,17 +237,20 @@ class BuildConfigs {
     return filter.matches(id);
   }
 
-  InputMatcher _matcherForNonRoot(PackageNode node) {
-    assert(!node.isRoot);
-    return _publicAssetsByPackage[node.name] ?? _defaultMatcherForNonRoot;
+  InputMatcher _matcherForNonRoot(BuildPackage buildPackage) {
+    assert(!buildPackage.isRoot);
+    return _publicAssetsByPackage[buildPackage.name] ??
+        _defaultMatcherForNonRoot;
   }
 }
 
 Future<BuildConfig> _packageBuildConfig(
   ReaderWriter? readerWriter,
-  PackageNode package,
+  BuildPackage package,
 ) async {
-  final dependencies = [for (final node in package.dependencies) node.name];
+  final dependencies = [
+    for (final buildPackage in package.dependencies) buildPackage.name,
+  ];
   try {
     final id = AssetId(package.name, 'build.yaml');
     if (readerWriter != null && await readerWriter.canRead(id)) {
@@ -283,19 +287,19 @@ Iterable<AssetId> _missingSources(
 ) => sources.where((s) => !targets.any((t) => t.matchesSource(s)));
 
 Future<BuiltMap<String, BuildConfig>> findBuildConfigOverrides({
-  required PackageGraph packageGraph,
+  required BuildPackages buildPackages,
   required ReaderWriter? readerWriter,
   required String? configKey,
 }) async {
   final configs = <String, BuildConfig>{};
   final configFiles = readerWriter!.assetFinder.find(
     Glob('*.build.yaml'),
-    package: packageGraph.root.name,
+    package: buildPackages.root.name,
   );
   await for (final id in configFiles) {
     final packageName = p.basename(id.path).split('.').first;
-    final packageNode = packageGraph.allPackages[packageName];
-    if (packageNode == null) {
+    final buildPackage = buildPackages.allPackages[packageName];
+    if (buildPackage == null) {
       buildLog.warning(
         'A build config override is provided for $packageName but '
         'that package does not exist. '
@@ -307,22 +311,22 @@ Future<BuiltMap<String, BuildConfig>> findBuildConfigOverrides({
     final yaml = await readerWriter.readAsString(id);
     final config = BuildConfig.parse(
       packageName,
-      packageNode.dependencies.map((n) => n.name),
+      buildPackage.dependencies.map((n) => n.name),
       yaml,
       configYamlPath: id.path,
     );
     configs[packageName] = config;
   }
   if (configKey != null) {
-    final id = AssetId(packageGraph.root.name, 'build.$configKey.yaml');
+    final id = AssetId(buildPackages.root.name, 'build.$configKey.yaml');
     if (!await readerWriter.canRead(id)) {
       buildLog.warning('Cannot find ${id.path} for specified config.');
       throw const CannotBuildException();
     }
     final yaml = await readerWriter.readAsString(id);
     final config = BuildConfig.parse(
-      packageGraph.root.name,
-      packageGraph.root.dependencies.map((n) => n.name),
+      buildPackages.root.name,
+      buildPackages.root.dependencies.map((n) => n.name),
       yaml,
       configYamlPath: id.path,
     );
@@ -332,7 +336,7 @@ Future<BuiltMap<String, BuildConfig>> findBuildConfigOverrides({
         'overriding builder configuration is not supported.',
       );
     }
-    configs[packageGraph.root.name] = config;
+    configs[buildPackages.root.name] = config;
   }
   return configs.build();
 }

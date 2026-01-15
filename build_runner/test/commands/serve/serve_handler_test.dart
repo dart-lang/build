@@ -12,8 +12,8 @@ import 'package:build_runner/src/build/asset_graph/graph.dart';
 import 'package:build_runner/src/build/asset_graph/node.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
 import 'package:build_runner/src/build/build_result.dart';
+import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
-import 'package:build_runner/src/build_plan/package_graph.dart';
 import 'package:build_runner/src/commands/serve/server.dart';
 import 'package:build_runner/src/commands/watch/watcher.dart';
 import 'package:build_runner/src/io/build_output_reader.dart';
@@ -104,12 +104,12 @@ void main() {
   late ServeHandler serveHandler;
   late InternalTestReaderWriter readerWriter;
   late MockWatchImpl watchImpl;
-  late PackageGraph packageGraph;
+  late BuildPackages packageGraph;
   late AssetGraph assetGraph;
   late BuildOutputReader finalizedReader;
 
   setUp(() async {
-    packageGraph = buildPackageGraph({rootPackage('a'): []});
+    packageGraph = createBuildPackages({rootPackage('a'): []});
     readerWriter = InternalTestReaderWriter(
       rootPackage: packageGraph.root.name,
     );

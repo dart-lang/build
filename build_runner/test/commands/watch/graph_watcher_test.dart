@@ -5,10 +5,10 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:build_runner/src/build_plan/package_graph.dart';
+import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/commands/watch/asset_change.dart';
-import 'package:build_runner/src/commands/watch/graph_watcher.dart';
-import 'package:build_runner/src/commands/watch/node_watcher.dart';
+import 'package:build_runner/src/commands/watch/build_package_watcher.dart';
+import 'package:build_runner/src/commands/watch/build_packages_watcher.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
@@ -17,16 +17,18 @@ import '../../common/package_graphs.dart';
 void main() {
   group('PackageGraphWatcher', () {
     test('should aggregate changes from all nodes', () {
-      final graph = buildPackageGraph({
+      final graph = createBuildPackages({
         rootPackage('a', path: '/g/a'): ['b'],
-        package('b', path: '/g/b', type: DependencyType.path): [],
+        package('b', path: '/g/b', isEditable: true): [],
       });
       final nodes = {
         'a': FakeNodeWatcher(graph['a']!),
         'b': FakeNodeWatcher(graph['b']!),
-        r'$sdk': FakeNodeWatcher(PackageNode('\$sdk', '', null, null)),
+        r'$sdk': FakeNodeWatcher(
+          BuildPackage('\$sdk', '', null, isEditable: true),
+        ),
       };
-      final watcher = PackageGraphWatcher(
+      final watcher = BuildPackagesWatcher(
         graph,
         watch: (node) {
           return nodes[node.name]!;
@@ -46,15 +48,15 @@ void main() {
     });
 
     test('should avoid duplicate changes with nested packages', () async {
-      final graph = buildPackageGraph({
+      final graph = createBuildPackages({
         rootPackage('a', path: '/g/a'): ['b'],
-        package('b', path: '/g/a/b', type: DependencyType.path): [],
+        package('b', path: '/g/a/b', isEditable: true): [],
       });
       final nodes = {
         'a': FakeNodeWatcher(graph['a']!)..markReady(),
         'b': FakeNodeWatcher(graph['b']!)..markReady(),
       };
-      final watcher = PackageGraphWatcher(
+      final watcher = BuildPackagesWatcher(
         graph,
         watch: (node) {
           return nodes[node.name]!;
@@ -74,20 +76,22 @@ void main() {
     });
 
     test('should avoid watchers on pub dependencies', () {
-      final graph = buildPackageGraph({
+      final graph = createBuildPackages({
         rootPackage('a', path: '/g/a'): ['b'],
-        package('b', path: '/g/a/b/', type: DependencyType.hosted): [],
+        package('b', path: '/g/a/b/', isEditable: false): [],
       });
       final nodes = {
         'a': FakeNodeWatcher(graph['a']!),
-        r'$sdk': FakeNodeWatcher(PackageNode('\$sdk', '', null, null)),
+        r'$sdk': FakeNodeWatcher(
+          BuildPackage('\$sdk', '', null, isEditable: true),
+        ),
       };
-      PackageNodeWatcher noBWatcher(PackageNode node) {
+      BuildPackageWatcher noBWatcher(BuildPackage node) {
         if (node.name == 'b') throw StateError('No watcher for B!');
         return nodes[node.name]!;
       }
 
-      final watcher = PackageGraphWatcher(graph, watch: noBWatcher);
+      final watcher = BuildPackagesWatcher(graph, watch: noBWatcher);
 
       unawaited(watcher.watch().drain());
 
@@ -99,16 +103,18 @@ void main() {
     });
 
     test('ready waits for all node watchers to be ready', () async {
-      final graph = buildPackageGraph({
+      final graph = createBuildPackages({
         rootPackage('a', path: '/g/a'): ['b'],
-        package('b', path: '/g/b', type: DependencyType.path): [],
+        package('b', path: '/g/b', isEditable: true): [],
       });
       final nodes = {
         'a': FakeNodeWatcher(graph['a']!),
         'b': FakeNodeWatcher(graph['b']!),
-        r'$sdk': FakeNodeWatcher(PackageNode('\$sdk', '', null, null)),
+        r'$sdk': FakeNodeWatcher(
+          BuildPackage('\$sdk', '', null, isEditable: true),
+        ),
       };
-      final watcher = PackageGraphWatcher(
+      final watcher = BuildPackagesWatcher(
         graph,
         watch: (node) {
           return nodes[node.name]!;
@@ -133,12 +139,12 @@ void main() {
   });
 }
 
-class FakeNodeWatcher implements PackageNodeWatcher {
+class FakeNodeWatcher implements BuildPackageWatcher {
   @override
-  final PackageNode node;
+  final BuildPackage buildPackage;
   final _events = StreamController<AssetChange>();
 
-  FakeNodeWatcher(this.node);
+  FakeNodeWatcher(this.buildPackage);
 
   @override
   Watcher get watcher => _watcher;
@@ -147,7 +153,7 @@ class FakeNodeWatcher implements PackageNodeWatcher {
   void markReady() => _watcher._readyCompleter.complete();
 
   void emitAdd(String path) {
-    _events.add(AssetChange(AssetId(node.name, path), ChangeType.ADD));
+    _events.add(AssetChange(AssetId(buildPackage.name, path), ChangeType.ADD));
   }
 
   @override

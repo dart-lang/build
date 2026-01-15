@@ -5,9 +5,9 @@
 import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:build_runner/src/build_plan/package_graph.dart';
+import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/commands/watch/asset_change.dart';
-import 'package:build_runner/src/commands/watch/node_watcher.dart';
+import 'package:build_runner/src/commands/watch/build_package_watcher.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
@@ -24,7 +24,7 @@ void main() {
       tmpDir.deleteSync(recursive: true);
     });
 
-    void initFiles(PackageNode node) {
+    void initFiles(BuildPackage node) {
       File(p.join(node.path, 'lib', '2.dart'))
         ..createSync(recursive: true)
         ..writeAsStringSync('2');
@@ -33,15 +33,20 @@ void main() {
         ..writeAsStringSync('3');
     }
 
-    void modifyFiles(PackageNode node) {
+    void modifyFiles(BuildPackage node) {
       File(p.join(node.path, 'lib', '1.dart')).createSync(recursive: true);
       File(p.join(node.path, 'lib', '2.dart')).writeAsStringSync('2+');
       File(p.join(node.path, 'lib', '3.dart')).deleteSync();
     }
 
     test('should emit a changed asset', () async {
-      final node = PackageNode('a', p.join(tmpDir.path, 'a'), null, null);
-      final nodeWatcher = PackageNodeWatcher(node);
+      final node = BuildPackage(
+        'a',
+        p.join(tmpDir.path, 'a'),
+        null,
+        isEditable: true,
+      );
+      final nodeWatcher = BuildPackageWatcher(node);
 
       initFiles(node);
 
@@ -59,13 +64,13 @@ void main() {
     });
 
     test('should also respect relative watch URLs', () async {
-      final node = PackageNode(
+      final node = BuildPackage(
         'a',
         p.relative(p.join(tmpDir.path, 'a'), from: p.current),
         null,
-        null,
+        isEditable: true,
       );
-      final nodeWatcher = PackageNodeWatcher(node);
+      final nodeWatcher = BuildPackageWatcher(node);
 
       initFiles(node);
 

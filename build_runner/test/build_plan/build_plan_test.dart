@@ -6,10 +6,11 @@ import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_config/build_config.dart' hide BuilderDefinition;
 import 'package:build_runner/src/build_plan/build_options.dart';
+import 'package:build_runner/src/build_plan/build_package.dart';
+import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_plan.dart';
 import 'package:build_runner/src/build_plan/builder_definition.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
-import 'package:build_runner/src/build_plan/package_graph.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
 import 'package:build_runner/src/constants.dart';
 import 'package:build_runner/src/io/reader_writer.dart';
@@ -28,19 +29,19 @@ void main() {
     final assetId2 = AssetId(rootPackage, 'lib/an.other');
     final assetGraphId = AssetId(rootPackage, assetGraphPath);
 
-    late PackageGraph packageGraph;
+    late BuildPackages buildPackages;
     late ReaderWriter readerWriter;
     late BuildOptions buildOptions;
     late BuilderFactories builderFactories;
     late TestingOverrides testingOverrides;
 
     setUp(() {
-      packageGraph = PackageGraph.fromRoot(
-        PackageNode(
+      buildPackages = BuildPackages.fromRoot(
+        BuildPackage(
           rootPackage,
           '/$rootPackage',
-          DependencyType.path,
           null,
+          isEditable: true,
           isRoot: true,
         ),
       );
@@ -55,7 +56,7 @@ void main() {
       testingOverrides = TestingOverrides(
         builderDefinitions: [BuilderDefinition('')].build(),
         readerWriter: readerWriter,
-        packageGraph: packageGraph,
+        buildPackages: buildPackages,
       );
     });
 
@@ -206,11 +207,11 @@ void main() {
       final assetGraph = buildPlan.takeAssetGraph();
       await readerWriter.writeAsBytes(assetGraphId, assetGraph.serialize());
 
-      final packageGraph2 = PackageGraph.fromRoot(
-        PackageNode('b', '/b', DependencyType.path, null, isRoot: true),
+      final buildPackages2 = BuildPackages.fromRoot(
+        BuildPackage('b', '/b', null, isEditable: true, isRoot: true),
       );
       final testingOverrides2 = testingOverrides.copyWith(
-        packageGraph: packageGraph2,
+        buildPackages: buildPackages2,
       );
       buildPlan = await BuildPlan.load(
         builderFactories: builderFactories,

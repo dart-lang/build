@@ -4,22 +4,23 @@
 @TestOn('vm')
 library;
 
-import 'package:build_runner/src/build_plan/package_graph.dart';
+import 'package:build_runner/src/build_plan/build_package.dart';
+import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:package_config/package_config_types.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 void main() {
-  late PackageGraph graph;
+  late BuildPackages graph;
 
-  group('PackageGraph', () {
+  group('BuildPackages', () {
     group('forThisPackage ', () {
       setUp(() async {
-        graph = await PackageGraph.forThisPackage();
+        graph = await BuildPackages.forThisPackage();
       });
 
       test('root', () {
-        expectPkg(graph.root, 'build_runner', '', DependencyType.path);
+        expectPkg(graph.root, 'build_runner', '', isEditable: true);
       });
 
       test('asPackageConfig', () {
@@ -36,7 +37,7 @@ void main() {
       final basicPkgPath = p.absolute('test/fixtures/basic_pkg/');
 
       setUp(() async {
-        graph = await PackageGraph.forPath(basicPkgPath);
+        graph = await BuildPackages.forPath(basicPkgPath);
       });
 
       test('allPackages', () {
@@ -54,12 +55,13 @@ void main() {
       });
 
       test('root', () {
-        expectPkg(graph.root, 'basic_pkg', basicPkgPath, DependencyType.path, [
-          graph['a']!,
-          graph['b']!,
-          graph['c']!,
-          graph['d']!,
-        ]);
+        expectPkg(
+          graph.root,
+          'basic_pkg',
+          basicPkgPath,
+          isEditable: true,
+          dependencies: [graph['a']!, graph['b']!, graph['c']!, graph['d']!],
+        );
       });
 
       test('dependency', () {
@@ -67,8 +69,8 @@ void main() {
           graph['a']!,
           'a',
           '$basicPkgPath/pkg/a',
-          DependencyType.hosted,
-          [graph['b']!, graph['c']!],
+          isEditable: false,
+          dependencies: [graph['b']!, graph['c']!],
         );
       });
 
@@ -85,7 +87,7 @@ void main() {
       final withDevDepsPkgPath = p.absolute('test/fixtures/with_dev_deps');
 
       setUp(() async {
-        graph = await PackageGraph.forPath(withDevDepsPkgPath);
+        graph = await BuildPackages.forPath(withDevDepsPkgPath);
       });
 
       test('allPackages contains dev deps of root pkg, but not others', () {
@@ -105,8 +107,8 @@ void main() {
           graph.root,
           'with_dev_deps',
           withDevDepsPkgPath,
-          DependencyType.path,
-          [graph['a']!, graph['b']!],
+          isEditable: true,
+          dependencies: [graph['a']!, graph['b']!],
         );
 
         // Package `c` does not appear because this is not the root package.
@@ -114,16 +116,16 @@ void main() {
           graph['a']!,
           'a',
           '$withDevDepsPkgPath/pkg/a',
-          DependencyType.hosted,
-          [],
+          isEditable: false,
+          dependencies: [],
         );
 
         expectPkg(
           graph['b']!,
           'b',
           '$withDevDepsPkgPath/pkg/b',
-          DependencyType.hosted,
-          [],
+          isEditable: false,
+          dependencies: [],
         );
 
         expect(graph['c'], isNull);
@@ -134,7 +136,7 @@ void main() {
       final withFlutterDeps = p.absolute('test/fixtures/flutter_pkg');
 
       setUp(() async {
-        graph = await PackageGraph.forPath(withFlutterDeps);
+        graph = await BuildPackages.forPath(withFlutterDeps);
       });
 
       test('allPackages resolved correctly with all packages', () {
@@ -156,13 +158,13 @@ void main() {
     });
 
     test('custom creation via fromRoot', () {
-      final a = PackageNode('a', '/a', DependencyType.path, null, isRoot: true);
-      final b = PackageNode('b', '/b', DependencyType.path, null);
-      final c = PackageNode('c', '/c', DependencyType.path, null);
-      final d = PackageNode('d', '/d', DependencyType.path, null);
+      final a = BuildPackage('a', '/a', null, isEditable: true, isRoot: true);
+      final b = BuildPackage('b', '/b', null, isEditable: true);
+      final c = BuildPackage('c', '/c', null, isEditable: true);
+      final d = BuildPackage('d', '/d', null, isEditable: true);
       a.dependencies.addAll([b, d]);
       b.dependencies.add(c);
-      final graph = PackageGraph.fromRoot(a);
+      final graph = BuildPackages.fromRoot(a);
       expect(graph.root, a);
       expect(
         graph.allPackages,
@@ -172,7 +174,7 @@ void main() {
 
     test('missing pubspec throws on create', () {
       expect(
-        () => PackageGraph.forPath(
+        () => BuildPackages.forPath(
           p.absolute(p.join('test', 'fixtures', 'no_pubspec')),
         ),
         throwsA(anything),
@@ -181,7 +183,7 @@ void main() {
 
     test('missing .dart_tool/package_config.json file throws on create', () {
       expect(
-        () => PackageGraph.forPath(
+        () => BuildPackages.forPath(
           p.absolute(p.join('test', 'fixtures', 'no_packages_file')),
         ),
         throwsA(anything),
@@ -193,34 +195,30 @@ void main() {
     final workspaceFixturePath = p.absolute('test/fixtures/workspace');
 
     test('loads only dependent packages, has correct root', () async {
-      Matcher packageNodeEquals(PackageNode node) => isA<PackageNode>()
+      Matcher packageNodeEquals(BuildPackage node) => isA<BuildPackage>()
           .having((c) => c.path, 'path', node.path)
           .having(
             (c) => c.dependencies,
             'dependencies',
             node.dependencies.map(packageNodeEquals),
           )
-          .having(
-            (c) => c.dependencyType,
-            'dependencyType',
-            node.dependencyType,
-          );
+          .having((c) => c.isEditable, 'isEditable', node.isEditable);
 
-      final graph = await PackageGraph.forPath(
+      final graph = await BuildPackages.forPath(
         p.absolute('$workspaceFixturePath/pkgs/a'),
       );
-      final a = PackageNode(
+      final a = BuildPackage(
         'a',
         '$workspaceFixturePath/pkgs/a',
-        DependencyType.path,
         null,
+        isEditable: true,
         isRoot: true,
       );
-      final b = PackageNode(
+      final b = BuildPackage(
         'b',
         '$workspaceFixturePath/pkgs/b',
-        DependencyType.path,
         null,
+        isEditable: true,
       );
       a.dependencies.add(b);
 
@@ -236,16 +234,16 @@ void main() {
 }
 
 void expectPkg(
-  PackageNode node,
+  BuildPackage node,
   String name,
-  String location,
-  DependencyType dependencyType, [
-  Iterable<PackageNode>? dependencies,
-]) {
+  String location, {
+  required bool isEditable,
+  Iterable<BuildPackage>? dependencies,
+}) {
   location = p.canonicalize(location);
   expect(node.name, name);
   expect(node.path, location);
-  expect(node.dependencyType, dependencyType);
+  expect(node.isEditable, isEditable);
   if (dependencies != null) {
     expect(node.dependencies, unorderedEquals(dependencies));
   }

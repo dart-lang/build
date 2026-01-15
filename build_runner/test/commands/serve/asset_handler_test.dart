@@ -27,7 +27,7 @@ void main() {
     assetGraph = await AssetGraph.build(
       BuildPhases([]),
       <AssetId>{},
-      buildPackageGraph({rootPackage('a'): []}),
+      createBuildPackages({rootPackage('a'): []}),
       InternalTestReaderWriter(),
     );
     readerWriter = InternalTestReaderWriter();

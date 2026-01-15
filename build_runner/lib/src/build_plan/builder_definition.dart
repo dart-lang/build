@@ -11,8 +11,9 @@ import 'package:meta/meta.dart';
 
 import '../io/reader_writer.dart';
 import 'build_configs.dart';
+import 'build_package.dart';
+import 'build_packages.dart';
 import 'builder_ordering.dart';
-import 'package_graph.dart';
 
 export 'package:build_config/build_config.dart'
     show AutoApply, TargetBuilderConfigDefaults;
@@ -29,25 +30,25 @@ sealed class AbstractBuilderDefinition {
   TargetBuilderConfigDefaults get targetBuilderConfigDefaults;
 
   /// Loads [BuilderDefinition]s for the configuration in `build.yaml` in
-  /// each package in [packageGraph].
+  /// each package in [buildPackages].
   static Future<BuiltList<AbstractBuilderDefinition>> load({
-    required PackageGraph packageGraph,
+    required BuildPackages buildPackages,
     required ReaderWriter readerWriter,
   }) async {
-    final orderedPackages = stronglyConnectedComponents<PackageNode>(
-      [packageGraph.root],
-      (node) => node.dependencies,
+    final orderedPackages = stronglyConnectedComponents<BuildPackage>(
+      [buildPackages.root],
+      (buildPackage) => buildPackage.dependencies,
       equals: (a, b) => a.name == b.name,
       hashCode: (n) => n.name.hashCode,
     ).expand((c) => c);
     final overrides = await findBuildConfigOverrides(
-      packageGraph: packageGraph,
+      buildPackages: buildPackages,
       readerWriter: readerWriter,
       configKey: null,
     );
 
     Future<build_config.BuildConfig> packageBuildConfig(
-      PackageNode package,
+      BuildPackage package,
     ) async {
       if (overrides.containsKey(package.name)) {
         return overrides[package.name]!;
@@ -73,7 +74,8 @@ sealed class AbstractBuilderDefinition {
       final import = definition.import as String;
       // ignore: avoid_dynamic_calls
       final package = definition.package as String;
-      return import.startsWith('package:') || package == packageGraph.root.name;
+      return import.startsWith('package:') ||
+          package == buildPackages.root.name;
     }
 
     final orderedConfigs = await Future.wait(
@@ -155,7 +157,7 @@ class BuilderDefinition implements AbstractBuilderDefinition {
   );
 
   /// Whether this builder application is auto applied to [package].
-  bool autoAppliesTo(PackageNode package) {
+  bool autoAppliesTo(BuildPackage package) {
     switch (autoApply) {
       case AutoApply.none:
         return false;

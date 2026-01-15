@@ -23,9 +23,9 @@ import '../../build_plan/build_plan.dart';
 import '../../logging/build_log.dart';
 import '../daemon_options.dart';
 import '../watch/asset_change.dart';
+import '../watch/build_package_watcher.dart';
+import '../watch/build_packages_watcher.dart';
 import '../watch/collect_changes.dart';
-import '../watch/graph_watcher.dart';
-import '../watch/node_watcher.dart';
 import 'change_providers.dart';
 
 /// A Daemon Builder that builds with `build_runner`.
@@ -59,7 +59,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   final _buildScriptUpdateCompleter = Completer<void>();
   Future<void> get buildScriptUpdated => _buildScriptUpdateCompleter.future;
 
-  String get _packageName => _buildPlan.packageGraph.root.name;
+  String get _packageName => _buildPlan.buildPackages.root.name;
 
   @override
   Future<void> build(
@@ -229,9 +229,9 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     final buildSeries = BuildSeries(buildPlan);
 
     // Only actually used for the AutoChangeProvider.
-    Stream<List<WatchEvent>> graphEvents() => PackageGraphWatcher(
-          buildPlan.packageGraph,
-          watch: PackageNodeWatcher.new,
+    Stream<List<WatchEvent>> graphEvents() => BuildPackagesWatcher(
+          buildPlan.buildPackages,
+          watch: BuildPackageWatcher.new,
         )
         .watch()
         .debounceBuffer(

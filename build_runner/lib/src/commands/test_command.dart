@@ -12,8 +12,8 @@ import 'package:io/io.dart';
 import '../bootstrap/build_process_state.dart';
 import '../build_plan/build_directory.dart';
 import '../build_plan/build_options.dart';
+import '../build_plan/build_packages.dart';
 import '../build_plan/builder_factories.dart';
-import '../build_plan/package_graph.dart';
 import '../build_plan/testing_overrides.dart';
 import '../constants.dart';
 import '../logging/build_log.dart';
@@ -51,9 +51,10 @@ class TestCommand implements BuildRunnerCommand {
             .uri
             .toFilePath();
     try {
-      final packageGraph =
-          testingOverrides.packageGraph ?? await PackageGraph.forThisPackage();
-      if (!packageGraph.allPackages.containsKey('build_test')) {
+      final buildPackages =
+          testingOverrides.buildPackages ??
+          await BuildPackages.forThisPackage();
+      if (!buildPackages.allPackages.containsKey('build_test')) {
         buildLog.error('''
 Missing dev dependency on package:build_test, which is required to run tests.
 

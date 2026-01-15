@@ -6,7 +6,7 @@ import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
-import '../../build_plan/package_graph.dart';
+import '../../build_plan/build_package.dart';
 
 /// Represents an [id] that was modified on disk as a result of [type].
 class AssetChange {
@@ -19,13 +19,13 @@ class AssetChange {
   const AssetChange(this.id, this.type);
 
   /// Creates a new change record in [package] from an existing watcher [event].
-  AssetChange.fromEvent(PackageNode package, WatchEvent event)
+  AssetChange.fromEvent(BuildPackage package, WatchEvent event)
     : this(
         AssetId(package.name, _normalizeRelativePath(package, event)),
         event.type,
       );
 
-  static String _normalizeRelativePath(PackageNode package, WatchEvent event) {
+  static String _normalizeRelativePath(BuildPackage package, WatchEvent event) {
     final pkgPath = package.path;
     final absoluteEventPath =
         p.isAbsolute(event.path) ? event.path : p.absolute(event.path);

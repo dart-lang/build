@@ -11,20 +11,20 @@ import 'package:logging/logging.dart';
 import 'package:watcher/watcher.dart';
 
 import '../io/reader_writer.dart';
+import 'build_packages.dart';
 import 'build_phases.dart';
 import 'builder_definition.dart';
-import 'package_graph.dart';
 
 /// Settings that are not user-visible: they are overriden only for testing.
 class TestingOverrides {
   final BuiltList<AbstractBuilderDefinition>? builderDefinitions;
   final BuiltMap<String, BuildConfig>? buildConfig;
+  final BuildPackages? buildPackages;
   final BuildPhases? buildPhases;
   final Duration? debounceDelay;
   final BuiltList<String>? defaultRootPackageSources;
   final DirectoryWatcher Function(String)? directoryWatcherFactory;
   final void Function(LogRecord)? onLog;
-  final PackageGraph? packageGraph;
   final ReaderWriter? readerWriter;
   final void Function(AssetId, Iterable<AssetId>)? reportUnusedAssetsForInput;
   final Resolvers? resolvers;
@@ -34,12 +34,12 @@ class TestingOverrides {
   const TestingOverrides({
     this.builderDefinitions,
     this.buildConfig,
+    this.buildPackages,
     this.buildPhases,
     this.debounceDelay,
     this.defaultRootPackageSources,
     this.directoryWatcherFactory,
     this.onLog,
-    this.packageGraph,
     this.readerWriter,
     this.reportUnusedAssetsForInput,
     this.resolvers,
@@ -50,16 +50,16 @@ class TestingOverrides {
   TestingOverrides copyWith({
     BuiltList<BuilderDefinition>? builderDefinitions,
     BuiltMap<String, BuildConfig>? buildConfig,
-    PackageGraph? packageGraph,
+    BuildPackages? buildPackages,
   }) => TestingOverrides(
     builderDefinitions: builderDefinitions ?? this.builderDefinitions,
     buildConfig: buildConfig ?? this.buildConfig,
+    buildPackages: buildPackages ?? this.buildPackages,
     buildPhases: buildPhases,
     debounceDelay: debounceDelay,
     defaultRootPackageSources: defaultRootPackageSources,
     directoryWatcherFactory: directoryWatcherFactory,
     onLog: onLog,
-    packageGraph: packageGraph ?? this.packageGraph,
     readerWriter: readerWriter,
     reportUnusedAssetsForInput: reportUnusedAssetsForInput,
     resolvers: resolvers,

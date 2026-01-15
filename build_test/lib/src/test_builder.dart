@@ -377,20 +377,20 @@ Future<TestBuilderResult> testBuilderFactories(
           ? AnalyzerResolvers.sharedInstance
           : AnalyzerResolvers.custom(packageConfig: packageConfig);
 
-  // Build a `PackageGraph` based on [sourceAssets].
-  final rootNode = PackageNode(
+  // Build a `buildPackages` based on [sourceAssets].
+  final rootNode = BuildPackage(
     rootPackage,
     '/$rootPackage',
-    DependencyType.path,
     null,
+    isEditable: true,
     isRoot: true,
   );
   for (final otherPackage in allPackages.where((p) => p != rootPackage)) {
     rootNode.dependencies.add(
-      PackageNode(otherPackage, '/$otherPackage', DependencyType.path, null),
+      BuildPackage(otherPackage, '/$otherPackage', null, isEditable: true),
     );
   }
-  final packageGraph = PackageGraph.fromRoot(rootNode);
+  final buildPackages = BuildPackages.fromRoot(rootNode);
 
   String builderName(Object builder) {
     final result = builder.toString();
@@ -450,7 +450,7 @@ Future<TestBuilderResult> testBuilderFactories(
 
   final testingOverrides = TestingOverrides(
     builderDefinitions: builderDefinitions.build(),
-    packageGraph: packageGraph,
+    buildPackages: buildPackages,
     readerWriter: readerWriter as InternalTestReaderWriter,
     resolvers: resolvers,
     buildConfig:
@@ -576,7 +576,7 @@ class _ApplyBuilderDefinitionToPackages implements BuilderDefinition {
   });
 
   @override
-  bool autoAppliesTo(PackageNode package) =>
+  bool autoAppliesTo(BuildPackage package) =>
       applyToPackages.contains(package.name);
 
   // Delegate everything else.

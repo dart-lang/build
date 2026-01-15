@@ -16,9 +16,9 @@ import 'package:watcher/watcher.dart';
 
 import '../build_plan/build_configs.dart';
 import '../build_plan/build_options.dart';
+import '../build_plan/build_packages.dart';
 import '../build_plan/build_phases.dart';
 import '../build_plan/build_plan.dart';
-import '../build_plan/package_graph.dart';
 import '../build_plan/phase.dart';
 import '../build_plan/testing_overrides.dart';
 import '../constants.dart';
@@ -131,13 +131,13 @@ class Build {
 
   BuildOptions get buildOptions => buildPlan.buildOptions;
   TestingOverrides get testingOverrides => buildPlan.testingOverrides;
-  PackageGraph get packageGraph => buildPlan.packageGraph;
+  BuildPackages get buildPackages => buildPlan.buildPackages;
   BuildConfigs get buildConfigs => buildPlan.buildConfigs;
   BuildPhases get buildPhases => buildPlan.buildPhases;
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
     buildLog.configuration = buildLog.configuration.rebuild(
-      (b) => b..rootPackageName = packageGraph.root.name,
+      (b) => b..rootPackageName = buildPackages.root.name,
     );
     var result = await _safeBuild(updates);
     if (result.status == BuildStatus.success) {
@@ -176,7 +176,7 @@ class Build {
         ) &&
         result.status == BuildStatus.success) {
       if (!await createMergedOutputDirectories(
-        packageGraph: packageGraph,
+        buildPackages: buildPackages,
         outputSymlinksOnly: buildOptions.outputSymlinksOnly,
         buildDirs: buildOptions.buildDirs,
         buildOutputReader: buildOutputReader,
@@ -219,7 +219,7 @@ class Build {
     final deleted = await assetGraph.updateAndInvalidate(
       buildPhases,
       updates,
-      packageGraph.root.name,
+      buildPackages.root.name,
       _delete,
       readerWriter,
     );
@@ -251,7 +251,7 @@ class Build {
                 );
         assetGraph.previousPhasedAssetDeps = updatedPhasedAssetDeps;
         await readerWriter.writeAsBytes(
-          AssetId(packageGraph.root.name, assetGraphPath),
+          AssetId(buildPackages.root.name, assetGraphPath),
           assetGraph.serialize(),
         );
         // Phases options don't change during a build series, so for all
@@ -273,7 +273,7 @@ class Build {
             '${_twoDigits(now.second)}',
           );
           buildLog.info('Writing performance log to $logPath');
-          final performanceLogId = AssetId(packageGraph.root.name, logPath);
+          final performanceLogId = AssetId(buildPackages.root.name, logPath);
           final serialized = jsonEncode(result.performance);
           await readerWriter.writeAsString(performanceLogId, serialized);
         }
@@ -396,7 +396,7 @@ class Build {
     // Accumulate in a `Set` because inputs are found once per output.
     final ids = <AssetId>{};
     final phase = buildPhases[phaseNumber];
-    final packageNode = packageGraph[package]!;
+    final packageNode = buildPackages[package]!;
 
     for (final node in assetGraph
         .outputsForPhase(package, phaseNumber)
@@ -466,7 +466,7 @@ class Build {
     return tracker.track(() async {
       final readerWriter = SingleStepReaderWriter(
         runningBuild: RunningBuild(
-          packageGraph: packageGraph,
+          buildPackages: buildPackages,
           buildConfigs: buildConfigs,
           assetGraph: assetGraph,
           nodeBuilder: _buildOutput,
@@ -538,7 +538,7 @@ class Build {
               resourceManager: resourceManager,
               stageTracker: tracker,
               reportUnusedAssetsForInput: reportUnusedAssetsForInput,
-              packageConfig: packageGraph.asPackageConfig,
+              packageConfig: buildPackages.asPackageConfig,
             ).catchError((void _) {
               // Errors tracked through the logger.
             }),
@@ -683,7 +683,7 @@ class Build {
     final inputNode = assetGraph.get(input)!;
     final stepReaderWriter = SingleStepReaderWriter(
       runningBuild: RunningBuild(
-        packageGraph: packageGraph,
+        buildPackages: buildPackages,
         buildConfigs: buildConfigs,
         assetGraph: assetGraph,
         nodeBuilder: _buildOutput,

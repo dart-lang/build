@@ -11,17 +11,17 @@ import '../exceptions.dart';
 import '../logging/build_log.dart';
 import '../logging/build_log_logger.dart';
 import 'build_configs.dart';
+import 'build_packages.dart';
 import 'build_phases.dart';
 import 'build_target.dart';
 import 'builder_definition.dart';
 import 'builder_factories.dart';
-import 'package_graph.dart';
 import 'phase.dart';
 
 /// Creates [BuildPhases] from [BuilderDefinition]s.
 class BuildPhaseCreator {
   final BuilderFactories builderFactories;
-  final PackageGraph packageGraph;
+  final BuildPackages buildPackages;
   final BuildConfigs buildConfigs;
   final BuiltList<AbstractBuilderDefinition> builderDefinitions;
   final BuiltMap<String, BuiltMap<String, dynamic>> builderConfigOverrides;
@@ -40,7 +40,7 @@ class BuildPhaseCreator {
 
   BuildPhaseCreator({
     required this.builderFactories,
-    required this.packageGraph,
+    required this.buildPackages,
     required this.buildConfigs,
     required Iterable<AbstractBuilderDefinition> builderDefinitions,
     required this.builderConfigOverrides,
@@ -104,7 +104,7 @@ class BuildPhaseCreator {
         return buildConfigs.buildTargets[key]!;
       }),
       equals: (a, b) => a.key == b.key,
-      hashCode: (node) => node.key.hashCode,
+      hashCode: (buildPackage) => buildPackage.key.hashCode,
     );
 
     final inBuildPhases = <InBuildPhase>[];
@@ -157,7 +157,7 @@ class BuildPhaseCreator {
           builderConfig: builderConfig,
           targetConfig: targetConfig,
           globalOptionOverrides: globalOptionOverrides,
-          isRoot: packageGraph[buildTarget.package]!.isRoot,
+          isRoot: buildPackages[buildTarget.package]!.isRoot,
         );
 
         final builder = BuildLogLogger.scopeLogSync(
@@ -201,7 +201,7 @@ class BuildPhaseCreator {
         builderConfig: builderConfig,
         targetConfig: targetConfig,
         globalOptionOverrides: globalOptionOverrides,
-        isRoot: packageGraph[buildTarget.package]!.isRoot,
+        isRoot: buildPackages[buildTarget.package]!.isRoot,
       );
 
       final builder = BuildLogLogger.scopeLogSync(
@@ -276,7 +276,7 @@ class BuildPhaseCreator {
     // `false` if the builder or any builder it applies has non-hidden output.
     // Post process builder output is always hidden, so skip the check.
     if (builderDefinition is BuilderDefinition &&
-        !packageGraph[buildTarget.package]!.isRoot) {
+        !buildPackages[buildTarget.package]!.isRoot) {
       if (!(builderDefinition.hideOutput &&
           builderDefinition.appliesBuilders.every(
             // Post process builders are not in the map, replace `null` with
@@ -296,7 +296,7 @@ class BuildPhaseCreator {
     final shouldAutoApply =
         buildTarget.autoApplyBuilders &&
         builderDefinition is BuilderDefinition &&
-        builderDefinition.autoAppliesTo(packageGraph[buildTarget.package]!);
+        builderDefinition.autoAppliesTo(buildPackages[buildTarget.package]!);
     return shouldAutoApply ||
         (_builderAppliersByKey[builderDefinition.key] ?? const []).any(
           (anchorBuilder) => _shouldApply(anchorBuilder, buildTarget),

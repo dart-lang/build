@@ -48,7 +48,7 @@ void _printOnFailure(LogRecord record) {
 ///
 /// [resumeFrom] reuses the `readerWriter` from a previous [BuildResult].
 ///
-/// [packageGraph] supplies the root package into which the outputs are to be
+/// [buildPackages] supplies the root package into which the outputs are to be
 /// written.
 ///
 /// [status] optionally indicates the desired outcome.
@@ -78,7 +78,7 @@ Future<TestBuildersResult> testPhases(
   Map<String, /*String|List<int>*/ Object> inputs, {
   TestBuildersResult? resumeFrom,
   Map<String, /*String|List<int>*/ Object>? outputs,
-  PackageGraph? packageGraph,
+  BuildPackages? buildPackages,
   BuildStatus status = BuildStatus.success,
   // A better way to "silence" logging than setting logLevel to OFF.
   void Function(LogRecord record) onLog = _printOnFailure,
@@ -90,10 +90,10 @@ Future<TestBuildersResult> testPhases(
   String? logPerformanceDir,
   void Function(AssetId id)? onDelete,
 }) async {
-  packageGraph ??= buildPackageGraph({rootPackage('a'): []});
+  buildPackages ??= createBuildPackages({rootPackage('a'): []});
   var readerWriter =
       resumeFrom == null
-          ? InternalTestReaderWriter(rootPackage: packageGraph.root.name)
+          ? InternalTestReaderWriter(rootPackage: buildPackages.root.name)
           : resumeFrom.readerWriter;
 
   if (onDelete != null) {
@@ -101,14 +101,14 @@ Future<TestBuildersResult> testPhases(
   }
 
   final pkgConfigId = AssetId(
-    packageGraph.root.name,
+    buildPackages.root.name,
     '.dart_tool/package_config.json',
   );
   if (!await readerWriter.canRead(pkgConfigId)) {
     final packageConfig = {
       'configVersion': 2,
       'packages': [
-        for (final pkgNode in packageGraph.allPackages.values)
+        for (final pkgNode in buildPackages.allPackages.values)
           {
             'name': pkgNode.name,
             'rootUri': pkgNode.path,
@@ -147,7 +147,7 @@ Future<TestBuildersResult> testPhases(
     ),
     testingOverrides: TestingOverrides(
       builderDefinitions: builders.build(),
-      packageGraph: packageGraph,
+      buildPackages: buildPackages,
       readerWriter: readerWriter,
     ),
   );
@@ -164,7 +164,7 @@ Future<TestBuildersResult> testPhases(
       outputs: outputs,
       readerWriter: readerWriter,
       status: status,
-      rootPackage: packageGraph.root.name,
+      rootPackage: buildPackages.root.name,
     );
   }
 

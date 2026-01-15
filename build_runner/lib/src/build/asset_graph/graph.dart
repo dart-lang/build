@@ -16,8 +16,8 @@ import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:watcher/watcher.dart';
 
+import '../../build_plan/build_packages.dart';
 import '../../build_plan/build_phases.dart';
-import '../../build_plan/package_graph.dart';
 import '../../build_plan/phase.dart';
 import '../../constants.dart';
 import '../../io/generated_asset_hider.dart';
@@ -171,7 +171,7 @@ class AssetGraph implements GeneratedAssetHider {
   static Future<AssetGraph> build(
     BuildPhases buildPhases,
     Set<AssetId> sources,
-    PackageGraph packageGraph,
+    BuildPackages buildPackages,
     ReaderWriter readerWriter, {
     String? kernelDigest,
   }) async {
@@ -179,15 +179,15 @@ class AssetGraph implements GeneratedAssetHider {
       kernelDigest,
       buildPhases,
       Platform.version,
-      packageGraph.languageVersions,
+      buildPackages.languageVersions,
       experiments_zone.enabledExperiments.build(),
     );
-    final placeholders = graph._addPlaceHolderNodes(packageGraph);
+    final placeholders = graph._addPlaceHolderNodes(buildPackages);
     graph._addSources(sources);
     graph._addOutputsForSources(
       buildPhases,
       sources,
-      packageGraph.root.name,
+      buildPackages.root.name,
       placeholders: placeholders,
     );
     // Pre-emptively compute digests for the nodes we know have outputs.
@@ -219,9 +219,9 @@ class AssetGraph implements GeneratedAssetHider {
       _nodes.packageFileIds(package, glob: glob);
   void removeForTest(AssetId id) => _nodes.remove(id);
 
-  /// Adds [AssetNode.placeholder]s for every package in [packageGraph].
-  Set<AssetId> _addPlaceHolderNodes(PackageGraph packageGraph) {
-    final placeholders = placeholderIdsFor(packageGraph);
+  /// Adds [AssetNode.placeholder]s for every package in [buildPackages].
+  Set<AssetId> _addPlaceHolderNodes(BuildPackages buildPackages) {
+    final placeholders = placeholderIdsFor(buildPackages);
     for (final id in placeholders) {
       _nodes.add(AssetNode.placeholder(id));
     }
@@ -631,7 +631,7 @@ class AssetGraph implements GeneratedAssetHider {
   }
 
   /// Returns outputs that were written to the source tree.
-  Iterable<AssetId> outputsToDelete(PackageGraph packageGraph) {
+  Iterable<AssetId> outputsToDelete(BuildPackages buildPackages) {
     final result = <AssetId>[];
     // Delete all the non-hidden outputs.
     for (final id in outputs) {
@@ -643,8 +643,8 @@ class AssetGraph implements GeneratedAssetHider {
         // renamed the root package.
         //
         // In that case we change `idToDelete` to be in the root package.
-        if (packageGraph[id.package] == null) {
-          idToDelete = AssetId(packageGraph.root.name, id.path);
+        if (buildPackages[id.package] == null) {
+          idToDelete = AssetId(buildPackages.root.name, id.path);
         }
         result.add(idToDelete);
       }
@@ -653,13 +653,14 @@ class AssetGraph implements GeneratedAssetHider {
   }
 }
 
-Set<AssetId> placeholderIdsFor(PackageGraph packageGraph) => Set<AssetId>.from(
-  packageGraph.allPackages.keys.expand(
-    (package) => [
-      AssetId(package, r'lib/$lib$'),
-      AssetId(package, r'test/$test$'),
-      AssetId(package, r'web/$web$'),
-      AssetId(package, r'$package$'),
-    ],
-  ),
-);
+Set<AssetId> placeholderIdsFor(BuildPackages buildPackages) =>
+    Set<AssetId>.from(
+      buildPackages.allPackages.keys.expand(
+        (package) => [
+          AssetId(package, r'lib/$lib$'),
+          AssetId(package, r'test/$test$'),
+          AssetId(package, r'web/$web$'),
+          AssetId(package, r'$package$'),
+        ],
+      ),
+    );

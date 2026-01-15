@@ -11,7 +11,7 @@ import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
 import '../build_plan/build_configs.dart';
-import '../build_plan/package_graph.dart';
+import '../build_plan/build_packages.dart';
 import '../build_plan/phase.dart';
 import '../io/asset_finder.dart';
 import '../io/reader_writer.dart';
@@ -62,7 +62,7 @@ class Readability {
 
 /// `SingleStepReaderWriter`'s view on the currently-running build.
 class RunningBuild {
-  final PackageGraph packageGraph;
+  final BuildPackages buildPackages;
   final BuildConfigs buildConfigs;
   final AssetGraph assetGraph;
   final AssetBuilder nodeBuilder;
@@ -70,7 +70,7 @@ class RunningBuild {
   final GlobNodeBuilder globNodeBuilder;
 
   RunningBuild({
-    required this.packageGraph,
+    required this.buildPackages,
     required this.buildConfigs,
     required this.assetGraph,
     required this.nodeBuilder,
@@ -319,7 +319,7 @@ class SingleStepReaderWriter implements PhasedReader {
   void _checkInvalidInput(AssetId id) {
     if (_runningBuild == null) return;
 
-    final packageNode = _runningBuild.packageGraph[id.package];
+    final packageNode = _runningBuild.buildPackages[id.package];
     if (packageNode == null) {
       throw PackageNotFoundException(id.package);
     }
