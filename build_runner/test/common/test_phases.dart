@@ -14,7 +14,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
-import 'package_graphs.dart';
+import 'build_packages.dart';
 
 Future<void> wait(int milliseconds) =>
     Future.delayed(Duration(milliseconds: milliseconds));

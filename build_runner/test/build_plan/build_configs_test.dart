@@ -17,10 +17,10 @@ import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
 
-import '../common/package_graphs.dart';
+import '../common/build_packages.dart';
 
 void main() {
-  group('BuildConfigs.forbuildPackages', () {
+  group('BuildConfigs.load', () {
     test('warns if required sources are missing', () {
       final logs = <LogRecord>[];
       final listener = Logger.root.onRecord.listen(logs.add);
