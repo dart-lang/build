@@ -17,8 +17,8 @@ BuildPackages createBuildPackages(
       packages[package]!.map((name) => packagesByName[name]!),
     );
   }
-  final root = packages.keys.singleWhere((n) => n.isRoot);
-  return BuildPackages.fromRoot(root);
+  final root = packages.keys.singleWhere((n) => n.isInBuild);
+  return BuildPackages.fromCurrent(root);
 }
 
 BuildPackage package(
@@ -42,5 +42,5 @@ BuildPackage rootPackage(
   path ?? '/$packageName',
   languageVersion,
   isEditable: true,
-  isRoot: true,
+  isInBuild: true,
 );

@@ -8,6 +8,7 @@ import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner/src/build_plan/build_triggers.dart';
 import 'package:build_test/build_test.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -47,20 +48,22 @@ void main() {
   });
 
   test('reports warnings', () {
-    final triggers = BuildTriggers.fromConfigs({
-      'my_pkg': BuildConfig.parse('my_pkg', [], '''
+    final triggers = BuildTriggers.fromConfigs(
+      {
+        'my_pkg': BuildConfig.parse('my_pkg', [], '''
 triggers:
   other_pkg|builder:
     - import 7
     - annotation 3
     - bleh
 '''),
-      'an_other_pkg': BuildConfig.parse('an_other_pkg', [], '''
+        'an_other_pkg': BuildConfig.parse('an_other_pkg', [], '''
 triggers:
   a_fourth_pkg:another_builder:
     - blah
 '''),
-    });
+      }.build(),
+    );
 
     expect(triggers.renderWarnings, '''
 build.yaml of package:my_pkg:

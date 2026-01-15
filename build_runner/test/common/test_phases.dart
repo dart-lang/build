@@ -93,7 +93,9 @@ Future<TestBuildersResult> testPhases(
   buildPackages ??= createBuildPackages({rootPackage('a'): []});
   var readerWriter =
       resumeFrom == null
-          ? InternalTestReaderWriter(rootPackage: buildPackages.root.name)
+          ? InternalTestReaderWriter(
+            outputRootPackage: buildPackages.outputRoot.name,
+          )
           : resumeFrom.readerWriter;
 
   if (onDelete != null) {
@@ -101,7 +103,7 @@ Future<TestBuildersResult> testPhases(
   }
 
   final pkgConfigId = AssetId(
-    buildPackages.root.name,
+    buildPackages.outputRoot.name,
     '.dart_tool/package_config.json',
   );
   if (!await readerWriter.canRead(pkgConfigId)) {
@@ -164,7 +166,7 @@ Future<TestBuildersResult> testPhases(
       outputs: outputs,
       readerWriter: readerWriter,
       status: status,
-      rootPackage: buildPackages.root.name,
+      buildCachePackage: buildPackages.outputRoot.name,
     );
   }
 
@@ -178,7 +180,7 @@ void checkBuild(
   Map<String, Object>? outputs,
   required TestReaderWriter readerWriter,
   BuildStatus status = BuildStatus.success,
-  String rootPackage = 'a',
+  String buildCachePackage = 'a',
 }) {
   expect(result.status, status, reason: '$result');
 
@@ -197,7 +199,7 @@ void checkBuild(
   AssetId mapHidden(AssetId id) =>
       unhiddenAssets.contains(id)
           ? AssetId(
-            rootPackage,
+            buildCachePackage,
             '.dart_tool/build/generated/${id.package}/${id.path}',
           )
           : id;

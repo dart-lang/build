@@ -12,12 +12,12 @@ import 'package:path/path.dart' as p;
 /// In this case, two `AssetId`s are returned: one ignoring the package mapping
 /// then one with the package mapping.
 List<AssetId> pathToAssetIds(
-  String rootPackage,
+  String outputRootPackage,
   String rootDir,
   List<String> pathSegments,
 ) {
   final result = <AssetId>[
-    AssetId(rootPackage, p.joinAll([rootDir, ...pathSegments])),
+    AssetId(outputRootPackage, p.joinAll([rootDir, ...pathSegments])),
   ];
   final packagesIndex = pathSegments.indexOf('packages');
   if (packagesIndex >= 0 && pathSegments.length - packagesIndex > 2) {

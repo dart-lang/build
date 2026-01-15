@@ -36,7 +36,7 @@ void main() {
     late BuildPhases buildPhases;
 
     setUp(() async {
-      readerWriter = InternalTestReaderWriter(rootPackage: 'a');
+      readerWriter = InternalTestReaderWriter(outputRootPackage: 'a');
       buildPackages = createBuildPackages({rootPackage('a'): []});
       assetGraph = await AssetGraph.build(
         BuildPhases([]),
@@ -119,7 +119,7 @@ void main() {
         ),
         testingOverrides: TestingOverrides(
           buildPhases: buildPhases,
-          defaultRootPackageSources: defaultNonRootVisibleAssets,
+          defaultRootPackageSources: defaultDependencyVisibleAssets,
           readerWriter: readerWriter,
           buildPackages: buildPackages,
         ),
@@ -143,7 +143,7 @@ void main() {
         ),
         testingOverrides: TestingOverrides(
           buildPhases: buildPhases,
-          defaultRootPackageSources: defaultNonRootVisibleAssets,
+          defaultRootPackageSources: defaultDependencyVisibleAssets,
           readerWriter: readerWriter,
           buildPackages: buildPackages,
         ),

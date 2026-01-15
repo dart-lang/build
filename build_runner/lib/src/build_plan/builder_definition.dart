@@ -36,7 +36,7 @@ sealed class AbstractBuilderDefinition {
     required ReaderWriter readerWriter,
   }) async {
     final orderedPackages = stronglyConnectedComponents<BuildPackage>(
-      [buildPackages.root],
+      buildPackages.allPackages.values,
       (buildPackage) => buildPackage.dependencies,
       equals: (a, b) => a.name == b.name,
       hashCode: (n) => n.name.hashCode,
@@ -69,21 +69,16 @@ sealed class AbstractBuilderDefinition {
       }
     }
 
-    bool isPackageImportOrForRoot(dynamic definition) {
-      // ignore: avoid_dynamic_calls
-      final import = definition.import as String;
-      // ignore: avoid_dynamic_calls
-      final package = definition.package as String;
-      return import.startsWith('package:') ||
-          package == buildPackages.root.name;
-    }
-
     final orderedConfigs = await Future.wait(
       orderedPackages.map(packageBuildConfig),
     );
     final builderDefinitions = orderedConfigs
         .expand((c) => c.builderDefinitions.values)
-        .where(isPackageImportOrForRoot);
+        .where(
+          (c) =>
+              c.import.startsWith('package:') ||
+              c.package == buildPackages.outputRoot.name,
+        );
 
     final rootBuildConfig = orderedConfigs.last;
     final orderedBuilders =
@@ -94,7 +89,11 @@ sealed class AbstractBuilderDefinition {
 
     final postProcessBuilderDefinitions = orderedConfigs
         .expand((c) => c.postProcessBuilderDefinitions.values)
-        .where(isPackageImportOrForRoot);
+        .where(
+          (c) =>
+              c.import.startsWith('package:') ||
+              c.package == buildPackages.outputRoot.name,
+        );
 
     final result = ListBuilder<AbstractBuilderDefinition>();
     for (final builder in orderedBuilders) {
@@ -164,7 +163,7 @@ class BuilderDefinition implements AbstractBuilderDefinition {
       case AutoApply.allPackages:
         return true;
       case AutoApply.rootPackage:
-        return package.isRoot;
+        return package.isInBuild;
       case AutoApply.dependents:
         return package.dependencies.any((p) => p.name == this.package);
     }

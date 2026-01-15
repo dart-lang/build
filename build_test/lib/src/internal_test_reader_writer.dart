@@ -22,6 +22,8 @@ import 'test_reader_writer.dart';
 /// and `build_runner`.
 class InternalTestReaderWriter extends ReaderWriter
     implements TestReaderWriter {
+  final String buildCachePackage;
+
   /// Assets read directly from this reader/writer.
   final Set<AssetId> assetsRead;
 
@@ -32,15 +34,18 @@ class InternalTestReaderWriter extends ReaderWriter
 
   /// Create a new asset reader/writer.
   ///
-  /// If provided [rootPackage] is the default package when globbing for files.
-  factory InternalTestReaderWriter({String? rootPackage}) {
+  /// If provided [outputRootPackage] is the package where the build cache is
+  /// written, otherwise `unset` is used.
+  factory InternalTestReaderWriter({String? outputRootPackage}) {
     final filesystem = InMemoryFilesystem();
     return InternalTestReaderWriter.using(
       assetsRead: {},
       assetsWritten: {},
-      rootPackage: rootPackage ?? 'unset',
-      assetFinder: InMemoryAssetFinder(filesystem, rootPackage),
-      assetPathProvider: const InMemoryAssetPathProvider(),
+      assetFinder: InMemoryAssetFinder(filesystem),
+      assetPathProvider: InMemoryAssetPathProvider(
+        outputRootPackage ?? 'unset',
+      ),
+      buildCachePackage: outputRootPackage ?? 'unset',
       generatedAssetHider: const NoopGeneratedAssetHider(),
       filesystem: filesystem,
       cache: const PassthroughFilesystemCache(),
@@ -52,9 +57,9 @@ class InternalTestReaderWriter extends ReaderWriter
   InternalTestReaderWriter.using({
     required this.assetsRead,
     required this.assetsWritten,
-    required super.rootPackage,
     required super.assetFinder,
     required super.assetPathProvider,
+    required this.buildCachePackage,
     required super.generatedAssetHider,
     required super.filesystem,
     required super.cache,
@@ -72,9 +77,9 @@ class InternalTestReaderWriter extends ReaderWriter
   }) => InternalTestReaderWriter.using(
     assetsRead: assetsRead,
     assetsWritten: assetsWritten,
-    rootPackage: rootPackage,
     assetFinder: assetFinder,
     assetPathProvider: assetPathProvider,
+    buildCachePackage: buildCachePackage,
     generatedAssetHider: generatedAssetHider ?? this.generatedAssetHider,
     filesystem: filesystem,
     cache: cache ?? this.cache,
@@ -145,27 +150,30 @@ class InternalTestReaderWriter extends ReaderWriter
 }
 
 class InMemoryAssetPathProvider implements AssetPathProvider {
-  const InMemoryAssetPathProvider();
+  final String outputRootPackage;
+
+  InMemoryAssetPathProvider(this.outputRootPackage);
 
   @override
-  String pathFor(AssetId id) => id.toString();
+  String pathFor(
+    AssetId id, {
+    required bool hide,
+    bool checkDeleteAllowed = false,
+  }) {
+    if (hide) {
+      id = AssetPathProvider.hide(id, outputRootPackage);
+    }
+    return id.toString();
+  }
 }
 
 class InMemoryAssetFinder implements AssetFinder {
   final InMemoryFilesystem filesystem;
-  final String? rootPackage;
 
-  InMemoryAssetFinder(this.filesystem, this.rootPackage);
+  InMemoryAssetFinder(this.filesystem);
 
   @override
-  Stream<AssetId> find(Glob glob, {String? package}) {
-    package ??= rootPackage;
-    if (package == null) {
-      throw UnsupportedError(
-        'Root package is required to use findAssets without providing an '
-        'explicit package.',
-      );
-    }
+  Stream<AssetId> find(Glob glob, {required String package}) {
     return Stream.fromIterable(
       filesystem.filePaths
           .map(AssetId.parse)
@@ -249,29 +257,35 @@ class _ReaderWriterTestingImpl implements ReaderWriterTesting {
 
   @override
   bool exists(AssetId id) => _readerWriter.filesystem.existsSync(
-    _readerWriter.assetPathProvider.pathFor(id),
+    _readerWriter.assetPathProvider.pathFor(id, hide: false),
   );
 
   @override
-  void writeString(AssetId id, String contents) => _readerWriter.filesystem
-      .writeAsStringSync(_readerWriter.assetPathProvider.pathFor(id), contents);
+  void writeString(AssetId id, String contents) =>
+      _readerWriter.filesystem.writeAsStringSync(
+        _readerWriter.assetPathProvider.pathFor(id, hide: false),
+        contents,
+      );
 
   @override
-  void writeBytes(AssetId id, List<int> contents) => _readerWriter.filesystem
-      .writeAsBytesSync(_readerWriter.assetPathProvider.pathFor(id), contents);
+  void writeBytes(AssetId id, List<int> contents) =>
+      _readerWriter.filesystem.writeAsBytesSync(
+        _readerWriter.assetPathProvider.pathFor(id, hide: false),
+        contents,
+      );
 
   @override
   Uint8List readBytes(AssetId id) => _readerWriter.filesystem.readAsBytesSync(
-    _readerWriter.assetPathProvider.pathFor(id),
+    _readerWriter.assetPathProvider.pathFor(id, hide: false),
   );
 
   @override
   String readString(AssetId id) => _readerWriter.filesystem.readAsStringSync(
-    _readerWriter.assetPathProvider.pathFor(id),
+    _readerWriter.assetPathProvider.pathFor(id, hide: false),
   );
 
   @override
   void delete(AssetId id) => _readerWriter.filesystem.deleteSync(
-    _readerWriter.assetPathProvider.pathFor(id),
+    _readerWriter.assetPathProvider.pathFor(id, hide: false),
   );
 }

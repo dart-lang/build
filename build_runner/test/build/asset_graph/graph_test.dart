@@ -269,7 +269,6 @@ void main() {
           await graph.updateAndInvalidate(
             buildPhases,
             changes,
-            'foo',
             (_) async {},
             digestReader,
           );
@@ -291,7 +290,6 @@ void main() {
           await graph.updateAndInvalidate(
             buildPhases,
             changes,
-            'foo',
             (id) async => deletes.add(id),
             digestReader,
           );
@@ -312,7 +310,6 @@ void main() {
           await graph.updateAndInvalidate(
             buildPhases,
             changes,
-            'foo',
             (id) async => deletes.add(id),
             digestReader,
           );
@@ -331,7 +328,6 @@ void main() {
           await graph.updateAndInvalidate(
             buildPhases,
             changes,
-            'foo',
             (_) async {},
             digestReader,
           );
@@ -362,7 +358,6 @@ void main() {
             await graph.updateAndInvalidate(
               buildPhases,
               changes,
-              'foo',
               (_) async {},
               digestReader,
             );
@@ -390,7 +385,6 @@ void main() {
             await graph.updateAndInvalidate(
               buildPhases,
               changes,
-              'foo',
               (_) => Future.value(null),
               digestReader,
             );
@@ -577,7 +571,6 @@ void main() {
           await graph.updateAndInvalidate(
             buildPhases,
             {renamedSource: ChangeType.ADD, source: ChangeType.REMOVE},
-            'a',
             (_) async {},
             digestReader,
           );

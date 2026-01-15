@@ -36,12 +36,12 @@ enum PerfSortOrder {
 }
 
 class ServeHandler {
-  final String rootPackage;
+  final String outputRootPackage;
   final Watcher _watcher;
 
   final BuildUpdatesWebSocketHandler _webSocketHandler;
 
-  ServeHandler(this.rootPackage, this._watcher)
+  ServeHandler(this.outputRootPackage, this._watcher)
     : _webSocketHandler = BuildUpdatesWebSocketHandler() {
     _watcher.buildResults
         .listen(_webSocketHandler.emitUpdateMessage)
@@ -76,7 +76,7 @@ class ServeHandler {
       }
       final assetHandler = AssetHandler(
         () async => (await _watcher.currentBuildResult).buildOutputReader,
-        rootPackage,
+        outputRootPackage,
       );
       return assetHandler.handle(request, rootDir: rootDir);
     });
@@ -105,7 +105,11 @@ class ServeHandler {
         (jsonDecode(await request.readAsString()) as List).cast<String>();
     final results = <String, String>{};
     for (final path in assertPathList) {
-      final assetIds = pathToAssetIds(rootPackage, rootDir, p.url.split(path));
+      final assetIds = pathToAssetIds(
+        outputRootPackage,
+        rootDir,
+        p.url.split(path),
+      );
       AssetId? assetId;
       for (final id in assetIds) {
         try {
@@ -246,17 +250,17 @@ window.\$dartLoader.forceLoadModule('packages/build_runner/src/commands/serve/$s
 
 class AssetHandler {
   final Future<BuildOutputReader> Function() _reader;
-  final String _rootPackage;
+  final String _outputRootPackage;
 
   final _typeResolver = MimeTypeResolver();
 
-  AssetHandler(this._reader, this._rootPackage);
+  AssetHandler(this._reader, this._outputRootPackage);
 
   Future<shelf.Response> handle(shelf.Request request, {String rootDir = ''}) =>
       (request.url.path.endsWith('/') || request.url.path.isEmpty)
           ? _handle(
             request,
-            pathToAssetIds(_rootPackage, rootDir, [
+            pathToAssetIds(_outputRootPackage, rootDir, [
               ...request.url.pathSegments.where((p) => p.isNotEmpty),
               'index.html',
             ]),
@@ -264,7 +268,11 @@ class AssetHandler {
           )
           : _handle(
             request,
-            pathToAssetIds(_rootPackage, rootDir, request.url.pathSegments),
+            pathToAssetIds(
+              _outputRootPackage,
+              rootDir,
+              request.url.pathSegments,
+            ),
           );
 
   Future<shelf.Response> _handle(
@@ -355,7 +363,10 @@ class AssetHandler {
     final reader = await _reader();
 
     final result =
-        await reader.assetFinder.find(Glob(glob)).map((a) => a.path).toList();
+        await reader
+            .findAssets(Glob(glob), package: from.package)
+            .map((a) => a.path)
+            .toList();
     final message = StringBuffer('Could not find ${from.path}');
     if (result.isEmpty) {
       message.write(' or any files in $directoryPath. ');

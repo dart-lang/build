@@ -11,14 +11,15 @@ abstract interface class AssetFinder {
   ///
   /// `Reader.findAssets` exposes this funcionality without allowing controlling
   /// [package].
-  Stream<AssetId> find(Glob glob, {String? package});
+  Stream<AssetId> find(Glob glob, {required String package});
 }
 
 class FunctionAssetFinder implements AssetFinder {
-  final Stream<AssetId> Function(Glob, String?) function;
+  final Stream<AssetId> Function(Glob, {required String package}) function;
 
   FunctionAssetFinder(this.function);
 
   @override
-  Stream<AssetId> find(Glob glob, {String? package}) => function(glob, package);
+  Stream<AssetId> find(Glob glob, {required String package}) =>
+      function(glob, package: package);
 }

@@ -4,19 +4,19 @@
 
 import 'package:build/build.dart';
 
-/// Optionally modifies the storage location of assets.
+/// Determines whether an asset is hidden.
 ///
-/// `AssetGraph` provides an implementation of this interface that moves
-/// "hidden" generated files to the "build cache" path under `rootPackage`.
+/// That means it's written to the "build cache" instead of the directory
+/// containing manually written source code.
 abstract interface class GeneratedAssetHider {
-  /// Returns [id] or an updated [id].
-  AssetId maybeHide(AssetId id, String rootPackage);
+  /// Returns whether [id] is hidden.
+  bool isHidden(AssetId id);
 }
 
-/// [GeneratedAssetHider] that does nothing.
+/// [GeneratedAssetHider] that always returns `false`.
 class NoopGeneratedAssetHider implements GeneratedAssetHider {
   const NoopGeneratedAssetHider();
 
   @override
-  AssetId maybeHide(AssetId id, String _) => id;
+  bool isHidden(AssetId _) => false;
 }

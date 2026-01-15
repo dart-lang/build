@@ -37,9 +37,9 @@ void main() {
         '/fakeA',
         LanguageVersion(0, 0),
         isEditable: true,
-        isRoot: true,
+        isInBuild: true,
       )..dependencies.add(packageB);
-      final buildPackages = BuildPackages.fromRoot(packageA);
+      final buildPackages = BuildPackages.fromCurrent(packageA);
 
       BuildConfigs.load(
         buildPackages: buildPackages,
@@ -200,13 +200,12 @@ void main() {
 
     // https://github.com/dart-lang/build/issues/1042
     test('a missing sources/include does not cause an error', () async {
-      final rootPkg = buildPackages.root.name;
       final buildConfigs = await BuildConfigs.load(
         buildPackages: buildPackages,
         testingOverrides: TestingOverrides(
           buildConfig:
               {
-                rootPkg: BuildConfig.fromMap(rootPkg, [], {
+                'a': BuildConfig.fromMap('a', [], {
                   'targets': {
                     'another': <String, dynamic>{},
                     '\$default': {
@@ -221,23 +220,19 @@ void main() {
       );
 
       expect(
-        buildConfigs.buildTargets['$rootPkg:another']!.sourceIncludes,
+        buildConfigs.buildTargets['a:another']!.sourceIncludes,
         isNotEmpty,
       );
-      expect(
-        buildConfigs.buildTargets['$rootPkg:$rootPkg']!.sourceIncludes,
-        isNotEmpty,
-      );
+      expect(buildConfigs.buildTargets['a:a']!.sourceIncludes, isNotEmpty);
     });
 
     test('a missing sources/include results in the default sources', () async {
-      final rootPkg = buildPackages.root.name;
       final buildConfigs = await BuildConfigs.load(
         buildPackages: buildPackages,
         testingOverrides: TestingOverrides(
           buildConfig:
               {
-                rootPkg: BuildConfig.fromMap(rootPkg, [], {
+                'a': BuildConfig.fromMap('a', [], {
                   'targets': {
                     'another': <String, dynamic>{},
                     '\$default': {
@@ -251,16 +246,16 @@ void main() {
         ),
       );
       expect(
-        buildConfigs.buildTargets['$rootPkg:another']!.sourceIncludes.map(
+        buildConfigs.buildTargets['a:another']!.sourceIncludes.map(
           (glob) => glob.pattern,
         ),
-        defaultRootPackageSources,
+        defaultInBuildPackageSources,
       );
       expect(
-        buildConfigs.buildTargets['$rootPkg:$rootPkg']!.sourceIncludes.map(
+        buildConfigs.buildTargets['a:a']!.sourceIncludes.map(
           (glob) => glob.pattern,
         ),
-        defaultRootPackageSources,
+        defaultInBuildPackageSources,
       );
     });
   });

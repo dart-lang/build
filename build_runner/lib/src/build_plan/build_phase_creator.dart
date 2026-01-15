@@ -70,12 +70,22 @@ class BuildPhaseCreator {
   /// dependency on some other package by choosing the appropriate
   /// [BuilderDefinition].
   Future<BuildPhases> createBuildPhases() async {
+    // Global options come from the `outputRoot` package.
+    final globalOptionsMap =
+        buildConfigs
+            .buildConfigByPackage[buildPackages.outputRoot.name]
+            ?.globalOptions ??
+        {};
     warnForUnknownBuilders(
       builderDefinitions,
-      buildConfigs.rootPackageConfig,
+      // Check the packages in the build, but not dependency packages.
+      buildPackages.packagesInBuild.map(
+        (p) => buildConfigs.buildConfigByPackage[p]!,
+      ),
+      globalOptionsMap,
       builderConfigOverrides,
     );
-    final globalOptions = buildConfigs.rootPackageConfig.globalOptions.map(
+    final globalOptions = globalOptionsMap.map(
       (key, config) => MapEntry(
         key,
         config.options.toBuilderOptions().overrideWith(
@@ -157,7 +167,7 @@ class BuildPhaseCreator {
           builderConfig: builderConfig,
           targetConfig: targetConfig,
           globalOptionOverrides: globalOptionOverrides,
-          isRoot: buildPackages[buildTarget.package]!.isRoot,
+          isRoot: buildPackages[buildTarget.package]!.isInBuild,
         );
 
         final builder = BuildLogLogger.scopeLogSync(
@@ -201,7 +211,7 @@ class BuildPhaseCreator {
         builderConfig: builderConfig,
         targetConfig: targetConfig,
         globalOptionOverrides: globalOptionOverrides,
-        isRoot: buildPackages[buildTarget.package]!.isRoot,
+        isRoot: buildPackages[buildTarget.package]!.isInBuild,
       );
 
       final builder = BuildLogLogger.scopeLogSync(
@@ -276,7 +286,7 @@ class BuildPhaseCreator {
     // `false` if the builder or any builder it applies has non-hidden output.
     // Post process builder output is always hidden, so skip the check.
     if (builderDefinition is BuilderDefinition &&
-        !buildPackages[buildTarget.package]!.isRoot) {
+        !buildPackages[buildTarget.package]!.isInBuild) {
       if (!(builderDefinition.hideOutput &&
           builderDefinition.appliesBuilders.every(
             // Post process builders are not in the map, replace `null` with
@@ -312,7 +322,8 @@ extension BuilderOptionsExtension on Map<String, dynamic>? {
 /// Warns about configuration related to unknown builders.
 void warnForUnknownBuilders(
   Iterable<AbstractBuilderDefinition> builders,
-  build_config.BuildConfig rootPackageConfig,
+  Iterable<build_config.BuildConfig> buildConfigs,
+  Map<String, build_config.GlobalBuilderConfig> globalConfig,
   BuiltMap<String, BuiltMap<String, dynamic>> builderConfigOverrides,
 ) {
   final builderKeys = builders.map((b) => b.key).toSet();
@@ -324,22 +335,24 @@ void warnForUnknownBuilders(
       );
     }
   }
-  for (final target in rootPackageConfig.buildTargets.values) {
-    for (final key in target.builders.keys) {
-      if (!builderKeys.contains(key)) {
-        buildLog.warning(
-          'Ignoring options for unknown builder `$key` '
-          'in target `${target.key}`.',
-        );
+  for (final buildConfig in buildConfigs) {
+    for (final target in buildConfig.buildTargets.values) {
+      for (final key in target.builders.keys) {
+        if (!builderKeys.contains(key)) {
+          buildLog.warning(
+            'Ignoring options for unknown builder `$key` '
+            'in target `${target.key}`.',
+          );
+        }
       }
     }
   }
-  for (final key in rootPackageConfig.globalOptions.keys) {
+  for (final key in globalConfig.keys) {
     if (!builderKeys.contains(key)) {
       buildLog.warning('Ignoring `global_options` for unknown builder `$key`.');
     }
   }
-  for (final value in rootPackageConfig.globalOptions.values) {
+  for (final value in globalConfig.values) {
     for (final key in value.runsBefore) {
       if (!builderKeys.contains(key)) {
         buildLog.warning(

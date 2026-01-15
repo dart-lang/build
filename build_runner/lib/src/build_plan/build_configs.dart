@@ -22,9 +22,9 @@ import 'testing_overrides.dart';
 
 /// Build configuration loaded from all `build.yaml` files in the build.
 class BuildConfigs {
-  static final InputMatcher _defaultMatcherForNonRoot = InputMatcher(
+  static final InputMatcher _defaultMatcherForDependency = InputMatcher(
     const InputSet(),
-    defaultInclude: defaultNonRootVisibleAssets,
+    defaultInclude: defaultDependencyVisibleAssets,
   );
 
   /// All [BuildTarget]s indexed by `"$packageName:$targetName"`.
@@ -33,8 +33,8 @@ class BuildConfigs {
   /// All [BuildTarget]s by package name.
   final BuiltListMultimap<String, BuildTarget> buildTargetsByPackage;
 
-  /// The [BuildConfig] of the root package.
-  final BuildConfig rootPackageConfig;
+  /// The build config per package.
+  final BuiltMap<String, BuildConfig> buildConfigByPackage;
 
   // The [BuildTriggers] accumulated across all packages.
   final BuildTriggers buildTriggers;
@@ -48,7 +48,7 @@ class BuildConfigs {
   BuildConfigs._(
     this.buildTargets,
     this.buildTargetsByPackage,
-    this.rootPackageConfig,
+    this.buildConfigByPackage,
     this.buildTriggers,
     this._publicAssetsByPackage,
   );
@@ -89,8 +89,7 @@ class BuildConfigs {
     final targetsByKey = MapBuilder<String, BuildTarget>();
     final publicAssetsByPackage = MapBuilder<String, InputMatcher>();
     final targetsByPackage = ListMultimapBuilder<String, BuildTarget>();
-    late BuildConfig rootPackageConfig;
-    final configs = <String, BuildConfig>{};
+    final buildConfigByPackage = MapBuilder<String, BuildConfig>();
     final configOverrides =
         testingOverrides?.buildConfig ??
         (readerWriter == null
@@ -104,24 +103,23 @@ class BuildConfigs {
       final config =
           configOverrides?[package.name] ??
           await _packageBuildConfig(readerWriter, package);
-      configs[package.name] = config;
+      buildConfigByPackage[package.name] = config;
 
       BuiltList<String> defaultInclude;
-      if (package.isRoot) {
+      if (package.isInBuild) {
         defaultInclude =
             [
               ...(testingOverrides?.defaultRootPackageSources ??
-                  defaultRootPackageSources),
+                  defaultInBuildPackageSources),
               ...config.additionalPublicAssets,
             ].build();
-        rootPackageConfig = config;
       } else if (package.name == r'$sdk') {
         defaultInclude =
             const ['lib/dev_compiler/**.js', 'lib/_internal/**.sum'].build();
       } else {
         defaultInclude =
             [
-              ...defaultNonRootVisibleAssets,
+              ...defaultDependencyVisibleAssets,
               ...config.additionalPublicAssets,
             ].build();
       }
@@ -129,7 +127,7 @@ class BuildConfigs {
         const InputSet(),
         defaultInclude:
             [
-              ...defaultNonRootVisibleAssets, // public by default
+              ...defaultDependencyVisibleAssets, // public by default
               ...config.additionalPublicAssets, // user-defined public assets
             ].build(),
       );
@@ -140,7 +138,7 @@ class BuildConfigs {
         final requiredSourcePaths = const [r'lib/$lib$'];
         final requiredRootSourcePaths = const [r'$package$', r'lib/$lib$'];
         final requiredPackagePaths =
-            package.isRoot ? requiredRootSourcePaths : requiredSourcePaths;
+            package.isInBuild ? requiredRootSourcePaths : requiredSourcePaths;
         final requiredIds = requiredPackagePaths.map(
           (path) => AssetId(package.name, path),
         );
@@ -160,7 +158,9 @@ class BuildConfigs {
       }
     }
 
-    final buildTriggers = BuildTriggers.fromConfigs(configs);
+    final buildTriggers = BuildTriggers.fromConfigs(
+      buildConfigByPackage.build(),
+    );
 
     if (buildTriggers.warningsByPackage.isNotEmpty) {
       buildLog.warning(buildTriggers.renderWarnings);
@@ -168,7 +168,7 @@ class BuildConfigs {
     return BuildConfigs._(
       targetsByKey.build(),
       targetsByPackage.build(),
-      rootPackageConfig,
+      buildConfigByPackage.build(),
       buildTriggers,
       publicAssetsByPackage.build(),
     );
@@ -181,7 +181,7 @@ class BuildConfigs {
   /// Obtains a list of glob patterns describing all valid input assets defined
   /// in the [package].
   List<String> validInputsFor(BuildPackage package) {
-    if (package.isRoot) {
+    if (package.isInBuild) {
       // There are no restrictions for the root package
       return ['**/*'];
     } else {
@@ -212,7 +212,7 @@ class BuildConfigs {
     assert(id.package == enclosingPackage.name);
 
     // All assets in the root package are included in the build
-    if (enclosingPackage.isRoot) return true;
+    if (enclosingPackage.isInBuild) return true;
 
     // For other packages, the asset must be marked as public
     return _matcherForNonRoot(enclosingPackage).matches(id);
@@ -220,8 +220,8 @@ class BuildConfigs {
 
   /// Whether [id] is considered to be semantically public.
   ///
-  /// By default, files in [defaultNonRootVisibleAssets] are considered public
-  /// assets as they are interesting for dependent Dart packages.
+  /// By default, files in [defaultDependencyVisibleAssets] are considered
+  /// public assets as they are interesting for dependent Dart packages.
   ///
   /// However, a package can add additional sources that it considers to be
   /// public (see [BuildConfig.additionalPublicAssets]). This is not typically
@@ -233,14 +233,14 @@ class BuildConfigs {
   /// also not considered optional outputs for hidden build phases.
   bool isPublicAsset(AssetId id) {
     final filter =
-        _publicAssetsByPackage[id.package] ?? _defaultMatcherForNonRoot;
+        _publicAssetsByPackage[id.package] ?? _defaultMatcherForDependency;
     return filter.matches(id);
   }
 
   InputMatcher _matcherForNonRoot(BuildPackage buildPackage) {
-    assert(!buildPackage.isRoot);
+    assert(!buildPackage.isInBuild);
     return _publicAssetsByPackage[buildPackage.name] ??
-        _defaultMatcherForNonRoot;
+        _defaultMatcherForDependency;
   }
 }
 
@@ -292,9 +292,10 @@ Future<BuiltMap<String, BuildConfig>> findBuildConfigOverrides({
   required String? configKey,
 }) async {
   final configs = <String, BuildConfig>{};
+  final outputRootPackage = buildPackages.outputRoot;
   final configFiles = readerWriter!.assetFinder.find(
     Glob('*.build.yaml'),
-    package: buildPackages.root.name,
+    package: outputRootPackage.name,
   );
   await for (final id in configFiles) {
     final packageName = p.basename(id.path).split('.').first;
@@ -318,15 +319,15 @@ Future<BuiltMap<String, BuildConfig>> findBuildConfigOverrides({
     configs[packageName] = config;
   }
   if (configKey != null) {
-    final id = AssetId(buildPackages.root.name, 'build.$configKey.yaml');
+    final id = AssetId(outputRootPackage.name, 'build.$configKey.yaml');
     if (!await readerWriter.canRead(id)) {
       buildLog.warning('Cannot find ${id.path} for specified config.');
       throw const CannotBuildException();
     }
     final yaml = await readerWriter.readAsString(id);
     final config = BuildConfig.parse(
-      buildPackages.root.name,
-      buildPackages.root.dependencies.map((n) => n.name),
+      outputRootPackage.name,
+      outputRootPackage.dependencies.map((n) => n.name),
       yaml,
       configYamlPath: id.path,
     );
@@ -336,7 +337,7 @@ Future<BuiltMap<String, BuildConfig>> findBuildConfigOverrides({
         'overriding builder configuration is not supported.',
       );
     }
-    configs[buildPackages.root.name] = config;
+    configs[outputRootPackage.name] = config;
   }
   return configs.build();
 }
@@ -345,7 +346,7 @@ Future<BuiltMap<String, BuildConfig>> findBuildConfigOverrides({
 ///
 /// This is also the default list of files for targets in non-root packages when
 /// an explicit include is not provided.
-final BuiltList<String> defaultNonRootVisibleAssets =
+final BuiltList<String> defaultDependencyVisibleAssets =
     [
       'CHANGELOG*',
       'lib/**',
@@ -358,8 +359,8 @@ final BuiltList<String> defaultNonRootVisibleAssets =
 /// The default list of files to include when an explicit include is not
 /// provided.
 ///
-/// This should be a superset of [defaultNonRootVisibleAssets].
-final BuiltList<String> defaultRootPackageSources =
+/// This should be a superset of [defaultDependencyVisibleAssets].
+final BuiltList<String> defaultInBuildPackageSources =
     [
       'assets/**',
       'benchmark/**',

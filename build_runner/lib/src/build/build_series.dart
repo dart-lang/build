@@ -110,7 +110,7 @@ class BuildSeries {
 
       // Changes to the entrypoint are handled via depfiles.
       if (_buildPlan.bootstrapper.isCompileDependency(
-        _buildPlan.buildPackages.pathFor(id),
+        _buildPlan.buildPackages.pathFor(id, hide: false),
       )) {
         result.add(change);
         continue;
@@ -180,7 +180,7 @@ class BuildSeries {
   bool _isBuildConfiguration(AssetId id) =>
       id.path == 'build.yaml' ||
       id.path.endsWith('.build.yaml') ||
-      (id.package == _buildPlan.buildPackages.root.name &&
+      (id.package == _buildPlan.buildPackages.outputRoot.name &&
           id.path == 'build.${_buildPlan.buildOptions.configKey}.yaml');
 
   Future<List<WatchEvent>> checkForChanges() async {
