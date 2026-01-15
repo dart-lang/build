@@ -6,12 +6,12 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart'
     hide AutoApply, BuilderDefinition, PostProcessBuilderDefinition;
+import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_phase_creator.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/builder_definition.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
 import 'package:build_runner/src/build_plan/phase.dart';
-import 'package:build_runner/src/build_plan/target_graph.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
 import 'package:build_runner/src/exceptions.dart';
 import 'package:built_collection/built_collection.dart';
@@ -26,7 +26,7 @@ void main() {
         rootPackage('a'): ['b'],
         package('b'): [],
       });
-      final targetGraph = await TargetGraph.forPackageGraph(
+      final buildConfigs = await BuildConfigs.load(
         packageGraph: packageGraph,
         testingOverrides: TestingOverrides(
           defaultRootPackageSources: ['**'].build(),
@@ -37,7 +37,8 @@ void main() {
             builderFactories: BuilderFactories({
               'b:cool_builder': [CoolBuilder.new],
             }),
-            targetGraph: targetGraph,
+            packageGraph: packageGraph,
+            buildConfigs: buildConfigs,
             builderDefinitions: [
               BuilderDefinition(
                 'b:cool_builder',
@@ -84,7 +85,7 @@ void main() {
                     },
                   ),
                 }.build();
-            final targetGraph = await TargetGraph.forPackageGraph(
+            final buildConfigs = await BuildConfigs.load(
               packageGraph: packageGraph,
               testingOverrides: TestingOverrides(
                 defaultRootPackageSources: ['**'].build(),
@@ -96,7 +97,8 @@ void main() {
                   builderFactories: BuilderFactories({
                     'b:cool_builder': [CoolBuilder.new],
                   }),
-                  targetGraph: targetGraph,
+                  packageGraph: packageGraph,
+                  buildConfigs: buildConfigs,
                   builderDefinitions: [
                     BuilderDefinition(
                       'b:cool_builder',
@@ -135,7 +137,7 @@ void main() {
         rootPackage('a'): ['b'],
         package('b'): [],
       });
-      final targetGraph = await TargetGraph.forPackageGraph(
+      final buildConfigs = await BuildConfigs.load(
         packageGraph: packageGraph,
         testingOverrides: TestingOverrides(
           defaultRootPackageSources: ['**'].build(),
@@ -146,7 +148,8 @@ void main() {
             builderFactories: BuilderFactories({
               'b:cool_builder': [CoolBuilder.new],
             }),
-            targetGraph: targetGraph,
+            packageGraph: packageGraph,
+            buildConfigs: buildConfigs,
             builderDefinitions: [
               BuilderDefinition(
                 'b:cool_builder',
@@ -165,7 +168,7 @@ void main() {
         rootPackage('a'): ['b'],
         package('b'): [],
       });
-      final targetGraph = await TargetGraph.forPackageGraph(
+      final buildConfigs = await BuildConfigs.load(
         packageGraph: packageGraph,
         testingOverrides: TestingOverrides(
           defaultRootPackageSources: ['**'].build(),
@@ -185,7 +188,8 @@ void main() {
               'b:cool_builder': [CoolBuilder.new],
               'b:not_by_default': [(_) => TestBuilder()],
             }),
-            targetGraph: targetGraph,
+            packageGraph: packageGraph,
+            buildConfigs: buildConfigs,
             builderDefinitions: builderDefinitions,
             builderConfigOverrides: BuiltMap(),
             isReleaseBuild: false,
@@ -209,7 +213,7 @@ void main() {
         package('b'): ['c'],
         package('c'): [],
       });
-      final targetGraph = await TargetGraph.forPackageGraph(
+      final buildConfigs = await BuildConfigs.load(
         packageGraph: packageGraph,
         testingOverrides: TestingOverrides(
           defaultRootPackageSources: ['**'].build(),
@@ -220,7 +224,8 @@ void main() {
             builderFactories: BuilderFactories({
               'c:cool_builder': [CoolBuilder.new],
             }),
-            targetGraph: targetGraph,
+            packageGraph: packageGraph,
+            buildConfigs: buildConfigs,
             builderDefinitions: [
               BuilderDefinition(
                 'c:cool_builder',
@@ -252,7 +257,7 @@ void main() {
           package('b'): ['c'],
           package('c'): [],
         });
-        final targetGraph = await TargetGraph.forPackageGraph(
+        final buildConfigs = await BuildConfigs.load(
           packageGraph: packageGraph,
           testingOverrides: TestingOverrides(
             defaultRootPackageSources: ['**'].build(),
@@ -276,7 +281,8 @@ void main() {
                 'c:cool_builder': [CoolBuilder.new],
                 'c:not_by_default': [(_) => TestBuilder()],
               }),
-              targetGraph: targetGraph,
+              packageGraph: packageGraph,
+              buildConfigs: buildConfigs,
               builderDefinitions: builderDefinitions,
               builderConfigOverrides: BuiltMap(),
               isReleaseBuild: false,
@@ -311,7 +317,7 @@ void main() {
                   },
                 ),
               }.build();
-          final targetGraph = await TargetGraph.forPackageGraph(
+          final buildConfigs = await BuildConfigs.load(
             packageGraph: packageGraph,
             testingOverrides: TestingOverrides(
               defaultRootPackageSources: ['**'].build(),
@@ -324,7 +330,8 @@ void main() {
                   builderFactories: BuilderFactories({
                     'b:cool_builder': [CoolBuilder.new],
                   }),
-                  targetGraph: targetGraph,
+                  packageGraph: packageGraph,
+                  buildConfigs: buildConfigs,
                   builderDefinitions: [
                     BuilderDefinition(
                       'b:cool_builder',
@@ -350,8 +357,8 @@ void main() {
           rootPackage('a'): ['b'],
           package('b'): [],
         });
-        final targetGraph = await runInBuildConfigZone(
-          () => TargetGraph.forPackageGraph(
+        final buildConfigs = await runInBuildConfigZone(
+          () => BuildConfigs.load(
             packageGraph: packageGraph,
             testingOverrides: TestingOverrides(
               defaultRootPackageSources: ['**'].build(),
@@ -388,7 +395,8 @@ void main() {
             'b:cool_builder': [CoolBuilder.new],
             'b:cool_builder_2': [CoolBuilder.new],
           }),
-          targetGraph: targetGraph,
+          packageGraph: packageGraph,
+          buildConfigs: buildConfigs,
           builderDefinitions: builderDefinitions,
           builderConfigOverrides: BuiltMap(),
           isReleaseBuild: false,
@@ -451,7 +459,7 @@ void main() {
       'does not allow post process builders with capturing inputs',
       () async {
         final packageGraph = buildPackageGraph({rootPackage('a'): []});
-        final targetGraph = await TargetGraph.forPackageGraph(
+        final buildConfigs = await BuildConfigs.load(
           packageGraph: packageGraph,
           testingOverrides: TestingOverrides(
             defaultRootPackageSources: ['**'].build(),
@@ -477,7 +485,8 @@ void main() {
                     'a:post': (_) => _InvalidPostProcessBuilder(),
                   },
                 ),
-                targetGraph: targetGraph,
+                packageGraph: packageGraph,
+                buildConfigs: buildConfigs,
                 builderDefinitions: builderDefinitions,
                 builderConfigOverrides: BuiltMap(),
                 isReleaseBuild: false,

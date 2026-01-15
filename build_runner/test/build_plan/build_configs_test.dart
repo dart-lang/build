@@ -7,8 +7,8 @@ library;
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
+import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/package_graph.dart';
-import 'package:build_runner/src/build_plan/target_graph.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:glob/glob.dart';
@@ -19,7 +19,7 @@ import 'package:test/test.dart';
 import '../common/package_graphs.dart';
 
 void main() {
-  group('TargetGraph.forPackageGraph', () {
+  group('BuildConfigs.forPackageGraph', () {
     test('warns if required sources are missing', () {
       final logs = <LogRecord>[];
       final listener = Logger.root.onRecord.listen(logs.add);
@@ -40,7 +40,7 @@ void main() {
       )..dependencies.add(packageB);
       final packageGraph = PackageGraph.fromRoot(packageA);
 
-      TargetGraph.forPackageGraph(
+      BuildConfigs.load(
         packageGraph: packageGraph,
         testingOverrides: TestingOverrides(
           defaultRootPackageSources: ['**'].build(),
@@ -113,7 +113,7 @@ void main() {
     });
 
     test('for root package', () async {
-      final targetGraph = await TargetGraph.forPackageGraph(
+      final buildConfigs = await BuildConfigs.load(
         packageGraph: packageGraph,
         testingOverrides: TestingOverrides(
           defaultRootPackageSources: ['**'].build(),
@@ -121,22 +121,22 @@ void main() {
       );
 
       expect(
-        targetGraph.isVisibleInBuild(AssetId('a', 'web/index.html'), a),
+        buildConfigs.isVisibleInBuild(AssetId('a', 'web/index.html'), a),
         isTrue,
       );
       expect(
-        targetGraph.isVisibleInBuild(AssetId('a', 'lib/a.dart'), a),
+        buildConfigs.isVisibleInBuild(AssetId('a', 'lib/a.dart'), a),
         isTrue,
       );
       expect(
-        targetGraph.isVisibleInBuild(AssetId('a', 'test/my_test.dart'), a),
+        buildConfigs.isVisibleInBuild(AssetId('a', 'test/my_test.dart'), a),
         isTrue,
       );
-      expect(targetGraph.validInputsFor(a), ['**/*']);
+      expect(buildConfigs.validInputsFor(a), ['**/*']);
     });
 
     test('for non-root package with default configuration', () async {
-      final targetGraph = await TargetGraph.forPackageGraph(
+      final buildConfigs = await BuildConfigs.load(
         packageGraph: packageGraph,
         testingOverrides: TestingOverrides(
           defaultRootPackageSources: ['**'].build(),
@@ -144,28 +144,28 @@ void main() {
       );
 
       expect(
-        targetGraph.isVisibleInBuild(AssetId('b', 'web/index.html'), b),
+        buildConfigs.isVisibleInBuild(AssetId('b', 'web/index.html'), b),
         isFalse,
       );
       expect(
-        targetGraph.isVisibleInBuild(AssetId('b', 'lib/b.dart'), b),
+        buildConfigs.isVisibleInBuild(AssetId('b', 'lib/b.dart'), b),
         isTrue,
       );
       expect(
-        targetGraph.isVisibleInBuild(AssetId('b', 'LICENSE.txt'), b),
+        buildConfigs.isVisibleInBuild(AssetId('b', 'LICENSE.txt'), b),
         isTrue,
       );
-      expect(targetGraph.isVisibleInBuild(AssetId('b', 'README'), b), isTrue);
+      expect(buildConfigs.isVisibleInBuild(AssetId('b', 'README'), b), isTrue);
       expect(
-        targetGraph.isVisibleInBuild(AssetId('b', 'test/my_test.dart'), b),
+        buildConfigs.isVisibleInBuild(AssetId('b', 'test/my_test.dart'), b),
         isFalse,
       );
 
-      expect(targetGraph.validInputsFor(b), contains('lib/**'));
+      expect(buildConfigs.validInputsFor(b), contains('lib/**'));
     });
 
     test('for non-root package exposing additional assets', () async {
-      final targetGraph = await TargetGraph.forPackageGraph(
+      final buildConfigs = await BuildConfigs.load(
         packageGraph: packageGraph,
         testingOverrides: TestingOverrides(
           defaultRootPackageSources: ['**'].build(),
@@ -181,18 +181,18 @@ void main() {
       );
 
       expect(
-        targetGraph.isVisibleInBuild(AssetId('b', 'lib/b.dart'), b),
+        buildConfigs.isVisibleInBuild(AssetId('b', 'lib/b.dart'), b),
         isTrue,
       );
       expect(
-        targetGraph.isVisibleInBuild(AssetId('b', 'test/my_test.dart'), b),
+        buildConfigs.isVisibleInBuild(AssetId('b', 'test/my_test.dart'), b),
         isTrue,
       );
 
-      expect(targetGraph.validInputsFor(b), contains('test/**'));
+      expect(buildConfigs.validInputsFor(b), contains('test/**'));
       // The additional input should also be included in the default target
       expect(
-        targetGraph.allModules['b:b']!.sourceIncludes,
+        buildConfigs.buildTargets['b:b']!.sourceIncludes,
         contains(isA<Glob>().having((e) => e.pattern, 'pattern', 'test/**')),
       );
     });
@@ -200,7 +200,7 @@ void main() {
     // https://github.com/dart-lang/build/issues/1042
     test('a missing sources/include does not cause an error', () async {
       final rootPkg = packageGraph.root.name;
-      final targetGraph = await TargetGraph.forPackageGraph(
+      final buildConfigs = await BuildConfigs.load(
         packageGraph: packageGraph,
         testingOverrides: TestingOverrides(
           buildConfig:
@@ -220,18 +220,18 @@ void main() {
       );
 
       expect(
-        targetGraph.allModules['$rootPkg:another']!.sourceIncludes,
+        buildConfigs.buildTargets['$rootPkg:another']!.sourceIncludes,
         isNotEmpty,
       );
       expect(
-        targetGraph.allModules['$rootPkg:$rootPkg']!.sourceIncludes,
+        buildConfigs.buildTargets['$rootPkg:$rootPkg']!.sourceIncludes,
         isNotEmpty,
       );
     });
 
     test('a missing sources/include results in the default sources', () async {
       final rootPkg = packageGraph.root.name;
-      final targetGraph = await TargetGraph.forPackageGraph(
+      final buildConfigs = await BuildConfigs.load(
         packageGraph: packageGraph,
         testingOverrides: TestingOverrides(
           buildConfig:
@@ -250,13 +250,13 @@ void main() {
         ),
       );
       expect(
-        targetGraph.allModules['$rootPkg:another']!.sourceIncludes.map(
+        buildConfigs.buildTargets['$rootPkg:another']!.sourceIncludes.map(
           (glob) => glob.pattern,
         ),
         defaultRootPackageSources,
       );
       expect(
-        targetGraph.allModules['$rootPkg:$rootPkg']!.sourceIncludes.map(
+        buildConfigs.buildTargets['$rootPkg:$rootPkg']!.sourceIncludes.map(
           (glob) => glob.pattern,
         ),
         defaultRootPackageSources,

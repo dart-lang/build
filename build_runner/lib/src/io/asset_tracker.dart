@@ -12,7 +12,9 @@ import 'package:watcher/watcher.dart';
 
 import '../build/asset_graph/graph.dart';
 import '../build/asset_graph/node.dart';
-import '../build_plan/target_graph.dart';
+import '../build_plan/build_configs.dart';
+import '../build_plan/build_target.dart';
+import '../build_plan/package_graph.dart';
 import '../constants.dart';
 import '../logging/timed_activities.dart';
 import 'reader_writer.dart';
@@ -20,9 +22,10 @@ import 'reader_writer.dart';
 /// Finds build assets and computes changes to build assets.
 class AssetTracker {
   final ReaderWriter _readerWriter;
-  final TargetGraph _targetGraph;
+  final PackageGraph _packageGraph;
+  final BuildConfigs _buildConfigs;
 
-  AssetTracker(this._readerWriter, this._targetGraph);
+  AssetTracker(this._readerWriter, this._packageGraph, this._buildConfigs);
 
   /// Checks for and returns any file system changes compared to the current
   /// state of the asset graph.
@@ -38,8 +41,8 @@ class AssetTracker {
 
   /// Returns the set of original package inputs on disk.
   Future<Set<AssetId>> findInputSources() {
-    final targets = Stream<TargetNode>.fromIterable(
-      _targetGraph.allModules.values,
+    final targets = Stream<BuildTarget>.fromIterable(
+      _buildConfigs.buildTargets.values,
     );
     return TimedActivity.read.runAsync(
       () => targets.asyncExpand(_listAssetIds).toSet(),
@@ -100,16 +103,19 @@ class AssetTracker {
     return updates;
   }
 
-  Stream<AssetId> _listAssetIds(TargetNode targetNode) {
-    return targetNode.sourceIncludes.isEmpty
+  Stream<AssetId> _listAssetIds(BuildTarget buildTarget) {
+    return buildTarget.sourceIncludes.isEmpty
         ? const Stream<AssetId>.empty()
         : StreamGroup.merge(
-          targetNode.sourceIncludes.map(
-            (glob) => _listIdsSafe(glob, package: targetNode.package.name)
+          buildTarget.sourceIncludes.map(
+            (glob) => _listIdsSafe(glob, package: buildTarget.package)
                 .where(
-                  (id) => _targetGraph.isVisibleInBuild(id, targetNode.package),
+                  (id) => _buildConfigs.isVisibleInBuild(
+                    id,
+                    _packageGraph.allPackages[buildTarget.package]!,
+                  ),
                 )
-                .where((id) => !targetNode.excludesSource(id)),
+                .where((id) => !buildTarget.excludesSource(id)),
           ),
         );
   }

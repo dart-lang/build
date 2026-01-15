@@ -10,16 +10,19 @@ import 'package:graphs/graphs.dart';
 import '../exceptions.dart';
 import '../logging/build_log.dart';
 import '../logging/build_log_logger.dart';
+import 'build_configs.dart';
 import 'build_phases.dart';
+import 'build_target.dart';
 import 'builder_definition.dart';
 import 'builder_factories.dart';
+import 'package_graph.dart';
 import 'phase.dart';
-import 'target_graph.dart';
 
 /// Creates [BuildPhases] from [BuilderDefinition]s.
 class BuildPhaseCreator {
   final BuilderFactories builderFactories;
-  final TargetGraph targetGraph;
+  final PackageGraph packageGraph;
+  final BuildConfigs buildConfigs;
   final BuiltList<AbstractBuilderDefinition> builderDefinitions;
   final BuiltMap<String, BuiltMap<String, dynamic>> builderConfigOverrides;
   final bool isReleaseBuild;
@@ -37,7 +40,8 @@ class BuildPhaseCreator {
 
   BuildPhaseCreator({
     required this.builderFactories,
-    required this.targetGraph,
+    required this.packageGraph,
+    required this.buildConfigs,
     required Iterable<AbstractBuilderDefinition> builderDefinitions,
     required this.builderConfigOverrides,
     required this.isReleaseBuild,
@@ -55,7 +59,7 @@ class BuildPhaseCreator {
   }
 
   /// Creates a [BuildPhase] to apply each builder in [builderDefinitions] to
-  /// each target in [targetGraph] such that all builders are run for
+  /// each target in [buildConfigs] such that all builders are run for
   /// dependencies before moving on to later packages.
   ///
   /// When there is a package cycle the builders are applied to each packages
@@ -68,10 +72,10 @@ class BuildPhaseCreator {
   Future<BuildPhases> createBuildPhases() async {
     warnForUnknownBuilders(
       builderDefinitions,
-      targetGraph.rootPackageConfig,
+      buildConfigs.rootPackageConfig,
       builderConfigOverrides,
     );
-    final globalOptions = targetGraph.rootPackageConfig.globalOptions.map(
+    final globalOptions = buildConfigs.rootPackageConfig.globalOptions.map(
       (key, config) => MapEntry(
         key,
         config.options.toBuilderOptions().overrideWith(
@@ -87,20 +91,20 @@ class BuildPhaseCreator {
           .overrideWith(overrides);
     }
 
-    final cycles = stronglyConnectedComponents<TargetNode>(
-      targetGraph.allModules.values,
-      (node) => node.target.dependencies.map((key) {
-        if (!targetGraph.allModules.containsKey(key)) {
+    final cycles = stronglyConnectedComponents<BuildTarget>(
+      buildConfigs.buildTargets.values,
+      (buildTarget) => buildTarget.dependencies.map((key) {
+        if (!buildConfigs.buildTargets.containsKey(key)) {
           buildLog.error(
-            '${node.target.key} declares a dependency on $key '
+            '${buildTarget.key} declares a dependency on $key '
             'but it does not exist.',
           );
           throw const CannotBuildException();
         }
-        return targetGraph.allModules[key]!;
+        return buildConfigs.buildTargets[key]!;
       }),
-      equals: (a, b) => a.target.key == b.target.key,
-      hashCode: (node) => node.target.key.hashCode,
+      equals: (a, b) => a.key == b.key,
+      hashCode: (node) => node.key.hashCode,
     );
 
     final inBuildPhases = <InBuildPhase>[];
@@ -136,7 +140,7 @@ class BuildPhaseCreator {
   }
 
   List<InBuildPhase> _createInBuildPhases(
-    Iterable<TargetNode> cycle,
+    Iterable<BuildTarget> buildTargets,
     BuilderDefinition builderDefinition,
     BuilderOptions globalOptionOverrides,
   ) {
@@ -144,16 +148,16 @@ class BuildPhaseCreator {
         this.builderFactories.builderFactories[builderDefinition.key]!;
     final result = <InBuildPhase>[];
     for (final builderFactory in builderFactories) {
-      for (final node in cycle) {
-        if (!_shouldApply(builderDefinition, node)) continue;
+      for (final buildTarget in buildTargets) {
+        if (!_shouldApply(builderDefinition, buildTarget)) continue;
 
         final builderConfig = builderDefinition.targetBuilderConfigDefaults;
-        final targetConfig = node.target.builders[builderDefinition.key];
+        final targetConfig = buildTarget.builders[builderDefinition.key];
         final options = _createOptions(
           builderConfig: builderConfig,
           targetConfig: targetConfig,
           globalOptionOverrides: globalOptionOverrides,
-          isRoot: node.package.isRoot,
+          isRoot: packageGraph[buildTarget.package]!.isRoot,
         );
 
         final builder = BuildLogLogger.scopeLogSync(
@@ -167,8 +171,8 @@ class BuildPhaseCreator {
           InBuildPhase(
             builder: builder,
             key: builderDefinition.key,
-            package: node.package.name,
-            targetSources: node.target.sources,
+            package: buildTarget.package,
+            targetSources: buildTarget.sources,
             generateFor: targetConfig?.generateFor ?? builderConfig.generateFor,
             options: options,
             hideOutput: builderDefinition.hideOutput,
@@ -181,23 +185,23 @@ class BuildPhaseCreator {
   }
 
   List<PostBuildAction> _createPostBuildActions(
-    Iterable<TargetNode> cycle,
+    Iterable<BuildTarget> buildTargets,
     PostProcessBuilderDefinition builderDefinition,
     BuilderOptions globalOptionOverrides,
   ) {
     final postProcessBuilderFactory =
         builderFactories.postProcessBuilderFactories[builderDefinition.key]!;
     final result = <PostBuildAction>[];
-    for (final node in cycle) {
-      if (!_shouldApply(builderDefinition, node)) continue;
+    for (final buildTarget in buildTargets) {
+      if (!_shouldApply(builderDefinition, buildTarget)) continue;
 
       final builderConfig = builderDefinition.targetBuilderConfigDefaults;
-      final targetConfig = node.target.builders[builderDefinition.key];
+      final targetConfig = buildTarget.builders[builderDefinition.key];
       final options = _createOptions(
         builderConfig: builderConfig,
         targetConfig: targetConfig,
         globalOptionOverrides: globalOptionOverrides,
-        isRoot: node.package.isRoot,
+        isRoot: packageGraph[buildTarget.package]!.isRoot,
       );
 
       final builder = BuildLogLogger.scopeLogSync(
@@ -209,10 +213,10 @@ class BuildPhaseCreator {
 
       final builderAction = PostBuildAction(
         builder: builder,
-        package: node.package.name,
+        package: buildTarget.package,
         options: options,
         generateFor: targetConfig?.generateFor ?? builderConfig.generateFor,
-        targetSources: node.target.sources,
+        targetSources: buildTarget.sources,
       );
       result.add(builderAction);
     }
@@ -260,18 +264,19 @@ class BuildPhaseCreator {
     return result;
   }
 
-  /// Whether [builderDefinition] applies to [node].
+  /// Whether [builderDefinition] applies to [buildTarget].
   ///
   /// Post process builders don't auto apply themselves: they can be explicitly
   /// enabled or they can be applied by another builder that auto applies.
   bool _shouldApply(
     AbstractBuilderDefinition builderDefinition,
-    TargetNode node,
+    BuildTarget buildTarget,
   ) {
     // If the package is not root, only hidden output is allowed. Return
     // `false` if the builder or any builder it applies has non-hidden output.
     // Post process builder output is always hidden, so skip the check.
-    if (builderDefinition is BuilderDefinition && !node.package.isRoot) {
+    if (builderDefinition is BuilderDefinition &&
+        !packageGraph[buildTarget.package]!.isRoot) {
       if (!(builderDefinition.hideOutput &&
           builderDefinition.appliesBuilders.every(
             // Post process builders are not in the map, replace `null` with
@@ -282,19 +287,19 @@ class BuildPhaseCreator {
       }
     }
     // If the builder is explicitly enabled or disabled, return that.
-    final builderConfig = node.target.builders[builderDefinition.key];
+    final builderConfig = buildTarget.builders[builderDefinition.key];
     if (builderConfig?.isEnabled != null) {
       return builderConfig!.isEnabled;
     }
     // Return true if autoApply for this builder or any applier of it matches
     // the package.
     final shouldAutoApply =
-        node.target.autoApplyBuilders &&
+        buildTarget.autoApplyBuilders &&
         builderDefinition is BuilderDefinition &&
-        builderDefinition.autoAppliesTo(node.package);
+        builderDefinition.autoAppliesTo(packageGraph[buildTarget.package]!);
     return shouldAutoApply ||
         (_builderAppliersByKey[builderDefinition.key] ?? const []).any(
-          (anchorBuilder) => _shouldApply(anchorBuilder, node),
+          (anchorBuilder) => _shouldApply(anchorBuilder, buildTarget),
         );
   }
 }

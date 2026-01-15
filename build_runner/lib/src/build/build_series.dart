@@ -140,7 +140,7 @@ class BuildSeries {
         if (change.type != ChangeType.ADD) continue;
 
         // It's an add: handle if it's a new input.
-        if (_buildPlan.targetGraph.anyMatchesAsset(id)) {
+        if (_buildPlan.buildConfigs.anyMatchesAsset(id)) {
           result.add(change);
         }
         continue;
@@ -186,7 +186,8 @@ class BuildSeries {
   Future<List<WatchEvent>> checkForChanges() async {
     final updates = await AssetTracker(
       _buildPlan.readerWriter,
-      _buildPlan.targetGraph,
+      _buildPlan.packageGraph,
+      _buildPlan.buildConfigs,
     ).collectChanges(_assetGraph);
     return List.of(
       updates.entries.map((entry) => WatchEvent(entry.value, '${entry.key}')),

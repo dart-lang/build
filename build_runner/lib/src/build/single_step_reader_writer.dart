@@ -10,9 +10,9 @@ import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
+import '../build_plan/build_configs.dart';
 import '../build_plan/package_graph.dart';
 import '../build_plan/phase.dart';
-import '../build_plan/target_graph.dart';
 import '../io/asset_finder.dart';
 import '../io/reader_writer.dart';
 import 'asset_graph/graph.dart';
@@ -63,7 +63,7 @@ class Readability {
 /// `SingleStepReaderWriter`'s view on the currently-running build.
 class RunningBuild {
   final PackageGraph packageGraph;
-  final TargetGraph targetGraph;
+  final BuildConfigs buildConfigs;
   final AssetGraph assetGraph;
   final AssetBuilder nodeBuilder;
   final AssetIsProcessedOutput assetIsProcessedOutput;
@@ -71,7 +71,7 @@ class RunningBuild {
 
   RunningBuild({
     required this.packageGraph,
-    required this.targetGraph,
+    required this.buildConfigs,
     required this.assetGraph,
     required this.nodeBuilder,
     required this.assetIsProcessedOutput,
@@ -325,8 +325,8 @@ class SingleStepReaderWriter implements PhasedReader {
     }
 
     // The id is an invalid input if it's not part of the build.
-    if (!_runningBuild.targetGraph.isVisibleInBuild(id, packageNode)) {
-      final allowed = _runningBuild.targetGraph.validInputsFor(packageNode);
+    if (!_runningBuild.buildConfigs.isVisibleInBuild(id, packageNode)) {
+      final allowed = _runningBuild.buildConfigs.validInputsFor(packageNode);
 
       throw InvalidInputException(id, allowedGlobs: allowed);
     }

@@ -2,18 +2,17 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:build_config/build_config.dart' as build_config;
 import 'package:build_config/build_config.dart'
     show AutoApply, TargetBuilderConfigDefaults;
-
+import 'package:build_config/build_config.dart' as build_config;
 import 'package:built_collection/built_collection.dart';
 import 'package:graphs/graphs.dart';
 import 'package:meta/meta.dart';
 
 import '../io/reader_writer.dart';
+import 'build_configs.dart';
 import 'builder_ordering.dart';
 import 'package_graph.dart';
-import 'target_graph.dart';
 
 export 'package:build_config/build_config.dart'
     show AutoApply, TargetBuilderConfigDefaults;
