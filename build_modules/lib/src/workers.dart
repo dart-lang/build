@@ -14,12 +14,6 @@ import 'common.dart';
 import 'frontend_server_driver.dart';
 import 'scratch_space.dart';
 
-// If no terminal is attached, prevent a new one from launching.
-final _processMode =
-    stdin.hasTerminal
-        ? ProcessStartMode.normal
-        : ProcessStartMode.detachedWithStdio;
-
 /// Completes once the dartdevk workers have been shut down.
 Future<void> get dartdevkWorkersAreDone =>
     _dartdevkWorkersAreDoneCompleter?.future ?? Future.value();
@@ -53,15 +47,10 @@ final int maxWorkersPerTask = () {
 BazelWorkerDriver get _dartdevkDriver {
   _dartdevkWorkersAreDoneCompleter ??= Completer<void>();
   return __dartdevkDriver ??= BazelWorkerDriver(
-    () => Process.start(
-      p.join(sdkDir, 'bin', 'dart'),
-      [
-        p.join(sdkDir, 'bin', 'snapshots', 'dartdevc.dart.snapshot'),
-        '--persistent_worker',
-      ],
-      mode: _processMode,
-      workingDirectory: scratchSpace.tempDir.path,
-    ),
+    () => Process.start(p.join(sdkDir, 'bin', 'dart'), [
+      p.join(sdkDir, 'bin', 'snapshots', 'dartdevc.dart.snapshot'),
+      '--persistent_worker',
+    ], workingDirectory: scratchSpace.tempDir.path),
     maxWorkers: maxWorkersPerTask,
   );
 }
@@ -89,7 +78,6 @@ BazelWorkerDriver get _frontendDriver {
         p.join(sdkDir, 'bin', 'snapshots', 'kernel_worker_aot.dart.snapshot'),
         '--persistent_worker',
       ],
-      mode: _processMode,
       workingDirectory: scratchSpace.tempDir.path,
     ),
     maxWorkers: maxWorkersPerTask,
