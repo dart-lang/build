@@ -78,7 +78,7 @@ void checkOutputs(
         if (!writer.testing.exists(mappedAssetId)) {
           // Then try the usual mapping for generated assets.
           mappedAssetId = AssetId(
-            (writer as InternalTestReaderWriter).rootPackage,
+            (writer as InternalTestReaderWriter).buildCachePackage,
             '.dart_tool/build/generated/${assetId.package}/${assetId.path}',
           );
         }
@@ -390,7 +390,7 @@ Future<TestBuilderResult> testBuilderFactories(
       BuildPackage(otherPackage, '/$otherPackage', null, isEditable: true),
     );
   }
-  final buildPackages = BuildPackages.fromRoot(rootNode);
+  final buildPackages = BuildPackages.fromCurrent(rootNode);
 
   String builderName(Object builder) {
     final result = builder.toString();

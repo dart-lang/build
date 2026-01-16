@@ -255,7 +255,7 @@ class SingleStepReaderWriter implements PhasedReader {
     return _delegate.readAsString(id, encoding: encoding);
   }
 
-  Stream<AssetId> _findAssets(Glob glob, String? package) {
+  Stream<AssetId> _findAssets(Glob glob, {required String package}) {
     if (_runningBuild == null) {
       return _delegate.assetFinder.find(glob, package: package);
     }

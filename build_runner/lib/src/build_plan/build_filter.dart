@@ -19,17 +19,23 @@ class BuildFilter {
   /// Builds a [BuildFilter] from a command line argument.
   ///
   /// Both relative paths and package: uris are supported. Relative
-  /// paths are treated as relative to the [rootPackage].
+  /// paths are treated as relative to the [currentPackage], if set.
   ///
   /// Globs are supported in package names and paths.
-  factory BuildFilter.fromArg(String arg, String rootPackage) {
+  factory BuildFilter.fromArg(String arg, String? currentPackage) {
     final uri = Uri.parse(arg);
     if (uri.scheme == 'package') {
       final package = uri.pathSegments.first;
       final glob = Glob(p.url.joinAll(['lib', ...uri.pathSegments.skip(1)]));
       return BuildFilter(Glob(package), glob);
     } else if (uri.scheme.isEmpty) {
-      return BuildFilter(Glob(rootPackage), Glob(uri.path));
+      if (currentPackage == null) {
+        throw FormatException(
+          'No current package so relative path is not supported: $arg',
+        );
+      } else {
+        return BuildFilter(Glob(currentPackage), Glob(uri.path));
+      }
     } else {
       throw FormatException('Unsupported scheme ${uri.scheme}', uri);
     }

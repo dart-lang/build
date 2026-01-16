@@ -1032,7 +1032,9 @@ targets:
         logPerformanceDir: 'perf',
       );
       final logs =
-          await result.readerWriter.assetFinder.find(Glob('perf/**')).toList();
+          await result.readerWriter.assetFinder
+              .find(Glob('perf/**'), package: 'a')
+              .toList();
       expect(logs.length, 1);
       final perf = BuildPerformance.fromJson(
         jsonDecode(await result.readerWriter.readAsString(logs.first))

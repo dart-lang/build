@@ -81,7 +81,7 @@ void main() {
     late BuildOutputReader buildOutputReader;
 
     setUp(() async {
-      readerWriter = InternalTestReaderWriter(rootPackage: 'a');
+      readerWriter = InternalTestReaderWriter(buildCachePackage: 'a');
       for (final source in sources.entries) {
         readerWriter.testing.writeString(source.key, source.value);
       }

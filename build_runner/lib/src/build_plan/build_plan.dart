@@ -155,17 +155,15 @@ class BuildPlan {
           builderConfigOverrides: buildOptions.builderConfigOverrides,
           isReleaseBuild: buildOptions.isReleaseBuild,
         ).createBuildPhases();
-    buildPhases.checkOutputLocations(buildPackages.root.name);
-    if (buildPhases.inBuildPhases.isEmpty &&
-        buildPhases.postBuildPhase.builderActions.isEmpty) {}
+    buildPhases.checkOutputLocations(buildPackages.allowedOutputPackages);
 
     AssetGraph? previousAssetGraph;
     final filesToDelete = <AssetId>{};
     final foldersToDelete = <AssetId>{};
 
-    final assetGraphId = AssetId(buildPackages.root.name, assetGraphPath);
+    final assetGraphId = AssetId(buildPackages.outputRoot.name, assetGraphPath);
     final generatedOutputDirectoryId = AssetId(
-      buildPackages.root.name,
+      buildPackages.outputRoot.name,
       generatedOutputDirectory,
     );
 
@@ -261,7 +259,9 @@ class BuildPlan {
       }
       final conflictsInDeps =
           assetGraph.outputs
-              .where((n) => n.package != buildPackages.root.name)
+              .where(
+                (n) => !buildPackages.allowedOutputPackages.contains(n.package),
+              )
               .where(inputSources.contains)
               .toSet();
       if (conflictsInDeps.isNotEmpty) {
@@ -276,7 +276,9 @@ class BuildPlan {
 
       filesToDelete.addAll(
         assetGraph.outputs
-            .where((n) => n.package == buildPackages.root.name)
+            .where(
+              (n) => buildPackages.allowedOutputPackages.contains(n.package),
+            )
             .where(inputSources.contains)
             .toSet(),
       );

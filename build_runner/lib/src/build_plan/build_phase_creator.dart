@@ -70,12 +70,23 @@ class BuildPhaseCreator {
   /// dependency on some other package by choosing the appropriate
   /// [BuilderDefinition].
   Future<BuildPhases> createBuildPhases() async {
+    // Global options come from the current package, if there is one.
+    // TODO(davidmorgan): with workspace support there will be no current
+    // package, add a way to set global options.
+    final globalOptionsMap =
+        buildConfigs
+            .buildConfigByPackage[buildPackages.current?.name]
+            ?.globalOptions ??
+        {};
+    final currentPackageConfig =
+        buildConfigs.buildConfigByPackage[buildPackages.current?.name];
     warnForUnknownBuilders(
       builderDefinitions,
-      buildConfigs.rootPackageConfig,
+      [if (currentPackageConfig != null) currentPackageConfig],
+      globalOptionsMap,
       builderConfigOverrides,
     );
-    final globalOptions = buildConfigs.rootPackageConfig.globalOptions.map(
+    final globalOptions = globalOptionsMap.map(
       (key, config) => MapEntry(
         key,
         config.options.toBuilderOptions().overrideWith(
@@ -312,7 +323,8 @@ extension BuilderOptionsExtension on Map<String, dynamic>? {
 /// Warns about configuration related to unknown builders.
 void warnForUnknownBuilders(
   Iterable<AbstractBuilderDefinition> builders,
-  build_config.BuildConfig rootPackageConfig,
+  Iterable<build_config.BuildConfig> buildConfigs,
+  Map<String, build_config.GlobalBuilderConfig> globalConfig,
   BuiltMap<String, BuiltMap<String, dynamic>> builderConfigOverrides,
 ) {
   final builderKeys = builders.map((b) => b.key).toSet();
@@ -324,22 +336,24 @@ void warnForUnknownBuilders(
       );
     }
   }
-  for (final target in rootPackageConfig.buildTargets.values) {
-    for (final key in target.builders.keys) {
-      if (!builderKeys.contains(key)) {
-        buildLog.warning(
-          'Ignoring options for unknown builder `$key` '
-          'in target `${target.key}`.',
-        );
+  for (final buildConfig in buildConfigs) {
+    for (final target in buildConfig.buildTargets.values) {
+      for (final key in target.builders.keys) {
+        if (!builderKeys.contains(key)) {
+          buildLog.warning(
+            'Ignoring options for unknown builder `$key` '
+            'in target `${target.key}`.',
+          );
+        }
       }
     }
   }
-  for (final key in rootPackageConfig.globalOptions.keys) {
+  for (final key in globalConfig.keys) {
     if (!builderKeys.contains(key)) {
       buildLog.warning('Ignoring `global_options` for unknown builder `$key`.');
     }
   }
-  for (final value in rootPackageConfig.globalOptions.values) {
+  for (final value in globalConfig.values) {
     for (final key in value.runsBefore) {
       if (!builderKeys.contains(key)) {
         buildLog.warning(

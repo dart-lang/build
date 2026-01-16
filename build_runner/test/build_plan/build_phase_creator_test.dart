@@ -126,8 +126,8 @@ void main() {
               );
             }
           },
-          buildPackages.root.name,
-          buildPackages.root.dependencies.map((node) => node.name).toList(),
+          buildPackages.current!.name,
+          buildPackages.current!.dependencies.map((node) => node.name).toList(),
         );
       },
     );
@@ -344,8 +344,8 @@ void main() {
             throwsA(const TypeMatcher<CannotBuildException>()),
           );
         },
-        buildPackages.root.name,
-        buildPackages.root.dependencies.map((node) => node.name).toList(),
+        buildPackages.current!.name,
+        buildPackages.current!.dependencies.map((node) => node.name).toList(),
       );
     });
 
