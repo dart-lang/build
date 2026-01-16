@@ -71,7 +71,7 @@ void main() {
 }
 ''',
     };
-    final packageGraph = buildPackageGraph({
+    final buildPackages = createBuildPackages({
       rootPackage('a'): ['b'],
       package('b'): [],
     });
@@ -93,7 +93,7 @@ void main() {
           defaultRootPackageSources:
               [...defaultRootPackageSources, 'foo/**'].build(),
           readerWriter: readerWriter,
-          packageGraph: packageGraph,
+          buildPackages: buildPackages,
         ),
       );
       graph = buildPlan.takeAssetGraph();
@@ -127,7 +127,7 @@ void main() {
             {
               BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
             }.build(),
-        packageGraph: packageGraph,
+        buildPackages: buildPackages,
         readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
@@ -150,7 +150,7 @@ void main() {
             {
               BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
             }.build(),
-        packageGraph: packageGraph,
+        buildPackages: buildPackages,
         readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
@@ -178,7 +178,7 @@ void main() {
                 outputLocation: OutputLocation(anotherTmpDir.path),
               ),
             }.build(),
-        packageGraph: packageGraph,
+        buildPackages: buildPackages,
         readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
@@ -202,7 +202,7 @@ void main() {
                 outputLocation: OutputLocation(tmpDir.path),
               ),
             }.build(),
-        packageGraph: packageGraph,
+        buildPackages: buildPackages,
         readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
@@ -214,7 +214,7 @@ void main() {
     test('succeeds if no output directory requested ', () async {
       final success = await createMergedOutputDirectories(
         buildDirs: {BuildDirectory('web'), BuildDirectory('foo')}.build(),
-        packageGraph: packageGraph,
+        buildPackages: buildPackages,
         readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
@@ -227,7 +227,7 @@ void main() {
         buildDirs:
             {BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path))}
                 .build(),
-        packageGraph: packageGraph,
+        buildPackages: buildPackages,
         readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
@@ -248,7 +248,7 @@ void main() {
                 outputLocation: OutputLocation(tmpDir.path),
               ),
             }.build(),
-        packageGraph: packageGraph,
+        buildPackages: buildPackages,
         readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
@@ -262,7 +262,7 @@ void main() {
         buildDirs:
             {BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path))}
                 .build(),
-        packageGraph: packageGraph,
+        buildPackages: buildPackages,
         readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
@@ -285,7 +285,7 @@ void main() {
                 outputLocation: OutputLocation(anotherTmpDir.path),
               ),
             }.build(),
-        packageGraph: packageGraph,
+        buildPackages: buildPackages,
         readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
@@ -313,7 +313,7 @@ void main() {
             {
               BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
             }.build(),
-        packageGraph: packageGraph,
+        buildPackages: buildPackages,
         readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
@@ -335,7 +335,7 @@ void main() {
                 outputLocation: OutputLocation(anotherTmpDir.path),
               ),
             }.build(),
-        packageGraph: packageGraph,
+        buildPackages: buildPackages,
         readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
@@ -368,7 +368,7 @@ void main() {
             {
               BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
             }.build(),
-        packageGraph: packageGraph,
+        buildPackages: buildPackages,
         readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
@@ -392,7 +392,7 @@ void main() {
             {
               BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
             }.build(),
-        packageGraph: packageGraph,
+        buildPackages: buildPackages,
         readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
@@ -427,7 +427,7 @@ void main() {
               {
                 BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
               }.build(),
-          packageGraph: packageGraph,
+          buildPackages: buildPackages,
           readerWriter: readerWriter,
           buildOutputReader: buildOutputReader,
           outputSymlinksOnly: false,
@@ -454,7 +454,7 @@ void main() {
               {
                 BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
               }.build(),
-          packageGraph: packageGraph,
+          buildPackages: buildPackages,
           readerWriter: readerWriter,
           buildOutputReader: buildOutputReader,
           outputSymlinksOnly: false,
@@ -476,7 +476,7 @@ void main() {
               {
                 BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
               }.build(),
-          packageGraph: packageGraph,
+          buildPackages: buildPackages,
           readerWriter: readerWriter,
           buildOutputReader: buildOutputReader,
           outputSymlinksOnly: false,

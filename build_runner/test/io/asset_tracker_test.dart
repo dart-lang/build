@@ -8,8 +8,9 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:build_runner/src/build/asset_graph/graph.dart';
 import 'package:build_runner/src/build_plan/build_configs.dart';
+import 'package:build_runner/src/build_plan/build_package.dart';
+import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
-import 'package:build_runner/src/build_plan/package_graph.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
 import 'package:build_runner/src/io/asset_tracker.dart';
 import 'package:build_runner/src/io/reader_writer.dart';
@@ -35,21 +36,21 @@ void main() {
           ),
         ]),
       ]).create();
-      final packageGraph = PackageGraph.fromRoot(
-        PackageNode(
+      final buildPackages = BuildPackages.fromRoot(
+        BuildPackage(
           'a',
           p.join(d.sandbox, 'a'),
-          DependencyType.path,
           LanguageVersion(2, 6),
+          isEditable: true,
           isRoot: true,
         ),
       );
-      final reader = ReaderWriter(packageGraph);
+      final reader = ReaderWriter(buildPackages);
       final aId = AssetId('a', 'web/a.txt');
       assetGraph = await AssetGraph.build(
         BuildPhases([]),
         {aId},
-        packageGraph,
+        buildPackages,
         reader,
       );
       // We need to pre-emptively assign a digest so we determine that the
@@ -60,12 +61,12 @@ void main() {
       });
 
       final buildConfigs = await BuildConfigs.load(
-        packageGraph: packageGraph,
+        buildPackages: buildPackages,
         testingOverrides: TestingOverrides(
           defaultRootPackageSources: ['web/**'].build(),
         ),
       );
-      assetTracker = AssetTracker(reader, packageGraph, buildConfigs);
+      assetTracker = AssetTracker(reader, buildPackages, buildConfigs);
       final updates = await assetTracker.collectChanges(assetGraph);
       await assetGraph.updateAndInvalidate(
         BuildPhases([]),

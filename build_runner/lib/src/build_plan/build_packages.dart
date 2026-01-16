@@ -14,46 +14,44 @@ import 'package:yaml/yaml.dart';
 
 import '../constants.dart';
 import '../io/asset_path_provider.dart';
+import 'build_package.dart';
 
 /// The SDK package, we filter this to the core libs and dev compiler
 /// resources.
-final _sdkPackageNode = PackageNode(
-  r'$sdk',
-  sdkPath,
-  DependencyType.hosted,
-  null,
-);
+final _sdkPackage = BuildPackage(r'$sdk', sdkPath, null, isEditable: false);
 
-/// A graph of the package dependencies for an application.
-class PackageGraph implements AssetPathProvider {
+/// The [BuildPackage]s in the build.
+class BuildPackages implements AssetPathProvider {
   /// The root application package.
-  final PackageNode root;
+  final BuildPackage root;
 
-  /// All [PackageNode]s indexed by package name.
-  final Map<String, PackageNode> allPackages;
+  /// All [BuildPackage]s indexed by package name.
+  final Map<String, BuildPackage> allPackages;
 
   /// A [PackageConfig] representation of this package graph.
   final PackageConfig asPackageConfig;
 
-  PackageGraph._(this.root, Map<String, PackageNode> allPackages)
+  BuildPackages._(this.root, Map<String, BuildPackage> allPackages)
     : asPackageConfig = _packagesToConfig(allPackages.values),
       allPackages = Map.unmodifiable(
-        Map<String, PackageNode>.from(allPackages)
-          ..putIfAbsent(r'$sdk', () => _sdkPackageNode),
+        Map<String, BuildPackage>.from(allPackages)
+          ..putIfAbsent(r'$sdk', () => _sdkPackage),
       ) {
     if (!root.isRoot) {
-      throw ArgumentError('Root node must indicate `isRoot`');
+      throw ArgumentError('Root package must indicate `isRoot`');
     }
     if (allPackages.values.where((n) => n != root).any((n) => n.isRoot)) {
-      throw ArgumentError('No nodes other than the root may indicate `isRoot`');
+      throw ArgumentError(
+        'No packages other than the root may indicate `isRoot`',
+      );
     }
   }
 
-  /// Creates a [PackageGraph] given the [root] [PackageNode].
-  factory PackageGraph.fromRoot(PackageNode root) {
-    final allPackages = <String, PackageNode>{root.name: root};
+  /// Creates a [BuildPackages] given the [root] [BuildPackage].
+  factory BuildPackages.fromRoot(BuildPackage root) {
+    final allPackages = <String, BuildPackage>{root.name: root};
 
-    void addDeps(PackageNode package) {
+    void addDeps(BuildPackage package) {
       for (final dep in package.dependencies) {
         if (allPackages.containsKey(dep.name)) continue;
         allPackages[dep.name] = dep;
@@ -63,7 +61,7 @@ class PackageGraph implements AssetPathProvider {
 
     addDeps(root);
 
-    return PackageGraph._(root, allPackages);
+    return BuildPackages._(root, allPackages);
   }
 
   /// Loads the package graph for the package at absolute path [packagePath].
@@ -71,7 +69,7 @@ class PackageGraph implements AssetPathProvider {
   /// Assumes `pubspec.yaml` exists and has a name, as this is checked by
   /// `dart run`.
   @visibleForTesting
-  static Future<PackageGraph> forPath(String packagePath) async {
+  static Future<BuildPackages> forPath(String packagePath) async {
     var packageConfigFile = File(
       p.join(packagePath, '.dart_tool', 'package_config.json'),
     );
@@ -100,8 +98,8 @@ class PackageGraph implements AssetPathProvider {
 
     final packageConfig = await loadPackageConfig(packageConfigFile);
 
-    final nodes = <String, PackageNode>{};
-    final packages =
+    final buildPackages = <String, BuildPackage>{};
+    final packageNames =
         packageConfig.packages.toList()
           ..sort((a, b) => a.name.compareTo(b.name));
 
@@ -110,89 +108,87 @@ class PackageGraph implements AssetPathProvider {
     final pubspecLockFile = File(
       p.join(workspacePath ?? packagePath, 'pubspec.lock'),
     );
-    final dependencyTypes = _parseDependencyTypes(pubspecLockFile);
+    final fixedPackages = _parseFixedPackages(pubspecLockFile);
 
-    for (final package in packages) {
+    for (final package in packageNames) {
       final isRoot = package.name == rootPackageName;
-      nodes[package.name] = PackageNode(
+      buildPackages[package.name] = BuildPackage(
         package.name,
         package.root.toFilePath(),
-        // If the package is missing from pubspec.lock, assume it is a path
-        // dependency.
-        dependencyTypes[package.name] ?? DependencyType.path,
         package.languageVersion,
+        isEditable: !fixedPackages.contains(package.name),
         isRoot: isRoot,
       );
     }
 
-    PackageNode packageNode(String package, {String? parent}) {
-      final node = nodes[package];
-      if (node == null) {
+    BuildPackage createPackage(String packageName, {String? parent}) {
+      final buildPackage = buildPackages[packageName];
+      if (buildPackage == null) {
         throw StateError(
-          'Dependency $package ${parent != null ? 'of $parent ' : ''}not '
+          'Dependency $packageName ${parent != null ? 'of $parent ' : ''}not '
           'present, please run `dart pub get` or `flutter pub get` to fetch '
           'dependencies.',
         );
       }
-      return node;
+      return buildPackage;
     }
 
-    final rootNode = packageNode(rootPackageName);
-    rootNode.dependencies.addAll(
+    final rootPackage = createPackage(rootPackageName);
+    rootPackage.dependencies.addAll(
       _depsFromYaml(
         rootPubspec,
         isRoot: true,
-      ).map((n) => packageNode(n, parent: rootPackageName)),
+      ).map((n) => createPackage(n, parent: rootPackageName)),
     );
 
     final packageDependencies = _parsePackageDependencies(
       packageConfig.packages.where((p) => p.name != rootPackageName),
     );
     for (final packageName in packageDependencies.keys) {
-      packageNode(packageName).dependencies.addAll(
+      createPackage(packageName).dependencies.addAll(
         packageDependencies[packageName]!.map(
-          (n) => packageNode(n, parent: packageName),
+          (n) => createPackage(n, parent: packageName),
         ),
       );
     }
 
     // A workspace can have packages that are not depended on by [rootPackage].
     // Compute transitive dependencies and filter to that.
-    Set<PackageNode>? usedNodes;
+    Set<BuildPackage>? usedPackages;
     if (workspacePath != null) {
-      usedNodes = {rootNode};
-      final queue = [rootNode];
+      usedPackages = {rootPackage};
+      final queue = [rootPackage];
       while (queue.isNotEmpty) {
-        final node = queue.removeLast();
-        for (final dep in node.dependencies) {
-          if (usedNodes.add(dep)) {
+        final package = queue.removeLast();
+        for (final dep in package.dependencies) {
+          if (usedPackages.add(dep)) {
             queue.add(dep);
           }
         }
       }
     }
 
-    return PackageGraph._(
-      rootNode,
-      usedNodes == null
-          ? nodes
+    return BuildPackages._(
+      rootPackage,
+      usedPackages == null
+          ? buildPackages
           : Map.fromEntries(
-            nodes.entries.where((e) => usedNodes!.contains(e.value)),
+            buildPackages.entries.where((e) => usedPackages!.contains(e.value)),
           ),
     );
   }
 
-  /// Creates a [PackageGraph] for the package in which you are currently
+  /// Creates a [BuildPackages] for the package in which you are currently
   /// running.
-  static Future<PackageGraph> forThisPackage() =>
-      PackageGraph.forPath(p.current);
+  static Future<BuildPackages> forThisPackage() =>
+      BuildPackages.forPath(p.current);
 
-  static PackageConfig _packagesToConfig(Iterable<PackageNode> packages) {
+  static PackageConfig _packagesToConfig(Iterable<BuildPackage> packages) {
     final relativeLib = Uri.parse('lib/');
 
     return PackageConfig([
       for (final package in packages)
-        if (package.name != _sdkPackageNode.name)
+        if (package.name != _sdkPackage.name)
           Package(
             package.name,
             Uri.file(
@@ -205,7 +201,7 @@ class PackageGraph implements AssetPathProvider {
   }
 
   /// Shorthand to get a package by name.
-  PackageNode? operator [](String packageName) => allPackages[packageName];
+  BuildPackage? operator [](String packageName) => allPackages[packageName];
 
   /// Map from package name to package language version.
   BuiltMap<String, LanguageVersion?> get languageVersions =>
@@ -237,75 +233,19 @@ class PackageGraph implements AssetPathProvider {
   }
 }
 
-/// A node in a [PackageGraph].
-class PackageNode {
-  /// The name of the package as listed in `pubspec.yaml`.
-  final String name;
-
-  /// The type of dependency being used to pull in this package.
-  ///
-  /// May be `null`.
-  final DependencyType? dependencyType;
-
-  /// All the packages that this package directly depends on.
-  final List<PackageNode> dependencies = [];
-
-  /// The absolute path of the current version of this package.
-  ///
-  /// Paths are platform dependent.
-  final String path;
-
-  /// Whether this node is the [PackageGraph.root].
-  final bool isRoot;
-
-  final LanguageVersion? languageVersion;
-
-  PackageNode(
-    this.name,
-    String path,
-    this.dependencyType,
-    this.languageVersion, {
-    this.isRoot = false,
-  }) : path = p.canonicalize(path);
-
-  @override
-  String toString() => '''
-  $name:
-    type: $dependencyType
-    path: $path
-    dependencies: [${dependencies.map((d) => d.name).join(', ')}]''';
-}
-
-/// The type of dependency being used. This dictates how the package should be
-/// watched for changes.
-enum DependencyType { github, path, hosted }
-
-/// Parse the `pubspec.lock` file and return a Map from package name to the type
-/// of dependency.
-Map<String, DependencyType> _parseDependencyTypes(File pubspecLockFile) {
-  final dependencyTypes = <String, DependencyType>{};
+/// Parse the `pubspec.lock` file and return the names of packages that are
+/// hosted, on git or in the SDK.
+Set<String> _parseFixedPackages(File pubspecLockFile) {
+  final result = <String>{};
   final dependencies = loadYaml(pubspecLockFile.readAsStringSync()) as YamlMap;
   final packages = dependencies['packages'] as YamlMap;
   for (final packageName in packages.keys) {
-    final source = (packages[packageName] as YamlMap)['source'];
-    dependencyTypes[packageName as String] = _dependencyTypeFromSource(
-      source as String,
-    );
+    final source = (packages[packageName] as YamlMap)['source'] as String?;
+    if (source == 'git' || source == 'hosted' || source == 'sdk') {
+      result.add(packageName as String);
+    }
   }
-  return dependencyTypes;
-}
-
-DependencyType _dependencyTypeFromSource(String source) {
-  switch (source) {
-    case 'git':
-      return DependencyType.github;
-    case 'hosted':
-      return DependencyType.hosted;
-    case 'path':
-    case 'sdk': // Until Flutter supports another type, assum same as path.
-      return DependencyType.path;
-  }
-  throw ArgumentError('Unable to determine dependency type:\n$source');
+  return result;
 }
 
 /// Read the pubspec for each package in [packages] and finds its

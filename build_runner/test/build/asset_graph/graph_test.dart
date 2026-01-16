@@ -22,7 +22,7 @@ import '../../common/common.dart';
 
 void main() {
   late InternalTestReaderWriter digestReader;
-  final fooPackageGraph = buildPackageGraph({rootPackage('foo'): []});
+  final fooPackageGraph = createBuildPackages({rootPackage('foo'): []});
 
   setUp(() async {
     digestReader = InternalTestReaderWriter();
@@ -555,7 +555,7 @@ void main() {
               package: 'a',
             ),
           ]);
-          final packageGraph = buildPackageGraph({rootPackage('a'): []});
+          final packageGraph = createBuildPackages({rootPackage('a'): []});
           final graph = await AssetGraph.build(
             buildPhases,
             {source},

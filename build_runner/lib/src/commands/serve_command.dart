@@ -12,8 +12,8 @@ import 'package:shelf/shelf_io.dart';
 
 import '../bootstrap/build_process_state.dart';
 import '../build_plan/build_options.dart';
+import '../build_plan/build_packages.dart';
 import '../build_plan/builder_factories.dart';
-import '../build_plan/package_graph.dart';
 import '../build_plan/testing_overrides.dart';
 import '../logging/build_log.dart';
 import 'build_runner_command.dart';
@@ -86,7 +86,7 @@ class ServeCommand implements BuildRunnerCommand {
       });
 
       // TODO(davidmorgan): reuse package graph.
-      _ensureBuildWebCompilersDependency(await PackageGraph.forThisPackage());
+      _ensureBuildWebCompilersDependency(await BuildPackages.forThisPackage());
 
       final completer = Completer<int>();
       handleBuildResultsStream(handler.buildResults, completer);
@@ -112,8 +112,8 @@ class ServeCommand implements BuildRunnerCommand {
   }
 }
 
-void _ensureBuildWebCompilersDependency(PackageGraph packageGraph) {
-  if (!packageGraph.allPackages.containsKey('build_web_compilers')) {
+void _ensureBuildWebCompilersDependency(BuildPackages buildPackages) {
+  if (!buildPackages.allPackages.containsKey('build_web_compilers')) {
     buildLog.warning('''
 Missing dev dependency on package:build_web_compilers, which is required to serve Dart compiled to JavaScript.
 

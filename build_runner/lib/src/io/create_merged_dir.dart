@@ -12,7 +12,7 @@ import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
 
 import '../build_plan/build_directory.dart';
-import '../build_plan/package_graph.dart';
+import '../build_plan/build_packages.dart';
 import '../logging/build_log.dart';
 import '../logging/timed_activities.dart';
 import 'build_output_reader.dart';
@@ -30,7 +30,7 @@ const _manifestSeparator = '\n';
 /// Returns whether it succeeded or not.
 Future<bool> createMergedOutputDirectories({
   required BuiltSet<BuildDirectory> buildDirs,
-  required PackageGraph packageGraph,
+  required BuildPackages buildPackages,
   required bool outputSymlinksOnly,
   required BuildOutputReader buildOutputReader,
   required ReaderWriter readerWriter,
@@ -57,7 +57,7 @@ Future<bool> createMergedOutputDirectories({
       if (outputLocation != null) {
         if (!await _createMergedOutputDir(
           buildOutputReader: buildOutputReader,
-          packageGraph: packageGraph,
+          buildPackages: buildPackages,
           outputPath: outputLocation.path,
           root: target.directory,
           // TODO(grouma) - retrieve symlink information from target only.
@@ -86,16 +86,16 @@ Set<String> _conflicts(BuiltSet<BuildDirectory> buildDirs) {
 Future<bool> _createMergedOutputDir({
   required String outputPath,
   required String root,
-  required PackageGraph packageGraph,
+  required BuildPackages buildPackages,
   required bool symlinkOnly,
   required bool hoist,
   required BuildOutputReader buildOutputReader,
   required ReaderWriter readerWriter,
 }) async {
   try {
-    final absoluteRoot = p.join(packageGraph.root.path, root);
-    if (absoluteRoot != packageGraph.root.path &&
-        !p.isWithin(packageGraph.root.path, absoluteRoot)) {
+    final absoluteRoot = p.join(buildPackages.root.path, root);
+    if (absoluteRoot != buildPackages.root.path &&
+        !p.isWithin(buildPackages.root.path, absoluteRoot)) {
       buildLog.error(
         'Invalid dir to build `$root`, must be within the package root.',
       );
@@ -109,7 +109,7 @@ Future<bool> _createMergedOutputDir({
     final builtAssets = buildOutputReader.allAssets(rootDir: root).toList();
     if (root != '' &&
         !builtAssets
-            .where((id) => id.package == packageGraph.root.name)
+            .where((id) => id.package == buildPackages.root.name)
             .any((id) => p.isWithin(root, id.path))) {
       buildLog.error('No assets exist in $root, skipping output.');
       return false;
@@ -127,14 +127,14 @@ Future<bool> _createMergedOutputDir({
             id,
             outputDir,
             root,
-            packageGraph,
+            buildPackages,
             readerWriter,
             symlinkOnly,
             hoist,
           ),
         _writeModifiedPackageConfig(
-          packageGraph.root.name,
-          packageGraph,
+          buildPackages.root.name,
+          buildPackages,
           outputDir,
         ),
       ]),
@@ -184,13 +184,13 @@ Future<bool> _createMergedOutputDir({
 /// Returns the relative path that was written to.
 Future<String> _writeModifiedPackageConfig(
   String rootPackage,
-  PackageGraph packageGraph,
+  BuildPackages buildPackages,
   Directory outputDir,
 ) async {
   final packageConfig = <String, Object?>{
     'configVersion': 2,
     'packages': [
-      for (final package in packageGraph.allPackages.values)
+      for (final package in buildPackages.allPackages.values)
         {
           'name': package.name,
           'rootUri':
@@ -228,7 +228,7 @@ Future<String> _writeAsset(
   AssetId id,
   Directory outputDir,
   String root,
-  PackageGraph packageGraph,
+  BuildPackages buildPackages,
   ReaderWriter readerWriter,
   bool symlinkOnly,
   bool hoist,
@@ -243,7 +243,7 @@ Future<String> _writeAsset(
       );
     } else {
       assetPath = id.path;
-      assert(id.package == packageGraph.root.name);
+      assert(id.package == buildPackages.root.name);
       if (hoist && p.isWithin(root, id.path)) {
         assetPath = p.relative(id.path, from: root);
       }
@@ -257,7 +257,7 @@ Future<String> _writeAsset(
           readerWriter.assetPathProvider.pathFor(
             readerWriter.generatedAssetHider.maybeHide(
               id,
-              packageGraph.root.name,
+              buildPackages.root.name,
             ),
           ),
           recursive: true,

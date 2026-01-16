@@ -12,7 +12,8 @@ import 'package:glob/glob.dart';
 import 'package:glob/list_local_fs.dart';
 import 'package:path/path.dart' as path;
 
-import '../build_plan/package_graph.dart';
+import '../build_plan/build_package.dart';
+import '../build_plan/build_packages.dart';
 import '../constants.dart';
 import '../logging/timed_activities.dart';
 import 'asset_finder.dart';
@@ -41,14 +42,14 @@ class ReaderWriter implements AssetReader, AssetWriter {
 
   /// A [ReaderWriter] suitable for real builds.
   ///
-  /// [packageGraph] is used for mapping paths and finding assets. The
+  /// [buildPackages] is used for mapping paths and finding assets. The
   /// `dart-io` filesystem is used with no cache.
   ///
   /// Use [copyWith] to change settings such as caching.
-  factory ReaderWriter(PackageGraph packageGraph) => ReaderWriter.using(
-    rootPackage: packageGraph.root.name,
-    assetFinder: PackageGraphAssetFinder(packageGraph),
-    assetPathProvider: packageGraph,
+  factory ReaderWriter(BuildPackages buildPackages) => ReaderWriter.using(
+    rootPackage: buildPackages.root.name,
+    assetFinder: BuildPackagesAssetFinder(buildPackages),
+    assetPathProvider: buildPackages,
     generatedAssetHider: const NoopGeneratedAssetHider(),
     filesystem: IoFilesystem(),
     cache: const PassthroughFilesystemCache(),
@@ -220,19 +221,19 @@ class ReaderWriter implements AssetReader, AssetWriter {
   Stream<AssetId> findAssets(Glob glob) => throw UnimplementedError();
 }
 
-/// [AssetFinder] that uses [PackageGraph] to map packages to paths, then
+/// [AssetFinder] that uses [BuildPackages] to map packages to paths, then
 /// uses the `dart:io` filesystem to find files.
 ///
 /// TODO(davidmorgan): read via `Filesystem` instead of `dart-io`.
-class PackageGraphAssetFinder implements AssetFinder {
-  final PackageGraph packageGraph;
+class BuildPackagesAssetFinder implements AssetFinder {
+  final BuildPackages buildPackages;
 
-  PackageGraphAssetFinder(this.packageGraph);
+  BuildPackagesAssetFinder(this.buildPackages);
 
   @override
   Stream<AssetId> find(Glob glob, {String? package}) {
     final packageNode =
-        package == null ? packageGraph.root : packageGraph[package];
+        package == null ? buildPackages.root : buildPackages[package];
     if (packageNode == null) {
       throw ArgumentError(
         "Could not find package '$package' which was listed as "
@@ -248,7 +249,7 @@ class PackageGraphAssetFinder implements AssetFinder {
   }
 
   /// Creates an [AssetId] for [file], which is a part of [packageNode].
-  static AssetId _fileToAssetId(File file, PackageNode packageNode) {
+  static AssetId _fileToAssetId(File file, BuildPackage packageNode) {
     final filePath = path.normalize(file.absolute.path);
     final relativePath = path.relative(filePath, from: packageNode.path);
     return AssetId(packageNode.name, relativePath);

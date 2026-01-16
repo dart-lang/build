@@ -7,9 +7,9 @@ import 'dart:io';
 
 import 'package:async/async.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
+import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/builder_definition.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
-import 'package:build_runner/src/build_plan/package_graph.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
 import 'package:build_runner/src/commands/serve/server.dart';
 import 'package:build_runner/src/commands/watch_command.dart';
@@ -22,7 +22,7 @@ import '../common/common.dart';
 
 void main() {
   group('ServeHandler', () {
-    final packageGraph = buildPackageGraph({
+    final buildPackages = createBuildPackages({
       rootPackage('a', path: path.absolute('a')): [],
     });
     late InternalTestReaderWriter readerWriter;
@@ -30,7 +30,7 @@ void main() {
     setUp(() async {
       _terminateServeController = StreamController();
       readerWriter = InternalTestReaderWriter(
-        rootPackage: packageGraph.root.name,
+        rootPackage: buildPackages.root.name,
       );
       await readerWriter.writeAsString(
         makeAssetId('a|.dart_tool/package_config.json'),
@@ -59,7 +59,7 @@ void main() {
         }),
         [BuilderDefinition('')],
         {'a|web/a.txt': 'a'},
-        packageGraph,
+        buildPackages,
         readerWriter,
       );
       final results = StreamQueue(handler.buildResults);
@@ -90,7 +90,7 @@ void main() {
         }),
         [BuilderDefinition('')],
         {'a|web/a.txt': 'a'},
-        packageGraph,
+        buildPackages,
         readerWriter,
       );
       final webHandler = handler.handlerFor('web');
@@ -168,7 +168,7 @@ Future<ServeHandler> createHandler(
   BuilderFactories builderFactories,
   Iterable<BuilderDefinition> builders,
   Map<String, String> inputs,
-  PackageGraph packageGraph,
+  BuildPackages buildPackages,
   InternalTestReaderWriter readerWriter,
 ) async {
   await Future.wait(
@@ -189,7 +189,7 @@ Future<ServeHandler> createHandler(
       directoryWatcherFactory: watcherFactory,
       debounceDelay: _debounceDelay,
       onLog: (_) {},
-      packageGraph: packageGraph,
+      buildPackages: buildPackages,
       readerWriter: readerWriter,
       terminateEventStream: _terminateServeController!.stream,
     ),

@@ -20,10 +20,10 @@ import 'package:build_runner/src/build/performance_tracker.dart';
 import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_directory.dart';
 import 'package:build_runner/src/build_plan/build_filter.dart';
+import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/builder_definition.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
-import 'package:build_runner/src/build_plan/package_graph.dart';
 import 'package:build_runner/src/constants.dart';
 import 'package:build_runner/src/exceptions.dart';
 import 'package:build_runner/src/io/reader_writer.dart';
@@ -62,7 +62,7 @@ void main() {
   );
   final globBuilder = GlobbingBuilder(Glob('**.txt'));
   final placeholders = placeholderIdsFor(
-    buildPackageGraph({rootPackage('a'): []}),
+    createBuildPackages({rootPackage('a'): []}),
   );
 
   group('build', () {
@@ -729,10 +729,10 @@ additional_public_assets:
     );
 
     group('with `hideOutput: true`', () {
-      late PackageGraph packageGraph;
+      late BuildPackages buildPackages;
 
       setUp(() {
-        packageGraph = buildPackageGraph({
+        buildPackages = createBuildPackages({
           rootPackage('a', path: 'a/'): ['b'],
           package('b', path: 'a/b/'): [],
         });
@@ -750,7 +750,7 @@ additional_public_assets:
             postCopyABuilderDefinition,
           ],
           {'b|lib/b.txt': 'b'},
-          packageGraph: packageGraph,
+          buildPackages: buildPackages,
           outputs: {r'$$b|lib/b.txt.copy': 'b', r'$$b|lib/b.txt.post': 'b'},
         );
       });
@@ -831,7 +831,7 @@ additional_public_assets:
             'b|lib/b.txt': 'b',
             'a|.dart_tool/build/generated/b/lib/b.txt.copy': 'b',
           },
-          packageGraph: packageGraph,
+          buildPackages: buildPackages,
           outputs: {r'$$b|lib/b.txt.copy': 'b'},
           onDelete: (AssetId assetId) {
             if (assetId.package != 'a') {
@@ -1043,7 +1043,7 @@ targets:
     });
 
     group('buildFilters', () {
-      final packageGraphWithDep = buildPackageGraph({
+      final buildPackagesWithDep = createBuildPackages({
         package('b'): [],
         rootPackage('a'): ['b'],
       });
@@ -1078,7 +1078,7 @@ targets:
             BuildFilter.fromArg('package:b/b.txt.copy', 'a'),
           },
           verbose: true,
-          packageGraph: packageGraphWithDep,
+          buildPackages: buildPackagesWithDep,
         );
       });
 
@@ -1098,7 +1098,7 @@ targets:
           outputs: {r'$$a|lib/a.txt.copy': '', r'$$b|lib/a.txt.copy': ''},
           buildFilters: {BuildFilter.fromArg('package:*/a.txt.copy', 'a')},
           verbose: true,
-          packageGraph: packageGraphWithDep,
+          buildPackages: buildPackagesWithDep,
         );
       });
 
@@ -1133,7 +1133,7 @@ targets:
             BuildFilter.fromArg('package:b/*2.txt.copy', 'a'),
           },
           verbose: true,
-          packageGraph: packageGraphWithDep,
+          buildPackages: buildPackagesWithDep,
         );
       });
 
@@ -1153,7 +1153,7 @@ targets:
           outputs: {r'$$a|lib/a.txt.copy': '', r'$$b|lib/b.txt.copy': ''},
           buildFilters: {BuildFilter.fromArg('package:*/*.txt.copy', 'a')},
           verbose: true,
-          packageGraph: packageGraphWithDep,
+          buildPackages: buildPackagesWithDep,
         );
       });
     });
@@ -1180,7 +1180,7 @@ targets:
     final expectedGraph = await AssetGraph.build(
       BuildPhases([]),
       <AssetId>{},
-      buildPackageGraph({rootPackage('a'): []}),
+      createBuildPackages({rootPackage('a'): []}),
       result.readerWriter,
     );
 

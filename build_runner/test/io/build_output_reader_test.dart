@@ -13,10 +13,10 @@ import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_directory.dart';
 import 'package:build_runner/src/build_plan/build_filter.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
+import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/build_plan.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
-import 'package:build_runner/src/build_plan/package_graph.dart';
 import 'package:build_runner/src/build_plan/phase.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
 import 'package:build_runner/src/io/build_output_reader.dart';
@@ -32,16 +32,16 @@ void main() {
     BuildOutputReader reader;
     late InternalTestReaderWriter readerWriter;
     late AssetGraph assetGraph;
-    late PackageGraph packageGraph;
+    late BuildPackages buildPackages;
     late BuildPhases buildPhases;
 
     setUp(() async {
       readerWriter = InternalTestReaderWriter(rootPackage: 'a');
-      packageGraph = buildPackageGraph({rootPackage('a'): []});
+      buildPackages = createBuildPackages({rootPackage('a'): []});
       assetGraph = await AssetGraph.build(
         BuildPhases([]),
         <AssetId>{},
-        packageGraph,
+        buildPackages,
         readerWriter,
       );
       buildPhases = BuildPhases([]);
@@ -78,7 +78,7 @@ void main() {
         testingOverrides: TestingOverrides(
           buildPhases: buildPhases,
           readerWriter: readerWriter,
-          packageGraph: packageGraph,
+          buildPackages: buildPackages,
         ),
       );
       reader = BuildOutputReader(
@@ -121,7 +121,7 @@ void main() {
           buildPhases: buildPhases,
           defaultRootPackageSources: defaultNonRootVisibleAssets,
           readerWriter: readerWriter,
-          packageGraph: packageGraph,
+          buildPackages: buildPackages,
         ),
       );
       reader = BuildOutputReader(
@@ -145,7 +145,7 @@ void main() {
           buildPhases: buildPhases,
           defaultRootPackageSources: defaultNonRootVisibleAssets,
           readerWriter: readerWriter,
-          packageGraph: packageGraph,
+          buildPackages: buildPackages,
         ),
       );
       reader = BuildOutputReader(

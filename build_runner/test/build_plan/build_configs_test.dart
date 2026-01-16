@@ -8,7 +8,8 @@ library;
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner/src/build_plan/build_configs.dart';
-import 'package:build_runner/src/build_plan/package_graph.dart';
+import 'package:build_runner/src/build_plan/build_package.dart';
+import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:glob/glob.dart';
@@ -19,29 +20,29 @@ import 'package:test/test.dart';
 import '../common/package_graphs.dart';
 
 void main() {
-  group('BuildConfigs.forPackageGraph', () {
+  group('BuildConfigs.forbuildPackages', () {
     test('warns if required sources are missing', () {
       final logs = <LogRecord>[];
       final listener = Logger.root.onRecord.listen(logs.add);
       addTearDown(listener.cancel);
 
-      final packageB = PackageNode(
+      final packageB = BuildPackage(
         'b',
         '/fakeB',
-        DependencyType.path,
         LanguageVersion(0, 0),
+        isEditable: true,
       );
-      final packageA = PackageNode(
+      final packageA = BuildPackage(
         'a',
         '/fakeA',
-        DependencyType.path,
         LanguageVersion(0, 0),
+        isEditable: true,
         isRoot: true,
       )..dependencies.add(packageB);
-      final packageGraph = PackageGraph.fromRoot(packageA);
+      final buildPackages = BuildPackages.fromRoot(packageA);
 
       BuildConfigs.load(
-        packageGraph: packageGraph,
+        buildPackages: buildPackages,
         testingOverrides: TestingOverrides(
           defaultRootPackageSources: ['**'].build(),
           buildConfig:
@@ -107,14 +108,14 @@ void main() {
   group('target graph reports visible assets', () {
     final a = rootPackage('a');
     final b = package('b');
-    final packageGraph = buildPackageGraph({
+    final buildPackages = createBuildPackages({
       a: ['b'],
       b: [],
     });
 
     test('for root package', () async {
       final buildConfigs = await BuildConfigs.load(
-        packageGraph: packageGraph,
+        buildPackages: buildPackages,
         testingOverrides: TestingOverrides(
           defaultRootPackageSources: ['**'].build(),
         ),
@@ -137,7 +138,7 @@ void main() {
 
     test('for non-root package with default configuration', () async {
       final buildConfigs = await BuildConfigs.load(
-        packageGraph: packageGraph,
+        buildPackages: buildPackages,
         testingOverrides: TestingOverrides(
           defaultRootPackageSources: ['**'].build(),
         ),
@@ -166,7 +167,7 @@ void main() {
 
     test('for non-root package exposing additional assets', () async {
       final buildConfigs = await BuildConfigs.load(
-        packageGraph: packageGraph,
+        buildPackages: buildPackages,
         testingOverrides: TestingOverrides(
           defaultRootPackageSources: ['**'].build(),
           buildConfig:
@@ -199,9 +200,9 @@ void main() {
 
     // https://github.com/dart-lang/build/issues/1042
     test('a missing sources/include does not cause an error', () async {
-      final rootPkg = packageGraph.root.name;
+      final rootPkg = buildPackages.root.name;
       final buildConfigs = await BuildConfigs.load(
-        packageGraph: packageGraph,
+        buildPackages: buildPackages,
         testingOverrides: TestingOverrides(
           buildConfig:
               {
@@ -230,9 +231,9 @@ void main() {
     });
 
     test('a missing sources/include results in the default sources', () async {
-      final rootPkg = packageGraph.root.name;
+      final rootPkg = buildPackages.root.name;
       final buildConfigs = await BuildConfigs.load(
-        packageGraph: packageGraph,
+        buildPackages: buildPackages,
         testingOverrides: TestingOverrides(
           buildConfig:
               {

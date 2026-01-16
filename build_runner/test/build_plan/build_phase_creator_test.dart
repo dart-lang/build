@@ -22,12 +22,12 @@ import '../common/common.dart';
 void main() {
   group('BuildPhaseCreator', () {
     test('builderConfigOverrides overrides builder config globally', () async {
-      final packageGraph = buildPackageGraph({
+      final buildPackages = createBuildPackages({
         rootPackage('a'): ['b'],
         package('b'): [],
       });
       final buildConfigs = await BuildConfigs.load(
-        packageGraph: packageGraph,
+        buildPackages: buildPackages,
         testingOverrides: TestingOverrides(
           defaultRootPackageSources: ['**'].build(),
         ),
@@ -37,7 +37,7 @@ void main() {
             builderFactories: BuilderFactories({
               'b:cool_builder': [CoolBuilder.new],
             }),
-            packageGraph: packageGraph,
+            buildPackages: buildPackages,
             buildConfigs: buildConfigs,
             builderDefinitions: [
               BuilderDefinition(
@@ -61,7 +61,7 @@ void main() {
     test(
       'applies root package global options before builderConfigOverrides',
       () async {
-        final packageGraph = buildPackageGraph({
+        final buildPackages = createBuildPackages({
           rootPackage('a'): ['b'],
           package('b'): [],
         });
@@ -86,7 +86,7 @@ void main() {
                   ),
                 }.build();
             final buildConfigs = await BuildConfigs.load(
-              packageGraph: packageGraph,
+              buildPackages: buildPackages,
               testingOverrides: TestingOverrides(
                 defaultRootPackageSources: ['**'].build(),
                 buildConfig: overrides,
@@ -97,7 +97,7 @@ void main() {
                   builderFactories: BuilderFactories({
                     'b:cool_builder': [CoolBuilder.new],
                   }),
-                  packageGraph: packageGraph,
+                  buildPackages: buildPackages,
                   buildConfigs: buildConfigs,
                   builderDefinitions: [
                     BuilderDefinition(
@@ -126,19 +126,19 @@ void main() {
               );
             }
           },
-          packageGraph.root.name,
-          packageGraph.root.dependencies.map((node) => node.name).toList(),
+          buildPackages.root.name,
+          buildPackages.root.dependencies.map((node) => node.name).toList(),
         );
       },
     );
 
     test('honors package filter', () async {
-      final packageGraph = buildPackageGraph({
+      final buildPackages = createBuildPackages({
         rootPackage('a'): ['b'],
         package('b'): [],
       });
       final buildConfigs = await BuildConfigs.load(
-        packageGraph: packageGraph,
+        buildPackages: buildPackages,
         testingOverrides: TestingOverrides(
           defaultRootPackageSources: ['**'].build(),
         ),
@@ -148,7 +148,7 @@ void main() {
             builderFactories: BuilderFactories({
               'b:cool_builder': [CoolBuilder.new],
             }),
-            packageGraph: packageGraph,
+            buildPackages: buildPackages,
             buildConfigs: buildConfigs,
             builderDefinitions: [
               BuilderDefinition(
@@ -164,12 +164,12 @@ void main() {
     });
 
     test('honors appliesBuilders', () async {
-      final packageGraph = buildPackageGraph({
+      final buildPackages = createBuildPackages({
         rootPackage('a'): ['b'],
         package('b'): [],
       });
       final buildConfigs = await BuildConfigs.load(
-        packageGraph: packageGraph,
+        buildPackages: buildPackages,
         testingOverrides: TestingOverrides(
           defaultRootPackageSources: ['**'].build(),
         ),
@@ -188,7 +188,7 @@ void main() {
               'b:cool_builder': [CoolBuilder.new],
               'b:not_by_default': [(_) => TestBuilder()],
             }),
-            packageGraph: packageGraph,
+            buildPackages: buildPackages,
             buildConfigs: buildConfigs,
             builderDefinitions: builderDefinitions,
             builderConfigOverrides: BuiltMap(),
@@ -208,13 +208,13 @@ void main() {
     });
 
     test('skips non-hidden builders on non-root packages', () async {
-      final packageGraph = buildPackageGraph({
+      final buildPackages = createBuildPackages({
         rootPackage('a'): ['b', 'c'],
         package('b'): ['c'],
         package('c'): [],
       });
       final buildConfigs = await BuildConfigs.load(
-        packageGraph: packageGraph,
+        buildPackages: buildPackages,
         testingOverrides: TestingOverrides(
           defaultRootPackageSources: ['**'].build(),
         ),
@@ -224,7 +224,7 @@ void main() {
             builderFactories: BuilderFactories({
               'c:cool_builder': [CoolBuilder.new],
             }),
-            packageGraph: packageGraph,
+            buildPackages: buildPackages,
             buildConfigs: buildConfigs,
             builderDefinitions: [
               BuilderDefinition(
@@ -252,13 +252,13 @@ void main() {
     test(
       'skips builders which apply non-hidden builders on non-root packages',
       () async {
-        final packageGraph = buildPackageGraph({
+        final buildPackages = createBuildPackages({
           rootPackage('a'): ['b', 'c'],
           package('b'): ['c'],
           package('c'): [],
         });
         final buildConfigs = await BuildConfigs.load(
-          packageGraph: packageGraph,
+          buildPackages: buildPackages,
           testingOverrides: TestingOverrides(
             defaultRootPackageSources: ['**'].build(),
           ),
@@ -281,7 +281,7 @@ void main() {
                 'c:cool_builder': [CoolBuilder.new],
                 'c:not_by_default': [(_) => TestBuilder()],
               }),
-              packageGraph: packageGraph,
+              buildPackages: buildPackages,
               buildConfigs: buildConfigs,
               builderDefinitions: builderDefinitions,
               builderConfigOverrides: BuiltMap(),
@@ -302,7 +302,7 @@ void main() {
     );
 
     test('returns empty phases if a dependency is missing', () async {
-      final packageGraph = buildPackageGraph({
+      final buildPackages = createBuildPackages({
         rootPackage('a'): ['b'],
         package('b'): [],
       });
@@ -318,7 +318,7 @@ void main() {
                 ),
               }.build();
           final buildConfigs = await BuildConfigs.load(
-            packageGraph: packageGraph,
+            buildPackages: buildPackages,
             testingOverrides: TestingOverrides(
               defaultRootPackageSources: ['**'].build(),
               buildConfig: overrides,
@@ -330,7 +330,7 @@ void main() {
                   builderFactories: BuilderFactories({
                     'b:cool_builder': [CoolBuilder.new],
                   }),
-                  packageGraph: packageGraph,
+                  buildPackages: buildPackages,
                   buildConfigs: buildConfigs,
                   builderDefinitions: [
                     BuilderDefinition(
@@ -344,8 +344,8 @@ void main() {
             throwsA(const TypeMatcher<CannotBuildException>()),
           );
         },
-        packageGraph.root.name,
-        packageGraph.root.dependencies.map((node) => node.name).toList(),
+        buildPackages.root.name,
+        buildPackages.root.dependencies.map((node) => node.name).toList(),
       );
     });
 
@@ -353,13 +353,13 @@ void main() {
       Future<BuildPhases> createPhases({
         Map<String, TargetBuilderConfig>? builderConfigs,
       }) async {
-        final packageGraph = buildPackageGraph({
+        final buildPackages = createBuildPackages({
           rootPackage('a'): ['b'],
           package('b'): [],
         });
         final buildConfigs = await runInBuildConfigZone(
           () => BuildConfigs.load(
-            packageGraph: packageGraph,
+            buildPackages: buildPackages,
             testingOverrides: TestingOverrides(
               defaultRootPackageSources: ['**'].build(),
               buildConfig:
@@ -395,7 +395,7 @@ void main() {
             'b:cool_builder': [CoolBuilder.new],
             'b:cool_builder_2': [CoolBuilder.new],
           }),
-          packageGraph: packageGraph,
+          buildPackages: buildPackages,
           buildConfigs: buildConfigs,
           builderDefinitions: builderDefinitions,
           builderConfigOverrides: BuiltMap(),
@@ -458,9 +458,9 @@ void main() {
     test(
       'does not allow post process builders with capturing inputs',
       () async {
-        final packageGraph = buildPackageGraph({rootPackage('a'): []});
+        final buildPackages = createBuildPackages({rootPackage('a'): []});
         final buildConfigs = await BuildConfigs.load(
-          packageGraph: packageGraph,
+          buildPackages: buildPackages,
           testingOverrides: TestingOverrides(
             defaultRootPackageSources: ['**'].build(),
           ),
@@ -485,7 +485,7 @@ void main() {
                     'a:post': (_) => _InvalidPostProcessBuilder(),
                   },
                 ),
-                packageGraph: packageGraph,
+                buildPackages: buildPackages,
                 buildConfigs: buildConfigs,
                 builderDefinitions: builderDefinitions,
                 builderConfigOverrides: BuiltMap(),

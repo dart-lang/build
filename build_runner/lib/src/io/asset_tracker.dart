@@ -13,8 +13,8 @@ import 'package:watcher/watcher.dart';
 import '../build/asset_graph/graph.dart';
 import '../build/asset_graph/node.dart';
 import '../build_plan/build_configs.dart';
+import '../build_plan/build_packages.dart';
 import '../build_plan/build_target.dart';
-import '../build_plan/package_graph.dart';
 import '../constants.dart';
 import '../logging/timed_activities.dart';
 import 'reader_writer.dart';
@@ -22,10 +22,10 @@ import 'reader_writer.dart';
 /// Finds build assets and computes changes to build assets.
 class AssetTracker {
   final ReaderWriter _readerWriter;
-  final PackageGraph _packageGraph;
+  final BuildPackages _buildPackages;
   final BuildConfigs _buildConfigs;
 
-  AssetTracker(this._readerWriter, this._packageGraph, this._buildConfigs);
+  AssetTracker(this._readerWriter, this._buildPackages, this._buildConfigs);
 
   /// Checks for and returns any file system changes compared to the current
   /// state of the asset graph.
@@ -112,7 +112,7 @@ class AssetTracker {
                 .where(
                   (id) => _buildConfigs.isVisibleInBuild(
                     id,
-                    _packageGraph.allPackages[buildTarget.package]!,
+                    _buildPackages.allPackages[buildTarget.package]!,
                   ),
                 )
                 .where((id) => !buildTarget.excludesSource(id)),

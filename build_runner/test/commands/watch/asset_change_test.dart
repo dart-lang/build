@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:build_runner/src/build_plan/package_graph.dart';
+import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/commands/watch/asset_change.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -36,7 +36,7 @@ void main() {
         'lib',
         'bar.dart',
       );
-      final nodeBar = PackageNode('bar', pkgBar, null, null);
+      final nodeBar = BuildPackage('bar', pkgBar, null, isEditable: true);
 
       final event = WatchEvent(ChangeType.ADD, barFile);
       final change = AssetChange.fromEvent(nodeBar, event);
@@ -49,7 +49,7 @@ void main() {
       final pkgBar = p.join('/', 'foo', 'bar');
       final barFile = p.join('/', 'foo', 'bar', 'lib', 'bar.dart');
 
-      final nodeBar = PackageNode('bar', pkgBar, null, null);
+      final nodeBar = BuildPackage('bar', pkgBar, null, isEditable: true);
       final event = WatchEvent(ChangeType.ADD, barFile);
       final change = AssetChange.fromEvent(nodeBar, event);
 
