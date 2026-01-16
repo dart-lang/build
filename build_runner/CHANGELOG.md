@@ -1,3 +1,5 @@
+## 2.10.6-wip
+
 ## 2.10.5
 
 - Add logging of builder compilation so you can tell how much time is spent

@@ -12,10 +12,10 @@ import 'package:build_runner/src/commands/watch/build_packages_watcher.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
-import '../../common/package_graphs.dart';
+import '../../common/build_packages.dart';
 
 void main() {
-  group('PackageGraphWatcher', () {
+  group('BuildPackagesWatcher', () {
     test('should aggregate changes from all nodes', () {
       final graph = createBuildPackages({
         rootPackage('a', path: '/g/a'): ['b'],

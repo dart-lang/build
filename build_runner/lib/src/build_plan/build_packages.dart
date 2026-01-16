@@ -99,7 +99,7 @@ class BuildPackages implements AssetPathProvider {
     final packageConfig = await loadPackageConfig(packageConfigFile);
 
     final buildPackages = <String, BuildPackage>{};
-    final packageNames =
+    final packageConfigs =
         packageConfig.packages.toList()
           ..sort((a, b) => a.name.compareTo(b.name));
 
@@ -110,13 +110,13 @@ class BuildPackages implements AssetPathProvider {
     );
     final fixedPackages = _parseFixedPackages(pubspecLockFile);
 
-    for (final package in packageNames) {
-      final isRoot = package.name == rootPackageName;
-      buildPackages[package.name] = BuildPackage(
-        package.name,
-        package.root.toFilePath(),
-        package.languageVersion,
-        isEditable: !fixedPackages.contains(package.name),
+    for (final packageConfig in packageConfigs) {
+      final isRoot = packageConfig.name == rootPackageName;
+      buildPackages[packageConfig.name] = BuildPackage(
+        packageConfig.name,
+        packageConfig.root.toFilePath(),
+        packageConfig.languageVersion,
+        isEditable: !fixedPackages.contains(packageConfig.name),
         isRoot: isRoot,
       );
     }
