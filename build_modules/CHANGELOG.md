@@ -1,3 +1,7 @@
+## 5.1.7
+
+- Use default process modes for kernel workers to avoid spawning extraneous terminals. 
+
 ## 5.1.6
 
 - Allow `analyzer` 10.0.0.
