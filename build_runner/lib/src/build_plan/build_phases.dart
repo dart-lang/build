@@ -85,23 +85,23 @@ class BuildPhases {
 
   /// Checks that outputs are to allowed locations.
   ///
-  /// Valid outputs are hidden or to packages in [allowedOutputPackages].
+  /// Valid outputs are hidden or to packages in [packagesInBuild].
   ///
   /// If the phases are not valid, logs then throws
   /// [CannotBuildException].
   ///
   ///  [PostBuildPhase]s are always hidden, so they are always valid.
-  void checkOutputLocations(BuiltSet<String> allowedOutputPackages) {
+  void checkOutputLocations(BuiltSet<String> packagesInBuild) {
     for (final action in inBuildPhases) {
       if (action.hideOutput) continue;
-      if (allowedOutputPackages.contains(action.package)) continue;
+      if (packagesInBuild.contains(action.package)) continue;
       // This should happen only with a manual build script since the build
       // script generation filters these out.
       buildLog.error(
         'A build phase (${action.displayName}) is attempting '
         'to operate on package "${action.package}" without "hideOutput". '
-        'Allowed non-hidden output packages are: '
-        '${allowedOutputPackages.join(', ')}',
+        'This is only allowed for packages in the build, not for dependency '
+        'packages.',
       );
       throw const CannotBuildException();
     }

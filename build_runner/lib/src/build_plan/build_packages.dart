@@ -55,7 +55,7 @@ class BuildPackages implements AssetPathProvider {
   final BuiltSet<String> packagesInBuild;
 
   BuildPackages._({
-    required this.current,
+    required BuildPackage this.current,
     required this.outputRoot,
     required Map<String, BuildPackage> allPackages,
   }) : asPackageConfig = _packagesToConfig(allPackages.values),
@@ -63,13 +63,11 @@ class BuildPackages implements AssetPathProvider {
          Map<String, BuildPackage>.from(allPackages)
            ..putIfAbsent(r'$sdk', () => _sdkPackage),
        ),
-       // TODO(davidmorgan): when workspace support is added there will be
-       // no current package, set the list of output packages.
-       packagesInBuild = {if (current != null) current.name}.build() {
+       packagesInBuild = {current.name}.build() {
     if (!current!.isInBuild) {
       throw ArgumentError('Current package must indicate `isInBuild`');
     }
-    if (allPackages.values.where((n) => n != current).any((n) => n.isInBuild)) {
+    if (allPackages.values.any((p) => p != current && p.isInBuild)) {
       throw ArgumentError(
         'No packages other than the current may indicate `isInBuild`',
       );
@@ -253,8 +251,11 @@ class BuildPackages implements AssetPathProvider {
     required bool hide,
     bool checkDeleteAllowed = false,
   }) {
-    if (checkDeleteAllowed && !hide) {
-      if (!packagesInBuild.contains(id.package)) {
+    if (checkDeleteAllowed) {
+      // Delete is allowed if it's a hidden output or if it's an output to a
+      // package in the build. This forbids deleting files that are part of the
+      // checked-in source tree of a dependency package.
+      if (!(hide || packagesInBuild.contains(id.package))) {
         throw InvalidOutputException(
           id,
           'Should not delete assets outside of package(s): '
