@@ -35,7 +35,7 @@ void main() {
       rootPackage('example', path: path): [],
     });
     readerWriter =
-        InternalTestReaderWriter(rootPackage: 'example')
+        InternalTestReaderWriter(outputRootPackage: 'example')
           ..testing.writeString(
             AssetId('example', 'web/initial.txt'),
             'initial',

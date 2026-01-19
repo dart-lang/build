@@ -81,7 +81,7 @@ void main() {
     late BuildOutputReader buildOutputReader;
 
     setUp(() async {
-      readerWriter = InternalTestReaderWriter(rootPackage: 'a');
+      readerWriter = InternalTestReaderWriter(outputRootPackage: 'a');
       for (final source in sources.entries) {
         readerWriter.testing.writeString(source.key, source.value);
       }
@@ -91,7 +91,7 @@ void main() {
         testingOverrides: TestingOverrides(
           buildPhases: phases,
           defaultRootPackageSources:
-              [...defaultRootPackageSources, 'foo/**'].build(),
+              [...defaultInBuildPackageSources, 'foo/**'].build(),
           readerWriter: readerWriter,
           buildPackages: buildPackages,
         ),

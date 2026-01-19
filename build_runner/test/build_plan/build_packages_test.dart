@@ -11,20 +11,20 @@ import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 void main() {
-  late BuildPackages graph;
+  late BuildPackages buildPackages;
 
   group('BuildPackages', () {
     group('forThisPackage ', () {
       setUp(() async {
-        graph = await BuildPackages.forThisPackage();
+        buildPackages = await BuildPackages.forThisPackage();
       });
 
-      test('root', () {
-        expectPkg(graph.root, 'build_runner', '', isEditable: true);
+      test('current', () {
+        expectPkg(buildPackages.current!, 'build_runner', '', isEditable: true);
       });
 
       test('asPackageConfig', () {
-        final config = graph.asPackageConfig;
+        final config = buildPackages.asPackageConfig;
         final buildRunner = config.packages.singleWhere(
           (p) => p.name == 'build_runner',
         );
@@ -37,45 +37,50 @@ void main() {
       final basicPkgPath = p.absolute('test/fixtures/basic_pkg/');
 
       setUp(() async {
-        graph = await BuildPackages.forPath(basicPkgPath);
+        buildPackages = await BuildPackages.forPath(basicPkgPath);
       });
 
       test('allPackages', () {
         expect(
-          graph.allPackages,
+          buildPackages.allPackages,
           equals({
-            'a': graph['a'],
-            'b': graph['b'],
-            'c': graph['c'],
-            'd': graph['d'],
-            'basic_pkg': graph['basic_pkg'],
+            'a': buildPackages['a'],
+            'b': buildPackages['b'],
+            'c': buildPackages['c'],
+            'd': buildPackages['d'],
+            'basic_pkg': buildPackages['basic_pkg'],
             r'$sdk': anything,
           }),
         );
       });
 
-      test('root', () {
+      test('current', () {
         expectPkg(
-          graph.root,
+          buildPackages.current!,
           'basic_pkg',
           basicPkgPath,
           isEditable: true,
-          dependencies: [graph['a']!, graph['b']!, graph['c']!, graph['d']!],
+          dependencies: [
+            buildPackages['a']!,
+            buildPackages['b']!,
+            buildPackages['c']!,
+            buildPackages['d']!,
+          ],
         );
       });
 
       test('dependency', () {
         expectPkg(
-          graph['a']!,
+          buildPackages['a']!,
           'a',
           '$basicPkgPath/pkg/a',
           isEditable: false,
-          dependencies: [graph['b']!, graph['c']!],
+          dependencies: [buildPackages['b']!, buildPackages['c']!],
         );
       });
 
       test('asPackageConfig', () {
-        final config = graph.asPackageConfig;
+        final config = buildPackages.asPackageConfig;
         final names = config.packages.map((e) => e.name);
 
         expect(names, isNot(contains(r'$sdk')));
@@ -87,33 +92,33 @@ void main() {
       final withDevDepsPkgPath = p.absolute('test/fixtures/with_dev_deps');
 
       setUp(() async {
-        graph = await BuildPackages.forPath(withDevDepsPkgPath);
+        buildPackages = await BuildPackages.forPath(withDevDepsPkgPath);
       });
 
-      test('allPackages contains dev deps of root pkg, but not others', () {
+      test('allPackages contains dev deps of current pkg, but not others', () {
         // Package `c` is a dev dep of package `a` so it shouldn't be present
         // while package `b` is a dev dep of the root package so it should be.
-        expect(graph.allPackages, {
-          'a': graph['a'],
-          'b': graph['b'],
-          'with_dev_deps': graph['with_dev_deps'],
-          r'$sdk': graph[r'$sdk'],
+        expect(buildPackages.allPackages, {
+          'a': buildPackages['a'],
+          'b': buildPackages['b'],
+          'with_dev_deps': buildPackages['with_dev_deps'],
+          r'$sdk': buildPackages[r'$sdk'],
         });
       });
 
-      test('dev deps are contained in deps of root pkg, but not others', () {
+      test('dev deps are contained in deps of current pkg, but not others', () {
         // Package `b` shows as a dep because this is the root package.
         expectPkg(
-          graph.root,
+          buildPackages.current!,
           'with_dev_deps',
           withDevDepsPkgPath,
           isEditable: true,
-          dependencies: [graph['a']!, graph['b']!],
+          dependencies: [buildPackages['a']!, buildPackages['b']!],
         );
 
-        // Package `c` does not appear because this is not the root package.
+        // Package `c` does not appear because this is not the current package.
         expectPkg(
-          graph['a']!,
+          buildPackages['a']!,
           'a',
           '$withDevDepsPkgPath/pkg/a',
           isEditable: false,
@@ -121,14 +126,14 @@ void main() {
         );
 
         expectPkg(
-          graph['b']!,
+          buildPackages['b']!,
           'b',
           '$withDevDepsPkgPath/pkg/b',
           isEditable: false,
           dependencies: [],
         );
 
-        expect(graph['c'], isNull);
+        expect(buildPackages['c'], isNull);
       });
     });
 
@@ -136,12 +141,12 @@ void main() {
       final withFlutterDeps = p.absolute('test/fixtures/flutter_pkg');
 
       setUp(() async {
-        graph = await BuildPackages.forPath(withFlutterDeps);
+        buildPackages = await BuildPackages.forPath(withFlutterDeps);
       });
 
       test('allPackages resolved correctly with all packages', () {
         expect(
-          graph.allPackages.keys,
+          buildPackages.allPackages.keys,
           unorderedEquals([
             'flutter_gallery',
             'intl',
@@ -157,15 +162,21 @@ void main() {
       });
     });
 
-    test('custom creation via fromRoot', () {
-      final a = BuildPackage('a', '/a', null, isEditable: true, isRoot: true);
+    test('custom creation via fromCurrent', () {
+      final a = BuildPackage(
+        'a',
+        '/a',
+        null,
+        isEditable: true,
+        isInBuild: true,
+      );
       final b = BuildPackage('b', '/b', null, isEditable: true);
       final c = BuildPackage('c', '/c', null, isEditable: true);
       final d = BuildPackage('d', '/d', null, isEditable: true);
       a.dependencies.addAll([b, d]);
       b.dependencies.add(c);
-      final graph = BuildPackages.fromRoot(a);
-      expect(graph.root, a);
+      final graph = BuildPackages.fromCurrent(a);
+      expect(graph.current!, a);
       expect(
         graph.allPackages,
         equals({'a': a, 'b': b, 'c': c, 'd': d, r'$sdk': anything}),
@@ -194,7 +205,7 @@ void main() {
   group('workspace ', () {
     final workspaceFixturePath = p.absolute('test/fixtures/workspace');
 
-    test('loads only dependent packages, has correct root', () async {
+    test('loads only dependent packages, has correct current', () async {
       Matcher packageNodeEquals(BuildPackage node) => isA<BuildPackage>()
           .having((c) => c.path, 'path', node.path)
           .having(
@@ -204,7 +215,7 @@ void main() {
           )
           .having((c) => c.isEditable, 'isEditable', node.isEditable);
 
-      final graph = await BuildPackages.forPath(
+      final buildPackages = await BuildPackages.forPath(
         p.absolute('$workspaceFixturePath/pkgs/a'),
       );
       final a = BuildPackage(
@@ -212,7 +223,7 @@ void main() {
         '$workspaceFixturePath/pkgs/a',
         null,
         isEditable: true,
-        isRoot: true,
+        isInBuild: true,
       );
       final b = BuildPackage(
         'b',
@@ -222,13 +233,13 @@ void main() {
       );
       a.dependencies.add(b);
 
-      expect(graph.allPackages, {
+      expect(buildPackages.allPackages, {
         'a': packageNodeEquals(a),
         'b': packageNodeEquals(b),
         r'$sdk': anything,
       });
 
-      expect(graph.root, packageNodeEquals(a));
+      expect(buildPackages.current!, packageNodeEquals(a));
     });
   });
 }

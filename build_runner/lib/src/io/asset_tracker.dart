@@ -123,7 +123,7 @@ class AssetTracker {
   Stream<AssetId> _listGeneratedAssetIds() {
     final glob = Glob('$generatedOutputDirectory/**');
 
-    return _listIdsSafe(glob)
+    return _listIdsSafe(glob, package: _buildPackages.outputRoot.name)
         .map((id) {
           final packagePath = id.path.substring(
             generatedOutputDirectory.length + 1,
@@ -142,11 +142,11 @@ class AssetTracker {
   ///
   /// Ideally we would warn but in practice the default sources list will give
   /// this error a lot and it would be noisy.
-  Stream<AssetId> _listIdsSafe(Glob glob, {String? package}) => _readerWriter
-      .assetFinder
-      .find(glob, package: package)
-      .handleError(
-        (void _) {},
-        test: (e) => e is FileSystemException && e.osError?.errorCode == 2,
-      );
+  Stream<AssetId> _listIdsSafe(Glob glob, {required String package}) =>
+      _readerWriter.assetFinder
+          .find(glob, package: package)
+          .handleError(
+            (void _) {},
+            test: (e) => e is FileSystemException && e.osError?.errorCode == 2,
+          );
 }

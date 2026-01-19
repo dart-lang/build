@@ -14,7 +14,6 @@ import 'package:path/path.dart' as path;
 
 import '../build_plan/build_package.dart';
 import '../build_plan/build_packages.dart';
-import '../constants.dart';
 import '../logging/timed_activities.dart';
 import 'asset_finder.dart';
 import 'asset_path_provider.dart';
@@ -27,11 +26,6 @@ import 'generated_asset_hider.dart';
 /// [AssetReader] and [AssetWriter] are the builder-facing file operations APIs,
 /// and are implemented here so that `TestReaderWriter` can offer them.
 class ReaderWriter implements AssetReader, AssetWriter {
-  /// The package the generator is running for.
-  ///
-  /// Deletes are only allowed within this package.
-  final String rootPackage;
-
   final AssetFinder assetFinder;
   final AssetPathProvider assetPathProvider;
   final GeneratedAssetHider generatedAssetHider;
@@ -47,7 +41,6 @@ class ReaderWriter implements AssetReader, AssetWriter {
   ///
   /// Use [copyWith] to change settings such as caching.
   factory ReaderWriter(BuildPackages buildPackages) => ReaderWriter.using(
-    rootPackage: buildPackages.root.name,
     assetFinder: BuildPackagesAssetFinder(buildPackages),
     assetPathProvider: buildPackages,
     generatedAssetHider: const NoopGeneratedAssetHider(),
@@ -57,7 +50,6 @@ class ReaderWriter implements AssetReader, AssetWriter {
   );
 
   ReaderWriter.using({
-    required this.rootPackage,
     required this.assetFinder,
     required this.assetPathProvider,
     required this.generatedAssetHider,
@@ -71,7 +63,6 @@ class ReaderWriter implements AssetReader, AssetWriter {
     GeneratedAssetHider? generatedAssetHider,
     void Function(AssetId)? onDelete,
   }) => ReaderWriter.using(
-    rootPackage: rootPackage,
     assetFinder: assetFinder,
     assetPathProvider: assetPathProvider,
     generatedAssetHider: generatedAssetHider ?? this.generatedAssetHider,
@@ -80,8 +71,12 @@ class ReaderWriter implements AssetReader, AssetWriter {
     onDelete: onDelete ?? this.onDelete,
   );
 
-  String _pathFor(AssetId id) =>
-      assetPathProvider.pathFor(generatedAssetHider.maybeHide(id, rootPackage));
+  String _pathFor(AssetId id, {bool checkDeleteAllowed = false}) =>
+      assetPathProvider.pathFor(
+        id,
+        hide: generatedAssetHider.isHidden(id),
+        checkDeleteAllowed: checkDeleteAllowed,
+      );
 
   @override
   Future<bool> canRead(AssetId id) {
@@ -184,20 +179,7 @@ class ReaderWriter implements AssetReader, AssetWriter {
   Future<void> delete(AssetId id) {
     TimedActivity.write.run(() {
       onDelete?.call(id);
-      final path = _pathFor(id);
-      // Hidden generated files are moved by `assetPathProvider` under the root
-      // package folder, and it's allowed to delete them. So for assets in a
-      // different package, check if the path has mapped onto the generated
-      // output path, and if so allow the deleted.
-      final generatedOutputPath = assetPathProvider.pathFor(
-        AssetId(rootPackage, generatedOutputDirectory),
-      );
-      if (id.package != rootPackage && !path.startsWith(generatedOutputPath)) {
-        throw InvalidOutputException(
-          id,
-          'Should not delete assets outside of $rootPackage',
-        );
-      }
+      final path = _pathFor(id, checkDeleteAllowed: true);
       cache.delete(
         id,
         deleter: () {
@@ -231,9 +213,8 @@ class BuildPackagesAssetFinder implements AssetFinder {
   BuildPackagesAssetFinder(this.buildPackages);
 
   @override
-  Stream<AssetId> find(Glob glob, {String? package}) {
-    final packageNode =
-        package == null ? buildPackages.root : buildPackages[package];
+  Stream<AssetId> find(Glob glob, {required String package}) {
+    final packageNode = buildPackages[package];
     if (packageNode == null) {
       throw ArgumentError(
         "Could not find package '$package' which was listed as "

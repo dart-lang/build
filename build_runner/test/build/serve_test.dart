@@ -30,7 +30,7 @@ void main() {
     setUp(() async {
       _terminateServeController = StreamController();
       readerWriter = InternalTestReaderWriter(
-        rootPackage: buildPackages.root.name,
+        outputRootPackage: buildPackages.outputRoot.name,
       );
       await readerWriter.writeAsString(
         makeAssetId('a|.dart_tool/package_config.json'),

@@ -187,7 +187,6 @@ class AssetGraph implements GeneratedAssetHider {
     graph._addOutputsForSources(
       buildPhases,
       sources,
-      buildPackages.root.name,
       placeholders: placeholders,
     );
     // Pre-emptively compute digests for the nodes we know have outputs.
@@ -337,7 +336,6 @@ class AssetGraph implements GeneratedAssetHider {
   Future<Set<AssetId>> updateAndInvalidate(
     BuildPhases buildPhases,
     Map<AssetId, ChangeType> updates,
-    String rootPackage,
     Future Function(AssetId id) delete,
     ReaderWriter readerWriter,
   ) async {
@@ -406,7 +404,7 @@ class AssetGraph implements GeneratedAssetHider {
       }
     }
 
-    _addOutputsForSources(buildPhases, newIds, rootPackage);
+    _addOutputsForSources(buildPhases, newIds);
 
     _nodes.clearComputationResults();
     return idsToDelete;
@@ -447,8 +445,7 @@ class AssetGraph implements GeneratedAssetHider {
   /// May remove nodes if sources overlap with generated outputs.
   void _addOutputsForSources(
     BuildPhases buildPhases,
-    Set<AssetId> newSources,
-    String rootPackage, {
+    Set<AssetId> newSources, {
     Set<AssetId>? placeholders,
   }) {
     final allInputs = Set<AssetId>.from(newSources);
@@ -464,7 +461,6 @@ class AssetGraph implements GeneratedAssetHider {
           phaseNum,
           allInputs,
           buildPhases,
-          rootPackage,
         ),
       );
     }
@@ -482,7 +478,6 @@ class AssetGraph implements GeneratedAssetHider {
     int phaseNum,
     Set<AssetId> allInputs,
     BuildPhases buildPhases,
-    String rootPackage,
   ) {
     final phaseOutputs = <AssetId>{};
     final inputs =
@@ -500,7 +495,6 @@ class AssetGraph implements GeneratedAssetHider {
         outputs,
         phaseNum,
         buildPhases,
-        rootPackage,
         primaryInput: input,
         isHidden: phase.hideOutput,
       );
@@ -542,8 +536,7 @@ class AssetGraph implements GeneratedAssetHider {
   Set<AssetId> _addGeneratedOutputs(
     Iterable<AssetId> outputs,
     int phaseNumber,
-    BuildPhases buildPhases,
-    String rootPackage, {
+    BuildPhases buildPhases, {
     required AssetId primaryInput,
     required bool isHidden,
   }) {
@@ -560,7 +553,6 @@ class AssetGraph implements GeneratedAssetHider {
         if (existing.type == NodeType.generated) {
           final existingConfiguration = existing.generatedNodeConfiguration!;
           throw DuplicateAssetNodeException(
-            rootPackage,
             existing.id,
             buildPhases
                 .inBuildPhases[existingConfiguration.phaseNumber]
@@ -611,23 +603,20 @@ class AssetGraph implements GeneratedAssetHider {
   }
 
   @override
-  AssetId maybeHide(AssetId id, String rootPackage) {
+  bool isHidden(AssetId id) {
     if (id.path.startsWith(generatedOutputDirectory) ||
         id.path.startsWith(cacheDirectoryPath)) {
-      return id;
+      return false;
     }
     if (!contains(id)) {
-      return id;
+      return false;
     }
     final assetNode = get(id)!;
     if (assetNode.type == NodeType.generated &&
         assetNode.generatedNodeConfiguration!.isHidden) {
-      return AssetId(
-        rootPackage,
-        '$generatedOutputDirectory/${id.package}/${id.path}',
-      );
+      return true;
     }
-    return id;
+    return false;
   }
 
   /// Returns outputs that were written to the source tree.
@@ -642,9 +631,11 @@ class AssetGraph implements GeneratedAssetHider {
         // If the package no longer exists, then the user must have
         // renamed the root package.
         //
-        // In that case we change `idToDelete` to be in the root package.
+        // In that case we change `idToDelete` to be in the current package.
         if (buildPackages[id.package] == null) {
-          idToDelete = AssetId(buildPackages.root.name, id.path);
+          final current = buildPackages.current;
+          if (current == null) continue;
+          idToDelete = AssetId(current.name, id.path);
         }
         result.add(idToDelete);
       }

@@ -20,7 +20,7 @@ import 'internal_test_reader_writer.dart';
 /// a build. This specifies which package `build_runner` is running in.
 abstract interface class TestReaderWriter implements AssetReader, AssetWriter {
   factory TestReaderWriter({String? rootPackage}) =>
-      InternalTestReaderWriter(rootPackage: rootPackage);
+      InternalTestReaderWriter(outputRootPackage: rootPackage);
 
   ReaderWriterTesting get testing;
 }

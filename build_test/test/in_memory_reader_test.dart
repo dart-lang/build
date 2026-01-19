@@ -17,31 +17,25 @@ void main() {
 
     setUp(() {
       readerWriter =
-          InternalTestReaderWriter(rootPackage: packageName)
+          InternalTestReaderWriter(outputRootPackage: packageName)
             ..testing.writeString(libAsset, 'libAsset')
             ..testing.writeString(testAsset, 'testAsset');
     });
 
-    test(
-      '#findAssets should throw if rootPackage and package are not supplied',
-      () {
-        readerWriter = InternalTestReaderWriter();
-        expect(
-          () => readerWriter.assetFinder.find(Glob('lib/*.dart')),
-          throwsUnsupportedError,
-        );
-      },
-    );
-
     test('#findAssets should list files in lib/', () async {
-      expect(await readerWriter.assetFinder.find(Glob('lib/*.dart')).toList(), [
-        libAsset,
-      ]);
+      expect(
+        await readerWriter.assetFinder
+            .find(Glob('lib/*.dart'), package: packageName)
+            .toList(),
+        [libAsset],
+      );
     });
 
     test('#findAssets should list files in test/', () async {
       expect(
-        await readerWriter.assetFinder.find(Glob('test/*.dart')).toList(),
+        await readerWriter.assetFinder
+            .find(Glob('test/*.dart'), package: packageName)
+            .toList(),
         [testAsset],
       );
     });

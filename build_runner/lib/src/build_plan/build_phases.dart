@@ -85,25 +85,23 @@ class BuildPhases {
 
   /// Checks that outputs are to allowed locations.
   ///
-  /// To be valid, all outputs must be under the package [root], or hidden,
-  /// meaning they will generate to the hidden generated output directory.
+  /// Valid outputs are hidden or to packages in [packagesInBuild].
   ///
   /// If the phases are not valid, logs then throws
   /// [CannotBuildException].
   ///
   ///  [PostBuildPhase]s are always hidden, so they are always valid.
-  void checkOutputLocations(String root) {
+  void checkOutputLocations(BuiltSet<String> packagesInBuild) {
     for (final action in inBuildPhases) {
       if (action.hideOutput) continue;
-      if (action.package == root) continue;
+      if (packagesInBuild.contains(action.package)) continue;
       // This should happen only with a manual build script since the build
       // script generation filters these out.
       buildLog.error(
         'A build phase (${action.displayName}) is attempting '
-        'to operate on package "${action.package}", but the build script '
-        'is located in package "$root". It\'s not valid to attempt to '
-        'generate files for another package unless the BuilderDefinition '
-        'specified "hideOutput".',
+        'to operate on package "${action.package}" without "hideOutput". '
+        'This is only allowed for packages in the build, not for dependency '
+        'packages.',
       );
       throw const CannotBuildException();
     }

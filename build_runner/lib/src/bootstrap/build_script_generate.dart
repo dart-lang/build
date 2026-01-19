@@ -73,7 +73,7 @@ ${library.accept(emitter)}
 Future<BuilderFactoriesExpressions> loadBuilderFactories() async {
   final buildPackages = await BuildPackages.forThisPackage();
   final orderedPackages = stronglyConnectedComponents<BuildPackage>(
-    [buildPackages.root],
+    buildPackages.allPackages.values,
     (buildPackage) => buildPackage.dependencies,
     equals: (a, b) => a.name == b.name,
     hashCode: (n) => n.name.hashCode,
@@ -104,27 +104,27 @@ Future<BuilderFactoriesExpressions> loadBuilderFactories() async {
     }
   }
 
-  bool isPackageImportOrForRoot(dynamic definition) {
-    // ignore: avoid_dynamic_calls
-    final import = definition.import as String;
-    // ignore: avoid_dynamic_calls
-    final package = definition.package as String;
-    return import.startsWith('package:') || package == buildPackages.root.name;
-  }
-
   final buildConfigs = await Future.wait(
     orderedPackages.map(packageBuildConfig),
   );
   final builderDefinitions =
       buildConfigs
           .expand((c) => c.builderDefinitions.values)
-          .where(isPackageImportOrForRoot)
+          .where(
+            (c) =>
+                c.import.startsWith('package:') ||
+                c.package == buildPackages.outputRoot.name,
+          )
           .toList()
         ..sort((a, b) => a.key.compareTo(b.key));
   final postProcessBuilderDefinitions =
       buildConfigs
           .expand((c) => c.postProcessBuilderDefinitions.values)
-          .where(isPackageImportOrForRoot)
+          .where(
+            (c) =>
+                c.import.startsWith('package:') ||
+                c.package == buildPackages.outputRoot.name,
+          )
           .toList()
         ..sort((a, b) => a.key.compareTo(b.key));
 

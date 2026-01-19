@@ -14,7 +14,6 @@ import '../build/asset_graph/graph.dart';
 import '../build/asset_graph/node.dart';
 import '../build/build_dirs.dart';
 import '../build_plan/build_plan.dart';
-import 'asset_finder.dart';
 import 'reader_writer.dart';
 
 /// A view of the build output.
@@ -25,8 +24,6 @@ import 'reader_writer.dart';
 /// Files are only visible if they were a required part of the build, even if
 /// they exist on disk from a previous build.
 class BuildOutputReader {
-  late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);
-
   final BuildPlan? _buildPlan;
   final AssetGraph? _assetGraph;
   final ReaderWriter? _readerWriter;
@@ -104,12 +101,9 @@ class BuildOutputReader {
 
   Future<List<int>> readAsBytes(AssetId id) => _readerWriter!.readAsBytes(id);
 
-  Stream<AssetId> _findAssets(Glob glob, String? _) async* {
+  Stream<AssetId> findAssets(Glob glob, {required String package}) async* {
     if (_assetGraph == null || _readerWriter == null) return;
-    for (final id in _assetGraph.packageFileIds(
-      _readerWriter.rootPackage,
-      glob: glob,
-    )) {
+    for (final id in _assetGraph.packageFileIds(package, glob: glob)) {
       if (await _readerWriter.canRead(id)) {
         yield id;
       }
@@ -151,10 +145,12 @@ class BuildOutputReader {
     if (node.isDeleted) return true;
 
     // Exclude non-lib assets if they're outside of the root directory or not
-    // from the root package.
+    // an output package of the build.
     if (!node.id.path.startsWith('lib/')) {
       if (rootDir != null && !p.isWithin(rootDir, node.id.path)) return true;
-      if (node.id.package != _buildPlan.buildPackages.root.name) return true;
+      if (!_buildPlan.buildPackages.packagesInBuild.contains(node.id.package)) {
+        return true;
+      }
     }
 
     if (node.type == NodeType.glob) {

@@ -68,7 +68,7 @@ Future<BuildResult> _doBuild(
     rootPackage('a', path: path.absolute('a')): [],
   });
   final readerWriter = InternalTestReaderWriter(
-    rootPackage: buildPackages.root.name,
+    outputRootPackage: buildPackages.outputRoot.name,
   );
   inputs.forEach((serializedId, contents) {
     readerWriter.writeAsString(makeAssetId(serializedId), contents);

@@ -24,8 +24,8 @@ class BuildPackage {
   /// Paths are platform dependent.
   final String path;
 
-  /// Whether this package is the one the build was launched in.
-  final bool isRoot;
+  /// Whether output will be built for this package.
+  final bool isInBuild;
 
   final LanguageVersion? languageVersion;
 
@@ -34,7 +34,7 @@ class BuildPackage {
     String path,
     this.languageVersion, {
     required this.isEditable,
-    this.isRoot = false,
+    this.isInBuild = false,
   }) : path = p.canonicalize(path);
 
   @override

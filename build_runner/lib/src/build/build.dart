@@ -137,7 +137,7 @@ class Build {
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
     buildLog.configuration = buildLog.configuration.rebuild(
-      (b) => b..rootPackageName = buildPackages.root.name,
+      (b) => b..currentPackageName = buildPackages.current?.name,
     );
     var result = await _safeBuild(updates);
     if (result.status == BuildStatus.success) {
@@ -219,7 +219,6 @@ class Build {
     final deleted = await assetGraph.updateAndInvalidate(
       buildPhases,
       updates,
-      buildPackages.root.name,
       _delete,
       readerWriter,
     );
@@ -251,7 +250,7 @@ class Build {
                 );
         assetGraph.previousPhasedAssetDeps = updatedPhasedAssetDeps;
         await readerWriter.writeAsBytes(
-          AssetId(buildPackages.root.name, assetGraphPath),
+          AssetId(buildPackages.outputRoot.name, assetGraphPath),
           assetGraph.serialize(),
         );
         // Phases options don't change during a build series, so for all
@@ -273,7 +272,10 @@ class Build {
             '${_twoDigits(now.second)}',
           );
           buildLog.info('Writing performance log to $logPath');
-          final performanceLogId = AssetId(buildPackages.root.name, logPath);
+          final performanceLogId = AssetId(
+            buildPackages.outputRoot.name,
+            logPath,
+          );
           final serialized = jsonEncode(result.performance);
           await readerWriter.writeAsString(performanceLogId, serialized);
         }

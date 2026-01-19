@@ -78,7 +78,7 @@ void checkOutputs(
         if (!writer.testing.exists(mappedAssetId)) {
           // Then try the usual mapping for generated assets.
           mappedAssetId = AssetId(
-            (writer as InternalTestReaderWriter).rootPackage,
+            (writer as InternalTestReaderWriter).buildCachePackage,
             '.dart_tool/build/generated/${assetId.package}/${assetId.path}',
           );
         }
@@ -383,14 +383,14 @@ Future<TestBuilderResult> testBuilderFactories(
     '/$rootPackage',
     null,
     isEditable: true,
-    isRoot: true,
+    isInBuild: true,
   );
   for (final otherPackage in allPackages.where((p) => p != rootPackage)) {
     rootNode.dependencies.add(
       BuildPackage(otherPackage, '/$otherPackage', null, isEditable: true),
     );
   }
-  final buildPackages = BuildPackages.fromRoot(rootNode);
+  final buildPackages = BuildPackages.fromCurrent(rootNode);
 
   String builderName(Object builder) {
     final result = builder.toString();
@@ -470,9 +470,9 @@ Future<TestBuilderResult> testBuilderFactories(
                         r'test/$test$',
                         r'web/$web$',
                         if (package == rootPackage)
-                          ...defaultRootPackageSources,
+                          ...defaultInBuildPackageSources,
                         if (package != rootPackage)
-                          ...defaultNonRootVisibleAssets,
+                          ...defaultDependencyVisibleAssets,
                         ...inputIds
                             .where(
                               (id) =>

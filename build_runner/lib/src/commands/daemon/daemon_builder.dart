@@ -59,7 +59,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   final _buildScriptUpdateCompleter = Completer<void>();
   Future<void> get buildScriptUpdated => _buildScriptUpdateCompleter.future;
 
-  String get _packageName => _buildPlan.buildPackages.root.name;
+  String? get _currentPackageName => _buildPlan.buildPackages.current?.name;
 
   @override
   Future<void> build(
@@ -96,12 +96,14 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       if (target.buildFilters != null && target.buildFilters!.isNotEmpty) {
         buildFilters.addAll([
           for (final pattern in target.buildFilters!)
-            BuildFilter.fromArg(pattern, _packageName),
+            BuildFilter.fromArg(pattern, _currentPackageName),
         ]);
       } else {
         buildFilters
-          ..add(BuildFilter.fromArg('package:*/**', _packageName))
-          ..add(BuildFilter.fromArg('${target.target}/**', _packageName));
+          ..add(BuildFilter.fromArg('package:*/**', _currentPackageName))
+          ..add(
+            BuildFilter.fromArg('${target.target}/**', _currentPackageName),
+          );
       }
     }
     Iterable<AssetId>? outputs;

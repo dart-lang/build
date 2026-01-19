@@ -36,13 +36,13 @@ void main() {
           ),
         ]),
       ]).create();
-      final buildPackages = BuildPackages.fromRoot(
+      final buildPackages = BuildPackages.fromCurrent(
         BuildPackage(
           'a',
           p.join(d.sandbox, 'a'),
           LanguageVersion(2, 6),
           isEditable: true,
-          isRoot: true,
+          isInBuild: true,
         ),
       );
       final reader = ReaderWriter(buildPackages);
@@ -71,7 +71,6 @@ void main() {
       await assetGraph.updateAndInvalidate(
         BuildPhases([]),
         updates,
-        'a',
         (_) async {},
         reader,
       );
