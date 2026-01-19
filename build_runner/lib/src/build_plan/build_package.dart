@@ -41,6 +41,7 @@ class BuildPackage {
   String toString() => '''
   $name:
     isEditable: $isEditable
+    isInBuild: $isInBuild
     path: $path
     dependencies: [${dependencies.map((d) => d.name).join(', ')}]''';
 }

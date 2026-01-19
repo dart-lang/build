@@ -18,6 +18,12 @@
       "rootUri": "../pkgs/b",
       "packageUri": "lib/",
       "languageVersion": "3.7"
+    },
+    {
+      "name": "c",
+      "rootUri": "../hosted/c",
+      "packageUri": "lib/",
+      "languageVersion": "3.7"
     }
   ],
   "generator": "pub",

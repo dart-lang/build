@@ -202,19 +202,20 @@ void main() {
     });
   });
 
-  group('workspace ', () {
+  group('workspace', () {
     final workspaceFixturePath = p.absolute('test/fixtures/workspace');
 
-    test('loads only dependent packages, has correct current', () async {
-      Matcher packageNodeEquals(BuildPackage node) => isA<BuildPackage>()
-          .having((c) => c.path, 'path', node.path)
-          .having(
-            (c) => c.dependencies,
-            'dependencies',
-            node.dependencies.map(packageNodeEquals),
-          )
-          .having((c) => c.isEditable, 'isEditable', node.isEditable);
+    Matcher packageNodeEquals(BuildPackage node) => isA<BuildPackage>()
+        .having((c) => c.path, 'path', node.path)
+        .having(
+          (c) => c.dependencies,
+          'dependencies',
+          node.dependencies.map(packageNodeEquals),
+        )
+        .having((c) => c.isEditable, 'isEditable', node.isEditable)
+        .having((c) => c.isInBuild, 'isInBuild', node.isInBuild);
 
+    test('loads only dependent packages, has correct current', () async {
       final buildPackages = await BuildPackages.forPath(
         p.absolute('$workspaceFixturePath/pkgs/a'),
       );
@@ -230,16 +231,68 @@ void main() {
         '$workspaceFixturePath/pkgs/b',
         null,
         isEditable: true,
+        isInBuild: false,
       );
       a.dependencies.add(b);
+      final c = BuildPackage(
+        'c',
+        '$workspaceFixturePath/hosted/c',
+        null,
+        isEditable: false,
+        isInBuild: false,
+      );
+      b.dependencies.add(c);
 
       expect(buildPackages.allPackages, {
         'a': packageNodeEquals(a),
         'b': packageNodeEquals(b),
+        'c': packageNodeEquals(c),
         r'$sdk': anything,
       });
 
       expect(buildPackages.current!, packageNodeEquals(a));
+    });
+
+    test('loads correctly with --workspace', () async {
+      final buildPackages = await BuildPackages.forPath(
+        p.absolute('$workspaceFixturePath/pkgs/a'),
+        workspace: false,
+      );
+      final a = BuildPackage(
+        'a',
+        '$workspaceFixturePath/pkgs/a',
+        null,
+        isEditable: true,
+        isInBuild: true,
+      );
+      final b = BuildPackage(
+        'b',
+        '$workspaceFixturePath/pkgs/b',
+        null,
+        isEditable: true,
+        isInBuild: true,
+      );
+      a.dependencies.add(b);
+      final c = BuildPackage(
+        'c',
+        '$workspaceFixturePath/hosted/c',
+        null,
+        isEditable: false,
+        isInBuild: false,
+      );
+      b.dependencies.add(c);
+
+      expect(buildPackages.allPackages, {
+        'a': packageNodeEquals(a),
+        'b': packageNodeEquals(b),
+        'c': packageNodeEquals(c),
+        r'$sdk': anything,
+      });
+
+      // TODO
+      expect(buildPackages.current!, packageNodeEquals(a));
+
+      // TODO: test dev dependency handling
     });
   });
 }

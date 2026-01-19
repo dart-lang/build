@@ -63,16 +63,11 @@ class BuildPackages implements AssetPathProvider {
          Map<String, BuildPackage>.from(allPackages)
            ..putIfAbsent(r'$sdk', () => _sdkPackage),
        ),
-       packagesInBuild = {current.name}.build() {
-    if (!current!.isInBuild) {
-      throw ArgumentError('Current package must indicate `isInBuild`');
-    }
-    if (allPackages.values.any((p) => p != current && p.isInBuild)) {
-      throw ArgumentError(
-        'No packages other than the current may indicate `isInBuild`',
-      );
-    }
-  }
+       packagesInBuild =
+           allPackages.values
+               .where((b) => b.isInBuild)
+               .map((p) => p.name)
+               .toBuiltSet();
 
   /// Creates a [BuildPackages] given the [current] [BuildPackage].
   factory BuildPackages.fromCurrent(BuildPackage current) {
@@ -99,8 +94,13 @@ class BuildPackages implements AssetPathProvider {
   ///
   /// Assumes `pubspec.yaml` exists and has a name, as this is checked by
   /// `dart run`.
+  ///
+  /// If [workspace], prepares to build for the whole workspace, if any.
   @visibleForTesting
-  static Future<BuildPackages> forPath(String packagePath) async {
+  static Future<BuildPackages> forPath(
+    String packagePath, {
+    bool workspace = false,
+  }) async {
     var packageConfigFile = File(
       p.join(packagePath, '.dart_tool', 'package_config.json'),
     );
@@ -135,24 +135,39 @@ class BuildPackages implements AssetPathProvider {
           ..sort((a, b) => a.name.compareTo(b.name));
 
     final currentPubspec = _pubspecForPath(packagePath);
-    final currentPackageName = currentPubspec['name']! as String;
+    final currentPackageName = currentPubspec['name'] as String;
+
+    final packagesInBuild = <String>{};
+    if (workspacePath == null || !workspace) {
+      packagesInBuild.add(currentPackageName);
+    } else {
+      final workspacePubspec = _pubspecForPath(workspacePath);
+      final workspacePackagePaths = workspacePubspec['workspace'] as YamlList;
+      // TODO fail nicely?
+      for (final path in workspacePackagePaths) {
+        packagesInBuild.add(
+          _pubspecForPath(p.join(workspacePath, path as String))['name']
+              as String,
+        );
+      }
+    }
+
     final pubspecLockFile = File(
       p.join(workspacePath ?? packagePath, 'pubspec.lock'),
     );
     final fixedPackages = _parseFixedPackages(pubspecLockFile);
 
     for (final packageConfig in packageConfigs) {
-      final isRoot = packageConfig.name == currentPackageName;
       buildPackages[packageConfig.name] = BuildPackage(
         packageConfig.name,
         packageConfig.root.toFilePath(),
         packageConfig.languageVersion,
         isEditable: !fixedPackages.contains(packageConfig.name),
-        isInBuild: isRoot,
+        isInBuild: packagesInBuild.contains(packageConfig.name),
       );
     }
 
-    BuildPackage createPackage(String packageName, {String? parent}) {
+    BuildPackage lookupPackage(String packageName, {String? parent}) {
       final buildPackage = buildPackages[packageName];
       if (buildPackage == null) {
         throw StateError(
@@ -164,31 +179,25 @@ class BuildPackages implements AssetPathProvider {
       return buildPackage;
     }
 
-    final currentPackage = createPackage(currentPackageName);
-    currentPackage.dependencies.addAll(
-      _depsFromYaml(
-        currentPubspec,
-        isRoot: true,
-      ).map((n) => createPackage(n, parent: currentPackageName)),
-    );
-
     final packageDependencies = _parsePackageDependencies(
-      packageConfig.packages.where((p) => p.name != currentPackageName),
+      packageConfig.packages,
+      packagesInBuild: packagesInBuild,
     );
     for (final packageName in packageDependencies.keys) {
-      createPackage(packageName).dependencies.addAll(
+      lookupPackage(packageName).dependencies.addAll(
         packageDependencies[packageName]!.map(
-          (n) => createPackage(n, parent: packageName),
+          (n) => lookupPackage(n, parent: packageName),
         ),
       );
     }
 
     // A workspace can have packages that are not depended on by [rootPackage].
     // Compute transitive dependencies and filter to that.
+    final trimPackages = workspacePath != null && !workspace;
     Set<BuildPackage>? usedPackages;
-    if (workspacePath != null) {
-      usedPackages = {currentPackage};
-      final queue = [currentPackage];
+    if (trimPackages) {
+      usedPackages = buildPackages.values.where((p) => p.isInBuild).toSet();
+      final queue = usedPackages.toList();
       while (queue.isNotEmpty) {
         final package = queue.removeLast();
         for (final dep in package.dependencies) {
@@ -200,23 +209,25 @@ class BuildPackages implements AssetPathProvider {
     }
 
     return BuildPackages._(
-      current: currentPackage,
-      outputRoot: currentPackage,
+      current: buildPackages[currentPackageName]!,
+      outputRoot: buildPackages[currentPackageName]!,
       allPackages:
-          usedPackages == null
-              ? buildPackages
-              : Map.fromEntries(
+          trimPackages
+              ? Map.fromEntries(
                 buildPackages.entries.where(
                   (e) => usedPackages!.contains(e.value),
                 ),
-              ),
+              )
+              : buildPackages,
     );
   }
 
   /// Creates a [BuildPackages] for the package in which you are currently
   /// running.
-  static Future<BuildPackages> forThisPackage() =>
-      BuildPackages.forPath(p.current);
+  ///
+  /// If [workspace], prepares to build for the whole workspace, if any.
+  static Future<BuildPackages> forThisPackage({bool workspace = false}) =>
+      BuildPackages.forPath(p.current, workspace: workspace);
 
   static PackageConfig _packagesToConfig(Iterable<BuildPackage> packages) {
     final relativeLib = Uri.parse('lib/');
@@ -304,22 +315,32 @@ Set<String> _parseFixedPackages(File pubspecLockFile) {
 
 /// Read the pubspec for each package in [packages] and finds its
 /// dependencies.
+///
+/// Includes dev dependencies for packages in [packagesInBuild].
 Map<String, List<String>> _parsePackageDependencies(
-  Iterable<Package> packages,
-) {
+  Iterable<Package> packages, {
+  required Set<String> packagesInBuild,
+}) {
   final dependencies = <String, List<String>>{};
   for (final package in packages) {
     final pubspec = _pubspecForPath(package.root.toFilePath());
-    dependencies[package.name] = _depsFromYaml(pubspec);
+    dependencies[package.name] = _depsFromYaml(
+      pubspec,
+      includeDevDependencies: packagesInBuild.contains(package.name),
+    );
   }
   return dependencies;
 }
 
 /// Gets the deps from a yaml file, omitting dependency_overrides.
-List<String> _depsFromYaml(YamlMap yaml, {bool isRoot = false}) {
+List<String> _depsFromYaml(
+  YamlMap yaml, {
+  bool includeDevDependencies = false,
+}) {
   final deps = <String>{
     ..._stringKeys(yaml['dependencies'] as Map?),
-    if (isRoot) ..._stringKeys(yaml['dev_dependencies'] as Map?),
+    if (includeDevDependencies)
+      ..._stringKeys(yaml['dev_dependencies'] as Map?),
   };
   // A consistent package order _should_ mean a consistent order of build
   // phases. It's not a guarantee, but also not required for correctness, only

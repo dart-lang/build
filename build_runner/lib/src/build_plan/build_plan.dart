@@ -119,7 +119,8 @@ class BuildPlan {
     }
 
     final buildPackages =
-        testingOverrides.buildPackages ?? await BuildPackages.forThisPackage();
+        testingOverrides.buildPackages ??
+        await BuildPackages.forThisPackage(workspace: buildOptions.workspace);
 
     final readerWriter =
         testingOverrides.readerWriter ?? ReaderWriter(buildPackages);

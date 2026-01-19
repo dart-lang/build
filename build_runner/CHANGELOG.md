@@ -1,5 +1,8 @@
 ## 2.10.6-wip
 
+- Add `--workspace` flag. Use it with `dart run build_runner build`, `watch`
+  or `serve` to build, watch or serve all packages in the current workspace.
+
 ## 2.10.5
 
 - Add logging of builder compilation so you can tell how much time is spent
