@@ -42,7 +42,7 @@ void main() {
           watch: true,
           isInBuild: true,
         ),
-      ], current: rootPackage);
+      ], singlePackageToBuild: rootPackage);
       readerWriter = InternalTestReaderWriter(outputRootPackage: rootPackage);
       readerWriter.writeAsString(assetId, '// a.dart');
       readerWriter.writeAsString(assetId2, '// other');
@@ -207,7 +207,7 @@ void main() {
 
       final buildPackages2 = BuildPackages.fromPackages([
         BuildPackage.forTesting(name: 'b', watch: true, isInBuild: true),
-      ], current: 'b');
+      ], singlePackageToBuild: 'b');
       final testingOverrides2 = testingOverrides.copyWith(
         buildPackages: buildPackages2,
       );

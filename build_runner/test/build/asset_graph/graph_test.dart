@@ -26,7 +26,7 @@ void main() {
   late InternalTestReaderWriter digestReader;
   final fooPackageGraph = BuildPackages.fromPackages({
     BuildPackage.forTesting(name: 'foo', isInBuild: true),
-  }, current: 'foo');
+  }, singlePackageToBuild: 'foo');
 
   setUp(() async {
     digestReader = InternalTestReaderWriter();
@@ -555,7 +555,7 @@ void main() {
           ]);
           final buildPackages = BuildPackages.fromPackages({
             BuildPackage.forTesting(name: 'a', isInBuild: true),
-          }, current: 'a');
+          }, singlePackageToBuild: 'a');
           final graph = await AssetGraph.build(
             buildPhases,
             {source},

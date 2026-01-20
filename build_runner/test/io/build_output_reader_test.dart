@@ -40,7 +40,7 @@ void main() {
       readerWriter = InternalTestReaderWriter(outputRootPackage: 'a');
       buildPackages = BuildPackages.fromPackages([
         BuildPackage.forTesting(name: 'a', isInBuild: true),
-      ], current: 'a');
+      ], singlePackageToBuild: 'a');
       assetGraph = await AssetGraph.build(
         BuildPhases([]),
         <AssetId>{},

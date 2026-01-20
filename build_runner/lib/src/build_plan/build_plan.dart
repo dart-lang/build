@@ -108,7 +108,8 @@ class BuildPlan {
     bool recentlyBootstrapped = true,
   }) async {
     final bootstrapper = Bootstrapper(
-      compileAot: buildOptions.forceAot ? true : false,
+      workspace: buildOptions.workspace,
+      compileAot: buildOptions.forceAot,
     );
     var restartIsNeeded = false;
     final kernelFreshness = await bootstrapper.checkCompileFreshness(
@@ -119,11 +120,10 @@ class BuildPlan {
     }
 
     final buildPackages =
-        testingOverrides.buildPackages ?? await BuildPackages.forThisPackage();
-
+        testingOverrides.buildPackages ??
+        await BuildPackages.forThisPackage(workspace: buildOptions.workspace);
     final readerWriter =
         testingOverrides.readerWriter ?? ReaderWriter(buildPackages);
-
     final buildConfigs = await BuildConfigs.load(
       readerWriter: readerWriter,
       buildPackages: buildPackages,
@@ -154,6 +154,7 @@ class BuildPlan {
           builderDefinitions: builderDefinitions,
           builderConfigOverrides: buildOptions.builderConfigOverrides,
           isReleaseBuild: buildOptions.isReleaseBuild,
+          workspace: buildOptions.workspace,
         ).createBuildPhases();
     buildPhases.checkOutputLocations(buildPackages.packagesInBuild);
 

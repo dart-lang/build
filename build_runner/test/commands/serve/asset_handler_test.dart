@@ -31,7 +31,7 @@ void main() {
       <AssetId>{},
       BuildPackages.fromPackages([
         BuildPackage.forTesting(name: 'a', isInBuild: true),
-      ], current: 'a'),
+      ], singlePackageToBuild: 'a'),
       InternalTestReaderWriter(),
     );
     readerWriter = InternalTestReaderWriter();

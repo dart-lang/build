@@ -41,7 +41,7 @@ void main() {
       final buildPackages = BuildPackages.fromPackages([
         packageA,
         packageB,
-      ], current: 'a');
+      ], singlePackageToBuild: 'a');
 
       BuildConfigs.load(
         buildPackages: buildPackages,
@@ -110,7 +110,10 @@ void main() {
   group('target graph reports visible assets', () {
     final a = BuildPackage.forTesting(name: 'a', isInBuild: true);
     final b = BuildPackage.forTesting(name: 'b');
-    final buildPackages = BuildPackages.fromPackages([a, b], current: 'a');
+    final buildPackages = BuildPackages.fromPackages([
+      a,
+      b,
+    ], singlePackageToBuild: 'a');
 
     test('for root package', () async {
       final buildConfigs = await BuildConfigs.load(

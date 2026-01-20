@@ -137,7 +137,7 @@ class Build {
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
     buildLog.configuration = buildLog.configuration.rebuild(
-      (b) => b..currentPackageName = buildPackages.current?.name,
+      (b) => b..singlePackageToBuild = buildPackages.singlePackageToBuild?.name,
     );
     var result = await _safeBuild(updates);
     if (result.status == BuildStatus.success) {

@@ -28,7 +28,7 @@ void main() {
       final logs = <LogRecord>[];
       final buildPackages = BuildPackages.fromPackages([
         BuildPackage(name: 'a', path: path.absolute('a'), isInBuild: true),
-      ], current: 'a');
+      ], singlePackageToBuild: 'a');
       final result = await _doBuild(
         {
           'a|build.yaml': '',

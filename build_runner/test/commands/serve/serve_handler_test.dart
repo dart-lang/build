@@ -112,7 +112,7 @@ void main() {
   setUp(() async {
     packageGraph = BuildPackages.fromPackages([
       BuildPackage.forTesting(name: 'a', isInBuild: true),
-    ], current: 'a');
+    ], singlePackageToBuild: 'a');
     readerWriter = InternalTestReaderWriter(
       outputRootPackage: packageGraph.outputRoot.name,
     );

@@ -76,7 +76,7 @@ void main() {
     final buildPackages = BuildPackages.fromPackages([
       BuildPackage.forTesting(name: 'a', isInBuild: true, dependencies: ['b']),
       BuildPackage.forTesting(name: 'b'),
-    ], current: 'a');
+    ], singlePackageToBuild: 'a');
     late Directory tmpDir;
     late Directory anotherTmpDir;
     late InternalTestReaderWriter readerWriter;

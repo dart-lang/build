@@ -26,7 +26,7 @@ void main() {
     final buildPackages = BuildPackages.fromPackages([
       BuildPackage.forTesting(name: 'a', dependencies: ['b'], isInBuild: true),
       BuildPackage.forTesting(name: 'b'),
-    ], current: 'a');
+    ], singlePackageToBuild: 'a');
 
     test('builderConfigOverrides overrides builder config globally', () async {
       final buildConfigs = await BuildConfigs.load(
@@ -125,8 +125,8 @@ void main() {
               );
             }
           },
-          buildPackages.current!.name,
-          buildPackages.current!.dependencies.toList(),
+          buildPackages.singlePackageToBuild!.name,
+          buildPackages.singlePackageToBuild!.dependencies.toList(),
         );
       },
     );
@@ -207,7 +207,7 @@ void main() {
         ),
         BuildPackage.forTesting(name: 'b', dependencies: ['c']),
         BuildPackage.forTesting(name: 'c'),
-      ], current: 'a');
+      ], singlePackageToBuild: 'a');
       final buildConfigs = await BuildConfigs.load(
         buildPackages: buildPackages,
         testingOverrides: TestingOverrides(
@@ -255,7 +255,7 @@ void main() {
           ),
           BuildPackage.forTesting(name: 'b', dependencies: ['c']),
           BuildPackage.forTesting(name: 'c'),
-        ], current: 'a');
+        ], singlePackageToBuild: 'a');
         final buildConfigs = await BuildConfigs.load(
           buildPackages: buildPackages,
           testingOverrides: TestingOverrides(
@@ -339,8 +339,8 @@ void main() {
             throwsA(const TypeMatcher<CannotBuildException>()),
           );
         },
-        buildPackages.current!.name,
-        buildPackages.current!.dependencies.toList(),
+        buildPackages.singlePackageToBuild!.name,
+        buildPackages.singlePackageToBuild!.dependencies.toList(),
       );
     });
 
@@ -451,7 +451,7 @@ void main() {
       () async {
         final buildPackages = BuildPackages.fromPackages([
           BuildPackage.forTesting(name: 'a', isInBuild: true),
-        ], current: 'a');
+        ], singlePackageToBuild: 'a');
         final buildConfigs = await BuildConfigs.load(
           buildPackages: buildPackages,
           testingOverrides: TestingOverrides(

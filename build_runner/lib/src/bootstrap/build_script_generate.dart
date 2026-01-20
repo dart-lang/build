@@ -21,8 +21,8 @@ import '../logging/build_log.dart';
 
 final _lastShortFormatDartVersion = Version(3, 6, 0);
 
-Future<String> generateBuildScript() async {
-  final builderFactories = await loadBuilderFactories();
+Future<String> generateBuildScript({required bool workspace}) async {
+  final builderFactories = await loadBuilderFactories(workspace: workspace);
   final library = Library(
     (b) => b.body.addAll([
       declareFinal('_builderFactories')
@@ -70,8 +70,17 @@ ${library.accept(emitter)}
   }
 }
 
-Future<BuilderFactoriesExpressions> loadBuilderFactories() async {
-  final buildPackages = await BuildPackages.forThisPackage();
+/// Loads builder factories for the current package and its transitive
+/// dependencies.
+///
+/// If [workspace], builder factories are also loaded for other packages in
+/// the current workspace, if any, and their transitive dependencies.
+Future<BuilderFactoriesExpressions> loadBuilderFactories({
+  required bool workspace,
+}) async {
+  final buildPackages = await BuildPackages.forThisPackage(
+    workspace: workspace,
+  );
   final orderedPackages = stronglyConnectedComponents<BuildPackage>(
     buildPackages.allPackages.values,
     (buildPackage) => buildPackage.dependencies.map(

@@ -44,7 +44,7 @@ void main() {
           watch: true,
           isInBuild: true,
         ),
-      ], current: 'a');
+      ], singlePackageToBuild: 'a');
       final reader = ReaderWriter(buildPackages);
       final aId = AssetId('a', 'web/a.txt');
       assetGraph = await AssetGraph.build(

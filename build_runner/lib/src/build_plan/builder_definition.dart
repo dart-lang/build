@@ -157,14 +157,24 @@ class BuilderDefinition implements AbstractBuilderDefinition {
   );
 
   /// Whether this builder application is auto applied to [package].
-  bool autoAppliesTo(BuildPackage package) {
+  ///
+  /// If [workspace], turns on more precise checking for the newer
+  /// "whole workspace" build mode.
+  bool autoAppliesTo(BuildPackage package, {bool workspace = false}) {
     switch (autoApply) {
       case AutoApply.none:
         return false;
       case AutoApply.allPackages:
         return true;
+      // "Root package" used to mean just the package the build was launched
+      // from. It was automatically true that the root package depends on all
+      // builders, because the list of builders came from the root package.
+      //
+      // In workspaces, "root package" means a package that's in the workspace
+      // that also depends directly on the builder.
       case AutoApply.rootPackage:
-        return package.isInBuild;
+        return package.isInBuild &&
+            (!workspace || package.dependencies.contains(this.package));
       case AutoApply.dependents:
         return package.dependencies.contains(this.package);
     }
