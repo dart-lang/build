@@ -20,7 +20,7 @@ void main() {
       });
 
       test('current', () {
-        expectPkg(buildPackages.current!, 'build_runner', '', isEditable: true);
+        expectPkg(buildPackages.current!, 'build_runner', '', watch: true);
       });
 
       test('asPackageConfig', () {
@@ -59,7 +59,7 @@ void main() {
           buildPackages.current!,
           'basic_pkg',
           basicPkgPath,
-          isEditable: true,
+          watch: true,
           dependencies: ['a', 'b', 'c', 'd'],
         );
       });
@@ -69,7 +69,7 @@ void main() {
           buildPackages['a']!,
           'a',
           '$basicPkgPath/pkg/a',
-          isEditable: false,
+          watch: false,
           dependencies: ['b', 'c'],
         );
       });
@@ -107,7 +107,7 @@ void main() {
           buildPackages.current!,
           'with_dev_deps',
           withDevDepsPkgPath,
-          isEditable: true,
+          watch: true,
           dependencies: ['a', 'b'],
         );
 
@@ -116,7 +116,7 @@ void main() {
           buildPackages['a']!,
           'a',
           '$withDevDepsPkgPath/pkg/a',
-          isEditable: false,
+          watch: false,
           dependencies: [],
         );
 
@@ -124,7 +124,7 @@ void main() {
           buildPackages['b']!,
           'b',
           '$withDevDepsPkgPath/pkg/b',
-          isEditable: false,
+          watch: false,
           dependencies: [],
         );
 
@@ -204,10 +204,15 @@ void main() {
     final workspaceFixturePath = p.absolute('test/fixtures/workspace');
 
     test('loads only dependent packages, has correct current', () async {
-      Matcher packageNodeEquals(BuildPackage node) => isA<BuildPackage>()
-          .having((c) => c.path, 'path', node.path)
-          .having((c) => c.dependencies, 'dependencies', node.dependencies)
-          .having((c) => c.watch, 'isEditable', node.watch);
+      Matcher packageNodeEquals(BuildPackage buildPackage) =>
+          isA<BuildPackage>()
+              .having((c) => c.path, 'path', buildPackage.path)
+              .having(
+                (c) => c.dependencies,
+                'dependencies',
+                buildPackage.dependencies,
+              )
+              .having((c) => c.watch, 'watch', buildPackage.watch);
 
       final buildPackages = await BuildPackages.forPath(
         p.absolute('$workspaceFixturePath/pkgs/a'),
@@ -240,13 +245,13 @@ void expectPkg(
   BuildPackage node,
   String name,
   String location, {
-  required bool isEditable,
+  required bool watch,
   Iterable<String>? dependencies,
 }) {
   location = p.canonicalize(location);
   expect(node.name, name);
   expect(node.path, location);
-  expect(node.watch, isEditable);
+  expect(node.watch, watch);
   if (dependencies != null) {
     expect(node.dependencies, unorderedEquals(dependencies));
   }
