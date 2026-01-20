@@ -17,8 +17,6 @@ import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
 
-import '../common/build_packages.dart';
-
 void main() {
   group('BuildConfigs.load', () {
     test('warns if required sources are missing', () {
@@ -27,19 +25,23 @@ void main() {
       addTearDown(listener.cancel);
 
       final packageB = BuildPackage(
-        'b',
-        '/fakeB',
-        LanguageVersion(0, 0),
-        isEditable: true,
+        name: 'b',
+        path: '/fakeB',
+        languageVersion: LanguageVersion(0, 0),
+        watch: true,
       );
       final packageA = BuildPackage(
-        'a',
-        '/fakeA',
-        LanguageVersion(0, 0),
-        isEditable: true,
+        name: 'a',
+        path: '/fakeA',
+        languageVersion: LanguageVersion(0, 0),
+        watch: true,
         isInBuild: true,
-      )..dependencies.add(packageB);
-      final buildPackages = BuildPackages.fromCurrent(packageA);
+        dependencies: ['b'],
+      );
+      final buildPackages = BuildPackages.fromPackages([
+        packageA,
+        packageB,
+      ], current: 'a');
 
       BuildConfigs.load(
         buildPackages: buildPackages,
@@ -106,12 +108,9 @@ void main() {
   });
 
   group('target graph reports visible assets', () {
-    final a = rootPackage('a');
-    final b = package('b');
-    final buildPackages = createBuildPackages({
-      a: ['b'],
-      b: [],
-    });
+    final a = BuildPackage.forTesting(name: 'a', isInBuild: true);
+    final b = BuildPackage.forTesting(name: 'b');
+    final buildPackages = BuildPackages.fromPackages([a, b], current: 'a');
 
     test('for root package', () async {
       final buildConfigs = await BuildConfigs.load(

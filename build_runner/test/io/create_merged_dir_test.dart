@@ -11,6 +11,8 @@ import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.da
 import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_directory.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
+import 'package:build_runner/src/build_plan/build_package.dart';
+import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/build_plan.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
@@ -71,10 +73,10 @@ void main() {
 }
 ''',
     };
-    final buildPackages = createBuildPackages({
-      rootPackage('a'): ['b'],
-      package('b'): [],
-    });
+    final buildPackages = BuildPackages.fromPackages([
+      BuildPackage.forTesting(name: 'a', isInBuild: true, dependencies: ['b']),
+      BuildPackage.forTesting(name: 'b'),
+    ], current: 'a');
     late Directory tmpDir;
     late Directory anotherTmpDir;
     late InternalTestReaderWriter readerWriter;

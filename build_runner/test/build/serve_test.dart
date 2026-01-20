@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:async/async.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
+import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/builder_definition.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
@@ -22,9 +23,14 @@ import '../common/common.dart';
 
 void main() {
   group('ServeHandler', () {
-    final buildPackages = createBuildPackages({
-      rootPackage('a', path: path.absolute('a')): [],
-    });
+    final buildPackages = BuildPackages.fromPackages([
+      BuildPackage(
+        name: 'a',
+        path: path.absolute('a'),
+        isInBuild: true,
+        watch: true,
+      ),
+    ], current: 'a');
     late InternalTestReaderWriter readerWriter;
 
     setUp(() async {

@@ -20,7 +20,7 @@ void main() {
       });
 
       test('current', () {
-        expectPkg(buildPackages.current!, 'build_runner', '', isEditable: true);
+        expectPkg(buildPackages.current!, 'build_runner', '', watch: true);
       });
 
       test('asPackageConfig', () {
@@ -59,13 +59,8 @@ void main() {
           buildPackages.current!,
           'basic_pkg',
           basicPkgPath,
-          isEditable: true,
-          dependencies: [
-            buildPackages['a']!,
-            buildPackages['b']!,
-            buildPackages['c']!,
-            buildPackages['d']!,
-          ],
+          watch: true,
+          dependencies: ['a', 'b', 'c', 'd'],
         );
       });
 
@@ -74,8 +69,8 @@ void main() {
           buildPackages['a']!,
           'a',
           '$basicPkgPath/pkg/a',
-          isEditable: false,
-          dependencies: [buildPackages['b']!, buildPackages['c']!],
+          watch: false,
+          dependencies: ['b', 'c'],
         );
       });
 
@@ -112,8 +107,8 @@ void main() {
           buildPackages.current!,
           'with_dev_deps',
           withDevDepsPkgPath,
-          isEditable: true,
-          dependencies: [buildPackages['a']!, buildPackages['b']!],
+          watch: true,
+          dependencies: ['a', 'b'],
         );
 
         // Package `c` does not appear because this is not the current package.
@@ -121,7 +116,7 @@ void main() {
           buildPackages['a']!,
           'a',
           '$withDevDepsPkgPath/pkg/a',
-          isEditable: false,
+          watch: false,
           dependencies: [],
         );
 
@@ -129,7 +124,7 @@ void main() {
           buildPackages['b']!,
           'b',
           '$withDevDepsPkgPath/pkg/b',
-          isEditable: false,
+          watch: false,
           dependencies: [],
         );
 
@@ -164,18 +159,21 @@ void main() {
 
     test('custom creation via fromCurrent', () {
       final a = BuildPackage(
-        'a',
-        '/a',
-        null,
-        isEditable: true,
+        name: 'a',
+        path: '/a',
+        watch: true,
         isInBuild: true,
+        dependencies: ['b', 'd'],
       );
-      final b = BuildPackage('b', '/b', null, isEditable: true);
-      final c = BuildPackage('c', '/c', null, isEditable: true);
-      final d = BuildPackage('d', '/d', null, isEditable: true);
-      a.dependencies.addAll([b, d]);
-      b.dependencies.add(c);
-      final graph = BuildPackages.fromCurrent(a);
+      final b = BuildPackage(
+        name: 'b',
+        path: '/b',
+        watch: true,
+        dependencies: ['c'],
+      );
+      final c = BuildPackage(name: 'c', path: '/c', watch: true);
+      final d = BuildPackage(name: 'd', path: '/d', watch: true);
+      final graph = BuildPackages.fromPackages([a, b, c, d], current: 'a');
       expect(graph.current!, a);
       expect(
         graph.allPackages,
@@ -206,32 +204,31 @@ void main() {
     final workspaceFixturePath = p.absolute('test/fixtures/workspace');
 
     test('loads only dependent packages, has correct current', () async {
-      Matcher packageNodeEquals(BuildPackage node) => isA<BuildPackage>()
-          .having((c) => c.path, 'path', node.path)
-          .having(
-            (c) => c.dependencies,
-            'dependencies',
-            node.dependencies.map(packageNodeEquals),
-          )
-          .having((c) => c.isEditable, 'isEditable', node.isEditable);
+      Matcher packageNodeEquals(BuildPackage buildPackage) =>
+          isA<BuildPackage>()
+              .having((c) => c.path, 'path', buildPackage.path)
+              .having(
+                (c) => c.dependencies,
+                'dependencies',
+                buildPackage.dependencies,
+              )
+              .having((c) => c.watch, 'watch', buildPackage.watch);
 
       final buildPackages = await BuildPackages.forPath(
         p.absolute('$workspaceFixturePath/pkgs/a'),
       );
       final a = BuildPackage(
-        'a',
-        '$workspaceFixturePath/pkgs/a',
-        null,
-        isEditable: true,
+        name: 'a',
+        path: '$workspaceFixturePath/pkgs/a',
+        watch: true,
         isInBuild: true,
+        dependencies: ['b'],
       );
       final b = BuildPackage(
-        'b',
-        '$workspaceFixturePath/pkgs/b',
-        null,
-        isEditable: true,
+        name: 'b',
+        path: '$workspaceFixturePath/pkgs/b',
+        watch: true,
       );
-      a.dependencies.add(b);
 
       expect(buildPackages.allPackages, {
         'a': packageNodeEquals(a),
@@ -248,13 +245,13 @@ void expectPkg(
   BuildPackage node,
   String name,
   String location, {
-  required bool isEditable,
-  Iterable<BuildPackage>? dependencies,
+  required bool watch,
+  Iterable<String>? dependencies,
 }) {
   location = p.canonicalize(location);
   expect(node.name, name);
   expect(node.path, location);
-  expect(node.isEditable, isEditable);
+  expect(node.watch, watch);
   if (dependencies != null) {
     expect(node.dependencies, unorderedEquals(dependencies));
   }

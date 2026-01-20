@@ -14,8 +14,6 @@ import 'package:built_collection/built_collection.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
-import 'build_packages.dart';
-
 Future<void> wait(int milliseconds) =>
     Future.delayed(Duration(milliseconds: milliseconds));
 
@@ -90,7 +88,9 @@ Future<TestBuildersResult> testPhases(
   String? logPerformanceDir,
   void Function(AssetId id)? onDelete,
 }) async {
-  buildPackages ??= createBuildPackages({rootPackage('a'): []});
+  buildPackages ??= BuildPackages.fromPackages([
+    BuildPackage.forTesting(name: 'a', isInBuild: true),
+  ], current: 'a');
   var readerWriter =
       resumeFrom == null
           ? InternalTestReaderWriter(

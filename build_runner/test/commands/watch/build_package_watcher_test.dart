@@ -41,10 +41,9 @@ void main() {
 
     test('should emit a changed asset', () async {
       final node = BuildPackage(
-        'a',
-        p.join(tmpDir.path, 'a'),
-        null,
-        isEditable: true,
+        name: 'a',
+        path: p.join(tmpDir.path, 'a'),
+        watch: true,
       );
       final nodeWatcher = BuildPackageWatcher(node);
 
@@ -65,10 +64,9 @@ void main() {
 
     test('should also respect relative watch URLs', () async {
       final node = BuildPackage(
-        'a',
-        p.relative(p.join(tmpDir.path, 'a'), from: p.current),
-        null,
-        isEditable: true,
+        name: 'a',
+        path: p.relative(p.join(tmpDir.path, 'a'), from: p.current),
+        watch: true,
       );
       final nodeWatcher = BuildPackageWatcher(node);
 

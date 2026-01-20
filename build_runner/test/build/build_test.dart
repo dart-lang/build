@@ -20,6 +20,7 @@ import 'package:build_runner/src/build/performance_tracker.dart';
 import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_directory.dart';
 import 'package:build_runner/src/build_plan/build_filter.dart';
+import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/builder_definition.dart';
@@ -62,7 +63,9 @@ void main() {
   );
   final globBuilder = GlobbingBuilder(Glob('**.txt'));
   final placeholders = placeholderIdsFor(
-    createBuildPackages({rootPackage('a'): []}),
+    BuildPackages.fromPackages([
+      BuildPackage.forTesting(name: 'a', isInBuild: true),
+    ], current: 'a'),
   );
 
   group('build', () {
@@ -732,10 +735,15 @@ additional_public_assets:
       late BuildPackages buildPackages;
 
       setUp(() {
-        buildPackages = createBuildPackages({
-          rootPackage('a', path: 'a/'): ['b'],
-          package('b', path: 'a/b/'): [],
-        });
+        buildPackages = BuildPackages.fromPackages([
+          BuildPackage(
+            name: 'a',
+            path: 'a/',
+            dependencies: ['b'],
+            isInBuild: true,
+          ),
+          BuildPackage(name: 'b', path: 'a/b/'),
+        ], current: 'a');
       });
       test('can output files in non-root packages', () async {
         await testPhases(
@@ -1045,10 +1053,14 @@ targets:
     });
 
     group('buildFilters', () {
-      final buildPackagesWithDep = createBuildPackages({
-        package('b'): [],
-        rootPackage('a'): ['b'],
-      });
+      final buildPackagesWithDep = BuildPackages.fromPackages([
+        BuildPackage.forTesting(
+          name: 'a',
+          isInBuild: true,
+          dependencies: ['b'],
+        ),
+        BuildPackage.forTesting(name: 'b'),
+      ], current: 'a');
 
       test('explicit files by uri and path', () async {
         await testPhases(
@@ -1182,7 +1194,9 @@ targets:
     final expectedGraph = await AssetGraph.build(
       BuildPhases([]),
       <AssetId>{},
-      createBuildPackages({rootPackage('a'): []}),
+      BuildPackages.fromPackages([
+        BuildPackage.forTesting(name: 'a', isInBuild: true),
+      ], current: 'a'),
       result.readerWriter,
     );
 
