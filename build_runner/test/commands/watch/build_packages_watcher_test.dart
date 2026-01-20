@@ -15,16 +15,16 @@ import 'package:watcher/watcher.dart';
 
 void main() {
   group('BuildPackagesWatcher', () {
-    final buildPackages = BuildPackages.fromPackages({
+    final buildPackages = BuildPackages.singlePackageBuild('a', {
       BuildPackage(
         name: 'a',
         path: '/g/a',
-        isInBuild: true,
+        isOutput: true,
         watch: true,
         dependencies: ['b'],
       ),
       BuildPackage(name: 'b', path: '/g/b', watch: true),
-    }, current: 'a');
+    });
     test('should aggregate changes from all nodes', () {
       final nodes = {
         'a': FakeNodeWatcher(buildPackages['a']!),
@@ -53,16 +53,16 @@ void main() {
     });
 
     test('should avoid duplicate changes with nested packages', () async {
-      final buildPackages = BuildPackages.fromPackages({
+      final buildPackages = BuildPackages.singlePackageBuild('a', {
         BuildPackage(
           name: 'a',
           path: '/g/a',
-          isInBuild: true,
+          isOutput: true,
           watch: true,
           dependencies: ['b'],
         ),
         BuildPackage(name: 'b', path: '/g/a/b', watch: true),
-      }, current: 'a');
+      });
       final nodes = {
         'a': FakeNodeWatcher(buildPackages['a']!)..markReady(),
         'b': FakeNodeWatcher(buildPackages['b']!)..markReady(),
@@ -87,16 +87,16 @@ void main() {
     });
 
     test('should avoid watchers on pub dependencies', () {
-      final buildPackages = BuildPackages.fromPackages({
+      final buildPackages = BuildPackages.singlePackageBuild('a', {
         BuildPackage(
           name: 'a',
           path: '/g/a',
-          isInBuild: true,
+          isOutput: true,
           watch: true,
           dependencies: ['b'],
         ),
         BuildPackage(name: 'b', path: '/g/b', watch: false),
-      }, current: 'a');
+      });
       final nodes = {
         'a': FakeNodeWatcher(buildPackages['a']!),
         r'$sdk': FakeNodeWatcher(

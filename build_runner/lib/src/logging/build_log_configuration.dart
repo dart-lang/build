@@ -21,10 +21,10 @@ abstract class BuildLogConfiguration
   /// If set, normal output is turned off.
   void Function(LogRecord)? get onLog;
 
-  /// The current package of the build.
+  /// If this is a single package build, the package name.
   ///
   /// If set, the package name will be omitted when rendering asset ids.
-  String? get currentPackageName;
+  String? get singleOutputPackage;
 
   /// Whether progress updates are throtled.
   bool get throttleProgressUpdates;

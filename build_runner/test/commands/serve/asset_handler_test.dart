@@ -29,9 +29,9 @@ void main() {
     assetGraph = await AssetGraph.build(
       BuildPhases([]),
       <AssetId>{},
-      BuildPackages.fromPackages([
-        BuildPackage.forTesting(name: 'a', isInBuild: true),
-      ], current: 'a'),
+      BuildPackages.singlePackageBuild('a', [
+        BuildPackage.forTesting(name: 'a', isOutput: true),
+      ]),
       InternalTestReaderWriter(),
     );
     readerWriter = InternalTestReaderWriter();

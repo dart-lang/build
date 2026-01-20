@@ -23,10 +23,10 @@ import '../common/common.dart';
 
 void main() {
   group('BuildPhaseCreator', () {
-    final buildPackages = BuildPackages.fromPackages([
-      BuildPackage.forTesting(name: 'a', dependencies: ['b'], isInBuild: true),
+    final buildPackages = BuildPackages.singlePackageBuild('a', [
+      BuildPackage.forTesting(name: 'a', dependencies: ['b'], isOutput: true),
       BuildPackage.forTesting(name: 'b'),
-    ], current: 'a');
+    ]);
 
     test('builderConfigOverrides overrides builder config globally', () async {
       final buildConfigs = await BuildConfigs.load(
@@ -125,8 +125,9 @@ void main() {
               );
             }
           },
-          buildPackages.current!.name,
-          buildPackages.current!.dependencies.toList(),
+          buildPackages.singleOutputPackage!,
+          buildPackages[buildPackages.singleOutputPackage!]!.dependencies
+              .toList(),
         );
       },
     );
@@ -199,15 +200,15 @@ void main() {
     });
 
     test('skips non-hidden builders on non-root packages', () async {
-      final buildPackages = BuildPackages.fromPackages([
+      final buildPackages = BuildPackages.singlePackageBuild('a', [
         BuildPackage.forTesting(
           name: 'a',
           dependencies: ['b', 'c'],
-          isInBuild: true,
+          isOutput: true,
         ),
         BuildPackage.forTesting(name: 'b', dependencies: ['c']),
         BuildPackage.forTesting(name: 'c'),
-      ], current: 'a');
+      ]);
       final buildConfigs = await BuildConfigs.load(
         buildPackages: buildPackages,
         testingOverrides: TestingOverrides(
@@ -247,15 +248,15 @@ void main() {
     test(
       'skips builders which apply non-hidden builders on non-root packages',
       () async {
-        final buildPackages = BuildPackages.fromPackages([
+        final buildPackages = BuildPackages.singlePackageBuild('a', [
           BuildPackage.forTesting(
             name: 'a',
             dependencies: ['b', 'c'],
-            isInBuild: true,
+            isOutput: true,
           ),
           BuildPackage.forTesting(name: 'b', dependencies: ['c']),
           BuildPackage.forTesting(name: 'c'),
-        ], current: 'a');
+        ]);
         final buildConfigs = await BuildConfigs.load(
           buildPackages: buildPackages,
           testingOverrides: TestingOverrides(
@@ -339,8 +340,9 @@ void main() {
             throwsA(const TypeMatcher<CannotBuildException>()),
           );
         },
-        buildPackages.current!.name,
-        buildPackages.current!.dependencies.toList(),
+        buildPackages.singleOutputPackage!,
+        buildPackages[buildPackages.singleOutputPackage!]!.dependencies
+            .toList(),
       );
     });
 
@@ -449,9 +451,9 @@ void main() {
     test(
       'does not allow post process builders with capturing inputs',
       () async {
-        final buildPackages = BuildPackages.fromPackages([
-          BuildPackage.forTesting(name: 'a', isInBuild: true),
-        ], current: 'a');
+        final buildPackages = BuildPackages.singlePackageBuild('a', [
+          BuildPackage.forTesting(name: 'a', isOutput: true),
+        ]);
         final buildConfigs = await BuildConfigs.load(
           buildPackages: buildPackages,
           testingOverrides: TestingOverrides(

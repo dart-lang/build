@@ -385,14 +385,14 @@ Future<TestBuilderResult> testBuilderFactories(
     name: rootPackage,
     path: '/$rootPackage',
     watch: true,
-    isInBuild: true,
+    isOutput: true,
     dependencies: otherPackages,
   );
-  final buildPackages = BuildPackages.fromPackages([
+  final buildPackages = BuildPackages.singlePackageBuild(rootPackage, [
     rootNode,
     for (final otherPackage in otherPackages)
       BuildPackage(name: otherPackage, path: '/$otherPackage', watch: true),
-  ], current: rootPackage);
+  ]);
 
   String builderName(Object builder) {
     final result = builder.toString();
@@ -573,8 +573,10 @@ class _ApplyBuilderDefinitionToPackages implements BuilderDefinition {
   });
 
   @override
-  bool autoAppliesTo(BuildPackage package) =>
-      applyToPackages.contains(package.name);
+  bool autoAppliesTo(
+    BuildPackage package, {
+    BuildPackages? restrictForWorkspacePackages,
+  }) => applyToPackages.contains(package.name);
 
   // Delegate everything else.
 

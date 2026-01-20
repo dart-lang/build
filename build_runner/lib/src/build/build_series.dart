@@ -180,7 +180,7 @@ class BuildSeries {
   bool _isBuildConfiguration(AssetId id) =>
       id.path == 'build.yaml' ||
       id.path.endsWith('.build.yaml') ||
-      (id.package == _buildPlan.buildPackages.outputRoot.name &&
+      (id.package == _buildPlan.buildPackages.outputRoot &&
           id.path == 'build.${_buildPlan.buildOptions.configKey}.yaml');
 
   Future<List<WatchEvent>> checkForChanges() async {

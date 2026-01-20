@@ -35,13 +35,13 @@ void main() {
         path: '/fakeA',
         languageVersion: LanguageVersion(0, 0),
         watch: true,
-        isInBuild: true,
+        isOutput: true,
         dependencies: ['b'],
       );
-      final buildPackages = BuildPackages.fromPackages([
+      final buildPackages = BuildPackages.singlePackageBuild('a', [
         packageA,
         packageB,
-      ], current: 'a');
+      ]);
 
       BuildConfigs.load(
         buildPackages: buildPackages,
@@ -108,9 +108,13 @@ void main() {
   });
 
   group('target graph reports visible assets', () {
-    final a = BuildPackage.forTesting(name: 'a', isInBuild: true);
+    final a = BuildPackage.forTesting(
+      name: 'a',
+      isOutput: true,
+      dependencies: ['b'],
+    );
     final b = BuildPackage.forTesting(name: 'b');
-    final buildPackages = BuildPackages.fromPackages([a, b], current: 'a');
+    final buildPackages = BuildPackages.singlePackageBuild('a', [a, b]);
 
     test('for root package', () async {
       final buildConfigs = await BuildConfigs.load(

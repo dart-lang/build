@@ -1,20 +1,20 @@
-// Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2026, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
+import 'package:graphs/graphs.dart';
 import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
-import 'package:yaml/yaml.dart';
 
 import '../constants.dart';
 import '../io/asset_path_provider.dart';
 import 'build_package.dart';
+import 'build_packages_loader.dart';
 
 /// The SDK package, we filter this to the core libs and dev compiler
 /// resources.
@@ -22,182 +22,159 @@ final _sdkPackage = BuildPackage(name: r'$sdk', path: sdkPath);
 
 /// The [BuildPackage]s in the build.
 class BuildPackages implements AssetPathProvider {
-  /// The package that `build_runner` was launched in.
+  /// All packages by package name.
+  final BuiltMap<String, BuildPackage> packages;
+
+  /// The names of all packages in the build reverse topologically ordered.
   ///
-  /// TODO(davidmorgan): when running for a workspace there will be no current
-  /// package.
-  final BuildPackage? current;
+  /// That means "dependencies first": a package only depends on packages that
+  /// are earlier in the list, with the exception of packages in dependency
+  /// cycles.
+  final BuiltList<String> orderedPackages;
+
+  /// When building a single package: the package `build_runner` was launched
+  /// in, which is also the current directory package and the [outputRoot].
+  ///
+  /// When building a workspace, `null`.
+  final String? singleOutputPackage;
+
+  /// The names of packages that generated output will be written to.
+  ///
+  /// If [singleOutputPackage] is set, contains exactly that one package.
+  /// Otherwise, contains all the packages in the workspace.
+  final BuiltSet<String> outputPackages;
 
   /// The package where output that does not belong to a specific package is
   /// written.
   ///
-  /// This includes the `.dart_tool/build` folder with the build script,
+  /// Equal to [singleOutputPackage] if there is one, otherwise this is the
+  /// workspace root.
+  ///
+  /// Output includes the `.dart_tool/build` folder with the build script,
   /// compiled build script, generated output and serialized asset graph.
   ///
-  /// It is the root for output of performance logs.
+  /// Also the root for output of performance logs.
   ///
-  /// It is also the path where `build_runner` looks for for `build.yaml`
-  /// configuration that applies to the whole build instead of to the package
-  /// it's in: global options and package-specific overrides.
-  ///
-  /// TODO(davidmorgan): when workspace support is added this will be a
-  /// fake package at the workspace root.
-  final BuildPackage outputRoot;
-
-  /// All [BuildPackage]s indexed by package name.
-  final Map<String, BuildPackage> allPackages;
+  /// Also the path where `build_runner` looks for `build.yaml` configuration
+  /// that applies to the whole build instead of to the package it's in: global
+  /// options and package-specific overrides.
+  final String outputRoot;
 
   /// A [PackageConfig] representation of this package graph.
   final PackageConfig asPackageConfig;
 
-  /// The names of packages in the build, as distinct from dependency packages
-  /// which can be read from but not written to.
-  final BuiltSet<String> packagesInBuild;
+  /// Transitive dependencies by package name.
+  final BuiltSetMultimap<String, String> _transitiveDependencies;
 
-  BuildPackages._({
-    required BuildPackage this.current,
+  /// Peer packages by package name, see [peersOf].
+  final BuiltSetMultimap<String, String> _peerPackages;
+
+  BuildPackages({
+    required this.singleOutputPackage,
     required this.outputRoot,
-    required Map<String, BuildPackage> allPackages,
-  }) : asPackageConfig = _packagesToConfig(allPackages.values),
-       allPackages = Map.unmodifiable(
-         Map<String, BuildPackage>.from(allPackages)
-           ..putIfAbsent(r'$sdk', () => _sdkPackage),
-       ),
-       packagesInBuild = {current.name}.build() {
-    if (!current!.isInBuild) {
-      throw ArgumentError('Current package must indicate `isInBuild`');
-    }
-    if (allPackages.values.any((p) => p != current && p.isInBuild)) {
-      throw ArgumentError(
-        'No packages other than the current may indicate `isInBuild`',
-      );
-    }
-  }
+    required this.packages,
+    required this.orderedPackages,
+    required this.outputPackages,
+    required this.asPackageConfig,
+    required BuiltSetMultimap<String, String> transitiveDependencies,
+    required BuiltSetMultimap<String, String> buildPackages,
+  }) : _transitiveDependencies = transitiveDependencies,
+       _peerPackages = buildPackages;
 
-  /// Creates [BuildPackages] from [BuildPackage]s.
-  ///
-  /// If [outputRoot] is not specified it defaults to [current].
-  @visibleForTesting
-  factory BuildPackages.fromPackages(
-    Iterable<BuildPackage> packages, {
-    required String current,
-    String? outputRoot,
+  factory BuildPackages.compute({
+    String? singlePackageToBuild,
+    required String outputRoot,
+    required BuiltMap<String, BuildPackage> packages,
   }) {
-    final allPackages = {for (final package in packages) package.name: package};
-    return BuildPackages._(
-      current: allPackages[current]!,
-      outputRoot: allPackages[outputRoot ?? current]!,
-      allPackages: allPackages,
-    );
-  }
-
-  /// Loads the package graph for the package at absolute path [packagePath].
-  ///
-  /// Assumes `pubspec.yaml` exists and has a name, as this is checked by
-  /// `dart run`.
-  @visibleForTesting
-  static Future<BuildPackages> forPath(String packagePath) async {
-    var packageConfigFile = File(
-      p.join(packagePath, '.dart_tool', 'package_config.json'),
-    );
-    String? workspacePath;
-    if (!packageConfigFile.existsSync()) {
-      final workspaceRefFile = File(
-        p.join(packagePath, '.dart_tool', 'pub', 'workspace_ref.json'),
-      );
-      if (workspaceRefFile.existsSync()) {
-        final workspaceRef =
-            (json.decode(workspaceRefFile.readAsStringSync())
-                    as Map<String, Object?>)['workspaceRoot']
-                as String;
-        workspacePath = p.canonicalize(
-          p.join(p.dirname(workspaceRefFile.path), workspaceRef),
-        );
-        packageConfigFile = File(
-          p.join(workspacePath, '.dart_tool', 'package_config.json'),
-        );
-      }
-    }
-
-    if (!packageConfigFile.existsSync()) {
-      throw StateError('Failed to find package_config.json.');
-    }
-
-    final packageConfig = await loadPackageConfig(packageConfigFile);
-
-    final buildPackages = <String, BuildPackage>{};
-    final packageConfigs =
-        packageConfig.packages.toList()
-          ..sort((a, b) => a.name.compareTo(b.name));
-
-    final currentPubspec = _pubspecForPath(packagePath);
-    final currentPackageName = currentPubspec['name']! as String;
-    final pubspecLockFile = File(
-      p.join(workspacePath ?? packagePath, 'pubspec.lock'),
-    );
-    final fixedPackages = _parseFixedPackages(pubspecLockFile);
-
-    for (final packageConfig in packageConfigs) {
-      final isRoot = packageConfig.name == currentPackageName;
-      final pubspec = _pubspecForPath(packageConfig.root.toFilePath());
-      buildPackages[packageConfig.name] = BuildPackage(
-        name: packageConfig.name,
-        path: packageConfig.root.toFilePath(),
-        languageVersion: packageConfig.languageVersion,
-        watch: !fixedPackages.contains(packageConfig.name),
-        isInBuild: isRoot,
-        dependencies: _depsFromYaml(pubspec, isRoot: isRoot),
-      );
-    }
-    for (final package in buildPackages.values) {
+    for (final package in packages.values) {
       for (final dependency in package.dependencies) {
-        if (!buildPackages.containsKey(dependency)) {
+        if (!packages.containsKey(dependency)) {
           throw StateError(
-            'Dependency $dependency of $package not '
-            'present, please run `dart pub get` or `flutter pub get` to fetch '
-            'dependencies.',
+            'Dependency $dependency of $package not present, please run '
+            '`dart pub get` or `flutter pub get` to fetch dependencies.',
           );
         }
       }
     }
 
-    final currentPackage = buildPackages[currentPackageName]!;
-
-    // A workspace can have packages that are not depended on by [rootPackage].
-    // Compute transitive dependencies and filter to that.
-    Set<BuildPackage>? usedPackages;
-    if (workspacePath != null) {
-      usedPackages = {currentPackage};
-      final queue = [currentPackage];
-      while (queue.isNotEmpty) {
-        final package = queue.removeLast();
-        for (final dependency in package.dependencies) {
-          final dependencyPackage = buildPackages[dependency]!;
-          if (usedPackages.add(dependencyPackage)) {
-            queue.add(dependencyPackage);
-          }
-        }
-      }
+    final packagesBuilder = packages.toBuilder();
+    // If building in a workspace but not building the whole workspace, filter
+    // to packages that are a transitive dependency of `singlePackageToBuild`.
+    if (singlePackageToBuild != null) {
+      final packageTransitiveDeps = _computeTransitiveDeps(
+        singlePackageToBuild,
+        packages,
+      );
+      packagesBuilder.removeWhere(
+        (name, _) => !packageTransitiveDeps.contains(name),
+      );
     }
+    packagesBuilder.putIfAbsent(r'$sdk', () => _sdkPackage);
+    packages = packagesBuilder.build();
 
-    return BuildPackages._(
-      current: currentPackage,
-      outputRoot: currentPackage,
-      allPackages:
-          usedPackages == null
-              ? buildPackages
-              : Map.fromEntries(
-                buildPackages.entries.where(
-                  (e) => usedPackages!.contains(e.value),
-                ),
-              ),
+    final asPackageConfig = _packagesToConfig(packages.values);
+    final outputPackages =
+        packages.values
+            .where((b) => b.isOutput)
+            .map((p) => p.name)
+            .toBuiltSet();
+
+    final transitiveDependencies = _computeAllTransitiveDeps(packages);
+    final buildPackages = _computePeers(outputPackages, transitiveDependencies);
+
+    return BuildPackages(
+      singleOutputPackage: singlePackageToBuild,
+      outputRoot: outputRoot,
+      packages: packages,
+      orderedPackages: transitiveDependencies.keys.toBuiltList(),
+      outputPackages: outputPackages,
+      asPackageConfig: asPackageConfig,
+      transitiveDependencies: transitiveDependencies,
+      buildPackages: buildPackages,
     );
   }
 
+  /// Creates [BuildPackages] from [BuildPackage]s for a single package build
+  /// of [package].
+  @visibleForTesting
+  factory BuildPackages.singlePackageBuild(
+    String package,
+    Iterable<BuildPackage> packages,
+  ) => BuildPackages.compute(
+    singlePackageToBuild: package,
+    outputRoot: package,
+    packages: {for (final package in packages) package.name: package}.build(),
+  );
+
+  /// Creates [BuildPackages] from [BuildPackage]s for a workspace build with
+  /// workspace name [workspace].
+  @visibleForTesting
+  factory BuildPackages.workspaceBuild(
+    String workspace,
+    Iterable<BuildPackage> packages,
+  ) => BuildPackages.compute(
+    outputRoot: workspace,
+    packages: {for (final package in packages) package.name: package}.build(),
+  );
+
+  /// Loads the build packages for building the package at [packagePath].
+  ///
+  /// Assumes `pubspec.yaml` exists and has a name, as this is checked by
+  /// `dart run`.
+  ///
+  /// If [workspace], prepares to build the whole workspace, if any.
+  @visibleForTesting
+  static Future<BuildPackages> forPath(
+    String packagePath, {
+    bool workspace = false,
+  }) async => BuildPackagesLoader.forPath(packagePath, workspace: workspace);
+
   /// Creates a [BuildPackages] for the package in which you are currently
   /// running.
-  static Future<BuildPackages> forThisPackage() =>
-      BuildPackages.forPath(p.current);
+  ///
+  /// If [workspace], prepares to build for the whole workspace, if any.
+  static Future<BuildPackages> forThisPackage({bool workspace = false}) =>
+      BuildPackages.forPath(p.current, workspace: workspace);
 
   static PackageConfig _packagesToConfig(Iterable<BuildPackage> packages) {
     final relativeLib = Uri.parse('lib/');
@@ -216,13 +193,13 @@ class BuildPackages implements AssetPathProvider {
     ]);
   }
 
-  /// Shorthand to get a package by name.
-  BuildPackage? operator [](String packageName) => allPackages[packageName];
+  /// Returns the package named [packageName], or `null` if not present.
+  BuildPackage? operator [](String packageName) => packages[packageName];
 
   /// Map from package name to package language version.
   BuiltMap<String, LanguageVersion?> get languageVersions =>
       {
-        for (final package in allPackages.values)
+        for (final package in packages.values)
           package.name: package.languageVersion,
       }.build();
 
@@ -233,21 +210,34 @@ class BuildPackages implements AssetPathProvider {
     bool checkDeleteAllowed = false,
   }) {
     if (checkDeleteAllowed) {
-      // Delete is allowed if it's a hidden output or if it's an output to a
-      // package in the build. This forbids deleting files that are part of the
-      // checked-in source tree of a dependency package.
-      if (!(hide || packagesInBuild.contains(id.package))) {
-        throw InvalidOutputException(
-          id,
-          'Should not delete assets outside of package(s): '
-          '${packagesInBuild.join(', ')}',
-        );
+      // Delete is allowed if it's a hidden output in `outputRoot` or if it's a
+      // package in the build.
+      final isUnderCacheDirectory = id.path.startsWith('$cacheDirectoryPath/');
+      final deleteIsAllowed =
+          hide ||
+          (isUnderCacheDirectory && id.package == outputRoot) ||
+          outputPackages.contains(id.package);
+      if (!deleteIsAllowed) {
+        if (isUnderCacheDirectory) {
+          throw InvalidOutputException(
+            id,
+            'Tried to delete from $cacheDirectoryPath in wrong package, should '
+            'be $outputRoot.',
+          );
+        } else {
+          throw InvalidOutputException(
+            id,
+            'Tried to delete from package not in the build. Packages in the '
+            'build are: ${outputPackages.join(', ')}',
+          );
+        }
       }
     }
+
     if (hide) {
-      id = AssetPathProvider.hide(id, outputRoot.name);
+      id = AssetPathProvider.hide(id, outputRoot);
     }
-    final package = allPackages[id.package];
+    final package = packages[id.package];
     if (package == null) {
       throw PackageNotFoundException(id.package);
     }
@@ -258,54 +248,101 @@ class BuildPackages implements AssetPathProvider {
     return p.join(package.path, path);
   }
 
+  /// Gets transitive deps of [packageName].
+  ///
+  /// Includes [packageName] itself.
+  BuiltSet<String> transitiveDepsOf(String packageName) =>
+      _transitiveDependencies[packageName]!;
+
+  /// Gets peer packages of [packageName].
+  ///
+  /// Two packages are peers if they are both a transitive dependency of the
+  /// same output package, meaning they are "in the same single package build".
+  /// Builders can only auto apply from a package in the same build.
+  BuiltSet<String> peersOf(String packageName) => _peerPackages[packageName]!;
+
   @override
   String toString() {
     final buffer = StringBuffer();
-    for (final package in allPackages.values) {
+    for (final package in packages.values) {
       buffer.writeln('$package');
     }
     return buffer.toString();
   }
 }
 
-/// Parse the `pubspec.lock` file and return the names of packages that are
-/// hosted, on git or in the SDK.
-Set<String> _parseFixedPackages(File pubspecLockFile) {
-  final result = <String>{};
-  final dependencies = loadYaml(pubspecLockFile.readAsStringSync()) as YamlMap;
-  final packages = dependencies['packages'] as YamlMap;
-  for (final packageName in packages.keys) {
-    final source = (packages[packageName] as YamlMap)['source'] as String?;
-    if (source == 'git' || source == 'hosted' || source == 'sdk') {
-      result.add(packageName as String);
+/// Returns the peer packages of each package.
+///
+/// See [BuildPackages.peersOf] for the definition of a peer package.
+BuiltSetMultimap<String, String> _computePeers(
+  Iterable<String> outputPackages,
+  BuiltSetMultimap<String, String> transitiveDeps,
+) {
+  final result = SetMultimapBuilder<String, String>();
+
+  for (final package in outputPackages) {
+    final packageTransitiveDeps = transitiveDeps[package]!;
+    for (final dependency in packageTransitiveDeps) {
+      result.addValues(dependency, packageTransitiveDeps);
+    }
+  }
+
+  return result.build();
+}
+
+/// Returns transitive deps of all packages in [packages].
+///
+/// The keys of the result map are ordered in reverse topological order.
+BuiltSetMultimap<String, String> _computeAllTransitiveDeps(
+  BuiltMap<String, BuildPackage> packages,
+) {
+  // Computes dep cycles in reverse topological order, "deps first", so they
+  // can be processed in order without encountering unprocessed deps.
+  final components = stronglyConnectedComponents<String>(
+    packages.keys,
+    (id) => packages[id]!.dependencies,
+  );
+
+  // Compute transitive deps for each strongly connected component.
+  final result = <String, Set<String>>{};
+  for (final component in components) {
+    final componentSet = component.toSet();
+    final componentTransitiveDeps = <String>{...componentSet};
+
+    // For each package in the component add all transitive deps for
+    // all direct deps not in the component.
+    for (final package in component) {
+      for (final dep in packages[package]!.dependencies) {
+        if (componentSet.contains(dep)) continue;
+        componentTransitiveDeps.addAll(result[dep]!);
+      }
+    }
+
+    // Set the result for all packages in the component.
+    for (final package in component) {
+      result[package] = componentTransitiveDeps;
+    }
+  }
+
+  return BuiltSetMultimap<String, String>(result);
+}
+
+/// Returns the transitive deps of [package].
+Set<String> _computeTransitiveDeps(
+  String package,
+  BuiltMap<String, BuildPackage> packages,
+) {
+  final result = {package};
+  final queue = result.toList();
+
+  while (queue.isNotEmpty) {
+    final next = queue.removeLast();
+    for (final dependency in packages[next]!.dependencies) {
+      if (!result.contains(dependency)) {
+        result.add(dependency);
+        queue.add(dependency);
+      }
     }
   }
   return result;
-}
-
-/// Gets the deps from a yaml file, omitting dependency_overrides.
-List<String> _depsFromYaml(YamlMap yaml, {bool isRoot = false}) {
-  final deps = <String>{
-    ..._stringKeys(yaml['dependencies'] as Map?),
-    if (isRoot) ..._stringKeys(yaml['dev_dependencies'] as Map?),
-  };
-  // A consistent package order _should_ mean a consistent order of build
-  // phases. It's not a guarantee, but also not required for correctness, only
-  // an optimization.
-  return deps.toList()..sort();
-}
-
-Iterable<String> _stringKeys(Map? m) =>
-    m == null ? const [] : m.keys.cast<String>();
-
-/// Should point to the top level directory for the package.
-YamlMap _pubspecForPath(String absolutePath) {
-  final pubspecPath = p.join(absolutePath, 'pubspec.yaml');
-  final pubspec = File(pubspecPath);
-  if (!pubspec.existsSync()) {
-    throw StateError(
-      'Unable to generate package graph, no `$pubspecPath` found.',
-    );
-  }
-  return loadYaml(pubspec.readAsStringSync()) as YamlMap;
 }

@@ -22,6 +22,10 @@ import 'processes.dart';
 /// that knows how to instantiate all the builders that will run during the
 /// build.
 ///
+/// If [workspace] the `BuilderFactories` contains builders applied to any
+/// package in the workspace. Otherwise, it only contains builders for the
+/// current directory package and its transitive dependencies.
+///
 /// When the entrypoint script is compiled a "depfile" is created listing all
 /// the sources it is compiled from. Then a digest is written based on the
 /// contents of all these files so they can be checked for freshness later.
@@ -30,10 +34,11 @@ import 'processes.dart';
 /// or [ParentProcess.runAotSnapshotAndSend] which passes initial state to it
 /// and receives updated state when it exits.
 class Bootstrapper {
+  final bool workspace;
   final bool compileAot;
   final Compiler _compiler;
 
-  Bootstrapper({required this.compileAot})
+  Bootstrapper({required this.workspace, required this.compileAot})
     : _compiler = compileAot ? AotCompiler() : KernelCompiler();
 
   /// Generates the entrypoint script, compiles it and runs it with [arguments].
@@ -121,7 +126,7 @@ class Bootstrapper {
   ///
   /// Reads before write so the file is not written if there is no change.
   Future<void> _writeBuildScript() async {
-    final buildScript = await generateBuildScript();
+    final buildScript = await generateBuildScript(workspace: workspace);
     final path = entrypointScriptPath;
     final existingBuildScript =
         File(path).existsSync() ? File(path).readAsStringSync() : null;

@@ -23,20 +23,20 @@ import '../common/common.dart';
 
 void main() {
   group('ServeHandler', () {
-    final buildPackages = BuildPackages.fromPackages([
+    final buildPackages = BuildPackages.singlePackageBuild('a', [
       BuildPackage(
         name: 'a',
         path: path.absolute('a'),
-        isInBuild: true,
+        isOutput: true,
         watch: true,
       ),
-    ], current: 'a');
+    ]);
     late InternalTestReaderWriter readerWriter;
 
     setUp(() async {
       _terminateServeController = StreamController();
       readerWriter = InternalTestReaderWriter(
-        outputRootPackage: buildPackages.outputRoot.name,
+        outputRootPackage: buildPackages.outputRoot,
       );
       await readerWriter.writeAsString(
         makeAssetId('a|.dart_tool/package_config.json'),

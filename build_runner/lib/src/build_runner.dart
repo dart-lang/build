@@ -84,7 +84,10 @@ class BuildRunner {
             as String;
 
     if (commandLine.type.requiresBuilders && builderFactories == null) {
-      return await _runWithBuilders(compileAot: commandLine.forceAot!);
+      return await _runWithBuilders(
+        workspace: commandLine.workspace!,
+        compileAot: commandLine.forceAot!,
+      );
     }
 
     BuildRunnerCommand command;
@@ -165,12 +168,18 @@ class BuildRunner {
   ///
   /// The nested `build_runner` invocation reaches [run] with [builderFactories]
   /// set, so it runs the command instead of bootstrapping.
-  Future<int> _runWithBuilders({required bool compileAot}) async {
+  Future<int> _runWithBuilders({
+    required bool workspace,
+    required bool compileAot,
+  }) async {
     buildLog.configuration = buildLog.configuration.rebuild((b) {
       b.mode = commandLine.type.buildLogMode;
     });
 
-    final bootstrapper = Bootstrapper(compileAot: compileAot);
+    final bootstrapper = Bootstrapper(
+      workspace: workspace,
+      compileAot: compileAot,
+    );
     return await bootstrapper.run(
       arguments,
       jitVmArgs: commandLine.jitVmArgs ?? const Iterable.empty(),

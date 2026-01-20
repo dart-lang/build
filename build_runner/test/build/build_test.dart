@@ -63,9 +63,9 @@ void main() {
   );
   final globBuilder = GlobbingBuilder(Glob('**.txt'));
   final placeholders = placeholderIdsFor(
-    BuildPackages.fromPackages([
-      BuildPackage.forTesting(name: 'a', isInBuild: true),
-    ], current: 'a'),
+    BuildPackages.singlePackageBuild('a', [
+      BuildPackage.forTesting(name: 'a', isOutput: true),
+    ]),
   );
 
   group('build', () {
@@ -735,15 +735,15 @@ additional_public_assets:
       late BuildPackages buildPackages;
 
       setUp(() {
-        buildPackages = BuildPackages.fromPackages([
+        buildPackages = BuildPackages.singlePackageBuild('a', [
           BuildPackage(
             name: 'a',
             path: 'a/',
             dependencies: ['b'],
-            isInBuild: true,
+            isOutput: true,
           ),
           BuildPackage(name: 'b', path: 'a/b/'),
-        ], current: 'a');
+        ]);
       });
       test('can output files in non-root packages', () async {
         await testPhases(
@@ -1053,14 +1053,10 @@ targets:
     });
 
     group('buildFilters', () {
-      final buildPackagesWithDep = BuildPackages.fromPackages([
-        BuildPackage.forTesting(
-          name: 'a',
-          isInBuild: true,
-          dependencies: ['b'],
-        ),
+      final buildPackagesWithDep = BuildPackages.singlePackageBuild('a', [
+        BuildPackage.forTesting(name: 'a', isOutput: true, dependencies: ['b']),
         BuildPackage.forTesting(name: 'b'),
-      ], current: 'a');
+      ]);
 
       test('explicit files by uri and path', () async {
         await testPhases(
@@ -1194,9 +1190,9 @@ targets:
     final expectedGraph = await AssetGraph.build(
       BuildPhases([]),
       <AssetId>{},
-      BuildPackages.fromPackages([
-        BuildPackage.forTesting(name: 'a', isInBuild: true),
-      ], current: 'a'),
+      BuildPackages.singlePackageBuild('a', [
+        BuildPackage.forTesting(name: 'a', isOutput: true),
+      ]),
       result.readerWriter,
     );
 

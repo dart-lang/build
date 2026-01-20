@@ -44,7 +44,7 @@ class BuildPackagesWatcher {
 
   Stream<AssetChange> _watch() {
     final allWatchers =
-        _buildPackages.allPackages.values
+        _buildPackages.packages.values
             .where((buildPackage) => buildPackage.watch)
             .map(_strategy)
             .toList();
@@ -85,7 +85,7 @@ class BuildPackagesWatcher {
   //
   // This allows the watcher to optimize and avoid duplicate events.
   List<String> _nestedPaths(BuildPackage rootPackage) {
-    return _buildPackages.allPackages.values
+    return _buildPackages.packages.values
         .where((buildPackage) {
           return buildPackage.path.length > rootPackage.path.length &&
               buildPackage.path.startsWith(rootPackage.path);

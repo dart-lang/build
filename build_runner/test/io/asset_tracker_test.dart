@@ -36,15 +36,15 @@ void main() {
           ),
         ]),
       ]).create();
-      final buildPackages = BuildPackages.fromPackages([
+      final buildPackages = BuildPackages.singlePackageBuild('a', [
         BuildPackage(
           name: 'a',
           path: p.join(d.sandbox, 'a'),
           languageVersion: LanguageVersion(2, 6),
           watch: true,
-          isInBuild: true,
+          isOutput: true,
         ),
-      ], current: 'a');
+      ]);
       final reader = ReaderWriter(buildPackages);
       final aId = AssetId('a', 'web/a.txt');
       assetGraph = await AssetGraph.build(

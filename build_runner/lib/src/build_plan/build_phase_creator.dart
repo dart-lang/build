@@ -27,6 +27,10 @@ class BuildPhaseCreator {
   final BuiltMap<String, BuiltMap<String, dynamic>> builderConfigOverrides;
   final bool isReleaseBuild;
 
+  /// Whether the build is for a whole workspace, as opposed to a single
+  /// package.
+  final bool workspace;
+
   /// Builder definitions by key, excluding post process builders.
   final Map<String, BuilderDefinition> _builderDefinitionByKey = {};
 
@@ -45,6 +49,7 @@ class BuildPhaseCreator {
     required Iterable<AbstractBuilderDefinition> builderDefinitions,
     required this.builderConfigOverrides,
     required this.isReleaseBuild,
+    this.workspace = false,
   }) : builderDefinitions = builderDefinitions.toBuiltList() {
     for (final builderDefinition in builderDefinitions) {
       if (builderDefinition is BuilderDefinition) {
@@ -73,13 +78,13 @@ class BuildPhaseCreator {
     // Global options come from the `outputRoot` package.
     final globalOptionsMap =
         buildConfigs
-            .buildConfigByPackage[buildPackages.outputRoot.name]
+            .buildConfigByPackage[buildPackages.outputRoot]
             ?.globalOptions ??
         {};
     warnForUnknownBuilders(
       builderDefinitions,
       // Check the packages in the build, but not dependency packages.
-      buildPackages.packagesInBuild.map(
+      buildPackages.outputPackages.map(
         (p) => buildConfigs.buildConfigByPackage[p]!,
       ),
       globalOptionsMap,
@@ -167,7 +172,7 @@ class BuildPhaseCreator {
           builderConfig: builderConfig,
           targetConfig: targetConfig,
           globalOptionOverrides: globalOptionOverrides,
-          isRoot: buildPackages[buildTarget.package]!.isInBuild,
+          isRoot: buildPackages[buildTarget.package]!.isOutput,
         );
 
         final builder = BuildLogLogger.scopeLogSync(
@@ -211,7 +216,7 @@ class BuildPhaseCreator {
         builderConfig: builderConfig,
         targetConfig: targetConfig,
         globalOptionOverrides: globalOptionOverrides,
-        isRoot: buildPackages[buildTarget.package]!.isInBuild,
+        isRoot: buildPackages[buildTarget.package]!.isOutput,
       );
 
       final builder = BuildLogLogger.scopeLogSync(
@@ -286,7 +291,7 @@ class BuildPhaseCreator {
     // `false` if the builder or any builder it applies has non-hidden output.
     // Post process builder output is always hidden, so skip the check.
     if (builderDefinition is BuilderDefinition &&
-        !buildPackages[buildTarget.package]!.isInBuild) {
+        !buildPackages[buildTarget.package]!.isOutput) {
       if (!(builderDefinition.hideOutput &&
           builderDefinition.appliesBuilders.every(
             // Post process builders are not in the map, replace `null` with
@@ -306,7 +311,10 @@ class BuildPhaseCreator {
     final shouldAutoApply =
         buildTarget.autoApplyBuilders &&
         builderDefinition is BuilderDefinition &&
-        builderDefinition.autoAppliesTo(buildPackages[buildTarget.package]!);
+        builderDefinition.autoAppliesTo(
+          buildPackages[buildTarget.package]!,
+          restrictForWorkspacePackages: workspace ? buildPackages : null,
+        );
     return shouldAutoApply ||
         (_builderAppliersByKey[builderDefinition.key] ?? const []).any(
           (anchorBuilder) => _shouldApply(anchorBuilder, buildTarget),

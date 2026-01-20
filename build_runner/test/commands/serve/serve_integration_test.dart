@@ -33,9 +33,9 @@ void main() {
   final path = p.absolute('example');
 
   setUp(() async {
-    final buildPackages = BuildPackages.fromPackages([
-      BuildPackage(name: 'example', path: path, isInBuild: true, watch: true),
-    ], current: 'example');
+    final buildPackages = BuildPackages.singlePackageBuild('example', [
+      BuildPackage(name: 'example', path: path, isOutput: true, watch: true),
+    ]);
     readerWriter =
         InternalTestReaderWriter(outputRootPackage: 'example')
           ..testing.writeString(
