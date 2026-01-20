@@ -18,7 +18,7 @@ import 'build_package.dart';
 
 /// The SDK package, we filter this to the core libs and dev compiler
 /// resources.
-final _sdkPackage = BuildPackage(r'$sdk', sdkPath, null, isEditable: false);
+final _sdkPackage = BuildPackage(name: r'$sdk', path: sdkPath);
 
 /// The [BuildPackage]s in the build.
 class BuildPackages implements AssetPathProvider {
@@ -74,23 +74,19 @@ class BuildPackages implements AssetPathProvider {
     }
   }
 
-  /// Creates a [BuildPackages] given the [current] [BuildPackage].
-  factory BuildPackages.fromCurrent(BuildPackage current) {
-    final allPackages = <String, BuildPackage>{current.name: current};
-
-    void addDeps(BuildPackage package) {
-      for (final dep in package.dependencies) {
-        if (allPackages.containsKey(dep.name)) continue;
-        allPackages[dep.name] = dep;
-        addDeps(dep);
-      }
-    }
-
-    addDeps(current);
-
+  /// Creates [BuildPackages] from [BuildPackage]s.
+  ///
+  /// If [outputRoot] is not specified it defaults to [current].
+  @visibleForTesting
+  factory BuildPackages.fromPackages(
+    Iterable<BuildPackage> packages, {
+    required String current,
+    String? outputRoot,
+  }) {
+    final allPackages = {for (final package in packages) package.name: package};
     return BuildPackages._(
-      current: current,
-      outputRoot: current,
+      current: allPackages[current]!,
+      outputRoot: allPackages[outputRoot ?? current]!,
       allPackages: allPackages,
     );
   }
@@ -143,45 +139,29 @@ class BuildPackages implements AssetPathProvider {
 
     for (final packageConfig in packageConfigs) {
       final isRoot = packageConfig.name == currentPackageName;
+      final pubspec = _pubspecForPath(packageConfig.root.toFilePath());
       buildPackages[packageConfig.name] = BuildPackage(
-        packageConfig.name,
-        packageConfig.root.toFilePath(),
-        packageConfig.languageVersion,
-        isEditable: !fixedPackages.contains(packageConfig.name),
+        name: packageConfig.name,
+        path: packageConfig.root.toFilePath(),
+        languageVersion: packageConfig.languageVersion,
+        watch: !fixedPackages.contains(packageConfig.name),
         isInBuild: isRoot,
+        dependencies: _depsFromYaml(pubspec, isRoot: isRoot),
       );
     }
-
-    BuildPackage createPackage(String packageName, {String? parent}) {
-      final buildPackage = buildPackages[packageName];
-      if (buildPackage == null) {
-        throw StateError(
-          'Dependency $packageName ${parent != null ? 'of $parent ' : ''}not '
-          'present, please run `dart pub get` or `flutter pub get` to fetch '
-          'dependencies.',
-        );
+    for (final package in buildPackages.values) {
+      for (final dependency in package.dependencies) {
+        if (!buildPackages.containsKey(dependency)) {
+          throw StateError(
+            'Dependency $dependency of $package not '
+            'present, please run `dart pub get` or `flutter pub get` to fetch '
+            'dependencies.',
+          );
+        }
       }
-      return buildPackage;
     }
 
-    final currentPackage = createPackage(currentPackageName);
-    currentPackage.dependencies.addAll(
-      _depsFromYaml(
-        currentPubspec,
-        isRoot: true,
-      ).map((n) => createPackage(n, parent: currentPackageName)),
-    );
-
-    final packageDependencies = _parsePackageDependencies(
-      packageConfig.packages.where((p) => p.name != currentPackageName),
-    );
-    for (final packageName in packageDependencies.keys) {
-      createPackage(packageName).dependencies.addAll(
-        packageDependencies[packageName]!.map(
-          (n) => createPackage(n, parent: packageName),
-        ),
-      );
-    }
+    final currentPackage = buildPackages[currentPackageName]!;
 
     // A workspace can have packages that are not depended on by [rootPackage].
     // Compute transitive dependencies and filter to that.
@@ -191,9 +171,10 @@ class BuildPackages implements AssetPathProvider {
       final queue = [currentPackage];
       while (queue.isNotEmpty) {
         final package = queue.removeLast();
-        for (final dep in package.dependencies) {
-          if (usedPackages.add(dep)) {
-            queue.add(dep);
+        for (final dependency in package.dependencies) {
+          final dependencyPackage = buildPackages[dependency]!;
+          if (usedPackages.add(dependencyPackage)) {
+            queue.add(dependencyPackage);
           }
         }
       }
@@ -300,19 +281,6 @@ Set<String> _parseFixedPackages(File pubspecLockFile) {
     }
   }
   return result;
-}
-
-/// Read the pubspec for each package in [packages] and finds its
-/// dependencies.
-Map<String, List<String>> _parsePackageDependencies(
-  Iterable<Package> packages,
-) {
-  final dependencies = <String, List<String>>{};
-  for (final package in packages) {
-    final pubspec = _pubspecForPath(package.root.toFilePath());
-    dependencies[package.name] = _depsFromYaml(pubspec);
-  }
-  return dependencies;
 }
 
 /// Gets the deps from a yaml file, omitting dependency_overrides.

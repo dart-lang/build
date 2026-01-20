@@ -12,6 +12,8 @@ import 'package:build_runner/src/build/asset_graph/exceptions.dart';
 import 'package:build_runner/src/build/asset_graph/graph.dart';
 import 'package:build_runner/src/build/asset_graph/node.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
+import 'package:build_runner/src/build_plan/build_package.dart';
+import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/phase.dart';
 import 'package:crypto/crypto.dart';
@@ -22,7 +24,9 @@ import '../../common/common.dart';
 
 void main() {
   late InternalTestReaderWriter digestReader;
-  final fooPackageGraph = createBuildPackages({rootPackage('foo'): []});
+  final fooPackageGraph = BuildPackages.fromPackages({
+    BuildPackage.forTesting(name: 'foo', isInBuild: true),
+  }, current: 'foo');
 
   setUp(() async {
     digestReader = InternalTestReaderWriter();
@@ -549,11 +553,13 @@ void main() {
               package: 'a',
             ),
           ]);
-          final packageGraph = createBuildPackages({rootPackage('a'): []});
+          final buildPackages = BuildPackages.fromPackages({
+            BuildPackage.forTesting(name: 'a', isInBuild: true),
+          }, current: 'a');
           final graph = await AssetGraph.build(
             buildPhases,
             {source},
-            packageGraph,
+            buildPackages,
             digestReader,
           );
 

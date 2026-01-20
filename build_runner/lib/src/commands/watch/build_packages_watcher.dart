@@ -45,7 +45,7 @@ class BuildPackagesWatcher {
   Stream<AssetChange> _watch() {
     final allWatchers =
         _buildPackages.allPackages.values
-            .where((buildPackage) => buildPackage.isEditable)
+            .where((buildPackage) => buildPackage.watch)
             .map(_strategy)
             .toList();
     final filteredEvents =

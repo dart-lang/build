@@ -36,7 +36,7 @@ void main() {
         'lib',
         'bar.dart',
       );
-      final nodeBar = BuildPackage('bar', pkgBar, null, isEditable: true);
+      final nodeBar = BuildPackage(name: 'bar', path: pkgBar, watch: true);
 
       final event = WatchEvent(ChangeType.ADD, barFile);
       final change = AssetChange.fromEvent(nodeBar, event);
@@ -49,7 +49,7 @@ void main() {
       final pkgBar = p.join('/', 'foo', 'bar');
       final barFile = p.join('/', 'foo', 'bar', 'lib', 'bar.dart');
 
-      final nodeBar = BuildPackage('bar', pkgBar, null, isEditable: true);
+      final nodeBar = BuildPackage(name: 'bar', path: pkgBar, watch: true);
       final event = WatchEvent(ChangeType.ADD, barFile);
       final change = AssetChange.fromEvent(nodeBar, event);
 

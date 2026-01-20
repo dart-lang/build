@@ -7,6 +7,8 @@ import 'package:build/build.dart';
 import 'package:build_config/build_config.dart'
     hide AutoApply, BuilderDefinition, PostProcessBuilderDefinition;
 import 'package:build_runner/src/build_plan/build_configs.dart';
+import 'package:build_runner/src/build_plan/build_package.dart';
+import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phase_creator.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/builder_definition.dart';
@@ -21,11 +23,12 @@ import '../common/common.dart';
 
 void main() {
   group('BuildPhaseCreator', () {
+    final buildPackages = BuildPackages.fromPackages([
+      BuildPackage.forTesting(name: 'a', dependencies: ['b'], isInBuild: true),
+      BuildPackage.forTesting(name: 'b'),
+    ], current: 'a');
+
     test('builderConfigOverrides overrides builder config globally', () async {
-      final buildPackages = createBuildPackages({
-        rootPackage('a'): ['b'],
-        package('b'): [],
-      });
       final buildConfigs = await BuildConfigs.load(
         buildPackages: buildPackages,
         testingOverrides: TestingOverrides(
@@ -61,10 +64,6 @@ void main() {
     test(
       'applies root package global options before builderConfigOverrides',
       () async {
-        final buildPackages = createBuildPackages({
-          rootPackage('a'): ['b'],
-          package('b'): [],
-        });
         await runInBuildConfigZone(
           () async {
             final overrides =
@@ -127,16 +126,12 @@ void main() {
             }
           },
           buildPackages.current!.name,
-          buildPackages.current!.dependencies.map((node) => node.name).toList(),
+          buildPackages.current!.dependencies.toList(),
         );
       },
     );
 
     test('honors package filter', () async {
-      final buildPackages = createBuildPackages({
-        rootPackage('a'): ['b'],
-        package('b'): [],
-      });
       final buildConfigs = await BuildConfigs.load(
         buildPackages: buildPackages,
         testingOverrides: TestingOverrides(
@@ -164,10 +159,6 @@ void main() {
     });
 
     test('honors appliesBuilders', () async {
-      final buildPackages = createBuildPackages({
-        rootPackage('a'): ['b'],
-        package('b'): [],
-      });
       final buildConfigs = await BuildConfigs.load(
         buildPackages: buildPackages,
         testingOverrides: TestingOverrides(
@@ -208,11 +199,15 @@ void main() {
     });
 
     test('skips non-hidden builders on non-root packages', () async {
-      final buildPackages = createBuildPackages({
-        rootPackage('a'): ['b', 'c'],
-        package('b'): ['c'],
-        package('c'): [],
-      });
+      final buildPackages = BuildPackages.fromPackages([
+        BuildPackage.forTesting(
+          name: 'a',
+          dependencies: ['b', 'c'],
+          isInBuild: true,
+        ),
+        BuildPackage.forTesting(name: 'b', dependencies: ['c']),
+        BuildPackage.forTesting(name: 'c'),
+      ], current: 'a');
       final buildConfigs = await BuildConfigs.load(
         buildPackages: buildPackages,
         testingOverrides: TestingOverrides(
@@ -252,11 +247,15 @@ void main() {
     test(
       'skips builders which apply non-hidden builders on non-root packages',
       () async {
-        final buildPackages = createBuildPackages({
-          rootPackage('a'): ['b', 'c'],
-          package('b'): ['c'],
-          package('c'): [],
-        });
+        final buildPackages = BuildPackages.fromPackages([
+          BuildPackage.forTesting(
+            name: 'a',
+            dependencies: ['b', 'c'],
+            isInBuild: true,
+          ),
+          BuildPackage.forTesting(name: 'b', dependencies: ['c']),
+          BuildPackage.forTesting(name: 'c'),
+        ], current: 'a');
         final buildConfigs = await BuildConfigs.load(
           buildPackages: buildPackages,
           testingOverrides: TestingOverrides(
@@ -302,10 +301,6 @@ void main() {
     );
 
     test('returns empty phases if a dependency is missing', () async {
-      final buildPackages = createBuildPackages({
-        rootPackage('a'): ['b'],
-        package('b'): [],
-      });
       await runInBuildConfigZone(
         () async {
           final overrides =
@@ -345,7 +340,7 @@ void main() {
           );
         },
         buildPackages.current!.name,
-        buildPackages.current!.dependencies.map((node) => node.name).toList(),
+        buildPackages.current!.dependencies.toList(),
       );
     });
 
@@ -353,10 +348,6 @@ void main() {
       Future<BuildPhases> createPhases({
         Map<String, TargetBuilderConfig>? builderConfigs,
       }) async {
-        final buildPackages = createBuildPackages({
-          rootPackage('a'): ['b'],
-          package('b'): [],
-        });
         final buildConfigs = await runInBuildConfigZone(
           () => BuildConfigs.load(
             buildPackages: buildPackages,
@@ -458,7 +449,9 @@ void main() {
     test(
       'does not allow post process builders with capturing inputs',
       () async {
-        final buildPackages = createBuildPackages({rootPackage('a'): []});
+        final buildPackages = BuildPackages.fromPackages([
+          BuildPackage.forTesting(name: 'a', isInBuild: true),
+        ], current: 'a');
         final buildConfigs = await BuildConfigs.load(
           buildPackages: buildPackages,
           testingOverrides: TestingOverrides(

@@ -12,6 +12,7 @@ import 'package:build_runner/src/build/asset_graph/graph.dart';
 import 'package:build_runner/src/build/asset_graph/node.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
 import 'package:build_runner/src/build/build_result.dart';
+import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/commands/serve/server.dart';
@@ -109,7 +110,9 @@ void main() {
   late BuildOutputReader finalizedReader;
 
   setUp(() async {
-    packageGraph = createBuildPackages({rootPackage('a'): []});
+    packageGraph = BuildPackages.fromPackages([
+      BuildPackage.forTesting(name: 'a', isInBuild: true),
+    ], current: 'a');
     readerWriter = InternalTestReaderWriter(
       outputRootPackage: packageGraph.outputRoot.name,
     );

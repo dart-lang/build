@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'package:build/build.dart';
 import 'package:build_runner/src/build/build_result.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
+import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
@@ -25,9 +26,9 @@ void main() {
   group('--config', () {
     test('warns override config defines builders', () async {
       final logs = <LogRecord>[];
-      final buildPackages = createBuildPackages({
-        rootPackage('a', path: path.absolute('a')): [],
-      });
+      final buildPackages = BuildPackages.fromPackages([
+        BuildPackage(name: 'a', path: path.absolute('a'), isInBuild: true),
+      ], current: 'a');
       final result = await _doBuild(
         {
           'a|build.yaml': '',
@@ -59,14 +60,11 @@ builders:
 Future<BuildResult> _doBuild(
   Map<String, String> inputs, {
   required AssetId packageConfigId,
-  BuildPackages? buildPackages,
+  required BuildPackages buildPackages,
   void Function(LogRecord)? onLog,
   String? configKey,
 }) async {
   onLog ??= (_) {};
-  buildPackages ??= createBuildPackages({
-    rootPackage('a', path: path.absolute('a')): [],
-  });
   final readerWriter = InternalTestReaderWriter(
     outputRootPackage: buildPackages.outputRoot.name,
   );

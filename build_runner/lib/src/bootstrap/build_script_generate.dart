@@ -74,7 +74,9 @@ Future<BuilderFactoriesExpressions> loadBuilderFactories() async {
   final buildPackages = await BuildPackages.forThisPackage();
   final orderedPackages = stronglyConnectedComponents<BuildPackage>(
     buildPackages.allPackages.values,
-    (buildPackage) => buildPackage.dependencies,
+    (buildPackage) => buildPackage.dependencies.map(
+      (name) => buildPackages.allPackages[name]!,
+    ),
     equals: (a, b) => a.name == b.name,
     hashCode: (n) => n.name.hashCode,
   ).expand((c) => c);
@@ -91,16 +93,13 @@ Future<BuilderFactoriesExpressions> loadBuilderFactories() async {
     try {
       return await BuildConfig.fromBuildConfigDir(
         package.name,
-        package.dependencies.map((n) => n.name),
+        package.dependencies,
         package.path,
       );
     } on ArgumentError // ignore: avoid_catching_errors
     catch (_) {
       // During the build an error will be logged.
-      return BuildConfig.useDefault(
-        package.name,
-        package.dependencies.map((n) => n.name),
-      );
+      return BuildConfig.useDefault(package.name, package.dependencies);
     }
   }
 

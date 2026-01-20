@@ -1,6 +1,8 @@
 // Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+// ignore_for_file: invalid_use_of_visible_for_testing_member
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -378,19 +380,19 @@ Future<TestBuilderResult> testBuilderFactories(
           : AnalyzerResolvers.custom(packageConfig: packageConfig);
 
   // Build a `buildPackages` based on [sourceAssets].
+  final otherPackages = allPackages.toSet()..remove(rootPackage);
   final rootNode = BuildPackage(
-    rootPackage,
-    '/$rootPackage',
-    null,
-    isEditable: true,
+    name: rootPackage,
+    path: '/$rootPackage',
+    watch: true,
     isInBuild: true,
+    dependencies: otherPackages,
   );
-  for (final otherPackage in allPackages.where((p) => p != rootPackage)) {
-    rootNode.dependencies.add(
-      BuildPackage(otherPackage, '/$otherPackage', null, isEditable: true),
-    );
-  }
-  final buildPackages = BuildPackages.fromCurrent(rootNode);
+  final buildPackages = BuildPackages.fromPackages([
+    rootNode,
+    for (final otherPackage in otherPackages)
+      BuildPackage(name: otherPackage, path: '/$otherPackage', watch: true),
+  ], current: rootPackage);
 
   String builderName(Object builder) {
     final result = builder.toString();
@@ -415,7 +417,6 @@ Future<TestBuilderResult> testBuilderFactories(
     name = _firstNameNotIn(name, builderNameToBuilderFactory.keys.toSet());
     builderDefinitions.add(
       _ApplyBuilderDefinitionToPackages(
-        // ignore: invalid_use_of_visible_for_testing_member
         delegate: BuilderDefinition(
           name,
           autoApply: build_config.AutoApply.allPackages,
@@ -441,10 +442,7 @@ Future<TestBuilderResult> testBuilderFactories(
       name,
       postProcessBuilderNameToBuilderFactory.keys.toSet(),
     );
-    builderDefinitions.add(
-      // ignore: invalid_use_of_visible_for_testing_member
-      PostProcessBuilderDefinition(name),
-    );
+    builderDefinitions.add(PostProcessBuilderDefinition(name));
     postProcessBuilderNameToBuilderFactory[name] = postProcessBuilderFactory;
   }
 
@@ -495,7 +493,6 @@ Future<TestBuilderResult> testBuilderFactories(
       builderNameToBuilderFactory,
       postProcessBuilderFactories: postProcessBuilderNameToBuilderFactory,
     ),
-    // ignore: invalid_use_of_visible_for_testing_member
     buildOptions: BuildOptions.forTests(
       enableLowResourcesMode: enableLowResourceMode,
       verbose: verbose,

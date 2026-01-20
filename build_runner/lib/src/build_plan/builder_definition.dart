@@ -37,7 +37,8 @@ sealed class AbstractBuilderDefinition {
   }) async {
     final orderedPackages = stronglyConnectedComponents<BuildPackage>(
       buildPackages.allPackages.values,
-      (buildPackage) => buildPackage.dependencies,
+      (buildPackage) =>
+          buildPackage.dependencies.map((name) => buildPackages[name]!),
       equals: (a, b) => a.name == b.name,
       hashCode: (n) => n.name.hashCode,
     ).expand((c) => c);
@@ -56,7 +57,7 @@ sealed class AbstractBuilderDefinition {
       try {
         return await build_config.BuildConfig.fromBuildConfigDir(
           package.name,
-          package.dependencies.map((n) => n.name),
+          package.dependencies,
           package.path,
         );
       } on ArgumentError // ignore: avoid_catching_errors
@@ -64,7 +65,7 @@ sealed class AbstractBuilderDefinition {
         // During the build an error will be logged.
         return build_config.BuildConfig.useDefault(
           package.name,
-          package.dependencies.map((n) => n.name),
+          package.dependencies,
         );
       }
     }
@@ -165,7 +166,7 @@ class BuilderDefinition implements AbstractBuilderDefinition {
       case AutoApply.rootPackage:
         return package.isInBuild;
       case AutoApply.dependents:
-        return package.dependencies.any((p) => p.name == this.package);
+        return package.dependencies.contains(this.package);
     }
   }
 }

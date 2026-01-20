@@ -248,20 +248,17 @@ Future<BuildConfig> _packageBuildConfig(
   ReaderWriter? readerWriter,
   BuildPackage package,
 ) async {
-  final dependencies = [
-    for (final buildPackage in package.dependencies) buildPackage.name,
-  ];
   try {
     final id = AssetId(package.name, 'build.yaml');
     if (readerWriter != null && await readerWriter.canRead(id)) {
       return BuildConfig.parse(
         package.name,
-        dependencies,
+        package.dependencies,
         await readerWriter.readAsString(id),
         configYamlPath: p.join(package.path, 'build.yaml'),
       );
     } else {
-      return BuildConfig.useDefault(package.name, dependencies);
+      return BuildConfig.useDefault(package.name, package.dependencies);
     }
   } on ArgumentError // ignore: avoid_catching_errors
   catch (e) {
@@ -312,7 +309,7 @@ Future<BuiltMap<String, BuildConfig>> findBuildConfigOverrides({
     final yaml = await readerWriter.readAsString(id);
     final config = BuildConfig.parse(
       packageName,
-      buildPackage.dependencies.map((n) => n.name),
+      buildPackage.dependencies,
       yaml,
       configYamlPath: id.path,
     );
@@ -327,7 +324,7 @@ Future<BuiltMap<String, BuildConfig>> findBuildConfigOverrides({
     final yaml = await readerWriter.readAsString(id);
     final config = BuildConfig.parse(
       outputRootPackage.name,
-      outputRootPackage.dependencies.map((n) => n.name),
+      outputRootPackage.dependencies,
       yaml,
       configYamlPath: id.path,
     );

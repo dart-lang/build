@@ -13,6 +13,7 @@ import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_directory.dart';
 import 'package:build_runner/src/build_plan/build_filter.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
+import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/build_plan.dart';
@@ -37,7 +38,9 @@ void main() {
 
     setUp(() async {
       readerWriter = InternalTestReaderWriter(outputRootPackage: 'a');
-      buildPackages = createBuildPackages({rootPackage('a'): []});
+      buildPackages = BuildPackages.fromPackages([
+        BuildPackage.forTesting(name: 'a', isInBuild: true),
+      ], current: 'a');
       assetGraph = await AssetGraph.build(
         BuildPhases([]),
         <AssetId>{},

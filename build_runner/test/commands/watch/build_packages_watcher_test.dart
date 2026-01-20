@@ -6,30 +6,35 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
+import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/commands/watch/asset_change.dart';
 import 'package:build_runner/src/commands/watch/build_package_watcher.dart';
 import 'package:build_runner/src/commands/watch/build_packages_watcher.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
-import '../../common/build_packages.dart';
-
 void main() {
   group('BuildPackagesWatcher', () {
+    final buildPackages = BuildPackages.fromPackages({
+      BuildPackage(
+        name: 'a',
+        path: '/g/a',
+        isInBuild: true,
+        watch: true,
+        dependencies: ['b'],
+      ),
+      BuildPackage(name: 'b', path: '/g/b', watch: true),
+    }, current: 'a');
     test('should aggregate changes from all nodes', () {
-      final graph = createBuildPackages({
-        rootPackage('a', path: '/g/a'): ['b'],
-        package('b', path: '/g/b', isEditable: true): [],
-      });
       final nodes = {
-        'a': FakeNodeWatcher(graph['a']!),
-        'b': FakeNodeWatcher(graph['b']!),
+        'a': FakeNodeWatcher(buildPackages['a']!),
+        'b': FakeNodeWatcher(buildPackages['b']!),
         r'$sdk': FakeNodeWatcher(
-          BuildPackage('\$sdk', '', null, isEditable: true),
+          BuildPackage(name: '\$sdk', path: '', watch: true),
         ),
       };
       final watcher = BuildPackagesWatcher(
-        graph,
+        buildPackages,
         watch: (node) {
           return nodes[node.name]!;
         },
@@ -48,16 +53,22 @@ void main() {
     });
 
     test('should avoid duplicate changes with nested packages', () async {
-      final graph = createBuildPackages({
-        rootPackage('a', path: '/g/a'): ['b'],
-        package('b', path: '/g/a/b', isEditable: true): [],
-      });
+      final buildPackages = BuildPackages.fromPackages({
+        BuildPackage(
+          name: 'a',
+          path: '/g/a',
+          isInBuild: true,
+          watch: true,
+          dependencies: ['b'],
+        ),
+        BuildPackage(name: 'b', path: '/g/a/b', watch: true),
+      }, current: 'a');
       final nodes = {
-        'a': FakeNodeWatcher(graph['a']!)..markReady(),
-        'b': FakeNodeWatcher(graph['b']!)..markReady(),
+        'a': FakeNodeWatcher(buildPackages['a']!)..markReady(),
+        'b': FakeNodeWatcher(buildPackages['b']!)..markReady(),
       };
       final watcher = BuildPackagesWatcher(
-        graph,
+        buildPackages,
         watch: (node) {
           return nodes[node.name]!;
         },
@@ -76,14 +87,20 @@ void main() {
     });
 
     test('should avoid watchers on pub dependencies', () {
-      final graph = createBuildPackages({
-        rootPackage('a', path: '/g/a'): ['b'],
-        package('b', path: '/g/a/b/', isEditable: false): [],
-      });
+      final buildPackages = BuildPackages.fromPackages({
+        BuildPackage(
+          name: 'a',
+          path: '/g/a',
+          isInBuild: true,
+          watch: true,
+          dependencies: ['b'],
+        ),
+        BuildPackage(name: 'b', path: '/g/b', watch: false),
+      }, current: 'a');
       final nodes = {
-        'a': FakeNodeWatcher(graph['a']!),
+        'a': FakeNodeWatcher(buildPackages['a']!),
         r'$sdk': FakeNodeWatcher(
-          BuildPackage('\$sdk', '', null, isEditable: true),
+          BuildPackage(name: '\$sdk', path: '', watch: true),
         ),
       };
       BuildPackageWatcher noBWatcher(BuildPackage node) {
@@ -91,7 +108,7 @@ void main() {
         return nodes[node.name]!;
       }
 
-      final watcher = BuildPackagesWatcher(graph, watch: noBWatcher);
+      final watcher = BuildPackagesWatcher(buildPackages, watch: noBWatcher);
 
       unawaited(watcher.watch().drain());
 
@@ -103,19 +120,15 @@ void main() {
     });
 
     test('ready waits for all node watchers to be ready', () async {
-      final graph = createBuildPackages({
-        rootPackage('a', path: '/g/a'): ['b'],
-        package('b', path: '/g/b', isEditable: true): [],
-      });
       final nodes = {
-        'a': FakeNodeWatcher(graph['a']!),
-        'b': FakeNodeWatcher(graph['b']!),
+        'a': FakeNodeWatcher(buildPackages['a']!),
+        'b': FakeNodeWatcher(buildPackages['b']!),
         r'$sdk': FakeNodeWatcher(
-          BuildPackage('\$sdk', '', null, isEditable: true),
+          BuildPackage(name: '\$sdk', path: '', watch: true),
         ),
       };
       final watcher = BuildPackagesWatcher(
-        graph,
+        buildPackages,
         watch: (node) {
           return nodes[node.name]!;
         },

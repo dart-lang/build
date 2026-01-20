@@ -10,7 +10,6 @@ import 'package:crypto/crypto.dart';
 export 'package:build_test/build_test.dart';
 export 'package:build_test/src/internal_test_reader_writer.dart';
 
-export 'build_packages.dart';
 export 'build_runner_tester.dart';
 export 'builders.dart';
 export 'fixture_packages.dart';

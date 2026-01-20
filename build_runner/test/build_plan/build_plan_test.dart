@@ -36,15 +36,13 @@ void main() {
     late TestingOverrides testingOverrides;
 
     setUp(() {
-      buildPackages = BuildPackages.fromCurrent(
-        BuildPackage(
-          rootPackage,
-          '/$rootPackage',
-          null,
-          isEditable: true,
+      buildPackages = BuildPackages.fromPackages([
+        BuildPackage.forTesting(
+          name: rootPackage,
+          watch: true,
           isInBuild: true,
         ),
-      );
+      ], current: rootPackage);
       readerWriter = InternalTestReaderWriter(outputRootPackage: rootPackage);
       readerWriter.writeAsString(assetId, '// a.dart');
       readerWriter.writeAsString(assetId2, '// other');
@@ -207,9 +205,9 @@ void main() {
       final assetGraph = buildPlan.takeAssetGraph();
       await readerWriter.writeAsBytes(assetGraphId, assetGraph.serialize());
 
-      final buildPackages2 = BuildPackages.fromCurrent(
-        BuildPackage('b', '/b', null, isEditable: true, isInBuild: true),
-      );
+      final buildPackages2 = BuildPackages.fromPackages([
+        BuildPackage.forTesting(name: 'b', watch: true, isInBuild: true),
+      ], current: 'b');
       final testingOverrides2 = testingOverrides.copyWith(
         buildPackages: buildPackages2,
       );

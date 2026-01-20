@@ -8,6 +8,8 @@ import 'package:build/build.dart';
 import 'package:build_runner/src/build/asset_graph/graph.dart';
 import 'package:build_runner/src/build/asset_graph/node.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
+import 'package:build_runner/src/build_plan/build_package.dart';
+import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/commands/serve/server.dart';
 import 'package:build_runner/src/io/build_output_reader.dart';
@@ -27,7 +29,9 @@ void main() {
     assetGraph = await AssetGraph.build(
       BuildPhases([]),
       <AssetId>{},
-      createBuildPackages({rootPackage('a'): []}),
+      BuildPackages.fromPackages([
+        BuildPackage.forTesting(name: 'a', isInBuild: true),
+      ], current: 'a'),
       InternalTestReaderWriter(),
     );
     readerWriter = InternalTestReaderWriter();

@@ -9,6 +9,8 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:build_runner/src/build/build_result.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
+import 'package:build_runner/src/build_plan/build_package.dart';
+import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/builder_definition.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
@@ -31,9 +33,9 @@ void main() {
   final path = p.absolute('example');
 
   setUp(() async {
-    final buildPackages = createBuildPackages({
-      rootPackage('example', path: path): [],
-    });
+    final buildPackages = BuildPackages.fromPackages([
+      BuildPackage(name: 'example', path: path, isInBuild: true, watch: true),
+    ], current: 'example');
     readerWriter =
         InternalTestReaderWriter(outputRootPackage: 'example')
           ..testing.writeString(
