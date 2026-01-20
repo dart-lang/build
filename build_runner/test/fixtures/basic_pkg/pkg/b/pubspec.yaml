@@ -1,4 +1,0 @@
-name: b
-version: 3.0.0
-dependencies:
-  c: ^0.4.0
