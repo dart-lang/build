@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // This file explicitly does _not_ end in `_test.dart`, so that it is not picked
-// up by `pub run test`. It is here for coveralls.
+// up by `dart run test`. It is here for coveralls.
 
 import 'builder/auto_mocks_test.dart' as builder_auto_mocks_test;
 import 'builder/custom_mocks_test.dart' as builder_custom_mocks_test;

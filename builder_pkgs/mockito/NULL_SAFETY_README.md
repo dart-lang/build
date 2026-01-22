@@ -101,7 +101,7 @@ under `dev_dependencies`: something like `build_runner: ^1.10.0`.
 The final step is to run build_runner in order to generate the new library:
 
 ```shell
-flutter pub run build_runner build
+dart run build_runner build
 # OR
 dart run build_runner build
 ```

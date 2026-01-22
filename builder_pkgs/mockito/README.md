@@ -49,7 +49,7 @@ you are directing Mockito's code generation to write a mock class for each
 The next step is to run `build_runner` in order to generate this new library:
 
 ```shell
-flutter pub run build_runner build
+dart run build_runner build
 # OR
 dart run build_runner build
 ```

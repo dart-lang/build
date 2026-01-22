@@ -47,7 +47,7 @@ jobs:
         name: Install dependencies
         run: dart pub get
       - name: Build generated artifacts
-        run: dart pub run build_runner build
+        run: dart run build_runner build
       - name: Analyze code
         run: dart analyze --fatal-infos
 
