@@ -357,6 +357,16 @@ class WebMemoryFilesystem {
     }
     final sourceMapFile = '$sourceFile.map';
     final metadataFile = '$sourceFile.metadata';
+
+    final sourceFileData = files[sourceFile];
+    if (sourceFileData == null) {
+      _log.warning(
+        'File $fileName was requested but not compiled by the '
+        'Frontend Server.',
+      );
+      return;
+    }
+
     final filesToWrite = {
       sourceFile: files[sourceFile]!,
       sourceMapFile: sourcemaps[sourceMapFile]!,

@@ -358,6 +358,22 @@ class WebEntrypointBuilder implements Builder {
     final isAppEntrypoint = await _isAppEntryPoint(dartEntrypointId, buildStep);
     if (!isAppEntrypoint) return;
 
+    // The WebEntrypointMarkerBuilder will ordinarily set the frontend server's
+    // state for web entrypoints, but we set this here in the entrypoint
+    // builder for tests or benchmarks.
+    if (options.usesWebHotReload) {
+      final frontendServerState = await buildStep.fetchResource(
+        frontendServerStateResource,
+      );
+      final frontendServerStateWasLoaded = await frontendServerState
+          .checkAndDeserializeState(buildStep);
+      if (!frontendServerStateWasLoaded) {
+        final webEntrypointJson = <String, dynamic>{};
+        webEntrypointJson['entrypoint'] = dartEntrypointId.toString();
+        frontendServerState.entrypointAssetId = dartEntrypointId;
+      }
+    }
+
     final compilationSteps = <Future>[];
     Dart2WasmBootstrapResult? dart2WasmResult;
 
