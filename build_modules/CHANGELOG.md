@@ -1,3 +1,7 @@
+## 5.1.7
+
+- Add entrypoint file deserialization logic to FrontendServerState.
+
 ## 5.1.6
 
 - Allow `analyzer` 10.0.0.

@@ -1,3 +1,7 @@
+## 4.4.8
+
+- Add support for non-web-dir entrypoints with DDC + FES.
+
 ## 4.4.7
 
 - Add support for DDC's Library Bundle module system, which is compatible with web hot reload. This is not yet enabled by default.
