@@ -30,7 +30,7 @@ class FrontendServerState {
     if (await buildStep.canRead(webEntrypointAsset)) {
       final contents =
           json.decode(await buildStep.readAsString(webEntrypointAsset))
-              as Map<String, dynamic>;
+              as Map<String, Object?>;
       entrypointAssetId = AssetId.parse(contents['entrypoint'] as String);
       return true;
     }
