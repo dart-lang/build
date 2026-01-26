@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:glob/glob.dart';
+import 'package:path/path.dart' as p;
 
 /// A builder that gathers information about a web target's 'main' entrypoint.
 class WebEntrypointMarkerBuilder implements Builder {
@@ -30,12 +31,12 @@ class WebEntrypointMarkerBuilder implements Builder {
     final frontendServerState = await buildStep.fetchResource(
       frontendServerStateResource,
     );
-    final webEntrypointAsset = AssetId(
-      buildStep.inputId.package,
-      'web/.web.entrypoint.json',
-    );
+    final frontendServerStateWasLoaded = await frontendServerState
+        .checkAndDeserializeState(buildStep);
+    if (frontendServerStateWasLoaded) return;
+
     final webAssets = await buildStep.findAssets(Glob('web/**')).toList();
-    final webEntrypointJson = <String, dynamic>{};
+    final webEntrypointJson = <String, Object?>{};
 
     for (final asset in webAssets) {
       if (asset.extension == '.dart') {
@@ -52,6 +53,12 @@ class WebEntrypointMarkerBuilder implements Builder {
         }
       }
     }
+
+    final rootDir = p.dirname(buildStep.inputId.path);
+    final webEntrypointAsset = AssetId(
+      buildStep.inputId.package,
+      p.join(rootDir, '.web.entrypoint.json'),
+    );
 
     await buildStep.writeAsString(
       webEntrypointAsset,

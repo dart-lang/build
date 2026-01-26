@@ -134,9 +134,13 @@ class DdcFrontendServerBuilder implements Builder {
       );
     }
     final outputFile = scratchSpace.fileFor(jsOutputId);
-    // Write an empty file if this output was deemed extraneous by FES.
-    if (!!await outputFile.exists()) {
+    final metadataId = ddcEntrypointId.changeExtension(metadataExtension);
+    final metadataFile = scratchSpace.fileFor(metadataId);
+    // Write empty files if this output was deemed extraneous by FES.
+    if (!outputFile.existsSync()) {
       await outputFile.create(recursive: true);
+      await metadataFile.create(recursive: true);
+      return;
     }
     await scratchSpace.copyOutput(jsOutputId, buildStep);
     await fixAndCopySourceMap(
@@ -147,9 +151,7 @@ class DdcFrontendServerBuilder implements Builder {
 
     // Copy the metadata output, modifying its contents to remove the temp
     // directory from paths
-    final metadataId = ddcEntrypointId.changeExtension(metadataExtension);
-    final file = scratchSpace.fileFor(metadataId);
-    final content = await file.readAsString();
+    final content = await metadataFile.readAsString();
     final metadataJson = jsonDecode(content) as Map<String, Object?>;
     fixMetadataSources(metadataJson, scratchSpace.tempDir.uri);
     await buildStep.writeAsString(metadataId, jsonEncode(metadataJson));
