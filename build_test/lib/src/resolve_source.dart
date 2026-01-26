@@ -93,6 +93,10 @@ Future<T> resolveSource<T>(
 /// [readAllSourcesFromFilesystem] to read all sources available with
 /// [packageConfig].
 ///
+/// In packages read using `readAllSourcesFromFilesystem` the asset graph
+/// `.dart_tool/build/asset_graph.json` is not loaded as it would cause generated
+/// output from the real build to be deleted, in RAM only, by the test build.
+///
 /// [assetReaderChecks], if provided, runs after the action completes and can be
 /// used to add expectations on the reader state.
 Future<T> resolveSources<T>(
@@ -189,6 +193,11 @@ Future<T> _resolveAssets<T>(
         Glob('**'),
         package: package.name,
       )) {
+        // Don't read the asset graph from a real build, it would cause
+        // generated files from that build to be deleted, in RAM only, in the
+        // test build.
+        if (id.path.startsWith('.dart_tool/build/asset_graph.json')) continue;
+
         readerWriter.testing.writeBytes(id, await assetReader.readAsBytes(id));
       }
     }

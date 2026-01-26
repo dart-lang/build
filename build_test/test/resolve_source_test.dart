@@ -3,6 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:io';
+import 'dart:isolate';
 
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/element/element.dart';
@@ -10,6 +12,7 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 void main() {
@@ -161,6 +164,50 @@ void main() {
           );
         },
       );
+    });
+
+    test('all sources from real filesystem skips asset graph', () async {
+      // `resolveSources` should ignore `asset_graph.json` when reading from the
+      // real filesystem as it would cause surprising effects related to the
+      // latest real build, for example deletion of generated files.
+
+      // To check if `asset_graph.json` is read from the real filesystem
+      // do a test build then write `asset_graph.json` to the real filesystem.
+      // Then do an identical build. If `asset_graph.json` is used then the
+      // identical build will be skipped.
+
+      final sources = {'build_test|test/some_file.dart': ''};
+
+      // Generate and write `asset_graph.json`.
+      late String assetGraphContent;
+      await resolveSources(
+        sources,
+        readAllSourcesFromFilesystem: true,
+        assetReaderChecks: (testReaderWriter) {
+          assetGraphContent = testReaderWriter.testing.readString(
+            AssetId('build_test', '.dart_tool/build/asset_graph.json'),
+          );
+        },
+        (resolver) async {},
+      );
+      final packageConfig = await loadPackageConfigUri(
+        (await Isolate.packageConfig)!,
+      );
+      final path = packageConfig['build_test']!.root;
+      final file = File(
+        p.join(path.toFilePath(), '.dart_tool/build/asset_graph.json'),
+      );
+      file.createSync(recursive: true);
+      file.writeAsStringSync(assetGraphContent);
+
+      // It should make no difference, the identical build should run again.
+      var ranSecondTime = false;
+      await resolveSources(sources, readAllSourcesFromFilesystem: true, (
+        resolver,
+      ) async {
+        ranSecondTime = true;
+      });
+      expect(ranSecondTime, true);
     });
   });
 
