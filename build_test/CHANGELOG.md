@@ -1,5 +1,8 @@
 ## 3.5.6-wip
 
+- Bug fix: when using `resolveSources` with `readAllSourcesFromFilesystem`,
+  skip reading real `asset_graph.json` files. This prevents the test build from
+  deleting, in RAM only, generated outputs of the real build.
 - Use `build_runner` 2.10.6.
 
 ## 3.5.5
