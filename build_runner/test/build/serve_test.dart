@@ -30,7 +30,7 @@ void main() {
         isInBuild: true,
         watch: true,
       ),
-    ], current: 'a');
+    ], singlePackageToBuild: 'a');
     late InternalTestReaderWriter readerWriter;
 
     setUp(() async {

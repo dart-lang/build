@@ -65,7 +65,7 @@ void main() {
   final placeholders = placeholderIdsFor(
     BuildPackages.fromPackages([
       BuildPackage.forTesting(name: 'a', isInBuild: true),
-    ], current: 'a'),
+    ], singlePackageToBuild: 'a'),
   );
 
   group('build', () {
@@ -743,7 +743,7 @@ additional_public_assets:
             isInBuild: true,
           ),
           BuildPackage(name: 'b', path: 'a/b/'),
-        ], current: 'a');
+        ], singlePackageToBuild: 'a');
       });
       test('can output files in non-root packages', () async {
         await testPhases(
@@ -1060,7 +1060,7 @@ targets:
           dependencies: ['b'],
         ),
         BuildPackage.forTesting(name: 'b'),
-      ], current: 'a');
+      ], singlePackageToBuild: 'a');
 
       test('explicit files by uri and path', () async {
         await testPhases(
@@ -1196,7 +1196,7 @@ targets:
       <AssetId>{},
       BuildPackages.fromPackages([
         BuildPackage.forTesting(name: 'a', isInBuild: true),
-      ], current: 'a'),
+      ], singlePackageToBuild: 'a'),
       result.readerWriter,
     );
 

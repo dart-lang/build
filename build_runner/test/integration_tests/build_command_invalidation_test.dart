@@ -72,6 +72,12 @@ void main() async {
       pathDependencies: ['builder_pkg', 'build_runner'],
       files: {'web/a.txt': 'a'},
     );
+    tester.writePackage(
+      name: 'builder_pkg',
+      dependencies: ['build'],
+      pathDependencies: ['build_runner'],
+      files: {},
+    );
     output = await tester.run('root_pkg', 'dart run build_runner build');
     expect(output, contains('wrote 1 output'));
 

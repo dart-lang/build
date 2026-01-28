@@ -392,7 +392,7 @@ Future<TestBuilderResult> testBuilderFactories(
     rootNode,
     for (final otherPackage in otherPackages)
       BuildPackage(name: otherPackage, path: '/$otherPackage', watch: true),
-  ], current: rootPackage);
+  ], singlePackageToBuild: rootPackage);
 
   String builderName(Object builder) {
     final result = builder.toString();
@@ -573,7 +573,7 @@ class _ApplyBuilderDefinitionToPackages implements BuilderDefinition {
   });
 
   @override
-  bool autoAppliesTo(BuildPackage package) =>
+  bool autoAppliesTo(BuildPackage package, {bool workspace = false}) =>
       applyToPackages.contains(package.name);
 
   // Delegate everything else.

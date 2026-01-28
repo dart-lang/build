@@ -58,6 +58,7 @@ class BuildRunnerCommandLine {
   final bool? trackPerformance;
   final bool? symlink;
   final bool? verbose;
+  final bool? workspace;
 
   static Future<BuildRunnerCommandLine?> parse(Iterable<String> arguments) =>
       _CommandRunner().run(arguments);
@@ -82,7 +83,8 @@ class BuildRunnerCommandLine {
       release = argResults.boolNamed(releaseOption),
       trackPerformance = argResults.boolNamed(trackPerformanceOption),
       symlink = argResults.boolNamed(symlinkOption),
-      verbose = argResults.boolNamed(verboseOption);
+      verbose = argResults.boolNamed(verboseOption),
+      workspace = argResults.boolNamed(workspaceOption);
 
   String get usage {
     // Calling `usage` only works if the command has been added to a
@@ -140,6 +142,7 @@ const releaseOption = 'release';
 const trackPerformanceOption = 'track-performance';
 const symlinkOption = 'symlink';
 const verboseOption = 'verbose';
+const workspaceOption = 'workspace';
 
 /// [CommandRunner] that returns a [BuildRunnerCommandLine] without actually
 /// running it.
@@ -282,6 +285,12 @@ class _Build extends Command<BuildRunnerCommandLine> {
             'For example, `--dart-jit-vm-arg "--observe" '
             '--dart-jit-vm-arg "--pause-isolates-on-start"` would start the '
             'build script with a debugger attached to it.',
+      )
+      ..addFlag(
+        workspaceOption,
+        defaultsTo: false,
+        negatable: true,
+        help: 'Build all packages in the current workspace.',
       );
   }
 

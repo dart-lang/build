@@ -27,6 +27,10 @@ class BuildPhaseCreator {
   final BuiltMap<String, BuiltMap<String, dynamic>> builderConfigOverrides;
   final bool isReleaseBuild;
 
+  /// Whether the build is for a whole workspace, as opposed to a single
+  /// package.
+  final bool workspace;
+
   /// Builder definitions by key, excluding post process builders.
   final Map<String, BuilderDefinition> _builderDefinitionByKey = {};
 
@@ -45,6 +49,7 @@ class BuildPhaseCreator {
     required Iterable<AbstractBuilderDefinition> builderDefinitions,
     required this.builderConfigOverrides,
     required this.isReleaseBuild,
+    this.workspace = false,
   }) : builderDefinitions = builderDefinitions.toBuiltList() {
     for (final builderDefinition in builderDefinitions) {
       if (builderDefinition is BuilderDefinition) {
@@ -120,6 +125,21 @@ class BuildPhaseCreator {
     final inBuildPhases = <InBuildPhase>[];
     final postBuildActions = <PostBuildAction>[];
     for (final cycle in cycles) {
+      // The set of packages that can contain builders that apply to the cycle,
+      // if building the whole workspace.
+      //
+      // If not building in a workspace, retain legacy behavior, which is to
+      // assume builders apply to all packages because builders are determined
+      // by the root package and the root package depends on all packages in the
+      // build. This is equivalent to the new check for real builds, but not
+      // equivalent for builds done by `package:build_test` where builder
+      // definitions are injected that do not match the package config.
+      final restrictAutoApplyToBuildersIn =
+          workspace
+              ? buildPackages.builderPackagesToAutoApplyByPackage[cycle
+                  .first
+                  .package]!
+              : null;
       for (final builderDefinition in builderDefinitions) {
         switch (builderDefinition) {
           case BuilderDefinition _:
@@ -128,6 +148,7 @@ class BuildPhaseCreator {
                 cycle,
                 builderDefinition,
                 globalOptions[builderDefinition.key] ?? BuilderOptions.empty,
+                restrictAutoApplyToBuildersIn: restrictAutoApplyToBuildersIn,
               ),
             );
             break;
@@ -152,14 +173,21 @@ class BuildPhaseCreator {
   List<InBuildPhase> _createInBuildPhases(
     Iterable<BuildTarget> buildTargets,
     BuilderDefinition builderDefinition,
-    BuilderOptions globalOptionOverrides,
-  ) {
+    BuilderOptions globalOptionOverrides, {
+    BuiltSet<String>? restrictAutoApplyToBuildersIn,
+  }) {
     final builderFactories =
         this.builderFactories.builderFactories[builderDefinition.key]!;
     final result = <InBuildPhase>[];
     for (final builderFactory in builderFactories) {
       for (final buildTarget in buildTargets) {
-        if (!_shouldApply(builderDefinition, buildTarget)) continue;
+        if (!_shouldApply(
+          builderDefinition,
+          buildTarget,
+          restrictAutoApplyToBuildersIn: restrictAutoApplyToBuildersIn,
+        )) {
+          continue;
+        }
 
         final builderConfig = builderDefinition.targetBuilderConfigDefaults;
         final targetConfig = buildTarget.builders[builderDefinition.key];
@@ -280,8 +308,9 @@ class BuildPhaseCreator {
   /// enabled or they can be applied by another builder that auto applies.
   bool _shouldApply(
     AbstractBuilderDefinition builderDefinition,
-    BuildTarget buildTarget,
-  ) {
+    BuildTarget buildTarget, {
+    BuiltSet<String>? restrictAutoApplyToBuildersIn,
+  }) {
     // If the package is not root, only hidden output is allowed. Return
     // `false` if the builder or any builder it applies has non-hidden output.
     // Post process builder output is always hidden, so skip the check.
@@ -306,10 +335,19 @@ class BuildPhaseCreator {
     final shouldAutoApply =
         buildTarget.autoApplyBuilders &&
         builderDefinition is BuilderDefinition &&
-        builderDefinition.autoAppliesTo(buildPackages[buildTarget.package]!);
+        builderDefinition.autoAppliesTo(
+          buildPackages[buildTarget.package]!,
+          workspace: workspace,
+        ) &&
+        (restrictAutoApplyToBuildersIn == null ||
+            restrictAutoApplyToBuildersIn.contains(builderDefinition.package));
     return shouldAutoApply ||
         (_builderAppliersByKey[builderDefinition.key] ?? const []).any(
-          (anchorBuilder) => _shouldApply(anchorBuilder, buildTarget),
+          (anchorBuilder) => _shouldApply(
+            anchorBuilder,
+            buildTarget,
+            restrictAutoApplyToBuildersIn: restrictAutoApplyToBuildersIn,
+          ),
         );
   }
 }

@@ -24,12 +24,13 @@ class TestingOverrides {
   final Duration? debounceDelay;
   final BuiltList<String>? defaultRootPackageSources;
   final DirectoryWatcher Function(String)? directoryWatcherFactory;
+  final bool flattenOutput;
   final void Function(LogRecord)? onLog;
   final ReaderWriter? readerWriter;
   final void Function(AssetId, Iterable<AssetId>)? reportUnusedAssetsForInput;
   final Resolvers? resolvers;
   final Stream<ProcessSignal>? terminateEventStream;
-  final bool flattenOutput;
+  final bool useAllBuilders;
 
   const TestingOverrides({
     this.builderDefinitions,
@@ -39,12 +40,13 @@ class TestingOverrides {
     this.debounceDelay,
     this.defaultRootPackageSources,
     this.directoryWatcherFactory,
+    this.flattenOutput = false,
     this.onLog,
     this.readerWriter,
     this.reportUnusedAssetsForInput,
     this.resolvers,
     this.terminateEventStream,
-    this.flattenOutput = false,
+    this.useAllBuilders = false,
   });
 
   TestingOverrides copyWith({
@@ -59,11 +61,11 @@ class TestingOverrides {
     debounceDelay: debounceDelay,
     defaultRootPackageSources: defaultRootPackageSources,
     directoryWatcherFactory: directoryWatcherFactory,
+    flattenOutput: flattenOutput,
     onLog: onLog,
     readerWriter: readerWriter,
     reportUnusedAssetsForInput: reportUnusedAssetsForInput,
     resolvers: resolvers,
     terminateEventStream: terminateEventStream,
-    flattenOutput: flattenOutput,
   );
 }

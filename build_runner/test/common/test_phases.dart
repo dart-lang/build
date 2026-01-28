@@ -90,7 +90,7 @@ Future<TestBuildersResult> testPhases(
 }) async {
   buildPackages ??= BuildPackages.fromPackages([
     BuildPackage.forTesting(name: 'a', isInBuild: true),
-  ], current: 'a');
+  ], singlePackageToBuild: 'a');
   var readerWriter =
       resumeFrom == null
           ? InternalTestReaderWriter(

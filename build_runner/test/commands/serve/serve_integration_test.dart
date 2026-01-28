@@ -35,7 +35,7 @@ void main() {
   setUp(() async {
     final buildPackages = BuildPackages.fromPackages([
       BuildPackage(name: 'example', path: path, isInBuild: true, watch: true),
-    ], current: 'example');
+    ], singlePackageToBuild: 'example');
     readerWriter =
         InternalTestReaderWriter(outputRootPackage: 'example')
           ..testing.writeString(

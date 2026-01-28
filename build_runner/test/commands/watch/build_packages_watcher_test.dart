@@ -24,7 +24,7 @@ void main() {
         dependencies: ['b'],
       ),
       BuildPackage(name: 'b', path: '/g/b', watch: true),
-    }, current: 'a');
+    }, singlePackageToBuild: 'a');
     test('should aggregate changes from all nodes', () {
       final nodes = {
         'a': FakeNodeWatcher(buildPackages['a']!),
@@ -62,7 +62,7 @@ void main() {
           dependencies: ['b'],
         ),
         BuildPackage(name: 'b', path: '/g/a/b', watch: true),
-      }, current: 'a');
+      }, singlePackageToBuild: 'a');
       final nodes = {
         'a': FakeNodeWatcher(buildPackages['a']!)..markReady(),
         'b': FakeNodeWatcher(buildPackages['b']!)..markReady(),
@@ -96,7 +96,7 @@ void main() {
           dependencies: ['b'],
         ),
         BuildPackage(name: 'b', path: '/g/b', watch: false),
-      }, current: 'a');
+      }, singlePackageToBuild: 'a');
       final nodes = {
         'a': FakeNodeWatcher(buildPackages['a']!),
         r'$sdk': FakeNodeWatcher(

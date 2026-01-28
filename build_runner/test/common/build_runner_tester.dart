@@ -462,18 +462,19 @@ environment:
 dependencies:
 ''');
 
-    for (final package in [
-      ...dependencies,
-      ...pathDependencies,
-      ...workspaceDependencies,
-    ]) {
+    for (final package in [...dependencies, ...workspaceDependencies]) {
       result.writeln('  $package: any');
+    }
+    for (final package in pathDependencies) {
+      result.writeln('  $package:');
+      result.writeln('    path: ../$package');
     }
 
     if (pathDevDependencies.isNotEmpty) {
       result.writeln('dev_dependencies:');
       for (final package in pathDevDependencies) {
-        result.writeln('  $package: any');
+        result.writeln('  $package:');
+        result.writeln('    path: ../$package');
       }
     }
 
@@ -483,11 +484,6 @@ dependencies:
       result
         ..writeln('  $package:')
         ..writeln('    path: $path');
-    }
-    for (final package in [...pathDependencies, ...pathDevDependencies]) {
-      result
-        ..writeln('  $package:')
-        ..writeln('    path: ../$package');
     }
     return result.toString();
   }
