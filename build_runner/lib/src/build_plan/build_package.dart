@@ -57,10 +57,29 @@ class BuildPackage {
   );
 
   @override
+  bool operator ==(Object other) {
+    if (identical(other, this)) return true;
+    return other is BuildPackage &&
+        name == other.name &&
+        path == other.path &&
+        watch == other.watch &&
+        isInBuild == other.isInBuild &&
+        languageVersion == other.languageVersion &&
+        dependencies == other.dependencies;
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(name, path, watch, isInBuild, languageVersion, dependencies);
+
+  @override
   String toString() => '''
-  $name:
-    path: $path
-    watch: $watch
-    isInBuild: $isInBuild
-    dependencies: $dependencies''';
+BuildPackage(
+  name: $name,
+  path: $path,
+  watch: $watch,
+  isInBuild: $isInBuild,
+  languageVersion: $languageVersion,
+  dependencies: $dependencies,
+)''';
 }

@@ -1,6 +1,0 @@
-name: workspace
-environment:
-  sdk: ^3.7.0
-workspace:
-  - pkgs/a
-  - pkgs/b

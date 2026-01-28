@@ -43,6 +43,7 @@ class BuildRunnerTester {
     required Map<String, String> files,
     List<String>? dependencies,
     List<String>? pathDependencies,
+    List<String>? pathDevDependencies,
     List<String>? workspaceDependencies,
     bool inWorkspace = false,
   }) {
@@ -53,6 +54,7 @@ class BuildRunnerTester {
           name: name,
           dependencies: dependencies,
           pathDependencies: pathDependencies,
+          pathDevDependencies: pathDevDependencies,
           workspaceDependencies: workspaceDependencies,
           inWorkspace: inWorkspace,
         ),
@@ -432,6 +434,9 @@ class Pubspecs {
   /// peer folders. This allows to add a dependency onto another package that
   /// will be written using `writePackage`.
   ///
+  /// [pathDevDependencies] are like [pathDependencies] except they are
+  /// `dev_dependencies`.
+  ///
   /// The specified [workspaceDependencies] are included as "any" dependencies.
   /// They should be in the workspace so they can be resolved from there.
   ///
@@ -440,11 +445,13 @@ class Pubspecs {
     required String name,
     List<String>? dependencies,
     List<String>? pathDependencies,
+    List<String>? pathDevDependencies,
     List<String>? workspaceDependencies,
     bool inWorkspace = false,
   }) {
     dependencies ??= [];
     pathDependencies ??= [];
+    pathDevDependencies ??= [];
     workspaceDependencies ??= [];
 
     final result = StringBuffer('''
@@ -463,6 +470,13 @@ dependencies:
       result.writeln('  $package: any');
     }
 
+    if (pathDevDependencies.isNotEmpty) {
+      result.writeln('dev_dependencies:');
+      for (final package in pathDevDependencies) {
+        result.writeln('  $package: any');
+      }
+    }
+
     result.writeln('dependency_overrides:');
     for (final package in dependencies) {
       final path = packageConfig[package]!.root.toFilePath();
@@ -470,7 +484,7 @@ dependencies:
         ..writeln('  $package:')
         ..writeln('    path: $path');
     }
-    for (final package in pathDependencies) {
+    for (final package in [...pathDependencies, ...pathDevDependencies]) {
       result
         ..writeln('  $package:')
         ..writeln('    path: ../$package');

@@ -15,35 +15,58 @@ import 'package:test/test.dart';
 
 import '../common/common.dart';
 
-final newLine = Platform.isWindows ? '\r\n' : '\n';
-
 void main() async {
-  final packageGraph = await BuildPackages.forPath(
-    p.absolute('test/fixtures/basic_pkg'),
-  );
-
   group('ReaderWriter', () {
-    final readerWriter = ReaderWriter(packageGraph);
+    late BuildPackages buildPackages;
+    late ReaderWriter readerWriter;
+    late String tempDirectory;
+
+    setUp(() async {
+      final pubspecs = await Pubspecs.load();
+      final tester = BuildRunnerTester(pubspecs);
+      tempDirectory = tester.tempDirectory.path;
+
+      tester.writePackage(
+        name: 'basic_pkg',
+        files: {
+          'hello.txt': 'world\n',
+          'lib/hello.txt': 'world\n',
+          'web/hello.txt': 'world\n',
+        },
+        pathDependencies: ['a'],
+      );
+      tester.writePackage(
+        name: 'a',
+        files: {'lib/a.txt': 'A\n'},
+        pathDependencies: [],
+      );
+      await tester.run('basic_pkg', 'dart pub get');
+
+      buildPackages = await BuildPackages.forPath(
+        p.join(tempDirectory, 'basic_pkg'),
+      );
+      readerWriter = ReaderWriter(buildPackages);
+    });
 
     test('can read any application package files', () async {
       expect(
         await readerWriter.readAsString(makeAssetId('basic_pkg|hello.txt')),
-        'world$newLine',
+        'world\n',
       );
       expect(
         await readerWriter.readAsString(makeAssetId('basic_pkg|lib/hello.txt')),
-        'world$newLine',
+        'world\n',
       );
       expect(
         await readerWriter.readAsString(makeAssetId('basic_pkg|web/hello.txt')),
-        'world$newLine',
+        'world\n',
       );
     });
 
     test('can read package dependency files in the lib dir', () async {
       expect(
         await readerWriter.readAsString(makeAssetId('a|lib/a.txt')),
-        'A$newLine',
+        'A\n',
       );
     });
 
@@ -156,7 +179,7 @@ void main() async {
       final id = makeAssetId('basic_pkg|test_file.txt');
       final content = 'test';
       await readerWriter.writeAsString(id, content);
-      final file = File(path.join('test', 'fixtures', id.package, id.path));
+      final file = File(path.join(tempDirectory, id.package, id.path));
       expect(await file.exists(), isTrue);
       expect(await file.readAsString(), content);
 

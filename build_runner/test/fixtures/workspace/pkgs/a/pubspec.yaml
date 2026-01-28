@@ -1,6 +1,0 @@
-name: a
-environment:
-  sdk: ^3.7.0
-resolution: workspace
-dependencies:
-  b:

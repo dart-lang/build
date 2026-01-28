@@ -4,11 +4,17 @@
 @TestOn('vm')
 library;
 
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:package_config/package_config_types.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
+import 'package:yaml/yaml.dart';
+
+import '../common/common.dart';
 
 void main() {
   late BuildPackages buildPackages;
@@ -20,7 +26,17 @@ void main() {
       });
 
       test('current', () {
-        expectPkg(buildPackages.current!, 'build_runner', '', watch: true);
+        expect(
+          buildPackages.current,
+          BuildPackage(
+            name: 'build_runner',
+            path: '',
+            watch: true,
+            isInBuild: true,
+            languageVersion: LanguageVersion(3, 7),
+            dependencies: buildPackages.current!.dependencies,
+          ),
+        );
       });
 
       test('asPackageConfig', () {
@@ -33,11 +49,30 @@ void main() {
       });
     });
 
-    group('basic package ', () {
-      final basicPkgPath = p.absolute('test/fixtures/basic_pkg/');
+    group('basic package', () {
+      late BuildPackages buildPackages;
+      late String tempDirectory;
 
       setUp(() async {
-        buildPackages = await BuildPackages.forPath(basicPkgPath);
+        final pubspecs = await Pubspecs.load();
+        final tester = BuildRunnerTester(pubspecs);
+        tempDirectory = tester.tempDirectory.path;
+
+        tester.writePackage(
+          name: 'basic_pkg',
+          files: {},
+          pathDependencies: ['a', 'b', 'c', 'd'],
+        );
+        tester.writePackage(name: 'a', files: {}, pathDependencies: ['b', 'c']);
+        tester.writePackage(name: 'b', files: {});
+        tester.writePackage(name: 'c', files: {});
+        tester.writePackage(name: 'd', files: {});
+        await tester.run('basic_pkg', 'dart pub get');
+        fakeHostedPackages(tester.tempDirectory, ['a', 'b', 'c', 'd']);
+
+        buildPackages = await BuildPackages.forPath(
+          p.join(tempDirectory, 'basic_pkg'),
+        );
       });
 
       test('allPackages', () {
@@ -55,22 +90,28 @@ void main() {
       });
 
       test('current', () {
-        expectPkg(
-          buildPackages.current!,
-          'basic_pkg',
-          basicPkgPath,
-          watch: true,
-          dependencies: ['a', 'b', 'c', 'd'],
+        expect(
+          buildPackages.current,
+          BuildPackage(
+            name: 'basic_pkg',
+            path: p.join(tempDirectory, 'basic_pkg'),
+            watch: true,
+            isInBuild: true,
+            languageVersion: LanguageVersion(3, 7),
+            dependencies: ['a', 'b', 'c', 'd'],
+          ),
         );
       });
 
       test('dependency', () {
-        expectPkg(
-          buildPackages['a']!,
-          'a',
-          '$basicPkgPath/pkg/a',
-          watch: false,
-          dependencies: ['b', 'c'],
+        expect(
+          buildPackages['a'],
+          BuildPackage(
+            name: 'a',
+            path: p.join(tempDirectory, 'a'),
+            languageVersion: LanguageVersion(3, 7),
+            dependencies: ['b', 'c'],
+          ),
         );
       });
 
@@ -84,10 +125,29 @@ void main() {
     });
 
     group('package with dev dependencies', () {
-      final withDevDepsPkgPath = p.absolute('test/fixtures/with_dev_deps');
+      late BuildPackages buildPackages;
+      late String tempDirectory;
 
       setUp(() async {
-        buildPackages = await BuildPackages.forPath(withDevDepsPkgPath);
+        final pubspecs = await Pubspecs.load();
+        final tester = BuildRunnerTester(pubspecs);
+        tempDirectory = tester.tempDirectory.path;
+
+        tester.writePackage(
+          name: 'with_dev_deps',
+          files: {},
+          pathDependencies: ['a'],
+          pathDevDependencies: ['b'],
+        );
+        tester.writePackage(name: 'a', files: {}, pathDevDependencies: ['c']);
+        tester.writePackage(name: 'b', files: {});
+        tester.writePackage(name: 'c', files: {});
+        await tester.run('with_dev_deps', 'dart pub get');
+        fakeHostedPackages(tester.tempDirectory, ['a', 'b', 'c']);
+
+        buildPackages = await BuildPackages.forPath(
+          p.join(tempDirectory, 'with_dev_deps'),
+        );
       });
 
       test('allPackages contains dev deps of current pkg, but not others', () {
@@ -103,29 +163,35 @@ void main() {
 
       test('dev deps are contained in deps of current pkg, but not others', () {
         // Package `b` shows as a dep because this is the root package.
-        expectPkg(
-          buildPackages.current!,
-          'with_dev_deps',
-          withDevDepsPkgPath,
-          watch: true,
-          dependencies: ['a', 'b'],
+        expect(
+          buildPackages.current,
+          BuildPackage(
+            name: 'with_dev_deps',
+            path: p.join(tempDirectory, 'with_dev_deps'),
+            watch: true,
+            isInBuild: true,
+            languageVersion: LanguageVersion(3, 7),
+            dependencies: ['a', 'b'],
+          ),
         );
 
         // Package `c` does not appear because this is not the current package.
-        expectPkg(
-          buildPackages['a']!,
-          'a',
-          '$withDevDepsPkgPath/pkg/a',
-          watch: false,
-          dependencies: [],
+        expect(
+          buildPackages['a'],
+          BuildPackage(
+            name: 'a',
+            path: p.join(tempDirectory, 'a'),
+            languageVersion: LanguageVersion(3, 7),
+          ),
         );
 
-        expectPkg(
-          buildPackages['b']!,
-          'b',
-          '$withDevDepsPkgPath/pkg/b',
-          watch: false,
-          dependencies: [],
+        expect(
+          buildPackages['b'],
+          BuildPackage(
+            name: 'b',
+            path: p.join(tempDirectory, 'b'),
+            languageVersion: LanguageVersion(3, 7),
+          ),
         );
 
         expect(buildPackages['c'], isNull);
@@ -200,59 +266,87 @@ void main() {
     });
   });
 
-  group('workspace ', () {
-    final workspaceFixturePath = p.absolute('test/fixtures/workspace');
+  group('workspace', () {
+    late BuildPackages buildPackages;
+    late String tempDirectory;
+
+    setUp(() async {
+      final pubspecs = await Pubspecs.load();
+      final tester = BuildRunnerTester(pubspecs);
+      tempDirectory = tester.tempDirectory.path;
+
+      tester.writePackage(
+        name: 'a',
+        files: {},
+        workspaceDependencies: ['b'],
+        inWorkspace: true,
+      );
+      tester.writePackage(name: 'b', files: {}, inWorkspace: true);
+      tester.write('pubspec.yaml', '''
+name: workspace
+environment:
+  sdk: ^3.5.0
+workspace:
+  - a
+  - b
+''');
+      await tester.run('a', 'dart pub get');
+
+      buildPackages = await BuildPackages.forPath(p.join(tempDirectory, 'a'));
+    });
 
     test('loads only dependent packages, has correct current', () async {
-      Matcher packageNodeEquals(BuildPackage buildPackage) =>
-          isA<BuildPackage>()
-              .having((c) => c.path, 'path', buildPackage.path)
-              .having(
-                (c) => c.dependencies,
-                'dependencies',
-                buildPackage.dependencies,
-              )
-              .having((c) => c.watch, 'watch', buildPackage.watch);
-
-      final buildPackages = await BuildPackages.forPath(
-        p.absolute('$workspaceFixturePath/pkgs/a'),
-      );
-      final a = BuildPackage(
-        name: 'a',
-        path: '$workspaceFixturePath/pkgs/a',
-        watch: true,
-        isInBuild: true,
-        dependencies: ['b'],
-      );
-      final b = BuildPackage(
-        name: 'b',
-        path: '$workspaceFixturePath/pkgs/b',
-        watch: true,
-      );
-
       expect(buildPackages.allPackages, {
-        'a': packageNodeEquals(a),
-        'b': packageNodeEquals(b),
+        'a': BuildPackage(
+          name: 'a',
+          path: p.join(tempDirectory, 'a'),
+          watch: true,
+          isInBuild: true,
+          languageVersion: LanguageVersion(3, 7),
+          dependencies: ['b'],
+        ),
+        'b': BuildPackage(
+          name: 'b',
+          path: p.join(tempDirectory, 'b'),
+          watch: true,
+          languageVersion: LanguageVersion(3, 7),
+        ),
         r'$sdk': anything,
       });
 
-      expect(buildPackages.current!, packageNodeEquals(a));
+      expect(buildPackages.current, buildPackages['a']);
     });
   });
 }
 
-void expectPkg(
-  BuildPackage node,
-  String name,
-  String location, {
-  required bool watch,
-  Iterable<String>? dependencies,
-}) {
-  location = p.canonicalize(location);
-  expect(node.name, name);
-  expect(node.path, location);
-  expect(node.watch, watch);
-  if (dependencies != null) {
-    expect(node.dependencies, unorderedEquals(dependencies));
+/// Updates all `pubspec.lock` files to change source for [packages] to
+/// `hosted`.
+///
+/// This fakes that they were fetched from pub, not from path.
+///
+/// `pubspec.lock` files that do not mention [packages] are ignored.
+void fakeHostedPackages(Directory tempDirectory, Iterable<String> packages) {
+  for (final file
+      in tempDirectory.listSync(recursive: true).whereType<File>()) {
+    if (p.basename(file.path) != 'pubspec.lock') continue;
+    final yaml = Map<Object, Object>.from(
+      loadYaml(file.readAsStringSync()) as YamlMap,
+    );
+    final packagesYaml =
+        yaml['packages'] = Map<Object, Object>.from(
+          yaml['packages'] as YamlMap,
+        );
+    for (final package in packages) {
+      if (packagesYaml.containsKey(package)) {
+        final packageYaml =
+            packagesYaml[package] = Map<Object, Object>.from(
+              packagesYaml[package] as YamlMap,
+            );
+        packageYaml['source'] = 'hosted';
+      }
+    }
+    // `package:yaml` does not support writing, recommends to just write as
+    // JSON because it's valid yaml.
+    file.writeAsStringSync(json.encode(yaml));
   }
 }
