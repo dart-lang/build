@@ -1,3 +1,7 @@
+## 4.4.9
+
+- Update min build_modules constraint to 5.1.7.
+
 ## 4.4.8
 
 - Add support for non-web-dir entrypoints with DDC + FES.
