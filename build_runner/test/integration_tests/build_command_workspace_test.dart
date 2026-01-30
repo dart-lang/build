@@ -106,12 +106,9 @@ workspace: [p1, p2, p3]
 ''');
 
     // Builders run.
-    await tester.run('p3', 'dart run build_runner build');
+    await tester.run('p3', 'dart run build_runner build --workspace');
     expect(tester.read('p3/lib/p3.txt.copy'), '1');
-    expect(
-      tester.read('p3/.dart_tool/build/generated/p3/lib/p3.txt.hidden'),
-      '1',
-    );
+    expect(tester.read('.dart_tool/build/generated/p3/lib/p3.txt.hidden'), '1');
 
     // Add a package to the workspace that are direct and indirect dependencies
     // of `p1`.
