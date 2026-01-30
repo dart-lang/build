@@ -38,8 +38,6 @@ class BuildPackage {
     this.isOutput = false,
     this.languageVersion,
     Iterable<String> dependencies = const [],
-    Iterable<String> transitiveDependencies = const [],
-    Iterable<String> buildPackages = const [],
   }) : path = p.canonicalize(path),
        dependencies = dependencies.toBuiltSet();
 
