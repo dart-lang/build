@@ -39,12 +39,12 @@ class TestingOverrides {
     this.debounceDelay,
     this.defaultRootPackageSources,
     this.directoryWatcherFactory,
+    this.flattenOutput = false,
     this.onLog,
     this.readerWriter,
     this.reportUnusedAssetsForInput,
     this.resolvers,
     this.terminateEventStream,
-    this.flattenOutput = false,
   });
 
   TestingOverrides copyWith({

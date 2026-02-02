@@ -93,9 +93,10 @@ Future<bool> _createMergedOutputDir({
   required ReaderWriter readerWriter,
 }) async {
   try {
-    final absoluteRoot = p.join(buildPackages.outputRoot.path, root);
-    if (absoluteRoot != buildPackages.outputRoot.path &&
-        !p.isWithin(buildPackages.outputRoot.path, absoluteRoot)) {
+    final outputRootPackage = buildPackages[buildPackages.outputRoot]!;
+    final absoluteRoot = p.join(outputRootPackage.path, root);
+    if (absoluteRoot != outputRootPackage.path &&
+        !p.isWithin(outputRootPackage.path, absoluteRoot)) {
       buildLog.error(
         'Invalid dir to build `$root`, must be within the package root.',
       );
@@ -109,7 +110,7 @@ Future<bool> _createMergedOutputDir({
     final builtAssets = buildOutputReader.allAssets(rootDir: root).toList();
     if (root != '' &&
         !builtAssets
-            .where((id) => id.package == buildPackages.outputRoot.name)
+            .where((id) => id.package == buildPackages.outputRoot)
             .any((id) => p.isWithin(root, id.path))) {
       buildLog.error('No assets exist in $root, skipping output.');
       return false;
@@ -133,7 +134,7 @@ Future<bool> _createMergedOutputDir({
             hoist,
           ),
         _writeModifiedPackageConfig(
-          buildPackages.outputRoot.name,
+          buildPackages.outputRoot,
           buildPackages,
           outputDir,
         ),
@@ -190,7 +191,7 @@ Future<String> _writeModifiedPackageConfig(
   final packageConfig = <String, Object?>{
     'configVersion': 2,
     'packages': [
-      for (final package in buildPackages.allPackages.values)
+      for (final package in buildPackages.packages.values)
         {
           'name': package.name,
           'rootUri':
@@ -243,7 +244,7 @@ Future<String> _writeAsset(
       );
     } else {
       assetPath = id.path;
-      assert(id.package == buildPackages.outputRoot.name);
+      assert(id.package == buildPackages.outputRoot);
       if (hoist && p.isWithin(root, id.path)) {
         assetPath = p.relative(id.path, from: root);
       }

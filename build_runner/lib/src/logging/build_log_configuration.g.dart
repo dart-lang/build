@@ -14,7 +14,7 @@ class _$BuildLogConfiguration extends BuildLogConfiguration {
   @override
   final void Function(LogRecord)? onLog;
   @override
-  final String? currentPackageName;
+  final String? singleOutputPackage;
   @override
   final bool throttleProgressUpdates;
   @override
@@ -32,7 +32,7 @@ class _$BuildLogConfiguration extends BuildLogConfiguration {
     required this.mode,
     required this.verbose,
     this.onLog,
-    this.currentPackageName,
+    this.singleOutputPackage,
     required this.throttleProgressUpdates,
     this.printOnFailure,
     this.forceAnsiConsoleForTesting,
@@ -55,7 +55,7 @@ class _$BuildLogConfiguration extends BuildLogConfiguration {
         mode == other.mode &&
         verbose == other.verbose &&
         onLog == _$dynamicOther.onLog &&
-        currentPackageName == other.currentPackageName &&
+        singleOutputPackage == other.singleOutputPackage &&
         throttleProgressUpdates == other.throttleProgressUpdates &&
         printOnFailure == _$dynamicOther.printOnFailure &&
         forceAnsiConsoleForTesting == other.forceAnsiConsoleForTesting &&
@@ -68,7 +68,7 @@ class _$BuildLogConfiguration extends BuildLogConfiguration {
     _$hash = $jc(_$hash, mode.hashCode);
     _$hash = $jc(_$hash, verbose.hashCode);
     _$hash = $jc(_$hash, onLog.hashCode);
-    _$hash = $jc(_$hash, currentPackageName.hashCode);
+    _$hash = $jc(_$hash, singleOutputPackage.hashCode);
     _$hash = $jc(_$hash, throttleProgressUpdates.hashCode);
     _$hash = $jc(_$hash, printOnFailure.hashCode);
     _$hash = $jc(_$hash, forceAnsiConsoleForTesting.hashCode);
@@ -83,7 +83,7 @@ class _$BuildLogConfiguration extends BuildLogConfiguration {
           ..add('mode', mode)
           ..add('verbose', verbose)
           ..add('onLog', onLog)
-          ..add('currentPackageName', currentPackageName)
+          ..add('singleOutputPackage', singleOutputPackage)
           ..add('throttleProgressUpdates', throttleProgressUpdates)
           ..add('printOnFailure', printOnFailure)
           ..add('forceAnsiConsoleForTesting', forceAnsiConsoleForTesting)
@@ -108,10 +108,10 @@ class BuildLogConfigurationBuilder
   void Function(LogRecord)? get onLog => _$this._onLog;
   set onLog(void Function(LogRecord)? onLog) => _$this._onLog = onLog;
 
-  String? _currentPackageName;
-  String? get currentPackageName => _$this._currentPackageName;
-  set currentPackageName(String? currentPackageName) =>
-      _$this._currentPackageName = currentPackageName;
+  String? _singleOutputPackage;
+  String? get singleOutputPackage => _$this._singleOutputPackage;
+  set singleOutputPackage(String? singleOutputPackage) =>
+      _$this._singleOutputPackage = singleOutputPackage;
 
   bool? _throttleProgressUpdates;
   bool? get throttleProgressUpdates => _$this._throttleProgressUpdates;
@@ -141,7 +141,7 @@ class BuildLogConfigurationBuilder
       _mode = $v.mode;
       _verbose = $v.verbose;
       _onLog = $v.onLog;
-      _currentPackageName = $v.currentPackageName;
+      _singleOutputPackage = $v.singleOutputPackage;
       _throttleProgressUpdates = $v.throttleProgressUpdates;
       _printOnFailure = $v.printOnFailure;
       _forceAnsiConsoleForTesting = $v.forceAnsiConsoleForTesting;
@@ -179,7 +179,7 @@ class BuildLogConfigurationBuilder
             'verbose',
           ),
           onLog: onLog,
-          currentPackageName: currentPackageName,
+          singleOutputPackage: singleOutputPackage,
           throttleProgressUpdates: BuiltValueNullFieldError.checkNotNull(
             throttleProgressUpdates,
             r'BuildLogConfiguration',

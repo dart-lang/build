@@ -26,9 +26,9 @@ void main() {
   group('--config', () {
     test('warns override config defines builders', () async {
       final logs = <LogRecord>[];
-      final buildPackages = BuildPackages.fromPackages([
-        BuildPackage(name: 'a', path: path.absolute('a'), isInBuild: true),
-      ], current: 'a');
+      final buildPackages = BuildPackages.singlePackageBuild('a', [
+        BuildPackage(name: 'a', path: path.absolute('a'), isOutput: true),
+      ]);
       final result = await _doBuild(
         {
           'a|build.yaml': '',
@@ -66,7 +66,7 @@ Future<BuildResult> _doBuild(
 }) async {
   onLog ??= (_) {};
   final readerWriter = InternalTestReaderWriter(
-    outputRootPackage: buildPackages.outputRoot.name,
+    outputRootPackage: buildPackages.outputRoot,
   );
   inputs.forEach((serializedId, contents) {
     readerWriter.writeAsString(makeAssetId(serializedId), contents);

@@ -118,7 +118,7 @@ $logEndMarker''');
       final server = await AssetServer.run(
         daemonOptions,
         builder,
-        buildPlan.buildPackages.outputRoot.name,
+        buildPlan.buildPackages.outputRoot,
       );
       File(
         assetServerPortFilePath(workingDirectory),

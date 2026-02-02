@@ -54,7 +54,7 @@ class TestCommand implements BuildRunnerCommand {
       final buildPackages =
           testingOverrides.buildPackages ??
           await BuildPackages.forThisPackage();
-      if (!buildPackages.allPackages.containsKey('build_test')) {
+      if (!buildPackages.packages.containsKey('build_test')) {
         buildLog.error('''
 Missing dev dependency on package:build_test, which is required to run tests.
 

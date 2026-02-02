@@ -18,22 +18,28 @@ class FixturePackage {
 }
 
 class FixturePackages {
-  /// Copies .txt files to .txt.copy files.
+  /// Copies .txt files to .txt.$outputExtension files.
   static FixturePackage copyBuilder({
+    String packageName = 'builder_pkg',
     bool buildToCache = false,
     bool applyToAllPackages = false,
+    String outputExtension = '.copy',
+    String appliesBuilders = '[]',
+    List<String> pathDependencies = const [],
   }) => FixturePackage(
-    name: 'builder_pkg',
+    name: packageName,
     dependencies: ['build', 'build_runner'],
+    pathDependencies: pathDependencies,
     files: {
       'build.yaml': '''
 builders:
   test_builder:
-    import: 'package:builder_pkg/builder.dart'
+    import: 'package:$packageName/builder.dart'
     builder_factories: ['testBuilderFactory']
-    build_extensions: {'.txt': ['.txt.copy']}
+    build_extensions: {'.txt': ['.txt$outputExtension']}
     auto_apply: ${applyToAllPackages ? 'all_packages' : 'root_package'}
     build_to: ${buildToCache ? 'cache' : 'source'}
+    applies_builders: $appliesBuilders
 ''',
       'lib/builder.dart': '''
 import 'package:build/build.dart';
@@ -42,12 +48,13 @@ Builder testBuilderFactory(BuilderOptions options) => TestBuilder();
 
 class TestBuilder implements Builder {
   @override
-  Map<String, List<String>> get buildExtensions => {'.txt': ['.txt.copy']};
+  Map<String, List<String>> get buildExtensions
+      => {'.txt': ['.txt$outputExtension']};
 
   @override
   Future<void> build(BuildStep buildStep) async {
     buildStep.writeAsString(
-        buildStep.inputId.addExtension('.copy'),
+        buildStep.inputId.addExtension('$outputExtension'),
         await buildStep.readAsString(buildStep.inputId),
     );
   }

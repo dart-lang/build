@@ -73,10 +73,10 @@ void main() {
 }
 ''',
     };
-    final buildPackages = BuildPackages.fromPackages([
-      BuildPackage.forTesting(name: 'a', isInBuild: true, dependencies: ['b']),
+    final buildPackages = BuildPackages.singlePackageBuild('a', [
+      BuildPackage.forTesting(name: 'a', isOutput: true, dependencies: ['b']),
       BuildPackage.forTesting(name: 'b'),
-    ], current: 'a');
+    ]);
     late Directory tmpDir;
     late Directory anotherTmpDir;
     late InternalTestReaderWriter readerWriter;

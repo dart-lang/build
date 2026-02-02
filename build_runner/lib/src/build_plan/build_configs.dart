@@ -99,14 +99,14 @@ class BuildConfigs {
               readerWriter: readerWriter,
               configKey: configKey,
             ));
-    for (final package in buildPackages.allPackages.values) {
+    for (final package in buildPackages.packages.values) {
       final config =
           configOverrides?[package.name] ??
           await _packageBuildConfig(readerWriter, package);
       buildConfigByPackage[package.name] = config;
 
       BuiltList<String> defaultInclude;
-      if (package.isInBuild) {
+      if (package.isOutput) {
         defaultInclude =
             [
               ...(testingOverrides?.defaultRootPackageSources ??
@@ -138,7 +138,7 @@ class BuildConfigs {
         final requiredSourcePaths = const [r'lib/$lib$'];
         final requiredRootSourcePaths = const [r'$package$', r'lib/$lib$'];
         final requiredPackagePaths =
-            package.isInBuild ? requiredRootSourcePaths : requiredSourcePaths;
+            package.isOutput ? requiredRootSourcePaths : requiredSourcePaths;
         final requiredIds = requiredPackagePaths.map(
           (path) => AssetId(package.name, path),
         );
@@ -181,13 +181,13 @@ class BuildConfigs {
   /// Obtains a list of glob patterns describing all valid input assets defined
   /// in the [package].
   List<String> validInputsFor(BuildPackage package) {
-    if (package.isInBuild) {
-      // There are no restrictions for the root package
+    if (package.isOutput) {
+      // There are no restrictions for output packages.
       return ['**/*'];
     } else {
-      // For a non-root package, valid inputs must be exposed explicitly. Note
-      // that we don't allow users to exclude inputs, so we can just return the
-      // including globs.
+      // For a non-output packages, valid inputs must be exposed explicitly.
+      // Note that we don't allow users to exclude inputs, so we can just return
+      // the including globs.
       return [
         // `_matcherForNonRoot` always returns a matcher with non-null include
         // globs.
@@ -211,10 +211,10 @@ class BuildConfigs {
   bool isVisibleInBuild(AssetId id, BuildPackage enclosingPackage) {
     assert(id.package == enclosingPackage.name);
 
-    // All assets in the root package are included in the build
-    if (enclosingPackage.isInBuild) return true;
+    // All assets in output packages are included in the build.
+    if (enclosingPackage.isOutput) return true;
 
-    // For other packages, the asset must be marked as public
+    // For other packages, the asset must be marked as public.
     return _matcherForNonRoot(enclosingPackage).matches(id);
   }
 
@@ -238,7 +238,7 @@ class BuildConfigs {
   }
 
   InputMatcher _matcherForNonRoot(BuildPackage buildPackage) {
-    assert(!buildPackage.isInBuild);
+    assert(!buildPackage.isOutput);
     return _publicAssetsByPackage[buildPackage.name] ??
         _defaultMatcherForDependency;
   }
@@ -289,14 +289,14 @@ Future<BuiltMap<String, BuildConfig>> findBuildConfigOverrides({
   required String? configKey,
 }) async {
   final configs = <String, BuildConfig>{};
-  final outputRootPackage = buildPackages.outputRoot;
+  final outputRoot = buildPackages.outputRoot;
   final configFiles = readerWriter!.assetFinder.find(
     Glob('*.build.yaml'),
-    package: outputRootPackage.name,
+    package: outputRoot,
   );
   await for (final id in configFiles) {
     final packageName = p.basename(id.path).split('.').first;
-    final buildPackage = buildPackages.allPackages[packageName];
+    final buildPackage = buildPackages[packageName];
     if (buildPackage == null) {
       buildLog.warning(
         'A build config override is provided for $packageName but '
@@ -316,15 +316,15 @@ Future<BuiltMap<String, BuildConfig>> findBuildConfigOverrides({
     configs[packageName] = config;
   }
   if (configKey != null) {
-    final id = AssetId(outputRootPackage.name, 'build.$configKey.yaml');
+    final id = AssetId(outputRoot, 'build.$configKey.yaml');
     if (!await readerWriter.canRead(id)) {
       buildLog.warning('Cannot find ${id.path} for specified config.');
       throw const CannotBuildException();
     }
     final yaml = await readerWriter.readAsString(id);
     final config = BuildConfig.parse(
-      outputRootPackage.name,
-      outputRootPackage.dependencies,
+      outputRoot,
+      buildPackages[outputRoot]!.dependencies,
       yaml,
       configYamlPath: id.path,
     );
@@ -334,7 +334,7 @@ Future<BuiltMap<String, BuildConfig>> findBuildConfigOverrides({
         'overriding builder configuration is not supported.',
       );
     }
-    configs[outputRootPackage.name] = config;
+    configs[outputRoot] = config;
   }
   return configs.build();
 }

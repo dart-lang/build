@@ -6,7 +6,6 @@ import 'package:build_config/build_config.dart'
     show AutoApply, TargetBuilderConfigDefaults;
 import 'package:build_config/build_config.dart' as build_config;
 import 'package:built_collection/built_collection.dart';
-import 'package:graphs/graphs.dart';
 import 'package:meta/meta.dart';
 
 import '../io/reader_writer.dart';
@@ -35,13 +34,6 @@ sealed class AbstractBuilderDefinition {
     required BuildPackages buildPackages,
     required ReaderWriter readerWriter,
   }) async {
-    final orderedPackages = stronglyConnectedComponents<BuildPackage>(
-      buildPackages.allPackages.values,
-      (buildPackage) =>
-          buildPackage.dependencies.map((name) => buildPackages[name]!),
-      equals: (a, b) => a.name == b.name,
-      hashCode: (n) => n.name.hashCode,
-    ).expand((c) => c);
     final overrides = await findBuildConfigOverrides(
       buildPackages: buildPackages,
       readerWriter: readerWriter,
@@ -49,11 +41,12 @@ sealed class AbstractBuilderDefinition {
     );
 
     Future<build_config.BuildConfig> packageBuildConfig(
-      BuildPackage package,
+      String packageName,
     ) async {
-      if (overrides.containsKey(package.name)) {
-        return overrides[package.name]!;
+      if (overrides.containsKey(packageName)) {
+        return overrides[packageName]!;
       }
+      final package = buildPackages[packageName]!;
       try {
         return await build_config.BuildConfig.fromBuildConfigDir(
           package.name,
@@ -71,14 +64,14 @@ sealed class AbstractBuilderDefinition {
     }
 
     final orderedConfigs = await Future.wait(
-      orderedPackages.map(packageBuildConfig),
+      buildPackages.orderedPackages.map(packageBuildConfig),
     );
     final builderDefinitions = orderedConfigs
         .expand((c) => c.builderDefinitions.values)
         .where(
           (c) =>
               c.import.startsWith('package:') ||
-              c.package == buildPackages.outputRoot.name,
+              c.package == buildPackages.outputRoot,
         );
 
     final rootBuildConfig = orderedConfigs.last;
@@ -93,7 +86,7 @@ sealed class AbstractBuilderDefinition {
         .where(
           (c) =>
               c.import.startsWith('package:') ||
-              c.package == buildPackages.outputRoot.name,
+              c.package == buildPackages.outputRoot,
         );
 
     final result = ListBuilder<AbstractBuilderDefinition>();
@@ -157,14 +150,35 @@ class BuilderDefinition implements AbstractBuilderDefinition {
   );
 
   /// Whether this builder application is auto applied to [package].
-  bool autoAppliesTo(BuildPackage package) {
+  ///
+  /// If [restrictForWorkspacePackages], turns on more precise checking for the
+  /// newer "whole workspace" build mode. These checks are also correct for real
+  /// builds in "single output package" mode, but would cause problems for tests
+  /// because fake test setups are used that do not add the correct dependencies
+  /// onto builders.
+  bool autoAppliesTo(
+    BuildPackage package, {
+    BuildPackages? restrictForWorkspacePackages,
+  }) {
     switch (autoApply) {
       case AutoApply.none:
         return false;
       case AutoApply.allPackages:
-        return true;
+        // In a workspace build, "allPackages" means "all peer packages". See
+        // `peersOf` for the definition.
+        return restrictForWorkspacePackages == null
+            ? true
+            : restrictForWorkspacePackages
+                .peersOf(package.name)
+                .contains(this.package);
       case AutoApply.rootPackage:
-        return package.isInBuild;
+        // In a workspace build, "root package" means an output package that
+        // depends transitively on the builder.
+        return package.isOutput &&
+            (restrictForWorkspacePackages == null ||
+                restrictForWorkspacePackages
+                    .transitiveDepsOf(package.name)
+                    .contains(this.package));
       case AutoApply.dependents:
         return package.dependencies.contains(this.package);
     }

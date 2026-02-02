@@ -25,18 +25,8 @@ void main() {
         buildPackages = await BuildPackages.forThisPackage();
       });
 
-      test('current', () {
-        expect(
-          buildPackages.current,
-          BuildPackage(
-            name: 'build_runner',
-            path: '',
-            watch: true,
-            isInBuild: true,
-            languageVersion: LanguageVersion(3, 7),
-            dependencies: buildPackages.current!.dependencies,
-          ),
-        );
+      test('singleOutputPackage', () {
+        expect(buildPackages.singleOutputPackage, 'build_runner');
       });
 
       test('asPackageConfig', () {
@@ -75,9 +65,9 @@ void main() {
         );
       });
 
-      test('allPackages', () {
+      test('packages', () {
         expect(
-          buildPackages.allPackages,
+          buildPackages.packages.asMap(),
           equals({
             'a': buildPackages['a'],
             'b': buildPackages['b'],
@@ -89,14 +79,16 @@ void main() {
         );
       });
 
-      test('current', () {
+      test('singleOutputPackage', () {
+        expect(buildPackages.singleOutputPackage, 'basic_pkg');
+
         expect(
-          buildPackages.current,
+          buildPackages.packages['basic_pkg'],
           BuildPackage(
             name: 'basic_pkg',
             path: p.join(tempDirectory, 'basic_pkg'),
             watch: true,
-            isInBuild: true,
+            isOutput: true,
             languageVersion: LanguageVersion(3, 7),
             dependencies: ['a', 'b', 'c', 'd'],
           ),
@@ -153,7 +145,7 @@ void main() {
       test('allPackages contains dev deps of current pkg, but not others', () {
         // Package `c` is a dev dep of package `a` so it shouldn't be present
         // while package `b` is a dev dep of the root package so it should be.
-        expect(buildPackages.allPackages, {
+        expect(buildPackages.packages.asMap(), {
           'a': buildPackages['a'],
           'b': buildPackages['b'],
           'with_dev_deps': buildPackages['with_dev_deps'],
@@ -163,13 +155,15 @@ void main() {
 
       test('dev deps are contained in deps of current pkg, but not others', () {
         // Package `b` shows as a dep because this is the root package.
+        expect(buildPackages.singleOutputPackage, 'with_dev_deps');
+
         expect(
-          buildPackages.current,
+          buildPackages['with_dev_deps'],
           BuildPackage(
             name: 'with_dev_deps',
             path: p.join(tempDirectory, 'with_dev_deps'),
             watch: true,
-            isInBuild: true,
+            isOutput: true,
             languageVersion: LanguageVersion(3, 7),
             dependencies: ['a', 'b'],
           ),
@@ -207,7 +201,7 @@ void main() {
 
       test('allPackages resolved correctly with all packages', () {
         expect(
-          buildPackages.allPackages.keys,
+          buildPackages.packages.keys,
           unorderedEquals([
             'flutter_gallery',
             'intl',
@@ -228,7 +222,7 @@ void main() {
         name: 'a',
         path: '/a',
         watch: true,
-        isInBuild: true,
+        isOutput: true,
         dependencies: ['b', 'd'],
       );
       final b = BuildPackage(
@@ -239,10 +233,10 @@ void main() {
       );
       final c = BuildPackage(name: 'c', path: '/c', watch: true);
       final d = BuildPackage(name: 'd', path: '/d', watch: true);
-      final graph = BuildPackages.fromPackages([a, b, c, d], current: 'a');
-      expect(graph.current!, a);
+      final graph = BuildPackages.singlePackageBuild('a', [a, b, c, d]);
+      expect(graph.singleOutputPackage!, 'a');
       expect(
-        graph.allPackages,
+        graph.packages.asMap(),
         equals({'a': a, 'b': b, 'c': c, 'd': d, r'$sdk': anything}),
       );
     });
@@ -283,7 +277,7 @@ void main() {
       );
       tester.writePackage(name: 'b', files: {}, inWorkspace: true);
       tester.write('pubspec.yaml', '''
-name: workspace
+name: some_workspace_name
 environment:
   sdk: ^3.5.0
 workspace:
@@ -291,17 +285,17 @@ workspace:
   - b
 ''');
       await tester.run('a', 'dart pub get');
-
-      buildPackages = await BuildPackages.forPath(p.join(tempDirectory, 'a'));
     });
 
-    test('loads only dependent packages, has correct current', () async {
-      expect(buildPackages.allPackages, {
+    test('without --workspace loads correctly', () async {
+      buildPackages = await BuildPackages.forPath(p.join(tempDirectory, 'a'));
+
+      expect(buildPackages.packages.asMap(), {
         'a': BuildPackage(
           name: 'a',
           path: p.join(tempDirectory, 'a'),
           watch: true,
-          isInBuild: true,
+          isOutput: true,
           languageVersion: LanguageVersion(3, 7),
           dependencies: ['b'],
         ),
@@ -314,8 +308,126 @@ workspace:
         r'$sdk': anything,
       });
 
-      expect(buildPackages.current, buildPackages['a']);
+      expect(buildPackages.singleOutputPackage, 'a');
+      expect(buildPackages.outputRoot, 'a');
     });
+
+    group('with --workspace loads correctly', () {
+      late Map<String, Object> expectedPackages;
+
+      setUp(() {
+        expectedPackages = {
+          'a': BuildPackage(
+            name: 'a',
+            path: p.join(tempDirectory, 'a'),
+            watch: true,
+            isOutput: true,
+            languageVersion: LanguageVersion(3, 7),
+            dependencies: ['b'],
+          ),
+          'b': BuildPackage(
+            name: 'b',
+            path: p.join(tempDirectory, 'b'),
+            watch: true,
+            isOutput: true,
+            languageVersion: LanguageVersion(3, 7),
+          ),
+          'some_workspace_name': BuildPackage(
+            name: 'some_workspace_name',
+            path: tempDirectory,
+            languageVersion: LanguageVersion(3, 5),
+          ),
+          r'$sdk': anything,
+        };
+      });
+
+      test('for package', () async {
+        // Load the workspace passing the directory of a package in the
+        // workspace.
+        buildPackages = await BuildPackages.forPath(
+          p.join(tempDirectory, 'a'),
+          workspace: true,
+        );
+
+        expect(buildPackages.packages.asMap(), expectedPackages);
+        expect(buildPackages.singleOutputPackage, null);
+        expect(buildPackages.outputRoot, 'some_workspace_name');
+      });
+
+      test('for workspace root', () async {
+        // Load the workspace passing the directory of a package in the
+        // workspace itself. The result should be identical.
+        buildPackages = await BuildPackages.forPath(
+          tempDirectory,
+          workspace: true,
+        );
+
+        expect(buildPackages.packages.asMap(), expectedPackages);
+        expect(buildPackages.singleOutputPackage, null);
+        expect(buildPackages.outputRoot, 'some_workspace_name');
+      });
+    });
+  });
+
+  test('calculates transitive dependencies', () {
+    final buildPackages = BuildPackages.workspaceBuild('workspace', [
+      BuildPackage.forTesting(name: 'a', dependencies: ['b']),
+      BuildPackage.forTesting(name: 'b', dependencies: ['d']),
+      BuildPackage.forTesting(name: 'c', dependencies: ['d']),
+      BuildPackage.forTesting(name: 'd', dependencies: ['e']),
+      BuildPackage.forTesting(name: 'e', dependencies: ['d']),
+      BuildPackage.forTesting(name: 'f', dependencies: ['g']),
+      BuildPackage.forTesting(name: 'g', dependencies: ['h']),
+      BuildPackage.forTesting(name: 'h', dependencies: ['g', 'i']),
+      BuildPackage.forTesting(name: 'i'),
+      BuildPackage.forTesting(name: 'workspace'),
+    ]);
+
+    expect(buildPackages.transitiveDepsOf('a'), {'a', 'b', 'd', 'e'});
+    expect(buildPackages.transitiveDepsOf('d'), {'d', 'e'});
+    expect(buildPackages.transitiveDepsOf('f'), {'f', 'g', 'h', 'i'});
+    expect(buildPackages.transitiveDepsOf('g'), {'g', 'h', 'i'});
+    expect(buildPackages.transitiveDepsOf('h'), {'g', 'h', 'i'});
+  });
+
+  test('filters to transitive dependencies of single build package', () {
+    final buildPackages = BuildPackages.singlePackageBuild('f', [
+      BuildPackage.forTesting(name: 'a', dependencies: ['b']),
+      BuildPackage.forTesting(name: 'b'),
+      BuildPackage.forTesting(name: 'f', dependencies: ['g']),
+      BuildPackage.forTesting(name: 'g'),
+    ]);
+
+    expect(buildPackages.packages.keys, ['f', 'g', r'$sdk']);
+  });
+
+  test('calculates peer packages', () {
+    final buildPackages = BuildPackages.workspaceBuild('workspace', [
+      BuildPackage.forTesting(name: 'a', dependencies: ['b'], isOutput: true),
+      BuildPackage.forTesting(name: 'b', dependencies: ['d']),
+      BuildPackage.forTesting(name: 'c', dependencies: ['d'], isOutput: true),
+      BuildPackage.forTesting(name: 'd', dependencies: ['e']),
+      BuildPackage.forTesting(name: 'e', dependencies: ['d']),
+      BuildPackage.forTesting(name: 'f', dependencies: ['g'], isOutput: true),
+      BuildPackage.forTesting(name: 'g'),
+      BuildPackage.forTesting(name: 'h', dependencies: ['e'], isOutput: true),
+      BuildPackage.forTesting(name: 'workspace'),
+    ]);
+
+    // Transitive deps of output package `a`.
+    expect(buildPackages.peersOf('a'), {'a', 'b', 'd', 'e'});
+    expect(buildPackages.peersOf('b'), {'a', 'b', 'd', 'e'});
+
+    // Transitive deps of output package `c`.
+    expect(buildPackages.peersOf('c'), {'c', 'd', 'e'});
+
+    // Transitive deps of output packages `a`, `c` and `h`.
+    expect(buildPackages.peersOf('d'), {'a', 'b', 'c', 'd', 'e', 'h'});
+    expect(buildPackages.peersOf('e'), {'a', 'b', 'c', 'd', 'e', 'h'});
+
+    // Transitive deps of output package `f`.
+    expect(buildPackages.peersOf('f'), {'f', 'g'});
+    expect(buildPackages.peersOf('g'), {'f', 'g'});
   });
 }
 

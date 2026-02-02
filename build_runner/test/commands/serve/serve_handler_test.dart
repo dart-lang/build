@@ -110,11 +110,11 @@ void main() {
   late BuildOutputReader finalizedReader;
 
   setUp(() async {
-    packageGraph = BuildPackages.fromPackages([
-      BuildPackage.forTesting(name: 'a', isInBuild: true),
-    ], current: 'a');
+    packageGraph = BuildPackages.singlePackageBuild('a', [
+      BuildPackage.forTesting(name: 'a', isOutput: true),
+    ]);
     readerWriter = InternalTestReaderWriter(
-      outputRootPackage: packageGraph.outputRoot.name,
+      outputRootPackage: packageGraph.outputRoot,
     );
     assetGraph = await AssetGraph.build(
       BuildPhases([]),
@@ -123,7 +123,7 @@ void main() {
       readerWriter,
     );
     watchImpl = MockWatchImpl();
-    serveHandler = ServeHandler(packageGraph.outputRoot.name, watchImpl);
+    serveHandler = ServeHandler(packageGraph.outputRoot, watchImpl);
     finalizedReader = BuildOutputReader.graphOnly(
       readerWriter: readerWriter,
       assetGraph: assetGraph,

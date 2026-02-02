@@ -628,14 +628,13 @@ class AssetGraph implements GeneratedAssetHider {
       final nodeConfiguration = node.generatedNodeConfiguration!;
       if (node.wasOutput && !nodeConfiguration.isHidden) {
         var idToDelete = id;
-        // If the package no longer exists, then the user must have
-        // renamed the root package.
-        //
-        // In that case we change `idToDelete` to be in the current package.
+        // If the package no longer exists, then the user might have renamed
+        // it. So move `idToDelete` to the single package being built, if there
+        // is one, to delete for that case.
         if (buildPackages[id.package] == null) {
-          final current = buildPackages.current;
-          if (current == null) continue;
-          idToDelete = AssetId(current.name, id.path);
+          final singleOutputPackage = buildPackages.singleOutputPackage;
+          if (singleOutputPackage == null) continue;
+          idToDelete = AssetId(singleOutputPackage, id.path);
         }
         result.add(idToDelete);
       }
@@ -646,7 +645,7 @@ class AssetGraph implements GeneratedAssetHider {
 
 Set<AssetId> placeholderIdsFor(BuildPackages buildPackages) =>
     Set<AssetId>.from(
-      buildPackages.allPackages.keys.expand(
+      buildPackages.packages.keys.expand(
         (package) => [
           AssetId(package, r'lib/$lib$'),
           AssetId(package, r'test/$test$'),

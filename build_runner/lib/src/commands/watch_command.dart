@@ -71,7 +71,7 @@ class WatchCommand implements BuildRunnerCommand {
       }),
     );
 
-    return ServeHandler(buildPlan.buildPackages.outputRoot.name, watcher);
+    return ServeHandler(buildPlan.buildPackages.outputRoot, watcher);
   }
 }
 

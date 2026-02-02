@@ -88,13 +88,13 @@ Future<TestBuildersResult> testPhases(
   String? logPerformanceDir,
   void Function(AssetId id)? onDelete,
 }) async {
-  buildPackages ??= BuildPackages.fromPackages([
-    BuildPackage.forTesting(name: 'a', isInBuild: true),
-  ], current: 'a');
+  buildPackages ??= BuildPackages.singlePackageBuild('a', [
+    BuildPackage.forTesting(name: 'a', isOutput: true),
+  ]);
   var readerWriter =
       resumeFrom == null
           ? InternalTestReaderWriter(
-            outputRootPackage: buildPackages.outputRoot.name,
+            outputRootPackage: buildPackages.outputRoot,
           )
           : resumeFrom.readerWriter;
 
@@ -103,19 +103,19 @@ Future<TestBuildersResult> testPhases(
   }
 
   final pkgConfigId = AssetId(
-    buildPackages.outputRoot.name,
+    buildPackages.outputRoot,
     '.dart_tool/package_config.json',
   );
   if (!await readerWriter.canRead(pkgConfigId)) {
     final packageConfig = {
       'configVersion': 2,
       'packages': [
-        for (final pkgNode in buildPackages.allPackages.values)
+        for (final package in buildPackages.packages.values)
           {
-            'name': pkgNode.name,
-            'rootUri': pkgNode.path,
+            'name': package.name,
+            'rootUri': package.path,
             'packageUri': 'lib/',
-            'languageVersion': pkgNode.languageVersion.toString(),
+            'languageVersion': package.languageVersion.toString(),
           },
       ],
     };
@@ -166,7 +166,7 @@ Future<TestBuildersResult> testPhases(
       outputs: outputs,
       readerWriter: readerWriter,
       status: status,
-      buildCachePackage: buildPackages.outputRoot.name,
+      buildCachePackage: buildPackages.outputRoot,
     );
   }
 

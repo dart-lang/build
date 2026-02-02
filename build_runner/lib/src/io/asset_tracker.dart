@@ -112,7 +112,7 @@ class AssetTracker {
                 .where(
                   (id) => _buildConfigs.isVisibleInBuild(
                     id,
-                    _buildPackages.allPackages[buildTarget.package]!,
+                    _buildPackages[buildTarget.package]!,
                   ),
                 )
                 .where((id) => !buildTarget.excludesSource(id)),
@@ -123,7 +123,7 @@ class AssetTracker {
   Stream<AssetId> _listGeneratedAssetIds() {
     final glob = Glob('$generatedOutputDirectory/**');
 
-    return _listIdsSafe(glob, package: _buildPackages.outputRoot.name)
+    return _listIdsSafe(glob, package: _buildPackages.outputRoot)
         .map((id) {
           final packagePath = id.path.substring(
             generatedOutputDirectory.length + 1,

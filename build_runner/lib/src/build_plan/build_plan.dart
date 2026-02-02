@@ -108,7 +108,8 @@ class BuildPlan {
     bool recentlyBootstrapped = true,
   }) async {
     final bootstrapper = Bootstrapper(
-      compileAot: buildOptions.forceAot ? true : false,
+      workspace: buildOptions.workspace,
+      compileAot: buildOptions.forceAot,
     );
     var restartIsNeeded = false;
     final kernelFreshness = await bootstrapper.checkCompileFreshness(
@@ -119,11 +120,10 @@ class BuildPlan {
     }
 
     final buildPackages =
-        testingOverrides.buildPackages ?? await BuildPackages.forThisPackage();
-
+        testingOverrides.buildPackages ??
+        await BuildPackages.forThisPackage(workspace: buildOptions.workspace);
     final readerWriter =
         testingOverrides.readerWriter ?? ReaderWriter(buildPackages);
-
     final buildConfigs = await BuildConfigs.load(
       readerWriter: readerWriter,
       buildPackages: buildPackages,
@@ -154,16 +154,17 @@ class BuildPlan {
           builderDefinitions: builderDefinitions,
           builderConfigOverrides: buildOptions.builderConfigOverrides,
           isReleaseBuild: buildOptions.isReleaseBuild,
+          workspace: buildOptions.workspace,
         ).createBuildPhases();
-    buildPhases.checkOutputLocations(buildPackages.packagesInBuild);
+    buildPhases.checkOutputLocations(buildPackages.outputPackages);
 
     AssetGraph? previousAssetGraph;
     final filesToDelete = <AssetId>{};
     final foldersToDelete = <AssetId>{};
 
-    final assetGraphId = AssetId(buildPackages.outputRoot.name, assetGraphPath);
+    final assetGraphId = AssetId(buildPackages.outputRoot, assetGraphPath);
     final generatedOutputDirectoryId = AssetId(
-      buildPackages.outputRoot.name,
+      buildPackages.outputRoot,
       generatedOutputDirectory,
     );
 
@@ -259,7 +260,7 @@ class BuildPlan {
       }
       final conflictsInDeps =
           assetGraph.outputs
-              .where((n) => !buildPackages.packagesInBuild.contains(n.package))
+              .where((n) => !buildPackages.outputPackages.contains(n.package))
               .where(inputSources.contains)
               .toSet();
       if (conflictsInDeps.isNotEmpty) {
@@ -274,7 +275,7 @@ class BuildPlan {
 
       filesToDelete.addAll(
         assetGraph.outputs
-            .where((n) => buildPackages.packagesInBuild.contains(n.package))
+            .where((n) => buildPackages.outputPackages.contains(n.package))
             .where(inputSources.contains)
             .toSet(),
       );

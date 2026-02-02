@@ -24,9 +24,9 @@ import '../../common/common.dart';
 
 void main() {
   late InternalTestReaderWriter digestReader;
-  final fooPackageGraph = BuildPackages.fromPackages({
-    BuildPackage.forTesting(name: 'foo', isInBuild: true),
-  }, current: 'foo');
+  final fooPackageGraph = BuildPackages.singlePackageBuild('foo', {
+    BuildPackage.forTesting(name: 'foo', isOutput: true),
+  });
 
   setUp(() async {
     digestReader = InternalTestReaderWriter();
@@ -553,9 +553,9 @@ void main() {
               package: 'a',
             ),
           ]);
-          final buildPackages = BuildPackages.fromPackages({
-            BuildPackage.forTesting(name: 'a', isInBuild: true),
-          }, current: 'a');
+          final buildPackages = BuildPackages.singlePackageBuild('a', {
+            BuildPackage.forTesting(name: 'a', isOutput: true),
+          });
           final graph = await AssetGraph.build(
             buildPhases,
             {source},

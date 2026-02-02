@@ -113,7 +113,7 @@ class ServeCommand implements BuildRunnerCommand {
 }
 
 void _ensureBuildWebCompilersDependency(BuildPackages buildPackages) {
-  if (!buildPackages.allPackages.containsKey('build_web_compilers')) {
+  if (!buildPackages.packages.containsKey('build_web_compilers')) {
     buildLog.warning('''
 Missing dev dependency on package:build_web_compilers, which is required to serve Dart compiled to JavaScript.
 

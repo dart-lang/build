@@ -490,7 +490,7 @@ class BuildLog {
   /// Like `AssetId.toString`, except the package name is omitted if it matches
   /// [configuration] `rootPackageName`.
   String renderId(AssetId id) {
-    if (id.package == configuration.currentPackageName) {
+    if (id.package == configuration.singleOutputPackage) {
       return id.path;
     } else {
       return id.toString();

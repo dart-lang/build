@@ -7,12 +7,10 @@ import 'dart:async';
 import 'package:build_config/build_config.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
-import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 
 import '../build_plan/build_configs.dart';
-import '../build_plan/build_package.dart';
 import '../build_plan/build_packages.dart';
 import '../constants.dart';
 import '../exceptions.dart';
@@ -21,8 +19,8 @@ import '../logging/build_log.dart';
 
 final _lastShortFormatDartVersion = Version(3, 6, 0);
 
-Future<String> generateBuildScript() async {
-  final builderFactories = await loadBuilderFactories();
+Future<String> generateBuildScript({required bool workspace}) async {
+  final builderFactories = await loadBuilderFactories(workspace: workspace);
   final library = Library(
     (b) => b.body.addAll([
       declareFinal('_builderFactories')
@@ -70,26 +68,28 @@ ${library.accept(emitter)}
   }
 }
 
-Future<BuilderFactoriesExpressions> loadBuilderFactories() async {
-  final buildPackages = await BuildPackages.forThisPackage();
-  final orderedPackages = stronglyConnectedComponents<BuildPackage>(
-    buildPackages.allPackages.values,
-    (buildPackage) => buildPackage.dependencies.map(
-      (name) => buildPackages.allPackages[name]!,
-    ),
-    equals: (a, b) => a.name == b.name,
-    hashCode: (n) => n.name.hashCode,
-  ).expand((c) => c);
+/// Loads builder factories for the current package and its transitive
+/// dependencies.
+///
+/// If [workspace], builder factories are also loaded for other packages in
+/// the current workspace, if any, and their transitive dependencies.
+Future<BuilderFactoriesExpressions> loadBuilderFactories({
+  required bool workspace,
+}) async {
+  final buildPackages = await BuildPackages.forThisPackage(
+    workspace: workspace,
+  );
   final readerWriter = ReaderWriter(buildPackages);
   final overrides = await findBuildConfigOverrides(
     buildPackages: buildPackages,
     readerWriter: readerWriter,
     configKey: null,
   );
-  Future<BuildConfig> packageBuildConfig(BuildPackage package) async {
-    if (overrides.containsKey(package.name)) {
-      return overrides[package.name]!;
+  Future<BuildConfig> packageBuildConfig(String packageName) async {
+    if (overrides.containsKey(packageName)) {
+      return overrides[packageName]!;
     }
+    final package = buildPackages[packageName]!;
     try {
       return await BuildConfig.fromBuildConfigDir(
         package.name,
@@ -104,7 +104,7 @@ Future<BuilderFactoriesExpressions> loadBuilderFactories() async {
   }
 
   final buildConfigs = await Future.wait(
-    orderedPackages.map(packageBuildConfig),
+    buildPackages.orderedPackages.map(packageBuildConfig),
   );
   final builderDefinitions =
       buildConfigs
@@ -112,7 +112,7 @@ Future<BuilderFactoriesExpressions> loadBuilderFactories() async {
           .where(
             (c) =>
                 c.import.startsWith('package:') ||
-                c.package == buildPackages.outputRoot.name,
+                c.package == buildPackages.outputRoot,
           )
           .toList()
         ..sort((a, b) => a.key.compareTo(b.key));
@@ -122,7 +122,7 @@ Future<BuilderFactoriesExpressions> loadBuilderFactories() async {
           .where(
             (c) =>
                 c.import.startsWith('package:') ||
-                c.package == buildPackages.outputRoot.name,
+                c.package == buildPackages.outputRoot,
           )
           .toList()
         ..sort((a, b) => a.key.compareTo(b.key));
