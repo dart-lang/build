@@ -126,5 +126,14 @@ workspace: [p1, p2, p3, p4, p5, p6]
     tester.write('p6/lib/p6.txt', '2');
     await watch.expect(BuildLog.successPattern);
     expect(tester.read('p6/lib/p6.txt.copy'), '2');
+
+    // Change workspace build.yaml, check that a build takes place.
+    tester.write('build.yaml', '''
+global_options:
+  builder_pkg|test_builder:
+    options:
+      some_option: some_value
+''');
+    await watch.expect(BuildLog.successPattern);
   });
 }

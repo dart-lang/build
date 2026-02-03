@@ -110,6 +110,7 @@ class BuildPackagesLoader {
       buildPackages[packageConfig.name] = BuildPackage(
         name: packageConfig.name,
         path: packageConfig.root.toFilePath(),
+        isWorkspace: packageConfig.name == workspaceName,
         languageVersion: packageConfig.languageVersion,
         watch: !fixedPackages.contains(packageConfig.name),
         isOutput: isInBuild,
