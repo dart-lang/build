@@ -12,7 +12,6 @@ import 'package:path/path.dart' as p;
 
 import '../build/asset_graph/graph.dart';
 import '../build/asset_graph/node.dart';
-import '../build/build_dirs.dart';
 import '../build_plan/build_plan.dart';
 import 'reader_writer.dart';
 
@@ -26,16 +25,15 @@ import 'reader_writer.dart';
 class BuildOutputReader {
   final BuildPlan? _buildPlan;
   final AssetGraph? _assetGraph;
+  final Set<AssetId>? _processedOutputs;
   final ReaderWriter? _readerWriter;
-
-  /// Results of checking if an output is required.
-  final Map<AssetId, bool> _checkedOutputs = {};
 
   /// For an unexpected failure condition, a fully empty output.
   BuildOutputReader.empty()
     : _assetGraph = null,
       _buildPlan = null,
-      _readerWriter = null;
+      _readerWriter = null,
+      _processedOutputs = null;
 
   /// For testing: a build output that does not check build phases to determine
   /// whether outputs were required.
@@ -45,15 +43,23 @@ class BuildOutputReader {
     required AssetGraph assetGraph,
   }) : _buildPlan = null,
        _assetGraph = assetGraph,
-       _readerWriter = readerWriter;
+       _readerWriter = readerWriter,
+       _processedOutputs = null;
 
+  /// Creates from build results.
+  ///
+  /// [processedOutputs] is the set of generated outputs in the build that were
+  /// considered for building. This excludes generated outputs that were skipped
+  /// due to not matching build dirs or not matching build filters.
   BuildOutputReader({
     required BuildPlan buildPlan,
     required ReaderWriter readerWriter,
     required AssetGraph assetGraph,
+    required Set<AssetId> processedOutputs,
   }) : _readerWriter = readerWriter,
        _assetGraph = assetGraph,
-       _buildPlan = buildPlan;
+       _buildPlan = buildPlan,
+       _processedOutputs = processedOutputs;
 
   /// Returns a reason why [id] is not readable, or null if it is readable.
   Future<UnreadableReason?> unreadableReason(AssetId id) async {
@@ -64,16 +70,19 @@ class BuildOutputReader {
       return UnreadableReason.notFound;
     }
     final node = _assetGraph.get(id)!;
-    if (!isRequired(node.id)) {
-      return UnreadableReason.notOutput;
-    }
     if (node.isDeleted) return UnreadableReason.deleted;
     if (!node.isFile) return UnreadableReason.assetType;
 
     if (node.type == NodeType.generated) {
+      if (_processedOutputs?.contains(node.id) == false) {
+        // The generated output was not considered for building because its
+        // transitive input(s) did not match build dirs and/or build filters.
+        return UnreadableReason.notOutput;
+      }
       final nodeState = node.generatedNodeState!;
       if (nodeState.result == false) return UnreadableReason.failed;
       if (!node.wasOutput) return UnreadableReason.notOutput;
+
       // No need to explicitly check readability for generated files, their
       // readability is recorded in the node state.
       return null;
@@ -160,55 +169,11 @@ class BuildOutputReader {
       if (!node.wasOutput || node.generatedNodeState!.result == false) {
         return true;
       }
-      return !isRequired(node.id);
+      return !_processedOutputs!.contains(node.id);
     }
     if (node.id.path == '.packages') return true;
     if (node.id.path == '.dart_tool/package_config.json') return true;
     return false;
-  }
-
-  /// Returns whether [output] was required.
-  ///
-  /// Non-required outputs might be present from a previous build, but they
-  /// should not be served or copied to a merged output directory.
-  bool isRequired(AssetId output, [Set<AssetId>? currentlyChecking]) {
-    if (_buildPlan == null) return true;
-    if (_assetGraph == null) return true;
-
-    currentlyChecking ??= <AssetId>{};
-    if (currentlyChecking.contains(output)) return false;
-    currentlyChecking.add(output);
-
-    final node = _assetGraph.get(output)!;
-    if (node.type != NodeType.generated) return true;
-    final nodeConfiguration = node.generatedNodeConfiguration!;
-    final phase = _buildPlan.buildPhases[nodeConfiguration.phaseNumber];
-    if (!phase.isOptional &&
-        shouldBuildForDirs(
-          output,
-          buildDirs: _buildPlan.buildOptions.buildDirs,
-          buildFilters: _buildPlan.buildOptions.buildFilters,
-          phase: phase,
-          buildConfigs: _buildPlan.buildConfigs,
-        )) {
-      return true;
-    }
-    return _checkedOutputs.putIfAbsent(
-      output,
-      () =>
-          (_assetGraph.computeOutputs()[node.id] ?? <AssetId>{}).any(
-            (o) => isRequired(o, currentlyChecking),
-          ) ||
-          _assetGraph
-              .outputsForPhase(output.package, nodeConfiguration.phaseNumber)
-              .where(
-                (n) =>
-                    n.generatedNodeConfiguration!.primaryInput ==
-                    node.generatedNodeConfiguration!.primaryInput,
-              )
-              .map((n) => n.id)
-              .any((o) => isRequired(o, currentlyChecking)),
-    );
   }
 }
 

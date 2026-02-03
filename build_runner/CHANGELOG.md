@@ -2,6 +2,8 @@
 
 - Add `--workspace` flag. Use it with `dart run build_runner build`, `watch`
   or `serve` to build, watch or serve all packages in the current workspace.
+- Bug fix: fix crash in corner case with post process builder, optional builder
+  and output used for `--output`, `watch` or `serve`.
 
 ## 2.10.5
 

@@ -13,8 +13,8 @@ void main() async {
   test('build command --output writes only required files', () async {
     final pubspecs = await Pubspecs.load();
     final tester = BuildRunnerTester(pubspecs);
-    tester.writeFixturePackage(FixturePackages.optionalCopyAndReadBuilders);
 
+    tester.writeFixturePackage(FixturePackages.optionalCopyAndReadBuilders);
     tester.writePackage(
       name: 'root_pkg',
       dependencies: ['build_runner'],
@@ -53,5 +53,23 @@ void main() async {
       'a.txt.copy': 'a',
       'b.txt': 'b',
     });
+
+    // Add a post process builder to regression test for the crash in
+    // https://github.com/dart-lang/build/issues/4341.
+    tester.writeFixturePackage(
+      FixturePackages.postProcessCopyBuilder(
+        packageName: 'post_process_builder_pkg',
+      ),
+    );
+    tester.writePackage(
+      name: 'root_pkg',
+      dependencies: ['build_runner'],
+      pathDependencies: ['builder_pkg', 'post_process_builder_pkg'],
+      files: {'other/a.txt': 'a'},
+    );
+    await tester.run(
+      'root_pkg',
+      'dart run build_runner build --output build --build-filter other/*',
+    );
   });
 }

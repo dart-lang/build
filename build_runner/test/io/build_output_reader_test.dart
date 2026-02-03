@@ -88,6 +88,7 @@ void main() {
         buildPlan: buildPlan,
         readerWriter: readerWriter,
         assetGraph: assetGraph,
+        processedOutputs: assetGraph.outputs.toSet(),
       );
       expect(await reader.canRead(notDeleted.id), true);
       expect(await reader.canRead(deleted.id), false);
@@ -131,6 +132,7 @@ void main() {
         buildPlan: buildPlan,
         readerWriter: readerWriter,
         assetGraph: assetGraph,
+        processedOutputs: assetGraph.outputs.toSet(),
       );
       expect(
         await reader.unreadableReason(id),
@@ -155,6 +157,8 @@ void main() {
         buildPlan: buildPlan,
         readerWriter: readerWriter,
         assetGraph: assetGraph,
+        // `a` does not match the build filter and is not processed.
+        processedOutputs: {},
       );
 
       expect(

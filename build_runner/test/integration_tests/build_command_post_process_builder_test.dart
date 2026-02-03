@@ -14,70 +14,7 @@ void main() async {
     final pubspecs = await Pubspecs.load();
     final tester = BuildRunnerTester(pubspecs);
 
-    tester.writePackage(
-      name: 'builder_pkg',
-      dependencies: ['build', 'build_runner'],
-      files: {
-        'build.yaml': '''
-builders:
-  test_builder:
-    import: "package:builder_pkg/builder.dart"
-    builder_factories: ["testBuilder"]
-    build_extensions: {".dart": [".g.dart"]}
-    auto_apply: root_package
-    build_to: source
-    applies_builders:
-      - builder_pkg:test_post_process_builder
-post_process_builders:
-  test_post_process_builder:
-    import: "package:builder_pkg/builder.dart"
-    builder_factory: "testPostProcessBuilder"
-    input_extensions: [".txt"]
-    defaults:
-      options:
-        output_extension: ".post"
-      dev_options:
-        extra_content: "(default dev)"
-      release_options:
-        extra_content: "(default release)"
-''',
-        'lib/builder.dart': '''
-import 'package:build/build.dart';
-
-TestBuilder testBuilder(BuilderOptions options)
-    => TestBuilder();
-TestPostProcessBuilder testPostProcessBuilder(BuilderOptions options)
-    => TestPostProcessBuilder(
-        options.config['output_extension'] as String,
-        options.config['extra_content'] as String);
-
-class TestBuilder implements Builder {
-  @override
-  Map<String, List<String>> get buildExtensions => {'.dart': ['.g.dart']};
-
-  @override
-  Future<void> build(BuildStep buildStep) async {}
-}
-
-class TestPostProcessBuilder implements PostProcessBuilder {
-  final String outputExtension;
-  final String extraContent;
-  TestPostProcessBuilder(this.outputExtension, this.extraContent);
-
-  @override
-  List<String> get inputExtensions => ['.txt'];
-
-  @override
-  Future<void> build(PostProcessBuildStep buildStep) async {
-    await buildStep.writeAsString(
-        buildStep.inputId.addExtension(outputExtension),
-        await buildStep.readInputAsString() + extraContent,
-    );
-  }
-}
-''',
-      },
-    );
+    tester.writeFixturePackage(FixturePackages.postProcessCopyBuilder());
     tester.writePackage(
       name: 'root_pkg',
       dependencies: ['build_runner'],
@@ -98,6 +35,11 @@ class TestPostProcessBuilder implements PostProcessBuilder {
       'dart run build_runner build --output build',
     );
     expect(output, contains('wrote 0 outputs'));
+    // Output is copied the same.
+    expect(tester.readFileTree('root_pkg/build/packages/root_pkg'), {
+      'a.txt': 'a',
+      'a.txt.post': 'a(default dev)',
+    });
 
     // Do rebuild if a file changed.
     tester.write('root_pkg/lib/a.txt', 'b');
