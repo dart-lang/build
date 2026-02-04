@@ -342,20 +342,27 @@ class AssetGraph implements GeneratedAssetHider {
     final newIds = <AssetId>{};
     final modifyIds = <AssetId>{};
     final removeIds = <AssetId>{};
-    updates.forEach((id, changeType) {
-      if (changeType != ChangeType.ADD && get(id) == null) return;
+    for (final entry in updates.entries) {
+      final id = entry.key;
+      final changeType = entry.value;
+      final existingNode = get(id);
+
+      /// Allow changes that are out of sync with the current graph state:
+      /// handle an "add" of an existing asset as "modify", a "modify" of a
+      /// missing asset as "add", and ignore a "remove" of a missing asset.
       switch (changeType) {
         case ChangeType.ADD:
-          newIds.add(id);
-          break;
         case ChangeType.MODIFY:
-          modifyIds.add(id);
-          break;
+          if (existingNode == null ||
+              existingNode.type == NodeType.missingSource) {
+            newIds.add(id);
+          } else {
+            modifyIds.add(id);
+          }
         case ChangeType.REMOVE:
-          removeIds.add(id);
-          break;
+          if (existingNode != null) removeIds.add(id);
       }
-    });
+    }
 
     _addSources(newIds);
 

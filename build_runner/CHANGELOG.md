@@ -4,6 +4,8 @@
   or `serve` to build, watch or serve all packages in the current workspace.
 - Bug fix: fix crash in corner case with post process builder, optional builder
   and output used for `--output`, `watch` or `serve`.
+- Bug fix: fix crash in corner case with `watch` or `serve` when builders depend
+  on generated files in the current build.
 
 ## 2.10.5
 
