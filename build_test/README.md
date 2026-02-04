@@ -55,43 +55,40 @@ test('should resolve a simple dart file', () async {
 ```
 
 ### Get generated source code as `String`
-You can use `TestReaderWriter` to read generated assets as `String`.
-Make sure to set `flattenOutput` to `true` in `testBuilder` to make sure the output assets are accessible:
+
+You can use `TestReaderWriter` to read generated assets as `String`. Read more about
+how this works in the [TestReaderWriter documentation][api:TestReaderWriter].
+
+Set `flattenOutput` to `true` in `testBuilder` to make the output assets accessible:
 
 ```dart
 final yourBuilder = ...;
 
-final rw = TestReaderWriter(rootPackage: 'test_package');
+final readerWriter = TestReaderWriter(rootPackage: 'test_package');
 
 final result = await testBuilder(
   yourBuilder,
   {...},
-  readerWriter: rw,
+  readerWriter: readerWriter,
   outputs: null,
   flattenOutput: true,
 );
 
 
-/// Map of output asset paths to their contents.
-Map<String, String> outputs = {};
-
+// You can read all of the generated assets like this...
 for (final AssetId asset in result.outputs) {
-  // print("reading generated asset: ${asset}");
-  // print("  can read ${asset}: ${await rw.canRead(asset)}");
-  // print("  exists ${asset}: ${await rw.testing.exists(asset)}");
-
-  final content = rw.testing.readString(asset);
-  outputs['${asset.package}|${asset.path}'] = content;
+  print('reading generated asset: ${asset}');
+  print('  can read: ${await readerWriter.canRead(asset)}');
+  print('  exists: ${await readerWriter.testing.exists(asset)}');
+  print('  content: \n${await readerWriter.testing.readString(asset)}');
 }
-```
 
-Now `outputs` contains all generated assets as strings. Access it like this:
-
-```dart
-final generatedCode = outputs['test_package|lib/source_file.g.dart'];
-
-// you can use it in tests like
-expect(generatedCode, contains('some expected content'));
+// ...or access a single generated asset directly, like this:
+final String generatedCode = await readerWriter.testing.readString(
+  AssetId('test_package', 'lib/source_file.g.dart')
+);
+// ...and, for example, use it in tests:
+expect(generatedCode, contains('callExpectedFunction();'));
 ```
 
 [api:PackageAssetReader]: https://pub.dev/documentation/build_test/latest/build_test/PackageAssetReader-class.html

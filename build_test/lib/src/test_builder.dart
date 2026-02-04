@@ -174,7 +174,7 @@ Future<TestBuilderResult> testBuilder(
 ///
 /// To access the outputs via `testing.readString` using the same
 /// `AssetId`s as returned by the outputs of this method,
-/// make sure to set [flattenOutput] to `true`. See [TestReaderWriter] for details.
+/// set [flattenOutput] to `true`. See [TestReaderWriter] for details.
 Future<TestBuilderResult> testBuilders(
   Iterable<Builder> builders,
   Map<String, /*String|List<int>*/ Object> sourceAssets, {

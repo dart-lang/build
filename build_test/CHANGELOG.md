@@ -4,6 +4,8 @@
   skip reading real `asset_graph.json` files. This prevents the test build from
   deleting, in RAM only, generated outputs of the real build.
 - Use `build_runner` 2.10.6.
+- Added documentation about reading generated assets as `String` using
+  `TestReaderWriter` and `testBuilder` with `flattenOutput`.
 
 ## 3.5.5
 
