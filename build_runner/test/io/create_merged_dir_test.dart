@@ -103,6 +103,7 @@ void main() {
         buildPlan: buildPlan,
         readerWriter: readerWriter,
         assetGraph: graph,
+        processedOutputs: graph.outputs.toSet(),
       );
 
       for (final id in graph.outputs) {
@@ -388,6 +389,7 @@ void main() {
         ),
         readerWriter: readerWriter,
         assetGraph: graph,
+        processedOutputs: graph.outputs.toSet(),
       );
       final success = await createMergedOutputDirectories(
         buildDirs:

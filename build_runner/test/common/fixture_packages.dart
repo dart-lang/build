@@ -121,4 +121,75 @@ class ReadBuilder implements Builder {
 ''',
     },
   );
+
+  /// A post process builder that copies .txt -> .post.
+  ///
+  /// Comes with a normal builder that does nothing but applies the post
+  /// process builder.
+  static FixturePackage postProcessCopyBuilder({
+    String packageName = 'builder_pkg',
+  }) => FixturePackage(
+    name: packageName,
+    dependencies: ['build', 'build_runner'],
+    files: {
+      'build.yaml': '''
+builders:
+  test_builder:
+    import: "package:$packageName/builder.dart"
+    builder_factories: ["testBuilder"]
+    build_extensions: {".dart": [".g.dart"]}
+    auto_apply: root_package
+    build_to: source
+    applies_builders:
+      - $packageName:test_post_process_builder
+post_process_builders:
+  test_post_process_builder:
+    import: "package:$packageName/builder.dart"
+    builder_factory: "testPostProcessBuilder"
+    input_extensions: [".txt"]
+    defaults:
+      options:
+        output_extension: ".post"
+      dev_options:
+        extra_content: "(default dev)"
+      release_options:
+        extra_content: "(default release)"
+''',
+      'lib/builder.dart': '''
+import 'package:build/build.dart';
+
+TestBuilder testBuilder(BuilderOptions options)
+    => TestBuilder();
+TestPostProcessBuilder testPostProcessBuilder(BuilderOptions options)
+    => TestPostProcessBuilder(
+        options.config['output_extension'] as String,
+        options.config['extra_content'] as String);
+
+class TestBuilder implements Builder {
+  @override
+  Map<String, List<String>> get buildExtensions => {'.dart': ['.g.dart']};
+
+  @override
+  Future<void> build(BuildStep buildStep) async {}
+}
+
+class TestPostProcessBuilder implements PostProcessBuilder {
+  final String outputExtension;
+  final String extraContent;
+  TestPostProcessBuilder(this.outputExtension, this.extraContent);
+
+  @override
+  List<String> get inputExtensions => ['.txt'];
+
+  @override
+  Future<void> build(PostProcessBuildStep buildStep) async {
+    await buildStep.writeAsString(
+        buildStep.inputId.addExtension(outputExtension),
+        await buildStep.readInputAsString() + extraContent,
+    );
+  }
+}
+''',
+    },
+  );
 }

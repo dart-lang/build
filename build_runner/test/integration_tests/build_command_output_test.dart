@@ -28,6 +28,16 @@ void main() async {
     expect(tester.read('root_pkg/build/web/a.txt.copy'), 'a');
     expect(tester.read('root_pkg/build/web/b.txt.copy'), 'b');
 
+    // No rebuild if nothing changed.
+    var output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --output build',
+    );
+    expect(output, contains('wrote 0 outputs'));
+    // Output is copied the same.
+    expect(tester.read('root_pkg/build/web/a.txt.copy'), 'a');
+    expect(tester.read('root_pkg/build/web/b.txt.copy'), 'b');
+
     // The --output option filters to --build-filter.
     await tester.run(
       'root_pkg',
@@ -55,7 +65,7 @@ void main() async {
     expect(tester.read('root_pkg/build2/web/b.txt.copy'), 'b');
 
     // Duplicate --output options are an error.
-    var output = await tester.run(
+    output = await tester.run(
       'root_pkg',
       'dart run build_runner build --output web:build --output test:build',
       expectExitCode: ExitCode.usage.code,

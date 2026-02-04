@@ -23,7 +23,7 @@ void main() async {
       files: {'web/a.txt': 'a', 'web/b.txt': 'b'},
     );
 
-    final serve = await tester.start(
+    var serve = await tester.start(
       'root_pkg',
       'dart run build_runner serve web:0',
     );
@@ -48,6 +48,25 @@ void main() async {
       'a.txt.copy': 'a',
       'b.txt': 'b',
     });
+
+    // Add a post process builder to regression test for the crash in
+    // https://github.com/dart-lang/build/issues/4341.
+    await serve.kill();
+    tester.writeFixturePackage(
+      FixturePackages.postProcessCopyBuilder(
+        packageName: 'post_process_builder_pkg',
+      ),
+    );
+    tester.writePackage(
+      name: 'root_pkg',
+      dependencies: ['build_runner'],
+      pathDependencies: ['builder_pkg', 'post_process_builder_pkg'],
+      files: {},
+    );
+    serve = await tester.start('root_pkg', 'dart run build_runner serve web:0');
+
+    await serve.expectServingAndBuildSuccess();
+    await serve.fetch('a.txt.copy', expectResponseCode: 404);
 
     await serve.kill();
   });

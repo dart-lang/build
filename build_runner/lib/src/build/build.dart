@@ -108,7 +108,7 @@ class Build {
   final Map<LibraryCycleGraph, bool> changedGraphs = Map.identity();
 
   /// The build output.
-  final BuildOutputReader buildOutputReader;
+  BuildOutputReader? _buildOutputReader;
 
   Build({
     required this.buildPlan,
@@ -122,18 +122,21 @@ class Build {
        previousDepsLoader =
            assetGraph.previousPhasedAssetDeps == null
                ? null
-               : AssetDepsLoader.fromDeps(assetGraph.previousPhasedAssetDeps!),
-       buildOutputReader = BuildOutputReader(
-         buildPlan: buildPlan,
-         readerWriter: readerWriter,
-         assetGraph: assetGraph,
-       );
+               : AssetDepsLoader.fromDeps(assetGraph.previousPhasedAssetDeps!);
 
   BuildOptions get buildOptions => buildPlan.buildOptions;
   TestingOverrides get testingOverrides => buildPlan.testingOverrides;
   BuildPackages get buildPackages => buildPlan.buildPackages;
   BuildConfigs get buildConfigs => buildPlan.buildConfigs;
   BuildPhases get buildPhases => buildPlan.buildPhases;
+
+  BuildOutputReader get buildOutputReader =>
+      _buildOutputReader ??= BuildOutputReader(
+        buildPlan: buildPlan,
+        readerWriter: readerWriter,
+        assetGraph: assetGraph,
+        processedOutputs: processedOutputs,
+      );
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
     buildLog.configuration = buildLog.configuration.rebuild(
@@ -699,19 +702,20 @@ class Build {
       assetsWritten: {},
     );
 
+    final existingOutputs = assetGraph.postProcessBuildStepOutputs(
+      postProcessBuildStepId,
+    );
     if (!await _postProcessBuildStepShouldRun(
       postProcessBuildStepId,
       stepReaderWriter,
     )) {
+      processedOutputs.addAll(existingOutputs);
       return <AssetId>[];
     }
     // Clear input tracking accumulated during `_buildShouldRun`.
     stepReaderWriter.inputTracker.clear();
 
     // Clean out the impacts of the previous run.
-    final existingOutputs = assetGraph.postProcessBuildStepOutputs(
-      postProcessBuildStepId,
-    );
     await _cleanUpStaleOutputs(existingOutputs);
     for (final output in existingOutputs) {
       assetGraph.removePostProcessOutput(output);
