@@ -171,6 +171,10 @@ Future<TestBuilderResult> testBuilder(
 /// `build_runner` config pass [testingBuilderConfig] `false`. To read
 /// `build.yaml` files passed in `sourceAssets`, use [testBuilderFactories]
 /// directly.
+///
+/// To access the outputs via `testing.readString` using the same
+/// `AssetId`s as returned by the outputs of this method,
+/// set [flattenOutput] to `true`. See [TestReaderWriter] for details.
 Future<TestBuilderResult> testBuilders(
   Iterable<Builder> builders,
   Map<String, /*String|List<int>*/ Object> sourceAssets, {

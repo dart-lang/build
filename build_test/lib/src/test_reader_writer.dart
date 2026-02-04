@@ -7,6 +7,7 @@ import 'package:build/build.dart';
 
 import 'fake_watcher.dart';
 import 'internal_test_reader_writer.dart';
+import 'test_builder.dart' show testBuilders;
 
 /// In-memory implementation of [AssetReader] and [AssetWriter].
 ///
@@ -18,6 +19,15 @@ import 'internal_test_reader_writer.dart';
 ///
 /// You must pass a `rootPackage` if the `TestReaderWriter` will be used in
 /// a build. This specifies which package `build_runner` is running in.
+///
+/// On disk "hidden" assets are placed under `.dart_tool/build/generated/<package>`
+/// while non-hidden assets are placed in the main source tree.
+/// Some parts of this API are from the point of view of a builder and use a
+/// unified namespace for [AssetId]s, while others see a split view
+/// of the hidden/non-hidden filesystem structure, and require an explicit
+/// mapping of [AssetId]s to the on-disk structure
+/// (eg. starting with `.dart_tool/build/generated/`) to access hidden files.
+/// See [testBuilders] `flattenOutput` parameter for more details.
 abstract interface class TestReaderWriter implements AssetReader, AssetWriter {
   factory TestReaderWriter({String? rootPackage}) =>
       InternalTestReaderWriter(outputRootPackage: rootPackage);
@@ -74,6 +84,11 @@ abstract interface class ReaderWriterTesting {
   Iterable<AssetId> get assetsWritten;
 
   /// Whether [id] exists on the [TestReaderWriter] in-memory filesystem.
+  ///
+  /// [AssetId]s are from the point of view of the filesystem,
+  /// so "hidden" assets are under .dart_tool.
+  /// See also [TestReaderWriter] class documentation and
+  /// [testBuilders] `flattenOutput` parameter.
   bool exists(AssetId id);
 
   /// Writes [id] with [contents] to the [TestReaderWriter] in-memory
@@ -85,11 +100,24 @@ abstract interface class ReaderWriterTesting {
   void writeBytes(AssetId id, List<int> contents);
 
   /// Reads [id] from the [TestReaderWriter] in-memory filesystem.
+  ///
+  /// [AssetId]s are from the point of view of the filesystem,
+  /// so "hidden" assets are under .dart_tool.
+  /// See also [TestReaderWriter] class documentation and
+  /// [testBuilders] `flattenOutput` parameter.
   Uint8List readBytes(AssetId id);
 
   /// Reads [id] from the [TestReaderWriter] in-memory filesystem.
+  ///
+  /// [AssetId]s are from the point of view of the filesystem,
+  /// so "hidden" assets are under .dart_tool.
+  /// /// See also [TestReaderWriter] class documentation and
   String readString(AssetId id);
 
   /// Deletes [id] from the [TestReaderWriter] in-memory filesystem.
+  ///
+  /// [AssetId]s are from the point of view of the filesystem,
+  /// so "hidden" assets are under .dart_tool.
+  /// /// [testBuilders] `flattenOutput` parameter.
   void delete(AssetId id);
 }

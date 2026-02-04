@@ -54,6 +54,43 @@ test('should resolve a simple dart file', () async {
 });
 ```
 
+### Get generated source code as `String`
+
+You can use `TestReaderWriter` to read generated assets as `String`. Read more about
+how this works in the [TestReaderWriter documentation][api:TestReaderWriter].
+
+Set `flattenOutput` to `true` in `testBuilder` to make the output assets accessible:
+
+```dart
+final yourBuilder = ...;
+
+final readerWriter = TestReaderWriter(rootPackage: 'test_package');
+
+final result = await testBuilder(
+  yourBuilder,
+  {...},
+  readerWriter: readerWriter,
+  outputs: null,
+  flattenOutput: true,
+);
+
+
+// You can read all of the generated assets like this...
+for (final AssetId asset in result.outputs) {
+  print('reading generated asset: ${asset}');
+  print('  can read: ${await readerWriter.canRead(asset)}');
+  print('  exists: ${await readerWriter.testing.exists(asset)}');
+  print('  content: \n${await readerWriter.testing.readString(asset)}');
+}
+
+// ...or access a single generated asset directly, like this:
+final String generatedCode = await readerWriter.testing.readString(
+  AssetId('test_package', 'lib/source_file.g.dart')
+);
+// ...and, for example, use it in tests:
+expect(generatedCode, contains('callExpectedFunction();'));
+```
+
 [api:PackageAssetReader]: https://pub.dev/documentation/build_test/latest/build_test/PackageAssetReader-class.html
 [api:resolveAsset]: https://pub.dev/documentation/build_test/latest/build_test/resolveAsset.html
 [api:resolveSource]: https://pub.dev/documentation/build_test/latest/build_test/resolveSource.html
