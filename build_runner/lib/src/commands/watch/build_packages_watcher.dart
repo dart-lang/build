@@ -45,7 +45,9 @@ class BuildPackagesWatcher {
   Stream<AssetChange> _watch() {
     final allWatchers =
         _buildPackages.packages.values
-            .where((buildPackage) => buildPackage.watch)
+            .where(
+              (buildPackage) => buildPackage.watch || buildPackage.isWorkspace,
+            )
             .map(_strategy)
             .toList();
     final filteredEvents =

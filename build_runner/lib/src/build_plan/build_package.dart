@@ -17,6 +17,9 @@ class BuildPackage {
   /// Paths are platform dependent.
   final String path;
 
+  /// Whether the "package" is actually a workspace.
+  final bool isWorkspace;
+
   /// Whether the package contents should be watched in `watch` and `serve`
   /// modes.
   final bool watch;
@@ -34,6 +37,7 @@ class BuildPackage {
   BuildPackage({
     required this.name,
     required String path,
+    this.isWorkspace = false,
     this.watch = false,
     this.isOutput = false,
     this.languageVersion,
@@ -45,12 +49,14 @@ class BuildPackage {
   @visibleForTesting
   factory BuildPackage.forTesting({
     required String name,
+    bool isWorkspace = false,
     bool watch = false,
     bool isOutput = false,
     Iterable<String> dependencies = const [],
   }) => BuildPackage(
     name: name,
     path: '/$name',
+    isWorkspace: isWorkspace,
     watch: watch,
     isOutput: isOutput,
     dependencies: dependencies,
@@ -62,6 +68,7 @@ class BuildPackage {
     return other is BuildPackage &&
         name == other.name &&
         path == other.path &&
+        isWorkspace == other.isWorkspace &&
         watch == other.watch &&
         isOutput == other.isOutput &&
         languageVersion == other.languageVersion &&
@@ -77,6 +84,7 @@ class BuildPackage {
 BuildPackage(
   name: $name,
   path: $path,
+  isWorkspace: $isWorkspace,
   watch: $watch,
   isOutput: $isOutput,
   languageVersion: $languageVersion,

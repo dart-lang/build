@@ -110,5 +110,56 @@ targets:
           '--define=builder_pkg:test_builder=copy_from=root_pkg|web/a.txt',
     );
     expect(tester.read('root_pkg/web/a.txt.copy'), 'a(yaml release)');
+
+    // Override with global options.
+    tester.write('root_pkg/build.yaml', r'''
+targets:
+  $default:
+    builders:
+      builder_pkg:test_builder:
+        options:
+          copy_from: root_pkg|web/b.txt
+        dev_options:
+          extra_content: "(yaml dev)"
+        release_options:
+          extra_content: "(yaml release)"
+
+global_options:
+  builder_pkg:test_builder:
+    options:
+      extra_content: "(global)"
+''');
+    await tester.run('root_pkg', 'dart run build_runner build');
+    expect(tester.read('root_pkg/web/a.txt.copy'), 'b(global)');
+
+    // Change to a workspace.
+    tester.writePackage(
+      name: 'root_pkg',
+      dependencies: ['build_runner'],
+      pathDependencies: ['builder_pkg'],
+      files: {},
+      inWorkspace: true,
+    );
+    tester.write('pubspec.yaml', '''
+name: workspace
+environment:
+  sdk: ^3.5.0
+workspace: [root_pkg]
+''');
+
+    // Build with --workspace. Package options from `root_pkg/build.yaml`
+    // still apply, but global options from `root_pkg/build.yaml` don't.
+    await tester.run('', 'dart run build_runner build --workspace');
+    expect(tester.read('root_pkg/web/a.txt.copy'), 'b(yaml dev)');
+
+    // Global options from workspace root `build.yaml` are used.
+    tester.write('build.yaml', r'''
+global_options:
+  builder_pkg:test_builder:
+    options:
+      extra_content: "(workspace global)"
+''');
+    await tester.run('', 'dart run build_runner build --workspace');
+    expect(tester.read('root_pkg/web/a.txt.copy'), 'b(workspace global)');
   });
 }
