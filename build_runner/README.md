@@ -134,9 +134,11 @@ class Person {
 }
 ```
 
-If you have multiple packages then you need to run `build` or `watch` in each
-package separately; there is an
-[open feature request for workspace support](https://github.com/dart-lang/build/issues/3804).
+You can build or watch more than one package together by putting them in a
+[workspace](https://dart.dev/tools/pub/workspaces) and passing the `--workspace`
+flag. This is still experimental and subject to change based on feedback, consider
+giving your own feedback in the
+[discussion forum](https://github.com/dart-lang/build/discussions/4349).
 
 ### Output files
 
@@ -159,6 +161,9 @@ So, tools such as `git` must be configured to ignore them. Make `git` ignore `.d
 ```bash
 .dart_tool
 ```
+
+With the `--workspace` flag the `.dart_tool` directory is written under the
+workspace root instead of under a package.
 
 ### Additional configuration
 
@@ -197,6 +202,10 @@ targets:
 ```
 
 —see each builder's documentation for details.
+
+With the `--workspace` flag package-specific options are read from each
+package's `build.yaml` file. Global options are read from the `build.yaml` in
+the workspace root, if there is one.
 
 ## Writing your own builder
 

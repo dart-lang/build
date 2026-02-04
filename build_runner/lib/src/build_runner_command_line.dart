@@ -84,7 +84,9 @@ class BuildRunnerCommandLine {
       trackPerformance = argResults.boolNamed(trackPerformanceOption),
       symlink = argResults.boolNamed(symlinkOption),
       verbose = argResults.boolNamed(verboseOption),
-      workspace = argResults.boolNamed(workspaceOption);
+      // Only "build" and "watch" support --workspace, default to false for
+      // other commands.
+      workspace = argResults.boolNamed(workspaceOption) ?? false;
 
   String get usage {
     // Calling `usage` only works if the command has been added to a
@@ -170,13 +172,14 @@ final _build = _Build();
 
 class _Build extends Command<BuildRunnerCommandLine> {
   _Build() {
-    addBuildArgs(argParser, symlinksDefault: false);
+    addBuildArgs(argParser, symlinksDefault: false, supportWorkspace: true);
   }
 
   /// Adds args common to all build commands to [argParser].
   static void addBuildArgs(
     ArgParser argParser, {
     required bool symlinksDefault,
+    required bool supportWorkspace,
   }) {
     argParser
       // No longer does anything, but accept so old usage does not fail.
@@ -285,13 +288,15 @@ class _Build extends Command<BuildRunnerCommandLine> {
             'For example, `--dart-jit-vm-arg "--observe" '
             '--dart-jit-vm-arg "--pause-isolates-on-start"` would start the '
             'build script with a debugger attached to it.',
-      )
-      ..addFlag(
+      );
+    if (supportWorkspace) {
+      argParser.addFlag(
         workspaceOption,
         defaultsTo: false,
         negatable: true,
         help: 'Build all packages in the current workspace.',
       );
+    }
   }
 
   @override
@@ -336,7 +341,11 @@ class _Daemon extends Command<BuildRunnerCommandLine> {
   String get name => 'daemon';
 
   _Daemon() {
-    _Build.addBuildArgs(argParser, symlinksDefault: false);
+    _Build.addBuildArgs(
+      argParser,
+      symlinksDefault: false,
+      supportWorkspace: false,
+    );
     argParser
       ..addOption(
         buildModeFlag,
@@ -360,7 +369,11 @@ final _run = _Run();
 
 class _Run extends Command<BuildRunnerCommandLine> {
   _Run() {
-    _Build.addBuildArgs(argParser, symlinksDefault: false);
+    _Build.addBuildArgs(
+      argParser,
+      symlinksDefault: false,
+      supportWorkspace: false,
+    );
   }
 
   @override
@@ -383,7 +396,11 @@ final _serve = _Serve();
 
 class _Serve extends Command<BuildRunnerCommandLine> {
   _Serve() {
-    _Build.addBuildArgs(argParser, symlinksDefault: false);
+    _Build.addBuildArgs(
+      argParser,
+      symlinksDefault: false,
+      supportWorkspace: false,
+    );
     argParser
       ..addOption(
         hostnameOption,
@@ -423,7 +440,11 @@ final _test = _Test();
 
 class _Test extends Command<BuildRunnerCommandLine> {
   _Test() {
-    _Build.addBuildArgs(argParser, symlinksDefault: !Platform.isWindows);
+    _Build.addBuildArgs(
+      argParser,
+      symlinksDefault: !Platform.isWindows,
+      supportWorkspace: false,
+    );
   }
 
   @override
@@ -446,7 +467,11 @@ final _watch = _Watch();
 
 class _Watch extends Command<BuildRunnerCommandLine> {
   _Watch() {
-    _Build.addBuildArgs(argParser, symlinksDefault: false);
+    _Build.addBuildArgs(
+      argParser,
+      symlinksDefault: false,
+      supportWorkspace: true,
+    );
   }
 
   @override

@@ -22,6 +22,7 @@ void main() async {
     final pubspecs = await Pubspecs.load();
     final tester = BuildRunnerTester(pubspecs);
 
+    // The `builder.g.dart` content that the builder writes.
     final partContent = '''
 part of 'builder.dart';
 ''';
@@ -59,6 +60,7 @@ class TestBuilder implements Builder {
   }
 }
 ''',
+        // Start with the correct output.
         'lib/builder.g.dart': partContent,
       },
       inWorkspace: true,
@@ -76,6 +78,7 @@ environment:
 workspace: [builder_pkg, root_pkg]
 ''');
 
+    // The first build runs and writes identical output for the generated file.
     final watch = await tester.start(
       '',
       'dart run build_runner watch --workspace',
