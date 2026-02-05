@@ -1,3 +1,7 @@
+## 3.5.7-wip
+
+- Use `build_runner` 2.11.1-wip.
+
 ## 3.5.6
 
 - Add documentation about reading generated assets as `String` using

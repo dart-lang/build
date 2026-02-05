@@ -14,6 +14,7 @@ import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/builder_definition.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
+import 'package:build_runner/src/commands/serve/server.dart';
 import 'package:build_runner/src/commands/watch_command.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:path/path.dart' as p;
@@ -61,29 +62,30 @@ void main() {
           );
 
     terminateController = StreamController<ProcessSignal>();
-    final server =
-        (await WatchCommand(
-          builderFactories: BuilderFactories({
-            '': [(_) => const UppercaseBuilder()],
-          }),
-          buildOptions: BuildOptions.forTests(verbose: true),
-          testingOverrides: TestingOverrides(
-            builderDefinitions: [BuilderDefinition('')].build(),
-            buildPackages: buildPackages,
-            readerWriter: readerWriter,
-            onLog:
-                (record) => printOnFailure(
-                  '[${record.level}] '
-                  '${record.loggerName}: ${record.message}',
-                ),
-            directoryWatcherFactory: FakeWatcher.new,
-            terminateEventStream: terminateController.stream,
-          ),
-        ).watch())!;
-    handler = server.handlerFor('web', logRequests: true);
+    final watchCommnd = WatchCommand(
+      builderFactories: BuilderFactories({
+        '': [(_) => const UppercaseBuilder()],
+      }),
+      buildOptions: BuildOptions.forTests(verbose: true),
+      testingOverrides: TestingOverrides(
+        builderDefinitions: [BuilderDefinition('')].build(),
+        buildPackages: buildPackages,
+        readerWriter: readerWriter,
+        onLog:
+            (record) => printOnFailure(
+              '[${record.level}] '
+              '${record.loggerName}: ${record.message}',
+            ),
+        directoryWatcherFactory: FakeWatcher.new,
+        terminateEventStream: terminateController.stream,
+      ),
+    );
+    final watcher = (await watchCommnd.watch())!;
+    final serveHandler = ServeHandler(watcher);
+    handler = serveHandler.handlerFor('web', logRequests: true);
 
     nextBuild = Completer<BuildResult>();
-    subscription = server.buildResults.listen((result) {
+    subscription = serveHandler.buildResults.listen((result) {
       nextBuild.complete(result);
       nextBuild = Completer<BuildResult>();
     });

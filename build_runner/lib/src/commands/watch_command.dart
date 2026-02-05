@@ -16,7 +16,6 @@ import '../build_plan/builder_factories.dart';
 import '../build_plan/testing_overrides.dart';
 import '../logging/build_log.dart';
 import 'build_runner_command.dart';
-import 'serve/server.dart';
 import 'watch/watcher.dart';
 
 class WatchCommand implements BuildRunnerCommand {
@@ -35,15 +34,15 @@ class WatchCommand implements BuildRunnerCommand {
       withEnabledExperiments(_run, buildOptions.enableExperiments.asList());
 
   Future<int> _run() async {
-    final handler = await watch();
-    if (handler == null) return ExitCode.tempFail.code;
+    final watcher = await watch();
+    if (watcher == null) return ExitCode.tempFail.code;
     final completer = Completer<int>();
-    handleBuildResultsStream(handler.buildResults, completer);
+    handleBuildResultsStream(watcher.buildResults, completer);
     return completer.future;
   }
 
   /// Watches files, or returns `null` if a restart is required.
-  Future<ServeHandler?> watch() async {
+  Future<Watcher?> watch() async {
     buildLog.configuration = buildLog.configuration.rebuild((b) {
       b.mode = BuildLogMode.build;
       b.verbose = buildOptions.verbose;
@@ -75,7 +74,7 @@ class WatchCommand implements BuildRunnerCommand {
       }),
     );
 
-    return ServeHandler(buildPlan.buildPackages.outputRoot, watcher);
+    return watcher;
   }
 }
 

@@ -9,6 +9,7 @@ import 'package:stream_transform/stream_transform.dart';
 
 import '../../build/build_result.dart';
 import '../../build/build_series.dart';
+import '../../build_plan/build_packages.dart';
 import '../../build_plan/build_plan.dart';
 import 'asset_change.dart';
 import 'build_package_watcher.dart';
@@ -23,6 +24,8 @@ class Watcher {
   final Set<AssetId> _expectedDeletes;
 
   Watcher._(this._buildPlan, this._buildSeries, this._expectedDeletes);
+
+  BuildPackages get buildPackages => _buildPlan.buildPackages;
 
   factory Watcher({required BuildPlan buildPlan, required Future<void> until}) {
     final expectedDeletes = <AssetId>{};

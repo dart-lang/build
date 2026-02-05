@@ -36,17 +36,18 @@ enum PerfSortOrder {
 }
 
 class ServeHandler {
-  final String outputRootPackage;
   final Watcher _watcher;
 
   final BuildUpdatesWebSocketHandler _webSocketHandler;
 
-  ServeHandler(this.outputRootPackage, this._watcher)
+  ServeHandler(this._watcher)
     : _webSocketHandler = BuildUpdatesWebSocketHandler() {
     _watcher.buildResults
         .listen(_webSocketHandler.emitUpdateMessage)
         .onDone(_webSocketHandler.close);
   }
+
+  String get outputRootPackage => _watcher.buildPackages.outputRoot;
 
   Future<BuildResult>? get currentBuildResult => _watcher.currentBuildResult;
 
