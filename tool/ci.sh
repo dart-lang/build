@@ -84,8 +84,8 @@ for PKG in ${PKGS}; do
         dart test -P presubmit --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
       test_2)
-        echo 'dart test -x integration1 -x integration2 -x integration3 -x integration4 --test-randomize-ordering-seed=random'
-        dart test -x integration1 -x integration2 -x integration3 -x integration4 --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        echo 'dart test -x integration1 -x integration2 -x integration3 -x integration4 -x integration5 -x integration6 --test-randomize-ordering-seed=random'
+        dart test -x integration1 -x integration2 -x integration3 -x integration4 -x integration5 -x integration6 --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
       test_3)
         echo 'dart test -t integration1 --test-randomize-ordering-seed=random'
@@ -102,6 +102,14 @@ for PKG in ${PKGS}; do
       test_6)
         echo 'dart test -t integration4 --test-randomize-ordering-seed=random'
         dart test -t integration4 --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        ;;
+      test_7)
+        echo 'dart test -t integration5 --test-randomize-ordering-seed=random'
+        dart test -t integration5 --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        ;;
+      test_8)
+        echo 'dart test -t integration6 --test-randomize-ordering-seed=random'
+        dart test -t integration6 --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
       *)
         echo -e "\033[31mUnknown TASK '${TASK}' - TERMINATING JOB\033[0m"

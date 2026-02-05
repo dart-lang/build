@@ -7,3 +7,7 @@ tags:
     timeout: 4x
   integration4:
     timeout: 4x
+  integration5:
+    timeout: 4x
+  integration6:
+    timeout: 4x
