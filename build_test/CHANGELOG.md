@@ -1,11 +1,11 @@
-## 3.5.6-wip
+## 3.5.6
 
+- Add documentation about reading generated assets as `String` using
+  `TestReaderWriter` and `testBuilder` with `flattenOutput`.
 - Bug fix: when using `resolveSources` with `readAllSourcesFromFilesystem`,
   skip reading real `asset_graph.json` files. This prevents the test build from
   deleting, in RAM only, generated outputs of the real build.
-- Use `build_runner` 2.10.6.
-- Added documentation about reading generated assets as `String` using
-  `TestReaderWriter` and `testBuilder` with `flattenOutput`.
+- Use `build_runner` 2.11.0.
 
 ## 3.5.5
 

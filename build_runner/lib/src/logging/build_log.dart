@@ -638,6 +638,14 @@ class BuildLog {
     }
     return false;
   }
+
+  void warnAboutWorkspaceFlag() {
+    warning(
+      'The --workspace flag is experimental and subject to change based on '
+      'feedback. Consider adding your own feedback at: '
+      'https://github.com/dart-lang/build/discussions/4349',
+    );
+  }
 }
 
 extension _IntExtension on int {

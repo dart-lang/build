@@ -46,6 +46,10 @@ class BuildCommand implements BuildRunnerCommand {
       b.onLog = testingOverrides.onLog;
     });
 
+    if (buildOptions.workspace) {
+      buildLog.warnAboutWorkspaceFlag();
+    }
+
     final buildPlan = await BuildPlan.load(
       builderFactories: builderFactories,
       buildOptions: buildOptions,
