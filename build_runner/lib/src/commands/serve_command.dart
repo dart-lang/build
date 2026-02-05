@@ -17,6 +17,7 @@ import '../build_plan/builder_factories.dart';
 import '../build_plan/testing_overrides.dart';
 import '../logging/build_log.dart';
 import 'build_runner_command.dart';
+import 'serve/server.dart';
 import 'serve_options.dart';
 import 'watch_command.dart';
 
@@ -66,13 +67,14 @@ class ServeCommand implements BuildRunnerCommand {
         return ExitCode.osError.code;
       }
 
-      final handler =
+      final watcher =
           await WatchCommand(
             builderFactories: builderFactories,
             buildOptions: buildOptions,
             testingOverrides: testingOverrides,
           ).watch();
-      if (handler == null) return ExitCode.tempFail.code;
+      if (watcher == null) return ExitCode.tempFail.code;
+      final handler = ServeHandler(watcher);
 
       servers.forEach((target, server) {
         serveRequests(
@@ -89,7 +91,7 @@ class ServeCommand implements BuildRunnerCommand {
       _ensureBuildWebCompilersDependency(await BuildPackages.forThisPackage());
 
       final completer = Completer<int>();
-      handleBuildResultsStream(handler.buildResults, completer);
+      handleBuildResultsStream(watcher.buildResults, completer);
 
       if (serveOptions.serveTargets.isEmpty) {
         buildLog.warning('Nothing to serve.');
@@ -102,7 +104,7 @@ class ServeCommand implements BuildRunnerCommand {
         }
       }
 
-      await handler.currentBuildResult;
+      await watcher.currentBuildResult;
       return await completer.future;
     } finally {
       await Future.wait(

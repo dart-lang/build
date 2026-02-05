@@ -104,31 +104,31 @@ class FakeWebSocketChannel extends StreamChannelMixin
 void main() {
   late ServeHandler serveHandler;
   late InternalTestReaderWriter readerWriter;
-  late MockWatchImpl watchImpl;
-  late BuildPackages packageGraph;
+  late FakeWatcher watcher;
+  late BuildPackages buildPackages;
   late AssetGraph assetGraph;
   late BuildOutputReader finalizedReader;
 
   setUp(() async {
-    packageGraph = BuildPackages.singlePackageBuild('a', [
+    buildPackages = BuildPackages.singlePackageBuild('a', [
       BuildPackage.forTesting(name: 'a', isOutput: true),
     ]);
     readerWriter = InternalTestReaderWriter(
-      outputRootPackage: packageGraph.outputRoot,
+      outputRootPackage: buildPackages.outputRoot,
     );
     assetGraph = await AssetGraph.build(
       BuildPhases([]),
       <AssetId>{},
-      packageGraph,
+      buildPackages,
       readerWriter,
     );
-    watchImpl = MockWatchImpl();
-    serveHandler = ServeHandler(packageGraph.outputRoot, watchImpl);
+    watcher = FakeWatcher(buildPackages);
+    serveHandler = ServeHandler(watcher);
     finalizedReader = BuildOutputReader.graphOnly(
       readerWriter: readerWriter,
       assetGraph: assetGraph,
     );
-    watchImpl.addFutureResult(
+    watcher.addFutureResult(
       Future.value(
         BuildResult(
           status: BuildStatus.success,
@@ -266,7 +266,7 @@ void main() {
           primaryInput: AssetId('a', 'web/main.dart'),
         ),
       );
-      watchImpl.addFutureResult(
+      watcher.addFutureResult(
         Future.value(
           BuildResult(
             status: BuildStatus.failure,
@@ -640,7 +640,10 @@ void main() {
   });
 }
 
-class MockWatchImpl implements Watcher {
+class FakeWatcher implements Watcher {
+  @override
+  final BuildPackages buildPackages;
+
   Future<BuildResult>? _currentBuild;
 
   @override
@@ -656,7 +659,7 @@ class MockWatchImpl implements Watcher {
     _futureBuildResultsController.add(result);
   }
 
-  MockWatchImpl() {
+  FakeWatcher(this.buildPackages) {
     final firstBuild = Completer<BuildResult>();
     _currentBuild = firstBuild.future;
     _futureBuildResultsController.stream.listen((futureBuildResult) {
