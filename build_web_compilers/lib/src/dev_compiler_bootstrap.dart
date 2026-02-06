@@ -886,8 +886,6 @@ String generateDDCLibraryBundleMainModule({
     /* MAIN_EXTENSION_MARKER */
     child.main();
   }
-  // Call this immediately in build_web_compilers.
-  window.$_onLoadEndCallback();
 })();
 ''';
 }
