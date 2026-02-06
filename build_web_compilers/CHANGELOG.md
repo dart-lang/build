@@ -1,3 +1,7 @@
+## 4.4.10
+
+- Remove extraneous reload logic in DDC's Library Loader bootstrapper.
+
 ## 4.4.9
 
 - Update min build_modules constraint to 5.1.7.
