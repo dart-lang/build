@@ -146,7 +146,10 @@ $librariesString
       modulePaths[libraryId] =
           jsId.path.startsWith('lib')
               ? '$moduleName$jsModuleExtension'
-              : _context.joinAll(_context.split(jsId.path).skip(1));
+              : _context.relative(
+                jsId.path,
+                from: _context.dirname(dartEntrypointId.path),
+              );
     }
     final bootstrapEndModuleName = _context.relative(
       bootstrapEndId.path,

@@ -1,3 +1,7 @@
+## 4.4.11
+
+- Fix entrypoints in nested directories not being properly resolved in DDC's Library Bundle module system.
+
 ## 4.4.10
 
 - Fix stack trace file name extraction in Safari.
