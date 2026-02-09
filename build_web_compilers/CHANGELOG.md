@@ -1,3 +1,8 @@
+## 4.4.10
+
+- Fix stack trace file name extraction in Safari.
+- Remove extraneous reload logic in DDC's Library Loader bootstrapper.
+
 ## 4.4.9
 
 - Update min build_modules constraint to 5.1.7.
