@@ -137,7 +137,7 @@ void main() async {
     );
     parentPid = int.parse(parentLine.split(' ').last);
 
-    while (tester.read('root_pkg/pid.txt') == null) {
+    while (tester.read('root_pkg/pid.txt')?.isEmpty ?? true) {
       await Future<void>.delayed(const Duration(milliseconds: 100));
     }
     childPid = int.parse(tester.read('root_pkg/pid.txt')!);
