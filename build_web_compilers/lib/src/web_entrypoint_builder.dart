@@ -481,7 +481,13 @@ function relativeURL(ref) {
               '[0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 95, 1, 120, 0]))';
 
       loaderResult.writeln('''
-const forceJS = isWorker ? false : new URLSearchParams(window.location.search).get('force_js');
+const forceJS = (() => {
+  if (thisScript && thisScript.src) {
+    const fromScript = new URL(thisScript.src).searchParams.get('force_js');
+    if (fromScript) return fromScript;
+  }
+  return new URLSearchParams(self.location.search).get('force_js');
+})();
 if (!forceJS && $supportCheck) {
 ''');
     }
