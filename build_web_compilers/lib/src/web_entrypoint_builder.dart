@@ -458,9 +458,13 @@ class WebEntrypointBuilder implements Builder {
 
     final loaderResult = StringBuffer('''
 (async () => {
-const thisScript = document.currentScript;
+const isWorker = typeof document === 'undefined';
+const thisScript = isWorker ? undefined : document.currentScript;
 
 function relativeURL(ref) {
+  if (isWorker) {
+    return new URL(ref, self.location.href).toString();
+  }
   const base = thisScript?.src ?? document.baseURI;
   return new URL(ref, base).toString();
 }
@@ -477,14 +481,13 @@ function relativeURL(ref) {
               '[0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 95, 1, 120, 0]))';
 
       loaderResult.writeln('''
-const searchParams = new URLSearchParams(window.location.search);
-const forceJS = searchParams.get('force_js');
+const forceJS = isWorker ? false : new URLSearchParams(window.location.search).get('force_js');
 if (!forceJS && $supportCheck) {
 ''');
     }
 
     loaderResult.writeln('''
-let { compileStreaming } = await import("./$basename${wasmCompiler.extension}");
+let { compileStreaming } = await import(relativeURL("./$basename${wasmCompiler.extension}"));
 
 let app = await compileStreaming(fetch(relativeURL("$basename.wasm")));
 let module = await app.instantiate({});
@@ -494,10 +497,14 @@ module.invokeMain();
     if (jsCompiler != null) {
       loaderResult.writeln('''
 } else {
-const scriptTag = document.createElement("script");
-scriptTag.type = "application/javascript";
-scriptTag.src = relativeURL("./$basename${jsCompiler.extension}");
-document.head.append(scriptTag);
+if (isWorker) {
+  importScripts(relativeURL("./$basename${jsCompiler.extension}"));
+} else {
+  const scriptTag = document.createElement("script");
+  scriptTag.type = "application/javascript";
+  scriptTag.src = relativeURL("./$basename${jsCompiler.extension}");
+  document.head.append(scriptTag);
+}
 }
 ''');
     }
