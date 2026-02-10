@@ -72,7 +72,8 @@ class BuildPackagesLoader {
     String outputRootName;
     final packagesInBuild = <String>{};
     if (buildType == BuildType.workspace) {
-      outputRootName = workspaceName!;
+      packagesInBuild.add(workspaceName!);
+      outputRootName = workspaceName;
       final workspacePackagePaths = workspacePubspec!['workspace'] as YamlList;
       for (final path in workspacePackagePaths) {
         packagesInBuild.add(
@@ -93,11 +94,6 @@ class BuildPackagesLoader {
       p.join(workspacePath ?? packagePath, 'pubspec.lock'),
     );
     final fixedPackages = _parseFixedPackages(pubspecLockFile);
-    // The workspace root is treated like a package, but does not contain
-    // sources so don't watch it for changes.
-    // TODO(davidmorgan): add test coverage for yaml files in the workspace
-    // root, do watch those for changes.
-    if (workspaceName != null) fixedPackages.add(workspaceName);
 
     final buildPackages = MapBuilder<String, BuildPackage>();
     for (final packageConfig in packageConfigs) {
@@ -110,7 +106,6 @@ class BuildPackagesLoader {
       buildPackages[packageConfig.name] = BuildPackage(
         name: packageConfig.name,
         path: packageConfig.root.toFilePath(),
-        isWorkspace: packageConfig.name == workspaceName,
         languageVersion: packageConfig.languageVersion,
         watch: !fixedPackages.contains(packageConfig.name),
         isOutput: isInBuild,

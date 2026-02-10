@@ -1,5 +1,8 @@
 ## 2.11.1-wip
 
+- Bug fix: with `--workspace` flag, correctly build for sources in the workspace
+  root instead of failing with "tried to delete from package not in the build".
+
 ## 2.11.0
 
 - Add `--workspace` flag. Use it with `dart run build_runner build` or `watch`
