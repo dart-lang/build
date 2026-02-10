@@ -335,7 +335,8 @@ workspace:
           'some_workspace_name': BuildPackage(
             name: 'some_workspace_name',
             path: tempDirectory,
-            isWorkspace: true,
+            watch: true,
+            isOutput: true,
             languageVersion: LanguageVersion(3, 5),
           ),
           r'$sdk': anything,
