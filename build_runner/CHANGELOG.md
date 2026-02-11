@@ -1,4 +1,4 @@
-## 2.11.1-wip
+## 2.11.1
 
 - Improve logging on build script build failures, don't repeatedly log an
   identical failure.
