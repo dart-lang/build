@@ -1,5 +1,7 @@
 ## 2.11.1-wip
 
+- Improve logging on build script build failures, don't repeatedly log an
+  identical failure.
 - Bug fix: with `--workspace` flag, correctly build for sources in the workspace
   root instead of failing with "tried to delete from package not in the build".
 

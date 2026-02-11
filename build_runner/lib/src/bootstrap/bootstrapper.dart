@@ -58,6 +58,7 @@ class Bootstrapper {
     Iterable<String>? experiments,
     bool retryCompileFailures = false,
   }) async {
+    String? previousMessages;
     while (true) {
       // Write build script based on current config read from disk.
       await _writeBuildScript();
@@ -68,32 +69,48 @@ class Bootstrapper {
           isAot: compileAot,
           function: () => _compiler.compile(experiments: experiments),
         );
+
+        // When retrying: for the first failure, log the start of a new build.
+        // After that, only log if the compiler output changed. The "compiling"
+        // message is still shown, with a stopwatch that resets to zero every
+        // time the build restarts, but no other output until the compiler
+        // output changes.
+        final messagesMatchPreviousMessages =
+            result.messages == previousMessages;
+        previousMessages = result.messages;
         if (!result.succeeded) {
           final bool failedDueToMirrors;
           if (result.messages == null) {
             failedDueToMirrors = false;
           } else {
-            buildLog.error(result.messages!);
             failedDueToMirrors =
                 compileAot && result.messages!.contains('dart:mirrors');
           }
           if (failedDueToMirrors) {
             // TODO(davidmorgan): when build_runner manages use of AOT compile
             // this will be an automatic fallback to JIT instead of a message.
+            buildLog.error(result.messages!);
             buildLog.error(
               'Failed to compile build script. A configured builder '
               'uses `dart:mirrors` and cannot be compiled AOT. Try again '
               'without --force-aot to use a JIT compile.',
             );
           } else {
-            buildLog.error(
-              'Failed to compile build script. '
-              'Check builder definitions and generated script '
-              '$entrypointScriptPath.'
-              '${retryCompileFailures ? ' Retrying.' : ''}',
-            );
+            if (!messagesMatchPreviousMessages) {
+              buildLog.error(result.messages!);
+              buildLog.error(
+                'Failed to compile build script. '
+                'Check builder definitions and generated script '
+                '$entrypointScriptPath.'
+                '${retryCompileFailures ? ' Retrying.' : ''}',
+              );
+
+              if (retryCompileFailures) {
+                buildLog.nextBuild();
+              }
+            }
           }
-          if (retryCompileFailures) continue;
+          if (retryCompileFailures && !failedDueToMirrors) continue;
           throw const CannotBuildException();
         }
       }
