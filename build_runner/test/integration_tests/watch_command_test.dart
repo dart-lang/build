@@ -177,12 +177,19 @@ $yaml
     build_extensions: {'.txt': ['']}
 ''',
     );
+    await watch.expect('missingBuilderFactory');
     await watch.expect(
       'Failed to compile build script. '
       'Check builder definitions and generated script '
       '.dart_tool/build/entrypoint/build.dart. '
       'Retrying.',
     );
+
+    // The first build after retry is marked as a new build.
+    await watch.expect('Starting build #5');
+    // But the next identical build failure is not logged as a new build.
+    final block = await watch.expectAndGetBlock('0s compiling builders');
+    expect(block, isNot(contains('Starting build')));
 
     // Restore the correct build script and it gets compiled and runs.
     tester.write('builder_pkg/build.yaml', '''
