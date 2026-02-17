@@ -9,10 +9,11 @@ import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:build/build.dart';
 
 import '../../logging/timed_activities.dart';
-import '../build_step_impl.dart';
+import '../input_tracker.dart';
 import '../library_cycle_graph/asset_deps_loader.dart';
 import '../library_cycle_graph/library_cycle_graph_loader.dart';
 import '../library_cycle_graph/phased_asset_deps.dart';
+import '../library_cycle_graph/phased_reader.dart';
 import 'analysis_driver_filesystem.dart';
 
 /// Manages analysis driver and related build state.
@@ -68,41 +69,21 @@ class AnalysisDriverModel {
     return assetId;
   }
 
-  /// Updates [filesystem] and the analysis driver given by
-  /// `withDriverResource`  with updated versions of [entrypoints].
+  /// Updates [filesystem] and the driver provided by [withDriver] with updated
+  /// source of [entrypoint] at the phase viewed by [phasedReader].
   ///
-  /// If [transitive], then all the transitive imports from [entrypoints] are
+  /// If [transitive], then all the transitive imports from [entrypoint] are
   /// also updated.
   ///
-  /// Notifies [buildStep] of all inputs that result from analysis. If
-  /// [transitive], this includes all transitive dependencies.
-  ///
-  Future<void> performResolve(
-    BuildStep buildStep,
-    List<AssetId> entrypoints,
-    Future<void> Function(
-      FutureOr<void> Function(AnalysisDriverForPackageBuild),
+  /// Records what was read in [inputTracker].
+  Future<void> updateDriver({
+    required Future<void> Function(
+      Future<void> Function(AnalysisDriverForPackageBuild),
     )
-    withDriverResource, {
-    required bool transitive,
-  }) async {
-    for (final entrypoint in entrypoints) {
-      await _performResolve(
-        buildStep as BuildStepImpl,
-        entrypoint,
-        withDriverResource,
-        transitive: transitive,
-      );
-    }
-  }
-
-  Future<void> _performResolve(
-    BuildStepImpl buildStep,
-    AssetId entrypoint,
-    Future<void> Function(
-      FutureOr<void> Function(AnalysisDriverForPackageBuild),
-    )
-    withDriverResource, {
+    withDriver,
+    required AssetId entrypoint,
+    required PhasedReader phasedReader,
+    required InputTracker inputTracker,
     required bool transitive,
   }) async {
     Iterable<AssetId> idsToSyncOntoFilesystem;
@@ -113,19 +94,19 @@ class AnalysisDriverModel {
         // Note: `transitiveDepsOf` can cause loads that cause builds that
         // cause a recursive `_performResolve` on this same `AnalysisDriver`
         // instance.
-        final nodeLoader = AssetDepsLoader(buildStep.phasedReader);
-        buildStep.inputTracker.addResolverEntrypoint(entrypoint);
+        final nodeLoader = AssetDepsLoader(phasedReader);
+        inputTracker.addResolverEntrypoint(entrypoint);
         return await _graphLoader.transitiveDepsOf(nodeLoader, entrypoint);
       });
     } else {
       // Notify [buildStep] of its inputs.
-      buildStep.inputTracker.add(entrypoint);
+      inputTracker.add(entrypoint);
       idsToSyncOntoFilesystem = [entrypoint];
     }
 
-    await withDriverResource((driver) async {
+    await withDriver((driver) async {
       // Sync changes onto the "URI resolver", the in-memory filesystem.
-      final phase = buildStep.phasedReader.phase;
+      final phase = phasedReader.phase;
       for (final id in idsToSyncOntoFilesystem) {
         final wasSyncedAt = _syncedOntoFilesystemAtPhase[id];
         if (wasSyncedAt != null) {
@@ -134,10 +115,7 @@ class AnalysisDriverModel {
             continue;
           }
           // Skip if synced at an equivalent other phase.
-          if (!buildStep.phasedReader.hasChanged(
-            id,
-            comparedToPhase: wasSyncedAt,
-          )) {
+          if (!phasedReader.hasChanged(id, comparedToPhase: wasSyncedAt)) {
             continue;
           }
         }
@@ -147,7 +125,7 @@ class AnalysisDriverModel {
         // Tracking has already been done by calling `inputTracker` directly.
         // Use `phasedReader` for the read instead of the `buildStep` methods
         // `canRead` and `readAsString`, which would call `inputTracker`.
-        final content = await buildStep.phasedReader.readAtPhase(id);
+        final content = await phasedReader.readAtPhase(id);
         if (content == null) {
           filesystem.deleteFile(id.asPath);
         } else {

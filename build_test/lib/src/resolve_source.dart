@@ -207,8 +207,8 @@ Future<T> _resolveAssets<T>(
   // faster.
   resolvers ??=
       packageConfig == null && enabledExperiments.isEmpty
-          ? AnalyzerResolvers.sharedInstance
-          : AnalyzerResolvers.custom(packageConfig: resolvedConfig);
+          ? ResolversImpl.sharedInstance
+          : ResolversImpl.custom(packageConfig: resolvedConfig);
 
   await testBuilder(
     resolveBuilder,

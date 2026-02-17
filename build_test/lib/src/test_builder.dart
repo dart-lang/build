@@ -380,8 +380,8 @@ Future<TestBuilderResult> testBuilderFactories(
   });
   resolvers ??=
       packageConfig == null && enabledExperiments.isEmpty
-          ? AnalyzerResolvers.sharedInstance
-          : AnalyzerResolvers.custom(packageConfig: packageConfig);
+          ? ResolversImpl.sharedInstance
+          : ResolversImpl.custom(packageConfig: packageConfig);
 
   // Build a `buildPackages` based on [sourceAssets].
   final otherPackages = allPackages.toSet()..remove(rootPackage);
