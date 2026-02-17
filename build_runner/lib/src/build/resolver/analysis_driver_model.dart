@@ -39,13 +39,6 @@ class AnalysisDriverModel {
   /// [filesystem].
   final _syncedOntoFilesystemAtPhase = <AssetId, int>{};
 
-  /// Notifies that [step] has completed.
-  ///
-  /// All build steps must complete before [reset] is called.
-  void notifyComplete(BuildStep step) {
-    // This implementation doesn't keep state per `BuildStep`, nothing to do.
-  }
-
   /// Clear cached information specific to an individual build.
   void reset() {
     _graphLoader.clear();
