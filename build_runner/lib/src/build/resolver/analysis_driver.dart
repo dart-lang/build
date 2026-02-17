@@ -17,12 +17,12 @@ import 'analysis_driver_model.dart';
 /// Builds an [AnalysisDriverForPackageBuild] backed by a summary SDK.
 ///
 /// Any code must be resolvable through [analysisDriverModel].
-Future<AnalysisDriverForPackageBuild> analysisDriver(
+AnalysisDriverForPackageBuild analysisDriver(
   AnalysisDriverModel analysisDriverModel,
   AnalysisOptions analysisOptions,
   String sdkSummaryPath,
   PackageConfig packageConfig,
-) async {
+) {
   return createAnalysisDriver(
     analysisOptions: analysisOptions,
     packages: _buildAnalyzerPackages(
