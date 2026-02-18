@@ -122,6 +122,43 @@ class ReadBuilder implements Builder {
     },
   );
 
+  /// Resolves dart files and outputs the library name.
+  static final FixturePackage resolveBuilder = FixturePackage(
+    name: 'builder_pkg',
+    dependencies: ['build', 'build_runner'],
+    files: {
+      'build.yaml': '''
+builders:
+  test_builder:
+    import: 'package:builder_pkg/builder.dart'
+    builder_factories: ['testBuilderFactory']
+    build_extensions: {'.dart': ['.resolved']}
+    auto_apply: root_package
+    build_to: source
+''',
+      'lib/builder.dart': '''
+import 'package:build/build.dart';
+
+Builder testBuilderFactory(BuilderOptions options) => TestBuilder();
+
+class TestBuilder implements Builder {
+  @override
+  Map<String, List<String>> get buildExtensions
+      => {'.dart': ['.resolved']};
+
+  @override
+  Future<void> build(BuildStep buildStep) async {
+    final library = await buildStep.inputLibrary;
+    buildStep.writeAsString(
+        buildStep.inputId.changeExtension('.resolved'),
+        library.name!,
+    );
+  }
+}
+''',
+    },
+  );
+
   /// A post process builder that copies .txt -> .post.
   ///
   /// Comes with a normal builder that does nothing but applies the post

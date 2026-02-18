@@ -43,6 +43,13 @@ Serializers _$serializers =
             () => SetBuilder<AssetId>(),
           )
           ..addBuilderFactory(
+            const FullType(BuiltMap, const [
+              const FullType(AssetId),
+              const FullType(String),
+            ]),
+            () => MapBuilder<AssetId, String>(),
+          )
+          ..addBuilderFactory(
             const FullType(BuiltSet, const [const FullType(AssetId)]),
             () => SetBuilder<AssetId>(),
           )

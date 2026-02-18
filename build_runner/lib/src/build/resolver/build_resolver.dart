@@ -9,8 +9,6 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:analyzer/error/error.dart';
-// ignore: implementation_imports
-import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:build/build.dart';
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:pool/pool.dart';
@@ -19,6 +17,7 @@ import '../../logging/timed_activities.dart';
 import '../input_tracker.dart';
 import '../library_cycle_graph/phased_reader.dart';
 import 'analysis_driver_filesystem.dart';
+import 'analysis_driver_for_package_build.dart';
 import 'analysis_driver_model.dart';
 import 'build_step_resolver.dart';
 
@@ -214,13 +213,18 @@ class BuildResolver {
   /// If [transitive], then all the transitive imports from [entrypoint] are
   /// also updated.
   ///
-  /// Records what was read in [inputTracker].
-  Future<void> updateDriverForEntrypoint({
+  /// Records what was read in [inputTracker], if any.
+  ///
+  /// If [transitive] returns the transitive API signature of the resolved
+  /// file, or the empty string if it is not a valid library.
+  ///
+  /// If not [transitive], returns `null`.
+  Future<String?> updateDriverForEntrypoint({
     required AssetId entrypoint,
     required PhasedReader phasedReader,
-    required InputTracker inputTracker,
     required bool transitive,
-  }) => _analysisDriverModel.updateDriver(
+    InputTracker? inputTracker,
+  }) => _analysisDriverModel.updateDriverForEntrypoint(
     withDriver:
         (withDriver) => _driverPool.withResource(() => withDriver(_driver)),
     phasedReader: phasedReader,

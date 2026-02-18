@@ -4,8 +4,6 @@
 
 import 'dart:async';
 
-// ignore: implementation_imports
-import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:build/build.dart';
 
 import '../../logging/timed_activities.dart';
@@ -15,6 +13,7 @@ import '../library_cycle_graph/library_cycle_graph_loader.dart';
 import '../library_cycle_graph/phased_asset_deps.dart';
 import '../library_cycle_graph/phased_reader.dart';
 import 'analysis_driver_filesystem.dart';
+import 'analysis_driver_for_package_build.dart';
 
 /// Manages analysis driver and related build state.
 ///
@@ -75,16 +74,21 @@ class AnalysisDriverModel {
   /// If [transitive], then all the transitive imports from [entrypoint] are
   /// also updated.
   ///
-  /// Records what was read in [inputTracker].
-  Future<void> updateDriver({
+  /// Records what was read in [inputTracker], if any.
+  ///
+  /// If [transitive] returns the transitive API signature of the resolved
+  /// file, or the empty string if it is not a valid library.
+  ///
+  /// If not [transitive], returns `null`.
+  Future<String?> updateDriverForEntrypoint({
     required Future<void> Function(
       Future<void> Function(AnalysisDriverForPackageBuild),
     )
     withDriver,
     required AssetId entrypoint,
     required PhasedReader phasedReader,
-    required InputTracker inputTracker,
     required bool transitive,
+    InputTracker? inputTracker,
   }) async {
     Iterable<AssetId> idsToSyncOntoFilesystem;
 
@@ -95,15 +99,15 @@ class AnalysisDriverModel {
         // cause a recursive `_performResolve` on this same `AnalysisDriver`
         // instance.
         final nodeLoader = AssetDepsLoader(phasedReader);
-        inputTracker.addResolverEntrypoint(entrypoint);
         return await _graphLoader.transitiveDepsOf(nodeLoader, entrypoint);
       });
     } else {
       // Notify [buildStep] of its inputs.
-      inputTracker.add(entrypoint);
+      inputTracker?.add(entrypoint);
       idsToSyncOntoFilesystem = [entrypoint];
     }
 
+    String? apiSignature;
     await withDriver((driver) async {
       // Sync changes onto the "URI resolver", the in-memory filesystem.
       final phase = phasedReader.phase;
@@ -140,7 +144,21 @@ class AnalysisDriverModel {
       }
       filesystem.clearChangedPaths();
       await driver.applyPendingFileChanges();
+
+      if (transitive) {
+        apiSignature = driver.libraryApiSignature(entrypoint.asPath) ?? '';
+      }
     });
+
+    if (transitive) {
+      inputTracker?.addResolverEntrypoint(
+        entrypoint: entrypoint,
+        apiSignature: apiSignature!,
+      );
+      return apiSignature!;
+    } else {
+      return null;
+    }
   }
 }
 

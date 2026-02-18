@@ -10,6 +10,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:logging/logging.dart';
 import 'package:watcher/watcher.dart';
 
+import '../build/resolver/resolvers_impl.dart';
 import '../io/reader_writer.dart';
 import 'build_packages.dart';
 import 'build_phases.dart';
@@ -46,6 +47,11 @@ class TestingOverrides {
     this.resolvers,
     this.terminateEventStream,
   });
+
+  /// If [resolvers] is a [ResolversImpl], [resolvers] cast to `ResolversImpl`.
+  /// Otherwise, `null`.
+  ResolversImpl? get resolversImpl =>
+      resolvers is ResolversImpl ? resolvers as ResolversImpl : null;
 
   TestingOverrides copyWith({
     BuiltList<BuilderDefinition>? builderDefinitions,
