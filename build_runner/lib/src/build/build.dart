@@ -39,7 +39,7 @@ import 'library_cycle_graph/library_cycle_graph_loader.dart';
 import 'performance_tracker.dart';
 import 'performance_tracking_resolvers.dart';
 import 'resolver/analysis_driver_model.dart';
-import 'resolver/resolver.dart';
+import 'resolver/resolvers_impl.dart';
 import 'run_builder.dart';
 import 'run_post_process_builder.dart';
 import 'single_step_reader_writer.dart';
@@ -203,7 +203,7 @@ class Build {
   }
 
   Resolvers get _resolvers =>
-      testingOverrides.resolvers ?? AnalyzerResolvers.sharedInstance;
+      testingOverrides.resolvers ?? ResolversImpl.sharedInstance;
 
   Future<void> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
     changedInputs.clear();

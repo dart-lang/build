@@ -13,7 +13,7 @@ import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_runner/src/build/resolver/analysis_driver.dart';
 import 'package:build_runner/src/build/resolver/analysis_driver_model.dart';
-import 'package:build_runner/src/build/resolver/resolver.dart';
+import 'package:build_runner/src/build/resolver/resolvers_impl.dart';
 import 'package:build_runner/src/build/resolver/sdk_summary.dart';
 import 'package:build_runner/src/build/run_builder.dart';
 import 'package:build_runner/src/build/single_step_reader_writer.dart';
@@ -1348,7 +1348,7 @@ abstract class ResolversFactory {
 
 class AnalysisDriverModelFactory implements ResolversFactory {
   @override
-  Resolvers create({PackageConfig? packageConfig}) => AnalyzerResolvers.custom(
+  Resolvers create({PackageConfig? packageConfig}) => ResolversImpl.custom(
     packageConfig: packageConfig,
     analysisDriverModel: AnalysisDriverModel(),
   );
@@ -1362,7 +1362,7 @@ class SharedAnalysisDriverModelFactory implements ResolversFactory {
 
   @override
   Resolvers create({PackageConfig? packageConfig}) {
-    final result = AnalyzerResolvers.custom(
+    final result = ResolversImpl.custom(
       packageConfig: packageConfig,
       analysisDriverModel: sharedInstance,
     );
