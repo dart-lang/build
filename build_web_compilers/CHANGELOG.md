@@ -1,3 +1,6 @@
+## 4.4.12
+- Remove `setStartAsyncSynchronously` in DDC's bootstrapper.
+
 ## 4.4.11
 
 - Fix entrypoints in nested directories not being properly resolved in DDC's Library Bundle module system.

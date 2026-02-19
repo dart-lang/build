@@ -307,7 +307,6 @@ String _appBootstrap({
           : 'dart_sdk.dart.nativeNonNullAsserts($nativeNullAssertions);';
   return '''
 define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_sdk) {
-  dart_sdk.dart.setStartAsyncSynchronously(true);
   $nativeAssertsCode
   dart_sdk._isolate_helper.startRootIsolate(() => {}, []);
   $_initializeTools
