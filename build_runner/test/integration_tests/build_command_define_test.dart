@@ -140,12 +140,7 @@ global_options:
       files: {},
       inWorkspace: true,
     );
-    tester.write('pubspec.yaml', '''
-name: workspace
-environment:
-  sdk: ^3.5.0
-workspace: [root_pkg]
-''');
+    tester.writeWorkspacePubspec(packages: ['root_pkg']);
 
     // Build with --workspace. Package options from `root_pkg/build.yaml`
     // still apply, but global options from `root_pkg/build.yaml` don't.

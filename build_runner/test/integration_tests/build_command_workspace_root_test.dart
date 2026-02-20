@@ -33,14 +33,12 @@ void main() async {
       inWorkspace: true,
     );
     // Workspace package with direct dependency on builder_pkg.
+    tester.writeWorkspacePubspec(packages: ['p1']);
     tester.write('pubspec.yaml', '''
-name: workspace
-environment:
-  sdk: ^3.5.0
+${tester.read('pubspec.yaml')}
 dependencies:
   builder_pkg:
     path: builder_pkg
-workspace: [p1]
 ''');
     tester.write('lib/w.txt', '1');
 

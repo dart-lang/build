@@ -71,12 +71,7 @@ class TestBuilder implements Builder {
       files: {},
       inWorkspace: true,
     );
-    tester.write('pubspec.yaml', '''
-name: workspace
-environment:
-  sdk: ^3.5.0
-workspace: [builder_pkg, root_pkg]
-''');
+    tester.writeWorkspacePubspec(packages: ['builder_pkg', 'root_pkg']);
 
     // The first build runs and writes identical output for the generated file.
     final watch = await tester.start(
