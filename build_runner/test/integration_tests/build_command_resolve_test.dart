@@ -70,8 +70,59 @@ import 'missing_import.dart';
 ''');
     output = await tester.run('root_pkg', 'dart run build_runner build');
 
-    // Unreadable inputs in previousd build do not break incremental build.
+    // Unreadable inputs in previous build do not break incremental build.
     tester.update('root_pkg/lib/a.dart', (script) => '$script\n');
     output = await tester.run('root_pkg', 'dart run build_runner build');
+
+    // Check that it's possible for a builder to resolve source in strings using
+    // `build_test`.
+    // See // https://github.com/dart-lang/build/issues/4368.
+    tester.writePackage(
+      name: 'builder_pkg',
+      dependencies: ['build', 'build_runner', 'build_test'],
+      files: {
+        'build.yaml': '''
+builders:
+  test_builder:
+    import: 'package:builder_pkg/builder.dart'
+    builder_factories: ['testBuilderFactory']
+    build_extensions: {'.dart': ['.g.dart']}
+    auto_apply: root_package
+    build_to: source
+''',
+        'lib/builder.dart': r'''
+import 'package:build/build.dart';
+import 'package:build_test/build_test.dart';
+
+Builder testBuilderFactory(BuilderOptions options) => TestBuilder();
+
+class TestBuilder implements Builder {
+  @override
+  Map<String, List<String>> get buildExtensions => {'.dart': ['.g.dart']};
+
+  @override
+  Future<void> build(BuildStep buildStep) async {
+    final assetId = AssetId('a', 'lib/a.dart');
+    final unit = await resolveSources({'$assetId': 'library x;'}, (r) async {
+      return r.compilationUnitFor(assetId);  
+    });
+    buildStep.writeAsString(
+        buildStep.inputId.changeExtension('.g.dart'),
+        unit.toSource(),
+    );
+  }
+}
+''',
+      },
+    );
+    tester.writePackage(
+      name: 'root_pkg',
+      dependencies: ['build_runner', 'build_test'],
+      pathDependencies: ['builder_pkg'],
+      files: {'lib/a.dart': ''},
+    );
+
+    await tester.run('root_pkg', 'dart run build_runner build');
+    expect(tester.read('root_pkg/lib/a.g.dart'), 'library x;');
   });
 }
