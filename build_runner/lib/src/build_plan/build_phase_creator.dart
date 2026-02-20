@@ -31,8 +31,8 @@ class BuildPhaseCreator {
   /// package.
   final bool workspace;
 
-  /// Builder definitions by key, excluding post process builders.
-  final Map<String, BuilderDefinition> _builderDefinitionByKey = {};
+  /// Builder definitions by key.
+  final Map<String, AbstractBuilderDefinition> _builderDefinitionByKey = {};
 
   /// For each builder key, the builders that apply that builder.
   ///
@@ -52,8 +52,8 @@ class BuildPhaseCreator {
     this.workspace = false,
   }) : builderDefinitions = builderDefinitions.toBuiltList() {
     for (final builderDefinition in builderDefinitions) {
+      _builderDefinitionByKey[builderDefinition.key] = builderDefinition;
       if (builderDefinition is BuilderDefinition) {
-        _builderDefinitionByKey[builderDefinition.key] = builderDefinition;
         for (final alsoApply in builderDefinition.appliesBuilders) {
           _builderAppliersByKey
               .putIfAbsent(alsoApply, () => [])
@@ -231,6 +231,7 @@ class BuildPhaseCreator {
         package: buildTarget.package,
         options: options,
         generateFor: targetConfig?.generateFor ?? builderConfig.generateFor,
+        hideOutput: builderDefinition.hideOutput,
         targetSources: buildTarget.sources,
       );
       result.add(builderAction);
@@ -289,15 +290,13 @@ class BuildPhaseCreator {
   ) {
     // If the package is not root, only hidden output is allowed. Return
     // `false` if the builder or any builder it applies has non-hidden output.
-    // Post process builder output is always hidden, so skip the check.
-    if (builderDefinition is BuilderDefinition &&
-        !buildPackages[buildTarget.package]!.isOutput) {
-      if (!(builderDefinition.hideOutput &&
-          builderDefinition.appliesBuilders.every(
-            // Post process builders are not in the map, replace `null` with
-            // `true` because post process builders always hide their output.
-            (b) => _builderDefinitionByKey[b]?.hideOutput ?? true,
-          ))) {
+    if (!buildPackages[buildTarget.package]!.isOutput) {
+      if (!builderDefinition.hideOutput) return false;
+      if (builderDefinition is BuilderDefinition &&
+          !(builderDefinition.hideOutput &&
+              builderDefinition.appliesBuilders.every(
+                (b) => _builderDefinitionByKey[b]!.hideOutput,
+              ))) {
         return false;
       }
     }

@@ -25,7 +25,7 @@ import '../build_plan/phase.dart';
 bool shouldBuildForDirs(
   AssetId id, {
   required BuiltSet<BuildDirectory> buildDirs,
-  required BuildPhase phase,
+  required InBuildPhase phase,
   required BuildConfigs buildConfigs,
   BuiltSet<BuildFilter>? buildFilters,
 }) {

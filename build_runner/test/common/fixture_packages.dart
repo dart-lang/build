@@ -128,6 +128,7 @@ class ReadBuilder implements Builder {
   /// process builder.
   static FixturePackage postProcessCopyBuilder({
     String packageName = 'builder_pkg',
+    bool buildToCache = true,
   }) => FixturePackage(
     name: packageName,
     dependencies: ['build', 'build_runner'],
@@ -137,9 +138,9 @@ builders:
   test_builder:
     import: "package:$packageName/builder.dart"
     builder_factories: ["testBuilder"]
-    build_extensions: {".dart": [".g.dart"]}
-    auto_apply: root_package
-    build_to: source
+    build_extensions: {".dart": [".unused"]}
+    auto_apply: all_packages
+    build_to: cache
     applies_builders:
       - $packageName:test_post_process_builder
 post_process_builders:
@@ -147,6 +148,7 @@ post_process_builders:
     import: "package:$packageName/builder.dart"
     builder_factory: "testPostProcessBuilder"
     input_extensions: [".txt"]
+    build_to: ${buildToCache ? 'cache' : 'source'}
     defaults:
       options:
         output_extension: ".post"
@@ -167,7 +169,7 @@ TestPostProcessBuilder testPostProcessBuilder(BuilderOptions options)
 
 class TestBuilder implements Builder {
   @override
-  Map<String, List<String>> get buildExtensions => {'.dart': ['.g.dart']};
+  Map<String, List<String>> get buildExtensions => {'.dart': ['.unused']};
 
   @override
   Future<void> build(BuildStep buildStep) async {}

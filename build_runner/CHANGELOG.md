@@ -1,5 +1,8 @@
 ## 2.11.2-wip
 
+- Support the `build_to` key added to `post_process_builders` in
+  `build_config 1.3.0`. Post process builders can use this to output files
+  to the source tree.
 - Bug fix: prevent logging crash when using `build_test` in a builder.
 
 ## 2.11.1

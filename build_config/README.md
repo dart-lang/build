@@ -182,10 +182,9 @@ builders:
 `PostProcessBuilder`s are configured similarly to normal `Builder`s, but they
 have some different/missing options.
 
-These builders can not be auto-applied on their own, and must always build to
-cache because their outputs are not declared ahead of time. To apply them a
-user will need to explicitly enable them on a target, or a `Builder` definition
-can add them to `apply_builders`.
+These builders can't be auto-applied. They are applied when explicitly
+applied to a target and when a `Builder` definition applies them using
+`apply_builders`.
 
 Exposed `PostProcessBuilder`s are configured in the `post_process_builders`
 section of the  `build.yaml`. This is a map of builder names to configuration.
@@ -199,6 +198,10 @@ Each post process builder config may contain the following keys:
 - **input_extensions**: Required. A list of input extensions that will be
   processed. This must match the `inputExtensions` from the `PostProcessBuilder`
   returned by the `builder_factory`.
+- **build_to**: Optional. The location that generated assets should be output
+  to. The possibilities are:
+  - `"source"`: Outputs go to the source tree next to their primary inputs.
+  - `"cache"`: Outputs go to a hidden build cache and won't be published.
 - **defaults**: Optional: Default values to apply when a user does not specify
   the corresponding key in their `builders` section. May contain the following
   keys:

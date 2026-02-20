@@ -185,6 +185,9 @@ class PostProcessBuilderDefinition {
   @Deprecated('do not use')
   final String? target;
 
+  /// Where the outputs of this builder should be written.
+  final BuildTo buildTo;
+
   final TargetBuilderConfigDefaults defaults;
 
   PostProcessBuilderDefinition({
@@ -192,8 +195,10 @@ class PostProcessBuilderDefinition {
     required this.import,
     this.inputExtensions,
     this.target,
+    BuildTo? buildTo,
     TargetBuilderConfigDefaults? defaults,
-  }) : defaults = defaults ?? const TargetBuilderConfigDefaults();
+  }) : buildTo = buildTo ?? BuildTo.cache,
+       defaults = defaults ?? const TargetBuilderConfigDefaults();
 
   factory PostProcessBuilderDefinition.fromJson(Map json) {
     ArgumentError.checkNotNull(json);

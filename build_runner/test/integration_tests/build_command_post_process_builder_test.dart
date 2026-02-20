@@ -104,5 +104,34 @@ targets:
       'a.txt': 'a',
       'a.txt.third_post': 'a(yaml release)',
     });
+
+    // Build to source.
+    tester.writeFixturePackage(
+      FixturePackages.postProcessCopyBuilder(buildToCache: false),
+    );
+    tester.delete('root_pkg/build.yaml');
+    await tester.run('root_pkg', 'dart run build_runner build');
+    expect(tester.read('root_pkg/lib/a.txt.post'), 'a(default dev)');
+    tester.write('root_pkg/lib/a.txt', 'b');
+    await tester.run('root_pkg', 'dart run build_runner build');
+    expect(tester.read('root_pkg/lib/a.txt.post'), 'b(default dev)');
+
+    // Build to source deletes old outputs.
+    await tester.run(
+      'root_pkg',
+      'dart run build_runner build '
+          '--define=builder_pkg:test_post_process_builder=output_extension='
+          '.more_post',
+    );
+    expect(tester.read('root_pkg/lib/a.txt.post'), null);
+    expect(tester.read('root_pkg/lib/a.txt.more_post'), 'b(default dev)');
+    tester.write('root_pkg/lib/a.txt', 'c');
+    await tester.run(
+      'root_pkg',
+      'dart run build_runner build '
+          '--define=builder_pkg:test_post_process_builder=output_extension='
+          '.more_post',
+    );
+    expect(tester.read('root_pkg/lib/a.txt.more_post'), 'c(default dev)');
   });
 }
