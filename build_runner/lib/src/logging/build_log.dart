@@ -503,7 +503,11 @@ class BuildLog {
     _stopwatch.reset();
     _processDuration += duration;
     if (currentPhaseName != null) {
-      _phaseProgress[currentPhaseName]!.duration += duration;
+      // Some builders use build_test to analyze source in strings, which
+      // causes problems for buildLog as it's a singleton. Ignore missing
+      // _phaseProgress so it at least doesn't crash.
+      // https://github.com/dart-lang/build/issues/4368
+      _phaseProgress[currentPhaseName]?.duration += duration;
     }
   }
 

@@ -1,3 +1,7 @@
+## 2.11.2-wip
+
+- Bug fix: prevent logging crash when using `build_test` in a builder.
+
 ## 2.11.1
 
 - Improve logging on build script build failures, don't repeatedly log an
