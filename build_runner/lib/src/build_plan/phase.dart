@@ -20,12 +20,6 @@ abstract class BuildPhase {
   /// never run.
   bool get isOptional;
 
-  /// Whether generated assets should be placed in the build cache.
-  ///
-  /// When this is `false` the Builder may not run on any package other than
-  /// the root.
-  bool get hideOutput;
-
   /// The identity of this action in terms of a build graph. If the identity of
   /// any action changes the build will be invalidated.
   ///
@@ -42,6 +36,7 @@ abstract class BuildAction {
   InputMatcher get generateFor;
   String get package;
   InputMatcher get targetSources;
+  bool get hideOutput;
 }
 
 /// A [BuildPhase] that uses a single [Builder] to generate files.
@@ -148,8 +143,6 @@ class PostBuildPhase implements BuildPhase {
   final List<PostBuildAction> builderActions;
 
   @override
-  bool get hideOutput => true;
-  @override
   bool get isOptional => false;
 
   PostBuildPhase(this.builderActions);
@@ -159,8 +152,7 @@ class PostBuildPhase implements BuildPhase {
 
   @override
   int get identity => _deepEquals.hash(
-    builderActions.map<dynamic>((b) => b.identity).toList()
-      ..addAll([isOptional, hideOutput]),
+    builderActions.map<dynamic>((b) => b.identity).toList()..add(isOptional),
   );
 }
 
@@ -177,6 +169,8 @@ class PostBuildAction implements BuildAction {
   final String package;
   @override
   final InputMatcher targetSources;
+  @override
+  final bool hideOutput;
 
   PostBuildAction({
     required this.builder,
@@ -184,6 +178,7 @@ class PostBuildAction implements BuildAction {
     required this.options,
     required InputSet targetSources,
     required InputSet generateFor,
+    required this.hideOutput,
   }) : builderLabel = _builderLabel(builder),
        targetSources = InputMatcher(targetSources),
        generateFor = InputMatcher(generateFor);
@@ -194,6 +189,7 @@ class PostBuildAction implements BuildAction {
     generateFor,
     package,
     targetSources,
+    hideOutput,
   ]);
 }
 

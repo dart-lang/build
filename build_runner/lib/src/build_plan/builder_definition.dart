@@ -25,6 +25,9 @@ sealed class AbstractBuilderDefinition {
   /// The package the builder is in.
   String get package;
 
+  /// Whether generated assets should be placed in the build cache.
+  bool get hideOutput;
+
   /// The defaults specified in `build.yaml` for this builder.
   TargetBuilderConfigDefaults get targetBuilderConfigDefaults;
 
@@ -119,7 +122,7 @@ class BuilderDefinition implements AbstractBuilderDefinition {
   /// even if [autoApply] does not match.
   final BuiltList<String> appliesBuilders;
 
-  /// Whether generated assets should be placed in the build cache.
+  @override
   final bool hideOutput;
 
   /// Whether the builder is skipped if nothing uses its output.
@@ -195,12 +198,16 @@ class PostProcessBuilderDefinition implements AbstractBuilderDefinition {
   final String package;
 
   @override
+  final bool hideOutput;
+
+  @override
   final TargetBuilderConfigDefaults targetBuilderConfigDefaults;
 
   @visibleForTesting
   PostProcessBuilderDefinition(
     this.key, {
     String? package,
+    this.hideOutput = true,
     this.targetBuilderConfigDefaults = const TargetBuilderConfigDefaults(),
   }) : package = package ?? (key.contains(':') ? key.split(':').first : '');
 
@@ -208,5 +215,6 @@ class PostProcessBuilderDefinition implements AbstractBuilderDefinition {
     build_config.PostProcessBuilderDefinition builderDefinition,
   ) : package = builderDefinition.package,
       key = builderDefinition.key,
+      hideOutput = builderDefinition.buildTo == build_config.BuildTo.cache,
       targetBuilderConfigDefaults = builderDefinition.defaults;
 }

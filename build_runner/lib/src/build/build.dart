@@ -397,7 +397,7 @@ class Build {
   ) async {
     // Accumulate in a `Set` because inputs are found once per output.
     final ids = <AssetId>{};
-    final phase = buildPhases[phaseNumber];
+    final phase = buildPhases[phaseNumber] as InBuildPhase;
     final packageNode = buildPackages[package]!;
 
     for (final node in assetGraph
@@ -669,7 +669,12 @@ class Build {
       if (inputNode.type == NodeType.source ||
           inputNode.type == NodeType.generated && inputNode.wasOutput) {
         outputs.addAll(
-          await _runPostProcessBuildStep(phaseNum, action.builder, buildStepId),
+          await _runPostProcessBuildStep(
+            phaseNum,
+            action.builder,
+            buildStepId,
+            hideOutput: action.hideOutput,
+          ),
         );
       }
     }
@@ -679,8 +684,9 @@ class Build {
   Future<Iterable<AssetId>> _runPostProcessBuildStep(
     int phaseNumber,
     PostProcessBuilder builder,
-    PostProcessBuildStepId postProcessBuildStepId,
-  ) async {
+    PostProcessBuildStepId postProcessBuildStepId, {
+    required bool hideOutput,
+  }) async {
     final input = postProcessBuildStepId.input;
     final inputNode = assetGraph.get(input)!;
     final stepReaderWriter = SingleStepReaderWriter(
@@ -738,7 +744,7 @@ class Build {
         final node = AssetNode.generated(
           assetId,
           primaryInput: input,
-          isHidden: true,
+          isHidden: hideOutput,
           phaseNumber: phaseNumber,
         );
         assetGraph.add(node);

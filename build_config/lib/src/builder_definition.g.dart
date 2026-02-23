@@ -111,6 +111,7 @@ PostProcessBuilderDefinition _$PostProcessBuilderDefinitionFromJson(
         'import',
         'input_extensions',
         'target',
+        'build_to',
         'defaults',
       ],
       requiredKeys: const ['builder_factory', 'import'],
@@ -124,6 +125,10 @@ PostProcessBuilderDefinition _$PostProcessBuilderDefinitionFromJson(
         (v) => (v as List<dynamic>?)?.map((e) => e as String),
       ),
       target: $checkedConvert('target', (v) => v as String?),
+      buildTo: $checkedConvert(
+        'build_to',
+        (v) => $enumDecodeNullable(_$BuildToEnumMap, v),
+      ),
       defaults: $checkedConvert(
         'defaults',
         (v) =>
@@ -135,6 +140,7 @@ PostProcessBuilderDefinition _$PostProcessBuilderDefinitionFromJson(
   fieldKeyMap: const {
     'builderFactory': 'builder_factory',
     'inputExtensions': 'input_extensions',
+    'buildTo': 'build_to',
   },
 );
 

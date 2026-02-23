@@ -196,6 +196,7 @@ void main() {
             targetSources: targetSources,
             options: const BuilderOptions({}),
             generateFor: const InputSet(),
+            hideOutput: true,
           ),
         ]),
       );

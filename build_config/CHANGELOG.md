@@ -1,3 +1,9 @@
+## 1.3.0
+
+- Add `build_to` key to `post_process_builders`. Like the `builders` key, it
+  controls where the builder output is written: by default `cache`, the hidden
+  build cache, or `source` to write next to source files.
+
 ## 1.2.0
 
 - Add top level key `triggers`. See

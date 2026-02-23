@@ -89,16 +89,20 @@ class BuildPhases {
   ///
   /// If the phases are not valid, logs then throws
   /// [CannotBuildException].
-  ///
-  ///  [PostBuildPhase]s are always hidden, so they are always valid.
   void checkOutputLocations(BuiltSet<String> packagesInBuild) {
-    for (final action in inBuildPhases) {
+    for (final action in inBuildPhases.cast<BuildAction>().followedBy(
+      postBuildPhase.builderActions,
+    )) {
       if (action.hideOutput) continue;
       if (packagesInBuild.contains(action.package)) continue;
       // This should happen only with a manual build script since the build
-      // script generation filters these out.
+      // phases generation filters these out.
+      final name =
+          action is InBuildPhase
+              ? action.displayName
+              : (action as PostBuildAction).builderLabel;
       buildLog.error(
-        'A build phase (${action.displayName}) is attempting '
+        'A build phase ($name) is attempting '
         'to operate on package "${action.package}" without "hideOutput". '
         'This is only allowed for packages in the build, not for dependency '
         'packages.',
