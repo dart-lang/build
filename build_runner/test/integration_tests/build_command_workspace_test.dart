@@ -34,12 +34,7 @@ void main() async {
       files: {'lib/p1.txt': '1'},
       inWorkspace: true,
     );
-    tester.write('pubspec.yaml', '''
-name: workspace
-environment:
-  sdk: ^3.5.0
-workspace: [p1]
-''');
+    tester.writeWorkspacePubspec(packages: ['p1']);
 
     // Run without --workspace in p1, builders apply.
     await tester.run('p1', 'dart run build_runner build');
@@ -75,12 +70,7 @@ workspace: [p1]
       files: {'lib/p2.txt': '1'},
       inWorkspace: true,
     );
-    tester.write('pubspec.yaml', '''
-name: workspace
-environment:
-  sdk: ^3.5.0
-workspace: [p1, p2]
-''');
+    tester.writeWorkspacePubspec(packages: ['p1', 'p2']);
 
     // Builders do not apply.
     await tester.run('', 'dart run build_runner build --workspace');
@@ -98,12 +88,7 @@ workspace: [p1, p2]
       files: {'lib/p3.txt': '1'},
       inWorkspace: true,
     );
-    tester.write('pubspec.yaml', '''
-name: workspace
-environment:
-  sdk: ^3.5.0
-workspace: [p1, p2, p3]
-''');
+    tester.writeWorkspacePubspec(packages: ['p1', 'p2', 'p3']);
 
     // Builders run.
     await tester.run('p3', 'dart run build_runner build --workspace');
@@ -131,12 +116,7 @@ workspace: [p1, p2, p3]
       files: {'lib/p5.txt': '1'},
       inWorkspace: true,
     );
-    tester.write('pubspec.yaml', '''
-name: workspace
-environment:
-  sdk: ^3.5.0
-workspace: [p1, p2, p3, p4, p5]
-''');
+    tester.writeWorkspacePubspec(packages: ['p1', 'p2', 'p3', 'p4', 'p5']);
 
     // Builders can apply to `p4` and `p5` because they are (transitive) deps
     // of `p1`.
@@ -164,12 +144,9 @@ workspace: [p1, p2, p3, p4, p5]
       pathDependencies: ['second_copy_builder_pkg'],
       inWorkspace: true,
     );
-    tester.write('pubspec.yaml', '''
-name: workspace
-environment:
-  sdk: ^3.5.0
-workspace: [p1, p2, p3, p4, p5, p6]
-''');
+    tester.writeWorkspacePubspec(
+      packages: ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'],
+    );
 
     // The builder applied by second_copy_builder_pkg runs despite not
     // being auto applied.

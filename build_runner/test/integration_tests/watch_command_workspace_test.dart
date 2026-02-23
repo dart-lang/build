@@ -73,12 +73,9 @@ void main() async {
       pathDependencies: ['second_copy_builder_pkg'],
       inWorkspace: true,
     );
-    tester.write('pubspec.yaml', '''
-name: workspace
-environment:
-  sdk: ^3.5.0
-workspace: [p1, p2, p3, p4, p5, p6]
-''');
+    tester.writeWorkspacePubspec(
+      packages: ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'],
+    );
 
     final watch = await tester.start(
       '',

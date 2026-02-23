@@ -76,6 +76,14 @@ class BuildRunnerTester {
     copyPathSync(sourcePath, destinationPath);
   }
 
+  /// Writes a `pubspec.yaml` for the workspace root.
+  ///
+  /// This includes `dependency_overrides` for `build`, `build_runner`, and
+  /// `build_config` pointing to the local versions.
+  void writeWorkspacePubspec({required List<String> packages}) {
+    write('pubspec.yaml', pubspecs.workspacePubspec(packages: packages));
+  }
+
   /// Reads workspace-relative [path], or returns `null` if it does not exist.
   String? read(String path) {
     final file = File(p.join(tempDirectory.path, path));
@@ -478,12 +486,68 @@ dependencies:
       }
     }
 
+    // If `inWorkspace`, the overrides will be written in the workspace pubspec
+    // instead.
+    if (!inWorkspace) {
+      result.writeln(
+        _localDependencyOverrides(
+          pathDependencies: {...pathDependencies, ...pathDevDependencies},
+          workspaceDependencies: workspaceDependencies.toSet(),
+        ),
+      );
+    }
+    return result.toString();
+  }
+
+  /// Returns `pubspec.yaml` content for the workspace root.
+  ///
+  /// This includes `dependency_overrides` overriding packages to use the local
+  /// versions depended on by the test itself, except for packages in the
+  /// workspace.
+  String workspacePubspec({required List<String> packages}) {
+    final result = StringBuffer('''
+name: workspace
+environment:
+  sdk: '>=3.7.0 <4.0.0'
+workspace: [${packages.join(', ')}]
+''');
+    result.writeln(
+      _localDependencyOverrides(
+        pathDependencies: {},
+        workspaceDependencies: packages.toSet(),
+      ),
+    );
+    return result.toString();
+  }
+
+  /// Returns `dependency_overrides` yaml that overrides packages to use the
+  /// local versions depended on by the test itself.
+  ///
+  /// Packages named in [pathDependencies] are instead overriden to the path in
+  /// the test sandox.
+  ///
+  /// Packages named in [workspaceDependencies] are not overriden.
+  String _localDependencyOverrides({
+    required Set<String> workspaceDependencies,
+    required Set<String> pathDependencies,
+  }) {
+    final result = StringBuffer();
     result.writeln('dependency_overrides:');
-    for (final package in dependencies) {
-      final path = packageConfig[package]!.root.toFilePath();
+    for (final package in packageConfig.packages) {
+      final name = package.name;
+      if (workspaceDependencies.contains(name) ||
+          pathDependencies.contains(name)) {
+        continue;
+      }
+      final path = packageConfig[name]!.root.toFilePath();
+      result
+        ..writeln('  $name:')
+        ..writeln('    path: $path');
+    }
+    for (final package in pathDependencies) {
       result
         ..writeln('  $package:')
-        ..writeln('    path: $path');
+        ..writeln('    path: ../$package');
     }
     return result.toString();
   }

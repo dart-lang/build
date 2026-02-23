@@ -87,9 +87,11 @@ void main() {
       'root_pkg/pubspec.yaml',
       pubspecs.pubspec(
         name: 'root_pkg',
-        dependencies: ['build', 'build_runner'],
+        dependencies: ['build_runner'],
+        pathDependencies: ['other'],
       ),
     );
+    tester.writePackage(name: 'other', files: {});
     output = await tester.run('root_pkg', 'dart run root_pkg:compile');
     expect(output, contains('succeeded: true'));
 

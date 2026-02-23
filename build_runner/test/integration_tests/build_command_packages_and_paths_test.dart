@@ -58,14 +58,7 @@ void main() async {
       files: {'lib/b.txt': 'b'},
       inWorkspace: true,
     );
-    tester.write('pubspec.yaml', '''
-name: workspace
-environment:
-  sdk: ^3.5.0
-workspace:
-  - root_pkg
-  - other_pkg
-''');
+    tester.writeWorkspacePubspec(packages: ['root_pkg', 'other_pkg']);
 
     // Files still not generated for `other_pkg` as it's not a dep.
     _deletePubspecs(tester);
