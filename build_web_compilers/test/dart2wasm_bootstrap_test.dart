@@ -118,9 +118,7 @@ void main() {
         'a|web/index.dart.js': decodedMatches(
           allOf([
             // Worker detection.
-            contains(
-              "const isWorker = typeof document === 'undefined'",
-            ),
+            contains("const isWorker = typeof document === 'undefined'"),
             // thisScript guarded for worker context.
             contains(
               'const thisScript = isWorker ? undefined'
