@@ -104,6 +104,60 @@ void main() {
         outputs: expectedOutputs,
       );
     });
+
+    test('loader script supports web workers', () async {
+      final builder = WebEntrypointBuilder.fromOptions(
+        const BuilderOptions({
+          'compilers': {
+            'dart2js': <String, Object?>{},
+            'dart2wasm': <String, Object?>{},
+          },
+        }),
+      );
+      final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
+        'a|web/index.dart.js': decodedMatches(
+          allOf([
+            // Worker detection.
+            contains(
+              "const isWorker = typeof document === 'undefined'",
+            ),
+            // thisScript guarded for worker context.
+            contains(
+              'const thisScript = isWorker ? undefined'
+              ' : document.currentScript',
+            ),
+            // relativeURL has worker branch using self.location.href.
+            contains('new URL(ref, self.location.href)'),
+            // forceJS is extracted from script src params as well
+            // as location search.
+            contains(
+              'new URL(thisScript.src).searchParams'
+              ".get('force_js')",
+            ),
+            contains(
+              'new URLSearchParams(self.location.search)'
+              ".get('force_js')",
+            ),
+            // JS fallback uses importScripts in worker context.
+            contains('importScripts(relativeURL('),
+            // Wasm module import uses relativeURL.
+            contains('await import(relativeURL('),
+          ]),
+        ),
+        'a|web/index.dart.js.tar.gz': isNotNull,
+        'a|web/index.dart2js.js': isNotNull,
+        'a|web/index.dart2js.js.map': isNotNull,
+        'a|web/index.mjs': isNotNull,
+        'a|web/index.wasm.map': isNotNull,
+        'a|web/index.wasm': isNotNull,
+      });
+
+      await testBuilders(
+        [...startingBuilders, builder],
+        startingAssets,
+        outputs: expectedOutputs,
+      );
+    });
   });
 
   test('can disable generation of loader script', () async {
