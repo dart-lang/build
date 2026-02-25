@@ -888,6 +888,7 @@ String generateDDCLibraryBundleMainModule({
     /* MAIN_EXTENSION_MARKER */
     child.main();
   }
+  window.$_onLoadEndCallback();
 })();
 ''';
 }

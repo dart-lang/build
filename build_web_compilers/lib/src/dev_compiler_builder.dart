@@ -277,7 +277,20 @@ Future<void> _createDevCompilerModule(
     }
 
     // Copy the output back using the buildStep.
-    await scratchSpace.copyOutput(jsId, buildStep);
+    if (ddcLibraryBundle) {
+      final jsFile = scratchSpace.fileFor(jsId);
+      final content = await jsFile.readAsString();
+      // This hack is required to make the source map's file name match that of
+      // the emitted JS file name (e.g., transform .lib.js into .ddc.js).
+      final fixedContent = content.replaceAllMapped(
+        RegExp(r'dartDevEmbedder\.debugger\.setSourceMap\([\s\S]*?\);'),
+        (match) =>
+            match.group(0)!.replaceAll('.dart.lib.js"', '$jsModuleExtension"'),
+      );
+      await buildStep.writeAsString(jsId, fixedContent);
+    } else {
+      await scratchSpace.copyOutput(jsId, buildStep);
+    }
 
     if (generateFullDill) {
       final currentFullKernelId = module.primarySource.changeExtension(
