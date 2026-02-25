@@ -1,6 +1,8 @@
 ## 4.4.13
 - Update sourcemap paths for DDC Library Bundle sources.
 - Update bootstrapper for DDC Library Bundle apps to auto-run main.
+- Fix generated entrypoint loader to work in Web Worker contexts by guarding DOM APIs and using `importScripts` as a fallback.
+- Support reading `force_js` parameter from the script's own URL in addition to the page's query string.
 
 ## 4.4.12
 - Remove `setStartAsyncSynchronously` in DDC's bootstrapper.
