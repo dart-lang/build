@@ -1,3 +1,7 @@
+## 4.4.13
+- Update sourcemap paths for DDC Library Bundle sources.
+- Update bootstrapper for DDC Library Bundle apps to auto-run main.
+
 ## 4.4.12
 - Remove `setStartAsyncSynchronously` in DDC's bootstrapper.
 
