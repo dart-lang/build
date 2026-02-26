@@ -142,8 +142,7 @@ $librariesString
       // `packages/` for lib modules. We set baseUrl to `/` to simplify things,
       // and we only allow you to serve top level directories.
       final moduleName = ddcModuleName(jsId);
-      final libraryId = ddcLibraryId(jsId);
-      modulePaths[libraryId] =
+      modulePaths[moduleName] =
           jsId.path.startsWith('lib')
               ? '$moduleName$jsModuleExtension'
               : _context.relative(
@@ -785,13 +784,12 @@ $_simpleLoaderScript
         !window.\$dartStackTraceUtility.ready) {
       window.\$dartStackTraceUtility.ready = true;
       window.\$dartStackTraceUtility.setSourceMapProvider(function(url) {
-        var baseUrl = window.location.protocol + '//' + window.location.host;
-        url = url.replace(baseUrl + '/', '');
-        if (url == 'dart_sdk.js') {
+        if (url.endsWith('dart_sdk.js')) {
           return dartDevEmbedder.debugger.getSourceMap('dart_sdk');
         }
-        url = url.replace(".lib.js", "");
-        return dartDevEmbedder.debugger.getSourceMap(url);
+        url = url.replace("$jsModuleExtension", "");
+        let relativeUrl = url.replace(_currentDirectory, "");
+        return dartDevEmbedder.debugger.getSourceMap(relativeUrl);
       });
     }
 

@@ -1,3 +1,6 @@
+## 4.4.14
+- Update DDC Library Bundle to use path-resolvable module names for sourcemap IDs.
+
 ## 4.4.13
 - Update sourcemap paths for DDC Library Bundle sources.
 - Update bootstrapper for DDC Library Bundle apps to auto-run main.

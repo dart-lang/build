@@ -21,14 +21,11 @@ void main() {
   initializePlatforms();
 
   final startingBuilders = {
-    // Uses the real sdk copy builder to copy required files from the SDK.
-    sdkJsCopyRequirejs(const BuilderOptions({})),
-    sdkJsCompile(defaultBuilderOptions),
     const ModuleLibraryBuilder(),
     MetaModuleBuilder(ddcPlatform),
     MetaModuleCleanBuilder(ddcPlatform),
     ModuleBuilder(ddcPlatform),
-    ddcKernelBuilder(const BuilderOptions({})),
+    ddcKernelBuilder(const BuilderOptions({'ddc-library-bundle': true})),
     DevCompilerBuilder(
       platform: ddcPlatform,
       ddcLibraryBundle: ddcLibraryBundle,
@@ -50,6 +47,11 @@ void main() {
         'b|lib/b.dart': '''final world = 'world';''',
         // Add a fake asset so that the build_web_compilers package exists.
         'build_web_compilers|fake.txt': '',
+        'build_web_compilers|lib/src/dev_compiler/dart_sdk.js': '',
+        'build_web_compilers|lib/src/dev_compiler/require.js': '',
+        'build_web_compilers|lib/src/dev_compiler/ddc_module_loader.js': '',
+        'build_web_compilers|lib/src/dev_compiler_stack_trace/stack_trace_mapper.dart.js':
+            '',
       };
       final startingExpectedOutputs = <String, Object>{
         'a|lib/.ddc.meta_module.clean': isNotNull,
@@ -76,11 +78,6 @@ void main() {
         'b|lib/b.module.library': isNotNull,
         'build_web_compilers|lib/.ddc.meta_module.clean': isNotNull,
         'build_web_compilers|lib/.ddc.meta_module.raw': isNotNull,
-        'build_web_compilers|lib/src/dev_compiler/dart_sdk.js.map': isNotNull,
-        'build_web_compilers|lib/src/dev_compiler/dart_sdk.js': isNotNull,
-        'build_web_compilers|lib/src/dev_compiler/ddc_module_loader.js':
-            isNotNull,
-        'build_web_compilers|lib/src/dev_compiler/require.js': isNotNull,
       };
 
       test('base build', () async {
@@ -116,14 +113,14 @@ void main() {
               contains('"src": "index.dart.bootstrap.js", "id": "data-main"'),
               // Maps non-lib modules to remove the top level dir.
               contains(
-                '"src": "index.ddc.js", "id": "org-dartlang-app:///web/index.dart"',
+                '"src": "index.ddc.js", "id": "web/index"',
               ),
               // Maps lib modules to packages path
               contains(
-                '"src": "packages/a/a.ddc.js", "id": "package:a/a.dart"',
+                '"src": "packages/a/a.ddc.js", "id": "packages/a/a"',
               ),
               contains(
-                '"src": "packages/b/b.ddc.js", "id": "package:b/b.dart"',
+                '"src": "packages/b/b.ddc.js", "id": "packages/b/b"',
               ),
               // Imports the dart sdk.
               contains('"id": "dart_sdk"'),
@@ -157,6 +154,11 @@ void main() {
       ''',
           // Add a fake asset so that the build_web_compilers package exists.
           'build_web_compilers|fake.txt': '',
+          'build_web_compilers|lib/src/dev_compiler/dart_sdk.js': '',
+          'build_web_compilers|lib/src/dev_compiler/require.js': '',
+          'build_web_compilers|lib/src/dev_compiler/ddc_module_loader.js': '',
+          'build_web_compilers|lib/src/dev_compiler_stack_trace/stack_trace_mapper.dart.js':
+              '',
         };
         // Check that we are invoking the correct
         final expectedOutputs = {
@@ -175,7 +177,7 @@ void main() {
             allOf([
               // Confirm that `a.dart` is the actual primary source.
               contains(
-                '"src": "a.ddc.js", "id": "org-dartlang-app:///web/a.dart"',
+                '"src": "a.ddc.js", "id": "web/a"',
               ),
               // And `b.dart` is the application whose 'main' is being invoked.
               contains('"src": "b.dart.bootstrap.js", "id": "data-main'),
@@ -186,11 +188,6 @@ void main() {
           'a|web/b.module.library': isNotNull,
           'build_web_compilers|lib/.ddc.meta_module.clean': isNotNull,
           'build_web_compilers|lib/.ddc.meta_module.raw': isNotNull,
-          'build_web_compilers|lib/src/dev_compiler/dart_sdk.js.map': isNotNull,
-          'build_web_compilers|lib/src/dev_compiler/dart_sdk.js': isNotNull,
-          'build_web_compilers|lib/src/dev_compiler/ddc_module_loader.js':
-              isNotNull,
-          'build_web_compilers|lib/src/dev_compiler/require.js': isNotNull,
         };
 
         await testBuilders(
@@ -206,6 +203,11 @@ void main() {
           'a|lib/app.dart': 'void main() {}',
           // Add a fake asset so that the build_web_compilers package exists.
           'build_web_compilers|fake.txt': '',
+          'build_web_compilers|lib/src/dev_compiler/dart_sdk.js': '',
+          'build_web_compilers|lib/src/dev_compiler/require.js': '',
+          'build_web_compilers|lib/src/dev_compiler/ddc_module_loader.js': '',
+          'build_web_compilers|lib/src/dev_compiler_stack_trace/stack_trace_mapper.dart.js':
+              '',
         };
         final expectedOutputs = {
           'a|lib/.ddc.meta_module.clean': isNotNull,
@@ -217,7 +219,7 @@ void main() {
             // Confirm that the child name is referenced via a package: uri
             // and not relative path to the root dir being served.
             contains(
-              '"src": "packages/a/app.ddc.js", "id": "package:a/app.dart"',
+              '"src": "packages/a/app.ddc.js", "id": "packages/a/app"',
             ),
           ),
           'a|lib/app.ddc.dill': isNotNull,
@@ -229,11 +231,6 @@ void main() {
           'a|lib/app.module.library': isNotNull,
           'build_web_compilers|lib/.ddc.meta_module.clean': isNotNull,
           'build_web_compilers|lib/.ddc.meta_module.raw': isNotNull,
-          'build_web_compilers|lib/src/dev_compiler/dart_sdk.js.map': isNotNull,
-          'build_web_compilers|lib/src/dev_compiler/dart_sdk.js': isNotNull,
-          'build_web_compilers|lib/src/dev_compiler/ddc_module_loader.js':
-              isNotNull,
-          'build_web_compilers|lib/src/dev_compiler/require.js': isNotNull,
         };
 
         await testBuilders(
@@ -278,6 +275,126 @@ void main() {
             'Enable this test when the library bundle module system is no '
             'longer locked behind the --canary flag',
       );
+    });
+    group('module system', () {
+      test('resolves paths correctly in nested entrypoints', () async {
+        // Test that an entrypoint compiled at web/sub_dir/main.dart is served
+        // relative to the entrypoint directory (e.g., web/sub_dir/main.ddc.js
+        // and not web/sub_dir/sub_dir/main.ddc.js)
+        final builderOptions = const BuilderOptions({
+          'compiler': 'dartdevc',
+          'ddc-library-bundle': true,
+          'native_null_assertions': false,
+        });
+        final builder = WebEntrypointBuilder.fromOptions(builderOptions);
+        final assets = {
+          'a|web/sub/main.dart': 'void main() {}',
+          'build_web_compilers|fake.txt': '',
+          'build_web_compilers|lib/src/dev_compiler/dart_sdk.js': '',
+          'build_web_compilers|lib/src/dev_compiler/require.js': '',
+          'build_web_compilers|lib/src/dev_compiler/ddc_module_loader.js': '',
+          'build_web_compilers|lib/src/dev_compiler_stack_trace/stack_trace_mapper.dart.js':
+              '',
+        };
+
+        final ddcLibraryBundleBuilders = {
+          const ModuleLibraryBuilder(),
+          MetaModuleBuilder(ddcPlatform),
+          MetaModuleCleanBuilder(ddcPlatform),
+          ModuleBuilder(ddcPlatform),
+          ddcKernelBuilder(const BuilderOptions({'ddc-library-bundle': true})),
+          DevCompilerBuilder(platform: ddcPlatform, ddcLibraryBundle: true),
+        };
+
+        final expectedOutputs = {
+          'a|web/sub/main.dart.js': decodedMatches(
+            allOf([
+              contains('"src": "main.ddc.js"'),
+              isNot(contains('"src": "sub/main.ddc.js"')),
+            ]),
+          ),
+          'build_web_compilers|lib/.ddc.meta_module.raw': isNotNull,
+          'build_web_compilers|lib/.ddc.meta_module.clean': isNotNull,
+          'a|web/sub/main.module.library': isNotNull,
+          'a|lib/.ddc.meta_module.raw': isNotNull,
+          'a|lib/.ddc.meta_module.clean': isNotNull,
+          'a|web/sub/main.ddc.module': isNotNull,
+          'a|web/sub/main.ddc.dill': isNotNull,
+          'a|web/sub/main.ddc.js': isNotNull,
+          'a|web/sub/main.ddc.js.map': isNotNull,
+          'a|web/sub/main.ddc.js.metadata': isNotNull,
+          'a|web/sub/main.dart.bootstrap.js': isNotNull,
+          'a|web/sub/main.dart.bootstrap.end.js': isNotNull,
+          'a|web/sub/main.digests': isNotNull,
+          'a|web/sub/main.dart.ddc_merged_metadata': isNotNull,
+        };
+
+        await testBuilders(
+          [...ddcLibraryBundleBuilders, builder],
+          assets,
+          outputs: expectedOutputs,
+        );
+      });
+
+      test('properly outputs script names during bootstrap', () async {
+        final builderOptions = const BuilderOptions({
+          'compiler': 'dartdevc',
+          'ddc-library-bundle': true,
+          'native_null_assertions': false,
+        });
+        final builder = WebEntrypointBuilder.fromOptions(builderOptions);
+        final assets = {
+          'a|web/main.dart': 'void main() {}',
+          'build_web_compilers|fake.txt': '',
+          'build_web_compilers|lib/src/dev_compiler/dart_sdk.js': '',
+          'build_web_compilers|lib/src/dev_compiler/require.js': '',
+          'build_web_compilers|lib/src/dev_compiler/ddc_module_loader.js': '',
+          'build_web_compilers|lib/src/dev_compiler_stack_trace/stack_trace_mapper.dart.js':
+              '',
+        };
+
+        final ddcLibraryBundleBuilders = {
+          const ModuleLibraryBuilder(),
+          MetaModuleBuilder(ddcPlatform),
+          MetaModuleCleanBuilder(ddcPlatform),
+          ModuleBuilder(ddcPlatform),
+          ddcKernelBuilder(const BuilderOptions({'ddc-library-bundle': true})),
+          DevCompilerBuilder(platform: ddcPlatform, ddcLibraryBundle: true),
+        };
+
+        await testBuilders(
+          [...ddcLibraryBundleBuilders, builder],
+          assets,
+          outputs: {
+            'a|web/main.dart.js': decodedMatches(
+              allOf([
+                contains('"id": "web/main"'),
+                isNot(contains('"id": "org-dartlang-app:///web/main.dart"')),
+                contains('"src": "main.ddc.js"'),
+              ]),
+            ),
+            'a|web/main.ddc.js.map': decodedMatches(
+              allOf([
+                contains('"file":"main.ddc.js"'),
+                contains('"sources":["main.dart"]'),
+              ]),
+            ),
+            'build_web_compilers|lib/.ddc.meta_module.raw': isNotNull,
+            'build_web_compilers|lib/.ddc.meta_module.clean': isNotNull,
+            'a|web/main.module.library': isNotNull,
+            'a|lib/.ddc.meta_module.raw': isNotNull,
+            'a|lib/.ddc.meta_module.clean': isNotNull,
+            'a|web/main.ddc.module': isNotNull,
+            'a|web/main.ddc.dill': isNotNull,
+            'a|web/main.ddc.js': isNotNull,
+            'a|web/main.ddc.js.metadata': isNotNull,
+            'a|web/main.dart.bootstrap.js': isNotNull,
+            'a|web/main.dart.bootstrap.end.js': isNotNull,
+            'a|web/main.digests': isNotNull,
+            'a|web/main.dart.ddc_merged_metadata': isNotNull,
+          },
+        );
+      });
     });
   });
 }
