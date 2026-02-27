@@ -112,16 +112,10 @@ void main() {
               // Contains a script pointer to main's bootstrap.js file.
               contains('"src": "index.dart.bootstrap.js", "id": "data-main"'),
               // Maps non-lib modules to remove the top level dir.
-              contains(
-                '"src": "index.ddc.js", "id": "web/index"',
-              ),
+              contains('"src": "index.ddc.js", "id": "web/index"'),
               // Maps lib modules to packages path
-              contains(
-                '"src": "packages/a/a.ddc.js", "id": "packages/a/a"',
-              ),
-              contains(
-                '"src": "packages/b/b.ddc.js", "id": "packages/b/b"',
-              ),
+              contains('"src": "packages/a/a.ddc.js", "id": "packages/a/a"'),
+              contains('"src": "packages/b/b.ddc.js", "id": "packages/b/b"'),
               // Imports the dart sdk.
               contains('"id": "dart_sdk"'),
               isNot(contains('lib/a')),
@@ -176,9 +170,7 @@ void main() {
           'a|web/b.dart.js': decodedMatches(
             allOf([
               // Confirm that `a.dart` is the actual primary source.
-              contains(
-                '"src": "a.ddc.js", "id": "web/a"',
-              ),
+              contains('"src": "a.ddc.js", "id": "web/a"'),
               // And `b.dart` is the application whose 'main' is being invoked.
               contains('"src": "b.dart.bootstrap.js", "id": "data-main'),
             ]),
@@ -218,9 +210,7 @@ void main() {
           'a|lib/app.dart.js': decodedMatches(
             // Confirm that the child name is referenced via a package: uri
             // and not relative path to the root dir being served.
-            contains(
-              '"src": "packages/a/app.ddc.js", "id": "packages/a/app"',
-            ),
+            contains('"src": "packages/a/app.ddc.js", "id": "packages/a/app"'),
           ),
           'a|lib/app.ddc.dill': isNotNull,
           'a|lib/app.ddc.js.map': isNotNull,
