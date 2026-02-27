@@ -784,6 +784,13 @@ $_simpleLoaderScript
         !window.\$dartStackTraceUtility.ready) {
       window.\$dartStackTraceUtility.ready = true;
       window.\$dartStackTraceUtility.setSourceMapProvider(function(url) {
+        // Try to resolve the library ID using the loader's internal map.
+        if (window.\$dartLoader && window.\$dartLoader.urlToModuleId) {
+          var id = window.\$dartLoader.urlToModuleId.get(url);
+          if (id) {
+             return dartDevEmbedder.debugger.getSourceMap(id);
+          }
+        }
         if (url.endsWith('dart_sdk.js')) {
           return dartDevEmbedder.debugger.getSourceMap('dart_sdk');
         }
