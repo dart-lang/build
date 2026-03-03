@@ -4,8 +4,6 @@
 
 import 'dart:async';
 
-// ignore: implementation_imports
-import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:build/build.dart';
 import 'package:pool/pool.dart';
 
@@ -18,6 +16,7 @@ import '../library_cycle_graph/library_cycle_graph_loader.dart';
 import '../library_cycle_graph/phased_asset_deps.dart';
 import '../library_cycle_graph/phased_reader.dart';
 import 'analysis_driver_filesystem.dart';
+import 'analysis_driver_for_package_build.dart';
 
 /// Manages analysis driver and related build state.
 ///
