@@ -1,3 +1,7 @@
+## 2.12.1
+
+- Bug fix: allow compilation with older `build_config 1.2.0`.
+
 ## 2.12.0
 
 - Add support for globs in the package list of workspace `pubspec.yaml`,

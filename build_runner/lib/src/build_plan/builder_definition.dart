@@ -218,3 +218,11 @@ class PostProcessBuilderDefinition implements AbstractBuilderDefinition {
       hideOutput = builderDefinition.buildTo == build_config.BuildTo.cache,
       targetBuilderConfigDefaults = builderDefinition.defaults;
 }
+
+/// Stubs for new `build_config` methods to allow compiling with 1.2.0.
+extension _PostProcessBuilderDefinitionStubs
+    on build_config.PostProcessBuilderDefinition {
+  // Added in `1.3.0`.
+  // ignore: unused_element
+  build_config.BuildTo? get buildTo => null;
+}

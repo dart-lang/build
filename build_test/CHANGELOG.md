@@ -1,6 +1,10 @@
+## 3.5.9
+
+- Use `build_runner` 2.12.1.
+
 ## 3.5.8
 
-- Use `build_runner` 2.12.0
+- Use `build_runner` 2.12.0.
 
 ## 3.5.7
 
