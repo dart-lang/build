@@ -152,5 +152,12 @@ void main() async {
     // being auto applied.
     await tester.run('', 'dart run build_runner build --workspace');
     expect(tester.read('p6/lib/p6.txt.copy'), '1');
+
+    // Support for globs in workspaces was added in 3.11.
+    tester.writeWorkspacePubspec(
+      packages: ["'p*'"],
+      sdkBound: '>=3.11.0 <4.0.0',
+    );
+    await tester.run('', 'dart run build_runner build --workspace');
   });
 }

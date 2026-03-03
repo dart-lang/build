@@ -80,8 +80,14 @@ class BuildRunnerTester {
   ///
   /// This includes `dependency_overrides` for `build`, `build_runner`, and
   /// `build_config` pointing to the local versions.
-  void writeWorkspacePubspec({required List<String> packages}) {
-    write('pubspec.yaml', pubspecs.workspacePubspec(packages: packages));
+  void writeWorkspacePubspec({
+    required List<String> packages,
+    String? sdkBound,
+  }) {
+    write(
+      'pubspec.yaml',
+      pubspecs.workspacePubspec(packages: packages, sdkBound: sdkBound),
+    );
   }
 
   /// Reads workspace-relative [path], or returns `null` if it does not exist.
@@ -504,11 +510,12 @@ dependencies:
   /// This includes `dependency_overrides` overriding packages to use the local
   /// versions depended on by the test itself, except for packages in the
   /// workspace.
-  String workspacePubspec({required List<String> packages}) {
+  String workspacePubspec({required List<String> packages, String? sdkBound}) {
+    sdkBound ??= '>=3.7.0 <4.0.0';
     final result = StringBuffer('''
 name: workspace
 environment:
-  sdk: '>=3.7.0 <4.0.0'
+  sdk: '$sdkBound'
 workspace: [${packages.join(', ')}]
 ''');
     result.writeln(
