@@ -1,5 +1,7 @@
-## 2.11.2-wip
+## 2.12.0
 
+- Add support for globs in the package list of workspace `pubspec.yaml`,
+  matching the new feature in Dart SDK `3.11`.
 - Support the `build_to` key added to `post_process_builders` in
   `build_config 1.3.0`. Post process builders can use this to output files
   to the source tree.

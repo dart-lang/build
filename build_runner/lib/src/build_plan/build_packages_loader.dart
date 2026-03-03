@@ -62,10 +62,14 @@ class BuildPackagesLoader {
           ..sort((a, b) => a.name.compareTo(b.name));
 
     String? workspaceName;
-    YamlMap? workspacePubspec;
+    List<String>? workspacePackages;
     if (buildType != BuildType.singlePackage) {
-      workspacePubspec = _pubspecForPath(workspacePath!);
+      final workspacePubspec = _pubspecForPath(workspacePath!);
       workspaceName = workspacePubspec['name']! as String;
+      final workspacePackageGraph = _packageGraphForPath(workspacePath);
+      workspacePackages = List.from(
+        workspacePackageGraph['roots'] as List<Object?>,
+      );
     }
 
     String? singlePackageToBuild;
@@ -73,14 +77,8 @@ class BuildPackagesLoader {
     final packagesInBuild = <String>{};
     if (buildType == BuildType.workspace) {
       packagesInBuild.add(workspaceName!);
+      packagesInBuild.addAll(workspacePackages!);
       outputRootName = workspaceName;
-      final workspacePackagePaths = workspacePubspec!['workspace'] as YamlList;
-      for (final path in workspacePackagePaths) {
-        packagesInBuild.add(
-          _pubspecForPath(p.join(workspacePath!, path as String))['name']
-              as String,
-        );
-      }
     } else {
       final singlePackageToBuildPubspec = _pubspecForPath(packagePath);
       singlePackageToBuild = singlePackageToBuildPubspec['name']! as String;
@@ -139,11 +137,25 @@ YamlMap _pubspecForPath(String absolutePath) {
   final pubspecPath = p.join(absolutePath, 'pubspec.yaml');
   final pubspec = File(pubspecPath);
   if (!pubspec.existsSync()) {
-    throw StateError(
-      'Unable to generate package graph, no `$pubspecPath` found.',
-    );
+    throw StateError('Unable to load packages, no `$pubspecPath` found.');
   }
   return loadYaml(pubspec.readAsStringSync()) as YamlMap;
+}
+
+/// Loads and returns `$absolutePath/.dart_tool/package_graph.json`.
+///
+/// Throws if it does not exist.
+Map<String, Object?> _packageGraphForPath(String absolutePath) {
+  final packageGraphPath = p.join(
+    absolutePath,
+    '.dart_tool',
+    'package_graph.json',
+  );
+  final packageGraph = File(packageGraphPath);
+  if (!packageGraph.existsSync()) {
+    throw StateError('Unable to load packages, no `$packageGraphPath` found.');
+  }
+  return json.decode(packageGraph.readAsStringSync()) as Map<String, Object?>;
 }
 
 /// Parses the `pubspec.lock` file and returns the names of packages that are
