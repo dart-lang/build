@@ -329,6 +329,12 @@ class Build {
         }
       }
 
+      final resolversImpl =
+          _resolvers is ResolversImpl ? _resolvers as ResolversImpl : null;
+      if (resolversImpl != null) {
+        resolversImpl.start();
+      }
+
       buildLog.startPhases(primaryInputCountsByPhase);
 
       // Main build phases.

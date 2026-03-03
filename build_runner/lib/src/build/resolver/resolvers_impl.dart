@@ -93,6 +93,10 @@ class ResolversImpl implements Resolvers {
     return BuildStepResolver(_buildResolver!, buildStep as BuildStepImpl);
   }
 
+  void start() {
+    _analysisDriverModel.start();
+  }
+
   /// Must be called between each build.
   @override
   void reset() {

@@ -9,6 +9,7 @@
 // ignore_for_file: implementation_imports
 // ignore_for_file: prefer_final_locals
 
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
@@ -24,10 +25,11 @@ import 'package:analyzer/src/dart/analysis/file_content_cache.dart';
 import 'package:analyzer/src/dart/analysis/file_state.dart';
 import 'package:analyzer/src/dart/analysis/performance_logger.dart';
 import 'package:analyzer/src/dart/analysis/results.dart';
+import 'package:analyzer/src/dart/sdk/sdk.dart';
 import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/summary/package_bundle_reader.dart';
-import 'package:analyzer/src/summary/summary_sdk.dart';
 import 'package:analyzer/src/summary2/package_bundle_format.dart';
+import 'package:path/path.dart' as p;
 
 export 'package:analyzer/dart/analysis/analysis_options.dart'
     show AnalysisOptions;
@@ -57,7 +59,13 @@ AnalysisDriverForPackageBuild createAnalysisDriver({
   ByteStore? byteStore,
 }) {
   var sdkBundle = PackageBundleReader(sdkSummaryBytes);
-  var sdk = SummaryBasedDartSdk.forBundle(sdkBundle);
+  // var sdk = SummaryBasedDartSdk.forBundle(sdkBundle);
+
+  final runningDartSdkPath = p.dirname(p.dirname(Platform.resolvedExecutable));
+  final sdk = FolderBasedDartSdk(
+    resourceProvider,
+    resourceProvider.getFolder(runningDartSdkPath),
+  );
 
   var sourceFactory = SourceFactory([DartUriResolver(sdk), ...uriResolvers]);
 
@@ -80,15 +88,18 @@ AnalysisDriverForPackageBuild createAnalysisDriver({
     sourceFactory: sourceFactory,
     analysisOptionsMap: optionsMap,
     fileContentCache: fileContentCache,
-    externalSummaries: dataStore,
+    // externalSummaries: dataStore,
     packages: packages,
-    withFineDependencies: false,
+    withFineDependencies: true,
     shouldReportInconsistentAnalysisException: false,
   );
 
   scheduler.start();
 
-  return AnalysisDriverForPackageBuild._(sdk.libraryUris, driver);
+  return AnalysisDriverForPackageBuild._(
+    sdk.libraryMap.uris.map(Uri.parse).toList(),
+    driver,
+  );
 }
 
 /// [AnalysisSession] plus a tiny bit more.

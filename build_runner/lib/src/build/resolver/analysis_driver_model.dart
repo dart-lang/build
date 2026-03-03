@@ -39,6 +39,8 @@ class AnalysisDriverModel {
   /// [filesystem].
   final _syncedOntoFilesystemAtPhase = <AssetId, int>{};
 
+  void start() {}
+
   /// Clear cached information specific to an individual build.
   void reset() {
     _graphLoader.clear();
