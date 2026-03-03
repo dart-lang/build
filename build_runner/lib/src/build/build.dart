@@ -415,6 +415,13 @@ class Build {
         buildPackages: buildPackages,
       );
 
+      final resolversImpl =
+          _resolvers is ResolversImpl ? _resolvers as ResolversImpl : null;
+      if (resolversImpl != null) {
+        resolversImpl.start();
+      }
+
+
       // Main build phases.
       for (
         var phaseNum = 0;

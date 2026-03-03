@@ -3,6 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:convert';
+import 'dart:io' as io;
+
 import 'dart:typed_data';
 
 import 'package:analyzer/file_system/file_system.dart';
@@ -133,8 +135,16 @@ class AnalysisDriverFilesystem
   ///
   /// Throws if ![exists].
   String read(String path) {
+    if (path.contains('/sdk/') || path.contains('/dart-sdk/')) {
+      return io.File(path).readAsStringSync();
+    }
     if (!exists(path)) throw StateError('Read of non-existent file.');
     return _data[path]!.content;
+    }
+    final result = _data[path];
+    if (result == null) throw ArgumentError('Path does not exist: $path');
+    return result;
+  }
   }
 
   /// Writes [content].
@@ -316,13 +326,20 @@ class _Resource implements File, Folder {
   @override
   String get shortName => filesystem.pathContext.basename(path);
 
+  @override
+  Folder get parent => _Resource(filesystem, p.dirname(path));
+  
   // `File` methods. These are mostly not used as reads for analysis are via
   // the `FileContentCache` API.
+
   @override
   Uint8List readAsBytesSync() => utf8.encode(filesystem.read(path));
 
   @override
   String readAsStringSync() => filesystem.read(path);
+
+  @override
+  String canonicalizePath(String path) => path;
 
   // Analyzer methods such as `CompilationUnitElement.source` provide access to
   // source and return a `TimestampedData` with this value.
@@ -338,6 +355,14 @@ class _Resource implements File, Folder {
   @override
   bool contains(String path) =>
       filesystem.pathContext.isWithin(this.path, path);
+
+  @override
+  File getChildAssumingFile(String relPath) =>
+      _Resource(filesystem, '$path/$relPath');
+
+  @override
+  Folder getChildAssumingFolder(String relPath) =>
+      _Resource(filesystem, '$path/$relPath');
 
   // Most `File` and/or `Folder` methods are not needed.
 
