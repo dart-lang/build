@@ -1,3 +1,6 @@
+## 4.5.0
+- Setting 'isWindows' to false in DDC's bootstrapper to ensure that cross-platform path aren't interlaced.
+
 ## 4.4.14
 - Update DDC Library Bundle to use path-resolvable module names for sourcemap IDs.
 
