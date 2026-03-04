@@ -1,3 +1,7 @@
+## 3.5.10
+
+- Use `build_runner` 2.12.2.
+
 ## 3.5.9
 
 - Use `build_runner` 2.12.1.
