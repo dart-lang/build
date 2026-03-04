@@ -169,9 +169,6 @@ $librariesString
           'packages/build_web_compilers/src/dev_compiler/ddc_module_loader.js',
       mainBoostrapperUrl: bootstrapModuleName,
       mapperUrl: stackTraceMapperPath,
-      // Ensure that `isWindows` is false to avoid DDC's bootstrapper appending
-      // backlashes to paths.
-      isWindows: false,
       scriptIdsToPath: modulePaths,
     );
     bootstrapEndContent = generateDDCLibraryBundleOnLoadEndBootstrap();
@@ -690,7 +687,6 @@ String generateDDCLibraryBundleBootstrapScript({
   required String ddcModuleLoaderUrl,
   required String mainBoostrapperUrl,
   required String mapperUrl,
-  required bool isWindows,
   required Map<String, String> scriptIdsToPath,
 }) {
   final scriptsJs = StringBuffer();
@@ -754,8 +750,8 @@ $_simpleLoaderScript
     let scripts = [${scriptsJs.toString()}];
 
     let loadConfig = new window.\$dartLoader.LoadConfiguration();
-    // TODO(srujzs): Verify this is sufficient for Windows.
-    loadConfig.isWindows = $isWindows;
+    // `isWindows` must be false to avoid appending backlashes to paths.
+    loadConfig.isWindows = false;
     loadConfig.root = trimmedDirectory;
     loadConfig.bootstrapScript = scripts[scripts.length - 1];
 

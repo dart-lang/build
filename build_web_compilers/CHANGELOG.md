@@ -1,5 +1,5 @@
 ## 4.4.15
-- Setting 'isWindows' to false in DDC's bootstrapper to ensure that cross-platform path aren't interlaced.
+- Normalize URIs in DDC's bootstrapper on Windows to always use forward slashes when running with the DDC Library Bundle module system.
 
 ## 4.4.14
 - Update DDC Library Bundle to use path-resolvable module names for sourcemap IDs.
