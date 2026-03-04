@@ -1,3 +1,7 @@
+## 2.12.1
+
+- Require `build_config` 1.3.0.
+
 ## 2.12.0
 
 - Add support for globs in the package list of workspace `pubspec.yaml`,
