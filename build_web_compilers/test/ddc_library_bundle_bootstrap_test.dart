@@ -119,6 +119,7 @@ void main() {
               // Imports the dart sdk.
               contains('"id": "dart_sdk"'),
               isNot(contains('lib/a')),
+              contains('loadConfig.isWindows = false;'),
             ]),
           ),
           'a|web/index.digests': decodedMatches(contains('packages/')),

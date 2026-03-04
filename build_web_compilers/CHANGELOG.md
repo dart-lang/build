@@ -1,3 +1,6 @@
+## 4.4.15
+- Normalize URIs in DDC's bootstrapper on Windows to always use forward slashes when running with the DDC Library Bundle module system.
+
 ## 4.4.14
 - Update DDC Library Bundle to use path-resolvable module names for sourcemap IDs.
 

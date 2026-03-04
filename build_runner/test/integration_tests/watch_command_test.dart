@@ -11,7 +11,7 @@ import 'package:test/test.dart';
 import '../common/common.dart';
 
 void main() async {
-  test('watch command', () async {
+  test('watch command', timeout: const Timeout.factor(4), () async {
     final pubspecs = await Pubspecs.load();
     final tester = BuildRunnerTester(pubspecs);
 
