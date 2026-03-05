@@ -7,6 +7,8 @@ import 'dart:async';
 import 'package:analyzer/dart/analysis/features.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
+// ignore: implementation_imports
+import 'package:analyzer/src/summary2/linked_element_factory.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:package_config/package_config.dart';
@@ -66,8 +68,9 @@ class ResolversImpl implements Resolvers {
   }) : _packageConfig = packageConfig,
        _analysisDriverModel = analysisDriverModel;
 
-  @override
-  Future<BuildStepResolver> get(BuildStep buildStep) async {
+  LinkedElementFactory get elementFactory => _buildResolver!.elementFactory;
+
+  Future<void> _initialize() async {
     await _initializationPool.withResource(() async {
       if (_buildResolver != null) return;
       _warnOnLanguageVersionMismatch();
@@ -84,10 +87,13 @@ class ResolversImpl implements Resolvers {
         await defaultSdkSummaryGenerator(),
         loadedConfig,
       );
-
       _buildResolver = BuildResolver(driver, _driverPool, _analysisDriverModel);
     });
+  }
 
+  @override
+  Future<BuildStepResolver> get(BuildStep buildStep) async {
+    await _initialize();
     return BuildStepResolver(_buildResolver!, buildStep as BuildStepImpl);
   }
 
@@ -118,6 +124,16 @@ class ResolversImpl implements Resolvers {
   @override
   void reset() {
     _analysisDriverModel.endBuildAndUnlock();
+    /*
+    final requirements = globalResultRequirements!;
+    print(
+      (requirements.libraries.keys.map((u) => u.toString()).toList()..sort())
+          .join('\n'),
+    );
+    final bytes = globalResultRequirements!.toBytes();
+    final hash = md5.convert(bytes).toString();
+    buildLog.debug('manifest: ${bytes.length} / $hash');
+    globalResultRequirements = RequirementsManifest();*/
   }
 }
 

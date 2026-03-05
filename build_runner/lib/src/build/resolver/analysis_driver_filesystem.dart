@@ -14,6 +14,7 @@ import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/dart/analysis/file_content_cache.dart';
 import 'package:build/build.dart' hide Resource;
+import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 
 import '../asset_graph/node.dart';
@@ -128,23 +129,31 @@ class AnalysisDriverFilesystem
   int _phaseOf(String path) => _phaseByPath[path] ?? -1;
 
   /// Whether [path] exists.
-  bool exists(String path) =>
-      _data.containsKey(path) && _phase > _phaseOf(path);
+  bool exists(String path) {
+    final result = _data.containsKey(path) && _phase > _phaseOf(path);
+    if (path.contains('/sdk/') || path.contains('/dart-sdk/') && !result) {
+      if (!io.File(path).existsSync()) return false;
+      final content = io.File(path).readAsStringSync();
+      writeContent(
+        BuildRunnerFileContent(
+          path,
+          true,
+          content,
+          base64.encode(md5.convert(utf8.encode(content)).bytes),
+        ),
+      );
+      return true;
+    }
+
+    return result;
+  }
 
   /// Reads the data previously written to [path].
   ///
   /// Throws if ![exists].
   String read(String path) {
-    if (path.contains('/sdk/') || path.contains('/dart-sdk/')) {
-      return io.File(path).readAsStringSync();
-    }
     if (!exists(path)) throw StateError('Read of non-existent file.');
     return _data[path]!.content;
-    }
-    final result = _data[path];
-    if (result == null) throw ArgumentError('Path does not exist: $path');
-    return result;
-  }
   }
 
   /// Writes [content].
@@ -328,7 +337,7 @@ class _Resource implements File, Folder {
 
   @override
   Folder get parent => _Resource(filesystem, p.dirname(path));
-  
+
   // `File` methods. These are mostly not used as reads for analysis are via
   // the `FileContentCache` API.
 

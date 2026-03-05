@@ -55,7 +55,6 @@ class AnalysisDriverModel {
       invalidatedSources: invalidatedSources,
     );
   }
-
   /// Clears build state and frees the lock taken by [takeLockAndStartBuild].
   ///
   /// If no lock was taken, just clears build state.
