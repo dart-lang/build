@@ -7,6 +7,12 @@ import 'dart:convert';
 
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
+// ignore: implementation_imports
+import 'package:analyzer/src/fine/requirements.dart';
+// ignore: implementation_imports
+import 'package:analyzer/src/fine/requirement_failure.dart';
+// ignore: implementation_imports
+import 'package:analyzer/src/util/performance/operation_performance.dart';
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
@@ -43,6 +49,9 @@ import 'resolver/resolvers_impl.dart';
 import 'run_builder.dart';
 import 'run_post_process_builder.dart';
 import 'single_step_reader_writer.dart';
+
+final Map<PrimaryInputAndPhase, RequirementsManifest> _previousRequirements =
+    {};
 
 /// A single build.
 class Build {
@@ -454,6 +463,32 @@ class Build {
     }
   }
 
+  void logRequirements(
+    PrimaryInputAndPhase primaryInputAndPhase,
+    RequirementsManifest requirements,
+  ) {
+    final resolversImpl =
+        _resolvers is ResolversImpl ? _resolvers as ResolversImpl : null;
+    if (resolversImpl == null) return;
+    final requirementFailure = requirements.isSatisfied(
+      elementFactory: resolversImpl.elementFactory,
+      performance: OperationPerformanceImpl(''),
+    );
+
+    buildLog.debug('''
+??? $primaryInputAndPhase
+$requirementFailure
+''');
+    if (requirementFailure is OpaqueApiUseFailure) {
+      for (final use in requirementFailure.uses) {
+        buildLog.debug(use.targetElementLibraryUri.toString());
+        buildLog.debug(use.targetRuntimeType.toString());
+        buildLog.debug(use.methodName.toString());
+        buildLog.debug(use.targetElementName.toString());
+      }
+    }
+  }
+
   /// Runs the builder for [primaryInput] at [phase].
   ///
   /// If outputs are already valid or are optional and not used, does nothing.
@@ -534,6 +569,22 @@ class Build {
         lazy: lazy,
       );
       if (allowedByTriggers) {
+        final primaryInputAndPhase = PrimaryInputAndPhase(
+          primaryInput,
+          phaseNumber,
+        );
+        final resolversImpl =
+            _resolvers is ResolversImpl ? _resolvers as ResolversImpl : null;
+
+        if (resolversImpl != null) {
+          final previousRequirements =
+              _previousRequirements[primaryInputAndPhase];
+          if (previousRequirements != null) {
+            logRequirements(primaryInputAndPhase, previousRequirements);
+          }
+          globalResultRequirements = RequirementsManifest();
+        }
+
         await TimedActivity.build.runAsync(
           () => tracker.trackStage(
             'Build',
@@ -552,6 +603,20 @@ class Build {
             }),
           ),
         );
+
+        final requirements = globalResultRequirements!;
+        logRequirements(primaryInputAndPhase, requirements);
+        final requirementsLibraries = (requirements.libraries.keys
+                .map((u) => u.toString())
+                .toList()
+              ..sort())
+            .join('\n');
+        buildLog.debug('''
+=== $primaryInputAndPhase
+$requirementsLibraries
+''');
+        _previousRequirements[primaryInputAndPhase] = requirements;
+        globalResultRequirements = null;
       }
 
       // Update the state for all the `builderOutputs` nodes based on what was
@@ -1232,6 +1297,25 @@ class Build {
   }
 
   Future _delete(AssetId id) => readerWriter.delete(id);
+}
+
+class PrimaryInputAndPhase {
+  final AssetId primaryInput;
+  final int phase;
+
+  PrimaryInputAndPhase(this.primaryInput, this.phase);
+
+  @override
+  bool operator ==(Object other) =>
+      other is PrimaryInputAndPhase &&
+      other.primaryInput == primaryInput &&
+      other.phase == phase;
+
+  @override
+  int get hashCode => primaryInput.hashCode ^ phase.hashCode;
+
+  @override
+  String toString() => '$primaryInput/$phase';
 }
 
 String _twoDigits(int n) => '$n'.padLeft(2, '0');

@@ -28,6 +28,7 @@ import 'package:analyzer/src/dart/analysis/results.dart';
 import 'package:analyzer/src/dart/sdk/sdk.dart';
 import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/summary/package_bundle_reader.dart';
+import 'package:analyzer/src/summary2/linked_element_factory.dart';
 import 'package:analyzer/src/summary2/package_bundle_format.dart';
 import 'package:path/path.dart' as p;
 
@@ -133,6 +134,9 @@ class AnalysisDriverForPackageBuild {
   List<Uri> get sdkLibraryUris {
     return _sdkLibraryUris;
   }
+
+  LinkedElementFactory get elementFactory =>
+      _driver.currentSession.elementFactory;
 
   /// Return a [Future] that completes after pending file changes are applied,
   /// so that [currentSession] can be used to compute results.
