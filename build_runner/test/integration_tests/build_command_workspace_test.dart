@@ -159,5 +159,18 @@ void main() async {
       sdkBound: '>=3.11.0 <4.0.0',
     );
     await tester.run('', 'dart run build_runner build --workspace');
+
+    // Write a builder that applies an unknown builder in its build.yaml, the
+    // unknown builder is ignored.
+    tester.writeFixturePackage(
+      FixturePackages.copyBuilder(
+        packageName: 'second_copy_builder_pkg',
+        outputExtension: '.copy2',
+        buildToCache: true,
+        appliesBuilders: '["unknown|test_builder"]',
+        pathDependencies: ['builder_pkg'],
+      ),
+    );
+    await tester.run('', 'dart run build_runner build --workspace');
   });
 }

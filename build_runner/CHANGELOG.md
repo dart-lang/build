@@ -1,3 +1,8 @@
+## 2.12.2
+
+- Bug fix: don't crash if `applies_builders` in `build.yaml` mentions an
+  unknown builder.
+
 ## 2.12.1
 
 - Require `build_config` 1.3.0.

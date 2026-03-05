@@ -295,7 +295,9 @@ class BuildPhaseCreator {
       if (builderDefinition is BuilderDefinition &&
           !(builderDefinition.hideOutput &&
               builderDefinition.appliesBuilders.every(
-                (b) => _builderDefinitionByKey[b]!.hideOutput,
+                // Missing builders won't be applied and so are counted as
+                // hidden.
+                (b) => _builderDefinitionByKey[b]?.hideOutput ?? true,
               ))) {
         return false;
       }
