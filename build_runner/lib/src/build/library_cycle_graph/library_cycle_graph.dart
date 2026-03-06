@@ -37,15 +37,4 @@ abstract class LibraryCycleGraph
 
     return result;
   }
-
-  /// All assets in the graph, including the root.
-  // TODO(davidmorgan): for best performance the graph should usually stay as a
-  // graph rather than being expanded into an explicit set of nodes. So, remove
-  // uses of this. If in the end it's still needed, investigate if it needs to
-  // be optimized.
-  Iterable<AssetId> transitiveDeps() sync* {
-    for (final graph in transitiveGraphs()) {
-      yield* graph.root.ids;
-    }
-  }
 }

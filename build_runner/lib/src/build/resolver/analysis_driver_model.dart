@@ -8,9 +8,11 @@ import 'dart:async';
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:build/build.dart';
 
+import '../../logging/build_log.dart';
 import '../../logging/timed_activities.dart';
 import '../input_tracker.dart';
 import '../library_cycle_graph/asset_deps_loader.dart';
+import '../library_cycle_graph/library_cycle_graph.dart';
 import '../library_cycle_graph/library_cycle_graph_loader.dart';
 import '../library_cycle_graph/phased_asset_deps.dart';
 import '../library_cycle_graph/phased_reader.dart';
@@ -38,12 +40,13 @@ class AnalysisDriverModel {
 
   /// Assets that have been synced into the in-memory filesystem
   /// [filesystem].
-  final _syncedOntoFilesystemAtPhase = <AssetId, int>{};
+  final Set<LibraryCycleGraph> _syncedLibraryCycleGraphs = Set.identity();
 
   /// Clear cached information specific to an individual build.
   void reset() {
     _graphLoader.clear();
-    _syncedOntoFilesystemAtPhase.clear();
+    _syncedLibraryCycleGraphs.clear();
+    filesystem.clear();
   }
 
   /// Serializable data from which the library cycle graphs can be
@@ -86,60 +89,89 @@ class AnalysisDriverModel {
     required InputTracker inputTracker,
     required bool transitive,
   }) async {
-    Iterable<AssetId> idsToSyncOntoFilesystem;
+    AssetId? idToSyncOntoFilesystem;
+    LibraryCycleGraph? libraryCycleGraphToSyncOntoFilesystem;
+
+    buildLog.debug('resolve $entrypoint');
 
     // If requested, find transitive imports.
     if (transitive) {
-      idsToSyncOntoFilesystem = await TimedActivity.resolve.runAsync(() async {
-        // Note: `transitiveDepsOf` can cause loads that cause builds that
-        // cause a recursive `_performResolve` on this same `AnalysisDriver`
-        // instance.
-        final nodeLoader = AssetDepsLoader(phasedReader);
-        inputTracker.addResolverEntrypoint(entrypoint);
-        return await _graphLoader.transitiveDepsOf(nodeLoader, entrypoint);
-      });
+      libraryCycleGraphToSyncOntoFilesystem = await TimedActivity.resolve
+          .runAsync(() async {
+            // Note: `transitiveDepsOf` can cause loads that cause builds that
+            // cause a recursive `_performResolve` on this same `AnalysisDriver`
+            // instance.
+            final nodeLoader = AssetDepsLoader(phasedReader);
+            inputTracker.addResolverEntrypoint(entrypoint);
+            return (await _graphLoader.libraryCycleGraphOf(
+              nodeLoader,
+              entrypoint,
+            )).valueAt(phase: phasedReader.phase);
+          });
     } else {
       // Notify [buildStep] of its inputs.
       inputTracker.add(entrypoint);
-      idsToSyncOntoFilesystem = [entrypoint];
+      idToSyncOntoFilesystem = entrypoint;
     }
 
     await withDriver((driver) async {
       // Sync changes onto the "URI resolver", the in-memory filesystem.
-      final phase = phasedReader.phase;
-      for (final id in idsToSyncOntoFilesystem) {
-        final wasSyncedAt = _syncedOntoFilesystemAtPhase[id];
-        if (wasSyncedAt != null) {
-          // Skip if already synced at this phase.
-          if (wasSyncedAt == phase) {
-            continue;
-          }
-          // Skip if synced at an equivalent other phase.
-          if (!phasedReader.hasChanged(id, comparedToPhase: wasSyncedAt)) {
-            continue;
+
+      await TimedActivity.resolve.runAsync(() async {
+        final phase = phasedReader.phase;
+        filesystem.phase = phase;
+
+        void sync(AssetId id) async {
+          if (filesystem.isKnown(id.asPath)) return;
+
+          final value = await phasedReader.readPhased(id);
+          buildLog.debug('$id: $value');
+
+          if (value.isComplete) {
+            final idPhase =
+                value.values.first.expiresAfter == null
+                    ? -1
+                    : value.values.first.expiresAfter!;
+            filesystem.writeFile(
+              id.asPath,
+              content: value.lastValue,
+              phase: idPhase,
+            );
           }
         }
 
-        _syncedOntoFilesystemAtPhase[id] = phase;
-
-        // Tracking has already been done by calling `inputTracker` directly.
-        // Use `phasedReader` for the read instead of the `buildStep` methods
-        // `canRead` and `readAsString`, which would call `inputTracker`.
-        final content = await phasedReader.readAtPhase(id);
-        if (content == null) {
-          filesystem.deleteFile(id.asPath);
-        } else {
-          filesystem.writeFile(id.asPath, content);
+        if (idToSyncOntoFilesystem != null) {
+          // buildLog.debug('sync $id');
+          sync(idToSyncOntoFilesystem);
         }
-      }
+
+        if (libraryCycleGraphToSyncOntoFilesystem != null) {
+          buildLog.debug(
+            'sync graph for $entrypoint: ${libraryCycleGraphToSyncOntoFilesystem}',
+          );
+          final nextGraphs = [libraryCycleGraphToSyncOntoFilesystem];
+          while (nextGraphs.isNotEmpty) {
+            final nextGraph = nextGraphs.removeLast();
+            if (_syncedLibraryCycleGraphs.add(nextGraph) || true) {
+              for (final id in nextGraph.root.ids) {
+                sync(id);
+              }
+              nextGraphs.addAll(nextGraph.children);
+            }
+          }
+        }
+      });
 
       // Notify the analyzer of changes and wait for it to update its internal
       // state.
-      for (final path in filesystem.changedPaths) {
-        driver.changeFile(path);
+      if (filesystem.changedPaths.isNotEmpty) {
+        // buildLog.debug('change ${filesystem.changedPaths}');
+        for (final path in filesystem.changedPaths) {
+          driver.changeFile(path);
+        }
+        filesystem.clearChangedPaths();
+        await driver.applyPendingFileChanges();
       }
-      filesystem.clearChangedPaths();
-      await driver.applyPendingFileChanges();
     });
   }
 }

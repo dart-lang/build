@@ -500,6 +500,7 @@ class Build {
           readerWriter,
         ),
       )) {
+        buildLog.debug('skip step $primaryInput $phase');
         buildLog.skipStep(phase: phase, lazy: lazy);
         return <AssetId>[];
       }
@@ -897,6 +898,7 @@ class Build {
       }
 
       for (final graphId in firstOutputState.resolverEntrypoints) {
+        buildLog.debug('check graph for $graphId');
         if (await _hasInputGraphChanged(
           phaseNumber: phaseNumber,
           entrypointId: graphId,

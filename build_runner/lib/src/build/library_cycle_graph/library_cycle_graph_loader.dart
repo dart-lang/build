@@ -468,28 +468,6 @@ class LibraryCycleGraphLoader {
     return _graphs[id]!;
   }
 
-  /// Returns the transitive dependencies of Dart source [id] at the
-  /// [assetDepsLoader] phase.
-  ///
-  /// A "dependency" is a mention in `import`, `export`, `part` or `part of`.
-  /// Dependencies are considered at the [assetDepsLoader] phase, meaning that
-  /// files generated in that phase or later count as empty and have no deps.
-  ///
-  /// Note that sources generated _at_ the [assetDepsLoader] phase are
-  /// not readable during the phase and are not used.
-  ///
-  /// Previously computed state is used if possible, anything additional is
-  /// loaded using [assetDepsLoader].
-  ///
-  /// See class note about recursive calls.
-  Future<Iterable<AssetId>> transitiveDepsOf(
-    AssetDepsLoader assetDepsLoader,
-    AssetId id,
-  ) async {
-    final graph = await libraryCycleGraphOf(assetDepsLoader, id);
-    return graph.valueAt(phase: assetDepsLoader.phase).transitiveDeps();
-  }
-
   /// Serializable data from which the library cycle graphs can be
   /// reconstructed.
   PhasedAssetDeps phasedAssetDeps() =>

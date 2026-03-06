@@ -12,46 +12,69 @@ import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:build/build.dart' hide Resource;
 import 'package:path/path.dart' as p;
 
+import '../../logging/build_log.dart';
+
 /// The in-memory filesystem that is the analyzer's view of the build.
 ///
 /// Tracks modified paths, which should be passed to
 /// `AnalysisDriver.changeFile` to update the analyzer state.
 class AnalysisDriverFilesystem implements UriResolver, ResourceProvider {
   final Map<String, String> _data = {};
+  final Map<String, int> _phases = {};
   final Set<String> _changedPaths = {};
+
+  int _phase = 0;
 
   // Methods for use by `AnalysisDriverModel`.
 
+  int get phase => _phase;
+
+  set phase(int phase) {
+    if (phase == _phase) return;
+    final oldPhase = _phase;
+    _phase = phase;
+    for (final entry in _phases.entries) {
+      if (oldPhase > entry.value != phase > entry.value) {
+        _changedPaths.add(entry.key);
+      }
+    }
+  }
+
   /// Whether [path] exists.
-  bool exists(String path) => _data.containsKey(path);
+  bool isKnown(String path) => _data.containsKey(path);
+
+  /// Whether [path] exists.
+  bool exists(String path) =>
+      _data.containsKey(path) && _phase > _phases[path]!;
 
   /// Reads the data previously written to [path].
   ///
   /// Throws if ![exists].
-  String read(String path) => _data[path]!;
-
-  /// Deletes the data previously written to [path].
-  ///
-  /// Records the change in [changedPaths].
-  ///
-  /// Or, if it's missing, does nothing.
-  void deleteFile(String path) {
-    if (_data.remove(path) != null) _changedPaths.add(path);
+  String read(String path) {
+    if (_phase <= _phases[path]!) throw StateError('!exists');
+    return _data[path]!;
   }
 
-  /// Writes [content] to [path].
-  ///
-  /// Records the change in [changedPaths], only if the content actually
-  /// changed.
-  void writeFile(String path, String content) {
-    final oldContent = _data[path];
+  /// Writes [content] to [path], generated at [phase].
+  void writeFile(String path, {required String content, required int phase}) {
+    // if (_data[path] != null) throw StateError('exists');
+    buildLog.debug('write $path at $phase');
     _data[path] = content;
-    if (content != oldContent) _changedPaths.add(path);
+    _phases[path] = phase;
+    if (_phase > phase) {
+      _changedPaths.add(path);
+    }
   }
 
   /// Paths that were modified by [deleteFile] or [writeFile] since the last
   /// call to [clearChangedPaths].
   Iterable<String> get changedPaths => _changedPaths;
+
+  void clear() {
+    _changedPaths.addAll(_data.keys);
+    _data.clear();
+    _phases.clear();
+  }
 
   /// Clears [changedPaths].
   void clearChangedPaths() => _changedPaths.clear();
