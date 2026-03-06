@@ -24,7 +24,8 @@ class InputTracker {
   final AssetId? primaryInput;
   final String? builderLabel;
   final HashSet<AssetId> _inputs = HashSet<AssetId>();
-  final HashSet<AssetId> _resolverEntrypoints = HashSet<AssetId>();
+  final HashMap<AssetId, String> _resolverEntrypoints =
+      HashMap<AssetId, String>();
 
   /// Creates an input tracker.
   ///
@@ -39,10 +40,13 @@ class InputTracker {
 
   void add(AssetId input) => _inputs.add(input);
 
-  void addResolverEntrypoint(AssetId graph) => _resolverEntrypoints.add(graph);
+  void addResolverEntrypoint({
+    required AssetId entrypoint,
+    required String apiSignature,
+  }) => _resolverEntrypoints[entrypoint] = apiSignature;
 
   Set<AssetId> get inputs => _inputs;
-  Set<AssetId> get resolverEntrypoints => _resolverEntrypoints;
+  Map<AssetId, String> get resolverEntrypoints => _resolverEntrypoints;
 
   void clear() {
     _inputs.clear();

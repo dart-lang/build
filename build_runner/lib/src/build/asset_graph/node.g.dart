@@ -369,8 +369,9 @@ class _$GeneratedNodeStateSerializer
       'resolverEntrypoints',
       serializers.serialize(
         object.resolverEntrypoints,
-        specifiedType: const FullType(BuiltSet, const [
+        specifiedType: const FullType(BuiltMap, const [
           const FullType(AssetId),
+          const FullType(String),
         ]),
       ),
       'errors',
@@ -422,11 +423,12 @@ class _$GeneratedNodeStateSerializer
           result.resolverEntrypoints.replace(
             serializers.deserialize(
                   value,
-                  specifiedType: const FullType(BuiltSet, const [
+                  specifiedType: const FullType(BuiltMap, const [
                     const FullType(AssetId),
+                    const FullType(String),
                   ]),
                 )!
-                as BuiltSet<Object?>,
+                as BuiltMap<Object?, Object?>,
           );
           break;
         case 'result':
@@ -948,7 +950,7 @@ class _$GeneratedNodeState extends GeneratedNodeState {
   @override
   final BuiltSet<AssetId> inputs;
   @override
-  final BuiltSet<AssetId> resolverEntrypoints;
+  final BuiltMap<AssetId, String> resolverEntrypoints;
   @override
   final bool? result;
   @override
@@ -1013,10 +1015,10 @@ class GeneratedNodeStateBuilder
   SetBuilder<AssetId> get inputs => _$this._inputs ??= SetBuilder<AssetId>();
   set inputs(SetBuilder<AssetId>? inputs) => _$this._inputs = inputs;
 
-  SetBuilder<AssetId>? _resolverEntrypoints;
-  SetBuilder<AssetId> get resolverEntrypoints =>
-      _$this._resolverEntrypoints ??= SetBuilder<AssetId>();
-  set resolverEntrypoints(SetBuilder<AssetId>? resolverEntrypoints) =>
+  MapBuilder<AssetId, String>? _resolverEntrypoints;
+  MapBuilder<AssetId, String> get resolverEntrypoints =>
+      _$this._resolverEntrypoints ??= MapBuilder<AssetId, String>();
+  set resolverEntrypoints(MapBuilder<AssetId, String>? resolverEntrypoints) =>
       _$this._resolverEntrypoints = resolverEntrypoints;
 
   bool? _result;

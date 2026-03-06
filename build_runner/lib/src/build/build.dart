@@ -54,6 +54,7 @@ class Build {
   final LibraryCycleGraphLoader previousLibraryCycleGraphLoader =
       LibraryCycleGraphLoader();
   final AssetDepsLoader? previousDepsLoader;
+  final ResolversImpl? _resolversImpl;
 
   // Logging.
   final BuildPerformanceTracker performanceTracker;
@@ -122,7 +123,11 @@ class Build {
        previousDepsLoader =
            assetGraph.previousPhasedAssetDeps == null
                ? null
-               : AssetDepsLoader.fromDeps(assetGraph.previousPhasedAssetDeps!);
+               : AssetDepsLoader.fromDeps(assetGraph.previousPhasedAssetDeps!),
+       _resolversImpl =
+           buildPlan.testingOverrides.resolvers == null
+               ? ResolversImpl.sharedInstance
+               : buildPlan.testingOverrides.resolversImpl;
 
   BuildOptions get buildOptions => buildPlan.buildOptions;
   TestingOverrides get testingOverrides => buildPlan.testingOverrides;
@@ -896,12 +901,28 @@ class Build {
         if (changed) return true;
       }
 
-      for (final graphId in firstOutputState.resolverEntrypoints) {
+      for (final graphId in firstOutputState.resolverEntrypoints.keys) {
         if (await _hasInputGraphChanged(
           phaseNumber: phaseNumber,
           entrypointId: graphId,
         )) {
-          return true;
+          // A file in the transitive deps changed.
+          if (_resolversImpl == null) {
+            // No way to check further, assume resolution changed. This can
+            // happen because `package:build_test` allows injection of
+            //`Resolvers` via `testingOverrides`.
+            return true;
+          } else {
+            // Check whether resolution of the entrypoint actually changed.
+            final oldSignature = firstOutputState.resolverEntrypoints[graphId];
+            final signature = await _resolversImpl.updateDriverForEntrypoint(
+              entrypoint: graphId,
+              phasedReader: readerWriter,
+            );
+            if (signature != oldSignature) {
+              return true;
+            }
+          }
         }
       }
 

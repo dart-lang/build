@@ -256,8 +256,9 @@ abstract class GeneratedNodeState
   /// to generate it.
   BuiltSet<AssetId> get inputs;
 
-  /// Entrypoints used for resolution with the analyzer.
-  BuiltSet<AssetId> get resolverEntrypoints;
+  /// Entrypoints used for resolution with the analyzer and their transitive API
+  /// signatures.
+  BuiltMap<AssetId, String> get resolverEntrypoints;
 
   /// Whether the generation succeded, or `null` if it did not run.
   ///

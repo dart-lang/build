@@ -8,8 +8,7 @@ import 'dart:math';
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
-import 'package:build_runner/src/constants.dart';
-import 'package:build_runner/src/logging/build_log.dart';
+import 'package:build_runner/src/internal.dart';
 import 'package:build_test/build_test.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
@@ -203,7 +202,7 @@ class InvalidationTester {
         throw StateError('Do a build without change, delete or create first.');
       }
       for (final id in _sourceAssets) {
-        assets[id] = '${_imports(id)}// initial source';
+        assets[id] = '${_imports(id)}\nint? x; // initial source';
       }
       if (_buildYaml != null) {
         assets[AssetId('pkg', 'build.yaml')] = _buildYaml!;
@@ -218,7 +217,7 @@ class InvalidationTester {
     // Make the requested updates.
     if (change != null) {
       assets[change.assetId] =
-          '${_imports(change.assetId)}\n// ${++_outputNumber}';
+          '${_imports(change.assetId)}\nint? x${++_outputNumber};';
     }
     if (delete != null) {
       if (assets.containsKey(delete.assetId)) {
@@ -235,7 +234,8 @@ class InvalidationTester {
       if (assets.containsKey(create.assetId)) {
         throw StateError('Asset $create to create already exists in: $assets');
       }
-      assets[create.assetId] = '${_imports(create.assetId)}// initial source';
+      assets[create.assetId] =
+          '${_imports(create.assetId)}\nint? x; // initial source';
     }
     if (buildYaml != null) {
       assets[AssetId('pkg', 'build.yaml')] = buildYaml;
@@ -531,6 +531,18 @@ class TestBuilder implements Builder {
         recordInput(resolve.assetId, null);
       }
     }
+
+    String renderRecordedInput() {
+      final result = StringBuffer();
+      for (final input in recordedInput) {
+        final digest = md5.convert(utf8.encode(input)).bytes.join('_');
+        // Any change needs to be an API change, so name a variable using the
+        // digest. Also bring the long form version in a comment.
+        result.writeln('int? x$digest; // $input');
+      }
+      return result.toString();
+    }
+
     for (final write in writes) {
       final writeId = buildStep.inputId.replaceExtensions('$from.dart', write);
       final outputStrategy =
@@ -539,7 +551,7 @@ class TestBuilder implements Builder {
         OutputStrategy.fixed => _tester._imports(writeId),
         OutputStrategy.inputDigest =>
           '${_tester._imports(writeId)}\n'
-              '${recordedInput.map((l) => '// $l\n').join('')}',
+              '${renderRecordedInput()}',
         OutputStrategy.none => null,
       };
       if (output != null) {

@@ -5,8 +5,6 @@
 import 'dart:async';
 
 import 'package:analyzer/dart/analysis/features.dart';
-// ignore: implementation_imports
-import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:package_config/package_config.dart';
@@ -15,7 +13,9 @@ import 'package:pool/pool.dart';
 import '../../bootstrap/build_process_state.dart';
 import '../../logging/build_log.dart';
 import '../build_step_impl.dart';
+import '../library_cycle_graph/phased_reader.dart';
 import 'analysis_driver.dart';
+import 'analysis_driver_for_package_build.dart';
 import 'analysis_driver_model.dart';
 import 'build_resolver.dart';
 import 'build_step_resolver.dart';
@@ -68,8 +68,7 @@ class ResolversImpl implements Resolvers {
   }) : _packageConfig = packageConfig,
        _analysisDriverModel = analysisDriverModel;
 
-  @override
-  Future<BuildStepResolver> get(BuildStep buildStep) async {
+  Future<void> _initialize() async {
     await _initializationPool.withResource(() async {
       if (_buildResolver != null) return;
       _warnOnLanguageVersionMismatch();
@@ -89,7 +88,11 @@ class ResolversImpl implements Resolvers {
 
       _buildResolver = BuildResolver(driver, _driverPool, _analysisDriverModel);
     });
+  }
 
+  @override
+  Future<BuildStepResolver> get(BuildStep buildStep) async {
+    await _initialize();
     return BuildStepResolver(_buildResolver!, buildStep as BuildStepImpl);
   }
 
@@ -97,6 +100,18 @@ class ResolversImpl implements Resolvers {
   @override
   void reset() {
     _analysisDriverModel.reset();
+  }
+
+  Future<String> updateDriverForEntrypoint({
+    required AssetId entrypoint,
+    required PhasedReader phasedReader,
+  }) async {
+    await _initialize();
+    return (await _buildResolver!.updateDriverForEntrypoint(
+      entrypoint: entrypoint,
+      phasedReader: phasedReader,
+      transitive: true,
+    ))!;
   }
 }
 
