@@ -132,6 +132,51 @@ Please check the following imports:
       );
     });
 
+    test('missing conditional imports yield helpful errors', () async {
+      await testBuilder(
+        TestBuilder(
+          buildExtensions: {
+            'lib/a${moduleExtension(platform)}': ['.transitive'],
+          },
+          build: expectAsync2((buildStep, _) async {
+            await expectLater(
+              () => rootModule.computeTransitiveDependencies(buildStep),
+              throwsA(
+                isA<MissingModulesException>().having(
+                  (e) => e.message,
+                  'message',
+                  contains('''
+Unable to find modules for some sources, this is usually the result of either a
+bad import, a missing dependency in a package (or possibly a dev_dependency
+needs to move to a real dependency), or a build failure (if importing a
+generated file).
+
+Please check the following imports:
+
+`import 'some_other_dep.dart' if (dart.library.js_interop) 'src/dep.dart';` from b|lib/b.dart at 1:1
+'''),
+                ),
+              ),
+            );
+          }),
+        ),
+        {
+          'a|lib/a${moduleExtension(platform)}': jsonEncode(
+            rootModule.toJson(),
+          ),
+          'a|lib/src/dep${moduleExtension(platform)}': jsonEncode(
+            directDepModule.toJson(),
+          ),
+          'b|lib/b${moduleExtension(platform)}': jsonEncode(
+            transitiveDepModule.toJson(),
+          ),
+          // No module for b|lib/src/dep.dart
+          'b|lib/b.dart':
+              'import \'some_other_dep.dart\' if (dart.library.js_interop) \'src/dep.dart\';',
+        },
+      );
+    });
+
     group('unsupported modules', () {
       test('are not allowed as the root', () async {
         final unsupportedRootModule = Module(

@@ -107,11 +107,26 @@ Future<String?> _missingImportMessage(
   final import = parsed.directives
       .whereType<UriBasedDirective>()
       .firstWhereOrNull((directive) {
-        final uriString = directive.uri.stringValue;
-        if (uriString == null) return false;
-        if (uriString.startsWith('dart:')) return false;
-        final id = AssetId.resolve(Uri.parse(uriString), from: sourceId);
-        return id == missingId;
+        final uris = <String?>[
+          directive.uri.stringValue,
+          // Conditional imports are represented as NamespaceDirectives.
+          if (directive is NamespaceDirective)
+            for (final config in directive.configurations)
+              config.uri.stringValue,
+        ];
+
+        for (final uriString in uris) {
+          if (uriString == null) continue;
+          if (uriString.startsWith('dart:')) continue;
+
+          try {
+            final id = AssetId.resolve(Uri.parse(uriString), from: sourceId);
+            if (id == missingId) return true;
+          } on FormatException {
+            // Ignore format exceptions since we're assembling an error string.
+          }
+        }
+        return false;
       });
   if (import == null) return null;
   final lineInfo = parsed.lineInfo.getLocation(import.offset);

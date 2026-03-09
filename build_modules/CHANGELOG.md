@@ -1,3 +1,7 @@
+## 5.1.9
+
+- Emit build errors for bad conditional imports.
+
 ## 5.1.8
 
 - Generate synthetic `package_config.json` in the root of its synthetic test directory. Fixes sources in `web/` and related directories not obeying version constraints.
