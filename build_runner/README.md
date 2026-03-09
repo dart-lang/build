@@ -216,10 +216,21 @@ For testing builders, see the [`build_test` package](https://pub.dev/packages/bu
 
 ## Debugging builds
 
-To debug the build process, note that `build_runner` spawns a child process to run
-the build.
-Options used to spawn this process can be customized, which allows attaching a debugger:
+To debug the build process, note that `build_runner` spawns a child process to
+run the build. So, the args that turn on debugging must be passed through
+`build_runner` to the child process using `--dart-jit-vm-arg`, for example:
 
 ```shell
 dart run build_runner build --dart-jit-vm-arg=--observe --dart-jit-vm-arg=--pause-isolates-on-start
 ```
+
+The args in the example will cause the child process to output a URL for debugging:
+
+```
+The Dart DevTools debugger and profiler is available at:
+http://127.0.0.1:8181/3xXtAPE8msc=/devtools/?uri=ws://127.0.0.1:8181/3xXtAPE8msc=/ws
+```
+
+To use your IDE to debug, launch a "remote debug" session. For example in
+VSCode the remote debug action is called "Debug: Attach to Dart Process". It
+will ask for the URL to connect to: paste in the one that was printed.

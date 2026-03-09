@@ -1,3 +1,7 @@
+## 2.12.3-wip
+
+- Improved debugging instructions in README.md.
+
 ## 2.12.2
 
 - Bug fix: don't crash if `applies_builders` in `build.yaml` mentions an
