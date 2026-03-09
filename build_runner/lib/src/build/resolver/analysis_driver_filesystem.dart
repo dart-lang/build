@@ -12,44 +12,105 @@ import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:build/build.dart' hide Resource;
 import 'package:path/path.dart' as p;
 
+import '../asset_graph/node.dart';
+
 /// The in-memory filesystem that is the analyzer's view of the build.
 ///
-/// Tracks modified paths, which should be passed to
-/// `AnalysisDriver.changeFile` to update the analyzer state.
+/// Pass an `Iterable<AssetNode>` of generated file nodes to [startBuild] at the
+/// start of a build. This tells the filesystem at what phase each generated
+/// file becomes visible.
+///
+/// During the build, set [phase] to change the phase that the files are viewed
+/// at.
+///
+/// Files are added as they're needed during one build and only removed when
+/// they are cleared by the next [startBuild].
 class AnalysisDriverFilesystem implements UriResolver, ResourceProvider {
   final Map<String, String> _data = {};
   final Set<String> _changedPaths = {};
 
+  // Path and phase information derived from the `Iterable<AssetNode>` for fast
+  // lookup.
+  final Map<String, int> _phaseByPath = {};
+  final Map<int, List<String>> _pathByPhase = {};
+
+  int _phase = 0;
+
   // Methods for use by `AnalysisDriverModel`.
 
+  /// The phase the files are currently viewed at.
+  int get phase => _phase;
+
+  /// Sets the phase that the files are viewed at.
+  ///
+  /// A generated file is only visible if it was generated at an earlier phase.
+  ///
+  /// Records changes due to the phase change in [changedPaths].
+  set phase(int phase) {
+    if (phase == _phase) return;
+    final oldPhase = _phase;
+    _phase = phase;
+
+    for (final entry in _pathByPhase.entries) {
+      if (oldPhase > entry.key != phase > entry.key) {
+        _changedPaths.addAll(entry.value);
+      }
+    }
+  }
+
+  /// Initializes a new filesystem that will have files added due to the
+  /// build described by [generatedNodes].
+  void startBuild(Iterable<AssetNode> generatedNodes) {
+    _changedPaths.addAll(_data.keys);
+    _data.clear();
+    _phaseByPath.clear();
+    _pathByPhase.clear();
+    for (final node in generatedNodes) {
+      final phase = node.generatedNodeConfiguration!.phaseNumber;
+      final idAsPath = node.id.asPath;
+      _phaseByPath[idAsPath] = phase;
+      _pathByPhase.putIfAbsent(phase, () => []).add(idAsPath);
+    }
+  }
+
+  /// Returns the phase of the generated file at [path] or `-1` if it's not a
+  /// generated file or not known.
+  int _phaseOf(String path) => _phaseByPath[path] ?? -1;
+
   /// Whether [path] exists.
-  bool exists(String path) => _data.containsKey(path);
+  bool exists(String path) =>
+      _data.containsKey(path) && _phase > _phaseOf(path);
 
   /// Reads the data previously written to [path].
   ///
   /// Throws if ![exists].
-  String read(String path) => _data[path]!;
-
-  /// Deletes the data previously written to [path].
-  ///
-  /// Records the change in [changedPaths].
-  ///
-  /// Or, if it's missing, does nothing.
-  void deleteFile(String path) {
-    if (_data.remove(path) != null) _changedPaths.add(path);
+  String read(String path) {
+    if (!exists(path)) throw StateError('!exists');
+    return _data[path]!;
   }
 
   /// Writes [content] to [path].
   ///
-  /// Records the change in [changedPaths], only if the content actually
-  /// changed.
+  /// Throws if the file was already written with different content since the
+  /// most recent [startBuild].
   void writeFile(String path, String content) {
-    final oldContent = _data[path];
-    _data[path] = content;
-    if (content != oldContent) _changedPaths.add(path);
+    var wasAbsent = false;
+    final updatedContent = _data.putIfAbsent(path, () {
+      wasAbsent = true;
+      return content;
+    });
+    if (wasAbsent) {
+      if (_phase > _phaseOf(path)) {
+        _changedPaths.add(path);
+      }
+    } else {
+      if (content != updatedContent) {
+        throw StateError('Different write to $path.');
+      }
+    }
   }
 
-  /// Paths that were modified by [deleteFile] or [writeFile] since the last
+  /// Paths that were modified by [writeFile] since the last
   /// call to [clearChangedPaths].
   Iterable<String> get changedPaths => _changedPaths;
 
@@ -207,4 +268,9 @@ class _Resource implements File, Folder {
   // `Folder.copyTo`.
   @override
   _Resource copyTo(Folder _) => throw UnimplementedError();
+}
+
+extension AssetIdExtensions on AssetId {
+  /// Asset path for the in-memory filesystem.
+  String get asPath => AnalysisDriverFilesystem.assetPath(this);
 }

@@ -1,10 +1,13 @@
 ## 2.12.3-wip
 
+- Improve management of files for analysis for faster initial builds and
+  incremental builds of large projects: 8% faster on the 1000 file "random"
+  benchmark, 30% faster on the 5000 file "random" benchmark.
 - Add `--dart-aot-perf` flag for profiling on Linux. Use it with `--force-aot`.
   It runs the builders under the `perf` profiling tool which writes to
   `perf.data`.
 - Add `--verbose-durations` flag that logs durations with greater precision.
-- Improved debugging instructions in README.md.
+- Improve debugging instructions in README.md.
 - Bug fix: fix line wrapping in `build_runner` args usage output.
 
 ## 2.12.2

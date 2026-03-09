@@ -28,7 +28,7 @@ import 'single_step_reader_writer.dart';
 Future<void> runBuilder(
   Builder builder,
   Iterable<AssetId> inputs,
-  SingleStepReaderWriter readerWriter,
+  SingleStepReaderWriter singleStepReaderWriter,
   Resolvers? resolvers, {
   Logger? logger,
   ResourceManager? resourceManager,
@@ -71,7 +71,7 @@ Future<void> runBuilder(
     final buildStep = BuildStepImpl(
       input,
       outputs,
-      readerWriter,
+      singleStepReaderWriter,
       resolvers,
       resources,
       loadPackageConfig,
