@@ -49,6 +49,7 @@ class DaemonCommand implements BuildRunnerCommand {
     buildLog.configuration = buildLog.configuration.rebuild((b) {
       b.mode = BuildLogMode.daemon;
       b.verbose = buildOptions.verbose;
+      b.verboseDurations = buildOptions.verboseDurations;
     });
     final workingDirectory = Directory.current.path;
     final daemon = Daemon(workingDirectory);

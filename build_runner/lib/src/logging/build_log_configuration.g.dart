@@ -12,6 +12,8 @@ class _$BuildLogConfiguration extends BuildLogConfiguration {
   @override
   final bool verbose;
   @override
+  final bool verboseDurations;
+  @override
   final void Function(LogRecord)? onLog;
   @override
   final String? singleOutputPackage;
@@ -31,6 +33,7 @@ class _$BuildLogConfiguration extends BuildLogConfiguration {
   _$BuildLogConfiguration._({
     required this.mode,
     required this.verbose,
+    required this.verboseDurations,
     this.onLog,
     this.singleOutputPackage,
     required this.throttleProgressUpdates,
@@ -54,6 +57,7 @@ class _$BuildLogConfiguration extends BuildLogConfiguration {
     return other is BuildLogConfiguration &&
         mode == other.mode &&
         verbose == other.verbose &&
+        verboseDurations == other.verboseDurations &&
         onLog == _$dynamicOther.onLog &&
         singleOutputPackage == other.singleOutputPackage &&
         throttleProgressUpdates == other.throttleProgressUpdates &&
@@ -67,6 +71,7 @@ class _$BuildLogConfiguration extends BuildLogConfiguration {
     var _$hash = 0;
     _$hash = $jc(_$hash, mode.hashCode);
     _$hash = $jc(_$hash, verbose.hashCode);
+    _$hash = $jc(_$hash, verboseDurations.hashCode);
     _$hash = $jc(_$hash, onLog.hashCode);
     _$hash = $jc(_$hash, singleOutputPackage.hashCode);
     _$hash = $jc(_$hash, throttleProgressUpdates.hashCode);
@@ -82,6 +87,7 @@ class _$BuildLogConfiguration extends BuildLogConfiguration {
     return (newBuiltValueToStringHelper(r'BuildLogConfiguration')
           ..add('mode', mode)
           ..add('verbose', verbose)
+          ..add('verboseDurations', verboseDurations)
           ..add('onLog', onLog)
           ..add('singleOutputPackage', singleOutputPackage)
           ..add('throttleProgressUpdates', throttleProgressUpdates)
@@ -103,6 +109,11 @@ class BuildLogConfigurationBuilder
   bool? _verbose;
   bool? get verbose => _$this._verbose;
   set verbose(bool? verbose) => _$this._verbose = verbose;
+
+  bool? _verboseDurations;
+  bool? get verboseDurations => _$this._verboseDurations;
+  set verboseDurations(bool? verboseDurations) =>
+      _$this._verboseDurations = verboseDurations;
 
   void Function(LogRecord)? _onLog;
   void Function(LogRecord)? get onLog => _$this._onLog;
@@ -140,6 +151,7 @@ class BuildLogConfigurationBuilder
     if ($v != null) {
       _mode = $v.mode;
       _verbose = $v.verbose;
+      _verboseDurations = $v.verboseDurations;
       _onLog = $v.onLog;
       _singleOutputPackage = $v.singleOutputPackage;
       _throttleProgressUpdates = $v.throttleProgressUpdates;
@@ -177,6 +189,11 @@ class BuildLogConfigurationBuilder
             verbose,
             r'BuildLogConfiguration',
             'verbose',
+          ),
+          verboseDurations: BuiltValueNullFieldError.checkNotNull(
+            verboseDurations,
+            r'BuildLogConfiguration',
+            'verboseDurations',
           ),
           onLog: onLog,
           singleOutputPackage: singleOutputPackage,

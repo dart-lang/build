@@ -43,6 +43,7 @@ class BuildCommand implements BuildRunnerCommand {
     buildLog.configuration = buildLog.configuration.rebuild((b) {
       b.mode = BuildLogMode.build;
       b.verbose = buildOptions.verbose;
+      b.verboseDurations = buildOptions.verboseDurations;
       b.onLog = testingOverrides.onLog;
     });
 

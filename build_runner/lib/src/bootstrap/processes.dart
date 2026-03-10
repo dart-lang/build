@@ -50,15 +50,31 @@ class ParentProcess {
     required String aotSnapshot,
     required Iterable<String> arguments,
     required String message,
+    required bool runUnderPerf,
   }) async {
-    return await _runAndSend(
-      executable: p.join(
-        p.dirname(Platform.resolvedExecutable),
-        'dartaotruntime',
-      ),
-      arguments: [aotSnapshot, ...arguments],
-      message: message,
+    final dartAotRuntime = p.join(
+      p.dirname(Platform.resolvedExecutable),
+      'dartaotruntime',
     );
+    return runUnderPerf
+        ? await _runAndSend(
+          executable: 'perf',
+          arguments: [
+            'record',
+            '-g',
+            '--output',
+            'perf.data',
+            dartAotRuntime,
+            aotSnapshot,
+            ...arguments,
+          ],
+          message: message,
+        )
+        : await _runAndSend(
+          executable: dartAotRuntime,
+          arguments: [aotSnapshot, ...arguments],
+          message: message,
+        );
   }
 
   static Future<RunAndSendResult> _runAndSend({

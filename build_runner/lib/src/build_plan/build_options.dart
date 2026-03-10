@@ -23,6 +23,7 @@ class BuildOptions {
   final String? configKey;
   final BuiltList<String> enableExperiments;
   final bool enableLowResourcesMode;
+  final bool dartAotPerf;
   final bool forceAot;
   final bool forceJit;
   final bool isReleaseBuild;
@@ -30,6 +31,7 @@ class BuildOptions {
   final bool outputSymlinksOnly;
   final bool trackPerformance;
   final bool verbose;
+  final bool verboseDurations;
   final bool workspace;
 
   late final bool anyMergedOutputDirectory = buildDirs.any(
@@ -41,6 +43,7 @@ class BuildOptions {
     required this.builderConfigOverrides,
     required this.buildFilters,
     required this.configKey,
+    required this.dartAotPerf,
     required this.enableExperiments,
     required this.enableLowResourcesMode,
     required this.forceAot,
@@ -50,6 +53,7 @@ class BuildOptions {
     required this.outputSymlinksOnly,
     required this.trackPerformance,
     required this.verbose,
+    required this.verboseDurations,
     required this.workspace,
   });
 
@@ -59,25 +63,28 @@ class BuildOptions {
   /// command line arg parsing configuration.
   @visibleForTesting
   factory BuildOptions.forTests({
-    bool? forceAot,
-    bool? forceJit,
     BuiltMap<String, BuiltMap<String, Object?>>? builderConfigOverrides,
     BuiltSet<BuildDirectory>? buildDirs,
     BuiltSet<BuildFilter>? buildFilters,
     String? configKey,
+    bool? dartAotPerf,
     BuiltList<String>? enableExperiments,
     bool? enableLowResourcesMode,
+    bool? forceAot,
+    bool? forceJit,
     bool? isReleaseBuild,
     String? logPerformanceDir,
     bool? outputSymlinksOnly,
     bool? trackPerformance,
     bool? verbose,
+    bool? verboseDurations,
     bool? workspace,
   }) => BuildOptions(
     builderConfigOverrides: builderConfigOverrides ?? BuiltMap(),
     buildDirs: buildDirs ?? BuiltSet(),
     buildFilters: buildFilters ?? BuiltSet(),
     configKey: configKey,
+    dartAotPerf: dartAotPerf ?? false,
     enableExperiments: enableExperiments ?? BuiltList(),
     enableLowResourcesMode: enableLowResourcesMode ?? false,
     forceAot: forceAot ?? false,
@@ -87,6 +94,7 @@ class BuildOptions {
     outputSymlinksOnly: outputSymlinksOnly ?? false,
     trackPerformance: trackPerformance ?? false,
     verbose: verbose ?? false,
+    verboseDurations: verboseDurations ?? false,
     workspace: workspace ?? false,
   );
 
@@ -115,6 +123,8 @@ class BuildOptions {
       ),
       buildFilters: _parseBuildFilters(commandLine, rootPackage: rootPackage),
       configKey: commandLine.config,
+      // Only available on Linux.
+      dartAotPerf: commandLine.dartAotPerf ?? false,
       enableExperiments: commandLine.enableExperiments!,
       enableLowResourcesMode: commandLine.lowResourcesMode!,
       forceAot: commandLine.forceAot!,
@@ -125,6 +135,7 @@ class BuildOptions {
       trackPerformance:
           commandLine.trackPerformance! || commandLine.logPerformance != null,
       verbose: commandLine.verbose!,
+      verboseDurations: commandLine.verboseDurations!,
       workspace: commandLine.workspace!,
     );
 
@@ -146,6 +157,7 @@ class BuildOptions {
     builderConfigOverrides: builderConfigOverrides,
     buildFilters: buildFilters ?? this.buildFilters,
     configKey: configKey,
+    dartAotPerf: dartAotPerf,
     enableExperiments: enableExperiments,
     enableLowResourcesMode: enableLowResourcesMode,
     forceAot: forceAot,
@@ -155,6 +167,7 @@ class BuildOptions {
     outputSymlinksOnly: outputSymlinksOnly,
     trackPerformance: trackPerformance,
     verbose: verbose,
+    verboseDurations: verboseDurations,
     workspace: workspace,
   );
 }

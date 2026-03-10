@@ -174,6 +174,8 @@ class BuildRunner {
   }) async {
     buildLog.configuration = buildLog.configuration.rebuild((b) {
       b.mode = commandLine.type.buildLogMode;
+      b.verbose = commandLine.verbose;
+      b.verboseDurations = commandLine.verboseDurations;
     });
 
     final bootstrapper = Bootstrapper(
@@ -182,6 +184,7 @@ class BuildRunner {
     );
     return await bootstrapper.run(
       arguments,
+      dartAotPerf: commandLine.dartAotPerf ?? false,
       jitVmArgs: commandLine.jitVmArgs ?? const Iterable.empty(),
       experiments: commandLine.enableExperiments,
       retryCompileFailures:
