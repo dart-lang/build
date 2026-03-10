@@ -78,14 +78,16 @@ class TimedActivities {
 
   /// Renders activities for [phaseName].
   ///
-  /// Only activities that lasted >=1s are rendered. If no activities are >=1s,
-  /// an empty `String` is returned.
-  String render({required String? phaseName}) {
+  /// By default only activities that lasted >=1s are rendered. If no activities
+  /// are >=1s, an empty `String` is returned.
+  ///
+  /// With [verboseDurations], activities that last >=10ms are rendered.
+  String render({required String? phaseName, required bool verboseDurations}) {
     final result = StringBuffer();
     final entries = (_activities[phaseName] ?? {}).entries.toList();
     entries.sort((a, b) => b.value.compareTo(a.value));
     for (final entry in entries) {
-      if (entry.value.inMilliseconds < 1000) continue;
+      if (entry.value.inMilliseconds < (verboseDurations ? 10 : 1000)) continue;
       if (result.isNotEmpty) result.write(', ');
       result.write(
         '${buildLog.renderDuration(entry.value)}${AnsiBuffer.nbsp}${entry.key}',

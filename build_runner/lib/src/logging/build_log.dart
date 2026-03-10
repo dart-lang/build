@@ -482,8 +482,14 @@ class BuildLog {
   }
 
   /// Renders [duration].
-  String renderDuration(Duration duration) =>
-      '${(duration.inMilliseconds / 1000).round()}s';
+  String renderDuration(Duration duration) {
+    if (configuration.verboseDurations) {
+      final seconds = duration.inMilliseconds / 1000.0;
+      return '${seconds.toStringAsFixed(2)}s';
+    } else {
+      return '${(duration.inMilliseconds / 1000).round()}s';
+    }
+  }
 
   /// Renders [id].
   ///
@@ -586,7 +592,10 @@ class BuildLog {
 
   /// Renders a line describing the progress of [phaseName].
   AnsiBufferLine _renderPhase(String phaseName) {
-    final activities = this.activities.render(phaseName: phaseName);
+    final activities = this.activities.render(
+      phaseName: phaseName,
+      verboseDurations: configuration.verboseDurations,
+    );
 
     var firstSeparator = true;
     String separator() {

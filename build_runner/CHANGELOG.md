@@ -1,6 +1,11 @@
 ## 2.12.3-wip
 
+- Add `--dart-aot-perf` flag for profiling on Linux. Use it with `--force-aot`.
+  It runs the builders under the `perf` profiling tool which writes to
+  `perf.data`.
+- Add `--verbose-durations` flag that logs durations with greater precision.
 - Improved debugging instructions in README.md.
+- Bug fix: fix line wrapping in `build_runner` args usage output.
 
 ## 2.12.2
 

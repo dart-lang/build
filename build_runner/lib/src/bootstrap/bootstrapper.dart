@@ -55,6 +55,7 @@ class Bootstrapper {
   Future<int> run(
     BuiltList<String> arguments, {
     required Iterable<String> jitVmArgs,
+    required bool dartAotPerf,
     Iterable<String>? experiments,
     bool retryCompileFailures = false,
   }) async {
@@ -121,6 +122,7 @@ class Bootstrapper {
                 aotSnapshot: entrypointAotPath,
                 arguments: arguments,
                 message: buildProcessState.serialize(),
+                runUnderPerf: dartAotPerf,
               )
               : await ParentProcess.runAndSend(
                 script: entrypointDillPath,

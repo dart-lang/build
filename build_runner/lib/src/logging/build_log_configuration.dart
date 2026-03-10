@@ -16,6 +16,9 @@ abstract class BuildLogConfiguration
   /// Whether info from builders is displayed.
   bool get verbose;
 
+  /// Whether to log durations with greater precision.
+  bool get verboseDurations;
+
   /// Optionally, a callback that will receive all log messages.
   ///
   /// If set, normal output is turned off.
@@ -40,10 +43,11 @@ abstract class BuildLogConfiguration
 
   /// Default configuration.
   factory BuildLogConfiguration() => _$BuildLogConfiguration._(
-    verbose: false,
-    onLog: null,
     mode: BuildLogMode.simple,
+    onLog: null,
     throttleProgressUpdates: true,
+    verbose: false,
+    verboseDurations: false,
   );
   BuildLogConfiguration._();
 }
