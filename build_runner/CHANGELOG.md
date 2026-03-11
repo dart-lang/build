@@ -7,6 +7,8 @@
   builds: 25% faster incremental build of the 5000 file "random" benchmark.
 - Avoid throwing and catching an exception during analysis of files that don't
   exist yet, for a small (2%) performance improvement.
+- Copy asset graph without a serialization round trip for a 5% performance
+  improvement.
 - Add `--dart-aot-perf` flag for profiling on Linux. Use it with `--force-aot`.
   It runs the builders under the `perf` profiling tool which writes to
   `perf.data`.
