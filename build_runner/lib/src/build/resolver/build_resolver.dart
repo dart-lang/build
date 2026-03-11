@@ -10,7 +10,8 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:analyzer/error/error.dart';
 // ignore: implementation_imports
-import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
+import 'package:analyzer/src/fine/requirements.dart';
+import 'package:analyzer/src/summary2/linked_element_factory.dart';
 import 'package:build/build.dart';
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:pool/pool.dart';
@@ -19,6 +20,7 @@ import '../../logging/timed_activities.dart';
 import '../input_tracker.dart';
 import '../library_cycle_graph/phased_reader.dart';
 import 'analysis_driver_filesystem.dart';
+import 'analysis_driver_for_package_build.dart';
 import 'analysis_driver_model.dart';
 import 'build_step_resolver.dart';
 
@@ -189,6 +191,8 @@ class BuildResolver {
     return Stream.fromFuture(loadLibraries).expand((libraries) => libraries);
   }
 
+  LinkedElementFactory get elementFactory => _driver.elementFactory;
+
   Future<AssetId> assetIdForElement(Element element) async {
     if (element is MultiplyDefinedElement) {
       throw UnresolvableAssetException('${element.name} is ambiguous');
@@ -237,6 +241,13 @@ class AnalyzeActivityPool {
   AnalyzeActivityPool(this.pool);
 
   Future<T> withResource<T>(Future<T> Function() function) async {
-    return pool.withResource(() => TimedActivity.analyze.runAsync(function));
+    return pool.withResource(
+      () => TimedActivity.analyze.runAsync(() async {
+        final requirements = globalResultRequirements;
+        final result = await function();
+        globalResultRequirements = requirements;
+        return result;
+      }),
+    );
   }
 }
