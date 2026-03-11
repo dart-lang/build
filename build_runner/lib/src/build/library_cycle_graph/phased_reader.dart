@@ -4,6 +4,7 @@
 
 import 'package:build/build.dart';
 
+import '../resolver/analysis_driver_filesystem.dart';
 import 'phased_value.dart';
 
 /// Asset reader that views the build at one specific phase.
@@ -31,7 +32,6 @@ abstract class PhasedReader {
   /// empty string is returned for its content.
   Future<PhasedValue<String>> readPhased(AssetId id);
 
-  /// The contents at the current phase, or `null` if the file is missing at the
-  /// current phase.
-  Future<String?> readAtPhase(AssetId id);
+  /// The contents at the current phase.
+  Future<BuildRunnerFileContent> readAtPhase(AssetId id);
 }

@@ -20,6 +20,7 @@ import 'asset_graph/node.dart';
 import 'input_tracker.dart';
 import 'library_cycle_graph/phased_reader.dart';
 import 'library_cycle_graph/phased_value.dart';
+import 'resolver/analysis_driver_filesystem.dart';
 
 /// Builds an asset.
 typedef AssetBuilder = Future<void> Function(AssetId);
@@ -416,9 +417,13 @@ class SingleStepReaderWriter implements PhasedReader {
   }
 
   @override
-  Future<String?> readAtPhase(AssetId id) async {
-    return await canRead(id, track: false)
-        ? await readAsString(id, track: false)
-        : null;
+  Future<BuildRunnerFileContent> readAtPhase(AssetId id) async {
+    if (!await canRead(id, track: false)) {
+      return BuildRunnerFileContent.missing(id.path);
+    }
+
+    final content = await readAsString(id, track: false);
+    final hash = base64.encode((await digest(id)).bytes);
+    return BuildRunnerFileContent(id.asPath, true, content, hash);
   }
 }

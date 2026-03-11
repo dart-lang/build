@@ -9,6 +9,8 @@ import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/source/file_source.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
+// ignore: implementation_imports
+import 'package:analyzer/src/dart/analysis/file_content_cache.dart';
 import 'package:build/build.dart' hide Resource;
 import 'package:path/path.dart' as p;
 
@@ -25,8 +27,9 @@ import '../asset_graph/node.dart';
 ///
 /// Files are added as they're needed during one build and only removed when
 /// they are cleared by the next [startBuild].
-class AnalysisDriverFilesystem implements UriResolver, ResourceProvider {
-  final Map<String, String> _data = {};
+class AnalysisDriverFilesystem
+    implements UriResolver, ResourceProvider, FileContentCache {
+  final Map<String, FileContent> _data = {};
   final Set<String> _changedPaths = {};
 
   // Path and phase information derived from the `Iterable<AssetNode>` for fast
@@ -89,14 +92,16 @@ class AnalysisDriverFilesystem implements UriResolver, ResourceProvider {
   /// Throws if ![exists].
   String read(String path) {
     if (!exists(path)) throw StateError('Read of non-existent file.');
-    return _data[path]!;
+    return _data[path]!.content;
   }
 
-  /// Writes [content] to [path].
+  /// Writes [content].
   ///
   /// Throws if the file was already written with different content since the
   /// most recent [startBuild].
-  void writeFile(String path, String content) {
+  void writeContent(BuildRunnerFileContent content) {
+    if (!content.exists) throw ArgumentError('content must exist');
+    final path = content.path;
     var wasAbsent = false;
     final updatedContent = _data.putIfAbsent(path, () {
       wasAbsent = true;
@@ -107,18 +112,36 @@ class AnalysisDriverFilesystem implements UriResolver, ResourceProvider {
         _changedPaths.add(path);
       }
     } else {
-      if (content != updatedContent) {
+      if (content.contentHash != updatedContent.contentHash) {
         throw StateError('Different write to $path.');
       }
     }
   }
 
-  /// Paths that were modified by [writeFile] since the last
+  /// Paths that were modified by [writeContent] since the last
   /// call to [clearChangedPaths].
   Iterable<String> get changedPaths => _changedPaths;
 
   /// Clears [changedPaths].
   void clearChangedPaths() => _changedPaths.clear();
+
+  // `FileContentCache` methods.
+
+  @override
+  FileContent get(String path) =>
+      exists(path) ? _data[path]! : BuildRunnerFileContent.missing(path);
+
+  @override
+  void invalidate(String path) {
+    // build_runner handles invalidation, ignore request to invalidate from the
+    // analyzer.
+  }
+
+  @override
+  void invalidateAll() {
+    // build_runner handles invalidation, ignore request to invalidate from the
+    // analyzer.
+  }
 
   // `UriResolver` methods.
 
@@ -217,6 +240,27 @@ class AnalysisDriverFilesystem implements UriResolver, ResourceProvider {
   Folder? getStateLocation(String pluginId) => throw UnimplementedError();
 }
 
+class BuildRunnerFileContent implements FileContent {
+  @override
+  final String path;
+  @override
+  final bool exists;
+  @override
+  final String content;
+  @override
+  final String contentHash;
+
+  BuildRunnerFileContent(
+    this.path,
+    this.exists,
+    this.content,
+    this.contentHash,
+  );
+
+  static BuildRunnerFileContent missing(String path) =>
+      BuildRunnerFileContent(path, false, '', '');
+}
+
 /// Minimal implementation of [File] and [Folder].
 ///
 /// Provides only what the analyzer actually uses during analysis.
@@ -235,14 +279,10 @@ class _Resource implements File, Folder {
   @override
   String get shortName => filesystem.pathContext.basename(path);
 
-  // `File` methods.
+  // `File` methods. These are mostly not used as reads for analysis are via
+  // the `FileContentCache` API.
   @override
-  Uint8List readAsBytesSync() {
-    // TODO(davidmorgan): the analyzer reads as bytes in `FileContentCache`
-    // then converts back to `String` and hashes. It should be possible to save
-    // that work, for example by injecting a custom `FileContentCache`.
-    return utf8.encode(filesystem.read(path));
-  }
+  Uint8List readAsBytesSync() => utf8.encode(filesystem.read(path));
 
   @override
   String readAsStringSync() => filesystem.read(path);

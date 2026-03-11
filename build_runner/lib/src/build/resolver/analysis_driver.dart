@@ -30,6 +30,7 @@ AnalysisDriverForPackageBuild analysisDriver(
       analysisDriverModel.filesystem,
     ),
     resourceProvider: analysisDriverModel.filesystem,
+    fileContentCache: analysisDriverModel.filesystem,
     sdkSummaryBytes: File(sdkSummaryPath).readAsBytesSync(),
     uriResolvers: [analysisDriverModel.filesystem],
   );

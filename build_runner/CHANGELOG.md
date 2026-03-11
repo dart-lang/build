@@ -5,6 +5,8 @@
   benchmark, 30% faster on the 5000 file "random" benchmark.
 - Reuse computation of syntax errors for faster initial builds and incremental
   builds: 25% faster incremental build of the 5000 file "random" benchmark.
+- Avoid throwing and catching an exception during analysis of files that don't
+  exist yet, for a small (2%) performance improvement.
 - Add `--dart-aot-perf` flag for profiling on Linux. Use it with `--force-aot`.
   It runs the builders under the `perf` profiling tool which writes to
   `perf.data`.
