@@ -136,34 +136,24 @@ class BuildResolver {
   /// Finds syntax errors in files related to the [element].
   ///
   /// This includes the main library and existing part files.
-  Future<List<ErrorsResult>> _syntacticErrorsFor(LibraryElement element) async {
-    final existingSources = <Source>[];
-
-    for (final fragment in element.fragments) {
-      existingSources.add(fragment.source);
+  Future<List<AnalysisResultWithDiagnostics>> _syntacticErrorsFor(
+    LibraryElement element,
+  ) async {
+    final parsedLibrary = _driver.currentSession.getParsedLibraryByElement(
+      element,
+    );
+    if (parsedLibrary is! ParsedLibraryResult) {
+      return const [];
     }
 
-    // Map from elements to absolute paths
-    final paths = existingSources
-        .map((source) => _analysisDriverModel.lookupCachedAsset(source.uri))
-        .whereType<AssetId>() // filter out nulls
-        .map(AnalysisDriverFilesystem.assetPath);
-
-    final relevantResults = <ErrorsResult>[];
-
-    await _driverPool.withResource(() async {
-      for (final path in paths) {
-        final result = await _driver.currentSession.getErrors(path);
-        if (result is ErrorsResult &&
-            result.diagnostics.any(
-              (error) =>
-                  error.diagnosticCode.type == DiagnosticType.SYNTACTIC_ERROR,
-            )) {
-          relevantResults.add(result);
-        }
+    final relevantResults = <AnalysisResultWithDiagnostics>[];
+    for (final unit in parsedLibrary.units) {
+      if (unit.diagnostics.any(
+        (error) => error.diagnosticCode.type == DiagnosticType.SYNTACTIC_ERROR,
+      )) {
+        relevantResults.add(unit);
       }
-    });
-
+    }
     return relevantResults;
   }
 
