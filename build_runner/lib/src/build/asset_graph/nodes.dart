@@ -37,6 +37,12 @@ class Nodes {
 
   Nodes();
 
+  Nodes clone() {
+    final result = Nodes();
+    result._nodes.addAll(_nodes);
+    return result;
+  }
+
   /// Whether [id] is in the graph.
   bool contains(AssetId id) => _nodes.containsKey(id);
 

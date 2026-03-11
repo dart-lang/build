@@ -148,18 +148,25 @@ class AssetGraph implements GeneratedAssetHider {
 
   /// Copies the graph prepared for the next build with [buildPhases].
   AssetGraph copyForNextBuild(BuildPhases buildPhases) {
-    // TODO(davidmorgan): clean up so there is a way to copy safely without
-    // serializing then deserializing.
-    final result = AssetGraph.deserialize(serialize())!;
-    result.previousInBuildPhasesOptionsDigests =
-        result.inBuildPhasesOptionsDigests;
-    result.inBuildPhasesOptionsDigests =
-        buildPhases.inBuildPhasesOptionsDigests;
-    result.previousPostBuildActionsOptionsDigests =
-        result.postBuildActionsOptionsDigests;
-    result.postBuildActionsOptionsDigests =
-        buildPhases.postBuildActionsOptionsDigests;
-    return result;
+    return AssetGraph._with(
+      nodes: _nodes.clone(),
+      kernelDigest: kernelDigest,
+      buildPhasesDigest: buildPhasesDigest,
+      dartVersion: dartVersion,
+      enabledExperiments: enabledExperiments,
+      packageLanguageVersions: packageLanguageVersions,
+      postProcessBuildStepOutputs: {
+        for (final entry in _postProcessBuildStepOutputs.entries)
+          entry.key: Map.of(entry.value),
+      },
+      previousBuildTriggersDigest: previousBuildTriggersDigest,
+      previousInBuildPhasesOptionsDigests: inBuildPhasesOptionsDigests,
+      inBuildPhasesOptionsDigests: buildPhases.inBuildPhasesOptionsDigests,
+      previousPostBuildActionsOptionsDigests: postBuildActionsOptionsDigests,
+      postBuildActionsOptionsDigests:
+          buildPhases.postBuildActionsOptionsDigests,
+      previousPhasedAssetDeps: previousPhasedAssetDeps,
+    );
   }
 
   /// Deserializes an [AssetGraph] from a [Map].
