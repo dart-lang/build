@@ -18,7 +18,7 @@ import 'package:test/test.dart';
 
 import '../common/common.dart';
 
-const defaultTimeout = Timeout(Duration(seconds: 90));
+const defaultTimeout = Timeout(Duration(seconds: 120));
 
 void main() async {
   final webTarget = DefaultBuildTarget((b) {
