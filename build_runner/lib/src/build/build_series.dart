@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
+import 'package:crypto/crypto.dart';
 import 'package:watcher/watcher.dart';
 
 import '../build_plan/build_directory.dart';
@@ -163,7 +164,14 @@ class BuildSeries {
       // For modifications, confirm that the content actually changed.
       if (change.type == ChangeType.MODIFY) {
         // Use `_buildPlan.readerWriter` which has no cache to do a real read.
-        final newDigest = await _buildPlan.readerWriter.digest(id);
+        // Try to read the file. Auxiliary files may be deleted intermitently
+        // by IDEs and should be treated as REMOVE.
+        Digest newDigest;
+        try {
+          newDigest = await _buildPlan.readerWriter.digest(id);
+        } on AssetNotFoundException {
+          continue;
+        }
         if (node.digest != newDigest) {
           result.add(change);
         }
