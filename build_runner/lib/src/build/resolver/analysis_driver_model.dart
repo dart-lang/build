@@ -127,8 +127,8 @@ class AnalysisDriverModel {
 
         Future<void> writeToFilesystem(AssetId id) async {
           final content = await phasedReader.readAtPhase(id);
-          if (content != null) {
-            filesystem.writeFile(id.asPath, content);
+          if (content.exists) {
+            filesystem.writeContent(content);
           }
         }
 

@@ -16,7 +16,7 @@ void main() {
 
   group('AnalysisDriverFilesystem', () {
     test('write then read', () {
-      filesystem.writeFile('foo.txt', 'bar');
+      filesystem.write('foo.txt', 'bar');
       expect(filesystem.read('foo.txt'), 'bar');
     });
 
@@ -25,21 +25,21 @@ void main() {
     });
 
     test('write adds to changedPaths', () {
-      filesystem.writeFile('foo.txt', 'bar');
+      filesystem.write('foo.txt', 'bar');
       expect(filesystem.changedPaths, ['foo.txt']);
     });
 
     test('identical write does not add to changedPaths', () {
-      filesystem.writeFile('foo.txt', 'bar');
+      filesystem.write('foo.txt', 'bar');
       filesystem.clearChangedPaths();
       expect(filesystem.changedPaths, isEmpty);
-      filesystem.writeFile('foo.txt', 'bar');
+      filesystem.write('foo.txt', 'bar');
       expect(filesystem.changedPaths, isEmpty);
     });
 
     test('write updates `exists`', () {
       expect(filesystem.exists('foo.txt'), false);
-      filesystem.writeFile('foo.txt', 'bar');
+      filesystem.write('foo.txt', 'bar');
       expect(filesystem.exists('foo.txt'), true);
     });
 
@@ -59,8 +59,8 @@ void main() {
         ),
       ]);
 
-      filesystem.writeFile('/a/lib/a.g.dart', 'a');
-      filesystem.writeFile('/b/lib/b.g.dart', 'b');
+      filesystem.write('/a/lib/a.g.dart', 'a');
+      filesystem.write('/b/lib/b.g.dart', 'b');
       filesystem.clearChangedPaths();
 
       expect(filesystem.exists('/a/lib/a.g.dart'), false);
@@ -84,4 +84,12 @@ void main() {
       expect(filesystem.exists('/b/lib/b.g.dart'), false);
     });
   });
+}
+
+extension _AnalysisDriverFilesystemExtensions on AnalysisDriverFilesystem {
+  void write(String path, String content) {
+    writeContent(
+      BuildRunnerFileContent(path, true, content, content.hashCode.toString()),
+    );
+  }
 }
