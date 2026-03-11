@@ -48,11 +48,14 @@ class AnalysisDriverFilesystem implements UriResolver, ResourceProvider {
   /// Records changes due to the phase change in [changedPaths].
   set phase(int phase) {
     if (phase == _phase) return;
-    final oldPhase = _phase;
+    final previousPhase = _phase;
     _phase = phase;
 
     for (final entry in _pathByPhase.entries) {
-      if (oldPhase > entry.key != phase > entry.key) {
+      final previouslyWasVisible = previousPhase > entry.key;
+      final isVisible = phase > entry.key;
+
+      if (previouslyWasVisible != isVisible) {
         _changedPaths.addAll(entry.value);
       }
     }
@@ -85,7 +88,7 @@ class AnalysisDriverFilesystem implements UriResolver, ResourceProvider {
   ///
   /// Throws if ![exists].
   String read(String path) {
-    if (!exists(path)) throw StateError('!exists');
+    if (!exists(path)) throw StateError('Read of non-existent file.');
     return _data[path]!;
   }
 
