@@ -421,21 +421,4 @@ class SingleStepReaderWriter implements PhasedReader {
         ? await readAsString(id, track: false)
         : null;
   }
-
-  @override
-  bool hasChanged(AssetId id, {required int comparedToPhase}) {
-    if (comparedToPhase == phase) return false;
-    if (_runningBuild == null) return false;
-
-    final node = _runningBuild.assetGraph.get(id);
-    if (node == null) return false;
-    if (node.type != NodeType.generated) return false;
-
-    final assetPhase = node.generatedNodeConfiguration!.phaseNumber;
-
-    final isHiddenAtComparePhase = assetPhase >= comparedToPhase;
-    final isHiddenAtCurrentPhase = assetPhase >= phase;
-
-    return isHiddenAtComparePhase != isHiddenAtCurrentPhase;
-  }
 }

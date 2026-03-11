@@ -14,6 +14,7 @@ import 'package:pool/pool.dart';
 
 import '../../bootstrap/build_process_state.dart';
 import '../../logging/build_log.dart';
+import '../asset_graph/graph.dart';
 import '../build_step_impl.dart';
 import 'analysis_driver.dart';
 import 'analysis_driver_model.dart';
@@ -93,10 +94,13 @@ class ResolversImpl implements Resolvers {
     return BuildStepResolver(_buildResolver!, buildStep as BuildStepImpl);
   }
 
-  /// Must be called between each build.
+  void startBuild(AssetGraph assetGraph) {
+    _analysisDriverModel.startBuild(assetGraph);
+  }
+
   @override
   void reset() {
-    _analysisDriverModel.reset();
+    _analysisDriverModel.finishBuild();
   }
 }
 

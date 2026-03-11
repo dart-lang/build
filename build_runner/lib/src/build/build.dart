@@ -54,6 +54,13 @@ class Build {
   final LibraryCycleGraphLoader previousLibraryCycleGraphLoader =
       LibraryCycleGraphLoader();
   final AssetDepsLoader? previousDepsLoader;
+  final Resolvers resolvers;
+
+  /// If [resolvers] is a `ResolversImpl`, the same instance.
+  ///
+  /// Otherwise, `null`. A different `Resolvers` implementation can be passed
+  /// for testing, including via `build_test`.
+  final ResolversImpl? resolversImpl;
 
   // Logging.
   final BuildPerformanceTracker performanceTracker;
@@ -122,7 +129,14 @@ class Build {
        previousDepsLoader =
            assetGraph.previousPhasedAssetDeps == null
                ? null
-               : AssetDepsLoader.fromDeps(assetGraph.previousPhasedAssetDeps!);
+               : AssetDepsLoader.fromDeps(assetGraph.previousPhasedAssetDeps!),
+       resolvers =
+           buildPlan.testingOverrides.resolvers ?? ResolversImpl.sharedInstance,
+       resolversImpl = switch (buildPlan.testingOverrides.resolvers ??
+           ResolversImpl.sharedInstance) {
+         ResolversImpl r => r,
+         _ => null,
+       };
 
   BuildOptions get buildOptions => buildPlan.buildOptions;
   TestingOverrides get testingOverrides => buildPlan.testingOverrides;
@@ -192,7 +206,7 @@ class Build {
       }
     }
 
-    _resolvers.reset();
+    resolvers.reset();
     result = result.copyWith(
       errors: buildLog.finishBuild(
         result: result.status == BuildStatus.success,
@@ -201,9 +215,6 @@ class Build {
     );
     return result;
   }
-
-  Resolvers get _resolvers =>
-      testingOverrides.resolvers ?? ResolversImpl.sharedInstance;
 
   Future<void> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
     changedInputs.clear();
@@ -237,6 +248,7 @@ class Build {
         if (!assetGraph.cleanBuild) {
           await _updateAssetGraph(updates);
         }
+        resolversImpl?.startBuild(assetGraph);
 
         final result = await _runPhases();
 
@@ -466,7 +478,7 @@ class Build {
       phase.displayName,
     );
     return tracker.track(() async {
-      final readerWriter = SingleStepReaderWriter(
+      final singleStepReaderWriter = SingleStepReaderWriter(
         runningBuild: RunningBuild(
           buildPackages: buildPackages,
           buildConfigs: buildConfigs,
@@ -481,9 +493,9 @@ class Build {
           buildPhase: phase,
           primaryPackage: primaryInput.package,
         ),
-        readerWriter: this.readerWriter,
+        readerWriter: readerWriter,
         inputTracker: InputTracker(
-          this.readerWriter.filesystem,
+          readerWriter.filesystem,
           primaryInput: primaryInput,
           builderLabel: phase.displayName,
         ),
@@ -497,7 +509,7 @@ class Build {
           phaseNumber,
           primaryInput,
           builderOutputs,
-          readerWriter,
+          singleStepReaderWriter,
         ),
       )) {
         buildLog.skipStep(phase: phase, lazy: lazy);
@@ -507,7 +519,7 @@ class Build {
       await _cleanUpStaleOutputs(builderOutputs);
 
       // Clear input tracking accumulated during `_buildShouldRun`.
-      readerWriter.inputTracker.clear();
+      singleStepReaderWriter.inputTracker.clear();
 
       final unusedAssets = <AssetId>{};
       void reportUnusedAssetsForInput(AssetId input, Iterable<AssetId> assets) {
@@ -518,7 +530,7 @@ class Build {
       // Pass `readerWriter` so that if `_allowedByTriggers` reads files to
       // evaluate triggers then they are tracked as inputs.
       final allowedByTriggers = await _allowedByTriggers(
-        readerWriter: readerWriter,
+        readerWriter: singleStepReaderWriter,
         phase: phase,
         primaryInput: primaryInput,
       );
@@ -529,13 +541,12 @@ class Build {
       );
       if (allowedByTriggers) {
         await TimedActivity.build.runAsync(
-          () => tracker.trackStage(
-            'Build',
-            () => runBuilder(
+          () => tracker.trackStage('Build', () {
+            return runBuilder(
               builder,
               [primaryInput],
-              readerWriter,
-              PerformanceTrackingResolvers(_resolvers, tracker),
+              singleStepReaderWriter,
+              PerformanceTrackingResolvers(resolvers, tracker),
               logger: logger,
               resourceManager: resourceManager,
               stageTracker: tracker,
@@ -543,8 +554,8 @@ class Build {
               packageConfig: buildPackages.asPackageConfig,
             ).catchError((void _) {
               // Errors tracked through the logger.
-            }),
-          ),
+            });
+          }),
         );
       }
 
@@ -556,7 +567,7 @@ class Build {
           () => _setOutputsState(
             primaryInput,
             builderOutputs,
-            readerWriter,
+            singleStepReaderWriter,
             logger.errors,
             unusedAssets: unusedAssets,
           ),
@@ -566,8 +577,8 @@ class Build {
       if (allowedByTriggers) {
         buildLog.finishStep(
           phase: phase,
-          anyOutputs: readerWriter.assetsWritten.isNotEmpty,
-          anyChangedOutputs: readerWriter.assetsWritten.any(
+          anyOutputs: singleStepReaderWriter.assetsWritten.isNotEmpty,
+          anyChangedOutputs: singleStepReaderWriter.assetsWritten.any(
             changedOutputs.contains,
           ),
           lazy: lazy,
@@ -576,7 +587,7 @@ class Build {
         buildLog.stepNotTriggered(phase: phase, lazy: lazy);
       }
 
-      return readerWriter.assetsWritten;
+      return singleStepReaderWriter.assetsWritten;
     });
   }
 
