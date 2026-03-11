@@ -9,6 +9,7 @@
   exist yet, for a small (2%) performance improvement.
 - Copy asset graph without a serialization round trip for a 5% performance
   improvement.
+- Reuse trigger configuration digest for a small (0.5%) performance improvement.
 - Add `--dart-aot-perf` flag for profiling on Linux. Use it with `--force-aot`.
   It runs the builders under the `perf` profiling tool which writes to
   `perf.data`.
