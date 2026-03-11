@@ -39,7 +39,7 @@ class BuildTriggers {
       triggers[builderName];
 
   /// Digest that changes if any trigger changes.
-  Digest get digest => md5.convert(utf8.encode(triggers.toString()));
+  late final Digest digest = md5.convert(utf8.encode(triggers.toString()));
 
   static BuildTriggers fromConfigs(
     BuiltMap<String, BuildConfig> configByPackage,
