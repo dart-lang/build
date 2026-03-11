@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:analyzer/dart/analysis/features.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
+import 'package:analyzer/src/generated/engine.dart' show AnalysisOptionsImpl;
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:package_config/package_config.dart';
@@ -78,14 +79,26 @@ class ResolversImpl implements Resolvers {
           _packageConfig ??= await loadPackageConfigUri(
             Uri.parse(buildProcessState.packageConfigUri),
           );
-      final driver = analysisDriver(
-        _analysisDriverModel,
-        AnalysisOptionsImpl()
-          ..contextFeatures = _featureSet(
-            enableExperiments: enabledExperiments,
-          ),
-        await defaultSdkSummaryGenerator(),
-        loadedConfig,
+      final sdkSummary = await defaultSdkSummaryGenerator();
+      final driver = runZoned(
+        () => analysisDriver(
+          _analysisDriverModel,
+          AnalysisOptionsImpl()
+            ..contextFeatures = _featureSet(
+              enableExperiments: enabledExperiments,
+            ),
+          sdkSummary,
+          loadedConfig,
+        ),
+        zoneSpecification: ZoneSpecification(
+          createTimer: (self, parent, zone, duration, callback) {
+            if (duration == Duration.zero) {
+              scheduleMicrotask(callback);
+              return _CustomTimer();
+            }
+            return parent.createTimer(zone, duration, callback);
+          },
+        ),
       );
 
       _buildResolver = BuildResolver(driver, _driverPool, _analysisDriverModel);
@@ -143,4 +156,13 @@ current version by running `pub deps`.
     sdkLanguageVersion: sdkLanguageVersion,
     flags: enableExperiments,
   );
+}
+
+class _CustomTimer implements Timer {
+  @override
+  void cancel() {}
+  @override
+  bool get isActive => false;
+  @override
+  int get tick => 0;
 }
