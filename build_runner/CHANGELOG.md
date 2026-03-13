@@ -16,6 +16,7 @@
 - Add `--verbose-durations` flag that logs durations with greater precision.
 - Improve debugging instructions in README.md.
 - Bug fix: fix line wrapping in `build_runner` args usage output.
+- Handle file deletes (arising from IDE operations) during `build_runner` reader updates.
 
 ## 2.12.2
 
