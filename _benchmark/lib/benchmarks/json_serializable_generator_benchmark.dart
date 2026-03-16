@@ -34,7 +34,7 @@ dependencies:
 dev_dependencies:
   build_runner: any
   json_serializable: any
-
+${config.config.web ? '  build_web_compilers: any' : ''}
 ${config.dependencyOverrides}
 ''',
     );
@@ -46,6 +46,9 @@ ${config.dependencyOverrides}
 /// CACHEBUSTER
 ''',
     );
+    if (config.config.web) {
+      workspace.writeWebEntrypoint();
+    }
 
     for (var libraryNumber = 0; libraryNumber != size; ++libraryNumber) {
       final libraryName = Benchmarks.libraryName(

@@ -29,6 +29,32 @@ class Workspace {
     file.writeAsStringSync(source);
   }
 
+  void writeWebEntrypoint() {
+    write(
+      'web/index.html',
+      source: '''
+<!DOCTYPE html>
+<html><head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>$name</title>
+    <script defer src="main.dart.js"></script>
+</head><body></body></html>
+''',
+    );
+    write(
+      'web/main.dart',
+      source: '''
+/// ignore_for_file: unused_import
+import 'package:$name/app.dart';
+void main() {
+  print('benchmark app is running');
+}
+''',
+    );
+  }
+
   /// Edits the file at [path] to replace `CACHEBUSTER` with a timestamp.
   ///
   /// Throws `StateError` if the string is not present to replace.

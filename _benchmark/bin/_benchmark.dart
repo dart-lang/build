@@ -58,6 +58,10 @@ final commandRunner =
       ..argParser.addFlag(
         'mostly-no-codegen',
         help: 'Whether to generate mostly source with no codegen.',
+      )
+      ..argParser.addFlag(
+        'web',
+        help: 'Whether to add web compiler builders and entrypoint.',
       );
 
 Future<void> main(List<String> arguments) async {

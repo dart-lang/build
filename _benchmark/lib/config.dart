@@ -20,6 +20,7 @@ class Config {
   final List<int> sizes;
   final bool allowFailures;
   bool mostlyNoCodegen;
+  bool web;
 
   Config({
     required this.allowFailures,
@@ -30,6 +31,7 @@ class Config {
     required this.sizes,
     required this.shapes,
     required this.mostlyNoCodegen,
+    required this.web,
   });
 
   factory Config.fromArgResults(ArgResults argResults) => Config(
@@ -52,6 +54,7 @@ class Config {
             ? Shape.values
             : [Shape.values.singleWhere((e) => e.name == argResults['shape'])],
     mostlyNoCodegen: argResults['mostly-no-codegen'] as bool,
+    web: argResults['web'] as bool,
   );
 }
 
