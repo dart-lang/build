@@ -16,6 +16,7 @@ import '../../bootstrap/build_process_state.dart';
 import '../../logging/build_log.dart';
 import '../asset_graph/graph.dart';
 import '../build_step_impl.dart';
+import '../library_cycle_graph/phased_asset_deps.dart';
 import 'analysis_driver.dart';
 import 'analysis_driver_model.dart';
 import 'build_resolver.dart';
@@ -28,10 +29,6 @@ import 'sdk_summary.dart';
 /// build step. These provide access to a single underlying [BuildResolver]
 /// which has one analysis driver and manages it via one [AnalysisDriverModel].
 class ResolversImpl implements Resolvers {
-  static final ResolversImpl sharedInstance = ResolversImpl._(
-    analysisDriverModel: AnalysisDriverModel.sharedInstance,
-  );
-
   /// Guards initialization of this class.
   final _initializationPool = Pool(1);
 
@@ -47,7 +44,7 @@ class ResolversImpl implements Resolvers {
   /// Specifies the language version for each package during analysis.
   PackageConfig? _packageConfig;
 
-  /// Creates a separate resolvers instance to [sharedInstance].
+  /// Creates a new resolvers instance.
   ///
   /// Specify [packageConfig] to override package language versions for
   /// analysis. Otherwise, it will be created from
@@ -58,12 +55,12 @@ class ResolversImpl implements Resolvers {
   factory ResolversImpl.custom({
     PackageConfig? packageConfig,
     AnalysisDriverModel? analysisDriverModel,
-  }) => ResolversImpl._(
+  }) => ResolversImpl(
     packageConfig: packageConfig,
     analysisDriverModel: analysisDriverModel ?? AnalysisDriverModel(),
   );
 
-  ResolversImpl._({
+  ResolversImpl({
     PackageConfig? packageConfig,
     required AnalysisDriverModel analysisDriverModel,
   }) : _packageConfig = packageConfig,
@@ -94,13 +91,28 @@ class ResolversImpl implements Resolvers {
     return BuildStepResolver(_buildResolver!, buildStep as BuildStepImpl);
   }
 
-  void startBuild(AssetGraph assetGraph) {
-    _analysisDriverModel.startBuild(assetGraph);
-  }
+  /// Start a build with [assetGraph].
+  ///
+  /// If another build has the lock, waits for it to finish.
+  ///
+  /// The lock is released on [reset].
+  ///
+  /// TODO(davidmorgan): taking the lock is not enforced because `Resolvers` is
+  /// a public API that does not support locking and `ResolversImpl` is private
+  /// implementation that needs locking. Find a way to do better. Fortunately,
+  /// only two codepaths need to care about the lock: the main build in
+  /// `build.dart` and test builds in `package:build_test` `test_builder.dart`.
+  Future<void> takeLockAndStartBuild(AssetGraph assetGraph) =>
+      _analysisDriverModel.takeLockAndStartBuild(assetGraph);
 
+  PhasedAssetDeps phasedAssetDeps() => _analysisDriverModel.phasedAssetDeps();
+
+  /// Frees the lock taken by [takeLockAndStartBuild].
+  ///
+  /// Or if none was taken, does nothing.
   @override
   void reset() {
-    _analysisDriverModel.finishBuild();
+    _analysisDriverModel.endBuildAndUnlock();
   }
 }
 

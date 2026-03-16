@@ -6,9 +6,6 @@ import 'dart:async';
 import 'dart:isolate';
 
 import 'package:build/build.dart';
-import 'package:build/experiments.dart';
-// ignore: implementation_imports
-import 'package:build_runner/src/internal.dart';
 import 'package:glob/glob.dart';
 import 'package:package_config/package_config.dart';
 
@@ -202,13 +199,6 @@ Future<T> _resolveAssets<T>(
       }
     }
   }
-
-  // Use the default resolver if no experiments are enabled. This is much
-  // faster.
-  resolvers ??=
-      packageConfig == null && enabledExperiments.isEmpty
-          ? ResolversImpl.sharedInstance
-          : ResolversImpl.custom(packageConfig: resolvedConfig);
 
   await testBuilder(
     resolveBuilder,

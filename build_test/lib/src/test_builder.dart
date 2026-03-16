@@ -380,7 +380,7 @@ Future<TestBuilderResult> testBuilderFactories(
   });
   resolvers ??=
       packageConfig == null && enabledExperiments.isEmpty
-          ? ResolversImpl.sharedInstance
+          ? _defaultResolvers
           : ResolversImpl.custom(packageConfig: packageConfig);
 
   // Build a `buildPackages` based on [sourceAssets].
@@ -623,3 +623,11 @@ String _firstNameNotIn(String name, Set<String> existingNames) {
     ++i;
   }
 }
+
+/// The default resolvers for tests.
+///
+/// Different from the default resolvers for real builds so that a real build
+/// can run `testBuilders`.
+final _defaultResolvers = ResolversImpl.custom(
+  analysisDriverModel: AnalysisDriverModel(),
+);

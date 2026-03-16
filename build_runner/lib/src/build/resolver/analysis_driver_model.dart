@@ -7,6 +7,7 @@ import 'dart:async';
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:build/build.dart';
+import 'package:pool/pool.dart';
 
 import '../../logging/timed_activities.dart';
 import '../asset_graph/graph.dart';
@@ -29,8 +30,8 @@ import 'analysis_driver_filesystem.dart';
 ///   build.
 /// - Notifies the analyzer of changes to that in-memory filesystem.
 class AnalysisDriverModel {
-  /// The instance used by the shared `AnalyzerResolvers` instance.
-  static AnalysisDriverModel sharedInstance = AnalysisDriverModel();
+  final _pool = Pool(1);
+  PoolResource? _lock;
 
   /// In-memory filesystem for the analyzer.
   final AnalysisDriverFilesystem filesystem = AnalysisDriverFilesystem();
@@ -42,14 +43,22 @@ class AnalysisDriverModel {
   /// [filesystem].
   final Set<LibraryCycleGraph> _syncedLibraryCycleGraphs = Set.identity();
 
-  void startBuild(AssetGraph assetGraph) {
+  /// Starts a build with [assetGraph].
+  ///
+  /// If another build has the lock, waits for it to finish.
+  Future<void> takeLockAndStartBuild(AssetGraph assetGraph) async {
+    _lock = await _pool.request();
     filesystem.startBuild(assetGraph.outputs.map((id) => assetGraph.get(id)!));
   }
 
-  /// Clear cached information specific to an individual build.
-  void finishBuild() {
+  /// Clears build state and frees the lock taken by [takeLockAndStartBuild].
+  ///
+  /// If no lock was taken, just clears build state.
+  void endBuildAndUnlock() {
     _graphLoader.clear();
     _syncedLibraryCycleGraphs.clear();
+    _lock?.release();
+    _lock = null;
   }
 
   /// Serializable data from which the library cycle graphs can be
