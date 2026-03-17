@@ -1,15 +1,11 @@
-## 2.12.3-wip
+## 2.13.0
 
-- Improve management of files for analysis for faster initial builds and
-  incremental builds of large projects: 8% faster on the 1000 file "random"
-  benchmark, 30% faster on the 5000 file "random" benchmark.
-- Reuse computation of syntax errors for faster initial builds and incremental
-  builds: 25% faster incremental build of the 5000 file "random" benchmark.
-- Avoid throwing and catching an exception during analysis of files that don't
-  exist yet, for a small (2%) performance improvement.
-- Copy asset graph without a serialization round trip for a 5% performance
-  improvement.
-- Reuse trigger configuration digest for a small (0.5%) performance improvement.
+- Performance: speedup of between 1.4x for small initial builds to 4x for large
+  incremental builds. See https://github.com/dart-lang/build/pull/4405 for full
+  benchmark results. Optimizations included: faster management of files for
+  analysis, re-use syntax errors computation, avoid a throw/catch on "not yet
+  generated" source, copy asset graph without a serialization round trip,
+  re-use trigger configuration digest.
 - Add `--dart-aot-perf` flag for profiling on Linux. Use it with `--force-aot`.
   It runs the builders under the `perf` profiling tool which writes to
   `perf.data`.
