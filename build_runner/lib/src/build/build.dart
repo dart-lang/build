@@ -36,6 +36,7 @@ import 'input_tracker.dart';
 import 'library_cycle_graph/asset_deps_loader.dart';
 import 'library_cycle_graph/library_cycle_graph.dart';
 import 'library_cycle_graph/library_cycle_graph_loader.dart';
+import 'library_cycle_graph/phased_asset_deps.dart';
 import 'performance_tracker.dart';
 import 'performance_tracking_resolvers.dart';
 import 'resolver/analysis_driver_model.dart';
@@ -43,6 +44,10 @@ import 'resolver/resolvers_impl.dart';
 import 'run_builder.dart';
 import 'run_post_process_builder.dart';
 import 'single_step_reader_writer.dart';
+
+final ResolversImpl _defaultResolvers = ResolversImpl(
+  analysisDriverModel: AnalysisDriverModel(),
+);
 
 /// A single build.
 class Build {
@@ -130,10 +135,9 @@ class Build {
            assetGraph.previousPhasedAssetDeps == null
                ? null
                : AssetDepsLoader.fromDeps(assetGraph.previousPhasedAssetDeps!),
-       resolvers =
-           buildPlan.testingOverrides.resolvers ?? ResolversImpl.sharedInstance,
+       resolvers = buildPlan.testingOverrides.resolvers ?? _defaultResolvers,
        resolversImpl = switch (buildPlan.testingOverrides.resolvers ??
-           ResolversImpl.sharedInstance) {
+           _defaultResolvers) {
          ResolversImpl r => r,
          _ => null,
        };
@@ -248,8 +252,7 @@ class Build {
         if (!assetGraph.cleanBuild) {
           await _updateAssetGraph(updates);
         }
-        resolversImpl?.startBuild(assetGraph);
-
+        await resolversImpl?.takeLockAndStartBuild(assetGraph);
         final result = await _runPhases();
 
         assetGraph.previousBuildTriggersDigest =
@@ -257,11 +260,13 @@ class Build {
         // Combine previous phased asset deps, if any, with the newly loaded
         // deps. Because of skipped builds, the newly loaded deps might just
         // say "not generated yet", in which case the old value is retained.
+        final currentPhasedAssetDeps =
+            resolversImpl?.phasedAssetDeps() ?? PhasedAssetDeps();
         final updatedPhasedAssetDeps =
             assetGraph.previousPhasedAssetDeps == null
-                ? AnalysisDriverModel.sharedInstance.phasedAssetDeps()
+                ? currentPhasedAssetDeps
                 : assetGraph.previousPhasedAssetDeps!.update(
-                  AnalysisDriverModel.sharedInstance.phasedAssetDeps(),
+                  currentPhasedAssetDeps,
                 );
         assetGraph.previousPhasedAssetDeps = updatedPhasedAssetDeps;
         await readerWriter.writeAsBytes(

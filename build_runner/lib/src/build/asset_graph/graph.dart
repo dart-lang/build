@@ -99,6 +99,11 @@ class AssetGraph implements GeneratedAssetHider {
       _nodes = Nodes(),
       _postProcessBuildStepOutputs = {};
 
+  /// An empty asset graph.
+  @visibleForTesting
+  AssetGraph.emptyForTesting()
+    : this._(null, BuildPhases([]), '', BuiltMap(), BuiltList());
+
   AssetGraph._fromSerialized(
     this.kernelDigest,
     this.buildPhasesDigest,

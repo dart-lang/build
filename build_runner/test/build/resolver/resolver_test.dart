@@ -11,6 +11,7 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
+import 'package:build_runner/src/build/asset_graph/graph.dart';
 import 'package:build_runner/src/build/resolver/analysis_driver.dart';
 import 'package:build_runner/src/build/resolver/analysis_driver_model.dart';
 import 'package:build_runner/src/build/resolver/resolvers_impl.dart';
@@ -1102,7 +1103,7 @@ int? get x => 1;
     final readerWriter = InternalTestReaderWriter();
 
     readerWriter.testing.writeString(makeAssetId('a|lib/a.dart'), '');
-    await runBuilder(
+    await _runBuilder(
       builder,
       [makeAssetId('a|lib/a.dart')],
       SingleStepReaderWriter.fakeFor(readerWriter),
@@ -1110,7 +1111,7 @@ int? get x => 1;
     );
 
     readerWriter.testing.writeString(makeAssetId('a|lib/b.dart'), '');
-    await runBuilder(
+    await _runBuilder(
       builder,
       [makeAssetId('a|lib/b.dart')],
       SingleStepReaderWriter.fakeFor(readerWriter),
@@ -1179,14 +1180,14 @@ int? get x => 1;
       },
     );
     final resolvers = createResolvers();
-    await runBuilder(
+    await _runBuilder(
       builder,
       [input],
       SingleStepReaderWriter.fakeFor(readerWriter),
       resolvers,
     );
 
-    await runBuilder(
+    await _runBuilder(
       builder,
       [input.changeExtension('.a.dart')],
       SingleStepReaderWriter.fakeFor(readerWriter),
@@ -1213,7 +1214,7 @@ int? get x => 1;
       }),
     );
     final resolvers = createResolvers();
-    await runBuilder(
+    await _runBuilder(
       builder,
       [input],
       SingleStepReaderWriter.fakeFor(readerWriter),
@@ -1242,7 +1243,7 @@ int? get x => 1;
         }),
       );
       final resolvers = createResolvers();
-      await runBuilder(
+      await _runBuilder(
         builder,
         [input],
         SingleStepReaderWriter.fakeFor(readerWriter),
@@ -1334,6 +1335,41 @@ int? get x => 1;
       });
     });
   });
+
+  group('simultaneous build resolves', () {
+    test('succeed', () async {
+      final futures = <Future<void>>[];
+      for (var i = 0; i != 10; ++i) {
+        futures.add(
+          resolveSources(
+            {'a|web/main.dart': ' main() { /* $i */}'},
+            (resolver) async {
+              // await Future<void>.delayed(Duration(milliseconds: i * 100));
+              await resolver.compilationUnitFor(entryPoint);
+            },
+            resolvers: createResolvers(),
+          ),
+        );
+      }
+      await Future.wait(futures);
+    });
+  });
+}
+
+// Calls `runBuilder` after getting the resolvers lock.
+Future<void> _runBuilder(
+  TestBuilder builder,
+  List<AssetId> list,
+  SingleStepReaderWriter singleStepReaderWriter,
+  Resolvers resolvers,
+) async {
+  final resolversImpl = switch (resolvers) {
+    final ResolversImpl r => r,
+    _ => null,
+  };
+  await resolversImpl?.takeLockAndStartBuild(AssetGraph.emptyForTesting());
+  await runBuilder(builder, list, singleStepReaderWriter, resolvers);
+  resolversImpl?.reset();
 }
 
 final _skipOnPreRelease =
