@@ -1,3 +1,7 @@
+## 5.1.10
+
+- Allow `analyzer` 11.0.0 and 12.0.0.
+
 ## 5.1.9
 
 - Emit build errors for bad conditional imports.

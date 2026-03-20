@@ -1,3 +1,7 @@
+## 2.13.1
+
+- Allow `analyzer` 11.0.0 and 12.0.0.
+
 ## 2.13.0
 
 - Performance: speedup of between 1.4x for small initial builds to 4x for large

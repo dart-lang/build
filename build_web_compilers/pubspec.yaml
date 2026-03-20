@@ -1,5 +1,5 @@
 name: build_web_compilers
-version: 4.4.15
+version: 4.4.16
 description: Builder implementations wrapping the dart2js and DDC compilers.
 repository: https://github.com/dart-lang/build/tree/master/build_web_compilers
 resolution: workspace
@@ -8,7 +8,7 @@ environment:
   sdk: '>=3.7.0 <3.12.0-z'
 
 dependencies:
-  analyzer: '>=5.1.0 <11.0.0'
+  analyzer: '>=5.1.0 <13.0.0'
   archive: '>=3.0.0 <5.0.0'
   bazel_worker: ^1.0.0
   build: '>=2.0.0 <5.0.0'
