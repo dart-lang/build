@@ -86,6 +86,16 @@ void main() {
       ]);
     });
 
+    test('removes OSC 8 hyperlink control sequences', () {
+      final text =
+          [
+            AnsiBuffer.openHyperlink(Uri.parse('file:///tmp/example.dart')),
+            'example.dart',
+            AnsiBuffer.closeHyperlink,
+          ].join();
+      expect(AnsiBuffer.removeAnsi(text), 'example.dart');
+    });
+
     test('wraps at previous item whitespace and pads to 80 cols', () {
       final buffer = AnsiBuffer();
       buffer.writeLine(['01234 6789', '0123456789' * 8]);

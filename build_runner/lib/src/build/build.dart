@@ -346,7 +346,10 @@ class Build {
         }
       }
 
-      buildLog.startPhases(primaryInputCountsByPhase);
+      buildLog.startPhases(
+        primaryInputCountsByPhase,
+        buildPackages: buildPackages,
+      );
 
       // Main build phases.
       for (
@@ -746,7 +749,10 @@ class Build {
       nodeBuilder.deletedBy.remove(postProcessBuildStepId);
     });
 
-    final logger = buildLog.loggerForOther(buildLog.renderId(input));
+    final logger = buildLog.loggerForOther(
+      buildLog.renderId(input),
+      contextId: input,
+    );
     final outputs = <AssetId>{};
     await runPostProcessBuilder(
       builder,

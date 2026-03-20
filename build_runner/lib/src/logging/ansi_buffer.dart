@@ -15,8 +15,25 @@ class AnsiBuffer {
   static const reset = '\x1B[0m';
   static const bold = '\x1B[1m';
   static const boldRed = '\x1B[1;31m';
+  static const _hyperlinkPrefix = '\x1B]8;;';
+  static const _hyperlinkTerminator = '\x1B\\';
+  static final RegExp _hyperlinkPattern = RegExp(
+    '${RegExp.escape(_hyperlinkPrefix)}'
+    r'[^\x1B]*'
+    '${RegExp.escape(_hyperlinkTerminator)}',
+  );
   static const _nbspCodeUnit = 0xA0;
   static const _spaceCodeUnit = 32;
+
+  static String openHyperlink(Uri uri) =>
+      '$_hyperlinkPrefix$uri$_hyperlinkTerminator';
+
+  static bool isHyperlink(String item) {
+    final match = _hyperlinkPattern.matchAsPrefix(item);
+    return match != null && match.end == item.length;
+  }
+
+  static const String closeHyperlink = '$_hyperlinkPrefix$_hyperlinkTerminator';
 
   /// The text added to the buffer, wrapped to [width].
   final List<String> lines = [];
@@ -130,8 +147,11 @@ class AnsiBuffer {
   }
 
   /// Removes all ANSI constants from [string], for testing.
-  static String removeAnsi(String string) =>
-      string.replaceAll(reset, '').replaceAll(bold, '').replaceAll(boldRed, '');
+  static String removeAnsi(String string) => string
+      .replaceAll(_hyperlinkPattern, '')
+      .replaceAll(reset, '')
+      .replaceAll(bold, '')
+      .replaceAll(boldRed, '');
 }
 
 /// A line for writing to an [AnsiBuffer].
@@ -173,7 +193,8 @@ class AnsiBufferLine {
 bool _isAnsi(String item) =>
     item == AnsiBuffer.reset ||
     item == AnsiBuffer.bold ||
-    item == AnsiBuffer.boldRed;
+    item == AnsiBuffer.boldRed ||
+    AnsiBuffer.isHyperlink(item);
 
 bool get _showingAnsi =>
     buildLog.configuration.forceAnsiConsoleForTesting ??

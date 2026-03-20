@@ -1,3 +1,7 @@
+## 2.14.0-wip
+
+- Add OSC 8 hyperlinks for logged input paths.
+
 ## 2.13.0
 
 - Performance: speedup of between 1.4x for small initial builds to 4x for large

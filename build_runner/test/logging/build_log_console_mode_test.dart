@@ -4,6 +4,8 @@
 
 import 'package:build/build.dart';
 import 'package:build_runner/src/bootstrap/build_process_state.dart';
+import 'package:build_runner/src/build_plan/build_package.dart';
+import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/phase.dart';
 import 'package:build_runner/src/logging/ansi_buffer.dart';
 import 'package:build_runner/src/logging/build_log.dart';
@@ -23,6 +25,8 @@ void main() {
 
     List<String> render() =>
         buildLog.render().lines.map(AnsiBuffer.removeAnsi).toList();
+
+    List<String> renderRaw() => buildLog.render().lines;
 
     test('initial display', () {
       expect(render(), <String>[]);
@@ -262,6 +266,66 @@ E An error.'''),
       );
     });
 
+    test('adds OSC 8 hyperlinks to phase progress paths', () {
+      final buildPackages = _testBuildPackages('build_runner');
+      buildLog.configuration = buildLog.configuration.rebuild((b) {
+        b.singleOutputPackage = 'build_runner';
+      });
+
+      final phases = _createPhases({'builder1': 1});
+      buildLog.startPhases(phases, buildPackages: buildPackages);
+      final assetId = AssetId('build_runner', 'lib/src/logging/build_log.dart');
+      buildLog.startStep(
+        phase: phases.keys.first,
+        primaryInput: assetId,
+        lazy: false,
+      );
+
+      final rawLine = renderRaw().single;
+      final targetUri = _packageFileUri(buildPackages, assetId);
+      final linkedText =
+          [
+            AnsiBuffer.openHyperlink(targetUri),
+            'lib/src/logging/build_log.dart',
+            AnsiBuffer.closeHyperlink,
+          ].join();
+
+      expect(rawLine, contains(linkedText));
+      expect(render().single, contains('lib/src/logging/build_log.dart'));
+    });
+
+    test('adds OSC 8 hyperlinks to builder log context paths', () {
+      final buildPackages = _testBuildPackages('build_runner');
+      buildLog.configuration = buildLog.configuration.rebuild((b) {
+        b.singleOutputPackage = 'build_runner';
+      });
+      buildLog.startPhases(<InBuildPhase, int>{}, buildPackages: buildPackages);
+      final assetId = AssetId('build_runner', 'lib/src/logging/build_log.dart');
+
+      buildLog.fromBuildLogLogger(
+        'An error.',
+        severity: Severity.error,
+        phaseName: 'builder1',
+        context: 'lib/src/logging/build_log.dart',
+        contextId: assetId,
+      );
+
+      final rawLine = renderRaw().first;
+      final targetUri = _packageFileUri(buildPackages, assetId);
+      final linkedText =
+          [
+            AnsiBuffer.openHyperlink(targetUri),
+            'lib/src/logging/build_log.dart',
+            AnsiBuffer.closeHyperlink,
+          ].join();
+
+      expect(rawLine, contains(linkedText));
+      expect(
+        render().first,
+        contains('lib/src/logging/build_log.dart builder1'),
+      );
+    });
+
     test('complete build with builder log output', () {
       final phases = _createPhases({'builder1': 1, 'builder2': 1});
       buildLog.startPhases(phases);
@@ -353,3 +417,11 @@ class _TestPhase implements InBuildPhase {
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
+
+BuildPackages _testBuildPackages(String packageName) =>
+    BuildPackages.singlePackageBuild(packageName, [
+      BuildPackage.forTesting(name: packageName, isOutput: true),
+    ]);
+
+Uri _packageFileUri(BuildPackages buildPackages, AssetId assetId) =>
+    Uri.file(buildPackages.pathFor(assetId, hide: false));

@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+import 'package:build/build.dart' show AssetId;
 // ignore: implementation_imports
 import 'package:build/src/logging.dart';
 import 'package:logging/logging.dart';
@@ -28,11 +29,12 @@ import 'build_log_messages.dart';
 class BuildLogLogger implements Logger {
   final String? phaseName;
   final String? context;
+  final AssetId? contextId;
 
   /// The errors logged to this logger.
   final List<String> errors = [];
 
-  BuildLogLogger({this.phaseName, this.context});
+  BuildLogLogger({this.phaseName, this.context, this.contextId});
 
   /// Runs [fn] in an error handling [Zone].
   ///
@@ -120,6 +122,7 @@ class BuildLogLogger implements Logger {
       severity: Severity.fromLogLevel(logLevel),
       phaseName: phaseName,
       context: context,
+      contextId: contextId,
       renderedMessage,
     );
   }
