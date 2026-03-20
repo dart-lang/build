@@ -11,6 +11,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:path/path.dart' as p;
 
 import '../bootstrap/build_process_state.dart';
+import '../build_plan/build_packages.dart';
 import '../build_plan/phase.dart';
 import 'ansi_buffer.dart';
 import 'build_log_configuration.dart';
@@ -104,6 +105,8 @@ class BuildLog {
   /// For `watch` and `serve` modes, the build number.
   int _buildNumber = 1;
 
+  BuildPackages? buildPackages;
+
   BuildLog._() {
     // Sync configuration between spawned isolates and the host.
     buildProcessState.doBeforeSend(() {
@@ -161,12 +164,13 @@ class BuildLog {
   }) => BuildLogLogger(
     phaseName: phase.name(lazy: lazy),
     context: renderId(primaryInput),
+    contextId: primaryInput,
   );
 
   /// Creates a logger that logs to the [BuildLog] for work other than building
   /// described by [context].
-  BuildLogLogger loggerForOther(String context) =>
-      BuildLogLogger(context: context);
+  BuildLogLogger loggerForOther(String context, {AssetId? contextId}) =>
+      BuildLogLogger(context: context, contextId: contextId);
 
   /// Logs a `build_runner` info.
   void info(String message) {
@@ -205,6 +209,7 @@ class BuildLog {
     required Severity severity,
     String? phaseName,
     String? context,
+    AssetId? contextId,
   }) {
     if (severity == Severity.error) _errors.add(message);
     if (_display.displayingBlocks) {
@@ -212,15 +217,23 @@ class BuildLog {
         severity: severity,
         phaseName: phaseName,
         context: context,
+        contextId: contextId,
         message,
       );
       _display.block(render());
     } else {
+      final renderedContext =
+          context == null
+              ? null
+              : AnsiBufferLine(
+                renderLinkedContext(context, contextId: contextId),
+              ).toString();
       _display.message(
         severity,
         [
           if (phaseName != null) '$phaseName ',
-          if (phaseName != null && context != null) 'on $context:',
+          if (phaseName != null && renderedContext != null)
+            'on $renderedContext:',
           if (phaseName != null) '\n',
           message,
         ].join(''),
@@ -298,8 +311,12 @@ class BuildLog {
 
   /// Sets up logging of build phases with the number of primary inputs matching
   /// for each required phase.
-  void startPhases(Map<InBuildPhase, int> primaryInputCountsByPhase) {
+  void startPhases(
+    Map<InBuildPhase, int> primaryInputCountsByPhase, {
+    BuildPackages? buildPackages,
+  }) {
     _phaseProgress.clear();
+    this.buildPackages = buildPackages;
     for (final entry in primaryInputCountsByPhase.entries) {
       final phase = entry.key;
       final primaryInputCount = entry.value;
@@ -450,6 +467,7 @@ class BuildLog {
     _processDuration = Duration.zero;
     _jitCompileProgress = null;
     _aotCompileProgress = null;
+    buildPackages = null;
 
     final errors = _errors.build();
     _errors.clear();
@@ -502,6 +520,20 @@ class BuildLog {
       return id.toString();
     }
   }
+
+  List<String> renderLinkedId(AssetId id) {
+    final renderedId = renderId(id);
+    final target = _targetUriForAssetId(id);
+    if (target == null) return [renderedId];
+    return [
+      AnsiBuffer.openHyperlink(target),
+      renderedId,
+      AnsiBuffer.closeHyperlink,
+    ];
+  }
+
+  List<String> renderLinkedContext(String context, {AssetId? contextId}) =>
+      contextId == null ? [context] : renderLinkedId(contextId);
 
   /// Records time spent since the previous [_tick].
   void _tick() {
@@ -625,7 +657,7 @@ class BuildLog {
       if (progress.nextInput != null) ...[
         '; ',
         AnsiBuffer.bold,
-        renderId(progress.nextInput!),
+        ...renderLinkedId(progress.nextInput!),
         AnsiBuffer.reset,
       ],
     ]);
@@ -658,6 +690,15 @@ class BuildLog {
       'feedback. Consider adding your own feedback at: '
       'https://github.com/dart-lang/build/discussions/4349',
     );
+  }
+
+  Uri? _targetUriForAssetId(AssetId id) {
+    try {
+      final path = buildPackages?.pathFor(id, hide: false);
+      return path == null ? null : Uri.file(path);
+    } on Exception {
+      return null;
+    }
   }
 }
 
