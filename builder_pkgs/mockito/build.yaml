@@ -1,0 +1,29 @@
+targets:
+  $default:
+    builders:
+      mockito|mockBuilder:
+        generate_for:
+          - example/**.dart
+          - test/end2end/*.dart
+        options:
+          # build_extensions takes a source pattern and if it matches it will transform the output
+          # to your desired path. The default behaviour is to the .mocks.dart file to be in the same
+          # directory as the source .dart file. As seen below this is customizable, but the generated
+          # file must always end in `.mocks.dart`.
+          #
+          # If you specify custom build_extensions you MUST ensure that they cover all input files
+          build_extensions:
+            '^example/build_extensions/{{}}.dart' : 'example/build_extensions/mocks/{{}}.mocks.dart'
+            '^example/example.dart' : 'example/example.mocks.dart'
+            '^example/iss/{{}}.dart' : 'example/iss/{{}}.mocks.dart'
+            '^test/end2end/{{}}.dart' : 'test/end2end/{{}}.mocks.dart'
+
+builders:
+  mockBuilder:
+    import: "package:mockito/src/builder.dart"
+    builder_factories: ["buildMocks"]
+    build_extensions: {".dart": [".mocks.dart"]}
+    build_to: source
+    auto_apply: dependents
+    defaults:
+      generate_for: ['test/**']
