@@ -17,6 +17,7 @@ import 'package:build/build.dart';
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:pool/pool.dart';
 
+import '../../logging/build_log.dart';
 import '../../logging/timed_activities.dart';
 import '../input_tracker.dart';
 import '../library_cycle_graph/phased_reader.dart';
@@ -217,7 +218,10 @@ class BuildResolver {
     required bool transitive,
   }) => _analysisDriverModel.updateDriver(
     withDriver:
-        (withDriver) => _driverPool.withResource(() => withDriver(_driver)),
+        (withDriver) => _driverPool.withResource(
+          () => withDriver(_driver),
+          swapRequirements: true,
+        ),
     phasedReader: phasedReader,
     inputTracker: inputTracker,
     entrypoint: entrypoint,
@@ -231,12 +235,25 @@ class AnalyzeActivityPool {
 
   AnalyzeActivityPool(this.pool);
 
-  Future<T> withResource<T>(Future<T> Function() function) async {
+  Future<T> withResource<T>(
+    Future<T> Function() function, {
+    bool swapRequirements = false,
+  }) async {
     return pool.withResource(
       () => TimedActivity.analyze.runAsync(() async {
         final requirements = globalResultRequirements;
+        final startedNull = globalResultRequirements == null;
+        if (swapRequirements) globalResultRequirements = null;
         final result = await function();
+        /*if (swapRequirements)*/
         globalResultRequirements = requirements;
+        final endedNull = globalResultRequirements == null;
+
+        if (startedNull != endedNull) {
+          buildLog.debug(
+            'started/ended $startedNull $endedNull ${StackTrace.current}',
+          );
+        }
         return result;
       }),
     );

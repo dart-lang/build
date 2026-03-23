@@ -555,30 +555,6 @@ class Build {
     }
   }
 
-  void logRequirements(
-    PrimaryInputAndPhase primaryInputAndPhase,
-    RequirementsManifest requirements,
-  ) {
-    if (resolversImpl == null) return;
-    final requirementFailure = requirements.isSatisfied(
-      elementFactory: resolversImpl!.elementFactory,
-      performance: OperationPerformanceImpl(''),
-    );
-
-    buildLog.debug('''
-??? $primaryInputAndPhase
-$requirementFailure
-''');
-    if (requirementFailure is OpaqueApiUseFailure) {
-      for (final use in requirementFailure.uses) {
-        buildLog.debug(use.targetElementLibraryUri.toString());
-        buildLog.debug(use.targetRuntimeType.toString());
-        buildLog.debug(use.methodName.toString());
-        buildLog.debug(use.targetElementName.toString());
-      }
-    }
-  }
-
   /// Runs the builder for [primaryInput] at [phase].
   ///
   /// If outputs are already valid or are optional and not used, does nothing.
@@ -663,14 +639,8 @@ $requirementFailure
           primaryInput,
           phaseNumber,
         );
-        if (resolversImpl != null) {
-          final previousRequirements =
-              _previousRequirements[primaryInputAndPhase];
-          if (previousRequirements != null) {
-            logRequirements(primaryInputAndPhase, previousRequirements);
-          }
-          globalResultRequirements = RequirementsManifest();
-        }
+
+        globalResultRequirements = RequirementsManifest();
 
         await TimedActivity.build.runAsync(
           () => tracker.trackStage('Build', () {
@@ -691,16 +661,6 @@ $requirementFailure
         );
 
         final requirements = globalResultRequirements!;
-        logRequirements(primaryInputAndPhase, requirements);
-        final requirementsLibraries = (requirements.libraries.keys
-                .map((u) => u.toString())
-                .toList()
-              ..sort())
-            .join('\n');
-        buildLog.debug('''
-=== $primaryInputAndPhase
-$requirementsLibraries
-''');
         _previousRequirements[primaryInputAndPhase] = requirements;
         globalResultRequirements = null;
       }
@@ -1045,6 +1005,8 @@ $requirementsLibraries
 
       if (firstOutputState.result == null) return true;
 
+      buildLog.debug('Reached this point for $primaryInput');
+
       // Check for changes to any inputs.
       final inputs = firstOutputState.inputs;
       for (final input in inputs) {
@@ -1053,7 +1015,10 @@ $requirementsLibraries
           input: input,
         );
 
-        if (changed) return true;
+        if (changed) {
+          buildLog.debug('Input changed $input');
+          return true;
+        }
       }
 
       for (final graphId in firstOutputState.resolverEntrypoints) {
@@ -1061,6 +1026,19 @@ $requirementsLibraries
           phaseNumber: phaseNumber,
           entrypointId: graphId,
         )) {
+          buildLog.debug('Transitive change for $graphId, $phaseNumber');
+          // Check if anything actually changed.
+          final requirements =
+              _previousRequirements[PrimaryInputAndPhase(graphId, phaseNumber)];
+          if (requirements != null) {
+            final check = requirements.isSatisfied(
+              elementFactory: resolversImpl!.elementFactory,
+              performance: OperationPerformanceImpl(''),
+            );
+            buildLog.debug(
+              'Check requirements for $graphId, $phaseNumber: $check',
+            );
+          }
           return true;
         }
       }

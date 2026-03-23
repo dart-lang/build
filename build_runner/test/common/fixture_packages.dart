@@ -196,4 +196,51 @@ class TestPostProcessBuilder implements PostProcessBuilder {
 ''',
     },
   );
+
+  /// Does analysis.
+  static FixturePackage analyzingBuilder({
+    String packageName = 'builder_pkg',
+  }) => FixturePackage(
+    name: packageName,
+    dependencies: ['build', 'build_runner'],
+    files: {
+      'build.yaml': '''
+builders:
+  test_builder:
+    import: 'package:$packageName/builder.dart'
+    builder_factories: ['testBuilderFactory']
+    build_extensions: {'.dart': ['.txt']}
+    auto_apply: root_package
+    build_to: source
+''',
+      'lib/builder.dart': '''
+import 'package:build/build.dart';
+
+Builder testBuilderFactory(BuilderOptions options) => TestBuilder();
+
+class TestBuilder implements Builder {
+  @override
+  Map<String, List<String>> get buildExtensions
+      => {'.dart': ['.txt']};
+
+  @override
+  Future<void> build(BuildStep buildStep) async {
+    final resolver = buildStep.resolver;
+    final buffer = StringBuffer();
+    final library = await resolver.libraryFor(buildStep.inputId);
+    for (final clazz in library.classes) {
+      buffer.writeln(clazz.name);
+      for (final supertype in clazz.allSupertypes) {
+        buffer.writeln('  \${supertype.getDisplayString()}');
+      }
+    }
+    await buildStep.writeAsString(
+        buildStep.inputId.changeExtension('.txt'),
+        buffer.toString(),
+    );
+  }
+}
+''',
+    },
+  );
 }

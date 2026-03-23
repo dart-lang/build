@@ -225,7 +225,7 @@ class SingleStepReaderWriter implements PhasedReader {
   }
 
   Future<Digest> digest(AssetId id, {bool track = true}) async {
-    final isReadable = await _isReadable(id, track: track);
+    final isReadable = await _isReadable(id, track: false);
 
     if (!isReadable) {
       throw AssetNotFoundException(id);

@@ -157,6 +157,11 @@ class BuildStepResolver implements ReleasableResolver {
     }
   });
 
+  Future<void> updateDriverForEntrypoint(
+    AssetId entrypoint, {
+    required bool transitive,
+  }) => _updateDriverForEntrypoint(entrypoint, transitive: transitive);
+
   @override
   void release() {}
 

@@ -52,14 +52,15 @@ export 'package:analyzer/src/generated/source.dart' show UriResolver;
 /// than parsing `package_config.json`.
 AnalysisDriverForPackageBuild createAnalysisDriver({
   required ResourceProvider resourceProvider,
-  required Uint8List sdkSummaryBytes,
+  required Uint8List? sdkSummaryBytes,
   required AnalysisOptions analysisOptions,
   FileContentCache? fileContentCache,
   required List<UriResolver> uriResolvers,
   required Packages packages,
   ByteStore? byteStore,
 }) {
-  var sdkBundle = PackageBundleReader(sdkSummaryBytes);
+  var sdkBundle =
+      sdkSummaryBytes == null ? null : PackageBundleReader(sdkSummaryBytes);
   // var sdk = SummaryBasedDartSdk.forBundle(sdkBundle);
 
   final runningDartSdkPath = p.dirname(p.dirname(Platform.resolvedExecutable));
@@ -71,7 +72,7 @@ AnalysisDriverForPackageBuild createAnalysisDriver({
   var sourceFactory = SourceFactory([DartUriResolver(sdk), ...uriResolvers]);
 
   var dataStore = SummaryDataStore();
-  dataStore.addBundle('', sdkBundle);
+  if (sdkBundle != null) dataStore.addBundle('', sdkBundle);
 
   var logger = PerformanceLog(null);
   byteStore ??= MemoryByteStore();
@@ -140,8 +141,12 @@ class AnalysisDriverForPackageBuild {
 
   /// Return a [Future] that completes after pending file changes are applied,
   /// so that [currentSession] can be used to compute results.
-  Future<void> applyPendingFileChanges() {
-    return _driver.applyPendingFileChanges();
+  Future<void> applyPendingFileChanges() async {
+    await _driver.applyPendingFileChanges();
+  }
+
+  Future<void> waitForIdle() async {
+    await _driver.scheduler.waitForIdle();
   }
 
   /// The file with the given [path] might have changed - updated, added or

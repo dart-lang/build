@@ -19,7 +19,7 @@ import 'analysis_driver_model.dart';
 AnalysisDriverForPackageBuild analysisDriver(
   AnalysisDriverModel analysisDriverModel,
   AnalysisOptions analysisOptions,
-  String sdkSummaryPath,
+  String? sdkSummaryPath,
   PackageConfig packageConfig,
 ) {
   return createAnalysisDriver(
@@ -30,7 +30,8 @@ AnalysisDriverForPackageBuild analysisDriver(
     ),
     resourceProvider: analysisDriverModel.filesystem,
     fileContentCache: analysisDriverModel.filesystem,
-    sdkSummaryBytes: File(sdkSummaryPath).readAsBytesSync(),
+    sdkSummaryBytes:
+        sdkSummaryPath == null ? null : File(sdkSummaryPath).readAsBytesSync(),
     uriResolvers: [analysisDriverModel.filesystem],
   );
 }
