@@ -1,3 +1,7 @@
+## 2.13.2-wip
+
+- Bug fix: small correctness fix in input tracking.
+
 ## 2.13.1
 
 - Allow `analyzer` 11.0.0 and 12.0.0.
