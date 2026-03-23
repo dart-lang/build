@@ -225,8 +225,8 @@ class SingleStepReaderWriter implements PhasedReader {
     return true;
   }
 
-  Future<Digest> digest(AssetId id) async {
-    final isReadable = await _isReadable(id);
+  Future<Digest> digest(AssetId id, {bool track = true}) async {
+    final isReadable = await _isReadable(id, track: track);
 
     if (!isReadable) {
       throw AssetNotFoundException(id);
@@ -423,7 +423,7 @@ class SingleStepReaderWriter implements PhasedReader {
     }
 
     final content = await readAsString(id, track: false);
-    final hash = base64.encode((await digest(id)).bytes);
+    final hash = base64.encode((await digest(id, track: false)).bytes);
     return BuildRunnerFileContent(id.asPath, true, content, hash);
   }
 }
