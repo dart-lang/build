@@ -1,5 +1,6 @@
-## 5.6.4-wip
+## 5.6.4
 
+* Allow `analyzer` 11.0.0 and 12.0.0.
 * Move to `dart-lang/build` monorepo.
 
 ## 5.6.3
