@@ -67,9 +67,13 @@ for PKG in ${PKGS}; do
         echo 'dart analyze --fatal-infos .'
         dart analyze --fatal-infos . || EXIT_CODE=$?
         ;;
-      command)
+      command_0)
         echo '../tool/leak_check.sh'
         ../tool/leak_check.sh || EXIT_CODE=$?
+        ;;
+      command_1)
+        echo 'dart run build_runner build'
+        dart run build_runner build || EXIT_CODE=$?
         ;;
       format)
         echo 'dart format --output=none --set-exit-if-changed .'

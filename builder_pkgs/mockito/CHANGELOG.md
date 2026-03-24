@@ -1,3 +1,7 @@
+## 5.6.4-wip
+
+* Move to `dart-lang/build` monorepo.
+
 ## 5.6.3
 
 * Allow `analyzer: >=8.1.0 <11.0.0`.
@@ -244,7 +248,7 @@
   return a value for a method with a generic return type. See
   [NULL_SAFETY_README][] for details.
 
-[NULL_SAFETY_README]: https://github.com/dart-lang/mockito/blob/master/NULL_SAFETY_README.md
+[NULL_SAFETY_README]: https://github.com/dart-lang/build/blob/master/builder_pkgs/mockito/NULL_SAFETY_README.md
 
 ## 5.0.8
 
@@ -463,7 +467,7 @@
 * Throw an exception when attempting to stub a method on a Mock object that
   already exists.
 
-[upgrading-to-mockito-3]: https://github.com/dart-lang/mockito/blob/master/upgrading-to-mockito-3.md
+[upgrading-to-mockito-3]: https://github.com/dart-lang/build/blob/master/builder_pkgs/mockito/upgrading-to-mockito-3.md
 [noSuchMethod Forwarding]: https://github.com/dart-lang/sdk/blob/master/docs/language/informal/nosuchmethod-forwarding.md
 
 ## 2.2.0

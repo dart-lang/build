@@ -31,7 +31,7 @@
 /// Custom mocks can be generated with the `customMocks:` named argument. Each
 /// mock is specified with a [MockSpec] object.
 ///
-/// [NULL_SAFETY_README]: https://github.com/dart-lang/mockito/blob/master/NULL_SAFETY_README.md
+/// [NULL_SAFETY_README]: https://github.com/dart-lang/build/blob/master/builder_pkgs/mockito/NULL_SAFETY_README.md
 class GenerateMocks {
   final List<Type> classes;
   final List<MockSpec> customMocks;
@@ -61,7 +61,7 @@ class GenerateMocks {
 ///     instead some value appropriate for the target type will be
 ///     returned.
 ///
-/// [NULL_SAFETY_README]: https://github.com/dart-lang/mockito/blob/master/NULL_SAFETY_README.md
+/// [NULL_SAFETY_README]: https://github.com/dart-lang/build/blob/master/builder_pkgs/mockito/NULL_SAFETY_README.md
 class GenerateNiceMocks {
   final List<MockSpec> mocks;
   const GenerateNiceMocks(this.mocks);

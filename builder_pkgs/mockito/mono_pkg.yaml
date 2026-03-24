@@ -1,0 +1,16 @@
+sdk:
+- dev
+
+os:
+- linux
+
+stages:
+- analyze_and_format:
+  - format
+  - group:
+    - command: dart run build_runner build
+    - analyze: --fatal-infos .
+- test:
+  - group:
+    - command: dart run build_runner build
+    - test: --test-randomize-ordering-seed=random
