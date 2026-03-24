@@ -1,9 +1,9 @@
 name: build_modules
-version: 5.1.10
+version: 5.1.11-wip
 description: >-
   Builders to analyze and split Dart code into individually compilable modules
   based on imports.
-repository: https://github.com/dart-lang/build/tree/master/build_modules
+repository: https://github.com/dart-lang/build/tree/master/builder_pkgs/build_modules
 resolution: workspace
 
 environment:

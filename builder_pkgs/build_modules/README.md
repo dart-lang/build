@@ -1,20 +1,3 @@
-<p align="center">
-  Module builders for modular compilation pipelines.
-  <br>
-  <a href="https://github.com/dart-lang/build/labels/package%3Abuild_modules">
-    <img src="https://img.shields.io/github/issues-raw/dart-lang/build/package%3Abuild_modules.svg" alt="Issues related to build_modules" />
-  </a>
-  <a href="https://pub.dev/packages/build_modules">
-    <img src="https://img.shields.io/pub/v/build_modules.svg" alt="Pub Package Version" />
-  </a>
-  <a href="https://pub.dev/documentation/build_modules/latest/">
-    <img src="https://img.shields.io/badge/dartdocs-latest-blue.svg" alt="Latest Dartdocs" />
-  </a>
-  <a href="https://gitter.im/dart-lang/build">
-    <img src="https://badges.gitter.im/dart-lang/build.svg" alt="Join the chat on Gitter" />
-  </a>
-</p>
-
 This package provides generic module builders which can be used to create custom
 compilation pipelines. It is used by the [`build_web_compilers`][]  package
 which provides standard builders for the web platform.
