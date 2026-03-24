@@ -230,8 +230,14 @@ class TestBuilder implements Builder {
     final library = await resolver.libraryFor(buildStep.inputId);
     for (final clazz in library.classes) {
       buffer.writeln(clazz.name);
-      for (final supertype in clazz.allSupertypes) {
-        buffer.writeln('  \${supertype.getDisplayString()}');
+      final getters = <String>{};
+      for (final type in [clazz.thisType, ...clazz.allSupertypes]) {
+        for (final getter in type.getters) {
+          getters.add(getter.name!);
+        }
+      }
+      for (final getter in getters.toList()..sort()) {
+        buffer.writeln('  \$getter');
       }
     }
     await buildStep.writeAsString(

@@ -45,6 +45,7 @@ import 'library_cycle_graph/library_cycle_graph_loader.dart';
 import 'library_cycle_graph/phased_asset_deps.dart';
 import 'performance_tracker.dart';
 import 'performance_tracking_resolvers.dart';
+import 'resolver/analysis_driver_filesystem.dart';
 import 'resolver/analysis_driver_model.dart';
 import 'resolver/resolvers_impl.dart';
 import 'run_builder.dart';
@@ -640,8 +641,6 @@ class Build {
           phaseNumber,
         );
 
-        globalResultRequirements = RequirementsManifest();
-
         await TimedActivity.build.runAsync(
           () => tracker.trackStage('Build', () {
             return runBuilder(
@@ -1030,7 +1029,33 @@ class Build {
           // Check if anything actually changed.
           final requirements =
               _previousRequirements[PrimaryInputAndPhase(graphId, phaseNumber)];
+          var foundEquivalent = false;
           if (requirements != null) {
+            RequirementFailure? checkRequirements() {
+              return requirements.isSatisfied(
+                elementFactory: resolversImpl!.elementFactory,
+                performance: OperationPerformanceImpl(''),
+              );
+            }
+
+            final tried = <AssetId>{};
+            while (true) {
+              final failure = checkRequirements();
+              if (failure is! LibraryMissing) break;
+              buildLog.debug('failure: $failure');
+              final id = AnalysisDriverFilesystem.parseAsset(failure.uri)!;
+              buildLog.debug('update driver for $id');
+              if (tried.add(id)) {
+                await resolversImpl!.updateDriverForEntrypoint(
+                  entrypoint: id,
+                  phasedReader: readerWriter,
+                );
+              } else {
+                buildLog.debug('gave up!');
+                return true;
+              }
+            }
+
             final check = requirements.isSatisfied(
               elementFactory: resolversImpl!.elementFactory,
               performance: OperationPerformanceImpl(''),
@@ -1038,8 +1063,9 @@ class Build {
             buildLog.debug(
               'Check requirements for $graphId, $phaseNumber: $check',
             );
+            if (check == null) foundEquivalent = true;
           }
-          return true;
+          if (!foundEquivalent) return true;
         }
       }
 

@@ -55,6 +55,7 @@ class AnalysisDriverModel {
       invalidatedSources: invalidatedSources,
     );
   }
+
   /// Clears build state and frees the lock taken by [takeLockAndStartBuild].
   ///
   /// If no lock was taken, just clears build state.
@@ -102,7 +103,7 @@ class AnalysisDriverModel {
     withDriver,
     required AssetId entrypoint,
     required PhasedReader phasedReader,
-    required InputTracker inputTracker,
+    required InputTracker? inputTracker,
     required bool transitive,
   }) async {
     AssetId? idToSyncOntoFilesystem;
@@ -116,7 +117,7 @@ class AnalysisDriverModel {
             // cause a recursive `_performResolve` on this same `AnalysisDriver`
             // instance.
             final nodeLoader = AssetDepsLoader(phasedReader);
-            inputTracker.addResolverEntrypoint(entrypoint);
+            inputTracker?.addResolverEntrypoint(entrypoint);
             return (await _graphLoader.libraryCycleGraphOf(
               nodeLoader,
               entrypoint,
@@ -124,7 +125,7 @@ class AnalysisDriverModel {
           });
     } else {
       // Notify [buildStep] of its inputs.
-      inputTracker.add(entrypoint);
+      inputTracker?.add(entrypoint);
       idToSyncOntoFilesystem = entrypoint;
       // Trigger any builds required for the file to be generated.
       await phasedReader.readAtPhase(entrypoint);

@@ -111,7 +111,9 @@ class BuildResolver {
     AssetId assetId, {
     bool allowSyntaxErrors = false,
   }) async {
-    final library = await _driverPool.withResource(() async {
+    buildLog.debug('libraryFor $assetId');
+    return await _driverPool.withResource(() async {
+      buildLog.debug('libraryFor $assetId with resource');
       final uri = assetId.uri;
       if (!_driver.isUriOfExistingFile(uri)) {
         throw AssetNotFoundException(assetId);
@@ -123,18 +125,20 @@ class BuildResolver {
         throw NonLibraryAssetException(assetId);
       }
 
-      return await _driver.currentSession.getLibraryByUri(uri.toString())
-          as LibraryElementResult;
-    });
+      final result =
+          (await _driver.currentSession.getLibraryByUri(uri.toString())
+                  as LibraryElementResult)
+              .element;
 
-    if (!allowSyntaxErrors) {
-      final errors = await _syntacticErrorsFor(library.element);
-      if (errors.isNotEmpty) {
-        throw SyntaxErrorInAssetException(assetId, errors);
+      if (!allowSyntaxErrors) {
+        final errors = await _syntacticErrorsFor(result);
+        if (errors.isNotEmpty) {
+          throw SyntaxErrorInAssetException(assetId, errors);
+        }
       }
-    }
 
-    return library.element;
+      return result;
+    });
   }
 
   /// Finds syntax errors in files related to the [element].
@@ -214,14 +218,11 @@ class BuildResolver {
   Future<void> updateDriverForEntrypoint({
     required AssetId entrypoint,
     required PhasedReader phasedReader,
-    required InputTracker inputTracker,
+    required InputTracker? inputTracker,
     required bool transitive,
   }) => _analysisDriverModel.updateDriver(
     withDriver:
-        (withDriver) => _driverPool.withResource(
-          () => withDriver(_driver),
-          swapRequirements: true,
-        ),
+        (withDriver) => _driverPool.withResource(() => withDriver(_driver)),
     phasedReader: phasedReader,
     inputTracker: inputTracker,
     entrypoint: entrypoint,
@@ -235,25 +236,22 @@ class AnalyzeActivityPool {
 
   AnalyzeActivityPool(this.pool);
 
-  Future<T> withResource<T>(
-    Future<T> Function() function, {
-    bool swapRequirements = false,
-  }) async {
+  Future<T> withResource<T>(Future<T> Function() function) async {
     return pool.withResource(
       () => TimedActivity.analyze.runAsync(() async {
         final requirements = globalResultRequirements;
+        final startedHash = requirements.hashCode;
         final startedNull = globalResultRequirements == null;
-        if (swapRequirements) globalResultRequirements = null;
         final result = await function();
-        /*if (swapRequirements)*/
-        globalResultRequirements = requirements;
         final endedNull = globalResultRequirements == null;
+        final endedHash = globalResultRequirements.hashCode;
+        globalResultRequirements = requirements;
 
-        if (startedNull != endedNull) {
-          buildLog.debug(
-            'started/ended $startedNull $endedNull ${StackTrace.current}',
-          );
-        }
+        //if (startedNull != endedNull) {
+        buildLog.debug(
+          'started/ended $startedNull $startedHash $endedNull $endedHash',
+        );
+        //}
         return result;
       }),
     );

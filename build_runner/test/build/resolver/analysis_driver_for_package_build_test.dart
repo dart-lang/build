@@ -4,162 +4,85 @@
 
 // ignore: implementation_imports
 import 'package:analyzer/dart/analysis/results.dart';
-import 'package:analyzer/src/fine/requirements.dart';
-import 'package:analyzer/src/fine/requirement_failure.dart';
+import 'package:analyzer/dart/element/element.dart';
 // ignore: implementation_imports
-import 'package:analyzer/src/summary2/linked_element_factory.dart';
+import 'package:analyzer/src/fine/requirement_failure.dart';
+import 'package:analyzer/src/fine/requirements.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/util/performance/operation_performance.dart';
-import 'package:build/build.dart';
 import 'package:build_runner/src/bootstrap/build_process_state.dart';
-import 'package:build_runner/src/build/asset_graph/graph.dart';
-import 'package:build_runner/src/build/build_step_impl.dart';
-import 'package:build_runner/src/build/input_tracker.dart';
 import 'package:build_runner/src/build/resolver/analysis_driver.dart';
 import 'package:build_runner/src/build/resolver/analysis_driver_filesystem.dart';
 import 'package:build_runner/src/build/resolver/analysis_driver_for_package_build.dart';
 import 'package:build_runner/src/build/resolver/analysis_driver_model.dart';
-import 'package:build_runner/src/build/resolver/resolvers_impl.dart';
-import 'package:build_runner/src/build/single_step_reader_writer.dart';
 import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
 
-import '../../common/common.dart';
-
 Future<void> main() async {
-  final analysisDriverModel = AnalysisDriverModel();
-  final driver = analysisDriver(
-    analysisDriverModel,
-    AnalysisOptionsImpl(),
-    null,
-    await loadPackageConfigUri(Uri.parse(buildProcessState.packageConfigUri)),
-  );
-
+  final tester = await FineGrainedAnalysisTester.create();
   test('analysis', () async {
-    analysisDriverModel.filesystem.startBuild([]);
-    analysisDriverModel.filesystem.write('/a/lib/a.dart', '''
+    await tester.build(
+      sources: {
+        '/a/lib/a.dart': '''
 import 'b.dart';
 
 abstract class A extends B {
   int get a;
 }
-''');
-    analysisDriverModel.filesystem.write('/a/lib/b.dart', '''
+''',
+        '/a/lib/b.dart': '''
 abstract class B {
   int get b;
 }
-''');
-
-    driver.changeFile('/a/lib/a.dart');
-    driver.changeFile('/b/lib/b.dart');
-    await driver.applyPendingFileChanges();
-    await driver.waitForIdle();
-    final result =
-        await driver.currentSession.getResolvedLibrary('/a/lib/a.dart')
-            as ResolvedLibraryResult;
-
-    final requirements = globalResultRequirements = RequirementsManifest();
-
-    final library = result.element;
-    expect(library.classes.length, 1);
-    expect(library.classes.single.name, 'A');
-    expect(requirements.libraries.keys, {Uri.parse('package:a/a.dart')});
-    expect(
-      requirements.isSatisfied(
-        elementFactory: driver.elementFactory,
-        performance: OperationPerformanceImpl(''),
-      ),
-      isNull,
+''',
+      },
+      analyze: (libraries) async {
+        final getters = await libraries.gettersOf(
+          path: '/a/lib/a.dart',
+          className: 'A',
+        );
+        expect(getters, {'a', 'b', 'hashCode', 'runtimeType'});
+      },
     );
 
-    for (final s in library.classes.single.allSupertypes) {
-      s.getters;
-    }
-    expect(requirements.libraries.keys, {
-      Uri.parse('package:a/a.dart'),
-      Uri.parse('package:a/b.dart'),
-      Uri.parse('dart:core'),
-    });
-    expect(
-      requirements.isSatisfied(
-        elementFactory: driver.elementFactory,
-        performance: OperationPerformanceImpl(''),
-      ),
-      isNull,
-    );
+    await tester.build(expectRebuild: false);
 
-    analysisDriverModel.filesystem.startBuild([]);
-    analysisDriverModel.filesystem.write('/a/lib/a.dart', '''
-import 'b.dart';
-
-abstract class A extends B {
-  int get a;
-}
-''');
-    analysisDriverModel.filesystem.write('/a/lib/b.dart', '''
+    await tester.build(
+      sources: {
+        '/a/lib/b.dart': '''
 abstract class B {
   int get b;
 }
-abstract class C {
-  int get c;
-}
-''');
-    driver.changeFile('/a/lib/b.dart');
-    await driver.applyPendingFileChanges();
-    await driver.waitForIdle();
-
-    var satisfied = requirements.isSatisfied(
-      elementFactory: driver.elementFactory,
-      performance: OperationPerformanceImpl(''),
-    );
-    if (satisfied?.kindId == RequirementFailureKindId.libraryMissing) {
-      final missing = satisfied as LibraryMissing;
-      await driver.currentSession.getResolvedLibrary(
-        analysisDriverModel.filesystem.resolveAbsolute(missing.uri)!.fullName,
-      );
-    }
-    expect(
-      requirements.isSatisfied(
-        elementFactory: driver.elementFactory,
-        performance: OperationPerformanceImpl(''),
-      ),
-      isNull,
+abstract class Unused {}
+''',
+      },
+      expectRebuild: false,
     );
 
-    analysisDriverModel.filesystem.startBuild([]);
-    analysisDriverModel.filesystem.write('/a/lib/a.dart', '''
+    await tester.build(
+      sources: {
+        '/a/lib/a.dart': '''
 import 'b.dart';
 
 abstract class A extends B {
   int get a;
 }
-''');
-    analysisDriverModel.filesystem.write('/a/lib/b.dart', '''
+''',
+        '/a/lib/b.dart': '''
 abstract class B {
   int get b;
   int get c;
 }
-''');
-    driver.changeFile('/a/lib/b.dart');
-    await driver.applyPendingFileChanges();
-    await driver.waitForIdle();
-
-    satisfied = requirements.isSatisfied(
-      elementFactory: driver.elementFactory,
-      performance: OperationPerformanceImpl(''),
-    );
-    if (satisfied?.kindId == RequirementFailureKindId.libraryMissing) {
-      final missing = satisfied as LibraryMissing;
-      await driver.currentSession.getResolvedLibrary(
-        analysisDriverModel.filesystem.resolveAbsolute(missing.uri)!.fullName,
-      );
-    }
-    expect(
-      requirements.isSatisfied(
-        elementFactory: driver.elementFactory,
-        performance: OperationPerformanceImpl(''),
-      ),
-      isA<InstanceChildrenIdsMismatch>(),
+''',
+      },
+      expectRebuild: true,
+      analyze: (libraries) async {
+        final getters = await libraries.gettersOf(
+          path: '/a/lib/a.dart',
+          className: 'A',
+        );
+        expect(getters, {'a', 'b', 'c', 'hashCode', 'runtimeType'});
+      },
     );
   });
 }
@@ -172,10 +95,113 @@ extension _AnalysisDriverFilesystemExtensions on AnalysisDriverFilesystem {
   }
 }
 
-extension RequirementsManifestExtension on RequirementsManifest? {
-  String describe() {
-    final self = this;
-    if (self == null) return 'null';
-    return '$hashCode ${self.libraries.keys} ${self.opaqueApiUses}';
+class FineGrainedAnalysisTester {
+  final AnalysisDriverModel analysisDriverModel;
+  final AnalysisDriverForPackageBuild driver;
+
+  Map<String, String>? _sources;
+  Future<void> Function(Libraries libraries)? _analyze;
+
+  RequirementsManifest? _previousRequirements;
+
+  FineGrainedAnalysisTester._(this.analysisDriverModel, this.driver);
+
+  static Future<FineGrainedAnalysisTester> create() async {
+    final analysisDriverModel = AnalysisDriverModel();
+    final driver = analysisDriver(
+      analysisDriverModel,
+      AnalysisOptionsImpl(),
+      null,
+      await loadPackageConfigUri(Uri.parse(buildProcessState.packageConfigUri)),
+    );
+    return FineGrainedAnalysisTester._(analysisDriverModel, driver);
+  }
+
+  Future<void> build({
+    Map<String, String>? sources,
+    bool? expectRebuild,
+    Future<void> Function(Libraries libraries)? analyze,
+  }) async {
+    if (sources != null) {
+      if (_sources == null) {
+        _sources = sources;
+      } else {
+        _sources!.addAll(sources);
+      }
+    }
+    if (analyze != null) _analyze = analyze;
+
+    analysisDriverModel.filesystem.startBuild([]);
+
+    for (final entry in _sources!.entries) {
+      analysisDriverModel.filesystem.write(entry.key, entry.value);
+    }
+    for (final path in _sources!.keys) {
+      driver.changeFile(path);
+    }
+    await driver.applyPendingFileChanges();
+    //await driver.waitForIdle();
+
+    if (expectRebuild != null) {
+      RequirementFailure? checkRequirements() {
+        return _previousRequirements!.isSatisfied(
+          elementFactory: driver.elementFactory,
+          performance: OperationPerformanceImpl(''),
+        );
+      }
+
+      while (true) {
+        final failure = checkRequirements();
+        if (failure is! LibraryMissing) break;
+        final path =
+            analysisDriverModel.filesystem
+                .resolveAbsolute(failure.uri)!
+                .fullName;
+        await Libraries(this).resolve(path);
+      }
+
+      final rebuild = checkRequirements() != null;
+      expect(rebuild, expectRebuild);
+    }
+
+    if (_analyze != null) {
+      globalResultRequirements = RequirementsManifest();
+      final libraries = Libraries(this);
+      await _analyze!(libraries);
+      _previousRequirements = globalResultRequirements;
+    }
+  }
+}
+
+class Libraries {
+  FineGrainedAnalysisTester tester;
+
+  Libraries(this.tester);
+
+  Future<LibraryElement> resolve(String path) async {
+    final requirements = globalResultRequirements;
+    globalResultRequirements = null;
+    final result =
+        (await tester.driver.currentSession.getResolvedLibrary(path)
+                as ResolvedLibraryResult)
+            .element;
+    globalResultRequirements = requirements;
+    return result;
+  }
+
+  Future<List<String>> gettersOf({
+    required String path,
+    required String className,
+  }) async {
+    final library = await resolve(path);
+    final clazz =
+        library.classes.where((clazz) => clazz.name == className).single;
+    final result = <String>[];
+    for (final type in [clazz.thisType, ...clazz.allSupertypes]) {
+      for (final getter in type.getters) {
+        result.add(getter.name!);
+      }
+    }
+    return result;
   }
 }

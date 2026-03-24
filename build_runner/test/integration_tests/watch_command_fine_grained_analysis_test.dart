@@ -23,10 +23,14 @@ void main() async {
       files: {
         'lib/a.dart': '''
 import 'b.dart';
-class A implements B{}
+abstract class A implements B {
+  int get a; 
+}
 ''',
         'lib/b.dart': '''
-class B {}
+abstract class B {
+  int get b;
+}
 ''',
       },
     );
@@ -36,17 +40,39 @@ class B {}
     await watch.expect(BuildLog.successPattern);
     expect(tester.read('root_pkg/lib/a.txt'), '''
 A
-  Object
-  B
+  a
+  b
+  hashCode
+  runtimeType
 ''');
 
     tester.write('root_pkg/lib/b.dart', '''
-class B {}
+abstract class B {
+  int get b;
+}
 
-class C {}
+class Unused {}
 ''');
+    await watch.expect('1 skipped, 1 output');
     await watch.expect(BuildLog.successPattern);
 
-    fail('');
+    tester.write('root_pkg/lib/b.dart', '''
+abstract class B {
+  int get b;
+  int get c;
+}
+
+class Unused {}
+''');
+    await watch.expect('2 output');
+    await watch.expect(BuildLog.successPattern);
+    expect(tester.read('root_pkg/lib/a.txt'), '''
+A
+  a
+  b
+  c
+  hashCode
+  runtimeType
+''');
   });
 }

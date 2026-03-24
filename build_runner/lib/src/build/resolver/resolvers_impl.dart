@@ -19,7 +19,9 @@ import '../../logging/build_log.dart';
 import '../asset_graph/graph.dart';
 import '../build_step_impl.dart';
 import '../library_cycle_graph/phased_asset_deps.dart';
+import '../library_cycle_graph/phased_reader.dart';
 import 'analysis_driver.dart';
+import 'analysis_driver_filesystem.dart';
 import 'analysis_driver_model.dart';
 import 'build_resolver.dart';
 import 'build_step_resolver.dart';
@@ -45,6 +47,8 @@ class ResolversImpl implements Resolvers {
 
   /// Specifies the language version for each package during analysis.
   PackageConfig? _packageConfig;
+
+  AnalysisDriverModel get analysisDriverModel => _analysisDriverModel;
 
   /// Creates a new resolvers instance.
   ///
@@ -95,6 +99,20 @@ class ResolversImpl implements Resolvers {
   Future<BuildStepResolver> get(BuildStep buildStep) async {
     await _initialize();
     return BuildStepResolver(_buildResolver!, buildStep as BuildStepImpl);
+  }
+
+  Future<void> updateDriverForEntrypoint({
+    required AssetId entrypoint,
+    required PhasedReader phasedReader,
+  }) async {
+    await _initialize();
+    await _buildResolver!.updateDriverForEntrypoint(
+      entrypoint: entrypoint,
+      phasedReader: phasedReader,
+      inputTracker: null,
+      transitive: true,
+    );
+    await _buildResolver!.libraryFor(entrypoint, allowSyntaxErrors: true);
   }
 
   /// Start a build with [assetGraph].
