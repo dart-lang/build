@@ -88,13 +88,13 @@ class RunConfig {
   build_config:
     path: $buildRepoPath/build_config
   build_modules:
-    path: $buildRepoPath/build_modules
+    path: $buildRepoPath/builder_pkgs/build_modules
   build_runner:
     path: $buildRepoPath/build_runner
   build_test:
     path: $buildRepoPath/build_test
   build_web_compilers:
-    path: $buildRepoPath/build_web_compilers
+    path: $buildRepoPath/builder_pkgs/build_web_compilers
 ''');
     }
 
