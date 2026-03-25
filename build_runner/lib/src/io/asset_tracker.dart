@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
+import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:watcher/watcher.dart';
 
@@ -95,7 +96,15 @@ class AssetTracker {
       final originalDigest = node.digest;
       if (originalDigest == null) continue;
       _readerWriter.cache.invalidate([id]);
-      final currentDigest = await _readerWriter.digest(id);
+      // Try to read the file. Auxiliary files may be deleted intermitently
+      // by IDEs and should be treated as REMOVE.
+      Digest currentDigest;
+      try {
+        currentDigest = await _readerWriter.digest(id);
+      } on AssetNotFoundException {
+        updates[id] = ChangeType.REMOVE;
+        continue;
+      }
       if (currentDigest != originalDigest) {
         updates[id] = ChangeType.MODIFY;
       }
