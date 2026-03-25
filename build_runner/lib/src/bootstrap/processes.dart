@@ -111,8 +111,14 @@ class ParentProcess {
     // Due to https://github.com/dart-lang/sdk/issues/61571 the end of the message
     // can't be signalled by closing stdin, that would cause a crash on Windows.
     // So send `_sentinal` instead.
-    process.stdin.write(message);
-    process.stdin.write(_sentinel);
+    try {
+      process.stdin.write(message);
+      process.stdin.write(_sentinel);
+    } catch (_) {
+      // Writes can fail if the child process exits too quickly due to an error.
+      // Just continue: the child process output and exit code signal what
+      // happened.
+    }
 
     final exitCode = await process.exitCode;
 
