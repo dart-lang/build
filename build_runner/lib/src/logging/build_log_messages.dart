@@ -3,9 +3,11 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:built_value/built_value.dart';
+import 'package:build/build.dart' show AssetId;
 import 'package:logging/logging.dart';
 
 import 'ansi_buffer.dart';
+import 'build_log.dart';
 
 part 'build_log_messages.g.dart';
 
@@ -28,6 +30,7 @@ class BuildLogMessages {
     String string, {
     String? phaseName,
     String? context,
+    AssetId? contextId,
     required Severity severity,
   }) {
     if (severity == Severity.warning) _hasWarnings = true;
@@ -36,11 +39,16 @@ class BuildLogMessages {
       text: string,
       phaseName: phaseName,
       context: context,
+      contextId: contextId,
       severity: severity,
     );
     _messageByCategory
         .putIfAbsent(
-          _MessageCategory(phaseName: phaseName, context: context),
+          _MessageCategory(
+            phaseName: phaseName,
+            context: context,
+            contextId: contextId,
+          ),
           () => [],
         )
         .add(message);
@@ -88,7 +96,10 @@ class BuildLogMessages {
       AnsiBufferLine([
         if (context != null) ...[
           failed ? AnsiBuffer.boldRed : AnsiBuffer.bold,
-          context,
+          ...buildLog.renderLinkedContext(
+            context,
+            contextId: category.contextId,
+          ),
           AnsiBuffer.reset,
           ' ',
         ],
@@ -130,12 +141,15 @@ abstract class Message implements Built<Message, MessageBuilder> {
   /// The message context: usually the build step input.
   String? get context;
 
+  AssetId? get contextId;
+
   Severity get severity;
   String get text;
 
   factory Message({
     required String? phaseName,
     required String? context,
+    required AssetId? contextId,
     required Severity severity,
     required String text,
   }) = _$Message._;
@@ -147,11 +161,17 @@ abstract class _MessageCategory
     implements Built<_MessageCategory, _MessageCategoryBuilder> {
   String? get phaseName;
   String? get context;
+  AssetId? get contextId;
 
   factory _MessageCategory({
     required String? phaseName,
     required String? context,
-  }) => _$MessageCategory._(phaseName: phaseName, context: context);
+    required AssetId? contextId,
+  }) => _$MessageCategory._(
+    phaseName: phaseName,
+    context: context,
+    contextId: contextId,
+  );
   _MessageCategory._();
 }
 

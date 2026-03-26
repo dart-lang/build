@@ -12,6 +12,8 @@ class _$Message extends Message {
   @override
   final String? context;
   @override
+  final AssetId? contextId;
+  @override
   final Severity severity;
   @override
   final String text;
@@ -22,6 +24,7 @@ class _$Message extends Message {
   _$Message._({
     this.phaseName,
     this.context,
+    this.contextId,
     required this.severity,
     required this.text,
   }) : super._();
@@ -38,6 +41,7 @@ class _$Message extends Message {
     return other is Message &&
         phaseName == other.phaseName &&
         context == other.context &&
+        contextId == other.contextId &&
         severity == other.severity &&
         text == other.text;
   }
@@ -47,6 +51,7 @@ class _$Message extends Message {
     var _$hash = 0;
     _$hash = $jc(_$hash, phaseName.hashCode);
     _$hash = $jc(_$hash, context.hashCode);
+    _$hash = $jc(_$hash, contextId.hashCode);
     _$hash = $jc(_$hash, severity.hashCode);
     _$hash = $jc(_$hash, text.hashCode);
     _$hash = $jf(_$hash);
@@ -58,6 +63,7 @@ class _$Message extends Message {
     return (newBuiltValueToStringHelper(r'Message')
           ..add('phaseName', phaseName)
           ..add('context', context)
+          ..add('contextId', contextId)
           ..add('severity', severity)
           ..add('text', text))
         .toString();
@@ -75,6 +81,10 @@ class MessageBuilder implements Builder<Message, MessageBuilder> {
   String? get context => _$this._context;
   set context(String? context) => _$this._context = context;
 
+  AssetId? _contextId;
+  AssetId? get contextId => _$this._contextId;
+  set contextId(AssetId? contextId) => _$this._contextId = contextId;
+
   Severity? _severity;
   Severity? get severity => _$this._severity;
   set severity(Severity? severity) => _$this._severity = severity;
@@ -90,6 +100,7 @@ class MessageBuilder implements Builder<Message, MessageBuilder> {
     if ($v != null) {
       _phaseName = $v.phaseName;
       _context = $v.context;
+      _contextId = $v.contextId;
       _severity = $v.severity;
       _text = $v.text;
       _$v = null;
@@ -116,6 +127,7 @@ class MessageBuilder implements Builder<Message, MessageBuilder> {
         _$Message._(
           phaseName: phaseName,
           context: context,
+          contextId: contextId,
           severity: BuiltValueNullFieldError.checkNotNull(
             severity,
             r'Message',
@@ -133,12 +145,15 @@ class _$MessageCategory extends _MessageCategory {
   final String? phaseName;
   @override
   final String? context;
+  @override
+  final AssetId? contextId;
 
   factory _$MessageCategory([
     void Function(_MessageCategoryBuilder)? updates,
   ]) => (_MessageCategoryBuilder()..update(updates))._build();
 
-  _$MessageCategory._({this.phaseName, this.context}) : super._();
+  _$MessageCategory._({this.phaseName, this.context, this.contextId})
+    : super._();
   @override
   _MessageCategory rebuild(void Function(_MessageCategoryBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -152,7 +167,8 @@ class _$MessageCategory extends _MessageCategory {
     if (identical(other, this)) return true;
     return other is _MessageCategory &&
         phaseName == other.phaseName &&
-        context == other.context;
+        context == other.context &&
+        contextId == other.contextId;
   }
 
   @override
@@ -160,6 +176,7 @@ class _$MessageCategory extends _MessageCategory {
     var _$hash = 0;
     _$hash = $jc(_$hash, phaseName.hashCode);
     _$hash = $jc(_$hash, context.hashCode);
+    _$hash = $jc(_$hash, contextId.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -168,7 +185,8 @@ class _$MessageCategory extends _MessageCategory {
   String toString() {
     return (newBuiltValueToStringHelper(r'_MessageCategory')
           ..add('phaseName', phaseName)
-          ..add('context', context))
+          ..add('context', context)
+          ..add('contextId', contextId))
         .toString();
   }
 }
@@ -185,6 +203,10 @@ class _MessageCategoryBuilder
   String? get context => _$this._context;
   set context(String? context) => _$this._context = context;
 
+  AssetId? _contextId;
+  AssetId? get contextId => _$this._contextId;
+  set contextId(AssetId? contextId) => _$this._contextId = contextId;
+
   _MessageCategoryBuilder();
 
   _MessageCategoryBuilder get _$this {
@@ -192,6 +214,7 @@ class _MessageCategoryBuilder
     if ($v != null) {
       _phaseName = $v.phaseName;
       _context = $v.context;
+      _contextId = $v.contextId;
       _$v = null;
     }
     return this;
@@ -212,7 +235,12 @@ class _MessageCategoryBuilder
 
   _$MessageCategory _build() {
     final _$result =
-        _$v ?? _$MessageCategory._(phaseName: phaseName, context: context);
+        _$v ??
+        _$MessageCategory._(
+          phaseName: phaseName,
+          context: context,
+          contextId: contextId,
+        );
     replace(_$result);
     return _$result;
   }
