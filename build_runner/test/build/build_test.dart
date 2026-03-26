@@ -1193,7 +1193,6 @@ targets:
       BuildPackages.singlePackageBuild('a', [
         BuildPackage.forTesting(name: 'a', isOutput: true),
       ]),
-      result.readerWriter,
     );
 
     // Source nodes

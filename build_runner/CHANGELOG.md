@@ -1,6 +1,9 @@
 ## 2.14.0-wip
 
 - Add OSC 8 hyperlinks for logged input paths.
+- Better handling of deletions of files during the build: if the file is not
+  needed ignore the deletion, if it's needed try to use the cached version,
+  as a last resort restart the build.
 - Bug fix: small correctness fix in input tracking.
 
 ## 2.13.1

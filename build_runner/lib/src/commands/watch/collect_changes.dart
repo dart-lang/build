@@ -3,54 +3,15 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:watcher/watcher.dart';
 
 import 'asset_change.dart';
 
-/// Merges [AssetChange] events.
-///
-/// For example, if an asset was added then immediately deleted, no event will
-/// be recorded for the given asset.
-Map<AssetId, ChangeType> collectChanges(List<List<AssetChange>> changes) {
-  final changeMap = <AssetId, ChangeType>{};
+/// Merges [AssetChange] events into a set of changed [AssetId]s, discarding
+/// the change types.
+Set<AssetId> collectChanges(List<List<AssetChange>> changes) {
+  final result = <AssetId>{};
   for (final change in changes.expand((l) => l)) {
-    final originalChangeType = changeMap[change.id];
-    if (originalChangeType != null) {
-      switch (originalChangeType) {
-        case ChangeType.ADD:
-          if (change.type == ChangeType.REMOVE) {
-            // ADD followed by REMOVE, just remove the change.
-            changeMap.remove(change.id);
-          }
-          break;
-        case ChangeType.REMOVE:
-          if (change.type == ChangeType.ADD) {
-            // REMOVE followed by ADD, convert to a MODIFY
-            changeMap[change.id] = ChangeType.MODIFY;
-          } else if (change.type == ChangeType.MODIFY) {
-            // REMOVE followed by MODIFY isn't sensible, just throw.
-            throw StateError(
-              'Internal error, got REMOVE event followed by MODIFY event for '
-              '${change.id}.',
-            );
-          }
-          break;
-        case ChangeType.MODIFY:
-          if (change.type == ChangeType.REMOVE) {
-            // MODIFY followed by REMOVE, convert to REMOVE
-            changeMap[change.id] = change.type;
-          } else if (change.type == ChangeType.ADD) {
-            // MODIFY followed by ADD isn't sensible, just throw.
-            throw StateError(
-              'Internal error, got MODIFY event followed by ADD event for '
-              '${change.id}.',
-            );
-          }
-          break;
-      }
-    } else {
-      changeMap[change.id] = change.type;
-    }
+    result.add(change.id);
   }
-  return changeMap;
+  return result;
 }

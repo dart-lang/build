@@ -7,11 +7,11 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:built_collection/built_collection.dart';
-import 'package:watcher/watcher.dart';
 
 import '../bootstrap/bootstrapper.dart';
 import '../build/asset_graph/exceptions.dart';
 import '../build/asset_graph/graph.dart';
+import '../build/asset_graph/node.dart';
 import '../constants.dart';
 import '../exceptions.dart';
 import '../io/asset_tracker.dart';
@@ -47,7 +47,7 @@ class BuildPlan {
   final Bootstrapper bootstrapper;
   final AssetGraph _assetGraph;
   bool _assetGraphWasTaken;
-  final BuiltMap<AssetId, ChangeType>? updates;
+  final BuiltSet<AssetId>? updates;
 
   /// Files to delete before restarting or before the next build.
   ///
@@ -217,13 +217,16 @@ class BuildPlan {
     final cacheDirSources = await assetTracker.findCacheDirSources();
 
     AssetGraph? assetGraph;
-    Map<AssetId, ChangeType>? updates;
+    Set<AssetId>? updates;
     if (previousAssetGraph != null) {
-      updates = await assetTracker.computeSourceUpdates(
-        inputSources,
-        cacheDirSources,
-        previousAssetGraph,
-      );
+      updates = {
+        ...inputSources,
+        ...cacheDirSources,
+        for (final node in previousAssetGraph.allNodes)
+          if (node.isFile &&
+              (node.type != NodeType.generated || node.wasOutput))
+            node.id,
+      };
       assetGraph = previousAssetGraph.copyForNextBuild(buildPhases);
 
       if (restartIsNeeded) {
@@ -252,7 +255,6 @@ class BuildPlan {
           buildPhases,
           inputSources,
           buildPackages,
-          readerWriter,
         );
       } on DuplicateAssetNodeException catch (e) {
         buildLog.error(e.toString());

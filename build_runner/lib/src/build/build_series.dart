@@ -42,12 +42,12 @@ class BuildSeries {
 
   final ResourceManager _resourceManager = ResourceManager();
 
-  /// For the first build only, updates from the previous serialized build
-  /// state.
+  /// For the first build only, assets that were updated since the previous
+  /// serialized build state.
   ///
   /// Null after the first build, or if there was no serialized build state, or
   /// if the serialized build state was discarded.
-  BuiltMap<AssetId, ChangeType>? _updatesFromLoad;
+  BuiltSet<AssetId>? _updatesFromLoad;
 
   final StreamController<BuildResult> _buildResultsController =
       StreamController.broadcast();
@@ -61,7 +61,7 @@ class BuildSeries {
     required BuildPlan buildPlan,
     required AssetGraph assetGraph,
     required ReaderWriter readerWriter,
-    required BuiltMap<AssetId, ChangeType>? updatesFromLoad,
+    required BuiltSet<AssetId>? updatesFromLoad,
   }) : _buildPlan = buildPlan,
        _assetGraph = assetGraph,
        _readerWriter = readerWriter,
@@ -160,16 +160,6 @@ class BuildSeries {
         continue;
       }
 
-      // For modifications, confirm that the content actually changed.
-      if (change.type == ChangeType.MODIFY) {
-        // Use `_buildPlan.readerWriter` which has no cache to do a real read.
-        final newDigest = await _buildPlan.readerWriter.digest(id);
-        if (node.digest != newDigest) {
-          result.add(change);
-        }
-        continue;
-      }
-
       // It's an add of "missing source" node or a deletion of an input.
       result.add(change);
     }
@@ -206,16 +196,16 @@ class BuildSeries {
   /// Runs a single build.
   ///
   /// For the first build, pass any changes since the `BuildSeries` was created
-  /// as [updates]. If the first build happens immediately then pass empty
+  /// as [idsToCheck]. If the first build happens immediately then pass empty
   /// `updates`.
   ///
   /// For further builds, pass the changes since the previous builds as
-  /// [updates].
+  /// [idsToCheck].
   ///
   /// Set [recentlyBootstrapped] to skip doing checks that are done during
-  /// bootstrapping. If [recentlyBootstrapped] then [updates] must be empty.
+  /// bootstrapping. If [recentlyBootstrapped] then [idsToCheck] must be empty.
   Future<BuildResult> run(
-    Map<AssetId, ChangeType> updates, {
+    Set<AssetId> idsToCheck, {
     required bool recentlyBootstrapped,
     BuiltSet<BuildDirectory>? buildDirs,
     BuiltSet<BuildFilter>? buildFilters,
@@ -225,7 +215,7 @@ class BuildSeries {
     }
 
     if (recentlyBootstrapped) {
-      if (updates.isNotEmpty) {
+      if (idsToCheck.isNotEmpty) {
         throw StateError('`recentlyBootstrapped` but updates not empty.');
       }
     } else {
@@ -239,7 +229,8 @@ class BuildSeries {
       }
     }
 
-    if (updates.keys.any(_isBuildConfiguration)) {
+    if (idsToCheck.any(_isBuildConfiguration)) {
+      // TODO: check digest here?
       _buildPlan = await _buildPlan.reload();
       await _buildPlan.deleteFilesAndFolders();
       // A config change might have caused new builders to be needed, which
@@ -267,7 +258,7 @@ class BuildSeries {
     buildFilters ??= _buildPlan.buildOptions.buildFilters;
     if (firstBuild) {
       if (_updatesFromLoad != null) {
-        updates = _updatesFromLoad!.toMap()..addAll(updates);
+        idsToCheck = _updatesFromLoad!.toSet()..addAll(idsToCheck);
         _updatesFromLoad = null;
       }
     } else {
@@ -288,7 +279,7 @@ class BuildSeries {
     );
     if (firstBuild) firstBuild = false;
 
-    _currentBuildResult = build.run(updates);
+    _currentBuildResult = build.run(idsToCheck);
     final result = await _currentBuildResult!;
     _buildResultsController.add(result);
     return result;

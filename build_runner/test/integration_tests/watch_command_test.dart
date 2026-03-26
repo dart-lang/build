@@ -41,7 +41,7 @@ void main() async {
 
     // File rewrite without change.
     tester.write('root_pkg/web/a.txt', 'updated');
-    await watch.expectNoOutput(const Duration(seconds: 1));
+    await watch.expect('wrote 0 outputs');
 
     // State on disk is updated so `build` knows to do nothing.
     var output = await tester.run('root_pkg', 'dart run build_runner build');

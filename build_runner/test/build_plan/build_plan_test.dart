@@ -17,7 +17,6 @@ import 'package:build_runner/src/io/reader_writer.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:test/test.dart';
-import 'package:watcher/watcher.dart';
 
 import '../common/common.dart';
 
@@ -253,6 +252,10 @@ void main() {
       assetGraph.updateNode(outputId, (b) {
         b.digest = Digest([]);
       });
+      // Give digests to inputs so they are monitored for modifications.
+      assetGraph.updateNode(assetId2, (b) {
+        b.digest = Digest([]);
+      });
 
       await readerWriter.writeAsBytes(assetGraphId, assetGraph.serialize());
 
@@ -273,12 +276,7 @@ void main() {
         testingOverrides: testingOverrides,
       );
 
-      expect(buildPlan.updates!.asMap(), <AssetId, ChangeType>{
-        assetId: ChangeType.REMOVE,
-        assetId2: ChangeType.MODIFY,
-        assetId3: ChangeType.ADD,
-        outputId: ChangeType.REMOVE,
-      });
+      expect(buildPlan.updates!, {assetId, assetId2, assetId3, outputId});
     });
 
     test('applies target glob from build config', () async {

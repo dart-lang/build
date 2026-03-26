@@ -6,11 +6,14 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:build/build.dart';
+import 'package:io/io.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
 import '../build_plan/builder_factories.dart';
 import '../build_runner.dart';
+import '../logging/build_log.dart';
 import 'build_process_state.dart';
 
 /// Methods for causing a child process to run and do work.
@@ -266,6 +269,24 @@ class ChildProcess {
     await stdout.close();
     exit(exitCode);
   }
+
+  /// Exits indicating that a file that should exist was deleted during the
+  /// build and the build cannot complete.
+  ///
+  /// The parent process will retry the whole command.
+  static Future<Never> exitDueToAssetDeleted(AssetId id) async {
+    buildLog.error('$id was unexpectedly deleted, restarting the build.');
+    await ChildProcess.exitWithMessage(
+      exitCode: assetDeletedExitCode,
+      message: buildProcessState.serialize(),
+    );
+  }
+
+  /// The exit code used to indicate "rebuild the builders".
+  static int recompileBuildersExitCode = ExitCode.tempFail.code;
+
+  /// The exit code used to indicate "try again, an asset was deleted".
+  static int assetDeletedExitCode = ExitCode.data.code;
 }
 
 // A code in the "private use" Unicode area, so it should not be in any log
