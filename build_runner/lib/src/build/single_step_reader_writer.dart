@@ -10,6 +10,7 @@ import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
+import '../bootstrap/processes.dart';
 import '../build_plan/build_configs.dart';
 import '../build_plan/build_packages.dart';
 import '../build_plan/phase.dart';
@@ -219,8 +220,6 @@ class SingleStepReaderWriter implements PhasedReader {
       return false;
     }
 
-    // If digests can be cached, cache it.
-    // TODO(davidmorgan): remove?
     await _ensureDigest(id);
     return true;
   }
@@ -276,17 +275,25 @@ class SingleStepReaderWriter implements PhasedReader {
   /// Returns the `lastKnownDigest` of [id], computing and caching it if
   /// necessary.
   ///
+  /// This is called on any read or existence check. With filesystem caching
+  /// this ensures that the cached file content matches the asset graph hash.
+  ///
   /// Note that [id] must exist in the asset graph.
-  FutureOr<Digest> _ensureDigest(AssetId id) {
+  Future<Digest> _ensureDigest(AssetId id) async {
     if (_runningBuild == null) return _delegate.digest(id);
     final node = _runningBuild.assetGraph.get(id)!;
     if (node.digest != null) return node.digest!;
-    return _delegate.digest(id).then((digest) {
-      _runningBuild.assetGraph.updateNode(id, (nodeBuilder) {
-        nodeBuilder.digest = digest;
-      });
-      return digest;
+
+    Digest digest;
+    try {
+      digest = await _delegate.digest(id);
+    } on AssetNotFoundException {
+      await ChildProcess.exitDueToAssetDeleted(id);
+    }
+    _runningBuild.assetGraph.updateNode(id, (nodeBuilder) {
+      nodeBuilder.digest = digest;
     });
+    return digest;
   }
 
   /// Checks whether [node] can be read by this step.

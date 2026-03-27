@@ -11,6 +11,7 @@ import 'package:io/io.dart';
 import 'package:shelf/shelf_io.dart';
 
 import '../bootstrap/build_process_state.dart';
+import '../bootstrap/processes.dart';
 import '../build_plan/build_options.dart';
 import '../build_plan/build_packages.dart';
 import '../build_plan/builder_factories.dart';
@@ -74,7 +75,9 @@ class ServeCommand implements BuildRunnerCommand {
             buildOptions: buildOptions,
             testingOverrides: testingOverrides,
           ).watch();
-      if (watcher == null) return ExitCode.tempFail.code;
+      if (watcher == null) {
+        return ChildProcess.rebuildBuildersExitCode;
+      }
       final handler = ServeHandler(watcher);
 
       servers.forEach((target, server) {

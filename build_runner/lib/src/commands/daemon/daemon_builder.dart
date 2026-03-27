@@ -22,10 +22,8 @@ import '../../build_plan/build_filter.dart';
 import '../../build_plan/build_plan.dart';
 import '../../logging/build_log.dart';
 import '../daemon_options.dart';
-import '../watch/asset_change.dart';
 import '../watch/build_package_watcher.dart';
 import '../watch/build_packages_watcher.dart';
-import '../watch/collect_changes.dart';
 import 'change_providers.dart';
 
 /// A Daemon Builder that builds with `build_runner`.
@@ -68,12 +66,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     Iterable<WatchEvent> fileChanges,
   ) async {
     final defaultTargets = targets.cast<DefaultBuildTarget>();
-    final changes =
-        fileChanges
-            .map<AssetChange>(
-              (change) => AssetChange(AssetId.parse(change.path), change.type),
-            )
-            .toList();
+    final idsToCheck =
+        fileChanges.map((change) => AssetId.parse(change.path)).toSet();
 
     final targetNames = targets.map((t) => t.target).toSet();
     _logMessage(Level.INFO, 'About to build ${targetNames.toList()}...');
@@ -113,9 +107,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     Iterable<AssetId>? outputs;
 
     try {
-      final mergedChanges = collectChanges([changes]);
       final result = await buildSeries.run(
-        mergedChanges,
+        idsToCheck,
         recentlyBootstrapped: false,
         buildDirs: buildDirs.build(),
         buildFilters: buildFilters.build(),
@@ -131,7 +124,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       );
 
       if (interestedInOutputs) {
-        outputs = {for (final change in changes) change.id, ...result.outputs};
+        outputs = {for (final id in idsToCheck) id, ...result.outputs};
       }
 
       for (final target in targets) {

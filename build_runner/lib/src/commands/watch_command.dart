@@ -9,6 +9,7 @@ import 'package:build/experiments.dart';
 import 'package:io/io.dart';
 
 import '../bootstrap/build_process_state.dart';
+import '../bootstrap/processes.dart';
 import '../build/build_result.dart';
 import '../build_plan/build_options.dart';
 import '../build_plan/build_plan.dart';
@@ -35,7 +36,9 @@ class WatchCommand implements BuildRunnerCommand {
 
   Future<int> _run() async {
     final watcher = await watch();
-    if (watcher == null) return ExitCode.tempFail.code;
+    if (watcher == null) {
+      return ChildProcess.rebuildBuildersExitCode;
+    }
     final completer = Completer<int>();
     handleBuildResultsStream(watcher.buildResults, completer);
     return completer.future;
@@ -89,7 +92,7 @@ void handleBuildResultsStream(
     if (completer.isCompleted) return;
     if (result.status == BuildStatus.failure) {
       if (result.failureType == FailureType.buildScriptChanged) {
-        completer.complete(ExitCode.tempFail.code);
+        completer.complete(ChildProcess.rebuildBuildersExitCode);
       }
     }
   });
