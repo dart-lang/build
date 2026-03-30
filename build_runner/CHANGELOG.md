@@ -1,6 +1,11 @@
 ## 2.14.0-wip
 
 - Add OSC 8 hyperlinks for logged input paths.
+- Bug fix: small correctness fix in input tracking.
+
+## 2.13.1
+
+- Allow `analyzer` 11.0.0 and 12.0.0.
 
 ## 2.13.0
 

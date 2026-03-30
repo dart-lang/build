@@ -1,3 +1,7 @@
+## 4.1.2-wip
+
+- Internal: remove use of `package:mockito` in test.
+
 ## 4.1.1
 
 - Bug fix: daemon process shuts down on internal error.

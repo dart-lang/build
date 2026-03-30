@@ -1,5 +1,3 @@
-[![Pub Package](https://img.shields.io/pub/v/scratch_space.svg)](https://pub.dev/packages/scratch_space)
-
 A [`ScratchSpace`][dartdoc:ScratchSpace] is a thin wrapper around a temporary
 directory. The constructor takes zero arguments, so making one is as simple as
 doing `ScratchSpace()`.

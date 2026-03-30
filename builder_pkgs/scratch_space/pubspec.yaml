@@ -1,7 +1,7 @@
 name: scratch_space
-version: 1.2.0
+version: 1.2.1-wip
 description: A tool to manage running external executables within package:build.
-repository: https://github.com/dart-lang/build/tree/master/scratch_space
+repository: https://github.com/dart-lang/build/tree/master/builder_pkgs/scratch_space
 resolution: workspace
 
 topics:

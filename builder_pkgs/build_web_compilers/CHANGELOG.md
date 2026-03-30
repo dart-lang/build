@@ -1,16 +1,29 @@
+## 4.4.17-wip
+
+- Move source to
+  https://github.com/dart-lang/build/blob/master/builder_pkgs/build_web_compilers.
+
+## 4.4.16
+
+- Allow `analyzer` 11.0.0 and 12.0.0.
+
 ## 4.4.15
+
 - Normalize URIs in DDC's bootstrapper on Windows to always use forward slashes when running with the DDC Library Bundle module system.
 
 ## 4.4.14
+
 - Update DDC Library Bundle to use path-resolvable module names for sourcemap IDs.
 
 ## 4.4.13
+
 - Update sourcemap paths for DDC Library Bundle sources.
 - Update bootstrapper for DDC Library Bundle apps to auto-run main.
 - Fix generated entrypoint loader to work in Web Worker contexts by guarding DOM APIs and using `importScripts` as a fallback.
 - Support reading `force_js` parameter from the script's own URL in addition to the page's query string.
 
 ## 4.4.12
+
 - Remove `setStartAsyncSynchronously` in DDC's bootstrapper.
 
 ## 4.4.11
