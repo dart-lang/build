@@ -1,5 +1,6 @@
-## 2.13.2-wip
+## 2.14.0-wip
 
+- Add OSC 8 hyperlinks for logged input paths.
 - Bug fix: small correctness fix in input tracking.
 
 ## 2.13.1
