@@ -230,6 +230,8 @@ Set<BuildDirectory> _parsePositionalBuildDirs(
   BuildRunnerCommandLine commandLine,
 ) => {
   for (final arg in commandLine.rest)
+    // If the command is `serve` the directories might have port numbers,
+    // strip them off.
     BuildDirectory(_checkTopLevel(commandLine, arg.split(':').first)),
 };
 
