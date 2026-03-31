@@ -119,6 +119,7 @@ void main() {
       // The old graph is in [BuildPlan#filesToDelete] because it's invalid.
       expect(await readerWriter.canRead(assetGraphId), true);
       await buildPlan.deleteFilesAndFolders();
+      buildPlan.readerWriter.cache.flush();
       expect(await readerWriter.canRead(assetGraphId), false);
     });
 
@@ -167,6 +168,7 @@ void main() {
       // `BuildPlan` can delete lost outputs.
       expect(await readerWriter.canRead(outputId), true);
       await buildPlan.deleteFilesAndFolders();
+      buildPlan.readerWriter.cache.flush();
       expect(await readerWriter.canRead(outputId), false);
     });
 

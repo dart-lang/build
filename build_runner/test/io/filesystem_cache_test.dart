@@ -278,6 +278,39 @@ void main() {
       expect(deleted, isTrue);
     });
   });
+
+  test('invalidate preserves pending writes', () {
+    var written = false;
+    cache.writeAsBytes(
+      txt1,
+      txt1Bytes,
+      writer: () {
+        written = true;
+      },
+    );
+    cache.invalidate([txt1]);
+    expect(
+      cache.readAsBytes(txt1, ifAbsent: () => throw UnimplementedError()),
+      txt1Bytes,
+    );
+    expect(written, isFalse);
+  });
+
+  test('invalidate preserves pending delete', () {
+    var deleted = false;
+    cache.delete(
+      txt1,
+      deleter: () {
+        deleted = true;
+      },
+    );
+    cache.invalidate([txt1]);
+    expect(
+      cache.exists(txt1, ifAbsent: () => throw UnimplementedError()),
+      isFalse,
+    );
+    expect(deleted, isFalse);
+  });
 }
 
 /// An encoding that produces bytes that are not valid UTF-8.
