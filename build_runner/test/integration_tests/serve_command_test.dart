@@ -83,4 +83,34 @@ void main() async {
     );
     await server.close();
   });
+
+  test('serve command with port builds files in cache', () async {
+    final pubspecs = await Pubspecs.load();
+    final tester = BuildRunnerTester(pubspecs);
+
+    // A builder that builds to cache.
+    tester.writeFixturePackage(
+      FixturePackages.copyBuilder(buildToCache: true, outputExtension: '.copy'),
+    );
+
+    tester.writePackage(
+      name: 'root_pkg',
+      dependencies: ['build_runner'],
+      pathDependencies: ['builder_pkg'],
+      files: {'web/a.txt': 'a'},
+    );
+
+    // Serve with a port.
+    final serve = await tester.start(
+      'root_pkg',
+      'dart run build_runner serve web:0',
+    );
+
+    await serve.expectServingAndBuildSuccess();
+
+    // The file in cache should be served.
+    expect(await serve.fetchContent('a.txt.copy'), 'a');
+
+    await serve.kill();
+  });
 }

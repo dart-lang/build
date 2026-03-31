@@ -230,7 +230,7 @@ Set<BuildDirectory> _parsePositionalBuildDirs(
   BuildRunnerCommandLine commandLine,
 ) => {
   for (final arg in commandLine.rest)
-    BuildDirectory(_checkTopLevel(commandLine, arg)),
+    BuildDirectory(_checkTopLevel(commandLine, arg.split(':').first)),
 };
 
 /// Throws a [UsageException] if [arg] looks like anything other than a top

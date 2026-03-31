@@ -2,6 +2,8 @@
 
 - Add OSC 8 hyperlinks for logged input paths.
 - Bug fix: small correctness fix in input tracking.
+- Bug fix: exclude an optional port from the `build_runner serve` command to
+  the output directory.
 
 ## 2.13.1
 
