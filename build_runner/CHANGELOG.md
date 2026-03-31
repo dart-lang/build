@@ -2,6 +2,11 @@
 
 - Add OSC 8 hyperlinks for logged input paths.
 - Bug fix: small correctness fix in input tracking.
+- Bug fix: fix corner case that caused missing outputs with `build_runner serve`
+  when directories were specified with a port, for example 
+  `build_runner serve web:0`. Before the fix, non-optional outputs to cache 
+  under `web` would be skipped unless they were used by another build step. 
+  With the fix, all non-optional outputs under `web` are built and served.
 
 ## 2.13.1
 

@@ -69,5 +69,23 @@ void main() async {
     await serve.fetch('a.txt.copy', expectResponseCode: 404);
 
     await serve.kill();
+
+    // Regression test for an issue whereby serve mode directories with
+    // ports were not correctly parsed to build directories, causing
+    // non-optional outputs to cache in served directories that are not also
+    // inputs to other build steps to be skipped.
+    tester.writeFixturePackage(
+      FixturePackages.copyBuilder(buildToCache: true, outputExtension: '.copy'),
+    );
+    tester.writePackage(
+      name: 'root_pkg',
+      dependencies: ['build_runner'],
+      pathDependencies: ['builder_pkg'],
+      files: {'web/a.txt': 'a'},
+    );
+    serve = await tester.start('root_pkg', 'dart run build_runner serve web:0');
+    await serve.expectServingAndBuildSuccess();
+    expect(await serve.fetchContent('a.txt.copy'), 'a');
+    await serve.kill();
   });
 }

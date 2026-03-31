@@ -129,14 +129,16 @@ class BuildRunner {
         );
 
       case CommandType.serve:
+        final serveOptions = ServeOptions.parse(commandLine);
         command = ServeCommand(
           builderFactories: builderFactories!,
           buildOptions: BuildOptions.parse(
             commandLine,
-            restIsBuildDirs: true,
+            restIsBuildDirs: false,
             rootPackage: rootPackage,
+            extraDirs: serveOptions.serveTargets.map((t) => t.dir),
           ),
-          serveOptions: ServeOptions.parse(commandLine),
+          serveOptions: serveOptions,
         );
 
       case CommandType.test:
