@@ -37,5 +37,15 @@ void main() async {
     expect(tester.read('root_pkg/web/a.txt.copy'), 'old');
     await build.expect(BuildLog.successPattern);
     expect(tester.read('root_pkg/web/a.txt.copy'), 'a');
+
+    // Don't write identical files.
+    final stat1 = tester.stat('root_pkg/web/a.txt.copy');
+    tester.delete('root_pkg/.dart_tool/build/asset_graph.json');
+    await tester.run('root_pkg', 'dart run build_runner build');
+    final stat2 = tester.stat('root_pkg/web/a.txt.copy');
+    // The file should not have been rewritten. Confirm that `modified` is
+    // unchanged. The delay in the builder means it would change reliably
+    // if the file was rewritten.
+    expect(stat1.modified, stat2.modified);
   });
 }

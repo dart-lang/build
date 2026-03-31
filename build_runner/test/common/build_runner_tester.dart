@@ -90,6 +90,12 @@ class BuildRunnerTester {
     );
   }
 
+  /// Stats workspace-relative [path], or returns `null` if it does not exist.
+  FileStat stat(String path) {
+    final file = File(p.join(tempDirectory.path, path));
+    return file.statSync();
+  }
+
   /// Reads workspace-relative [path], or returns `null` if it does not exist.
   String? read(String path) {
     final file = File(p.join(tempDirectory.path, path));

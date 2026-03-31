@@ -73,22 +73,14 @@ class TestBuilder implements Builder {
     );
     tester.writeWorkspacePubspec(packages: ['builder_pkg', 'root_pkg']);
 
-    // The first build runs and writes identical output for the generated file.
+    // The first build runs and produces identical output for the generated
+    // file. The identical output is not written due to the check on write
+    // by `Filesystem`.
     final watch = await tester.start(
       '',
       'dart run build_runner watch --workspace',
     );
     await watch.expect(BuildLog.successPattern);
-    expect(tester.read('builder_pkg/lib/builder.g.dart'), partContent);
-
-    // The write of the generated file causes a second build that does nothing
-    // because the build has already started before the lack of actual change
-    // can be detected in `BuildSeries.run`.
-    //
-    // Before the fix of https://github.com/dart-lang/build/issues/4348 this
-    // would cause a crash due to an "add" event for `builder.g.dart`.
-    var line = await watch.expectAndGetLine(BuildLog.successPattern);
-    expect(line, contains('wrote 0 outputs'));
     expect(tester.read('builder_pkg/lib/builder.g.dart'), partContent);
 
     // Update the generated file to something different that does build. The
@@ -103,16 +95,8 @@ part of 'builder.dart';
     expect(tester.read('builder_pkg/lib/builder.g.dart'), partContent);
 
     // The generated file content changed so the builders need recompiling.
-    // That happens, the build runs and the generated file is written again but
-    // this time with the same content.
-    await watch.expect('Starting build #4 with updated builders.');
-    line = await watch.expectAndGetLine(BuildLog.successPattern);
-    expect(line, contains('wrote 1 output'));
-
-    // Write of the generated file to the same content causes another build that
-    // does nothing because no input changed.
-    await watch.expect('Starting build #5.');
-    line = await watch.expectAndGetLine(BuildLog.successPattern);
-    expect(line, contains('wrote 0 outputs'));
+    // That happens, the build runs but the generated output is the same so it's
+    // not written and no new build starts.
+    await watch.expectNoOutput(const Duration(seconds: 1));
   });
 }
