@@ -547,13 +547,13 @@ T named<T extends Mock>(T mock, {String? name, int? hashCode}) =>
       .._givenHashCode = hashCode;
 
 /// Clear stubs of, and collected interactions with [mock].
-void reset(var mock) {
+void reset(Mock mock) {
   mock._realCalls.clear();
   mock._responses.clear();
 }
 
 /// Clear the collected interactions with [mock].
-void clearInteractions(var mock) {
+void clearInteractions(Mock mock) {
   mock._realCalls.clear();
 }
 
@@ -711,7 +711,7 @@ class InvocationMatcher {
     return true;
   }
 
-  bool isMatchingArg(roleArg, actArg) {
+  bool isMatchingArg(Object? roleArg, Object? actArg) {
     if (roleArg is ArgMatcher) {
       return roleArg.matcher.matches(actArg, {});
     } else {
@@ -1249,7 +1249,7 @@ void _throwMockArgumentError(String method, var nonMockInstance) {
   throw ArgumentError('$method must only be given a Mock object');
 }
 
-void verifyNoMoreInteractions(var mock) {
+void verifyNoMoreInteractions(Object? mock) {
   if (mock is Mock) {
     final unverified = mock._realCalls.where((inv) => !inv.verified).toList();
     if (unverified.isNotEmpty) {
@@ -1263,7 +1263,7 @@ void verifyNoMoreInteractions(var mock) {
   }
 }
 
-void verifyZeroInteractions(var mock) {
+void verifyZeroInteractions(Object? mock) {
   if (mock is Mock) {
     if (mock._realCalls.isNotEmpty) {
       fail(
