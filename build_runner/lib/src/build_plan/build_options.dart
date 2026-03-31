@@ -106,16 +106,24 @@ class BuildOptions {
   /// Set [restIsBuildDirs] to `true` if "rest" args specify build directories,
   /// as they do for the `build` command, or to false if they are used elsewhere
   /// for something else, as for the `run` command where they are script args.
+  ///
+  /// Set [extraDirs] to specify additional directory names that should be
+  /// built, for example if they were parsed from a command-specific positional
+  /// argument (like `serve`).
   static BuildOptions parse(
     BuildRunnerCommandLine commandLine, {
     required String rootPackage,
     required bool restIsBuildDirs,
+    Iterable<String>? extraDirs,
   }) {
     final result = BuildOptions(
       buildDirs:
           {
             ..._parseBuildDirs(commandLine),
             if (restIsBuildDirs) ..._parsePositionalBuildDirs(commandLine),
+            if (extraDirs != null)
+              for (final dir in extraDirs)
+                BuildDirectory(_checkTopLevel(commandLine, dir)),
           }.build(),
       builderConfigOverrides: _parseBuilderConfigOverrides(
         commandLine,
@@ -230,9 +238,7 @@ Set<BuildDirectory> _parsePositionalBuildDirs(
   BuildRunnerCommandLine commandLine,
 ) => {
   for (final arg in commandLine.rest)
-    // If the command is `serve` the directories might have port numbers,
-    // strip them off.
-    BuildDirectory(_checkTopLevel(commandLine, arg.split(':').first)),
+    BuildDirectory(_checkTopLevel(commandLine, arg)),
 };
 
 /// Throws a [UsageException] if [arg] looks like anything other than a top
