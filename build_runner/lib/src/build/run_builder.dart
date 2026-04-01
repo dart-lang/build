@@ -4,7 +4,6 @@
 import 'dart:isolate';
 
 // ignore: implementation_imports
-import 'package:analyzer/src/fine/requirements.dart';
 import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
@@ -84,7 +83,6 @@ Future<void> runBuilder(
               : (assets) => reportUnusedAssetsForInput(input, assets),
     );
     try {
-      globalResultRequirements = RequirementsManifest();
       await builder.build(buildStep);
     } finally {
       await buildStep.complete();

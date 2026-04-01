@@ -175,6 +175,7 @@ class AnalysisDriverModel {
         }
         filesystem.clearChangedPaths();
         await TimedActivity.analyze.runAsync(driver.applyPendingFileChanges);
+        await TimedActivity.analyze.runAsync(driver.waitForIdle);
       }
     });
   }

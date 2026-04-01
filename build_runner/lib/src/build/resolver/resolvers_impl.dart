@@ -21,7 +21,6 @@ import '../build_step_impl.dart';
 import '../library_cycle_graph/phased_asset_deps.dart';
 import '../library_cycle_graph/phased_reader.dart';
 import 'analysis_driver.dart';
-import 'analysis_driver_filesystem.dart';
 import 'analysis_driver_model.dart';
 import 'build_resolver.dart';
 import 'build_step_resolver.dart';

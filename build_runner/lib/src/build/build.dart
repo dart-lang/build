@@ -420,24 +420,10 @@ class Build {
         }
       }
 
-<<<<<<< conflict 1 of 1
-%%%%%%% diff from: rskryrtl 16941d54 "Use fine grained analysis." (rebased revision)
-\\\\\\\        to: rskryrtl 307de8e4 "Use fine grained analysis." (rebase destination)
-+      buildLog.startPhases(
-+        primaryInputCountsByPhase,
-+        buildPackages: buildPackages,
-+      );
-+
-       final resolversImpl =
-           _resolvers is ResolversImpl ? _resolvers as ResolversImpl : null;
-       if (resolversImpl != null) {
-         resolversImpl.start();
-       }
- 
-       buildLog.startPhases(
-         primaryInputCountsByPhase,
-         buildPackages: buildPackages,
-       );
+      buildLog.startPhases(
+        primaryInputCountsByPhase,
+        buildPackages: buildPackages,
+      );
 
       // Main build phases.
       for (
@@ -641,6 +627,9 @@ class Build {
           phaseNumber,
         );
 
+        final previousGlobalResultRequirements = globalResultRequirements;
+        globalResultRequirements = RequirementsManifest();
+
         await TimedActivity.build.runAsync(
           () => tracker.trackStage('Build', () {
             return runBuilder(
@@ -661,7 +650,7 @@ class Build {
 
         final requirements = globalResultRequirements!;
         _previousRequirements[primaryInputAndPhase] = requirements;
-        globalResultRequirements = null;
+        globalResultRequirements = previousGlobalResultRequirements;
       }
 
       // Update the state for all the `builderOutputs` nodes based on what was

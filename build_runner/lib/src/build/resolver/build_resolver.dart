@@ -43,6 +43,7 @@ class BuildResolver {
     : _driverPool = AnalyzeActivityPool(driverPool);
 
   Future<bool> isLibrary(AssetId assetId) async {
+    buildLog.debug('isLibrary $assetId');
     if (assetId.extension != '.dart') return false;
     return _driverPool.withResource(() async {
       if (!_driver.isUriOfExistingFile(assetId.uri)) return false;
@@ -62,6 +63,7 @@ class BuildResolver {
       // library and can't be resolved like this.
       return null;
     }
+    buildLog.debug('astNodeFor $fragment');
     final path = library.firstFragment.source.fullName;
 
     return _driverPool.withResource(() async {
@@ -90,6 +92,7 @@ class BuildResolver {
     AssetId assetId, {
     bool allowSyntaxErrors = false,
   }) {
+    buildLog.debug('compilationUnitFor $assetId');
     return _driverPool.withResource(() async {
       if (!_driver.isUriOfExistingFile(assetId.uri)) {
         throw AssetNotFoundException(assetId);
@@ -166,6 +169,7 @@ class BuildResolver {
   }
 
   Stream<LibraryElement> get sdkLibraries {
+    buildLog.debug('sdkLibraries');
     final loadLibraries =
         _sdkLibraries ??= Future.sync(() {
           final publicSdkUris = _driver.sdkLibraryUris.where(
@@ -190,6 +194,7 @@ class BuildResolver {
   LinkedElementFactory get elementFactory => _driver.elementFactory;
 
   Future<AssetId> assetIdForElement(Element element) async {
+    buildLog.debug('assetIdForElement $element');
     if (element is MultiplyDefinedElement) {
       throw UnresolvableAssetException('${element.name} is ambiguous');
     }
@@ -220,14 +225,17 @@ class BuildResolver {
     required PhasedReader phasedReader,
     required InputTracker? inputTracker,
     required bool transitive,
-  }) => _analysisDriverModel.updateDriver(
-    withDriver:
-        (withDriver) => _driverPool.withResource(() => withDriver(_driver)),
-    phasedReader: phasedReader,
-    inputTracker: inputTracker,
-    entrypoint: entrypoint,
-    transitive: transitive,
-  );
+  }) {
+    buildLog.debug('updateDriverForEntrypoint $entrypoint');
+    return _analysisDriverModel.updateDriver(
+      withDriver:
+          (withDriver) => _driverPool.withResource(() => withDriver(_driver)),
+      phasedReader: phasedReader,
+      inputTracker: inputTracker,
+      entrypoint: entrypoint,
+      transitive: transitive,
+    );
+  }
 }
 
 /// Wraps [pool] so resource use is timed as [TimedActivity.analyze].
@@ -242,6 +250,7 @@ class AnalyzeActivityPool {
         final requirements = globalResultRequirements;
         final startedHash = requirements.hashCode;
         final startedNull = globalResultRequirements == null;
+        globalResultRequirements = null;
         final result = await function();
         final endedNull = globalResultRequirements == null;
         final endedHash = globalResultRequirements.hashCode;

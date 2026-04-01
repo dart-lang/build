@@ -131,7 +131,7 @@ class FineGrainedAnalysisTester {
     }
     if (analyze != null) _analyze = analyze;
 
-    analysisDriverModel.filesystem.startBuild([]);
+    analysisDriverModel.filesystem.startBuild([], invalidatedSources: null);
 
     for (final entry in _sources!.entries) {
       analysisDriverModel.filesystem.write(entry.key, entry.value);
