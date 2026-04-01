@@ -1,5 +1,6 @@
-## 4.4.17-wip
+## 4.4.17
 
+- Allow Dart SDK 3.12.x and 3.13 prerelease.
 - Move source to
   https://github.com/dart-lang/build/blob/master/builder_pkgs/build_web_compilers.
 
