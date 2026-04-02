@@ -196,16 +196,16 @@ class BuildSeries {
   /// Runs a single build.
   ///
   /// For the first build, pass any changes since the `BuildSeries` was created
-  /// as [idsToCheck]. If the first build happens immediately then pass empty
+  /// as [updates]. If the first build happens immediately then pass empty
   /// `updates`.
   ///
   /// For further builds, pass the changes since the previous builds as
-  /// [idsToCheck].
+  /// [updates].
   ///
   /// Set [recentlyBootstrapped] to skip doing checks that are done during
-  /// bootstrapping. If [recentlyBootstrapped] then [idsToCheck] must be empty.
+  /// bootstrapping. If [recentlyBootstrapped] then [updates] must be empty.
   Future<BuildResult> run(
-    Set<AssetId> idsToCheck, {
+    Set<AssetId> updates, {
     required bool recentlyBootstrapped,
     BuiltSet<BuildDirectory>? buildDirs,
     BuiltSet<BuildFilter>? buildFilters,
@@ -215,7 +215,7 @@ class BuildSeries {
     }
 
     if (recentlyBootstrapped) {
-      if (idsToCheck.isNotEmpty) {
+      if (updates.isNotEmpty) {
         throw StateError('`recentlyBootstrapped` but updates not empty.');
       }
     } else {
@@ -229,8 +229,7 @@ class BuildSeries {
       }
     }
 
-    if (idsToCheck.any(_isBuildConfiguration)) {
-      // TODO: check digest here?
+    if (updates.any(_isBuildConfiguration)) {
       _buildPlan = await _buildPlan.reload();
       await _buildPlan.deleteFilesAndFolders();
       // A config change might have caused new builders to be needed, which
@@ -258,7 +257,7 @@ class BuildSeries {
     buildFilters ??= _buildPlan.buildOptions.buildFilters;
     if (firstBuild) {
       if (_updatesFromLoad != null) {
-        idsToCheck = _updatesFromLoad!.toSet()..addAll(idsToCheck);
+        updates = _updatesFromLoad!.toSet()..addAll(updates);
         _updatesFromLoad = null;
       }
     } else {
@@ -279,7 +278,7 @@ class BuildSeries {
     );
     if (firstBuild) firstBuild = false;
 
-    _currentBuildResult = build.run(idsToCheck);
+    _currentBuildResult = build.run(updates);
     final result = await _currentBuildResult!;
     _buildResultsController.add(result);
     return result;

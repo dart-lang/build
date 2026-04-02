@@ -244,7 +244,10 @@ class Build {
           try {
             newDigest = await readerWriter.digest(id);
             newDigests[id] = newDigest;
-          } catch (_) {}
+          } catch (_) {
+            // Was deleted after `canRead`.
+            exists = false;
+          }
         }
       }
 
