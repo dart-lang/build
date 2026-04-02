@@ -45,7 +45,6 @@ void main() {
         BuildPhases([]),
         <AssetId>{},
         buildPackages,
-        readerWriter,
       );
       buildPhases = BuildPhases([]);
     });

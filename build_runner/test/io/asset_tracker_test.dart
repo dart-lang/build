@@ -47,12 +47,9 @@ void main() {
       ]);
       final reader = ReaderWriter(buildPackages);
       final aId = AssetId('a', 'web/a.txt');
-      assetGraph = await AssetGraph.build(
-        BuildPhases([]),
-        {aId},
-        buildPackages,
-        reader,
-      );
+      assetGraph = await AssetGraph.build(BuildPhases([]), {
+        aId,
+      }, buildPackages);
       // We need to pre-emptively assign a digest so we determine that the
       // node is "interesting".
       final digest = await reader.digest(aId);
@@ -68,12 +65,7 @@ void main() {
       );
       assetTracker = AssetTracker(reader, buildPackages, buildConfigs);
       final updates = await assetTracker.collectChanges(assetGraph);
-      await assetGraph.updateAndInvalidate(
-        BuildPhases([]),
-        updates,
-        (_) async {},
-        reader,
-      );
+      await assetGraph.updateAndInvalidate(BuildPhases([]), updates);
       // We should see no changes initially other than new sdk sources
       expect(
         updates..removeWhere(

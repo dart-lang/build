@@ -6,7 +6,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:built_collection/built_collection.dart';
-import 'package:io/io.dart';
 
 import '../exceptions.dart';
 import '../internal.dart';
@@ -43,8 +42,10 @@ class Bootstrapper {
 
   /// Generates the entrypoint script, compiles it and runs it with [arguments].
   ///
-  /// If the entrypoint script exits with `ExitCode.tempFail` then regenerates
-  /// it and launches it again with the same arguments.
+  /// If the entrypoint script exits with
+  /// `ChildProcess.recompileBuildersExitCode` or
+  /// `ChildProcess.assetDeletedExitCode` then regenerates it and launches it
+  /// again with the same arguments.
   ///
   /// If the entrypoint exits with any other exit code, returns it.
   ///
@@ -133,11 +134,14 @@ class Bootstrapper {
       buildProcessState.deserializeAndSet(result.message);
       final exitCode = result.exitCode;
 
-      if (exitCode != ExitCode.tempFail.code) {
+      if (exitCode != ChildProcess.recompileBuildersExitCode &&
+          exitCode != ChildProcess.assetDeletedExitCode) {
         return exitCode;
       }
 
-      buildLog.nextBuild(recompilingBuilders: true);
+      buildLog.nextBuild(
+        recompilingBuilders: exitCode == ChildProcess.recompileBuildersExitCode,
+      );
     }
   }
 

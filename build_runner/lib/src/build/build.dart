@@ -156,7 +156,7 @@ class Build {
         processedOutputs: processedOutputs,
       );
 
-  Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
+  Future<BuildResult> run(Set<AssetId> updates) async {
     buildLog.configuration = buildLog.configuration.rebuild(
       (b) => b..singleOutputPackage = buildPackages.singleOutputPackage,
     );
@@ -220,37 +220,85 @@ class Build {
     return result;
   }
 
-  Future<void> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
+  Future<void> _updateAssetGraph(Set<AssetId> updates) async {
     changedInputs.clear();
     deletedAssets.clear();
-    for (final update in updates.entries) {
-      if (update.value == ChangeType.REMOVE) {
-        deletedAssets.add(update.key);
-      } else {
-        changedInputs.add(update.key);
-        if (update.value == ChangeType.ADD) {
-          newPrimaryInputs.add(update.key);
+
+    // Check what actually changed for each asset in `updates`.
+    readerWriter.cache.invalidate(updates);
+    final resolvedUpdates = <AssetId, ChangeType>{};
+    final newDigests = <AssetId, Digest>{};
+    for (final id in updates) {
+      final oldNode = assetGraph.get(id);
+      final oldExisted =
+          oldNode != null && oldNode.type != NodeType.missingSource;
+      final oldDigest = oldNode?.digest;
+      var exists = false;
+      Digest? newDigest;
+      if (await readerWriter.canRead(id)) {
+        exists = true;
+        // Assets are only eagerly read if they were an input in the previous
+        // build. In that case, they have a digest. Compute the new digest to
+        // check if the file changed.
+        if (oldDigest != null) {
+          try {
+            newDigest = await readerWriter.digest(id);
+            newDigests[id] = newDigest;
+          } catch (_) {
+            // Was deleted after `canRead`.
+            exists = false;
+          }
         }
       }
+
+      if (oldExisted && !exists) {
+        resolvedUpdates[id] = ChangeType.REMOVE;
+        deletedAssets.add(id);
+      } else if (!oldExisted && exists) {
+        changedInputs.add(id);
+        newPrimaryInputs.add(id);
+        resolvedUpdates[id] = ChangeType.ADD;
+      } else if (oldExisted &&
+          oldDigest != null &&
+          exists &&
+          oldDigest != newDigest) {
+        changedInputs.add(id);
+        resolvedUpdates[id] = ChangeType.MODIFY;
+      }
     }
-    readerWriter.cache.invalidate(changedInputs);
+
     final deleted = await assetGraph.updateAndInvalidate(
       buildPhases,
-      updates,
-      _delete,
-      readerWriter,
+      resolvedUpdates,
     );
+    for (final id in deleted) {
+      await readerWriter.delete(id);
+    }
     deletedAssets.addAll(deleted);
+    for (final entry in newDigests.entries) {
+      assetGraph.updateNode(entry.key, (nodeBuilder) {
+        nodeBuilder.digest = entry.value;
+      });
+    }
   }
 
   /// Runs a build inside a zone with an error handler and stack chain
   /// capturing.
-  Future<BuildResult> _safeBuild(Map<AssetId, ChangeType> updates) {
+  Future<BuildResult> _safeBuild(Set<AssetId> idsToCheck) {
     final done = Completer<BuildResult>();
     runZonedGuarded(
       () async {
         if (!assetGraph.cleanBuild) {
-          await _updateAssetGraph(updates);
+          await _updateAssetGraph(idsToCheck);
+        }
+        for (final id in assetGraph.sources) {
+          final node = assetGraph.get(id)!;
+          if (node.digest == null && node.primaryOutputs.isNotEmpty) {
+            final digest = await readerWriter.digest(id);
+            assetGraph.updateNode(id, (nodeBuilder) {
+              nodeBuilder.digest = digest;
+            });
+          }
         }
         await resolversImpl?.takeLockAndStartBuild(assetGraph);
         final result = await _runPhases();

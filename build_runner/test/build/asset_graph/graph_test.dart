@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
@@ -23,13 +22,8 @@ import 'package:watcher/watcher.dart';
 import '../../common/common.dart';
 
 void main() {
-  late InternalTestReaderWriter digestReader;
   final fooPackageGraph = BuildPackages.singlePackageBuild('foo', {
     BuildPackage.forTesting(name: 'foo', isOutput: true),
-  });
-
-  setUp(() async {
-    digestReader = InternalTestReaderWriter();
   });
 
   group('AssetGraph', () {
@@ -59,7 +53,6 @@ void main() {
           BuildPhases([]),
           <AssetId>{},
           fooPackageGraph,
-          digestReader,
         );
       });
 
@@ -212,16 +205,10 @@ void main() {
       );
 
       setUp(() async {
-        digestReader.testing.writeString(
+        graph = await AssetGraph.build(buildPhases, {
           primaryInputId,
-          'contents of $primaryInputId',
-        );
-        graph = await AssetGraph.build(
-          buildPhases,
-          {primaryInputId, excludedInputId},
-          fooPackageGraph,
-          digestReader,
-        );
+          excludedInputId,
+        }, fooPackageGraph);
       });
 
       test('build', () {
@@ -241,19 +228,6 @@ void main() {
         final node = graph.get(primaryInputId)!;
         expect(node.primaryOutputs, [primaryOutputId]);
         expect(graph.computeOutputs()[node.id] ?? <AssetId>{}, isEmpty);
-        expect(
-          node.digest,
-          isNotNull,
-          reason: 'Nodes with outputs should get an eager digest.',
-        );
-
-        final excludedNode = graph.get(excludedInputId);
-        expect(excludedNode, isNotNull);
-        expect(
-          excludedNode!.digest,
-          isNull,
-          reason: 'Nodes with no output shouldn\'t get an eager digest.',
-        );
 
         final primaryOutputNode = graph.get(primaryOutputId)!;
         // Didn't actually do a build yet so this starts out empty.
@@ -271,12 +245,7 @@ void main() {
       group('updateAndInvalidate', () {
         test('add new primary input', () async {
           final changes = {AssetId('foo', 'new.txt'): ChangeType.ADD};
-          await graph.updateAndInvalidate(
-            buildPhases,
-            changes,
-            (_) async {},
-            digestReader,
-          );
+          await graph.updateAndInvalidate(buildPhases, changes);
           expect(graph.contains(AssetId('foo', 'new.txt.copy')), isTrue);
           final newBuildStepId = PostProcessBuildStepId(
             input: primaryInputId,
@@ -288,40 +257,16 @@ void main() {
           );
         });
 
-        test('delete old primary input', () async {
-          final changes = {primaryInputId: ChangeType.REMOVE};
-          final deletes = <AssetId>[];
-          expect(graph.contains(primaryOutputId), isTrue);
-          await graph.updateAndInvalidate(
-            buildPhases,
-            changes,
-            (id) async => deletes.add(id),
-            digestReader,
-          );
-          expect(graph.get(primaryInputId)!.type, NodeType.missingSource);
-          expect(graph.get(primaryOutputId)!.type, NodeType.missingSource);
-          expect(deletes, equals([primaryOutputId]));
-          expect(graph.postProcessBuildStepIds(package: 'foo'), isEmpty);
-        });
-
         test('modify primary input', () async {
           final changes = {primaryInputId: ChangeType.MODIFY};
-          final deletes = <AssetId>[];
           expect(graph.contains(primaryOutputId), isTrue);
           // pretend a build happened
           graph.updateNode(primaryOutputId, (nodeBuilder) {
             nodeBuilder.generatedNodeState.inputs.add(primaryInputId);
           });
-          await graph.updateAndInvalidate(
-            buildPhases,
-            changes,
-            (id) async => deletes.add(id),
-            digestReader,
-          );
+          await graph.updateAndInvalidate(buildPhases, changes);
           expect(graph.contains(primaryInputId), isTrue);
           expect(graph.contains(primaryOutputId), isTrue);
-          // We don't pre-emptively delete the file in the case of modifications
-          expect(deletes, isEmpty);
         });
 
         test('add new primary input which replaces a synthetic node', () async {
@@ -330,12 +275,7 @@ void main() {
           expect(graph.get(syntheticId), syntheticNode);
 
           final changes = {syntheticId: ChangeType.ADD};
-          await graph.updateAndInvalidate(
-            buildPhases,
-            changes,
-            (_) async {},
-            digestReader,
-          );
+          await graph.updateAndInvalidate(buildPhases, changes);
 
           expect(graph.contains(syntheticId), isTrue);
           expect(graph.get(syntheticId)?.type, NodeType.source);
@@ -360,12 +300,7 @@ void main() {
             expect(graph.get(syntheticOutputId), syntheticNode);
 
             final changes = {syntheticId: ChangeType.ADD};
-            await graph.updateAndInvalidate(
-              buildPhases,
-              changes,
-              (_) async {},
-              digestReader,
-            );
+            await graph.updateAndInvalidate(buildPhases, changes);
 
             expect(graph.contains(syntheticOutputId), isTrue);
             expect(graph.get(syntheticOutputId)!.type, NodeType.generated);
@@ -387,12 +322,7 @@ void main() {
             expect(graph.get(secondaryId), secondaryNode);
 
             final changes = {primaryInputId: ChangeType.REMOVE};
-            await graph.updateAndInvalidate(
-              buildPhases,
-              changes,
-              (_) => Future.value(null),
-              digestReader,
-            );
+            await graph.updateAndInvalidate(buildPhases, changes);
 
             expect(graph.get(primaryInputId)!.type, NodeType.missingSource);
             expect(graph.get(primaryOutputId)!.type, NodeType.missingSource);
@@ -419,7 +349,6 @@ void main() {
             ),
             {makeAssetId('foo|file')},
             fooPackageGraph,
-            digestReader,
           ),
           throwsA(isA<DuplicateAssetNodeException>()),
         );
@@ -438,9 +367,6 @@ void main() {
             makeAssetId('foo|lib/2.a.b.c.txt'),
           };
 
-          for (final id in sources) {
-            digestReader.testing.writeString(id, 'contents of $id');
-          }
           final graph = await AssetGraph.build(
             BuildPhases([
               InBuildPhase(
@@ -470,7 +396,6 @@ void main() {
             ]),
             sources,
             fooPackageGraph,
-            digestReader,
           );
           expect(
             graph.outputs,
@@ -497,9 +422,6 @@ void main() {
         test('allows running on generated inputs that do not match target '
             'source globs', () async {
           final sources = {makeAssetId('foo|lib/1.txt')};
-          for (final id in sources) {
-            digestReader.testing.writeString(id, 'contents of $id');
-          }
           final graph = await AssetGraph.build(
             BuildPhases([
               InBuildPhase(
@@ -520,7 +442,6 @@ void main() {
             ]),
             sources,
             fooPackageGraph,
-            digestReader,
           );
           expect(
             graph.outputs,
@@ -533,7 +454,6 @@ void main() {
 
         test('https://github.com/dart-lang/build/issues/1804', () async {
           final source = AssetId('a', 'lib/a.dart');
-          digestReader.testing.writeString(source, 'contents of $source');
           final renamedSource = AssetId('a', 'lib/A.dart');
           final generatedDart = AssetId('a', 'lib/a.g.dart');
           final generatedPart = AssetId('a', 'lib/a.g.part');
@@ -557,12 +477,9 @@ void main() {
           final buildPackages = BuildPackages.singlePackageBuild('a', {
             BuildPackage.forTesting(name: 'a', isOutput: true),
           });
-          final graph = await AssetGraph.build(
-            buildPhases,
-            {source},
-            buildPackages,
-            digestReader,
-          );
+          final graph = await AssetGraph.build(buildPhases, {
+            source,
+          }, buildPackages);
 
           // Pretend a build happened
           graph.add(AssetNode.missingSource(toBeGeneratedDart));
@@ -575,12 +492,10 @@ void main() {
 
           expect(graph.get(source)!.type, NodeType.source);
 
-          await graph.updateAndInvalidate(
-            buildPhases,
-            {renamedSource: ChangeType.ADD, source: ChangeType.REMOVE},
-            (_) async {},
-            digestReader,
-          );
+          await graph.updateAndInvalidate(buildPhases, {
+            renamedSource: ChangeType.ADD,
+            source: ChangeType.REMOVE,
+          });
 
           // The old generated part file should be marked as missing.
           expect(graph.get(generatedPart)!.type, NodeType.missingSource);

@@ -32,7 +32,6 @@ void main() {
       BuildPackages.singlePackageBuild('a', [
         BuildPackage.forTesting(name: 'a', isOutput: true),
       ]),
-      InternalTestReaderWriter(),
     );
     readerWriter = InternalTestReaderWriter();
     reader = BuildOutputReader.graphOnly(
