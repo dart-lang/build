@@ -23,7 +23,7 @@ export 'src/mock.dart'
     show
         Mock,
         SmartFake,
-        named, // ignore: deprecated_member_use_from_same_package
+        named,
         // -- setting behaviour
         when,
         any,

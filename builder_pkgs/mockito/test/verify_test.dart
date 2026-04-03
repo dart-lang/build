@@ -192,6 +192,7 @@ void main() {
     });
 
     test('should throw meaningful errors when verification is interrupted', () {
+      // ignore: only_throw_errors
       int badHelper() => throw 'boo';
 
       try {
@@ -248,13 +249,11 @@ void main() {
 
     test('and there is one unmatched call without args', () {
       mock.methodWithOptionalArg();
-      expectFail(
-        'No matching calls. All calls: _MockedClass.methodWithOptionalArg(null)\n'
-        '$noMatchingCallsFooter',
-        () {
-          verify(mock.methodWithOptionalArg(43));
-        },
-      );
+      expectFail('No matching calls. '
+          'All calls: _MockedClass.methodWithOptionalArg(null)\n'
+          '$noMatchingCallsFooter', () {
+        verify(mock.methodWithOptionalArg(43));
+      });
     });
 
     test('and there are multiple unmatched calls', () {
