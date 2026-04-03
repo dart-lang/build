@@ -10,6 +10,8 @@
   `build_runner serve web:0`. Before the fix, non-optional outputs to cache 
   under `web` would be skipped unless they were used by another build step. 
   With the fix, all non-optional outputs under `web` are built and served.
+- Add basic locking to prevent multiple instances of `build_runner` from running
+  in the same package directory.
 
 ## 2.13.1
 

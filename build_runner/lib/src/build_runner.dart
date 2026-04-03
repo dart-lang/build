@@ -27,6 +27,7 @@ import 'commands/serve_options.dart';
 import 'commands/test_command.dart';
 import 'commands/test_options.dart';
 import 'commands/watch_command.dart';
+import 'constants.dart';
 import 'exceptions.dart';
 import 'logging/build_log.dart';
 
@@ -64,6 +65,14 @@ class BuildRunner {
     final maybeCommandLine = await BuildRunnerCommandLine.parse(arguments);
     if (maybeCommandLine == null) return ExitCode.success.code;
     commandLine = maybeCommandLine;
+
+    // If this is the outer bootstrapping process and not a daemon command,
+    // acquire the universal runner lock to prevent concurrent builds.
+    if (builderFactories == null && commandLine.type != CommandType.daemon) {
+      if (!_acquireLock()) {
+        return ExitCode.config.code;
+      }
+    }
 
     // Option parsing depends on the package name in `pubspec.yaml`.
     // Fortunately, `dart run build_runner` checks that `pubspec.yaml` is
@@ -193,5 +202,48 @@ class BuildRunner {
           commandLine.type == CommandType.watch ||
           commandLine.type == CommandType.serve,
     );
+  }
+
+  /// Attempts to acquire an exclusive lock on the universal build runner lock
+  /// file.
+  ///
+  /// Returns `true` if the lock was successfully acquired, or `false` if the
+  /// lock is already held by another active process.
+  bool _acquireLock() {
+    final lockPath = p.join(cacheDirectoryPath, 'runner.lock');
+    final lockFile = File(lockPath);
+    try {
+      lockFile.createSync(recursive: true);
+      // Open and lock exclusively. The lock is released automatically by the OS
+      // when the process terminates.
+      lockFile.openSync(mode: FileMode.write).lockSync();
+
+      // Write useful diagnostic metadata so other tools can see who holds the
+      // lock.
+      lockFile.writeAsStringSync('''
+pid: $pid
+command: ${commandLine.type.name}
+timestamp: ${DateTime.now().toIso8601String()}
+arguments: ${arguments.join(' ')}
+''');
+      return true;
+    } on FileSystemException {
+      final String metadata;
+      if (lockFile.existsSync()) {
+        metadata = lockFile.readAsStringSync();
+      } else {
+        metadata = 'Unknown process';
+      }
+      print(
+        ansi.red.wrap('''
+Build failed: Another instance of `build_runner` is currently running in this package.
+
+Lock held by:
+$metadata
+Please terminate that process before starting a new build.
+'''),
+      );
+      return false;
+    }
   }
 }
