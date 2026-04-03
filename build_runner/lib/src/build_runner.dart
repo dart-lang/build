@@ -216,11 +216,12 @@ class BuildRunner {
       lockFile.createSync(recursive: true);
       // Open and lock exclusively. The lock is released automatically by the OS
       // when the process terminates.
-      lockFile.openSync(mode: FileMode.write).lockSync();
+      final openLock = lockFile.openSync(mode: FileMode.write);
+      openLock.lockSync();
 
       // Write useful diagnostic metadata so other tools can see who holds the
       // lock.
-      lockFile.writeAsStringSync('''
+      openLock.writeStringSync('''
 pid: $pid
 command: ${commandLine.type.name}
 timestamp: ${DateTime.now().toIso8601String()}
@@ -228,11 +229,15 @@ arguments: ${arguments.join(' ')}
 ''');
       return true;
     } on FileSystemException {
-      final String metadata;
-      if (lockFile.existsSync()) {
-        metadata = lockFile.readAsStringSync();
-      } else {
-        metadata = 'Unknown process';
+      String metadata;
+      try {
+        if (lockFile.existsSync()) {
+          metadata = lockFile.readAsStringSync();
+        } else {
+          metadata = 'Unknown process';
+        }
+      } catch (_) {
+        metadata = 'Unknown process (metadata unreadable due to OS lock)';
       }
       print(
         ansi.red.wrap('''
