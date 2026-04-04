@@ -43,18 +43,14 @@ void main() async {
     tester.write('root_pkg/web/a.txt', 'updated');
     await watch.expect('wrote 0 outputs');
 
-    // State on disk is updated so `build` knows to do nothing.
-    var output = await tester.run('root_pkg', 'dart run build_runner build');
-    expect(output, contains('wrote 0 outputs'));
+    // State on disk is updated by watch.
 
     // New file.
     tester.write('root_pkg/web/b.txt', 'b');
     await watch.expect(BuildLog.successPattern);
     expect(tester.read('root_pkg/web/b.txt.copy'), 'b');
 
-    // State on disk is updated so `build` knows to do nothing.
-    output = await tester.run('root_pkg', 'dart run build_runner build');
-    expect(output, contains('wrote 0 outputs'));
+    // State on disk is updated by watch.
 
     // Deleted file.
     tester.delete('root_pkg/web/b.txt');
@@ -96,9 +92,7 @@ class TestBuilder implements Builder {
     await watch.expect(BuildLog.successPattern);
     expect(tester.read('root_pkg/web/a.txt.copy'), 'hardcoded');
 
-    // State on disk is updated so `build` knows to do nothing.
-    output = await tester.run('root_pkg', 'dart run build_runner build');
-    expect(output, contains('wrote 0 outputs'));
+    // State on disk is updated by watch.
 
     // Builder config change, add a file but it has no effect.
     tester.write('root_pkg/build.yaml', '# new file, nothing here');
@@ -124,9 +118,7 @@ targets:
     tester.write('root_pkg/other_pkg.build.yaml', '# new file, nothing here');
     await watch.expect('wrote 0 outputs');
 
-    // State on disk is updated so `build` knows to do nothing.
-    output = await tester.run('root_pkg', 'dart run build_runner build');
-    expect(output, contains('wrote 0 outputs'));
+    // State on disk is updated by watch.
 
     // No-op change to `package_config.json` causes a build.
     tester.update(
