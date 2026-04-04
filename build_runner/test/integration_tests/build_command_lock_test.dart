@@ -58,4 +58,36 @@ command: watch
       ),
     );
   });
+
+  test('clean command successfully deletes cache directory without '
+      'self-lock crash', () async {
+    final pubspecs = await Pubspecs.load();
+    final tester = BuildRunnerTester(pubspecs);
+
+    tester.writePackage(
+      name: 'root_pkg',
+      dependencies: ['build_runner'],
+      files: {'web/a.txt': 'a'},
+    );
+
+    // First run build to create the cache and lock file.
+    await tester.run('root_pkg', 'dart run build_runner build');
+
+    // Then run clean and expect success. On Windows, this confirms that
+    // the process explicitly closed its own lock handle before deleting
+    // the directory.
+    await tester.run(
+      'root_pkg',
+      'dart run build_runner clean',
+      expectExitCode: 0,
+    );
+
+    final cachePath = p.join(
+      tester.tempDirectory.path,
+      'root_pkg',
+      '.dart_tool',
+      'build',
+    );
+    expect(Directory(cachePath).existsSync(), isFalse);
+  });
 }

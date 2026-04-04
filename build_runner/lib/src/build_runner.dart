@@ -204,6 +204,20 @@ class BuildRunner {
     );
   }
 
+  /// A handle to the universal lock file, if acquired by this process.
+  ///
+  /// TRICKY: This is kept static so that commands like `clean` can explicitly
+  /// release the lock before performing destructive filesystem operations (like
+  /// deleting `.dart_tool/build`) to avoid OS-level sharing violations on
+  /// Windows. It also aids integration tests that interleave multiple runs.
+  static RandomAccessFile? _universalLock;
+
+  /// Explicitly releases the universal runner lock if held by this process.
+  static void releaseLock() {
+    _universalLock?.closeSync();
+    _universalLock = null;
+  }
+
   /// Attempts to acquire an exclusive lock on the universal build runner lock
   /// file.
   ///
@@ -215,18 +229,21 @@ class BuildRunner {
     try {
       lockFile.createSync(recursive: true);
       // Open and lock exclusively. The lock is released automatically by the OS
-      // when the process terminates.
+      // when the process terminates, OR explicitly via `releaseLock()`.
       final openLock = lockFile.openSync(mode: FileMode.write);
       openLock.lockSync();
 
-      // Write useful diagnostic metadata so other tools can see who holds the
-      // lock.
+      // TRICKY: Write diagnostic metadata using the open handle itself rather
+      // than opening the file again via `File.writeAsStringSync`. On Windows,
+      // mandatory locking prevents opening a second handle to an exclusively
+      // locked file.
       openLock.writeStringSync('''
 pid: $pid
 command: ${commandLine.type.name}
 timestamp: ${DateTime.now().toIso8601String()}
 arguments: ${arguments.join(' ')}
 ''');
+      _universalLock = openLock;
       return true;
     } on FileSystemException {
       String metadata;
