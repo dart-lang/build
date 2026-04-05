@@ -43,10 +43,11 @@ import 'package:build/build.dart';
 import 'package:code_builder/code_builder.dart' hide refer;
 import 'package:collection/collection.dart';
 import 'package:dart_style/dart_style.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/src/version.dart';
 import 'package:path/path.dart' as p;
 import 'package:source_gen/source_gen.dart';
+
+import '../annotations.dart';
+import 'version.dart';
 
 /// For a source Dart library, generate the mocks referenced therein.
 ///
@@ -82,8 +83,8 @@ class MockBuilder implements Builder {
     if (mockLibraryAsset == null) {
       throw ArgumentError(
         'Build_extensions has missing or conflicting outputs for '
-        '`${buildStep.inputId.path}`, this is usually caused by a misconfigured '
-        'build extension override in `build.yaml`',
+        '`${buildStep.inputId.path}`, this is usually caused by a '
+        'misconfigured build extension override in `build.yaml`',
       );
     }
 
@@ -1346,9 +1347,9 @@ class _MockClassInfo {
             );
           } else {
             // For a pre-null safe library, we do not need to re-implement any
-            // members for the purpose of expanding their parameter types. However,
-            // we may need to include an implementation of `toString()`, if the
-            // class-to-mock has added optional parameters.
+            // members for the purpose of expanding their parameter types.
+            // However, we may need to include an implementation of
+            // `toString()` if the class-to-mock has added optional parameters.
             final toStringMethod = members
                 .whereType<MethodElement>()
                 .firstWhereOrNull((m) => m.name == 'toString');
@@ -1472,8 +1473,8 @@ class _MockClassInfo {
           ..name = name
           ..annotations.add(referImported('override', 'dart:core'))
           ..types.addAll(typeParamsWithBounds);
-        // We allow overriding a method with a private return type by omitting the
-        // return type (which is then inherited).
+        // We allow overriding a method with a private return type by omitting
+        // the return type (which is then inherited).
         if (!returnType.containsPrivateName) {
           builder.returns = _typeReference(returnType);
         }
@@ -1494,9 +1495,9 @@ class _MockClassInfo {
             final matchingParameter = _matchingParameter(
               parameter,
               superParameterType: superParameterType,
-              // A parameter in the overridden method may be a wildcard, in which
-              // case we need to rename it, as we use the parameter when we pass
-              // it to `Invocation.method`.
+              // A parameter in the overridden method may be a wildcard, in
+              // which case we need to rename it, as we use the parameter when
+              // we pass it to `Invocation.method`.
               defaultName: '_$position',
               forceNullable: true,
             );
@@ -1558,7 +1559,8 @@ class _MockClassInfo {
                   .call([
                     // Generate a raw string since name might contain a $.
                     literalString(
-                      '"$name" cannot be used without a mockito fallback generator.',
+                      '"$name" cannot be used without a mockito fallback '
+                      'generator.',
                       raw: true,
                     ),
                   ])
@@ -1591,8 +1593,8 @@ class _MockClassInfo {
               fallbackGenerator,
             );
           } else {
-            // Return a legal default value if no stub is found which matches a real
-            // call.
+            // Return a legal default value if no stub is found which matches a
+            // real call.
             returnValueForMissingStub = _dummyValue(returnType, invocation);
           }
         }
@@ -1921,9 +1923,9 @@ class _MockClassInfo {
   void _addFakeClass(String fakeName, InterfaceElement elementToFake) {
     mockLibraryInfo.fakeClasses.add(
       Class((cBuilder) {
-        // For each type parameter on [elementToFake], the Fake class needs a type
-        // parameter with same type variables, and a mirrored type argument for
-        // the "implements" clause.
+        // For each type parameter on [elementToFake], the Fake class needs a
+        // type parameter with same type variables, and a mirrored type
+        // argument for the "implements" clause.
         cBuilder
           ..name = fakeName
           ..extend = referImported('SmartFake', 'package:mockito/mockito.dart');
@@ -1972,8 +1974,9 @@ class _MockClassInfo {
           );
           if (toStringMethod != null &&
               toStringMethod.formalParameters.isNotEmpty) {
-            // If [elementToFake] includes an overriding `toString` implementation,
-            // we need to include an implementation which matches the signature.
+            // If [elementToFake] includes an overriding `toString`
+            // implementation, we need to include an implementation which
+            // matches the signature.
             cBuilder.methods.add(
               Method(
                 (mBuilder) => _buildOverridingMethod(mBuilder, toStringMethod),
@@ -2032,7 +2035,8 @@ class _MockClassInfo {
           final method = parameter.enclosingElement!;
           throw InvalidMockitoAnnotationException(
             'Mockito cannot generate a valid override for method '
-            "'${mockTarget.interfaceElement.displayName}.${method.displayName}'; "
+            "'${mockTarget.interfaceElement.displayName}."
+            "${method.displayName}'; "
             "parameter '${parameter.displayName}' causes a problem: "
             '${e.message}',
           );

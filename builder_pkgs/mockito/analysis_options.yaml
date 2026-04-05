@@ -1,13 +1,11 @@
-include: package:lints/recommended.yaml
+include: package:dart_flutter_team_lints/analysis_options.yaml
 
 analyzer:
-  language:
-    strict-casts: true
+  errors:
+    prefer_const_constructors: ignore
+    unreachable_from_main: ignore
+    unnecessary_lambdas: ignore
 
 linter:
   rules:
-    - combinators_ordering
-    - comment_references
-    - directives_ordering
-    - test_types_in_equals
-    - throw_in_finally
+    - unnecessary_ignore

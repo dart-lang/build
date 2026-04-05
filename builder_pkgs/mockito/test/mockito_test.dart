@@ -46,21 +46,6 @@ class _MockFoo extends _AbstractFoo with Mock {}
 
 class _MockedClass extends Mock implements _RealClass {}
 
-void expectFail(String expectedMessage, void Function() expectedToFail) {
-  try {
-    expectedToFail();
-    fail('It was expected to fail!');
-  } catch (e) {
-    if (e is! TestFailure) {
-      rethrow;
-    } else {
-      if (expectedMessage != e.message) {
-        throw TestFailure('Failed, but with wrong message: ${e.message}');
-      }
-    }
-  }
-}
-
 void main() {
   late _MockedClass mock;
 

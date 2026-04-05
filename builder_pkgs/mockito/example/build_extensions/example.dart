@@ -30,7 +30,7 @@ class Dog {
 @GenerateNiceMocks([MockSpec<Dog>()])
 void main() {
   test('Verify some dog behaviour', () async {
-    MockDog mockDog = MockDog();
+    var mockDog = MockDog();
     when(mockDog.eatFood(any));
 
     mockDog.eatFood('biscuits');
