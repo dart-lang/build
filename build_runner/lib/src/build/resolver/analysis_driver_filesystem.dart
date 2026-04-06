@@ -31,6 +31,7 @@ class AnalysisDriverFilesystem
     implements UriResolver, ResourceProvider, FileContentCache {
   final Map<String, FileContent> _data = {};
   final Set<String> _changedPaths = {};
+  final Set<String> _writtenPathsThisBuild = {};
 
   // Path and phase information derived from the `Iterable<AssetNode>` for fast
   // lookup.
@@ -59,7 +60,11 @@ class AnalysisDriverFilesystem
       final isVisible = phase > entry.key;
 
       if (previouslyWasVisible != isVisible) {
-        _changedPaths.addAll(entry.value);
+        for (final path in entry.value) {
+          if (_data.containsKey(path)) {
+            _changedPaths.add(path);
+          }
+        }
       }
     }
   }
@@ -67,16 +72,58 @@ class AnalysisDriverFilesystem
   /// Initializes a new filesystem that will have files added due to the
   /// build described by [generatedNodes].
   void startBuild(Iterable<AssetNode> generatedNodes) {
-    _changedPaths.addAll(_data.keys);
-    _data.clear();
-    _phaseByPath.clear();
-    _pathByPhase.clear();
+    final previousPhaseByPath = Map<String, int>.from(_phaseByPath);
+    final previousGeneratedPaths = previousPhaseByPath.keys.toSet();
+    final nextPhaseByPath = <String, int>{};
+    final nextPathByPhase = <int, List<String>>{};
     for (final node in generatedNodes) {
       final phase = node.generatedNodeConfiguration!.phaseNumber;
       final idAsPath = node.id.asPath;
-      _phaseByPath[idAsPath] = phase;
-      _pathByPhase.putIfAbsent(phase, () => []).add(idAsPath);
+      nextPhaseByPath[idAsPath] = phase;
+      nextPathByPhase.putIfAbsent(phase, () => []).add(idAsPath);
     }
+
+    final sourcePathsToClear =
+        _data.keys
+            .where((path) => !previousGeneratedPaths.contains(path))
+            .toList();
+    for (final path in sourcePathsToClear) {
+      _changedPaths.add(path);
+      _data.remove(path);
+    }
+
+    final removedGeneratedPaths =
+        previousPhaseByPath.keys.toSet()..removeAll(nextPhaseByPath.keys);
+    for (final path in removedGeneratedPaths) {
+      final previousPhase = previousPhaseByPath[path]!;
+      final wasVisible = _phase > previousPhase;
+      if (_data.remove(path) != null && wasVisible) {
+        _changedPaths.add(path);
+      }
+    }
+
+    for (final entry in previousPhaseByPath.entries) {
+      final path = entry.key;
+      final nextPhase = nextPhaseByPath[path];
+      if (nextPhase == null ||
+          nextPhase == entry.value ||
+          !_data.containsKey(path)) {
+        continue;
+      }
+      final previouslyWasVisible = _phase > entry.value;
+      final isVisible = _phase > nextPhase;
+      if (previouslyWasVisible != isVisible) {
+        _changedPaths.add(path);
+      }
+    }
+
+    _phaseByPath
+      ..clear()
+      ..addAll(nextPhaseByPath);
+    _pathByPhase
+      ..clear()
+      ..addAll(nextPathByPhase);
+    _writtenPathsThisBuild.clear();
   }
 
   /// Returns the phase of the generated file at [path] or `-1` if it's not a
@@ -102,19 +149,30 @@ class AnalysisDriverFilesystem
   void writeContent(BuildRunnerFileContent content) {
     if (!content.exists) throw ArgumentError('content must exist');
     final path = content.path;
-    var wasAbsent = false;
-    final updatedContent = _data.putIfAbsent(path, () {
-      wasAbsent = true;
-      return content;
-    });
-    if (wasAbsent) {
-      if (_phase > _phaseOf(path)) {
+    final previousContent = _data[path];
+    final isVisible = _phase > _phaseOf(path);
+    if (previousContent == null) {
+      _data[path] = content;
+      _writtenPathsThisBuild.add(path);
+      if (isVisible) {
         _changedPaths.add(path);
       }
-    } else {
-      if (content.contentHash != updatedContent.contentHash) {
-        throw StateError('Different write to $path.');
-      }
+      return;
+    }
+
+    if (content.contentHash == previousContent.contentHash) {
+      _writtenPathsThisBuild.add(path);
+      return;
+    }
+
+    if (_writtenPathsThisBuild.contains(path)) {
+      throw StateError('Different write to $path.');
+    }
+
+    _data[path] = content;
+    _writtenPathsThisBuild.add(path);
+    if (isVisible) {
+      _changedPaths.add(path);
     }
   }
 
