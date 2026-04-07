@@ -48,7 +48,10 @@ class AnalysisDriverModel {
   /// If another build has the lock, waits for it to finish.
   Future<void> takeLockAndStartBuild(AssetGraph assetGraph) async {
     _lock = await _pool.request();
-    filesystem.startBuild(assetGraph.outputs.map((id) => assetGraph.get(id)!));
+    filesystem.startBuild(
+      assetGraph.outputs.map((id) => assetGraph.get(id)!),
+      currentSources: assetGraph.sources,
+    );
   }
 
   /// Clears build state and frees the lock taken by [takeLockAndStartBuild].

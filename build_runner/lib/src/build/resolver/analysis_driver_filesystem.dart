@@ -71,9 +71,12 @@ class AnalysisDriverFilesystem
 
   /// Initializes a new filesystem that will have files added due to the
   /// build described by [generatedNodes].
-  void startBuild(Iterable<AssetNode> generatedNodes) {
+  void startBuild(
+    Iterable<AssetNode> generatedNodes, {
+    Iterable<AssetId> currentSources = const [],
+  }) {
     final previousPhaseByPath = Map<String, int>.from(_phaseByPath);
-    final previousGeneratedPaths = previousPhaseByPath.keys.toSet();
+    final currentSourcePaths = currentSources.map((id) => id.asPath).toSet();
     final nextPhaseByPath = <String, int>{};
     final nextPathByPhase = <int, List<String>>{};
     for (final node in generatedNodes) {
@@ -83,13 +86,17 @@ class AnalysisDriverFilesystem
       nextPathByPhase.putIfAbsent(phase, () => []).add(idAsPath);
     }
 
-    final sourcePathsToClear =
+    final removedSourcePaths =
         _data.keys
-            .where((path) => !previousGeneratedPaths.contains(path))
+            .where(
+              (path) =>
+                  !previousPhaseByPath.containsKey(path) &&
+                  !currentSourcePaths.contains(path),
+            )
             .toList();
-    for (final path in sourcePathsToClear) {
-      _changedPaths.add(path);
+    for (final path in removedSourcePaths) {
       _data.remove(path);
+      _changedPaths.add(path);
     }
 
     final removedGeneratedPaths =

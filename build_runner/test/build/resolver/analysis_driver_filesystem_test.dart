@@ -43,14 +43,24 @@ void main() {
       expect(filesystem.exists('foo.txt'), true);
     });
 
-    test('startBuild clears non-generated file contents', () {
-      filesystem.write('foo.txt', 'bar');
+    test('startBuild retains unchanged non-generated file contents', () {
+      filesystem.write('/a/foo.txt', 'bar');
+      filesystem.clearChangedPaths();
+
+      filesystem.startBuild([], currentSources: [AssetId('a', 'foo.txt')]);
+
+      expect(filesystem.read('/a/foo.txt'), 'bar');
+      expect(filesystem.changedPaths, isEmpty);
+    });
+
+    test('startBuild removes disappeared non-generated file contents', () {
+      filesystem.write('/a/foo.txt', 'bar');
       filesystem.clearChangedPaths();
 
       filesystem.startBuild([]);
 
-      expect(filesystem.exists('foo.txt'), isFalse);
-      expect(filesystem.changedPaths, {'foo.txt'});
+      expect(filesystem.exists('/a/foo.txt'), isFalse);
+      expect(filesystem.changedPaths, {'/a/foo.txt'});
     });
 
     test('startBuild removes disappeared generated files', () {
@@ -108,22 +118,15 @@ void main() {
           isHidden: false,
         ),
       ]);
-      filesystem.write('/a/lib/a.g.dart', 'before');
+      filesystem.write('/a/foo.txt', 'before');
       filesystem.phase = 2;
       filesystem.clearChangedPaths();
 
-      filesystem.startBuild([
-        AssetNode.generated(
-          AssetId.parse('a|lib/a.g.dart'),
-          primaryInput: AssetId.parse('a|lib/a.dart'),
-          phaseNumber: 1,
-          isHidden: false,
-        ),
-      ]);
-      filesystem.write('/a/lib/a.g.dart', 'after');
+      filesystem.startBuild([], currentSources: [AssetId('a', 'foo.txt')]);
+      filesystem.write('/a/foo.txt', 'after');
 
-      expect(filesystem.read('/a/lib/a.g.dart'), 'after');
-      expect(filesystem.changedPaths, {'/a/lib/a.g.dart'});
+      expect(filesystem.read('/a/foo.txt'), 'after');
+      expect(filesystem.changedPaths, {'/a/foo.txt'});
     });
 
     test('startBuild reports visibility changes for retained generated '
