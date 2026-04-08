@@ -14,6 +14,7 @@
   `build_runner serve web:0`. Before the fix, non-optional outputs to cache 
   under `web` would be skipped unless they were used by another build step. 
   With the fix, all non-optional outputs under `web` are built and served.
+- Remove `code_builder` dependency so builders can use any version of it.
 
 ## 2.13.1
 
