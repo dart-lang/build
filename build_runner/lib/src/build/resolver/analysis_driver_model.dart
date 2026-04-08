@@ -56,6 +56,9 @@ class AnalysisDriverModel {
     if (isInitialBuild) {
       filesystem.clearSourcePaths();
     } else {
+      for (final id in changedSources) {
+        filesystem.removeSourcePath(id.asPath);
+      }
       for (final id in deletedSources) {
         filesystem.removeSourcePath(id.asPath);
       }
