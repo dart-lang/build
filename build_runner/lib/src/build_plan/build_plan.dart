@@ -15,6 +15,7 @@ import '../build/asset_graph/node.dart';
 import '../constants.dart';
 import '../exceptions.dart';
 import '../io/asset_tracker.dart';
+import '../io/filesystem_cache.dart';
 import '../io/generated_asset_hider.dart';
 import '../io/reader_writer.dart';
 import '../logging/build_log.dart';
@@ -123,7 +124,12 @@ class BuildPlan {
         testingOverrides.buildPackages ??
         await BuildPackages.forThisPackage(workspace: buildOptions.workspace);
     final readerWriter =
-        testingOverrides.readerWriter ?? ReaderWriter(buildPackages);
+        (testingOverrides.readerWriter ?? ReaderWriter(buildPackages)).copyWith(
+          cache:
+              buildOptions.enableLowResourcesMode
+                  ? const PassthroughFilesystemCache()
+                  : InMemoryFilesystemCache(),
+        );
     final buildConfigs = await BuildConfigs.load(
       readerWriter: readerWriter,
       buildPackages: buildPackages,

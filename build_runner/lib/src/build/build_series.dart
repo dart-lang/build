@@ -14,7 +14,6 @@ import '../build_plan/build_plan.dart';
 import '../commands/watch/asset_change.dart';
 import '../constants.dart';
 import '../io/asset_tracker.dart';
-import '../io/filesystem_cache.dart';
 import '../io/generated_asset_hider.dart';
 import '../io/reader_writer.dart';
 import '../logging/build_log.dart';
@@ -74,10 +73,6 @@ class BuildSeries {
           buildPlan.testingOverrides.flattenOutput
               ? const NoopGeneratedAssetHider()
               : assetGraph,
-      cache:
-          buildPlan.buildOptions.enableLowResourcesMode
-              ? const PassthroughFilesystemCache()
-              : InMemoryFilesystemCache(),
     );
     return BuildSeries._(
       buildPlan: buildPlan,
@@ -246,10 +241,6 @@ class BuildSeries {
             _buildPlan.testingOverrides.flattenOutput
                 ? const NoopGeneratedAssetHider()
                 : _assetGraph,
-        cache:
-            _buildPlan.buildOptions.enableLowResourcesMode
-                ? const PassthroughFilesystemCache()
-                : InMemoryFilesystemCache(),
       );
     }
 
