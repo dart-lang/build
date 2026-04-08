@@ -1453,7 +1453,7 @@ class _MockClassInfo {
             referImported(
               'throwOnMissingStub',
               'package:mockito/mockito.dart',
-            ).call([refer('this').expression]).statement,
+            ).call([refer('this')]).statement,
   );
 
   /// Build a method which overrides [method], with all non-nullable
