@@ -49,6 +49,23 @@ final ResolversImpl _defaultResolvers = ResolversImpl(
   analysisDriverModel: AnalysisDriverModel(),
 );
 
+class _AssetGraphSourceUpdates {
+  final bool isInitialBuild;
+  final Set<AssetId> changedSources;
+  final Set<AssetId> deletedSources;
+
+  const _AssetGraphSourceUpdates({
+    required this.isInitialBuild,
+    required this.changedSources,
+    required this.deletedSources,
+  });
+
+  const _AssetGraphSourceUpdates.initial()
+    : isInitialBuild = true,
+      changedSources = const {},
+      deletedSources = const {};
+}
+
 /// A single build.
 class Build {
   final BuildPlan buildPlan;
@@ -220,16 +237,23 @@ class Build {
     return result;
   }
 
-  Future<void> _updateAssetGraph(Set<AssetId> updates) async {
+  _AssetGraphSourceUpdates _initialSourceUpdates() =>
+      const _AssetGraphSourceUpdates.initial();
+
+  Future<_AssetGraphSourceUpdates> _updateAssetGraph(
+    Set<AssetId> updates,
+  ) async {
     changedInputs.clear();
     deletedAssets.clear();
 
     // Check what actually changed for each asset in `updates`.
     readerWriter.cache.invalidate(updates);
     final resolvedUpdates = <AssetId, ChangeType>{};
+    final previousSourceNodes = <AssetId, bool>{};
     final newDigests = <AssetId, Digest>{};
     for (final id in updates) {
       final oldNode = assetGraph.get(id);
+      previousSourceNodes[id] = oldNode?.type == NodeType.source;
       final oldExisted =
           oldNode != null && oldNode.type != NodeType.missingSource;
       final oldDigest = oldNode?.digest;
@@ -280,6 +304,29 @@ class Build {
         nodeBuilder.digest = entry.value;
       });
     }
+
+    final changedSources = <AssetId>{};
+    final deletedSources = <AssetId>{};
+    for (final entry in resolvedUpdates.entries) {
+      final id = entry.key;
+      final changeType = entry.value;
+      if (changeType == ChangeType.REMOVE) {
+        if (previousSourceNodes[id] == true) {
+          deletedSources.add(id);
+        }
+        continue;
+      }
+      final updatedNode = assetGraph.get(id);
+      if (updatedNode?.type == NodeType.source) {
+        changedSources.add(id);
+      }
+    }
+
+    return _AssetGraphSourceUpdates(
+      isInitialBuild: false,
+      changedSources: changedSources,
+      deletedSources: deletedSources,
+    );
   }
 
   /// Runs a build inside a zone with an error handler and stack chain
@@ -288,9 +335,10 @@ class Build {
     final done = Completer<BuildResult>();
     runZonedGuarded(
       () async {
-        if (!assetGraph.cleanBuild) {
-          await _updateAssetGraph(idsToCheck);
-        }
+        final sourceUpdates =
+            assetGraph.cleanBuild
+                ? _initialSourceUpdates()
+                : await _updateAssetGraph(idsToCheck);
         for (final id in assetGraph.sources) {
           final node = assetGraph.get(id)!;
           if (node.digest == null && node.primaryOutputs.isNotEmpty) {
@@ -300,7 +348,12 @@ class Build {
             });
           }
         }
-        await resolversImpl?.takeLockAndStartBuild(assetGraph);
+        await resolversImpl?.takeLockAndStartBuild(
+          assetGraph,
+          isInitialBuild: sourceUpdates.isInitialBuild,
+          changedSources: sourceUpdates.changedSources,
+          deletedSources: sourceUpdates.deletedSources,
+        );
         final result = await _runPhases();
 
         assetGraph.previousBuildTriggersDigest =

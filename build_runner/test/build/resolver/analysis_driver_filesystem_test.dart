@@ -43,26 +43,6 @@ void main() {
       expect(filesystem.exists('foo.txt'), true);
     });
 
-    test('startBuild retains unchanged non-generated file contents', () {
-      filesystem.write('/a/foo.txt', 'bar');
-      filesystem.clearChangedPaths();
-
-      filesystem.startBuild([], currentSources: [AssetId('a', 'foo.txt')]);
-
-      expect(filesystem.read('/a/foo.txt'), 'bar');
-      expect(filesystem.changedPaths, isEmpty);
-    });
-
-    test('startBuild removes disappeared non-generated file contents', () {
-      filesystem.write('/a/foo.txt', 'bar');
-      filesystem.clearChangedPaths();
-
-      filesystem.startBuild([]);
-
-      expect(filesystem.exists('/a/foo.txt'), isFalse);
-      expect(filesystem.changedPaths, {'/a/foo.txt'});
-    });
-
     test('startBuild removes disappeared generated files', () {
       filesystem.startBuild([
         AssetNode.generated(
@@ -118,16 +98,59 @@ void main() {
           isHidden: false,
         ),
       ]);
-      filesystem.write('/a/foo.txt', 'before');
+      filesystem.write('/a/lib/a.g.dart', 'before');
       filesystem.phase = 2;
       filesystem.clearChangedPaths();
 
-      filesystem.startBuild([], currentSources: [AssetId('a', 'foo.txt')]);
-      filesystem.write('/a/foo.txt', 'after');
+      filesystem.startBuild([
+        AssetNode.generated(
+          AssetId.parse('a|lib/a.g.dart'),
+          primaryInput: AssetId.parse('a|lib/a.dart'),
+          phaseNumber: 1,
+          isHidden: false,
+        ),
+      ]);
+      filesystem.write('/a/lib/a.g.dart', 'after');
 
-      expect(filesystem.read('/a/foo.txt'), 'after');
+      expect(filesystem.read('/a/lib/a.g.dart'), 'after');
+      expect(filesystem.changedPaths, {'/a/lib/a.g.dart'});
+    });
+
+    test('removeSourcePath removes source file contents and changedPaths', () {
+      filesystem.write('/a/foo.txt', 'bar');
+      filesystem.clearChangedPaths();
+
+      filesystem.removeSourcePath('/a/foo.txt');
+
+      expect(filesystem.exists('/a/foo.txt'), isFalse);
       expect(filesystem.changedPaths, {'/a/foo.txt'});
     });
+
+    test(
+      'clearSourcePaths removes all source file contents and changedPaths',
+      () {
+        filesystem.write('/a/foo.txt', 'bar');
+        filesystem.write('/b/bar.txt', 'baz');
+        filesystem.startBuild([
+          AssetNode.generated(
+            AssetId.parse('a|lib/a.g.dart'),
+            primaryInput: AssetId.parse('a|lib/a.dart'),
+            phaseNumber: 1,
+            isHidden: false,
+          ),
+        ]);
+        filesystem.write('/a/lib/a.g.dart', 'generated');
+        filesystem.phase = 2;
+        filesystem.clearChangedPaths();
+
+        filesystem.clearSourcePaths();
+
+        expect(filesystem.exists('/a/foo.txt'), isFalse);
+        expect(filesystem.exists('/b/bar.txt'), isFalse);
+        expect(filesystem.exists('/a/lib/a.g.dart'), isTrue);
+        expect(filesystem.changedPaths, {'/a/foo.txt', '/b/bar.txt'});
+      },
+    );
 
     test('startBuild reports visibility changes for retained generated '
         'files', () {

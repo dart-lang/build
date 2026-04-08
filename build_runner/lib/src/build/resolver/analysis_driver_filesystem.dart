@@ -25,8 +25,8 @@ import '../asset_graph/node.dart';
 /// During the build, set [phase] to change the phase that the files are viewed
 /// at.
 ///
-/// Files are added as they're needed during one build and only removed when
-/// they are cleared by the next [startBuild].
+/// Source files are added as they're needed during a build and are managed by
+/// the analysis driver model. Generated files are tracked by [startBuild].
 class AnalysisDriverFilesystem
     implements UriResolver, ResourceProvider, FileContentCache {
   final Map<String, FileContent> _data = {};
@@ -71,12 +71,8 @@ class AnalysisDriverFilesystem
 
   /// Initializes a new filesystem that will have files added due to the
   /// build described by [generatedNodes].
-  void startBuild(
-    Iterable<AssetNode> generatedNodes, {
-    Iterable<AssetId> currentSources = const [],
-  }) {
+  void startBuild(Iterable<AssetNode> generatedNodes) {
     final previousPhaseByPath = Map<String, int>.from(_phaseByPath);
-    final currentSourcePaths = currentSources.map((id) => id.asPath).toSet();
     final nextPhaseByPath = <String, int>{};
     final nextPathByPhase = <int, List<String>>{};
     for (final node in generatedNodes) {
@@ -84,19 +80,6 @@ class AnalysisDriverFilesystem
       final idAsPath = node.id.asPath;
       nextPhaseByPath[idAsPath] = phase;
       nextPathByPhase.putIfAbsent(phase, () => []).add(idAsPath);
-    }
-
-    final removedSourcePaths =
-        _data.keys
-            .where(
-              (path) =>
-                  !previousPhaseByPath.containsKey(path) &&
-                  !currentSourcePaths.contains(path),
-            )
-            .toList();
-    for (final path in removedSourcePaths) {
-      _data.remove(path);
-      _changedPaths.add(path);
     }
 
     final removedGeneratedPaths =
@@ -131,6 +114,26 @@ class AnalysisDriverFilesystem
       ..clear()
       ..addAll(nextPathByPhase);
     _writtenPathsThisBuild.clear();
+  }
+
+  /// Removes a source file from the in-memory filesystem.
+  void removeSourcePath(String path) {
+    if (_phaseByPath.containsKey(path)) {
+      throw ArgumentError.value(path, 'path', 'Must not be a generated path.');
+    }
+    if (_data.remove(path) != null) {
+      _changedPaths.add(path);
+    }
+  }
+
+  /// Clears all source file contents from the in-memory filesystem.
+  void clearSourcePaths() {
+    final sourcePaths =
+        _data.keys.where((path) => !_phaseByPath.containsKey(path)).toList();
+    for (final path in sourcePaths) {
+      _data.remove(path);
+      _changedPaths.add(path);
+    }
   }
 
   /// Returns the phase of the generated file at [path] or `-1` if it's not a
