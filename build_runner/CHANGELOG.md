@@ -4,8 +4,9 @@
 - Better handling of deletions of files during the build: if the file is not
   needed ignore the deletion, if it's needed try to use the cached version,
   as a last resort restart the build.
-- Defer deletions of files by `build_runner` until the build is complete to
-  avoid causing churn for tools that would notice the file deletion.
+- Defer deletions of files by `build_runner` until the build is complete. Don't
+  write files unless the contents changed. These reduce unnecessary work by
+  tools that watch the filesystem.
 - `--workspace` flag is no longer experimental, remove the warning.
 - Bug fix: small correctness fix in input tracking.
 - Bug fix: fix corner case that caused missing outputs with `build_runner serve`
