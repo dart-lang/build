@@ -21,7 +21,6 @@ dependencies:
   build_daemon: ^4.0.0
   built_collection: ^5.1.1
   built_value: ^8.10.1
-  code_builder: ^4.2.0
   collection: ^1.15.0
   convert: ^3.0.0
   crypto: ^3.0.0
