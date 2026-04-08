@@ -109,7 +109,7 @@ class BuildPlan {
     bool recentlyBootstrapped = true,
   }) async {
     final bootstrapper = Bootstrapper(
-      workspace: buildOptions.workspace,
+      buildPaths: buildOptions.buildPaths,
       compileAot: buildOptions.forceAot,
     );
     var restartIsNeeded = false;
@@ -122,7 +122,7 @@ class BuildPlan {
 
     final buildPackages =
         testingOverrides.buildPackages ??
-        await BuildPackages.forThisPackage(workspace: buildOptions.workspace);
+        await BuildPackages.forPaths(buildOptions.buildPaths);
     final readerWriter =
         (testingOverrides.readerWriter ?? ReaderWriter(buildPackages)).copyWith(
           cache:
@@ -160,7 +160,7 @@ class BuildPlan {
           builderDefinitions: builderDefinitions,
           builderConfigOverrides: buildOptions.builderConfigOverrides,
           isReleaseBuild: buildOptions.isReleaseBuild,
-          workspace: buildOptions.workspace,
+          workspace: buildOptions.buildPaths.buildWorkspace,
         ).createBuildPhases();
     buildPhases.checkOutputLocations(buildPackages.outputPackages);
 

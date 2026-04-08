@@ -11,6 +11,7 @@ import 'package:pub_semver/pub_semver.dart';
 
 import '../build_plan/build_configs.dart';
 import '../build_plan/build_packages.dart';
+import '../build_plan/build_paths.dart';
 import '../constants.dart';
 import '../exceptions.dart';
 import '../io/reader_writer.dart';
@@ -18,8 +19,8 @@ import '../logging/build_log.dart';
 
 final _lastShortFormatDartVersion = Version(3, 6, 0);
 
-Future<String> generateBuildScript({required bool workspace}) async {
-  final builderFactories = await loadBuilderFactories(workspace: workspace);
+Future<String> generateBuildScript({required BuildPaths buildPaths}) async {
+  final builderFactories = await loadBuilderFactories(buildPaths: buildPaths);
 
   try {
     // The `build_runner` version number is included to force a rebuild if the
@@ -61,14 +62,13 @@ void main(List<String> args) async {
 /// Loads builder factories for the current package and its transitive
 /// dependencies.
 ///
-/// If [workspace], builder factories are also loaded for other packages in
-/// the current workspace, if any, and their transitive dependencies.
+/// If `buildPaths.buildWorkspace`, builder factories are also loaded for other
+/// packages in the current workspace, if any, and their transitive
+/// dependencies.
 Future<BuilderFactoriesExpressions> loadBuilderFactories({
-  required bool workspace,
+  required BuildPaths buildPaths,
 }) async {
-  final buildPackages = await BuildPackages.forThisPackage(
-    workspace: workspace,
-  );
+  final buildPackages = await BuildPackages.forPaths(buildPaths);
   final readerWriter = ReaderWriter(buildPackages);
   final overrides = await findBuildConfigOverrides(
     buildPackages: buildPackages,

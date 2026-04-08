@@ -13,12 +13,14 @@ import 'package:path/path.dart' as p;
 import '../build_runner_command_line.dart';
 import 'build_directory.dart';
 import 'build_filter.dart';
+import 'build_paths.dart';
 
 /// The command line options common to all `build_runner` commands that do a
 /// build.
 class BuildOptions {
   final BuiltMap<String, BuiltMap<String, Object?>> builderConfigOverrides;
   final BuiltSet<BuildDirectory> buildDirs;
+  final BuildPaths buildPaths;
   final BuiltSet<BuildFilter> buildFilters;
   final String? configKey;
   final BuiltList<String> enableExperiments;
@@ -32,7 +34,6 @@ class BuildOptions {
   final bool trackPerformance;
   final bool verbose;
   final bool verboseDurations;
-  final bool workspace;
 
   late final bool anyMergedOutputDirectory = buildDirs.any(
     (target) => target.outputLocation?.path.isNotEmpty ?? false,
@@ -40,6 +41,7 @@ class BuildOptions {
 
   BuildOptions({
     required this.buildDirs,
+    required this.buildPaths,
     required this.builderConfigOverrides,
     required this.buildFilters,
     required this.configKey,
@@ -54,7 +56,6 @@ class BuildOptions {
     required this.trackPerformance,
     required this.verbose,
     required this.verboseDurations,
-    required this.workspace,
   });
 
   /// Creates with defaults that mostly match the real defaults.
@@ -65,6 +66,7 @@ class BuildOptions {
   factory BuildOptions.forTests({
     BuiltMap<String, BuiltMap<String, Object?>>? builderConfigOverrides,
     BuiltSet<BuildDirectory>? buildDirs,
+    BuildPaths? buildPaths,
     BuiltSet<BuildFilter>? buildFilters,
     String? configKey,
     bool? dartAotPerf,
@@ -78,10 +80,11 @@ class BuildOptions {
     bool? trackPerformance,
     bool? verbose,
     bool? verboseDurations,
-    bool? workspace,
   }) => BuildOptions(
     builderConfigOverrides: builderConfigOverrides ?? BuiltMap(),
     buildDirs: buildDirs ?? BuiltSet(),
+    buildPaths:
+        buildPaths ?? BuildPaths(packagePath: '.', buildWorkspace: false),
     buildFilters: buildFilters ?? BuiltSet(),
     configKey: configKey,
     dartAotPerf: dartAotPerf ?? false,
@@ -95,7 +98,6 @@ class BuildOptions {
     trackPerformance: trackPerformance ?? false,
     verbose: verbose ?? false,
     verboseDurations: verboseDurations ?? false,
-    workspace: workspace ?? false,
   );
 
   /// Parses [commandLine].
@@ -112,6 +114,7 @@ class BuildOptions {
   /// argument (like `serve`).
   static BuildOptions parse(
     BuildRunnerCommandLine commandLine, {
+    required BuildPaths buildPaths,
     required String rootPackage,
     required bool restIsBuildDirs,
     Iterable<String>? extraDirs,
@@ -125,6 +128,7 @@ class BuildOptions {
               for (final dir in extraDirs)
                 BuildDirectory(_checkTopLevel(commandLine, dir)),
           }.build(),
+      buildPaths: buildPaths,
       builderConfigOverrides: _parseBuilderConfigOverrides(
         commandLine,
         rootPackage: rootPackage,
@@ -144,7 +148,6 @@ class BuildOptions {
           commandLine.trackPerformance! || commandLine.logPerformance != null,
       verbose: commandLine.verbose!,
       verboseDurations: commandLine.verboseDurations!,
-      workspace: commandLine.workspace!,
     );
 
     if (result.forceAot && result.forceJit) {
@@ -162,6 +165,7 @@ class BuildOptions {
     BuiltSet<BuildFilter>? buildFilters,
   }) => BuildOptions(
     buildDirs: buildDirs ?? this.buildDirs,
+    buildPaths: buildPaths,
     builderConfigOverrides: builderConfigOverrides,
     buildFilters: buildFilters ?? this.buildFilters,
     configKey: configKey,
@@ -176,7 +180,6 @@ class BuildOptions {
     trackPerformance: trackPerformance,
     verbose: verbose,
     verboseDurations: verboseDurations,
-    workspace: workspace,
   );
 }
 

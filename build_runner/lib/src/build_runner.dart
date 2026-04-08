@@ -12,7 +12,9 @@ import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
 import 'bootstrap/bootstrapper.dart';
+import 'bootstrap/build_process_state.dart';
 import 'build_plan/build_options.dart';
+import 'build_plan/build_paths.dart';
 import 'build_plan/builder_factories.dart';
 import 'build_runner_command_line.dart';
 import 'commands/build_command.dart';
@@ -24,6 +26,7 @@ import 'commands/run_command.dart';
 import 'commands/run_options.dart';
 import 'commands/serve_command.dart';
 import 'commands/serve_options.dart';
+import 'commands/stop_command.dart';
 import 'commands/test_command.dart';
 import 'commands/test_options.dart';
 import 'commands/watch_command.dart';
@@ -83,9 +86,19 @@ class BuildRunner {
                 as YamlMap)['name']!
             as String;
 
+    // Take the process lock if this is the outer process. All commands except
+    // `daemon` take the lock; `daemon` has its own locking.
+    final buildPaths = BuildPaths.load(
+      p.current,
+      buildWorkspace: commandLine.workspace ?? false,
+    );
+    if (builderFactories == null && commandLine.type != CommandType.daemon) {
+      await buildProcessState.takeLock(buildPaths);
+    }
+
     if (commandLine.type.requiresBuilders && builderFactories == null) {
       return await _runWithBuilders(
-        workspace: commandLine.workspace!,
+        buildPaths: buildPaths,
         compileAot: commandLine.forceAot!,
       );
     }
@@ -99,11 +112,15 @@ class BuildRunner {
             commandLine,
             restIsBuildDirs: true,
             rootPackage: rootPackage,
+            buildPaths: buildPaths,
           ),
         );
 
       case CommandType.clean:
-        command = CleanCommand();
+        command = CleanCommand(buildPaths);
+
+      case CommandType.stop:
+        command = StopCommand();
 
       case CommandType.daemon:
         command = DaemonCommand(
@@ -113,6 +130,7 @@ class BuildRunner {
             commandLine,
             restIsBuildDirs: false,
             rootPackage: rootPackage,
+            buildPaths: buildPaths,
           ),
           daemonOptions: DaemonOptions.parse(commandLine),
         );
@@ -124,6 +142,7 @@ class BuildRunner {
             commandLine,
             restIsBuildDirs: false,
             rootPackage: rootPackage,
+            buildPaths: buildPaths,
           ),
           runOptions: RunOptions.parse(commandLine),
         );
@@ -136,6 +155,7 @@ class BuildRunner {
             commandLine,
             restIsBuildDirs: false,
             rootPackage: rootPackage,
+            buildPaths: buildPaths,
             extraDirs: serveOptions.serveTargets.map((t) => t.dir),
           ),
           serveOptions: serveOptions,
@@ -148,6 +168,7 @@ class BuildRunner {
             commandLine,
             restIsBuildDirs: false,
             rootPackage: rootPackage,
+            buildPaths: buildPaths,
           ),
           testOptions: TestOptions.parse(commandLine),
         );
@@ -159,6 +180,7 @@ class BuildRunner {
             commandLine,
             restIsBuildDirs: true,
             rootPackage: rootPackage,
+            buildPaths: buildPaths,
           ),
         );
     }
@@ -171,7 +193,7 @@ class BuildRunner {
   /// The nested `build_runner` invocation reaches [run] with [builderFactories]
   /// set, so it runs the command instead of bootstrapping.
   Future<int> _runWithBuilders({
-    required bool workspace,
+    required BuildPaths buildPaths,
     required bool compileAot,
   }) async {
     buildLog.configuration = buildLog.configuration.rebuild((b) {
@@ -181,7 +203,7 @@ class BuildRunner {
     });
 
     final bootstrapper = Bootstrapper(
-      workspace: workspace,
+      buildPaths: buildPaths,
       compileAot: compileAot,
     );
     return await bootstrapper.run(

@@ -8,6 +8,17 @@
   write files unless the contents changed. These reduce unnecessary work by
   tools that watch the filesystem.
 - `--workspace` flag is no longer experimental, remove the warning.
+- Add `--workspace` flag to `clean` command, use it to clear the cache used for
+  a `--workspace` build.
+- Add new command `stop`: run `dart run build_runner stop` to terminate a
+  running `watch` or `serve` command in the current package or workspace. If
+  a build is in progress, the build will complete first.
+- Add locking: `build_runner` will wait for any already-running command before
+  running. If there is an already-running `watch` or `serve` command, it will be
+  closed after the currently-running build, as if you ran the new
+  `dart run build_runner stop`.
+- Note: the `daemon` command ignores `build_runner stop` and ignores the new
+  locking as it uses its own locking.
 - Bug fix: small correctness fix in input tracking.
 - Bug fix: fix corner case that caused missing outputs with `build_runner serve`
   when directories were specified with a port, for example 

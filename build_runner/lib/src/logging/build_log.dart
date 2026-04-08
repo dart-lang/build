@@ -247,6 +247,10 @@ class BuildLog {
     _display.flushAndPrint('BuildLog.debug:$message');
   }
 
+  void flushAndPrint(String message) {
+    _display.flushAndPrint(message);
+  }
+
   _PhaseProgress _getProgress({
     required InBuildPhase phase,
     required bool lazy,

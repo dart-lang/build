@@ -17,6 +17,7 @@ enum CommandType {
   daemon,
   run,
   serve,
+  stop,
   test,
   watch;
 
@@ -28,7 +29,7 @@ enum CommandType {
 
   /// Whether the command must be launched as a nested `build_runner` binary
   /// built with configured builders.
-  bool get requiresBuilders => this != clean;
+  bool get requiresBuilders => this != clean && this != stop;
 }
 
 /// A `build_runner` command line with arguments parsed to primitive types.
@@ -106,6 +107,8 @@ class BuildRunnerCommandLine {
         return _run.usage;
       case CommandType.serve:
         return _serve.usage;
+      case CommandType.stop:
+        return _stop.usage;
       case CommandType.test:
         return _test.usage;
       case CommandType.watch:
@@ -166,6 +169,7 @@ class _CommandRunner extends CommandRunner<BuildRunnerCommandLine> {
     addCommand(_daemon);
     addCommand(_run);
     addCommand(_serve);
+    addCommand(_stop);
     addCommand(_test);
     addCommand(_watch);
   }
@@ -345,7 +349,17 @@ class _Clean extends _Command<BuildRunnerCommandLine> {
 
   @override
   String get description =>
-      'Deletes the build cache. The next build will be a full build.';
+      'Deletes the package or workspace build cache. '
+      'The next build will be a full build.';
+
+  _Clean() {
+    argParser.addFlag(
+      workspaceOption,
+      defaultsTo: false,
+      negatable: false,
+      help: 'Deletes the `--workspace` build cache.',
+    );
+  }
 
   @override
   Future<BuildRunnerCommandLine> run() async =>
@@ -510,4 +524,28 @@ class _Watch extends _Command<BuildRunnerCommandLine> {
   @override
   Future<BuildRunnerCommandLine> run() async =>
       BuildRunnerCommandLine(CommandType.watch, argResults!);
+}
+
+final _stop = _Stop();
+
+class _Stop extends _Command<BuildRunnerCommandLine> {
+  @override
+  String get name => 'stop';
+
+  @override
+  String get description =>
+      'Stops `watch` and `serve` commands in the same package or workspace.';
+
+  _Stop() {
+    argParser.addFlag(
+      workspaceOption,
+      defaultsTo: false,
+      negatable: false,
+      help: 'Stop `build_runner` in all packages in the current workspace.',
+    );
+  }
+
+  @override
+  Future<BuildRunnerCommandLine> run() async =>
+      BuildRunnerCommandLine(CommandType.stop, argResults!);
 }
