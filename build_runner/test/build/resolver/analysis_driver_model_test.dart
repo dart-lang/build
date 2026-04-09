@@ -32,10 +32,7 @@ void main() {
 
       expect(model.filesystem.exists('/a/lib/a.dart'), isFalse);
       expect(model.filesystem.exists('/a/lib/b.dart'), isFalse);
-      expect(model.filesystem.changedPaths, {
-        '/a/lib/a.dart',
-        '/a/lib/b.dart',
-      });
+      expect(model.filesystem.changedPaths, {'/a/lib/a.dart', '/a/lib/b.dart'});
     });
 
     test('incremental build keeps unchanged sources cached', () async {
