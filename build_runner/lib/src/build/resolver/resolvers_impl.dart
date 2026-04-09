@@ -104,14 +104,10 @@ class ResolversImpl implements Resolvers {
   /// `build.dart` and test builds in `package:build_test` `test_builder.dart`.
   Future<void> takeLockAndStartBuild(
     AssetGraph assetGraph, {
-    required bool isInitialBuild,
-    required Set<AssetId> changedSources,
-    required Set<AssetId> deletedSources,
+    required Set<AssetId>? invalidatedSources,
   }) => _analysisDriverModel.takeLockAndStartBuild(
     assetGraph,
-    isInitialBuild: isInitialBuild,
-    changedSources: changedSources,
-    deletedSources: deletedSources,
+    invalidatedSources: invalidatedSources,
   );
 
   PhasedAssetDeps phasedAssetDeps() => _analysisDriverModel.phasedAssetDeps();

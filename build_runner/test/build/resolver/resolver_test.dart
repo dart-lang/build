@@ -1369,9 +1369,7 @@ Future<void> _runBuilder(
   };
   await resolversImpl?.takeLockAndStartBuild(
     AssetGraph.emptyForTesting(),
-    isInitialBuild: true,
-    changedSources: const {},
-    deletedSources: const {},
+    invalidatedSources: null,
   );
   await runBuilder(builder, list, singleStepReaderWriter, resolvers);
   resolversImpl?.reset();

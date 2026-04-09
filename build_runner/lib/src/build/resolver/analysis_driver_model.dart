@@ -48,22 +48,13 @@ class AnalysisDriverModel {
   /// If another build has the lock, waits for it to finish.
   Future<void> takeLockAndStartBuild(
     AssetGraph assetGraph, {
-    required bool isInitialBuild,
-    required Set<AssetId> changedSources,
-    required Set<AssetId> deletedSources,
+    required Set<AssetId>? invalidatedSources,
   }) async {
     _lock = await _pool.request();
-    if (isInitialBuild) {
-      filesystem.clearSourcePaths();
-    } else {
-      for (final id in changedSources) {
-        filesystem.removeSourcePath(id.asPath);
-      }
-      for (final id in deletedSources) {
-        filesystem.removeSourcePath(id.asPath);
-      }
-    }
-    filesystem.startBuild(assetGraph.outputs.map((id) => assetGraph.get(id)!));
+    filesystem.startBuild(
+      assetGraph.outputs.map((id) => assetGraph.get(id)!),
+      invalidatedSources: invalidatedSources,
+    );
   }
 
   /// Clears build state and frees the lock taken by [takeLockAndStartBuild].

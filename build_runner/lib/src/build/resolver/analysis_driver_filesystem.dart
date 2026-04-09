@@ -25,8 +25,8 @@ import '../asset_graph/node.dart';
 /// During the build, set [phase] to change the phase that the files are viewed
 /// at.
 ///
-/// Source files are added as they're needed during a build and are managed by
-/// the analysis driver model. Generated files are tracked by [startBuild].
+/// Source files are added as they're needed during a build. [startBuild]
+/// manages how source and generated files are invalidated between builds.
 class AnalysisDriverFilesystem
     implements UriResolver, ResourceProvider, FileContentCache {
   final Map<String, FileContent> _data = {};
@@ -35,8 +35,8 @@ class AnalysisDriverFilesystem
 
   // Path and phase information derived from the `Iterable<AssetNode>` for fast
   // lookup.
-  final Map<String, int> _phaseByPath = {};
-  final Map<int, List<String>> _pathByPhase = {};
+  Map<String, int> _phaseByPath = {};
+  Map<int, List<String>> _pathByPhase = {};
 
   int _phase = 0;
 
@@ -71,68 +71,57 @@ class AnalysisDriverFilesystem
 
   /// Initializes a new filesystem that will have files added due to the
   /// build described by [generatedNodes].
-  void startBuild(Iterable<AssetNode> generatedNodes) {
-    final previousPhaseByPath = Map<String, int>.from(_phaseByPath);
-    final nextPhaseByPath = <String, int>{};
-    final nextPathByPhase = <int, List<String>>{};
+  ///
+  /// If [invalidatedSources] is `null`, this is an initial build and all
+  /// cached contents are cleared. Otherwise, only source files matching
+  /// [invalidatedSources] are removed.
+  void startBuild(
+    Iterable<AssetNode> generatedNodes, {
+    required Set<AssetId>? invalidatedSources,
+  }) {
+    final previousPhaseByPath = _phaseByPath;
+    _phaseByPath = <String, int>{};
+    _pathByPhase = <int, List<String>>{};
     for (final node in generatedNodes) {
       final phase = node.generatedNodeConfiguration!.phaseNumber;
       final idAsPath = node.id.asPath;
-      nextPhaseByPath[idAsPath] = phase;
-      nextPathByPhase.putIfAbsent(phase, () => []).add(idAsPath);
+      _phaseByPath[idAsPath] = phase;
+      _pathByPhase.putIfAbsent(phase, () => []).add(idAsPath);
     }
 
-    final removedGeneratedPaths =
-        previousPhaseByPath.keys.toSet()..removeAll(nextPhaseByPath.keys);
-    for (final path in removedGeneratedPaths) {
-      final previousPhase = previousPhaseByPath[path]!;
-      final wasVisible = _phase > previousPhase;
-      if (_data.remove(path) != null && wasVisible) {
+    _writtenPathsThisBuild.clear();
+
+    if (invalidatedSources == null) {
+      _changedPaths.addAll(_data.keys);
+      _data.clear();
+      return;
+    }
+
+    for (final id in invalidatedSources) {
+      final path = id.asPath;
+      if (_data.remove(path) != null) {
         _changedPaths.add(path);
       }
     }
 
     for (final entry in previousPhaseByPath.entries) {
       final path = entry.key;
-      final nextPhase = nextPhaseByPath[path];
-      if (nextPhase == null ||
-          nextPhase == entry.value ||
-          !_data.containsKey(path)) {
+      final previousPhase = entry.value;
+      final nextPhase = _phaseByPath[path];
+      if (nextPhase == null) {
+        if (_data.remove(path) != null && _phase > previousPhase) {
+          _changedPaths.add(path);
+        }
         continue;
       }
-      final previouslyWasVisible = _phase > entry.value;
+      if (nextPhase == previousPhase || !_data.containsKey(path)) {
+        continue;
+      }
+      final previouslyWasVisible = _phase > previousPhase;
       final isVisible = _phase > nextPhase;
       if (previouslyWasVisible != isVisible) {
         _changedPaths.add(path);
       }
-    }
-
-    _phaseByPath
-      ..clear()
-      ..addAll(nextPhaseByPath);
-    _pathByPhase
-      ..clear()
-      ..addAll(nextPathByPhase);
-    _writtenPathsThisBuild.clear();
-  }
-
-  /// Removes a source file from the in-memory filesystem.
-  void removeSourcePath(String path) {
-    if (_phaseByPath.containsKey(path)) {
-      throw ArgumentError.value(path, 'path', 'Must not be a generated path.');
-    }
-    if (_data.remove(path) != null) {
-      _changedPaths.add(path);
-    }
-  }
-
-  /// Clears all source file contents from the in-memory filesystem.
-  void clearSourcePaths() {
-    final sourcePaths =
-        _data.keys.where((path) => !_phaseByPath.containsKey(path)).toList();
-    for (final path in sourcePaths) {
-      _data.remove(path);
-      _changedPaths.add(path);
     }
   }
 

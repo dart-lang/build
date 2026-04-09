@@ -27,9 +27,7 @@ void main() {
 
       await model.takeLockAndStartBuild(
         AssetGraph.emptyForTesting(),
-        isInitialBuild: true,
-        changedSources: const {},
-        deletedSources: const {},
+        invalidatedSources: null,
       );
 
       expect(model.filesystem.exists('/a/lib/a.dart'), isFalse);
@@ -46,9 +44,7 @@ void main() {
 
       await model.takeLockAndStartBuild(
         AssetGraph.emptyForTesting(),
-        isInitialBuild: false,
-        changedSources: const {},
-        deletedSources: const {},
+        invalidatedSources: const {},
       );
 
       expect(model.filesystem.exists('/a/lib/a.dart'), isTrue);
@@ -56,9 +52,7 @@ void main() {
       expect(model.filesystem.changedPaths, isEmpty);
     });
 
-    test(
-      'incremental build removes only changed and deleted sources',
-      () async {
+    test('incremental build removes only invalidated sources', () async {
       model.filesystem.write('/a/lib/changed.dart', 'class Changed {}');
       model.filesystem.write('/a/lib/deleted.dart', 'class Deleted {}');
       model.filesystem.write('/a/lib/unchanged.dart', 'class Unchanged {}');
@@ -66,9 +60,10 @@ void main() {
 
       await model.takeLockAndStartBuild(
         AssetGraph.emptyForTesting(),
-        isInitialBuild: false,
-        changedSources: {AssetId.parse('a|lib/changed.dart')},
-        deletedSources: {AssetId.parse('a|lib/deleted.dart')},
+        invalidatedSources: {
+          AssetId.parse('a|lib/changed.dart'),
+          AssetId.parse('a|lib/deleted.dart'),
+        },
       );
 
       expect(model.filesystem.exists('/a/lib/changed.dart'), isFalse);
@@ -78,8 +73,7 @@ void main() {
         '/a/lib/changed.dart',
         '/a/lib/deleted.dart',
       });
-      },
-    );
+    });
   });
 }
 

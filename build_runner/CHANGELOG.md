@@ -1,5 +1,7 @@
 ## 2.14.0-wip
 
+- Performance: further improvements to management of files for analysis
+  for 2x faster incremental builds.
 - Add OSC 8 hyperlinks for logged input paths.
 - Better handling of deletions of files during the build: if the file is not
   needed ignore the deletion, if it's needed try to use the cached version,
