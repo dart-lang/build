@@ -32,6 +32,7 @@ class AnalysisDriverFilesystem
   final Map<String, FileContent> _data = {};
   final Set<String> _changedPaths = {};
   final Set<String> _writtenPathsThisBuild = {};
+  bool _allCachedContentsAreFromCurrentBuild = false;
 
   // Path and phase information derived from the `Iterable<AssetNode>` for fast
   // lookup.
@@ -60,11 +61,7 @@ class AnalysisDriverFilesystem
       final isVisible = phase > entry.key;
 
       if (previouslyWasVisible != isVisible) {
-        for (final path in entry.value) {
-          if (_data.containsKey(path)) {
-            _changedPaths.add(path);
-          }
-        }
+        _changedPaths.addAll(entry.value);
       }
     }
   }
@@ -90,6 +87,7 @@ class AnalysisDriverFilesystem
     }
 
     _writtenPathsThisBuild.clear();
+    _allCachedContentsAreFromCurrentBuild = invalidatedSources == null;
 
     if (invalidatedSources == null) {
       _changedPaths.addAll(_data.keys);
@@ -152,7 +150,9 @@ class AnalysisDriverFilesystem
     final isVisible = _phase > _phaseOf(path);
     if (previousContent == null) {
       _data[path] = content;
-      _writtenPathsThisBuild.add(path);
+      if (!_allCachedContentsAreFromCurrentBuild) {
+        _writtenPathsThisBuild.add(path);
+      }
       if (isVisible) {
         _changedPaths.add(path);
       }
@@ -160,11 +160,14 @@ class AnalysisDriverFilesystem
     }
 
     if (content.contentHash == previousContent.contentHash) {
-      _writtenPathsThisBuild.add(path);
+      if (!_allCachedContentsAreFromCurrentBuild) {
+        _writtenPathsThisBuild.add(path);
+      }
       return;
     }
 
-    if (_writtenPathsThisBuild.contains(path)) {
+    if (_allCachedContentsAreFromCurrentBuild ||
+        _writtenPathsThisBuild.contains(path)) {
       throw StateError('Different write to $path.');
     }
 
