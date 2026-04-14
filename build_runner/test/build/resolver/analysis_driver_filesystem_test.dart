@@ -37,6 +37,14 @@ void main() {
       expect(filesystem.changedPaths, isEmpty);
     });
 
+    test('different write in the same build asserts', () {
+      filesystem.write('foo.txt', 'bar');
+      expect(
+        () => filesystem.write('foo.txt', 'baz'),
+        throwsA(isA<AssertionError>()),
+      );
+    });
+
     test('write updates `exists`', () {
       expect(filesystem.exists('foo.txt'), false);
       filesystem.write('foo.txt', 'bar');

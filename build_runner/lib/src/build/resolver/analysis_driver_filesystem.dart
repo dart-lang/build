@@ -31,8 +31,7 @@ class AnalysisDriverFilesystem
     implements UriResolver, ResourceProvider, FileContentCache {
   final Map<String, FileContent> _data = {};
   final Set<String> _changedPaths = {};
-  final Set<String> _writtenPathsThisBuild = {};
-  bool _allCachedContentsAreFromCurrentBuild = false;
+  final Set<String> _changedPathsThisBuild = {};
 
   // Path and phase information derived from the `Iterable<AssetNode>` for fast
   // lookup.
@@ -86,8 +85,7 @@ class AnalysisDriverFilesystem
       _pathByPhase.putIfAbsent(phase, () => []).add(idAsPath);
     }
 
-    _writtenPathsThisBuild.clear();
-    _allCachedContentsAreFromCurrentBuild = invalidatedSources == null;
+    _changedPathsThisBuild.clear();
 
     if (invalidatedSources == null) {
       _changedPaths.addAll(_data.keys);
@@ -140,42 +138,21 @@ class AnalysisDriverFilesystem
   }
 
   /// Writes [content].
-  ///
-  /// Throws if the file was already written with different content since the
-  /// most recent [startBuild].
   void writeContent(BuildRunnerFileContent content) {
     if (!content.exists) throw ArgumentError('content must exist');
     final path = content.path;
     final previousContent = _data[path];
     final isVisible = _phase > _phaseOf(path);
-    if (previousContent == null) {
-      _data[path] = content;
-      if (!_allCachedContentsAreFromCurrentBuild) {
-        _writtenPathsThisBuild.add(path);
-      }
-      if (isVisible) {
-        _changedPaths.add(path);
-      }
+    if (previousContent != null &&
+        content.contentHash == previousContent.contentHash) {
       return;
-    }
-
-    if (content.contentHash == previousContent.contentHash) {
-      if (!_allCachedContentsAreFromCurrentBuild) {
-        _writtenPathsThisBuild.add(path);
-      }
-      return;
-    }
-
-    if (_allCachedContentsAreFromCurrentBuild ||
-        _writtenPathsThisBuild.contains(path)) {
-      throw StateError('Different write to $path.');
     }
 
     _data[path] = content;
-    _writtenPathsThisBuild.add(path);
     if (isVisible) {
       _changedPaths.add(path);
     }
+    assert(_changedPathsThisBuild.add(path), path);
   }
 
   /// Paths that were modified by [writeContent] since the last
