@@ -207,8 +207,10 @@ class _Lock {
   /// Releases the lock and closes the file.
   void unlock() {
     try {
-      _randomAccessFile.unlockSync();
       _randomAccessFile.closeSync();
+    } catch (_) {}
+    try {
+      _randomAccessFile.unlockSync();
     } catch (_) {}
   }
 
@@ -219,7 +221,7 @@ class _Lock {
       requestedFile.parent.createSync(recursive: true);
       // Write even if the file already exists to trigger a file watch event in
       // the process that has the lock.
-      requestedFile.writeAsStringSync('');
+      requestedFile.writeAsStringSync('', flush: true);
     } catch (_) {}
   }
 }
