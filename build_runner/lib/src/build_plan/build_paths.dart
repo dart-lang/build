@@ -28,6 +28,11 @@ class BuildPaths {
     return BuildType.singlePackageInWorkspace;
   }
 
+  /// The path to the output root for this build.
+  ///
+  /// If [buildWorkspace] then [workspacePath], otherwise [packagePath].
+  String get outputRootPath => buildWorkspace ? workspacePath! : packagePath;
+
   BuildPaths({
     required this.packagePath,
     required this.buildWorkspace,

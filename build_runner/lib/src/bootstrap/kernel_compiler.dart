@@ -4,6 +4,9 @@
 
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
+
+import '../build_plan/build_paths.dart';
 import '../constants.dart';
 import 'compiler.dart';
 import 'depfile.dart';
@@ -15,11 +18,18 @@ const entrypointDillDigestPath = '$entrypointScriptPath.dill.digest';
 
 /// Compiles the build script to kernel.
 class KernelCompiler implements Compiler {
-  final Depfile _outputDepfile = Depfile(
-    outputPath: entrypointDillPath,
-    depfilePath: entrypointDillDepfilePath,
-    digestPath: entrypointDillDigestPath,
-  );
+  final BuildPaths buildPaths;
+  final Depfile _outputDepfile;
+
+  KernelCompiler(this.buildPaths)
+    : _outputDepfile = Depfile(
+        outputPath: p.join(buildPaths.outputRootPath, entrypointDillPath),
+        depfilePath: p.join(
+          buildPaths.outputRootPath,
+          entrypointDillDepfilePath,
+        ),
+        digestPath: p.join(buildPaths.outputRootPath, entrypointDillDigestPath),
+      );
 
   @override
   FreshnessResult checkFreshness({required bool digestsAreFresh}) =>
@@ -34,11 +44,11 @@ class KernelCompiler implements Compiler {
     final result = await ParentProcess.run(dart, [
       'compile',
       'kernel',
-      entrypointScriptPath,
+      p.join(buildPaths.outputRootPath, entrypointScriptPath),
       '--output',
-      entrypointDillPath,
+      p.join(buildPaths.outputRootPath, entrypointDillPath),
       '--depfile',
-      entrypointDillDepfilePath,
+      p.join(buildPaths.outputRootPath, entrypointDillDepfilePath),
       if (experiments != null)
         for (final experiment in experiments) '--enable-experiment=$experiment',
     ]);
@@ -48,8 +58,11 @@ class KernelCompiler implements Compiler {
 
       // Convert "unknown experiment" warnings to errors.
       if (stdout.contains('Unknown experiment:')) {
-        if (File(entrypointDillPath).existsSync()) {
-          File(entrypointDillPath).deleteSync();
+        final dillFile = File(
+          p.join(buildPaths.outputRootPath, entrypointDillPath),
+        );
+        if (dillFile.existsSync()) {
+          dillFile.deleteSync();
         }
         final messages = stdout
             .split('\n')

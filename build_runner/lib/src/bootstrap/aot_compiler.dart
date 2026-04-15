@@ -4,6 +4,9 @@
 
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
+
+import '../build_plan/build_paths.dart';
 import '../constants.dart';
 import 'compiler.dart';
 import 'depfile.dart';
@@ -15,11 +18,18 @@ const entrypointAotDigestPath = '$entrypointScriptPath.aot.digest';
 
 /// Compiles the build script to an AOT snapshot.
 class AotCompiler implements Compiler {
-  final Depfile _outputDepfile = Depfile(
-    outputPath: entrypointAotPath,
-    depfilePath: entrypointAotDepfilePath,
-    digestPath: entrypointAotDigestPath,
-  );
+  final BuildPaths buildPaths;
+  final Depfile _outputDepfile;
+
+  AotCompiler(this.buildPaths)
+    : _outputDepfile = Depfile(
+        outputPath: p.join(buildPaths.outputRootPath, entrypointAotPath),
+        depfilePath: p.join(
+          buildPaths.outputRootPath,
+          entrypointAotDepfilePath,
+        ),
+        digestPath: p.join(buildPaths.outputRootPath, entrypointAotDigestPath),
+      );
 
   @override
   FreshnessResult checkFreshness({required bool digestsAreFresh}) =>
@@ -34,11 +44,11 @@ class AotCompiler implements Compiler {
     final result = await ParentProcess.run(dart, [
       'compile',
       'aot-snapshot',
-      entrypointScriptPath,
+      p.join(buildPaths.outputRootPath, entrypointScriptPath),
       '--output',
-      entrypointAotPath,
+      p.join(buildPaths.outputRootPath, entrypointAotPath),
       '--depfile',
-      entrypointAotDepfilePath,
+      p.join(buildPaths.outputRootPath, entrypointAotDepfilePath),
       if (experiments != null)
         for (final experiment in experiments) '--enable-experiment=$experiment',
     ]);
@@ -48,8 +58,11 @@ class AotCompiler implements Compiler {
 
       // Convert "unknown experiment" warnings to errors.
       if (stdout.contains('Unknown experiment:')) {
-        if (File(entrypointAotPath).existsSync()) {
-          File(entrypointAotPath).deleteSync();
+        final aotFile = File(
+          p.join(buildPaths.outputRootPath, entrypointAotPath),
+        );
+        if (aotFile.existsSync()) {
+          aotFile.deleteSync();
         }
         final messages = stdout
             .split('\n')

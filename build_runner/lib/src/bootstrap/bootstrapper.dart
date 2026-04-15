@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:built_collection/built_collection.dart';
+import 'package:path/path.dart' as p;
 
 import '../build_plan/build_paths.dart';
 import '../exceptions.dart';
@@ -39,7 +40,8 @@ class Bootstrapper {
   final Compiler _compiler;
 
   Bootstrapper({required this.buildPaths, required this.compileAot})
-    : _compiler = compileAot ? AotCompiler() : KernelCompiler();
+    : _compiler =
+          compileAot ? AotCompiler(buildPaths) : KernelCompiler(buildPaths);
 
   /// Generates the entrypoint script, compiles it and runs it with [arguments].
   ///
@@ -121,13 +123,16 @@ class Bootstrapper {
       final result =
           compileAot
               ? await ParentProcess.runAotSnapshotAndSend(
-                aotSnapshot: entrypointAotPath,
+                aotSnapshot: p.join(
+                  buildPaths.outputRootPath,
+                  entrypointAotPath,
+                ),
                 arguments: arguments,
                 message: buildProcessState.serialize(),
                 runUnderPerf: dartAotPerf,
               )
               : await ParentProcess.runAndSend(
-                script: entrypointDillPath,
+                script: p.join(buildPaths.outputRootPath, entrypointDillPath),
                 arguments: arguments,
                 message: buildProcessState.serialize(),
                 jitVmArgs: jitVmArgs,
@@ -151,7 +156,7 @@ class Bootstrapper {
   /// Reads before write so the file is not written if there is no change.
   Future<void> _writeBuildScript() async {
     final buildScript = await generateBuildScript(buildPaths: buildPaths);
-    final path = entrypointScriptPath;
+    final path = p.join(buildPaths.outputRootPath, entrypointScriptPath);
     final existingBuildScript =
         File(path).existsSync() ? File(path).readAsStringSync() : null;
     if (buildScript != existingBuildScript) {
