@@ -26,11 +26,24 @@ class BuildRunnerTester {
   final Pubspecs pubspecs;
   final Directory tempDirectory;
 
-  BuildRunnerTester(this.pubspecs)
-    : tempDirectory = Directory.systemTemp.createTempSync(
-        'BuildRunnerTester-',
-      ) {
+  BuildRunnerTester(Pubspecs pubspecs)
+    : this._(
+        pubspecs,
+        Directory.systemTemp.createTempSync('BuildRunnerTester-'),
+      );
+
+  BuildRunnerTester._(this.pubspecs, this.tempDirectory) {
     addTearDown(() => tempDirectory.deleteSync(recursive: true));
+  }
+
+  /// Copies the entire workspace, returns a new `BuildRunnerTester` using
+  /// the copy.
+  BuildRunnerTester copyWorkspace() {
+    final newTemp = Directory.systemTemp.createTempSync(
+      'BuildRunnerTester-copy-',
+    );
+    copyPathSync(tempDirectory.path, newTemp.path);
+    return BuildRunnerTester._(pubspecs, newTemp);
   }
 
   /// Writes a Dart package to the workspace.
@@ -244,7 +257,8 @@ class BuildRunnerProcess {
     final stopwatch = Stopwatch()..start();
     while (stopwatch.elapsed < duration) {
       try {
-        output.add(await _outputs.next.timeout(duration - stopwatch.elapsed));
+        output.add(await _outputs.peek.timeout(duration - stopwatch.elapsed));
+        await _outputs.next;
       } on TimeoutException catch (_) {
         // Expected.
       } catch (_) {

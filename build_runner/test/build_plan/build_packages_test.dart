@@ -9,6 +9,7 @@ import 'dart:io';
 
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
+import 'package:build_runner/src/build_plan/build_paths.dart';
 import 'package:package_config/package_config_types.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -22,7 +23,9 @@ void main() {
   group('BuildPackages', () {
     group('forThisPackage ', () {
       setUp(() async {
-        buildPackages = await BuildPackages.forThisPackage();
+        buildPackages = await BuildPackages.forPaths(
+          BuildPaths.load(p.current, buildWorkspace: false),
+        );
       });
 
       test('singleOutputPackage', () {
@@ -60,8 +63,11 @@ void main() {
         await tester.run('basic_pkg', 'dart pub get');
         fakeHostedPackages(tester.tempDirectory, ['a', 'b', 'c', 'd']);
 
-        buildPackages = await BuildPackages.forPath(
-          p.join(tempDirectory, 'basic_pkg'),
+        buildPackages = await BuildPackages.forPaths(
+          BuildPaths.load(
+            p.join(tempDirectory, 'basic_pkg'),
+            buildWorkspace: false,
+          ),
         );
       });
 
@@ -137,8 +143,11 @@ void main() {
         await tester.run('with_dev_deps', 'dart pub get');
         fakeHostedPackages(tester.tempDirectory, ['a', 'b', 'c']);
 
-        buildPackages = await BuildPackages.forPath(
-          p.join(tempDirectory, 'with_dev_deps'),
+        buildPackages = await BuildPackages.forPaths(
+          BuildPaths.load(
+            p.join(tempDirectory, 'with_dev_deps'),
+            buildWorkspace: false,
+          ),
         );
       });
 
@@ -196,7 +205,9 @@ void main() {
       final withFlutterDeps = p.absolute('test/fixtures/flutter_pkg');
 
       setUp(() async {
-        buildPackages = await BuildPackages.forPath(withFlutterDeps);
+        buildPackages = await BuildPackages.forPaths(
+          BuildPaths.load(withFlutterDeps, buildWorkspace: false),
+        );
       });
 
       test('allPackages resolved correctly with all packages', () {
@@ -243,8 +254,11 @@ void main() {
 
     test('missing pubspec throws on create', () {
       expect(
-        () => BuildPackages.forPath(
-          p.absolute(p.join('test', 'fixtures', 'no_pubspec')),
+        () => BuildPackages.forPaths(
+          BuildPaths.load(
+            p.absolute(p.join('test', 'fixtures', 'no_pubspec')),
+            buildWorkspace: false,
+          ),
         ),
         throwsA(anything),
       );
@@ -252,8 +266,11 @@ void main() {
 
     test('missing .dart_tool/package_config.json file throws on create', () {
       expect(
-        () => BuildPackages.forPath(
-          p.absolute(p.join('test', 'fixtures', 'no_packages_file')),
+        () => BuildPackages.forPaths(
+          BuildPaths.load(
+            p.absolute(p.join('test', 'fixtures', 'no_packages_file')),
+            buildWorkspace: false,
+          ),
         ),
         throwsA(anything),
       );
@@ -288,7 +305,9 @@ workspace:
     });
 
     test('without --workspace loads correctly', () async {
-      buildPackages = await BuildPackages.forPath(p.join(tempDirectory, 'a'));
+      buildPackages = await BuildPackages.forPaths(
+        BuildPaths.load(p.join(tempDirectory, 'a'), buildWorkspace: false),
+      );
 
       expect(buildPackages.packages.asMap(), {
         'a': BuildPackage(
@@ -346,9 +365,8 @@ workspace:
       test('for package', () async {
         // Load the workspace passing the directory of a package in the
         // workspace.
-        buildPackages = await BuildPackages.forPath(
-          p.join(tempDirectory, 'a'),
-          workspace: true,
+        buildPackages = await BuildPackages.forPaths(
+          BuildPaths.load(p.join(tempDirectory, 'a'), buildWorkspace: true),
         );
 
         expect(buildPackages.packages.asMap(), expectedPackages);
@@ -359,9 +377,8 @@ workspace:
       test('for workspace root', () async {
         // Load the workspace passing the directory of a package in the
         // workspace itself. The result should be identical.
-        buildPackages = await BuildPackages.forPath(
-          tempDirectory,
-          workspace: true,
+        buildPackages = await BuildPackages.forPaths(
+          BuildPaths.load(tempDirectory, buildWorkspace: true),
         );
 
         expect(buildPackages.packages.asMap(), expectedPackages);

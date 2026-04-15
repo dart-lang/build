@@ -12,31 +12,18 @@ import 'package:yaml/yaml.dart';
 
 import 'build_package.dart';
 import 'build_packages.dart';
+import 'build_paths.dart';
 
 class BuildPackagesLoader {
-  /// Loads the build packages for building the package at [packagePath].
+  /// Loads the build packages for building [paths].
   ///
   /// Assumes `pubspec.yaml` exists and has a name, as this is checked by
   /// `dart run`.
-  ///
-  /// If [workspace], prepares to build the whole workspace, if any.
-  static Future<BuildPackages> forPath(
-    String packagePath, {
-    bool workspace = false,
-  }) async {
-    String? workspacePath;
-    final workspaceRefFile = File(
-      p.join(packagePath, '.dart_tool', 'pub', 'workspace_ref.json'),
-    );
+  static Future<BuildPackages> forPaths(BuildPaths paths) async {
+    final packagePath = paths.packagePath;
+    final workspacePath = paths.workspacePath;
     File packageConfigFile;
-    if (workspaceRefFile.existsSync()) {
-      final workspaceRef =
-          (json.decode(workspaceRefFile.readAsStringSync())
-                  as Map<String, Object?>)['workspaceRoot']
-              as String;
-      workspacePath = p.canonicalize(
-        p.join(p.dirname(workspaceRefFile.path), workspaceRef),
-      );
+    if (workspacePath != null) {
       packageConfigFile = File(
         p.join(workspacePath, '.dart_tool', 'package_config.json'),
       );
@@ -49,12 +36,7 @@ class BuildPackagesLoader {
       throw StateError('Failed to find package_config.json.');
     }
 
-    final buildType =
-        workspacePath == null
-            ? BuildType.singlePackage
-            : workspace
-            ? BuildType.workspace
-            : BuildType.singlePackageInWorkspace;
+    final buildType = paths.buildType;
 
     final packageConfig = await loadPackageConfig(packageConfigFile);
     final packageConfigs =
@@ -117,17 +99,6 @@ class BuildPackagesLoader {
       packages: buildPackages.build(),
     );
   }
-}
-
-enum BuildType {
-  /// Single package not in a workspace.
-  singlePackage,
-
-  /// Single package in a workspace, but the workspace is ignored.
-  singlePackageInWorkspace,
-
-  /// All packages in a workspace.
-  workspace,
 }
 
 /// Loads and returns `$absolutePath/pubspec.yaml`.

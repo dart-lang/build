@@ -92,7 +92,9 @@ class ServeCommand implements BuildRunnerCommand {
       });
 
       // TODO(davidmorgan): reuse package graph.
-      _ensureBuildWebCompilersDependency(await BuildPackages.forThisPackage());
+      _ensureBuildWebCompilersDependency(
+        await BuildPackages.forPaths(buildOptions.buildPaths),
+      );
 
       final completer = Completer<int>();
       handleBuildResultsStream(watcher.buildResults, completer);
