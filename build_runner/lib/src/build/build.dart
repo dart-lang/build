@@ -220,16 +220,20 @@ class Build {
     return result;
   }
 
-  Future<void> _updateAssetGraph(Set<AssetId> updates) async {
+  Future<Set<AssetId>> _updateAssetGraph(Set<AssetId> updates) async {
     changedInputs.clear();
     deletedAssets.clear();
 
     // Check what actually changed for each asset in `updates`.
     readerWriter.cache.invalidate(updates);
     final resolvedUpdates = <AssetId, ChangeType>{};
+    final previousSourceNodes = <AssetId>{};
     final newDigests = <AssetId, Digest>{};
     for (final id in updates) {
       final oldNode = assetGraph.get(id);
+      if (oldNode?.type == NodeType.source) {
+        previousSourceNodes.add(id);
+      }
       final oldExisted =
           oldNode != null && oldNode.type != NodeType.missingSource;
       final oldDigest = oldNode?.digest;
@@ -280,6 +284,16 @@ class Build {
         nodeBuilder.digest = entry.value;
       });
     }
+
+    final invalidatedSources = <AssetId>{};
+    for (final entry in resolvedUpdates.entries) {
+      final id = entry.key;
+      final changeType = entry.value;
+      if (changeType != ChangeType.ADD && previousSourceNodes.contains(id)) {
+        invalidatedSources.add(id);
+      }
+    }
+    return invalidatedSources;
   }
 
   /// Runs a build inside a zone with an error handler and stack chain
@@ -288,9 +302,8 @@ class Build {
     final done = Completer<BuildResult>();
     runZonedGuarded(
       () async {
-        if (!assetGraph.cleanBuild) {
-          await _updateAssetGraph(idsToCheck);
-        }
+        final invalidatedSources =
+            assetGraph.cleanBuild ? null : await _updateAssetGraph(idsToCheck);
         for (final id in assetGraph.sources) {
           final node = assetGraph.get(id)!;
           if (node.digest == null && node.primaryOutputs.isNotEmpty) {
@@ -300,7 +313,10 @@ class Build {
             });
           }
         }
-        await resolversImpl?.takeLockAndStartBuild(assetGraph);
+        await resolversImpl?.takeLockAndStartBuild(
+          assetGraph,
+          invalidatedSources: invalidatedSources,
+        );
         final result = await _runPhases();
 
         assetGraph.previousBuildTriggersDigest =

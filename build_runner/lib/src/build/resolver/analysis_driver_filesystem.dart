@@ -25,17 +25,18 @@ import '../asset_graph/node.dart';
 /// During the build, set [phase] to change the phase that the files are viewed
 /// at.
 ///
-/// Files are added as they're needed during one build and only removed when
-/// they are cleared by the next [startBuild].
+/// Source files are added as they're needed during a build. [startBuild]
+/// manages how source and generated files are invalidated between builds.
 class AnalysisDriverFilesystem
     implements UriResolver, ResourceProvider, FileContentCache {
   final Map<String, FileContent> _data = {};
   final Set<String> _changedPaths = {};
+  final Set<String> _changedPathsThisBuild = {};
 
   // Path and phase information derived from the `Iterable<AssetNode>` for fast
   // lookup.
-  final Map<String, int> _phaseByPath = {};
-  final Map<int, List<String>> _pathByPhase = {};
+  Map<String, int> _phaseByPath = {};
+  Map<int, List<String>> _pathByPhase = {};
 
   int _phase = 0;
 
@@ -66,16 +67,57 @@ class AnalysisDriverFilesystem
 
   /// Initializes a new filesystem that will have files added due to the
   /// build described by [generatedNodes].
-  void startBuild(Iterable<AssetNode> generatedNodes) {
-    _changedPaths.addAll(_data.keys);
-    _data.clear();
-    _phaseByPath.clear();
-    _pathByPhase.clear();
+  ///
+  /// If [invalidatedSources] is `null`, this is an initial build and all
+  /// cached contents are cleared. Otherwise, only source files matching
+  /// [invalidatedSources] are removed.
+  void startBuild(
+    Iterable<AssetNode> generatedNodes, {
+    required Set<AssetId>? invalidatedSources,
+  }) {
+    final previousPhaseByPath = _phaseByPath;
+    _phaseByPath = <String, int>{};
+    _pathByPhase = <int, List<String>>{};
     for (final node in generatedNodes) {
       final phase = node.generatedNodeConfiguration!.phaseNumber;
       final idAsPath = node.id.asPath;
       _phaseByPath[idAsPath] = phase;
       _pathByPhase.putIfAbsent(phase, () => []).add(idAsPath);
+    }
+
+    _changedPathsThisBuild.clear();
+
+    if (invalidatedSources == null) {
+      _changedPaths.addAll(_data.keys);
+      _data.clear();
+      return;
+    }
+
+    for (final id in invalidatedSources) {
+      final path = id.asPath;
+      if (_data.remove(path) != null) {
+        _changedPaths.add(path);
+      }
+    }
+
+    for (final entry in previousPhaseByPath.entries) {
+      final path = entry.key;
+      final previousPhase = entry.value;
+      final nextPhase = _phaseByPath[path];
+      if (nextPhase == null) {
+        if (_data.remove(path) != null && _phase > previousPhase) {
+          _changedPaths.add(path);
+        }
+        continue;
+      }
+      if (nextPhase == previousPhase || !_data.containsKey(path)) {
+        continue;
+      }
+      final previouslyWasVisible = _phase > previousPhase;
+      final isVisible = _phase > nextPhase;
+      if (previouslyWasVisible != isVisible) {
+        _changedPaths.add(path);
+      }
     }
   }
 
@@ -96,26 +138,21 @@ class AnalysisDriverFilesystem
   }
 
   /// Writes [content].
-  ///
-  /// Throws if the file was already written with different content since the
-  /// most recent [startBuild].
   void writeContent(BuildRunnerFileContent content) {
     if (!content.exists) throw ArgumentError('content must exist');
     final path = content.path;
-    var wasAbsent = false;
-    final updatedContent = _data.putIfAbsent(path, () {
-      wasAbsent = true;
-      return content;
-    });
-    if (wasAbsent) {
-      if (_phase > _phaseOf(path)) {
-        _changedPaths.add(path);
-      }
-    } else {
-      if (content.contentHash != updatedContent.contentHash) {
-        throw StateError('Different write to $path.');
-      }
+    final previousContent = _data[path];
+    final isVisible = _phase > _phaseOf(path);
+    if (previousContent != null &&
+        content.contentHash == previousContent.contentHash) {
+      return;
     }
+
+    _data[path] = content;
+    if (isVisible) {
+      _changedPaths.add(path);
+    }
+    assert(_changedPathsThisBuild.add(path), path);
   }
 
   /// Paths that were modified by [writeContent] since the last

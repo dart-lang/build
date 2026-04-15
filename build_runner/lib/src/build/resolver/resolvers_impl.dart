@@ -102,8 +102,13 @@ class ResolversImpl implements Resolvers {
   /// implementation that needs locking. Find a way to do better. Fortunately,
   /// only two codepaths need to care about the lock: the main build in
   /// `build.dart` and test builds in `package:build_test` `test_builder.dart`.
-  Future<void> takeLockAndStartBuild(AssetGraph assetGraph) =>
-      _analysisDriverModel.takeLockAndStartBuild(assetGraph);
+  Future<void> takeLockAndStartBuild(
+    AssetGraph assetGraph, {
+    required Set<AssetId>? invalidatedSources,
+  }) => _analysisDriverModel.takeLockAndStartBuild(
+    assetGraph,
+    invalidatedSources: invalidatedSources,
+  );
 
   PhasedAssetDeps phasedAssetDeps() => _analysisDriverModel.phasedAssetDeps();
 
