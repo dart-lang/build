@@ -25,8 +25,9 @@ void main() async {
         'bin/compile.dart': r'''
 import 'dart:io';
 import 'package:build_runner/src/bootstrap/kernel_compiler.dart';
+import 'package:build_runner/src/build_plan/build_paths.dart';
 void main() async {
-  final compiler = KernelCompiler();
+  final compiler = KernelCompiler(BuildPaths(packagePath: '.', buildWorkspace: false));
   if (compiler.checkFreshness(digestsAreFresh: false).outputIsFresh) {
     stdout.write('fresh\n');
   } else {
