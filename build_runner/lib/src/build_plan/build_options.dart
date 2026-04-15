@@ -10,6 +10,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
+import '../bootstrap/compile_type.dart';
 import '../build_runner_command_line.dart';
 import 'build_directory.dart';
 import 'build_filter.dart';
@@ -22,12 +23,11 @@ class BuildOptions {
   final BuiltSet<BuildDirectory> buildDirs;
   final BuildPaths buildPaths;
   final BuiltSet<BuildFilter> buildFilters;
+  final CompileStrategy compileStrategy;
   final String? configKey;
   final BuiltList<String> enableExperiments;
   final bool enableLowResourcesMode;
   final bool dartAotPerf;
-  final bool forceAot;
-  final bool forceJit;
   final bool isReleaseBuild;
   final String? logPerformanceDir;
   final bool outputSymlinksOnly;
@@ -44,12 +44,11 @@ class BuildOptions {
     required this.buildPaths,
     required this.builderConfigOverrides,
     required this.buildFilters,
+    required this.compileStrategy,
     required this.configKey,
     required this.dartAotPerf,
     required this.enableExperiments,
     required this.enableLowResourcesMode,
-    required this.forceAot,
-    required this.forceJit,
     required this.isReleaseBuild,
     required this.logPerformanceDir,
     required this.outputSymlinksOnly,
@@ -68,12 +67,11 @@ class BuildOptions {
     BuiltSet<BuildDirectory>? buildDirs,
     BuildPaths? buildPaths,
     BuiltSet<BuildFilter>? buildFilters,
+    CompileStrategy? compileStrategy,
     String? configKey,
     bool? dartAotPerf,
     BuiltList<String>? enableExperiments,
     bool? enableLowResourcesMode,
-    bool? forceAot,
-    bool? forceJit,
     bool? isReleaseBuild,
     String? logPerformanceDir,
     bool? outputSymlinksOnly,
@@ -86,12 +84,11 @@ class BuildOptions {
     buildPaths:
         buildPaths ?? BuildPaths(packagePath: '.', buildWorkspace: false),
     buildFilters: buildFilters ?? BuiltSet(),
+    compileStrategy: compileStrategy ?? CompileStrategy.tryAot,
     configKey: configKey,
     dartAotPerf: dartAotPerf ?? false,
     enableExperiments: enableExperiments ?? BuiltList(),
     enableLowResourcesMode: enableLowResourcesMode ?? false,
-    forceAot: forceAot ?? false,
-    forceJit: forceJit ?? false,
     isReleaseBuild: isReleaseBuild ?? false,
     logPerformanceDir: logPerformanceDir,
     outputSymlinksOnly: outputSymlinksOnly ?? false,
@@ -119,6 +116,26 @@ class BuildOptions {
     required bool restIsBuildDirs,
     Iterable<String>? extraDirs,
   }) {
+    final forceAot = commandLine.forceAot!;
+    final forceJit = commandLine.forceJit!;
+    if (forceAot && forceJit) {
+      throw UsageException(
+        'Only one compile mode can be used, '
+        'got --$forceAotOption and --$forceJitOption.',
+        commandLine.usage,
+      );
+    }
+    CompileStrategy compileStrategy;
+    if (commandLine.type == CommandType.run) {
+      compileStrategy = CompileStrategy.alwaysJit;
+    } else if (forceJit) {
+      compileStrategy = CompileStrategy.forceJit;
+    } else if (forceAot) {
+      compileStrategy = CompileStrategy.forceAot;
+    } else {
+      compileStrategy = CompileStrategy.tryAot;
+    }
+
     final result = BuildOptions(
       buildDirs:
           {
@@ -139,8 +156,6 @@ class BuildOptions {
       dartAotPerf: commandLine.dartAotPerf ?? false,
       enableExperiments: commandLine.enableExperiments!,
       enableLowResourcesMode: commandLine.lowResourcesMode!,
-      forceAot: commandLine.forceAot!,
-      forceJit: commandLine.forceJit!,
       isReleaseBuild: commandLine.release!,
       logPerformanceDir: _parseLogPerformance(commandLine),
       outputSymlinksOnly: commandLine.symlink!,
@@ -148,21 +163,15 @@ class BuildOptions {
           commandLine.trackPerformance! || commandLine.logPerformance != null,
       verbose: commandLine.verbose!,
       verboseDurations: commandLine.verboseDurations!,
+      compileStrategy: compileStrategy,
     );
-
-    if (result.forceAot && result.forceJit) {
-      throw UsageException(
-        'Only one compile mode can be used, '
-        'got --$forceAotOption and --$forceJitOption.',
-        commandLine.usage,
-      );
-    }
     return result;
   }
 
   BuildOptions copyWith({
     BuiltSet<BuildDirectory>? buildDirs,
     BuiltSet<BuildFilter>? buildFilters,
+    CompileStrategy? compileStrategy,
   }) => BuildOptions(
     buildDirs: buildDirs ?? this.buildDirs,
     buildPaths: buildPaths,
@@ -172,14 +181,13 @@ class BuildOptions {
     dartAotPerf: dartAotPerf,
     enableExperiments: enableExperiments,
     enableLowResourcesMode: enableLowResourcesMode,
-    forceAot: forceAot,
-    forceJit: forceJit,
     isReleaseBuild: isReleaseBuild,
     logPerformanceDir: logPerformanceDir,
     outputSymlinksOnly: outputSymlinksOnly,
     trackPerformance: trackPerformance,
     verbose: verbose,
     verboseDurations: verboseDurations,
+    compileStrategy: compileStrategy ?? this.compileStrategy,
   );
 }
 

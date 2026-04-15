@@ -2,6 +2,11 @@
 
 - Performance: further improvements to management of files for analysis
   for 2x faster incremental builds.
+- Performance: default to AOT compilation for commands other than `run`. This
+  costs more initial startup time but gives faster builds afterwards. Fall back
+  to JIT if the compile fails due to use of `dart:mirrors`. Use the
+  `--force-jit` flag if you want the old default JIT builder compile. Use the
+  `--force-aot` flag to turn off the fallback to JIT compile.
 - Add OSC 8 hyperlinks for logged input paths.
 - Better handling of deletions of files during the build: if the file is not
   needed ignore the deletion, if it's needed try to use the cached version,

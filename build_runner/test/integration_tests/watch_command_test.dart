@@ -30,7 +30,10 @@ void main() async {
     );
 
     // Watch and initial build.
-    var watch = await tester.start('root_pkg', 'dart run build_runner watch');
+    var watch = await tester.start(
+      'root_pkg',
+      'dart run build_runner watch --force-jit',
+    );
     await watch.expect(BuildLog.successPattern);
     expect(tester.read('root_pkg/web/a.txt.copy'), 'a');
 
@@ -46,7 +49,7 @@ void main() async {
     // State on disk is updated so `build` knows to do nothing.
     var output = await tester.copyWorkspace().run(
       'root_pkg',
-      'dart run build_runner build',
+      'dart run build_runner build --force-jit',
     );
     expect(output, contains('wrote 0 outputs'));
 
@@ -58,7 +61,7 @@ void main() async {
     // State on disk is updated so `build` knows to do nothing.
     output = await tester.copyWorkspace().run(
       'root_pkg',
-      'dart run build_runner build',
+      'dart run build_runner build --force-jit',
     );
     expect(output, contains('wrote 0 outputs'));
 
@@ -105,7 +108,7 @@ class TestBuilder implements Builder {
     // State on disk is updated so `build` knows to do nothing.
     output = await tester.copyWorkspace().run(
       'root_pkg',
-      'dart run build_runner build',
+      'dart run build_runner build --force-jit',
     );
     expect(output, contains('wrote 0 outputs'));
 
@@ -136,7 +139,7 @@ targets:
     // State on disk is updated so `build` knows to do nothing.
     output = await tester.copyWorkspace().run(
       'root_pkg',
-      'dart run build_runner build',
+      'dart run build_runner build --force-jit',
     );
     expect(output, contains('wrote 0 outputs'));
 
@@ -151,7 +154,7 @@ targets:
     // Now with --output.
     watch = await tester.start(
       'root_pkg',
-      'dart run build_runner watch --output web:build',
+      'dart run build_runner watch --force-jit --output web:build',
     );
     await watch.expect(BuildLog.successPattern);
     expect(tester.read('root_pkg/build/a.txt'), 'updated');

@@ -11,6 +11,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:path/path.dart' as p;
 
 import '../bootstrap/build_process_state.dart';
+import '../bootstrap/compile_type.dart';
 import '../build_plan/build_packages.dart';
 import '../build_plan/phase.dart';
 import 'ansi_buffer.dart';
@@ -262,31 +263,35 @@ class BuildLog {
   }
 
   Future<T> logCompile<T>({
-    required bool isAot,
+    required CompileType compileType,
     required Future<T> Function() function,
   }) async {
     final progress = _CompileProgress();
-    if (isAot) {
+    if (compileType == CompileType.aot) {
       _aotCompileProgress = progress;
     } else {
       _jitCompileProgress = progress;
     }
-    _compileTick(isAot: isAot, firstTick: true, lastTick: false);
+    _compileTick(compileType: compileType, firstTick: true, lastTick: false);
 
     final timer = Timer.periodic(
       const Duration(milliseconds: 100),
-      (_) => _compileTick(isAot: isAot, firstTick: false, lastTick: false),
+      (_) => _compileTick(
+        compileType: compileType,
+        firstTick: false,
+        lastTick: false,
+      ),
     );
     try {
       return await function();
     } finally {
       timer.cancel();
-      _compileTick(isAot: isAot, firstTick: false, lastTick: true);
+      _compileTick(compileType: compileType, firstTick: false, lastTick: true);
     }
   }
 
   void _compileTick({
-    required bool isAot,
+    required CompileType compileType,
     required bool firstTick,
     required bool lastTick,
   }) {
@@ -295,7 +300,7 @@ class BuildLog {
     _processDuration += duration;
 
     if (!firstTick) {
-      if (isAot) {
+      if (compileType == CompileType.aot) {
         _aotCompileProgress!.duration += duration;
       } else {
         _jitCompileProgress!.duration += duration;
@@ -308,7 +313,7 @@ class BuildLog {
       } else {
         _display.message(
           Severity.info,
-          _renderCompiling(isAot: isAot).toString(),
+          _renderCompiling(compileType: compileType).toString(),
         );
       }
     }
@@ -576,10 +581,10 @@ class BuildLog {
     final result = AnsiBuffer();
 
     if (_jitCompileProgress != null) {
-      result.write(_renderCompiling(isAot: false));
+      result.write(_renderCompiling(compileType: CompileType.jit));
     }
     if (_aotCompileProgress != null) {
-      result.write(_renderCompiling(isAot: true));
+      result.write(_renderCompiling(compileType: CompileType.aot));
     }
 
     final displayedProgressEntries = _phaseProgress.entries.where(
@@ -624,15 +629,18 @@ class BuildLog {
     return result;
   }
 
-  AnsiBufferLine _renderCompiling({required bool isAot}) {
-    final progress = isAot ? _aotCompileProgress! : _jitCompileProgress!;
+  AnsiBufferLine _renderCompiling({required CompileType compileType}) {
+    final progress =
+        compileType == CompileType.aot
+            ? _aotCompileProgress!
+            : _jitCompileProgress!;
     return AnsiBufferLine([
       renderDuration(progress.duration),
       ' ',
       AnsiBuffer.bold,
       'compiling builders',
       AnsiBuffer.reset,
-      '/${isAot ? 'aot' : 'jit'}',
+      '/${compileType.displayName}',
     ]);
   }
 

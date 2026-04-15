@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 
 import '../build_plan/build_paths.dart';
 import '../constants.dart';
+import 'compile_type.dart';
 import 'compiler.dart';
 import 'depfile.dart';
 import 'processes.dart';
@@ -30,6 +31,9 @@ class KernelCompiler implements Compiler {
         ),
         digestPath: p.join(buildPaths.outputRootPath, entrypointDillDigestPath),
       );
+
+  @override
+  CompileType get compileType => CompileType.jit;
 
   @override
   FreshnessResult checkFreshness({required bool digestsAreFresh}) =>

@@ -24,14 +24,17 @@ void main() async {
     );
 
     // The --output option creates a merged output directory.
-    await tester.run('root_pkg', 'dart run build_runner build --output build');
+    await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit --output build',
+    );
     expect(tester.read('root_pkg/build/web/a.txt.copy'), 'a');
     expect(tester.read('root_pkg/build/web/b.txt.copy'), 'b');
 
     // No rebuild if nothing changed.
     var output = await tester.run(
       'root_pkg',
-      'dart run build_runner build --output build',
+      'dart run build_runner build --force-jit --output build',
     );
     expect(output, contains('wrote 0 outputs'));
     // Output is copied the same.
@@ -41,7 +44,7 @@ void main() async {
     // The --output option filters to --build-filter.
     await tester.run(
       'root_pkg',
-      'dart run build_runner build --output build --build-filter web/b.txt.copy',
+      'dart run build_runner build --force-jit --output build --build-filter web/b.txt.copy',
     );
     expect(tester.read('root_pkg/build/web/a.txt.copy'), null);
     expect(tester.read('root_pkg/build/web/b.txt.copy'), 'b');
@@ -49,7 +52,7 @@ void main() async {
     // The --output option accepts a root.
     await tester.run(
       'root_pkg',
-      'dart run build_runner build --output web:build',
+      'dart run build_runner build --force-jit --output web:build',
     );
     expect(tester.read('root_pkg/build/a.txt.copy'), 'a');
     expect(tester.read('root_pkg/build/b.txt.copy'), 'b');
@@ -57,7 +60,7 @@ void main() async {
     // The --output option can be passed multiple times.
     await tester.run(
       'root_pkg',
-      'dart run build_runner build --output build1 --output build2',
+      'dart run build_runner build --force-jit --output build1 --output build2',
     );
     expect(tester.read('root_pkg/build1/web/a.txt.copy'), 'a');
     expect(tester.read('root_pkg/build1/web/b.txt.copy'), 'b');
@@ -67,7 +70,8 @@ void main() async {
     // Duplicate --output options are an error.
     output = await tester.run(
       'root_pkg',
-      'dart run build_runner build --output web:build --output test:build',
+      'dart run build_runner build --force-jit --output web:build '
+          '--output test:build',
       expectExitCode: ExitCode.usage.code,
     );
     expect(
@@ -81,7 +85,7 @@ void main() async {
     // Can only specify top level directories to build.
     output = await tester.run(
       'root_pkg',
-      'dart run build_runner build --output lib/something:build',
+      'dart run build_runner build --force-jit --output lib/something:build',
       expectExitCode: ExitCode.usage.code,
     );
     expect(
@@ -95,7 +99,8 @@ void main() async {
     // Correct output with specified folder and --symlink.
     await tester.run(
       'root_pkg',
-      'dart run build_runner build --output web:build_web --symlink',
+      'dart run build_runner build --force-jit --output web:build_web '
+          '--symlink',
     );
     expect(tester.read('root_pkg/build_web/a.txt.copy'), 'a');
     expect(tester.read('root_pkg/build_web/b.txt.copy'), 'b');
@@ -105,7 +110,7 @@ void main() async {
     tester.delete('root_pkg/build/.build.manifest');
     output = await tester.run(
       'root_pkg',
-      'dart run build_runner build --output build',
+      'dart run build_runner build --force-jit --output build',
       expectExitCode: ExitCode.cantCreate.code,
     );
     expect(

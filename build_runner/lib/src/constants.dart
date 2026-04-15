@@ -2,9 +2,9 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:io';
-
 import 'package:path/path.dart' as p;
+
+import 'bootstrap/build_process_state.dart';
 
 /// Relative path to the cache directory from the root package dir.
 const String cacheDirectoryPath = '.dart_tool/build';
@@ -20,10 +20,10 @@ final String assetGraphPath = '$cacheDirectoryPath/asset_graph.json';
 String get generatedOutputDirectory => '$cacheDirectoryPath/generated';
 
 /// The dart binary from the current sdk.
-final dartBinary = p.join(sdkBin, 'dart');
+String get dartBinary => p.join(sdkBin, 'dart');
 
 /// The path to the sdk bin directory on the current platform.
-final sdkBin = p.join(sdkPath, 'bin');
+String get sdkBin => p.join(sdkPath, 'bin');
 
 /// The path to the sdk on the current platform.
-final sdkPath = p.dirname(p.dirname(Platform.resolvedExecutable));
+String get sdkPath => buildProcessState.dartSdkPath;

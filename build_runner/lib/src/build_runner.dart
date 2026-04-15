@@ -13,6 +13,7 @@ import 'package:yaml/yaml.dart';
 
 import 'bootstrap/bootstrapper.dart';
 import 'bootstrap/build_process_state.dart';
+import 'bootstrap/compile_type.dart';
 import 'build_plan/build_options.dart';
 import 'build_plan/build_paths.dart';
 import 'build_plan/builder_factories.dart';
@@ -96,10 +97,28 @@ class BuildRunner {
       await buildProcessState.takeLock(buildPaths);
     }
 
+    if ((commandLine.forceAot ?? false) && (commandLine.forceJit ?? false)) {
+      throw UsageException(
+        'Only one compile mode can be used, '
+        'got --force-aot and --force-jit.',
+        commandLine.usage,
+      );
+    }
+
     if (commandLine.type.requiresBuilders && builderFactories == null) {
+      CompileStrategy compileStrategy;
+      if (commandLine.type == CommandType.run) {
+        compileStrategy = CompileStrategy.alwaysJit;
+      } else if (commandLine.forceJit ?? false) {
+        compileStrategy = CompileStrategy.forceJit;
+      } else if (commandLine.forceAot ?? false) {
+        compileStrategy = CompileStrategy.forceAot;
+      } else {
+        compileStrategy = CompileStrategy.tryAot;
+      }
       return await _runWithBuilders(
         buildPaths: buildPaths,
-        compileAot: commandLine.forceAot!,
+        compileStrategy: compileStrategy,
       );
     }
 
@@ -194,7 +213,7 @@ class BuildRunner {
   /// set, so it runs the command instead of bootstrapping.
   Future<int> _runWithBuilders({
     required BuildPaths buildPaths,
-    required bool compileAot,
+    required CompileStrategy compileStrategy,
   }) async {
     buildLog.configuration = buildLog.configuration.rebuild((b) {
       b.mode = commandLine.type.buildLogMode;
@@ -204,7 +223,7 @@ class BuildRunner {
 
     final bootstrapper = Bootstrapper(
       buildPaths: buildPaths,
-      compileAot: compileAot,
+      compileStrategy: compileStrategy,
     );
     return await bootstrapper.run(
       arguments,

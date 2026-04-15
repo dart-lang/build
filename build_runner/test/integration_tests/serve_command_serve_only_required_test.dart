@@ -25,7 +25,7 @@ void main() async {
 
     var serve = await tester.start(
       'root_pkg',
-      'dart run build_runner serve web:0',
+      'dart run build_runner serve --force-jit web:0',
     );
 
     // Initial build produces no output as the copy is not required.
@@ -63,7 +63,10 @@ void main() async {
       pathDependencies: ['builder_pkg', 'post_process_builder_pkg'],
       files: {},
     );
-    serve = await tester.start('root_pkg', 'dart run build_runner serve web:0');
+    serve = await tester.start(
+      'root_pkg',
+      'dart run build_runner serve --force-jit web:0',
+    );
 
     await serve.expectServingAndBuildSuccess();
     await serve.fetch('a.txt.copy', expectResponseCode: 404);
@@ -83,7 +86,10 @@ void main() async {
       pathDependencies: ['builder_pkg'],
       files: {'web/a.txt': 'a'},
     );
-    serve = await tester.start('root_pkg', 'dart run build_runner serve web:0');
+    serve = await tester.start(
+      'root_pkg',
+      'dart run build_runner serve --force-jit web:0',
+    );
     await serve.expectServingAndBuildSuccess();
     expect(await serve.fetchContent('a.txt.copy'), 'a');
     await serve.kill();

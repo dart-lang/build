@@ -14,6 +14,7 @@ void main() async {
     final pubspecs = await Pubspecs.load();
     final tester = BuildRunnerTester(pubspecs);
 
+    // Basic AOT build and rebuild on change.
     tester.writeFixturePackage(FixturePackages.copyBuilder());
     tester.writePackage(
       name: 'root_pkg',
@@ -44,5 +45,63 @@ void main() async {
       'dart run build_runner build --force-aot',
     );
     expect(output, contains('wrote 1 output'));
+
+    // Builder using `dart:mirrors`.
+    tester.writePackage(
+      name: 'builder_pkg',
+      dependencies: ['build', 'build_runner'],
+      files: {
+        'build.yaml': '''
+builders:
+  test_builder:
+    import: 'package:builder_pkg/builder.dart'
+    builder_factories: ['testBuilderFactory']
+    build_extensions: {'.txt': ['.g.dart']}
+    auto_apply: root_package
+    build_to: source
+''',
+        'lib/builder.dart': '''
+import 'dart:mirrors';
+import 'package:build/build.dart';
+
+Builder testBuilderFactory(BuilderOptions options) => TestBuilder();
+
+class TestBuilder implements Builder {
+  @override
+  Map<String, List<String>> get buildExtensions => {'.txt': ['.g.dart']};
+
+  @override
+  Future<void> build(BuildStep buildStep) async {
+    print(currentMirrorSystem());
+  }
+}
+''',
+      },
+    );
+    tester.writePackage(
+      name: 'root_pkg',
+      dependencies: ['build_runner'],
+      pathDependencies: ['builder_pkg'],
+      files: {'lib/a.txt': 'a'},
+    );
+
+    // Fall back to JIT and succeeds.
+    output = await tester.run('root_pkg', 'dart run build_runner build');
+    expect(
+      output,
+      contains('AOT compilation failed due to dart:mirrors usage.'),
+    );
+    expect(output, contains('Built with build_runner/jit'));
+
+    // With `--force-aot`, fails.
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-aot',
+      expectExitCode: 78,
+    );
+    expect(
+      output,
+      contains('Not falling back to JIT compilation due to --force-aot'),
+    );
   });
 }

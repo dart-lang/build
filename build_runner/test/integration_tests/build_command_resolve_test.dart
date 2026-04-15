@@ -59,7 +59,7 @@ syntax error
     // Syntax error.
     var output = await tester.run(
       'root_pkg',
-      'dart run build_runner build',
+      'dart run build_runner build --force-jit',
       expectExitCode: 1,
     );
     expect(output, contains("Expected to find ';'"));
@@ -68,11 +68,17 @@ syntax error
     tester.write('root_pkg/lib/a.dart', '''
 import 'missing_import.dart';
 ''');
-    output = await tester.run('root_pkg', 'dart run build_runner build');
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
 
     // Unreadable inputs in previous build do not break incremental build.
     tester.update('root_pkg/lib/a.dart', (script) => '$script\n');
-    output = await tester.run('root_pkg', 'dart run build_runner build');
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
 
     // Check that it's possible for a builder to resolve source in strings using
     // `build_test`.
@@ -122,7 +128,7 @@ class TestBuilder implements Builder {
       files: {'lib/a.dart': ''},
     );
 
-    await tester.run('root_pkg', 'dart run build_runner build');
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
     expect(tester.read('root_pkg/lib/a.g.dart'), 'library x;');
   });
 }
