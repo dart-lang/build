@@ -125,16 +125,6 @@ class BuildOptions {
         commandLine.usage,
       );
     }
-    CompileStrategy compileStrategy;
-    if (commandLine.type == CommandType.run) {
-      compileStrategy = CompileStrategy.alwaysJit;
-    } else if (forceJit) {
-      compileStrategy = CompileStrategy.forceJit;
-    } else if (forceAot) {
-      compileStrategy = CompileStrategy.forceAot;
-    } else {
-      compileStrategy = CompileStrategy.tryAot;
-    }
 
     final result = BuildOptions(
       buildDirs:
@@ -163,7 +153,7 @@ class BuildOptions {
           commandLine.trackPerformance! || commandLine.logPerformance != null,
       verbose: commandLine.verbose!,
       verboseDurations: commandLine.verboseDurations!,
-      compileStrategy: compileStrategy,
+      compileStrategy: commandLine.compileStrategy,
     );
     return result;
   }

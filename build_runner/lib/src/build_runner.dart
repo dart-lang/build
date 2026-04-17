@@ -106,19 +106,9 @@ class BuildRunner {
     }
 
     if (commandLine.type.requiresBuilders && builderFactories == null) {
-      CompileStrategy compileStrategy;
-      if (commandLine.type == CommandType.run) {
-        compileStrategy = CompileStrategy.alwaysJit;
-      } else if (commandLine.forceJit ?? false) {
-        compileStrategy = CompileStrategy.forceJit;
-      } else if (commandLine.forceAot ?? false) {
-        compileStrategy = CompileStrategy.forceAot;
-      } else {
-        compileStrategy = CompileStrategy.tryAot;
-      }
       return await _runWithBuilders(
         buildPaths: buildPaths,
-        compileStrategy: compileStrategy,
+        compileStrategy: commandLine.compileStrategy,
       );
     }
 
