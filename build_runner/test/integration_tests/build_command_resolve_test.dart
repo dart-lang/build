@@ -56,8 +56,20 @@ syntax error
       },
     );
 
-    // Syntax error.
+    // Syntax error in default, AOT and JIT compile modes.
     var output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build',
+      expectExitCode: 1,
+    );
+    expect(output, contains("Expected to find ';'"));
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-aot',
+      expectExitCode: 1,
+    );
+    expect(output, contains("Expected to find ';'"));
+    output = await tester.run(
       'root_pkg',
       'dart run build_runner build --force-jit',
       expectExitCode: 1,
