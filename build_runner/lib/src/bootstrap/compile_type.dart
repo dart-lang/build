@@ -31,7 +31,10 @@ enum CompileStrategy {
   /// Try AOT compilation, fall back to JIT if it fails.
   tryAot,
 
-  alwaysJit;
+  /// For the `run` command: JIT is required, so there are no flags and
+  /// `build_runner` knows to always use JIT and to check the JIT compile for
+  /// freshness.
+  commandForcesJit;
 
   CompileType get initialCompileType {
     switch (this) {
@@ -39,7 +42,7 @@ enum CompileStrategy {
       case CompileStrategy.tryAot:
         return CompileType.aot;
       case CompileStrategy.forceJit:
-      case CompileStrategy.alwaysJit:
+      case CompileStrategy.commandForcesJit:
         return CompileType.jit;
     }
   }

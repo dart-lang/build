@@ -65,7 +65,7 @@ class BuildRunnerCommandLine {
   final bool? workspace;
 
   CompileStrategy get compileStrategy {
-    if (type == CommandType.run) return CompileStrategy.alwaysJit;
+    if (type == CommandType.run) return CompileStrategy.commandForcesJit;
     if (forceJit ?? false) return CompileStrategy.forceJit;
     if (forceAot ?? false) return CompileStrategy.forceAot;
     return CompileStrategy.tryAot;

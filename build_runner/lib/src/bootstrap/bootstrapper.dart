@@ -144,7 +144,7 @@ class Bootstrapper {
               : await ParentProcess.runAndSend(
                 script: p.join(buildPaths.outputRootPath, entrypointDillPath),
                 arguments:
-                    compileStrategy == CompileStrategy.alwaysJit
+                    compileStrategy == CompileStrategy.commandForcesJit
                         ? arguments.toList()
                         : [...arguments, '--force-jit'],
                 message: buildProcessState.serialize(),
