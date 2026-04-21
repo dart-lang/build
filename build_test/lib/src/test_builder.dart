@@ -455,6 +455,7 @@ Future<TestBuilderResult> testBuilderFactories(
     buildPackages: buildPackages,
     readerWriter: readerWriter as InternalTestReaderWriter,
     resolvers: resolvers,
+    checkBuilderFreshness: false,
     buildConfig:
         // Override sources to defaults plus all explicitly passed inputs,
         // optionally restricted by [inputFilter] or [generateFor]. Or if

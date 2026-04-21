@@ -9,6 +9,7 @@ import 'package:args/command_runner.dart';
 import 'package:build_daemon/constants.dart';
 import 'package:built_collection/built_collection.dart';
 
+import 'bootstrap/compile_type.dart';
 import 'internal.dart';
 
 enum CommandType {
@@ -62,6 +63,13 @@ class BuildRunnerCommandLine {
   final bool? verbose;
   final bool? verboseDurations;
   final bool? workspace;
+
+  CompileStrategy get compileStrategy {
+    if (type == CommandType.run) return CompileStrategy.commandForcesJit;
+    if (forceJit ?? false) return CompileStrategy.forceJit;
+    if (forceAot ?? false) return CompileStrategy.forceAot;
+    return CompileStrategy.tryAot;
+  }
 
   static Future<BuildRunnerCommandLine?> parse(Iterable<String> arguments) =>
       _CommandRunner().run(arguments);
@@ -229,7 +237,9 @@ class _Build extends _Command<BuildRunnerCommandLine> {
         forceAotOption,
         defaultsTo: false,
         negatable: false,
-        help: 'Compiles builders with AOT mode for faster builds.',
+        help:
+            'Forces AOT compilation of builders: disables fallback to '
+            'JIT mode.',
       )
       ..addFlag(
         forceJitOption,

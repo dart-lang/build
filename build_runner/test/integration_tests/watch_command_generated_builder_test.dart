@@ -78,7 +78,7 @@ class TestBuilder implements Builder {
     // by `Filesystem`.
     final watch = await tester.start(
       '',
-      'dart run build_runner watch --workspace',
+      'dart run build_runner watch --force-jit --workspace',
     );
     await watch.expect(BuildLog.successPattern);
     expect(tester.read('builder_pkg/lib/builder.g.dart'), partContent);

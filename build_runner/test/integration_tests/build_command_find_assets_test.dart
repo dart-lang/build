@@ -59,7 +59,7 @@ class GlobbingBuilder extends Builder {
     );
 
     // Glob matches the expected files.
-    await tester.run('root_pkg', 'dart run build_runner build');
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
     expect(tester.read('root_pkg/web/a.matchingFiles')!.split('\n'), [
       'root_pkg|web/a.txt',
       'root_pkg|web/b.txt',
@@ -67,7 +67,7 @@ class GlobbingBuilder extends Builder {
 
     // On rebuild glob matches a new file.
     tester.write('root_pkg/web/c.txt', '');
-    await tester.run('root_pkg', 'dart run build_runner build');
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
     expect(tester.read('root_pkg/web/a.matchingFiles')!.split('\n'), [
       'root_pkg|web/a.txt',
       'root_pkg|web/b.txt',
@@ -76,7 +76,7 @@ class GlobbingBuilder extends Builder {
 
     // On rebuild glob no longer matches a deleted file.
     tester.delete('root_pkg/web/c.txt');
-    await tester.run('root_pkg', 'dart run build_runner build');
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
     expect(tester.read('root_pkg/web/a.matchingFiles')!.split('\n'), [
       'root_pkg|web/a.txt',
       'root_pkg|web/b.txt',
@@ -84,7 +84,10 @@ class GlobbingBuilder extends Builder {
 
     // No work on rebuild for a new non-matching file.
     tester.write('root_pkg/web/c.other', '');
-    var output = await tester.run('root_pkg', 'dart run build_runner build');
+    var output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
     expect(output, contains('wrote 0 outputs'));
     expect(tester.read('root_pkg/web/a.matchingFiles')!.split('\n'), [
       'root_pkg|web/a.txt',
@@ -94,7 +97,10 @@ class GlobbingBuilder extends Builder {
     // No work on rebuild for changed matching file: the builder does not read
     // the files so they are not inputs.
     tester.write('root_pkg/web/a.txt', 'changed');
-    output = await tester.run('root_pkg', 'dart run build_runner build');
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
     expect(output, contains('wrote 0 outputs'));
     expect(tester.read('root_pkg/web/a.matchingFiles')!.split('\n'), [
       'root_pkg|web/a.txt',

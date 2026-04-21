@@ -21,7 +21,7 @@ void main() async {
       files: {},
     );
 
-    await tester.run('root_pkg', 'dart run build_runner build');
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
     expect(tester.read('root_pkg/$entrypointScriptPath'), isNotNull);
     await tester.run('root_pkg', 'dart run build_runner clean');
     expect(tester.readFileTree('root_pkg/.dart_tool/build'), {
@@ -43,7 +43,10 @@ void main() async {
     );
     tester.writeWorkspacePubspec(packages: ['p1', 'p2']);
 
-    await tester.run('p1', 'dart run build_runner build --workspace');
+    await tester.run(
+      'p1',
+      'dart run build_runner build --force-jit --workspace',
+    );
     expect(tester.read(entrypointScriptPath), isNotNull);
     expect(tester.read(assetGraphPath), isNotNull);
 

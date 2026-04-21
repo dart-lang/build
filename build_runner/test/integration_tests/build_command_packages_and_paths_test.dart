@@ -26,7 +26,7 @@ void main() async {
     tester.writePackage(name: 'other_pkg', files: {'lib/b.txt': 'b'});
 
     // Runs in a subdirectory of the package.
-    await tester.run('root_pkg/lib', 'dart run build_runner build');
+    await tester.run('root_pkg/lib', 'dart run build_runner build --force-jit');
     expect(tester.readFileTree('root_pkg/.dart_tool/build/generated'), {
       'root_pkg/lib/a.txt.copy': 'a',
       'other_pkg/lib/b.txt.copy': 'b',
@@ -40,7 +40,7 @@ void main() async {
       files: {'lib/a.txt': 'a'},
     );
     _deletePubspecs(tester);
-    await tester.run('root_pkg/lib', 'dart run build_runner build');
+    await tester.run('root_pkg/lib', 'dart run build_runner build --force-jit');
     expect(tester.readFileTree('root_pkg/.dart_tool/build/generated'), {
       'root_pkg/lib/a.txt.copy': 'a',
     });
@@ -62,7 +62,7 @@ void main() async {
 
     // Files still not generated for `other_pkg` as it's not a dep.
     _deletePubspecs(tester);
-    await tester.run('root_pkg/lib', 'dart run build_runner build');
+    await tester.run('root_pkg/lib', 'dart run build_runner build --force-jit');
     expect(tester.readFileTree('root_pkg/.dart_tool/build/generated'), {
       'root_pkg/lib/a.txt.copy': 'a',
     });
@@ -79,7 +79,7 @@ void main() async {
 
     // Files generated for `other_pkg` now it's a dep.
     _deletePubspecs(tester);
-    await tester.run('root_pkg/lib', 'dart run build_runner build');
+    await tester.run('root_pkg/lib', 'dart run build_runner build --force-jit');
     expect(tester.readFileTree('root_pkg/.dart_tool/build/generated'), {
       'root_pkg/lib/a.txt.copy': 'a',
       'other_pkg/lib/b.txt.copy': 'b',

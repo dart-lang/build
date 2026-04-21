@@ -4,6 +4,7 @@
 
 import 'package:build/build.dart';
 import 'package:build_runner/src/bootstrap/build_process_state.dart';
+import 'package:build_runner/src/bootstrap/compile_type.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/phase.dart';
@@ -49,13 +50,13 @@ E An error.'''),
     });
 
     test('compile progress', () {
-      buildLog.logCompile(isAot: false, function: () async {});
+      buildLog.logCompile(compileType: CompileType.jit, function: () async {});
       expect(
         render(),
         padLinesRight('''
 0s compiling builders/jit'''),
       );
-      buildLog.logCompile(isAot: true, function: () async {});
+      buildLog.logCompile(compileType: CompileType.aot, function: () async {});
       expect(
         render(),
         padLinesRight('''

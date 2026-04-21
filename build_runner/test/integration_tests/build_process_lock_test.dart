@@ -25,12 +25,12 @@ void main() async {
     // One build blocks waiting for another.
     final build1 = await tester.start(
       'root_pkg',
-      'dart run build_runner build',
+      'dart run build_runner build --force-jit',
     );
     await build1.expect('compiling builders');
     final build2 = await tester.start(
       'root_pkg',
-      'dart run build_runner build',
+      'dart run build_runner build --force-jit',
     );
     await build2.expect('Waiting for already-running build_runner.');
     await build1.exitCode;
@@ -128,14 +128,17 @@ Future<void> main() async {
       pathDependencies: ['builder_pkg'],
       files: {'lib/p1.txt': '1'},
     );
-    var watch = await tester.start('p1', 'dart run build_runner watch');
+    var watch = await tester.start(
+      'p1',
+      'dart run build_runner watch --force-jit',
+    );
     await watch.expect('builder_pkg:test_builder on 1 input');
     await tester.run('p1', 'dart run build_runner stop');
     await watch.expect('Exiting as requested by another build_runner process.');
     await watch.exitCode;
 
     // Watch mode exits if requested while idle.
-    watch = await tester.start('p1', 'dart run build_runner watch');
+    watch = await tester.start('p1', 'dart run build_runner watch --force-jit');
     await watch.expect(BuildLog.successPattern);
     await tester.run('p1', 'dart run build_runner stop');
     await watch.expect('Exiting as requested by another build_runner process.');

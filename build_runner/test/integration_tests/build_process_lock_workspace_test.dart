@@ -40,8 +40,14 @@ void main() async {
     tester.writeWorkspacePubspec(packages: ['p1', 'p2']);
 
     // Two single package builds can run concurrently.
-    final build1 = await tester.start('p1', 'dart run build_runner build');
-    final build2 = await tester.start('p2', 'dart run build_runner build');
+    final build1 = await tester.start(
+      'p1',
+      'dart run build_runner build --force-jit',
+    );
+    final build2 = await tester.start(
+      'p2',
+      'dart run build_runner build --force-jit',
+    );
     final output1 = await build1.expectAndGetBlock(BuildLog.successPattern);
     final output2 = await build2.expectAndGetBlock(BuildLog.successPattern);
     expect(
@@ -54,11 +60,14 @@ void main() async {
     );
 
     // Workspace build blocks on single package build.
-    final build3 = await tester.start('p1', 'dart run build_runner build');
+    final build3 = await tester.start(
+      'p1',
+      'dart run build_runner build --force-jit',
+    );
     await Future<void>.delayed(const Duration(milliseconds: 500));
     final build4 = await tester.start(
       '',
-      'dart run build_runner build --workspace',
+      'dart run build_runner build --force-jit --workspace',
     );
     await build4.expect('Waiting for already-running build_runner.');
     await build3.expect(BuildLog.successPattern);
@@ -67,16 +76,22 @@ void main() async {
     // Single package build blocks on workspace build.
     final build5 = await tester.start(
       '',
-      'dart run build_runner build --workspace',
+      'dart run build_runner build --force-jit --workspace',
     );
     await Future<void>.delayed(const Duration(milliseconds: 500));
-    final build6 = await tester.start('p1', 'dart run build_runner build');
+    final build6 = await tester.start(
+      'p1',
+      'dart run build_runner build --force-jit',
+    );
     await build6.expect('Waiting for already-running build_runner.');
     await build5.expect(BuildLog.successPattern);
     await build6.expect(BuildLog.successPattern);
 
     // Watch mode in a package exits if requested via `stop --workspace`.
-    final watch = await tester.start('p1', 'dart run build_runner watch');
+    final watch = await tester.start(
+      'p1',
+      'dart run build_runner watch --force-jit',
+    );
     await watch.expect(BuildLog.successPattern);
     await tester
         .run('p1', 'dart run build_runner stop --workspace')
@@ -86,7 +101,10 @@ void main() async {
 
     // Watch mode in a package exits if requested via `stop` (without
     // --workspace).
-    final watch2 = await tester.start('p1', 'dart run build_runner watch');
+    final watch2 = await tester.start(
+      'p1',
+      'dart run build_runner watch --force-jit',
+    );
     await watch2.expect(BuildLog.successPattern);
     await tester
         .run('p1', 'dart run build_runner stop')
@@ -98,7 +116,10 @@ void main() async {
 
     // Watch mode in a package exits if requested via `stop --workspace` from
     // another package.
-    final watch3 = await tester.start('p1', 'dart run build_runner watch');
+    final watch3 = await tester.start(
+      'p1',
+      'dart run build_runner watch --force-jit',
+    );
     await watch3.expect(BuildLog.successPattern);
     await tester
         .run('p2', 'dart run build_runner stop --workspace')

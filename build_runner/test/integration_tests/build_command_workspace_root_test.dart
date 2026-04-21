@@ -43,28 +43,28 @@ dependencies:
     tester.write('lib/w.txt', '1');
 
     // Build without --workspace then build with, no input change.
-    await tester.run('', 'dart run build_runner build');
+    await tester.run('', 'dart run build_runner build --force-jit');
     expect(tester.read('lib/w.txt.copy'), '1');
     expect(
       tester.read('p1/lib/p1.txt.copy'),
       null,
     ); // No build of nested package.
-    await tester.run('', 'dart run build_runner build --workspace');
+    await tester.run('', 'dart run build_runner build --force-jit --workspace');
     expect(tester.read('lib/w.txt.copy'), '1');
     expect(tester.read('p1/lib/p1.txt.copy'), '1');
 
     // Build without --workspace then build with, input change in between.
-    await tester.run('', 'dart run build_runner build');
+    await tester.run('', 'dart run build_runner build --force-jit');
     expect(tester.read('lib/w.txt.copy'), '1');
     tester.write('lib/w.txt', '2');
     tester.write('p1/lib/p1.txt', '2');
-    await tester.run('', 'dart run build_runner build --workspace');
+    await tester.run('', 'dart run build_runner build --force-jit --workspace');
     expect(tester.read('lib/w.txt.copy'), '2');
     expect(tester.read('p1/lib/p1.txt.copy'), '2');
 
     // Build without --workspace again, no input change.
     tester.write('p1/lib/p1.txt', '3');
-    await tester.run('', 'dart run build_runner build');
+    await tester.run('', 'dart run build_runner build --force-jit');
     expect(tester.read('lib/w.txt.copy'), '2');
     expect(
       tester.read('p1/lib/p1.txt.copy'),
@@ -72,12 +72,12 @@ dependencies:
     ); // No build of nested package.
 
     // Build with --workspace then without, input change in between.
-    await tester.run('', 'dart run build_runner build --workspace');
+    await tester.run('', 'dart run build_runner build --force-jit --workspace');
     expect(tester.read('lib/w.txt.copy'), '2');
     expect(tester.read('p1/lib/p1.txt.copy'), '3');
     tester.write('lib/w.txt', '3');
     tester.write('p1/lib/p1.txt', '4');
-    await tester.run('', 'dart run build_runner build');
+    await tester.run('', 'dart run build_runner build --force-jit');
     expect(tester.read('lib/w.txt.copy'), '3');
     expect(
       tester.read('p1/lib/p1.txt.copy'),

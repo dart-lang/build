@@ -35,7 +35,7 @@ void main() async {
 
     await tester.run(
       'root_pkg',
-      'dart run build_runner build '
+      'dart run build_runner build --force-jit '
           '--build-filter package:*/a.txt.copy '
           '--build-filter web/a.txt.copy ',
     );

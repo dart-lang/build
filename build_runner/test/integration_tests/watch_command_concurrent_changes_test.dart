@@ -61,7 +61,10 @@ class TestBuilder implements Builder {
 
     // Files with primary outputs are read at the start of the build. So a
     // delete during the build does not interrupt the build.
-    var watch = await tester.start('root_pkg', 'dart run build_runner watch');
+    var watch = await tester.start(
+      'root_pkg',
+      'dart run build_runner watch --force-jit',
+    );
     // Wait for the build to start then delete the input.
     await watch.expect('builder_pkg:test_builder');
     tester.delete('root_pkg/lib/a.txt');
@@ -71,9 +74,10 @@ class TestBuilder implements Builder {
     await watch.expect(BuildLog.successPattern);
     expect(tester.read('root_pkg/lib/a.txt.copy'), null);
 
-    // Files that are not primary inputs are not read at the start of the first
-    // build. If they are never actually used then deleting them during the
-    // build does not interrupt the build, nor does it trigger a new build.
+    // Files that are not primary inputs are not read at the start of the
+    // first build. If they are never actually used then deleting them during
+    // the build does not interrupt the build, nor does it trigger a new
+    // build.
     tester.write('root_pkg/lib/a.txt', 'a');
     tester.write('root_pkg/lib/a.other', 'a');
     // Wait for the build to start then delete the non-primary input.
@@ -113,7 +117,10 @@ class TestBuilder implements Builder {
     // The non-primary input is not read on startup, so the build needs
     // to restart to recover.
     tester.write('root_pkg/lib/a.other', 'a');
-    watch = await tester.start('root_pkg', 'dart run build_runner watch');
+    watch = await tester.start(
+      'root_pkg',
+      'dart run build_runner watch --force-jit',
+    );
     // Wait for the build to start then delete the non-primary input.
     await watch.expect('builder_pkg:test_builder');
     tester.delete('root_pkg/lib/a.other');

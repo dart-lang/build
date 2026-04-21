@@ -7,6 +7,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:path/path.dart' as p;
+
 import '../build_plan/build_paths.dart';
 
 import 'build_process_lock.dart';
@@ -63,7 +65,7 @@ class BuildProcessState {
 
   /// For `buildLog`, console output capabilities.
   ///
-  /// If not already set, sets from the current process stdio on get.
+  /// If not already set, sets from the current process stdio.
   StdioCapabilities get stdio {
     _state['stdioCapabilities'] ??= StdioCapabilities().serialize();
     return StdioCapabilities.deserialize(
@@ -103,6 +105,9 @@ class BuildProcessState {
   set buildNumber(int buildNumber) => _state['buildNumber'] = buildNumber;
 
   /// The package config URI.
+  ///
+  /// If not already set, sets from the current process
+  /// `Isolate.packageConfigSync`.
   String get packageConfigUri =>
       (_state['packageConfigUri'] ??= Isolate.packageConfigSync!.toString())
           as String;
@@ -122,6 +127,19 @@ class BuildProcessState {
     _state['buildWorkspace'] = value?.buildWorkspace;
   }
 
+  /// The path to the Dart SDK.
+  ///
+  /// If not already set, sets from the current process
+  /// `Platform.resolvedExecutable`.
+  String get dartSdkPath {
+    _state['dartSdkPath'] ??= p.dirname(p.dirname(Platform.resolvedExecutable));
+    return _state['dartSdkPath'] as String;
+  }
+
+  set dartSdkPath(String value) {
+    _state['dartSdkPath'] = value;
+  }
+
   void resetForTests() {
     _state.clear();
   }
@@ -132,9 +150,13 @@ class BuildProcessState {
   }
 
   String serialize() {
-    // Set any unset values that should be set by the parent process.
-    stdio;
+    // Set unset values that can be read reliably only in the parent process
+    // because it is always JIT compiled.
+    dartSdkPath;
     packageConfigUri;
+    // Set unset terminal details that can only be read correctly by the parent
+    // process.
+    stdio;
 
     for (final beforeSend in _beforeSends) {
       beforeSend();
