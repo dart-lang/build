@@ -1,4 +1,4 @@
-## 2.14.0-wip
+## 2.14.0
 
 - Performance: further improvements to management of files for analysis
   for 2x faster incremental builds.
