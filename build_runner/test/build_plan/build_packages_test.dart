@@ -389,18 +389,22 @@ workspace:
   });
 
   test('calculates transitive dependencies', () {
-    final buildPackages = BuildPackages.workspaceBuild('workspace', [
-      BuildPackage.forTesting(name: 'a', dependencies: ['b']),
-      BuildPackage.forTesting(name: 'b', dependencies: ['d']),
-      BuildPackage.forTesting(name: 'c', dependencies: ['d']),
-      BuildPackage.forTesting(name: 'd', dependencies: ['e']),
-      BuildPackage.forTesting(name: 'e', dependencies: ['d']),
-      BuildPackage.forTesting(name: 'f', dependencies: ['g']),
-      BuildPackage.forTesting(name: 'g', dependencies: ['h']),
-      BuildPackage.forTesting(name: 'h', dependencies: ['g', 'i']),
-      BuildPackage.forTesting(name: 'i'),
-      BuildPackage.forTesting(name: 'workspace'),
-    ]);
+    final buildPackages = BuildPackages.workspaceBuild(
+      currentPackage: 'workspace',
+      workspace: 'workspace',
+      packages: [
+        BuildPackage.forTesting(name: 'a', dependencies: ['b']),
+        BuildPackage.forTesting(name: 'b', dependencies: ['d']),
+        BuildPackage.forTesting(name: 'c', dependencies: ['d']),
+        BuildPackage.forTesting(name: 'd', dependencies: ['e']),
+        BuildPackage.forTesting(name: 'e', dependencies: ['d']),
+        BuildPackage.forTesting(name: 'f', dependencies: ['g']),
+        BuildPackage.forTesting(name: 'g', dependencies: ['h']),
+        BuildPackage.forTesting(name: 'h', dependencies: ['g', 'i']),
+        BuildPackage.forTesting(name: 'i'),
+        BuildPackage.forTesting(name: 'workspace'),
+      ],
+    );
 
     expect(buildPackages.transitiveDepsOf('a'), {'a', 'b', 'd', 'e'});
     expect(buildPackages.transitiveDepsOf('d'), {'d', 'e'});
@@ -421,17 +425,21 @@ workspace:
   });
 
   test('calculates peer packages', () {
-    final buildPackages = BuildPackages.workspaceBuild('workspace', [
-      BuildPackage.forTesting(name: 'a', dependencies: ['b'], isOutput: true),
-      BuildPackage.forTesting(name: 'b', dependencies: ['d']),
-      BuildPackage.forTesting(name: 'c', dependencies: ['d'], isOutput: true),
-      BuildPackage.forTesting(name: 'd', dependencies: ['e']),
-      BuildPackage.forTesting(name: 'e', dependencies: ['d']),
-      BuildPackage.forTesting(name: 'f', dependencies: ['g'], isOutput: true),
-      BuildPackage.forTesting(name: 'g'),
-      BuildPackage.forTesting(name: 'h', dependencies: ['e'], isOutput: true),
-      BuildPackage.forTesting(name: 'workspace'),
-    ]);
+    final buildPackages = BuildPackages.workspaceBuild(
+      currentPackage: 'workspace',
+      workspace: 'workspace',
+      packages: [
+        BuildPackage.forTesting(name: 'a', dependencies: ['b'], isOutput: true),
+        BuildPackage.forTesting(name: 'b', dependencies: ['d']),
+        BuildPackage.forTesting(name: 'c', dependencies: ['d'], isOutput: true),
+        BuildPackage.forTesting(name: 'd', dependencies: ['e']),
+        BuildPackage.forTesting(name: 'e', dependencies: ['d']),
+        BuildPackage.forTesting(name: 'f', dependencies: ['g'], isOutput: true),
+        BuildPackage.forTesting(name: 'g'),
+        BuildPackage.forTesting(name: 'h', dependencies: ['e'], isOutput: true),
+        BuildPackage.forTesting(name: 'workspace'),
+      ],
+    );
 
     // Transitive deps of output package `a`.
     expect(buildPackages.peersOf('a'), {'a', 'b', 'd', 'e'});

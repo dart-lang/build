@@ -1083,9 +1083,15 @@ targets:
             r'$$b|lib/b.txt.copy': '',
           },
           buildFilters: {
-            BuildFilter.fromArg('web/a.txt.copy', 'a'),
-            BuildFilter.fromArg('package:a/a.txt.copy', 'a'),
-            BuildFilter.fromArg('package:b/b.txt.copy', 'a'),
+            BuildFilter.fromArg(arg: 'web/a.txt.copy', currentPackage: 'a'),
+            BuildFilter.fromArg(
+              arg: 'package:a/a.txt.copy',
+              currentPackage: 'a',
+            ),
+            BuildFilter.fromArg(
+              arg: 'package:b/b.txt.copy',
+              currentPackage: 'a',
+            ),
           },
           verbose: true,
           buildPackages: buildPackagesWithDep,
@@ -1106,7 +1112,12 @@ targets:
           ],
           {'a|lib/a.txt': '', 'b|lib/a.txt': ''},
           outputs: {r'$$a|lib/a.txt.copy': '', r'$$b|lib/a.txt.copy': ''},
-          buildFilters: {BuildFilter.fromArg('package:*/a.txt.copy', 'a')},
+          buildFilters: {
+            BuildFilter.fromArg(
+              arg: 'package:*/a.txt.copy',
+              currentPackage: 'a',
+            ),
+          },
           verbose: true,
           buildPackages: buildPackagesWithDep,
         );
@@ -1138,9 +1149,15 @@ targets:
             r'$$b|lib/b2.txt.copy': '',
           },
           buildFilters: {
-            BuildFilter.fromArg('package:a/*0.txt.copy', 'a'),
-            BuildFilter.fromArg('web/*1.txt.copy', 'a'),
-            BuildFilter.fromArg('package:b/*2.txt.copy', 'a'),
+            BuildFilter.fromArg(
+              arg: 'package:a/*0.txt.copy',
+              currentPackage: 'a',
+            ),
+            BuildFilter.fromArg(arg: 'web/*1.txt.copy', currentPackage: 'a'),
+            BuildFilter.fromArg(
+              arg: 'package:b/*2.txt.copy',
+              currentPackage: 'a',
+            ),
           },
           verbose: true,
           buildPackages: buildPackagesWithDep,
@@ -1161,7 +1178,12 @@ targets:
           ],
           {'a|lib/a.txt': '', 'b|lib/b.txt': ''},
           outputs: {r'$$a|lib/a.txt.copy': '', r'$$b|lib/b.txt.copy': ''},
-          buildFilters: {BuildFilter.fromArg('package:*/*.txt.copy', 'a')},
+          buildFilters: {
+            BuildFilter.fromArg(
+              arg: 'package:*/*.txt.copy',
+              currentPackage: 'a',
+            ),
+          },
           verbose: true,
           buildPackages: buildPackagesWithDep,
         );

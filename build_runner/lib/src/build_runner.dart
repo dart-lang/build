@@ -82,7 +82,7 @@ class BuildRunner {
       }
       Directory.current = parent;
     }
-    final rootPackage =
+    final currentPackage =
         (loadYaml(File(p.join(p.current, 'pubspec.yaml')).readAsStringSync())
                 as YamlMap)['name']!
             as String;
@@ -120,7 +120,7 @@ class BuildRunner {
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: true,
-            rootPackage: rootPackage,
+            currentPackage: currentPackage,
             buildPaths: buildPaths,
           ),
         );
@@ -138,7 +138,7 @@ class BuildRunner {
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: false,
-            rootPackage: rootPackage,
+            currentPackage: currentPackage,
             buildPaths: buildPaths,
           ),
           daemonOptions: DaemonOptions.parse(commandLine),
@@ -150,7 +150,7 @@ class BuildRunner {
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: false,
-            rootPackage: rootPackage,
+            currentPackage: currentPackage,
             buildPaths: buildPaths,
           ),
           runOptions: RunOptions.parse(commandLine),
@@ -163,7 +163,7 @@ class BuildRunner {
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: false,
-            rootPackage: rootPackage,
+            currentPackage: currentPackage,
             buildPaths: buildPaths,
             extraDirs: serveOptions.serveTargets.map((t) => t.dir),
           ),
@@ -176,7 +176,7 @@ class BuildRunner {
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: false,
-            rootPackage: rootPackage,
+            currentPackage: currentPackage,
             buildPaths: buildPaths,
           ),
           testOptions: TestOptions.parse(commandLine),
@@ -188,7 +188,7 @@ class BuildRunner {
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: true,
-            rootPackage: rootPackage,
+            currentPackage: currentPackage,
             buildPaths: buildPaths,
           ),
         );
