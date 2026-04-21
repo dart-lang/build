@@ -99,8 +99,7 @@ class BuildOptions {
 
   /// Parses [commandLine].
   ///
-  /// Build config overrides use [rootPackage], the current package name, as the
-  /// default package name.
+  /// Build config overrides use [currentPackage] as the default package name.
   ///
   /// Set [restIsBuildDirs] to `true` if "rest" args specify build directories,
   /// as they do for the `build` command, or to false if they are used elsewhere
@@ -112,7 +111,7 @@ class BuildOptions {
   static BuildOptions parse(
     BuildRunnerCommandLine commandLine, {
     required BuildPaths buildPaths,
-    required String rootPackage,
+    required String currentPackage,
     required bool restIsBuildDirs,
     Iterable<String>? extraDirs,
   }) {
@@ -138,9 +137,12 @@ class BuildOptions {
       buildPaths: buildPaths,
       builderConfigOverrides: _parseBuilderConfigOverrides(
         commandLine,
-        rootPackage: rootPackage,
+        currentPackage: currentPackage,
       ),
-      buildFilters: _parseBuildFilters(commandLine, rootPackage: rootPackage),
+      buildFilters: _parseBuildFilters(
+        commandLine,
+        currentPackage: currentPackage,
+      ),
       configKey: commandLine.config,
       // Only available on Linux.
       dartAotPerf: commandLine.dartAotPerf ?? false,
@@ -258,7 +260,7 @@ String _checkTopLevel(BuildRunnerCommandLine commandLine, String arg) {
 
 BuiltMap<String, BuiltMap<String, dynamic>> _parseBuilderConfigOverrides(
   BuildRunnerCommandLine commandLine, {
-  required String rootPackage,
+  required String currentPackage,
 }) {
   if (commandLine.defines == null) return BuiltMap();
   final result = <String, Map<String, dynamic>>{};
@@ -278,7 +280,7 @@ BuiltMap<String, BuiltMap<String, dynamic>> _parseBuilderConfigOverrides(
         ..removeRange(2, parts.length)
         ..add(rest.join('='));
     }
-    final builderKey = normalizeBuilderKeyUsage(parts[0], rootPackage);
+    final builderKey = normalizeBuilderKeyUsage(parts[0], currentPackage);
     final option = parts[1];
     dynamic value;
     // Attempt to parse the value as JSON, and if that fails then treat it as
@@ -306,13 +308,14 @@ BuiltMap<String, BuiltMap<String, dynamic>> _parseBuilderConfigOverrides(
 /// with glob support for both package names and paths.
 BuiltSet<BuildFilter> _parseBuildFilters(
   BuildRunnerCommandLine commandLine, {
-  required String rootPackage,
+  required String currentPackage,
 }) {
   final filterArgs = commandLine.buildFilter;
   if (filterArgs == null || filterArgs.isEmpty) return BuiltSet();
   try {
     return {
-      for (final arg in filterArgs) BuildFilter.fromArg(arg, rootPackage),
+      for (final arg in filterArgs)
+        BuildFilter.fromArg(arg: arg, currentPackage: currentPackage),
     }.build();
   } on FormatException catch (e) {
     throw ArgumentError.value(

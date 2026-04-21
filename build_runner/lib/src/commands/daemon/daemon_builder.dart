@@ -57,8 +57,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   final _buildScriptUpdateCompleter = Completer<void>();
   Future<void> get buildScriptUpdated => _buildScriptUpdateCompleter.future;
 
-  String? get _singleOutputPackageName =>
-      _buildPlan.buildPackages.singleOutputPackage;
+  String get _currentPackageName => _buildPlan.buildPackages.currentPackage;
 
   @override
   Future<void> build(
@@ -91,15 +90,23 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       if (target.buildFilters != null && target.buildFilters!.isNotEmpty) {
         buildFilters.addAll([
           for (final pattern in target.buildFilters!)
-            BuildFilter.fromArg(pattern, _singleOutputPackageName),
+            BuildFilter.fromArg(
+              arg: pattern,
+              currentPackage: _currentPackageName,
+            ),
         ]);
       } else {
         buildFilters
-          ..add(BuildFilter.fromArg('package:*/**', _singleOutputPackageName))
           ..add(
             BuildFilter.fromArg(
-              '${target.target}/**',
-              _singleOutputPackageName,
+              arg: 'package:*/**',
+              currentPackage: _currentPackageName,
+            ),
+          )
+          ..add(
+            BuildFilter.fromArg(
+              arg: '${target.target}/**',
+              currentPackage: _currentPackageName,
             ),
           );
       }

@@ -300,11 +300,12 @@ class _Build extends _Command<BuildRunnerCommandLine> {
       ..addMultiOption(
         buildFilterOption,
         help:
-            'An explicit filter of files to build. Relative paths and '
-            '`package:` uris are supported, including glob syntax for paths '
-            'portions (but not package names). '
-            'If multiple filters are applied then outputs matching any '
-            'filter will be built (they do not need to match all filters).',
+            'Limits which files get built. Multiple filters are ORed together. '
+            'Specify a relative path, optionally with globs, to limit to '
+            'building matching paths in the current package. '
+            'Or, use a `package:` or `asset:` URI to refer to other packages. '
+            '`package:` URIs refer only to the `lib` folder of that package. '
+            '`asset:` URIs refer to the root of that package.',
       )
       ..addMultiOption(
         enableExperimentOption,

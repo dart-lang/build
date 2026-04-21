@@ -54,6 +54,9 @@ class BuildPackagesLoader {
       );
     }
 
+    final currentPackagePubspec = _pubspecForPath(packagePath);
+    final currentPackage = currentPackagePubspec['name']! as String;
+
     String? singlePackageToBuild;
     String outputRootName;
     final packagesInBuild = <String>{};
@@ -62,10 +65,9 @@ class BuildPackagesLoader {
       packagesInBuild.addAll(workspacePackages!);
       outputRootName = workspaceName;
     } else {
-      final singlePackageToBuildPubspec = _pubspecForPath(packagePath);
-      singlePackageToBuild = singlePackageToBuildPubspec['name']! as String;
-      outputRootName = singlePackageToBuild;
-      packagesInBuild.add(singlePackageToBuild);
+      singlePackageToBuild = currentPackage;
+      outputRootName = currentPackage;
+      packagesInBuild.add(currentPackage);
     }
 
     // Read the lock file to find "fixed" packages that are hosted, on git
@@ -94,6 +96,7 @@ class BuildPackagesLoader {
     }
 
     return BuildPackages.compute(
+      currentPackage: currentPackage,
       singlePackageToBuild: singlePackageToBuild,
       outputRoot: outputRootName,
       packages: buildPackages.build(),

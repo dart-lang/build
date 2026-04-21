@@ -53,6 +53,7 @@ class BuildRunnerTester {
   /// A `pubspec.yaml` is also written, see [Pubspecs.pubspec].
   void writePackage({
     required String name,
+    String? path,
     required Map<String, String> files,
     List<String>? dependencies,
     List<String>? pathDependencies,
@@ -61,7 +62,7 @@ class BuildRunnerTester {
     bool inWorkspace = false,
   }) {
     _writeDirectory(
-      name: name,
+      name: path ?? name,
       files: {
         'pubspec.yaml': pubspecs.pubspec(
           name: name,
@@ -136,10 +137,17 @@ class BuildRunnerTester {
     file.writeAsStringSync(update(data));
   }
 
-  /// Deletes the workspace-relative [path].
+  /// Deletes the file or directory at workspace-relative [path].
   void delete(String path) {
-    final file = File(p.join(tempDirectory.path, path));
-    file.deleteSync(recursive: true);
+    final absolutePath = p.join(tempDirectory.path, path);
+    final type = FileSystemEntity.typeSync(absolutePath);
+    if (type == FileSystemEntityType.file) {
+      File(absolutePath).deleteSync(recursive: true);
+    } else if (type == FileSystemEntityType.directory) {
+      Directory(absolutePath).deleteSync(recursive: true);
+    } else {
+      throw UnsupportedError('File type: $type');
+    }
   }
 
   /// Reads the tree of files at the workspace-relative [path].
