@@ -164,6 +164,8 @@ class AnalysisDriverModel {
                 await writeToFilesystem(id);
               }
               nextGraphs.addAll(nextGraph.children);
+            } else {
+              buildLog.debug('Skipped syncing graph for ${nextGraph.root.ids}');
             }
           }
         }

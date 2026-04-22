@@ -47,12 +47,13 @@ import 'performance_tracker.dart';
 import 'performance_tracking_resolvers.dart';
 import 'resolver/analysis_driver_filesystem.dart';
 import 'resolver/analysis_driver_model.dart';
+import 'resolver/analysis_driver_for_package_build.dart';
 import 'resolver/resolvers_impl.dart';
 import 'run_builder.dart';
 import 'run_post_process_builder.dart';
 import 'single_step_reader_writer.dart';
 
-final Map<PrimaryInputAndPhase, RequirementsManifest> _previousRequirements =
+final Map<PrimaryInputAndPhase, AnalysisRequirements> _previousRequirements =
     {};
 
 final ResolversImpl _defaultResolvers = ResolversImpl(
@@ -627,30 +628,46 @@ class Build {
           phaseNumber,
         );
 
-        final previousGlobalResultRequirements = globalResultRequirements;
-        globalResultRequirements = RequirementsManifest();
-
-        await TimedActivity.build.runAsync(
-          () => tracker.trackStage('Build', () {
-            return runBuilder(
-              builder,
-              [primaryInput],
-              singleStepReaderWriter,
-              PerformanceTrackingResolvers(resolvers, tracker),
-              logger: logger,
-              resourceManager: resourceManager,
-              stageTracker: tracker,
-              reportUnusedAssetsForInput: reportUnusedAssetsForInput,
-              packageConfig: buildPackages.asPackageConfig,
-            ).catchError((void _) {
-              // Errors tracked through the logger.
-            });
-          }),
-        );
-
-        final requirements = globalResultRequirements!;
-        _previousRequirements[primaryInputAndPhase] = requirements;
-        globalResultRequirements = previousGlobalResultRequirements;
+        if (resolversImpl != null) {
+          final (_, requirements) = await resolversImpl!.runWithRequirements(() async {
+            await TimedActivity.build.runAsync(
+              () => tracker.trackStage('Build', () {
+                return runBuilder(
+                  builder,
+                  [primaryInput],
+                  singleStepReaderWriter,
+                  PerformanceTrackingResolvers(resolvers, tracker),
+                  logger: logger,
+                  resourceManager: resourceManager,
+                  stageTracker: tracker,
+                  reportUnusedAssetsForInput: reportUnusedAssetsForInput,
+                  packageConfig: buildPackages.asPackageConfig,
+                ).catchError((void _) {
+                  // Errors tracked through the logger.
+                });
+              }),
+            );
+          });
+          _previousRequirements[primaryInputAndPhase] = requirements;
+        } else {
+          await TimedActivity.build.runAsync(
+            () => tracker.trackStage('Build', () {
+              return runBuilder(
+                builder,
+                [primaryInput],
+                singleStepReaderWriter,
+                PerformanceTrackingResolvers(resolvers, tracker),
+                logger: logger,
+                resourceManager: resourceManager,
+                stageTracker: tracker,
+                reportUnusedAssetsForInput: reportUnusedAssetsForInput,
+                packageConfig: buildPackages.asPackageConfig,
+              ).catchError((void _) {
+                // Errors tracked through the logger.
+              });
+            }),
+          );
+        }
       }
 
       // Update the state for all the `builderOutputs` nodes based on what was
@@ -1025,38 +1042,11 @@ class Build {
               phasedReader: readerWriter,
             );
 
-            RequirementFailure? checkRequirements() {
-              return requirements.isSatisfied(
-                elementFactory: resolversImpl!.elementFactory,
-                performance: OperationPerformanceImpl(''),
-              );
-            }
-
-            final tried = <AssetId>{};
-            while (true) {
-              final failure = checkRequirements();
-              if (failure is! LibraryMissing) break;
-
-              final id = AnalysisDriverFilesystem.parseAsset(failure.uri)!;
-
-              if (tried.add(id)) {
-                await resolversImpl!.updateDriverForEntrypoint(
-                  entrypoint: id,
-                  phasedReader: readerWriter,
-                );
-              } else {
-
-                return true;
-              }
-            }
 
 
-            final check = requirements.isSatisfied(
-              elementFactory: resolversImpl!.elementFactory,
-              performance: OperationPerformanceImpl(''),
-            );
 
-            if (check == null) foundEquivalent = true;
+            final checkResult = requirements.checkRequirements(resolversImpl!.elementFactory);
+            if (checkResult.isSatisfied) foundEquivalent = true;
           }
           if (!foundEquivalent) return true;
         }

@@ -8,6 +8,8 @@ import 'package:analyzer/dart/analysis/features.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 // ignore: implementation_imports
+import 'package:analyzer/src/fine/requirements.dart';
+// ignore: implementation_imports
 import 'package:analyzer/src/summary2/linked_element_factory.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
@@ -22,6 +24,7 @@ import '../library_cycle_graph/phased_asset_deps.dart';
 import '../library_cycle_graph/phased_reader.dart';
 import 'analysis_driver.dart';
 import 'analysis_driver_model.dart';
+import 'analysis_driver_for_package_build.dart';
 import 'build_resolver.dart';
 import 'build_step_resolver.dart';
 import 'sdk_summary.dart';
@@ -74,6 +77,11 @@ class ResolversImpl implements Resolvers {
   LinkedElementFactory get elementFactory => _buildResolver!.elementFactory;
 
   String? libraryApiSignature(String path) => _buildResolver!.libraryApiSignature(path);
+
+  Future<(T, AnalysisRequirements)> runWithRequirements<T>(Future<T> Function() function) async {
+    await _initialize();
+    return _buildResolver!.runWithRequirements(function);
+  }
 
   Future<void> _initialize() async {
     await _initializationPool.withResource(() async {

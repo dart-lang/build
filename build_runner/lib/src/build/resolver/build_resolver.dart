@@ -40,7 +40,7 @@ class BuildResolver {
   Future<List<LibraryElement>>? _sdkLibraries;
 
   BuildResolver(this._driver, Pool driverPool, this._analysisDriverModel)
-    : _driverPool = AnalyzeActivityPool(driverPool);
+    : _driverPool = AnalyzeActivityPool(driverPool, _driver);
 
   Future<bool> isLibrary(AssetId assetId) async {
 
@@ -195,6 +195,9 @@ class BuildResolver {
 
   String? libraryApiSignature(String path) => _driver.libraryApiSignature(path);
 
+  Future<(T, AnalysisRequirements)> runWithRequirements<T>(Future<T> Function() function) =>
+      _driver.runWithRequirements(function);
+
   Future<AssetId> assetIdForElement(Element element) async {
     buildLog.debug('assetIdForElement $element');
     if (element is MultiplyDefinedElement) {
@@ -243,22 +246,14 @@ class BuildResolver {
 /// Wraps [pool] so resource use is timed as [TimedActivity.analyze].
 class AnalyzeActivityPool {
   final Pool pool;
+  final AnalysisDriverForPackageBuild driver;
 
-  AnalyzeActivityPool(this.pool);
+  AnalyzeActivityPool(this.pool, this.driver);
 
   Future<T> withResource<T>(Future<T> Function() function) async {
     return pool.withResource(
       () => TimedActivity.analyze.runAsync(() async {
-        final requirements = globalResultRequirements;
-        final startedHash = requirements.hashCode;
-        final startedNull = globalResultRequirements == null;
-        globalResultRequirements = null;
-        final result = await function();
-        final endedNull = globalResultRequirements == null;
-        final endedHash = globalResultRequirements.hashCode;
-        globalResultRequirements = requirements;
-
-
+        final (result, _) = await driver.runWithRequirements(function);
         return result;
       }),
     );

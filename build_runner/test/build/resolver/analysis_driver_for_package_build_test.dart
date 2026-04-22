@@ -16,6 +16,7 @@ import 'package:build_runner/src/build/resolver/analysis_driver_filesystem.dart'
 import 'package:build_runner/src/build/resolver/analysis_driver_for_package_build.dart';
 import 'package:build_runner/src/build/resolver/analysis_driver_model.dart';
 import 'package:package_config/package_config.dart';
+import 'package:build_runner/src/logging/build_log.dart';
 import 'package:test/test.dart';
 
 Future<void> main() async {
@@ -130,12 +131,8 @@ abstract class B {
 
     // Check requirements. They should fail because b.dart changed.
     // But because we didn't notify the driver, it will likely return null (satisfied).
-    final check = tester.previousRequirements!.isSatisfied(
-      elementFactory: tester.driver.elementFactory,
-      performance: OperationPerformanceImpl(''),
-    );
-
-    expect(check, isNull); // This is the bug we are reproducing!
+    final checkResult = tester.previousRequirements!.checkRequirements(tester.driver.elementFactory);
+    expect(checkResult.isSatisfied, isTrue); // This is the bug we are reproducing!
   });
 }
 
@@ -154,9 +151,9 @@ class FineGrainedAnalysisTester {
   Map<String, String>? _sources;
   Future<void> Function(Libraries libraries)? _analyze;
 
-  RequirementsManifest? _previousRequirements;
+  AnalysisRequirements? _previousRequirements;
 
-  RequirementsManifest? get previousRequirements => _previousRequirements;
+  AnalysisRequirements? get previousRequirements => _previousRequirements;
 
   FineGrainedAnalysisTester._(this.analysisDriverModel, this.driver);
 
@@ -198,7 +195,7 @@ class FineGrainedAnalysisTester {
 
     if (expectRebuild != null) {
       RequirementFailure? checkRequirements() {
-        return _previousRequirements!.isSatisfied(
+        return _previousRequirements!.manifest.isSatisfied(
           elementFactory: driver.elementFactory,
           performance: OperationPerformanceImpl(''),
         );
@@ -219,10 +216,11 @@ class FineGrainedAnalysisTester {
     }
 
     if (_analyze != null) {
-      globalResultRequirements = RequirementsManifest();
-      final libraries = Libraries(this);
-      await _analyze!(libraries);
-      _previousRequirements = globalResultRequirements;
+      final (_, requirements) = await driver.runWithRequirements(() async {
+        final libraries = Libraries(this);
+        await _analyze!(libraries);
+      });
+      _previousRequirements = requirements;
     }
   }
 }
@@ -233,13 +231,13 @@ class Libraries {
   Libraries(this.tester);
 
   Future<LibraryElement> resolve(String path) async {
-    final requirements = globalResultRequirements;
-    globalResultRequirements = null;
-    final result =
-        (await tester.driver.currentSession.getResolvedLibrary(path)
-                as ResolvedLibraryResult)
-            .element;
-    globalResultRequirements = requirements;
+    late LibraryElement result;
+    await tester.driver.runWithRequirements(() async {
+      result =
+          (await tester.driver.currentSession.getResolvedLibrary(path)
+                  as ResolvedLibraryResult)
+              .element;
+    });
     return result;
   }
 

@@ -26,6 +26,11 @@ import 'package:analyzer/src/dart/analysis/file_state.dart';
 import 'package:analyzer/src/dart/analysis/performance_logger.dart';
 import 'package:analyzer/src/dart/analysis/results.dart';
 import 'package:analyzer/src/dart/sdk/sdk.dart';
+// ignore: implementation_imports
+import 'package:analyzer/src/fine/requirement_failure.dart';
+import 'package:analyzer/src/fine/requirements.dart';
+// ignore: implementation_imports
+import 'package:analyzer/src/util/performance/operation_performance.dart';
 import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/summary/package_bundle_reader.dart';
 import 'package:analyzer/src/summary2/linked_element_factory.dart';
@@ -111,6 +116,24 @@ class AnalysisDriverForPackageBuild {
 
   AnalysisDriverForPackageBuild._(this._sdkLibraryUris, this._driver);
 
+  final _requirementsStack = <RequirementsManifest>[];
+
+  /// Runs [function] with a new [RequirementsManifest] on the stack,
+  /// and returns the result of the function and that manifest.
+  Future<(T, AnalysisRequirements)> runWithRequirements<T>(Future<T> Function() function) async {
+    final requirements = RequirementsManifest();
+    _requirementsStack.add(requirements);
+    final previousGlobal = globalResultRequirements;
+    globalResultRequirements = requirements;
+    try {
+      final result = await function();
+      return (result, AnalysisRequirements(requirements));
+    } finally {
+      globalResultRequirements = previousGlobal;
+      _requirementsStack.removeLast();
+    }
+  }
+
   /// Returns the transitive API signature of the library at [path].
   ///
   /// If it is not found or is not a library, returns `null`.
@@ -165,5 +188,35 @@ class AnalysisDriverForPackageBuild {
   bool isUriOfExistingFile(Uri uri) {
     var source = _driver.sourceFactory.forUri2(uri);
     return source != null && source.exists();
+  }
+}
+
+class AnalysisRequirements {
+  final RequirementsManifest _manifest;
+
+  AnalysisRequirements(this._manifest);
+
+  RequirementsManifest get manifest => _manifest;
+
+  RequirementsCheckResult checkRequirements(LinkedElementFactory elementFactory) {
+    final failure = _manifest.isSatisfied(
+      elementFactory: elementFactory,
+      performance: OperationPerformanceImpl(''),
+    );
+    return RequirementsCheckResult(failure);
+  }
+}
+
+class RequirementsCheckResult {
+  final RequirementFailure? _failure;
+
+  RequirementsCheckResult(this._failure);
+
+  bool get isSatisfied => _failure == null;
+
+  @override
+  String toString() {
+    if (isSatisfied) return 'Satisfied';
+    return 'Failure: $_failure';
   }
 }
