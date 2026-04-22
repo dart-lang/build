@@ -993,7 +993,7 @@ class Build {
 
       if (firstOutputState.result == null) return true;
 
-      buildLog.debug('Reached this point for $primaryInput');
+
 
       // Check for changes to any inputs.
       final inputs = firstOutputState.inputs;
@@ -1004,7 +1004,7 @@ class Build {
         );
 
         if (changed) {
-          buildLog.debug('Input changed $input');
+
           return true;
         }
       }
@@ -1014,7 +1014,7 @@ class Build {
           phaseNumber: phaseNumber,
           entrypointId: graphId,
         )) {
-          buildLog.debug('Transitive change for $graphId, $phaseNumber');
+
           // Check if anything actually changed.
           final requirements =
               _previousRequirements[PrimaryInputAndPhase(graphId, phaseNumber)];
@@ -1036,31 +1036,26 @@ class Build {
             while (true) {
               final failure = checkRequirements();
               if (failure is! LibraryMissing) break;
-              buildLog.debug('failure: $failure');
+
               final id = AnalysisDriverFilesystem.parseAsset(failure.uri)!;
-              buildLog.debug('update driver for $id');
+
               if (tried.add(id)) {
                 await resolversImpl!.updateDriverForEntrypoint(
                   entrypoint: id,
                   phasedReader: readerWriter,
                 );
               } else {
-                buildLog.debug('gave up!');
+
                 return true;
               }
             }
 
-            final path = AnalysisDriverFilesystem.assetPath(graphId);
-            buildLog.debug(
-              'Signature for $graphId: ${resolversImpl!.libraryApiSignature(path)}',
-            );
+
             final check = requirements.isSatisfied(
               elementFactory: resolversImpl!.elementFactory,
               performance: OperationPerformanceImpl(''),
             );
-            buildLog.debug(
-              'Check requirements for $graphId, $phaseNumber: $check',
-            );
+
             if (check == null) foundEquivalent = true;
           }
           if (!foundEquivalent) return true;

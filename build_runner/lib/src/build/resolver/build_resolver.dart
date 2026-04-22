@@ -43,7 +43,7 @@ class BuildResolver {
     : _driverPool = AnalyzeActivityPool(driverPool);
 
   Future<bool> isLibrary(AssetId assetId) async {
-    buildLog.debug('isLibrary $assetId');
+
     if (assetId.extension != '.dart') return false;
     return _driverPool.withResource(() async {
       if (!_driver.isUriOfExistingFile(assetId.uri)) return false;
@@ -114,9 +114,9 @@ class BuildResolver {
     AssetId assetId, {
     bool allowSyntaxErrors = false,
   }) async {
-    buildLog.debug('libraryFor $assetId');
+
     return await _driverPool.withResource(() async {
-      buildLog.debug('libraryFor $assetId with resource');
+
       final uri = assetId.uri;
       if (!_driver.isUriOfExistingFile(uri)) {
         throw AssetNotFoundException(assetId);
@@ -169,7 +169,7 @@ class BuildResolver {
   }
 
   Stream<LibraryElement> get sdkLibraries {
-    buildLog.debug('sdkLibraries');
+
     final loadLibraries =
         _sdkLibraries ??= Future.sync(() {
           final publicSdkUris = _driver.sdkLibraryUris.where(
@@ -258,11 +258,7 @@ class AnalyzeActivityPool {
         final endedHash = globalResultRequirements.hashCode;
         globalResultRequirements = requirements;
 
-        //if (startedNull != endedNull) {
-        buildLog.debug(
-          'started/ended $startedNull $startedHash $endedNull $endedHash',
-        );
-        //}
+
         return result;
       }),
     );
