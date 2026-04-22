@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:isolate';
 
+// ignore: implementation_imports
 import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';

@@ -5,13 +5,12 @@
 import 'dart:io';
 
 import 'package:analyzer/file_system/file_system.dart' show ResourceProvider;
-// ignore: implementation_imports
-import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:package_config/package_config.dart' show PackageConfig;
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 
 import 'analysis_driver_filesystem.dart';
+import 'analysis_driver_for_package_build.dart';
 import 'analysis_driver_model.dart';
 
 /// Builds an [AnalysisDriverForPackageBuild] backed by a summary SDK.
@@ -20,7 +19,7 @@ import 'analysis_driver_model.dart';
 AnalysisDriverForPackageBuild analysisDriver(
   AnalysisDriverModel analysisDriverModel,
   AnalysisOptions analysisOptions,
-  String sdkSummaryPath,
+  String? sdkSummaryPath,
   PackageConfig packageConfig,
 ) {
   return createAnalysisDriver(
@@ -31,7 +30,8 @@ AnalysisDriverForPackageBuild analysisDriver(
     ),
     resourceProvider: analysisDriverModel.filesystem,
     fileContentCache: analysisDriverModel.filesystem,
-    sdkSummaryBytes: File(sdkSummaryPath).readAsBytesSync(),
+    sdkSummaryBytes:
+        sdkSummaryPath == null ? null : File(sdkSummaryPath).readAsBytesSync(),
     uriResolvers: [analysisDriverModel.filesystem],
   );
 }

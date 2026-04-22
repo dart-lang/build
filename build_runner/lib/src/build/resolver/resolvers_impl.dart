@@ -7,6 +7,10 @@ import 'dart:async';
 import 'package:analyzer/dart/analysis/features.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
+// ignore: implementation_imports
+import 'package:analyzer/src/fine/requirements.dart';
+// ignore: implementation_imports
+import 'package:analyzer/src/summary2/linked_element_factory.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:package_config/package_config.dart';
@@ -17,8 +21,10 @@ import '../../logging/build_log.dart';
 import '../asset_graph/graph.dart';
 import '../build_step_impl.dart';
 import '../library_cycle_graph/phased_asset_deps.dart';
+import '../library_cycle_graph/phased_reader.dart';
 import 'analysis_driver.dart';
 import 'analysis_driver_model.dart';
+import 'analysis_driver_for_package_build.dart';
 import 'build_resolver.dart';
 import 'build_step_resolver.dart';
 import 'sdk_summary.dart';
@@ -44,6 +50,8 @@ class ResolversImpl implements Resolvers {
   /// Specifies the language version for each package during analysis.
   PackageConfig? _packageConfig;
 
+  AnalysisDriverModel get analysisDriverModel => _analysisDriverModel;
+
   /// Creates a new resolvers instance.
   ///
   /// Specify [packageConfig] to override package language versions for
@@ -66,8 +74,16 @@ class ResolversImpl implements Resolvers {
   }) : _packageConfig = packageConfig,
        _analysisDriverModel = analysisDriverModel;
 
-  @override
-  Future<BuildStepResolver> get(BuildStep buildStep) async {
+  LinkedElementFactory get elementFactory => _buildResolver!.elementFactory;
+
+  String? libraryApiSignature(String path) => _buildResolver!.libraryApiSignature(path);
+
+  Future<(T, AnalysisRequirements)> runWithRequirements<T>(Future<T> Function() function) async {
+    await _initialize();
+    return _buildResolver!.runWithRequirements(function);
+  }
+
+  Future<void> _initialize() async {
     await _initializationPool.withResource(() async {
       if (_buildResolver != null) return;
       _warnOnLanguageVersionMismatch();
@@ -84,11 +100,28 @@ class ResolversImpl implements Resolvers {
         await defaultSdkSummaryGenerator(),
         loadedConfig,
       );
-
       _buildResolver = BuildResolver(driver, _driverPool, _analysisDriverModel);
     });
+  }
 
+  @override
+  Future<BuildStepResolver> get(BuildStep buildStep) async {
+    await _initialize();
     return BuildStepResolver(_buildResolver!, buildStep as BuildStepImpl);
+  }
+
+  Future<void> updateDriverForEntrypoint({
+    required AssetId entrypoint,
+    required PhasedReader phasedReader,
+  }) async {
+    await _initialize();
+    await _buildResolver!.updateDriverForEntrypoint(
+      entrypoint: entrypoint,
+      phasedReader: phasedReader,
+      inputTracker: null,
+      transitive: true,
+    );
+    await _buildResolver!.libraryFor(entrypoint, allowSyntaxErrors: true);
   }
 
   /// Start a build with [assetGraph].
@@ -118,6 +151,16 @@ class ResolversImpl implements Resolvers {
   @override
   void reset() {
     _analysisDriverModel.endBuildAndUnlock();
+    /*
+    final requirements = globalResultRequirements!;
+    print(
+      (requirements.libraries.keys.map((u) => u.toString()).toList()..sort())
+          .join('\n'),
+    );
+    final bytes = globalResultRequirements!.toBytes();
+    final hash = md5.convert(bytes).toString();
+    buildLog.debug('manifest: ${bytes.length} / $hash');
+    globalResultRequirements = RequirementsManifest();*/
   }
 }
 

@@ -10,15 +10,19 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:analyzer/error/error.dart';
 // ignore: implementation_imports
-import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
+import 'package:analyzer/src/fine/requirements.dart';
+// ignore: implementation_imports
+import 'package:analyzer/src/summary2/linked_element_factory.dart';
 import 'package:build/build.dart';
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:pool/pool.dart';
 
+import '../../logging/build_log.dart';
 import '../../logging/timed_activities.dart';
 import '../input_tracker.dart';
 import '../library_cycle_graph/phased_reader.dart';
 import 'analysis_driver_filesystem.dart';
+import 'analysis_driver_for_package_build.dart';
 import 'analysis_driver_model.dart';
 import 'build_step_resolver.dart';
 
@@ -36,9 +40,10 @@ class BuildResolver {
   Future<List<LibraryElement>>? _sdkLibraries;
 
   BuildResolver(this._driver, Pool driverPool, this._analysisDriverModel)
-    : _driverPool = AnalyzeActivityPool(driverPool);
+    : _driverPool = AnalyzeActivityPool(driverPool, _driver);
 
   Future<bool> isLibrary(AssetId assetId) async {
+
     if (assetId.extension != '.dart') return false;
     return _driverPool.withResource(() async {
       if (!_driver.isUriOfExistingFile(assetId.uri)) return false;
@@ -58,6 +63,7 @@ class BuildResolver {
       // library and can't be resolved like this.
       return null;
     }
+    buildLog.debug('astNodeFor $fragment');
     final path = library.firstFragment.source.fullName;
 
     return _driverPool.withResource(() async {
@@ -86,6 +92,7 @@ class BuildResolver {
     AssetId assetId, {
     bool allowSyntaxErrors = false,
   }) {
+    buildLog.debug('compilationUnitFor $assetId');
     return _driverPool.withResource(() async {
       if (!_driver.isUriOfExistingFile(assetId.uri)) {
         throw AssetNotFoundException(assetId);
@@ -107,7 +114,9 @@ class BuildResolver {
     AssetId assetId, {
     bool allowSyntaxErrors = false,
   }) async {
-    final library = await _driverPool.withResource(() async {
+
+    return await _driverPool.withResource(() async {
+
       final uri = assetId.uri;
       if (!_driver.isUriOfExistingFile(uri)) {
         throw AssetNotFoundException(assetId);
@@ -119,18 +128,20 @@ class BuildResolver {
         throw NonLibraryAssetException(assetId);
       }
 
-      return await _driver.currentSession.getLibraryByUri(uri.toString())
-          as LibraryElementResult;
-    });
+      final result =
+          (await _driver.currentSession.getLibraryByUri(uri.toString())
+                  as LibraryElementResult)
+              .element;
 
-    if (!allowSyntaxErrors) {
-      final errors = await _syntacticErrorsFor(library.element);
-      if (errors.isNotEmpty) {
-        throw SyntaxErrorInAssetException(assetId, errors);
+      if (!allowSyntaxErrors) {
+        final errors = await _syntacticErrorsFor(result);
+        if (errors.isNotEmpty) {
+          throw SyntaxErrorInAssetException(assetId, errors);
+        }
       }
-    }
 
-    return library.element;
+      return result;
+    });
   }
 
   /// Finds syntax errors in files related to the [element].
@@ -158,6 +169,7 @@ class BuildResolver {
   }
 
   Stream<LibraryElement> get sdkLibraries {
+
     final loadLibraries =
         _sdkLibraries ??= Future.sync(() {
           final publicSdkUris = _driver.sdkLibraryUris.where(
@@ -179,7 +191,15 @@ class BuildResolver {
     return Stream.fromFuture(loadLibraries).expand((libraries) => libraries);
   }
 
+  LinkedElementFactory get elementFactory => _driver.elementFactory;
+
+  String? libraryApiSignature(String path) => _driver.libraryApiSignature(path);
+
+  Future<(T, AnalysisRequirements)> runWithRequirements<T>(Future<T> Function() function) =>
+      _driver.runWithRequirements(function);
+
   Future<AssetId> assetIdForElement(Element element) async {
+    buildLog.debug('assetIdForElement $element');
     if (element is MultiplyDefinedElement) {
       throw UnresolvableAssetException('${element.name} is ambiguous');
     }
@@ -208,25 +228,34 @@ class BuildResolver {
   Future<void> updateDriverForEntrypoint({
     required AssetId entrypoint,
     required PhasedReader phasedReader,
-    required InputTracker inputTracker,
+    required InputTracker? inputTracker,
     required bool transitive,
-  }) => _analysisDriverModel.updateDriver(
-    withDriver:
-        (withDriver) => _driverPool.withResource(() => withDriver(_driver)),
-    phasedReader: phasedReader,
-    inputTracker: inputTracker,
-    entrypoint: entrypoint,
-    transitive: transitive,
-  );
+  }) {
+    buildLog.debug('updateDriverForEntrypoint $entrypoint');
+    return _analysisDriverModel.updateDriver(
+      withDriver:
+          (withDriver) => _driverPool.withResource(() => withDriver(_driver)),
+      phasedReader: phasedReader,
+      inputTracker: inputTracker,
+      entrypoint: entrypoint,
+      transitive: transitive,
+    );
+  }
 }
 
 /// Wraps [pool] so resource use is timed as [TimedActivity.analyze].
 class AnalyzeActivityPool {
   final Pool pool;
+  final AnalysisDriverForPackageBuild driver;
 
-  AnalyzeActivityPool(this.pool);
+  AnalyzeActivityPool(this.pool, this.driver);
 
   Future<T> withResource<T>(Future<T> Function() function) async {
-    return pool.withResource(() => TimedActivity.analyze.runAsync(function));
+    return pool.withResource(
+      () => TimedActivity.analyze.runAsync(() async {
+        final (result, _) = await driver.runWithRequirements(function);
+        return result;
+      }),
+    );
   }
 }

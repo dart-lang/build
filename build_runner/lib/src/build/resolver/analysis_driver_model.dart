@@ -4,11 +4,10 @@
 
 import 'dart:async';
 
-// ignore: implementation_imports
-import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:build/build.dart';
 import 'package:pool/pool.dart';
 
+import '../../logging/build_log.dart';
 import '../../logging/timed_activities.dart';
 import '../asset_graph/graph.dart';
 import '../input_tracker.dart';
@@ -18,6 +17,7 @@ import '../library_cycle_graph/library_cycle_graph_loader.dart';
 import '../library_cycle_graph/phased_asset_deps.dart';
 import '../library_cycle_graph/phased_reader.dart';
 import 'analysis_driver_filesystem.dart';
+import 'analysis_driver_for_package_build.dart';
 
 /// Manages analysis driver and related build state.
 ///
@@ -50,6 +50,7 @@ class AnalysisDriverModel {
     AssetGraph assetGraph, {
     required Set<AssetId>? invalidatedSources,
   }) async {
+
     _lock = await _pool.request();
     filesystem.startBuild(
       assetGraph.outputs.map((id) => assetGraph.get(id)!),
@@ -104,7 +105,7 @@ class AnalysisDriverModel {
     withDriver,
     required AssetId entrypoint,
     required PhasedReader phasedReader,
-    required InputTracker inputTracker,
+    required InputTracker? inputTracker,
     required bool transitive,
   }) async {
     AssetId? idToSyncOntoFilesystem;
@@ -118,7 +119,7 @@ class AnalysisDriverModel {
             // cause a recursive `_performResolve` on this same `AnalysisDriver`
             // instance.
             final nodeLoader = AssetDepsLoader(phasedReader);
-            inputTracker.addResolverEntrypoint(entrypoint);
+            inputTracker?.addResolverEntrypoint(entrypoint);
             return (await _graphLoader.libraryCycleGraphOf(
               nodeLoader,
               entrypoint,
@@ -126,7 +127,7 @@ class AnalysisDriverModel {
           });
     } else {
       // Notify [buildStep] of its inputs.
-      inputTracker.add(entrypoint);
+      inputTracker?.add(entrypoint);
       idToSyncOntoFilesystem = entrypoint;
       // Trigger any builds required for the file to be generated.
       await phasedReader.readAtPhase(entrypoint);
@@ -163,6 +164,8 @@ class AnalysisDriverModel {
                 await writeToFilesystem(id);
               }
               nextGraphs.addAll(nextGraph.children);
+            } else {
+              buildLog.debug('Skipped syncing graph for ${nextGraph.root.ids}');
             }
           }
         }
@@ -171,11 +174,13 @@ class AnalysisDriverModel {
       // Notify the analyzer of changes and wait for it to update its internal
       // state.
       if (filesystem.changedPaths.isNotEmpty) {
+
         for (final path in filesystem.changedPaths) {
           driver.changeFile(path);
         }
         filesystem.clearChangedPaths();
         await TimedActivity.analyze.runAsync(driver.applyPendingFileChanges);
+        await TimedActivity.analyze.runAsync(driver.waitForIdle);
       }
     });
   }

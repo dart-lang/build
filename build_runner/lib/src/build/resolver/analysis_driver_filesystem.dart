@@ -3,6 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:convert';
+import 'dart:io' as io;
+
 import 'dart:typed_data';
 
 import 'package:analyzer/file_system/file_system.dart';
@@ -12,6 +14,7 @@ import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/dart/analysis/file_content_cache.dart';
 import 'package:build/build.dart' hide Resource;
+import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 
 import '../asset_graph/node.dart';
@@ -126,8 +129,24 @@ class AnalysisDriverFilesystem
   int _phaseOf(String path) => _phaseByPath[path] ?? -1;
 
   /// Whether [path] exists.
-  bool exists(String path) =>
-      _data.containsKey(path) && _phase > _phaseOf(path);
+  bool exists(String path) {
+    final result = _data.containsKey(path) && _phase > _phaseOf(path);
+    if (path.contains('/sdk/') || path.contains('/dart-sdk/') && !result) {
+      if (!io.File(path).existsSync()) return false;
+      final content = io.File(path).readAsStringSync();
+      writeContent(
+        BuildRunnerFileContent(
+          path,
+          true,
+          content,
+          base64.encode(md5.convert(utf8.encode(content)).bytes),
+        ),
+      );
+      return true;
+    }
+
+    return result;
+  }
 
   /// Reads the data previously written to [path].
   ///
@@ -316,13 +335,20 @@ class _Resource implements File, Folder {
   @override
   String get shortName => filesystem.pathContext.basename(path);
 
+  @override
+  Folder get parent => _Resource(filesystem, p.dirname(path));
+
   // `File` methods. These are mostly not used as reads for analysis are via
   // the `FileContentCache` API.
+
   @override
   Uint8List readAsBytesSync() => utf8.encode(filesystem.read(path));
 
   @override
   String readAsStringSync() => filesystem.read(path);
+
+  @override
+  String canonicalizePath(String path) => path;
 
   // Analyzer methods such as `CompilationUnitElement.source` provide access to
   // source and return a `TimestampedData` with this value.
@@ -338,6 +364,14 @@ class _Resource implements File, Folder {
   @override
   bool contains(String path) =>
       filesystem.pathContext.isWithin(this.path, path);
+
+  @override
+  File getChildAssumingFile(String relPath) =>
+      _Resource(filesystem, '$path/$relPath');
+
+  @override
+  Folder getChildAssumingFolder(String relPath) =>
+      _Resource(filesystem, '$path/$relPath');
 
   // Most `File` and/or `Folder` methods are not needed.
 

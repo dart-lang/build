@@ -7,6 +7,12 @@ import 'dart:convert';
 
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
+// ignore: implementation_imports
+import 'package:analyzer/src/fine/requirement_failure.dart';
+// ignore: implementation_imports
+import 'package:analyzer/src/fine/requirements.dart';
+// ignore: implementation_imports
+import 'package:analyzer/src/util/performance/operation_performance.dart';
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
@@ -39,11 +45,16 @@ import 'library_cycle_graph/library_cycle_graph_loader.dart';
 import 'library_cycle_graph/phased_asset_deps.dart';
 import 'performance_tracker.dart';
 import 'performance_tracking_resolvers.dart';
+import 'resolver/analysis_driver_filesystem.dart';
 import 'resolver/analysis_driver_model.dart';
+import 'resolver/analysis_driver_for_package_build.dart';
 import 'resolver/resolvers_impl.dart';
 import 'run_builder.dart';
 import 'run_post_process_builder.dart';
 import 'single_step_reader_writer.dart';
+
+final Map<PrimaryInputAndPhase, AnalysisRequirements> _previousRequirements =
+    {};
 
 final ResolversImpl _defaultResolvers = ResolversImpl(
   analysisDriverModel: AnalysisDriverModel(),
@@ -612,23 +623,51 @@ class Build {
         lazy: lazy,
       );
       if (allowedByTriggers) {
-        await TimedActivity.build.runAsync(
-          () => tracker.trackStage('Build', () {
-            return runBuilder(
-              builder,
-              [primaryInput],
-              singleStepReaderWriter,
-              PerformanceTrackingResolvers(resolvers, tracker),
-              logger: logger,
-              resourceManager: resourceManager,
-              stageTracker: tracker,
-              reportUnusedAssetsForInput: reportUnusedAssetsForInput,
-              packageConfig: buildPackages.asPackageConfig,
-            ).catchError((void _) {
-              // Errors tracked through the logger.
-            });
-          }),
+        final primaryInputAndPhase = PrimaryInputAndPhase(
+          primaryInput,
+          phaseNumber,
         );
+
+        if (resolversImpl != null) {
+          final (_, requirements) = await resolversImpl!.runWithRequirements(() async {
+            await TimedActivity.build.runAsync(
+              () => tracker.trackStage('Build', () {
+                return runBuilder(
+                  builder,
+                  [primaryInput],
+                  singleStepReaderWriter,
+                  PerformanceTrackingResolvers(resolvers, tracker),
+                  logger: logger,
+                  resourceManager: resourceManager,
+                  stageTracker: tracker,
+                  reportUnusedAssetsForInput: reportUnusedAssetsForInput,
+                  packageConfig: buildPackages.asPackageConfig,
+                ).catchError((void _) {
+                  // Errors tracked through the logger.
+                });
+              }),
+            );
+          });
+          _previousRequirements[primaryInputAndPhase] = requirements;
+        } else {
+          await TimedActivity.build.runAsync(
+            () => tracker.trackStage('Build', () {
+              return runBuilder(
+                builder,
+                [primaryInput],
+                singleStepReaderWriter,
+                PerformanceTrackingResolvers(resolvers, tracker),
+                logger: logger,
+                resourceManager: resourceManager,
+                stageTracker: tracker,
+                reportUnusedAssetsForInput: reportUnusedAssetsForInput,
+                packageConfig: buildPackages.asPackageConfig,
+              ).catchError((void _) {
+                // Errors tracked through the logger.
+              });
+            }),
+          );
+        }
       }
 
       // Update the state for all the `builderOutputs` nodes based on what was
@@ -971,6 +1010,8 @@ class Build {
 
       if (firstOutputState.result == null) return true;
 
+
+
       // Check for changes to any inputs.
       final inputs = firstOutputState.inputs;
       for (final input in inputs) {
@@ -979,7 +1020,10 @@ class Build {
           input: input,
         );
 
-        if (changed) return true;
+        if (changed) {
+
+          return true;
+        }
       }
 
       for (final graphId in firstOutputState.resolverEntrypoints) {
@@ -987,7 +1031,24 @@ class Build {
           phaseNumber: phaseNumber,
           entrypointId: graphId,
         )) {
-          return true;
+
+          // Check if anything actually changed.
+          final requirements =
+              _previousRequirements[PrimaryInputAndPhase(graphId, phaseNumber)];
+          var foundEquivalent = false;
+          if (requirements != null) {
+            await resolversImpl!.updateDriverForEntrypoint(
+              entrypoint: graphId,
+              phasedReader: readerWriter,
+            );
+
+
+
+
+            final checkResult = requirements.checkRequirements(resolversImpl!.elementFactory);
+            if (checkResult.isSatisfied) foundEquivalent = true;
+          }
+          if (!foundEquivalent) return true;
         }
       }
 
@@ -1312,6 +1373,25 @@ class Build {
   }
 
   Future _delete(AssetId id) => readerWriter.delete(id);
+}
+
+class PrimaryInputAndPhase {
+  final AssetId primaryInput;
+  final int phase;
+
+  PrimaryInputAndPhase(this.primaryInput, this.phase);
+
+  @override
+  bool operator ==(Object other) =>
+      other is PrimaryInputAndPhase &&
+      other.primaryInput == primaryInput &&
+      other.phase == phase;
+
+  @override
+  int get hashCode => primaryInput.hashCode ^ phase.hashCode;
+
+  @override
+  String toString() => '$primaryInput/$phase';
 }
 
 String _twoDigits(int n) => '$n'.padLeft(2, '0');
