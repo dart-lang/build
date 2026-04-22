@@ -4,9 +4,12 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
+import 'package:path/path.dart' as p;
+import 'package:scratch_space/scratch_space.dart';
 
 import 'common.dart';
 import 'errors.dart';
@@ -14,15 +17,18 @@ import 'platforms.dart';
 
 /// A builder that compiles DDC modules with the Frontend Server.
 class DdcFrontendServerBuilder implements Builder {
-  DdcFrontendServerBuilder();
+  final bool generateFullDill;
+
+  DdcFrontendServerBuilder({this.generateFullDill = false});
 
   @override
-  final Map<String, List<String>> buildExtensions = {
+  Map<String, List<String>> get buildExtensions => {
     moduleExtension(ddcPlatform): [
       jsModuleExtension,
       jsModuleErrorsExtension,
       jsSourceMapExtension,
       metadataExtension,
+      if (generateFullDill) fullKernelExtension,
     ],
   };
 
@@ -116,10 +122,11 @@ class DdcFrontendServerBuilder implements Builder {
     // Request from the Frontend Server exactly the JS file requested by
     // build_runner. Frontend Server's recompilation logic will avoid
     // extraneous recompilation.
+    final fullDillId = ddcEntrypointId.changeExtension(fullKernelExtension);
     final compilerOutput = await driver.recompileAndRecord(
       sourceArg(webEntrypointAsset),
       changedAssetUris,
-      [sourceArg(jsFESOutputId)],
+      [sourceArg(jsFESOutputId), if (generateFullDill) sourceArg(fullDillId)],
     );
     if (compilerOutput == null) {
       throw FrontendServerCompilationException(
@@ -127,33 +134,115 @@ class DdcFrontendServerBuilder implements Builder {
         'Frontend Server produced no output.',
       );
     }
-    if (compilerOutput.errorCount != 0 || compilerOutput.errorMessage != null) {
+    if (compilerOutput.errorCount != 0 ||
+        (compilerOutput.errorMessage != null &&
+            compilerOutput.errorMessage!.contains('Error:'))) {
       throw FrontendServerCompilationException(
         webEntrypointAsset,
         compilerOutput.errorMessage!,
       );
     }
-    final outputFile = scratchSpace.fileFor(jsOutputId);
+    final fesOutputFile = scratchSpace.fileFor(jsFESOutputId);
+    final fesMetadataId = ddcEntrypointId.changeExtension(
+      '.dart.lib.js.metadata',
+    );
+    final fesMetadataFile = scratchSpace.fileFor(fesMetadataId);
+
     final metadataId = ddcEntrypointId.changeExtension(metadataExtension);
     final metadataFile = scratchSpace.fileFor(metadataId);
+
+    final targetOutputFile = scratchSpace.fileFor(jsOutputId);
+    final hasFesOutput = fesOutputFile.existsSync();
+    final hasTargetOutput = targetOutputFile.existsSync();
+
     // Write empty files if this output was deemed extraneous by FES.
-    if (!outputFile.existsSync()) {
-      await outputFile.create(recursive: true);
+    if (!hasFesOutput && !hasTargetOutput) {
+      await targetOutputFile.create(recursive: true);
       await metadataFile.create(recursive: true);
       return;
     }
-    await scratchSpace.copyOutput(jsOutputId, buildStep);
-    await fixAndCopySourceMap(
-      ddcEntrypointId.changeExtension(jsSourceMapExtension),
-      scratchSpace,
-      buildStep,
+
+    final fileToRead = hasFesOutput ? fesOutputFile : targetOutputFile;
+
+    // Replace `.dart.lib.js` with `.ddc.js` in the `setSourceMap` call to
+    // match the actual DDC output JS file name.
+    final content = await fileToRead.readAsString();
+    await _fixAndWriteJs(content, jsOutputId, buildStep);
+
+    if (generateFullDill) {
+      final outputDillFile = File(
+        p.join(scratchSpace.tempDir.path, 'output.dill'),
+      );
+      log.info(
+        'DdcFrontendServerBuilder: outputDillFile exists=${outputDillFile.existsSync()}',
+      );
+      if (outputDillFile.existsSync()) {
+        final fullDillFile = scratchSpace.fileFor(fullDillId);
+        await outputDillFile.copy(fullDillFile.path);
+        await scratchSpace.copyOutput(fullDillId, buildStep);
+      }
+    }
+
+    // Handle source map rename if needed
+    final fesSourceMapId = ddcEntrypointId.changeExtension('.dart.lib.js.map');
+    final fesSourceMapFile = scratchSpace.fileFor(fesSourceMapId);
+    final targetSourceMapId = ddcEntrypointId.changeExtension(
+      jsSourceMapExtension,
     );
+    final targetSourceMapFile = scratchSpace.fileFor(targetSourceMapId);
+
+    if (fesSourceMapFile.existsSync()) {
+      await fesSourceMapFile.copy(targetSourceMapFile.path);
+    }
+
+    await fixAndCopySourceMap(targetSourceMapId, scratchSpace, buildStep);
 
     // Copy the metadata output, modifying its contents to remove the temp
-    // directory from paths
-    final content = await metadataFile.readAsString();
+    // directory from paths and renaming module references.
+    final metadataFileToRead =
+        fesMetadataFile.existsSync() ? fesMetadataFile : metadataFile;
+    if (metadataFileToRead.existsSync()) {
+      await _fixAndWriteMetadata(
+        metadataFileToRead,
+        metadataId,
+        scratchSpace,
+        buildStep,
+      );
+    }
+  }
+
+  Future<void> _fixAndWriteJs(
+    String content,
+    AssetId jsOutputId,
+    BuildStep buildStep,
+  ) async {
+    var fixedContent = content.replaceAllMapped(
+      RegExp(r'dartDevEmbedder\.debugger\.setSourceMap\([\s\S]*?\);'),
+      (match) =>
+          match.group(0)!.replaceAll('.dart.lib.js"', '$jsModuleExtension"'),
+    );
+    fixedContent = fixedContent.replaceAll(
+      '.dart.lib.js.map',
+      jsSourceMapExtension,
+    );
+    await buildStep.writeAsString(jsOutputId, fixedContent);
+  }
+
+  Future<void> _fixAndWriteMetadata(
+    File file,
+    AssetId metadataId,
+    ScratchSpace scratchSpace,
+    BuildStep buildStep,
+  ) async {
+    final content = await file.readAsString();
     final metadataJson = jsonDecode(content) as Map<String, Object?>;
     fixMetadataSources(metadataJson, scratchSpace.tempDir.uri);
-    await buildStep.writeAsString(metadataId, jsonEncode(metadataJson));
+
+    final metadataString = jsonEncode(metadataJson);
+    final fixedMetadataString = metadataString.replaceAll(
+      '.dart.lib.js',
+      jsModuleExtension,
+    );
+    await buildStep.writeAsString(metadataId, fixedMetadataString);
   }
 }
