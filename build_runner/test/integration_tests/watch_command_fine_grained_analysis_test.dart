@@ -11,34 +11,40 @@ import 'package:test/test.dart';
 import '../common/common.dart';
 
 void main() async {
-  test('watch command', timeout: const Timeout.factor(4), () async {
-    final pubspecs = await Pubspecs.load();
-    final tester = BuildRunnerTester(pubspecs);
+  test(
+    'watch command fine grained analysis',
+    timeout: const Timeout.factor(4),
+    () async {
+      final pubspecs = await Pubspecs.load();
+      final tester = BuildRunnerTester(pubspecs);
 
-    tester.writeFixturePackage(FixturePackages.analyzingBuilder());
-    tester.writePackage(
-      name: 'root_pkg',
-      dependencies: ['build_runner'],
-      pathDependencies: ['builder_pkg'],
-      files: {
-        'lib/a.dart': '''
+      tester.writeFixturePackage(FixturePackages.analyzingBuilder());
+      tester.writePackage(
+        name: 'root_pkg',
+        dependencies: ['build_runner'],
+        pathDependencies: ['builder_pkg'],
+        files: {
+          'lib/a.dart': '''
 import 'b.dart';
 abstract class A implements B {
   int get a; 
 }
 ''',
-        'lib/b.dart': '''
+          'lib/b.dart': '''
 abstract class B {
   int get b;
 }
 ''',
-      },
-    );
+        },
+      );
 
-    // Watch and initial build.
-    final watch = await tester.start('root_pkg', 'dart run build_runner watch');
-    await watch.expect(BuildLog.successPattern);
-    expect(tester.read('root_pkg/lib/a.txt'), '''
+      // Watch and initial build.
+      final watch = await tester.start(
+        'root_pkg',
+        'dart run build_runner watch --force-jit',
+      );
+      await watch.expect(BuildLog.successPattern);
+      expect(tester.read('root_pkg/lib/a.txt'), '''
 A
   a
   b
@@ -46,17 +52,17 @@ A
   runtimeType
 ''');
 
-    tester.write('root_pkg/lib/b.dart', '''
+      tester.write('root_pkg/lib/b.dart', '''
 abstract class B {
   int get b;
 }
 
 class Unused {}
 ''');
-    await watch.expect('1 skipped, 1 output');
-    await watch.expect(BuildLog.successPattern);
+      await watch.expect('1 skipped, 1 output');
+      await watch.expect(BuildLog.successPattern);
 
-    tester.write('root_pkg/lib/b.dart', '''
+      tester.write('root_pkg/lib/b.dart', '''
 abstract class B {
   int get b;
   int get c;
@@ -64,9 +70,9 @@ abstract class B {
 
 class Unused {}
 ''');
-    await watch.expect('2 output');
-    await watch.expect(BuildLog.successPattern);
-    expect(tester.read('root_pkg/lib/a.txt'), '''
+      await watch.expect('2 output');
+      await watch.expect(BuildLog.successPattern);
+      expect(tester.read('root_pkg/lib/a.txt'), '''
 A
   a
   b
@@ -74,5 +80,6 @@ A
   hashCode
   runtimeType
 ''');
-  });
+    },
+  );
 }
