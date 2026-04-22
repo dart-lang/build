@@ -24,7 +24,10 @@ void main() async {
       files: {},
     );
 
-    var serve = await tester.start('root_pkg', 'dart run build_runner serve');
+    var serve = await tester.start(
+      'root_pkg',
+      'dart run build_runner serve --force-jit',
+    );
     await serve.expect(
       'Missing dev dependency on package:build_web_compilers, '
       'which is required to serve Dart compiled to JavaScript.',
@@ -35,7 +38,10 @@ void main() async {
     // Create some source to serve, serve it.
     tester.write('root_pkg/web/a.txt', 'a');
     tester.write('root_pkg/web/subdirectory/b.txt', 'b');
-    serve = await tester.start('root_pkg', 'dart run build_runner serve web:0');
+    serve = await tester.start(
+      'root_pkg',
+      'dart run build_runner serve --force-jit web:0',
+    );
     await serve.expectServingAndBuildSuccess();
 
     // Serves directory index as 404 for subdirectory without index.html.
@@ -70,7 +76,7 @@ void main() async {
     addTearDown(server.close);
     final output = await tester.run(
       'root_pkg',
-      'dart run build_runner serve web:${server.port}',
+      'dart run build_runner serve --force-jit web:${server.port}',
       expectExitCode: ExitCode.osError.code,
     );
     expect(

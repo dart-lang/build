@@ -37,7 +37,7 @@ void main() async {
     tester.writeWorkspacePubspec(packages: ['p1']);
 
     // Run without --workspace in p1, builders apply.
-    await tester.run('p1', 'dart run build_runner build');
+    await tester.run('p1', 'dart run build_runner build --force-jit');
     expect(tester.read('p1/lib/p1.txt.copy'), '1');
     expect(
       tester.read('p1/.dart_tool/build/generated/p1/lib/p1.txt.hidden'),
@@ -47,7 +47,10 @@ void main() async {
     // Run with --workspace in p1, builders apply, logs with package name.
     tester.write('p1/lib/p1.txt', '2');
     expect(
-      await tester.run('p1', 'dart run build_runner build --workspace'),
+      await tester.run(
+        'p1',
+        'dart run build_runner build --force-jit --workspace',
+      ),
       contains('on 1 input; p1|lib/p1.txt'),
     );
     expect(tester.read('p1/lib/p1.txt.copy'), '2');
@@ -57,7 +60,10 @@ void main() async {
     // Run with --workspace in workspace root, builders apply.
     tester.write('p1/lib/p1.txt', '3');
     expect(
-      await tester.run('', 'dart run build_runner build --workspace'),
+      await tester.run(
+        '',
+        'dart run build_runner build --force-jit --workspace',
+      ),
       contains('on 1 input; p1|lib/p1.txt'),
     );
     expect(tester.read('p1/lib/p1.txt.copy'), '3');
@@ -73,7 +79,7 @@ void main() async {
     tester.writeWorkspacePubspec(packages: ['p1', 'p2']);
 
     // Builders do not apply.
-    await tester.run('', 'dart run build_runner build --workspace');
+    await tester.run('', 'dart run build_runner build --force-jit --workspace');
     expect(tester.read('p2/lib/p2.txt.copy'), null);
     expect(
       tester.read('.dart_tool/build/generated/p2/lib/p2.txt.hidden'),
@@ -91,7 +97,10 @@ void main() async {
     tester.writeWorkspacePubspec(packages: ['p1', 'p2', 'p3']);
 
     // Builders run.
-    await tester.run('p3', 'dart run build_runner build --workspace');
+    await tester.run(
+      'p3',
+      'dart run build_runner build --force-jit --workspace',
+    );
     expect(tester.read('p3/lib/p3.txt.copy'), '1');
     expect(tester.read('.dart_tool/build/generated/p3/lib/p3.txt.hidden'), '1');
 
@@ -120,7 +129,7 @@ void main() async {
 
     // Builders can apply to `p4` and `p5` because they are (transitive) deps
     // of `p1`.
-    await tester.run('', 'dart run build_runner build --workspace');
+    await tester.run('', 'dart run build_runner build --force-jit --workspace');
     // `AutoApply.root` does not apply because the builder is not a transitive
     // dep of `p4` or `p5`.
     expect(tester.read('p4/lib/p4.txt.copy'), null);
@@ -150,7 +159,7 @@ void main() async {
 
     // The builder applied by second_copy_builder_pkg runs despite not
     // being auto applied.
-    await tester.run('', 'dart run build_runner build --workspace');
+    await tester.run('', 'dart run build_runner build --force-jit --workspace');
     expect(tester.read('p6/lib/p6.txt.copy'), '1');
 
     // Support for globs in workspaces was added in 3.11.
@@ -158,7 +167,7 @@ void main() async {
       packages: ["'p*'"],
       sdkBound: '>=3.11.0 <4.0.0',
     );
-    await tester.run('', 'dart run build_runner build --workspace');
+    await tester.run('', 'dart run build_runner build --force-jit --workspace');
 
     // Write a builder that applies an unknown builder in its build.yaml, the
     // unknown builder is ignored.
@@ -171,6 +180,6 @@ void main() async {
         pathDependencies: ['builder_pkg'],
       ),
     );
-    await tester.run('', 'dart run build_runner build --workspace');
+    await tester.run('', 'dart run build_runner build --force-jit --workspace');
   });
 }

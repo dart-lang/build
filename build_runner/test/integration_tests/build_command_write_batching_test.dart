@@ -32,7 +32,10 @@ void main() async {
     );
 
     // The delete should be deferred until the new output is ready.
-    final build = await tester.start('root_pkg', 'dart run build_runner build');
+    final build = await tester.start(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
     await build.expect('builder_pkg:test_builder');
     expect(tester.read('root_pkg/web/a.txt.copy'), 'old');
     await build.expect(BuildLog.successPattern);
@@ -41,7 +44,7 @@ void main() async {
     // Don't write identical files.
     final stat1 = tester.stat('root_pkg/web/a.txt.copy');
     tester.delete('root_pkg/.dart_tool/build/asset_graph.json');
-    await tester.run('root_pkg', 'dart run build_runner build');
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
     final stat2 = tester.stat('root_pkg/web/a.txt.copy');
     // The file should not have been rewritten. Confirm that `modified` is
     // unchanged. The delay in the builder means it would change reliably

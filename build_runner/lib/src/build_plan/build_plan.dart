@@ -9,6 +9,7 @@ import 'package:build/experiments.dart';
 import 'package:built_collection/built_collection.dart';
 
 import '../bootstrap/bootstrapper.dart';
+import '../bootstrap/depfile.dart';
 import '../build/asset_graph/exceptions.dart';
 import '../build/asset_graph/graph.dart';
 import '../build/asset_graph/node.dart';
@@ -110,12 +111,15 @@ class BuildPlan {
   }) async {
     final bootstrapper = Bootstrapper(
       buildPaths: buildOptions.buildPaths,
-      compileAot: buildOptions.forceAot,
+      compileStrategy: buildOptions.compileStrategy,
     );
     var restartIsNeeded = false;
-    final kernelFreshness = await bootstrapper.checkCompileFreshness(
-      digestsAreFresh: recentlyBootstrapped,
-    );
+    final kernelFreshness =
+        testingOverrides.checkBuilderFreshness
+            ? await bootstrapper.checkCompileFreshness(
+              digestsAreFresh: recentlyBootstrapped,
+            )
+            : FreshnessResult(outputIsFresh: true, digest: 'dummy_digest');
     if (!kernelFreshness.outputIsFresh) {
       restartIsNeeded = true;
     }

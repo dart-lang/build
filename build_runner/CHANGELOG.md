@@ -1,7 +1,18 @@
-## 2.14.0-wip
+## 2.14.0
 
 - Performance: further improvements to management of files for analysis
   for 2x faster incremental builds.
+- Performance: default to AOT compilation for commands other than `run`. This
+  costs more initial startup time but gives faster builds afterwards. Fall back
+  to JIT if the compile fails due to use of `dart:mirrors`. Use the
+  `--force-jit` flag if you want the old default JIT builder compile. Use the
+  `--force-aot` flag to turn off the fallback to JIT compile.
+- Add support for `asset:` scheme to the `--build-filter` flag. It is like
+  `package:` but for the whole package, not just `lib`. For example,
+  `package:a/b.dart` is the same as `asset:a/lib/b.dart`.
+- Paths specified using `--build-filter` when using the `--workspace` flag now
+  apply to the current package, not the workspace root. Other packages must
+  be referred to using `package:` or `asset:` schemes.
 - Add OSC 8 hyperlinks for logged input paths.
 - Better handling of deletions of files during the build: if the file is not
   needed ignore the deletion, if it's needed try to use the cached version,

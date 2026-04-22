@@ -55,7 +55,7 @@ class TestBuilder implements Builder {
 
     var output = await tester.run(
       'root_pkg',
-      'dart run build_runner build',
+      'dart run build_runner build --force-jit',
       expectExitCode: 1,
     );
     expect(output, contains('builder ran'));
@@ -65,7 +65,7 @@ class TestBuilder implements Builder {
     // Errors are serialized so the error is reported again; the warning is not.
     output = await tester.run(
       'root_pkg',
-      'dart run build_runner build',
+      'dart run build_runner build --force-jit',
       expectExitCode: 1,
     );
     expect(output, isNot(contains('builder ran')));
@@ -81,7 +81,7 @@ class TestBuilder implements Builder {
     );
     output = await tester.run(
       'root_pkg',
-      'dart run build_runner build',
+      'dart run build_runner build --force-jit',
       expectExitCode: 1,
     );
     expect(output, contains('builder ran'));

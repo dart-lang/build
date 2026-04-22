@@ -21,7 +21,7 @@ void main() {
     // check that help output is emitted to verify that the option is respected.
     final output = await tester.run(
       'root_pkg',
-      'dart run build_runner build --dart-jit-vm-arg=--help',
+      'dart run build_runner build --force-jit --dart-jit-vm-arg=--help',
     );
 
     expect(output, contains('Run "dart help" to see global options.'));

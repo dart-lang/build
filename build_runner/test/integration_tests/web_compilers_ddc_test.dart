@@ -75,7 +75,7 @@ void main() async {
     // Initial build.
     await tester.run(
       'root_pkg',
-      'dart run build_runner build --output web:build',
+      'dart run build_runner build --force-jit --output web:build',
     );
     expect(
       tester.readFileTree('root_pkg/build')!.keys,
@@ -107,7 +107,7 @@ void main() async {
     tester.write('root_pkg/lib/a.dart', 'error');
     var output = await tester.run(
       'root_pkg',
-      'dart run build_runner build --output web:build',
+      'dart run build_runner build --force-jit --output web:build',
       expectExitCode: 1,
     );
     expect(output, contains(BuildLog.failurePattern));
@@ -116,7 +116,7 @@ void main() async {
     tester.write('root_pkg/web/main.dart', 'void main() {}');
     output = await tester.run(
       'root_pkg',
-      'dart run build_runner build --output web:build',
+      'dart run build_runner build --force-jit --output web:build',
     );
     expect(output, contains(BuildLog.successPattern));
 
@@ -124,7 +124,7 @@ void main() async {
     expect(tester.read('root_pkg/build/unused.dart'), '');
     await tester.run(
       'root_pkg',
-      'dart run build_runner build --output web:build '
+      'dart run build_runner build --force-jit --output web:build '
           '--define=build_web_compilers:dart_source_cleanup=enabled=true',
     );
     expect(tester.read('root_pkg/build/unused.dart'), null);

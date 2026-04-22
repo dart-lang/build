@@ -24,19 +24,19 @@ void main() async {
     // `test` does not support specifying directory to build.
     await tester.run(
       'root_pkg',
-      'dart run build_runner test web',
+      'dart run build_runner test --force-jit web',
       expectExitCode: ExitCode.usage.code,
     );
     await tester.run(
       'root_pkg',
-      'dart run build_runner test web -- -p chrome',
+      'dart run build_runner test --force-jit web -- -p chrome',
       expectExitCode: ExitCode.usage.code,
     );
 
     // Requires `build_test` dependency.
     final output = await tester.run(
       'root_pkg',
-      'dart run build_runner test',
+      'dart run build_runner test --force-jit',
       expectExitCode: ExitCode.config.code,
     );
     expect(

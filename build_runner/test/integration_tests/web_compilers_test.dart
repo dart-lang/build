@@ -64,7 +64,7 @@ void main() {
     // Initial build.
     await tester.run(
       'root_pkg',
-      'dart run build_runner build --output web:build',
+      'dart run build_runner build --force-jit --output web:build',
     );
     expect(
       tester.readFileTree('root_pkg/build')!.keys,
@@ -96,7 +96,7 @@ void main() {
     // With dart2js. Does compile into a single file.
     await tester.run(
       'root_pkg',
-      'dart run build_runner build --output web:build '
+      'dart run build_runner build --force-jit --output web:build '
           '--define build_web_compilers:entrypoint=compiler=dart2js',
     );
     expect(
@@ -111,7 +111,7 @@ void main() {
     // With dart2js + minify.
     await tester.run(
       'root_pkg',
-      'dart run build_runner build --output web:build '
+      'dart run build_runner build --force-jit --output web:build '
           '--define build_web_compilers:entrypoint=compiler=dart2js '
           '--define build_web_compilers:entrypoint=dart2js_args=["--minify"]',
     );
@@ -127,7 +127,7 @@ void main() {
     // With dart2wasm.
     await tester.run(
       'root_pkg',
-      'dart run build_runner build --output web:build '
+      'dart run build_runner build --force-jit --output web:build '
           '--define build_web_compilers:entrypoint=compiler=dart2wasm',
     );
     expect(tester.readBytes('root_pkg/build/main.wasm'), isNotNull);
@@ -136,7 +136,7 @@ void main() {
     tester.write('root_pkg/lib/a.dart', 'error');
     var output = await tester.run(
       'root_pkg',
-      'dart run build_runner build --output web:build',
+      'dart run build_runner build --force-jit --output web:build',
       expectExitCode: 1,
     );
     expect(output, contains(BuildLog.failurePattern));
@@ -145,7 +145,7 @@ void main() {
     tester.write('root_pkg/web/main.dart', 'void main() {}');
     output = await tester.run(
       'root_pkg',
-      'dart run build_runner build --output web:build',
+      'dart run build_runner build --force-jit --output web:build',
     );
     expect(output, contains(BuildLog.successPattern));
 
@@ -153,7 +153,7 @@ void main() {
     expect(tester.read('root_pkg/build/unused.dart'), '');
     await tester.run(
       'root_pkg',
-      'dart run build_runner build --output web:build '
+      'dart run build_runner build --force-jit --output web:build '
           '--define=build_web_compilers:dart_source_cleanup=enabled=true',
     );
     expect(tester.read('root_pkg/build/unused.dart'), null);

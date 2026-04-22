@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 
 import '../build_plan/build_paths.dart';
 import '../constants.dart';
+import 'compile_type.dart';
 import 'compiler.dart';
 import 'depfile.dart';
 import 'processes.dart';
@@ -30,6 +31,9 @@ class AotCompiler implements Compiler {
         ),
         digestPath: p.join(buildPaths.outputRootPath, entrypointAotDigestPath),
       );
+
+  @override
+  CompileType get compileType => CompileType.aot;
 
   @override
   FreshnessResult checkFreshness({required bool digestsAreFresh}) =>

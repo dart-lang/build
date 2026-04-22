@@ -10,6 +10,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
+import '../bootstrap/compile_type.dart';
 import '../build_runner_command_line.dart';
 import 'build_directory.dart';
 import 'build_filter.dart';
@@ -22,12 +23,11 @@ class BuildOptions {
   final BuiltSet<BuildDirectory> buildDirs;
   final BuildPaths buildPaths;
   final BuiltSet<BuildFilter> buildFilters;
+  final CompileStrategy compileStrategy;
   final String? configKey;
   final BuiltList<String> enableExperiments;
   final bool enableLowResourcesMode;
   final bool dartAotPerf;
-  final bool forceAot;
-  final bool forceJit;
   final bool isReleaseBuild;
   final String? logPerformanceDir;
   final bool outputSymlinksOnly;
@@ -44,12 +44,11 @@ class BuildOptions {
     required this.buildPaths,
     required this.builderConfigOverrides,
     required this.buildFilters,
+    required this.compileStrategy,
     required this.configKey,
     required this.dartAotPerf,
     required this.enableExperiments,
     required this.enableLowResourcesMode,
-    required this.forceAot,
-    required this.forceJit,
     required this.isReleaseBuild,
     required this.logPerformanceDir,
     required this.outputSymlinksOnly,
@@ -68,12 +67,11 @@ class BuildOptions {
     BuiltSet<BuildDirectory>? buildDirs,
     BuildPaths? buildPaths,
     BuiltSet<BuildFilter>? buildFilters,
+    CompileStrategy? compileStrategy,
     String? configKey,
     bool? dartAotPerf,
     BuiltList<String>? enableExperiments,
     bool? enableLowResourcesMode,
-    bool? forceAot,
-    bool? forceJit,
     bool? isReleaseBuild,
     String? logPerformanceDir,
     bool? outputSymlinksOnly,
@@ -86,12 +84,11 @@ class BuildOptions {
     buildPaths:
         buildPaths ?? BuildPaths(packagePath: '.', buildWorkspace: false),
     buildFilters: buildFilters ?? BuiltSet(),
+    compileStrategy: compileStrategy ?? CompileStrategy.tryAot,
     configKey: configKey,
     dartAotPerf: dartAotPerf ?? false,
     enableExperiments: enableExperiments ?? BuiltList(),
     enableLowResourcesMode: enableLowResourcesMode ?? false,
-    forceAot: forceAot ?? false,
-    forceJit: forceJit ?? false,
     isReleaseBuild: isReleaseBuild ?? false,
     logPerformanceDir: logPerformanceDir,
     outputSymlinksOnly: outputSymlinksOnly ?? false,
@@ -102,8 +99,7 @@ class BuildOptions {
 
   /// Parses [commandLine].
   ///
-  /// Build config overrides use [rootPackage], the current package name, as the
-  /// default package name.
+  /// Build config overrides use [currentPackage] as the default package name.
   ///
   /// Set [restIsBuildDirs] to `true` if "rest" args specify build directories,
   /// as they do for the `build` command, or to false if they are used elsewhere
@@ -115,10 +111,20 @@ class BuildOptions {
   static BuildOptions parse(
     BuildRunnerCommandLine commandLine, {
     required BuildPaths buildPaths,
-    required String rootPackage,
+    required String currentPackage,
     required bool restIsBuildDirs,
     Iterable<String>? extraDirs,
   }) {
+    final forceAot = commandLine.forceAot!;
+    final forceJit = commandLine.forceJit!;
+    if (forceAot && forceJit) {
+      throw UsageException(
+        'Only one compile mode can be used, '
+        'got --$forceAotOption and --$forceJitOption.',
+        commandLine.usage,
+      );
+    }
+
     final result = BuildOptions(
       buildDirs:
           {
@@ -131,16 +137,17 @@ class BuildOptions {
       buildPaths: buildPaths,
       builderConfigOverrides: _parseBuilderConfigOverrides(
         commandLine,
-        rootPackage: rootPackage,
+        currentPackage: currentPackage,
       ),
-      buildFilters: _parseBuildFilters(commandLine, rootPackage: rootPackage),
+      buildFilters: _parseBuildFilters(
+        commandLine,
+        currentPackage: currentPackage,
+      ),
       configKey: commandLine.config,
       // Only available on Linux.
       dartAotPerf: commandLine.dartAotPerf ?? false,
       enableExperiments: commandLine.enableExperiments!,
       enableLowResourcesMode: commandLine.lowResourcesMode!,
-      forceAot: commandLine.forceAot!,
-      forceJit: commandLine.forceJit!,
       isReleaseBuild: commandLine.release!,
       logPerformanceDir: _parseLogPerformance(commandLine),
       outputSymlinksOnly: commandLine.symlink!,
@@ -148,21 +155,15 @@ class BuildOptions {
           commandLine.trackPerformance! || commandLine.logPerformance != null,
       verbose: commandLine.verbose!,
       verboseDurations: commandLine.verboseDurations!,
+      compileStrategy: commandLine.compileStrategy,
     );
-
-    if (result.forceAot && result.forceJit) {
-      throw UsageException(
-        'Only one compile mode can be used, '
-        'got --$forceAotOption and --$forceJitOption.',
-        commandLine.usage,
-      );
-    }
     return result;
   }
 
   BuildOptions copyWith({
     BuiltSet<BuildDirectory>? buildDirs,
     BuiltSet<BuildFilter>? buildFilters,
+    CompileStrategy? compileStrategy,
   }) => BuildOptions(
     buildDirs: buildDirs ?? this.buildDirs,
     buildPaths: buildPaths,
@@ -172,14 +173,13 @@ class BuildOptions {
     dartAotPerf: dartAotPerf,
     enableExperiments: enableExperiments,
     enableLowResourcesMode: enableLowResourcesMode,
-    forceAot: forceAot,
-    forceJit: forceJit,
     isReleaseBuild: isReleaseBuild,
     logPerformanceDir: logPerformanceDir,
     outputSymlinksOnly: outputSymlinksOnly,
     trackPerformance: trackPerformance,
     verbose: verbose,
     verboseDurations: verboseDurations,
+    compileStrategy: compileStrategy ?? this.compileStrategy,
   );
 }
 
@@ -260,7 +260,7 @@ String _checkTopLevel(BuildRunnerCommandLine commandLine, String arg) {
 
 BuiltMap<String, BuiltMap<String, dynamic>> _parseBuilderConfigOverrides(
   BuildRunnerCommandLine commandLine, {
-  required String rootPackage,
+  required String currentPackage,
 }) {
   if (commandLine.defines == null) return BuiltMap();
   final result = <String, Map<String, dynamic>>{};
@@ -280,7 +280,7 @@ BuiltMap<String, BuiltMap<String, dynamic>> _parseBuilderConfigOverrides(
         ..removeRange(2, parts.length)
         ..add(rest.join('='));
     }
-    final builderKey = normalizeBuilderKeyUsage(parts[0], rootPackage);
+    final builderKey = normalizeBuilderKeyUsage(parts[0], currentPackage);
     final option = parts[1];
     dynamic value;
     // Attempt to parse the value as JSON, and if that fails then treat it as
@@ -308,13 +308,14 @@ BuiltMap<String, BuiltMap<String, dynamic>> _parseBuilderConfigOverrides(
 /// with glob support for both package names and paths.
 BuiltSet<BuildFilter> _parseBuildFilters(
   BuildRunnerCommandLine commandLine, {
-  required String rootPackage,
+  required String currentPackage,
 }) {
   final filterArgs = commandLine.buildFilter;
   if (filterArgs == null || filterArgs.isEmpty) return BuiltSet();
   try {
     return {
-      for (final arg in filterArgs) BuildFilter.fromArg(arg, rootPackage),
+      for (final arg in filterArgs)
+        BuildFilter.fromArg(arg: arg, currentPackage: currentPackage),
     }.build();
   } on FormatException catch (e) {
     throw ArgumentError.value(

@@ -13,6 +13,7 @@ import 'package:yaml/yaml.dart';
 
 import 'bootstrap/bootstrapper.dart';
 import 'bootstrap/build_process_state.dart';
+import 'bootstrap/compile_type.dart';
 import 'build_plan/build_options.dart';
 import 'build_plan/build_paths.dart';
 import 'build_plan/builder_factories.dart';
@@ -81,7 +82,7 @@ class BuildRunner {
       }
       Directory.current = parent;
     }
-    final rootPackage =
+    final currentPackage =
         (loadYaml(File(p.join(p.current, 'pubspec.yaml')).readAsStringSync())
                 as YamlMap)['name']!
             as String;
@@ -96,10 +97,18 @@ class BuildRunner {
       await buildProcessState.takeLock(buildPaths);
     }
 
+    if ((commandLine.forceAot ?? false) && (commandLine.forceJit ?? false)) {
+      throw UsageException(
+        'Only one compile mode can be used, '
+        'got --force-aot and --force-jit.',
+        commandLine.usage,
+      );
+    }
+
     if (commandLine.type.requiresBuilders && builderFactories == null) {
       return await _runWithBuilders(
         buildPaths: buildPaths,
-        compileAot: commandLine.forceAot!,
+        compileStrategy: commandLine.compileStrategy,
       );
     }
 
@@ -111,7 +120,7 @@ class BuildRunner {
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: true,
-            rootPackage: rootPackage,
+            currentPackage: currentPackage,
             buildPaths: buildPaths,
           ),
         );
@@ -129,7 +138,7 @@ class BuildRunner {
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: false,
-            rootPackage: rootPackage,
+            currentPackage: currentPackage,
             buildPaths: buildPaths,
           ),
           daemonOptions: DaemonOptions.parse(commandLine),
@@ -141,7 +150,7 @@ class BuildRunner {
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: false,
-            rootPackage: rootPackage,
+            currentPackage: currentPackage,
             buildPaths: buildPaths,
           ),
           runOptions: RunOptions.parse(commandLine),
@@ -154,7 +163,7 @@ class BuildRunner {
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: false,
-            rootPackage: rootPackage,
+            currentPackage: currentPackage,
             buildPaths: buildPaths,
             extraDirs: serveOptions.serveTargets.map((t) => t.dir),
           ),
@@ -167,7 +176,7 @@ class BuildRunner {
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: false,
-            rootPackage: rootPackage,
+            currentPackage: currentPackage,
             buildPaths: buildPaths,
           ),
           testOptions: TestOptions.parse(commandLine),
@@ -179,7 +188,7 @@ class BuildRunner {
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: true,
-            rootPackage: rootPackage,
+            currentPackage: currentPackage,
             buildPaths: buildPaths,
           ),
         );
@@ -194,7 +203,7 @@ class BuildRunner {
   /// set, so it runs the command instead of bootstrapping.
   Future<int> _runWithBuilders({
     required BuildPaths buildPaths,
-    required bool compileAot,
+    required CompileStrategy compileStrategy,
   }) async {
     buildLog.configuration = buildLog.configuration.rebuild((b) {
       b.mode = commandLine.type.buildLogMode;
@@ -204,7 +213,7 @@ class BuildRunner {
 
     final bootstrapper = Bootstrapper(
       buildPaths: buildPaths,
-      compileAot: compileAot,
+      compileStrategy: compileStrategy,
     );
     return await bootstrapper.run(
       arguments,

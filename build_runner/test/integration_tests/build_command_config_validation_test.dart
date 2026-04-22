@@ -30,7 +30,10 @@ targets:
       },
     );
 
-    var output = await tester.run('root_pkg', 'dart run build_runner build');
+    var output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
     expect(
       output,
       contains(
@@ -44,7 +47,10 @@ global_options:
   bad:builder:
     options: {}
 ''');
-    output = await tester.run('root_pkg', 'dart run build_runner build');
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
     expect(
       output,
       contains('Ignoring `global_options` for unknown builder `bad:builder`.'),
@@ -53,7 +59,7 @@ global_options:
     tester.delete('root_pkg/build.yaml');
     output = await tester.run(
       'root_pkg',
-      'dart run build_runner build --define=bad:key=foo=bar',
+      'dart run build_runner build --force-jit --define=bad:key=foo=bar',
     );
     expect(
       output,
@@ -72,7 +78,7 @@ builders:
 ''');
     output = await tester.run(
       'root_pkg',
-      'dart run build_runner build',
+      'dart run build_runner build --force-jit',
       expectExitCode: ExitCode.config.code,
     );
     expect(output, contains("Error when reading 'missing_builder.dart'"));
@@ -90,7 +96,7 @@ builders:
 ''');
     output = await tester.run(
       'root_pkg',
-      'dart run build_runner build',
+      'dart run build_runner build --force-jit',
       expectExitCode: ExitCode.config.code,
     );
     expect(

@@ -9,6 +9,7 @@ import 'package:args/command_runner.dart';
 import 'package:build_daemon/constants.dart';
 import 'package:built_collection/built_collection.dart';
 
+import 'bootstrap/compile_type.dart';
 import 'internal.dart';
 
 enum CommandType {
@@ -62,6 +63,13 @@ class BuildRunnerCommandLine {
   final bool? verbose;
   final bool? verboseDurations;
   final bool? workspace;
+
+  CompileStrategy get compileStrategy {
+    if (type == CommandType.run) return CompileStrategy.commandForcesJit;
+    if (forceJit ?? false) return CompileStrategy.forceJit;
+    if (forceAot ?? false) return CompileStrategy.forceAot;
+    return CompileStrategy.tryAot;
+  }
 
   static Future<BuildRunnerCommandLine?> parse(Iterable<String> arguments) =>
       _CommandRunner().run(arguments);
@@ -229,7 +237,9 @@ class _Build extends _Command<BuildRunnerCommandLine> {
         forceAotOption,
         defaultsTo: false,
         negatable: false,
-        help: 'Compiles builders with AOT mode for faster builds.',
+        help:
+            'Forces AOT compilation of builders: disables fallback to '
+            'JIT mode.',
       )
       ..addFlag(
         forceJitOption,
@@ -290,11 +300,12 @@ class _Build extends _Command<BuildRunnerCommandLine> {
       ..addMultiOption(
         buildFilterOption,
         help:
-            'An explicit filter of files to build. Relative paths and '
-            '`package:` uris are supported, including glob syntax for paths '
-            'portions (but not package names). '
-            'If multiple filters are applied then outputs matching any '
-            'filter will be built (they do not need to match all filters).',
+            'Limits which files get built. Multiple filters are ORed together. '
+            'Specify a relative path, optionally with globs, to limit to '
+            'building matching paths in the current package. '
+            'Or, use a `package:` or `asset:` URI to refer to other packages. '
+            '`package:` URIs refer only to the `lib` folder of that package. '
+            '`asset:` URIs refer to the root of that package.',
       )
       ..addMultiOption(
         enableExperimentOption,

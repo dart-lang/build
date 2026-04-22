@@ -12,6 +12,7 @@ import '../build_plan/build_paths.dart';
 import '../exceptions.dart';
 import '../internal.dart';
 import 'aot_compiler.dart';
+import 'compile_type.dart';
 import 'compiler.dart';
 import 'depfile.dart';
 import 'kernel_compiler.dart';
@@ -36,12 +37,11 @@ import 'processes.dart';
 /// and receives updated state when it exits.
 class Bootstrapper {
   final BuildPaths buildPaths;
-  final bool compileAot;
-  final Compiler _compiler;
+  final CompileStrategy compileStrategy;
+  Compiler _compiler;
 
-  Bootstrapper({required this.buildPaths, required this.compileAot})
-    : _compiler =
-          compileAot ? AotCompiler(buildPaths) : KernelCompiler(buildPaths);
+  Bootstrapper({required this.buildPaths, required this.compileStrategy})
+    : _compiler = compileStrategy.initialCompileType.createCompiler(buildPaths);
 
   /// Generates the entrypoint script, compiles it and runs it with [arguments].
   ///
@@ -71,7 +71,7 @@ class Bootstrapper {
       // Compile if there was any change.
       if (!_compiler.checkFreshness(digestsAreFresh: false).outputIsFresh) {
         final result = await buildLog.logCompile(
-          isAot: compileAot,
+          compileType: _compiler.compileType,
           function: () => _compiler.compile(experiments: experiments),
         );
 
@@ -89,17 +89,24 @@ class Bootstrapper {
             failedDueToMirrors = false;
           } else {
             failedDueToMirrors =
-                compileAot && result.messages!.contains('dart:mirrors');
+                _compiler.compileType == CompileType.aot &&
+                result.messages!.contains('dart:mirrors');
           }
           if (failedDueToMirrors) {
-            // TODO(davidmorgan): when build_runner manages use of AOT compile
-            // this will be an automatic fallback to JIT instead of a message.
-            buildLog.error(result.messages!);
-            buildLog.error(
-              'Failed to compile build script. A configured builder '
-              'uses `dart:mirrors` and cannot be compiled AOT. Try again '
-              'without --force-aot to use a JIT compile.',
+            if (compileStrategy == CompileStrategy.forceAot) {
+              buildLog.error(result.messages!);
+              buildLog.info(
+                'AOT compilation failed due to dart:mirrors usage. '
+                'Not falling back to JIT compilation due to --force-aot.',
+              );
+              throw const CannotBuildException();
+            }
+            buildLog.info(
+              'AOT compilation failed due to dart:mirrors usage. '
+              'Falling back to JIT compilation.',
             );
+            _compiler = CompileType.jit.createCompiler(buildPaths);
+            continue;
           } else {
             if (!messagesMatchPreviousMessages) {
               buildLog.error(result.messages!);
@@ -120,20 +127,26 @@ class Bootstrapper {
         }
       }
 
+      // The child process needs to know how it was compiled to check its
+      // freshness, so pass `--force-aot` or `--force-jit`, except for when
+      // strategy is alwaysJit.
       final result =
-          compileAot
+          _compiler.compileType == CompileType.aot
               ? await ParentProcess.runAotSnapshotAndSend(
                 aotSnapshot: p.join(
                   buildPaths.outputRootPath,
                   entrypointAotPath,
                 ),
-                arguments: arguments,
+                arguments: [...arguments, '--force-aot'],
                 message: buildProcessState.serialize(),
                 runUnderPerf: dartAotPerf,
               )
               : await ParentProcess.runAndSend(
                 script: p.join(buildPaths.outputRootPath, entrypointDillPath),
-                arguments: arguments,
+                arguments:
+                    compileStrategy == CompileStrategy.commandForcesJit
+                        ? arguments.toList()
+                        : [...arguments, '--force-jit'],
                 message: buildProcessState.serialize(),
                 jitVmArgs: jitVmArgs,
               );
