@@ -73,6 +73,8 @@ class ResolversImpl implements Resolvers {
 
   LinkedElementFactory get elementFactory => _buildResolver!.elementFactory;
 
+  String? libraryApiSignature(String path) => _buildResolver!.libraryApiSignature(path);
+
   Future<void> _initialize() async {
     await _initializationPool.withResource(() async {
       if (_buildResolver != null) return;

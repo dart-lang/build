@@ -85,6 +85,58 @@ abstract class B {
       },
     );
   });
+
+  test('stale requirements check', () async {
+    await tester.build(
+      sources: {
+        '/a/lib/a.dart': '''
+import 'b.dart';
+
+abstract class A extends B {
+  int get a;
+}
+''',
+        '/a/lib/b.dart': '''
+abstract class B {
+  int get b;
+}
+''',
+      },
+      analyze: (libraries) async {
+        await libraries.gettersOf(
+          path: '/a/lib/a.dart',
+          className: 'A',
+        );
+      },
+    );
+
+    // Simulate next build start.
+    tester.analysisDriverModel.filesystem.startBuild([], invalidatedSources: null);
+
+    // Modify b.dart on filesystem but DO NOT notify driver yet.
+    tester.analysisDriverModel.filesystem.writeContent(
+      BuildRunnerFileContent(
+        '/a/lib/b.dart',
+        true,
+        '''
+abstract class B {
+  int get b;
+  int get c;
+}
+''',
+        'hash',
+      ),
+    );
+
+    // Check requirements. They should fail because b.dart changed.
+    // But because we didn't notify the driver, it will likely return null (satisfied).
+    final check = tester.previousRequirements!.isSatisfied(
+      elementFactory: tester.driver.elementFactory,
+      performance: OperationPerformanceImpl(''),
+    );
+
+    expect(check, isNull); // This is the bug we are reproducing!
+  });
 }
 
 extension _AnalysisDriverFilesystemExtensions on AnalysisDriverFilesystem {
@@ -103,6 +155,8 @@ class FineGrainedAnalysisTester {
   Future<void> Function(Libraries libraries)? _analyze;
 
   RequirementsManifest? _previousRequirements;
+
+  RequirementsManifest? get previousRequirements => _previousRequirements;
 
   FineGrainedAnalysisTester._(this.analysisDriverModel, this.driver);
 

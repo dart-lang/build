@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:pool/pool.dart';
 
+import '../../logging/build_log.dart';
 import '../../logging/timed_activities.dart';
 import '../asset_graph/graph.dart';
 import '../input_tracker.dart';
@@ -49,6 +50,7 @@ class AnalysisDriverModel {
     AssetGraph assetGraph, {
     required Set<AssetId>? invalidatedSources,
   }) async {
+    buildLog.debug('Starting build with invalidated sources: $invalidatedSources');
     _lock = await _pool.request();
     filesystem.startBuild(
       assetGraph.outputs.map((id) => assetGraph.get(id)!),
@@ -170,6 +172,7 @@ class AnalysisDriverModel {
       // Notify the analyzer of changes and wait for it to update its internal
       // state.
       if (filesystem.changedPaths.isNotEmpty) {
+        buildLog.debug('Notifying driver of changes to: ${filesystem.changedPaths}');
         for (final path in filesystem.changedPaths) {
           driver.changeFile(path);
         }

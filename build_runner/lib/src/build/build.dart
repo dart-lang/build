@@ -1020,6 +1020,11 @@ class Build {
               _previousRequirements[PrimaryInputAndPhase(graphId, phaseNumber)];
           var foundEquivalent = false;
           if (requirements != null) {
+            await resolversImpl!.updateDriverForEntrypoint(
+              entrypoint: graphId,
+              phasedReader: readerWriter,
+            );
+
             RequirementFailure? checkRequirements() {
               return requirements.isSatisfied(
                 elementFactory: resolversImpl!.elementFactory,
@@ -1045,6 +1050,10 @@ class Build {
               }
             }
 
+            final path = AnalysisDriverFilesystem.assetPath(graphId);
+            buildLog.debug(
+              'Signature for $graphId: ${resolversImpl!.libraryApiSignature(path)}',
+            );
             final check = requirements.isSatisfied(
               elementFactory: resolversImpl!.elementFactory,
               performance: OperationPerformanceImpl(''),

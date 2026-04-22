@@ -193,6 +193,8 @@ class BuildResolver {
 
   LinkedElementFactory get elementFactory => _driver.elementFactory;
 
+  String? libraryApiSignature(String path) => _driver.libraryApiSignature(path);
+
   Future<AssetId> assetIdForElement(Element element) async {
     buildLog.debug('assetIdForElement $element');
     if (element is MultiplyDefinedElement) {
