@@ -1,3 +1,7 @@
+## 5.1.12-wip
+
+- In `KernelBuilder`, add `--track-widget-creation` flag to kernel worker.
+
 ## 5.1.11
 
 - Allow Dart SDK 3.12.x and 3.13 prerelease.

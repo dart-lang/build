@@ -433,6 +433,7 @@ Future<void> _addRequestArguments(
     '--packages-file=$multiRootScheme:///$packagesFilePath',
     '--multi-root-scheme=$multiRootScheme',
     '--exclude-non-sources',
+    '--track-widget-creation',
     summaryOnly ? '--summary-only' : '--no-summary-only',
     '--target=$targetName',
     '--libraries-file=${p.toUri(librariesPath)}',
