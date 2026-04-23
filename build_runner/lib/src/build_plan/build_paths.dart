@@ -5,6 +5,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:path/path.dart' as p;
+import 'pubspecs.dart';
 
 /// The current package path, workspace path, and whether to build the single
 /// package or the workspace.
@@ -48,13 +49,21 @@ class BuildPaths {
       p.join(packagePath, '.dart_tool', 'pub', 'workspace_ref.json'),
     );
     if (workspaceRefFile.existsSync()) {
-      final workspaceRef =
-          (json.decode(workspaceRefFile.readAsStringSync())
-                  as Map<String, Object?>)['workspaceRoot']
-              as String;
-      workspacePath = p.canonicalize(
-        p.join(p.dirname(workspaceRefFile.path), workspaceRef),
-      );
+      // The `workspace_ref.json` might be stale. Confirm by checking the
+      // current package `pubspec.yaml`. If it's a package in the workspace then
+      // it has `resolution: workspace`, if it is the workspace root then it has
+      // `workspace:`.
+      final pubspec = Pubspecs.load(p.join(packagePath, 'pubspec.yaml'));
+      if (pubspec['resolution'] == 'workspace' ||
+          pubspec['workspace'] != null) {
+        final workspaceRef =
+            (json.decode(workspaceRefFile.readAsStringSync())
+                    as Map<String, Object?>)['workspaceRoot']
+                as String;
+        workspacePath = p.canonicalize(
+          p.join(p.dirname(workspaceRefFile.path), workspaceRef),
+        );
+      }
     }
     return BuildPaths(
       packagePath: packagePath,

@@ -1,3 +1,8 @@
+## 2.14.1-wip
+
+- Bug fix: fix crash if a package used to belong to a workspace but was removed
+  from the workspace leaving a stale `workspace.ref` file.
+
 ## 2.14.0
 
 - Performance: further improvements to management of files for analysis
