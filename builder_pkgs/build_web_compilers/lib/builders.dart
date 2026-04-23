@@ -57,9 +57,7 @@ Builder ddcBuilder(BuilderOptions options) {
   _ensureSameDdcOptions(options);
 
   if (_readWebHotReloadOption(options)) {
-    return DdcFrontendServerBuilder(
-      generateFullDill: _readGenerateFullDillOption(options),
-    );
+    return DdcFrontendServerBuilder();
   }
 
   return DevCompilerBuilder(

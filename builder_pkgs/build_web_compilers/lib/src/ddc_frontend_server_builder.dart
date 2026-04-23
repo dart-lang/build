@@ -8,7 +8,6 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
-import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
 
 import 'common.dart';
@@ -17,9 +16,7 @@ import 'platforms.dart';
 
 /// A builder that compiles DDC modules with the Frontend Server.
 class DdcFrontendServerBuilder implements Builder {
-  final bool generateFullDill;
-
-  DdcFrontendServerBuilder({this.generateFullDill = false});
+  DdcFrontendServerBuilder();
 
   @override
   Map<String, List<String>> get buildExtensions => {
@@ -28,7 +25,6 @@ class DdcFrontendServerBuilder implements Builder {
       jsModuleErrorsExtension,
       jsSourceMapExtension,
       metadataExtension,
-      if (generateFullDill) fullKernelExtension,
     ],
   };
 
@@ -65,6 +61,10 @@ class DdcFrontendServerBuilder implements Builder {
 
   /// Compile [module] with Frontend Server.
   Future<void> _compile(Module module, BuildStep buildStep) async {
+    log.info(
+      'DdcFrontendServerBuilder: _compile called for module '
+      '${module.primarySource}',
+    );
     final transitiveAssets = await buildStep.trackStage(
       'CollectTransitiveDeps',
       () => module.computeTransitiveAssets(buildStep),
@@ -122,11 +122,10 @@ class DdcFrontendServerBuilder implements Builder {
     // Request from the Frontend Server exactly the JS file requested by
     // build_runner. Frontend Server's recompilation logic will avoid
     // extraneous recompilation.
-    final fullDillId = ddcEntrypointId.changeExtension(fullKernelExtension);
     final compilerOutput = await driver.recompileAndRecord(
       sourceArg(webEntrypointAsset),
       changedAssetUris,
-      [sourceArg(jsFESOutputId), if (generateFullDill) sourceArg(fullDillId)],
+      [sourceArg(jsFESOutputId)],
     );
     if (compilerOutput == null) {
       throw FrontendServerCompilationException(
@@ -166,17 +165,6 @@ class DdcFrontendServerBuilder implements Builder {
     // match the actual DDC output JS file name.
     final content = await fileToRead.readAsString();
     await _fixAndWriteJs(content, jsOutputId, buildStep);
-
-    if (generateFullDill) {
-      final outputDillFile = File(
-        p.join(scratchSpace.tempDir.path, 'output.dill'),
-      );
-      if (outputDillFile.existsSync()) {
-        final fullDillFile = scratchSpace.fileFor(fullDillId);
-        await outputDillFile.copy(fullDillFile.path);
-        await scratchSpace.copyOutput(fullDillId, buildStep);
-      }
-    }
 
     // Handle source map rename if needed
     final fesSourceMapId = ddcEntrypointId.changeExtension('.dart.lib.js.map');
