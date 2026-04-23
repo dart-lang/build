@@ -173,9 +173,6 @@ class DdcFrontendServerBuilder implements Builder {
       final outputDillFile = File(
         p.join(scratchSpace.tempDir.path, 'output.dill'),
       );
-      log.info(
-        'DdcFrontendServerBuilder: outputDillFile exists=${outputDillFile.existsSync()}',
-      );
       if (outputDillFile.existsSync()) {
         final fullDillFile = scratchSpace.fileFor(fullDillId);
         await outputDillFile.copy(fullDillFile.path);
