@@ -181,5 +181,22 @@ void main() async {
       ),
     );
     await tester.run('', 'dart run build_runner build --force-jit --workspace');
+
+    // Rewrite p1 to not be in a workspace.
+    tester.writePackage(
+      name: 'p1',
+      dependencies: ['build_runner'],
+      pathDependencies: ['builder_pkg', 'cache_builder_pkg'],
+      files: {'lib/p1.txt': '4'},
+    );
+    // Explicitly write a stale workspace_ref.json pointing to a non-existent
+    // directory.
+    tester.write(
+      'p1/.dart_tool/pub/workspace_ref.json',
+      '{"workspaceRoot": "../../../non_existent"}',
+    );
+    // Run build in p1. It should succeed as a single package build,
+    // ignoring the stale workspace_ref.json.
+    await tester.run('p1', 'dart run build_runner build --force-jit');
   });
 }

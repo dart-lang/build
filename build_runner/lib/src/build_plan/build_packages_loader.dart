@@ -13,6 +13,7 @@ import 'package:yaml/yaml.dart';
 import 'build_package.dart';
 import 'build_packages.dart';
 import 'build_paths.dart';
+import 'pubspecs.dart';
 
 class BuildPackagesLoader {
   /// Loads the build packages for building [paths].
@@ -46,7 +47,9 @@ class BuildPackagesLoader {
     String? workspaceName;
     List<String>? workspacePackages;
     if (buildType != BuildType.singlePackage) {
-      final workspacePubspec = _pubspecForPath(workspacePath!);
+      final workspacePubspec = Pubspecs.load(
+        p.join(workspacePath!, 'pubspec.yaml'),
+      );
       workspaceName = workspacePubspec['name']! as String;
       final workspacePackageGraph = _packageGraphForPath(workspacePath);
       workspacePackages = List.from(
@@ -54,7 +57,9 @@ class BuildPackagesLoader {
       );
     }
 
-    final currentPackagePubspec = _pubspecForPath(packagePath);
+    final currentPackagePubspec = Pubspecs.load(
+      p.join(packagePath, 'pubspec.yaml'),
+    );
     final currentPackage = currentPackagePubspec['name']! as String;
 
     String? singlePackageToBuild;
@@ -80,7 +85,9 @@ class BuildPackagesLoader {
     final buildPackages = MapBuilder<String, BuildPackage>();
     for (final packageConfig in packageConfigs) {
       final isInBuild = packagesInBuild.contains(packageConfig.name);
-      final packagePubspec = _pubspecForPath(packageConfig.root.toFilePath());
+      final packagePubspec = Pubspecs.load(
+        p.join(packageConfig.root.toFilePath(), 'pubspec.yaml'),
+      );
       final dependencies = _depsFromYaml(
         packagePubspec,
         loadDevDependencies: isInBuild,
@@ -107,14 +114,6 @@ class BuildPackagesLoader {
 /// Loads and returns `$absolutePath/pubspec.yaml`.
 ///
 /// Throws if it does not exist.
-YamlMap _pubspecForPath(String absolutePath) {
-  final pubspecPath = p.join(absolutePath, 'pubspec.yaml');
-  final pubspec = File(pubspecPath);
-  if (!pubspec.existsSync()) {
-    throw StateError('Unable to load packages, no `$pubspecPath` found.');
-  }
-  return loadYaml(pubspec.readAsStringSync()) as YamlMap;
-}
 
 /// Loads and returns `$absolutePath/.dart_tool/package_graph.json`.
 ///
