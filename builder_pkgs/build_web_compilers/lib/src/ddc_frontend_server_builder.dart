@@ -61,10 +61,6 @@ class DdcFrontendServerBuilder implements Builder {
 
   /// Compile [module] with Frontend Server.
   Future<void> _compile(Module module, BuildStep buildStep) async {
-    log.info(
-      'DdcFrontendServerBuilder: _compile called for module '
-      '${module.primarySource}',
-    );
     final transitiveAssets = await buildStep.trackStage(
       'CollectTransitiveDeps',
       () => module.computeTransitiveAssets(buildStep),

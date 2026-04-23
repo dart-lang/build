@@ -1,7 +1,6 @@
 ## 4.4.18
 
 - Fix DDC + Frontend Server not properly formatting sourcemaps.
-- Fix DDC + Frontend Server not emitting full dills when specified.
 
 ## 4.4.17
 
