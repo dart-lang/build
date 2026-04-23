@@ -1,3 +1,7 @@
+## 4.4.18
+
+- Fix DDC + Frontend Server not properly formatting sourcemaps.
+
 ## 4.4.17
 
 - Allow Dart SDK 3.12.x and 3.13 prerelease.
