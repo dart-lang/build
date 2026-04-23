@@ -134,9 +134,7 @@ class DdcFrontendServerBuilder implements Builder {
         'Frontend Server produced no output.',
       );
     }
-    if (compilerOutput.errorCount != 0 ||
-        (compilerOutput.errorMessage != null &&
-            compilerOutput.errorMessage!.contains('Error:'))) {
+    if (compilerOutput.errorCount != 0 || compilerOutput.errorMessage != null) {
       throw FrontendServerCompilationException(
         webEntrypointAsset,
         compilerOutput.errorMessage!,
