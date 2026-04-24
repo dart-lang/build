@@ -51,10 +51,15 @@ class Watcher {
   ///
   /// File watchers are scheduled synchronously.
   void _run(Future<void> until) async {
-    final terminate = Future.any([until, _buildSeries.closing]);
     // If the BuildProcessLock is requested, finish the current build if there
     // is one then exit.
-    buildProcessState.setLockRequestCallback(_buildSeries.close);
+    final closeController = Completer<void>();
+    buildProcessState.setLockRequestCallback(() {
+      if (!closeController.isCompleted) {
+        closeController.complete();
+      }
+    });
+    final terminate = Future.any([until, closeController.future]);
 
     // Start watching files immediately, before the first build is even started.
     final graphWatcher = BuildPackagesWatcher(
@@ -84,6 +89,8 @@ class Watcher {
         .asyncMapBuffer(_doBuild)
         .drain<void>()
         .then((_) async {
+          await currentBuildResult;
+          await _buildSeries.close();
           if (buildProcessState.isLockRequested()) {
             buildLog.flushAndPrint(
               'Exiting as requested by another build_runner process.',
