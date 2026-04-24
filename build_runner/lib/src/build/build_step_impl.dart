@@ -16,7 +16,6 @@ import 'package:package_config/package_config_types.dart';
 
 import 'input_tracker.dart';
 import 'library_cycle_graph/phased_reader.dart';
-import 'run_builder.dart';
 import 'single_step_reader_writer.dart';
 
 /// A single step in the build processes.
@@ -25,7 +24,6 @@ import 'single_step_reader_writer.dart';
 /// handles tracking of dependencies.
 class BuildStepImpl implements BuildStep {
   final Resolvers? _resolvers;
-  final StageTracker _stageTracker;
 
   /// The primary input id for this build step.
   @override
@@ -65,10 +63,8 @@ class BuildStepImpl implements BuildStep {
     this._resolvers,
     this._resourceManager,
     this._resolvePackageConfig, {
-    StageTracker? stageTracker,
     void Function(Iterable<AssetId>)? reportUnusedAssets,
   }) : allowedOutputs = UnmodifiableSetView(expectedOutputs.toSet()),
-       _stageTracker = stageTracker ?? NoOpStageTracker.instance,
        _reportUnusedAssets = reportUnusedAssets;
 
   InputTracker get inputTracker => _singleStepReaderWriter.inputTracker;
@@ -171,7 +167,7 @@ class BuildStepImpl implements BuildStep {
     String label,
     T Function() action, {
     bool isExternal = false,
-  }) => _stageTracker.trackStage(label, action, isExternal: isExternal);
+  }) => action();
 
   Future<void> _futureOrWrite<T>(
     FutureOr<T> content,

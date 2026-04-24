@@ -26,12 +26,9 @@ class BuildOptions {
   final CompileStrategy compileStrategy;
   final String? configKey;
   final BuiltList<String> enableExperiments;
-  final bool enableLowResourcesMode;
   final bool dartAotPerf;
   final bool isReleaseBuild;
-  final String? logPerformanceDir;
   final bool outputSymlinksOnly;
-  final bool trackPerformance;
   final bool verbose;
   final bool verboseDurations;
 
@@ -48,11 +45,8 @@ class BuildOptions {
     required this.configKey,
     required this.dartAotPerf,
     required this.enableExperiments,
-    required this.enableLowResourcesMode,
     required this.isReleaseBuild,
-    required this.logPerformanceDir,
     required this.outputSymlinksOnly,
-    required this.trackPerformance,
     required this.verbose,
     required this.verboseDurations,
   });
@@ -71,11 +65,8 @@ class BuildOptions {
     String? configKey,
     bool? dartAotPerf,
     BuiltList<String>? enableExperiments,
-    bool? enableLowResourcesMode,
     bool? isReleaseBuild,
-    String? logPerformanceDir,
     bool? outputSymlinksOnly,
-    bool? trackPerformance,
     bool? verbose,
     bool? verboseDurations,
   }) => BuildOptions(
@@ -88,11 +79,8 @@ class BuildOptions {
     configKey: configKey,
     dartAotPerf: dartAotPerf ?? false,
     enableExperiments: enableExperiments ?? BuiltList(),
-    enableLowResourcesMode: enableLowResourcesMode ?? false,
     isReleaseBuild: isReleaseBuild ?? false,
-    logPerformanceDir: logPerformanceDir,
     outputSymlinksOnly: outputSymlinksOnly ?? false,
-    trackPerformance: trackPerformance ?? false,
     verbose: verbose ?? false,
     verboseDurations: verboseDurations ?? false,
   );
@@ -147,12 +135,8 @@ class BuildOptions {
       // Only available on Linux.
       dartAotPerf: commandLine.dartAotPerf ?? false,
       enableExperiments: commandLine.enableExperiments!,
-      enableLowResourcesMode: commandLine.lowResourcesMode!,
       isReleaseBuild: commandLine.release!,
-      logPerformanceDir: _parseLogPerformance(commandLine),
       outputSymlinksOnly: commandLine.symlink!,
-      trackPerformance:
-          commandLine.trackPerformance! || commandLine.logPerformance != null,
       verbose: commandLine.verbose!,
       verboseDurations: commandLine.verboseDurations!,
       compileStrategy: commandLine.compileStrategy,
@@ -172,11 +156,8 @@ class BuildOptions {
     configKey: configKey,
     dartAotPerf: dartAotPerf,
     enableExperiments: enableExperiments,
-    enableLowResourcesMode: enableLowResourcesMode,
     isReleaseBuild: isReleaseBuild,
-    logPerformanceDir: logPerformanceDir,
     outputSymlinksOnly: outputSymlinksOnly,
-    trackPerformance: trackPerformance,
     verbose: verbose,
     verboseDurations: verboseDurations,
     compileStrategy: compileStrategy ?? this.compileStrategy,
@@ -325,18 +306,4 @@ BuiltSet<BuildFilter> _parseBuildFilters(
           '`package:` uri.\n\n$e',
     );
   }
-}
-
-String? _parseLogPerformance(BuildRunnerCommandLine commandLine) {
-  final logPerformance = commandLine.logPerformance;
-  if (logPerformance == null) return null;
-  if (!p.isWithin(p.current, logPerformance)) {
-    throw UsageException(
-      'Performance logs may only be output under the root '
-      'package, but got `$logPerformance` which is not.',
-
-      commandLine.usage,
-    );
-  }
-  return logPerformance;
 }

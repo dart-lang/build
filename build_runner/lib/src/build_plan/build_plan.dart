@@ -127,13 +127,9 @@ class BuildPlan {
     final buildPackages =
         testingOverrides.buildPackages ??
         await BuildPackages.forPaths(buildOptions.buildPaths);
-    final readerWriter =
-        (testingOverrides.readerWriter ?? ReaderWriter(buildPackages)).copyWith(
-          cache:
-              buildOptions.enableLowResourcesMode
-                  ? const PassthroughFilesystemCache()
-                  : InMemoryFilesystemCache(),
-        );
+    final readerWriter = (testingOverrides.readerWriter ??
+            ReaderWriter(buildPackages))
+        .copyWith(cache: InMemoryFilesystemCache());
     final buildConfigs = await BuildConfigs.load(
       readerWriter: readerWriter,
       buildPackages: buildPackages,

@@ -140,7 +140,6 @@ Future<TestBuilderResult> testBuilder(
   Resolvers? resolvers,
   TestReaderWriter? readerWriter,
   bool verbose = false,
-  bool enableLowResourceMode = false,
   bool flattenOutput = false,
 }) async {
   return testBuilders(
@@ -156,7 +155,6 @@ Future<TestBuilderResult> testBuilder(
     resolvers: resolvers,
     readerWriter: readerWriter,
     verbose: verbose,
-    enableLowResourceMode: enableLowResourceMode,
     flattenOutput: flattenOutput,
   );
 }
@@ -193,7 +191,6 @@ Future<TestBuilderResult> testBuilders(
   bool testingBuilderConfig = true,
   TestReaderWriter? readerWriter,
   bool verbose = false,
-  bool enableLowResourceMode = false,
   bool flattenOutput = false,
 }) {
   final builderFactories = <BuilderFactory>[];
@@ -235,7 +232,6 @@ Future<TestBuilderResult> testBuilders(
     testingBuilderConfig: testingBuilderConfig,
     readerWriter: readerWriter,
     verbose: verbose,
-    enableLowResourceMode: enableLowResourceMode,
     flattenOutput: flattenOutput,
   );
 }
@@ -300,9 +296,6 @@ Future<TestBuilderResult> testBuilders(
 /// Optionally pass [verbose], which acts like the command line flag: it enables
 /// info logging from builders.
 ///
-/// Optionally pass [enableLowResourceMode], which acts like the command
-/// line flag; in particular it disables file caching.
-///
 /// By default generated outputs are written to the `TestReaderWriter` where
 /// they would be written in a real `build_runner` build, which means "hidden"
 /// outputs go in the `.dart_tool/build/generated` folder in the root package.
@@ -329,7 +322,6 @@ Future<TestBuilderResult> testBuilderFactories(
   bool testingBuilderConfig = true,
   TestReaderWriter? readerWriter,
   bool verbose = false,
-  bool enableLowResourceMode = false,
   bool flattenOutput = false,
 }) async {
   onLog ??= _printOnFailureOrWrite;
@@ -498,10 +490,7 @@ Future<TestBuilderResult> testBuilderFactories(
       builderNameToBuilderFactory,
       postProcessBuilderFactories: postProcessBuilderNameToBuilderFactory,
     ),
-    buildOptions: BuildOptions.forTests(
-      enableLowResourcesMode: enableLowResourceMode,
-      verbose: verbose,
-    ),
+    buildOptions: BuildOptions.forTests(verbose: verbose),
     testingOverrides: testingOverrides,
   );
   await buildPlan.deleteFilesAndFolders();

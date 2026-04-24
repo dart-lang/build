@@ -112,6 +112,14 @@ class BuildRunner {
       );
     }
 
+    final removedOptionsUsed = commandLine.removedOptionsUsed;
+    if (removedOptionsUsed.isNotEmpty) {
+      buildLog.warning(
+        'These options have been removed and were ignored: '
+        '${removedOptionsUsed.map((o) => '--$o').join(', ')}',
+      );
+    }
+
     BuildRunnerCommand command;
     switch (commandLine.type) {
       case CommandType.build:
