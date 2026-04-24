@@ -53,16 +53,15 @@ class BuildRunnerCommandLine {
   final String? hostname;
   final BuiltList<String>? jitVmArgs;
   final bool? liveReload;
-  final String? logPerformance;
   final bool? logRequests;
-  final bool? lowResourcesMode;
   final BuiltList<String>? outputs;
   final bool? release;
   final bool? symlink;
-  final bool? trackPerformance;
   final bool? verbose;
   final bool? verboseDurations;
   final bool? workspace;
+
+  final BuiltList<String> removedOptionsUsed;
 
   CompileStrategy get compileStrategy {
     if (type == CommandType.run) return CompileStrategy.commandForcesJit;
@@ -88,18 +87,23 @@ class BuildRunnerCommandLine {
       hostname = argResults.stringNamed(hostnameOption),
       jitVmArgs = argResults.listNamed(dartJitVmArgOption),
       liveReload = argResults.boolNamed(liveReloadOption),
-      logPerformance = argResults.stringNamed(logPerformanceOption),
       logRequests = argResults.boolNamed(logRequestsOption),
-      lowResourcesMode = argResults.boolNamed(lowResourcesModeOption),
       outputs = argResults.listNamed(outputOption),
       release = argResults.boolNamed(releaseOption),
       symlink = argResults.boolNamed(symlinkOption),
-      trackPerformance = argResults.boolNamed(trackPerformanceOption),
       verbose = argResults.boolNamed(verboseOption),
       verboseDurations = argResults.boolNamed(verboseDurationsOption),
       // Only "build" and "watch" support --workspace, default to false for
       // other commands.
-      workspace = argResults.boolNamed(workspaceOption) ?? false;
+      workspace = argResults.boolNamed(workspaceOption) ?? false,
+      removedOptionsUsed =
+          removedOptions
+              .where(
+                (option) =>
+                    argResults.options.contains(option) &&
+                    argResults.wasParsed(option),
+              )
+              .toBuiltList();
 
   String get usage {
     // Calling `usage` only works if the command has been added to a
@@ -144,7 +148,6 @@ extension _ArgResultsExtension on ArgResults {
 const buildFilterOption = 'build-filter';
 const configOption = 'config';
 const defineOption = 'define';
-const deleteFilesByDefaultOption = 'delete-conflicting-outputs';
 const enableExperimentOption = 'enable-experiment';
 const forceAotOption = 'force-aot';
 const forceJitOption = 'force-jit';
@@ -152,16 +155,27 @@ const dartAotPerfOption = 'dart-aot-perf';
 const dartJitVmArgOption = 'dart-jit-vm-arg';
 const hostnameOption = 'hostname';
 const liveReloadOption = 'live-reload';
-const logPerformanceOption = 'log-performance';
 const logRequestsOption = 'log-requests';
-const lowResourcesModeOption = 'low-resources-mode';
 const outputOption = 'output';
 const releaseOption = 'release';
 const symlinkOption = 'symlink';
-const trackPerformanceOption = 'track-performance';
 const verboseDurationsOption = 'verbose-durations';
 const verboseOption = 'verbose';
 const workspaceOption = 'workspace';
+
+// Removed options, kept to not break old command lines.
+const deleteFilesByDefaultOption = 'delete-conflicting-outputs';
+const failOnSevereOption = 'fail-on-severe';
+const logPerformanceOption = 'log-performance';
+const lowResourcesModeOption = 'low-resources-mode';
+const trackPerformanceOption = 'track-performance';
+const removedOptions = [
+  deleteFilesByDefaultOption,
+  failOnSevereOption,
+  logPerformanceOption,
+  lowResourcesModeOption,
+  trackPerformanceOption,
+];
 
 /// [CommandRunner] that returns a [BuildRunnerCommandLine] without actually
 /// running it.
@@ -205,33 +219,10 @@ class _Build extends _Command<BuildRunnerCommandLine> {
     required bool supportWorkspace,
   }) {
     argParser
-      // No longer does anything, but accept so old usage does not fail.
-      ..addFlag(
-        deleteFilesByDefaultOption,
-        hide: true,
-        abbr: 'd',
-        negatable: false,
-      )
-      ..addFlag(
-        lowResourcesModeOption,
-        help:
-            'Reduce the amount of memory consumed by the build process. '
-            'This will slow down builds but allow them to progress in '
-            'resource constrained environments.',
-        negatable: false,
-        defaultsTo: false,
-      )
       ..addOption(
         configOption,
         help: 'Read `build.<name>.yaml` instead of the default `build.yaml`',
         abbr: 'c',
-      )
-      ..addFlag(
-        'fail-on-severe',
-        help: 'Deprecated argument - always enabled',
-        negatable: true,
-        defaultsTo: true,
-        hide: true,
       )
       ..addFlag(
         forceAotOption,
@@ -248,21 +239,9 @@ class _Build extends _Command<BuildRunnerCommandLine> {
         help: 'Compiles builders with JIT mode.',
       )
       ..addFlag(
-        trackPerformanceOption,
-        help: r'Enables performance tracking and the /$perf page.',
-        negatable: true,
-        defaultsTo: false,
-      )
-      ..addFlag(
         verboseDurationsOption,
         negatable: false,
         help: 'Logs durations with greater precision.',
-      )
-      ..addOption(
-        logPerformanceOption,
-        help:
-            'A directory to write performance logs to, must be in the '
-            'current package. Implies `--track-performance`.',
       )
       ..addMultiOption(
         outputOption,
@@ -336,6 +315,34 @@ class _Build extends _Command<BuildRunnerCommandLine> {
         help: 'Build all packages in the current workspace.',
       );
     }
+
+    // Removed options.
+    argParser
+      ..addFlag(
+        deleteFilesByDefaultOption,
+        hide: true,
+        abbr: 'd',
+        negatable: false,
+      )
+      ..addFlag(
+        failOnSevereOption,
+        negatable: true,
+        defaultsTo: true,
+        hide: true,
+      )
+      ..addOption(logPerformanceOption, hide: true)
+      ..addFlag(
+        lowResourcesModeOption,
+        hide: true,
+        negatable: false,
+        defaultsTo: false,
+      )
+      ..addFlag(
+        trackPerformanceOption,
+        hide: true,
+        negatable: true,
+        defaultsTo: false,
+      );
   }
 
   @override

@@ -11,7 +11,6 @@ import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
-import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
 import '../build_plan/build_configs.dart';
@@ -37,8 +36,6 @@ import 'library_cycle_graph/asset_deps_loader.dart';
 import 'library_cycle_graph/library_cycle_graph.dart';
 import 'library_cycle_graph/library_cycle_graph_loader.dart';
 import 'library_cycle_graph/phased_asset_deps.dart';
-import 'performance_tracker.dart';
-import 'performance_tracking_resolvers.dart';
 import 'resolver/analysis_driver_model.dart';
 import 'resolver/resolvers_impl.dart';
 import 'run_builder.dart';
@@ -66,9 +63,6 @@ class Build {
   /// Otherwise, `null`. A different `Resolvers` implementation can be passed
   /// for testing, including via `build_test`.
   final ResolversImpl? resolversImpl;
-
-  // Logging.
-  final BuildPerformanceTracker performanceTracker;
 
   // State.
   final AssetGraph assetGraph;
@@ -127,11 +121,7 @@ class Build {
     required this.readerWriter,
     required this.resourceManager,
     required this.assetGraph,
-  }) : performanceTracker =
-           buildPlan.buildOptions.trackPerformance
-               ? BuildPerformanceTracker()
-               : BuildPerformanceTracker.noOp(),
-       previousDepsLoader =
+  }) : previousDepsLoader =
            assetGraph.previousPhasedAssetDeps == null
                ? null
                : AssetDepsLoader.fromDeps(assetGraph.previousPhasedAssetDeps!),
@@ -345,22 +335,6 @@ class Build {
         assetGraph.previousPostBuildActionsOptionsDigests =
             assetGraph.postBuildActionsOptionsDigests;
 
-        // Log performance information if requested
-        if (buildOptions.logPerformanceDir != null) {
-          assert(result.performance != null);
-          final now = DateTime.now();
-          final logPath = p.join(
-            buildOptions.logPerformanceDir!,
-            '${now.year}-${_twoDigits(now.month)}-${_twoDigits(now.day)}'
-            '_${_twoDigits(now.hour)}-${_twoDigits(now.minute)}-'
-            '${_twoDigits(now.second)}',
-          );
-          buildLog.info('Writing performance log to $logPath');
-          final performanceLogId = AssetId(buildPackages.outputRoot, logPath);
-          final serialized = jsonEncode(result.performance);
-          await readerWriter.writeAsString(performanceLogId, serialized);
-        }
-
         if (!done.isCompleted) done.complete(result);
       },
       (e, st) {
@@ -384,94 +358,80 @@ class Build {
 
   /// Runs the actions in [buildPhases] and returns a future which completes
   /// to the [BuildResult] once all [BuildPhase]s are done.
-  Future<BuildResult> _runPhases() {
-    return performanceTracker.track(() async {
-      final outputs = <AssetId>[];
-      // Find inputs for non-optional phases, count them for logging.
-      final primaryInputsByPhase = <InBuildPhase, List<AssetId>>{};
-      final primaryInputCountsByPhase = <InBuildPhase, int>{};
-      for (
-        var phaseNum = 0;
-        phaseNum < buildPhases.inBuildPhases.length;
-        phaseNum++
-      ) {
-        final phase = buildPhases.inBuildPhases[phaseNum];
+  Future<BuildResult> _runPhases() async {
+    final outputs = <AssetId>[];
+    // Find inputs for non-optional phases, count them for logging.
+    final primaryInputsByPhase = <InBuildPhase, List<AssetId>>{};
+    final primaryInputCountsByPhase = <InBuildPhase, int>{};
+    for (
+      var phaseNum = 0;
+      phaseNum < buildPhases.inBuildPhases.length;
+      phaseNum++
+    ) {
+      final phase = buildPhases.inBuildPhases[phaseNum];
 
-        if (phase.isOptional) continue;
-        final primaryInputs = await _matchingPrimaryInputs(
-          phase.package,
-          phaseNum,
-        );
-        // If `primaryInputs` is empty, the phase will only run lazily,
-        // and might not run at all; so don't log it to start with.
-        if (primaryInputs.isNotEmpty) {
-          primaryInputsByPhase[phase] = primaryInputs;
-          primaryInputCountsByPhase[phase] = primaryInputs.length;
-        }
-      }
-
-      buildLog.startPhases(
-        primaryInputCountsByPhase,
-        buildPackages: buildPackages,
+      if (phase.isOptional) continue;
+      final primaryInputs = await _matchingPrimaryInputs(
+        phase.package,
+        phaseNum,
       );
-
-      // Main build phases.
-      for (
-        var phaseNum = 0;
-        phaseNum < buildPhases.inBuildPhases.length;
-        phaseNum++
-      ) {
-        final phase = buildPhases.inBuildPhases[phaseNum];
-        final primaryInputs = primaryInputsByPhase[phase];
-        if (primaryInputs == null || primaryInputs.isEmpty) continue;
-
-        outputs.addAll(
-          await performanceTracker.trackBuildPhase(phase, () async {
-            final outputs = <AssetId>[];
-            for (var i = 0; i != primaryInputs.length; ++i) {
-              final primaryInput = primaryInputs[i];
-              outputs.addAll(
-                await _buildForPrimaryInput(
-                  phaseNumber: phaseNum,
-                  phase: phase,
-                  primaryInput: primaryInput,
-                  lazy: false,
-                ),
-              );
-            }
-            return outputs;
-          }),
-        );
+      // If `primaryInputs` is empty, the phase will only run lazily,
+      // and might not run at all; so don't log it to start with.
+      if (primaryInputs.isNotEmpty) {
+        primaryInputsByPhase[phase] = primaryInputs;
+        primaryInputCountsByPhase[phase] = primaryInputs.length;
       }
+    }
 
-      // Post build phase.
-      if (buildPhases.postBuildPhase.builderActions.isNotEmpty) {
+    buildLog.startPhases(
+      primaryInputCountsByPhase,
+      buildPackages: buildPackages,
+    );
+
+    // Main build phases.
+    for (
+      var phaseNum = 0;
+      phaseNum < buildPhases.inBuildPhases.length;
+      phaseNum++
+    ) {
+      final phase = buildPhases.inBuildPhases[phaseNum];
+      final primaryInputs = primaryInputsByPhase[phase];
+      if (primaryInputs == null || primaryInputs.isEmpty) continue;
+
+      for (var i = 0; i != primaryInputs.length; ++i) {
+        final primaryInput = primaryInputs[i];
         outputs.addAll(
-          await performanceTracker.trackBuildPhase(
-            buildPhases.postBuildPhase,
-            () async {
-              return _runPostBuildPhase(
-                buildPhases.inBuildPhases.length,
-                buildPhases.postBuildPhase,
-              );
-            },
+          await _buildForPrimaryInput(
+            phaseNumber: phaseNum,
+            phase: phase,
+            primaryInput: primaryInput,
+            lazy: false,
           ),
         );
       }
+    }
 
-      await Future.forEach(
-        lazyPhases.values,
-        (Future<Iterable<AssetId>> lazyOuts) async =>
-            outputs.addAll(await lazyOuts),
+    // Post build phase.
+    if (buildPhases.postBuildPhase.builderActions.isNotEmpty) {
+      outputs.addAll(
+        await _runPostBuildPhase(
+          buildPhases.inBuildPhases.length,
+          buildPhases.postBuildPhase,
+        ),
       );
-      // Assume success, `_assetGraph.failedOutputs` will be checked later.
-      return BuildResult(
-        status: BuildStatus.success,
-        outputs: outputs.build(),
-        performance: performanceTracker,
-        buildOutputReader: buildOutputReader,
-      );
-    });
+    }
+
+    await Future.forEach(
+      lazyPhases.values,
+      (Future<Iterable<AssetId>> lazyOuts) async =>
+          outputs.addAll(await lazyOuts),
+    );
+    // Assume success, `_assetGraph.failedOutputs` will be checked later.
+    return BuildResult(
+      status: BuildStatus.success,
+      outputs: outputs.build(),
+      buildOutputReader: buildOutputReader,
+    );
   }
 
   /// Returns primary inputs for [package] in [phaseNumber].
@@ -545,122 +505,107 @@ class Build {
   }) async {
     buildLog.startStep(phase: phase, primaryInput: primaryInput, lazy: lazy);
     final builder = phase.builder;
-    final tracker = performanceTracker.addBuilderAction(
-      primaryInput,
-      phase.displayName,
+    final singleStepReaderWriter = SingleStepReaderWriter(
+      runningBuild: RunningBuild(
+        buildPackages: buildPackages,
+        buildConfigs: buildConfigs,
+        assetGraph: assetGraph,
+        nodeBuilder: _buildOutput,
+        assetIsProcessedOutput: processedOutputs.contains,
+        globNodeBuilder: _buildGlobNode,
+      ),
+      runningBuildStep: RunningBuildStep(
+        phaseNumber: phaseNumber,
+
+        buildPhase: phase,
+        primaryPackage: primaryInput.package,
+      ),
+      readerWriter: readerWriter,
+      inputTracker: InputTracker(
+        readerWriter.filesystem,
+        primaryInput: primaryInput,
+        builderLabel: phase.displayName,
+      ),
+      assetsWritten: {},
     );
-    return tracker.track(() async {
-      final singleStepReaderWriter = SingleStepReaderWriter(
-        runningBuild: RunningBuild(
-          buildPackages: buildPackages,
-          buildConfigs: buildConfigs,
-          assetGraph: assetGraph,
-          nodeBuilder: _buildOutput,
-          assetIsProcessedOutput: processedOutputs.contains,
-          globNodeBuilder: _buildGlobNode,
-        ),
-        runningBuildStep: RunningBuildStep(
-          phaseNumber: phaseNumber,
 
-          buildPhase: phase,
-          primaryPackage: primaryInput.package,
-        ),
-        readerWriter: readerWriter,
-        inputTracker: InputTracker(
-          readerWriter.filesystem,
-          primaryInput: primaryInput,
-          builderLabel: phase.displayName,
-        ),
-        assetsWritten: {},
-      );
+    final builderOutputs = expectedOutputs(builder, primaryInput);
+    if (!await _buildShouldRun(
+      phaseNumber,
+      primaryInput,
+      builderOutputs,
+      singleStepReaderWriter,
+    )) {
+      buildLog.skipStep(phase: phase, lazy: lazy);
+      return <AssetId>[];
+    }
 
-      final builderOutputs = expectedOutputs(builder, primaryInput);
-      if (!await tracker.trackStage(
-        'Setup',
-        () => _buildShouldRun(
-          phaseNumber,
-          primaryInput,
-          builderOutputs,
+    await _cleanUpStaleOutputs(builderOutputs);
+
+    // Clear input tracking accumulated during `_buildShouldRun`.
+    singleStepReaderWriter.inputTracker.clear();
+
+    final unusedAssets = <AssetId>{};
+    void reportUnusedAssetsForInput(AssetId input, Iterable<AssetId> assets) {
+      testingOverrides.reportUnusedAssetsForInput?.call(input, assets);
+      unusedAssets.addAll(assets);
+    }
+
+    // Pass `readerWriter` so that if `_allowedByTriggers` reads files to
+    // evaluate triggers then they are tracked as inputs.
+    final allowedByTriggers = await _allowedByTriggers(
+      readerWriter: singleStepReaderWriter,
+      phase: phase,
+      primaryInput: primaryInput,
+    );
+    final logger = buildLog.loggerFor(
+      phase: phase,
+      primaryInput: primaryInput,
+      lazy: lazy,
+    );
+    if (allowedByTriggers) {
+      await TimedActivity.build.runAsync(() {
+        return runBuilder(
+          builder,
+          [primaryInput],
           singleStepReaderWriter,
+          resolvers,
+          logger: logger,
+          resourceManager: resourceManager,
+          reportUnusedAssetsForInput: reportUnusedAssetsForInput,
+          packageConfig: buildPackages.asPackageConfig,
+        ).catchError((void _) {
+          // Errors tracked through the logger.
+        });
+      });
+    }
+
+    // Update the state for all the `builderOutputs` nodes based on what was
+    // read and written.
+    await TimedActivity.track.runAsync(
+      () => _setOutputsState(
+        primaryInput,
+        builderOutputs,
+        singleStepReaderWriter,
+        logger.errors,
+        unusedAssets: unusedAssets,
+      ),
+    );
+
+    if (allowedByTriggers) {
+      buildLog.finishStep(
+        phase: phase,
+        anyOutputs: singleStepReaderWriter.assetsWritten.isNotEmpty,
+        anyChangedOutputs: singleStepReaderWriter.assetsWritten.any(
+          changedOutputs.contains,
         ),
-      )) {
-        buildLog.skipStep(phase: phase, lazy: lazy);
-        return <AssetId>[];
-      }
-
-      await _cleanUpStaleOutputs(builderOutputs);
-
-      // Clear input tracking accumulated during `_buildShouldRun`.
-      singleStepReaderWriter.inputTracker.clear();
-
-      final unusedAssets = <AssetId>{};
-      void reportUnusedAssetsForInput(AssetId input, Iterable<AssetId> assets) {
-        testingOverrides.reportUnusedAssetsForInput?.call(input, assets);
-        unusedAssets.addAll(assets);
-      }
-
-      // Pass `readerWriter` so that if `_allowedByTriggers` reads files to
-      // evaluate triggers then they are tracked as inputs.
-      final allowedByTriggers = await _allowedByTriggers(
-        readerWriter: singleStepReaderWriter,
-        phase: phase,
-        primaryInput: primaryInput,
-      );
-      final logger = buildLog.loggerFor(
-        phase: phase,
-        primaryInput: primaryInput,
         lazy: lazy,
       );
-      if (allowedByTriggers) {
-        await TimedActivity.build.runAsync(
-          () => tracker.trackStage('Build', () {
-            return runBuilder(
-              builder,
-              [primaryInput],
-              singleStepReaderWriter,
-              PerformanceTrackingResolvers(resolvers, tracker),
-              logger: logger,
-              resourceManager: resourceManager,
-              stageTracker: tracker,
-              reportUnusedAssetsForInput: reportUnusedAssetsForInput,
-              packageConfig: buildPackages.asPackageConfig,
-            ).catchError((void _) {
-              // Errors tracked through the logger.
-            });
-          }),
-        );
-      }
+    } else {
+      buildLog.stepNotTriggered(phase: phase, lazy: lazy);
+    }
 
-      // Update the state for all the `builderOutputs` nodes based on what was
-      // read and written.
-      await TimedActivity.track.runAsync(
-        () => tracker.trackStage(
-          'Finalize',
-          () => _setOutputsState(
-            primaryInput,
-            builderOutputs,
-            singleStepReaderWriter,
-            logger.errors,
-            unusedAssets: unusedAssets,
-          ),
-        ),
-      );
-
-      if (allowedByTriggers) {
-        buildLog.finishStep(
-          phase: phase,
-          anyOutputs: singleStepReaderWriter.assetsWritten.isNotEmpty,
-          anyChangedOutputs: singleStepReaderWriter.assetsWritten.any(
-            changedOutputs.contains,
-          ),
-          lazy: lazy,
-        );
-      } else {
-        buildLog.stepNotTriggered(phase: phase, lazy: lazy);
-      }
-
-      return singleStepReaderWriter.assetsWritten;
-    });
+    return singleStepReaderWriter.assetsWritten;
   }
 
   /// Whether build triggers allow [phase] to run on [primaryInput].
@@ -1313,5 +1258,3 @@ class Build {
 
   Future _delete(AssetId id) => readerWriter.delete(id);
 }
-
-String _twoDigits(int n) => '$n'.padLeft(2, '0');

@@ -1,3 +1,11 @@
+## 2.15.0-wip
+
+- Remove `--low-resources-mode` as default memory usage has been improved. If
+  you have problems with RAM usage please file an issue.
+- Remove `--log-performance` and `--track-performance`. File an issue if you
+  have performance measurement needs not covered by the newer `--dart-aot-perf`.
+- Removed options can still be passed, they will be ignored with a warning.
+
 ## 2.14.1
 
 - Bug fix: fix crash if a package used to belong to a workspace but was removed

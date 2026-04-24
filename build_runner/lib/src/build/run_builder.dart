@@ -32,12 +32,10 @@ Future<void> runBuilder(
   Resolvers? resolvers, {
   Logger? logger,
   ResourceManager? resourceManager,
-  StageTracker? stageTracker,
   void Function(AssetId input, Iterable<AssetId> assets)?
   reportUnusedAssetsForInput,
   PackageConfig? packageConfig,
 }) async {
-  stageTracker ??= NoOpStageTracker.instance;
   final shouldDisposeResourceManager = resourceManager == null;
   final resources = resourceManager ?? ResourceManager();
   logger ??= Logger('runBuilder');
@@ -64,7 +62,6 @@ Future<void> runBuilder(
     return transformedConfig = config.transformToAssetUris();
   }
 
-  //TODO(nbosch) check overlapping outputs?
   Future<void> buildForInput(AssetId input) async {
     final outputs = expectedOutputs(builder, input);
     if (outputs.isEmpty) return;
@@ -75,7 +72,6 @@ Future<void> runBuilder(
       resolvers,
       resources,
       loadPackageConfig,
-      stageTracker: stageTracker,
       reportUnusedAssets:
           reportUnusedAssetsForInput == null
               ? null
@@ -119,21 +115,4 @@ extension on PackageConfig {
       for (final package in packages) package.transformToAssetUris(),
     ], extraData: extraData);
   }
-}
-
-abstract class StageTracker {
-  T trackStage<T>(String label, T Function() action, {bool isExternal = false});
-}
-
-class NoOpStageTracker implements StageTracker {
-  static const StageTracker instance = NoOpStageTracker._();
-
-  @override
-  T trackStage<T>(
-    String label,
-    T Function() action, {
-    bool isExternal = false,
-  }) => action();
-
-  const NoOpStageTracker._();
 }

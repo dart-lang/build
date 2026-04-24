@@ -81,11 +81,9 @@ Future<TestBuildersResult> testPhases(
   // A better way to "silence" logging than setting logLevel to OFF.
   void Function(LogRecord record) onLog = _printOnFailure,
   bool checkBuildStatus = true,
-  bool enableLowResourcesMode = false,
   bool verbose = false,
   Set<BuildDirectory> buildDirs = const {},
   Set<BuildFilter> buildFilters = const {},
-  String? logPerformanceDir,
   void Function(AssetId id)? onDelete,
 }) async {
   buildPackages ??= BuildPackages.singlePackageBuild('a', [
@@ -142,9 +140,6 @@ Future<TestBuildersResult> testPhases(
     buildOptions: BuildOptions.forTests(
       buildDirs: buildDirs.build(),
       buildFilters: buildFilters.build(),
-      enableLowResourcesMode: enableLowResourcesMode,
-      logPerformanceDir: logPerformanceDir,
-      trackPerformance: logPerformanceDir != null,
       verbose: verbose,
     ),
     testingOverrides: TestingOverrides(

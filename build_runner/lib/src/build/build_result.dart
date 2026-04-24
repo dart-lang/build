@@ -4,10 +4,8 @@
 
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
-import 'package:meta/meta.dart';
 
 import '../io/build_output_reader.dart';
-import 'performance_tracker.dart';
 
 /// The result of an individual build, this may be an incremental build or
 /// a full build.
@@ -27,16 +25,11 @@ class BuildResult {
   // The build output.
   final BuildOutputReader buildOutputReader;
 
-  /// The [BuildPerformance] broken out by build action.
-  @experimental
-  final BuildPerformance? performance;
-
   BuildResult({
     required this.status,
     BuiltList<String>? errors,
     BuiltList<AssetId>? outputs,
     required this.buildOutputReader,
-    this.performance,
     FailureType? failureType,
   }) : failureType =
            failureType == null && status == BuildStatus.failure
@@ -54,7 +47,6 @@ class BuildResult {
     errors: errors ?? this.errors,
     outputs: outputs,
     buildOutputReader: buildOutputReader,
-    performance: performance,
     failureType: failureType ?? this.failureType,
   );
 
