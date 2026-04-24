@@ -2,6 +2,9 @@
 
 - Bug fix: fix crash if a package used to belong to a workspace but was removed
   from the workspace leaving a stale `workspace.ref` file.
+- Bug fix: the `watch` command now always does one build before exiting due to
+  a request from another `build_runner` process. Fix crashes related to request
+  before build start.
 
 ## 2.14.0
 
