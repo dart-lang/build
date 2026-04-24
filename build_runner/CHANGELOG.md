@@ -1,4 +1,4 @@
-## 2.14.1-wip
+## 2.14.1
 
 - Bug fix: fix crash if a package used to belong to a workspace but was removed
   from the workspace leaving a stale `workspace.ref` file.
