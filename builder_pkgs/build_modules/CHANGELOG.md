@@ -1,3 +1,7 @@
+## 5.1.12-wip
+
+- Allow `analyzer` 13.0.0.
+
 ## 5.1.11
 
 - Allow Dart SDK 3.12.x and 3.13 prerelease.

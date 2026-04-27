@@ -3,6 +3,7 @@
 - Use `build_runner` 2.15.0.
 - Remove `enableLowResourceMode` parameters as there is no longer a low resource
   mode.
+- Allow `analyzer` 13.0.0.
 
 ## 3.5.14
 
