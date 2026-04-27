@@ -8,4 +8,5 @@ analyzer:
 
 linter:
   rules:
+    - prefer_void_to_null
     - unnecessary_ignore
