@@ -546,13 +546,15 @@ T named<T extends Mock>(T mock, {String? name, int? hashCode}) =>
       .._givenHashCode = hashCode;
 
 /// Clear stubs of, and collected interactions with [mock].
-void reset(Mock mock) {
+void reset(Object? mock) {
+  mock as Mock;
   mock._realCalls.clear();
   mock._responses.clear();
 }
 
 /// Clear the collected interactions with [mock].
-void clearInteractions(Mock mock) {
+void clearInteractions(Object? mock) {
+  mock as Mock;
   mock._realCalls.clear();
 }
 
