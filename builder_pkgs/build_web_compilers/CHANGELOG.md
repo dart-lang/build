@@ -1,3 +1,7 @@
+## 4.4.19-wip
+
+- Allow `analyzer` 13.0.0.
+
 ## 4.4.18
 
 - Fix DDC + Frontend Server not properly formatting sourcemaps.

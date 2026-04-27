@@ -29,9 +29,6 @@ import 'package:analyzer/src/dart/element/element.dart'
 import 'package:analyzer/src/dart/element/inheritance_manager3.dart'
     show InheritanceManager3, Name;
 // ignore: implementation_imports
-import 'package:analyzer/src/dart/element/member.dart'
-    show SubstitutedExecutableElementImpl;
-// ignore: implementation_imports
 import 'package:analyzer/src/dart/element/type_algebra.dart' show Substitution;
 import 'package:build/build.dart';
 // Do not expose [refer] in the default namespace.
@@ -562,10 +559,10 @@ class _MockTargetGatherer {
 
   static ast.ListLiteral? _customMocksAst(ast.Annotation annotation) =>
       (annotation.arguments!.arguments.firstWhereOrNull(
-                    (arg) => arg is ast.NamedExpression,
+                    (arg) => arg is ast.NamedArgument,
                   )
-                  as ast.NamedExpression?)
-              ?.expression
+                  as ast.NamedArgument?)
+              ?.argumentExpression
           as ast.ListLiteral?;
 
   static ast.ListLiteral _niceMocksAst(ast.Annotation annotation) =>
@@ -946,10 +943,7 @@ class _MockTargetGatherer {
         .map
         .values
         .where((m) => !m.isPrivate && !m.isStatic)
-        .map(
-          (member) =>
-              SubstitutedExecutableElementImpl.from(member, substitution),
-        );
+        .map((member) => member.substitute(substitution));
     final unstubbableErrorMessages =
         relevantMembers.expand((member) {
           final nameWithEquals =
@@ -1327,10 +1321,7 @@ class _MockClassInfo {
               .getInterface(classToMock)
               .map
               .values
-              .map(
-                (member) =>
-                    SubstitutedExecutableElementImpl.from(member, substitution),
-              );
+              .map((member) => member.substitute(substitution));
 
           // The test can be pre-null-safety but if the class
           // we want to mock is defined in a null safe library,

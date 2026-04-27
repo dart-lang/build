@@ -22,3 +22,23 @@ workspace:
 - builder_pkgs/scratch_space
 - example
 - tool
+
+# Dependency overrides needed to resolve analyzer 13 pending releases of
+# dart_style, source_gen, test_api and test_core.
+dependency_overrides:
+  analyzer: '13.0.0'
+  dart_style:
+    git:
+      url: https://github.com/dart-lang/dart_style.git
+      ref: c9975c66895011079bb3a98dc2271f4e038d45e8
+  source_gen: '4.2.2'
+  test_api:
+    git:
+      url: https://github.com/dart-lang/test.git
+      ref: d0d5ccd037cb0eaea8e4dad900946ac54a4286c6
+      path: pkgs/test_api
+  test_core:
+    git:
+      url: https://github.com/dart-lang/test.git
+      ref: d0d5ccd037cb0eaea8e4dad900946ac54a4286c6
+      path: pkgs/test_core
