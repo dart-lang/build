@@ -1,4 +1,4 @@
-## 4.4.19-wip
+## 4.4.19
 
 - Allow `analyzer` 13.0.0.
 - Add support for deferred loading when compiling to wasm. Users can enable this by adding `--enable-deferred-loading` to the `args` for the `build_web_compilers:dart2wasm` builder.
@@ -85,7 +85,7 @@
 ## 4.4.0
 
 - Add DDC + Frontend Server compilation support to existing builders.
-- Add new builders: `DdcFrontendServerBuilder` and `WebEntrypointMarkerBuilder`. 
+- Add new builders: `DdcFrontendServerBuilder` and `WebEntrypointMarkerBuilder`.
 
 ## 4.3.2
 
