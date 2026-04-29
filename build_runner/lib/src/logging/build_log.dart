@@ -531,18 +531,31 @@ class BuildLog {
     }
   }
 
-  Uri? _targetUriForAssetId(AssetId id) {
+  Uri? _targetUriForAssetId(AssetId id, {bool? windows}) {
+    String? path;
     try {
-      final path = buildPackages?.pathFor(id, hide: false);
-      return path == null ? null : Uri.file(path);
+      path = buildPackages?.pathFor(id, hide: false);
     } on PackageNotFoundException {
+      return null;
+    }
+    if (path == null) return null;
+    try {
+      return Uri.file(path, windows: windows);
+    } catch (e) {
+      // `Uri.file` can fail due to invalid characters on Windows.
       return null;
     }
   }
 
-  List<String> renderLinkedId(AssetId id) {
+  /// Renders [id] as an ANSI hyperlink if possible.
+  ///
+  /// Otherwise, renders with no hyperlink.
+  ///
+  /// [windows] defaults to `null` which means it's detected, override it for
+  /// testing.
+  List<String> renderLinkedId(AssetId id, {bool? windows}) {
     final renderedId = renderId(id);
-    final target = _targetUriForAssetId(id);
+    final target = _targetUriForAssetId(id, windows: windows);
     if (target == null) return [renderedId];
     return [
       AnsiBuffer.openHyperlink(target),

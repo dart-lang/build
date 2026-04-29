@@ -3,11 +3,11 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:build_runner/src/bootstrap/build_process_state.dart';
 import 'package:build_runner/src/bootstrap/compile_type.dart';
 import 'package:build_runner/src/build_plan/phase.dart';
-import 'package:build_runner/src/logging/build_log.dart';
+import 'package:build_runner/src/internal.dart';
 import 'package:build_runner/src/logging/build_log_messages.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -23,6 +23,15 @@ void main() {
         b.onLog = (record) => lines.add(record.toString());
         b.throttleProgressUpdates = false;
       });
+    });
+
+    test('invalid URI on Windows', () {
+      buildLog.buildPackages = BuildPackages.compute(
+        currentPackage: 'p',
+        outputRoot: 'p',
+        packages: {'p': BuildPackage.forTesting(name: 'p')}.build(),
+      );
+      buildLog.renderLinkedId(AssetId('p', 'foo/*/bar'), windows: true);
     });
 
     test('build_runner info, warnings and errors', () {

@@ -5,6 +5,7 @@
 - Remove `--log-performance` and `--track-performance`. File an issue if you
   have performance measurement needs not covered by the newer `--dart-aot-perf`.
 - Removed options can still be passed, they will be ignored with a warning.
+- Bug fix: fix crash during logging if an asset path is an invalid URI.
 - Allow `analyzer` 13.0.0.
 
 ## 2.14.1
