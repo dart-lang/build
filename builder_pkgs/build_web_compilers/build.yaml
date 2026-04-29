@@ -118,6 +118,7 @@ builders:
         - .wasm
         - .wasm.map
         - .mjs
+        - .wasm.tar.gz
     required_inputs:
       - .dart
       - .ddc.js

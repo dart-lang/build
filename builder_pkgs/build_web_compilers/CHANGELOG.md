@@ -1,6 +1,7 @@
 ## 4.4.19-wip
 
 - Allow `analyzer` 13.0.0.
+- Add support for deferred loading when compiling to wasm. Users can enable this by adding `--enable-deferred-loading` to the `args` for the `build_web_compilers:dart2wasm` builder.
 
 ## 4.4.18
 
