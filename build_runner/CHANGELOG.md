@@ -1,4 +1,4 @@
-## 2.15.0-wip
+## 2.15.0
 
 - Remove `--low-resources-mode` as default memory usage has been improved. If
   you have problems with RAM usage please file an issue.
