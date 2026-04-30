@@ -1,4 +1,4 @@
-## 5.6.5-wip
+## 5.6.5
 
 * Require `analyzer` 13.0.0.
 
