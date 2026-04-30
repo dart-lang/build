@@ -162,5 +162,67 @@ global_options:
 ''');
     await tester.run('', 'dart run build_runner build --force-jit --workspace');
     expect(tester.read('root_pkg/web/a.txt.copy'), 'b(workspace global)');
+
+    // Global options `runs_before` from workspace root `build.yaml` are used.
+    tester.writePackage(
+      name: 'pkg_a',
+      files:
+          FixturePackages.copyBuilder(
+            packageName: 'pkg_a',
+            outputExtension: '.a',
+          ).files,
+      dependencies: ['build', 'build_runner'],
+      inWorkspace: true,
+    );
+    tester.writePackage(
+      name: 'pkg_b',
+      files:
+          FixturePackages.copyBuilder(
+            packageName: 'pkg_b',
+            outputExtension: '.b',
+          ).files,
+      dependencies: ['build', 'build_runner'],
+      inWorkspace: true,
+    );
+    tester.writePackage(
+      name: 'root_pkg',
+      dependencies: ['build_runner'],
+      pathDependencies: ['pkg_a', 'pkg_b'],
+      files: {'web/a.txt': 'a'},
+      inWorkspace: true,
+    );
+    tester.writeWorkspacePubspec(packages: ['root_pkg', 'pkg_a', 'pkg_b']);
+
+    // `pkg_a:test_builder` runs first.
+    tester.write('build.yaml', r'''
+global_options:
+  pkg_a:test_builder:
+    runs_before: ['pkg_b:test_builder']
+''');
+    // Run order can be determined by which shows first in the log.
+    var output = await tester.run(
+      '',
+      'dart run build_runner build --force-jit --workspace',
+    );
+    expect(
+      output.indexOf('pkg_a:test_builder'),
+      lessThan(output.indexOf('pkg_b:test_builder')),
+    );
+
+    // `pkg_b:test_builder` runs first.
+    tester.write('build.yaml', r'''
+global_options:
+  pkg_b:test_builder:
+    runs_before: ['pkg_a:test_builder']
+''');
+    // Now they show in the reverse order in the log.
+    output = await tester.run(
+      '',
+      'dart run build_runner build --force-jit --workspace',
+    );
+    expect(
+      output.indexOf('pkg_a:test_builder'),
+      greaterThan(output.indexOf('pkg_b:test_builder')),
+    );
   });
 }

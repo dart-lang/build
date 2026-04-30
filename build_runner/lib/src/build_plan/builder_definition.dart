@@ -77,7 +77,9 @@ sealed class AbstractBuilderDefinition {
               c.package == buildPackages.outputRoot,
         );
 
-    final rootBuildConfig = orderedConfigs.last;
+    final rootBuildConfig = orderedConfigs.singleWhere(
+      (c) => c.packageName == buildPackages.outputRoot,
+    );
     final orderedBuilders =
         findBuilderOrder(
           builderDefinitions,

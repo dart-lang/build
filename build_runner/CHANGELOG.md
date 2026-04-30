@@ -6,6 +6,9 @@
   have performance measurement needs not covered by the newer `--dart-aot-perf`.
 - Removed options can still be passed, they will be ignored with a warning.
 - Bug fix: fix crash during logging if an asset path is an invalid URI.
+- Bug fix: with `--workspace` the global options affecting build order were read
+  from the wrong package. They are now read from `build.yaml` in the workspace
+  root, like other global options.
 - Allow `analyzer` 13.0.0.
 
 ## 2.14.1
