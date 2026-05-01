@@ -6,11 +6,13 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:built_collection/built_collection.dart';
-import 'package:io/io.dart';
+import 'package:path/path.dart' as p;
 
+import '../build_plan/build_paths.dart';
 import '../exceptions.dart';
 import '../internal.dart';
 import 'aot_compiler.dart';
+import 'compile_type.dart';
 import 'compiler.dart';
 import 'depfile.dart';
 import 'kernel_compiler.dart';
@@ -22,9 +24,9 @@ import 'processes.dart';
 /// that knows how to instantiate all the builders that will run during the
 /// build.
 ///
-/// If [workspace] the `BuilderFactories` contains builders applied to any
-/// package in the workspace. Otherwise, it only contains builders for the
-/// current directory package and its transitive dependencies.
+/// If `buildPaths.buildWorkspace` the `BuilderFactories` contains builders
+/// applied to any package in the workspace. Otherwise, it only contains
+/// builders for the current directory package and its transitive dependencies.
 ///
 /// When the entrypoint script is compiled a "depfile" is created listing all
 /// the sources it is compiled from. Then a digest is written based on the
@@ -34,17 +36,19 @@ import 'processes.dart';
 /// or [ParentProcess.runAotSnapshotAndSend] which passes initial state to it
 /// and receives updated state when it exits.
 class Bootstrapper {
-  final bool workspace;
-  final bool compileAot;
-  final Compiler _compiler;
+  final BuildPaths buildPaths;
+  final CompileStrategy compileStrategy;
+  Compiler _compiler;
 
-  Bootstrapper({required this.workspace, required this.compileAot})
-    : _compiler = compileAot ? AotCompiler() : KernelCompiler();
+  Bootstrapper({required this.buildPaths, required this.compileStrategy})
+    : _compiler = compileStrategy.initialCompileType.createCompiler(buildPaths);
 
   /// Generates the entrypoint script, compiles it and runs it with [arguments].
   ///
-  /// If the entrypoint script exits with `ExitCode.tempFail` then regenerates
-  /// it and launches it again with the same arguments.
+  /// If the entrypoint script exits with
+  /// `ChildProcess.recompileBuildersExitCode` or
+  /// `ChildProcess.assetDeletedExitCode` then regenerates it and launches it
+  /// again with the same arguments.
   ///
   /// If the entrypoint exits with any other exit code, returns it.
   ///
@@ -67,7 +71,7 @@ class Bootstrapper {
       // Compile if there was any change.
       if (!_compiler.checkFreshness(digestsAreFresh: false).outputIsFresh) {
         final result = await buildLog.logCompile(
-          isAot: compileAot,
+          compileType: _compiler.compileType,
           function: () => _compiler.compile(experiments: experiments),
         );
 
@@ -85,17 +89,24 @@ class Bootstrapper {
             failedDueToMirrors = false;
           } else {
             failedDueToMirrors =
-                compileAot && result.messages!.contains('dart:mirrors');
+                _compiler.compileType == CompileType.aot &&
+                result.messages!.contains('dart:mirrors');
           }
           if (failedDueToMirrors) {
-            // TODO(davidmorgan): when build_runner manages use of AOT compile
-            // this will be an automatic fallback to JIT instead of a message.
-            buildLog.error(result.messages!);
-            buildLog.error(
-              'Failed to compile build script. A configured builder '
-              'uses `dart:mirrors` and cannot be compiled AOT. Try again '
-              'without --force-aot to use a JIT compile.',
+            if (compileStrategy == CompileStrategy.forceAot) {
+              buildLog.error(result.messages!);
+              buildLog.info(
+                'AOT compilation failed due to dart:mirrors usage. '
+                'Not falling back to JIT compilation due to --force-aot.',
+              );
+              throw const CannotBuildException();
+            }
+            buildLog.info(
+              'AOT compilation failed due to dart:mirrors usage. '
+              'Falling back to JIT compilation.',
             );
+            _compiler = CompileType.jit.createCompiler(buildPaths);
+            continue;
           } else {
             if (!messagesMatchPreviousMessages) {
               buildLog.error(result.messages!);
@@ -116,28 +127,40 @@ class Bootstrapper {
         }
       }
 
+      // The child process needs to know how it was compiled to check its
+      // freshness, so pass `--force-aot` or `--force-jit`, except for when
+      // strategy is alwaysJit.
       final result =
-          compileAot
+          _compiler.compileType == CompileType.aot
               ? await ParentProcess.runAotSnapshotAndSend(
-                aotSnapshot: entrypointAotPath,
-                arguments: arguments,
+                aotSnapshot: p.join(
+                  buildPaths.outputRootPath,
+                  entrypointAotPath,
+                ),
+                arguments: [...arguments, '--force-aot'],
                 message: buildProcessState.serialize(),
                 runUnderPerf: dartAotPerf,
               )
               : await ParentProcess.runAndSend(
-                script: entrypointDillPath,
-                arguments: arguments,
+                script: p.join(buildPaths.outputRootPath, entrypointDillPath),
+                arguments:
+                    compileStrategy == CompileStrategy.commandForcesJit
+                        ? arguments.toList()
+                        : [...arguments, '--force-jit'],
                 message: buildProcessState.serialize(),
                 jitVmArgs: jitVmArgs,
               );
       buildProcessState.deserializeAndSet(result.message);
       final exitCode = result.exitCode;
 
-      if (exitCode != ExitCode.tempFail.code) {
+      if (exitCode != ChildProcess.recompileBuildersExitCode &&
+          exitCode != ChildProcess.assetDeletedExitCode) {
         return exitCode;
       }
 
-      buildLog.nextBuild(recompilingBuilders: true);
+      buildLog.nextBuild(
+        recompilingBuilders: exitCode == ChildProcess.recompileBuildersExitCode,
+      );
     }
   }
 
@@ -145,8 +168,8 @@ class Bootstrapper {
   ///
   /// Reads before write so the file is not written if there is no change.
   Future<void> _writeBuildScript() async {
-    final buildScript = await generateBuildScript(workspace: workspace);
-    final path = entrypointScriptPath;
+    final buildScript = await generateBuildScript(buildPaths: buildPaths);
+    final path = p.join(buildPaths.outputRootPath, entrypointScriptPath);
     final existingBuildScript =
         File(path).existsSync() ? File(path).readAsStringSync() : null;
     if (buildScript != existingBuildScript) {

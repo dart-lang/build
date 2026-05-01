@@ -21,9 +21,37 @@ void main() async {
       files: {},
     );
 
-    await tester.run('root_pkg', 'dart run build_runner build');
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
     expect(tester.read('root_pkg/$entrypointScriptPath'), isNotNull);
     await tester.run('root_pkg', 'dart run build_runner clean');
-    expect(tester.readFileTree('root_pkg/.dart_tool/build'), isNull);
+    expect(tester.readFileTree('root_pkg/.dart_tool/build'), {
+      'lock/build_runner.lock': '',
+    });
+
+    // Clean --workspace deletes files in the workspace root.
+    tester.writePackage(
+      name: 'p1',
+      dependencies: ['build_runner'],
+      files: {},
+      inWorkspace: true,
+    );
+    tester.writePackage(
+      name: 'p2',
+      dependencies: ['build_runner'],
+      files: {},
+      inWorkspace: true,
+    );
+    tester.writeWorkspacePubspec(packages: ['p1', 'p2']);
+
+    await tester.run(
+      'p1',
+      'dart run build_runner build --force-jit --workspace',
+    );
+    expect(tester.read(entrypointScriptPath), isNotNull);
+    expect(tester.read(assetGraphPath), isNotNull);
+
+    await tester.run('p1', 'dart run build_runner clean --workspace');
+    expect(tester.read(assetGraphPath), isNull);
+    expect(tester.read(entrypointScriptPath), isNull);
   });
 }

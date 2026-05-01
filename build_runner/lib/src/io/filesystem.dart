@@ -77,6 +77,28 @@ class IoFilesystem implements Filesystem {
   }) {
     final file = File(path);
     file.parent.createSync(recursive: true);
+
+    // Skip writing the file if it exists and the content is identical, in order
+    // to not cause tools that watch the filesystem to do work.
+    if (file.existsSync()) {
+      try {
+        final stat = file.statSync();
+        if (stat.size == contents.length) {
+          final existingContents = readAsBytesSync(path);
+          var different = false;
+          for (var i = 0; i != contents.length; ++i) {
+            if (contents[i] != existingContents[i]) {
+              different = true;
+              break;
+            }
+          }
+          if (!different) return;
+        }
+      } catch (_) {
+        // File disappearing after `existsSync`, continue to write.
+      }
+    }
+
     file.writeAsBytesSync(contents);
   }
 
@@ -88,6 +110,23 @@ class IoFilesystem implements Filesystem {
   }) {
     final file = File(path);
     file.parent.createSync(recursive: true);
+
+    // Skip writing the file if it exists and the content is identical, in order
+    // to not cause tools that watch the filesystem to do work.
+    if (file.existsSync()) {
+      try {
+        final stat = file.statSync();
+        if (stat.size == contents.length) {
+          String? existingContents;
+          existingContents = readAsStringSync(path, encoding: encoding);
+          if (existingContents == contents) return;
+        }
+      } catch (_) {
+        // File disappearing after `existsSync` or could not be decoded,
+        // continue to write.
+      }
+    }
+
     file.writeAsStringSync(contents, encoding: encoding);
   }
 }

@@ -25,6 +25,7 @@ const moduleJsExtension = '.mjs';
 const jsEntrypointSourceMapExtension = '.dart.js.map';
 const dart2jsEntrypointSourceMapExtension = '.dart2js.js.map';
 const jsEntrypointArchiveExtension = '.dart.js.tar.gz';
+const wasmEntrypointArchiveExtension = '.wasm.tar.gz';
 const digestsEntrypointExtension = '.digests';
 const mergedMetadataExtension = '.dart.ddc_merged_metadata';
 
@@ -314,6 +315,7 @@ final class EntrypointBuilderOptions {
           dart2wasm.extension,
           wasmExtension,
           wasmSourceMapExtension,
+          wasmEntrypointArchiveExtension,
         ],
         if (loaderExtension case final loader?) loader,
       ],
@@ -493,10 +495,13 @@ if (!forceJS && $supportCheck) {
     }
 
     loaderResult.writeln('''
+function loadDeferredModules(modules, handleWasmBytes) {
+  return Promise.all(modules.map((m) => fetch(relativeURL(`./\${m}`)).then((b) => handleWasmBytes(m, b))));
+}
 let { compileStreaming } = await import(relativeURL("./$basename${wasmCompiler.extension}"));
 
 let app = await compileStreaming(fetch(relativeURL("$basename.wasm")));
-let module = await app.instantiate({});
+let module = await app.instantiate({}, {loadDeferredModules: loadDeferredModules});
 module.invokeMain();
 ''');
 

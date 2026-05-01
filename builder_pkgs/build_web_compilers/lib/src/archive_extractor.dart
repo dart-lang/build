@@ -22,14 +22,20 @@ class Dart2JsArchiveExtractor implements PostProcessBuilder {
     : filterOutputs = options.config['filter_outputs'] as bool? ?? false;
 
   @override
-  final inputExtensions = const [jsEntrypointArchiveExtension];
+  final inputExtensions = const [
+    jsEntrypointArchiveExtension,
+    wasmEntrypointArchiveExtension,
+  ];
 
   @override
   Future<void> build(PostProcessBuildStep buildStep) async {
     final bytes = await buildStep.readInputAsBytes();
     final archive = TarDecoder().decodeBytes(bytes);
     for (final file in archive.files) {
-      if (filterOutputs && !file.name.endsWith('.js')) continue;
+      if (filterOutputs &&
+          !(file.name.endsWith('.js') || file.name.endsWith('.wasm'))) {
+        continue;
+      }
       final inputId = buildStep.inputId;
       final id = AssetId(
         inputId.package,

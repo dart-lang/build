@@ -12,8 +12,16 @@ void main() {
   initializePlatforms();
   final startingAssets = {
     'a|web/index.dart': '''
-        void main() {
+        import 'lib.dart' deferred as lib;
+        Future<void> main() async {
           print('Hello world!');
+          await lib.loadLibrary();
+          lib.foo();
+        }
+      ''',
+    'a|web/lib.dart': '''
+        void foo() {
+          print('Hello from foo!');
         }
       ''',
   };
@@ -34,6 +42,7 @@ void main() {
     'a|web/index.dart2js.module': isNotNull,
     'a|web/index.dart2wasm.module': isNotNull,
     'a|web/index.module.library': isNotNull,
+    'a|web/lib.module.library': isNotNull,
   };
 
   test('base build', () async {
@@ -177,6 +186,35 @@ void main() {
         'loader': null,
       }),
     );
+
+    await testBuilders(
+      [...startingBuilders, builder],
+      startingAssets,
+      outputs: expectedOutputs,
+    );
+  });
+
+  test('generates archive when deferred loading enabled', () async {
+    final builder = WebEntrypointBuilder.fromOptions(
+      const BuilderOptions({
+        'compilers': {
+          'dart2js': <String, Object?>{},
+          'dart2wasm': <String, Object?>{
+            'args': ['--enable-deferred-loading'],
+          },
+        },
+      }),
+    );
+    final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
+      'a|web/index.dart.js.tar.gz': isNotNull,
+      'a|web/index.dart2js.js': isNotNull,
+      'a|web/index.dart2js.js.map': isNotNull,
+      'a|web/index.dart.js': isNotNull,
+      'a|web/index.wasm.tar.gz': isNotNull,
+      'a|web/index.mjs': isNotNull,
+      'a|web/index.wasm.map': isNotNull,
+      'a|web/index.wasm': isNotNull,
+    });
 
     await testBuilders(
       [...startingBuilders, builder],

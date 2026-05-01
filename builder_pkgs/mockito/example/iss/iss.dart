@@ -41,9 +41,10 @@ class IssLocator {
     // at this moment.
     final uri = Uri.parse('http://api.open-notify.org/iss-now.json');
     final rs = await client.get(uri);
-    final data = jsonDecode(rs.body);
-    final latitude = double.parse(data['iss_position']['latitude'] as String);
-    final longitude = double.parse(data['iss_position']['longitude'] as String);
+    final data = jsonDecode(rs.body) as Map<String, dynamic>;
+    final issPosition = data['iss_position'] as Map<String, dynamic>;
+    final latitude = double.parse(issPosition['latitude'] as String);
+    final longitude = double.parse(issPosition['longitude'] as String);
     _position = Point<double>(latitude, longitude);
   }
 }

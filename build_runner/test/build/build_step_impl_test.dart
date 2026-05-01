@@ -11,7 +11,6 @@ import 'dart:convert';
 import 'package:build/build.dart';
 import 'package:build_runner/src/build/build_step_impl.dart';
 import 'package:build_runner/src/build/resolver/resolvers_impl.dart';
-import 'package:build_runner/src/build/run_builder.dart';
 import 'package:build_runner/src/build/single_step_reader_writer.dart';
 import 'package:build_runner/src/io/filesystem.dart';
 import 'package:build_runner/src/io/reader_writer.dart';
@@ -248,7 +247,6 @@ void main() {
         ResolversImpl.custom(),
         resourceManager,
         _unsupported,
-        stageTracker: NoOpStageTracker.instance,
       );
     });
 

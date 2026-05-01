@@ -7,6 +7,7 @@ library;
 import 'dart:io';
 
 import 'package:build_runner/src/build_plan/build_packages.dart';
+import 'package:build_runner/src/build_plan/build_paths.dart';
 import 'package:build_runner/src/io/reader_writer.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as path;
@@ -42,8 +43,11 @@ void main() async {
       );
       await tester.run('basic_pkg', 'dart pub get');
 
-      buildPackages = await BuildPackages.forPath(
-        p.join(tempDirectory, 'basic_pkg'),
+      buildPackages = await BuildPackages.forPaths(
+        BuildPaths.load(
+          p.join(tempDirectory, 'basic_pkg'),
+          buildWorkspace: false,
+        ),
       );
       readerWriter = ReaderWriter(buildPackages);
     });

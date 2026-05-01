@@ -2,10 +2,13 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'compile_type.dart';
 import 'depfile.dart';
 
 /// Compiles the build script.
 abstract class Compiler {
+  CompileType get compileType;
+
   /// Checks freshness of the build script compile output.
   ///
   /// Set [digestsAreFresh] if digests were very recently updated. Then, they

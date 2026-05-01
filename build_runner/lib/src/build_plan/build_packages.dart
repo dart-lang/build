@@ -15,6 +15,7 @@ import '../constants.dart';
 import '../io/asset_path_provider.dart';
 import 'build_package.dart';
 import 'build_packages_loader.dart';
+import 'build_paths.dart';
 
 /// The SDK package, we filter this to the core libs and dev compiler
 /// resources.
@@ -32,8 +33,11 @@ class BuildPackages implements AssetPathProvider {
   /// cycles.
   final BuiltList<String> orderedPackages;
 
-  /// When building a single package: the package `build_runner` was launched
-  /// in, which is also the current directory package and the [outputRoot].
+  /// The package `build_runner` was launched in, which is also the current
+  /// directory package.
+  final String currentPackage;
+
+  /// When building a single package, [currentPackage].
   ///
   /// When building a workspace, `null`.
   final String? singleOutputPackage;
@@ -70,6 +74,7 @@ class BuildPackages implements AssetPathProvider {
   final BuiltSetMultimap<String, String> _peerPackages;
 
   BuildPackages({
+    required this.currentPackage,
     required this.singleOutputPackage,
     required this.outputRoot,
     required this.packages,
@@ -82,6 +87,7 @@ class BuildPackages implements AssetPathProvider {
        _peerPackages = buildPackages;
 
   factory BuildPackages.compute({
+    required String currentPackage,
     String? singlePackageToBuild,
     required String outputRoot,
     required BuiltMap<String, BuildPackage> packages,
@@ -123,6 +129,7 @@ class BuildPackages implements AssetPathProvider {
     final buildPackages = _computePeers(outputPackages, transitiveDependencies);
 
     return BuildPackages(
+      currentPackage: currentPackage,
       singleOutputPackage: singlePackageToBuild,
       outputRoot: outputRoot,
       packages: packages,
@@ -141,6 +148,7 @@ class BuildPackages implements AssetPathProvider {
     String package,
     Iterable<BuildPackage> packages,
   ) => BuildPackages.compute(
+    currentPackage: package,
     singlePackageToBuild: package,
     outputRoot: package,
     packages: {for (final package in packages) package.name: package}.build(),
@@ -149,32 +157,26 @@ class BuildPackages implements AssetPathProvider {
   /// Creates [BuildPackages] from [BuildPackage]s for a workspace build with
   /// workspace name [workspace].
   @visibleForTesting
-  factory BuildPackages.workspaceBuild(
-    String workspace,
-    Iterable<BuildPackage> packages,
-  ) => BuildPackages.compute(
+  factory BuildPackages.workspaceBuild({
+    required String currentPackage,
+    required String workspace,
+    required Iterable<BuildPackage> packages,
+  }) => BuildPackages.compute(
+    currentPackage: currentPackage,
     outputRoot: workspace,
     packages: {for (final package in packages) package.name: package}.build(),
   );
 
-  /// Loads the build packages for building the package at [packagePath].
+  /// Loads the build packages at [buildPaths].
   ///
   /// Assumes `pubspec.yaml` exists and has a name, as this is checked by
   /// `dart run`.
   ///
-  /// If [workspace], prepares to build the whole workspace, if any.
-  @visibleForTesting
-  static Future<BuildPackages> forPath(
-    String packagePath, {
-    bool workspace = false,
-  }) async => BuildPackagesLoader.forPath(packagePath, workspace: workspace);
-
-  /// Creates a [BuildPackages] for the package in which you are currently
-  /// running.
-  ///
-  /// If [workspace], prepares to build for the whole workspace, if any.
-  static Future<BuildPackages> forThisPackage({bool workspace = false}) =>
-      BuildPackages.forPath(p.current, workspace: workspace);
+  /// If `buildPaths.buildWorkspace`, prepares to build the whole workspace, if
+  /// any.
+  static Future<BuildPackages> forPaths(BuildPaths buildPaths) async {
+    return BuildPackagesLoader.forPaths(buildPaths);
+  }
 
   static PackageConfig _packagesToConfig(Iterable<BuildPackage> packages) {
     final relativeLib = Uri.parse('lib/');

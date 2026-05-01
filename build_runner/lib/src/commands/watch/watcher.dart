@@ -7,10 +7,12 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:stream_transform/stream_transform.dart';
 
+import '../../bootstrap/build_process_state.dart';
 import '../../build/build_result.dart';
 import '../../build/build_series.dart';
 import '../../build_plan/build_packages.dart';
 import '../../build_plan/build_plan.dart';
+import '../../logging/build_log.dart';
 import 'asset_change.dart';
 import 'build_package_watcher.dart';
 import 'build_packages_watcher.dart';
@@ -49,7 +51,15 @@ class Watcher {
   ///
   /// File watchers are scheduled synchronously.
   void _run(Future<void> until) async {
-    final terminate = Future.any([until, _buildSeries.closing]);
+    // If the BuildProcessLock is requested, finish the current build if there
+    // is one then exit.
+    final closeController = Completer<void>();
+    buildProcessState.setLockRequestCallback(() {
+      if (!closeController.isCompleted) {
+        closeController.complete();
+      }
+    });
+    final terminate = Future.any([until, closeController.future]);
 
     // Start watching files immediately, before the first build is even started.
     final graphWatcher = BuildPackagesWatcher(
@@ -78,6 +88,15 @@ class Watcher {
         .takeUntil(terminate)
         .asyncMapBuffer(_doBuild)
         .drain<void>()
+        .then((_) async {
+          await currentBuildResult;
+          await _buildSeries.close();
+          if (buildProcessState.isLockRequested()) {
+            buildLog.flushAndPrint(
+              'Exiting as requested by another build_runner process.',
+            );
+          }
+        })
         .ignore();
 
     await graphWatcher.ready;

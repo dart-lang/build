@@ -1,3 +1,6 @@
+// ignore_for_file: unnecessary_lambdas, inference_failure_on_instance_creation,
+// ignore_for_file: inference_failure_on_function_invocation
+
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
@@ -22,7 +25,6 @@ import 'generated_mocks_test.mocks.dart';
         #$hasDollarInName,
       },
     ),
-    // ignore: deprecated_member_use_from_same_package
     MockSpec<HasPrivate>(mixingIn: [HasPrivateMixin]),
   ],
 )

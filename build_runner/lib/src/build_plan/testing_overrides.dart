@@ -30,6 +30,7 @@ class TestingOverrides {
   final Resolvers? resolvers;
   final Stream<ProcessSignal>? terminateEventStream;
   final bool flattenOutput;
+  final bool checkBuilderFreshness;
 
   const TestingOverrides({
     this.builderDefinitions,
@@ -40,6 +41,7 @@ class TestingOverrides {
     this.defaultRootPackageSources,
     this.directoryWatcherFactory,
     this.flattenOutput = false,
+    this.checkBuilderFreshness = true,
     this.onLog,
     this.readerWriter,
     this.reportUnusedAssetsForInput,
@@ -65,5 +67,6 @@ class TestingOverrides {
     resolvers: resolvers,
     terminateEventStream: terminateEventStream,
     flattenOutput: flattenOutput,
+    checkBuilderFreshness: checkBuilderFreshness,
   );
 }

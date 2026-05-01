@@ -23,7 +23,10 @@ void main() async {
     );
 
     // Initial build.
-    await tester.run('root_pkg', 'dart run build_runner build --output build');
+    await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit --output build',
+    );
     expect(tester.readFileTree('root_pkg/build/packages/root_pkg'), {
       'a.txt': 'a',
       'a.txt.post': 'a(default dev)',
@@ -32,7 +35,7 @@ void main() async {
     // No rebuild if nothing changed.
     var output = await tester.run(
       'root_pkg',
-      'dart run build_runner build --output build',
+      'dart run build_runner build --force-jit --output build',
     );
     expect(output, contains('wrote 0 outputs'));
     // Output is copied the same.
@@ -45,7 +48,7 @@ void main() async {
     tester.write('root_pkg/lib/a.txt', 'b');
     output = await tester.run(
       'root_pkg',
-      'dart run build_runner build --output build',
+      'dart run build_runner build --force-jit --output build',
     );
     expect(output, contains('wrote 1 output'));
     // Restore the original input.
@@ -54,7 +57,7 @@ void main() async {
     // Release build.
     await tester.run(
       'root_pkg',
-      'dart run build_runner build '
+      'dart run build_runner build --force-jit '
           '--output build --release',
     );
     expect(tester.readFileTree('root_pkg/build/packages/root_pkg'), {
@@ -75,7 +78,10 @@ targets:
         release_options:
           extra_content: "(yaml release)"
 ''');
-    await tester.run('root_pkg', 'dart run build_runner build --output build');
+    await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit --output build',
+    );
     expect(tester.readFileTree('root_pkg/build/packages/root_pkg'), {
       'a.txt': 'a',
       'a.txt.other_post': 'a(yaml dev)',
@@ -84,7 +90,7 @@ targets:
     // Configure with `--define`.
     await tester.run(
       'root_pkg',
-      'dart run build_runner build --output build '
+      'dart run build_runner build --force-jit --output build '
           '--define=builder_pkg:test_post_process_builder=output_extension='
           '.third_post',
     );
@@ -96,7 +102,7 @@ targets:
     // Configure with `--define` and `--release`.
     await tester.run(
       'root_pkg',
-      'dart run build_runner build --output build '
+      'dart run build_runner build --force-jit --output build '
           '--define=builder_pkg:test_post_process_builder=output_extension='
           '.third_post --release',
     );
@@ -110,16 +116,16 @@ targets:
       FixturePackages.postProcessCopyBuilder(buildToCache: false),
     );
     tester.delete('root_pkg/build.yaml');
-    await tester.run('root_pkg', 'dart run build_runner build');
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
     expect(tester.read('root_pkg/lib/a.txt.post'), 'a(default dev)');
     tester.write('root_pkg/lib/a.txt', 'b');
-    await tester.run('root_pkg', 'dart run build_runner build');
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
     expect(tester.read('root_pkg/lib/a.txt.post'), 'b(default dev)');
 
     // Build to source deletes old outputs.
     await tester.run(
       'root_pkg',
-      'dart run build_runner build '
+      'dart run build_runner build --force-jit '
           '--define=builder_pkg:test_post_process_builder=output_extension='
           '.more_post',
     );
@@ -128,7 +134,7 @@ targets:
     tester.write('root_pkg/lib/a.txt', 'c');
     await tester.run(
       'root_pkg',
-      'dart run build_runner build '
+      'dart run build_runner build --force-jit '
           '--define=builder_pkg:test_post_process_builder=output_extension='
           '.more_post',
     );

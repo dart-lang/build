@@ -21,7 +21,6 @@ import '../../build_plan/build_phases.dart';
 import '../../build_plan/phase.dart';
 import '../../constants.dart';
 import '../../io/generated_asset_hider.dart';
-import '../../io/reader_writer.dart';
 import '../library_cycle_graph/phased_asset_deps.dart';
 import 'exceptions.dart';
 import 'node.dart';
@@ -183,8 +182,7 @@ class AssetGraph implements GeneratedAssetHider {
   static Future<AssetGraph> build(
     BuildPhases buildPhases,
     Set<AssetId> sources,
-    BuildPackages buildPackages,
-    ReaderWriter readerWriter, {
+    BuildPackages buildPackages, {
     String? kernelDigest,
   }) async {
     final graph = AssetGraph._(
@@ -200,11 +198,6 @@ class AssetGraph implements GeneratedAssetHider {
       buildPhases,
       sources,
       placeholders: placeholders,
-    );
-    // Pre-emptively compute digests for the nodes we know have outputs.
-    await graph._setDigests(
-      sources.where((id) => graph.get(id)?.primaryOutputs.isNotEmpty == true),
-      readerWriter,
     );
     return graph;
   }
@@ -244,20 +237,6 @@ class AssetGraph implements GeneratedAssetHider {
   void _addSources(Set<AssetId> assetIds) {
     for (final id in assetIds) {
       _nodes.add(AssetNode.source(id));
-    }
-  }
-
-  /// Uses [readerWriter] to compute the [Digest] for nodes with [ids] and set
-  /// the `lastKnownDigest` field.
-  Future<void> _setDigests(
-    Iterable<AssetId> ids,
-    ReaderWriter readerWriter,
-  ) async {
-    for (final id in ids) {
-      final digest = await readerWriter.digest(id);
-      updateNode(id, (nodeBuilder) {
-        nodeBuilder.digest = digest;
-      });
     }
   }
 
@@ -344,12 +323,10 @@ class AssetGraph implements GeneratedAssetHider {
   /// Outputs that are deleted from the filesystem are retained in the graph as
   /// `missingSource` nodes.
   ///
-  /// Returns the set of [AssetId]s that were deleted.
+  /// Returns the set of [AssetId]s to delete.
   Future<Set<AssetId>> updateAndInvalidate(
     BuildPhases buildPhases,
     Map<AssetId, ChangeType> updates,
-    Future Function(AssetId id) delete,
-    ReaderWriter readerWriter,
   ) async {
     final newIds = <AssetId>{};
     final modifyIds = <AssetId>{};
@@ -378,22 +355,6 @@ class AssetGraph implements GeneratedAssetHider {
 
     _addSources(newIds);
 
-    final newAndModifiedNodes = [
-      for (final id in modifyIds.followedBy(newIds)) get(id)!,
-    ];
-    // Pre-emptively compute digests for the new and modified nodes we know have
-    // outputs.
-    await _setDigests(
-      newAndModifiedNodes
-          .where(
-            (node) =>
-                node.isTrackedInput &&
-                (node.primaryOutputs.isNotEmpty || node.digest != null),
-          )
-          .map((node) => node.id),
-      readerWriter,
-    );
-
     // Compute generated nodes that will no longer be output because their
     // primary input was deleted. Delete them.
     final transitiveRemovedIds = <AssetId>{};
@@ -409,9 +370,6 @@ class AssetGraph implements GeneratedAssetHider {
         addTransitivePrimaryOutputs(id);
       }
     }
-    final idsToDelete = Set<AssetId>.from(transitiveRemovedIds)
-      ..removeAll(removeIds);
-    await Future.wait(idsToDelete.map(delete));
 
     // Change deleted source assets and their transitive primary outputs to
     // `missingSource` nodes, rather than deleting them. This allows them to
@@ -426,7 +384,8 @@ class AssetGraph implements GeneratedAssetHider {
     _addOutputsForSources(buildPhases, newIds);
 
     _nodes.clearComputationResults();
-    return idsToDelete;
+    transitiveRemovedIds.removeAll(removeIds);
+    return transitiveRemovedIds;
   }
 
   /// Crawl up primary inputs to see if the original Source file matches the

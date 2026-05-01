@@ -1,12 +1,67 @@
-## 2.14.0-wip
+## 2.15.0
 
+- Remove `--low-resources-mode` as default memory usage has been improved. If
+  you have problems with RAM usage please file an issue.
+- Remove `--log-performance` and `--track-performance`. File an issue if you
+  have performance measurement needs not covered by the newer `--dart-aot-perf`.
+- Removed options can still be passed, they will be ignored with a warning.
+- Bug fix: fix crash during logging if an asset path is an invalid URI.
+- Bug fix: with `--workspace` the global options affecting build order were read
+  from the wrong package. They are now read from `build.yaml` in the workspace
+  root, like other global options.
+- Allow `analyzer` 13.0.0.
+
+## 2.14.1
+
+- Bug fix: fix crash if a package used to belong to a workspace but was removed
+  from the workspace leaving a stale `workspace.ref` file.
+- Bug fix: the `watch` command now always does one build before exiting due to
+  a request from another `build_runner` process. Fix crashes related to request
+  before build start.
+
+## 2.14.0
+
+- Performance: further improvements to management of files for analysis
+  for 2x faster incremental builds.
+- Performance: default to AOT compilation for commands other than `run`. This
+  costs more initial startup time but gives faster builds afterwards. Fall back
+  to JIT if the compile fails due to use of `dart:mirrors`. Use the
+  `--force-jit` flag if you want the old default JIT builder compile. Use the
+  `--force-aot` flag to turn off the fallback to JIT compile.
+- Add support for `asset:` scheme to the `--build-filter` flag. It is like
+  `package:` but for the whole package, not just `lib`. For example,
+  `package:a/b.dart` is the same as `asset:a/lib/b.dart`.
+- Paths specified using `--build-filter` when using the `--workspace` flag now
+  apply to the current package, not the workspace root. Other packages must
+  be referred to using `package:` or `asset:` schemes.
 - Add OSC 8 hyperlinks for logged input paths.
+- Better handling of deletions of files during the build: if the file is not
+  needed ignore the deletion, if it's needed try to use the cached version,
+  as a last resort restart the build.
+- Defer deletions of files by `build_runner` until the build is complete. Don't
+  write files unless the contents changed. These reduce unnecessary work by
+  tools that watch the filesystem.
+- `--workspace` flag is no longer experimental, remove the warning.
+- Add `--workspace` flag to `clean` command, use it to clear the cache used for
+  a `--workspace` build.
+- Add new command `stop`: run `dart run build_runner stop` to terminate a
+  running `watch` or `serve` command in the current package or workspace. If
+  a build is in progress, the build will complete first.
+- Add locking: `build_runner` will wait for any already-running command before
+  running. If there is an already-running `watch` or `serve` command, it will be
+  closed after the currently-running build, as if you ran the new
+  `dart run build_runner stop`.
+- Note: the `daemon` command ignores `build_runner stop` and ignores the new
+  locking as it uses its own locking.
 - Bug fix: small correctness fix in input tracking.
 - Bug fix: fix corner case that caused missing outputs with `build_runner serve`
   when directories were specified with a port, for example 
   `build_runner serve web:0`. Before the fix, non-optional outputs to cache 
   under `web` would be skipped unless they were used by another build step. 
   With the fix, all non-optional outputs under `web` are built and served.
+- Bug fix: when building with `--workspace` generate the entrypoint and compiled
+  artifacts under the workspace root instead of the current package root.
+- Remove `code_builder` dependency so builders can use any version of it.
 
 ## 2.13.1
 

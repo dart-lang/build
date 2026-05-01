@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:build/build.dart';
@@ -16,7 +15,6 @@ import 'package:build_runner/src/build/asset_graph/graph.dart';
 import 'package:build_runner/src/build/asset_graph/node.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
 import 'package:build_runner/src/build/build_result.dart';
-import 'package:build_runner/src/build/performance_tracker.dart';
 import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_directory.dart';
 import 'package:build_runner/src/build_plan/build_filter.dart';
@@ -541,16 +539,6 @@ targets:
         );
       });
 
-      test('in low resources mode', () async {
-        await testPhases(
-          builderFactories,
-          [BuilderDefinition('')],
-          {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
-          outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'},
-          enableLowResourcesMode: true,
-        );
-      });
-
       test('previous outputs are cleaned up', () async {
         final result = await testBuilders(
           [testBuilder],
@@ -1024,34 +1012,6 @@ targets:
       },
     );
 
-    test('can output performance logs', () async {
-      final result = await testPhases(
-        builderFactories,
-        [
-          BuilderDefinition(
-            'test_builder',
-            autoApply: AutoApply.rootPackage,
-            isOptional: false,
-            hideOutput: false,
-          ),
-        ],
-        {'a|web/a.txt': 'a'},
-        outputs: {'a|web/a.txt.copy': 'a'},
-        logPerformanceDir: 'perf',
-      );
-      final logs =
-          await result.readerWriter.assetFinder
-              .find(Glob('perf/**'), package: 'a')
-              .toList();
-      expect(logs.length, 1);
-      final perf = BuildPerformance.fromJson(
-        jsonDecode(await result.readerWriter.readAsString(logs.first))
-            as Map<String, dynamic>,
-      );
-      expect(perf.phases.length, 1);
-      expect(perf.phases.first.builderKeys, equals(['test_builder']));
-    });
-
     group('buildFilters', () {
       final buildPackagesWithDep = BuildPackages.singlePackageBuild('a', [
         BuildPackage.forTesting(name: 'a', isOutput: true, dependencies: ['b']),
@@ -1083,9 +1043,15 @@ targets:
             r'$$b|lib/b.txt.copy': '',
           },
           buildFilters: {
-            BuildFilter.fromArg('web/a.txt.copy', 'a'),
-            BuildFilter.fromArg('package:a/a.txt.copy', 'a'),
-            BuildFilter.fromArg('package:b/b.txt.copy', 'a'),
+            BuildFilter.fromArg(arg: 'web/a.txt.copy', currentPackage: 'a'),
+            BuildFilter.fromArg(
+              arg: 'package:a/a.txt.copy',
+              currentPackage: 'a',
+            ),
+            BuildFilter.fromArg(
+              arg: 'package:b/b.txt.copy',
+              currentPackage: 'a',
+            ),
           },
           verbose: true,
           buildPackages: buildPackagesWithDep,
@@ -1106,7 +1072,12 @@ targets:
           ],
           {'a|lib/a.txt': '', 'b|lib/a.txt': ''},
           outputs: {r'$$a|lib/a.txt.copy': '', r'$$b|lib/a.txt.copy': ''},
-          buildFilters: {BuildFilter.fromArg('package:*/a.txt.copy', 'a')},
+          buildFilters: {
+            BuildFilter.fromArg(
+              arg: 'package:*/a.txt.copy',
+              currentPackage: 'a',
+            ),
+          },
           verbose: true,
           buildPackages: buildPackagesWithDep,
         );
@@ -1138,9 +1109,15 @@ targets:
             r'$$b|lib/b2.txt.copy': '',
           },
           buildFilters: {
-            BuildFilter.fromArg('package:a/*0.txt.copy', 'a'),
-            BuildFilter.fromArg('web/*1.txt.copy', 'a'),
-            BuildFilter.fromArg('package:b/*2.txt.copy', 'a'),
+            BuildFilter.fromArg(
+              arg: 'package:a/*0.txt.copy',
+              currentPackage: 'a',
+            ),
+            BuildFilter.fromArg(arg: 'web/*1.txt.copy', currentPackage: 'a'),
+            BuildFilter.fromArg(
+              arg: 'package:b/*2.txt.copy',
+              currentPackage: 'a',
+            ),
           },
           verbose: true,
           buildPackages: buildPackagesWithDep,
@@ -1161,7 +1138,12 @@ targets:
           ],
           {'a|lib/a.txt': '', 'b|lib/b.txt': ''},
           outputs: {r'$$a|lib/a.txt.copy': '', r'$$b|lib/b.txt.copy': ''},
-          buildFilters: {BuildFilter.fromArg('package:*/*.txt.copy', 'a')},
+          buildFilters: {
+            BuildFilter.fromArg(
+              arg: 'package:*/*.txt.copy',
+              currentPackage: 'a',
+            ),
+          },
           verbose: true,
           buildPackages: buildPackagesWithDep,
         );
@@ -1193,7 +1175,6 @@ targets:
       BuildPackages.singlePackageBuild('a', [
         BuildPackage.forTesting(name: 'a', isOutput: true),
       ]),
-      result.readerWriter,
     );
 
     // Source nodes

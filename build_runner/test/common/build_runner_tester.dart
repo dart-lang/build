@@ -26,11 +26,24 @@ class BuildRunnerTester {
   final Pubspecs pubspecs;
   final Directory tempDirectory;
 
-  BuildRunnerTester(this.pubspecs)
-    : tempDirectory = Directory.systemTemp.createTempSync(
-        'BuildRunnerTester-',
-      ) {
+  BuildRunnerTester(Pubspecs pubspecs)
+    : this._(
+        pubspecs,
+        Directory.systemTemp.createTempSync('BuildRunnerTester-'),
+      );
+
+  BuildRunnerTester._(this.pubspecs, this.tempDirectory) {
     addTearDown(() => tempDirectory.deleteSync(recursive: true));
+  }
+
+  /// Copies the entire workspace, returns a new `BuildRunnerTester` using
+  /// the copy.
+  BuildRunnerTester copyWorkspace() {
+    final newTemp = Directory.systemTemp.createTempSync(
+      'BuildRunnerTester-copy-',
+    );
+    copyPathSync(tempDirectory.path, newTemp.path);
+    return BuildRunnerTester._(pubspecs, newTemp);
   }
 
   /// Writes a Dart package to the workspace.
@@ -40,6 +53,7 @@ class BuildRunnerTester {
   /// A `pubspec.yaml` is also written, see [Pubspecs.pubspec].
   void writePackage({
     required String name,
+    String? path,
     required Map<String, String> files,
     List<String>? dependencies,
     List<String>? pathDependencies,
@@ -48,7 +62,7 @@ class BuildRunnerTester {
     bool inWorkspace = false,
   }) {
     _writeDirectory(
-      name: name,
+      name: path ?? name,
       files: {
         'pubspec.yaml': pubspecs.pubspec(
           name: name,
@@ -90,6 +104,12 @@ class BuildRunnerTester {
     );
   }
 
+  /// Stats workspace-relative [path], or returns `null` if it does not exist.
+  FileStat stat(String path) {
+    final file = File(p.join(tempDirectory.path, path));
+    return file.statSync();
+  }
+
   /// Reads workspace-relative [path], or returns `null` if it does not exist.
   String? read(String path) {
     final file = File(p.join(tempDirectory.path, path));
@@ -117,10 +137,17 @@ class BuildRunnerTester {
     file.writeAsStringSync(update(data));
   }
 
-  /// Deletes the workspace-relative [path].
+  /// Deletes the file or directory at workspace-relative [path].
   void delete(String path) {
-    final file = File(p.join(tempDirectory.path, path));
-    file.deleteSync(recursive: true);
+    final absolutePath = p.join(tempDirectory.path, path);
+    final type = FileSystemEntity.typeSync(absolutePath);
+    if (type == FileSystemEntityType.file) {
+      File(absolutePath).deleteSync(recursive: true);
+    } else if (type == FileSystemEntityType.directory) {
+      Directory(absolutePath).deleteSync(recursive: true);
+    } else {
+      throw UnsupportedError('File type: $type');
+    }
   }
 
   /// Reads the tree of files at the workspace-relative [path].
@@ -238,7 +265,8 @@ class BuildRunnerProcess {
     final stopwatch = Stopwatch()..start();
     while (stopwatch.elapsed < duration) {
       try {
-        output.add(await _outputs.next.timeout(duration - stopwatch.elapsed));
+        output.add(await _outputs.peek.timeout(duration - stopwatch.elapsed));
+        await _outputs.next;
       } on TimeoutException catch (_) {
         // Expected.
       } catch (_) {

@@ -144,7 +144,7 @@ void main() {
 
 abstract class Interface {
   bool? get value;
-  set value(value);
+  set value(bool? value);
   void say(String text);
   void eat(String food, {bool? alsoDrink});
   void lie([bool? facingDown]);
@@ -166,7 +166,7 @@ class Stub implements Interface {
 }
 
 // Inspired by shouldFail() from package:test, which doesn't expose it to users.
-void shouldFail(value, Matcher matcher, expected) {
+void shouldFail(Object? value, Matcher matcher, Object? expected) {
   const reason = 'Expected to fail.';
   try {
     expect(value, matcher);
@@ -182,6 +182,6 @@ void shouldFail(value, Matcher matcher, expected) {
   }
 }
 
-void shouldPass(value, Matcher matcher) {
+void shouldPass(Object? value, Matcher matcher) {
   expect(value, matcher);
 }

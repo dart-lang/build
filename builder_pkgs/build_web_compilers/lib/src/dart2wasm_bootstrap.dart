@@ -5,9 +5,12 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:archive/archive.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_modules/build_modules.dart';
+import 'package:glob/glob.dart';
+import 'package:glob/list_local_fs.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
 
@@ -151,6 +154,38 @@ $librariesString
       scratchSpace,
       buildStep,
     );
+
+    final rootDir = p.dirname(wasmOutputFile.path);
+    final baseInputName = p.basenameWithoutExtension(dartEntrypointId.path);
+    final archive = Archive();
+    final fileGlob = Glob('$baseInputName*$wasmExtension');
+    await for (final wasmFile in fileGlob.list(root: rootDir)) {
+      if (wasmFile is! File) continue;
+      if (wasmFile.path.endsWith(moduleJsExtension) ||
+          wasmFile.path.endsWith(wasmSourceMapExtension) ||
+          wasmFile.absolute.path == wasmOutputFile.absolute.path) {
+        // These are explicitly output, and are not part of the archive.
+        continue;
+      }
+      final fileName = p.relative(wasmFile.path, from: rootDir);
+      final fileStats = await wasmFile.stat();
+      archive.addFile(
+        ArchiveFile(
+            fileName,
+            fileStats.size,
+            await (wasmFile as File).readAsBytes(),
+          )
+          ..mode = fileStats.mode
+          ..lastModTime = fileStats.modified.millisecondsSinceEpoch,
+      );
+    }
+
+    if (archive.isNotEmpty) {
+      final archiveId = dartEntrypointId.changeExtension(
+        wasmEntrypointArchiveExtension,
+      );
+      await buildStep.writeAsBytes(archiveId, TarEncoder().encode(archive));
+    }
 
     final loaderContents =
         await scratchSpace

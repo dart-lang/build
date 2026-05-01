@@ -9,24 +9,6 @@ import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
 void main() {
-  test('without caching writes are immediate', () async {
-    final readerWriter = TestReaderWriter(rootPackage: 'a');
-    final result = await testBuilder(
-      TestBuilder(
-        check: (_) async {
-          expect(readerWriter.testing.assets, [
-            AssetId('a', 'lib/a.dart'),
-            AssetId('a', '.dart_tool/build/generated/a/lib/a.g.dart'),
-          ]);
-        },
-      ),
-      {'a|lib/a.dart': ''},
-      readerWriter: readerWriter,
-      enableLowResourceMode: true,
-    );
-    expect(result.succeeded, true);
-  });
-
   test('with caching writes wait until build completion', () async {
     final readerWriter = TestReaderWriter(rootPackage: 'a');
     final result = await testBuilder(
@@ -37,7 +19,6 @@ void main() {
       ),
       {'a|lib/a.dart': ''},
       readerWriter: readerWriter,
-      enableLowResourceMode: false,
     );
     expect(result.succeeded, true);
     expect(
@@ -63,7 +44,6 @@ void main() {
       ),
       {'a|lib/a.dart': ''},
       readerWriter: readerWriter,
-      enableLowResourceMode: false,
     );
     expect(result.succeeded, true);
   });

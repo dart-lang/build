@@ -343,6 +343,7 @@ Future<void> main() async {
       ),
       {'a|foo.in': 'new input', 'a|foo.out': 'pre-existing output'},
       outputs: {'a|foo.out': 'new input'},
+      flattenOutput: true,
     );
   });
 

@@ -9,6 +9,7 @@ import 'package:args/command_runner.dart';
 import 'package:build_daemon/constants.dart';
 import 'package:built_collection/built_collection.dart';
 
+import 'bootstrap/compile_type.dart';
 import 'internal.dart';
 
 enum CommandType {
@@ -17,6 +18,7 @@ enum CommandType {
   daemon,
   run,
   serve,
+  stop,
   test,
   watch;
 
@@ -28,7 +30,7 @@ enum CommandType {
 
   /// Whether the command must be launched as a nested `build_runner` binary
   /// built with configured builders.
-  bool get requiresBuilders => this != clean;
+  bool get requiresBuilders => this != clean && this != stop;
 }
 
 /// A `build_runner` command line with arguments parsed to primitive types.
@@ -51,16 +53,22 @@ class BuildRunnerCommandLine {
   final String? hostname;
   final BuiltList<String>? jitVmArgs;
   final bool? liveReload;
-  final String? logPerformance;
   final bool? logRequests;
-  final bool? lowResourcesMode;
   final BuiltList<String>? outputs;
   final bool? release;
   final bool? symlink;
-  final bool? trackPerformance;
   final bool? verbose;
   final bool? verboseDurations;
   final bool? workspace;
+
+  final BuiltList<String> removedOptionsUsed;
+
+  CompileStrategy get compileStrategy {
+    if (type == CommandType.run) return CompileStrategy.commandForcesJit;
+    if (forceJit ?? false) return CompileStrategy.forceJit;
+    if (forceAot ?? false) return CompileStrategy.forceAot;
+    return CompileStrategy.tryAot;
+  }
 
   static Future<BuildRunnerCommandLine?> parse(Iterable<String> arguments) =>
       _CommandRunner().run(arguments);
@@ -79,18 +87,23 @@ class BuildRunnerCommandLine {
       hostname = argResults.stringNamed(hostnameOption),
       jitVmArgs = argResults.listNamed(dartJitVmArgOption),
       liveReload = argResults.boolNamed(liveReloadOption),
-      logPerformance = argResults.stringNamed(logPerformanceOption),
       logRequests = argResults.boolNamed(logRequestsOption),
-      lowResourcesMode = argResults.boolNamed(lowResourcesModeOption),
       outputs = argResults.listNamed(outputOption),
       release = argResults.boolNamed(releaseOption),
       symlink = argResults.boolNamed(symlinkOption),
-      trackPerformance = argResults.boolNamed(trackPerformanceOption),
       verbose = argResults.boolNamed(verboseOption),
       verboseDurations = argResults.boolNamed(verboseDurationsOption),
       // Only "build" and "watch" support --workspace, default to false for
       // other commands.
-      workspace = argResults.boolNamed(workspaceOption) ?? false;
+      workspace = argResults.boolNamed(workspaceOption) ?? false,
+      removedOptionsUsed =
+          removedOptions
+              .where(
+                (option) =>
+                    argResults.options.contains(option) &&
+                    argResults.wasParsed(option),
+              )
+              .toBuiltList();
 
   String get usage {
     // Calling `usage` only works if the command has been added to a
@@ -106,6 +119,8 @@ class BuildRunnerCommandLine {
         return _run.usage;
       case CommandType.serve:
         return _serve.usage;
+      case CommandType.stop:
+        return _stop.usage;
       case CommandType.test:
         return _test.usage;
       case CommandType.watch:
@@ -133,7 +148,6 @@ extension _ArgResultsExtension on ArgResults {
 const buildFilterOption = 'build-filter';
 const configOption = 'config';
 const defineOption = 'define';
-const deleteFilesByDefaultOption = 'delete-conflicting-outputs';
 const enableExperimentOption = 'enable-experiment';
 const forceAotOption = 'force-aot';
 const forceJitOption = 'force-jit';
@@ -141,16 +155,27 @@ const dartAotPerfOption = 'dart-aot-perf';
 const dartJitVmArgOption = 'dart-jit-vm-arg';
 const hostnameOption = 'hostname';
 const liveReloadOption = 'live-reload';
-const logPerformanceOption = 'log-performance';
 const logRequestsOption = 'log-requests';
-const lowResourcesModeOption = 'low-resources-mode';
 const outputOption = 'output';
 const releaseOption = 'release';
 const symlinkOption = 'symlink';
-const trackPerformanceOption = 'track-performance';
 const verboseDurationsOption = 'verbose-durations';
 const verboseOption = 'verbose';
 const workspaceOption = 'workspace';
+
+// Removed options, kept to not break old command lines.
+const deleteFilesByDefaultOption = 'delete-conflicting-outputs';
+const failOnSevereOption = 'fail-on-severe';
+const logPerformanceOption = 'log-performance';
+const lowResourcesModeOption = 'low-resources-mode';
+const trackPerformanceOption = 'track-performance';
+const removedOptions = [
+  deleteFilesByDefaultOption,
+  failOnSevereOption,
+  logPerformanceOption,
+  lowResourcesModeOption,
+  trackPerformanceOption,
+];
 
 /// [CommandRunner] that returns a [BuildRunnerCommandLine] without actually
 /// running it.
@@ -166,6 +191,7 @@ class _CommandRunner extends CommandRunner<BuildRunnerCommandLine> {
     addCommand(_daemon);
     addCommand(_run);
     addCommand(_serve);
+    addCommand(_stop);
     addCommand(_test);
     addCommand(_watch);
   }
@@ -193,39 +219,18 @@ class _Build extends _Command<BuildRunnerCommandLine> {
     required bool supportWorkspace,
   }) {
     argParser
-      // No longer does anything, but accept so old usage does not fail.
-      ..addFlag(
-        deleteFilesByDefaultOption,
-        hide: true,
-        abbr: 'd',
-        negatable: false,
-      )
-      ..addFlag(
-        lowResourcesModeOption,
-        help:
-            'Reduce the amount of memory consumed by the build process. '
-            'This will slow down builds but allow them to progress in '
-            'resource constrained environments.',
-        negatable: false,
-        defaultsTo: false,
-      )
       ..addOption(
         configOption,
         help: 'Read `build.<name>.yaml` instead of the default `build.yaml`',
         abbr: 'c',
       )
       ..addFlag(
-        'fail-on-severe',
-        help: 'Deprecated argument - always enabled',
-        negatable: true,
-        defaultsTo: true,
-        hide: true,
-      )
-      ..addFlag(
         forceAotOption,
         defaultsTo: false,
         negatable: false,
-        help: 'Compiles builders with AOT mode for faster builds.',
+        help:
+            'Forces AOT compilation of builders: disables fallback to '
+            'JIT mode.',
       )
       ..addFlag(
         forceJitOption,
@@ -234,21 +239,9 @@ class _Build extends _Command<BuildRunnerCommandLine> {
         help: 'Compiles builders with JIT mode.',
       )
       ..addFlag(
-        trackPerformanceOption,
-        help: r'Enables performance tracking and the /$perf page.',
-        negatable: true,
-        defaultsTo: false,
-      )
-      ..addFlag(
         verboseDurationsOption,
         negatable: false,
         help: 'Logs durations with greater precision.',
-      )
-      ..addOption(
-        logPerformanceOption,
-        help:
-            'A directory to write performance logs to, must be in the '
-            'current package. Implies `--track-performance`.',
       )
       ..addMultiOption(
         outputOption,
@@ -286,11 +279,12 @@ class _Build extends _Command<BuildRunnerCommandLine> {
       ..addMultiOption(
         buildFilterOption,
         help:
-            'An explicit filter of files to build. Relative paths and '
-            '`package:` uris are supported, including glob syntax for paths '
-            'portions (but not package names). '
-            'If multiple filters are applied then outputs matching any '
-            'filter will be built (they do not need to match all filters).',
+            'Limits which files get built. Multiple filters are ORed together. '
+            'Specify a relative path, optionally with globs, to limit to '
+            'building matching paths in the current package. '
+            'Or, use a `package:` or `asset:` URI to refer to other packages. '
+            '`package:` URIs refer only to the `lib` folder of that package. '
+            '`asset:` URIs refer to the root of that package.',
       )
       ..addMultiOption(
         enableExperimentOption,
@@ -321,6 +315,34 @@ class _Build extends _Command<BuildRunnerCommandLine> {
         help: 'Build all packages in the current workspace.',
       );
     }
+
+    // Removed options.
+    argParser
+      ..addFlag(
+        deleteFilesByDefaultOption,
+        hide: true,
+        abbr: 'd',
+        negatable: false,
+      )
+      ..addFlag(
+        failOnSevereOption,
+        negatable: true,
+        defaultsTo: true,
+        hide: true,
+      )
+      ..addOption(logPerformanceOption, hide: true)
+      ..addFlag(
+        lowResourcesModeOption,
+        hide: true,
+        negatable: false,
+        defaultsTo: false,
+      )
+      ..addFlag(
+        trackPerformanceOption,
+        hide: true,
+        negatable: true,
+        defaultsTo: false,
+      );
   }
 
   @override
@@ -345,7 +367,17 @@ class _Clean extends _Command<BuildRunnerCommandLine> {
 
   @override
   String get description =>
-      'Deletes the build cache. The next build will be a full build.';
+      'Deletes the package or workspace build cache. '
+      'The next build will be a full build.';
+
+  _Clean() {
+    argParser.addFlag(
+      workspaceOption,
+      defaultsTo: false,
+      negatable: false,
+      help: 'Deletes the `--workspace` build cache.',
+    );
+  }
 
   @override
   Future<BuildRunnerCommandLine> run() async =>
@@ -510,4 +542,28 @@ class _Watch extends _Command<BuildRunnerCommandLine> {
   @override
   Future<BuildRunnerCommandLine> run() async =>
       BuildRunnerCommandLine(CommandType.watch, argResults!);
+}
+
+final _stop = _Stop();
+
+class _Stop extends _Command<BuildRunnerCommandLine> {
+  @override
+  String get name => 'stop';
+
+  @override
+  String get description =>
+      'Stops `watch` and `serve` commands in the same package or workspace.';
+
+  _Stop() {
+    argParser.addFlag(
+      workspaceOption,
+      defaultsTo: false,
+      negatable: false,
+      help: 'Stop `build_runner` in all packages in the current workspace.',
+    );
+  }
+
+  @override
+  Future<BuildRunnerCommandLine> run() async =>
+      BuildRunnerCommandLine(CommandType.stop, argResults!);
 }

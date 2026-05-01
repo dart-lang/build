@@ -120,7 +120,6 @@ void main() {
       BuildPhases([]),
       <AssetId>{},
       buildPackages,
-      readerWriter,
     );
     watcher = FakeWatcher(buildPackages);
     serveHandler = ServeHandler(watcher);

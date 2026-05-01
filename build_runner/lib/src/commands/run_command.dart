@@ -11,6 +11,7 @@ import 'package:io/io.dart';
 import 'package:path/path.dart' as p;
 
 import '../bootstrap/build_process_state.dart';
+import '../bootstrap/compile_type.dart';
 import '../build_plan/build_directory.dart';
 import '../build_plan/build_options.dart';
 import '../build_plan/builder_factories.dart';
@@ -69,6 +70,7 @@ class RunCommand implements BuildRunnerCommand {
         await BuildCommand(
           builderFactories: builderFactories,
           buildOptions: buildOptions.copyWith(
+            compileStrategy: CompileStrategy.forceJit,
             buildDirs: buildOptions.buildDirs.rebuild((b) {
               b.add(
                 BuildDirectory(

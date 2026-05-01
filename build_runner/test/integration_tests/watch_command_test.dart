@@ -30,7 +30,10 @@ void main() async {
     );
 
     // Watch and initial build.
-    var watch = await tester.start('root_pkg', 'dart run build_runner watch');
+    var watch = await tester.start(
+      'root_pkg',
+      'dart run build_runner watch --force-jit',
+    );
     await watch.expect(BuildLog.successPattern);
     expect(tester.read('root_pkg/web/a.txt.copy'), 'a');
 
@@ -41,10 +44,13 @@ void main() async {
 
     // File rewrite without change.
     tester.write('root_pkg/web/a.txt', 'updated');
-    await watch.expectNoOutput(const Duration(seconds: 1));
+    await watch.expect('wrote 0 outputs');
 
     // State on disk is updated so `build` knows to do nothing.
-    var output = await tester.run('root_pkg', 'dart run build_runner build');
+    var output = await tester.copyWorkspace().run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
     expect(output, contains('wrote 0 outputs'));
 
     // New file.
@@ -53,7 +59,10 @@ void main() async {
     expect(tester.read('root_pkg/web/b.txt.copy'), 'b');
 
     // State on disk is updated so `build` knows to do nothing.
-    output = await tester.run('root_pkg', 'dart run build_runner build');
+    output = await tester.copyWorkspace().run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
     expect(output, contains('wrote 0 outputs'));
 
     // Deleted file.
@@ -97,7 +106,10 @@ class TestBuilder implements Builder {
     expect(tester.read('root_pkg/web/a.txt.copy'), 'hardcoded');
 
     // State on disk is updated so `build` knows to do nothing.
-    output = await tester.run('root_pkg', 'dart run build_runner build');
+    output = await tester.copyWorkspace().run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
     expect(output, contains('wrote 0 outputs'));
 
     // Builder config change, add a file but it has no effect.
@@ -125,7 +137,10 @@ targets:
     await watch.expect('wrote 0 outputs');
 
     // State on disk is updated so `build` knows to do nothing.
-    output = await tester.run('root_pkg', 'dart run build_runner build');
+    output = await tester.copyWorkspace().run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
     expect(output, contains('wrote 0 outputs'));
 
     // No-op change to `package_config.json` causes a build.
@@ -139,7 +154,7 @@ targets:
     // Now with --output.
     watch = await tester.start(
       'root_pkg',
-      'dart run build_runner watch --output web:build',
+      'dart run build_runner watch --force-jit --output web:build',
     );
     await watch.expect(BuildLog.successPattern);
     expect(tester.read('root_pkg/build/a.txt'), 'updated');

@@ -79,7 +79,7 @@ void main() async {
 
     final watch = await tester.start(
       '',
-      'dart run build_runner watch --workspace',
+      'dart run build_runner watch --force-jit --workspace',
     );
     await watch.expect(BuildLog.successPattern);
 

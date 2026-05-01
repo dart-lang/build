@@ -44,7 +44,7 @@ class _ContainsIgnoringFormattingMatcher extends Matcher {
   }
 
   @override
-  bool matches(item, Map matchState) =>
+  bool matches(Object? item, Map matchState) =>
       _stripFormatting(item.toString()).contains(_stripFormatting(_expected));
 
   /// Removes whitespace and trailing commas.

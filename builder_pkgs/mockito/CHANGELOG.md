@@ -1,3 +1,7 @@
+## 5.6.5
+
+* Require `analyzer` 13.0.0.
+
 ## 5.6.4
 
 * Allow `analyzer` 11.0.0 and 12.0.0.

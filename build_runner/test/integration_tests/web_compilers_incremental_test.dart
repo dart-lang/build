@@ -76,7 +76,10 @@ void main() async {
       files: {'lib/a.dart': "String helloWorld = 'Hello World!';"},
     );
     final generatedDirRoot = 'root_pkg/.dart_tool/build/generated';
-    final watch = await tester.start('root_pkg', 'dart run build_runner watch');
+    final watch = await tester.start(
+      'root_pkg',
+      'dart run build_runner watch --force-jit',
+    );
     await watch.expect(BuildLog.successPattern);
     expect(
       tester.read('$generatedDirRoot/pkg_a/lib/a.ddc.js'),
@@ -175,7 +178,10 @@ void main() async {
       files: {'lib/a.dart': "String helloWorld = 'Hello World!';"},
     );
     final generatedDirRoot = 'root_pkg/.dart_tool/build/generated';
-    final watch = await tester.start('root_pkg', 'dart run build_runner watch');
+    final watch = await tester.start(
+      'root_pkg',
+      'dart run build_runner watch --force-jit',
+    );
     await watch.expect(BuildLog.successPattern);
     expect(
       tester.read('$generatedDirRoot/pkg_a/lib/a.ddc.js'),

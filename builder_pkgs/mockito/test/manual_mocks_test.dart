@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// ignore_for_file: unnecessary_lambdas,
+// ignore_for_file: inference_failure_on_function_invocation
+
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
 

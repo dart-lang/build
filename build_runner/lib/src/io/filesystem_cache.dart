@@ -143,9 +143,6 @@ class InMemoryFilesystemCache implements FilesystemCache {
 
   @override
   Future<void> invalidate(Iterable<AssetId> ids) async {
-    if (_pendingWrites.isNotEmpty) {
-      throw StateError("Can't invalidate while there are pending writes.");
-    }
     for (final id in ids) {
       _existsCache.remove(id);
       _bytesContentCache.remove(id);

@@ -1,6 +1,17 @@
-## 3.5.13-wip
+## 3.5.15
 
-- Use `build_runner` 2.13.2-wip.
+- Use `build_runner` 2.15.0.
+- Remove `enableLowResourceMode` parameters as there is no longer a low resource
+  mode.
+- Allow `analyzer` 13.0.0.
+
+## 3.5.14
+
+- Use `build_runner` 2.14.1.
+
+## 3.5.13
+
+- Use `build_runner` 2.14.0.
 
 ## 3.5.12
 

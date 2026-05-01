@@ -12,31 +12,19 @@ import 'package:yaml/yaml.dart';
 
 import 'build_package.dart';
 import 'build_packages.dart';
+import 'build_paths.dart';
+import 'pubspecs.dart';
 
 class BuildPackagesLoader {
-  /// Loads the build packages for building the package at [packagePath].
+  /// Loads the build packages for building [paths].
   ///
   /// Assumes `pubspec.yaml` exists and has a name, as this is checked by
   /// `dart run`.
-  ///
-  /// If [workspace], prepares to build the whole workspace, if any.
-  static Future<BuildPackages> forPath(
-    String packagePath, {
-    bool workspace = false,
-  }) async {
-    String? workspacePath;
-    final workspaceRefFile = File(
-      p.join(packagePath, '.dart_tool', 'pub', 'workspace_ref.json'),
-    );
+  static Future<BuildPackages> forPaths(BuildPaths paths) async {
+    final packagePath = paths.packagePath;
+    final workspacePath = paths.workspacePath;
     File packageConfigFile;
-    if (workspaceRefFile.existsSync()) {
-      final workspaceRef =
-          (json.decode(workspaceRefFile.readAsStringSync())
-                  as Map<String, Object?>)['workspaceRoot']
-              as String;
-      workspacePath = p.canonicalize(
-        p.join(p.dirname(workspaceRefFile.path), workspaceRef),
-      );
+    if (workspacePath != null) {
       packageConfigFile = File(
         p.join(workspacePath, '.dart_tool', 'package_config.json'),
       );
@@ -49,12 +37,7 @@ class BuildPackagesLoader {
       throw StateError('Failed to find package_config.json.');
     }
 
-    final buildType =
-        workspacePath == null
-            ? BuildType.singlePackage
-            : workspace
-            ? BuildType.workspace
-            : BuildType.singlePackageInWorkspace;
+    final buildType = paths.buildType;
 
     final packageConfig = await loadPackageConfig(packageConfigFile);
     final packageConfigs =
@@ -64,13 +47,20 @@ class BuildPackagesLoader {
     String? workspaceName;
     List<String>? workspacePackages;
     if (buildType != BuildType.singlePackage) {
-      final workspacePubspec = _pubspecForPath(workspacePath!);
+      final workspacePubspec = Pubspecs.load(
+        p.join(workspacePath!, 'pubspec.yaml'),
+      );
       workspaceName = workspacePubspec['name']! as String;
       final workspacePackageGraph = _packageGraphForPath(workspacePath);
       workspacePackages = List.from(
         workspacePackageGraph['roots'] as List<Object?>,
       );
     }
+
+    final currentPackagePubspec = Pubspecs.load(
+      p.join(packagePath, 'pubspec.yaml'),
+    );
+    final currentPackage = currentPackagePubspec['name']! as String;
 
     String? singlePackageToBuild;
     String outputRootName;
@@ -80,10 +70,9 @@ class BuildPackagesLoader {
       packagesInBuild.addAll(workspacePackages!);
       outputRootName = workspaceName;
     } else {
-      final singlePackageToBuildPubspec = _pubspecForPath(packagePath);
-      singlePackageToBuild = singlePackageToBuildPubspec['name']! as String;
-      outputRootName = singlePackageToBuild;
-      packagesInBuild.add(singlePackageToBuild);
+      singlePackageToBuild = currentPackage;
+      outputRootName = currentPackage;
+      packagesInBuild.add(currentPackage);
     }
 
     // Read the lock file to find "fixed" packages that are hosted, on git
@@ -96,7 +85,9 @@ class BuildPackagesLoader {
     final buildPackages = MapBuilder<String, BuildPackage>();
     for (final packageConfig in packageConfigs) {
       final isInBuild = packagesInBuild.contains(packageConfig.name);
-      final packagePubspec = _pubspecForPath(packageConfig.root.toFilePath());
+      final packagePubspec = Pubspecs.load(
+        p.join(packageConfig.root.toFilePath(), 'pubspec.yaml'),
+      );
       final dependencies = _depsFromYaml(
         packagePubspec,
         loadDevDependencies: isInBuild,
@@ -112,6 +103,7 @@ class BuildPackagesLoader {
     }
 
     return BuildPackages.compute(
+      currentPackage: currentPackage,
       singlePackageToBuild: singlePackageToBuild,
       outputRoot: outputRootName,
       packages: buildPackages.build(),
@@ -119,28 +111,9 @@ class BuildPackagesLoader {
   }
 }
 
-enum BuildType {
-  /// Single package not in a workspace.
-  singlePackage,
-
-  /// Single package in a workspace, but the workspace is ignored.
-  singlePackageInWorkspace,
-
-  /// All packages in a workspace.
-  workspace,
-}
-
 /// Loads and returns `$absolutePath/pubspec.yaml`.
 ///
 /// Throws if it does not exist.
-YamlMap _pubspecForPath(String absolutePath) {
-  final pubspecPath = p.join(absolutePath, 'pubspec.yaml');
-  final pubspec = File(pubspecPath);
-  if (!pubspec.existsSync()) {
-    throw StateError('Unable to load packages, no `$pubspecPath` found.');
-  }
-  return loadYaml(pubspec.readAsStringSync()) as YamlMap;
-}
 
 /// Loads and returns `$absolutePath/.dart_tool/package_graph.json`.
 ///

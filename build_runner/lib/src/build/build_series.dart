@@ -14,7 +14,6 @@ import '../build_plan/build_plan.dart';
 import '../commands/watch/asset_change.dart';
 import '../constants.dart';
 import '../io/asset_tracker.dart';
-import '../io/filesystem_cache.dart';
 import '../io/generated_asset_hider.dart';
 import '../io/reader_writer.dart';
 import '../logging/build_log.dart';
@@ -42,12 +41,12 @@ class BuildSeries {
 
   final ResourceManager _resourceManager = ResourceManager();
 
-  /// For the first build only, updates from the previous serialized build
-  /// state.
+  /// For the first build only, assets that were updated since the previous
+  /// serialized build state.
   ///
   /// Null after the first build, or if there was no serialized build state, or
   /// if the serialized build state was discarded.
-  BuiltMap<AssetId, ChangeType>? _updatesFromLoad;
+  BuiltSet<AssetId>? _updatesFromLoad;
 
   final StreamController<BuildResult> _buildResultsController =
       StreamController.broadcast();
@@ -61,7 +60,7 @@ class BuildSeries {
     required BuildPlan buildPlan,
     required AssetGraph assetGraph,
     required ReaderWriter readerWriter,
-    required BuiltMap<AssetId, ChangeType>? updatesFromLoad,
+    required BuiltSet<AssetId>? updatesFromLoad,
   }) : _buildPlan = buildPlan,
        _assetGraph = assetGraph,
        _readerWriter = readerWriter,
@@ -74,10 +73,6 @@ class BuildSeries {
           buildPlan.testingOverrides.flattenOutput
               ? const NoopGeneratedAssetHider()
               : assetGraph,
-      cache:
-          buildPlan.buildOptions.enableLowResourcesMode
-              ? const PassthroughFilesystemCache()
-              : InMemoryFilesystemCache(),
     );
     return BuildSeries._(
       buildPlan: buildPlan,
@@ -160,16 +155,6 @@ class BuildSeries {
         continue;
       }
 
-      // For modifications, confirm that the content actually changed.
-      if (change.type == ChangeType.MODIFY) {
-        // Use `_buildPlan.readerWriter` which has no cache to do a real read.
-        final newDigest = await _buildPlan.readerWriter.digest(id);
-        if (node.digest != newDigest) {
-          result.add(change);
-        }
-        continue;
-      }
-
       // It's an add of "missing source" node or a deletion of an input.
       result.add(change);
     }
@@ -215,7 +200,7 @@ class BuildSeries {
   /// Set [recentlyBootstrapped] to skip doing checks that are done during
   /// bootstrapping. If [recentlyBootstrapped] then [updates] must be empty.
   Future<BuildResult> run(
-    Map<AssetId, ChangeType> updates, {
+    Set<AssetId> updates, {
     required bool recentlyBootstrapped,
     BuiltSet<BuildDirectory>? buildDirs,
     BuiltSet<BuildFilter>? buildFilters,
@@ -239,7 +224,7 @@ class BuildSeries {
       }
     }
 
-    if (updates.keys.any(_isBuildConfiguration)) {
+    if (updates.any(_isBuildConfiguration)) {
       _buildPlan = await _buildPlan.reload();
       await _buildPlan.deleteFilesAndFolders();
       // A config change might have caused new builders to be needed, which
@@ -256,10 +241,6 @@ class BuildSeries {
             _buildPlan.testingOverrides.flattenOutput
                 ? const NoopGeneratedAssetHider()
                 : _assetGraph,
-        cache:
-            _buildPlan.buildOptions.enableLowResourcesMode
-                ? const PassthroughFilesystemCache()
-                : InMemoryFilesystemCache(),
       );
     }
 
@@ -267,7 +248,7 @@ class BuildSeries {
     buildFilters ??= _buildPlan.buildOptions.buildFilters;
     if (firstBuild) {
       if (_updatesFromLoad != null) {
-        updates = _updatesFromLoad!.toMap()..addAll(updates);
+        updates = _updatesFromLoad!.toSet()..addAll(updates);
         _updatesFromLoad = null;
       }
     } else {

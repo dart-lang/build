@@ -28,18 +28,27 @@ void main() async {
         'root_pkg/.dart_tool/build/generated/fake_output';
 
     // First build.
-    var output = await tester.run('root_pkg', 'dart run build_runner build');
+    var output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
     expect(output, contains('build_runner/jit'));
     expect(tester.read('root_pkg/web/a.txt.copy'), 'a');
 
     // With no changes, no rebuild.
-    output = await tester.run('root_pkg', 'dart run build_runner build');
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
     expect(output, contains('wrote 0 outputs'));
 
     // Change the build script, rebuilds.
     tester.update('builder_pkg/lib/builder.dart', (script) => '$script\n');
     tester.write(fakeGeneratedOutput, '');
-    output = await tester.run('root_pkg', 'dart run build_runner build');
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
     expect(output, contains('wrote 1 output'));
     expect(tester.read(fakeGeneratedOutput), null);
 
@@ -49,7 +58,7 @@ void main() async {
       'builder_pkg/lib/builder.dart',
       (script) => script.replaceAll('.copy', '.copy2'),
     );
-    await tester.run('root_pkg', 'dart run build_runner build');
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
     expect(tester.read('root_pkg/web/a.txt.copy'), null);
     expect(tester.read('root_pkg/web/a.txt.copy2'), 'a');
 
@@ -60,7 +69,10 @@ void main() async {
       (json) => json.replaceAll('"version":', '"version":1'),
     );
     tester.write(fakeGeneratedOutput, '');
-    output = await tester.run('root_pkg', 'dart run build_runner build');
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
     expect(output, contains('wrote 1 output'));
     expect(tester.read(fakeGeneratedOutput), null);
 
@@ -78,11 +90,17 @@ void main() async {
       pathDependencies: ['build_runner'],
       files: {},
     );
-    output = await tester.run('root_pkg', 'dart run build_runner build');
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
     expect(output, contains('wrote 1 output'));
 
     // No change, no rebuild.
-    output = await tester.run('root_pkg', 'dart run build_runner build');
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
     expect(output, contains('wrote 0 outputs'));
 
     // Change `build_runner` source, rebuilds.
@@ -90,7 +108,10 @@ void main() async {
       'build_runner/lib/src/build_runner.dart',
       (script) => '$script\n',
     );
-    output = await tester.run('root_pkg', 'dart run build_runner build');
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
     expect(output, contains('wrote 1 output'));
   });
 }

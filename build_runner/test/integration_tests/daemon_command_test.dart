@@ -65,12 +65,16 @@ void main() {
     // Invalid options.
     var daemon = await tester.start(
       'root_pkg',
-      'dart run build_runner daemon --enable-experiment=bad-experiment',
+      'dart run build_runner daemon --force-jit '
+          '--enable-experiment=bad-experiment',
     );
     await daemon.expect('Failed to compile build script.');
 
     // Start daemon in default "auto" mode that watches files.
-    daemon = await tester.start('root_pkg', 'dart run build_runner daemon');
+    daemon = await tester.start(
+      'root_pkg',
+      'dart run build_runner daemon --force-jit',
+    );
     await daemon.expect(readyToConnectLog);
 
     // Writes the asset server port.
@@ -84,7 +88,7 @@ void main() {
     // Start with different option gives an error.
     final differentOptionsDaemon = await tester.start(
       'root_pkg',
-      'dart run build_runner daemon --build-mode=BuildMode.Manual',
+      'dart run build_runner daemon --force-jit --build-mode=BuildMode.Manual',
     );
     await differentOptionsDaemon.expect(optionsSkew);
 
@@ -131,7 +135,7 @@ void main() {
     await daemon.kill();
     daemon = await tester.start(
       'root_pkg',
-      'dart run build_runner daemon --build-mode=BuildMode.Manual',
+      'dart run build_runner daemon --force-jit --build-mode=BuildMode.Manual',
     );
     await daemon.expect(readyToConnectLog);
 
@@ -170,7 +174,7 @@ void main() {
     // Start a new daemon, connect to it.
     daemon = await tester.start(
       'root_pkg',
-      'dart run build_runner daemon --build-mode=BuildMode.Manual',
+      'dart run build_runner daemon --force-jit --build-mode=BuildMode.Manual',
     );
     await daemon.expect(readyToConnectLog);
     client = await BuildDaemonClient.connectUnchecked(

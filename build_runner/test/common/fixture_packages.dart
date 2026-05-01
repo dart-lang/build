@@ -26,6 +26,7 @@ class FixturePackages {
     String outputExtension = '.copy',
     String appliesBuilders = '[]',
     List<String> pathDependencies = const [],
+    bool delayAtBuildStart = false,
   }) => FixturePackage(
     name: packageName,
     dependencies: ['build', 'build_runner'],
@@ -53,6 +54,7 @@ class TestBuilder implements Builder {
 
   @override
   Future<void> build(BuildStep buildStep) async {
+${delayAtBuildStart ? 'await Future.delayed(Duration(seconds: 1));' : ''}
     buildStep.writeAsString(
         buildStep.inputId.addExtension('$outputExtension'),
         await buildStep.readAsString(buildStep.inputId),
