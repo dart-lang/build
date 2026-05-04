@@ -1,0 +1,34 @@
+// Copyright (c) 2026, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+import 'package:build/build.dart' hide Builder;
+import 'package:built_collection/built_collection.dart';
+import 'package:built_value/built_value.dart';
+import 'package:built_value/serializer.dart';
+
+part 'build_step_result.g.dart';
+
+/// Execution results and dependency tracking for a build step.
+abstract class BuildStepResult
+    implements Built<BuildStepResult, BuildStepResultBuilder> {
+  static Serializer<BuildStepResult> get serializer =>
+      _$buildStepResultSerializer;
+
+  /// Whether the build step succeeded, or `null` if it did not complete or was
+  /// skipped.
+  bool? get result;
+
+  /// Inputs and missing sources read.
+  BuiltSet<AssetId> get inputs;
+
+  /// Entrypoints used for resolution with the analyzer.
+  BuiltSet<AssetId> get resolverEntrypoints;
+
+  /// Errors logged.
+  BuiltList<String> get errors;
+
+  factory BuildStepResult([void Function(BuildStepResultBuilder)? updates]) =
+      _$BuildStepResult;
+  BuildStepResult._();
+}

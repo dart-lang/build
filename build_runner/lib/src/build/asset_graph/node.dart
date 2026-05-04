@@ -10,6 +10,7 @@ import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 import 'package:crypto/crypto.dart';
 
+import 'build_step_id.dart';
 import 'post_process_build_step_id.dart';
 
 part 'node.g.dart';
@@ -40,10 +41,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
 
   /// Additional node configuration for an [AssetNode.generated].
   GeneratedNodeConfiguration? get generatedNodeConfiguration;
-
-  /// Additional node state that changes during the build for an
-  /// [AssetNode.generated].
-  GeneratedNodeState? get generatedNodeState;
 
   /// Additional node configuration for an [AssetNode.glob].
   GlobNodeConfiguration? get globNodeConfiguration;
@@ -105,7 +102,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   factory AssetNode.source(
     AssetId id, {
     Digest? digest,
-    Iterable<AssetId>? outputs,
     Iterable<AssetId>? primaryOutputs,
   }) => AssetNode((b) {
     b.id = id;
@@ -143,16 +139,12 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     required AssetId primaryInput,
     required int phaseNumber,
     required bool isHidden,
-    Iterable<AssetId>? inputs,
-    bool? result,
   }) => AssetNode((b) {
     b.id = id;
     b.type = NodeType.generated;
     b.generatedNodeConfiguration.primaryInput = primaryInput;
     b.generatedNodeConfiguration.phaseNumber = phaseNumber;
     b.generatedNodeConfiguration.isHidden = isHidden;
-    b.generatedNodeState.inputs.replace(inputs ?? []);
-    b.generatedNodeState.result = result;
     b.digest = digest;
   });
 
@@ -195,11 +187,7 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
       }
     }
 
-    check(
-      type == NodeType.generated,
-      generatedNodeConfiguration != null,
-      generatedNodeState != null,
-    );
+    check(type == NodeType.generated, generatedNodeConfiguration != null);
     check(
       type == NodeType.glob,
       globNodeConfiguration != null,
@@ -207,12 +195,9 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     );
   }
 
-  /// The generated node inputs, or the glob node inputs, or `null` if the node
-  /// is not of one of those two types.
+  /// The glob node inputs, or `null` if the node is not a glob node.
   BuiltSet<AssetId>? get inputs {
     switch (type) {
-      case NodeType.generated:
-        return generatedNodeState!.inputs;
       case NodeType.glob:
         return globNodeState!.inputs;
       default:
@@ -254,41 +239,14 @@ abstract class GeneratedNodeConfiguration
   /// Whether the asset should be placed in the build cache.
   bool get isHidden;
 
+  BuildStepId get buildStepId =>
+      BuildStepId(primaryInput: primaryInput, phaseNumber: phaseNumber);
+
   factory GeneratedNodeConfiguration(
     void Function(GeneratedNodeConfigurationBuilder) updates,
   ) = _$GeneratedNodeConfiguration;
 
   GeneratedNodeConfiguration._();
-}
-
-/// State for an [AssetNode.generated] that changes during the build.
-abstract class GeneratedNodeState
-    implements Built<GeneratedNodeState, GeneratedNodeStateBuilder> {
-  static Serializer<GeneratedNodeState> get serializer =>
-      _$generatedNodeStateSerializer;
-
-  /// All the inputs that were read when generating this asset, or deciding not
-  /// to generate it.
-  BuiltSet<AssetId> get inputs;
-
-  /// Entrypoints used for resolution with the analyzer.
-  BuiltSet<AssetId> get resolverEntrypoints;
-
-  /// Whether the generation succeded, or `null` if it did not run.
-  ///
-  /// A full build can complete with `null` results if there are optional
-  /// outputs that are not depended on by required outputs.
-  ///
-  /// Generation can succeed without writing the output: see
-  /// [AssetNode.wasOutput].
-  bool? get result;
-
-  BuiltList<String> get errors;
-
-  factory GeneratedNodeState(void Function(GeneratedNodeStateBuilder) updates) =
-      _$GeneratedNodeState;
-
-  GeneratedNodeState._();
 }
 
 /// Additional configuration for an [AssetNode.glob].

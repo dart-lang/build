@@ -45,8 +45,6 @@ Serializer<NodeType> _$nodeTypeSerializer = _$NodeTypeSerializer();
 Serializer<AssetNode> _$assetNodeSerializer = _$AssetNodeSerializer();
 Serializer<GeneratedNodeConfiguration> _$generatedNodeConfigurationSerializer =
     _$GeneratedNodeConfigurationSerializer();
-Serializer<GeneratedNodeState> _$generatedNodeStateSerializer =
-    _$GeneratedNodeStateSerializer();
 Serializer<GlobNodeConfiguration> _$globNodeConfigurationSerializer =
     _$GlobNodeConfigurationSerializer();
 Serializer<GlobNodeState> _$globNodeStateSerializer =
@@ -120,17 +118,6 @@ class _$AssetNodeSerializer implements StructuredSerializer<AssetNode> {
           ),
         );
     }
-    value = object.generatedNodeState;
-    if (value != null) {
-      result
-        ..add('generatedNodeState')
-        ..add(
-          serializers.serialize(
-            value,
-            specifiedType: const FullType(GeneratedNodeState),
-          ),
-        );
-    }
     value = object.globNodeConfiguration;
     if (value != null) {
       result
@@ -201,15 +188,6 @@ class _$AssetNodeSerializer implements StructuredSerializer<AssetNode> {
                   specifiedType: const FullType(GeneratedNodeConfiguration),
                 )!
                 as GeneratedNodeConfiguration,
-          );
-          break;
-        case 'generatedNodeState':
-          result.generatedNodeState.replace(
-            serializers.deserialize(
-                  value,
-                  specifiedType: const FullType(GeneratedNodeState),
-                )!
-                as GeneratedNodeState,
           );
           break;
         case 'globNodeConfiguration':
@@ -341,116 +319,6 @@ class _$GeneratedNodeConfigurationSerializer
                     specifiedType: const FullType(bool),
                   )!
                   as bool;
-          break;
-      }
-    }
-
-    return result.build();
-  }
-}
-
-class _$GeneratedNodeStateSerializer
-    implements StructuredSerializer<GeneratedNodeState> {
-  @override
-  final Iterable<Type> types = const [GeneratedNodeState, _$GeneratedNodeState];
-  @override
-  final String wireName = 'GeneratedNodeState';
-
-  @override
-  Iterable<Object?> serialize(
-    Serializers serializers,
-    GeneratedNodeState object, {
-    FullType specifiedType = FullType.unspecified,
-  }) {
-    final result = <Object?>[
-      'inputs',
-      serializers.serialize(
-        object.inputs,
-        specifiedType: const FullType(BuiltSet, const [
-          const FullType(AssetId),
-        ]),
-      ),
-      'resolverEntrypoints',
-      serializers.serialize(
-        object.resolverEntrypoints,
-        specifiedType: const FullType(BuiltSet, const [
-          const FullType(AssetId),
-        ]),
-      ),
-      'errors',
-      serializers.serialize(
-        object.errors,
-        specifiedType: const FullType(BuiltList, const [
-          const FullType(String),
-        ]),
-      ),
-    ];
-    Object? value;
-    value = object.result;
-    if (value != null) {
-      result
-        ..add('result')
-        ..add(
-          serializers.serialize(value, specifiedType: const FullType(bool)),
-        );
-    }
-    return result;
-  }
-
-  @override
-  GeneratedNodeState deserialize(
-    Serializers serializers,
-    Iterable<Object?> serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) {
-    final result = GeneratedNodeStateBuilder();
-
-    final iterator = serialized.iterator;
-    while (iterator.moveNext()) {
-      final key = iterator.current! as String;
-      iterator.moveNext();
-      final Object? value = iterator.current;
-      switch (key) {
-        case 'inputs':
-          result.inputs.replace(
-            serializers.deserialize(
-                  value,
-                  specifiedType: const FullType(BuiltSet, const [
-                    const FullType(AssetId),
-                  ]),
-                )!
-                as BuiltSet<Object?>,
-          );
-          break;
-        case 'resolverEntrypoints':
-          result.resolverEntrypoints.replace(
-            serializers.deserialize(
-                  value,
-                  specifiedType: const FullType(BuiltSet, const [
-                    const FullType(AssetId),
-                  ]),
-                )!
-                as BuiltSet<Object?>,
-          );
-          break;
-        case 'result':
-          result.result =
-              serializers.deserialize(
-                    value,
-                    specifiedType: const FullType(bool),
-                  )
-                  as bool?;
-          break;
-        case 'errors':
-          result.errors.replace(
-            serializers.deserialize(
-                  value,
-                  specifiedType: const FullType(BuiltList, const [
-                    const FullType(String),
-                  ]),
-                )!
-                as BuiltList<Object?>,
-          );
           break;
       }
     }
@@ -608,8 +476,6 @@ class _$AssetNode extends AssetNode {
   @override
   final GeneratedNodeConfiguration? generatedNodeConfiguration;
   @override
-  final GeneratedNodeState? generatedNodeState;
-  @override
   final GlobNodeConfiguration? globNodeConfiguration;
   @override
   final GlobNodeState? globNodeState;
@@ -627,7 +493,6 @@ class _$AssetNode extends AssetNode {
     required this.id,
     required this.type,
     this.generatedNodeConfiguration,
-    this.generatedNodeState,
     this.globNodeConfiguration,
     this.globNodeState,
     required this.primaryOutputs,
@@ -648,7 +513,6 @@ class _$AssetNode extends AssetNode {
         id == other.id &&
         type == other.type &&
         generatedNodeConfiguration == other.generatedNodeConfiguration &&
-        generatedNodeState == other.generatedNodeState &&
         globNodeConfiguration == other.globNodeConfiguration &&
         globNodeState == other.globNodeState &&
         primaryOutputs == other.primaryOutputs &&
@@ -662,7 +526,6 @@ class _$AssetNode extends AssetNode {
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, type.hashCode);
     _$hash = $jc(_$hash, generatedNodeConfiguration.hashCode);
-    _$hash = $jc(_$hash, generatedNodeState.hashCode);
     _$hash = $jc(_$hash, globNodeConfiguration.hashCode);
     _$hash = $jc(_$hash, globNodeState.hashCode);
     _$hash = $jc(_$hash, primaryOutputs.hashCode);
@@ -678,7 +541,6 @@ class _$AssetNode extends AssetNode {
           ..add('id', id)
           ..add('type', type)
           ..add('generatedNodeConfiguration', generatedNodeConfiguration)
-          ..add('generatedNodeState', generatedNodeState)
           ..add('globNodeConfiguration', globNodeConfiguration)
           ..add('globNodeState', globNodeState)
           ..add('primaryOutputs', primaryOutputs)
@@ -706,12 +568,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
   set generatedNodeConfiguration(
     GeneratedNodeConfigurationBuilder? generatedNodeConfiguration,
   ) => _$this._generatedNodeConfiguration = generatedNodeConfiguration;
-
-  GeneratedNodeStateBuilder? _generatedNodeState;
-  GeneratedNodeStateBuilder get generatedNodeState =>
-      _$this._generatedNodeState ??= GeneratedNodeStateBuilder();
-  set generatedNodeState(GeneratedNodeStateBuilder? generatedNodeState) =>
-      _$this._generatedNodeState = generatedNodeState;
 
   GlobNodeConfigurationBuilder? _globNodeConfiguration;
   GlobNodeConfigurationBuilder get globNodeConfiguration =>
@@ -750,7 +606,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
       _id = $v.id;
       _type = $v.type;
       _generatedNodeConfiguration = $v.generatedNodeConfiguration?.toBuilder();
-      _generatedNodeState = $v.generatedNodeState?.toBuilder();
       _globNodeConfiguration = $v.globNodeConfiguration?.toBuilder();
       _globNodeState = $v.globNodeState?.toBuilder();
       _primaryOutputs = $v.primaryOutputs.toBuilder();
@@ -787,7 +642,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
               'type',
             ),
             generatedNodeConfiguration: _generatedNodeConfiguration?.build(),
-            generatedNodeState: _generatedNodeState?.build(),
             globNodeConfiguration: _globNodeConfiguration?.build(),
             globNodeState: _globNodeState?.build(),
             primaryOutputs: primaryOutputs.build(),
@@ -799,8 +653,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
       try {
         _$failedField = 'generatedNodeConfiguration';
         _generatedNodeConfiguration?.build();
-        _$failedField = 'generatedNodeState';
-        _generatedNodeState?.build();
         _$failedField = 'globNodeConfiguration';
         _globNodeConfiguration?.build();
         _$failedField = 'globNodeState';
@@ -943,151 +795,6 @@ class GeneratedNodeConfigurationBuilder
             'isHidden',
           ),
         );
-    replace(_$result);
-    return _$result;
-  }
-}
-
-class _$GeneratedNodeState extends GeneratedNodeState {
-  @override
-  final BuiltSet<AssetId> inputs;
-  @override
-  final BuiltSet<AssetId> resolverEntrypoints;
-  @override
-  final bool? result;
-  @override
-  final BuiltList<String> errors;
-
-  factory _$GeneratedNodeState([
-    void Function(GeneratedNodeStateBuilder)? updates,
-  ]) => (GeneratedNodeStateBuilder()..update(updates))._build();
-
-  _$GeneratedNodeState._({
-    required this.inputs,
-    required this.resolverEntrypoints,
-    this.result,
-    required this.errors,
-  }) : super._();
-  @override
-  GeneratedNodeState rebuild(
-    void Function(GeneratedNodeStateBuilder) updates,
-  ) => (toBuilder()..update(updates)).build();
-
-  @override
-  GeneratedNodeStateBuilder toBuilder() =>
-      GeneratedNodeStateBuilder()..replace(this);
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(other, this)) return true;
-    return other is GeneratedNodeState &&
-        inputs == other.inputs &&
-        resolverEntrypoints == other.resolverEntrypoints &&
-        result == other.result &&
-        errors == other.errors;
-  }
-
-  @override
-  int get hashCode {
-    var _$hash = 0;
-    _$hash = $jc(_$hash, inputs.hashCode);
-    _$hash = $jc(_$hash, resolverEntrypoints.hashCode);
-    _$hash = $jc(_$hash, result.hashCode);
-    _$hash = $jc(_$hash, errors.hashCode);
-    _$hash = $jf(_$hash);
-    return _$hash;
-  }
-
-  @override
-  String toString() {
-    return (newBuiltValueToStringHelper(r'GeneratedNodeState')
-          ..add('inputs', inputs)
-          ..add('resolverEntrypoints', resolverEntrypoints)
-          ..add('result', result)
-          ..add('errors', errors))
-        .toString();
-  }
-}
-
-class GeneratedNodeStateBuilder
-    implements Builder<GeneratedNodeState, GeneratedNodeStateBuilder> {
-  _$GeneratedNodeState? _$v;
-
-  SetBuilder<AssetId>? _inputs;
-  SetBuilder<AssetId> get inputs => _$this._inputs ??= SetBuilder<AssetId>();
-  set inputs(SetBuilder<AssetId>? inputs) => _$this._inputs = inputs;
-
-  SetBuilder<AssetId>? _resolverEntrypoints;
-  SetBuilder<AssetId> get resolverEntrypoints =>
-      _$this._resolverEntrypoints ??= SetBuilder<AssetId>();
-  set resolverEntrypoints(SetBuilder<AssetId>? resolverEntrypoints) =>
-      _$this._resolverEntrypoints = resolverEntrypoints;
-
-  bool? _result;
-  bool? get result => _$this._result;
-  set result(bool? result) => _$this._result = result;
-
-  ListBuilder<String>? _errors;
-  ListBuilder<String> get errors => _$this._errors ??= ListBuilder<String>();
-  set errors(ListBuilder<String>? errors) => _$this._errors = errors;
-
-  GeneratedNodeStateBuilder();
-
-  GeneratedNodeStateBuilder get _$this {
-    final $v = _$v;
-    if ($v != null) {
-      _inputs = $v.inputs.toBuilder();
-      _resolverEntrypoints = $v.resolverEntrypoints.toBuilder();
-      _result = $v.result;
-      _errors = $v.errors.toBuilder();
-      _$v = null;
-    }
-    return this;
-  }
-
-  @override
-  void replace(GeneratedNodeState other) {
-    _$v = other as _$GeneratedNodeState;
-  }
-
-  @override
-  void update(void Function(GeneratedNodeStateBuilder)? updates) {
-    if (updates != null) updates(this);
-  }
-
-  @override
-  GeneratedNodeState build() => _build();
-
-  _$GeneratedNodeState _build() {
-    _$GeneratedNodeState _$result;
-    try {
-      _$result =
-          _$v ??
-          _$GeneratedNodeState._(
-            inputs: inputs.build(),
-            resolverEntrypoints: resolverEntrypoints.build(),
-            result: result,
-            errors: errors.build(),
-          );
-    } catch (_) {
-      late String _$failedField;
-      try {
-        _$failedField = 'inputs';
-        inputs.build();
-        _$failedField = 'resolverEntrypoints';
-        resolverEntrypoints.build();
-
-        _$failedField = 'errors';
-        errors.build();
-      } catch (e) {
-        throw BuiltValueNestedFieldError(
-          r'GeneratedNodeState',
-          _$failedField,
-          e.toString(),
-        );
-      }
-      rethrow;
-    }
     replace(_$result);
     return _$result;
   }

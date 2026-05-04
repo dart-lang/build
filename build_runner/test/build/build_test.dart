@@ -11,6 +11,7 @@ import 'package:build_config/build_config.dart'
         BuilderDefinition,
         PostProcessBuilderDefinition,
         TargetBuilderConfigDefaults;
+import 'package:build_runner/src/build/asset_graph/build_step_id.dart';
 import 'package:build_runner/src/build/asset_graph/graph.dart';
 import 'package:build_runner/src/build/asset_graph/node.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
@@ -1190,9 +1191,7 @@ targets:
       aCopyId,
       phaseNumber: 0,
       primaryInput: makeAssetId('a|web/a.txt'),
-      result: true,
       digest: computeDigest(aCopyId, 'a'),
-      inputs: [makeAssetId('a|web/a.txt')],
       isHidden: false,
     );
     aSourceNode = aSourceNode.rebuild(
@@ -1204,9 +1203,7 @@ targets:
       bCopyId,
       phaseNumber: 0,
       primaryInput: makeAssetId('a|lib/b.txt'),
-      result: true,
       digest: computeDigest(bCopyId, 'b'),
-      inputs: [makeAssetId('a|lib/b.txt')],
       isHidden: false,
     );
     bSourceNode = bSourceNode.rebuild(
@@ -1226,8 +1223,6 @@ targets:
     final aPostCopyNode = AssetNode.postGenerated(
       makeAssetId('a|web/a.txt.post'),
     );
-    // Note we don't expect this node to get added to the builder options node
-    // outputs.
     aSourceNode = aSourceNode.rebuild(
       (b) => b..primaryOutputs.add(aPostCopyNode.id),
     );
@@ -1235,8 +1230,6 @@ targets:
     final bPostCopyNode = AssetNode.postGenerated(
       makeAssetId('a|lib/b.txt.post'),
     );
-    // Note we don't expect this node to get added to the builder options node
-    // outputs.
     bSourceNode = bSourceNode.rebuild(
       (b) => b..primaryOutputs.add(bPostCopyNode.id),
     );
@@ -1289,8 +1282,12 @@ targets:
           )!;
       final outputId = AssetId('a', 'lib/a.txt.out');
 
-      final outputNode = cachedGraph.get(outputId)!;
-      expect(outputNode.generatedNodeState!.inputs, isNot(contains(outputId)));
+      final buildStepId = BuildStepId(
+        primaryInput: makeAssetId('a|lib/a.txt'),
+        phaseNumber: 0,
+      );
+      final stepResult = cachedGraph.buildStepResultFor(buildStepId)!;
+      expect(stepResult.inputs, isNot(contains(outputId)));
     },
   );
 
@@ -1675,18 +1672,14 @@ targets:
               makeAssetId('a|$assetGraphPath'),
             ),
           )!;
-      final outputNode = graph.get(makeAssetId('a|lib/file.a.copy'))!;
       final fileANode = graph.get(makeAssetId('a|lib/file.a'))!;
-      final fileBNode = graph.get(makeAssetId('a|lib/file.b'))!;
       final fileCNode = graph.get(makeAssetId('a|lib/file.c'))!;
-      expect(
-        outputNode.generatedNodeState!.inputs,
-        unorderedEquals([fileANode.id, fileCNode.id]),
+      final buildStepId = BuildStepId(
+        primaryInput: makeAssetId('a|lib/file.a'),
+        phaseNumber: 0,
       );
-      final computedOutputs = graph.computeOutputs();
-      expect(computedOutputs[fileANode.id]!, contains(outputNode.id));
-      expect(computedOutputs[fileBNode.id] ?? const <AssetId>{}, isEmpty);
-      expect(computedOutputs[fileCNode.id]!, unorderedEquals([outputNode.id]));
+      final stepResult = graph.buildStepResultFor(buildStepId)!;
+      expect(stepResult.inputs, unorderedEquals([fileANode.id, fileCNode.id]));
     });
 
     test('Ouputs aren\'t rebuilt if their inputs didn\'t change', () async {
@@ -1915,16 +1908,24 @@ targets:
             result.readerWriter.testing.readBytes(AssetId('a', assetGraphPath)),
           )!;
 
+      final node1 = finalGraph.get(AssetId('a', 'web/a.g1'))!;
+      final config1 = node1.generatedNodeConfiguration!;
       expect(
-        finalGraph.get(AssetId('a', 'web/a.g1'))!.generatedNodeState!.result,
+        finalGraph.buildStepResultFor(config1.buildStepId)!.result,
         isFalse,
       );
+
+      final node2 = finalGraph.get(AssetId('a', 'web/a.g2'))!;
+      final config2 = node2.generatedNodeConfiguration!;
       expect(
-        finalGraph.get(AssetId('a', 'web/a.g2'))!.generatedNodeState!.result,
+        finalGraph.buildStepResultFor(config2.buildStepId)!.result,
         isFalse,
       );
+
+      final node3 = finalGraph.get(AssetId('a', 'web/a.g3'))!;
+      final config3 = node3.generatedNodeConfiguration!;
       expect(
-        finalGraph.get(AssetId('a', 'web/a.g3'))!.generatedNodeState!.result,
+        finalGraph.buildStepResultFor(config3.buildStepId)!.result,
         isFalse,
       );
     });

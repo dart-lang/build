@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build_runner/src/build/asset_graph/build_step_result.dart';
 import 'package:build_runner/src/build/asset_graph/graph.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
 import 'package:build_runner/src/build_plan/build_configs.dart';
@@ -107,9 +108,13 @@ void main() {
       );
 
       for (final id in graph.outputs) {
+        final node = graph.get(id)!;
+        final config = node.generatedNodeConfiguration!;
+        final stepResult = BuildStepResult((b) => b..result = true);
+        graph.updateBuildStepResult(config.buildStepId, stepResult);
+
         graph.updateNode(id, (nodeBuilder) {
           nodeBuilder.digest = Digest([]);
-          nodeBuilder.generatedNodeState.result = true;
         });
         readerWriter.testing.writeString(
           id,
@@ -361,9 +366,12 @@ void main() {
 
     test('doesnt write files that werent output', () async {
       final node = graph.get(AssetId('b', 'lib/c.txt.copy'))!;
+      final config = node.generatedNodeConfiguration!;
+      final stepResult = BuildStepResult((b) => b..result = null);
+      graph.updateBuildStepResult(config.buildStepId, stepResult);
+
       graph.updateNode(node.id, (nodeBuilder) {
         nodeBuilder.digest = null;
-        nodeBuilder.generatedNodeState.result = null;
       });
 
       final success = await createMergedOutputDirectories(
