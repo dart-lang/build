@@ -1,3 +1,7 @@
+## 4.4.20
+
+- Add `webAssetsPath` option to `build_web_compilers:entrypoint` to allow manually specifying a non-default main directory.
+
 ## 4.4.19
 
 - Allow `analyzer` 13.0.0.
