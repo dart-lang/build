@@ -11,6 +11,7 @@ import 'package:build_runner/src/build/asset_graph/exceptions.dart';
 import 'package:build_runner/src/build/asset_graph/graph.dart';
 import 'package:build_runner/src/build/asset_graph/node.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
+import 'package:build_runner/src/build/asset_graph/post_process_build_step_result.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
@@ -108,7 +109,10 @@ void main() {
             input: node.id,
             actionNumber: n,
           );
-          graph.updatePostProcessBuildStep(postProcessBuildStep, outputs: {});
+          graph.updatePostProcessBuildStepResult(
+            postProcessBuildStep,
+            PostProcessBuildStepResult(hidden: true),
+          );
           for (var g = 0; g < 5 - n; g++) {
             var generatedNode = AssetNode.generated(
               makeAssetId(),
@@ -146,8 +150,8 @@ void main() {
         final decoded = AssetGraph.deserialize(encoded)!;
         expect(decoded, equalsAssetGraph(graph));
         expect(
-          decoded.allPostProcessBuildStepOutputs,
-          graph.allPostProcessBuildStepOutputs,
+          decoded.allPostProcessBuildStepResults,
+          graph.allPostProcessBuildStepResults,
         );
       });
 

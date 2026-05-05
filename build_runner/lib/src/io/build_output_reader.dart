@@ -73,6 +73,9 @@ class BuildOutputReader {
     if (node.isDeleted) return UnreadableReason.deleted;
     if (!node.isFile) return UnreadableReason.assetType;
 
+    if (node.type == NodeType.postGenerated) {
+      return null;
+    }
     if (node.type == NodeType.generated) {
       if (_processedOutputs?.contains(node.id) == false) {
         // The generated output was not considered for building because its
@@ -164,6 +167,9 @@ class BuildOutputReader {
 
     if (node.type == NodeType.glob) {
       return true;
+    }
+    if (node.type == NodeType.postGenerated) {
+      return false;
     }
     if (node.type == NodeType.generated) {
       if (!node.wasOutput || node.generatedNodeState!.result == false) {

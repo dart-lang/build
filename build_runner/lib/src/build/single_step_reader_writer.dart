@@ -300,6 +300,10 @@ class SingleStepReaderWriter implements PhasedReader {
   ///
   /// If it's a generated node from an earlier phase, wait for it to be built.
   Future<Readability> _isReadableNode(AssetNode node) async {
+    if (node.type == NodeType.postGenerated) {
+      // Post process outputs are not readable until after the build.
+      return Readability.notReadable;
+    }
     if (node.type == NodeType.generated) {
       final nodeConfiguration = node.generatedNodeConfiguration!;
       if (nodeConfiguration.phaseNumber > _runningBuildStep!.phaseNumber) {

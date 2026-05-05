@@ -8,7 +8,7 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 32;
+const _version = 33;
 
 /// Deserializes an [AssetGraph] from a [Map].
 ///
@@ -66,16 +66,19 @@ AssetGraph? deserializeAssetGraph(List<int> bytes) {
     graph._nodes.add(_deserializeAssetNode(serializedItem as List));
   }
 
-  final postProcessOutputs =
+  final postProcessResults =
       serializers.deserialize(
-            serializedGraph['postProcessOutputs'],
-            specifiedType: postProcessBuildStepOutputsFullType,
+            serializedGraph['postProcessResults'],
+            specifiedType: postProcessBuildStepResultsFullType,
           )
-          as Map<String, Map<PostProcessBuildStepId, Set<AssetId>>>;
+          as Map<
+            String,
+            Map<PostProcessBuildStepId, PostProcessBuildStepResult>
+          >;
 
-  for (final postProcessOutputsForPackage in postProcessOutputs.values) {
-    for (final entry in postProcessOutputsForPackage.entries) {
-      graph.updatePostProcessBuildStep(entry.key, outputs: entry.value);
+  for (final postProcessResultsForPackage in postProcessResults.values) {
+    for (final entry in postProcessResultsForPackage.entries) {
+      graph.updatePostProcessBuildStepResult(entry.key, entry.value);
     }
   }
 
@@ -117,9 +120,9 @@ List<int> serializeAssetGraph(AssetGraph graph) {
             .map((pkg, version) => MapEntry(pkg, version?.toString()))
             .toMap(),
     'enabledExperiments': graph.enabledExperiments.toList(),
-    'postProcessOutputs': serializers.serialize(
-      graph._postProcessBuildStepOutputs,
-      specifiedType: postProcessBuildStepOutputsFullType,
+    'postProcessResults': serializers.serialize(
+      graph._postProcessBuildStepResults,
+      specifiedType: postProcessBuildStepResultsFullType,
     ),
     'inBuildPhasesOptionsDigests': serializers.serialize(
       graph.inBuildPhasesOptionsDigests,

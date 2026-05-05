@@ -29,6 +29,7 @@ import '../logging/timed_activities.dart';
 import 'asset_graph/graph.dart';
 import 'asset_graph/node.dart';
 import 'asset_graph/post_process_build_step_id.dart';
+import 'asset_graph/post_process_build_step_result.dart';
 import 'build_dirs.dart';
 import 'build_result.dart';
 import 'input_tracker.dart';
@@ -159,22 +160,49 @@ class Build {
         if (node.generatedNodeState!.result != false) continue;
         failures.add(node);
       }
+
       if (failures.isNotEmpty) {
         for (final failure in failures) {
           if (errorsShownOutputs.contains(failure.id)) continue;
-          final phase =
-              buildPhases.inBuildPhases[failure
-                  .generatedNodeConfiguration!
-                  .phaseNumber];
+          final config = failure.generatedNodeConfiguration!;
+          final phase = buildPhases.inBuildPhases[config.phaseNumber];
           final logger = buildLog.loggerFor(
             phase: phase,
-            primaryInput: failure.generatedNodeConfiguration!.primaryInput,
+            primaryInput: config.primaryInput,
             lazy: phase.isOptional,
           );
           for (final error in failure.generatedNodeState!.errors) {
             logger.severe(error);
           }
         }
+      }
+
+      final failedPostProcessSteps = <PostProcessBuildStepId>[];
+      for (final packageResults
+          in assetGraph.allPostProcessBuildStepResults.values) {
+        for (final entry in packageResults.entries) {
+          if (entry.value.errors.isNotEmpty) {
+            failedPostProcessSteps.add(entry.key);
+          }
+        }
+      }
+
+      if (failedPostProcessSteps.isNotEmpty) {
+        for (final id in failedPostProcessSteps) {
+          final action =
+              buildPhases.postBuildPhase.builderActions[id.actionNumber];
+          final logger = buildLog.loggerForOther(
+            action.builderLabel,
+            contextId: id.input,
+          );
+          final stepResult = assetGraph.postProcessBuildStepResultFor(id)!;
+          for (final error in stepResult.errors) {
+            logger.severe(error);
+          }
+        }
+      }
+
+      if (failures.isNotEmpty || failedPostProcessSteps.isNotEmpty) {
         result = result.copyWith(status: BuildStatus.failure);
       }
     }
@@ -736,9 +764,11 @@ class Build {
       assetsWritten: {},
     );
 
-    final existingOutputs = assetGraph.postProcessBuildStepOutputs(
-      postProcessBuildStepId,
-    );
+    final existingOutputs =
+        assetGraph
+            .postProcessBuildStepResultFor(postProcessBuildStepId)
+            ?.outputs ??
+        const <AssetId>{};
     if (!await _postProcessBuildStepShouldRun(
       postProcessBuildStepId,
       stepReaderWriter,
@@ -754,6 +784,10 @@ class Build {
     for (final output in existingOutputs) {
       assetGraph.removePostProcessOutput(output);
     }
+    assetGraph.updatePostProcessBuildStepResult(
+      postProcessBuildStepId,
+      PostProcessBuildStepResult(hidden: hideOutput),
+    );
     assetGraph.updateNode(inputNode.id, (nodeBuilder) {
       nodeBuilder.deletedBy.remove(postProcessBuildStepId);
     });
@@ -772,12 +806,7 @@ class Build {
         if (assetGraph.contains(assetId)) {
           throw InvalidOutputException(assetId, 'Asset already exists');
         }
-        final node = AssetNode.generated(
-          assetId,
-          primaryInput: input,
-          isHidden: hideOutput,
-          phaseNumber: phaseNumber,
-        );
+        final node = AssetNode.postGenerated(assetId);
         assetGraph.add(node);
         outputs.add(assetId);
       },
@@ -799,11 +828,6 @@ class Build {
       // Errors tracked through the logger
     });
 
-    assetGraph.updatePostProcessBuildStep(
-      postProcessBuildStepId,
-      outputs: outputs,
-    );
-
     final assetsWritten = stepReaderWriter.assetsWritten.toSet();
 
     // Reset the state for all the output nodes based on what was read and
@@ -812,11 +836,14 @@ class Build {
       nodeBuilder.primaryOutputs.addAll(assetsWritten);
     });
 
-    await _setOutputsState(
-      input,
-      assetsWritten,
-      stepReaderWriter,
-      logger.errors,
+    final stepResult = PostProcessBuildStepResult(
+      hidden: hideOutput,
+      outputs: assetsWritten,
+      errors: logger.errors,
+    );
+    assetGraph.updatePostProcessBuildStepResult(
+      postProcessBuildStepId,
+      stepResult,
     );
 
     return assetsWritten;
@@ -1112,7 +1139,7 @@ class Build {
   Future<void> _cleanUpStaleOutputs(Iterable<AssetId> outputs) async {
     for (final output in outputs) {
       final node = assetGraph.get(output)!;
-      if (node.type == NodeType.generated && node.wasOutput) {
+      if (node.isGenerated && node.wasOutput) {
         await _delete(output);
       }
     }

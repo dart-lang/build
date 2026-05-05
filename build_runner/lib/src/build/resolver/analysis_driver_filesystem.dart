@@ -79,6 +79,8 @@ class AnalysisDriverFilesystem
     _phaseByPath = <String, int>{};
     _pathByPhase = <int, List<String>>{};
     for (final node in generatedNodes) {
+      // Post process generated nodes are never analyzed.
+      if (node.type == NodeType.postGenerated) continue;
       final phase = node.generatedNodeConfiguration!.phaseNumber;
       final idAsPath = node.id.asPath;
       _phaseByPath[idAsPath] = phase;
