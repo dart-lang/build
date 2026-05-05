@@ -5,6 +5,7 @@
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:build_frontend_server/build_frontend_server.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
@@ -43,8 +44,9 @@ class WebEntrypointMarkerBuilder implements Builder {
     // Start the Frontend Server early to record its port.
     await buildStep.fetchResource(persistentFrontendServerResource);
 
-    final hasCachedState = await frontendServerState
-        .checkAndDeserializeState(buildStep);
+    final hasCachedState = await frontendServerState.checkAndDeserializeState(
+      buildStep,
+    );
 
     final webEntrypointJson = <String, Object?>{};
 
@@ -52,7 +54,8 @@ class WebEntrypointMarkerBuilder implements Builder {
       webEntrypointJson['entrypoint'] =
           frontendServerState.entrypointAssetId.toString();
     } else {
-      final webAssets = await buildStep.findAssets(Glob('$webAssetsPath/**')).toList();
+      final webAssets =
+          await buildStep.findAssets(Glob('$webAssetsPath/**')).toList();
 
       for (final asset in webAssets) {
         if (asset.extension == '.dart') {
