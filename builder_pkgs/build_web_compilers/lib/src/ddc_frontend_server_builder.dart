@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build_frontend_server/build_frontend_server.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:scratch_space/scratch_space.dart';
 
