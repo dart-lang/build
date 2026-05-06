@@ -9,7 +9,6 @@ import 'package:built_value/serializer.dart';
 import 'package:crypto/crypto.dart';
 
 import 'build_step_id.dart';
-import 'post_process_build_step_id.dart';
 
 part 'node.g.dart';
 
@@ -55,9 +54,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   /// For other node types, `null`.
   Digest? get digest;
 
-  /// The `PostProcessBuildStep`s which requested to delete this asset.
-  BuiltSet<PostProcessBuildStepId> get deletedBy;
-
   /// Whether this asset is a normal, readable file.
   ///
   /// Does not guarantee that the file currently exists.
@@ -65,11 +61,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
       type == NodeType.generated ||
       type == NodeType.postGenerated ||
       type == NodeType.source;
-
-  /// Whether the node is deleted.
-  ///
-  /// Deleted nodes are ignored in the final merge step and watch handlers.
-  bool get isDeleted => deletedBy.isNotEmpty;
 
   factory AssetNode([void Function(AssetNodeBuilder) updates]) = _$AssetNode;
 

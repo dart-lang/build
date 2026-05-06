@@ -28,6 +28,9 @@ class BuildOutputReader {
   final Set<AssetId>? _processedOutputs;
   final ReaderWriter? _readerWriter;
 
+  late final Set<AssetId> _assetsDeletedByPostProcessBuilders =
+      _collectAssetsDeletedByPostProcessBuilders();
+
   /// For an unexpected failure condition, a fully empty output.
   BuildOutputReader.empty()
     : _assetGraph = null,
@@ -61,6 +64,21 @@ class BuildOutputReader {
        _buildPlan = buildPlan,
        _processedOutputs = processedOutputs;
 
+  Set<AssetId> _collectAssetsDeletedByPostProcessBuilders() {
+    final assetGraph = _assetGraph;
+    if (assetGraph == null) return const {};
+    final result = <AssetId>{};
+    for (final packageResults
+        in assetGraph.allPostProcessBuildStepResults.values) {
+      for (final entry in packageResults.entries) {
+        if (entry.value.deletedPrimaryInput) {
+          result.add(entry.key.input);
+        }
+      }
+    }
+    return result;
+  }
+
   /// Returns a reason why [id] is not readable, or null if it is readable.
   Future<UnreadableReason?> unreadableReason(AssetId id) async {
     if (_assetGraph == null || _readerWriter == null) {
@@ -69,8 +87,10 @@ class BuildOutputReader {
     if (!_assetGraph.contains(id)) {
       return UnreadableReason.notFound;
     }
+    if (_assetsDeletedByPostProcessBuilders.contains(id)) {
+      return UnreadableReason.deleted;
+    }
     final node = _assetGraph.get(id)!;
-    if (node.isDeleted) return UnreadableReason.deleted;
     if (!node.isFile) return UnreadableReason.assetType;
 
     if (node.type == NodeType.postGenerated) {
@@ -159,7 +179,7 @@ class BuildOutputReader {
   bool _shouldSkipNode(AssetNode node, String? rootDir) {
     if (_buildPlan == null) return false;
     if (!node.isFile) return true;
-    if (node.isDeleted) return true;
+    if (_assetsDeletedByPostProcessBuilders.contains(node.id)) return true;
 
     // Exclude non-lib assets if they're outside of the root directory or not
     // an output package of the build.

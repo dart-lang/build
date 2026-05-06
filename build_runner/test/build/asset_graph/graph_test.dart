@@ -113,8 +113,12 @@ void main() {
             );
             node = node.rebuild((b) => b..primaryOutputs.add(generatedNode.id));
             if (g.isEven) {
-              node = node.rebuild(
-                (b) => b..deletedBy.add(postProcessBuildStep),
+              graph.updatePostProcessBuildStepResult(
+                postProcessBuildStep,
+                PostProcessBuildStepResult(
+                  hidden: true,
+                  deletedPrimaryInput: true,
+                ),
               );
             }
 

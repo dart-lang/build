@@ -11,6 +11,7 @@ import 'package:build_runner/src/build/asset_graph/build_step_result.dart';
 import 'package:build_runner/src/build/asset_graph/graph.dart';
 import 'package:build_runner/src/build/asset_graph/node.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
+import 'package:build_runner/src/build/asset_graph/post_process_build_step_result.dart';
 import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_directory.dart';
 import 'package:build_runner/src/build_plan/build_filter.dart';
@@ -56,17 +57,14 @@ void main() {
         AssetId.parse('a|web/a.txt'),
         digest: computeDigest(AssetId('a', 'web/a.txt'), 'a'),
       );
-      var deleted = AssetNode.source(
+      final deleted = AssetNode.source(
         AssetId.parse('a|lib/b.txt'),
         digest: computeDigest(AssetId('a', 'lib/b.txt'), 'b'),
       );
 
-      deleted = deleted.rebuild(
-        (b) =>
-            b
-              ..deletedBy.add(
-                PostProcessBuildStepId(input: notDeleted.id, actionNumber: 0),
-              ),
+      assetGraph.updatePostProcessBuildStepResult(
+        PostProcessBuildStepId(input: deleted.id, actionNumber: 0),
+        PostProcessBuildStepResult(hidden: true, deletedPrimaryInput: true),
       );
 
       assetGraph
