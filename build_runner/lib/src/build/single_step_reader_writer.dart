@@ -16,6 +16,8 @@ import '../build_plan/build_packages.dart';
 import '../build_plan/phase.dart';
 import '../io/asset_finder.dart';
 import '../io/reader_writer.dart';
+import 'asset_graph/build_step_id.dart';
+
 import 'asset_graph/graph.dart';
 import 'asset_graph/node.dart';
 import 'input_tracker.dart';
@@ -320,9 +322,16 @@ class SingleStepReaderWriter implements PhasedReader {
 
       await _runningBuild!.nodeBuilder(node.id);
       node = _runningBuild.assetGraph.get(node.id)!;
-      final nodeState = node.generatedNodeState!;
+      final config = node.generatedNodeConfiguration!;
+      final buildStepId = BuildStepId(
+        primaryInput: config.primaryInput,
+        phaseNumber: config.phaseNumber,
+      );
+      final stepResult = _runningBuild.assetGraph.buildStepResultFor(
+        buildStepId,
+      );
       return Readability.fromPreviousPhase(
-        node.wasOutput && nodeState.result != false,
+        node.wasOutput && (stepResult == null || stepResult.result != false),
       );
     }
     return Readability.fromPreviousPhase(node.isFile && node.isTrackedInput);
@@ -412,12 +421,18 @@ class SingleStepReaderWriter implements PhasedReader {
           await _runningBuild.nodeBuilder(id);
           node = _runningBuild.assetGraph.get(id)!;
         }
+        final config = node.generatedNodeConfiguration!;
+        final buildStepId = BuildStepId(
+          primaryInput: config.primaryInput,
+          phaseNumber: config.phaseNumber,
+        );
+        final stepResult =
+            _runningBuild.assetGraph.buildStepResultFor(buildStepId)!;
+        final isSuccessOutput = node.wasOutput && stepResult.result == true;
         return PhasedValue.generated(
           atPhase: nodePhase,
           before: '',
-          (node.wasOutput && node.generatedNodeState!.result == true)
-              ? await _delegate.readAsString(id)
-              : '',
+          isSuccessOutput ? await _delegate.readAsString(id) : '',
         );
       }
     }

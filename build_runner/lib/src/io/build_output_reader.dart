@@ -82,8 +82,11 @@ class BuildOutputReader {
         // transitive input(s) did not match build dirs and/or build filters.
         return UnreadableReason.notOutput;
       }
-      final nodeState = node.generatedNodeState!;
-      if (nodeState.result == false) return UnreadableReason.failed;
+      final config = node.generatedNodeConfiguration!;
+      final stepResult = _assetGraph.buildStepResultFor(config.buildStepId);
+      if (stepResult != null && stepResult.result == false) {
+        return UnreadableReason.failed;
+      }
       if (!node.wasOutput) return UnreadableReason.notOutput;
 
       // No need to explicitly check readability for generated files, their
@@ -172,7 +175,10 @@ class BuildOutputReader {
       return false;
     }
     if (node.type == NodeType.generated) {
-      if (!node.wasOutput || node.generatedNodeState!.result == false) {
+      final config = node.generatedNodeConfiguration!;
+      final stepResult = _assetGraph!.buildStepResultFor(config.buildStepId);
+      if (!node.wasOutput ||
+          (stepResult == null || stepResult.result == false)) {
         return true;
       }
       return !_processedOutputs!.contains(node.id);

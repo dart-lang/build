@@ -5,6 +5,8 @@
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build_runner/src/build/asset_graph/build_step_id.dart';
+import 'package:build_runner/src/build/asset_graph/build_step_result.dart';
 import 'package:build_runner/src/build/asset_graph/graph.dart';
 import 'package:build_runner/src/build/asset_graph/node.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
@@ -129,16 +131,21 @@ void main() {
   });
 
   test('Fails request for failed outputs', () async {
+    final primaryId = AssetId('a', 'web/main.dart');
+    final outputId = AssetId('a', 'web/main.ddc.js');
     assetGraph.add(
       AssetNode.generated(
-        AssetId('a', 'web/main.ddc.js'),
+        outputId,
         phaseNumber: 0,
         isHidden: false,
         digest: Digest([]),
-        result: false,
-        primaryInput: AssetId('a', 'web/main.dart'),
+        primaryInput: primaryId,
       ),
     );
+    final buildStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
+    final stepResult = BuildStepResult((b) => b..result = false);
+    assetGraph.updateBuildStepResult(buildStepId, stepResult);
+
     final response = await handler.handle(
       Request('GET', Uri.parse('http://server.com/main.ddc.js')),
       rootDir: 'web',

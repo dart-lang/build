@@ -6,6 +6,8 @@
 library;
 
 import 'package:build/build.dart';
+import 'package:build_runner/src/build/asset_graph/build_step_id.dart';
+import 'package:build_runner/src/build/asset_graph/build_step_result.dart';
 import 'package:build_runner/src/build/asset_graph/graph.dart';
 import 'package:build_runner/src/build/asset_graph/node.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
@@ -95,15 +97,18 @@ void main() {
 
     test('Failure nodes interact well with build filters ', () async {
       final id = AssetId('a', 'web/a.txt');
+      final primaryId = AssetId('a', 'web/a.dart');
       final node = AssetNode.generated(
         id,
         phaseNumber: 0,
-        result: false,
         digest: Digest([]),
-        primaryInput: AssetId('a', 'web/a.dart'),
+        primaryInput: primaryId,
         isHidden: true,
       );
       assetGraph.add(node);
+      final buildStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
+      final stepResult = BuildStepResult((b) => b..result = false);
+      assetGraph.updateBuildStepResult(buildStepId, stepResult);
       readerWriter.testing.writeString(id, '');
 
       buildPhases = BuildPhases([
