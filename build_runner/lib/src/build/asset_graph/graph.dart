@@ -606,10 +606,14 @@ class AssetGraph implements GeneratedAssetHider {
 
   /// Returns outputs that were written to the source tree.
   Iterable<AssetId> outputsToDelete(BuildPackages buildPackages) {
-    // Checks if `id` is in a known package. If not, maybe the package was
-    // renamed: move it to the single package being built, if there is one,
-    // to delete for that case. If the ID is in an unknown package and can't
-    // be fixed, returns `null`.
+    // Checks if `id` is in a known package. If so, returns it.
+    //
+    // If not, and a single package is being built, returns `id` moved to that
+    // package. This allows old generated output to be deleted if the package
+    // was renamed since the last build.
+    //
+    // If `id` is not in a known package and a single package is not being
+    // built, returns `null`.
     AssetId? checkAndMoveId(AssetId id) {
       if (buildPackages[id.package] != null) {
         return id;
