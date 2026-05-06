@@ -94,7 +94,9 @@ class BuildOutputReader {
       return null;
     }
 
-    if (node.isTrackedInput && await _readerWriter.canRead(id)) return null;
+    if (node.type == NodeType.source && await _readerWriter.canRead(id)) {
+      return null;
+    }
     return UnreadableReason.unknown;
   }
 
@@ -168,9 +170,6 @@ class BuildOutputReader {
       }
     }
 
-    if (node.type == NodeType.glob) {
-      return true;
-    }
     if (node.type == NodeType.postGenerated) {
       return false;
     }

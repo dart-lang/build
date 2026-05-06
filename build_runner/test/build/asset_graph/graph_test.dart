@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:collection';
 import 'dart:convert';
 
 import 'package:build/build.dart';
@@ -91,21 +90,9 @@ void main() {
       });
 
       test('serialize/deserialize', () {
-        var globNode = AssetNode.glob(
-          makeAssetId(),
-          glob: '**/*.dart',
-          phaseNumber: 0,
-          inputs: HashSet(),
-          results: [],
-        );
         for (var n = 0; n < 5; n++) {
           var node = AssetNode.source(AssetId.parse('pkg|lib/a$n.dart'));
-          globNode = globNode.rebuild(
-            (b) =>
-                b.globNodeState
-                  ..inputs.add(node.id)
-                  ..results.add(node.id),
-          );
+
           final phaseNum = n;
           final postProcessBuildStep = PostProcessBuildStepId(
             input: node.id,
@@ -141,7 +128,7 @@ void main() {
               (b) =>
                   b
                     ..result = phaseNum.isOdd
-                    ..inputs.addAll([node.id, syntheticNode.id, globNode.id]),
+                    ..inputs.addAll([node.id, syntheticNode.id]),
             );
             graph.updateBuildStepResult(buildStepId, stepResult);
             graph
@@ -150,7 +137,6 @@ void main() {
           }
           graph.add(node);
         }
-        graph.add(globNode);
 
         final encoded = graph.serialize();
         final decoded = AssetGraph.deserialize(encoded)!;

@@ -8,7 +8,6 @@ part of 'node.dart';
 
 const NodeType _$generated = const NodeType._('generated');
 const NodeType _$postGenerated = const NodeType._('postGenerated');
-const NodeType _$glob = const NodeType._('glob');
 const NodeType _$placeholder = const NodeType._('placeholder');
 const NodeType _$source = const NodeType._('source');
 const NodeType _$missingSource = const NodeType._('missingSource');
@@ -19,8 +18,6 @@ NodeType _$nodeTypeValueOf(String name) {
       return _$generated;
     case 'postGenerated':
       return _$postGenerated;
-    case 'glob':
-      return _$glob;
     case 'placeholder':
       return _$placeholder;
     case 'source':
@@ -35,7 +32,6 @@ NodeType _$nodeTypeValueOf(String name) {
 final BuiltSet<NodeType> _$nodeTypeValues = BuiltSet<NodeType>(const <NodeType>[
   _$generated,
   _$postGenerated,
-  _$glob,
   _$placeholder,
   _$source,
   _$missingSource,
@@ -45,10 +41,6 @@ Serializer<NodeType> _$nodeTypeSerializer = _$NodeTypeSerializer();
 Serializer<AssetNode> _$assetNodeSerializer = _$AssetNodeSerializer();
 Serializer<GeneratedNodeConfiguration> _$generatedNodeConfigurationSerializer =
     _$GeneratedNodeConfigurationSerializer();
-Serializer<GlobNodeConfiguration> _$globNodeConfigurationSerializer =
-    _$GlobNodeConfigurationSerializer();
-Serializer<GlobNodeState> _$globNodeStateSerializer =
-    _$GlobNodeStateSerializer();
 
 class _$NodeTypeSerializer implements PrimitiveSerializer<NodeType> {
   @override
@@ -118,28 +110,6 @@ class _$AssetNodeSerializer implements StructuredSerializer<AssetNode> {
           ),
         );
     }
-    value = object.globNodeConfiguration;
-    if (value != null) {
-      result
-        ..add('globNodeConfiguration')
-        ..add(
-          serializers.serialize(
-            value,
-            specifiedType: const FullType(GlobNodeConfiguration),
-          ),
-        );
-    }
-    value = object.globNodeState;
-    if (value != null) {
-      result
-        ..add('globNodeState')
-        ..add(
-          serializers.serialize(
-            value,
-            specifiedType: const FullType(GlobNodeState),
-          ),
-        );
-    }
     value = object.digest;
     if (value != null) {
       result
@@ -188,24 +158,6 @@ class _$AssetNodeSerializer implements StructuredSerializer<AssetNode> {
                   specifiedType: const FullType(GeneratedNodeConfiguration),
                 )!
                 as GeneratedNodeConfiguration,
-          );
-          break;
-        case 'globNodeConfiguration':
-          result.globNodeConfiguration.replace(
-            serializers.deserialize(
-                  value,
-                  specifiedType: const FullType(GlobNodeConfiguration),
-                )!
-                as GlobNodeConfiguration,
-          );
-          break;
-        case 'globNodeState':
-          result.globNodeState.replace(
-            serializers.deserialize(
-                  value,
-                  specifiedType: const FullType(GlobNodeState),
-                )!
-                as GlobNodeState,
           );
           break;
         case 'primaryOutputs':
@@ -327,147 +279,6 @@ class _$GeneratedNodeConfigurationSerializer
   }
 }
 
-class _$GlobNodeConfigurationSerializer
-    implements StructuredSerializer<GlobNodeConfiguration> {
-  @override
-  final Iterable<Type> types = const [
-    GlobNodeConfiguration,
-    _$GlobNodeConfiguration,
-  ];
-  @override
-  final String wireName = 'GlobNodeConfiguration';
-
-  @override
-  Iterable<Object?> serialize(
-    Serializers serializers,
-    GlobNodeConfiguration object, {
-    FullType specifiedType = FullType.unspecified,
-  }) {
-    final result = <Object?>[
-      'glob',
-      serializers.serialize(object.glob, specifiedType: const FullType(String)),
-      'phaseNumber',
-      serializers.serialize(
-        object.phaseNumber,
-        specifiedType: const FullType(int),
-      ),
-    ];
-
-    return result;
-  }
-
-  @override
-  GlobNodeConfiguration deserialize(
-    Serializers serializers,
-    Iterable<Object?> serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) {
-    final result = GlobNodeConfigurationBuilder();
-
-    final iterator = serialized.iterator;
-    while (iterator.moveNext()) {
-      final key = iterator.current! as String;
-      iterator.moveNext();
-      final Object? value = iterator.current;
-      switch (key) {
-        case 'glob':
-          result.glob =
-              serializers.deserialize(
-                    value,
-                    specifiedType: const FullType(String),
-                  )!
-                  as String;
-          break;
-        case 'phaseNumber':
-          result.phaseNumber =
-              serializers.deserialize(
-                    value,
-                    specifiedType: const FullType(int),
-                  )!
-                  as int;
-          break;
-      }
-    }
-
-    return result.build();
-  }
-}
-
-class _$GlobNodeStateSerializer implements StructuredSerializer<GlobNodeState> {
-  @override
-  final Iterable<Type> types = const [GlobNodeState, _$GlobNodeState];
-  @override
-  final String wireName = 'GlobNodeState';
-
-  @override
-  Iterable<Object?> serialize(
-    Serializers serializers,
-    GlobNodeState object, {
-    FullType specifiedType = FullType.unspecified,
-  }) {
-    final result = <Object?>[
-      'inputs',
-      serializers.serialize(
-        object.inputs,
-        specifiedType: const FullType(BuiltSet, const [
-          const FullType(AssetId),
-        ]),
-      ),
-      'results',
-      serializers.serialize(
-        object.results,
-        specifiedType: const FullType(BuiltList, const [
-          const FullType(AssetId),
-        ]),
-      ),
-    ];
-
-    return result;
-  }
-
-  @override
-  GlobNodeState deserialize(
-    Serializers serializers,
-    Iterable<Object?> serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) {
-    final result = GlobNodeStateBuilder();
-
-    final iterator = serialized.iterator;
-    while (iterator.moveNext()) {
-      final key = iterator.current! as String;
-      iterator.moveNext();
-      final Object? value = iterator.current;
-      switch (key) {
-        case 'inputs':
-          result.inputs.replace(
-            serializers.deserialize(
-                  value,
-                  specifiedType: const FullType(BuiltSet, const [
-                    const FullType(AssetId),
-                  ]),
-                )!
-                as BuiltSet<Object?>,
-          );
-          break;
-        case 'results':
-          result.results.replace(
-            serializers.deserialize(
-                  value,
-                  specifiedType: const FullType(BuiltList, const [
-                    const FullType(AssetId),
-                  ]),
-                )!
-                as BuiltList<Object?>,
-          );
-          break;
-      }
-    }
-
-    return result.build();
-  }
-}
-
 class _$AssetNode extends AssetNode {
   @override
   final AssetId id;
@@ -475,10 +286,6 @@ class _$AssetNode extends AssetNode {
   final NodeType type;
   @override
   final GeneratedNodeConfiguration? generatedNodeConfiguration;
-  @override
-  final GlobNodeConfiguration? globNodeConfiguration;
-  @override
-  final GlobNodeState? globNodeState;
   @override
   final BuiltSet<AssetId> primaryOutputs;
   @override
@@ -493,8 +300,6 @@ class _$AssetNode extends AssetNode {
     required this.id,
     required this.type,
     this.generatedNodeConfiguration,
-    this.globNodeConfiguration,
-    this.globNodeState,
     required this.primaryOutputs,
     this.digest,
     required this.deletedBy,
@@ -513,8 +318,6 @@ class _$AssetNode extends AssetNode {
         id == other.id &&
         type == other.type &&
         generatedNodeConfiguration == other.generatedNodeConfiguration &&
-        globNodeConfiguration == other.globNodeConfiguration &&
-        globNodeState == other.globNodeState &&
         primaryOutputs == other.primaryOutputs &&
         digest == other.digest &&
         deletedBy == other.deletedBy;
@@ -526,8 +329,6 @@ class _$AssetNode extends AssetNode {
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, type.hashCode);
     _$hash = $jc(_$hash, generatedNodeConfiguration.hashCode);
-    _$hash = $jc(_$hash, globNodeConfiguration.hashCode);
-    _$hash = $jc(_$hash, globNodeState.hashCode);
     _$hash = $jc(_$hash, primaryOutputs.hashCode);
     _$hash = $jc(_$hash, digest.hashCode);
     _$hash = $jc(_$hash, deletedBy.hashCode);
@@ -541,8 +342,6 @@ class _$AssetNode extends AssetNode {
           ..add('id', id)
           ..add('type', type)
           ..add('generatedNodeConfiguration', generatedNodeConfiguration)
-          ..add('globNodeConfiguration', globNodeConfiguration)
-          ..add('globNodeState', globNodeState)
           ..add('primaryOutputs', primaryOutputs)
           ..add('digest', digest)
           ..add('deletedBy', deletedBy))
@@ -569,19 +368,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
     GeneratedNodeConfigurationBuilder? generatedNodeConfiguration,
   ) => _$this._generatedNodeConfiguration = generatedNodeConfiguration;
 
-  GlobNodeConfigurationBuilder? _globNodeConfiguration;
-  GlobNodeConfigurationBuilder get globNodeConfiguration =>
-      _$this._globNodeConfiguration ??= GlobNodeConfigurationBuilder();
-  set globNodeConfiguration(
-    GlobNodeConfigurationBuilder? globNodeConfiguration,
-  ) => _$this._globNodeConfiguration = globNodeConfiguration;
-
-  GlobNodeStateBuilder? _globNodeState;
-  GlobNodeStateBuilder get globNodeState =>
-      _$this._globNodeState ??= GlobNodeStateBuilder();
-  set globNodeState(GlobNodeStateBuilder? globNodeState) =>
-      _$this._globNodeState = globNodeState;
-
   SetBuilder<AssetId>? _primaryOutputs;
   SetBuilder<AssetId> get primaryOutputs =>
       _$this._primaryOutputs ??= SetBuilder<AssetId>();
@@ -606,8 +392,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
       _id = $v.id;
       _type = $v.type;
       _generatedNodeConfiguration = $v.generatedNodeConfiguration?.toBuilder();
-      _globNodeConfiguration = $v.globNodeConfiguration?.toBuilder();
-      _globNodeState = $v.globNodeState?.toBuilder();
       _primaryOutputs = $v.primaryOutputs.toBuilder();
       _digest = $v.digest;
       _deletedBy = $v.deletedBy.toBuilder();
@@ -642,8 +426,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
               'type',
             ),
             generatedNodeConfiguration: _generatedNodeConfiguration?.build(),
-            globNodeConfiguration: _globNodeConfiguration?.build(),
-            globNodeState: _globNodeState?.build(),
             primaryOutputs: primaryOutputs.build(),
             digest: digest,
             deletedBy: deletedBy.build(),
@@ -653,10 +435,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
       try {
         _$failedField = 'generatedNodeConfiguration';
         _generatedNodeConfiguration?.build();
-        _$failedField = 'globNodeConfiguration';
-        _globNodeConfiguration?.build();
-        _$failedField = 'globNodeState';
-        _globNodeState?.build();
         _$failedField = 'primaryOutputs';
         primaryOutputs.build();
 
@@ -795,218 +573,6 @@ class GeneratedNodeConfigurationBuilder
             'isHidden',
           ),
         );
-    replace(_$result);
-    return _$result;
-  }
-}
-
-class _$GlobNodeConfiguration extends GlobNodeConfiguration {
-  @override
-  final String glob;
-  @override
-  final int phaseNumber;
-
-  factory _$GlobNodeConfiguration([
-    void Function(GlobNodeConfigurationBuilder)? updates,
-  ]) => (GlobNodeConfigurationBuilder()..update(updates))._build();
-
-  _$GlobNodeConfiguration._({required this.glob, required this.phaseNumber})
-    : super._();
-  @override
-  GlobNodeConfiguration rebuild(
-    void Function(GlobNodeConfigurationBuilder) updates,
-  ) => (toBuilder()..update(updates)).build();
-
-  @override
-  GlobNodeConfigurationBuilder toBuilder() =>
-      GlobNodeConfigurationBuilder()..replace(this);
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(other, this)) return true;
-    return other is GlobNodeConfiguration &&
-        glob == other.glob &&
-        phaseNumber == other.phaseNumber;
-  }
-
-  @override
-  int get hashCode {
-    var _$hash = 0;
-    _$hash = $jc(_$hash, glob.hashCode);
-    _$hash = $jc(_$hash, phaseNumber.hashCode);
-    _$hash = $jf(_$hash);
-    return _$hash;
-  }
-
-  @override
-  String toString() {
-    return (newBuiltValueToStringHelper(r'GlobNodeConfiguration')
-          ..add('glob', glob)
-          ..add('phaseNumber', phaseNumber))
-        .toString();
-  }
-}
-
-class GlobNodeConfigurationBuilder
-    implements Builder<GlobNodeConfiguration, GlobNodeConfigurationBuilder> {
-  _$GlobNodeConfiguration? _$v;
-
-  String? _glob;
-  String? get glob => _$this._glob;
-  set glob(String? glob) => _$this._glob = glob;
-
-  int? _phaseNumber;
-  int? get phaseNumber => _$this._phaseNumber;
-  set phaseNumber(int? phaseNumber) => _$this._phaseNumber = phaseNumber;
-
-  GlobNodeConfigurationBuilder();
-
-  GlobNodeConfigurationBuilder get _$this {
-    final $v = _$v;
-    if ($v != null) {
-      _glob = $v.glob;
-      _phaseNumber = $v.phaseNumber;
-      _$v = null;
-    }
-    return this;
-  }
-
-  @override
-  void replace(GlobNodeConfiguration other) {
-    _$v = other as _$GlobNodeConfiguration;
-  }
-
-  @override
-  void update(void Function(GlobNodeConfigurationBuilder)? updates) {
-    if (updates != null) updates(this);
-  }
-
-  @override
-  GlobNodeConfiguration build() => _build();
-
-  _$GlobNodeConfiguration _build() {
-    final _$result =
-        _$v ??
-        _$GlobNodeConfiguration._(
-          glob: BuiltValueNullFieldError.checkNotNull(
-            glob,
-            r'GlobNodeConfiguration',
-            'glob',
-          ),
-          phaseNumber: BuiltValueNullFieldError.checkNotNull(
-            phaseNumber,
-            r'GlobNodeConfiguration',
-            'phaseNumber',
-          ),
-        );
-    replace(_$result);
-    return _$result;
-  }
-}
-
-class _$GlobNodeState extends GlobNodeState {
-  @override
-  final BuiltSet<AssetId> inputs;
-  @override
-  final BuiltList<AssetId> results;
-
-  factory _$GlobNodeState([void Function(GlobNodeStateBuilder)? updates]) =>
-      (GlobNodeStateBuilder()..update(updates))._build();
-
-  _$GlobNodeState._({required this.inputs, required this.results}) : super._();
-  @override
-  GlobNodeState rebuild(void Function(GlobNodeStateBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
-
-  @override
-  GlobNodeStateBuilder toBuilder() => GlobNodeStateBuilder()..replace(this);
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(other, this)) return true;
-    return other is GlobNodeState &&
-        inputs == other.inputs &&
-        results == other.results;
-  }
-
-  @override
-  int get hashCode {
-    var _$hash = 0;
-    _$hash = $jc(_$hash, inputs.hashCode);
-    _$hash = $jc(_$hash, results.hashCode);
-    _$hash = $jf(_$hash);
-    return _$hash;
-  }
-
-  @override
-  String toString() {
-    return (newBuiltValueToStringHelper(r'GlobNodeState')
-          ..add('inputs', inputs)
-          ..add('results', results))
-        .toString();
-  }
-}
-
-class GlobNodeStateBuilder
-    implements Builder<GlobNodeState, GlobNodeStateBuilder> {
-  _$GlobNodeState? _$v;
-
-  SetBuilder<AssetId>? _inputs;
-  SetBuilder<AssetId> get inputs => _$this._inputs ??= SetBuilder<AssetId>();
-  set inputs(SetBuilder<AssetId>? inputs) => _$this._inputs = inputs;
-
-  ListBuilder<AssetId>? _results;
-  ListBuilder<AssetId> get results =>
-      _$this._results ??= ListBuilder<AssetId>();
-  set results(ListBuilder<AssetId>? results) => _$this._results = results;
-
-  GlobNodeStateBuilder();
-
-  GlobNodeStateBuilder get _$this {
-    final $v = _$v;
-    if ($v != null) {
-      _inputs = $v.inputs.toBuilder();
-      _results = $v.results.toBuilder();
-      _$v = null;
-    }
-    return this;
-  }
-
-  @override
-  void replace(GlobNodeState other) {
-    _$v = other as _$GlobNodeState;
-  }
-
-  @override
-  void update(void Function(GlobNodeStateBuilder)? updates) {
-    if (updates != null) updates(this);
-  }
-
-  @override
-  GlobNodeState build() => _build();
-
-  _$GlobNodeState _build() {
-    _$GlobNodeState _$result;
-    try {
-      _$result =
-          _$v ??
-          _$GlobNodeState._(inputs: inputs.build(), results: results.build());
-    } catch (_) {
-      late String _$failedField;
-      try {
-        _$failedField = 'inputs';
-        inputs.build();
-        _$failedField = 'results';
-        results.build();
-      } catch (e) {
-        throw BuiltValueNestedFieldError(
-          r'GlobNodeState',
-          _$failedField,
-          e.toString(),
-        );
-      }
-      rethrow;
-    }
     replace(_$result);
     return _$result;
   }

@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:convert';
-
 import 'package:build/build.dart' hide Builder;
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
@@ -21,7 +19,6 @@ class NodeType extends EnumClass {
 
   static const NodeType generated = _$generated;
   static const NodeType postGenerated = _$postGenerated;
-  static const NodeType glob = _$glob;
   static const NodeType placeholder = _$placeholder;
   static const NodeType source = _$source;
   static const NodeType missingSource = _$missingSource;
@@ -42,16 +39,8 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   /// Additional node configuration for an [AssetNode.generated].
   GeneratedNodeConfiguration? get generatedNodeConfiguration;
 
-  /// Additional node configuration for an [AssetNode.glob].
-  GlobNodeConfiguration? get globNodeConfiguration;
-
-  /// Additional node state that changes during the build for an
-  /// [AssetNode.glob].
-  GlobNodeState? get globNodeState;
-
   /// The assets that any [Builder] in the build graph declares it may output
   /// when run on this asset.
-  // TODO(davidmorgan): remove and compute when needed?
   BuiltSet<AssetId> get primaryOutputs;
 
   /// The [Digest] for this node.
@@ -62,10 +51,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   /// For generated files, it's computed and set when the file is output, at the
   /// same time comparing with any previous value to check if the output has
   /// changed since the previous build. Here, `null` means "not output".
-  ///
-  /// For globs, it's computed and set when the glob is evaluated, at the same
-  /// time comparing with any previous value to check if the glob results have
-  /// changed.
   ///
   /// For other node types, `null`.
   Digest? get digest;
@@ -81,20 +66,10 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
       type == NodeType.postGenerated ||
       type == NodeType.source;
 
-  /// Whether this node is tracked as an input in the asset graph.
-  bool get isTrackedInput =>
-      type == NodeType.generated ||
-      type == NodeType.source ||
-      type == NodeType.placeholder;
-
   /// Whether the node is deleted.
   ///
   /// Deleted nodes are ignored in the final merge step and watch handlers.
   bool get isDeleted => deletedBy.isNotEmpty;
-
-  /// Whether changes to this node will have any effect on other nodes.
-  bool get changesRequireRebuild =>
-      type == NodeType.glob || type == NodeType.missingSource || digest != null;
 
   factory AssetNode([void Function(AssetNodeBuilder) updates]) = _$AssetNode;
 
@@ -148,24 +123,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     b.digest = digest;
   });
 
-  /// A glob node.
-  factory AssetNode.glob(
-    AssetId id, {
-    required String glob,
-    required int phaseNumber,
-    Iterable<AssetId>? inputs,
-    List<AssetId>? results,
-  }) => AssetNode((b) {
-    b.id = id;
-    b.type = NodeType.glob;
-    b.globNodeConfiguration.glob = glob;
-    b.globNodeConfiguration.phaseNumber = phaseNumber;
-    b.globNodeState.results.replace(results ?? []);
-  });
-
-  static AssetId createGlobNodeId(String package, String glob, int phaseNum) =>
-      AssetId(package, 'glob.$phaseNum.${base64.encode(utf8.encode(glob))}');
-
   /// A post-process generated node.
   factory AssetNode.postGenerated(AssetId id) => AssetNode((b) {
     b.id = id;
@@ -173,35 +130,8 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   });
 
   AssetNode._() {
-    // Check that configuration and state fields are non-null exactly when the
-    // node is of the corresponding type.
-
-    void check(bool hasType, bool hasConfiguration, [bool? hasState]) {
-      if (hasType != hasConfiguration) {
-        throw ArgumentError(
-          'Node configuration does not match its type: $this',
-        );
-      }
-      if (hasState != null && hasType != hasState) {
-        throw ArgumentError('Node state does not match its type: $this');
-      }
-    }
-
-    check(type == NodeType.generated, generatedNodeConfiguration != null);
-    check(
-      type == NodeType.glob,
-      globNodeConfiguration != null,
-      globNodeState != null,
-    );
-  }
-
-  /// The glob node inputs, or `null` if the node is not a glob node.
-  BuiltSet<AssetId>? get inputs {
-    switch (type) {
-      case NodeType.glob:
-        return globNodeState!.inputs;
-      default:
-        return null;
+    if ((type == NodeType.generated) != (generatedNodeConfiguration != null)) {
+      throw ArgumentError('Node configuration does not match its type: $this');
     }
   }
 
@@ -247,43 +177,4 @@ abstract class GeneratedNodeConfiguration
   ) = _$GeneratedNodeConfiguration;
 
   GeneratedNodeConfiguration._();
-}
-
-/// Additional configuration for an [AssetNode.glob].
-abstract class GlobNodeConfiguration
-    implements Built<GlobNodeConfiguration, GlobNodeConfigurationBuilder> {
-  static Serializer<GlobNodeConfiguration> get serializer =>
-      _$globNodeConfigurationSerializer;
-
-  String get glob;
-  int get phaseNumber;
-
-  factory GlobNodeConfiguration(
-    void Function(GlobNodeConfigurationBuilder) updates,
-  ) = _$GlobNodeConfiguration;
-
-  GlobNodeConfiguration._();
-}
-
-/// State for an [AssetNode.glob] that changes during the build.
-abstract class GlobNodeState
-    implements Built<GlobNodeState, GlobNodeStateBuilder> {
-  static Serializer<GlobNodeState> get serializer => _$globNodeStateSerializer;
-
-  /// The next work that needs doing on this node.
-
-  /// All the potential inputs matching this glob.
-  ///
-  /// This field differs from [results] in that [AssetNode.generated] which may
-  /// have been readable but were not output are included here and not in
-  /// [results].
-  BuiltSet<AssetId> get inputs;
-
-  /// The results of the glob.
-  BuiltList<AssetId> get results;
-
-  factory GlobNodeState(void Function(GlobNodeStateBuilder) updates) =
-      _$GlobNodeState;
-
-  GlobNodeState._();
 }

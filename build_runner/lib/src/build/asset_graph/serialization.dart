@@ -102,6 +102,21 @@ AssetGraph? deserializeAssetGraph(List<int> bytes) {
     }
   }
 
+  if (serializedGraph.containsKey('globResults')) {
+    final deserializedResults =
+        serializers.deserialize(
+              serializedGraph['globResults'],
+              specifiedType: const FullType(BuiltMap, [
+                FullType(GlobId),
+                FullType(GlobResult),
+              ]),
+            )
+            as BuiltMap<GlobId, GlobResult>;
+    for (final entry in deserializedResults.entries) {
+      graph.updateGlobResult(entry.key, entry.value);
+    }
+  }
+
   identityAssetIdSerializer.reset();
   return graph;
 }
@@ -153,6 +168,13 @@ List<int> serializeAssetGraph(AssetGraph graph) {
       specifiedType: const FullType(BuiltMap, [
         FullType(BuildStepId),
         FullType(BuildStepResult),
+      ]),
+    ),
+    'globResults': serializers.serialize(
+      BuiltMap<GlobId, GlobResult>.of(graph.globResults),
+      specifiedType: const FullType(BuiltMap, [
+        FullType(GlobId),
+        FullType(GlobResult),
       ]),
     ),
   };

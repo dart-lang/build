@@ -30,6 +30,11 @@ class _$BuildStepResultSerializer
           const FullType(AssetId),
         ]),
       ),
+      'globsEvaluated',
+      serializers.serialize(
+        object.globsEvaluated,
+        specifiedType: const FullType(BuiltSet, const [const FullType(GlobId)]),
+      ),
       'resolverEntrypoints',
       serializers.serialize(
         object.resolverEntrypoints,
@@ -90,6 +95,17 @@ class _$BuildStepResultSerializer
                 as BuiltSet<Object?>,
           );
           break;
+        case 'globsEvaluated':
+          result.globsEvaluated.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(BuiltSet, const [
+                    const FullType(GlobId),
+                  ]),
+                )!
+                as BuiltSet<Object?>,
+          );
+          break;
         case 'resolverEntrypoints':
           result.resolverEntrypoints.replace(
             serializers.deserialize(
@@ -125,6 +141,8 @@ class _$BuildStepResult extends BuildStepResult {
   @override
   final BuiltSet<AssetId> inputs;
   @override
+  final BuiltSet<GlobId> globsEvaluated;
+  @override
   final BuiltSet<AssetId> resolverEntrypoints;
   @override
   final BuiltList<String> errors;
@@ -135,6 +153,7 @@ class _$BuildStepResult extends BuildStepResult {
   _$BuildStepResult._({
     this.result,
     required this.inputs,
+    required this.globsEvaluated,
     required this.resolverEntrypoints,
     required this.errors,
   }) : super._();
@@ -151,6 +170,7 @@ class _$BuildStepResult extends BuildStepResult {
     return other is BuildStepResult &&
         result == other.result &&
         inputs == other.inputs &&
+        globsEvaluated == other.globsEvaluated &&
         resolverEntrypoints == other.resolverEntrypoints &&
         errors == other.errors;
   }
@@ -160,6 +180,7 @@ class _$BuildStepResult extends BuildStepResult {
     var _$hash = 0;
     _$hash = $jc(_$hash, result.hashCode);
     _$hash = $jc(_$hash, inputs.hashCode);
+    _$hash = $jc(_$hash, globsEvaluated.hashCode);
     _$hash = $jc(_$hash, resolverEntrypoints.hashCode);
     _$hash = $jc(_$hash, errors.hashCode);
     _$hash = $jf(_$hash);
@@ -171,6 +192,7 @@ class _$BuildStepResult extends BuildStepResult {
     return (newBuiltValueToStringHelper(r'BuildStepResult')
           ..add('result', result)
           ..add('inputs', inputs)
+          ..add('globsEvaluated', globsEvaluated)
           ..add('resolverEntrypoints', resolverEntrypoints)
           ..add('errors', errors))
         .toString();
@@ -189,6 +211,12 @@ class BuildStepResultBuilder
   SetBuilder<AssetId> get inputs => _$this._inputs ??= SetBuilder<AssetId>();
   set inputs(SetBuilder<AssetId>? inputs) => _$this._inputs = inputs;
 
+  SetBuilder<GlobId>? _globsEvaluated;
+  SetBuilder<GlobId> get globsEvaluated =>
+      _$this._globsEvaluated ??= SetBuilder<GlobId>();
+  set globsEvaluated(SetBuilder<GlobId>? globsEvaluated) =>
+      _$this._globsEvaluated = globsEvaluated;
+
   SetBuilder<AssetId>? _resolverEntrypoints;
   SetBuilder<AssetId> get resolverEntrypoints =>
       _$this._resolverEntrypoints ??= SetBuilder<AssetId>();
@@ -206,6 +234,7 @@ class BuildStepResultBuilder
     if ($v != null) {
       _result = $v.result;
       _inputs = $v.inputs.toBuilder();
+      _globsEvaluated = $v.globsEvaluated.toBuilder();
       _resolverEntrypoints = $v.resolverEntrypoints.toBuilder();
       _errors = $v.errors.toBuilder();
       _$v = null;
@@ -234,6 +263,7 @@ class BuildStepResultBuilder
           _$BuildStepResult._(
             result: result,
             inputs: inputs.build(),
+            globsEvaluated: globsEvaluated.build(),
             resolverEntrypoints: resolverEntrypoints.build(),
             errors: errors.build(),
           );
@@ -242,6 +272,8 @@ class BuildStepResultBuilder
       try {
         _$failedField = 'inputs';
         inputs.build();
+        _$failedField = 'globsEvaluated';
+        globsEvaluated.build();
         _$failedField = 'resolverEntrypoints';
         resolverEntrypoints.build();
         _$failedField = 'errors';

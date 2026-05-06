@@ -25,6 +25,8 @@ import '../library_cycle_graph/phased_asset_deps.dart';
 import 'build_step_id.dart';
 import 'build_step_result.dart';
 import 'exceptions.dart';
+import 'glob_id.dart';
+import 'glob_result.dart';
 import 'node.dart';
 import 'nodes.dart';
 import 'post_process_build_step_id.dart';
@@ -69,6 +71,8 @@ class AssetGraph implements GeneratedAssetHider {
   /// All standard build step execution results, indexed by [BuildStepId].
   final Map<BuildStepId, BuildStepResult> _buildStepResults;
 
+  final Map<GlobId, GlobResult> _globResults;
+
   /// Digest of the previous build's `BuildTriggers`, or `null` if this is a
   /// clean build.
   Digest? previousBuildTriggersDigest;
@@ -103,7 +107,8 @@ class AssetGraph implements GeneratedAssetHider {
           buildPhases.postBuildActionsOptionsDigests,
       _nodes = Nodes(),
       _postProcessBuildStepResults = {},
-      _buildStepResults = {};
+      _buildStepResults = {},
+      _globResults = {};
 
   /// An empty asset graph.
   @visibleForTesting
@@ -120,7 +125,8 @@ class AssetGraph implements GeneratedAssetHider {
     this.enabledExperiments,
   ) : _nodes = Nodes(),
       _postProcessBuildStepResults = {},
-      _buildStepResults = {};
+      _buildStepResults = {},
+      _globResults = {};
 
   AssetGraph._with({
     required Nodes nodes,
@@ -135,6 +141,7 @@ class AssetGraph implements GeneratedAssetHider {
     >
     postProcessBuildStepResults,
     required Map<BuildStepId, BuildStepResult> buildStepResults,
+    required Map<GlobId, GlobResult> globResults,
     required this.previousBuildTriggersDigest,
     required this.previousInBuildPhasesOptionsDigests,
     required this.inBuildPhasesOptionsDigests,
@@ -143,7 +150,8 @@ class AssetGraph implements GeneratedAssetHider {
     required this.previousPhasedAssetDeps,
   }) : _nodes = nodes,
        _postProcessBuildStepResults = postProcessBuildStepResults,
-       _buildStepResults = buildStepResults;
+       _buildStepResults = buildStepResults,
+       _globResults = globResults;
 
   @visibleForTesting
   AssetGraph copyWith({String? dartVersion}) => AssetGraph._with(
@@ -155,6 +163,7 @@ class AssetGraph implements GeneratedAssetHider {
     packageLanguageVersions: packageLanguageVersions,
     postProcessBuildStepResults: _postProcessBuildStepResults,
     buildStepResults: _buildStepResults,
+    globResults: _globResults,
     previousBuildTriggersDigest: previousBuildTriggersDigest,
     previousInBuildPhasesOptionsDigests: previousInBuildPhasesOptionsDigests,
     inBuildPhasesOptionsDigests: inBuildPhasesOptionsDigests,
@@ -178,6 +187,7 @@ class AssetGraph implements GeneratedAssetHider {
           entry.key: Map.of(entry.value),
       },
       buildStepResults: Map.of(_buildStepResults),
+      globResults: Map.of(_globResults),
       previousBuildTriggersDigest: previousBuildTriggersDigest,
       previousInBuildPhasesOptionsDigests: inBuildPhasesOptionsDigests,
       inBuildPhasesOptionsDigests: buildPhases.inBuildPhasesOptionsDigests,
@@ -238,6 +248,13 @@ class AssetGraph implements GeneratedAssetHider {
   }
 
   Map<BuildStepId, BuildStepResult> get buildStepResults => _buildStepResults;
+
+  GlobResult? globResultFor(GlobId globId) => _globResults[globId];
+  void updateGlobResult(GlobId globId, GlobResult result) {
+    _globResults[globId] = result;
+  }
+
+  Map<GlobId, GlobResult> get globResults => _globResults;
 
   Iterable<AssetNode> get allNodes => _nodes.allNodes;
   Iterable<AssetId> packageFileIds(String package, {Glob? glob}) =>
