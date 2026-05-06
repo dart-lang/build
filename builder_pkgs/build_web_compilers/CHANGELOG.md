@@ -1,3 +1,7 @@
+## 4.4.20-wip
+
+- Fixed `DdcFrontendServerBuilder` to correctly work with generated entrypoints.
+
 ## 4.4.19
 
 - Allow `analyzer` 13.0.0.
