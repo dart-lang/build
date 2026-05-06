@@ -14,6 +14,7 @@ import 'package:build_config/build_config.dart'
 import 'package:build_runner/src/build/asset_graph/graph.dart';
 import 'package:build_runner/src/build/asset_graph/node.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
+import 'package:build_runner/src/build/asset_graph/post_process_build_step_result.dart';
 import 'package:build_runner/src/build/build_result.dart';
 import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_directory.dart';
@@ -1222,14 +1223,8 @@ targets:
       actionNumber: 0,
     );
 
-    final aPostCopyNode = AssetNode.generated(
+    final aPostCopyNode = AssetNode.postGenerated(
       makeAssetId('a|web/a.txt.post'),
-      phaseNumber: 1,
-      primaryInput: makeAssetId('a|web/a.txt'),
-      result: true,
-      digest: computeDigest(makeAssetId(r'$$a|web/a.txt.post'), 'a'),
-      inputs: [makeAssetId('a|web/a.txt')],
-      isHidden: true,
     );
     // Note we don't expect this node to get added to the builder options node
     // outputs.
@@ -1237,14 +1232,8 @@ targets:
       (b) => b..primaryOutputs.add(aPostCopyNode.id),
     );
 
-    final bPostCopyNode = AssetNode.generated(
+    final bPostCopyNode = AssetNode.postGenerated(
       makeAssetId('a|lib/b.txt.post'),
-      phaseNumber: 1,
-      primaryInput: makeAssetId('a|lib/b.txt'),
-      result: true,
-      digest: computeDigest(makeAssetId(r'$$a|lib/b.txt.post'), 'b'),
-      inputs: [makeAssetId('a|lib/b.txt')],
-      isHidden: true,
     );
     // Note we don't expect this node to get added to the builder options node
     // outputs.
@@ -1259,19 +1248,19 @@ targets:
       ..add(bCopyNode)
       ..add(aPostCopyNode)
       ..add(bPostCopyNode)
-      ..updatePostProcessBuildStep(
+      ..updatePostProcessBuildStepResult(
         aPostProcessBuildStepId,
-        outputs: {aPostCopyNode.id},
+        PostProcessBuildStepResult(hidden: true, outputs: [aPostCopyNode.id]),
       )
-      ..updatePostProcessBuildStep(
+      ..updatePostProcessBuildStepResult(
         bPostProcessBuildStepId,
-        outputs: {bPostCopyNode.id},
+        PostProcessBuildStepResult(hidden: true, outputs: [bPostCopyNode.id]),
       );
 
     expect(cachedGraph, equalsAssetGraph(expectedGraph));
     expect(
-      cachedGraph.allPostProcessBuildStepOutputs,
-      expectedGraph.allPostProcessBuildStepOutputs,
+      cachedGraph.allPostProcessBuildStepResults,
+      expectedGraph.allPostProcessBuildStepResults,
     );
   });
 
@@ -1968,7 +1957,7 @@ targets:
       // A build does not crash in `_cleanUpStaleOutputs`
       await testPhases(builderFactories, builderDefinitions, {
         'a|lib/a.txt': 'a',
-      });
+      }, status: BuildStatus.failure);
     });
 
     test('can have assets ending in a dot', () async {

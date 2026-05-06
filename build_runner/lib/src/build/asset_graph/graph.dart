@@ -26,6 +26,7 @@ import 'exceptions.dart';
 import 'node.dart';
 import 'nodes.dart';
 import 'post_process_build_step_id.dart';
+import 'post_process_build_step_result.dart';
 import 'serializers.dart';
 
 part 'serialization.dart';
@@ -55,13 +56,13 @@ class AssetGraph implements GeneratedAssetHider {
 
   final BuiltMap<String, LanguageVersion?> packageLanguageVersions;
 
-  /// All post process build steps outputs, indexed by package then
+  /// All post process build steps results, indexed by package then
   /// [PostProcessBuildStepId].
   ///
   /// Created with empty outputs at the start of the build if it's a new build
-  /// step; or deserialized with previous build outputs if it has run before.
-  final Map<String, Map<PostProcessBuildStepId, Set<AssetId>>>
-  _postProcessBuildStepOutputs;
+  /// step; or deserialized with previous build results if it has run before.
+  final Map<String, Map<PostProcessBuildStepId, PostProcessBuildStepResult>>
+  _postProcessBuildStepResults;
 
   /// Digest of the previous build's `BuildTriggers`, or `null` if this is a
   /// clean build.
@@ -96,7 +97,7 @@ class AssetGraph implements GeneratedAssetHider {
       postBuildActionsOptionsDigests =
           buildPhases.postBuildActionsOptionsDigests,
       _nodes = Nodes(),
-      _postProcessBuildStepOutputs = {};
+      _postProcessBuildStepResults = {};
 
   /// An empty asset graph.
   @visibleForTesting
@@ -112,7 +113,7 @@ class AssetGraph implements GeneratedAssetHider {
     this.packageLanguageVersions,
     this.enabledExperiments,
   ) : _nodes = Nodes(),
-      _postProcessBuildStepOutputs = {};
+      _postProcessBuildStepResults = {};
 
   AssetGraph._with({
     required Nodes nodes,
@@ -121,8 +122,11 @@ class AssetGraph implements GeneratedAssetHider {
     required this.dartVersion,
     required this.enabledExperiments,
     required this.packageLanguageVersions,
-    required Map<String, Map<PostProcessBuildStepId, Set<AssetId>>>
-    postProcessBuildStepOutputs,
+    required Map<
+      String,
+      Map<PostProcessBuildStepId, PostProcessBuildStepResult>
+    >
+    postProcessBuildStepResults,
     required this.previousBuildTriggersDigest,
     required this.previousInBuildPhasesOptionsDigests,
     required this.inBuildPhasesOptionsDigests,
@@ -130,7 +134,7 @@ class AssetGraph implements GeneratedAssetHider {
     required this.postBuildActionsOptionsDigests,
     required this.previousPhasedAssetDeps,
   }) : _nodes = nodes,
-       _postProcessBuildStepOutputs = postProcessBuildStepOutputs;
+       _postProcessBuildStepResults = postProcessBuildStepResults;
 
   @visibleForTesting
   AssetGraph copyWith({String? dartVersion}) => AssetGraph._with(
@@ -140,7 +144,7 @@ class AssetGraph implements GeneratedAssetHider {
     dartVersion: dartVersion ?? this.dartVersion,
     enabledExperiments: enabledExperiments,
     packageLanguageVersions: packageLanguageVersions,
-    postProcessBuildStepOutputs: _postProcessBuildStepOutputs,
+    postProcessBuildStepResults: _postProcessBuildStepResults,
     previousBuildTriggersDigest: previousBuildTriggersDigest,
     previousInBuildPhasesOptionsDigests: previousInBuildPhasesOptionsDigests,
     inBuildPhasesOptionsDigests: inBuildPhasesOptionsDigests,
@@ -159,8 +163,8 @@ class AssetGraph implements GeneratedAssetHider {
       dartVersion: dartVersion,
       enabledExperiments: enabledExperiments,
       packageLanguageVersions: packageLanguageVersions,
-      postProcessBuildStepOutputs: {
-        for (final entry in _postProcessBuildStepOutputs.entries)
+      postProcessBuildStepResults: {
+        for (final entry in _postProcessBuildStepResults.entries)
           entry.key: Map.of(entry.value),
       },
       previousBuildTriggersDigest: previousBuildTriggersDigest,
@@ -204,9 +208,8 @@ class AssetGraph implements GeneratedAssetHider {
 
   List<int> serialize() => serializeAssetGraph(this);
 
-  @visibleForTesting
-  Map<String, Map<PostProcessBuildStepId, Set<AssetId>>>
-  get allPostProcessBuildStepOutputs => _postProcessBuildStepOutputs;
+  Map<String, Map<PostProcessBuildStepId, PostProcessBuildStepResult>>
+  get allPostProcessBuildStepResults => _postProcessBuildStepResults;
 
   /// Whether this is a clean build, meaning there was no previous build state
   /// loaded or it was discarded as incompatible.
@@ -256,8 +259,8 @@ class AssetGraph implements GeneratedAssetHider {
     });
 
     // Remove post build action applications with removed assets as inputs.
-    for (final packageOutputs in _postProcessBuildStepOutputs.values) {
-      packageOutputs.removeWhere((id, _) => removedIds!.contains(id.input));
+    for (final packageResults in _postProcessBuildStepResults.values) {
+      packageResults.removeWhere((id, _) => removedIds!.contains(id.input));
     }
   }
 
@@ -277,31 +280,35 @@ class AssetGraph implements GeneratedAssetHider {
   /// All the post process build steps for `package`.
   Iterable<PostProcessBuildStepId> postProcessBuildStepIds({
     required String package,
-  }) => _postProcessBuildStepOutputs[package]?.keys ?? const [];
+  }) => _postProcessBuildStepResults[package]?.keys ?? const [];
+
+  Iterable<AssetId> get allPostProcessOutputIds => _postProcessBuildStepResults
+      .values
+      .expand((entries) => entries.values.expand((v) => v.outputs));
 
   /// Creates or updates state for a [PostProcessBuildStepId].
-  void updatePostProcessBuildStep(
-    PostProcessBuildStepId buildStepId, {
-    required Set<AssetId> outputs,
-  }) {
-    _postProcessBuildStepOutputs.putIfAbsent(
+  void updatePostProcessBuildStepResult(
+    PostProcessBuildStepId buildStepId,
+    PostProcessBuildStepResult result,
+  ) {
+    _postProcessBuildStepResults.putIfAbsent(
           buildStepId.input.package,
           () => {},
         )[buildStepId] =
-        outputs;
+        result;
   }
 
-  /// Gets outputs of a [PostProcessBuildStepId].
+  /// Gets the result of a [PostProcessBuildStepId].
   ///
-  /// These are set using [updatePostProcessBuildStep] during the build, then
-  /// used to clean up prior outputs in the next build.
-  Iterable<AssetId> postProcessBuildStepOutputs(PostProcessBuildStepId action) {
-    return _postProcessBuildStepOutputs[action.input.package]![action]!;
-  }
+  /// These are set using [updatePostProcessBuildStepResult] during the build,
+  /// then used to clean up prior outputs in the next build.
+  PostProcessBuildStepResult? postProcessBuildStepResultFor(
+    PostProcessBuildStepId action,
+  ) => _postProcessBuildStepResults[action.input.package]?[action];
 
   /// All the generated outputs in the graph.
   Iterable<AssetId> get outputs =>
-      allNodes.where((n) => n.type == NodeType.generated).map((n) => n.id);
+      allNodes.where((n) => n.isGenerated).map((n) => n.id);
 
   /// All the generated outputs for a particular phase.
   Iterable<AssetNode> outputsForPhase(String package, int phase) =>
@@ -494,9 +501,9 @@ class AssetGraph implements GeneratedAssetHider {
     for (final action in phase.builderActions) {
       final inputs = allInputs.where((input) => _actionMatches(action, input));
       for (final input in inputs) {
-        updatePostProcessBuildStep(
+        updatePostProcessBuildStepResult(
           PostProcessBuildStepId(input: input, actionNumber: actionNumber),
-          outputs: {},
+          PostProcessBuildStepResult(hidden: action.hideOutput),
         );
       }
       actionNumber++;
@@ -599,22 +606,47 @@ class AssetGraph implements GeneratedAssetHider {
 
   /// Returns outputs that were written to the source tree.
   Iterable<AssetId> outputsToDelete(BuildPackages buildPackages) {
+    // Checks if `id` is in a known package. If so, returns it.
+    //
+    // If not, and a single package is being built, returns `id` moved to that
+    // package. This allows old generated output to be deleted if the package
+    // was renamed since the last build.
+    //
+    // If `id` is not in a known package and a single package is not being
+    // built, returns `null`.
+    AssetId? checkAndMoveId(AssetId id) {
+      if (buildPackages[id.package] != null) {
+        return id;
+      }
+      final singleOutputPackage = buildPackages.singleOutputPackage;
+      if (singleOutputPackage == null) return null;
+      return AssetId(singleOutputPackage, id.path);
+    }
+
     final result = <AssetId>[];
     // Delete all the non-hidden outputs.
     for (final id in outputs) {
       final node = get(id)!;
+      if (node.type == NodeType.postGenerated) {
+        // Handled via post process build step results below so we know if the
+        // output is hidden.
+        continue;
+      }
       final nodeConfiguration = node.generatedNodeConfiguration!;
       if (node.wasOutput && !nodeConfiguration.isHidden) {
-        var idToDelete = id;
-        // If the package no longer exists, then the user might have renamed
-        // it. So move `idToDelete` to the single package being built, if there
-        // is one, to delete for that case.
-        if (buildPackages[id.package] == null) {
-          final singleOutputPackage = buildPackages.singleOutputPackage;
-          if (singleOutputPackage == null) continue;
-          idToDelete = AssetId(singleOutputPackage, id.path);
+        final idToDelete = checkAndMoveId(id);
+        if (idToDelete != null) result.add(idToDelete);
+      }
+    }
+    for (final packagePostProcessResults
+        in _postProcessBuildStepResults.values) {
+      for (final postProcessResults in packagePostProcessResults.values) {
+        if (!postProcessResults.hidden) {
+          for (final id in postProcessResults.outputs) {
+            final idToDelete = checkAndMoveId(id);
+            if (idToDelete != null) result.add(idToDelete);
+          }
         }
-        result.add(idToDelete);
       }
     }
     return result;

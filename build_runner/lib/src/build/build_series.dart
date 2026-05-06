@@ -18,7 +18,6 @@ import '../io/generated_asset_hider.dart';
 import '../io/reader_writer.dart';
 import '../logging/build_log.dart';
 import 'asset_graph/graph.dart';
-import 'asset_graph/node.dart';
 import 'build.dart';
 import 'build_result.dart';
 
@@ -151,7 +150,7 @@ class BuildSeries {
       }
 
       // Ignore creation or modification of outputs.
-      if (node.type == NodeType.generated && change.type != ChangeType.REMOVE) {
+      if (node.isGenerated && change.type != ChangeType.REMOVE) {
         continue;
       }
 

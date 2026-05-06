@@ -19,6 +19,7 @@ Serializers _$serializers =
           ..add(PhasedAssetDeps.serializer)
           ..add(PhasedValue.serializer)
           ..add(PostProcessBuildStepId.serializer)
+          ..add(PostProcessBuildStepResult.serializer)
           ..addBuilderFactory(
             const FullType(BuiltMap, const [
               const FullType(AssetId),
@@ -37,6 +38,14 @@ Serializers _$serializers =
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(AssetId)]),
             () => ListBuilder<AssetId>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltSet, const [const FullType(AssetId)]),
+            () => SetBuilder<AssetId>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltSet, const [const FullType(AssetId)]),

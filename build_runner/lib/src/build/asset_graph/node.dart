@@ -19,6 +19,7 @@ class NodeType extends EnumClass {
   static Serializer<NodeType> get serializer => _$nodeTypeSerializer;
 
   static const NodeType generated = _$generated;
+  static const NodeType postGenerated = _$postGenerated;
   static const NodeType glob = _$glob;
   static const NodeType placeholder = _$placeholder;
   static const NodeType source = _$source;
@@ -78,7 +79,10 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   /// Whether this asset is a normal, readable file.
   ///
   /// Does not guarantee that the file currently exists.
-  bool get isFile => type == NodeType.generated || type == NodeType.source;
+  bool get isFile =>
+      type == NodeType.generated ||
+      type == NodeType.postGenerated ||
+      type == NodeType.source;
 
   /// Whether this node is tracked as an input in the asset graph.
   bool get isTrackedInput =>
@@ -170,6 +174,12 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   static AssetId createGlobNodeId(String package, String glob, int phaseNum) =>
       AssetId(package, 'glob.$phaseNum.${base64.encode(utf8.encode(glob))}');
 
+  /// A post-process generated node.
+  factory AssetNode.postGenerated(AssetId id) => AssetNode((b) {
+    b.id = id;
+    b.type = NodeType.postGenerated;
+  });
+
   AssetNode._() {
     // Check that configuration and state fields are non-null exactly when the
     // node is of the corresponding type.
@@ -210,11 +220,16 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     }
   }
 
+  bool get isGenerated =>
+      type == NodeType.generated || type == NodeType.postGenerated;
+
   /// Whether this is a generated node that was written when the generator ran.
   ///
   /// A file can be output by a failing generator, check
   /// `generatedNodeState.result` for whether the generator succeeded.
-  bool get wasOutput => type == NodeType.generated && digest != null;
+  bool get wasOutput =>
+      type == NodeType.postGenerated ||
+      (type == NodeType.generated && digest != null);
 }
 
 /// Additional configuration for an [AssetNode.generated].

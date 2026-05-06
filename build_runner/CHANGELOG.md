@@ -1,3 +1,8 @@
+## 2.15.1-wip
+
+- Bug fix: handle errors from post process builders in previous runs without
+  crashing.
+
 ## 2.15.0
 
 - Remove `--low-resources-mode` as default memory usage has been improved. If
