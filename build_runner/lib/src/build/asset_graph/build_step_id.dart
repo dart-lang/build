@@ -8,8 +8,7 @@ import 'package:built_value/serializer.dart';
 
 part 'build_step_id.g.dart';
 
-/// Identifies one build step in the build by its primary input and the phase
-/// it runs in.
+/// Unique ID for a build step.
 abstract class BuildStepId implements Built<BuildStepId, BuildStepIdBuilder> {
   static Serializer<BuildStepId> get serializer => _$buildStepIdSerializer;
 

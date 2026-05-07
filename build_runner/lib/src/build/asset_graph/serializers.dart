@@ -14,6 +14,8 @@ import '../library_cycle_graph/phased_asset_deps.dart';
 import '../library_cycle_graph/phased_value.dart';
 import 'build_step_id.dart';
 import 'build_step_result.dart';
+import 'glob_id.dart';
+import 'glob_result.dart';
 import 'identity_serializer.dart';
 import 'node.dart';
 import 'post_process_build_step_id.dart';
@@ -42,6 +44,8 @@ final identityAssetIdSerializer = IdentitySerializer<AssetId>(
   AssetDeps,
   BuildStepId,
   BuildStepResult,
+  GlobId,
+  GlobResult,
   PostProcessBuildStepResult,
 ])
 final Serializers serializers =
@@ -62,6 +66,10 @@ final Serializers serializers =
               FullType(BuildStepResult),
             ]),
             MapBuilder<BuildStepId, BuildStepResult>.new,
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltMap, [FullType(GlobId), FullType(GlobResult)]),
+            MapBuilder<GlobId, GlobResult>.new,
           )
           ..addBuilderFactory(
             const FullType(Set, [FullType(AssetId)]),

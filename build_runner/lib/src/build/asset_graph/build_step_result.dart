@@ -7,6 +7,8 @@ import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
+import 'glob_id.dart';
+
 part 'build_step_result.g.dart';
 
 /// Execution results and dependency tracking for a build step.
@@ -21,6 +23,9 @@ abstract class BuildStepResult
 
   /// Inputs and missing sources read.
   BuiltSet<AssetId> get inputs;
+
+  /// The globs evaluated during this step.
+  BuiltSet<GlobId> get globsEvaluated;
 
   /// Entrypoints used for resolution with the analyzer.
   BuiltSet<AssetId> get resolverEntrypoints;

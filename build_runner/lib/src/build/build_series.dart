@@ -18,6 +18,7 @@ import '../io/generated_asset_hider.dart';
 import '../io/reader_writer.dart';
 import '../logging/build_log.dart';
 import 'asset_graph/graph.dart';
+import 'asset_graph/node.dart';
 import 'build.dart';
 import 'build_result.dart';
 
@@ -145,7 +146,8 @@ class BuildSeries {
       // If not copying to a merged output directory, ignore changes to files
       // with no outputs.
       if (!_buildPlan.buildOptions.anyMergedOutputDirectory &&
-          !node.changesRequireRebuild) {
+          node.type != NodeType.missingSource &&
+          node.digest == null) {
         continue;
       }
 

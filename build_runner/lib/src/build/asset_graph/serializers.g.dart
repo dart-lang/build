@@ -14,8 +14,8 @@ Serializers _$serializers =
           ..add(BuildStepResult.serializer)
           ..add(ExpiringValue.serializer)
           ..add(GeneratedNodeConfiguration.serializer)
-          ..add(GlobNodeConfiguration.serializer)
-          ..add(GlobNodeState.serializer)
+          ..add(GlobId.serializer)
+          ..add(GlobResult.serializer)
           ..add(NodeType.serializer)
           ..add(PhasedAssetDeps.serializer)
           ..add(PhasedValue.serializer)
@@ -37,20 +37,24 @@ Serializers _$serializers =
             () => SetBuilder<AssetId>(),
           )
           ..addBuilderFactory(
-            const FullType(BuiltList, const [const FullType(AssetId)]),
-            () => ListBuilder<AssetId>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltSet, const [const FullType(AssetId)]),
-            () => SetBuilder<AssetId>(),
-          )
-          ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(String)]),
             () => ListBuilder<String>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltSet, const [const FullType(AssetId)]),
             () => SetBuilder<AssetId>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltSet, const [const FullType(AssetId)]),
+            () => SetBuilder<AssetId>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltSet, const [const FullType(AssetId)]),
+            () => SetBuilder<AssetId>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltSet, const [const FullType(GlobId)]),
+            () => SetBuilder<GlobId>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltSet, const [const FullType(AssetId)]),

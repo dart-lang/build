@@ -28,6 +28,8 @@ import '../logging/build_log.dart';
 import '../logging/timed_activities.dart';
 import 'asset_graph/build_step_id.dart';
 import 'asset_graph/build_step_result.dart';
+import 'asset_graph/glob_id.dart';
+import 'asset_graph/glob_result.dart';
 import 'asset_graph/graph.dart';
 import 'asset_graph/node.dart';
 import 'asset_graph/post_process_build_step_id.dart';
@@ -70,7 +72,7 @@ class Build {
   // State.
   final AssetGraph assetGraph;
   final lazyPhases = <String, Future<Iterable<AssetId>>>{};
-  final lazyGlobs = <AssetId, Future<void>>{};
+  final lazyGlobs = <GlobId, Future<void>>{};
 
   /// Generated outputs that have been processed.
   ///
@@ -83,7 +85,7 @@ class Build {
   ///
   /// That means they have been checked to determine whether they
   /// need evaluating, and if so their state has been updated accordingly.
-  final Set<AssetId> processedGlobs = {};
+  final Set<GlobId> processedGlobs = {};
 
   /// Inputs that changed since the last build.
   ///
@@ -108,6 +110,9 @@ class Build {
   /// Filled during the build as each output is produced and its digest is
   /// checked against the digest from the previous build.
   final Set<AssetId> changedOutputs = {};
+
+  /// Glob queries that changed since the last build.
+  final Set<GlobId> changedGlobs = {};
 
   /// Build steps for which errors have been shown.
   final Set<BuildStepId> errorsShownSteps = {};
@@ -552,7 +557,7 @@ class Build {
         assetGraph: assetGraph,
         nodeBuilder: _buildOutput,
         assetIsProcessedOutput: processedOutputs.contains,
-        globNodeBuilder: _buildGlobNode,
+        globEvaluator: _evaluateGlob,
       ),
       runningBuildStep: RunningBuildStep(
         phaseNumber: buildStepId.phaseNumber,
@@ -763,7 +768,7 @@ class Build {
         assetGraph: assetGraph,
         nodeBuilder: _buildOutput,
         assetIsProcessedOutput: processedOutputs.contains,
-        globNodeBuilder: _buildGlobNode,
+        globEvaluator: _evaluateGlob,
       ),
       runningBuildStep: RunningBuildStep(
         phaseNumber: phaseNumber,
@@ -975,6 +980,14 @@ class Build {
         if (changed) return true;
       }
 
+      // Check for changes to any glob inputs.
+      for (final globId in stepResult.globsEvaluated) {
+        if (!processedGlobs.contains(globId)) {
+          await _evaluateGlob(globId);
+        }
+        if (changedGlobs.contains(globId)) return true;
+      }
+
       for (final graphId in stepResult.resolverEntrypoints) {
         if (await _hasInputGraphChanged(
           phaseNumber: buildStepId.phaseNumber,
@@ -1092,14 +1105,6 @@ class Build {
       if (changedOutputs.contains(input)) {
         return true;
       }
-    } else if (inputNode.type == NodeType.glob) {
-      // Ensure that the glob was evaluated, so [changedOutputs] is updated.
-      if (!processedGlobs.contains(input)) {
-        await _buildGlobNode(input);
-      }
-      if (changedOutputs.contains(input)) {
-        return true;
-      }
     } else if (inputNode.type == NodeType.source) {
       if (changedInputs.contains(input)) {
         return true;
@@ -1183,15 +1188,13 @@ class Build {
   /// ends up in `inputs` but not in `results`.
   ///
   ///
-  Future<void> _buildGlobNode(AssetId globId) async {
+  Future<void> _evaluateGlob(GlobId globId) async {
     if (processedGlobs.contains(globId)) {
       return;
     }
 
     return lazyGlobs.putIfAbsent(globId, () async {
-      final globNodeConfiguration =
-          assetGraph.get(globId)!.globNodeConfiguration!;
-      final glob = Glob(globNodeConfiguration.glob);
+      final glob = Glob(globId.glob);
 
       // Generated files that match the glob.
       final generatedFileInputs = <AssetId>[];
@@ -1203,8 +1206,7 @@ class Build {
         // Generated nodes are only considered at all if they are output in
         // an earlier phase.
         if (node.type != NodeType.generated ||
-            node.generatedNodeConfiguration!.phaseNumber <
-                globNodeConfiguration.phaseNumber) {
+            node.generatedNodeConfiguration!.phaseNumber < globId.phaseNumber) {
           if (node.type == NodeType.generated) {
             generatedFileInputs.add(node.id);
           } else {
@@ -1234,18 +1236,19 @@ class Build {
 
       final results = [...otherInputs, ...generatedFileResults];
       final digest = md5.convert(utf8.encode(results.join(' ')));
-      assetGraph.updateNode(globId, (nodeBuilder) {
-        if (nodeBuilder.digest != digest) {
-          changedOutputs.add(globId);
-        }
-        processedGlobs.add(globId);
-        nodeBuilder
-          ..globNodeState.results.replace(results)
-          ..globNodeState.inputs.replace(
-            generatedFileInputs.followedBy(otherInputs),
-          )
-          ..digest = digest;
+
+      final previousGlobResult = assetGraph.globResultFor(globId);
+      if (previousGlobResult == null || previousGlobResult.digest != digest) {
+        changedGlobs.add(globId);
+      }
+      processedGlobs.add(globId);
+
+      final globResult = GlobResult((b) {
+        b.results.addAll(results);
+        b.inputs.addAll(generatedFileInputs.followedBy(otherInputs));
+        b.digest = digest;
       });
+      assetGraph.updateGlobResult(globId, globResult);
 
       unawaited(lazyGlobs.remove(globId));
     });
@@ -1279,6 +1282,7 @@ class Build {
     final stepResult = BuildStepResult((b) {
       b.result = result;
       b.inputs.replace(usedInputs);
+      b.globsEvaluated.replace(inputTracker.globsEvaluated);
       b.resolverEntrypoints.replace(inputTracker.resolverEntrypoints);
       b.errors.replace(errors);
     });

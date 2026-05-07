@@ -17,6 +17,7 @@ import '../build_plan/phase.dart';
 import '../io/asset_finder.dart';
 import '../io/reader_writer.dart';
 import 'asset_graph/build_step_id.dart';
+import 'asset_graph/glob_id.dart';
 
 import 'asset_graph/graph.dart';
 import 'asset_graph/node.dart';
@@ -33,10 +34,8 @@ typedef AssetBuilder = Future<void> Function(AssetId);
 /// If so, there is no need to build it.
 typedef AssetIsProcessedOutput = bool Function(AssetId);
 
-/// Builds a "glob node": all assets matching a glob.
-///
-/// The node must have type [NodeType.glob].
-typedef GlobNodeBuilder = Future<void> Function(AssetId);
+/// Evaluates all assets matching a glob.
+typedef GlobEvaluator = Future<void> Function(GlobId);
 
 /// Describes if and how a [SingleStepReaderWriter] should read an [AssetId].
 class Readability {
@@ -71,7 +70,7 @@ class RunningBuild {
   final AssetGraph assetGraph;
   final AssetBuilder nodeBuilder;
   final AssetIsProcessedOutput assetIsProcessedOutput;
-  final GlobNodeBuilder globNodeBuilder;
+  final GlobEvaluator globEvaluator;
 
   RunningBuild({
     required this.buildPackages,
@@ -79,7 +78,7 @@ class RunningBuild {
     required this.assetGraph,
     required this.nodeBuilder,
     required this.assetIsProcessedOutput,
-    required this.globNodeBuilder,
+    required this.globEvaluator,
   });
 }
 
@@ -264,12 +263,10 @@ class SingleStepReaderWriter implements PhasedReader {
 
     final streamCompleter = StreamCompleter<AssetId>();
 
-    _buildGlobNode(glob.pattern).then((globNodeId) {
-      inputTracker.add(globNodeId);
-      final globNode = _runningBuild.assetGraph.get(globNodeId)!;
-      streamCompleter.setSourceStream(
-        Stream.fromIterable(globNode.globNodeState!.results),
-      );
+    _evaluateGlob(glob.pattern).then((globId) {
+      inputTracker.addGlob(globId);
+      final globResult = _runningBuild.assetGraph.globResultFor(globId)!;
+      streamCompleter.setSourceStream(Stream.fromIterable(globResult.results));
     });
     return streamCompleter.stream;
   }
@@ -334,7 +331,7 @@ class SingleStepReaderWriter implements PhasedReader {
         node.wasOutput && (stepResult == null || stepResult.result != false),
       );
     }
-    return Readability.fromPreviousPhase(node.isFile && node.isTrackedInput);
+    return Readability.fromPreviousPhase(node.type == NodeType.source);
   }
 
   void _checkInvalidInput(AssetId id) {
@@ -353,28 +350,15 @@ class SingleStepReaderWriter implements PhasedReader {
     }
   }
 
-  /// Builds an [AssetNode.glob] for [glob].
-  ///
-  /// Retrieves an existing node from `_runningBuild.assetGraph` if it's
-  /// available; if not, adds one. Then, gets the built glob from
-  /// `runningBuild.globNodeBuilder`, which might return an existing result.
-  Future<AssetId> _buildGlobNode(String glob) async {
-    final globNodeId = AssetNode.createGlobNodeId(
-      _runningBuildStep!.primaryPackage,
-      glob,
-      _runningBuildStep.phaseNumber,
+  /// Triggers the evaluation of the [glob] query inside the build engine.
+  Future<GlobId> _evaluateGlob(String glob) async {
+    final globId = GlobId(
+      package: _runningBuildStep!.primaryPackage,
+      glob: glob,
+      phaseNumber: _runningBuildStep.phaseNumber,
     );
-    var globNode = _runningBuild!.assetGraph.get(globNodeId);
-    if (globNode == null) {
-      globNode = AssetNode.glob(
-        globNodeId,
-        glob: glob,
-        phaseNumber: _runningBuildStep.phaseNumber,
-      );
-      _runningBuild.assetGraph.add(globNode);
-    }
-    await _runningBuild.globNodeBuilder(globNodeId);
-    return globNodeId;
+    await _runningBuild!.globEvaluator(globId);
+    return globId;
   }
 
   Future<void> writeAsBytes(AssetId id, List<int> bytes) {
