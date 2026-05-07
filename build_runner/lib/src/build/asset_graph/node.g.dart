@@ -90,13 +90,6 @@ class _$AssetNodeSerializer implements StructuredSerializer<AssetNode> {
           const FullType(AssetId),
         ]),
       ),
-      'deletedBy',
-      serializers.serialize(
-        object.deletedBy,
-        specifiedType: const FullType(BuiltSet, const [
-          const FullType(PostProcessBuildStepId),
-        ]),
-      ),
     ];
     Object? value;
     value = object.generatedNodeConfiguration;
@@ -178,17 +171,6 @@ class _$AssetNodeSerializer implements StructuredSerializer<AssetNode> {
                     specifiedType: const FullType(Digest),
                   )
                   as Digest?;
-          break;
-        case 'deletedBy':
-          result.deletedBy.replace(
-            serializers.deserialize(
-                  value,
-                  specifiedType: const FullType(BuiltSet, const [
-                    const FullType(PostProcessBuildStepId),
-                  ]),
-                )!
-                as BuiltSet<Object?>,
-          );
           break;
       }
     }
@@ -290,8 +272,6 @@ class _$AssetNode extends AssetNode {
   final BuiltSet<AssetId> primaryOutputs;
   @override
   final Digest? digest;
-  @override
-  final BuiltSet<PostProcessBuildStepId> deletedBy;
 
   factory _$AssetNode([void Function(AssetNodeBuilder)? updates]) =>
       (AssetNodeBuilder()..update(updates))._build();
@@ -302,7 +282,6 @@ class _$AssetNode extends AssetNode {
     this.generatedNodeConfiguration,
     required this.primaryOutputs,
     this.digest,
-    required this.deletedBy,
   }) : super._();
   @override
   AssetNode rebuild(void Function(AssetNodeBuilder) updates) =>
@@ -319,8 +298,7 @@ class _$AssetNode extends AssetNode {
         type == other.type &&
         generatedNodeConfiguration == other.generatedNodeConfiguration &&
         primaryOutputs == other.primaryOutputs &&
-        digest == other.digest &&
-        deletedBy == other.deletedBy;
+        digest == other.digest;
   }
 
   @override
@@ -331,7 +309,6 @@ class _$AssetNode extends AssetNode {
     _$hash = $jc(_$hash, generatedNodeConfiguration.hashCode);
     _$hash = $jc(_$hash, primaryOutputs.hashCode);
     _$hash = $jc(_$hash, digest.hashCode);
-    _$hash = $jc(_$hash, deletedBy.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -343,8 +320,7 @@ class _$AssetNode extends AssetNode {
           ..add('type', type)
           ..add('generatedNodeConfiguration', generatedNodeConfiguration)
           ..add('primaryOutputs', primaryOutputs)
-          ..add('digest', digest)
-          ..add('deletedBy', deletedBy))
+          ..add('digest', digest))
         .toString();
   }
 }
@@ -378,12 +354,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
   Digest? get digest => _$this._digest;
   set digest(Digest? digest) => _$this._digest = digest;
 
-  SetBuilder<PostProcessBuildStepId>? _deletedBy;
-  SetBuilder<PostProcessBuildStepId> get deletedBy =>
-      _$this._deletedBy ??= SetBuilder<PostProcessBuildStepId>();
-  set deletedBy(SetBuilder<PostProcessBuildStepId>? deletedBy) =>
-      _$this._deletedBy = deletedBy;
-
   AssetNodeBuilder();
 
   AssetNodeBuilder get _$this {
@@ -394,7 +364,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
       _generatedNodeConfiguration = $v.generatedNodeConfiguration?.toBuilder();
       _primaryOutputs = $v.primaryOutputs.toBuilder();
       _digest = $v.digest;
-      _deletedBy = $v.deletedBy.toBuilder();
       _$v = null;
     }
     return this;
@@ -428,7 +397,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
             generatedNodeConfiguration: _generatedNodeConfiguration?.build(),
             primaryOutputs: primaryOutputs.build(),
             digest: digest,
-            deletedBy: deletedBy.build(),
           );
     } catch (_) {
       late String _$failedField;
@@ -437,9 +405,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
         _generatedNodeConfiguration?.build();
         _$failedField = 'primaryOutputs';
         primaryOutputs.build();
-
-        _$failedField = 'deletedBy';
-        deletedBy.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'AssetNode',

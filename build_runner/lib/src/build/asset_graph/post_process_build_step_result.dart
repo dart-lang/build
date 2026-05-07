@@ -19,6 +19,8 @@ abstract class PostProcessBuildStepResult
 
   bool get hidden;
 
+  bool get deletedPrimaryInput;
+
   BuiltSet<AssetId> get outputs;
 
   BuiltList<String> get errors;
@@ -27,8 +29,10 @@ abstract class PostProcessBuildStepResult
     required bool hidden,
     Iterable<AssetId> outputs = const [],
     Iterable<String> errors = const [],
+    bool deletedPrimaryInput = false,
   }) => _$PostProcessBuildStepResult._(
     hidden: hidden,
+    deletedPrimaryInput: deletedPrimaryInput,
     outputs: outputs.toBuiltSet(),
     errors: errors.toBuiltList(),
   );

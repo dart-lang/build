@@ -804,15 +804,13 @@ class Build {
       postProcessBuildStepId,
       PostProcessBuildStepResult(hidden: hideOutput),
     );
-    assetGraph.updateNode(inputNode.id, (nodeBuilder) {
-      nodeBuilder.deletedBy.remove(postProcessBuildStepId);
-    });
 
     final logger = buildLog.loggerForOther(
       buildLog.renderId(input),
       contextId: input,
     );
     final outputs = <AssetId>{};
+    var deletedPrimaryInput = false;
     await runPostProcessBuilder(
       builder,
       input,
@@ -836,9 +834,7 @@ class Build {
             'Can only delete primary input',
           );
         }
-        assetGraph.updateNode(assetId, (nodeBuilder) {
-          nodeBuilder.deletedBy.add(postProcessBuildStepId);
-        });
+        deletedPrimaryInput = true;
       },
     ).catchError((void _) {
       // Errors tracked through the logger
@@ -856,6 +852,7 @@ class Build {
       hidden: hideOutput,
       outputs: assetsWritten,
       errors: logger.errors,
+      deletedPrimaryInput: deletedPrimaryInput,
     );
     assetGraph.updatePostProcessBuildStepResult(
       postProcessBuildStepId,

@@ -37,6 +37,10 @@ Serializers _$serializers =
             () => SetBuilder<AssetId>(),
           )
           ..addBuilderFactory(
+            const FullType(BuiltSet, const [const FullType(AssetId)]),
+            () => SetBuilder<AssetId>(),
+          )
+          ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(String)]),
             () => ListBuilder<String>(),
           )
@@ -63,16 +67,6 @@ Serializers _$serializers =
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(String)]),
             () => ListBuilder<String>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltSet, const [const FullType(AssetId)]),
-            () => SetBuilder<AssetId>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltSet, const [
-              const FullType(PostProcessBuildStepId),
-            ]),
-            () => SetBuilder<PostProcessBuildStepId>(),
           ))
         .build();
 

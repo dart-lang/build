@@ -28,6 +28,11 @@ class _$PostProcessBuildStepResultSerializer
     final result = <Object?>[
       'hidden',
       serializers.serialize(object.hidden, specifiedType: const FullType(bool)),
+      'deletedPrimaryInput',
+      serializers.serialize(
+        object.deletedPrimaryInput,
+        specifiedType: const FullType(bool),
+      ),
       'outputs',
       serializers.serialize(
         object.outputs,
@@ -69,6 +74,14 @@ class _$PostProcessBuildStepResultSerializer
                   )!
                   as bool;
           break;
+        case 'deletedPrimaryInput':
+          result.deletedPrimaryInput =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(bool),
+                  )!
+                  as bool;
+          break;
         case 'outputs':
           result.outputs.replace(
             serializers.deserialize(
@@ -102,6 +115,8 @@ class _$PostProcessBuildStepResult extends PostProcessBuildStepResult {
   @override
   final bool hidden;
   @override
+  final bool deletedPrimaryInput;
+  @override
   final BuiltSet<AssetId> outputs;
   @override
   final BuiltList<String> errors;
@@ -112,6 +127,7 @@ class _$PostProcessBuildStepResult extends PostProcessBuildStepResult {
 
   _$PostProcessBuildStepResult._({
     required this.hidden,
+    required this.deletedPrimaryInput,
     required this.outputs,
     required this.errors,
   }) : super._();
@@ -129,6 +145,7 @@ class _$PostProcessBuildStepResult extends PostProcessBuildStepResult {
     if (identical(other, this)) return true;
     return other is PostProcessBuildStepResult &&
         hidden == other.hidden &&
+        deletedPrimaryInput == other.deletedPrimaryInput &&
         outputs == other.outputs &&
         errors == other.errors;
   }
@@ -137,6 +154,7 @@ class _$PostProcessBuildStepResult extends PostProcessBuildStepResult {
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, hidden.hashCode);
+    _$hash = $jc(_$hash, deletedPrimaryInput.hashCode);
     _$hash = $jc(_$hash, outputs.hashCode);
     _$hash = $jc(_$hash, errors.hashCode);
     _$hash = $jf(_$hash);
@@ -147,6 +165,7 @@ class _$PostProcessBuildStepResult extends PostProcessBuildStepResult {
   String toString() {
     return (newBuiltValueToStringHelper(r'PostProcessBuildStepResult')
           ..add('hidden', hidden)
+          ..add('deletedPrimaryInput', deletedPrimaryInput)
           ..add('outputs', outputs)
           ..add('errors', errors))
         .toString();
@@ -162,6 +181,11 @@ class PostProcessBuildStepResultBuilder
   bool? get hidden => _$this._hidden;
   set hidden(bool? hidden) => _$this._hidden = hidden;
 
+  bool? _deletedPrimaryInput;
+  bool? get deletedPrimaryInput => _$this._deletedPrimaryInput;
+  set deletedPrimaryInput(bool? deletedPrimaryInput) =>
+      _$this._deletedPrimaryInput = deletedPrimaryInput;
+
   SetBuilder<AssetId>? _outputs;
   SetBuilder<AssetId> get outputs => _$this._outputs ??= SetBuilder<AssetId>();
   set outputs(SetBuilder<AssetId>? outputs) => _$this._outputs = outputs;
@@ -176,6 +200,7 @@ class PostProcessBuildStepResultBuilder
     final $v = _$v;
     if ($v != null) {
       _hidden = $v.hidden;
+      _deletedPrimaryInput = $v.deletedPrimaryInput;
       _outputs = $v.outputs.toBuilder();
       _errors = $v.errors.toBuilder();
       _$v = null;
@@ -206,6 +231,11 @@ class PostProcessBuildStepResultBuilder
               hidden,
               r'PostProcessBuildStepResult',
               'hidden',
+            ),
+            deletedPrimaryInput: BuiltValueNullFieldError.checkNotNull(
+              deletedPrimaryInput,
+              r'PostProcessBuildStepResult',
+              'deletedPrimaryInput',
             ),
             outputs: outputs.build(),
             errors: errors.build(),
