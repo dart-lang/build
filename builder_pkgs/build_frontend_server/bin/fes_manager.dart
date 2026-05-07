@@ -15,7 +15,11 @@ void main(List<String> args) async {
     exit(1);
   }
   final sdkRoot = args[0];
-  final fileSystemRoot = Uri.parse(args[1]);
+  var fileSystemRoot = Uri.parse(args[1]);
+  if (!fileSystemRoot.path.endsWith('/')) {
+    fileSystemRoot = fileSystemRoot.replace(path: '${fileSystemRoot.path}/');
+  }
+
   final packagesFile = Uri.parse(args[2]);
 
   // Delete the port file if it exists. Frontend Server finds a port and
@@ -29,6 +33,7 @@ void main(List<String> args) async {
     packagesFile: packagesFile,
   );
 
+  final driver = FrontendServerProxyDriver()..init(fes);
   final server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
 
   // Write port and filesystem root to file so we can create connections to it
@@ -37,7 +42,6 @@ void main(List<String> args) async {
   portFile.writeAsStringSync(
     jsonEncode({
       'port': server.port,
-      'fileSystemRoot': fileSystemRoot.toString(),
       'timestamp': DateTime.now().toIso8601String(),
     }),
   );
@@ -71,12 +75,13 @@ void main(List<String> args) async {
                   expression: request['expression'] as String,
                 );
 
+                final bytes = result?.expressionData;
+                final expressionDataString =
+                    bytes != null ? base64.encode(bytes) : null;
+
                 socket.writeln(
                   jsonEncode({
-                    'result':
-                        result?.expressionData != null
-                            ? base64.encode(result!.expressionData!)
-                            : null,
+                    'expressionData': expressionDataString,
                     'errorCount': result?.errorCount,
                     'errorMessage': result?.errorMessage,
                   }),
@@ -94,7 +99,7 @@ void main(List<String> args) async {
                   }),
                 );
                 break;
-              case 'RECOMPILE_AND_FLUSH':
+              case 'RECOMPILE_AND_RECORD':
                 final entrypoint = request['entrypoint'] as String;
                 final invalidatedFiles =
                     (request['invalidatedFiles'] as List)
@@ -104,23 +109,11 @@ void main(List<String> args) async {
                 final filesToWrite =
                     (request['filesToWrite'] as List).cast<String>();
 
-                final result = await fes.recompile(
+                final result = await driver.recompileAndRecord(
                   entrypoint,
                   invalidatedFiles,
+                  filesToWrite,
                 );
-                if (result != null && result.errorCount == 0) {
-                  fes.accept();
-                  fes.recordFiles();
-                  if (filesToWrite.isEmpty) {
-                    fes.writeAllFiles();
-                  } else {
-                    for (final file in filesToWrite) {
-                      fes.writeFile(file);
-                    }
-                  }
-                } else {
-                  await fes.reject();
-                }
 
                 socket.writeln(
                   jsonEncode({

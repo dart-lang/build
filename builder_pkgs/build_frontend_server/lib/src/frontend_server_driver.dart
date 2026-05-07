@@ -51,21 +51,18 @@ class FrontendServerProxyDriver {
   ) async {
     if (_frontendServer!._socket != null) {
       final socket = _frontendServer!._socket!;
+      final socketLines = _frontendServer!._socketLines!;
+      final nextResponseFuture = socketLines.first;
       socket.writeln(
         jsonEncode({
-          'instruction': 'RECOMPILE_AND_FLUSH',
+          'instruction': 'RECOMPILE_AND_RECORD',
           'entrypoint': entrypoint,
           'invalidatedFiles':
               invalidatedFiles.map((u) => u.toString()).toList(),
           'filesToWrite': filesToWrite.toList(),
         }),
       );
-      final responseLine =
-          await socket
-              .cast<List<int>>()
-              .transform(utf8.decoder)
-              .transform(const LineSplitter())
-              .first;
+      final responseLine = await nextResponseFuture;
       final compileResult = jsonDecode(responseLine) as Map<String, dynamic>;
       return CompilerOutput(
         compileResult['outputFilename'] as String? ?? '',
@@ -78,6 +75,10 @@ class FrontendServerProxyDriver {
       );
     }
 
+    // The first request to the Frontend Server will be coerced to a full
+    // compile. We must additionally write all of FES's generated files
+    // to disk - not just those for the 'current' library.
+    final isFirstRequest = _cachedOutput == null;
     final compilerOutput = await recompile(entrypoint, invalidatedFiles);
     if (compilerOutput == null ||
         compilerOutput.errorCount != 0 ||
@@ -86,7 +87,7 @@ class FrontendServerProxyDriver {
       return compilerOutput;
     }
     _frontendServer!.recordFiles();
-    if (filesToWrite.isEmpty) {
+    if (isFirstRequest || filesToWrite.isEmpty) {
       _frontendServer!.writeAllFiles();
     } else {
       for (final file in filesToWrite) {
@@ -255,49 +256,54 @@ class _CompileExpressionToJsRequest extends _CompilationRequest {
 class PersistentFrontendServer {
   Process? _server;
   final Socket? _socket;
+  final Stream<String>? _socketLines;
   final StdoutHandler? _stdoutHandler;
   final StreamController<String>? _stdinController;
   final Uri outputDillUri;
   final WebMemoryFilesystem _fileSystem;
-  final String? fileSystemRootPath;
-
-  PersistentFrontendServer._(
-    this._server,
-    this._stdoutHandler,
-    this._stdinController,
-    this.outputDillUri,
-    this._fileSystem,
-    this._socket,
-    this.fileSystemRootPath,
-  );
+  PersistentFrontendServer._({
+    Process? server,
+    StdoutHandler? stdoutHandler,
+    StreamController<String>? stdinController,
+    required this.outputDillUri,
+    required WebMemoryFilesystem fileSystem,
+    Socket? socket,
+    Stream<String>? socketLines,
+  }) : _server = server,
+       _stdoutHandler = stdoutHandler,
+       _stdinController = stdinController,
+       _fileSystem = fileSystem,
+       _socket = socket,
+       _socketLines = socketLines;
 
   static Future<PersistentFrontendServer> start({
     required String sdkRoot,
     required Uri fileSystemRoot,
     required Uri packagesFile,
   }) async {
-    String? fileSystemRootPath;
     final file = File(p.join(Directory.current.path, fesWorkerPortPath));
     if (await file.exists()) {
       try {
         final content = await file.readAsString();
         final json = jsonDecode(content) as Map<String, dynamic>;
         final port = json['port'] as int?;
-        fileSystemRootPath = json['fileSystemRoot'] as String?;
         if (port != null) {
           final socket = await Socket.connect(
             InternetAddress.loopbackIPv4,
             port,
           );
+          final socketLines =
+              socket
+                  .cast<List<int>>()
+                  .transform(utf8.decoder)
+                  .transform(const LineSplitter())
+                  .asBroadcastStream();
           final fileSystem = WebMemoryFilesystem(fileSystemRoot);
           return PersistentFrontendServer._(
-            null,
-            null,
-            null,
-            fileSystemRoot.resolve('output.dill'),
-            fileSystem,
-            socket,
-            fileSystemRootPath,
+            outputDillUri: fileSystemRoot.resolve('output.dill'),
+            fileSystem: fileSystem,
+            socket: socket,
+            socketLines: socketLines,
           );
         }
       } catch (e) {
@@ -342,27 +348,22 @@ class PersistentFrontendServer {
     stdinController.stream.listen(process.stdin.writeln);
 
     return PersistentFrontendServer._(
-      process,
-      stdoutHandler,
-      stdinController,
-      outputDillUri,
-      fileSystem,
-      null,
-      null,
+      server: process,
+      stdoutHandler: stdoutHandler,
+      stdinController: stdinController,
+      outputDillUri: outputDillUri,
+      fileSystem: fileSystem,
     );
   }
 
   Future<CompilerOutput?> compile(String entrypoint) async {
     if (_socket != null) {
+      final socketLines = _socketLines!;
+      final nextResponseFuture = socketLines.first;
       _socket.writeln(
         jsonEncode({'instruction': 'COMPILE', 'entrypoint': entrypoint}),
       );
-      final responseLine =
-          await _socket
-              .cast<List<int>>()
-              .transform(utf8.decoder)
-              .transform(const LineSplitter())
-              .first;
+      final responseLine = await nextResponseFuture;
       final compileResult = jsonDecode(responseLine) as Map<String, dynamic>;
       return CompilerOutput(
         compileResult['outputFilename'] as String? ?? '',
@@ -427,9 +428,24 @@ class PersistentFrontendServer {
       }),
     );
     try {
-      return await _stdoutHandler.compilerOutput!.future.timeout(
+      final result = await _stdoutHandler.compilerOutput!.future.timeout(
         const Duration(seconds: 10),
       );
+      if (result != null &&
+          result.expressionData == null &&
+          result.outputFilename.isNotEmpty) {
+        final file = File(result.outputFilename);
+        if (file.existsSync()) {
+          return CompilerOutput(
+            result.outputFilename,
+            result.errorCount,
+            result.sources,
+            expressionData: file.readAsBytesSync(),
+            errorMessage: result.errorMessage,
+          );
+        }
+      }
+      return result;
     } on TimeoutException {
       _stdoutHandler.reset();
       return const CompilerOutput(
@@ -525,13 +541,6 @@ class WebMemoryFilesystem {
   final Map<String, Uint8List> metadata = {};
 
   WebMemoryFilesystem(this.jsRootUri);
-
-  /// Clears all files registered in the filesystem.
-  void clearWritableState() {
-    files.clear();
-    sourcemaps.clear();
-    metadata.clear();
-  }
 
   /// Writes the entirety of this filesystem to [outputDirectoryUri].
   void writeAllFilesToDisk(Uri outputDirectoryUri) {
