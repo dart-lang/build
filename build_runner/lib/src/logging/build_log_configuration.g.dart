@@ -53,15 +53,14 @@ class _$BuildLogConfiguration extends BuildLogConfiguration {
   @override
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
-    final dynamic _$dynamicOther = other;
     return other is BuildLogConfiguration &&
         mode == other.mode &&
         verbose == other.verbose &&
         verboseDurations == other.verboseDurations &&
-        onLog == _$dynamicOther.onLog &&
+        onLog == other.onLog &&
         singleOutputPackage == other.singleOutputPackage &&
         throttleProgressUpdates == other.throttleProgressUpdates &&
-        printOnFailure == _$dynamicOther.printOnFailure &&
+        printOnFailure == other.printOnFailure &&
         forceAnsiConsoleForTesting == other.forceAnsiConsoleForTesting &&
         forceConsoleWidthForTesting == other.forceConsoleWidthForTesting;
   }

@@ -4,7 +4,7 @@
 
 import 'dart:convert';
 
-import 'package:build/build.dart' show AssetId, PostProcessBuildStep;
+import 'package:build/build.dart' show AssetId;
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/serializer.dart';
 import 'package:crypto/crypto.dart';
@@ -12,20 +12,25 @@ import 'package:crypto/crypto.dart';
 import '../library_cycle_graph/asset_deps.dart';
 import '../library_cycle_graph/phased_asset_deps.dart';
 import '../library_cycle_graph/phased_value.dart';
+import 'build_step_id.dart';
+import 'build_step_result.dart';
+import 'glob_id.dart';
+import 'glob_result.dart';
 import 'identity_serializer.dart';
 import 'node.dart';
 import 'post_process_build_step_id.dart';
+import 'post_process_build_step_result.dart';
 
 part 'serializers.g.dart';
 
-final postProcessBuildStepOutputsInnerFullType = const FullType(Map, [
-  FullType(PostProcessBuildStep),
-  FullType(Set, [FullType(AssetId)]),
+final postProcessBuildStepResultsInnerFullType = const FullType(Map, [
+  FullType(PostProcessBuildStepId),
+  FullType(PostProcessBuildStepResult),
 ]);
 
-final postProcessBuildStepOutputsFullType = FullType(Map, [
+final postProcessBuildStepResultsFullType = FullType(Map, [
   const FullType(String),
-  postProcessBuildStepOutputsInnerFullType,
+  postProcessBuildStepResultsInnerFullType,
 ]);
 
 final assetIdSerializer = AssetIdSerializer();
@@ -33,22 +38,58 @@ final identityAssetIdSerializer = IdentitySerializer<AssetId>(
   assetIdSerializer,
 );
 
-@SerializersFor([AssetNode, PhasedAssetDeps, AssetDeps])
+@SerializersFor([
+  AssetNode,
+  PhasedAssetDeps,
+  AssetDeps,
+  BuildStepId,
+  BuildStepResult,
+  GlobId,
+  GlobResult,
+  PostProcessBuildStepResult,
+])
 final Serializers serializers =
     (_$serializers.toBuilder()
           ..add(identityAssetIdSerializer)
           ..add(DigestSerializer())
           ..addBuilderFactory(
+            const FullType(BuiltSet, [FullType(AssetId)]),
+            SetBuilder<AssetId>.new,
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, [FullType(String)]),
+            ListBuilder<String>.new,
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltMap, [
+              FullType(BuildStepId),
+              FullType(BuildStepResult),
+            ]),
+            MapBuilder<BuildStepId, BuildStepResult>.new,
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltMap, [FullType(GlobId), FullType(GlobResult)]),
+            MapBuilder<GlobId, GlobResult>.new,
+          )
+          ..addBuilderFactory(
             const FullType(Set, [FullType(AssetId)]),
             () => <AssetId>{},
           )
           ..addBuilderFactory(
-            postProcessBuildStepOutputsInnerFullType,
-            () => <PostProcessBuildStepId, Set<AssetId>>{},
+            postProcessBuildStepResultsInnerFullType,
+            () => <PostProcessBuildStepId, PostProcessBuildStepResult>{},
           )
           ..addBuilderFactory(
-            postProcessBuildStepOutputsFullType,
-            () => <String, Map<PostProcessBuildStepId, Set<AssetId>>>{},
+            postProcessBuildStepResultsFullType,
+            () =>
+                <
+                  String,
+                  Map<PostProcessBuildStepId, PostProcessBuildStepResult>
+                >{},
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltMap, [FullType(AssetId), FullType(Digest)]),
+            MapBuilder<AssetId, Digest>.new,
           )
           ..addBuilderFactory(
             const FullType(BuiltList, [FullType(Digest)]),

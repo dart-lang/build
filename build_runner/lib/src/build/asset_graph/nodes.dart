@@ -12,10 +12,6 @@ import 'node.dart';
 class Nodes {
   final Map<AssetId, AssetNode> _nodes = {};
 
-  /// The result of [computeOutputs] for reuse, or `null` if outputs have not
-  /// been computed.
-  Map<AssetId, Set<AssetId>>? _outputs;
-
   /// Sorted nodes by package, or `null` if they have not been computed.
   Map<String, List<AssetId>>? _sortedFileIdsByPackage;
 
@@ -60,9 +56,6 @@ class Nodes {
     final updatedNode = node.rebuild(updates);
     _nodes[id] = updatedNode;
 
-    if (node.inputs != updatedNode.inputs) {
-      _outputs = null;
-    }
     if (node.isFile != updatedNode.isFile) {
       _sortedFileIdsByPackage = null;
     }
@@ -84,9 +77,6 @@ class Nodes {
     final updatedNode = node.rebuild(updates);
     _nodes[id] = updatedNode;
 
-    if (node.inputs != updatedNode.inputs) {
-      _outputs = null;
-    }
     if (node.isFile != updatedNode.isFile) {
       _sortedFileIdsByPackage = null;
     }
@@ -117,9 +107,6 @@ class Nodes {
       }
     }
     _nodes[node.id] = node;
-    if (node.inputs?.isNotEmpty ?? false) {
-      _outputs = null;
-    }
 
     return node;
   }
@@ -177,32 +164,9 @@ class Nodes {
     return result;
   }
 
-  /// Computes node outputs: the inverse of the graph described by the `inputs`
-  /// fields on glob and generated nodes.
-  ///
-  /// The result is cached until any node is updated with different `inputs` or
-  /// [clearComputationResults] is called.
-  Map<AssetId, Set<AssetId>> computeOutputs() {
-    if (_outputs != null) return _outputs!;
-    final result = <AssetId, Set<AssetId>>{};
-    for (final node in allNodes) {
-      if (node.type == NodeType.generated) {
-        for (final input in node.generatedNodeState!.inputs) {
-          result.putIfAbsent(input, () => {}).add(node.id);
-        }
-      } else if (node.type == NodeType.glob) {
-        for (final input in node.globNodeState!.inputs) {
-          result.putIfAbsent(input, () => {}).add(node.id);
-        }
-      }
-    }
-    return _outputs = result;
-  }
-
   /// Call this after modifications to the graph and before the next build, to
   /// reset computed values.
   void clearComputationResults() {
-    _outputs = null;
     _sortedFileIdsByPackageWasComputed = false;
   }
 }

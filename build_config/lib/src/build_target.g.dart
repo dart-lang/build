@@ -6,44 +6,40 @@ part of 'build_target.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-BuildTarget _$BuildTargetFromJson(Map json) => $checkedCreate(
-  'BuildTarget',
-  json,
-  ($checkedConvert) {
-    $checkKeys(
-      json,
-      allowedKeys: const [
-        'auto_apply_builders',
-        'builders',
-        'dependencies',
-        'sources',
-      ],
-    );
-    final val = BuildTarget(
-      autoApplyBuilders: $checkedConvert(
-        'auto_apply_builders',
-        (v) => v as bool?,
-      ),
-      sources: $checkedConvert(
-        'sources',
-        (v) => v == null ? null : InputSet.fromJson(v),
-      ),
-      dependencies: $checkedConvert(
-        'dependencies',
-        (v) => (v as List<dynamic>?)?.map((e) => e as String),
-      ),
-      builders: $checkedConvert(
-        'builders',
-        (v) => (v as Map?)?.map(
-          (k, e) =>
-              MapEntry(k as String, TargetBuilderConfig.fromJson(e as Map)),
+BuildTarget _$BuildTargetFromJson(Map json) =>
+    $checkedCreate('BuildTarget', json, ($checkedConvert) {
+      $checkKeys(
+        json,
+        allowedKeys: const [
+          'auto_apply_builders',
+          'builders',
+          'dependencies',
+          'sources',
+        ],
+      );
+      final val = BuildTarget(
+        autoApplyBuilders: $checkedConvert(
+          'auto_apply_builders',
+          (v) => v as bool?,
         ),
-      ),
-    );
-    return val;
-  },
-  fieldKeyMap: const {'autoApplyBuilders': 'auto_apply_builders'},
-);
+        sources: $checkedConvert(
+          'sources',
+          (v) => v == null ? null : InputSet.fromJson(v),
+        ),
+        dependencies: $checkedConvert(
+          'dependencies',
+          (v) => (v as List<dynamic>?)?.map((e) => e as String),
+        ),
+        builders: $checkedConvert(
+          'builders',
+          (v) => (v as Map?)?.map(
+            (k, e) =>
+                MapEntry(k as String, TargetBuilderConfig.fromJson(e as Map)),
+          ),
+        ),
+      );
+      return val;
+    }, fieldKeyMap: const {'autoApplyBuilders': 'auto_apply_builders'});
 
 TargetBuilderConfig _$TargetBuilderConfigFromJson(Map json) => $checkedCreate(
   'TargetBuilderConfig',

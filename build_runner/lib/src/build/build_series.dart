@@ -146,12 +146,13 @@ class BuildSeries {
       // If not copying to a merged output directory, ignore changes to files
       // with no outputs.
       if (!_buildPlan.buildOptions.anyMergedOutputDirectory &&
-          !node.changesRequireRebuild) {
+          node.type != NodeType.missingSource &&
+          node.digest == null) {
         continue;
       }
 
       // Ignore creation or modification of outputs.
-      if (node.type == NodeType.generated && change.type != ChangeType.REMOVE) {
+      if (node.isGenerated && change.type != ChangeType.REMOVE) {
         continue;
       }
 

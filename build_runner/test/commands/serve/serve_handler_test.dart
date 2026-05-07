@@ -8,9 +8,12 @@ import 'dart:io';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
+import 'package:build_runner/src/build/asset_graph/build_step_id.dart';
+import 'package:build_runner/src/build/asset_graph/build_step_result.dart';
 import 'package:build_runner/src/build/asset_graph/graph.dart';
 import 'package:build_runner/src/build/asset_graph/node.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
+import 'package:build_runner/src/build/asset_graph/post_process_build_step_result.dart';
 import 'package:build_runner/src/build/build_result.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
@@ -139,16 +142,15 @@ void main() {
 
   void addSource(String id, String content, {bool deleted = false}) {
     final parsedId = AssetId.parse(id);
-    var node = AssetNode.source(
+    final node = AssetNode.source(
       parsedId,
       digest: computeDigest(parsedId, content),
     );
     if (deleted) {
-      node = node.rebuild((b) {
-        b.deletedBy.add(
-          PostProcessBuildStepId(input: node.id, actionNumber: 1),
-        );
-      });
+      assetGraph.updatePostProcessBuildStepResult(
+        PostProcessBuildStepId(input: parsedId, actionNumber: 1),
+        PostProcessBuildStepResult(hidden: true, deletedPrimaryInput: true),
+      );
     }
     assetGraph.add(node);
     readerWriter.testing.writeString(node.id, content);
@@ -255,16 +257,20 @@ void main() {
   group('build failures', () {
     setUp(() async {
       addSource('a|web/index.html', '');
+      final primaryId = AssetId('a', 'web/main.dart');
+      final outputId = AssetId('a', 'web/main.ddc.js');
       assetGraph.add(
         AssetNode.generated(
-          AssetId('a', 'web/main.ddc.js'),
+          outputId,
           phaseNumber: 0,
           isHidden: false,
           digest: Digest([]),
-          result: false,
-          primaryInput: AssetId('a', 'web/main.dart'),
+          primaryInput: primaryId,
         ),
       );
+      final buildStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
+      final stepResult = BuildStepResult((b) => b..result = false);
+      assetGraph.updateBuildStepResult(buildStepId, stepResult);
       watcher.addFutureResult(
         Future.value(
           BuildResult(

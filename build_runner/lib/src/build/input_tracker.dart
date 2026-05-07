@@ -7,6 +7,7 @@ import 'dart:collection';
 import 'package:build/build.dart';
 
 import '../io/filesystem.dart';
+import 'asset_graph/glob_id.dart';
 
 /// Records inputs for a `BuildStep`.
 class InputTracker {
@@ -25,6 +26,7 @@ class InputTracker {
   final String? builderLabel;
   final HashSet<AssetId> _inputs = HashSet<AssetId>();
   final HashSet<AssetId> _resolverEntrypoints = HashSet<AssetId>();
+  final HashSet<GlobId> _globsEvaluated = HashSet<GlobId>();
 
   /// Creates an input tracker.
   ///
@@ -41,11 +43,15 @@ class InputTracker {
 
   void addResolverEntrypoint(AssetId graph) => _resolverEntrypoints.add(graph);
 
+  void addGlob(GlobId glob) => _globsEvaluated.add(glob);
+
   Set<AssetId> get inputs => _inputs;
   Set<AssetId> get resolverEntrypoints => _resolverEntrypoints;
+  Set<GlobId> get globsEvaluated => _globsEvaluated;
 
   void clear() {
     _inputs.clear();
     _resolverEntrypoints.clear();
+    _globsEvaluated.clear();
   }
 }

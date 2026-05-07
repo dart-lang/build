@@ -105,7 +105,10 @@ class DdcFrontendServerBuilder implements Builder {
     await buildStep.trackStage(
       'EnsureAssets',
       () => scratchSpace.ensureAssets([
-        webEntrypointAsset,
+        // It is only safe to include the entrypoint here for the same package,
+        // as for other packages it might be generated in a later build phase.
+        if (webEntrypointAsset.package == buildStep.inputId.package)
+          webEntrypointAsset,
         ...transitiveAssets,
       ], buildStep),
     );

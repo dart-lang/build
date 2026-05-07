@@ -8,7 +8,7 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 32;
+const _version = 33;
 
 /// Deserializes an [AssetGraph] from a [Map].
 ///
@@ -66,16 +66,19 @@ AssetGraph? deserializeAssetGraph(List<int> bytes) {
     graph._nodes.add(_deserializeAssetNode(serializedItem as List));
   }
 
-  final postProcessOutputs =
+  final postProcessResults =
       serializers.deserialize(
-            serializedGraph['postProcessOutputs'],
-            specifiedType: postProcessBuildStepOutputsFullType,
+            serializedGraph['postProcessResults'],
+            specifiedType: postProcessBuildStepResultsFullType,
           )
-          as Map<String, Map<PostProcessBuildStepId, Set<AssetId>>>;
+          as Map<
+            String,
+            Map<PostProcessBuildStepId, PostProcessBuildStepResult>
+          >;
 
-  for (final postProcessOutputsForPackage in postProcessOutputs.values) {
-    for (final entry in postProcessOutputsForPackage.entries) {
-      graph.updatePostProcessBuildStep(entry.key, outputs: entry.value);
+  for (final postProcessResultsForPackage in postProcessResults.values) {
+    for (final entry in postProcessResultsForPackage.entries) {
+      graph.updatePostProcessBuildStepResult(entry.key, entry.value);
     }
   }
 
@@ -83,6 +86,36 @@ AssetGraph? deserializeAssetGraph(List<int> bytes) {
     PhasedAssetDeps.serializer,
     serializedGraph['phasedAssetDeps'],
   );
+
+  if (serializedGraph.containsKey('buildStepResults')) {
+    final deserializedResults =
+        serializers.deserialize(
+              serializedGraph['buildStepResults'],
+              specifiedType: const FullType(BuiltMap, [
+                FullType(BuildStepId),
+                FullType(BuildStepResult),
+              ]),
+            )
+            as BuiltMap<BuildStepId, BuildStepResult>;
+    for (final entry in deserializedResults.entries) {
+      graph.updateBuildStepResult(entry.key, entry.value);
+    }
+  }
+
+  if (serializedGraph.containsKey('globResults')) {
+    final deserializedResults =
+        serializers.deserialize(
+              serializedGraph['globResults'],
+              specifiedType: const FullType(BuiltMap, [
+                FullType(GlobId),
+                FullType(GlobResult),
+              ]),
+            )
+            as BuiltMap<GlobId, GlobResult>;
+    for (final entry in deserializedResults.entries) {
+      graph.updateGlobResult(entry.key, entry.value);
+    }
+  }
 
   identityAssetIdSerializer.reset();
   return graph;
@@ -117,9 +150,9 @@ List<int> serializeAssetGraph(AssetGraph graph) {
             .map((pkg, version) => MapEntry(pkg, version?.toString()))
             .toMap(),
     'enabledExperiments': graph.enabledExperiments.toList(),
-    'postProcessOutputs': serializers.serialize(
-      graph._postProcessBuildStepOutputs,
-      specifiedType: postProcessBuildStepOutputsFullType,
+    'postProcessResults': serializers.serialize(
+      graph._postProcessBuildStepResults,
+      specifiedType: postProcessBuildStepResultsFullType,
     ),
     'inBuildPhasesOptionsDigests': serializers.serialize(
       graph.inBuildPhasesOptionsDigests,
@@ -130,6 +163,20 @@ List<int> serializeAssetGraph(AssetGraph graph) {
       specifiedType: const FullType(BuiltList, [FullType(Digest)]),
     ),
     'phasedAssetDeps': serializedPhasedAssetDeps,
+    'buildStepResults': serializers.serialize(
+      BuiltMap<BuildStepId, BuildStepResult>.of(graph.buildStepResults),
+      specifiedType: const FullType(BuiltMap, [
+        FullType(BuildStepId),
+        FullType(BuildStepResult),
+      ]),
+    ),
+    'globResults': serializers.serialize(
+      BuiltMap<GlobId, GlobResult>.of(graph.globResults),
+      specifiedType: const FullType(BuiltMap, [
+        FullType(GlobId),
+        FullType(GlobResult),
+      ]),
+    ),
   };
 
   identityAssetIdSerializer.reset();
