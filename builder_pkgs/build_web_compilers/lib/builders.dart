@@ -58,7 +58,9 @@ Builder ddcBuilder(BuilderOptions options) {
   _ensureSameDdcOptions(options);
 
   if (_readWebHotReloadOption(options)) {
-    return DdcFrontendServerBuilder();
+    return DdcFrontendServerBuilder(
+      scratchSpaceDir: _readScratchSpaceDirOption(options),
+    );
   }
 
   return DevCompilerBuilder(
@@ -278,6 +280,10 @@ String _readWebAssetsPathOption(BuilderOptions options) {
   return options.config[_webAssetsPathOption] as String? ?? 'web';
 }
 
+String? _readScratchSpaceDirOption(BuilderOptions options) {
+  return options.config[_scratchSpaceDirOption] as String?;
+}
+
 Map<String, String> _readEnvironmentOption(BuilderOptions options) {
   final environment = options.config[_environmentOption] as Map? ?? const {};
   return environment.map((key, value) => MapEntry('$key', '$value'));
@@ -300,6 +306,7 @@ const _ddcKernelPathOption = 'ddc-kernel-path';
 const _librariesPathOption = 'libraries-path';
 const _platformSdkOption = 'platform-sdk';
 const _usePrebuiltSdkFromPathOption = 'use-prebuilt-sdk-from-path';
+const _scratchSpaceDirOption = 'scratch-space-dir';
 
 const _supportedOptions = [
   _environmentOption,
@@ -316,4 +323,5 @@ const _supportedOptions = [
   _platformSdkOption,
   _usePrebuiltSdkFromPathOption,
   _webAssetsPathOption,
+  _scratchSpaceDirOption,
 ];
