@@ -1,5 +1,5 @@
 name: build_frontend_server
-version: 0.1.0-wip
+version: 1.0.0
 description: A package to manage the Frontend Server worker for build_runner and webdev.
 repository: https://github.com/dart-lang/build/tree/master/builder_pkgs/build_frontend_server
 resolution: workspace
