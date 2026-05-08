@@ -5,6 +5,7 @@
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:build_frontend_server/build_frontend_server.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
@@ -17,7 +18,15 @@ class WebEntrypointMarkerBuilder implements Builder {
   /// A no-op if [usesWebHotReload] is not set.
   final bool usesWebHotReload;
 
-  WebEntrypointMarkerBuilder({this.usesWebHotReload = false});
+  /// The directory containing the 'main' entrypoint for the web target.
+  ///
+  /// Defaults to 'web'.
+  final String webAssetsPath;
+
+  WebEntrypointMarkerBuilder({
+    this.usesWebHotReload = false,
+    this.webAssetsPath = 'web',
+  });
 
   @override
   final buildExtensions = const {
@@ -31,25 +40,36 @@ class WebEntrypointMarkerBuilder implements Builder {
     final frontendServerState = await buildStep.fetchResource(
       frontendServerStateResource,
     );
-    final frontendServerStateWasLoaded = await frontendServerState
-        .checkAndDeserializeState(buildStep);
-    if (frontendServerStateWasLoaded) return;
 
-    final webAssets = await buildStep.findAssets(Glob('web/**')).toList();
+    // Start the Frontend Server early to record its port.
+    await buildStep.fetchResource(persistentFrontendServerResource);
+
+    final hasCachedState = await frontendServerState.checkAndDeserializeState(
+      buildStep,
+    );
+
     final webEntrypointJson = <String, Object?>{};
 
-    for (final asset in webAssets) {
-      if (asset.extension == '.dart') {
-        final moduleLibrary = ModuleLibrary.fromSource(
-          asset,
-          await buildStep.readAsString(asset),
-        );
-        if (moduleLibrary.hasMain && moduleLibrary.isEntryPoint) {
-          // We must save the main entrypoint as the recompilation target for
-          // the Frontend Server before any JS files are emitted.
-          frontendServerState.entrypointAssetId = asset;
-          webEntrypointJson['entrypoint'] = asset.toString();
-          break;
+    if (hasCachedState) {
+      webEntrypointJson['entrypoint'] =
+          frontendServerState.entrypointAssetId.toString();
+    } else {
+      final webAssets =
+          await buildStep.findAssets(Glob('$webAssetsPath/**')).toList();
+
+      for (final asset in webAssets) {
+        if (asset.extension == '.dart') {
+          final moduleLibrary = ModuleLibrary.fromSource(
+            asset,
+            await buildStep.readAsString(asset),
+          );
+          if (moduleLibrary.hasMain && moduleLibrary.isEntryPoint) {
+            // We must save the main entrypoint as the recompilation target for
+            // the Frontend Server before any JS files are emitted.
+            frontendServerState.entrypointAssetId = asset;
+            webEntrypointJson['entrypoint'] = asset.toString();
+            break;
+          }
         }
       }
     }

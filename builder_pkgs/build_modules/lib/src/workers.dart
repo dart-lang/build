@@ -8,10 +8,10 @@ import 'dart:math' show min;
 
 import 'package:bazel_worker/driver.dart';
 import 'package:build/build.dart';
+import 'package:build_frontend_server/build_frontend_server.dart';
 import 'package:path/path.dart' as p;
 
 import 'common.dart';
-import 'frontend_server_driver.dart';
 import 'scratch_space.dart';
 
 // If no terminal is attached, prevent a new one from launching.
@@ -135,14 +135,26 @@ final frontendServerProxyDriverResource = Resource<FrontendServerProxyDriver>(
 
 PersistentFrontendServer? __persistentFrontendServer;
 
-/// Manages a single persistent instance of the Frontend Server targeting DDC.
+/// Returns the running instance of the PersistentFrontendServer, if any.
+PersistentFrontendServer? get persistentFrontendServer =>
+    __persistentFrontendServer;
+
+/// Starts a single persistent instance of the Frontend Server targeting DDC.
+Future<PersistentFrontendServer> startFrontendServerWorker() async {
+  if (__persistentFrontendServer != null) return __persistentFrontendServer!;
+
+  final fes = await PersistentFrontendServer.start(
+    sdkRoot: sdkDir,
+    fileSystemRoot: scratchSpace.tempDir.uri,
+    packagesFile: scratchSpace.tempDir.uri.resolve(packagesFilePath),
+  );
+
+  _frontendServerProxyDriver.init(fes);
+  return __persistentFrontendServer = fes;
+}
+
 final persistentFrontendServerResource = Resource<PersistentFrontendServer>(
-  () async =>
-      __persistentFrontendServer ??= await PersistentFrontendServer.start(
-        sdkRoot: sdkDir,
-        fileSystemRoot: scratchSpace.tempDir.uri,
-        packagesFile: scratchSpace.tempDir.uri.resolve(packagesFilePath),
-      ),
+  () async => await startFrontendServerWorker(),
   beforeExit: () async {
     await __persistentFrontendServer?.shutdown();
     __persistentFrontendServer = null;

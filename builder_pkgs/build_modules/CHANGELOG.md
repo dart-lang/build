@@ -1,6 +1,8 @@
-## 5.1.13-wip
+## 5.2.0
 
 - In `KernelBuilder`, add `--track-widget-creation` flag to kernel worker.
+- Add support for expression evaluation to DDC's Library Bundle module system.
+- Add exports for `fesWorkerPortPath`, `persistentFrontendServer`, and `startFrontendServerWorker`.
 
 ## 5.1.12
 

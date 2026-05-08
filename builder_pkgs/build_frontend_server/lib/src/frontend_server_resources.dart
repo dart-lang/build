@@ -6,6 +6,7 @@ import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
+import 'package:scratch_space/scratch_space.dart';
 
 /// A persistent shared [FrontendServerState] for DDC workers that interact with
 /// the Frontend Server.
@@ -17,6 +18,9 @@ class FrontendServerState {
   /// This must be set before any asset builders run when compiling with DDC and
   /// hot reload.
   AssetId? entrypointAssetId;
+
+  /// The scratch space used by the Frontend Server if owned by webdev.
+  ScratchSpace? fesScratchSpace;
 
   /// Looks for and loads a `.web.entrypoint.json` file if it exists.
   ///

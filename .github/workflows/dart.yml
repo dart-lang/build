@@ -38,16 +38,16 @@ jobs:
       - name: mono_repo self validate
         run: dart pub global run mono_repo generate --validate
   job_002:
-    name: "analyze_and_format; linux; PKGS: _benchmark, build, build_config, build_daemon, build_runner, build_test, builder_pkgs/build_modules, builder_pkgs/build_web_compilers, builder_pkgs/scratch_space, example; `dart analyze --fatal-infos .`"
+    name: "analyze_and_format; linux; PKGS: _benchmark, build, build_config, build_daemon, build_runner, build_test, builder_pkgs/build_frontend_server, builder_pkgs/build_modules, builder_pkgs/build_web_compilers, builder_pkgs/scratch_space, example; `dart analyze --fatal-infos .`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_modules-builder_pkgs/build_web_compilers-builder_pkgs/scratch_space-example;commands:analyze"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_frontend_server-builder_pkgs/build_modules-builder_pkgs/build_web_compilers-builder_pkgs/scratch_space-example;commands:analyze"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_modules-builder_pkgs/build_web_compilers-builder_pkgs/scratch_space-example
+            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_frontend_server-builder_pkgs/build_modules-builder_pkgs/build_web_compilers-builder_pkgs/scratch_space-example
             os:ubuntu-latest;pub-cache-hosted;sdk:dev
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
@@ -112,6 +112,15 @@ jobs:
         run: dart analyze --fatal-infos .
         if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
         working-directory: build_test
+      - id: builder_pkgs_build_frontend_server_pub_upgrade
+        name: builder_pkgs/build_frontend_server; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: builder_pkgs/build_frontend_server
+      - name: "builder_pkgs/build_frontend_server; dart analyze --fatal-infos ."
+        run: dart analyze --fatal-infos .
+        if: "always() && steps.builder_pkgs_build_frontend_server_pub_upgrade.conclusion == 'success'"
+        working-directory: builder_pkgs/build_frontend_server
       - id: builder_pkgs_build_modules_pub_upgrade
         name: builder_pkgs/build_modules; dart pub upgrade
         run: dart pub upgrade
@@ -149,16 +158,16 @@ jobs:
         if: "always() && steps.example_pub_upgrade.conclusion == 'success'"
         working-directory: example
   job_003:
-    name: "analyze_and_format; linux; PKGS: _benchmark, build, build_config, build_daemon, build_runner, build_test, builder_pkgs/build_modules, builder_pkgs/build_web_compilers, builder_pkgs/mockito, builder_pkgs/scratch_space, example; `dart format --output=none --set-exit-if-changed .`"
+    name: "analyze_and_format; linux; PKGS: _benchmark, build, build_config, build_daemon, build_runner, build_test, builder_pkgs/build_frontend_server, builder_pkgs/build_modules, builder_pkgs/build_web_compilers, builder_pkgs/mockito, builder_pkgs/scratch_space, example; `dart format --output=none --set-exit-if-changed .`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_modules-builder_pkgs/build_web_compilers-builder_pkgs/mockito-builder_pkgs/scratch_space-example;commands:format"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_frontend_server-builder_pkgs/build_modules-builder_pkgs/build_web_compilers-builder_pkgs/mockito-builder_pkgs/scratch_space-example;commands:format"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_modules-builder_pkgs/build_web_compilers-builder_pkgs/mockito-builder_pkgs/scratch_space-example
+            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_frontend_server-builder_pkgs/build_modules-builder_pkgs/build_web_compilers-builder_pkgs/mockito-builder_pkgs/scratch_space-example
             os:ubuntu-latest;pub-cache-hosted;sdk:dev
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
@@ -223,6 +232,15 @@ jobs:
         run: "dart format --output=none --set-exit-if-changed ."
         if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
         working-directory: build_test
+      - id: builder_pkgs_build_frontend_server_pub_upgrade
+        name: builder_pkgs/build_frontend_server; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: builder_pkgs/build_frontend_server
+      - name: "builder_pkgs/build_frontend_server; dart format --output=none --set-exit-if-changed ."
+        run: "dart format --output=none --set-exit-if-changed ."
+        if: "always() && steps.builder_pkgs_build_frontend_server_pub_upgrade.conclusion == 'success'"
+        working-directory: builder_pkgs/build_frontend_server
       - id: builder_pkgs_build_modules_pub_upgrade
         name: builder_pkgs/build_modules; dart pub upgrade
         run: dart pub upgrade
@@ -443,6 +461,41 @@ jobs:
       - job_003
       - job_004
   job_009:
+    name: "test; linux; PKG: builder_pkgs/build_frontend_server; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:builder_pkgs/build_frontend_server;commands:test_0"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:builder_pkgs/build_frontend_server
+            os:ubuntu-latest;pub-cache-hosted;sdk:dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
+        with:
+          sdk: dev
+      - id: checkout
+        name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - id: builder_pkgs_build_frontend_server_pub_upgrade
+        name: builder_pkgs/build_frontend_server; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: builder_pkgs/build_frontend_server
+      - name: "builder_pkgs/build_frontend_server; dart test --test-randomize-ordering-seed=random"
+        run: "dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.builder_pkgs_build_frontend_server_pub_upgrade.conclusion == 'success'"
+        working-directory: builder_pkgs/build_frontend_server
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+  job_010:
     name: "test; linux; PKG: builder_pkgs/build_web_compilers; `dart test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -477,7 +530,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_010:
+  job_011:
     name: "test; linux; PKG: builder_pkgs/scratch_space; `dart test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -512,7 +565,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_011:
+  job_012:
     name: "test; linux; PKG: build_runner; `../tool/leak_check.sh`"
     runs-on: ubuntu-latest
     steps:
@@ -547,7 +600,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_012:
+  job_013:
     name: "test; linux; PKG: build_runner; `dart test -t integration1 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -582,7 +635,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_013:
+  job_014:
     name: "test; linux; PKG: build_runner; `dart test -t integration2 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -617,7 +670,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_014:
+  job_015:
     name: "test; linux; PKG: build_runner; `dart test -t integration3 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -652,7 +705,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_015:
+  job_016:
     name: "test; linux; PKG: build_runner; `dart test -t integration4 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -687,7 +740,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_016:
+  job_017:
     name: "test; linux; PKG: build_runner; `dart test -x integration1 -x integration2 -x integration3 -x integration4 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -722,7 +775,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_017:
+  job_018:
     name: "test; linux; PKG: builder_pkgs/build_modules; `dart test -P presubmit --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -757,7 +810,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_018:
+  job_019:
     name: "test; linux; PKG: builder_pkgs/mockito; `dart run build_runner build`, `dart test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -796,7 +849,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_019:
+  job_020:
     name: "test; macos; PKG: build_runner; `dart test -t integration1 --test-randomize-ordering-seed=random`"
     runs-on: macos-latest
     steps:
@@ -831,7 +884,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_020:
+  job_021:
     name: "test; macos; PKG: build_runner; `dart test -t integration2 --test-randomize-ordering-seed=random`"
     runs-on: macos-latest
     steps:
@@ -866,7 +919,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_021:
+  job_022:
     name: "test; macos; PKG: build_runner; `dart test -t integration3 --test-randomize-ordering-seed=random`"
     runs-on: macos-latest
     steps:
@@ -901,7 +954,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_022:
+  job_023:
     name: "test; macos; PKG: build_runner; `dart test -t integration4 --test-randomize-ordering-seed=random`"
     runs-on: macos-latest
     steps:
@@ -936,7 +989,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_023:
+  job_024:
     name: "test; windows; PKG: build_daemon; `dart test --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -961,7 +1014,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_024:
+  job_025:
     name: "test; windows; PKG: build_runner; `dart test -t integration1 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -986,7 +1039,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_025:
+  job_026:
     name: "test; windows; PKG: build_runner; `dart test -t integration2 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -1011,7 +1064,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_026:
+  job_027:
     name: "test; windows; PKG: build_runner; `dart test -t integration3 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -1036,7 +1089,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_027:
+  job_028:
     name: "test; windows; PKG: build_runner; `dart test -t integration4 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:

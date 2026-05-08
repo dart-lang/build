@@ -41,6 +41,11 @@ class ScratchSpace {
   ScratchSpace._(this.tempDir)
     : packagesDir = Directory(p.join(tempDir.path, 'packages'));
 
+  /// Creates a [ScratchSpace] using an existing directory [tempDir].
+  ///
+  /// Used when another process has already initialized the scratch space.
+  factory ScratchSpace.existing(Directory tempDir) => ScratchSpace._(tempDir);
+
   ScratchSpace()
     : this._(
         Directory(

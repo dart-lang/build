@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build_frontend_server/build_frontend_server.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:scratch_space/scratch_space.dart';
 
@@ -16,7 +17,12 @@ import 'platforms.dart';
 
 /// A builder that compiles DDC modules with the Frontend Server.
 class DdcFrontendServerBuilder implements Builder {
-  DdcFrontendServerBuilder();
+  /// A custom directory to use for the scratch space, if provided.
+  ///
+  /// Used to share the scratch space directory with the `fes_manager` process
+  /// when it is initialized separately from the build daemon (like in tests).
+  final String? scratchSpaceDir;
+  DdcFrontendServerBuilder({this.scratchSpaceDir});
 
   @override
   Map<String, List<String>> get buildExtensions => {
@@ -91,7 +97,10 @@ class DdcFrontendServerBuilder implements Builder {
       }
     }
 
-    final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
+    final scratchSpace =
+        scratchSpaceDir != null
+            ? ScratchSpace.existing(Directory(scratchSpaceDir!))
+            : await buildStep.fetchResource(scratchSpaceResource);
     final webEntrypointAsset = frontendServerState.entrypointAssetId!;
     await buildStep.trackStage(
       'EnsureAssets',
@@ -153,8 +162,10 @@ class DdcFrontendServerBuilder implements Builder {
 
     // Write empty files if this output was deemed extraneous by FES.
     if (!hasFesOutput && !hasTargetOutput) {
-      await targetOutputFile.create(recursive: true);
-      await metadataFile.create(recursive: true);
+      final targetFile = scratchSpace.fileFor(jsOutputId);
+      final targetMetadataFile = scratchSpace.fileFor(metadataId);
+      await targetFile.create(recursive: true);
+      await targetMetadataFile.create(recursive: true);
       return;
     }
 

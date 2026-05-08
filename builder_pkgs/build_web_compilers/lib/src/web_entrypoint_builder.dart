@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:build/build.dart';
+import 'package:build_frontend_server/build_frontend_server.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:collection/collection.dart';
 import 'package:path/path.dart' as p;

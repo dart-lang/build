@@ -6,8 +6,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:build_modules/src/common.dart';
-import 'package:build_modules/src/frontend_server_driver.dart';
+import 'package:build_frontend_server/build_frontend_server.dart';
+import 'package:build_frontend_server/src/common.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -26,6 +26,8 @@ void main() {
         ..writeAsStringSync(
           jsonEncode({'configVersion': 2, 'packages': <String>[]}),
         );
+      final portFile = File(p.join(Directory.current.path, fesWorkerPortPath));
+      if (portFile.existsSync()) portFile.deleteSync();
       server = await PersistentFrontendServer.start(
         sdkRoot: sdkDir,
         fileSystemRoot: tempDir.uri,
@@ -108,6 +110,8 @@ void main() {
         ..writeAsStringSync(
           jsonEncode({'configVersion': 2, 'packages': <String>[]}),
         );
+      final portFile = File(p.join(Directory.current.path, fesWorkerPortPath));
+      if (portFile.existsSync()) portFile.deleteSync();
       server = await PersistentFrontendServer.start(
         sdkRoot: sdkDir,
         fileSystemRoot: tempDir.uri,
@@ -168,9 +172,7 @@ void main() {
       expect(output, isNotNull);
       expect(output!.errorCount, 0);
 
-      final jsOutputFile = File(
-        jsFESOutputPath.replaceFirst('.dart.lib.js', '.ddc.js'),
-      );
+      final jsOutputFile = File(jsFESOutputPath);
       expect(jsOutputFile.existsSync(), isTrue);
       final content = jsOutputFile.readAsStringSync();
       expect(content, contains('function main()'));
