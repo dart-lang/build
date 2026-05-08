@@ -161,11 +161,7 @@ class Build {
     var result = await _safeBuild(updates);
     if (result.status == BuildStatus.success) {
       final failedSteps = <BuildStepId>{};
-      for (final output in processedOutputs) {
-        final node = assetGraph.get(output)!;
-        if (node.type != NodeType.generated) continue;
-        final config = node.generatedNodeConfiguration!;
-        final buildStepId = config.buildStepId;
+      for (final buildStepId in assetGraph.buildStepResults.keys) {
         final stepResult = assetGraph.buildStepResultFor(buildStepId);
         if (stepResult != null && stepResult.result == false) {
           failedSteps.add(buildStepId);
@@ -504,6 +500,23 @@ class Build {
       if (!buildConfigs.isVisibleInBuild(node.id, packageNode)) continue;
 
       ids.add(node.generatedNodeConfiguration!.primaryInput);
+    }
+    // If the builder outputs nothing to files, outputsForPhase is empty.
+    // We discover the matching primary inputs dynamically from package sources.
+    if (ids.isEmpty &&
+        phase.builder.buildExtensions.values.every(
+          (outputs) => outputs.isEmpty,
+        )) {
+      final sources = assetGraph.sources.where((id) => id.package == package);
+      for (final sourceId in sources) {
+        if (!phase.targetSources.matches(sourceId)) continue;
+        if (!phase.generateFor.matches(sourceId)) continue;
+        if (!phase.builder.buildExtensions.keys.any(sourceId.path.endsWith)) {
+          continue;
+        }
+        if (!buildConfigs.isVisibleInBuild(sourceId, packageNode)) continue;
+        ids.add(sourceId);
+      }
     }
     return ids.toList()..sort();
   }
@@ -1265,7 +1278,6 @@ class Build {
     Iterable<String> errors, {
     Set<AssetId>? unusedAssets,
   }) async {
-    if (outputs.isEmpty) return;
     final inputTracker = stepReaderWriter.inputTracker;
     final usedInputs =
         unusedAssets != null && unusedAssets.isNotEmpty

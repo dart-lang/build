@@ -64,7 +64,7 @@ Future<void> runBuilder(
 
   Future<void> buildForInput(AssetId input) async {
     final outputs = expectedOutputs(builder, input);
-    if (outputs.isEmpty) return;
+
     final buildStep = BuildStepImpl(
       input,
       outputs,
