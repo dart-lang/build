@@ -461,6 +461,41 @@ jobs:
       - job_003
       - job_004
   job_009:
+    name: "test; linux; PKG: builder_pkgs/build_frontend_server; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:builder_pkgs/build_frontend_server;commands:test_0"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:builder_pkgs/build_frontend_server
+            os:ubuntu-latest;pub-cache-hosted;sdk:dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
+        with:
+          sdk: dev
+      - id: checkout
+        name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - id: builder_pkgs_build_frontend_server_pub_upgrade
+        name: builder_pkgs/build_frontend_server; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: builder_pkgs/build_frontend_server
+      - name: "builder_pkgs/build_frontend_server; dart test --test-randomize-ordering-seed=random"
+        run: "dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.builder_pkgs_build_frontend_server_pub_upgrade.conclusion == 'success'"
+        working-directory: builder_pkgs/build_frontend_server
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+  job_010:
     name: "test; linux; PKG: builder_pkgs/build_web_compilers; `dart test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -495,7 +530,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_010:
+  job_011:
     name: "test; linux; PKG: builder_pkgs/scratch_space; `dart test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -530,7 +565,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_011:
+  job_012:
     name: "test; linux; PKG: build_runner; `../tool/leak_check.sh`"
     runs-on: ubuntu-latest
     steps:
@@ -565,7 +600,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_012:
+  job_013:
     name: "test; linux; PKG: build_runner; `dart test -t integration1 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -600,7 +635,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_013:
+  job_014:
     name: "test; linux; PKG: build_runner; `dart test -t integration2 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -635,7 +670,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_014:
+  job_015:
     name: "test; linux; PKG: build_runner; `dart test -t integration3 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -670,7 +705,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_015:
+  job_016:
     name: "test; linux; PKG: build_runner; `dart test -t integration4 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -705,7 +740,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_016:
+  job_017:
     name: "test; linux; PKG: build_runner; `dart test -x integration1 -x integration2 -x integration3 -x integration4 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -735,41 +770,6 @@ jobs:
         run: "dart test -x integration1 -x integration2 -x integration3 -x integration4 --test-randomize-ordering-seed=random"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-  job_017:
-    name: "test; linux; PKG: builder_pkgs/build_frontend_server; `dart test -P presubmit --test-randomize-ordering-seed=random`"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:builder_pkgs/build_frontend_server;commands:test_6"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:builder_pkgs/build_frontend_server
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
-      - name: Setup Dart SDK
-        uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
-        with:
-          sdk: dev
-      - id: checkout
-        name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - id: builder_pkgs_build_frontend_server_pub_upgrade
-        name: builder_pkgs/build_frontend_server; dart pub upgrade
-        run: dart pub upgrade
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: builder_pkgs/build_frontend_server
-      - name: "builder_pkgs/build_frontend_server; dart test -P presubmit --test-randomize-ordering-seed=random"
-        run: "dart test -P presubmit --test-randomize-ordering-seed=random"
-        if: "always() && steps.builder_pkgs_build_frontend_server_pub_upgrade.conclusion == 'success'"
-        working-directory: builder_pkgs/build_frontend_server
     needs:
       - job_001
       - job_002

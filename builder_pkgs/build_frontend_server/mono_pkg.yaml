@@ -9,4 +9,4 @@ stages:
   - format
   - analyze: --fatal-infos .
 - test:
-  - test: -P presubmit --test-randomize-ordering-seed=random
+  - test: --test-randomize-ordering-seed=random
