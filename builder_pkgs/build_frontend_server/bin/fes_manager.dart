@@ -42,6 +42,7 @@ void main(List<String> args) async {
   portFile.writeAsStringSync(
     jsonEncode({
       'port': server.port,
+      'fileSystemRoot': fileSystemRoot.toString(),
       'timestamp': DateTime.now().toIso8601String(),
     }),
   );
