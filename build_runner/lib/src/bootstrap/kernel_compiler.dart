@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:path/path.dart' as p;
 
@@ -48,6 +49,10 @@ class KernelCompiler implements Compiler {
     final result = await ParentProcess.run(dart, [
       'compile',
       'kernel',
+      if (Isolate.packageConfigSync != null) ...[
+        '--packages',
+        Isolate.packageConfigSync!.toFilePath(),
+      ],
       p.join(buildPaths.outputRootPath, entrypointScriptPath),
       '--output',
       p.join(buildPaths.outputRootPath, entrypointDillPath),
