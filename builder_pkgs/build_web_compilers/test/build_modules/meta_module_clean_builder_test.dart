@@ -5,9 +5,9 @@
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:build_test/build_test.dart';
 import 'package:build_web_compilers/src/build_modules/build_modules.dart';
 import 'package:build_web_compilers/src/build_modules/meta_module.dart';
-import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 

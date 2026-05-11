@@ -7,9 +7,9 @@ import 'dart:io';
 
 import 'package:bazel_worker/bazel_worker.dart';
 import 'package:build/build.dart';
-import 'package:build_web_compilers/src/build_modules/build_modules.dart';
 import 'package:path/path.dart' as p;
 
+import 'build_modules/build_modules.dart';
 import 'common.dart';
 import 'errors.dart';
 
