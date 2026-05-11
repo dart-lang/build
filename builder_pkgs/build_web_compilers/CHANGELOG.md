@@ -1,6 +1,7 @@
-## 4.4.20-wip
+## 4.5.0
 
 - Fixed `DdcFrontendServerBuilder` to correctly work with generated entrypoints.
+- Move `module_library` and `module_cleanup` builders from `build_modules` to `build_web_compilers`.
 
 ## 4.4.19
 
