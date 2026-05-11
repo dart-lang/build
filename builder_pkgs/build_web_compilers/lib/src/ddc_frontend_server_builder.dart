@@ -8,9 +8,8 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'build_frontend_server/build_frontend_server.dart';
-import 'package:build_web_compilers/src/build_modules/build_modules.dart';
+import 'build_modules/build_modules.dart';
 import 'package:scratch_space/scratch_space.dart';
-
 import 'common.dart';
 import 'errors.dart';
 import 'platforms.dart';

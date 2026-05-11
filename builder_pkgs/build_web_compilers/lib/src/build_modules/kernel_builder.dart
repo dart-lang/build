@@ -20,6 +20,7 @@ import 'build_modules.dart';
 import 'common.dart';
 import 'errors.dart';
 import 'module_cache.dart';
+import 'modules.dart' show Module;
 import 'workers.dart';
 
 /// A builder which can output kernel files for a given sdk.

@@ -8,12 +8,12 @@ import 'dart:io';
 import 'package:archive/archive.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
-import 'package:build_web_compilers/src/build_modules/build_modules.dart';
 import 'package:glob/glob.dart';
 import 'package:glob/list_local_fs.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
 
+import 'build_modules/build_modules.dart';
 import 'common.dart';
 import 'platforms.dart';
 import 'web_entrypoint_builder.dart';
