@@ -9,8 +9,7 @@ import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
 
-import 'build_modules/build_modules.dart'
-    show multiRootScheme;
+import 'build_modules/build_modules.dart' show multiRootScheme;
 
 final jsModuleErrorsExtension = '.ddc.js.errors';
 final jsModuleExtension = '.ddc.js';

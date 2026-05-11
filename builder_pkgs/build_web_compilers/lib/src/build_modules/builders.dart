@@ -5,7 +5,6 @@
 import 'package:build/build.dart';
 import 'build_modules.dart';
 
-
 Builder moduleLibraryBuilder(BuilderOptions _) => const ModuleLibraryBuilder();
 
 PostProcessBuilder moduleCleanup(BuilderOptions _) => const ModuleCleanup();
