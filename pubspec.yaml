@@ -12,10 +12,8 @@ workspace:
 - build_daemon
 - build_runner
 - build_test
-- builder_pkgs/build_frontend_server
-- builder_pkgs/build_modules
-- builder_pkgs/build_modules/test/fixtures/a
-- builder_pkgs/build_modules/test/fixtures/b
+- builder_pkgs/build_web_compilers/test/build_modules/fixtures/a
+- builder_pkgs/build_web_compilers/test/build_modules/fixtures/b
 - builder_pkgs/build_web_compilers
 - builder_pkgs/build_web_compilers/test/fixtures/c
 - builder_pkgs/build_web_compilers/test/fixtures/d

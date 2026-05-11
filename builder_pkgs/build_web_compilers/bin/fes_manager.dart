@@ -5,8 +5,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:build_frontend_server/build_frontend_server.dart';
-import 'package:build_frontend_server/src/common.dart';
+import 'package:build_web_compilers/src/build_frontend_server/build_frontend_server.dart';
+import 'package:build_web_compilers/src/build_frontend_server/common.dart';
 import 'package:path/path.dart' as p;
 
 void main(List<String> args) async {

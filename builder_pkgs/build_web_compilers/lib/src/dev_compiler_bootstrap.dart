@@ -7,7 +7,7 @@ import 'dart:collection';
 import 'dart:convert';
 
 import 'package:build/build.dart';
-import 'package:build_modules/build_modules.dart';
+import 'package:build_web_compilers/src/build_modules/build_modules.dart';
 // ignore: no_leading_underscores_for_library_prefixes
 import 'package:path/path.dart' as _p;
 import 'package:pool/pool.dart';

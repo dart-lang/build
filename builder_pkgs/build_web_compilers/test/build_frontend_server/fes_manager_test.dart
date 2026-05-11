@@ -6,7 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:build_frontend_server/src/common.dart';
+import 'package:build_web_compilers/src/build_frontend_server/common.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 

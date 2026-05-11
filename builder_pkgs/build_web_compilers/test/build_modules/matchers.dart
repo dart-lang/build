@@ -4,8 +4,8 @@
 
 import 'dart:convert';
 
-import 'package:build_modules/src/meta_module.dart';
-import 'package:build_modules/src/modules.dart';
+import 'package:build_web_compilers/src/build_modules/meta_module.dart';
+import 'package:build_web_compilers/src/build_modules/modules.dart';
 import 'package:test/test.dart';
 
 /// Matches an encoded [Module] against an [expected] Module instance.

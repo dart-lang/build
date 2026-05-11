@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:build_modules/build_modules.dart';
+import 'package:build_web_compilers/src/build_modules/build_modules.dart';
 
 /// `dart:` SDK libraries available in every platform supported by
 /// build_web_compilers.
