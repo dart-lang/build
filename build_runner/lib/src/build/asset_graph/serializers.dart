@@ -46,6 +46,7 @@ final identityAssetIdSerializer = IdentitySerializer<AssetId>(
   BuildStepResult,
   GlobId,
   GlobResult,
+  PostProcessBuildStepId,
   PostProcessBuildStepResult,
 ])
 final Serializers serializers =

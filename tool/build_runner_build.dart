@@ -11,11 +11,20 @@ import 'dart:io';
 ///
 /// Usage: in one of the `build` repo packages, instead of running
 /// `dart run build_runner build`, run `dart ../tool/build_runner_build.dart`.
-void main() {
+void main(List<String> arguments) {
   final pathSegments = Directory.current.uri.pathSegments;
-  if (pathSegments[pathSegments.length - 3] != 'build') {
-    print('Current directly should be a package inside the build repo.');
+  if (pathSegments[pathSegments.length - 2] != 'build_runner') {
+    print('Current directory should be a package inside the build repo.');
     exit(1);
+  }
+
+  String? buildRunnerOverride;
+  if (arguments.length == 1) {
+    buildRunnerOverride = arguments[0];
+  } else if (arguments.length > 1) {
+    print(
+      'Usage: build_runner_build.dart [optional build_runner package path]',
+    );
   }
 
   // Run `pub get` in a temp folder to get paths for published versions of
@@ -24,13 +33,22 @@ void main() {
     'build_runner_build',
   );
   tempDirectory.createSync(recursive: true);
+  final maybeOverride =
+      buildRunnerOverride == null
+          ? ''
+          : '''
+dependency_overrides:
+  build_runner:
+    path: $buildRunnerOverride
+''';
   File.fromUri(tempDirectory.uri.resolve('pubspec.yaml')).writeAsStringSync('''
 name: none
 environment:
   sdk: ^3.7.0
 dependencies:
-  build_runner: '2.4.15'
+  build_runner: 2.15.0
   build_test: any
+$maybeOverride
 ''');
   Process.runSync('dart', ['pub', 'get'], workingDirectory: tempDirectory.path);
   final pubConfig = PackageConfig(
@@ -64,9 +82,7 @@ dependencies:
     'build',
     'build_config',
     'build_daemon',
-    'build_resolvers',
     'build_runner',
-    'build_runner_core',
     'build_test',
   ]) {
     final packageConfig = pubConfig.packageNamed(package);
@@ -85,7 +101,7 @@ dependencies:
     'run',
     '$buildRunnerPath/bin/build_runner.dart',
     'build',
-    '-d',
+    '--force-jit',
   ], workingDirectory: Directory.current.path);
 
   stdout.write(buildResult.stdout);

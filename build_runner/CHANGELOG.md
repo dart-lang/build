@@ -1,5 +1,7 @@
 ## 2.15.1-wip
 
+- Pass Dart SDK `--packages` arg to builder compiles, so they can be compiled
+  with different packages to the current version solve.
 - Bug fix: handle errors from post process builders in previous runs without
   crashing.
 

@@ -5,6 +5,8 @@
 export 'common.dart' show fesWorkerPortPath, multiRootScheme;
 export 'ddc_names.dart';
 export 'errors.dart' show MissingModulesException, UnsupportedModules;
+export '../build_frontend_server/frontend_server_resources.dart'
+    show frontendServerState, frontendServerStateResource;
 export 'kernel_builder.dart' show KernelBuilder, reportUnusedKernelInputs;
 export 'meta_module_builder.dart'
     show MetaModuleBuilder, metaModuleExtension;
@@ -23,6 +25,7 @@ export 'workers.dart'
         dartdevkDriverResource,
         frontendServerProxyDriverResource,
         maxWorkersPerTask,
+
         persistentFrontendServer,
         persistentFrontendServerResource,
         startFrontendServerWorker;
