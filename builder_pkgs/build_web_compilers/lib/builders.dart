@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:build_modules/build_modules.dart';
+import 'package:build_web_compilers/src/build_modules/build_modules.dart';
 import 'package:collection/collection.dart';
 
 import 'build_web_compilers.dart';
@@ -97,6 +97,9 @@ Builder ddcKernelBuilder(BuilderOptions options) {
     platformSdk: _readPlatformSdkOption(options),
   );
 }
+
+Builder moduleLibraryBuilder(BuilderOptions _) => const ModuleLibraryBuilder();
+PostProcessBuilder moduleCleanup(BuilderOptions _) => const ModuleCleanup();
 
 Builder sdkJsCopyRequirejs(BuilderOptions _) => SdkJsCopyBuilder();
 Builder sdkJsCompile(BuilderOptions options) {
