@@ -8,8 +8,7 @@ export 'errors.dart' show MissingModulesException, UnsupportedModules;
 export 'frontend_server_resources.dart'
     show frontendServerState, frontendServerStateResource;
 export 'kernel_builder.dart' show KernelBuilder, reportUnusedKernelInputs;
-export 'meta_module_builder.dart'
-    show MetaModuleBuilder, metaModuleExtension;
+export 'meta_module_builder.dart' show MetaModuleBuilder, metaModuleExtension;
 export 'meta_module_clean_builder.dart'
     show MetaModuleCleanBuilder, metaModuleCleanExtension;
 export 'module_builder.dart' show ModuleBuilder, moduleExtension;

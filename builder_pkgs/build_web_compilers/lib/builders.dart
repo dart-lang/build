@@ -3,10 +3,10 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:build_web_compilers/src/build_modules/build_modules.dart';
 import 'package:collection/collection.dart';
 
 import 'build_web_compilers.dart';
+import 'src/build_modules/build_modules.dart';
 import 'src/common.dart';
 import 'src/ddc_frontend_server_builder.dart';
 import 'src/sdk_js_compile_builder.dart';

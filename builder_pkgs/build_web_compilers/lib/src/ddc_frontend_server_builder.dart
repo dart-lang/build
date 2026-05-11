@@ -7,9 +7,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:build_web_compilers/src/build_modules/build_modules.dart';
 import 'package:scratch_space/scratch_space.dart';
 
+import 'build_modules/build_modules.dart';
 import 'common.dart';
 import 'errors.dart';
 import 'platforms.dart';

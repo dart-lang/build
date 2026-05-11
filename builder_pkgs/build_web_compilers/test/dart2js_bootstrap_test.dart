@@ -5,9 +5,9 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:build_web_compilers/src/build_modules/build_modules.dart';
 import 'package:build_test/build_test.dart';
 import 'package:build_web_compilers/build_web_compilers.dart';
+import 'package:build_web_compilers/src/build_modules/build_modules.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
