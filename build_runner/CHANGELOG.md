@@ -2,6 +2,8 @@
 
 - Pass Dart SDK `--packages` arg to builder compiles, so they can be compiled
   with different packages to the current version solve.
+- More efficient watching for file changes in workspaces and other setups with
+  nested packages.
 - Bug fix: handle errors from post process builders in previous runs without
   crashing.
 

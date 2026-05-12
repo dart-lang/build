@@ -6,6 +6,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:async/async.dart';
+import 'package:build/build.dart';
+import 'package:path/path.dart' as p;
 
 import '../../build_plan/build_package.dart';
 import '../../build_plan/build_packages.dart';
@@ -16,7 +18,7 @@ import 'build_package_watcher.dart';
 BuildPackageWatcher _default(BuildPackage buildPackage) =>
     BuildPackageWatcher(buildPackage);
 
-/// Allows watching an entire graph of packages to schedule rebuilds.
+/// Watches the watchable packages in a [BuildPackages] for file changes.
 class BuildPackagesWatcher {
   final BuildPackageWatcher Function(BuildPackage) _strategy;
   final BuildPackages _buildPackages;
@@ -28,8 +30,7 @@ class BuildPackagesWatcher {
 
   /// Creates a new watcher for a [BuildPackages].
   ///
-  /// May optionally specify a [watch] strategy, otherwise will attempt a
-  /// reasonable default based on the current platform.
+  /// Optionally override watch strategy [watch] for testing.
   BuildPackagesWatcher(
     this._buildPackages, {
     BuildPackageWatcher Function(BuildPackage)? watch,
@@ -43,58 +44,128 @@ class BuildPackagesWatcher {
   }
 
   Stream<AssetChange> _watch() {
-    final allWatchers =
-        _buildPackages.packages.values
-            .where((buildPackage) => buildPackage.watch)
-            .map(_strategy)
-            .toList();
-    final filteredEvents =
-        allWatchers
-            .map(
-              (w) => w
-                  .watch()
-                  .where(_nestedPathFilter(w.buildPackage))
-                  .handleError((Object e, StackTrace s) {
-                    buildLog.error(
-                      buildLog.renderThrowable(
-                        'Failed to watch files in '
-                        'package:${w.buildPackage.name}.',
-                        e,
-                      ),
-                    );
-                  }),
-            )
-            .toList();
+    final forest = _buildPackageForest();
+    final watchers = <BuildPackageWatcher>[];
+    final events = <Stream<AssetChange>>[];
+
+    for (final tree in forest) {
+      final watcher = _strategy(tree.package);
+      watchers.add(watcher);
+
+      final stream = watcher.watch().map(tree.moveToDeepestPackage);
+      events.add(
+        stream.handleError((Object e, StackTrace s) {
+          buildLog.error(
+            buildLog.renderThrowable(
+              'Failed to watch files in '
+              'package:${watcher.buildPackage.name}.',
+              e,
+            ),
+          );
+        }),
+      );
+    }
+
     // Asynchronously complete the `_readyCompleter` once all the watchers
     // are done.
     () async {
-      await Future.wait(
-        allWatchers.map((packageWatcher) => packageWatcher.watcher.ready),
-      );
+      final readyFutures = <Future<void>>[];
+      for (final watcher in watchers) {
+        readyFutures.add(watcher.watcher.ready);
+      }
+      await Future.wait(readyFutures);
       _readyCompleter.complete();
     }();
-    return StreamGroup.merge(filteredEvents);
+    return StreamGroup.merge(events);
   }
 
-  bool Function(AssetChange) _nestedPathFilter(BuildPackage rootPackage) {
-    final ignorePaths = _nestedPaths(rootPackage);
-    return (change) => !ignorePaths.any(change.id.path.startsWith);
+  /// Builds a forest of [WatchablePackageTree] with all watchable packages.
+  List<WatchablePackageTree> _buildPackageForest() {
+    final watchablePackages = <BuildPackage>[];
+    for (final p in _buildPackages.packages.values) {
+      if (p.watch) watchablePackages.add(p);
+    }
+    watchablePackages.sort((a, b) => a.path.length.compareTo(b.path.length));
+    final result = <WatchablePackageTree>[];
+    for (final package in watchablePackages) {
+      var inserted = false;
+      for (final tree in result) {
+        if (tree.insert(package)) {
+          inserted = true;
+          break;
+        }
+      }
+      if (!inserted) {
+        result.add(WatchablePackageTree(package));
+      }
+    }
+    return result;
+  }
+}
+
+/// A tree of watchable packages that share a common prefix.
+class WatchablePackageTree {
+  final BuildPackage package;
+  final String packagePathWithSeparator;
+  final List<WatchablePackageTree> children = [];
+
+  WatchablePackageTree(this.package)
+    : packagePathWithSeparator = package.path + Platform.pathSeparator;
+
+  /// Recursively inserts [newPackage] as a child if it is nested under this
+  /// package.
+  ///
+  /// Returns `true` if [newPackage] belongs in this subtree.
+  bool insert(BuildPackage newPackage) {
+    if (!newPackage.path.startsWith(packagePathWithSeparator)) {
+      return false;
+    }
+
+    for (final child in children) {
+      if (child.insert(newPackage)) {
+        return true;
+      }
+    }
+
+    children.add(WatchablePackageTree(newPackage));
+    return true;
   }
 
-  // Returns a set of all package paths that are "nested" within a package.
-  //
-  // This allows the watcher to optimize and avoid duplicate events.
-  List<String> _nestedPaths(BuildPackage rootPackage) {
-    return _buildPackages.packages.values
-        .where((buildPackage) {
-          return buildPackage.path.length > rootPackage.path.length &&
-              buildPackage.path.startsWith(rootPackage.path);
-        })
-        .map(
-          (buildPackage) =>
-              buildPackage.path.substring(rootPackage.path.length + 1) +
-              Platform.pathSeparator,
-        )
-        .toList();
+  /// Finds the deepest nested package in this subtree that contains [path].
+  ///
+  /// Returns `null` if [path] does not belong to this package tree.
+  BuildPackage? deepestPackageForPath(String path) {
+    if (path != package.path && !path.startsWith(packagePathWithSeparator)) {
+      return null;
+    }
+
+    for (final child in children) {
+      final match = child.deepestPackageForPath(path);
+      if (match != null) return match;
+    }
+
+    return package;
   }
+
+  /// Moves [change] to the deepest matching package in the tree.
+  ///
+  /// Throws if it's not in the tree.
+  AssetChange moveToDeepestPackage(AssetChange change) {
+    final absolutePath = p.join(package.path, change.id.platformPath);
+    final deepestPackage = deepestPackageForPath(absolutePath);
+    if (deepestPackage == null) {
+      throw StateError('No package found for path: $absolutePath');
+    }
+    if (deepestPackage == package) {
+      return change;
+    }
+    final relativePath = p.relative(absolutePath, from: deepestPackage.path);
+    return AssetChange(AssetId(deepestPackage.name, relativePath), change.type);
+  }
+}
+
+extension _AssetIdExtension on AssetId {
+  // Returns [path] with platform separators.
+  String get platformPath =>
+      Platform.isWindows ? path.replaceAll('/', r'\') : path;
 }

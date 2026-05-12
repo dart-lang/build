@@ -22,7 +22,6 @@ import '../../build_plan/build_filter.dart';
 import '../../build_plan/build_plan.dart';
 import '../../logging/build_log.dart';
 import '../daemon_options.dart';
-import '../watch/build_package_watcher.dart';
 import '../watch/build_packages_watcher.dart';
 import 'change_providers.dart';
 
@@ -235,25 +234,23 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     final buildSeries = BuildSeries(buildPlan);
 
     // Only actually used for the AutoChangeProvider.
-    Stream<List<WatchEvent>> graphEvents() => BuildPackagesWatcher(
-          buildPlan.buildPackages,
-          watch: BuildPackageWatcher.new,
-        )
-        .watch()
-        .debounceBuffer(
-          buildPlan.testingOverrides.debounceDelay ??
-              const Duration(milliseconds: 250),
-        )
-        .asyncMap(
-          (changes) => buildSeries.filterChanges(changes, expectedDeletes),
-        )
-        .where((changes) => changes.isNotEmpty)
-        .map(
-          (changes) =>
-              changes
-                  .map((change) => WatchEvent(change.type, '${change.id}'))
-                  .toList(),
-        );
+    Stream<List<WatchEvent>> graphEvents() =>
+        BuildPackagesWatcher(buildPlan.buildPackages)
+            .watch()
+            .debounceBuffer(
+              buildPlan.testingOverrides.debounceDelay ??
+                  const Duration(milliseconds: 250),
+            )
+            .asyncMap(
+              (changes) => buildSeries.filterChanges(changes, expectedDeletes),
+            )
+            .where((changes) => changes.isNotEmpty)
+            .map(
+              (changes) =>
+                  changes
+                      .map((change) => WatchEvent(change.type, '${change.id}'))
+                      .toList(),
+            );
 
     final changeProvider =
         daemonOptions.buildMode == BuildMode.Auto
