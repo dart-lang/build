@@ -8,9 +8,9 @@ import 'dart:math' show min;
 
 import 'package:bazel_worker/driver.dart';
 import 'package:build/build.dart';
-import '../build_frontend_server/build_frontend_server.dart';
 import 'package:path/path.dart' as p;
 
+import '../build_frontend_server/build_frontend_server.dart';
 import 'common.dart';
 import 'scratch_space.dart';
 

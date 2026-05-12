@@ -5,10 +5,10 @@
 import 'dart:convert';
 
 import 'package:build/build.dart';
-import 'build_frontend_server/build_frontend_server.dart';
-import 'build_modules/build_modules.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
+
+import 'build_modules/build_modules.dart';
 
 /// A builder that gathers information about a web target's 'main' entrypoint.
 class WebEntrypointMarkerBuilder implements Builder {
