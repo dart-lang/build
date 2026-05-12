@@ -4,16 +4,12 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:build/experiments.dart' as experiments_zone;
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/serializer.dart';
-import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
-import 'package:package_config/package_config.dart';
 import 'package:watcher/watcher.dart';
 
 import '../../build_plan/build_packages.dart';
@@ -40,26 +36,6 @@ class AssetGraph implements GeneratedAssetHider {
   /// All the [AssetNode]s in the graph.
   final Nodes _nodes;
 
-  /// A digest of the generated build script kernel and inputs, if available.
-  ///
-  /// May be `null` in tests.
-  final String? kernelDigest;
-
-  /// A [Digest] of the build actions this graph was originally created with.
-  ///
-  /// When an [AssetGraph] is deserialized we check whether or not it matches
-  /// the new [BuildPhase]s and throw away the graph if it doesn't.
-  final Digest buildPhasesDigest;
-
-  /// The [Platform.version] this graph was created with.
-  final String dartVersion;
-
-  /// The Dart language experiments that were enabled when this graph was
-  /// originally created from the [build] constructor.
-  final BuiltList<String> enabledExperiments;
-
-  final BuiltMap<String, LanguageVersion?> packageLanguageVersions;
-
   /// All post process build steps results, indexed by package then
   /// [PostProcessBuildStepId].
   ///
@@ -73,68 +49,18 @@ class AssetGraph implements GeneratedAssetHider {
 
   final Map<GlobId, GlobResult> _globResults;
 
-  /// Digest of the previous build's `BuildTriggers`, or `null` if this is a
-  /// clean build.
-  Digest? previousBuildTriggersDigest;
-
-  /// Digests from the previous build's [BuildPhases], or `null` if this is a
-  /// clean build.
-  BuiltList<Digest>? previousInBuildPhasesOptionsDigests;
-
-  /// Digests from the current build's [BuildPhases].
-  BuiltList<Digest> inBuildPhasesOptionsDigests;
-
-  /// Digests from the previous build's [BuildPhases], or `null` if this is a
-  /// clean build.
-  BuiltList<Digest>? previousPostBuildActionsOptionsDigests;
-
-  /// Digests from the current build's [BuildPhases].
-  BuiltList<Digest> postBuildActionsOptionsDigests;
-
   /// Imports of resolved assets in the previous build, or `null` if this is a
   /// clean build.
   PhasedAssetDeps? previousPhasedAssetDeps;
 
-  AssetGraph._(
-    this.kernelDigest,
-    BuildPhases buildPhases,
-    this.dartVersion,
-    this.packageLanguageVersions,
-    this.enabledExperiments,
-  ) : buildPhasesDigest = buildPhases.digest,
-      inBuildPhasesOptionsDigests = buildPhases.inBuildPhasesOptionsDigests,
-      postBuildActionsOptionsDigests =
-          buildPhases.postBuildActionsOptionsDigests,
-      _nodes = Nodes(),
-      _postProcessBuildStepResults = {},
-      _buildStepResults = {},
-      _globResults = {};
-
-  /// An empty asset graph.
-  @visibleForTesting
-  AssetGraph.emptyForTesting()
-    : this._(null, BuildPhases([]), '', BuiltMap(), BuiltList());
-
-  AssetGraph._fromSerialized(
-    this.kernelDigest,
-    this.buildPhasesDigest,
-    this.inBuildPhasesOptionsDigests,
-    this.postBuildActionsOptionsDigests,
-    this.dartVersion,
-    this.packageLanguageVersions,
-    this.enabledExperiments,
-  ) : _nodes = Nodes(),
+  AssetGraph()
+    : _nodes = Nodes(),
       _postProcessBuildStepResults = {},
       _buildStepResults = {},
       _globResults = {};
 
   AssetGraph._with({
     required Nodes nodes,
-    required this.kernelDigest,
-    required this.buildPhasesDigest,
-    required this.dartVersion,
-    required this.enabledExperiments,
-    required this.packageLanguageVersions,
     required Map<
       String,
       Map<PostProcessBuildStepId, PostProcessBuildStepResult>
@@ -142,11 +68,6 @@ class AssetGraph implements GeneratedAssetHider {
     postProcessBuildStepResults,
     required Map<BuildStepId, BuildStepResult> buildStepResults,
     required Map<GlobId, GlobResult> globResults,
-    required this.previousBuildTriggersDigest,
-    required this.previousInBuildPhasesOptionsDigests,
-    required this.inBuildPhasesOptionsDigests,
-    required this.previousPostBuildActionsOptionsDigests,
-    required this.postBuildActionsOptionsDigests,
     required this.previousPhasedAssetDeps,
   }) : _nodes = nodes,
        _postProcessBuildStepResults = postProcessBuildStepResults,
@@ -154,22 +75,11 @@ class AssetGraph implements GeneratedAssetHider {
        _globResults = globResults;
 
   @visibleForTesting
-  AssetGraph copyWith({String? dartVersion}) => AssetGraph._with(
+  AssetGraph copyWith() => AssetGraph._with(
     nodes: _nodes,
-    kernelDigest: kernelDigest,
-    buildPhasesDigest: buildPhasesDigest,
-    dartVersion: dartVersion ?? this.dartVersion,
-    enabledExperiments: enabledExperiments,
-    packageLanguageVersions: packageLanguageVersions,
     postProcessBuildStepResults: _postProcessBuildStepResults,
     buildStepResults: _buildStepResults,
     globResults: _globResults,
-    previousBuildTriggersDigest: previousBuildTriggersDigest,
-    previousInBuildPhasesOptionsDigests: previousInBuildPhasesOptionsDigests,
-    inBuildPhasesOptionsDigests: inBuildPhasesOptionsDigests,
-    previousPostBuildActionsOptionsDigests:
-        previousPostBuildActionsOptionsDigests,
-    postBuildActionsOptionsDigests: postBuildActionsOptionsDigests,
     previousPhasedAssetDeps: previousPhasedAssetDeps,
   );
 
@@ -177,23 +87,12 @@ class AssetGraph implements GeneratedAssetHider {
   AssetGraph copyForNextBuild(BuildPhases buildPhases) {
     return AssetGraph._with(
       nodes: _nodes.clone(),
-      kernelDigest: kernelDigest,
-      buildPhasesDigest: buildPhasesDigest,
-      dartVersion: dartVersion,
-      enabledExperiments: enabledExperiments,
-      packageLanguageVersions: packageLanguageVersions,
       postProcessBuildStepResults: {
         for (final entry in _postProcessBuildStepResults.entries)
           entry.key: Map.of(entry.value),
       },
       buildStepResults: Map.of(_buildStepResults),
       globResults: Map.of(_globResults),
-      previousBuildTriggersDigest: previousBuildTriggersDigest,
-      previousInBuildPhasesOptionsDigests: inBuildPhasesOptionsDigests,
-      inBuildPhasesOptionsDigests: buildPhases.inBuildPhasesOptionsDigests,
-      previousPostBuildActionsOptionsDigests: postBuildActionsOptionsDigests,
-      postBuildActionsOptionsDigests:
-          buildPhases.postBuildActionsOptionsDigests,
       previousPhasedAssetDeps: previousPhasedAssetDeps,
     );
   }
@@ -201,22 +100,23 @@ class AssetGraph implements GeneratedAssetHider {
   /// Deserializes an [AssetGraph] from a [Map].
   ///
   /// Returns `null` if deserialization fails.
-  static AssetGraph? deserialize(List<int> serializedGraph) =>
-      deserializeAssetGraph(serializedGraph);
+  @visibleForTesting
+  static AssetGraph? deserialize(String serializedGraph) {
+    try {
+      final decodedMap = json.decode(serializedGraph);
+      if (decodedMap is! Map) return null;
+      return deserializeAssetGraph(decodedMap);
+    } catch (_) {
+      return null;
+    }
+  }
 
   static Future<AssetGraph> build(
     BuildPhases buildPhases,
     Set<AssetId> sources,
-    BuildPackages buildPackages, {
-    String? kernelDigest,
-  }) async {
-    final graph = AssetGraph._(
-      kernelDigest,
-      buildPhases,
-      Platform.version,
-      buildPackages.languageVersions,
-      experiments_zone.enabledExperiments.build(),
-    );
+    BuildPackages buildPackages,
+  ) async {
+    final graph = AssetGraph();
     final placeholders = graph._addPlaceHolderNodes(buildPackages);
     graph._addSources(sources);
     graph._addOutputsForSources(
@@ -227,14 +127,11 @@ class AssetGraph implements GeneratedAssetHider {
     return graph;
   }
 
-  List<int> serialize() => serializeAssetGraph(this);
+  @visibleForTesting
+  String serialize() => json.encode(serializeAssetGraph(this));
 
   Map<String, Map<PostProcessBuildStepId, PostProcessBuildStepResult>>
   get allPostProcessBuildStepResults => _postProcessBuildStepResults;
-
-  /// Whether this is a clean build, meaning there was no previous build state
-  /// loaded or it was discarded as incompatible.
-  bool get cleanBuild => previousInBuildPhasesOptionsDigests == null;
 
   // Forwards to [Nodes], see docs on that class.
   bool contains(AssetId id) => _nodes.contains(id);

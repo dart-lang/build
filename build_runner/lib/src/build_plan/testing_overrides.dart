@@ -53,6 +53,7 @@ class TestingOverrides {
     BuiltList<BuilderDefinition>? builderDefinitions,
     BuiltMap<String, BuildConfig>? buildConfig,
     BuildPackages? buildPackages,
+    bool? checkBuilderFreshness,
   }) => TestingOverrides(
     builderDefinitions: builderDefinitions ?? this.builderDefinitions,
     buildConfig: buildConfig ?? this.buildConfig,
@@ -67,6 +68,6 @@ class TestingOverrides {
     resolvers: resolvers,
     terminateEventStream: terminateEventStream,
     flattenOutput: flattenOutput,
-    checkBuilderFreshness: checkBuilderFreshness,
+    checkBuilderFreshness: checkBuilderFreshness ?? this.checkBuilderFreshness,
   );
 }

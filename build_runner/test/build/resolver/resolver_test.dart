@@ -1356,7 +1356,7 @@ Future<void> _runBuilder(
     _ => null,
   };
   await resolversImpl?.takeLockAndStartBuild(
-    AssetGraph.emptyForTesting(),
+    AssetGraph(),
     invalidatedSources: null,
   );
   await runBuilder(builder, list, singleStepReaderWriter, resolvers);

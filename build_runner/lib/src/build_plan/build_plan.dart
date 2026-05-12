@@ -2,17 +2,18 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:build/build.dart';
-import 'package:build/experiments.dart';
 import 'package:built_collection/built_collection.dart';
 
 import '../bootstrap/bootstrapper.dart';
 import '../bootstrap/depfile.dart';
+import '../build/asset_graph/asset_graph_json.dart';
 import '../build/asset_graph/exceptions.dart';
 import '../build/asset_graph/graph.dart';
 import '../build/asset_graph/node.dart';
+
 import '../constants.dart';
 import '../exceptions.dart';
 import '../io/asset_tracker.dart';
@@ -27,12 +28,15 @@ import 'build_options.dart';
 import 'build_packages.dart';
 import 'build_phase_creator.dart';
 import 'build_phases.dart';
+import 'build_plan_digest.dart';
 import 'builder_definition.dart';
 import 'builder_factories.dart';
 import 'testing_overrides.dart';
 
 /// Options and derived configuration for a build.
 class BuildPlan {
+  final BuildPlanDigest buildPlanDigest;
+
   final BuilderFactories builderFactories;
   final BuildOptions buildOptions;
   final TestingOverrides testingOverrides;
@@ -51,6 +55,21 @@ class BuildPlan {
   bool _assetGraphWasTaken;
   final BuiltSet<AssetId>? updates;
 
+  /// Whether this is a clean build.
+  ///
+  /// If not, it's an incremental build.
+  final bool cleanBuild;
+
+  /// Whether build triggers config changed since the previous build.
+  final bool triggersChanged;
+
+  /// Whether phase options per phase changed since the previous build.
+  final BuiltList<bool> _phaseOptionsChanged;
+
+  /// Whether post process phase options per phase changed since the previous
+  /// build.
+  final BuiltList<bool> _postBuildOptionsChanged;
+
   /// Files to delete before restarting or before the next build.
   ///
   /// - Outputs from the previous build.
@@ -66,6 +85,7 @@ class BuildPlan {
   final BuiltList<AssetId> foldersToDelete;
 
   BuildPlan({
+    required this.buildPlanDigest,
     required this.builderFactories,
     required this.buildOptions,
     required this.testingOverrides,
@@ -82,10 +102,16 @@ class BuildPlan {
     required this.updates,
     required this.filesToDelete,
     required this.foldersToDelete,
+    required this.cleanBuild,
+    required this.triggersChanged,
+    required BuiltList<bool> phaseOptionsChanged,
+    required BuiltList<bool> postBuildOptionsChanged,
   }) : _previousAssetGraph = previousAssetGraph,
        _previousAssetGraphWasTaken = previousAssetGraphWasTaken,
        _assetGraph = assetGraph,
-       _assetGraphWasTaken = assetGraphWasTaken;
+       _assetGraphWasTaken = assetGraphWasTaken,
+       _phaseOptionsChanged = phaseOptionsChanged,
+       _postBuildOptionsChanged = postBuildOptionsChanged;
 
   /// Loads a build plan.
   ///
@@ -114,13 +140,13 @@ class BuildPlan {
       compileStrategy: buildOptions.compileStrategy,
     );
     var restartIsNeeded = false;
-    final kernelFreshness =
+    final compileFreshness =
         testingOverrides.checkBuilderFreshness
             ? await bootstrapper.checkCompileFreshness(
               digestsAreFresh: recentlyBootstrapped,
             )
             : FreshnessResult(outputIsFresh: true, digest: 'dummy_digest');
-    if (!kernelFreshness.outputIsFresh) {
+    if (!compileFreshness.outputIsFresh) {
       restartIsNeeded = true;
     }
 
@@ -164,37 +190,36 @@ class BuildPlan {
         ).createBuildPhases();
     buildPhases.checkOutputLocations(buildPackages.outputPackages);
 
-    AssetGraph? previousAssetGraph;
-    final filesToDelete = <AssetId>{};
-    final foldersToDelete = <AssetId>{};
+    final buildPlanDigest = BuildPlanDigest(
+      compileDigest: compileFreshness.digest,
+      buildConfigs: buildConfigs,
+      buildPhases: buildPhases,
+      buildPackages: buildPackages,
+    );
 
     final assetGraphId = AssetId(buildPackages.outputRoot, assetGraphPath);
     final generatedOutputDirectoryId = AssetId(
       buildPackages.outputRoot,
       generatedOutputDirectory,
     );
+    BuildPlanDigest? previousBuildPlanDigest;
+    AssetGraph? previousAssetGraph;
+    final filesToDelete = <AssetId>{};
+    final foldersToDelete = <AssetId>{};
 
     if (await readerWriter.canRead(assetGraphId)) {
-      previousAssetGraph = AssetGraph.deserialize(
-        await readerWriter.readAsBytes(assetGraphId),
+      final assetGraphJson = AssetGraphJson.deserialize(
+        await readerWriter.readAsBytes(assetGraphId) as Uint8List,
       );
+      if (assetGraphJson != null) {
+        previousAssetGraph = assetGraphJson.assetGraph;
+        previousBuildPlanDigest = assetGraphJson.buildPlanDigest;
+      }
       if (previousAssetGraph != null) {
-        final buildPhasesChanged =
-            buildPhases.digest != previousAssetGraph.buildPhasesDigest;
-        final pkgVersionsChanged =
-            previousAssetGraph.packageLanguageVersions !=
-            buildPackages.languageVersions;
-        final enabledExperimentsChanged =
-            previousAssetGraph.enabledExperiments != enabledExperiments.build();
-        if (buildPhasesChanged ||
-            pkgVersionsChanged ||
-            enabledExperimentsChanged ||
-            !isSameSdkVersion(
-              previousAssetGraph.dartVersion,
-              Platform.version,
-            ) ||
-            restartIsNeeded ||
-            previousAssetGraph.kernelDigest != kernelFreshness.digest) {
+        if (restartIsNeeded ||
+            !buildPlanDigest.canIncrementallyBuildFrom(
+              previousBuildPlanDigest,
+            )) {
           // Mark old outputs for deletion.
           filesToDelete.addAll(
             previousAssetGraph.outputsToDelete(buildPackages),
@@ -257,7 +282,6 @@ class BuildPlan {
 
       try {
         assetGraph = await AssetGraph.build(
-          kernelDigest: kernelFreshness.digest,
           buildPhases,
           inputSources,
           buildPackages,
@@ -290,6 +314,7 @@ class BuildPlan {
     }
 
     return BuildPlan(
+      buildPlanDigest: buildPlanDigest,
       builderFactories: builderFactories,
       buildOptions: buildOptions,
       testingOverrides: testingOverrides,
@@ -306,14 +331,29 @@ class BuildPlan {
       updates: updates?.build(),
       filesToDelete: filesToDelete.toBuiltList(),
       foldersToDelete: foldersToDelete.toBuiltList(),
+      cleanBuild: previousAssetGraph == null,
+      triggersChanged:
+          !buildPlanDigest.hasSameTriggersAs(previousBuildPlanDigest),
+      phaseOptionsChanged: buildPlanDigest.computeChangedPhaseOptions(
+        previousBuildPlanDigest,
+      ),
+      postBuildOptionsChanged: buildPlanDigest.computeChangedPostBuildOptions(
+        previousBuildPlanDigest,
+      ),
     );
   }
 
   BuildPlan copyWith({
+    BuildPlanDigest? buildPlanDigest,
     BuiltSet<BuildDirectory>? buildDirs,
     BuiltSet<BuildFilter>? buildFilters,
     ReaderWriter? readerWriter,
+    bool? cleanBuild,
+    bool? triggersChanged,
+    BuiltList<bool>? phaseOptionsChanged,
+    BuiltList<bool>? postBuildOptionsChanged,
   }) => BuildPlan(
+    buildPlanDigest: buildPlanDigest ?? this.buildPlanDigest,
     builderFactories: builderFactories,
     buildOptions: buildOptions.copyWith(
       buildDirs: buildDirs,
@@ -333,6 +373,26 @@ class BuildPlan {
     updates: updates,
     filesToDelete: filesToDelete,
     foldersToDelete: foldersToDelete,
+    cleanBuild: cleanBuild ?? this.cleanBuild,
+    triggersChanged: triggersChanged ?? this.triggersChanged,
+    phaseOptionsChanged: phaseOptionsChanged ?? _phaseOptionsChanged,
+    postBuildOptionsChanged:
+        postBuildOptionsChanged ?? _postBuildOptionsChanged,
+  );
+
+  /// Returns a copy of the plan updated for the next incremental build.
+  ///
+  /// Sets [cleanBuild], [triggersChanged], `phaseOptionsChanged` and
+  /// `postBuildOptionsChanged` to `false`.
+  BuildPlan forNextBuild() => copyWith(
+    cleanBuild: false,
+    triggersChanged: false,
+    phaseOptionsChanged: BuiltList<bool>.from(
+      List.filled(buildPhases.inBuildPhasesOptionsDigests.length, false),
+    ),
+    postBuildOptionsChanged: BuiltList<bool>.from(
+      List.filled(buildPhases.postBuildActionsOptionsDigests.length, false),
+    ),
   );
 
   /// Takes the loaded [AssetGraph], which may be `null` if none could be
@@ -355,6 +415,16 @@ class BuildPlan {
     _assetGraphWasTaken = true;
     return _assetGraph;
   }
+
+  /// Whether [phaseNumber] has different options to the previous build
+  /// and must be fully rebuilt.
+  bool phaseOptionsChanged(int phaseNumber) =>
+      _phaseOptionsChanged[phaseNumber];
+
+  /// Whether [actionNumber] has different options to the previous build
+  /// and must be fully rebuilt.
+  bool postBuildOptionsChanged(int actionNumber) =>
+      _postBuildOptionsChanged[actionNumber];
 
   Future<void> deleteFilesAndFolders() async {
     // Hidden outputs are deleted if needed by deleting the entire folder. So,
@@ -387,6 +457,3 @@ class BuildPlan {
     recentlyBootstrapped: false,
   );
 }
-
-bool isSameSdkVersion(String? thisVersion, String? thatVersion) =>
-    thisVersion?.split(' ').first == thatVersion?.split(' ').first;
