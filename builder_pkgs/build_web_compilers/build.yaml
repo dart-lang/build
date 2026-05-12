@@ -16,6 +16,17 @@ targets:
       build_web_compilers:sdk_js:
         enabled: true
 builders:
+  module_library:
+    import: "package:build_web_compilers/builders.dart"
+    builder_factories:
+      - moduleLibraryBuilder
+    build_extensions:
+      .dart:
+        - .module.library
+    auto_apply: all_packages
+    is_optional: True
+    required_inputs: [".dart"]
+    applies_builders: ["|module_cleanup"]
   sdk_js:
     import: "package:build_web_compilers/builders.dart"
     builder_factories:
@@ -45,7 +56,7 @@ builders:
     is_optional: True
     auto_apply: none
     required_inputs: [".dart", ".module.library"]
-    applies_builders: ["build_modules:module_cleanup"]
+    applies_builders: ["build_web_compilers:module_cleanup"]
   dart2wasm_modules:
     import: "package:build_web_compilers/builders.dart"
     builder_factories:
@@ -61,7 +72,7 @@ builders:
     is_optional: True
     auto_apply: none
     required_inputs: [".dart", ".module.library"]
-    applies_builders: ["build_modules:module_cleanup"]
+    applies_builders: ["build_web_compilers:module_cleanup"]
   ddc_modules:
     import: "package:build_web_compilers/builders.dart"
     builder_factories:
@@ -77,7 +88,7 @@ builders:
     is_optional: True
     auto_apply: none
     required_inputs: [".dart", ".module.library"]
-    applies_builders: ["build_modules:module_cleanup"]
+    applies_builders: ["build_web_compilers:module_cleanup"]
   ddc:
     import: "package:build_web_compilers/builders.dart"
     builder_factories:
@@ -172,6 +183,9 @@ builders:
     build_to: source
     required_inputs: [".dart.js"]
 post_process_builders:
+  module_cleanup:
+    import: "package:build_web_compilers/builders.dart"
+    builder_factory: "moduleCleanup"
   dart2js_archive_extractor:
     import: "package:build_web_compilers/builders.dart"
     builder_factory: dart2jsArchiveExtractor

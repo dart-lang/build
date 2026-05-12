@@ -6,8 +6,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:build_modules/src/common.dart';
-import 'package:build_modules/src/frontend_server_driver.dart';
+import 'package:build_web_compilers/src/build_modules/common.dart';
+import 'package:build_web_compilers/src/build_modules/frontend_server_driver.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 

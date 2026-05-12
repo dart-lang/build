@@ -103,10 +103,6 @@ for PKG in ${PKGS}; do
         echo 'dart test -t integration4 --test-randomize-ordering-seed=random'
         dart test -t integration4 --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
-      test_6)
-        echo 'dart test -P presubmit --test-randomize-ordering-seed=random'
-        dart test -P presubmit --test-randomize-ordering-seed=random || EXIT_CODE=$?
-        ;;
       *)
         echo -e "\033[31mUnknown TASK '${TASK}' - TERMINATING JOB\033[0m"
         exit 64

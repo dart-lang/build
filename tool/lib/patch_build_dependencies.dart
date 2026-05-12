@@ -12,7 +12,6 @@ const _buildPackages = [
   'build',
   'build_config',
   'build_daemon',
-  'build_modules',
   'build_runner',
   'build_test',
   'build_web_compilers',
