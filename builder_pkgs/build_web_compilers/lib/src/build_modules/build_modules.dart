@@ -24,7 +24,6 @@ export 'workers.dart'
         dartdevkDriverResource,
         frontendServerProxyDriverResource,
         maxWorkersPerTask,
-
         persistentFrontendServer,
         persistentFrontendServerResource,
         startFrontendServerWorker;
