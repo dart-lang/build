@@ -10,8 +10,6 @@ import 'package:test/test.dart';
 
 import '../common/common.dart';
 
-const defaultTimeout = Timeout(Duration(minutes: 3));
-
 void main() async {
   // TODO(davidmorgan): this is an integration test of the web compilers,
   // support testing like this outside the `build_runner` package.
@@ -128,5 +126,5 @@ void main() async {
           '--define=build_web_compilers:dart_source_cleanup=enabled=true',
     );
     expect(tester.read('root_pkg/build/unused.dart'), null);
-  }, timeout: defaultTimeout);
+  });
 }

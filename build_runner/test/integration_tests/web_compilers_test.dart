@@ -10,8 +10,6 @@ import 'package:test/test.dart';
 
 import '../common/common.dart';
 
-const defaultTimeout = Timeout(Duration(minutes: 3));
-
 void main() async {
   test('web compilers', () async {
     final pubspecs = await Pubspecs.load();
@@ -157,5 +155,5 @@ void main() {
           '--define=build_web_compilers:dart_source_cleanup=enabled=true',
     );
     expect(tester.read('root_pkg/build/unused.dart'), null);
-  }, timeout: defaultTimeout);
+  });
 }

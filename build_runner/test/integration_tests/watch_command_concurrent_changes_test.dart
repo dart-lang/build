@@ -101,10 +101,11 @@ class TestBuilder implements Builder {
   @override
   Future<void> build(BuildStep buildStep) async {
     final id = AssetId('root_pkg', 'lib/a.other');
-    final canRead = await buildStep.canRead(id);
     await Future.delayed(Duration(seconds: 1));
-    if (canRead) {
+    try {
       await buildStep.readAsString(id);
+    } catch (_) {
+      print('file was not present');
     }
     buildStep.writeAsString(
         buildStep.inputId.addExtension('.copy'),
@@ -128,6 +129,7 @@ class TestBuilder implements Builder {
       'root_pkg|lib/a.other was unexpectedly deleted, restarting the build.',
     );
     await watch.expect('Starting build #2.');
+    await watch.expect('file was not present');
     await watch.expect(BuildLog.successPattern);
 
     // If there was a succesful build using the non-primary input then it's
