@@ -41,9 +41,6 @@ class WebEntrypointMarkerBuilder implements Builder {
       frontendServerStateResource,
     );
 
-    // Start the Frontend Server early to record its port.
-    await buildStep.fetchResource(persistentFrontendServerResource);
-
     final hasCachedState = await frontendServerState.checkAndDeserializeState(
       buildStep,
     );

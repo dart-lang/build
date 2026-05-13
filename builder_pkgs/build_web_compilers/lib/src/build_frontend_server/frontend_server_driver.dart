@@ -14,7 +14,7 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
-import 'common.dart';
+import '../common.dart';
 
 final _log = Logger('FrontendServerProxy');
 final dartaotruntimePath = p.join(sdkDir, 'bin', 'dartaotruntime');
@@ -329,20 +329,20 @@ class PersistentFrontendServer {
 
   /// Tries to connect to a shared Frontend Server manager.
   ///
-  /// Looks for a port file at [fesWorkerPortPath]. If it exists, reads the port
-  /// and attempts to connect.
+  /// Looks for a config file at [fesManagerConfigPath]. If it exists, reads the
+  /// port and attempts to connect.
   ///
-  /// If a connection can't be made, returns `null` and deletes the port file.
+  /// If a connection can't be made, returns `null` and deletes the config file.
   static Future<PersistentFrontendServer?> _tryConnectToFESManager(
     Uri fileSystemRoot,
   ) async {
-    final fesWorkerFile = File(
-      p.join(Directory.current.path, fesWorkerPortPath),
+    final configFile = File(
+      p.join(Directory.current.path, fesManagerConfigPath),
     );
-    if (!fesWorkerFile.existsSync()) return null;
+    if (!configFile.existsSync()) return null;
 
     try {
-      final content = await fesWorkerFile.readAsString();
+      final content = await configFile.readAsString();
       final json = jsonDecode(content) as Map<String, dynamic>;
       final port = json['port'] as int?;
       if (port == null) {
@@ -365,12 +365,12 @@ class PersistentFrontendServer {
       );
     } catch (e) {
       _log.warning(
-        'Failed to connect to FES manager. Deleting stale port file and '
+        'Failed to connect to FES manager. Deleting stale config file and '
         'falling back to process mode.',
         e,
       );
       try {
-        await fesWorkerFile.delete();
+        await configFile.delete();
       } catch (_) {}
       return null;
     }

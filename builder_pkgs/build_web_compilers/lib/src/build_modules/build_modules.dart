@@ -4,7 +4,7 @@
 
 export '../build_frontend_server/frontend_server_resources.dart'
     show frontendServerState, frontendServerStateResource;
-export 'common.dart' show fesWorkerPortPath, multiRootScheme;
+export '../common.dart' show fesManagerConfigPath, multiRootScheme;
 export 'ddc_names.dart';
 export 'errors.dart' show MissingModulesException, UnsupportedModules;
 export 'kernel_builder.dart' show KernelBuilder, reportUnusedKernelInputs;

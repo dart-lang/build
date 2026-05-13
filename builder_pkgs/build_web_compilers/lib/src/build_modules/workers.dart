@@ -11,7 +11,7 @@ import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 
 import '../build_frontend_server/frontend_server_driver.dart';
-import 'common.dart';
+import '../common.dart';
 import 'scratch_space.dart';
 
 // If no terminal is attached, prevent a new one from launching.

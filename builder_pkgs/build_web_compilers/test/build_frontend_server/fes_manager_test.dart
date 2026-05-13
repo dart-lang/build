@@ -6,7 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:build_web_compilers/src/build_frontend_server/common.dart';
+import 'package:build_web_compilers/src/common.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -24,9 +24,6 @@ void main() {
       packageConfig.writeAsStringSync(
         jsonEncode({'configVersion': 2, 'packages': <String>[]}),
       );
-
-      final portFile = File(p.join(Directory.current.path, fesWorkerPortPath));
-      if (portFile.existsSync()) portFile.deleteSync();
     });
 
     tearDown(() async {
@@ -37,22 +34,21 @@ void main() {
       final fileSystemRoot = tempDir.uri.resolve('fes_root/');
       await Directory.fromUri(fileSystemRoot).create(recursive: true);
 
+      final scriptPath = p.absolute('bin/fes_manager.dart');
       final process = await Process.start('dart', [
-        'bin/fes_manager.dart',
+        scriptPath,
         sdkDir,
         fileSystemRoot.toString(),
         p.toUri(packageConfig.path).toString(),
-      ]);
+      ], workingDirectory: tempDir.path);
 
-      // Wait for a port file to be written.
-      final portFile = File(p.join(Directory.current.path, fesWorkerPortPath));
-      final content = await _waitForFile(portFile);
+      // Wait for a config file to be written.
+      final configFile = File(p.join(tempDir.path, fesManagerConfigPath));
+      final content = await _waitForFile(configFile);
       final json = jsonDecode(content) as Map<String, dynamic>;
       final port = json['port'] as int?;
-      final path = json['fileSystemRoot'] as String?;
 
       expect(port, isNotNull);
-      expect(path, fileSystemRoot.toString());
 
       // Connect to the FES socket, send a request, and verify its response.
       final socket = await Socket.connect(InternetAddress.loopbackIPv4, port!);
@@ -71,8 +67,6 @@ void main() {
       await socket.close();
       process.kill();
       await process.exitCode;
-
-      if (portFile.existsSync()) portFile.deleteSync();
     });
 
     test('updates the port file on restart', () async {
@@ -80,17 +74,18 @@ void main() {
       await Directory.fromUri(fileSystemRoot).create(recursive: true);
 
       // Start first manager
+      final scriptPath = p.absolute('bin/fes_manager.dart');
       final process1 = await Process.start('dart', [
-        'bin/fes_manager.dart',
+        scriptPath,
         sdkDir,
         fileSystemRoot.toString(),
         p.toUri(packageConfig.path).toString(),
-      ]);
+      ], workingDirectory: tempDir.path);
 
-      final portFile = File(p.join(Directory.current.path, fesWorkerPortPath));
-      await _waitForFile(portFile);
+      final configFile = File(p.join(tempDir.path, fesManagerConfigPath));
+      await _waitForFile(configFile);
 
-      final content1 = await portFile.readAsString();
+      final content1 = await configFile.readAsString();
 
       // Stop first manager
       process1.kill();
@@ -98,23 +93,23 @@ void main() {
 
       // Start second manager
       final process2 = await Process.start('dart', [
-        'bin/fes_manager.dart',
+        scriptPath,
         sdkDir,
         fileSystemRoot.toString(),
         p.toUri(packageConfig.path).toString(),
-      ]);
+      ], workingDirectory: tempDir.path);
 
-      // Wait for the port file to be updated with new content
+      // Wait for the config file to be updated with new content
       var content2 = '';
       var attempts = 0;
       while (attempts < 100) {
-        content2 = await _waitForFile(portFile);
+        content2 = await _waitForFile(configFile);
         if (content2 != content1) break;
         await Future<void>.delayed(const Duration(milliseconds: 100));
         attempts++;
       }
       if (attempts >= 100) {
-        fail('Timed out waiting for port file to change');
+        fail('Timed out waiting for config file to change');
       }
       final json2 = jsonDecode(content2) as Map<String, dynamic>;
       final port2 = json2['port'] as int;
@@ -137,8 +132,6 @@ void main() {
       await socket.close();
       process2.kill();
       await process2.exitCode;
-
-      if (portFile.existsSync()) portFile.deleteSync();
     });
   });
 }

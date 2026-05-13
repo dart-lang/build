@@ -9,7 +9,7 @@ import 'package:graphs/graphs.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:path/path.dart' as p;
 
-import 'common.dart';
+import '../common.dart';
 import 'module_library.dart';
 import 'modules.dart';
 import 'platform.dart';

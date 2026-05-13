@@ -19,7 +19,13 @@ class FrontendServerState {
   /// hot reload.
   AssetId? entrypointAssetId;
 
-  /// The scratch space used by the Frontend Server if owned by webdev.
+  /// The scratch space where the Frontend Server writes its outputs (`.js`,
+  /// `.map`, and `.metadata` files).
+  ///
+  /// These files are read by downstream builders to create build assets.
+  ///
+  /// When not null, the scratch space should be initialized over an existing
+  /// directory (rather than a fresh one).
   ScratchSpace? fesScratchSpace;
 
   /// Looks for and loads a `.web.entrypoint.json` file if it exists.

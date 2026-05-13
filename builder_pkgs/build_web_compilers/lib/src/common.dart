@@ -9,7 +9,14 @@ import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
 
-import 'build_modules/build_modules.dart' show multiRootScheme;
+const multiRootScheme = 'org-dartlang-app';
+final fesManagerConfigPath = p.join(
+  '.dart_tool',
+  'build',
+  'fes_manager_config',
+);
+final packagesFilePath = p.join('.dart_tool', 'package_config.json');
+const webHotReloadOption = 'web-hot-reload';
 
 final jsModuleErrorsExtension = '.ddc.js.errors';
 final jsModuleExtension = '.ddc.js';
@@ -168,4 +175,22 @@ AssetId changeAssetIdExtension(
       inputId.path.substring(0, inputId.path.length - inputExtension.length) +
       outputExtension;
   return AssetId(inputId.package, newPath);
+}
+
+enum ModuleStrategy { fine, coarse }
+
+ModuleStrategy moduleStrategy(BuilderOptions options) {
+  final usesWebHotReload = options.config[webHotReloadOption] as bool? ?? false;
+  if (usesWebHotReload) {
+    return ModuleStrategy.fine;
+  }
+  final config = options.config['strategy'] as String? ?? 'coarse';
+  switch (config) {
+    case 'coarse':
+      return ModuleStrategy.coarse;
+    case 'fine':
+      return ModuleStrategy.fine;
+    default:
+      throw ArgumentError('Unexpected ModuleBuilder strategy: $config');
+  }
 }

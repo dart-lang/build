@@ -6,8 +6,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:build_web_compilers/src/build_frontend_server/common.dart';
 import 'package:build_web_compilers/src/build_frontend_server/frontend_server_driver.dart';
+import 'package:build_web_compilers/src/common.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -26,8 +26,10 @@ void main() {
         ..writeAsStringSync(
           jsonEncode({'configVersion': 2, 'packages': <String>[]}),
         );
-      final portFile = File(p.join(Directory.current.path, fesWorkerPortPath));
-      if (portFile.existsSync()) portFile.deleteSync();
+      final configFile = File(
+        p.join(Directory.current.path, fesManagerConfigPath),
+      );
+      if (configFile.existsSync()) configFile.deleteSync();
       server = await PersistentFrontendServer.start(
         sdkRoot: sdkDir,
         fileSystemRoot: tempDir.uri,
@@ -110,8 +112,10 @@ void main() {
         ..writeAsStringSync(
           jsonEncode({'configVersion': 2, 'packages': <String>[]}),
         );
-      final portFile = File(p.join(Directory.current.path, fesWorkerPortPath));
-      if (portFile.existsSync()) portFile.deleteSync();
+      final configFile = File(
+        p.join(Directory.current.path, fesManagerConfigPath),
+      );
+      if (configFile.existsSync()) configFile.deleteSync();
       server = await PersistentFrontendServer.start(
         sdkRoot: sdkDir,
         fileSystemRoot: tempDir.uri,

@@ -5,15 +5,15 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:build_web_compilers/src/build_frontend_server/common.dart';
 import 'package:build_web_compilers/src/build_frontend_server/frontend_server_driver.dart';
+import 'package:build_web_compilers/src/common.dart';
 import 'package:path/path.dart' as p;
 
 /// Starts a persistent Frontend Server instance and exposes it via a socket.
 ///
 /// This avoids the overhead of restarting the Frontend Server for every
 /// compile or expression eval request. Communicates with JSON-encoded
-/// instructions on a dynamically allocated port written to [fesWorkerPortPath].
+/// instructions on a port written to [fesManagerConfigPath].
 ///
 /// This is only meant to be used by web builders, not direct use.
 void main(List<String> args) async {
@@ -29,10 +29,10 @@ void main(List<String> args) async {
 
   final packagesFile = Uri.parse(args[2]);
 
-  // Delete the port file if it exists. Frontend Server finds a port and
-  // writes it.
-  final portFile = File(p.join(Directory.current.path, fesWorkerPortPath));
-  if (portFile.existsSync()) portFile.deleteSync();
+  // Delete stale config files if they exist. This manager will spin up a FES
+  // instance and write its new config.
+  final configFile = File(p.join(Directory.current.path, fesManagerConfigPath));
+  if (configFile.existsSync()) configFile.deleteSync();
 
   final fes = await PersistentFrontendServer.start(
     sdkRoot: sdkRoot,
@@ -43,31 +43,34 @@ void main(List<String> args) async {
   final driver = FrontendServerProxyDriver()..init(fes);
   final server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
 
-  // Write port and filesystem root to file so we can create connections to it
-  // or its scratch space later in the build.
-  portFile.createSync(recursive: true);
-  portFile.writeAsStringSync(
-    jsonEncode({
-      'port': server.port,
-      'fileSystemRoot': fileSystemRoot.toString(),
-      'timestamp': DateTime.now().toIso8601String(),
-    }),
-  );
+  // Write config to file so we can create connections to it later in the build.
+  configFile.createSync(recursive: true);
+  configFile.writeAsStringSync(jsonEncode({'port': server.port}));
 
   print('Frontend Server Manager listening on port ${server.port}');
 
+  final activeSockets = <Socket>{};
   server.listen((socket) {
+    activeSockets.add(socket);
     socket
         .cast<List<int>>()
         .transform(utf8.decoder)
         .transform(const LineSplitter())
-        .listen((line) => _handleRequest(line, socket, fes, driver));
+        .listen(
+          (line) => _handleRequest(line, socket, fes, driver),
+          onDone: () => activeSockets.remove(socket),
+          onError: (_) => activeSockets.remove(socket),
+        );
   });
 
   // Handle shutdown
   ProcessSignal.sigint.watch().listen((_) async {
+    await server.close();
+    for (final socket in activeSockets) {
+      await socket.close();
+    }
     await fes.shutdown();
-    if (portFile.existsSync()) portFile.deleteSync();
+    if (configFile.existsSync()) configFile.deleteSync();
     exit(0);
   });
 }

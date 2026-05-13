@@ -7,8 +7,8 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:build_web_compilers/src/build_modules/build_modules.dart';
-import 'package:build_web_compilers/src/build_modules/common.dart';
 import 'package:build_web_compilers/src/build_modules/meta_module.dart';
+import 'package:build_web_compilers/src/common.dart';
 import 'package:test/test.dart';
 
 import 'matchers.dart';

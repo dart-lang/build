@@ -16,8 +16,8 @@ import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
 import 'package:stream_transform/stream_transform.dart';
 
+import '../common.dart';
 import 'build_modules.dart';
-import 'common.dart';
 import 'errors.dart';
 import 'module_cache.dart';
 import 'workers.dart';
