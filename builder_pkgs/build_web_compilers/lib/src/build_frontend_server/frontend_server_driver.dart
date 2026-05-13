@@ -281,38 +281,9 @@ class PersistentFrontendServer {
     required Uri fileSystemRoot,
     required Uri packagesFile,
   }) async {
-    final file = File(p.join(Directory.current.path, fesWorkerPortPath));
-    if (await file.exists()) {
-      try {
-        final content = await file.readAsString();
-        final json = jsonDecode(content) as Map<String, dynamic>;
-        final port = json['port'] as int?;
-        if (port != null) {
-          final socket = await Socket.connect(
-            InternetAddress.loopbackIPv4,
-            port,
-          );
-          final socketLines =
-              socket
-                  .cast<List<int>>()
-                  .transform(utf8.decoder)
-                  .transform(const LineSplitter())
-                  .asBroadcastStream();
-          final fileSystem = WebMemoryFilesystem(fileSystemRoot);
-          return PersistentFrontendServer._(
-            outputDillUri: fileSystemRoot.resolve('output.dill'),
-            fileSystem: fileSystem,
-            socket: socket,
-            socketLines: socketLines,
-          );
-        }
-      } catch (e) {
-        _log.warning(
-          'Failed to read FES port file, falling back to process mode',
-          e,
-        );
-      }
-    }
+    final fes = await _tryConnectToFESManager(fileSystemRoot);
+    if (fes != null) return fes;
+
     final outputDillUri = fileSystemRoot.resolve('output.dill');
     // [platformDill] must be passed to the Frontend Server with a 'file:'
     // prefix to pass schema checks for Windows drive letters.
@@ -335,7 +306,7 @@ class PersistentFrontendServer {
       '--output-dill=${outputDillUri.toFilePath()}',
       '--output-incremental-dill=${outputDillUri.toFilePath()}',
     ];
-    final process = await Process.start(dartaotruntimePath, args);
+    final process = await _startWithReaper(dartaotruntimePath, args);
     final fileSystem = WebMemoryFilesystem(fileSystemRoot);
     final stdoutHandler = StdoutHandler(logger: _log);
     process.stdout
@@ -354,6 +325,99 @@ class PersistentFrontendServer {
       outputDillUri: outputDillUri,
       fileSystem: fileSystem,
     );
+  }
+
+  /// Tries to connect to a shared Frontend Server manager.
+  ///
+  /// Looks for a port file at [fesWorkerPortPath]. If it exists, reads the port
+  /// and attempts to connect.
+  ///
+  /// If a connection can't be made, returns `null` and deletes the port file.
+  static Future<PersistentFrontendServer?> _tryConnectToFESManager(
+    Uri fileSystemRoot,
+  ) async {
+    final fesWorkerFile = File(
+      p.join(Directory.current.path, fesWorkerPortPath),
+    );
+    if (!fesWorkerFile.existsSync()) return null;
+
+    try {
+      final content = await fesWorkerFile.readAsString();
+      final json = jsonDecode(content) as Map<String, dynamic>;
+      final port = json['port'] as int?;
+      if (port == null) {
+        throw StateError('Malformed FES port file: missing "port" field.');
+      }
+
+      final socket = await Socket.connect(InternetAddress.loopbackIPv4, port);
+      final socketLines =
+          socket
+              .cast<List<int>>()
+              .transform(utf8.decoder)
+              .transform(const LineSplitter())
+              .asBroadcastStream();
+      final fileSystem = WebMemoryFilesystem(fileSystemRoot);
+      return PersistentFrontendServer._(
+        outputDillUri: fileSystemRoot.resolve('output.dill'),
+        fileSystem: fileSystem,
+        socket: socket,
+        socketLines: socketLines,
+      );
+    } catch (e) {
+      _log.warning(
+        'Failed to connect to FES manager. Deleting stale port file and '
+        'falling back to process mode.',
+        e,
+      );
+      try {
+        await fesWorkerFile.delete();
+      } catch (_) {}
+      return null;
+    }
+  }
+
+  /// `Process.start` plus a reaper script so that the child process is killed
+  /// if the parent process is killed.
+  static Future<Process> _startWithReaper(
+    String command,
+    List<String> arguments,
+  ) async {
+    final result = await Process.start(command, arguments);
+    final reaper = await _startReaper(parentPid: pid, childPid: result.pid);
+    if (reaper != null) {
+      result.exitCode.then<void>((_) {
+        reaper.kill();
+      }).ignore();
+    }
+    return result;
+  }
+
+  /// Starts a script that waits until [parentPid] exits then kills [childPid].
+  ///
+  /// Returns `null` on failure to start the script.
+  ///
+  /// The caller is responsible for killing the reaper if the child exits first.
+  static Future<Process?> _startReaper({
+    required int parentPid,
+    required int childPid,
+  }) async {
+    try {
+      if (Platform.isWindows) {
+        return await Process.start('powershell', [
+          '-ExecutionPolicy',
+          'Bypass',
+          '-Command',
+          'Wait-Process -Id $parentPid; Stop-Process -Id $childPid -Force',
+        ]);
+      } else {
+        return await Process.start('bash', [
+          '-c',
+          'while kill -0 $parentPid; do sleep 1; done; kill -9 $childPid',
+        ], mode: ProcessStartMode.detachedWithStdio);
+      }
+    } on ProcessException catch (_) {
+      return null;
+    }
   }
 
   Future<CompilerOutput?> compile(String entrypoint) async {
@@ -427,25 +491,11 @@ class PersistentFrontendServer {
         },
       }),
     );
+    CompilerOutput? result;
     try {
-      final result = await _stdoutHandler.compilerOutput!.future.timeout(
+      result = await _stdoutHandler.compilerOutput!.future.timeout(
         const Duration(seconds: 10),
       );
-      if (result != null &&
-          result.expressionData == null &&
-          result.outputFilename.isNotEmpty) {
-        final file = File(result.outputFilename);
-        if (file.existsSync()) {
-          return CompilerOutput(
-            result.outputFilename,
-            result.errorCount,
-            result.sources,
-            expressionData: file.readAsBytesSync(),
-            errorMessage: result.errorMessage,
-          );
-        }
-      }
-      return result;
     } on TimeoutException {
       _stdoutHandler.reset();
       return const CompilerOutput(
@@ -455,6 +505,22 @@ class PersistentFrontendServer {
         errorMessage: 'Timeout waiting for expression compilation',
       );
     }
+
+    if (result != null &&
+        result.expressionData == null &&
+        result.outputFilename.isNotEmpty) {
+      final file = File(result.outputFilename);
+      if (file.existsSync()) {
+        return CompilerOutput(
+          result.outputFilename,
+          result.errorCount,
+          result.sources,
+          expressionData: file.readAsBytesSync(),
+          errorMessage: result.errorMessage,
+        );
+      }
+    }
+    return result;
   }
 
   void accept() {
@@ -465,13 +531,7 @@ class PersistentFrontendServer {
   ///
   /// This is called by the worker in `workers.dart` in response to a
   /// `READ_OUTPUT_FILE` request from the daemon in `daemon_builder.dart`.
-  Future<String> readOutputFile(String path) async {
-    final file = File(path);
-    if (await file.exists()) {
-      return await file.readAsString();
-    }
-    throw Exception('File not found: $path');
-  }
+  Future<String> readOutputFile(String path) => File(path).readAsString();
 
   Future<CompilerOutput?> reject() async {
     _stdoutHandler!.reset(expectSources: false);

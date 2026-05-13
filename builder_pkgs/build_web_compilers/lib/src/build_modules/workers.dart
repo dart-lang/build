@@ -10,7 +10,7 @@ import 'package:bazel_worker/driver.dart';
 import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 
-import '../build_frontend_server/build_frontend_server.dart';
+import '../build_frontend_server/frontend_server_driver.dart';
 import 'common.dart';
 import 'scratch_space.dart';
 
