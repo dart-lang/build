@@ -10,8 +10,6 @@ import 'package:test/test.dart';
 
 import '../common/common.dart';
 
-const defaultTimeout = Timeout(Duration(minutes: 3));
-
 void main() async {
   // TODO(davidmorgan): this is an integration test of the web compilers,
   // support testing like this outside the `build_runner` package.
@@ -112,7 +110,7 @@ void main() async {
       tester.read('$generatedDirRoot/root_pkg/web/main.ddc.js'),
       isNot(contains('Hello')),
     );
-  }, timeout: defaultTimeout);
+  });
 
   // TODO(davidmorgan): this is an integration test of the web compilers,
   // support testing like this outside the `build_runner` package.
@@ -231,5 +229,5 @@ String helloWorld = 'Hello Dash!';
       tester.read('$generatedDirRoot/root_pkg/web/main.ddc.js'),
       isNot(contains('Hello')),
     );
-  }, timeout: defaultTimeout);
+  });
 }

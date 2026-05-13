@@ -1,9 +1,9 @@
 tags:
   integration1:
-    timeout: 4x
+    timeout: 3m
   integration2:
-    timeout: 4x
+    timeout: 3m
   integration3:
-    timeout: 4x
+    timeout: 3m
   integration4:
-    timeout: 4x
+    timeout: 3m
