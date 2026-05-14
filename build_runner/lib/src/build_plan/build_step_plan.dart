@@ -41,8 +41,7 @@ class BuildStepPlan {
     final placeholders = placeholderIdsForPlan(buildPackages);
     final expectedOutputsBuilder =
         MapBuilder<AssetId, GeneratedNodeConfiguration>();
-    final primaryOutputsByStep =
-        MapBuilder<BuildStepId, SetBuilder<AssetId>>();
+    final primaryOutputsByStep = MapBuilder<BuildStepId, SetBuilder<AssetId>>();
     final scheduledBuildSteps = SetBuilder<BuildStepId>();
     final scheduledPostProcessSteps = SetBuilder<PostProcessBuildStepId>();
 
@@ -80,8 +79,7 @@ class BuildStepPlan {
           allInputs.where((input) => actionMatches(phase, input)).toList();
 
       for (final input in inputs) {
-        final generatedOutputs =
-            computeExpectedOutputsForBuilder(phase.builder, input);
+        final generatedOutputs = build.expectedOutputs(phase.builder, input);
         if (generatedOutputs.isEmpty) continue;
 
         final buildStepId = BuildStepId(
@@ -90,7 +88,7 @@ class BuildStepPlan {
         );
         scheduledBuildSteps.add(buildStepId);
         primaryOutputsByStep
-            .putIfAbsent(buildStepId, () => SetBuilder())
+            .putIfAbsent(buildStepId, SetBuilder.new)
             .addAll(generatedOutputs);
 
         for (final output in generatedOutputs) {
@@ -141,25 +139,3 @@ Set<AssetId> placeholderIdsForPlan(BuildPackages buildPackages) =>
         ],
       ),
     );
-
-Iterable<AssetId> computeExpectedOutputsForBuilder(
-  build.Builder builder,
-  AssetId input,
-) {
-  return builder.buildExtensions.keys
-      .where(input.path.endsWith)
-      .expand((String inputExtension) {
-        return builder.buildExtensions[inputExtension]!.map((
-          String outputExtension,
-        ) {
-          return AssetId(
-            input.package,
-            input.path.substring(
-                  0,
-                  input.path.length - inputExtension.length,
-                ) +
-                outputExtension,
-          );
-        });
-      });
-}

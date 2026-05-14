@@ -328,8 +328,7 @@ class BuildPlan {
     );
 
     // Shadow verification assertions: verify BuildStepPlan matches AssetGraph!
-    final BuiltSet<AssetId> expectedPlaceholders =
-        placeholderIdsFor(buildPackages).toBuiltSet();
+    final expectedPlaceholders = placeholderIdsFor(buildPackages).toBuiltSet();
     if (buildStepPlan.placeholders != expectedPlaceholders) {
       throw StateError(
         'Shadow verification mismatch: BuildStepPlan placeholders '
@@ -364,10 +363,9 @@ class BuildPlan {
       phaseOptionsChanged: buildPlanDigest.computeChangedPhaseOptions(
         previousBuildPlanDigest,
       ),
-      postBuildOptionsChanged:
-          buildPlanDigest.computeChangedPostBuildOptions(
-            previousBuildPlanDigest,
-          ),
+      postBuildOptionsChanged: buildPlanDigest.computeChangedPostBuildOptions(
+        previousBuildPlanDigest,
+      ),
     );
   }
 

@@ -18,6 +18,7 @@ import '../build_plan/build_options.dart';
 import '../build_plan/build_packages.dart';
 import '../build_plan/build_phases.dart';
 import '../build_plan/build_plan.dart';
+import '../build_plan/build_step_plan.dart';
 import '../build_plan/phase.dart';
 import '../build_plan/testing_overrides.dart';
 import '../constants.dart';
@@ -54,7 +55,7 @@ final ResolversImpl _defaultResolvers = ResolversImpl(
 
 /// A single build.
 class Build {
-  final BuildPlan buildPlan;
+  BuildPlan buildPlan;
 
   // Collaborators.
   final ResourceManager resourceManager;
@@ -333,6 +334,15 @@ class Build {
       () async {
         final invalidatedSources =
             buildPlan.cleanBuild ? null : await _updateAssetGraph(idsToCheck);
+        if (invalidatedSources != null) {
+          buildPlan = buildPlan.copyWith(
+            buildStepPlan: BuildStepPlan.create(
+              buildPhases: buildPlan.buildPhases,
+              sources: assetGraph.sources.toSet(),
+              buildPackages: buildPlan.buildPackages,
+            ),
+          );
+        }
         for (final id in assetGraph.sources) {
           final node = assetGraph.get(id)!;
           if (node.digest == null && node.primaryOutputs.isNotEmpty) {
