@@ -131,9 +131,9 @@ class Build {
     required this.resourceManager,
     required this.assetGraph,
   }) : previousDepsLoader =
-           assetGraph.previousPhasedAssetDeps == null
+           buildPlan.previousPhasedAssetDeps == null
                ? null
-               : AssetDepsLoader.fromDeps(assetGraph.previousPhasedAssetDeps!),
+               : AssetDepsLoader.fromDeps(buildPlan.previousPhasedAssetDeps!),
        resolvers = buildPlan.testingOverrides.resolvers ?? _defaultResolvers,
        resolversImpl = switch (buildPlan.testingOverrides.resolvers ??
            _defaultResolvers) {
@@ -354,21 +354,25 @@ class Build {
         final currentPhasedAssetDeps =
             resolversImpl?.phasedAssetDeps() ?? PhasedAssetDeps();
         final updatedPhasedAssetDeps =
-            assetGraph.previousPhasedAssetDeps == null
+            buildPlan.previousPhasedAssetDeps == null
                 ? currentPhasedAssetDeps
-                : assetGraph.previousPhasedAssetDeps!.update(
+                : buildPlan.previousPhasedAssetDeps!.update(
                   currentPhasedAssetDeps,
                 );
-        assetGraph.previousPhasedAssetDeps = updatedPhasedAssetDeps;
         await readerWriter.writeAsBytes(
           AssetId(buildPackages.outputRoot, assetGraphPath),
           AssetGraphJson.serialize(
             buildPlanDigest: buildPlan.buildPlanDigest,
             assetGraph: assetGraph,
+            phasedAssetDeps: updatedPhasedAssetDeps,
           ),
         );
 
-        if (!done.isCompleted) done.complete(result);
+        if (!done.isCompleted) {
+          done.complete(
+            result.copyWith(phasedAssetDeps: updatedPhasedAssetDeps),
+          );
+        }
       },
       (e, st) {
         if (!done.isCompleted) {

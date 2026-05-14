@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import '../../build_plan/build_plan_digest.dart';
+import '../library_cycle_graph/phased_asset_deps.dart';
 import 'graph.dart';
 import 'serializers.dart';
 
@@ -16,22 +17,39 @@ import 'serializers.dart';
 class AssetGraphJson {
   final BuildPlanDigest buildPlanDigest;
   final AssetGraph assetGraph;
+  final PhasedAssetDeps phasedAssetDeps;
 
-  AssetGraphJson({required this.buildPlanDigest, required this.assetGraph});
+  AssetGraphJson({
+    required this.buildPlanDigest,
+    required this.assetGraph,
+    required this.phasedAssetDeps,
+  });
 
   /// Serializes for `asset_graph.json`.
   static Uint8List serialize({
     required BuildPlanDigest buildPlanDigest,
     required AssetGraph assetGraph,
+    required PhasedAssetDeps phasedAssetDeps,
   }) {
+    // Serialize fields first so all `AssetId` instances are seen by
+    // `identityAssetIdSeralizer`.
+    final serializedAssetGraph = serializeAssetGraph(assetGraph);
+    final serializedBuildPlanDigest = serializers.serializeWith(
+      BuildPlanDigest.serializer,
+      buildPlanDigest,
+    );
+    final serializedPhasedAssetDeps = serializers.serializeWith(
+      PhasedAssetDeps.serializer,
+      phasedAssetDeps,
+    );
     final result = {
       'version': _version,
-      'assetGraph': serializeAssetGraph(assetGraph),
-      'buildPlanDigest': serializers.serializeWith(
-        BuildPlanDigest.serializer,
-        buildPlanDigest,
-      ),
+      'ids': identityAssetIdSerializer.serializedObjects,
+      'assetGraph': serializedAssetGraph,
+      'buildPlanDigest': serializedBuildPlanDigest,
+      'phasedAssetDeps': serializedPhasedAssetDeps,
     };
+    identityAssetIdSerializer.reset();
     return jsonUtf8.encode(result) as Uint8List;
   }
 
@@ -44,6 +62,12 @@ class AssetGraphJson {
       if (deserialized is! Map) return null;
       if (deserialized['version'] != _version) return null;
 
+      identityAssetIdSerializer.deserializeWithObjects(
+        (deserialized['ids'] as List).map(
+          (id) => assetIdSerializer.deserialize(serializers, id as Object),
+        ),
+      );
+
       final buildPlanDigest = serializers.deserializeWith(
         BuildPlanDigest.serializer,
         deserialized['buildPlanDigest'],
@@ -53,16 +77,24 @@ class AssetGraphJson {
         deserialized['assetGraph'] as Map,
       );
 
+      final phasedAssetDeps = serializers.deserializeWith(
+        PhasedAssetDeps.serializer,
+        deserialized['phasedAssetDeps'],
+      );
+
       return AssetGraphJson(
         assetGraph: assetGraph!,
         buildPlanDigest: buildPlanDigest!,
+        phasedAssetDeps: phasedAssetDeps!,
       );
     } catch (_) {
       return null;
+    } finally {
+      identityAssetIdSerializer.reset();
     }
   }
 }
 
 /// Increment whenever older `asset_graph.json` files should be rejected.
-const _version = 35;
+const _version = 36;
 final jsonUtf8 = json.fuse(utf8);

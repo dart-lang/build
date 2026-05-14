@@ -13,12 +13,6 @@ part of 'graph.dart';
 ///
 /// Returns `null` if deserialization fails.
 AssetGraph? deserializeAssetGraph(Map serializedGraph) {
-  identityAssetIdSerializer.deserializeWithObjects(
-    (serializedGraph['ids'] as List).map(
-      (id) => assetIdSerializer.deserialize(serializers, id as Object),
-    ),
-  );
-
   final graph = AssetGraph();
 
   for (final serializedItem in serializedGraph['nodes'] as Iterable) {
@@ -40,11 +34,6 @@ AssetGraph? deserializeAssetGraph(Map serializedGraph) {
       graph.updatePostProcessBuildStepResult(entry.key, entry.value);
     }
   }
-
-  graph.previousPhasedAssetDeps = serializers.deserializeWith(
-    PhasedAssetDeps.serializer,
-    serializedGraph['phasedAssetDeps'],
-  );
 
   if (serializedGraph.containsKey('buildStepResults')) {
     final deserializedResults =
@@ -76,7 +65,6 @@ AssetGraph? deserializeAssetGraph(Map serializedGraph) {
     }
   }
 
-  identityAssetIdSerializer.reset();
   return graph;
 }
 
@@ -91,19 +79,12 @@ Map<String, Object?> serializeAssetGraph(AssetGraph graph) {
   final nodes = graph.allNodes
       .map((node) => serializers.serializeWith(AssetNode.serializer, node))
       .toList(growable: false);
-  final serializedPhasedAssetDeps = serializers.serializeWith(
-    PhasedAssetDeps.serializer,
-    graph.previousPhasedAssetDeps,
-  );
-
   final result = <String, Object?>{
-    'ids': identityAssetIdSerializer.serializedObjects,
     'nodes': nodes,
     'postProcessResults': serializers.serialize(
       graph._postProcessBuildStepResults,
       specifiedType: postProcessBuildStepResultsFullType,
     ),
-    'phasedAssetDeps': serializedPhasedAssetDeps,
     'buildStepResults': serializers.serialize(
       BuiltMap<BuildStepId, BuildStepResult>.of(graph.buildStepResults),
       specifiedType: const FullType(BuiltMap, [
@@ -120,6 +101,5 @@ Map<String, Object?> serializeAssetGraph(AssetGraph graph) {
     ),
   };
 
-  identityAssetIdSerializer.reset();
   return result;
 }

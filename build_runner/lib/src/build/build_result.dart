@@ -6,6 +6,7 @@ import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 
 import '../io/build_output_reader.dart';
+import 'library_cycle_graph/phased_asset_deps.dart';
 
 /// The result of an individual build, this may be an incremental build or
 /// a full build.
@@ -22,6 +23,9 @@ class BuildResult {
   /// All outputs created/updated during this build.
   final BuiltList<AssetId> outputs;
 
+  /// The imports graph for resolved sources.
+  final PhasedAssetDeps phasedAssetDeps;
+
   // The build output.
   final BuildOutputReader buildOutputReader;
 
@@ -29,6 +33,7 @@ class BuildResult {
     required this.status,
     BuiltList<String>? errors,
     BuiltList<AssetId>? outputs,
+    PhasedAssetDeps? phasedAssetDeps,
     required this.buildOutputReader,
     FailureType? failureType,
   }) : failureType =
@@ -36,16 +41,19 @@ class BuildResult {
                ? FailureType.general
                : failureType,
        errors = errors ?? BuiltList(),
-       outputs = outputs ?? BuiltList();
+       outputs = outputs ?? BuiltList(),
+       phasedAssetDeps = phasedAssetDeps ?? PhasedAssetDeps();
 
   BuildResult copyWith({
     BuildStatus? status,
     FailureType? failureType,
     BuiltList<String>? errors,
+    PhasedAssetDeps? phasedAssetDeps,
   }) => BuildResult(
     status: status ?? this.status,
     errors: errors ?? this.errors,
     outputs: outputs,
+    phasedAssetDeps: phasedAssetDeps ?? this.phasedAssetDeps,
     buildOutputReader: buildOutputReader,
     failureType: failureType ?? this.failureType,
   );
