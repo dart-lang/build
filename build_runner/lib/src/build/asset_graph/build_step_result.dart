@@ -7,6 +7,8 @@ import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
+import 'package:crypto/crypto.dart';
+
 import 'glob_id.dart';
 
 part 'build_step_result.g.dart';
@@ -23,6 +25,9 @@ abstract class BuildStepResult
 
   /// Inputs and missing sources read.
   BuiltSet<AssetId> get inputs;
+
+  /// Emitted outputs and their content digests.
+  BuiltMap<AssetId, Digest> get outputDigests;
 
   /// The globs evaluated during this step.
   BuiltSet<GlobId> get globsEvaluated;

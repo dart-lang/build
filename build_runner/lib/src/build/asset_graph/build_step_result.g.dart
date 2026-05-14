@@ -30,6 +30,14 @@ class _$BuildStepResultSerializer
           const FullType(AssetId),
         ]),
       ),
+      'outputDigests',
+      serializers.serialize(
+        object.outputDigests,
+        specifiedType: const FullType(BuiltMap, const [
+          const FullType(AssetId),
+          const FullType(Digest),
+        ]),
+      ),
       'globsEvaluated',
       serializers.serialize(
         object.globsEvaluated,
@@ -95,6 +103,17 @@ class _$BuildStepResultSerializer
                 as BuiltSet<Object?>,
           );
           break;
+        case 'outputDigests':
+          result.outputDigests.replace(
+            serializers.deserialize(
+              value,
+              specifiedType: const FullType(BuiltMap, const [
+                const FullType(AssetId),
+                const FullType(Digest),
+              ]),
+            )!,
+          );
+          break;
         case 'globsEvaluated':
           result.globsEvaluated.replace(
             serializers.deserialize(
@@ -141,6 +160,8 @@ class _$BuildStepResult extends BuildStepResult {
   @override
   final BuiltSet<AssetId> inputs;
   @override
+  final BuiltMap<AssetId, Digest> outputDigests;
+  @override
   final BuiltSet<GlobId> globsEvaluated;
   @override
   final BuiltSet<AssetId> resolverEntrypoints;
@@ -153,6 +174,7 @@ class _$BuildStepResult extends BuildStepResult {
   _$BuildStepResult._({
     this.result,
     required this.inputs,
+    required this.outputDigests,
     required this.globsEvaluated,
     required this.resolverEntrypoints,
     required this.errors,
@@ -170,6 +192,7 @@ class _$BuildStepResult extends BuildStepResult {
     return other is BuildStepResult &&
         result == other.result &&
         inputs == other.inputs &&
+        outputDigests == other.outputDigests &&
         globsEvaluated == other.globsEvaluated &&
         resolverEntrypoints == other.resolverEntrypoints &&
         errors == other.errors;
@@ -180,6 +203,7 @@ class _$BuildStepResult extends BuildStepResult {
     var _$hash = 0;
     _$hash = $jc(_$hash, result.hashCode);
     _$hash = $jc(_$hash, inputs.hashCode);
+    _$hash = $jc(_$hash, outputDigests.hashCode);
     _$hash = $jc(_$hash, globsEvaluated.hashCode);
     _$hash = $jc(_$hash, resolverEntrypoints.hashCode);
     _$hash = $jc(_$hash, errors.hashCode);
@@ -192,6 +216,7 @@ class _$BuildStepResult extends BuildStepResult {
     return (newBuiltValueToStringHelper(r'BuildStepResult')
           ..add('result', result)
           ..add('inputs', inputs)
+          ..add('outputDigests', outputDigests)
           ..add('globsEvaluated', globsEvaluated)
           ..add('resolverEntrypoints', resolverEntrypoints)
           ..add('errors', errors))
@@ -210,6 +235,12 @@ class BuildStepResultBuilder
   SetBuilder<AssetId>? _inputs;
   SetBuilder<AssetId> get inputs => _$this._inputs ??= SetBuilder<AssetId>();
   set inputs(SetBuilder<AssetId>? inputs) => _$this._inputs = inputs;
+
+  MapBuilder<AssetId, Digest>? _outputDigests;
+  MapBuilder<AssetId, Digest> get outputDigests =>
+      _$this._outputDigests ??= MapBuilder<AssetId, Digest>();
+  set outputDigests(MapBuilder<AssetId, Digest>? outputDigests) =>
+      _$this._outputDigests = outputDigests;
 
   SetBuilder<GlobId>? _globsEvaluated;
   SetBuilder<GlobId> get globsEvaluated =>
@@ -234,6 +265,7 @@ class BuildStepResultBuilder
     if ($v != null) {
       _result = $v.result;
       _inputs = $v.inputs.toBuilder();
+      _outputDigests = $v.outputDigests.toBuilder();
       _globsEvaluated = $v.globsEvaluated.toBuilder();
       _resolverEntrypoints = $v.resolverEntrypoints.toBuilder();
       _errors = $v.errors.toBuilder();
@@ -263,6 +295,7 @@ class BuildStepResultBuilder
           _$BuildStepResult._(
             result: result,
             inputs: inputs.build(),
+            outputDigests: outputDigests.build(),
             globsEvaluated: globsEvaluated.build(),
             resolverEntrypoints: resolverEntrypoints.build(),
             errors: errors.build(),
@@ -272,6 +305,8 @@ class BuildStepResultBuilder
       try {
         _$failedField = 'inputs';
         inputs.build();
+        _$failedField = 'outputDigests';
+        outputDigests.build();
         _$failedField = 'globsEvaluated';
         globsEvaluated.build();
         _$failedField = 'resolverEntrypoints';

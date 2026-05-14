@@ -1268,11 +1268,21 @@ class Build {
 
     final result = errors.isEmpty;
 
+    final outputDigests = <AssetId, Digest>{};
+    for (final output in outputs) {
+      final wasOutput = stepReaderWriter.assetsWritten.contains(output);
+      final digest = wasOutput ? await readerWriter.digest(output) : null;
+      if (digest != null) {
+        outputDigests[output] = digest;
+      }
+    }
+
     final phaseNum = stepReaderWriter.phase;
     final buildStepId = BuildStepId(primaryInput: input, phaseNumber: phaseNum);
     final stepResult = BuildStepResult((b) {
       b.result = result;
       b.inputs.replace(usedInputs);
+      b.outputDigests.replace(outputDigests);
       b.globsEvaluated.replace(inputTracker.globsEvaluated);
       b.resolverEntrypoints.replace(inputTracker.resolverEntrypoints);
       b.errors.replace(errors);
@@ -1289,6 +1299,14 @@ class Build {
       final wasOutput = stepReaderWriter.assetsWritten.contains(output);
       final digest = wasOutput ? await readerWriter.digest(output) : null;
       var outputNode = assetGraph.get(output)!;
+
+      // Shadow verification assertion!
+      if (stepResult.outputDigests[output] != digest) {
+        throw StateError(
+          'Shadow verification mismatch: BuildStepResult digest '
+          '${stepResult.outputDigests[output]} != AssetGraph digest $digest',
+        );
+      }
 
       // A transition from (missing or failed) to (written and not failed) is
       // a new primary input that triggers generation even if no content
