@@ -573,7 +573,9 @@ class Build {
       assetsWritten: {},
     );
 
-    final builderOutputs = expectedOutputs(builder, buildStepId.primaryInput);
+    final builderOutputs =
+        buildPlan.buildStepPlan.primaryOutputsByStep[buildStepId] ??
+        BuiltSet<AssetId>();
     if (!await _buildShouldRun(
       buildStepId,
       builderOutputs,

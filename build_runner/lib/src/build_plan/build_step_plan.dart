@@ -21,14 +21,14 @@ import 'phase.dart';
 class BuildStepPlan {
   final BuiltSet<AssetId> placeholders;
   final BuiltMap<AssetId, GeneratedNodeConfiguration> expectedOutputs;
-  final BuiltMap<AssetId, BuiltSet<AssetId>> primaryOutputsByInput;
+  final BuiltMap<BuildStepId, BuiltSet<AssetId>> primaryOutputsByStep;
   final BuiltSet<BuildStepId> scheduledBuildSteps;
   final BuiltSet<PostProcessBuildStepId> scheduledPostProcessSteps;
 
   BuildStepPlan._({
     required this.placeholders,
     required this.expectedOutputs,
-    required this.primaryOutputsByInput,
+    required this.primaryOutputsByStep,
     required this.scheduledBuildSteps,
     required this.scheduledPostProcessSteps,
   });
@@ -41,7 +41,8 @@ class BuildStepPlan {
     final placeholders = placeholderIdsForPlan(buildPackages);
     final expectedOutputsBuilder =
         MapBuilder<AssetId, GeneratedNodeConfiguration>();
-    final primaryOutputsByInput = MapBuilder<AssetId, SetBuilder<AssetId>>();
+    final primaryOutputsByStep =
+        MapBuilder<BuildStepId, SetBuilder<AssetId>>();
     final scheduledBuildSteps = SetBuilder<BuildStepId>();
     final scheduledPostProcessSteps = SetBuilder<PostProcessBuildStepId>();
 
@@ -83,11 +84,13 @@ class BuildStepPlan {
             computeExpectedOutputsForBuilder(phase.builder, input);
         if (generatedOutputs.isEmpty) continue;
 
-        scheduledBuildSteps.add(
-          BuildStepId(primaryInput: input, phaseNumber: phaseNum),
+        final buildStepId = BuildStepId(
+          primaryInput: input,
+          phaseNumber: phaseNum,
         );
-        primaryOutputsByInput
-            .putIfAbsent(input, () => SetBuilder())
+        scheduledBuildSteps.add(buildStepId);
+        primaryOutputsByStep
+            .putIfAbsent(buildStepId, () => SetBuilder())
             .addAll(generatedOutputs);
 
         for (final output in generatedOutputs) {
@@ -117,8 +120,8 @@ class BuildStepPlan {
     return BuildStepPlan._(
       placeholders: placeholders.build(),
       expectedOutputs: expectedOutputsBuilder.build(),
-      primaryOutputsByInput: BuiltMap<AssetId, BuiltSet<AssetId>>.from({
-        for (final entry in primaryOutputsByInput.build().entries)
+      primaryOutputsByStep: BuiltMap<BuildStepId, BuiltSet<AssetId>>.from({
+        for (final entry in primaryOutputsByStep.build().entries)
           entry.key: entry.value.build(),
       }),
       scheduledBuildSteps: scheduledBuildSteps.build(),
