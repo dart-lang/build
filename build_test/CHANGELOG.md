@@ -1,4 +1,8 @@
-## 3.5.15-wip
+## 3.5.16-wip
+
+- Use `build_runner` 2.15.1.
+
+## 3.5.15
 
 - Use `build_runner` 2.15.0.
 - Remove `enableLowResourceMode` parameters as there is no longer a low resource

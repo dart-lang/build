@@ -1,5 +1,7 @@
-## 4.4.20
+## 4.5.0
 
+- Fixed `DdcFrontendServerBuilder` to correctly work with generated entrypoints.
+- Move `module_library` and `module_cleanup` builders from `build_modules` to `build_web_compilers`.
 - Add module caching to wasm deferred loading logic so that the same load Promise is reused when a specific module is loaded multiple times.
 
 ## 4.4.19

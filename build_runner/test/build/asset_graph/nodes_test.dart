@@ -24,7 +24,6 @@ void main() {
         // Should not match.
         AssetNode.source(AssetId('b', 'lib/a.dart')),
         AssetNode.placeholder(AssetId('a', r'lib/$lib$')),
-        AssetNode.glob(AssetId('a', 'glob'), glob: '*', phaseNumber: 0),
       ]) {
         nodes.add(node);
       }

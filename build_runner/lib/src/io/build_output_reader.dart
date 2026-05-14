@@ -28,6 +28,9 @@ class BuildOutputReader {
   final Set<AssetId>? _processedOutputs;
   final ReaderWriter? _readerWriter;
 
+  late final Set<AssetId> _assetsDeletedByPostProcessBuilders =
+      _collectAssetsDeletedByPostProcessBuilders();
+
   /// For an unexpected failure condition, a fully empty output.
   BuildOutputReader.empty()
     : _assetGraph = null,
@@ -61,6 +64,21 @@ class BuildOutputReader {
        _buildPlan = buildPlan,
        _processedOutputs = processedOutputs;
 
+  Set<AssetId> _collectAssetsDeletedByPostProcessBuilders() {
+    final assetGraph = _assetGraph;
+    if (assetGraph == null) return const {};
+    final result = <AssetId>{};
+    for (final packageResults
+        in assetGraph.allPostProcessBuildStepResults.values) {
+      for (final entry in packageResults.entries) {
+        if (entry.value.deletedPrimaryInput) {
+          result.add(entry.key.input);
+        }
+      }
+    }
+    return result;
+  }
+
   /// Returns a reason why [id] is not readable, or null if it is readable.
   Future<UnreadableReason?> unreadableReason(AssetId id) async {
     if (_assetGraph == null || _readerWriter == null) {
@@ -69,18 +87,26 @@ class BuildOutputReader {
     if (!_assetGraph.contains(id)) {
       return UnreadableReason.notFound;
     }
+    if (_assetsDeletedByPostProcessBuilders.contains(id)) {
+      return UnreadableReason.deleted;
+    }
     final node = _assetGraph.get(id)!;
-    if (node.isDeleted) return UnreadableReason.deleted;
     if (!node.isFile) return UnreadableReason.assetType;
 
+    if (node.type == NodeType.postGenerated) {
+      return null;
+    }
     if (node.type == NodeType.generated) {
       if (_processedOutputs?.contains(node.id) == false) {
         // The generated output was not considered for building because its
         // transitive input(s) did not match build dirs and/or build filters.
         return UnreadableReason.notOutput;
       }
-      final nodeState = node.generatedNodeState!;
-      if (nodeState.result == false) return UnreadableReason.failed;
+      final config = node.generatedNodeConfiguration!;
+      final stepResult = _assetGraph.buildStepResultFor(config.buildStepId);
+      if (stepResult != null && stepResult.result == false) {
+        return UnreadableReason.failed;
+      }
       if (!node.wasOutput) return UnreadableReason.notOutput;
 
       // No need to explicitly check readability for generated files, their
@@ -88,7 +114,9 @@ class BuildOutputReader {
       return null;
     }
 
-    if (node.isTrackedInput && await _readerWriter.canRead(id)) return null;
+    if (node.type == NodeType.source && await _readerWriter.canRead(id)) {
+      return null;
+    }
     return UnreadableReason.unknown;
   }
 
@@ -151,7 +179,7 @@ class BuildOutputReader {
   bool _shouldSkipNode(AssetNode node, String? rootDir) {
     if (_buildPlan == null) return false;
     if (!node.isFile) return true;
-    if (node.isDeleted) return true;
+    if (_assetsDeletedByPostProcessBuilders.contains(node.id)) return true;
 
     // Exclude non-lib assets if they're outside of the root directory or not
     // an output package of the build.
@@ -162,11 +190,14 @@ class BuildOutputReader {
       }
     }
 
-    if (node.type == NodeType.glob) {
-      return true;
+    if (node.type == NodeType.postGenerated) {
+      return false;
     }
     if (node.type == NodeType.generated) {
-      if (!node.wasOutput || node.generatedNodeState!.result == false) {
+      final config = node.generatedNodeConfiguration!;
+      final stepResult = _assetGraph!.buildStepResultFor(config.buildStepId);
+      if (!node.wasOutput ||
+          (stepResult == null || stepResult.result == false)) {
         return true;
       }
       return !_processedOutputs!.contains(node.id);

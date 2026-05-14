@@ -1,4 +1,11 @@
-## 2.15.0-wip
+## 2.15.1-wip
+
+- Pass Dart SDK `--packages` arg to builder compiles, so they can be compiled
+  with different packages to the current version solve.
+- Bug fix: handle errors from post process builders in previous runs without
+  crashing.
+
+## 2.15.0
 
 - Remove `--low-resources-mode` as default memory usage has been improved. If
   you have problems with RAM usage please file an issue.
@@ -6,6 +13,9 @@
   have performance measurement needs not covered by the newer `--dart-aot-perf`.
 - Removed options can still be passed, they will be ignored with a warning.
 - Bug fix: fix crash during logging if an asset path is an invalid URI.
+- Bug fix: with `--workspace` the global options affecting build order were read
+  from the wrong package. They are now read from `build.yaml` in the workspace
+  root, like other global options.
 - Allow `analyzer` 13.0.0.
 
 ## 2.14.1

@@ -329,15 +329,13 @@ void runTests(ResolversFactory resolversFactory) {
 
   group('language versioning', () {
     test('gives a correct languageVersion based on comments', () async {
-      await resolveSources(
-        {'a|web/main.dart': '// @dart=3.1\n\nmain() {}'},
-        (resolver) async {
-          final lib = await resolver.libraryFor(entryPoint);
-          expect(lib.languageVersion.effective.major, 3);
-          expect(lib.languageVersion.effective.minor, 1);
-        },
-        resolvers: createResolvers(),
-      );
+      await resolveSources({'a|web/main.dart': '// @dart=3.1\n\nmain() {}'}, (
+        resolver,
+      ) async {
+        final lib = await resolver.libraryFor(entryPoint);
+        expect(lib.languageVersion.effective.major, 3);
+        expect(lib.languageVersion.effective.minor, 1);
+      }, resolvers: createResolvers());
     });
 
     test('defaults to the current isolate package config', () async {
@@ -376,15 +374,11 @@ void runTests(ResolversFactory resolversFactory) {
           languageVersion: customVersion,
         ),
       ]);
-      await resolveSources(
-        {'a|web/main.dart': 'main() {}'},
-        (resolver) async {
-          final lib = await resolver.libraryFor(entryPoint);
-          expect(lib.languageVersion.effective.major, customVersion.major);
-          expect(lib.languageVersion.effective.minor, customVersion.minor);
-        },
-        resolvers: createResolvers(packageConfig: customPackageConfig),
-      );
+      await resolveSources({'a|web/main.dart': 'main() {}'}, (resolver) async {
+        final lib = await resolver.libraryFor(entryPoint);
+        expect(lib.languageVersion.effective.major, customVersion.major);
+        expect(lib.languageVersion.effective.minor, customVersion.minor);
+      }, resolvers: createResolvers(packageConfig: customPackageConfig));
     });
 
     test('gives the current language version if not provided', () async {
@@ -396,15 +390,11 @@ void runTests(ResolversFactory resolversFactory) {
           languageVersion: null,
         ),
       ]);
-      await resolveSources(
-        {'a|web/main.dart': 'main() {}'},
-        (resolver) async {
-          final lib = await resolver.libraryFor(entryPoint);
-          expect(lib.languageVersion.effective.major, sdkLanguageVersion.major);
-          expect(lib.languageVersion.effective.minor, sdkLanguageVersion.minor);
-        },
-        resolvers: createResolvers(packageConfig: customPackageConfig),
-      );
+      await resolveSources({'a|web/main.dart': 'main() {}'}, (resolver) async {
+        final lib = await resolver.libraryFor(entryPoint);
+        expect(lib.languageVersion.effective.major, sdkLanguageVersion.major);
+        expect(lib.languageVersion.effective.minor, sdkLanguageVersion.minor);
+      }, resolvers: createResolvers(packageConfig: customPackageConfig));
     });
 
     test(
@@ -1341,14 +1331,12 @@ int? get x => 1;
       final futures = <Future<void>>[];
       for (var i = 0; i != 10; ++i) {
         futures.add(
-          resolveSources(
-            {'a|web/main.dart': ' main() { /* $i */}'},
-            (resolver) async {
-              // await Future<void>.delayed(Duration(milliseconds: i * 100));
-              await resolver.compilationUnitFor(entryPoint);
-            },
-            resolvers: createResolvers(),
-          ),
+          resolveSources({'a|web/main.dart': ' main() { /* $i */}'}, (
+            resolver,
+          ) async {
+            // await Future<void>.delayed(Duration(milliseconds: i * 100));
+            await resolver.compilationUnitFor(entryPoint);
+          }, resolvers: createResolvers()),
         );
       }
       await Future.wait(futures);

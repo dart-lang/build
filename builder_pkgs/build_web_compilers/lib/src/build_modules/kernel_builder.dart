@@ -16,7 +16,7 @@ import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
 import 'package:stream_transform/stream_transform.dart';
 
-import '../build_modules.dart';
+import 'build_modules.dart';
 import 'common.dart';
 import 'errors.dart';
 import 'module_cache.dart';
@@ -433,6 +433,7 @@ Future<void> _addRequestArguments(
     '--packages-file=$multiRootScheme:///$packagesFilePath',
     '--multi-root-scheme=$multiRootScheme',
     '--exclude-non-sources',
+    '--track-widget-creation',
     summaryOnly ? '--summary-only' : '--no-summary-only',
     '--target=$targetName',
     '--libraries-file=${p.toUri(librariesPath)}',

@@ -68,12 +68,7 @@ class AssetTracker {
       }
     }
 
-    final newSources = inputSources.difference(
-      assetGraph.allNodes
-          .where((node) => node.isTrackedInput)
-          .map((node) => node.id)
-          .toSet(),
-    );
+    final newSources = inputSources.difference(assetGraph.sources.toSet());
     addUpdates(newSources, ChangeType.ADD);
     final removedAssets = assetGraph.allNodes
         .where((n) {

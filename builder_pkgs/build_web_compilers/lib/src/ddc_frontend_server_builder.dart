@@ -7,9 +7,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:build_modules/build_modules.dart';
 import 'package:scratch_space/scratch_space.dart';
 
+import 'build_modules/build_modules.dart';
 import 'common.dart';
 import 'errors.dart';
 import 'platforms.dart';
@@ -96,7 +96,10 @@ class DdcFrontendServerBuilder implements Builder {
     await buildStep.trackStage(
       'EnsureAssets',
       () => scratchSpace.ensureAssets([
-        webEntrypointAsset,
+        // It is only safe to include the entrypoint here for the same package,
+        // as for other packages it might be generated in a later build phase.
+        if (webEntrypointAsset.package == buildStep.inputId.package)
+          webEntrypointAsset,
         ...transitiveAssets,
       ], buildStep),
     );

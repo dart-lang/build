@@ -2,15 +2,17 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:collection';
 import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
+import 'package:build_runner/src/build/asset_graph/build_step_id.dart';
+import 'package:build_runner/src/build/asset_graph/build_step_result.dart';
 import 'package:build_runner/src/build/asset_graph/exceptions.dart';
 import 'package:build_runner/src/build/asset_graph/graph.dart';
 import 'package:build_runner/src/build/asset_graph/node.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
+import 'package:build_runner/src/build/asset_graph/post_process_build_step_result.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
@@ -88,66 +90,64 @@ void main() {
       });
 
       test('serialize/deserialize', () {
-        var globNode = AssetNode.glob(
-          makeAssetId(),
-          glob: '**/*.dart',
-          phaseNumber: 0,
-          inputs: HashSet(),
-          results: [],
-        );
         for (var n = 0; n < 5; n++) {
           var node = AssetNode.source(AssetId.parse('pkg|lib/a$n.dart'));
-          globNode = globNode.rebuild(
-            (b) =>
-                b.globNodeState
-                  ..inputs.add(node.id)
-                  ..results.add(node.id),
-          );
+
           final phaseNum = n;
           final postProcessBuildStep = PostProcessBuildStepId(
             input: node.id,
             actionNumber: n,
           );
-          graph.updatePostProcessBuildStep(postProcessBuildStep, outputs: {});
+          graph.updatePostProcessBuildStepResult(
+            postProcessBuildStep,
+            PostProcessBuildStepResult(hidden: true),
+          );
           for (var g = 0; g < 5 - n; g++) {
-            var generatedNode = AssetNode.generated(
-              makeAssetId(),
+            final generatedId = makeAssetId();
+            final generatedNode = AssetNode.generated(
+              generatedId,
               phaseNumber: phaseNum,
               primaryInput: node.id,
               digest: g.isEven ? Digest([]) : null,
-              result: phaseNum.isOdd,
               isHidden: g % 3 == 0,
             );
             node = node.rebuild((b) => b..primaryOutputs.add(generatedNode.id));
             if (g.isEven) {
-              node = node.rebuild(
-                (b) => b..deletedBy.add(postProcessBuildStep),
+              graph.updatePostProcessBuildStepResult(
+                postProcessBuildStep,
+                PostProcessBuildStepResult(
+                  hidden: true,
+                  deletedPrimaryInput: true,
+                ),
               );
             }
 
             final syntheticNode = AssetNode.missingSource(makeAssetId());
 
-            generatedNode = generatedNode.rebuild(
-              (b) => b.generatedNodeState.inputs.addAll([
-                node.id,
-                syntheticNode.id,
-                globNode.id,
-              ]),
+            final buildStepId = BuildStepId(
+              primaryInput: node.id,
+              phaseNumber: phaseNum,
             );
+            final stepResult = BuildStepResult(
+              (b) =>
+                  b
+                    ..result = phaseNum.isOdd
+                    ..inputs.addAll([node.id, syntheticNode.id]),
+            );
+            graph.updateBuildStepResult(buildStepId, stepResult);
             graph
               ..add(generatedNode)
               ..add(syntheticNode);
           }
           graph.add(node);
         }
-        graph.add(globNode);
 
         final encoded = graph.serialize();
         final decoded = AssetGraph.deserialize(encoded)!;
         expect(decoded, equalsAssetGraph(graph));
         expect(
-          decoded.allPostProcessBuildStepOutputs,
-          graph.allPostProcessBuildStepOutputs,
+          decoded.allPostProcessBuildStepResults,
+          graph.allPostProcessBuildStepResults,
         );
       });
 
@@ -227,11 +227,13 @@ void main() {
         });
         final node = graph.get(primaryInputId)!;
         expect(node.primaryOutputs, [primaryOutputId]);
-        expect(graph.computeOutputs()[node.id] ?? <AssetId>{}, isEmpty);
 
+        final buildStepId = BuildStepId(
+          primaryInput: primaryInputId,
+          phaseNumber: 0,
+        );
+        expect(graph.buildStepResultFor(buildStepId), isNull);
         final primaryOutputNode = graph.get(primaryOutputId)!;
-        // Didn't actually do a build yet so this starts out empty.
-        expect(primaryOutputNode.generatedNodeState!.inputs, isEmpty);
         expect(
           primaryOutputNode.generatedNodeConfiguration!.primaryInput,
           primaryInputId,
@@ -260,10 +262,17 @@ void main() {
         test('modify primary input', () async {
           final changes = {primaryInputId: ChangeType.MODIFY};
           expect(graph.contains(primaryOutputId), isTrue);
-          // pretend a build happened
-          graph.updateNode(primaryOutputId, (nodeBuilder) {
-            nodeBuilder.generatedNodeState.inputs.add(primaryInputId);
-          });
+          final buildStepId = BuildStepId(
+            primaryInput: primaryInputId,
+            phaseNumber: 0,
+          );
+          final stepResult = BuildStepResult(
+            (b) =>
+                b
+                  ..result = true
+                  ..inputs.add(primaryInputId),
+          );
+          graph.updateBuildStepResult(buildStepId, stepResult);
           await graph.updateAndInvalidate(buildPhases, changes);
           expect(graph.contains(primaryInputId), isTrue);
           expect(graph.contains(primaryOutputId), isTrue);
@@ -314,9 +323,17 @@ void main() {
             final secondaryId = makeAssetId('foo|secondary.txt');
             final secondaryNode = AssetNode.source(secondaryId);
 
-            graph.updateNode(primaryOutputId, (nodeBuilder) {
-              nodeBuilder.generatedNodeState.inputs.add(secondaryNode.id);
-            });
+            final buildStepId = BuildStepId(
+              primaryInput: primaryInputId,
+              phaseNumber: 0,
+            );
+            final stepResult = BuildStepResult(
+              (b) =>
+                  b
+                    ..result = true
+                    ..inputs.add(secondaryNode.id),
+            );
+            graph.updateBuildStepResult(buildStepId, stepResult);
 
             graph.add(secondaryNode);
             expect(graph.get(secondaryId), secondaryNode);
@@ -326,10 +343,6 @@ void main() {
 
             expect(graph.get(primaryInputId)!.type, NodeType.missingSource);
             expect(graph.get(primaryOutputId)!.type, NodeType.missingSource);
-            expect(
-              graph.computeOutputs()[secondaryId] ?? const <AssetId>{},
-              isNot(contains(primaryOutputId)),
-            );
           },
         );
       });
@@ -455,7 +468,6 @@ void main() {
         test('https://github.com/dart-lang/build/issues/1804', () async {
           final source = AssetId('a', 'lib/a.dart');
           final renamedSource = AssetId('a', 'lib/A.dart');
-          final generatedDart = AssetId('a', 'lib/a.g.dart');
           final generatedPart = AssetId('a', 'lib/a.g.part');
           final toBeGeneratedDart = AssetId('a', 'lib/A.g.dart');
           final buildPhases = BuildPhases([
@@ -481,14 +493,17 @@ void main() {
             source,
           }, buildPackages);
 
-          // Pretend a build happened
+          // Pretend a build happened.
           graph.add(AssetNode.missingSource(toBeGeneratedDart));
-          graph.updateNode(generatedDart, (nodeBuilder) {
-            nodeBuilder.generatedNodeState.inputs.addAll([
-              generatedPart,
-              toBeGeneratedDart,
-            ]);
+          final buildStepId = BuildStepId(
+            primaryInput: generatedPart,
+            phaseNumber: 1,
+          );
+          final stepResult = BuildStepResult((b) {
+            b.result = true;
+            b.inputs.addAll([generatedPart, toBeGeneratedDart]);
           });
+          graph.updateBuildStepResult(buildStepId, stepResult);
 
           expect(graph.get(source)!.type, NodeType.source);
 
@@ -499,13 +514,6 @@ void main() {
 
           // The old generated part file should be marked as missing.
           expect(graph.get(generatedPart)!.type, NodeType.missingSource);
-
-          // The generated part file should not exist in outputs of the new
-          // generated dart file
-          expect(
-            graph.computeOutputs()[toBeGeneratedDart] ?? <AssetId>{},
-            isNot(contains(generatedPart)),
-          );
         });
       });
     });
