@@ -495,8 +495,16 @@ if (!forceJS && $supportCheck) {
     }
 
     loaderResult.writeln('''
+const moduleLoadingCache = new Map();
+function getModuleBytes(m, callback) {
+  const cached = moduleLoadingCache.get(m);
+  if (!!cached) return cached;
+  const loadPromise = fetch(relativeURL(`./\${m}`)).then((b) => callback(m, b));
+  moduleLoadingCache.set(m, loadPromise);
+  return loadPromise;
+}
 function loadDeferredModules(modules, handleWasmBytes) {
-  return Promise.all(modules.map((m) => fetch(relativeURL(`./\${m}`)).then((b) => handleWasmBytes(m, b))));
+  return Promise.all(modules.map((m) => getModuleBytes(m, handleWasmBytes)));
 }
 let { compileStreaming } = await import(relativeURL("./$basename${wasmCompiler.extension}"));
 
