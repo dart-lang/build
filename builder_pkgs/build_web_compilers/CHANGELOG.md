@@ -1,3 +1,7 @@
+## 4.4.20
+
+- Add module caching to wasm deferred loading logic so that the same load Promise is reused when a specific module is loaded multiple times.
+
 ## 4.4.19
 
 - Allow `analyzer` 13.0.0.
