@@ -30,6 +30,7 @@ import 'build_packages.dart';
 import 'build_phase_creator.dart';
 import 'build_phases.dart';
 import 'build_plan_digest.dart';
+import 'build_step_plan.dart';
 import 'builder_definition.dart';
 import 'builder_factories.dart';
 import 'testing_overrides.dart';
@@ -46,6 +47,7 @@ class BuildPlan {
   final ReaderWriter readerWriter;
   final BuildConfigs buildConfigs;
   final BuildPhases buildPhases;
+  final BuildStepPlan buildStepPlan;
 
   final AssetGraph? _previousAssetGraph;
   bool _previousAssetGraphWasTaken;
@@ -95,6 +97,7 @@ class BuildPlan {
     required this.readerWriter,
     required this.buildConfigs,
     required this.buildPhases,
+    required this.buildStepPlan,
     required AssetGraph? previousAssetGraph,
     required bool previousAssetGraphWasTaken,
     required this.previousPhasedAssetDeps,
@@ -318,6 +321,23 @@ class BuildPlan {
       );
     }
 
+    final buildStepPlan = BuildStepPlan.create(
+      buildPhases: buildPhases,
+      sources: inputSources,
+      buildPackages: buildPackages,
+    );
+
+    // Shadow verification assertions: verify BuildStepPlan matches AssetGraph!
+    final BuiltSet<AssetId> expectedPlaceholders =
+        placeholderIdsFor(buildPackages).toBuiltSet();
+    if (buildStepPlan.placeholders != expectedPlaceholders) {
+      throw StateError(
+        'Shadow verification mismatch: BuildStepPlan placeholders '
+        '${buildStepPlan.placeholders} != AssetGraph placeholders '
+        '$expectedPlaceholders',
+      );
+    }
+
     return BuildPlan(
       buildPlanDigest: buildPlanDigest,
       builderFactories: builderFactories,
@@ -327,6 +347,7 @@ class BuildPlan {
       readerWriter: readerWriter,
       buildConfigs: buildConfigs,
       buildPhases: buildPhases,
+      buildStepPlan: buildStepPlan,
       previousAssetGraph: previousAssetGraph,
       previousAssetGraphWasTaken: false,
       previousPhasedAssetDeps: previousPhasedAssetDeps,
@@ -343,9 +364,10 @@ class BuildPlan {
       phaseOptionsChanged: buildPlanDigest.computeChangedPhaseOptions(
         previousBuildPlanDigest,
       ),
-      postBuildOptionsChanged: buildPlanDigest.computeChangedPostBuildOptions(
-        previousBuildPlanDigest,
-      ),
+      postBuildOptionsChanged:
+          buildPlanDigest.computeChangedPostBuildOptions(
+            previousBuildPlanDigest,
+          ),
     );
   }
 
@@ -354,6 +376,7 @@ class BuildPlan {
     BuiltSet<BuildDirectory>? buildDirs,
     BuiltSet<BuildFilter>? buildFilters,
     ReaderWriter? readerWriter,
+    BuildStepPlan? buildStepPlan,
     bool? cleanBuild,
     bool? triggersChanged,
     PhasedAssetDeps? previousPhasedAssetDeps,
@@ -371,6 +394,7 @@ class BuildPlan {
     buildConfigs: buildConfigs,
     readerWriter: readerWriter ?? this.readerWriter,
     buildPhases: buildPhases,
+    buildStepPlan: buildStepPlan ?? this.buildStepPlan,
     previousAssetGraph: _previousAssetGraph,
     previousAssetGraphWasTaken: _previousAssetGraphWasTaken,
     previousPhasedAssetDeps:
