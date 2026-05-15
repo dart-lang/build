@@ -129,6 +129,14 @@ class AssetGraph implements GeneratedAssetHider {
   ) => _nodes.updateNodeIfPresent(id, updates);
   BuildStepResult? buildStepResultFor(BuildStepId buildStepId) =>
       _buildStepResults[buildStepId];
+  BuildStepResult? buildStepResultForOutput(AssetId outputId) {
+    for (final result in _buildStepResults.values) {
+      if (result.outputDigests.containsKey(outputId)) {
+        return result;
+      }
+    }
+    return null;
+  }
   void updateBuildStepResult(BuildStepId buildStepId, BuildStepResult result) {
     _buildStepResults[buildStepId] = result;
   }
@@ -224,15 +232,6 @@ class AssetGraph implements GeneratedAssetHider {
   Iterable<AssetId> get outputs =>
       allNodes.where((n) => n.isGenerated).map((n) => n.id);
 
-  /// All the generated outputs for a particular phase.
-  Iterable<AssetNode> outputsForPhase(String package, int phase) =>
-      packageFileIds(package)
-          .map((id) => get(id)!)
-          .where(
-            (n) =>
-                n.type == NodeType.generated &&
-                n.generatedNodeConfiguration!.phaseNumber == phase,
-          );
 
   /// All the source files in the graph.
   Iterable<AssetId> get sources =>
@@ -311,7 +310,11 @@ class AssetGraph implements GeneratedAssetHider {
 
   /// Crawl up primary inputs to see if the original Source file matches the
   /// glob on [action].
-  bool _actionMatches(BuildAction action, AssetId input) {
+  bool _actionMatches(
+    BuildAction action,
+    AssetId input,
+    Map<AssetId, AssetId> primaryInputByOutput,
+  ) {
     if (input.package != action.package) return false;
     if (!action.generateFor.matches(input)) return false;
 
@@ -326,12 +329,11 @@ class AssetGraph implements GeneratedAssetHider {
       throw StateError('Unrecognized action type $action');
     }
 
-    var inputNode = get(input)!;
-    while (inputNode.type == NodeType.generated) {
-      final inputNodeConfiguration = inputNode.generatedNodeConfiguration!;
-      inputNode = get(inputNodeConfiguration.primaryInput)!;
+    var currentInput = input;
+    while (primaryInputByOutput[currentInput] != null) {
+      currentInput = primaryInputByOutput[currentInput]!;
     }
-    return action.targetSources.matches(inputNode.id);
+    return action.targetSources.matches(currentInput);
   }
 
   /// Returns a set containing [newSources] plus any new generated sources
@@ -344,6 +346,7 @@ class AssetGraph implements GeneratedAssetHider {
     Set<AssetId> newSources,
   ) {
     final allInputs = Set<AssetId>.from(newSources);
+    final primaryInputByOutput = <AssetId, AssetId>{};
     for (
       var phaseNum = 0;
       phaseNum < buildPhases.inBuildPhases.length;
@@ -355,10 +358,15 @@ class AssetGraph implements GeneratedAssetHider {
           phaseNum,
           allInputs,
           buildPhases,
+          primaryInputByOutput,
         ),
       );
     }
-    _addPostBuildActionApplications(buildPhases.postBuildPhase, allInputs);
+    _addPostBuildActionApplications(
+      buildPhases.postBuildPhase,
+      allInputs,
+      primaryInputByOutput,
+    );
   }
 
   /// Adds all [AssetNode.generated]s for [phase] given [allInputs].
@@ -372,26 +380,26 @@ class AssetGraph implements GeneratedAssetHider {
     int phaseNum,
     Set<AssetId> allInputs,
     BuildPhases buildPhases,
+    Map<AssetId, AssetId> primaryInputByOutput,
   ) {
     final phaseOutputs = <AssetId>{};
     final inputs =
-        allInputs.where((input) => _actionMatches(phase, input)).toList();
+        allInputs
+            .where((input) => _actionMatches(phase, input, primaryInputByOutput))
+            .toList();
     for (final input in inputs) {
       // We might have deleted some inputs during this loop, if they turned
       // out to be generated assets.
       if (!allInputs.contains(input)) continue;
       final outputs = expectedOutputs(phase.builder, input);
       phaseOutputs.addAll(outputs);
+      for (final output in outputs) {
+        primaryInputByOutput[output] = input;
+      }
       updateNode(input, (nodeBuilder) {
         nodeBuilder.primaryOutputs.addAll(outputs);
       });
-      final deleted = _addGeneratedOutputs(
-        outputs,
-        phaseNum,
-        buildPhases,
-        primaryInput: input,
-        isHidden: phase.hideOutput,
-      );
+      final deleted = _addGeneratedOutputs(outputs, phaseNum, buildPhases);
       allInputs.removeAll(deleted);
       // We may delete source nodes that were producing outputs previously.
       // Detect this by checking for deleted nodes that no longer exist in the
@@ -405,10 +413,12 @@ class AssetGraph implements GeneratedAssetHider {
   void _addPostBuildActionApplications(
     PostBuildPhase phase,
     Set<AssetId> allInputs,
+    Map<AssetId, AssetId> primaryInputByOutput,
   ) {
     var actionNumber = 0;
     for (final action in phase.builderActions) {
-      final inputs = allInputs.where((input) => _actionMatches(action, input));
+      final inputs =
+          allInputs.where((input) => _actionMatches(action, input, primaryInputByOutput));
       for (final input in inputs) {
         updatePostProcessBuildStepResult(
           PostProcessBuildStepId(input: input, actionNumber: actionNumber),
@@ -430,10 +440,8 @@ class AssetGraph implements GeneratedAssetHider {
   Set<AssetId> _addGeneratedOutputs(
     Iterable<AssetId> outputs,
     int phaseNumber,
-    BuildPhases buildPhases, {
-    required AssetId primaryInput,
-    required bool isHidden,
-  }) {
+    BuildPhases buildPhases,
+  ) {
     final removed = <AssetId>{};
     for (final output in outputs) {
       AssetNode? existing;
@@ -443,24 +451,16 @@ class AssetGraph implements GeneratedAssetHider {
       if (contains(output)) {
         existing = get(output)!;
         if (existing.type == NodeType.generated) {
-          final existingConfiguration = existing.generatedNodeConfiguration!;
           throw DuplicateAssetNodeException(
             existing.id,
-            buildPhases
-                .inBuildPhases[existingConfiguration.phaseNumber]
-                .displayName,
+            'an earlier phase',
             buildPhases.inBuildPhases[phaseNumber].displayName,
           );
         }
         _removeRecursive(output, removedIds: removed);
       }
 
-      final newNode = AssetNode.generated(
-        output,
-        phaseNumber: phaseNumber,
-        primaryInput: primaryInput,
-        isHidden: isHidden,
-      );
+      final newNode = AssetNode.generated(output);
       _nodes.add(newNode);
     }
     return removed;
@@ -481,13 +481,13 @@ class AssetGraph implements GeneratedAssetHider {
         id.path.startsWith(cacheDirectoryPath)) {
       return false;
     }
-    final config =
-        buildPlan?.buildStepPlan.expectedOutputs[id] ??
-        (get(id)?.type == NodeType.generated
-            ? get(id)?.generatedNodeConfiguration
-            : null);
-    if (config != null && config.isHidden) {
-      return true;
+    final config = buildPlan?.buildStepPlan.expectedOutputs[id];
+    if (config != null) {
+      return config.isHidden;
+    }
+    final stepResult = buildStepResultForOutput(id);
+    if (stepResult != null) {
+      return stepResult.isHidden ?? false;
     }
     return false;
   }
@@ -512,18 +512,12 @@ class AssetGraph implements GeneratedAssetHider {
     }
 
     final result = <AssetId>[];
-    // Delete all the non-hidden outputs.
-    for (final id in outputs) {
-      final node = get(id)!;
-      if (node.type == NodeType.postGenerated) {
-        // Handled via post process build step results below so we know if the
-        // output is hidden.
-        continue;
-      }
-      final nodeConfiguration = node.generatedNodeConfiguration!;
-      if (node.wasOutput && !nodeConfiguration.isHidden) {
-        final idToDelete = checkAndMoveId(id);
-        if (idToDelete != null) result.add(idToDelete);
+    for (final stepResult in _buildStepResults.values) {
+      if (!(stepResult.isHidden ?? false)) {
+        for (final id in stepResult.outputDigests.keys) {
+          final idToDelete = checkAndMoveId(id);
+          if (idToDelete != null) result.add(idToDelete);
+        }
       }
     }
     for (final packagePostProcessResults

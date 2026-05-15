@@ -17,9 +17,6 @@ void main() {
         AssetNode.source(AssetId('a', 'lib/a.dart')),
         AssetNode.generated(
           AssetId('a', 'lib/a.g.dart'),
-          primaryInput: AssetId('a', 'input'),
-          phaseNumber: 0,
-          isHidden: false,
         ),
         // Should not match.
         AssetNode.source(AssetId('b', 'lib/a.dart')),

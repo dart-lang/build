@@ -14,7 +14,6 @@ Serializers _$serializers =
           ..add(BuildStepId.serializer)
           ..add(BuildStepResult.serializer)
           ..add(ExpiringValue.serializer)
-          ..add(GeneratedNodeConfiguration.serializer)
           ..add(GlobId.serializer)
           ..add(GlobResult.serializer)
           ..add(NodeType.serializer)

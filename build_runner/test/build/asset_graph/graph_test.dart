@@ -103,10 +103,7 @@ void main() {
             final generatedId = makeAssetId();
             final generatedNode = AssetNode.generated(
               generatedId,
-              phaseNumber: phaseNum,
-              primaryInput: node.id,
               digest: g.isEven ? Digest([]) : null,
-              isHidden: g % 3 == 0,
             );
             node = node.rebuild((b) => b..primaryOutputs.add(generatedNode.id));
             if (g.isEven) {
@@ -129,7 +126,11 @@ void main() {
               (b) =>
                   b
                     ..result = phaseNum.isOdd
-                    ..inputs.addAll([node.id, syntheticNode.id]),
+                    ..isHidden = g % 3 == 0
+                    ..inputs.addAll([node.id, syntheticNode.id])
+                    ..outputDigests.addAll({
+                      if (g.isEven) generatedId: Digest([]),
+                    }),
             );
             graph.updateBuildStepResult(buildStepId, stepResult);
             graph
@@ -206,16 +207,8 @@ void main() {
         final node = graph.get(primaryInputId)!;
         expect(node.primaryOutputs, [primaryOutputId]);
 
-        final buildStepId = BuildStepId(
-          primaryInput: primaryInputId,
-          phaseNumber: 0,
-        );
-        expect(graph.buildStepResultFor(buildStepId), isNull);
         final primaryOutputNode = graph.get(primaryOutputId)!;
-        expect(
-          primaryOutputNode.generatedNodeConfiguration!.primaryInput,
-          primaryInputId,
-        );
+        expect(primaryOutputNode.type, NodeType.generated);
 
         expect(graph.postProcessBuildStepIds(package: 'foo'), {
           expectedBuildStepId,

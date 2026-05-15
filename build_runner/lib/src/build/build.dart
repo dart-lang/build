@@ -168,7 +168,7 @@ class Build {
       for (final output in processedOutputs) {
         final node = assetGraph.get(output);
         if (node == null || node.type != NodeType.generated) continue;
-        final config = node.generatedNodeConfiguration!;
+        final config = buildPlan.buildStepPlan.expectedOutputs[output]!;
         final buildStepId = config.buildStepId;
         final stepResult = assetGraph.buildStepResultFor(buildStepId);
         if (stepResult != null && stepResult.result == false) {
@@ -534,11 +534,7 @@ class Build {
   /// If it is currently being built according to [lazyPhases], waits for it to
   /// be built.
   Future<void> _buildOutput(AssetId id) async {
-    final config =
-        buildPlan.buildStepPlan.expectedOutputs[id] ??
-        (assetGraph.get(id)?.type == NodeType.generated
-            ? assetGraph.get(id)?.generatedNodeConfiguration
-            : null);
+    final config = buildPlan.buildStepPlan.expectedOutputs[id];
     if (config != null && !processedOutputs.contains(id)) {
       final buildStepId = config.buildStepId;
       await lazyPhases.putIfAbsent(
@@ -950,7 +946,7 @@ class Build {
       // Propagate results for generated node inputs.
       if (primaryInputNode?.type == NodeType.generated) {
         final inputConfiguration =
-            primaryInputNode!.generatedNodeConfiguration!;
+            buildPlan.buildStepPlan.expectedOutputs[primaryInputNode!.id]!;
         final inputStepResult = assetGraph.buildStepResultFor(
           inputConfiguration.buildStepId,
         );
@@ -1131,7 +1127,7 @@ class Build {
     if (inputNode == null) return false;
 
     if (inputNode.type == NodeType.generated) {
-      if (inputNode.generatedNodeConfiguration!.phaseNumber >= phaseNumber) {
+      if (buildPlan.buildStepPlan.expectedOutputs[input]!.phaseNumber >= phaseNumber) {
         // It's not readable in this phase.
         return false;
       }
@@ -1244,11 +1240,7 @@ class Build {
 
       for (final id in allPackageIds) {
         final node = assetGraph.get(id);
-        final config =
-            buildPlan.buildStepPlan.expectedOutputs[id] ??
-            (node?.type == NodeType.generated
-                ? node?.generatedNodeConfiguration
-                : null);
+        final config = buildPlan.buildStepPlan.expectedOutputs[id];
         // Generated nodes are only considered at all if they are output in
         // an earlier phase.
         if (config != null) {
@@ -1271,7 +1263,7 @@ class Build {
       for (final id in generatedFileInputs) {
         final node = assetGraph.get(id);
         if (node != null && node.type == NodeType.generated) {
-          final nodeConfig = node.generatedNodeConfiguration!;
+          final nodeConfig = buildPlan.buildStepPlan.expectedOutputs[id]!;
           final stepResult = assetGraph.buildStepResultFor(
             nodeConfig.buildStepId,
           );
@@ -1339,6 +1331,7 @@ class Build {
     final buildStepId = BuildStepId(primaryInput: input, phaseNumber: phaseNum);
     final stepResult = BuildStepResult((b) {
       b.result = result;
+      b.isHidden = buildPhases.inBuildPhases[phaseNum].hideOutput;
       b.inputs.replace(usedInputs);
       b.outputDigests.replace(outputDigests);
       b.globsEvaluated.replace(inputTracker.globsEvaluated);
@@ -1381,9 +1374,6 @@ class Build {
       if (outputNode == null) {
         final newNode = AssetNode.generated(
           output,
-          primaryInput: input,
-          phaseNumber: phaseNum,
-          isHidden: buildPhases.inBuildPhases[phaseNum].hideOutput,
           digest: digest,
         );
         assetGraph.add(newNode);

@@ -139,14 +139,17 @@ void main() {
     assetGraph.add(
       AssetNode.generated(
         outputId,
-        phaseNumber: 0,
-        isHidden: false,
         digest: Digest([]),
-        primaryInput: primaryId,
       ),
     );
     final buildStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
-    final stepResult = BuildStepResult((b) => b..result = false);
+    final stepResult = BuildStepResult(
+      (b) =>
+          b
+            ..result = false
+            ..isHidden = false
+            ..outputDigests[outputId] = Digest([]),
+    );
     assetGraph.updateBuildStepResult(buildStepId, stepResult);
 
     final response = await handler.handle(

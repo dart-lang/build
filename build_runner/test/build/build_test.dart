@@ -1186,10 +1186,7 @@ targets:
     final aCopyId = AssetId.parse('a|web/a.txt.copy');
     final aCopyNode = AssetNode.generated(
       aCopyId,
-      phaseNumber: 0,
-      primaryInput: makeAssetId('a|web/a.txt'),
       digest: computeDigest(aCopyId, 'a'),
-      isHidden: false,
     );
     aSourceNode = aSourceNode.rebuild(
       (b) => b..primaryOutputs.add(aCopyNode.id),
@@ -1198,10 +1195,7 @@ targets:
     final bCopyId = makeAssetId('a|lib/b.txt.copy'); //;
     final bCopyNode = AssetNode.generated(
       bCopyId,
-      phaseNumber: 0,
-      primaryInput: makeAssetId('a|lib/b.txt'),
       digest: computeDigest(bCopyId, 'b'),
-      isHidden: false,
     );
     bSourceNode = bSourceNode.rebuild(
       (b) => b..primaryOutputs.add(bCopyNode.id),
@@ -1905,24 +1899,24 @@ targets:
             result.readerWriter.testing.readBytes(AssetId('a', assetGraphPath)),
           )!.assetGraph;
 
-      final node1 = finalGraph.get(AssetId('a', 'web/a.g1'))!;
-      final config1 = node1.generatedNodeConfiguration!;
       expect(
-        finalGraph.buildStepResultFor(config1.buildStepId)!.result,
+        finalGraph.buildStepResultFor(
+          BuildStepId(primaryInput: AssetId('a', 'web/a.source'), phaseNumber: 0),
+        )!.result,
         isFalse,
       );
 
-      final node2 = finalGraph.get(AssetId('a', 'web/a.g2'))!;
-      final config2 = node2.generatedNodeConfiguration!;
       expect(
-        finalGraph.buildStepResultFor(config2.buildStepId)!.result,
+        finalGraph.buildStepResultFor(
+          BuildStepId(primaryInput: AssetId('a', 'web/a.g1'), phaseNumber: 1),
+        )!.result,
         isFalse,
       );
 
-      final node3 = finalGraph.get(AssetId('a', 'web/a.g3'))!;
-      final config3 = node3.generatedNodeConfiguration!;
       expect(
-        finalGraph.buildStepResultFor(config3.buildStepId)!.result,
+        finalGraph.buildStepResultFor(
+          BuildStepId(primaryInput: AssetId('a', 'web/a.g2'), phaseNumber: 2),
+        )!.result,
         isFalse,
       );
     });

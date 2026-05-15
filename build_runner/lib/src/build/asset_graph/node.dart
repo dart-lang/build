@@ -34,8 +34,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   AssetId get id;
   NodeType get type;
 
-  /// Additional node configuration for an [AssetNode.generated].
-  GeneratedNodeConfiguration? get generatedNodeConfiguration;
 
   /// The assets that any [Builder] in the build graph declares it may output
   /// when run on this asset.
@@ -91,15 +89,9 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   factory AssetNode.generated(
     AssetId id, {
     Digest? digest,
-    required AssetId primaryInput,
-    required int phaseNumber,
-    required bool isHidden,
   }) => AssetNode((b) {
     b.id = id;
     b.type = NodeType.generated;
-    b.generatedNodeConfiguration.primaryInput = primaryInput;
-    b.generatedNodeConfiguration.phaseNumber = phaseNumber;
-    b.generatedNodeConfiguration.isHidden = isHidden;
     b.digest = digest;
   });
 
@@ -109,11 +101,7 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     b.type = NodeType.postGenerated;
   });
 
-  AssetNode._() {
-    if ((type == NodeType.generated) != (generatedNodeConfiguration != null)) {
-      throw ArgumentError('Node configuration does not match its type: $this');
-    }
-  }
+  AssetNode._();
 
   bool get isGenerated =>
       type == NodeType.generated || type == NodeType.postGenerated;

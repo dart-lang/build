@@ -72,17 +72,15 @@ class AnalysisDriverFilesystem
   /// cached contents are cleared. Otherwise, only source files matching
   /// [invalidatedSources] are removed.
   void startBuild(
-    Iterable<AssetNode> generatedNodes, {
+    Map<AssetId, GeneratedNodeConfiguration> expectedOutputs, {
     required Set<AssetId>? invalidatedSources,
   }) {
     final previousPhaseByPath = _phaseByPath;
     _phaseByPath = <String, int>{};
     _pathByPhase = <int, List<String>>{};
-    for (final node in generatedNodes) {
-      // Post process generated nodes are never analyzed.
-      if (node.type == NodeType.postGenerated) continue;
-      final phase = node.generatedNodeConfiguration!.phaseNumber;
-      final idAsPath = node.id.asPath;
+    for (final entry in expectedOutputs.entries) {
+      final phase = entry.value.phaseNumber;
+      final idAsPath = entry.key.asPath;
       _phaseByPath[idAsPath] = phase;
       _pathByPhase.putIfAbsent(phase, () => []).add(idAsPath);
     }

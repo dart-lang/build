@@ -88,17 +88,6 @@ class _$AssetNodeSerializer implements StructuredSerializer<AssetNode> {
       ),
     ];
     Object? value;
-    value = object.generatedNodeConfiguration;
-    if (value != null) {
-      result
-        ..add('generatedNodeConfiguration')
-        ..add(
-          serializers.serialize(
-            value,
-            specifiedType: const FullType(GeneratedNodeConfiguration),
-          ),
-        );
-    }
     value = object.digest;
     if (value != null) {
       result
@@ -139,15 +128,6 @@ class _$AssetNodeSerializer implements StructuredSerializer<AssetNode> {
                     specifiedType: const FullType(NodeType),
                   )!
                   as NodeType;
-          break;
-        case 'generatedNodeConfiguration':
-          result.generatedNodeConfiguration.replace(
-            serializers.deserialize(
-                  value,
-                  specifiedType: const FullType(GeneratedNodeConfiguration),
-                )!
-                as GeneratedNodeConfiguration,
-          );
           break;
         case 'primaryOutputs':
           result.primaryOutputs.replace(
@@ -263,8 +243,6 @@ class _$AssetNode extends AssetNode {
   @override
   final NodeType type;
   @override
-  final GeneratedNodeConfiguration? generatedNodeConfiguration;
-  @override
   final BuiltSet<AssetId> primaryOutputs;
   @override
   final Digest? digest;
@@ -275,7 +253,6 @@ class _$AssetNode extends AssetNode {
   _$AssetNode._({
     required this.id,
     required this.type,
-    this.generatedNodeConfiguration,
     required this.primaryOutputs,
     this.digest,
   }) : super._();
@@ -292,7 +269,6 @@ class _$AssetNode extends AssetNode {
     return other is AssetNode &&
         id == other.id &&
         type == other.type &&
-        generatedNodeConfiguration == other.generatedNodeConfiguration &&
         primaryOutputs == other.primaryOutputs &&
         digest == other.digest;
   }
@@ -302,7 +278,6 @@ class _$AssetNode extends AssetNode {
     var _$hash = 0;
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, type.hashCode);
-    _$hash = $jc(_$hash, generatedNodeConfiguration.hashCode);
     _$hash = $jc(_$hash, primaryOutputs.hashCode);
     _$hash = $jc(_$hash, digest.hashCode);
     _$hash = $jf(_$hash);
@@ -314,7 +289,6 @@ class _$AssetNode extends AssetNode {
     return (newBuiltValueToStringHelper(r'AssetNode')
           ..add('id', id)
           ..add('type', type)
-          ..add('generatedNodeConfiguration', generatedNodeConfiguration)
           ..add('primaryOutputs', primaryOutputs)
           ..add('digest', digest))
         .toString();
@@ -331,14 +305,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
   NodeType? _type;
   NodeType? get type => _$this._type;
   set type(NodeType? type) => _$this._type = type;
-
-  GeneratedNodeConfigurationBuilder? _generatedNodeConfiguration;
-  GeneratedNodeConfigurationBuilder get generatedNodeConfiguration =>
-      _$this._generatedNodeConfiguration ??=
-          GeneratedNodeConfigurationBuilder();
-  set generatedNodeConfiguration(
-    GeneratedNodeConfigurationBuilder? generatedNodeConfiguration,
-  ) => _$this._generatedNodeConfiguration = generatedNodeConfiguration;
 
   SetBuilder<AssetId>? _primaryOutputs;
   SetBuilder<AssetId> get primaryOutputs =>
@@ -357,7 +323,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
     if ($v != null) {
       _id = $v.id;
       _type = $v.type;
-      _generatedNodeConfiguration = $v.generatedNodeConfiguration?.toBuilder();
       _primaryOutputs = $v.primaryOutputs.toBuilder();
       _digest = $v.digest;
       _$v = null;
@@ -390,15 +355,12 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
               r'AssetNode',
               'type',
             ),
-            generatedNodeConfiguration: _generatedNodeConfiguration?.build(),
             primaryOutputs: primaryOutputs.build(),
             digest: digest,
           );
     } catch (_) {
       late String _$failedField;
       try {
-        _$failedField = 'generatedNodeConfiguration';
-        _generatedNodeConfiguration?.build();
         _$failedField = 'primaryOutputs';
         primaryOutputs.build();
       } catch (e) {

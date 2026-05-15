@@ -321,7 +321,7 @@ class SingleStepReaderWriter implements PhasedReader {
       return Readability.notReadable;
     }
     if (node.type == NodeType.generated) {
-      final nodeConfiguration = node.generatedNodeConfiguration!;
+      final nodeConfiguration = _runningBuild!.buildPlan.buildStepPlan.expectedOutputs[node.id]!;
       if (nodeConfiguration.phaseNumber > _runningBuildStep!.phaseNumber) {
         return Readability.notReadable;
       } else if (nodeConfiguration.phaseNumber ==
@@ -334,9 +334,9 @@ class SingleStepReaderWriter implements PhasedReader {
         return isInBuild ? Readability.ownOutput : Readability.notReadable;
       }
 
-      await _runningBuild!.nodeBuilder(node.id);
+      await _runningBuild.nodeBuilder(node.id);
       node = _runningBuild.assetGraph.get(node.id)!;
-      final config = node.generatedNodeConfiguration!;
+      final config = _runningBuild.buildPlan.buildStepPlan.expectedOutputs[node.id]!;
       final buildStepId = BuildStepId(
         primaryInput: config.primaryInput,
         phaseNumber: config.phaseNumber,
@@ -413,7 +413,7 @@ class SingleStepReaderWriter implements PhasedReader {
     }
 
     if (node.type == NodeType.generated) {
-      final nodePhase = node.generatedNodeConfiguration!.phaseNumber;
+      final nodePhase = _runningBuild.buildPlan.buildStepPlan.expectedOutputs[node.id]!.phaseNumber;
       if (nodePhase >= phase) {
         return PhasedValue.unavailable(before: '', expiresAfter: nodePhase);
       } else {
@@ -422,7 +422,7 @@ class SingleStepReaderWriter implements PhasedReader {
           await _runningBuild.nodeBuilder(id);
           node = _runningBuild.assetGraph.get(id)!;
         }
-        final config = node.generatedNodeConfiguration!;
+        final config = _runningBuild.buildPlan.buildStepPlan.expectedOutputs[node.id]!;
         final buildStepId = BuildStepId(
           primaryInput: config.primaryInput,
           phaseNumber: config.phaseNumber,

@@ -109,9 +109,11 @@ void main() {
       );
 
       for (final id in graph.outputs) {
-        final node = graph.get(id)!;
-        final config = node.generatedNodeConfiguration!;
-        final stepResult = BuildStepResult((b) => b..result = true);
+        final config = buildPlan.buildStepPlan.expectedOutputs[id]!;
+        final stepResult = BuildStepResult((b) => b
+          ..result = true
+          ..outputDigests[id] = Digest([])
+        );
         graph.updateBuildStepResult(config.buildStepId, stepResult);
 
         graph.updateNode(id, (nodeBuilder) {
@@ -119,7 +121,7 @@ void main() {
         });
         readerWriter.testing.writeString(
           id,
-          sources[graph.get(id)!.generatedNodeConfiguration!.primaryInput]!,
+          sources[config.primaryInput]!,
         );
       }
       tmpDir = await Directory.systemTemp.createTemp('build_tests');
@@ -366,7 +368,7 @@ void main() {
 
     test('doesnt write files that werent output', () async {
       final node = graph.get(AssetId('b', 'lib/c.txt.copy'))!;
-      final config = node.generatedNodeConfiguration!;
+      final config = buildPlan.buildStepPlan.expectedOutputs[node.id]!;
       final stepResult = BuildStepResult((b) => b..result = null);
       graph.updateBuildStepResult(config.buildStepId, stepResult);
 

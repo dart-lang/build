@@ -23,6 +23,9 @@ abstract class BuildStepResult
   /// skipped.
   bool? get result;
 
+  /// Whether or not the emitted outputs of this step are hidden.
+  bool? get isHidden;
+
   /// Inputs and missing sources read.
   BuiltSet<AssetId> get inputs;
 
