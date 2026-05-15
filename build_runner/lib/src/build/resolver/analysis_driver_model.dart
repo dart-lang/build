@@ -12,7 +12,7 @@ import 'package:pool/pool.dart';
 
 import '../../logging/timed_activities.dart';
 import '../asset_graph/graph.dart';
-import '../asset_graph/node.dart';
+import '../../build_plan/build_step_plan.dart';
 import '../input_tracker.dart';
 import '../library_cycle_graph/asset_deps_loader.dart';
 import '../library_cycle_graph/library_cycle_graph.dart';
@@ -54,7 +54,7 @@ class AnalysisDriverModel {
   }) async {
     _lock = await _pool.request();
     filesystem.startBuild(
-      (assetGraph.buildPlan?.buildStepPlan.expectedOutputs ?? BuiltMap<AssetId, GeneratedNodeConfiguration>()).toMap(),
+      (assetGraph.buildPlan?.buildStepPlan.expectedOutputs ?? BuiltMap<AssetId, ExpectedOutputConfiguration>()).toMap(),
       invalidatedSources: invalidatedSources,
     );
   }

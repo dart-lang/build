@@ -8,7 +8,6 @@ import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 import 'package:crypto/crypto.dart';
 
-import 'build_step_id.dart';
 
 part 'node.g.dart';
 
@@ -115,34 +114,3 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
       (type == NodeType.generated && digest != null);
 }
 
-/// Additional configuration for an [AssetNode.generated].
-abstract class GeneratedNodeConfiguration
-    implements
-        Built<GeneratedNodeConfiguration, GeneratedNodeConfigurationBuilder> {
-  static Serializer<GeneratedNodeConfiguration> get serializer =>
-      _$generatedNodeConfigurationSerializer;
-
-  /// The primary input which generated this node.
-  AssetId get primaryInput;
-
-  /// The phase in which this node is generated.
-  ///
-  /// The generator that produces this node can only read files from earlier
-  /// phases plus any files it writes itself.
-  ///
-  /// Other generators and globs can only read this node if they run in a
-  /// later phase.
-  int get phaseNumber;
-
-  /// Whether the asset should be placed in the build cache.
-  bool get isHidden;
-
-  BuildStepId get buildStepId =>
-      BuildStepId(primaryInput: primaryInput, phaseNumber: phaseNumber);
-
-  factory GeneratedNodeConfiguration(
-    void Function(GeneratedNodeConfigurationBuilder) updates,
-  ) = _$GeneratedNodeConfiguration;
-
-  GeneratedNodeConfiguration._();
-}

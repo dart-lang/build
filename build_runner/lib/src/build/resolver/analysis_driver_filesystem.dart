@@ -14,11 +14,11 @@ import 'package:analyzer/src/dart/analysis/file_content_cache.dart';
 import 'package:build/build.dart' hide Resource;
 import 'package:path/path.dart' as p;
 
-import '../asset_graph/node.dart';
+import '../../build_plan/build_step_plan.dart';
 
 /// The in-memory filesystem that is the analyzer's view of the build.
 ///
-/// Pass an `Iterable<AssetNode>` of generated file nodes to [startBuild] at the
+/// Pass a `Map<AssetId, ExpectedOutputConfiguration>` of expected outputs to [startBuild] at the
 /// start of a build. This tells the filesystem at what phase each generated
 /// file becomes visible.
 ///
@@ -72,7 +72,7 @@ class AnalysisDriverFilesystem
   /// cached contents are cleared. Otherwise, only source files matching
   /// [invalidatedSources] are removed.
   void startBuild(
-    Map<AssetId, GeneratedNodeConfiguration> expectedOutputs, {
+    Map<AssetId, ExpectedOutputConfiguration> expectedOutputs, {
     required Set<AssetId>? invalidatedSources,
   }) {
     final previousPhaseByPath = _phaseByPath;

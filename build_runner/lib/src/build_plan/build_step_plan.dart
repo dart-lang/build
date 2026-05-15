@@ -7,7 +7,7 @@ import 'package:build/build.dart' hide Builder;
 import 'package:built_collection/built_collection.dart';
 
 import '../build/asset_graph/build_step_id.dart';
-import '../build/asset_graph/node.dart';
+
 import '../build/asset_graph/post_process_build_step_id.dart';
 import 'build_packages.dart';
 import 'build_phases.dart';
@@ -18,9 +18,24 @@ import 'phase.dart';
 /// Expands [BuildPhases] against workspace sources and [BuildPackages]
 /// to declare scheduled build steps, expected generated outputs, and
 /// placeholders.
+class ExpectedOutputConfiguration {
+  final AssetId primaryInput;
+  final int phaseNumber;
+  final bool isHidden;
+
+  ExpectedOutputConfiguration({
+    required this.primaryInput,
+    required this.phaseNumber,
+    required this.isHidden,
+  });
+
+  BuildStepId get buildStepId =>
+      BuildStepId(primaryInput: primaryInput, phaseNumber: phaseNumber);
+}
+
 class BuildStepPlan {
   final BuiltSet<AssetId> placeholders;
-  final BuiltMap<AssetId, GeneratedNodeConfiguration> expectedOutputs;
+  final BuiltMap<AssetId, ExpectedOutputConfiguration> expectedOutputs;
   final BuiltMap<BuildStepId, BuiltSet<AssetId>> primaryOutputsByStep;
   final BuiltSet<BuildStepId> scheduledBuildSteps;
   final BuiltSet<PostProcessBuildStepId> scheduledPostProcessSteps;
@@ -40,7 +55,7 @@ class BuildStepPlan {
   }) {
     final placeholders = placeholderIdsForPlan(buildPackages);
     final expectedOutputsBuilder =
-        MapBuilder<AssetId, GeneratedNodeConfiguration>();
+        MapBuilder<AssetId, ExpectedOutputConfiguration>();
     final primaryOutputsByStep = MapBuilder<BuildStepId, SetBuilder<AssetId>>();
     final scheduledBuildSteps = SetBuilder<BuildStepId>();
     final scheduledPostProcessSteps = SetBuilder<PostProcessBuildStepId>();
@@ -117,12 +132,10 @@ class BuildStepPlan {
           }
           removeInvalidStepsRecursive(output);
 
-          expectedOutputsBuilder[output] = GeneratedNodeConfiguration(
-            (b) =>
-                b
-                  ..primaryInput = input
-                  ..phaseNumber = phaseNum
-                  ..isHidden = phase.hideOutput,
+          expectedOutputsBuilder[output] = ExpectedOutputConfiguration(
+            primaryInput: input,
+            phaseNumber: phaseNum,
+            isHidden: phase.hideOutput,
           );
           phaseOutputs.add(output);
         }
