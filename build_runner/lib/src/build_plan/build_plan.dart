@@ -324,7 +324,10 @@ class BuildPlan {
 
     final buildStepPlan = BuildStepPlan.create(
       buildPhases: buildPhases,
-      sources: inputSources,
+      sources:
+          previousAssetGraph != null
+              ? previousAssetGraph.sources.toSet()
+              : inputSources,
       buildPackages: buildPackages,
     );
 

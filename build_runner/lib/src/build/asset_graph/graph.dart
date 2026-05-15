@@ -285,7 +285,7 @@ class AssetGraph implements GeneratedAssetHider {
     final transitiveRemovedIds = <AssetId>{};
     void addTransitivePrimaryOutputs(AssetId id) {
       if (transitiveRemovedIds.add(id)) {
-        get(id)!.primaryOutputs.forEach(addTransitivePrimaryOutputs);
+        primaryOutputsOf(id).forEach(addTransitivePrimaryOutputs);
       }
     }
 

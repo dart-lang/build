@@ -348,7 +348,8 @@ class Build {
         }
         for (final id in assetGraph.sources) {
           final node = assetGraph.get(id)!;
-          if (node.digest == null && node.primaryOutputs.isNotEmpty) {
+          if (node.digest == null &&
+              assetGraph.primaryOutputsOf(id).isNotEmpty) {
             final digest = await readerWriter.digest(id);
             assetGraph.updateNode(id, (nodeBuilder) {
               nodeBuilder.digest = digest;
