@@ -106,7 +106,7 @@ class BuildOutputReader {
       if (stepResult != null && stepResult.result == false) {
         return UnreadableReason.failed;
       }
-      if (!node.wasOutput) return UnreadableReason.notOutput;
+      if (!_assetGraph.wasOutput(node.id)) return UnreadableReason.notOutput;
 
       // No need to explicitly check readability for generated files, their
       // readability is recorded in the node state.
@@ -194,7 +194,7 @@ class BuildOutputReader {
     }
     if (node.type == NodeType.generated) {
       final stepResult = _assetGraph!.buildStepResultForOutput(node.id);
-      if (!node.wasOutput ||
+      if (!_assetGraph.wasOutput(node.id) ||
           (stepResult == null || stepResult.result == false)) {
         return true;
       }

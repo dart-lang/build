@@ -345,7 +345,8 @@ class SingleStepReaderWriter implements PhasedReader {
         buildStepId,
       );
       return Readability.fromPreviousPhase(
-        node.wasOutput && (stepResult == null || stepResult.result != false),
+        _runningBuild.assetGraph.wasOutput(node.id) &&
+            (stepResult == null || stepResult.result != false),
       );
     }
     return Readability.fromPreviousPhase(node.type == NodeType.source);
@@ -429,7 +430,9 @@ class SingleStepReaderWriter implements PhasedReader {
         );
         final stepResult =
             _runningBuild.assetGraph.buildStepResultFor(buildStepId)!;
-        final isSuccessOutput = node.wasOutput && stepResult.result == true;
+        final isSuccessOutput =
+            _runningBuild.assetGraph.wasOutput(node.id) &&
+                stepResult.result == true;
         return PhasedValue.generated(
           atPhase: nodePhase,
           before: '',

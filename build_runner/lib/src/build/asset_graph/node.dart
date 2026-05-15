@@ -105,12 +105,5 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   bool get isGenerated =>
       type == NodeType.generated || type == NodeType.postGenerated;
 
-  /// Whether this is a generated node that was written when the generator ran.
-  ///
-  /// A file can be output by a failing generator, check
-  /// `generatedNodeState.result` for whether the generator succeeded.
-  bool get wasOutput =>
-      type == NodeType.postGenerated ||
-      (type == NodeType.generated && digest != null);
 }
 

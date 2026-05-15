@@ -760,7 +760,8 @@ class Build {
       if (buildStepId.actionNumber != actionNum) continue;
       final inputNode = assetGraph.get(buildStepId.input)!;
       if (inputNode.type == NodeType.source ||
-          inputNode.type == NodeType.generated && inputNode.wasOutput) {
+          inputNode.type == NodeType.generated &&
+              assetGraph.wasOutput(inputNode.id)) {
         outputs.addAll(
           await _runPostProcessBuildStep(
             phaseNum,
@@ -960,7 +961,7 @@ class Build {
 
         // If the primary input succeeded but was not output, this build is
         // skipped.
-        if (!primaryInputNode.wasOutput) {
+        if (!assetGraph.wasOutput(primaryInputNode.id)) {
           await _cleanUpStaleOutputs(outputs);
           _markBuildStepSkipped(buildStepId, outputs);
           return false;
@@ -1196,7 +1197,9 @@ class Build {
   Future<void> _cleanUpStaleOutputs(Iterable<AssetId> outputs) async {
     for (final output in outputs) {
       final node = assetGraph.get(output);
-      if (node != null && node.isGenerated && node.wasOutput) {
+      if (node != null &&
+          node.isGenerated &&
+          assetGraph.wasOutput(node.id)) {
         await _delete(output);
       }
     }
@@ -1267,7 +1270,7 @@ class Build {
           final stepResult = assetGraph.buildStepResultFor(
             nodeConfig.buildStepId,
           );
-          if (node.wasOutput &&
+          if (assetGraph.wasOutput(node.id) &&
               stepResult != null &&
               stepResult.result == true) {
             generatedFileResults.add(id);

@@ -8,6 +8,7 @@ import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_config/build_config.dart' hide BuilderDefinition;
 import 'package:build_runner/src/build/asset_graph/asset_graph_json.dart';
+import 'package:build_runner/src/build/asset_graph/build_step_result.dart';
 import 'package:build_runner/src/build/asset_graph/graph.dart';
 import 'package:build_runner/src/build/library_cycle_graph/phased_asset_deps.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
@@ -155,6 +156,12 @@ void main() {
 
       // Write an output and add it to the asset graph as if it was built.
       await readerWriter.writeAsString(outputId, '// output');
+      final config = buildPlan.buildStepPlan.expectedOutputs[outputId]!;
+      final stepResult = BuildStepResult((b) => b
+        ..result = true
+        ..outputDigests[outputId] = Digest([])
+      );
+      assetGraph.updateBuildStepResult(config.buildStepId, stepResult);
       assetGraph.updateNode(outputId, (b) {
         b.digest = Digest([]);
       });
@@ -242,6 +249,12 @@ void main() {
 
       // Write an output and add it to the asset graph as if it was built.
       await readerWriter.writeAsString(outputId, '// output');
+      final config = buildPlan.buildStepPlan.expectedOutputs[outputId]!;
+      final stepResult = BuildStepResult((b) => b
+        ..result = true
+        ..outputDigests[outputId] = Digest([])
+      );
+      assetGraph.updateBuildStepResult(config.buildStepId, stepResult);
       assetGraph.updateNode(outputId, (b) {
         b.digest = Digest([]);
       });

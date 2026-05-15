@@ -492,6 +492,20 @@ class AssetGraph implements GeneratedAssetHider {
     return false;
   }
 
+  bool wasOutput(AssetId id) {
+    final node = get(id);
+    if (node == null) return false;
+    if (node.type == NodeType.postGenerated) {
+      return true;
+    }
+    if (node.type == NodeType.generated) {
+      final stepResult = buildStepResultForOutput(id);
+      if (stepResult == null) return false;
+      return stepResult.outputDigests.containsKey(id);
+    }
+    return false;
+  }
+
   /// Returns outputs that were written to the source tree.
   Iterable<AssetId> outputsToDelete(BuildPackages buildPackages) {
     // Checks if `id` is in a known package. If so, returns it.
