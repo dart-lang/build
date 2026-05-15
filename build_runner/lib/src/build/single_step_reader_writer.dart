@@ -13,6 +13,7 @@ import 'package:glob/glob.dart';
 import '../bootstrap/processes.dart';
 import '../build_plan/build_configs.dart';
 import '../build_plan/build_packages.dart';
+import '../build_plan/build_plan.dart';
 import '../build_plan/phase.dart';
 import '../io/asset_finder.dart';
 import '../io/reader_writer.dart';
@@ -65,6 +66,7 @@ class Readability {
 
 /// `SingleStepReaderWriter`'s view on the currently-running build.
 class RunningBuild {
+  final BuildPlan buildPlan;
   final BuildPackages buildPackages;
   final BuildConfigs buildConfigs;
   final AssetGraph assetGraph;
@@ -73,6 +75,7 @@ class RunningBuild {
   final GlobEvaluator globEvaluator;
 
   RunningBuild({
+    required this.buildPlan,
     required this.buildPackages,
     required this.buildConfigs,
     required this.assetGraph,
@@ -84,11 +87,13 @@ class RunningBuild {
 
 /// `SingleStepReaderWriter`'s view on the currently-running build step.
 class RunningBuildStep {
+  final BuildStepId? buildStepId;
   final int phaseNumber;
   final BuildPhase buildPhase;
   final String primaryPackage;
 
   RunningBuildStep({
+    this.buildStepId,
     required this.phaseNumber,
     required this.buildPhase,
     required this.primaryPackage,
@@ -184,7 +189,19 @@ class SingleStepReaderWriter implements PhasedReader {
       return _delegate.canRead(id);
     }
 
-    final node = _runningBuild.assetGraph.get(id);
+    var node = _runningBuild.assetGraph.get(id);
+    if (node == null) {
+      final config = _runningBuild.buildPlan.buildStepPlan.expectedOutputs[id];
+      if (config != null) {
+        if (_runningBuildStep?.buildStepId != null &&
+            config.buildStepId == _runningBuildStep!.buildStepId) {
+          return false;
+        }
+        await _runningBuild.nodeBuilder(id);
+        node = _runningBuild.assetGraph.get(id);
+      }
+    }
+
     if (node == null) {
       if (track) inputTracker.add(id);
       _runningBuild.assetGraph.add(AssetNode.missingSource(id));

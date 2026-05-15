@@ -59,7 +59,6 @@ void main() {
       test('add, contains, get, allNodes', () {
         final expectedNodes = [
           for (var i = 0; i < 5; i++) testAddNode(i),
-          for (final id in placeholderIdsFor(fooPackageGraph)) graph.get(id),
         ];
         expect(graph.allNodes, unorderedEquals(expectedNodes));
       });
@@ -179,7 +178,6 @@ void main() {
       final primaryOutputId = makeAssetId('foo|file.txt.copy');
       final syntheticId = makeAssetId('foo|synthetic.txt');
       final syntheticOutputId = makeAssetId('foo|synthetic.txt.copy');
-      final placeholders = placeholderIdsFor(fooPackageGraph);
       final expectedBuildStepId = PostProcessBuildStepId(
         input: primaryInputId,
         actionNumber: 0,
@@ -200,7 +198,6 @@ void main() {
             primaryInputId,
             excludedInputId,
             primaryOutputId,
-            ...placeholders,
           ]),
         );
         expect(graph.postProcessBuildStepIds(package: 'foo'), {

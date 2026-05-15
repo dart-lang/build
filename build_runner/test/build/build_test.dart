@@ -63,11 +63,6 @@ void main() {
     },
   );
   final globBuilder = GlobbingBuilder(Glob('**.txt'));
-  final placeholders = placeholderIdsFor(
-    BuildPackages.singlePackageBuild('a', [
-      BuildPackage.forTesting(name: 'a', isOutput: true),
-    ]),
-  );
 
   group('build', () {
     test('can log within a buildFactory', () async {
@@ -529,7 +524,6 @@ targets:
             makeAssetId('a|web/a.txt'),
             makeAssetId('a|web/a.txt.copy'),
             makeAssetId('a|web/a.txt.copy.clone'),
-            ...placeholders,
           ]),
         );
         expect(cachedGraph.sources, [makeAssetId('a|web/a.txt')]);

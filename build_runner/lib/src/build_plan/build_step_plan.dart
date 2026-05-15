@@ -77,8 +77,11 @@ class BuildStepPlan {
       final phase = buildPhases.inBuildPhases[phaseNum];
       final inputs =
           allInputs.where((input) => actionMatches(phase, input)).toList();
+      final phaseOutputs = <AssetId>[];
 
       for (final input in inputs) {
+        if (!allInputs.contains(input)) continue;
+
         final generatedOutputs = build.expectedOutputs(phase.builder, input);
         if (generatedOutputs.isEmpty) continue;
 
@@ -92,6 +95,28 @@ class BuildStepPlan {
             .addAll(generatedOutputs);
 
         for (final output in generatedOutputs) {
+          // If this output was previously processed as a source file during this phase,
+          // remove any scheduled steps that used it as an input!
+          void removeInvalidStepsRecursive(AssetId invalidInput) {
+            final invalidSteps = scheduledBuildSteps
+                .build()
+                .where((step) => step.primaryInput == invalidInput)
+                .toList();
+            for (final invalidStep in invalidSteps) {
+              scheduledBuildSteps.remove(invalidStep);
+              final invalidOutputs =
+                  primaryOutputsByStep[invalidStep]?.build() ??
+                  BuiltSet<AssetId>();
+              primaryOutputsByStep.remove(invalidStep);
+              for (final invalidOutput in invalidOutputs) {
+                phaseOutputs.remove(invalidOutput);
+                expectedOutputsBuilder.remove(invalidOutput);
+                removeInvalidStepsRecursive(invalidOutput);
+              }
+            }
+          }
+          removeInvalidStepsRecursive(output);
+
           expectedOutputsBuilder[output] = GeneratedNodeConfiguration(
             (b) =>
                 b
@@ -99,9 +124,11 @@ class BuildStepPlan {
                   ..phaseNumber = phaseNum
                   ..isHidden = phase.hideOutput,
           );
-          allInputs.add(output);
+          phaseOutputs.add(output);
         }
+        allInputs.removeAll(generatedOutputs);
       }
+      allInputs.addAll(phaseOutputs);
     }
 
     var actionNumber = 0;

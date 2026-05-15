@@ -14,6 +14,7 @@ import 'package:watcher/watcher.dart';
 
 import '../../build_plan/build_packages.dart';
 import '../../build_plan/build_phases.dart';
+import '../../build_plan/build_plan.dart';
 import '../../build_plan/phase.dart';
 import '../../constants.dart';
 import '../../io/generated_asset_hider.dart';
@@ -32,6 +33,8 @@ part 'serialization.dart';
 
 /// All the [AssetId]s involved in a build, and all of their outputs.
 class AssetGraph implements GeneratedAssetHider {
+  BuildPlan? buildPlan;
+
   /// All the [AssetNode]s in the graph.
   final Nodes _nodes;
 
@@ -101,12 +104,10 @@ class AssetGraph implements GeneratedAssetHider {
     BuildPackages buildPackages,
   ) async {
     final graph = AssetGraph();
-    final placeholders = graph._addPlaceHolderNodes(buildPackages);
     graph._addSources(sources);
     graph._addOutputsForSources(
       buildPhases,
       sources,
-      placeholders: placeholders,
     );
     return graph;
   }
@@ -122,6 +123,10 @@ class AssetGraph implements GeneratedAssetHider {
   AssetNode? get(AssetId id) => _nodes.get(id);
   AssetNode updateNode(AssetId id, void Function(AssetNodeBuilder) updates) =>
       _nodes.updateNode(id, updates);
+  AssetNode? updateNodeIfPresent(
+    AssetId id,
+    void Function(AssetNodeBuilder) updates,
+  ) => _nodes.updateNodeIfPresent(id, updates);
   BuildStepResult? buildStepResultFor(BuildStepId buildStepId) =>
       _buildStepResults[buildStepId];
   void updateBuildStepResult(BuildStepId buildStepId, BuildStepResult result) {
@@ -142,14 +147,7 @@ class AssetGraph implements GeneratedAssetHider {
       _nodes.packageFileIds(package, glob: glob);
   void removeForTest(AssetId id) => _nodes.remove(id);
 
-  /// Adds [AssetNode.placeholder]s for every package in [buildPackages].
-  Set<AssetId> _addPlaceHolderNodes(BuildPackages buildPackages) {
-    final placeholders = placeholderIdsFor(buildPackages);
-    for (final id in placeholders) {
-      _nodes.add(AssetNode.placeholder(id));
-    }
-    return placeholders;
-  }
+
 
   /// Adds [assetIds] as [AssetNode.source] to this graph, and returns the newly
   /// created nodes.
@@ -340,17 +338,12 @@ class AssetGraph implements GeneratedAssetHider {
   /// based on [buildPhases], and updates this graph to contain all the
   /// new outputs.
   ///
-  /// If [placeholders] is supplied they will be added to [newSources] to create
-  /// the full input set.
-  ///
   /// May remove nodes if sources overlap with generated outputs.
   void _addOutputsForSources(
     BuildPhases buildPhases,
-    Set<AssetId> newSources, {
-    Set<AssetId>? placeholders,
-  }) {
+    Set<AssetId> newSources,
+  ) {
     final allInputs = Set<AssetId>.from(newSources);
-    if (placeholders != null) allInputs.addAll(placeholders);
     for (
       var phaseNum = 0;
       phaseNum < buildPhases.inBuildPhases.length;
@@ -488,12 +481,12 @@ class AssetGraph implements GeneratedAssetHider {
         id.path.startsWith(cacheDirectoryPath)) {
       return false;
     }
-    if (!contains(id)) {
-      return false;
-    }
-    final assetNode = get(id)!;
-    if (assetNode.type == NodeType.generated &&
-        assetNode.generatedNodeConfiguration!.isHidden) {
+    final config =
+        buildPlan?.buildStepPlan.expectedOutputs[id] ??
+        (get(id)?.type == NodeType.generated
+            ? get(id)?.generatedNodeConfiguration
+            : null);
+    if (config != null && config.isHidden) {
       return true;
     }
     return false;

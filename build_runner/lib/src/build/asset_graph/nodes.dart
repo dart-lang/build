@@ -15,21 +15,6 @@ class Nodes {
   /// Sorted nodes by package, or `null` if they have not been computed.
   Map<String, List<AssetId>>? _sortedFileIdsByPackage;
 
-  /// Whether [_sortedFileIdsByPackage] has already been calculated during
-  /// this build.
-  ///
-  /// Sorted file IDs are calculated at most once per build as files are not
-  /// added or removed during the build. This bool is used to check and throw if
-  /// that does not hold.
-  ///
-  /// Note that "missing source" IDs are added during the build, but they don't
-  /// count as files. Post process build steps can delete their input but that
-  /// happens after the last possible use of `_sortedFileIdsByPackage` because
-  /// post process steps can't glob for files.
-  ///
-  /// After the build and before the next build files can be added or removed,
-  /// [clearComputationResults] will be called to reset.
-  bool _sortedFileIdsByPackageWasComputed = false;
 
   Nodes();
 
@@ -146,12 +131,6 @@ class Nodes {
   ///
   /// An asset ID is a file if [AssetNode.isFile].
   Map<String, List<AssetId>> _computeSortedFileIdsByPackage() {
-    if (_sortedFileIdsByPackageWasComputed) {
-      throw StateError(
-        'Sorted file IDs by package were already computed this build.',
-      );
-    }
-    _sortedFileIdsByPackageWasComputed = true;
     final result = <String, List<AssetId>>{};
     for (final value in _nodes.values) {
       if (value.isFile) {
@@ -164,11 +143,7 @@ class Nodes {
     return result;
   }
 
-  /// Call this after modifications to the graph and before the next build, to
-  /// reset computed values.
-  void clearComputationResults() {
-    _sortedFileIdsByPackageWasComputed = false;
-  }
+  void clearComputationResults() {}
 }
 
 /// Extension on `List<AssetId>` that assumes the list is sorted so it can do a

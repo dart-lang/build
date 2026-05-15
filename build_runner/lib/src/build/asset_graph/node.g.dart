@@ -8,7 +8,6 @@ part of 'node.dart';
 
 const NodeType _$generated = const NodeType._('generated');
 const NodeType _$postGenerated = const NodeType._('postGenerated');
-const NodeType _$placeholder = const NodeType._('placeholder');
 const NodeType _$source = const NodeType._('source');
 const NodeType _$missingSource = const NodeType._('missingSource');
 
@@ -18,8 +17,6 @@ NodeType _$nodeTypeValueOf(String name) {
       return _$generated;
     case 'postGenerated':
       return _$postGenerated;
-    case 'placeholder':
-      return _$placeholder;
     case 'source':
       return _$source;
     case 'missingSource':
@@ -32,7 +29,6 @@ NodeType _$nodeTypeValueOf(String name) {
 final BuiltSet<NodeType> _$nodeTypeValues = BuiltSet<NodeType>(const <NodeType>[
   _$generated,
   _$postGenerated,
-  _$placeholder,
   _$source,
   _$missingSource,
 ]);
