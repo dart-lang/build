@@ -8,7 +8,6 @@ import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 import 'package:crypto/crypto.dart';
 
-
 part 'node.g.dart';
 
 /// Types of [AssetNode].
@@ -32,7 +31,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
 
   AssetId get id;
   NodeType get type;
-
 
   /// The assets that any [Builder] in the build graph declares it may output
   /// when run on this asset.
@@ -83,12 +81,8 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     b.type = NodeType.missingSource;
   });
 
-
   /// A generated node.
-  factory AssetNode.generated(
-    AssetId id, {
-    Digest? digest,
-  }) => AssetNode((b) {
+  factory AssetNode.generated(AssetId id, {Digest? digest}) => AssetNode((b) {
     b.id = id;
     b.type = NodeType.generated;
     b.digest = digest;
@@ -104,6 +98,4 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
 
   bool get isGenerated =>
       type == NodeType.generated || type == NodeType.postGenerated;
-
 }
-

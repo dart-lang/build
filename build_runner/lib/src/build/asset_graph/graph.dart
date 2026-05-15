@@ -105,10 +105,7 @@ class AssetGraph implements GeneratedAssetHider {
   ) async {
     final graph = AssetGraph();
     graph._addSources(sources);
-    graph._addOutputsForSources(
-      buildPhases,
-      sources,
-    );
+    graph._addOutputsForSources(buildPhases, sources);
     return graph;
   }
 
@@ -137,6 +134,7 @@ class AssetGraph implements GeneratedAssetHider {
     }
     return null;
   }
+
   void updateBuildStepResult(BuildStepId buildStepId, BuildStepResult result) {
     _buildStepResults[buildStepId] = result;
   }
@@ -155,14 +153,22 @@ class AssetGraph implements GeneratedAssetHider {
       _nodes.packageFileIds(package, glob: glob);
   void removeForTest(AssetId id) => _nodes.remove(id);
 
-
-
   /// Adds [assetIds] as [AssetNode.source] to this graph, and returns the newly
   /// created nodes.
   void _addSources(Set<AssetId> assetIds) {
     for (final id in assetIds) {
       _nodes.add(AssetNode.source(id));
     }
+  }
+
+  Iterable<AssetId> primaryOutputsOf(AssetId id) {
+    final normalOutputs =
+        buildPlan?.buildStepPlan.primaryOutputsOf(id) ?? const [];
+    final postOutputs = _postProcessBuildStepResults.values
+        .expand((packageResults) => packageResults.entries)
+        .where((entry) => entry.key.input == id)
+        .expand((entry) => entry.value.outputs);
+    return [...normalOutputs, ...postOutputs];
   }
 
   /// Changes [id] and its transitive`primaryOutput`s to `missingSource` nodes.
@@ -231,7 +237,6 @@ class AssetGraph implements GeneratedAssetHider {
   /// All the generated outputs in the graph.
   Iterable<AssetId> get outputs =>
       allNodes.where((n) => n.isGenerated).map((n) => n.id);
-
 
   /// All the source files in the graph.
   Iterable<AssetId> get sources =>
@@ -341,10 +346,7 @@ class AssetGraph implements GeneratedAssetHider {
   /// new outputs.
   ///
   /// May remove nodes if sources overlap with generated outputs.
-  void _addOutputsForSources(
-    BuildPhases buildPhases,
-    Set<AssetId> newSources,
-  ) {
+  void _addOutputsForSources(BuildPhases buildPhases, Set<AssetId> newSources) {
     final allInputs = Set<AssetId>.from(newSources);
     final primaryInputByOutput = <AssetId, AssetId>{};
     for (
@@ -385,7 +387,9 @@ class AssetGraph implements GeneratedAssetHider {
     final phaseOutputs = <AssetId>{};
     final inputs =
         allInputs
-            .where((input) => _actionMatches(phase, input, primaryInputByOutput))
+            .where(
+              (input) => _actionMatches(phase, input, primaryInputByOutput),
+            )
             .toList();
     for (final input in inputs) {
       // We might have deleted some inputs during this loop, if they turned
@@ -417,8 +421,9 @@ class AssetGraph implements GeneratedAssetHider {
   ) {
     var actionNumber = 0;
     for (final action in phase.builderActions) {
-      final inputs =
-          allInputs.where((input) => _actionMatches(action, input, primaryInputByOutput));
+      final inputs = allInputs.where(
+        (input) => _actionMatches(action, input, primaryInputByOutput),
+      );
       for (final input in inputs) {
         updatePostProcessBuildStepResult(
           PostProcessBuildStepId(input: input, actionNumber: actionNumber),

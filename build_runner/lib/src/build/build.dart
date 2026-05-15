@@ -344,6 +344,7 @@ class Build {
               buildPackages: buildPlan.buildPackages,
             ),
           );
+          assetGraph.buildPlan = buildPlan;
         }
         for (final id in assetGraph.sources) {
           final node = assetGraph.get(id)!;
@@ -501,19 +502,21 @@ class Build {
       if (buildStepId.phaseNumber != phaseNumber) continue;
       if (buildStepId.primaryInput.package != package) continue;
 
-      // Check if any expected output for this build step is visible and should be built!
+      // Check if any expected output for this build step is visible and should
+      // be built!
       final expectedOutputs =
           buildPlan.buildStepPlan.primaryOutputsByStep[buildStepId] ??
           BuiltSet<AssetId>();
-      bool hasVisibleOutput = false;
+      var hasVisibleOutput = false;
       for (final outputId in expectedOutputs) {
         if (shouldBuildForDirs(
-          outputId,
-          buildDirs: buildPlan.buildOptions.buildDirs,
-          buildFilters: buildPlan.buildOptions.buildFilters,
-          phase: phase,
-          buildConfigs: buildConfigs,
-        ) && buildConfigs.isVisibleInBuild(outputId, packageNode)) {
+              outputId,
+              buildDirs: buildPlan.buildOptions.buildDirs,
+              buildFilters: buildPlan.buildOptions.buildFilters,
+              phase: phase,
+              buildConfigs: buildConfigs,
+            ) &&
+            buildConfigs.isVisibleInBuild(outputId, packageNode)) {
           hasVisibleOutput = true;
           break;
         }
@@ -1108,7 +1111,7 @@ class Build {
     required AssetId input,
     required int phaseNumber,
   }) async {
-    var inputNode = assetGraph.get(input);
+    final inputNode = assetGraph.get(input);
     if (inputNode == null) {
       final config = buildPlan.buildStepPlan.expectedOutputs[input];
       if (config != null) {
@@ -1128,7 +1131,8 @@ class Build {
     if (inputNode == null) return false;
 
     if (inputNode.type == NodeType.generated) {
-      if (buildPlan.buildStepPlan.expectedOutputs[input]!.phaseNumber >= phaseNumber) {
+      if (buildPlan.buildStepPlan.expectedOutputs[input]!.phaseNumber >=
+          phaseNumber) {
         // It's not readable in this phase.
         return false;
       }
@@ -1197,9 +1201,7 @@ class Build {
   Future<void> _cleanUpStaleOutputs(Iterable<AssetId> outputs) async {
     for (final output in outputs) {
       final node = assetGraph.get(output);
-      if (node != null &&
-          node.isGenerated &&
-          assetGraph.wasOutput(node.id)) {
+      if (node != null && node.isGenerated && assetGraph.wasOutput(node.id)) {
         await _delete(output);
       }
     }
@@ -1352,7 +1354,7 @@ class Build {
     for (final output in outputs) {
       final wasOutput = stepReaderWriter.assetsWritten.contains(output);
       final digest = wasOutput ? await readerWriter.digest(output) : null;
-      var outputNode = assetGraph.get(output);
+      final outputNode = assetGraph.get(output);
 
       // Shadow verification assertion!
       if (stepResult.outputDigests[output] != digest) {
@@ -1375,10 +1377,7 @@ class Build {
       }
 
       if (outputNode == null) {
-        final newNode = AssetNode.generated(
-          output,
-          digest: digest,
-        );
+        final newNode = AssetNode.generated(output, digest: digest);
         assetGraph.add(newNode);
       } else {
         assetGraph.updateNode(output, (nodeBuilder) {

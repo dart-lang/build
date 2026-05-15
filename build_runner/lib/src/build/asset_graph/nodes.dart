@@ -15,7 +15,6 @@ class Nodes {
   /// Sorted nodes by package, or `null` if they have not been computed.
   Map<String, List<AssetId>>? _sortedFileIdsByPackage;
 
-
   Nodes();
 
   Nodes clone() {

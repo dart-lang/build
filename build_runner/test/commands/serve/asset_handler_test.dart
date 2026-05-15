@@ -136,12 +136,7 @@ void main() {
   test('Fails request for failed outputs', () async {
     final primaryId = AssetId('a', 'web/main.dart');
     final outputId = AssetId('a', 'web/main.ddc.js');
-    assetGraph.add(
-      AssetNode.generated(
-        outputId,
-        digest: Digest([]),
-      ),
-    );
+    assetGraph.add(AssetNode.generated(outputId, digest: Digest([])));
     final buildStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
     final stepResult = BuildStepResult(
       (b) =>

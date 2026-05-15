@@ -157,9 +157,11 @@ void main() {
       // Write an output and add it to the asset graph as if it was built.
       await readerWriter.writeAsString(outputId, '// output');
       final config = buildPlan.buildStepPlan.expectedOutputs[outputId]!;
-      final stepResult = BuildStepResult((b) => b
-        ..result = true
-        ..outputDigests[outputId] = Digest([])
+      final stepResult = BuildStepResult(
+        (b) =>
+            b
+              ..result = true
+              ..outputDigests[outputId] = Digest([]),
       );
       assetGraph.updateBuildStepResult(config.buildStepId, stepResult);
       assetGraph.updateNode(outputId, (b) {
@@ -250,9 +252,11 @@ void main() {
       // Write an output and add it to the asset graph as if it was built.
       await readerWriter.writeAsString(outputId, '// output');
       final config = buildPlan.buildStepPlan.expectedOutputs[outputId]!;
-      final stepResult = BuildStepResult((b) => b
-        ..result = true
-        ..outputDigests[outputId] = Digest([])
+      final stepResult = BuildStepResult(
+        (b) =>
+            b
+              ..result = true
+              ..outputDigests[outputId] = Digest([]),
       );
       assetGraph.updateBuildStepResult(config.buildStepId, stepResult);
       assetGraph.updateNode(outputId, (b) {

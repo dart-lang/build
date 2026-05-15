@@ -18,9 +18,9 @@ import '../../build_plan/build_step_plan.dart';
 
 /// The in-memory filesystem that is the analyzer's view of the build.
 ///
-/// Pass a `Map<AssetId, ExpectedOutputConfiguration>` of expected outputs to [startBuild] at the
-/// start of a build. This tells the filesystem at what phase each generated
-/// file becomes visible.
+/// Pass a `Map<AssetId, ExpectedOutputConfiguration>` of expected outputs to
+/// [startBuild] at the start of a build. This tells the filesystem at what
+/// phase each generated file becomes visible.
 ///
 /// During the build, set [phase] to change the phase that the files are viewed
 /// at.
@@ -66,7 +66,7 @@ class AnalysisDriverFilesystem
   }
 
   /// Initializes a new filesystem that will have files added due to the
-  /// build described by [generatedNodes].
+  /// build described by `expectedOutputs`.
   ///
   /// If [invalidatedSources] is `null`, this is an initial build and all
   /// cached contents are cleared. Otherwise, only source files matching

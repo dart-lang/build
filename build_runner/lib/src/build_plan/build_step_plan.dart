@@ -48,6 +48,10 @@ class BuildStepPlan {
     required this.scheduledPostProcessSteps,
   });
 
+  Iterable<AssetId> primaryOutputsOf(AssetId id) => primaryOutputsByStep.entries
+      .where((entry) => entry.key.primaryInput == id)
+      .expand((entry) => entry.value);
+
   static BuildStepPlan create({
     required BuildPhases buildPhases,
     required Set<AssetId> sources,
@@ -110,13 +114,14 @@ class BuildStepPlan {
             .addAll(generatedOutputs);
 
         for (final output in generatedOutputs) {
-          // If this output was previously processed as a source file during this phase,
-          // remove any scheduled steps that used it as an input!
+          // If this output was previously processed as a source file during
+          // this phase, remove any scheduled steps that used it as an input!
           void removeInvalidStepsRecursive(AssetId invalidInput) {
-            final invalidSteps = scheduledBuildSteps
-                .build()
-                .where((step) => step.primaryInput == invalidInput)
-                .toList();
+            final invalidSteps =
+                scheduledBuildSteps
+                    .build()
+                    .where((step) => step.primaryInput == invalidInput)
+                    .toList();
             for (final invalidStep in invalidSteps) {
               scheduledBuildSteps.remove(invalidStep);
               final invalidOutputs =
@@ -130,6 +135,7 @@ class BuildStepPlan {
               }
             }
           }
+
           removeInvalidStepsRecursive(output);
 
           expectedOutputsBuilder[output] = ExpectedOutputConfiguration(

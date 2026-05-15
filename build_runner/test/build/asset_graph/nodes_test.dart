@@ -15,9 +15,7 @@ void main() {
       for (final node in [
         // Should match.
         AssetNode.source(AssetId('a', 'lib/a.dart')),
-        AssetNode.generated(
-          AssetId('a', 'lib/a.g.dart'),
-        ),
+        AssetNode.generated(AssetId('a', 'lib/a.g.dart')),
         // Should not match.
         AssetNode.source(AssetId('b', 'lib/a.dart')),
         AssetNode.missingSource(AssetId('a', r'lib/$lib$')),

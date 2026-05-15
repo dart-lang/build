@@ -57,9 +57,7 @@ void main() {
       });
 
       test('add, contains, get, allNodes', () {
-        final expectedNodes = [
-          for (var i = 0; i < 5; i++) testAddNode(i),
-        ];
+        final expectedNodes = [for (var i = 0; i < 5; i++) testAddNode(i)];
         expect(graph.allNodes, unorderedEquals(expectedNodes));
       });
 
@@ -195,11 +193,7 @@ void main() {
         expect(graph.outputs, unorderedEquals([primaryOutputId]));
         expect(
           graph.allNodes.map((n) => n.id),
-          unorderedEquals([
-            primaryInputId,
-            excludedInputId,
-            primaryOutputId,
-          ]),
+          unorderedEquals([primaryInputId, excludedInputId, primaryOutputId]),
         );
         expect(graph.postProcessBuildStepIds(package: 'foo'), {
           expectedBuildStepId,

@@ -110,19 +110,18 @@ void main() {
 
       for (final id in graph.outputs) {
         final config = buildPlan.buildStepPlan.expectedOutputs[id]!;
-        final stepResult = BuildStepResult((b) => b
-          ..result = true
-          ..outputDigests[id] = Digest([])
+        final stepResult = BuildStepResult(
+          (b) =>
+              b
+                ..result = true
+                ..outputDigests[id] = Digest([]),
         );
         graph.updateBuildStepResult(config.buildStepId, stepResult);
 
         graph.updateNode(id, (nodeBuilder) {
           nodeBuilder.digest = Digest([]);
         });
-        readerWriter.testing.writeString(
-          id,
-          sources[config.primaryInput]!,
-        );
+        readerWriter.testing.writeString(id, sources[config.primaryInput]!);
       }
       tmpDir = await Directory.systemTemp.createTemp('build_tests');
       anotherTmpDir = await Directory.systemTemp.createTemp('build_tests');

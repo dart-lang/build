@@ -1900,23 +1900,38 @@ targets:
           )!.assetGraph;
 
       expect(
-        finalGraph.buildStepResultFor(
-          BuildStepId(primaryInput: AssetId('a', 'web/a.source'), phaseNumber: 0),
-        )!.result,
+        finalGraph
+            .buildStepResultFor(
+              BuildStepId(
+                primaryInput: AssetId('a', 'web/a.source'),
+                phaseNumber: 0,
+              ),
+            )!
+            .result,
         isFalse,
       );
 
       expect(
-        finalGraph.buildStepResultFor(
-          BuildStepId(primaryInput: AssetId('a', 'web/a.g1'), phaseNumber: 1),
-        )!.result,
+        finalGraph
+            .buildStepResultFor(
+              BuildStepId(
+                primaryInput: AssetId('a', 'web/a.g1'),
+                phaseNumber: 1,
+              ),
+            )!
+            .result,
         isFalse,
       );
 
       expect(
-        finalGraph.buildStepResultFor(
-          BuildStepId(primaryInput: AssetId('a', 'web/a.g2'), phaseNumber: 2),
-        )!.result,
+        finalGraph
+            .buildStepResultFor(
+              BuildStepId(
+                primaryInput: AssetId('a', 'web/a.g2'),
+                phaseNumber: 2,
+              ),
+            )!
+            .result,
         isFalse,
       );
     });

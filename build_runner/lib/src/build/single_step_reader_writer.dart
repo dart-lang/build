@@ -321,7 +321,8 @@ class SingleStepReaderWriter implements PhasedReader {
       return Readability.notReadable;
     }
     if (node.type == NodeType.generated) {
-      final nodeConfiguration = _runningBuild!.buildPlan.buildStepPlan.expectedOutputs[node.id]!;
+      final nodeConfiguration =
+          _runningBuild!.buildPlan.buildStepPlan.expectedOutputs[node.id]!;
       if (nodeConfiguration.phaseNumber > _runningBuildStep!.phaseNumber) {
         return Readability.notReadable;
       } else if (nodeConfiguration.phaseNumber ==
@@ -336,7 +337,8 @@ class SingleStepReaderWriter implements PhasedReader {
 
       await _runningBuild.nodeBuilder(node.id);
       node = _runningBuild.assetGraph.get(node.id)!;
-      final config = _runningBuild.buildPlan.buildStepPlan.expectedOutputs[node.id]!;
+      final config =
+          _runningBuild.buildPlan.buildStepPlan.expectedOutputs[node.id]!;
       final buildStepId = BuildStepId(
         primaryInput: config.primaryInput,
         phaseNumber: config.phaseNumber,
@@ -414,7 +416,12 @@ class SingleStepReaderWriter implements PhasedReader {
     }
 
     if (node.type == NodeType.generated) {
-      final nodePhase = _runningBuild.buildPlan.buildStepPlan.expectedOutputs[node.id]!.phaseNumber;
+      final nodePhase =
+          _runningBuild
+              .buildPlan
+              .buildStepPlan
+              .expectedOutputs[node.id]!
+              .phaseNumber;
       if (nodePhase >= phase) {
         return PhasedValue.unavailable(before: '', expiresAfter: nodePhase);
       } else {
@@ -423,7 +430,8 @@ class SingleStepReaderWriter implements PhasedReader {
           await _runningBuild.nodeBuilder(id);
           node = _runningBuild.assetGraph.get(id)!;
         }
-        final config = _runningBuild.buildPlan.buildStepPlan.expectedOutputs[node.id]!;
+        final config =
+            _runningBuild.buildPlan.buildStepPlan.expectedOutputs[node.id]!;
         final buildStepId = BuildStepId(
           primaryInput: config.primaryInput,
           phaseNumber: config.phaseNumber,
@@ -432,7 +440,7 @@ class SingleStepReaderWriter implements PhasedReader {
             _runningBuild.assetGraph.buildStepResultFor(buildStepId)!;
         final isSuccessOutput =
             _runningBuild.assetGraph.wasOutput(node.id) &&
-                stepResult.result == true;
+            stepResult.result == true;
         return PhasedValue.generated(
           atPhase: nodePhase,
           before: '',
