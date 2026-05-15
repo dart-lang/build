@@ -1178,9 +1178,9 @@ targets:
 
     // Source nodes
     final aId = AssetId.parse('a|web/a.txt');
-    var aSourceNode = AssetNode.source(aId, digest: computeDigest(aId, 'a'));
+    final aSourceNode = AssetNode.source(aId, digest: computeDigest(aId, 'a'));
     final bId = AssetId.parse('a|lib/b.txt');
-    var bSourceNode = AssetNode.source(bId, digest: computeDigest(bId, 'b'));
+    final bSourceNode = AssetNode.source(bId, digest: computeDigest(bId, 'b'));
 
     // Regular generated asset nodes.
     final aCopyId = AssetId.parse('a|web/a.txt.copy');
@@ -1188,17 +1188,11 @@ targets:
       aCopyId,
       digest: computeDigest(aCopyId, 'a'),
     );
-    aSourceNode = aSourceNode.rebuild(
-      (b) => b..primaryOutputs.add(aCopyNode.id),
-    );
 
     final bCopyId = makeAssetId('a|lib/b.txt.copy'); //;
     final bCopyNode = AssetNode.generated(
       bCopyId,
       digest: computeDigest(bCopyId, 'b'),
-    );
-    bSourceNode = bSourceNode.rebuild(
-      (b) => b..primaryOutputs.add(bCopyNode.id),
     );
 
     // Post build generates asset nodes.
@@ -1214,15 +1208,9 @@ targets:
     final aPostCopyNode = AssetNode.postGenerated(
       makeAssetId('a|web/a.txt.post'),
     );
-    aSourceNode = aSourceNode.rebuild(
-      (b) => b..primaryOutputs.add(aPostCopyNode.id),
-    );
 
     final bPostCopyNode = AssetNode.postGenerated(
       makeAssetId('a|lib/b.txt.post'),
-    );
-    bSourceNode = bSourceNode.rebuild(
-      (b) => b..primaryOutputs.add(bPostCopyNode.id),
     );
 
     expectedGraph

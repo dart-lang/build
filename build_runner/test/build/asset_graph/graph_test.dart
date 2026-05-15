@@ -86,7 +86,7 @@ void main() {
 
       test('serialize/deserialize', () {
         for (var n = 0; n < 5; n++) {
-          var node = AssetNode.source(AssetId.parse('pkg|lib/a$n.dart'));
+          final node = AssetNode.source(AssetId.parse('pkg|lib/a$n.dart'));
 
           final phaseNum = n;
           final postProcessBuildStep = PostProcessBuildStepId(
@@ -103,7 +103,6 @@ void main() {
               generatedId,
               digest: g.isEven ? Digest([]) : null,
             );
-            node = node.rebuild((b) => b..primaryOutputs.add(generatedNode.id));
             if (g.isEven) {
               graph.updatePostProcessBuildStepResult(
                 postProcessBuildStep,
@@ -198,8 +197,6 @@ void main() {
         expect(graph.postProcessBuildStepIds(package: 'foo'), {
           expectedBuildStepId,
         });
-        final node = graph.get(primaryInputId)!;
-        expect(node.primaryOutputs, [primaryOutputId]);
 
         final primaryOutputNode = graph.get(primaryOutputId)!;
         expect(primaryOutputNode.type, NodeType.generated);

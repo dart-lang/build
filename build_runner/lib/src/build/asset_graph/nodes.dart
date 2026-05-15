@@ -73,16 +73,13 @@ class Nodes {
   /// Throws a [StateError] if it already exists in the graph.
   ///
   /// Returns the updated node: if it replaces an [AssetNode.missingSource] then
-  /// `outputs` and `primaryOutputs` are copied to it from that.
+  /// `outputs` is copied to it from that.
   AssetNode add(AssetNode node) {
     if (node.isFile) _sortedFileIdsByPackage = null;
     final existing = get(node.id);
     if (existing != null) {
       if (existing.type == NodeType.missingSource) {
         _nodes.remove(existing.id);
-        node = node.rebuild((b) {
-          b.primaryOutputs.addAll(existing.primaryOutputs);
-        });
       } else {
         throw StateError(
           'Tried to add node ${node.id} to the asset graph but it already '

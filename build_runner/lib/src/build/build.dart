@@ -786,7 +786,6 @@ class Build {
     required bool hideOutput,
   }) async {
     final input = postProcessBuildStepId.input;
-    final inputNode = assetGraph.get(input)!;
     final stepReaderWriter = SingleStepReaderWriter(
       runningBuild: RunningBuild(
         buildPlan: buildPlan,
@@ -868,12 +867,6 @@ class Build {
     });
 
     final assetsWritten = stepReaderWriter.assetsWritten.toSet();
-
-    // Reset the state for all the output nodes based on what was read and
-    // written.
-    assetGraph.updateNode(inputNode.id, (nodeBuilder) {
-      nodeBuilder.primaryOutputs.addAll(assetsWritten);
-    });
 
     final stepResult = PostProcessBuildStepResult(
       hidden: hideOutput,

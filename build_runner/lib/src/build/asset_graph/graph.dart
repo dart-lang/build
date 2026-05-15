@@ -51,11 +51,14 @@ class AssetGraph implements GeneratedAssetHider {
 
   final Map<GlobId, GlobResult> _globResults;
 
+  final Map<AssetId, AssetId> _shadowPrimaryInputByOutput;
+
   AssetGraph()
     : _nodes = Nodes(),
       _postProcessBuildStepResults = {},
       _buildStepResults = {},
-      _globResults = {};
+      _globResults = {},
+      _shadowPrimaryInputByOutput = {};
 
   AssetGraph._with({
     required Nodes nodes,
@@ -66,10 +69,12 @@ class AssetGraph implements GeneratedAssetHider {
     postProcessBuildStepResults,
     required Map<BuildStepId, BuildStepResult> buildStepResults,
     required Map<GlobId, GlobResult> globResults,
+    required Map<AssetId, AssetId> shadowPrimaryInputByOutput,
   }) : _nodes = nodes,
        _postProcessBuildStepResults = postProcessBuildStepResults,
        _buildStepResults = buildStepResults,
-       _globResults = globResults;
+       _globResults = globResults,
+       _shadowPrimaryInputByOutput = shadowPrimaryInputByOutput;
 
   /// Copies the graph prepared for the next build.
   AssetGraph copyForNextBuild() {
@@ -81,6 +86,7 @@ class AssetGraph implements GeneratedAssetHider {
       },
       buildStepResults: Map.of(_buildStepResults),
       globResults: Map.of(_globResults),
+      shadowPrimaryInputByOutput: Map.of(_shadowPrimaryInputByOutput),
     );
   }
 
@@ -163,7 +169,11 @@ class AssetGraph implements GeneratedAssetHider {
 
   Iterable<AssetId> primaryOutputsOf(AssetId id) {
     final normalOutputs =
-        buildPlan?.buildStepPlan.primaryOutputsOf(id) ?? const [];
+        buildPlan != null
+            ? buildPlan!.buildStepPlan.primaryOutputsOf(id)
+            : _shadowPrimaryInputByOutput.entries
+                .where((entry) => entry.value == id)
+                .map((entry) => entry.key);
     final postOutputs = _postProcessBuildStepResults.values
         .expand((packageResults) => packageResults.entries)
         .where((entry) => entry.key.input == id)
@@ -179,7 +189,7 @@ class AssetGraph implements GeneratedAssetHider {
     final node = get(id);
     if (node == null) return;
     removedIds.add(id);
-    for (final output in node.primaryOutputs.toList()) {
+    for (final output in primaryOutputsOf(id).toList()) {
       _setMissingRecursive(output, removedIds: removedIds);
     }
     updateNode(id, (nodeBuilder) {
@@ -198,7 +208,7 @@ class AssetGraph implements GeneratedAssetHider {
     final node = get(id);
     if (node == null) return;
     if (removedIds.add(id)) {
-      for (final output in node.primaryOutputs.toList()) {
+      for (final output in primaryOutputsOf(id).toList()) {
         _removeRecursive(output, removedIds: removedIds);
       }
       _nodes.remove(id);
@@ -399,10 +409,8 @@ class AssetGraph implements GeneratedAssetHider {
       phaseOutputs.addAll(outputs);
       for (final output in outputs) {
         primaryInputByOutput[output] = input;
+        _shadowPrimaryInputByOutput[output] = input;
       }
-      updateNode(input, (nodeBuilder) {
-        nodeBuilder.primaryOutputs.addAll(outputs);
-      });
       final deleted = _addGeneratedOutputs(outputs, phaseNum, buildPhases);
       allInputs.removeAll(deleted);
       // We may delete source nodes that were producing outputs previously.

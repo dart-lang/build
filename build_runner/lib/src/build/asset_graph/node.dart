@@ -32,10 +32,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   AssetId get id;
   NodeType get type;
 
-  /// The assets that any [Builder] in the build graph declares it may output
-  /// when run on this asset.
-  BuiltSet<AssetId> get primaryOutputs;
-
   /// The [Digest] for this node.
   ///
   /// For source files, this is computed when the file is read so it can be used
@@ -59,14 +55,9 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   factory AssetNode([void Function(AssetNodeBuilder) updates]) = _$AssetNode;
 
   /// A manually-written source file.
-  factory AssetNode.source(
-    AssetId id, {
-    Digest? digest,
-    Iterable<AssetId>? primaryOutputs,
-  }) => AssetNode((b) {
+  factory AssetNode.source(AssetId id, {Digest? digest}) => AssetNode((b) {
     b.id = id;
     b.type = NodeType.source;
-    b.primaryOutputs.replace(primaryOutputs ?? {});
     b.digest = digest;
   });
 
