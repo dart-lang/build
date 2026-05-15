@@ -141,7 +141,7 @@ class Build {
          ResolversImpl r => r,
          _ => null,
        } {
-    assetGraph.buildPlan = buildPlan;
+    assetGraph.buildStepPlan = buildPlan.buildStepPlan;
   }
 
   BuildOptions get buildOptions => buildPlan.buildOptions;
@@ -344,7 +344,7 @@ class Build {
               buildPackages: buildPlan.buildPackages,
             ),
           );
-          assetGraph.buildPlan = buildPlan;
+          assetGraph.buildStepPlan = buildPlan.buildStepPlan;
         }
         for (final id in assetGraph.sources) {
           final node = assetGraph.get(id)!;

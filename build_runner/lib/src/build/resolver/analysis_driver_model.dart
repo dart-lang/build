@@ -54,7 +54,7 @@ class AnalysisDriverModel {
   }) async {
     _lock = await _pool.request();
     filesystem.startBuild(
-      (assetGraph.buildPlan?.buildStepPlan.expectedOutputs ??
+      (assetGraph.buildStepPlan?.expectedOutputs ??
               BuiltMap<AssetId, ExpectedOutputConfiguration>())
           .toMap(),
       invalidatedSources: invalidatedSources,

@@ -127,7 +127,6 @@ class BuildStepPlan {
               final invalidOutputs =
                   primaryOutputsByStep[invalidStep]?.build() ??
                   BuiltSet<AssetId>();
-              primaryOutputsByStep.remove(invalidStep);
               for (final invalidOutput in invalidOutputs) {
                 phaseOutputs.remove(invalidOutput);
                 expectedOutputsBuilder.remove(invalidOutput);

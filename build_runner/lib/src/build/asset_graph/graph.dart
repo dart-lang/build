@@ -14,7 +14,7 @@ import 'package:watcher/watcher.dart';
 
 import '../../build_plan/build_packages.dart';
 import '../../build_plan/build_phases.dart';
-import '../../build_plan/build_plan.dart';
+import '../../build_plan/build_step_plan.dart';
 import '../../build_plan/phase.dart';
 import '../../constants.dart';
 import '../../io/generated_asset_hider.dart';
@@ -33,7 +33,7 @@ part 'serialization.dart';
 
 /// All the [AssetId]s involved in a build, and all of their outputs.
 class AssetGraph implements GeneratedAssetHider {
-  BuildPlan? buildPlan;
+  BuildStepPlan? buildStepPlan;
 
   /// All the [AssetNode]s in the graph.
   final Nodes _nodes;
@@ -51,14 +51,11 @@ class AssetGraph implements GeneratedAssetHider {
 
   final Map<GlobId, GlobResult> _globResults;
 
-  final Map<AssetId, AssetId> _shadowPrimaryInputByOutput;
-
   AssetGraph()
     : _nodes = Nodes(),
       _postProcessBuildStepResults = {},
       _buildStepResults = {},
-      _globResults = {},
-      _shadowPrimaryInputByOutput = {};
+      _globResults = {};
 
   AssetGraph._with({
     required Nodes nodes,
@@ -69,12 +66,10 @@ class AssetGraph implements GeneratedAssetHider {
     postProcessBuildStepResults,
     required Map<BuildStepId, BuildStepResult> buildStepResults,
     required Map<GlobId, GlobResult> globResults,
-    required Map<AssetId, AssetId> shadowPrimaryInputByOutput,
   }) : _nodes = nodes,
        _postProcessBuildStepResults = postProcessBuildStepResults,
        _buildStepResults = buildStepResults,
-       _globResults = globResults,
-       _shadowPrimaryInputByOutput = shadowPrimaryInputByOutput;
+       _globResults = globResults;
 
   /// Copies the graph prepared for the next build.
   AssetGraph copyForNextBuild() {
@@ -86,7 +81,6 @@ class AssetGraph implements GeneratedAssetHider {
       },
       buildStepResults: Map.of(_buildStepResults),
       globResults: Map.of(_globResults),
-      shadowPrimaryInputByOutput: Map.of(_shadowPrimaryInputByOutput),
     );
   }
 
@@ -111,6 +105,11 @@ class AssetGraph implements GeneratedAssetHider {
   ) async {
     final graph = AssetGraph();
     graph._addSources(sources);
+    graph.buildStepPlan = BuildStepPlan.create(
+      buildPhases: buildPhases,
+      sources: sources,
+      buildPackages: buildPackages,
+    );
     graph._addOutputsForSources(buildPhases, sources);
     return graph;
   }
@@ -168,12 +167,7 @@ class AssetGraph implements GeneratedAssetHider {
   }
 
   Iterable<AssetId> primaryOutputsOf(AssetId id) {
-    final normalOutputs =
-        buildPlan != null
-            ? buildPlan!.buildStepPlan.primaryOutputsOf(id)
-            : _shadowPrimaryInputByOutput.entries
-                .where((entry) => entry.value == id)
-                .map((entry) => entry.key);
+    final normalOutputs = buildStepPlan?.primaryOutputsOf(id) ?? const [];
     final postOutputs = _postProcessBuildStepResults.values
         .expand((packageResults) => packageResults.entries)
         .where((entry) => entry.key.input == id)
@@ -409,7 +403,6 @@ class AssetGraph implements GeneratedAssetHider {
       phaseOutputs.addAll(outputs);
       for (final output in outputs) {
         primaryInputByOutput[output] = input;
-        _shadowPrimaryInputByOutput[output] = input;
       }
       final deleted = _addGeneratedOutputs(outputs, phaseNum, buildPhases);
       allInputs.removeAll(deleted);
@@ -494,7 +487,7 @@ class AssetGraph implements GeneratedAssetHider {
         id.path.startsWith(cacheDirectoryPath)) {
       return false;
     }
-    final config = buildPlan?.buildStepPlan.expectedOutputs[id];
+    final config = buildStepPlan?.expectedOutputs[id];
     if (config != null) {
       return config.isHidden;
     }
