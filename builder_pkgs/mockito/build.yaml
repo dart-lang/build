@@ -17,6 +17,7 @@ targets:
             '^example/example.dart' : 'example/example.mocks.dart'
             '^example/iss/{{}}.dart' : 'example/iss/{{}}.mocks.dart'
             '^test/end2end/{{}}.dart' : 'test/end2end/{{}}.mocks.dart'
+            '^test/end2end/web/{{}}.dart' : 'test/end2end/web/{{}}.mocks.dart'
 
 builders:
   mockBuilder:

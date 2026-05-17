@@ -1779,6 +1779,13 @@ class _MockClassInfo {
           _dummyValue(valueType, invocation),
         ]);
       }
+    } else if (type.element is ExtensionTypeElement &&
+        (type.element as ExtensionTypeElement).isJSInteropType) {
+      // Type erasures for any JS interop types are platform-specific, so we
+      // need to fall back to runtime values. For example, if `JSString` is
+      // used, that's `String` when compiling to JS and an internal wrapper type
+      // when compiling to Wasm.
+      return _dummyValueFallbackToRuntime(type, invocation);
     }
 
     // This class is unknown; we must likely generate a fake class, and return
@@ -2780,5 +2787,21 @@ extension NamedTypeExtension on ast.NamedType {
       return '${importPrefix.name.lexeme}.${name.lexeme}';
     }
     return name.lexeme;
+  }
+}
+
+extension on ExtensionTypeElement {
+  bool get isSdkJSInteropType {
+    final uri = library.uri.toString();
+    return uri == 'dart:js_interop' || uri == 'dart:js_interop_unsafe';
+  }
+
+  bool get isJSInteropType {
+    Element? element = this;
+    while (element is ExtensionTypeElement) {
+      if (element.isSdkJSInteropType) return true;
+      element = element.representation.type.element;
+    }
+    return false;
   }
 }
