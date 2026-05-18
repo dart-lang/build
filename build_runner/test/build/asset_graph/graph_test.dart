@@ -89,7 +89,7 @@ void main() {
 
       test('serialize/deserialize', () {
         for (var n = 0; n < 5; n++) {
-          var node = AssetNode.source(AssetId.parse('pkg|lib/a$n.dart'));
+          final node = AssetNode.source(AssetId.parse('pkg|lib/a$n.dart'));
 
           final phaseNum = n;
           final postProcessBuildStep = PostProcessBuildStepId(
@@ -102,11 +102,7 @@ void main() {
           );
           for (var g = 0; g < 5 - n; g++) {
             final generatedId = makeAssetId();
-            final generatedNode = AssetNode.generated(
-              generatedId,
-              digest: g.isEven ? Digest([]) : null,
-            );
-            node = node.rebuild((b) => b..primaryOutputs.add(generatedNode.id));
+            graph.declareOutputs(node.id, [generatedId]);
             if (g.isEven) {
               graph.updatePostProcessBuildStepResult(
                 postProcessBuildStep,
@@ -123,14 +119,17 @@ void main() {
               primaryInput: node.id,
               phaseNumber: phaseNum,
             );
-            final stepResult = BuildStepResult(
-              (b) =>
-                  b
-                    ..result = phaseNum.isOdd
-                    ..inputs.addAll([node.id, syntheticNode.id]),
-            );
+            final stepResult = BuildStepResult((b) {
+              b.result = phaseNum.isOdd;
+              b.isHidden = false;
+              b.inputs.addAll([node.id, syntheticNode.id]);
+            });
             graph.updateBuildStepResult(buildStepId, stepResult);
-            graph.addGeneratedForTest(generatedNode, buildStepId);
+            graph.addGeneratedForTest(
+              generatedId,
+              buildStepId,
+              digest: g.isEven ? Digest([]) : null,
+            );
             graph.add(syntheticNode);
           }
           graph.add(node);
@@ -140,8 +139,8 @@ void main() {
         final decoded = AssetGraph.deserialize(encoded)!;
         expect(decoded, equalsAssetGraph(graph));
         expect(
-          decoded.allPostProcessBuildStepResults,
-          graph.allPostProcessBuildStepResults,
+          decoded.postProcessBuildStepResults,
+          graph.postProcessBuildStepResults,
         );
       });
     });
@@ -192,18 +191,12 @@ void main() {
         expect(graph.outputs, unorderedEquals([primaryOutputId]));
         expect(
           graph.allNodes.map((n) => n.id),
-          unorderedEquals([
-            primaryInputId,
-            excludedInputId,
-            primaryOutputId,
-            ...placeholders,
-          ]),
+          unorderedEquals([primaryInputId, excludedInputId, ...placeholders]),
         );
         expect(graph.postProcessBuildStepIds(package: 'foo'), {
           expectedBuildStepId,
         });
-        final node = graph.get(primaryInputId)!;
-        expect(node.primaryOutputs, [primaryOutputId]);
+        expect(graph.primaryOutputsOf(primaryInputId), [primaryOutputId]);
 
         final buildStepId = BuildStepId(
           primaryInput: primaryInputId,
@@ -211,7 +204,7 @@ void main() {
         );
         expect(graph.buildStepResultFor(buildStepId)!.result, isNull);
         expect(
-          graph.generatedBy[primaryOutputId]!.primaryInput,
+          graph.buildStepsByDeclaredOutput[primaryOutputId]!.primaryInput,
           primaryInputId,
         );
 
@@ -242,12 +235,11 @@ void main() {
             primaryInput: primaryInputId,
             phaseNumber: 0,
           );
-          final stepResult = BuildStepResult(
-            (b) =>
-                b
-                  ..result = true
-                  ..inputs.add(primaryInputId),
-          );
+          final stepResult = BuildStepResult((b) {
+            b.result = true;
+            b.isHidden = false;
+            b.inputs.add(primaryInputId);
+          });
           graph.updateBuildStepResult(buildStepId, stepResult);
           await graph.updateAndInvalidate(buildPhases, changes);
           expect(graph.contains(primaryInputId), isTrue);
@@ -265,7 +257,7 @@ void main() {
           expect(graph.contains(syntheticId), isTrue);
           expect(graph.get(syntheticId)?.type, NodeType.source);
           expect(graph.contains(syntheticOutputId), isTrue);
-          expect(graph.get(syntheticOutputId)!.type, NodeType.generated);
+          expect(graph.isDeclaredOutput(syntheticOutputId), isTrue);
 
           final newAnchor = PostProcessBuildStepId(
             input: syntheticId,
@@ -288,7 +280,7 @@ void main() {
             await graph.updateAndInvalidate(buildPhases, changes);
 
             expect(graph.contains(syntheticOutputId), isTrue);
-            expect(graph.get(syntheticOutputId)!.type, NodeType.generated);
+            expect(graph.isDeclaredOutput(syntheticOutputId), isTrue);
             expect(graph.contains(syntheticOutputId), isTrue);
           },
         );
@@ -303,12 +295,11 @@ void main() {
               primaryInput: primaryInputId,
               phaseNumber: 0,
             );
-            final stepResult = BuildStepResult(
-              (b) =>
-                  b
-                    ..result = true
-                    ..inputs.add(secondaryNode.id),
-            );
+            final stepResult = BuildStepResult((b) {
+              b.result = true;
+              b.isHidden = false;
+              b.inputs.add(secondaryNode.id);
+            });
             graph.updateBuildStepResult(buildStepId, stepResult);
 
             graph.add(secondaryNode);
@@ -477,6 +468,7 @@ void main() {
           );
           final stepResult = BuildStepResult((b) {
             b.result = true;
+            b.isHidden = false;
             b.inputs.addAll([generatedPart, toBeGeneratedDart]);
           });
           graph.updateBuildStepResult(buildStepId, stepResult);

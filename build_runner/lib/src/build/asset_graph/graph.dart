@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/serializer.dart';
+import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 import 'package:watcher/watcher.dart';
@@ -36,13 +37,16 @@ class AssetGraph implements GeneratedAssetHider {
   final Nodes _nodes;
 
   /// All standard build step execution results, indexed by [BuildStepId].
-  final Map<BuildStepId, BuildStepResult> _buildStepResults;
+  final Map<BuildStepId, BuildStepResult> buildStepResults;
 
-  /// Declared generated outputs and their build steps.
-  final Map<AssetId, BuildStepId> _generatedBy;
+  /// Declared outputs by primary input.
+  final Map<AssetId, Set<AssetId>> declaredOutputsByPrimaryInput;
+
+  /// Build steps by primary output declared.
+  final Map<AssetId, BuildStepId> buildStepsByDeclaredOutput;
 
   /// Globs evaluated during the build.
-  final Map<GlobId, GlobResult> _globResults;
+  final Map<GlobId, GlobResult> globResults;
 
   /// All post process build steps results, indexed by package then
   /// [PostProcessBuildStepId].
@@ -50,42 +54,40 @@ class AssetGraph implements GeneratedAssetHider {
   /// Created with empty outputs at the start of the build if it's a new build
   /// step; or deserialized with previous build results if it has run before.
   final Map<String, Map<PostProcessBuildStepId, PostProcessBuildStepResult>>
-  _postProcessBuildStepResults;
+  postProcessBuildStepResults;
 
   AssetGraph()
     : _nodes = Nodes(),
-      _postProcessBuildStepResults = {},
-      _buildStepResults = {},
-      _globResults = {},
-      _generatedBy = {};
+      postProcessBuildStepResults = {},
+      buildStepResults = {},
+      declaredOutputsByPrimaryInput = {},
+      globResults = {},
+      buildStepsByDeclaredOutput = {};
 
   AssetGraph._with({
     required Nodes nodes,
-    required Map<
-      String,
-      Map<PostProcessBuildStepId, PostProcessBuildStepResult>
-    >
-    postProcessBuildStepResults,
-    required Map<BuildStepId, BuildStepResult> buildStepResults,
-    required Map<GlobId, GlobResult> globResults,
-    required Map<AssetId, BuildStepId> generatedBy,
-  }) : _nodes = nodes,
-       _postProcessBuildStepResults = postProcessBuildStepResults,
-       _buildStepResults = buildStepResults,
-       _globResults = globResults,
-       _generatedBy = generatedBy;
+    required this.postProcessBuildStepResults,
+    required this.buildStepResults,
+    required this.globResults,
+    required this.buildStepsByDeclaredOutput,
+    required this.declaredOutputsByPrimaryInput,
+  }) : _nodes = nodes;
 
   /// Copies the graph prepared for the next build.
   AssetGraph copyForNextBuild() {
     return AssetGraph._with(
       nodes: _nodes.clone(),
       postProcessBuildStepResults: {
-        for (final entry in _postProcessBuildStepResults.entries)
+        for (final entry in postProcessBuildStepResults.entries)
           entry.key: Map.of(entry.value),
       },
-      buildStepResults: Map.of(_buildStepResults),
-      globResults: Map.of(_globResults),
-      generatedBy: Map.of(_generatedBy),
+      buildStepResults: Map.of(buildStepResults),
+      globResults: Map.of(globResults),
+      buildStepsByDeclaredOutput: Map.of(buildStepsByDeclaredOutput),
+      declaredOutputsByPrimaryInput: {
+        for (final entry in declaredOutputsByPrimaryInput.entries)
+          entry.key: Set.of(entry.value),
+      },
     );
   }
 
@@ -122,34 +124,52 @@ class AssetGraph implements GeneratedAssetHider {
   @visibleForTesting
   String serialize() => json.encode(serializeAssetGraph(this));
 
-  Map<String, Map<PostProcessBuildStepId, PostProcessBuildStepResult>>
-  get allPostProcessBuildStepResults => _postProcessBuildStepResults;
-
-  // Forwards to [Nodes], see docs on that class.
-  bool contains(AssetId id) => _nodes.contains(id);
+  bool contains(AssetId id) =>
+      _nodes.contains(id) || buildStepsByDeclaredOutput.containsKey(id);
   AssetNode? get(AssetId id) => _nodes.get(id);
   AssetNode updateNode(AssetId id, void Function(AssetNodeBuilder) updates) =>
       _nodes.updateNode(id, updates);
+
+  /// Whether [id) is a source file.
+  bool isSource(AssetId id) => _nodes.get(id)?.type == NodeType.source;
+
+  /// Whether [id] is a source file that was accessed but did not exist.
+  bool isMissingSource(AssetId id) =>
+      _nodes.get(id)?.type == NodeType.missingSource;
+
+  /// Whether [id] is a declared build output.
+  bool isDeclaredOutput(AssetId id) =>
+      buildStepsByDeclaredOutput.containsKey(id);
+
+  /// Whether [id] is a declared build output that was actually generated.
+  bool isActualOutput(AssetId id) {
+    final buildStepId = buildStepsByDeclaredOutput[id];
+    if (buildStepId == null) return false;
+    return buildStepResultFor(buildStepId)!.outputs.containsKey(id);
+  }
+
+  /// Whether [id] is a post process build output that was actually generated.
+  bool isActualPostOutput(AssetId id) =>
+      _nodes.get(id)?.type == NodeType.postGenerated;
+
+  bool isFile(AssetId id) =>
+      buildStepsByDeclaredOutput.containsKey(id) ||
+      _nodes.get(id)?.isFile == true;
+
   BuildStepResult? buildStepResultFor(BuildStepId buildStepId) =>
-      _buildStepResults[buildStepId];
+      buildStepResults[buildStepId];
   void updateBuildStepResult(BuildStepId buildStepId, BuildStepResult result) {
-    _buildStepResults[buildStepId] = result;
+    buildStepResults[buildStepId] = result;
   }
 
-  Map<BuildStepId, BuildStepResult> get buildStepResults => _buildStepResults;
-
-  Map<AssetId, BuildStepId> get generatedBy => _generatedBy;
-
-  GlobResult? globResultFor(GlobId globId) => _globResults[globId];
+  GlobResult? globResultFor(GlobId globId) => globResults[globId];
   void updateGlobResult(GlobId globId, GlobResult result) {
-    _globResults[globId] = result;
+    globResults[globId] = result;
   }
-
-  Map<GlobId, GlobResult> get globResults => _globResults;
 
   Iterable<AssetNode> get allNodes => _nodes.allNodes;
-  Iterable<AssetId> packageFileIds(String package, {Glob? glob}) =>
-      _nodes.packageFileIds(package, glob: glob);
+  Iterable<AssetId> packageFileIds(String package, {Glob? glob}) => _nodes
+      .packageFileIds(package, buildStepsByDeclaredOutput.keys, glob: glob);
   void removeForTest(AssetId id) => _nodes.remove(id);
 
   /// Adds [AssetNode.placeholder]s for every package in [buildPackages].
@@ -169,23 +189,37 @@ class AssetGraph implements GeneratedAssetHider {
     }
   }
 
+  Iterable<AssetId> primaryOutputsOf(AssetId id) =>
+      declaredOutputsByPrimaryInput[id] ?? const [];
+
+  // For use by tests and `_addInBuildPhaseOutputs`.
+  @visibleForTesting
+  void declareOutputs(AssetId id, Iterable<AssetId> outputs) {
+    declaredOutputsByPrimaryInput.putIfAbsent(id, () => {}).addAll(outputs);
+  }
+
   /// Changes [id] and its transitive`primaryOutput`s to `missingSource` nodes.
   ///
   /// Removes post build applications with removed assets as inputs.
   void _setMissingRecursive(AssetId id, {Set<AssetId>? removedIds}) {
     removedIds ??= <AssetId>{};
-    final node = get(id);
-    if (node == null) return;
+    if (!contains(id)) return;
     removedIds.add(id);
-    for (final output in node.primaryOutputs.toList()) {
+    for (final output in primaryOutputsOf(id).toList()) {
       _setMissingRecursive(output, removedIds: removedIds);
     }
-    updateNode(id, (nodeBuilder) {
-      nodeBuilder.replace(AssetNode.missingSource(id));
-    });
+    buildStepsByDeclaredOutput.remove(id);
+    declaredOutputsByPrimaryInput.remove(id);
+    if (_nodes.contains(id)) {
+      updateNode(id, (nodeBuilder) {
+        nodeBuilder.replace(AssetNode.missingSource(id));
+      });
+    } else {
+      _nodes.add(AssetNode.missingSource(id));
+    }
 
     // Remove post build action applications with removed assets as inputs.
-    for (final packageResults in _postProcessBuildStepResults.values) {
+    for (final packageResults in postProcessBuildStepResults.values) {
       packageResults.removeWhere((id, _) => removedIds!.contains(id.input));
     }
   }
@@ -193,23 +227,23 @@ class AssetGraph implements GeneratedAssetHider {
   /// Removes [id] and its transitive`primaryOutput`s from the graph.
   void _removeRecursive(AssetId id, {Set<AssetId>? removedIds}) {
     removedIds ??= <AssetId>{};
-    final node = get(id);
-    if (node == null) return;
+    if (!contains(id)) return;
     if (removedIds.add(id)) {
-      for (final output in node.primaryOutputs.toList()) {
+      for (final output in primaryOutputsOf(id).toList()) {
         _removeRecursive(output, removedIds: removedIds);
       }
       _nodes.remove(id);
-      _generatedBy.remove(id);
+      buildStepsByDeclaredOutput.remove(id);
+      declaredOutputsByPrimaryInput.remove(id);
     }
   }
 
   /// All the post process build steps for `package`.
   Iterable<PostProcessBuildStepId> postProcessBuildStepIds({
     required String package,
-  }) => _postProcessBuildStepResults[package]?.keys ?? const [];
+  }) => postProcessBuildStepResults[package]?.keys ?? const [];
 
-  Iterable<AssetId> get allPostProcessOutputIds => _postProcessBuildStepResults
+  Iterable<AssetId> get allPostProcessOutputIds => postProcessBuildStepResults
       .values
       .expand((entries) => entries.values.expand((v) => v.outputs));
 
@@ -218,7 +252,7 @@ class AssetGraph implements GeneratedAssetHider {
     PostProcessBuildStepId buildStepId,
     PostProcessBuildStepResult result,
   ) {
-    _postProcessBuildStepResults.putIfAbsent(
+    postProcessBuildStepResults.putIfAbsent(
           buildStepId.input.package,
           () => {},
         )[buildStepId] =
@@ -231,26 +265,26 @@ class AssetGraph implements GeneratedAssetHider {
   /// then used to clean up prior outputs in the next build.
   PostProcessBuildStepResult? postProcessBuildStepResultFor(
     PostProcessBuildStepId action,
-  ) => _postProcessBuildStepResults[action.input.package]?[action];
+  ) => postProcessBuildStepResults[action.input.package]?[action];
 
   /// All declared outputs in the graph.
-  Iterable<AssetId> get outputs =>
-      allNodes.where((n) => n.isGenerated).map((n) => n.id);
+  Iterable<AssetId> get outputs => [
+    ...buildStepsByDeclaredOutput.keys,
+    for (final node in allNodes)
+      if (node.type == NodeType.postGenerated) node.id,
+  ];
 
   /// All declared outputs and the phases in which they are output.
   Map<AssetId, int> get outputPhases => {
-    for (final entry in generatedBy.entries) entry.key: entry.value.phaseNumber,
+    for (final entry in buildStepsByDeclaredOutput.entries)
+      entry.key: entry.value.phaseNumber,
   };
 
   /// All the generated outputs for a particular phase.
-  Iterable<AssetNode> outputsForPhase(String package, int phase) =>
-      packageFileIds(package)
-          .map((id) => get(id)!)
-          .where(
-            (n) =>
-                n.type == NodeType.generated &&
-                _generatedBy[n.id]?.phaseNumber == phase,
-          );
+  Iterable<AssetId> outputsForPhase(String package, int phase) =>
+      packageFileIds(
+        package,
+      ).where((id) => buildStepsByDeclaredOutput[id]?.phaseNumber == phase);
 
   /// All the source files in the graph.
   Iterable<AssetId> get sources =>
@@ -299,7 +333,7 @@ class AssetGraph implements GeneratedAssetHider {
     final transitiveRemovedIds = <AssetId>{};
     void addTransitivePrimaryOutputs(AssetId id) {
       if (transitiveRemovedIds.add(id)) {
-        get(id)!.primaryOutputs.forEach(addTransitivePrimaryOutputs);
+        primaryOutputsOf(id).forEach(addTransitivePrimaryOutputs);
       }
     }
 
@@ -344,11 +378,11 @@ class AssetGraph implements GeneratedAssetHider {
       throw StateError('Unrecognized action type $action');
     }
 
-    var inputNode = get(input)!;
-    while (inputNode.type == NodeType.generated) {
-      inputNode = get(_generatedBy[inputNode.id]!.primaryInput)!;
+    var currentInput = input;
+    while (buildStepsByDeclaredOutput.containsKey(currentInput)) {
+      currentInput = buildStepsByDeclaredOutput[currentInput]!.primaryInput;
     }
-    return action.targetSources.matches(inputNode.id);
+    return action.targetSources.matches(currentInput);
   }
 
   /// Returns a set containing [newSources] plus any new generated sources
@@ -383,7 +417,7 @@ class AssetGraph implements GeneratedAssetHider {
     _addPostBuildActionApplications(buildPhases.postBuildPhase, allInputs);
   }
 
-  /// Adds all [AssetNode.generated]s for [phase] given [allInputs].
+  /// Adds all generated asset outputs for [phase] given [allInputs].
   ///
   /// May remove some items from [allInputs], if they are deemed to actually be
   /// outputs of this phase and not original sources.
@@ -404,9 +438,7 @@ class AssetGraph implements GeneratedAssetHider {
       if (!allInputs.contains(input)) continue;
       final outputs = expectedOutputs(phase.builder, input);
       phaseOutputs.addAll(outputs);
-      updateNode(input, (nodeBuilder) {
-        nodeBuilder.primaryOutputs.addAll(outputs);
-      });
+      declareOutputs(input, outputs);
       final deleted = _addGeneratedOutputs(
         outputs,
         phaseNum,
@@ -441,11 +473,11 @@ class AssetGraph implements GeneratedAssetHider {
     }
   }
 
-  /// Adds [outputs] as [AssetNode.generated]s to the graph.
+  /// Adds [outputs] to the graph.
   ///
-  /// If there are existing [AssetNode.source]s or [AssetNode.missingSource]s
-  /// that overlap the [AssetNode.generated]s, then they will be replaced with
-  /// [AssetNode.generated]s, and their transitive `primaryOutputs` will be
+  /// If there are existing source or missing source nodes
+  /// that overlap the outputs, then they will be replaced,
+  /// and their transitive `primaryOutputs` will be
   /// removed from the graph.
   ///
   /// The return value is the set of assets that were removed from the graph.
@@ -458,16 +490,14 @@ class AssetGraph implements GeneratedAssetHider {
   }) {
     final removed = <AssetId>{};
     for (final output in outputs) {
-      AssetNode? existing;
       // When any outputs aren't hidden we can pick up old generated outputs as
       // regular `AssetNode`s, we need to delete them and all their primary
       // outputs, and replace them with a `GeneratedAssetNode`.
       if (contains(output)) {
-        existing = get(output)!;
-        if (existing.type == NodeType.generated) {
-          final existingPhase = _generatedBy[existing.id]!.phaseNumber;
+        if (buildStepsByDeclaredOutput.containsKey(output)) {
+          final existingPhase = buildStepsByDeclaredOutput[output]!.phaseNumber;
           throw DuplicateAssetNodeException(
-            existing.id,
+            output,
             buildPhases.inBuildPhases[existingPhase].displayName,
             buildPhases.inBuildPhases[phaseNumber].displayName,
           );
@@ -475,18 +505,16 @@ class AssetGraph implements GeneratedAssetHider {
         _removeRecursive(output, removedIds: removed);
       }
 
-      final newNode = AssetNode.generated(output);
-      _nodes.add(newNode);
       final buildStepId = BuildStepId(
         primaryInput: primaryInput,
         phaseNumber: phaseNumber,
       );
-      _generatedBy[output] = buildStepId;
-      final buildStepResult =
-          _buildStepResults[buildStepId] ?? BuildStepResult();
-      _buildStepResults[buildStepId] = buildStepResult.rebuild(
-        (b) => b..isHidden = isHidden,
-      );
+      buildStepsByDeclaredOutput[output] = buildStepId;
+      final buildStepResultBuilder =
+          buildStepResults[buildStepId]?.toBuilder() ??
+          BuildStepResultBuilder();
+      buildStepResultBuilder.isHidden = isHidden;
+      buildStepResults[buildStepId] = buildStepResultBuilder.build();
     }
     return removed;
   }
@@ -499,16 +527,44 @@ class AssetGraph implements GeneratedAssetHider {
 
   @visibleForTesting
   void addGeneratedForTest(
-    AssetNode node,
+    AssetId id,
     BuildStepId buildStepId, {
     bool isHidden = true,
+    Digest? digest,
   }) {
-    _nodes.add(node);
-    _generatedBy[node.id] = buildStepId;
-    final buildStepResult = _buildStepResults[buildStepId] ?? BuildStepResult();
-    _buildStepResults[buildStepId] = buildStepResult.rebuild(
-      (b) => b..isHidden = isHidden,
-    );
+    buildStepsByDeclaredOutput[id] = buildStepId;
+    final existingResult = buildStepResults[buildStepId];
+    if (existingResult == null) {
+      buildStepResults[buildStepId] = BuildStepResult((b) {
+        b.isHidden = isHidden;
+        if (digest != null) {
+          b.outputs[id] = digest;
+        }
+      });
+    } else {
+      if (digest != null) {
+        buildStepResults[buildStepId] = existingResult.rebuild(
+          (b) => b..outputs[id] = digest,
+        );
+      }
+    }
+  }
+
+  Digest? digestFor(AssetId id) {
+    if (buildStepsByDeclaredOutput.containsKey(id)) {
+      return buildStepResultFor(buildStepsByDeclaredOutput[id]!)!.outputs[id];
+    }
+    final node = get(id);
+    if (node == null) return null;
+    return node.digest;
+  }
+
+  /// Updates a source file digest.
+  ///
+  /// Does nothing for generated files, their digest is set when the build step
+  /// result is written.
+  void updateSourceDigest(AssetId id, Digest? digest) {
+    _nodes.updateNodeIfPresent(id, (b) => b.digest = digest);
   }
 
   /// Adds a source that a builder tried to access but was missing.
@@ -531,7 +587,7 @@ class AssetGraph implements GeneratedAssetHider {
     if (!contains(id)) {
       return false;
     }
-    final buildStepId = _generatedBy[id];
+    final buildStepId = buildStepsByDeclaredOutput[id];
     if (buildStepId != null) {
       return buildStepResultFor(buildStepId)!.isHidden;
     }
@@ -560,19 +616,18 @@ class AssetGraph implements GeneratedAssetHider {
     final result = <AssetId>[];
     // Delete all the non-hidden outputs.
     for (final id in outputs) {
-      final node = get(id)!;
-      if (node.type == NodeType.postGenerated) {
+      if (isActualPostOutput(id)) {
         // Handled via post process build step results below so we know if the
         // output is hidden.
         continue;
       }
-      if (node.wasOutput && !isHidden(id)) {
+      if (isActualOutput(id) && !isHidden(id)) {
         final idToDelete = checkAndMoveId(id);
         if (idToDelete != null) result.add(idToDelete);
       }
     }
     for (final packagePostProcessResults
-        in _postProcessBuildStepResults.values) {
+        in postProcessBuildStepResults.values) {
       for (final postProcessResults in packagePostProcessResults.values) {
         if (!postProcessResults.hidden) {
           for (final id in postProcessResults.outputs) {
