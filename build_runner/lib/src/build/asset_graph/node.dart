@@ -33,9 +33,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   AssetId get id;
   NodeType get type;
 
-  /// Additional node configuration for an [AssetNode.generated].
-  GeneratedNodeConfiguration? get generatedNodeConfiguration;
-
   /// The assets that any [Builder] in the build graph declares it may output
   /// when run on this asset.
   BuiltSet<AssetId> get primaryOutputs;
@@ -97,14 +94,9 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   });
 
   /// A generated node.
-  factory AssetNode.generated(
-    AssetId id, {
-    Digest? digest,
-    required bool isHidden,
-  }) => AssetNode((b) {
+  factory AssetNode.generated(AssetId id, {Digest? digest}) => AssetNode((b) {
     b.id = id;
     b.type = NodeType.generated;
-    b.generatedNodeConfiguration.isHidden = isHidden;
     b.digest = digest;
   });
 
@@ -114,11 +106,7 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     b.type = NodeType.postGenerated;
   });
 
-  AssetNode._() {
-    if ((type == NodeType.generated) != (generatedNodeConfiguration != null)) {
-      throw ArgumentError('Node configuration does not match its type: $this');
-    }
-  }
+  AssetNode._();
 
   bool get isGenerated =>
       type == NodeType.generated || type == NodeType.postGenerated;
@@ -130,21 +118,4 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   bool get wasOutput =>
       type == NodeType.postGenerated ||
       (type == NodeType.generated && digest != null);
-}
-
-/// Additional configuration for an [AssetNode.generated].
-abstract class GeneratedNodeConfiguration
-    implements
-        Built<GeneratedNodeConfiguration, GeneratedNodeConfigurationBuilder> {
-  static Serializer<GeneratedNodeConfiguration> get serializer =>
-      _$generatedNodeConfigurationSerializer;
-
-  /// Whether the asset should be placed in the build cache.
-  bool get isHidden;
-
-  factory GeneratedNodeConfiguration(
-    void Function(GeneratedNodeConfigurationBuilder) updates,
-  ) = _$GeneratedNodeConfiguration;
-
-  GeneratedNodeConfiguration._();
 }

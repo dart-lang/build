@@ -475,11 +475,17 @@ class AssetGraph implements GeneratedAssetHider {
         _removeRecursive(output, removedIds: removed);
       }
 
-      final newNode = AssetNode.generated(output, isHidden: isHidden);
+      final newNode = AssetNode.generated(output);
       _nodes.add(newNode);
-      _generatedBy[output] = BuildStepId(
+      final buildStepId = BuildStepId(
         primaryInput: primaryInput,
         phaseNumber: phaseNumber,
+      );
+      _generatedBy[output] = buildStepId;
+      final buildStepResult =
+          _buildStepResults[buildStepId] ?? BuildStepResult();
+      _buildStepResults[buildStepId] = buildStepResult.rebuild(
+        (b) => b..isHidden = isHidden,
       );
     }
     return removed;
@@ -492,9 +498,17 @@ class AssetGraph implements GeneratedAssetHider {
   void add(AssetNode node) => _nodes.add(node);
 
   @visibleForTesting
-  void addGeneratedForTest(AssetNode node, BuildStepId buildStepId) {
+  void addGeneratedForTest(
+    AssetNode node,
+    BuildStepId buildStepId, {
+    bool isHidden = true,
+  }) {
     _nodes.add(node);
     _generatedBy[node.id] = buildStepId;
+    final buildStepResult = _buildStepResults[buildStepId] ?? BuildStepResult();
+    _buildStepResults[buildStepId] = buildStepResult.rebuild(
+      (b) => b..isHidden = isHidden,
+    );
   }
 
   /// Adds a source that a builder tried to access but was missing.
@@ -517,10 +531,9 @@ class AssetGraph implements GeneratedAssetHider {
     if (!contains(id)) {
       return false;
     }
-    final assetNode = get(id)!;
-    if (assetNode.type == NodeType.generated &&
-        assetNode.generatedNodeConfiguration!.isHidden) {
-      return true;
+    final buildStepId = _generatedBy[id];
+    if (buildStepId != null) {
+      return buildStepResultFor(buildStepId)!.isHidden;
     }
     return false;
   }
@@ -553,8 +566,7 @@ class AssetGraph implements GeneratedAssetHider {
         // output is hidden.
         continue;
       }
-      final nodeConfiguration = node.generatedNodeConfiguration!;
-      if (node.wasOutput && !nodeConfiguration.isHidden) {
+      if (node.wasOutput && !isHidden(id)) {
         final idToDelete = checkAndMoveId(id);
         if (idToDelete != null) result.add(idToDelete);
       }

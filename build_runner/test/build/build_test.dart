@@ -1193,7 +1193,6 @@ targets:
     final aCopyNode = AssetNode.generated(
       aCopyId,
       digest: computeDigest(aCopyId, 'a'),
-      isHidden: false,
     );
     aSourceNode = aSourceNode.rebuild(
       (b) => b..primaryOutputs.add(aCopyNode.id),
@@ -1203,7 +1202,6 @@ targets:
     final bCopyNode = AssetNode.generated(
       bCopyId,
       digest: computeDigest(bCopyId, 'b'),
-      isHidden: false,
     );
     bSourceNode = bSourceNode.rebuild(
       (b) => b..primaryOutputs.add(bCopyNode.id),
