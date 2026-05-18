@@ -30,7 +30,7 @@ void main() {
       await tempDir.delete(recursive: true);
     });
 
-    test('writes a port file and can receive messages', () async {
+    test('writes a config file and can receive messages', () async {
       final fileSystemRoot = tempDir.uri.resolve('fes_root/');
       await Directory.fromUri(fileSystemRoot).create(recursive: true);
 
@@ -44,7 +44,7 @@ void main() {
 
       // Wait for a config file to be written.
       final configFile = File(p.join(tempDir.path, fesManagerConfigPath));
-      final content = await _waitForFile(configFile);
+      final content = await _waitForFileContentChanges(configFile);
       final json = jsonDecode(content) as Map<String, dynamic>;
       final port = json['port'] as int?;
 
@@ -69,7 +69,7 @@ void main() {
       await process.exitCode;
     });
 
-    test('updates the port file on restart', () async {
+    test('updates the config file on restart', () async {
       final fileSystemRoot = tempDir.uri.resolve('fes_root/');
       await Directory.fromUri(fileSystemRoot).create(recursive: true);
 
@@ -83,7 +83,7 @@ void main() {
       ], workingDirectory: tempDir.path);
 
       final configFile = File(p.join(tempDir.path, fesManagerConfigPath));
-      await _waitForFile(configFile);
+      await _waitForFileContentChanges(configFile);
 
       final content1 = await configFile.readAsString();
 
@@ -100,17 +100,10 @@ void main() {
       ], workingDirectory: tempDir.path);
 
       // Wait for the config file to be updated with new content
-      var content2 = '';
-      var attempts = 0;
-      while (attempts < 100) {
-        content2 = await _waitForFile(configFile);
-        if (content2 != content1) break;
-        await Future<void>.delayed(const Duration(milliseconds: 100));
-        attempts++;
-      }
-      if (attempts >= 100) {
-        fail('Timed out waiting for config file to change');
-      }
+      final content2 = await _waitForFileContentChanges(
+        configFile,
+        previousContent: content1,
+      );
       final json2 = jsonDecode(content2) as Map<String, dynamic>;
       final port2 = json2['port'] as int;
 
@@ -136,9 +129,21 @@ void main() {
   });
 }
 
-Future<String> _waitForFile(File file) async {
-  while (!await file.exists()) {
+Future<String> _waitForFileContentChanges(
+  File file, {
+  String? previousContent,
+}) async {
+  while (true) {
+    try {
+      if (await file.exists()) {
+        final content = await file.readAsString();
+        if (content.isNotEmpty && content != previousContent) {
+          // Verify that [content] is valid JSON
+          jsonDecode(content);
+          return content;
+        }
+      }
+    } catch (_) {}
     await Future<void>.delayed(const Duration(milliseconds: 100));
   }
-  return await file.readAsString();
 }
