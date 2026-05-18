@@ -14,13 +14,13 @@ import 'package:analyzer/src/dart/analysis/file_content_cache.dart';
 import 'package:build/build.dart' hide Resource;
 import 'package:path/path.dart' as p;
 
-import '../asset_graph/node.dart';
+import '../../build_plan/build_step_plan.dart';
 
 /// The in-memory filesystem that is the analyzer's view of the build.
 ///
-/// Pass an `Iterable<AssetNode>` of generated file nodes to [startBuild] at the
-/// start of a build. This tells the filesystem at what phase each generated
-/// file becomes visible.
+/// Pass a `Map<AssetId, ExpectedOutputConfiguration>` of expected outputs to
+/// [startBuild] at the start of a build. This tells the filesystem at what
+/// phase each generated file becomes visible.
 ///
 /// During the build, set [phase] to change the phase that the files are viewed
 /// at.
@@ -66,23 +66,21 @@ class AnalysisDriverFilesystem
   }
 
   /// Initializes a new filesystem that will have files added due to the
-  /// build described by [generatedNodes].
+  /// build described by `expectedOutputs`.
   ///
   /// If [invalidatedSources] is `null`, this is an initial build and all
   /// cached contents are cleared. Otherwise, only source files matching
   /// [invalidatedSources] are removed.
   void startBuild(
-    Iterable<AssetNode> generatedNodes, {
+    Map<AssetId, ExpectedOutputConfiguration> expectedOutputs, {
     required Set<AssetId>? invalidatedSources,
   }) {
     final previousPhaseByPath = _phaseByPath;
     _phaseByPath = <String, int>{};
     _pathByPhase = <int, List<String>>{};
-    for (final node in generatedNodes) {
-      // Post process generated nodes are never analyzed.
-      if (node.type == NodeType.postGenerated) continue;
-      final phase = node.generatedNodeConfiguration!.phaseNumber;
-      final idAsPath = node.id.asPath;
+    for (final entry in expectedOutputs.entries) {
+      final phase = entry.value.phaseNumber;
+      final idAsPath = entry.key.asPath;
       _phaseByPath[idAsPath] = phase;
       _pathByPhase.putIfAbsent(phase, () => []).add(idAsPath);
     }

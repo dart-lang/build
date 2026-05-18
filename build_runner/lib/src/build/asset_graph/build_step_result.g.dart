@@ -30,6 +30,14 @@ class _$BuildStepResultSerializer
           const FullType(AssetId),
         ]),
       ),
+      'outputDigests',
+      serializers.serialize(
+        object.outputDigests,
+        specifiedType: const FullType(BuiltMap, const [
+          const FullType(AssetId),
+          const FullType(Digest),
+        ]),
+      ),
       'globsEvaluated',
       serializers.serialize(
         object.globsEvaluated,
@@ -59,6 +67,14 @@ class _$BuildStepResultSerializer
           serializers.serialize(value, specifiedType: const FullType(bool)),
         );
     }
+    value = object.isHidden;
+    if (value != null) {
+      result
+        ..add('isHidden')
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(bool)),
+        );
+    }
     return result;
   }
 
@@ -84,6 +100,14 @@ class _$BuildStepResultSerializer
                   )
                   as bool?;
           break;
+        case 'isHidden':
+          result.isHidden =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(bool),
+                  )
+                  as bool?;
+          break;
         case 'inputs':
           result.inputs.replace(
             serializers.deserialize(
@@ -93,6 +117,17 @@ class _$BuildStepResultSerializer
                   ]),
                 )!
                 as BuiltSet<Object?>,
+          );
+          break;
+        case 'outputDigests':
+          result.outputDigests.replace(
+            serializers.deserialize(
+              value,
+              specifiedType: const FullType(BuiltMap, const [
+                const FullType(AssetId),
+                const FullType(Digest),
+              ]),
+            )!,
           );
           break;
         case 'globsEvaluated':
@@ -139,7 +174,11 @@ class _$BuildStepResult extends BuildStepResult {
   @override
   final bool? result;
   @override
+  final bool? isHidden;
+  @override
   final BuiltSet<AssetId> inputs;
+  @override
+  final BuiltMap<AssetId, Digest> outputDigests;
   @override
   final BuiltSet<GlobId> globsEvaluated;
   @override
@@ -152,7 +191,9 @@ class _$BuildStepResult extends BuildStepResult {
 
   _$BuildStepResult._({
     this.result,
+    this.isHidden,
     required this.inputs,
+    required this.outputDigests,
     required this.globsEvaluated,
     required this.resolverEntrypoints,
     required this.errors,
@@ -169,7 +210,9 @@ class _$BuildStepResult extends BuildStepResult {
     if (identical(other, this)) return true;
     return other is BuildStepResult &&
         result == other.result &&
+        isHidden == other.isHidden &&
         inputs == other.inputs &&
+        outputDigests == other.outputDigests &&
         globsEvaluated == other.globsEvaluated &&
         resolverEntrypoints == other.resolverEntrypoints &&
         errors == other.errors;
@@ -179,7 +222,9 @@ class _$BuildStepResult extends BuildStepResult {
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, result.hashCode);
+    _$hash = $jc(_$hash, isHidden.hashCode);
     _$hash = $jc(_$hash, inputs.hashCode);
+    _$hash = $jc(_$hash, outputDigests.hashCode);
     _$hash = $jc(_$hash, globsEvaluated.hashCode);
     _$hash = $jc(_$hash, resolverEntrypoints.hashCode);
     _$hash = $jc(_$hash, errors.hashCode);
@@ -191,7 +236,9 @@ class _$BuildStepResult extends BuildStepResult {
   String toString() {
     return (newBuiltValueToStringHelper(r'BuildStepResult')
           ..add('result', result)
+          ..add('isHidden', isHidden)
           ..add('inputs', inputs)
+          ..add('outputDigests', outputDigests)
           ..add('globsEvaluated', globsEvaluated)
           ..add('resolverEntrypoints', resolverEntrypoints)
           ..add('errors', errors))
@@ -207,9 +254,19 @@ class BuildStepResultBuilder
   bool? get result => _$this._result;
   set result(bool? result) => _$this._result = result;
 
+  bool? _isHidden;
+  bool? get isHidden => _$this._isHidden;
+  set isHidden(bool? isHidden) => _$this._isHidden = isHidden;
+
   SetBuilder<AssetId>? _inputs;
   SetBuilder<AssetId> get inputs => _$this._inputs ??= SetBuilder<AssetId>();
   set inputs(SetBuilder<AssetId>? inputs) => _$this._inputs = inputs;
+
+  MapBuilder<AssetId, Digest>? _outputDigests;
+  MapBuilder<AssetId, Digest> get outputDigests =>
+      _$this._outputDigests ??= MapBuilder<AssetId, Digest>();
+  set outputDigests(MapBuilder<AssetId, Digest>? outputDigests) =>
+      _$this._outputDigests = outputDigests;
 
   SetBuilder<GlobId>? _globsEvaluated;
   SetBuilder<GlobId> get globsEvaluated =>
@@ -233,7 +290,9 @@ class BuildStepResultBuilder
     final $v = _$v;
     if ($v != null) {
       _result = $v.result;
+      _isHidden = $v.isHidden;
       _inputs = $v.inputs.toBuilder();
+      _outputDigests = $v.outputDigests.toBuilder();
       _globsEvaluated = $v.globsEvaluated.toBuilder();
       _resolverEntrypoints = $v.resolverEntrypoints.toBuilder();
       _errors = $v.errors.toBuilder();
@@ -262,7 +321,9 @@ class BuildStepResultBuilder
           _$v ??
           _$BuildStepResult._(
             result: result,
+            isHidden: isHidden,
             inputs: inputs.build(),
+            outputDigests: outputDigests.build(),
             globsEvaluated: globsEvaluated.build(),
             resolverEntrypoints: resolverEntrypoints.build(),
             errors: errors.build(),
@@ -272,6 +333,8 @@ class BuildStepResultBuilder
       try {
         _$failedField = 'inputs';
         inputs.build();
+        _$failedField = 'outputDigests';
+        outputDigests.build();
         _$failedField = 'globsEvaluated';
         globsEvaluated.build();
         _$failedField = 'resolverEntrypoints';

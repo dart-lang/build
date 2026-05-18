@@ -7,8 +7,10 @@ import 'dart:async';
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:build/build.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:pool/pool.dart';
 
+import '../../build_plan/build_step_plan.dart';
 import '../../logging/timed_activities.dart';
 import '../asset_graph/graph.dart';
 import '../input_tracker.dart';
@@ -52,7 +54,9 @@ class AnalysisDriverModel {
   }) async {
     _lock = await _pool.request();
     filesystem.startBuild(
-      assetGraph.outputs.map((id) => assetGraph.get(id)!),
+      (assetGraph.buildStepPlan?.expectedOutputs ??
+              BuiltMap<AssetId, ExpectedOutputConfiguration>())
+          .toMap(),
       invalidatedSources: invalidatedSources,
     );
   }

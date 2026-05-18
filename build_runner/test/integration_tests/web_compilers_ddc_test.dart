@@ -70,10 +70,12 @@ void main() async {
     );
 
     // Initial build.
-    await tester.run(
+    final process = await tester.start(
       'root_pkg',
       'dart run build_runner build --force-jit --output web:build',
     );
+    await process.expect(BuildLog.successPattern);
+    await process.kill();
     expect(
       tester.readFileTree('root_pkg/build')!.keys,
       containsAll([

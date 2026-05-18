@@ -13,6 +13,7 @@ import 'package:glob/glob.dart';
 import '../bootstrap/processes.dart';
 import '../build_plan/build_configs.dart';
 import '../build_plan/build_packages.dart';
+import '../build_plan/build_plan.dart';
 import '../build_plan/phase.dart';
 import '../io/asset_finder.dart';
 import '../io/reader_writer.dart';
@@ -65,6 +66,7 @@ class Readability {
 
 /// `SingleStepReaderWriter`'s view on the currently-running build.
 class RunningBuild {
+  final BuildPlan buildPlan;
   final BuildPackages buildPackages;
   final BuildConfigs buildConfigs;
   final AssetGraph assetGraph;
@@ -73,6 +75,7 @@ class RunningBuild {
   final GlobEvaluator globEvaluator;
 
   RunningBuild({
+    required this.buildPlan,
     required this.buildPackages,
     required this.buildConfigs,
     required this.assetGraph,
@@ -84,11 +87,13 @@ class RunningBuild {
 
 /// `SingleStepReaderWriter`'s view on the currently-running build step.
 class RunningBuildStep {
+  final BuildStepId? buildStepId;
   final int phaseNumber;
   final BuildPhase buildPhase;
   final String primaryPackage;
 
   RunningBuildStep({
+    this.buildStepId,
     required this.phaseNumber,
     required this.buildPhase,
     required this.primaryPackage,
@@ -184,7 +189,19 @@ class SingleStepReaderWriter implements PhasedReader {
       return _delegate.canRead(id);
     }
 
-    final node = _runningBuild.assetGraph.get(id);
+    var node = _runningBuild.assetGraph.get(id);
+    if (node == null) {
+      final config = _runningBuild.buildPlan.buildStepPlan.expectedOutputs[id];
+      if (config != null) {
+        if (_runningBuildStep?.buildStepId != null &&
+            config.buildStepId == _runningBuildStep!.buildStepId) {
+          return false;
+        }
+        await _runningBuild.nodeBuilder(id);
+        node = _runningBuild.assetGraph.get(id);
+      }
+    }
+
     if (node == null) {
       if (track) inputTracker.add(id);
       _runningBuild.assetGraph.add(AssetNode.missingSource(id));
@@ -304,7 +321,8 @@ class SingleStepReaderWriter implements PhasedReader {
       return Readability.notReadable;
     }
     if (node.type == NodeType.generated) {
-      final nodeConfiguration = node.generatedNodeConfiguration!;
+      final nodeConfiguration =
+          _runningBuild!.buildPlan.buildStepPlan.expectedOutputs[node.id]!;
       if (nodeConfiguration.phaseNumber > _runningBuildStep!.phaseNumber) {
         return Readability.notReadable;
       } else if (nodeConfiguration.phaseNumber ==
@@ -317,9 +335,10 @@ class SingleStepReaderWriter implements PhasedReader {
         return isInBuild ? Readability.ownOutput : Readability.notReadable;
       }
 
-      await _runningBuild!.nodeBuilder(node.id);
+      await _runningBuild.nodeBuilder(node.id);
       node = _runningBuild.assetGraph.get(node.id)!;
-      final config = node.generatedNodeConfiguration!;
+      final config =
+          _runningBuild.buildPlan.buildStepPlan.expectedOutputs[node.id]!;
       final buildStepId = BuildStepId(
         primaryInput: config.primaryInput,
         phaseNumber: config.phaseNumber,
@@ -328,7 +347,8 @@ class SingleStepReaderWriter implements PhasedReader {
         buildStepId,
       );
       return Readability.fromPreviousPhase(
-        node.wasOutput && (stepResult == null || stepResult.result != false),
+        _runningBuild.assetGraph.wasOutput(node.id) &&
+            (stepResult == null || stepResult.result != false),
       );
     }
     return Readability.fromPreviousPhase(node.type == NodeType.source);
@@ -396,7 +416,12 @@ class SingleStepReaderWriter implements PhasedReader {
     }
 
     if (node.type == NodeType.generated) {
-      final nodePhase = node.generatedNodeConfiguration!.phaseNumber;
+      final nodePhase =
+          _runningBuild
+              .buildPlan
+              .buildStepPlan
+              .expectedOutputs[node.id]!
+              .phaseNumber;
       if (nodePhase >= phase) {
         return PhasedValue.unavailable(before: '', expiresAfter: nodePhase);
       } else {
@@ -405,14 +430,17 @@ class SingleStepReaderWriter implements PhasedReader {
           await _runningBuild.nodeBuilder(id);
           node = _runningBuild.assetGraph.get(id)!;
         }
-        final config = node.generatedNodeConfiguration!;
+        final config =
+            _runningBuild.buildPlan.buildStepPlan.expectedOutputs[node.id]!;
         final buildStepId = BuildStepId(
           primaryInput: config.primaryInput,
           phaseNumber: config.phaseNumber,
         );
         final stepResult =
             _runningBuild.assetGraph.buildStepResultFor(buildStepId)!;
-        final isSuccessOutput = node.wasOutput && stepResult.result == true;
+        final isSuccessOutput =
+            _runningBuild.assetGraph.wasOutput(node.id) &&
+            stepResult.result == true;
         return PhasedValue.generated(
           atPhase: nodePhase,
           before: '',
