@@ -165,8 +165,7 @@ class Build {
       for (final output in processedOutputs) {
         final node = assetGraph.get(output)!;
         if (node.type != NodeType.generated) continue;
-        final config = node.generatedNodeConfiguration!;
-        final buildStepId = config.buildStepId;
+        final buildStepId = assetGraph.generatedBy[output]!;
         final stepResult = assetGraph.buildStepResultFor(buildStepId);
         if (stepResult != null && stepResult.result == false) {
           failedSteps.add(buildStepId);
@@ -502,7 +501,7 @@ class Build {
       // since the test dir is not part of the build for non-root packages.
       if (!buildConfigs.isVisibleInBuild(node.id, packageNode)) continue;
 
-      ids.add(node.generatedNodeConfiguration!.primaryInput);
+      ids.add(assetGraph.generatedBy[node.id]!.primaryInput);
     }
     return ids.toList()..sort();
   }
@@ -517,8 +516,7 @@ class Build {
   Future<void> _buildOutput(AssetId id) async {
     final node = assetGraph.get(id)!;
     if (node.type == NodeType.generated && !processedOutputs.contains(id)) {
-      final nodeConfiguration = node.generatedNodeConfiguration!;
-      final buildStepId = nodeConfiguration.buildStepId;
+      final buildStepId = assetGraph.generatedBy[id]!;
       await lazyPhases.putIfAbsent(
         '${buildStepId.phaseNumber}|${buildStepId.primaryInput}',
         () async {
@@ -819,8 +817,7 @@ class Build {
         if (assetGraph.contains(assetId)) {
           throw InvalidOutputException(assetId, 'Asset already exists');
         }
-        final node = AssetNode.postGenerated(assetId);
-        assetGraph.add(node);
+        assetGraph.addPostGenerated(assetId);
         outputs.add(assetId);
       },
       deleteAsset: (assetId) {
@@ -922,9 +919,8 @@ class Build {
 
       // Propagate results for generated node inputs.
       if (primaryInputNode.type == NodeType.generated) {
-        final inputConfiguration = primaryInputNode.generatedNodeConfiguration!;
         final inputStepResult = assetGraph.buildStepResultFor(
-          inputConfiguration.buildStepId,
+          assetGraph.generatedBy[buildStepId.primaryInput]!,
         );
 
         // If the primary input's generating step failed, this build is also
@@ -1085,7 +1081,8 @@ class Build {
   }) async {
     final inputNode = assetGraph.get(input)!;
     if (inputNode.type == NodeType.generated) {
-      if (inputNode.generatedNodeConfiguration!.phaseNumber >= phaseNumber) {
+      final phase = assetGraph.generatedBy[input]!.phaseNumber;
+      if (phase >= phaseNumber) {
         // It's not readable in this phase.
         return false;
       }
@@ -1195,7 +1192,7 @@ class Build {
         // Generated nodes are only considered at all if they are output in
         // an earlier phase.
         if (node.type != NodeType.generated ||
-            node.generatedNodeConfiguration!.phaseNumber < globId.phaseNumber) {
+            assetGraph.generatedBy[id]!.phaseNumber < globId.phaseNumber) {
           if (node.type == NodeType.generated) {
             generatedFileInputs.add(node.id);
           } else {
@@ -1214,9 +1211,8 @@ class Build {
       final generatedFileResults = <AssetId>[];
       for (final id in generatedFileInputs) {
         final node = assetGraph.get(id)!;
-        final nodeConfig = node.generatedNodeConfiguration!;
         final stepResult = assetGraph.buildStepResultFor(
-          nodeConfig.buildStepId,
+          assetGraph.generatedBy[id]!,
         );
         if (node.wasOutput && stepResult != null && stepResult.result == true) {
           generatedFileResults.add(id);

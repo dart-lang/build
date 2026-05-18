@@ -196,16 +196,6 @@ class _$GeneratedNodeConfigurationSerializer
     FullType specifiedType = FullType.unspecified,
   }) {
     final result = <Object?>[
-      'primaryInput',
-      serializers.serialize(
-        object.primaryInput,
-        specifiedType: const FullType(AssetId),
-      ),
-      'phaseNumber',
-      serializers.serialize(
-        object.phaseNumber,
-        specifiedType: const FullType(int),
-      ),
       'isHidden',
       serializers.serialize(
         object.isHidden,
@@ -230,22 +220,6 @@ class _$GeneratedNodeConfigurationSerializer
       iterator.moveNext();
       final Object? value = iterator.current;
       switch (key) {
-        case 'primaryInput':
-          result.primaryInput =
-              serializers.deserialize(
-                    value,
-                    specifiedType: const FullType(AssetId),
-                  )!
-                  as AssetId;
-          break;
-        case 'phaseNumber':
-          result.phaseNumber =
-              serializers.deserialize(
-                    value,
-                    specifiedType: const FullType(int),
-                  )!
-                  as int;
-          break;
         case 'isHidden':
           result.isHidden =
               serializers.deserialize(
@@ -421,21 +395,13 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
 
 class _$GeneratedNodeConfiguration extends GeneratedNodeConfiguration {
   @override
-  final AssetId primaryInput;
-  @override
-  final int phaseNumber;
-  @override
   final bool isHidden;
 
   factory _$GeneratedNodeConfiguration([
     void Function(GeneratedNodeConfigurationBuilder)? updates,
   ]) => (GeneratedNodeConfigurationBuilder()..update(updates))._build();
 
-  _$GeneratedNodeConfiguration._({
-    required this.primaryInput,
-    required this.phaseNumber,
-    required this.isHidden,
-  }) : super._();
+  _$GeneratedNodeConfiguration._({required this.isHidden}) : super._();
   @override
   GeneratedNodeConfiguration rebuild(
     void Function(GeneratedNodeConfigurationBuilder) updates,
@@ -448,17 +414,12 @@ class _$GeneratedNodeConfiguration extends GeneratedNodeConfiguration {
   @override
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
-    return other is GeneratedNodeConfiguration &&
-        primaryInput == other.primaryInput &&
-        phaseNumber == other.phaseNumber &&
-        isHidden == other.isHidden;
+    return other is GeneratedNodeConfiguration && isHidden == other.isHidden;
   }
 
   @override
   int get hashCode {
     var _$hash = 0;
-    _$hash = $jc(_$hash, primaryInput.hashCode);
-    _$hash = $jc(_$hash, phaseNumber.hashCode);
     _$hash = $jc(_$hash, isHidden.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
@@ -467,10 +428,7 @@ class _$GeneratedNodeConfiguration extends GeneratedNodeConfiguration {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'GeneratedNodeConfiguration')
-          ..add('primaryInput', primaryInput)
-          ..add('phaseNumber', phaseNumber)
-          ..add('isHidden', isHidden))
-        .toString();
+      ..add('isHidden', isHidden)).toString();
   }
 }
 
@@ -478,15 +436,6 @@ class GeneratedNodeConfigurationBuilder
     implements
         Builder<GeneratedNodeConfiguration, GeneratedNodeConfigurationBuilder> {
   _$GeneratedNodeConfiguration? _$v;
-
-  AssetId? _primaryInput;
-  AssetId? get primaryInput => _$this._primaryInput;
-  set primaryInput(AssetId? primaryInput) =>
-      _$this._primaryInput = primaryInput;
-
-  int? _phaseNumber;
-  int? get phaseNumber => _$this._phaseNumber;
-  set phaseNumber(int? phaseNumber) => _$this._phaseNumber = phaseNumber;
 
   bool? _isHidden;
   bool? get isHidden => _$this._isHidden;
@@ -497,8 +446,6 @@ class GeneratedNodeConfigurationBuilder
   GeneratedNodeConfigurationBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
-      _primaryInput = $v.primaryInput;
-      _phaseNumber = $v.phaseNumber;
       _isHidden = $v.isHidden;
       _$v = null;
     }
@@ -522,16 +469,6 @@ class GeneratedNodeConfigurationBuilder
     final _$result =
         _$v ??
         _$GeneratedNodeConfiguration._(
-          primaryInput: BuiltValueNullFieldError.checkNotNull(
-            primaryInput,
-            r'GeneratedNodeConfiguration',
-            'primaryInput',
-          ),
-          phaseNumber: BuiltValueNullFieldError.checkNotNull(
-            phaseNumber,
-            r'GeneratedNodeConfiguration',
-            'phaseNumber',
-          ),
           isHidden: BuiltValueNullFieldError.checkNotNull(
             isHidden,
             r'GeneratedNodeConfiguration',

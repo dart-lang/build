@@ -52,7 +52,7 @@ class AnalysisDriverModel {
   }) async {
     _lock = await _pool.request();
     filesystem.startBuild(
-      assetGraph.outputs.map((id) => assetGraph.get(id)!),
+      assetGraph.outputPhases,
       invalidatedSources: invalidatedSources,
     );
   }

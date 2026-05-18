@@ -103,8 +103,8 @@ void main() {
         primaryInput: primaryId,
         isHidden: true,
       );
-      assetGraph.add(node);
       final buildStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
+      assetGraph.addGeneratedForTest(node, buildStepId);
       final stepResult = BuildStepResult((b) => b..result = false);
       assetGraph.updateBuildStepResult(buildStepId, stepResult);
       readerWriter.testing.writeString(id, '');

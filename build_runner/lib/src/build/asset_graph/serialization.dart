@@ -65,6 +65,19 @@ AssetGraph? deserializeAssetGraph(Map serializedGraph) {
     }
   }
 
+  if (serializedGraph.containsKey('generatedBy')) {
+    final deserializedGeneratedBy =
+        serializers.deserialize(
+              serializedGraph['generatedBy'],
+              specifiedType: const FullType(BuiltMap, [
+                FullType(AssetId),
+                FullType(BuildStepId),
+              ]),
+            )
+            as BuiltMap<AssetId, BuildStepId>;
+    graph._generatedBy.addAll(deserializedGeneratedBy.toMap());
+  }
+
   return graph;
 }
 
@@ -97,6 +110,13 @@ Map<String, Object?> serializeAssetGraph(AssetGraph graph) {
       specifiedType: const FullType(BuiltMap, [
         FullType(GlobId),
         FullType(GlobResult),
+      ]),
+    ),
+    'generatedBy': serializers.serialize(
+      BuiltMap<AssetId, BuildStepId>.of(graph._generatedBy),
+      specifiedType: const FullType(BuiltMap, [
+        FullType(AssetId),
+        FullType(BuildStepId),
       ]),
     ),
   };

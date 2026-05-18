@@ -1911,24 +1911,30 @@ targets:
             result.readerWriter.testing.readBytes(AssetId('a', assetGraphPath)),
           )!.assetGraph;
 
-      final node1 = finalGraph.get(AssetId('a', 'web/a.g1'))!;
-      final config1 = node1.generatedNodeConfiguration!;
       expect(
-        finalGraph.buildStepResultFor(config1.buildStepId)!.result,
+        finalGraph
+            .buildStepResultFor(
+              finalGraph.generatedBy[AssetId('a', 'web/a.g1')]!,
+            )!
+            .result,
         isFalse,
       );
 
-      final node2 = finalGraph.get(AssetId('a', 'web/a.g2'))!;
-      final config2 = node2.generatedNodeConfiguration!;
       expect(
-        finalGraph.buildStepResultFor(config2.buildStepId)!.result,
+        finalGraph
+            .buildStepResultFor(
+              finalGraph.generatedBy[AssetId('a', 'web/a.g2')]!,
+            )!
+            .result,
         isFalse,
       );
 
-      final node3 = finalGraph.get(AssetId('a', 'web/a.g3'))!;
-      final config3 = node3.generatedNodeConfiguration!;
       expect(
-        finalGraph.buildStepResultFor(config3.buildStepId)!.result,
+        finalGraph
+            .buildStepResultFor(
+              finalGraph.generatedBy[AssetId('a', 'web/a.g3')]!,
+            )!
+            .result,
         isFalse,
       );
     });

@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:build_runner/src/build/asset_graph/node.dart';
 import 'package:build_runner/src/build/resolver/analysis_driver_filesystem.dart';
 import 'package:test/test.dart';
 
@@ -52,45 +51,30 @@ void main() {
     });
 
     test('startBuild removes disappeared generated files', () {
-      filesystem.startBuild([
-        AssetNode.generated(
-          AssetId.parse('a|lib/a.g.dart'),
-          primaryInput: AssetId.parse('a|lib/a.dart'),
-          phaseNumber: 1,
-          isHidden: false,
-        ),
-      ], invalidatedSources: null);
+      filesystem.startBuild({
+        AssetId.parse('a|lib/a.g.dart'): 1,
+      }, invalidatedSources: null);
       filesystem.write('/a/lib/a.g.dart', 'a');
       filesystem.phase = 2;
       filesystem.clearChangedPaths();
 
-      filesystem.startBuild([], invalidatedSources: const {});
+      filesystem.startBuild({}, invalidatedSources: const {});
 
       expect(filesystem.changedPaths, {'/a/lib/a.g.dart'});
       expect(filesystem.exists('/a/lib/a.g.dart'), false);
     });
 
     test('startBuild retains unchanged generated file contents', () {
-      filesystem.startBuild([
-        AssetNode.generated(
-          AssetId.parse('a|lib/a.g.dart'),
-          primaryInput: AssetId.parse('a|lib/a.dart'),
-          phaseNumber: 1,
-          isHidden: false,
-        ),
-      ], invalidatedSources: null);
+      filesystem.startBuild({
+        AssetId.parse('a|lib/a.g.dart'): 1,
+      }, invalidatedSources: null);
       filesystem.write('/a/lib/a.g.dart', 'a');
       filesystem.phase = 2;
       filesystem.clearChangedPaths();
 
-      filesystem.startBuild([
-        AssetNode.generated(
-          AssetId.parse('a|lib/a.g.dart'),
-          primaryInput: AssetId.parse('a|lib/a.dart'),
-          phaseNumber: 1,
-          isHidden: false,
-        ),
-      ], invalidatedSources: const {});
+      filesystem.startBuild({
+        AssetId.parse('a|lib/a.g.dart'): 1,
+      }, invalidatedSources: const {});
 
       expect(filesystem.read('/a/lib/a.g.dart'), 'a');
       expect(filesystem.changedPaths, isEmpty);
@@ -98,26 +82,16 @@ void main() {
 
     test('write with changed generated content across builds updates file and '
         'changedPaths', () {
-      filesystem.startBuild([
-        AssetNode.generated(
-          AssetId.parse('a|lib/a.g.dart'),
-          primaryInput: AssetId.parse('a|lib/a.dart'),
-          phaseNumber: 1,
-          isHidden: false,
-        ),
-      ], invalidatedSources: null);
+      filesystem.startBuild({
+        AssetId.parse('a|lib/a.g.dart'): 1,
+      }, invalidatedSources: null);
       filesystem.write('/a/lib/a.g.dart', 'before');
       filesystem.phase = 2;
       filesystem.clearChangedPaths();
 
-      filesystem.startBuild([
-        AssetNode.generated(
-          AssetId.parse('a|lib/a.g.dart'),
-          primaryInput: AssetId.parse('a|lib/a.dart'),
-          phaseNumber: 1,
-          isHidden: false,
-        ),
-      ], invalidatedSources: const {});
+      filesystem.startBuild({
+        AssetId.parse('a|lib/a.g.dart'): 1,
+      }, invalidatedSources: const {});
       filesystem.write('/a/lib/a.g.dart', 'after');
 
       expect(filesystem.read('/a/lib/a.g.dart'), 'after');
@@ -125,27 +99,17 @@ void main() {
     });
 
     test('initial build clears all cached contents', () {
-      filesystem.startBuild([
-        AssetNode.generated(
-          AssetId.parse('a|lib/a.g.dart'),
-          primaryInput: AssetId.parse('a|lib/a.dart'),
-          phaseNumber: 1,
-          isHidden: false,
-        ),
-      ], invalidatedSources: null);
+      filesystem.startBuild({
+        AssetId.parse('a|lib/a.g.dart'): 1,
+      }, invalidatedSources: null);
       filesystem.write('/a/lib/a.dart', 'class A {}');
       filesystem.write('/a/lib/a.g.dart', 'generated');
       filesystem.phase = 2;
       filesystem.clearChangedPaths();
 
-      filesystem.startBuild([
-        AssetNode.generated(
-          AssetId.parse('a|lib/a.g.dart'),
-          primaryInput: AssetId.parse('a|lib/a.dart'),
-          phaseNumber: 1,
-          isHidden: false,
-        ),
-      ], invalidatedSources: null);
+      filesystem.startBuild({
+        AssetId.parse('a|lib/a.g.dart'): 1,
+      }, invalidatedSources: null);
 
       expect(filesystem.exists('/a/lib/a.dart'), isFalse);
       expect(filesystem.exists('/a/lib/a.g.dart'), isFalse);
@@ -158,7 +122,7 @@ void main() {
       filesystem.clearChangedPaths();
 
       filesystem.startBuild(
-        const [],
+        const {},
         invalidatedSources: {AssetId.parse('a|foo.txt')},
       );
 
@@ -169,46 +133,26 @@ void main() {
 
     test('startBuild reports visibility changes for retained generated '
         'files', () {
-      filesystem.startBuild([
-        AssetNode.generated(
-          AssetId.parse('a|lib/a.g.dart'),
-          primaryInput: AssetId.parse('a|lib/a.dart'),
-          phaseNumber: 1,
-          isHidden: false,
-        ),
-      ], invalidatedSources: null);
+      filesystem.startBuild({
+        AssetId.parse('a|lib/a.g.dart'): 1,
+      }, invalidatedSources: null);
       filesystem.write('/a/lib/a.g.dart', 'a');
       filesystem.phase = 2;
       filesystem.clearChangedPaths();
 
-      filesystem.startBuild([
-        AssetNode.generated(
-          AssetId.parse('a|lib/a.g.dart'),
-          primaryInput: AssetId.parse('a|lib/a.dart'),
-          phaseNumber: 3,
-          isHidden: false,
-        ),
-      ], invalidatedSources: const {});
+      filesystem.startBuild({
+        AssetId.parse('a|lib/a.g.dart'): 3,
+      }, invalidatedSources: const {});
 
       expect(filesystem.changedPaths, {'/a/lib/a.g.dart'});
       expect(filesystem.exists('/a/lib/a.g.dart'), false);
     });
 
     test('files change by phases', () {
-      filesystem.startBuild([
-        AssetNode.generated(
-          AssetId.parse('a|lib/a.g.dart'),
-          primaryInput: AssetId.parse('a|lib/a.dart'),
-          phaseNumber: 1,
-          isHidden: false,
-        ),
-        AssetNode.generated(
-          AssetId.parse('b|lib/b.g.dart'),
-          primaryInput: AssetId.parse('b|lib/b.dart'),
-          phaseNumber: 2,
-          isHidden: false,
-        ),
-      ], invalidatedSources: null);
+      filesystem.startBuild({
+        AssetId.parse('a|lib/a.g.dart'): 1,
+        AssetId.parse('b|lib/b.g.dart'): 2,
+      }, invalidatedSources: null);
 
       filesystem.write('/a/lib/a.g.dart', 'a');
       filesystem.write('/b/lib/b.g.dart', 'b');

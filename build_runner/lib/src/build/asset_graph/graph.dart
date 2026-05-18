@@ -35,6 +35,15 @@ class AssetGraph implements GeneratedAssetHider {
   /// All the [AssetNode]s in the graph.
   final Nodes _nodes;
 
+  /// All standard build step execution results, indexed by [BuildStepId].
+  final Map<BuildStepId, BuildStepResult> _buildStepResults;
+
+  /// Declared generated outputs and their build steps.
+  final Map<AssetId, BuildStepId> _generatedBy;
+
+  /// Globs evaluated during the build.
+  final Map<GlobId, GlobResult> _globResults;
+
   /// All post process build steps results, indexed by package then
   /// [PostProcessBuildStepId].
   ///
@@ -43,16 +52,12 @@ class AssetGraph implements GeneratedAssetHider {
   final Map<String, Map<PostProcessBuildStepId, PostProcessBuildStepResult>>
   _postProcessBuildStepResults;
 
-  /// All standard build step execution results, indexed by [BuildStepId].
-  final Map<BuildStepId, BuildStepResult> _buildStepResults;
-
-  final Map<GlobId, GlobResult> _globResults;
-
   AssetGraph()
     : _nodes = Nodes(),
       _postProcessBuildStepResults = {},
       _buildStepResults = {},
-      _globResults = {};
+      _globResults = {},
+      _generatedBy = {};
 
   AssetGraph._with({
     required Nodes nodes,
@@ -63,10 +68,12 @@ class AssetGraph implements GeneratedAssetHider {
     postProcessBuildStepResults,
     required Map<BuildStepId, BuildStepResult> buildStepResults,
     required Map<GlobId, GlobResult> globResults,
+    required Map<AssetId, BuildStepId> generatedBy,
   }) : _nodes = nodes,
        _postProcessBuildStepResults = postProcessBuildStepResults,
        _buildStepResults = buildStepResults,
-       _globResults = globResults;
+       _globResults = globResults,
+       _generatedBy = generatedBy;
 
   /// Copies the graph prepared for the next build.
   AssetGraph copyForNextBuild() {
@@ -78,6 +85,7 @@ class AssetGraph implements GeneratedAssetHider {
       },
       buildStepResults: Map.of(_buildStepResults),
       globResults: Map.of(_globResults),
+      generatedBy: Map.of(_generatedBy),
     );
   }
 
@@ -129,6 +137,8 @@ class AssetGraph implements GeneratedAssetHider {
   }
 
   Map<BuildStepId, BuildStepResult> get buildStepResults => _buildStepResults;
+
+  Map<AssetId, BuildStepId> get generatedBy => _generatedBy;
 
   GlobResult? globResultFor(GlobId globId) => _globResults[globId];
   void updateGlobResult(GlobId globId, GlobResult result) {
@@ -190,6 +200,7 @@ class AssetGraph implements GeneratedAssetHider {
         _removeRecursive(output, removedIds: removedIds);
       }
       _nodes.remove(id);
+      _generatedBy.remove(id);
     }
   }
 
@@ -222,9 +233,14 @@ class AssetGraph implements GeneratedAssetHider {
     PostProcessBuildStepId action,
   ) => _postProcessBuildStepResults[action.input.package]?[action];
 
-  /// All the generated outputs in the graph.
+  /// All declared outputs in the graph.
   Iterable<AssetId> get outputs =>
       allNodes.where((n) => n.isGenerated).map((n) => n.id);
+
+  /// All declared outputs and the phases in which they are output.
+  Map<AssetId, int> get outputPhases => {
+    for (final entry in generatedBy.entries) entry.key: entry.value.phaseNumber,
+  };
 
   /// All the generated outputs for a particular phase.
   Iterable<AssetNode> outputsForPhase(String package, int phase) =>
@@ -233,7 +249,7 @@ class AssetGraph implements GeneratedAssetHider {
           .where(
             (n) =>
                 n.type == NodeType.generated &&
-                n.generatedNodeConfiguration!.phaseNumber == phase,
+                _generatedBy[n.id]?.phaseNumber == phase,
           );
 
   /// All the source files in the graph.
@@ -330,8 +346,7 @@ class AssetGraph implements GeneratedAssetHider {
 
     var inputNode = get(input)!;
     while (inputNode.type == NodeType.generated) {
-      final inputNodeConfiguration = inputNode.generatedNodeConfiguration!;
-      inputNode = get(inputNodeConfiguration.primaryInput)!;
+      inputNode = get(_generatedBy[inputNode.id]!.primaryInput)!;
     }
     return action.targetSources.matches(inputNode.id);
   }
@@ -450,12 +465,10 @@ class AssetGraph implements GeneratedAssetHider {
       if (contains(output)) {
         existing = get(output)!;
         if (existing.type == NodeType.generated) {
-          final existingConfiguration = existing.generatedNodeConfiguration!;
+          final existingPhase = _generatedBy[existing.id]!.phaseNumber;
           throw DuplicateAssetNodeException(
             existing.id,
-            buildPhases
-                .inBuildPhases[existingConfiguration.phaseNumber]
-                .displayName,
+            buildPhases.inBuildPhases[existingPhase].displayName,
             buildPhases.inBuildPhases[phaseNumber].displayName,
           );
         }
@@ -469,6 +482,10 @@ class AssetGraph implements GeneratedAssetHider {
         isHidden: isHidden,
       );
       _nodes.add(newNode);
+      _generatedBy[output] = BuildStepId(
+        primaryInput: primaryInput,
+        phaseNumber: phaseNumber,
+      );
     }
     return removed;
   }
@@ -476,10 +493,24 @@ class AssetGraph implements GeneratedAssetHider {
   @override
   String toString() => allNodes.toList().toString();
 
+  @visibleForTesting
   void add(AssetNode node) => _nodes.add(node);
 
+  @visibleForTesting
+  void addGeneratedForTest(AssetNode node, BuildStepId buildStepId) {
+    _nodes.add(node);
+    _generatedBy[node.id] = buildStepId;
+  }
+
+  /// Adds a source that a builder tried to access but was missing.
+  void addMissingSource(AssetId id) => _nodes.add(AssetNode.missingSource(id));
+
+  /// Adds a generated node that was output by a post process build step.
+  void addPostGenerated(AssetId id) {
+    _nodes.add(AssetNode.postGenerated(id));
+  }
+
   /// Removes a generated node that was output by a post process build step.
-  /// TODO(davidmorgan): look at removing them from the graph altogether.
   void removePostProcessOutput(AssetId id) => _nodes.remove(id);
 
   @override
