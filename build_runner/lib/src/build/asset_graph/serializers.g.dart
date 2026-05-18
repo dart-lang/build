@@ -10,6 +10,7 @@ Serializers _$serializers =
     (Serializers().toBuilder()
           ..add(AssetDeps.serializer)
           ..add(AssetNode.serializer)
+          ..add(BuildPlanDigest.serializer)
           ..add(BuildStepId.serializer)
           ..add(BuildStepResult.serializer)
           ..add(ExpiringValue.serializer)
@@ -21,6 +22,25 @@ Serializers _$serializers =
           ..add(PhasedValue.serializer)
           ..add(PostProcessBuildStepId.serializer)
           ..add(PostProcessBuildStepResult.serializer)
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltMap, const [
+              const FullType(String),
+              const FullType.nullable(String),
+            ]),
+            () => MapBuilder<String, String?>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
+          )
           ..addBuilderFactory(
             const FullType(BuiltMap, const [
               const FullType(AssetId),

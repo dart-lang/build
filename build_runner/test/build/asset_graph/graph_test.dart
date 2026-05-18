@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:convert';
-
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner/src/build/asset_graph/build_step_id.dart';
@@ -149,23 +147,6 @@ void main() {
           decoded.allPostProcessBuildStepResults,
           graph.allPostProcessBuildStepResults,
         );
-      });
-
-      test(
-        'Throws an AssetGraphCorruptedException if versions dont match up',
-        () {
-          final bytes = graph.serialize();
-          final serialized =
-              json.decode(utf8.decode(bytes)) as Map<String, dynamic>;
-          serialized['version'] = -1;
-          final encoded = utf8.encode(json.encode(serialized));
-          expect(AssetGraph.deserialize(encoded), null);
-        },
-      );
-
-      test('Throws an AssetGraphCorruptedException on invalid json', () {
-        final bytes = List.of(graph.serialize())..removeLast();
-        expect(AssetGraph.deserialize(bytes), null);
       });
     });
 

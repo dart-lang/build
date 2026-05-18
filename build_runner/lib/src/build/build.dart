@@ -26,6 +26,7 @@ import '../io/create_merged_dir.dart';
 import '../io/reader_writer.dart';
 import '../logging/build_log.dart';
 import '../logging/timed_activities.dart';
+import 'asset_graph/asset_graph_json.dart';
 import 'asset_graph/build_step_id.dart';
 import 'asset_graph/build_step_result.dart';
 import 'asset_graph/glob_id.dart';
@@ -331,7 +332,7 @@ class Build {
     runZonedGuarded(
       () async {
         final invalidatedSources =
-            assetGraph.cleanBuild ? null : await _updateAssetGraph(idsToCheck);
+            buildPlan.cleanBuild ? null : await _updateAssetGraph(idsToCheck);
         for (final id in assetGraph.sources) {
           final node = assetGraph.get(id)!;
           if (node.digest == null && node.primaryOutputs.isNotEmpty) {
@@ -347,8 +348,6 @@ class Build {
         );
         final result = await _runPhases();
 
-        assetGraph.previousBuildTriggersDigest =
-            buildConfigs.buildTriggers.digest;
         // Combine previous phased asset deps, if any, with the newly loaded
         // deps. Because of skipped builds, the newly loaded deps might just
         // say "not generated yet", in which case the old value is retained.
@@ -363,15 +362,11 @@ class Build {
         assetGraph.previousPhasedAssetDeps = updatedPhasedAssetDeps;
         await readerWriter.writeAsBytes(
           AssetId(buildPackages.outputRoot, assetGraphPath),
-          assetGraph.serialize(),
+          AssetGraphJson.serialize(
+            buildPlanDigest: buildPlan.buildPlanDigest,
+            assetGraph: assetGraph,
+          ),
         );
-        // Phases options don't change during a build series, so for all
-        // subsequent builds "previous" and current build options digests
-        // match.
-        assetGraph.previousInBuildPhasesOptionsDigests =
-            assetGraph.inBuildPhasesOptionsDigests;
-        assetGraph.previousPostBuildActionsOptionsDigests =
-            assetGraph.postBuildActionsOptionsDigests;
 
         if (!done.isCompleted) done.complete(result);
       },
@@ -944,16 +939,11 @@ class Build {
         }
       }
 
-      if (assetGraph.cleanBuild) return true;
+      if (buildPlan.cleanBuild) return true;
 
-      if (assetGraph.previousBuildTriggersDigest !=
-          buildConfigs.buildTriggers.digest) {
-        return true;
-      }
+      if (buildPlan.triggersChanged) return true;
 
-      if (assetGraph.previousInBuildPhasesOptionsDigests![buildStepId
-              .phaseNumber] !=
-          assetGraph.inBuildPhasesOptionsDigests[buildStepId.phaseNumber]) {
+      if (buildPlan.phaseOptionsChanged(buildStepId.phaseNumber)) {
         return true;
       }
 
@@ -1125,13 +1115,11 @@ class Build {
     final input = buildStepId.input;
     final node = assetGraph.get(input)!;
 
-    if (assetGraph.cleanBuild) {
+    if (buildPlan.cleanBuild) {
       return true;
     }
 
-    if (assetGraph.previousPostBuildActionsOptionsDigests![buildStepId
-            .actionNumber] !=
-        assetGraph.postBuildActionsOptionsDigests[buildStepId.actionNumber]) {
+    if (buildPlan.postBuildOptionsChanged(buildStepId.actionNumber)) {
       return true;
     }
 

@@ -2,9 +2,13 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:convert';
+
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_config/build_config.dart' hide BuilderDefinition;
+import 'package:build_runner/src/build/asset_graph/asset_graph_json.dart';
+import 'package:build_runner/src/build/asset_graph/graph.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
@@ -22,25 +26,25 @@ import '../common/common.dart';
 
 void main() {
   group('BuildPlan', () {
-    final rootPackage = 'a';
-    final assetId = AssetId(rootPackage, 'lib/a.dart');
+    final assetId = AssetId('a', 'lib/a.dart');
     final outputId = AssetId('a', 'lib/a.dart.copy');
-    final assetId2 = AssetId(rootPackage, 'lib/an.other');
-    final assetGraphId = AssetId(rootPackage, assetGraphPath);
+    final assetId2 = AssetId('a', 'lib/an.other');
+    final assetGraphId = AssetId('a', assetGraphPath);
 
     late BuildPackages buildPackages;
     late ReaderWriter readerWriter;
     late BuildOptions buildOptions;
     late BuilderFactories builderFactories;
     late TestingOverrides testingOverrides;
+    late BuildPlan buildPlan;
 
-    setUp(() {
-      buildPackages = BuildPackages.singlePackageBuild(rootPackage, [
-        BuildPackage.forTesting(name: rootPackage, watch: true, isOutput: true),
+    setUp(() async {
+      buildPackages = BuildPackages.singlePackageBuild('a', [
+        BuildPackage.forTesting(name: 'a', watch: true, isOutput: true),
       ]);
-      readerWriter = InternalTestReaderWriter(outputRootPackage: rootPackage);
-      readerWriter.writeAsString(assetId, '// a.dart');
-      readerWriter.writeAsString(assetId2, '// other');
+      readerWriter = InternalTestReaderWriter(outputRootPackage: 'a');
+      await readerWriter.writeAsString(assetId, '// a.dart');
+      await readerWriter.writeAsString(assetId2, '// other');
       buildOptions = BuildOptions.forTests();
       builderFactories = BuilderFactories({
         '': [(_) => TestBuilder()],
@@ -50,33 +54,42 @@ void main() {
         builderDefinitions: [BuilderDefinition('')].build(),
         readerWriter: readerWriter,
         buildPackages: buildPackages,
+        checkBuilderFreshness: false,
+      );
+      buildPlan = await BuildPlan.load(
+        builderFactories: builderFactories,
+        buildOptions: buildOptions,
+        testingOverrides: testingOverrides,
       );
     });
 
     test('loads with no asset graph', () async {
-      final buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides,
-      );
       expect(buildPlan.takePreviousAssetGraph(), null);
     });
 
-    test('loads previous asset graph', () async {
-      var buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides,
+    Future<void> writeGraphAndPlan(
+      AssetGraph assetGraph,
+      BuildPlan buildPlan,
+    ) async {
+      await readerWriter.writeAsBytes(
+        assetGraphId,
+        AssetGraphJson.serialize(
+          buildPlanDigest: buildPlan.buildPlanDigest,
+          assetGraph: assetGraph,
+        ),
       );
-      final assetGraph = buildPlan.takeAssetGraph();
-      await readerWriter.writeAsBytes(assetGraphId, assetGraph.serialize());
+    }
 
+    test('loads previous asset graph', () async {
+      final assetGraph = buildPlan.takeAssetGraph();
+      await writeGraphAndPlan(assetGraph, buildPlan);
       buildPlan = await BuildPlan.load(
         builderFactories: builderFactories,
         buildOptions: buildOptions,
         testingOverrides: testingOverrides,
       );
       final loadedGraph = buildPlan.takePreviousAssetGraph();
+
       expect(loadedGraph.toString(), assetGraph.toString());
     });
 
@@ -88,18 +101,14 @@ void main() {
           builderDefinitions: [BuilderDefinition('missing')].build(),
         ),
       );
+
       expect(buildPlan.buildPhases.inBuildPhases.isEmpty, true);
       expect(buildPlan.restartIsNeeded, true);
     });
 
     test('discards previous asset graph if build phases changed', () async {
-      var buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides,
-      );
       final assetGraph = buildPlan.takeAssetGraph();
-      await readerWriter.writeAsBytes(assetGraphId, assetGraph.serialize());
+      await writeGraphAndPlan(assetGraph, buildPlan);
 
       buildPlan = await BuildPlan.load(
         builderFactories: builderFactories,
@@ -147,7 +156,7 @@ void main() {
       assetGraph.updateNode(outputId, (b) {
         b.digest = Digest([]);
       });
-      await readerWriter.writeAsBytes(assetGraphId, assetGraph.serialize());
+      await writeGraphAndPlan(assetGraph, buildPlan);
 
       buildPlan = await BuildPlan.load(
         builderFactories: builderFactories,
@@ -173,13 +182,8 @@ void main() {
     });
 
     test('discards previous asset graph if SDK version changed', () async {
-      var buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides,
-      );
       final assetGraph = buildPlan.takeAssetGraph();
-      await readerWriter.writeAsBytes(assetGraphId, assetGraph.serialize());
+      await writeGraphAndPlan(assetGraph, buildPlan);
 
       buildPlan = await BuildPlan.load(
         builderFactories: builderFactories,
@@ -194,13 +198,8 @@ void main() {
     });
 
     test('discards previous asset graph if packages changed', () async {
-      var buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides,
-      );
       final assetGraph = buildPlan.takeAssetGraph();
-      await readerWriter.writeAsBytes(assetGraphId, assetGraph.serialize());
+      await writeGraphAndPlan(assetGraph, buildPlan);
 
       final buildPackages2 = BuildPackages.singlePackageBuild('b', [
         BuildPackage.forTesting(name: 'b', watch: true, isOutput: true),
@@ -220,13 +219,8 @@ void main() {
     test(
       'discards previous asset graph if enabled experiments changed',
       () async {
-        var buildPlan = await BuildPlan.load(
-          builderFactories: builderFactories,
-          buildOptions: buildOptions,
-          testingOverrides: testingOverrides,
-        );
         final assetGraph = buildPlan.takeAssetGraph();
-        await readerWriter.writeAsBytes(assetGraphId, assetGraph.serialize());
+        await writeGraphAndPlan(assetGraph, buildPlan);
 
         buildPlan = await withEnabledExperiments(
           () => BuildPlan.load(
@@ -242,11 +236,6 @@ void main() {
     );
 
     test('reports updates', () async {
-      var buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides,
-      );
       final assetGraph = buildPlan.takeAssetGraph();
 
       // Write an output and add it to the asset graph as if it was built.
@@ -259,14 +248,14 @@ void main() {
         b.digest = Digest([]);
       });
 
-      await readerWriter.writeAsBytes(assetGraphId, assetGraph.serialize());
+      await writeGraphAndPlan(assetGraph, buildPlan);
 
       // Remove source.
       await readerWriter.delete(assetId);
       // Change source.
       await readerWriter.writeAsString(assetId2, 'changed');
       // Add source.
-      final assetId3 = AssetId(rootPackage, 'lib/new.dart');
+      final assetId3 = AssetId('a', 'lib/new.dart');
       await readerWriter.writeAsString(assetId3, '');
 
       // Remove generated.
@@ -285,22 +274,22 @@ void main() {
       final buildConfig1 = runInBuildConfigZone(
         () {
           return BuildConfig(
-            packageName: rootPackage,
+            packageName: 'a',
             buildTargets: {
-              '$rootPackage|$rootPackage': BuildTarget(
+              'a|a': BuildTarget(
                 sources: const InputSet(include: ['**/*.dart']),
               ),
             },
           );
         },
-        rootPackage,
+        'a',
         [],
       );
       final buildPlan1 = await BuildPlan.load(
         builderFactories: builderFactories,
         buildOptions: buildOptions,
         testingOverrides: testingOverrides.copyWith(
-          buildConfig: {rootPackage: buildConfig1}.build(),
+          buildConfig: {'a': buildConfig1}.build(),
         ),
       );
       final assetGraph1 = buildPlan1.takeAssetGraph();
@@ -311,27 +300,228 @@ void main() {
       final buildConfig2 = runInBuildConfigZone(
         () {
           return BuildConfig(
-            packageName: rootPackage,
+            packageName: 'a',
             buildTargets: {
-              '$rootPackage|$rootPackage': BuildTarget(
+              'a|a': BuildTarget(
                 sources: const InputSet(include: ['**/*.other']),
               ),
             },
           );
         },
-        rootPackage,
+        'a',
         [],
       );
       final buildPlan2 = await BuildPlan.load(
         builderFactories: builderFactories,
         buildOptions: buildOptions,
         testingOverrides: testingOverrides.copyWith(
-          buildConfig: {rootPackage: buildConfig2}.build(),
+          buildConfig: {'a': buildConfig2}.build(),
         ),
       );
       final assetGraph2 = buildPlan2.takeAssetGraph();
       // Matches the only `*.other` source.
       expect(assetGraph2.sources, <AssetId>{assetId2});
+    });
+
+    test('tracks cleanBuild when build_plan.json does not exist', () async {
+      final plan = await BuildPlan.load(
+        builderFactories: builderFactories,
+        buildOptions: buildOptions,
+        testingOverrides: testingOverrides,
+      );
+      expect(plan.cleanBuild, isTrue);
+    });
+
+    test(
+      'tracks cleanBuild when build_plan.json compileDigest is fresh',
+      () async {
+        await writeGraphAndPlan(buildPlan.takeAssetGraph(), buildPlan);
+        buildPlan = await BuildPlan.load(
+          builderFactories: builderFactories,
+          buildOptions: buildOptions,
+          testingOverrides: testingOverrides,
+        );
+        expect(buildPlan.cleanBuild, isFalse);
+      },
+    );
+
+    test(
+      'tracks cleanBuild when build_plan.json compileDigest is stale',
+      () async {
+        buildPlan = buildPlan.copyWith(
+          buildPlanDigest: buildPlan.buildPlanDigest.rebuild(
+            (b) => b.compileDigest = 'stale_digest',
+          ),
+        );
+        await writeGraphAndPlan(buildPlan.takeAssetGraph(), buildPlan);
+
+        buildPlan = await BuildPlan.load(
+          builderFactories: builderFactories,
+          buildOptions: buildOptions,
+          testingOverrides: testingOverrides,
+        );
+        expect(buildPlan.cleanBuild, isTrue);
+      },
+    );
+
+    test('tracks triggersChanged when triggers change', () async {
+      buildPlan = buildPlan.copyWith(
+        buildPlanDigest: buildPlan.buildPlanDigest.rebuild(
+          (b) => b.buildTriggersDigest = 'triggers_1',
+        ),
+      );
+      await writeGraphAndPlan(buildPlan.takeAssetGraph(), buildPlan);
+
+      final buildConfig2 = runInBuildConfigZone(
+        () {
+          return BuildConfig(
+            packageName: 'a',
+            buildTargets: {
+              'a|a': BuildTarget(
+                builders: {
+                  '': TargetBuilderConfig(
+                    generateFor: const InputSet(include: ['lib/*.dart']),
+                  ),
+                },
+              ),
+            },
+          );
+        },
+        'a',
+        [],
+      );
+
+      final buildPlan2 = await BuildPlan.load(
+        builderFactories: builderFactories,
+        buildOptions: buildOptions,
+        testingOverrides: testingOverrides.copyWith(
+          buildConfig: {'a': buildConfig2}.build(),
+        ),
+      );
+      expect(buildPlan2.cleanBuild, isFalse);
+      expect(buildPlan2.triggersChanged, isTrue);
+    });
+
+    test('tracks phaseOptionsChanged when builder options change', () async {
+      buildPlan = buildPlan.copyWith(
+        buildPlanDigest: buildPlan.buildPlanDigest.rebuild(
+          (b) => b.inBuildPhasesOptionsDigests[0] = 'dummy_digest_1',
+        ),
+      );
+      await writeGraphAndPlan(buildPlan.takeAssetGraph(), buildPlan);
+
+      final buildConfig2 = runInBuildConfigZone(
+        () {
+          return BuildConfig(
+            packageName: 'a',
+            buildTargets: {
+              'a|a': BuildTarget(
+                builders: {
+                  '': TargetBuilderConfig(
+                    options: const {'some_option': 'changed'},
+                  ),
+                },
+              ),
+            },
+          );
+        },
+        'a',
+        [],
+      );
+
+      final buildPlan2 = await BuildPlan.load(
+        builderFactories: builderFactories,
+        buildOptions: buildOptions,
+        testingOverrides: testingOverrides.copyWith(
+          buildConfig: {'a': buildConfig2}.build(),
+        ),
+      );
+      expect(buildPlan2.cleanBuild, isFalse);
+      expect(buildPlan2.phaseOptionsChanged(0), isTrue);
+    });
+
+    test('tracks buildPhasesDigest when build phases change', () async {
+      buildPlan = buildPlan.copyWith(
+        buildPlanDigest: buildPlan.buildPlanDigest.rebuild(
+          (b) => b.buildPhasesDigest = 'stale_digest',
+        ),
+      );
+      await writeGraphAndPlan(buildPlan.takeAssetGraph(), buildPlan);
+
+      buildPlan = await BuildPlan.load(
+        builderFactories: builderFactories,
+        buildOptions: buildOptions,
+        testingOverrides: testingOverrides,
+      );
+      expect(buildPlan.cleanBuild, isTrue);
+    });
+
+    test('tracks dartVersion when SDK version changes', () async {
+      buildPlan = buildPlan.copyWith(
+        buildPlanDigest: buildPlan.buildPlanDigest.rebuild(
+          (b) => b.dartVersion = 'stale_version',
+        ),
+      );
+      await writeGraphAndPlan(buildPlan.takeAssetGraph(), buildPlan);
+
+      buildPlan = await BuildPlan.load(
+        builderFactories: builderFactories,
+        buildOptions: buildOptions,
+        testingOverrides: testingOverrides,
+      );
+      expect(buildPlan.cleanBuild, isTrue);
+    });
+
+    test('tracks enabledExperiments when experiments change', () async {
+      buildPlan = buildPlan.copyWith(
+        buildPlanDigest: buildPlan.buildPlanDigest.rebuild(
+          (b) => b.enabledExperiments.add('stale_experiment'),
+        ),
+      );
+      await writeGraphAndPlan(buildPlan.takeAssetGraph(), buildPlan);
+
+      buildPlan = await BuildPlan.load(
+        builderFactories: builderFactories,
+        buildOptions: buildOptions,
+        testingOverrides: testingOverrides,
+      );
+      expect(buildPlan.cleanBuild, isTrue);
+    });
+
+    test(
+      'tracks packageLanguageVersions when package language versions change',
+      () async {
+        buildPlan = buildPlan.copyWith(
+          buildPlanDigest: buildPlan.buildPlanDigest.rebuild(
+            (b) => b.packageLanguageVersions['a'] = '1.0',
+          ),
+        );
+        await writeGraphAndPlan(buildPlan.takeAssetGraph(), buildPlan);
+
+        buildPlan = await BuildPlan.load(
+          builderFactories: builderFactories,
+          buildOptions: buildOptions,
+          testingOverrides: testingOverrides,
+        );
+        expect(buildPlan.cleanBuild, isTrue);
+      },
+    );
+
+    test('tracks cleanBuild when asset_graph.json version is stale', () async {
+      final assetGraphId = AssetId(buildPackages.outputRoot, assetGraphPath);
+      await writeGraphAndPlan(buildPlan.takeAssetGraph(), buildPlan);
+
+      final decodedMap =
+          json.decode(await readerWriter.readAsString(assetGraphId)) as Map;
+      decodedMap['version'] = 999;
+      await readerWriter.writeAsString(assetGraphId, json.encode(decodedMap));
+
+      buildPlan = await BuildPlan.load(
+        builderFactories: builderFactories,
+        buildOptions: buildOptions,
+        testingOverrides: testingOverrides,
+      );
+      expect(buildPlan.cleanBuild, isTrue);
     });
   });
 }
