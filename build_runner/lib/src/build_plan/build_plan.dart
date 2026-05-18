@@ -260,7 +260,8 @@ class BuildPlan {
         ...cacheDirSources,
         for (final node in previousAssetGraph.allNodes)
           if (node.isFile &&
-              (node.type != NodeType.generated || node.wasOutput))
+              (node.type != NodeType.generated ||
+                  previousAssetGraph.wasOutput(node.id)))
             node.id,
       };
       assetGraph = previousAssetGraph.copyForNextBuild();

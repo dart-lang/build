@@ -264,7 +264,8 @@ class Build {
       }
       final oldExisted =
           oldNode != null && oldNode.type != NodeType.missingSource;
-      final oldDigest = oldNode?.digest;
+      final oldDigest =
+          oldNode?.type == NodeType.source ? oldNode?.digest : null;
       var exists = false;
       Digest? newDigest;
       if (await readerWriter.canRead(id)) {
@@ -308,9 +309,7 @@ class Build {
     }
     deletedAssets.addAll(deleted);
     for (final entry in newDigests.entries) {
-      assetGraph.updateNode(entry.key, (nodeBuilder) {
-        nodeBuilder.digest = entry.value;
-      });
+      assetGraph.updateDigest(entry.key, entry.value);
     }
 
     final invalidatedSources = <AssetId>{};
@@ -578,6 +577,9 @@ class Build {
       singleStepReaderWriter,
     )) {
       buildLog.skipStep(phase: phase, lazy: lazy);
+      for (final output in builderOutputs) {
+        processedOutputs.add(output);
+      }
       return <AssetId>[];
     }
 
@@ -736,7 +738,8 @@ class Build {
       if (buildStepId.actionNumber != actionNum) continue;
       final inputNode = assetGraph.get(buildStepId.input)!;
       if (inputNode.type == NodeType.source ||
-          inputNode.type == NodeType.generated && inputNode.wasOutput) {
+          inputNode.type == NodeType.generated &&
+              assetGraph.wasOutput(inputNode.id)) {
         outputs.addAll(
           await _runPostProcessBuildStep(
             phaseNum,
@@ -869,9 +872,6 @@ class Build {
       BuildStepResult((b) => b..isHidden = isHidden),
     );
     for (final output in outputs) {
-      assetGraph.updateNode(output, (nodeBuilder) {
-        nodeBuilder.digest = null;
-      });
       processedOutputs.add(output);
     }
   }
@@ -885,17 +885,12 @@ class Build {
         assetGraph.buildStepResultFor(buildStepId)?.isHidden ?? true;
     assetGraph.updateBuildStepResult(
       buildStepId,
-      BuildStepResult(
-        (b) =>
-            b
-              ..result = false
-              ..isHidden = isHidden,
-      ),
+      BuildStepResult((b) {
+        b.result = false;
+        b.isHidden = isHidden;
+      }),
     );
     for (final output in outputs) {
-      assetGraph.updateNode(output, (nodeBuilder) {
-        nodeBuilder.digest = null;
-      });
       processedOutputs.add(output);
     }
   }
@@ -943,7 +938,7 @@ class Build {
 
         // If the primary input succeeded but was not output, this build is
         // skipped.
-        if (!primaryInputNode.wasOutput) {
+        if (!assetGraph.wasOutput(buildStepId.primaryInput)) {
           await _cleanUpStaleOutputs(outputs);
           _markBuildStepSkipped(buildStepId, outputs);
           return false;
@@ -1162,7 +1157,7 @@ class Build {
   Future<void> _cleanUpStaleOutputs(Iterable<AssetId> outputs) async {
     for (final output in outputs) {
       final node = assetGraph.get(output)!;
-      if (node.isGenerated && node.wasOutput) {
+      if (node.isGenerated && assetGraph.wasOutput(output)) {
         await _delete(output);
       }
     }
@@ -1221,11 +1216,12 @@ class Build {
       // the glob.
       final generatedFileResults = <AssetId>[];
       for (final id in generatedFileInputs) {
-        final node = assetGraph.get(id)!;
         final stepResult = assetGraph.buildStepResultFor(
           assetGraph.generatedBy[id]!,
         );
-        if (node.wasOutput && stepResult != null && stepResult.result == true) {
+        if (assetGraph.wasOutput(id) &&
+            stepResult != null &&
+            stepResult.result == true) {
           generatedFileResults.add(id);
         }
       }
@@ -1270,48 +1266,50 @@ class Build {
         unusedAssets != null && unusedAssets.isNotEmpty
             ? inputTracker.inputs.difference(unusedAssets)
             : inputTracker.inputs;
-
     final result = errors.isEmpty;
-
     final phaseNum = stepReaderWriter.phase;
-    final isHidden = buildPhases.inBuildPhases[phaseNum].hideOutput;
-    final buildStepId = BuildStepId(primaryInput: input, phaseNumber: phaseNum);
-    final stepResult = BuildStepResult((b) {
-      b.result = result;
-      b.isHidden = isHidden;
-      b.inputs.replace(usedInputs);
-      b.globsEvaluated.replace(inputTracker.globsEvaluated);
-      b.resolverEntrypoints.replace(inputTracker.resolverEntrypoints);
-      b.errors.replace(errors);
-    });
 
-    final previousResult = assetGraph.buildStepResultFor(buildStepId)?.result;
-    assetGraph.updateBuildStepResult(buildStepId, stepResult);
+    final buildStepResultBuilder =
+        BuildStepResultBuilder()
+          ..result = result
+          ..isHidden = buildPhases.inBuildPhases[phaseNum].hideOutput
+          ..inputs.replace(usedInputs)
+          ..globsEvaluated.replace(inputTracker.globsEvaluated)
+          ..resolverEntrypoints.replace(inputTracker.resolverEntrypoints)
+          ..errors.replace(errors);
+    for (final output in outputs) {
+      if (stepReaderWriter.assetsWritten.contains(output)) {
+        buildStepResultBuilder.outputs[output] = await readerWriter.digest(
+          output,
+        );
+      }
+    }
+    final buildStepResult = buildStepResultBuilder.build();
+
+    final buildStepId = BuildStepId(primaryInput: input, phaseNumber: phaseNum);
+    final previousBuildStepResult = assetGraph.buildStepResultFor(buildStepId);
+    final previousResult = previousBuildStepResult?.result;
+    assetGraph.updateBuildStepResult(buildStepId, buildStepResult);
 
     if (result == false) {
       errorsShownSteps.add(buildStepId);
     }
 
     for (final output in outputs) {
-      final wasOutput = stepReaderWriter.assetsWritten.contains(output);
-      final digest = wasOutput ? await readerWriter.digest(output) : null;
-      var outputNode = assetGraph.get(output)!;
+      final oldDigest = previousBuildStepResult?.outputs[output];
+      final newDigest = buildStepResult.outputs[output];
 
       // A transition from (missing or failed) to (written and not failed) is
       // a new primary input that triggers generation even if no content
       // changed.
-      if ((outputNode.digest == null || previousResult == false) &&
-          (digest != null && result)) {
+      if ((oldDigest == null || previousResult == false) &&
+          (newDigest != null && result)) {
         newPrimaryInputs.add(output);
       }
       // Only a change to content matters for non-primary inputs.
-      if (outputNode.digest != digest) {
+      if (oldDigest != newDigest) {
         changedOutputs.add(output);
       }
-
-      outputNode = assetGraph.updateNode(output, (nodeBuilder) {
-        nodeBuilder.digest = digest;
-      });
 
       processedOutputs.add(output);
     }

@@ -279,8 +279,8 @@ class SingleStepReaderWriter implements PhasedReader {
   /// Note that [id] must exist in the asset graph.
   Future<Digest> _ensureDigest(AssetId id) async {
     if (_runningBuild == null) return _delegate.digest(id);
-    final node = _runningBuild.assetGraph.get(id)!;
-    if (node.digest != null) return node.digest!;
+    final knownDigest = _runningBuild.assetGraph.digestFor(id);
+    if (knownDigest != null) return knownDigest;
 
     Digest digest;
     try {
@@ -288,9 +288,7 @@ class SingleStepReaderWriter implements PhasedReader {
     } on AssetNotFoundException {
       await ChildProcess.exitDueToAssetDeleted(id);
     }
-    _runningBuild.assetGraph.updateNode(id, (nodeBuilder) {
-      nodeBuilder.digest = digest;
-    });
+    _runningBuild.assetGraph.updateDigest(id, digest);
     return digest;
   }
 
@@ -322,7 +320,8 @@ class SingleStepReaderWriter implements PhasedReader {
         buildStepId,
       );
       return Readability.fromPreviousPhase(
-        node.wasOutput && (stepResult == null || stepResult.result != false),
+        _runningBuild.assetGraph.wasOutput(node.id) &&
+            (stepResult == null || stepResult.result != false),
       );
     }
     return Readability.fromPreviousPhase(node.type == NodeType.source);
@@ -402,7 +401,8 @@ class SingleStepReaderWriter implements PhasedReader {
         }
         final stepResult =
             _runningBuild.assetGraph.buildStepResultFor(buildStepId)!;
-        final isSuccessOutput = node.wasOutput && stepResult.result == true;
+        final isSuccessOutput =
+            _runningBuild.assetGraph.wasOutput(id) && stepResult.result == true;
         return PhasedValue.generated(
           atPhase: nodePhase,
           before: '',

@@ -74,7 +74,7 @@ class AssetTracker {
         .where((n) {
           if (!n.isFile) return false;
           if (n.type == NodeType.generated) {
-            return n.wasOutput;
+            return assetGraph.wasOutput(n.id);
           }
           return true;
         })

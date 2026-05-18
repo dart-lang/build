@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/serializer.dart';
+import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 import 'package:watcher/watcher.dart';
@@ -128,8 +129,26 @@ class AssetGraph implements GeneratedAssetHider {
   // Forwards to [Nodes], see docs on that class.
   bool contains(AssetId id) => _nodes.contains(id);
   AssetNode? get(AssetId id) => _nodes.get(id);
-  AssetNode updateNode(AssetId id, void Function(AssetNodeBuilder) updates) =>
-      _nodes.updateNode(id, updates);
+  AssetNode updateNode(AssetId id, void Function(AssetNodeBuilder) updates) {
+    final updated = _nodes.updateNode(id, updates);
+    if (updated.type == NodeType.generated && updated.digest != null) {
+      final buildStepId = _generatedBy[id];
+      if (buildStepId != null) {
+        final existingResult = _buildStepResults[buildStepId];
+        if (existingResult != null) {
+          _buildStepResults[buildStepId] = existingResult.rebuild(
+            (b) => b..outputs[id] = updated.digest!,
+          );
+        } else {
+          _buildStepResults[buildStepId] = BuildStepResult(
+            (b) => b..outputs[id] = updated.digest!,
+          );
+        }
+      }
+    }
+    return updated;
+  }
+
   BuildStepResult? buildStepResultFor(BuildStepId buildStepId) =>
       _buildStepResults[buildStepId];
   void updateBuildStepResult(BuildStepId buildStepId, BuildStepResult result) {
@@ -505,10 +524,52 @@ class AssetGraph implements GeneratedAssetHider {
   }) {
     _nodes.add(node);
     _generatedBy[node.id] = buildStepId;
-    final buildStepResult = _buildStepResults[buildStepId] ?? BuildStepResult();
-    _buildStepResults[buildStepId] = buildStepResult.rebuild(
-      (b) => b..isHidden = isHidden,
-    );
+    final existingResult = _buildStepResults[buildStepId];
+    if (existingResult == null) {
+      _buildStepResults[buildStepId] = BuildStepResult((b) {
+        b.isHidden = isHidden;
+        if (node.digest != null) {
+          b.outputs[node.id] = node.digest!;
+        }
+      });
+    } else {
+      if (node.digest != null) {
+        _buildStepResults[buildStepId] = existingResult.rebuild(
+          (b) => b..outputs[node.id] = node.digest!,
+        );
+      }
+    }
+  }
+
+  bool wasOutput(AssetId id) {
+    final node = get(id);
+    if (node == null) return false;
+    if (node.type == NodeType.generated) {
+      final buildStepId = _generatedBy[id];
+      if (buildStepId == null) return false;
+      final stepResult = buildStepResultFor(buildStepId);
+      return stepResult?.outputs.containsKey(id) ?? false;
+    }
+    return node.wasOutput;
+  }
+
+  Digest? digestFor(AssetId id) {
+    final node = get(id);
+    if (node == null) return null;
+    if (node.type == NodeType.generated) {
+      return buildStepResultFor(_generatedBy[id]!)!.outputs[id];
+    }
+    return node.digest;
+  }
+
+  void updateDigest(AssetId id, Digest? digest) {
+    final node = get(id);
+    if (node == null) return;
+    if (node.type == NodeType.generated) {
+      // Not set.
+    } else {
+      updateNode(id, (b) => b.digest = digest);
+    }
   }
 
   /// Adds a source that a builder tried to access but was missing.
@@ -566,7 +627,7 @@ class AssetGraph implements GeneratedAssetHider {
         // output is hidden.
         continue;
       }
-      if (node.wasOutput && !isHidden(id)) {
+      if (wasOutput(id) && !isHidden(id)) {
         final idToDelete = checkAndMoveId(id);
         if (idToDelete != null) result.add(idToDelete);
       }

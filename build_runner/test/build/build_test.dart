@@ -1190,19 +1190,13 @@ targets:
 
     // Regular generated asset nodes.
     final aCopyId = AssetId.parse('a|web/a.txt.copy');
-    final aCopyNode = AssetNode.generated(
-      aCopyId,
-      digest: computeDigest(aCopyId, 'a'),
-    );
+    final aCopyNode = AssetNode.generated(aCopyId);
     aSourceNode = aSourceNode.rebuild(
       (b) => b..primaryOutputs.add(aCopyNode.id),
     );
 
     final bCopyId = makeAssetId('a|lib/b.txt.copy'); //;
-    final bCopyNode = AssetNode.generated(
-      bCopyId,
-      digest: computeDigest(bCopyId, 'b'),
-    );
+    final bCopyNode = AssetNode.generated(bCopyId);
     bSourceNode = bSourceNode.rebuild(
       (b) => b..primaryOutputs.add(bCopyNode.id),
     );

@@ -147,7 +147,7 @@ class BuildSeries {
       // with no outputs.
       if (!_buildPlan.buildOptions.anyMergedOutputDirectory &&
           node.type != NodeType.missingSource &&
-          node.digest == null) {
+          _assetGraph.digestFor(id) == null) {
         continue;
       }
 

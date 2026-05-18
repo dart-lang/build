@@ -109,12 +109,13 @@ void main() {
       );
 
       for (final id in graph.outputs) {
-        final stepResult = BuildStepResult((b) => b..result = true);
+        final stepResult = BuildStepResult(
+          (b) =>
+              b
+                ..result = true
+                ..outputs[id] = Digest([]),
+        );
         graph.updateBuildStepResult(graph.generatedBy[id]!, stepResult);
-
-        graph.updateNode(id, (nodeBuilder) {
-          nodeBuilder.digest = Digest([]);
-        });
         readerWriter.testing.writeString(
           id,
           sources[graph.generatedBy[id]!.primaryInput]!,
@@ -367,9 +368,7 @@ void main() {
       final stepResult = BuildStepResult((b) => b..result = null);
       graph.updateBuildStepResult(graph.generatedBy[node.id]!, stepResult);
 
-      graph.updateNode(node.id, (nodeBuilder) {
-        nodeBuilder.digest = null;
-      });
+
 
       final success = await createMergedOutputDirectories(
         buildDirs:
