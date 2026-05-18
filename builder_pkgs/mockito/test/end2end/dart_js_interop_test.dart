@@ -33,7 +33,6 @@ final mockJSBigInt = createJSBigInt(42);
 final mockJSObject = JSObject();
 final mockJSArray = [1.toJS].toJS;
 final mockJSFunction = ((JSAny _) {}).toJS;
-final mockJSPromise = JSPromise((JSAny _, JSAny _) {}.toJS);
 final mockJSDataView = JSDataView(JSArrayBuffer(1));
 final mockJSArrayBuffer = JSArrayBuffer(1);
 final mockJSTypedArray = JSUint8Array();
@@ -65,7 +64,6 @@ void main() {
     when(mockFoo.jsObject).thenReturn(mockJSObject);
     when(mockFoo.jsArray).thenReturn(mockJSArray);
     when(mockFoo.jsFunction).thenReturn(mockJSFunction);
-    when(mockFoo.jsPromise).thenReturn(mockJSPromise);
     when(mockFoo.jsDataView).thenReturn(mockJSDataView);
     when(mockFoo.jsArrayBuffer).thenReturn(mockJSArrayBuffer);
     when(mockFoo.jsTypedArray).thenReturn(mockJSTypedArray);
@@ -93,7 +91,6 @@ void main() {
     // We use `equals` because permissive type checks against JS functions leads
     // to `package:test` believing this is a predicate.
     expect(mockFoo.jsFunction, equals(mockJSFunction));
-    expect(mockFoo.jsPromise, mockJSPromise);
     expect(mockFoo.jsDataView, mockJSDataView);
     expect(mockFoo.jsArrayBuffer, mockJSArrayBuffer);
     expect(mockFoo.jsTypedArray, mockJSTypedArray);

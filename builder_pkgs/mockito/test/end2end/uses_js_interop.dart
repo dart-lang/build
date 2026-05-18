@@ -34,7 +34,6 @@ class UsesJSInterop<T extends JSAny> {
   final JSObject jsObject;
   final JSArray jsArray;
   final JSFunction jsFunction;
-  final JSPromise jsPromise;
   final JSDataView jsDataView;
   final JSArrayBuffer jsArrayBuffer;
   final JSTypedArray jsTypedArray;
@@ -61,7 +60,6 @@ class UsesJSInterop<T extends JSAny> {
       jsObject = JSObject(),
       jsArray = JSArray(),
       jsFunction = (() {}).toJS,
-      jsPromise = JSPromise((JSAny _, JSAny _) {}.toJS),
       jsDataView = JSDataView(JSArrayBuffer(1)),
       jsArrayBuffer = JSArrayBuffer(1),
       jsTypedArray = JSUint8Array(),
