@@ -57,9 +57,15 @@ class DdcFrontendServerBuilder implements Builder {
 
     try {
       await _compile(module, buildStep);
+      frontendServerState.needsRecompileRestart = false;
     } on FrontendServerCompilationException catch (e) {
+      frontendServerState.needsRecompileRestart = true;
       await handleError(e);
     } on MissingModulesException catch (e) {
+      frontendServerState.needsRecompileRestart = true;
+      await handleError(e);
+    } catch (e) {
+      frontendServerState.needsRecompileRestart = true;
       await handleError(e);
     }
   }
@@ -133,6 +139,7 @@ class DdcFrontendServerBuilder implements Builder {
       sourceArg(webEntrypointAsset),
       changedAssetUris,
       [sourceArg(jsFESOutputId)],
+      recompileRestart: frontendServerState.needsRecompileRestart,
     );
     if (compilerOutput == null) {
       throw FrontendServerCompilationException(

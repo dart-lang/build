@@ -134,11 +134,13 @@ Future<void> _handleRequest(
                 .map(Uri.parse)
                 .toList();
         final filesToWrite = (request['filesToWrite'] as List).cast<String>();
+        final recompileRestart = request['recompileRestart'] as bool? ?? false;
 
         final result = await driver.recompileAndRecord(
           entrypoint,
           invalidatedFiles,
           filesToWrite,
+          recompileRestart: recompileRestart,
         );
 
         socket.writeln(

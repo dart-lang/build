@@ -47,8 +47,9 @@ class FrontendServerProxyDriver {
   Future<CompilerOutput?> recompileAndRecord(
     String entrypoint,
     List<Uri> invalidatedFiles,
-    Iterable<String> filesToWrite,
-  ) async {
+    Iterable<String> filesToWrite, {
+    bool recompileRestart = false,
+  }) async {
     if (_frontendServer!._socket != null) {
       final socket = _frontendServer!._socket!;
       final socketLines = _frontendServer!._socketLines!;
@@ -60,6 +61,7 @@ class FrontendServerProxyDriver {
           'invalidatedFiles':
               invalidatedFiles.map((u) => u.toString()).toList(),
           'filesToWrite': filesToWrite.toList(),
+          'recompileRestart': recompileRestart,
         }),
       );
       final responseLine = await nextResponseFuture;
@@ -79,7 +81,10 @@ class FrontendServerProxyDriver {
     // compile. We must additionally write all of FES's generated files
     // to disk - not just those for the 'current' library.
     final isFirstRequest = _cachedOutput == null;
-    final compilerOutput = await recompile(entrypoint, invalidatedFiles);
+    final compilerOutput =
+        recompileRestart
+            ? await this.recompileRestart(entrypoint, invalidatedFiles)
+            : await recompile(entrypoint, invalidatedFiles);
     if (compilerOutput == null ||
         compilerOutput.errorCount != 0 ||
         compilerOutput.errorMessage != null) {
@@ -111,6 +116,18 @@ class FrontendServerProxyDriver {
     final completer = Completer<CompilerOutput?>();
     _requestQueue.add(
       _RecompileRequest(entrypoint, invalidatedFiles, completer),
+    );
+    if (!_isProcessing) _processQueue();
+    return completer.future;
+  }
+
+  Future<CompilerOutput?> recompileRestart(
+    String entrypoint,
+    List<Uri> invalidatedFiles,
+  ) async {
+    final completer = Completer<CompilerOutput?>();
+    _requestQueue.add(
+      _RecompileRestartRequest(entrypoint, invalidatedFiles, completer),
     );
     if (!_isProcessing) _processQueue();
     return completer.future;
@@ -166,6 +183,12 @@ class FrontendServerProxyDriver {
             request.invalidatedFiles,
           );
         }
+      } else if (request is _RecompileRestartRequest) {
+        output = await _frontendServer!.recompileRestart(
+          request.entrypoint,
+          request.invalidatedFiles,
+        );
+        _cachedOutput = output;
       } else if (request is _CompileExpressionToJsRequest) {
         output = await _frontendServer!.compileExpressionToJs(
           libraryUri: request.libraryUri,
@@ -226,6 +249,16 @@ class _RecompileRequest extends _CompilationRequest {
   final String entrypoint;
   final List<Uri> invalidatedFiles;
   _RecompileRequest(this.entrypoint, this.invalidatedFiles, super.completer);
+}
+
+class _RecompileRestartRequest extends _CompilationRequest {
+  final String entrypoint;
+  final List<Uri> invalidatedFiles;
+  _RecompileRestartRequest(
+    this.entrypoint,
+    this.invalidatedFiles,
+    super.completer,
+  );
 }
 
 class _CompileExpressionToJsRequest extends _CompilationRequest {
@@ -452,6 +485,20 @@ class PersistentFrontendServer {
     _stdoutHandler!.reset();
     final inputKey = const Uuid().v4();
     _stdinController!.add('recompile $entrypoint $inputKey');
+    for (final file in invalidatedFiles) {
+      _stdinController.add(file.toString());
+    }
+    _stdinController.add(inputKey);
+    return await _stdoutHandler.compilerOutput!.future;
+  }
+
+  Future<CompilerOutput?> recompileRestart(
+    String entrypoint,
+    List<Uri> invalidatedFiles,
+  ) async {
+    _stdoutHandler!.reset();
+    final inputKey = const Uuid().v4();
+    _stdinController!.add('recompile-restart $entrypoint $inputKey');
     for (final file in invalidatedFiles) {
       _stdinController.add(file.toString());
     }

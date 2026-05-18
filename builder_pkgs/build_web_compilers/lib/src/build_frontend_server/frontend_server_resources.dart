@@ -28,6 +28,9 @@ class FrontendServerState {
   /// directory (rather than a fresh one).
   ScratchSpace? fesScratchSpace;
 
+  /// Whether the next recompile should be a recompile-restart.
+  bool needsRecompileRestart = false;
+
   /// Looks for and loads a `.web.entrypoint.json` file if it exists.
   ///
   /// Returns whether or not the `.web.entrypoint.json` was found and loaded.
