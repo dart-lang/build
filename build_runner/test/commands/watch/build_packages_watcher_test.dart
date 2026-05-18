@@ -149,6 +149,119 @@ void main() {
       await Future<void>.value();
       expect(done, isTrue);
     });
+
+    test('only watches the root-most packages', () async {
+      final buildPackages = BuildPackages.singlePackageBuild('a', {
+        BuildPackage(
+          name: 'a',
+          path: '/g/a',
+          isOutput: true,
+          watch: true,
+          dependencies: ['b', 'c'],
+        ),
+        BuildPackage(name: 'b', path: '/g/a/b', watch: true),
+        BuildPackage(name: 'c', path: '/g/c', watch: true),
+      });
+
+      final watchedPackages = <String>[];
+      final nodes = {
+        'a': FakeNodeWatcher(buildPackages['a']!)..markReady(),
+        'b': FakeNodeWatcher(buildPackages['b']!)..markReady(),
+        'c': FakeNodeWatcher(buildPackages['c']!)..markReady(),
+      };
+
+      final watcher = BuildPackagesWatcher(
+        buildPackages,
+        watch: (node) {
+          watchedPackages.add(node.name);
+          return nodes[node.name]!;
+        },
+      );
+
+      unawaited(watcher.watch().drain());
+      await watcher.ready;
+
+      expect(watchedPackages, contains('a'));
+      expect(watchedPackages, contains('c'));
+      expect(watchedPackages, isNot(contains('b')));
+      expect(watchedPackages.length, 2);
+    });
+
+    test('handle 3-level nesting correctly', () async {
+      final buildPackages = BuildPackages.singlePackageBuild('root', {
+        BuildPackage(
+          name: 'root',
+          path: '/g',
+          isOutput: true,
+          watch: true,
+          dependencies: ['a', 'b'],
+        ),
+        BuildPackage(name: 'a', path: '/g/a', watch: true),
+        BuildPackage(name: 'b', path: '/g/a/b', watch: true),
+      });
+
+      final watchedPackages = <String>[];
+      final nodes = {
+        'root': FakeNodeWatcher(buildPackages['root']!)..markReady(),
+        'a': FakeNodeWatcher(buildPackages['a']!)..markReady(),
+        'b': FakeNodeWatcher(buildPackages['b']!)..markReady(),
+      };
+
+      final watcher = BuildPackagesWatcher(
+        buildPackages,
+        watch: (node) {
+          watchedPackages.add(node.name);
+          return nodes[node.name]!;
+        },
+      );
+
+      unawaited(watcher.watch().drain());
+      await watcher.ready;
+
+      expect(watchedPackages, contains('root'));
+      expect(watchedPackages, isNot(contains('a')));
+      expect(watchedPackages, isNot(contains('b')));
+      expect(watchedPackages.length, 1);
+    });
+
+    test('reports events on the deepest nested package', () async {
+      final buildPackages = BuildPackages.singlePackageBuild('a', {
+        BuildPackage(
+          name: 'a',
+          path: '/g/a',
+          isOutput: true,
+          watch: true,
+          dependencies: ['b'],
+        ),
+        BuildPackage(name: 'b', path: '/g/a/b', watch: true),
+      });
+
+      final nodes = {'a': FakeNodeWatcher(buildPackages['a']!)..markReady()};
+
+      final watcher = BuildPackagesWatcher(
+        buildPackages,
+        watch: (node) {
+          return nodes[node.name]!;
+        },
+      );
+
+      final events = <AssetChange>[];
+      unawaited(watcher.watch().forEach(events.add));
+      await watcher.ready;
+
+      nodes['a']!.emitAdd('b/lib/b.dart');
+      nodes['a']!.emitAdd('lib/a.dart');
+
+      await pumpEventQueue();
+
+      expect(
+        events,
+        unorderedEquals([
+          AssetChange(AssetId('b', 'lib/b.dart'), ChangeType.ADD),
+          AssetChange(AssetId('a', 'lib/a.dart'), ChangeType.ADD),
+        ]),
+      );
+    });
   });
 }
 
