@@ -25,6 +25,7 @@ Builder webEntrypointMarkerBuilder(BuilderOptions options) {
   _ensureSameDdcHotReloadOptions(options);
   return WebEntrypointMarkerBuilder(
     usesWebHotReload: _readWebHotReloadOption(options),
+    webAssetsPath: _readWebAssetsPathOption(options),
   );
 }
 
@@ -57,7 +58,9 @@ Builder ddcBuilder(BuilderOptions options) {
   _ensureSameDdcOptions(options);
 
   if (_readWebHotReloadOption(options)) {
-    return DdcFrontendServerBuilder();
+    return DdcFrontendServerBuilder(
+      scratchSpaceDir: _readScratchSpaceDirOption(options),
+    );
   }
 
   return DevCompilerBuilder(
@@ -276,6 +279,14 @@ String? _readUsePrebuiltSdkFromPathOption(BuilderOptions options) {
   return options.config[_usePrebuiltSdkFromPathOption] as String?;
 }
 
+String _readWebAssetsPathOption(BuilderOptions options) {
+  return options.config[_webAssetsPathOption] as String? ?? 'web';
+}
+
+String? _readScratchSpaceDirOption(BuilderOptions options) {
+  return options.config[_scratchSpaceDirOption] as String?;
+}
+
 Map<String, String> _readEnvironmentOption(BuilderOptions options) {
   final environment = options.config[_environmentOption] as Map? ?? const {};
   return environment.map((key, value) => MapEntry('$key', '$value'));
@@ -292,11 +303,13 @@ const _trackUnusedInputsCompilerOption = 'track-unused-inputs';
 const _environmentOption = 'environment';
 const _webHotReloadOption = 'web-hot-reload';
 const _ddcLibraryBundleOption = 'ddc-library-bundle';
+const _webAssetsPathOption = 'web-assets-path';
 const _useUiLibrariesOption = 'use-ui-libraries';
 const _ddcKernelPathOption = 'ddc-kernel-path';
 const _librariesPathOption = 'libraries-path';
 const _platformSdkOption = 'platform-sdk';
 const _usePrebuiltSdkFromPathOption = 'use-prebuilt-sdk-from-path';
+const _scratchSpaceDirOption = 'scratch-space-dir';
 
 const _supportedOptions = [
   _environmentOption,
@@ -312,4 +325,6 @@ const _supportedOptions = [
   _librariesPathOption,
   _platformSdkOption,
   _usePrebuiltSdkFromPathOption,
+  _webAssetsPathOption,
+  _scratchSpaceDirOption,
 ];

@@ -7,7 +7,7 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 
-import 'common.dart';
+import '../common.dart';
 import 'meta_module.dart';
 import 'module_cache.dart';
 import 'module_library_builder.dart';

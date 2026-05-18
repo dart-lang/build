@@ -2,11 +2,11 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-export 'common.dart' show multiRootScheme;
+export '../build_frontend_server/frontend_server_resources.dart'
+    show frontendServerState, frontendServerStateResource;
+export '../common.dart' show fesManagerConfigPath, multiRootScheme;
 export 'ddc_names.dart';
 export 'errors.dart' show MissingModulesException, UnsupportedModules;
-export 'frontend_server_resources.dart'
-    show frontendServerState, frontendServerStateResource;
 export 'kernel_builder.dart' show KernelBuilder, reportUnusedKernelInputs;
 export 'meta_module_builder.dart' show MetaModuleBuilder, metaModuleExtension;
 export 'meta_module_clean_builder.dart'
@@ -24,4 +24,6 @@ export 'workers.dart'
         dartdevkDriverResource,
         frontendServerProxyDriverResource,
         maxWorkersPerTask,
-        persistentFrontendServerResource;
+        persistentFrontendServer,
+        persistentFrontendServerResource,
+        startFrontendServerWorker;

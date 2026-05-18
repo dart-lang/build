@@ -4,6 +4,8 @@
 
 ## 4.5.0
 
+- Add `webAssetsPath` option to `build_web_compilers:entrypoint` to allow manually specifying a non-default main directory.
+- Add `scratch-space-dir` to specify the directory for `scratch_space` in `build_daemon`.
 - Fixed `DdcFrontendServerBuilder` to correctly work with generated entrypoints.
 - Move `module_library` and `module_cleanup` builders from `build_modules` to `build_web_compilers`.
 

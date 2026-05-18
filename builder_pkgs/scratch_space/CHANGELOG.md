@@ -1,7 +1,8 @@
-## 1.2.1-wip
+## 1.2.1
 
 - Move source to
   https://github.com/dart-lang/build/blob/master/builder_pkgs/scratch_space.
+- Add `ScratchSpace.existing` to create a scratch space from a pre-existing directory.
 
 ## 1.2.0
 
