@@ -261,13 +261,7 @@ void main() {
       final outputId = AssetId('a', 'web/main.ddc.js');
       final buildStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
       assetGraph.addGeneratedForTest(
-        AssetNode.generated(
-          outputId,
-          phaseNumber: 0,
-          isHidden: false,
-          digest: Digest([]),
-          primaryInput: primaryId,
-        ),
+        AssetNode.generated(outputId, isHidden: false, digest: Digest([])),
         buildStepId,
       );
       final stepResult = BuildStepResult((b) => b..result = false);

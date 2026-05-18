@@ -15,12 +15,7 @@ void main() {
       for (final node in [
         // Should match.
         AssetNode.source(AssetId('a', 'lib/a.dart')),
-        AssetNode.generated(
-          AssetId('a', 'lib/a.g.dart'),
-          primaryInput: AssetId('a', 'input'),
-          phaseNumber: 0,
-          isHidden: false,
-        ),
+        AssetNode.generated(AssetId('a', 'lib/a.g.dart'), isHidden: false),
         // Should not match.
         AssetNode.source(AssetId('b', 'lib/a.dart')),
         AssetNode.placeholder(AssetId('a', r'lib/$lib$')),

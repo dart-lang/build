@@ -104,8 +104,6 @@ void main() {
             final generatedId = makeAssetId();
             final generatedNode = AssetNode.generated(
               generatedId,
-              phaseNumber: phaseNum,
-              primaryInput: node.id,
               digest: g.isEven ? Digest([]) : null,
               isHidden: g % 3 == 0,
             );

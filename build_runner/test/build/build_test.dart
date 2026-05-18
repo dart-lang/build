@@ -1192,8 +1192,6 @@ targets:
     final aCopyId = AssetId.parse('a|web/a.txt.copy');
     final aCopyNode = AssetNode.generated(
       aCopyId,
-      phaseNumber: 0,
-      primaryInput: makeAssetId('a|web/a.txt'),
       digest: computeDigest(aCopyId, 'a'),
       isHidden: false,
     );
@@ -1204,8 +1202,6 @@ targets:
     final bCopyId = makeAssetId('a|lib/b.txt.copy'); //;
     final bCopyNode = AssetNode.generated(
       bCopyId,
-      phaseNumber: 0,
-      primaryInput: makeAssetId('a|lib/b.txt'),
       digest: computeDigest(bCopyId, 'b'),
       isHidden: false,
     );

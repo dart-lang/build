@@ -475,12 +475,7 @@ class AssetGraph implements GeneratedAssetHider {
         _removeRecursive(output, removedIds: removed);
       }
 
-      final newNode = AssetNode.generated(
-        output,
-        phaseNumber: phaseNumber,
-        primaryInput: primaryInput,
-        isHidden: isHidden,
-      );
+      final newNode = AssetNode.generated(output, isHidden: isHidden);
       _nodes.add(newNode);
       _generatedBy[output] = BuildStepId(
         primaryInput: primaryInput,

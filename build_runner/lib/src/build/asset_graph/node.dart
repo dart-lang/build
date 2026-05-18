@@ -100,8 +100,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   factory AssetNode.generated(
     AssetId id, {
     Digest? digest,
-    AssetId? primaryInput,
-    int? phaseNumber,
     required bool isHidden,
   }) => AssetNode((b) {
     b.id = id;
