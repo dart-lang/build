@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/serializer.dart';
+import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 import 'package:watcher/watcher.dart';
@@ -138,6 +139,38 @@ class AssetGraph implements GeneratedAssetHider {
   Map<GlobId, GlobResult> get globResults => _globResults;
 
   Iterable<AssetNode> get allNodes => _nodes.allNodes;
+  Iterable<AssetId> get allNodeIds => allNodes.map((n) => n.id);
+
+  bool nodeExists(AssetId id) {
+    final node = get(id);
+    return node != null && node.type != NodeType.missingSource;
+  }
+  bool isSource(AssetId id) => get(id)?.type == NodeType.source;
+  bool isMissingSource(AssetId id) => get(id)?.type == NodeType.missingSource;
+  bool isGenerated(AssetId id) => get(id)?.type == NodeType.generated;
+  bool isPostGenerated(AssetId id) => get(id)?.type == NodeType.postGenerated;
+  bool isFile(AssetId id) => get(id)?.isFile ?? false;
+  bool wasOutput(AssetId id) => get(id)?.wasOutput ?? false;
+  bool hasPrimaryOutputs(AssetId id) =>
+      get(id)?.primaryOutputs.isNotEmpty ?? false;
+  GeneratedNodeConfiguration? generatedNodeConfigurationFor(AssetId id) =>
+      get(id)?.generatedNodeConfiguration;
+
+  Digest? digestFor(AssetId id) => get(id)?.digest;
+  void setDigest(AssetId id, Digest? digest) {
+    if (contains(id)) {
+      updateNode(id, (b) => b.digest = digest);
+    }
+  }
+
+  void addMissingSource(AssetId id) => _nodes.add(AssetNode.missingSource(id));
+  void addPostGenerated(AssetId id) => _nodes.add(AssetNode.postGenerated(id));
+  void addPrimaryOutputs(AssetId id, Iterable<AssetId> outputs) {
+    if (contains(id)) {
+      updateNode(id, (b) => b.primaryOutputs.addAll(outputs));
+    }
+  }
+
   Iterable<AssetId> packageFileIds(String package, {Glob? glob}) =>
       _nodes.packageFileIds(package, glob: glob);
   void removeForTest(AssetId id) => _nodes.remove(id);
@@ -235,6 +268,9 @@ class AssetGraph implements GeneratedAssetHider {
                 n.type == NodeType.generated &&
                 n.generatedNodeConfiguration!.phaseNumber == phase,
           );
+
+  Iterable<AssetId> outputIdsForPhase(String package, int phase) =>
+      outputsForPhase(package, phase).map((n) => n.id);
 
   /// All the source files in the graph.
   Iterable<AssetId> get sources =>
