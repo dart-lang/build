@@ -323,6 +323,7 @@ Future<bool> _cleanUpOutputDir(Directory outputDir) async {
 
     for (final path in previousOutputs) {
       final file = File(p.join(outputPath, path));
+      if (!p.isWithin(outputPath, file.path)) continue;
       if (file.existsSync()) file.deleteSync();
     }
     _cleanEmptyDirectories(outputPath, previousOutputs);
