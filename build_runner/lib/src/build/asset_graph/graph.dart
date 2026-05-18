@@ -17,7 +17,6 @@ import '../../build_plan/build_phases.dart';
 import '../../build_plan/phase.dart';
 import '../../constants.dart';
 import '../../io/generated_asset_hider.dart';
-import '../library_cycle_graph/phased_asset_deps.dart';
 import 'build_step_id.dart';
 import 'build_step_result.dart';
 import 'exceptions.dart';
@@ -49,10 +48,6 @@ class AssetGraph implements GeneratedAssetHider {
 
   final Map<GlobId, GlobResult> _globResults;
 
-  /// Imports of resolved assets in the previous build, or `null` if this is a
-  /// clean build.
-  PhasedAssetDeps? previousPhasedAssetDeps;
-
   AssetGraph()
     : _nodes = Nodes(),
       _postProcessBuildStepResults = {},
@@ -68,23 +63,13 @@ class AssetGraph implements GeneratedAssetHider {
     postProcessBuildStepResults,
     required Map<BuildStepId, BuildStepResult> buildStepResults,
     required Map<GlobId, GlobResult> globResults,
-    required this.previousPhasedAssetDeps,
   }) : _nodes = nodes,
        _postProcessBuildStepResults = postProcessBuildStepResults,
        _buildStepResults = buildStepResults,
        _globResults = globResults;
 
-  @visibleForTesting
-  AssetGraph copyWith() => AssetGraph._with(
-    nodes: _nodes,
-    postProcessBuildStepResults: _postProcessBuildStepResults,
-    buildStepResults: _buildStepResults,
-    globResults: _globResults,
-    previousPhasedAssetDeps: previousPhasedAssetDeps,
-  );
-
-  /// Copies the graph prepared for the next build with [buildPhases].
-  AssetGraph copyForNextBuild(BuildPhases buildPhases) {
+  /// Copies the graph prepared for the next build.
+  AssetGraph copyForNextBuild() {
     return AssetGraph._with(
       nodes: _nodes.clone(),
       postProcessBuildStepResults: {
@@ -93,7 +78,6 @@ class AssetGraph implements GeneratedAssetHider {
       },
       buildStepResults: Map.of(_buildStepResults),
       globResults: Map.of(_globResults),
-      previousPhasedAssetDeps: previousPhasedAssetDeps,
     );
   }
 

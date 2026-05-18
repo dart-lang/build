@@ -5,6 +5,7 @@
 import 'dart:convert';
 import 'package:build_runner/src/build/asset_graph/asset_graph_json.dart';
 import 'package:build_runner/src/build/asset_graph/graph.dart';
+import 'package:build_runner/src/build/library_cycle_graph/phased_asset_deps.dart';
 import 'package:build_runner/src/build_plan/build_plan_digest.dart';
 import 'package:test/test.dart';
 
@@ -19,6 +20,7 @@ void main() {
           b.buildPhasesDigest = '';
           b.dartVersion = '';
         }),
+        phasedAssetDeps: PhasedAssetDeps(),
       );
       expect(AssetGraphJson.deserialize(validBytes), isNotNull);
 
@@ -41,6 +43,7 @@ void main() {
           b.buildPhasesDigest = '';
           b.dartVersion = '';
         }),
+        phasedAssetDeps: PhasedAssetDeps(),
       );
       final invalidBytes = validBytes.sublist(0, validBytes.length - 1);
       expect(AssetGraphJson.deserialize(invalidBytes), isNull);

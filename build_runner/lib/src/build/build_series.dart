@@ -272,7 +272,9 @@ class BuildSeries {
 
     _currentBuildResult = build.run(updates);
     final result = await _currentBuildResult!;
-    _buildPlan = _buildPlan.forNextBuild();
+    _buildPlan = _buildPlan.forNextBuild(
+      previousPhasedAssetDeps: result.phasedAssetDeps,
+    );
     _buildResultsController.add(result);
     return result;
   }

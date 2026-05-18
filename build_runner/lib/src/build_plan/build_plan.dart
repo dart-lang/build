@@ -13,6 +13,7 @@ import '../build/asset_graph/asset_graph_json.dart';
 import '../build/asset_graph/exceptions.dart';
 import '../build/asset_graph/graph.dart';
 import '../build/asset_graph/node.dart';
+import '../build/library_cycle_graph/phased_asset_deps.dart';
 
 import '../constants.dart';
 import '../exceptions.dart';
@@ -48,6 +49,7 @@ class BuildPlan {
 
   final AssetGraph? _previousAssetGraph;
   bool _previousAssetGraphWasTaken;
+  final PhasedAssetDeps? previousPhasedAssetDeps;
   final bool restartIsNeeded;
 
   final Bootstrapper bootstrapper;
@@ -95,6 +97,7 @@ class BuildPlan {
     required this.buildPhases,
     required AssetGraph? previousAssetGraph,
     required bool previousAssetGraphWasTaken,
+    required this.previousPhasedAssetDeps,
     required this.restartIsNeeded,
     required this.bootstrapper,
     required AssetGraph assetGraph,
@@ -207,6 +210,7 @@ class BuildPlan {
     final filesToDelete = <AssetId>{};
     final foldersToDelete = <AssetId>{};
 
+    PhasedAssetDeps? previousPhasedAssetDeps;
     if (await readerWriter.canRead(assetGraphId)) {
       final assetGraphJson = AssetGraphJson.deserialize(
         await readerWriter.readAsBytes(assetGraphId) as Uint8List,
@@ -214,6 +218,7 @@ class BuildPlan {
       if (assetGraphJson != null) {
         previousAssetGraph = assetGraphJson.assetGraph;
         previousBuildPlanDigest = assetGraphJson.buildPlanDigest;
+        previousPhasedAssetDeps = assetGraphJson.phasedAssetDeps;
       }
       if (previousAssetGraph != null) {
         if (restartIsNeeded ||
@@ -258,7 +263,7 @@ class BuildPlan {
               (node.type != NodeType.generated || node.wasOutput))
             node.id,
       };
-      assetGraph = previousAssetGraph.copyForNextBuild(buildPhases);
+      assetGraph = previousAssetGraph.copyForNextBuild();
 
       if (restartIsNeeded) {
         // Mark old outputs for deletion.
@@ -324,6 +329,7 @@ class BuildPlan {
       buildPhases: buildPhases,
       previousAssetGraph: previousAssetGraph,
       previousAssetGraphWasTaken: false,
+      previousPhasedAssetDeps: previousPhasedAssetDeps,
       restartIsNeeded: restartIsNeeded,
       bootstrapper: bootstrapper,
       assetGraph: assetGraph,
@@ -350,6 +356,7 @@ class BuildPlan {
     ReaderWriter? readerWriter,
     bool? cleanBuild,
     bool? triggersChanged,
+    PhasedAssetDeps? previousPhasedAssetDeps,
     BuiltList<bool>? phaseOptionsChanged,
     BuiltList<bool>? postBuildOptionsChanged,
   }) => BuildPlan(
@@ -366,6 +373,8 @@ class BuildPlan {
     buildPhases: buildPhases,
     previousAssetGraph: _previousAssetGraph,
     previousAssetGraphWasTaken: _previousAssetGraphWasTaken,
+    previousPhasedAssetDeps:
+        previousPhasedAssetDeps ?? this.previousPhasedAssetDeps,
     restartIsNeeded: restartIsNeeded,
     bootstrapper: bootstrapper,
     assetGraph: _assetGraph,
@@ -382,18 +391,22 @@ class BuildPlan {
 
   /// Returns a copy of the plan updated for the next incremental build.
   ///
+  /// Updates [previousPhasedAssetDeps].
+  ///
   /// Sets [cleanBuild], [triggersChanged], `phaseOptionsChanged` and
   /// `postBuildOptionsChanged` to `false`.
-  BuildPlan forNextBuild() => copyWith(
-    cleanBuild: false,
-    triggersChanged: false,
-    phaseOptionsChanged: BuiltList<bool>.from(
-      List.filled(buildPhases.inBuildPhasesOptionsDigests.length, false),
-    ),
-    postBuildOptionsChanged: BuiltList<bool>.from(
-      List.filled(buildPhases.postBuildActionsOptionsDigests.length, false),
-    ),
-  );
+  BuildPlan forNextBuild({PhasedAssetDeps? previousPhasedAssetDeps}) =>
+      copyWith(
+        cleanBuild: false,
+        triggersChanged: false,
+        previousPhasedAssetDeps: previousPhasedAssetDeps,
+        phaseOptionsChanged: BuiltList<bool>.from(
+          List.filled(buildPhases.inBuildPhasesOptionsDigests.length, false),
+        ),
+        postBuildOptionsChanged: BuiltList<bool>.from(
+          List.filled(buildPhases.postBuildActionsOptionsDigests.length, false),
+        ),
+      );
 
   /// Takes the loaded [AssetGraph], which may be `null` if none could be
   /// loaded or if it was invalid.

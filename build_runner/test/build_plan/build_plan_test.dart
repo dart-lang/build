@@ -9,6 +9,7 @@ import 'package:build/experiments.dart';
 import 'package:build_config/build_config.dart' hide BuilderDefinition;
 import 'package:build_runner/src/build/asset_graph/asset_graph_json.dart';
 import 'package:build_runner/src/build/asset_graph/graph.dart';
+import 'package:build_runner/src/build/library_cycle_graph/phased_asset_deps.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
@@ -76,6 +77,7 @@ void main() {
         AssetGraphJson.serialize(
           buildPlanDigest: buildPlan.buildPlanDigest,
           assetGraph: assetGraph,
+          phasedAssetDeps: PhasedAssetDeps(),
         ),
       );
     }
