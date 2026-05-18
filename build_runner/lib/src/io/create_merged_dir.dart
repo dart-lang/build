@@ -323,8 +323,6 @@ Future<bool> _cleanUpOutputDir(Directory outputDir) async {
 
     for (final path in previousOutputs) {
       final file = File(p.join(outputPath, path));
-      // Reject manifest entries that resolve outside the output directory;
-      // a malicious package could write ../ sequences into asset paths.
       if (!p.isWithin(outputPath, file.path)) continue;
       if (file.existsSync()) file.deleteSync();
     }
