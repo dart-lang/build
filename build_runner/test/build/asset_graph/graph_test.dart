@@ -105,7 +105,6 @@ void main() {
             final generatedNode = AssetNode.generated(
               generatedId,
               digest: g.isEven ? Digest([]) : null,
-              isHidden: g % 3 == 0,
             );
             node = node.rebuild((b) => b..primaryOutputs.add(generatedNode.id));
             if (g.isEven) {
@@ -210,7 +209,7 @@ void main() {
           primaryInput: primaryInputId,
           phaseNumber: 0,
         );
-        expect(graph.buildStepResultFor(buildStepId), isNull);
+        expect(graph.buildStepResultFor(buildStepId)!.result, isNull);
         expect(
           graph.generatedBy[primaryOutputId]!.primaryInput,
           primaryInputId,

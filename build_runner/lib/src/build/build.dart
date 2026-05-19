@@ -858,12 +858,16 @@ class Build {
     return assetsWritten;
   }
 
-  /// Marks the build step as skipped and clears output digests.
   void _markBuildStepSkipped(
     BuildStepId buildStepId,
     Iterable<AssetId> outputs,
   ) {
-    assetGraph.updateBuildStepResult(buildStepId, BuildStepResult());
+    final isHidden =
+        assetGraph.buildStepResultFor(buildStepId)?.isHidden ?? true;
+    assetGraph.updateBuildStepResult(
+      buildStepId,
+      BuildStepResult((b) => b..isHidden = isHidden),
+    );
     for (final output in outputs) {
       assetGraph.updateNode(output, (nodeBuilder) {
         nodeBuilder.digest = null;
@@ -877,9 +881,16 @@ class Build {
     BuildStepId buildStepId,
     Iterable<AssetId> outputs,
   ) async {
+    final isHidden =
+        assetGraph.buildStepResultFor(buildStepId)?.isHidden ?? true;
     assetGraph.updateBuildStepResult(
       buildStepId,
-      BuildStepResult((b) => b..result = false),
+      BuildStepResult(
+        (b) =>
+            b
+              ..result = false
+              ..isHidden = isHidden,
+      ),
     );
     for (final output in outputs) {
       assetGraph.updateNode(output, (nodeBuilder) {
@@ -1263,9 +1274,11 @@ class Build {
     final result = errors.isEmpty;
 
     final phaseNum = stepReaderWriter.phase;
+    final isHidden = buildPhases.inBuildPhases[phaseNum].hideOutput;
     final buildStepId = BuildStepId(primaryInput: input, phaseNumber: phaseNum);
     final stepResult = BuildStepResult((b) {
       b.result = result;
+      b.isHidden = isHidden;
       b.inputs.replace(usedInputs);
       b.globsEvaluated.replace(inputTracker.globsEvaluated);
       b.resolverEntrypoints.replace(inputTracker.resolverEntrypoints);
