@@ -12,7 +12,6 @@ import '../bootstrap/depfile.dart';
 import '../build/asset_graph/asset_graph_json.dart';
 import '../build/asset_graph/exceptions.dart';
 import '../build/asset_graph/graph.dart';
-import '../build/asset_graph/node.dart';
 import '../build/library_cycle_graph/phased_asset_deps.dart';
 
 import '../constants.dart';
@@ -259,10 +258,9 @@ class BuildPlan {
         ...inputSources,
         ...cacheDirSources,
         for (final node in previousAssetGraph.allNodes)
-          if (node.isFile &&
-              (node.type != NodeType.generated ||
-                  previousAssetGraph.wasOutput(node.id)))
-            node.id,
+          if (node.isFile) node.id,
+        for (final id in previousAssetGraph.generatedBy.keys)
+          if (previousAssetGraph.wasOutput(id)) id,
       };
       assetGraph = previousAssetGraph.copyForNextBuild();
 

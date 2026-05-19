@@ -102,11 +102,7 @@ void main() {
           );
           for (var g = 0; g < 5 - n; g++) {
             final generatedId = makeAssetId();
-            final generatedNode = AssetNode.generated(
-              generatedId,
-              digest: g.isEven ? Digest([]) : null,
-            );
-            node = node.rebuild((b) => b..primaryOutputs.add(generatedNode.id));
+            node = node.rebuild((b) => b..primaryOutputs.add(generatedId));
             if (g.isEven) {
               graph.updatePostProcessBuildStepResult(
                 postProcessBuildStep,
@@ -130,7 +126,11 @@ void main() {
                     ..inputs.addAll([node.id, syntheticNode.id]),
             );
             graph.updateBuildStepResult(buildStepId, stepResult);
-            graph.addGeneratedForTest(generatedNode, buildStepId);
+            graph.addGeneratedForTest(
+              generatedId,
+              buildStepId,
+              digest: g.isEven ? Digest([]) : null,
+            );
             graph.add(syntheticNode);
           }
           graph.add(node);
@@ -192,12 +192,7 @@ void main() {
         expect(graph.outputs, unorderedEquals([primaryOutputId]));
         expect(
           graph.allNodes.map((n) => n.id),
-          unorderedEquals([
-            primaryInputId,
-            excludedInputId,
-            primaryOutputId,
-            ...placeholders,
-          ]),
+          unorderedEquals([primaryInputId, excludedInputId, ...placeholders]),
         );
         expect(graph.postProcessBuildStepIds(package: 'foo'), {
           expectedBuildStepId,
@@ -265,7 +260,7 @@ void main() {
           expect(graph.contains(syntheticId), isTrue);
           expect(graph.get(syntheticId)?.type, NodeType.source);
           expect(graph.contains(syntheticOutputId), isTrue);
-          expect(graph.get(syntheticOutputId)!.type, NodeType.generated);
+          expect(graph.isGenerated(syntheticOutputId), isTrue);
 
           final newAnchor = PostProcessBuildStepId(
             input: syntheticId,
@@ -288,7 +283,7 @@ void main() {
             await graph.updateAndInvalidate(buildPhases, changes);
 
             expect(graph.contains(syntheticOutputId), isTrue);
-            expect(graph.get(syntheticOutputId)!.type, NodeType.generated);
+            expect(graph.isGenerated(syntheticOutputId), isTrue);
             expect(graph.contains(syntheticOutputId), isTrue);
           },
         );

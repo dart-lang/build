@@ -146,9 +146,9 @@ void main() {
     });
 
     test('doesnt write deleted files', () async {
-      final node = graph.get(AssetId('b', 'lib/c.txt.copy'))!;
+      final targetId = AssetId('b', 'lib/c.txt.copy');
       graph.updatePostProcessBuildStepResult(
-        PostProcessBuildStepId(input: node.id, actionNumber: 1),
+        PostProcessBuildStepId(input: targetId, actionNumber: 1),
         PostProcessBuildStepResult(hidden: true, deletedPrimaryInput: true),
       );
 
@@ -364,11 +364,9 @@ void main() {
     });
 
     test('doesnt write files that werent output', () async {
-      final node = graph.get(AssetId('b', 'lib/c.txt.copy'))!;
+      final targetId = AssetId('b', 'lib/c.txt.copy');
       final stepResult = BuildStepResult((b) => b..result = null);
-      graph.updateBuildStepResult(graph.generatedBy[node.id]!, stepResult);
-
-
+      graph.updateBuildStepResult(graph.generatedBy[targetId]!, stepResult);
 
       final success = await createMergedOutputDirectories(
         buildDirs:

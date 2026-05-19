@@ -11,7 +11,6 @@ import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
 import '../build/asset_graph/graph.dart';
-import '../build/asset_graph/node.dart';
 import '../build_plan/build_plan.dart';
 import 'reader_writer.dart';
 
@@ -90,14 +89,13 @@ class BuildOutputReader {
     if (_assetsDeletedByPostProcessBuilders.contains(id)) {
       return UnreadableReason.deleted;
     }
-    final node = _assetGraph.get(id)!;
-    if (!node.isFile) return UnreadableReason.assetType;
+    if (!_assetGraph.isFile(id)) return UnreadableReason.assetType;
 
-    if (node.type == NodeType.postGenerated) {
+    if (_assetGraph.isPostGenerated(id)) {
       return null;
     }
-    if (node.type == NodeType.generated) {
-      if (_processedOutputs?.contains(node.id) == false) {
+    if (_assetGraph.generatedBy.containsKey(id)) {
+      if (_processedOutputs?.contains(id) == false) {
         // The generated output was not considered for building because its
         // transitive input(s) did not match build dirs and/or build filters.
         return UnreadableReason.notOutput;
@@ -115,7 +113,7 @@ class BuildOutputReader {
       return null;
     }
 
-    if (node.type == NodeType.source && await _readerWriter.canRead(id)) {
+    if (_assetGraph.isSource(id) && await _readerWriter.canRead(id)) {
       return null;
     }
     return UnreadableReason.unknown;
@@ -163,47 +161,43 @@ class BuildOutputReader {
 
   /// A lazily computed view of all the assets available after a build.
   List<AssetId> allAssets({String? rootDir}) {
-    if (_assetGraph == null) return [];
-    return _assetGraph.allNodes
-        .map((node) {
-          if (_shouldSkipNode(node, rootDir)) {
-            return null;
-          }
-          return node.id;
-        })
-        .whereType<AssetId>()
-        .toList();
+    final assetGraph = _assetGraph;
+    if (assetGraph == null) return [];
+    return [
+      for (final node in assetGraph.allNodes) node.id,
+      ...assetGraph.generatedBy.keys,
+    ].where((id) => !_shouldSkipId(assetGraph, id, rootDir)).toList();
   }
 
-  bool _shouldSkipNode(AssetNode node, String? rootDir) {
+  bool _shouldSkipId(AssetGraph assetGraph, AssetId id, String? rootDir) {
     if (_buildPlan == null) return false;
-    if (!node.isFile) return true;
-    if (_assetsDeletedByPostProcessBuilders.contains(node.id)) return true;
+    if (!assetGraph.isFile(id)) return true;
+    if (_assetsDeletedByPostProcessBuilders.contains(id)) return true;
 
     // Exclude non-lib assets if they're outside of the root directory or not
     // an output package of the build.
-    if (!node.id.path.startsWith('lib/')) {
-      if (rootDir != null && !p.isWithin(rootDir, node.id.path)) return true;
-      if (!_buildPlan.buildPackages.outputPackages.contains(node.id.package)) {
+    if (!id.path.startsWith('lib/')) {
+      if (rootDir != null && !p.isWithin(rootDir, id.path)) return true;
+      if (!_buildPlan.buildPackages.outputPackages.contains(id.package)) {
         return true;
       }
     }
 
-    if (node.type == NodeType.postGenerated) {
+    if (assetGraph.isPostGenerated(id)) {
       return false;
     }
-    if (node.type == NodeType.generated) {
-      final stepResult = _assetGraph!.buildStepResultFor(
-        _assetGraph.generatedBy[node.id]!,
+    if (assetGraph.generatedBy.containsKey(id)) {
+      final stepResult = assetGraph.buildStepResultFor(
+        assetGraph.generatedBy[id]!,
       );
-      if (!_assetGraph.wasOutput(node.id) ||
+      if (!assetGraph.wasOutput(id) ||
           (stepResult == null || stepResult.result == false)) {
         return true;
       }
-      return !_processedOutputs!.contains(node.id);
+      return !_processedOutputs!.contains(id);
     }
-    if (node.id.path == '.packages') return true;
-    if (node.id.path == '.dart_tool/package_config.json') return true;
+    if (id.path == '.packages') return true;
+    if (id.path == '.dart_tool/package_config.json') return true;
     return false;
   }
 }

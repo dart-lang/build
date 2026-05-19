@@ -14,7 +14,6 @@ part 'node.g.dart';
 class NodeType extends EnumClass {
   static Serializer<NodeType> get serializer => _$nodeTypeSerializer;
 
-  static const NodeType generated = _$generated;
   static const NodeType postGenerated = _$postGenerated;
   static const NodeType placeholder = _$placeholder;
   static const NodeType source = _$source;
@@ -41,21 +40,12 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   ///
   /// For source files, this is computed when the file is read so it can be used
   /// to check for changes in the next build.
-  ///
-  /// For generated files, it's computed and set when the file is output, at the
-  /// same time comparing with any previous value to check if the output has
-  /// changed since the previous build. Here, `null` means "not output".
-  ///
-  /// For other node types, `null`.
   Digest? get digest;
 
   /// Whether this asset is a normal, readable file.
   ///
   /// Does not guarantee that the file currently exists.
-  bool get isFile =>
-      type == NodeType.generated ||
-      type == NodeType.postGenerated ||
-      type == NodeType.source;
+  bool get isFile => type == NodeType.postGenerated || type == NodeType.source;
 
   factory AssetNode([void Function(AssetNodeBuilder) updates]) = _$AssetNode;
 
@@ -93,13 +83,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     b.type = NodeType.placeholder;
   });
 
-  /// A generated node.
-  factory AssetNode.generated(AssetId id, {Digest? digest}) => AssetNode((b) {
-    b.id = id;
-    b.type = NodeType.generated;
-    b.digest = digest;
-  });
-
   /// A post-process generated node.
   factory AssetNode.postGenerated(AssetId id) => AssetNode((b) {
     b.id = id;
@@ -108,14 +91,8 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
 
   AssetNode._();
 
-  bool get isGenerated =>
-      type == NodeType.generated || type == NodeType.postGenerated;
+  bool get isGenerated => type == NodeType.postGenerated;
 
   /// Whether this is a generated node that was written when the generator ran.
-  ///
-  /// A file can be output by a failing generator, check
-  /// `generatedNodeState.result` for whether the generator succeeded.
-  bool get wasOutput =>
-      type == NodeType.postGenerated ||
-      (type == NodeType.generated && digest != null);
+  bool get wasOutput => type == NodeType.postGenerated;
 }

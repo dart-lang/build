@@ -127,8 +127,12 @@ class Nodes {
   /// A node refers to a file if [AssetNode.isFile].
   ///
   /// If [glob] is passed, return only IDs for which the glob matches the path.
-  Iterable<AssetId> packageFileIds(String package, {Glob? glob}) {
-    _sortedFileIdsByPackage ??= _computeSortedFileIdsByPackage();
+  Iterable<AssetId> packageFileIds(
+    String package,
+    Iterable<AssetId> generatedIds, {
+    Glob? glob,
+  }) {
+    _sortedFileIdsByPackage ??= _computeSortedFileIdsByPackage(generatedIds);
     final list = _sortedFileIdsByPackage![package];
     if (list == null) return const [];
     if (glob == null) return list;
@@ -145,7 +149,9 @@ class Nodes {
   /// Computes a `Map` from package names to sorted IDs of files in the package.
   ///
   /// An asset ID is a file if [AssetNode.isFile].
-  Map<String, List<AssetId>> _computeSortedFileIdsByPackage() {
+  Map<String, List<AssetId>> _computeSortedFileIdsByPackage(
+    Iterable<AssetId> generatedIds,
+  ) {
     if (_sortedFileIdsByPackageWasComputed) {
       throw StateError(
         'Sorted file IDs by package were already computed this build.',
@@ -157,6 +163,9 @@ class Nodes {
       if (value.isFile) {
         result.putIfAbsent(value.id.package, () => []).add(value.id);
       }
+    }
+    for (final id in generatedIds) {
+      result.putIfAbsent(id.package, () => []).add(id);
     }
     for (final value in result.values) {
       value.sort();

@@ -155,9 +155,13 @@ void main() {
 
       // Write an output and add it to the asset graph as if it was built.
       await readerWriter.writeAsString(outputId, '// output');
-      assetGraph.updateNode(outputId, (b) {
-        b.digest = Digest([]);
-      });
+      final stepId = assetGraph.generatedBy[outputId]!;
+      assetGraph.updateBuildStepResult(
+        stepId,
+        assetGraph
+            .buildStepResultFor(stepId)!
+            .rebuild((b) => b..outputs[outputId] = Digest([])),
+      );
       await writeGraphAndPlan(assetGraph, buildPlan);
 
       buildPlan = await BuildPlan.load(
@@ -242,9 +246,13 @@ void main() {
 
       // Write an output and add it to the asset graph as if it was built.
       await readerWriter.writeAsString(outputId, '// output');
-      assetGraph.updateNode(outputId, (b) {
-        b.digest = Digest([]);
-      });
+      final stepId = assetGraph.generatedBy[outputId]!;
+      assetGraph.updateBuildStepResult(
+        stepId,
+        assetGraph
+            .buildStepResultFor(stepId)!
+            .rebuild((b) => b..outputs[outputId] = Digest([])),
+      );
       // Give digests to inputs so they are monitored for modifications.
       assetGraph.updateNode(assetId2, (b) {
         b.digest = Digest([]);

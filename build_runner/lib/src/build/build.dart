@@ -163,8 +163,7 @@ class Build {
     if (result.status == BuildStatus.success) {
       final failedSteps = <BuildStepId>{};
       for (final output in processedOutputs) {
-        final node = assetGraph.get(output)!;
-        if (node.type != NodeType.generated) continue;
+        if (!assetGraph.generatedBy.containsKey(output)) continue;
         final buildStepId = assetGraph.generatedBy[output]!;
         final stepResult = assetGraph.buildStepResultFor(buildStepId);
         if (stepResult != null && stepResult.result == false) {
@@ -263,7 +262,7 @@ class Build {
         previousSourceNodes.add(id);
       }
       final oldExisted =
-          oldNode != null && oldNode.type != NodeType.missingSource;
+          assetGraph.contains(id) && !assetGraph.isMissingSource(id);
       final oldDigest =
           oldNode?.type == NodeType.source ? oldNode?.digest : null;
       var exists = false;
@@ -482,11 +481,11 @@ class Build {
     final phase = buildPhases[phaseNumber] as InBuildPhase;
     final packageNode = buildPackages[package]!;
 
-    for (final node in assetGraph
+    for (final outputId in assetGraph
         .outputsForPhase(package, phaseNumber)
         .toList(growable: false)) {
       if (!shouldBuildForDirs(
-        node.id,
+        outputId,
         buildDirs: buildPlan.buildOptions.buildDirs,
         buildFilters: buildPlan.buildOptions.buildFilters,
         phase: phase,
@@ -498,9 +497,9 @@ class Build {
       // Don't build for inputs that aren't visible. This can happen for
       // placeholder nodes like `test/$test$` that are added to each package,
       // since the test dir is not part of the build for non-root packages.
-      if (!buildConfigs.isVisibleInBuild(node.id, packageNode)) continue;
+      if (!buildConfigs.isVisibleInBuild(outputId, packageNode)) continue;
 
-      ids.add(assetGraph.generatedBy[node.id]!.primaryInput);
+      ids.add(assetGraph.generatedBy[outputId]!.primaryInput);
     }
     return ids.toList()..sort();
   }
@@ -513,8 +512,8 @@ class Build {
   /// If it is currently being built according to [lazyPhases], waits for it to
   /// be built.
   Future<void> _buildOutput(AssetId id) async {
-    final node = assetGraph.get(id)!;
-    if (node.type == NodeType.generated && !processedOutputs.contains(id)) {
+    if (assetGraph.generatedBy.containsKey(id) &&
+        !processedOutputs.contains(id)) {
       final buildStepId = assetGraph.generatedBy[id]!;
       await lazyPhases.putIfAbsent(
         '${buildStepId.phaseNumber}|${buildStepId.primaryInput}',
@@ -736,10 +735,9 @@ class Build {
       package: action.package,
     )) {
       if (buildStepId.actionNumber != actionNum) continue;
-      final inputNode = assetGraph.get(buildStepId.input)!;
-      if (inputNode.type == NodeType.source ||
-          inputNode.type == NodeType.generated &&
-              assetGraph.wasOutput(inputNode.id)) {
+      if (assetGraph.isSource(buildStepId.input) ||
+          assetGraph.generatedBy.containsKey(buildStepId.input) &&
+              assetGraph.wasOutput(buildStepId.input)) {
         outputs.addAll(
           await _runPostProcessBuildStep(
             phaseNum,
@@ -760,7 +758,6 @@ class Build {
     required bool hideOutput,
   }) async {
     final input = postProcessBuildStepId.input;
-    final inputNode = assetGraph.get(input)!;
     final stepReaderWriter = SingleStepReaderWriter(
       runningBuild: RunningBuild(
         buildPackages: buildPackages,
@@ -843,9 +840,11 @@ class Build {
 
     // Reset the state for all the output nodes based on what was read and
     // written.
-    assetGraph.updateNode(inputNode.id, (nodeBuilder) {
-      nodeBuilder.primaryOutputs.addAll(assetsWritten);
-    });
+    if (assetGraph.get(input) != null) {
+      assetGraph.updateNode(input, (nodeBuilder) {
+        nodeBuilder.primaryOutputs.addAll(assetsWritten);
+      });
+    }
 
     final stepResult = PostProcessBuildStepResult(
       hidden: hideOutput,
@@ -906,17 +905,15 @@ class Build {
   ) async {
     return await TimedActivity.track.runAsync(() async {
       // Update state for primary input if needed.
-      var primaryInputNode = assetGraph.get(buildStepId.primaryInput)!;
-      if (primaryInputNode.type == NodeType.generated) {
+      if (assetGraph.generatedBy.containsKey(buildStepId.primaryInput)) {
         if (!processedOutputs.contains(buildStepId.primaryInput)) {
           await _buildOutput(buildStepId.primaryInput);
-          primaryInputNode = assetGraph.get(buildStepId.primaryInput)!;
         }
       }
 
       // If the primary input has been deleted, the build is skipped.
       if (deletedAssets.contains(buildStepId.primaryInput)) {
-        if (primaryInputNode.type == NodeType.missingSource) {
+        if (assetGraph.isMissingSource(buildStepId.primaryInput)) {
           await _cleanUpStaleOutputs(outputs);
           _markBuildStepSkipped(buildStepId, outputs);
           return false;
@@ -924,7 +921,7 @@ class Build {
       }
 
       // Propagate results for generated node inputs.
-      if (primaryInputNode.type == NodeType.generated) {
+      if (assetGraph.generatedBy.containsKey(buildStepId.primaryInput)) {
         final inputStepResult = assetGraph.buildStepResultFor(
           assetGraph.generatedBy[buildStepId.primaryInput]!,
         );
@@ -1085,8 +1082,7 @@ class Build {
     required AssetId input,
     required int phaseNumber,
   }) async {
-    final inputNode = assetGraph.get(input)!;
-    if (inputNode.type == NodeType.generated) {
+    if (assetGraph.generatedBy.containsKey(input)) {
       final phase = assetGraph.generatedBy[input]!.phaseNumber;
       if (phase >= phaseNumber) {
         // It's not readable in this phase.
@@ -1094,16 +1090,16 @@ class Build {
       }
       // Ensure that the input was built, so [changedOutputs] is updated.
       if (!processedOutputs.contains(input)) {
-        await _buildOutput(inputNode.id);
+        await _buildOutput(input);
       }
       if (changedOutputs.contains(input)) {
         return true;
       }
-    } else if (inputNode.type == NodeType.source) {
+    } else if (assetGraph.isSource(input)) {
       if (changedInputs.contains(input)) {
         return true;
       }
-    } else if (inputNode.type == NodeType.missingSource) {
+    } else if (assetGraph.isMissingSource(input)) {
       // It's only a newly-deleted asset if it's also in [deletedAssets].
       if (deletedAssets.contains(input)) {
         return true;
@@ -1120,7 +1116,6 @@ class Build {
     SingleStepReaderWriter stepReaderWriter,
   ) async {
     final input = buildStepId.input;
-    final node = assetGraph.get(input)!;
 
     if (buildPlan.cleanBuild) {
       return true;
@@ -1130,20 +1125,20 @@ class Build {
       return true;
     }
 
-    if (node.type == NodeType.generated) {
+    if (assetGraph.generatedBy.containsKey(input)) {
       // Check that the input was built, so [changedOutputs] is updated.
-      if (!processedOutputs.contains(node.id)) {
-        await _buildOutput(node.id);
+      if (!processedOutputs.contains(input)) {
+        await _buildOutput(input);
       }
       if (changedOutputs.contains(input)) {
         return true;
       }
-    } else if (node.type == NodeType.source) {
+    } else if (assetGraph.isSource(input)) {
       if (changedInputs.contains(input)) {
         return true;
       }
     } else {
-      throw StateError('Expected generated or source node: $node');
+      throw StateError('Expected generated or source node: $input');
     }
 
     return false;
@@ -1153,11 +1148,10 @@ class Build {
   ///
   /// This should be called after deciding that an asset really needs to be
   /// regenerated based on its inputs hash changing. All assets in [outputs]
-  /// must correspond to a [AssetNode.generated].
+  /// must be generated assets.
   Future<void> _cleanUpStaleOutputs(Iterable<AssetId> outputs) async {
     for (final output in outputs) {
-      final node = assetGraph.get(output)!;
-      if (node.isGenerated && assetGraph.wasOutput(output)) {
+      if (assetGraph.isGenerated(output) && assetGraph.wasOutput(output)) {
         await _delete(output);
       }
     }
@@ -1194,15 +1188,14 @@ class Build {
       final otherInputs = <AssetId>[];
 
       for (final id in assetGraph.packageFileIds(globId.package, glob: glob)) {
-        final node = assetGraph.get(id)!;
         // Generated nodes are only considered at all if they are output in
         // an earlier phase.
-        if (node.type != NodeType.generated ||
+        if (!assetGraph.generatedBy.containsKey(id) ||
             assetGraph.generatedBy[id]!.phaseNumber < globId.phaseNumber) {
-          if (node.type == NodeType.generated) {
-            generatedFileInputs.add(node.id);
+          if (assetGraph.generatedBy.containsKey(id)) {
+            generatedFileInputs.add(id);
           } else {
-            otherInputs.add(node.id);
+            otherInputs.add(id);
           }
         }
       }

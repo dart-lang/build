@@ -18,7 +18,6 @@ import '../io/generated_asset_hider.dart';
 import '../io/reader_writer.dart';
 import '../logging/build_log.dart';
 import 'asset_graph/graph.dart';
-import 'asset_graph/node.dart';
 import 'build.dart';
 import 'build_result.dart';
 
@@ -124,10 +123,7 @@ class BuildSeries {
         continue;
       }
 
-      final node = _assetGraph.contains(id) ? _assetGraph.get(id) : null;
-
-      // Changes to files that are not currently part of the build.
-      if (node == null) {
+      if (!_assetGraph.contains(id)) {
         // Ignore under `.dart_tool/build`.
         if (id.path.startsWith(cacheDirectoryPath)) continue;
 
@@ -146,13 +142,13 @@ class BuildSeries {
       // If not copying to a merged output directory, ignore changes to files
       // with no outputs.
       if (!_buildPlan.buildOptions.anyMergedOutputDirectory &&
-          node.type != NodeType.missingSource &&
+          !_assetGraph.isMissingSource(id) &&
           _assetGraph.digestFor(id) == null) {
         continue;
       }
 
       // Ignore creation or modification of outputs.
-      if (node.isGenerated && change.type != ChangeType.REMOVE) {
+      if (_assetGraph.isGenerated(id) && change.type != ChangeType.REMOVE) {
         continue;
       }
 
