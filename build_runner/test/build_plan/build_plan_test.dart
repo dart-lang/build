@@ -155,7 +155,7 @@ void main() {
 
       // Write an output and add it to the asset graph as if it was built.
       await readerWriter.writeAsString(outputId, '// output');
-      final stepId = assetGraph.generatedBy[outputId]!;
+      final stepId = assetGraph.buildStepsByDeclaredOutput[outputId]!;
       assetGraph.updateBuildStepResult(
         stepId,
         assetGraph
@@ -246,7 +246,7 @@ void main() {
 
       // Write an output and add it to the asset graph as if it was built.
       await readerWriter.writeAsString(outputId, '// output');
-      final stepId = assetGraph.generatedBy[outputId]!;
+      final stepId = assetGraph.buildStepsByDeclaredOutput[outputId]!;
       assetGraph.updateBuildStepResult(
         stepId,
         assetGraph

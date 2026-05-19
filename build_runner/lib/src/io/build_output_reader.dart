@@ -68,7 +68,7 @@ class BuildOutputReader {
     if (assetGraph == null) return const {};
     final result = <AssetId>{};
     for (final packageResults
-        in assetGraph.allPostProcessBuildStepResults.values) {
+        in assetGraph.postProcessBuildStepResults.values) {
       for (final entry in packageResults.entries) {
         if (entry.value.deletedPrimaryInput) {
           result.add(entry.key.input);
@@ -91,22 +91,22 @@ class BuildOutputReader {
     }
     if (!_assetGraph.isFile(id)) return UnreadableReason.assetType;
 
-    if (_assetGraph.isPostGenerated(id)) {
+    if (_assetGraph.isActualPostOutput(id)) {
       return null;
     }
-    if (_assetGraph.generatedBy.containsKey(id)) {
+    if (_assetGraph.buildStepsByDeclaredOutput.containsKey(id)) {
       if (_processedOutputs?.contains(id) == false) {
         // The generated output was not considered for building because its
         // transitive input(s) did not match build dirs and/or build filters.
         return UnreadableReason.notOutput;
       }
       final stepResult = _assetGraph.buildStepResultFor(
-        _assetGraph.generatedBy[id]!,
+        _assetGraph.buildStepsByDeclaredOutput[id]!,
       );
       if (stepResult != null && stepResult.result == false) {
         return UnreadableReason.failed;
       }
-      if (!_assetGraph.wasOutput(id)) return UnreadableReason.notOutput;
+      if (!_assetGraph.isActualOutput(id)) return UnreadableReason.notOutput;
 
       // No need to explicitly check readability for generated files, their
       // readability is recorded in the node state.
@@ -154,7 +154,7 @@ class BuildOutputReader {
     final digest = _assetGraph!.digestFor(id);
     if (digest != null) return digest;
     return _readerWriter!.digest(id).then((digest) {
-      _assetGraph.updateDigest(id, digest);
+      _assetGraph.updateSourceDigest(id, digest);
       return digest;
     });
   }
@@ -165,7 +165,7 @@ class BuildOutputReader {
     if (assetGraph == null) return [];
     return [
       for (final node in assetGraph.allNodes) node.id,
-      ...assetGraph.generatedBy.keys,
+      ...assetGraph.buildStepsByDeclaredOutput.keys,
     ].where((id) => !_shouldSkipId(assetGraph, id, rootDir)).toList();
   }
 
@@ -183,14 +183,14 @@ class BuildOutputReader {
       }
     }
 
-    if (assetGraph.isPostGenerated(id)) {
+    if (assetGraph.isActualPostOutput(id)) {
       return false;
     }
-    if (assetGraph.generatedBy.containsKey(id)) {
+    if (assetGraph.buildStepsByDeclaredOutput.containsKey(id)) {
       final stepResult = assetGraph.buildStepResultFor(
-        assetGraph.generatedBy[id]!,
+        assetGraph.buildStepsByDeclaredOutput[id]!,
       );
-      if (!assetGraph.wasOutput(id) ||
+      if (!assetGraph.isActualOutput(id) ||
           (stepResult == null || stepResult.result == false)) {
         return true;
       }

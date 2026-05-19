@@ -109,16 +109,18 @@ void main() {
       );
 
       for (final id in graph.outputs) {
-        final stepResult = BuildStepResult(
-          (b) =>
-              b
-                ..result = true
-                ..outputs[id] = Digest([]),
+        final stepResult = BuildStepResult((b) {
+          b.result = true;
+          b.isHidden = false;
+          b.outputs[id] = Digest([]);
+        });
+        graph.updateBuildStepResult(
+          graph.buildStepsByDeclaredOutput[id]!,
+          stepResult,
         );
-        graph.updateBuildStepResult(graph.generatedBy[id]!, stepResult);
         readerWriter.testing.writeString(
           id,
-          sources[graph.generatedBy[id]!.primaryInput]!,
+          sources[graph.buildStepsByDeclaredOutput[id]!.primaryInput]!,
         );
       }
       tmpDir = await Directory.systemTemp.createTemp('build_tests');
@@ -365,8 +367,13 @@ void main() {
 
     test('doesnt write files that werent output', () async {
       final targetId = AssetId('b', 'lib/c.txt.copy');
-      final stepResult = BuildStepResult((b) => b..result = null);
-      graph.updateBuildStepResult(graph.generatedBy[targetId]!, stepResult);
+      final stepResult = BuildStepResult((b) {
+        b.isHidden = false;
+      });
+      graph.updateBuildStepResult(
+        graph.buildStepsByDeclaredOutput[targetId]!,
+        stepResult,
+      );
 
       final success = await createMergedOutputDirectories(
         buildDirs:

@@ -210,7 +210,7 @@ class SingleStepReaderWriter implements PhasedReader {
     if (!isReadable) return false;
     if (_runningBuild == null) return true;
 
-    if (_runningBuild.assetGraph.generatedBy.containsKey(id) &&
+    if (_runningBuild.assetGraph.buildStepsByDeclaredOutput.containsKey(id) &&
         !await _delegate.canRead(id)) {
       return false;
     }
@@ -283,7 +283,7 @@ class SingleStepReaderWriter implements PhasedReader {
     } on AssetNotFoundException {
       await ChildProcess.exitDueToAssetDeleted(id);
     }
-    _runningBuild.assetGraph.updateDigest(id, digest);
+    _runningBuild.assetGraph.updateSourceDigest(id, digest);
     return digest;
   }
 
@@ -291,12 +291,12 @@ class SingleStepReaderWriter implements PhasedReader {
   ///
   /// If it's a generated node from an earlier phase, wait for it to be built.
   Future<Readability> _isReadableId(AssetId id) async {
-    if (_runningBuild!.assetGraph.isPostGenerated(id)) {
+    if (_runningBuild!.assetGraph.isActualPostOutput(id)) {
       // Post process outputs are not readable until after the build.
       return Readability.notReadable;
     }
-    if (_runningBuild.assetGraph.generatedBy.containsKey(id)) {
-      final stepId = _runningBuild.assetGraph.generatedBy[id]!;
+    if (_runningBuild.assetGraph.buildStepsByDeclaredOutput.containsKey(id)) {
+      final stepId = _runningBuild.assetGraph.buildStepsByDeclaredOutput[id]!;
       if (stepId.phaseNumber > _runningBuildStep!.phaseNumber) {
         return Readability.notReadable;
       } else if (stepId.phaseNumber == _runningBuildStep.phaseNumber) {
@@ -309,12 +309,13 @@ class SingleStepReaderWriter implements PhasedReader {
       }
 
       await _runningBuild.nodeBuilder(id);
-      final buildStepId = _runningBuild.assetGraph.generatedBy[id]!;
+      final buildStepId =
+          _runningBuild.assetGraph.buildStepsByDeclaredOutput[id]!;
       final stepResult = _runningBuild.assetGraph.buildStepResultFor(
         buildStepId,
       );
       return Readability.fromPreviousPhase(
-        _runningBuild.assetGraph.wasOutput(id) &&
+        _runningBuild.assetGraph.isActualOutput(id) &&
             (stepResult == null || stepResult.result != false),
       );
     }
@@ -381,8 +382,9 @@ class SingleStepReaderWriter implements PhasedReader {
       return PhasedValue.fixed('');
     }
 
-    if (_runningBuild.assetGraph.generatedBy.containsKey(id)) {
-      final buildStepId = _runningBuild.assetGraph.generatedBy[id]!;
+    if (_runningBuild.assetGraph.buildStepsByDeclaredOutput.containsKey(id)) {
+      final buildStepId =
+          _runningBuild.assetGraph.buildStepsByDeclaredOutput[id]!;
       final nodePhase = buildStepId.phaseNumber;
       if (nodePhase >= phase) {
         return PhasedValue.unavailable(before: '', expiresAfter: nodePhase);
@@ -394,7 +396,8 @@ class SingleStepReaderWriter implements PhasedReader {
         final stepResult =
             _runningBuild.assetGraph.buildStepResultFor(buildStepId)!;
         final isSuccessOutput =
-            _runningBuild.assetGraph.wasOutput(id) && stepResult.result == true;
+            _runningBuild.assetGraph.isActualOutput(id) &&
+            stepResult.result == true;
         return PhasedValue.generated(
           atPhase: nodePhase,
           before: '',

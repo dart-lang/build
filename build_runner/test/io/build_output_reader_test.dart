@@ -98,7 +98,10 @@ void main() {
       final primaryId = AssetId('a', 'web/a.dart');
       final buildStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
       assetGraph.addGeneratedForTest(id, buildStepId, digest: Digest([]));
-      final stepResult = BuildStepResult((b) => b..result = false);
+      final stepResult = BuildStepResult((b) {
+        b.result = false;
+        b.isHidden = false;
+      });
       assetGraph.updateBuildStepResult(buildStepId, stepResult);
       readerWriter.testing.writeString(id, '');
 

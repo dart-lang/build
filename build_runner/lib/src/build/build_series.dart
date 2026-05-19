@@ -148,7 +148,8 @@ class BuildSeries {
       }
 
       // Ignore creation or modification of outputs.
-      if (_assetGraph.isGenerated(id) && change.type != ChangeType.REMOVE) {
+      if (_assetGraph.isDeclaredOutput(id) &&
+          change.type != ChangeType.REMOVE) {
         continue;
       }
 

@@ -23,12 +23,10 @@ class _$BuildStepResultSerializer
     FullType specifiedType = FullType.unspecified,
   }) {
     final result = <Object?>[
-      'inputs',
+      'isHidden',
       serializers.serialize(
-        object.inputs,
-        specifiedType: const FullType(BuiltSet, const [
-          const FullType(AssetId),
-        ]),
+        object.isHidden,
+        specifiedType: const FullType(bool),
       ),
       'outputs',
       serializers.serialize(
@@ -36,6 +34,13 @@ class _$BuildStepResultSerializer
         specifiedType: const FullType(BuiltMap, const [
           const FullType(AssetId),
           const FullType(Digest),
+        ]),
+      ),
+      'inputs',
+      serializers.serialize(
+        object.inputs,
+        specifiedType: const FullType(BuiltSet, const [
+          const FullType(AssetId),
         ]),
       ),
       'globsEvaluated',
@@ -67,14 +72,6 @@ class _$BuildStepResultSerializer
           serializers.serialize(value, specifiedType: const FullType(bool)),
         );
     }
-    result
-      ..add('isHidden')
-      ..add(
-        serializers.serialize(
-          object.isHidden,
-          specifiedType: const FullType(bool),
-        ),
-      );
     return result;
   }
 
@@ -108,6 +105,17 @@ class _$BuildStepResultSerializer
                   )!
                   as bool;
           break;
+        case 'outputs':
+          result.outputs.replace(
+            serializers.deserialize(
+              value,
+              specifiedType: const FullType(BuiltMap, const [
+                const FullType(AssetId),
+                const FullType(Digest),
+              ]),
+            )!,
+          );
+          break;
         case 'inputs':
           result.inputs.replace(
             serializers.deserialize(
@@ -117,18 +125,6 @@ class _$BuildStepResultSerializer
                   ]),
                 )!
                 as BuiltSet<Object?>,
-          );
-          break;
-        case 'outputs':
-          result.outputs.replace(
-            serializers.deserialize(
-                  value,
-                  specifiedType: const FullType(BuiltMap, const [
-                    const FullType(AssetId),
-                    const FullType(Digest),
-                  ]),
-                )!
-                as BuiltMap<Object?, Object?>,
           );
           break;
         case 'globsEvaluated':
@@ -322,7 +318,11 @@ class BuildStepResultBuilder
           _$v ??
           _$BuildStepResult._(
             result: result,
-            isHidden: isHidden ?? true,
+            isHidden: BuiltValueNullFieldError.checkNotNull(
+              isHidden,
+              r'BuildStepResult',
+              'isHidden',
+            ),
             outputs: outputs.build(),
             inputs: inputs.build(),
             globsEvaluated: globsEvaluated.build(),
