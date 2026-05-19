@@ -102,8 +102,9 @@ class BuildOutputReader {
         // transitive input(s) did not match build dirs and/or build filters.
         return UnreadableReason.notOutput;
       }
-      final config = node.generatedNodeConfiguration!;
-      final stepResult = _assetGraph.buildStepResultFor(config.buildStepId);
+      final stepResult = _assetGraph.buildStepResultFor(
+        _assetGraph.generatedBy[id]!,
+      );
       if (stepResult != null && stepResult.result == false) {
         return UnreadableReason.failed;
       }
@@ -194,8 +195,9 @@ class BuildOutputReader {
       return false;
     }
     if (node.type == NodeType.generated) {
-      final config = node.generatedNodeConfiguration!;
-      final stepResult = _assetGraph!.buildStepResultFor(config.buildStepId);
+      final stepResult = _assetGraph!.buildStepResultFor(
+        _assetGraph.generatedBy[node.id]!,
+      );
       if (!node.wasOutput ||
           (stepResult == null || stepResult.result == false)) {
         return true;

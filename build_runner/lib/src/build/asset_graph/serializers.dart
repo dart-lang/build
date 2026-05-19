@@ -75,6 +75,13 @@ final Serializers serializers =
             MapBuilder<GlobId, GlobResult>.new,
           )
           ..addBuilderFactory(
+            const FullType(BuiltMap, [
+              FullType(AssetId),
+              FullType(BuildStepId),
+            ]),
+            MapBuilder<AssetId, BuildStepId>.new,
+          )
+          ..addBuilderFactory(
             const FullType(Set, [FullType(AssetId)]),
             () => <AssetId>{},
           )
