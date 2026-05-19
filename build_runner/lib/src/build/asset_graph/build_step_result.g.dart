@@ -23,6 +23,19 @@ class _$BuildStepResultSerializer
     FullType specifiedType = FullType.unspecified,
   }) {
     final result = <Object?>[
+      'isHidden',
+      serializers.serialize(
+        object.isHidden,
+        specifiedType: const FullType(bool),
+      ),
+      'outputs',
+      serializers.serialize(
+        object.outputs,
+        specifiedType: const FullType(BuiltMap, const [
+          const FullType(AssetId),
+          const FullType(Digest),
+        ]),
+      ),
       'inputs',
       serializers.serialize(
         object.inputs,
@@ -59,14 +72,6 @@ class _$BuildStepResultSerializer
           serializers.serialize(value, specifiedType: const FullType(bool)),
         );
     }
-    result
-      ..add('isHidden')
-      ..add(
-        serializers.serialize(
-          object.isHidden,
-          specifiedType: const FullType(bool),
-        ),
-      );
     return result;
   }
 
@@ -99,6 +104,17 @@ class _$BuildStepResultSerializer
                     specifiedType: const FullType(bool),
                   )!
                   as bool;
+          break;
+        case 'outputs':
+          result.outputs.replace(
+            serializers.deserialize(
+              value,
+              specifiedType: const FullType(BuiltMap, const [
+                const FullType(AssetId),
+                const FullType(Digest),
+              ]),
+            )!,
+          );
           break;
         case 'inputs':
           result.inputs.replace(
@@ -157,6 +173,8 @@ class _$BuildStepResult extends BuildStepResult {
   @override
   final bool isHidden;
   @override
+  final BuiltMap<AssetId, Digest> outputs;
+  @override
   final BuiltSet<AssetId> inputs;
   @override
   final BuiltSet<GlobId> globsEvaluated;
@@ -171,6 +189,7 @@ class _$BuildStepResult extends BuildStepResult {
   _$BuildStepResult._({
     this.result,
     required this.isHidden,
+    required this.outputs,
     required this.inputs,
     required this.globsEvaluated,
     required this.resolverEntrypoints,
@@ -189,6 +208,7 @@ class _$BuildStepResult extends BuildStepResult {
     return other is BuildStepResult &&
         result == other.result &&
         isHidden == other.isHidden &&
+        outputs == other.outputs &&
         inputs == other.inputs &&
         globsEvaluated == other.globsEvaluated &&
         resolverEntrypoints == other.resolverEntrypoints &&
@@ -200,6 +220,7 @@ class _$BuildStepResult extends BuildStepResult {
     var _$hash = 0;
     _$hash = $jc(_$hash, result.hashCode);
     _$hash = $jc(_$hash, isHidden.hashCode);
+    _$hash = $jc(_$hash, outputs.hashCode);
     _$hash = $jc(_$hash, inputs.hashCode);
     _$hash = $jc(_$hash, globsEvaluated.hashCode);
     _$hash = $jc(_$hash, resolverEntrypoints.hashCode);
@@ -213,6 +234,7 @@ class _$BuildStepResult extends BuildStepResult {
     return (newBuiltValueToStringHelper(r'BuildStepResult')
           ..add('result', result)
           ..add('isHidden', isHidden)
+          ..add('outputs', outputs)
           ..add('inputs', inputs)
           ..add('globsEvaluated', globsEvaluated)
           ..add('resolverEntrypoints', resolverEntrypoints)
@@ -232,6 +254,12 @@ class BuildStepResultBuilder
   bool? _isHidden;
   bool? get isHidden => _$this._isHidden;
   set isHidden(bool? isHidden) => _$this._isHidden = isHidden;
+
+  MapBuilder<AssetId, Digest>? _outputs;
+  MapBuilder<AssetId, Digest> get outputs =>
+      _$this._outputs ??= MapBuilder<AssetId, Digest>();
+  set outputs(MapBuilder<AssetId, Digest>? outputs) =>
+      _$this._outputs = outputs;
 
   SetBuilder<AssetId>? _inputs;
   SetBuilder<AssetId> get inputs => _$this._inputs ??= SetBuilder<AssetId>();
@@ -260,6 +288,7 @@ class BuildStepResultBuilder
     if ($v != null) {
       _result = $v.result;
       _isHidden = $v.isHidden;
+      _outputs = $v.outputs.toBuilder();
       _inputs = $v.inputs.toBuilder();
       _globsEvaluated = $v.globsEvaluated.toBuilder();
       _resolverEntrypoints = $v.resolverEntrypoints.toBuilder();
@@ -289,7 +318,12 @@ class BuildStepResultBuilder
           _$v ??
           _$BuildStepResult._(
             result: result,
-            isHidden: isHidden ?? true,
+            isHidden: BuiltValueNullFieldError.checkNotNull(
+              isHidden,
+              r'BuildStepResult',
+              'isHidden',
+            ),
+            outputs: outputs.build(),
             inputs: inputs.build(),
             globsEvaluated: globsEvaluated.build(),
             resolverEntrypoints: resolverEntrypoints.build(),
@@ -298,6 +332,8 @@ class BuildStepResultBuilder
     } catch (_) {
       late String _$failedField;
       try {
+        _$failedField = 'outputs';
+        outputs.build();
         _$failedField = 'inputs';
         inputs.build();
         _$failedField = 'globsEvaluated';

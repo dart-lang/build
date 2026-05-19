@@ -11,7 +11,6 @@ import 'package:glob/glob.dart';
 import 'package:watcher/watcher.dart';
 
 import '../build/asset_graph/graph.dart';
-import '../build/asset_graph/node.dart';
 import '../build_plan/build_configs.dart';
 import '../build_plan/build_packages.dart';
 import '../build_plan/build_target.dart';
@@ -70,16 +69,12 @@ class AssetTracker {
 
     final newSources = inputSources.difference(assetGraph.sources.toSet());
     addUpdates(newSources, ChangeType.ADD);
-    final removedAssets = assetGraph.allNodes
-        .where((n) {
-          if (!n.isFile) return false;
-          if (n.type == NodeType.generated) {
-            return n.wasOutput;
-          }
-          return true;
-        })
-        .map((n) => n.id)
-        .where((id) => !allSources.contains(id));
+    final removedAssets = [
+      for (final node in assetGraph.allNodes)
+        if (node.isFile) node.id,
+      for (final id in assetGraph.buildStepsByDeclaredOutput.keys)
+        if (assetGraph.isActualOutput(id)) id,
+    ].where((id) => !allSources.contains(id));
 
     addUpdates(removedAssets, ChangeType.REMOVE);
 

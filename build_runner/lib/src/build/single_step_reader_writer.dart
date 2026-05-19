@@ -19,7 +19,6 @@ import '../io/reader_writer.dart';
 import 'asset_graph/glob_id.dart';
 
 import 'asset_graph/graph.dart';
-import 'asset_graph/node.dart';
 import 'input_tracker.dart';
 import 'library_cycle_graph/phased_reader.dart';
 import 'library_cycle_graph/phased_value.dart';
@@ -183,14 +182,13 @@ class SingleStepReaderWriter implements PhasedReader {
       return _delegate.canRead(id);
     }
 
-    final node = _runningBuild.assetGraph.get(id);
-    if (node == null) {
+    if (!_runningBuild.assetGraph.contains(id)) {
       if (track) inputTracker.add(id);
       _runningBuild.assetGraph.addMissingSource(id);
       return false;
     }
 
-    final readability = await _isReadableNode(node);
+    final readability = await _isReadableId(id);
 
     // If it's in the same phase it's never an input: it is either an output of
     // the current generator, which means it's readable but not an input, or
@@ -212,10 +210,7 @@ class SingleStepReaderWriter implements PhasedReader {
     if (!isReadable) return false;
     if (_runningBuild == null) return true;
 
-    // No need to check readability for [GeneratedAssetNode], they are always
-    // readable.
-
-    if (_runningBuild.assetGraph.get(id)!.type == NodeType.generated &&
+    if (_runningBuild.assetGraph.buildStepsByDeclaredOutput.containsKey(id) &&
         !await _delegate.canRead(id)) {
       return false;
     }
@@ -279,8 +274,8 @@ class SingleStepReaderWriter implements PhasedReader {
   /// Note that [id] must exist in the asset graph.
   Future<Digest> _ensureDigest(AssetId id) async {
     if (_runningBuild == null) return _delegate.digest(id);
-    final node = _runningBuild.assetGraph.get(id)!;
-    if (node.digest != null) return node.digest!;
+    final knownDigest = _runningBuild.assetGraph.digestFor(id);
+    if (knownDigest != null) return knownDigest;
 
     Digest digest;
     try {
@@ -288,44 +283,43 @@ class SingleStepReaderWriter implements PhasedReader {
     } on AssetNotFoundException {
       await ChildProcess.exitDueToAssetDeleted(id);
     }
-    _runningBuild.assetGraph.updateNode(id, (nodeBuilder) {
-      nodeBuilder.digest = digest;
-    });
+    _runningBuild.assetGraph.updateSourceDigest(id, digest);
     return digest;
   }
 
-  /// Checks whether [node] can be read by this step.
+  /// Checks whether [id] can be read by this step.
   ///
   /// If it's a generated node from an earlier phase, wait for it to be built.
-  Future<Readability> _isReadableNode(AssetNode node) async {
-    if (node.type == NodeType.postGenerated) {
+  Future<Readability> _isReadableId(AssetId id) async {
+    if (_runningBuild!.assetGraph.isActualPostOutput(id)) {
       // Post process outputs are not readable until after the build.
       return Readability.notReadable;
     }
-    if (node.type == NodeType.generated) {
-      final stepId = _runningBuild!.assetGraph.generatedBy[node.id]!;
+    if (_runningBuild.assetGraph.buildStepsByDeclaredOutput.containsKey(id)) {
+      final stepId = _runningBuild.assetGraph.buildStepsByDeclaredOutput[id]!;
       if (stepId.phaseNumber > _runningBuildStep!.phaseNumber) {
         return Readability.notReadable;
       } else if (stepId.phaseNumber == _runningBuildStep.phaseNumber) {
         // allow a build step to read its outputs (contained in writtenAssets)
         final isInBuild =
             _runningBuildStep.buildPhase is InBuildPhase &&
-            assetsWritten.contains(node.id);
+            assetsWritten.contains(id);
 
         return isInBuild ? Readability.ownOutput : Readability.notReadable;
       }
 
-      await _runningBuild.nodeBuilder(node.id);
-      node = _runningBuild.assetGraph.get(node.id)!;
-      final buildStepId = _runningBuild.assetGraph.generatedBy[node.id]!;
+      await _runningBuild.nodeBuilder(id);
+      final buildStepId =
+          _runningBuild.assetGraph.buildStepsByDeclaredOutput[id]!;
       final stepResult = _runningBuild.assetGraph.buildStepResultFor(
         buildStepId,
       );
       return Readability.fromPreviousPhase(
-        node.wasOutput && (stepResult == null || stepResult.result != false),
+        _runningBuild.assetGraph.isActualOutput(id) &&
+            (stepResult == null || stepResult.result != false),
       );
     }
-    return Readability.fromPreviousPhase(node.type == NodeType.source);
+    return Readability.fromPreviousPhase(_runningBuild.assetGraph.isSource(id));
   }
 
   void _checkInvalidInput(AssetId id) {
@@ -380,17 +374,17 @@ class SingleStepReaderWriter implements PhasedReader {
       }
     }
 
-    var node = _runningBuild.assetGraph.get(id);
-    if (node == null) {
+    if (!_runningBuild.assetGraph.contains(id)) {
       // Add to the graph for input tracking.
       _runningBuild.assetGraph.addMissingSource(id);
       return PhasedValue.fixed('');
-    } else if (node.type == NodeType.missingSource) {
+    } else if (_runningBuild.assetGraph.isMissingSource(id)) {
       return PhasedValue.fixed('');
     }
 
-    if (node.type == NodeType.generated) {
-      final buildStepId = _runningBuild.assetGraph.generatedBy[id]!;
+    if (_runningBuild.assetGraph.buildStepsByDeclaredOutput.containsKey(id)) {
+      final buildStepId =
+          _runningBuild.assetGraph.buildStepsByDeclaredOutput[id]!;
       final nodePhase = buildStepId.phaseNumber;
       if (nodePhase >= phase) {
         return PhasedValue.unavailable(before: '', expiresAfter: nodePhase);
@@ -398,11 +392,12 @@ class SingleStepReaderWriter implements PhasedReader {
         // If needed, trigger a build at an earlier phase.
         if (!_runningBuild.assetIsProcessedOutput(id)) {
           await _runningBuild.nodeBuilder(id);
-          node = _runningBuild.assetGraph.get(id)!;
         }
         final stepResult =
             _runningBuild.assetGraph.buildStepResultFor(buildStepId)!;
-        final isSuccessOutput = node.wasOutput && stepResult.result == true;
+        final isSuccessOutput =
+            _runningBuild.assetGraph.isActualOutput(id) &&
+            stepResult.result == true;
         return PhasedValue.generated(
           atPhase: nodePhase,
           before: '',

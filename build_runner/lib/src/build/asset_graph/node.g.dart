@@ -6,7 +6,6 @@ part of 'node.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-const NodeType _$generated = const NodeType._('generated');
 const NodeType _$postGenerated = const NodeType._('postGenerated');
 const NodeType _$placeholder = const NodeType._('placeholder');
 const NodeType _$source = const NodeType._('source');
@@ -14,8 +13,6 @@ const NodeType _$missingSource = const NodeType._('missingSource');
 
 NodeType _$nodeTypeValueOf(String name) {
   switch (name) {
-    case 'generated':
-      return _$generated;
     case 'postGenerated':
       return _$postGenerated;
     case 'placeholder':
@@ -30,7 +27,6 @@ NodeType _$nodeTypeValueOf(String name) {
 }
 
 final BuiltSet<NodeType> _$nodeTypeValues = BuiltSet<NodeType>(const <NodeType>[
-  _$generated,
   _$postGenerated,
   _$placeholder,
   _$source,
@@ -81,13 +77,6 @@ class _$AssetNodeSerializer implements StructuredSerializer<AssetNode> {
         object.type,
         specifiedType: const FullType(NodeType),
       ),
-      'primaryOutputs',
-      serializers.serialize(
-        object.primaryOutputs,
-        specifiedType: const FullType(BuiltSet, const [
-          const FullType(AssetId),
-        ]),
-      ),
     ];
     Object? value;
     value = object.digest;
@@ -131,17 +120,6 @@ class _$AssetNodeSerializer implements StructuredSerializer<AssetNode> {
                   )!
                   as NodeType;
           break;
-        case 'primaryOutputs':
-          result.primaryOutputs.replace(
-            serializers.deserialize(
-                  value,
-                  specifiedType: const FullType(BuiltSet, const [
-                    const FullType(AssetId),
-                  ]),
-                )!
-                as BuiltSet<Object?>,
-          );
-          break;
         case 'digest':
           result.digest =
               serializers.deserialize(
@@ -163,19 +141,13 @@ class _$AssetNode extends AssetNode {
   @override
   final NodeType type;
   @override
-  final BuiltSet<AssetId> primaryOutputs;
-  @override
   final Digest? digest;
 
   factory _$AssetNode([void Function(AssetNodeBuilder)? updates]) =>
       (AssetNodeBuilder()..update(updates))._build();
 
-  _$AssetNode._({
-    required this.id,
-    required this.type,
-    required this.primaryOutputs,
-    this.digest,
-  }) : super._();
+  _$AssetNode._({required this.id, required this.type, this.digest})
+    : super._();
   @override
   AssetNode rebuild(void Function(AssetNodeBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -189,7 +161,6 @@ class _$AssetNode extends AssetNode {
     return other is AssetNode &&
         id == other.id &&
         type == other.type &&
-        primaryOutputs == other.primaryOutputs &&
         digest == other.digest;
   }
 
@@ -198,7 +169,6 @@ class _$AssetNode extends AssetNode {
     var _$hash = 0;
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, type.hashCode);
-    _$hash = $jc(_$hash, primaryOutputs.hashCode);
     _$hash = $jc(_$hash, digest.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
@@ -209,7 +179,6 @@ class _$AssetNode extends AssetNode {
     return (newBuiltValueToStringHelper(r'AssetNode')
           ..add('id', id)
           ..add('type', type)
-          ..add('primaryOutputs', primaryOutputs)
           ..add('digest', digest))
         .toString();
   }
@@ -226,12 +195,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
   NodeType? get type => _$this._type;
   set type(NodeType? type) => _$this._type = type;
 
-  SetBuilder<AssetId>? _primaryOutputs;
-  SetBuilder<AssetId> get primaryOutputs =>
-      _$this._primaryOutputs ??= SetBuilder<AssetId>();
-  set primaryOutputs(SetBuilder<AssetId>? primaryOutputs) =>
-      _$this._primaryOutputs = primaryOutputs;
-
   Digest? _digest;
   Digest? get digest => _$this._digest;
   set digest(Digest? digest) => _$this._digest = digest;
@@ -243,7 +206,6 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
     if ($v != null) {
       _id = $v.id;
       _type = $v.type;
-      _primaryOutputs = $v.primaryOutputs.toBuilder();
       _digest = $v.digest;
       _$v = null;
     }
@@ -264,34 +226,17 @@ class AssetNodeBuilder implements Builder<AssetNode, AssetNodeBuilder> {
   AssetNode build() => _build();
 
   _$AssetNode _build() {
-    _$AssetNode _$result;
-    try {
-      _$result =
-          _$v ??
-          _$AssetNode._(
-            id: BuiltValueNullFieldError.checkNotNull(id, r'AssetNode', 'id'),
-            type: BuiltValueNullFieldError.checkNotNull(
-              type,
-              r'AssetNode',
-              'type',
-            ),
-            primaryOutputs: primaryOutputs.build(),
-            digest: digest,
-          );
-    } catch (_) {
-      late String _$failedField;
-      try {
-        _$failedField = 'primaryOutputs';
-        primaryOutputs.build();
-      } catch (e) {
-        throw BuiltValueNestedFieldError(
-          r'AssetNode',
-          _$failedField,
-          e.toString(),
+    final _$result =
+        _$v ??
+        _$AssetNode._(
+          id: BuiltValueNullFieldError.checkNotNull(id, r'AssetNode', 'id'),
+          type: BuiltValueNullFieldError.checkNotNull(
+            type,
+            r'AssetNode',
+            'type',
+          ),
+          digest: digest,
         );
-      }
-      rethrow;
-    }
     replace(_$result);
     return _$result;
   }
