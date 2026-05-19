@@ -1,3 +1,8 @@
+## 5.7.0
+
+* Handle JS interop extension types and provide dummy values for them.
+  [#4498](https://github.com/dart-lang/build/issues/4498)
+
 ## 5.6.5
 
 * Require `analyzer` 13.0.0.
