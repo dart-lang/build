@@ -1197,19 +1197,15 @@ targets:
       actionNumber: 0,
     );
 
-    final aPostCopyNode = AssetNode.postGenerated(
-      makeAssetId('a|web/a.txt.post'),
-    );
+    final aPostCopyId = makeAssetId('a|web/a.txt.post');
 
-    final bPostCopyNode = AssetNode.postGenerated(
-      makeAssetId('a|lib/b.txt.post'),
-    );
+    final bPostCopyId = makeAssetId('a|lib/b.txt.post');
 
     expectedGraph
       ..add(aSourceNode)
       ..add(bSourceNode)
-      ..declareOutputs(aId, [aCopyId, aPostCopyNode.id])
-      ..declareOutputs(bId, [bCopyId, bPostCopyNode.id])
+      ..declareOutputs(aId, [aCopyId, aPostCopyId])
+      ..declareOutputs(bId, [bCopyId, bPostCopyId])
       ..addGeneratedForTest(
         aCopyId,
         BuildStepId(primaryInput: aId, phaseNumber: 0),
@@ -1220,15 +1216,13 @@ targets:
         BuildStepId(primaryInput: bId, phaseNumber: 0),
         digest: computeDigest(bCopyId, 'b'),
       )
-      ..add(aPostCopyNode)
-      ..add(bPostCopyNode)
       ..updatePostProcessBuildStepResult(
         aPostProcessBuildStepId,
-        PostProcessBuildStepResult(hidden: true, outputs: [aPostCopyNode.id]),
+        PostProcessBuildStepResult(hidden: true, outputs: [aPostCopyId]),
       )
       ..updatePostProcessBuildStepResult(
         bPostProcessBuildStepId,
-        PostProcessBuildStepResult(hidden: true, outputs: [bPostCopyNode.id]),
+        PostProcessBuildStepResult(hidden: true, outputs: [bPostCopyId]),
       );
 
     expect(cachedGraph, equalsAssetGraph(expectedGraph));
@@ -1550,7 +1544,7 @@ targets:
       final aCloneNodeId = makeAssetId('a|lib/a.txt.copy.clone');
       expect(newGraph.get(aNodeId)!.type, NodeType.missingSource);
       expect(newGraph.get(aCopyNodeId)!.type, NodeType.missingSource);
-      expect(newGraph.contains(aCloneNodeId), isFalse);
+      expect(newGraph.isKnownFile(aCloneNodeId), isFalse);
       expect(result.readerWriter.testing.exists(aNodeId), isFalse);
       expect(result.readerWriter.testing.exists(aCopyNodeId), isFalse);
       expect(result.readerWriter.testing.exists(aCloneNodeId), isFalse);

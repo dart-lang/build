@@ -24,15 +24,10 @@ AssetGraph? deserializeAssetGraph(Map serializedGraph) {
             serializedGraph['postProcessResults'],
             specifiedType: postProcessBuildStepResultsFullType,
           )
-          as Map<
-            String,
-            Map<PostProcessBuildStepId, PostProcessBuildStepResult>
-          >;
+          as BuiltMap<PostProcessBuildStepId, PostProcessBuildStepResult>;
 
-  for (final postProcessResultsForPackage in postProcessResults.values) {
-    for (final entry in postProcessResultsForPackage.entries) {
-      graph.updatePostProcessBuildStepResult(entry.key, entry.value);
-    }
+  for (final entry in postProcessResults.entries) {
+    graph.updatePostProcessBuildStepResult(entry.key, entry.value);
   }
 
   if (serializedGraph.containsKey('buildStepResults')) {
@@ -110,7 +105,9 @@ Map<String, Object?> serializeAssetGraph(AssetGraph graph) {
   final result = <String, Object?>{
     'nodes': nodes,
     'postProcessResults': serializers.serialize(
-      graph.postProcessBuildStepResults,
+      BuiltMap<PostProcessBuildStepId, PostProcessBuildStepResult>.of(
+        graph.postProcessBuildStepResults,
+      ),
       specifiedType: postProcessBuildStepResultsFullType,
     ),
     'buildStepResults': serializers.serialize(

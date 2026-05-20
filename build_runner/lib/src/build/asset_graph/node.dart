@@ -14,7 +14,6 @@ part 'node.g.dart';
 class NodeType extends EnumClass {
   static Serializer<NodeType> get serializer => _$nodeTypeSerializer;
 
-  static const NodeType postGenerated = _$postGenerated;
   static const NodeType placeholder = _$placeholder;
   static const NodeType source = _$source;
   static const NodeType missingSource = _$missingSource;
@@ -37,11 +36,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   /// For source files, this is computed when the file is read so it can be used
   /// to check for changes in the next build.
   Digest? get digest;
-
-  /// Whether this asset is a normal, readable file.
-  ///
-  /// Does not guarantee that the file currently exists.
-  bool get isFile => type == NodeType.postGenerated || type == NodeType.source;
 
   factory AssetNode([void Function(AssetNodeBuilder) updates]) = _$AssetNode;
 
@@ -72,12 +66,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   factory AssetNode.placeholder(AssetId id) => AssetNode((b) {
     b.id = id;
     b.type = NodeType.placeholder;
-  });
-
-  /// A post-process generated node.
-  factory AssetNode.postGenerated(AssetId id) => AssetNode((b) {
-    b.id = id;
-    b.type = NodeType.postGenerated;
   });
 
   AssetNode._();

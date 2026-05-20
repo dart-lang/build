@@ -24,14 +24,9 @@ import 'post_process_build_step_result.dart';
 
 part 'serializers.g.dart';
 
-final postProcessBuildStepResultsInnerFullType = const FullType(Map, [
+final postProcessBuildStepResultsFullType = const FullType(BuiltMap, [
   FullType(PostProcessBuildStepId),
   FullType(PostProcessBuildStepResult),
-]);
-
-final postProcessBuildStepResultsFullType = FullType(Map, [
-  const FullType(String),
-  postProcessBuildStepResultsInnerFullType,
 ]);
 
 final assetIdSerializer = AssetIdSerializer();
@@ -93,16 +88,8 @@ final Serializers serializers =
             () => <AssetId>{},
           )
           ..addBuilderFactory(
-            postProcessBuildStepResultsInnerFullType,
-            () => <PostProcessBuildStepId, PostProcessBuildStepResult>{},
-          )
-          ..addBuilderFactory(
             postProcessBuildStepResultsFullType,
-            () =>
-                <
-                  String,
-                  Map<PostProcessBuildStepId, PostProcessBuildStepResult>
-                >{},
+            MapBuilder<PostProcessBuildStepId, PostProcessBuildStepResult>.new,
           )
           ..addBuilderFactory(
             const FullType(BuiltMap, [FullType(AssetId), FullType(Digest)]),

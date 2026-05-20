@@ -67,12 +67,9 @@ class BuildOutputReader {
     final assetGraph = _assetGraph;
     if (assetGraph == null) return const {};
     final result = <AssetId>{};
-    for (final packageResults
-        in assetGraph.postProcessBuildStepResults.values) {
-      for (final entry in packageResults.entries) {
-        if (entry.value.deletedPrimaryInput) {
-          result.add(entry.key.input);
-        }
+    for (final entry in assetGraph.postProcessBuildStepResults.entries) {
+      if (entry.value.deletedPrimaryInput) {
+        result.add(entry.key.input);
       }
     }
     return result;
@@ -83,13 +80,13 @@ class BuildOutputReader {
     if (_assetGraph == null || _readerWriter == null) {
       return UnreadableReason.notFound;
     }
-    if (!_assetGraph.contains(id)) {
+    if (!_assetGraph.isKnownFile(id)) {
       return UnreadableReason.notFound;
     }
     if (_assetsDeletedByPostProcessBuilders.contains(id)) {
       return UnreadableReason.deleted;
     }
-    if (!_assetGraph.isFile(id)) return UnreadableReason.assetType;
+    if (!_assetGraph.isKnownFile(id)) return UnreadableReason.assetType;
 
     if (_assetGraph.isActualPostOutput(id)) {
       return null;
@@ -173,12 +170,13 @@ class BuildOutputReader {
         result.add(id);
       }
     }
+    result.addAll(assetGraph.allPostProcessOutputIds);
     return result;
   }
 
   bool _shouldSkipId(AssetGraph assetGraph, AssetId id, String? rootDir) {
     if (_buildPlan == null) return false;
-    if (!assetGraph.isFile(id)) return true;
+    if (!assetGraph.isKnownFile(id)) return true;
     if (_assetsDeletedByPostProcessBuilders.contains(id)) return true;
 
     // Exclude non-lib assets if they're outside of the root directory or not
