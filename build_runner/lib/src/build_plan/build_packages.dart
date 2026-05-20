@@ -263,6 +263,15 @@ class BuildPackages implements AssetPathProvider {
   /// Builders can only auto apply from a package in the same build.
   BuiltSet<String> peersOf(String packageName) => _peerPackages[packageName]!;
 
+  Iterable<AssetId> get placeholderIds => packages.keys.expand(
+    (package) => [
+      AssetId(package, r'lib/$lib$'),
+      AssetId(package, r'test/$test$'),
+      AssetId(package, r'web/$web$'),
+      AssetId(package, r'$package$'),
+    ],
+  );
+
   @override
   String toString() {
     final buffer = StringBuffer();

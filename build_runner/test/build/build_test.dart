@@ -63,11 +63,6 @@ void main() {
     },
   );
   final globBuilder = GlobbingBuilder(Glob('**.txt'));
-  final placeholders = placeholderIdsFor(
-    BuildPackages.singlePackageBuild('a', [
-      BuildPackage.forTesting(name: 'a', isOutput: true),
-    ]),
-  );
 
   group('build', () {
     test('can log within a buildFactory', () async {
@@ -525,7 +520,7 @@ targets:
             )!.assetGraph;
         expect(
           cachedGraph.allNodes.map((node) => node.id),
-          unorderedEquals([makeAssetId('a|web/a.txt'), ...placeholders]),
+          unorderedEquals([makeAssetId('a|web/a.txt')]),
         );
         expect(cachedGraph.sources, [makeAssetId('a|web/a.txt')]);
         expect(

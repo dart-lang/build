@@ -17,7 +17,7 @@ void main() {
         AssetNode.source(AssetId('a', 'lib/a.dart')),
         // Should not match.
         AssetNode.source(AssetId('b', 'lib/a.dart')),
-        AssetNode.placeholder(AssetId('a', r'lib/$lib$')),
+        AssetNode.missingSource(AssetId('a', r'lib/missing.dart')),
       ]) {
         nodes.add(node);
       }

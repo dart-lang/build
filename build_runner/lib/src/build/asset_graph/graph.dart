@@ -110,12 +110,11 @@ class AssetGraph implements GeneratedAssetHider {
     BuildPackages buildPackages,
   ) async {
     final graph = AssetGraph();
-    final placeholders = graph._addPlaceHolderNodes(buildPackages);
     graph._addSources(sources);
     graph._addOutputsForSources(
       buildPhases,
       sources,
-      placeholders: placeholders,
+      placeholders: buildPackages.placeholderIds,
     );
     return graph;
   }
@@ -129,7 +128,10 @@ class AssetGraph implements GeneratedAssetHider {
 
   /// Whether [id) is a placeholder.
   bool isPlaceholder(AssetId id) =>
-      _nodes.get(id)?.type == NodeType.placeholder;
+      id.path == r'lib/$lib$' ||
+      id.path == r'test/$test$' ||
+      id.path == r'web/$web$' ||
+      id.path == r'$package$';
 
   /// Whether [id] is one of: source, output or post process output.
   bool isKnownFile(AssetId id) =>
@@ -174,15 +176,6 @@ class AssetGraph implements GeneratedAssetHider {
         ...allPostProcessOutputIds,
       ], glob: glob);
   void removeForTest(AssetId id) => _nodes.remove(id);
-
-  /// Adds [AssetNode.placeholder]s for every package in [buildPackages].
-  Set<AssetId> _addPlaceHolderNodes(BuildPackages buildPackages) {
-    final placeholders = placeholderIdsFor(buildPackages);
-    for (final id in placeholders) {
-      _nodes.add(AssetNode.placeholder(id));
-    }
-    return placeholders;
-  }
 
   /// Adds [assetIds] as [AssetNode.source] to this graph, and returns the newly
   /// created nodes.
@@ -400,7 +393,7 @@ class AssetGraph implements GeneratedAssetHider {
   void _addOutputsForSources(
     BuildPhases buildPhases,
     Set<AssetId> newSources, {
-    Set<AssetId>? placeholders,
+    Iterable<AssetId>? placeholders,
   }) {
     final allInputs = Set<AssetId>.from(newSources);
     if (placeholders != null) allInputs.addAll(placeholders);
@@ -610,15 +603,3 @@ class AssetGraph implements GeneratedAssetHider {
     return result;
   }
 }
-
-Set<AssetId> placeholderIdsFor(BuildPackages buildPackages) =>
-    Set<AssetId>.from(
-      buildPackages.packages.keys.expand(
-        (package) => [
-          AssetId(package, r'lib/$lib$'),
-          AssetId(package, r'test/$test$'),
-          AssetId(package, r'web/$web$'),
-          AssetId(package, r'$package$'),
-        ],
-      ),
-    );
