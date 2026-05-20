@@ -71,10 +71,10 @@ class AssetTracker {
     addUpdates(newSources, ChangeType.ADD);
     final removedAssets = [
       for (final node in assetGraph.allNodes)
-        if (node.isFile) node.id,
+        if (node.isFile && !allSources.contains(node.id)) node.id,
       for (final id in assetGraph.buildStepsByDeclaredOutput.keys)
-        if (assetGraph.isActualOutput(id)) id,
-    ].where((id) => !allSources.contains(id));
+        if (assetGraph.isActualOutput(id) && !allSources.contains(id)) id,
+    ];
 
     addUpdates(removedAssets, ChangeType.REMOVE);
 

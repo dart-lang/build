@@ -379,8 +379,10 @@ class AssetGraph implements GeneratedAssetHider {
     }
 
     var currentInput = input;
-    while (buildStepsByDeclaredOutput.containsKey(currentInput)) {
-      currentInput = buildStepsByDeclaredOutput[currentInput]!.primaryInput;
+    while (true) {
+      final buildStep = buildStepsByDeclaredOutput[currentInput];
+      if (buildStep == null) break;
+      currentInput = buildStep.primaryInput;
     }
     return action.targetSources.matches(currentInput);
   }
@@ -494,8 +496,9 @@ class AssetGraph implements GeneratedAssetHider {
       // regular `AssetNode`s, we need to delete them and all their primary
       // outputs, and replace them with a `GeneratedAssetNode`.
       if (contains(output)) {
-        if (buildStepsByDeclaredOutput.containsKey(output)) {
-          final existingPhase = buildStepsByDeclaredOutput[output]!.phaseNumber;
+        final buildStep = buildStepsByDeclaredOutput[output];
+        if (buildStep != null) {
+          final existingPhase = buildStep.phaseNumber;
           throw DuplicateAssetNodeException(
             output,
             buildPhases.inBuildPhases[existingPhase].displayName,
@@ -551,8 +554,9 @@ class AssetGraph implements GeneratedAssetHider {
   }
 
   Digest? digestFor(AssetId id) {
-    if (buildStepsByDeclaredOutput.containsKey(id)) {
-      return buildStepResultFor(buildStepsByDeclaredOutput[id]!)!.outputs[id];
+    final buildStep = buildStepsByDeclaredOutput[id];
+    if (buildStep != null) {
+      return buildStepResultFor(buildStep)!.outputs[id];
     }
     final node = get(id);
     if (node == null) return null;

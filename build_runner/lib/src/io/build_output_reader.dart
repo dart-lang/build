@@ -94,15 +94,14 @@ class BuildOutputReader {
     if (_assetGraph.isActualPostOutput(id)) {
       return null;
     }
-    if (_assetGraph.buildStepsByDeclaredOutput.containsKey(id)) {
+    final buildStep = _assetGraph.buildStepsByDeclaredOutput[id];
+    if (buildStep != null) {
       if (_processedOutputs?.contains(id) == false) {
         // The generated output was not considered for building because its
         // transitive input(s) did not match build dirs and/or build filters.
         return UnreadableReason.notOutput;
       }
-      final stepResult = _assetGraph.buildStepResultFor(
-        _assetGraph.buildStepsByDeclaredOutput[id]!,
-      );
+      final stepResult = _assetGraph.buildStepResultFor(buildStep);
       if (stepResult != null && stepResult.result == false) {
         return UnreadableReason.failed;
       }
@@ -163,10 +162,18 @@ class BuildOutputReader {
   List<AssetId> allAssets({String? rootDir}) {
     final assetGraph = _assetGraph;
     if (assetGraph == null) return [];
-    return [
-      for (final node in assetGraph.allNodes) node.id,
-      ...assetGraph.buildStepsByDeclaredOutput.keys,
-    ].where((id) => !_shouldSkipId(assetGraph, id, rootDir)).toList();
+    final result = <AssetId>[];
+    for (final node in assetGraph.allNodes) {
+      if (!_shouldSkipId(assetGraph, node.id, rootDir)) {
+        result.add(node.id);
+      }
+    }
+    for (final id in assetGraph.buildStepsByDeclaredOutput.keys) {
+      if (!_shouldSkipId(assetGraph, id, rootDir)) {
+        result.add(id);
+      }
+    }
+    return result;
   }
 
   bool _shouldSkipId(AssetGraph assetGraph, AssetId id, String? rootDir) {
@@ -186,10 +193,9 @@ class BuildOutputReader {
     if (assetGraph.isActualPostOutput(id)) {
       return false;
     }
-    if (assetGraph.buildStepsByDeclaredOutput.containsKey(id)) {
-      final stepResult = assetGraph.buildStepResultFor(
-        assetGraph.buildStepsByDeclaredOutput[id]!,
-      );
+    final buildStep = assetGraph.buildStepsByDeclaredOutput[id];
+    if (buildStep != null) {
+      final stepResult = assetGraph.buildStepResultFor(buildStep);
       if (!assetGraph.isActualOutput(id) ||
           (stepResult == null || stepResult.result == false)) {
         return true;

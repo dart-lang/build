@@ -295,11 +295,11 @@ class SingleStepReaderWriter implements PhasedReader {
       // Post process outputs are not readable until after the build.
       return Readability.notReadable;
     }
-    if (_runningBuild.assetGraph.buildStepsByDeclaredOutput.containsKey(id)) {
-      final stepId = _runningBuild.assetGraph.buildStepsByDeclaredOutput[id]!;
-      if (stepId.phaseNumber > _runningBuildStep!.phaseNumber) {
+    final buildStep = _runningBuild.assetGraph.buildStepsByDeclaredOutput[id];
+    if (buildStep != null) {
+      if (buildStep.phaseNumber > _runningBuildStep!.phaseNumber) {
         return Readability.notReadable;
-      } else if (stepId.phaseNumber == _runningBuildStep.phaseNumber) {
+      } else if (buildStep.phaseNumber == _runningBuildStep.phaseNumber) {
         // allow a build step to read its outputs (contained in writtenAssets)
         final isInBuild =
             _runningBuildStep.buildPhase is InBuildPhase &&
@@ -309,11 +309,7 @@ class SingleStepReaderWriter implements PhasedReader {
       }
 
       await _runningBuild.nodeBuilder(id);
-      final buildStepId =
-          _runningBuild.assetGraph.buildStepsByDeclaredOutput[id]!;
-      final stepResult = _runningBuild.assetGraph.buildStepResultFor(
-        buildStepId,
-      );
+      final stepResult = _runningBuild.assetGraph.buildStepResultFor(buildStep);
       return Readability.fromPreviousPhase(
         _runningBuild.assetGraph.isActualOutput(id) &&
             (stepResult == null || stepResult.result != false),
