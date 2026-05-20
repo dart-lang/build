@@ -24,18 +24,17 @@ import 'build_step_result.dart';
 import 'exceptions.dart';
 import 'glob_id.dart';
 import 'glob_result.dart';
-import 'node.dart';
-import 'nodes.dart';
 import 'post_process_build_step_id.dart';
 import 'post_process_build_step_result.dart';
 import 'serializers.dart';
+import 'sources.dart';
 
 part 'serialization.dart';
 
 /// All the [AssetId]s involved in a build, and all of their outputs.
 class AssetGraph implements GeneratedAssetHider {
-  /// All the [AssetNode]s in the graph.
-  final Nodes _nodes;
+  /// Sources and missing sources.
+  final Sources _sources;
 
   /// All standard build step execution results, indexed by [BuildStepId].
   final Map<BuildStepId, BuildStepResult> buildStepResults;
@@ -57,7 +56,7 @@ class AssetGraph implements GeneratedAssetHider {
   final Set<AssetId> postProcessOutputs;
 
   AssetGraph()
-    : _nodes = Nodes(),
+    : _sources = Sources(),
       postProcessBuildStepResults = {},
       postProcessOutputs = {},
       buildStepResults = {},
@@ -66,19 +65,19 @@ class AssetGraph implements GeneratedAssetHider {
       buildStepsByDeclaredOutput = {};
 
   AssetGraph._with({
-    required Nodes nodes,
+    required Sources sources,
     required this.postProcessBuildStepResults,
     required this.postProcessOutputs,
     required this.buildStepResults,
     required this.globResults,
     required this.buildStepsByDeclaredOutput,
     required this.declaredOutputsByPrimaryInput,
-  }) : _nodes = nodes;
+  }) : _sources = sources;
 
   /// Copies the graph prepared for the next build.
   AssetGraph copyForNextBuild() {
     return AssetGraph._with(
-      nodes: _nodes.clone(),
+      sources: _sources.clone(),
       postProcessBuildStepResults: Map.of(postProcessBuildStepResults),
       postProcessOutputs: Set.of(postProcessOutputs),
       buildStepResults: Map.of(buildStepResults),
@@ -123,10 +122,6 @@ class AssetGraph implements GeneratedAssetHider {
   @visibleForTesting
   String serialize() => json.encode(serializeAssetGraph(this));
 
-  AssetNode? get(AssetId id) => _nodes.get(id);
-  AssetNode updateNode(AssetId id, void Function(AssetNodeBuilder) updates) =>
-      _nodes.updateNode(id, updates);
-
   /// Whether [id) is a placeholder.
   bool isPlaceholder(AssetId id) => Placeholders.isPlaceholderPath(id.path);
 
@@ -135,11 +130,16 @@ class AssetGraph implements GeneratedAssetHider {
       isSource(id) || isDeclaredOutput(id) || isActualPostOutput(id);
 
   /// Whether [id) is a source file.
-  bool isSource(AssetId id) => _nodes.get(id)?.type == NodeType.source;
+  bool isSource(AssetId id) => _sources.isSource(id);
+
+  /// Whether [id) is a source file.
+  bool isUnreadSource(AssetId id) => _sources.isUnreadSource(id);
 
   /// Whether [id] is a source file that was accessed but did not exist.
-  bool isMissingSource(AssetId id) =>
-      _nodes.get(id)?.type == NodeType.missingSource;
+  bool isMissingSource(AssetId id) => _sources.isMissingSource(id);
+
+  /// The digest of source [id], or `null` if it has not been read.
+  Digest? sourceDigest(AssetId id) => _sources.getDigest(id);
 
   /// Whether [id] is a declared build output.
   bool isDeclaredOutput(AssetId id) =>
@@ -166,19 +166,18 @@ class AssetGraph implements GeneratedAssetHider {
     globResults[globId] = result;
   }
 
-  Iterable<AssetNode> get allNodes => _nodes.allNodes;
+  Iterable<AssetId> get sources => _sources.sourceIds;
   Iterable<AssetId> packageFileIds(String package, {Glob? glob}) =>
-      _nodes.packageFileIds(package, [
+      _sources.packageFileIds(package, [
         ...buildStepsByDeclaredOutput.keys,
         ...allPostProcessOutputIds,
       ], glob: glob);
-  void removeForTest(AssetId id) => _nodes.remove(id);
+  void removeForTest(AssetId id) => _sources.remove(id);
 
-  /// Adds [assetIds] as [AssetNode.source] to this graph, and returns the newly
-  /// created nodes.
+  /// Adds [assetIds] to this graph.
   void _addSources(Set<AssetId> assetIds) {
     for (final id in assetIds) {
-      _nodes.add(AssetNode.source(id));
+      _sources.add(id);
     }
   }
 
@@ -202,13 +201,7 @@ class AssetGraph implements GeneratedAssetHider {
     }
     buildStepsByDeclaredOutput.remove(id);
     declaredOutputsByPrimaryInput.remove(id);
-    if (_nodes.contains(id)) {
-      updateNode(id, (nodeBuilder) {
-        nodeBuilder.replace(AssetNode.missingSource(id));
-      });
-    } else {
-      _nodes.add(AssetNode.missingSource(id));
-    }
+    _sources.setMissing(id);
 
     // Remove post build action applications with removed assets as inputs.
     postProcessBuildStepResults.removeWhere((id, result) {
@@ -227,7 +220,7 @@ class AssetGraph implements GeneratedAssetHider {
       for (final output in primaryOutputsOf(id).toList()) {
         _removeRecursive(output, removedIds: removedIds);
       }
-      _nodes.remove(id);
+      _sources.remove(id);
       buildStepsByDeclaredOutput.remove(id);
       declaredOutputsByPrimaryInput.remove(id);
     }
@@ -274,10 +267,6 @@ class AssetGraph implements GeneratedAssetHider {
         package,
       ).where((id) => buildStepsByDeclaredOutput[id]?.phaseNumber == phase);
 
-  /// All source files.
-  Iterable<AssetId> get sources =>
-      allNodes.where((n) => n.type == NodeType.source).map((n) => n.id);
-
   /// All actual outputs.
   Iterable<AssetId> get actualOutputs =>
       buildStepResults.values.expand((result) => result.outputs.keys);
@@ -299,22 +288,16 @@ class AssetGraph implements GeneratedAssetHider {
     for (final entry in updates.entries) {
       final id = entry.key;
       final changeType = entry.value;
-      final existingNode = get(id);
-
-      /// Allow changes that are out of sync with the current graph state:
-      /// handle an "add" of an existing asset as "modify", a "modify" of a
-      /// missing asset as "add", and ignore a "remove" of a missing asset.
       switch (changeType) {
         case ChangeType.ADD:
         case ChangeType.MODIFY:
-          if (existingNode == null ||
-              existingNode.type == NodeType.missingSource) {
+          if (!isSource(id) || isMissingSource(id)) {
             newIds.add(id);
           } else {
             modifyIds.add(id);
           }
         case ChangeType.REMOVE:
-          if (existingNode != null) removeIds.add(id);
+          if (isSource(id)) removeIds.add(id);
       }
     }
 
@@ -330,8 +313,7 @@ class AssetGraph implements GeneratedAssetHider {
     }
 
     for (final id in removeIds) {
-      final node = get(id);
-      if (node != null && node.type == NodeType.source) {
+      if (isSource(id)) {
         addTransitivePrimaryOutputs(id);
       }
     }
@@ -340,15 +322,14 @@ class AssetGraph implements GeneratedAssetHider {
     // `missingSource` nodes, rather than deleting them. This allows them to
     // remain referenced in `inputs` in order to trigger rebuilds if necessary.
     for (final id in removeIds) {
-      final node = get(id);
-      if (node != null && node.type == NodeType.source) {
+      if (isSource(id)) {
         _setMissingRecursive(id);
       }
     }
 
     _addOutputsForSources(buildPhases, newIds);
 
-    _nodes.clearComputationResults();
+    _sources.clearComputationResults();
     transitiveRemovedIds.removeAll(removeIds);
     return transitiveRemovedIds;
   }
@@ -489,11 +470,9 @@ class AssetGraph implements GeneratedAssetHider {
     return removed;
   }
 
-  @override
-  String toString() => allNodes.toList().toString();
-
   @visibleForTesting
-  void add(AssetNode node) => _nodes.add(node);
+  void addSourceForTest(AssetId id, {Digest? digest}) =>
+      _sources.add(id, digest: digest);
 
   @visibleForTesting
   void addGeneratedForTest(
@@ -525,9 +504,7 @@ class AssetGraph implements GeneratedAssetHider {
     if (buildStep != null) {
       return buildStepResultFor(buildStep)!.outputs[id];
     }
-    final node = get(id);
-    if (node == null) return null;
-    return node.digest;
+    return _sources.getDigest(id);
   }
 
   /// Updates a source file digest.
@@ -535,11 +512,11 @@ class AssetGraph implements GeneratedAssetHider {
   /// Does nothing for generated files, their digest is set when the build step
   /// result is written.
   void updateSourceDigest(AssetId id, Digest? digest) {
-    _nodes.updateNodeIfPresent(id, (b) => b.digest = digest);
+    _sources.updateDigestIfPresent(id, digest);
   }
 
   /// Adds a source that a builder tried to access but was missing.
-  void addMissingSource(AssetId id) => _nodes.add(AssetNode.missingSource(id));
+  void addMissingSource(AssetId id) => _sources.addMissing(id);
 
   @override
   bool isHidden(AssetId id) {

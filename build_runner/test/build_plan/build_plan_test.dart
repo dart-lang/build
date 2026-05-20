@@ -254,9 +254,7 @@ void main() {
             .rebuild((b) => b..outputs[outputId] = Digest([])),
       );
       // Give digests to inputs so they are monitored for modifications.
-      assetGraph.updateNode(assetId2, (b) {
-        b.digest = Digest([]);
-      });
+      assetGraph.updateSourceDigest(assetId2, Digest([]));
 
       await writeGraphAndPlan(assetGraph, buildPlan);
 

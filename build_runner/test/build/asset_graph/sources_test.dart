@@ -3,56 +3,53 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:build_runner/src/build/asset_graph/node.dart';
-import 'package:build_runner/src/build/asset_graph/nodes.dart';
+import 'package:build_runner/src/build/asset_graph/sources.dart';
 import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('Nodes', () {
+  group('Sources', () {
     test('packageFileIds matches only files in the specified package', () {
-      final nodes = Nodes();
-      for (final node in [
+      final sources = Sources();
+      for (final id in [
         // Should match.
-        AssetNode.source(AssetId('a', 'lib/a.dart')),
-        // Should not match.
-        AssetNode.source(AssetId('b', 'lib/a.dart')),
-        AssetNode.missingSource(AssetId('a', r'lib/missing.dart')),
+        AssetId('a', 'lib/a.dart'),
+        AssetId('b', 'lib/a.dart'),
       ]) {
-        nodes.add(node);
+        sources.add(id);
       }
-      expect(nodes.packageFileIds('a', [AssetId('a', 'lib/a.g.dart')]), [
+      expect(sources.packageFileIds('a', [AssetId('a', 'lib/a.g.dart')]), [
         AssetId('a', 'lib/a.dart'),
         AssetId('a', 'lib/a.g.dart'),
       ]);
     });
 
     test('packageFileIds matches paths to glob, sorts results', () {
-      final nodes = Nodes();
-      for (final node in [
-        AssetNode.source(AssetId('a', 'lib/aa.dart')),
-        AssetNode.source(AssetId('a', 'lib/ab.dart')),
-        AssetNode.source(AssetId('a', 'lib/aa/a.dart')),
-        AssetNode.source(AssetId('a', 'lib/ba.dart')),
-        AssetNode.source(AssetId('a', 'lib/bb.dart')),
-        AssetNode.source(AssetId('a', 'lib/bb/b.dart')),
+      final sources = Sources();
+      for (final id in [
+        AssetId('a', 'lib/aa.dart'),
+        AssetId('a', 'lib/ab.dart'),
+        AssetId('a', 'lib/aa/a.dart'),
+        AssetId('a', 'lib/ba.dart'),
+        AssetId('a', 'lib/bb.dart'),
+        AssetId('a', 'lib/bb/b.dart'),
       ]) {
-        nodes.add(node);
+        sources.add(id);
       }
-      expect(nodes.packageFileIds('a', [], glob: Glob('lib/a*.dart')), [
+      expect(sources.packageFileIds('a', [], glob: Glob('lib/a*.dart')), [
         AssetId('a', 'lib/aa.dart'),
         AssetId('a', 'lib/ab.dart'),
       ]);
-      expect(nodes.packageFileIds('a', [], glob: Glob('lib/*a.dart')), [
+      expect(sources.packageFileIds('a', [], glob: Glob('lib/*a.dart')), [
         AssetId('a', 'lib/aa.dart'),
         AssetId('a', 'lib/ba.dart'),
       ]);
-      expect(nodes.packageFileIds('a', [], glob: Glob('*/aa.dart')), [
+      expect(sources.packageFileIds('a', [], glob: Glob('*/aa.dart')), [
         AssetId('a', 'lib/aa.dart'),
       ]);
-      expect(nodes.packageFileIds('a', [], glob: Glob('*')), isEmpty);
+      expect(sources.packageFileIds('a', [], glob: Glob('*')), isEmpty);
 
-      expect(nodes.packageFileIds('a', [], glob: Glob('**')), [
+      expect(sources.packageFileIds('a', [], glob: Glob('**')), [
         // Matches are sorted.
         AssetId('a', 'lib/aa.dart'),
         AssetId('a', 'lib/aa/a.dart'),
@@ -61,7 +58,7 @@ void main() {
         AssetId('a', 'lib/bb.dart'),
         AssetId('a', 'lib/bb/b.dart'),
       ]);
-      expect(nodes.packageFileIds('a', [], glob: Glob('**/a.dart')), [
+      expect(sources.packageFileIds('a', [], glob: Glob('**/a.dart')), [
         AssetId('a', 'lib/aa/a.dart'),
       ]);
     });

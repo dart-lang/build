@@ -9,7 +9,6 @@ import 'package:build/build.dart';
 import 'package:build_runner/src/build/asset_graph/build_step_id.dart';
 import 'package:build_runner/src/build/asset_graph/build_step_result.dart';
 import 'package:build_runner/src/build/asset_graph/graph.dart';
-import 'package:build_runner/src/build/asset_graph/node.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_result.dart';
 import 'package:build_runner/src/build_plan/build_configs.dart';
@@ -53,26 +52,23 @@ void main() {
     });
 
     test('can not read deleted files', () async {
-      final notDeleted = AssetNode.source(
-        AssetId.parse('a|web/a.txt'),
-        digest: computeDigest(AssetId('a', 'web/a.txt'), 'a'),
-      );
-      final deleted = AssetNode.source(
-        AssetId.parse('a|lib/b.txt'),
-        digest: computeDigest(AssetId('a', 'lib/b.txt'), 'b'),
-      );
+      final notDeletedId = AssetId.parse('a|web/a.txt');
+      final deletedId = AssetId.parse('a|lib/b.txt');
 
       assetGraph.updatePostProcessBuildStepResult(
-        PostProcessBuildStepId(input: deleted.id, actionNumber: 0),
+        PostProcessBuildStepId(input: deletedId, actionNumber: 0),
         PostProcessBuildStepResult(hidden: true, deletedPrimaryInput: true),
       );
 
       assetGraph
-        ..add(notDeleted)
-        ..add(deleted);
+        ..addSourceForTest(
+          notDeletedId,
+          digest: computeDigest(notDeletedId, 'a'),
+        )
+        ..addSourceForTest(deletedId, digest: computeDigest(deletedId, 'b'));
 
-      readerWriter.testing.writeString(notDeleted.id, '');
-      readerWriter.testing.writeString(deleted.id, '');
+      readerWriter.testing.writeString(notDeletedId, '');
+      readerWriter.testing.writeString(deletedId, '');
 
       final buildPlan = await BuildPlan.load(
         builderFactories: BuilderFactories({}),
@@ -89,8 +85,8 @@ void main() {
         assetGraph: assetGraph,
         processedOutputs: assetGraph.outputs.toSet(),
       );
-      expect(await reader.canRead(notDeleted.id), true);
-      expect(await reader.canRead(deleted.id), false);
+      expect(await reader.canRead(notDeletedId), true);
+      expect(await reader.canRead(deletedId), false);
     });
 
     test('Failure nodes interact well with build filters ', () async {

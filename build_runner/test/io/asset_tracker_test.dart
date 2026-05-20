@@ -53,9 +53,7 @@ void main() {
       // We need to pre-emptively assign a digest so we determine that the
       // node is "interesting".
       final digest = await reader.digest(aId);
-      assetGraph.updateNode(aId, (nodeBuilder) {
-        nodeBuilder.digest = digest;
-      });
+      assetGraph.updateSourceDigest(aId, digest);
 
       final buildConfigs = await BuildConfigs.load(
         buildPackages: buildPackages,

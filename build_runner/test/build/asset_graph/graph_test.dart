@@ -8,14 +8,10 @@ import 'package:build_runner/src/build/asset_graph/build_step_id.dart';
 import 'package:build_runner/src/build/asset_graph/build_step_result.dart';
 import 'package:build_runner/src/build/asset_graph/exceptions.dart';
 import 'package:build_runner/src/build/asset_graph/graph.dart';
-import 'package:build_runner/src/build/asset_graph/node.dart';
-import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
-import 'package:build_runner/src/build/asset_graph/post_process_build_step_result.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/phase.dart';
-import 'package:crypto/crypto.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
@@ -29,22 +25,22 @@ void main() {
   group('AssetGraph', () {
     late AssetGraph graph;
 
-    void expectNodeDoesNotExist(AssetNode node) {
-      expect(graph.isKnownFile(node.id), isFalse);
-      expect(graph.get(node.id), isNull);
+    void expectNodeDoesNotExist(AssetId id) {
+      expect(graph.isKnownFile(id), isFalse);
+      expect(graph.isSource(id), isFalse);
     }
 
-    void expectNodeExists(AssetNode node) {
-      expect(graph.isKnownFile(node.id), isTrue);
-      expect(graph.get(node.id), node);
+    void expectNodeExists(AssetId id) {
+      expect(graph.isKnownFile(id), isTrue);
+      expect(graph.isSource(id), isTrue);
     }
 
-    AssetNode testAddNode(int number) {
-      final node = AssetNode.source(AssetId.parse('pkg|lib/a$number.dart'));
-      expectNodeDoesNotExist(node);
-      graph.add(node);
-      expectNodeExists(node);
-      return node;
+    AssetId testAddNode(int number) {
+      final id = AssetId.parse('pkg|lib/a$number.dart');
+      expectNodeDoesNotExist(id);
+      graph.addSourceForTest(id);
+      expectNodeExists(id);
+      return id;
     }
 
     group('simple graph', () {
@@ -58,17 +54,17 @@ void main() {
 
       test('add, contains, get, allNodes', () {
         final expectedNodes = [for (var i = 0; i < 5; i++) testAddNode(i)];
-        expect(graph.allNodes, unorderedEquals(expectedNodes));
+        expect(graph.sources, unorderedEquals(expectedNodes));
       });
 
       test('remove', () {
-        final nodes = <AssetNode>[];
+        final nodes = <AssetId>[];
         for (var i = 0; i < 5; i++) {
           nodes.add(testAddNode(i));
         }
         graph
-          ..removeForTest(nodes[1].id)
-          ..removeForTest(nodes[4].id);
+          ..removeForTest(nodes[1])
+          ..removeForTest(nodes[4]);
 
         expectNodeExists(nodes[0]);
         expectNodeDoesNotExist(nodes[1]);
@@ -78,67 +74,10 @@ void main() {
 
         graph
           // Doesn't throw.
-          ..removeForTest(nodes[1].id)
+          ..removeForTest(nodes[1])
           // Can be added back
-          ..add(nodes[1]);
+          ..addSourceForTest(nodes[1]);
         expectNodeExists(nodes[1]);
-      });
-
-      test('serialize/deserialize', () {
-        for (var n = 0; n < 5; n++) {
-          final node = AssetNode.source(AssetId.parse('pkg|lib/a$n.dart'));
-
-          final phaseNum = n;
-          final postProcessBuildStep = PostProcessBuildStepId(
-            input: node.id,
-            actionNumber: n,
-          );
-          graph.updatePostProcessBuildStepResult(
-            postProcessBuildStep,
-            PostProcessBuildStepResult(hidden: true),
-          );
-          for (var g = 0; g < 5 - n; g++) {
-            final generatedId = makeAssetId();
-            graph.declareOutputs(node.id, [generatedId]);
-            if (g.isEven) {
-              graph.updatePostProcessBuildStepResult(
-                postProcessBuildStep,
-                PostProcessBuildStepResult(
-                  hidden: true,
-                  deletedPrimaryInput: true,
-                ),
-              );
-            }
-
-            final syntheticNode = AssetNode.missingSource(makeAssetId());
-
-            final buildStepId = BuildStepId(
-              primaryInput: node.id,
-              phaseNumber: phaseNum,
-            );
-            final stepResult = BuildStepResult((b) {
-              b.result = phaseNum.isOdd;
-              b.isHidden = false;
-              b.inputs.addAll([node.id, syntheticNode.id]);
-            });
-            graph.updateBuildStepResult(buildStepId, stepResult);
-            graph.addGeneratedForTest(
-              generatedId,
-              buildStepId,
-              digest: g.isEven ? Digest([]) : null,
-            );
-            graph.add(syntheticNode);
-          }
-          graph.add(node);
-        }
-
-        final encoded = graph.serialize();
-        final decoded = AssetGraph.deserialize(encoded)!;
-        expect(decoded, equalsAssetGraph(graph));
-        expect(
-          decoded.postProcessBuildStepResults,
-          graph.postProcessBuildStepResults,
-        );
       });
     });
 
@@ -182,7 +121,7 @@ void main() {
       test('build', () {
         expect(graph.outputs, unorderedEquals([primaryOutputId]));
         expect(
-          graph.allNodes.map((n) => n.id),
+          graph.sources,
           unorderedEquals([primaryInputId, excludedInputId]),
         );
         expect(graph.primaryOutputsOf(primaryInputId), [primaryOutputId]);
@@ -224,15 +163,14 @@ void main() {
         });
 
         test('add new primary input which replaces a synthetic node', () async {
-          final syntheticNode = AssetNode.missingSource(syntheticId);
-          graph.add(syntheticNode);
-          expect(graph.get(syntheticId), syntheticNode);
+          graph.addMissingSource(syntheticId);
+          expect(graph.isMissingSource(syntheticId), isTrue);
 
           final changes = {syntheticId: ChangeType.ADD};
           await graph.updateAndInvalidate(buildPhases, changes);
 
           expect(graph.isKnownFile(syntheticId), isTrue);
-          expect(graph.get(syntheticId)?.type, NodeType.source);
+          expect(graph.isSource(syntheticId), isTrue);
           expect(graph.isKnownFile(syntheticOutputId), isTrue);
           expect(graph.isDeclaredOutput(syntheticOutputId), isTrue);
         });
@@ -240,9 +178,8 @@ void main() {
         test(
           'add new generated asset which replaces a synthetic node',
           () async {
-            final syntheticNode = AssetNode.missingSource(syntheticOutputId);
-            graph.add(syntheticNode);
-            expect(graph.get(syntheticOutputId), syntheticNode);
+            graph.addMissingSource(syntheticOutputId);
+            expect(graph.isMissingSource(syntheticOutputId), isTrue);
 
             final changes = {syntheticId: ChangeType.ADD};
             await graph.updateAndInvalidate(buildPhases, changes);
@@ -257,7 +194,6 @@ void main() {
           'removing nodes deletes primary outputs and secondary edges',
           () async {
             final secondaryId = makeAssetId('foo|secondary.txt');
-            final secondaryNode = AssetNode.source(secondaryId);
 
             final buildStepId = BuildStepId(
               primaryInput: primaryInputId,
@@ -266,18 +202,18 @@ void main() {
             final stepResult = BuildStepResult((b) {
               b.result = true;
               b.isHidden = false;
-              b.inputs.add(secondaryNode.id);
+              b.inputs.add(secondaryId);
             });
             graph.updateBuildStepResult(buildStepId, stepResult);
 
-            graph.add(secondaryNode);
-            expect(graph.get(secondaryId), secondaryNode);
+            graph.addSourceForTest(secondaryId);
+            expect(graph.isSource(secondaryId), isTrue);
 
             final changes = {primaryInputId: ChangeType.REMOVE};
             await graph.updateAndInvalidate(buildPhases, changes);
 
-            expect(graph.get(primaryInputId)!.type, NodeType.missingSource);
-            expect(graph.get(primaryOutputId)!.type, NodeType.missingSource);
+            expect(graph.isMissingSource(primaryInputId), isTrue);
+            expect(graph.isMissingSource(primaryOutputId), isTrue);
           },
         );
       });
@@ -429,7 +365,7 @@ void main() {
           }, buildPackages);
 
           // Pretend a build happened.
-          graph.add(AssetNode.missingSource(toBeGeneratedDart));
+          graph.addMissingSource(toBeGeneratedDart);
           final buildStepId = BuildStepId(
             primaryInput: generatedPart,
             phaseNumber: 1,
@@ -441,7 +377,7 @@ void main() {
           });
           graph.updateBuildStepResult(buildStepId, stepResult);
 
-          expect(graph.get(source)!.type, NodeType.source);
+          expect(graph.isSource(source), isTrue);
 
           await graph.updateAndInvalidate(buildPhases, {
             renamedSource: ChangeType.ADD,
@@ -449,7 +385,7 @@ void main() {
           });
 
           // The old generated part file should be marked as missing.
-          expect(graph.get(generatedPart)!.type, NodeType.missingSource);
+          expect(graph.isMissingSource(generatedPart), isTrue);
         });
       });
     });
