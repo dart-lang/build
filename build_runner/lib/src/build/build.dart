@@ -187,12 +187,9 @@ class Build {
       }
 
       final failedPostProcessSteps = <PostProcessBuildStepId>[];
-      for (final packageResults
-          in assetGraph.postProcessBuildStepResults.values) {
-        for (final entry in packageResults.entries) {
-          if (entry.value.errors.isNotEmpty) {
-            failedPostProcessSteps.add(entry.key);
-          }
+      for (final entry in assetGraph.postProcessBuildStepResults.entries) {
+        if (entry.value.errors.isNotEmpty) {
+          failedPostProcessSteps.add(entry.key);
         }
       }
 
@@ -261,8 +258,7 @@ class Build {
       if (oldNode?.type == NodeType.source) {
         previousSourceNodes.add(id);
       }
-      final oldExisted =
-          assetGraph.contains(id) && !assetGraph.isMissingSource(id);
+      final oldExisted = assetGraph.isKnownFile(id);
       final oldDigest =
           oldNode?.type == NodeType.source ? oldNode?.digest : null;
       var exists = false;
@@ -731,22 +727,22 @@ class Build {
     PostBuildAction action,
   ) async {
     final outputs = <AssetId>[];
-    for (final buildStepId in assetGraph.postProcessBuildStepIds(
-      package: action.package,
+    for (final input in assetGraph.sources.followedBy(
+      assetGraph.actualOutputs,
     )) {
-      if (buildStepId.actionNumber != actionNum) continue;
-      if (assetGraph.isSource(buildStepId.input) ||
-          assetGraph.isDeclaredOutput(buildStepId.input) &&
-              assetGraph.isActualOutput(buildStepId.input)) {
-        outputs.addAll(
-          await _runPostProcessBuildStep(
-            phaseNum,
-            action.builder,
-            buildStepId,
-            hideOutput: action.hideOutput,
-          ),
-        );
-      }
+      if (!assetGraph.actionMatches(action, input)) continue;
+      final buildStepId = PostProcessBuildStepId(
+        input: input,
+        actionNumber: actionNum,
+      );
+      outputs.addAll(
+        await _runPostProcessBuildStep(
+          phaseNum,
+          action.builder,
+          buildStepId,
+          hideOutput: action.hideOutput,
+        ),
+      );
     }
     return outputs;
   }
@@ -794,9 +790,6 @@ class Build {
 
     // Clean out the impacts of the previous run.
     await _cleanUpStaleOutputs(existingOutputs);
-    for (final output in existingOutputs) {
-      assetGraph.removePostProcessOutput(output);
-    }
     assetGraph.updatePostProcessBuildStepResult(
       postProcessBuildStepId,
       PostProcessBuildStepResult(hidden: hideOutput),
@@ -814,14 +807,13 @@ class Build {
       stepReaderWriter,
       logger,
       addAsset: (assetId) {
-        if (assetGraph.contains(assetId)) {
+        if (assetGraph.isKnownFile(assetId)) {
           throw InvalidOutputException(assetId, 'Asset already exists');
         }
-        assetGraph.addPostGenerated(assetId);
         outputs.add(assetId);
       },
       deleteAsset: (assetId) {
-        if (!assetGraph.contains(assetId)) {
+        if (!assetGraph.isKnownFile(assetId)) {
           throw AssetNotFoundException(assetId);
         }
         if (assetId != input) {

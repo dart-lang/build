@@ -56,7 +56,7 @@ class Nodes {
     final updatedNode = node.rebuild(updates);
     _nodes[id] = updatedNode;
 
-    if (node.isFile != updatedNode.isFile) {
+    if (node.type != updatedNode.type) {
       _sortedFileIdsByPackage = null;
     }
 
@@ -77,7 +77,7 @@ class Nodes {
     final updatedNode = node.rebuild(updates);
     _nodes[id] = updatedNode;
 
-    if (node.isFile != updatedNode.isFile) {
+    if (node.type != updatedNode.type) {
       _sortedFileIdsByPackage = null;
     }
 
@@ -91,7 +91,7 @@ class Nodes {
   /// Returns the updated node: if it replaces an [AssetNode.missingSource] then
   /// `outputs` and `primaryOutputs` are copied to it from that.
   AssetNode add(AssetNode node) {
-    if (node.isFile) _sortedFileIdsByPackage = null;
+    if (node.type == NodeType.source) _sortedFileIdsByPackage = null;
     final existing = get(node.id);
     if (existing != null) {
       if (existing.type == NodeType.missingSource) {
@@ -111,7 +111,7 @@ class Nodes {
   /// Removes [id] from the graph, if present.
   void remove(AssetId id) {
     final removed = _nodes.remove(id);
-    if (removed != null && removed.isFile) {
+    if (removed != null && removed.type == NodeType.source) {
       _sortedFileIdsByPackage = null;
     }
   }
@@ -120,8 +120,6 @@ class Nodes {
   Iterable<AssetNode> get allNodes => _nodes.values;
 
   /// All IDs in `package` that refer to files and match.
-  ///
-  /// A node refers to a file if [AssetNode.isFile].
   ///
   /// If [glob] is passed, return only IDs for which the glob matches the path.
   Iterable<AssetId> packageFileIds(
@@ -144,8 +142,6 @@ class Nodes {
   }
 
   /// Computes a `Map` from package names to sorted IDs of files in the package.
-  ///
-  /// An asset ID is a file if [AssetNode.isFile].
   Map<String, List<AssetId>> _computeSortedFileIdsByPackage(
     Iterable<AssetId> generatedIds,
   ) {
@@ -157,7 +153,7 @@ class Nodes {
     _sortedFileIdsByPackageWasComputed = true;
     final result = <String, List<AssetId>>{};
     for (final value in _nodes.values) {
-      if (value.isFile) {
+      if (value.type == NodeType.source) {
         result.putIfAbsent(value.id.package, () => []).add(value.id);
       }
     }

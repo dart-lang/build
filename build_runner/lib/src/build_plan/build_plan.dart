@@ -257,10 +257,8 @@ class BuildPlan {
       updates = {
         ...inputSources,
         ...cacheDirSources,
-        for (final node in previousAssetGraph.allNodes)
-          if (node.isFile) node.id,
-        for (final id in previousAssetGraph.buildStepsByDeclaredOutput.keys)
-          if (previousAssetGraph.isActualOutput(id)) id,
+        ...previousAssetGraph.sources,
+        ...previousAssetGraph.actualOutputs,
       };
       assetGraph = previousAssetGraph.copyForNextBuild();
 

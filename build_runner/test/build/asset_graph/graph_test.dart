@@ -30,12 +30,12 @@ void main() {
     late AssetGraph graph;
 
     void expectNodeDoesNotExist(AssetNode node) {
-      expect(graph.contains(node.id), isFalse);
+      expect(graph.isKnownFile(node.id), isFalse);
       expect(graph.get(node.id), isNull);
     }
 
     void expectNodeExists(AssetNode node) {
-      expect(graph.contains(node.id), isTrue);
+      expect(graph.isKnownFile(node.id), isTrue);
       expect(graph.get(node.id), node);
     }
 
@@ -175,10 +175,6 @@ void main() {
       final syntheticId = makeAssetId('foo|synthetic.txt');
       final syntheticOutputId = makeAssetId('foo|synthetic.txt.copy');
       final placeholders = placeholderIdsFor(fooPackageGraph);
-      final expectedBuildStepId = PostProcessBuildStepId(
-        input: primaryInputId,
-        actionNumber: 0,
-      );
 
       setUp(() async {
         graph = await AssetGraph.build(buildPhases, {
@@ -193,9 +189,6 @@ void main() {
           graph.allNodes.map((n) => n.id),
           unorderedEquals([primaryInputId, excludedInputId, ...placeholders]),
         );
-        expect(graph.postProcessBuildStepIds(package: 'foo'), {
-          expectedBuildStepId,
-        });
         expect(graph.primaryOutputsOf(primaryInputId), [primaryOutputId]);
 
         final buildStepId = BuildStepId(
@@ -207,30 +200,18 @@ void main() {
           graph.buildStepsByDeclaredOutput[primaryOutputId]!.primaryInput,
           primaryInputId,
         );
-
-        expect(graph.postProcessBuildStepIds(package: 'foo'), {
-          expectedBuildStepId,
-        });
       });
 
       group('updateAndInvalidate', () {
         test('add new primary input', () async {
           final changes = {AssetId('foo', 'new.txt'): ChangeType.ADD};
           await graph.updateAndInvalidate(buildPhases, changes);
-          expect(graph.contains(AssetId('foo', 'new.txt.copy')), isTrue);
-          final newBuildStepId = PostProcessBuildStepId(
-            input: primaryInputId,
-            actionNumber: 0,
-          );
-          expect(
-            graph.postProcessBuildStepIds(package: 'foo'),
-            contains(newBuildStepId),
-          );
+          expect(graph.isKnownFile(AssetId('foo', 'new.txt.copy')), isTrue);
         });
 
         test('modify primary input', () async {
           final changes = {primaryInputId: ChangeType.MODIFY};
-          expect(graph.contains(primaryOutputId), isTrue);
+          expect(graph.isKnownFile(primaryOutputId), isTrue);
           final buildStepId = BuildStepId(
             primaryInput: primaryInputId,
             phaseNumber: 0,
@@ -242,8 +223,8 @@ void main() {
           });
           graph.updateBuildStepResult(buildStepId, stepResult);
           await graph.updateAndInvalidate(buildPhases, changes);
-          expect(graph.contains(primaryInputId), isTrue);
-          expect(graph.contains(primaryOutputId), isTrue);
+          expect(graph.isKnownFile(primaryInputId), isTrue);
+          expect(graph.isKnownFile(primaryOutputId), isTrue);
         });
 
         test('add new primary input which replaces a synthetic node', () async {
@@ -254,19 +235,10 @@ void main() {
           final changes = {syntheticId: ChangeType.ADD};
           await graph.updateAndInvalidate(buildPhases, changes);
 
-          expect(graph.contains(syntheticId), isTrue);
+          expect(graph.isKnownFile(syntheticId), isTrue);
           expect(graph.get(syntheticId)?.type, NodeType.source);
-          expect(graph.contains(syntheticOutputId), isTrue);
+          expect(graph.isKnownFile(syntheticOutputId), isTrue);
           expect(graph.isDeclaredOutput(syntheticOutputId), isTrue);
-
-          final newAnchor = PostProcessBuildStepId(
-            input: syntheticId,
-            actionNumber: 0,
-          );
-          expect(
-            graph.postProcessBuildStepIds(package: 'foo'),
-            contains(newAnchor),
-          );
         });
 
         test(
@@ -279,9 +251,9 @@ void main() {
             final changes = {syntheticId: ChangeType.ADD};
             await graph.updateAndInvalidate(buildPhases, changes);
 
-            expect(graph.contains(syntheticOutputId), isTrue);
+            expect(graph.isKnownFile(syntheticOutputId), isTrue);
             expect(graph.isDeclaredOutput(syntheticOutputId), isTrue);
-            expect(graph.contains(syntheticOutputId), isTrue);
+            expect(graph.isKnownFile(syntheticOutputId), isTrue);
           },
         );
 

@@ -123,7 +123,7 @@ class BuildSeries {
         continue;
       }
 
-      if (!_assetGraph.contains(id)) {
+      if (!_assetGraph.isKnownFile(id)) {
         // Ignore under `.dart_tool/build`.
         if (id.path.startsWith(cacheDirectoryPath)) continue;
 

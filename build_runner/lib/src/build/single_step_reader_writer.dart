@@ -182,7 +182,10 @@ class SingleStepReaderWriter implements PhasedReader {
       return _delegate.canRead(id);
     }
 
-    if (!_runningBuild.assetGraph.contains(id)) {
+    if (_runningBuild.assetGraph.isPlaceholder(id)) {
+      return false;
+    }
+    if (!_runningBuild.assetGraph.isKnownFile(id)) {
       if (track) inputTracker.add(id);
       _runningBuild.assetGraph.addMissingSource(id);
       return false;
@@ -370,7 +373,7 @@ class SingleStepReaderWriter implements PhasedReader {
       }
     }
 
-    if (!_runningBuild.assetGraph.contains(id)) {
+    if (!_runningBuild.assetGraph.isKnownFile(id)) {
       // Add to the graph for input tracking.
       _runningBuild.assetGraph.addMissingSource(id);
       return PhasedValue.fixed('');
