@@ -260,11 +260,11 @@ void main() {
       final primaryId = AssetId('a', 'web/main.dart');
       final outputId = AssetId('a', 'web/main.ddc.js');
       final buildStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
-      assetGraph.addGeneratedForTest(
-        AssetNode.generated(outputId, digest: Digest([])),
-        buildStepId,
-      );
-      final stepResult = BuildStepResult((b) => b..result = false);
+      assetGraph.addGeneratedForTest(outputId, buildStepId, digest: Digest([]));
+      final stepResult = BuildStepResult((b) {
+        b.result = false;
+        b.isHidden = false;
+      });
       assetGraph.updateBuildStepResult(buildStepId, stepResult);
       watcher.addFutureResult(
         Future.value(

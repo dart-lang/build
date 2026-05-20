@@ -96,10 +96,12 @@ void main() {
     test('Failure nodes interact well with build filters ', () async {
       final id = AssetId('a', 'web/a.txt');
       final primaryId = AssetId('a', 'web/a.dart');
-      final node = AssetNode.generated(id, digest: Digest([]));
       final buildStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
-      assetGraph.addGeneratedForTest(node, buildStepId);
-      final stepResult = BuildStepResult((b) => b..result = false);
+      assetGraph.addGeneratedForTest(id, buildStepId, digest: Digest([]));
+      final stepResult = BuildStepResult((b) {
+        b.result = false;
+        b.isHidden = false;
+      });
       assetGraph.updateBuildStepResult(buildStepId, stepResult);
       readerWriter.testing.writeString(id, '');
 

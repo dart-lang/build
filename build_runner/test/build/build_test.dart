@@ -525,12 +525,7 @@ targets:
             )!.assetGraph;
         expect(
           cachedGraph.allNodes.map((node) => node.id),
-          unorderedEquals([
-            makeAssetId('a|web/a.txt'),
-            makeAssetId('a|web/a.txt.copy'),
-            makeAssetId('a|web/a.txt.copy.clone'),
-            ...placeholders,
-          ]),
+          unorderedEquals([makeAssetId('a|web/a.txt'), ...placeholders]),
         );
         expect(cachedGraph.sources, [makeAssetId('a|web/a.txt')]);
         expect(
@@ -1184,28 +1179,13 @@ targets:
 
     // Source nodes
     final aId = AssetId.parse('a|web/a.txt');
-    var aSourceNode = AssetNode.source(aId, digest: computeDigest(aId, 'a'));
+    final aSourceNode = AssetNode.source(aId, digest: computeDigest(aId, 'a'));
     final bId = AssetId.parse('a|lib/b.txt');
-    var bSourceNode = AssetNode.source(bId, digest: computeDigest(bId, 'b'));
+    final bSourceNode = AssetNode.source(bId, digest: computeDigest(bId, 'b'));
 
     // Regular generated asset nodes.
     final aCopyId = AssetId.parse('a|web/a.txt.copy');
-    final aCopyNode = AssetNode.generated(
-      aCopyId,
-      digest: computeDigest(aCopyId, 'a'),
-    );
-    aSourceNode = aSourceNode.rebuild(
-      (b) => b..primaryOutputs.add(aCopyNode.id),
-    );
-
     final bCopyId = makeAssetId('a|lib/b.txt.copy'); //;
-    final bCopyNode = AssetNode.generated(
-      bCopyId,
-      digest: computeDigest(bCopyId, 'b'),
-    );
-    bSourceNode = bSourceNode.rebuild(
-      (b) => b..primaryOutputs.add(bCopyNode.id),
-    );
 
     // Post build generates asset nodes.
     final aPostProcessBuildStepId = PostProcessBuildStepId(
@@ -1220,22 +1200,26 @@ targets:
     final aPostCopyNode = AssetNode.postGenerated(
       makeAssetId('a|web/a.txt.post'),
     );
-    aSourceNode = aSourceNode.rebuild(
-      (b) => b..primaryOutputs.add(aPostCopyNode.id),
-    );
 
     final bPostCopyNode = AssetNode.postGenerated(
       makeAssetId('a|lib/b.txt.post'),
-    );
-    bSourceNode = bSourceNode.rebuild(
-      (b) => b..primaryOutputs.add(bPostCopyNode.id),
     );
 
     expectedGraph
       ..add(aSourceNode)
       ..add(bSourceNode)
-      ..add(aCopyNode)
-      ..add(bCopyNode)
+      ..declareOutputs(aId, [aCopyId, aPostCopyNode.id])
+      ..declareOutputs(bId, [bCopyId, bPostCopyNode.id])
+      ..addGeneratedForTest(
+        aCopyId,
+        BuildStepId(primaryInput: aId, phaseNumber: 0),
+        digest: computeDigest(aCopyId, 'a'),
+      )
+      ..addGeneratedForTest(
+        bCopyId,
+        BuildStepId(primaryInput: bId, phaseNumber: 0),
+        digest: computeDigest(bCopyId, 'b'),
+      )
       ..add(aPostCopyNode)
       ..add(bPostCopyNode)
       ..updatePostProcessBuildStepResult(
@@ -1249,8 +1233,8 @@ targets:
 
     expect(cachedGraph, equalsAssetGraph(expectedGraph));
     expect(
-      cachedGraph.allPostProcessBuildStepResults,
-      expectedGraph.allPostProcessBuildStepResults,
+      cachedGraph.postProcessBuildStepResults,
+      expectedGraph.postProcessBuildStepResults,
     );
   });
 
@@ -1908,7 +1892,7 @@ targets:
       expect(
         finalGraph
             .buildStepResultFor(
-              finalGraph.generatedBy[AssetId('a', 'web/a.g1')]!,
+              finalGraph.buildStepsByDeclaredOutput[AssetId('a', 'web/a.g1')]!,
             )!
             .result,
         isFalse,
@@ -1917,7 +1901,7 @@ targets:
       expect(
         finalGraph
             .buildStepResultFor(
-              finalGraph.generatedBy[AssetId('a', 'web/a.g2')]!,
+              finalGraph.buildStepsByDeclaredOutput[AssetId('a', 'web/a.g2')]!,
             )!
             .result,
         isFalse,
@@ -1926,7 +1910,7 @@ targets:
       expect(
         finalGraph
             .buildStepResultFor(
-              finalGraph.generatedBy[AssetId('a', 'web/a.g3')]!,
+              finalGraph.buildStepsByDeclaredOutput[AssetId('a', 'web/a.g3')]!,
             )!
             .result,
         isFalse,
