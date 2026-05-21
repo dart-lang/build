@@ -16,6 +16,7 @@ import 'package:watcher/watcher.dart';
 import '../../build_plan/build_packages.dart';
 import '../../build_plan/build_phases.dart';
 import '../../build_plan/phase.dart';
+import '../../build_plan/placeholders.dart';
 import '../../constants.dart';
 import '../../io/generated_asset_hider.dart';
 import 'build_step_id.dart';
@@ -127,11 +128,7 @@ class AssetGraph implements GeneratedAssetHider {
       _nodes.updateNode(id, updates);
 
   /// Whether [id) is a placeholder.
-  bool isPlaceholder(AssetId id) =>
-      id.path == r'lib/$lib$' ||
-      id.path == r'test/$test$' ||
-      id.path == r'web/$web$' ||
-      id.path == r'$package$';
+  bool isPlaceholder(AssetId id) => Placeholders.isPlaceholderPath(id.path);
 
   /// Whether [id] is one of: source, output or post process output.
   bool isKnownFile(AssetId id) =>
@@ -382,12 +379,7 @@ class AssetGraph implements GeneratedAssetHider {
     return action.targetSources.matches(currentInput);
   }
 
-  /// Returns a set containing [newSources] plus any new generated sources
-  /// based on [buildPhases], and updates this graph to contain all the
-  /// new outputs.
-  ///
-  /// If [placeholders] is supplied they will be added to [newSources] to create
-  /// the full input set.
+  /// Adds outputs for [newSources] and optionally [placeholders].
   ///
   /// May remove nodes if sources overlap with generated outputs.
   void _addOutputsForSources(

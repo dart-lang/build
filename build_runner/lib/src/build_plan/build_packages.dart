@@ -16,6 +16,7 @@ import '../io/asset_path_provider.dart';
 import 'build_package.dart';
 import 'build_packages_loader.dart';
 import 'build_paths.dart';
+import 'placeholders.dart';
 
 /// The SDK package, we filter this to the core libs and dev compiler
 /// resources.
@@ -265,10 +266,10 @@ class BuildPackages implements AssetPathProvider {
 
   Iterable<AssetId> get placeholderIds => packages.keys.expand(
     (package) => [
-      AssetId(package, r'lib/$lib$'),
-      AssetId(package, r'test/$test$'),
-      AssetId(package, r'web/$web$'),
-      AssetId(package, r'$package$'),
+      AssetId(package, Placeholders.libPath),
+      AssetId(package, Placeholders.testPath),
+      AssetId(package, Placeholders.webPath),
+      AssetId(package, Placeholders.packageName),
     ],
   );
 
