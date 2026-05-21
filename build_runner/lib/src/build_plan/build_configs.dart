@@ -69,7 +69,7 @@ class BuildConfigs {
   }) async {
     readerWriter = testingOverrides?.readerWriter ?? readerWriter;
     try {
-      return _tryLoad(
+      return await _tryLoad(
         buildPackages: buildPackages,
         readerWriter: readerWriter,
         configKey: configKey,
