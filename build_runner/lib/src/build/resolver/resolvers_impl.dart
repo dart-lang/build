@@ -91,7 +91,7 @@ class ResolversImpl implements Resolvers {
     return BuildStepResolver(_buildResolver!, buildStep as BuildStepImpl);
   }
 
-  /// Start a build with [assetGraph].
+  /// Start a build with [buildState].
   ///
   /// If another build has the lock, waits for it to finish.
   ///
@@ -103,10 +103,10 @@ class ResolversImpl implements Resolvers {
   /// only two codepaths need to care about the lock: the main build in
   /// `build.dart` and test builds in `package:build_test` `test_builder.dart`.
   Future<void> takeLockAndStartBuild(
-    BuildState assetGraph, {
+    BuildState buildState, {
     required Set<AssetId>? invalidatedSources,
   }) => _analysisDriverModel.takeLockAndStartBuild(
-    assetGraph,
+    buildState,
     invalidatedSources: invalidatedSources,
   );
 

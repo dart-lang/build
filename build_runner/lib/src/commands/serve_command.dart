@@ -91,7 +91,7 @@ class ServeCommand implements BuildRunnerCommand {
         );
       });
 
-      // TODO(davidmorgan): reuse package graph.
+      // TODO(davidmorgan): reuse build packages.
       _ensureBuildWebCompilersDependency(
         await BuildPackages.forPaths(buildOptions.buildPaths),
       );

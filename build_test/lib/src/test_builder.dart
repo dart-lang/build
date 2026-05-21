@@ -53,7 +53,9 @@ void checkOutputs(
   final modifiableActualAssets = Set.of(actualAssets);
 
   // Ignore asset graph.
-  modifiableActualAssets.removeWhere((id) => id.path.endsWith(assetGraphPath));
+  modifiableActualAssets.removeWhere(
+    (id) => id.path.endsWith(assetGraphJsonPath),
+  );
 
   if (outputs != null) {
     outputs.forEach((serializedId, contentsMatcher) {

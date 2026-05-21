@@ -148,7 +148,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
               b.status = BuildStatus.failed;
               // TODO(grouma) - We should forward the error messages
               // instead.
-              // We can use the AssetGraph and FailureReporter to provide
+              // We can use the BuildState and FailureReporter to provide
               // a better error message.;
               b.error = 'FailureType: ${result.failureType?.exitCode}';
               b.target = target.target;

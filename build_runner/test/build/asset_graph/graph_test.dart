@@ -22,30 +22,20 @@ void main() {
     BuildPackage.forTesting(name: 'foo', isOutput: true),
   });
 
-  group('AssetGraph', () {
-    late BuildState graph;
+  group('BuildState', () {
+    late BuildState buildState;
 
-    void expectNodeDoesNotExist(AssetId id) {
-      expect(graph.isFile(id), isFalse);
-      expect(graph.isSource(id), isFalse);
-    }
-
-    void expectNodeExists(AssetId id) {
-      expect(graph.isFile(id), isTrue);
-      expect(graph.isSource(id), isTrue);
-    }
-
-    AssetId testAddNode(int number) {
+    AssetId testAddSource(int number) {
       final id = AssetId.parse('pkg|lib/a$number.dart');
-      expectNodeDoesNotExist(id);
-      graph.addSourceForTest(id);
-      expectNodeExists(id);
+      expect(buildState.isSource(id), false);
+      buildState.addSourceForTest(id);
+      expect(buildState.isSource(id), true);
       return id;
     }
 
-    group('simple graph', () {
+    group('simple build state', () {
       setUp(() async {
-        graph = BuildState.create(
+        buildState = BuildState.create(
           buildPhases: BuildPhases([]),
           buildPackages: fooPackageGraph,
           sources: <AssetId>{},
@@ -53,8 +43,8 @@ void main() {
       });
 
       test('add, contains, get, allNodes', () {
-        final expectedNodes = [for (var i = 0; i < 5; i++) testAddNode(i)];
-        expect(graph.sources, unorderedEquals(expectedNodes));
+        final expectedNodes = [for (var i = 0; i < 5; i++) testAddSource(i)];
+        expect(buildState.sources, unorderedEquals(expectedNodes));
       });
     });
 
@@ -89,7 +79,7 @@ void main() {
       final syntheticOutputId = makeAssetId('foo|synthetic.txt.copy');
 
       setUp(() async {
-        graph = BuildState.create(
+        buildState = BuildState.create(
           buildPhases: buildPhases,
           buildPackages: fooPackageGraph,
           sources: {primaryInputId, excludedInputId},
@@ -97,20 +87,23 @@ void main() {
       });
 
       test('build', () {
-        expect(graph.outputs, unorderedEquals([primaryOutputId]));
         expect(
-          graph.sources,
+          buildState.declaredAndActualOutputs,
+          unorderedEquals([primaryOutputId]),
+        );
+        expect(
+          buildState.sources,
           unorderedEquals([primaryInputId, excludedInputId]),
         );
-        expect(graph.declaredOutputsOf(primaryInputId), [primaryOutputId]);
+        expect(buildState.declaredOutputsOf(primaryInputId), [primaryOutputId]);
 
         final buildStepId = BuildStepId(
           primaryInput: primaryInputId,
           phaseNumber: 0,
         );
-        expect(graph.stepResult(buildStepId).result, isNull);
+        expect(buildState.stepResult(buildStepId).result, isNull);
         expect(
-          graph.stepForDeclaredOutput(primaryOutputId).primaryInput,
+          buildState.stepForDeclaredOutput(primaryOutputId).primaryInput,
           primaryInputId,
         );
       });
@@ -118,13 +111,13 @@ void main() {
       group('updateAndInvalidate', () {
         test('add new primary input', () async {
           final changes = {AssetId('foo', 'new.txt'): ChangeType.ADD};
-          await graph.updateAndInvalidate(buildPhases, changes);
-          expect(graph.isFile(AssetId('foo', 'new.txt.copy')), isTrue);
+          buildState.updateForNextBuild(buildPhases, changes);
+          expect(buildState.isFile(AssetId('foo', 'new.txt.copy')), isTrue);
         });
 
         test('modify primary input', () async {
           final changes = {primaryInputId: ChangeType.MODIFY};
-          expect(graph.isFile(primaryOutputId), isTrue);
+          expect(buildState.isFile(primaryOutputId), isTrue);
           final buildStepId = BuildStepId(
             primaryInput: primaryInputId,
             phaseNumber: 0,
@@ -134,37 +127,37 @@ void main() {
             b.isHidden = false;
             b.inputs.add(primaryInputId);
           });
-          graph.updateBuildStepResult(buildStepId, stepResult);
-          await graph.updateAndInvalidate(buildPhases, changes);
-          expect(graph.isFile(primaryInputId), isTrue);
-          expect(graph.isFile(primaryOutputId), isTrue);
+          buildState.updateBuildStepResult(buildStepId, stepResult);
+          buildState.updateForNextBuild(buildPhases, changes);
+          expect(buildState.isFile(primaryInputId), isTrue);
+          expect(buildState.isFile(primaryOutputId), isTrue);
         });
 
         test('add new primary input which replaces a synthetic node', () async {
-          graph.addMissingSource(syntheticId);
-          expect(graph.isMissingSource(syntheticId), isTrue);
+          buildState.addMissingSource(syntheticId);
+          expect(buildState.isMissingSource(syntheticId), isTrue);
 
           final changes = {syntheticId: ChangeType.ADD};
-          await graph.updateAndInvalidate(buildPhases, changes);
+          buildState.updateForNextBuild(buildPhases, changes);
 
-          expect(graph.isFile(syntheticId), isTrue);
-          expect(graph.isSource(syntheticId), isTrue);
-          expect(graph.isFile(syntheticOutputId), isTrue);
-          expect(graph.isDeclaredOutput(syntheticOutputId), isTrue);
+          expect(buildState.isFile(syntheticId), isTrue);
+          expect(buildState.isSource(syntheticId), isTrue);
+          expect(buildState.isFile(syntheticOutputId), isTrue);
+          expect(buildState.isDeclaredOutput(syntheticOutputId), isTrue);
         });
 
         test(
           'add new generated asset which replaces a synthetic node',
           () async {
-            graph.addMissingSource(syntheticOutputId);
-            expect(graph.isMissingSource(syntheticOutputId), isTrue);
+            buildState.addMissingSource(syntheticOutputId);
+            expect(buildState.isMissingSource(syntheticOutputId), isTrue);
 
             final changes = {syntheticId: ChangeType.ADD};
-            await graph.updateAndInvalidate(buildPhases, changes);
+            buildState.updateForNextBuild(buildPhases, changes);
 
-            expect(graph.isFile(syntheticOutputId), isTrue);
-            expect(graph.isDeclaredOutput(syntheticOutputId), isTrue);
-            expect(graph.isFile(syntheticOutputId), isTrue);
+            expect(buildState.isFile(syntheticOutputId), isTrue);
+            expect(buildState.isDeclaredOutput(syntheticOutputId), isTrue);
+            expect(buildState.isFile(syntheticOutputId), isTrue);
           },
         );
 
@@ -182,16 +175,16 @@ void main() {
               b.isHidden = false;
               b.inputs.add(secondaryId);
             });
-            graph.updateBuildStepResult(buildStepId, stepResult);
+            buildState.updateBuildStepResult(buildStepId, stepResult);
 
-            graph.addSourceForTest(secondaryId);
-            expect(graph.isSource(secondaryId), isTrue);
+            buildState.addSourceForTest(secondaryId);
+            expect(buildState.isSource(secondaryId), isTrue);
 
             final changes = {primaryInputId: ChangeType.REMOVE};
-            await graph.updateAndInvalidate(buildPhases, changes);
+            buildState.updateForNextBuild(buildPhases, changes);
 
-            expect(graph.isMissingSource(primaryInputId), isTrue);
-            expect(graph.isMissingSource(primaryOutputId), isTrue);
+            expect(buildState.isMissingSource(primaryInputId), isTrue);
+            expect(buildState.isMissingSource(primaryOutputId), isTrue);
           },
         );
       });
@@ -212,7 +205,7 @@ void main() {
             buildPackages: fooPackageGraph,
             sources: {makeAssetId('foo|file')},
           ),
-          throwsA(isA<DuplicateAssetNodeException>()),
+          throwsA(isA<DuplicateAssetIdException>()),
         );
       });
 
@@ -260,7 +253,7 @@ void main() {
             sources: sources,
           );
           expect(
-            buildState.outputs,
+            buildState.declaredAndActualOutputs,
             unorderedEquals([
               makeAssetId('foo|lib/1.a.txt'),
               makeAssetId('foo|lib/1.b.txt'),
@@ -306,7 +299,7 @@ void main() {
             sources: sources,
           );
           expect(
-            buildState.outputs,
+            buildState.declaredAndActualOutputs,
             unorderedEquals([
               makeAssetId('foo|lib/1.txt.1'),
               makeAssetId('foo|lib/1.txt.1.2'),
@@ -359,7 +352,7 @@ void main() {
 
           expect(buildState.isSource(source), isTrue);
 
-          await buildState.updateAndInvalidate(buildPhases, {
+          buildState.updateForNextBuild(buildPhases, {
             renamedSource: ChangeType.ADD,
             source: ChangeType.REMOVE,
           });

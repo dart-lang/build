@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:async';
-
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/serializer.dart';
@@ -104,7 +102,7 @@ class BuildState implements GeneratedAssetHider {
        _buildStepResults = buildStepResults,
        _sources = sources;
 
-  /// Copies the graph prepared for the next build.
+  /// Copies the state and prepares it for the next build.
   BuildState copyForNextBuild() {
     return BuildState._with(
       sources: _sources.clone(),
@@ -120,7 +118,7 @@ class BuildState implements GeneratedAssetHider {
     );
   }
 
-  // Predicates over IDs and iterables of IDs.
+  // --  Predicates over IDs and iterables over IDs.
 
   /// Whether [id] is a placeholder.
   ///
@@ -179,6 +177,18 @@ class BuildState implements GeneratedAssetHider {
         package: package,
       ).where((id) => _buildStepsByDeclaredOutput[id]?.phaseNumber == phase);
 
+  /// Declared outputs and the phase in which they will be output.
+  Map<AssetId, int> get declaredOutputPhases => {
+    for (final entry in _buildStepsByDeclaredOutput.entries)
+      entry.key: entry.value.phaseNumber,
+  };
+
+  /// Actual build step outputs.
+  ///
+  /// A subset of [declaredOutputs].
+  Iterable<AssetId> get actualOutputs =>
+      _buildStepResults.values.expand((result) => result.outputs.keys);
+
   /// Whether [id] is a declared build output that was actually generated.
   bool isActualOutput(AssetId id) {
     final buildStepId = _buildStepsByDeclaredOutput[id];
@@ -195,7 +205,7 @@ class BuildState implements GeneratedAssetHider {
     return stepResult.succeeded && stepResult.outputs.containsKey(id);
   }
 
-  /// All post process build outputs.
+  /// Post process outputs.
   ///
   /// Note that post process outputs happen after the main build, so during the
   /// main build this is either empty or is the post process outputs from the
@@ -205,7 +215,21 @@ class BuildState implements GeneratedAssetHider {
   /// Whether [id] is a post process build output that was actually generated.
   bool isActualPostOutput(AssetId id) => _postProcessOutputs.contains(id);
 
-  // Digests.
+  /// All declared outputs and all post process outputs.
+  Iterable<AssetId> get declaredAndActualOutputs => [
+    ..._buildStepsByDeclaredOutput.keys,
+    ...actualPostOutputs,
+  ];
+
+  // -- Digests.
+
+  /// Updates a source file digest.
+  ///
+  /// Does nothing for generated files, their digest is set when the build step
+  /// result is written.
+  void updateSourceDigest(AssetId id, Digest? digest) {
+    _sources.updateDigestIfPresent(id, digest);
+  }
 
   /// If [id] is a source or a declared output, returns the latest digest.
   ///
@@ -224,7 +248,15 @@ class BuildState implements GeneratedAssetHider {
   /// Throws if it is not a source.
   Digest? digestOfSource(AssetId id) => _sources.digestOfSource(id);
 
-  // Build steps.
+  // -- Missing sources.
+
+  /// Adds a source that a builder tried to access but was missing.
+  ///
+  /// The builder must check and find there is no declared output or
+  /// source before calling this.
+  void addMissingSource(AssetId id) => _sources.addMissing(id);
+
+  // -- Build steps.
 
   /// The build step that declared [id].
   BuildStepId stepForDeclaredOutput(AssetId id) =>
@@ -239,7 +271,7 @@ class BuildState implements GeneratedAssetHider {
     _buildStepResults[buildStepId] = result;
   }
 
-  // Globs.
+  // -- Globs.
 
   GlobResult? globResultFor(GlobId globId) => _globResults[globId];
 
@@ -247,152 +279,40 @@ class BuildState implements GeneratedAssetHider {
     _globResults[globId] = result;
   }
 
-  // Post process build steps.
+  // -- Post process build steps.
 
   void addPostProcessBuildStepResult(
-    PostProcessBuildStepId stepId,
+    PostProcessBuildStepId step,
     PostProcessBuildStepResult result,
   ) {
     final updated = _postProcessBuildStepResults.putIfAbsent(
-      stepId,
+      step,
       () => result,
     );
     if (!identical(updated, result)) {
-      throw StateError('Already had post process result for $stepId.');
+      throw StateError('Already had post process result for $step.');
     }
     _postProcessOutputs.addAll(result.outputs);
   }
 
-  void removePostProcessBuildResult(PostProcessBuildStepId buildStepId) {
-    final oldResult = _postProcessBuildStepResults.remove(buildStepId);
+  void removePostProcessBuildResult(PostProcessBuildStepId step) {
+    final oldResult = _postProcessBuildStepResults.remove(step);
     if (oldResult != null) {
       _postProcessOutputs.removeAll(oldResult.outputs);
     }
   }
 
-  /// Gets the result for a [PostProcessBuildStepId], or `null` if there is
-  /// none.
   PostProcessBuildStepResult? postProcessBuildStepResultFor(
-    PostProcessBuildStepId action,
-  ) => _postProcessBuildStepResults[action];
+    PostProcessBuildStepId step,
+  ) => _postProcessBuildStepResults[step];
 
-  /// Changes [id] and its transitive`primaryOutput`s to `missingSource` nodes.
-  ///
-  /// Removes post build applications with removed assets as inputs.
-  void _setMissingRecursive(AssetId id, {Set<AssetId>? removedIds}) {
-    removedIds ??= <AssetId>{};
-    removedIds.add(id);
-    for (final output in declaredOutputsOf(id).toList()) {
-      _setMissingRecursive(output, removedIds: removedIds);
-    }
-    _buildStepsByDeclaredOutput.remove(id);
-    _declaredOutputsByPrimaryInput.remove(id);
-    _sources.setMissing(id);
+  /// All [PostProcessBuildStepResult] by [PostProcessBuildStepId].
+  Iterable<MapEntry<PostProcessBuildStepId, PostProcessBuildStepResult>>
+  get postProcessBuildStepResults => _postProcessBuildStepResults.entries;
 
-    // Remove post build action applications with removed assets as inputs.
-    _postProcessBuildStepResults.removeWhere((id, result) {
-      if (removedIds!.contains(id.input)) {
-        _postProcessOutputs.removeAll(result.outputs);
-        return true;
-      }
-      return false;
-    });
-  }
+  // -- Build planning.
 
-  /// Removes [id] and its transitive`primaryOutput`s from the graph.
-  void _removeRecursive(AssetId id, {Set<AssetId>? removedIds}) {
-    removedIds ??= <AssetId>{};
-    if (removedIds.add(id)) {
-      for (final output in declaredOutputsOf(id).toList()) {
-        _removeRecursive(output, removedIds: removedIds);
-      }
-      _sources.remove(id);
-      _buildStepsByDeclaredOutput.remove(id);
-      _declaredOutputsByPrimaryInput.remove(id);
-    }
-  }
-
-  /// All declared outputs in the graph.
-  Iterable<AssetId> get outputs => [
-    ..._buildStepsByDeclaredOutput.keys,
-    ...actualPostOutputs,
-  ];
-
-  /// All declared outputs and the phases in which they are output.
-  Map<AssetId, int> get outputPhases => {
-    for (final entry in _buildStepsByDeclaredOutput.entries)
-      entry.key: entry.value.phaseNumber,
-  };
-
-  /// All actual outputs.
-  Iterable<AssetId> get actualOutputs =>
-      _buildStepResults.values.expand((result) => result.outputs.keys);
-
-  /// Updates graph structure, invalidating and deleting any outputs that were
-  /// affected.
-  ///
-  /// Outputs that are deleted from the filesystem are retained in the graph as
-  /// `missingSource` nodes.
-  ///
-  /// Returns the set of [AssetId]s to delete.
-  Future<Set<AssetId>> updateAndInvalidate(
-    BuildPhases buildPhases,
-    Map<AssetId, ChangeType> updates,
-  ) async {
-    final newIds = <AssetId>{};
-    final modifyIds = <AssetId>{};
-    final removeIds = <AssetId>{};
-    for (final entry in updates.entries) {
-      final id = entry.key;
-      final changeType = entry.value;
-      switch (changeType) {
-        case ChangeType.ADD:
-        case ChangeType.MODIFY:
-          if (!isSource(id) || isMissingSource(id)) {
-            newIds.add(id);
-          } else {
-            modifyIds.add(id);
-          }
-        case ChangeType.REMOVE:
-          if (isSource(id)) removeIds.add(id);
-      }
-    }
-
-    _sources.addAll(newIds);
-
-    // Compute generated nodes that will no longer be output because their
-    // primary input was deleted. Delete them.
-    final transitiveRemovedIds = <AssetId>{};
-    void addTransitivePrimaryOutputs(AssetId id) {
-      if (transitiveRemovedIds.add(id)) {
-        declaredOutputsOf(id).forEach(addTransitivePrimaryOutputs);
-      }
-    }
-
-    for (final id in removeIds) {
-      if (isSource(id)) {
-        addTransitivePrimaryOutputs(id);
-      }
-    }
-
-    // Change deleted source assets and their transitive primary outputs to
-    // `missingSource` nodes, rather than deleting them. This allows them to
-    // remain referenced in `inputs` in order to trigger rebuilds if necessary.
-    for (final id in removeIds) {
-      if (isSource(id)) {
-        _setMissingRecursive(id);
-      }
-    }
-
-    _addOutputsForSources(buildPhases, newIds);
-
-    _sources.clearComputationResults();
-    transitiveRemovedIds.removeAll(removeIds);
-    return transitiveRemovedIds;
-  }
-
-  /// Crawl up primary inputs to see if the original Source file matches the
-  /// glob on [action].
+  /// Returns whether [action] should run for [input].
   bool actionMatches(BuildAction action, AssetId input) {
     if (input.package != action.package) return false;
     if (!action.generateFor.matches(input)) return false;
@@ -415,174 +335,6 @@ class BuildState implements GeneratedAssetHider {
       currentInput = buildStep.primaryInput;
     }
     return action.targetSources.matches(currentInput);
-  }
-
-  /// Adds outputs for [newSources] and optionally [placeholders].
-  ///
-  /// May remove nodes if sources overlap with generated outputs.
-  void _addOutputsForSources(
-    BuildPhases buildPhases,
-    Set<AssetId> newSources, {
-    Iterable<AssetId>? placeholders,
-  }) {
-    final allInputs = Set<AssetId>.from(newSources);
-    if (placeholders != null) allInputs.addAll(placeholders);
-    for (
-      var phaseNum = 0;
-      phaseNum < buildPhases.inBuildPhases.length;
-      phaseNum++
-    ) {
-      allInputs.addAll(
-        _addInBuildPhaseOutputs(
-          buildPhases.inBuildPhases[phaseNum],
-          phaseNum,
-          allInputs,
-          buildPhases,
-        ),
-      );
-    }
-  }
-
-  /// Adds all generated asset outputs for [phase] given [allInputs].
-  ///
-  /// May remove some items from [allInputs], if they are deemed to actually be
-  /// outputs of this phase and not original sources.
-  ///
-  /// Returns all newly created asset ids.
-  Set<AssetId> _addInBuildPhaseOutputs(
-    InBuildPhase phase,
-    int phaseNum,
-    Set<AssetId> allInputs,
-    BuildPhases buildPhases,
-  ) {
-    final phaseOutputs = <AssetId>{};
-    final inputs =
-        allInputs.where((input) => actionMatches(phase, input)).toList();
-    for (final input in inputs) {
-      // We might have deleted some inputs during this loop, if they turned
-      // out to be generated assets.
-      if (!allInputs.contains(input)) continue;
-      final outputs = expectedOutputs(phase.builder, input);
-      phaseOutputs.addAll(outputs);
-      _declaredOutputsByPrimaryInput
-          .putIfAbsent(input, () => {})
-          .addAll(outputs);
-      final deleted = _addGeneratedOutputs(
-        outputs,
-        phaseNum,
-        buildPhases,
-        primaryInput: input,
-        isHidden: phase.hideOutput,
-      );
-      allInputs.removeAll(deleted);
-      // We may delete source nodes that were producing outputs previously.
-      // Detect this by checking for deleted nodes that no longer exist in the
-      // graph at all, and remove them from `phaseOutputs`.
-      phaseOutputs.removeAll(deleted.where((id) => !isDeclaredOutput(id)));
-    }
-    return phaseOutputs;
-  }
-
-  /// Adds [outputs] to the graph.
-  ///
-  /// If there are existing source or missing source nodes
-  /// that overlap the outputs, then they will be replaced,
-  /// and their transitive `primaryOutputs` will be
-  /// removed from the graph.
-  ///
-  /// The return value is the set of assets that were removed from the graph.
-  Set<AssetId> _addGeneratedOutputs(
-    Iterable<AssetId> outputs,
-    int phaseNumber,
-    BuildPhases buildPhases, {
-    required AssetId primaryInput,
-    required bool isHidden,
-  }) {
-    final removed = <AssetId>{};
-    for (final output in outputs) {
-      if (isSource(output)) {
-        // An old generated source was picked up as a source file. Remove it and
-        // its outputs.
-        _removeRecursive(output, removedIds: removed);
-      } else if (isDeclaredOutput(output)) {
-        // The output was already declared by another builder.
-        final buildStep = _buildStepsByDeclaredOutput[output]!;
-        final existingPhase = buildStep.phaseNumber;
-        throw DuplicateAssetNodeException(
-          output,
-          buildPhases.inBuildPhases[existingPhase].displayName,
-          buildPhases.inBuildPhases[phaseNumber].displayName,
-        );
-      }
-
-      final buildStepId = BuildStepId(
-        primaryInput: primaryInput,
-        phaseNumber: phaseNumber,
-      );
-      _buildStepsByDeclaredOutput[output] = buildStepId;
-      final buildStepResultBuilder =
-          _buildStepResults[buildStepId]?.toBuilder() ??
-          BuildStepResultBuilder();
-      buildStepResultBuilder.isHidden = isHidden;
-      _buildStepResults[buildStepId] = buildStepResultBuilder.build();
-    }
-    return removed;
-  }
-
-  @visibleForTesting
-  void addSourceForTest(AssetId id, {Digest? digest}) =>
-      _sources.add(id, digest: digest);
-
-  @visibleForTesting
-  void addGeneratedForTest(
-    AssetId id,
-    BuildStepId buildStepId, {
-    bool isHidden = true,
-    Digest? digest,
-  }) {
-    _buildStepsByDeclaredOutput[id] = buildStepId;
-    final existingResult = _buildStepResults[buildStepId];
-    if (existingResult == null) {
-      _buildStepResults[buildStepId] = BuildStepResult((b) {
-        b.isHidden = isHidden;
-        if (digest != null) {
-          b.outputs[id] = digest;
-        }
-      });
-    } else {
-      if (digest != null) {
-        _buildStepResults[buildStepId] = existingResult.rebuild(
-          (b) => b..outputs[id] = digest,
-        );
-      }
-    }
-  }
-
-  /// Updates a source file digest.
-  ///
-  /// Does nothing for generated files, their digest is set when the build step
-  /// result is written.
-  void updateSourceDigest(AssetId id, Digest? digest) {
-    _sources.updateDigestIfPresent(id, digest);
-  }
-
-  /// Adds a source that a builder tried to access but was missing.
-  void addMissingSource(AssetId id) => _sources.addMissing(id);
-
-  @override
-  bool isHidden(AssetId id) {
-    if (id.path.startsWith(generatedOutputDirectory) ||
-        id.path.startsWith(cacheDirectoryPath)) {
-      return false;
-    }
-    if (!isDeclaredOutput(id)) {
-      return false;
-    }
-    final buildStepId = _buildStepsByDeclaredOutput[id];
-    if (buildStepId != null) {
-      return stepResult(buildStepId).isHidden;
-    }
-    return false;
   }
 
   /// Returns outputs that were written to the source tree.
@@ -623,9 +375,262 @@ class BuildState implements GeneratedAssetHider {
     return result;
   }
 
-  // Post process.
+  // -- Creation of the state and updates for incremental builds.
 
-  /// All [PostProcessBuildStepResult] by [PostProcessBuildStepId].
-  Iterable<MapEntry<PostProcessBuildStepId, PostProcessBuildStepResult>>
-  get postProcessBuildStepResults => _postProcessBuildStepResults.entries;
+  /// Updates for the next build.
+  ///
+  /// Returns the set of [AssetId]s to delete.
+  Set<AssetId> updateForNextBuild(
+    BuildPhases buildPhases,
+    Map<AssetId, ChangeType> updates,
+  ) {
+    final newIds = <AssetId>{};
+    final modifyIds = <AssetId>{};
+    final removeIds = <AssetId>{};
+    for (final entry in updates.entries) {
+      final id = entry.key;
+      final changeType = entry.value;
+      switch (changeType) {
+        case ChangeType.ADD:
+        case ChangeType.MODIFY:
+          if (!isSource(id) || isMissingSource(id)) {
+            newIds.add(id);
+          } else {
+            modifyIds.add(id);
+          }
+        case ChangeType.REMOVE:
+          if (isSource(id)) removeIds.add(id);
+      }
+    }
+
+    _sources.addAll(newIds);
+
+    // Compute declared outputs that will no longer be output because their
+    // primary input was deleted. Delete them.
+    final transitiveRemovedIds = <AssetId>{};
+    void addTransitivePrimaryOutputs(AssetId id) {
+      if (transitiveRemovedIds.add(id)) {
+        declaredOutputsOf(id).forEach(addTransitivePrimaryOutputs);
+      }
+    }
+
+    for (final id in removeIds) {
+      if (isSource(id)) {
+        addTransitivePrimaryOutputs(id);
+      }
+    }
+
+    // Change deleted source assets and their transitive declared outputs to
+    // missing sources, rather than deleting them. This allows them to remain
+    // referenced in `inputs` in order to trigger rebuilds if necessary.
+    for (final id in removeIds) {
+      if (isSource(id)) {
+        _setMissingRecursive(id);
+      }
+    }
+
+    _addOutputsForSources(buildPhases, newIds);
+
+    _sources.clearComputationResults();
+    transitiveRemovedIds.removeAll(removeIds);
+    return transitiveRemovedIds;
+  }
+
+  /// Changes [id] and its transitive primary outputs to missing sources.
+  ///
+  /// Removes post build applications with removed assets as inputs.
+  void _setMissingRecursive(AssetId id, {Set<AssetId>? removedIds}) {
+    removedIds ??= <AssetId>{};
+    removedIds.add(id);
+    for (final output in declaredOutputsOf(id).toList()) {
+      _setMissingRecursive(output, removedIds: removedIds);
+    }
+    _buildStepsByDeclaredOutput.remove(id);
+    _declaredOutputsByPrimaryInput.remove(id);
+    _sources.setMissing(id);
+
+    // Remove post build action applications with removed assets as inputs.
+    _postProcessBuildStepResults.removeWhere((id, result) {
+      if (removedIds!.contains(id.input)) {
+        _postProcessOutputs.removeAll(result.outputs);
+        return true;
+      }
+      return false;
+    });
+  }
+
+  /// Removes [id] and its transitive declared outputs.
+  void _removeRecursive(AssetId id, {Set<AssetId>? removedIds}) {
+    removedIds ??= <AssetId>{};
+    if (removedIds.add(id)) {
+      for (final output in declaredOutputsOf(id).toList()) {
+        _removeRecursive(output, removedIds: removedIds);
+      }
+      _sources.remove(id);
+      _buildStepsByDeclaredOutput.remove(id);
+      _declaredOutputsByPrimaryInput.remove(id);
+    }
+  }
+
+  /// Adds outputs for [newSources] and optionally [placeholders].
+  ///
+  /// If a source now clashes with an output, it means an old generated output
+  /// was incorrectly treated as a source. Clean that up: remove any outputs
+  /// that were added because the output was treated as a source.
+  void _addOutputsForSources(
+    BuildPhases buildPhases,
+    Set<AssetId> newSources, {
+    Iterable<AssetId>? placeholders,
+  }) {
+    final allInputs = Set<AssetId>.from(newSources);
+    if (placeholders != null) allInputs.addAll(placeholders);
+    for (
+      var phaseNum = 0;
+      phaseNum < buildPhases.inBuildPhases.length;
+      phaseNum++
+    ) {
+      allInputs.addAll(
+        _addInBuildPhaseOutputs(
+          buildPhases.inBuildPhases[phaseNum],
+          phaseNum,
+          allInputs,
+          buildPhases,
+        ),
+      );
+    }
+  }
+
+  /// Adds all generated asset outputs for [phase] given [allInputs].
+  ///
+  /// Removes ids from [allInputs] if they are recognized as outputs of the
+  /// phase.
+  ///
+  /// Returns all newly created asset ids.
+  Set<AssetId> _addInBuildPhaseOutputs(
+    InBuildPhase phase,
+    int phaseNum,
+    Set<AssetId> allInputs,
+    BuildPhases buildPhases,
+  ) {
+    final phaseOutputs = <AssetId>{};
+    final inputs =
+        allInputs.where((input) => actionMatches(phase, input)).toList();
+    for (final input in inputs) {
+      // We might have deleted some inputs during this loop, if they turned
+      // out to be generated assets.
+      if (!allInputs.contains(input)) continue;
+      final outputs = expectedOutputs(phase.builder, input);
+      phaseOutputs.addAll(outputs);
+      _declaredOutputsByPrimaryInput
+          .putIfAbsent(input, () => {})
+          .addAll(outputs);
+      final deleted = _addGeneratedOutputs(
+        outputs,
+        phaseNum,
+        buildPhases,
+        primaryInput: input,
+        isHidden: phase.hideOutput,
+      );
+      allInputs.removeAll(deleted);
+      // We may delete sources that were producing outputs previously.
+      // Detect this by checking for deleted files that are no longer declared
+      // outputs, and remove them from `phaseOutputs`.
+      phaseOutputs.removeAll(deleted.where((id) => !isDeclaredOutput(id)));
+    }
+    return phaseOutputs;
+  }
+
+  /// Adds [outputs] to the state.
+  ///
+  /// If there are existing source or missing sources that match outputs,
+  /// replace them with outputs and remove incorrect transitive outputs.
+  ///
+  /// The return value is the set of assets that were removed from the
+  /// build state.
+  Set<AssetId> _addGeneratedOutputs(
+    Iterable<AssetId> outputs,
+    int phaseNumber,
+    BuildPhases buildPhases, {
+    required AssetId primaryInput,
+    required bool isHidden,
+  }) {
+    final removed = <AssetId>{};
+    for (final output in outputs) {
+      if (isSource(output)) {
+        // An old generated source was picked up as a source file. Remove it and
+        // its outputs.
+        _removeRecursive(output, removedIds: removed);
+      } else if (isDeclaredOutput(output)) {
+        // The output was already declared by another builder.
+        final buildStep = _buildStepsByDeclaredOutput[output]!;
+        final existingPhase = buildStep.phaseNumber;
+        throw DuplicateAssetIdException(
+          output,
+          buildPhases.inBuildPhases[existingPhase].displayName,
+          buildPhases.inBuildPhases[phaseNumber].displayName,
+        );
+      }
+
+      final buildStepId = BuildStepId(
+        primaryInput: primaryInput,
+        phaseNumber: phaseNumber,
+      );
+      _buildStepsByDeclaredOutput[output] = buildStepId;
+      final buildStepResultBuilder =
+          _buildStepResults[buildStepId]?.toBuilder() ??
+          BuildStepResultBuilder();
+      buildStepResultBuilder.isHidden = isHidden;
+      _buildStepResults[buildStepId] = buildStepResultBuilder.build();
+    }
+    return removed;
+  }
+
+  // -- GeneratedAssetHider implementation.
+
+  @override
+  bool isHidden(AssetId id) {
+    if (id.path.startsWith(generatedOutputDirectory) ||
+        id.path.startsWith(cacheDirectoryPath)) {
+      return false;
+    }
+    if (!isDeclaredOutput(id)) {
+      return false;
+    }
+    final buildStepId = _buildStepsByDeclaredOutput[id];
+    if (buildStepId != null) {
+      return stepResult(buildStepId).isHidden;
+    }
+    return false;
+  }
+
+  // -- Testing.
+
+  @visibleForTesting
+  void addSourceForTest(AssetId id, {Digest? digest}) =>
+      _sources.add(id, digest: digest);
+
+  @visibleForTesting
+  void addGeneratedForTest(
+    AssetId id,
+    BuildStepId buildStepId, {
+    bool isHidden = true,
+    Digest? digest,
+  }) {
+    _buildStepsByDeclaredOutput[id] = buildStepId;
+    final existingResult = _buildStepResults[buildStepId];
+    if (existingResult == null) {
+      _buildStepResults[buildStepId] = BuildStepResult((b) {
+        b.isHidden = isHidden;
+        if (digest != null) {
+          b.outputs[id] = digest;
+        }
+      });
+    } else {
+      if (digest != null) {
+        _buildStepResults[buildStepId] = existingResult.rebuild(
+          (b) => b..outputs[id] = digest,
+        );
+      }
+    }
+  }
 }

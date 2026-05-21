@@ -38,7 +38,7 @@ void main() {
     readerWriter = InternalTestReaderWriter();
     reader = BuildOutputReader.graphOnly(
       readerWriter: readerWriter,
-      assetGraph: buildState,
+      buildState: buildState,
     );
     handler = AssetHandler(() async => reader, 'a');
   });
@@ -55,7 +55,7 @@ void main() {
     readerWriter.testing.writeString(parsedId, content);
   }
 
-  test('can not read deleted nodes', () async {
+  test('can not read deleted files', () async {
     addAsset('a|web/index.html', 'content', deleted: true);
     final response = await handler.handle(
       Request('GET', Uri.parse('http://server.com/index.html')),

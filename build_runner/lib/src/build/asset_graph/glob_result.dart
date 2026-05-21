@@ -14,12 +14,13 @@ part 'glob_result.g.dart';
 abstract class GlobResult implements Built<GlobResult, GlobResultBuilder> {
   static Serializer<GlobResult> get serializer => _$globResultSerializer;
 
-  /// The matching outputs that actually exist/were output in the graph.
+  /// The matching outputs that actually exist/were output in the build state.
   BuiltSet<AssetId> get results;
 
   /// All matching files checked as inputs.
   ///
-  /// This includes any missing or non-existent optional matching files.
+  /// This includes declared outputs that the build step did not output, so they
+  /// don't exist.
   BuiltSet<AssetId> get inputs;
 
   /// Content signature computed from the sorted list of matched

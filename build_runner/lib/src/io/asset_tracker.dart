@@ -27,11 +27,11 @@ class AssetTracker {
   AssetTracker(this._readerWriter, this._buildPackages, this._buildConfigs);
 
   /// Checks for and returns any file system changes compared to the current
-  /// state of the asset graph.
-  Future<Map<AssetId, ChangeType>> collectChanges(BuildState assetGraph) async {
+  /// build state.
+  Future<Map<AssetId, ChangeType>> collectChanges(BuildState buildState) async {
     final inputSources = await findInputSources();
     final generatedSources = await findCacheDirSources();
-    return computeSourceUpdates(inputSources, generatedSources, assetGraph);
+    return computeSourceUpdates(inputSources, generatedSources, buildState);
   }
 
   /// Returns the all the sources found in the cache directory.
@@ -49,12 +49,12 @@ class AssetTracker {
   }
 
   /// Finds the asset changes which have happened while unwatched between builds
-  /// by taking a difference between the assets in the graph and the assets on
-  /// disk.
+  /// by taking a difference between the assets in the build state and the
+  /// assets on disk.
   Future<Map<AssetId, ChangeType>> computeSourceUpdates(
     Set<AssetId> inputSources,
     Set<AssetId> generatedSources,
-    BuildState assetGraph,
+    BuildState buildState,
   ) async {
     final allSources =
         <AssetId>{}
@@ -67,19 +67,21 @@ class AssetTracker {
       }
     }
 
-    final newSources = inputSources.difference(assetGraph.sources.toSet());
+    final newSources = inputSources.difference(buildState.sources.toSet());
     addUpdates(newSources, ChangeType.ADD);
     final removedAssets = [
-      for (final id in assetGraph.sources.followedBy(assetGraph.outputs))
+      for (final id in buildState.sources.followedBy(
+        buildState.declaredAndActualOutputs,
+      ))
         if (!allSources.contains(id)) id,
     ];
 
     addUpdates(removedAssets, ChangeType.REMOVE);
 
-    final originalGraphSources = assetGraph.sources.toSet();
+    final originalGraphSources = buildState.sources.toSet();
     final preExistingSources = originalGraphSources.intersection(inputSources);
     for (final id in preExistingSources) {
-      final originalDigest = assetGraph.digestOfSource(id);
+      final originalDigest = buildState.digestOfSource(id);
       if (originalDigest == null) continue;
       _readerWriter.cache.invalidate([id]);
       final currentDigest = await _readerWriter.digest(id);

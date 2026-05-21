@@ -42,8 +42,8 @@ class Readability {
 
   const Readability({required this.canRead, required this.inSamePhase});
 
-  /// Determines readability for a node written in a previous build phase, which
-  /// means that [ownOutput] is impossible.
+  /// Determines readability for an output written in a previous build phase,
+  /// which means that [ownOutput] is impossible.
   factory Readability.fromPreviousPhase(bool readable) =>
       readable ? Readability.readable : Readability.notReadable;
 
@@ -66,7 +66,7 @@ class RunningBuild {
   final BuildPackages buildPackages;
   final BuildConfigs buildConfigs;
   final BuildState buildState;
-  final AssetBuilder nodeBuilder;
+  final AssetBuilder assetBuilder;
   final AssetIsProcessedOutput assetIsProcessedOutput;
   final GlobEvaluator globEvaluator;
 
@@ -74,7 +74,7 @@ class RunningBuild {
     required this.buildPackages,
     required this.buildConfigs,
     required this.buildState,
-    required this.nodeBuilder,
+    required this.assetBuilder,
     required this.assetIsProcessedOutput,
     required this.globEvaluator,
   });
@@ -271,9 +271,9 @@ class SingleStepReaderWriter implements PhasedReader {
   /// necessary.
   ///
   /// This is called on any read or existence check. With filesystem caching
-  /// this ensures that the cached file content matches the asset graph hash.
+  /// this ensures that the cached file content matches the build state hash.
   ///
-  /// Note that [id] must exist in the asset graph.
+  /// Note that [id] must exist in the build state.
   Future<Digest> _ensureDigest(AssetId id) async {
     if (_runningBuild == null) return _delegate.digest(id);
     final knownDigest = _runningBuild.buildState.digestOf(id);
@@ -291,7 +291,7 @@ class SingleStepReaderWriter implements PhasedReader {
 
   /// Checks whether [id] can be read by this step.
   ///
-  /// If it's a generated node from an earlier phase, wait for it to be built.
+  /// If it's a declared output from an earlier phase, wait for it to be built.
   Future<Readability> _isReadableId(AssetId id) async {
     if (_runningBuild!.buildState.isActualPostOutput(id)) {
       // Post process outputs are not readable until after the build.
@@ -310,7 +310,7 @@ class SingleStepReaderWriter implements PhasedReader {
         return isInBuild ? Readability.ownOutput : Readability.notReadable;
       }
 
-      await _runningBuild.nodeBuilder(id);
+      await _runningBuild.assetBuilder(id);
       return Readability.fromPreviousPhase(
         _runningBuild.buildState.isActualSuccessfulOutput(id),
       );
@@ -321,14 +321,14 @@ class SingleStepReaderWriter implements PhasedReader {
   void _checkInvalidInput(AssetId id) {
     if (_runningBuild == null) return;
 
-    final packageNode = _runningBuild.buildPackages[id.package];
-    if (packageNode == null) {
+    final package = _runningBuild.buildPackages[id.package];
+    if (package == null) {
       throw PackageNotFoundException(id.package);
     }
 
     // The id is an invalid input if it's not part of the build.
-    if (!_runningBuild.buildConfigs.isVisibleInBuild(id, packageNode)) {
-      final allowed = _runningBuild.buildConfigs.validInputsFor(packageNode);
+    if (!_runningBuild.buildConfigs.isVisibleInBuild(id, package)) {
+      final allowed = _runningBuild.buildConfigs.validInputsFor(package);
 
       throw InvalidInputException(id, allowedGlobs: allowed);
     }
@@ -371,7 +371,7 @@ class SingleStepReaderWriter implements PhasedReader {
     }
 
     if (!_runningBuild.buildState.isFile(id)) {
-      // Add to the graph for input tracking.
+      // Add to the build state for input tracking.
       _runningBuild.buildState.addMissingSource(id);
       return PhasedValue.fixed('');
     } else if (_runningBuild.buildState.isMissingSource(id)) {
@@ -380,20 +380,20 @@ class SingleStepReaderWriter implements PhasedReader {
 
     if (_runningBuild.buildState.isDeclaredOutput(id)) {
       final step = _runningBuild.buildState.stepForDeclaredOutput(id);
-      final nodePhase = step.phaseNumber;
-      if (nodePhase >= phase) {
-        return PhasedValue.unavailable(before: '', expiresAfter: nodePhase);
+      final stepPhase = step.phaseNumber;
+      if (stepPhase >= phase) {
+        return PhasedValue.unavailable(before: '', expiresAfter: stepPhase);
       } else {
         // If needed, trigger a build at an earlier phase.
         if (!_runningBuild.assetIsProcessedOutput(id)) {
-          await _runningBuild.nodeBuilder(id);
+          await _runningBuild.assetBuilder(id);
         }
         final stepResult = _runningBuild.buildState.stepResult(step);
         final isSuccessOutput =
             _runningBuild.buildState.isActualOutput(id) &&
             stepResult.result == true;
         return PhasedValue.generated(
-          atPhase: nodePhase,
+          atPhase: stepPhase,
           before: '',
           isSuccessOutput ? await _delegate.readAsString(id) : '',
         );

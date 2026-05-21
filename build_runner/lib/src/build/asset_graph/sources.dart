@@ -31,10 +31,10 @@ class Sources {
     return result;
   }
 
-  /// Whether [id) is a source file.
+  /// Whether [id] is a source file.
   bool isSource(AssetId id) => sources.containsKey(id);
 
-  /// Whether [id) is a source file that has never been read.
+  /// Whether [id] is a source file that has never been read.
   bool isUnreadSource(AssetId id) =>
       sources[id] == null && sources.containsKey(id);
 

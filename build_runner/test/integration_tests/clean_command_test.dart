@@ -48,10 +48,10 @@ void main() async {
       'dart run build_runner build --force-jit --workspace',
     );
     expect(tester.read(entrypointScriptPath), isNotNull);
-    expect(tester.read(assetGraphPath), isNotNull);
+    expect(tester.read(assetGraphJsonPath), isNotNull);
 
     await tester.run('p1', 'dart run build_runner clean --workspace');
-    expect(tester.read(assetGraphPath), isNull);
+    expect(tester.read(assetGraphJsonPath), isNull);
     expect(tester.read(entrypointScriptPath), isNull);
   });
 }

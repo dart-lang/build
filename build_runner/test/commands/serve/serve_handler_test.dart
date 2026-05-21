@@ -127,7 +127,7 @@ void main() {
     serveHandler = ServeHandler(watcher);
     finalizedReader = BuildOutputReader.graphOnly(
       readerWriter: readerWriter,
-      assetGraph: buildState,
+      buildState: buildState,
     );
     watcher.addFutureResult(
       Future.value(

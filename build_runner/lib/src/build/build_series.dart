@@ -29,13 +29,13 @@ import 'build_result.dart';
 /// This happens either across multiple invocations of `build_runner build` or
 /// within one long-running `build_runner watch` or `build_runner serve`.
 ///
-/// In both cases, the `AssetGraph` is serialized after the build, to give the
+/// In both cases, the `BuildState` is serialized after the build, to give the
 /// starting state for the next `build_runner build`. For `watch` and `serve`
-/// this serialized state is not actually used: the `AssetGraph` instance
+/// this serialized state is not actually used: the `BuildState` instance
 /// already in memory is used directly.
 class BuildSeries {
   BuildPlan _buildPlan;
-  BuildState _assetGraph;
+  BuildState _buildState;
   ReaderWriter _readerWriter;
 
   final ResourceManager _resourceManager = ResourceManager();
@@ -57,25 +57,25 @@ class BuildSeries {
 
   BuildSeries._({
     required BuildPlan buildPlan,
-    required BuildState assetGraph,
+    required BuildState buildState,
     required ReaderWriter readerWriter,
     required BuiltSet<AssetId>? updatesFromLoad,
   }) : _buildPlan = buildPlan,
-       _assetGraph = assetGraph,
+       _buildState = buildState,
        _readerWriter = readerWriter,
        _updatesFromLoad = updatesFromLoad;
 
   factory BuildSeries(BuildPlan buildPlan) {
-    final assetGraph = buildPlan.takeAssetGraph();
+    final buildState = buildPlan.takeBuildState();
     final readerWriter = buildPlan.readerWriter.copyWith(
       generatedAssetHider:
           buildPlan.testingOverrides.flattenOutput
               ? const NoopGeneratedAssetHider()
-              : assetGraph,
+              : buildState,
     );
     return BuildSeries._(
       buildPlan: buildPlan,
-      assetGraph: assetGraph,
+      buildState: buildState,
       readerWriter: readerWriter,
       updatesFromLoad: buildPlan.updates,
     );
@@ -123,7 +123,7 @@ class BuildSeries {
         continue;
       }
 
-      if (!_assetGraph.isFile(id)) {
+      if (!_buildState.isFile(id)) {
         // Ignore under `.dart_tool/build`.
         if (id.path.startsWith(cacheDirectoryPath)) continue;
 
@@ -142,18 +142,18 @@ class BuildSeries {
       // If not copying to a merged output directory, ignore changes to files
       // with no outputs.
       if (!_buildPlan.buildOptions.anyMergedOutputDirectory &&
-          !_assetGraph.isMissingSource(id) &&
-          _assetGraph.digestOf(id) == null) {
+          !_buildState.isMissingSource(id) &&
+          _buildState.digestOf(id) == null) {
         continue;
       }
 
       // Ignore creation or modification of outputs.
-      if (_assetGraph.isDeclaredOutput(id) &&
+      if (_buildState.isDeclaredOutput(id) &&
           change.type != ChangeType.REMOVE) {
         continue;
       }
 
-      // It's an add of "missing source" node or a deletion of an input.
+      // It's an add of a "missing source" or a deletion of an input.
       result.add(change);
     }
 
@@ -171,7 +171,7 @@ class BuildSeries {
       _buildPlan.readerWriter,
       _buildPlan.buildPackages,
       _buildPlan.buildConfigs,
-    ).collectChanges(_assetGraph);
+    ).collectChanges(_buildState);
     return List.of(
       updates.entries.map((entry) => WatchEvent(entry.value, '${entry.key}')),
     );
@@ -233,12 +233,12 @@ class BuildSeries {
         await close();
         return result;
       }
-      _assetGraph = _buildPlan.takeAssetGraph();
+      _buildState = _buildPlan.takeBuildState();
       _readerWriter = _buildPlan.readerWriter.copyWith(
         generatedAssetHider:
             _buildPlan.testingOverrides.flattenOutput
                 ? const NoopGeneratedAssetHider()
-                : _assetGraph,
+                : _buildState,
       );
     }
 
@@ -261,7 +261,7 @@ class BuildSeries {
         buildDirs: buildDirs,
         buildFilters: buildFilters,
       ),
-      buildState: _assetGraph,
+      buildState: _buildState,
       readerWriter: _readerWriter,
       resourceManager: _resourceManager,
     );

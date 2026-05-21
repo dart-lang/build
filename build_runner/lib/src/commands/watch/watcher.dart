@@ -62,7 +62,7 @@ class Watcher {
     final terminate = Future.any([until, closeController.future]);
 
     // Start watching files immediately, before the first build is even started.
-    final graphWatcher = BuildPackagesWatcher(
+    final packagesWatcher = BuildPackagesWatcher(
       _buildPlan.buildPackages,
       watch:
           (buildPackage) => BuildPackageWatcher(
@@ -70,7 +70,7 @@ class Watcher {
             watch: _buildPlan.testingOverrides.directoryWatcherFactory,
           ),
     );
-    graphWatcher
+    packagesWatcher
         .watch()
         .asyncMap<AssetChange>((change) async {
           // Delay any events until the current build is completed.
@@ -99,7 +99,7 @@ class Watcher {
         })
         .ignore();
 
-    await graphWatcher.ready;
+    await packagesWatcher.ready;
     await _buildSeries.run({}, recentlyBootstrapped: true);
   }
 
