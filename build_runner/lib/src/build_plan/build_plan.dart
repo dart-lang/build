@@ -46,13 +46,13 @@ class BuildPlan {
   final BuildConfigs buildConfigs;
   final BuildPhases buildPhases;
 
-  final AssetGraph? _previousAssetGraph;
+  final BuildState? _previousAssetGraph;
   bool _previousAssetGraphWasTaken;
   final PhasedAssetDeps? previousPhasedAssetDeps;
   final bool restartIsNeeded;
 
   final Bootstrapper bootstrapper;
-  final AssetGraph _assetGraph;
+  final BuildState _assetGraph;
   bool _assetGraphWasTaken;
   final BuiltSet<AssetId>? updates;
 
@@ -94,12 +94,12 @@ class BuildPlan {
     required this.readerWriter,
     required this.buildConfigs,
     required this.buildPhases,
-    required AssetGraph? previousAssetGraph,
+    required BuildState? previousAssetGraph,
     required bool previousAssetGraphWasTaken,
     required this.previousPhasedAssetDeps,
     required this.restartIsNeeded,
     required this.bootstrapper,
-    required AssetGraph assetGraph,
+    required BuildState assetGraph,
     required bool assetGraphWasTaken,
     required this.updates,
     required this.filesToDelete,
@@ -205,7 +205,7 @@ class BuildPlan {
       generatedOutputDirectory,
     );
     BuildPlanDigest? previousBuildPlanDigest;
-    AssetGraph? previousAssetGraph;
+    BuildState? previousAssetGraph;
     final filesToDelete = <AssetId>{};
     final foldersToDelete = <AssetId>{};
 
@@ -251,7 +251,7 @@ class BuildPlan {
     final inputSources = await assetTracker.findInputSources();
     final cacheDirSources = await assetTracker.findCacheDirSources();
 
-    AssetGraph? assetGraph;
+    BuildState? assetGraph;
     Set<AssetId>? updates;
     if (previousAssetGraph != null) {
       updates = {
@@ -283,10 +283,10 @@ class BuildPlan {
       inputSources.removeAll(filesToDelete);
 
       try {
-        assetGraph = await AssetGraph.build(
-          buildPhases,
-          inputSources,
-          buildPackages,
+        assetGraph = BuildState.create(
+          buildPhases: buildPhases,
+          buildPackages: buildPackages,
+          sources: inputSources,
         );
       } on DuplicateAssetNodeException catch (e) {
         buildLog.error(e.toString());
@@ -405,22 +405,22 @@ class BuildPlan {
         ),
       );
 
-  /// Takes the loaded [AssetGraph], which may be `null` if none could be
+  /// Takes the loaded [BuildState], which may be `null` if none could be
   /// loaded or if it was invalid.
   ///
-  /// Subsequent calls will throw. This is because [AssetGraph] is mutable, so
+  /// Subsequent calls will throw. This is because [BuildState] is mutable, so
   /// the initial loaded state is only available once.
-  AssetGraph? takePreviousAssetGraph() {
+  BuildState? takePreviousAssetGraph() {
     if (_previousAssetGraphWasTaken) throw StateError('Already taken.');
     _previousAssetGraphWasTaken = true;
     return _previousAssetGraph;
   }
 
-  /// Takes the [AssetGraph] for the build.
+  /// Takes the [BuildState] for the build.
   ///
-  /// Subsequent calls will throw. This is because [AssetGraph] is mutable, so
+  /// Subsequent calls will throw. This is because [BuildState] is mutable, so
   /// the initial state is only available once.
-  AssetGraph takeAssetGraph() {
+  BuildState takeAssetGraph() {
     if (_assetGraphWasTaken) throw StateError('Already taken.');
     _assetGraphWasTaken = true;
     return _assetGraph;

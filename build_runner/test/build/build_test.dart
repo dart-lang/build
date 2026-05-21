@@ -1162,7 +1162,7 @@ targets:
         primaryInput: makeAssetId('a|lib/a.txt'),
         phaseNumber: 0,
       );
-      final stepResult = cachedGraph.buildStepResultFor(buildStepId)!;
+      final stepResult = cachedGraph.stepResult(buildStepId);
       expect(stepResult.inputs, isNot(contains(outputId)));
     },
   );
@@ -1445,7 +1445,7 @@ targets:
       final aCloneNodeId = makeAssetId('a|lib/a.txt.copy.clone');
       expect(newGraph.isMissingSource(aNodeId), isTrue);
       expect(newGraph.isMissingSource(aCopyNodeId), isTrue);
-      expect(newGraph.isKnownFile(aCloneNodeId), isFalse);
+      expect(newGraph.isFile(aCloneNodeId), isFalse);
       expect(result.readerWriter.testing.exists(aNodeId), isFalse);
       expect(result.readerWriter.testing.exists(aCopyNodeId), isFalse);
       expect(result.readerWriter.testing.exists(aCloneNodeId), isFalse);
@@ -1556,7 +1556,7 @@ targets:
         primaryInput: makeAssetId('a|lib/file.a'),
         phaseNumber: 0,
       );
-      final stepResult = graph.buildStepResultFor(buildStepId)!;
+      final stepResult = graph.stepResult(buildStepId);
       expect(stepResult.inputs, unorderedEquals([fileAId, fileCId]));
     });
 
@@ -1788,27 +1788,27 @@ targets:
 
       expect(
         finalGraph
-            .buildStepResultFor(
-              finalGraph.buildStepsByDeclaredOutput[AssetId('a', 'web/a.g1')]!,
-            )!
+            .stepResult(
+              finalGraph.stepForDeclaredOutput(AssetId('a', 'web/a.g1')),
+            )
             .result,
         isFalse,
       );
 
       expect(
         finalGraph
-            .buildStepResultFor(
-              finalGraph.buildStepsByDeclaredOutput[AssetId('a', 'web/a.g2')]!,
-            )!
+            .stepResult(
+              finalGraph.stepForDeclaredOutput(AssetId('a', 'web/a.g2')),
+            )
             .result,
         isFalse,
       );
 
       expect(
         finalGraph
-            .buildStepResultFor(
-              finalGraph.buildStepsByDeclaredOutput[AssetId('a', 'web/a.g3')]!,
-            )!
+            .stepResult(
+              finalGraph.stepForDeclaredOutput(AssetId('a', 'web/a.g3')),
+            )
             .result,
         isFalse,
       );

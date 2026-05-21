@@ -28,7 +28,7 @@ class AssetTracker {
 
   /// Checks for and returns any file system changes compared to the current
   /// state of the asset graph.
-  Future<Map<AssetId, ChangeType>> collectChanges(AssetGraph assetGraph) async {
+  Future<Map<AssetId, ChangeType>> collectChanges(BuildState assetGraph) async {
     final inputSources = await findInputSources();
     final generatedSources = await findCacheDirSources();
     return computeSourceUpdates(inputSources, generatedSources, assetGraph);
@@ -54,7 +54,7 @@ class AssetTracker {
   Future<Map<AssetId, ChangeType>> computeSourceUpdates(
     Set<AssetId> inputSources,
     Set<AssetId> generatedSources,
-    AssetGraph assetGraph,
+    BuildState assetGraph,
   ) async {
     final allSources =
         <AssetId>{}
@@ -79,7 +79,7 @@ class AssetTracker {
     final originalGraphSources = assetGraph.sources.toSet();
     final preExistingSources = originalGraphSources.intersection(inputSources);
     for (final id in preExistingSources) {
-      final originalDigest = assetGraph.sourceDigest(id);
+      final originalDigest = assetGraph.digestOfSource(id);
       if (originalDigest == null) continue;
       _readerWriter.cache.invalidate([id]);
       final currentDigest = await _readerWriter.digest(id);

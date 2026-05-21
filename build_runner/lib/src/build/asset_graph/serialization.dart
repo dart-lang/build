@@ -9,11 +9,11 @@ part of 'graph.dart';
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
 
-/// Deserializes an [AssetGraph] from a [Map].
+/// Deserializes an [BuildState] from a [Map].
 ///
 /// Returns `null` if deserialization fails.
-AssetGraph? deserializeAssetGraph(Map serializedGraph) {
-  final graph = AssetGraph();
+BuildState? deserializeAssetGraph(Map serializedGraph) {
+  final graph = BuildState.empty();
 
   final sourceIds =
       serializers.deserialize(
@@ -43,7 +43,7 @@ AssetGraph? deserializeAssetGraph(Map serializedGraph) {
           as BuiltMap<PostProcessBuildStepId, PostProcessBuildStepResult>;
 
   for (final entry in postProcessResults.entries) {
-    graph.updatePostProcessBuildStepResult(entry.key, entry.value);
+    graph.addPostProcessBuildStepResult(entry.key, entry.value);
   }
 
   if (serializedGraph.containsKey('missingSources')) {
@@ -96,7 +96,7 @@ AssetGraph? deserializeAssetGraph(Map serializedGraph) {
               ]),
             )
             as BuiltMap<AssetId, BuildStepId>;
-    graph.buildStepsByDeclaredOutput.addAll(deserialized.toMap());
+    graph._buildStepsByDeclaredOutput.addAll(deserialized.toMap());
   }
 
   if (serializedGraph.containsKey('declaredPrimaryOutputsByPrimaryInput')) {
@@ -110,15 +110,15 @@ AssetGraph? deserializeAssetGraph(Map serializedGraph) {
             )
             as BuiltMap<AssetId, BuiltSet<AssetId>>;
     for (final entry in deserialized.entries) {
-      graph.declaredOutputsByPrimaryInput[entry.key] = entry.value.toSet();
+      graph._declaredOutputsByPrimaryInput[entry.key] = entry.value.toSet();
     }
   }
 
   return graph;
 }
 
-/// Serializes an [AssetGraph] into a [Map].
-Map<String, Object?> serializeAssetGraph(AssetGraph graph) {
+/// Serializes an [BuildState] into a [Map].
+Map<String, Object?> serializeAssetGraph(BuildState graph) {
   final result = <String, Object?>{
     'sourceIds': serializers.serialize(
       BuiltSet<AssetId>.of(graph._sources.sources.keys),
@@ -136,7 +136,7 @@ Map<String, Object?> serializeAssetGraph(AssetGraph graph) {
     ),
     'postProcessResults': serializers.serialize(
       BuiltMap<PostProcessBuildStepId, PostProcessBuildStepResult>.of(
-        graph.postProcessBuildStepResults,
+        graph._postProcessBuildStepResults,
       ),
       specifiedType: postProcessBuildStepResultsFullType,
     ),
@@ -145,21 +145,21 @@ Map<String, Object?> serializeAssetGraph(AssetGraph graph) {
       specifiedType: const FullType(BuiltSet, [FullType(AssetId)]),
     ),
     'buildStepResults': serializers.serialize(
-      BuiltMap<BuildStepId, BuildStepResult>.of(graph.buildStepResults),
+      BuiltMap<BuildStepId, BuildStepResult>.of(graph._buildStepResults),
       specifiedType: const FullType(BuiltMap, [
         FullType(BuildStepId),
         FullType(BuildStepResult),
       ]),
     ),
     'globResults': serializers.serialize(
-      BuiltMap<GlobId, GlobResult>.of(graph.globResults),
+      BuiltMap<GlobId, GlobResult>.of(graph._globResults),
       specifiedType: const FullType(BuiltMap, [
         FullType(GlobId),
         FullType(GlobResult),
       ]),
     ),
     'buildStepsByDeclaredOutput': serializers.serialize(
-      BuiltMap<AssetId, BuildStepId>.of(graph.buildStepsByDeclaredOutput),
+      BuiltMap<AssetId, BuildStepId>.of(graph._buildStepsByDeclaredOutput),
       specifiedType: const FullType(BuiltMap, [
         FullType(AssetId),
         FullType(BuildStepId),
@@ -167,7 +167,7 @@ Map<String, Object?> serializeAssetGraph(AssetGraph graph) {
     ),
     'declaredPrimaryOutputsByPrimaryInput': serializers.serialize(
       BuiltMap<AssetId, BuiltSet<AssetId>>.of({
-        for (final entry in graph.declaredOutputsByPrimaryInput.entries)
+        for (final entry in graph._declaredOutputsByPrimaryInput.entries)
           entry.key: entry.value.toBuiltSet(),
       }),
       specifiedType: const FullType(BuiltMap, [

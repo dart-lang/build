@@ -13,7 +13,7 @@ void main() {
   group('AssetGraphJson', () {
     test('deserialize returns null on version mismatch', () async {
       final validBytes = AssetGraphJson.serialize(
-        assetGraph: AssetGraph(),
+        assetGraph: BuildState.empty(),
         buildPlanDigest: BuildPlanDigest.build((b) {
           b.compileDigest = '';
           b.buildTriggersDigest = '';
@@ -36,7 +36,7 @@ void main() {
 
     test('deserialize returns null on invalid json', () async {
       final validBytes = AssetGraphJson.serialize(
-        assetGraph: AssetGraph(),
+        assetGraph: BuildState.empty(),
         buildPlanDigest: BuildPlanDigest.build((b) {
           b.compileDigest = '';
           b.buildTriggersDigest = '';

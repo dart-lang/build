@@ -103,7 +103,7 @@ class ResolversImpl implements Resolvers {
   /// only two codepaths need to care about the lock: the main build in
   /// `build.dart` and test builds in `package:build_test` `test_builder.dart`.
   Future<void> takeLockAndStartBuild(
-    AssetGraph assetGraph, {
+    BuildState assetGraph, {
     required Set<AssetId>? invalidatedSources,
   }) => _analysisDriverModel.takeLockAndStartBuild(
     assetGraph,

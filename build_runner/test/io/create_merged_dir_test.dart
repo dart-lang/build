@@ -32,7 +32,7 @@ import '../common/common.dart';
 void main() {
   group('createMergedDir', () {
     late BuildPlan buildPlan;
-    late AssetGraph graph;
+    late BuildState graph;
     final phases = BuildPhases([
       InBuildPhase(
         builder: TestBuilder(
@@ -115,12 +115,12 @@ void main() {
           b.outputs[id] = Digest([]);
         });
         graph.updateBuildStepResult(
-          graph.buildStepsByDeclaredOutput[id]!,
+          graph.stepForDeclaredOutput(id),
           stepResult,
         );
         readerWriter.testing.writeString(
           id,
-          sources[graph.buildStepsByDeclaredOutput[id]!.primaryInput]!,
+          sources[graph.stepForDeclaredOutput(id).primaryInput]!,
         );
       }
       tmpDir = await Directory.systemTemp.createTemp('build_tests');
@@ -149,7 +149,7 @@ void main() {
 
     test('doesnt write deleted files', () async {
       final targetId = AssetId('b', 'lib/c.txt.copy');
-      graph.updatePostProcessBuildStepResult(
+      graph.addPostProcessBuildStepResult(
         PostProcessBuildStepId(input: targetId, actionNumber: 1),
         PostProcessBuildStepResult(hidden: true, deletedPrimaryInput: true),
       );
@@ -371,7 +371,7 @@ void main() {
         b.isHidden = false;
       });
       graph.updateBuildStepResult(
-        graph.buildStepsByDeclaredOutput[targetId]!,
+        graph.stepForDeclaredOutput(targetId),
         stepResult,
       );
 
@@ -476,7 +476,7 @@ void main() {
         final removes = ['a|lib/a.txt', 'a|lib/a.txt.copy'];
         for (final remove in removes) {
           final removeId = makeAssetId(remove);
-          graph.updatePostProcessBuildStepResult(
+          graph.addPostProcessBuildStepResult(
             PostProcessBuildStepId(input: removeId, actionNumber: 1),
             PostProcessBuildStepResult(hidden: true, deletedPrimaryInput: true),
           );

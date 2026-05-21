@@ -47,7 +47,7 @@ class AnalysisDriverModel {
   ///
   /// If another build has the lock, waits for it to finish.
   Future<void> takeLockAndStartBuild(
-    AssetGraph assetGraph, {
+    BuildState assetGraph, {
     required Set<AssetId>? invalidatedSources,
   }) async {
     _lock = await _pool.request();

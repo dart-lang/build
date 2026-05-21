@@ -23,7 +23,7 @@ import 'reader_writer.dart';
 /// they exist on disk from a previous build.
 class BuildOutputReader {
   final BuildPlan? _buildPlan;
-  final AssetGraph? _assetGraph;
+  final BuildState? _assetGraph;
   final Set<AssetId>? _processedOutputs;
   final ReaderWriter? _readerWriter;
 
@@ -42,7 +42,7 @@ class BuildOutputReader {
   @visibleForTesting
   BuildOutputReader.graphOnly({
     required ReaderWriter readerWriter,
-    required AssetGraph assetGraph,
+    required BuildState assetGraph,
   }) : _buildPlan = null,
        _assetGraph = assetGraph,
        _readerWriter = readerWriter,
@@ -56,7 +56,7 @@ class BuildOutputReader {
   BuildOutputReader({
     required BuildPlan buildPlan,
     required ReaderWriter readerWriter,
-    required AssetGraph assetGraph,
+    required BuildState assetGraph,
     required Set<AssetId> processedOutputs,
   }) : _readerWriter = readerWriter,
        _assetGraph = assetGraph,
@@ -67,7 +67,7 @@ class BuildOutputReader {
     final assetGraph = _assetGraph;
     if (assetGraph == null) return const {};
     final result = <AssetId>{};
-    for (final entry in assetGraph.postProcessBuildStepResults.entries) {
+    for (final entry in assetGraph.postProcessBuildStepResults) {
       if (entry.value.deletedPrimaryInput) {
         result.add(entry.key.input);
       }
@@ -80,26 +80,26 @@ class BuildOutputReader {
     if (_assetGraph == null || _readerWriter == null) {
       return UnreadableReason.notFound;
     }
-    if (!_assetGraph.isKnownFile(id)) {
+    if (!_assetGraph.isFile(id)) {
       return UnreadableReason.notFound;
     }
     if (_assetsDeletedByPostProcessBuilders.contains(id)) {
       return UnreadableReason.deleted;
     }
-    if (!_assetGraph.isKnownFile(id)) return UnreadableReason.assetType;
+    if (!_assetGraph.isFile(id)) return UnreadableReason.assetType;
 
     if (_assetGraph.isActualPostOutput(id)) {
       return null;
     }
-    final buildStep = _assetGraph.buildStepsByDeclaredOutput[id];
-    if (buildStep != null) {
+    if (_assetGraph.isDeclaredOutput(id)) {
+      final step = _assetGraph.stepForDeclaredOutput(id);
       if (_processedOutputs?.contains(id) == false) {
         // The generated output was not considered for building because its
         // transitive input(s) did not match build dirs and/or build filters.
         return UnreadableReason.notOutput;
       }
-      final stepResult = _assetGraph.buildStepResultFor(buildStep);
-      if (stepResult != null && stepResult.result == false) {
+      final stepResult = _assetGraph.stepResult(step);
+      if (stepResult.failed) {
         return UnreadableReason.failed;
       }
       if (!_assetGraph.isActualOutput(id)) return UnreadableReason.notOutput;
@@ -135,7 +135,7 @@ class BuildOutputReader {
 
   Stream<AssetId> findAssets(Glob glob, {required String package}) async* {
     if (_assetGraph == null || _readerWriter == null) return;
-    for (final id in _assetGraph.packageFileIds(package, glob: glob)) {
+    for (final id in _assetGraph.findFiles(package: package, glob: glob)) {
       if (await _readerWriter.canRead(id)) {
         yield id;
       }
@@ -147,7 +147,7 @@ class BuildOutputReader {
   ///
   /// Note that [id] must exist in the asset graph.
   FutureOr<Digest> _ensureDigest(AssetId id) {
-    final digest = _assetGraph!.digestFor(id);
+    final digest = _assetGraph!.digestOf(id);
     if (digest != null) return digest;
     return _readerWriter!.digest(id).then((digest) {
       _assetGraph.updateSourceDigest(id, digest);
@@ -165,18 +165,18 @@ class BuildOutputReader {
         result.add(id);
       }
     }
-    for (final id in assetGraph.buildStepsByDeclaredOutput.keys) {
+    for (final id in assetGraph.declaredOutputs) {
       if (!_shouldSkipId(assetGraph, id, rootDir)) {
         result.add(id);
       }
     }
-    result.addAll(assetGraph.allPostProcessOutputIds);
+    result.addAll(assetGraph.actualPostOutputs);
     return result;
   }
 
-  bool _shouldSkipId(AssetGraph assetGraph, AssetId id, String? rootDir) {
+  bool _shouldSkipId(BuildState buildState, AssetId id, String? rootDir) {
     if (_buildPlan == null) return false;
-    if (!assetGraph.isKnownFile(id)) return true;
+    if (!buildState.isFile(id)) return true;
     if (_assetsDeletedByPostProcessBuilders.contains(id)) return true;
 
     // Exclude non-lib assets if they're outside of the root directory or not
@@ -188,14 +188,13 @@ class BuildOutputReader {
       }
     }
 
-    if (assetGraph.isActualPostOutput(id)) {
+    if (buildState.isActualPostOutput(id)) {
       return false;
     }
-    final buildStep = assetGraph.buildStepsByDeclaredOutput[id];
-    if (buildStep != null) {
-      final stepResult = assetGraph.buildStepResultFor(buildStep);
-      if (!assetGraph.isActualOutput(id) ||
-          (stepResult == null || stepResult.result == false)) {
+    if (buildState.isDeclaredOutput(id)) {
+      final step = buildState.stepForDeclaredOutput(id);
+      final stepResult = buildState.stepResult(step);
+      if (!buildState.isActualOutput(id) || (stepResult.failed)) {
         return true;
       }
       return !_processedOutputs!.contains(id);

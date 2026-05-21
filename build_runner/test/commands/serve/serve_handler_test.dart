@@ -108,7 +108,7 @@ void main() {
   late InternalTestReaderWriter readerWriter;
   late FakeWatcher watcher;
   late BuildPackages buildPackages;
-  late AssetGraph assetGraph;
+  late BuildState buildState;
   late BuildOutputReader finalizedReader;
 
   setUp(() async {
@@ -118,16 +118,16 @@ void main() {
     readerWriter = InternalTestReaderWriter(
       outputRootPackage: buildPackages.outputRoot,
     );
-    assetGraph = await AssetGraph.build(
-      BuildPhases([]),
-      <AssetId>{},
-      buildPackages,
+    buildState = BuildState.create(
+      buildPhases: BuildPhases([]),
+      buildPackages: buildPackages,
+      sources: <AssetId>{},
     );
     watcher = FakeWatcher(buildPackages);
     serveHandler = ServeHandler(watcher);
     finalizedReader = BuildOutputReader.graphOnly(
       readerWriter: readerWriter,
-      assetGraph: assetGraph,
+      assetGraph: buildState,
     );
     watcher.addFutureResult(
       Future.value(
@@ -142,12 +142,12 @@ void main() {
   void addSource(String id, String content, {bool deleted = false}) {
     final parsedId = AssetId.parse(id);
     if (deleted) {
-      assetGraph.updatePostProcessBuildStepResult(
+      buildState.addPostProcessBuildStepResult(
         PostProcessBuildStepId(input: parsedId, actionNumber: 1),
         PostProcessBuildStepResult(hidden: true, deletedPrimaryInput: true),
       );
     }
-    assetGraph.addSourceForTest(
+    buildState.addSourceForTest(
       parsedId,
       digest: computeDigest(parsedId, content),
     );
@@ -258,12 +258,12 @@ void main() {
       final primaryId = AssetId('a', 'web/main.dart');
       final outputId = AssetId('a', 'web/main.ddc.js');
       final buildStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
-      assetGraph.addGeneratedForTest(outputId, buildStepId, digest: Digest([]));
+      buildState.addGeneratedForTest(outputId, buildStepId, digest: Digest([]));
       final stepResult = BuildStepResult((b) {
         b.result = false;
         b.isHidden = false;
       });
-      assetGraph.updateBuildStepResult(buildStepId, stepResult);
+      buildState.updateBuildStepResult(buildStepId, stepResult);
       watcher.addFutureResult(
         Future.value(
           BuildResult(

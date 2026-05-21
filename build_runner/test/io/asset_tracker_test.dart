@@ -24,7 +24,7 @@ import 'package:watcher/watcher.dart';
 void main() {
   group('AssetTracker.collectChanges()', () {
     late AssetTracker assetTracker;
-    late AssetGraph assetGraph;
+    late BuildState assetGraph;
 
     setUp(() async {
       await d.dir('a', [
@@ -47,9 +47,11 @@ void main() {
       ]);
       final reader = ReaderWriter(buildPackages);
       final aId = AssetId('a', 'web/a.txt');
-      assetGraph = await AssetGraph.build(BuildPhases([]), {
-        aId,
-      }, buildPackages);
+      assetGraph = BuildState.create(
+        buildPhases: BuildPhases([]),
+        buildPackages: buildPackages,
+        sources: {aId},
+      );
       // We need to pre-emptively assign a digest so we determine that the
       // node is "interesting".
       final digest = await reader.digest(aId);

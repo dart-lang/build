@@ -18,7 +18,7 @@ void main() {
       ]) {
         sources.add(id);
       }
-      expect(sources.packageFileIds('a', [AssetId('a', 'lib/a.g.dart')]), [
+      expect(sources.findFiles('a', [AssetId('a', 'lib/a.g.dart')]), [
         AssetId('a', 'lib/a.dart'),
         AssetId('a', 'lib/a.g.dart'),
       ]);
@@ -36,20 +36,20 @@ void main() {
       ]) {
         sources.add(id);
       }
-      expect(sources.packageFileIds('a', [], glob: Glob('lib/a*.dart')), [
+      expect(sources.findFiles('a', [], glob: Glob('lib/a*.dart')), [
         AssetId('a', 'lib/aa.dart'),
         AssetId('a', 'lib/ab.dart'),
       ]);
-      expect(sources.packageFileIds('a', [], glob: Glob('lib/*a.dart')), [
+      expect(sources.findFiles('a', [], glob: Glob('lib/*a.dart')), [
         AssetId('a', 'lib/aa.dart'),
         AssetId('a', 'lib/ba.dart'),
       ]);
-      expect(sources.packageFileIds('a', [], glob: Glob('*/aa.dart')), [
+      expect(sources.findFiles('a', [], glob: Glob('*/aa.dart')), [
         AssetId('a', 'lib/aa.dart'),
       ]);
-      expect(sources.packageFileIds('a', [], glob: Glob('*')), isEmpty);
+      expect(sources.findFiles('a', [], glob: Glob('*')), isEmpty);
 
-      expect(sources.packageFileIds('a', [], glob: Glob('**')), [
+      expect(sources.findFiles('a', [], glob: Glob('**')), [
         // Matches are sorted.
         AssetId('a', 'lib/aa.dart'),
         AssetId('a', 'lib/aa/a.dart'),
@@ -58,7 +58,7 @@ void main() {
         AssetId('a', 'lib/bb.dart'),
         AssetId('a', 'lib/bb/b.dart'),
       ]);
-      expect(sources.packageFileIds('a', [], glob: Glob('**/a.dart')), [
+      expect(sources.findFiles('a', [], glob: Glob('**/a.dart')), [
         AssetId('a', 'lib/aa/a.dart'),
       ]);
     });

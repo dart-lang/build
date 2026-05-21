@@ -69,7 +69,7 @@ void main() {
     });
 
     Future<void> writeGraphAndPlan(
-      AssetGraph assetGraph,
+      BuildState assetGraph,
       BuildPlan buildPlan,
     ) async {
       await readerWriter.writeAsBytes(
@@ -155,11 +155,11 @@ void main() {
 
       // Write an output and add it to the asset graph as if it was built.
       await readerWriter.writeAsString(outputId, '// output');
-      final stepId = assetGraph.buildStepsByDeclaredOutput[outputId]!;
+      final step = assetGraph.stepForDeclaredOutput(outputId);
       assetGraph.updateBuildStepResult(
-        stepId,
+        step,
         assetGraph
-            .buildStepResultFor(stepId)!
+            .stepResult(step)
             .rebuild((b) => b..outputs[outputId] = Digest([])),
       );
       await writeGraphAndPlan(assetGraph, buildPlan);
@@ -246,11 +246,11 @@ void main() {
 
       // Write an output and add it to the asset graph as if it was built.
       await readerWriter.writeAsString(outputId, '// output');
-      final stepId = assetGraph.buildStepsByDeclaredOutput[outputId]!;
+      final stepId = assetGraph.stepForDeclaredOutput(outputId);
       assetGraph.updateBuildStepResult(
         stepId,
         assetGraph
-            .buildStepResultFor(stepId)!
+            .stepResult(stepId)
             .rebuild((b) => b..outputs[outputId] = Digest([])),
       );
       // Give digests to inputs so they are monitored for modifications.

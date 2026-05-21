@@ -25,20 +25,20 @@ void main() {
   late AssetHandler handler;
   late BuildOutputReader reader;
   late InternalTestReaderWriter readerWriter;
-  late AssetGraph assetGraph;
+  late BuildState buildState;
 
   setUp(() async {
-    assetGraph = await AssetGraph.build(
-      BuildPhases([]),
-      <AssetId>{},
-      BuildPackages.singlePackageBuild('a', [
+    buildState = BuildState.create(
+      buildPhases: BuildPhases([]),
+      buildPackages: BuildPackages.singlePackageBuild('a', [
         BuildPackage.forTesting(name: 'a', isOutput: true),
       ]),
+      sources: <AssetId>{},
     );
     readerWriter = InternalTestReaderWriter();
     reader = BuildOutputReader.graphOnly(
       readerWriter: readerWriter,
-      assetGraph: assetGraph,
+      assetGraph: buildState,
     );
     handler = AssetHandler(() async => reader, 'a');
   });
@@ -46,12 +46,12 @@ void main() {
   void addAsset(String id, String content, {bool deleted = false}) {
     final parsedId = AssetId.parse(id);
     if (deleted) {
-      assetGraph.updatePostProcessBuildStepResult(
+      buildState.addPostProcessBuildStepResult(
         PostProcessBuildStepId(input: parsedId, actionNumber: 1),
         PostProcessBuildStepResult(hidden: true, deletedPrimaryInput: true),
       );
     }
-    assetGraph.addSourceForTest(parsedId, digest: computeDigest(parsedId, 'a'));
+    buildState.addSourceForTest(parsedId, digest: computeDigest(parsedId, 'a'));
     readerWriter.testing.writeString(parsedId, content);
   }
 
@@ -132,12 +132,12 @@ void main() {
     final primaryId = AssetId('a', 'web/main.dart');
     final outputId = AssetId('a', 'web/main.ddc.js');
     final buildStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
-    assetGraph.addGeneratedForTest(outputId, buildStepId, digest: Digest([]));
+    buildState.addGeneratedForTest(outputId, buildStepId, digest: Digest([]));
     final stepResult = BuildStepResult((b) {
       b.result = false;
       b.isHidden = false;
     });
-    assetGraph.updateBuildStepResult(buildStepId, stepResult);
+    buildState.updateBuildStepResult(buildStepId, stepResult);
 
     final response = await handler.handle(
       Request('GET', Uri.parse('http://server.com/main.ddc.js')),

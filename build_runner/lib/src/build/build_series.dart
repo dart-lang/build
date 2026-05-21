@@ -35,7 +35,7 @@ import 'build_result.dart';
 /// already in memory is used directly.
 class BuildSeries {
   BuildPlan _buildPlan;
-  AssetGraph _assetGraph;
+  BuildState _assetGraph;
   ReaderWriter _readerWriter;
 
   final ResourceManager _resourceManager = ResourceManager();
@@ -57,7 +57,7 @@ class BuildSeries {
 
   BuildSeries._({
     required BuildPlan buildPlan,
-    required AssetGraph assetGraph,
+    required BuildState assetGraph,
     required ReaderWriter readerWriter,
     required BuiltSet<AssetId>? updatesFromLoad,
   }) : _buildPlan = buildPlan,
@@ -123,7 +123,7 @@ class BuildSeries {
         continue;
       }
 
-      if (!_assetGraph.isKnownFile(id)) {
+      if (!_assetGraph.isFile(id)) {
         // Ignore under `.dart_tool/build`.
         if (id.path.startsWith(cacheDirectoryPath)) continue;
 
@@ -143,7 +143,7 @@ class BuildSeries {
       // with no outputs.
       if (!_buildPlan.buildOptions.anyMergedOutputDirectory &&
           !_assetGraph.isMissingSource(id) &&
-          _assetGraph.digestFor(id) == null) {
+          _assetGraph.digestOf(id) == null) {
         continue;
       }
 
@@ -261,7 +261,7 @@ class BuildSeries {
         buildDirs: buildDirs,
         buildFilters: buildFilters,
       ),
-      assetGraph: _assetGraph,
+      buildState: _assetGraph,
       readerWriter: _readerWriter,
       resourceManager: _resourceManager,
     );

@@ -34,7 +34,7 @@ void main() {
   group('FinalizedReader', () {
     BuildOutputReader reader;
     late InternalTestReaderWriter readerWriter;
-    late AssetGraph assetGraph;
+    late BuildState assetGraph;
     late BuildPackages buildPackages;
     late BuildPhases buildPhases;
 
@@ -43,10 +43,10 @@ void main() {
       buildPackages = BuildPackages.singlePackageBuild('a', [
         BuildPackage.forTesting(name: 'a', isOutput: true),
       ]);
-      assetGraph = await AssetGraph.build(
-        BuildPhases([]),
-        <AssetId>{},
-        buildPackages,
+      assetGraph = BuildState.create(
+        buildPhases: BuildPhases([]),
+        buildPackages: buildPackages,
+        sources: <AssetId>{},
       );
       buildPhases = BuildPhases([]);
     });
@@ -55,7 +55,7 @@ void main() {
       final notDeletedId = AssetId.parse('a|web/a.txt');
       final deletedId = AssetId.parse('a|lib/b.txt');
 
-      assetGraph.updatePostProcessBuildStepResult(
+      assetGraph.addPostProcessBuildStepResult(
         PostProcessBuildStepId(input: deletedId, actionNumber: 0),
         PostProcessBuildStepResult(hidden: true, deletedPrimaryInput: true),
       );

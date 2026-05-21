@@ -16,7 +16,7 @@ import 'serializers.dart';
 /// and if so exactly what should be rebuilt.
 class AssetGraphJson {
   final BuildPlanDigest buildPlanDigest;
-  final AssetGraph assetGraph;
+  final BuildState assetGraph;
   final PhasedAssetDeps phasedAssetDeps;
 
   AssetGraphJson({
@@ -28,7 +28,7 @@ class AssetGraphJson {
   /// Serializes for `asset_graph.json`.
   static Uint8List serialize({
     required BuildPlanDigest buildPlanDigest,
-    required AssetGraph assetGraph,
+    required BuildState assetGraph,
     required PhasedAssetDeps phasedAssetDeps,
   }) {
     // Serialize fields first so all `AssetId` instances are seen by
