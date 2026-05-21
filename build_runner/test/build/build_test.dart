@@ -26,6 +26,7 @@ import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/builder_definition.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
+import 'package:build_runner/src/build_plan/placeholders.dart';
 import 'package:build_runner/src/constants.dart';
 import 'package:build_runner/src/exceptions.dart';
 import 'package:build_runner/src/io/reader_writer.dart';
@@ -63,11 +64,6 @@ void main() {
     },
   );
   final globBuilder = GlobbingBuilder(Glob('**.txt'));
-  final placeholders = placeholderIdsFor(
-    BuildPackages.singlePackageBuild('a', [
-      BuildPackage.forTesting(name: 'a', isOutput: true),
-    ]),
-  );
 
   group('build', () {
     test('can log within a buildFactory', () async {
@@ -228,11 +224,11 @@ void main() {
       test('with placeholder as input', () async {
         final builder1 = PlaceholderBuilder(
           {'lib.txt': 'libText'}.build(),
-          inputPlaceholder: r'$lib$',
+          inputPlaceholder: Placeholders.libName,
         );
         final builder2 = PlaceholderBuilder(
           {'root.txt': 'rootText'}.build(),
-          inputPlaceholder: r'$package$',
+          inputPlaceholder: Placeholders.packageName,
         );
         await testBuilders(
           [builder1, builder2],
@@ -525,7 +521,7 @@ targets:
             )!.assetGraph;
         expect(
           cachedGraph.allNodes.map((node) => node.id),
-          unorderedEquals([makeAssetId('a|web/a.txt'), ...placeholders]),
+          unorderedEquals([makeAssetId('a|web/a.txt')]),
         );
         expect(cachedGraph.sources, [makeAssetId('a|web/a.txt')]);
         expect(

@@ -14,7 +14,6 @@ part 'node.g.dart';
 class NodeType extends EnumClass {
   static Serializer<NodeType> get serializer => _$nodeTypeSerializer;
 
-  static const NodeType placeholder = _$placeholder;
   static const NodeType source = _$source;
   static const NodeType missingSource = _$missingSource;
 
@@ -55,17 +54,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   factory AssetNode.missingSource(AssetId id) => AssetNode((b) {
     b.id = id;
     b.type = NodeType.missingSource;
-  });
-
-  /// Placeholders for useful parts of packages.
-  ///
-  /// Four types of placeholder are used per package: the `lib` folder, the
-  /// `test` folder, the `web` folder, and the whole package.
-  ///
-  /// TODO(davidmorgan): describe how these are used.
-  factory AssetNode.placeholder(AssetId id) => AssetNode((b) {
-    b.id = id;
-    b.type = NodeType.placeholder;
   });
 
   AssetNode._();

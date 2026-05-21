@@ -16,6 +16,7 @@ import 'package:watcher/watcher.dart';
 import '../../build_plan/build_packages.dart';
 import '../../build_plan/build_phases.dart';
 import '../../build_plan/phase.dart';
+import '../../build_plan/placeholders.dart';
 import '../../constants.dart';
 import '../../io/generated_asset_hider.dart';
 import 'build_step_id.dart';
@@ -110,12 +111,11 @@ class AssetGraph implements GeneratedAssetHider {
     BuildPackages buildPackages,
   ) async {
     final graph = AssetGraph();
-    final placeholders = graph._addPlaceHolderNodes(buildPackages);
     graph._addSources(sources);
     graph._addOutputsForSources(
       buildPhases,
       sources,
-      placeholders: placeholders,
+      placeholders: buildPackages.placeholderIds,
     );
     return graph;
   }
@@ -128,8 +128,7 @@ class AssetGraph implements GeneratedAssetHider {
       _nodes.updateNode(id, updates);
 
   /// Whether [id) is a placeholder.
-  bool isPlaceholder(AssetId id) =>
-      _nodes.get(id)?.type == NodeType.placeholder;
+  bool isPlaceholder(AssetId id) => Placeholders.isPlaceholderPath(id.path);
 
   /// Whether [id] is one of: source, output or post process output.
   bool isKnownFile(AssetId id) =>
@@ -174,15 +173,6 @@ class AssetGraph implements GeneratedAssetHider {
         ...allPostProcessOutputIds,
       ], glob: glob);
   void removeForTest(AssetId id) => _nodes.remove(id);
-
-  /// Adds [AssetNode.placeholder]s for every package in [buildPackages].
-  Set<AssetId> _addPlaceHolderNodes(BuildPackages buildPackages) {
-    final placeholders = placeholderIdsFor(buildPackages);
-    for (final id in placeholders) {
-      _nodes.add(AssetNode.placeholder(id));
-    }
-    return placeholders;
-  }
 
   /// Adds [assetIds] as [AssetNode.source] to this graph, and returns the newly
   /// created nodes.
@@ -389,18 +379,13 @@ class AssetGraph implements GeneratedAssetHider {
     return action.targetSources.matches(currentInput);
   }
 
-  /// Returns a set containing [newSources] plus any new generated sources
-  /// based on [buildPhases], and updates this graph to contain all the
-  /// new outputs.
-  ///
-  /// If [placeholders] is supplied they will be added to [newSources] to create
-  /// the full input set.
+  /// Adds outputs for [newSources] and optionally [placeholders].
   ///
   /// May remove nodes if sources overlap with generated outputs.
   void _addOutputsForSources(
     BuildPhases buildPhases,
     Set<AssetId> newSources, {
-    Set<AssetId>? placeholders,
+    Iterable<AssetId>? placeholders,
   }) {
     final allInputs = Set<AssetId>.from(newSources);
     if (placeholders != null) allInputs.addAll(placeholders);
@@ -610,15 +595,3 @@ class AssetGraph implements GeneratedAssetHider {
     return result;
   }
 }
-
-Set<AssetId> placeholderIdsFor(BuildPackages buildPackages) =>
-    Set<AssetId>.from(
-      buildPackages.packages.keys.expand(
-        (package) => [
-          AssetId(package, r'lib/$lib$'),
-          AssetId(package, r'test/$test$'),
-          AssetId(package, r'web/$web$'),
-          AssetId(package, r'$package$'),
-        ],
-      ),
-    );

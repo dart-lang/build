@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+import 'package:build_runner/src/build_plan/placeholders.dart';
 import 'package:built_collection/built_collection.dart';
 
 class CopyingPostProcessBuilder implements PostProcessBuilder {
@@ -41,7 +42,7 @@ class PlaceholderBuilder extends Builder {
 
   PlaceholderBuilder(
     this.outputFilenameToContent, {
-    this.inputPlaceholder = r'$lib$',
+    this.inputPlaceholder = Placeholders.libName,
   });
 
   @override

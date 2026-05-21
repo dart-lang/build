@@ -57,10 +57,7 @@ void main() {
       });
 
       test('add, contains, get, allNodes', () {
-        final expectedNodes = [
-          for (var i = 0; i < 5; i++) testAddNode(i),
-          for (final id in placeholderIdsFor(fooPackageGraph)) graph.get(id),
-        ];
+        final expectedNodes = [for (var i = 0; i < 5; i++) testAddNode(i)];
         expect(graph.allNodes, unorderedEquals(expectedNodes));
       });
 
@@ -174,7 +171,6 @@ void main() {
       final primaryOutputId = makeAssetId('foo|file.txt.copy');
       final syntheticId = makeAssetId('foo|synthetic.txt');
       final syntheticOutputId = makeAssetId('foo|synthetic.txt.copy');
-      final placeholders = placeholderIdsFor(fooPackageGraph);
 
       setUp(() async {
         graph = await AssetGraph.build(buildPhases, {
@@ -187,7 +183,7 @@ void main() {
         expect(graph.outputs, unorderedEquals([primaryOutputId]));
         expect(
           graph.allNodes.map((n) => n.id),
-          unorderedEquals([primaryInputId, excludedInputId, ...placeholders]),
+          unorderedEquals([primaryInputId, excludedInputId]),
         );
         expect(graph.primaryOutputsOf(primaryInputId), [primaryOutputId]);
 

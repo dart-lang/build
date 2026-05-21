@@ -16,6 +16,7 @@ import '../io/asset_path_provider.dart';
 import 'build_package.dart';
 import 'build_packages_loader.dart';
 import 'build_paths.dart';
+import 'placeholders.dart';
 
 /// The SDK package, we filter this to the core libs and dev compiler
 /// resources.
@@ -262,6 +263,15 @@ class BuildPackages implements AssetPathProvider {
   /// same output package, meaning they are "in the same single package build".
   /// Builders can only auto apply from a package in the same build.
   BuiltSet<String> peersOf(String packageName) => _peerPackages[packageName]!;
+
+  Iterable<AssetId> get placeholderIds => packages.keys.expand(
+    (package) => [
+      AssetId(package, Placeholders.libPath),
+      AssetId(package, Placeholders.testPath),
+      AssetId(package, Placeholders.webPath),
+      AssetId(package, Placeholders.packageName),
+    ],
+  );
 
   @override
   String toString() {
