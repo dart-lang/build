@@ -185,12 +185,7 @@ class Build {
         }
       }
 
-      final failedPostProcessSteps = <PostProcessBuildStepId>[];
-      for (final entry in buildState.postProcessBuildStepResults) {
-        if (entry.value.errors.isNotEmpty) {
-          failedPostProcessSteps.add(entry.key);
-        }
-      }
+      final failedPostProcessSteps = buildState.failedPostProcessSteps;
 
       if (failedPostProcessSteps.isNotEmpty) {
         for (final id in failedPostProcessSteps) {
@@ -465,32 +460,41 @@ class Build {
     String package,
     int phaseNumber,
   ) async {
-    // Accumulate in a `Set` because inputs are found once per output.
-    final ids = <AssetId>{};
+    final ids = <AssetId>[];
     final phase = buildPhases[phaseNumber] as InBuildPhase;
     final buildPackage = buildPackages[package]!;
 
-    for (final outputId in buildState
-        .declaredOutputsForPhase(package, phaseNumber)
-        .toList(growable: false)) {
-      if (!shouldBuildForDirs(
-        outputId,
-        buildDirs: buildPlan.buildOptions.buildDirs,
-        buildFilters: buildPlan.buildOptions.buildFilters,
-        phase: phase,
-        buildConfigs: buildConfigs,
-      )) {
-        continue;
+    for (final step in buildState.buildStepsForPhase(package, phaseNumber)) {
+      final primaryInput = step.primaryInput;
+      final outputs = expectedOutputs(phase.builder, primaryInput);
+
+      final assetsToCheck = outputs.isEmpty ? [primaryInput] : outputs;
+      var shouldBuild = false;
+      for (final id in assetsToCheck) {
+        if (!shouldBuildForDirs(
+          id,
+          buildDirs: buildPlan.buildOptions.buildDirs,
+          buildFilters: buildPlan.buildOptions.buildFilters,
+          phase: phase,
+          buildConfigs: buildConfigs,
+        )) {
+          continue;
+        }
+
+        // Don't build for inputs that aren't visible. This can happen for
+        // placeholders like `test/$test$` that are added to each package,
+        // since the test dir is not part of the build for non-root packages.
+        if (!buildConfigs.isVisibleInBuild(id, buildPackage)) continue;
+
+        shouldBuild = true;
+        break;
       }
 
-      // Don't build for inputs that aren't visible. This can happen for
-      // placeholders like `test/$test$` that are added to each package,
-      // since the test dir is not part of the build for non-root packages.
-      if (!buildConfigs.isVisibleInBuild(outputId, buildPackage)) continue;
-
-      ids.add(buildState.stepForDeclaredOutput(outputId).primaryInput);
+      if (shouldBuild) {
+        ids.add(primaryInput);
+      }
     }
-    return ids.toList()..sort();
+    return ids..sort();
   }
 
   /// If [id] is a generated asset, ensures that it has been built.
@@ -1216,7 +1220,6 @@ class Build {
     Iterable<String> errors, {
     Set<AssetId>? unusedAssets,
   }) async {
-    if (outputs.isEmpty) return;
     final inputTracker = stepReaderWriter.inputTracker;
     final usedInputs =
         unusedAssets != null && unusedAssets.isNotEmpty

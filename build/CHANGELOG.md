@@ -1,3 +1,9 @@
+## 4.0.7-wip
+
+- Replace `Builder` extension method `hasOutputFor` with `matchesInput`.
+  Deprecate `hasOutputFor`. The new `matchesInput` is identical, but now that
+  zero-output builders are supported the old name is misleading.
+
 ## 4.0.6
 
 - Allow `analyzer` 13.0.0.

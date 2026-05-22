@@ -40,8 +40,8 @@ class BuildState implements GeneratedAssetHider {
   /// Sources and missing sources.
   final Sources _sources;
 
-  /// All standard build step execution results, indexed by [BuildStepId].
-  final Map<BuildStepId, BuildStepResult> _buildStepResults;
+  /// All standard build step execution results by [AssetId] then phase number.
+  final Map<AssetId, Map<int, BuildStepResult>> _buildStepResultsByPrimaryInput;
 
   /// Declared outputs by primary input.
   final Map<AssetId, Set<AssetId>> _declaredOutputsByPrimaryInput;
@@ -52,9 +52,9 @@ class BuildState implements GeneratedAssetHider {
   /// Globs evaluated during the build.
   final Map<GlobId, GlobResult> _globResults;
 
-  /// All post process build steps results, indexed by [PostProcessBuildStepId].
-  final Map<PostProcessBuildStepId, PostProcessBuildStepResult>
-  _postProcessBuildStepResults;
+  /// All post process build steps results by [AssetId] then action number.
+  final Map<AssetId, Map<int, PostProcessBuildStepResult>>
+  _postProcessResultsByInput;
 
   /// All post process build step outputs.
   final Set<AssetId> _postProcessOutputs;
@@ -62,9 +62,9 @@ class BuildState implements GeneratedAssetHider {
   @visibleForTesting
   BuildState.empty()
     : _sources = Sources(),
-      _postProcessBuildStepResults = {},
+      _postProcessResultsByInput = {},
       _postProcessOutputs = {},
-      _buildStepResults = {},
+      _buildStepResultsByPrimaryInput = {},
       _declaredOutputsByPrimaryInput = {},
       _globResults = {},
       _buildStepsByDeclaredOutput = {};
@@ -87,28 +87,35 @@ class BuildState implements GeneratedAssetHider {
 
   BuildState._with({
     required Sources sources,
-    required Map<PostProcessBuildStepId, PostProcessBuildStepResult>
-    postProcessBuildStepResults,
+    required Map<AssetId, Map<int, PostProcessBuildStepResult>>
+    postProcessResultsByInput,
     required Set<AssetId> postProcessOutputs,
-    required Map<BuildStepId, BuildStepResult> buildStepResults,
+    required Map<AssetId, Map<int, BuildStepResult>>
+    buildStepResultsByPrimaryInput,
     required Map<GlobId, GlobResult> globResults,
     required Map<AssetId, BuildStepId> buildStepsByDeclaredOutput,
     required Map<AssetId, Set<AssetId>> declaredOutputsByPrimaryInput,
   }) : _postProcessOutputs = postProcessOutputs,
-       _postProcessBuildStepResults = postProcessBuildStepResults,
+       _postProcessResultsByInput = postProcessResultsByInput,
        _globResults = globResults,
        _buildStepsByDeclaredOutput = buildStepsByDeclaredOutput,
        _declaredOutputsByPrimaryInput = declaredOutputsByPrimaryInput,
-       _buildStepResults = buildStepResults,
+       _buildStepResultsByPrimaryInput = buildStepResultsByPrimaryInput,
        _sources = sources;
 
   /// Copies the state and prepares it for the next build.
   BuildState copyForNextBuild() {
     return BuildState._with(
       sources: _sources.clone(),
-      postProcessBuildStepResults: Map.of(_postProcessBuildStepResults),
+      postProcessResultsByInput: {
+        for (final entry in _postProcessResultsByInput.entries)
+          entry.key: Map.of(entry.value),
+      },
       postProcessOutputs: Set.of(_postProcessOutputs),
-      buildStepResults: Map.of(_buildStepResults),
+      buildStepResultsByPrimaryInput: {
+        for (final entry in _buildStepResultsByPrimaryInput.entries)
+          entry.key: Map.of(entry.value),
+      },
       globResults: Map.of(_globResults),
       buildStepsByDeclaredOutput: Map.of(_buildStepsByDeclaredOutput),
       declaredOutputsByPrimaryInput: {
@@ -171,11 +178,20 @@ class BuildState implements GeneratedAssetHider {
   Iterable<AssetId> declaredOutputsOf(AssetId id) =>
       _declaredOutputsByPrimaryInput[id] ?? const [];
 
-  /// All the declared outputs for [phase].
-  Iterable<AssetId> declaredOutputsForPhase(String package, int phase) =>
-      findFiles(
-        package: package,
-      ).where((id) => _buildStepsByDeclaredOutput[id]?.phaseNumber == phase);
+  /// All the build steps for [phase].
+  Iterable<BuildStepId> buildStepsForPhase(String package, int phase) {
+    final results = <BuildStepId>[];
+    for (final entry in _buildStepResultsByPrimaryInput.entries) {
+      final primaryInput = entry.key;
+      if (primaryInput.package != package) continue;
+      if (entry.value.containsKey(phase)) {
+        results.add(
+          BuildStepId(primaryInput: primaryInput, phaseNumber: phase),
+        );
+      }
+    }
+    return results;
+  }
 
   /// Declared outputs and the phase in which they will be output.
   Map<AssetId, int> get declaredOutputPhases => {
@@ -186,8 +202,8 @@ class BuildState implements GeneratedAssetHider {
   /// Actual build step outputs.
   ///
   /// A subset of [declaredOutputs].
-  Iterable<AssetId> get actualOutputs =>
-      _buildStepResults.values.expand((result) => result.outputs.keys);
+  Iterable<AssetId> get actualOutputs => _buildStepResultsByPrimaryInput.values
+      .expand((map) => map.values.expand((result) => result.outputs.keys));
 
   /// Whether [id] is a declared build output that was actually generated.
   bool isActualOutput(AssetId id) {
@@ -264,11 +280,16 @@ class BuildState implements GeneratedAssetHider {
 
   /// The result of [buildStep].
   BuildStepResult stepResult(BuildStepId buildStep) =>
-      _buildStepResults[buildStep]!;
+      _buildStepResultsByPrimaryInput[buildStep.primaryInput]![buildStep
+          .phaseNumber]!;
 
   /// Updates a build step result after the step runs.
   void updateBuildStepResult(BuildStepId buildStepId, BuildStepResult result) {
-    _buildStepResults[buildStepId] = result;
+    _buildStepResultsByPrimaryInput.putIfAbsent(
+          buildStepId.primaryInput,
+          () => {},
+        )[buildStepId.phaseNumber] =
+        result;
   }
 
   // -- Globs.
@@ -285,30 +306,61 @@ class BuildState implements GeneratedAssetHider {
     PostProcessBuildStepId step,
     PostProcessBuildStepResult result,
   ) {
-    final updated = _postProcessBuildStepResults.putIfAbsent(
-      step,
-      () => result,
+    final results = _postProcessResultsByInput.putIfAbsent(
+      step.input,
+      () => {},
     );
-    if (!identical(updated, result)) {
+    if (results.containsKey(step.actionNumber)) {
       throw StateError('Already had post process result for $step.');
     }
+    results[step.actionNumber] = result;
     _postProcessOutputs.addAll(result.outputs);
   }
 
   void removePostProcessBuildResult(PostProcessBuildStepId step) {
-    final oldResult = _postProcessBuildStepResults.remove(step);
+    final results = _postProcessResultsByInput[step.input];
+    if (results == null) return;
+    final oldResult = results.remove(step.actionNumber);
     if (oldResult != null) {
       _postProcessOutputs.removeAll(oldResult.outputs);
+    }
+    if (results.isEmpty) {
+      _postProcessResultsByInput.remove(step.input);
     }
   }
 
   PostProcessBuildStepResult? postProcessBuildStepResultFor(
     PostProcessBuildStepId step,
-  ) => _postProcessBuildStepResults[step];
+  ) => _postProcessResultsByInput[step.input]?[step.actionNumber];
 
-  /// All [PostProcessBuildStepResult] by [PostProcessBuildStepId].
-  Iterable<MapEntry<PostProcessBuildStepId, PostProcessBuildStepResult>>
-  get postProcessBuildStepResults => _postProcessBuildStepResults.entries;
+  Iterable<PostProcessBuildStepId> get failedPostProcessSteps {
+    final results = <PostProcessBuildStepId>[];
+    for (final outer in _postProcessResultsByInput.entries) {
+      final input = outer.key;
+      for (final inner in outer.value.entries) {
+        if (inner.value.errors.isNotEmpty) {
+          results.add(
+            PostProcessBuildStepId(input: input, actionNumber: inner.key),
+          );
+        }
+      }
+    }
+    return results;
+  }
+
+  Set<AssetId> get assetsDeletedByPostProcess {
+    final result = <AssetId>{};
+    for (final outer in _postProcessResultsByInput.entries) {
+      final input = outer.key;
+      for (final inner in outer.value.values) {
+        if (inner.deletedPrimaryInput) {
+          result.add(input);
+          break;
+        }
+      }
+    }
+    return result;
+  }
 
   // -- Build planning.
 
@@ -318,7 +370,7 @@ class BuildState implements GeneratedAssetHider {
     if (!action.generateFor.matches(input)) return false;
 
     if (action is InBuildPhase) {
-      if (!action.builder.hasOutputFor(input)) return false;
+      if (!action.builder.matchesInput(input)) return false;
     } else if (action is PostBuildAction) {
       final inputExtensions = action.builder.inputExtensions;
       if (!inputExtensions.any(input.path.endsWith)) {
@@ -364,11 +416,13 @@ class BuildState implements GeneratedAssetHider {
         if (idToDelete != null) result.add(idToDelete);
       }
     }
-    for (final postProcessResults in _postProcessBuildStepResults.values) {
-      if (!postProcessResults.hidden) {
-        for (final id in postProcessResults.outputs) {
-          final idToDelete = checkAndMoveId(id);
-          if (idToDelete != null) result.add(idToDelete);
+    for (final results in _postProcessResultsByInput.values) {
+      for (final postProcessResults in results.values) {
+        if (!postProcessResults.hidden) {
+          for (final id in postProcessResults.outputs) {
+            final idToDelete = checkAndMoveId(id);
+            if (idToDelete != null) result.add(idToDelete);
+          }
         }
       }
     }
@@ -450,13 +504,12 @@ class BuildState implements GeneratedAssetHider {
     _sources.setMissing(id);
 
     // Remove post build action applications with removed assets as inputs.
-    _postProcessBuildStepResults.removeWhere((id, result) {
-      if (removedIds!.contains(id.input)) {
+    final postProcessResults = _postProcessResultsByInput.remove(id);
+    if (postProcessResults != null) {
+      for (final result in postProcessResults.values) {
         _postProcessOutputs.removeAll(result.outputs);
-        return true;
       }
-      return false;
-    });
+    }
   }
 
   /// Removes [id] and its transitive declared outputs.
@@ -469,6 +522,7 @@ class BuildState implements GeneratedAssetHider {
       _sources.remove(id);
       _buildStepsByDeclaredOutput.remove(id);
       _declaredOutputsByPrimaryInput.remove(id);
+      _buildStepResultsByPrimaryInput.remove(id);
     }
   }
 
@@ -554,6 +608,21 @@ class BuildState implements GeneratedAssetHider {
     required AssetId primaryInput,
     required bool isHidden,
   }) {
+    final buildStepId = BuildStepId(
+      primaryInput: primaryInput,
+      phaseNumber: phaseNumber,
+    );
+    final existingResults = _buildStepResultsByPrimaryInput[primaryInput];
+    final existingResult = existingResults?[phaseNumber];
+    final buildStepResultBuilder =
+        existingResult?.toBuilder() ?? BuildStepResultBuilder();
+    buildStepResultBuilder.isHidden = isHidden;
+    _buildStepResultsByPrimaryInput.putIfAbsent(
+          primaryInput,
+          () => {},
+        )[phaseNumber] =
+        buildStepResultBuilder.build();
+
     final removed = <AssetId>{};
     for (final output in outputs) {
       if (isSource(output)) {
@@ -571,16 +640,7 @@ class BuildState implements GeneratedAssetHider {
         );
       }
 
-      final buildStepId = BuildStepId(
-        primaryInput: primaryInput,
-        phaseNumber: phaseNumber,
-      );
       _buildStepsByDeclaredOutput[output] = buildStepId;
-      final buildStepResultBuilder =
-          _buildStepResults[buildStepId]?.toBuilder() ??
-          BuildStepResultBuilder();
-      buildStepResultBuilder.isHidden = isHidden;
-      _buildStepResults[buildStepId] = buildStepResultBuilder.build();
     }
     return removed;
   }
@@ -617,9 +677,15 @@ class BuildState implements GeneratedAssetHider {
     Digest? digest,
   }) {
     _buildStepsByDeclaredOutput[id] = buildStepId;
-    final existingResult = _buildStepResults[buildStepId];
+    final primaryInput = buildStepId.primaryInput;
+    final phaseNumber = buildStepId.phaseNumber;
+    final existingResults = _buildStepResultsByPrimaryInput[primaryInput];
+    final existingResult = existingResults?[phaseNumber];
     if (existingResult == null) {
-      _buildStepResults[buildStepId] = BuildStepResult((b) {
+      _buildStepResultsByPrimaryInput.putIfAbsent(
+        primaryInput,
+        () => {},
+      )[phaseNumber] = BuildStepResult((b) {
         b.isHidden = isHidden;
         if (digest != null) {
           b.outputs[id] = digest;
@@ -627,9 +693,10 @@ class BuildState implements GeneratedAssetHider {
       });
     } else {
       if (digest != null) {
-        _buildStepResults[buildStepId] = existingResult.rebuild(
-          (b) => b..outputs[id] = digest,
-        );
+        _buildStepResultsByPrimaryInput.putIfAbsent(
+          primaryInput,
+          () => {},
+        )[phaseNumber] = existingResult.rebuild((b) => b..outputs[id] = digest);
       }
     }
   }

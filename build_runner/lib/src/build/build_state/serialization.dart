@@ -133,9 +133,12 @@ Map<String, Object?> serializeBuildState(BuildState buildState) {
       ]),
     ),
     'postProcessResults': serializers.serialize(
-      BuiltMap<PostProcessBuildStepId, PostProcessBuildStepResult>.of(
-        buildState._postProcessBuildStepResults,
-      ),
+      BuiltMap<PostProcessBuildStepId, PostProcessBuildStepResult>.of({
+        for (final outer in buildState._postProcessResultsByInput.entries)
+          for (final inner in outer.value.entries)
+            PostProcessBuildStepId(input: outer.key, actionNumber: inner.key):
+                inner.value,
+      }),
       specifiedType: postProcessBuildStepResultsFullType,
     ),
     'missingSources': serializers.serialize(
@@ -143,7 +146,12 @@ Map<String, Object?> serializeBuildState(BuildState buildState) {
       specifiedType: const FullType(BuiltSet, [FullType(AssetId)]),
     ),
     'buildStepResults': serializers.serialize(
-      BuiltMap<BuildStepId, BuildStepResult>.of(buildState._buildStepResults),
+      BuiltMap<BuildStepId, BuildStepResult>.of({
+        for (final outer in buildState._buildStepResultsByPrimaryInput.entries)
+          for (final inner in outer.value.entries)
+            BuildStepId(primaryInput: outer.key, phaseNumber: inner.key):
+                inner.value,
+      }),
       specifiedType: const FullType(BuiltMap, [
         FullType(BuildStepId),
         FullType(BuildStepResult),
