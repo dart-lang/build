@@ -8,7 +8,6 @@ import 'package:build/build.dart';
 import 'package:build_runner/src/build/asset_graph/build_step_id.dart';
 import 'package:build_runner/src/build/asset_graph/build_step_result.dart';
 import 'package:build_runner/src/build/asset_graph/graph.dart';
-import 'package:build_runner/src/build/asset_graph/node.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
 import 'package:build_runner/src/build/asset_graph/post_process_build_step_result.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
@@ -46,18 +45,14 @@ void main() {
 
   void addAsset(String id, String content, {bool deleted = false}) {
     final parsedId = AssetId.parse(id);
-    final node = AssetNode.source(
-      parsedId,
-      digest: computeDigest(parsedId, 'a'),
-    );
     if (deleted) {
       assetGraph.updatePostProcessBuildStepResult(
         PostProcessBuildStepId(input: parsedId, actionNumber: 1),
         PostProcessBuildStepResult(hidden: true, deletedPrimaryInput: true),
       );
     }
-    assetGraph.add(node);
-    readerWriter.testing.writeString(node.id, content);
+    assetGraph.addSourceForTest(parsedId, digest: computeDigest(parsedId, 'a'));
+    readerWriter.testing.writeString(parsedId, content);
   }
 
   test('can not read deleted nodes', () async {

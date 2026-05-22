@@ -160,9 +160,9 @@ class BuildOutputReader {
     final assetGraph = _assetGraph;
     if (assetGraph == null) return [];
     final result = <AssetId>[];
-    for (final node in assetGraph.allNodes) {
-      if (!_shouldSkipId(assetGraph, node.id, rootDir)) {
-        result.add(node.id);
+    for (final id in assetGraph.sources) {
+      if (!_shouldSkipId(assetGraph, id, rootDir)) {
+        result.add(id);
       }
     }
     for (final id in assetGraph.buildStepsByDeclaredOutput.keys) {

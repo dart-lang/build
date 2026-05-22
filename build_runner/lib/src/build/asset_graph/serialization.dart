@@ -15,8 +15,24 @@ part of 'graph.dart';
 AssetGraph? deserializeAssetGraph(Map serializedGraph) {
   final graph = AssetGraph();
 
-  for (final serializedItem in serializedGraph['nodes'] as Iterable) {
-    graph._nodes.add(_deserializeAssetNode(serializedItem as List));
+  final sourceIds =
+      serializers.deserialize(
+            serializedGraph['sourceIds'],
+            specifiedType: const FullType(BuiltSet, [FullType(AssetId)]),
+          )
+          as BuiltSet<AssetId>;
+  final sourceDigests =
+      serializers.deserialize(
+            serializedGraph['sourceDigests'],
+            specifiedType: const FullType(BuiltMap, [
+              FullType(AssetId),
+              FullType(Digest),
+            ]),
+          )
+          as BuiltMap<AssetId, Digest>;
+
+  for (final id in sourceIds) {
+    graph.addSourceForTest(id, digest: sourceDigests[id]);
   }
 
   final postProcessResults =
@@ -28,6 +44,16 @@ AssetGraph? deserializeAssetGraph(Map serializedGraph) {
 
   for (final entry in postProcessResults.entries) {
     graph.updatePostProcessBuildStepResult(entry.key, entry.value);
+  }
+
+  if (serializedGraph.containsKey('missingSources')) {
+    final deserialized =
+        serializers.deserialize(
+              serializedGraph['missingSources'],
+              specifiedType: const FullType(BuiltSet, [FullType(AssetId)]),
+            )
+            as BuiltSet<AssetId>;
+    graph._sources.missingSources.addAll(deserialized.toSet());
   }
 
   if (serializedGraph.containsKey('buildStepResults')) {
@@ -91,24 +117,32 @@ AssetGraph? deserializeAssetGraph(Map serializedGraph) {
   return graph;
 }
 
-AssetNode _deserializeAssetNode(List serializedNode) =>
-    serializers.deserializeWith(AssetNode.serializer, serializedNode)
-        as AssetNode;
-
 /// Serializes an [AssetGraph] into a [Map].
 Map<String, Object?> serializeAssetGraph(AssetGraph graph) {
-  // Serialize nodes first so all `AssetId` instances are seen by
-  // `identityAssetIdSeralizer`.
-  final nodes = graph.allNodes
-      .map((node) => serializers.serializeWith(AssetNode.serializer, node))
-      .toList(growable: false);
   final result = <String, Object?>{
-    'nodes': nodes,
+    'sourceIds': serializers.serialize(
+      BuiltSet<AssetId>.of(graph._sources.sources.keys),
+      specifiedType: const FullType(BuiltSet, [FullType(AssetId)]),
+    ),
+    'sourceDigests': serializers.serialize(
+      BuiltMap<AssetId, Digest>.of({
+        for (final entry in graph._sources.sources.entries)
+          if (entry.value != null) entry.key: entry.value!,
+      }),
+      specifiedType: const FullType(BuiltMap, [
+        FullType(AssetId),
+        FullType(Digest),
+      ]),
+    ),
     'postProcessResults': serializers.serialize(
       BuiltMap<PostProcessBuildStepId, PostProcessBuildStepResult>.of(
         graph.postProcessBuildStepResults,
       ),
       specifiedType: postProcessBuildStepResultsFullType,
+    ),
+    'missingSources': serializers.serialize(
+      BuiltSet<AssetId>.of(graph._sources.missingSources),
+      specifiedType: const FullType(BuiltSet, [FullType(AssetId)]),
     ),
     'buildStepResults': serializers.serialize(
       BuiltMap<BuildStepId, BuildStepResult>.of(graph.buildStepResults),

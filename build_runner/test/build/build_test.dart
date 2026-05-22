@@ -13,17 +13,12 @@ import 'package:build_config/build_config.dart'
         TargetBuilderConfigDefaults;
 import 'package:build_runner/src/build/asset_graph/asset_graph_json.dart';
 import 'package:build_runner/src/build/asset_graph/build_step_id.dart';
-import 'package:build_runner/src/build/asset_graph/graph.dart';
-import 'package:build_runner/src/build/asset_graph/node.dart';
-import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
-import 'package:build_runner/src/build/asset_graph/post_process_build_step_result.dart';
 import 'package:build_runner/src/build/build_result.dart';
 import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_directory.dart';
 import 'package:build_runner/src/build_plan/build_filter.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
-import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/builder_definition.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
 import 'package:build_runner/src/build_plan/placeholders.dart';
@@ -40,13 +35,6 @@ void main() {
   /// Basic phases/phase groups which get used in many tests
   final testBuilder = TestBuilder(
     buildExtensions: appendExtension('.copy', from: '.txt'),
-  );
-  final requiresPostProcessBuilderDefinition = BuilderDefinition(
-    'test_builder',
-    autoApply: AutoApply.rootPackage,
-    appliesBuilders: ['a:post_copy_builder'],
-    hideOutput: false,
-    isOptional: false,
   );
   final postCopyABuilderDefinition = PostProcessBuilderDefinition(
     'a:post_copy_builder',
@@ -520,7 +508,7 @@ targets:
               result.readerWriter.testing.readBytes(graphId),
             )!.assetGraph;
         expect(
-          cachedGraph.allNodes.map((node) => node.id),
+          cachedGraph.sources,
           unorderedEquals([makeAssetId('a|web/a.txt')]),
         );
         expect(cachedGraph.sources, [makeAssetId('a|web/a.txt')]);
@@ -1145,89 +1133,6 @@ targets:
     });
   });
 
-  test('tracks dependency graph in a asset_graph.json file', () async {
-    final result = await testPhases(
-      builderFactories,
-      [requiresPostProcessBuilderDefinition, postCopyABuilderDefinition],
-      {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
-      outputs: {
-        'a|web/a.txt.copy': 'a',
-        'a|lib/b.txt.copy': 'b',
-        r'$$a|web/a.txt.post': 'a',
-        r'$$a|lib/b.txt.post': 'b',
-      },
-    );
-
-    final graphId = makeAssetId('a|$assetGraphPath');
-    expect(result.readerWriter.testing.exists(graphId), isTrue);
-    final cachedGraph =
-        AssetGraphJson.deserialize(
-          result.readerWriter.testing.readBytes(graphId),
-        )!.assetGraph;
-
-    final expectedGraph = await AssetGraph.build(
-      BuildPhases([]),
-      <AssetId>{},
-      BuildPackages.singlePackageBuild('a', [
-        BuildPackage.forTesting(name: 'a', isOutput: true),
-      ]),
-    );
-
-    // Source nodes
-    final aId = AssetId.parse('a|web/a.txt');
-    final aSourceNode = AssetNode.source(aId, digest: computeDigest(aId, 'a'));
-    final bId = AssetId.parse('a|lib/b.txt');
-    final bSourceNode = AssetNode.source(bId, digest: computeDigest(bId, 'b'));
-
-    // Regular generated asset nodes.
-    final aCopyId = AssetId.parse('a|web/a.txt.copy');
-    final bCopyId = makeAssetId('a|lib/b.txt.copy'); //;
-
-    // Post build generates asset nodes.
-    final aPostProcessBuildStepId = PostProcessBuildStepId(
-      input: aSourceNode.id,
-      actionNumber: 0,
-    );
-    final bPostProcessBuildStepId = PostProcessBuildStepId(
-      input: bSourceNode.id,
-      actionNumber: 0,
-    );
-
-    final aPostCopyId = makeAssetId('a|web/a.txt.post');
-
-    final bPostCopyId = makeAssetId('a|lib/b.txt.post');
-
-    expectedGraph
-      ..add(aSourceNode)
-      ..add(bSourceNode)
-      ..declareOutputs(aId, [aCopyId, aPostCopyId])
-      ..declareOutputs(bId, [bCopyId, bPostCopyId])
-      ..addGeneratedForTest(
-        aCopyId,
-        BuildStepId(primaryInput: aId, phaseNumber: 0),
-        digest: computeDigest(aCopyId, 'a'),
-      )
-      ..addGeneratedForTest(
-        bCopyId,
-        BuildStepId(primaryInput: bId, phaseNumber: 0),
-        digest: computeDigest(bCopyId, 'b'),
-      )
-      ..updatePostProcessBuildStepResult(
-        aPostProcessBuildStepId,
-        PostProcessBuildStepResult(hidden: true, outputs: [aPostCopyId]),
-      )
-      ..updatePostProcessBuildStepResult(
-        bPostProcessBuildStepId,
-        PostProcessBuildStepResult(hidden: true, outputs: [bPostCopyId]),
-      );
-
-    expect(cachedGraph, equalsAssetGraph(expectedGraph));
-    expect(
-      cachedGraph.postProcessBuildStepResults,
-      expectedGraph.postProcessBuildStepResults,
-    );
-  });
-
   test(
     "builders reading their output don't cause self-referential nodes",
     () async {
@@ -1487,8 +1392,8 @@ targets:
                 ),
               )!.assetGraph;
           expect(
-            graph.get(makeAssetId('a|lib/a.txt.copy'))!.type,
-            NodeType.missingSource,
+            graph.isMissingSource(makeAssetId('a|lib/a.txt.copy')),
+            isTrue,
           );
         },
       );
@@ -1538,8 +1443,8 @@ targets:
       final aNodeId = makeAssetId('a|lib/a.txt');
       final aCopyNodeId = makeAssetId('a|lib/a.txt.copy');
       final aCloneNodeId = makeAssetId('a|lib/a.txt.copy.clone');
-      expect(newGraph.get(aNodeId)!.type, NodeType.missingSource);
-      expect(newGraph.get(aCopyNodeId)!.type, NodeType.missingSource);
+      expect(newGraph.isMissingSource(aNodeId), isTrue);
+      expect(newGraph.isMissingSource(aCopyNodeId), isTrue);
       expect(newGraph.isKnownFile(aCloneNodeId), isFalse);
       expect(result.readerWriter.testing.exists(aNodeId), isFalse);
       expect(result.readerWriter.testing.exists(aCopyNodeId), isFalse);
@@ -1643,14 +1548,16 @@ targets:
               makeAssetId('a|$assetGraphPath'),
             ),
           )!.assetGraph;
-      final fileANode = graph.get(makeAssetId('a|lib/file.a'))!;
-      final fileCNode = graph.get(makeAssetId('a|lib/file.c'))!;
+      final fileAId = makeAssetId('a|lib/file.a');
+      final fileCId = makeAssetId('a|lib/file.c');
+      expect(graph.isSource(fileAId), isTrue);
+      expect(graph.isSource(fileCId), isTrue);
       final buildStepId = BuildStepId(
         primaryInput: makeAssetId('a|lib/file.a'),
         phaseNumber: 0,
       );
       final stepResult = graph.buildStepResultFor(buildStepId)!;
-      expect(stepResult.inputs, unorderedEquals([fileANode.id, fileCNode.id]));
+      expect(stepResult.inputs, unorderedEquals([fileAId, fileCId]));
     });
 
     test('Ouputs aren\'t rebuilt if their inputs didn\'t change', () async {

@@ -32,7 +32,6 @@ import 'asset_graph/build_step_result.dart';
 import 'asset_graph/glob_id.dart';
 import 'asset_graph/glob_result.dart';
 import 'asset_graph/graph.dart';
-import 'asset_graph/node.dart';
 import 'asset_graph/post_process_build_step_id.dart';
 import 'asset_graph/post_process_build_step_result.dart';
 import 'build_dirs.dart';
@@ -254,13 +253,12 @@ class Build {
     final previousSourceNodes = <AssetId>{};
     final newDigests = <AssetId, Digest>{};
     for (final id in updates) {
-      final oldNode = assetGraph.get(id);
-      if (oldNode?.type == NodeType.source) {
+      final oldIsSource = assetGraph.isSource(id);
+      if (oldIsSource) {
         previousSourceNodes.add(id);
       }
       final oldExisted = assetGraph.isKnownFile(id);
-      final oldDigest =
-          oldNode?.type == NodeType.source ? oldNode?.digest : null;
+      final oldDigest = oldIsSource ? assetGraph.sourceDigest(id) : null;
       var exists = false;
       Digest? newDigest;
       if (await readerWriter.canRead(id)) {
@@ -327,13 +325,10 @@ class Build {
         final invalidatedSources =
             buildPlan.cleanBuild ? null : await _updateAssetGraph(idsToCheck);
         for (final id in assetGraph.sources) {
-          final node = assetGraph.get(id)!;
-          if (node.digest == null &&
+          if (assetGraph.isUnreadSource(id) &&
               assetGraph.primaryOutputsOf(id).isNotEmpty) {
             final digest = await readerWriter.digest(id);
-            assetGraph.updateNode(id, (nodeBuilder) {
-              nodeBuilder.digest = digest;
-            });
+            assetGraph.updateSourceDigest(id, digest);
           }
         }
         await resolversImpl?.takeLockAndStartBuild(

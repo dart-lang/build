@@ -18,7 +18,6 @@ import 'build_step_result.dart';
 import 'glob_id.dart';
 import 'glob_result.dart';
 import 'identity_serializer.dart';
-import 'node.dart';
 import 'post_process_build_step_id.dart';
 import 'post_process_build_step_result.dart';
 
@@ -36,7 +35,6 @@ final identityAssetIdSerializer = IdentitySerializer<AssetId>(
 
 @SerializersFor([
   AssetDeps,
-  AssetNode,
   BuildPlanDigest,
   BuildStepId,
   BuildStepResult,

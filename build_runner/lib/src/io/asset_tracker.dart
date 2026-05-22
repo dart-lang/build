@@ -79,8 +79,7 @@ class AssetTracker {
     final originalGraphSources = assetGraph.sources.toSet();
     final preExistingSources = originalGraphSources.intersection(inputSources);
     for (final id in preExistingSources) {
-      final node = assetGraph.get(id)!;
-      final originalDigest = node.digest;
+      final originalDigest = assetGraph.sourceDigest(id);
       if (originalDigest == null) continue;
       _readerWriter.cache.invalidate([id]);
       final currentDigest = await _readerWriter.digest(id);

@@ -3,121 +3,92 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 
-import 'node.dart';
+/// Assets that are inputs to the build.
+///
+/// There are three types of source: actual files that haven't been read, actual
+/// files that have been read and digested, and missing sources.
+class Sources {
+  final Map<AssetId, Digest?> sources = {};
+  final Set<AssetId> missingSources = {};
 
-/// Nodes in the `AssetGraph`.
-class Nodes {
-  final Map<AssetId, AssetNode> _nodes = {};
-
-  /// Sorted nodes by package, or `null` if they have not been computed.
+  /// Sorted sources by package, or `null` if they have not been computed.
   Map<String, List<AssetId>>? _sortedFileIdsByPackage;
 
   /// Whether [_sortedFileIdsByPackage] has already been calculated during
   /// this build.
-  ///
-  /// Sorted file IDs are calculated at most once per build as files are not
-  /// added or removed during the build. This bool is used to check and throw if
-  /// that does not hold.
-  ///
-  /// Note that "missing source" IDs are added during the build, but they don't
-  /// count as files. Post process build steps can delete their input but that
-  /// happens after the last possible use of `_sortedFileIdsByPackage` because
-  /// post process steps can't glob for files.
-  ///
-  /// After the build and before the next build files can be added or removed,
-  /// [clearComputationResults] will be called to reset.
   bool _sortedFileIdsByPackageWasComputed = false;
 
-  Nodes();
+  Sources();
 
-  Nodes clone() {
-    final result = Nodes();
-    result._nodes.addAll(_nodes);
+  Sources clone() {
+    final result = Sources();
+    result.sources.addAll(sources);
+    result.missingSources.addAll(missingSources);
     return result;
   }
 
-  /// Whether [id] is in the graph.
-  bool contains(AssetId id) => _nodes.containsKey(id);
+  /// Whether [id] is a known source on disk.
+  bool isSource(AssetId id) => sources.containsKey(id);
 
-  /// Gets the node for [id], or `null` if it doesn't exist.
-  AssetNode? get(AssetId id) => _nodes[id];
+  /// Whether [id] is a known source on disk but has not been read.
+  bool isUnreadSource(AssetId id) =>
+      sources[id] == null && sources.containsKey(id);
 
-  /// Updates a node in the graph with [updates].
+  /// Whether [id] is a missing source: a builder tried to read it but it does
+  /// not exist.
+  bool isMissingSource(AssetId id) => missingSources.contains(id);
+
+  /// The digest of source [id], or `null` if it has not been read.
+  Digest? getDigest(AssetId id) => sources[id];
+
+  /// Updates the digest of [id] if it's a known source.
+  void updateDigestIfPresent(AssetId id, Digest? digest) {
+    if (sources.containsKey(id)) {
+      sources[id] = digest;
+    }
+  }
+
+  /// Adds [id] as a known source.
   ///
-  /// If it does not exist, [StateError] is thrown.
-  ///
-  /// Returns the updated node.
-  AssetNode updateNode(AssetId id, void Function(AssetNodeBuilder) updates) {
-    final node = get(id);
-    if (node == null) throw StateError('Missing node: $id');
-    final updatedNode = node.rebuild(updates);
-    _nodes[id] = updatedNode;
+  /// Throws a [StateError] if it was already known.
+  void add(AssetId id, {Digest? digest}) {
+    _sortedFileIdsByPackage = null;
+    if (sources.containsKey(id)) {
+      throw StateError('Tried to add known source $id.');
+    }
+    sources[id] = digest;
+    missingSources.remove(id);
+  }
 
-    if (node.type != updatedNode.type) {
+  /// Adds [id] as a missing source.
+  void addMissing(AssetId id) {
+    missingSources.add(id);
+  }
+
+  /// Sets [id] to missing, removing from sources if needed.
+  void setMissing(AssetId id) {
+    if (sources.containsKey(id)) {
+      sources.remove(id);
       _sortedFileIdsByPackage = null;
     }
-
-    return updatedNode;
+    missingSources.add(id);
   }
 
-  /// Updates a node in the graph with [updates].
-  ///
-  /// If it does not exist, does nothing and returns `null`.
-  ///
-  /// If it does exist, returns the updated node.
-  AssetNode? updateNodeIfPresent(
-    AssetId id,
-    void Function(AssetNodeBuilder) updates,
-  ) {
-    final node = get(id);
-    if (node == null) return null;
-    final updatedNode = node.rebuild(updates);
-    _nodes[id] = updatedNode;
-
-    if (node.type != updatedNode.type) {
-      _sortedFileIdsByPackage = null;
-    }
-
-    return updatedNode;
-  }
-
-  /// Adds [node] to the graph if it doesn't exist.
-  ///
-  /// Throws a [StateError] if it already exists in the graph.
-  ///
-  /// Returns the updated node: if it replaces an [AssetNode.missingSource] then
-  /// `outputs` and `primaryOutputs` are copied to it from that.
-  AssetNode add(AssetNode node) {
-    if (node.type == NodeType.source) _sortedFileIdsByPackage = null;
-    final existing = get(node.id);
-    if (existing != null) {
-      if (existing.type == NodeType.missingSource) {
-        _nodes.remove(existing.id);
-      } else {
-        throw StateError(
-          'Tried to add node ${node.id} to the asset graph but it already '
-          'exists.',
-        );
-      }
-    }
-    _nodes[node.id] = node;
-
-    return node;
-  }
-
-  /// Removes [id] from the graph, if present.
+  /// Removes [id] from sources and missing sources.
   void remove(AssetId id) {
-    final removed = _nodes.remove(id);
-    if (removed != null && removed.type == NodeType.source) {
+    if (sources.containsKey(id)) {
+      sources.remove(id);
       _sortedFileIdsByPackage = null;
     }
+    missingSources.remove(id);
   }
 
-  /// All nodes in the graph.
-  Iterable<AssetNode> get allNodes => _nodes.values;
+  /// All source IDs.
+  Iterable<AssetId> get sourceIds => sources.keys;
 
   /// All IDs in `package` that refer to files and match.
   ///
@@ -152,10 +123,8 @@ class Nodes {
     }
     _sortedFileIdsByPackageWasComputed = true;
     final result = <String, List<AssetId>>{};
-    for (final value in _nodes.values) {
-      if (value.type == NodeType.source) {
-        result.putIfAbsent(value.id.package, () => []).add(value.id);
-      }
+    for (final id in sources.keys) {
+      result.putIfAbsent(id.package, () => []).add(id);
     }
     for (final id in generatedIds) {
       result.putIfAbsent(id.package, () => []).add(id);
