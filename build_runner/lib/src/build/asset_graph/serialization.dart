@@ -4,26 +4,21 @@
 
 part of 'graph.dart';
 
-/// Part of the serialized graph, used to ensure versioning constraints.
-///
-/// This should be incremented any time the serialize/deserialize formats
-/// change.
-
-/// Deserializes an [AssetGraph] from a [Map].
+/// Deserializes an [BuildState] from a [Map].
 ///
 /// Returns `null` if deserialization fails.
-AssetGraph? deserializeAssetGraph(Map serializedGraph) {
-  final graph = AssetGraph();
+BuildState? deserializeBuildState(Map serializedBuildState) {
+  final buildState = BuildState.empty();
 
   final sourceIds =
       serializers.deserialize(
-            serializedGraph['sourceIds'],
+            serializedBuildState['sourceIds'],
             specifiedType: const FullType(BuiltSet, [FullType(AssetId)]),
           )
           as BuiltSet<AssetId>;
   final sourceDigests =
       serializers.deserialize(
-            serializedGraph['sourceDigests'],
+            serializedBuildState['sourceDigests'],
             specifiedType: const FullType(BuiltMap, [
               FullType(AssetId),
               FullType(Digest),
@@ -32,34 +27,34 @@ AssetGraph? deserializeAssetGraph(Map serializedGraph) {
           as BuiltMap<AssetId, Digest>;
 
   for (final id in sourceIds) {
-    graph.addSourceForTest(id, digest: sourceDigests[id]);
+    buildState._sources.add(id, digest: sourceDigests[id]);
   }
 
   final postProcessResults =
       serializers.deserialize(
-            serializedGraph['postProcessResults'],
+            serializedBuildState['postProcessResults'],
             specifiedType: postProcessBuildStepResultsFullType,
           )
           as BuiltMap<PostProcessBuildStepId, PostProcessBuildStepResult>;
 
   for (final entry in postProcessResults.entries) {
-    graph.updatePostProcessBuildStepResult(entry.key, entry.value);
+    buildState.addPostProcessBuildStepResult(entry.key, entry.value);
   }
 
-  if (serializedGraph.containsKey('missingSources')) {
+  if (serializedBuildState.containsKey('missingSources')) {
     final deserialized =
         serializers.deserialize(
-              serializedGraph['missingSources'],
+              serializedBuildState['missingSources'],
               specifiedType: const FullType(BuiltSet, [FullType(AssetId)]),
             )
             as BuiltSet<AssetId>;
-    graph._sources.missingSources.addAll(deserialized.toSet());
+    buildState._sources.missingSources.addAll(deserialized.toSet());
   }
 
-  if (serializedGraph.containsKey('buildStepResults')) {
+  if (serializedBuildState.containsKey('buildStepResults')) {
     final deserialized =
         serializers.deserialize(
-              serializedGraph['buildStepResults'],
+              serializedBuildState['buildStepResults'],
               specifiedType: const FullType(BuiltMap, [
                 FullType(BuildStepId),
                 FullType(BuildStepResult),
@@ -67,14 +62,14 @@ AssetGraph? deserializeAssetGraph(Map serializedGraph) {
             )
             as BuiltMap<BuildStepId, BuildStepResult>;
     for (final entry in deserialized.entries) {
-      graph.updateBuildStepResult(entry.key, entry.value);
+      buildState.updateBuildStepResult(entry.key, entry.value);
     }
   }
 
-  if (serializedGraph.containsKey('globResults')) {
+  if (serializedBuildState.containsKey('globResults')) {
     final deserialized =
         serializers.deserialize(
-              serializedGraph['globResults'],
+              serializedBuildState['globResults'],
               specifiedType: const FullType(BuiltMap, [
                 FullType(GlobId),
                 FullType(GlobResult),
@@ -82,27 +77,29 @@ AssetGraph? deserializeAssetGraph(Map serializedGraph) {
             )
             as BuiltMap<GlobId, GlobResult>;
     for (final entry in deserialized.entries) {
-      graph.updateGlobResult(entry.key, entry.value);
+      buildState.updateGlobResult(entry.key, entry.value);
     }
   }
 
-  if (serializedGraph.containsKey('buildStepsByDeclaredOutput')) {
+  if (serializedBuildState.containsKey('buildStepsByDeclaredOutput')) {
     final deserialized =
         serializers.deserialize(
-              serializedGraph['buildStepsByDeclaredOutput'],
+              serializedBuildState['buildStepsByDeclaredOutput'],
               specifiedType: const FullType(BuiltMap, [
                 FullType(AssetId),
                 FullType(BuildStepId),
               ]),
             )
             as BuiltMap<AssetId, BuildStepId>;
-    graph.buildStepsByDeclaredOutput.addAll(deserialized.toMap());
+    buildState._buildStepsByDeclaredOutput.addAll(deserialized.toMap());
   }
 
-  if (serializedGraph.containsKey('declaredPrimaryOutputsByPrimaryInput')) {
+  if (serializedBuildState.containsKey(
+    'declaredPrimaryOutputsByPrimaryInput',
+  )) {
     final deserialized =
         serializers.deserialize(
-              serializedGraph['declaredPrimaryOutputsByPrimaryInput'],
+              serializedBuildState['declaredPrimaryOutputsByPrimaryInput'],
               specifiedType: const FullType(BuiltMap, [
                 FullType(AssetId),
                 FullType(BuiltSet, [FullType(AssetId)]),
@@ -110,23 +107,24 @@ AssetGraph? deserializeAssetGraph(Map serializedGraph) {
             )
             as BuiltMap<AssetId, BuiltSet<AssetId>>;
     for (final entry in deserialized.entries) {
-      graph.declaredOutputsByPrimaryInput[entry.key] = entry.value.toSet();
+      buildState._declaredOutputsByPrimaryInput[entry.key] =
+          entry.value.toSet();
     }
   }
 
-  return graph;
+  return buildState;
 }
 
-/// Serializes an [AssetGraph] into a [Map].
-Map<String, Object?> serializeAssetGraph(AssetGraph graph) {
+/// Serializes an [BuildState] into a [Map].
+Map<String, Object?> serializeBuildState(BuildState buildState) {
   final result = <String, Object?>{
     'sourceIds': serializers.serialize(
-      BuiltSet<AssetId>.of(graph._sources.sources.keys),
+      BuiltSet<AssetId>.of(buildState._sources.sources.keys),
       specifiedType: const FullType(BuiltSet, [FullType(AssetId)]),
     ),
     'sourceDigests': serializers.serialize(
       BuiltMap<AssetId, Digest>.of({
-        for (final entry in graph._sources.sources.entries)
+        for (final entry in buildState._sources.sources.entries)
           if (entry.value != null) entry.key: entry.value!,
       }),
       specifiedType: const FullType(BuiltMap, [
@@ -136,30 +134,30 @@ Map<String, Object?> serializeAssetGraph(AssetGraph graph) {
     ),
     'postProcessResults': serializers.serialize(
       BuiltMap<PostProcessBuildStepId, PostProcessBuildStepResult>.of(
-        graph.postProcessBuildStepResults,
+        buildState._postProcessBuildStepResults,
       ),
       specifiedType: postProcessBuildStepResultsFullType,
     ),
     'missingSources': serializers.serialize(
-      BuiltSet<AssetId>.of(graph._sources.missingSources),
+      BuiltSet<AssetId>.of(buildState._sources.missingSources),
       specifiedType: const FullType(BuiltSet, [FullType(AssetId)]),
     ),
     'buildStepResults': serializers.serialize(
-      BuiltMap<BuildStepId, BuildStepResult>.of(graph.buildStepResults),
+      BuiltMap<BuildStepId, BuildStepResult>.of(buildState._buildStepResults),
       specifiedType: const FullType(BuiltMap, [
         FullType(BuildStepId),
         FullType(BuildStepResult),
       ]),
     ),
     'globResults': serializers.serialize(
-      BuiltMap<GlobId, GlobResult>.of(graph.globResults),
+      BuiltMap<GlobId, GlobResult>.of(buildState._globResults),
       specifiedType: const FullType(BuiltMap, [
         FullType(GlobId),
         FullType(GlobResult),
       ]),
     ),
     'buildStepsByDeclaredOutput': serializers.serialize(
-      BuiltMap<AssetId, BuildStepId>.of(graph.buildStepsByDeclaredOutput),
+      BuiltMap<AssetId, BuildStepId>.of(buildState._buildStepsByDeclaredOutput),
       specifiedType: const FullType(BuiltMap, [
         FullType(AssetId),
         FullType(BuildStepId),
@@ -167,7 +165,7 @@ Map<String, Object?> serializeAssetGraph(AssetGraph graph) {
     ),
     'declaredPrimaryOutputsByPrimaryInput': serializers.serialize(
       BuiltMap<AssetId, BuiltSet<AssetId>>.of({
-        for (final entry in graph.declaredOutputsByPrimaryInput.entries)
+        for (final entry in buildState._declaredOutputsByPrimaryInput.entries)
           entry.key: entry.value.toBuiltSet(),
       }),
       specifiedType: const FullType(BuiltMap, [

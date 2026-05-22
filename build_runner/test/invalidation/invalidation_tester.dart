@@ -277,8 +277,10 @@ class InvalidationTester {
   }
 
   /// The size of the asset graph that was written by [build], in bytes.
-  int get assetGraphSize =>
-      readerWriter!.testing.readBytes(AssetId('pkg', assetGraphPath)).length;
+  int get assetGraphJsonSize =>
+      readerWriter!.testing
+          .readBytes(AssetId('pkg', assetGraphJsonPath))
+          .length;
 }
 
 /// Strategy used by generators for outputting files.

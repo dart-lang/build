@@ -36,7 +36,7 @@ class BuildPackagesWatcher {
     BuildPackageWatcher Function(BuildPackage)? watch,
   }) : _strategy = watch ?? _default;
 
-  /// Returns a stream of records for assets that changed in the package graph.
+  /// Returns a stream of records for assets that changed in the build packages.
   Stream<AssetChange> watch() {
     assert(!_isWatching);
     _isWatching = true;

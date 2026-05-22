@@ -25,7 +25,10 @@ void main() {
       model.filesystem.write('/a/lib/b.dart', 'class B {}');
       model.filesystem.clearChangedPaths();
 
-      await model.takeLockAndStartBuild(AssetGraph(), invalidatedSources: null);
+      await model.takeLockAndStartBuild(
+        BuildState.empty(),
+        invalidatedSources: null,
+      );
 
       expect(model.filesystem.exists('/a/lib/a.dart'), isFalse);
       expect(model.filesystem.exists('/a/lib/b.dart'), isFalse);
@@ -37,7 +40,7 @@ void main() {
       model.filesystem.clearChangedPaths();
 
       await model.takeLockAndStartBuild(
-        AssetGraph(),
+        BuildState.empty(),
         invalidatedSources: const {},
       );
 
@@ -53,7 +56,7 @@ void main() {
       model.filesystem.clearChangedPaths();
 
       await model.takeLockAndStartBuild(
-        AssetGraph(),
+        BuildState.empty(),
         invalidatedSources: {
           AssetId.parse('a|lib/changed.dart'),
           AssetId.parse('a|lib/deleted.dart'),

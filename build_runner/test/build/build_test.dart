@@ -501,19 +501,19 @@ targets:
           outputs: {'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.clone': 'a'},
         );
 
-        final graphId = makeAssetId('a|$assetGraphPath');
-        expect(result.readerWriter.testing.exists(graphId), isTrue);
-        final cachedGraph =
+        final assetGraphJsonId = makeAssetId('a|$assetGraphJsonPath');
+        expect(result.readerWriter.testing.exists(assetGraphJsonId), isTrue);
+        final cachedBuildState =
             AssetGraphJson.deserialize(
-              result.readerWriter.testing.readBytes(graphId),
-            )!.assetGraph;
+              result.readerWriter.testing.readBytes(assetGraphJsonId),
+            )!.buildState;
         expect(
-          cachedGraph.sources,
+          cachedBuildState.sources,
           unorderedEquals([makeAssetId('a|web/a.txt')]),
         );
-        expect(cachedGraph.sources, [makeAssetId('a|web/a.txt')]);
+        expect(cachedBuildState.sources, [makeAssetId('a|web/a.txt')]);
         expect(
-          cachedGraph.outputs,
+          cachedBuildState.declaredAndActualOutputs,
           unorderedEquals([
             makeAssetId('a|web/a.txt.copy'),
             makeAssetId('a|web/a.txt.copy.clone'),
@@ -1133,39 +1133,36 @@ targets:
     });
   });
 
-  test(
-    "builders reading their output don't cause self-referential nodes",
-    () async {
-      final result = await testBuilders(
-        [
-          TestBuilder(
-            build: (step, _) async {
-              final output = step.inputId.addExtension('.out');
-              await step.writeAsString(output, 'a');
-              await step.readAsString(output);
-            },
-            buildExtensions: appendExtension('.out', from: '.txt'),
-          ),
-        ],
-        {'a|lib/a.txt': 'a'},
-        outputs: {'a|lib/a.txt.out': 'a'},
-      );
+  test("builders reading their output don't cause self reference", () async {
+    final result = await testBuilders(
+      [
+        TestBuilder(
+          build: (step, _) async {
+            final output = step.inputId.addExtension('.out');
+            await step.writeAsString(output, 'a');
+            await step.readAsString(output);
+          },
+          buildExtensions: appendExtension('.out', from: '.txt'),
+        ),
+      ],
+      {'a|lib/a.txt': 'a'},
+      outputs: {'a|lib/a.txt.out': 'a'},
+    );
 
-      final graphId = makeAssetId('a|$assetGraphPath');
-      final cachedGraph =
-          AssetGraphJson.deserialize(
-            result.readerWriter.testing.readBytes(graphId),
-          )!.assetGraph;
-      final outputId = AssetId('a', 'lib/a.txt.out');
+    final graphId = makeAssetId('a|$assetGraphJsonPath');
+    final cachedBuildState =
+        AssetGraphJson.deserialize(
+          result.readerWriter.testing.readBytes(graphId),
+        )!.buildState;
+    final outputId = AssetId('a', 'lib/a.txt.out');
 
-      final buildStepId = BuildStepId(
-        primaryInput: makeAssetId('a|lib/a.txt'),
-        phaseNumber: 0,
-      );
-      final stepResult = cachedGraph.buildStepResultFor(buildStepId)!;
-      expect(stepResult.inputs, isNot(contains(outputId)));
-    },
-  );
+    final buildStepId = BuildStepId(
+      primaryInput: makeAssetId('a|lib/a.txt'),
+      phaseNumber: 0,
+    );
+    final stepResult = cachedBuildState.stepResult(buildStepId);
+    expect(stepResult.inputs, isNot(contains(outputId)));
+  });
 
   test(
     'outputs from previous full builds shouldn\'t be inputs to later ones',
@@ -1181,7 +1178,7 @@ targets:
         inputs,
         outputs: outputs,
       );
-      // Second run, only output should be the asset graph.
+      // Second run, only output should be the asset graph JSON.
       for (final id in result.readerWriter.testing.assets) {
         inputs[id.toString()] = await result.readerWriter.readAsString(id);
       }
@@ -1207,7 +1204,7 @@ targets:
     );
 
     // Delete the `asset_graph.json` file!
-    final outputId = makeAssetId('a|$assetGraphPath');
+    final outputId = makeAssetId('a|$assetGraphJsonPath');
     await (result.readerWriter as ReaderWriter).delete(outputId);
 
     // Second run, should have no extra outputs.
@@ -1219,7 +1216,7 @@ targets:
     );
   });
 
-  group('incremental builds with cached graph', () {
+  group('incremental builds with cached build state', () {
     group('reportUnusedAssets', () {
       test('removes input dependencies', () async {
         final builderFactories = BuilderFactories({
@@ -1385,21 +1382,21 @@ targets:
             resumeFrom: result,
           );
 
-          final graph =
+          final buildState =
               AssetGraphJson.deserialize(
                 result.readerWriter.testing.readBytes(
-                  makeAssetId('a|$assetGraphPath'),
+                  makeAssetId('a|$assetGraphJsonPath'),
                 ),
-              )!.assetGraph;
+              )!.buildState;
           expect(
-            graph.isMissingSource(makeAssetId('a|lib/a.txt.copy')),
+            buildState.isMissingSource(makeAssetId('a|lib/a.txt.copy')),
             isTrue,
           );
         },
       );
     });
 
-    test('graph/file system get cleaned up for deleted inputs', () async {
+    test('build state/file system get cleaned up for deleted inputs', () async {
       final builderFactories = BuilderFactories({
         '': [(_) => TestBuilder()],
         'b2': [
@@ -1423,7 +1420,7 @@ targets:
         outputs: {'a|lib/a.txt.copy': 'a', 'a|lib/a.txt.clone': 'a'},
       );
 
-      // Followup build with deleted input + cached graph.
+      // Followup build with deleted input + cached build state.
       result.readerWriter.testing.delete(AssetId('a', 'lib/a.txt'));
       await testPhases(
         builderFactories,
@@ -1434,21 +1431,21 @@ targets:
       );
 
       /// Should be deleted using the writer, and converted to missingSource.
-      final newGraph =
+      final newBuildState =
           AssetGraphJson.deserialize(
             result.readerWriter.testing.readBytes(
-              makeAssetId('a|$assetGraphPath'),
+              makeAssetId('a|$assetGraphJsonPath'),
             ),
-          )!.assetGraph;
-      final aNodeId = makeAssetId('a|lib/a.txt');
-      final aCopyNodeId = makeAssetId('a|lib/a.txt.copy');
-      final aCloneNodeId = makeAssetId('a|lib/a.txt.copy.clone');
-      expect(newGraph.isMissingSource(aNodeId), isTrue);
-      expect(newGraph.isMissingSource(aCopyNodeId), isTrue);
-      expect(newGraph.isKnownFile(aCloneNodeId), isFalse);
-      expect(result.readerWriter.testing.exists(aNodeId), isFalse);
-      expect(result.readerWriter.testing.exists(aCopyNodeId), isFalse);
-      expect(result.readerWriter.testing.exists(aCloneNodeId), isFalse);
+          )!.buildState;
+      final anId = makeAssetId('a|lib/a.txt');
+      final aCopyId = makeAssetId('a|lib/a.txt.copy');
+      final aCloneId = makeAssetId('a|lib/a.txt.copy.clone');
+      expect(newBuildState.isMissingSource(anId), isTrue);
+      expect(newBuildState.isMissingSource(aCopyId), isTrue);
+      expect(newBuildState.isFile(aCloneId), isFalse);
+      expect(result.readerWriter.testing.exists(anId), isFalse);
+      expect(result.readerWriter.testing.exists(aCopyId), isFalse);
+      expect(result.readerWriter.testing.exists(aCloneId), isFalse);
     });
 
     test('no outputs if no changed sources', () async {
@@ -1461,7 +1458,7 @@ targets:
         outputs: {'a|web/a.txt.copy': 'a'},
       );
 
-      // Followup build with same sources + cached graph.
+      // Followup build with same sources + cached build state.
       await testPhases(
         builderFactories,
         builderDefinitions,
@@ -1490,7 +1487,7 @@ targets:
         outputs: {r'$$a|web/a.txt.copy': 'a'},
       );
 
-      // Followup build with same sources + cached graph.
+      // Followup build with same sources + cached build state.
       await testPhases(
         builderFactories,
         builderDefinitions,
@@ -1517,8 +1514,8 @@ targets:
         outputs: {'a|lib/file.a.copy': 'b'},
       );
 
-      // Followup build with same sources + cached graph, but configure the
-      // builder to read a different file.
+      // Followup build with same sources + cached build state, but configure
+      // the builder to read a different file.
       await testPhases(
         BuilderFactories({
           '': [
@@ -1541,22 +1538,22 @@ targets:
         resumeFrom: result,
       );
 
-      // Read cached graph and validate.
-      final graph =
+      // Read cached build state and validate.
+      final buildState =
           AssetGraphJson.deserialize(
             result.readerWriter.testing.readBytes(
-              makeAssetId('a|$assetGraphPath'),
+              makeAssetId('a|$assetGraphJsonPath'),
             ),
-          )!.assetGraph;
+          )!.buildState;
       final fileAId = makeAssetId('a|lib/file.a');
       final fileCId = makeAssetId('a|lib/file.c');
-      expect(graph.isSource(fileAId), isTrue);
-      expect(graph.isSource(fileCId), isTrue);
+      expect(buildState.isSource(fileAId), isTrue);
+      expect(buildState.isSource(fileCId), isTrue);
       final buildStepId = BuildStepId(
         primaryInput: makeAssetId('a|lib/file.a'),
         phaseNumber: 0,
       );
-      final stepResult = graph.buildStepResultFor(buildStepId)!;
+      final stepResult = buildState.stepResult(buildStepId);
       expect(stepResult.inputs, unorderedEquals([fileAId, fileCId]));
     });
 
@@ -1617,8 +1614,8 @@ targets:
         outputs: {'a|web/a.txt.new': 'sibling'},
       );
 
-      // Followup build with cached graph and a changed primary input, but the
-      // actual file that was read has not changed.
+      // Followup build with cached build state and a changed primary input, but
+      // the actual file that was read has not changed.
       result = await testPhases(
         builderFactories,
         builderDefinitions,
@@ -1770,8 +1767,8 @@ targets:
         resumeFrom: result,
       );
 
-      // Make sure if we mark the original node as a failure again, that we
-      // also mark all its primary outputs as failures.
+      // Make sure if we mark the original step as a failure again, that we
+      // also mark all its primary output steps as failures.
       await testPhases(
         builderFactories,
         builderDefinitions,
@@ -1781,40 +1778,42 @@ targets:
         resumeFrom: result,
       );
 
-      final finalGraph =
+      final finalBuildState =
           AssetGraphJson.deserialize(
-            result.readerWriter.testing.readBytes(AssetId('a', assetGraphPath)),
-          )!.assetGraph;
+            result.readerWriter.testing.readBytes(
+              AssetId('a', assetGraphJsonPath),
+            ),
+          )!.buildState;
 
       expect(
-        finalGraph
-            .buildStepResultFor(
-              finalGraph.buildStepsByDeclaredOutput[AssetId('a', 'web/a.g1')]!,
-            )!
+        finalBuildState
+            .stepResult(
+              finalBuildState.stepForDeclaredOutput(AssetId('a', 'web/a.g1')),
+            )
             .result,
         isFalse,
       );
 
       expect(
-        finalGraph
-            .buildStepResultFor(
-              finalGraph.buildStepsByDeclaredOutput[AssetId('a', 'web/a.g2')]!,
-            )!
+        finalBuildState
+            .stepResult(
+              finalBuildState.stepForDeclaredOutput(AssetId('a', 'web/a.g2')),
+            )
             .result,
         isFalse,
       );
 
       expect(
-        finalGraph
-            .buildStepResultFor(
-              finalGraph.buildStepsByDeclaredOutput[AssetId('a', 'web/a.g3')]!,
-            )!
+        finalBuildState
+            .stepResult(
+              finalBuildState.stepForDeclaredOutput(AssetId('a', 'web/a.g3')),
+            )
             .result,
         isFalse,
       );
     });
 
-    test('a glob should not be an output of an anchor node', () async {
+    test('a glob should not match a post process output', () async {
       // https://github.com/dart-lang/build/issues/2017
       final builderFactories = BuilderFactories(
         {

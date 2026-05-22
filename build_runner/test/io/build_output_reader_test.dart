@@ -34,7 +34,7 @@ void main() {
   group('FinalizedReader', () {
     BuildOutputReader reader;
     late InternalTestReaderWriter readerWriter;
-    late AssetGraph assetGraph;
+    late BuildState buildState;
     late BuildPackages buildPackages;
     late BuildPhases buildPhases;
 
@@ -43,10 +43,10 @@ void main() {
       buildPackages = BuildPackages.singlePackageBuild('a', [
         BuildPackage.forTesting(name: 'a', isOutput: true),
       ]);
-      assetGraph = await AssetGraph.build(
-        BuildPhases([]),
-        <AssetId>{},
-        buildPackages,
+      buildState = BuildState.create(
+        buildPhases: BuildPhases([]),
+        buildPackages: buildPackages,
+        sources: <AssetId>{},
       );
       buildPhases = BuildPhases([]);
     });
@@ -55,12 +55,12 @@ void main() {
       final notDeletedId = AssetId.parse('a|web/a.txt');
       final deletedId = AssetId.parse('a|lib/b.txt');
 
-      assetGraph.updatePostProcessBuildStepResult(
+      buildState.addPostProcessBuildStepResult(
         PostProcessBuildStepId(input: deletedId, actionNumber: 0),
         PostProcessBuildStepResult(hidden: true, deletedPrimaryInput: true),
       );
 
-      assetGraph
+      buildState
         ..addSourceForTest(
           notDeletedId,
           digest: computeDigest(notDeletedId, 'a'),
@@ -82,23 +82,23 @@ void main() {
       reader = BuildOutputReader(
         buildPlan: buildPlan,
         readerWriter: readerWriter,
-        assetGraph: assetGraph,
-        processedOutputs: assetGraph.outputs.toSet(),
+        buildState: buildState,
+        processedOutputs: buildState.declaredAndActualOutputs.toSet(),
       );
       expect(await reader.canRead(notDeletedId), true);
       expect(await reader.canRead(deletedId), false);
     });
 
-    test('Failure nodes interact well with build filters ', () async {
+    test('Failed steps interact well with build filters ', () async {
       final id = AssetId('a', 'web/a.txt');
       final primaryId = AssetId('a', 'web/a.dart');
       final buildStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
-      assetGraph.addGeneratedForTest(id, buildStepId, digest: Digest([]));
+      buildState.addGeneratedForTest(id, buildStepId, digest: Digest([]));
       final stepResult = BuildStepResult((b) {
         b.result = false;
         b.isHidden = false;
       });
-      assetGraph.updateBuildStepResult(buildStepId, stepResult);
+      buildState.updateBuildStepResult(buildStepId, stepResult);
       readerWriter.testing.writeString(id, '');
 
       buildPhases = BuildPhases([
@@ -125,8 +125,8 @@ void main() {
       reader = BuildOutputReader(
         buildPlan: buildPlan,
         readerWriter: readerWriter,
-        assetGraph: assetGraph,
-        processedOutputs: assetGraph.outputs.toSet(),
+        buildState: buildState,
+        processedOutputs: buildState.declaredAndActualOutputs.toSet(),
       );
       expect(
         await reader.unreadableReason(id),
@@ -150,7 +150,7 @@ void main() {
       reader = BuildOutputReader(
         buildPlan: buildPlan,
         readerWriter: readerWriter,
-        assetGraph: assetGraph,
+        buildState: buildState,
         // `a` does not match the build filter and is not processed.
         processedOutputs: {},
       );

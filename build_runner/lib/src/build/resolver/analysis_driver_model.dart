@@ -43,16 +43,16 @@ class AnalysisDriverModel {
   /// [filesystem].
   final Set<LibraryCycleGraph> _syncedLibraryCycleGraphs = Set.identity();
 
-  /// Starts a build with [assetGraph].
+  /// Starts a build with [buildState].
   ///
   /// If another build has the lock, waits for it to finish.
   Future<void> takeLockAndStartBuild(
-    AssetGraph assetGraph, {
+    BuildState buildState, {
     required Set<AssetId>? invalidatedSources,
   }) async {
     _lock = await _pool.request();
     filesystem.startBuild(
-      assetGraph.outputPhases,
+      buildState.declaredOutputPhases,
       invalidatedSources: invalidatedSources,
     );
   }

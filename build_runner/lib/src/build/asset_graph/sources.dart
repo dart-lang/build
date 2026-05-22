@@ -31,19 +31,22 @@ class Sources {
     return result;
   }
 
-  /// Whether [id] is a known source on disk.
+  /// Whether [id] is a source file.
   bool isSource(AssetId id) => sources.containsKey(id);
 
-  /// Whether [id] is a known source on disk but has not been read.
+  /// Whether [id] is a source file that has never been read.
   bool isUnreadSource(AssetId id) =>
       sources[id] == null && sources.containsKey(id);
 
-  /// Whether [id] is a missing source: a builder tried to read it but it does
-  /// not exist.
-  bool isMissingSource(AssetId id) => missingSources.contains(id);
-
   /// The digest of source [id], or `null` if it has not been read.
-  Digest? getDigest(AssetId id) => sources[id];
+  ///
+  /// Throws if it is not a source.
+  Digest? digestOfSource(AssetId id) {
+    if (!sources.containsKey(id)) {
+      throw StateError('Tried to read digest of non-source $id.');
+    }
+    return sources[id];
+  }
 
   /// Updates the digest of [id] if it's a known source.
   void updateDigestIfPresent(AssetId id, Digest? digest) {
@@ -63,6 +66,19 @@ class Sources {
     sources[id] = digest;
     missingSources.remove(id);
   }
+
+  /// Adds [ids] as known sources.
+  ///
+  /// Throws a [StateError] if any ID was already known.
+  void addAll(Iterable<AssetId> ids) {
+    for (final id in ids) {
+      add(id);
+    }
+  }
+
+  /// Whether [id] is a missing source: a builder tried to read it but it does
+  /// not exist.
+  bool isMissingSource(AssetId id) => missingSources.contains(id);
 
   /// Adds [id] as a missing source.
   void addMissing(AssetId id) {
@@ -93,12 +109,12 @@ class Sources {
   /// All IDs in `package` that refer to files and match.
   ///
   /// If [glob] is passed, return only IDs for which the glob matches the path.
-  Iterable<AssetId> packageFileIds(
+  Iterable<AssetId> findFiles(
     String package,
-    Iterable<AssetId> generatedIds, {
+    Iterable<AssetId> declaredOutputs, {
     Glob? glob,
   }) {
-    _sortedFileIdsByPackage ??= _computeSortedFileIdsByPackage(generatedIds);
+    _sortedFileIdsByPackage ??= _computeSortedFileIdsByPackage(declaredOutputs);
     final list = _sortedFileIdsByPackage![package];
     if (list == null) return const [];
     if (glob == null) return list;

@@ -16,24 +16,24 @@ import 'serializers.dart';
 /// and if so exactly what should be rebuilt.
 class AssetGraphJson {
   final BuildPlanDigest buildPlanDigest;
-  final AssetGraph assetGraph;
+  final BuildState buildState;
   final PhasedAssetDeps phasedAssetDeps;
 
   AssetGraphJson({
     required this.buildPlanDigest,
-    required this.assetGraph,
+    required this.buildState,
     required this.phasedAssetDeps,
   });
 
   /// Serializes for `asset_graph.json`.
   static Uint8List serialize({
     required BuildPlanDigest buildPlanDigest,
-    required AssetGraph assetGraph,
+    required BuildState buildState,
     required PhasedAssetDeps phasedAssetDeps,
   }) {
     // Serialize fields first so all `AssetId` instances are seen by
     // `identityAssetIdSeralizer`.
-    final serializedAssetGraph = serializeAssetGraph(assetGraph);
+    final serializedBuildState = serializeBuildState(buildState);
     final serializedBuildPlanDigest = serializers.serializeWith(
       BuildPlanDigest.serializer,
       buildPlanDigest,
@@ -45,7 +45,7 @@ class AssetGraphJson {
     final result = {
       'version': _version,
       'ids': identityAssetIdSerializer.serializedObjects,
-      'assetGraph': serializedAssetGraph,
+      'buildState': serializedBuildState,
       'buildPlanDigest': serializedBuildPlanDigest,
       'phasedAssetDeps': serializedPhasedAssetDeps,
     };
@@ -73,8 +73,8 @@ class AssetGraphJson {
         deserialized['buildPlanDigest'],
       );
 
-      final assetGraph = deserializeAssetGraph(
-        deserialized['assetGraph'] as Map,
+      final buildState = deserializeBuildState(
+        deserialized['buildState'] as Map,
       );
 
       final phasedAssetDeps = serializers.deserializeWith(
@@ -83,7 +83,7 @@ class AssetGraphJson {
       );
 
       return AssetGraphJson(
-        assetGraph: assetGraph!,
+        buildState: buildState!,
         buildPlanDigest: buildPlanDigest!,
         phasedAssetDeps: phasedAssetDeps!,
       );
@@ -96,5 +96,5 @@ class AssetGraphJson {
 }
 
 /// Increment whenever older `asset_graph.json` files should be rejected.
-const _version = 40;
+const _version = 41;
 final jsonUtf8 = json.fuse(utf8);

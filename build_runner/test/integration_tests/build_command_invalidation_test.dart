@@ -63,9 +63,9 @@ void main() async {
     expect(tester.read('root_pkg/web/a.txt.copy2'), 'a');
 
     // Asset graph version mismatch.
-    final assetGraphPath = 'root_pkg/${constants.assetGraphPath}';
+    final assetGraphJsonPath = 'root_pkg/${constants.assetGraphJsonPath}';
     tester.update(
-      assetGraphPath,
+      assetGraphJsonPath,
       (json) => json.replaceAll('"version":', '"version":1'),
     );
     tester.write(fakeGeneratedOutput, '');

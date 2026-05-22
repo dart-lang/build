@@ -51,7 +51,7 @@ class BuildPackagesLoader {
         p.join(workspacePath!, 'pubspec.yaml'),
       );
       workspaceName = workspacePubspec['name']! as String;
-      final workspacePackageGraph = _packageGraphForPath(workspacePath);
+      final workspacePackageGraph = _buildPackagesForPath(workspacePath);
       workspacePackages = List.from(
         workspacePackageGraph['roots'] as List<Object?>,
       );
@@ -118,7 +118,7 @@ class BuildPackagesLoader {
 /// Loads and returns `$absolutePath/.dart_tool/package_graph.json`.
 ///
 /// Throws if it does not exist.
-Map<String, Object?> _packageGraphForPath(String absolutePath) {
+Map<String, Object?> _buildPackagesForPath(String absolutePath) {
   final packageGraphPath = p.join(
     absolutePath,
     '.dart_tool',

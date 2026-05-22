@@ -56,7 +56,7 @@ class BuildPackages implements AssetPathProvider {
   /// workspace root.
   ///
   /// Output includes the `.dart_tool/build` folder with the build script,
-  /// compiled build script, generated output and serialized asset graph.
+  /// compiled build script, generated output and serialized build state.
   ///
   /// Also the root for output of performance logs.
   ///
@@ -65,7 +65,7 @@ class BuildPackages implements AssetPathProvider {
   /// options and package-specific overrides.
   final String outputRoot;
 
-  /// A [PackageConfig] representation of this package graph.
+  /// A [PackageConfig] representation of this `BuildPackages`.
   final PackageConfig asPackageConfig;
 
   /// Transitive dependencies by package name.

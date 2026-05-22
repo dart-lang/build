@@ -43,4 +43,15 @@ abstract class BuildStepResult
   factory BuildStepResult([void Function(BuildStepResultBuilder)? updates]) =
       _$BuildStepResult;
   BuildStepResult._();
+
+  /// Whether the build step ran, either in the previous build or in this build.
+  bool get hasRun => result != null;
+
+  /// Whether the build step ran and succeeded, either in the previous build or
+  /// in this build.
+  bool get succeeded => result == true;
+
+  /// Whether the build step ran and failed, either in the previous build or in
+  /// this build.
+  bool get failed => result == false;
 }

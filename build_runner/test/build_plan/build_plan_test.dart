@@ -30,7 +30,7 @@ void main() {
     final assetId = AssetId('a', 'lib/a.dart');
     final outputId = AssetId('a', 'lib/a.dart.copy');
     final assetId2 = AssetId('a', 'lib/an.other');
-    final assetGraphId = AssetId('a', assetGraphPath);
+    final assetGraphJsonId = AssetId('a', assetGraphJsonPath);
 
     late BuildPackages buildPackages;
     late ReaderWriter readerWriter;
@@ -64,35 +64,35 @@ void main() {
       );
     });
 
-    test('loads with no asset graph', () async {
-      expect(buildPlan.takePreviousAssetGraph(), null);
+    test('loads with no previous build state', () async {
+      expect(buildPlan.takePreviousBuildState(), null);
     });
 
-    Future<void> writeGraphAndPlan(
-      AssetGraph assetGraph,
+    Future<void> writeBuildStateAndPlan(
+      BuildState buildState,
       BuildPlan buildPlan,
     ) async {
       await readerWriter.writeAsBytes(
-        assetGraphId,
+        assetGraphJsonId,
         AssetGraphJson.serialize(
           buildPlanDigest: buildPlan.buildPlanDigest,
-          assetGraph: assetGraph,
+          buildState: buildState,
           phasedAssetDeps: PhasedAssetDeps(),
         ),
       );
     }
 
-    test('loads previous asset graph', () async {
-      final assetGraph = buildPlan.takeAssetGraph();
-      await writeGraphAndPlan(assetGraph, buildPlan);
+    test('loads previous build state', () async {
+      final buildState = buildPlan.takeBuildState();
+      await writeBuildStateAndPlan(buildState, buildPlan);
       buildPlan = await BuildPlan.load(
         builderFactories: builderFactories,
         buildOptions: buildOptions,
         testingOverrides: testingOverrides,
       );
-      final loadedGraph = buildPlan.takePreviousAssetGraph();
+      final loadedState = buildPlan.takePreviousBuildState();
 
-      expect(loadedGraph.toString(), assetGraph.toString());
+      expect(loadedState.toString(), buildState.toString());
     });
 
     test('requires restart if a factory is missing', () async {
@@ -108,9 +108,9 @@ void main() {
       expect(buildPlan.restartIsNeeded, true);
     });
 
-    test('discards previous asset graph if build phases changed', () async {
-      final assetGraph = buildPlan.takeAssetGraph();
-      await writeGraphAndPlan(assetGraph, buildPlan);
+    test('discards previous build state if build phases changed', () async {
+      final buildState = buildPlan.takeBuildState();
+      await writeBuildStateAndPlan(buildState, buildPlan);
 
       buildPlan = await BuildPlan.load(
         builderFactories: builderFactories,
@@ -125,13 +125,14 @@ void main() {
         ),
       );
 
-      expect(buildPlan.takePreviousAssetGraph(), null);
+      expect(buildPlan.takePreviousBuildState(), null);
 
-      // The old graph is in [BuildPlan#filesToDelete] because it's invalid.
-      expect(await readerWriter.canRead(assetGraphId), true);
+      // The old state file is in [BuildPlan#filesToDelete] because it's
+      // invalid.
+      expect(await readerWriter.canRead(assetGraphJsonId), true);
       await buildPlan.deleteFilesAndFolders();
       buildPlan.readerWriter.cache.flush();
-      expect(await readerWriter.canRead(assetGraphId), false);
+      expect(await readerWriter.canRead(assetGraphJsonId), false);
     });
 
     test('tracks lost outputs if build phases changed', () async {
@@ -151,18 +152,18 @@ void main() {
               ].build(),
         ),
       );
-      final assetGraph = buildPlan.takeAssetGraph();
+      final buildState = buildPlan.takeBuildState();
 
-      // Write an output and add it to the asset graph as if it was built.
+      // Write an output and add it to the build state as if it was built.
       await readerWriter.writeAsString(outputId, '// output');
-      final stepId = assetGraph.buildStepsByDeclaredOutput[outputId]!;
-      assetGraph.updateBuildStepResult(
-        stepId,
-        assetGraph
-            .buildStepResultFor(stepId)!
+      final step = buildState.stepForDeclaredOutput(outputId);
+      buildState.updateBuildStepResult(
+        step,
+        buildState
+            .stepResult(step)
             .rebuild((b) => b..outputs[outputId] = Digest([])),
       );
-      await writeGraphAndPlan(assetGraph, buildPlan);
+      await writeBuildStateAndPlan(buildState, buildPlan);
 
       buildPlan = await BuildPlan.load(
         builderFactories: builderFactories,
@@ -177,7 +178,7 @@ void main() {
         ),
       );
 
-      expect(buildPlan.takePreviousAssetGraph(), null);
+      expect(buildPlan.takePreviousBuildState(), null);
       expect(buildPlan.filesToDelete, isNotEmpty);
 
       // `BuildPlan` can delete lost outputs.
@@ -187,9 +188,9 @@ void main() {
       expect(await readerWriter.canRead(outputId), false);
     });
 
-    test('discards previous asset graph if SDK version changed', () async {
-      final assetGraph = buildPlan.takeAssetGraph();
-      await writeGraphAndPlan(assetGraph, buildPlan);
+    test('discards previous build state if SDK version changed', () async {
+      final buildState = buildPlan.takeBuildState();
+      await writeBuildStateAndPlan(buildState, buildPlan);
 
       buildPlan = await BuildPlan.load(
         builderFactories: builderFactories,
@@ -200,12 +201,12 @@ void main() {
         ),
       );
 
-      expect(buildPlan.takePreviousAssetGraph(), null);
+      expect(buildPlan.takePreviousBuildState(), null);
     });
 
-    test('discards previous asset graph if packages changed', () async {
-      final assetGraph = buildPlan.takeAssetGraph();
-      await writeGraphAndPlan(assetGraph, buildPlan);
+    test('discards previous build state if packages changed', () async {
+      final buildState = buildPlan.takeBuildState();
+      await writeBuildStateAndPlan(buildState, buildPlan);
 
       final buildPackages2 = BuildPackages.singlePackageBuild('b', [
         BuildPackage.forTesting(name: 'b', watch: true, isOutput: true),
@@ -219,14 +220,14 @@ void main() {
         testingOverrides: testingOverrides2,
       );
 
-      expect(buildPlan.takePreviousAssetGraph(), null);
+      expect(buildPlan.takePreviousBuildState(), null);
     });
 
     test(
-      'discards previous asset graph if enabled experiments changed',
+      'discards previous build state if enabled experiments changed',
       () async {
-        final assetGraph = buildPlan.takeAssetGraph();
-        await writeGraphAndPlan(assetGraph, buildPlan);
+        final buildState = buildPlan.takeBuildState();
+        await writeBuildStateAndPlan(buildState, buildPlan);
 
         buildPlan = await withEnabledExperiments(
           () => BuildPlan.load(
@@ -237,26 +238,26 @@ void main() {
           ['an_experiment'],
         );
 
-        expect(buildPlan.takePreviousAssetGraph(), null);
+        expect(buildPlan.takePreviousBuildState(), null);
       },
     );
 
     test('reports updates', () async {
-      final assetGraph = buildPlan.takeAssetGraph();
+      final buildState = buildPlan.takeBuildState();
 
-      // Write an output and add it to the asset graph as if it was built.
+      // Write an output and add it to the build state as if it was built.
       await readerWriter.writeAsString(outputId, '// output');
-      final stepId = assetGraph.buildStepsByDeclaredOutput[outputId]!;
-      assetGraph.updateBuildStepResult(
+      final stepId = buildState.stepForDeclaredOutput(outputId);
+      buildState.updateBuildStepResult(
         stepId,
-        assetGraph
-            .buildStepResultFor(stepId)!
+        buildState
+            .stepResult(stepId)
             .rebuild((b) => b..outputs[outputId] = Digest([])),
       );
       // Give digests to inputs so they are monitored for modifications.
-      assetGraph.updateSourceDigest(assetId2, Digest([]));
+      buildState.updateSourceDigest(assetId2, Digest([]));
 
-      await writeGraphAndPlan(assetGraph, buildPlan);
+      await writeBuildStateAndPlan(buildState, buildPlan);
 
       // Remove source.
       await readerWriter.delete(assetId);
@@ -300,9 +301,9 @@ void main() {
           buildConfig: {'a': buildConfig1}.build(),
         ),
       );
-      final assetGraph1 = buildPlan1.takeAssetGraph();
+      final buildState1 = buildPlan1.takeBuildState();
       // Matches the only `*.dart` source.
-      expect(assetGraph1.sources, <AssetId>{assetId});
+      expect(buildState1.sources, <AssetId>{assetId});
 
       // Same again but now glob `*.other`.
       final buildConfig2 = runInBuildConfigZone(
@@ -326,9 +327,9 @@ void main() {
           buildConfig: {'a': buildConfig2}.build(),
         ),
       );
-      final assetGraph2 = buildPlan2.takeAssetGraph();
+      final buildState2 = buildPlan2.takeBuildState();
       // Matches the only `*.other` source.
-      expect(assetGraph2.sources, <AssetId>{assetId2});
+      expect(buildState2.sources, <AssetId>{assetId2});
     });
 
     test('tracks cleanBuild when build_plan.json does not exist', () async {
@@ -343,7 +344,7 @@ void main() {
     test(
       'tracks cleanBuild when build_plan.json compileDigest is fresh',
       () async {
-        await writeGraphAndPlan(buildPlan.takeAssetGraph(), buildPlan);
+        await writeBuildStateAndPlan(buildPlan.takeBuildState(), buildPlan);
         buildPlan = await BuildPlan.load(
           builderFactories: builderFactories,
           buildOptions: buildOptions,
@@ -361,7 +362,7 @@ void main() {
             (b) => b.compileDigest = 'stale_digest',
           ),
         );
-        await writeGraphAndPlan(buildPlan.takeAssetGraph(), buildPlan);
+        await writeBuildStateAndPlan(buildPlan.takeBuildState(), buildPlan);
 
         buildPlan = await BuildPlan.load(
           builderFactories: builderFactories,
@@ -378,7 +379,7 @@ void main() {
           (b) => b.buildTriggersDigest = 'triggers_1',
         ),
       );
-      await writeGraphAndPlan(buildPlan.takeAssetGraph(), buildPlan);
+      await writeBuildStateAndPlan(buildPlan.takeBuildState(), buildPlan);
 
       final buildConfig2 = runInBuildConfigZone(
         () {
@@ -416,7 +417,7 @@ void main() {
           (b) => b.inBuildPhasesOptionsDigests[0] = 'dummy_digest_1',
         ),
       );
-      await writeGraphAndPlan(buildPlan.takeAssetGraph(), buildPlan);
+      await writeBuildStateAndPlan(buildPlan.takeBuildState(), buildPlan);
 
       final buildConfig2 = runInBuildConfigZone(
         () {
@@ -454,7 +455,7 @@ void main() {
           (b) => b.buildPhasesDigest = 'stale_digest',
         ),
       );
-      await writeGraphAndPlan(buildPlan.takeAssetGraph(), buildPlan);
+      await writeBuildStateAndPlan(buildPlan.takeBuildState(), buildPlan);
 
       buildPlan = await BuildPlan.load(
         builderFactories: builderFactories,
@@ -470,7 +471,7 @@ void main() {
           (b) => b.dartVersion = 'stale_version',
         ),
       );
-      await writeGraphAndPlan(buildPlan.takeAssetGraph(), buildPlan);
+      await writeBuildStateAndPlan(buildPlan.takeBuildState(), buildPlan);
 
       buildPlan = await BuildPlan.load(
         builderFactories: builderFactories,
@@ -486,7 +487,7 @@ void main() {
           (b) => b.enabledExperiments.add('stale_experiment'),
         ),
       );
-      await writeGraphAndPlan(buildPlan.takeAssetGraph(), buildPlan);
+      await writeBuildStateAndPlan(buildPlan.takeBuildState(), buildPlan);
 
       buildPlan = await BuildPlan.load(
         builderFactories: builderFactories,
@@ -504,7 +505,7 @@ void main() {
             (b) => b.packageLanguageVersions['a'] = '1.0',
           ),
         );
-        await writeGraphAndPlan(buildPlan.takeAssetGraph(), buildPlan);
+        await writeBuildStateAndPlan(buildPlan.takeBuildState(), buildPlan);
 
         buildPlan = await BuildPlan.load(
           builderFactories: builderFactories,
@@ -516,13 +517,19 @@ void main() {
     );
 
     test('tracks cleanBuild when asset_graph.json version is stale', () async {
-      final assetGraphId = AssetId(buildPackages.outputRoot, assetGraphPath);
-      await writeGraphAndPlan(buildPlan.takeAssetGraph(), buildPlan);
+      final assetGraphJsonId = AssetId(
+        buildPackages.outputRoot,
+        assetGraphJsonPath,
+      );
+      await writeBuildStateAndPlan(buildPlan.takeBuildState(), buildPlan);
 
       final decodedMap =
-          json.decode(await readerWriter.readAsString(assetGraphId)) as Map;
+          json.decode(await readerWriter.readAsString(assetGraphJsonId)) as Map;
       decodedMap['version'] = 999;
-      await readerWriter.writeAsString(assetGraphId, json.encode(decodedMap));
+      await readerWriter.writeAsString(
+        assetGraphJsonId,
+        json.encode(decodedMap),
+      );
 
       buildPlan = await BuildPlan.load(
         builderFactories: builderFactories,
