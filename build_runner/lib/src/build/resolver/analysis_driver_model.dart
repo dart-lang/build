@@ -51,10 +51,7 @@ class AnalysisDriverModel {
     required Set<AssetId>? invalidatedSources,
   }) async {
     _lock = await _pool.request();
-    filesystem.startBuild(
-      buildState.declaredOutputPhases,
-      invalidatedSources: invalidatedSources,
-    );
+    filesystem.startBuild(invalidatedSources: invalidatedSources);
   }
 
   /// Clears build state and frees the lock taken by [takeLockAndStartBuild].
@@ -138,13 +135,18 @@ class AnalysisDriverModel {
       await TimedActivity.resolve.runAsync(() async {
         // Change `filesystem`'s view of the files to be at `phase`.
         final phase = phasedReader.phase;
-        filesystem.phase = phase;
+        if (filesystem.phase != phase) {
+          filesystem.phase = phase;
+          _syncedLibraryCycleGraphs.clear();
+        }
 
-        Future<void> writeToFilesystem(AssetId id) async {
+        Future<bool> writeToFilesystem(AssetId id) async {
           final content = await phasedReader.readAtPhase(id);
           if (content.exists) {
-            filesystem.writeContent(content);
+            final phasedContent = await phasedReader.readPhased(id);
+            return filesystem.writePhasedContent(id, phasedContent);
           }
+          return false;
         }
 
         // For single file parsing, sync that one file.

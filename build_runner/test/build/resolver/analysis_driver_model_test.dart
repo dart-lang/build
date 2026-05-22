@@ -4,6 +4,7 @@
 
 import 'package:build/build.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
+import 'package:build_runner/src/build/library_cycle_graph/phased_value.dart';
 import 'package:build_runner/src/build/resolver/analysis_driver_filesystem.dart';
 import 'package:build_runner/src/build/resolver/analysis_driver_model.dart';
 import 'package:test/test.dart';
@@ -32,11 +33,14 @@ void main() {
 
       expect(model.filesystem.exists('/a/lib/a.dart'), isFalse);
       expect(model.filesystem.exists('/a/lib/b.dart'), isFalse);
-      expect(model.filesystem.changedPaths, {'/a/lib/a.dart', '/a/lib/b.dart'});
+      expect(model.filesystem.changedPaths, {
+        '/a/lib/a.dart',
+        '/a/lib/b.dart',
+      });
     });
 
     test('incremental build keeps unchanged sources cached', () async {
-      model.filesystem.write('/a/lib/a.dart', 'class A {}');
+      model.filesystem.write('/a/lib/unchanged.dart', 'class Unchanged {}');
       model.filesystem.clearChangedPaths();
 
       await model.takeLockAndStartBuild(
@@ -44,8 +48,7 @@ void main() {
         invalidatedSources: const {},
       );
 
-      expect(model.filesystem.exists('/a/lib/a.dart'), isTrue);
-      expect(model.filesystem.read('/a/lib/a.dart'), 'class A {}');
+      expect(model.filesystem.exists('/a/lib/unchanged.dart'), isTrue);
       expect(model.filesystem.changedPaths, isEmpty);
     });
 
@@ -76,8 +79,9 @@ void main() {
 
 extension _AnalysisDriverFilesystemExtensions on AnalysisDriverFilesystem {
   void write(String path, String content) {
-    writeContent(
-      BuildRunnerFileContent(path, true, content, content.hashCode.toString()),
-    );
+    final fullPath = path.startsWith('/') ? path : '/a/lib/$path';
+    final asset = AnalysisDriverFilesystem.parseAsset(Uri.parse('file://$fullPath'))!;
+    final fileContent = BuildRunnerFileContent(fullPath, true, content, content.hashCode.toString());
+    writePhasedContent(asset, PhasedValue.fixed(fileContent));
   }
 }

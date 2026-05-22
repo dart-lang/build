@@ -112,6 +112,21 @@ BuildState? deserializeBuildState(Map serializedBuildState) {
     }
   }
 
+  if (serializedBuildState.containsKey('primaryInputByPartOutput')) {
+    final deserialized =
+        serializers.deserialize(
+              serializedBuildState['primaryInputByPartOutput'],
+              specifiedType: const FullType(BuiltList, [FullType(String)]),
+            )
+            as BuiltList<String>;
+    for (var i = 0; i < deserialized.length; i += 2) {
+      final gpId = AssetId.parse(deserialized[i]);
+      final primaryInput = AssetId.parse(deserialized[i + 1]);
+      buildState._primaryInputByPartOutput[gpId] = primaryInput;
+      buildState._partOutputs.add(gpId);
+    }
+  }
+
   return buildState;
 }
 
@@ -180,6 +195,15 @@ Map<String, Object?> serializeBuildState(BuildState buildState) {
         FullType(AssetId),
         FullType(BuiltSet, [FullType(AssetId)]),
       ]),
+    ),
+    'primaryInputByPartOutput': serializers.serialize(
+      BuiltList<String>.of([
+        for (final entry in buildState._primaryInputByPartOutput.entries) ...[
+          entry.key.toString(),
+          entry.value.toString(),
+        ]
+      ]),
+      specifiedType: const FullType(BuiltList, [FullType(String)]),
     ),
   };
 

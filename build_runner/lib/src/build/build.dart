@@ -11,6 +11,7 @@ import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
+import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
 import '../build_plan/build_configs.dart';
@@ -447,6 +448,44 @@ class Build {
       (Future<Iterable<AssetId>> lazyOuts) async =>
           outputs.addAll(await lazyOuts),
     );
+
+    final partsByPrimaryInput = <AssetId, List<String>>{};
+    for (final entry in buildState.buildStepResultsByPrimaryInput.entries) {
+      final primaryInput = entry.key;
+      final steps = entry.value;
+      final sortedPhases = steps.keys.toList()..sort();
+      for (final phaseNum in sortedPhases) {
+        final stepResult = steps[phaseNum]!;
+        if (stepResult.succeeded && stepResult.partsWritten.isNotEmpty) {
+          partsByPrimaryInput
+              .putIfAbsent(primaryInput, () => [])
+              .addAll(stepResult.partsWritten);
+        }
+      }
+    }
+
+    final dartVersionRegExp = RegExp(r'//\s*@dart\s*=\s*[0-9.]+\b');
+
+    for (final entry in partsByPrimaryInput.entries) {
+      final primaryInput = entry.key;
+      final parts = p.posix.split(primaryInput.path);
+      final topDir = parts[0];
+      final remainder = p.posix.joinAll(parts.sublist(1));
+      final gpPath = '$topDir/_gp/${p.posix.withoutExtension(remainder)}.gp.dart';
+      final gpId = AssetId(primaryInput.package, gpPath);
+      buildState.addPartOutput(gpId, primaryInput);
+
+      final primaryContent = await readerWriter.readAsString(primaryInput);
+      final match = dartVersionRegExp.firstMatch(primaryContent);
+      final versionOverride = match != null ? '${match.group(0)}\n\n' : '';
+
+      final header = versionOverride.isNotEmpty
+          ? "$versionOverride\npart of '../${p.posix.basename(primaryInput.path)}';\n\n"
+          : "part of '../${p.posix.basename(primaryInput.path)}';\n\n";
+      await readerWriter.writeAsString(gpId, '$header${entry.value.join('\n\n')}');
+      outputs.add(gpId);
+    }
+
     // Assume success, failed outputs will be checked later.
     return BuildResult(
       status: BuildStatus.success,
@@ -1235,7 +1274,8 @@ class Build {
           ..inputs.replace(usedInputs)
           ..globsEvaluated.replace(inputTracker.globsEvaluated)
           ..resolverEntrypoints.replace(inputTracker.resolverEntrypoints)
-          ..errors.replace(errors);
+          ..errors.replace(errors)
+          ..partsWritten.replace(stepReaderWriter.partsWritten);
     for (final output in outputs) {
       if (stepReaderWriter.assetsWritten.contains(output)) {
         buildStepResultBuilder.outputs[output] = await readerWriter.digest(

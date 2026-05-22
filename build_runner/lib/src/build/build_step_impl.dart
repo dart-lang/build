@@ -157,6 +157,12 @@ class BuildStepImpl implements BuildStep {
   }
 
   @override
+  void writePart(String contents) {
+    if (_isComplete) throw BuildStepCompletedException();
+    _singleStepReaderWriter.writePart(contents);
+  }
+
+  @override
   Future<Digest> digest(AssetId id) {
     if (_isComplete) throw BuildStepCompletedException();
     return _singleStepReaderWriter.digest(id);
