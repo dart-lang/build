@@ -7,7 +7,7 @@ import 'dart:typed_data';
 
 import '../../build_plan/build_plan_digest.dart';
 import '../library_cycle_graph/phased_asset_deps.dart';
-import 'graph.dart';
+import 'build_state.dart';
 import 'serializers.dart';
 
 /// State stored in `asset_graph.json`.

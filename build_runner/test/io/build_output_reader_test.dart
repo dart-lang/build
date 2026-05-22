@@ -6,11 +6,11 @@
 library;
 
 import 'package:build/build.dart';
-import 'package:build_runner/src/build/asset_graph/build_step_id.dart';
-import 'package:build_runner/src/build/asset_graph/build_step_result.dart';
-import 'package:build_runner/src/build/asset_graph/graph.dart';
-import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
-import 'package:build_runner/src/build/asset_graph/post_process_build_step_result.dart';
+import 'package:build_runner/src/build/build_state/build_state.dart';
+import 'package:build_runner/src/build/build_state/build_step_id.dart';
+import 'package:build_runner/src/build/build_state/build_step_result.dart';
+import 'package:build_runner/src/build/build_state/post_process_build_step_id.dart';
+import 'package:build_runner/src/build/build_state/post_process_build_step_result.dart';
 import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_directory.dart';
 import 'package:build_runner/src/build_plan/build_filter.dart';

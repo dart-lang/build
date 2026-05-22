@@ -16,9 +16,8 @@ import '../build_plan/build_packages.dart';
 import '../build_plan/phase.dart';
 import '../io/asset_finder.dart';
 import '../io/reader_writer.dart';
-import 'asset_graph/glob_id.dart';
-
-import 'asset_graph/graph.dart';
+import 'build_state/build_state.dart';
+import 'build_state/glob_id.dart';
 import 'input_tracker.dart';
 import 'library_cycle_graph/phased_reader.dart';
 import 'library_cycle_graph/phased_value.dart';

@@ -10,7 +10,7 @@ import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import 'package:watcher/watcher.dart';
 
-import '../build/asset_graph/graph.dart';
+import '../build/build_state/build_state.dart';
 import '../build_plan/build_configs.dart';
 import '../build_plan/build_packages.dart';
 import '../build_plan/build_target.dart';

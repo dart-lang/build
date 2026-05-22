@@ -9,11 +9,10 @@ import 'package:built_collection/built_collection.dart';
 
 import '../bootstrap/bootstrapper.dart';
 import '../bootstrap/depfile.dart';
-import '../build/asset_graph/asset_graph_json.dart';
-import '../build/asset_graph/exceptions.dart';
-import '../build/asset_graph/graph.dart';
+import '../build/build_state/asset_graph_json.dart';
+import '../build/build_state/build_state.dart';
+import '../build/build_state/exceptions.dart';
 import '../build/library_cycle_graph/phased_asset_deps.dart';
-
 import '../constants.dart';
 import '../exceptions.dart';
 import '../io/asset_tracker.dart';

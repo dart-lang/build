@@ -10,7 +10,7 @@ import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
-import '../build/asset_graph/graph.dart';
+import '../build/build_state/build_state.dart';
 import '../build_plan/build_plan.dart';
 import 'reader_writer.dart';
 

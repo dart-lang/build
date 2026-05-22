@@ -17,9 +17,9 @@ import '../io/asset_tracker.dart';
 import '../io/generated_asset_hider.dart';
 import '../io/reader_writer.dart';
 import '../logging/build_log.dart';
-import 'asset_graph/graph.dart';
 import 'build.dart';
 import 'build_result.dart';
+import 'build_state/build_state.dart';
 
 /// A series of builds with the same configuration.
 ///

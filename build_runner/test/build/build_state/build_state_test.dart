@@ -4,10 +4,10 @@
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
-import 'package:build_runner/src/build/asset_graph/build_step_id.dart';
-import 'package:build_runner/src/build/asset_graph/build_step_result.dart';
-import 'package:build_runner/src/build/asset_graph/exceptions.dart';
-import 'package:build_runner/src/build/asset_graph/graph.dart';
+import 'package:build_runner/src/build/build_state/build_state.dart';
+import 'package:build_runner/src/build/build_state/build_step_id.dart';
+import 'package:build_runner/src/build/build_state/build_step_result.dart';
+import 'package:build_runner/src/build/build_state/exceptions.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
