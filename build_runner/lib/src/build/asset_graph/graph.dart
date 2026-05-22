@@ -122,17 +122,17 @@ class AssetGraph implements GeneratedAssetHider {
   @visibleForTesting
   String serialize() => json.encode(serializeAssetGraph(this));
 
-  /// Whether [id) is a placeholder.
+  /// Whether [id] is a placeholder.
   bool isPlaceholder(AssetId id) => Placeholders.isPlaceholderPath(id.path);
 
   /// Whether [id] is one of: source, output or post process output.
   bool isKnownFile(AssetId id) =>
       isSource(id) || isDeclaredOutput(id) || isActualPostOutput(id);
 
-  /// Whether [id) is a source file.
+  /// Whether [id] is a source file.
   bool isSource(AssetId id) => _sources.isSource(id);
 
-  /// Whether [id) is a source file.
+  /// Whether [id] is a source file.
   bool isUnreadSource(AssetId id) => _sources.isUnreadSource(id);
 
   /// Whether [id] is a source file that was accessed but did not exist.
