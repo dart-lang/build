@@ -1137,8 +1137,6 @@ class Build {
   /// generated file is still tracked as an input that matched the glob, but is
   /// not useful to something that wants to read the file. In the glob result,
   /// it ends up in `inputs` but not in `results`.
-  ///
-  ///
   Future<void> _evaluateGlob(GlobId globId) async {
     if (processedGlobs.contains(globId)) {
       return;
@@ -1179,7 +1177,7 @@ class Build {
         final stepResult = buildState.stepResult(
           buildState.stepForDeclaredOutput(id),
         );
-        if (buildState.isActualOutput(id) && stepResult.result == true) {
+        if (buildState.isActualOutput(id) && stepResult.succeeded) {
           generatedFileResults.add(id);
         }
       }

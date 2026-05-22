@@ -194,7 +194,7 @@ class BuildOutputReader {
     if (buildState.isDeclaredOutput(id)) {
       final step = buildState.stepForDeclaredOutput(id);
       final stepResult = buildState.stepResult(step);
-      if (!buildState.isActualOutput(id) || (stepResult.failed)) {
+      if (!buildState.isActualOutput(id) || stepResult.failed) {
         return true;
       }
       return !_processedOutputs!.contains(id);

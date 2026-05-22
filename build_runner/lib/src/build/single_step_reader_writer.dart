@@ -186,7 +186,7 @@ class SingleStepReaderWriter implements PhasedReader {
     if (buildState.isPlaceholder(id)) return false;
     if (!buildState.isFile(id)) {
       if (track) inputTracker.add(id);
-      _runningBuild.buildState.addMissingSource(id);
+      buildState.addMissingSource(id);
       return false;
     }
 
@@ -390,8 +390,7 @@ class SingleStepReaderWriter implements PhasedReader {
         }
         final stepResult = _runningBuild.buildState.stepResult(step);
         final isSuccessOutput =
-            _runningBuild.buildState.isActualOutput(id) &&
-            stepResult.result == true;
+            _runningBuild.buildState.isActualOutput(id) && stepResult.succeeded;
         return PhasedValue.generated(
           atPhase: stepPhase,
           before: '',
