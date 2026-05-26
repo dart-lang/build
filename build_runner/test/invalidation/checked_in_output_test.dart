@@ -18,7 +18,7 @@ void main() {
       // Start with output source on disk.
       //
       // The ordering of sources matters because a different codepath in
-      // `graph.dart` is triggered depending on whether a source is first
+      // `build_state.dart` is triggered depending on whether a source is first
       // processed as an input or as a generated output of another input.
       //
       // So for `a` have the output come first, and for `b` the input come
@@ -58,7 +58,8 @@ void main() {
       // Start with output source on disk that the build would not actually
       // write: with the output of a previous build used as input.
       //
-      // The order matters because it affects the codepath in `graph.dart`.
+      // The order matters because it affects the codepath in
+      // `build_state.dart`.
       tester.sources(['a.g.g', 'a.g', 'a']);
 
       tester.builder(from: '', to: '.g', outputIsVisible: true)
@@ -76,7 +77,8 @@ void main() {
       // Start with output source on disk that the build would not actually
       // write: with the output of a previous build used as input.
       //
-      // The order matters because it affects the codepath in `graph.dart`.
+      // The order matters because it affects the codepath in
+      // `build_state.dart`.
       tester.sources(['a.g.other.g', 'a.g.other', 'a.g', 'a']);
 
       tester.builder(from: '', to: '.g', outputIsVisible: true)

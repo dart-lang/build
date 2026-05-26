@@ -10,7 +10,7 @@ import 'package:build/build.dart';
 import 'package:pool/pool.dart';
 
 import '../../logging/timed_activities.dart';
-import '../asset_graph/graph.dart';
+import '../build_state/build_state.dart';
 import '../input_tracker.dart';
 import '../library_cycle_graph/asset_deps_loader.dart';
 import '../library_cycle_graph/library_cycle_graph.dart';

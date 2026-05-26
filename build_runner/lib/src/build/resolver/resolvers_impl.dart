@@ -14,7 +14,7 @@ import 'package:pool/pool.dart';
 
 import '../../bootstrap/build_process_state.dart';
 import '../../logging/build_log.dart';
-import '../asset_graph/graph.dart';
+import '../build_state/build_state.dart';
 import '../build_step_impl.dart';
 import '../library_cycle_graph/phased_asset_deps.dart';
 import 'analysis_driver.dart';
