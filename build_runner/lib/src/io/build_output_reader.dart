@@ -63,17 +63,8 @@ class BuildOutputReader {
        _buildPlan = buildPlan,
        _processedOutputs = processedOutputs;
 
-  Set<AssetId> _collectAssetsDeletedByPostProcessBuilders() {
-    final buildState = _buildState;
-    if (buildState == null) return const {};
-    final result = <AssetId>{};
-    for (final entry in buildState.postProcessBuildStepResults) {
-      if (entry.value.deletedPrimaryInput) {
-        result.add(entry.key.input);
-      }
-    }
-    return result;
-  }
+  Set<AssetId> _collectAssetsDeletedByPostProcessBuilders() =>
+      _buildState?.assetsDeletedByPostProcess ?? const {};
 
   /// Returns a reason why [id] is not readable, or null if it is readable.
   Future<UnreadableReason?> unreadableReason(AssetId id) async {
