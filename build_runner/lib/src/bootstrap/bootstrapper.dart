@@ -137,7 +137,7 @@ class Bootstrapper {
                   buildPaths.outputRootPath,
                   entrypointAotPath,
                 ),
-                arguments: [...arguments, '--force-aot'],
+                arguments: _insertFlag(arguments, '--force-aot'),
                 message: buildProcessState.serialize(),
                 runUnderPerf: dartAotPerf,
               )
@@ -146,7 +146,7 @@ class Bootstrapper {
                 arguments:
                     compileStrategy == CompileStrategy.commandForcesJit
                         ? arguments.toList()
-                        : [...arguments, '--force-jit'],
+                        : _insertFlag(arguments, '--force-jit'),
                 message: buildProcessState.serialize(),
                 jitVmArgs: jitVmArgs,
               );
@@ -210,5 +210,18 @@ class Bootstrapper {
       return false;
     }
     return _compiler.isDependency(path);
+  }
+
+  /// Returns `args` with `flag` inserted before `--`, or at the end if there is
+  /// no `--`.
+  List<String> _insertFlag(Iterable<String> args, String flag) {
+    final result = args.toList();
+    final index = result.indexOf('--');
+    if (index == -1) {
+      result.add(flag);
+    } else {
+      result.insert(index, flag);
+    }
+    return result;
   }
 }

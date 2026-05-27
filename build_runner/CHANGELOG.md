@@ -9,6 +9,8 @@
   build.
 - Bug fix: handle errors from post process builders in previous runs without
   crashing.
+- Bug fix: fix `dart run build_runner test` to correctly pass arguments after
+  `--` to the test process.
 
 ## 2.15.0
 
