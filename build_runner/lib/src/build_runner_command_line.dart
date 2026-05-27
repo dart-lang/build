@@ -268,7 +268,10 @@ class _Build extends _Command<BuildRunnerCommandLine> {
       ..addMultiOption(
         defineOption,
         splitCommas: false,
-        help: 'Sets the global `options` config for a builder by key.',
+        help:
+            'Sets the global `options` config for a builder by key. '
+            'If values are valid JSON they are parsed to objects. If not, they '
+            'are used as exact strings.',
       )
       ..addFlag(
         symlinkOption,

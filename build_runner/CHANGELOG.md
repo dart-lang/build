@@ -7,6 +7,8 @@
 - Support builders with no declared outputs. They can't output anything, but
   they can do processing, write log messages and choose whether to fail the
   build.
+- Mention in command usage that `--define` values are parsed as JSON with a
+  fallback.
 - Bug fix: handle errors from post process builders in previous runs without
   crashing.
 - Bug fix: fix `dart run build_runner test` to correctly pass arguments after

@@ -40,11 +40,11 @@ import 'package:build/build.dart';
 Builder testBuilderFactory(BuilderOptions options) =>
     TestBuilder(
         AssetId.parse(options.config['copy_from'] as String),
-        options.config['extra_content'] as String? ?? '');
+        options.config['extra_content'] as Object? ?? '');
 
 class TestBuilder implements Builder {
   final AssetId copyFrom;
-  final String extraContent;
+  final Object extraContent;
 
   TestBuilder(this.copyFrom, this.extraContent);
 
@@ -55,7 +55,7 @@ class TestBuilder implements Builder {
   Future<void> build(BuildStep buildStep) async {
     buildStep.writeAsString(
         buildStep.inputId.addExtension('.copy'),
-        await buildStep.readAsString(copyFrom) + extraContent,
+        await buildStep.readAsString(copyFrom) + '\$extraContent',
     );
   }
 }''',
@@ -108,6 +108,14 @@ targets:
           '--define=builder_pkg:test_builder=copy_from=root_pkg|web/a.txt',
     );
     expect(tester.read('root_pkg/web/a.txt.copy'), 'a(yaml dev)');
+
+    // Override with `--define` JSON content.
+    await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit '
+          '--define=builder_pkg:test_builder=extra_content=[1,2,3,{"a":4}]',
+    );
+    expect(tester.read('root_pkg/web/a.txt.copy'), 'b[1, 2, 3, {a: 4}]');
 
     // Override with `--define` and `--release`.
     await tester.run(

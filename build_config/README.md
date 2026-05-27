@@ -413,6 +413,10 @@ And when running the build:
 dart run build_runner build --define=some_package:some_builder=some_option="Priority 6"
 ```
 
+If values are valid JSON they are parsed to objects, making them as expressive
+as YAML files. For example, it's possible to pass lists and maps. If values are
+not valid JSON they are used as exact strings.
+
 ### How can I include additional sources in my build?
 
 The `build_runner` package defaults the included source files to directories
