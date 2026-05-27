@@ -285,7 +285,7 @@ class BuildRunnerFileContent implements FileContent {
   @override
   final String contentHash;
 
-  BuildRunnerFileContent(
+  new(
     this.path,
     this.exists,
     this.content,
@@ -304,7 +304,7 @@ class _Resource implements File, Folder {
   @override
   final String path;
 
-  _Resource(this.filesystem, this.path);
+  new(this.filesystem, this.path);
 
   // `File` and `Folder` methods.
 

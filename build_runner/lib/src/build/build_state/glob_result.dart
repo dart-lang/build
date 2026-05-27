@@ -27,7 +27,7 @@ abstract class GlobResult implements Built<GlobResult, GlobResultBuilder> {
   /// result paths.
   Digest get digest;
 
-  factory GlobResult([void Function(GlobResultBuilder)? updates]) =
+  factory([void Function(GlobResultBuilder)? updates]) =
       _$GlobResult;
-  GlobResult._();
+  new _();
 }

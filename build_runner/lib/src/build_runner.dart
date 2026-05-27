@@ -41,7 +41,7 @@ class BuildRunner {
 
   late final BuildRunnerCommandLine commandLine;
 
-  BuildRunner({
+  new({
     required Iterable<String> arguments,
     required this.builderFactories,
   }) : arguments = arguments.toBuiltList();

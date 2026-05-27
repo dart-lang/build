@@ -9,7 +9,7 @@ class FixturePackage {
   final List<String>? pathDependencies;
   final Map<String, String> files;
 
-  FixturePackage({
+  new({
     required this.name,
     required this.files,
     this.dependencies,

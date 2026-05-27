@@ -52,7 +52,7 @@ class ResolversImpl implements Resolvers {
   ///
   /// A new [AnalysisDriverModel] will be created, or pass one as
   /// [analysisDriverModel].
-  factory ResolversImpl.custom({
+  factory custom({
     PackageConfig? packageConfig,
     AnalysisDriverModel? analysisDriverModel,
   }) => ResolversImpl(
@@ -60,7 +60,7 @@ class ResolversImpl implements Resolvers {
     analysisDriverModel: analysisDriverModel ?? AnalysisDriverModel(),
   );
 
-  ResolversImpl({
+  new({
     PackageConfig? packageConfig,
     required AnalysisDriverModel analysisDriverModel,
   }) : _packageConfig = packageConfig,

@@ -213,5 +213,5 @@ class TestBuildersResult {
   final BuildResult buildResult;
   final InternalTestReaderWriter readerWriter;
 
-  TestBuildersResult({required this.buildResult, required this.readerWriter});
+  new({required this.buildResult, required this.readerWriter});
 }

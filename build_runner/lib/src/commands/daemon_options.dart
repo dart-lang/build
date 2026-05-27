@@ -11,7 +11,7 @@ class DaemonOptions {
   final bool logRequests;
   final BuildMode buildMode;
 
-  DaemonOptions({required this.buildMode, required this.logRequests});
+  new({required this.buildMode, required this.logRequests});
 
   static DaemonOptions parse(BuildRunnerCommandLine commandLine) {
     final buildModeValue = commandLine.buildMode;

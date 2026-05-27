@@ -6,5 +6,5 @@
 ///
 /// Before throwing this exception a user actionable message should be logged.
 class CannotBuildException implements Exception {
-  const CannotBuildException();
+  const new();
 }

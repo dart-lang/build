@@ -15,10 +15,10 @@ abstract class LibraryCycle
     implements Built<LibraryCycle, LibraryCycleBuilder> {
   BuiltSet<AssetId> get ids;
 
-  factory LibraryCycle([void Function(LibraryCycleBuilder) updates]) =
+  factory([void Function(LibraryCycleBuilder) updates]) =
       _$LibraryCycle;
-  LibraryCycle._();
+  new _();
 
-  factory LibraryCycle.of(Iterable<AssetId> ids) =>
+  factory of(Iterable<AssetId> ids) =>
       _$LibraryCycle._(ids: ids.toBuiltSet());
 }

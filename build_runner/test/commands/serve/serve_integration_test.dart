@@ -154,7 +154,7 @@ void main() {
 }
 
 class UppercaseBuilder implements Builder {
-  const UppercaseBuilder();
+  const new();
 
   @override
   Future<void> build(BuildStep buildStep) async {

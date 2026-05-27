@@ -29,7 +29,7 @@ class BuildResult {
   // The build output.
   final BuildOutputReader buildOutputReader;
 
-  BuildResult({
+  new({
     required this.status,
     BuiltList<String>? errors,
     BuiltList<AssetId>? outputs,
@@ -73,7 +73,7 @@ Build Failed :(
     }
   }
 
-  factory BuildResult.buildScriptChanged() => BuildResult(
+  factory buildScriptChanged() => BuildResult(
     status: BuildStatus.failure,
     failureType: FailureType.buildScriptChanged,
     buildOutputReader: BuildOutputReader.empty(),
@@ -89,5 +89,5 @@ class FailureType {
   static final cantCreate = FailureType._(73);
   static final buildScriptChanged = FailureType._(75);
   final int exitCode;
-  FailureType._(this.exitCode);
+  new _(this.exitCode);
 }

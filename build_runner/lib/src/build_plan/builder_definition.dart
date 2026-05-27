@@ -131,7 +131,7 @@ class BuilderDefinition implements AbstractBuilderDefinition {
   final bool isOptional;
 
   @visibleForTesting
-  BuilderDefinition(
+  new(
     this.key, {
     String? package,
     this.autoApply = AutoApply.rootPackage,
@@ -142,7 +142,7 @@ class BuilderDefinition implements AbstractBuilderDefinition {
   }) : package = package ?? (key.contains(':') ? key.split(':').first : ''),
        appliesBuilders = appliesBuilders.toBuiltList();
 
-  factory BuilderDefinition.fromConfig(
+  factory fromConfig(
     build_config.BuilderDefinition builderDefinition,
   ) => BuilderDefinition(
     builderDefinition.key,
@@ -206,14 +206,14 @@ class PostProcessBuilderDefinition implements AbstractBuilderDefinition {
   final TargetBuilderConfigDefaults targetBuilderConfigDefaults;
 
   @visibleForTesting
-  PostProcessBuilderDefinition(
+  new(
     this.key, {
     String? package,
     this.hideOutput = true,
     this.targetBuilderConfigDefaults = const TargetBuilderConfigDefaults(),
   }) : package = package ?? (key.contains(':') ? key.split(':').first : '');
 
-  PostProcessBuilderDefinition.fromConfig(
+  new fromConfig(
     build_config.PostProcessBuilderDefinition builderDefinition,
   ) : package = builderDefinition.package,
       key = builderDefinition.key,

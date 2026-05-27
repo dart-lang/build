@@ -73,7 +73,7 @@ abstract interface class FilesystemCache {
 
 /// [FilesystemCache] that always reads from the underlying source.
 class PassthroughFilesystemCache implements FilesystemCache {
-  const PassthroughFilesystemCache();
+  const new();
 
   @override
   Future<void> invalidate(Iterable<AssetId> ids) async {}
@@ -265,7 +265,7 @@ class _PendingWrite {
   final void Function() writer;
   final Uint8List? bytes;
 
-  _PendingWrite({required this.writer, this.bytes});
+  new({required this.writer, this.bytes});
 
   bool get isDelete => bytes == null;
 }

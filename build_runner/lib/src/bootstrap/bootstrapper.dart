@@ -40,7 +40,7 @@ class Bootstrapper {
   final CompileStrategy compileStrategy;
   Compiler _compiler;
 
-  Bootstrapper({required this.buildPaths, required this.compileStrategy})
+  new({required this.buildPaths, required this.compileStrategy})
     : _compiler = compileStrategy.initialCompileType.createCompiler(buildPaths);
 
   /// Generates the entrypoint script, compiles it and runs it with [arguments].

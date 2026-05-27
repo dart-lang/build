@@ -19,7 +19,7 @@ class AssetGraphJson {
   final BuildState buildState;
   final PhasedAssetDeps phasedAssetDeps;
 
-  AssetGraphJson({
+  new({
     required this.buildPlanDigest,
     required this.buildState,
     required this.phasedAssetDeps,

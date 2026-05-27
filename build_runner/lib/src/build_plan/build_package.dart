@@ -31,7 +31,7 @@ class BuildPackage {
   /// If [isOutput], includes dev dependencies.
   final BuiltSet<String> dependencies;
 
-  BuildPackage({
+  new({
     required this.name,
     required String path,
     this.watch = false,
@@ -43,7 +43,7 @@ class BuildPackage {
 
   /// Creates with a default [path] for testing.
   @visibleForTesting
-  factory BuildPackage.forTesting({
+  factory forTesting({
     required String name,
     bool isWorkspace = false,
     bool watch = false,

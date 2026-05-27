@@ -21,7 +21,7 @@ class Depfile {
   /// Input paths parsed from the depfile.
   Set<String>? _depfilePaths;
 
-  Depfile({
+  new({
     required this.outputPath,
     required this.depfilePath,
     required this.digestPath,
@@ -125,5 +125,5 @@ class FreshnessResult {
   /// If the output is fresh, the digest of inputs and output.
   final String? digest;
 
-  FreshnessResult({required this.outputIsFresh, this.digest});
+  new({required this.outputIsFresh, this.digest});
 }

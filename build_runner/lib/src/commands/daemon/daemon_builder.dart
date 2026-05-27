@@ -39,7 +39,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   @override
   final Stream<ServerLog> logs;
 
-  BuildRunnerDaemonBuilder._(
+  new _(
     this._buildPlan,
     this.buildSeries,
     this._outputStreamController,

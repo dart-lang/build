@@ -498,7 +498,7 @@ class CoolBuilder extends Builder {
   final String optionB;
   final String optionC;
 
-  CoolBuilder(BuilderOptions options)
+  new(BuilderOptions options)
     : optionA = options.config['option_a'] as String? ?? 'defaultA',
       optionB = options.config['option_b'] as String? ?? 'defaultB',
       optionC = options.config['option_c'] as String? ?? 'defaultC';

@@ -15,10 +15,10 @@ abstract class GlobId implements Built<GlobId, GlobIdBuilder> {
   String get glob;
   int get phaseNumber;
 
-  factory GlobId({
+  factory({
     required String package,
     required String glob,
     required int phaseNumber,
   }) = _$GlobId._;
-  GlobId._();
+  new _();
 }

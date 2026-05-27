@@ -27,7 +27,7 @@ abstract class Compiler {
 class CompileResult {
   final String? messages;
 
-  CompileResult({required this.messages});
+  new({required this.messages});
 
   bool get succeeded => messages == null;
 

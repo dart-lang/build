@@ -16,7 +16,7 @@ class ServeOptions {
   final bool logRequests;
   final BuiltList<ServeTarget> serveTargets;
 
-  ServeOptions({
+  new({
     required this.hostname,
     required this.liveReload,
     required this.logRequests,
@@ -79,7 +79,7 @@ class ServeTarget {
   final String dir;
   final int port;
 
-  ServeTarget(this.dir, this.port);
+  new(this.dir, this.port);
 }
 
 final _defaultWebDirs = const ['web', 'test', 'example', 'benchmark'];

@@ -20,9 +20,9 @@ abstract class PostProcessBuildStepId
   /// The [actionNumber] identifying which `PostProcessBuilder` runs.
   int get actionNumber;
 
-  PostProcessBuildStepId._();
+  new _();
 
-  factory PostProcessBuildStepId({
+  factory({
     required AssetId input,
     required int actionNumber,
   }) = _$PostProcessBuildStepId._;

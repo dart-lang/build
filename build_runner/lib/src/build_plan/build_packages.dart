@@ -74,7 +74,7 @@ class BuildPackages implements AssetPathProvider {
   /// Peer packages by package name, see [peersOf].
   final BuiltSetMultimap<String, String> _peerPackages;
 
-  BuildPackages({
+  new({
     required this.currentPackage,
     required this.singleOutputPackage,
     required this.outputRoot,
@@ -87,7 +87,7 @@ class BuildPackages implements AssetPathProvider {
   }) : _transitiveDependencies = transitiveDependencies,
        _peerPackages = buildPackages;
 
-  factory BuildPackages.compute({
+  factory compute({
     required String currentPackage,
     String? singlePackageToBuild,
     required String outputRoot,
@@ -145,7 +145,7 @@ class BuildPackages implements AssetPathProvider {
   /// Creates [BuildPackages] from [BuildPackage]s for a single package build
   /// of [package].
   @visibleForTesting
-  factory BuildPackages.singlePackageBuild(
+  factory singlePackageBuild(
     String package,
     Iterable<BuildPackage> packages,
   ) => BuildPackages.compute(
@@ -158,7 +158,7 @@ class BuildPackages implements AssetPathProvider {
   /// Creates [BuildPackages] from [BuildPackage]s for a workspace build with
   /// workspace name [workspace].
   @visibleForTesting
-  factory BuildPackages.workspaceBuild({
+  factory workspaceBuild({
     required String currentPackage,
     required String workspace,
     required Iterable<BuildPackage> packages,

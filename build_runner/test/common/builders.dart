@@ -14,7 +14,7 @@ class CopyingPostProcessBuilder implements PostProcessBuilder {
   @override
   final inputExtensions = ['.txt'];
 
-  CopyingPostProcessBuilder({this.outputExtension = '.copy'});
+  new({this.outputExtension = '.copy'});
 
   @override
   Future<void> build(PostProcessBuildStep buildStep) async {
@@ -40,7 +40,7 @@ class PlaceholderBuilder extends Builder {
     inputPlaceholder: outputFilenameToContent.keys.toList(),
   };
 
-  PlaceholderBuilder(
+  new(
     this.outputFilenameToContent, {
     this.inputPlaceholder = Placeholders.libName,
   });

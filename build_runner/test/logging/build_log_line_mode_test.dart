@@ -307,7 +307,7 @@ class _TestPhase implements InBuildPhase {
   @override
   final String displayName;
 
-  _TestPhase(this.displayName);
+  new(this.displayName);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

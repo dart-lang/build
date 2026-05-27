@@ -27,7 +27,7 @@ class RunCommand implements BuildRunnerCommand {
   final RunOptions runOptions;
   final TestingOverrides testingOverrides;
 
-  RunCommand({
+  new({
     required this.builderFactories,
     required this.buildOptions,
     required this.runOptions,

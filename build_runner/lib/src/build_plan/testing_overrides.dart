@@ -32,7 +32,7 @@ class TestingOverrides {
   final bool flattenOutput;
   final bool checkBuilderFreshness;
 
-  const TestingOverrides({
+  const new({
     this.builderDefinitions,
     this.buildConfig,
     this.buildPackages,

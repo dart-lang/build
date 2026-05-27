@@ -22,7 +22,7 @@ class PostProcessBuildStepImpl implements PostProcessBuildStep {
   /// The result of any writes which are starting during this step.
   final _writeResults = <Future<Result<void>>>[];
 
-  PostProcessBuildStepImpl(
+  new(
     this.inputId,
     this._readerWriter,
     this._addAsset,

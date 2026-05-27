@@ -124,7 +124,7 @@ class Build {
   /// The build output.
   BuildOutputReader? _buildOutputReader;
 
-  Build({
+  new({
     required this.buildPlan,
     required this.readerWriter,
     required this.resourceManager,

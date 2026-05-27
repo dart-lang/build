@@ -121,7 +121,7 @@ class _LoggingBuilder implements Builder {
   Level level;
   bool built = false;
 
-  _LoggingBuilder(this.level);
+  new(this.level);
 
   @override
   Future<void> build(BuildStep buildStep) async {

@@ -13,7 +13,7 @@ class AutoChangeProviderImpl implements AutoChangeProvider {
   @override
   final Stream<List<WatchEvent>> changes;
 
-  AutoChangeProviderImpl(this.changes);
+  new(this.changes);
 }
 
 /// Computes changes with a file scan when requested by a call to
@@ -21,7 +21,7 @@ class AutoChangeProviderImpl implements AutoChangeProvider {
 class ManualChangeProviderImpl implements ManualChangeProvider {
   final Future<List<WatchEvent>> Function() _function;
 
-  ManualChangeProviderImpl(this._function);
+  new(this._function);
 
   @override
   Future<List<WatchEvent>> collectChanges() async {

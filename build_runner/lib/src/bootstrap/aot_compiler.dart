@@ -23,7 +23,7 @@ class AotCompiler implements Compiler {
   final BuildPaths buildPaths;
   final Depfile _outputDepfile;
 
-  AotCompiler(this.buildPaths)
+  new(this.buildPaths)
     : _outputDepfile = Depfile(
         outputPath: p.join(buildPaths.outputRootPath, entrypointAotPath),
         depfilePath: p.join(

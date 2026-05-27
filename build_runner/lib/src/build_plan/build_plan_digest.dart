@@ -31,13 +31,13 @@ abstract class BuildPlanDigest
   BuiltList<String> get inBuildPhasesOptionsDigests;
   BuiltList<String> get postBuildActionsOptionsDigests;
 
-  BuildPlanDigest._();
+  new _();
 
-  factory BuildPlanDigest.build([
+  factory build([
     void Function(BuildPlanDigestBuilder)? updates,
   ]) = _$BuildPlanDigest;
 
-  factory BuildPlanDigest({
+  factory({
     required String? compileDigest,
     required BuildConfigs buildConfigs,
     required BuildPhases buildPhases,

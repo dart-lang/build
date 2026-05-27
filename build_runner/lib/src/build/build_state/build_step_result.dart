@@ -40,9 +40,9 @@ abstract class BuildStepResult
   /// Errors logged.
   BuiltList<String> get errors;
 
-  factory BuildStepResult([void Function(BuildStepResultBuilder)? updates]) =
+  factory([void Function(BuildStepResultBuilder)? updates]) =
       _$BuildStepResult;
-  BuildStepResult._();
+  new _();
 
   /// Whether the build step ran, either in the previous build or in this build.
   bool get hasRun => result != null;

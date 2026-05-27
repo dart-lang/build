@@ -70,7 +70,7 @@ class InvalidationTester {
   /// Output number, for writing outputs that are different.
   int _outputNumber = 0;
 
-  InvalidationTester({this.testIsRunning = true});
+  new({this.testIsRunning = true});
 
   /// Starts logging test setup.
   ///
@@ -316,12 +316,12 @@ class Result {
   /// Whether the build succeeded.
   bool succeeded;
 
-  Result({Iterable<String>? written, Iterable<String>? deleted})
+  new({Iterable<String>? written, Iterable<String>? deleted})
     : written = (written ?? {}).toBuiltSet(),
       deleted = (deleted ?? {}).toBuiltSet(),
       succeeded = true;
 
-  Result.failure({Iterable<String>? written, Iterable<String>? deleted})
+  new failure({Iterable<String>? written, Iterable<String>? deleted})
     : written = (written ?? {}).toBuiltSet(),
       deleted = (deleted ?? {}).toBuiltSet(),
       succeeded = false;
@@ -353,7 +353,7 @@ class TestBuilderBuilder {
   final bool _logSetup;
   final List<String> _setupLog;
 
-  TestBuilderBuilder(this._builder)
+  new(this._builder)
     : _logSetup = _builder._tester._logSetup,
       _setupLog = _builder._tester._setupLog;
 
@@ -431,7 +431,7 @@ class TestBuilder implements Builder {
   /// [AssetIdExtension.replaceExtensions].
   List<String> writes = [];
 
-  TestBuilder(
+  new(
     this._tester,
     this.from,
     Iterable<String> to,

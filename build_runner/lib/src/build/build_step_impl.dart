@@ -56,7 +56,7 @@ class BuildStepImpl implements BuildStep {
   final Future<PackageConfig> Function() _resolvePackageConfig;
   Future<Result<PackageConfig>>? _resolvedPackageConfig;
 
-  BuildStepImpl(
+  new(
     this.inputId,
     Iterable<AssetId> expectedOutputs,
     this._singleStepReaderWriter,
@@ -212,7 +212,7 @@ class BuildStepImpl implements BuildStep {
 class _DelayedResolver implements Resolver {
   final Future<Resolver> _delegate;
 
-  _DelayedResolver(this._delegate);
+  new(this._delegate);
 
   @override
   Future<bool> isLibrary(AssetId assetId) async =>

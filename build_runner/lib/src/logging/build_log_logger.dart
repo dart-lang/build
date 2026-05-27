@@ -34,7 +34,7 @@ class BuildLogLogger implements Logger {
   /// The errors logged to this logger.
   final List<String> errors = [];
 
-  BuildLogLogger({this.phaseName, this.context, this.contextId});
+  new({this.phaseName, this.context, this.contextId});
 
   /// Runs [fn] in an error handling [Zone].
   ///

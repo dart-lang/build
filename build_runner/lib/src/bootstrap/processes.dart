@@ -206,7 +206,7 @@ class RunAndSendResult {
   final int exitCode;
   final String message;
 
-  RunAndSendResult({required this.exitCode, required this.message});
+  new({required this.exitCode, required this.message});
 }
 
 /// Methods for child processes launched with [ParentProcess.runAndSend]

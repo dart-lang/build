@@ -33,7 +33,7 @@ class BuildTriggers {
     r'^[a-z][a-z0-9_]*:[a-z][a-z0-9_]',
   );
 
-  BuildTriggers({required this.triggers, required this.warningsByPackage});
+  new({required this.triggers, required this.warningsByPackage});
 
   Iterable<BuildTrigger>? operator [](String builderName) =>
       triggers[builderName];
@@ -168,8 +168,8 @@ abstract class ImportBuildTrigger
   static final RegExp _regexp = RegExp(r'^[a-z][a-z0-9_/.]*$');
   String get import;
 
-  ImportBuildTrigger._();
-  factory ImportBuildTrigger(String import) =>
+  new _();
+  factory(String import) =>
       _$ImportBuildTrigger._(import: import);
 
   @memoized
@@ -201,8 +201,8 @@ abstract class AnnotationBuildTrigger
   static final RegExp _regexp = RegExp(r'^[a-zA-Z_][a-zA-Z0-9]*$');
   String get annotation;
 
-  AnnotationBuildTrigger._();
-  factory AnnotationBuildTrigger(String annotation) =>
+  new _();
+  factory(String annotation) =>
       _$AnnotationBuildTrigger._(annotation: annotation);
 
   @override

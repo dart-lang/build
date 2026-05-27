@@ -31,13 +31,13 @@ extension type TimedActivity(String name) {
   /// Writing or deleting files.
   static final TimedActivity write = TimedActivity._('writing');
 
-  TimedActivity._(this.name);
+  new _(this.name);
 
   /// [TimedActivity] for the phase [phase].
   ///
   /// Only lazy builds, which means builds that are triggered by a required
   /// build, are tracked in this way.
-  TimedActivity.lazyPhase(InBuildPhase phase) : name = phase.displayName;
+  new lazyPhase(InBuildPhase phase) : name = phase.displayName;
 
   /// Runs [function] attributing the time spent to this activity.
   ///

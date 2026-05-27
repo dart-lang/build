@@ -22,7 +22,7 @@ class Sources {
   /// this build.
   bool _sortedFileIdsByPackageWasComputed = false;
 
-  Sources();
+  new();
 
   Sources clone() {
     final result = Sources();

@@ -23,9 +23,9 @@ abstract class PhasedAssetDeps
 
   BuiltMap<AssetId, PhasedValue<AssetDeps>> get assetDeps;
 
-  factory PhasedAssetDeps([void Function(PhasedAssetDepsBuilder) b]) =
+  factory([void Function(PhasedAssetDepsBuilder) b]) =
       _$PhasedAssetDeps;
-  PhasedAssetDeps._();
+  new _();
 
   /// Returns `this` data with [other] added to it.
   ///

@@ -32,7 +32,7 @@ class BuildPhases {
   /// A [Digest] that can be used to detect any change to the phases.
   final Digest digest;
 
-  BuildPhases(
+  new(
     Iterable<InBuildPhase> inBuildPhases, [
     PostBuildPhase? postBuildPhase,
   ]) : inBuildPhases = inBuildPhases.toBuiltList(),

@@ -9,7 +9,7 @@ class DuplicateAssetIdException implements Exception {
   final String builder1;
   final String builder2;
 
-  DuplicateAssetIdException(this.assetId, this.builder1, this.builder2);
+  new(this.assetId, this.builder1, this.builder2);
   @override
   String toString() =>
       'Builders $builder1 and $builder2 outputs collide: ${assetId.uri}';

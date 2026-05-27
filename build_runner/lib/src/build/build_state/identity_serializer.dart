@@ -26,7 +26,7 @@ class IdentitySerializer<T> implements PrimitiveSerializer<T> {
   List<Object?> _serializedObjects = [];
 
   /// A serializer wrapping [delegate] to deduplicate by identity.
-  IdentitySerializer(this.delegate)
+  new(this.delegate)
     : _primitiveDelegate = delegate is PrimitiveSerializer<T> ? delegate : null,
       _structuredDelegate =
           delegate is StructuredSerializer<T> ? delegate : null;

@@ -35,7 +35,7 @@ class BuildResolver {
 
   Future<List<LibraryElement>>? _sdkLibraries;
 
-  BuildResolver(this._driver, Pool driverPool, this._analysisDriverModel)
+  new(this._driver, Pool driverPool, this._analysisDriverModel)
     : _driverPool = AnalyzeActivityPool(driverPool);
 
   Future<bool> isLibrary(AssetId assetId) async {
@@ -224,7 +224,7 @@ class BuildResolver {
 class AnalyzeActivityPool {
   final Pool pool;
 
-  AnalyzeActivityPool(this.pool);
+  new(this.pool);
 
   Future<T> withResource<T>(Future<T> Function() function) async {
     return pool.withResource(() => TimedActivity.analyze.runAsync(function));

@@ -15,7 +15,7 @@ class BuilderFactories {
   /// Post process builder factories by builder key.
   final BuiltMap<String, PostProcessBuilderFactory> postProcessBuilderFactories;
 
-  BuilderFactories(
+  new(
     Map<String, List<BuilderFactory>> builderFactories, {
     Map<String, PostProcessBuilderFactory>? postProcessBuilderFactories,
   }) : builderFactories =

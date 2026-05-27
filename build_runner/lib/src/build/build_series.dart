@@ -55,7 +55,7 @@ class BuildSeries {
   /// Whether the next build is the first build.
   bool firstBuild = true;
 
-  BuildSeries._({
+  new _({
     required BuildPlan buildPlan,
     required BuildState buildState,
     required ReaderWriter readerWriter,
@@ -65,13 +65,12 @@ class BuildSeries {
        _readerWriter = readerWriter,
        _updatesFromLoad = updatesFromLoad;
 
-  factory BuildSeries(BuildPlan buildPlan) {
+  factory(BuildPlan buildPlan) {
     final buildState = buildPlan.takeBuildState();
     final readerWriter = buildPlan.readerWriter.copyWith(
-      generatedAssetHider:
-          buildPlan.testingOverrides.flattenOutput
-              ? const NoopGeneratedAssetHider()
-              : buildState,
+      generatedAssetHider: buildPlan.testingOverrides.flattenOutput
+          ? const NoopGeneratedAssetHider()
+          : buildState,
     );
     return BuildSeries._(
       buildPlan: buildPlan,
@@ -235,10 +234,9 @@ class BuildSeries {
       }
       _buildState = _buildPlan.takeBuildState();
       _readerWriter = _buildPlan.readerWriter.copyWith(
-        generatedAssetHider:
-            _buildPlan.testingOverrides.flattenOutput
-                ? const NoopGeneratedAssetHider()
-                : _buildState,
+        generatedAssetHider: _buildPlan.testingOverrides.flattenOutput
+            ? const NoopGeneratedAssetHider()
+            : _buildState,
       );
     }
 

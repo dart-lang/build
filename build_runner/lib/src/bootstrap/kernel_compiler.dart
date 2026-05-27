@@ -23,7 +23,7 @@ class KernelCompiler implements Compiler {
   final BuildPaths buildPaths;
   final Depfile _outputDepfile;
 
-  KernelCompiler(this.buildPaths)
+  new(this.buildPaths)
     : _outputDepfile = Depfile(
         outputPath: p.join(buildPaths.outputRootPath, entrypointDillPath),
         depfilePath: p.join(
