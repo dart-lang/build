@@ -21,7 +21,6 @@ class DdcFrontendServerBuilder implements Builder {
   /// Used to share the scratch space directory with the `fes_manager` process
   /// when it is initialized separately from the build daemon (like in tests).
   final String? scratchSpaceDir;
-
   /// A persistent scratch space instance used when a custom scratch space
   /// directory is provided.
   ///
@@ -29,7 +28,16 @@ class DdcFrontendServerBuilder implements Builder {
   /// for recompiles.
   ScratchSpace? _scratchSpace;
 
-  DdcFrontendServerBuilder({this.scratchSpaceDir});
+  final String? librariesPath;
+  final String? platformSdk;
+  final String? sdkKernelPath;
+
+  DdcFrontendServerBuilder({
+    this.scratchSpaceDir,
+    this.librariesPath,
+    this.platformSdk,
+    this.sdkKernelPath,
+  });
 
   @override
   Map<String, List<String>> get buildExtensions => {
@@ -84,10 +92,17 @@ class DdcFrontendServerBuilder implements Builder {
       ], buildStep),
     );
     final root = getRootPackageName();
+    final frontendServer = await buildStep.fetchResource(
+      persistentFrontendServerResource,
+    );
+    await frontendServer.ensureStarted(
+      librariesPath: librariesPath,
+      platformSdk: platformSdk,
+      sdkKernelPath: sdkKernelPath,
+    );
     final driver = await buildStep.fetchResource(
       frontendServerProxyDriverResource,
     );
-    await buildStep.fetchResource(persistentFrontendServerResource);
     final entrypointArg = sourceArg(frontendServerState.entrypointAssetId!);
     String assetPath(AssetId id) =>
         id.package == root

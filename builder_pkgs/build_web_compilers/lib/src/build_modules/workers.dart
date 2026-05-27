@@ -156,7 +156,7 @@ Future<PersistentFrontendServer> startFrontendServerWorker() async {
   final customPath = frontendServerState.customScratchSpacePath;
   final fesRoot =
       customPath != null ? Directory(customPath).uri : scratchSpace.tempDir.uri;
-  final fes = await PersistentFrontendServer.start(
+  final fes = PersistentFrontendServer(
     sdkRoot: sdkDir,
     fileSystemRoot: fesRoot,
     packagesFile: fesRoot.resolve(packagesFilePath),
