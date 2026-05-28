@@ -1,3 +1,7 @@
+## 1.3.1-wip
+
+- Document that `--define` values are parsed as JSON with a fallback.
+
 ## 1.3.0
 
 - Add `build_to` key to `post_process_builders`. Like the `builders` key, it
