@@ -37,7 +37,7 @@ final commandRunner =
         'generator',
         help: 'Generator to benchmark.',
         allowed: Generator.values.map((e) => e.packageName).toList(),
-        defaultsTo: Generator.builtValue.packageName,
+        defaultsTo: Generator.combined.packageName,
       )
       ..argParser.addOption(
         'root-directory',
