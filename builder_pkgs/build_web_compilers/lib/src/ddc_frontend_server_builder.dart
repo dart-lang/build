@@ -43,6 +43,9 @@ class DdcFrontendServerBuilder implements Builder {
 
   @override
   Future<void> build(BuildStep buildStep) async {
+    final frontendServerState = await buildStep.fetchResource(
+      frontendServerStateResource,
+    );
     final moduleContents = await buildStep.readAsString(buildStep.inputId);
     final module = Module.fromJson(
       json.decode(moduleContents) as Map<String, dynamic>,
@@ -53,9 +56,6 @@ class DdcFrontendServerBuilder implements Builder {
     );
     await buildStep.fetchResource(persistentFrontendServerResource);
 
-    final frontendServerState = await buildStep.fetchResource(
-      frontendServerStateResource,
-    );
     final entrypoint = frontendServerState.entrypointAssetId;
     final isEntrypoint =
         entrypoint == null
@@ -66,82 +66,120 @@ class DdcFrontendServerBuilder implements Builder {
       frontendServerState.entrypointAssetId = ddcEntrypointId;
     }
     final entrypointArg = sourceArg(frontendServerState.entrypointAssetId!);
+    final root = getRootPackageName();
+    String assetPath(AssetId id) =>
+        id.package == root ? id.path : 'packages/${id.package}/${id.path}';
     final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
     final changedAssetUris = [
       for (final asset in scratchSpace.changedFilesInBuild)
-        if (asset.package == ddcEntrypointId.package)
-          Uri(scheme: multiRootScheme, host: '', path: '/${asset.path}'),
+        Uri(scheme: multiRootScheme, host: '', path: '/${asset.path}'),
     ];
-    // Only compile once for entrypoints to prevent redundant compiles.
-    if (isEntrypoint) {
-      final ScratchSpace sSpace;
-      final customDir = scratchSpaceDir;
-      if (customDir != null) {
-        frontendServerState.customScratchSpacePath = customDir;
-        sSpace = _scratchSpace ??= ScratchSpace.existing(Directory(customDir));
-      } else {
-        sSpace = scratchSpace;
-      }
+    final entrypointAssetId = frontendServerState.entrypointAssetId!;
+    final transitiveDeps = await buildStep.trackStage(
+      'CollectTransitiveDeps',
+      () => module.computeTransitiveDependencies(buildStep),
+    );
+    final transitiveJsDeps = [
+      for (final dep in transitiveDeps)
+        if (dep.primarySource.package != buildStep.inputId.package) ...[
+          dep.primarySource.changeExtension(jsModuleExtension),
+          dep.primarySource.changeExtension(metadataExtension),
+        ],
+    ];
+    await buildStep.trackStage(
+      'EnsureAssets',
+      () => scratchSpace.ensureAssets([
+        ...module.sources,
+        ...transitiveJsDeps,
+      ], buildStep),
+    );
+    try {
+      frontendServerState.triggerSharedCompilation(entrypointAssetId, () async {
+        final ScratchSpace sSpace;
+        final customDir = scratchSpaceDir;
+        if (customDir != null) {
+          frontendServerState.customScratchSpacePath = customDir;
+          sSpace =
+              _scratchSpace ??= ScratchSpace.existing(Directory(customDir));
+        } else {
+          sSpace = scratchSpace;
+        }
+        await buildStep.trackStage(
+          'EnsureAssets',
+          () => sSpace.ensureAssets([
+            if (frontendServerState.entrypointAssetId!.package ==
+                buildStep.inputId.package)
+              frontendServerState.entrypointAssetId!,
+          ], buildStep),
+        );
+        final compilerOutput = await driver.recompileAndRecord(
+          entrypointArg,
+          changedAssetUris,
+          [assetPath(ddcEntrypointId.changeExtension(fesJsExtension))],
+          recompileRestart: frontendServerState.needsRecompileRestart,
+        );
+        if (compilerOutput == null) {
+          throw FrontendServerCompilationException(
+            frontendServerState.entrypointAssetId!,
+            'Frontend Server produced no output.',
+          );
+        }
+        if (compilerOutput.errorCount != 0) {
+          throw FrontendServerCompilationException(
+            frontendServerState.entrypointAssetId!,
+            compilerOutput.errorMessage ?? 'Unknown error',
+          );
+        }
+      });
+      await frontendServerState.waitForCompilation(entrypointAssetId);
       await buildStep.trackStage(
         'EnsureAssets',
-        () => sSpace.ensureAssets([
-          if (frontendServerState.entrypointAssetId!.package ==
-              buildStep.inputId.package)
-            frontendServerState.entrypointAssetId!,
-        ], buildStep),
+        () => scratchSpace.ensureAssets(transitiveJsDeps, buildStep),
       );
-      final compilerOutput = await driver.recompileAndRecord(
+
+      final jsOutputId = ddcEntrypointId.changeExtension(jsModuleExtension);
+      final mapOutputId = ddcEntrypointId.changeExtension(jsSourceMapExtension);
+      final metadataOutputId = ddcEntrypointId.changeExtension(
+        metadataExtension,
+      );
+
+      final jsPath = '$testScratchSpacePathPrefix${assetPath(jsOutputId)}';
+      final mapPath = '$testScratchSpacePathPrefix${assetPath(mapOutputId)}';
+      final metadataPath =
+          '$testScratchSpacePathPrefix${assetPath(metadataOutputId)}';
+
+      final jsContent = await driver.readInMemoryFile(
+        jsPath,
         entrypointArg,
         changedAssetUris,
-        [ddcEntrypointId.changeExtension(fesJsExtension).path],
-        recompileRestart: frontendServerState.needsRecompileRestart,
       );
-      if (compilerOutput == null) {
-        throw FrontendServerCompilationException(
-          frontendServerState.entrypointAssetId!,
-          'Frontend Server produced no output.',
-        );
+      final mapContent = await driver.readInMemoryFile(
+        mapPath,
+        entrypointArg,
+        changedAssetUris,
+      );
+      final metadataContent = await driver.readInMemoryFile(
+        metadataPath,
+        entrypointArg,
+        changedAssetUris,
+      );
+
+      if (jsContent != null) {
+        await buildStep.writeAsString(jsOutputId, jsContent);
       }
-      if (compilerOutput.errorCount != 0) {
-        throw FrontendServerCompilationException(
-          frontendServerState.entrypointAssetId!,
-          compilerOutput.errorMessage ?? 'Unknown error',
-        );
+      if (mapContent != null) {
+        await buildStep.writeAsString(mapOutputId, mapContent);
       }
-    }
+      if (metadataContent != null) {
+        await buildStep.writeAsString(metadataOutputId, metadataContent);
+      }
 
-    final jsOutputId = ddcEntrypointId.changeExtension(jsModuleExtension);
-    final mapOutputId = ddcEntrypointId.changeExtension(jsSourceMapExtension);
-    final metadataOutputId = ddcEntrypointId.changeExtension(metadataExtension);
-
-    final jsPath = '$testScratchSpacePathPrefix${jsOutputId.path}';
-    final mapPath = '$testScratchSpacePathPrefix${mapOutputId.path}';
-    final metadataPath = '$testScratchSpacePathPrefix${metadataOutputId.path}';
-
-    final jsContent = await driver.readInMemoryFile(
-      jsPath,
-      entrypointArg,
-      changedAssetUris,
-    );
-    final mapContent = await driver.readInMemoryFile(
-      mapPath,
-      entrypointArg,
-      changedAssetUris,
-    );
-    final metadataContent = await driver.readInMemoryFile(
-      metadataPath,
-      entrypointArg,
-      changedAssetUris,
-    );
-
-    if (jsContent != null) {
-      await buildStep.writeAsString(jsOutputId, jsContent);
-    }
-    if (mapContent != null) {
-      await buildStep.writeAsString(mapOutputId, mapContent);
-    }
-    if (metadataContent != null) {
-      await buildStep.writeAsString(metadataOutputId, metadataContent);
+      if (isEntrypoint) {
+        frontendServerState.needsRecompileRestart = false;
+      }
+    } catch (e) {
+      frontendServerState.needsRecompileRestart = true;
+      rethrow;
     }
   }
 }
