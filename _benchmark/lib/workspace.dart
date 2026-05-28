@@ -71,14 +71,8 @@ void main() {
     file.writeAsStringSync(edited);
   }
 
-  /// Builds and measures performance.
-  PendingResult measure() {
-    final result = PendingResult();
-    _measure(result);
-    return result;
-  }
-
-  Future<void> _measure(PendingResult result) async {
+  /// Builds and measures performance sequentially.
+  Future<void> measureSequential(PendingResult result) async {
     // Clean build.
     final stopwatch = Stopwatch()..start();
     var process = await Process.start('dart', [
@@ -134,6 +128,22 @@ void main() {
       final stderr = await process.stderr.transform(utf8.decoder).join();
       result.failure = 'Incremental build failed:\n$stdout\n$stderr';
       return;
+    }
+  }
+
+  /// Runs `dart pub get` in the workspace directory.
+  Future<int> runPubGet() async {
+    final process = await Process.start('dart', [
+      'pub',
+      'get',
+    ], workingDirectory: directory.path);
+    return process.exitCode;
+  }
+
+  /// Deletes the workspace directory.
+  void deleteSelf() {
+    if (directory.existsSync()) {
+      directory.deleteSync(recursive: true);
     }
   }
 

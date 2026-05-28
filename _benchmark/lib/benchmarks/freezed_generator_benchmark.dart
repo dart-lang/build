@@ -33,7 +33,7 @@ dependencies:
 dev_dependencies:
   build_runner: any
   freezed: any
-${config.config.web ? '  build_web_compilers: any' : ''}
+${config.web ? '  build_web_compilers: any' : ''}
 ${config.dependencyOverrides}
 ''',
     );
@@ -45,7 +45,7 @@ ${config.dependencyOverrides}
 /// CACHEBUSTER
 ''',
     );
-    if (config.config.web) {
+    if (config.web) {
       workspace.writeWebEntrypoint();
     }
 

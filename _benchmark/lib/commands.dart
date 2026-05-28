@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:math';
+
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 
@@ -11,21 +13,21 @@ import 'workspace.dart';
 
 class BenchmarkCommand extends Command<void> {
   @override
-  String get description => 'Runs "create" then "measure".';
+  String get description => 'Runs the benchmark suite sequentially.';
 
   @override
   String get name => 'benchmark';
 
   @override
   Future<void> run() async {
-    await CreateCommand()._run(globalResults!);
     await MeasureCommand()._run(globalResults!);
   }
 }
 
 class CreateCommand extends Command<void> {
   @override
-  String get description => 'Creates codebases to benchmark.';
+  String get description =>
+      'Creates codebases to benchmark (for manual checking).';
 
   @override
   String get name => 'create';
@@ -39,18 +41,24 @@ class CreateCommand extends Command<void> {
     for (final shape in config.shapes) {
       for (final size in config.sizes) {
         final paddedSize = size.toString().padLeft(4, '0');
-        final workspace = Workspace(
-          config: config,
-          name: '${config.generator.packageName}_${shape.name}_$paddedSize',
-        );
-        final runConfig = RunConfig(
-          config: config,
-          workspace: workspace,
-          size: size,
-          paddedSize: paddedSize,
-          shape: shape,
-        );
-        config.generator.benchmark.create(runConfig);
+        for (final web in config.webConfigs) {
+          final workspace = Workspace(
+            config: config,
+            name:
+                '${config.generator.packageName}_${shape.name}_$paddedSize'
+                '${web ? "_web" : ""}',
+          );
+          final runConfig = RunConfig(
+            config: config,
+            workspace: workspace,
+            size: size,
+            paddedSize: paddedSize,
+            shape: shape,
+            version: 'local',
+            web: web,
+          );
+          config.generator.benchmark.create(runConfig);
+        }
       }
     }
   }
@@ -58,7 +66,7 @@ class CreateCommand extends Command<void> {
 
 class MeasureCommand extends Command<void> {
   @override
-  String get description => 'Builds and measures performance.';
+  String get description => 'Builds and measures performance sequentially.';
 
   @override
   String get name => 'measure';
@@ -67,87 +75,197 @@ class MeasureCommand extends Command<void> {
   Future<void> run() => _run(globalResults!);
 
   Future<void> _run(ArgResults globalResults) async {
-    // Launch a benchmark at each size in parallel.
     final config = Config.fromArgResults(globalResults);
-    final pendingResults = <(Shape, int), PendingResult>{};
-    for (final shape in config.shapes) {
-      for (final size in config.sizes) {
-        final paddedSize = size.toString().padLeft(4, '0');
-        final workspace = Workspace(
-          config: config,
-          name: '${config.generator.packageName}_${shape.name}_$paddedSize',
-          clean: false,
-        );
-        pendingResults[(shape, size)] = workspace.measure();
-      }
-    }
 
-    // Wait for them to complete, printing status every second only if it
-    // changed.
-    String? previousUpdate;
-    while (!pendingResults.values.every((r) => r.isFinished)) {
-      await Future<void>.delayed(const Duration(seconds: 1));
+    final showShape = config.shapes.any((s) => s != Shape.random);
 
-      final update = StringBuffer('${config.generator.packageName}\n');
-      update.write(
-        'shape,libraries,clean/ms,no changes/ms,incremental/ms,'
-        'json/KiB\n',
-      );
+    // Print CSV Header
+    print(
+      [
+        'Version',
+        if (showShape) 'Shape',
+        'Size',
+        'Web',
+        'Clean Mean (s)',
+        'Clean CI (s)',
+        'No-Changes Mean (s)',
+        'No-Changes CI (s)',
+        'Incremental Mean (s)',
+        'Incremental CI (s)',
+        'Graph Size (KiB)',
+      ].join(','),
+    );
+
+    for (final version in config.versions) {
       for (final shape in config.shapes) {
         for (final size in config.sizes) {
-          final pendingResult = pendingResults[(shape, size)]!;
-          if (pendingResult.isFailure) {
-            if (!config.allowFailures) {
-              throw StateError(pendingResult.failure!);
-            }
-            update.write(
-              [
-                shape.name,
-                size,
-                pendingResult.cleanBuildTime.renderFailed,
-                pendingResult.noChangesBuildTime.renderFailed,
-                pendingResult.incrementalBuildTime.renderFailed,
-                pendingResult.graphSize.renderFailed,
-              ].join(','),
-            );
-          } else {
-            update.write(
-              [
-                shape.name,
-                size,
-                pendingResult.cleanBuildTime.render,
-                pendingResult.noChangesBuildTime.render,
-                pendingResult.incrementalBuildTime.render,
-                pendingResult.graphSize.render,
-              ].join(','),
+          for (final web in config.webConfigs) {
+            await _runBenchmarkCell(
+              config,
+              version,
+              shape,
+              size,
+              web,
+              showShape: showShape,
             );
           }
-          update.write('\n');
         }
-      }
-
-      final updateString = update.toString();
-      if (updateString != previousUpdate) {
-        print(updateString);
-        previousUpdate = updateString;
       }
     }
   }
+
+  Future<void> _runBenchmarkCell(
+    Config config,
+    String version,
+    Shape shape,
+    int size,
+    bool web, {
+    required bool showShape,
+  }) async {
+    final cleanTimes = <Duration>[];
+    final noChangesTimes = <Duration>[];
+    final incrementalTimes = <Duration>[];
+    int? graphSize;
+
+    for (var rep = 0; rep < config.repetitions; ++rep) {
+      final paddedSize = size.toString().padLeft(4, '0');
+      final workspaceName =
+          '${config.generator.packageName}_${shape.name}_${paddedSize}_'
+          '${web ? "web_" : ""}${version}_rep$rep';
+
+      final workspace = Workspace(
+        config: config,
+        name: workspaceName,
+        clean: true,
+      );
+
+      final runConfig = RunConfig(
+        config: config,
+        workspace: workspace,
+        size: size,
+        paddedSize: paddedSize,
+        shape: shape,
+        version: version,
+        web: web,
+      );
+
+      // 1. Create source
+      config.generator.benchmark.create(runConfig);
+
+      // 2. Run pub get
+      final pubGetExitCode = await workspace.runPubGet();
+      if (pubGetExitCode != 0) {
+        workspace.deleteSelf();
+        if (!config.allowFailures) {
+          throw StateError('pub get failed for $workspaceName');
+        }
+        continue;
+      }
+
+      // 3. Measure
+      final pendingResult = PendingResult();
+      await workspace.measureSequential(pendingResult);
+
+      if (pendingResult.isFailure) {
+        workspace.deleteSelf();
+        if (!config.allowFailures) {
+          throw StateError(pendingResult.failure!);
+        }
+        continue;
+      }
+
+      cleanTimes.add(pendingResult.cleanBuildTime!);
+      noChangesTimes.add(pendingResult.noChangesBuildTime!);
+      incrementalTimes.add(pendingResult.incrementalBuildTime!);
+      graphSize = pendingResult.graphSize;
+
+      // 4. Cleanup
+      workspace.deleteSelf();
+    }
+
+    if (cleanTimes.isEmpty) return;
+
+    final cleanStats = Stats(cleanTimes);
+    final noChangesStats = Stats(noChangesTimes);
+    final incrementalStats = Stats(incrementalTimes);
+
+    print(
+      [
+        version,
+        if (showShape) shape.name,
+        size,
+        web ? 'true' : 'false',
+        cleanStats.meanSeconds.toStringAsFixed(2),
+        cleanStats.confidenceIntervalHalfWidthSeconds.toStringAsFixed(2),
+        noChangesStats.meanSeconds.toStringAsFixed(2),
+        noChangesStats.confidenceIntervalHalfWidthSeconds.toStringAsFixed(2),
+        incrementalStats.meanSeconds.toStringAsFixed(2),
+        incrementalStats.confidenceIntervalHalfWidthSeconds.toStringAsFixed(2),
+        graphSize == null ? 'X' : (graphSize / 1024).round().toString(),
+      ].join(','),
+    );
+  }
 }
 
-extension DurationExtension on Duration? {
-  /// Renders with `---` for `null`, to mean "pending".
-  String get render => this == null ? '---' : this!.inMilliseconds.toString();
+class Stats {
+  final List<Duration> durations;
 
-  /// Renders with X` for `null`, to mean "failed".
-  String get renderFailed =>
-      this == null ? 'X' : this!.inMilliseconds.toString();
-}
+  Stats(this.durations);
 
-extension IntExtension on int? {
-  /// Renders with `---` for `null`, to mean "pending".
-  String get render => this == null ? '---' : (this! / 1024).round().toString();
+  double get meanSeconds {
+    if (durations.isEmpty) return 0.0;
+    final totalMs = durations.fold<int>(0, (sum, d) => sum + d.inMilliseconds);
+    return (totalMs / durations.length) / 1000.0;
+  }
 
-  /// Renders with X` for `null`, to mean "failed".
-  String get renderFailed => this == null ? 'X' : this!.toString();
+  double get standardDeviationSeconds {
+    if (durations.length <= 1) return 0.0;
+    final mean = meanSeconds;
+    final variance =
+        durations
+            .map((d) {
+              final diff = (d.inMilliseconds / 1000.0) - mean;
+              return diff * diff;
+            })
+            .reduce((a, b) => a + b) /
+        (durations.length - 1);
+    return sqrt(variance);
+  }
+
+  /// Returns the half-width of the 90% confidence interval for the mean.
+  double get confidenceIntervalHalfWidthSeconds {
+    final n = durations.length;
+    if (n <= 1) return 0.0;
+    final sd = standardDeviationSeconds;
+    final t = _tCriticalValue(n);
+    return t * (sd / sqrt(n));
+  }
+
+  double _tCriticalValue(int n) {
+    const table = {
+      2: 6.314,
+      3: 2.920,
+      4: 2.353,
+      5: 2.132,
+      6: 2.015,
+      7: 1.943,
+      8: 1.895,
+      9: 1.860,
+      10: 1.833,
+      11: 1.812,
+      12: 1.796,
+      13: 1.782,
+      14: 1.771,
+      15: 1.761,
+      16: 1.753,
+      17: 1.746,
+      18: 1.740,
+      19: 1.734,
+      20: 1.729,
+    };
+    if (n < 2) return 0.0;
+    if (n <= 20) return table[n]!;
+    // Z-score approximation for large n
+    return 1.645;
+  }
 }
