@@ -31,6 +31,9 @@ class FrontendServerState {
   /// Whether the next recompile should be a recompile-restart.
   bool needsRecompileRestart = false;
 
+  /// The custom scratch space path provided to the builder, if any.
+  String? customScratchSpacePath;
+
   /// Looks for and loads a `.web.entrypoint.json` file if it exists.
   ///
   /// Returns whether or not the `.web.entrypoint.json` was found and loaded.

@@ -11,6 +11,7 @@ import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 
 import '../build_frontend_server/frontend_server_driver.dart';
+import '../build_frontend_server/frontend_server_resources.dart';
 import '../common.dart';
 import 'scratch_space.dart';
 
@@ -143,10 +144,16 @@ PersistentFrontendServer? get persistentFrontendServer =>
 Future<PersistentFrontendServer> startFrontendServerWorker() async {
   if (__persistentFrontendServer != null) return __persistentFrontendServer!;
 
+  // We bind the Frontend Server worker's filesystem root to that of the scratch
+  // space. If a scratch space is provided by the build options (instead of
+  // being created dynamically), use that.
+  final customPath = frontendServerState.customScratchSpacePath;
+  final fesRoot =
+      customPath != null ? Directory(customPath).uri : scratchSpace.tempDir.uri;
   final fes = await PersistentFrontendServer.start(
     sdkRoot: sdkDir,
-    fileSystemRoot: scratchSpace.tempDir.uri,
-    packagesFile: scratchSpace.tempDir.uri.resolve(packagesFilePath),
+    fileSystemRoot: fesRoot,
+    packagesFile: fesRoot.resolve(packagesFilePath),
   );
 
   _frontendServerProxyDriver.init(fes);

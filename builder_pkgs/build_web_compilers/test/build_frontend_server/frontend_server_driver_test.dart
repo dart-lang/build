@@ -51,7 +51,7 @@ void main() {
       expect(output!.errorCount, 0);
       expect(output.outputFilename, endsWith('output.dill'));
       expect(output.sources, contains(entrypoint));
-      server.accept();
+      await server.accept();
     });
 
     test('can handle compilation errors', () async {
@@ -80,7 +80,7 @@ void main() {
       var output = await server.compile(entrypoint.toString());
       expect(output, isNotNull);
       expect(output!.errorCount, 0);
-      server.accept();
+      await server.accept();
 
       File(dep.toFilePath()).writeAsStringSync('invalid dart code');
       output = await server.recompile(entrypoint.toString(), [dep]);
@@ -93,7 +93,7 @@ void main() {
       output = await server.recompile(entrypoint.toString(), [dep]);
       expect(output, isNotNull);
       expect(output!.errorCount, 0);
-      server.accept();
+      await server.accept();
     });
   });
 
@@ -166,11 +166,11 @@ void main() {
       final entrypoint = tempDir.uri.resolve('entrypoint.dart');
       File(entrypoint.toFilePath()).writeAsStringSync('void main() {}');
 
-      final jsFESOutputPath = p.join(tempDir.path, 'entrypoint.dart.lib.js');
+      final jsFESOutputPath = p.join(tempDir.path, 'entrypoint.ddc.js');
       final output = await driver.recompileAndRecord(
         '$multiRootScheme:///entrypoint.dart',
         [entrypoint],
-        ['entrypoint.dart.lib.js'],
+        ['entrypoint.ddc.js'],
       );
 
       expect(output, isNotNull);

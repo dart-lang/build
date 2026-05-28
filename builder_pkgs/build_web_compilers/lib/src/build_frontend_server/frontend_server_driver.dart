@@ -12,6 +12,7 @@ import 'dart:typed_data';
 
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
+import 'package:pool/pool.dart';
 import 'package:uuid/uuid.dart';
 
 import '../common.dart';
@@ -32,9 +33,28 @@ class FrontendServerProxyDriver {
   final _requestQueue = Queue<_CompilationRequest>();
   bool _isProcessing = false;
   CompilerOutput? _cachedOutput;
+  static final _fesPool = Pool(1);
 
   void init(PersistentFrontendServer frontendServer) {
     _frontendServer = frontendServer;
+  }
+
+  PersistentFrontendServer? get fes => _frontendServer;
+
+  /// Reads a compiled asset's content directly from the Frontend Server's
+  /// in-memory file caches.
+  Future<String?> readInMemoryFile(
+    String path,
+    String entrypoint,
+    List<Uri> invalidatedFiles,
+  ) async {
+    return _fesPool.withResource(() async {
+      return await _frontendServer!.client.readInMemoryFile(
+        path,
+        entrypoint,
+        invalidatedFiles,
+      );
+    });
   }
 
   /// Sends a recompile request to the Frontend Server at [entrypoint] with
@@ -50,56 +70,14 @@ class FrontendServerProxyDriver {
     Iterable<String> filesToWrite, {
     bool recompileRestart = false,
   }) async {
-    if (_frontendServer!._socket != null) {
-      final socket = _frontendServer!._socket!;
-      final socketLines = _frontendServer!._socketLines!;
-      final nextResponseFuture = socketLines.first;
-      socket.writeln(
-        jsonEncode({
-          'instruction': 'RECOMPILE_AND_RECORD',
-          'entrypoint': entrypoint,
-          'invalidatedFiles':
-              invalidatedFiles.map((u) => u.toString()).toList(),
-          'filesToWrite': filesToWrite.toList(),
-          'recompileRestart': recompileRestart,
-        }),
+    return _fesPool.withResource(() async {
+      return await _frontendServer!.client.recompileAndRecord(
+        entrypoint,
+        invalidatedFiles,
+        filesToWrite,
+        recompileRestart: recompileRestart,
       );
-      final responseLine = await nextResponseFuture;
-      final compileResult = jsonDecode(responseLine) as Map<String, dynamic>;
-      return CompilerOutput(
-        compileResult['outputFilename'] as String? ?? '',
-        (compileResult['errorCount'] as int?) ?? 0,
-        (compileResult['sources'] as List?)
-                ?.cast<String>()
-                .map(Uri.parse)
-                .toList() ??
-            [],
-      );
-    }
-
-    // The first request to the Frontend Server will be coerced to a full
-    // compile. We must additionally write all of FES's generated files
-    // to disk - not just those for the 'current' library.
-    final isFirstRequest = _cachedOutput == null;
-    final compilerOutput =
-        recompileRestart
-            ? await this.recompileRestart(entrypoint, invalidatedFiles)
-            : await recompile(entrypoint, invalidatedFiles);
-    if (compilerOutput == null ||
-        compilerOutput.errorCount != 0 ||
-        compilerOutput.errorMessage != null) {
-      // Don't update the Frontend Server's state if an error occurred.
-      return compilerOutput;
-    }
-    _frontendServer!.recordFiles();
-    if (isFirstRequest || filesToWrite.isEmpty) {
-      _frontendServer!.writeAllFiles();
-    } else {
-      for (final file in filesToWrite) {
-        _frontendServer!.writeFile(file);
-      }
-    }
-    return compilerOutput;
+    });
   }
 
   Future<CompilerOutput?> compile(String entrypoint) async {
@@ -203,7 +181,7 @@ class FrontendServerProxyDriver {
       }
       if (request is _RecompileRequest) {
         if (output != null && output.errorCount == 0) {
-          _frontendServer!.accept();
+          await _frontendServer!.accept();
         } else {
           // We must await [reject]'s output, but we swallow the output since it
           // doesn't provide useful information.
@@ -287,35 +265,37 @@ class _CompileExpressionToJsRequest extends _CompilationRequest {
 /// A single instance of the Frontend Server that persists across
 /// compile/recompile requests.
 class PersistentFrontendServer {
-  Process? _server;
-  final Socket? _socket;
-  final Stream<String>? _socketLines;
-  final StdoutHandler? _stdoutHandler;
-  final StreamController<String>? _stdinController;
+  final FrontendServerClient _client;
   final Uri outputDillUri;
   final WebMemoryFilesystem _fileSystem;
+
   PersistentFrontendServer._({
-    Process? server,
-    StdoutHandler? stdoutHandler,
-    StreamController<String>? stdinController,
+    required FrontendServerClient client,
     required this.outputDillUri,
     required WebMemoryFilesystem fileSystem,
-    Socket? socket,
-    Stream<String>? socketLines,
-  }) : _server = server,
-       _stdoutHandler = stdoutHandler,
-       _stdinController = stdinController,
-       _fileSystem = fileSystem,
-       _socket = socket,
-       _socketLines = socketLines;
+  }) : _client = client,
+       _fileSystem = fileSystem;
+
+  FrontendServerClient get client => _client;
+  WebMemoryFilesystem get fileSystem => _fileSystem;
 
   static Future<PersistentFrontendServer> start({
     required String sdkRoot,
     required Uri fileSystemRoot,
     required Uri packagesFile,
   }) async {
-    final fes = await _tryConnectToFESManager(fileSystemRoot);
-    if (fes != null) return fes;
+    final rootPackage = getRootPackageName();
+    final socketConnection = await _tryConnectToFESManager(fileSystemRoot);
+    if (socketConnection != null) {
+      return PersistentFrontendServer._(
+        client: SocketFrontendServerClient(
+          socketConnection.socket,
+          socketConnection.socketLines,
+        ),
+        outputDillUri: fileSystemRoot.resolve('output.dill'),
+        fileSystem: WebMemoryFilesystem(fileSystemRoot, rootPackage),
+      );
+    }
 
     final outputDillUri = fileSystemRoot.resolve('output.dill');
     // [platformDill] must be passed to the Frontend Server with a 'file:'
@@ -340,21 +320,21 @@ class PersistentFrontendServer {
       '--output-incremental-dill=${outputDillUri.toFilePath()}',
     ];
     final process = await _startWithReaper(dartaotruntimePath, args);
-    final fileSystem = WebMemoryFilesystem(fileSystemRoot);
+    final fileSystem = WebMemoryFilesystem(fileSystemRoot, rootPackage);
     final stdoutHandler = StdoutHandler(logger: _log);
     process.stdout
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .listen(stdoutHandler.handler);
-    process.stderr.transform(utf8.decoder).listen(stderr.writeln);
-
-    final stdinController = StreamController<String>();
-    stdinController.stream.listen(process.stdin.writeln);
+    process.stderr.transform(utf8.decoder).listen(_log.warning);
 
     return PersistentFrontendServer._(
-      server: process,
-      stdoutHandler: stdoutHandler,
-      stdinController: stdinController,
+      client: StdioFrontendServerClient(
+        process,
+        stdoutHandler,
+        fileSystem,
+        outputDillUri,
+      ),
       outputDillUri: outputDillUri,
       fileSystem: fileSystem,
     );
@@ -366,22 +346,34 @@ class PersistentFrontendServer {
   /// port and attempts to connect.
   ///
   /// If a connection can't be made, returns `null` and deletes the config file.
-  static Future<PersistentFrontendServer?> _tryConnectToFESManager(
-    Uri fileSystemRoot,
-  ) async {
+  static Future<_FesSocketConnection?> _tryConnectToFESManager(
+    Uri fileSystemRoot, {
+    int retries = 10,
+  }) async {
     final configFile = File(
       p.join(Directory.current.path, fesManagerConfigPath),
     );
     if (!configFile.existsSync()) return null;
 
-    try {
-      final content = await configFile.readAsString();
-      final json = jsonDecode(content) as Map<String, dynamic>;
-      final port = json['port'] as int?;
-      if (port == null) {
-        throw StateError('Malformed FES port file: missing "port" field.');
-      }
+    int? port;
+    for (var i = 0; i < retries; i++) {
+      try {
+        final content = await configFile.readAsString();
+        final json = jsonDecode(content) as Map<String, dynamic>;
+        port = json['port'] as int?;
+        if (port != null) break;
+      } catch (_) {}
+      await Future<void>.delayed(const Duration(milliseconds: 25));
+    }
 
+    if (port == null) {
+      throw StateError(
+        'FES config file found at ${configFile.path} '
+        'but port could not be read.',
+      );
+    }
+
+    try {
       final socket = await Socket.connect(InternetAddress.loopbackIPv4, port);
       final socketLines =
           socket
@@ -389,23 +381,9 @@ class PersistentFrontendServer {
               .transform(utf8.decoder)
               .transform(const LineSplitter())
               .asBroadcastStream();
-      final fileSystem = WebMemoryFilesystem(fileSystemRoot);
-      return PersistentFrontendServer._(
-        outputDillUri: fileSystemRoot.resolve('output.dill'),
-        fileSystem: fileSystem,
-        socket: socket,
-        socketLines: socketLines,
-      );
+      return _FesSocketConnection(socket, socketLines);
     } catch (e) {
-      _log.warning(
-        'Failed to connect to FES manager. Deleting stale config file and '
-        'falling back to process mode.',
-        e,
-      );
-      try {
-        await configFile.delete();
-      } catch (_) {}
-      return null;
+      throw StateError('Failed to connect to FES manager at port $port: $e');
     }
   }
 
@@ -453,64 +431,19 @@ class PersistentFrontendServer {
     }
   }
 
-  Future<CompilerOutput?> compile(String entrypoint) async {
-    if (_socket != null) {
-      final socketLines = _socketLines!;
-      final nextResponseFuture = socketLines.first;
-      _socket.writeln(
-        jsonEncode({'instruction': 'COMPILE', 'entrypoint': entrypoint}),
-      );
-      final responseLine = await nextResponseFuture;
-      final compileResult = jsonDecode(responseLine) as Map<String, dynamic>;
-      return CompilerOutput(
-        compileResult['outputFilename'] as String? ?? '',
-        (compileResult['errorCount'] as int?) ?? 0,
-        (compileResult['sources'] as List?)
-                ?.cast<String>()
-                .map(Uri.parse)
-                .toList() ??
-            [],
-      );
-    }
-    _stdoutHandler!.reset();
-    _stdinController!.add('compile $entrypoint');
-    return await _stdoutHandler.compilerOutput!.future;
-  }
+  Future<CompilerOutput?> compile(String entrypoint) =>
+      _client.compile(entrypoint);
 
-  /// Either [accept] or [reject] should be called after every [recompile] call.
   Future<CompilerOutput?> recompile(
     String entrypoint,
     List<Uri> invalidatedFiles,
-  ) async {
-    _stdoutHandler!.reset();
-    final inputKey = const Uuid().v4();
-    _stdinController!.add('recompile $entrypoint $inputKey');
-    for (final file in invalidatedFiles) {
-      _stdinController.add(file.toString());
-    }
-    _stdinController.add(inputKey);
-    return await _stdoutHandler.compilerOutput!.future;
-  }
+  ) => _client.recompile(entrypoint, invalidatedFiles);
 
   Future<CompilerOutput?> recompileRestart(
     String entrypoint,
     List<Uri> invalidatedFiles,
-  ) async {
-    _stdoutHandler!.reset();
-    final inputKey = const Uuid().v4();
-    _stdinController!.add('recompile-restart $entrypoint $inputKey');
-    for (final file in invalidatedFiles) {
-      _stdinController.add(file.toString());
-    }
-    _stdinController.add(inputKey);
-    return await _stdoutHandler.compilerOutput!.future;
-  }
+  ) => _client.recompileRestart(entrypoint, invalidatedFiles);
 
-  /// Compiles a Dart expression to JS via the Frontend Server.
-  ///
-  /// This method uses the `JSON_INPUT` protocol to communicate with the
-  /// Frontend Server process.
-  /// See: `pkg/frontend_server/lib/frontend_server.dart` in the Dart SDK.
   Future<CompilerOutput?> compileExpressionToJs({
     required String libraryUri,
     required String scriptUri,
@@ -520,76 +453,21 @@ class PersistentFrontendServer {
     required Map<String, String> jsFrameValues,
     required String moduleName,
     required String expression,
-  }) async {
-    _stdoutHandler!.reset(expectSources: false);
-    _stdinController!.add('JSON_INPUT');
-    _stdinController.add(
-      json.encode({
-        'type': 'COMPILE_EXPRESSION_JS',
-        'data': {
-          'expression': expression,
-          'libraryUri': libraryUri,
-          'scriptUri': scriptUri,
-          'line': line,
-          'column': column,
-          'jsModules': jsModules,
-          'jsFrameValues': jsFrameValues,
-          'moduleName': moduleName,
-        },
-      }),
-    );
-    CompilerOutput? result;
-    try {
-      result = await _stdoutHandler.compilerOutput!.future.timeout(
-        const Duration(seconds: 10),
-      );
-    } on TimeoutException {
-      _stdoutHandler.reset();
-      return const CompilerOutput(
-        '',
-        1,
-        [],
-        errorMessage: 'Timeout waiting for expression compilation',
-      );
-    }
+  }) => _client.compileExpressionToJs(
+    libraryUri: libraryUri,
+    scriptUri: scriptUri,
+    line: line,
+    column: column,
+    jsModules: jsModules,
+    jsFrameValues: jsFrameValues,
+    moduleName: moduleName,
+    expression: expression,
+  );
 
-    if (result != null &&
-        result.expressionData == null &&
-        result.outputFilename.isNotEmpty) {
-      final file = File(result.outputFilename);
-      if (file.existsSync()) {
-        return CompilerOutput(
-          result.outputFilename,
-          result.errorCount,
-          result.sources,
-          expressionData: file.readAsBytesSync(),
-          errorMessage: result.errorMessage,
-        );
-      }
-    }
-    return result;
-  }
-
-  void accept() {
-    _stdinController!.add('accept');
-  }
-
-  /// Reads the content of a file generated by the Frontend Server.
-  ///
-  /// This is called by the worker in `workers.dart` in response to a
-  /// `READ_OUTPUT_FILE` request from the daemon in `daemon_builder.dart`.
-  Future<String> readOutputFile(String path) => File(path).readAsString();
-
-  Future<CompilerOutput?> reject() async {
-    _stdoutHandler!.reset(expectSources: false);
-    _stdinController!.add('reject');
-    return await _stdoutHandler.compilerOutput!.future;
-  }
-
-  void reset() {
-    _stdoutHandler!.reset();
-    _stdinController!.add('reset');
-  }
+  Future<void> accept() => _client.accept();
+  Future<String> readOutputFile(String path) => _client.readOutputFile(path);
+  Future<CompilerOutput?> reject() => _client.reject();
+  Future<void> reset() => _client.reset();
 
   /// Records all modified files into the in-memory filesystem.
   void recordFiles() {
@@ -609,12 +487,7 @@ class PersistentFrontendServer {
     _fileSystem.writeFileToDisk(_fileSystem.jsRootUri, fileName);
   }
 
-  Future<void> shutdown() async {
-    _stdinController!.add('quit');
-    await _server?.exitCode;
-    await _stdinController.close();
-    _server = null;
-  }
+  Future<void> shutdown() => _client.shutdown();
 }
 
 class CompilerOutput {
@@ -642,12 +515,13 @@ class CompilerOutput {
 class WebMemoryFilesystem {
   /// The root directory's URI from which JS file are being served.
   final Uri jsRootUri;
+  final String? rootPackageName;
 
   final Map<String, Uint8List> files = {};
   final Map<String, Uint8List> sourcemaps = {};
   final Map<String, Uint8List> metadata = {};
 
-  WebMemoryFilesystem(this.jsRootUri);
+  WebMemoryFilesystem(this.jsRootUri, [this.rootPackageName]);
 
   /// Writes the entirety of this filesystem to [outputDirectoryUri].
   void writeAllFilesToDisk(Uri outputDirectoryUri) {
@@ -664,24 +538,17 @@ class WebMemoryFilesystem {
   ///
   /// [fileName] is the file path of the compiled JS file being requested.
   /// Source maps and metadata files will be pulled in based on this name.
+  ///
+  /// Maps Frontend Server URIs to local server/hoisted paths:
+  /// - package:foo/lib/bar.dart -> packages/foo/bar.dart
+  /// - org-dartlang-app:///web/main.dart -> web/main.dart
+  /// - lib/src/helper.dart -> packages/root_package/src/helper.dart
   void writeFileToDisk(Uri outputDirectoryUri, String fileName) {
     assert(
       Directory.fromUri(outputDirectoryUri).existsSync(),
       '$outputDirectoryUri does not exist.',
     );
-    var sourceFile = fileName;
-    if (sourceFile.startsWith('package:')) {
-      sourceFile =
-          'packages/${sourceFile.substring('package:'.length, sourceFile.length)}';
-    } else if (sourceFile.startsWith('$multiRootScheme:///')) {
-      sourceFile = sourceFile.substring(
-        '$multiRootScheme:///'.length,
-        sourceFile.length,
-      );
-    }
-    final sourceMapFile = '$sourceFile.map';
-    final metadataFile = '$sourceFile.metadata';
-
+    final sourceFile = fesToAssetPath(fileName, rootPackage: rootPackageName);
     final sourceFileData = files[sourceFile];
     if (sourceFileData == null) {
       _log.warning(
@@ -691,6 +558,8 @@ class WebMemoryFilesystem {
       return;
     }
 
+    final sourceMapFile = '$sourceFile.map';
+    final metadataFile = '$sourceFile.metadata';
     final filesToWrite = {
       sourceFile: files[sourceFile]!,
       sourceMapFile: sourcemaps[sourceMapFile]!,
@@ -756,14 +625,26 @@ class WebMemoryFilesystem {
         _log.severe('Invalid byte index: [$codeStart, $codeEnd]');
         continue;
       }
-
-      final byteView = Uint8List.view(
+      var byteView = Uint8List.view(
         codeBytes.buffer,
         codeStart,
         codeEnd - codeStart,
       );
-      final fileName =
-          filePath.startsWith('/') ? filePath.substring(1) : filePath;
+      final fileName = fesToAssetPath(filePath, rootPackage: rootPackageName);
+
+      var codeString = utf8.decode(byteView);
+      codeString = codeString.replaceAllMapped(
+        RegExp(r'dartDevEmbedder\.debugger\.setSourceMap\([\s\S]*?\);'),
+        (match) => match
+            .group(0)!
+            .replaceAll('"$fesJsExtension"', '"$jsModuleExtension"'),
+      );
+      codeString = codeString.replaceAll(
+        fesSourceMapExtension,
+        jsSourceMapExtension,
+      );
+      byteView = Uint8List.fromList(utf8.encode(codeString));
+
       files[fileName] = byteView;
       updatedFiles.add(fileName);
 
@@ -772,11 +653,17 @@ class WebMemoryFilesystem {
       if (sourcemapStart < 0 || sourcemapEnd > sourcemapBytes.lengthInBytes) {
         continue;
       }
-      final sourcemapView = Uint8List.view(
+      var sourcemapView = Uint8List.view(
         sourcemapBytes.buffer,
         sourcemapStart,
         sourcemapEnd - sourcemapStart,
       );
+      var sourcemapString = utf8.decode(sourcemapView);
+      sourcemapString = sourcemapString.replaceAll(
+        fesJsExtension,
+        jsModuleExtension,
+      );
+      sourcemapView = Uint8List.fromList(utf8.encode(sourcemapString));
       final sourcemapName = '$fileName.map';
       sourcemaps[sourcemapName] = sourcemapView;
 
@@ -786,11 +673,22 @@ class WebMemoryFilesystem {
         _log.severe('Invalid byte index: [$metadataStart, $metadataEnd]');
         continue;
       }
-      final metadataView = Uint8List.view(
+      var metadataView = Uint8List.view(
         metadataBytes.buffer,
         metadataStart,
         metadataEnd - metadataStart,
       );
+      var metadataString = utf8.decode(metadataView);
+      metadataString = metadataString.replaceAll(
+        fesJsExtension,
+        jsModuleExtension,
+      );
+      metadataString = metadataString.replaceAll('.dart.lib', '');
+      metadataString = metadataString.replaceAllMapped(
+        RegExp(r'"name"\s*:\s*"([^"]*?)\.dart"'),
+        (match) => '"name":"${match.group(1)}"',
+      );
+      metadataView = Uint8List.fromList(utf8.encode(metadataString));
       metadata['$fileName.metadata'] = metadataView;
     }
     return updatedFiles;
@@ -884,4 +782,463 @@ class StdoutHandler {
     state = StdoutState.CollectDiagnostic;
     _errorBuffer = StringBuffer();
   }
+}
+
+/// Serializes async writes and flushes to an IOSink (such as stdin).
+///
+/// Ensures every write is flushed to the OS pipe before the next begins.
+class _StdinWriterQueue {
+  final IOSink _stdin;
+  final Logger _log;
+  Future<void> _chain = Future.value();
+
+  _StdinWriterQueue(this._stdin, this._log);
+
+  /// Schedules [line] to be written and flushed to stdin.
+  ///
+  /// Returns a [Future] that completes only after the line has been written
+  /// and flushed.
+  Future<void> send(String line) async {
+    _log.fine('FES Stdin queue write: $line');
+    _chain = _chain
+        .then((_) async {
+          _stdin.writeln(line);
+          await _stdin.flush().catchError((_) {});
+        })
+        .catchError((_) {});
+    await _chain;
+  }
+}
+
+abstract class FrontendServerClient {
+  Future<CompilerOutput?> compile(String entrypoint);
+
+  Future<CompilerOutput?> recompile(
+    String entrypoint,
+    List<Uri> invalidatedFiles,
+  );
+
+  Future<CompilerOutput?> recompileRestart(
+    String entrypoint,
+    List<Uri> invalidatedFiles,
+  );
+
+  Future<CompilerOutput?> compileExpressionToJs({
+    required String libraryUri,
+    required String scriptUri,
+    required int line,
+    required int column,
+    required Map<String, String> jsModules,
+    required Map<String, String> jsFrameValues,
+    required String moduleName,
+    required String expression,
+  });
+
+  Future<void> accept();
+  Future<CompilerOutput?> reject();
+  Future<void> reset();
+  Future<void> shutdown();
+  Future<String> readOutputFile(String path);
+
+  Future<String?> readInMemoryFile(
+    String path,
+    String entrypoint,
+    List<Uri> invalidatedFiles,
+  );
+
+  Future<CompilerOutput?> recompileAndRecord(
+    String entrypoint,
+    List<Uri> invalidatedFiles,
+    Iterable<String> filesToWrite, {
+    bool recompileRestart = false,
+  });
+}
+
+/// A Frontend Server client that communicates with a shared external FES
+/// Manager process over a socket using JSON-encoded commands.
+///
+/// Primarily used by webdev and supports client-side hot reload and expression
+/// eval.
+class SocketFrontendServerClient implements FrontendServerClient {
+  final Socket _socket;
+  final Stream<String> _socketLines;
+
+  SocketFrontendServerClient(this._socket, this._socketLines);
+
+  @override
+  Future<CompilerOutput?> compile(String entrypoint) async {
+    final nextResponseFuture = _socketLines.first;
+    _socket.writeln(
+      jsonEncode({'instruction': 'COMPILE', 'entrypoint': entrypoint}),
+    );
+    final responseLine = await nextResponseFuture;
+    final compileResult = jsonDecode(responseLine) as Map<String, dynamic>;
+    return CompilerOutput(
+      compileResult['outputFilename'] as String? ?? '',
+      (compileResult['errorCount'] as int?) ?? 0,
+      (compileResult['sources'] as List?)
+              ?.cast<String>()
+              .map(Uri.parse)
+              .toList() ??
+          [],
+      errorMessage: compileResult['errorMessage'] as String?,
+    );
+  }
+
+  @override
+  Future<String?> readInMemoryFile(
+    String path,
+    String entrypoint,
+    List<Uri> invalidatedFiles,
+  ) async {
+    final nextResponseFuture = _socketLines.first;
+    _socket.writeln(
+      jsonEncode({
+        'instruction': 'READ_OUTPUT_FILE',
+        'path': path,
+        'entrypoint': entrypoint,
+        'invalidatedFiles': invalidatedFiles.map((u) => u.toString()).toList(),
+      }),
+    );
+    await _socket.flush();
+    final responseLine = await nextResponseFuture;
+    final response = jsonDecode(responseLine) as Map<String, dynamic>;
+    return response['content'] as String?;
+  }
+
+  @override
+  Future<CompilerOutput?> recompileAndRecord(
+    String entrypoint,
+    List<Uri> invalidatedFiles,
+    Iterable<String> filesToWrite, {
+    bool recompileRestart = false,
+  }) async {
+    final nextResponseFuture = _socketLines.first;
+    _socket.writeln(
+      jsonEncode({
+        'instruction': 'RECOMPILE_AND_RECORD',
+        'entrypoint': entrypoint,
+        'invalidatedFiles': invalidatedFiles.map((u) => u.toString()).toList(),
+        'filesToWrite': filesToWrite.toList(),
+        'recompileRestart': recompileRestart,
+      }),
+    );
+    await _socket.flush();
+    final responseLine = await nextResponseFuture;
+    final compileResult = jsonDecode(responseLine) as Map<String, dynamic>;
+    return CompilerOutput(
+      compileResult['outputFilename'] as String? ?? '',
+      (compileResult['errorCount'] as int?) ?? 0,
+      (compileResult['sources'] as List?)
+              ?.cast<String>()
+              .map(Uri.parse)
+              .toList() ??
+          [],
+    );
+  }
+
+  @override
+  Future<CompilerOutput?> recompile(
+    String entrypoint,
+    List<Uri> invalidatedFiles,
+  ) => throw UnsupportedError('Use recompileAndRecord for socket client.');
+
+  @override
+  Future<CompilerOutput?> recompileRestart(
+    String entrypoint,
+    List<Uri> invalidatedFiles,
+  ) => throw UnsupportedError('Use recompileAndRecord for socket client.');
+
+  @override
+  Future<CompilerOutput?> compileExpressionToJs({
+    required String libraryUri,
+    required String scriptUri,
+    required int line,
+    required int column,
+    required Map<String, String> jsModules,
+    required Map<String, String> jsFrameValues,
+    required String moduleName,
+    required String expression,
+  }) async {
+    final nextResponseFuture = _socketLines.first;
+    _socket.writeln(
+      jsonEncode({
+        'instruction': 'COMPILE_EXPRESSION_JS',
+        'libraryUri': libraryUri,
+        'scriptUri': scriptUri,
+        'line': line,
+        'column': column,
+        'jsModules': jsModules,
+        'jsFrameValues': jsFrameValues,
+        'moduleName': moduleName,
+        'expression': expression,
+      }),
+    );
+    await _socket.flush();
+    final responseLine = await nextResponseFuture;
+    final response = jsonDecode(responseLine) as Map<String, dynamic>;
+    final bytes =
+        response['expressionData'] != null
+            ? base64.decode(response['expressionData'] as String)
+            : null;
+    return CompilerOutput(
+      '',
+      (response['errorCount'] as int?) ?? 0,
+      [],
+      expressionData: bytes,
+      errorMessage: response['errorMessage'] as String?,
+    );
+  }
+
+  @override
+  Future<void> accept() async {}
+
+  @override
+  Future<CompilerOutput?> reject() async => null;
+
+  @override
+  Future<void> reset() async {}
+
+  @override
+  Future<void> shutdown() async {
+    await _socket.close();
+  }
+
+  @override
+  Future<String> readOutputFile(String path) async {
+    final nextResponseFuture = _socketLines.first;
+    _socket.writeln(
+      jsonEncode({'instruction': 'READ_OUTPUT_FILE', 'path': path}),
+    );
+    await _socket.flush();
+    final responseLine = await nextResponseFuture;
+    final response = jsonDecode(responseLine) as Map<String, dynamic>;
+    return response['content'] as String? ?? '';
+  }
+}
+
+/// A Frontend Server client that interacts with a persistent local FES process
+/// over stdio.
+///
+/// Used when running with `build_runner serve`.
+class StdioFrontendServerClient implements FrontendServerClient {
+  final Process _server;
+  final StdoutHandler _stdoutHandler;
+  final WebMemoryFilesystem _fileSystem;
+  final Uri _outputDillUri;
+  final _StdinWriterQueue _stdinWriterQueue;
+  CompilerOutput? _cachedOutput;
+
+  StdioFrontendServerClient(
+    this._server,
+    this._stdoutHandler,
+    this._fileSystem,
+    this._outputDillUri,
+  ) : _stdinWriterQueue = _StdinWriterQueue(_server.stdin, _log);
+
+  Future<void> _send(String line) async {
+    await _stdinWriterQueue.send(line);
+  }
+
+  @override
+  Future<CompilerOutput?> compile(String entrypoint) async {
+    _stdoutHandler.reset();
+    await _send('compile $entrypoint');
+    return await _stdoutHandler.compilerOutput!.future;
+  }
+
+  @override
+  Future<CompilerOutput?> recompile(
+    String entrypoint,
+    List<Uri> invalidatedFiles,
+  ) async {
+    _stdoutHandler.reset();
+    final inputKey = const Uuid().v4();
+    await _send('recompile $entrypoint $inputKey');
+    for (final file in invalidatedFiles) {
+      await _send(file.toString());
+    }
+    await _send(inputKey);
+    return await _stdoutHandler.compilerOutput!.future;
+  }
+
+  @override
+  Future<CompilerOutput?> recompileRestart(
+    String entrypoint,
+    List<Uri> invalidatedFiles,
+  ) async {
+    _stdoutHandler.reset();
+    final inputKey = const Uuid().v4();
+    await _send('recompile-restart $entrypoint $inputKey');
+    for (final file in invalidatedFiles) {
+      await _send(file.toString());
+    }
+    await _send(inputKey);
+    return await _stdoutHandler.compilerOutput!.future;
+  }
+
+  @override
+  Future<CompilerOutput?> compileExpressionToJs({
+    required String libraryUri,
+    required String scriptUri,
+    required int line,
+    required int column,
+    required Map<String, String> jsModules,
+    required Map<String, String> jsFrameValues,
+    required String moduleName,
+    required String expression,
+  }) async {
+    _stdoutHandler.reset(expectSources: false);
+    await _send('JSON_INPUT');
+    await _send(
+      json.encode({
+        'type': 'COMPILE_EXPRESSION_JS',
+        'data': {
+          'expression': expression,
+          'libraryUri': libraryUri,
+          'scriptUri': scriptUri,
+          'line': line,
+          'column': column,
+          'jsModules': jsModules,
+          'jsFrameValues': jsFrameValues,
+          'moduleName': moduleName,
+        },
+      }),
+    );
+    CompilerOutput? result;
+    try {
+      result = await _stdoutHandler.compilerOutput!.future.timeout(
+        const Duration(seconds: 10),
+      );
+    } on TimeoutException {
+      _stdoutHandler.reset();
+      return const CompilerOutput(
+        '',
+        1,
+        [],
+        errorMessage: 'Timeout waiting for expression compilation',
+      );
+    }
+
+    if (result != null &&
+        result.expressionData == null &&
+        result.outputFilename.isNotEmpty) {
+      final file = File(result.outputFilename);
+      if (file.existsSync()) {
+        return CompilerOutput(
+          result.outputFilename,
+          result.errorCount,
+          result.sources,
+          expressionData: file.readAsBytesSync(),
+          errorMessage: result.errorMessage,
+        );
+      }
+    }
+    return result;
+  }
+
+  @override
+  Future<void> accept() async {
+    await _send('accept');
+  }
+
+  @override
+  Future<CompilerOutput?> reject() async {
+    _stdoutHandler.reset(expectSources: false);
+    await _send('reject');
+    return await _stdoutHandler.compilerOutput!.future;
+  }
+
+  @override
+  Future<void> reset() async {
+    _stdoutHandler.reset();
+    await _send('reset');
+  }
+
+  @override
+  Future<void> shutdown() async {
+    await _send('quit');
+    await _server.exitCode;
+  }
+
+  @override
+  Future<String> readOutputFile(String path) => File(path).readAsString();
+
+  @override
+  Future<String?> readInMemoryFile(
+    String path,
+    String entrypoint,
+    List<Uri> invalidatedFiles,
+  ) async {
+    String? content;
+    final scratchSpacePrefix = testScratchSpacePathPrefix;
+    final index = path.indexOf(scratchSpacePrefix);
+    if (index != -1) {
+      final relativeKey = fesToAssetPath(
+        path.substring(index + scratchSpacePrefix.length),
+        rootPackage: _fileSystem.rootPackageName,
+      );
+
+      final memoryData =
+          _fileSystem.files[relativeKey] ??
+          _fileSystem.sourcemaps[relativeKey] ??
+          _fileSystem.metadata[relativeKey];
+      if (memoryData != null) {
+        content = utf8.decode(memoryData);
+      }
+    }
+
+    if (content == null) {
+      throw StateError(
+        'Requested memory file not found in Frontend Server memory cache: '
+        '$path',
+      );
+    }
+    return content;
+  }
+
+  @override
+  Future<CompilerOutput?> recompileAndRecord(
+    String entrypoint,
+    List<Uri> invalidatedFiles,
+    Iterable<String> filesToWrite, {
+    bool recompileRestart = false,
+  }) async {
+    final isFirstRequest = _cachedOutput == null;
+    final compilerOutput = await (switch ((isFirstRequest, recompileRestart)) {
+      (true, _) => compile(entrypoint),
+      (false, true) => this.recompileRestart(entrypoint, invalidatedFiles),
+      (false, false) => recompile(entrypoint, invalidatedFiles),
+    });
+    if (compilerOutput == null ||
+        compilerOutput.errorCount != 0 ||
+        compilerOutput.errorMessage != null) {
+      await reject();
+      return compilerOutput;
+    }
+    await accept();
+    _cachedOutput = compilerOutput;
+    recordFiles();
+    writeAllFiles();
+    return compilerOutput;
+  }
+
+  void recordFiles() {
+    final outputDillPath = _outputDillUri.toFilePath();
+    final codeFile = File('$outputDillPath.sources');
+    final manifestFile = File('$outputDillPath.json');
+    final sourcemapFile = File('$outputDillPath.map');
+    final metadataFile = File('$outputDillPath.metadata');
+    _fileSystem.update(codeFile, manifestFile, sourcemapFile, metadataFile);
+  }
+
+  void writeAllFiles() {
+    _fileSystem.writeAllFilesToDisk(_fileSystem.jsRootUri);
+  }
+}
+
+class _FesSocketConnection {
+  final Socket socket;
+  final Stream<String> socketLines;
+  _FesSocketConnection(this.socket, this.socketLines);
 }
