@@ -1,3 +1,8 @@
+## 4.7.0
+
+- Add new Frontend Server socket instructions: MERGE_ALL_METADATA and READ_OUTPUT_FILE.
+- Add support for recompile-restart operations in the Frontend Server.
+
 ## 4.6.0
 
 - Add `webAssetsPath` option to `build_web_compilers:entrypoint` to allow manually specifying a non-default main directory.
