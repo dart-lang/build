@@ -16,6 +16,7 @@ import 'package:pool/pool.dart';
 import 'package:uuid/uuid.dart';
 
 import '../common.dart';
+import 'package_config.dart';
 
 final _log = Logger('FrontendServerProxy');
 final dartaotruntimePath = p.join(sdkDir, 'bin', 'dartaotruntime');
@@ -296,6 +297,18 @@ class PersistentFrontendServer {
         fileSystem: WebMemoryFilesystem(fileSystemRoot, rootPackage),
       );
     }
+
+    // ScratchSpace's generated 'package_config.json' uses absolute file URIs
+    // (e.g., file:///tmp/...), but Frontend Server expects paths mounted under
+    // its multi-root scheme (e.g., org-dartlang-app:///). So we rewrite all
+    // non-root package URIs their absolute multi-root URIs.
+    final file = File.fromUri(packagesFile);
+    if (!file.existsSync()) {
+      throw StateError(
+        'package_config.json does not exist at ${packagesFile.toFilePath()}',
+      );
+    }
+    PackageConfig.rewriteToMultiRoot(file, multiRootScheme, rootPackage);
 
     final outputDillUri = fileSystemRoot.resolve('output.dill');
     // [platformDill] must be passed to the Frontend Server with a 'file:'

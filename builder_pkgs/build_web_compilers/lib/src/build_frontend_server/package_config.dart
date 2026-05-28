@@ -53,4 +53,44 @@ class PackageConfig {
     final pathInPackage = parts.skip(1).join('/');
     return root.resolve(pathInPackage);
   }
+
+  /// Resolves a relative scratch space path (e.g., `'packages/foo/bar.dart'`)
+  /// directly to its absolute on-disk source file URI.
+  ///
+  /// Returns `null` if the path is not a package path or the package
+  /// cannot be resolved.
+  Uri? resolveScratchSpacePath(String relativePath) {
+    if (!relativePath.startsWith('packages/')) return null;
+    final parts = relativePath.split('/');
+    if (parts.length < 3) return null;
+    final packageName = parts[1];
+    final subPath = parts.skip(2).join('/');
+    return resolve(Uri.parse('package:$packageName/$subPath'));
+  }
+
+  /// Rewrites [packageConfigFile]'s absolute package paths to absolute
+  /// URIs under [multiRootScheme].
+  ///
+  /// Ignores root packages.
+  static void rewriteToMultiRoot(
+    File packageConfigFile,
+    String multiRootScheme,
+    String rootPackage,
+  ) {
+    final content = packageConfigFile.readAsStringSync();
+    final parsed = jsonDecode(content) as Map<String, dynamic>;
+    final packages = parsed['packages'] as List<dynamic>;
+    var modified = false;
+    for (final package in packages) {
+      final packageMap = package as Map<String, dynamic>;
+      final name = packageMap['name'] as String;
+      if (name != rootPackage) {
+        packageMap['rootUri'] = '$multiRootScheme:///packages/$name/';
+        modified = true;
+      }
+    }
+    if (modified) {
+      packageConfigFile.writeAsStringSync(jsonEncode(parsed));
+    }
+  }
 }

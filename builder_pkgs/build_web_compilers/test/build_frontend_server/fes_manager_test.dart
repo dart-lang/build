@@ -34,13 +34,19 @@ void main() {
       final fileSystemRoot = tempDir.uri.resolve('fes_root/');
       await Directory.fromUri(fileSystemRoot).create(recursive: true);
 
-      final scriptPath = p.absolute('bin/fes_manager.dart');
+      final scriptPath = _resolveFesManagerScriptPath();
       final process = await Process.start('dart', [
         scriptPath,
         sdkDir,
         fileSystemRoot.toString(),
         p.toUri(packageConfig.path).toString(),
       ], workingDirectory: tempDir.path);
+      process.stdout
+          .transform(utf8.decoder)
+          .listen((line) => print('Test 1 stdout: $line'));
+      process.stderr
+          .transform(utf8.decoder)
+          .listen((line) => print('Test 1 stderr: $line'));
 
       // Wait for a config file to be written.
       final configFile = File(p.join(tempDir.path, fesManagerConfigPath));
@@ -74,7 +80,7 @@ void main() {
       await Directory.fromUri(fileSystemRoot).create(recursive: true);
 
       // Start first manager
-      final scriptPath = p.absolute('bin/fes_manager.dart');
+      final scriptPath = _resolveFesManagerScriptPath();
       final process1 = await Process.start('dart', [
         scriptPath,
         sdkDir,
@@ -156,7 +162,7 @@ void main() {
         testMainFile.createSync(recursive: true);
         testMainFile.writeAsStringSync('void main() { print("hello"); }');
 
-        final scriptPath = p.absolute('bin/fes_manager.dart');
+        final scriptPath = _resolveFesManagerScriptPath();
         testProcess = await Process.start('dart', [
           scriptPath,
           sdkDir,
@@ -406,4 +412,11 @@ Future<String> _waitForFileContentChanges(
     } catch (_) {}
     await Future<void>.delayed(const Duration(milliseconds: 100));
   }
+}
+
+// TODO(markzipan): Determine if this is sufficient to find 'fes_manager.dart'.
+String _resolveFesManagerScriptPath() {
+  final localScript = p.absolute('bin/fes_manager.dart');
+  if (File(localScript).existsSync()) return localScript;
+  return p.absolute('builder_pkgs/build_web_compilers/bin/fes_manager.dart');
 }

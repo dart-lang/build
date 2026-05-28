@@ -226,17 +226,13 @@ class FesManager {
             .cast<String>()
             .map((f) => f.replaceAll(jsModuleExtension, fesJsExtension))
             .toList();
-    final invalidatedUris =
+    final invalidatedFiles =
         (request['invalidatedFiles'] as List)
             .cast<String>()
             .map(Uri.parse)
             .toList();
     // Copy invalidated files to FES's scratch space.
-    _copyFilesToScratchSpace(invalidatedUris);
-    final invalidatedFiles =
-        invalidatedUris
-            .map((uri) => packageConfig.resolve(uri) ?? uri)
-            .toList();
+    _copyFilesToScratchSpace(invalidatedFiles);
 
     final result = await driver.recompileAndRecord(
       entrypoint,
@@ -351,29 +347,37 @@ class FesManager {
     }
   }
 
-  /// Copies invalidated files to the FES scratch space.
-  ///
-  /// Maps URIs to their actual location in the scratch space.
+  /// Copies invalidated Dart source files to the Frontend Server's scratch
+  /// space so that recompiles have can read the updated code.
   void _copyFilesToScratchSpace(Iterable<Uri> uris) {
-    final rootPackageName = fes.fileSystem.rootPackageName;
     final targetOutputPath = p.dirname(fes.outputDillUri.toFilePath());
 
     for (final uri in uris) {
-      // Handle 'package:' uris.
-      if (uri.scheme == 'package' &&
-          uri.pathSegments.first == rootPackageName) {
-        final subPath = uri.pathSegments.skip(1).join('/');
-        _copy(
-          _resolveSourceAndTarget(
-            p.join('lib', subPath),
-            targetOutputPath,
-            targetRelativePath: p.join('packages', rootPackageName, subPath),
-          ),
-        );
-      } else if (uri.scheme == multiRootScheme) {
-        final relativePath =
-            uri.path.startsWith('/') ? uri.path.substring(1) : uri.path;
-        _copy(_resolveSourceAndTarget(relativePath, targetOutputPath));
+      // Transform the URI to its scratch space URI. For example:
+      // For web assets and entrypoints:
+      // - input URI: `org-dartlang-app:///web/main.dart`
+      // - source: `Directory.current.path/web/main.dart`
+      //           (e.g. `/tmp/build_runner_tester/root_pkg/web/main.dart`)
+      // - target: `<targetOutputPath>/web/main.dart`
+      //           (e.g. `/tmp/fes_root/web/main.dart`)
+      //
+      // For package files:
+      // - input URI: `package:foo/lib/bar.dart` or `org-dartlang-app:///packages/foo/bar.dart`
+      // - source: `packageConfig.resolve/lib/bar.dart`
+      //           (e.g. `/tmp/build_runner_tester/foo/lib/bar.dart`)
+      // - target: `<targetOutputPath>/packages/foo/bar.dart`
+      //           (e.g. `/tmp/fes_root/packages/foo/bar.dart`)
+      final relativePath = fesToAssetPath(uri.toString());
+      final resolvedUri = packageConfig.resolveScratchSpacePath(relativePath);
+
+      if (resolvedUri != null && resolvedUri.scheme == 'file') {
+        final sourceFile = File(resolvedUri.toFilePath());
+        final targetFile = File(p.join(targetOutputPath, relativePath));
+        _copy((source: sourceFile, target: targetFile));
+      } else if (!relativePath.startsWith('packages/')) {
+        final sourceFile = File(p.join(Directory.current.path, relativePath));
+        final targetFile = File(p.join(targetOutputPath, relativePath));
+        _copy((source: sourceFile, target: targetFile));
       }
     }
   }
@@ -381,30 +385,4 @@ class FesManager {
   Future<void> shutdown() async {
     await fes.shutdown();
   }
-}
-
-/// Resolves [sourceRelativePath] to its on-disk source file and maps it to
-/// [targetRelativePath] within [targetOutputPath].
-///
-/// [targetOutputPath] is usually the FES Manager's managed scratch space dir.
-///
-/// For entrypoints and web assets (e.g., `web/main.dart`), the build system
-/// and FES have identical relative paths, and [targetOutputPath] can be null:
-/// - source: `<packageRoot>/web/main.dart`
-/// - target: `[targetOutputPath]/web/main.dart`
-///
-/// For package files (e.g., `lib/library.dart`), FES saves them under a
-/// `packages/` folder:
-/// - source: `<packageRoot>/lib/library.dart`
-/// - target: `[targetOutputPath]/packages/<packageName>/library.dart`
-({File source, File target}) _resolveSourceAndTarget(
-  String sourceRelativePath,
-  String targetOutputPath, {
-  String? targetRelativePath,
-}) {
-  final sourceFile = File(p.join(Directory.current.path, sourceRelativePath));
-  final targetFile = File(
-    p.join(targetOutputPath, targetRelativePath ?? sourceRelativePath),
-  );
-  return (source: sourceFile, target: targetFile);
 }

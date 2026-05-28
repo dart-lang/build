@@ -51,11 +51,6 @@ class DdcFrontendServerBuilder implements Builder {
       json.decode(moduleContents) as Map<String, dynamic>,
     );
     final ddcEntrypointId = module.primarySource;
-    final driver = await buildStep.fetchResource(
-      frontendServerProxyDriverResource,
-    );
-    await buildStep.fetchResource(persistentFrontendServerResource);
-
     final entrypoint = frontendServerState.entrypointAssetId;
     final isEntrypoint =
         entrypoint == null
@@ -65,15 +60,6 @@ class DdcFrontendServerBuilder implements Builder {
     if (isEntrypoint && entrypoint == null) {
       frontendServerState.entrypointAssetId = ddcEntrypointId;
     }
-    final entrypointArg = sourceArg(frontendServerState.entrypointAssetId!);
-    final root = getRootPackageName();
-    String assetPath(AssetId id) =>
-        id.package == root ? id.path : 'packages/${id.package}/${id.path}';
-    final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
-    final changedAssetUris = [
-      for (final asset in scratchSpace.changedFilesInBuild)
-        Uri(scheme: multiRootScheme, host: '', path: '/${asset.path}'),
-    ];
     final entrypointAssetId = frontendServerState.entrypointAssetId!;
     final transitiveDeps = await buildStep.trackStage(
       'CollectTransitiveDeps',
@@ -86,13 +72,31 @@ class DdcFrontendServerBuilder implements Builder {
           dep.primarySource.changeExtension(metadataExtension),
         ],
     ];
+    final transitiveSources = [
+      for (final dep in transitiveDeps) ...dep.sources,
+    ];
+    final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
     await buildStep.trackStage(
       'EnsureAssets',
       () => scratchSpace.ensureAssets([
         ...module.sources,
-        ...transitiveJsDeps,
+        ...transitiveSources,
       ], buildStep),
     );
+    final root = getRootPackageName();
+    final driver = await buildStep.fetchResource(
+      frontendServerProxyDriverResource,
+    );
+    await buildStep.fetchResource(persistentFrontendServerResource);
+    final entrypointArg = sourceArg(frontendServerState.entrypointAssetId!);
+    String assetPath(AssetId id) =>
+        id.package == root
+            ? id.path
+            : 'packages/${id.package}/${id.path.replaceFirst('lib/', '')}';
+    final changedAssetUris = [
+      for (final asset in scratchSpace.changedFilesInBuild)
+        Uri(scheme: multiRootScheme, host: '', path: '/${assetPath(asset)}'),
+    ];
     try {
       frontendServerState.triggerSharedCompilation(entrypointAssetId, () async {
         final ScratchSpace sSpace;
