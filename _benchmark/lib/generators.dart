@@ -4,12 +4,14 @@
 
 import 'benchmark.dart';
 import 'benchmarks/built_value_generator_benchmark.dart';
+import 'benchmarks/combined_generator_benchmark.dart';
 import 'benchmarks/freezed_generator_benchmark.dart';
 import 'benchmarks/json_serializable_generator_benchmark.dart';
 import 'benchmarks/mockito_generator_benchmark.dart';
 
 /// A code generator for benchmarking.
 enum Generator {
+  combined(packageName: 'combined', benchmark: CombinedGeneratorBenchmark()),
   builtValue(
     packageName: 'built_value',
     benchmark: BuiltValueGeneratorBenchmark(),
