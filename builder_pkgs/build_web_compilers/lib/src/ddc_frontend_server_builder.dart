@@ -57,9 +57,11 @@ class DdcFrontendServerBuilder implements Builder {
       frontendServerStateResource,
     );
     final entrypoint = frontendServerState.entrypointAssetId;
-    final isEntrypoint = entrypoint == null
-        ? ddcEntrypointId.changeExtension('.ddc.module') == buildStep.inputId
-        : ddcEntrypointId == entrypoint;
+    final isEntrypoint =
+        entrypoint == null
+            ? ddcEntrypointId.changeExtension('.ddc.module') ==
+                buildStep.inputId
+            : ddcEntrypointId == entrypoint;
     if (isEntrypoint && entrypoint == null) {
       frontendServerState.entrypointAssetId = ddcEntrypointId;
     }
