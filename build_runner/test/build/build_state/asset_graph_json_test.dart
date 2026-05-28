@@ -3,8 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:convert';
-import 'package:build_runner/src/build/asset_graph/asset_graph_json.dart';
-import 'package:build_runner/src/build/asset_graph/graph.dart';
+import 'package:build_runner/src/build/build_state/asset_graph_json.dart';
+import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/library_cycle_graph/phased_asset_deps.dart';
 import 'package:build_runner/src/build_plan/build_plan_digest.dart';
 import 'package:test/test.dart';
@@ -13,7 +13,7 @@ void main() {
   group('AssetGraphJson', () {
     test('deserialize returns null on version mismatch', () async {
       final validBytes = AssetGraphJson.serialize(
-        assetGraph: AssetGraph(),
+        buildState: BuildState.empty(),
         buildPlanDigest: BuildPlanDigest.build((b) {
           b.compileDigest = '';
           b.buildTriggersDigest = '';
@@ -36,7 +36,7 @@ void main() {
 
     test('deserialize returns null on invalid json', () async {
       final validBytes = AssetGraphJson.serialize(
-        assetGraph: AssetGraph(),
+        buildState: BuildState.empty(),
         buildPlanDigest: BuildPlanDigest.build((b) {
           b.compileDigest = '';
           b.buildTriggersDigest = '';

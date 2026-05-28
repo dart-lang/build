@@ -7,7 +7,7 @@ import 'dart:collection';
 import 'package:build/build.dart';
 
 import '../io/filesystem.dart';
-import 'asset_graph/glob_id.dart';
+import 'build_state/glob_id.dart';
 
 /// Records inputs for a `BuildStep`.
 class InputTracker {

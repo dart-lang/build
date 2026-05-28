@@ -10,6 +10,7 @@ import 'package:build_config/build_config.dart';
 import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
+import 'package:build_runner/src/build_plan/placeholders.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:glob/glob.dart';
@@ -84,8 +85,8 @@ void main() {
                     'The package `a` does not include some required '
                     'sources in any of its targets',
                   ),
-                  contains(r'$package$'),
-                  isNot(contains(r'lib/$lib$')),
+                  contains(Placeholders.packageName),
+                  isNot(contains(Placeholders.libPath)),
                 ),
               ),
           isA<LogRecord>()
@@ -98,8 +99,8 @@ void main() {
                     'The package `b` does not include some required '
                     'sources in any of its targets',
                   ),
-                  contains(r'lib/$lib$'),
-                  isNot(contains(r'$package$')),
+                  contains(Placeholders.libPath),
+                  isNot(contains(Placeholders.packageName)),
                 ),
               ),
         ]),

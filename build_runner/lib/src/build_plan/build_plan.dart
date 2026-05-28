@@ -9,12 +9,10 @@ import 'package:built_collection/built_collection.dart';
 
 import '../bootstrap/bootstrapper.dart';
 import '../bootstrap/depfile.dart';
-import '../build/asset_graph/asset_graph_json.dart';
-import '../build/asset_graph/exceptions.dart';
-import '../build/asset_graph/graph.dart';
-import '../build/asset_graph/node.dart';
+import '../build/build_state/asset_graph_json.dart';
+import '../build/build_state/build_state.dart';
+import '../build/build_state/exceptions.dart';
 import '../build/library_cycle_graph/phased_asset_deps.dart';
-
 import '../constants.dart';
 import '../exceptions.dart';
 import '../io/asset_tracker.dart';
@@ -47,14 +45,14 @@ class BuildPlan {
   final BuildConfigs buildConfigs;
   final BuildPhases buildPhases;
 
-  final AssetGraph? _previousAssetGraph;
-  bool _previousAssetGraphWasTaken;
+  final BuildState? _previousBuildState;
+  bool _previousBuildStateWasTaken;
   final PhasedAssetDeps? previousPhasedAssetDeps;
   final bool restartIsNeeded;
 
   final Bootstrapper bootstrapper;
-  final AssetGraph _assetGraph;
-  bool _assetGraphWasTaken;
+  final BuildState _buildState;
+  bool _buildStateWasTaken;
   final BuiltSet<AssetId>? updates;
 
   /// Whether this is a clean build.
@@ -76,7 +74,7 @@ class BuildPlan {
   ///
   /// - Outputs from the previous build.
   /// - Files on disk that conflict with outputs of the current build.
-  /// - The asset graph, if it's invalid.
+  /// - The build state, if it's invalid.
   ///
   /// Call [deleteFilesAndFolders] to delete them.
   final BuiltList<AssetId> filesToDelete;
@@ -95,13 +93,13 @@ class BuildPlan {
     required this.readerWriter,
     required this.buildConfigs,
     required this.buildPhases,
-    required AssetGraph? previousAssetGraph,
-    required bool previousAssetGraphWasTaken,
+    required BuildState? previousBuildState,
+    required bool previousBuildStateWasTaken,
     required this.previousPhasedAssetDeps,
     required this.restartIsNeeded,
     required this.bootstrapper,
-    required AssetGraph assetGraph,
-    required bool assetGraphWasTaken,
+    required BuildState buildState,
+    required bool buildStateWasTaken,
     required this.updates,
     required this.filesToDelete,
     required this.foldersToDelete,
@@ -109,10 +107,10 @@ class BuildPlan {
     required this.triggersChanged,
     required BuiltList<bool> phaseOptionsChanged,
     required BuiltList<bool> postBuildOptionsChanged,
-  }) : _previousAssetGraph = previousAssetGraph,
-       _previousAssetGraphWasTaken = previousAssetGraphWasTaken,
-       _assetGraph = assetGraph,
-       _assetGraphWasTaken = assetGraphWasTaken,
+  }) : _previousBuildState = previousBuildState,
+       _previousBuildStateWasTaken = previousBuildStateWasTaken,
+       _buildState = buildState,
+       _buildStateWasTaken = buildStateWasTaken,
        _phaseOptionsChanged = phaseOptionsChanged,
        _postBuildOptionsChanged = postBuildOptionsChanged;
 
@@ -120,11 +118,11 @@ class BuildPlan {
   ///
   /// Loads the package strucure and build configuration; prepares
   /// [readerWriter], deduces the [buildPhases] that will run, deserializes and
-  /// checks the `AssetGraph`.
+  /// checks the `BuildState`.
   ///
-  /// If the asset graph indicates a restart is needed, [restartIsNeeded] will
-  /// be set. Otherwise, if it's valid, the deserialized asset graph is
-  /// available from [takePreviousAssetGraph].
+  /// If the build state indicates a restart is needed, [restartIsNeeded] will
+  /// be set. Otherwise, if it's valid, the deserialized build state is
+  /// available from [takePreviousBuildState].
   ///
   /// Files that should be deleted before restarting or building are accumulated
   /// in [filesToDelete] and [foldersToDelete]. Call [deleteFilesAndFolders] to
@@ -200,47 +198,50 @@ class BuildPlan {
       buildPackages: buildPackages,
     );
 
-    final assetGraphId = AssetId(buildPackages.outputRoot, assetGraphPath);
+    final assetGraphJsonId = AssetId(
+      buildPackages.outputRoot,
+      assetGraphJsonPath,
+    );
     final generatedOutputDirectoryId = AssetId(
       buildPackages.outputRoot,
       generatedOutputDirectory,
     );
     BuildPlanDigest? previousBuildPlanDigest;
-    AssetGraph? previousAssetGraph;
+    BuildState? previousBuildState;
     final filesToDelete = <AssetId>{};
     final foldersToDelete = <AssetId>{};
 
     PhasedAssetDeps? previousPhasedAssetDeps;
-    if (await readerWriter.canRead(assetGraphId)) {
+    if (await readerWriter.canRead(assetGraphJsonId)) {
       final assetGraphJson = AssetGraphJson.deserialize(
-        await readerWriter.readAsBytes(assetGraphId) as Uint8List,
+        await readerWriter.readAsBytes(assetGraphJsonId) as Uint8List,
       );
       if (assetGraphJson != null) {
-        previousAssetGraph = assetGraphJson.assetGraph;
+        previousBuildState = assetGraphJson.buildState;
         previousBuildPlanDigest = assetGraphJson.buildPlanDigest;
         previousPhasedAssetDeps = assetGraphJson.phasedAssetDeps;
       }
-      if (previousAssetGraph != null) {
+      if (previousBuildState != null) {
         if (restartIsNeeded ||
             !buildPlanDigest.canIncrementallyBuildFrom(
               previousBuildPlanDigest,
             )) {
           // Mark old outputs for deletion.
           filesToDelete.addAll(
-            previousAssetGraph.outputsToDelete(buildPackages),
+            previousBuildState.outputsToDelete(buildPackages),
           );
 
-          // Discard the invalid asset graph so that a new one will be created
+          // Discard the invalid build state so that a new one will be created
           // from scratch.
-          previousAssetGraph = null;
+          previousBuildState = null;
         }
       }
     }
 
-    // If there was no previous asset graph or it was invalid, start by deleting
-    // any invalid graph file and the generated output directory.
-    if (previousAssetGraph == null) {
-      filesToDelete.add(assetGraphId);
+    // If there was no previous build state or it was invalid, start by deleting
+    // any invalid asset graph json file and the generated output directory.
+    if (previousBuildState == null) {
+      filesToDelete.add(assetGraphJsonId);
       foldersToDelete.add(generatedOutputDirectoryId);
     }
 
@@ -252,51 +253,49 @@ class BuildPlan {
     final inputSources = await assetTracker.findInputSources();
     final cacheDirSources = await assetTracker.findCacheDirSources();
 
-    AssetGraph? assetGraph;
+    BuildState? buildState;
     Set<AssetId>? updates;
-    if (previousAssetGraph != null) {
+    if (previousBuildState != null) {
       updates = {
         ...inputSources,
         ...cacheDirSources,
-        for (final node in previousAssetGraph.allNodes)
-          if (node.isFile &&
-              (node.type != NodeType.generated || node.wasOutput))
-            node.id,
+        ...previousBuildState.sources,
+        ...previousBuildState.actualOutputs,
       };
-      assetGraph = previousAssetGraph.copyForNextBuild();
+      buildState = previousBuildState.copyForNextBuild();
 
       if (restartIsNeeded) {
         // Mark old outputs for deletion.
-        filesToDelete.addAll(previousAssetGraph.outputsToDelete(buildPackages));
+        filesToDelete.addAll(previousBuildState.outputsToDelete(buildPackages));
         foldersToDelete.add(generatedOutputDirectoryId);
 
-        // Discard the invalid asset graph so that a new one will be created
+        // Discard the invalid AssetGraphJson so that a new one will be created
         // from scratch, and mark it for deletion so that the same will happen
         // if restarting.
-        previousAssetGraph = null;
-        filesToDelete.add(assetGraphId);
+        previousBuildState = null;
+        filesToDelete.add(assetGraphJsonId);
 
-        // Discard state tied to the invalid asset graph.
+        // Discard state tied to the invalid AssetGraphJson.
         updates = null;
       }
     }
 
-    if (assetGraph == null) {
+    if (buildState == null) {
       // Files marked for deletion are not inputs.
       inputSources.removeAll(filesToDelete);
 
       try {
-        assetGraph = await AssetGraph.build(
-          buildPhases,
-          inputSources,
-          buildPackages,
+        buildState = BuildState.create(
+          buildPhases: buildPhases,
+          buildPackages: buildPackages,
+          sources: inputSources,
         );
-      } on DuplicateAssetNodeException catch (e) {
+      } on DuplicateAssetIdException catch (e) {
         buildLog.error(e.toString());
         throw const CannotBuildException();
       }
       final conflictsInDeps =
-          assetGraph.outputs
+          buildState.declaredAndActualOutputs
               .where((n) => !buildPackages.outputPackages.contains(n.package))
               .where(inputSources.contains)
               .toSet();
@@ -311,7 +310,7 @@ class BuildPlan {
       }
 
       filesToDelete.addAll(
-        assetGraph.outputs
+        buildState.declaredAndActualOutputs
             .where((n) => buildPackages.outputPackages.contains(n.package))
             .where(inputSources.contains)
             .toSet(),
@@ -327,17 +326,17 @@ class BuildPlan {
       readerWriter: readerWriter,
       buildConfigs: buildConfigs,
       buildPhases: buildPhases,
-      previousAssetGraph: previousAssetGraph,
-      previousAssetGraphWasTaken: false,
+      previousBuildState: previousBuildState,
+      previousBuildStateWasTaken: false,
       previousPhasedAssetDeps: previousPhasedAssetDeps,
       restartIsNeeded: restartIsNeeded,
       bootstrapper: bootstrapper,
-      assetGraph: assetGraph,
-      assetGraphWasTaken: false,
+      buildState: buildState,
+      buildStateWasTaken: false,
       updates: updates?.build(),
       filesToDelete: filesToDelete.toBuiltList(),
       foldersToDelete: foldersToDelete.toBuiltList(),
-      cleanBuild: previousAssetGraph == null,
+      cleanBuild: previousBuildState == null,
       triggersChanged:
           !buildPlanDigest.hasSameTriggersAs(previousBuildPlanDigest),
       phaseOptionsChanged: buildPlanDigest.computeChangedPhaseOptions(
@@ -371,14 +370,14 @@ class BuildPlan {
     buildConfigs: buildConfigs,
     readerWriter: readerWriter ?? this.readerWriter,
     buildPhases: buildPhases,
-    previousAssetGraph: _previousAssetGraph,
-    previousAssetGraphWasTaken: _previousAssetGraphWasTaken,
+    previousBuildState: _previousBuildState,
+    previousBuildStateWasTaken: _previousBuildStateWasTaken,
     previousPhasedAssetDeps:
         previousPhasedAssetDeps ?? this.previousPhasedAssetDeps,
     restartIsNeeded: restartIsNeeded,
     bootstrapper: bootstrapper,
-    assetGraph: _assetGraph,
-    assetGraphWasTaken: _assetGraphWasTaken,
+    buildState: _buildState,
+    buildStateWasTaken: _buildStateWasTaken,
     updates: updates,
     filesToDelete: filesToDelete,
     foldersToDelete: foldersToDelete,
@@ -408,25 +407,25 @@ class BuildPlan {
         ),
       );
 
-  /// Takes the loaded [AssetGraph], which may be `null` if none could be
+  /// Takes the loaded [BuildState], which may be `null` if none could be
   /// loaded or if it was invalid.
   ///
-  /// Subsequent calls will throw. This is because [AssetGraph] is mutable, so
+  /// Subsequent calls will throw. This is because [BuildState] is mutable, so
   /// the initial loaded state is only available once.
-  AssetGraph? takePreviousAssetGraph() {
-    if (_previousAssetGraphWasTaken) throw StateError('Already taken.');
-    _previousAssetGraphWasTaken = true;
-    return _previousAssetGraph;
+  BuildState? takePreviousBuildState() {
+    if (_previousBuildStateWasTaken) throw StateError('Already taken.');
+    _previousBuildStateWasTaken = true;
+    return _previousBuildState;
   }
 
-  /// Takes the [AssetGraph] for the build.
+  /// Takes the [BuildState] for the build.
   ///
-  /// Subsequent calls will throw. This is because [AssetGraph] is mutable, so
+  /// Subsequent calls will throw. This is because [BuildState] is mutable, so
   /// the initial state is only available once.
-  AssetGraph takeAssetGraph() {
-    if (_assetGraphWasTaken) throw StateError('Already taken.');
-    _assetGraphWasTaken = true;
-    return _assetGraph;
+  BuildState takeBuildState() {
+    if (_buildStateWasTaken) throw StateError('Already taken.');
+    _buildStateWasTaken = true;
+    return _buildState;
   }
 
   /// Whether [phaseNumber] has different options to the previous build

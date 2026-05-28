@@ -31,9 +31,9 @@ class CleanCommand implements BuildRunnerCommand {
       entrypointDir.deleteSync(recursive: true);
     }
 
-    final assetGraph = File(p.join(basePath, assetGraphPath));
-    if (assetGraph.existsSync()) {
-      assetGraph.deleteSync();
+    final assetGraphJsonFile = File(p.join(basePath, assetGraphJsonPath));
+    if (assetGraphJsonFile.existsSync()) {
+      assetGraphJsonFile.deleteSync();
     }
 
     final generatedDir = Directory(p.join(basePath, generatedOutputDirectory));

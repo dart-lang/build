@@ -14,8 +14,6 @@ import 'package:analyzer/src/dart/analysis/file_content_cache.dart';
 import 'package:build/build.dart' hide Resource;
 import 'package:path/path.dart' as p;
 
-import '../asset_graph/node.dart';
-
 /// The in-memory filesystem that is the analyzer's view of the build.
 ///
 /// Pass an `Iterable<AssetNode>` of generated file nodes to [startBuild] at the
@@ -66,23 +64,21 @@ class AnalysisDriverFilesystem
   }
 
   /// Initializes a new filesystem that will have files added due to the
-  /// build described by [generatedNodes].
+  /// build described by [generatedPhases].
   ///
   /// If [invalidatedSources] is `null`, this is an initial build and all
   /// cached contents are cleared. Otherwise, only source files matching
   /// [invalidatedSources] are removed.
   void startBuild(
-    Iterable<AssetNode> generatedNodes, {
+    Map<AssetId, int> generatedPhases, {
     required Set<AssetId>? invalidatedSources,
   }) {
     final previousPhaseByPath = _phaseByPath;
     _phaseByPath = <String, int>{};
     _pathByPhase = <int, List<String>>{};
-    for (final node in generatedNodes) {
-      // Post process generated nodes are never analyzed.
-      if (node.type == NodeType.postGenerated) continue;
-      final phase = node.generatedNodeConfiguration!.phaseNumber;
-      final idAsPath = node.id.asPath;
+    for (final entry in generatedPhases.entries) {
+      final phase = entry.value;
+      final idAsPath = entry.key.asPath;
       _phaseByPath[idAsPath] = phase;
       _pathByPhase.putIfAbsent(phase, () => []).add(idAsPath);
     }

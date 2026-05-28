@@ -10,8 +10,7 @@ import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
-import '../build/asset_graph/graph.dart';
-import '../build/asset_graph/node.dart';
+import '../build/build_state/build_state.dart';
 import '../build_plan/build_plan.dart';
 import 'reader_writer.dart';
 
@@ -24,7 +23,7 @@ import 'reader_writer.dart';
 /// they exist on disk from a previous build.
 class BuildOutputReader {
   final BuildPlan? _buildPlan;
-  final AssetGraph? _assetGraph;
+  final BuildState? _buildState;
   final Set<AssetId>? _processedOutputs;
   final ReaderWriter? _readerWriter;
 
@@ -33,7 +32,7 @@ class BuildOutputReader {
 
   /// For an unexpected failure condition, a fully empty output.
   BuildOutputReader.empty()
-    : _assetGraph = null,
+    : _buildState = null,
       _buildPlan = null,
       _readerWriter = null,
       _processedOutputs = null;
@@ -43,9 +42,9 @@ class BuildOutputReader {
   @visibleForTesting
   BuildOutputReader.graphOnly({
     required ReaderWriter readerWriter,
-    required AssetGraph assetGraph,
+    required BuildState buildState,
   }) : _buildPlan = null,
-       _assetGraph = assetGraph,
+       _buildState = buildState,
        _readerWriter = readerWriter,
        _processedOutputs = null;
 
@@ -57,64 +56,51 @@ class BuildOutputReader {
   BuildOutputReader({
     required BuildPlan buildPlan,
     required ReaderWriter readerWriter,
-    required AssetGraph assetGraph,
+    required BuildState buildState,
     required Set<AssetId> processedOutputs,
   }) : _readerWriter = readerWriter,
-       _assetGraph = assetGraph,
+       _buildState = buildState,
        _buildPlan = buildPlan,
        _processedOutputs = processedOutputs;
 
-  Set<AssetId> _collectAssetsDeletedByPostProcessBuilders() {
-    final assetGraph = _assetGraph;
-    if (assetGraph == null) return const {};
-    final result = <AssetId>{};
-    for (final packageResults
-        in assetGraph.allPostProcessBuildStepResults.values) {
-      for (final entry in packageResults.entries) {
-        if (entry.value.deletedPrimaryInput) {
-          result.add(entry.key.input);
-        }
-      }
-    }
-    return result;
-  }
+  Set<AssetId> _collectAssetsDeletedByPostProcessBuilders() =>
+      _buildState?.assetsDeletedByPostProcess ?? const {};
 
   /// Returns a reason why [id] is not readable, or null if it is readable.
   Future<UnreadableReason?> unreadableReason(AssetId id) async {
-    if (_assetGraph == null || _readerWriter == null) {
+    if (_buildState == null || _readerWriter == null) {
       return UnreadableReason.notFound;
     }
-    if (!_assetGraph.contains(id)) {
+    if (!_buildState.isFile(id)) {
       return UnreadableReason.notFound;
     }
     if (_assetsDeletedByPostProcessBuilders.contains(id)) {
       return UnreadableReason.deleted;
     }
-    final node = _assetGraph.get(id)!;
-    if (!node.isFile) return UnreadableReason.assetType;
+    if (!_buildState.isFile(id)) return UnreadableReason.assetType;
 
-    if (node.type == NodeType.postGenerated) {
+    if (_buildState.isActualPostOutput(id)) {
       return null;
     }
-    if (node.type == NodeType.generated) {
-      if (_processedOutputs?.contains(node.id) == false) {
+    if (_buildState.isDeclaredOutput(id)) {
+      final step = _buildState.stepForDeclaredOutput(id);
+      if (_processedOutputs?.contains(id) == false) {
         // The generated output was not considered for building because its
         // transitive input(s) did not match build dirs and/or build filters.
         return UnreadableReason.notOutput;
       }
-      final config = node.generatedNodeConfiguration!;
-      final stepResult = _assetGraph.buildStepResultFor(config.buildStepId);
-      if (stepResult != null && stepResult.result == false) {
+      final stepResult = _buildState.stepResult(step);
+      if (stepResult.failed) {
         return UnreadableReason.failed;
       }
-      if (!node.wasOutput) return UnreadableReason.notOutput;
+      if (!_buildState.isActualOutput(id)) return UnreadableReason.notOutput;
 
       // No need to explicitly check readability for generated files, their
-      // readability is recorded in the node state.
+      // readability is recorded in the build state.
       return null;
     }
 
-    if (node.type == NodeType.source && await _readerWriter.canRead(id)) {
+    if (_buildState.isSource(id) && await _readerWriter.canRead(id)) {
       return null;
     }
     return UnreadableReason.unknown;
@@ -139,8 +125,8 @@ class BuildOutputReader {
   Future<List<int>> readAsBytes(AssetId id) => _readerWriter!.readAsBytes(id);
 
   Stream<AssetId> findAssets(Glob glob, {required String package}) async* {
-    if (_assetGraph == null || _readerWriter == null) return;
-    for (final id in _assetGraph.packageFileIds(package, glob: glob)) {
+    if (_buildState == null || _readerWriter == null) return;
+    for (final id in _buildState.findFiles(package: package, glob: glob)) {
       if (await _readerWriter.canRead(id)) {
         yield id;
       }
@@ -152,58 +138,60 @@ class BuildOutputReader {
   ///
   /// Note that [id] must exist in the asset graph.
   FutureOr<Digest> _ensureDigest(AssetId id) {
-    final node = _assetGraph!.get(id)!;
-    if (node.digest != null) return node.digest!;
+    final digest = _buildState!.digestOf(id);
+    if (digest != null) return digest;
     return _readerWriter!.digest(id).then((digest) {
-      _assetGraph.updateNode(id, (nodeBuilder) {
-        nodeBuilder.digest = digest;
-      });
+      _buildState.updateSourceDigest(id, digest);
       return digest;
     });
   }
 
   /// A lazily computed view of all the assets available after a build.
   List<AssetId> allAssets({String? rootDir}) {
-    if (_assetGraph == null) return [];
-    return _assetGraph.allNodes
-        .map((node) {
-          if (_shouldSkipNode(node, rootDir)) {
-            return null;
-          }
-          return node.id;
-        })
-        .whereType<AssetId>()
-        .toList();
+    final buildState = _buildState;
+    if (buildState == null) return [];
+    final result = <AssetId>[];
+    for (final id in buildState.sources) {
+      if (!_shouldSkipId(buildState, id, rootDir)) {
+        result.add(id);
+      }
+    }
+    for (final id in buildState.declaredOutputs) {
+      if (!_shouldSkipId(buildState, id, rootDir)) {
+        result.add(id);
+      }
+    }
+    result.addAll(buildState.actualPostOutputs);
+    return result;
   }
 
-  bool _shouldSkipNode(AssetNode node, String? rootDir) {
+  bool _shouldSkipId(BuildState buildState, AssetId id, String? rootDir) {
     if (_buildPlan == null) return false;
-    if (!node.isFile) return true;
-    if (_assetsDeletedByPostProcessBuilders.contains(node.id)) return true;
+    if (!buildState.isFile(id)) return true;
+    if (_assetsDeletedByPostProcessBuilders.contains(id)) return true;
 
     // Exclude non-lib assets if they're outside of the root directory or not
     // an output package of the build.
-    if (!node.id.path.startsWith('lib/')) {
-      if (rootDir != null && !p.isWithin(rootDir, node.id.path)) return true;
-      if (!_buildPlan.buildPackages.outputPackages.contains(node.id.package)) {
+    if (!id.path.startsWith('lib/')) {
+      if (rootDir != null && !p.isWithin(rootDir, id.path)) return true;
+      if (!_buildPlan.buildPackages.outputPackages.contains(id.package)) {
         return true;
       }
     }
 
-    if (node.type == NodeType.postGenerated) {
+    if (buildState.isActualPostOutput(id)) {
       return false;
     }
-    if (node.type == NodeType.generated) {
-      final config = node.generatedNodeConfiguration!;
-      final stepResult = _assetGraph!.buildStepResultFor(config.buildStepId);
-      if (!node.wasOutput ||
-          (stepResult == null || stepResult.result == false)) {
+    if (buildState.isDeclaredOutput(id)) {
+      final step = buildState.stepForDeclaredOutput(id);
+      final stepResult = buildState.stepResult(step);
+      if (!buildState.isActualOutput(id) || stepResult.failed) {
         return true;
       }
-      return !_processedOutputs!.contains(node.id);
+      return !_processedOutputs!.contains(id);
     }
-    if (node.id.path == '.packages') return true;
-    if (node.id.path == '.dart_tool/package_config.json') return true;
+    if (id.path == '.packages') return true;
+    if (id.path == '.dart_tool/package_config.json') return true;
     return false;
   }
 }

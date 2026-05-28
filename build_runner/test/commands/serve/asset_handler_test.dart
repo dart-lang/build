@@ -5,12 +5,11 @@
 import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:build_runner/src/build/asset_graph/build_step_id.dart';
-import 'package:build_runner/src/build/asset_graph/build_step_result.dart';
-import 'package:build_runner/src/build/asset_graph/graph.dart';
-import 'package:build_runner/src/build/asset_graph/node.dart';
-import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
-import 'package:build_runner/src/build/asset_graph/post_process_build_step_result.dart';
+import 'package:build_runner/src/build/build_state/build_state.dart';
+import 'package:build_runner/src/build/build_state/build_step_id.dart';
+import 'package:build_runner/src/build/build_state/build_step_result.dart';
+import 'package:build_runner/src/build/build_state/post_process_build_step_id.dart';
+import 'package:build_runner/src/build/build_state/post_process_build_step_result.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
@@ -26,41 +25,37 @@ void main() {
   late AssetHandler handler;
   late BuildOutputReader reader;
   late InternalTestReaderWriter readerWriter;
-  late AssetGraph assetGraph;
+  late BuildState buildState;
 
   setUp(() async {
-    assetGraph = await AssetGraph.build(
-      BuildPhases([]),
-      <AssetId>{},
-      BuildPackages.singlePackageBuild('a', [
+    buildState = BuildState.create(
+      buildPhases: BuildPhases([]),
+      buildPackages: BuildPackages.singlePackageBuild('a', [
         BuildPackage.forTesting(name: 'a', isOutput: true),
       ]),
+      sources: <AssetId>{},
     );
     readerWriter = InternalTestReaderWriter();
     reader = BuildOutputReader.graphOnly(
       readerWriter: readerWriter,
-      assetGraph: assetGraph,
+      buildState: buildState,
     );
     handler = AssetHandler(() async => reader, 'a');
   });
 
   void addAsset(String id, String content, {bool deleted = false}) {
     final parsedId = AssetId.parse(id);
-    final node = AssetNode.source(
-      parsedId,
-      digest: computeDigest(parsedId, 'a'),
-    );
     if (deleted) {
-      assetGraph.updatePostProcessBuildStepResult(
+      buildState.addPostProcessBuildStepResult(
         PostProcessBuildStepId(input: parsedId, actionNumber: 1),
         PostProcessBuildStepResult(hidden: true, deletedPrimaryInput: true),
       );
     }
-    assetGraph.add(node);
-    readerWriter.testing.writeString(node.id, content);
+    buildState.addSourceForTest(parsedId, digest: computeDigest(parsedId, 'a'));
+    readerWriter.testing.writeString(parsedId, content);
   }
 
-  test('can not read deleted nodes', () async {
+  test('can not read deleted files', () async {
     addAsset('a|web/index.html', 'content', deleted: true);
     final response = await handler.handle(
       Request('GET', Uri.parse('http://server.com/index.html')),
@@ -136,18 +131,13 @@ void main() {
   test('Fails request for failed outputs', () async {
     final primaryId = AssetId('a', 'web/main.dart');
     final outputId = AssetId('a', 'web/main.ddc.js');
-    assetGraph.add(
-      AssetNode.generated(
-        outputId,
-        phaseNumber: 0,
-        isHidden: false,
-        digest: Digest([]),
-        primaryInput: primaryId,
-      ),
-    );
     final buildStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
-    final stepResult = BuildStepResult((b) => b..result = false);
-    assetGraph.updateBuildStepResult(buildStepId, stepResult);
+    buildState.addGeneratedForTest(outputId, buildStepId, digest: Digest([]));
+    final stepResult = BuildStepResult((b) {
+      b.result = false;
+      b.isHidden = false;
+    });
+    buildState.updateBuildStepResult(buildStepId, stepResult);
 
     final response = await handler.handle(
       Request('GET', Uri.parse('http://server.com/main.ddc.js')),

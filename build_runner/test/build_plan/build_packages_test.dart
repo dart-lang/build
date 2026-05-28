@@ -244,10 +244,10 @@ void main() {
       );
       final c = BuildPackage(name: 'c', path: '/c', watch: true);
       final d = BuildPackage(name: 'd', path: '/d', watch: true);
-      final graph = BuildPackages.singlePackageBuild('a', [a, b, c, d]);
-      expect(graph.singleOutputPackage!, 'a');
+      buildPackages = BuildPackages.singlePackageBuild('a', [a, b, c, d]);
+      expect(buildPackages.singleOutputPackage!, 'a');
       expect(
-        graph.packages.asMap(),
+        buildPackages.packages.asMap(),
         equals({'a': a, 'b': b, 'c': c, 'd': d, r'$sdk': anything}),
       );
     });

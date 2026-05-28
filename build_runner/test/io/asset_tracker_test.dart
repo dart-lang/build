@@ -6,7 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:build_runner/src/build/asset_graph/graph.dart';
+import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
@@ -24,7 +24,7 @@ import 'package:watcher/watcher.dart';
 void main() {
   group('AssetTracker.collectChanges()', () {
     late AssetTracker assetTracker;
-    late AssetGraph assetGraph;
+    late BuildState buildState;
 
     setUp(() async {
       await d.dir('a', [
@@ -47,15 +47,14 @@ void main() {
       ]);
       final reader = ReaderWriter(buildPackages);
       final aId = AssetId('a', 'web/a.txt');
-      assetGraph = await AssetGraph.build(BuildPhases([]), {
-        aId,
-      }, buildPackages);
-      // We need to pre-emptively assign a digest so we determine that the
-      // node is "interesting".
+      buildState = BuildState.create(
+        buildPhases: BuildPhases([]),
+        buildPackages: buildPackages,
+        sources: {aId},
+      );
+      // Assign a digest so the source is recognized as having been used.
       final digest = await reader.digest(aId);
-      assetGraph.updateNode(aId, (nodeBuilder) {
-        nodeBuilder.digest = digest;
-      });
+      buildState.updateSourceDigest(aId, digest);
 
       final buildConfigs = await BuildConfigs.load(
         buildPackages: buildPackages,
@@ -64,8 +63,8 @@ void main() {
         ),
       );
       assetTracker = AssetTracker(reader, buildPackages, buildConfigs);
-      final updates = await assetTracker.collectChanges(assetGraph);
-      await assetGraph.updateAndInvalidate(BuildPhases([]), updates);
+      final updates = await assetTracker.collectChanges(buildState);
+      buildState.updateForNextBuild(BuildPhases([]), updates);
       // We should see no changes initially other than new sdk sources
       expect(
         updates..removeWhere(
@@ -78,7 +77,7 @@ void main() {
     test('Collects file edits', () async {
       File(p.join(d.sandbox, 'a', 'web', 'a.txt')).writeAsStringSync('goodbye');
 
-      expect(await assetTracker.collectChanges(assetGraph), {
+      expect(await assetTracker.collectChanges(buildState), {
         AssetId('a', 'web/a.txt'): ChangeType.MODIFY,
       });
     });
@@ -86,7 +85,7 @@ void main() {
     test('Collects new files', () async {
       File(p.join(d.sandbox, 'a', 'web', 'b.txt')).writeAsStringSync('yo!');
 
-      expect(await assetTracker.collectChanges(assetGraph), {
+      expect(await assetTracker.collectChanges(buildState), {
         AssetId('a', 'web/b.txt'): ChangeType.ADD,
       });
     });
@@ -94,7 +93,7 @@ void main() {
     test('Collects deleted files', () async {
       File(p.join(d.sandbox, 'a', 'web', 'a.txt')).deleteSync();
 
-      expect(await assetTracker.collectChanges(assetGraph), {
+      expect(await assetTracker.collectChanges(buildState), {
         AssetId('a', 'web/a.txt'): ChangeType.REMOVE,
       });
     });

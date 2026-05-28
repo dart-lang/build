@@ -4,12 +4,12 @@
 
 import 'package:build/build.dart';
 
-class DuplicateAssetNodeException implements Exception {
+class DuplicateAssetIdException implements Exception {
   final AssetId assetId;
   final String builder1;
   final String builder2;
 
-  DuplicateAssetNodeException(this.assetId, this.builder1, this.builder2);
+  DuplicateAssetIdException(this.assetId, this.builder1, this.builder2);
   @override
   String toString() =>
       'Builders $builder1 and $builder2 outputs collide: ${assetId.uri}';

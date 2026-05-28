@@ -4,8 +4,13 @@
   with different packages to the current version solve.
 - More efficient watching for file changes in workspaces and other setups with
   nested packages.
+- Support builders with no declared outputs. They can't output anything, but
+  they can do processing, write log messages and choose whether to fail the
+  build.
 - Bug fix: handle errors from post process builders in previous runs without
   crashing.
+- Bug fix: fix `dart run build_runner test` to correctly pass arguments after
+  `--` to the test process.
 
 ## 2.15.0
 

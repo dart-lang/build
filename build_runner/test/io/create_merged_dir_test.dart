@@ -6,10 +6,10 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:build_runner/src/build/asset_graph/build_step_result.dart';
-import 'package:build_runner/src/build/asset_graph/graph.dart';
-import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
-import 'package:build_runner/src/build/asset_graph/post_process_build_step_result.dart';
+import 'package:build_runner/src/build/build_state/build_state.dart';
+import 'package:build_runner/src/build/build_state/build_step_result.dart';
+import 'package:build_runner/src/build/build_state/post_process_build_step_id.dart';
+import 'package:build_runner/src/build/build_state/post_process_build_step_result.dart';
 import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_directory.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
@@ -32,7 +32,7 @@ import '../common/common.dart';
 void main() {
   group('createMergedDir', () {
     late BuildPlan buildPlan;
-    late AssetGraph graph;
+    late BuildState buildState;
     final phases = BuildPhases([
       InBuildPhase(
         builder: TestBuilder(
@@ -100,26 +100,27 @@ void main() {
           buildPackages: buildPackages,
         ),
       );
-      graph = buildPlan.takeAssetGraph();
+      buildState = buildPlan.takeBuildState();
       buildOutputReader = BuildOutputReader(
         buildPlan: buildPlan,
         readerWriter: readerWriter,
-        assetGraph: graph,
-        processedOutputs: graph.outputs.toSet(),
+        buildState: buildState,
+        processedOutputs: buildState.declaredAndActualOutputs.toSet(),
       );
 
-      for (final id in graph.outputs) {
-        final node = graph.get(id)!;
-        final config = node.generatedNodeConfiguration!;
-        final stepResult = BuildStepResult((b) => b..result = true);
-        graph.updateBuildStepResult(config.buildStepId, stepResult);
-
-        graph.updateNode(id, (nodeBuilder) {
-          nodeBuilder.digest = Digest([]);
+      for (final id in buildState.declaredAndActualOutputs) {
+        final stepResult = BuildStepResult((b) {
+          b.result = true;
+          b.isHidden = false;
+          b.outputs[id] = Digest([]);
         });
+        buildState.updateBuildStepResult(
+          buildState.stepForDeclaredOutput(id),
+          stepResult,
+        );
         readerWriter.testing.writeString(
           id,
-          sources[graph.get(id)!.generatedNodeConfiguration!.primaryInput]!,
+          sources[buildState.stepForDeclaredOutput(id).primaryInput]!,
         );
       }
       tmpDir = await Directory.systemTemp.createTemp('build_tests');
@@ -147,9 +148,9 @@ void main() {
     });
 
     test('doesnt write deleted files', () async {
-      final node = graph.get(AssetId('b', 'lib/c.txt.copy'))!;
-      graph.updatePostProcessBuildStepResult(
-        PostProcessBuildStepId(input: node.id, actionNumber: 1),
+      final targetId = AssetId('b', 'lib/c.txt.copy');
+      buildState.addPostProcessBuildStepResult(
+        PostProcessBuildStepId(input: targetId, actionNumber: 1),
         PostProcessBuildStepResult(hidden: true, deletedPrimaryInput: true),
       );
 
@@ -365,14 +366,14 @@ void main() {
     });
 
     test('doesnt write files that werent output', () async {
-      final node = graph.get(AssetId('b', 'lib/c.txt.copy'))!;
-      final config = node.generatedNodeConfiguration!;
-      final stepResult = BuildStepResult((b) => b..result = null);
-      graph.updateBuildStepResult(config.buildStepId, stepResult);
-
-      graph.updateNode(node.id, (nodeBuilder) {
-        nodeBuilder.digest = null;
+      final targetId = AssetId('b', 'lib/c.txt.copy');
+      final stepResult = BuildStepResult((b) {
+        b.isHidden = false;
       });
+      buildState.updateBuildStepResult(
+        buildState.stepForDeclaredOutput(targetId),
+        stepResult,
+      );
 
       final success = await createMergedOutputDirectories(
         buildDirs:
@@ -396,8 +397,8 @@ void main() {
           buildDirs: {BuildDirectory('foo')}.build(),
         ),
         readerWriter: readerWriter,
-        assetGraph: graph,
-        processedOutputs: graph.outputs.toSet(),
+        buildState: buildState,
+        processedOutputs: buildState.declaredAndActualOutputs.toSet(),
       );
       final success = await createMergedOutputDirectories(
         buildDirs:
@@ -475,7 +476,7 @@ void main() {
         final removes = ['a|lib/a.txt', 'a|lib/a.txt.copy'];
         for (final remove in removes) {
           final removeId = makeAssetId(remove);
-          graph.updatePostProcessBuildStepResult(
+          buildState.addPostProcessBuildStepResult(
             PostProcessBuildStepId(input: removeId, actionNumber: 1),
             PostProcessBuildStepResult(hidden: true, deletedPrimaryInput: true),
           );
@@ -484,8 +485,8 @@ void main() {
         buildOutputReader = BuildOutputReader(
           buildPlan: buildPlan,
           readerWriter: readerWriter,
-          assetGraph: graph,
-          processedOutputs: graph.outputs.toSet(),
+          buildState: buildState,
+          processedOutputs: buildState.declaredAndActualOutputs.toSet(),
         );
         success = await createMergedOutputDirectories(
           buildDirs:

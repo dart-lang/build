@@ -18,6 +18,7 @@ import 'build_packages.dart';
 import 'build_target.dart';
 import 'build_triggers.dart';
 import 'input_matcher.dart';
+import 'placeholders.dart';
 import 'testing_overrides.dart';
 
 /// Build configuration loaded from all `build.yaml` files in the build.
@@ -68,7 +69,7 @@ class BuildConfigs {
   }) async {
     readerWriter = testingOverrides?.readerWriter ?? readerWriter;
     try {
-      return _tryLoad(
+      return await _tryLoad(
         buildPackages: buildPackages,
         readerWriter: readerWriter,
         configKey: configKey,
@@ -135,8 +136,11 @@ class BuildConfigs {
         (target) => BuildTarget(target, defaultInclude: defaultInclude),
       );
       if (package.name != r'$sdk') {
-        final requiredSourcePaths = const [r'lib/$lib$'];
-        final requiredRootSourcePaths = const [r'$package$', r'lib/$lib$'];
+        final requiredSourcePaths = const [Placeholders.libPath];
+        final requiredRootSourcePaths = const [
+          Placeholders.packageName,
+          Placeholders.libPath,
+        ];
         final requiredPackagePaths =
             package.isOutput ? requiredRootSourcePaths : requiredSourcePaths;
         final requiredIds = requiredPackagePaths.map(

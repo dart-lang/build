@@ -31,13 +31,14 @@ final _parsedInputs = Expando<List<_ParsedBuildOutputs>>();
 
 /// Extensions on [Builder] describing expected outputs.
 extension BuildOutputExtensions on Builder {
-  /// Whether this builder is expected to output assets when running on [input].
-  ///
-  /// This will be `true` iff its [expectedOutputs] is not empty, but may be
-  /// more efficient to compute.
-  bool hasOutputFor(AssetId input) {
-    return _parsedExtensions.any((e) => e.hasAnyOutputFor(input));
-  }
+  // With zero output builders the name no longer makes sense, renamed to
+  // `matchesInput`.
+  @Deprecated('Use matchesInput')
+  bool hasOutputFor(AssetId input) => matchesInput(input);
+
+  /// Whether this builder runs on [input].
+  bool matchesInput(AssetId input) =>
+      _parsedExtensions.any((e) => e.matchesInput(input));
 
   List<_ParsedBuildOutputs> get _parsedExtensions {
     return _parsedInputs[this] ??= [
@@ -89,7 +90,8 @@ abstract class _ParsedBuildOutputs {
     }
   }
 
-  bool hasAnyOutputFor(AssetId input);
+  /// Whether this builder runs on [input].
+  bool matchesInput(AssetId input);
   Iterable<AssetId> matchingOutputsFor(AssetId input);
 }
 
@@ -102,11 +104,11 @@ class _FullMatchBuildOutputs extends _ParsedBuildOutputs {
   _FullMatchBuildOutputs(this.inputExtension, this.outputExtensions);
 
   @override
-  bool hasAnyOutputFor(AssetId input) => input.path == inputExtension;
+  bool matchesInput(AssetId input) => input.path == inputExtension;
 
   @override
   Iterable<AssetId> matchingOutputsFor(AssetId input) {
-    if (!hasAnyOutputFor(input)) return const Iterable.empty();
+    if (!matchesInput(input)) return const Iterable.empty();
 
     // If we expect an output, the asset's path ends with the input extension.
     // Expected outputs just replace the matched suffix in the path.
@@ -125,11 +127,11 @@ class _SuffixBuildOutputs extends _ParsedBuildOutputs {
   _SuffixBuildOutputs(this.inputExtension, this.outputExtensions);
 
   @override
-  bool hasAnyOutputFor(AssetId input) => input.path.endsWith(inputExtension);
+  bool matchesInput(AssetId input) => input.path.endsWith(inputExtension);
 
   @override
   Iterable<AssetId> matchingOutputsFor(AssetId input) {
-    if (!hasAnyOutputFor(input)) return const Iterable.empty();
+    if (!matchesInput(input)) return const Iterable.empty();
 
     // If we expect an output, the asset's path ends with the input extension.
     // Expected outputs just replace the matched suffix in the path.
@@ -236,7 +238,7 @@ class _CapturingBuildOutputs extends _ParsedBuildOutputs {
   }
 
   @override
-  bool hasAnyOutputFor(AssetId input) => _pathMatcher.hasMatch(input.path);
+  bool matchesInput(AssetId input) => _pathMatcher.hasMatch(input.path);
 
   @override
   Iterable<AssetId> matchingOutputsFor(AssetId input) {

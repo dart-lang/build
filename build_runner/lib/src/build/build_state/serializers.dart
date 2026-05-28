@@ -18,20 +18,14 @@ import 'build_step_result.dart';
 import 'glob_id.dart';
 import 'glob_result.dart';
 import 'identity_serializer.dart';
-import 'node.dart';
 import 'post_process_build_step_id.dart';
 import 'post_process_build_step_result.dart';
 
 part 'serializers.g.dart';
 
-final postProcessBuildStepResultsInnerFullType = const FullType(Map, [
+final postProcessBuildStepResultsFullType = const FullType(BuiltMap, [
   FullType(PostProcessBuildStepId),
   FullType(PostProcessBuildStepResult),
-]);
-
-final postProcessBuildStepResultsFullType = FullType(Map, [
-  const FullType(String),
-  postProcessBuildStepResultsInnerFullType,
 ]);
 
 final assetIdSerializer = AssetIdSerializer();
@@ -41,7 +35,6 @@ final identityAssetIdSerializer = IdentitySerializer<AssetId>(
 
 @SerializersFor([
   AssetDeps,
-  AssetNode,
   BuildPlanDigest,
   BuildStepId,
   BuildStepResult,
@@ -75,20 +68,26 @@ final Serializers serializers =
             MapBuilder<GlobId, GlobResult>.new,
           )
           ..addBuilderFactory(
+            const FullType(BuiltMap, [
+              FullType(AssetId),
+              FullType(BuildStepId),
+            ]),
+            MapBuilder<AssetId, BuildStepId>.new,
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltMap, [
+              FullType(AssetId),
+              FullType(BuiltSet, [FullType(AssetId)]),
+            ]),
+            MapBuilder<AssetId, BuiltSet<AssetId>>.new,
+          )
+          ..addBuilderFactory(
             const FullType(Set, [FullType(AssetId)]),
             () => <AssetId>{},
           )
           ..addBuilderFactory(
-            postProcessBuildStepResultsInnerFullType,
-            () => <PostProcessBuildStepId, PostProcessBuildStepResult>{},
-          )
-          ..addBuilderFactory(
             postProcessBuildStepResultsFullType,
-            () =>
-                <
-                  String,
-                  Map<PostProcessBuildStepId, PostProcessBuildStepResult>
-                >{},
+            MapBuilder<PostProcessBuildStepId, PostProcessBuildStepResult>.new,
           )
           ..addBuilderFactory(
             const FullType(BuiltMap, [FullType(AssetId), FullType(Digest)]),

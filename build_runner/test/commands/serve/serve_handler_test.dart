@@ -8,13 +8,12 @@ import 'dart:io';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
-import 'package:build_runner/src/build/asset_graph/build_step_id.dart';
-import 'package:build_runner/src/build/asset_graph/build_step_result.dart';
-import 'package:build_runner/src/build/asset_graph/graph.dart';
-import 'package:build_runner/src/build/asset_graph/node.dart';
-import 'package:build_runner/src/build/asset_graph/post_process_build_step_id.dart';
-import 'package:build_runner/src/build/asset_graph/post_process_build_step_result.dart';
 import 'package:build_runner/src/build/build_result.dart';
+import 'package:build_runner/src/build/build_state/build_state.dart';
+import 'package:build_runner/src/build/build_state/build_step_id.dart';
+import 'package:build_runner/src/build/build_state/build_step_result.dart';
+import 'package:build_runner/src/build/build_state/post_process_build_step_id.dart';
+import 'package:build_runner/src/build/build_state/post_process_build_step_result.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
@@ -109,7 +108,7 @@ void main() {
   late InternalTestReaderWriter readerWriter;
   late FakeWatcher watcher;
   late BuildPackages buildPackages;
-  late AssetGraph assetGraph;
+  late BuildState buildState;
   late BuildOutputReader finalizedReader;
 
   setUp(() async {
@@ -119,16 +118,16 @@ void main() {
     readerWriter = InternalTestReaderWriter(
       outputRootPackage: buildPackages.outputRoot,
     );
-    assetGraph = await AssetGraph.build(
-      BuildPhases([]),
-      <AssetId>{},
-      buildPackages,
+    buildState = BuildState.create(
+      buildPhases: BuildPhases([]),
+      buildPackages: buildPackages,
+      sources: <AssetId>{},
     );
     watcher = FakeWatcher(buildPackages);
     serveHandler = ServeHandler(watcher);
     finalizedReader = BuildOutputReader.graphOnly(
       readerWriter: readerWriter,
-      assetGraph: assetGraph,
+      buildState: buildState,
     );
     watcher.addFutureResult(
       Future.value(
@@ -142,18 +141,17 @@ void main() {
 
   void addSource(String id, String content, {bool deleted = false}) {
     final parsedId = AssetId.parse(id);
-    final node = AssetNode.source(
-      parsedId,
-      digest: computeDigest(parsedId, content),
-    );
     if (deleted) {
-      assetGraph.updatePostProcessBuildStepResult(
+      buildState.addPostProcessBuildStepResult(
         PostProcessBuildStepId(input: parsedId, actionNumber: 1),
         PostProcessBuildStepResult(hidden: true, deletedPrimaryInput: true),
       );
     }
-    assetGraph.add(node);
-    readerWriter.testing.writeString(node.id, content);
+    buildState.addSourceForTest(
+      parsedId,
+      digest: computeDigest(parsedId, content),
+    );
+    readerWriter.testing.writeString(parsedId, content);
   }
 
   test('can get handlers for a subdirectory', () async {
@@ -259,18 +257,13 @@ void main() {
       addSource('a|web/index.html', '');
       final primaryId = AssetId('a', 'web/main.dart');
       final outputId = AssetId('a', 'web/main.ddc.js');
-      assetGraph.add(
-        AssetNode.generated(
-          outputId,
-          phaseNumber: 0,
-          isHidden: false,
-          digest: Digest([]),
-          primaryInput: primaryId,
-        ),
-      );
       final buildStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
-      final stepResult = BuildStepResult((b) => b..result = false);
-      assetGraph.updateBuildStepResult(buildStepId, stepResult);
+      buildState.addGeneratedForTest(outputId, buildStepId, digest: Digest([]));
+      final stepResult = BuildStepResult((b) {
+        b.result = false;
+        b.isHidden = false;
+      });
+      buildState.updateBuildStepResult(buildStepId, stepResult);
       watcher.addFutureResult(
         Future.value(
           BuildResult(

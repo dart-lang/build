@@ -41,11 +41,11 @@ void main() {
       expect(await tester.build(change: 'z$size'), Result(written: ['a.2']));
     });
 
-    test('asset graph size', () async {
+    test('asset graph JSON size', () async {
       await tester.build();
       // Currently measured at 276k; doesn't need to be a precise check, this is
       // to guard against quadratic behaviour which would cause size >> 1Mb.
-      expect(tester.assetGraphSize, lessThan(300000));
+      expect(tester.assetGraphJsonSize, lessThan(300000));
     });
   });
 }
