@@ -165,7 +165,11 @@ Future<TestBuildersResult> testPhases(
     );
   }
 
-  return TestBuildersResult(buildResult: result, readerWriter: readerWriter);
+  return TestBuildersResult(
+    buildResult: result,
+    readerWriter: readerWriter,
+    buildPlan: buildPlan,
+  );
 }
 
 /// Translates expected outptus which start with `$$` to the build cache and
@@ -212,6 +216,11 @@ void checkBuild(
 class TestBuildersResult {
   final BuildResult buildResult;
   final InternalTestReaderWriter readerWriter;
+  final BuildPlan buildPlan;
 
-  TestBuildersResult({required this.buildResult, required this.readerWriter});
+  TestBuildersResult({
+    required this.buildResult,
+    required this.readerWriter,
+    required this.buildPlan,
+  });
 }

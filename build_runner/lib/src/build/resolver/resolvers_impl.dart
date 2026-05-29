@@ -14,7 +14,6 @@ import 'package:pool/pool.dart';
 
 import '../../bootstrap/build_process_state.dart';
 import '../../logging/build_log.dart';
-import '../build_state/build_state.dart';
 import '../build_step_impl.dart';
 import '../library_cycle_graph/phased_asset_deps.dart';
 import 'analysis_driver.dart';
@@ -91,7 +90,7 @@ class ResolversImpl implements Resolvers {
     return BuildStepResolver(_buildResolver!, buildStep as BuildStepImpl);
   }
 
-  /// Start a build with [buildState].
+  /// Start a build with [declaredOutputPhases].
   ///
   /// If another build has the lock, waits for it to finish.
   ///
@@ -103,10 +102,10 @@ class ResolversImpl implements Resolvers {
   /// only two codepaths need to care about the lock: the main build in
   /// `build.dart` and test builds in `package:build_test` `test_builder.dart`.
   Future<void> takeLockAndStartBuild(
-    BuildState buildState, {
+    Map<AssetId, int> declaredOutputPhases, {
     required Set<AssetId>? invalidatedSources,
   }) => _analysisDriverModel.takeLockAndStartBuild(
-    buildState,
+    declaredOutputPhases,
     invalidatedSources: invalidatedSources,
   );
 

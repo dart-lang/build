@@ -11,7 +11,6 @@ import 'package:build_runner/src/build/build_state/build_step_id.dart';
 import 'package:build_runner/src/build/build_state/build_step_result.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_id.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_result.dart';
-import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_directory.dart';
 import 'package:build_runner/src/build_plan/build_filter.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
@@ -24,7 +23,6 @@ import 'package:build_runner/src/build_plan/phase.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
 import 'package:build_runner/src/io/build_output_reader.dart';
 import 'package:built_collection/built_collection.dart';
-import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 
@@ -43,11 +41,7 @@ void main() {
       buildPackages = BuildPackages.singlePackageBuild('a', [
         BuildPackage.forTesting(name: 'a', isOutput: true),
       ]);
-      buildState = BuildState.create(
-        buildPhases: BuildPhases([]),
-        buildPackages: buildPackages,
-        sources: <AssetId>{},
-      );
+      buildState = BuildState.create(sources: <AssetId>{});
       buildPhases = BuildPhases([]);
     });
 
@@ -83,7 +77,10 @@ void main() {
         buildPlan: buildPlan,
         readerWriter: readerWriter,
         buildState: buildState,
-        processedOutputs: buildState.declaredAndActualOutputs.toSet(),
+        processedOutputs: <AssetId>{
+          ...buildPlan.buildStepPlan.declaredOutputs,
+          ...buildState.actualPostOutputs,
+        },
       );
       expect(await reader.canRead(notDeletedId), true);
       expect(await reader.canRead(deletedId), false);
@@ -93,17 +90,19 @@ void main() {
       final id = AssetId('a', 'web/a.txt');
       final primaryId = AssetId('a', 'web/a.dart');
       final buildStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
-      buildState.addGeneratedForTest(id, buildStepId, digest: Digest([]));
       final stepResult = BuildStepResult((b) {
         b.result = false;
         b.isHidden = false;
       });
       buildState.updateBuildStepResult(buildStepId, stepResult);
+      readerWriter.testing.writeString(primaryId, '');
       readerWriter.testing.writeString(id, '');
 
       buildPhases = BuildPhases([
         InBuildPhase(
-          builder: TestBuilder(),
+          builder: TestBuilder(
+            buildExtensions: replaceExtension('.dart', '.txt'),
+          ),
           key: 'TestBuilder',
           package: 'a',
           isOptional: false,
@@ -117,7 +116,6 @@ void main() {
         ),
         testingOverrides: TestingOverrides(
           buildPhases: buildPhases,
-          defaultRootPackageSources: defaultDependencyVisibleAssets,
           readerWriter: readerWriter,
           buildPackages: buildPackages,
         ),
@@ -126,7 +124,10 @@ void main() {
         buildPlan: buildPlan,
         readerWriter: readerWriter,
         buildState: buildState,
-        processedOutputs: buildState.declaredAndActualOutputs.toSet(),
+        processedOutputs: <AssetId>{
+          ...buildPlan.buildStepPlan.declaredOutputs,
+          ...buildState.actualPostOutputs,
+        },
       );
       expect(
         await reader.unreadableReason(id),
@@ -142,7 +143,6 @@ void main() {
         ),
         testingOverrides: TestingOverrides(
           buildPhases: buildPhases,
-          defaultRootPackageSources: defaultDependencyVisibleAssets,
           readerWriter: readerWriter,
           buildPackages: buildPackages,
         ),

@@ -26,8 +26,9 @@ import 'build_filter.dart';
 import 'build_options.dart';
 import 'build_packages.dart';
 import 'build_phase_creator.dart';
-import 'build_phases.dart';
+
 import 'build_plan_digest.dart';
+import 'build_step_plan.dart';
 import 'builder_definition.dart';
 import 'builder_factories.dart';
 import 'testing_overrides.dart';
@@ -43,7 +44,7 @@ class BuildPlan {
   final BuildPackages buildPackages;
   final ReaderWriter readerWriter;
   final BuildConfigs buildConfigs;
-  final BuildPhases buildPhases;
+  final BuildStepPlan buildStepPlan;
 
   final BuildState? _previousBuildState;
   bool _previousBuildStateWasTaken;
@@ -92,7 +93,7 @@ class BuildPlan {
     required this.buildPackages,
     required this.readerWriter,
     required this.buildConfigs,
-    required this.buildPhases,
+    required this.buildStepPlan,
     required BuildState? previousBuildState,
     required bool previousBuildStateWasTaken,
     required this.previousPhasedAssetDeps,
@@ -117,7 +118,7 @@ class BuildPlan {
   /// Loads a build plan.
   ///
   /// Loads the package strucure and build configuration; prepares
-  /// [readerWriter], deduces the [buildPhases] that will run, deserializes and
+  /// [readerWriter], deduces the buildPhases that will run, deserializes and
   /// checks the `BuildState`.
   ///
   /// If the build state indicates a restart is needed, [restartIsNeeded] will
@@ -284,18 +285,40 @@ class BuildPlan {
       // Files marked for deletion are not inputs.
       inputSources.removeAll(filesToDelete);
 
+      // Build steps are computed twice: first to identify inputs that are
+      // actually outputs and remove them from the input set.
+      final declaredOutputs =
+          BuildStepPlan.compute(
+            buildPhases: buildPhases,
+            placeholderIds: buildPackages.placeholderIds,
+            sources: inputSources,
+          ).declaredOutputs;
+      final inputSourcesWithoutOutputs = Set<AssetId>.from(inputSources);
+      for (final output in declaredOutputs) {
+        inputSourcesWithoutOutputs.remove(output);
+      }
+
       try {
-        buildState = BuildState.create(
-          buildPhases: buildPhases,
-          buildPackages: buildPackages,
-          sources: inputSources,
-        );
+        buildState = BuildState.create(sources: inputSourcesWithoutOutputs);
       } on DuplicateAssetIdException catch (e) {
         buildLog.error(e.toString());
         throw const CannotBuildException();
       }
+    }
+
+    final buildStepPlan = BuildStepPlan.compute(
+      buildPhases: buildPhases,
+      placeholderIds: buildPackages.placeholderIds,
+      sources: buildState.sources,
+    );
+    final declaredAndActualOutputs = [
+      ...buildStepPlan.declaredOutputs,
+      ...buildState.actualPostOutputs,
+    ];
+
+    if (previousBuildState == null) {
       final conflictsInDeps =
-          buildState.declaredAndActualOutputs
+          declaredAndActualOutputs
               .where((n) => !buildPackages.outputPackages.contains(n.package))
               .where(inputSources.contains)
               .toSet();
@@ -310,7 +333,7 @@ class BuildPlan {
       }
 
       filesToDelete.addAll(
-        buildState.declaredAndActualOutputs
+        declaredAndActualOutputs
             .where((n) => buildPackages.outputPackages.contains(n.package))
             .where(inputSources.contains)
             .toSet(),
@@ -325,7 +348,7 @@ class BuildPlan {
       buildPackages: buildPackages,
       readerWriter: readerWriter,
       buildConfigs: buildConfigs,
-      buildPhases: buildPhases,
+      buildStepPlan: buildStepPlan,
       previousBuildState: previousBuildState,
       previousBuildStateWasTaken: false,
       previousPhasedAssetDeps: previousPhasedAssetDeps,
@@ -358,8 +381,10 @@ class BuildPlan {
     PhasedAssetDeps? previousPhasedAssetDeps,
     BuiltList<bool>? phaseOptionsChanged,
     BuiltList<bool>? postBuildOptionsChanged,
+    BuildStepPlan? buildStepPlan,
   }) => BuildPlan(
     buildPlanDigest: buildPlanDigest ?? this.buildPlanDigest,
+    buildStepPlan: buildStepPlan ?? this.buildStepPlan,
     builderFactories: builderFactories,
     buildOptions: buildOptions.copyWith(
       buildDirs: buildDirs,
@@ -369,7 +394,6 @@ class BuildPlan {
     buildPackages: buildPackages,
     buildConfigs: buildConfigs,
     readerWriter: readerWriter ?? this.readerWriter,
-    buildPhases: buildPhases,
     previousBuildState: _previousBuildState,
     previousBuildStateWasTaken: _previousBuildStateWasTaken,
     previousPhasedAssetDeps:
@@ -390,22 +414,40 @@ class BuildPlan {
 
   /// Returns a copy of the plan updated for the next incremental build.
   ///
-  /// Updates [previousPhasedAssetDeps].
+  /// Updates [previousPhasedAssetDeps] from the build result.
   ///
   /// Sets [cleanBuild], [triggersChanged], `phaseOptionsChanged` and
   /// `postBuildOptionsChanged` to `false`.
-  BuildPlan forNextBuild({PhasedAssetDeps? previousPhasedAssetDeps}) =>
+  BuildPlan updateForResult({PhasedAssetDeps? previousPhasedAssetDeps}) =>
       copyWith(
         cleanBuild: false,
         triggersChanged: false,
         previousPhasedAssetDeps: previousPhasedAssetDeps,
         phaseOptionsChanged: BuiltList<bool>.from(
-          List.filled(buildPhases.inBuildPhasesOptionsDigests.length, false),
+          List.filled(
+            buildStepPlan.buildPhases.inBuildPhasesOptionsDigests.length,
+            false,
+          ),
         ),
         postBuildOptionsChanged: BuiltList<bool>.from(
-          List.filled(buildPhases.postBuildActionsOptionsDigests.length, false),
+          List.filled(
+            buildStepPlan.buildPhases.postBuildActionsOptionsDigests.length,
+            false,
+          ),
         ),
       );
+
+  /// Returns a copy of the plan with [buildStepPlan] updated for changed input
+  /// sources.
+  BuildPlan updateForSources(Iterable<AssetId> sources) {
+    return copyWith(
+      buildStepPlan: BuildStepPlan.compute(
+        buildPhases: buildStepPlan.buildPhases,
+        placeholderIds: buildPackages.placeholderIds,
+        sources: sources,
+      ),
+    );
+  }
 
   /// Takes the loaded [BuildState], which may be `null` if none could be
   /// loaded or if it was invalid.

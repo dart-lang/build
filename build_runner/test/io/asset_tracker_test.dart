@@ -7,10 +7,13 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
+import 'package:build_runner/src/build/build_state/build_step_id.dart';
 import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
+import 'package:build_runner/src/build_plan/build_step_plan.dart';
+import 'package:build_runner/src/build_plan/phase.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
 import 'package:build_runner/src/io/asset_tracker.dart';
 import 'package:build_runner/src/io/reader_writer.dart';
@@ -25,8 +28,13 @@ void main() {
   group('AssetTracker.collectChanges()', () {
     late AssetTracker assetTracker;
     late BuildState buildState;
+    late BuildStepPlan buildStepPlan;
 
     setUp(() async {
+      buildStepPlan = BuildStepPlan(
+        (BuildStepPlanBuilder b) =>
+            b..buildPhases = BuildPhases(const <InBuildPhase>[]),
+      );
       await d.dir('a', [
         d.dir('web', [d.file('a.txt', 'hello')]),
         d.dir('.dart_tool', [
@@ -47,11 +55,7 @@ void main() {
       ]);
       final reader = ReaderWriter(buildPackages);
       final aId = AssetId('a', 'web/a.txt');
-      buildState = BuildState.create(
-        buildPhases: BuildPhases([]),
-        buildPackages: buildPackages,
-        sources: {aId},
-      );
+      buildState = BuildState.create(sources: {aId});
       // Assign a digest so the source is recognized as having been used.
       final digest = await reader.digest(aId);
       buildState.updateSourceDigest(aId, digest);
@@ -63,8 +67,11 @@ void main() {
         ),
       );
       assetTracker = AssetTracker(reader, buildPackages, buildConfigs);
-      final updates = await assetTracker.collectChanges(buildState);
-      buildState.updateForNextBuild(BuildPhases([]), updates);
+      final updates = await assetTracker.collectChanges(
+        buildState: buildState,
+        buildStepPlan: buildStepPlan,
+      );
+      buildState.updateForNextBuild(buildStepPlan, updates);
       // We should see no changes initially other than new sdk sources
       expect(
         updates..removeWhere(
@@ -77,25 +84,65 @@ void main() {
     test('Collects file edits', () async {
       File(p.join(d.sandbox, 'a', 'web', 'a.txt')).writeAsStringSync('goodbye');
 
-      expect(await assetTracker.collectChanges(buildState), {
-        AssetId('a', 'web/a.txt'): ChangeType.MODIFY,
-      });
+      expect(
+        await assetTracker.collectChanges(
+          buildState: buildState,
+          buildStepPlan: buildStepPlan,
+        ),
+        {AssetId('a', 'web/a.txt'): ChangeType.MODIFY},
+      );
     });
 
     test('Collects new files', () async {
       File(p.join(d.sandbox, 'a', 'web', 'b.txt')).writeAsStringSync('yo!');
 
-      expect(await assetTracker.collectChanges(buildState), {
-        AssetId('a', 'web/b.txt'): ChangeType.ADD,
-      });
+      expect(
+        await assetTracker.collectChanges(
+          buildState: buildState,
+          buildStepPlan: buildStepPlan,
+        ),
+        {AssetId('a', 'web/b.txt'): ChangeType.ADD},
+      );
     });
 
     test('Collects deleted files', () async {
       File(p.join(d.sandbox, 'a', 'web', 'a.txt')).deleteSync();
 
-      expect(await assetTracker.collectChanges(buildState), {
-        AssetId('a', 'web/a.txt'): ChangeType.REMOVE,
-      });
+      expect(
+        await assetTracker.collectChanges(
+          buildState: buildState,
+          buildStepPlan: buildStepPlan,
+        ),
+        {AssetId('a', 'web/a.txt'): ChangeType.REMOVE},
+      );
+    });
+
+    test('Collects deleted declared outputs', () async {
+      // Create a buildState with no sources (so web/a.txt is not in sources).
+      final emptyBuildState = BuildState.create(sources: const {});
+
+      // Delete the file from disk so it's actually missing.
+      File(p.join(d.sandbox, 'a', 'web', 'a.txt')).deleteSync();
+
+      final outputId = AssetId('a', 'web/a.txt');
+      final buildStepId = BuildStepId(
+        primaryInput: AssetId('a', 'web/a.dart'),
+        phaseNumber: 0,
+      );
+
+      final planWithOutput = BuildStepPlan(
+        (BuildStepPlanBuilder b) =>
+            b
+              ..buildPhases = BuildPhases(const <InBuildPhase>[])
+              ..buildStepsByDeclaredOutput.addAll({outputId: buildStepId}),
+      );
+
+      final changes = await assetTracker.collectChanges(
+        buildState: emptyBuildState,
+        buildStepPlan: planWithOutput,
+      );
+      changes.removeWhere((id, type) => id.package == r'$sdk');
+      expect(changes, {outputId: ChangeType.REMOVE});
     });
   });
 }

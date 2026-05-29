@@ -71,7 +71,7 @@ class BuildSeries {
       generatedAssetHider:
           buildPlan.testingOverrides.flattenOutput
               ? const NoopGeneratedAssetHider()
-              : buildState,
+              : buildPlan.buildStepPlan,
     );
     return BuildSeries._(
       buildPlan: buildPlan,
@@ -123,7 +123,11 @@ class BuildSeries {
         continue;
       }
 
-      if (!_buildState.isFile(id)) {
+      final isFile = _buildState.isFile(
+        buildStepPlan: _buildPlan.buildStepPlan,
+        id: id,
+      );
+      if (!isFile) {
         // Ignore under `.dart_tool/build`.
         if (id.path.startsWith(cacheDirectoryPath)) continue;
 
@@ -143,12 +147,16 @@ class BuildSeries {
       // with no outputs.
       if (!_buildPlan.buildOptions.anyMergedOutputDirectory &&
           !_buildState.isMissingSource(id) &&
-          _buildState.digestOf(id) == null) {
+          _buildState.digestOf(
+                id: id,
+                buildStepPlan: _buildPlan.buildStepPlan,
+              ) ==
+              null) {
         continue;
       }
 
       // Ignore creation or modification of outputs.
-      if (_buildState.isDeclaredOutput(id) &&
+      if (_buildPlan.buildStepPlan.isDeclaredOutput(id) &&
           change.type != ChangeType.REMOVE) {
         continue;
       }
@@ -171,7 +179,10 @@ class BuildSeries {
       _buildPlan.readerWriter,
       _buildPlan.buildPackages,
       _buildPlan.buildConfigs,
-    ).collectChanges(_buildState);
+    ).collectChanges(
+      buildStepPlan: _buildPlan.buildStepPlan,
+      buildState: _buildState,
+    );
     return List.of(
       updates.entries.map((entry) => WatchEvent(entry.value, '${entry.key}')),
     );
@@ -238,7 +249,7 @@ class BuildSeries {
         generatedAssetHider:
             _buildPlan.testingOverrides.flattenOutput
                 ? const NoopGeneratedAssetHider()
-                : _buildState,
+                : _buildPlan.buildStepPlan,
       );
     }
 
@@ -269,9 +280,10 @@ class BuildSeries {
 
     _currentBuildResult = build.run(updates);
     final result = await _currentBuildResult!;
-    _buildPlan = _buildPlan.forNextBuild(
+    _buildPlan = build.buildPlan.updateForResult(
       previousPhasedAssetDeps: result.phasedAssetDeps,
     );
+    _readerWriter = build.readerWriter;
     _buildResultsController.add(result);
     return result;
   }

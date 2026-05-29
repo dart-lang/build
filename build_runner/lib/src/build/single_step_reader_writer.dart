@@ -13,6 +13,7 @@ import 'package:glob/glob.dart';
 import '../bootstrap/processes.dart';
 import '../build_plan/build_configs.dart';
 import '../build_plan/build_packages.dart';
+import '../build_plan/build_step_plan.dart';
 import '../build_plan/phase.dart';
 import '../io/asset_finder.dart';
 import '../io/reader_writer.dart';
@@ -64,6 +65,7 @@ class Readability {
 class RunningBuild {
   final BuildPackages buildPackages;
   final BuildConfigs buildConfigs;
+  final BuildStepPlan buildStepPlan;
   final BuildState buildState;
   final AssetBuilder assetBuilder;
   final AssetIsProcessedOutput assetIsProcessedOutput;
@@ -72,6 +74,7 @@ class RunningBuild {
   RunningBuild({
     required this.buildPackages,
     required this.buildConfigs,
+    required this.buildStepPlan,
     required this.buildState,
     required this.assetBuilder,
     required this.assetIsProcessedOutput,
@@ -183,7 +186,7 @@ class SingleStepReaderWriter implements PhasedReader {
 
     final buildState = _runningBuild.buildState;
     if (buildState.isPlaceholder(id)) return false;
-    if (!buildState.isFile(id)) {
+    if (!_isFile(id)) {
       if (track) inputTracker.add(id);
       buildState.addMissingSource(id);
       return false;
@@ -211,7 +214,7 @@ class SingleStepReaderWriter implements PhasedReader {
     if (!isReadable) return false;
     if (_runningBuild == null) return true;
 
-    if (_runningBuild.buildState.isDeclaredOutput(id) &&
+    if (_runningBuild.buildStepPlan.isDeclaredOutput(id) &&
         !await _delegate.canRead(id)) {
       return false;
     }
@@ -275,7 +278,10 @@ class SingleStepReaderWriter implements PhasedReader {
   /// Note that [id] must exist in the build state.
   Future<Digest> _ensureDigest(AssetId id) async {
     if (_runningBuild == null) return _delegate.digest(id);
-    final knownDigest = _runningBuild.buildState.digestOf(id);
+    final knownDigest = _runningBuild.buildState.digestOf(
+      id: id,
+      buildStepPlan: _runningBuild.buildStepPlan,
+    );
     if (knownDigest != null) return knownDigest;
 
     Digest digest;
@@ -296,8 +302,8 @@ class SingleStepReaderWriter implements PhasedReader {
       // Post process outputs are not readable until after the build.
       return Readability.notReadable;
     }
-    if (_runningBuild.buildState.isDeclaredOutput(id)) {
-      final step = _runningBuild.buildState.stepForDeclaredOutput(id);
+    if (_runningBuild.buildStepPlan.isDeclaredOutput(id)) {
+      final step = _runningBuild.buildStepPlan.stepForDeclaredOutput(id);
       if (step.phaseNumber > _runningBuildStep!.phaseNumber) {
         return Readability.notReadable;
       } else if (step.phaseNumber == _runningBuildStep.phaseNumber) {
@@ -311,7 +317,10 @@ class SingleStepReaderWriter implements PhasedReader {
 
       await _runningBuild.assetBuilder(id);
       return Readability.fromPreviousPhase(
-        _runningBuild.buildState.isActualSuccessfulOutput(id),
+        _runningBuild.buildState.isActualSuccessfulOutput(
+          buildStepPlan: _runningBuild.buildStepPlan,
+          id: id,
+        ),
       );
     }
     return Readability.fromPreviousPhase(_runningBuild.buildState.isSource(id));
@@ -369,7 +378,7 @@ class SingleStepReaderWriter implements PhasedReader {
       }
     }
 
-    if (!_runningBuild.buildState.isFile(id)) {
+    if (!_isFile(id)) {
       // Add to the build state for input tracking.
       _runningBuild.buildState.addMissingSource(id);
       return PhasedValue.fixed('');
@@ -377,8 +386,8 @@ class SingleStepReaderWriter implements PhasedReader {
       return PhasedValue.fixed('');
     }
 
-    if (_runningBuild.buildState.isDeclaredOutput(id)) {
-      final step = _runningBuild.buildState.stepForDeclaredOutput(id);
+    if (_runningBuild.buildStepPlan.isDeclaredOutput(id)) {
+      final step = _runningBuild.buildStepPlan.stepForDeclaredOutput(id);
       final stepPhase = step.phaseNumber;
       if (stepPhase >= phase) {
         return PhasedValue.unavailable(before: '', expiresAfter: stepPhase);
@@ -387,9 +396,11 @@ class SingleStepReaderWriter implements PhasedReader {
         if (!_runningBuild.assetIsProcessedOutput(id)) {
           await _runningBuild.assetBuilder(id);
         }
-        final stepResult = _runningBuild.buildState.stepResult(step);
-        final isSuccessOutput =
-            _runningBuild.buildState.isActualOutput(id) && stepResult.succeeded;
+        final isSuccessOutput = _runningBuild.buildState
+            .isActualSuccessfulOutput(
+              buildStepPlan: _runningBuild.buildStepPlan,
+              id: id,
+            );
         return PhasedValue.generated(
           atPhase: stepPhase,
           before: '',
@@ -413,4 +424,9 @@ class SingleStepReaderWriter implements PhasedReader {
     final hash = base64.encode((await digest(id, track: false)).bytes);
     return BuildRunnerFileContent(id.asPath, true, content, hash);
   }
+
+  bool _isFile(AssetId id) => _runningBuild!.buildState.isFile(
+    buildStepPlan: _runningBuild.buildStepPlan,
+    id: id,
+  );
 }

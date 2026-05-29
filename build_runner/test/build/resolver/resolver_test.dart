@@ -11,7 +11,6 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
-import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/resolver/analysis_driver.dart';
 import 'package:build_runner/src/build/resolver/analysis_driver_model.dart';
 import 'package:build_runner/src/build/resolver/resolvers_impl.dart';
@@ -1356,7 +1355,7 @@ Future<void> _runBuilder(
     _ => null,
   };
   await resolversImpl?.takeLockAndStartBuild(
-    BuildState.empty(),
+    const {},
     invalidatedSources: null,
   );
   await runBuilder(builder, list, singleStepReaderWriter, resolvers);

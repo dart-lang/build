@@ -81,37 +81,6 @@ BuildState? deserializeBuildState(Map serializedBuildState) {
     }
   }
 
-  if (serializedBuildState.containsKey('buildStepsByDeclaredOutput')) {
-    final deserialized =
-        serializers.deserialize(
-              serializedBuildState['buildStepsByDeclaredOutput'],
-              specifiedType: const FullType(BuiltMap, [
-                FullType(AssetId),
-                FullType(BuildStepId),
-              ]),
-            )
-            as BuiltMap<AssetId, BuildStepId>;
-    buildState._buildStepsByDeclaredOutput.addAll(deserialized.toMap());
-  }
-
-  if (serializedBuildState.containsKey(
-    'declaredPrimaryOutputsByPrimaryInput',
-  )) {
-    final deserialized =
-        serializers.deserialize(
-              serializedBuildState['declaredPrimaryOutputsByPrimaryInput'],
-              specifiedType: const FullType(BuiltMap, [
-                FullType(AssetId),
-                FullType(BuiltSet, [FullType(AssetId)]),
-              ]),
-            )
-            as BuiltMap<AssetId, BuiltSet<AssetId>>;
-    for (final entry in deserialized.entries) {
-      buildState._declaredOutputsByPrimaryInput[entry.key] =
-          entry.value.toSet();
-    }
-  }
-
   return buildState;
 }
 
@@ -162,23 +131,6 @@ Map<String, Object?> serializeBuildState(BuildState buildState) {
       specifiedType: const FullType(BuiltMap, [
         FullType(GlobId),
         FullType(GlobResult),
-      ]),
-    ),
-    'buildStepsByDeclaredOutput': serializers.serialize(
-      BuiltMap<AssetId, BuildStepId>.of(buildState._buildStepsByDeclaredOutput),
-      specifiedType: const FullType(BuiltMap, [
-        FullType(AssetId),
-        FullType(BuildStepId),
-      ]),
-    ),
-    'declaredPrimaryOutputsByPrimaryInput': serializers.serialize(
-      BuiltMap<AssetId, BuiltSet<AssetId>>.of({
-        for (final entry in buildState._declaredOutputsByPrimaryInput.entries)
-          entry.key: entry.value.toBuiltSet(),
-      }),
-      specifiedType: const FullType(BuiltMap, [
-        FullType(AssetId),
-        FullType(BuiltSet, [FullType(AssetId)]),
       ]),
     ),
   };

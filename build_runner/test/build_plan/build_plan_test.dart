@@ -9,6 +9,7 @@ import 'package:build/experiments.dart';
 import 'package:build_config/build_config.dart' hide BuilderDefinition;
 import 'package:build_runner/src/build/build_state/asset_graph_json.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
+import 'package:build_runner/src/build/build_state/build_step_result.dart';
 import 'package:build_runner/src/build/library_cycle_graph/phased_asset_deps.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
@@ -104,7 +105,7 @@ void main() {
         ),
       );
 
-      expect(buildPlan.buildPhases.inBuildPhases.isEmpty, true);
+      expect(buildPlan.buildStepPlan.buildPhases.inBuildPhases.isEmpty, true);
       expect(buildPlan.restartIsNeeded, true);
     });
 
@@ -156,12 +157,13 @@ void main() {
 
       // Write an output and add it to the build state as if it was built.
       await readerWriter.writeAsString(outputId, '// output');
-      final step = buildState.stepForDeclaredOutput(outputId);
+      final step = buildPlan.buildStepPlan.stepForDeclaredOutput(outputId);
       buildState.updateBuildStepResult(
         step,
-        buildState
-            .stepResult(step)
-            .rebuild((b) => b..outputs[outputId] = Digest([])),
+        BuildStepResult((b) {
+          b.isHidden = false;
+          b.outputs[outputId] = Digest([]);
+        }),
       );
       await writeBuildStateAndPlan(buildState, buildPlan);
 
@@ -247,12 +249,13 @@ void main() {
 
       // Write an output and add it to the build state as if it was built.
       await readerWriter.writeAsString(outputId, '// output');
-      final stepId = buildState.stepForDeclaredOutput(outputId);
+      final stepId = buildPlan.buildStepPlan.stepForDeclaredOutput(outputId);
       buildState.updateBuildStepResult(
         stepId,
-        buildState
-            .stepResult(stepId)
-            .rebuild((b) => b..outputs[outputId] = Digest([])),
+        BuildStepResult((b) {
+          b.isHidden = false;
+          b.outputs[outputId] = Digest([]);
+        }),
       );
       // Give digests to inputs so they are monitored for modifications.
       buildState.updateSourceDigest(assetId2, Digest([]));

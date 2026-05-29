@@ -513,7 +513,10 @@ targets:
         );
         expect(cachedBuildState.sources, [makeAssetId('a|web/a.txt')]);
         expect(
-          cachedBuildState.declaredAndActualOutputs,
+          [
+            ...result.buildPlan.buildStepPlan.declaredOutputs,
+            ...cachedBuildState.actualPostOutputs,
+          ],
           unorderedEquals([
             makeAssetId('a|web/a.txt.copy'),
             makeAssetId('a|web/a.txt.copy.clone'),
@@ -1442,7 +1445,11 @@ targets:
       final aCloneId = makeAssetId('a|lib/a.txt.copy.clone');
       expect(newBuildState.isMissingSource(anId), isTrue);
       expect(newBuildState.isMissingSource(aCopyId), isTrue);
-      expect(newBuildState.isFile(aCloneId), isFalse);
+      expect(
+        newBuildState.isSource(aCloneId) ||
+            result.buildPlan.buildStepPlan.isDeclaredOutput(aCloneId),
+        isFalse,
+      );
       expect(result.readerWriter.testing.exists(anId), isFalse);
       expect(result.readerWriter.testing.exists(aCopyId), isFalse);
       expect(result.readerWriter.testing.exists(aCloneId), isFalse);
@@ -1788,7 +1795,9 @@ targets:
       expect(
         finalBuildState
             .stepResult(
-              finalBuildState.stepForDeclaredOutput(AssetId('a', 'web/a.g1')),
+              result.buildPlan.buildStepPlan.stepForDeclaredOutput(
+                AssetId('a', 'web/a.g1'),
+              ),
             )
             .result,
         isFalse,
@@ -1797,7 +1806,9 @@ targets:
       expect(
         finalBuildState
             .stepResult(
-              finalBuildState.stepForDeclaredOutput(AssetId('a', 'web/a.g2')),
+              result.buildPlan.buildStepPlan.stepForDeclaredOutput(
+                AssetId('a', 'web/a.g2'),
+              ),
             )
             .result,
         isFalse,
@@ -1806,7 +1817,9 @@ targets:
       expect(
         finalBuildState
             .stepResult(
-              finalBuildState.stepForDeclaredOutput(AssetId('a', 'web/a.g3')),
+              result.buildPlan.buildStepPlan.stepForDeclaredOutput(
+                AssetId('a', 'web/a.g3'),
+              ),
             )
             .result,
         isFalse,
