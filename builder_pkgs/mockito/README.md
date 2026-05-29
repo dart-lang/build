@@ -46,8 +46,6 @@ The next step is to run `build_runner` in order to generate this new library:
 
 ```shell
 dart run build_runner build
-# OR
-dart run build_runner build
 ```
 
 `build_runner` will generate a file with a name based on the file containing the
