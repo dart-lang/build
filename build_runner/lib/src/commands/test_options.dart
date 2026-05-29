@@ -10,7 +10,7 @@ import '../build_runner_command_line.dart';
 class TestOptions {
   BuiltList<String> options;
 
-  TestOptions._(this.options);
+  new _(this.options);
 
   static TestOptions parse(BuildRunnerCommandLine commandLine) {
     if (commandLine.restArgumentsBeforeSeparator != 0) {

@@ -17,7 +17,7 @@ import 'daemon_builder.dart';
 class AssetServer {
   final HttpServer _server;
 
-  AssetServer._(this._server);
+  new _(this._server);
 
   int get port => _server.port;
 

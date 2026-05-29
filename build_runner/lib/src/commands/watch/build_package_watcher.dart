@@ -25,7 +25,7 @@ class BuildPackageWatcher {
   /// May optionally specify a [watch] strategy, otherwise will attempt a
   /// reasonable default based on the current platform and the type of path
   /// (i.e. a file versus directory).
-  BuildPackageWatcher(this.buildPackage, {Watcher Function(String path)? watch})
+  new(this.buildPackage, {Watcher Function(String path)? watch})
     : _strategy = watch ?? _default;
 
   /// Returns a stream of records for assets that change recursively.

@@ -36,7 +36,7 @@ class BuildOptions {
     (target) => target.outputLocation?.path.isNotEmpty ?? false,
   );
 
-  BuildOptions({
+  new({
     required this.buildDirs,
     required this.buildPaths,
     required this.builderConfigOverrides,
@@ -56,7 +56,7 @@ class BuildOptions {
   /// This codepath is only used for testing as the real defaults come from the
   /// command line arg parsing configuration.
   @visibleForTesting
-  factory BuildOptions.forTests({
+  factory forTests({
     BuiltMap<String, BuiltMap<String, Object?>>? builderConfigOverrides,
     BuiltSet<BuildDirectory>? buildDirs,
     BuildPaths? buildPaths,

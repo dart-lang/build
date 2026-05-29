@@ -24,7 +24,7 @@ class AssetTracker {
   final BuildPackages _buildPackages;
   final BuildConfigs _buildConfigs;
 
-  AssetTracker(this._readerWriter, this._buildPackages, this._buildConfigs);
+  new(this._readerWriter, this._buildPackages, this._buildConfigs);
 
   /// Checks for and returns any file system changes compared to the current
   /// build state.

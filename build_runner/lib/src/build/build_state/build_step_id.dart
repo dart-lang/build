@@ -15,9 +15,9 @@ abstract class BuildStepId implements Built<BuildStepId, BuildStepIdBuilder> {
   AssetId get primaryInput;
   int get phaseNumber;
 
-  factory BuildStepId({
+  factory({
     required AssetId primaryInput,
     required int phaseNumber,
   }) = _$BuildStepId._;
-  BuildStepId._();
+  new _();
 }

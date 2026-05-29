@@ -28,7 +28,7 @@ const _workspaceLockName = 'build_runner.workspace.lock';
 class BuildProcessLock {
   final BuildPaths paths;
 
-  BuildProcessLock(this.paths);
+  new(this.paths);
 
   void Function()? _onLockRequested;
   bool _lockWasRequested = false;
@@ -192,7 +192,7 @@ class _Lock {
   late RandomAccessFile _randomAccessFile;
 
   /// Takes the lock on [file] or requests the lock and throws.
-  _Lock(File file, FileLock mode) {
+  new(File file, FileLock mode) {
     try {
       file.createSync(recursive: true);
       _randomAccessFile = file.openSync(mode: FileMode.write);

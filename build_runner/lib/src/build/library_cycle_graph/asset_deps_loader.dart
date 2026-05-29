@@ -17,8 +17,8 @@ class AssetDepsLoader {
 
   final PhasedReader _reader;
 
-  AssetDepsLoader(this._reader);
-  factory AssetDepsLoader.fromDeps(PhasedAssetDeps deps) =>
+  new(this._reader);
+  factory fromDeps(PhasedAssetDeps deps) =>
       _InMemoryAssetDepsLoader(deps);
 
   /// The phase that this loader is reading build state at.
@@ -72,7 +72,7 @@ class _InMemoryAssetDepsLoader implements AssetDepsLoader {
   );
   PhasedAssetDeps phasedAssetDeps;
 
-  _InMemoryAssetDepsLoader(PhasedAssetDeps phasedAssetDeps)
+  new(PhasedAssetDeps phasedAssetDeps)
     : phasedAssetDeps = phasedAssetDeps.complete();
 
   // Return very high phase to tell `LibraryCycleGraphLoader` that all data is

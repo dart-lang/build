@@ -7,7 +7,7 @@ import 'package:built_collection/built_collection.dart';
 class BuildDirectory {
   final String directory;
   final OutputLocation? outputLocation;
-  BuildDirectory(this.directory, {this.outputLocation});
+  new(this.directory, {this.outputLocation});
 
   @override
   bool operator ==(Object other) =>
@@ -29,7 +29,7 @@ class OutputLocation {
   final String path;
   final bool useSymlinks;
   final bool hoist;
-  OutputLocation(this.path, {this.useSymlinks = false, this.hoist = true}) {
+  new(this.path, {this.useSymlinks = false, this.hoist = true}) {
     if (path.isEmpty && hoist) {
       throw ArgumentError('Can not build everything and hoist');
     }

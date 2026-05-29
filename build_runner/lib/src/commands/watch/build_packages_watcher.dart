@@ -31,7 +31,7 @@ class BuildPackagesWatcher {
   /// Creates a new watcher for a [BuildPackages].
   ///
   /// Optionally override watch strategy [watch] for testing.
-  BuildPackagesWatcher(
+  new(
     this._buildPackages, {
     BuildPackageWatcher Function(BuildPackage)? watch,
   }) : _strategy = watch ?? _default;
@@ -109,7 +109,7 @@ class WatchablePackageTree {
   final String packagePathWithSeparator;
   final List<WatchablePackageTree> children = [];
 
-  WatchablePackageTree(this.package)
+  new(this.package)
     : packagePathWithSeparator = package.path + Platform.pathSeparator;
 
   /// Recursively inserts [newPackage] as a child if it is nested under this

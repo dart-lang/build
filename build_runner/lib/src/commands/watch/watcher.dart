@@ -25,11 +25,11 @@ class Watcher {
   /// Pending expected delete events from the build.
   final Set<AssetId> _expectedDeletes;
 
-  Watcher._(this._buildPlan, this._buildSeries, this._expectedDeletes);
+  new _(this._buildPlan, this._buildSeries, this._expectedDeletes);
 
   BuildPackages get buildPackages => _buildPlan.buildPackages;
 
-  factory Watcher({required BuildPlan buildPlan, required Future<void> until}) {
+  factory({required BuildPlan buildPlan, required Future<void> until}) {
     final expectedDeletes = <AssetId>{};
     buildPlan = buildPlan.copyWith(
       readerWriter: buildPlan.readerWriter.copyWith(

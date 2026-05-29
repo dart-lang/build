@@ -26,7 +26,7 @@ class BuildStepResolver implements ReleasableResolver {
   // before it is actually ready, or resolving entrypoints more than once.
   final Pool _perActionResolvePool = Pool(1);
 
-  BuildStepResolver(this._buildResolver, this._buildStep);
+  new(this._buildResolver, this._buildStep);
 
   Stream<LibraryElement> get _librariesFromEntrypoints async* {
     await _updateDriverForEntrypoint(_buildStep.inputId, transitive: true);

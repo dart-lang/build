@@ -60,7 +60,7 @@ class BuildState implements GeneratedAssetHider {
   final Set<AssetId> _postProcessOutputs;
 
   @visibleForTesting
-  BuildState.empty()
+  new empty()
     : _sources = Sources(),
       _postProcessResultsByInput = {},
       _postProcessOutputs = {},
@@ -70,7 +70,7 @@ class BuildState implements GeneratedAssetHider {
       _buildStepsByDeclaredOutput = {};
 
   /// Creates from build phases, sources and packages.
-  factory BuildState.create({
+  factory create({
     required BuildPhases buildPhases,
     required BuildPackages buildPackages,
     required Set<AssetId> sources,
@@ -85,7 +85,7 @@ class BuildState implements GeneratedAssetHider {
     return result;
   }
 
-  BuildState._with({
+  new _with({
     required Sources sources,
     required Map<AssetId, Map<int, PostProcessBuildStepResult>>
     postProcessResultsByInput,

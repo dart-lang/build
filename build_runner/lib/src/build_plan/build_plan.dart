@@ -84,7 +84,7 @@ class BuildPlan {
   /// Call [deleteFilesAndFolders] to delete them.
   final BuiltList<AssetId> foldersToDelete;
 
-  BuildPlan({
+  new({
     required this.buildPlanDigest,
     required this.builderFactories,
     required this.buildOptions,

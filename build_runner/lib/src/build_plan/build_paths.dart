@@ -34,7 +34,7 @@ class BuildPaths {
   /// If [buildWorkspace] then [workspacePath], otherwise [packagePath].
   String get outputRootPath => buildWorkspace ? workspacePath! : packagePath;
 
-  BuildPaths({
+  new({
     required this.packagePath,
     required this.buildWorkspace,
     this.workspacePath,

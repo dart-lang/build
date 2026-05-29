@@ -25,7 +25,7 @@ abstract class PostProcessBuildStepResult
 
   BuiltList<String> get errors;
 
-  factory PostProcessBuildStepResult({
+  factory({
     required bool hidden,
     Iterable<AssetId> outputs = const [],
     Iterable<String> errors = const [],
@@ -37,5 +37,5 @@ abstract class PostProcessBuildStepResult
     errors: errors.toBuiltList(),
   );
 
-  PostProcessBuildStepResult._();
+  new _();
 }

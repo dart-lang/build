@@ -33,7 +33,7 @@ class InputTracker {
   /// [filesystem] is used to distinguish input trackers for testing, because
   /// each test case creates a new in-memory filesystem. It's not used
   /// otherwise.
-  InputTracker(Filesystem filesystem, {this.primaryInput, this.builderLabel}) {
+  new(Filesystem filesystem, {this.primaryInput, this.builderLabel}) {
     if (captureInputTrackersForTesting) {
       inputTrackersForTesting.putIfAbsent(filesystem, () => []).add(this);
     }

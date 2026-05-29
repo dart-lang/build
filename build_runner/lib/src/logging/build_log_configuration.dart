@@ -42,12 +42,12 @@ abstract class BuildLogConfiguration
   int? get forceConsoleWidthForTesting;
 
   /// Default configuration.
-  factory BuildLogConfiguration() => _$BuildLogConfiguration._(
+  factory() => _$BuildLogConfiguration._(
     mode: BuildLogMode.simple,
     onLog: null,
     throttleProgressUpdates: true,
     verbose: false,
     verboseDurations: false,
   );
-  BuildLogConfiguration._();
+  new _();
 }

@@ -21,7 +21,7 @@ class BuildTarget {
 
   final InputMatcher _sourcesMatcher;
 
-  BuildTarget(
+  new(
     build_config.BuildTarget buildTarget, {
     required BuiltList<String> defaultInclude,
   }) : package = buildTarget.package,

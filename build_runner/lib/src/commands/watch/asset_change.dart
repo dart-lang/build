@@ -16,10 +16,10 @@ class AssetChange {
   /// What caused the asset to be detected as changed.
   final ChangeType type;
 
-  const AssetChange(this.id, this.type);
+  const new(this.id, this.type);
 
   /// Creates a new change record in [package] from an existing watcher [event].
-  AssetChange.fromEvent(BuildPackage package, WatchEvent event)
+  new fromEvent(BuildPackage package, WatchEvent event)
     : this(
         AssetId(package.name, _normalizeRelativePath(package, event)),
         event.type,

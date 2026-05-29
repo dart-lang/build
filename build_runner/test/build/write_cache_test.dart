@@ -52,7 +52,7 @@ void main() {
 /// Writes output, runs `check`.
 class TestBuilder implements Builder {
   final Future<void> Function(BuildStep buildStep) check;
-  TestBuilder({required this.check});
+  new({required this.check});
 
   @override
   Future<void> build(BuildStep buildStep) async {

@@ -73,7 +73,7 @@ class BuildRunnerCommandLine {
   static Future<BuildRunnerCommandLine?> parse(Iterable<String> arguments) =>
       _CommandRunner().run(arguments);
 
-  BuildRunnerCommandLine(this.type, ArgResults argResults)
+  new(this.type, ArgResults argResults)
     : arguments = argResults.arguments.build(),
       rest = argResults.rest.build(),
       buildFilter = argResults.listNamed(buildFilterOption),
@@ -180,7 +180,7 @@ const removedOptions = [
 /// [CommandRunner] that returns a [BuildRunnerCommandLine] without actually
 /// running it.
 class _CommandRunner extends CommandRunner<BuildRunnerCommandLine> {
-  _CommandRunner()
+  new()
     : super(
         'build_runner',
         'Dart build tool.',
@@ -208,7 +208,7 @@ abstract class _Command<T> extends Command<T> {
 }
 
 class _Build extends _Command<BuildRunnerCommandLine> {
-  _Build() {
+  new() {
     addBuildArgs(argParser, symlinksDefault: false, supportWorkspace: true);
   }
 
@@ -373,7 +373,7 @@ class _Clean extends _Command<BuildRunnerCommandLine> {
       'Deletes the package or workspace build cache. '
       'The next build will be a full build.';
 
-  _Clean() {
+  new() {
     argParser.addFlag(
       workspaceOption,
       defaultsTo: false,
@@ -399,7 +399,7 @@ class _Daemon extends _Command<BuildRunnerCommandLine> {
   @override
   String get name => 'daemon';
 
-  _Daemon() {
+  new() {
     _Build.addBuildArgs(
       argParser,
       symlinksDefault: false,
@@ -427,7 +427,7 @@ class _Daemon extends _Command<BuildRunnerCommandLine> {
 final _run = _Run();
 
 class _Run extends _Command<BuildRunnerCommandLine> {
-  _Run() {
+  new() {
     _Build.addBuildArgs(
       argParser,
       symlinksDefault: false,
@@ -454,7 +454,7 @@ class _Run extends _Command<BuildRunnerCommandLine> {
 final _serve = _Serve();
 
 class _Serve extends _Command<BuildRunnerCommandLine> {
-  _Serve() {
+  new() {
     _Build.addBuildArgs(
       argParser,
       symlinksDefault: false,
@@ -498,7 +498,7 @@ class _Serve extends _Command<BuildRunnerCommandLine> {
 final _test = _Test();
 
 class _Test extends _Command<BuildRunnerCommandLine> {
-  _Test() {
+  new() {
     _Build.addBuildArgs(
       argParser,
       symlinksDefault: !Platform.isWindows,
@@ -525,7 +525,7 @@ class _Test extends _Command<BuildRunnerCommandLine> {
 final _watch = _Watch();
 
 class _Watch extends _Command<BuildRunnerCommandLine> {
-  _Watch() {
+  new() {
     _Build.addBuildArgs(
       argParser,
       symlinksDefault: false,
@@ -557,7 +557,7 @@ class _Stop extends _Command<BuildRunnerCommandLine> {
   String get description =>
       'Stops `watch` and `serve` commands in the same package or workspace.';
 
-  _Stop() {
+  new() {
     argParser.addFlag(
       workspaceOption,
       defaultsTo: false,

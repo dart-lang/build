@@ -270,7 +270,7 @@ class FakeNodeWatcher implements BuildPackageWatcher {
   final BuildPackage buildPackage;
   final _events = StreamController<AssetChange>();
 
-  FakeNodeWatcher(this.buildPackage);
+  new(this.buildPackage);
 
   @override
   Watcher get watcher => _watcher;

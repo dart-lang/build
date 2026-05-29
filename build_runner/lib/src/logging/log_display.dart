@@ -147,7 +147,7 @@ class LogDisplay {
 /// single character prefixes from [Severity] instead of the full names.
 class _LogRecord extends LogRecord {
   final Severity _severity;
-  _LogRecord(super.level, super.message, [super.loggerName = ''])
+  new(super.level, super.message, [super.loggerName = ''])
     : _severity = Severity.fromLogLevel(level);
 
   @override

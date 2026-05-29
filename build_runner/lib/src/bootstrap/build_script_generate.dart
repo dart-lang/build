@@ -134,7 +134,7 @@ class BuilderFactoriesExpressions {
   final Map<String, FactoryExpression> postProcessBuilderFactories;
   final Map<String, String> importPrefixes = {};
 
-  BuilderFactoriesExpressions({
+  new({
     required this.builderFactories,
     required this.postProcessBuilderFactories,
   }) {
@@ -209,7 +209,7 @@ class FactoryExpression {
   final String import;
   final String name;
 
-  FactoryExpression({required this.name, required this.import});
+  new({required this.name, required this.import});
 
   String render(Map<String, String> importPrefixes) =>
       '${importPrefixes[import]}.$name';

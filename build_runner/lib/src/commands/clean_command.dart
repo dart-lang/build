@@ -14,7 +14,7 @@ import 'build_runner_command.dart';
 class CleanCommand implements BuildRunnerCommand {
   final BuildPaths buildPaths;
 
-  CleanCommand(this.buildPaths);
+  new(this.buildPaths);
 
   @override
   Future<int> run() async {

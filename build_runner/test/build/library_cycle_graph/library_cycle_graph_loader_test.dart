@@ -537,7 +537,7 @@ class TestAssetDepsLoader implements AssetDepsLoader {
   /// asset gets built.
   final Set<AssetId>? built;
 
-  TestAssetDepsLoader(
+  new(
     this.phase,
     this.results, [
     this.loader,
@@ -628,7 +628,7 @@ class Expect {
   /// The expected transitive deps.
   final Iterable<AssetId> deps;
 
-  Expect({required this.phase, required this.from, required this.deps});
+  new({required this.phase, required this.from, required this.deps});
 
   Future<void> run(
     LibraryCycleGraphLoader loader,

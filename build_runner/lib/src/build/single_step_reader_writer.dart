@@ -39,11 +39,11 @@ class Readability {
   final bool canRead;
   final bool inSamePhase;
 
-  const Readability({required this.canRead, required this.inSamePhase});
+  const new({required this.canRead, required this.inSamePhase});
 
   /// Determines readability for an output written in a previous build phase,
   /// which means that [ownOutput] is impossible.
-  factory Readability.fromPreviousPhase(bool readable) =>
+  factory fromPreviousPhase(bool readable) =>
       readable ? Readability.readable : Readability.notReadable;
 
   static const Readability notReadable = Readability(
@@ -69,7 +69,7 @@ class RunningBuild {
   final AssetIsProcessedOutput assetIsProcessedOutput;
   final GlobEvaluator globEvaluator;
 
-  RunningBuild({
+  new({
     required this.buildPackages,
     required this.buildConfigs,
     required this.buildState,
@@ -85,7 +85,7 @@ class RunningBuildStep {
   final BuildPhase buildPhase;
   final String primaryPackage;
 
-  RunningBuildStep({
+  new({
     required this.phaseNumber,
     required this.buildPhase,
     required this.primaryPackage,
@@ -115,7 +115,7 @@ class SingleStepReaderWriter implements PhasedReader {
   /// The assets written via [writeAsString] or [writeAsBytes].
   final Set<AssetId> assetsWritten;
 
-  SingleStepReaderWriter({
+  new({
     required RunningBuild? runningBuild,
     required RunningBuildStep? runningBuildStep,
     required ReaderWriter readerWriter,
@@ -142,7 +142,7 @@ class SingleStepReaderWriter implements PhasedReader {
     }
   }
 
-  factory SingleStepReaderWriter.fakeFor(ReaderWriter readerWriter) {
+  factory fakeFor(ReaderWriter readerWriter) {
     return SingleStepReaderWriter(
       runningBuild: null,
       runningBuildStep: null,

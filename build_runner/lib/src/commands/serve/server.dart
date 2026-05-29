@@ -40,7 +40,7 @@ class ServeHandler {
 
   final BuildUpdatesWebSocketHandler _webSocketHandler;
 
-  ServeHandler(this._watcher)
+  new(this._watcher)
     : _webSocketHandler = BuildUpdatesWebSocketHandler() {
     _watcher.buildResults
         .listen(_webSocketHandler.emitUpdateMessage)
@@ -148,7 +148,7 @@ class BuildUpdatesWebSocketHandler {
   _handlerFactory;
   final _internalHandlers = <String, shelf.Handler>{};
 
-  BuildUpdatesWebSocketHandler([this._handlerFactory = webSocketHandler]);
+  new([this._handlerFactory = webSocketHandler]);
 
   shelf.Handler createHandlerByRootDir(String rootDir) {
     if (!_internalHandlers.containsKey(rootDir)) {
@@ -255,7 +255,7 @@ class AssetHandler {
 
   final _typeResolver = MimeTypeResolver();
 
-  AssetHandler(this._reader, this._outputRootPackage);
+  new(this._reader, this._outputRootPackage);
 
   Future<shelf.Response> handle(shelf.Request request, {String rootDir = ''}) =>
       (request.url.path.endsWith('/') || request.url.path.isEmpty)

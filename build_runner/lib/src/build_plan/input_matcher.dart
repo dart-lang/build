@@ -20,7 +20,7 @@ class InputMatcher {
   /// Null or empty means exclude nothing.
   final List<Glob>? excludeGlobs;
 
-  InputMatcher(InputSet inputSet, {BuiltList<String>? defaultInclude})
+  new(InputSet inputSet, {BuiltList<String>? defaultInclude})
     : includeGlobs =
           (inputSet.include ?? defaultInclude)?.map(Glob.new).toList(),
       excludeGlobs = inputSet.exclude?.map(Glob.new).toList();

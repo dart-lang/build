@@ -160,7 +160,7 @@ class AnsiBufferLine {
   int indent;
   int? hangingIndent;
 
-  AnsiBufferLine(this.items, {this.indent = 0, this.hangingIndent});
+  new(this.items, {this.indent = 0, this.hangingIndent});
 
   AnsiBufferLine withHangingIndent(int? hangingIndent) => AnsiBufferLine(
     items,

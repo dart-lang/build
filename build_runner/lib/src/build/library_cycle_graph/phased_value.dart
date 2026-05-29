@@ -49,19 +49,19 @@ abstract class PhasedValue<T>
 
   BuiltList<ExpiringValue<T>> get values;
 
-  factory PhasedValue([void Function(PhasedValueBuilder<T>)? updates]) =
+  factory([void Function(PhasedValueBuilder<T>)? updates]) =
       _$PhasedValue<T>;
-  PhasedValue._();
+  new _();
 
   /// A fixed [value] with no changes.
-  factory PhasedValue.fixed(T value) => PhasedValue((b) {
+  factory fixed(T value) => PhasedValue((b) {
     b.values.add(ExpiringValue<T>(value));
   });
 
   /// A value that will be generated in phase [expiresAfter].
   ///
   /// Pass the "missing" value for T as [before].
-  factory PhasedValue.unavailable({
+  factory unavailable({
     required int expiresAfter,
     required T before,
   }) => PhasedValue((b) {
@@ -70,7 +70,7 @@ abstract class PhasedValue<T>
 
   /// A value that is generated during [atPhase], changing from [before] to
   /// [value].
-  factory PhasedValue.generated(
+  factory generated(
     T value, {
     required int atPhase,
     required T before,
@@ -80,7 +80,7 @@ abstract class PhasedValue<T>
   });
 
   /// A [value] expiring after [expiresAfter] if it's not `null`.
-  factory PhasedValue.of(T value, {required int? expiresAfter}) =>
+  factory of(T value, {required int? expiresAfter}) =>
       PhasedValue((b) {
         b.values.add(ExpiringValue<T>(value, expiresAfter: expiresAfter));
       });
@@ -160,9 +160,9 @@ abstract class ExpiringValue<T>
   T get value;
   int? get expiresAfter;
 
-  factory ExpiringValue(T value, {int? expiresAfter}) =>
+  factory(T value, {int? expiresAfter}) =>
       _$ExpiringValue<T>._(value: value, expiresAfter: expiresAfter);
-  ExpiringValue._();
+  new _();
 }
 
 /// Returns the earliest of two nullable phases [a] and [b].

@@ -33,7 +33,7 @@ class DaemonCommand implements BuildRunnerCommand {
   final DaemonOptions daemonOptions;
   final TestingOverrides testingOverrides;
 
-  DaemonCommand({
+  new({
     required this.builderFactories,
     required this.arguments,
     required this.buildOptions,

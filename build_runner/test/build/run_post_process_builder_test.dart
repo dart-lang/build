@@ -88,7 +88,7 @@ class CopyingPostProcessBuilder implements PostProcessBuilder {
   @override
   final inputExtensions = ['.txt'];
 
-  CopyingPostProcessBuilder({this.outputExtension = '.copy'});
+  new({this.outputExtension = '.copy'});
 
   @override
   Future<void> build(PostProcessBuildStep buildStep) async {
@@ -105,7 +105,7 @@ class DeletePostProcessBuilder implements PostProcessBuilder {
   @override
   final inputExtensions = ['.txt'];
 
-  DeletePostProcessBuilder();
+  new();
 
   @override
   Future<void> build(PostProcessBuildStep buildStep) async {

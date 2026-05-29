@@ -46,7 +46,7 @@ class BuildConfigs {
   /// included in the build.
   final BuiltMap<String, InputMatcher> _publicAssetsByPackage;
 
-  BuildConfigs._(
+  new _(
     this.buildTargets,
     this.buildTargetsByPackage,
     this.buildConfigByPackage,
@@ -274,7 +274,7 @@ class BuildConfigParseException implements Exception {
   final String packageName;
   final String message;
 
-  BuildConfigParseException(this.packageName, this.message);
+  new(this.packageName, this.message);
 
   @override
   String toString() =>

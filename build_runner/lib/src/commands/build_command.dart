@@ -20,7 +20,7 @@ class BuildCommand implements BuildRunnerCommand {
   final BuildOptions buildOptions;
   final TestingOverrides testingOverrides;
 
-  BuildCommand({
+  new({
     required this.builderFactories,
     required this.buildOptions,
     this.testingOverrides = const TestingOverrides(),

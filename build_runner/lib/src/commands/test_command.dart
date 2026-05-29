@@ -27,7 +27,7 @@ class TestCommand implements BuildRunnerCommand {
   final TestOptions testOptions;
   final TestingOverrides testingOverrides;
 
-  TestCommand({
+  new({
     required this.builderFactories,
     required this.buildOptions,
     required this.testOptions,

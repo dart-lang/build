@@ -24,7 +24,7 @@ class WatchCommand implements BuildRunnerCommand {
   final BuildOptions buildOptions;
   final TestingOverrides testingOverrides;
 
-  WatchCommand({
+  new({
     required this.builderFactories,
     required this.buildOptions,
     this.testingOverrides = const TestingOverrides(),
@@ -108,7 +108,7 @@ class Terminator {
   final Future shouldTerminate;
   final StreamSubscription _subscription;
 
-  factory Terminator([Stream<ProcessSignal>? terminateEventStream]) {
+  factory([Stream<ProcessSignal>? terminateEventStream]) {
     final shouldTerminate = Completer<void>();
     terminateEventStream ??= ProcessSignal.sigint.watch();
     var numEventsSeen = 0;
@@ -123,7 +123,7 @@ class Terminator {
     return Terminator._(shouldTerminate.future, terminateListener);
   }
 
-  Terminator._(this.shouldTerminate, this._subscription);
+  new _(this.shouldTerminate, this._subscription);
 
   Future cancel() => _subscription.cancel();
 }

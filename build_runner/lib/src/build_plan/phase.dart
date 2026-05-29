@@ -68,7 +68,7 @@ class InBuildPhase extends BuildPhase implements BuildAction {
   @override
   final bool hideOutput;
 
-  InBuildPhase._(
+  new _(
     this.package,
     this.builder,
     this.options, {
@@ -91,7 +91,7 @@ class InBuildPhase extends BuildPhase implements BuildAction {
   ///
   /// [hideOutput] specifies that the generated asses should be placed in the
   /// build cache rather than the source tree.
-  InBuildPhase({
+  new({
     required Builder builder,
     required String key,
     required String package,
@@ -145,7 +145,7 @@ class PostBuildPhase implements BuildPhase {
   @override
   bool get isOptional => false;
 
-  PostBuildPhase(this.builderActions);
+  new(this.builderActions);
 
   @override
   String toString() => builderActions.map((a) => a.builderLabel).join(', ');
@@ -172,7 +172,7 @@ class PostBuildAction implements BuildAction {
   @override
   final bool hideOutput;
 
-  PostBuildAction({
+  new({
     required this.builder,
     required this.package,
     required this.options,

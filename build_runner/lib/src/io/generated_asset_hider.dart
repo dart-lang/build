@@ -15,7 +15,7 @@ abstract interface class GeneratedAssetHider {
 
 /// [GeneratedAssetHider] that always returns `false`.
 class NoopGeneratedAssetHider implements GeneratedAssetHider {
-  const NoopGeneratedAssetHider();
+  const new();
 
   @override
   bool isHidden(AssetId _) => false;

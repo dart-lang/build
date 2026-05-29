@@ -18,9 +18,9 @@ class TimeSlice {
 
   final DateTime stopTime;
 
-  TimeSlice(this.startTime, this.stopTime);
+  new(this.startTime, this.stopTime);
 
-  factory TimeSlice.fromJson(Map<String, dynamic> json) =>
+  factory fromJson(Map<String, dynamic> json) =>
       _$TimeSliceFromJson(json);
 
   Map<String, dynamic> toJson() => _$TimeSliceToJson(this);
@@ -57,10 +57,10 @@ class TimeSliceGroup implements TimeSlice {
         (slice is TimeSliceGroup ? slice.innerDuration : slice.duration),
   );
 
-  TimeSliceGroup(this.slices);
+  new(this.slices);
 
   /// Constructs TimeSliceGroup from JSON representation
-  factory TimeSliceGroup.fromJson(Map<String, dynamic> json) =>
+  factory fromJson(Map<String, dynamic> json) =>
       _$TimeSliceGroupFromJson(json);
 
   @override
@@ -235,7 +235,7 @@ class AsyncTimeTracker extends TimeSliceGroup implements TimeTracker {
 
   static const _zoneKey = #timing_AsyncTimeTracker;
 
-  AsyncTimeTracker({this.trackNested = true}) : super([]);
+  new({this.trackNested = true}) : super([]);
 
   T _trackSyncSlice<T>(ZoneDelegate parent, Zone zone, T Function() action) {
     // Ignore dangling runs after tracker completes

@@ -26,13 +26,13 @@ class BuildRunnerTester {
   final Pubspecs pubspecs;
   final Directory tempDirectory;
 
-  BuildRunnerTester(Pubspecs pubspecs)
+  new(Pubspecs pubspecs)
     : this._(
         pubspecs,
         Directory.systemTemp.createTempSync('BuildRunnerTester-'),
       );
 
-  BuildRunnerTester._(this.pubspecs, this.tempDirectory) {
+  new _(this.pubspecs, this.tempDirectory) {
     addTearDown(() => tempDirectory.deleteSync(recursive: true));
   }
 
@@ -246,7 +246,7 @@ class BuildRunnerProcess {
   int? _port;
   Future<void>? _killResult;
 
-  BuildRunnerProcess(this.process)
+  new(this.process)
     : _outputs = StreamQueue(
         StreamGroup.merge([
           process.stdout
@@ -460,7 +460,7 @@ class BuildRunnerProcess {
 class Pubspecs {
   final PackageConfig packageConfig;
 
-  Pubspecs(this.packageConfig);
+  new(this.packageConfig);
 
   /// Creates [Pubspecs] with package config from the current isolate.
   static Future<Pubspecs> load() async =>

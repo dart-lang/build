@@ -34,7 +34,7 @@ import '../../common/common.dart';
 class FakeSink extends DelegatingStreamSink implements WebSocketSink {
   final FakeWebSocketChannel _channel;
 
-  FakeSink(this._channel) : super(_channel._controller.sink);
+  new(this._channel) : super(_channel._controller.sink);
 
   @override
   Future close([int? closeCode, String? closeReason]) async {
@@ -55,7 +55,7 @@ class FakeWebSocketChannel extends StreamChannelMixin
   int? _closeCode;
   String? _closeReason;
 
-  FakeWebSocketChannel(this._controller, this._closed);
+  new(this._controller, this._closed);
 
   @override
   int? get closeCode => _closeCode;
@@ -657,7 +657,7 @@ class FakeWatcher implements Watcher {
     _futureBuildResultsController.add(result);
   }
 
-  FakeWatcher(this.buildPackages) {
+  new(this.buildPackages) {
     final firstBuild = Completer<BuildResult>();
     _currentBuild = firstBuild.future;
     _futureBuildResultsController.stream.listen((futureBuildResult) {

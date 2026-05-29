@@ -42,7 +42,7 @@ class BuildPhaseCreator {
   /// Post process builders can be applied, but cannot be appliers.
   final Map<String, List<BuilderDefinition>> _builderAppliersByKey = {};
 
-  BuildPhaseCreator({
+  new({
     required this.builderFactories,
     required this.buildPackages,
     required this.buildConfigs,

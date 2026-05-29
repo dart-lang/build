@@ -14,7 +14,7 @@ class BuildFilter {
   /// A glob for files under [_package] that must match.
   final Glob _path;
 
-  BuildFilter(this._package, this._path);
+  new(this._package, this._path);
 
   /// Builds a [BuildFilter] from a command line argument.
   ///
@@ -22,7 +22,7 @@ class BuildFilter {
   /// paths are treated as relative to the [currentPackage].
   ///
   /// Globs are supported in package names and paths.
-  factory BuildFilter.fromArg({
+  factory fromArg({
     required String arg,
     required String currentPackage,
   }) {

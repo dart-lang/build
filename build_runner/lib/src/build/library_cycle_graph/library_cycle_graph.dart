@@ -19,9 +19,9 @@ abstract class LibraryCycleGraph
   LibraryCycle get root;
   BuiltList<LibraryCycleGraph> get children;
 
-  factory LibraryCycleGraph([void Function(LibraryCycleGraphBuilder) updates]) =
+  factory([void Function(LibraryCycleGraphBuilder) updates]) =
       _$LibraryCycleGraph;
-  LibraryCycleGraph._();
+  new _();
 
   /// All subgraphs in the graph, including the root.
   Iterable<LibraryCycleGraph> transitiveGraphs() {

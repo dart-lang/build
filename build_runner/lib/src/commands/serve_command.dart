@@ -28,7 +28,7 @@ class ServeCommand implements BuildRunnerCommand {
   final ServeOptions serveOptions;
   final TestingOverrides testingOverrides;
 
-  ServeCommand({
+  new({
     required this.builderFactories,
     required this.buildOptions,
     required this.serveOptions,

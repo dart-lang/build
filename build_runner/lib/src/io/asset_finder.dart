@@ -17,7 +17,7 @@ abstract interface class AssetFinder {
 class FunctionAssetFinder implements AssetFinder {
   final Stream<AssetId> Function(Glob, {required String package}) function;
 
-  FunctionAssetFinder(this.function);
+  new(this.function);
 
   @override
   Stream<AssetId> find(Glob glob, {required String package}) =>

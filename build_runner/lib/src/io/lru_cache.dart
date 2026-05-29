@@ -17,7 +17,7 @@ class LruCache<K, V> {
 
   final _entries = <K, _Entry<K, V>>{};
 
-  LruCache(
+  new(
     this._individualWeightMax,
     this._totalWeightMax,
     this._computeWeight,
@@ -113,5 +113,5 @@ class _Entry<K, V> {
 
   final V value;
 
-  _Entry(this.key, this.value, this.weight);
+  new(this.key, this.value, this.weight);
 }

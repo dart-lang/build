@@ -146,14 +146,14 @@ abstract class Message implements Built<Message, MessageBuilder> {
   Severity get severity;
   String get text;
 
-  factory Message({
+  factory({
     required String? phaseName,
     required String? context,
     required AssetId? contextId,
     required Severity severity,
     required String text,
   }) = _$Message._;
-  Message._();
+  new _();
 }
 
 /// Messages are displayed by phase+context.
@@ -163,7 +163,7 @@ abstract class _MessageCategory
   String? get context;
   AssetId? get contextId;
 
-  factory _MessageCategory({
+  factory({
     required String? phaseName,
     required String? context,
     required AssetId? contextId,
@@ -172,7 +172,7 @@ abstract class _MessageCategory
     context: context,
     contextId: contextId,
   );
-  _MessageCategory._();
+  new _();
 }
 
 /// Severity of a message logged to `BuildLog`.
@@ -216,11 +216,11 @@ class RenderResult {
   /// Rendered messages block that does contain errors.
   final List<AnsiBufferLine> failureLines;
 
-  RenderResult() : nonFailureLines = [], failureLines = [];
-  RenderResult.failed(List<AnsiBufferLine> lines)
+  new() : nonFailureLines = [], failureLines = [];
+  new failed(List<AnsiBufferLine> lines)
     : failureLines = lines,
       nonFailureLines = [];
-  RenderResult.succeeded(List<AnsiBufferLine> lines)
+  new succeeded(List<AnsiBufferLine> lines)
     : nonFailureLines = lines,
       failureLines = [];
 

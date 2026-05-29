@@ -25,7 +25,7 @@ class BuildProcessState {
   final List<void Function()> _afterReceives = [];
   BuildProcessLock? _lock;
 
-  BuildProcessState() {
+  new() {
     _afterReceives.add(() {
       // Initialize lock using state from parent process if it was set.
       if (_buildPaths != null) {
@@ -225,13 +225,13 @@ class StdioCapabilities {
   final int terminalLines;
   final int terminalColumns;
 
-  StdioCapabilities()
+  new()
     : hasTerminal = stdout.hasTerminal,
       supportsAnsiEscapes = stdout.supportsAnsiEscapes,
       terminalLines = stdout.hasTerminal ? stdout.terminalLines : 0,
       terminalColumns = stdout.hasTerminal ? stdout.terminalColumns : 80;
 
-  StdioCapabilities.deserialize(Map<String, Object?> serialized)
+  new deserialize(Map<String, Object?> serialized)
     : hasTerminal = serialized['hasTerminal'] as bool,
       supportsAnsiEscapes = serialized['supportsAnsiEscapes'] as bool,
       terminalLines = serialized['terminalLines'] as int,

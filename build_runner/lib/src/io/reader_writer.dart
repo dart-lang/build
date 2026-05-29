@@ -40,7 +40,7 @@ class ReaderWriter implements AssetReader, AssetWriter {
   /// `dart-io` filesystem is used with no cache.
   ///
   /// Use [copyWith] to change settings such as caching.
-  factory ReaderWriter(BuildPackages buildPackages) => ReaderWriter.using(
+  factory(BuildPackages buildPackages) => ReaderWriter.using(
     assetFinder: BuildPackagesAssetFinder(buildPackages),
     assetPathProvider: buildPackages,
     generatedAssetHider: const NoopGeneratedAssetHider(),
@@ -49,7 +49,7 @@ class ReaderWriter implements AssetReader, AssetWriter {
     onDelete: null,
   );
 
-  ReaderWriter.using({
+  new using({
     required this.assetFinder,
     required this.assetPathProvider,
     required this.generatedAssetHider,
@@ -210,7 +210,7 @@ class ReaderWriter implements AssetReader, AssetWriter {
 class BuildPackagesAssetFinder implements AssetFinder {
   final BuildPackages buildPackages;
 
-  BuildPackagesAssetFinder(this.buildPackages);
+  new(this.buildPackages);
 
   @override
   Stream<AssetId> find(Glob glob, {required String package}) {

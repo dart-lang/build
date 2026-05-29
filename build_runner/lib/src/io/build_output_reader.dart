@@ -31,7 +31,7 @@ class BuildOutputReader {
       _collectAssetsDeletedByPostProcessBuilders();
 
   /// For an unexpected failure condition, a fully empty output.
-  BuildOutputReader.empty()
+  new empty()
     : _buildState = null,
       _buildPlan = null,
       _readerWriter = null,
@@ -40,7 +40,7 @@ class BuildOutputReader {
   /// For testing: a build output that does not check build phases to determine
   /// whether outputs were required.
   @visibleForTesting
-  BuildOutputReader.graphOnly({
+  new graphOnly({
     required ReaderWriter readerWriter,
     required BuildState buildState,
   }) : _buildPlan = null,
@@ -53,7 +53,7 @@ class BuildOutputReader {
   /// [processedOutputs] is the set of generated outputs in the build that were
   /// considered for building. This excludes generated outputs that were skipped
   /// due to not matching build dirs or not matching build filters.
-  BuildOutputReader({
+  new({
     required BuildPlan buildPlan,
     required ReaderWriter readerWriter,
     required BuildState buildState,

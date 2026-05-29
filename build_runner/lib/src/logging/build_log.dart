@@ -109,7 +109,7 @@ class BuildLog {
   /// For looking up asset paths when rendering asset IDs.
   BuildPackages? buildPackages;
 
-  BuildLog._() {
+  new _() {
     // Sync configuration between spawned isolates and the host.
     buildProcessState.doBeforeSend(() {
       buildProcessState.elapsedMillis = _processDuration.inMilliseconds;
@@ -772,7 +772,7 @@ class _PhaseProgress {
   /// The next input that will run in this phase.
   AssetId? nextInput;
 
-  _PhaseProgress();
+  new();
 
   /// The number of build steps that have run in this phase.
   int get runCount =>
