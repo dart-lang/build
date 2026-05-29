@@ -1,7 +1,6 @@
 ## 4.7.0
 
-- Add new Frontend Server socket instructions: MERGE_ALL_METADATA and READ_OUTPUT_FILE.
-- Add support for recompile-restart operations in the Frontend Server.
+- Add support for proper reload-restarts after invalid hot reloads in DDC + Frontend Server builder.
 
 ## 4.6.0
 
