@@ -134,6 +134,12 @@ final frontendServerProxyDriverResource = Resource<FrontendServerProxyDriver>(
   },
 );
 
+/// Environment options to pass to the Frontend Server.
+///
+/// These must be set when the persistent FES process is started but not when
+/// FES is externally managed (such as by webdev).
+Map<String, String> frontendServerEnvironment = const {};
+
 PersistentFrontendServer? __persistentFrontendServer;
 
 /// Returns the running instance of the PersistentFrontendServer, if any.
@@ -154,6 +160,7 @@ Future<PersistentFrontendServer> startFrontendServerWorker() async {
     sdkRoot: sdkDir,
     fileSystemRoot: fesRoot,
     packagesFile: fesRoot.resolve(packagesFilePath),
+    environment: frontendServerEnvironment,
   );
 
   _frontendServerProxyDriver.init(fes);

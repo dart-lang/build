@@ -25,7 +25,10 @@ void main(List<String> args) async {
   });
 
   if (args.length < 3) {
-    print('Usage: fes_manager <sdkRoot> <fileSystemRoot> <packagesFile>');
+    print(
+      'Usage: fes_manager <sdkRoot> <fileSystemRoot> <packagesFile> '
+      '[-Dkey=value ...]',
+    );
     exit(1);
   }
   final sdkRoot = args[0];
@@ -36,6 +39,20 @@ void main(List<String> args) async {
 
   final packagesFile = Uri.parse(args[2]);
 
+  // Parse environment variables.
+  final environment = <String, String>{};
+  for (var i = 3; i < args.length; i++) {
+    final arg = args[i];
+    if (arg.startsWith('-D')) {
+      final parts = arg.substring(2).split('=');
+      if (parts.length >= 2) {
+        final key = parts[0];
+        final value = parts.sublist(1).join('=');
+        environment[key] = value;
+      }
+    }
+  }
+
   // Delete stale config files if they exist. This manager will spin up a FES
   // instance and write its new config.
   final configFile = File(p.join(Directory.current.path, fesManagerConfigPath));
@@ -45,6 +62,7 @@ void main(List<String> args) async {
     sdkRoot: sdkRoot,
     fileSystemRoot: fileSystemRoot,
     packagesFile: packagesFile,
+    environment: environment,
   );
 
   final server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
@@ -115,11 +133,13 @@ class FesManager {
     required String sdkRoot,
     required Uri fileSystemRoot,
     required Uri packagesFile,
+    Map<String, String> environment = const {},
   }) async {
     final fes = await PersistentFrontendServer.start(
       sdkRoot: sdkRoot,
       fileSystemRoot: fileSystemRoot,
       packagesFile: packagesFile,
+      environment: environment,
     );
     final driver = FrontendServerProxyDriver()..init(fes);
     final packageConfig = await PackageConfig.load(File.fromUri(packagesFile));

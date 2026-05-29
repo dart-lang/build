@@ -58,6 +58,7 @@ Builder ddcBuilder(BuilderOptions options) {
   _ensureSameDdcOptions(options);
 
   if (_readWebHotReloadOption(options)) {
+    frontendServerEnvironment = _readEnvironmentOption(options);
     return DdcFrontendServerBuilder(
       scratchSpaceDir: _readScratchSpaceDirOption(options),
     );

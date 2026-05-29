@@ -75,6 +75,66 @@ void main() {
       await process.exitCode;
     });
 
+    test('passes environment defines to Frontend Server', () async {
+      final fileSystemRoot = tempDir.uri.resolve('fes_root/');
+      await Directory.fromUri(fileSystemRoot).create(recursive: true);
+
+      final mainFile = File(
+        p.join(tempDir.path, 'fes_root', 'web', 'main.dart'),
+      );
+      mainFile.createSync(recursive: true);
+      mainFile.writeAsStringSync(
+        "void main() { print(const String.fromEnvironment('MY_DEFINE')); }",
+      );
+
+      final scriptPath = _resolveFesManagerScriptPath();
+      final process = await Process.start('dart', [
+        scriptPath,
+        sdkDir,
+        fileSystemRoot.toString(),
+        p.toUri(packageConfig.path).toString(),
+        '-DMY_DEFINE=manager_hello',
+      ], workingDirectory: tempDir.path);
+
+      process.stdout
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())
+          .listen((line) => print('Manager defines test stdout: $line'));
+
+      final configFile = File(p.join(tempDir.path, fesManagerConfigPath));
+      final content = await _waitForFileContentChanges(configFile);
+      final json = jsonDecode(content) as Map<String, dynamic>;
+      final port = json['port'] as int?;
+
+      expect(port, isNotNull);
+
+      final socket = await Socket.connect(InternetAddress.loopbackIPv4, port!);
+      final socketLines =
+          socket
+              .cast<List<int>>()
+              .transform(utf8.decoder)
+              .transform(const LineSplitter())
+              .asBroadcastStream();
+
+      socket.writeln(
+        jsonEncode({
+          'instruction': 'READ_OUTPUT_FILE',
+          'path': 'test_scratch_space/web/main.ddc.js',
+          'entrypoint': 'org-dartlang-app:///web/main.dart',
+          'invalidatedFiles': ['org-dartlang-app:///web/main.dart'],
+        }),
+      );
+
+      final responseLine = await socketLines.first;
+      final response = jsonDecode(responseLine) as Map<String, dynamic>;
+      expect(response.containsKey('content'), isTrue);
+      expect(response['content'], contains('manager_hello'));
+
+      await socket.close();
+      process.kill();
+      await process.exitCode;
+    });
+
     test('updates the config file on restart', () async {
       final fileSystemRoot = tempDir.uri.resolve('fes_root/');
       await Directory.fromUri(fileSystemRoot).create(recursive: true);

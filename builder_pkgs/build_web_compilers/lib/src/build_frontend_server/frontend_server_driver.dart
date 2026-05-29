@@ -10,6 +10,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:build/experiments.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
@@ -284,6 +285,7 @@ class PersistentFrontendServer {
     required String sdkRoot,
     required Uri fileSystemRoot,
     required Uri packagesFile,
+    Map<String, String> environment = const {},
   }) async {
     final rootPackage = getRootPackageName();
     final socketConnection = await _tryConnectToFESManager(fileSystemRoot);
@@ -331,6 +333,10 @@ class PersistentFrontendServer {
       '--platform=$platformDill',
       '--output-dill=${outputDillUri.toFilePath()}',
       '--output-incremental-dill=${outputDillUri.toFilePath()}',
+      for (final define in environment.entries)
+        '-D${define.key}=${define.value}',
+      for (final experiment in enabledExperiments)
+        '--enable-experiment=$experiment',
     ];
     final process = await _startWithReaper(dartaotruntimePath, args);
     final fileSystem = WebMemoryFilesystem(fileSystemRoot, rootPackage);
