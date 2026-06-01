@@ -60,6 +60,7 @@ class Build {
   // Collaborators.
   final ResourceManager resourceManager;
   ReaderWriter _readerWriter;
+  final BuildStepPlan? previousBuildStepPlan;
   final LibraryCycleGraphLoader previousLibraryCycleGraphLoader =
       LibraryCycleGraphLoader();
   final AssetDepsLoader? previousDepsLoader;
@@ -72,7 +73,7 @@ class Build {
   final ResolversImpl? resolversImpl;
 
   // State.
-  final BuildState buildState;
+  BuildState buildState;
   final lazyPhases = <BuildStepId, Future<Iterable<AssetId>>>{};
   final lazyGlobs = <GlobId, Future<void>>{};
 
@@ -133,6 +134,8 @@ class Build {
     required this.buildState,
   }) : _buildPlan = buildPlan,
        _readerWriter = readerWriter,
+       previousBuildStepPlan =
+           buildPlan.previousBuildState == null ? null : buildPlan.buildStepPlan,
        previousDepsLoader =
            buildPlan.previousPhasedAssetDeps == null
                ? null
@@ -248,66 +251,136 @@ class Build {
   Future<Set<AssetId>> _updateBuildState(Set<AssetId> updates) async {
     changedInputs.clear();
     deletedAssets.clear();
+    newPrimaryInputs.clear();
 
-    // Check what actually changed for each asset in `updates`.
     readerWriter.cache.invalidate(updates);
-    final resolvedUpdates = <AssetId, ChangeType>{};
+
+    final previousBuildState = buildPlan.previousBuildState!;
+
+    // 1. Identify adds, removes, modifies from updates.
+    final adds = <AssetId>{};
+    final removes = <AssetId>{};
+    final modifies = <AssetId>{};
     final previousSources = <AssetId>{};
-    final newDigests = <AssetId, Digest>{};
     for (final id in updates) {
-      final oldIsSource = buildState.isSource(id);
+      final oldIsSource = previousBuildState.isSource(id);
       if (oldIsSource) {
         previousSources.add(id);
       }
-      final oldExisted = _isFile(id);
-      final oldDigest = oldIsSource ? buildState.digestOfSource(id) : null;
+      final oldExisted = previousBuildState.isFile(
+        buildStepPlan: buildStepPlan,
+        id: id,
+      );
       var exists = false;
-      Digest? newDigest;
       if (await readerWriter.canRead(id)) {
         exists = true;
-        // Assets are only eagerly read if they were an input in the previous
-        // build. In that case, they have a digest. Compute the new digest to
-        // check if the file changed.
-        if (oldDigest != null) {
-          try {
-            newDigest = await readerWriter.digest(id);
-            newDigests[id] = newDigest;
-          } catch (_) {
-            // Was deleted after `canRead`.
-            exists = false;
-          }
-        }
       }
 
       if (oldExisted && !exists) {
-        resolvedUpdates[id] = ChangeType.REMOVE;
-        deletedAssets.add(id);
+        removes.add(id);
       } else if (!oldExisted && exists) {
-        changedInputs.add(id);
-        newPrimaryInputs.add(id);
-        resolvedUpdates[id] = ChangeType.ADD;
-      } else if (oldExisted &&
-          oldDigest != null &&
-          exists &&
-          oldDigest != newDigest) {
-        changedInputs.add(id);
-        resolvedUpdates[id] = ChangeType.MODIFY;
+        adds.add(id);
+      } else if (oldExisted && exists) {
+        modifies.add(id);
       }
     }
 
-    final deleted = buildState.updateForNextBuild(
-      buildStepPlan,
-      resolvedUpdates,
-    );
-    for (final id in deleted) {
-      await readerWriter.delete(id);
+    // 2. Compute new sources.
+    final newSources =
+        previousBuildState.sources.toSet()
+          ..addAll(adds)
+          ..removeAll(removes);
+
+
+
+    // 3. Create the NEW BuildState.
+    final newBuildState = BuildState.create(sources: newSources);
+
+    // 4. Populate changedInputs, deletedAssets, newPrimaryInputs.
+    changedInputs.addAll(adds);
+    newPrimaryInputs.addAll(adds);
+    deletedAssets.addAll(removes);
+
+    // 5. Check modified sources for content changes.
+    final resolvedUpdates = <AssetId, ChangeType>{};
+    for (final id in modifies) {
+      if (newSources.contains(id)) {
+        final oldDigest = previousBuildState.digestOfSource(id);
+        if (oldDigest != null) {
+          try {
+            final newDigest = await readerWriter.digest(id);
+            if (oldDigest != newDigest) {
+              changedInputs.add(id);
+              newBuildState.updateSourceDigest(id, newDigest);
+              resolvedUpdates[id] = ChangeType.MODIFY;
+            } else {
+              newBuildState.updateSourceDigest(id, oldDigest);
+            }
+          } catch (_) {
+            // Treat as missing.
+            newBuildState.addMissingSource(id);
+            deletedAssets.add(id);
+            resolvedUpdates[id] = ChangeType.REMOVE;
+          }
+        }
+      }
     }
-    _buildPlan = _buildPlan.updateForSources(buildState.sources);
-    deletedAssets.addAll(deleted);
-    for (final entry in newDigests.entries) {
-      buildState.updateSourceDigest(entry.key, entry.value);
+    for (final id in adds) {
+      resolvedUpdates[id] = ChangeType.ADD;
+    }
+    for (final id in removes) {
+      resolvedUpdates[id] = ChangeType.REMOVE;
     }
 
+    // 6. Copy unchanged source digests.
+    for (final id in newSources) {
+      if (!adds.contains(id) && !modifies.contains(id)) {
+        final digest = previousBuildState.digestOfSource(id);
+        newBuildState.updateSourceDigest(id, digest);
+      }
+    }
+
+    final newBuildPlan = _buildPlan.updateForSources(newSources);
+    final newBuildStepPlan = newBuildPlan.buildStepPlan;
+
+    // 7. Find outputs to delete.
+    final outputsToDelete = <AssetId>[];
+    for (final id in buildStepPlan.declaredOutputs) {
+      if (!newBuildStepPlan.isDeclaredOutput(id)) {
+        if (previousBuildState.isActualOutput(
+          buildStepPlan: buildStepPlan,
+          id: id,
+        )) {
+          outputsToDelete.add(id);
+        }
+      }
+    }
+    for (final id in outputsToDelete) {
+      await _readerWriter.delete(id);
+    }
+
+    deletedAssets.addAll(outputsToDelete);
+
+    // 8. Populate missingSources in the new BuildState.
+    final stillMissing = previousBuildState.missingSources.difference(adds);
+    for (final id in stillMissing) {
+      newBuildState.addMissingSource(id);
+    }
+    for (final id in removes) {
+      newBuildState.addMissingSource(id);
+    }
+
+    // 9. Replace buildState and update readerWriter in Build.
+    buildState = newBuildState;
+    _buildPlan = newBuildPlan;
+    _readerWriter = _readerWriter.copyWith(
+      generatedAssetHider:
+          buildPlan.testingOverrides.flattenOutput
+              ? const NoopGeneratedAssetHider()
+              : buildStepPlan,
+    );
+
+    // 10. Compute invalidatedSources to return.
     final invalidatedSources = <AssetId>{};
     for (final entry in resolvedUpdates.entries) {
       final id = entry.key;
@@ -580,16 +653,35 @@ class Build {
     );
 
     final builderOutputs = expectedOutputs(builder, buildStepId.primaryInput);
-    if (!await _buildShouldRun(
+    final stepAction = await _computeStepAction(
       buildStepId,
       builderOutputs,
       singleStepReaderWriter,
-    )) {
+    );
+    if (stepAction.isSkip) {
       buildLog.skipStep(phase: phase, lazy: lazy);
-      for (final output in builderOutputs) {
-        processedOutputs.add(output);
+      switch (stepAction) {
+        case StepAction.skipKeepPrevious:
+          final previousBuildState = buildPlan.previousBuildState;
+          if (previousBuildState != null &&
+              previousBuildState.hasStepResult(buildStepId)) {
+            final previousResult = previousBuildState.stepResult(buildStepId);
+            buildState.updateBuildStepResult(buildStepId, previousResult);
+          }
+          for (final output in builderOutputs) {
+            processedOutputs.add(output);
+          }
+          return <AssetId>[];
+        case StepAction.skipMarkSuccess:
+          await _cleanUpStaleOutputs(builderOutputs);
+          _markStepSkipped(buildStepId, builderOutputs);
+          return <AssetId>[];
+        case StepAction.skipMarkFailure:
+          await _markStepFailed(buildStepId, builderOutputs);
+          return <AssetId>[];
+        default:
+          throw StateError('unreachable');
       }
-      return <AssetId>[];
     }
 
     await _cleanUpStaleOutputs(builderOutputs);
@@ -788,15 +880,21 @@ class Build {
       assetsWritten: {},
     );
 
-    final existingOutputs =
-        buildState
-            .postProcessBuildStepResultFor(postProcessBuildStepId)
-            ?.outputs ??
-        const <AssetId>{};
+    final previousBuildState = buildPlan.previousBuildState;
+    final previousResult = previousBuildState?.postProcessBuildStepResultFor(
+      postProcessBuildStepId,
+    );
+    final existingOutputs = previousResult?.outputs ?? const <AssetId>{};
     if (!await _postProcessBuildStepShouldRun(
       postProcessBuildStepId,
       stepReaderWriter,
     )) {
+      if (previousResult != null) {
+        buildState.addPostProcessBuildStepResult(
+          postProcessBuildStepId,
+          previousResult,
+        );
+      }
       processedOutputs.addAll(existingOutputs);
       return <AssetId>[];
     }
@@ -891,7 +989,7 @@ class Build {
   /// the build step [step].
   ///
   /// As part of checking, builds any inputs that need building.
-  Future<bool> _buildShouldRun(
+  Future<StepAction> _computeStepAction(
     BuildStepId step,
     Iterable<AssetId> outputs,
     SingleStepReaderWriter readerWriter,
@@ -906,10 +1004,11 @@ class Build {
 
       // If the primary input has been deleted, the build is skipped.
       if (deletedAssets.contains(step.primaryInput)) {
-        if (buildState.isMissingSource(step.primaryInput)) {
-          await _cleanUpStaleOutputs(outputs);
-          _markStepSkipped(step, outputs);
-          return false;
+        final previousBuildState = buildPlan.previousBuildState;
+        if (previousBuildState != null &&
+            (previousBuildState.isSource(step.primaryInput) ||
+                previousBuildState.isMissingSource(step.primaryInput))) {
+          return StepAction.skipMarkSuccess;
         }
       }
 
@@ -922,8 +1021,7 @@ class Build {
         // If the primary input's generating step failed, this build is also
         // failed.
         if (inputStepResult.failed) {
-          await _markStepFailed(step, outputs);
-          return false;
+          return StepAction.skipMarkFailure;
         }
 
         // If the primary input succeeded but was not output, this build is
@@ -932,28 +1030,32 @@ class Build {
           buildStepPlan: buildStepPlan,
           id: step.primaryInput,
         )) {
-          await _cleanUpStaleOutputs(outputs);
-          _markStepSkipped(step, outputs);
-          return false;
+          return StepAction.skipMarkSuccess;
         }
       }
 
-      if (buildPlan.cleanBuild) return true;
+      if (buildPlan.cleanBuild) return StepAction.run;
 
-      if (buildPlan.triggersChanged) return true;
+      if (buildPlan.triggersChanged) return StepAction.run;
 
       if (buildPlan.phaseOptionsChanged(step.phaseNumber)) {
-        return true;
+        return StepAction.run;
       }
 
-      if (newPrimaryInputs.contains(step.primaryInput)) return true;
+      if (newPrimaryInputs.contains(step.primaryInput)) {
+        return StepAction.run;
+      }
 
       for (final output in outputs) {
-        if (deletedAssets.contains(output)) return true;
+        if (deletedAssets.contains(output)) return StepAction.run;
       }
 
-      final stepResult = buildState.stepResultOrNull(step);
-      if (stepResult == null || !stepResult.hasRun) return true;
+      final previousBuildState = buildPlan.previousBuildState!;
+      final stepResult =
+          previousBuildState.hasStepResult(step)
+              ? previousBuildState.stepResult(step)
+              : BuildStepResult((b) => b..isHidden = false);
+      if (!stepResult.hasRun) return StepAction.run;
 
       // Check for changes to any secondary inputs.
       for (final input in stepResult.inputs) {
@@ -962,7 +1064,7 @@ class Build {
           input: input,
         );
 
-        if (changed) return true;
+        if (changed) return StepAction.run;
       }
 
       // Check for changes to any glob inputs.
@@ -970,7 +1072,7 @@ class Build {
         if (!processedGlobs.contains(globId)) {
           await _evaluateGlob(globId);
         }
-        if (changedGlobs.contains(globId)) return true;
+        if (changedGlobs.contains(globId)) return StepAction.run;
       }
 
       for (final graphId in stepResult.resolverEntrypoints) {
@@ -978,16 +1080,12 @@ class Build {
           phaseNumber: step.phaseNumber,
           entrypointId: graphId,
         )) {
-          return true;
+          return StepAction.run;
         }
       }
 
       // No input changes: build is not needed, and outputs state is up to date.
-      for (final output in outputs) {
-        processedOutputs.add(output);
-      }
-
-      return false;
+      return StepAction.skipKeepPrevious;
     });
   }
 
@@ -1072,11 +1170,12 @@ class Build {
     return changedGraphs[entrypointGraph]!;
   }
 
-  /// Whether [input] has a change visible at [phaseNumber].
   Future<bool> _hasInputChanged({
     required AssetId input,
     required int phaseNumber,
   }) async {
+    final previousBuildState = buildPlan.previousBuildState!;
+
     if (buildStepPlan.isDeclaredOutput(input)) {
       final phase = buildStepPlan.stepForDeclaredOutput(input).phaseNumber;
       if (phase >= phaseNumber) {
@@ -1087,20 +1186,30 @@ class Build {
       if (!processedOutputs.contains(input)) {
         await _buildOutput(input);
       }
-      if (changedOutputs.contains(input)) {
-        return true;
-      }
-    } else if (buildState.isSource(input)) {
-      if (changedInputs.contains(input)) {
-        return true;
-      }
-    } else if (buildState.isMissingSource(input)) {
-      // It's only a newly-deleted asset if it's also in [deletedAssets].
-      if (deletedAssets.contains(input)) {
-        return true;
-      }
+      return changedOutputs.contains(input);
     }
-    return false;
+
+    if (previousBuildStepPlan?.isDeclaredOutput(input) == true) {
+      // Was declared output but no longer planned -> deleted.
+      return true;
+    }
+
+    if (buildState.isSource(input)) {
+      return changedInputs.contains(input);
+    }
+
+    if (previousBuildState.isSource(input)) {
+      // Was source but no longer exists -> deleted.
+      return true;
+    }
+
+    if (previousBuildState.isMissingSource(input)) {
+      // Was missing, and is still missing (otherwise it would be in
+      // buildState.isSource).
+      return false;
+    }
+
+    throw StateError('Expected declared output or source: $input');
   }
 
   /// Whether the post process build step [buildStepId] should run.
@@ -1145,9 +1254,16 @@ class Build {
   /// regenerated based on its inputs hash changing. All assets in [outputs]
   /// must be generated assets.
   Future<void> _cleanUpStaleOutputs(Iterable<AssetId> outputs) async {
+    final previousBuildState = buildPlan.previousBuildState;
+    if (previousBuildState == null) return;
+
     for (final output in outputs) {
-      if (buildState.isActualOutput(buildStepPlan: buildStepPlan, id: output) ||
-          buildState.isActualPostOutput(output)) {
+      final wasOutput = previousBuildState.isActualOutput(
+        buildStepPlan: previousBuildStepPlan!,
+        id: output,
+      );
+      final wasPostOutput = previousBuildState.isActualPostOutput(output);
+      if (wasOutput || wasPostOutput) {
         await _delete(output);
       }
     }
@@ -1219,7 +1335,8 @@ class Build {
       final results = [...otherInputs, ...generatedFileResults];
       final digest = md5.convert(utf8.encode(results.join(' ')));
 
-      final previousGlobResult = buildState.globResultFor(globId);
+      final previousBuildState = buildPlan.previousBuildState;
+      final previousGlobResult = previousBuildState?.globResultFor(globId);
       if (previousGlobResult == null || previousGlobResult.digest != digest) {
         changedGlobs.add(globId);
       }
@@ -1276,7 +1393,11 @@ class Build {
     final buildStepResult = buildStepResultBuilder.build();
 
     final buildStepId = BuildStepId(primaryInput: input, phaseNumber: phaseNum);
-    final previousBuildStepResult = buildState.stepResultOrNull(buildStepId);
+    final previousBuildState = buildPlan.previousBuildState;
+    final previousBuildStepResult = previousBuildState != null &&
+            previousBuildState.hasStepResult(buildStepId)
+        ? previousBuildState.stepResult(buildStepId)
+        : null;
     final previousResult = previousBuildStepResult?.result;
     buildState.updateBuildStepResult(buildStepId, buildStepResult);
 
@@ -1308,4 +1429,17 @@ class Build {
       buildState.isFile(buildStepPlan: buildStepPlan, id: id);
 
   Future _delete(AssetId id) => readerWriter.delete(id);
+}
+
+/// Actions that can be taken for a build step in an incremental build.
+enum StepAction {
+  run,
+  skipKeepPrevious,
+  skipMarkSuccess,
+  skipMarkFailure;
+
+  bool get isSkip =>
+      this == StepAction.skipKeepPrevious ||
+      this == StepAction.skipMarkSuccess ||
+      this == StepAction.skipMarkFailure;
 }

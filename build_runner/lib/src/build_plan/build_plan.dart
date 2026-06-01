@@ -47,19 +47,17 @@ class BuildPlan {
   final BuildStepPlan buildStepPlan;
 
   final BuildState? _previousBuildState;
-  bool _previousBuildStateWasTaken;
   final PhasedAssetDeps? previousPhasedAssetDeps;
   final bool restartIsNeeded;
 
   final Bootstrapper bootstrapper;
   final BuildState _buildState;
-  bool _buildStateWasTaken;
   final BuiltSet<AssetId>? updates;
 
   /// Whether this is a clean build.
   ///
   /// If not, it's an incremental build.
-  final bool cleanBuild;
+  bool get cleanBuild => previousBuildState == null;
 
   /// Whether build triggers config changed since the previous build.
   final bool triggersChanged;
@@ -95,23 +93,18 @@ class BuildPlan {
     required this.buildConfigs,
     required this.buildStepPlan,
     required BuildState? previousBuildState,
-    required bool previousBuildStateWasTaken,
     required this.previousPhasedAssetDeps,
     required this.restartIsNeeded,
     required this.bootstrapper,
     required BuildState buildState,
-    required bool buildStateWasTaken,
     required this.updates,
     required this.filesToDelete,
     required this.foldersToDelete,
-    required this.cleanBuild,
     required this.triggersChanged,
     required BuiltList<bool> phaseOptionsChanged,
     required BuiltList<bool> postBuildOptionsChanged,
   }) : _previousBuildState = previousBuildState,
-       _previousBuildStateWasTaken = previousBuildStateWasTaken,
        _buildState = buildState,
-       _buildStateWasTaken = buildStateWasTaken,
        _phaseOptionsChanged = phaseOptionsChanged,
        _postBuildOptionsChanged = postBuildOptionsChanged;
 
@@ -123,7 +116,7 @@ class BuildPlan {
   ///
   /// If the build state indicates a restart is needed, [restartIsNeeded] will
   /// be set. Otherwise, if it's valid, the deserialized build state is
-  /// available from [takePreviousBuildState].
+  /// available from [previousBuildState].
   ///
   /// Files that should be deleted before restarting or building are accumulated
   /// in [filesToDelete] and [foldersToDelete]. Call [deleteFilesAndFolders] to
@@ -263,7 +256,6 @@ class BuildPlan {
         ...previousBuildState.sources,
         ...previousBuildState.actualOutputs,
       };
-      buildState = previousBuildState.copyForNextBuild();
 
       if (restartIsNeeded) {
         // Mark old outputs for deletion.
@@ -278,6 +270,10 @@ class BuildPlan {
 
         // Discard state tied to the invalid AssetGraphJson.
         updates = null;
+      } else {
+        buildState = BuildState.create(
+          sources: previousBuildState.sources.toSet(),
+        );
       }
     }
 
@@ -351,16 +347,13 @@ class BuildPlan {
       buildConfigs: buildConfigs,
       buildStepPlan: buildStepPlan,
       previousBuildState: previousBuildState,
-      previousBuildStateWasTaken: false,
       previousPhasedAssetDeps: previousPhasedAssetDeps,
       restartIsNeeded: restartIsNeeded,
       bootstrapper: bootstrapper,
       buildState: buildState,
-      buildStateWasTaken: false,
       updates: updates?.build(),
       filesToDelete: filesToDelete.toBuiltList(),
       foldersToDelete: foldersToDelete.toBuiltList(),
-      cleanBuild: previousBuildState == null,
       triggersChanged:
           !buildPlanDigest.hasSameTriggersAs(previousBuildPlanDigest),
       phaseOptionsChanged: buildPlanDigest.computeChangedPhaseOptions(
@@ -377,8 +370,8 @@ class BuildPlan {
     BuiltSet<BuildDirectory>? buildDirs,
     BuiltSet<BuildFilter>? buildFilters,
     ReaderWriter? readerWriter,
-    bool? cleanBuild,
     bool? triggersChanged,
+    BuildState? previousBuildState,
     PhasedAssetDeps? previousPhasedAssetDeps,
     BuiltList<bool>? phaseOptionsChanged,
     BuiltList<bool>? postBuildOptionsChanged,
@@ -395,18 +388,15 @@ class BuildPlan {
     buildPackages: buildPackages,
     buildConfigs: buildConfigs,
     readerWriter: readerWriter ?? this.readerWriter,
-    previousBuildState: _previousBuildState,
-    previousBuildStateWasTaken: _previousBuildStateWasTaken,
+    previousBuildState: previousBuildState ?? _previousBuildState,
     previousPhasedAssetDeps:
         previousPhasedAssetDeps ?? this.previousPhasedAssetDeps,
     restartIsNeeded: restartIsNeeded,
     bootstrapper: bootstrapper,
     buildState: _buildState,
-    buildStateWasTaken: _buildStateWasTaken,
     updates: updates,
     filesToDelete: filesToDelete,
     foldersToDelete: foldersToDelete,
-    cleanBuild: cleanBuild ?? this.cleanBuild,
     triggersChanged: triggersChanged ?? this.triggersChanged,
     phaseOptionsChanged: phaseOptionsChanged ?? _phaseOptionsChanged,
     postBuildOptionsChanged:
@@ -419,10 +409,13 @@ class BuildPlan {
   ///
   /// Sets [cleanBuild], [triggersChanged], `phaseOptionsChanged` and
   /// `postBuildOptionsChanged` to `false`.
-  BuildPlan updateForResult({PhasedAssetDeps? previousPhasedAssetDeps}) =>
+  BuildPlan updateForResult({
+    required BuildState previousBuildState,
+    PhasedAssetDeps? previousPhasedAssetDeps,
+  }) =>
       copyWith(
-        cleanBuild: false,
         triggersChanged: false,
+        previousBuildState: previousBuildState,
         previousPhasedAssetDeps: previousPhasedAssetDeps,
         phaseOptionsChanged: BuiltList<bool>.from(
           List.filled(
@@ -450,26 +443,9 @@ class BuildPlan {
     );
   }
 
-  /// Takes the loaded [BuildState], which may be `null` if none could be
-  /// loaded or if it was invalid.
-  ///
-  /// Subsequent calls will throw. This is because [BuildState] is mutable, so
-  /// the initial loaded state is only available once.
-  BuildState? takePreviousBuildState() {
-    if (_previousBuildStateWasTaken) throw StateError('Already taken.');
-    _previousBuildStateWasTaken = true;
-    return _previousBuildState;
-  }
+  BuildState? get previousBuildState => _previousBuildState;
 
-  /// Takes the [BuildState] for the build.
-  ///
-  /// Subsequent calls will throw. This is because [BuildState] is mutable, so
-  /// the initial state is only available once.
-  BuildState takeBuildState() {
-    if (_buildStateWasTaken) throw StateError('Already taken.');
-    _buildStateWasTaken = true;
-    return _buildState;
-  }
+  BuildState get buildState => _buildState;
 
   /// Whether [phaseNumber] has different options to the previous build
   /// and must be fully rebuilt.

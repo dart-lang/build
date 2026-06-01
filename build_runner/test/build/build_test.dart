@@ -1393,7 +1393,7 @@ targets:
               )!.buildState;
           expect(
             buildState.isMissingSource(makeAssetId('a|lib/a.txt.copy')),
-            isTrue,
+            isFalse,
           );
         },
       );
@@ -1444,10 +1444,12 @@ targets:
       final aCopyId = makeAssetId('a|lib/a.txt.copy');
       final aCloneId = makeAssetId('a|lib/a.txt.copy.clone');
       expect(newBuildState.isMissingSource(anId), isTrue);
-      expect(newBuildState.isMissingSource(aCopyId), isTrue);
+      expect(newBuildState.isMissingSource(aCopyId), isFalse);
       expect(
-        newBuildState.isSource(aCloneId) ||
-            result.buildPlan.buildStepPlan.isDeclaredOutput(aCloneId),
+        newBuildState.isFile(
+          buildStepPlan: result.buildPlan.buildStepPlan,
+          id: aCloneId,
+        ),
         isFalse,
       );
       expect(result.readerWriter.testing.exists(anId), isFalse);

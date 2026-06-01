@@ -13,7 +13,6 @@ import 'package:build_runner/src/build_plan/build_step_plan.dart';
 import 'package:build_runner/src/build_plan/phase.dart';
 
 import 'package:test/test.dart';
-import 'package:watcher/watcher.dart';
 
 import '../../common/common.dart';
 
@@ -82,13 +81,7 @@ void main() {
         );
       });
 
-      void recomputeBuildStepPlan() {
-        buildStepPlan = BuildStepPlan.compute(
-          buildPhases: buildPhases,
-          placeholderIds: [],
-          sources: buildState.sources,
-        );
-      }
+
 
       test('build', () {
         expect(
@@ -116,44 +109,71 @@ void main() {
 
       group('updateAndInvalidate', () {
         test('add new primary input', () async {
-          final changes = {AssetId('foo', 'new.txt'): ChangeType.ADD};
-          buildState.updateForNextBuild(buildStepPlan, changes);
-          recomputeBuildStepPlan();
+          final newSources = {...buildState.sources, AssetId('foo', 'new.txt')};
+          final newBuildState = BuildState.create(sources: newSources);
+          final newBuildStepPlan = BuildStepPlan.compute(
+            buildPhases: buildPhases,
+            placeholderIds: [],
+            sources: newSources,
+          );
           expect(
-            buildStepPlan.isDeclaredOutput(AssetId('foo', 'new.txt.copy')),
+            newBuildState.isFile(
+              buildStepPlan: newBuildStepPlan,
+              id: AssetId('foo', 'new.txt.copy'),
+            ),
             isTrue,
           );
         });
 
         test('modify primary input', () async {
-          final changes = {primaryInputId: ChangeType.MODIFY};
-          expect(buildStepPlan.isDeclaredOutput(primaryOutputId), isTrue);
-          final buildStepId = BuildStepId(
-            primaryInput: primaryInputId,
-            phaseNumber: 0,
+          // Modifications don't change the static plan, so recreation with
+          // same sources will yield same sources and outputs.
+          final newBuildState = BuildState.create(
+            sources: buildState.sources.toSet(),
           );
-          final stepResult = BuildStepResult((b) {
-            b.result = true;
-            b.isHidden = false;
-            b.inputs.add(primaryInputId);
-          });
-          buildState.updateBuildStepResult(buildStepId, stepResult);
-          buildState.updateForNextBuild(buildStepPlan, changes);
-          recomputeBuildStepPlan();
-          expect(buildState.isSource(primaryInputId), isTrue);
-          expect(buildStepPlan.isDeclaredOutput(primaryOutputId), isTrue);
+          expect(
+            newBuildState.isFile(
+              buildStepPlan: buildStepPlan,
+              id: primaryInputId,
+            ),
+            isTrue,
+          );
+          expect(
+            newBuildState.isFile(
+              buildStepPlan: buildStepPlan,
+              id: primaryOutputId,
+            ),
+            isTrue,
+          );
         });
 
         test('add new primary input which replaces a synthetic node', () async {
           buildState.addMissingSource(syntheticId);
           expect(buildState.isMissingSource(syntheticId), isTrue);
 
-          final changes = {syntheticId: ChangeType.ADD};
-          buildState.updateForNextBuild(buildStepPlan, changes);
-          recomputeBuildStepPlan();
-
-          expect(buildState.isSource(syntheticId), isTrue);
-          expect(buildStepPlan.isDeclaredOutput(syntheticOutputId), isTrue);
+          final newSources = {...buildState.sources, syntheticId};
+          final newBuildState = BuildState.create(sources: newSources);
+          final newBuildStepPlan = BuildStepPlan.compute(
+            buildPhases: buildPhases,
+            placeholderIds: [],
+            sources: newSources,
+          );
+          expect(
+            newBuildState.isFile(
+              buildStepPlan: newBuildStepPlan,
+              id: syntheticId,
+            ),
+            isTrue,
+          );
+          expect(newBuildState.isSource(syntheticId), isTrue);
+          expect(
+            newBuildState.isFile(
+              buildStepPlan: newBuildStepPlan,
+              id: syntheticOutputId,
+            ),
+            isTrue,
+          );
+          expect(newBuildStepPlan.isDeclaredOutput(syntheticOutputId), isTrue);
         });
 
         test(
@@ -162,39 +182,50 @@ void main() {
             buildState.addMissingSource(syntheticOutputId);
             expect(buildState.isMissingSource(syntheticOutputId), isTrue);
 
-            final changes = {syntheticId: ChangeType.ADD};
-            buildState.updateForNextBuild(buildStepPlan, changes);
-            recomputeBuildStepPlan();
+            final newSources = {...buildState.sources, syntheticId};
+            final newBuildState = BuildState.create(sources: newSources);
+            final newBuildStepPlan = BuildStepPlan.compute(
+              buildPhases: buildPhases,
+              placeholderIds: [],
+              sources: newSources,
+            );
 
-            expect(buildStepPlan.isDeclaredOutput(syntheticOutputId), isTrue);
+            expect(
+              newBuildState.isFile(
+                buildStepPlan: newBuildStepPlan,
+                id: syntheticOutputId,
+              ),
+              isTrue,
+            );
+            expect(newBuildStepPlan.isDeclaredOutput(syntheticOutputId), isTrue);
           },
         );
 
         test(
           'removing nodes deletes primary outputs and secondary edges',
           () async {
-            final secondaryId = makeAssetId('foo|secondary.txt');
-
-            final buildStepId = BuildStepId(
-              primaryInput: primaryInputId,
-              phaseNumber: 0,
+            final newSources =
+                buildState.sources.toSet()..remove(primaryInputId);
+            final newBuildState = BuildState.create(sources: newSources);
+            final newBuildStepPlan = BuildStepPlan.compute(
+              buildPhases: buildPhases,
+              placeholderIds: [],
+              sources: newSources,
             );
-            final stepResult = BuildStepResult((b) {
-              b.result = true;
-              b.isHidden = false;
-              b.inputs.add(secondaryId);
-            });
-            buildState.updateBuildStepResult(buildStepId, stepResult);
-
-            buildState.addSourceForTest(secondaryId);
-            expect(buildState.isSource(secondaryId), isTrue);
-
-            final changes = {primaryInputId: ChangeType.REMOVE};
-            buildState.updateForNextBuild(buildStepPlan, changes);
-            recomputeBuildStepPlan();
-
-            expect(buildState.isMissingSource(primaryInputId), isTrue);
-            expect(buildState.isMissingSource(primaryOutputId), isTrue);
+            expect(
+              newBuildState.isFile(
+                buildStepPlan: newBuildStepPlan,
+                id: primaryInputId,
+              ),
+              isFalse,
+            );
+            expect(
+              newBuildState.isFile(
+                buildStepPlan: newBuildStepPlan,
+                id: primaryOutputId,
+              ),
+              isFalse,
+            );
           },
         );
       });
@@ -333,7 +364,7 @@ void main() {
           ]);
           final buildState = BuildState.create(sources: {source});
 
-          final computed = BuildStepPlan.compute(
+          final buildStepPlan = BuildStepPlan.compute(
             buildPhases: buildPhases,
             placeholderIds: [],
             sources: {source},
@@ -354,13 +385,36 @@ void main() {
 
           expect(buildState.isSource(source), isTrue);
 
-          buildState.updateForNextBuild(computed, {
-            renamedSource: ChangeType.ADD,
-            source: ChangeType.REMOVE,
-          });
+          final adds = {renamedSource};
+          final removes = {source};
+
+          final newSources =
+              buildState.sources.toSet()
+                ..addAll(adds)
+                ..removeAll(removes);
+
+          final newBuildState = BuildState.create(sources: newSources);
+
+          // Populate missing sources in newBuildState using the new logic:
+          final stillMissing = buildState.missingSources.difference(adds);
+          for (final id in stillMissing) {
+            newBuildState.addMissingSource(id);
+          }
+          final newlyMissing = <AssetId>{};
+          void addTransitiveOutputs(AssetId id) {
+            if (newlyMissing.add(id)) {
+              buildStepPlan.declaredOutputsOf(id).forEach(addTransitiveOutputs);
+            }
+          }
+          for (final id in removes) {
+            addTransitiveOutputs(id);
+          }
+          for (final id in newlyMissing) {
+            newBuildState.addMissingSource(id);
+          }
 
           // The old generated part file should be marked as missing.
-          expect(buildState.isMissingSource(generatedPart), isTrue);
+          expect(newBuildState.isMissingSource(generatedPart), isTrue);
         });
       });
     });

@@ -100,7 +100,7 @@ void main() {
           buildPackages: buildPackages,
         ),
       );
-      buildState = buildPlan.takeBuildState();
+      buildState = buildPlan.buildState;
       buildOutputReader = BuildOutputReader(
         buildPlan: buildPlan,
         readerWriter: readerWriter,

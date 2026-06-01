@@ -54,12 +54,6 @@ void main() {
         ),
       ]);
       final reader = ReaderWriter(buildPackages);
-      final aId = AssetId('a', 'web/a.txt');
-      buildState = BuildState.create(sources: {aId});
-      // Assign a digest so the source is recognized as having been used.
-      final digest = await reader.digest(aId);
-      buildState.updateSourceDigest(aId, digest);
-
       final buildConfigs = await BuildConfigs.load(
         buildPackages: buildPackages,
         testingOverrides: TestingOverrides(
@@ -67,18 +61,21 @@ void main() {
         ),
       );
       assetTracker = AssetTracker(reader, buildPackages, buildConfigs);
+
+      final inputSources = await assetTracker.findInputSources();
+
+      buildState = BuildState.create(sources: inputSources);
+
+      final aId = AssetId('a', 'web/a.txt');
+      // Assign a digest so the source is recognized as having been used.
+      final digest = await reader.digest(aId);
+      buildState.updateSourceDigest(aId, digest);
+
       final updates = await assetTracker.collectChanges(
         buildState: buildState,
         buildStepPlan: buildStepPlan,
       );
-      buildState.updateForNextBuild(buildStepPlan, updates);
-      // We should see no changes initially other than new sdk sources
-      expect(
-        updates..removeWhere(
-          (id, type) => id.package == r'$sdk' && type == ChangeType.ADD,
-        ),
-        isEmpty,
-      );
+      expect(updates, isEmpty);
     });
 
     test('Collects file edits', () async {

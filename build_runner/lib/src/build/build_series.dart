@@ -66,7 +66,7 @@ class BuildSeries {
        _updatesFromLoad = updatesFromLoad;
 
   factory BuildSeries(BuildPlan buildPlan) {
-    final buildState = buildPlan.takeBuildState();
+    final buildState = buildPlan.buildState;
     final readerWriter = buildPlan.readerWriter.copyWith(
       generatedAssetHider:
           buildPlan.testingOverrides.flattenOutput
@@ -147,10 +147,14 @@ class BuildSeries {
       // with no outputs.
       if (!_buildPlan.buildOptions.anyMergedOutputDirectory &&
           !_buildState.isMissingSource(id) &&
-          _buildState.digestOf(
-                id: id,
-                buildStepPlan: _buildPlan.buildStepPlan,
-              ) ==
+          (_buildPlan.previousBuildState?.digestOf(
+                    buildStepPlan: _buildPlan.buildStepPlan,
+                    id: id,
+                  ) ??
+                  _buildState.digestOf(
+                    buildStepPlan: _buildPlan.buildStepPlan,
+                    id: id,
+                  )) ==
               null) {
         continue;
       }
@@ -244,7 +248,7 @@ class BuildSeries {
         await close();
         return result;
       }
-      _buildState = _buildPlan.takeBuildState();
+      _buildState = _buildPlan.buildState;
     }
 
     buildDirs ??= _buildPlan.buildOptions.buildDirs;
@@ -274,7 +278,9 @@ class BuildSeries {
 
     _currentBuildResult = build.run(updates);
     final result = await _currentBuildResult!;
+    _buildState = build.buildState;
     _buildPlan = build.buildPlan.updateForResult(
+      previousBuildState: _buildState,
       previousPhasedAssetDeps: result.phasedAssetDeps,
     );
     _buildResultsController.add(result);
