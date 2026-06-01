@@ -4,6 +4,7 @@
 
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/src/dart/analysis/file_content_cache.dart';
 import 'package:build/build.dart';
 
 import 'asset_deps.dart';
@@ -37,17 +38,17 @@ class AssetDepsLoader {
   }
 
   /// Parses directives in [content] to return an [AssetDeps].
-  ExpiringValue<AssetDeps> _parse(AssetId id, ExpiringValue<String> content) {
+  ExpiringValue<AssetDeps> _parse(AssetId id, ExpiringValue<FileContent> content) {
     final result =
         ExpiringValueBuilder<AssetDeps>()..expiresAfter = content.expiresAfter;
 
     final depsNodeBuilder = AssetDepsBuilder();
 
-    if (content.value == '') {
+    if (!content.value.exists || content.value.content == '') {
       result.value = AssetDeps.empty;
     } else {
       final parsed =
-          parseString(content: content.value, throwIfDiagnostics: false).unit;
+          parseString(content: content.value.content, throwIfDiagnostics: false).unit;
 
       for (final directive in parsed.directives) {
         if (directive is! UriBasedDirective) continue;
@@ -88,7 +89,7 @@ class _InMemoryAssetDepsLoader implements AssetDepsLoader {
   int get phase => 0xffffffff;
 
   @override
-  ExpiringValue<AssetDeps> _parse(AssetId id, ExpiringValue<String> content) =>
+  ExpiringValue<AssetDeps> _parse(AssetId id, ExpiringValue<FileContent> content) =>
       throw UnimplementedError();
 
   @override

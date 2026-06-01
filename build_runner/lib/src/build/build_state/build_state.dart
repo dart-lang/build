@@ -59,11 +59,17 @@ class BuildState implements GeneratedAssetHider {
   /// All post process build step outputs.
   final Set<AssetId> _postProcessOutputs;
 
+  final Set<AssetId> _partOutputs;
+
+  final Map<AssetId, AssetId> _primaryInputByPartOutput;
+
   @visibleForTesting
   BuildState.empty()
     : _sources = Sources(),
       _postProcessResultsByInput = {},
       _postProcessOutputs = {},
+      _partOutputs = {},
+      _primaryInputByPartOutput = {},
       _buildStepResultsByPrimaryInput = {},
       _declaredOutputsByPrimaryInput = {},
       _globResults = {},
@@ -90,12 +96,16 @@ class BuildState implements GeneratedAssetHider {
     required Map<AssetId, Map<int, PostProcessBuildStepResult>>
     postProcessResultsByInput,
     required Set<AssetId> postProcessOutputs,
+    required Set<AssetId> partOutputs,
+    required Map<AssetId, AssetId> primaryInputByPartOutput,
     required Map<AssetId, Map<int, BuildStepResult>>
     buildStepResultsByPrimaryInput,
     required Map<GlobId, GlobResult> globResults,
     required Map<AssetId, BuildStepId> buildStepsByDeclaredOutput,
     required Map<AssetId, Set<AssetId>> declaredOutputsByPrimaryInput,
   }) : _postProcessOutputs = postProcessOutputs,
+       _partOutputs = partOutputs,
+       _primaryInputByPartOutput = primaryInputByPartOutput,
        _postProcessResultsByInput = postProcessResultsByInput,
        _globResults = globResults,
        _buildStepsByDeclaredOutput = buildStepsByDeclaredOutput,
@@ -112,6 +122,8 @@ class BuildState implements GeneratedAssetHider {
           entry.key: Map.of(entry.value),
       },
       postProcessOutputs: Set.of(_postProcessOutputs),
+      partOutputs: Set.of(_partOutputs),
+      primaryInputByPartOutput: Map.of(_primaryInputByPartOutput),
       buildStepResultsByPrimaryInput: {
         for (final entry in _buildStepResultsByPrimaryInput.entries)
           entry.key: Map.of(entry.value),
@@ -235,6 +247,7 @@ class BuildState implements GeneratedAssetHider {
   Iterable<AssetId> get declaredAndActualOutputs => [
     ..._buildStepsByDeclaredOutput.keys,
     ...actualPostOutputs,
+    ..._partOutputs,
   ];
 
   // -- Digests.
@@ -282,6 +295,26 @@ class BuildState implements GeneratedAssetHider {
   BuildStepResult stepResult(BuildStepId buildStep) =>
       _buildStepResultsByPrimaryInput[buildStep.primaryInput]![buildStep
           .phaseNumber]!;
+
+
+
+  /// Exposes all step results grouped by primary input.
+  Map<AssetId, Map<int, BuildStepResult>> get buildStepResultsByPrimaryInput =>
+      _buildStepResultsByPrimaryInput;
+
+  /// Returns all phase step results for [primaryInput].
+  Map<int, BuildStepResult>? stepResultsForPrimaryInput(AssetId primaryInput) =>
+      _buildStepResultsByPrimaryInput[primaryInput];
+
+  void addPartOutput(AssetId gpId, AssetId primaryInput) {
+    _partOutputs.add(gpId);
+    _primaryInputByPartOutput[gpId] = primaryInput;
+  }
+
+  bool isPartOutput(AssetId id) => _partOutputs.contains(id);
+
+  AssetId primaryInputForPartOutput(AssetId gpId) =>
+      _primaryInputByPartOutput[gpId]!;
 
   /// Updates a build step result after the step runs.
   void updateBuildStepResult(BuildStepId buildStepId, BuildStepResult result) {
@@ -652,6 +685,22 @@ class BuildState implements GeneratedAssetHider {
     if (id.path.startsWith(generatedOutputDirectory) ||
         id.path.startsWith(cacheDirectoryPath)) {
       return false;
+    }
+    if (_partOutputs.contains(id)) {
+      final primaryInput = _primaryInputByPartOutput[id];
+      if (primaryInput != null) {
+        final steps = _buildStepResultsByPrimaryInput[primaryInput];
+        if (steps != null) {
+          for (final stepResult in steps.values) {
+            if (stepResult.succeeded && stepResult.partsWritten.isNotEmpty) {
+              if (!stepResult.isHidden) {
+                return false;
+              }
+            }
+          }
+        }
+      }
+      return true;
     }
     if (!isDeclaredOutput(id)) {
       return false;

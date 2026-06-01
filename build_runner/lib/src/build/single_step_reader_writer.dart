@@ -4,11 +4,13 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'package:analyzer/src/dart/analysis/file_content_cache.dart';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
+import 'package:path/path.dart' as p;
 
 import '../bootstrap/processes.dart';
 import '../build_plan/build_configs.dart';
@@ -115,6 +117,11 @@ class SingleStepReaderWriter implements PhasedReader {
   /// The assets written via [writeAsString] or [writeAsBytes].
   final Set<AssetId> assetsWritten;
 
+  final partsWritten = <String>[];
+  void writePart(String content) {
+    partsWritten.add(content);
+  }
+
   SingleStepReaderWriter({
     required RunningBuild? runningBuild,
     required RunningBuildStep? runningBuildStep,
@@ -203,6 +210,11 @@ class SingleStepReaderWriter implements PhasedReader {
   }
 
   Future<bool> canRead(AssetId id, {bool track = true}) async {
+    if (_runningBuild != null && _isGpAsset(id)) {
+      if (track) inputTracker.add(id);
+      return _readGpContent(id, upToPhase: phase) != null;
+    }
+
     final isReadable = await _isReadable(
       id,
       catchInvalidInputs: true,
@@ -221,6 +233,15 @@ class SingleStepReaderWriter implements PhasedReader {
   }
 
   Future<Digest> digest(AssetId id, {bool track = true}) async {
+    if (_runningBuild != null && _isGpAsset(id)) {
+      if (track) inputTracker.add(id);
+      final content = _readGpContent(id, upToPhase: phase);
+      if (content == null) {
+        throw AssetNotFoundException(id);
+      }
+      return md5.convert(utf8.encode(content));
+    }
+
     final isReadable = await _isReadable(id, track: track);
 
     if (!isReadable) {
@@ -230,6 +251,15 @@ class SingleStepReaderWriter implements PhasedReader {
   }
 
   Future<List<int>> readAsBytes(AssetId id) async {
+    if (_runningBuild != null && _isGpAsset(id)) {
+      inputTracker.add(id);
+      final content = _readGpContent(id, upToPhase: phase);
+      if (content == null) {
+        throw AssetNotFoundException(id);
+      }
+      return utf8.encode(content);
+    }
+
     final isReadable = await _isReadable(id);
     if (!isReadable) {
       throw AssetNotFoundException(id);
@@ -243,6 +273,15 @@ class SingleStepReaderWriter implements PhasedReader {
     Encoding encoding = utf8,
     bool track = true,
   }) async {
+    if (_runningBuild != null && _isGpAsset(id)) {
+      if (track) inputTracker.add(id);
+      final content = _readGpContent(id, upToPhase: phase);
+      if (content == null) {
+        throw AssetNotFoundException(id);
+      }
+      return content;
+    }
+
     final isReadable = await _isReadable(id, track: track);
     if (!isReadable) {
       throw AssetNotFoundException(id);
@@ -359,29 +398,83 @@ class SingleStepReaderWriter implements PhasedReader {
   }
 
   @override
-  Future<PhasedValue<String>> readPhased(AssetId id) async {
+  Future<PhasedValue<FileContent>> readPhased(AssetId id) async {
     if (_runningBuild == null) {
       final exists = await _delegate.canRead(id);
       if (exists) {
-        return PhasedValue.fixed(await _delegate.readAsString(id));
+        final content = await _delegate.readAsString(id);
+        final hash = md5.convert(utf8.encode(content)).toString();
+        return PhasedValue.fixed(BuildRunnerFileContent(id.path, true, content, hash));
       } else {
-        return PhasedValue.fixed('');
+        return PhasedValue.fixed(BuildRunnerFileContent.missing(id.path));
       }
+    }
+
+    if (_isGpAsset(id)) {
+      final primaryInput = _primaryInputForGpAsset(id);
+      final partsByPhase = <int, List<String>>{};
+      final steps = _runningBuild.buildState.stepResultsForPrimaryInput(primaryInput);
+      if (steps != null) {
+        for (final entry in steps.entries) {
+          final stepResult = entry.value;
+          if (stepResult.succeeded && stepResult.partsWritten.isNotEmpty) {
+            partsByPhase
+                .putIfAbsent(entry.key, () => [])
+                .addAll(stepResult.partsWritten);
+          }
+        }
+      }
+
+      if (partsByPhase.isEmpty) {
+        return PhasedValue<FileContent>.of(BuildRunnerFileContent.missing(id.path), expiresAfter: phase);
+      }
+
+      final sortedPhases = partsByPhase.keys.toList()..sort();
+      var currentValue = '';
+      
+      final primaryContent = await _delegate.readAsString(primaryInput);
+      final match = RegExp(r'//\s*@dart\s*=\s*[0-9.]+\b').firstMatch(primaryContent);
+      final versionOverride = match != null ? '${match.group(0)}\n\n' : '';
+      
+      final header = versionOverride.isNotEmpty
+          ? "$versionOverride\npart of '../${p.posix.basename(primaryInput.path)}';\n\n"
+          : "part of '../${p.posix.basename(primaryInput.path)}';\n\n";
+      var phasedValue = PhasedValue<FileContent>.of(BuildRunnerFileContent.missing(id.path), expiresAfter: sortedPhases.first);
+
+      for (var i = 0; i < sortedPhases.length; i++) {
+        final phaseNum = sortedPhases[i];
+        final addedParts = partsByPhase[phaseNum]!;
+        currentValue = currentValue.isEmpty
+            ? addedParts.join('\n\n')
+            : '$currentValue\n\n${addedParts.join('\n\n')}';
+
+        final content = '$header$currentValue';
+        final hash = md5.convert(utf8.encode(content)).toString();
+        final fileContent = BuildRunnerFileContent(id.path, true, content, hash);
+
+        final nextPhase = (i + 1 < sortedPhases.length) ? sortedPhases[i + 1] : phase;
+        phasedValue = phasedValue.followedBy(ExpiringValue<FileContent>(fileContent, expiresAfter: nextPhase));
+      }
+
+      return phasedValue;
     }
 
     if (!_runningBuild.buildState.isFile(id)) {
       // Add to the build state for input tracking.
       _runningBuild.buildState.addMissingSource(id);
-      return PhasedValue.fixed('');
+      return PhasedValue.fixed(BuildRunnerFileContent.missing(id.path));
     } else if (_runningBuild.buildState.isMissingSource(id)) {
-      return PhasedValue.fixed('');
+      return PhasedValue.fixed(BuildRunnerFileContent.missing(id.path));
     }
 
     if (_runningBuild.buildState.isDeclaredOutput(id)) {
       final step = _runningBuild.buildState.stepForDeclaredOutput(id);
       final stepPhase = step.phaseNumber;
       if (stepPhase >= phase) {
-        return PhasedValue.unavailable(before: '', expiresAfter: stepPhase);
+        return PhasedValue.unavailable(
+          before: BuildRunnerFileContent.missing(id.path),
+          expiresAfter: stepPhase,
+        );
       } else {
         // If needed, trigger a build at an earlier phase.
         if (!_runningBuild.assetIsProcessedOutput(id)) {
@@ -390,17 +483,29 @@ class SingleStepReaderWriter implements PhasedReader {
         final stepResult = _runningBuild.buildState.stepResult(step);
         final isSuccessOutput =
             _runningBuild.buildState.isActualOutput(id) && stepResult.succeeded;
+        
+        final content = isSuccessOutput ? await _delegate.readAsString(id) : '';
+        final hash = isSuccessOutput
+            ? md5.convert(utf8.encode(content)).toString()
+            : md5.convert(const []).toString();
+        final fileContent = BuildRunnerFileContent(id.path, isSuccessOutput, content, hash);
+
         return PhasedValue.generated(
+          fileContent,
           atPhase: stepPhase,
-          before: '',
-          isSuccessOutput ? await _delegate.readAsString(id) : '',
+          before: BuildRunnerFileContent.missing(id.path),
         );
       }
     }
 
-    return PhasedValue.fixed(
-      await _delegate.canRead(id) ? await _delegate.readAsString(id) : '',
-    );
+    final exists = await _delegate.canRead(id);
+    if (exists) {
+      final content = await _delegate.readAsString(id);
+      final hash = md5.convert(utf8.encode(content)).toString();
+      return PhasedValue.fixed(BuildRunnerFileContent(id.path, true, content, hash));
+    } else {
+      return PhasedValue.fixed(BuildRunnerFileContent.missing(id.path));
+    }
   }
 
   @override
@@ -412,5 +517,38 @@ class SingleStepReaderWriter implements PhasedReader {
     final content = await readAsString(id, track: false);
     final hash = base64.encode((await digest(id, track: false)).bytes);
     return BuildRunnerFileContent(id.asPath, true, content, hash);
+  }
+
+  bool _isGpAsset(AssetId id) {
+    if (!id.path.contains('/_gp/')) return false;
+    return id.path.endsWith('.gp.dart');
+  }
+
+  AssetId _primaryInputForGpAsset(AssetId gpId) {
+    final parts = p.posix.split(gpId.path);
+    final topDir = parts[0];
+    final subPath = parts.sublist(2).join('/');
+    final remainder = subPath.substring(0, subPath.length - '.gp.dart'.length) + '.dart';
+    return AssetId(gpId.package, '$topDir/$remainder');
+  }
+
+  String? _readGpContent(AssetId gpId, {required int upToPhase}) {
+    if (_runningBuild == null) return null;
+    final primaryInput = _primaryInputForGpAsset(gpId);
+    final steps = _runningBuild.buildState.stepResultsForPrimaryInput(primaryInput);
+    if (steps == null || steps.isEmpty) return null;
+
+    final sortedPhases = steps.keys.toList()..sort();
+    final accumulated = <String>[];
+    for (final phaseNum in sortedPhases) {
+      if (phaseNum >= upToPhase) break;
+      final stepResult = steps[phaseNum]!;
+      if (stepResult.succeeded && stepResult.partsWritten.isNotEmpty) {
+        accumulated.addAll(stepResult.partsWritten);
+      }
+    }
+    if (accumulated.isEmpty) return null;
+    final header = "part of '../${p.posix.basename(primaryInput.path)}';\n\n";
+    return '$header${accumulated.join('\n\n')}';
   }
 }

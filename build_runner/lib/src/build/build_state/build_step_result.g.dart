@@ -182,6 +182,8 @@ class _$BuildStepResult extends BuildStepResult {
   final BuiltSet<AssetId> resolverEntrypoints;
   @override
   final BuiltList<String> errors;
+  @override
+  final BuiltList<String> partsWritten;
 
   factory _$BuildStepResult([void Function(BuildStepResultBuilder)? updates]) =>
       (BuildStepResultBuilder()..update(updates))._build();
@@ -194,6 +196,7 @@ class _$BuildStepResult extends BuildStepResult {
     required this.globsEvaluated,
     required this.resolverEntrypoints,
     required this.errors,
+    required this.partsWritten,
   }) : super._();
   @override
   BuildStepResult rebuild(void Function(BuildStepResultBuilder) updates) =>
@@ -212,7 +215,8 @@ class _$BuildStepResult extends BuildStepResult {
         inputs == other.inputs &&
         globsEvaluated == other.globsEvaluated &&
         resolverEntrypoints == other.resolverEntrypoints &&
-        errors == other.errors;
+        errors == other.errors &&
+        partsWritten == other.partsWritten;
   }
 
   @override
@@ -225,6 +229,7 @@ class _$BuildStepResult extends BuildStepResult {
     _$hash = $jc(_$hash, globsEvaluated.hashCode);
     _$hash = $jc(_$hash, resolverEntrypoints.hashCode);
     _$hash = $jc(_$hash, errors.hashCode);
+    _$hash = $jc(_$hash, partsWritten.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -238,7 +243,8 @@ class _$BuildStepResult extends BuildStepResult {
           ..add('inputs', inputs)
           ..add('globsEvaluated', globsEvaluated)
           ..add('resolverEntrypoints', resolverEntrypoints)
-          ..add('errors', errors))
+          ..add('errors', errors)
+          ..add('partsWritten', partsWritten))
         .toString();
   }
 }
@@ -281,6 +287,12 @@ class BuildStepResultBuilder
   ListBuilder<String> get errors => _$this._errors ??= ListBuilder<String>();
   set errors(ListBuilder<String>? errors) => _$this._errors = errors;
 
+  ListBuilder<String>? _partsWritten;
+  ListBuilder<String> get partsWritten =>
+      _$this._partsWritten ??= ListBuilder<String>();
+  set partsWritten(ListBuilder<String>? partsWritten) =>
+      _$this._partsWritten = partsWritten;
+
   BuildStepResultBuilder();
 
   BuildStepResultBuilder get _$this {
@@ -293,6 +305,7 @@ class BuildStepResultBuilder
       _globsEvaluated = $v.globsEvaluated.toBuilder();
       _resolverEntrypoints = $v.resolverEntrypoints.toBuilder();
       _errors = $v.errors.toBuilder();
+      _partsWritten = $v.partsWritten.toBuilder();
       _$v = null;
     }
     return this;
@@ -328,6 +341,7 @@ class BuildStepResultBuilder
             globsEvaluated: globsEvaluated.build(),
             resolverEntrypoints: resolverEntrypoints.build(),
             errors: errors.build(),
+            partsWritten: partsWritten.build(),
           );
     } catch (_) {
       late String _$failedField;

@@ -109,6 +109,11 @@ abstract class BuildStep implements AssetReader, AssetWriter {
     Encoding encoding = utf8,
   });
 
+  /// Writes [contents] as a part contribution to the primary input library.
+  ///
+  /// The primary input ([inputId]) must be a library.
+  void writePart(String contents);
+
   /// Fetches [resource].
   ///
   /// See the [Resource] docs for how resources are created, shared and

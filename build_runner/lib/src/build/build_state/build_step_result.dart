@@ -40,6 +40,9 @@ abstract class BuildStepResult
   /// Errors logged.
   BuiltList<String> get errors;
 
+  /// Parts written.
+  BuiltList<String> get partsWritten;
+
   factory BuildStepResult([void Function(BuildStepResultBuilder)? updates]) =
       _$BuildStepResult;
   BuildStepResult._();

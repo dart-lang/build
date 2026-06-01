@@ -4,6 +4,8 @@
 
 import 'package:build/build.dart';
 
+import 'package:analyzer/src/dart/analysis/file_content_cache.dart';
+
 import '../resolver/analysis_driver_filesystem.dart';
 import 'phased_value.dart';
 
@@ -17,8 +19,8 @@ abstract class PhasedReader {
 
   /// Reads [id] as a [PhasedValue].
   ///
-  /// If the asset is missing, returns a [PhasedValue.fixed] with an empty
-  /// string.
+  /// If the asset is missing, returns a [PhasedValue.fixed] with a missing
+  /// [FileContent].
   ///
   /// If the asset is a source file, returns a [PhasedValue.fixed] with its
   /// content.
@@ -28,9 +30,9 @@ abstract class PhasedReader {
   ///
   /// If the asset is generated and _has_ already been generated, returns
   /// a [PhasedValue.generated] specifying both when it was generated and
-  /// its content. Note that generation might output nothing, in which case an
-  /// empty string is returned for its content.
-  Future<PhasedValue<String>> readPhased(AssetId id);
+  /// its content. Note that generation might output nothing, in which case a
+  /// missing or empty [FileContent] is returned.
+  Future<PhasedValue<FileContent>> readPhased(AssetId id);
 
   /// The contents at the current phase.
   Future<BuildRunnerFileContent> readAtPhase(AssetId id);
