@@ -265,12 +265,23 @@ class BuildSeries {
     }
 
     if (!firstBuild) buildLog.nextBuild();
+    _buildPlan = _buildPlan.copyWith(
+      buildDirs: buildDirs,
+      buildFilters: buildFilters,
+    );
+    if (!_buildPlan.cleanBuild && !firstBuild) {
+      _buildPlan = await _buildPlan.applyUpdates(updates);
+    }
+    _buildState = _buildPlan.buildState;
+    _readerWriter = _buildPlan.readerWriter.copyWith(
+      generatedAssetHider:
+          _buildPlan.testingOverrides.flattenOutput
+              ? const NoopGeneratedAssetHider()
+              : _buildPlan.buildStepPlan,
+    );
+
     final build = Build(
-      buildPlan: _buildPlan.copyWith(
-        buildDirs: buildDirs,
-        buildFilters: buildFilters,
-      ),
-      buildState: _buildState,
+      buildPlan: _buildPlan,
       readerWriter: _readerWriter,
       resourceManager: _resourceManager,
     );

@@ -7,6 +7,8 @@ import 'dart:typed_data';
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 
+import 'package:watcher/watcher.dart';
+
 import '../bootstrap/bootstrapper.dart';
 import '../bootstrap/depfile.dart';
 import '../build/build_state/asset_graph_json.dart';
@@ -45,6 +47,7 @@ class BuildPlan {
   final ReaderWriter readerWriter;
   final BuildConfigs buildConfigs;
   final BuildStepPlan buildStepPlan;
+  final BuildStepPlan? previousBuildStepPlan;
 
   final BuildState? _previousBuildState;
   final PhasedAssetDeps? previousPhasedAssetDeps;
@@ -53,6 +56,11 @@ class BuildPlan {
   final Bootstrapper bootstrapper;
   final BuildState _buildState;
   final BuiltSet<AssetId>? updates;
+
+  final BuiltSet<AssetId> changedInputs;
+  final BuiltSet<AssetId> deletedAssets;
+  final BuiltSet<AssetId> newPrimaryInputs;
+  final Set<AssetId> invalidatedSources;
 
   /// Whether this is a clean build.
   ///
@@ -92,6 +100,7 @@ class BuildPlan {
     required this.readerWriter,
     required this.buildConfigs,
     required this.buildStepPlan,
+    required this.previousBuildStepPlan,
     required BuildState? previousBuildState,
     required this.previousPhasedAssetDeps,
     required this.restartIsNeeded,
@@ -103,6 +112,10 @@ class BuildPlan {
     required this.triggersChanged,
     required BuiltList<bool> phaseOptionsChanged,
     required BuiltList<bool> postBuildOptionsChanged,
+    required this.changedInputs,
+    required this.deletedAssets,
+    required this.newPrimaryInputs,
+    required this.invalidatedSources,
   }) : _previousBuildState = previousBuildState,
        _buildState = buildState,
        _phaseOptionsChanged = phaseOptionsChanged,
@@ -247,7 +260,6 @@ class BuildPlan {
     final inputSources = await assetTracker.findInputSources();
     final cacheDirSources = await assetTracker.findCacheDirSources();
 
-    BuildState? buildState;
     Set<AssetId>? updates;
     if (previousBuildState != null) {
       updates = {
@@ -277,37 +289,37 @@ class BuildPlan {
       }
     }
 
-    if (buildState == null) {
-      // Files marked for deletion are not inputs.
-      inputSources.removeAll(filesToDelete);
+    // Files marked for deletion are not inputs.
+    inputSources.removeAll(filesToDelete);
 
-      // Compute build steps just to get declared outputs and prune the input
-      // sources to remove them. They are computed again below based on the
-      // pruned inputs.
-      final declaredOutputs =
-          BuildStepPlan.compute(
-            buildPhases: buildPhases,
-            placeholderIds: buildPackages.placeholderIds,
-            sources: inputSources,
-          ).declaredOutputs;
-      final inputSourcesWithoutOutputs = Set<AssetId>.from(inputSources);
-      for (final output in declaredOutputs) {
-        inputSourcesWithoutOutputs.remove(output);
-      }
-
-      try {
-        buildState = BuildState.create(sources: inputSourcesWithoutOutputs);
-      } on DuplicateAssetIdException catch (e) {
-        buildLog.error(e.toString());
-        throw const CannotBuildException();
-      }
+    BuildStepPlan? previousBuildStepPlan;
+    if (previousBuildState != null) {
+      previousBuildStepPlan = BuildStepPlan.compute(
+        buildPhases: buildPhases,
+        placeholderIds: buildPackages.placeholderIds,
+        sources: previousBuildState.sources,
+      );
     }
 
-    final buildStepPlan = BuildStepPlan.compute(
-      buildPhases: buildPhases,
-      placeholderIds: buildPackages.placeholderIds,
-      sources: buildState.sources,
-    );
+    _RecreatedState recreated;
+    try {
+      recreated = await _recreateState(
+        previousBuildState: previousBuildState,
+        previousBuildStepPlan: previousBuildStepPlan,
+        updates: updates ?? const {},
+        inputSources: inputSources,
+        buildPhases: buildPhases,
+        buildPackages: buildPackages,
+        readerWriter: readerWriter,
+      );
+    } on DuplicateAssetIdException catch (e) {
+      buildLog.error(e.toString());
+      throw const CannotBuildException();
+    }
+
+    final buildState = recreated.buildState;
+    final buildStepPlan = recreated.buildStepPlan;
+
     final declaredAndActualOutputs = [
       ...buildStepPlan.declaredOutputs,
       ...buildState.actualPostOutputs,
@@ -324,11 +336,14 @@ class BuildPlan {
           'There are existing files in dependencies which conflict '
           'with files that a Builder may produce. These must be removed or '
           'the Builders disabled before a build can continue: '
-          '${conflictsInDeps.map((a) => a.uri).join('\n')}',
+          '${conflictsInDeps.map((a) => a.uri).join('
+')}',
         );
         throw const CannotBuildException();
       }
+    }
 
+    if (previousBuildState == null) {
       filesToDelete.addAll(
         declaredAndActualOutputs
             .where((n) => buildPackages.outputPackages.contains(n.package))
@@ -346,6 +361,7 @@ class BuildPlan {
       readerWriter: readerWriter,
       buildConfigs: buildConfigs,
       buildStepPlan: buildStepPlan,
+      previousBuildStepPlan: previousBuildStepPlan,
       previousBuildState: previousBuildState,
       previousPhasedAssetDeps: previousPhasedAssetDeps,
       restartIsNeeded: restartIsNeeded,
@@ -362,6 +378,10 @@ class BuildPlan {
       postBuildOptionsChanged: buildPlanDigest.computeChangedPostBuildOptions(
         previousBuildPlanDigest,
       ),
+      changedInputs: recreated.changedInputs,
+      deletedAssets: recreated.deletedAssets,
+      newPrimaryInputs: recreated.newPrimaryInputs,
+      invalidatedSources: recreated.invalidatedSources,
     );
   }
 
@@ -376,9 +396,16 @@ class BuildPlan {
     BuiltList<bool>? phaseOptionsChanged,
     BuiltList<bool>? postBuildOptionsChanged,
     BuildStepPlan? buildStepPlan,
+    BuildStepPlan? previousBuildStepPlan,
+    BuildState? buildState,
+    BuiltSet<AssetId>? changedInputs,
+    BuiltSet<AssetId>? deletedAssets,
+    BuiltSet<AssetId>? newPrimaryInputs,
+    Set<AssetId>? invalidatedSources,
   }) => BuildPlan(
     buildPlanDigest: buildPlanDigest ?? this.buildPlanDigest,
     buildStepPlan: buildStepPlan ?? this.buildStepPlan,
+    previousBuildStepPlan: previousBuildStepPlan ?? this.previousBuildStepPlan,
     builderFactories: builderFactories,
     buildOptions: buildOptions.copyWith(
       buildDirs: buildDirs,
@@ -393,7 +420,7 @@ class BuildPlan {
         previousPhasedAssetDeps ?? this.previousPhasedAssetDeps,
     restartIsNeeded: restartIsNeeded,
     bootstrapper: bootstrapper,
-    buildState: _buildState,
+    buildState: buildState ?? _buildState,
     updates: updates,
     filesToDelete: filesToDelete,
     foldersToDelete: foldersToDelete,
@@ -401,6 +428,10 @@ class BuildPlan {
     phaseOptionsChanged: phaseOptionsChanged ?? _phaseOptionsChanged,
     postBuildOptionsChanged:
         postBuildOptionsChanged ?? _postBuildOptionsChanged,
+    changedInputs: changedInputs ?? this.changedInputs,
+    deletedAssets: deletedAssets ?? this.deletedAssets,
+    newPrimaryInputs: newPrimaryInputs ?? this.newPrimaryInputs,
+    invalidatedSources: invalidatedSources ?? this.invalidatedSources,
   );
 
   /// Returns a copy of the plan updated for the next incremental build.
@@ -416,6 +447,7 @@ class BuildPlan {
       copyWith(
         triggersChanged: false,
         previousBuildState: previousBuildState,
+        previousBuildStepPlan: this.buildStepPlan,
         previousPhasedAssetDeps: previousPhasedAssetDeps,
         phaseOptionsChanged: BuiltList<bool>.from(
           List.filled(
@@ -429,19 +461,12 @@ class BuildPlan {
             false,
           ),
         ),
+        buildState: BuildState.create(sources: const {}),
+        changedInputs: BuiltSet<AssetId>(),
+        deletedAssets: BuiltSet<AssetId>(),
+        newPrimaryInputs: BuiltSet<AssetId>(),
+        invalidatedSources: const {},
       );
-
-  /// Returns a copy of the plan with [buildStepPlan] updated for changed input
-  /// sources.
-  BuildPlan updateForSources(Iterable<AssetId> sources) {
-    return copyWith(
-      buildStepPlan: BuildStepPlan.compute(
-        buildPhases: buildStepPlan.buildPhases,
-        placeholderIds: buildPackages.placeholderIds,
-        sources: sources,
-      ),
-    );
-  }
 
   BuildState? get previousBuildState => _previousBuildState;
 
@@ -487,4 +512,214 @@ class BuildPlan {
     testingOverrides: testingOverrides,
     recentlyBootstrapped: false,
   );
+
+  Future<BuildPlan> applyUpdates(Set<AssetId> updates) async {
+    final recreated = await _recreateState(
+      previousBuildState: previousBuildState,
+      previousBuildStepPlan: previousBuildStepPlan,
+      updates: updates,
+      inputSources: const {},
+      buildPhases: buildPhases,
+      buildPackages: buildPackages,
+      readerWriter: readerWriter,
+    );
+    return copyWith(
+      buildStepPlan: recreated.buildStepPlan,
+      buildState: recreated.buildState,
+      changedInputs: recreated.changedInputs,
+      deletedAssets: recreated.deletedAssets,
+      newPrimaryInputs: recreated.newPrimaryInputs,
+      invalidatedSources: recreated.invalidatedSources,
+    );
+  }
+
+  static Future<_RecreatedState> _recreateState({
+    required BuildState? previousBuildState,
+    required BuildStepPlan? previousBuildStepPlan,
+    required Set<AssetId> updates,
+    required Set<AssetId> inputSources,
+    required BuildPhases buildPhases,
+    required BuildPackages buildPackages,
+    required ReaderWriter readerWriter,
+  }) async {
+    final activeReaderWriter = readerWriter.copyWith(
+      generatedAssetHider:
+          previousBuildState ?? const NoopGeneratedAssetHider(),
+    );
+    readerWriter = activeReaderWriter;
+    final changedInputs = <AssetId>{};
+    final deletedAssets = <AssetId>{};
+    final newPrimaryInputs = <AssetId>{};
+
+    if (previousBuildState == null) {
+      final buildState = BuildState.create(sources: inputSources);
+      final buildStepPlan = BuildStepPlan.compute(
+        buildPhases: buildPhases,
+        placeholderIds: buildPackages.placeholderIds,
+        sources: buildState.sources,
+      );
+      return _RecreatedState(
+        buildState: buildState,
+        buildStepPlan: buildStepPlan,
+      previousBuildStepPlan: previousBuildStepPlan,
+        changedInputs: BuiltSet<AssetId>(),
+        deletedAssets: BuiltSet<AssetId>(),
+        newPrimaryInputs: BuiltSet<AssetId>(),
+        invalidatedSources: const {},
+      );
+    }
+
+    readerWriter.cache.invalidate(updates);
+
+    // 1. Identify adds, removes, modifies from updates.
+    final adds = <AssetId>{};
+    final removes = <AssetId>{};
+    final modifies = <AssetId>{};
+    final previousSources = <AssetId>{};
+    for (final id in updates) {
+      final oldIsSource = previousBuildState.isSource(id);
+      if (oldIsSource) {
+        previousSources.add(id);
+      }
+      final oldExisted = previousBuildState.isFile(
+        buildStepPlan: previousBuildStepPlan,
+        id: id,
+      );
+      var exists = false;
+      if (await readerWriter.canRead(id)) {
+        exists = true;
+      }
+
+      if (oldExisted && !exists) {
+        removes.add(id);
+      } else if (!oldExisted && exists) {
+        adds.add(id);
+      } else if (oldExisted && exists) {
+        modifies.add(id);
+      }
+    }
+
+    // 2. Compute new sources.
+    final newSources =
+        previousBuildState.sources.toSet()
+          ..addAll(adds)
+          ..removeAll(removes);
+
+    // 3. Create the NEW BuildState.
+    final newBuildState = BuildState.create(sources: newSources);
+    final newBuildStepPlan = BuildStepPlan.compute(
+      buildPhases: buildPhases,
+      placeholderIds: buildPackages.placeholderIds,
+      sources: newBuildState.sources,
+    );
+
+    // 4. Populate changedInputs, deletedAssets, newPrimaryInputs.
+    changedInputs.addAll(adds);
+    newPrimaryInputs.addAll(adds);
+    deletedAssets.addAll(removes);
+
+    // 5. Check modified sources for content changes.
+    readerWriter.cache.invalidate(modifies);
+    final resolvedUpdates = <AssetId, ChangeType>{};
+    for (final id in modifies) {
+      if (newSources.contains(id)) {
+        final oldDigest = previousBuildState.digestOfSource(id);
+        if (oldDigest != null) {
+          try {
+            final newDigest = await readerWriter.digest(id);
+            if (oldDigest != newDigest) {
+              changedInputs.add(id);
+              newBuildState.updateSourceDigest(id, newDigest);
+              resolvedUpdates[id] = ChangeType.MODIFY;
+            } else {
+              newBuildState.updateSourceDigest(id, oldDigest);
+            }
+          } catch (_) {
+            // Treat as missing.
+            newBuildState.addMissingSource(id);
+            deletedAssets.add(id);
+            resolvedUpdates[id] = ChangeType.REMOVE;
+          }
+        }
+      }
+    }
+    for (final id in adds) {
+      resolvedUpdates[id] = ChangeType.ADD;
+    }
+    for (final id in removes) {
+      resolvedUpdates[id] = ChangeType.REMOVE;
+    }
+
+    // 6. Copy unchanged source digests.
+    for (final id in newSources) {
+      if (!adds.contains(id) && !modifies.contains(id)) {
+        final digest = previousBuildState.digestOfSource(id);
+        newBuildState.updateSourceDigest(id, digest);
+      }
+    }
+
+    // 7. Find outputs to delete.
+    final outputsToDelete = <AssetId>[];
+    for (final id in previousBuildStepPlan!.declaredOutputs) {
+      if (!newBuildStepPlan.isDeclaredOutput(id)) {
+        if (previousBuildState.isActualOutput(
+          buildStepPlan: previousBuildStepPlan,
+          id: id,
+        )) {
+          outputsToDelete.add(id);
+        }
+      }
+    }
+    for (final id in outputsToDelete) {
+      await readerWriter.delete(id);
+    }
+    deletedAssets.addAll(outputsToDelete);
+
+    // 8. Populate missingSources in the new BuildState.
+    final stillMissing = previousBuildState.missingSources.difference(adds);
+    for (final id in stillMissing) {
+      newBuildState.addMissingSource(id);
+    }
+    for (final id in removes) {
+      newBuildState.addMissingSource(id);
+    }
+
+    // 9. Compute invalidatedSources to return.
+    final invalidatedSources = <AssetId>{};
+    for (final entry in resolvedUpdates.entries) {
+      final id = entry.key;
+      final changeType = entry.value;
+      if (changeType != ChangeType.ADD && previousSources.contains(id)) {
+        invalidatedSources.add(id);
+      }
+    }
+
+    return _RecreatedState(
+      buildState: newBuildState,
+      buildStepPlan: newBuildStepPlan,
+      changedInputs: BuiltSet<AssetId>.of(changedInputs),
+      deletedAssets: BuiltSet<AssetId>.of(deletedAssets),
+      newPrimaryInputs: BuiltSet<AssetId>.of(newPrimaryInputs),
+      invalidatedSources: invalidatedSources,
+    );
+  }
+}
+
+class _RecreatedState {
+  final BuildState buildState;
+  final BuildStepPlan buildStepPlan;
+  final BuildStepPlan? previousBuildStepPlan;
+  final BuiltSet<AssetId> changedInputs;
+  final BuiltSet<AssetId> deletedAssets;
+  final BuiltSet<AssetId> newPrimaryInputs;
+  final Set<AssetId> invalidatedSources;
+  _RecreatedState({
+    required this.buildState,
+    required this.buildStepPlan,
+    required this.previousBuildStepPlan,
+    required this.changedInputs,
+    required this.deletedAssets,
+    required this.newPrimaryInputs,
+    required this.invalidatedSources,
+  });
 }

@@ -1186,6 +1186,7 @@ targets:
         inputs[id.toString()] = await result.readerWriter.readAsString(id);
       }
       result = await testBuilders([TestBuilder()], inputs);
+
       expect(
         result.readerWriter.testing.assetsWritten.single.toString(),
         contains('asset_graph.json'),

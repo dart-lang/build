@@ -11,7 +11,6 @@ import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
-import 'package:watcher/watcher.dart';
 
 import '../build_plan/build_configs.dart';
 import '../build_plan/build_options.dart';
@@ -24,7 +23,7 @@ import '../build_plan/testing_overrides.dart';
 import '../constants.dart';
 import '../io/build_output_reader.dart';
 import '../io/create_merged_dir.dart';
-import '../io/generated_asset_hider.dart';
+
 import '../io/reader_writer.dart';
 import '../logging/build_log.dart';
 import '../logging/timed_activities.dart';
@@ -59,7 +58,7 @@ class Build {
 
   // Collaborators.
   final ResourceManager resourceManager;
-  ReaderWriter _readerWriter;
+  final ReaderWriter readerWriter;
   final BuildStepPlan? previousBuildStepPlan;
   final LibraryCycleGraphLoader previousLibraryCycleGraphLoader =
       LibraryCycleGraphLoader();
@@ -73,7 +72,7 @@ class Build {
   final ResolversImpl? resolversImpl;
 
   // State.
-  BuildState buildState;
+  final BuildState buildState;
   final lazyPhases = <BuildStepId, Future<Iterable<AssetId>>>{};
   final lazyGlobs = <GlobId, Future<void>>{};
 
@@ -91,22 +90,13 @@ class Build {
   final Set<GlobId> processedGlobs = {};
 
   /// Inputs that changed since the last build.
-  ///
-  /// Filled from the `updates` passed in to the build.
-  final Set<AssetId> changedInputs = {};
+  Set<AssetId> get changedInputs => buildPlan.changedInputs.toSet();
 
   /// Assets that were deleted since the last build.
-  ///
-  /// This is used to distinguish between missing sources that were
-  /// already known and missing sources that are newly known.
-  final Set<AssetId> deletedAssets = {};
+  Set<AssetId> get deletedAssets => buildPlan.deletedAssets.toSet();
 
   /// Assets that might be new primary inputs since the previous build.
-  ///
-  /// This means: new inputs, new generated outputs, or generated outputs
-  /// from generators that failed in the previous build and succeed in this
-  /// build.
-  final Set<AssetId> newPrimaryInputs = {};
+  final Set<AssetId> newPrimaryInputs;
 
   /// Outputs that changed since the last build.
   ///
@@ -129,13 +119,12 @@ class Build {
 
   Build({
     required BuildPlan buildPlan,
-    required ReaderWriter readerWriter,
+    required this.readerWriter,
     required this.resourceManager,
-    required this.buildState,
   }) : _buildPlan = buildPlan,
-       _readerWriter = readerWriter,
-       previousBuildStepPlan =
-           buildPlan.previousBuildState == null ? null : buildPlan.buildStepPlan,
+       buildState = buildPlan.buildState,
+       previousBuildStepPlan = buildPlan.previousBuildStepPlan,
+       newPrimaryInputs = buildPlan.newPrimaryInputs.toSet(),
        previousDepsLoader =
            buildPlan.previousPhasedAssetDeps == null
                ? null
@@ -148,7 +137,6 @@ class Build {
        };
 
   BuildPlan get buildPlan => _buildPlan;
-  ReaderWriter get readerWriter => _readerWriter;
   BuildOptions get buildOptions => buildPlan.buildOptions;
   TestingOverrides get testingOverrides => buildPlan.testingOverrides;
   BuildPackages get buildPackages => buildPlan.buildPackages;
@@ -248,149 +236,6 @@ class Build {
     return result;
   }
 
-  Future<Set<AssetId>> _updateBuildState(Set<AssetId> updates) async {
-    changedInputs.clear();
-    deletedAssets.clear();
-    newPrimaryInputs.clear();
-
-    readerWriter.cache.invalidate(updates);
-
-    final previousBuildState = buildPlan.previousBuildState!;
-
-    // 1. Identify adds, removes, modifies from updates.
-    final adds = <AssetId>{};
-    final removes = <AssetId>{};
-    final modifies = <AssetId>{};
-    final previousSources = <AssetId>{};
-    for (final id in updates) {
-      final oldIsSource = previousBuildState.isSource(id);
-      if (oldIsSource) {
-        previousSources.add(id);
-      }
-      final oldExisted = previousBuildState.isFile(
-        buildStepPlan: buildStepPlan,
-        id: id,
-      );
-      var exists = false;
-      if (await readerWriter.canRead(id)) {
-        exists = true;
-      }
-
-      if (oldExisted && !exists) {
-        removes.add(id);
-      } else if (!oldExisted && exists) {
-        adds.add(id);
-      } else if (oldExisted && exists) {
-        modifies.add(id);
-      }
-    }
-
-    // 2. Compute new sources.
-    final newSources =
-        previousBuildState.sources.toSet()
-          ..addAll(adds)
-          ..removeAll(removes);
-
-
-
-    // 3. Create the NEW BuildState.
-    final newBuildState = BuildState.create(sources: newSources);
-
-    // 4. Populate changedInputs, deletedAssets, newPrimaryInputs.
-    changedInputs.addAll(adds);
-    newPrimaryInputs.addAll(adds);
-    deletedAssets.addAll(removes);
-
-    // 5. Check modified sources for content changes.
-    final resolvedUpdates = <AssetId, ChangeType>{};
-    for (final id in modifies) {
-      if (newSources.contains(id)) {
-        final oldDigest = previousBuildState.digestOfSource(id);
-        if (oldDigest != null) {
-          try {
-            final newDigest = await readerWriter.digest(id);
-            if (oldDigest != newDigest) {
-              changedInputs.add(id);
-              newBuildState.updateSourceDigest(id, newDigest);
-              resolvedUpdates[id] = ChangeType.MODIFY;
-            } else {
-              newBuildState.updateSourceDigest(id, oldDigest);
-            }
-          } catch (_) {
-            // Treat as missing.
-            newBuildState.addMissingSource(id);
-            deletedAssets.add(id);
-            resolvedUpdates[id] = ChangeType.REMOVE;
-          }
-        }
-      }
-    }
-    for (final id in adds) {
-      resolvedUpdates[id] = ChangeType.ADD;
-    }
-    for (final id in removes) {
-      resolvedUpdates[id] = ChangeType.REMOVE;
-    }
-
-    // 6. Copy unchanged source digests.
-    for (final id in newSources) {
-      if (!adds.contains(id) && !modifies.contains(id)) {
-        final digest = previousBuildState.digestOfSource(id);
-        newBuildState.updateSourceDigest(id, digest);
-      }
-    }
-
-    final newBuildPlan = _buildPlan.updateForSources(newSources);
-    final newBuildStepPlan = newBuildPlan.buildStepPlan;
-
-    // 7. Find outputs to delete.
-    final outputsToDelete = <AssetId>[];
-    for (final id in buildStepPlan.declaredOutputs) {
-      if (!newBuildStepPlan.isDeclaredOutput(id)) {
-        if (previousBuildState.isActualOutput(
-          buildStepPlan: buildStepPlan,
-          id: id,
-        )) {
-          outputsToDelete.add(id);
-        }
-      }
-    }
-    for (final id in outputsToDelete) {
-      await _readerWriter.delete(id);
-    }
-
-    deletedAssets.addAll(outputsToDelete);
-
-    // 8. Populate missingSources in the new BuildState.
-    final stillMissing = previousBuildState.missingSources.difference(adds);
-    for (final id in stillMissing) {
-      newBuildState.addMissingSource(id);
-    }
-    for (final id in removes) {
-      newBuildState.addMissingSource(id);
-    }
-
-    // 9. Replace buildState and update readerWriter in Build.
-    buildState = newBuildState;
-    _buildPlan = newBuildPlan;
-    _readerWriter = _readerWriter.copyWith(
-      generatedAssetHider:
-          buildPlan.testingOverrides.flattenOutput
-              ? const NoopGeneratedAssetHider()
-              : buildStepPlan,
-    );
-
-    // 10. Compute invalidatedSources to return.
-    final invalidatedSources = <AssetId>{};
-    for (final entry in resolvedUpdates.entries) {
-      final id = entry.key;
-      final changeType = entry.value;
-      if (changeType != ChangeType.ADD && previousSources.contains(id)) {
-        invalidatedSources.add(id);
-      }
-    }
-    return invalidatedSources;
-  }
 
   /// Runs a build inside a zone with an error handler and stack chain
   /// capturing.
@@ -399,15 +244,7 @@ class Build {
     runZonedGuarded(
       () async {
         final invalidatedSources =
-            buildPlan.cleanBuild ? null : await _updateBuildState(idsToCheck);
-        // _updateBuildState can change the buildStepPlan, give _readerWriter
-        // the latest plan.
-        _readerWriter = _readerWriter.copyWith(
-          generatedAssetHider:
-              _buildPlan.testingOverrides.flattenOutput
-                  ? const NoopGeneratedAssetHider()
-                  : _buildPlan.buildStepPlan,
-        );
+            buildPlan.cleanBuild ? null : buildPlan.invalidatedSources;
         for (final id in buildState.sources) {
           if (buildState.isUnreadSource(id) &&
               buildStepPlan.declaredOutputsOf(id).isNotEmpty) {
