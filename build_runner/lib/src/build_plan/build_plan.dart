@@ -6,14 +6,18 @@ import 'dart:typed_data';
 
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
-
+import 'package:crypto/crypto.dart';
 import 'package:watcher/watcher.dart';
-
 import '../bootstrap/bootstrapper.dart';
 import '../bootstrap/depfile.dart';
 import '../build/build_state/asset_graph_json.dart';
 import '../build/build_state/build_state.dart';
+import '../build/build_state/build_step_id.dart';
+import '../build/build_state/build_step_result.dart';
 import '../build/build_state/exceptions.dart';
+import '../build/build_state/glob_id.dart';
+import '../build/build_state/post_process_build_step_id.dart';
+import '../build/build_state/post_process_build_step_result.dart';
 import '../build/library_cycle_graph/phased_asset_deps.dart';
 import '../constants.dart';
 import '../exceptions.dart';
@@ -28,6 +32,7 @@ import 'build_filter.dart';
 import 'build_options.dart';
 import 'build_packages.dart';
 import 'build_phase_creator.dart';
+import 'build_phases.dart';
 
 import 'build_plan_digest.dart';
 import 'build_step_plan.dart';
@@ -282,10 +287,6 @@ class BuildPlan {
 
         // Discard state tied to the invalid AssetGraphJson.
         updates = null;
-      } else {
-        buildState = BuildState.create(
-          sources: previousBuildState.sources.toSet(),
-        );
       }
     }
 
@@ -336,8 +337,7 @@ class BuildPlan {
           'There are existing files in dependencies which conflict '
           'with files that a Builder may produce. These must be removed or '
           'the Builders disabled before a build can continue: '
-          '${conflictsInDeps.map((a) => a.uri).join('
-')}',
+          '${conflictsInDeps.map((a) => a.uri).join('\n')}',
         );
         throw const CannotBuildException();
       }
@@ -472,6 +472,18 @@ class BuildPlan {
 
   BuildState get buildState => _buildState;
 
+  Digest? previousGlobDigest(GlobId globId) =>
+      _previousBuildState?.globResultFor(globId)?.digest;
+
+  BuildStepResult? previousStepResult(BuildStepId id) =>
+      _previousBuildState?.hasStepResult(id) == true
+          ? _previousBuildState!.stepResult(id)
+          : null;
+
+  PostProcessBuildStepResult? previousPostProcessStepResult(
+    PostProcessBuildStepId id,
+  ) => _previousBuildState?.postProcessBuildStepResultFor(id);
+
   /// Whether [phaseNumber] has different options to the previous build
   /// and must be fully rebuilt.
   bool phaseOptionsChanged(int phaseNumber) =>
@@ -519,7 +531,7 @@ class BuildPlan {
       previousBuildStepPlan: previousBuildStepPlan,
       updates: updates,
       inputSources: const {},
-      buildPhases: buildPhases,
+      buildPhases: buildStepPlan.buildPhases,
       buildPackages: buildPackages,
       readerWriter: readerWriter,
     );
@@ -544,7 +556,7 @@ class BuildPlan {
   }) async {
     final activeReaderWriter = readerWriter.copyWith(
       generatedAssetHider:
-          previousBuildState ?? const NoopGeneratedAssetHider(),
+          previousBuildStepPlan ?? const NoopGeneratedAssetHider(),
     );
     readerWriter = activeReaderWriter;
     final changedInputs = <AssetId>{};
@@ -552,7 +564,18 @@ class BuildPlan {
     final newPrimaryInputs = <AssetId>{};
 
     if (previousBuildState == null) {
-      final buildState = BuildState.create(sources: inputSources);
+      final declaredOutputs =
+          BuildStepPlan.compute(
+            buildPhases: buildPhases,
+            placeholderIds: buildPackages.placeholderIds,
+            sources: inputSources,
+          ).declaredOutputs;
+      final inputSourcesWithoutOutputs = Set<AssetId>.from(inputSources);
+      for (final output in declaredOutputs) {
+        inputSourcesWithoutOutputs.remove(output);
+      }
+
+      final buildState = BuildState.create(sources: inputSourcesWithoutOutputs);
       final buildStepPlan = BuildStepPlan.compute(
         buildPhases: buildPhases,
         placeholderIds: buildPackages.placeholderIds,
@@ -561,7 +584,6 @@ class BuildPlan {
       return _RecreatedState(
         buildState: buildState,
         buildStepPlan: buildStepPlan,
-      previousBuildStepPlan: previousBuildStepPlan,
         changedInputs: BuiltSet<AssetId>(),
         deletedAssets: BuiltSet<AssetId>(),
         newPrimaryInputs: BuiltSet<AssetId>(),
@@ -708,7 +730,6 @@ class BuildPlan {
 class _RecreatedState {
   final BuildState buildState;
   final BuildStepPlan buildStepPlan;
-  final BuildStepPlan? previousBuildStepPlan;
   final BuiltSet<AssetId> changedInputs;
   final BuiltSet<AssetId> deletedAssets;
   final BuiltSet<AssetId> newPrimaryInputs;
@@ -716,7 +737,6 @@ class _RecreatedState {
   _RecreatedState({
     required this.buildState,
     required this.buildStepPlan,
-    required this.previousBuildStepPlan,
     required this.changedInputs,
     required this.deletedAssets,
     required this.newPrimaryInputs,

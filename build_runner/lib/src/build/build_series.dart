@@ -35,7 +35,7 @@ import 'build_state/build_state.dart';
 /// already in memory is used directly.
 class BuildSeries {
   final ResourceManager _resourceManager = ResourceManager();
-  final ReaderWriter _readerWriter;
+  ReaderWriter _readerWriter;
 
   BuildPlan _buildPlan;
   BuildState _buildState;
