@@ -1,3 +1,7 @@
+## 4.7.0
+
+- Add support for proper reload-restarts after invalid hot reloads in DDC + Frontend Server builder.
+
 ## 4.6.0
 
 - Add `webAssetsPath` option to `build_web_compilers:entrypoint` to allow manually specifying a non-default main directory.

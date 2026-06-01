@@ -10,6 +10,7 @@ import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
 
 const multiRootScheme = 'org-dartlang-app';
+const testScratchSpacePathPrefix = 'test_scratch_space/';
 final fesManagerConfigPath = p.join(
   '.dart_tool',
   'build',
@@ -24,6 +25,10 @@ final jsSourceMapExtension = '.ddc.js.map';
 final metadataExtension = '.ddc.js.metadata';
 final symbolsExtension = '.ddc.js.symbols';
 final fullKernelExtension = '.ddc.full.dill';
+
+final fesJsExtension = '.dart.lib.js';
+final fesJsAlternateExtension = '.lib.js';
+final fesSourceMapExtension = '.dart.lib.js.map';
 
 final defaultAnalysisOptionsId = AssetId(
   'build_modules',
@@ -193,4 +198,67 @@ ModuleStrategy moduleStrategy(BuilderOptions options) {
     default:
       throw ArgumentError('Unexpected ModuleBuilder strategy: $config');
   }
+}
+
+String? _rootPackageName;
+
+/// Returns root package name from `pubspec.yaml` in the current directory.
+///
+/// Caches the parsed value to [_rootPackageName]. Uses [fallbackPackageName] if
+/// `pubspec.yaml` doesn't exist (such as in unit tests).
+String getRootPackageName([String fallbackPackageName = '']) {
+  if (_rootPackageName != null) return _rootPackageName!;
+  var dir = Directory.current;
+  // Search parent directories to locate the root package's pubspec.yaml
+  // since tests or custom builds may be executed from nested subdirectories.
+  while (true) {
+    final pubspecFile = File(p.join(dir.path, 'pubspec.yaml'));
+    if (pubspecFile.existsSync()) {
+      final lines = pubspecFile.readAsLinesSync();
+      for (final line in lines) {
+        // Matches 'name: <package_name>'.
+        final match = RegExp(r'^name:\s*([^\s#]+)').firstMatch(line.trim());
+        if (match != null) {
+          _rootPackageName = match.group(1);
+          return _rootPackageName!;
+        }
+      }
+    }
+    final parent = dir.parent;
+    if (parent.path == dir.path) break;
+    dir = parent;
+  }
+  return _rootPackageName ??= fallbackPackageName;
+}
+
+/// Translates a Frontend Server's file paths to the equivalent path expected by
+/// the build runner.
+///
+/// Examples:
+/// - `package:foo/lib/bar.dart` to `packages/foo/bar.dart`
+/// - `org-dartlang-app:///web/main.dart` to `web/main.dart`
+/// - `foo.dart.lib.js` to `foo.ddc.js`
+/// - `foo.lib.js` to `foo.ddc.js`
+/// - `package:path/lib/path.dart.lib.js` to `packages/path/path.ddc.js`
+/// - `package:root_app/lib/utils.dart.lib.js` to `lib/utils.ddc.js`
+String fesToAssetPath(String sourcePath, {String? rootPackage}) {
+  if (sourcePath.startsWith('/')) {
+    sourcePath = sourcePath.substring(1);
+  }
+  if (sourcePath.startsWith('package:')) {
+    sourcePath = 'packages/${sourcePath.substring('package:'.length)}';
+  } else if (sourcePath.startsWith('$multiRootScheme:///')) {
+    sourcePath = sourcePath.substring('$multiRootScheme:///'.length);
+  }
+  // Drop 'lib/' in package paths.
+  sourcePath = sourcePath.replaceFirst('/lib/', '/');
+  sourcePath = sourcePath
+      .replaceAll(fesJsExtension, jsModuleExtension)
+      .replaceAll(fesJsAlternateExtension, jsModuleExtension);
+  // Re-root to 'lib/' if in the root package.
+  final root = rootPackage ?? getRootPackageName();
+  if (root.isNotEmpty && sourcePath.startsWith('packages/$root/')) {
+    sourcePath = 'lib/${sourcePath.substring('packages/$root/'.length)}';
+  }
+  return sourcePath;
 }

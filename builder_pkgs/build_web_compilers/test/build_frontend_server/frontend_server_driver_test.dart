@@ -51,7 +51,7 @@ void main() {
       expect(output!.errorCount, 0);
       expect(output.outputFilename, endsWith('output.dill'));
       expect(output.sources, contains(entrypoint));
-      server.accept();
+      await server.accept();
     });
 
     test('can handle compilation errors', () async {
@@ -80,7 +80,7 @@ void main() {
       var output = await server.compile(entrypoint.toString());
       expect(output, isNotNull);
       expect(output!.errorCount, 0);
-      server.accept();
+      await server.accept();
 
       File(dep.toFilePath()).writeAsStringSync('invalid dart code');
       output = await server.recompile(entrypoint.toString(), [dep]);
@@ -93,7 +93,7 @@ void main() {
       output = await server.recompile(entrypoint.toString(), [dep]);
       expect(output, isNotNull);
       expect(output!.errorCount, 0);
-      server.accept();
+      await server.accept();
     });
   });
 
@@ -166,11 +166,11 @@ void main() {
       final entrypoint = tempDir.uri.resolve('entrypoint.dart');
       File(entrypoint.toFilePath()).writeAsStringSync('void main() {}');
 
-      final jsFESOutputPath = p.join(tempDir.path, 'entrypoint.dart.lib.js');
+      final jsFESOutputPath = p.join(tempDir.path, 'entrypoint.ddc.js');
       final output = await driver.recompileAndRecord(
         '$multiRootScheme:///entrypoint.dart',
         [entrypoint],
-        ['entrypoint.dart.lib.js'],
+        ['entrypoint.ddc.js'],
       );
 
       expect(output, isNotNull);
@@ -180,6 +180,41 @@ void main() {
       expect(jsOutputFile.existsSync(), isTrue);
       final content = jsOutputFile.readAsStringSync();
       expect(content, contains('function main()'));
+    });
+
+    test('recompileAndRecord passes environment options to JS', () async {
+      final packageConfig = tempDir.uri.resolve(
+        '.dart_tool/package_config.json',
+      );
+      final envServer = await PersistentFrontendServer.start(
+        sdkRoot: sdkDir,
+        fileSystemRoot: tempDir.uri,
+        packagesFile: packageConfig,
+        environment: {'MY_DEFINE': 'hello_world'},
+      );
+      addTearDown(envServer.shutdown);
+
+      final envDriver = FrontendServerProxyDriver()..init(envServer);
+
+      final entrypoint = tempDir.uri.resolve('entrypoint_env.dart');
+      File(entrypoint.toFilePath()).writeAsStringSync(
+        "void main() { print(const String.fromEnvironment('MY_DEFINE')); }",
+      );
+
+      final jsFESOutputPath = p.join(tempDir.path, 'entrypoint_env.ddc.js');
+      final output = await envDriver.recompileAndRecord(
+        '$multiRootScheme:///entrypoint_env.dart',
+        [entrypoint],
+        ['entrypoint_env.ddc.js'],
+      );
+
+      expect(output, isNotNull);
+      expect(output!.errorCount, 0);
+
+      final jsOutputFile = File(jsFESOutputPath);
+      expect(jsOutputFile.existsSync(), isTrue);
+      final content = jsOutputFile.readAsStringSync();
+      expect(content, contains('hello_world'));
     });
   });
 }

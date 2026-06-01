@@ -28,6 +28,12 @@ class FrontendServerState {
   /// directory (rather than a fresh one).
   ScratchSpace? fesScratchSpace;
 
+  /// Whether the next recompile should be a recompile-restart.
+  bool needsRecompileRestart = false;
+
+  /// The custom scratch space path provided to the builder, if any.
+  String? customScratchSpacePath;
+
   /// Looks for and loads a `.web.entrypoint.json` file if it exists.
   ///
   /// Returns whether or not the `.web.entrypoint.json` was found and loaded.
@@ -45,6 +51,43 @@ class FrontendServerState {
       return true;
     }
     return false;
+  }
+
+  /// Tracks active background compilations keyed by their entrypoint [AssetId].
+  ///
+  /// Allows arbitrary DDC builders to share a single compiler execution run for
+  /// an entrypoint. Typically the entrypoint for all builders - except for
+  /// certain tests with multiple targets in the entrypoint.
+  final Map<AssetId, Future<void>> _activeCompilations = {};
+
+  /// Returns a future that completes when the compilation for [entrypointId]
+  /// is complete, or immediately if there is no active compilation.
+  Future<void> waitForCompilation(AssetId entrypointId) {
+    return _activeCompilations[entrypointId] ?? Future.value();
+  }
+
+  /// Initiates the compilation of [entrypointId] using [compileFn] if no
+  /// compilation is currently active.
+  ///
+  /// Concurrent calls for the same entrypoint will subscribe to and share
+  /// the same compilation future. The future is automatically removed from
+  /// the active registry once it completes or fails.
+  void triggerSharedCompilation(
+    AssetId entrypointId,
+    Future<void> Function() compileFn,
+  ) {
+    _activeCompilations.putIfAbsent(entrypointId, () async {
+      try {
+        await compileFn();
+      } finally {
+        clearCompilation(entrypointId);
+      }
+    });
+  }
+
+  /// Cancels the cached compilation future for [entrypointId].
+  void clearCompilation(AssetId entrypointId) {
+    _activeCompilations.remove(entrypointId);
   }
 }
 
