@@ -34,11 +34,11 @@ import 'build_state/build_state.dart';
 /// this serialized state is not actually used: the `BuildState` instance
 /// already in memory is used directly.
 class BuildSeries {
+  final ResourceManager _resourceManager = ResourceManager();
+  final ReaderWriter _readerWriter;
+
   BuildPlan _buildPlan;
   BuildState _buildState;
-  ReaderWriter _readerWriter;
-
-  final ResourceManager _resourceManager = ResourceManager();
 
   /// For the first build only, assets that were updated since the previous
   /// serialized build state.
@@ -245,12 +245,6 @@ class BuildSeries {
         return result;
       }
       _buildState = _buildPlan.takeBuildState();
-      _readerWriter = _buildPlan.readerWriter.copyWith(
-        generatedAssetHider:
-            _buildPlan.testingOverrides.flattenOutput
-                ? const NoopGeneratedAssetHider()
-                : _buildPlan.buildStepPlan,
-      );
     }
 
     buildDirs ??= _buildPlan.buildOptions.buildDirs;
@@ -283,7 +277,6 @@ class BuildSeries {
     _buildPlan = build.buildPlan.updateForResult(
       previousPhasedAssetDeps: result.phasedAssetDeps,
     );
-    _readerWriter = build.readerWriter;
     _buildResultsController.add(result);
     return result;
   }

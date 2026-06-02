@@ -303,12 +303,6 @@ class Build {
       await readerWriter.delete(id);
     }
     _buildPlan = _buildPlan.updateForSources(buildState.sources);
-    _readerWriter = _readerWriter.copyWith(
-      generatedAssetHider:
-          _buildPlan.testingOverrides.flattenOutput
-              ? const NoopGeneratedAssetHider()
-              : _buildPlan.buildStepPlan,
-    );
     deletedAssets.addAll(deleted);
     for (final entry in newDigests.entries) {
       buildState.updateSourceDigest(entry.key, entry.value);
@@ -333,6 +327,14 @@ class Build {
       () async {
         final invalidatedSources =
             buildPlan.cleanBuild ? null : await _updateBuildState(idsToCheck);
+        // _updateBuildState can change the buildStepPlan, give _readerWriter
+        // the latest plan.
+        _readerWriter = _readerWriter.copyWith(
+          generatedAssetHider:
+              _buildPlan.testingOverrides.flattenOutput
+                  ? const NoopGeneratedAssetHider()
+                  : _buildPlan.buildStepPlan,
+        );
         for (final id in buildState.sources) {
           if (buildState.isUnreadSource(id) &&
               buildStepPlan.declaredOutputsOf(id).isNotEmpty) {
@@ -926,7 +928,6 @@ class Build {
 
         // If the primary input succeeded but was not output, this build is
         // skipped.
-
         if (!buildState.isActualOutput(
           buildStepPlan: buildStepPlan,
           id: step.primaryInput,
@@ -1209,8 +1210,8 @@ class Build {
           buildStepPlan.stepForDeclaredOutput(id),
         );
         if (stepResult != null &&
-            stepResult.outputs.containsKey(id) &&
-            stepResult.succeeded) {
+            stepResult.succeeded &&
+            stepResult.outputs.containsKey(id)) {
           generatedFileResults.add(id);
         }
       }

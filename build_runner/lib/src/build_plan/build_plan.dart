@@ -285,8 +285,9 @@ class BuildPlan {
       // Files marked for deletion are not inputs.
       inputSources.removeAll(filesToDelete);
 
-      // Build steps are computed twice: first to identify inputs that are
-      // actually outputs and remove them from the input set.
+      // Compute build steps just to get declared outputs and prune the input
+      // sources to remove them. They are computed again below based on the
+      // pruned inputs.
       final declaredOutputs =
           BuildStepPlan.compute(
             buildPhases: buildPhases,

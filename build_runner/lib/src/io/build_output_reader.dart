@@ -201,8 +201,8 @@ class BuildOutputReader {
     if (step != null) {
       final stepResult = buildState.stepResultOrNull(step);
       if (stepResult == null ||
-          !stepResult.outputs.containsKey(id) ||
-          stepResult.failed) {
+          stepResult.failed ||
+          !stepResult.outputs.containsKey(id)) {
         return true;
       }
       return !_processedOutputs!.contains(id);
