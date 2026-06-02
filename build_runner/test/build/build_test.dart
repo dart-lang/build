@@ -798,32 +798,7 @@ additional_public_assets:
         );
       });
 
-      test('Will not delete from non-root packages', () async {
-        await testPhases(
-          builderFactories,
-          [
-            BuilderDefinition(
-              '',
-              autoApply: AutoApply.allPackages,
-              hideOutput: true,
-            ),
-          ],
-          {
-            'b|lib/b.txt': 'b',
-            'a|.dart_tool/build/generated/b/lib/b.txt.copy': 'b',
-          },
-          buildPackages: buildPackages,
-          outputs: {r'$$b|lib/b.txt.copy': 'b'},
-          onDelete: (AssetId assetId) {
-            if (assetId.package != 'a') {
-              throw StateError(
-                'Should not delete outside of package:a, '
-                'tried to delete $assetId',
-              );
-            }
-          },
-        );
-      });
+
     });
 
     test('can read files from external packages', () async {
@@ -1447,10 +1422,7 @@ targets:
       expect(newBuildState.isMissingSource(anId), isTrue);
       expect(newBuildState.isMissingSource(aCopyId), isFalse);
       expect(
-        newBuildState.isFile(
-          buildStepPlan: result.buildPlan.buildStepPlan,
-          id: aCloneId,
-        ),
+        result.buildPlan.buildStepPlan.isFile(newBuildState, aCloneId),
         isFalse,
       );
       expect(result.readerWriter.testing.exists(anId), isFalse);

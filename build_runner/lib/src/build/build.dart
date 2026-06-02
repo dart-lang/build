@@ -23,7 +23,6 @@ import '../build_plan/testing_overrides.dart';
 import '../constants.dart';
 import '../io/build_output_reader.dart';
 import '../io/create_merged_dir.dart';
-
 import '../io/reader_writer.dart';
 import '../logging/build_log.dart';
 import '../logging/timed_activities.dart';
@@ -54,7 +53,7 @@ final ResolversImpl _defaultResolvers = ResolversImpl(
 
 /// A single build.
 class Build {
-  BuildPlan _buildPlan;
+  final BuildPlan _buildPlan;
 
   // Collaborators.
   final ResourceManager resourceManager;
@@ -87,12 +86,6 @@ class Build {
   /// That means they have been checked to determine whether they
   /// need evaluating, and if so their state has been updated accordingly.
   final Set<GlobId> processedGlobs = {};
-
-  /// Inputs that changed since the last build.
-  Set<AssetId> get changedInputs => buildPlan.changedInputs.toSet();
-
-  /// Assets that were deleted since the last build.
-  Set<AssetId> get deletedAssets => buildPlan.deletedAssets.toSet();
 
   /// Assets that might be new primary inputs since the previous build.
   final Set<AssetId> newPrimaryInputs;
@@ -233,7 +226,6 @@ class Build {
     );
     return result;
   }
-
 
   /// Runs a build inside a zone with an error handler and stack chain
   /// capturing.
@@ -506,7 +498,7 @@ class Build {
           }
           return <AssetId>[];
         case StepAction.skipMarkSuccess:
-          await _cleanUpStaleOutputs(builderOutputs);
+          await _deleteAll(builderOutputs);
           _markStepSkipped(buildStepId, builderOutputs);
           return <AssetId>[];
         case StepAction.skipMarkFailure:
@@ -517,7 +509,7 @@ class Build {
       }
     }
 
-    await _cleanUpStaleOutputs(builderOutputs);
+    await _deleteAll(builderOutputs);
 
     // Clear input tracking accumulated during `_buildShouldRun`.
     singleStepReaderWriter.inputTracker.clear();
@@ -734,7 +726,7 @@ class Build {
     stepReaderWriter.inputTracker.clear();
 
     // Clean out the impacts of the previous run.
-    await _cleanUpStaleOutputs(existingOutputs);
+    await _deleteAll(existingOutputs);
     buildState.removePostProcessBuildResult(postProcessBuildStepId);
 
     final logger = buildLog.loggerForOther(
@@ -835,7 +827,7 @@ class Build {
       }
 
       // If the primary input has been deleted, the build is skipped.
-      if (deletedAssets.contains(step.primaryInput)) {
+      if (buildPlan.deletedAssets.contains(step.primaryInput)) {
         if (!buildStepPlan.isDeclaredOutput(step.primaryInput)) {
           return StepAction.skipMarkSuccess;
         }
@@ -855,10 +847,7 @@ class Build {
 
         // If the primary input succeeded but was not output, this build is
         // skipped.
-        if (!buildState.isActualOutput(
-          buildStepPlan: buildStepPlan,
-          id: step.primaryInput,
-        )) {
+        if (!buildStepPlan.isActualOutput(buildState, step.primaryInput)) {
           return StepAction.skipMarkSuccess;
         }
       }
@@ -876,7 +865,7 @@ class Build {
       }
 
       for (final output in outputs) {
-        if (deletedAssets.contains(output)) return StepAction.run;
+        if (buildPlan.deletedAssets.contains(output)) return StepAction.run;
       }
 
       final stepResult =
@@ -1014,12 +1003,11 @@ class Build {
       return changedOutputs.contains(input);
     }
 
-
     if (buildState.isSource(input)) {
-      return changedInputs.contains(input);
+      return buildPlan.changedInputs.contains(input);
     }
 
-    if (deletedAssets.contains(input)) {
+    if (buildPlan.deletedAssets.contains(input)) {
       return true;
     }
 
@@ -1056,7 +1044,7 @@ class Build {
         return true;
       }
     } else if (buildState.isSource(input)) {
-      if (changedInputs.contains(input)) {
+      if (buildPlan.changedInputs.contains(input)) {
         return true;
       }
     } else {
@@ -1064,19 +1052,6 @@ class Build {
     }
 
     return false;
-  }
-
-  /// Deletes any of [outputs] which previously were output.
-  ///
-  /// This should be called after deciding that an asset really needs to be
-  /// regenerated based on its inputs hash changing. All assets in [outputs]
-  /// must be generated assets.
-  Future<void> _cleanUpStaleOutputs(Iterable<AssetId> outputs) async {
-    for (final output in outputs) {
-      if (await readerWriter.canRead(output)) {
-        await _delete(output);
-      }
-    }
   }
 
   /// Evaluates the glob for [globId].
@@ -1107,9 +1082,9 @@ class Build {
       // Other types of file that match the glob.
       final otherInputs = <AssetId>[];
 
-      for (final id in buildState.findFiles(
+      for (final id in buildStepPlan.findFiles(
+        buildState,
         package: globId.package,
-        buildStepPlan: buildStepPlan,
         glob: glob,
       )) {
         if (buildStepPlan.isDeclaredOutput(id)) {
@@ -1203,10 +1178,11 @@ class Build {
 
     final buildStepId = BuildStepId(primaryInput: input, phaseNumber: phaseNum);
     final previousBuildState = buildPlan.previousBuildState;
-    final previousBuildStepResult = previousBuildState != null &&
-            previousBuildState.hasStepResult(buildStepId)
-        ? previousBuildState.stepResult(buildStepId)
-        : null;
+    final previousBuildStepResult =
+        previousBuildState != null &&
+                previousBuildState.hasStepResult(buildStepId)
+            ? previousBuildState.stepResult(buildStepId)
+            : null;
     final previousResult = previousBuildStepResult?.result;
     buildState.updateBuildStepResult(buildStepId, buildStepResult);
 
@@ -1234,10 +1210,13 @@ class Build {
     }
   }
 
-  bool _isFile(AssetId id) =>
-      buildState.isFile(buildStepPlan: buildStepPlan, id: id);
+  bool _isFile(AssetId id) => buildStepPlan.isFile(buildState, id);
 
-  Future _delete(AssetId id) => readerWriter.delete(id);
+  Future<void> _deleteAll(Iterable<AssetId> ids) async {
+    for (final id in ids) {
+      await readerWriter.delete(id);
+    }
+  }
 }
 
 /// Actions that can be taken for a build step in an incremental build.

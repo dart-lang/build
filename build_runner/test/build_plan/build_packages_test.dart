@@ -13,6 +13,7 @@ import 'package:build_runner/src/build_plan/build_paths.dart';
 import 'package:package_config/package_config_types.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
+import 'package:build/build.dart';
 import 'package:yaml/yaml.dart';
 
 import '../common/common.dart';
@@ -119,6 +120,38 @@ void main() {
 
         expect(names, isNot(contains(r'$sdk')));
         expect(names, containsAll(['a', 'b', 'c', 'd', 'basic_pkg']));
+      });
+
+      group('pathFor', () {
+        test('allows deleting hidden outputs of non-root packages', () {
+          final id = AssetId('a', 'lib/a.txt');
+          // should not throw
+          buildPackages.pathFor(id, hide: true, checkDeleteAllowed: true);
+        });
+
+        test('allows deleting from root package', () {
+          final id = AssetId('basic_pkg', 'lib/file.txt');
+          // should not throw
+          buildPackages.pathFor(id, hide: false, checkDeleteAllowed: true);
+        });
+
+        test('disallows deleting non-hidden outputs of non-root packages', () {
+          final id = AssetId('a', 'lib/a.txt');
+          expect(
+            () => buildPackages.pathFor(id,
+                hide: false, checkDeleteAllowed: true),
+            throwsA(isA<InvalidOutputException>()),
+          );
+        });
+
+        test('disallows deleting from cache of non-root packages', () {
+          final id = AssetId('a', '.dart_tool/build/generated/a/lib/a.txt');
+          expect(
+            () => buildPackages.pathFor(id,
+                hide: false, checkDeleteAllowed: true),
+            throwsA(isA<InvalidOutputException>()),
+          );
+        });
       });
     });
 

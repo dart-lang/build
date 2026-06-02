@@ -443,30 +443,29 @@ class BuildPlan {
   BuildPlan updateForResult({
     required BuildState previousBuildState,
     PhasedAssetDeps? previousPhasedAssetDeps,
-  }) =>
-      copyWith(
-        triggersChanged: false,
-        previousBuildState: previousBuildState,
-        previousBuildStepPlan: this.buildStepPlan,
-        previousPhasedAssetDeps: previousPhasedAssetDeps,
-        phaseOptionsChanged: BuiltList<bool>.from(
-          List.filled(
-            buildStepPlan.buildPhases.inBuildPhasesOptionsDigests.length,
-            false,
-          ),
-        ),
-        postBuildOptionsChanged: BuiltList<bool>.from(
-          List.filled(
-            buildStepPlan.buildPhases.postBuildActionsOptionsDigests.length,
-            false,
-          ),
-        ),
-        buildState: BuildState.create(sources: const {}),
-        changedInputs: BuiltSet<AssetId>(),
-        deletedAssets: BuiltSet<AssetId>(),
-        newPrimaryInputs: BuiltSet<AssetId>(),
-        invalidatedSources: const {},
-      );
+  }) => copyWith(
+    triggersChanged: false,
+    previousBuildState: previousBuildState,
+    previousBuildStepPlan: buildStepPlan,
+    previousPhasedAssetDeps: previousPhasedAssetDeps,
+    phaseOptionsChanged: BuiltList<bool>.from(
+      List.filled(
+        buildStepPlan.buildPhases.inBuildPhasesOptionsDigests.length,
+        false,
+      ),
+    ),
+    postBuildOptionsChanged: BuiltList<bool>.from(
+      List.filled(
+        buildStepPlan.buildPhases.postBuildActionsOptionsDigests.length,
+        false,
+      ),
+    ),
+    buildState: BuildState.create(sources: const {}),
+    changedInputs: BuiltSet<AssetId>(),
+    deletedAssets: BuiltSet<AssetId>(),
+    newPrimaryInputs: BuiltSet<AssetId>(),
+    invalidatedSources: const {},
+  );
 
   BuildState? get previousBuildState => _previousBuildState;
 
@@ -603,10 +602,7 @@ class BuildPlan {
       if (oldIsSource) {
         previousSources.add(id);
       }
-      final oldExisted = previousBuildState.isFile(
-        buildStepPlan: previousBuildStepPlan,
-        id: id,
-      );
+      final oldExisted = previousBuildStepPlan!.isFile(previousBuildState, id);
       var exists = false;
       if (await readerWriter.canRead(id)) {
         exists = true;
@@ -684,10 +680,7 @@ class BuildPlan {
     final outputsToDelete = <AssetId>[];
     for (final id in previousBuildStepPlan!.declaredOutputs) {
       if (!newBuildStepPlan.isDeclaredOutput(id)) {
-        if (previousBuildState.isActualOutput(
-          buildStepPlan: previousBuildStepPlan,
-          id: id,
-        )) {
+        if (previousBuildStepPlan.isActualOutput(previousBuildState, id)) {
           outputsToDelete.add(id);
         }
       }

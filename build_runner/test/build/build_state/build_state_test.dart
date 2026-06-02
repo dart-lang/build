@@ -81,8 +81,6 @@ void main() {
         );
       });
 
-
-
       test('build', () {
         expect(
           buildStepPlan.declaredOutputs,
@@ -117,9 +115,9 @@ void main() {
             sources: newSources,
           );
           expect(
-            newBuildState.isFile(
-              buildStepPlan: newBuildStepPlan,
-              id: AssetId('foo', 'new.txt.copy'),
+            newBuildStepPlan.isFile(
+              newBuildState,
+              AssetId('foo', 'new.txt.copy'),
             ),
             isTrue,
           );
@@ -131,20 +129,8 @@ void main() {
           final newBuildState = BuildState.create(
             sources: buildState.sources.toSet(),
           );
-          expect(
-            newBuildState.isFile(
-              buildStepPlan: buildStepPlan,
-              id: primaryInputId,
-            ),
-            isTrue,
-          );
-          expect(
-            newBuildState.isFile(
-              buildStepPlan: buildStepPlan,
-              id: primaryOutputId,
-            ),
-            isTrue,
-          );
+          expect(buildStepPlan.isFile(newBuildState, primaryInputId), isTrue);
+          expect(buildStepPlan.isFile(newBuildState, primaryOutputId), isTrue);
         });
 
         test('add new primary input which replaces a synthetic node', () async {
@@ -158,19 +144,10 @@ void main() {
             placeholderIds: [],
             sources: newSources,
           );
-          expect(
-            newBuildState.isFile(
-              buildStepPlan: newBuildStepPlan,
-              id: syntheticId,
-            ),
-            isTrue,
-          );
+          expect(newBuildStepPlan.isFile(newBuildState, syntheticId), isTrue);
           expect(newBuildState.isSource(syntheticId), isTrue);
           expect(
-            newBuildState.isFile(
-              buildStepPlan: newBuildStepPlan,
-              id: syntheticOutputId,
-            ),
+            newBuildStepPlan.isFile(newBuildState, syntheticOutputId),
             isTrue,
           );
           expect(newBuildStepPlan.isDeclaredOutput(syntheticOutputId), isTrue);
@@ -191,13 +168,13 @@ void main() {
             );
 
             expect(
-              newBuildState.isFile(
-                buildStepPlan: newBuildStepPlan,
-                id: syntheticOutputId,
-              ),
+              newBuildStepPlan.isFile(newBuildState, syntheticOutputId),
               isTrue,
             );
-            expect(newBuildStepPlan.isDeclaredOutput(syntheticOutputId), isTrue);
+            expect(
+              newBuildStepPlan.isDeclaredOutput(syntheticOutputId),
+              isTrue,
+            );
           },
         );
 
@@ -213,17 +190,11 @@ void main() {
               sources: newSources,
             );
             expect(
-              newBuildState.isFile(
-                buildStepPlan: newBuildStepPlan,
-                id: primaryInputId,
-              ),
+              newBuildStepPlan.isFile(newBuildState, primaryInputId),
               isFalse,
             );
             expect(
-              newBuildState.isFile(
-                buildStepPlan: newBuildStepPlan,
-                id: primaryOutputId,
-              ),
+              newBuildStepPlan.isFile(newBuildState, primaryOutputId),
               isFalse,
             );
           },
@@ -406,6 +377,7 @@ void main() {
               buildStepPlan.declaredOutputsOf(id).forEach(addTransitiveOutputs);
             }
           }
+
           for (final id in removes) {
             addTransitiveOutputs(id);
           }

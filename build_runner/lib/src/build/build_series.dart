@@ -123,10 +123,7 @@ class BuildSeries {
         continue;
       }
 
-      final isFile = _buildState.isFile(
-        buildStepPlan: _buildPlan.buildStepPlan,
-        id: id,
-      );
+      final isFile = _buildPlan.buildStepPlan.isFile(_buildState, id);
       if (!isFile) {
         // Ignore under `.dart_tool/build`.
         if (id.path.startsWith(cacheDirectoryPath)) continue;
@@ -145,17 +142,18 @@ class BuildSeries {
 
       // If not copying to a merged output directory, ignore changes to files
       // with no outputs.
+      final previousDigest =
+          _buildPlan.previousBuildState != null &&
+                  _buildPlan.previousBuildStepPlan != null
+              ? _buildPlan.previousBuildStepPlan!.digestOf(
+                _buildPlan.previousBuildState!,
+                id,
+              )
+              : null;
+      final currentDigest = _buildPlan.buildStepPlan.digestOf(_buildState, id);
       if (!_buildPlan.buildOptions.anyMergedOutputDirectory &&
           !_buildState.isMissingSource(id) &&
-          (_buildPlan.previousBuildState?.digestOf(
-                    buildStepPlan: _buildPlan.buildStepPlan,
-                    id: id,
-                  ) ??
-                  _buildState.digestOf(
-                    buildStepPlan: _buildPlan.buildStepPlan,
-                    id: id,
-                  )) ==
-              null) {
+          (previousDigest ?? currentDigest) == null) {
         continue;
       }
 

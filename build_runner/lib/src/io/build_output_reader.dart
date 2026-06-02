@@ -99,7 +99,7 @@ class BuildOutputReader {
       if (stepResult.failed) {
         return UnreadableReason.failed;
       }
-      if (!_buildState.isActualOutput(buildStepPlan: _buildStepPlan!, id: id)) {
+      if (!_buildStepPlan!.isActualOutput(_buildState, id)) {
         return UnreadableReason.notOutput;
       }
 
@@ -134,9 +134,9 @@ class BuildOutputReader {
 
   Stream<AssetId> findAssets(Glob glob, {required String package}) async* {
     if (_buildState == null || _readerWriter == null) return;
-    for (final id in _buildState.findFiles(
+    for (final id in _buildStepPlan!.findFiles(
+      _buildState,
       package: package,
-      buildStepPlan: _buildStepPlan,
       glob: glob,
     )) {
       if (await _readerWriter.canRead(id)) {
@@ -150,7 +150,7 @@ class BuildOutputReader {
   ///
   /// Note that [id] must exist in the asset graph.
   FutureOr<Digest> _ensureDigest(AssetId id) {
-    final digest = _buildState!.digestOf(buildStepPlan: _buildStepPlan, id: id);
+    final digest = _buildStepPlan!.digestOf(_buildState!, id);
     if (digest != null) return digest;
     return _readerWriter!.digest(id).then((digest) {
       _buildState.updateSourceDigest(id, digest);
@@ -213,7 +213,9 @@ class BuildOutputReader {
   }
 
   bool _isFile(AssetId id) =>
-      _buildState!.isFile(buildStepPlan: _buildStepPlan, id: id);
+      _buildStepPlan != null
+          ? _buildStepPlan.isFile(_buildState!, id)
+          : _buildState!.isSource(id) || _buildState.isActualPostOutput(id);
 }
 
 enum UnreadableReason {

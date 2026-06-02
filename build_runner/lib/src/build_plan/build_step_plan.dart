@@ -5,7 +5,10 @@
 import 'package:build/build.dart' hide Builder;
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
+import 'package:crypto/crypto.dart';
+import 'package:glob/glob.dart';
 
+import '../build/build_state/build_state.dart';
 import '../build/build_state/build_step_id.dart';
 import '../build/build_state/exceptions.dart';
 import '../constants.dart';
@@ -167,4 +170,41 @@ abstract class BuildStepPlan
     for (final entry in buildStepsByDeclaredOutput.entries)
       entry.key: entry.value.phaseNumber,
   };
+
+  bool isFile(BuildState buildState, AssetId id) =>
+      buildState.isSource(id) ||
+      isDeclaredOutput(id) ||
+      buildState.isActualPostOutput(id);
+
+  Iterable<AssetId> findFiles(
+    BuildState buildState, {
+    required String package,
+    Glob? glob,
+  }) => buildState.findFiles(
+    package: package,
+    declaredOutputs: declaredOutputs,
+    glob: glob,
+  );
+
+  bool isActualOutput(BuildState buildState, AssetId id) {
+    final buildStepId = stepForDeclaredOutputOrNull(id);
+    if (buildStepId == null) return false;
+    return buildState.stepResultOrNull(buildStepId)?.outputs.containsKey(id) ??
+        false;
+  }
+
+  bool isActualSuccessfulOutput(BuildState buildState, AssetId id) {
+    final step = stepForDeclaredOutputOrNull(id);
+    if (step == null) return false;
+    final stepResult = buildState.stepResultOrNull(step);
+    if (stepResult == null) return false;
+    return stepResult.succeeded && stepResult.outputs.containsKey(id);
+  }
+
+  Digest? digestOf(BuildState buildState, AssetId id) {
+    if (buildState.isSource(id)) return buildState.digestOfSource(id);
+    final step = stepForDeclaredOutputOrNull(id);
+    if (step == null) return null;
+    return buildState.stepResultOrNull(step)?.outputs[id];
+  }
 }
