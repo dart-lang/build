@@ -8,22 +8,19 @@ import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/build_state/build_step_id.dart';
 import 'package:build_runner/src/build/build_state/build_step_result.dart';
 import 'package:build_runner/src/build/build_state/exceptions.dart';
-import 'package:build_runner/src/build_plan/build_package.dart';
-import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
+import 'package:build_runner/src/build_plan/build_step_plan.dart';
 import 'package:build_runner/src/build_plan/phase.dart';
+
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
 import '../../common/common.dart';
 
 void main() {
-  final fooPackageGraph = BuildPackages.singlePackageBuild('foo', {
-    BuildPackage.forTesting(name: 'foo', isOutput: true),
-  });
-
   group('BuildState', () {
     late BuildState buildState;
+    late BuildStepPlan buildStepPlan;
 
     AssetId testAddSource(int number) {
       final id = AssetId.parse('pkg|lib/a$number.dart');
@@ -35,11 +32,7 @@ void main() {
 
     group('simple build state', () {
       setUp(() async {
-        buildState = BuildState.create(
-          buildPhases: BuildPhases([]),
-          buildPackages: fooPackageGraph,
-          sources: <AssetId>{},
-        );
+        buildState = BuildState.create(sources: <AssetId>{});
       });
 
       test('add, contains, get, allNodes', () {
@@ -48,7 +41,7 @@ void main() {
       });
     });
 
-    group('with buildPhases', () {
+    group('build state with declared outputs', () {
       final targetSources = const InputSet(exclude: ['excluded.txt']);
       final buildPhases = BuildPhases(
         [
@@ -80,30 +73,43 @@ void main() {
 
       setUp(() async {
         buildState = BuildState.create(
-          buildPhases: buildPhases,
-          buildPackages: fooPackageGraph,
           sources: {primaryInputId, excludedInputId},
+        );
+        buildStepPlan = BuildStepPlan.compute(
+          buildPhases: buildPhases,
+          placeholderIds: [],
+          sources: buildState.sources,
         );
       });
 
+      void recomputeBuildStepPlan() {
+        buildStepPlan = BuildStepPlan.compute(
+          buildPhases: buildPhases,
+          placeholderIds: [],
+          sources: buildState.sources,
+        );
+      }
+
       test('build', () {
         expect(
-          buildState.declaredAndActualOutputs,
+          buildStepPlan.declaredOutputs,
           unorderedEquals([primaryOutputId]),
         );
         expect(
           buildState.sources,
           unorderedEquals([primaryInputId, excludedInputId]),
         );
-        expect(buildState.declaredOutputsOf(primaryInputId), [primaryOutputId]);
+        expect(buildStepPlan.declaredOutputsOf(primaryInputId), [
+          primaryOutputId,
+        ]);
 
         final buildStepId = BuildStepId(
           primaryInput: primaryInputId,
           phaseNumber: 0,
         );
-        expect(buildState.stepResult(buildStepId).result, isNull);
+        expect(buildState.stepResultOrNull(buildStepId), isNull);
         expect(
-          buildState.stepForDeclaredOutput(primaryOutputId).primaryInput,
+          buildStepPlan.stepForDeclaredOutput(primaryOutputId).primaryInput,
           primaryInputId,
         );
       });
@@ -111,13 +117,17 @@ void main() {
       group('updateAndInvalidate', () {
         test('add new primary input', () async {
           final changes = {AssetId('foo', 'new.txt'): ChangeType.ADD};
-          buildState.updateForNextBuild(buildPhases, changes);
-          expect(buildState.isFile(AssetId('foo', 'new.txt.copy')), isTrue);
+          buildState.updateForNextBuild(buildStepPlan, changes);
+          recomputeBuildStepPlan();
+          expect(
+            buildStepPlan.isDeclaredOutput(AssetId('foo', 'new.txt.copy')),
+            isTrue,
+          );
         });
 
         test('modify primary input', () async {
           final changes = {primaryInputId: ChangeType.MODIFY};
-          expect(buildState.isFile(primaryOutputId), isTrue);
+          expect(buildStepPlan.isDeclaredOutput(primaryOutputId), isTrue);
           final buildStepId = BuildStepId(
             primaryInput: primaryInputId,
             phaseNumber: 0,
@@ -128,9 +138,10 @@ void main() {
             b.inputs.add(primaryInputId);
           });
           buildState.updateBuildStepResult(buildStepId, stepResult);
-          buildState.updateForNextBuild(buildPhases, changes);
-          expect(buildState.isFile(primaryInputId), isTrue);
-          expect(buildState.isFile(primaryOutputId), isTrue);
+          buildState.updateForNextBuild(buildStepPlan, changes);
+          recomputeBuildStepPlan();
+          expect(buildState.isSource(primaryInputId), isTrue);
+          expect(buildStepPlan.isDeclaredOutput(primaryOutputId), isTrue);
         });
 
         test('add new primary input which replaces a synthetic node', () async {
@@ -138,12 +149,11 @@ void main() {
           expect(buildState.isMissingSource(syntheticId), isTrue);
 
           final changes = {syntheticId: ChangeType.ADD};
-          buildState.updateForNextBuild(buildPhases, changes);
+          buildState.updateForNextBuild(buildStepPlan, changes);
+          recomputeBuildStepPlan();
 
-          expect(buildState.isFile(syntheticId), isTrue);
           expect(buildState.isSource(syntheticId), isTrue);
-          expect(buildState.isFile(syntheticOutputId), isTrue);
-          expect(buildState.isDeclaredOutput(syntheticOutputId), isTrue);
+          expect(buildStepPlan.isDeclaredOutput(syntheticOutputId), isTrue);
         });
 
         test(
@@ -153,11 +163,10 @@ void main() {
             expect(buildState.isMissingSource(syntheticOutputId), isTrue);
 
             final changes = {syntheticId: ChangeType.ADD};
-            buildState.updateForNextBuild(buildPhases, changes);
+            buildState.updateForNextBuild(buildStepPlan, changes);
+            recomputeBuildStepPlan();
 
-            expect(buildState.isFile(syntheticOutputId), isTrue);
-            expect(buildState.isDeclaredOutput(syntheticOutputId), isTrue);
-            expect(buildState.isFile(syntheticOutputId), isTrue);
+            expect(buildStepPlan.isDeclaredOutput(syntheticOutputId), isTrue);
           },
         );
 
@@ -181,7 +190,8 @@ void main() {
             expect(buildState.isSource(secondaryId), isTrue);
 
             final changes = {primaryInputId: ChangeType.REMOVE};
-            buildState.updateForNextBuild(buildPhases, changes);
+            buildState.updateForNextBuild(buildStepPlan, changes);
+            recomputeBuildStepPlan();
 
             expect(buildState.isMissingSource(primaryInputId), isTrue);
             expect(buildState.isMissingSource(primaryOutputId), isTrue);
@@ -190,8 +200,9 @@ void main() {
       });
 
       test('overlapping build phases cause an error', () async {
+        // Statically compute overlapping outputs to verify it throws
         expect(
-          () => BuildState.create(
+          () => BuildStepPlan.compute(
             buildPhases: BuildPhases(
               List.filled(
                 2,
@@ -202,7 +213,7 @@ void main() {
                 ),
               ),
             ),
-            buildPackages: fooPackageGraph,
+            placeholderIds: [],
             sources: {makeAssetId('foo|file')},
           ),
           throwsA(isA<DuplicateAssetIdException>()),
@@ -211,49 +222,44 @@ void main() {
 
       group('regression tests', () {
         test('build can chains of pre-existing to-source outputs', () async {
-          final sources = {
-            makeAssetId('foo|lib/1.txt'),
-            makeAssetId('foo|lib/2.txt'),
-            // All the following are actually old outputs.
-            makeAssetId('foo|lib/1.a.txt'),
-            makeAssetId('foo|lib/1.a.b.txt'),
-            makeAssetId('foo|lib/2.a.txt'),
-            makeAssetId('foo|lib/2.a.b.txt'),
-            makeAssetId('foo|lib/2.a.b.c.txt'),
-          };
+          final buildPhases = BuildPhases([
+            InBuildPhase(
+              builder: TestBuilder(
+                buildExtensions: replaceExtension('.txt', '.a.txt'),
+              ),
+              key: 'TestBuilder',
+              package: 'foo',
+              hideOutput: false,
+            ),
+            InBuildPhase(
+              builder: TestBuilder(
+                buildExtensions: replaceExtension('.txt', '.b.txt'),
+              ),
+              key: 'TestBuilder',
+              package: 'foo',
+              hideOutput: false,
+            ),
+            InBuildPhase(
+              builder: TestBuilder(
+                buildExtensions: replaceExtension('.a.b.txt', '.a.b.c.txt'),
+              ),
+              key: 'TestBuilder',
+              package: 'foo',
+              hideOutput: false,
+            ),
+          ]);
 
-          final buildState = BuildState.create(
-            buildPhases: BuildPhases([
-              InBuildPhase(
-                builder: TestBuilder(
-                  buildExtensions: replaceExtension('.txt', '.a.txt'),
-                ),
-                key: 'TestBuilder',
-                package: 'foo',
-                hideOutput: false,
-              ),
-              InBuildPhase(
-                builder: TestBuilder(
-                  buildExtensions: replaceExtension('.txt', '.b.txt'),
-                ),
-                key: 'TestBuilder',
-                package: 'foo',
-                hideOutput: false,
-              ),
-              InBuildPhase(
-                builder: TestBuilder(
-                  buildExtensions: replaceExtension('.a.b.txt', '.a.b.c.txt'),
-                ),
-                key: 'TestBuilder',
-                package: 'foo',
-                hideOutput: false,
-              ),
-            ]),
-            buildPackages: fooPackageGraph,
-            sources: sources,
+          final buildStepPlan = BuildStepPlan.compute(
+            buildPhases: buildPhases,
+            placeholderIds: [],
+            sources: {
+              makeAssetId('foo|lib/1.txt'),
+              makeAssetId('foo|lib/2.txt'),
+            },
           );
+
           expect(
-            buildState.declaredAndActualOutputs,
+            buildStepPlan.declaredOutputs,
             unorderedEquals([
               makeAssetId('foo|lib/1.a.txt'),
               makeAssetId('foo|lib/1.b.txt'),
@@ -265,41 +271,39 @@ void main() {
               makeAssetId('foo|lib/2.a.b.c.txt'),
             ]),
           );
-          expect(
-            buildState.sources,
-            unorderedEquals([
-              makeAssetId('foo|lib/1.txt'),
-              makeAssetId('foo|lib/2.txt'),
-            ]),
-          );
         });
 
         test('allows running on generated inputs that do not match target '
             'source globs', () async {
           final sources = {makeAssetId('foo|lib/1.txt')};
-          final buildState = BuildState.create(
-            buildPhases: BuildPhases([
-              InBuildPhase(
-                builder: TestBuilder(
-                  buildExtensions: appendExtension('.1', from: '.txt'),
-                ),
-                key: 'TestBuilder',
-                package: 'foo',
+          final buildPhases = BuildPhases([
+            InBuildPhase(
+              builder: TestBuilder(
+                buildExtensions: appendExtension('.1', from: '.txt'),
               ),
-              InBuildPhase(
-                builder: TestBuilder(
-                  buildExtensions: appendExtension('.2', from: '.1'),
-                ),
-                key: 'TestBuilder',
-                package: 'foo',
-                targetSources: const InputSet(include: ['lib/*.txt']),
+              key: 'TestBuilder',
+              package: 'foo',
+            ),
+            InBuildPhase(
+              builder: TestBuilder(
+                buildExtensions: appendExtension('.2', from: '.1'),
               ),
-            ]),
-            buildPackages: fooPackageGraph,
+              key: 'TestBuilder',
+              package: 'foo',
+              targetSources: const InputSet(include: ['lib/*.txt']),
+            ),
+          ]);
+
+          final computed = BuildStepPlan.compute(
+            buildPhases: buildPhases,
+            placeholderIds: [],
             sources: sources,
           );
+          final buildStepsByDeclaredOutput =
+              computed.buildStepsByDeclaredOutput;
+
           expect(
-            buildState.declaredAndActualOutputs,
+            buildStepsByDeclaredOutput.keys,
             unorderedEquals([
               makeAssetId('foo|lib/1.txt.1'),
               makeAssetId('foo|lib/1.txt.1.2'),
@@ -328,12 +332,11 @@ void main() {
               package: 'a',
             ),
           ]);
-          final buildPackages = BuildPackages.singlePackageBuild('a', {
-            BuildPackage.forTesting(name: 'a', isOutput: true),
-          });
-          final buildState = BuildState.create(
+          final buildState = BuildState.create(sources: {source});
+
+          final computed = BuildStepPlan.compute(
             buildPhases: buildPhases,
-            buildPackages: buildPackages,
+            placeholderIds: [],
             sources: {source},
           );
 
@@ -352,7 +355,7 @@ void main() {
 
           expect(buildState.isSource(source), isTrue);
 
-          buildState.updateForNextBuild(buildPhases, {
+          buildState.updateForNextBuild(computed, {
             renamedSource: ChangeType.ADD,
             source: ChangeType.REMOVE,
           });
@@ -361,6 +364,77 @@ void main() {
           expect(buildState.isMissingSource(generatedPart), isTrue);
         });
       });
+    });
+  });
+
+  group('BuildStepPlan.transitiveDeclaredOutputsOf', () {
+    late BuildStepPlan plan;
+
+    setUp(() {
+      plan = BuildStepPlan((builder) => builder..buildPhases = BuildPhases([]));
+    });
+
+    test('empty plan', () {
+      expect(plan.transitiveDeclaredOutputsOf([]), isEmpty);
+      expect(plan.transitiveDeclaredOutputsOf([makeAssetId('foo|a')]), {
+        makeAssetId('foo|a'),
+      });
+    });
+
+    test('chain: a -> b -> c', () {
+      final a = makeAssetId('foo|a');
+      final b = makeAssetId('foo|b');
+      final c = makeAssetId('foo|c');
+      plan = BuildStepPlan(
+        (builder) =>
+            builder
+              ..buildPhases = BuildPhases([])
+              ..declaredOutputsByPrimaryInput.addValues(a, [b])
+              ..declaredOutputsByPrimaryInput.addValues(b, [c]),
+      );
+
+      expect(plan.transitiveDeclaredOutputsOf([a]), unorderedEquals({a, b, c}));
+      expect(plan.transitiveDeclaredOutputsOf([b]), unorderedEquals({b, c}));
+      expect(plan.transitiveDeclaredOutputsOf([c]), unorderedEquals({c}));
+    });
+
+    test('diamond: a -> b, c; b -> d; c -> d', () {
+      final a = makeAssetId('foo|a');
+      final b = makeAssetId('foo|b');
+      final c = makeAssetId('foo|c');
+      final d = makeAssetId('foo|d');
+      plan = BuildStepPlan(
+        (builder) =>
+            builder
+              ..buildPhases = BuildPhases([])
+              ..declaredOutputsByPrimaryInput.addValues(a, [b, c])
+              ..declaredOutputsByPrimaryInput.addValues(b, [d])
+              ..declaredOutputsByPrimaryInput.addValues(c, [d]),
+      );
+
+      expect(
+        plan.transitiveDeclaredOutputsOf([a]),
+        unorderedEquals({a, b, c, d}),
+      );
+    });
+
+    test('multiple inputs', () {
+      final a = makeAssetId('foo|a');
+      final b = makeAssetId('foo|b');
+      final c = makeAssetId('foo|c');
+      final d = makeAssetId('foo|d');
+      plan = BuildStepPlan(
+        (builder) =>
+            builder
+              ..buildPhases = BuildPhases([])
+              ..declaredOutputsByPrimaryInput.addValues(a, [b])
+              ..declaredOutputsByPrimaryInput.addValues(c, [d]),
+      );
+
+      expect(
+        plan.transitiveDeclaredOutputsOf([a, c]),
+        unorderedEquals({a, b, c, d}),
+      );
     });
   });
 }

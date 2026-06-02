@@ -13,6 +13,7 @@ import 'package:watcher/watcher.dart';
 import '../build/build_state/build_state.dart';
 import '../build_plan/build_configs.dart';
 import '../build_plan/build_packages.dart';
+import '../build_plan/build_step_plan.dart';
 import '../build_plan/build_target.dart';
 import '../constants.dart';
 import '../logging/timed_activities.dart';
@@ -27,11 +28,23 @@ class AssetTracker {
   AssetTracker(this._readerWriter, this._buildPackages, this._buildConfigs);
 
   /// Checks for and returns any file system changes compared to the current
-  /// build state.
-  Future<Map<AssetId, ChangeType>> collectChanges(BuildState buildState) async {
+  /// build step plan and build state.
+  Future<Map<AssetId, ChangeType>> collectChanges({
+    required BuildStepPlan buildStepPlan,
+    required BuildState buildState,
+  }) async {
     final inputSources = await findInputSources();
     final generatedSources = await findCacheDirSources();
-    return computeSourceUpdates(inputSources, generatedSources, buildState);
+    final declaredAndActualOutputs = [
+      ...buildStepPlan.declaredOutputs,
+      ...buildState.actualPostOutputs,
+    ];
+    return computeSourceUpdates(
+      inputSources,
+      generatedSources,
+      buildState,
+      declaredAndActualOutputs,
+    );
   }
 
   /// Returns the all the sources found in the cache directory.
@@ -55,6 +68,7 @@ class AssetTracker {
     Set<AssetId> inputSources,
     Set<AssetId> generatedSources,
     BuildState buildState,
+    Iterable<AssetId> declaredAndActualOutputs,
   ) async {
     final allSources =
         <AssetId>{}
@@ -70,9 +84,7 @@ class AssetTracker {
     final newSources = inputSources.difference(buildState.sources.toSet());
     addUpdates(newSources, ChangeType.ADD);
     final removedAssets = [
-      for (final id in buildState.sources.followedBy(
-        buildState.declaredAndActualOutputs,
-      ))
+      for (final id in buildState.sources.followedBy(declaredAndActualOutputs))
         if (!allSources.contains(id)) id,
     ];
 

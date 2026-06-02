@@ -105,22 +105,30 @@ void main() {
         buildPlan: buildPlan,
         readerWriter: readerWriter,
         buildState: buildState,
-        processedOutputs: buildState.declaredAndActualOutputs.toSet(),
+        processedOutputs: <AssetId>{
+          ...buildPlan.buildStepPlan.declaredOutputs,
+          ...buildState.actualPostOutputs,
+        },
       );
 
-      for (final id in buildState.declaredAndActualOutputs) {
+      for (final id in [
+        ...buildPlan.buildStepPlan.declaredOutputs,
+        ...buildState.actualPostOutputs,
+      ]) {
         final stepResult = BuildStepResult((b) {
           b.result = true;
           b.isHidden = false;
           b.outputs[id] = Digest([]);
         });
         buildState.updateBuildStepResult(
-          buildState.stepForDeclaredOutput(id),
+          buildPlan.buildStepPlan.stepForDeclaredOutput(id),
           stepResult,
         );
         readerWriter.testing.writeString(
           id,
-          sources[buildState.stepForDeclaredOutput(id).primaryInput]!,
+          sources[buildPlan.buildStepPlan
+              .stepForDeclaredOutput(id)
+              .primaryInput]!,
         );
       }
       tmpDir = await Directory.systemTemp.createTemp('build_tests');
@@ -371,7 +379,7 @@ void main() {
         b.isHidden = false;
       });
       buildState.updateBuildStepResult(
-        buildState.stepForDeclaredOutput(targetId),
+        buildPlan.buildStepPlan.stepForDeclaredOutput(targetId),
         stepResult,
       );
 
@@ -398,7 +406,10 @@ void main() {
         ),
         readerWriter: readerWriter,
         buildState: buildState,
-        processedOutputs: buildState.declaredAndActualOutputs.toSet(),
+        processedOutputs: <AssetId>{
+          ...buildPlan.buildStepPlan.declaredOutputs,
+          ...buildState.actualPostOutputs,
+        },
       );
       final success = await createMergedOutputDirectories(
         buildDirs:
@@ -486,7 +497,10 @@ void main() {
           buildPlan: buildPlan,
           readerWriter: readerWriter,
           buildState: buildState,
-          processedOutputs: buildState.declaredAndActualOutputs.toSet(),
+          processedOutputs: <AssetId>{
+            ...buildPlan.buildStepPlan.declaredOutputs,
+            ...buildState.actualPostOutputs,
+          },
         );
         success = await createMergedOutputDirectories(
           buildDirs:

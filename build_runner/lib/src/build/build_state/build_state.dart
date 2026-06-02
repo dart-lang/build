@@ -11,14 +11,10 @@ import 'package:meta/meta.dart';
 import 'package:watcher/watcher.dart';
 
 import '../../build_plan/build_packages.dart';
-import '../../build_plan/build_phases.dart';
-import '../../build_plan/phase.dart';
+import '../../build_plan/build_step_plan.dart';
 import '../../build_plan/placeholders.dart';
-import '../../constants.dart';
-import '../../io/generated_asset_hider.dart';
 import 'build_step_id.dart';
 import 'build_step_result.dart';
-import 'exceptions.dart';
 import 'glob_id.dart';
 import 'glob_result.dart';
 import 'post_process_build_step_id.dart';
@@ -32,22 +28,14 @@ part 'serialization.dart';
 /// follow-on incremental build.
 ///
 /// - Sources and their digests; missing sources.
-/// - Planned build steps, updated with results as the build progresses,
-///   including digests of outputs and error messages.
 /// - Glob results.
 /// - Post process build step results.
-class BuildState implements GeneratedAssetHider {
+class BuildState {
   /// Sources and missing sources.
   final Sources _sources;
 
   /// All standard build step execution results by [AssetId] then phase number.
   final Map<AssetId, Map<int, BuildStepResult>> _buildStepResultsByPrimaryInput;
-
-  /// Declared outputs by primary input.
-  final Map<AssetId, Set<AssetId>> _declaredOutputsByPrimaryInput;
-
-  /// Build steps by primary output declared.
-  final Map<AssetId, BuildStepId> _buildStepsByDeclaredOutput;
 
   /// Globs evaluated during the build.
   final Map<GlobId, GlobResult> _globResults;
@@ -65,23 +53,12 @@ class BuildState implements GeneratedAssetHider {
       _postProcessResultsByInput = {},
       _postProcessOutputs = {},
       _buildStepResultsByPrimaryInput = {},
-      _declaredOutputsByPrimaryInput = {},
-      _globResults = {},
-      _buildStepsByDeclaredOutput = {};
+      _globResults = {};
 
-  /// Creates from build phases, sources and packages.
-  factory BuildState.create({
-    required BuildPhases buildPhases,
-    required BuildPackages buildPackages,
-    required Set<AssetId> sources,
-  }) {
+  /// Creates from sources.
+  factory BuildState.create({required Set<AssetId> sources}) {
     final result = BuildState.empty();
     result._sources.addAll(sources);
-    result._addOutputsForSources(
-      buildPhases,
-      sources,
-      placeholders: buildPackages.placeholderIds,
-    );
     return result;
   }
 
@@ -93,13 +70,9 @@ class BuildState implements GeneratedAssetHider {
     required Map<AssetId, Map<int, BuildStepResult>>
     buildStepResultsByPrimaryInput,
     required Map<GlobId, GlobResult> globResults,
-    required Map<AssetId, BuildStepId> buildStepsByDeclaredOutput,
-    required Map<AssetId, Set<AssetId>> declaredOutputsByPrimaryInput,
   }) : _postProcessOutputs = postProcessOutputs,
        _postProcessResultsByInput = postProcessResultsByInput,
        _globResults = globResults,
-       _buildStepsByDeclaredOutput = buildStepsByDeclaredOutput,
-       _declaredOutputsByPrimaryInput = declaredOutputsByPrimaryInput,
        _buildStepResultsByPrimaryInput = buildStepResultsByPrimaryInput,
        _sources = sources;
 
@@ -117,11 +90,6 @@ class BuildState implements GeneratedAssetHider {
           entry.key: Map.of(entry.value),
       },
       globResults: Map.of(_globResults),
-      buildStepsByDeclaredOutput: Map.of(_buildStepsByDeclaredOutput),
-      declaredOutputsByPrimaryInput: {
-        for (final entry in _declaredOutputsByPrimaryInput.entries)
-          entry.key: Set.of(entry.value),
-      },
     );
   }
 
@@ -136,18 +104,27 @@ class BuildState implements GeneratedAssetHider {
 
   /// Whether [id] is one of: source, declared output or actual post process
   /// output.
-  bool isFile(AssetId id) =>
-      isSource(id) || isDeclaredOutput(id) || isActualPostOutput(id);
+  bool isFile({required BuildStepPlan? buildStepPlan, required AssetId id}) =>
+      isSource(id) ||
+      buildStepPlan?.isDeclaredOutput(id) == true ||
+      isActualPostOutput(id);
 
   /// Files that are in [package] and match [glob].
   ///
-  /// Checks sources and declared outputs. The declared outputs that match might
-  /// not exist yet if their build step hasn't run, or might never exist if it
-  /// runs but decides not to output them.
+  /// To match declared outputs as well as sources, pass `buildStepPlan`. The
+  /// declared outputs that match might not exist yet if their build step hasn't
+  /// run, or might never exist if it runs but decides not to output them.
   ///
   /// Does not match post process outputs.
-  Iterable<AssetId> findFiles({required String package, Glob? glob}) =>
-      _sources.findFiles(package, declaredOutputs, glob: glob);
+  Iterable<AssetId> findFiles({
+    required String package,
+    required BuildStepPlan? buildStepPlan,
+    Glob? glob,
+  }) => _sources.findFiles(
+    package,
+    buildStepPlan?.declaredOutputs ?? const [],
+    glob: glob,
+  );
 
   /// Sources.
   ///
@@ -167,57 +144,32 @@ class BuildState implements GeneratedAssetHider {
   /// Whether [id] is a source file that was accessed but did not exist.
   bool isMissingSource(AssetId id) => _sources.isMissingSource(id);
 
-  /// Declared build outputs.
-  Iterable<AssetId> get declaredOutputs => _buildStepsByDeclaredOutput.keys;
-
-  /// Whether [id] is a declared build output.
-  bool isDeclaredOutput(AssetId id) =>
-      _buildStepsByDeclaredOutput.containsKey(id);
-
-  /// Declared outputs of [id].
-  Iterable<AssetId> declaredOutputsOf(AssetId id) =>
-      _declaredOutputsByPrimaryInput[id] ?? const [];
-
-  /// All the build steps for [phase].
-  Iterable<BuildStepId> buildStepsForPhase(String package, int phase) {
-    final results = <BuildStepId>[];
-    for (final entry in _buildStepResultsByPrimaryInput.entries) {
-      final primaryInput = entry.key;
-      if (primaryInput.package != package) continue;
-      if (entry.value.containsKey(phase)) {
-        results.add(
-          BuildStepId(primaryInput: primaryInput, phaseNumber: phase),
-        );
-      }
-    }
-    return results;
-  }
-
-  /// Declared outputs and the phase in which they will be output.
-  Map<AssetId, int> get declaredOutputPhases => {
-    for (final entry in _buildStepsByDeclaredOutput.entries)
-      entry.key: entry.value.phaseNumber,
-  };
-
   /// Actual build step outputs.
   ///
-  /// A subset of [declaredOutputs].
+  /// A subset of the declared outputs.
   Iterable<AssetId> get actualOutputs => _buildStepResultsByPrimaryInput.values
       .expand((map) => map.values.expand((result) => result.outputs.keys));
 
   /// Whether [id] is a declared build output that was actually generated.
-  bool isActualOutput(AssetId id) {
-    final buildStepId = _buildStepsByDeclaredOutput[id];
+  bool isActualOutput({
+    required BuildStepPlan buildStepPlan,
+    required AssetId id,
+  }) {
+    final buildStepId = buildStepPlan.stepForDeclaredOutputOrNull(id);
     if (buildStepId == null) return false;
-    return stepResult(buildStepId).outputs.containsKey(id);
+    return stepResultOrNull(buildStepId)?.outputs.containsKey(id) ?? false;
   }
 
   /// Whether [id] is a declared build output that was actually generated by
   /// a build step that succeeded.
-  bool isActualSuccessfulOutput(AssetId id) {
-    final step = _buildStepsByDeclaredOutput[id];
+  bool isActualSuccessfulOutput({
+    required BuildStepPlan buildStepPlan,
+    required AssetId id,
+  }) {
+    final step = buildStepPlan.stepForDeclaredOutputOrNull(id);
     if (step == null) return false;
-    final stepResult = this.stepResult(step);
+    final stepResult = stepResultOrNull(step);
+    if (stepResult == null) return false;
     return stepResult.succeeded && stepResult.outputs.containsKey(id);
   }
 
@@ -230,12 +182,6 @@ class BuildState implements GeneratedAssetHider {
 
   /// Whether [id] is a post process build output that was actually generated.
   bool isActualPostOutput(AssetId id) => _postProcessOutputs.contains(id);
-
-  /// All declared outputs and all post process outputs.
-  Iterable<AssetId> get declaredAndActualOutputs => [
-    ..._buildStepsByDeclaredOutput.keys,
-    ...actualPostOutputs,
-  ];
 
   // -- Digests.
 
@@ -251,12 +197,11 @@ class BuildState implements GeneratedAssetHider {
   ///
   /// Otherwise, returns `null`. In particular, post process outputs don't have
   /// their digests stored.
-  Digest? digestOf(AssetId id) {
+  Digest? digestOf({BuildStepPlan? buildStepPlan, required AssetId id}) {
     if (isSource(id)) return _sources.digestOfSource(id);
-    if (isDeclaredOutput(id)) {
-      return stepResult(stepForDeclaredOutput(id)).outputs[id];
-    }
-    return null;
+    final step = buildStepPlan?.stepForDeclaredOutputOrNull(id);
+    if (step == null) return null;
+    return stepResultOrNull(step)?.outputs[id];
   }
 
   /// The digest of source [id], or `null` if it has not been read.
@@ -274,14 +219,15 @@ class BuildState implements GeneratedAssetHider {
 
   // -- Build steps.
 
-  /// The build step that declared [id].
-  BuildStepId stepForDeclaredOutput(AssetId id) =>
-      _buildStepsByDeclaredOutput[id]!;
-
   /// The result of [buildStep].
   BuildStepResult stepResult(BuildStepId buildStep) =>
-      _buildStepResultsByPrimaryInput[buildStep.primaryInput]![buildStep
-          .phaseNumber]!;
+      stepResultOrNull(buildStep)!;
+
+  /// The result of [buildStep], or `null` if it is not a known step or there is
+  /// no result yet.
+  BuildStepResult? stepResultOrNull(BuildStepId buildStep) =>
+      _buildStepResultsByPrimaryInput[buildStep.primaryInput]?[buildStep
+          .phaseNumber];
 
   /// Updates a build step result after the step runs.
   void updateBuildStepResult(BuildStepId buildStepId, BuildStepResult result) {
@@ -362,33 +308,6 @@ class BuildState implements GeneratedAssetHider {
     return result;
   }
 
-  // -- Build planning.
-
-  /// Returns whether [action] should run for [input].
-  bool actionMatches(BuildAction action, AssetId input) {
-    if (input.package != action.package) return false;
-    if (!action.generateFor.matches(input)) return false;
-
-    if (action is InBuildPhase) {
-      if (!action.builder.matchesInput(input)) return false;
-    } else if (action is PostBuildAction) {
-      final inputExtensions = action.builder.inputExtensions;
-      if (!inputExtensions.any(input.path.endsWith)) {
-        return false;
-      }
-    } else {
-      throw StateError('Unrecognized action type $action');
-    }
-
-    var currentInput = input;
-    while (true) {
-      final buildStep = _buildStepsByDeclaredOutput[currentInput];
-      if (buildStep == null) break;
-      currentInput = buildStep.primaryInput;
-    }
-    return action.targetSources.matches(currentInput);
-  }
-
   /// Returns outputs that were written to the source tree.
   Iterable<AssetId> outputsToDelete(BuildPackages buildPackages) {
     // Checks if `id` is in a known package. If so, returns it.
@@ -410,10 +329,14 @@ class BuildState implements GeneratedAssetHider {
 
     final result = <AssetId>[];
     // Delete all the non-hidden outputs.
-    for (final id in actualOutputs) {
-      if (!isHidden(id)) {
-        final idToDelete = checkAndMoveId(id);
-        if (idToDelete != null) result.add(idToDelete);
+    for (final map in _buildStepResultsByPrimaryInput.values) {
+      for (final stepResult in map.values) {
+        if (!stepResult.isHidden) {
+          for (final id in stepResult.outputs.keys) {
+            final idToDelete = checkAndMoveId(id);
+            if (idToDelete != null) result.add(idToDelete);
+          }
+        }
       }
     }
     for (final results in _postProcessResultsByInput.values) {
@@ -435,7 +358,7 @@ class BuildState implements GeneratedAssetHider {
   ///
   /// Returns the set of [AssetId]s to delete.
   Set<AssetId> updateForNextBuild(
-    BuildPhases buildPhases,
+    BuildStepPlan buildStepPlan,
     Map<AssetId, ChangeType> updates,
   ) {
     final newIds = <AssetId>{};
@@ -460,207 +383,26 @@ class BuildState implements GeneratedAssetHider {
     _sources.addAll(newIds);
 
     // Compute declared outputs that will no longer be output because their
-    // primary input was deleted. Delete them.
-    final transitiveRemovedIds = <AssetId>{};
-    void addTransitivePrimaryOutputs(AssetId id) {
-      if (transitiveRemovedIds.add(id)) {
-        declaredOutputsOf(id).forEach(addTransitivePrimaryOutputs);
+    // primary input was deleted. Mark them as missing sources, allowing them
+    // to remain referenced in `inputs` in order to trigger rebuilds.
+    final sourcesToRemove = removeIds.where(isSource).toList();
+    final transitiveRemovedIds = buildStepPlan.transitiveDeclaredOutputsOf(
+      sourcesToRemove,
+    );
+
+    for (final id in transitiveRemovedIds) {
+      _sources.setMissing(id);
+      final postProcessResults = _postProcessResultsByInput.remove(id);
+      if (postProcessResults != null) {
+        for (final result in postProcessResults.values) {
+          _postProcessOutputs.removeAll(result.outputs);
+        }
       }
     }
-
-    for (final id in removeIds) {
-      if (isSource(id)) {
-        addTransitivePrimaryOutputs(id);
-      }
-    }
-
-    // Change deleted source assets and their transitive declared outputs to
-    // missing sources, rather than deleting them. This allows them to remain
-    // referenced in `inputs` in order to trigger rebuilds if necessary.
-    for (final id in removeIds) {
-      if (isSource(id)) {
-        _setMissingRecursive(id);
-      }
-    }
-
-    _addOutputsForSources(buildPhases, newIds);
 
     _sources.clearComputationResults();
     transitiveRemovedIds.removeAll(removeIds);
     return transitiveRemovedIds;
-  }
-
-  /// Changes [id] and its transitive primary outputs to missing sources.
-  ///
-  /// Removes post build applications with removed assets as inputs.
-  void _setMissingRecursive(AssetId id, {Set<AssetId>? removedIds}) {
-    removedIds ??= <AssetId>{};
-    removedIds.add(id);
-    for (final output in declaredOutputsOf(id).toList()) {
-      _setMissingRecursive(output, removedIds: removedIds);
-    }
-    _buildStepsByDeclaredOutput.remove(id);
-    _declaredOutputsByPrimaryInput.remove(id);
-    _sources.setMissing(id);
-
-    // Remove post build action applications with removed assets as inputs.
-    final postProcessResults = _postProcessResultsByInput.remove(id);
-    if (postProcessResults != null) {
-      for (final result in postProcessResults.values) {
-        _postProcessOutputs.removeAll(result.outputs);
-      }
-    }
-  }
-
-  /// Removes [id] and its transitive declared outputs.
-  void _removeRecursive(AssetId id, {Set<AssetId>? removedIds}) {
-    removedIds ??= <AssetId>{};
-    if (removedIds.add(id)) {
-      for (final output in declaredOutputsOf(id).toList()) {
-        _removeRecursive(output, removedIds: removedIds);
-      }
-      _sources.remove(id);
-      _buildStepsByDeclaredOutput.remove(id);
-      _declaredOutputsByPrimaryInput.remove(id);
-      _buildStepResultsByPrimaryInput.remove(id);
-    }
-  }
-
-  /// Adds outputs for [newSources] and optionally [placeholders].
-  ///
-  /// If a source now clashes with an output, it means an old generated output
-  /// was incorrectly treated as a source. Clean that up: remove any outputs
-  /// that were added because the output was treated as a source.
-  void _addOutputsForSources(
-    BuildPhases buildPhases,
-    Set<AssetId> newSources, {
-    Iterable<AssetId>? placeholders,
-  }) {
-    final allInputs = Set<AssetId>.from(newSources);
-    if (placeholders != null) allInputs.addAll(placeholders);
-    for (
-      var phaseNum = 0;
-      phaseNum < buildPhases.inBuildPhases.length;
-      phaseNum++
-    ) {
-      allInputs.addAll(
-        _addInBuildPhaseOutputs(
-          buildPhases.inBuildPhases[phaseNum],
-          phaseNum,
-          allInputs,
-          buildPhases,
-        ),
-      );
-    }
-  }
-
-  /// Adds all generated asset outputs for [phase] given [allInputs].
-  ///
-  /// Removes ids from [allInputs] if they are recognized as outputs of the
-  /// phase.
-  ///
-  /// Returns all newly created asset ids.
-  Set<AssetId> _addInBuildPhaseOutputs(
-    InBuildPhase phase,
-    int phaseNum,
-    Set<AssetId> allInputs,
-    BuildPhases buildPhases,
-  ) {
-    final phaseOutputs = <AssetId>{};
-    final inputs =
-        allInputs.where((input) => actionMatches(phase, input)).toList();
-    for (final input in inputs) {
-      // We might have deleted some inputs during this loop, if they turned
-      // out to be generated assets.
-      if (!allInputs.contains(input)) continue;
-      final outputs = expectedOutputs(phase.builder, input);
-      phaseOutputs.addAll(outputs);
-      _declaredOutputsByPrimaryInput
-          .putIfAbsent(input, () => {})
-          .addAll(outputs);
-      final deleted = _addGeneratedOutputs(
-        outputs,
-        phaseNum,
-        buildPhases,
-        primaryInput: input,
-        isHidden: phase.hideOutput,
-      );
-      allInputs.removeAll(deleted);
-      // We may delete sources that were producing outputs previously.
-      // Detect this by checking for deleted files that are no longer declared
-      // outputs, and remove them from `phaseOutputs`.
-      phaseOutputs.removeAll(deleted.where((id) => !isDeclaredOutput(id)));
-    }
-    return phaseOutputs;
-  }
-
-  /// Adds [outputs] to the state.
-  ///
-  /// If there are existing source or missing sources that match outputs,
-  /// replace them with outputs and remove incorrect transitive outputs.
-  ///
-  /// The return value is the set of assets that were removed from the
-  /// build state.
-  Set<AssetId> _addGeneratedOutputs(
-    Iterable<AssetId> outputs,
-    int phaseNumber,
-    BuildPhases buildPhases, {
-    required AssetId primaryInput,
-    required bool isHidden,
-  }) {
-    final buildStepId = BuildStepId(
-      primaryInput: primaryInput,
-      phaseNumber: phaseNumber,
-    );
-    final existingResults = _buildStepResultsByPrimaryInput[primaryInput];
-    final existingResult = existingResults?[phaseNumber];
-    final buildStepResultBuilder =
-        existingResult?.toBuilder() ?? BuildStepResultBuilder();
-    buildStepResultBuilder.isHidden = isHidden;
-    _buildStepResultsByPrimaryInput.putIfAbsent(
-          primaryInput,
-          () => {},
-        )[phaseNumber] =
-        buildStepResultBuilder.build();
-
-    final removed = <AssetId>{};
-    for (final output in outputs) {
-      if (isSource(output)) {
-        // An old generated source was picked up as a source file. Remove it and
-        // its outputs.
-        _removeRecursive(output, removedIds: removed);
-      } else if (isDeclaredOutput(output)) {
-        // The output was already declared by another builder.
-        final buildStep = _buildStepsByDeclaredOutput[output]!;
-        final existingPhase = buildStep.phaseNumber;
-        throw DuplicateAssetIdException(
-          output,
-          buildPhases.inBuildPhases[existingPhase].displayName,
-          buildPhases.inBuildPhases[phaseNumber].displayName,
-        );
-      }
-
-      _buildStepsByDeclaredOutput[output] = buildStepId;
-    }
-    return removed;
-  }
-
-  // -- GeneratedAssetHider implementation.
-
-  @override
-  bool isHidden(AssetId id) {
-    if (id.path.startsWith(generatedOutputDirectory) ||
-        id.path.startsWith(cacheDirectoryPath)) {
-      return false;
-    }
-    if (!isDeclaredOutput(id)) {
-      return false;
-    }
-    final buildStepId = _buildStepsByDeclaredOutput[id];
-    if (buildStepId != null) {
-      return stepResult(buildStepId).isHidden;
-    }
-    return false;
   }
 
   // -- Testing.
@@ -668,36 +410,4 @@ class BuildState implements GeneratedAssetHider {
   @visibleForTesting
   void addSourceForTest(AssetId id, {Digest? digest}) =>
       _sources.add(id, digest: digest);
-
-  @visibleForTesting
-  void addGeneratedForTest(
-    AssetId id,
-    BuildStepId buildStepId, {
-    bool isHidden = true,
-    Digest? digest,
-  }) {
-    _buildStepsByDeclaredOutput[id] = buildStepId;
-    final primaryInput = buildStepId.primaryInput;
-    final phaseNumber = buildStepId.phaseNumber;
-    final existingResults = _buildStepResultsByPrimaryInput[primaryInput];
-    final existingResult = existingResults?[phaseNumber];
-    if (existingResult == null) {
-      _buildStepResultsByPrimaryInput.putIfAbsent(
-        primaryInput,
-        () => {},
-      )[phaseNumber] = BuildStepResult((b) {
-        b.isHidden = isHidden;
-        if (digest != null) {
-          b.outputs[id] = digest;
-        }
-      });
-    } else {
-      if (digest != null) {
-        _buildStepResultsByPrimaryInput.putIfAbsent(
-          primaryInput,
-          () => {},
-        )[phaseNumber] = existingResult.rebuild((b) => b..outputs[id] = digest);
-      }
-    }
-  }
 }

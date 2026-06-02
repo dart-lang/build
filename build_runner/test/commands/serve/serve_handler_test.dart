@@ -17,11 +17,12 @@ import 'package:build_runner/src/build/build_state/post_process_build_step_resul
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
+import 'package:build_runner/src/build_plan/build_step_plan.dart';
+import 'package:build_runner/src/build_plan/phase.dart';
 import 'package:build_runner/src/commands/serve/server.dart';
 import 'package:build_runner/src/commands/watch/watcher.dart';
 import 'package:build_runner/src/io/build_output_reader.dart';
 import 'package:built_collection/built_collection.dart';
-import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 import 'package:stream_channel/stream_channel.dart';
@@ -110,6 +111,7 @@ void main() {
   late BuildPackages buildPackages;
   late BuildState buildState;
   late BuildOutputReader finalizedReader;
+  late BuildStepPlan buildStepPlan;
 
   setUp(() async {
     buildPackages = BuildPackages.singlePackageBuild('a', [
@@ -118,16 +120,17 @@ void main() {
     readerWriter = InternalTestReaderWriter(
       outputRootPackage: buildPackages.outputRoot,
     );
-    buildState = BuildState.create(
-      buildPhases: BuildPhases([]),
-      buildPackages: buildPackages,
-      sources: <AssetId>{},
-    );
+    buildState = BuildState.create(sources: <AssetId>{});
     watcher = FakeWatcher(buildPackages);
     serveHandler = ServeHandler(watcher);
-    finalizedReader = BuildOutputReader.graphOnly(
+    buildStepPlan = BuildStepPlan(
+      (BuildStepPlanBuilder b) =>
+          b..buildPhases = BuildPhases(const <InBuildPhase>[]),
+    );
+    finalizedReader = BuildOutputReader.buildStateOnly(
       readerWriter: readerWriter,
       buildState: buildState,
+      buildStepPlan: buildStepPlan,
     );
     watcher.addFutureResult(
       Future.value(
@@ -258,7 +261,18 @@ void main() {
       final primaryId = AssetId('a', 'web/main.dart');
       final outputId = AssetId('a', 'web/main.ddc.js');
       final buildStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
-      buildState.addGeneratedForTest(outputId, buildStepId, digest: Digest([]));
+
+      final buildStepPlan = BuildStepPlan((BuildStepPlanBuilder b) {
+        b.buildPhases = BuildPhases(const <InBuildPhase>[]);
+        b.buildStepsByDeclaredOutput.addAll({outputId: buildStepId});
+      });
+
+      finalizedReader = BuildOutputReader.buildStateOnly(
+        readerWriter: readerWriter,
+        buildState: buildState,
+        buildStepPlan: buildStepPlan,
+      );
+
       final stepResult = BuildStepResult((b) {
         b.result = false;
         b.isHidden = false;

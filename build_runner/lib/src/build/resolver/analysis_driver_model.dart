@@ -10,7 +10,6 @@ import 'package:build/build.dart';
 import 'package:pool/pool.dart';
 
 import '../../logging/timed_activities.dart';
-import '../build_state/build_state.dart';
 import '../input_tracker.dart';
 import '../library_cycle_graph/asset_deps_loader.dart';
 import '../library_cycle_graph/library_cycle_graph.dart';
@@ -43,16 +42,16 @@ class AnalysisDriverModel {
   /// [filesystem].
   final Set<LibraryCycleGraph> _syncedLibraryCycleGraphs = Set.identity();
 
-  /// Starts a build with [buildState].
+  /// Starts a build with [declaredOutputPhases].
   ///
   /// If another build has the lock, waits for it to finish.
   Future<void> takeLockAndStartBuild(
-    BuildState buildState, {
+    Map<AssetId, int> declaredOutputPhases, {
     required Set<AssetId>? invalidatedSources,
   }) async {
     _lock = await _pool.request();
     filesystem.startBuild(
-      buildState.declaredOutputPhases,
+      declaredOutputPhases,
       invalidatedSources: invalidatedSources,
     );
   }

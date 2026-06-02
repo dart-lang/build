@@ -12,6 +12,7 @@ import 'package:path/path.dart' as p;
 
 import '../build/build_state/build_state.dart';
 import '../build_plan/build_plan.dart';
+import '../build_plan/build_step_plan.dart';
 import 'reader_writer.dart';
 
 /// A view of the build output.
@@ -23,6 +24,7 @@ import 'reader_writer.dart';
 /// they exist on disk from a previous build.
 class BuildOutputReader {
   final BuildPlan? _buildPlan;
+  final BuildStepPlan? _buildStepPlan;
   final BuildState? _buildState;
   final Set<AssetId>? _processedOutputs;
   final ReaderWriter? _readerWriter;
@@ -34,16 +36,19 @@ class BuildOutputReader {
   BuildOutputReader.empty()
     : _buildState = null,
       _buildPlan = null,
+      _buildStepPlan = null,
       _readerWriter = null,
       _processedOutputs = null;
 
   /// For testing: a build output that does not check build phases to determine
   /// whether outputs were required.
   @visibleForTesting
-  BuildOutputReader.graphOnly({
+  BuildOutputReader.buildStateOnly({
     required ReaderWriter readerWriter,
     required BuildState buildState,
+    BuildStepPlan? buildStepPlan,
   }) : _buildPlan = null,
+       _buildStepPlan = buildStepPlan,
        _buildState = buildState,
        _readerWriter = readerWriter,
        _processedOutputs = null;
@@ -61,6 +66,7 @@ class BuildOutputReader {
   }) : _readerWriter = readerWriter,
        _buildState = buildState,
        _buildPlan = buildPlan,
+       _buildStepPlan = buildPlan.buildStepPlan,
        _processedOutputs = processedOutputs;
 
   Set<AssetId> _collectAssetsDeletedByPostProcessBuilders() =>
@@ -71,19 +77,19 @@ class BuildOutputReader {
     if (_buildState == null || _readerWriter == null) {
       return UnreadableReason.notFound;
     }
-    if (!_buildState.isFile(id)) {
+    if (!_isFile(id)) {
       return UnreadableReason.notFound;
     }
     if (_assetsDeletedByPostProcessBuilders.contains(id)) {
       return UnreadableReason.deleted;
     }
-    if (!_buildState.isFile(id)) return UnreadableReason.assetType;
+    if (!_isFile(id)) return UnreadableReason.assetType;
 
     if (_buildState.isActualPostOutput(id)) {
       return null;
     }
-    if (_buildState.isDeclaredOutput(id)) {
-      final step = _buildState.stepForDeclaredOutput(id);
+    final step = _buildStepPlan?.stepForDeclaredOutputOrNull(id);
+    if (step != null) {
       if (_processedOutputs?.contains(id) == false) {
         // The generated output was not considered for building because its
         // transitive input(s) did not match build dirs and/or build filters.
@@ -93,7 +99,9 @@ class BuildOutputReader {
       if (stepResult.failed) {
         return UnreadableReason.failed;
       }
-      if (!_buildState.isActualOutput(id)) return UnreadableReason.notOutput;
+      if (!_buildState.isActualOutput(buildStepPlan: _buildStepPlan!, id: id)) {
+        return UnreadableReason.notOutput;
+      }
 
       // No need to explicitly check readability for generated files, their
       // readability is recorded in the build state.
@@ -126,7 +134,11 @@ class BuildOutputReader {
 
   Stream<AssetId> findAssets(Glob glob, {required String package}) async* {
     if (_buildState == null || _readerWriter == null) return;
-    for (final id in _buildState.findFiles(package: package, glob: glob)) {
+    for (final id in _buildState.findFiles(
+      package: package,
+      buildStepPlan: _buildStepPlan,
+      glob: glob,
+    )) {
       if (await _readerWriter.canRead(id)) {
         yield id;
       }
@@ -138,7 +150,7 @@ class BuildOutputReader {
   ///
   /// Note that [id] must exist in the asset graph.
   FutureOr<Digest> _ensureDigest(AssetId id) {
-    final digest = _buildState!.digestOf(id);
+    final digest = _buildState!.digestOf(buildStepPlan: _buildStepPlan, id: id);
     if (digest != null) return digest;
     return _readerWriter!.digest(id).then((digest) {
       _buildState.updateSourceDigest(id, digest);
@@ -156,9 +168,12 @@ class BuildOutputReader {
         result.add(id);
       }
     }
-    for (final id in buildState.declaredOutputs) {
-      if (!_shouldSkipId(buildState, id, rootDir)) {
-        result.add(id);
+    final buildStepPlan = _buildStepPlan;
+    if (buildStepPlan != null) {
+      for (final id in buildStepPlan.declaredOutputs) {
+        if (!_shouldSkipId(buildState, id, rootDir)) {
+          result.add(id);
+        }
       }
     }
     result.addAll(buildState.actualPostOutputs);
@@ -167,7 +182,7 @@ class BuildOutputReader {
 
   bool _shouldSkipId(BuildState buildState, AssetId id, String? rootDir) {
     if (_buildPlan == null) return false;
-    if (!buildState.isFile(id)) return true;
+    if (!_isFile(id)) return true;
     if (_assetsDeletedByPostProcessBuilders.contains(id)) return true;
 
     // Exclude non-lib assets if they're outside of the root directory or not
@@ -182,10 +197,12 @@ class BuildOutputReader {
     if (buildState.isActualPostOutput(id)) {
       return false;
     }
-    if (buildState.isDeclaredOutput(id)) {
-      final step = buildState.stepForDeclaredOutput(id);
-      final stepResult = buildState.stepResult(step);
-      if (!buildState.isActualOutput(id) || stepResult.failed) {
+    final step = _buildStepPlan?.stepForDeclaredOutputOrNull(id);
+    if (step != null) {
+      final stepResult = buildState.stepResultOrNull(step);
+      if (stepResult == null ||
+          !stepResult.outputs.containsKey(id) ||
+          stepResult.failed) {
         return true;
       }
       return !_processedOutputs!.contains(id);
@@ -194,6 +211,9 @@ class BuildOutputReader {
     if (id.path == '.dart_tool/package_config.json') return true;
     return false;
   }
+
+  bool _isFile(AssetId id) =>
+      _buildState!.isFile(buildStepPlan: _buildStepPlan, id: id);
 }
 
 enum UnreadableReason {

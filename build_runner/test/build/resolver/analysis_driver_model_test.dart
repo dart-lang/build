@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/resolver/analysis_driver_filesystem.dart';
 import 'package:build_runner/src/build/resolver/analysis_driver_model.dart';
 import 'package:test/test.dart';
@@ -25,10 +24,7 @@ void main() {
       model.filesystem.write('/a/lib/b.dart', 'class B {}');
       model.filesystem.clearChangedPaths();
 
-      await model.takeLockAndStartBuild(
-        BuildState.empty(),
-        invalidatedSources: null,
-      );
+      await model.takeLockAndStartBuild(const {}, invalidatedSources: null);
 
       expect(model.filesystem.exists('/a/lib/a.dart'), isFalse);
       expect(model.filesystem.exists('/a/lib/b.dart'), isFalse);
@@ -39,10 +35,7 @@ void main() {
       model.filesystem.write('/a/lib/a.dart', 'class A {}');
       model.filesystem.clearChangedPaths();
 
-      await model.takeLockAndStartBuild(
-        BuildState.empty(),
-        invalidatedSources: const {},
-      );
+      await model.takeLockAndStartBuild(const {}, invalidatedSources: const {});
 
       expect(model.filesystem.exists('/a/lib/a.dart'), isTrue);
       expect(model.filesystem.read('/a/lib/a.dart'), 'class A {}');
@@ -56,7 +49,7 @@ void main() {
       model.filesystem.clearChangedPaths();
 
       await model.takeLockAndStartBuild(
-        BuildState.empty(),
+        const {},
         invalidatedSources: {
           AssetId.parse('a|lib/changed.dart'),
           AssetId.parse('a|lib/deleted.dart'),
