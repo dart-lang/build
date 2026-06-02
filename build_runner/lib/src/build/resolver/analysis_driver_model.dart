@@ -3,11 +3,15 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 
 // ignore: implementation_imports
+import 'package:analyzer/src/dart/analysis/file_content_cache.dart';
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:build/build.dart';
 import 'package:pool/pool.dart';
+import '../library_cycle_graph/phased_value.dart';
 
 import '../../logging/timed_activities.dart';
 import '../build_state/build_state.dart';
@@ -52,7 +56,6 @@ class AnalysisDriverModel {
   }) async {
     _lock = await _pool.request();
     filesystem.startBuild(
-      buildState.declaredOutputPhases,
       invalidatedSources: invalidatedSources,
     );
   }
@@ -138,13 +141,39 @@ class AnalysisDriverModel {
       await TimedActivity.resolve.runAsync(() async {
         // Change `filesystem`'s view of the files to be at `phase`.
         final phase = phasedReader.phase;
-        filesystem.phase = phase;
+        if (filesystem.phase != phase) {
+          filesystem.phase = phase;
+          _syncedLibraryCycleGraphs.clear();
+        }
 
-        Future<void> writeToFilesystem(AssetId id) async {
+        Future<bool> writeToFilesystem(AssetId id) async {
           final content = await phasedReader.readAtPhase(id);
           if (content.exists) {
-            filesystem.writeContent(content);
+            final phasedStr = await phasedReader.readPhased(id);
+            final phasedContent = PhasedValue<FileContent>((b) {
+              for (final expVal in phasedStr.values) {
+                final str = expVal.value;
+                final isLast = expVal == phasedStr.values.last;
+                final exists = !isLast && str.isEmpty ? false : true;
+
+                final fileContent = exists
+                    ? BuildRunnerFileContent(
+                        id.asPath,
+                        true,
+                        str,
+                        base64.encode(md5.convert(utf8.encode(str)).bytes),
+                      )
+                    : BuildRunnerFileContent.missing(id.asPath);
+
+                b.values.add(ExpiringValue<FileContent>(
+                  fileContent,
+                  expiresAfter: expVal.expiresAfter,
+                ));
+              }
+            });
+            return filesystem.writePhasedContent(id.asPath, phasedContent);
           }
+          return false;
         }
 
         // For single file parsing, sync that one file.

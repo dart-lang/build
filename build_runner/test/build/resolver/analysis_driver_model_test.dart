@@ -6,6 +6,7 @@ import 'package:build/build.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/resolver/analysis_driver_filesystem.dart';
 import 'package:build_runner/src/build/resolver/analysis_driver_model.dart';
+import 'package:build_runner/src/build/library_cycle_graph/phased_value.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -76,8 +77,11 @@ void main() {
 
 extension _AnalysisDriverFilesystemExtensions on AnalysisDriverFilesystem {
   void write(String path, String content) {
-    writeContent(
-      BuildRunnerFileContent(path, true, content, content.hashCode.toString()),
+    writePhasedContent(
+      path,
+      PhasedValue.fixed(
+        BuildRunnerFileContent(path, true, content, content.hashCode.toString()),
+      ),
     );
   }
 }

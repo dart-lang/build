@@ -4,6 +4,8 @@
 
 import 'package:build/build.dart';
 import 'package:build_runner/src/build/resolver/analysis_driver_filesystem.dart';
+import 'package:build_runner/src/build/library_cycle_graph/phased_value.dart';
+import 'package:analyzer/src/dart/analysis/file_content_cache.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -51,30 +53,38 @@ void main() {
     });
 
     test('startBuild removes disappeared generated files', () {
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 1,
-      }, invalidatedSources: null);
-      filesystem.write('/a/lib/a.g.dart', 'a');
+      filesystem.startBuild(invalidatedSources: null);
+      filesystem.writePhased(
+        AssetId.parse('a|lib/a.g.dart'),
+        PhasedValue.generated(
+          BuildRunnerFileContent('/a/lib/a.g.dart', true, 'a', 'a'.hashCode.toString()),
+          atPhase: 1,
+          before: BuildRunnerFileContent.missing('/a/lib/a.g.dart'),
+        ),
+      );
       filesystem.phase = 2;
       filesystem.clearChangedPaths();
 
-      filesystem.startBuild({}, invalidatedSources: const {});
+      filesystem.startBuild(invalidatedSources: {AssetId.parse('a|lib/a.g.dart')});
 
       expect(filesystem.changedPaths, {'/a/lib/a.g.dart'});
       expect(filesystem.exists('/a/lib/a.g.dart'), false);
     });
 
     test('startBuild retains unchanged generated file contents', () {
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 1,
-      }, invalidatedSources: null);
-      filesystem.write('/a/lib/a.g.dart', 'a');
+      filesystem.startBuild(invalidatedSources: null);
+      filesystem.writePhased(
+        AssetId.parse('a|lib/a.g.dart'),
+        PhasedValue.generated(
+          BuildRunnerFileContent('/a/lib/a.g.dart', true, 'a', 'a'.hashCode.toString()),
+          atPhase: 1,
+          before: BuildRunnerFileContent.missing('/a/lib/a.g.dart'),
+        ),
+      );
       filesystem.phase = 2;
       filesystem.clearChangedPaths();
 
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 1,
-      }, invalidatedSources: const {});
+      filesystem.startBuild(invalidatedSources: const {});
 
       expect(filesystem.read('/a/lib/a.g.dart'), 'a');
       expect(filesystem.changedPaths, isEmpty);
@@ -82,34 +92,47 @@ void main() {
 
     test('write with changed generated content across builds updates file and '
         'changedPaths', () {
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 1,
-      }, invalidatedSources: null);
-      filesystem.write('/a/lib/a.g.dart', 'before');
+      filesystem.startBuild(invalidatedSources: null);
+      filesystem.writePhased(
+        AssetId.parse('a|lib/a.g.dart'),
+        PhasedValue.generated(
+          BuildRunnerFileContent('/a/lib/a.g.dart', true, 'before', 'before'.hashCode.toString()),
+          atPhase: 1,
+          before: BuildRunnerFileContent.missing('/a/lib/a.g.dart'),
+        ),
+      );
       filesystem.phase = 2;
       filesystem.clearChangedPaths();
 
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 1,
-      }, invalidatedSources: const {});
-      filesystem.write('/a/lib/a.g.dart', 'after');
+      filesystem.startBuild(invalidatedSources: const {});
+      filesystem.writePhased(
+        AssetId.parse('a|lib/a.g.dart'),
+        PhasedValue.generated(
+          BuildRunnerFileContent('/a/lib/a.g.dart', true, 'after', 'after'.hashCode.toString()),
+          atPhase: 1,
+          before: BuildRunnerFileContent.missing('/a/lib/a.g.dart'),
+        ),
+      );
 
       expect(filesystem.read('/a/lib/a.g.dart'), 'after');
       expect(filesystem.changedPaths, {'/a/lib/a.g.dart'});
     });
 
     test('initial build clears all cached contents', () {
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 1,
-      }, invalidatedSources: null);
+      filesystem.startBuild(invalidatedSources: null);
       filesystem.write('/a/lib/a.dart', 'class A {}');
-      filesystem.write('/a/lib/a.g.dart', 'generated');
+      filesystem.writePhased(
+        AssetId.parse('a|lib/a.g.dart'),
+        PhasedValue.generated(
+          BuildRunnerFileContent('/a/lib/a.g.dart', true, 'generated', 'generated'.hashCode.toString()),
+          atPhase: 1,
+          before: BuildRunnerFileContent.missing('/a/lib/a.g.dart'),
+        ),
+      );
       filesystem.phase = 2;
       filesystem.clearChangedPaths();
 
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 1,
-      }, invalidatedSources: null);
+      filesystem.startBuild(invalidatedSources: null);
 
       expect(filesystem.exists('/a/lib/a.dart'), isFalse);
       expect(filesystem.exists('/a/lib/a.g.dart'), isFalse);
@@ -122,7 +145,6 @@ void main() {
       filesystem.clearChangedPaths();
 
       filesystem.startBuild(
-        const {},
         invalidatedSources: {AssetId.parse('a|foo.txt')},
       );
 
@@ -133,29 +155,51 @@ void main() {
 
     test('startBuild reports visibility changes for retained generated '
         'files', () {
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 1,
-      }, invalidatedSources: null);
-      filesystem.write('/a/lib/a.g.dart', 'a');
+      filesystem.startBuild(invalidatedSources: null);
+      filesystem.writePhased(
+        AssetId.parse('a|lib/a.g.dart'),
+        PhasedValue.generated(
+          BuildRunnerFileContent('/a/lib/a.g.dart', true, 'a', 'a'.hashCode.toString()),
+          atPhase: 1,
+          before: BuildRunnerFileContent.missing('/a/lib/a.g.dart'),
+        ),
+      );
       filesystem.phase = 2;
       filesystem.clearChangedPaths();
 
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 3,
-      }, invalidatedSources: const {});
+      filesystem.startBuild(invalidatedSources: const {});
+      filesystem.writePhased(
+        AssetId.parse('a|lib/a.g.dart'),
+        PhasedValue.generated(
+          BuildRunnerFileContent('/a/lib/a.g.dart', true, 'a', 'a'.hashCode.toString()),
+          atPhase: 3,
+          before: BuildRunnerFileContent.missing('/a/lib/a.g.dart'),
+        ),
+      );
 
       expect(filesystem.changedPaths, {'/a/lib/a.g.dart'});
       expect(filesystem.exists('/a/lib/a.g.dart'), false);
     });
 
     test('files change by phases', () {
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 1,
-        AssetId.parse('b|lib/b.g.dart'): 2,
-      }, invalidatedSources: null);
+      filesystem.startBuild(invalidatedSources: null);
 
-      filesystem.write('/a/lib/a.g.dart', 'a');
-      filesystem.write('/b/lib/b.g.dart', 'b');
+      filesystem.writePhased(
+        AssetId.parse('a|lib/a.g.dart'),
+        PhasedValue.generated(
+          BuildRunnerFileContent('/a/lib/a.g.dart', true, 'a', 'a'.hashCode.toString()),
+          atPhase: 1,
+          before: BuildRunnerFileContent.missing('/a/lib/a.g.dart'),
+        ),
+      );
+      filesystem.writePhased(
+        AssetId.parse('b|lib/b.g.dart'),
+        PhasedValue.generated(
+          BuildRunnerFileContent('/b/lib/b.g.dart', true, 'b', 'b'.hashCode.toString()),
+          atPhase: 2,
+          before: BuildRunnerFileContent.missing('/b/lib/b.g.dart'),
+        ),
+      );
       filesystem.clearChangedPaths();
 
       expect(filesystem.exists('/a/lib/a.g.dart'), false);
@@ -183,8 +227,15 @@ void main() {
 
 extension _AnalysisDriverFilesystemExtensions on AnalysisDriverFilesystem {
   void write(String path, String content) {
-    writeContent(
-      BuildRunnerFileContent(path, true, content, content.hashCode.toString()),
+    writePhasedContent(
+      path,
+      PhasedValue.fixed(
+        BuildRunnerFileContent(path, true, content, content.hashCode.toString()),
+      ),
     );
+  }
+
+  void writePhased(AssetId id, PhasedValue<FileContent> content) {
+    writePhasedContent(id.asPath, content);
   }
 }

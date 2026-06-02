@@ -14,27 +14,17 @@ import 'package:analyzer/src/dart/analysis/file_content_cache.dart';
 import 'package:build/build.dart' hide Resource;
 import 'package:path/path.dart' as p;
 
+import '../library_cycle_graph/phased_value.dart';
+
 /// The in-memory filesystem that is the analyzer's view of the build.
-///
-/// Pass an `Iterable<AssetNode>` of generated file nodes to [startBuild] at the
-/// start of a build. This tells the filesystem at what phase each generated
-/// file becomes visible.
-///
-/// During the build, set [phase] to change the phase that the files are viewed
-/// at.
 ///
 /// Source files are added as they're needed during a build. [startBuild]
 /// manages how source and generated files are invalidated between builds.
 class AnalysisDriverFilesystem
     implements UriResolver, ResourceProvider, FileContentCache {
-  final Map<String, FileContent> _data = {};
+  final Map<String, PhasedValue<FileContent>> _phasedData = {};
   final Set<String> _changedPaths = {};
-  final Set<String> _changedPathsThisBuild = {};
-
-  // Path and phase information derived from the `Iterable<AssetNode>` for fast
-  // lookup.
-  Map<String, int> _phaseByPath = {};
-  Map<int, List<String>> _pathByPhase = {};
+  final Set<String> _syncedPathsThisBuild = {};
 
   int _phase = 0;
 
@@ -45,112 +35,101 @@ class AnalysisDriverFilesystem
 
   /// Sets the phase that the files are viewed at.
   ///
-  /// A generated file is only visible if it was generated at an earlier phase.
-  ///
   /// Records changes due to the phase change in [changedPaths].
   set phase(int phase) {
     if (phase == _phase) return;
     final previousPhase = _phase;
     _phase = phase;
 
-    for (final entry in _pathByPhase.entries) {
-      final previouslyWasVisible = previousPhase > entry.key;
-      final isVisible = phase > entry.key;
+    for (final entry in _phasedData.entries) {
+      final path = entry.key;
+      final phased = entry.value;
 
-      if (previouslyWasVisible != isVisible) {
-        _changedPaths.addAll(entry.value);
+      FileContent? prevVal;
+      try {
+        prevVal = phased.valueAt(phase: previousPhase);
+      } catch (_) {}
+
+      FileContent? newVal;
+      try {
+        newVal = phased.valueAt(phase: phase);
+      } catch (_) {}
+
+      if (prevVal?.contentHash != newVal?.contentHash) {
+        _changedPaths.add(path);
       }
     }
   }
 
-  /// Initializes a new filesystem that will have files added due to the
-  /// build described by [generatedPhases].
+  /// Initializes a new filesystem that will have files added due to the build.
   ///
   /// If [invalidatedSources] is `null`, this is an initial build and all
   /// cached contents are cleared. Otherwise, only source files matching
   /// [invalidatedSources] are removed.
-  void startBuild(
-    Map<AssetId, int> generatedPhases, {
+  void startBuild({
     required Set<AssetId>? invalidatedSources,
   }) {
-    final previousPhaseByPath = _phaseByPath;
-    _phaseByPath = <String, int>{};
-    _pathByPhase = <int, List<String>>{};
-    for (final entry in generatedPhases.entries) {
-      final phase = entry.value;
-      final idAsPath = entry.key.asPath;
-      _phaseByPath[idAsPath] = phase;
-      _pathByPhase.putIfAbsent(phase, () => []).add(idAsPath);
-    }
-
-    _changedPathsThisBuild.clear();
+    _syncedPathsThisBuild.clear();
 
     if (invalidatedSources == null) {
-      _changedPaths.addAll(_data.keys);
-      _data.clear();
+      _changedPaths.addAll(_phasedData.keys);
+      _phasedData.clear();
       return;
     }
 
     for (final id in invalidatedSources) {
       final path = id.asPath;
-      if (_data.remove(path) != null) {
-        _changedPaths.add(path);
-      }
-    }
-
-    for (final entry in previousPhaseByPath.entries) {
-      final path = entry.key;
-      final previousPhase = entry.value;
-      final nextPhase = _phaseByPath[path];
-      if (nextPhase == null) {
-        if (_data.remove(path) != null && _phase > previousPhase) {
-          _changedPaths.add(path);
-        }
-        continue;
-      }
-      if (nextPhase == previousPhase || !_data.containsKey(path)) {
-        continue;
-      }
-      final previouslyWasVisible = _phase > previousPhase;
-      final isVisible = _phase > nextPhase;
-      if (previouslyWasVisible != isVisible) {
+      if (_phasedData.remove(path) != null) {
         _changedPaths.add(path);
       }
     }
   }
 
-  /// Returns the phase of the generated file at [path] or `-1` if it's not a
-  /// generated file or not known.
-  int _phaseOf(String path) => _phaseByPath[path] ?? -1;
-
   /// Whether [path] exists.
-  bool exists(String path) =>
-      _data.containsKey(path) && _phase > _phaseOf(path);
+  bool exists(String path) {
+    final phased = _phasedData[path];
+    if (phased == null) return false;
+    try {
+      final expiring = phased.expiringValueAt(phase: _phase);
+      if (expiring.expiresAfter != null) return false;
+      return expiring.value.exists;
+    } catch (_) {
+      return false;
+    }
+  }
 
   /// Reads the data previously written to [path].
   ///
   /// Throws if ![exists].
   String read(String path) {
     if (!exists(path)) throw StateError('Read of non-existent file.');
-    return _data[path]!.content;
+    final phased = _phasedData[path];
+    if (phased == null) throw StateError('Read of non-existent file.');
+    return phased.valueAt(phase: _phase).content;
   }
 
-  /// Writes [content].
-  void writeContent(BuildRunnerFileContent content) {
-    if (!content.exists) throw ArgumentError('content must exist');
-    final path = content.path;
-    final previousContent = _data[path];
-    final isVisible = _phase > _phaseOf(path);
-    if (previousContent != null &&
-        content.contentHash == previousContent.contentHash) {
-      return;
+  /// Writes [phasedContent]. Returns true if the content was actually updated.
+  bool writePhasedContent(String path, PhasedValue<FileContent> phasedContent) {
+    final existing = _phasedData[path];
+
+    if (existing != null && _syncedPathsThisBuild.contains(path)) {
+      try {
+        final existingVal = existing.valueAt(phase: _phase);
+        final newVal = phasedContent.valueAt(phase: _phase);
+        if (existingVal != newVal) {
+          assert(false, 'Conflicting write to $path at phase $_phase: $existingVal vs $newVal');
+        }
+      } on StateError catch (_) {}
     }
 
-    _data[path] = content;
-    if (isVisible) {
+    if (existing != phasedContent) {
+      _phasedData[path] = phasedContent;
       _changedPaths.add(path);
+      _syncedPathsThisBuild.add(path);
+      return true;
     }
-    assert(_changedPathsThisBuild.add(path), path);
+    _syncedPathsThisBuild.add(path);
+    return false;
   }
 
   /// Paths that were modified by [writeContent] since the last
@@ -163,8 +142,15 @@ class AnalysisDriverFilesystem
   // `FileContentCache` methods.
 
   @override
-  FileContent get(String path) =>
-      exists(path) ? _data[path]! : BuildRunnerFileContent.missing(path);
+  FileContent get(String path) {
+    final phased = _phasedData[path];
+    if (phased == null) return BuildRunnerFileContent.missing(path);
+    try {
+      return phased.valueAt(phase: _phase);
+    } catch (_) {
+      return BuildRunnerFileContent.missing(path);
+    }
+  }
 
   @override
   void invalidate(String path) {
@@ -294,6 +280,26 @@ class BuildRunnerFileContent implements FileContent {
 
   static BuildRunnerFileContent missing(String path) =>
       BuildRunnerFileContent(path, false, '', '');
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BuildRunnerFileContent &&
+          runtimeType == other.runtimeType &&
+          path == other.path &&
+          exists == other.exists &&
+          content == other.content &&
+          contentHash == other.contentHash;
+
+  @override
+  int get hashCode =>
+      path.hashCode ^
+      exists.hashCode ^
+      content.hashCode ^
+      contentHash.hashCode;
+
+  @override
+  String toString() => 'BuildRunnerFileContent(path: $path, exists: $exists, contentHash: $contentHash, content: ${content.length > 50 ? content.substring(0, 50) + "..." : content})';
 }
 
 /// Minimal implementation of [File] and [Folder].
