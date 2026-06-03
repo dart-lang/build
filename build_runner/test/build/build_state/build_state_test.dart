@@ -200,7 +200,6 @@ void main() {
       });
 
       test('overlapping build phases cause an error', () async {
-        // Statically compute overlapping outputs to verify it throws
         expect(
           () => BuildStepPlan.compute(
             buildPhases: BuildPhases(

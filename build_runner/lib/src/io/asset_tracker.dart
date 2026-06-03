@@ -84,7 +84,9 @@ class AssetTracker {
     final newSources = inputSources.difference(buildState.sources.toSet());
     addUpdates(newSources, ChangeType.ADD);
     final removedAssets = [
-      for (final id in buildState.sources.followedBy(declaredAndActualOutputs))
+      for (final id in buildState.sources)
+        if (!allSources.contains(id)) id,
+      for (final id in declaredAndActualOutputs)
         if (!allSources.contains(id)) id,
     ];
 
