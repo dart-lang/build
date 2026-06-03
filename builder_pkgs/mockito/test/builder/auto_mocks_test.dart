@@ -2610,6 +2610,42 @@ void main() {
   });
 
   test(
+    'creates dummy non-null Int64 and Int32 return values from package:fixnum',
+    () async {
+      await testWithNonNullable(
+        {
+          ...metaAssets,
+          ...annotationsAsset,
+          ...simpleTestAsset,
+          'fixnum|lib/fixnum.dart': dedent(r'''
+          final class Int64 {
+            static const ZERO = Int64._();
+            const Int64._();
+          }
+          final class Int32 {
+            static const ZERO = Int32._();
+            const Int32._();
+          }
+        '''),
+          'foo|lib/foo.dart': dedent(r'''
+          import 'package:fixnum/fixnum.dart';
+          class Foo {
+            Int64 m64() => Int64.ZERO;
+            Int32 m32() => Int32.ZERO;
+          }
+        '''),
+        },
+        outputs: {
+          'foo|test/foo_test.mocks.dart': _containsAllOf(
+            '.Int64.ZERO',
+            '.Int32.ZERO',
+          ),
+        },
+      );
+    },
+  );
+
+  test(
     'calls dummyValue to get a dummy non-null String return value',
     () async {
       await expectSingleNonNullableOutput(
