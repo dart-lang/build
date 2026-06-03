@@ -192,10 +192,7 @@ class UnsupportedModules implements Exception {
                 .toList();
         if (unsupportedSdkDeps.isEmpty) continue;
 
-        final targetAssetId = AssetId(
-          library.id.package,
-          library.id.path.replaceFirst(moduleLibraryExtension, '.dart'),
-        );
+        final targetAssetId = library.id.dartAssetId;
         final path = await _findImportPath(
           entrypoint,
           targetAssetId,
@@ -207,22 +204,9 @@ class UnsupportedModules implements Exception {
             '${unsupportedSdkDeps.map((d) => 'dart:$d').join(', ')}'
             ')';
         if (path != null) {
-          final pathString = path
-              .map((id) {
-                if (id.path.startsWith('lib/')) {
-                  return 'package:${id.package}/${id.path.substring(4)}';
-                }
-                return id.toString();
-              })
-              .join(' -> ');
-          buffer.writeln('$pathString$suffix');
+          buffer.writeln('${path.toDisplayString}$suffix');
         } else {
-          final libName =
-              targetAssetId.path.startsWith('lib/')
-                  ? 'package:${targetAssetId.package}/'
-                      '${targetAssetId.path.substring(4)}'
-                  : targetAssetId.toString();
-          buffer.writeln('$libName$suffix');
+          buffer.writeln('${targetAssetId.toDisplayString}$suffix');
         }
       }
     }
@@ -272,4 +256,20 @@ Future<List<AssetId>?> _findImportPath(
     }
   }
   return null;
+}
+
+extension on AssetId {
+  AssetId get dartAssetId =>
+      AssetId(package, path.replaceFirst(moduleLibraryExtension, '.dart'));
+
+  String get toDisplayString {
+    if (path.startsWith('lib/')) {
+      return 'package:$package/${path.substring(4)}';
+    }
+    return toString();
+  }
+}
+
+extension on Iterable<AssetId> {
+  String get toDisplayString => map((id) => id.toDisplayString).join(' -> ');
 }
