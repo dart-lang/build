@@ -1,3 +1,8 @@
+## 4.8.0-wip
+
+- Improve error message when a transitive import uses a disallowed platform
+  library. Print an import path to the problem library.
+
 ## 4.7.0
 
 - Add support for proper reload-restarts after invalid hot reloads in DDC + Frontend Server builder.

@@ -186,7 +186,131 @@ void main() {
           contains(
             'Skipping compiling a|lib/index.dart with dart2js because some of '
             'its\ntransitive libraries have sdk dependencies that are not '
-            'supported on this platform:\n\na|lib/index.dart',
+            'supported on this platform:\n\n'
+            'package:a/index.dart (which imports dart:io)',
+          ),
+        ),
+      ),
+    );
+  });
+
+  test('throws on transitive unsupported platform library imports', () async {
+    final assets = {
+      'a|lib/index.dart': '''
+        import 'package:a/dependency.dart';
+        main() {
+          print('hello world');
+        }
+      ''',
+      'a|lib/dependency.dart': '''
+        import 'package:a/transitive_dependency.dart';
+      ''',
+      'a|lib/transitive_dependency.dart': '''
+        import 'dart:io';
+      ''',
+    };
+    final expectedOutputs = {
+      'a|lib/.dart2js.meta_module.clean': isNotNull,
+      'a|lib/.dart2js.meta_module.raw': isNotNull,
+      'a|lib/index.dart2js.module': isNotNull,
+      'a|lib/index.module.library': isNotNull,
+      'a|lib/dependency.dart2js.module': isNotNull,
+      'a|lib/dependency.module.library': isNotNull,
+      'a|lib/transitive_dependency.dart2js.module': isNotNull,
+      'a|lib/transitive_dependency.module.library': isNotNull,
+    };
+    final logs = <LogRecord>[];
+    await testBuilders(
+      [
+        const ModuleLibraryBuilder(),
+        MetaModuleBuilder(platform),
+        MetaModuleCleanBuilder(platform),
+        ModuleBuilder(platform),
+        WebEntrypointBuilder.fromOptions(
+          const BuilderOptions({
+            'compiler': 'dart2js',
+            'native_null_assertions': false,
+          }),
+        ),
+      ],
+      assets,
+      outputs: expectedOutputs,
+      onLog: logs.add,
+    );
+    expect(
+      logs,
+      contains(
+        isA<LogRecord>().having(
+          (r) => r.message,
+          'message',
+          contains(
+            'Skipping compiling a|lib/index.dart with dart2js because some of '
+            'its\ntransitive libraries have sdk dependencies that are not '
+            'supported on this platform:\n\n'
+            'package:a/index.dart -> package:a/dependency.dart -> '
+            'package:a/transitive_dependency.dart (which imports dart:io)',
+          ),
+        ),
+      ),
+    );
+  });
+
+  test('throws on multiple unsupported platform library imports', () async {
+    final assets = {
+      'a|lib/index.dart': '''
+        import 'package:a/dependency_a.dart';
+        import 'package:a/dependency_b.dart';
+        main() {
+          print('hello world');
+        }
+      ''',
+      'a|lib/dependency_a.dart': '''
+        import 'dart:io';
+      ''',
+      'a|lib/dependency_b.dart': '''
+        import 'dart:ffi';
+      ''',
+    };
+    final expectedOutputs = {
+      'a|lib/.dart2js.meta_module.clean': isNotNull,
+      'a|lib/.dart2js.meta_module.raw': isNotNull,
+      'a|lib/index.dart2js.module': isNotNull,
+      'a|lib/index.module.library': isNotNull,
+      'a|lib/dependency_a.dart2js.module': isNotNull,
+      'a|lib/dependency_a.module.library': isNotNull,
+      'a|lib/dependency_b.dart2js.module': isNotNull,
+      'a|lib/dependency_b.module.library': isNotNull,
+    };
+    final logs = <LogRecord>[];
+    await testBuilders(
+      [
+        const ModuleLibraryBuilder(),
+        MetaModuleBuilder(platform),
+        MetaModuleCleanBuilder(platform),
+        ModuleBuilder(platform),
+        WebEntrypointBuilder.fromOptions(
+          const BuilderOptions({
+            'compiler': 'dart2js',
+            'native_null_assertions': false,
+          }),
+        ),
+      ],
+      assets,
+      outputs: expectedOutputs,
+      onLog: logs.add,
+    );
+    expect(
+      logs,
+      contains(
+        isA<LogRecord>().having(
+          (r) => r.message,
+          'message',
+          contains(
+            'Skipping compiling a|lib/index.dart with dart2js because some of '
+            'its\ntransitive libraries have sdk dependencies that are not '
+            'supported on this platform:\n\n'
+            'package:a/index.dart -> package:a/dependency_a.dart (which imports dart:io)\n'
+            'package:a/index.dart -> package:a/dependency_b.dart (which imports dart:ffi)',
           ),
         ),
       ),
