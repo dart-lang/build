@@ -14,8 +14,7 @@ import '../build_plan/build_plan.dart';
 import '../commands/watch/asset_change.dart';
 import '../constants.dart';
 import '../io/asset_tracker.dart';
-import '../io/generated_asset_hider.dart';
-import '../io/reader_writer.dart';
+
 import '../logging/build_log.dart';
 import 'build.dart';
 import 'build_result.dart';
@@ -35,17 +34,7 @@ import 'build_state/build_state.dart';
 /// already in memory is used directly.
 class BuildSeries {
   final ResourceManager _resourceManager = ResourceManager();
-  final ReaderWriter _readerWriter;
-
   BuildPlan _buildPlan;
-  BuildState _buildState;
-
-  /// For the first build only, assets that were updated since the previous
-  /// serialized build state.
-  ///
-  /// Null after the first build, or if there was no serialized build state, or
-  /// if the serialized build state was discarded.
-  BuiltSet<AssetId>? _updatesFromLoad;
 
   final StreamController<BuildResult> _buildResultsController =
       StreamController.broadcast();
@@ -55,30 +44,10 @@ class BuildSeries {
   /// Whether the next build is the first build.
   bool firstBuild = true;
 
-  BuildSeries._({
-    required BuildPlan buildPlan,
-    required BuildState buildState,
-    required ReaderWriter readerWriter,
-    required BuiltSet<AssetId>? updatesFromLoad,
-  }) : _buildPlan = buildPlan,
-       _buildState = buildState,
-       _readerWriter = readerWriter,
-       _updatesFromLoad = updatesFromLoad;
+  BuildSeries._({required BuildPlan buildPlan}) : _buildPlan = buildPlan;
 
   factory BuildSeries(BuildPlan buildPlan) {
-    final buildState = buildPlan.takeBuildState();
-    final readerWriter = buildPlan.readerWriter.copyWith(
-      generatedAssetHider:
-          buildPlan.testingOverrides.flattenOutput
-              ? const NoopGeneratedAssetHider()
-              : buildPlan.buildStepPlan,
-    );
-    return BuildSeries._(
-      buildPlan: buildPlan,
-      buildState: buildState,
-      readerWriter: readerWriter,
-      updatesFromLoad: buildPlan.updates,
-    );
+    return BuildSeries._(buildPlan: buildPlan);
   }
 
   /// Broadcast stream of build results.
@@ -123,10 +92,12 @@ class BuildSeries {
         continue;
       }
 
-      final isFile = _buildState.isFile(
-        buildStepPlan: _buildPlan.buildStepPlan,
-        id: id,
-      );
+      final isFile =
+          _buildPlan.previousBuildState?.isFile(
+            buildStepPlan: _buildPlan.buildStepPlan,
+            id: id,
+          ) ??
+          false;
       if (!isFile) {
         // Ignore under `.dart_tool/build`.
         if (id.path.startsWith(cacheDirectoryPath)) continue;
@@ -146,8 +117,8 @@ class BuildSeries {
       // If not copying to a merged output directory, ignore changes to files
       // with no outputs.
       if (!_buildPlan.buildOptions.anyMergedOutputDirectory &&
-          !_buildState.isMissingSource(id) &&
-          _buildState.digestOf(
+          !(_buildPlan.previousBuildState?.isMissingSource(id) ?? false) &&
+          _buildPlan.previousBuildState?.digestOf(
                 id: id,
                 buildStepPlan: _buildPlan.buildStepPlan,
               ) ==
@@ -181,7 +152,7 @@ class BuildSeries {
       _buildPlan.buildConfigs,
     ).collectChanges(
       buildStepPlan: _buildPlan.buildStepPlan,
-      buildState: _buildState,
+      buildState: _buildPlan.previousBuildState ?? BuildState(),
     );
     return List.of(
       updates.entries.map((entry) => WatchEvent(entry.value, '${entry.key}')),
@@ -244,38 +215,35 @@ class BuildSeries {
         await close();
         return result;
       }
-      _buildState = _buildPlan.takeBuildState();
     }
 
     buildDirs ??= _buildPlan.buildOptions.buildDirs;
     buildFilters ??= _buildPlan.buildOptions.buildFilters;
+    if (!firstBuild) buildLog.nextBuild();
+    _buildPlan = _buildPlan.copyWith(
+      buildDirs: buildDirs,
+      buildFilters: buildFilters,
+    );
+
     if (firstBuild) {
-      if (_updatesFromLoad != null) {
-        updates = _updatesFromLoad!.toSet()..addAll(updates);
-        _updatesFromLoad = null;
+      if (updates.isNotEmpty) {
+        _buildPlan = await _buildPlan.updateForFileChanges(updates);
       }
     } else {
-      if (_updatesFromLoad != null) {
-        throw StateError('Only first build can have updates from load.');
-      }
+      _buildPlan = await _buildPlan.updateForFileChanges(updates);
     }
 
-    if (!firstBuild) buildLog.nextBuild();
     final build = Build(
-      buildPlan: _buildPlan.copyWith(
-        buildDirs: buildDirs,
-        buildFilters: buildFilters,
-      ),
-      buildState: _buildState,
-      readerWriter: _readerWriter,
+      buildPlan: _buildPlan,
       resourceManager: _resourceManager,
     );
     if (firstBuild) firstBuild = false;
 
-    _currentBuildResult = build.run(updates);
+    _currentBuildResult = build.run();
     final result = await _currentBuildResult!;
     _buildPlan = build.buildPlan.updateForResult(
       previousPhasedAssetDeps: result.phasedAssetDeps,
+      previousBuildState: build.buildState,
     );
     _buildResultsController.add(result);
     return result;

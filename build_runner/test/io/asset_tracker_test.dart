@@ -55,7 +55,7 @@ void main() {
       ]);
       final reader = ReaderWriter(buildPackages);
       final aId = AssetId('a', 'web/a.txt');
-      buildState = BuildState.create(sources: {aId});
+      buildState = BuildState({aId});
       // Assign a digest so the source is recognized as having been used.
       final digest = await reader.digest(aId);
       buildState.updateSourceDigest(aId, digest);
@@ -71,7 +71,25 @@ void main() {
         buildState: buildState,
         buildStepPlan: buildStepPlan,
       );
-      buildState.updateForNextBuild(buildStepPlan, updates);
+      // Advance buildState for the next tests so these initial sources are
+      // known.
+      final newSources = buildState.sources.toSet();
+      for (final entry in updates.entries) {
+        if (entry.value != ChangeType.REMOVE) {
+          newSources.add(entry.key);
+        } else {
+          newSources.remove(entry.key);
+        }
+      }
+      final nextState = BuildState(newSources);
+      for (final id in newSources) {
+        if (buildState.isSource(id)) {
+          final digest = buildState.digestOfSource(id);
+          if (digest != null) nextState.updateSourceDigest(id, digest);
+        }
+      }
+      buildState = nextState;
+
       // We should see no changes initially other than new sdk sources
       expect(
         updates..removeWhere(
@@ -119,7 +137,7 @@ void main() {
 
     test('Collects deleted declared outputs', () async {
       // Create a buildState with no sources (so web/a.txt is not in sources).
-      final emptyBuildState = BuildState.create(sources: const {});
+      final emptyBuildState = BuildState(const {});
 
       // Delete the file from disk so it's actually missing.
       File(p.join(d.sandbox, 'a', 'web', 'a.txt')).deleteSync();

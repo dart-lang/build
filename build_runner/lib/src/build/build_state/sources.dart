@@ -24,13 +24,6 @@ class Sources {
 
   Sources();
 
-  Sources clone() {
-    final result = Sources();
-    result.sources.addAll(sources);
-    result.missingSources.addAll(missingSources);
-    return result;
-  }
-
   /// Whether [id] is a source file.
   bool isSource(AssetId id) => sources.containsKey(id);
 
@@ -85,24 +78,6 @@ class Sources {
     missingSources.add(id);
   }
 
-  /// Sets [id] to missing, removing from sources if needed.
-  void setMissing(AssetId id) {
-    if (sources.containsKey(id)) {
-      sources.remove(id);
-      _sortedFileIdsByPackage = null;
-    }
-    missingSources.add(id);
-  }
-
-  /// Removes [id] from sources and missing sources.
-  void remove(AssetId id) {
-    if (sources.containsKey(id)) {
-      sources.remove(id);
-      _sortedFileIdsByPackage = null;
-    }
-    missingSources.remove(id);
-  }
-
   /// All source IDs.
   Iterable<AssetId> get sourceIds => sources.keys;
 
@@ -149,12 +124,6 @@ class Sources {
       value.sort();
     }
     return result;
-  }
-
-  /// Call this after modifications to the graph and before the next build, to
-  /// reset computed values.
-  void clearComputationResults() {
-    _sortedFileIdsByPackageWasComputed = false;
   }
 }
 

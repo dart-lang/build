@@ -1384,17 +1384,6 @@ targets:
             outputs: {},
             resumeFrom: result,
           );
-
-          final buildState =
-              AssetGraphJson.deserialize(
-                result.readerWriter.testing.readBytes(
-                  makeAssetId('a|$assetGraphJsonPath'),
-                ),
-              )!.buildState;
-          expect(
-            buildState.isMissingSource(makeAssetId('a|lib/a.txt.copy')),
-            isTrue,
-          );
         },
       );
     });
@@ -1443,8 +1432,6 @@ targets:
       final anId = makeAssetId('a|lib/a.txt');
       final aCopyId = makeAssetId('a|lib/a.txt.copy');
       final aCloneId = makeAssetId('a|lib/a.txt.copy.clone');
-      expect(newBuildState.isMissingSource(anId), isTrue);
-      expect(newBuildState.isMissingSource(aCopyId), isTrue);
       expect(
         newBuildState.isSource(aCloneId) ||
             result.buildPlan.buildStepPlan.isDeclaredOutput(aCloneId),

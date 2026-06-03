@@ -120,7 +120,7 @@ void main() {
     readerWriter = InternalTestReaderWriter(
       outputRootPackage: buildPackages.outputRoot,
     );
-    buildState = BuildState.create(sources: <AssetId>{});
+    buildState = BuildState(<AssetId>{});
     watcher = FakeWatcher(buildPackages);
     serveHandler = ServeHandler(watcher);
     buildStepPlan = BuildStepPlan(

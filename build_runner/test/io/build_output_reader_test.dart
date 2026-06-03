@@ -41,7 +41,7 @@ void main() {
       buildPackages = BuildPackages.singlePackageBuild('a', [
         BuildPackage.forTesting(name: 'a', isOutput: true),
       ]);
-      buildState = BuildState.create(sources: <AssetId>{});
+      buildState = BuildState(<AssetId>{});
       buildPhases = BuildPhases([]);
     });
 
@@ -73,15 +73,7 @@ void main() {
           buildPackages: buildPackages,
         ),
       );
-      reader = BuildOutputReader(
-        buildPlan: buildPlan,
-        readerWriter: readerWriter,
-        buildState: buildState,
-        processedOutputs: <AssetId>{
-          ...buildPlan.buildStepPlan.declaredOutputs,
-          ...buildState.actualPostOutputs,
-        },
-      );
+      reader = BuildOutputReader(buildPlan: buildPlan, buildState: buildState);
       expect(await reader.canRead(notDeletedId), true);
       expect(await reader.canRead(deletedId), false);
     });
@@ -90,6 +82,8 @@ void main() {
       final id = AssetId('a', 'web/a.txt');
       final primaryId = AssetId('a', 'web/a.dart');
       final buildStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
+
+      var buildState = BuildState(<AssetId>{});
       final stepResult = BuildStepResult((b) {
         b.result = false;
         b.isHidden = false;
@@ -120,15 +114,7 @@ void main() {
           buildPackages: buildPackages,
         ),
       );
-      reader = BuildOutputReader(
-        buildPlan: buildPlan,
-        readerWriter: readerWriter,
-        buildState: buildState,
-        processedOutputs: <AssetId>{
-          ...buildPlan.buildStepPlan.declaredOutputs,
-          ...buildState.actualPostOutputs,
-        },
-      );
+      reader = BuildOutputReader(buildPlan: buildPlan, buildState: buildState);
       expect(
         await reader.unreadableReason(id),
         UnreadableReason.failed,
@@ -147,13 +133,12 @@ void main() {
           buildPackages: buildPackages,
         ),
       );
-      reader = BuildOutputReader(
-        buildPlan: buildPlan,
-        readerWriter: readerWriter,
-        buildState: buildState,
-        // `a` does not match the build filter and is not processed.
-        processedOutputs: {},
-      );
+
+      // If a step is skipped due to build filters it is not evaluated and its
+      // result is not added to the buildState.
+      buildState = BuildState(<AssetId>{});
+
+      reader = BuildOutputReader(buildPlan: buildPlan, buildState: buildState);
 
       expect(
         await reader.unreadableReason(id),

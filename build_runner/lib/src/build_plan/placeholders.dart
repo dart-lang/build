@@ -25,7 +25,11 @@ class Placeholders {
   static const String packageName = r'$package$';
   static const String packagePath = packageName;
 
-  /// Whether [path] is one of the placeholders.
+  /// Whether [path] is a placeholder path.
+  ///
+  /// Placeholders are virtual files that exist in every package. They can't be
+  /// read, but they can be matched as inputs. This allows builders to generate
+  /// a fixed list of outputs for any package.
   static bool isPlaceholderPath(String path) =>
       path == libPath ||
       path == testPath ||

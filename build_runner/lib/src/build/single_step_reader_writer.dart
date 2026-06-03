@@ -15,6 +15,7 @@ import '../build_plan/build_configs.dart';
 import '../build_plan/build_packages.dart';
 import '../build_plan/build_step_plan.dart';
 import '../build_plan/phase.dart';
+import '../build_plan/placeholders.dart';
 import '../io/asset_finder.dart';
 import '../io/reader_writer.dart';
 import 'build_state/build_state.dart';
@@ -185,7 +186,7 @@ class SingleStepReaderWriter implements PhasedReader {
     }
 
     final buildState = _runningBuild.buildState;
-    if (buildState.isPlaceholder(id)) return false;
+    if (Placeholders.isPlaceholderPath(id.path)) return false;
     if (!_isFile(id)) {
       if (track) inputTracker.add(id);
       buildState.addMissingSource(id);
