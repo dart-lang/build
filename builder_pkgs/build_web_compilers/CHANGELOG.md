@@ -1,7 +1,8 @@
-## 4.8.0-wip
+## 4.8.0
 
 - Improve error message when a transitive import uses a disallowed platform
   library. Print an import path to the problem library.
+- Add several `build_modules` exports to `build_web_compilers`.
 
 ## 4.7.0
 
