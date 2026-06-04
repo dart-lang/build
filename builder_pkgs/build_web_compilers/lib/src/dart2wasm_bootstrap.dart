@@ -84,20 +84,13 @@ Future<Dart2WasmBootstrapResult> _bootstrapDart2Wasm(
         throwIfUnsupported: !unsafeAllowUnsupportedModules,
       ))..add(module);
     } on UnsupportedModules catch (e) {
-      final librariesString = (await e.exactLibraries(buildStep).toList())
-          .map(
-            (lib) => AssetId(
-              lib.id.package,
-              lib.id.path.replaceFirst(moduleLibraryExtension, '.dart'),
-            ),
-          )
-          .join('\n');
-      log.warning('''
-Skipping compiling ${buildStep.inputId} with dart2wasm because some of its
-transitive libraries have sdk dependencies that are not supported on this platform:
-
-$librariesString
-''');
+      log.warning(
+        await e.formattedUnsupportedMessage(
+          'dart2wasm',
+          buildStep.inputId,
+          buildStep,
+        ),
+      );
       return const Dart2WasmBootstrapResult.didNotCompile();
     }
 

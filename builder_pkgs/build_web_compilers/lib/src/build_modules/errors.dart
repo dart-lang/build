@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
@@ -12,6 +13,7 @@ import 'package:collection/collection.dart';
 import 'module_library.dart';
 import 'module_library_builder.dart';
 import 'modules.dart';
+import 'platform.dart';
 
 /// An [Exception] that is thrown when a worker returns an error.
 abstract class _WorkerException implements Exception {
@@ -163,8 +165,111 @@ class UnsupportedModules implements Exception {
     }
   }
 
+  Future<String> formattedUnsupportedMessage(
+    String compilerName,
+    AssetId entrypoint,
+    AssetReader reader,
+  ) async {
+    final buffer = StringBuffer(
+      'Skipping compiling $entrypoint with $compilerName '
+      'because some of its\n'
+      'transitive libraries have sdk dependencies that are not supported on '
+      'this platform:\n\n',
+    );
+
+    final platform = unsupportedModules.first.platform;
+    for (final module in unsupportedModules) {
+      for (final source in module.sources) {
+        final libraryId = source.changeExtension(moduleLibraryExtension);
+        if (!await reader.canRead(libraryId)) continue;
+        final library = ModuleLibrary.deserialize(
+          libraryId,
+          await reader.readAsString(libraryId),
+        );
+        final unsupportedSdkDeps =
+            library.sdkDeps
+                .where((lib) => !platform.supportsLibrary(lib))
+                .toList();
+        if (unsupportedSdkDeps.isEmpty) continue;
+
+        final targetAssetId = library.id.dartAssetId;
+        final path = await _findImportPath(
+          entrypoint,
+          targetAssetId,
+          platform,
+          reader,
+        );
+        final suffix =
+            ' (which imports '
+            '${unsupportedSdkDeps.map((d) => 'dart:$d').join(', ')}'
+            ')';
+        if (path != null) {
+          buffer.writeln('${path.toDisplayString}$suffix');
+        } else {
+          buffer.writeln('${targetAssetId.toDisplayString}$suffix');
+        }
+      }
+    }
+    return buffer.toString();
+  }
+
   @override
   String toString() =>
       'Some modules contained libraries that were incompatible '
       'with the current platform.';
+}
+
+Future<List<AssetId>?> _findImportPath(
+  AssetId start,
+  AssetId target,
+  DartPlatform platform,
+  AssetReader reader,
+) async {
+  final queue = Queue<AssetId>()..add(start);
+  final visited = {start};
+  final parents = <AssetId, AssetId>{};
+
+  while (queue.isNotEmpty) {
+    final current = queue.removeFirst();
+    if (current == target) {
+      final path = <AssetId>[];
+      var curr = target;
+      while (curr != start) {
+        path.add(curr);
+        curr = parents[curr]!;
+      }
+      path.add(start);
+      return path.reversed.toList();
+    }
+
+    final libraryId = current.changeExtension(moduleLibraryExtension);
+    if (!await reader.canRead(libraryId)) continue;
+    final library = ModuleLibrary.deserialize(
+      libraryId,
+      await reader.readAsString(libraryId),
+    );
+    for (final dep in library.depsForPlatform(platform)) {
+      if (visited.add(dep)) {
+        parents[dep] = current;
+        queue.add(dep);
+      }
+    }
+  }
+  return null;
+}
+
+extension on AssetId {
+  AssetId get dartAssetId =>
+      AssetId(package, path.replaceFirst(moduleLibraryExtension, '.dart'));
+
+  String get toDisplayString {
+    if (path.startsWith('lib/')) {
+      return 'package:$package/${path.substring(4)}';
+    }
+    return toString();
+  }
+}
+
+extension on Iterable<AssetId> {
+  String get toDisplayString => map((id) => id.toDisplayString).join(' -> ');
 }
