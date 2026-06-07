@@ -7,8 +7,21 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../data/build_target.dart';
 
-bool _isBlacklistedPath(String filePath, Set<RegExp> blackListedPatterns) =>
-    blackListedPatterns.any((pattern) => filePath.contains(pattern));
+bool _isBlacklistedPath(String filePath, Set<RegExp> blackListedPatterns) {
+  for (final pattern in blackListedPatterns) {
+    try {
+      // Basic safeguard against overly complex patterns
+      if (pattern.pattern.length > 100) continue;
+
+      if (filePath.contains(pattern)) {
+        return true;
+      }
+    } catch (_) {
+      continue;
+    }
+  }
+  return false;
+}
 
 bool _shouldBuild(BuildTarget target, Iterable<WatchEvent> changes) =>
     target is DefaultBuildTarget &&
