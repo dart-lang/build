@@ -19,8 +19,10 @@ class Config {
   final Directory rootDirectory;
   final List<int> sizes;
   final bool allowFailures;
-  bool mostlyNoCodegen;
-  bool web;
+  final bool mostlyNoCodegen;
+  final List<bool> webConfigs;
+  final List<String> versions;
+  final int repetitions;
 
   Config({
     required this.allowFailures,
@@ -31,31 +33,60 @@ class Config {
     required this.sizes,
     required this.shapes,
     required this.mostlyNoCodegen,
-    required this.web,
+    required this.webConfigs,
+    required this.versions,
+    required this.repetitions,
   });
 
-  factory Config.fromArgResults(ArgResults argResults) => Config(
-    allowFailures: argResults['allow-failures'] as bool,
-    buildRepoPath: argResults['build-repo-path'] as String?,
-    dependencyOverridePaths: {
-      for (final s in argResults['dependency-override-path'] as List<String>)
-        s.split('=')[0]: s.split('=')[1],
-    },
-    generator: Generator.values.singleWhere(
-      (e) => e.packageName == argResults['generator'],
-    ),
-    rootDirectory: Directory(argResults['root-directory'] as String),
-    sizes:
-        argResults['size'] == null
-            ? [1, 100, 250, 500, 750, 1000]
-            : [int.parse(argResults['size'] as String)],
-    shapes:
-        argResults['shape'] == null
-            ? Shape.values
-            : [Shape.values.singleWhere((e) => e.name == argResults['shape'])],
-    mostlyNoCodegen: argResults['mostly-no-codegen'] as bool,
-    web: argResults['web'] as bool,
-  );
+  factory Config.fromArgResults(ArgResults argResults) {
+    final buildRepoPath = argResults['build-repo-path'] as String?;
+    final versionsInput = argResults['versions'] as String?;
+    final List<String> versions;
+    if (versionsInput != null) {
+      versions = versionsInput.split(',');
+    } else {
+      versions = buildRepoPath != null ? ['pub', 'local'] : ['pub'];
+    }
+
+    final shapes =
+        argResults.wasParsed('shape')
+            ? [Shape.values.singleWhere((e) => e.name == argResults['shape'])]
+            : [Shape.random];
+
+    final sizes =
+        argResults.wasParsed('size')
+            ? [int.parse(argResults['size'] as String)]
+            : [10, 2000];
+
+    final webConfigs =
+        argResults.wasParsed('web')
+            ? [argResults['web'] as bool]
+            : [false, true];
+
+    final repetitions =
+        argResults.wasParsed('repetitions')
+            ? int.parse(argResults['repetitions'] as String)
+            : 5; // Default to 5 repetitions
+
+    return Config(
+      allowFailures: argResults['allow-failures'] as bool,
+      buildRepoPath: buildRepoPath,
+      dependencyOverridePaths: {
+        for (final s in argResults['dependency-override-path'] as List<String>)
+          s.split('=')[0]: s.split('=')[1],
+      },
+      generator: Generator.values.singleWhere(
+        (e) => e.packageName == argResults['generator'],
+      ),
+      rootDirectory: Directory(argResults['root-directory'] as String),
+      sizes: sizes,
+      shapes: shapes,
+      mostlyNoCodegen: argResults['mostly-no-codegen'] as bool,
+      webConfigs: webConfigs,
+      versions: versions,
+      repetitions: repetitions,
+    );
+  }
 }
 
 /// Single benchmark run config.
@@ -68,6 +99,8 @@ class RunConfig {
   final String paddedSize;
 
   final Workspace workspace;
+  final String version;
+  final bool web;
 
   RunConfig({
     required this.config,
@@ -75,12 +108,36 @@ class RunConfig {
     required this.size,
     required this.paddedSize,
     required this.shape,
+    required this.version,
+    required this.web,
   });
 
   String get dependencyOverrides {
     final overrides = StringBuffer();
 
-    final buildRepoPath = config.buildRepoPath;
+    final String? buildRepoPath;
+    final String? gitRef;
+
+    if (version.startsWith('git:')) {
+      buildRepoPath = null;
+      gitRef = version.substring(4);
+    } else if (version == 'local') {
+      buildRepoPath = config.buildRepoPath;
+      if (buildRepoPath == null) {
+        throw StateError(
+          'local version requested but --build-repo-path is not set',
+        );
+      }
+      gitRef = null;
+    } else if (version == 'pub') {
+      buildRepoPath = null;
+      gitRef = null;
+    } else {
+      // Assume version is a path
+      buildRepoPath = version;
+      gitRef = null;
+    }
+
     if (buildRepoPath != null) {
       overrides.write('''
   build:
@@ -93,6 +150,36 @@ class RunConfig {
     path: $buildRepoPath/build_test
   build_web_compilers:
     path: $buildRepoPath/builder_pkgs/build_web_compilers
+''');
+    }
+
+    if (gitRef != null) {
+      overrides.write('''
+  build:
+    git:
+      url: https://github.com/dart-lang/build.git
+      path: build
+      ref: $gitRef
+  build_config:
+    git:
+      url: https://github.com/dart-lang/build.git
+      path: build_config
+      ref: $gitRef
+  build_runner:
+    git:
+      url: https://github.com/dart-lang/build.git
+      path: build_runner
+      ref: $gitRef
+  build_test:
+    git:
+      url: https://github.com/dart-lang/build.git
+      path: build_test
+      ref: $gitRef
+  build_web_compilers:
+    git:
+      url: https://github.com/dart-lang/build.git
+      path: builder_pkgs/build_web_compilers
+      ref: $gitRef
 ''');
     }
 

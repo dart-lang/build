@@ -22,6 +22,15 @@ final commandRunner =
         help: 'Whether to continue benchmarking despite failures.',
       )
       ..argParser.addOption(
+        'versions',
+        help: 'Comma-separated list of versions to benchmark (e.g. pub,local).',
+      )
+      ..argParser.addOption(
+        'repetitions',
+        help: 'Number of repetitions for each benchmark run.',
+        defaultsTo: '5',
+      )
+      ..argParser.addOption(
         'build-repo-path',
         help: 'Path to build repo to benchmark.',
       )
