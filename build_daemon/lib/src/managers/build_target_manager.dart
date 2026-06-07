@@ -11,7 +11,7 @@ bool _isBlacklistedPath(String filePath, Set<RegExp> blackListedPatterns) {
   for (final pattern in blackListedPatterns) {
     try {
       // Basic safeguard against overly complex patterns
-      if (pattern.pattern.length > 100) continue;
+      if (pattern.pattern.length > 1000) continue;
 
       if (filePath.contains(pattern)) {
         return true;
