@@ -100,15 +100,10 @@ void main() {
           buildPackages: buildPackages,
         ),
       );
-      buildState = buildPlan.takeBuildState();
+      buildState = BuildState(buildPlan.buildInputs.sources.toSet());
       buildOutputReader = BuildOutputReader(
         buildPlan: buildPlan,
-        readerWriter: readerWriter,
         buildState: buildState,
-        processedOutputs: <AssetId>{
-          ...buildPlan.buildStepPlan.declaredOutputs,
-          ...buildState.actualPostOutputs,
-        },
       );
 
       for (final id in [
@@ -404,12 +399,7 @@ void main() {
         buildPlan: buildPlan.copyWith(
           buildDirs: {BuildDirectory('foo')}.build(),
         ),
-        readerWriter: readerWriter,
         buildState: buildState,
-        processedOutputs: <AssetId>{
-          ...buildPlan.buildStepPlan.declaredOutputs,
-          ...buildState.actualPostOutputs,
-        },
       );
       final success = await createMergedOutputDirectories(
         buildDirs:
@@ -495,12 +485,7 @@ void main() {
         // Recreate buildOutputReader so it notices the delete.
         buildOutputReader = BuildOutputReader(
           buildPlan: buildPlan,
-          readerWriter: readerWriter,
           buildState: buildState,
-          processedOutputs: <AssetId>{
-            ...buildPlan.buildStepPlan.declaredOutputs,
-            ...buildState.actualPostOutputs,
-          },
         );
         success = await createMergedOutputDirectories(
           buildDirs:

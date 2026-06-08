@@ -47,7 +47,7 @@ class AnalysisDriverModel {
   /// If another build has the lock, waits for it to finish.
   Future<void> takeLockAndStartBuild(
     Map<AssetId, int> declaredOutputPhases, {
-    required Set<AssetId>? invalidatedSources,
+    required Iterable<AssetId>? invalidatedSources,
   }) async {
     _lock = await _pool.request();
     filesystem.startBuild(

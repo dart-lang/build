@@ -103,7 +103,7 @@ class ResolversImpl implements Resolvers {
   /// `build.dart` and test builds in `package:build_test` `test_builder.dart`.
   Future<void> takeLockAndStartBuild(
     Map<AssetId, int> declaredOutputPhases, {
-    required Set<AssetId>? invalidatedSources,
+    required Iterable<AssetId>? invalidatedSources,
   }) => _analysisDriverModel.takeLockAndStartBuild(
     declaredOutputPhases,
     invalidatedSources: invalidatedSources,
