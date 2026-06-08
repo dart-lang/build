@@ -9,7 +9,7 @@ part of 'serializers.dart';
 Serializers _$serializers =
     (Serializers().toBuilder()
           ..add(AssetDeps.serializer)
-          ..add(BuildPlanDigest.serializer)
+          ..add(BuildSpecDigest.serializer)
           ..add(BuildStepId.serializer)
           ..add(BuildStepResult.serializer)
           ..add(ExpiringValue.serializer)

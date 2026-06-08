@@ -132,17 +132,19 @@ Future<TestBuildersResult> testPhases(
   });
 
   final buildPlan = await BuildPlan.load(
-    builderFactories: builderFactories,
-    // ignore: invalid_use_of_visible_for_testing_member
-    buildOptions: BuildOptions.forTests(
-      buildDirs: buildDirs.build(),
-      buildFilters: buildFilters.build(),
-      verbose: verbose,
-    ),
-    testingOverrides: TestingOverrides(
-      builderDefinitions: builders.build(),
-      buildPackages: buildPackages,
-      readerWriter: readerWriter,
+    await BuildSpec.load(
+      builderFactories: builderFactories,
+      // ignore: invalid_use_of_visible_for_testing_member
+      buildOptions: BuildOptions.forTests(
+        buildDirs: buildDirs.build(),
+        buildFilters: buildFilters.build(),
+        verbose: verbose,
+      ),
+      testingOverrides: TestingOverrides(
+        builderDefinitions: builders.build(),
+        buildPackages: buildPackages,
+        readerWriter: readerWriter,
+      ),
     ),
   );
   await buildPlan.deleteFilesAndFolders();

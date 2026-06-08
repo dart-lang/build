@@ -17,6 +17,7 @@ export 'build_plan/build_package.dart';
 export 'build_plan/build_packages.dart';
 export 'build_plan/build_phases.dart';
 export 'build_plan/build_plan.dart';
+export 'build_plan/build_spec.dart';
 export 'build_plan/builder_definition.dart';
 export 'build_plan/builder_factories.dart';
 export 'build_plan/testing_overrides.dart';

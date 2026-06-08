@@ -1,25 +1,25 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'build_plan_digest.dart';
+part of 'build_spec_digest.dart';
 
 // **************************************************************************
 // BuiltValueGenerator
 // **************************************************************************
 
-Serializer<BuildPlanDigest> _$buildPlanDigestSerializer =
-    _$BuildPlanDigestSerializer();
+Serializer<BuildSpecDigest> _$buildSpecDigestSerializer =
+    _$BuildSpecDigestSerializer();
 
-class _$BuildPlanDigestSerializer
-    implements StructuredSerializer<BuildPlanDigest> {
+class _$BuildSpecDigestSerializer
+    implements StructuredSerializer<BuildSpecDigest> {
   @override
-  final Iterable<Type> types = const [BuildPlanDigest, _$BuildPlanDigest];
+  final Iterable<Type> types = const [BuildSpecDigest, _$BuildSpecDigest];
   @override
-  final String wireName = 'BuildPlanDigest';
+  final String wireName = 'BuildSpecDigest';
 
   @override
   Iterable<Object?> serialize(
     Serializers serializers,
-    BuildPlanDigest object, {
+    BuildSpecDigest object, {
     FullType specifiedType = FullType.unspecified,
   }) {
     final result = <Object?>[
@@ -81,12 +81,12 @@ class _$BuildPlanDigestSerializer
   }
 
   @override
-  BuildPlanDigest deserialize(
+  BuildSpecDigest deserialize(
     Serializers serializers,
     Iterable<Object?> serialized, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    final result = BuildPlanDigestBuilder();
+    final result = BuildSpecDigestBuilder();
 
     final iterator = serialized.iterator;
     while (iterator.moveNext()) {
@@ -177,7 +177,7 @@ class _$BuildPlanDigestSerializer
   }
 }
 
-class _$BuildPlanDigest extends BuildPlanDigest {
+class _$BuildSpecDigest extends BuildSpecDigest {
   @override
   final String? compileDigest;
   @override
@@ -195,10 +195,10 @@ class _$BuildPlanDigest extends BuildPlanDigest {
   @override
   final BuiltList<String> postBuildActionsOptionsDigests;
 
-  factory _$BuildPlanDigest([void Function(BuildPlanDigestBuilder)? updates]) =>
-      (BuildPlanDigestBuilder()..update(updates))._build();
+  factory _$BuildSpecDigest([void Function(BuildSpecDigestBuilder)? updates]) =>
+      (BuildSpecDigestBuilder()..update(updates))._build();
 
-  _$BuildPlanDigest._({
+  _$BuildSpecDigest._({
     this.compileDigest,
     required this.buildTriggersDigest,
     required this.buildPhasesDigest,
@@ -209,16 +209,16 @@ class _$BuildPlanDigest extends BuildPlanDigest {
     required this.postBuildActionsOptionsDigests,
   }) : super._();
   @override
-  BuildPlanDigest rebuild(void Function(BuildPlanDigestBuilder) updates) =>
+  BuildSpecDigest rebuild(void Function(BuildSpecDigestBuilder) updates) =>
       (toBuilder()..update(updates)).build();
 
   @override
-  BuildPlanDigestBuilder toBuilder() => BuildPlanDigestBuilder()..replace(this);
+  BuildSpecDigestBuilder toBuilder() => BuildSpecDigestBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
-    return other is BuildPlanDigest &&
+    return other is BuildSpecDigest &&
         compileDigest == other.compileDigest &&
         buildTriggersDigest == other.buildTriggersDigest &&
         buildPhasesDigest == other.buildPhasesDigest &&
@@ -246,7 +246,7 @@ class _$BuildPlanDigest extends BuildPlanDigest {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(r'BuildPlanDigest')
+    return (newBuiltValueToStringHelper(r'BuildSpecDigest')
           ..add('compileDigest', compileDigest)
           ..add('buildTriggersDigest', buildTriggersDigest)
           ..add('buildPhasesDigest', buildPhasesDigest)
@@ -262,9 +262,9 @@ class _$BuildPlanDigest extends BuildPlanDigest {
   }
 }
 
-class BuildPlanDigestBuilder
-    implements Builder<BuildPlanDigest, BuildPlanDigestBuilder> {
-  _$BuildPlanDigest? _$v;
+class BuildSpecDigestBuilder
+    implements Builder<BuildSpecDigest, BuildSpecDigestBuilder> {
+  _$BuildSpecDigest? _$v;
 
   String? _compileDigest;
   String? get compileDigest => _$this._compileDigest;
@@ -312,9 +312,9 @@ class BuildPlanDigestBuilder
     ListBuilder<String>? postBuildActionsOptionsDigests,
   ) => _$this._postBuildActionsOptionsDigests = postBuildActionsOptionsDigests;
 
-  BuildPlanDigestBuilder();
+  BuildSpecDigestBuilder();
 
-  BuildPlanDigestBuilder get _$this {
+  BuildSpecDigestBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
       _compileDigest = $v.compileDigest;
@@ -332,38 +332,38 @@ class BuildPlanDigestBuilder
   }
 
   @override
-  void replace(BuildPlanDigest other) {
-    _$v = other as _$BuildPlanDigest;
+  void replace(BuildSpecDigest other) {
+    _$v = other as _$BuildSpecDigest;
   }
 
   @override
-  void update(void Function(BuildPlanDigestBuilder)? updates) {
+  void update(void Function(BuildSpecDigestBuilder)? updates) {
     if (updates != null) updates(this);
   }
 
   @override
-  BuildPlanDigest build() => _build();
+  BuildSpecDigest build() => _build();
 
-  _$BuildPlanDigest _build() {
-    _$BuildPlanDigest _$result;
+  _$BuildSpecDigest _build() {
+    _$BuildSpecDigest _$result;
     try {
       _$result =
           _$v ??
-          _$BuildPlanDigest._(
+          _$BuildSpecDigest._(
             compileDigest: compileDigest,
             buildTriggersDigest: BuiltValueNullFieldError.checkNotNull(
               buildTriggersDigest,
-              r'BuildPlanDigest',
+              r'BuildSpecDigest',
               'buildTriggersDigest',
             ),
             buildPhasesDigest: BuiltValueNullFieldError.checkNotNull(
               buildPhasesDigest,
-              r'BuildPlanDigest',
+              r'BuildSpecDigest',
               'buildPhasesDigest',
             ),
             dartVersion: BuiltValueNullFieldError.checkNotNull(
               dartVersion,
-              r'BuildPlanDigest',
+              r'BuildSpecDigest',
               'dartVersion',
             ),
             enabledExperiments: enabledExperiments.build(),
@@ -385,7 +385,7 @@ class BuildPlanDigestBuilder
         postBuildActionsOptionsDigests.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-          r'BuildPlanDigest',
+          r'BuildSpecDigest',
           _$failedField,
           e.toString(),
         );

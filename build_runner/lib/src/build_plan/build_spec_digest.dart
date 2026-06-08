@@ -13,14 +13,14 @@ import 'build_configs.dart';
 import 'build_packages.dart';
 import 'build_phases.dart';
 
-part 'build_plan_digest.g.dart';
+part 'build_spec_digest.g.dart';
 
 /// The configuration and digests of configuration used to determine whether the
 /// current build is compatible with the previous build.
-abstract class BuildPlanDigest
-    implements Built<BuildPlanDigest, BuildPlanDigestBuilder> {
-  static Serializer<BuildPlanDigest> get serializer =>
-      _$buildPlanDigestSerializer;
+abstract class BuildSpecDigest
+    implements Built<BuildSpecDigest, BuildSpecDigestBuilder> {
+  static Serializer<BuildSpecDigest> get serializer =>
+      _$buildSpecDigestSerializer;
 
   String? get compileDigest;
   String get buildTriggersDigest;
@@ -31,18 +31,18 @@ abstract class BuildPlanDigest
   BuiltList<String> get inBuildPhasesOptionsDigests;
   BuiltList<String> get postBuildActionsOptionsDigests;
 
-  BuildPlanDigest._();
+  BuildSpecDigest._();
 
-  factory BuildPlanDigest.build([
-    void Function(BuildPlanDigestBuilder)? updates,
-  ]) = _$BuildPlanDigest;
+  factory BuildSpecDigest.build([
+    void Function(BuildSpecDigestBuilder)? updates,
+  ]) = _$BuildSpecDigest;
 
-  factory BuildPlanDigest({
+  factory BuildSpecDigest({
     required String? compileDigest,
     required BuildConfigs buildConfigs,
     required BuildPhases buildPhases,
     required BuildPackages buildPackages,
-  }) => BuildPlanDigest.build((b) {
+  }) => BuildSpecDigest.build((b) {
     b.compileDigest = compileDigest;
     b.buildTriggersDigest = buildConfigs.buildTriggers.digest.toString();
     b.buildPhasesDigest = buildPhases.digest.toString();
@@ -64,7 +64,7 @@ abstract class BuildPlanDigest
   /// [other].
   ///
   /// If [other] is `null`, returns `false`.
-  bool canIncrementallyBuildFrom(BuildPlanDigest? other) {
+  bool canIncrementallyBuildFrom(BuildSpecDigest? other) {
     return other != null &&
         compileDigest == other.compileDigest &&
         buildPhasesDigest == other.buildPhasesDigest &&
@@ -73,7 +73,7 @@ abstract class BuildPlanDigest
         packageLanguageVersions == other.packageLanguageVersions;
   }
 
-  bool hasSameTriggersAs(BuildPlanDigest? other) {
+  bool hasSameTriggersAs(BuildSpecDigest? other) {
     return buildTriggersDigest == other?.buildTriggersDigest;
   }
 
@@ -82,7 +82,7 @@ abstract class BuildPlanDigest
   ///
   /// If [other] is `null` or has a different number of phases, all results are
   /// `true`.
-  BuiltList<bool> computeChangedPhaseOptions(BuildPlanDigest? other) {
+  BuiltList<bool> computeChangedPhaseOptions(BuildSpecDigest? other) {
     if (other == null ||
         other.inBuildPhasesOptionsDigests.length !=
             inBuildPhasesOptionsDigests.length) {
@@ -104,7 +104,7 @@ abstract class BuildPlanDigest
   ///
   /// If [other] is `null` or has a different number of post build actions, all
   /// results are`true`.
-  BuiltList<bool> computeChangedPostBuildOptions(BuildPlanDigest? other) {
+  BuiltList<bool> computeChangedPostBuildOptions(BuildSpecDigest? other) {
     if (other == null ||
         postBuildActionsOptionsDigests.length !=
             other.postBuildActionsOptionsDigests.length) {

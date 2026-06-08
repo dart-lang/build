@@ -15,6 +15,7 @@ import 'package:build_runner/src/build_plan/build_options.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_plan.dart';
+import 'package:build_runner/src/build_plan/build_spec.dart';
 import 'package:build_runner/src/build_plan/builder_definition.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
@@ -40,6 +41,16 @@ void main() {
     late TestingOverrides testingOverrides;
     late BuildPlan buildPlan;
 
+    Future<BuildPlan> loadPlan([TestingOverrides? overrides]) async {
+      return BuildPlan.load(
+        await BuildSpec.load(
+          builderFactories: builderFactories,
+          buildOptions: buildOptions,
+          testingOverrides: overrides ?? testingOverrides,
+        ),
+      );
+    }
+
     setUp(() async {
       buildPackages = BuildPackages.singlePackageBuild('a', [
         BuildPackage.forTesting(name: 'a', watch: true, isOutput: true),
@@ -58,11 +69,7 @@ void main() {
         buildPackages: buildPackages,
         checkBuilderFreshness: false,
       );
-      buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides,
-      );
+      buildPlan = await loadPlan();
     });
 
     test('loads with no previous build state', () async {
@@ -76,7 +83,7 @@ void main() {
       await readerWriter.writeAsBytes(
         assetGraphJsonId,
         AssetGraphJson.serialize(
-          buildPlanDigest: buildPlan.buildPlanDigest,
+          buildPlanDigest: buildPlan.buildSpec.buildPlanDigest,
           buildState: buildState,
           phasedAssetDeps: PhasedAssetDeps(),
         ),
@@ -86,11 +93,7 @@ void main() {
     test('loads previous build state', () async {
       final buildState = buildPlan.previousBuildState ?? BuildState();
       await writeBuildStateAndPlan(buildState, buildPlan);
-      buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides,
-      );
+      buildPlan = await loadPlan();
       final loadedState = buildPlan.previousBuildState;
 
       expect(loadedState.toString(), buildState.toString());
@@ -98,15 +101,17 @@ void main() {
 
     test('requires restart if a factory is missing', () async {
       final buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides.copyWith(
-          builderDefinitions: [BuilderDefinition('missing')].build(),
+        await BuildSpec.load(
+          builderFactories: builderFactories,
+          buildOptions: buildOptions,
+          testingOverrides: testingOverrides.copyWith(
+            builderDefinitions: [BuilderDefinition('missing')].build(),
+          ),
         ),
       );
 
       expect(buildPlan.buildStepPlan.buildPhases.inBuildPhases.isEmpty, true);
-      expect(buildPlan.restartIsNeeded, true);
+      expect(buildPlan.buildSpec.restartIsNeeded, true);
     });
 
     test('discards previous build state if build phases changed', () async {
@@ -114,14 +119,16 @@ void main() {
       await writeBuildStateAndPlan(buildState, buildPlan);
 
       buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides.copyWith(
-          builderDefinitions: [
-            BuilderDefinition(''),
-            // Apply a second builder so build phases change.
-            BuilderDefinition('b2'),
-          ].build(),
+        await BuildSpec.load(
+          builderFactories: builderFactories,
+          buildOptions: buildOptions,
+          testingOverrides: testingOverrides.copyWith(
+            builderDefinitions: [
+              BuilderDefinition(''),
+              // Apply a second builder so build phases change.
+              BuilderDefinition('b2'),
+            ].build(),
+          ),
         ),
       );
 
@@ -137,18 +144,20 @@ void main() {
 
     test('tracks lost outputs if build phases changed', () async {
       var buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides.copyWith(
-          builderDefinitions: [
-            BuilderDefinition(
-              '',
-              // Hidden output is easy to find and delete, it's under one
-              // generated root. Unhide the output so there can be lost
-              // outputs.
-              hideOutput: false,
-            ),
-          ].build(),
+        await BuildSpec.load(
+          builderFactories: builderFactories,
+          buildOptions: buildOptions,
+          testingOverrides: testingOverrides.copyWith(
+            builderDefinitions: [
+              BuilderDefinition(
+                '',
+                // Hidden output is easy to find and delete, it's under one
+                // generated root. Unhide the output so there can be lost
+                // outputs.
+                hideOutput: false,
+              ),
+            ].build(),
+          ),
         ),
       );
       final buildState = buildPlan.previousBuildState ?? BuildState();
@@ -166,14 +175,16 @@ void main() {
       await writeBuildStateAndPlan(buildState, buildPlan);
 
       buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides.copyWith(
-          builderDefinitions: [
-            BuilderDefinition(''),
-            // Apply a second builder so build phases change.
-            BuilderDefinition('b2'),
-          ].build(),
+        await BuildSpec.load(
+          builderFactories: builderFactories,
+          buildOptions: buildOptions,
+          testingOverrides: testingOverrides.copyWith(
+            builderDefinitions: [
+              BuilderDefinition(''),
+              // Apply a second builder so build phases change.
+              BuilderDefinition('b2'),
+            ].build(),
+          ),
         ),
       );
 
@@ -192,13 +203,15 @@ void main() {
       await writeBuildStateAndPlan(buildState, buildPlan);
 
       buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides.copyWith(
-          builderDefinitions: [
-            BuilderDefinition(''),
-            BuilderDefinition('b2'),
-          ].build(),
+        await BuildSpec.load(
+          builderFactories: builderFactories,
+          buildOptions: buildOptions,
+          testingOverrides: testingOverrides.copyWith(
+            builderDefinitions: [
+              BuilderDefinition(''),
+              BuilderDefinition('b2'),
+            ].build(),
+          ),
         ),
       );
 
@@ -216,9 +229,11 @@ void main() {
         buildPackages: buildPackages2,
       );
       buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides2,
+        await BuildSpec.load(
+          builderFactories: builderFactories,
+          buildOptions: buildOptions,
+          testingOverrides: testingOverrides2,
+        ),
       );
 
       expect(buildPlan.previousBuildState, null);
@@ -231,10 +246,12 @@ void main() {
         await writeBuildStateAndPlan(buildState, buildPlan);
 
         buildPlan = await withEnabledExperiments(
-          () => BuildPlan.load(
-            builderFactories: builderFactories,
-            buildOptions: buildOptions,
-            testingOverrides: testingOverrides,
+          () async => BuildPlan.load(
+            await BuildSpec.load(
+              builderFactories: builderFactories,
+              buildOptions: buildOptions,
+              testingOverrides: testingOverrides,
+            ),
           ),
           ['an_experiment'],
         );
@@ -273,11 +290,7 @@ void main() {
       // Remove generated.
       await readerWriter.delete(outputId);
 
-      buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides,
-      );
+      buildPlan = await loadPlan();
 
       expect(
         {
@@ -306,10 +319,12 @@ void main() {
         [],
       );
       final buildPlan1 = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides.copyWith(
-          buildConfig: {'a': buildConfig1}.build(),
+        await BuildSpec.load(
+          builderFactories: builderFactories,
+          buildOptions: buildOptions,
+          testingOverrides: testingOverrides.copyWith(
+            buildConfig: {'a': buildConfig1}.build(),
+          ),
         ),
       );
       // Matches the only `*.dart` source.
@@ -331,10 +346,12 @@ void main() {
         [],
       );
       final buildPlan2 = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides.copyWith(
-          buildConfig: {'a': buildConfig2}.build(),
+        await BuildSpec.load(
+          builderFactories: builderFactories,
+          buildOptions: buildOptions,
+          testingOverrides: testingOverrides.copyWith(
+            buildConfig: {'a': buildConfig2}.build(),
+          ),
         ),
       );
       // Matches the only `*.other` source.
@@ -342,11 +359,7 @@ void main() {
     });
 
     test('tracks cleanBuild when build_plan.json does not exist', () async {
-      final plan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides,
-      );
+      final plan = await loadPlan();
       expect(plan.previousBuildState, isNull);
     });
 
@@ -357,11 +370,7 @@ void main() {
           buildPlan.previousBuildState ?? BuildState(),
           buildPlan,
         );
-        buildPlan = await BuildPlan.load(
-          builderFactories: builderFactories,
-          buildOptions: buildOptions,
-          testingOverrides: testingOverrides,
-        );
+        buildPlan = await loadPlan();
         expect(buildPlan.previousBuildState, isNotNull);
       },
     );
@@ -369,30 +378,22 @@ void main() {
     test(
       'tracks cleanBuild when build_plan.json compileDigest is stale',
       () async {
-        buildPlan = buildPlan.copyWith(
-          buildPlanDigest: buildPlan.buildPlanDigest.rebuild(
-            (b) => b.compileDigest = 'stale_digest',
-          ),
+        buildPlan = buildPlan.rebuild(
+          (b) => b.buildSpec.buildPlanDigest.compileDigest = 'stale_digest',
         );
         await writeBuildStateAndPlan(
           buildPlan.previousBuildState ?? BuildState(),
           buildPlan,
         );
 
-        buildPlan = await BuildPlan.load(
-          builderFactories: builderFactories,
-          buildOptions: buildOptions,
-          testingOverrides: testingOverrides,
-        );
+        buildPlan = await loadPlan();
         expect(buildPlan.previousBuildState, isNull);
       },
     );
 
     test('tracks triggersChanged when triggers change', () async {
-      buildPlan = buildPlan.copyWith(
-        buildPlanDigest: buildPlan.buildPlanDigest.rebuild(
-          (b) => b.buildTriggersDigest = 'triggers_1',
-        ),
+      buildPlan = buildPlan.rebuild(
+        (b) => b.buildSpec.buildPlanDigest.buildTriggersDigest = 'triggers_1',
       );
       await writeBuildStateAndPlan(
         buildPlan.previousBuildState ?? BuildState(),
@@ -419,10 +420,12 @@ void main() {
       );
 
       final buildPlan2 = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides.copyWith(
-          buildConfig: {'a': buildConfig2}.build(),
+        await BuildSpec.load(
+          builderFactories: builderFactories,
+          buildOptions: buildOptions,
+          testingOverrides: testingOverrides.copyWith(
+            buildConfig: {'a': buildConfig2}.build(),
+          ),
         ),
       );
       expect(buildPlan2.previousBuildState, isNotNull);
@@ -430,10 +433,9 @@ void main() {
     });
 
     test('tracks phaseOptionsChanged when builder options change', () async {
-      buildPlan = buildPlan.copyWith(
-        buildPlanDigest: buildPlan.buildPlanDigest.rebuild(
-          (b) => b.inBuildPhasesOptionsDigests[0] = 'dummy_digest_1',
-        ),
+      buildPlan = buildPlan.rebuild(
+        (b) => b.buildSpec.buildPlanDigest.inBuildPhasesOptionsDigests[0] =
+            'dummy_digest_1',
       );
       await writeBuildStateAndPlan(
         buildPlan.previousBuildState ?? BuildState(),
@@ -460,10 +462,12 @@ void main() {
       );
 
       final buildPlan2 = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides.copyWith(
-          buildConfig: {'a': buildConfig2}.build(),
+        await BuildSpec.load(
+          builderFactories: builderFactories,
+          buildOptions: buildOptions,
+          testingOverrides: testingOverrides.copyWith(
+            buildConfig: {'a': buildConfig2}.build(),
+          ),
         ),
       );
       expect(buildPlan2.previousBuildState, isNotNull);
@@ -471,47 +475,35 @@ void main() {
     });
 
     test('tracks buildPhasesDigest when build phases change', () async {
-      buildPlan = buildPlan.copyWith(
-        buildPlanDigest: buildPlan.buildPlanDigest.rebuild(
-          (b) => b.buildPhasesDigest = 'stale_digest',
-        ),
+      buildPlan = buildPlan.rebuild(
+        (b) => b.buildSpec.buildPlanDigest.buildPhasesDigest = 'stale_digest',
       );
       await writeBuildStateAndPlan(
         buildPlan.previousBuildState ?? BuildState(),
         buildPlan,
       );
 
-      buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides,
-      );
+      buildPlan = await loadPlan();
       expect(buildPlan.previousBuildState, isNull);
     });
 
     test('tracks dartVersion when SDK version changes', () async {
-      buildPlan = buildPlan.copyWith(
-        buildPlanDigest: buildPlan.buildPlanDigest.rebuild(
-          (b) => b.dartVersion = 'stale_version',
-        ),
+      buildPlan = buildPlan.rebuild(
+        (b) => b.buildSpec.buildPlanDigest.dartVersion = 'stale_version',
       );
       await writeBuildStateAndPlan(
         buildPlan.previousBuildState ?? BuildState(),
         buildPlan,
       );
 
-      buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides,
-      );
+      buildPlan = await loadPlan();
       expect(buildPlan.previousBuildState, isNull);
     });
 
     test('tracks enabledExperiments when experiments change', () async {
-      buildPlan = buildPlan.copyWith(
-        buildPlanDigest: buildPlan.buildPlanDigest.rebuild(
-          (b) => b.enabledExperiments.add('stale_experiment'),
+      buildPlan = buildPlan.rebuild(
+        (b) => b.buildSpec.buildPlanDigest.enabledExperiments.add(
+          'stale_experiment',
         ),
       );
       await writeBuildStateAndPlan(
@@ -519,32 +511,23 @@ void main() {
         buildPlan,
       );
 
-      buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides,
-      );
+      buildPlan = await loadPlan();
       expect(buildPlan.previousBuildState, isNull);
     });
 
     test(
       'tracks packageLanguageVersions when package language versions change',
       () async {
-        buildPlan = buildPlan.copyWith(
-          buildPlanDigest: buildPlan.buildPlanDigest.rebuild(
-            (b) => b.packageLanguageVersions['a'] = '1.0',
-          ),
+        buildPlan = buildPlan.rebuild(
+          (b) =>
+              b.buildSpec.buildPlanDigest.packageLanguageVersions['a'] = '1.0',
         );
         await writeBuildStateAndPlan(
           buildPlan.previousBuildState ?? BuildState(),
           buildPlan,
         );
 
-        buildPlan = await BuildPlan.load(
-          builderFactories: builderFactories,
-          buildOptions: buildOptions,
-          testingOverrides: testingOverrides,
-        );
+        buildPlan = await loadPlan();
         expect(buildPlan.previousBuildState, isNull);
       },
     );
@@ -567,11 +550,7 @@ void main() {
         json.encode(decodedMap),
       );
 
-      buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides,
-      );
+      buildPlan = await loadPlan();
       expect(buildPlan.previousBuildState, isNull);
     });
   });

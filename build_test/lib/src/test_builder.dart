@@ -486,12 +486,14 @@ Future<TestBuilderResult> testBuilderFactories(
   );
 
   final buildPlan = await BuildPlan.load(
-    builderFactories: BuilderFactories(
-      builderNameToBuilderFactory,
-      postProcessBuilderFactories: postProcessBuilderNameToBuilderFactory,
+    await BuildSpec.load(
+      builderFactories: BuilderFactories(
+        builderNameToBuilderFactory,
+        postProcessBuilderFactories: postProcessBuilderNameToBuilderFactory,
+      ),
+      buildOptions: BuildOptions.forTests(verbose: verbose),
+      testingOverrides: testingOverrides,
     ),
-    buildOptions: BuildOptions.forTests(verbose: verbose),
-    testingOverrides: testingOverrides,
   );
   await buildPlan.deleteFilesAndFolders();
 

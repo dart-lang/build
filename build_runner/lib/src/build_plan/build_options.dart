@@ -20,9 +20,19 @@ import 'build_paths.dart';
 /// build.
 class BuildOptions {
   final BuiltMap<String, BuiltMap<String, Object?>> builderConfigOverrides;
+
+  /// The globally-configured build filters.
+  ///
+  /// These can be overridden elsewhere for individual builds.
   final BuiltSet<BuildDirectory> buildDirs;
+
   final BuildPaths buildPaths;
+
+  /// The globally-configured build filters.
+  ///
+  /// These can be overridden elsewhere for individual builds.
   final BuiltSet<BuildFilter> buildFilters;
+
   final CompileStrategy compileStrategy;
   final String? configKey;
   final BuiltList<String> enableExperiments;

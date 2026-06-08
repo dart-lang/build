@@ -18,6 +18,7 @@ import '../build_plan/build_options.dart';
 import '../build_plan/build_packages.dart';
 import '../build_plan/build_phases.dart';
 import '../build_plan/build_plan.dart';
+import '../build_plan/build_spec.dart';
 import '../build_plan/build_step_plan.dart';
 import '../build_plan/phase.dart';
 import '../build_plan/testing_overrides.dart';
@@ -87,8 +88,9 @@ class Build {
       previousDepsLoader = buildPlan.previousPhasedAssetDeps == null
           ? null
           : AssetDepsLoader.fromDeps(buildPlan.previousPhasedAssetDeps!),
-      resolvers = buildPlan.testingOverrides.resolvers ?? _defaultResolvers,
-      resolversImpl = switch (buildPlan.testingOverrides.resolvers ??
+      resolvers =
+          buildPlan.buildSpec.testingOverrides.resolvers ?? _defaultResolvers,
+      resolversImpl = switch (buildPlan.buildSpec.testingOverrides.resolvers ??
           _defaultResolvers) {
         ResolversImpl r => r,
         _ => null,
@@ -99,10 +101,11 @@ class Build {
     }
   }
 
-  BuildOptions get buildOptions => buildPlan.buildOptions;
-  TestingOverrides get testingOverrides => buildPlan.testingOverrides;
-  BuildPackages get buildPackages => buildPlan.buildPackages;
-  BuildConfigs get buildConfigs => buildPlan.buildConfigs;
+  BuildSpec get buildSpec => buildPlan.buildSpec;
+  BuildOptions get buildOptions => buildSpec.buildOptions;
+  TestingOverrides get testingOverrides => buildSpec.testingOverrides;
+  BuildPackages get buildPackages => buildSpec.buildPackages;
+  BuildConfigs get buildConfigs => buildSpec.buildConfigs;
   BuildPhases get buildPhases => buildPlan.buildStepPlan.buildPhases;
   BuildState? get previousBuildState => buildPlan.previousBuildState;
   BuildInputs get buildInputs => buildPlan.buildInputs;
@@ -166,14 +169,14 @@ class Build {
     await resourceManager.disposeAll();
 
     // If requested, create output directories. If that fails, fail the build.
-    if (buildPlan.buildOptions.buildDirs.any(
+    if (buildPlan.buildDirs.any(
           (target) => target.outputLocation?.path.isNotEmpty ?? false,
         ) &&
         result.status == BuildStatus.success) {
       if (!await createMergedOutputDirectories(
         buildPackages: buildPackages,
         outputSymlinksOnly: buildOptions.outputSymlinksOnly,
-        buildDirs: buildOptions.buildDirs,
+        buildDirs: buildPlan.buildDirs,
         buildOutputReader: buildOutputReader,
         readerWriter: readerWriter,
       )) {
@@ -215,7 +218,7 @@ class Build {
         await readerWriter.writeAsBytes(
           AssetId(buildPackages.outputRoot, assetGraphJsonPath),
           AssetGraphJson.serialize(
-            buildPlanDigest: buildPlan.buildPlanDigest,
+            buildPlanDigest: buildSpec.buildPlanDigest,
             buildState: buildState,
             phasedAssetDeps: updatedPhasedAssetDeps,
           ),
@@ -346,8 +349,8 @@ class Build {
       for (final id in assetsToCheck) {
         if (!shouldBuildForDirs(
           id,
-          buildDirs: buildPlan.buildOptions.buildDirs,
-          buildFilters: buildPlan.buildOptions.buildFilters,
+          buildDirs: buildPlan.buildDirs,
+          buildFilters: buildPlan.buildFilters,
           phase: phase,
           buildConfigs: buildConfigs,
         )) {
