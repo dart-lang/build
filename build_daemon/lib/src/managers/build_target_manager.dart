@@ -9,18 +9,20 @@ import '../../data/build_target.dart';
 
 bool _isBlacklistedPath(String filePath, Set<RegExp> blackListedPatterns) {
   for (final pattern in blackListedPatterns) {
-    try {
-      // Basic safeguard against overly complex patterns
-      if (pattern.pattern.length > 1000) continue;
-
-      if (filePath.contains(pattern)) {
-        return true;
-      }
-    } catch (_) {
-      continue;
-    }
+    if (_isDangerousPattern(pattern)) continue;
+    if (filePath.contains(pattern)) return true;
   }
   return false;
+}
+
+/// Guards against catastrophic backtracking on Dart's mandatory ECMAScript
+/// backtracking regex engine. Nested quantifiers like (a+)+ cause exponential
+/// time complexity.
+/// Reference: https://api.dart.dev/dart-core/RegExp-class.html
+bool _isDangerousPattern(RegExp pattern) {
+  final p = pattern.pattern;
+  return RegExp(r'\([^)]*[+*][^)]*\)[+*?]').hasMatch(p) ||
+         RegExp(r'\([^)]*\|[^)]*\)[+*?]').hasMatch(p);
 }
 
 bool _shouldBuild(BuildTarget target, Iterable<WatchEvent> changes) =>
