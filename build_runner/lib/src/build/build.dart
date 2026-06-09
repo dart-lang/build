@@ -84,10 +84,9 @@ class Build {
 
   Build({required this.buildPlan, required this.resourceManager})
     : readerWriter = buildPlan.readerWriter,
-      previousDepsLoader =
-          buildPlan.previousPhasedAssetDeps == null
-              ? null
-              : AssetDepsLoader.fromDeps(buildPlan.previousPhasedAssetDeps!),
+      previousDepsLoader = buildPlan.previousPhasedAssetDeps == null
+          ? null
+          : AssetDepsLoader.fromDeps(buildPlan.previousPhasedAssetDeps!),
       resolvers = buildPlan.testingOverrides.resolvers ?? _defaultResolvers,
       resolversImpl = switch (buildPlan.testingOverrides.resolvers ??
           _defaultResolvers) {
@@ -109,11 +108,8 @@ class Build {
   BuildInputs get buildInputs => buildPlan.buildInputs;
   BuildStepPlan get buildStepPlan => buildPlan.buildStepPlan;
 
-  BuildOutputReader get buildOutputReader =>
-      _buildOutputReader ??= BuildOutputReader(
-        buildPlan: buildPlan,
-        buildState: buildState,
-      );
+  BuildOutputReader get buildOutputReader => _buildOutputReader ??=
+      BuildOutputReader(buildPlan: buildPlan, buildState: buildState);
 
   Future<BuildResult> run() async {
     buildLog.configuration = buildLog.configuration.rebuild(
@@ -213,12 +209,9 @@ class Build {
         // say "not generated yet", in which case the old value is retained.
         final currentPhasedAssetDeps =
             resolversImpl?.phasedAssetDeps() ?? PhasedAssetDeps();
-        final updatedPhasedAssetDeps =
-            buildPlan.previousPhasedAssetDeps == null
-                ? currentPhasedAssetDeps
-                : buildPlan.previousPhasedAssetDeps!.update(
-                  currentPhasedAssetDeps,
-                );
+        final updatedPhasedAssetDeps = buildPlan.previousPhasedAssetDeps == null
+            ? currentPhasedAssetDeps
+            : buildPlan.previousPhasedAssetDeps!.update(currentPhasedAssetDeps);
         await readerWriter.writeAsBytes(
           AssetId(buildPackages.outputRoot, assetGraphJsonPath),
           AssetGraphJson.serialize(
@@ -422,11 +415,8 @@ class Build {
         buildStepPlan: buildStepPlan,
         buildState: buildState,
         assetBuilder: _buildOutput,
-        assetIsProcessedOutput:
-            (id) => buildState.isProcessedOutput(
-              buildStepPlan: buildStepPlan,
-              id: id,
-            ),
+        assetIsProcessedOutput: (id) =>
+            buildState.isProcessedOutput(buildStepPlan: buildStepPlan, id: id),
         globEvaluator: _evaluateGlob,
       ),
       runningBuildStep: RunningBuildStep(
@@ -649,11 +639,8 @@ class Build {
         buildStepPlan: buildStepPlan,
         buildState: buildState,
         assetBuilder: _buildOutput,
-        assetIsProcessedOutput:
-            (id) => buildState.isProcessedOutput(
-              buildStepPlan: buildStepPlan,
-              id: id,
-            ),
+        assetIsProcessedOutput: (id) =>
+            buildState.isProcessedOutput(buildStepPlan: buildStepPlan, id: id),
         globEvaluator: _evaluateGlob,
       ),
       runningBuildStep: RunningBuildStep(
@@ -904,8 +891,8 @@ class Build {
     required int phaseNumber,
   }) async {
     // If the result has already been calculated, return it.
-    final entrypointGraph = (await previousLibraryCycleGraphLoader
-        .libraryCycleGraphOf(
+    final entrypointGraph =
+        (await previousLibraryCycleGraphLoader.libraryCycleGraphOf(
           previousDepsLoader!,
           entrypointId,
         )).valueAt(phase: phaseNumber);
@@ -1153,21 +1140,19 @@ class Build {
     Set<AssetId>? unusedAssets,
   }) async {
     final inputTracker = stepReaderWriter.inputTracker;
-    final usedInputs =
-        unusedAssets != null && unusedAssets.isNotEmpty
-            ? inputTracker.inputs.difference(unusedAssets)
-            : inputTracker.inputs;
+    final usedInputs = unusedAssets != null && unusedAssets.isNotEmpty
+        ? inputTracker.inputs.difference(unusedAssets)
+        : inputTracker.inputs;
     final result = errors.isEmpty;
     final phaseNum = stepReaderWriter.phase;
 
-    final buildStepResultBuilder =
-        BuildStepResultBuilder()
-          ..result = result
-          ..isHidden = buildPhases.inBuildPhases[phaseNum].hideOutput
-          ..inputs.replace(usedInputs)
-          ..globsEvaluated.replace(inputTracker.globsEvaluated)
-          ..resolverEntrypoints.replace(inputTracker.resolverEntrypoints)
-          ..errors.replace(errors);
+    final buildStepResultBuilder = BuildStepResultBuilder()
+      ..result = result
+      ..isHidden = buildPhases.inBuildPhases[phaseNum].hideOutput
+      ..inputs.replace(usedInputs)
+      ..globsEvaluated.replace(inputTracker.globsEvaluated)
+      ..resolverEntrypoints.replace(inputTracker.resolverEntrypoints)
+      ..errors.replace(errors);
     for (final output in outputs) {
       if (stepReaderWriter.assetsWritten.contains(output)) {
         buildStepResultBuilder.outputs[output] = await readerWriter.digest(
@@ -1186,8 +1171,9 @@ class Build {
 
   bool _isChangedOutput(AssetId output) {
     final generatingStep = buildStepPlan.stepForDeclaredOutput(output);
-    final oldDigest =
-        previousBuildState?.stepResultOrNull(generatingStep)?.outputs[output];
+    final oldDigest = previousBuildState
+        ?.stepResultOrNull(generatingStep)
+        ?.outputs[output];
     final newDigest = buildState.stepResult(generatingStep).outputs[output];
     return oldDigest != newDigest;
   }

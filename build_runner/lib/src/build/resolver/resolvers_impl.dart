@@ -70,10 +70,9 @@ class ResolversImpl implements Resolvers {
     await _initializationPool.withResource(() async {
       if (_buildResolver != null) return;
       _warnOnLanguageVersionMismatch();
-      final loadedConfig =
-          _packageConfig ??= await loadPackageConfigUri(
-            Uri.parse(buildProcessState.packageConfigUri),
-          );
+      final loadedConfig = _packageConfig ??= await loadPackageConfigUri(
+        Uri.parse(buildProcessState.packageConfigUri),
+      );
       final driver = analysisDriver(
         _analysisDriverModel,
         AnalysisOptionsImpl()
@@ -125,8 +124,9 @@ class ResolversImpl implements Resolvers {
 void _warnOnLanguageVersionMismatch() async {
   if (sdkLanguageVersion <= ExperimentStatus.currentVersion) return;
 
-  final upgradeCommand =
-      isFlutter ? 'flutter packages upgrade' : 'dart pub upgrade';
+  final upgradeCommand = isFlutter
+      ? 'flutter packages upgrade'
+      : 'dart pub upgrade';
   buildLog.warning(
     'SDK language version $sdkLanguageVersion is newer than `analyzer` '
     'language version ${ExperimentStatus.currentVersion}. '

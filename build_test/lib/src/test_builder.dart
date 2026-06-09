@@ -342,10 +342,9 @@ Future<TestBuilderResult> testBuilderFactories(
   // Differentiate input packages and all packages. Builders run on input
   // packages; they can read/resolve all packages. Additional packages are
   // supplied by passing a `readerWriter`.
-  final inputPackages =
-      inputIds.isEmpty
-          ? {rootPackage!}
-          : {for (final id in inputIds) id.package};
+  final inputPackages = inputIds.isEmpty
+      ? {rootPackage!}
+      : {for (final id in inputIds) id.package};
   final allPackages = inputPackages.toSet();
   if (readerWriter != null) {
     for (final asset in readerWriter.testing.assets) {
@@ -372,10 +371,9 @@ Future<TestBuilderResult> testBuilderFactories(
     b.onLog = onLog;
     b.verbose = verbose;
   });
-  resolvers ??=
-      packageConfig == null && enabledExperiments.isEmpty
-          ? _defaultResolvers
-          : ResolversImpl.custom(packageConfig: packageConfig);
+  resolvers ??= packageConfig == null && enabledExperiments.isEmpty
+      ? _defaultResolvers
+      : ResolversImpl.custom(packageConfig: packageConfig);
 
   // Build a `buildPackages` based on [sourceAssets].
   final otherPackages = allPackages.toSet()..remove(rootPackage);
@@ -456,33 +454,33 @@ Future<TestBuilderResult> testBuilderFactories(
         // [testingBuilderConfig] is false, use the defaults. These skip some
         // files, for example picking up `lib/**` but not all files in the package root.
         testingBuilderConfig
-            ? {
-              for (final package in inputPackages)
-                package: build_config.BuildConfig.fromMap(package, [], {
-                  'targets': {
-                    package: {
-                      'sources': [
-                        r'\$package$',
-                        r'lib/$lib$',
-                        r'test/$test$',
-                        r'web/$web$',
-                        if (package == rootPackage)
-                          ...defaultInBuildPackageSources,
-                        if (package != rootPackage)
-                          ...defaultDependencyVisibleAssets,
-                        ...inputIds
-                            .where(
-                              (id) =>
-                                  id.package == package &&
-                                  !id.path.startsWith('.dart_tool/'),
-                            )
-                            .map((id) => Glob.quote(id.path)),
-                      ],
-                    },
+        ? {
+            for (final package in inputPackages)
+              package: build_config.BuildConfig.fromMap(package, [], {
+                'targets': {
+                  package: {
+                    'sources': [
+                      r'\$package$',
+                      r'lib/$lib$',
+                      r'test/$test$',
+                      r'web/$web$',
+                      if (package == rootPackage)
+                        ...defaultInBuildPackageSources,
+                      if (package != rootPackage)
+                        ...defaultDependencyVisibleAssets,
+                      ...inputIds
+                          .where(
+                            (id) =>
+                                id.package == package &&
+                                !id.path.startsWith('.dart_tool/'),
+                          )
+                          .map((id) => Glob.quote(id.path)),
+                    ],
                   },
-                }),
-            }.build()
-            : null,
+                },
+              }),
+          }.build()
+        : null,
     reportUnusedAssetsForInput: reportUnusedAssetsForInput,
     flattenOutput: flattenOutput,
   );

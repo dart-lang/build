@@ -146,14 +146,15 @@ class BuildSeries {
           id.path == 'build.${_buildPlan.buildOptions.configKey}.yaml');
 
   Future<List<WatchEvent>> checkForChanges() async {
-    final updates = await AssetTracker(
-      _buildPlan.readerWriter,
-      _buildPlan.buildPackages,
-      _buildPlan.buildConfigs,
-    ).collectChanges(
-      buildStepPlan: _buildPlan.buildStepPlan,
-      buildState: _buildPlan.previousBuildState ?? BuildState(),
-    );
+    final updates =
+        await AssetTracker(
+          _buildPlan.readerWriter,
+          _buildPlan.buildPackages,
+          _buildPlan.buildConfigs,
+        ).collectChanges(
+          buildStepPlan: _buildPlan.buildStepPlan,
+          buildState: _buildPlan.previousBuildState ?? BuildState(),
+        );
     return List.of(
       updates.entries.map((entry) => WatchEvent(entry.value, '${entry.key}')),
     );

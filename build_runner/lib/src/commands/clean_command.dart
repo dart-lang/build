@@ -21,10 +21,9 @@ class CleanCommand implements BuildRunnerCommand {
     // Delete specific directories and files instead of the whole cache
     // directory, which can't be deleted on Windows due to the open lock file.
 
-    final basePath =
-        buildPaths.buildWorkspace
-            ? buildPaths.workspacePath!
-            : buildPaths.packagePath;
+    final basePath = buildPaths.buildWorkspace
+        ? buildPaths.workspacePath!
+        : buildPaths.packagePath;
 
     final entrypointDir = Directory(p.join(basePath, entrypointDirectoryPath));
     if (entrypointDir.existsSync()) {

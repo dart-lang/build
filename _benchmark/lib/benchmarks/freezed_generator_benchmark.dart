@@ -20,7 +20,8 @@ class FreezedGeneratorBenchmark implements Benchmark {
     // TODO(davidmorgan): add a way to pick `build` and generator versions.
     workspace.write(
       'pubspec.yaml',
-      source: '''
+      source:
+          '''
 name: ${workspace.name}
 publish_to: none
 
@@ -66,7 +67,8 @@ ${config.dependencyOverrides}
       if (config.config.mostlyNoCodegen && libraryNumber > 1) {
         workspace.write(
           'lib/$libraryName',
-          source: '''
+          source:
+              '''
 // ignore_for_file: unused_import
 ${[for (final importName in importNames) "import '$importName';"].join('\n')}
 
@@ -76,7 +78,8 @@ class Value {}
       } else {
         workspace.write(
           'lib/$libraryName',
-          source: '''
+          source:
+              '''
 // ignore_for_file: unused_import
 import 'package:freezed_annotation/freezed_annotation.dart';
 

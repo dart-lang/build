@@ -130,12 +130,11 @@ class BuildPlan {
       compileStrategy: buildOptions.compileStrategy,
     );
     var restartIsNeeded = false;
-    final compileFreshness =
-        testingOverrides.checkBuilderFreshness
-            ? await bootstrapper.checkCompileFreshness(
-              digestsAreFresh: recentlyBootstrapped,
-            )
-            : FreshnessResult(outputIsFresh: true, digest: 'dummy_digest');
+    final compileFreshness = testingOverrides.checkBuilderFreshness
+        ? await bootstrapper.checkCompileFreshness(
+            digestsAreFresh: recentlyBootstrapped,
+          )
+        : FreshnessResult(outputIsFresh: true, digest: 'dummy_digest');
     if (!compileFreshness.outputIsFresh) {
       restartIsNeeded = true;
     }
@@ -143,9 +142,10 @@ class BuildPlan {
     final buildPackages =
         testingOverrides.buildPackages ??
         await BuildPackages.forPaths(buildOptions.buildPaths);
-    final readerWriter = (testingOverrides.readerWriter ??
-            ReaderWriter(buildPackages))
-        .copyWith(cache: InMemoryFilesystemCache());
+    final readerWriter =
+        (testingOverrides.readerWriter ?? ReaderWriter(buildPackages)).copyWith(
+          cache: InMemoryFilesystemCache(),
+        );
     final buildConfigs = await BuildConfigs.load(
       readerWriter: readerWriter,
       buildPackages: buildPackages,
@@ -275,12 +275,11 @@ class BuildPlan {
       // Compute build steps just to get declared outputs and prune the input
       // sources to remove them. They are computed again below based on the
       // pruned inputs.
-      final declaredOutputs =
-          BuildStepPlan.compute(
-            buildPhases: buildPhases,
-            placeholderIds: buildPackages.placeholderIds,
-            sources: inputSources,
-          ).declaredOutputs;
+      final declaredOutputs = BuildStepPlan.compute(
+        buildPhases: buildPhases,
+        placeholderIds: buildPackages.placeholderIds,
+        sources: inputSources,
+      ).declaredOutputs;
       final inputSourcesWithoutOutputs = Set<AssetId>.from(inputSources);
       for (final output in declaredOutputs) {
         inputSourcesWithoutOutputs.remove(output);
@@ -303,11 +302,10 @@ class BuildPlan {
     ];
 
     if (previousBuildState == null) {
-      final conflictsInDeps =
-          declaredAndActualOutputs
-              .where((n) => !buildPackages.outputPackages.contains(n.package))
-              .where(inputSources.contains)
-              .toSet();
+      final conflictsInDeps = declaredAndActualOutputs
+          .where((n) => !buildPackages.outputPackages.contains(n.package))
+          .where(inputSources.contains)
+          .toSet();
       if (conflictsInDeps.isNotEmpty) {
         buildLog.error(
           'There are existing files in dependencies which conflict '
@@ -327,10 +325,9 @@ class BuildPlan {
     }
 
     final finalReaderWriter = readerWriter.copyWith(
-      generatedAssetHider:
-          testingOverrides.flattenOutput
-              ? const NoopGeneratedAssetHider()
-              : buildStepPlan,
+      generatedAssetHider: testingOverrides.flattenOutput
+          ? const NoopGeneratedAssetHider()
+          : buildStepPlan,
     );
 
     return _createAndResolve(
@@ -348,8 +345,9 @@ class BuildPlan {
       bootstrapper: bootstrapper,
       filesToDelete: filesToDelete.toBuiltList(),
       foldersToDelete: foldersToDelete.toBuiltList(),
-      triggersChanged:
-          !buildPlanDigest.hasSameTriggersAs(previousBuildPlanDigest),
+      triggersChanged: !buildPlanDigest.hasSameTriggersAs(
+        previousBuildPlanDigest,
+      ),
       phaseOptionsChanged: buildPlanDigest.computeChangedPhaseOptions(
         previousBuildPlanDigest,
       ),
@@ -524,10 +522,9 @@ class BuildPlan {
         }
       }
       final newReaderWriter = readerWriter.copyWith(
-        generatedAssetHider:
-            testingOverrides.flattenOutput
-                ? const NoopGeneratedAssetHider()
-                : newBuildStepPlan,
+        generatedAssetHider: testingOverrides.flattenOutput
+            ? const NoopGeneratedAssetHider()
+            : newBuildStepPlan,
       );
       return BuildPlan(
         buildPlanDigest: buildPlanDigest,
@@ -562,8 +559,9 @@ class BuildPlan {
         buildStepPlan: buildStepPlan,
         id: id,
       );
-      final oldDigest =
-          oldIsSource ? previousBuildState.digestOfSource(id) : null;
+      final oldDigest = oldIsSource
+          ? previousBuildState.digestOfSource(id)
+          : null;
       var exists = false;
       Digest? newDigest;
 
@@ -643,17 +641,15 @@ class BuildPlan {
       }
     }
 
-    final deletedOutputs =
-        buildStepPlan
-            .transitiveDeclaredOutputsOf(result.deletedSources.build())
-            .toSet();
+    final deletedOutputs = buildStepPlan
+        .transitiveDeclaredOutputsOf(result.deletedSources.build())
+        .toSet();
     result.deletedOutputs.addAll(deletedOutputs);
 
     final generatedReaderWriter = readerWriter.copyWith(
-      generatedAssetHider:
-          testingOverrides.flattenOutput
-              ? const NoopGeneratedAssetHider()
-              : newBuildStepPlan,
+      generatedAssetHider: testingOverrides.flattenOutput
+          ? const NoopGeneratedAssetHider()
+          : newBuildStepPlan,
     );
     for (final id in deletedOutputs) {
       await generatedReaderWriter.delete(id);

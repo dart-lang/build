@@ -80,11 +80,10 @@ sealed class AbstractBuilderDefinition {
     final rootBuildConfig = orderedConfigs.singleWhere(
       (c) => c.packageName == buildPackages.outputRoot,
     );
-    final orderedBuilders =
-        findBuilderOrder(
-          builderDefinitions,
-          rootBuildConfig.globalOptions,
-        ).toList();
+    final orderedBuilders = findBuilderOrder(
+      builderDefinitions,
+      rootBuildConfig.globalOptions,
+    ).toList();
 
     final postProcessBuilderDefinitions = orderedConfigs
         .expand((c) => c.postProcessBuilderDefinitions.values)
@@ -174,8 +173,8 @@ class BuilderDefinition implements AbstractBuilderDefinition {
         return restrictForWorkspacePackages == null
             ? true
             : restrictForWorkspacePackages
-                .peersOf(package.name)
-                .contains(this.package);
+                  .peersOf(package.name)
+                  .contains(this.package);
       case AutoApply.rootPackage:
         // In a workspace build, "root package" means an output package that
         // depends transitively on the builder.

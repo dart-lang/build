@@ -101,10 +101,11 @@ void main() {
           );
           expect(buildPackage.root, Uri.parse('asset:build/'));
           expect(buildPackage.packageUriRoot, Uri.parse('asset:build/lib/'));
-          expect(buildPackage.languageVersion, LanguageVersion(3, 7));
+          expect(buildPackage.languageVersion, LanguageVersion(3, 8));
 
-          final resolvedBuildUri =
-              config.resolve(Uri.parse('package:build/foo.txt'))!;
+          final resolvedBuildUri = config.resolve(
+            Uri.parse('package:build/foo.txt'),
+          )!;
           expect(
             await buildStep.canRead(AssetId.resolve(resolvedBuildUri)),
             isTrue,
@@ -132,7 +133,7 @@ void main() {
           Package(
             'build',
             Uri.file('/foo/bar/'),
-            languageVersion: LanguageVersion(3, 7),
+            languageVersion: LanguageVersion(3, 8),
           ),
         ]),
       );

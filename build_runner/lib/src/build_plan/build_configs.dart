@@ -96,10 +96,10 @@ class BuildConfigs {
         (readerWriter == null
             ? null
             : await findBuildConfigOverrides(
-              buildPackages: buildPackages,
-              readerWriter: readerWriter,
-              configKey: configKey,
-            ));
+                buildPackages: buildPackages,
+                readerWriter: readerWriter,
+                configKey: configKey,
+              ));
     for (final package in buildPackages.packages.values) {
       final config =
           configOverrides?[package.name] ??
@@ -108,29 +108,28 @@ class BuildConfigs {
 
       BuiltList<String> defaultInclude;
       if (package.isOutput) {
-        defaultInclude =
-            [
-              ...(testingOverrides?.defaultRootPackageSources ??
-                  defaultInBuildPackageSources),
-              ...config.additionalPublicAssets,
-            ].build();
+        defaultInclude = [
+          ...(testingOverrides?.defaultRootPackageSources ??
+              defaultInBuildPackageSources),
+          ...config.additionalPublicAssets,
+        ].build();
       } else if (package.name == r'$sdk') {
-        defaultInclude =
-            const ['lib/dev_compiler/**.js', 'lib/_internal/**.sum'].build();
+        defaultInclude = const [
+          'lib/dev_compiler/**.js',
+          'lib/_internal/**.sum',
+        ].build();
       } else {
-        defaultInclude =
-            [
-              ...defaultDependencyVisibleAssets,
-              ...config.additionalPublicAssets,
-            ].build();
+        defaultInclude = [
+          ...defaultDependencyVisibleAssets,
+          ...config.additionalPublicAssets,
+        ].build();
       }
       publicAssetsByPackage[package.name] = InputMatcher(
         const InputSet(),
-        defaultInclude:
-            [
-              ...defaultDependencyVisibleAssets, // public by default
-              ...config.additionalPublicAssets, // user-defined public assets
-            ].build(),
+        defaultInclude: [
+          ...defaultDependencyVisibleAssets, // public by default
+          ...config.additionalPublicAssets, // user-defined public assets
+        ].build(),
       );
       final buildTargets = config.buildTargets.values.map(
         (target) => BuildTarget(target, defaultInclude: defaultInclude),
@@ -141,8 +140,9 @@ class BuildConfigs {
           Placeholders.packageName,
           Placeholders.libPath,
         ];
-        final requiredPackagePaths =
-            package.isOutput ? requiredRootSourcePaths : requiredSourcePaths;
+        final requiredPackagePaths = package.isOutput
+            ? requiredRootSourcePaths
+            : requiredSourcePaths;
         final requiredIds = requiredPackagePaths.map(
           (path) => AssetId(package.name, path),
         );
@@ -347,36 +347,34 @@ Future<BuiltMap<String, BuildConfig>> findBuildConfigOverrides({
 ///
 /// This is also the default list of files for targets in non-root packages when
 /// an explicit include is not provided.
-final BuiltList<String> defaultDependencyVisibleAssets =
-    [
-      'CHANGELOG*',
-      'lib/**',
-      'bin/**',
-      'LICENSE*',
-      'pubspec.yaml',
-      'README*',
-    ].build();
+final BuiltList<String> defaultDependencyVisibleAssets = [
+  'CHANGELOG*',
+  'lib/**',
+  'bin/**',
+  'LICENSE*',
+  'pubspec.yaml',
+  'README*',
+].build();
 
 /// The default list of files to include when an explicit include is not
 /// provided.
 ///
 /// This should be a superset of [defaultDependencyVisibleAssets].
-final BuiltList<String> defaultInBuildPackageSources =
-    [
-      'assets/**',
-      'benchmark/**',
-      'bin/**',
-      'CHANGELOG*',
-      'example/**',
-      'lib/**',
-      'test/**',
-      'integration_test/**',
-      'tool/**',
-      'web/**',
-      'node/**',
-      'LICENSE*',
-      'pubspec.yaml',
-      'pubspec.lock',
-      'README*',
-      r'$package$',
-    ].build();
+final BuiltList<String> defaultInBuildPackageSources = [
+  'assets/**',
+  'benchmark/**',
+  'bin/**',
+  'CHANGELOG*',
+  'example/**',
+  'lib/**',
+  'test/**',
+  'integration_test/**',
+  'tool/**',
+  'web/**',
+  'node/**',
+  'LICENSE*',
+  'pubspec.yaml',
+  'pubspec.lock',
+  'README*',
+  r'$package$',
+].build();

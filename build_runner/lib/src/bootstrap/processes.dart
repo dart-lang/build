@@ -61,23 +61,23 @@ class ParentProcess {
     );
     return runUnderPerf
         ? await _runAndSend(
-          executable: 'perf',
-          arguments: [
-            'record',
-            '-g',
-            '--output',
-            'perf.data',
-            dartAotRuntime,
-            aotSnapshot,
-            ...arguments,
-          ],
-          message: message,
-        )
+            executable: 'perf',
+            arguments: [
+              'record',
+              '-g',
+              '--output',
+              'perf.data',
+              dartAotRuntime,
+              aotSnapshot,
+              ...arguments,
+            ],
+            message: message,
+          )
         : await _runAndSend(
-          executable: dartAotRuntime,
-          arguments: [aotSnapshot, ...arguments],
-          message: message,
-        );
+            executable: dartAotRuntime,
+            arguments: [aotSnapshot, ...arguments],
+            message: message,
+          );
   }
 
   static Future<RunAndSendResult> _runAndSend({
@@ -228,11 +228,10 @@ class ChildProcess {
   ) async {
     _isRunning = true;
     buildProcessState.deserializeAndSet(await receive());
-    final exitCode =
-        await BuildRunner(
-          arguments: arguments,
-          builderFactories: builderFactories,
-        ).run();
+    final exitCode = await BuildRunner(
+      arguments: arguments,
+      builderFactories: builderFactories,
+    ).run();
     await exitWithMessage(
       exitCode: exitCode,
       message: buildProcessState.serialize(),

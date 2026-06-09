@@ -114,14 +114,13 @@ class BuildOptions {
     }
 
     final result = BuildOptions(
-      buildDirs:
-          {
-            ..._parseBuildDirs(commandLine),
-            if (restIsBuildDirs) ..._parsePositionalBuildDirs(commandLine),
-            if (extraDirs != null)
-              for (final dir in extraDirs)
-                BuildDirectory(_checkTopLevel(commandLine, dir)),
-          }.build(),
+      buildDirs: {
+        ..._parseBuildDirs(commandLine),
+        if (restIsBuildDirs) ..._parsePositionalBuildDirs(commandLine),
+        if (extraDirs != null)
+          for (final dir in extraDirs)
+            BuildDirectory(_checkTopLevel(commandLine, dir)),
+      }.build(),
       buildPaths: buildPaths,
       builderConfigOverrides: _parseBuilderConfigOverrides(
         commandLine,

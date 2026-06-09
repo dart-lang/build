@@ -95,14 +95,12 @@ class Server {
             // We can only get explicit build requests if we have a manual
             // change provider.
             final changeProvider = _changeProvider;
-            final changes =
-                changeProvider is ManualChangeProvider
-                    ? await changeProvider.collectChanges()
-                    : <WatchEvent>[];
-            final targets =
-                changes.isEmpty
-                    ? _buildTargetManager.targets
-                    : _buildTargetManager.targetsForChanges(changes);
+            final changes = changeProvider is ManualChangeProvider
+                ? await changeProvider.collectChanges()
+                : <WatchEvent>[];
+            final targets = changes.isEmpty
+                ? _buildTargetManager.targets
+                : _buildTargetManager.targetsForChanges(changes);
             await _build(targets, changes);
           }
         },
@@ -149,8 +147,9 @@ class Server {
     Set<BuildTarget> buildTargets,
     Iterable<WatchEvent> changes,
   ) => _pool.withResource(() {
-    _interestedChannels =
-        buildTargets.expand(_buildTargetManager.channels).toSet();
+    _interestedChannels = buildTargets
+        .expand(_buildTargetManager.channels)
+        .toSet();
     return _builder.build(buildTargets, changes);
   });
   void _forwardData() {
@@ -175,15 +174,15 @@ class Server {
             );
             String messageForChannel;
             if (wantsChangedAssets) {
-              messageForChannel =
-                  message ??= jsonEncode(_serializers.serialize(status));
+              messageForChannel = message ??= jsonEncode(
+                _serializers.serialize(status),
+              );
             } else {
-              messageForChannel =
-                  messageWithoutChangedAssets ??= jsonEncode(
-                    _serializers.serialize(
-                      status.rebuild((b) => b.changedAssets = null),
-                    ),
-                  );
+              messageForChannel = messageWithoutChangedAssets ??= jsonEncode(
+                _serializers.serialize(
+                  status.rebuild((b) => b.changedAssets = null),
+                ),
+              );
             }
             channel.sink.add(messageForChannel);
           }

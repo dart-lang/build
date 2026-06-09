@@ -140,15 +140,14 @@ class BuildProcessLock {
   );
 
   /// The lock file for [BuildPaths.workspacePath].
-  File? get _workspaceLockFile =>
-      paths.workspacePath == null
-          ? null
-          : File(
-            p.join(
-              paths.workspacePath!,
-              '.dart_tool/build/lock/$_workspaceLockName',
-            ),
-          );
+  File? get _workspaceLockFile => paths.workspacePath == null
+      ? null
+      : File(
+          p.join(
+            paths.workspacePath!,
+            '.dart_tool/build/lock/$_workspaceLockName',
+          ),
+        );
 
   /// Deletes the lock request files.
   void _clearRequested() {

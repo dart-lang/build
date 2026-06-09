@@ -30,10 +30,9 @@ class PostProcessBuildStepImpl implements PostProcessBuildStep {
   );
 
   @override
-  Future<Digest> digest(AssetId id) =>
-      inputId == id
-          ? _readerWriter.digest(id)
-          : Future.error(InvalidInputException(id));
+  Future<Digest> digest(AssetId id) => inputId == id
+      ? _readerWriter.digest(id)
+      : Future.error(InvalidInputException(id));
 
   @override
   Future<List<int>> readInputAsBytes() => _readerWriter.readAsBytes(inputId);

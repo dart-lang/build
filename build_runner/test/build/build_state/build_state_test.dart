@@ -233,11 +233,10 @@ void main() {
       final b = makeAssetId('foo|b');
       final c = makeAssetId('foo|c');
       plan = BuildStepPlan(
-        (builder) =>
-            builder
-              ..buildPhases = BuildPhases([])
-              ..declaredOutputsByPrimaryInput.addValues(a, [b])
-              ..declaredOutputsByPrimaryInput.addValues(b, [c]),
+        (builder) => builder
+          ..buildPhases = BuildPhases([])
+          ..declaredOutputsByPrimaryInput.addValues(a, [b])
+          ..declaredOutputsByPrimaryInput.addValues(b, [c]),
       );
 
       expect(plan.transitiveDeclaredOutputsOf([a]), unorderedEquals({a, b, c}));
@@ -251,12 +250,11 @@ void main() {
       final c = makeAssetId('foo|c');
       final d = makeAssetId('foo|d');
       plan = BuildStepPlan(
-        (builder) =>
-            builder
-              ..buildPhases = BuildPhases([])
-              ..declaredOutputsByPrimaryInput.addValues(a, [b, c])
-              ..declaredOutputsByPrimaryInput.addValues(b, [d])
-              ..declaredOutputsByPrimaryInput.addValues(c, [d]),
+        (builder) => builder
+          ..buildPhases = BuildPhases([])
+          ..declaredOutputsByPrimaryInput.addValues(a, [b, c])
+          ..declaredOutputsByPrimaryInput.addValues(b, [d])
+          ..declaredOutputsByPrimaryInput.addValues(c, [d]),
       );
 
       expect(
@@ -271,11 +269,10 @@ void main() {
       final c = makeAssetId('foo|c');
       final d = makeAssetId('foo|d');
       plan = BuildStepPlan(
-        (builder) =>
-            builder
-              ..buildPhases = BuildPhases([])
-              ..declaredOutputsByPrimaryInput.addValues(a, [b])
-              ..declaredOutputsByPrimaryInput.addValues(c, [d]),
+        (builder) => builder
+          ..buildPhases = BuildPhases([])
+          ..declaredOutputsByPrimaryInput.addValues(a, [b])
+          ..declaredOutputsByPrimaryInput.addValues(c, [d]),
       );
 
       expect(

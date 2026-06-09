@@ -6,7 +6,7 @@ repository: https://github.com/dart-lang/build/tree/master/build_config
 resolution: workspace
 
 environment:
-  sdk: ^3.7.0
+  sdk: ^3.8.0
 
 dependencies:
   checked_yaml: ^2.0.0

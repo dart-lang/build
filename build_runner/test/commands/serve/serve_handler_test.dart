@@ -354,13 +354,14 @@ void main() {
       ),
     );
     expect(jsonDecode(await response.readAsString()), {
-      'index.html':
-          computeDigest(AssetId('a', 'web/index.html'), 'content1').toString(),
-      'packages/a/some.dart.js':
-          computeDigest(
-            AssetId('a', 'lib/some.dart.js'),
-            'content2',
-          ).toString(),
+      'index.html': computeDigest(
+        AssetId('a', 'web/index.html'),
+        'content1',
+      ).toString(),
+      'packages/a/some.dart.js': computeDigest(
+        AssetId('a', 'lib/some.dart.js'),
+        'content2',
+      ).toString(),
     });
   });
 
@@ -468,18 +469,16 @@ void main() {
             (Request request) =>
                 Response(200, context: {'onConnect': onConnect});
 
-        createMockConnection = (
-          WebSocketChannel serverChannel,
-          String rootDir,
-        ) async {
-          final mockResponse = await handler.createHandlerByRootDir(rootDir)(
-            FakeRequest(),
-          );
-          final onConnect =
-              mockResponse.context['onConnect']
-                  as void Function(WebSocketChannel, String);
-          onConnect(serverChannel, '');
-        };
+        createMockConnection =
+            (WebSocketChannel serverChannel, String rootDir) async {
+              final mockResponse = await handler.createHandlerByRootDir(
+                rootDir,
+              )(FakeRequest());
+              final onConnect =
+                  mockResponse.context['onConnect']
+                      as void Function(WebSocketChannel, String);
+              onConnect(serverChannel, '');
+            };
 
         handler = BuildUpdatesWebSocketHandler(mockHandlerFactory);
 
@@ -552,22 +551,20 @@ void main() {
       test('emits build results digests', () async {
         addSource('a|web/index.html', 'content1');
         addSource('a|lib/some.dart.js', 'content2');
-        final indexHash =
-            computeDigest(
-              AssetId('a', 'web/index.html'),
-              'content1',
-            ).toString();
+        final indexHash = computeDigest(
+          AssetId('a', 'web/index.html'),
+          'content1',
+        ).toString();
         expect(
           clientChannel1.stream.map((s) => jsonDecode(s.toString())),
           emitsInOrder([
             {'index.html': indexHash},
             {
               'index.html': indexHash,
-              'packages/a/some.dart.js':
-                  computeDigest(
-                    AssetId('a', 'lib/some.dart.js'),
-                    'content2',
-                  ).toString(),
+              'packages/a/some.dart.js': computeDigest(
+                AssetId('a', 'lib/some.dart.js'),
+                'content2',
+              ).toString(),
             },
             emitsDone,
           ]),
@@ -583,11 +580,10 @@ void main() {
         await handler.emitUpdateMessage(
           BuildResult(
             status: BuildStatus.success,
-            outputs:
-                [
-                  AssetId('a', 'web/index.html'),
-                  AssetId('a', 'lib/some.dart.js'),
-                ].build(),
+            outputs: [
+              AssetId('a', 'web/index.html'),
+              AssetId('a', 'lib/some.dart.js'),
+            ].build(),
             buildOutputReader: finalizedReader,
           ),
         );
@@ -598,20 +594,18 @@ void main() {
         addSource('a|web1/index.html', 'content1');
         addSource('a|web2/index.html', 'content2');
         addSource('a|lib/some.dart.js', 'content3');
-        final someDartHash =
-            computeDigest(
-              AssetId('a', 'lib/some.dart.js'),
-              'content3',
-            ).toString();
+        final someDartHash = computeDigest(
+          AssetId('a', 'lib/some.dart.js'),
+          'content3',
+        ).toString();
         expect(
           clientChannel1.stream.map((s) => jsonDecode(s.toString())),
           emitsInOrder([
             {
-              'index.html':
-                  computeDigest(
-                    AssetId('a', 'web1/index.html'),
-                    'content1',
-                  ).toString(),
+              'index.html': computeDigest(
+                AssetId('a', 'web1/index.html'),
+                'content1',
+              ).toString(),
               'packages/a/some.dart.js': someDartHash,
             },
             emitsDone,
@@ -621,11 +615,10 @@ void main() {
           clientChannel2.stream.map((s) => jsonDecode(s.toString())),
           emitsInOrder([
             {
-              'index.html':
-                  computeDigest(
-                    AssetId('a', 'web2/index.html'),
-                    'content2',
-                  ).toString(),
+              'index.html': computeDigest(
+                AssetId('a', 'web2/index.html'),
+                'content2',
+              ).toString(),
               'packages/a/some.dart.js': someDartHash,
             },
             emitsDone,
@@ -636,12 +629,11 @@ void main() {
         await handler.emitUpdateMessage(
           BuildResult(
             status: BuildStatus.success,
-            outputs:
-                [
-                  AssetId('a', 'web1/index.html'),
-                  AssetId('a', 'web2/index.html'),
-                  AssetId('a', 'lib/some.dart.js'),
-                ].build(),
+            outputs: [
+              AssetId('a', 'web1/index.html'),
+              AssetId('a', 'web2/index.html'),
+              AssetId('a', 'lib/some.dart.js'),
+            ].build(),
             buildOutputReader: finalizedReader,
           ),
         );

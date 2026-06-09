@@ -36,11 +36,10 @@ void main() {
         );
         final nonOptionalWritesImportedFile = TestBuilder(
           buildExtensions: replaceExtension('.dart', '.imported.dart'),
-          build:
-              (buildStep, _) => buildStep.writeAsString(
-                buildStep.inputId.changeExtension('.imported.dart'),
-                'class SomeClass {}',
-              ),
+          build: (buildStep, _) => buildStep.writeAsString(
+            buildStep.inputId.changeExtension('.imported.dart'),
+            'class SomeClass {}',
+          ),
         );
         final nonOptionalResolveImportedFile = TestBuilder(
           buildExtensions: appendExtension('.bar'),
@@ -51,16 +50,14 @@ void main() {
             await buildStep.canRead(buildStep.inputId.addExtension('.foo'));
             // Check that the `.imported.dart` library is still reachable
             // through the resolver.
-            final importedLibrary =
-                inputLibrary.firstFragment.libraryImports
-                    .firstWhere(
-                      (l) => l.importedLibrary!.uri.path.endsWith(
-                        '.imported.dart',
-                      ),
-                    )
-                    .importedLibrary!;
-            final classNames =
-                importedLibrary.classes.map((c) => c.name).toList();
+            final importedLibrary = inputLibrary.firstFragment.libraryImports
+                .firstWhere(
+                  (l) => l.importedLibrary!.uri.path.endsWith('.imported.dart'),
+                )
+                .importedLibrary!;
+            final classNames = importedLibrary.classes
+                .map((c) => c.name)
+                .toList();
             return buildStep.writeAsString(
               buildStep.inputId.addExtension('.bar'),
               '$classNames',
@@ -104,9 +101,13 @@ void main() {
           build: (buildStep, _) async {
             if (buildStep.inputId.path != 'lib/a.dart') return;
             final library = await buildStep.inputLibrary;
-            final annotation =
-                library.topLevelFunctions.single.metadata.annotations.single
-                    .computeConstantValue();
+            final annotation = library
+                .topLevelFunctions
+                .single
+                .metadata
+                .annotations
+                .single
+                .computeConstantValue();
             await buildStep.writeAsString(
               buildStep.inputId.changeExtension('.g2.dart'),
               '//$annotation',

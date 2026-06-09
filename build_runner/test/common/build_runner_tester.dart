@@ -212,7 +212,8 @@ class BuildRunnerTester {
       workingDirectory: p.join(tempDirectory.path, directory),
       environment: environment,
     );
-    final output = '''
+    final output =
+        '''
 === $directory: $commandLine
 ${result.stdout}${result.stderr}===
 ''';
@@ -369,12 +370,11 @@ class BuildRunnerProcess {
   }
 
   String get _testLine {
-    var result =
-        StackTrace.current
-            .toString()
-            .split('\n')
-            .where((l) => l.contains('_test.dart'))
-            .first;
+    var result = StackTrace.current
+        .toString()
+        .split('\n')
+        .where((l) => l.contains('_test.dart'))
+        .first;
     result = result.substring(result.lastIndexOf('/') + 1);
     result = result.substring(0, result.lastIndexOf(':'));
     return result;

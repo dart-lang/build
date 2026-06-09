@@ -37,29 +37,25 @@ void main() {
     final buildPackages = BuildPackages.singlePackageBuild('example', [
       BuildPackage(name: 'example', path: path, isOutput: true, watch: true),
     ]);
-    readerWriter =
-        InternalTestReaderWriter(outputRootPackage: 'example')
-          ..testing.writeString(
-            AssetId('example', 'web/initial.txt'),
-            'initial',
-          )
-          ..testing.writeString(
-            AssetId('example', 'web/large.txt'),
-            'large' * 10000,
-          )
-          ..testing.writeString(
-            makeAssetId('example|.dart_tool/package_config.json'),
-            jsonEncode({
-              'configVersion': 2,
-              'packages': [
-                {
-                  'name': 'example',
-                  'rootUri': 'file://fake/pkg/path',
-                  'packageUri': 'lib/',
-                },
-              ],
-            }),
-          );
+    readerWriter = InternalTestReaderWriter(outputRootPackage: 'example')
+      ..testing.writeString(AssetId('example', 'web/initial.txt'), 'initial')
+      ..testing.writeString(
+        AssetId('example', 'web/large.txt'),
+        'large' * 10000,
+      )
+      ..testing.writeString(
+        makeAssetId('example|.dart_tool/package_config.json'),
+        jsonEncode({
+          'configVersion': 2,
+          'packages': [
+            {
+              'name': 'example',
+              'rootUri': 'file://fake/pkg/path',
+              'packageUri': 'lib/',
+            },
+          ],
+        }),
+      );
 
     terminateController = StreamController<ProcessSignal>();
     final watchCommnd = WatchCommand(
@@ -71,11 +67,10 @@ void main() {
         builderDefinitions: [BuilderDefinition('')].build(),
         buildPackages: buildPackages,
         readerWriter: readerWriter,
-        onLog:
-            (record) => printOnFailure(
-              '[${record.level}] '
-              '${record.loggerName}: ${record.message}',
-            ),
+        onLog: (record) => printOnFailure(
+          '[${record.level}] '
+          '${record.loggerName}: ${record.message}',
+        ),
         directoryWatcherFactory: FakeWatcher.new,
         terminateEventStream: terminateController.stream,
       ),

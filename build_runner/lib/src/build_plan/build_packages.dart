@@ -120,11 +120,10 @@ class BuildPackages implements AssetPathProvider {
     packages = packagesBuilder.build();
 
     final asPackageConfig = _packagesToConfig(packages.values);
-    final outputPackages =
-        packages.values
-            .where((b) => b.isOutput)
-            .map((p) => p.name)
-            .toBuiltSet();
+    final outputPackages = packages.values
+        .where((b) => b.isOutput)
+        .map((p) => p.name)
+        .toBuiltSet();
 
     final transitiveDependencies = _computeAllTransitiveDeps(packages);
     final buildPackages = _computePeers(outputPackages, transitiveDependencies);
@@ -200,11 +199,10 @@ class BuildPackages implements AssetPathProvider {
   BuildPackage? operator [](String packageName) => packages[packageName];
 
   /// Map from package name to package language version.
-  BuiltMap<String, LanguageVersion?> get languageVersions =>
-      {
-        for (final package in packages.values)
-          package.name: package.languageVersion,
-      }.build();
+  BuiltMap<String, LanguageVersion?> get languageVersions => {
+    for (final package in packages.values)
+      package.name: package.languageVersion,
+  }.build();
 
   @override
   String pathFor(

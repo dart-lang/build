@@ -40,9 +40,8 @@ class BuildPackagesLoader {
     final buildType = paths.buildType;
 
     final packageConfig = await loadPackageConfig(packageConfigFile);
-    final packageConfigs =
-        packageConfig.packages.toList()
-          ..sort((a, b) => a.name.compareTo(b.name));
+    final packageConfigs = packageConfig.packages.toList()
+      ..sort((a, b) => a.name.compareTo(b.name));
 
     String? workspaceName;
     List<String>? workspacePackages;

@@ -96,14 +96,13 @@ class BuildRunnerCommandLine {
       // Only "build" and "watch" support --workspace, default to false for
       // other commands.
       workspace = argResults.boolNamed(workspaceOption) ?? false,
-      removedOptionsUsed =
-          removedOptions
-              .where(
-                (option) =>
-                    argResults.options.contains(option) &&
-                    argResults.wasParsed(option),
-              )
-              .toBuiltList();
+      removedOptionsUsed = removedOptions
+          .where(
+            (option) =>
+                argResults.options.contains(option) &&
+                argResults.wasParsed(option),
+          )
+          .toBuiltList();
 
   String get usage {
     // Calling `usage` only works if the command has been added to a

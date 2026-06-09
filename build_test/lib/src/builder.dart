@@ -60,15 +60,14 @@ BuildBehavior copyFrom(AssetId assetId) =>
 /// A build behavior which writes either 'true' or 'false' depending on whether
 /// [assetId] can be read.
 BuildBehavior writeCanRead(AssetId assetId) =>
-    (
-      BuildStep buildStep,
-      Map<String, List<String>> buildExtensions,
-    ) => _copyToAll(
-      buildStep,
-      buildExtensions,
-      readFrom: (_) => assetId,
-      read: (buildStep, assetId) async => '${await buildStep.canRead(assetId)}',
-    );
+    (BuildStep buildStep, Map<String, List<String>> buildExtensions) =>
+        _copyToAll(
+          buildStep,
+          buildExtensions,
+          readFrom: (_) => assetId,
+          read: (buildStep, assetId) async =>
+              '${await buildStep.canRead(assetId)}',
+        );
 
 /// A [Builder.buildExtensions] which operats on assets ending in [from] and
 /// creates outputs with [postFix] appended as the extension.
@@ -79,10 +78,9 @@ Map<String, List<String>> appendExtension(
   String from = '',
   int numCopies = 1,
 }) => {
-  from:
-      numCopies == 1
-          ? ['$from$postFix']
-          : List.generate(numCopies, (i) => '$from$postFix.$i'),
+  from: numCopies == 1
+      ? ['$from$postFix']
+      : List.generate(numCopies, (i) => '$from$postFix.$i'),
 };
 
 Map<String, List<String>> replaceExtension(String from, String to) => {

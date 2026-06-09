@@ -71,8 +71,9 @@ class BuildStepImpl implements BuildStep {
 
   @override
   Future<PackageConfig> get packageConfig async {
-    final resolved =
-        _resolvedPackageConfig ??= Result.capture(_resolvePackageConfig());
+    final resolved = _resolvedPackageConfig ??= Result.capture(
+      _resolvePackageConfig(),
+    );
 
     return (await resolved).asFuture;
   }

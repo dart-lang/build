@@ -102,8 +102,8 @@ class BuildStepPlanBuilder
     if ($v != null) {
       _buildPhases = $v.buildPhases;
       _buildStepsByDeclaredOutput = $v.buildStepsByDeclaredOutput.toBuilder();
-      _declaredOutputsByPrimaryInput =
-          $v.declaredOutputsByPrimaryInput.toBuilder();
+      _declaredOutputsByPrimaryInput = $v.declaredOutputsByPrimaryInput
+          .toBuilder();
       _buildStepsByPhase = $v.buildStepsByPhase.toBuilder();
       _$v = null;
     }
@@ -135,8 +135,8 @@ class BuildStepPlanBuilder
               'buildPhases',
             ),
             buildStepsByDeclaredOutput: buildStepsByDeclaredOutput.build(),
-            declaredOutputsByPrimaryInput:
-                declaredOutputsByPrimaryInput.build(),
+            declaredOutputsByPrimaryInput: declaredOutputsByPrimaryInput
+                .build(),
             buildStepsByPhase: buildStepsByPhase.build(),
           );
     } catch (_) {

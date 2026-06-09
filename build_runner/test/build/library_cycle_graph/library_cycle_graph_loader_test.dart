@@ -486,9 +486,10 @@ void main() {
             final randomForLoads = Random(seed);
 
             List<AssetId> randomLoads() {
-              return ([a1, a2, a3, a4, a5, a6, a7, a8, a9]..shuffle(
-                randomForLoads,
-              )).take(randomForLoads.nextInt(3)).toList();
+              return ([a1, a2, a3, a4, a5, a6, a7, a8, a9]
+                    ..shuffle(randomForLoads))
+                  .take(randomForLoads.nextInt(3))
+                  .toList();
             }
 
             final loader = LibraryCycleGraphLoader();

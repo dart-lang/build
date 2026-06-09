@@ -68,11 +68,10 @@ void runTests(ResolversFactory resolversFactory) {
       (resolver) async {
         final lib = await resolver.libraryFor(entryPoint);
         expect(lib.firstFragment.libraryImports.length, 2);
-        final libA =
-            lib
-              ..firstFragment.libraryImports
-                  .where((l) => l.importedLibrary!.name == 'a')
-                  .single;
+        final libA = lib
+          ..firstFragment.libraryImports
+              .where((l) => l.importedLibrary!.name == 'a')
+              .single;
         expect(libA.getClass('Foo'), isNull);
       },
       resolvers: createResolvers(),
@@ -112,11 +111,10 @@ void runTests(ResolversFactory resolversFactory) {
       (resolver) async {
         final lib = await resolver.libraryFor(entryPoint);
         expect(lib.firstFragment.libraryImports.length, 2);
-        final libB =
-            lib
-              ..firstFragment.libraryImports
-                  .where((l) => l.importedLibrary!.name == 'b')
-                  .single;
+        final libB = lib
+          ..firstFragment.libraryImports
+              .where((l) => l.importedLibrary!.name == 'b')
+              .single;
         expect(libB.getClass('Foo'), isNull);
       },
       resolvers: createResolvers(),
@@ -593,8 +591,9 @@ void runTests(ResolversFactory resolversFactory) {
           'a|lib/d.dart': 'library a.d;',
         },
         (resolver) async {
-          final libs =
-              await resolver.libraries.where((l) => !l.isInSdk).toList();
+          final libs = await resolver.libraries
+              .where((l) => !l.isInSdk)
+              .toList();
           expect(
             libs.map((l) => l.name),
             unorderedEquals(['a.main', 'a.a', 'a.b', 'a.c', 'a.d']),
@@ -660,8 +659,12 @@ void runTests(ResolversFactory resolversFactory) {
         },
         (resolver) async {
           final main = (await resolver.findLibraryByName('web.main'))!;
-          final meta =
-              main.getClass('Foo')!.supertype!.element.metadata.annotations[0];
+          final meta = main
+              .getClass('Foo')!
+              .supertype!
+              .element
+              .metadata
+              .annotations[0];
           expect(meta, isNotNull);
           expect(meta.computeConstantValue()?.toIntValue(), 0);
         },
@@ -706,10 +709,9 @@ void runTests(ResolversFactory resolversFactory) {
         },
         (resolver) async {
           final entry = await resolver.libraryFor(AssetId('a', 'lib/a.dart'));
-          final classDefinition =
-              entry.firstFragment.libraryImports
-                  .map((l) => l.importedLibrary!.getClass('SomeClass'))
-                  .singleWhere((c) => c != null)!;
+          final classDefinition = entry.firstFragment.libraryImports
+              .map((l) => l.importedLibrary!.getClass('SomeClass'))
+              .singleWhere((c) => c != null)!;
           expect(
             await resolver.assetIdForElement(classDefinition),
             AssetId('a', 'lib/b.dart'),
@@ -738,13 +740,12 @@ void runTests(ResolversFactory resolversFactory) {
         },
         (resolver) async {
           final entry = await resolver.libraryFor(AssetId('a', 'lib/a.dart'));
-          final element =
-              entry.topLevelFunctions
-                  .firstWhere((e) => e.name == 'main')
-                  .metadata
-                  .annotations
-                  .single
-                  .element!;
+          final element = entry.topLevelFunctions
+              .firstWhere((e) => e.name == 'main')
+              .metadata
+              .annotations
+              .single
+              .element!;
           await expectLater(
             () => resolver.assetIdForElement(element),
             throwsA(isA<UnresolvableAssetException>()),
@@ -760,7 +761,8 @@ void runTests(ResolversFactory resolversFactory) {
       await withEnabledExperiments(
         () => resolveSources(
           {
-            'a|web/main.dart': '''
+            'a|web/main.dart':
+                '''
 // @dart=${sdkLanguageVersion.major}.${sdkLanguageVersion.minor}
 int? get x => 1;
                 ''',
@@ -1364,8 +1366,8 @@ Future<void> _runBuilder(
 
 final _skipOnPreRelease =
     Version.parse(Platform.version.split(' ').first).isPreRelease
-        ? 'Skipped on prerelease sdks'
-        : null;
+    ? 'Skipped on prerelease sdks'
+    : null;
 
 abstract class ResolversFactory {
   /// Whether [create] returns a shared instance that persists between tests.

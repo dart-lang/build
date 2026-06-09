@@ -194,12 +194,12 @@ Future<String> _writeModifiedPackageConfig(
       for (final package in buildPackages.packages.values)
         {
           'name': package.name,
-          'rootUri':
-              package.name == rootPackage
-                  ? '../'
-                  : '../packages/${package.name}',
-          'packageUri':
-              package.name == rootPackage ? 'packages/${package.name}' : '',
+          'rootUri': package.name == rootPackage
+              ? '../'
+              : '../packages/${package.name}',
+          'packageUri': package.name == rootPackage
+              ? 'packages/${package.name}'
+              : '',
           if (package.languageVersion != null)
             'languageVersion': '${package.languageVersion}',
         },

@@ -32,7 +32,8 @@ class FixturePackages {
     dependencies: ['build', 'build_runner'],
     pathDependencies: pathDependencies,
     files: {
-      'build.yaml': '''
+      'build.yaml':
+          '''
 builders:
   test_builder:
     import: 'package:$packageName/builder.dart'
@@ -42,7 +43,8 @@ builders:
     build_to: ${buildToCache ? 'cache' : 'source'}
     applies_builders: $appliesBuilders
 ''',
-      'lib/builder.dart': '''
+      'lib/builder.dart':
+          '''
 import 'package:build/build.dart';
 
 Builder testBuilderFactory(BuilderOptions options) => TestBuilder();
@@ -135,7 +137,8 @@ class ReadBuilder implements Builder {
     name: packageName,
     dependencies: ['build', 'build_runner'],
     files: {
-      'build.yaml': '''
+      'build.yaml':
+          '''
 builders:
   test_builder:
     import: "package:$packageName/builder.dart"

@@ -39,11 +39,10 @@ Future<void> _handleDaemonStartup(
       );
     },
   );
-  final stdout =
-      process.stdout
-          .transform(utf8.decoder)
-          .transform(const LineSplitter())
-          .asBroadcastStream();
+  final stdout = process.stdout
+      .transform(utf8.decoder)
+      .transform(const LineSplitter())
+      .asBroadcastStream();
 
   // The daemon may log critical information prior to it successfully
   // starting. Capture this data and forward to the logHandler.
@@ -63,12 +62,11 @@ Future<void> _handleDaemonStartup(
         } catch (e, s) {
           logHandler(
             ServerLog(
-              (builder) =>
-                  builder
-                    ..message = 'Failed to read log message:\n$nextLogRecord'
-                    ..level = Level.SEVERE
-                    ..error = '$e'
-                    ..stackTrace = '$s',
+              (builder) => builder
+                ..message = 'Failed to read log message:\n$nextLogRecord'
+                ..level = Level.SEVERE
+                ..error = '$e'
+                ..stackTrace = '$s',
             ),
           );
         }

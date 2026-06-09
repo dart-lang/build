@@ -64,8 +64,9 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     Iterable<WatchEvent> fileChanges,
   ) async {
     final defaultTargets = targets.cast<DefaultBuildTarget>();
-    final updates =
-        fileChanges.map((change) => AssetId.parse(change.path)).toSet();
+    final updates = fileChanges
+        .map((change) => AssetId.parse(change.path))
+        .toSet();
 
     final targetNames = targets.map((t) => t.target).toSet();
     _logMessage(Level.INFO, 'About to build ${targetNames.toList()}...');
@@ -246,16 +247,14 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
             )
             .where((changes) => changes.isNotEmpty)
             .map(
-              (changes) =>
-                  changes
-                      .map((change) => WatchEvent(change.type, '${change.id}'))
-                      .toList(),
+              (changes) => changes
+                  .map((change) => WatchEvent(change.type, '${change.id}'))
+                  .toList(),
             );
 
-    final changeProvider =
-        daemonOptions.buildMode == BuildMode.Auto
-            ? AutoChangeProviderImpl(graphEvents())
-            : ManualChangeProviderImpl(buildSeries.checkForChanges);
+    final changeProvider = daemonOptions.buildMode == BuildMode.Auto
+        ? AutoChangeProviderImpl(graphEvents())
+        : ManualChangeProviderImpl(buildSeries.checkForChanges);
 
     return BuildRunnerDaemonBuilder._(
       buildPlan,

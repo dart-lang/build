@@ -1,6 +1,7 @@
 ## 4.1.2-wip
 
 - Internal: remove use of `package:mockito` in test.
+- Require Dart 3.8.0.
 
 ## 4.1.1
 

@@ -89,12 +89,9 @@ Future<TestBuildersResult> testPhases(
   buildPackages ??= BuildPackages.singlePackageBuild('a', [
     BuildPackage.forTesting(name: 'a', isOutput: true),
   ]);
-  var readerWriter =
-      resumeFrom == null
-          ? InternalTestReaderWriter(
-            outputRootPackage: buildPackages.outputRoot,
-          )
-          : resumeFrom.readerWriter;
+  var readerWriter = resumeFrom == null
+      ? InternalTestReaderWriter(outputRootPackage: buildPackages.outputRoot)
+      : resumeFrom.readerWriter;
 
   if (onDelete != null) {
     readerWriter = readerWriter.copyWith(onDelete: onDelete);
@@ -195,13 +192,12 @@ void checkBuild(
     }
   }
 
-  AssetId mapHidden(AssetId id) =>
-      unhiddenAssets.contains(id)
-          ? AssetId(
-            buildCachePackage,
-            '.dart_tool/build/generated/${id.package}/${id.path}',
-          )
-          : id;
+  AssetId mapHidden(AssetId id) => unhiddenAssets.contains(id)
+      ? AssetId(
+          buildCachePackage,
+          '.dart_tool/build/generated/${id.package}/${id.path}',
+        )
+      : id;
 
   if (status == BuildStatus.success) {
     checkOutputs(
