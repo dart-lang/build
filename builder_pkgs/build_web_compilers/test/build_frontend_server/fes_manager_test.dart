@@ -251,6 +251,21 @@ void main() {
                 .transform(utf8.decoder)
                 .transform(const LineSplitter())
                 .asBroadcastStream();
+
+        // Perform an initial compile to ensure the Frontend Server is warmed up
+        // and initialized for subsequent expression compilation and metadata
+        // merging tests.
+        testSocket.writeln(
+          jsonEncode({
+            'instruction': 'COMPILE',
+            'entrypoint': 'org-dartlang-app:///web/main.dart',
+          }),
+        );
+        final responseLine = await testSocketLines.first;
+        final response = jsonDecode(responseLine) as Map<String, dynamic>;
+        if (response['errorCount'] != 0) {
+          throw StateError('Failed to run initial compile: $response');
+        }
       });
 
       tearDownAll(() async {
