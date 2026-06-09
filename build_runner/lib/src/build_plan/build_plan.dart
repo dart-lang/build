@@ -4,65 +4,57 @@
 
 import 'dart:typed_data';
 
-import 'package:build/build.dart';
+import 'package:build/build.dart' hide Builder;
 import 'package:built_collection/built_collection.dart';
+import 'package:built_value/built_value.dart';
 import 'package:crypto/crypto.dart';
 import 'package:watcher/watcher.dart';
 
-import '../bootstrap/bootstrapper.dart';
-import '../bootstrap/depfile.dart';
 import '../build/build_state/asset_graph_json.dart';
 import '../build/build_state/build_state.dart';
-
 import '../build/library_cycle_graph/phased_asset_deps.dart';
 import '../constants.dart';
 import '../exceptions.dart';
 import '../io/asset_tracker.dart';
-import '../io/filesystem_cache.dart';
 import '../io/generated_asset_hider.dart';
 import '../io/reader_writer.dart';
 import '../logging/build_log.dart';
-import 'build_configs.dart';
 import 'build_directory.dart';
 import 'build_filter.dart';
 import 'build_inputs.dart';
-import 'build_options.dart';
-import 'build_packages.dart';
-import 'build_phase_creator.dart';
-import 'build_plan_digest.dart';
+import 'build_spec.dart';
+import 'build_spec_digest.dart';
 import 'build_step_plan.dart';
-import 'builder_definition.dart';
-import 'builder_factories.dart';
-import 'testing_overrides.dart';
+
+part 'build_plan.g.dart';
 
 /// Options and derived configuration for a build.
-class BuildPlan {
-  final BuildPlanDigest buildPlanDigest;
+abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
+  BuildSpec get buildSpec;
 
-  final BuilderFactories builderFactories;
-  final BuildOptions buildOptions;
-  final TestingOverrides testingOverrides;
+  /// Per-build build dirs, which can differ from the global option in
+  /// `BuildOptions`.
+  BuiltSet<BuildDirectory> get buildDirs;
 
-  final BuildPackages buildPackages;
-  final ReaderWriter readerWriter;
-  final BuildConfigs buildConfigs;
-  final BuildState? previousBuildState;
-  final PhasedAssetDeps? previousPhasedAssetDeps;
+  /// Per-build build filters, which can differ from the global option in
+  /// `BuildOptions`.
+  BuiltSet<BuildFilter> get buildFilters;
 
-  final BuildStepPlan buildStepPlan;
-  final bool restartIsNeeded;
+  ReaderWriter get readerWriter;
 
-  final Bootstrapper bootstrapper;
+  BuildState? get previousBuildState;
+  PhasedAssetDeps? get previousPhasedAssetDeps;
+  BuildStepPlan get buildStepPlan;
 
   /// Whether build triggers config changed since the previous build.
-  final bool triggersChanged;
+  bool get triggersChanged;
 
   /// Whether phase options per phase changed since the previous build.
-  final BuiltList<bool> _phaseOptionsChanged;
+  BuiltList<bool> get phaseOptionsChangedList;
 
   /// Whether post process phase options per phase changed since the previous
   /// build.
-  final BuiltList<bool> _postBuildOptionsChanged;
+  BuiltList<bool> get postBuildOptionsChangedList;
 
   /// Files to delete before restarting or before the next build.
   ///
@@ -71,121 +63,33 @@ class BuildPlan {
   /// - The build state, if it's invalid.
   ///
   /// Call [deleteFilesAndFolders] to delete them.
-  final BuiltList<AssetId> filesToDelete;
+  BuiltList<AssetId> get filesToDelete;
 
   /// Folders to delete before restarting or before the next build.
   ///
   /// Call [deleteFilesAndFolders] to delete them.
-  final BuiltList<AssetId> foldersToDelete;
+  BuiltList<AssetId> get foldersToDelete;
 
   /// Sources and changes to sources before the build.
-  final BuildInputs buildInputs;
+  BuildInputs get buildInputs;
 
-  BuildPlan({
-    required this.buildPlanDigest,
-    required this.builderFactories,
-    required this.buildOptions,
-    required this.testingOverrides,
-    required this.buildPackages,
-    required this.readerWriter,
-    required this.buildConfigs,
-    required this.buildStepPlan,
-    required this.previousBuildState,
-    required this.previousPhasedAssetDeps,
-    required this.restartIsNeeded,
-    required this.bootstrapper,
-    required this.filesToDelete,
-    required this.foldersToDelete,
-    required this.triggersChanged,
-    required BuiltList<bool> phaseOptionsChanged,
-    required BuiltList<bool> postBuildOptionsChanged,
-    required this.buildInputs,
-  }) : _phaseOptionsChanged = phaseOptionsChanged,
-       _postBuildOptionsChanged = postBuildOptionsChanged;
+  BuildPlan._();
+  factory BuildPlan([void Function(BuildPlanBuilder) updates]) = _$BuildPlan;
 
-  /// Loads a build plan.
+  /// Loads the build plan for [buildSpec].
   ///
-  /// Loads the package structure and build configuration; prepares
-  /// [readerWriter], deduces the buildPhases that will run, deserializes and
-  /// checks the `BuildState`.
-  ///
-  /// If the build state indicates a restart is needed, [restartIsNeeded] will
-  /// be set. Otherwise, if it's valid, the deserialized build state is
-  /// available from [previousBuildState].
+  /// Deserializes and checks the `BuildState`. If it's compatible, it's
+  /// available as [previousBuildState]. If not, it's discarded.
   ///
   /// Files that should be deleted before restarting or building are accumulated
   /// in [filesToDelete] and [foldersToDelete]. Call [deleteFilesAndFolders] to
   /// delete them.
   ///
-  /// Set [recentlyBootstrapped] to false to do checks that are also done during
-  /// bootstrapping.
-  static Future<BuildPlan> load({
-    required BuilderFactories builderFactories,
-    required BuildOptions buildOptions,
-    required TestingOverrides testingOverrides,
-    bool recentlyBootstrapped = true,
-  }) async {
-    final bootstrapper = Bootstrapper(
-      buildPaths: buildOptions.buildPaths,
-      compileStrategy: buildOptions.compileStrategy,
-    );
-    var restartIsNeeded = false;
-    final compileFreshness = testingOverrides.checkBuilderFreshness
-        ? await bootstrapper.checkCompileFreshness(
-            digestsAreFresh: recentlyBootstrapped,
-          )
-        : FreshnessResult(outputIsFresh: true, digest: 'dummy_digest');
-    if (!compileFreshness.outputIsFresh) {
-      restartIsNeeded = true;
-    }
-
-    final buildPackages =
-        testingOverrides.buildPackages ??
-        await BuildPackages.forPaths(buildOptions.buildPaths);
-    final readerWriter =
-        (testingOverrides.readerWriter ?? ReaderWriter(buildPackages)).copyWith(
-          cache: InMemoryFilesystemCache(),
-        );
-    final buildConfigs = await BuildConfigs.load(
-      readerWriter: readerWriter,
-      buildPackages: buildPackages,
-      testingOverrides: testingOverrides,
-      configKey: buildOptions.configKey,
-    );
-
-    var builderDefinitions =
-        testingOverrides.builderDefinitions ??
-        await AbstractBuilderDefinition.load(
-          buildPackages: buildPackages,
-          readerWriter: readerWriter,
-        );
-
-    // Check that there is a factory available for every builder, if not the
-    // config has changed since the script was written and a restart is needed.
-    if (!builderFactories.hasFactoriesFor(builderDefinitions)) {
-      restartIsNeeded = true;
-      builderDefinitions = BuiltList();
-    }
-
-    final buildPhases =
-        testingOverrides.buildPhases ??
-        await BuildPhaseCreator(
-          builderFactories: builderFactories,
-          buildPackages: buildPackages,
-          buildConfigs: buildConfigs,
-          builderDefinitions: builderDefinitions,
-          builderConfigOverrides: buildOptions.builderConfigOverrides,
-          isReleaseBuild: buildOptions.isReleaseBuild,
-          workspace: buildOptions.buildPaths.buildWorkspace,
-        ).createBuildPhases();
-    buildPhases.checkOutputLocations(buildPackages.outputPackages);
-
-    final buildPlanDigest = BuildPlanDigest(
-      compileDigest: compileFreshness.digest,
-      buildConfigs: buildConfigs,
-      buildPhases: buildPhases,
-      buildPackages: buildPackages,
-    );
+  /// [buildInputs] are resolved.
+  static Future<BuildPlan> load(BuildSpec buildSpec) async {
+    final readerWriter = buildSpec.readerWriter;
+    final buildPackages = buildSpec.buildPackages;
+    final buildPlanDigest = buildSpec.buildPlanDigest;
 
     final assetGraphJsonId = AssetId(
       buildPackages.outputRoot,
@@ -195,7 +99,7 @@ class BuildPlan {
       buildPackages.outputRoot,
       generatedOutputDirectory,
     );
-    BuildPlanDigest? previousBuildPlanDigest;
+    BuildSpecDigest? previousBuildPlanDigest;
     BuildState? previousBuildState;
     final filesToDelete = <AssetId>{};
     final foldersToDelete = <AssetId>{};
@@ -211,7 +115,7 @@ class BuildPlan {
         previousPhasedAssetDeps = assetGraphJson.phasedAssetDeps;
       }
       if (previousBuildState != null) {
-        if (restartIsNeeded ||
+        if (buildSpec.restartIsNeeded ||
             !buildPlanDigest.canIncrementallyBuildFrom(
               previousBuildPlanDigest,
             )) {
@@ -237,7 +141,7 @@ class BuildPlan {
     final assetTracker = AssetTracker(
       readerWriter,
       buildPackages,
-      buildConfigs,
+      buildSpec.buildConfigs,
     );
     final inputSources = await assetTracker.findInputSources();
     final cacheDirSources = await assetTracker.findCacheDirSources();
@@ -251,7 +155,7 @@ class BuildPlan {
         ...previousBuildState.actualOutputs,
       };
 
-      if (restartIsNeeded) {
+      if (buildSpec.restartIsNeeded) {
         // Mark old outputs for deletion.
         filesToDelete.addAll(previousBuildState.outputsToDelete(buildPackages));
         foldersToDelete.add(generatedOutputDirectoryId);
@@ -276,7 +180,7 @@ class BuildPlan {
       // sources to remove them. They are computed again below based on the
       // pruned inputs.
       final declaredOutputs = BuildStepPlan.compute(
-        buildPhases: buildPhases,
+        buildPhases: buildSpec.buildPhases,
         placeholderIds: buildPackages.placeholderIds,
         sources: inputSources,
       ).declaredOutputs;
@@ -292,7 +196,7 @@ class BuildPlan {
     }
 
     final buildStepPlan = BuildStepPlan.compute(
-      buildPhases: buildPhases,
+      buildPhases: buildSpec.buildPhases,
       placeholderIds: buildPackages.placeholderIds,
       sources: sourcesForBuildStepPlan,
     );
@@ -325,24 +229,19 @@ class BuildPlan {
     }
 
     final finalReaderWriter = readerWriter.copyWith(
-      generatedAssetHider: testingOverrides.flattenOutput
+      generatedAssetHider: buildSpec.testingOverrides.flattenOutput
           ? const NoopGeneratedAssetHider()
           : buildStepPlan,
     );
 
     return _createAndResolve(
-      buildPlanDigest: buildPlanDigest,
-      builderFactories: builderFactories,
-      buildOptions: buildOptions,
-      testingOverrides: testingOverrides,
-      buildPackages: buildPackages,
+      buildSpec: buildSpec,
+      buildDirs: buildSpec.buildOptions.buildDirs,
+      buildFilters: buildSpec.buildOptions.buildFilters,
       readerWriter: finalReaderWriter,
-      buildConfigs: buildConfigs,
       buildStepPlan: buildStepPlan,
       previousBuildState: previousBuildState,
       previousPhasedAssetDeps: previousPhasedAssetDeps,
-      restartIsNeeded: restartIsNeeded,
-      bootstrapper: bootstrapper,
       filesToDelete: filesToDelete.toBuiltList(),
       foldersToDelete: foldersToDelete.toBuiltList(),
       triggersChanged: !buildPlanDigest.hasSameTriggersAs(
@@ -358,44 +257,6 @@ class BuildPlan {
     );
   }
 
-  BuildPlan copyWith({
-    BuildPlanDigest? buildPlanDigest,
-    BuiltSet<BuildDirectory>? buildDirs,
-    BuiltSet<BuildFilter>? buildFilters,
-    ReaderWriter? readerWriter,
-    bool? triggersChanged,
-    PhasedAssetDeps? previousPhasedAssetDeps,
-    BuiltList<bool>? phaseOptionsChanged,
-    BuiltList<bool>? postBuildOptionsChanged,
-    BuildStepPlan? buildStepPlan,
-    BuildState? previousBuildState,
-    BuildInputs? buildInputs,
-  }) => BuildPlan(
-    buildPlanDigest: buildPlanDigest ?? this.buildPlanDigest,
-    builderFactories: builderFactories,
-    buildOptions: buildOptions.copyWith(
-      buildDirs: buildDirs,
-      buildFilters: buildFilters,
-    ),
-    testingOverrides: testingOverrides,
-    buildPackages: buildPackages,
-    buildConfigs: buildConfigs,
-    readerWriter: readerWriter ?? this.readerWriter,
-    buildStepPlan: buildStepPlan ?? this.buildStepPlan,
-    previousBuildState: previousBuildState ?? this.previousBuildState,
-    previousPhasedAssetDeps:
-        previousPhasedAssetDeps ?? this.previousPhasedAssetDeps,
-    restartIsNeeded: restartIsNeeded,
-    bootstrapper: bootstrapper,
-    filesToDelete: filesToDelete,
-    foldersToDelete: foldersToDelete,
-    triggersChanged: triggersChanged ?? this.triggersChanged,
-    phaseOptionsChanged: phaseOptionsChanged ?? _phaseOptionsChanged,
-    postBuildOptionsChanged:
-        postBuildOptionsChanged ?? _postBuildOptionsChanged,
-    buildInputs: buildInputs ?? this.buildInputs,
-  );
-
   /// Returns a copy of the plan updated for the next incremental build.
   ///
   /// Updates [previousPhasedAssetDeps] from the build result.
@@ -405,43 +266,46 @@ class BuildPlan {
   BuildPlan updateForResult({
     PhasedAssetDeps? previousPhasedAssetDeps,
     BuildState? previousBuildState,
-  }) => copyWith(
-    triggersChanged: false,
-    previousPhasedAssetDeps: previousPhasedAssetDeps,
-    previousBuildState: previousBuildState,
-    phaseOptionsChanged: BuiltList<bool>.from(
-      List.filled(
-        buildStepPlan.buildPhases.inBuildPhasesOptionsDigests.length,
-        false,
+  }) => rebuild((b) {
+    b.triggersChanged = false;
+    if (previousPhasedAssetDeps == null) {
+      b.previousPhasedAssetDeps = null;
+    } else {
+      b.previousPhasedAssetDeps.replace(previousPhasedAssetDeps);
+    }
+    b.previousBuildState = previousBuildState;
+    b.phaseOptionsChangedList.replace(
+      BuiltList<bool>.from(
+        List.filled(
+          buildStepPlan.buildPhases.inBuildPhasesOptionsDigests.length,
+          false,
+        ),
       ),
-    ),
-    postBuildOptionsChanged: BuiltList<bool>.from(
-      List.filled(
-        buildStepPlan.buildPhases.postBuildActionsOptionsDigests.length,
-        false,
+    );
+    b.postBuildOptionsChangedList.replace(
+      BuiltList<bool>.from(
+        List.filled(
+          buildStepPlan.buildPhases.postBuildActionsOptionsDigests.length,
+          false,
+        ),
       ),
-    ),
-  );
+    );
+  });
 
   Future<BuildPlan> updateForFileChanges(Set<AssetId> updates) {
     return _createAndResolve(
-      buildPlanDigest: buildPlanDigest,
-      builderFactories: builderFactories,
-      buildOptions: buildOptions,
-      testingOverrides: testingOverrides,
-      buildPackages: buildPackages,
+      buildSpec: buildSpec,
+      buildDirs: buildDirs,
+      buildFilters: buildFilters,
       readerWriter: readerWriter,
-      buildConfigs: buildConfigs,
       buildStepPlan: buildStepPlan,
       previousBuildState: previousBuildState,
       previousPhasedAssetDeps: previousPhasedAssetDeps,
-      restartIsNeeded: restartIsNeeded,
-      bootstrapper: bootstrapper,
       filesToDelete: filesToDelete,
       foldersToDelete: foldersToDelete,
       triggersChanged: triggersChanged,
-      phaseOptionsChanged: _phaseOptionsChanged,
-      postBuildOptionsChanged: _postBuildOptionsChanged,
+      phaseOptionsChanged: phaseOptionsChangedList,
+      postBuildOptionsChanged: postBuildOptionsChangedList,
       updates: updates,
     );
   }
@@ -449,12 +313,12 @@ class BuildPlan {
   /// Whether [phaseNumber] has different options to the previous build
   /// and must be fully rebuilt.
   bool phaseOptionsChanged(int phaseNumber) =>
-      _phaseOptionsChanged[phaseNumber];
+      phaseOptionsChangedList[phaseNumber];
 
   /// Whether [actionNumber] has different options to the previous build
   /// and must be fully rebuilt.
   bool postBuildOptionsChanged(int actionNumber) =>
-      _postBuildOptionsChanged[actionNumber];
+      postBuildOptionsChangedList[actionNumber];
 
   Future<void> deleteFilesAndFolders() async {
     // Hidden outputs are deleted if needed by deleting the entire folder. So,
@@ -474,18 +338,13 @@ class BuildPlan {
   }
 
   static Future<BuildPlan> _createAndResolve({
-    required BuildPlanDigest buildPlanDigest,
-    required BuilderFactories builderFactories,
-    required BuildOptions buildOptions,
-    required TestingOverrides testingOverrides,
-    required BuildPackages buildPackages,
+    required BuildSpec buildSpec,
+    required BuiltSet<BuildDirectory> buildDirs,
+    required BuiltSet<BuildFilter> buildFilters,
     required ReaderWriter readerWriter,
-    required BuildConfigs buildConfigs,
     required BuildStepPlan buildStepPlan,
     required BuildState? previousBuildState,
     required PhasedAssetDeps? previousPhasedAssetDeps,
-    required bool restartIsNeeded,
-    required Bootstrapper bootstrapper,
     required BuiltList<AssetId> filesToDelete,
     required BuiltList<AssetId> foldersToDelete,
     required bool triggersChanged,
@@ -511,7 +370,7 @@ class BuildPlan {
 
       final newBuildStepPlan = BuildStepPlan.compute(
         buildPhases: buildStepPlan.buildPhases,
-        placeholderIds: buildPackages.placeholderIds,
+        placeholderIds: buildSpec.buildPackages.placeholderIds,
         sources: result.sources.build(),
       );
       for (final id in result.sources.build()) {
@@ -522,30 +381,25 @@ class BuildPlan {
         }
       }
       final newReaderWriter = readerWriter.copyWith(
-        generatedAssetHider: testingOverrides.flattenOutput
+        generatedAssetHider: buildSpec.testingOverrides.flattenOutput
             ? const NoopGeneratedAssetHider()
             : newBuildStepPlan,
       );
-      return BuildPlan(
-        buildPlanDigest: buildPlanDigest,
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides,
-        buildPackages: buildPackages,
-        readerWriter: newReaderWriter,
-        buildConfigs: buildConfigs,
-        buildStepPlan: newBuildStepPlan,
-        previousBuildState: previousBuildState,
-        previousPhasedAssetDeps: previousPhasedAssetDeps,
-        restartIsNeeded: restartIsNeeded,
-        bootstrapper: bootstrapper,
-        filesToDelete: filesToDelete,
-        foldersToDelete: foldersToDelete,
-        triggersChanged: triggersChanged,
-        phaseOptionsChanged: phaseOptionsChanged,
-        postBuildOptionsChanged: postBuildOptionsChanged,
-        buildInputs: result.build(),
-      );
+      return BuildPlan((b) {
+        b.buildSpec.replace(buildSpec);
+        b.buildDirs.replace(buildDirs);
+        b.buildFilters.replace(buildFilters);
+        b.readerWriter = newReaderWriter;
+        b.buildStepPlan.replace(newBuildStepPlan);
+        b.previousBuildState = previousBuildState;
+        b.previousPhasedAssetDeps = previousPhasedAssetDeps?.toBuilder();
+        b.filesToDelete.replace(filesToDelete);
+        b.foldersToDelete.replace(foldersToDelete);
+        b.triggersChanged = triggersChanged;
+        b.phaseOptionsChangedList.replace(phaseOptionsChanged);
+        b.postBuildOptionsChangedList.replace(postBuildOptionsChanged);
+        b.buildInputs.replace(result.build());
+      });
     }
 
     readerWriter.cache.invalidate(updates);
@@ -628,7 +482,7 @@ class BuildPlan {
 
     final newBuildStepPlan = BuildStepPlan.compute(
       buildPhases: buildStepPlan.buildPhases,
-      placeholderIds: buildPackages.placeholderIds,
+      placeholderIds: buildSpec.buildPackages.placeholderIds,
       sources: result.sources.build(),
     );
 
@@ -647,7 +501,7 @@ class BuildPlan {
     result.deletedOutputs.addAll(deletedOutputs);
 
     final generatedReaderWriter = readerWriter.copyWith(
-      generatedAssetHider: testingOverrides.flattenOutput
+      generatedAssetHider: buildSpec.testingOverrides.flattenOutput
           ? const NoopGeneratedAssetHider()
           : newBuildStepPlan,
     );
@@ -655,26 +509,25 @@ class BuildPlan {
       await generatedReaderWriter.delete(id);
     }
 
-    return BuildPlan(
-      buildPlanDigest: buildPlanDigest,
-      builderFactories: builderFactories,
-      buildOptions: buildOptions,
-      testingOverrides: testingOverrides,
-      buildPackages: buildPackages,
-      readerWriter: generatedReaderWriter,
-      buildConfigs: buildConfigs,
-      buildStepPlan: newBuildStepPlan,
-      previousBuildState: previousBuildState,
-      previousPhasedAssetDeps: previousPhasedAssetDeps,
-      restartIsNeeded: restartIsNeeded,
-      bootstrapper: bootstrapper,
-      filesToDelete: filesToDelete,
-      foldersToDelete: foldersToDelete,
-      triggersChanged: triggersChanged,
-      phaseOptionsChanged: phaseOptionsChanged,
-      postBuildOptionsChanged: postBuildOptionsChanged,
-      buildInputs: result.build(),
-    );
+    return BuildPlan((b) {
+      b.buildSpec.replace(buildSpec);
+      b.buildDirs.replace(buildDirs);
+      b.buildFilters.replace(buildFilters);
+      b.readerWriter = generatedReaderWriter;
+      b.buildStepPlan.replace(newBuildStepPlan);
+      b.previousBuildState = previousBuildState;
+      if (previousPhasedAssetDeps == null) {
+        b.previousPhasedAssetDeps = null;
+      } else {
+        b.previousPhasedAssetDeps.replace(previousPhasedAssetDeps);
+      }
+      b.filesToDelete.replace(filesToDelete);
+      b.foldersToDelete.replace(foldersToDelete);
+      b.triggersChanged = triggersChanged;
+      b.phaseOptionsChangedList.replace(phaseOptionsChanged);
+      b.postBuildOptionsChangedList.replace(postBuildOptionsChanged);
+      b.buildInputs.replace(result.build());
+    });
   }
 
   /// Reloads the build plan.
@@ -683,11 +536,16 @@ class BuildPlan {
   /// `recentlyBootstrapped` to `false` to redo checks from bootstrapping.
   ///
   /// The caller must call [deleteFilesAndFolders] on the result and check
-  /// [restartIsNeeded].
-  Future<BuildPlan> reload() => BuildPlan.load(
-    builderFactories: builderFactories,
-    buildOptions: buildOptions,
-    testingOverrides: testingOverrides,
-    recentlyBootstrapped: false,
+  /// `buildSpec.restartIsNeeded`.
+  Future<BuildPlan> reload() async => BuildPlan.load(
+    await BuildSpec.load(
+      builderFactories: buildSpec.builderFactories,
+      buildOptions: buildSpec.buildOptions.copyWith(
+        buildDirs: buildDirs,
+        buildFilters: buildFilters,
+      ),
+      testingOverrides: buildSpec.testingOverrides,
+      recentlyBootstrapped: false,
+    ),
   );
 }

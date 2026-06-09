@@ -182,7 +182,9 @@ class BuildOutputReader {
     // an output package of the build.
     if (!id.path.startsWith('lib/')) {
       if (rootDir != null && !p.isWithin(rootDir, id.path)) return true;
-      if (!_buildPlan.buildPackages.outputPackages.contains(id.package)) {
+      if (!_buildPlan.buildSpec.buildPackages.outputPackages.contains(
+        id.package,
+      )) {
         return true;
       }
     }

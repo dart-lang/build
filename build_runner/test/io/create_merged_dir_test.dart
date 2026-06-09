@@ -17,6 +17,7 @@ import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/build_plan.dart';
+import 'package:build_runner/src/build_plan/build_spec.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
 import 'package:build_runner/src/build_plan/phase.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
@@ -90,16 +91,18 @@ void main() {
         readerWriter.testing.writeString(source.key, source.value);
       }
       buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories({}),
-        buildOptions: BuildOptions.forTests(),
-        testingOverrides: TestingOverrides(
-          buildPhases: phases,
-          defaultRootPackageSources: [
-            ...defaultInBuildPackageSources,
-            'foo/**',
-          ].build(),
-          readerWriter: readerWriter,
-          buildPackages: buildPackages,
+        await BuildSpec.load(
+          builderFactories: BuilderFactories({}),
+          buildOptions: BuildOptions.forTests(),
+          testingOverrides: TestingOverrides(
+            buildPhases: phases,
+            defaultRootPackageSources: [
+              ...defaultInBuildPackageSources,
+              'foo/**',
+            ].build(),
+            readerWriter: readerWriter,
+            buildPackages: buildPackages,
+          ),
         ),
       );
       buildState = BuildState(buildPlan.buildInputs.sources.toSet());
@@ -377,8 +380,8 @@ void main() {
 
     test('doesnt always write files not matching outputDirs', () async {
       buildOutputReader = BuildOutputReader(
-        buildPlan: buildPlan.copyWith(
-          buildDirs: {BuildDirectory('foo')}.build(),
+        buildPlan: buildPlan.rebuild(
+          (b) => b.buildDirs.replace({BuildDirectory('foo')}),
         ),
         buildState: buildState,
       );

@@ -72,8 +72,8 @@ class BuildSeries {
       final id = change.id;
 
       // Changes to the entrypoint are handled via depfiles.
-      if (_buildPlan.bootstrapper.isCompileDependency(
-        _buildPlan.buildPackages.pathFor(id, hide: false),
+      if (_buildPlan.buildSpec.bootstrapper.isCompileDependency(
+        _buildPlan.buildSpec.buildPackages.pathFor(id, hide: false),
       )) {
         result.add(change);
         continue;
@@ -106,7 +106,7 @@ class BuildSeries {
         if (change.type != ChangeType.ADD) continue;
 
         // It's an add: handle if it's a new input.
-        if (_buildPlan.buildConfigs.anyMatchesAsset(id)) {
+        if (_buildPlan.buildSpec.buildConfigs.anyMatchesAsset(id)) {
           result.add(change);
         }
         continue;
@@ -116,7 +116,7 @@ class BuildSeries {
 
       // If not copying to a merged output directory, ignore changes to files
       // with no outputs.
-      if (!_buildPlan.buildOptions.anyMergedOutputDirectory &&
+      if (!_buildPlan.buildSpec.buildOptions.anyMergedOutputDirectory &&
           !(_buildPlan.previousBuildState?.isMissingSource(id) ?? false) &&
           _buildPlan.previousBuildState?.digestOf(
                 id: id,
@@ -142,15 +142,16 @@ class BuildSeries {
   bool _isBuildConfiguration(AssetId id) =>
       id.path == 'build.yaml' ||
       id.path.endsWith('.build.yaml') ||
-      (id.package == _buildPlan.buildPackages.outputRoot &&
-          id.path == 'build.${_buildPlan.buildOptions.configKey}.yaml');
+      (id.package == _buildPlan.buildSpec.buildPackages.outputRoot &&
+          id.path ==
+              'build.${_buildPlan.buildSpec.buildOptions.configKey}.yaml');
 
   Future<List<WatchEvent>> checkForChanges() async {
     final updates =
         await AssetTracker(
           _buildPlan.readerWriter,
-          _buildPlan.buildPackages,
-          _buildPlan.buildConfigs,
+          _buildPlan.buildSpec.buildPackages,
+          _buildPlan.buildSpec.buildConfigs,
         ).collectChanges(
           buildStepPlan: _buildPlan.buildStepPlan,
           buildState: _buildPlan.previousBuildState ?? BuildState(),
@@ -195,7 +196,7 @@ class BuildSeries {
         throw StateError('`recentlyBootstrapped` but updates not empty.');
       }
     } else {
-      final kernelFreshness = await _buildPlan.bootstrapper
+      final kernelFreshness = await _buildPlan.buildSpec.bootstrapper
           .checkCompileFreshness(digestsAreFresh: false);
       if (!kernelFreshness.outputIsFresh) {
         final result = BuildResult.buildScriptChanged();
@@ -210,7 +211,7 @@ class BuildSeries {
       await _buildPlan.deleteFilesAndFolders();
       // A config change might have caused new builders to be needed, which
       // needs a restart to change the build script.
-      if (_buildPlan.restartIsNeeded) {
+      if (_buildPlan.buildSpec.restartIsNeeded) {
         final result = BuildResult.buildScriptChanged();
         _buildResultsController.add(result);
         await close();
@@ -218,12 +219,13 @@ class BuildSeries {
       }
     }
 
-    buildDirs ??= _buildPlan.buildOptions.buildDirs;
-    buildFilters ??= _buildPlan.buildOptions.buildFilters;
+    buildDirs ??= _buildPlan.buildDirs;
+    buildFilters ??= _buildPlan.buildFilters;
     if (!firstBuild) buildLog.nextBuild();
-    _buildPlan = _buildPlan.copyWith(
-      buildDirs: buildDirs,
-      buildFilters: buildFilters,
+    _buildPlan = _buildPlan.rebuild(
+      (b) => b
+        ..buildDirs.replace(buildDirs!)
+        ..buildFilters.replace(buildFilters!),
     );
 
     if (firstBuild) {

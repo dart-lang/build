@@ -5,7 +5,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import '../../build_plan/build_plan_digest.dart';
+import '../../build_plan/build_spec_digest.dart';
 import '../library_cycle_graph/phased_asset_deps.dart';
 import 'build_state.dart';
 import 'serializers.dart';
@@ -15,7 +15,7 @@ import 'serializers.dart';
 /// Enough information to determine whether an incremental build is possible,
 /// and if so exactly what should be rebuilt.
 class AssetGraphJson {
-  final BuildPlanDigest buildPlanDigest;
+  final BuildSpecDigest buildPlanDigest;
   final BuildState buildState;
   final PhasedAssetDeps phasedAssetDeps;
 
@@ -27,7 +27,7 @@ class AssetGraphJson {
 
   /// Serializes for `asset_graph.json`.
   static Uint8List serialize({
-    required BuildPlanDigest buildPlanDigest,
+    required BuildSpecDigest buildPlanDigest,
     required BuildState buildState,
     required PhasedAssetDeps phasedAssetDeps,
   }) {
@@ -35,7 +35,7 @@ class AssetGraphJson {
     // `identityAssetIdSeralizer`.
     final serializedBuildState = serializeBuildState(buildState);
     final serializedBuildPlanDigest = serializers.serializeWith(
-      BuildPlanDigest.serializer,
+      BuildSpecDigest.serializer,
       buildPlanDigest,
     );
     final serializedPhasedAssetDeps = serializers.serializeWith(
@@ -69,7 +69,7 @@ class AssetGraphJson {
       );
 
       final buildPlanDigest = serializers.deserializeWith(
-        BuildPlanDigest.serializer,
+        BuildSpecDigest.serializer,
         deserialized['buildPlanDigest'],
       );
 
@@ -96,5 +96,5 @@ class AssetGraphJson {
 }
 
 /// Increment whenever older `asset_graph.json` files should be rejected.
-const _version = 42;
+const _version = 43;
 final jsonUtf8 = json.fuse(utf8);

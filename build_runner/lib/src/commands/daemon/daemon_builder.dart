@@ -56,7 +56,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   final _buildScriptUpdateCompleter = Completer<void>();
   Future<void> get buildScriptUpdated => _buildScriptUpdateCompleter.future;
 
-  String get _currentPackageName => _buildPlan.buildPackages.currentPackage;
+  String get _currentPackageName =>
+      _buildPlan.buildSpec.buildPackages.currentPackage;
 
   @override
   Future<void> build(
@@ -226,8 +227,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         outputStreamController.add(ServerLog.fromLogRecord(record));
       };
     });
-    buildPlan = buildPlan.copyWith(
-      readerWriter: buildPlan.readerWriter.copyWith(
+    buildPlan = buildPlan.rebuild(
+      (b) => b.readerWriter = buildPlan.readerWriter.copyWith(
         onDelete: expectedDeletes.add,
       ),
     );
@@ -236,10 +237,10 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
     // Only actually used for the AutoChangeProvider.
     Stream<List<WatchEvent>> graphEvents() =>
-        BuildPackagesWatcher(buildPlan.buildPackages)
+        BuildPackagesWatcher(buildPlan.buildSpec.buildPackages)
             .watch()
             .debounceBuffer(
-              buildPlan.testingOverrides.debounceDelay ??
+              buildPlan.buildSpec.testingOverrides.debounceDelay ??
                   const Duration(milliseconds: 250),
             )
             .asyncMap(

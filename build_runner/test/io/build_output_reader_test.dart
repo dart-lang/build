@@ -18,6 +18,7 @@ import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/build_plan.dart';
+import 'package:build_runner/src/build_plan/build_spec.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
 import 'package:build_runner/src/build_plan/phase.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
@@ -65,12 +66,14 @@ void main() {
       readerWriter.testing.writeString(deletedId, '');
 
       final buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories({}),
-        buildOptions: BuildOptions.forTests(),
-        testingOverrides: TestingOverrides(
-          buildPhases: buildPhases,
-          readerWriter: readerWriter,
-          buildPackages: buildPackages,
+        await BuildSpec.load(
+          builderFactories: BuilderFactories({}),
+          buildOptions: BuildOptions.forTests(),
+          testingOverrides: TestingOverrides(
+            buildPhases: buildPhases,
+            readerWriter: readerWriter,
+            buildPackages: buildPackages,
+          ),
         ),
       );
       reader = BuildOutputReader(buildPlan: buildPlan, buildState: buildState);
@@ -104,14 +107,16 @@ void main() {
       ]);
 
       var buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories({}),
-        buildOptions: BuildOptions.forTests(
-          buildDirs: {BuildDirectory('web')}.build(),
-        ),
-        testingOverrides: TestingOverrides(
-          buildPhases: buildPhases,
-          readerWriter: readerWriter,
-          buildPackages: buildPackages,
+        await BuildSpec.load(
+          builderFactories: BuilderFactories({}),
+          buildOptions: BuildOptions.forTests(
+            buildDirs: {BuildDirectory('web')}.build(),
+          ),
+          testingOverrides: TestingOverrides(
+            buildPhases: buildPhases,
+            readerWriter: readerWriter,
+            buildPackages: buildPackages,
+          ),
         ),
       );
       reader = BuildOutputReader(buildPlan: buildPlan, buildState: buildState);
@@ -122,15 +127,17 @@ void main() {
       );
 
       buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories({}),
-        buildOptions: BuildOptions.forTests(
-          buildDirs: {BuildDirectory('web')}.build(),
-          buildFilters: {BuildFilter(Glob('b'), Glob('foo'))}.build(),
-        ),
-        testingOverrides: TestingOverrides(
-          buildPhases: buildPhases,
-          readerWriter: readerWriter,
-          buildPackages: buildPackages,
+        await BuildSpec.load(
+          builderFactories: BuilderFactories({}),
+          buildOptions: BuildOptions.forTests(
+            buildDirs: {BuildDirectory('web')}.build(),
+            buildFilters: {BuildFilter(Glob('b'), Glob('foo'))}.build(),
+          ),
+          testingOverrides: TestingOverrides(
+            buildPhases: buildPhases,
+            readerWriter: readerWriter,
+            buildPackages: buildPackages,
+          ),
         ),
       );
 
