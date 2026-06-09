@@ -19,6 +19,7 @@ import 'package:build_runner/src/build_plan/builder_factories.dart';
 import 'package:build_runner/src/build_plan/previous_build.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
 import 'package:build_runner/src/constants.dart';
+import 'package:build_runner/src/exceptions.dart';
 import 'package:build_runner/src/io/reader_writer.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
@@ -234,6 +235,52 @@ void main() {
 
       expect(await readerWriter.canRead(assetGraphJsonId), false);
       expect(await readerWriter.canRead(outputId), false);
+    });
+
+    test('throws CannotBuildException if there are conflicting outputs '
+        'in dependencies', () async {
+      final buildPackages = BuildPackages.singlePackageBuild('a', [
+        BuildPackage.forTesting(
+          name: 'a',
+          watch: true,
+          isOutput: true,
+          dependencies: ['dep'],
+        ),
+        BuildPackage.forTesting(name: 'dep', watch: true, isOutput: false),
+      ]);
+      final readerWriter = InternalTestReaderWriter(outputRootPackage: 'a');
+      await readerWriter.writeAsString(AssetId('a', 'lib/a.dart'), '// a.dart');
+      await readerWriter.writeAsString(
+        AssetId('dep', 'lib/a.dart'),
+        '// dep a.dart',
+      );
+
+      final conflictId = AssetId('dep', 'lib/a.dart.copy');
+      await readerWriter.writeAsString(conflictId, '// conflict');
+
+      final testingOverrides = TestingOverrides(
+        builderDefinitions: [
+          BuilderDefinition(
+            '',
+            hideOutput: true,
+            autoApply: AutoApply.allPackages,
+          ),
+        ].build(),
+        readerWriter: readerWriter,
+        buildPackages: buildPackages,
+        checkBuilderFreshness: false,
+      );
+
+      expect(
+        () async => await BuildPlan.load(
+          await BuildSpec.load(
+            builderFactories: builderFactories,
+            buildOptions: buildOptions,
+            testingOverrides: testingOverrides,
+          ),
+        ),
+        throwsA(const TypeMatcher<CannotBuildException>()),
+      );
     });
   });
 }
