@@ -2,10 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:convert';
-
 import 'package:build/build.dart';
-import 'package:build/experiments.dart';
 import 'package:build_config/build_config.dart' hide BuilderDefinition;
 import 'package:build_runner/src/build/build_state/asset_graph_json.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
@@ -16,8 +13,10 @@ import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_plan.dart';
 import 'package:build_runner/src/build_plan/build_spec.dart';
+import 'package:build_runner/src/build_plan/build_step_plan.dart';
 import 'package:build_runner/src/build_plan/builder_definition.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
+import 'package:build_runner/src/build_plan/previous_build.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
 import 'package:build_runner/src/constants.dart';
 import 'package:build_runner/src/io/reader_writer.dart';
@@ -72,10 +71,6 @@ void main() {
       buildPlan = await loadPlan();
     });
 
-    test('loads with no previous build state', () async {
-      expect(buildPlan.previousBuildState, null);
-    });
-
     Future<void> writeBuildStateAndPlan(
       BuildState buildState,
       BuildPlan buildPlan,
@@ -89,176 +84,6 @@ void main() {
         ),
       );
     }
-
-    test('loads previous build state', () async {
-      final buildState = buildPlan.previousBuildState ?? BuildState();
-      await writeBuildStateAndPlan(buildState, buildPlan);
-      buildPlan = await loadPlan();
-      final loadedState = buildPlan.previousBuildState;
-
-      expect(loadedState.toString(), buildState.toString());
-    });
-
-    test('requires restart if a factory is missing', () async {
-      final buildPlan = await BuildPlan.load(
-        await BuildSpec.load(
-          builderFactories: builderFactories,
-          buildOptions: buildOptions,
-          testingOverrides: testingOverrides.copyWith(
-            builderDefinitions: [BuilderDefinition('missing')].build(),
-          ),
-        ),
-      );
-
-      expect(buildPlan.buildStepPlan.buildPhases.inBuildPhases.isEmpty, true);
-      expect(buildPlan.buildSpec.restartIsNeeded, true);
-    });
-
-    test('discards previous build state if build phases changed', () async {
-      final buildState = buildPlan.previousBuildState ?? BuildState();
-      await writeBuildStateAndPlan(buildState, buildPlan);
-
-      buildPlan = await BuildPlan.load(
-        await BuildSpec.load(
-          builderFactories: builderFactories,
-          buildOptions: buildOptions,
-          testingOverrides: testingOverrides.copyWith(
-            builderDefinitions: [
-              BuilderDefinition(''),
-              // Apply a second builder so build phases change.
-              BuilderDefinition('b2'),
-            ].build(),
-          ),
-        ),
-      );
-
-      expect(buildPlan.previousBuildState, null);
-
-      // The old state file is in [BuildPlan#filesToDelete] because it's
-      // invalid.
-      expect(await readerWriter.canRead(assetGraphJsonId), true);
-      await buildPlan.deleteFilesAndFolders();
-      buildPlan.readerWriter.cache.flush();
-      expect(await readerWriter.canRead(assetGraphJsonId), false);
-    });
-
-    test('tracks lost outputs if build phases changed', () async {
-      var buildPlan = await BuildPlan.load(
-        await BuildSpec.load(
-          builderFactories: builderFactories,
-          buildOptions: buildOptions,
-          testingOverrides: testingOverrides.copyWith(
-            builderDefinitions: [
-              BuilderDefinition(
-                '',
-                // Hidden output is easy to find and delete, it's under one
-                // generated root. Unhide the output so there can be lost
-                // outputs.
-                hideOutput: false,
-              ),
-            ].build(),
-          ),
-        ),
-      );
-      final buildState = buildPlan.previousBuildState ?? BuildState();
-
-      // Write an output and add it to the build state as if it was built.
-      await readerWriter.writeAsString(outputId, '// output');
-      final step = buildPlan.buildStepPlan.stepForDeclaredOutput(outputId);
-      buildState.updateBuildStepResult(
-        step,
-        BuildStepResult((b) {
-          b.isHidden = false;
-          b.outputs[outputId] = Digest([]);
-        }),
-      );
-      await writeBuildStateAndPlan(buildState, buildPlan);
-
-      buildPlan = await BuildPlan.load(
-        await BuildSpec.load(
-          builderFactories: builderFactories,
-          buildOptions: buildOptions,
-          testingOverrides: testingOverrides.copyWith(
-            builderDefinitions: [
-              BuilderDefinition(''),
-              // Apply a second builder so build phases change.
-              BuilderDefinition('b2'),
-            ].build(),
-          ),
-        ),
-      );
-
-      expect(buildPlan.previousBuildState, null);
-      expect(buildPlan.filesToDelete, isNotEmpty);
-
-      // `BuildPlan` can delete lost outputs.
-      expect(await readerWriter.canRead(outputId), true);
-      await buildPlan.deleteFilesAndFolders();
-      buildPlan.readerWriter.cache.flush();
-      expect(await readerWriter.canRead(outputId), false);
-    });
-
-    test('discards previous build state if SDK version changed', () async {
-      final buildState = buildPlan.previousBuildState ?? BuildState();
-      await writeBuildStateAndPlan(buildState, buildPlan);
-
-      buildPlan = await BuildPlan.load(
-        await BuildSpec.load(
-          builderFactories: builderFactories,
-          buildOptions: buildOptions,
-          testingOverrides: testingOverrides.copyWith(
-            builderDefinitions: [
-              BuilderDefinition(''),
-              BuilderDefinition('b2'),
-            ].build(),
-          ),
-        ),
-      );
-
-      expect(buildPlan.previousBuildState, null);
-    });
-
-    test('discards previous build state if packages changed', () async {
-      final buildState = buildPlan.previousBuildState ?? BuildState();
-      await writeBuildStateAndPlan(buildState, buildPlan);
-
-      final buildPackages2 = BuildPackages.singlePackageBuild('b', [
-        BuildPackage.forTesting(name: 'b', watch: true, isOutput: true),
-      ]);
-      final testingOverrides2 = testingOverrides.copyWith(
-        buildPackages: buildPackages2,
-      );
-      buildPlan = await BuildPlan.load(
-        await BuildSpec.load(
-          builderFactories: builderFactories,
-          buildOptions: buildOptions,
-          testingOverrides: testingOverrides2,
-        ),
-      );
-
-      expect(buildPlan.previousBuildState, null);
-    });
-
-    test(
-      'discards previous build state if enabled experiments changed',
-      () async {
-        final buildState = buildPlan.previousBuildState ?? BuildState();
-        await writeBuildStateAndPlan(buildState, buildPlan);
-
-        buildPlan = await withEnabledExperiments(
-          () async => BuildPlan.load(
-            await BuildSpec.load(
-              builderFactories: builderFactories,
-              buildOptions: buildOptions,
-              testingOverrides: testingOverrides,
-            ),
-          ),
-          ['an_experiment'],
-        );
-
-        expect(buildPlan.previousBuildState, null);
-      },
-    );
 
     test('reports updates', () async {
       final buildState = BuildState({assetId, assetId2});
@@ -358,200 +183,57 @@ void main() {
       expect(buildPlan2.buildInputs.sources.toSet(), <AssetId>{assetId2});
     });
 
-    test('tracks cleanBuild when build_plan.json does not exist', () async {
-      final plan = await loadPlan();
-      expect(plan.previousBuildState, isNull);
-    });
-
-    test(
-      'tracks cleanBuild when build_plan.json compileDigest is fresh',
-      () async {
-        await writeBuildStateAndPlan(
-          buildPlan.previousBuildState ?? BuildState(),
-          buildPlan,
-        );
-        buildPlan = await loadPlan();
-        expect(buildPlan.previousBuildState, isNotNull);
-      },
-    );
-
-    test(
-      'tracks cleanBuild when build_plan.json compileDigest is stale',
-      () async {
-        buildPlan = buildPlan.rebuild(
-          (b) => b.buildSpec.buildPlanDigest.compileDigest = 'stale_digest',
-        );
-        await writeBuildStateAndPlan(
-          buildPlan.previousBuildState ?? BuildState(),
-          buildPlan,
-        );
-
-        buildPlan = await loadPlan();
-        expect(buildPlan.previousBuildState, isNull);
-      },
-    );
-
-    test('tracks triggersChanged when triggers change', () async {
-      buildPlan = buildPlan.rebuild(
-        (b) => b.buildSpec.buildPlanDigest.buildTriggersDigest = 'triggers_1',
+    test('deleteFilesAndFolders deletes incompatible outputs and clean build '
+        'files', () async {
+      final spec = await BuildSpec.load(
+        builderFactories: builderFactories,
+        buildOptions: buildOptions,
+        testingOverrides: testingOverrides.copyWith(
+          builderDefinitions: [
+            BuilderDefinition('', hideOutput: false),
+          ].build(),
+        ),
       );
-      await writeBuildStateAndPlan(
-        buildPlan.previousBuildState ?? BuildState(),
-        buildPlan,
-      );
+      final previousBuild = await PreviousBuild.load(spec);
+      final buildState = previousBuild.buildState ?? BuildState();
 
-      final buildConfig2 = runInBuildConfigZone(
-        () {
-          return BuildConfig(
-            packageName: 'a',
-            buildTargets: {
-              'a|a': BuildTarget(
-                builders: {
-                  '': TargetBuilderConfig(
-                    generateFor: const InputSet(include: ['lib/*.dart']),
-                  ),
-                },
-              ),
-            },
-          );
-        },
-        'a',
-        [],
+      await readerWriter.writeAsString(outputId, '// output');
+      final buildStepPlan = BuildStepPlan.compute(
+        buildPhases: spec.buildPhases,
+        placeholderIds: buildPackages.placeholderIds,
+        sources: {assetId, assetId2},
       );
+      final step = buildStepPlan.stepForDeclaredOutput(outputId);
+      buildState.updateBuildStepResult(
+        step,
+        BuildStepResult((b) {
+          b.isHidden = false;
+          b.outputs[outputId] = Digest([]);
+        }),
+      );
+      await writeBuildStateAndPlan(buildState, buildPlan);
 
-      final buildPlan2 = await BuildPlan.load(
+      buildPlan = await BuildPlan.load(
         await BuildSpec.load(
           builderFactories: builderFactories,
           buildOptions: buildOptions,
           testingOverrides: testingOverrides.copyWith(
-            buildConfig: {'a': buildConfig2}.build(),
+            builderDefinitions: [
+              BuilderDefinition(''),
+              BuilderDefinition('b2'),
+            ].build(),
           ),
         ),
       );
-      expect(buildPlan2.previousBuildState, isNotNull);
-      expect(buildPlan2.triggersChanged, isTrue);
-    });
 
-    test('tracks phaseOptionsChanged when builder options change', () async {
-      buildPlan = buildPlan.rebuild(
-        (b) => b.buildSpec.buildPlanDigest.inBuildPhasesOptionsDigests[0] =
-            'dummy_digest_1',
-      );
-      await writeBuildStateAndPlan(
-        buildPlan.previousBuildState ?? BuildState(),
-        buildPlan,
-      );
+      expect(await readerWriter.canRead(assetGraphJsonId), true);
+      expect(await readerWriter.canRead(outputId), true);
 
-      final buildConfig2 = runInBuildConfigZone(
-        () {
-          return BuildConfig(
-            packageName: 'a',
-            buildTargets: {
-              'a|a': BuildTarget(
-                builders: {
-                  '': TargetBuilderConfig(
-                    options: const {'some_option': 'changed'},
-                  ),
-                },
-              ),
-            },
-          );
-        },
-        'a',
-        [],
-      );
+      await buildPlan.deleteFilesAndFolders();
+      buildPlan.readerWriter.cache.flush();
 
-      final buildPlan2 = await BuildPlan.load(
-        await BuildSpec.load(
-          builderFactories: builderFactories,
-          buildOptions: buildOptions,
-          testingOverrides: testingOverrides.copyWith(
-            buildConfig: {'a': buildConfig2}.build(),
-          ),
-        ),
-      );
-      expect(buildPlan2.previousBuildState, isNotNull);
-      expect(buildPlan2.phaseOptionsChanged(0), isTrue);
-    });
-
-    test('tracks buildPhasesDigest when build phases change', () async {
-      buildPlan = buildPlan.rebuild(
-        (b) => b.buildSpec.buildPlanDigest.buildPhasesDigest = 'stale_digest',
-      );
-      await writeBuildStateAndPlan(
-        buildPlan.previousBuildState ?? BuildState(),
-        buildPlan,
-      );
-
-      buildPlan = await loadPlan();
-      expect(buildPlan.previousBuildState, isNull);
-    });
-
-    test('tracks dartVersion when SDK version changes', () async {
-      buildPlan = buildPlan.rebuild(
-        (b) => b.buildSpec.buildPlanDigest.dartVersion = 'stale_version',
-      );
-      await writeBuildStateAndPlan(
-        buildPlan.previousBuildState ?? BuildState(),
-        buildPlan,
-      );
-
-      buildPlan = await loadPlan();
-      expect(buildPlan.previousBuildState, isNull);
-    });
-
-    test('tracks enabledExperiments when experiments change', () async {
-      buildPlan = buildPlan.rebuild(
-        (b) => b.buildSpec.buildPlanDigest.enabledExperiments.add(
-          'stale_experiment',
-        ),
-      );
-      await writeBuildStateAndPlan(
-        buildPlan.previousBuildState ?? BuildState(),
-        buildPlan,
-      );
-
-      buildPlan = await loadPlan();
-      expect(buildPlan.previousBuildState, isNull);
-    });
-
-    test(
-      'tracks packageLanguageVersions when package language versions change',
-      () async {
-        buildPlan = buildPlan.rebuild(
-          (b) =>
-              b.buildSpec.buildPlanDigest.packageLanguageVersions['a'] = '1.0',
-        );
-        await writeBuildStateAndPlan(
-          buildPlan.previousBuildState ?? BuildState(),
-          buildPlan,
-        );
-
-        buildPlan = await loadPlan();
-        expect(buildPlan.previousBuildState, isNull);
-      },
-    );
-
-    test('tracks cleanBuild when asset_graph.json version is stale', () async {
-      final assetGraphJsonId = AssetId(
-        buildPackages.outputRoot,
-        assetGraphJsonPath,
-      );
-      await writeBuildStateAndPlan(
-        buildPlan.previousBuildState ?? BuildState(),
-        buildPlan,
-      );
-
-      final decodedMap =
-          json.decode(await readerWriter.readAsString(assetGraphJsonId)) as Map;
-      decodedMap['version'] = 999;
-      await readerWriter.writeAsString(
-        assetGraphJsonId,
-        json.encode(decodedMap),
-      );
-
-      buildPlan = await loadPlan();
-      expect(buildPlan.previousBuildState, isNull);
+      expect(await readerWriter.canRead(assetGraphJsonId), false);
+      expect(await readerWriter.canRead(outputId), false);
     });
   });
 }

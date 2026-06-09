@@ -85,9 +85,9 @@ class Build {
 
   Build({required this.buildPlan, required this.resourceManager})
     : readerWriter = buildPlan.readerWriter,
-      previousDepsLoader = buildPlan.previousPhasedAssetDeps == null
+      previousDepsLoader = buildPlan.previousBuild.phasedAssetDeps == null
           ? null
-          : AssetDepsLoader.fromDeps(buildPlan.previousPhasedAssetDeps!),
+          : AssetDepsLoader.fromDeps(buildPlan.previousBuild.phasedAssetDeps!),
       resolvers =
           buildPlan.buildSpec.testingOverrides.resolvers ?? _defaultResolvers,
       resolversImpl = switch (buildPlan.buildSpec.testingOverrides.resolvers ??
@@ -107,7 +107,7 @@ class Build {
   BuildPackages get buildPackages => buildSpec.buildPackages;
   BuildConfigs get buildConfigs => buildSpec.buildConfigs;
   BuildPhases get buildPhases => buildPlan.buildStepPlan.buildPhases;
-  BuildState? get previousBuildState => buildPlan.previousBuildState;
+  BuildState? get previousBuildState => buildPlan.previousBuild.buildState;
   BuildInputs get buildInputs => buildPlan.buildInputs;
   BuildStepPlan get buildStepPlan => buildPlan.buildStepPlan;
 
@@ -212,9 +212,12 @@ class Build {
         // say "not generated yet", in which case the old value is retained.
         final currentPhasedAssetDeps =
             resolversImpl?.phasedAssetDeps() ?? PhasedAssetDeps();
-        final updatedPhasedAssetDeps = buildPlan.previousPhasedAssetDeps == null
+        final updatedPhasedAssetDeps =
+            buildPlan.previousBuild.phasedAssetDeps == null
             ? currentPhasedAssetDeps
-            : buildPlan.previousPhasedAssetDeps!.update(currentPhasedAssetDeps);
+            : buildPlan.previousBuild.phasedAssetDeps!.update(
+                currentPhasedAssetDeps,
+              );
         await readerWriter.writeAsBytes(
           AssetId(buildPackages.outputRoot, assetGraphJsonPath),
           AssetGraphJson.serialize(
@@ -808,7 +811,7 @@ class Build {
 
       if (buildInputs.cleanBuild) return StepAction.run;
 
-      if (buildPlan.triggersChanged) return StepAction.run;
+      if (buildPlan.previousBuild.triggersChanged) return StepAction.run;
 
       if (buildPlan.phaseOptionsChanged(step.phaseNumber)) {
         return StepAction.run;
