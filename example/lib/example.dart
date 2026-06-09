@@ -45,7 +45,8 @@ class CssBuilder implements Builder {
     r'$package$': ['web/generated.css'],
   };
 
-  static String _cssContent() => '''
+  static String _cssContent() =>
+      '''
 /*
 Generated at: ${DateTime.now()}
 */
@@ -106,9 +107,8 @@ class TextBuilder implements Builder {
           .replaceFirst('.json', '.dart'),
     );
 
-    final messages =
-        (json.decode(await buildStep.readAsString(inputId)) as Map)
-            .cast<String, String>();
+    final messages = (json.decode(await buildStep.readAsString(inputId)) as Map)
+        .cast<String, String>();
 
     final outputBuffer = StringBuffer('// Generated, do not edit\n');
     messages.forEach((key, value) {

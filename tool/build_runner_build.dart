@@ -33,10 +33,9 @@ void main(List<String> arguments) {
     'build_runner_build',
   );
   tempDirectory.createSync(recursive: true);
-  final maybeOverride =
-      buildRunnerOverride == null
-          ? ''
-          : '''
+  final maybeOverride = buildRunnerOverride == null
+      ? ''
+      : '''
 dependency_overrides:
   build_runner:
     path: $buildRunnerOverride
@@ -114,10 +113,9 @@ $maybeOverride
 }
 
 extension type PackageConfig(Map<String, Object?> node) {
-  List<Package> get packages =>
-      (node['packages'] as List<Object?>)
-          .map((p) => Package(p as Map<String, Object?>))
-          .toList();
+  List<Package> get packages => (node['packages'] as List<Object?>)
+      .map((p) => Package(p as Map<String, Object?>))
+      .toList();
   Package packageNamed(String name) =>
       packages.singleWhere((package) => package.name == name);
 }

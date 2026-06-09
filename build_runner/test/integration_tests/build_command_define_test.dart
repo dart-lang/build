@@ -174,21 +174,19 @@ global_options:
     // Global options `runs_before` from workspace root `build.yaml` are used.
     tester.writePackage(
       name: 'pkg_a',
-      files:
-          FixturePackages.copyBuilder(
-            packageName: 'pkg_a',
-            outputExtension: '.a',
-          ).files,
+      files: FixturePackages.copyBuilder(
+        packageName: 'pkg_a',
+        outputExtension: '.a',
+      ).files,
       dependencies: ['build', 'build_runner'],
       inWorkspace: true,
     );
     tester.writePackage(
       name: 'pkg_b',
-      files:
-          FixturePackages.copyBuilder(
-            packageName: 'pkg_b',
-            outputExtension: '.b',
-          ).files,
+      files: FixturePackages.copyBuilder(
+        packageName: 'pkg_b',
+        outputExtension: '.b',
+      ).files,
       dependencies: ['build', 'build_runner'],
       inWorkspace: true,
     );

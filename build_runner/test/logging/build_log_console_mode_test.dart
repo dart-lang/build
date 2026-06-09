@@ -284,12 +284,11 @@ E An error.'''),
 
       final rawLine = renderRaw().single;
       final targetUri = _packageFileUri(buildPackages, assetId);
-      final linkedText =
-          [
-            AnsiBuffer.openHyperlink(targetUri),
-            'lib/src/logging/build_log.dart',
-            AnsiBuffer.closeHyperlink,
-          ].join();
+      final linkedText = [
+        AnsiBuffer.openHyperlink(targetUri),
+        'lib/src/logging/build_log.dart',
+        AnsiBuffer.closeHyperlink,
+      ].join();
 
       expect(rawLine, contains(linkedText));
       expect(render().single, contains('lib/src/logging/build_log.dart'));
@@ -313,12 +312,11 @@ E An error.'''),
 
       final rawLine = renderRaw().first;
       final targetUri = _packageFileUri(buildPackages, assetId);
-      final linkedText =
-          [
-            AnsiBuffer.openHyperlink(targetUri),
-            'lib/src/logging/build_log.dart',
-            AnsiBuffer.closeHyperlink,
-          ].join();
+      final linkedText = [
+        AnsiBuffer.openHyperlink(targetUri),
+        'lib/src/logging/build_log.dart',
+        AnsiBuffer.closeHyperlink,
+      ].join();
 
       expect(rawLine, contains(linkedText));
       expect(

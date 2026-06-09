@@ -85,8 +85,7 @@ class DaemonCommand implements BuildRunnerCommand {
       //
       // `BuildRunnerDaemonBuilder` sets its own `onLog` replacing this one.
       buildLog.configuration = buildLog.configuration.rebuild((b) {
-        b.onLog =
-            (record) => stdout.writeln('''
+        b.onLog = (record) => stdout.writeln('''
 $logStartMarker
 ${jsonEncode(serializers.serialize(ServerLog.fromLogRecord(record)))}
 $logEndMarker''');

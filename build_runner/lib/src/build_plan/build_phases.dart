@@ -41,10 +41,7 @@ class BuildPhases {
        postBuildActionsOptionsDigests = _digestsOf(
          postBuildPhase?.builderActions ?? [],
        ),
-       digest = _computeDigest([
-         ...inBuildPhases,
-         if (postBuildPhase != null) postBuildPhase,
-       ]);
+       digest = _computeDigest([...inBuildPhases, ?postBuildPhase]);
 
   /// The phases, [inBuildPhases] followed by [postBuildPhase], by number.
   BuildPhase operator [](int index) {
@@ -97,10 +94,9 @@ class BuildPhases {
       if (packagesInBuild.contains(action.package)) continue;
       // This should happen only with a manual build script since the build
       // phases generation filters these out.
-      final name =
-          action is InBuildPhase
-              ? action.displayName
-              : (action as PostBuildAction).builderLabel;
+      final name = action is InBuildPhase
+          ? action.displayName
+          : (action as PostBuildAction).builderLabel;
       buildLog.error(
         'A build phase ($name) is attempting '
         'to operate on package "${action.package}" without "hideOutput". '

@@ -86,11 +86,10 @@ class AotCompiler implements Compiler {
 
     var stderr = result.stderr as String;
     // Tidy up the compiler output to leave just the failure.
-    stderr =
-        stderr
-            .replaceAll('Error: AOT compilation failed', '')
-            .replaceAll('Bad state: Generating AOT snapshot failed!', '')
-            .trim();
+    stderr = stderr
+        .replaceAll('Error: AOT compilation failed', '')
+        .replaceAll('Bad state: Generating AOT snapshot failed!', '')
+        .trim();
     return CompileResult(messages: result.exitCode == 0 ? null : stderr);
   }
 }

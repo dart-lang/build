@@ -74,14 +74,13 @@ class Daemon {
     _createVersionFile();
     _createOptionsFile(options);
 
-    final server =
-        _server = Server(
-          builder,
-          timeout,
-          changeProvider,
-          serializersOverride: serializersOverride,
-          shouldBuild: shouldBuild,
-        );
+    final server = _server = Server(
+      builder,
+      timeout,
+      changeProvider,
+      serializersOverride: serializersOverride,
+      shouldBuild: shouldBuild,
+    );
     final port = await server.listen();
     _createPortFile(port);
 

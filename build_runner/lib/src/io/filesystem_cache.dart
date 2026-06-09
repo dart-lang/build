@@ -200,8 +200,9 @@ class InMemoryFilesystemCache implements FilesystemCache {
     List<int> contents, {
     required void Function() writer,
   }) {
-    final uint8ListContents =
-        contents is Uint8List ? contents : Uint8List.fromList(contents);
+    final uint8ListContents = contents is Uint8List
+        ? contents
+        : Uint8List.fromList(contents);
     _bytesContentCache[id] = uint8ListContents;
     _existsCache[id] = true;
     _pendingWrites[id] = _PendingWrite(

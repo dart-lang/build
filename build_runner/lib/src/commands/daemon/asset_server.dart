@@ -36,9 +36,8 @@ class AssetServer {
         })
         .add(
           AssetHandler(
-            () async =>
-                (await builder.buildSeries.currentBuildResult)
-                    .buildOutputReader,
+            () async => (await builder.buildSeries.currentBuildResult)
+                .buildOutputReader,
             outputRootPackage,
           ).handle,
         );

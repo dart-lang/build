@@ -288,35 +288,37 @@ class AsyncTimeTracker extends TimeSliceGroup implements TimeTracker {
       final tracker = self[_zoneKey] as AsyncTimeTracker;
       return tracker._trackSyncSlice(parent, zone, () => parent.run(zone, f));
     },
-    runUnary: <R, T>(
-      Zone self,
-      ZoneDelegate parent,
-      Zone zone,
-      R Function(T) f,
-      T arg,
-    ) {
-      final tracker = self[_zoneKey] as AsyncTimeTracker;
-      return tracker._trackSyncSlice(
-        parent,
-        zone,
-        () => parent.runUnary(zone, f, arg),
-      );
-    },
-    runBinary: <R, T1, T2>(
-      Zone self,
-      ZoneDelegate parent,
-      Zone zone,
-      R Function(T1, T2) f,
-      T1 arg1,
-      T2 arg2,
-    ) {
-      final tracker = self[_zoneKey] as AsyncTimeTracker;
-      return tracker._trackSyncSlice(
-        parent,
-        zone,
-        () => parent.runBinary(zone, f, arg1, arg2),
-      );
-    },
+    runUnary:
+        <R, T>(
+          Zone self,
+          ZoneDelegate parent,
+          Zone zone,
+          R Function(T) f,
+          T arg,
+        ) {
+          final tracker = self[_zoneKey] as AsyncTimeTracker;
+          return tracker._trackSyncSlice(
+            parent,
+            zone,
+            () => parent.runUnary(zone, f, arg),
+          );
+        },
+    runBinary:
+        <R, T1, T2>(
+          Zone self,
+          ZoneDelegate parent,
+          Zone zone,
+          R Function(T1, T2) f,
+          T1 arg1,
+          T2 arg2,
+        ) {
+          final tracker = self[_zoneKey] as AsyncTimeTracker;
+          return tracker._trackSyncSlice(
+            parent,
+            zone,
+            () => parent.runBinary(zone, f, arg1, arg2),
+          );
+        },
   );
 
   @override

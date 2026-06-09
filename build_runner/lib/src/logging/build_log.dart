@@ -224,12 +224,11 @@ class BuildLog {
       );
       _display.block(render());
     } else {
-      final renderedContext =
-          context == null
-              ? null
-              : AnsiBufferLine(
-                renderLinkedContext(context, contextId: contextId),
-              ).toString();
+      final renderedContext = context == null
+          ? null
+          : AnsiBufferLine(
+              renderLinkedContext(context, contextId: contextId),
+            ).toString();
       _display.message(
         severity,
         [
@@ -643,10 +642,9 @@ class BuildLog {
   }
 
   AnsiBufferLine _renderCompiling({required CompileType compileType}) {
-    final progress =
-        compileType == CompileType.aot
-            ? _aotCompileProgress!
-            : _jitCompileProgress!;
+    final progress = compileType == CompileType.aot
+        ? _aotCompileProgress!
+        : _jitCompileProgress!;
     return AnsiBufferLine([
       renderDuration(progress.duration),
       ' ',
@@ -710,8 +708,8 @@ class BuildLog {
     if (!configuration.throttleProgressUpdates) return true;
     final interval =
         configuration.mode == BuildLogMode.build && _display.displayingBlocks
-            ? const Duration(milliseconds: 100)
-            : const Duration(seconds: 1);
+        ? const Duration(milliseconds: 100)
+        : const Duration(seconds: 1);
     if (_progressStopwatch.elapsed >= interval) {
       _progressStopwatch.reset();
       return true;

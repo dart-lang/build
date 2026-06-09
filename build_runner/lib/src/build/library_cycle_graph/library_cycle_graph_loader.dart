@@ -218,8 +218,9 @@ class LibraryCycleGraphLoader {
       // If a recursive `_load` happens then the associated cycles and graphs
       // are also fully computed before this `_load` continues: the work that
       // remains is only work for later phases.
-      final assetDeps =
-          _assetDeps[idToLoad] = await assetDepsLoader.load(idToLoad);
+      final assetDeps = _assetDeps[idToLoad] = await assetDepsLoader.load(
+        idToLoad,
+      );
       _removeIdToLoad(idToLoadPhase, idToLoad);
 
       if (assetDeps.isComplete) {
@@ -275,22 +276,21 @@ class LibraryCycleGraphLoader {
         idsToComputeCyclesFrom,
         edgesFromId,
       );
-      final newCycles =
-          newComponentLists.map((list) {
-            // Compare to the library cycle computed at `phase - 1`. If the
-            // cycles are the same size then they must have the same contents,
-            // because cycles only change by growing as phases progress. In that
-            // case, reuse the existing [LibraryCycle].
-            final maybePhasedCycle = _cycles[list.first];
-            if (maybePhasedCycle != null) {
-              final value = maybePhasedCycle.valueAt(phase: phase - 1);
-              if (value.ids.length == list.length) {
-                return value;
-              }
-            }
-            // The cycle is new or has changed, return a new value.
-            return LibraryCycle((b) => b..ids.replace(list));
-          }).toList();
+      final newCycles = newComponentLists.map((list) {
+        // Compare to the library cycle computed at `phase - 1`. If the
+        // cycles are the same size then they must have the same contents,
+        // because cycles only change by growing as phases progress. In that
+        // case, reuse the existing [LibraryCycle].
+        final maybePhasedCycle = _cycles[list.first];
+        if (maybePhasedCycle != null) {
+          final value = maybePhasedCycle.valueAt(phase: phase - 1);
+          if (value.ids.length == list.length) {
+            return value;
+          }
+        }
+        // The cycle is new or has changed, return a new value.
+        return LibraryCycle((b) => b..ids.replace(list));
+      }).toList();
 
       // Build graphs from cycles.
       _buildGraphs(phase, newCycles: newCycles);
@@ -300,10 +300,9 @@ class LibraryCycleGraphLoader {
         // it gets a new dep that leads back to the cycle then that whole path
         // joins the cycle. Get this expirey phase from the graph built by
         // `_buildGraphs`.
-        final expiresAfter =
-            _graphs[cycle.ids.first]!
-                .expiringValueAt(phase: phase)
-                .expiresAfter;
+        final expiresAfter = _graphs[cycle.ids.first]!
+            .expiringValueAt(phase: phase)
+            .expiresAfter;
 
         // Merge the computed cycle into any existing phased value for each ID.
         // The phased value can differ by ID: they are in the same cycle at this
@@ -496,7 +495,8 @@ class LibraryCycleGraphLoader {
       PhasedAssetDeps((b) => b.assetDeps.addAll(_assetDeps));
 
   @override
-  String toString() => '''
+  String toString() =>
+      '''
 LibraryCycleGraphLoader(
   _runningAtPhases: $_runningAtPhases
   _assetDeps: $_assetDeps,

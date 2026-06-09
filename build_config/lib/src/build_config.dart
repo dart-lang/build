@@ -94,10 +94,9 @@ class BuildConfig {
       () {
         final key = '$packageName:$packageName';
         final target = BuildTarget(
-          dependencies:
-              dependencies
-                  .map((dep) => normalizeTargetKeyUsage(dep, packageName))
-                  .toList(),
+          dependencies: dependencies
+              .map((dep) => normalizeTargetKeyUsage(dep, packageName))
+              .toList(),
           sources: InputSet.anything,
         );
         return BuildConfig(
@@ -158,12 +157,12 @@ class BuildConfig {
     this.triggersByBuilder = const {},
   }) : buildTargets =
            identical(buildTargets, BuildConfig._placeholderBuildTarget)
-               ? {
-                 _defaultTarget(packageName ?? currentPackage): BuildTarget(
-                   dependencies: currentPackageDefaultDependencies,
-                 ),
-               }
-               : buildTargets,
+           ? {
+               _defaultTarget(packageName ?? currentPackage): BuildTarget(
+                 dependencies: currentPackageDefaultDependencies,
+               ),
+             }
+           : buildTargets,
        globalOptions = (globalOptions ?? const {}).map(
          (key, config) =>
              MapEntry(normalizeBuilderKeyUsage(key, currentPackage), config),

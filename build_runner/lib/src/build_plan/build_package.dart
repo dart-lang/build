@@ -74,7 +74,8 @@ class BuildPackage {
       Object.hash(name, path, watch, isOutput, languageVersion, dependencies);
 
   @override
-  String toString() => '''
+  String toString() =>
+      '''
 BuildPackage(
   name: $name,
   path: $path,

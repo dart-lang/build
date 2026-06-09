@@ -40,7 +40,8 @@ builders:
     auto_apply: root_package
     build_to: source
 ''',
-        'lib/builder.dart': '''
+        'lib/builder.dart':
+            '''
 import 'package:build/build.dart';
 
 part 'builder.g.dart';

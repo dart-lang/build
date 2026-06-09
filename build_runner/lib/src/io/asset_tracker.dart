@@ -70,10 +70,9 @@ class AssetTracker {
     BuildState buildState,
     Iterable<AssetId> declaredAndActualOutputs,
   ) async {
-    final allSources =
-        <AssetId>{}
-          ..addAll(inputSources)
-          ..addAll(generatedSources);
+    final allSources = <AssetId>{}
+      ..addAll(inputSources)
+      ..addAll(generatedSources);
     final updates = <AssetId, ChangeType>{};
     void addUpdates(Iterable<AssetId> assets, ChangeType type) {
       for (final asset in assets) {
@@ -110,17 +109,17 @@ class AssetTracker {
     return buildTarget.sourceIncludes.isEmpty
         ? const Stream<AssetId>.empty()
         : StreamGroup.merge(
-          buildTarget.sourceIncludes.map(
-            (glob) => _listIdsSafe(glob, package: buildTarget.package)
-                .where(
-                  (id) => _buildConfigs.isVisibleInBuild(
-                    id,
-                    _buildPackages[buildTarget.package]!,
-                  ),
-                )
-                .where((id) => !buildTarget.excludesSource(id)),
-          ),
-        );
+            buildTarget.sourceIncludes.map(
+              (glob) => _listIdsSafe(glob, package: buildTarget.package)
+                  .where(
+                    (id) => _buildConfigs.isVisibleInBuild(
+                      id,
+                      _buildPackages[buildTarget.package]!,
+                    ),
+                  )
+                  .where((id) => !buildTarget.excludesSource(id)),
+            ),
+          );
   }
 
   Stream<AssetId> _listGeneratedAssetIds() {

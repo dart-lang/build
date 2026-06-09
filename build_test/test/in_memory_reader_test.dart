@@ -16,10 +16,9 @@ void main() {
     late InternalTestReaderWriter readerWriter;
 
     setUp(() {
-      readerWriter =
-          InternalTestReaderWriter(outputRootPackage: packageName)
-            ..testing.writeString(libAsset, 'libAsset')
-            ..testing.writeString(testAsset, 'testAsset');
+      readerWriter = InternalTestReaderWriter(outputRootPackage: packageName)
+        ..testing.writeString(libAsset, 'libAsset')
+        ..testing.writeString(testAsset, 'testAsset');
     });
 
     test('#findAssets should list files in lib/', () async {

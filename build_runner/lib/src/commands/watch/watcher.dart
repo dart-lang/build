@@ -64,11 +64,10 @@ class Watcher {
     // Start watching files immediately, before the first build is even started.
     final packagesWatcher = BuildPackagesWatcher(
       _buildPlan.buildPackages,
-      watch:
-          (buildPackage) => BuildPackageWatcher(
-            buildPackage,
-            watch: _buildPlan.testingOverrides.directoryWatcherFactory,
-          ),
+      watch: (buildPackage) => BuildPackageWatcher(
+        buildPackage,
+        watch: _buildPlan.testingOverrides.directoryWatcherFactory,
+      ),
     );
     packagesWatcher
         .watch()

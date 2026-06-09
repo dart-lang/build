@@ -158,23 +158,22 @@ class BuildResolver {
   }
 
   Stream<LibraryElement> get sdkLibraries {
-    final loadLibraries =
-        _sdkLibraries ??= Future.sync(() {
-          final publicSdkUris = _driver.sdkLibraryUris.where(
-            (e) => !e.path.startsWith('_'),
-          );
+    final loadLibraries = _sdkLibraries ??= Future.sync(() {
+      final publicSdkUris = _driver.sdkLibraryUris.where(
+        (e) => !e.path.startsWith('_'),
+      );
 
-          return Future.wait(
-            publicSdkUris.map((uri) {
-              return _driverPool.withResource(() async {
-                final result =
-                    await _driver.currentSession.getLibraryByUri(uri.toString())
-                        as LibraryElementResult;
-                return result.element;
-              });
-            }),
-          );
-        });
+      return Future.wait(
+        publicSdkUris.map((uri) {
+          return _driverPool.withResource(() async {
+            final result =
+                await _driver.currentSession.getLibraryByUri(uri.toString())
+                    as LibraryElementResult;
+            return result.element;
+          });
+        }),
+      );
+    });
 
     return Stream.fromFuture(loadLibraries).expand((libraries) => libraries);
   }
@@ -211,8 +210,8 @@ class BuildResolver {
     required InputTracker inputTracker,
     required bool transitive,
   }) => _analysisDriverModel.updateDriver(
-    withDriver:
-        (withDriver) => _driverPool.withResource(() => withDriver(_driver)),
+    withDriver: (withDriver) =>
+        _driverPool.withResource(() => withDriver(_driver)),
     phasedReader: phasedReader,
     inputTracker: inputTracker,
     entrypoint: entrypoint,

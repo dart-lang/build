@@ -32,7 +32,8 @@ class Workspace {
   void writeWebEntrypoint() {
     write(
       'web/index.html',
-      source: '''
+      source:
+          '''
 <!DOCTYPE html>
 <html><head>
     <meta charset="utf-8">
@@ -45,7 +46,8 @@ class Workspace {
     );
     write(
       'web/main.dart',
-      source: '''
+      source:
+          '''
 /// ignore_for_file: unused_import
 import 'package:$name/app.dart';
 void main() {

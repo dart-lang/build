@@ -141,10 +141,9 @@ Future<void> main() async {
           final input = step.inputId;
           await step.writeAsString(input.changeExtension('.temp'), 'out');
 
-          final outputFromOther =
-              input.path.contains('foo')
-                  ? AssetId('a', 'bar.temp')
-                  : AssetId('a', 'foo.temp');
+          final outputFromOther = input.path.contains('foo')
+              ? AssetId('a', 'bar.temp')
+              : AssetId('a', 'foo.temp');
 
           expect(await step.canRead(outputFromOther), isFalse);
         },

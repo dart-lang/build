@@ -117,12 +117,11 @@ void main() {
         builderFactories: builderFactories,
         buildOptions: buildOptions,
         testingOverrides: testingOverrides.copyWith(
-          builderDefinitions:
-              [
-                BuilderDefinition(''),
-                // Apply a second builder so build phases change.
-                BuilderDefinition('b2'),
-              ].build(),
+          builderDefinitions: [
+            BuilderDefinition(''),
+            // Apply a second builder so build phases change.
+            BuilderDefinition('b2'),
+          ].build(),
         ),
       );
 
@@ -141,16 +140,15 @@ void main() {
         builderFactories: builderFactories,
         buildOptions: buildOptions,
         testingOverrides: testingOverrides.copyWith(
-          builderDefinitions:
-              [
-                BuilderDefinition(
-                  '',
-                  // Hidden output is easy to find and delete, it's under one
-                  // generated root. Unhide the output so there can be lost
-                  // outputs.
-                  hideOutput: false,
-                ),
-              ].build(),
+          builderDefinitions: [
+            BuilderDefinition(
+              '',
+              // Hidden output is easy to find and delete, it's under one
+              // generated root. Unhide the output so there can be lost
+              // outputs.
+              hideOutput: false,
+            ),
+          ].build(),
         ),
       );
       final buildState = buildPlan.previousBuildState ?? BuildState();
@@ -171,12 +169,11 @@ void main() {
         builderFactories: builderFactories,
         buildOptions: buildOptions,
         testingOverrides: testingOverrides.copyWith(
-          builderDefinitions:
-              [
-                BuilderDefinition(''),
-                // Apply a second builder so build phases change.
-                BuilderDefinition('b2'),
-              ].build(),
+          builderDefinitions: [
+            BuilderDefinition(''),
+            // Apply a second builder so build phases change.
+            BuilderDefinition('b2'),
+          ].build(),
         ),
       );
 
@@ -198,8 +195,10 @@ void main() {
         builderFactories: builderFactories,
         buildOptions: buildOptions,
         testingOverrides: testingOverrides.copyWith(
-          builderDefinitions:
-              [BuilderDefinition(''), BuilderDefinition('b2')].build(),
+          builderDefinitions: [
+            BuilderDefinition(''),
+            BuilderDefinition('b2'),
+          ].build(),
         ),
       );
 

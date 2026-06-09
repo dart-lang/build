@@ -198,10 +198,9 @@ class BuildState {
   /// Updates a build step result after the step runs.
   void updateBuildStepResult(BuildStepId buildStepId, BuildStepResult result) {
     _buildStepResultsByPrimaryInput.putIfAbsent(
-          buildStepId.primaryInput,
-          () => {},
-        )[buildStepId.phaseNumber] =
-        result;
+      buildStepId.primaryInput,
+      () => {},
+    )[buildStepId.phaseNumber] = result;
   }
 
   // -- Globs.

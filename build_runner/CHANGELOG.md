@@ -15,6 +15,7 @@
   crashing.
 - Bug fix: fix `dart run build_runner test` to correctly pass arguments after
   `--` to the test process.
+- Require Dart 3.8.0.
 
 ## 2.15.0
 

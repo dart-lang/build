@@ -37,8 +37,9 @@ class _$LibraryCycle extends LibraryCycle {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(r'LibraryCycle')
-      ..add('ids', ids)).toString();
+    return (newBuiltValueToStringHelper(
+      r'LibraryCycle',
+    )..add('ids', ids)).toString();
   }
 }
 

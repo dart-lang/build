@@ -71,10 +71,9 @@ Future<void> runBuilder(
       resolvers,
       resources,
       loadPackageConfig,
-      reportUnusedAssets:
-          reportUnusedAssetsForInput == null
-              ? null
-              : (assets) => reportUnusedAssetsForInput(input, assets),
+      reportUnusedAssets: reportUnusedAssetsForInput == null
+          ? null
+          : (assets) => reportUnusedAssetsForInput(input, assets),
     );
     try {
       await builder.build(buildStep);

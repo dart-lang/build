@@ -38,7 +38,7 @@ void main() {
           (p) => p.name == 'build_runner',
         );
 
-        expect(buildRunner.languageVersion, LanguageVersion(3, 7));
+        expect(buildRunner.languageVersion, LanguageVersion(3, 8));
       });
     });
 
@@ -471,16 +471,14 @@ void fakeHostedPackages(Directory tempDirectory, Iterable<String> packages) {
     final yaml = Map<Object, Object>.from(
       loadYaml(file.readAsStringSync()) as YamlMap,
     );
-    final packagesYaml =
-        yaml['packages'] = Map<Object, Object>.from(
-          yaml['packages'] as YamlMap,
-        );
+    final packagesYaml = yaml['packages'] = Map<Object, Object>.from(
+      yaml['packages'] as YamlMap,
+    );
     for (final package in packages) {
       if (packagesYaml.containsKey(package)) {
-        final packageYaml =
-            packagesYaml[package] = Map<Object, Object>.from(
-              packagesYaml[package] as YamlMap,
-            );
+        final packageYaml = packagesYaml[package] = Map<Object, Object>.from(
+          packagesYaml[package] as YamlMap,
+        );
         packageYaml['source'] = 'hosted';
       }
     }

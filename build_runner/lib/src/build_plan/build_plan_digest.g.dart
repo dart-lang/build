@@ -324,8 +324,8 @@ class BuildPlanDigestBuilder
       _enabledExperiments = $v.enabledExperiments.toBuilder();
       _packageLanguageVersions = $v.packageLanguageVersions.toBuilder();
       _inBuildPhasesOptionsDigests = $v.inBuildPhasesOptionsDigests.toBuilder();
-      _postBuildActionsOptionsDigests =
-          $v.postBuildActionsOptionsDigests.toBuilder();
+      _postBuildActionsOptionsDigests = $v.postBuildActionsOptionsDigests
+          .toBuilder();
       _$v = null;
     }
     return this;
@@ -369,8 +369,8 @@ class BuildPlanDigestBuilder
             enabledExperiments: enabledExperiments.build(),
             packageLanguageVersions: packageLanguageVersions.build(),
             inBuildPhasesOptionsDigests: inBuildPhasesOptionsDigests.build(),
-            postBuildActionsOptionsDigests:
-                postBuildActionsOptionsDigests.build(),
+            postBuildActionsOptionsDigests: postBuildActionsOptionsDigests
+                .build(),
           );
     } catch (_) {
       late String _$failedField;

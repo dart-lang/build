@@ -36,8 +36,9 @@ class ServeOptions {
         );
       }
 
-      final port =
-          parts.length == 2 ? int.tryParse(parts[1]) : nextDefaultPort++;
+      final port = parts.length == 2
+          ? int.tryParse(parts[1])
+          : nextDefaultPort++;
       if (port == null) {
         throw UsageException(
           'Unable to parse port number in `$arg`',

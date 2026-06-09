@@ -149,10 +149,9 @@ void main() {
       );
 
       final planWithOutput = BuildStepPlan(
-        (BuildStepPlanBuilder b) =>
-            b
-              ..buildPhases = BuildPhases(const <InBuildPhase>[])
-              ..buildStepsByDeclaredOutput.addAll({outputId: buildStepId}),
+        (BuildStepPlanBuilder b) => b
+          ..buildPhases = BuildPhases(const <InBuildPhase>[])
+          ..buildStepsByDeclaredOutput.addAll({outputId: buildStepId}),
       );
 
       final changes = await assetTracker.collectChanges(

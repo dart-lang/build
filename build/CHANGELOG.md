@@ -3,6 +3,7 @@
 - Replace `Builder` extension method `hasOutputFor` with `matchesInput`.
   Deprecate `hasOutputFor`. The new `matchesInput` is identical, but now that
   zero-output builders are supported the old name is misleading.
+- Require Dart 3.8.0.
 
 ## 4.0.6
 
