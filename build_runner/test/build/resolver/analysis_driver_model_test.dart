@@ -24,7 +24,10 @@ void main() {
       model.filesystem.write('/a/lib/b.dart', 'class B {}');
       model.filesystem.clearChangedPaths();
 
-      await model.takeLockAndStartBuild(const {}, invalidatedSources: null);
+      await model.takeLockAndStartBuild(
+        invalidatedSources: null,
+        disappearedOutputs: null,
+      );
 
       expect(model.filesystem.exists('/a/lib/a.dart'), isFalse);
       expect(model.filesystem.exists('/a/lib/b.dart'), isFalse);
@@ -35,7 +38,10 @@ void main() {
       model.filesystem.write('/a/lib/a.dart', 'class A {}');
       model.filesystem.clearChangedPaths();
 
-      await model.takeLockAndStartBuild(const {}, invalidatedSources: const {});
+      await model.takeLockAndStartBuild(
+        invalidatedSources: const {},
+        disappearedOutputs: const {},
+      );
 
       expect(model.filesystem.exists('/a/lib/a.dart'), isTrue);
       expect(model.filesystem.read('/a/lib/a.dart'), 'class A {}');
@@ -49,11 +55,11 @@ void main() {
       model.filesystem.clearChangedPaths();
 
       await model.takeLockAndStartBuild(
-        const {},
         invalidatedSources: {
           AssetId.parse('a|lib/changed.dart'),
           AssetId.parse('a|lib/deleted.dart'),
         },
+        disappearedOutputs: const {},
       );
 
       expect(model.filesystem.exists('/a/lib/changed.dart'), isFalse);

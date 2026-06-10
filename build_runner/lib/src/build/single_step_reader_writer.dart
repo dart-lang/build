@@ -410,9 +410,16 @@ class SingleStepReaderWriter implements PhasedReader {
       }
     }
 
-    return PhasedValue.fixed(
-      await _delegate.canRead(id) ? await _delegate.readAsString(id) : '',
-    );
+    final canRead = await _delegate.canRead(id);
+    if (canRead) {
+      try {
+        final digest = await _delegate.digest(id);
+        _runningBuild.buildState.updateSourceDigest(id, digest);
+      } on AssetNotFoundException {
+        // Ignore.
+      }
+    }
+    return PhasedValue.fixed(canRead ? await _delegate.readAsString(id) : '');
   }
 
   @override

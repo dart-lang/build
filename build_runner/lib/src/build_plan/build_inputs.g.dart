@@ -21,6 +21,8 @@ class _$BuildInputs extends BuildInputs {
   final BuiltSet<AssetId> modifiedSources;
   @override
   final BuiltSet<AssetId> deletedOutputs;
+  @override
+  final BuiltSet<AssetId> disappearedOutputs;
 
   factory _$BuildInputs([void Function(BuildInputsBuilder)? updates]) =>
       (BuildInputsBuilder()..update(updates))._build();
@@ -33,6 +35,7 @@ class _$BuildInputs extends BuildInputs {
     required this.deletedSources,
     required this.modifiedSources,
     required this.deletedOutputs,
+    required this.disappearedOutputs,
   }) : super._();
   @override
   BuildInputs rebuild(void Function(BuildInputsBuilder) updates) =>
@@ -123,6 +126,12 @@ class BuildInputsBuilder implements Builder<BuildInputs, BuildInputsBuilder> {
   set deletedOutputs(SetBuilder<AssetId>? deletedOutputs) =>
       _$this._deletedOutputs = deletedOutputs;
 
+  SetBuilder<AssetId>? _disappearedOutputs;
+  SetBuilder<AssetId> get disappearedOutputs =>
+      _$this._disappearedOutputs ??= SetBuilder<AssetId>();
+  set disappearedOutputs(SetBuilder<AssetId>? disappearedOutputs) =>
+      _$this._disappearedOutputs = disappearedOutputs;
+
   BuildInputsBuilder();
 
   BuildInputsBuilder get _$this {
@@ -170,6 +179,7 @@ class BuildInputsBuilder implements Builder<BuildInputs, BuildInputsBuilder> {
             deletedSources: deletedSources.build(),
             modifiedSources: modifiedSources.build(),
             deletedOutputs: deletedOutputs.build(),
+            disappearedOutputs: disappearedOutputs.build(),
           );
     } catch (_) {
       late String _$failedField;

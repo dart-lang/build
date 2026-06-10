@@ -3,16 +3,17 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
 
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:build/build.dart';
+import 'package:crypto/crypto.dart';
 import 'package:pool/pool.dart';
 
 import '../../logging/timed_activities.dart';
 import '../input_tracker.dart';
 import '../library_cycle_graph/asset_deps_loader.dart';
-import '../library_cycle_graph/library_cycle_graph.dart';
 import '../library_cycle_graph/library_cycle_graph_loader.dart';
 import '../library_cycle_graph/phased_asset_deps.dart';
 import '../library_cycle_graph/phased_reader.dart';
@@ -38,21 +39,17 @@ class AnalysisDriverModel {
   /// The import graph of all sources needed for analysis.
   final LibraryCycleGraphLoader _graphLoader = LibraryCycleGraphLoader();
 
-  /// Assets that have been synced into the in-memory filesystem
-  /// [filesystem].
-  final Set<LibraryCycleGraph> _syncedLibraryCycleGraphs = Set.identity();
-
-  /// Starts a build with [declaredOutputPhases].
+  /// Starts a build.
   ///
   /// If another build has the lock, waits for it to finish.
-  Future<void> takeLockAndStartBuild(
-    Map<AssetId, int> declaredOutputPhases, {
+  Future<void> takeLockAndStartBuild({
     required Iterable<AssetId>? invalidatedSources,
+    required Iterable<AssetId>? disappearedOutputs,
   }) async {
     _lock = await _pool.request();
     filesystem.startBuild(
-      declaredOutputPhases,
       invalidatedSources: invalidatedSources,
+      disappearedOutputs: disappearedOutputs,
     );
   }
 
@@ -61,7 +58,6 @@ class AnalysisDriverModel {
   /// If no lock was taken, just clears build state.
   void endBuildAndUnlock() {
     _graphLoader.clear();
-    _syncedLibraryCycleGraphs.clear();
     _lock?.release();
     _lock = null;
   }
@@ -89,6 +85,15 @@ class AnalysisDriverModel {
     return assetId;
   }
 
+  /// Pushes [content] for [id] to the in-memory filesystem.
+  void pushContent(AssetId id, String content, {int phase = -1}) {
+    final hash = base64.encode(md5.convert(utf8.encode(content)).bytes);
+    filesystem.writeContent(
+      BuildRunnerFileContent(id.asPath, true, content, hash),
+      phase: phase,
+    );
+  }
+
   /// Updates [filesystem] and the driver provided by [withDriver] with updated
   /// source of [entrypoint] at the phase viewed by [phasedReader].
   ///
@@ -106,27 +111,19 @@ class AnalysisDriverModel {
     required InputTracker inputTracker,
     required bool transitive,
   }) async {
-    AssetId? idToSyncOntoFilesystem;
-    LibraryCycleGraph? libraryCycleGraphToSyncOntoFilesystem;
-
     // If requested, find transitive imports.
     if (transitive) {
-      libraryCycleGraphToSyncOntoFilesystem = await TimedActivity.resolve
-          .runAsync(() async {
-            // Note: `transitiveDepsOf` can cause loads that cause builds that
-            // cause a recursive `_performResolve` on this same `AnalysisDriver`
-            // instance.
-            final nodeLoader = AssetDepsLoader(phasedReader);
-            inputTracker.addResolverEntrypoint(entrypoint);
-            return (await _graphLoader.libraryCycleGraphOf(
-              nodeLoader,
-              entrypoint,
-            )).valueAt(phase: phasedReader.phase);
-          });
+      await TimedActivity.resolve.runAsync(() async {
+        // Note: `transitiveDepsOf` can cause loads that cause builds that
+        // cause a recursive `_performResolve` on this same `AnalysisDriver`
+        // instance.
+        final nodeLoader = AssetDepsLoader(phasedReader);
+        inputTracker.addResolverEntrypoint(entrypoint);
+        await _graphLoader.libraryCycleGraphOf(nodeLoader, entrypoint);
+      });
     } else {
       // Notify [buildStep] of its inputs.
       inputTracker.add(entrypoint);
-      idToSyncOntoFilesystem = entrypoint;
       // Trigger any builds required for the file to be generated.
       await phasedReader.readAtPhase(entrypoint);
     }
@@ -136,35 +133,7 @@ class AnalysisDriverModel {
 
       await TimedActivity.resolve.runAsync(() async {
         // Change `filesystem`'s view of the files to be at `phase`.
-        final phase = phasedReader.phase;
-        filesystem.phase = phase;
-
-        Future<void> writeToFilesystem(AssetId id) async {
-          final content = await phasedReader.readAtPhase(id);
-          if (content.exists) {
-            filesystem.writeContent(content);
-          }
-        }
-
-        // For single file parsing, sync that one file.
-        if (idToSyncOntoFilesystem != null) {
-          await writeToFilesystem(idToSyncOntoFilesystem);
-        }
-
-        // For transitive resolves, sync all transitive library cycle graphs
-        // that were not already synced.
-        if (libraryCycleGraphToSyncOntoFilesystem != null) {
-          final nextGraphs = [libraryCycleGraphToSyncOntoFilesystem];
-          while (nextGraphs.isNotEmpty) {
-            final nextGraph = nextGraphs.removeLast();
-            if (_syncedLibraryCycleGraphs.add(nextGraph)) {
-              for (final id in nextGraph.root.ids) {
-                await writeToFilesystem(id);
-              }
-              nextGraphs.addAll(nextGraph.children);
-            }
-          }
-        }
+        filesystem.phase = phasedReader.phase;
       });
 
       // Notify the analyzer of changes and wait for it to update its internal

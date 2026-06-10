@@ -1357,9 +1357,17 @@ Future<void> _runBuilder(
     _ => null,
   };
   await resolversImpl?.takeLockAndStartBuild(
-    const {},
     invalidatedSources: null,
+    disappearedOutputs: null,
   );
+  if (resolversImpl != null) {
+    for (final id in list) {
+      if (await singleStepReaderWriter.canRead(id)) {
+        final content = await singleStepReaderWriter.readAsString(id);
+        resolversImpl.pushContent(id, content);
+      }
+    }
+  }
   await runBuilder(builder, list, singleStepReaderWriter, resolvers);
   resolversImpl?.reset();
 }

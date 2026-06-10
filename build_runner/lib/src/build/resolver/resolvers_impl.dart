@@ -89,7 +89,7 @@ class ResolversImpl implements Resolvers {
     return BuildStepResolver(_buildResolver!, buildStep as BuildStepImpl);
   }
 
-  /// Start a build with [declaredOutputPhases].
+  /// Start a build.
   ///
   /// If another build has the lock, waits for it to finish.
   ///
@@ -100,12 +100,12 @@ class ResolversImpl implements Resolvers {
   /// implementation that needs locking. Find a way to do better. Fortunately,
   /// only two codepaths need to care about the lock: the main build in
   /// `build.dart` and test builds in `package:build_test` `test_builder.dart`.
-  Future<void> takeLockAndStartBuild(
-    Map<AssetId, int> declaredOutputPhases, {
+  Future<void> takeLockAndStartBuild({
     required Iterable<AssetId>? invalidatedSources,
+    required Iterable<AssetId>? disappearedOutputs,
   }) => _analysisDriverModel.takeLockAndStartBuild(
-    declaredOutputPhases,
     invalidatedSources: invalidatedSources,
+    disappearedOutputs: disappearedOutputs,
   );
 
   PhasedAssetDeps phasedAssetDeps() => _analysisDriverModel.phasedAssetDeps();
@@ -116,6 +116,10 @@ class ResolversImpl implements Resolvers {
   @override
   void reset() {
     _analysisDriverModel.endBuildAndUnlock();
+  }
+
+  void pushContent(AssetId id, String content, {int phase = -1}) {
+    _analysisDriverModel.pushContent(id, content, phase: phase);
   }
 }
 

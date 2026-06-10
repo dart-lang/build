@@ -202,9 +202,25 @@ class Build {
     runZonedGuarded(
       () async {
         await resolversImpl?.takeLockAndStartBuild(
-          buildPlan.buildStepPlan.declaredOutputPhases,
           invalidatedSources: buildInputs.invalidatedSources,
+          disappearedOutputs: buildInputs.disappearedOutputs,
         );
+        if (resolversImpl != null) {
+          final toPush = buildInputs.invalidatedSources ?? buildInputs.sources;
+          for (final id in toPush) {
+            if (id.extension != '.dart') continue;
+            if (buildState.isSource(id)) {
+              try {
+                final content = await readerWriter.readAsString(id);
+                resolversImpl!.pushContent(id, content);
+              } on AssetNotFoundException {
+                // Ignore.
+              } on FormatException {
+                // Ignore non-text files.
+              }
+            }
+          }
+        }
         final result = await _runPhases();
 
         // Combine previous phased asset deps, if any, with the newly loaded
@@ -513,6 +529,24 @@ class Build {
         unusedAssets: unusedAssets,
       ),
     );
+
+    if (resolversImpl != null) {
+      for (final id in singleStepReaderWriter.assetsWritten) {
+        if (id.extension != '.dart') continue;
+        try {
+          final content = await readerWriter.readAsString(id);
+          resolversImpl!.pushContent(
+            id,
+            content,
+            phase: buildStepId.phaseNumber,
+          );
+        } on AssetNotFoundException {
+          // Ignore.
+        } on FormatException {
+          // Ignore non-text files.
+        }
+      }
+    }
 
     if (allowedByTriggers) {
       buildLog.finishStep(
@@ -945,6 +979,7 @@ class Build {
           break;
         }
       }
+
       if (rootLibraryCycleHasChanged) {
         changedGraphs[nextGraph] = true;
       } else {
@@ -993,7 +1028,8 @@ class Build {
         return true;
       }
     } else if (buildInputs.deletedSources.contains(input) ||
-        buildInputs.deletedOutputs.contains(input)) {
+        buildInputs.deletedOutputs.contains(input) ||
+        buildInputs.disappearedOutputs.contains(input)) {
       return true;
     }
     return false;

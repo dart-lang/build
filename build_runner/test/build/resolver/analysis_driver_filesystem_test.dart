@@ -15,66 +15,66 @@ void main() {
 
   group('AnalysisDriverFilesystem', () {
     test('write then read', () {
-      filesystem.write('foo.txt', 'bar');
-      expect(filesystem.read('foo.txt'), 'bar');
+      filesystem.write('/foo.txt', 'bar');
+      expect(filesystem.read('/foo.txt'), 'bar');
     });
 
     test('read without write throws', () {
-      expect(() => filesystem.read('foo.txt'), throwsA(isA<Error>()));
+      expect(() => filesystem.read('/foo.txt'), throwsA(isA<Error>()));
     });
 
     test('write adds to changedPaths', () {
-      filesystem.write('foo.txt', 'bar');
-      expect(filesystem.changedPaths, ['foo.txt']);
+      filesystem.write('/foo.txt', 'bar');
+      expect(filesystem.changedPaths, ['/foo.txt']);
     });
 
     test('identical write does not add to changedPaths', () {
-      filesystem.write('foo.txt', 'bar');
+      filesystem.write('/foo.txt', 'bar');
       filesystem.clearChangedPaths();
       expect(filesystem.changedPaths, isEmpty);
-      filesystem.write('foo.txt', 'bar');
+      filesystem.write('/foo.txt', 'bar');
       expect(filesystem.changedPaths, isEmpty);
     });
 
     test('different write in the same build asserts', () {
-      filesystem.write('foo.txt', 'bar');
+      filesystem.write('/foo.txt', 'bar');
       expect(
-        () => filesystem.write('foo.txt', 'baz'),
+        () => filesystem.write('/foo.txt', 'baz'),
         throwsA(isA<AssertionError>()),
       );
     });
 
     test('write updates `exists`', () {
-      expect(filesystem.exists('foo.txt'), false);
-      filesystem.write('foo.txt', 'bar');
-      expect(filesystem.exists('foo.txt'), true);
+      expect(filesystem.exists('/foo.txt'), false);
+      filesystem.write('/foo.txt', 'bar');
+      expect(filesystem.exists('/foo.txt'), true);
     });
 
     test('startBuild removes disappeared generated files', () {
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 1,
-      }, invalidatedSources: null);
-      filesystem.write('/a/lib/a.g.dart', 'a');
+      filesystem.startBuild(invalidatedSources: null, disappearedOutputs: null);
+      filesystem.write('/a/lib/a.g.dart', 'a', phase: 1);
       filesystem.phase = 2;
       filesystem.clearChangedPaths();
 
-      filesystem.startBuild({}, invalidatedSources: const {});
+      filesystem.startBuild(
+        invalidatedSources: const {},
+        disappearedOutputs: {AssetId.parse('a|lib/a.g.dart')},
+      );
 
       expect(filesystem.changedPaths, {'/a/lib/a.g.dart'});
       expect(filesystem.exists('/a/lib/a.g.dart'), false);
     });
 
     test('startBuild retains unchanged generated file contents', () {
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 1,
-      }, invalidatedSources: null);
-      filesystem.write('/a/lib/a.g.dart', 'a');
+      filesystem.startBuild(invalidatedSources: null, disappearedOutputs: null);
+      filesystem.write('/a/lib/a.g.dart', 'a', phase: 1);
       filesystem.phase = 2;
       filesystem.clearChangedPaths();
 
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 1,
-      }, invalidatedSources: const {});
+      filesystem.startBuild(
+        invalidatedSources: const {},
+        disappearedOutputs: const {},
+      );
 
       expect(filesystem.read('/a/lib/a.g.dart'), 'a');
       expect(filesystem.changedPaths, isEmpty);
@@ -82,34 +82,29 @@ void main() {
 
     test('write with changed generated content across builds updates file and '
         'changedPaths', () {
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 1,
-      }, invalidatedSources: null);
-      filesystem.write('/a/lib/a.g.dart', 'before');
+      filesystem.startBuild(invalidatedSources: null, disappearedOutputs: null);
+      filesystem.write('/a/lib/a.g.dart', 'before', phase: 1);
       filesystem.phase = 2;
       filesystem.clearChangedPaths();
 
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 1,
-      }, invalidatedSources: const {});
-      filesystem.write('/a/lib/a.g.dart', 'after');
+      filesystem.startBuild(
+        invalidatedSources: const {},
+        disappearedOutputs: const {},
+      );
+      filesystem.write('/a/lib/a.g.dart', 'after', phase: 1);
 
       expect(filesystem.read('/a/lib/a.g.dart'), 'after');
       expect(filesystem.changedPaths, {'/a/lib/a.g.dart'});
     });
 
     test('initial build clears all cached contents', () {
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 1,
-      }, invalidatedSources: null);
+      filesystem.startBuild(invalidatedSources: null, disappearedOutputs: null);
       filesystem.write('/a/lib/a.dart', 'class A {}');
-      filesystem.write('/a/lib/a.g.dart', 'generated');
+      filesystem.write('/a/lib/a.g.dart', 'generated', phase: 1);
       filesystem.phase = 2;
       filesystem.clearChangedPaths();
 
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 1,
-      }, invalidatedSources: null);
+      filesystem.startBuild(invalidatedSources: null, disappearedOutputs: null);
 
       expect(filesystem.exists('/a/lib/a.dart'), isFalse);
       expect(filesystem.exists('/a/lib/a.g.dart'), isFalse);
@@ -122,8 +117,8 @@ void main() {
       filesystem.clearChangedPaths();
 
       filesystem.startBuild(
-        const {},
         invalidatedSources: {AssetId.parse('a|foo.txt')},
+        disappearedOutputs: const {},
       );
 
       expect(filesystem.exists('/a/foo.txt'), isFalse);
@@ -131,31 +126,11 @@ void main() {
       expect(filesystem.changedPaths, {'/a/foo.txt'});
     });
 
-    test('startBuild reports visibility changes for retained generated '
-        'files', () {
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 1,
-      }, invalidatedSources: null);
-      filesystem.write('/a/lib/a.g.dart', 'a');
-      filesystem.phase = 2;
-      filesystem.clearChangedPaths();
-
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 3,
-      }, invalidatedSources: const {});
-
-      expect(filesystem.changedPaths, {'/a/lib/a.g.dart'});
-      expect(filesystem.exists('/a/lib/a.g.dart'), false);
-    });
-
     test('files change by phases', () {
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 1,
-        AssetId.parse('b|lib/b.g.dart'): 2,
-      }, invalidatedSources: null);
+      filesystem.startBuild(invalidatedSources: null, disappearedOutputs: null);
 
-      filesystem.write('/a/lib/a.g.dart', 'a');
-      filesystem.write('/b/lib/b.g.dart', 'b');
+      filesystem.write('/a/lib/a.g.dart', 'a', phase: 1);
+      filesystem.write('/b/lib/b.g.dart', 'b', phase: 2);
       filesystem.clearChangedPaths();
 
       expect(filesystem.exists('/a/lib/a.g.dart'), false);
@@ -182,9 +157,10 @@ void main() {
 }
 
 extension _AnalysisDriverFilesystemExtensions on AnalysisDriverFilesystem {
-  void write(String path, String content) {
+  void write(String path, String content, {int phase = -1}) {
     writeContent(
       BuildRunnerFileContent(path, true, content, content.hashCode.toString()),
+      phase: phase,
     );
   }
 }

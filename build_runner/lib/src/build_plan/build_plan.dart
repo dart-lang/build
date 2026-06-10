@@ -377,17 +377,17 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       }
     }
 
-    final deletedOutputs = buildStepPlan
+    final disappearedOutputs = buildStepPlan
         .transitiveDeclaredOutputsOf(result.deletedSources.build())
         .toSet();
-    result.deletedOutputs.addAll(deletedOutputs);
+    result.disappearedOutputs.addAll(disappearedOutputs);
 
     final generatedReaderWriter = readerWriter.copyWith(
       generatedAssetHider: buildSpec.testingOverrides.flattenOutput
           ? const NoopGeneratedAssetHider()
           : newBuildStepPlan,
     );
-    for (final id in deletedOutputs) {
+    for (final id in disappearedOutputs) {
       await generatedReaderWriter.delete(id);
     }
 
