@@ -93,7 +93,7 @@ class BuildSeries {
       }
 
       final isFile =
-          _buildPlan.previousBuildState?.isFile(
+          _buildPlan.previousBuild.buildState?.isFile(
             buildStepPlan: _buildPlan.buildStepPlan,
             id: id,
           ) ??
@@ -117,8 +117,9 @@ class BuildSeries {
       // If not copying to a merged output directory, ignore changes to files
       // with no outputs.
       if (!_buildPlan.buildSpec.buildOptions.anyMergedOutputDirectory &&
-          !(_buildPlan.previousBuildState?.isMissingSource(id) ?? false) &&
-          _buildPlan.previousBuildState?.digestOf(
+          !(_buildPlan.previousBuild.buildState?.isMissingSource(id) ??
+              false) &&
+          _buildPlan.previousBuild.buildState?.digestOf(
                 id: id,
                 buildStepPlan: _buildPlan.buildStepPlan,
               ) ==
@@ -154,7 +155,7 @@ class BuildSeries {
           _buildPlan.buildSpec.buildConfigs,
         ).collectChanges(
           buildStepPlan: _buildPlan.buildStepPlan,
-          buildState: _buildPlan.previousBuildState ?? BuildState(),
+          buildState: _buildPlan.previousBuild.buildState ?? BuildState(),
         );
     return List.of(
       updates.entries.map((entry) => WatchEvent(entry.value, '${entry.key}')),
@@ -244,7 +245,7 @@ class BuildSeries {
 
     _currentBuildResult = build.run();
     final result = await _currentBuildResult!;
-    _buildPlan = build.buildPlan.updateForResult(
+    _buildPlan = build.buildPlan.withCompatiblePreviousBuild(
       previousPhasedAssetDeps: result.phasedAssetDeps,
       previousBuildState: build.buildState,
     );
