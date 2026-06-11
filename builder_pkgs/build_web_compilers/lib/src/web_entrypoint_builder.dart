@@ -316,7 +316,7 @@ final class EntrypointBuilderOptions {
           wasmSourceMapExtension,
           wasmEntrypointArchiveExtension,
         ],
-        if (loaderExtension case final loader?) loader,
+        ?loaderExtension,
       ],
     };
   }

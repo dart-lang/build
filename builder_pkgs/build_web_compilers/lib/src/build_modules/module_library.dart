@@ -52,13 +52,12 @@ class ModuleLibrary {
   ModuleLibrary._(
     this.id, {
     required this.isEntryPoint,
-    required Set<AssetId> deps,
+    required this._deps,
     required this.parts,
     required this.conditionalDeps,
     required this.sdkDeps,
     required this.hasMain,
-  }) : _deps = deps,
-       isImportable = true;
+  }) : isImportable = true;
 
   ModuleLibrary._nonImportable(this.id)
     : isImportable = false,
@@ -247,8 +246,8 @@ class ModuleLibrary {
   }
 }
 
-Set<AssetId> _deserializeAssetIds(Iterable serlialized) =>
-    Set.from(serlialized.map((decoded) => AssetId.parse(decoded as String)));
+Set<AssetId> _deserializeAssetIds(Iterable serialized) =>
+    Set.from(serialized.map((decoded) => AssetId.parse(decoded as String)));
 
 bool _isPart(CompilationUnit dart) =>
     dart.directives.any((directive) => directive is PartOfDirective);

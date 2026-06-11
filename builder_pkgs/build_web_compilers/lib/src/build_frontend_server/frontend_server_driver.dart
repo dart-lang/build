@@ -272,11 +272,10 @@ class PersistentFrontendServer {
   final WebMemoryFilesystem _fileSystem;
 
   PersistentFrontendServer._({
-    required FrontendServerClient client,
+    required this._client,
     required this.outputDillUri,
-    required WebMemoryFilesystem fileSystem,
-  }) : _client = client,
-       _fileSystem = fileSystem;
+    required this._fileSystem,
+  });
 
   FrontendServerClient get client => _client;
   WebMemoryFilesystem get fileSystem => _fileSystem;
@@ -717,7 +716,7 @@ enum StdoutState { CollectDiagnostic, CollectDependencies }
 
 /// Handles stdin/stdout communication with the Frontend Server.
 class StdoutHandler {
-  StdoutHandler({required Logger logger}) : _logger = logger {
+  StdoutHandler({required this._logger}) {
     reset();
   }
   final Logger _logger;
