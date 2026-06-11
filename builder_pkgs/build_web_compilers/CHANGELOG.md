@@ -1,4 +1,4 @@
-## 4.8.1-wip
+## 4.8.1
 - Bump the min sdk to 3.13.0-107.0.dev.
 - Internal only changes.
 
