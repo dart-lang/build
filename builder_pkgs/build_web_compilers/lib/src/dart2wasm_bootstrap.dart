@@ -98,13 +98,12 @@ Future<Dart2WasmBootstrapResult> _bootstrapDart2Wasm(
     final allSrcs = allDeps.expand((module) => module.sources);
     await scratchSpace.ensureAssets(allSrcs, buildStep);
 
-    final dartUri =
-        dartEntrypointId.path.startsWith('lib/')
-            ? Uri.parse(
-              'package:${dartEntrypointId.package}/'
-              '${dartEntrypointId.path.substring('lib/'.length)}',
-            )
-            : Uri.parse('$multiRootScheme:///${dartEntrypointId.path}');
+    final dartUri = dartEntrypointId.path.startsWith('lib/')
+        ? Uri.parse(
+            'package:${dartEntrypointId.package}/'
+            '${dartEntrypointId.path.substring('lib/'.length)}',
+          )
+        : Uri.parse('$multiRootScheme:///${dartEntrypointId.path}');
     final wasmOutputPath =
         p.withoutExtension(
           dartUri.scheme == 'package'
@@ -180,10 +179,9 @@ Future<Dart2WasmBootstrapResult> _bootstrapDart2Wasm(
       await buildStep.writeAsBytes(archiveId, TarEncoder().encode(archive));
     }
 
-    final loaderContents =
-        await scratchSpace
-            .fileFor(dartEntrypointId.changeExtension(moduleJsExtension))
-            .readAsBytes();
+    final loaderContents = await scratchSpace
+        .fileFor(dartEntrypointId.changeExtension(moduleJsExtension))
+        .readAsBytes();
     await buildStep.writeAsBytes(
       dartEntrypointId.changeExtension(javaScriptModuleExtension),
       loaderContents,

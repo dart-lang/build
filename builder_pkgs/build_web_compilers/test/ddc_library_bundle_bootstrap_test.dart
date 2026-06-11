@@ -92,38 +92,39 @@ void main() {
         // Just do some basic sanity checking, integration tests will validate
         // things actually work.
         final builder = WebEntrypointBuilder.fromOptions(defaultBuilderOptions);
-        final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
-          'a|web/index.dart.bootstrap.js': decodedMatches(
-            allOf([
-              // Calls 'main' via the embedder.
-              contains('dartDevEmbedder.runMain'),
-            ]),
-          ),
-          'a|web/index.dart.bootstrap.end.js': isNotEmpty,
-          'a|web/index.dart.ddc_merged_metadata': isNotEmpty,
-          'a|web/index.ddc.js': decodedMatches(
-            // Contains the library declaration of the entrypoint library.
-            contains(
-              'dartDevEmbedder.defineLibrary("org-dartlang-app:///web/index.dart"',
+        final expectedOutputs = Map.of(startingExpectedOutputs)
+          ..addAll({
+            'a|web/index.dart.bootstrap.js': decodedMatches(
+              allOf([
+                // Calls 'main' via the embedder.
+                contains('dartDevEmbedder.runMain'),
+              ]),
             ),
-          ),
-          'a|web/index.dart.js': decodedMatches(
-            allOf([
-              // Contains a script pointer to main's bootstrap.js file.
-              contains('"src": "index.dart.bootstrap.js", "id": "data-main"'),
-              // Maps non-lib modules to remove the top level dir.
-              contains('"src": "index.ddc.js", "id": "web/index"'),
-              // Maps lib modules to packages path
-              contains('"src": "packages/a/a.ddc.js", "id": "packages/a/a"'),
-              contains('"src": "packages/b/b.ddc.js", "id": "packages/b/b"'),
-              // Imports the dart sdk.
-              contains('"id": "dart_sdk"'),
-              isNot(contains('lib/a')),
-              contains('loadConfig.isWindows = false;'),
-            ]),
-          ),
-          'a|web/index.digests': decodedMatches(contains('packages/')),
-        });
+            'a|web/index.dart.bootstrap.end.js': isNotEmpty,
+            'a|web/index.dart.ddc_merged_metadata': isNotEmpty,
+            'a|web/index.ddc.js': decodedMatches(
+              // Contains the library declaration of the entrypoint library.
+              contains(
+                'dartDevEmbedder.defineLibrary("org-dartlang-app:///web/index.dart"',
+              ),
+            ),
+            'a|web/index.dart.js': decodedMatches(
+              allOf([
+                // Contains a script pointer to main's bootstrap.js file.
+                contains('"src": "index.dart.bootstrap.js", "id": "data-main"'),
+                // Maps non-lib modules to remove the top level dir.
+                contains('"src": "index.ddc.js", "id": "web/index"'),
+                // Maps lib modules to packages path
+                contains('"src": "packages/a/a.ddc.js", "id": "packages/a/a"'),
+                contains('"src": "packages/b/b.ddc.js", "id": "packages/b/b"'),
+                // Imports the dart sdk.
+                contains('"id": "dart_sdk"'),
+                isNot(contains('lib/a')),
+                contains('loadConfig.isWindows = false;'),
+              ]),
+            ),
+            'a|web/index.digests': decodedMatches(contains('packages/')),
+          });
         await testBuilders(
           [...startingBuilders, builder],
           startingAssets,

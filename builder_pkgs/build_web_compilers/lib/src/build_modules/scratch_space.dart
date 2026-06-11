@@ -104,8 +104,8 @@ String _scratchSpacePackageConfig(String rootConfig, Uri packageConfigUri) {
       'version 2 is supported.',
     );
   }
-  final packages =
-      (parsedRootConfig['packages'] as List).cast<Map<String, dynamic>>();
+  final packages = (parsedRootConfig['packages'] as List)
+      .cast<Map<String, dynamic>>();
   var foundRoot = false;
   for (final package in packages) {
     var rootUri = packageConfigUri.resolve(package['rootUri'] as String);

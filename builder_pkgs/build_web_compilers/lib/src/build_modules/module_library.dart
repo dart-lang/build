@@ -196,14 +196,13 @@ class ModuleLibrary {
       deps: _deserializeAssetIds(json['deps'] as Iterable),
       parts: _deserializeAssetIds(json['parts'] as Iterable),
       sdkDeps: Set.of((json['sdkDeps'] as Iterable).cast<String>()),
-      conditionalDeps:
-          (json['conditionalDeps'] as Iterable).map((conditions) {
-            return Map.of(
-              (conditions as Map<String, dynamic>).map(
-                (k, v) => MapEntry(k, AssetId.parse(v as String)),
-              ),
-            );
-          }).toList(),
+      conditionalDeps: (json['conditionalDeps'] as Iterable).map((conditions) {
+        return Map.of(
+          (conditions as Map<String, dynamic>).map(
+            (k, v) => MapEntry(k, AssetId.parse(v as String)),
+          ),
+        );
+      }).toList(),
       hasMain: json['hasMain'] as bool,
     );
   }
@@ -212,13 +211,11 @@ class ModuleLibrary {
     'isEntrypoint': isEntryPoint,
     'deps': _deps.map((id) => id.toString()).toList(),
     'parts': parts.map((id) => id.toString()).toList(),
-    'conditionalDeps':
-        conditionalDeps
-            .map(
-              (conditions) =>
-                  conditions.map((k, v) => MapEntry(k, v.toString())),
-            )
-            .toList(),
+    'conditionalDeps': conditionalDeps
+        .map(
+          (conditions) => conditions.map((k, v) => MapEntry(k, v.toString())),
+        )
+        .toList(),
     'sdkDeps': sdkDeps.toList(),
     'hasMain': hasMain,
   });

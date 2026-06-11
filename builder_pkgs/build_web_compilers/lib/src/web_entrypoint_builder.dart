@@ -280,10 +280,9 @@ final class EntrypointBuilderOptions {
     return EntrypointBuilderOptions(
       compilers: compilers,
       nativeNullAssertions: nativeNullAssertions,
-      loaderExtension:
-          config.containsKey(loaderOption)
-              ? config[loaderOption] as String?
-              : defaultLoaderOption,
+      loaderExtension: config.containsKey(loaderOption)
+          ? config[loaderOption] as String?
+          : defaultLoaderOption,
       usesWebHotReload: usesWebHotReload,
       ddcLibraryBundle: usesDdcLibraryBundle,
       librariesPath: librariesPath,
@@ -326,12 +325,11 @@ final class EntrypointBuilderOptions {
     return switch (from) {
       null => const [],
       final List list => list.map((arg) => '$arg').toList(),
-      final String other =>
-        throw ArgumentError.value(
-          other,
-          key,
-          'There may have been a failure decoding as JSON, expected a list.',
-        ),
+      final String other => throw ArgumentError.value(
+        other,
+        key,
+        'There may have been a failure decoding as JSON, expected a list.',
+      ),
       final other => throw ArgumentError.value(other, key, 'Expected a list'),
     };
   }
@@ -391,10 +389,9 @@ class WebEntrypointBuilder implements Builder {
                 await bootstrapDdc(
                   buildStep,
                   nativeNullAssertions: options.nativeNullAssertions,
-                  requiredAssets:
-                      usesDdcLibraryBundle
-                          ? _ddcLibraryBundleSdkResources
-                          : _ddcSdkResources,
+                  requiredAssets: usesDdcLibraryBundle
+                      ? _ddcLibraryBundleSdkResources
+                      : _ddcSdkResources,
                   usesWebHotReload: usesWebHotReload,
                   ddcLibraryBundle: usesDdcLibraryBundle,
                   unsafeAllowUnsupportedModules:
@@ -539,11 +536,10 @@ Future<bool> _isAppEntryPoint(AssetId dartId, AssetReader reader) async {
   assert(dartId.extension == '.dart');
   // Skip reporting errors here, dartdevc will report them later with nicer
   // formatting.
-  final parsed =
-      parseString(
-        content: await reader.readAsString(dartId),
-        throwIfDiagnostics: false,
-      ).unit;
+  final parsed = parseString(
+    content: await reader.readAsString(dartId),
+    throwIfDiagnostics: false,
+  ).unit;
   // Allow two or fewer arguments so that entrypoints intended for use with
   // [spawnUri] get counted.
   //

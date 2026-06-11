@@ -59,12 +59,13 @@ void main() {
         const BuilderOptions({'compiler': 'dart2wasm'}),
       );
 
-      final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
-        'a|web/index.dart.js': decodedMatches(contains('compileStreaming')),
-        'a|web/index.mjs': isNotNull,
-        'a|web/index.wasm.map': isNotNull,
-        'a|web/index.wasm': isNotNull,
-      });
+      final expectedOutputs = Map.of(startingExpectedOutputs)
+        ..addAll({
+          'a|web/index.dart.js': decodedMatches(contains('compileStreaming')),
+          'a|web/index.mjs': isNotNull,
+          'a|web/index.wasm.map': isNotNull,
+          'a|web/index.wasm': isNotNull,
+        });
 
       await testBuilders(
         [...startingBuilders, builder],
@@ -82,30 +83,31 @@ void main() {
           },
         }),
       );
-      final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
-        'a|web/index.dart.js': decodedMatches(
-          stringContainsInOrder([
-            'if',
-            // Depending on whether dart2wasm emitted a .support.js file,
-            // this check either comes from dart2wasm or from our own script
-            // doing its own feature detection as a fallback. Which one is
-            // used depends on the SDK version, we can only assume that the
-            // check is guaranteed to include WebAssembly.validate to check
-            // for WASM features.
-            'WebAssembly.validate',
-            '{',
-            'compileStreaming',
-            '} else {',
-            'scriptTag.src = relativeURL("./index.dart2js.js");',
-          ]),
-        ),
-        'a|web/index.dart.js.tar.gz': isNotNull,
-        'a|web/index.dart2js.js': decodedMatches(contains('Hello world!')),
-        'a|web/index.dart2js.js.map': isNotNull,
-        'a|web/index.mjs': isNotNull,
-        'a|web/index.wasm.map': isNotNull,
-        'a|web/index.wasm': isNotNull,
-      });
+      final expectedOutputs = Map.of(startingExpectedOutputs)
+        ..addAll({
+          'a|web/index.dart.js': decodedMatches(
+            stringContainsInOrder([
+              'if',
+              // Depending on whether dart2wasm emitted a .support.js file,
+              // this check either comes from dart2wasm or from our own script
+              // doing its own feature detection as a fallback. Which one is
+              // used depends on the SDK version, we can only assume that the
+              // check is guaranteed to include WebAssembly.validate to check
+              // for WASM features.
+              'WebAssembly.validate',
+              '{',
+              'compileStreaming',
+              '} else {',
+              'scriptTag.src = relativeURL("./index.dart2js.js");',
+            ]),
+          ),
+          'a|web/index.dart.js.tar.gz': isNotNull,
+          'a|web/index.dart2js.js': decodedMatches(contains('Hello world!')),
+          'a|web/index.dart2js.js.map': isNotNull,
+          'a|web/index.mjs': isNotNull,
+          'a|web/index.wasm.map': isNotNull,
+          'a|web/index.wasm': isNotNull,
+        });
 
       await testBuilders(
         [...startingBuilders, builder],
@@ -123,41 +125,42 @@ void main() {
           },
         }),
       );
-      final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
-        'a|web/index.dart.js': decodedMatches(
-          allOf([
-            // Worker detection.
-            contains("const isWorker = typeof document === 'undefined'"),
-            // thisScript guarded for worker context.
-            contains(
-              'const thisScript = isWorker ? undefined'
-              ' : document.currentScript',
-            ),
-            // relativeURL has worker branch using self.location.href.
-            contains('new URL(ref, self.location.href)'),
-            // forceJS is extracted from script src params as well
-            // as location search.
-            contains(
-              'new URL(thisScript.src).searchParams'
-              ".get('force_js')",
-            ),
-            contains(
-              'new URLSearchParams(self.location.search)'
-              ".get('force_js')",
-            ),
-            // JS fallback uses importScripts in worker context.
-            contains('importScripts(relativeURL('),
-            // Wasm module import uses relativeURL.
-            contains('await import(relativeURL('),
-          ]),
-        ),
-        'a|web/index.dart.js.tar.gz': isNotNull,
-        'a|web/index.dart2js.js': isNotNull,
-        'a|web/index.dart2js.js.map': isNotNull,
-        'a|web/index.mjs': isNotNull,
-        'a|web/index.wasm.map': isNotNull,
-        'a|web/index.wasm': isNotNull,
-      });
+      final expectedOutputs = Map.of(startingExpectedOutputs)
+        ..addAll({
+          'a|web/index.dart.js': decodedMatches(
+            allOf([
+              // Worker detection.
+              contains("const isWorker = typeof document === 'undefined'"),
+              // thisScript guarded for worker context.
+              contains(
+                'const thisScript = isWorker ? undefined'
+                ' : document.currentScript',
+              ),
+              // relativeURL has worker branch using self.location.href.
+              contains('new URL(ref, self.location.href)'),
+              // forceJS is extracted from script src params as well
+              // as location search.
+              contains(
+                'new URL(thisScript.src).searchParams'
+                ".get('force_js')",
+              ),
+              contains(
+                'new URLSearchParams(self.location.search)'
+                ".get('force_js')",
+              ),
+              // JS fallback uses importScripts in worker context.
+              contains('importScripts(relativeURL('),
+              // Wasm module import uses relativeURL.
+              contains('await import(relativeURL('),
+            ]),
+          ),
+          'a|web/index.dart.js.tar.gz': isNotNull,
+          'a|web/index.dart2js.js': isNotNull,
+          'a|web/index.dart2js.js.map': isNotNull,
+          'a|web/index.mjs': isNotNull,
+          'a|web/index.wasm.map': isNotNull,
+          'a|web/index.wasm': isNotNull,
+        });
 
       await testBuilders(
         [...startingBuilders, builder],
@@ -168,14 +171,15 @@ void main() {
   });
 
   test('can disable generation of loader script', () async {
-    final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
-      'a|web/index.dart.js.tar.gz': isNotNull,
-      'a|web/index.dart2js.js': decodedMatches(contains('Hello world!')),
-      'a|web/index.dart2js.js.map': isNotNull,
-      'a|web/index.mjs': isNotNull,
-      'a|web/index.wasm.map': isNotNull,
-      'a|web/index.wasm': isNotNull,
-    });
+    final expectedOutputs = Map.of(startingExpectedOutputs)
+      ..addAll({
+        'a|web/index.dart.js.tar.gz': isNotNull,
+        'a|web/index.dart2js.js': decodedMatches(contains('Hello world!')),
+        'a|web/index.dart2js.js.map': isNotNull,
+        'a|web/index.mjs': isNotNull,
+        'a|web/index.wasm.map': isNotNull,
+        'a|web/index.wasm': isNotNull,
+      });
 
     final builder = WebEntrypointBuilder.fromOptions(
       const BuilderOptions({
@@ -205,16 +209,17 @@ void main() {
         },
       }),
     );
-    final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
-      'a|web/index.dart.js.tar.gz': isNotNull,
-      'a|web/index.dart2js.js': isNotNull,
-      'a|web/index.dart2js.js.map': isNotNull,
-      'a|web/index.dart.js': isNotNull,
-      'a|web/index.wasm.tar.gz': isNotNull,
-      'a|web/index.mjs': isNotNull,
-      'a|web/index.wasm.map': isNotNull,
-      'a|web/index.wasm': isNotNull,
-    });
+    final expectedOutputs = Map.of(startingExpectedOutputs)
+      ..addAll({
+        'a|web/index.dart.js.tar.gz': isNotNull,
+        'a|web/index.dart2js.js': isNotNull,
+        'a|web/index.dart2js.js.map': isNotNull,
+        'a|web/index.dart.js': isNotNull,
+        'a|web/index.wasm.tar.gz': isNotNull,
+        'a|web/index.mjs': isNotNull,
+        'a|web/index.wasm.map': isNotNull,
+        'a|web/index.wasm': isNotNull,
+      });
 
     await testBuilders(
       [...startingBuilders, builder],

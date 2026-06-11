@@ -96,10 +96,9 @@ Future<void> fixAndCopySourceMap(
     final uri = Uri.parse(source);
     // We only want to rewrite multi-root scheme uris.
     if (uri.scheme.isEmpty) return source;
-    final newSegments =
-        uri.pathSegments.first == 'packages'
-            ? uri.pathSegments
-            : uri.pathSegments.skip(1);
+    final newSegments = uri.pathSegments.first == 'packages'
+        ? uri.pathSegments
+        : uri.pathSegments.skip(1);
     return Uri(path: p.url.joinAll(['/', ...newSegments])).toString();
   }
 
@@ -154,18 +153,16 @@ void fixMetadataSources(Map<String, dynamic> json, Uri scratchUri) {
 ///
 /// Corresponds to the library name for the Library Bundler module system.
 String ddcModuleName(AssetId jsId) {
-  final jsPath =
-      jsId.path.startsWith('lib/')
-          ? jsId.path.replaceFirst('lib/', 'packages/${jsId.package}/')
-          : jsId.path;
+  final jsPath = jsId.path.startsWith('lib/')
+      ? jsId.path.replaceFirst('lib/', 'packages/${jsId.package}/')
+      : jsId.path;
   return jsPath.substring(0, jsPath.length - jsModuleExtension.length);
 }
 
 String ddcLibraryId(AssetId jsId) {
-  final jsPath =
-      jsId.path.startsWith('lib/')
-          ? jsId.path.replaceFirst('lib/', 'package:${jsId.package}/')
-          : '$multiRootScheme:///${jsId.path}';
+  final jsPath = jsId.path.startsWith('lib/')
+      ? jsId.path.replaceFirst('lib/', 'package:${jsId.package}/')
+      : '$multiRootScheme:///${jsId.path}';
   final prefix = jsPath.substring(0, jsPath.length - jsModuleExtension.length);
   return '$prefix.dart';
 }

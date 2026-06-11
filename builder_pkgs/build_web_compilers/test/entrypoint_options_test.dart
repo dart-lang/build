@@ -75,8 +75,7 @@ void main() {
   });
 
   test('can enable multiple compilers', () {
-    final yamlOptions =
-        loadYaml('''
+    final yamlOptions = loadYaml('''
 compilers:
   dart2js:
     args:
@@ -86,8 +85,7 @@ compilers:
     args:
       - "-O3"
 loader: .dart.js
-''')
-            as Map;
+''') as Map;
 
     final options = EntrypointBuilderOptions.fromOptions(
       BuilderOptions(yamlOptions.cast()),
