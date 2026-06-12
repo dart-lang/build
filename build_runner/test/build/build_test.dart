@@ -161,6 +161,33 @@ void main() {
     });
 
     group('with root package inputs', () {
+      test('fetches and disposes resources correctly', () async {
+        var resourceDisposed = false;
+        final resource = Resource(
+          () => 1,
+          dispose: (_) {
+            resourceDisposed = true;
+          },
+        );
+
+        final builder = TestBuilder(
+          buildExtensions: appendExtension('.copy'),
+          extraWork: (buildStep, _) async {
+            final value = await buildStep.fetchResource(resource);
+            expect(value, 1);
+          },
+        );
+
+        await testBuilders(
+          [builder],
+          {'a|web/a.txt': 'a'},
+          outputs: {'a|web/a.txt.copy': 'a'},
+        );
+
+        // The build_runner should have disposed the resource at the end of the build.
+        expect(resourceDisposed, isTrue);
+      });
+
       test('one phase, one builder, one-to-one outputs', () async {
         await testBuilders(
           [testBuilder],

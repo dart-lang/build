@@ -15,8 +15,6 @@ import 'package:build_runner/src/build/resolver/analysis_driver.dart';
 import 'package:build_runner/src/build/resolver/analysis_driver_model.dart';
 import 'package:build_runner/src/build/resolver/resolvers_impl.dart';
 import 'package:build_runner/src/build/resolver/sdk_summary.dart';
-import 'package:build_runner/src/build/run_builder.dart';
-import 'package:build_runner/src/build/single_step_reader_writer.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:pub_semver/pub_semver.dart';
@@ -1088,25 +1086,29 @@ int? get x => 1;
           allLibraries.map((e) => e.uri.toString()),
           containsAll(['dart:io', 'dart:core', 'dart:html']),
         );
+
+        await buildStep.writeAsString(
+          buildStep.inputId.changeExtension('.txt'),
+          '',
+        );
       },
     );
 
-    final readerWriter = InternalTestReaderWriter();
-
-    readerWriter.testing.writeString(makeAssetId('a|lib/a.dart'), '');
-    await _runBuilder(
-      builder,
-      [makeAssetId('a|lib/a.dart')],
-      SingleStepReaderWriter.fakeFor(readerWriter),
-      resolvers,
+    var result = await testBuilders(
+      [builder],
+      {'a|lib/a.dart': ''},
+      outputs: {'a|lib/a.txt': ''},
+      resolvers: resolvers,
+      visibleOutputBuilders: {builder},
     );
 
-    readerWriter.testing.writeString(makeAssetId('a|lib/b.dart'), '');
-    await _runBuilder(
-      builder,
-      [makeAssetId('a|lib/b.dart')],
-      SingleStepReaderWriter.fakeFor(readerWriter),
-      resolvers,
+    result = await testBuilders(
+      [builder],
+      {'a|lib/b.dart': ''},
+      outputs: {'a|lib/a.txt': '', 'a|lib/b.txt': ''},
+      readerWriter: result.readerWriter,
+      resolvers: resolvers,
+      visibleOutputBuilders: {builder},
     );
   });
 
@@ -1145,52 +1147,45 @@ int? get x => 1;
   });
 
   test('generated part files are not considered libraries', () async {
-    final readerWriter = InternalTestReaderWriter();
-    final input = AssetId('a', 'lib/input.dart');
-    readerWriter.testing.writeString(input, "part 'input.a.dart';");
-
-    final builder = TestBuilder(
+    final builderA = TestBuilder(
       buildExtensions: {
         '.dart': ['.a.dart'],
       },
       build: (buildStep, buildExtensions) async {
         final isLibrary = await buildStep.resolver.isLibrary(buildStep.inputId);
-        if (buildStep.inputId == input) {
-          await buildStep.writeAsString(
-            buildStep.inputId.changeExtension(buildExtensions['.dart']!.first),
-            "part of 'input.dart';",
-          );
-          expect(isLibrary, true);
-        } else {
-          expect(
-            isLibrary,
-            false,
-            reason: '${buildStep.inputId} should not be considered a library',
-          );
-        }
+        expect(isLibrary, true);
+        await buildStep.writeAsString(
+          buildStep.inputId.changeExtension('.a.dart'),
+          "part of 'input.dart';",
+        );
+      },
+    );
+
+    final builderB = TestBuilder(
+      buildExtensions: {
+        '.a.dart': ['.b.dart'],
+      },
+      build: (buildStep, buildExtensions) async {
+        final isLibrary = await buildStep.resolver.isLibrary(buildStep.inputId);
+        expect(isLibrary, false);
+        await buildStep.writeAsString(AssetId('a', 'lib/input.b.dart'), 'done');
       },
     );
     final resolvers = createResolvers();
-    await _runBuilder(
-      builder,
-      [input],
-      SingleStepReaderWriter.fakeFor(readerWriter),
-      resolvers,
-    );
 
-    await _runBuilder(
-      builder,
-      [input.changeExtension('.a.dart')],
-      SingleStepReaderWriter.fakeFor(readerWriter),
-      resolvers,
+    await testBuilders(
+      [builderA, builderB],
+      {'a|lib/input.dart': "part 'input.a.dart';"},
+      outputs: {
+        'a|lib/input.a.dart': "part of 'input.dart';",
+        'a|lib/input.b.dart': 'done',
+      },
+      resolvers: resolvers,
+      visibleOutputBuilders: {builderA, builderB},
     );
   });
 
   test('missing files are not considered libraries', () async {
-    final readerWriter = InternalTestReaderWriter();
-    final input = AssetId('a', 'lib/input.dart');
-    readerWriter.testing.writeString(input, 'void doStuff() {}');
-
     final builder = TestBuilder(
       buildExtensions: {
         '.dart': ['.a.dart'],
@@ -1202,27 +1197,26 @@ int? get x => 1;
           ),
           false,
         );
+        await buildStep.writeAsString(
+          buildStep.inputId.changeExtension('.a.dart'),
+          'done',
+        );
       }),
     );
     final resolvers = createResolvers();
-    await _runBuilder(
-      builder,
-      [input],
-      SingleStepReaderWriter.fakeFor(readerWriter),
-      resolvers,
+
+    await testBuilders(
+      [builder],
+      {'a|lib/input.dart': 'void doStuff() {}'},
+      outputs: {'a|lib/input.a.dart': 'done'},
+      resolvers: resolvers,
+      visibleOutputBuilders: {builder},
     );
   });
 
   test(
     'assets with extensions other than `.dart` are not considered libraries',
     () async {
-      final readerWriter = InternalTestReaderWriter();
-      final input = AssetId('a', 'lib/input.dart');
-      readerWriter.testing.writeString(input, 'void doStuff() {}');
-
-      final otherFile = AssetId('a', 'lib/input.notdart');
-      readerWriter.testing.writeString(otherFile, 'Not a Dart file');
-
       final builder = TestBuilder(
         buildExtensions: {
           '.dart': ['.a.dart'],
@@ -1231,14 +1225,23 @@ int? get x => 1;
           final other = buildStep.inputId.changeExtension('.notdart');
           expect(await buildStep.canRead(other), true);
           expect(await buildStep.resolver.isLibrary(other), false);
+          await buildStep.writeAsString(
+            buildStep.inputId.changeExtension('.a.dart'),
+            'done',
+          );
         }),
       );
       final resolvers = createResolvers();
-      await _runBuilder(
-        builder,
-        [input],
-        SingleStepReaderWriter.fakeFor(readerWriter),
-        resolvers,
+
+      await testBuilders(
+        [builder],
+        {
+          'a|lib/input.dart': 'void doStuff() {}',
+          'a|lib/input.notdart': 'Not a Dart file',
+        },
+        outputs: {'a|lib/input.a.dart': 'done'},
+        resolvers: resolvers,
+        visibleOutputBuilders: {builder},
       );
     },
   );
@@ -1343,25 +1346,6 @@ int? get x => 1;
       await Future.wait(futures);
     });
   });
-}
-
-// Calls `runBuilder` after getting the resolvers lock.
-Future<void> _runBuilder(
-  TestBuilder builder,
-  List<AssetId> list,
-  SingleStepReaderWriter singleStepReaderWriter,
-  Resolvers resolvers,
-) async {
-  final resolversImpl = switch (resolvers) {
-    final ResolversImpl r => r,
-    _ => null,
-  };
-  await resolversImpl?.takeLockAndStartBuild(
-    const {},
-    invalidatedSources: null,
-  );
-  await runBuilder(builder, list, singleStepReaderWriter, resolvers);
-  resolversImpl?.reset();
 }
 
 final _skipOnPreRelease =
