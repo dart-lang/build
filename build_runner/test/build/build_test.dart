@@ -161,7 +161,7 @@ void main() {
     });
 
     group('with root package inputs', () {
-      test('fetches and disposes resources correctly', () async {
+      test('fetches and disposes resources', () async {
         var resourceDisposed = false;
         final resource = Resource(
           () => 1,
@@ -184,7 +184,6 @@ void main() {
           outputs: {'a|web/a.txt.copy': 'a'},
         );
 
-        // The build_runner should have disposed the resource at the end of the build.
         expect(resourceDisposed, isTrue);
       });
 

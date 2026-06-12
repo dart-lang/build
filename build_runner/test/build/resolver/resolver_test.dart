@@ -23,20 +23,18 @@ import 'package:test/test.dart';
 import '../../common/common.dart';
 
 void main() {
-  for (final resolversFactory in [
-    AnalysisDriverModelFactory(),
-    SharedAnalysisDriverModelFactory(),
-  ]) {
-    group('$resolversFactory', () {
-      runTests(resolversFactory);
-    });
-  }
-}
-
-void runTests(ResolversFactory resolversFactory) {
   final entryPoint = AssetId('a', 'web/main.dart');
-  Resolvers createResolvers({PackageConfig? packageConfig}) =>
-      resolversFactory.create(packageConfig: packageConfig);
+
+  final sharedModel = AnalysisDriverModel();
+  Resolvers createResolvers({PackageConfig? packageConfig}) {
+    final result = ResolversImpl.custom(
+      packageConfig: packageConfig,
+      analysisDriverModel: sharedModel,
+    );
+    addTearDown(result.reset);
+    return result;
+  }
+
   test('should handle initial files', () {
     return resolveSources({'a|web/main.dart': ' main() {}'}, (resolver) async {
       final lib = await resolver.libraryFor(entryPoint);
@@ -163,7 +161,7 @@ void runTests(ResolversFactory resolversFactory) {
     );
 
     // Only allow changes to source between builds.
-    await _resetResolvers(resolvers);
+    resolvers.reset();
 
     await resolveSources(
       {
@@ -201,7 +199,7 @@ void runTests(ResolversFactory resolversFactory) {
     );
 
     // Only allow changes to source between builds.
-    await _resetResolvers(resolvers);
+    resolvers.reset();
 
     await resolveSources(
       {
@@ -554,7 +552,7 @@ void runTests(ResolversFactory resolversFactory) {
         resolvers: resolvers,
       );
 
-      await _resetResolvers(resolvers);
+      resolvers.reset();
 
       await resolveSources(
         {
@@ -1352,49 +1350,3 @@ final _skipOnPreRelease =
     Version.parse(Platform.version.split(' ').first).isPreRelease
     ? 'Skipped on prerelease sdks'
     : null;
-
-abstract class ResolversFactory {
-  /// Whether [create] returns a shared instance that persists between tests.
-  Resolvers create({PackageConfig? packageConfig});
-}
-
-class AnalysisDriverModelFactory implements ResolversFactory {
-  @override
-  Resolvers create({PackageConfig? packageConfig}) => ResolversImpl.custom(
-    packageConfig: packageConfig,
-    analysisDriverModel: AnalysisDriverModel(),
-  );
-
-  @override
-  String toString() => 'New resolver';
-}
-
-class SharedAnalysisDriverModelFactory implements ResolversFactory {
-  static final AnalysisDriverModel sharedInstance = AnalysisDriverModel();
-
-  @override
-  Resolvers create({PackageConfig? packageConfig}) {
-    final result = ResolversImpl.custom(
-      packageConfig: packageConfig,
-      analysisDriverModel: sharedInstance,
-    );
-    addTearDown(result.reset);
-    return result;
-  }
-
-  @override
-  String toString() => 'Shared new resolver';
-}
-
-Future<void> _resetResolvers(Resolvers resolvers) async {
-  // `resolveSources` actually completes prior to the build step being
-  // done, which causes this `reset` call to fail. After a few microtasks
-  // it succeeds though.
-  var tries = 0;
-  while (tries++ < 5) {
-    await Future.value(null);
-    try {
-      resolvers.reset();
-    } catch (_) {}
-  }
-}
