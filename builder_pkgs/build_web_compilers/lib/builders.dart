@@ -61,6 +61,9 @@ Builder ddcBuilder(BuilderOptions options) {
     frontendServerEnvironment = _readEnvironmentOption(options);
     return DdcFrontendServerBuilder(
       scratchSpaceDir: _readScratchSpaceDirOption(options),
+      librariesPath: _readLibrariesPathOption(options),
+      platformSdk: _readPlatformSdkOption(options),
+      sdkKernelPath: _readDdcKernelPathOption(options),
     );
   }
 

@@ -135,12 +135,13 @@ class FesManager {
     required Uri packagesFile,
     Map<String, String> environment = const {},
   }) async {
-    final fes = await PersistentFrontendServer.start(
+    final fes = PersistentFrontendServer(
       sdkRoot: sdkRoot,
       fileSystemRoot: fileSystemRoot,
       packagesFile: packagesFile,
       environment: environment,
     );
+    await fes.ensureStarted();
     final driver = FrontendServerProxyDriver()..init(fes);
     final packageConfig = await PackageConfig.load(File.fromUri(packagesFile));
     return FesManager._(fes: fes, driver: driver, packageConfig: packageConfig);
