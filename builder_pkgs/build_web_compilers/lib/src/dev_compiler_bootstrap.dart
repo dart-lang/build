@@ -100,19 +100,18 @@ Future<void> bootstrapDdc(
 
   final dartEntrypointParts = _context.split(dartEntrypointId.path);
   final packageName = module.primarySource.package;
-  final entrypointLibraryName =
-      ddcLibraryBundle
-          ? _context.joinAll([
-            // Convert to a package: uri for files under lib.
-            if (dartEntrypointParts.first == 'lib') 'package:$packageName',
-            ...dartEntrypointParts,
-          ])
-          : _context.joinAll([
-            // Convert to a package: uri for files under lib.
-            if (dartEntrypointParts.first == 'lib') 'package:$packageName',
-            // Strip top-level directory from the path.
-            ...dartEntrypointParts.skip(1),
-          ]);
+  final entrypointLibraryName = ddcLibraryBundle
+      ? _context.joinAll([
+          // Convert to a package: uri for files under lib.
+          if (dartEntrypointParts.first == 'lib') 'package:$packageName',
+          ...dartEntrypointParts,
+        ])
+      : _context.joinAll([
+          // Convert to a package: uri for files under lib.
+          if (dartEntrypointParts.first == 'lib') 'package:$packageName',
+          // Strip top-level directory from the path.
+          ...dartEntrypointParts.skip(1),
+        ]);
 
   final entrypointJsId = dartEntrypointId.changeExtension(entrypointExtension);
 
@@ -130,13 +129,12 @@ Future<void> bootstrapDdc(
       // `packages/` for lib modules. We set baseUrl to `/` to simplify things,
       // and we only allow you to serve top level directories.
       final moduleName = ddcModuleName(jsId);
-      modulePaths[moduleName] =
-          jsId.path.startsWith('lib')
-              ? '$moduleName$jsModuleExtension'
-              : _context.relative(
-                jsId.path,
-                from: _context.dirname(dartEntrypointId.path),
-              );
+      modulePaths[moduleName] = jsId.path.startsWith('lib')
+          ? '$moduleName$jsModuleExtension'
+          : _context.relative(
+              jsId.path,
+              from: _context.dirname(dartEntrypointId.path),
+            );
     }
     final bootstrapEndModuleName = _context.relative(
       bootstrapEndId.path,
@@ -287,10 +285,9 @@ String _appBootstrap({
   required String oldModuleScope,
   required bool? nativeNullAssertions,
 }) {
-  final nativeAssertsCode =
-      nativeNullAssertions == null
-          ? ''
-          : 'dart_sdk.dart.nativeNonNullAsserts($nativeNullAssertions);';
+  final nativeAssertsCode = nativeNullAssertions == null
+      ? ''
+      : 'dart_sdk.dart.nativeNonNullAsserts($nativeNullAssertions);';
   return '''
 define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_sdk) {
   $nativeAssertsCode
@@ -330,7 +327,8 @@ define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_s
 
 /// The actual entrypoint JS file which injects all the necessary scripts to
 /// run the app.
-String _entryPointJs(String bootstrapModuleName) => '''
+String _entryPointJs(String bootstrapModuleName) =>
+    '''
 (function() {
   $_currentDirectoryScript
   $_baseUrlScript
@@ -457,7 +455,8 @@ for (let moduleName of Object.getOwnPropertyNames(modulePaths)) {
 /// other tools.
 ///
 /// Posts a message to the window when done.
-final _initializeTools = '''
+final _initializeTools =
+    '''
 $_baseUrlScript
   dart_sdk._debugger.registerDevtoolsFormatter();
   \$dartLoader.getModuleLibraries = dart_sdk.dart.getModuleLibraries;
@@ -488,7 +487,8 @@ $_baseUrlScript
 ///
 /// Adds error handler code for require.js which requests a `.errors` file for
 /// any failed module, and logs it to the console.
-final _requireJsConfig = '''
+final _requireJsConfig =
+    '''
 // Whenever we fail to load a JS module, try to request the corresponding
 // `.errors` file, and log it to the console.
 (function() {
@@ -684,7 +684,8 @@ String generateDDCLibraryBundleBootstrapScript({
   });
   // Write the "true" main boostrapper last as part of the loader's convention.
   scriptsJs.write('{"src": "$mainBoostrapperUrl", "id": "data-main"}\n');
-  final boostrapScript = '''
+  final boostrapScript =
+      '''
 // Save the current directory so we can access it in a closure.
   let _currentDirectory = (function () {
     let _url = document.currentScript.src;
@@ -786,57 +787,46 @@ $_simpleLoaderScript
       });
     }
 
-    let currentUri = _currentScript.src;
-    // We should have written a file containing all the scripts that need to be
-    // reloaded into the page. This is then read when a hot restart is triggered
-    // in DDC via the `\$dartReloadModifiedModules` callback.
-    let reloadedSources = _currentDirectory + 'reloaded_sources.json';
-
     if (!window.\$dartReloadModifiedModules) {
-      window.\$dartReloadModifiedModules = (function(appName, callback) {
-        const xhttp = new XMLHttpRequest();
-        xhttp.withCredentials = true;
-        xhttp.onreadystatechange = function() {
-          // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/readyState
-          if (this.readyState == 4 && this.status == 200 || this.status == 304) {
-            const scripts = JSON.parse(this.responseText);
-            let numToLoad = 0;
-            let numLoaded = 0;
-            for (let i = 0; i < scripts.length; i++) {
-              const script = scripts[i];
-              const module = script.module;
-              if (module == null) continue;
-              const src = script.src;
-              const oldSrc = window.\$dartLoader.moduleIdToUrl.get(module);
-
-              // We might actually load from a different uri, delete the old one
-              // just to be sure.
-              window.\$dartLoader.urlToModuleId.delete(oldSrc);
-
-              window.\$dartLoader.moduleIdToUrl.set(module, src);
-              window.\$dartLoader.urlToModuleId.set(src, module);
-
-              numToLoad++;
-
-              let el = document.getElementById(module);
-              if (el) el.remove();
-              el = window.\$dartCreateScript();
-              el.src = policy.createScriptURL(src);
-              el.async = false;
-              el.defer = true;
-              el.id = module;
-              el.onload = function() {
-                numLoaded++;
-                if (numToLoad == numLoaded) callback();
-              };
-              document.head.appendChild(el);
-            }
-            // Call `callback` right away if we found no updated scripts.
-            if (numToLoad == 0) callback();
+      window.\$dartReloadModifiedModules = (function(filesToReload, appName) {
+        return new Promise(function(resolve) {
+          function callback() {
+            resolve(filesToReload);
           }
-        };
-        xhttp.open("GET", reloadedSources, true);
-        xhttp.send();
+          let numToLoad = 0;
+          let numLoaded = 0;
+          for (let i = 0; i < filesToReload.length; i++) {
+            const file = filesToReload[i];
+            const module = file.module;
+            if (module == null) continue;
+            const src = file.src;
+            const oldSrc = window.\$dartLoader.moduleIdToUrl.get(module);
+
+            // We might actually load from a different uri, delete the old one
+            // just to be sure.
+            window.\$dartLoader.urlToModuleId.delete(oldSrc);
+
+            window.\$dartLoader.moduleIdToUrl.set(module, src);
+            window.\$dartLoader.urlToModuleId.set(src, module);
+
+            numToLoad++;
+
+            let el = document.getElementById(module);
+            if (el) el.remove();
+            el = window.\$dartCreateScript();
+            el.src = policy.createScriptURL(src);
+            el.async = false;
+            el.defer = true;
+            el.id = module;
+            el.onload = function() {
+              numLoaded++;
+              if (numToLoad == numLoaded) callback();
+            };
+            document.head.appendChild(el);
+          }
+          // Call `callback` right away if we found no updated scripts.
+          if (numToLoad == 0) callback();
+        });
       });
     }
   };

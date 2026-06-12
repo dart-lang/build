@@ -16,10 +16,9 @@ import '../common.dart';
 import 'scratch_space.dart';
 
 // If no terminal is attached, prevent a new one from launching.
-final _processMode =
-    stdin.hasTerminal
-        ? ProcessStartMode.normal
-        : ProcessStartMode.detachedWithStdio;
+final _processMode = stdin.hasTerminal
+    ? ProcessStartMode.normal
+    : ProcessStartMode.detachedWithStdio;
 
 /// Completes once the dartdevk workers have been shut down.
 Future<void> get dartdevkWorkersAreDone =>
@@ -154,8 +153,9 @@ Future<PersistentFrontendServer> startFrontendServerWorker() async {
   // space. If a scratch space is provided by the build options (instead of
   // being created dynamically), use that.
   final customPath = frontendServerState.customScratchSpacePath;
-  final fesRoot =
-      customPath != null ? Directory(customPath).uri : scratchSpace.tempDir.uri;
+  final fesRoot = customPath != null
+      ? Directory(customPath).uri
+      : scratchSpace.tempDir.uri;
   final fes = await PersistentFrontendServer.start(
     sdkRoot: sdkDir,
     fileSystemRoot: fesRoot,

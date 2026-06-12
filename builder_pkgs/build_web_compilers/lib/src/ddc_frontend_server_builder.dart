@@ -52,11 +52,9 @@ class DdcFrontendServerBuilder implements Builder {
     );
     final ddcEntrypointId = module.primarySource;
     final entrypoint = frontendServerState.entrypointAssetId;
-    final isEntrypoint =
-        entrypoint == null
-            ? ddcEntrypointId.changeExtension('.ddc.module') ==
-                buildStep.inputId
-            : ddcEntrypointId == entrypoint;
+    final isEntrypoint = entrypoint == null
+        ? ddcEntrypointId.changeExtension('.ddc.module') == buildStep.inputId
+        : ddcEntrypointId == entrypoint;
     if (isEntrypoint && entrypoint == null) {
       frontendServerState.entrypointAssetId = ddcEntrypointId;
     }
@@ -89,10 +87,9 @@ class DdcFrontendServerBuilder implements Builder {
     );
     await buildStep.fetchResource(persistentFrontendServerResource);
     final entrypointArg = sourceArg(frontendServerState.entrypointAssetId!);
-    String assetPath(AssetId id) =>
-        id.package == root
-            ? id.path
-            : 'packages/${id.package}/${id.path.replaceFirst('lib/', '')}';
+    String assetPath(AssetId id) => id.package == root
+        ? id.path
+        : 'packages/${id.package}/${id.path.replaceFirst('lib/', '')}';
     final changedAssetUris = [
       for (final asset in scratchSpace.changedFilesInBuild)
         Uri(scheme: multiRootScheme, host: '', path: '/${assetPath(asset)}'),
@@ -103,8 +100,9 @@ class DdcFrontendServerBuilder implements Builder {
         final customDir = scratchSpaceDir;
         if (customDir != null) {
           frontendServerState.customScratchSpacePath = customDir;
-          sSpace =
-              _scratchSpace ??= ScratchSpace.existing(Directory(customDir));
+          sSpace = _scratchSpace ??= ScratchSpace.existing(
+            Directory(customDir),
+          );
         } else {
           sSpace = scratchSpace;
         }

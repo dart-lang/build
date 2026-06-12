@@ -68,17 +68,17 @@ class DecodingCache<T> {
     if (!await reader.canRead(id)) return null;
     _Entry<T> entry;
     if (!_cached.containsKey(id)) {
-      entry =
-          _cached[id] = _Entry(
-            Result.capture(reader.readAsBytes(id).then(_fromBytes)),
-            digest: Result.capture(reader.digest(id)),
-          );
+      entry = _cached[id] = _Entry(
+        Result.capture(reader.readAsBytes(id).then(_fromBytes)),
+        digest: Result.capture(reader.digest(id)),
+      );
     } else {
       entry = _cached[id]!;
       if (entry.needsCheck) {
         await (entry.onGoingCheck ??= () async {
-          final previousDigest =
-              entry.digest == null ? null : await Result.release(entry.digest!);
+          final previousDigest = entry.digest == null
+              ? null
+              : await Result.release(entry.digest!);
           entry.digest = Result.capture(reader.digest(id));
           if (await Result.release(entry.digest!) != previousDigest) {
             entry.value = Result.capture(

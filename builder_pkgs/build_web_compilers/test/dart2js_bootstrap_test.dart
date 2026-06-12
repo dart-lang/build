@@ -75,11 +75,12 @@ void main() {
           'native_null_assertions': false,
         }),
       );
-      final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
-        'a|web/index.dart.js.map': isNotNull,
-        'a|web/index.dart.js.tar.gz': isNotNull,
-        'a|web/index.dart.js': decodedMatches(contains('world')),
-      });
+      final expectedOutputs = Map.of(startingExpectedOutputs)
+        ..addAll({
+          'a|web/index.dart.js.map': isNotNull,
+          'a|web/index.dart.js.tar.gz': isNotNull,
+          'a|web/index.dart.js': decodedMatches(contains('world')),
+        });
       await testBuilders(
         [...startingBuilders, builder],
         startingAssets,
@@ -95,10 +96,11 @@ void main() {
           'dart2js_args': ['--no-source-maps'],
         }),
       );
-      final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
-        'a|web/index.dart.js.tar.gz': anything,
-        'a|web/index.dart.js': anything,
-      });
+      final expectedOutputs = Map.of(startingExpectedOutputs)
+        ..addAll({
+          'a|web/index.dart.js.tar.gz': anything,
+          'a|web/index.dart.js': anything,
+        });
       await testBuilders(
         [...startingBuilders, builder],
         startingAssets,

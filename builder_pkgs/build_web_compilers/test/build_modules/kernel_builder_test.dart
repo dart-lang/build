@@ -71,17 +71,18 @@ void main() {
           trackUnusedInputs: trackUnusedInputs,
         );
 
-        final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
-          'a|web/index$kernelOutputExtension': containsAllInOrder(
-            utf8.encode('web/index.dart'),
-          ),
-          'b|lib/b$kernelOutputExtension': containsAllInOrder(
-            utf8.encode('package:b/b.dart'),
-          ),
-          'c|lib/c$kernelOutputExtension': containsAllInOrder(
-            utf8.encode('package:c/c.dart'),
-          ),
-        });
+        final expectedOutputs = Map.of(startingExpectedOutputs)
+          ..addAll({
+            'a|web/index$kernelOutputExtension': containsAllInOrder(
+              utf8.encode('web/index.dart'),
+            ),
+            'b|lib/b$kernelOutputExtension': containsAllInOrder(
+              utf8.encode('package:b/b.dart'),
+            ),
+            'c|lib/c$kernelOutputExtension': containsAllInOrder(
+              utf8.encode('package:c/c.dart'),
+            ),
+          });
 
         final reportedUnused = <AssetId, Iterable<AssetId>>{};
         await testBuilders(

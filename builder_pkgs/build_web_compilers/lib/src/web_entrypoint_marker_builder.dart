@@ -48,11 +48,12 @@ class WebEntrypointMarkerBuilder implements Builder {
     final webEntrypointJson = <String, Object?>{};
 
     if (hasCachedState) {
-      webEntrypointJson['entrypoint'] =
-          frontendServerState.entrypointAssetId.toString();
+      webEntrypointJson['entrypoint'] = frontendServerState.entrypointAssetId
+          .toString();
     } else {
-      final webAssets =
-          await buildStep.findAssets(Glob('$webAssetsPath/**')).toList();
+      final webAssets = await buildStep
+          .findAssets(Glob('$webAssetsPath/**'))
+          .toList();
 
       for (final asset in webAssets) {
         if (asset.extension == '.dart') {

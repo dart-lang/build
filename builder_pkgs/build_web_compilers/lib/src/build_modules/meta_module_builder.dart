@@ -41,8 +41,9 @@ class MetaModuleBuilder implements Builder {
   Future build(BuildStep buildStep) async {
     if (buildStep.inputId.package == r'$sdk') return;
 
-    final libraryAssets =
-        await buildStep.findAssets(Glob('**$moduleLibraryExtension')).toList();
+    final libraryAssets = await buildStep
+        .findAssets(Glob('**$moduleLibraryExtension'))
+        .toList();
 
     final metaModule = await MetaModule.forLibraries(
       buildStep,

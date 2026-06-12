@@ -61,12 +61,11 @@ void main() {
       socket.writeln(
         jsonEncode({'instruction': 'READ_OUTPUT_FILE', 'path': 'non_existent'}),
       );
-      final responseLine =
-          await socket
-              .cast<List<int>>()
-              .transform(utf8.decoder)
-              .transform(const LineSplitter())
-              .first;
+      final responseLine = await socket
+          .cast<List<int>>()
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())
+          .first;
       final response = jsonDecode(responseLine) as Map<String, dynamic>;
       expect(response.containsKey('error'), isTrue);
 
@@ -109,12 +108,11 @@ void main() {
       expect(port, isNotNull);
 
       final socket = await Socket.connect(InternetAddress.loopbackIPv4, port!);
-      final socketLines =
-          socket
-              .cast<List<int>>()
-              .transform(utf8.decoder)
-              .transform(const LineSplitter())
-              .asBroadcastStream();
+      final socketLines = socket
+          .cast<List<int>>()
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())
+          .asBroadcastStream();
 
       socket.writeln(
         jsonEncode({
@@ -178,12 +176,11 @@ void main() {
       socket.writeln(
         jsonEncode({'instruction': 'READ_OUTPUT_FILE', 'path': 'non_existent'}),
       );
-      final responseLine =
-          await socket
-              .cast<List<int>>()
-              .transform(utf8.decoder)
-              .transform(const LineSplitter())
-              .first;
+      final responseLine = await socket
+          .cast<List<int>>()
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())
+          .first;
 
       final response = jsonDecode(responseLine) as Map<String, dynamic>;
       expect(response.containsKey('error'), isTrue);
@@ -245,12 +242,11 @@ void main() {
         final port = json['port'] as int;
 
         testSocket = await Socket.connect(InternetAddress.loopbackIPv4, port);
-        testSocketLines =
-            testSocket
-                .cast<List<int>>()
-                .transform(utf8.decoder)
-                .transform(const LineSplitter())
-                .asBroadcastStream();
+        testSocketLines = testSocket
+            .cast<List<int>>()
+            .transform(utf8.decoder)
+            .transform(const LineSplitter())
+            .asBroadcastStream();
 
         // Perform an initial compile to ensure the Frontend Server is warmed up
         // and initialized for subsequent expression compilation and metadata

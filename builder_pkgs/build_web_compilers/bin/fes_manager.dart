@@ -171,8 +171,9 @@ class FesManager {
             );
 
             final bytes = result?.expressionData;
-            final expressionDataString =
-                bytes != null ? base64.encode(bytes) : null;
+            final expressionDataString = bytes != null
+                ? base64.encode(bytes)
+                : null;
 
             socket.writeln(
               jsonEncode({
@@ -241,16 +242,14 @@ class FesManager {
     _cachedEntrypoint = entrypoint;
     final recompileRestart = request['recompileRestart'] as bool? ?? false;
     // Rename the build system's '.ddc.js' extensions to FES's '.dart.lib.js'.
-    final filesToWrite =
-        (request['filesToWrite'] as List)
-            .cast<String>()
-            .map((f) => f.replaceAll(jsModuleExtension, fesJsExtension))
-            .toList();
-    final invalidatedFiles =
-        (request['invalidatedFiles'] as List)
-            .cast<String>()
-            .map(Uri.parse)
-            .toList();
+    final filesToWrite = (request['filesToWrite'] as List)
+        .cast<String>()
+        .map((f) => f.replaceAll(jsModuleExtension, fesJsExtension))
+        .toList();
+    final invalidatedFiles = (request['invalidatedFiles'] as List)
+        .cast<String>()
+        .map(Uri.parse)
+        .toList();
     // Copy invalidated files to FES's scratch space.
     _copyFilesToScratchSpace(invalidatedFiles);
 
@@ -316,13 +315,12 @@ class FesManager {
       _lastCompiledInvalidations.addAll(invalidatedPaths);
       // Sync the modified files to the Frontend Server's scratch space.
       _copyFilesToScratchSpace(invalidatedPaths.map(Uri.parse));
-      final compileResult =
-          isColdStart
-              ? await fes.compile(_cachedEntrypoint!)
-              : await fes.recompile(
-                _cachedEntrypoint!,
-                invalidatedPaths.map(Uri.parse).toList(),
-              );
+      final compileResult = isColdStart
+          ? await fes.compile(_cachedEntrypoint!)
+          : await fes.recompile(
+              _cachedEntrypoint!,
+              invalidatedPaths.map(Uri.parse).toList(),
+            );
       final isSuccess = compileResult != null && compileResult.errorCount == 0;
       if (isSuccess) {
         await fes.accept();

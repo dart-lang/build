@@ -82,13 +82,12 @@ Future<void> _bootstrapDart2Js(
     final allSrcs = allDeps.expand((module) => module.sources);
     await scratchSpace.ensureAssets(allSrcs, buildStep);
 
-    final dartUri =
-        dartEntrypointId.path.startsWith('lib/')
-            ? Uri.parse(
-              'package:${dartEntrypointId.package}/'
-              '${dartEntrypointId.path.substring('lib/'.length)}',
-            )
-            : Uri.parse('$multiRootScheme:///${dartEntrypointId.path}');
+    final dartUri = dartEntrypointId.path.startsWith('lib/')
+        ? Uri.parse(
+            'package:${dartEntrypointId.package}/'
+            '${dartEntrypointId.path.substring('lib/'.length)}',
+          )
+        : Uri.parse('$multiRootScheme:///${dartEntrypointId.path}');
     final jsOutputPath =
         p.withoutExtension(
           dartUri.scheme == 'package'
@@ -99,19 +98,19 @@ Future<void> _bootstrapDart2Js(
     final librariesSpec =
         librariesPath ?? p.joinAll([sdkDir, 'lib', 'libraries.json']);
     _validateUserArgs(dart2JsArgs);
-    args =
-        dart2JsArgs.toList()..addAll([
-          '--libraries-spec=$librariesSpec',
-          '--packages=$multiRootScheme:///.dart_tool/package_config.json',
-          '--multi-root-scheme=$multiRootScheme',
-          '--multi-root=${scratchSpace.tempDir.uri.toFilePath()}',
-          for (final experiment in enabledExperiments)
-            '--enable-experiment=$experiment',
-          if (nativeNullAssertions != null)
-            '--${nativeNullAssertions ? '' : 'no-'}native-null-assertions',
-          '-o$jsOutputPath',
-          '$dartUri',
-        ]);
+    args = dart2JsArgs.toList()
+      ..addAll([
+        '--libraries-spec=$librariesSpec',
+        '--packages=$multiRootScheme:///.dart_tool/package_config.json',
+        '--multi-root-scheme=$multiRootScheme',
+        '--multi-root=${scratchSpace.tempDir.uri.toFilePath()}',
+        for (final experiment in enabledExperiments)
+          '--enable-experiment=$experiment',
+        if (nativeNullAssertions != null)
+          '--${nativeNullAssertions ? '' : 'no-'}native-null-assertions',
+        '-o$jsOutputPath',
+        '$dartUri',
+      ]);
   }
 
   log.info('Running `dart compile js` with ${args.join(' ')}\n');

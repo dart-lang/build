@@ -44,9 +44,9 @@ class FrontendServerState {
       p.join(rootDir, '.web.entrypoint.json'),
     );
     if (await buildStep.canRead(webEntrypointAsset)) {
-      final contents =
-          json.decode(await buildStep.readAsString(webEntrypointAsset))
-              as Map<String, Object?>;
+      final contents = json.decode(
+        await buildStep.readAsString(webEntrypointAsset),
+      ) as Map<String, Object?>;
       entrypointAssetId = AssetId.parse(contents['entrypoint'] as String);
       return true;
     }

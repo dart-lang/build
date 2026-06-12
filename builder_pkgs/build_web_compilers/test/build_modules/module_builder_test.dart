@@ -48,16 +48,26 @@ void main() {
         'a|lib/${metaModuleCleanExtension(platform)}': jsonEncode(
           metaModule.toJson(),
         ),
-        'a|lib/a$moduleLibraryExtension':
-            ModuleLibrary.fromSource(assetA, '').serialize(),
-        'a|lib/b$moduleLibraryExtension':
-            ModuleLibrary.fromSource(assetB, '').serialize(),
-        'a|lib/c$moduleLibraryExtension':
-            ModuleLibrary.fromSource(assetC, '').serialize(),
-        'a|lib/d$moduleLibraryExtension':
-            ModuleLibrary.fromSource(assetD, '').serialize(),
-        'a|lib/e$moduleLibraryExtension':
-            ModuleLibrary.fromSource(assetE, '').serialize(),
+        'a|lib/a$moduleLibraryExtension': ModuleLibrary.fromSource(
+          assetA,
+          '',
+        ).serialize(),
+        'a|lib/b$moduleLibraryExtension': ModuleLibrary.fromSource(
+          assetB,
+          '',
+        ).serialize(),
+        'a|lib/c$moduleLibraryExtension': ModuleLibrary.fromSource(
+          assetC,
+          '',
+        ).serialize(),
+        'a|lib/d$moduleLibraryExtension': ModuleLibrary.fromSource(
+          assetD,
+          '',
+        ).serialize(),
+        'a|lib/e$moduleLibraryExtension': ModuleLibrary.fromSource(
+          assetE,
+          '',
+        ).serialize(),
       },
       outputs: {
         'a|lib/a${moduleExtension(platform)}': encodedMatchesModule(moduleA),
@@ -109,16 +119,26 @@ void main() {
         'a|lib/${metaModuleExtension(platform)}': jsonEncode(
           metaModule.toJson(),
         ),
-        'a|lib/a$moduleLibraryExtension':
-            ModuleLibrary.fromSource(assetA, '').serialize(),
-        'a|lib/b$moduleLibraryExtension':
-            ModuleLibrary.fromSource(assetB, '').serialize(),
-        'a|lib/c$moduleLibraryExtension':
-            ModuleLibrary.fromSource(assetC, '').serialize(),
-        'a|lib/d$moduleLibraryExtension':
-            ModuleLibrary.fromSource(assetD, '').serialize(),
-        'a|lib/e$moduleLibraryExtension':
-            ModuleLibrary.fromSource(assetE, '').serialize(),
+        'a|lib/a$moduleLibraryExtension': ModuleLibrary.fromSource(
+          assetA,
+          '',
+        ).serialize(),
+        'a|lib/b$moduleLibraryExtension': ModuleLibrary.fromSource(
+          assetB,
+          '',
+        ).serialize(),
+        'a|lib/c$moduleLibraryExtension': ModuleLibrary.fromSource(
+          assetC,
+          '',
+        ).serialize(),
+        'a|lib/d$moduleLibraryExtension': ModuleLibrary.fromSource(
+          assetD,
+          '',
+        ).serialize(),
+        'a|lib/e$moduleLibraryExtension': ModuleLibrary.fromSource(
+          assetE,
+          '',
+        ).serialize(),
       },
       outputs: {
         'a|lib/a${moduleExtension(platform)}': encodedMatchesModule(moduleA),
