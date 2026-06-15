@@ -41,34 +41,43 @@ void main() {
     );
 
     test('finds transitive deps', () async {
+      // package:build_test's testBuilder swallows exceptions thrown inside the
+      // async build callback because of the build runner's zone boundary.
+      // We capture and store any exception here, then rethrow it at the end
+      // of the test body to ensure test failures are correctly propagated.
+      Object? failure;
       await testBuilder(
         TestBuilder(
           buildExtensions: {
             'lib/a${moduleExtension(platform)}': ['.transitive'],
           },
           build: expectAsync2((buildStep, _) async {
-            final transitiveDeps =
-                (await rootModule.computeTransitiveDependencies(
-                  buildStep,
-                )).map((m) => m.primarySource).toList();
-            expect(
-              transitiveDeps,
-              unorderedEquals([
-                directDepModule.primarySource,
-                transitiveDepModule.primarySource,
-                deepTransitiveDepModule.primarySource,
-              ]),
-            );
-            expect(
-              transitiveDeps.indexOf(transitiveDepModule.primarySource),
-              lessThan(transitiveDeps.indexOf(directDepModule.primarySource)),
-            );
-            expect(
-              transitiveDeps.indexOf(deepTransitiveDepModule.primarySource),
-              lessThan(
+            try {
+              final transitiveDeps =
+                  (await rootModule.computeTransitiveDependencies(
+                    buildStep,
+                  )).map((m) => m.primarySource).toList();
+              expect(
+                transitiveDeps,
+                unorderedEquals([
+                  directDepModule.primarySource,
+                  transitiveDepModule.primarySource,
+                  deepTransitiveDepModule.primarySource,
+                ]),
+              );
+              expect(
                 transitiveDeps.indexOf(transitiveDepModule.primarySource),
-              ),
-            );
+                lessThan(transitiveDeps.indexOf(directDepModule.primarySource)),
+              );
+              expect(
+                transitiveDeps.indexOf(deepTransitiveDepModule.primarySource),
+                lessThan(
+                  transitiveDeps.indexOf(transitiveDepModule.primarySource),
+                ),
+              );
+            } catch (e) {
+              failure = e;
+            }
           }),
         ),
         {
@@ -86,22 +95,32 @@ void main() {
           ),
         },
       );
+      if (failure != null) {
+        // ignore: only_throw_errors
+        throw failure!;
+      }
     });
 
     test('missing modules report nice errors', () async {
+      // package:build_test's testBuilder swallows exceptions thrown inside the
+      // async build callback because of the build runner's zone boundary.
+      // We capture and store any exception here, then rethrow it at the end
+      // of the test body to ensure test failures are correctly propagated.
+      Object? failure;
       await testBuilder(
         TestBuilder(
           buildExtensions: {
             'lib/a${moduleExtension(platform)}': ['.transitive'],
           },
           build: expectAsync2((buildStep, _) async {
-            await expectLater(
-              () => rootModule.computeTransitiveDependencies(buildStep),
-              throwsA(
-                isA<MissingModulesException>().having(
-                  (e) => e.message,
-                  'message',
-                  contains('''
+            try {
+              await expectLater(
+                () => rootModule.computeTransitiveDependencies(buildStep),
+                throwsA(
+                  isA<MissingModulesException>().having(
+                    (e) => e.message,
+                    'message',
+                    contains('''
 Unable to find modules for some sources, this is usually the result of either a
 bad import, a missing dependency in a package (or possibly a dev_dependency
 needs to move to a real dependency), or a build failure (if importing a
@@ -111,9 +130,12 @@ Please check the following imports:
 
 `import 'src/dep.dart';` from b|lib/b.dart at 1:1
 '''),
+                  ),
                 ),
-              ),
-            );
+              );
+            } catch (e) {
+              failure = e;
+            }
           }),
         ),
         {
@@ -130,6 +152,10 @@ Please check the following imports:
           'b|lib/b.dart': 'import \'src/dep.dart\';',
         },
       );
+      if (failure != null) {
+        // ignore: only_throw_errors
+        throw failure!;
+      }
     });
 
     test('missing conditional imports yield helpful errors', () async {
@@ -317,6 +343,112 @@ Please check the following imports:
             ),
           },
         );
+      });
+    });
+
+    group('circular dependencies', () {
+      test('do not crash on when involving the root module', () async {
+        // A <-> B
+        final moduleA = Module(rootId, [rootId], [directDepId], platform, true);
+        final moduleB = Module(
+          directDepId,
+          [directDepId],
+          [rootId],
+          platform,
+          true,
+        );
+
+        // The test builder swallows exceptions thrown inside its async zone
+        // boundary, so we capture exceptions here, to ensure they're propagated
+        // to the test framework.
+        Object? failure;
+        await testBuilder(
+          TestBuilder(
+            buildExtensions: {
+              'lib/a${moduleExtension(platform)}': ['.transitive'],
+            },
+            build: expectAsync2((buildStep, _) async {
+              try {
+                final transitiveDeps =
+                    (await moduleA.computeTransitiveDependencies(
+                      buildStep,
+                    )).map((m) => m.primarySource).toList();
+                expect(transitiveDeps, contains(moduleB.primarySource));
+              } catch (e) {
+                failure = e;
+              }
+            }),
+          ),
+          {
+            'a|lib/a${moduleExtension(platform)}': jsonEncode(moduleA.toJson()),
+            'a|lib/src/dep${moduleExtension(platform)}': jsonEncode(
+              moduleB.toJson(),
+            ),
+          },
+        );
+        if (failure != null) {
+          // ignore: only_throw_errors
+          throw failure!;
+        }
+      });
+
+      test('do not crash when in transitive dependencies', () async {
+        // A -> B, B <-> C
+        final moduleA = Module(rootId, [rootId], [directDepId], platform, true);
+        final moduleB = Module(
+          directDepId,
+          [directDepId],
+          [transitiveDepId],
+          platform,
+          true,
+        );
+        final moduleC = Module(
+          transitiveDepId,
+          [transitiveDepId],
+          [directDepId],
+          platform,
+          true,
+        );
+
+        // The test builder swallows exceptions thrown inside its async zone
+        // boundary, so we capture exceptions here, to ensure they're propagated
+        // to the test framework.
+        Object? failure;
+        await testBuilder(
+          TestBuilder(
+            buildExtensions: {
+              'lib/a${moduleExtension(platform)}': ['.transitive'],
+            },
+            build: expectAsync2((buildStep, _) async {
+              try {
+                final transitiveDeps =
+                    (await moduleA.computeTransitiveDependencies(
+                      buildStep,
+                    )).map((m) => m.primarySource).toList();
+                expect(
+                  transitiveDeps,
+                  unorderedEquals([
+                    moduleB.primarySource,
+                    moduleC.primarySource,
+                  ]),
+                );
+              } catch (e) {
+                failure = e;
+              }
+            }),
+          ),
+          {
+            'a|lib/a${moduleExtension(platform)}': jsonEncode(moduleA.toJson()),
+            'a|lib/src/dep${moduleExtension(platform)}': jsonEncode(
+              moduleB.toJson(),
+            ),
+            'b|lib/b${moduleExtension(platform)}': jsonEncode(moduleC.toJson()),
+          },
+        );
+        if (failure != null) {
+          // ignore: only_throw_errors
+          throw failure!;
+        }
       });
     });
   });
