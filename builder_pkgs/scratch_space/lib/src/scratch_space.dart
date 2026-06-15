@@ -127,9 +127,7 @@ class ScratchSpace {
             await _pendingWrites[id];
             return;
           }
-          if (existing != null) {
-            _changedFilesInBuild.add(id);
-          }
+          _changedFilesInBuild.add(id);
           _digests[id] = digest;
 
           try {
