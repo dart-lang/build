@@ -284,8 +284,12 @@ class PersistentFrontendServer {
   static Future<PersistentFrontendServer> start({
     required String sdkRoot,
     required Uri fileSystemRoot,
+    List<Uri>? fileSystemRoots,
     required Uri packagesFile,
     Map<String, String> environment = const {},
+    String? librariesPath,
+    String? platformSdk,
+    String? sdkKernelPath,
   }) async {
     final rootPackage = getRootPackageName();
     final socketConnection = await _tryConnectToFESManager(fileSystemRoot);
@@ -330,6 +334,12 @@ class PersistentFrontendServer {
       '--experimental-emit-debug-metadata',
       '--filesystem-scheme=$multiRootScheme',
       '--filesystem-root=${fileSystemRoot.toFilePath()}',
+      if (fileSystemRoots != null)
+        for (final root in fileSystemRoots)
+          '--filesystem-root=${root.toFilePath()}',
+      if (librariesPath != null) '--libraries-spec=$librariesPath',
+      if (platformSdk != null) '--platform-sdk=$platformSdk',
+      if (sdkKernelPath != null) '--sdk-kernel-path=$sdkKernelPath',
       '--platform=$platformDill',
       '--output-dill=${outputDillUri.toFilePath()}',
       '--output-incremental-dill=${outputDillUri.toFilePath()}',
