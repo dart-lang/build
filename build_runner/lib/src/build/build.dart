@@ -22,16 +22,14 @@ import '../build_plan/build_spec.dart';
 import '../build_plan/build_step_plan.dart';
 import '../build_plan/phase.dart';
 import '../build_plan/testing_overrides.dart';
-import '../constants.dart';
+
 import '../io/build_output_reader.dart';
-import '../io/create_merged_dir.dart';
-import '../io/reader_writer.dart';
+
 import '../logging/build_log.dart';
 import '../logging/build_log_logger.dart';
 import '../logging/timed_activities.dart';
 import 'build_dirs.dart';
 import 'build_result.dart';
-import 'build_state/asset_graph_json.dart';
 import 'build_state/build_state.dart';
 import 'build_state/build_step_id.dart';
 import 'build_state/build_step_result.dart';
@@ -60,7 +58,6 @@ class Build {
 
   // Collaborators.
   final ResourceManager resourceManager;
-  final ReaderWriter readerWriter;
   final LibraryCycleGraphLoader previousLibraryCycleGraphLoader =
       LibraryCycleGraphLoader();
   final AssetDepsLoader? previousDepsLoader;
@@ -89,14 +86,13 @@ class Build {
     buildConfigs: buildConfigs,
     buildStepPlan: buildStepPlan,
     buildState: buildState,
-    readerWriter: readerWriter,
+    readerWriter: buildPlan.readerWriter,
     assetBuilder: _buildOutput,
     globEvaluator: _evaluateGlob,
   );
 
   Build({required this.buildPlan, required this.resourceManager})
-    : readerWriter = buildPlan.readerWriter,
-      previousDepsLoader = buildPlan.previousBuild.phasedAssetDeps == null
+    : previousDepsLoader = buildPlan.previousBuild.phasedAssetDeps == null
           ? null
           : AssetDepsLoader.fromDeps(buildPlan.previousBuild.phasedAssetDeps!),
       resolvers =
@@ -107,8 +103,8 @@ class Build {
         _ => null,
       },
       buildState = BuildState(buildPlan.buildInputs.sources) {
-    for (final entry in buildPlan.buildInputs.digests.entries) {
-      buildState.updateSourceDigest(entry.key, entry.value);
+    for (final entry in buildPlan.buildInputs.sourceContents.entries) {
+      buildState.updateSourceContent(entry.key, entry.value);
     }
   }
 
@@ -176,35 +172,9 @@ class Build {
         result = result.copyWith(status: BuildStatus.failure);
       }
     }
-    readerWriter.cache.flush();
     await resourceManager.disposeAll();
 
-    // If requested, create output directories. If that fails, fail the build.
-    if (buildPlan.buildDirs.any(
-          (target) => target.outputLocation?.path.isNotEmpty ?? false,
-        ) &&
-        result.status == BuildStatus.success) {
-      if (!await createMergedOutputDirectories(
-        buildPackages: buildPackages,
-        outputSymlinksOnly: buildOptions.outputSymlinksOnly,
-        buildDirs: buildPlan.buildDirs,
-        buildOutputReader: buildOutputReader,
-        readerWriter: readerWriter,
-      )) {
-        result = result.copyWith(
-          status: BuildStatus.failure,
-          failureType: FailureType.cantCreate,
-        );
-      }
-    }
-
     resolvers.reset();
-    result = result.copyWith(
-      errors: buildLog.finishBuild(
-        result: result.status == BuildStatus.success,
-        outputs: result.outputs.length,
-      ),
-    );
     return result;
   }
 
@@ -229,15 +199,6 @@ class Build {
             : buildPlan.previousBuild.phasedAssetDeps!.update(
                 currentPhasedAssetDeps,
               );
-        await readerWriter.writeAsBytes(
-          AssetId(buildPackages.outputRoot, assetGraphJsonPath),
-          AssetGraphJson.serialize(
-            buildPlanDigest: buildSpec.buildPlanDigest,
-            buildState: buildState,
-            phasedAssetDeps: updatedPhasedAssetDeps,
-          ),
-        );
-
         if (!done.isCompleted) {
           done.complete(
             result.copyWith(phasedAssetDeps: updatedPhasedAssetDeps),
@@ -253,6 +214,7 @@ class Build {
             BuildResult(
               status: BuildStatus.failure,
               outputs: BuiltList(),
+              buildState: buildState,
               buildOutputReader: buildOutputReader,
             ),
           );
@@ -341,6 +303,7 @@ class Build {
     return BuildResult(
       status: BuildStatus.success,
       outputs: outputs.build(),
+      buildState: buildState,
       buildOutputReader: buildOutputReader,
     );
   }
@@ -428,7 +391,7 @@ class Build {
     final builderOutputs = expectedOutputs(builder, buildStepId.primaryInput);
 
     final inputTracker = InputTracker(
-      readerWriter.filesystem,
+      buildPlan.readerWriter.filesystem,
       primaryInput: buildStepId.primaryInput,
       builderLabel: phase.displayName,
     );
@@ -455,7 +418,6 @@ class Build {
     if (stepAction.isSkip) {
       buildLog.skipStep(phase: phase, lazy: lazy);
       if (stepAction == StepAction.skipMissingPrimaryInput) {
-        await _deletePreviousOutputs(builderOutputs);
         _markStepSkipped(buildStepId, builderOutputs);
       } else if (stepAction == StepAction.skipFailedPrimaryInput) {
         await _markStepFailed(buildStepId, builderOutputs);
@@ -467,8 +429,6 @@ class Build {
       }
       return <AssetId>[];
     }
-
-    await _deletePreviousOutputs(builderOutputs);
 
     // Clear input tracking accumulated during `_buildShouldRun`.
     step.inputTracker.clear();
@@ -543,7 +503,10 @@ class Build {
       return false;
     }
     inputTracker.add(primaryInput);
-    final primaryInputSource = await readerWriter.readAsString(primaryInput);
+
+    final primaryInputSource = (await _builderFilesystem.contentOf(
+      primaryInput,
+    )).stringValue();
     final compilationUnit = _parseCompilationUnit(primaryInputSource);
     List<CompilationUnit>? compilationUnits;
     for (final trigger in buildTriggers) {
@@ -579,10 +542,16 @@ class Build {
         Uri.parse(directive.uri.stringValue!),
         from: id,
       );
-      if (!await readerWriter.canRead(partId)) continue;
+      if (!_builderFilesystem.isFile(partId)) continue;
       inputTracker.add(partId);
       result.add(
-        _parseCompilationUnit(await readerWriter.readAsString(partId)),
+        _parseCompilationUnit(
+          (await _builderFilesystem.contentOf(
+            partId,
+            // Part files might not be primary inputs.
+            allowReads: true,
+          )).stringValue(),
+        ),
       );
     }
     return result;
@@ -636,11 +605,6 @@ class Build {
   }) async {
     final input = postProcessBuildStepId.input;
 
-    final existingOutputs =
-        previousBuildState
-            ?.postProcessBuildStepResultFor(postProcessBuildStepId)
-            ?.outputs ??
-        const <AssetId>{};
     if (!await _postProcessBuildStepShouldRun(postProcessBuildStepId)) {
       final oldResult = previousBuildState?.postProcessBuildStepResultFor(
         postProcessBuildStepId,
@@ -654,8 +618,6 @@ class Build {
       return <AssetId>[];
     }
     // Clean out the impacts of the previous run.
-    await _deletePreviousOutputs(existingOutputs);
-    buildState.removePostProcessBuildResult(postProcessBuildStepId);
 
     final logger = buildLog.loggerForOther(
       buildLog.renderId(input),
@@ -665,7 +627,6 @@ class Build {
     final step = PostProcessBuildStepImpl(
       inputId: input,
       buildFilesystem: _builderFilesystem,
-      readerWriter: readerWriter,
       addAsset: (assetId) {
         if (_isFile(assetId)) {
           throw InvalidOutputException(assetId, 'Asset already exists');
@@ -693,12 +654,9 @@ class Build {
       }
     }, logger);
 
-    for (final entry in step.outputs.entries) {
-      await readerWriter.writeAsBytes(entry.key, entry.value.bytes);
-    }
     final stepResult = PostProcessBuildStepResult(
       hidden: hideOutput,
-      outputs: step.outputs.keys,
+      outputs: step.outputs,
       errors: logger.errors,
       deletedPrimaryInput: deletedPrimaryInput,
     );
@@ -732,7 +690,6 @@ class Build {
         b.isHidden = isHidden;
       }),
     );
-    await _deletePreviousOutputs(outputs);
   }
 
   /// Checks and returns whether any [outputs] need to be updated by
@@ -1012,21 +969,6 @@ class Build {
     return false;
   }
 
-  /// Deletes any of [outputs] which previously were output.
-  Future<void> _deletePreviousOutputs(Iterable<AssetId> outputs) async {
-    final previousBuildState = this.previousBuildState;
-    if (previousBuildState == null) return;
-    for (final output in outputs) {
-      if (previousBuildState.isActualOutput(
-            buildStepPlan: buildStepPlan,
-            id: output,
-          ) ||
-          previousBuildState.isActualPostOutput(output)) {
-        await readerWriter.delete(output);
-      }
-    }
-  }
-
   /// Evaluates the glob for [globId].
   ///
   /// This means finding matches of the glob and building them if necessary.
@@ -1135,8 +1077,7 @@ class Build {
     for (final output in outputs) {
       if (step.outputs.containsKey(output)) {
         final content = step.outputs[output]!;
-        await readerWriter.writeAsBytes(output, content.bytes);
-        buildStepResultBuilder.outputs[output] = content.digest;
+        buildStepResultBuilder.outputs[output] = content;
       }
     }
     final buildStepResult = buildStepResultBuilder.build();
@@ -1150,11 +1091,11 @@ class Build {
 
   bool _isChangedOutput(AssetId output) {
     final generatingStep = buildStepPlan.stepForDeclaredOutput(output);
-    final oldDigest = previousBuildState
+    final oldContent = previousBuildState
         ?.stepResultOrNull(generatingStep)
         ?.outputs[output];
-    final newDigest = buildState.stepResult(generatingStep).outputs[output];
-    return oldDigest != newDigest;
+    final newContent = buildState.stepResult(generatingStep).outputs[output];
+    return oldContent?.digest != newContent?.digest;
   }
 }
 

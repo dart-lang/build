@@ -117,12 +117,9 @@ class BuildStepImpl implements BuildStep {
     );
     if (!isReadable) return false;
 
-    if (buildFilesystem.buildStepPlan.isDeclaredOutput(id) &&
-        !await buildFilesystem.readerWriter.canRead(id)) {
-      return false;
-    }
-
-    await buildFilesystem.ensureDigest(id);
+    // Read the file so it's in memory; if that fails the file was deleted
+    // during the build and the build is aborted.
+    await buildFilesystem.contentOf(id, allowReads: true);
     return true;
   }
 
@@ -142,8 +139,8 @@ class BuildStepImpl implements BuildStep {
     if (outputs.containsKey(id)) {
       return outputs[id]!.bytes;
     }
-    await buildFilesystem.ensureDigest(id);
-    return buildFilesystem.readerWriter.readAsBytes(id);
+    final content = await buildFilesystem.contentOf(id, allowReads: true);
+    return content.bytes;
   }
 
   @override
@@ -160,8 +157,8 @@ class BuildStepImpl implements BuildStep {
     if (outputs.containsKey(id)) {
       return outputs[id]!.stringValue(encoding: encoding);
     }
-    await buildFilesystem.ensureDigest(id);
-    return buildFilesystem.readerWriter.readAsString(id, encoding: encoding);
+    final content = await buildFilesystem.contentOf(id, allowReads: true);
+    return content.stringValue(encoding: encoding);
   }
 
   @override
@@ -204,7 +201,7 @@ class BuildStepImpl implements BuildStep {
     if (outputs.containsKey(id)) {
       return outputs[id]!.digest;
     }
-    return buildFilesystem.ensureDigest(id);
+    return (await buildFilesystem.contentOf(id, allowReads: true)).digest;
   }
 
   @override

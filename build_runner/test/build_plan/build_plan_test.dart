@@ -4,6 +4,7 @@
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart' hide BuilderDefinition;
+import 'package:build_runner/src/build/asset_content.dart';
 import 'package:build_runner/src/build/build_state/asset_graph_json.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/build_state/build_step_result.dart';
@@ -13,10 +14,10 @@ import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_plan.dart';
 import 'package:build_runner/src/build_plan/build_spec.dart';
-import 'package:build_runner/src/build_plan/build_step_plan.dart';
+
 import 'package:build_runner/src/build_plan/builder_definition.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
-import 'package:build_runner/src/build_plan/previous_build.dart';
+
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
 import 'package:build_runner/src/constants.dart';
 import 'package:build_runner/src/exceptions.dart';
@@ -98,12 +99,12 @@ void main() {
         stepId,
         BuildStepResult((b) {
           b.isHidden = false;
-          b.outputs[outputId] = Digest([]);
+          b.outputs[outputId] = AssetContent.digest(Digest([]));
         }),
       );
       // Give digests to inputs so they are monitored for modifications.
-      buildState.updateSourceDigest(assetId, Digest([]));
-      buildState.updateSourceDigest(assetId2, Digest([]));
+      buildState.updateSourceContent(assetId, AssetContent.digest(Digest([])));
+      buildState.updateSourceContent(assetId2, AssetContent.digest(Digest([])));
 
       await writeBuildStateAndPlan(buildState, buildPlan);
 
@@ -184,59 +185,6 @@ void main() {
       );
       // Matches the only `*.other` source.
       expect(buildPlan2.buildInputs.sources.toSet(), <AssetId>{assetId2});
-    });
-
-    test('deleteFilesAndFolders deletes incompatible outputs and clean build '
-        'files', () async {
-      final spec = await BuildSpec.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides.copyWith(
-          builderDefinitions: [
-            BuilderDefinition('', hideOutput: false),
-          ].build(),
-        ),
-      );
-      final previousBuild = await PreviousBuild.load(spec);
-      final buildState = previousBuild.buildState ?? BuildState();
-
-      await readerWriter.writeAsString(outputId, '// output');
-      final buildStepPlan = BuildStepPlan.compute(
-        buildPhases: spec.buildPhases,
-        placeholderIds: buildPackages.placeholderIds,
-        sources: {assetId, assetId2},
-      );
-      final step = buildStepPlan.stepForDeclaredOutput(outputId);
-      buildState.updateBuildStepResult(
-        step,
-        BuildStepResult((b) {
-          b.isHidden = false;
-          b.outputs[outputId] = Digest([]);
-        }),
-      );
-      await writeBuildStateAndPlan(buildState, buildPlan);
-
-      buildPlan = await BuildPlan.load(
-        await BuildSpec.load(
-          builderFactories: builderFactories,
-          buildOptions: buildOptions,
-          testingOverrides: testingOverrides.copyWith(
-            builderDefinitions: [
-              BuilderDefinition(''),
-              BuilderDefinition('b2'),
-            ].build(),
-          ),
-        ),
-      );
-
-      expect(await readerWriter.canRead(assetGraphJsonId), true);
-      expect(await readerWriter.canRead(outputId), true);
-
-      await buildPlan.deleteFilesAndFolders();
-      buildPlan.readerWriter.cache.flush();
-
-      expect(await readerWriter.canRead(assetGraphJsonId), false);
-      expect(await readerWriter.canRead(outputId), false);
     });
 
     test('throws CannotBuildException if there are conflicting outputs '

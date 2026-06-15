@@ -14,10 +14,12 @@ import '../build_plan/build_plan.dart';
 import '../commands/watch/asset_change.dart';
 import '../constants.dart';
 import '../io/asset_tracker.dart';
-
+import '../io/create_merged_dir.dart';
 import '../logging/build_log.dart';
+import 'asset_content.dart';
 import 'build.dart';
 import 'build_result.dart';
+import 'build_state/asset_graph_json.dart';
 import 'build_state/build_state.dart';
 
 /// A series of builds with the same configuration.
@@ -119,7 +121,7 @@ class BuildSeries {
       if (!_buildPlan.buildSpec.buildOptions.anyMergedOutputDirectory &&
           !(_buildPlan.previousBuild.buildState?.isMissingSource(id) ??
               false) &&
-          _buildPlan.previousBuild.buildState?.digestOf(
+          _buildPlan.previousBuild.buildState?.contentOf(
                 id: id,
                 buildStepPlan: _buildPlan.buildStepPlan,
               ) ==
@@ -209,7 +211,6 @@ class BuildSeries {
 
     if (updates.any(_isBuildConfiguration)) {
       _buildPlan = await _buildPlan.reload();
-      await _buildPlan.deleteFilesAndFolders();
       // A config change might have caused new builders to be needed, which
       // needs a restart to change the build script.
       if (_buildPlan.buildSpec.restartIsNeeded) {
@@ -243,13 +244,125 @@ class BuildSeries {
     );
     if (firstBuild) firstBuild = false;
 
-    _currentBuildResult = build.run();
+    _currentBuildResult = _runBuildAndWrite(build);
     final result = await _currentBuildResult!;
+    _buildResultsController.add(result);
+    return result;
+  }
+
+  Future<BuildResult> _runBuildAndWrite(Build build) async {
+    var result = await build.run();
+
+    await _writeBuildOutput(result);
+    result = await _createMergedOutputDirectories(result);
+
     _buildPlan = build.buildPlan.withCompatiblePreviousBuild(
       previousPhasedAssetDeps: result.phasedAssetDeps,
       previousBuildState: build.buildState,
     );
-    _buildResultsController.add(result);
+    return result.copyWith(
+      errors: buildLog.finishBuild(
+        result: result.status == BuildStatus.success,
+        outputs: result.outputs.length,
+      ),
+    );
+  }
+
+  /// Deletes old build output, writes new build output.
+  ///
+  /// Serializes and writes the updated `asset_graph.json`.
+  Future<void> _writeBuildOutput(BuildResult result) async {
+    final deletes = <AssetId>{};
+    deletes.addAll(_buildPlan.conflictingOutputs);
+    deletes.addAll(_buildPlan.previousBuild.incompatibleBuildOutputsToDelete);
+
+    final previousState = _buildPlan.previousBuild.buildState;
+    if (previousState != null) {
+      final currentState = result.buildState!;
+
+      for (final id in previousState.actualOutputs) {
+        final stepId = _buildPlan.buildStepPlan.stepForDeclaredOutputOrNull(id);
+        if (stepId == null) {
+          deletes.add(id);
+        } else if (currentState.stepResultOrNull(stepId) != null) {
+          if (!currentState.isActualOutput(
+            buildStepPlan: _buildPlan.buildStepPlan,
+            id: id,
+          )) {
+            deletes.add(id);
+          }
+        }
+      }
+
+      for (final id in previousState.actualPostOutputs) {
+        if (!currentState.isActualPostOutput(id)) {
+          deletes.add(id);
+        }
+      }
+    }
+
+    if (_buildPlan.buildInputs.cleanBuild) {
+      final generatedOutputDirectoryId = AssetId(
+        _buildPlan.buildSpec.buildPackages.outputRoot,
+        generatedOutputDirectory,
+      );
+      await _buildPlan.readerWriter.deleteDirectory(generatedOutputDirectoryId);
+    }
+
+    for (final output in result.outputs) {
+      deletes.remove(output);
+      final content = result.buildState!.contentOf(
+        id: output,
+        buildStepPlan: _buildPlan.buildStepPlan,
+      );
+      if (content != null) {
+        await _buildPlan.readerWriter.writeAsBytes(output, content.bytes);
+      }
+    }
+    for (final id in deletes) {
+      await _buildPlan.readerWriter.delete(id);
+    }
+
+    final assetGraphId = AssetId(
+      _buildPlan.buildSpec.buildPackages.outputRoot,
+      assetGraphJsonPath,
+    );
+    final assetGraphContent = AssetContent.bytes(
+      AssetGraphJson.serialize(
+        buildPlanDigest: _buildPlan.buildSpec.buildPlanDigest,
+        buildState: result.buildState!,
+        phasedAssetDeps: result.phasedAssetDeps,
+      ),
+    );
+    await _buildPlan.readerWriter.writeAsBytes(
+      assetGraphId,
+      assetGraphContent.bytes,
+    );
+  }
+
+  /// Creates merged output directories if they are configured.
+  ///
+  /// Returns `result` with `status` modified to `failure` if any creation
+  /// failed.
+  Future<BuildResult> _createMergedOutputDirectories(BuildResult result) async {
+    if (_buildPlan.buildDirs.any(
+          (target) => target.outputLocation?.path.isNotEmpty ?? false,
+        ) &&
+        result.status == BuildStatus.success) {
+      if (!await createMergedOutputDirectories(
+        buildPackages: _buildPlan.buildSpec.buildPackages,
+        outputSymlinksOnly:
+            _buildPlan.buildSpec.buildOptions.outputSymlinksOnly,
+        buildDirs: _buildPlan.buildDirs,
+        buildOutputReader: result.buildOutputReader,
+        readerWriter: _buildPlan.readerWriter,
+      )) {
+        return result.copyWith(
+          status: BuildStatus.failure,
+          failureType: FailureType.cantCreate,
+        );
+      }
+    }
     return result;
   }
 

@@ -495,7 +495,6 @@ Future<TestBuilderResult> testBuilderFactories(
       testingOverrides: testingOverrides,
     ),
   );
-  await buildPlan.deleteFilesAndFolders();
 
   final buildSeries = BuildSeries(buildPlan);
 

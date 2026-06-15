@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build_runner/src/build/asset_content.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/build_state/build_step_id.dart';
 import 'package:build_runner/src/build_plan/build_configs.dart';
@@ -62,7 +63,7 @@ void main() {
       buildState = BuildState({aId});
       // Assign a digest so the source is recognized as having been used.
       final digest = await reader.digest(aId);
-      buildState.updateSourceDigest(aId, digest);
+      buildState.updateSourceContent(aId, AssetContent.digest(digest));
 
       final buildConfigs = await BuildConfigs.load(
         buildPackages: buildPackages,
@@ -88,8 +89,8 @@ void main() {
       final nextState = BuildState(newSources);
       for (final id in newSources) {
         if (buildState.isSource(id)) {
-          final digest = buildState.digestOfSource(id);
-          if (digest != null) nextState.updateSourceDigest(id, digest);
+          final digest = buildState.contentOfSource(id);
+          if (digest != null) nextState.updateSourceContent(id, digest);
         }
       }
       buildState = nextState;

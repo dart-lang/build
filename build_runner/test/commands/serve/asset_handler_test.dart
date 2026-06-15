@@ -5,6 +5,7 @@
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build_runner/src/build/asset_content.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/build_state/build_step_id.dart';
 import 'package:build_runner/src/build/build_state/build_step_result.dart';
@@ -50,7 +51,10 @@ void main() {
         PostProcessBuildStepResult(hidden: true, deletedPrimaryInput: true),
       );
     }
-    buildState.addSourceForTest(parsedId, digest: computeDigest(parsedId, 'a'));
+    buildState.addSourceForTest(
+      parsedId,
+      digest: AssetContent.digest(computeDigest(parsedId, 'a')),
+    );
     readerWriter.testing.writeString(parsedId, content);
   }
 

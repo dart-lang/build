@@ -10,6 +10,7 @@ import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
+import '../build/asset_content.dart';
 import '../build/build_state/build_state.dart';
 import '../build_plan/build_plan.dart';
 import '../build_plan/build_step_plan.dart';
@@ -143,11 +144,15 @@ class BuildOutputReader {
   ///
   /// Note that [id] must exist in the asset graph.
   FutureOr<Digest> _ensureDigest(AssetId id) {
-    final digest = _buildState!.digestOf(buildStepPlan: _buildStepPlan, id: id);
-    if (digest != null) return digest;
-    return _readerWriter!.digest(id).then((digest) {
-      _buildState.updateSourceDigest(id, digest);
-      return digest;
+    final content = _buildState!.contentOf(
+      buildStepPlan: _buildStepPlan,
+      id: id,
+    );
+    if (content != null) return content.digest;
+    return _readerWriter!.readAsBytes(id).then((bytes) {
+      final content = AssetContent.bytes(bytes);
+      _buildState.updateSourceContent(id, content);
+      return content.digest;
     });
   }
 

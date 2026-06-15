@@ -5,12 +5,13 @@
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/serializer.dart';
-import 'package:crypto/crypto.dart';
+
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 
 import '../../build_plan/build_packages.dart';
 import '../../build_plan/build_step_plan.dart';
+import '../asset_content.dart';
 
 import 'build_step_id.dart';
 import 'build_step_result.dart';
@@ -43,8 +44,8 @@ class BuildState {
   final Map<AssetId, Map<int, PostProcessBuildStepResult>>
   _postProcessResultsByInput;
 
-  /// All post process build step outputs.
-  final Set<AssetId> _postProcessOutputs;
+  /// All post process build step outputs by the step that created them.
+  final Map<AssetId, PostProcessBuildStepId> _postProcessOutputs;
 
   BuildState([Iterable<AssetId> sources = const []])
     : _sources = Sources()..addAll(sources),
@@ -131,10 +132,10 @@ class BuildState {
   /// Note that post process outputs happen after the main build, so during the
   /// main build this is either empty or is the post process outputs from the
   /// previous build.
-  Iterable<AssetId> get actualPostOutputs => _postProcessOutputs;
+  Iterable<AssetId> get actualPostOutputs => _postProcessOutputs.keys;
 
   /// Whether [id] is a post process build output that was actually generated.
-  bool isActualPostOutput(AssetId id) => _postProcessOutputs.contains(id);
+  bool isActualPostOutput(AssetId id) => _postProcessOutputs.containsKey(id);
 
   /// Whether the builder for [id] has been processed during this build.
   ///
@@ -149,31 +150,41 @@ class BuildState {
     return false;
   }
 
-  // -- Digests.
+  // -- AssetContent.
 
-  /// Updates a source file digest.
+  /// Updates a source file content.
   ///
-  /// Does nothing for generated files, their digest is set when the build step
+  /// Does nothing for generated files, their content is set when the build step
   /// result is written.
-  void updateSourceDigest(AssetId id, Digest? digest) {
-    _sources.updateDigestIfPresent(id, digest);
+  void updateSourceContent(AssetId id, AssetContent? content) {
+    _sources.updateContentIfPresent(id, content);
   }
 
-  /// If [id] is a source or a declared output, returns the latest digest.
+  /// The content of [id].
   ///
-  /// Otherwise, returns `null`. In particular, post process outputs don't have
-  /// their digests stored.
-  Digest? digestOf({BuildStepPlan? buildStepPlan, required AssetId id}) {
-    if (isSource(id)) return _sources.digestOfSource(id);
+  /// If it is a source, returns `null` if it has not been read.
+  ///
+  /// If it is a build output, returns `null` if it has not been generated.
+  ///
+  /// If it is a post process output, returns `null` if it has not been
+  /// generated.
+  AssetContent? contentOf({BuildStepPlan? buildStepPlan, required AssetId id}) {
+    if (isSource(id)) return _sources.contentOfSource(id);
     final step = buildStepPlan?.stepForDeclaredOutputOrNull(id);
-    if (step == null) return null;
-    return stepResultOrNull(step)?.outputs[id];
+    if (step != null) {
+      return stepResultOrNull(step)?.outputs[id];
+    }
+    final postProcessStepId = _postProcessOutputs[id];
+    if (postProcessStepId != null) {
+      return postProcessBuildStepResultFor(postProcessStepId)?.outputs[id];
+    }
+    return null;
   }
 
-  /// The digest of source [id], or `null` if it has not been read.
+  /// The content of source [id], or `null` if it has not been read.
   ///
   /// Throws if it is not a source.
-  Digest? digestOfSource(AssetId id) => _sources.digestOfSource(id);
+  AssetContent? contentOfSource(AssetId id) => _sources.contentOfSource(id);
 
   // -- Missing sources.
 
@@ -227,18 +238,8 @@ class BuildState {
       throw StateError('Already had post process result for $step.');
     }
     results[step.actionNumber] = result;
-    _postProcessOutputs.addAll(result.outputs);
-  }
-
-  void removePostProcessBuildResult(PostProcessBuildStepId step) {
-    final results = _postProcessResultsByInput[step.input];
-    if (results == null) return;
-    final oldResult = results.remove(step.actionNumber);
-    if (oldResult != null) {
-      _postProcessOutputs.removeAll(oldResult.outputs);
-    }
-    if (results.isEmpty) {
-      _postProcessResultsByInput.remove(step.input);
+    for (final outputId in result.outputs.keys) {
+      _postProcessOutputs[outputId] = step;
     }
   }
 
@@ -322,7 +323,7 @@ class BuildState {
     for (final results in _postProcessResultsByInput.values) {
       for (final postProcessResults in results.values) {
         if (!postProcessResults.hidden) {
-          for (final id in postProcessResults.outputs) {
+          for (final id in postProcessResults.outputs.keys) {
             final idToDelete = checkAndMoveId(id);
             if (idToDelete != null) result.add(idToDelete);
           }
@@ -337,6 +338,6 @@ class BuildState {
   // -- Testing.
 
   @visibleForTesting
-  void addSourceForTest(AssetId id, {Digest? digest}) =>
+  void addSourceForTest(AssetId id, {AssetContent? digest}) =>
       _sources.add(id, digest: digest);
 }

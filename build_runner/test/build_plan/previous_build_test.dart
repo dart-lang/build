@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_config/build_config.dart' hide BuilderDefinition;
+import 'package:build_runner/src/build/asset_content.dart';
 import 'package:build_runner/src/build/build_state/asset_graph_json.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/build_state/build_step_result.dart';
@@ -150,7 +151,7 @@ void main() {
         step,
         BuildStepResult((b) {
           b.isHidden = false;
-          b.outputs[outputId] = Digest(<int>[]);
+          b.outputs[outputId] = AssetContent.digest(Digest(<int>[]));
         }),
       );
       await writeBuildStateAndPlan(buildState, spec.buildPlanDigest);

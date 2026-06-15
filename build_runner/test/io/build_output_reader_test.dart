@@ -6,6 +6,7 @@
 library;
 
 import 'package:build/build.dart';
+import 'package:build_runner/src/build/asset_content.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/build_state/build_step_id.dart';
 import 'package:build_runner/src/build/build_state/build_step_result.dart';
@@ -58,9 +59,12 @@ void main() {
       buildState
         ..addSourceForTest(
           notDeletedId,
-          digest: computeDigest(notDeletedId, 'a'),
+          digest: AssetContent.digest(computeDigest(notDeletedId, 'a')),
         )
-        ..addSourceForTest(deletedId, digest: computeDigest(deletedId, 'b'));
+        ..addSourceForTest(
+          deletedId,
+          digest: AssetContent.digest(computeDigest(deletedId, 'b')),
+        );
 
       readerWriter.testing.writeString(notDeletedId, '');
       readerWriter.testing.writeString(deletedId, '');
