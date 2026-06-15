@@ -27,6 +27,7 @@ import '../io/build_output_reader.dart';
 import '../io/create_merged_dir.dart';
 import '../io/reader_writer.dart';
 import '../logging/build_log.dart';
+import '../logging/build_log_logger.dart';
 import '../logging/timed_activities.dart';
 import 'build_dirs.dart';
 import 'build_result.dart';
@@ -38,16 +39,16 @@ import 'build_state/glob_id.dart';
 import 'build_state/glob_result.dart';
 import 'build_state/post_process_build_step_id.dart';
 import 'build_state/post_process_build_step_result.dart';
+import 'build_step_impl.dart';
+import 'builder_filesystem.dart';
 import 'input_tracker.dart';
 import 'library_cycle_graph/asset_deps_loader.dart';
 import 'library_cycle_graph/library_cycle_graph.dart';
 import 'library_cycle_graph/library_cycle_graph_loader.dart';
 import 'library_cycle_graph/phased_asset_deps.dart';
+import 'post_process_build_step_impl.dart';
 import 'resolver/analysis_driver_model.dart';
 import 'resolver/resolvers_impl.dart';
-import 'run_builder.dart';
-import 'run_post_process_builder.dart';
-import 'single_step_reader_writer.dart';
 
 final ResolversImpl _defaultResolvers = ResolversImpl(
   analysisDriverModel: AnalysisDriverModel(),
@@ -82,6 +83,16 @@ class Build {
 
   /// The build output.
   BuildOutputReader? _buildOutputReader;
+
+  late final BuilderFilesystem _builderFilesystem = BuilderFilesystem(
+    buildPackages: buildPackages,
+    buildConfigs: buildConfigs,
+    buildStepPlan: buildStepPlan,
+    buildState: buildState,
+    readerWriter: readerWriter,
+    assetBuilder: _buildOutput,
+    globEvaluator: _evaluateGlob,
+  );
 
   Build({required this.buildPlan, required this.resourceManager})
     : readerWriter = buildPlan.readerWriter,
@@ -414,38 +425,33 @@ class Build {
       lazy: lazy,
     );
     final builder = phase.builder;
-    final singleStepReaderWriter = SingleStepReaderWriter(
-      runningBuild: RunningBuild(
-        buildPackages: buildPackages,
-        buildConfigs: buildConfigs,
-        buildStepPlan: buildStepPlan,
-        buildState: buildState,
-        assetBuilder: _buildOutput,
-        assetIsProcessedOutput: (id) =>
-            buildState.isProcessedOutput(buildStepPlan: buildStepPlan, id: id),
-        globEvaluator: _evaluateGlob,
-      ),
-      runningBuildStep: RunningBuildStep(
-        phaseNumber: buildStepId.phaseNumber,
-
-        buildPhase: phase,
-        primaryPackage: buildStepId.primaryInput.package,
-      ),
-      readerWriter: readerWriter,
-      inputTracker: InputTracker(
-        readerWriter.filesystem,
-        primaryInput: buildStepId.primaryInput,
-        builderLabel: phase.displayName,
-      ),
-      assetsWritten: {},
-    );
-
     final builderOutputs = expectedOutputs(builder, buildStepId.primaryInput);
-    final stepAction = await _computeStepAction(
-      buildStepId,
-      builderOutputs,
-      singleStepReaderWriter,
+
+    final inputTracker = InputTracker(
+      readerWriter.filesystem,
+      primaryInput: buildStepId.primaryInput,
+      builderLabel: phase.displayName,
     );
+
+    final unusedAssets = <AssetId>{};
+    void reportUnusedAssetsForInput(AssetId input, Iterable<AssetId> assets) {
+      testingOverrides.reportUnusedAssetsForInput?.call(input, assets);
+      unusedAssets.addAll(assets);
+    }
+
+    final step = BuildStepImpl(
+      inputId: buildStepId.primaryInput,
+      expectedOutputs: builderOutputs,
+      inputTracker: inputTracker,
+      buildFilesystem: _builderFilesystem,
+      phase: buildStepId.phaseNumber,
+      resolvers: resolvers,
+      resourceManager: resourceManager,
+      reportUnusedAssets: (Iterable<AssetId> assets) =>
+          reportUnusedAssetsForInput(buildStepId.primaryInput, assets),
+    );
+
+    final stepAction = await _computeStepAction(buildStepId, builderOutputs);
     if (stepAction.isSkip) {
       buildLog.skipStep(phase: phase, lazy: lazy);
       if (stepAction == StepAction.skipMissingPrimaryInput) {
@@ -465,18 +471,10 @@ class Build {
     await _deletePreviousOutputs(builderOutputs);
 
     // Clear input tracking accumulated during `_buildShouldRun`.
-    singleStepReaderWriter.inputTracker.clear();
+    step.inputTracker.clear();
 
-    final unusedAssets = <AssetId>{};
-    void reportUnusedAssetsForInput(AssetId input, Iterable<AssetId> assets) {
-      testingOverrides.reportUnusedAssetsForInput?.call(input, assets);
-      unusedAssets.addAll(assets);
-    }
-
-    // Pass `readerWriter` so that if `_allowedByTriggers` reads files to
-    // evaluate triggers then they are tracked as inputs.
     final allowedByTriggers = await _allowedByTriggers(
-      readerWriter: singleStepReaderWriter,
+      inputTracker: step.inputTracker,
       phase: phase,
       primaryInput: buildStepId.primaryInput,
     );
@@ -486,19 +484,18 @@ class Build {
       lazy: lazy,
     );
     if (allowedByTriggers) {
-      await TimedActivity.build.runAsync(() {
-        return runBuilder(
-          builder,
-          [buildStepId.primaryInput],
-          singleStepReaderWriter,
-          resolvers,
-          logger: logger,
-          resourceManager: resourceManager,
-          reportUnusedAssetsForInput: reportUnusedAssetsForInput,
-          packageConfig: buildPackages.asPackageConfig,
-        ).catchError((void _) {
-          // Errors tracked through the logger.
-        });
+      await TimedActivity.build.runAsync<void>(() async {
+        try {
+          await BuildLogLogger.scopeLogAsync(() async {
+            try {
+              await builder.build(step);
+            } finally {
+              await step.complete();
+            }
+          }, logger);
+        } catch (_) {
+          // Errors are handled via the logger.
+        }
       });
     }
 
@@ -508,7 +505,7 @@ class Build {
       () => _setOutputsState(
         buildStepId.primaryInput,
         builderOutputs,
-        singleStepReaderWriter,
+        step,
         logger.errors,
         unusedAssets: unusedAssets,
       ),
@@ -517,17 +514,15 @@ class Build {
     if (allowedByTriggers) {
       buildLog.finishStep(
         phase: phase,
-        anyOutputs: singleStepReaderWriter.assetsWritten.isNotEmpty,
-        anyChangedOutputs: singleStepReaderWriter.assetsWritten.any(
-          _isChangedOutput,
-        ),
+        anyOutputs: step.assetsWritten.isNotEmpty,
+        anyChangedOutputs: step.assetsWritten.any(_isChangedOutput),
         lazy: lazy,
       );
     } else {
       buildLog.stepNotTriggered(phase: phase, lazy: lazy);
     }
 
-    return singleStepReaderWriter.assetsWritten;
+    return step.assetsWritten;
   }
 
   /// Whether build triggers allow [phase] to run on [primaryInput].
@@ -535,7 +530,7 @@ class Build {
   /// This means either the builder does not have `run_only_if_triggered: true`
   /// or it does run only if triggered and is triggered.
   Future<bool> _allowedByTriggers({
-    required SingleStepReaderWriter readerWriter,
+    required InputTracker inputTracker,
     required InBuildPhase phase,
     required AssetId primaryInput,
   }) async {
@@ -547,13 +542,14 @@ class Build {
     if (buildTriggers == null) {
       return false;
     }
+    inputTracker.add(primaryInput);
     final primaryInputSource = await readerWriter.readAsString(primaryInput);
     final compilationUnit = _parseCompilationUnit(primaryInputSource);
     List<CompilationUnit>? compilationUnits;
     for (final trigger in buildTriggers) {
       if (trigger.checksParts) {
         compilationUnits ??= await _readAndParseCompilationUnits(
-          readerWriter,
+          inputTracker,
           primaryInput,
           compilationUnit,
         );
@@ -571,8 +567,8 @@ class Build {
     return parseString(content: content, throwIfDiagnostics: false).unit;
   }
 
-  static Future<List<CompilationUnit>> _readAndParseCompilationUnits(
-    SingleStepReaderWriter stepReaderWriter,
+  Future<List<CompilationUnit>> _readAndParseCompilationUnits(
+    InputTracker inputTracker,
     AssetId id,
     CompilationUnit compilationUnit,
   ) async {
@@ -583,9 +579,10 @@ class Build {
         Uri.parse(directive.uri.stringValue!),
         from: id,
       );
-      if (!await stepReaderWriter.canRead(partId)) continue;
+      if (!await readerWriter.canRead(partId)) continue;
+      inputTracker.add(partId);
       result.add(
-        _parseCompilationUnit(await stepReaderWriter.readAsString(partId)),
+        _parseCompilationUnit(await readerWriter.readAsString(partId)),
       );
     }
     return result;
@@ -638,36 +635,13 @@ class Build {
     required bool hideOutput,
   }) async {
     final input = postProcessBuildStepId.input;
-    final stepReaderWriter = SingleStepReaderWriter(
-      runningBuild: RunningBuild(
-        buildPackages: buildPackages,
-        buildConfigs: buildConfigs,
-        buildStepPlan: buildStepPlan,
-        buildState: buildState,
-        assetBuilder: _buildOutput,
-        assetIsProcessedOutput: (id) =>
-            buildState.isProcessedOutput(buildStepPlan: buildStepPlan, id: id),
-        globEvaluator: _evaluateGlob,
-      ),
-      runningBuildStep: RunningBuildStep(
-        phaseNumber: phaseNumber,
-        buildPhase: buildPhases.postBuildPhase,
-        primaryPackage: input.package,
-      ),
-      readerWriter: readerWriter,
-      inputTracker: InputTracker(readerWriter.filesystem, primaryInput: input),
-      assetsWritten: {},
-    );
 
     final existingOutputs =
         previousBuildState
             ?.postProcessBuildStepResultFor(postProcessBuildStepId)
             ?.outputs ??
         const <AssetId>{};
-    if (!await _postProcessBuildStepShouldRun(
-      postProcessBuildStepId,
-      stepReaderWriter,
-    )) {
+    if (!await _postProcessBuildStepShouldRun(postProcessBuildStepId)) {
       final oldResult = previousBuildState?.postProcessBuildStepResultFor(
         postProcessBuildStepId,
       );
@@ -679,9 +653,6 @@ class Build {
       }
       return <AssetId>[];
     }
-    // Clear input tracking accumulated during `_buildShouldRun`.
-    stepReaderWriter.inputTracker.clear();
-
     // Clean out the impacts of the previous run.
     await _deletePreviousOutputs(existingOutputs);
     buildState.removePostProcessBuildResult(postProcessBuildStepId);
@@ -692,11 +663,10 @@ class Build {
     );
     final outputs = <AssetId>{};
     var deletedPrimaryInput = false;
-    await runPostProcessBuilder(
-      builder,
-      input,
-      stepReaderWriter,
-      logger,
+    final step = PostProcessBuildStepImpl(
+      inputId: input,
+      buildFilesystem: _builderFilesystem,
+      readerWriter: readerWriter,
       addAsset: (assetId) {
         if (_isFile(assetId)) {
           throw InvalidOutputException(assetId, 'Asset already exists');
@@ -715,11 +685,17 @@ class Build {
         }
         deletedPrimaryInput = true;
       },
-    ).catchError((void _) {
-      // Errors tracked through the logger
-    });
+    );
 
-    final assetsWritten = stepReaderWriter.assetsWritten.toSet();
+    await BuildLogLogger.scopeLogAsync(() async {
+      try {
+        await builder.build(step);
+      } finally {
+        await step.complete();
+      }
+    }, logger);
+
+    final assetsWritten = step.assetsWritten;
 
     final stepResult = PostProcessBuildStepResult(
       hidden: hideOutput,
@@ -767,7 +743,6 @@ class Build {
   Future<StepAction> _computeStepAction(
     BuildStepId step,
     Iterable<AssetId> outputs,
-    SingleStepReaderWriter readerWriter,
   ) async {
     return await TimedActivity.track.runAsync(() async {
       // Update state for primary input if needed.
@@ -1004,7 +979,6 @@ class Build {
   /// It should run if its builder options changed or its input changed.
   Future<bool> _postProcessBuildStepShouldRun(
     PostProcessBuildStepId buildStepId,
-    SingleStepReaderWriter stepReaderWriter,
   ) async {
     final input = buildStepId.input;
 
@@ -1141,16 +1115,16 @@ class Build {
   Future<void> _setOutputsState(
     AssetId input,
     Iterable<AssetId> outputs,
-    SingleStepReaderWriter stepReaderWriter,
+    BuildStepImpl step,
     Iterable<String> errors, {
     Set<AssetId>? unusedAssets,
   }) async {
-    final inputTracker = stepReaderWriter.inputTracker;
+    final inputTracker = step.inputTracker;
     final usedInputs = unusedAssets != null && unusedAssets.isNotEmpty
         ? inputTracker.inputs.difference(unusedAssets)
         : inputTracker.inputs;
     final result = errors.isEmpty;
-    final phaseNum = stepReaderWriter.phase;
+    final phaseNum = step.phase;
 
     final buildStepResultBuilder = BuildStepResultBuilder()
       ..result = result
@@ -1160,7 +1134,7 @@ class Build {
       ..resolverEntrypoints.replace(inputTracker.resolverEntrypoints)
       ..errors.replace(errors);
     for (final output in outputs) {
-      if (stepReaderWriter.assetsWritten.contains(output)) {
+      if (step.assetsWritten.contains(output)) {
         buildStepResultBuilder.outputs[output] = await readerWriter.digest(
           output,
         );

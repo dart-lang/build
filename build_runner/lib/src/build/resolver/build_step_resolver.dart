@@ -147,8 +147,7 @@ class BuildStepResolver implements ReleasableResolver {
       await _buildStep.trackStage(
         'Resolving library $entrypoint',
         () => _buildResolver.updateDriverForEntrypoint(
-          phasedReader: _buildStep.phasedReader,
-          inputTracker: _buildStep.inputTracker,
+          buildStep: _buildStep,
           entrypoint: entrypoint,
           transitive: transitive,
         ),

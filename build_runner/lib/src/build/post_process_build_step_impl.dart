@@ -9,41 +9,55 @@ import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:crypto/crypto.dart' show Digest;
 
-import 'single_step_reader_writer.dart';
+import '../io/reader_writer.dart';
+import 'builder_filesystem.dart';
 
 class PostProcessBuildStepImpl implements PostProcessBuildStep {
   @override
   final AssetId inputId;
 
-  final SingleStepReaderWriter _readerWriter;
+  final BuilderFilesystem buildFilesystem;
+  final ReaderWriter _readerWriter;
   final void Function(AssetId) _addAsset;
   final void Function(AssetId) _deleteAsset;
 
   /// The result of any writes which are starting during this step.
   final _writeResults = <Future<Result<void>>>[];
 
-  PostProcessBuildStepImpl(
-    this.inputId,
-    this._readerWriter,
-    this._addAsset,
-    this._deleteAsset,
-  );
+  final Set<AssetId> _assetsWritten = {};
+  Iterable<AssetId> get assetsWritten => _assetsWritten;
+
+  PostProcessBuildStepImpl({
+    required this.inputId,
+    required this.buildFilesystem,
+    required ReaderWriter readerWriter,
+    required void Function(AssetId) addAsset,
+    required void Function(AssetId) deleteAsset,
+  }) : _readerWriter = readerWriter,
+       _addAsset = addAsset,
+       _deleteAsset = deleteAsset;
 
   @override
   Future<Digest> digest(AssetId id) => inputId == id
-      ? _readerWriter.digest(id)
+      ? buildFilesystem.ensureDigest(id)
       : Future.error(InvalidInputException(id));
 
   @override
-  Future<List<int>> readInputAsBytes() => _readerWriter.readAsBytes(inputId);
+  Future<List<int>> readInputAsBytes() async {
+    await buildFilesystem.ensureDigest(inputId);
+    return _readerWriter.readAsBytes(inputId);
+  }
 
   @override
-  Future<String> readInputAsString({Encoding encoding = utf8}) =>
-      _readerWriter.readAsString(inputId, encoding: encoding);
+  Future<String> readInputAsString({Encoding encoding = utf8}) async {
+    await buildFilesystem.ensureDigest(inputId);
+    return _readerWriter.readAsString(inputId, encoding: encoding);
+  }
 
   @override
   Future<void> writeAsBytes(AssetId id, FutureOr<List<int>> bytes) {
     _addAsset(id);
+    _assetsWritten.add(id);
     final done = _futureOrWrite(
       bytes,
       (List<int> b) => _readerWriter.writeAsBytes(id, b),
@@ -59,6 +73,7 @@ class PostProcessBuildStepImpl implements PostProcessBuildStep {
     Encoding encoding = utf8,
   }) {
     _addAsset(id);
+    _assetsWritten.add(id);
     final done = _futureOrWrite(
       content,
       (String c) => _readerWriter.writeAsString(id, c, encoding: encoding),
