@@ -514,15 +514,15 @@ class Build {
     if (allowedByTriggers) {
       buildLog.finishStep(
         phase: phase,
-        anyOutputs: step.assetsWritten.isNotEmpty,
-        anyChangedOutputs: step.assetsWritten.any(_isChangedOutput),
+        anyOutputs: step.outputs.isNotEmpty,
+        anyChangedOutputs: step.outputs.keys.any(_isChangedOutput),
         lazy: lazy,
       );
     } else {
       buildLog.stepNotTriggered(phase: phase, lazy: lazy);
     }
 
-    return step.assetsWritten;
+    return step.outputs.keys;
   }
 
   /// Whether build triggers allow [phase] to run on [primaryInput].
@@ -661,7 +661,6 @@ class Build {
       buildLog.renderId(input),
       contextId: input,
     );
-    final outputs = <AssetId>{};
     var deletedPrimaryInput = false;
     final step = PostProcessBuildStepImpl(
       inputId: input,
@@ -671,7 +670,6 @@ class Build {
         if (_isFile(assetId)) {
           throw InvalidOutputException(assetId, 'Asset already exists');
         }
-        outputs.add(assetId);
       },
       deleteAsset: (assetId) {
         if (!_isFile(assetId)) {
@@ -695,11 +693,12 @@ class Build {
       }
     }, logger);
 
-    final assetsWritten = step.assetsWritten;
-
+    for (final entry in step.outputs.entries) {
+      await readerWriter.writeAsBytes(entry.key, entry.value.bytes);
+    }
     final stepResult = PostProcessBuildStepResult(
       hidden: hideOutput,
-      outputs: assetsWritten,
+      outputs: step.outputs.keys,
       errors: logger.errors,
       deletedPrimaryInput: deletedPrimaryInput,
     );
@@ -708,7 +707,7 @@ class Build {
       stepResult,
     );
 
-    return assetsWritten;
+    return step.outputs.keys;
   }
 
   void _markStepSkipped(BuildStepId buildStepId, Iterable<AssetId> outputs) {
@@ -1134,10 +1133,10 @@ class Build {
       ..resolverEntrypoints.replace(inputTracker.resolverEntrypoints)
       ..errors.replace(errors);
     for (final output in outputs) {
-      if (step.assetsWritten.contains(output)) {
-        buildStepResultBuilder.outputs[output] = await readerWriter.digest(
-          output,
-        );
+      if (step.outputs.containsKey(output)) {
+        final content = step.outputs[output]!;
+        await readerWriter.writeAsBytes(output, content.bytes);
+        buildStepResultBuilder.outputs[output] = content.digest;
       }
     }
     final buildStepResult = buildStepResultBuilder.build();
