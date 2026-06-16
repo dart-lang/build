@@ -1,3 +1,6 @@
+## 4.8.1
+- Fix circular dependencies causing hangs in `DdcFrontendServerBuilder`.
+
 ## 4.8.2
 - Several bug fixes for `DdcFrontendServerBuilder`.
 - Several bug fixes for builder circular dependencies.
