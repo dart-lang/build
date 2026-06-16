@@ -176,13 +176,12 @@ Future<void> _createKernel({
     await scratchSpace.ensureAssets(allAssetIds, buildStep);
 
     if (trackUnusedInputs) {
-      usedInputsFile =
-          await File(
-            p.join(
-              (await Directory.systemTemp.createTemp('kernel_builder_')).path,
-              'used_inputs.txt',
-            ),
-          ).create();
+      usedInputsFile = await File(
+        p.join(
+          (await Directory.systemTemp.createTemp('kernel_builder_')).path,
+          'used_inputs.txt',
+        ),
+      ).create();
       kernelInputPathToId = {};
     }
 
@@ -211,12 +210,11 @@ Future<void> _createKernel({
     );
     final response = await frontendWorker.doWork(
       request,
-      trackWork:
-          (response) => buildStep.trackStage(
-            'Kernel Generate',
-            () => response,
-            isExternal: true,
-          ),
+      trackWork: (response) => buildStep.trackStage(
+        'Kernel Generate',
+        () => response,
+        isExternal: true,
+      ),
     );
     if (response.exitCode != EXIT_CODE_OK || !await outputFile.exists()) {
       throw KernelException(
@@ -269,12 +267,11 @@ Future<void> reportUnusedKernelInputs(
   if (usedPaths.isEmpty || usedPaths.first == '') return;
 
   String? firstMissingInputPath;
-  final usedIds =
-      usedPaths.map((usedPath) {
-        final id = inputPathToId[usedPath];
-        if (id == null) firstMissingInputPath ??= usedPath;
-        return id;
-      }).toSet();
+  final usedIds = usedPaths.map((usedPath) {
+    final id = inputPathToId[usedPath];
+    if (id == null) firstMissingInputPath ??= usedPath;
+    return id;
+  }).toSet();
 
   if (firstMissingInputPath != null) {
     log.warning(
@@ -459,9 +456,8 @@ Future<void> _addRequestArguments(
 }
 
 String _sourceArg(AssetId id) {
-  final uri =
-      id.path.startsWith('lib')
-          ? canonicalUriFor(id)
-          : '$multiRootScheme:///${id.path}';
+  final uri = id.path.startsWith('lib')
+      ? canonicalUriFor(id)
+      : '$multiRootScheme:///${id.path}';
   return '--source=$uri';
 }

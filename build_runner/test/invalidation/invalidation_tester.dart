@@ -277,10 +277,9 @@ class InvalidationTester {
   }
 
   /// The size of the asset graph that was written by [build], in bytes.
-  int get assetGraphJsonSize =>
-      readerWriter!.testing
-          .readBytes(AssetId('pkg', assetGraphJsonPath))
-          .length;
+  int get assetGraphJsonSize => readerWriter!.testing
+      .readBytes(AssetId('pkg', assetGraphJsonPath))
+      .length;
 }
 
 /// Strategy used by generators for outputting files.
@@ -444,10 +443,9 @@ class TestBuilder implements Builder {
     final recordedInput = <String>[];
 
     void recordInput(AssetId id, String? content) {
-      final hash =
-          content == null
-              ? null
-              : base64.encode(md5.convert(utf8.encode(content)).bytes);
+      final hash = content == null
+          ? null
+          : base64.encode(md5.convert(utf8.encode(content)).bytes);
       recordedInput.add('$id${hash == null ? '' : ',$hash'}');
     }
 
@@ -469,10 +467,8 @@ class TestBuilder implements Builder {
         recordInput(readId, content);
         final random = Random(content.hashCode);
 
-        final pick =
-            _tester._pickableInputs[random.nextInt(
-              _tester._pickableInputs.length,
-            )];
+        final pick = _tester
+            ._pickableInputs[random.nextInt(_tester._pickableInputs.length)];
         if (_tester._logSetup) {
           _tester._setupLog.add(
             'builder $buildExtensions on '
@@ -481,10 +477,8 @@ class TestBuilder implements Builder {
         }
         pickedOtherReads.add(pick);
 
-        final resolvePick =
-            _tester._pickableInputs[random.nextInt(
-              _tester._pickableInputs.length,
-            )];
+        final resolvePick = _tester
+            ._pickableInputs[random.nextInt(_tester._pickableInputs.length)];
         if (_tester._logSetup) {
           _tester._setupLog.add(
             'builder $buildExtensions on '

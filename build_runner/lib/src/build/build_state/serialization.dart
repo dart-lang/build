@@ -8,7 +8,7 @@ part of 'build_state.dart';
 ///
 /// Returns `null` if deserialization fails.
 BuildState? deserializeBuildState(Map serializedBuildState) {
-  final buildState = BuildState.empty();
+  final buildState = BuildState();
 
   final sourceIds =
       serializers.deserialize(

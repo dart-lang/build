@@ -184,7 +184,8 @@ builders:
     // something broken.
     tester.update(
       'builder_pkg/build.yaml',
-      (yaml) => '''
+      (yaml) =>
+          '''
 $yaml
   missing_builder:
     import: 'package:builder_pkg/builder.dart'

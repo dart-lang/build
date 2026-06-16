@@ -26,7 +26,6 @@ class BuildOutputReader {
   final BuildPlan? _buildPlan;
   final BuildStepPlan? _buildStepPlan;
   final BuildState? _buildState;
-  final Set<AssetId>? _processedOutputs;
   final ReaderWriter? _readerWriter;
 
   late final Set<AssetId> _assetsDeletedByPostProcessBuilders =
@@ -37,8 +36,7 @@ class BuildOutputReader {
     : _buildState = null,
       _buildPlan = null,
       _buildStepPlan = null,
-      _readerWriter = null,
-      _processedOutputs = null;
+      _readerWriter = null;
 
   /// For testing: a build output that does not check build phases to determine
   /// whether outputs were required.
@@ -50,24 +48,16 @@ class BuildOutputReader {
   }) : _buildPlan = null,
        _buildStepPlan = buildStepPlan,
        _buildState = buildState,
-       _readerWriter = readerWriter,
-       _processedOutputs = null;
+       _readerWriter = readerWriter;
 
   /// Creates from build results.
-  ///
-  /// [processedOutputs] is the set of generated outputs in the build that were
-  /// considered for building. This excludes generated outputs that were skipped
-  /// due to not matching build dirs or not matching build filters.
   BuildOutputReader({
     required BuildPlan buildPlan,
-    required ReaderWriter readerWriter,
     required BuildState buildState,
-    required Set<AssetId> processedOutputs,
-  }) : _readerWriter = readerWriter,
+  }) : _readerWriter = buildPlan.readerWriter,
        _buildState = buildState,
        _buildPlan = buildPlan,
-       _buildStepPlan = buildPlan.buildStepPlan,
-       _processedOutputs = processedOutputs;
+       _buildStepPlan = buildPlan.buildStepPlan;
 
   Set<AssetId> _collectAssetsDeletedByPostProcessBuilders() =>
       _buildState?.assetsDeletedByPostProcess ?? const {};
@@ -90,7 +80,10 @@ class BuildOutputReader {
     }
     final step = _buildStepPlan?.stepForDeclaredOutputOrNull(id);
     if (step != null) {
-      if (_processedOutputs?.contains(id) == false) {
+      if (!_buildState.isProcessedOutput(
+        buildStepPlan: _buildStepPlan,
+        id: id,
+      )) {
         // The generated output was not considered for building because its
         // transitive input(s) did not match build dirs and/or build filters.
         return UnreadableReason.notOutput;
@@ -189,7 +182,9 @@ class BuildOutputReader {
     // an output package of the build.
     if (!id.path.startsWith('lib/')) {
       if (rootDir != null && !p.isWithin(rootDir, id.path)) return true;
-      if (!_buildPlan.buildPackages.outputPackages.contains(id.package)) {
+      if (!_buildPlan.buildSpec.buildPackages.outputPackages.contains(
+        id.package,
+      )) {
         return true;
       }
     }
@@ -205,7 +200,10 @@ class BuildOutputReader {
           !stepResult.outputs.containsKey(id)) {
         return true;
       }
-      return !_processedOutputs!.contains(id);
+      return !buildState.isProcessedOutput(
+        buildStepPlan: _buildStepPlan,
+        id: id,
+      );
     }
     if (id.path == '.packages') return true;
     if (id.path == '.dart_tool/package_config.json') return true;

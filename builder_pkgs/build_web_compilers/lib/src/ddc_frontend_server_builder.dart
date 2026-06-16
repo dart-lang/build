@@ -52,11 +52,9 @@ class DdcFrontendServerBuilder implements Builder {
     );
     final ddcEntrypointId = module.primarySource;
     final entrypoint = frontendServerState.entrypointAssetId;
-    final isEntrypoint =
-        entrypoint == null
-            ? ddcEntrypointId.changeExtension('.ddc.module') ==
-                buildStep.inputId
-            : ddcEntrypointId == entrypoint;
+    final isEntrypoint = entrypoint == null
+        ? ddcEntrypointId.changeExtension('.ddc.module') == buildStep.inputId
+        : ddcEntrypointId == entrypoint;
     if (isEntrypoint && entrypoint == null) {
       frontendServerState.entrypointAssetId = ddcEntrypointId;
     }
@@ -99,11 +97,6 @@ class DdcFrontendServerBuilder implements Builder {
             ? id.path
             : 'packages/${id.package}/${id.path.replaceFirst('lib/', '')}';
 
-    // Generates the URIs to invalidate when assets change in a format that the
-    // Frontend Server expects.
-    //
-    // Assets in 'lib' yield 'package:my_app/src/foo.dart', while other assets
-    // yield 'org-dartlang-app:///web/main.dart'.
     final changedAssetUris = [
       for (final asset in scratchSpace.changedFilesInBuild)
         if (asset.path.startsWith('lib/'))

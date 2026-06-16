@@ -61,23 +61,23 @@ class ParentProcess {
     );
     return runUnderPerf
         ? await _runAndSend(
-          executable: 'perf',
-          arguments: [
-            'record',
-            '-g',
-            '--output',
-            'perf.data',
-            dartAotRuntime,
-            aotSnapshot,
-            ...arguments,
-          ],
-          message: message,
-        )
+            executable: 'perf',
+            arguments: [
+              'record',
+              '-g',
+              '--output',
+              'perf.data',
+              dartAotRuntime,
+              aotSnapshot,
+              ...arguments,
+            ],
+            message: message,
+          )
         : await _runAndSend(
-          executable: dartAotRuntime,
-          arguments: [aotSnapshot, ...arguments],
-          message: message,
-        );
+            executable: dartAotRuntime,
+            arguments: [aotSnapshot, ...arguments],
+            message: message,
+          );
   }
 
   static Future<RunAndSendResult> _runAndSend({
@@ -114,6 +114,11 @@ class ParentProcess {
     // Due to https://github.com/dart-lang/sdk/issues/61571 the end of the message
     // can't be signalled by closing stdin, that would cause a crash on Windows.
     // So send `_sentinal` instead.
+    //
+    // Ignore asynchronous errors that occur if the child exits early and closes
+    //  its stdin pipe.
+    unawaited(process.stdin.done.catchError((_) {}));
+
     try {
       process.stdin.write(message);
       process.stdin.write(_sentinel);
@@ -228,11 +233,10 @@ class ChildProcess {
   ) async {
     _isRunning = true;
     buildProcessState.deserializeAndSet(await receive());
-    final exitCode =
-        await BuildRunner(
-          arguments: arguments,
-          builderFactories: builderFactories,
-        ).run();
+    final exitCode = await BuildRunner(
+      arguments: arguments,
+      builderFactories: builderFactories,
+    ).run();
     await exitWithMessage(
       exitCode: exitCode,
       message: buildProcessState.serialize(),

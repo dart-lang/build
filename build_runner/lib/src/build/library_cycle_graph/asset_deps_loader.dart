@@ -38,16 +38,18 @@ class AssetDepsLoader {
 
   /// Parses directives in [content] to return an [AssetDeps].
   ExpiringValue<AssetDeps> _parse(AssetId id, ExpiringValue<String> content) {
-    final result =
-        ExpiringValueBuilder<AssetDeps>()..expiresAfter = content.expiresAfter;
+    final result = ExpiringValueBuilder<AssetDeps>()
+      ..expiresAfter = content.expiresAfter;
 
     final depsNodeBuilder = AssetDepsBuilder();
 
     if (content.value == '') {
       result.value = AssetDeps.empty;
     } else {
-      final parsed =
-          parseString(content: content.value, throwIfDiagnostics: false).unit;
+      final parsed = parseString(
+        content: content.value,
+        throwIfDiagnostics: false,
+      ).unit;
 
       for (final directive in parsed.directives) {
         if (directive is! UriBasedDirective) continue;

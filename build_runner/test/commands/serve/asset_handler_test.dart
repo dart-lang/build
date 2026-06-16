@@ -28,7 +28,7 @@ void main() {
   late BuildStepPlan buildStepPlan;
 
   setUp(() async {
-    buildState = BuildState.create(sources: <AssetId>{});
+    buildState = BuildState(<AssetId>{});
     readerWriter = InternalTestReaderWriter();
     buildStepPlan = BuildStepPlan(
       (BuildStepPlanBuilder b) =>

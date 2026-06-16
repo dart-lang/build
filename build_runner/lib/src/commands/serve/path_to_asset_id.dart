@@ -31,7 +31,7 @@ List<AssetId> pathToAssetIds(
 /// Returns null for paths that neither a lib nor starts from a rootDir
 String? assetIdToPath(AssetId assetId, String rootDir) =>
     assetId.path.startsWith('lib/')
-        ? assetId.path.replaceFirst('lib/', 'packages/${assetId.package}/')
-        : assetId.path.startsWith('$rootDir/')
-        ? assetId.path.substring(rootDir.length + 1)
-        : null;
+    ? assetId.path.replaceFirst('lib/', 'packages/${assetId.package}/')
+    : assetId.path.startsWith('$rootDir/')
+    ? assetId.path.substring(rootDir.length + 1)
+    : null;

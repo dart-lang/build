@@ -272,11 +272,10 @@ class PersistentFrontendServer {
   final WebMemoryFilesystem _fileSystem;
 
   PersistentFrontendServer._({
-    required FrontendServerClient client,
+    required this._client,
     required this.outputDillUri,
-    required WebMemoryFilesystem fileSystem,
-  }) : _client = client,
-       _fileSystem = fileSystem;
+    required this._fileSystem,
+  });
 
   FrontendServerClient get client => _client;
   WebMemoryFilesystem get fileSystem => _fileSystem;
@@ -404,12 +403,11 @@ class PersistentFrontendServer {
 
     try {
       final socket = await Socket.connect(InternetAddress.loopbackIPv4, port);
-      final socketLines =
-          socket
-              .cast<List<int>>()
-              .transform(utf8.decoder)
-              .transform(const LineSplitter())
-              .asBroadcastStream();
+      final socketLines = socket
+          .cast<List<int>>()
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())
+          .asBroadcastStream();
       return _FesSocketConnection(socket, socketLines);
     } catch (e) {
       throw StateError('Failed to connect to FES manager at port $port: $e');
@@ -636,10 +634,10 @@ class WebMemoryFilesystem {
             manifest[filePath] as Map,
           );
       final codeOffsets = (offsets['code'] as List<dynamic>).cast<int>();
-      final sourcemapOffsets =
-          (offsets['sourcemap'] as List<dynamic>).cast<int>();
-      final metadataOffsets =
-          (offsets['metadata'] as List<dynamic>).cast<int>();
+      final sourcemapOffsets = (offsets['sourcemap'] as List<dynamic>)
+          .cast<int>();
+      final metadataOffsets = (offsets['metadata'] as List<dynamic>)
+          .cast<int>();
 
       if (codeOffsets.length != 2 ||
           sourcemapOffsets.length != 2 ||
@@ -728,7 +726,7 @@ enum StdoutState { CollectDiagnostic, CollectDependencies }
 
 /// Handles stdin/stdout communication with the Frontend Server.
 class StdoutHandler {
-  StdoutHandler({required Logger logger}) : _logger = logger {
+  StdoutHandler({required this._logger}) {
     reset();
   }
   final Logger _logger;
@@ -1006,10 +1004,9 @@ class SocketFrontendServerClient implements FrontendServerClient {
     await _socket.flush();
     final responseLine = await nextResponseFuture;
     final response = jsonDecode(responseLine) as Map<String, dynamic>;
-    final bytes =
-        response['expressionData'] != null
-            ? base64.decode(response['expressionData'] as String)
-            : null;
+    final bytes = response['expressionData'] != null
+        ? base64.decode(response['expressionData'] as String)
+        : null;
     return CompilerOutput(
       '',
       (response['errorCount'] as int?) ?? 0,

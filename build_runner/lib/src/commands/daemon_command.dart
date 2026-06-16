@@ -17,6 +17,7 @@ import '../bootstrap/build_process_state.dart';
 import '../bootstrap/processes.dart';
 import '../build_plan/build_options.dart';
 import '../build_plan/build_plan.dart';
+import '../build_plan/build_spec.dart';
 import '../build_plan/builder_factories.dart';
 import '../build_plan/testing_overrides.dart';
 import '../logging/build_log.dart';
@@ -85,20 +86,20 @@ class DaemonCommand implements BuildRunnerCommand {
       //
       // `BuildRunnerDaemonBuilder` sets its own `onLog` replacing this one.
       buildLog.configuration = buildLog.configuration.rebuild((b) {
-        b.onLog =
-            (record) => stdout.writeln('''
+        b.onLog = (record) => stdout.writeln('''
 $logStartMarker
 ${jsonEncode(serializers.serialize(ServerLog.fromLogRecord(record)))}
 $logEndMarker''');
       });
 
-      final buildPlan = await BuildPlan.load(
+      final buildSpec = await BuildSpec.load(
         builderFactories: builderFactories,
         buildOptions: buildOptions,
         testingOverrides: testingOverrides,
       );
+      final buildPlan = await BuildPlan.load(buildSpec);
       await buildPlan.deleteFilesAndFolders();
-      if (buildPlan.restartIsNeeded) {
+      if (buildSpec.restartIsNeeded) {
         return ChildProcess.recompileBuildersExitCode;
       }
 
@@ -121,7 +122,7 @@ $logEndMarker''');
       final server = await AssetServer.run(
         daemonOptions,
         builder,
-        buildPlan.buildPackages.outputRoot,
+        buildPlan.buildSpec.buildPackages.outputRoot,
       );
       File(
         assetServerPortFilePath(workingDirectory),

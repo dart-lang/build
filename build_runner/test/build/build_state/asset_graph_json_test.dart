@@ -6,15 +6,15 @@ import 'dart:convert';
 import 'package:build_runner/src/build/build_state/asset_graph_json.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/library_cycle_graph/phased_asset_deps.dart';
-import 'package:build_runner/src/build_plan/build_plan_digest.dart';
+import 'package:build_runner/src/build_plan/build_spec_digest.dart';
 import 'package:test/test.dart';
 
 void main() {
   group('AssetGraphJson', () {
     test('deserialize returns null on version mismatch', () async {
       final validBytes = AssetGraphJson.serialize(
-        buildState: BuildState.empty(),
-        buildPlanDigest: BuildPlanDigest.build((b) {
+        buildState: BuildState(),
+        buildPlanDigest: BuildSpecDigest.build((b) {
           b.compileDigest = '';
           b.buildTriggersDigest = '';
           b.buildPhasesDigest = '';
@@ -36,8 +36,8 @@ void main() {
 
     test('deserialize returns null on invalid json', () async {
       final validBytes = AssetGraphJson.serialize(
-        buildState: BuildState.empty(),
-        buildPlanDigest: BuildPlanDigest.build((b) {
+        buildState: BuildState(),
+        buildPlanDigest: BuildSpecDigest.build((b) {
           b.compileDigest = '';
           b.buildTriggersDigest = '';
           b.buildPhasesDigest = '';

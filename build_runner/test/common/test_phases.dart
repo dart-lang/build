@@ -89,12 +89,9 @@ Future<TestBuildersResult> testPhases(
   buildPackages ??= BuildPackages.singlePackageBuild('a', [
     BuildPackage.forTesting(name: 'a', isOutput: true),
   ]);
-  var readerWriter =
-      resumeFrom == null
-          ? InternalTestReaderWriter(
-            outputRootPackage: buildPackages.outputRoot,
-          )
-          : resumeFrom.readerWriter;
+  var readerWriter = resumeFrom == null
+      ? InternalTestReaderWriter(outputRootPackage: buildPackages.outputRoot)
+      : resumeFrom.readerWriter;
 
   if (onDelete != null) {
     readerWriter = readerWriter.copyWith(onDelete: onDelete);
@@ -135,17 +132,19 @@ Future<TestBuildersResult> testPhases(
   });
 
   final buildPlan = await BuildPlan.load(
-    builderFactories: builderFactories,
-    // ignore: invalid_use_of_visible_for_testing_member
-    buildOptions: BuildOptions.forTests(
-      buildDirs: buildDirs.build(),
-      buildFilters: buildFilters.build(),
-      verbose: verbose,
-    ),
-    testingOverrides: TestingOverrides(
-      builderDefinitions: builders.build(),
-      buildPackages: buildPackages,
-      readerWriter: readerWriter,
+    await BuildSpec.load(
+      builderFactories: builderFactories,
+      // ignore: invalid_use_of_visible_for_testing_member
+      buildOptions: BuildOptions.forTests(
+        buildDirs: buildDirs.build(),
+        buildFilters: buildFilters.build(),
+        verbose: verbose,
+      ),
+      testingOverrides: TestingOverrides(
+        builderDefinitions: builders.build(),
+        buildPackages: buildPackages,
+        readerWriter: readerWriter,
+      ),
     ),
   );
   await buildPlan.deleteFilesAndFolders();
@@ -195,13 +194,12 @@ void checkBuild(
     }
   }
 
-  AssetId mapHidden(AssetId id) =>
-      unhiddenAssets.contains(id)
-          ? AssetId(
-            buildCachePackage,
-            '.dart_tool/build/generated/${id.package}/${id.path}',
-          )
-          : id;
+  AssetId mapHidden(AssetId id) => unhiddenAssets.contains(id)
+      ? AssetId(
+          buildCachePackage,
+          '.dart_tool/build/generated/${id.package}/${id.path}',
+        )
+      : id;
 
   if (status == BuildStatus.success) {
     checkOutputs(

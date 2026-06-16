@@ -6,6 +6,7 @@ import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
+import 'package:path/path.dart' as p;
 
 import 'build_modules/build_modules.dart';
 
@@ -40,28 +41,43 @@ class WebEntrypointMarkerBuilder implements Builder {
       frontendServerStateResource,
     );
 
+    final hasCachedState = await frontendServerState.checkAndDeserializeState(
+      buildStep,
+    );
+
     final webEntrypointJson = <String, Object?>{};
 
-    final webAssets =
-        await buildStep.findAssets(Glob('$webAssetsPath/**.dart')).toList();
+    if (hasCachedState) {
+      webEntrypointJson['entrypoint'] = frontendServerState.entrypointAssetId
+          .toString();
+    } else {
+      final webAssets = await buildStep
+          .findAssets(Glob('$webAssetsPath/**'))
+          .toList();
 
-    for (final asset in webAssets) {
-      if (asset.extension == '.dart') {
-        final moduleLibrary = ModuleLibrary.fromSource(
-          asset,
-          await buildStep.readAsString(asset),
-        );
-        if (moduleLibrary.hasMain && moduleLibrary.isEntryPoint) {
-          // We must save the main entrypoint as the recompilation target for
-          // the Frontend Server before any JS files are emitted.
-          frontendServerState.entrypointAssetId = asset;
-          webEntrypointJson['entrypoint'] = asset.toString();
-          break;
+      for (final asset in webAssets) {
+        if (asset.extension == '.dart') {
+          final moduleLibrary = ModuleLibrary.fromSource(
+            asset,
+            await buildStep.readAsString(asset),
+          );
+          if (moduleLibrary.hasMain && moduleLibrary.isEntryPoint) {
+            // We must save the main entrypoint as the recompilation target for
+            // the Frontend Server before any JS files are emitted.
+            frontendServerState.entrypointAssetId = asset;
+            webEntrypointJson['entrypoint'] = asset.toString();
+            break;
+          }
         }
       }
     }
 
-    final webEntrypointAsset = buildStep.allowedOutputs.single;
+    final rootDir = p.dirname(buildStep.inputId.path);
+    final webEntrypointAsset = AssetId(
+      buildStep.inputId.package,
+      p.join(rootDir, '.web.entrypoint.json'),
+    );
+
     await buildStep.writeAsString(
       webEntrypointAsset,
       jsonEncode(webEntrypointJson),

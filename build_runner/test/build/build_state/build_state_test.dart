@@ -6,14 +6,12 @@ import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/build_state/build_step_id.dart';
-import 'package:build_runner/src/build/build_state/build_step_result.dart';
 import 'package:build_runner/src/build/build_state/exceptions.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/build_step_plan.dart';
 import 'package:build_runner/src/build_plan/phase.dart';
 
 import 'package:test/test.dart';
-import 'package:watcher/watcher.dart';
 
 import '../../common/common.dart';
 
@@ -32,7 +30,7 @@ void main() {
 
     group('simple build state', () {
       setUp(() async {
-        buildState = BuildState.create(sources: <AssetId>{});
+        buildState = BuildState(<AssetId>{});
       });
 
       test('add, contains, get, allNodes', () {
@@ -68,27 +66,15 @@ void main() {
       final primaryInputId = makeAssetId('foo|file.txt');
       final excludedInputId = makeAssetId('foo|excluded.txt');
       final primaryOutputId = makeAssetId('foo|file.txt.copy');
-      final syntheticId = makeAssetId('foo|synthetic.txt');
-      final syntheticOutputId = makeAssetId('foo|synthetic.txt.copy');
 
       setUp(() async {
-        buildState = BuildState.create(
-          sources: {primaryInputId, excludedInputId},
-        );
+        buildState = BuildState({primaryInputId, excludedInputId});
         buildStepPlan = BuildStepPlan.compute(
           buildPhases: buildPhases,
           placeholderIds: [],
           sources: buildState.sources,
         );
       });
-
-      void recomputeBuildStepPlan() {
-        buildStepPlan = BuildStepPlan.compute(
-          buildPhases: buildPhases,
-          placeholderIds: [],
-          sources: buildState.sources,
-        );
-      }
 
       test('build', () {
         expect(
@@ -111,91 +97,6 @@ void main() {
         expect(
           buildStepPlan.stepForDeclaredOutput(primaryOutputId).primaryInput,
           primaryInputId,
-        );
-      });
-
-      group('updateAndInvalidate', () {
-        test('add new primary input', () async {
-          final changes = {AssetId('foo', 'new.txt'): ChangeType.ADD};
-          buildState.updateForNextBuild(buildStepPlan, changes);
-          recomputeBuildStepPlan();
-          expect(
-            buildStepPlan.isDeclaredOutput(AssetId('foo', 'new.txt.copy')),
-            isTrue,
-          );
-        });
-
-        test('modify primary input', () async {
-          final changes = {primaryInputId: ChangeType.MODIFY};
-          expect(buildStepPlan.isDeclaredOutput(primaryOutputId), isTrue);
-          final buildStepId = BuildStepId(
-            primaryInput: primaryInputId,
-            phaseNumber: 0,
-          );
-          final stepResult = BuildStepResult((b) {
-            b.result = true;
-            b.isHidden = false;
-            b.inputs.add(primaryInputId);
-          });
-          buildState.updateBuildStepResult(buildStepId, stepResult);
-          buildState.updateForNextBuild(buildStepPlan, changes);
-          recomputeBuildStepPlan();
-          expect(buildState.isSource(primaryInputId), isTrue);
-          expect(buildStepPlan.isDeclaredOutput(primaryOutputId), isTrue);
-        });
-
-        test('add new primary input which replaces a synthetic node', () async {
-          buildState.addMissingSource(syntheticId);
-          expect(buildState.isMissingSource(syntheticId), isTrue);
-
-          final changes = {syntheticId: ChangeType.ADD};
-          buildState.updateForNextBuild(buildStepPlan, changes);
-          recomputeBuildStepPlan();
-
-          expect(buildState.isSource(syntheticId), isTrue);
-          expect(buildStepPlan.isDeclaredOutput(syntheticOutputId), isTrue);
-        });
-
-        test(
-          'add new generated asset which replaces a synthetic node',
-          () async {
-            buildState.addMissingSource(syntheticOutputId);
-            expect(buildState.isMissingSource(syntheticOutputId), isTrue);
-
-            final changes = {syntheticId: ChangeType.ADD};
-            buildState.updateForNextBuild(buildStepPlan, changes);
-            recomputeBuildStepPlan();
-
-            expect(buildStepPlan.isDeclaredOutput(syntheticOutputId), isTrue);
-          },
-        );
-
-        test(
-          'removing nodes deletes primary outputs and secondary edges',
-          () async {
-            final secondaryId = makeAssetId('foo|secondary.txt');
-
-            final buildStepId = BuildStepId(
-              primaryInput: primaryInputId,
-              phaseNumber: 0,
-            );
-            final stepResult = BuildStepResult((b) {
-              b.result = true;
-              b.isHidden = false;
-              b.inputs.add(secondaryId);
-            });
-            buildState.updateBuildStepResult(buildStepId, stepResult);
-
-            buildState.addSourceForTest(secondaryId);
-            expect(buildState.isSource(secondaryId), isTrue);
-
-            final changes = {primaryInputId: ChangeType.REMOVE};
-            buildState.updateForNextBuild(buildStepPlan, changes);
-            recomputeBuildStepPlan();
-
-            expect(buildState.isMissingSource(primaryInputId), isTrue);
-            expect(buildState.isMissingSource(primaryOutputId), isTrue);
-          },
         );
       });
 
@@ -309,59 +210,6 @@ void main() {
             ]),
           );
         });
-
-        test('https://github.com/dart-lang/build/issues/1804', () async {
-          final source = AssetId('a', 'lib/a.dart');
-          final renamedSource = AssetId('a', 'lib/A.dart');
-          final generatedPart = AssetId('a', 'lib/a.g.part');
-          final toBeGeneratedDart = AssetId('a', 'lib/A.g.dart');
-          final buildPhases = BuildPhases([
-            InBuildPhase(
-              builder: TestBuilder(
-                buildExtensions: replaceExtension('.dart', '.g.part'),
-              ),
-              key: 'TestBuilder',
-              package: 'a',
-            ),
-            InBuildPhase(
-              builder: TestBuilder(
-                buildExtensions: replaceExtension('.g.part', '.g.dart'),
-              ),
-              key: 'TestBuilder',
-              package: 'a',
-            ),
-          ]);
-          final buildState = BuildState.create(sources: {source});
-
-          final computed = BuildStepPlan.compute(
-            buildPhases: buildPhases,
-            placeholderIds: [],
-            sources: {source},
-          );
-
-          // Pretend a build happened.
-          buildState.addMissingSource(toBeGeneratedDart);
-          final buildStepId = BuildStepId(
-            primaryInput: generatedPart,
-            phaseNumber: 1,
-          );
-          final stepResult = BuildStepResult((b) {
-            b.result = true;
-            b.isHidden = false;
-            b.inputs.addAll([generatedPart, toBeGeneratedDart]);
-          });
-          buildState.updateBuildStepResult(buildStepId, stepResult);
-
-          expect(buildState.isSource(source), isTrue);
-
-          buildState.updateForNextBuild(computed, {
-            renamedSource: ChangeType.ADD,
-            source: ChangeType.REMOVE,
-          });
-
-          // The old generated part file should be marked as missing.
-          expect(buildState.isMissingSource(generatedPart), isTrue);
-        });
       });
     });
   });
@@ -385,11 +233,10 @@ void main() {
       final b = makeAssetId('foo|b');
       final c = makeAssetId('foo|c');
       plan = BuildStepPlan(
-        (builder) =>
-            builder
-              ..buildPhases = BuildPhases([])
-              ..declaredOutputsByPrimaryInput.addValues(a, [b])
-              ..declaredOutputsByPrimaryInput.addValues(b, [c]),
+        (builder) => builder
+          ..buildPhases = BuildPhases([])
+          ..declaredOutputsByPrimaryInput.addValues(a, [b])
+          ..declaredOutputsByPrimaryInput.addValues(b, [c]),
       );
 
       expect(plan.transitiveDeclaredOutputsOf([a]), unorderedEquals({a, b, c}));
@@ -403,12 +250,11 @@ void main() {
       final c = makeAssetId('foo|c');
       final d = makeAssetId('foo|d');
       plan = BuildStepPlan(
-        (builder) =>
-            builder
-              ..buildPhases = BuildPhases([])
-              ..declaredOutputsByPrimaryInput.addValues(a, [b, c])
-              ..declaredOutputsByPrimaryInput.addValues(b, [d])
-              ..declaredOutputsByPrimaryInput.addValues(c, [d]),
+        (builder) => builder
+          ..buildPhases = BuildPhases([])
+          ..declaredOutputsByPrimaryInput.addValues(a, [b, c])
+          ..declaredOutputsByPrimaryInput.addValues(b, [d])
+          ..declaredOutputsByPrimaryInput.addValues(c, [d]),
       );
 
       expect(
@@ -423,11 +269,10 @@ void main() {
       final c = makeAssetId('foo|c');
       final d = makeAssetId('foo|d');
       plan = BuildStepPlan(
-        (builder) =>
-            builder
-              ..buildPhases = BuildPhases([])
-              ..declaredOutputsByPrimaryInput.addValues(a, [b])
-              ..declaredOutputsByPrimaryInput.addValues(c, [d]),
+        (builder) => builder
+          ..buildPhases = BuildPhases([])
+          ..declaredOutputsByPrimaryInput.addValues(a, [b])
+          ..declaredOutputsByPrimaryInput.addValues(c, [d]),
       );
 
       expect(

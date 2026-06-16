@@ -30,14 +30,14 @@ class TestBootstrapBuilder extends Builder {
   Future<void> build(BuildStep buildStep) async {
     final id = buildStep.inputId;
     final contents = await buildStep.readAsString(id);
-    final assetPath =
-        id.pathSegments.first == 'lib'
-            ? p.url.join('packages', id.package, id.path)
-            : id.path;
+    final assetPath = id.pathSegments.first == 'lib'
+        ? p.url.join('packages', id.package, id.path)
+        : id.path;
 
     final vmRuntimes = [Runtime.vm];
-    final browserRuntimes =
-        Runtime.builtIn.where((r) => r.isBrowser == true).toList();
+    final browserRuntimes = Runtime.builtIn
+        .where((r) => r.isBrowser == true)
+        .toList();
     final nodeRuntimes = [Runtime.nodeJS];
     final config = await _ConfigLoader.instance.load(id.package, buildStep);
     if (config != null) {

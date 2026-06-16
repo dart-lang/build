@@ -186,10 +186,9 @@ class UnsupportedModules implements Exception {
           libraryId,
           await reader.readAsString(libraryId),
         );
-        final unsupportedSdkDeps =
-            library.sdkDeps
-                .where((lib) => !platform.supportsLibrary(lib))
-                .toList();
+        final unsupportedSdkDeps = library.sdkDeps
+            .where((lib) => !platform.supportsLibrary(lib))
+            .toList();
         if (unsupportedSdkDeps.isEmpty) continue;
 
         final targetAssetId = library.id.dartAssetId;

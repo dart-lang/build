@@ -188,76 +188,73 @@ Future<void> _createDevCompilerModule(
   File? usedInputsFile;
 
   if (trackUnusedInputs) {
-    usedInputsFile =
-        await File(
-          p.join(
-            (await Directory.systemTemp.createTemp('ddk_builder_')).path,
-            'used_inputs.txt',
-          ),
-        ).create();
+    usedInputsFile = await File(
+      p.join(
+        (await Directory.systemTemp.createTemp('ddk_builder_')).path,
+        'used_inputs.txt',
+      ),
+    ).create();
     kernelInputPathToId = {};
   }
 
-  final request =
-      WorkRequest()
-        ..arguments.addAll([
-          '--dart-sdk-summary=$sdkSummary',
-          '--modules=${ddcLibraryBundle ? 'ddc' : 'amd'}',
-          '--no-summarize',
-          if (generateFullDill) '--experimental-output-compiled-kernel',
-          if (emitDebugSymbols) '--emit-debug-symbols',
-          if (canaryFeatures || ddcLibraryBundle) '--canary',
-          '-o',
-          jsOutputFile.path,
-          debugMode ? '--source-map' : '--no-source-map',
-          for (final dep in transitiveDeps) _summaryArg(dep),
-          '--packages=$multiRootScheme:///.dart_tool/package_config.json',
-          '--module-name=${ddcModuleName(jsId)}',
-          '--multi-root-scheme=$multiRootScheme',
-          '--multi-root=.',
-          '--track-widget-creation',
-          '--inline-source-map',
-          '--libraries-file=${p.toUri(librariesPath)}',
-          '--experimental-emit-debug-metadata',
-          if (useIncrementalCompiler) ...[
-            '--reuse-compiler-result',
-            '--use-incremental-compiler',
-          ],
-          if (usedInputsFile != null)
-            '--used-inputs-file=${usedInputsFile.uri.toFilePath()}',
-          for (final source in module.sources) sourceArg(source),
-          for (final define in environment.entries)
-            '-D${define.key}=${define.value}',
-          for (final experiment in enabledExperiments)
-            '--enable-experiment=$experiment',
-        ])
-        ..inputs.add(
-          Input()
-            ..path = sdkSummary
-            ..digest = [0],
-        )
-        ..inputs.addAll(
-          await Future.wait(
-            transitiveKernelDeps.map((dep) async {
-              final file = scratchSpace.fileFor(dep);
-              if (kernelInputPathToId != null) {
-                kernelInputPathToId[file.uri.toString()] = dep;
-              }
-              return Input()
-                ..path = file.path
-                ..digest = (await buildStep.digest(dep)).bytes;
-            }),
-          ),
-        );
+  final request = WorkRequest()
+    ..arguments.addAll([
+      '--dart-sdk-summary=$sdkSummary',
+      '--modules=${ddcLibraryBundle ? 'ddc' : 'amd'}',
+      '--no-summarize',
+      if (generateFullDill) '--experimental-output-compiled-kernel',
+      if (emitDebugSymbols) '--emit-debug-symbols',
+      if (canaryFeatures || ddcLibraryBundle) '--canary',
+      '-o',
+      jsOutputFile.path,
+      debugMode ? '--source-map' : '--no-source-map',
+      for (final dep in transitiveDeps) _summaryArg(dep),
+      '--packages=$multiRootScheme:///.dart_tool/package_config.json',
+      '--module-name=${ddcModuleName(jsId)}',
+      '--multi-root-scheme=$multiRootScheme',
+      '--multi-root=.',
+      '--track-widget-creation',
+      '--inline-source-map',
+      '--libraries-file=${p.toUri(librariesPath)}',
+      '--experimental-emit-debug-metadata',
+      if (useIncrementalCompiler) ...[
+        '--reuse-compiler-result',
+        '--use-incremental-compiler',
+      ],
+      if (usedInputsFile != null)
+        '--used-inputs-file=${usedInputsFile.uri.toFilePath()}',
+      for (final source in module.sources) sourceArg(source),
+      for (final define in environment.entries)
+        '-D${define.key}=${define.value}',
+      for (final experiment in enabledExperiments)
+        '--enable-experiment=$experiment',
+    ])
+    ..inputs.add(
+      Input()
+        ..path = sdkSummary
+        ..digest = [0],
+    )
+    ..inputs.addAll(
+      await Future.wait(
+        transitiveKernelDeps.map((dep) async {
+          final file = scratchSpace.fileFor(dep);
+          if (kernelInputPathToId != null) {
+            kernelInputPathToId[file.uri.toString()] = dep;
+          }
+          return Input()
+            ..path = file.path
+            ..digest = (await buildStep.digest(dep)).bytes;
+        }),
+      ),
+    );
 
   try {
     final driverResource = dartdevkDriverResource;
     final driver = await buildStep.fetchResource(driverResource);
     final response = await driver.doWork(
       request,
-      trackWork:
-          (response) =>
-              buildStep.trackStage('Compile', () => response, isExternal: true),
+      trackWork: (response) =>
+          buildStep.trackStage('Compile', () => response, isExternal: true),
     );
 
     // TODO(jakemac53): Fix the ddc worker mode so it always sends back a bad

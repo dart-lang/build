@@ -9,7 +9,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:built_value/serializer.dart';
 import 'package:crypto/crypto.dart';
 
-import '../../build_plan/build_plan_digest.dart';
+import '../../build_plan/build_spec_digest.dart';
 import '../library_cycle_graph/asset_deps.dart';
 import '../library_cycle_graph/phased_asset_deps.dart';
 import '../library_cycle_graph/phased_value.dart';
@@ -35,7 +35,7 @@ final identityAssetIdSerializer = IdentitySerializer<AssetId>(
 
 @SerializersFor([
   AssetDeps,
-  BuildPlanDigest,
+  BuildSpecDigest,
   BuildStepId,
   BuildStepResult,
   GlobId,

@@ -99,8 +99,9 @@ class _$PhasedAssetDeps extends PhasedAssetDeps {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(r'PhasedAssetDeps')
-      ..add('assetDeps', assetDeps)).toString();
+    return (newBuiltValueToStringHelper(
+      r'PhasedAssetDeps',
+    )..add('assetDeps', assetDeps)).toString();
   }
 }
 

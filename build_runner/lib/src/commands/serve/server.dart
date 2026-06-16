@@ -102,8 +102,8 @@ class ServeHandler {
   ) async {
     final buildResult = await _watcher.currentBuildResult;
     final reader = buildResult.buildOutputReader;
-    final assertPathList =
-        (jsonDecode(await request.readAsString()) as List).cast<String>();
+    final assertPathList = (jsonDecode(await request.readAsString()) as List)
+        .cast<String>();
     final results = <String, String>{};
     for (final path in assertPathList) {
       final assetIds = pathToAssetIds(
@@ -244,7 +244,8 @@ final _injectLiveReloadClientCode = _injectBuildUpdatesClientCode(
 /// Hot-/live- reload config
 ///
 /// Listen WebSocket for updates in build results
-String _buildUpdatesInjectedJS(String scriptName) => '''\n
+String _buildUpdatesInjectedJS(String scriptName) =>
+    '''\n
 // Injected by build_runner for build updates support
 window.\$dartLoader.forceLoadModule('packages/build_runner/src/commands/serve/$scriptName');
 ''';
@@ -259,22 +260,18 @@ class AssetHandler {
 
   Future<shelf.Response> handle(shelf.Request request, {String rootDir = ''}) =>
       (request.url.path.endsWith('/') || request.url.path.isEmpty)
-          ? _handle(
-            request,
-            pathToAssetIds(_outputRootPackage, rootDir, [
-              ...request.url.pathSegments.where((p) => p.isNotEmpty),
-              'index.html',
-            ]),
-            fallbackToDirectoryList: true,
-          )
-          : _handle(
-            request,
-            pathToAssetIds(
-              _outputRootPackage,
-              rootDir,
-              request.url.pathSegments,
-            ),
-          );
+      ? _handle(
+          request,
+          pathToAssetIds(_outputRootPackage, rootDir, [
+            ...request.url.pathSegments.where((p) => p.isNotEmpty),
+            'index.html',
+          ]),
+          fallbackToDirectoryList: true,
+        )
+      : _handle(
+          request,
+          pathToAssetIds(_outputRootPackage, rootDir, request.url.pathSegments),
+        );
 
   Future<shelf.Response> _handle(
     shelf.Request request,
@@ -327,7 +324,7 @@ class AssetHandler {
         contentType = '$contentType; charset=utf-8';
       }
       final headers = <String, Object>{
-        if (contentType != null) HttpHeaders.contentTypeHeader: contentType,
+        HttpHeaders.contentTypeHeader: ?contentType,
         HttpHeaders.etagHeader: etag,
         // We always want this revalidated, which requires specifying both
         // max-age=0 and must-revalidate.
@@ -363,11 +360,10 @@ class AssetHandler {
     final glob = p.url.join(directoryPath, '*');
     final reader = await _reader();
 
-    final result =
-        await reader
-            .findAssets(Glob(glob), package: from.package)
-            .map((a) => a.path)
-            .toList();
+    final result = await reader
+        .findAssets(Glob(glob), package: from.package)
+        .map((a) => a.path)
+        .toList();
     final message = StringBuffer('Could not find ${from.path}');
     if (result.isEmpty) {
       message.write(' or any files in $directoryPath. ');
@@ -388,8 +384,9 @@ shelf.Handler _logRequests(shelf.Handler innerHandler) {
     final watch = Stopwatch()..start();
     try {
       final response = await innerHandler(request);
-      final logFn =
-          response.statusCode >= 500 ? buildLog.warning : buildLog.info;
+      final logFn = response.statusCode >= 500
+          ? buildLog.warning
+          : buildLog.info;
       final msg = _requestLabel(
         startTime,
         response.statusCode,

@@ -56,36 +56,34 @@ class RunCommand implements BuildRunnerCommand {
     }
 
     // Create a temporary directory in which to execute the script.
-    final tempPath =
-        Directory.systemTemp
-            .createTempSync('build_runner_run_script')
-            .absolute
-            .uri
-            .toFilePath();
+    final tempPath = Directory.systemTemp
+        .createTempSync('build_runner_run_script')
+        .absolute
+        .uri
+        .toFilePath();
 
     // Use a completer to determine the exit code.
     final exitCodeCompleter = Completer<int>();
 
-    final result =
-        await BuildCommand(
-          builderFactories: builderFactories,
-          buildOptions: buildOptions.copyWith(
-            compileStrategy: CompileStrategy.forceJit,
-            buildDirs: buildOptions.buildDirs.rebuild((b) {
-              b.add(
-                BuildDirectory(
-                  '',
-                  outputLocation: OutputLocation(
-                    tempPath,
-                    useSymlinks: buildOptions.outputSymlinksOnly,
-                    hoist: false,
-                  ),
-                ),
-              );
-            }),
-          ),
-          testingOverrides: testingOverrides,
-        ).run();
+    final result = await BuildCommand(
+      builderFactories: builderFactories,
+      buildOptions: buildOptions.copyWith(
+        compileStrategy: CompileStrategy.forceJit,
+        buildDirs: buildOptions.buildDirs.rebuild((b) {
+          b.add(
+            BuildDirectory(
+              '',
+              outputLocation: OutputLocation(
+                tempPath,
+                useSymlinks: buildOptions.outputSymlinksOnly,
+                hoist: false,
+              ),
+            ),
+          );
+        }),
+      ),
+      testingOverrides: testingOverrides,
+    ).run();
     if (result != ExitCode.success.code) {
       buildLog.warning('Skipping script run due to build failure.');
       return result;

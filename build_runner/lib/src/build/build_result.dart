@@ -36,10 +36,9 @@ class BuildResult {
     PhasedAssetDeps? phasedAssetDeps,
     required this.buildOutputReader,
     FailureType? failureType,
-  }) : failureType =
-           failureType == null && status == BuildStatus.failure
-               ? FailureType.general
-               : failureType,
+  }) : failureType = failureType == null && status == BuildStatus.failure
+           ? FailureType.general
+           : failureType,
        errors = errors ?? BuiltList(),
        outputs = outputs ?? BuiltList(),
        phasedAssetDeps = phasedAssetDeps ?? PhasedAssetDeps();

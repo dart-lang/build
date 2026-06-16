@@ -44,15 +44,15 @@ Module _moduleForComponent(
   // public srcs (not under lib/src).
   final sources = componentLibraries.map((n) => n.id).toSet();
   final nonSrcIds = sources.where((id) => !id.path.startsWith('lib/src/'));
-  final primaryId =
-      nonSrcIds.isNotEmpty ? nonSrcIds.reduce(_min) : sources.reduce(_min);
+  final primaryId = nonSrcIds.isNotEmpty
+      ? nonSrcIds.reduce(_min)
+      : sources.reduce(_min);
   // Expand to include all the part files of each node, these aren't
   // included as individual `_AssetNodes`s in `connectedComponents`.
   sources.addAll(componentLibraries.expand((n) => n.parts));
-  final directDependencies =
-      <AssetId>{}
-        ..addAll(componentLibraries.expand((n) => n.depsForPlatform(platform)))
-        ..removeAll(sources);
+  final directDependencies = <AssetId>{}
+    ..addAll(componentLibraries.expand((n) => n.depsForPlatform(platform)))
+    ..removeAll(sources);
   final isSupported = componentLibraries
       .expand((l) => l.sdkDeps)
       .every(platform.supportsLibrary);
@@ -116,8 +116,9 @@ Map<AssetId, Set<AssetId>> _findReverseEntrypointDeps(
 ///   * Else merge it into with others that are depended on by the same set of
 ///   entrypoints
 List<Module> _mergeModules(Iterable<Module> modules, Set<AssetId> entrypoints) {
-  final entrypointModules =
-      modules.where((m) => m.sources.any(entrypoints.contains)).toList();
+  final entrypointModules = modules
+      .where((m) => m.sources.any(entrypoints.contains))
+      .toList();
 
   // Groups of modules that can be merged into an existing entrypoint module.
   final entrypointModuleGroups = {
@@ -213,8 +214,10 @@ List<Module> _computeModules(
     hashCode: (l) => l.id.hashCode,
   );
 
-  final entryIds =
-      libraries.values.where((l) => l.isEntryPoint).map((l) => l.id).toSet();
+  final entryIds = libraries.values
+      .where((l) => l.isEntryPoint)
+      .map((l) => l.id)
+      .toSet();
   return _mergeModules(
     connectedComponents.map((c) => _moduleForComponent(c, platform)),
     entryIds,

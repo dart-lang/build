@@ -111,10 +111,9 @@ class PackageAssetReader {
   String get _rootPackagePath {
     // If the root package has a pub layout, use `packagePath`.
     final rootPackage = _rootPackage;
-    final root =
-        rootPackage != null
-            ? packageConfig[rootPackage]?.root.toFilePath()
-            : null;
+    final root = rootPackage != null
+        ? packageConfig[rootPackage]?.root.toFilePath()
+        : null;
     if (root != null && Directory(p.join(root, 'lib')).existsSync()) {
       return root;
     }

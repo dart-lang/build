@@ -69,12 +69,11 @@ class ServeCommand implements BuildRunnerCommand {
         return ExitCode.osError.code;
       }
 
-      final watcher =
-          await WatchCommand(
-            builderFactories: builderFactories,
-            buildOptions: buildOptions,
-            testingOverrides: testingOverrides,
-          ).watch();
+      final watcher = await WatchCommand(
+        builderFactories: builderFactories,
+        buildOptions: buildOptions,
+        testingOverrides: testingOverrides,
+      ).watch();
       if (watcher == null) {
         return ChildProcess.recompileBuildersExitCode;
       }

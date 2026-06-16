@@ -45,10 +45,9 @@ void main() {
       'test_builder': [(_) => testBuilder],
     },
     postProcessBuilderFactories: {
-      'a:post_copy_builder':
-          (options) => CopyingPostProcessBuilder(
-            outputExtension: options.config['extension'] as String? ?? '.post',
-          ),
+      'a:post_copy_builder': (options) => CopyingPostProcessBuilder(
+        outputExtension: options.config['extension'] as String? ?? '.post',
+      ),
     },
   );
   final globBuilder = GlobbingBuilder(Glob('**.txt'));
@@ -363,8 +362,9 @@ void main() {
                 ),
               ],
             },
-            postProcessBuilderFactories:
-                builderFactories.postProcessBuilderFactories.toMap(),
+            postProcessBuilderFactories: builderFactories
+                .postProcessBuilderFactories
+                .toMap(),
           ),
           builders,
           {
@@ -503,10 +503,9 @@ targets:
 
         final assetGraphJsonId = makeAssetId('a|$assetGraphJsonPath');
         expect(result.readerWriter.testing.exists(assetGraphJsonId), isTrue);
-        final cachedBuildState =
-            AssetGraphJson.deserialize(
-              result.readerWriter.testing.readBytes(assetGraphJsonId),
-            )!.buildState;
+        final cachedBuildState = AssetGraphJson.deserialize(
+          result.readerWriter.testing.readBytes(assetGraphJsonId),
+        )!.buildState;
         expect(
           cachedBuildState.sources,
           unorderedEquals([makeAssetId('a|web/a.txt')]),
@@ -828,8 +827,8 @@ additional_public_assets:
 
     test('can read files from external packages', () async {
       final builder = TestBuilder(
-        extraWork:
-            (buildStep, _) => buildStep.canRead(makeAssetId('b|lib/b.txt')),
+        extraWork: (buildStep, _) =>
+            buildStep.canRead(makeAssetId('b|lib/b.txt')),
       );
       await testBuilders(
         [builder],
@@ -1153,10 +1152,9 @@ targets:
     );
 
     final graphId = makeAssetId('a|$assetGraphJsonPath');
-    final cachedBuildState =
-        AssetGraphJson.deserialize(
-          result.readerWriter.testing.readBytes(graphId),
-        )!.buildState;
+    final cachedBuildState = AssetGraphJson.deserialize(
+      result.readerWriter.testing.readBytes(graphId),
+    )!.buildState;
     final outputId = AssetId('a', 'lib/a.txt.out');
 
     final buildStepId = BuildStepId(
@@ -1384,17 +1382,6 @@ targets:
             outputs: {},
             resumeFrom: result,
           );
-
-          final buildState =
-              AssetGraphJson.deserialize(
-                result.readerWriter.testing.readBytes(
-                  makeAssetId('a|$assetGraphJsonPath'),
-                ),
-              )!.buildState;
-          expect(
-            buildState.isMissingSource(makeAssetId('a|lib/a.txt.copy')),
-            isTrue,
-          );
         },
       );
     });
@@ -1434,17 +1421,14 @@ targets:
       );
 
       /// Should be deleted using the writer, and converted to missingSource.
-      final newBuildState =
-          AssetGraphJson.deserialize(
-            result.readerWriter.testing.readBytes(
-              makeAssetId('a|$assetGraphJsonPath'),
-            ),
-          )!.buildState;
+      final newBuildState = AssetGraphJson.deserialize(
+        result.readerWriter.testing.readBytes(
+          makeAssetId('a|$assetGraphJsonPath'),
+        ),
+      )!.buildState;
       final anId = makeAssetId('a|lib/a.txt');
       final aCopyId = makeAssetId('a|lib/a.txt.copy');
       final aCloneId = makeAssetId('a|lib/a.txt.copy.clone');
-      expect(newBuildState.isMissingSource(anId), isTrue);
-      expect(newBuildState.isMissingSource(aCopyId), isTrue);
       expect(
         newBuildState.isSource(aCloneId) ||
             result.buildPlan.buildStepPlan.isDeclaredOutput(aCloneId),
@@ -1546,12 +1530,11 @@ targets:
       );
 
       // Read cached build state and validate.
-      final buildState =
-          AssetGraphJson.deserialize(
-            result.readerWriter.testing.readBytes(
-              makeAssetId('a|$assetGraphJsonPath'),
-            ),
-          )!.buildState;
+      final buildState = AssetGraphJson.deserialize(
+        result.readerWriter.testing.readBytes(
+          makeAssetId('a|$assetGraphJsonPath'),
+        ),
+      )!.buildState;
       final fileAId = makeAssetId('a|lib/file.a');
       final fileCId = makeAssetId('a|lib/file.c');
       expect(buildState.isSource(fileAId), isTrue);
@@ -1785,12 +1768,9 @@ targets:
         resumeFrom: result,
       );
 
-      final finalBuildState =
-          AssetGraphJson.deserialize(
-            result.readerWriter.testing.readBytes(
-              AssetId('a', assetGraphJsonPath),
-            ),
-          )!.buildState;
+      final finalBuildState = AssetGraphJson.deserialize(
+        result.readerWriter.testing.readBytes(AssetId('a', assetGraphJsonPath)),
+      )!.buildState;
 
       expect(
         finalBuildState

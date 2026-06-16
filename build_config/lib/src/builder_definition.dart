@@ -94,10 +94,9 @@ class BuilderDefinition {
     BuildTo? buildTo,
     TargetBuilderConfigDefaults? defaults,
   }) : // ignore: deprecated_member_use
-       target =
-           target != null
-               ? normalizeTargetKeyUsage(target, currentPackage)
-               : null,
+       target = target != null
+           ? normalizeTargetKeyUsage(target, currentPackage)
+           : null,
        autoApply = autoApply ?? AutoApply.none,
        requiredInputs = requiredInputs?.toList() ?? const [],
        runsBefore =
@@ -140,18 +139,17 @@ class BuilderDefinition {
   }
 
   @override
-  String toString() =>
-      {
-        'autoApply': autoApply,
-        'import': import,
-        'builderFactories': builderFactories,
-        'buildExtensions': buildExtensions,
-        'requiredInputs': requiredInputs,
-        'runsBefore': runsBefore,
-        'isOptional': isOptional,
-        'buildTo': buildTo,
-        'defaults': defaults,
-      }.toString();
+  String toString() => {
+    'autoApply': autoApply,
+    'import': import,
+    'builderFactories': builderFactories,
+    'buildExtensions': buildExtensions,
+    'requiredInputs': requiredInputs,
+    'runsBefore': runsBefore,
+    'isOptional': isOptional,
+    'buildTo': buildTo,
+    'defaults': defaults,
+  }.toString();
 }
 
 /// The definition of a `PostProcessBuilder` in the `post_process_builders`
@@ -206,12 +204,11 @@ class PostProcessBuilderDefinition {
   }
 
   @override
-  String toString() =>
-      {
-        'import': import,
-        'builderFactory': builderFactory,
-        'defaults': defaults,
-      }.toString();
+  String toString() => {
+    'import': import,
+    'builderFactory': builderFactory,
+    'defaults': defaults,
+  }.toString();
 }
 
 /// Default values that builder authors can specify when users don't fill in the

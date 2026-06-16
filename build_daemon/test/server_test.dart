@@ -106,10 +106,9 @@ void main() {
 
       // Register second client which is interested in changes.
       final targetWithChanges = DefaultBuildTarget(
-        (b) =>
-            b
-              ..target = ''
-              ..reportChangedAssets = true,
+        (b) => b
+          ..target = ''
+          ..reportChangedAssets = true,
       );
       interstedClient.sink.add(
         jsonEncode(

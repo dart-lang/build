@@ -106,12 +106,11 @@ Future<void> main() async {
               'pkg',
               '.dart_tool/build/generated/pkg/lib/$output.dart',
             );
-            final outputContents =
-                tester.readerWriter!.testing.exists(assetId)
-                    ? tester.readerWriter!.testing.readString(assetId)
-                    : tester.readerWriter!.testing.exists(hiddenAssetId)
-                    ? tester.readerWriter!.testing.readString(hiddenAssetId)
-                    : '';
+            final outputContents = tester.readerWriter!.testing.exists(assetId)
+                ? tester.readerWriter!.testing.readString(assetId)
+                : tester.readerWriter!.testing.exists(hiddenAssetId)
+                ? tester.readerWriter!.testing.readString(hiddenAssetId)
+                : '';
             // The test builder output is a list of "$name,$hash" for each input
             // that was read, including transitively resolved sources. Check it
             // for [input]. If found, this output is invalidated: recursively
@@ -129,8 +128,8 @@ Future<void> main() async {
         // If [changeImports] then change some imports; it's only possible to
         // change imports for files that will be output.
         if (changeImports && expectedOutputs.isNotEmpty) {
-          final sourceToChangeImports =
-              expectedOutputs.toList()[random.nextInt(expectedOutputs.length)];
+          final sourceToChangeImports = expectedOutputs
+              .toList()[random.nextInt(expectedOutputs.length)];
           importGraph[sourceToChangeImports] = randomImportList();
           tester.importGraph(importGraph);
         }

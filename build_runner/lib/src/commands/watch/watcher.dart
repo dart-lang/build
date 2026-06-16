@@ -27,12 +27,12 @@ class Watcher {
 
   Watcher._(this._buildPlan, this._buildSeries, this._expectedDeletes);
 
-  BuildPackages get buildPackages => _buildPlan.buildPackages;
+  BuildPackages get buildPackages => _buildPlan.buildSpec.buildPackages;
 
   factory Watcher({required BuildPlan buildPlan, required Future<void> until}) {
     final expectedDeletes = <AssetId>{};
-    buildPlan = buildPlan.copyWith(
-      readerWriter: buildPlan.readerWriter.copyWith(
+    buildPlan = buildPlan.rebuild(
+      (b) => b.readerWriter = buildPlan.readerWriter.copyWith(
         onDelete: expectedDeletes.add,
       ),
     );
@@ -63,12 +63,11 @@ class Watcher {
 
     // Start watching files immediately, before the first build is even started.
     final packagesWatcher = BuildPackagesWatcher(
-      _buildPlan.buildPackages,
-      watch:
-          (buildPackage) => BuildPackageWatcher(
-            buildPackage,
-            watch: _buildPlan.testingOverrides.directoryWatcherFactory,
-          ),
+      _buildPlan.buildSpec.buildPackages,
+      watch: (buildPackage) => BuildPackageWatcher(
+        buildPackage,
+        watch: _buildPlan.buildSpec.testingOverrides.directoryWatcherFactory,
+      ),
     );
     packagesWatcher
         .watch()
@@ -78,7 +77,7 @@ class Watcher {
           return change;
         })
         .debounceBuffer(
-          _buildPlan.testingOverrides.debounceDelay ??
+          _buildPlan.buildSpec.testingOverrides.debounceDelay ??
               const Duration(milliseconds: 250),
         )
         .asyncMap(

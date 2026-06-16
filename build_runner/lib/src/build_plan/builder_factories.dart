@@ -18,14 +18,13 @@ class BuilderFactories {
   BuilderFactories(
     Map<String, List<BuilderFactory>> builderFactories, {
     Map<String, PostProcessBuilderFactory>? postProcessBuilderFactories,
-  }) : builderFactories =
-           builderFactories
-               .map<String, BuiltList<BuilderFactory>>(
-                 (k, v) => MapEntry(k, v.build()),
-               )
-               .build(),
-       postProcessBuilderFactories =
-           (postProcessBuilderFactories ?? {}).build();
+  }) : builderFactories = builderFactories
+           .map<String, BuiltList<BuilderFactory>>(
+             (k, v) => MapEntry(k, v.build()),
+           )
+           .build(),
+       postProcessBuilderFactories = (postProcessBuilderFactories ?? {})
+           .build();
 
   /// Whether there are factories for all definitions in [builderDefinitions].
   ///

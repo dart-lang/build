@@ -71,7 +71,7 @@ class AnalysisDriverFilesystem
   /// [invalidatedSources] are removed.
   void startBuild(
     Map<AssetId, int> generatedPhases, {
-    required Set<AssetId>? invalidatedSources,
+    required Iterable<AssetId>? invalidatedSources,
   }) {
     final previousPhaseByPath = _phaseByPath;
     _phaseByPath = <String, int>{};

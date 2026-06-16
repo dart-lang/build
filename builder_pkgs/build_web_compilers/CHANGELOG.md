@@ -1,3 +1,10 @@
+## 4.8.2
+- Several bug fixes for `DdcFrontendServerBuilder`.
+
+## 4.8.1
+- Bump the min sdk to 3.13.0-107.0.dev.
+- Internal only changes.
+
 ## 4.8.0
 
 - Improve error message when a transitive import uses a disallowed platform

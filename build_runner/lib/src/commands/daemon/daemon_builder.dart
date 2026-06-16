@@ -56,7 +56,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   final _buildScriptUpdateCompleter = Completer<void>();
   Future<void> get buildScriptUpdated => _buildScriptUpdateCompleter.future;
 
-  String get _currentPackageName => _buildPlan.buildPackages.currentPackage;
+  String get _currentPackageName =>
+      _buildPlan.buildSpec.buildPackages.currentPackage;
 
   @override
   Future<void> build(
@@ -64,8 +65,9 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     Iterable<WatchEvent> fileChanges,
   ) async {
     final defaultTargets = targets.cast<DefaultBuildTarget>();
-    final updates =
-        fileChanges.map((change) => AssetId.parse(change.path)).toSet();
+    final updates = fileChanges
+        .map((change) => AssetId.parse(change.path))
+        .toSet();
 
     final targetNames = targets.map((t) => t.target).toSet();
     _logMessage(Level.INFO, 'About to build ${targetNames.toList()}...');
@@ -225,8 +227,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         outputStreamController.add(ServerLog.fromLogRecord(record));
       };
     });
-    buildPlan = buildPlan.copyWith(
-      readerWriter: buildPlan.readerWriter.copyWith(
+    buildPlan = buildPlan.rebuild(
+      (b) => b.readerWriter = buildPlan.readerWriter.copyWith(
         onDelete: expectedDeletes.add,
       ),
     );
@@ -235,10 +237,10 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
     // Only actually used for the AutoChangeProvider.
     Stream<List<WatchEvent>> graphEvents() =>
-        BuildPackagesWatcher(buildPlan.buildPackages)
+        BuildPackagesWatcher(buildPlan.buildSpec.buildPackages)
             .watch()
             .debounceBuffer(
-              buildPlan.testingOverrides.debounceDelay ??
+              buildPlan.buildSpec.testingOverrides.debounceDelay ??
                   const Duration(milliseconds: 250),
             )
             .asyncMap(
@@ -246,16 +248,14 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
             )
             .where((changes) => changes.isNotEmpty)
             .map(
-              (changes) =>
-                  changes
-                      .map((change) => WatchEvent(change.type, '${change.id}'))
-                      .toList(),
+              (changes) => changes
+                  .map((change) => WatchEvent(change.type, '${change.id}'))
+                  .toList(),
             );
 
-    final changeProvider =
-        daemonOptions.buildMode == BuildMode.Auto
-            ? AutoChangeProviderImpl(graphEvents())
-            : ManualChangeProviderImpl(buildSeries.checkForChanges);
+    final changeProvider = daemonOptions.buildMode == BuildMode.Auto
+        ? AutoChangeProviderImpl(graphEvents())
+        : ManualChangeProviderImpl(buildSeries.checkForChanges);
 
     return BuildRunnerDaemonBuilder._(
       buildPlan,

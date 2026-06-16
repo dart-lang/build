@@ -18,6 +18,7 @@ import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/build_plan.dart';
+import 'package:build_runner/src/build_plan/build_spec.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
 import 'package:build_runner/src/build_plan/phase.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
@@ -41,7 +42,7 @@ void main() {
       buildPackages = BuildPackages.singlePackageBuild('a', [
         BuildPackage.forTesting(name: 'a', isOutput: true),
       ]);
-      buildState = BuildState.create(sources: <AssetId>{});
+      buildState = BuildState(<AssetId>{});
       buildPhases = BuildPhases([]);
     });
 
@@ -65,23 +66,17 @@ void main() {
       readerWriter.testing.writeString(deletedId, '');
 
       final buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories({}),
-        buildOptions: BuildOptions.forTests(),
-        testingOverrides: TestingOverrides(
-          buildPhases: buildPhases,
-          readerWriter: readerWriter,
-          buildPackages: buildPackages,
+        await BuildSpec.load(
+          builderFactories: BuilderFactories({}),
+          buildOptions: BuildOptions.forTests(),
+          testingOverrides: TestingOverrides(
+            buildPhases: buildPhases,
+            readerWriter: readerWriter,
+            buildPackages: buildPackages,
+          ),
         ),
       );
-      reader = BuildOutputReader(
-        buildPlan: buildPlan,
-        readerWriter: readerWriter,
-        buildState: buildState,
-        processedOutputs: <AssetId>{
-          ...buildPlan.buildStepPlan.declaredOutputs,
-          ...buildState.actualPostOutputs,
-        },
-      );
+      reader = BuildOutputReader(buildPlan: buildPlan, buildState: buildState);
       expect(await reader.canRead(notDeletedId), true);
       expect(await reader.canRead(deletedId), false);
     });
@@ -90,6 +85,8 @@ void main() {
       final id = AssetId('a', 'web/a.txt');
       final primaryId = AssetId('a', 'web/a.dart');
       final buildStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
+
+      var buildState = BuildState(<AssetId>{});
       final stepResult = BuildStepResult((b) {
         b.result = false;
         b.isHidden = false;
@@ -110,25 +107,19 @@ void main() {
       ]);
 
       var buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories({}),
-        buildOptions: BuildOptions.forTests(
-          buildDirs: {BuildDirectory('web')}.build(),
-        ),
-        testingOverrides: TestingOverrides(
-          buildPhases: buildPhases,
-          readerWriter: readerWriter,
-          buildPackages: buildPackages,
+        await BuildSpec.load(
+          builderFactories: BuilderFactories({}),
+          buildOptions: BuildOptions.forTests(
+            buildDirs: {BuildDirectory('web')}.build(),
+          ),
+          testingOverrides: TestingOverrides(
+            buildPhases: buildPhases,
+            readerWriter: readerWriter,
+            buildPackages: buildPackages,
+          ),
         ),
       );
-      reader = BuildOutputReader(
-        buildPlan: buildPlan,
-        readerWriter: readerWriter,
-        buildState: buildState,
-        processedOutputs: <AssetId>{
-          ...buildPlan.buildStepPlan.declaredOutputs,
-          ...buildState.actualPostOutputs,
-        },
-      );
+      reader = BuildOutputReader(buildPlan: buildPlan, buildState: buildState);
       expect(
         await reader.unreadableReason(id),
         UnreadableReason.failed,
@@ -136,24 +127,25 @@ void main() {
       );
 
       buildPlan = await BuildPlan.load(
-        builderFactories: BuilderFactories({}),
-        buildOptions: BuildOptions.forTests(
-          buildDirs: {BuildDirectory('web')}.build(),
-          buildFilters: {BuildFilter(Glob('b'), Glob('foo'))}.build(),
-        ),
-        testingOverrides: TestingOverrides(
-          buildPhases: buildPhases,
-          readerWriter: readerWriter,
-          buildPackages: buildPackages,
+        await BuildSpec.load(
+          builderFactories: BuilderFactories({}),
+          buildOptions: BuildOptions.forTests(
+            buildDirs: {BuildDirectory('web')}.build(),
+            buildFilters: {BuildFilter(Glob('b'), Glob('foo'))}.build(),
+          ),
+          testingOverrides: TestingOverrides(
+            buildPhases: buildPhases,
+            readerWriter: readerWriter,
+            buildPackages: buildPackages,
+          ),
         ),
       );
-      reader = BuildOutputReader(
-        buildPlan: buildPlan,
-        readerWriter: readerWriter,
-        buildState: buildState,
-        // `a` does not match the build filter and is not processed.
-        processedOutputs: {},
-      );
+
+      // If a step is skipped due to build filters it is not evaluated and its
+      // result is not added to the buildState.
+      buildState = BuildState(<AssetId>{});
+
+      reader = BuildOutputReader(buildPlan: buildPlan, buildState: buildState);
 
       expect(
         await reader.unreadableReason(id),

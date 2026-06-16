@@ -11,20 +11,20 @@ import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
-import 'package:watcher/watcher.dart';
 
 import '../build_plan/build_configs.dart';
+import '../build_plan/build_inputs.dart';
 import '../build_plan/build_options.dart';
 import '../build_plan/build_packages.dart';
 import '../build_plan/build_phases.dart';
 import '../build_plan/build_plan.dart';
+import '../build_plan/build_spec.dart';
 import '../build_plan/build_step_plan.dart';
 import '../build_plan/phase.dart';
 import '../build_plan/testing_overrides.dart';
 import '../constants.dart';
 import '../io/build_output_reader.dart';
 import '../io/create_merged_dir.dart';
-import '../io/generated_asset_hider.dart';
 import '../io/reader_writer.dart';
 import '../logging/build_log.dart';
 import '../logging/timed_activities.dart';
@@ -55,11 +55,11 @@ final ResolversImpl _defaultResolvers = ResolversImpl(
 
 /// A single build.
 class Build {
-  BuildPlan _buildPlan;
+  final BuildPlan buildPlan;
 
   // Collaborators.
   final ResourceManager resourceManager;
-  ReaderWriter _readerWriter;
+  final ReaderWriter readerWriter;
   final LibraryCycleGraphLoader previousLibraryCycleGraphLoader =
       LibraryCycleGraphLoader();
   final AssetDepsLoader? previousDepsLoader;
@@ -76,49 +76,6 @@ class Build {
   final lazyPhases = <BuildStepId, Future<Iterable<AssetId>>>{};
   final lazyGlobs = <GlobId, Future<void>>{};
 
-  /// Generated outputs that have been processed.
-  ///
-  /// That means they have been checked to determine whether they
-  /// need building; if so, those have been built, and state has been
-  /// updated accordingly.
-  final Set<AssetId> processedOutputs = {};
-
-  /// Globs that have been processed.
-  ///
-  /// That means they have been checked to determine whether they
-  /// need evaluating, and if so their state has been updated accordingly.
-  final Set<GlobId> processedGlobs = {};
-
-  /// Inputs that changed since the last build.
-  ///
-  /// Filled from the `updates` passed in to the build.
-  final Set<AssetId> changedInputs = {};
-
-  /// Assets that were deleted since the last build.
-  ///
-  /// This is used to distinguish between missing sources that were
-  /// already known and missing sources that are newly known.
-  final Set<AssetId> deletedAssets = {};
-
-  /// Assets that might be new primary inputs since the previous build.
-  ///
-  /// This means: new inputs, new generated outputs, or generated outputs
-  /// from generators that failed in the previous build and succeed in this
-  /// build.
-  final Set<AssetId> newPrimaryInputs = {};
-
-  /// Outputs that changed since the last build.
-  ///
-  /// Filled during the build as each output is produced and its digest is
-  /// checked against the digest from the previous build.
-  final Set<AssetId> changedOutputs = {};
-
-  /// Glob queries that changed since the last build.
-  final Set<GlobId> changedGlobs = {};
-
-  /// Build steps for which errors have been shown.
-  final Set<BuildStepId> errorsShownSteps = {};
-
   /// Whether a graph from [previousLibraryCycleGraphLoader] has any changed
   /// transitive source.
   final Map<LibraryCycleGraph, bool> changedGraphs = Map.identity();
@@ -126,66 +83,61 @@ class Build {
   /// The build output.
   BuildOutputReader? _buildOutputReader;
 
-  Build({
-    required BuildPlan buildPlan,
-    required ReaderWriter readerWriter,
-    required this.resourceManager,
-    required this.buildState,
-  }) : _buildPlan = buildPlan,
-       _readerWriter = readerWriter,
-       previousDepsLoader =
-           buildPlan.previousPhasedAssetDeps == null
-               ? null
-               : AssetDepsLoader.fromDeps(buildPlan.previousPhasedAssetDeps!),
-       resolvers = buildPlan.testingOverrides.resolvers ?? _defaultResolvers,
-       resolversImpl = switch (buildPlan.testingOverrides.resolvers ??
-           _defaultResolvers) {
-         ResolversImpl r => r,
-         _ => null,
-       };
+  Build({required this.buildPlan, required this.resourceManager})
+    : readerWriter = buildPlan.readerWriter,
+      previousDepsLoader = buildPlan.previousBuild.phasedAssetDeps == null
+          ? null
+          : AssetDepsLoader.fromDeps(buildPlan.previousBuild.phasedAssetDeps!),
+      resolvers =
+          buildPlan.buildSpec.testingOverrides.resolvers ?? _defaultResolvers,
+      resolversImpl = switch (buildPlan.buildSpec.testingOverrides.resolvers ??
+          _defaultResolvers) {
+        ResolversImpl r => r,
+        _ => null,
+      },
+      buildState = BuildState(buildPlan.buildInputs.sources) {
+    for (final entry in buildPlan.buildInputs.digests.entries) {
+      buildState.updateSourceDigest(entry.key, entry.value);
+    }
+  }
 
-  BuildPlan get buildPlan => _buildPlan;
-  ReaderWriter get readerWriter => _readerWriter;
-  BuildOptions get buildOptions => buildPlan.buildOptions;
-  TestingOverrides get testingOverrides => buildPlan.testingOverrides;
-  BuildPackages get buildPackages => buildPlan.buildPackages;
-  BuildConfigs get buildConfigs => buildPlan.buildConfigs;
+  BuildSpec get buildSpec => buildPlan.buildSpec;
+  BuildOptions get buildOptions => buildSpec.buildOptions;
+  TestingOverrides get testingOverrides => buildSpec.testingOverrides;
+  BuildPackages get buildPackages => buildSpec.buildPackages;
+  BuildConfigs get buildConfigs => buildSpec.buildConfigs;
   BuildPhases get buildPhases => buildPlan.buildStepPlan.buildPhases;
+  BuildState? get previousBuildState => buildPlan.previousBuild.buildState;
+  BuildInputs get buildInputs => buildPlan.buildInputs;
   BuildStepPlan get buildStepPlan => buildPlan.buildStepPlan;
 
-  BuildOutputReader get buildOutputReader =>
-      _buildOutputReader ??= BuildOutputReader(
-        buildPlan: buildPlan,
-        readerWriter: readerWriter,
-        buildState: buildState,
-        processedOutputs: processedOutputs,
-      );
+  BuildOutputReader get buildOutputReader => _buildOutputReader ??=
+      BuildOutputReader(buildPlan: buildPlan, buildState: buildState);
 
-  Future<BuildResult> run(Set<AssetId> updates) async {
+  Future<BuildResult> run() async {
     buildLog.configuration = buildLog.configuration.rebuild(
       (b) => b..singleOutputPackage = buildPackages.singleOutputPackage,
     );
-    var result = await _safeBuild(updates);
+    var result = await _safeBuild();
     if (result.status == BuildStatus.success) {
-      final failedSteps = <BuildStepId>{};
-      for (final output in processedOutputs) {
-        final step = buildStepPlan.stepForDeclaredOutputOrNull(output);
-        if (step == null) continue;
-        final stepResult = buildState.stepResult(step);
-        if (stepResult.failed) {
-          failedSteps.add(step);
-        }
-      }
+      final failedSteps = buildState.failedSteps;
       if (failedSteps.isNotEmpty) {
         for (final step in failedSteps) {
-          if (errorsShownSteps.contains(step)) continue;
+          final stepResult = buildState.stepResult(step);
+          if (!identical(
+            stepResult,
+            previousBuildState?.stepResultOrNull(step),
+          )) {
+            // It was run in this build, so the errors were already logged
+            // by the builder itself.
+            continue;
+          }
           final phase = buildPhases.inBuildPhases[step.phaseNumber];
           final logger = buildLog.loggerFor(
             phase: phase,
             primaryInput: step.primaryInput,
             lazy: phase.isOptional,
           );
-          final stepResult = buildState.stepResult(step);
           for (final error in stepResult.errors) {
             logger.severe(error);
           }
@@ -217,14 +169,14 @@ class Build {
     await resourceManager.disposeAll();
 
     // If requested, create output directories. If that fails, fail the build.
-    if (buildPlan.buildOptions.buildDirs.any(
+    if (buildPlan.buildDirs.any(
           (target) => target.outputLocation?.path.isNotEmpty ?? false,
         ) &&
         result.status == BuildStatus.success) {
       if (!await createMergedOutputDirectories(
         buildPackages: buildPackages,
         outputSymlinksOnly: buildOptions.outputSymlinksOnly,
-        buildDirs: buildOptions.buildDirs,
+        buildDirs: buildPlan.buildDirs,
         buildOutputReader: buildOutputReader,
         readerWriter: readerWriter,
       )) {
@@ -245,106 +197,13 @@ class Build {
     return result;
   }
 
-  Future<Set<AssetId>> _updateBuildState(Set<AssetId> updates) async {
-    changedInputs.clear();
-    deletedAssets.clear();
-
-    // Check what actually changed for each asset in `updates`.
-    readerWriter.cache.invalidate(updates);
-    final resolvedUpdates = <AssetId, ChangeType>{};
-    final previousSources = <AssetId>{};
-    final newDigests = <AssetId, Digest>{};
-    for (final id in updates) {
-      final oldIsSource = buildState.isSource(id);
-      if (oldIsSource) {
-        previousSources.add(id);
-      }
-      final oldExisted = _isFile(id);
-      final oldDigest = oldIsSource ? buildState.digestOfSource(id) : null;
-      var exists = false;
-      Digest? newDigest;
-      if (await readerWriter.canRead(id)) {
-        exists = true;
-        // Assets are only eagerly read if they were an input in the previous
-        // build. In that case, they have a digest. Compute the new digest to
-        // check if the file changed.
-        if (oldDigest != null) {
-          try {
-            newDigest = await readerWriter.digest(id);
-            newDigests[id] = newDigest;
-          } catch (_) {
-            // Was deleted after `canRead`.
-            exists = false;
-          }
-        }
-      }
-
-      if (oldExisted && !exists) {
-        resolvedUpdates[id] = ChangeType.REMOVE;
-        deletedAssets.add(id);
-      } else if (!oldExisted && exists) {
-        changedInputs.add(id);
-        newPrimaryInputs.add(id);
-        resolvedUpdates[id] = ChangeType.ADD;
-      } else if (oldExisted &&
-          oldDigest != null &&
-          exists &&
-          oldDigest != newDigest) {
-        changedInputs.add(id);
-        resolvedUpdates[id] = ChangeType.MODIFY;
-      }
-    }
-
-    final deleted = buildState.updateForNextBuild(
-      buildStepPlan,
-      resolvedUpdates,
-    );
-    for (final id in deleted) {
-      await readerWriter.delete(id);
-    }
-    _buildPlan = _buildPlan.updateForSources(buildState.sources);
-    deletedAssets.addAll(deleted);
-    for (final entry in newDigests.entries) {
-      buildState.updateSourceDigest(entry.key, entry.value);
-    }
-
-    final invalidatedSources = <AssetId>{};
-    for (final entry in resolvedUpdates.entries) {
-      final id = entry.key;
-      final changeType = entry.value;
-      if (changeType != ChangeType.ADD && previousSources.contains(id)) {
-        invalidatedSources.add(id);
-      }
-    }
-    return invalidatedSources;
-  }
-
-  /// Runs a build inside a zone with an error handler and stack chain
-  /// capturing.
-  Future<BuildResult> _safeBuild(Set<AssetId> idsToCheck) {
+  Future<BuildResult> _safeBuild() {
     final done = Completer<BuildResult>();
     runZonedGuarded(
       () async {
-        final invalidatedSources =
-            buildPlan.cleanBuild ? null : await _updateBuildState(idsToCheck);
-        // _updateBuildState can change the buildStepPlan, give _readerWriter
-        // the latest plan.
-        _readerWriter = _readerWriter.copyWith(
-          generatedAssetHider:
-              _buildPlan.testingOverrides.flattenOutput
-                  ? const NoopGeneratedAssetHider()
-                  : _buildPlan.buildStepPlan,
-        );
-        for (final id in buildState.sources) {
-          if (buildState.isUnreadSource(id) &&
-              buildStepPlan.declaredOutputsOf(id).isNotEmpty) {
-            final digest = await readerWriter.digest(id);
-            buildState.updateSourceDigest(id, digest);
-          }
-        }
         await resolversImpl?.takeLockAndStartBuild(
           buildPlan.buildStepPlan.declaredOutputPhases,
-          invalidatedSources: invalidatedSources,
+          invalidatedSources: buildInputs.invalidatedSources,
         );
         final result = await _runPhases();
 
@@ -354,15 +213,15 @@ class Build {
         final currentPhasedAssetDeps =
             resolversImpl?.phasedAssetDeps() ?? PhasedAssetDeps();
         final updatedPhasedAssetDeps =
-            buildPlan.previousPhasedAssetDeps == null
-                ? currentPhasedAssetDeps
-                : buildPlan.previousPhasedAssetDeps!.update(
-                  currentPhasedAssetDeps,
-                );
+            buildPlan.previousBuild.phasedAssetDeps == null
+            ? currentPhasedAssetDeps
+            : buildPlan.previousBuild.phasedAssetDeps!.update(
+                currentPhasedAssetDeps,
+              );
         await readerWriter.writeAsBytes(
           AssetId(buildPackages.outputRoot, assetGraphJsonPath),
           AssetGraphJson.serialize(
-            buildPlanDigest: buildPlan.buildPlanDigest,
+            buildPlanDigest: buildSpec.buildPlanDigest,
             buildState: buildState,
             phasedAssetDeps: updatedPhasedAssetDeps,
           ),
@@ -493,8 +352,8 @@ class Build {
       for (final id in assetsToCheck) {
         if (!shouldBuildForDirs(
           id,
-          buildDirs: buildPlan.buildOptions.buildDirs,
-          buildFilters: buildPlan.buildOptions.buildFilters,
+          buildDirs: buildPlan.buildDirs,
+          buildFilters: buildPlan.buildFilters,
           phase: phase,
           buildConfigs: buildConfigs,
         )) {
@@ -519,14 +378,15 @@ class Build {
 
   /// If [id] is a generated asset, ensures that it has been built.
   ///
-  /// If has already been built according to [processedOutputs], returns
+  /// If has already been built according to [buildState], returns
   /// immediately.
   ///
   /// If it is currently being built according to [lazyPhases], waits for it to
   /// be built.
   Future<void> _buildOutput(AssetId id) async {
     final step = buildStepPlan.stepForDeclaredOutputOrNull(id);
-    if (step != null && !processedOutputs.contains(id)) {
+    if (step != null &&
+        !buildState.isProcessedOutput(buildStepPlan: buildStepPlan, id: id)) {
       await lazyPhases.putIfAbsent(step, () async {
         final phase = buildPhases.inBuildPhases[step.phaseNumber];
         return _buildForPrimaryInput(
@@ -561,7 +421,8 @@ class Build {
         buildStepPlan: buildStepPlan,
         buildState: buildState,
         assetBuilder: _buildOutput,
-        assetIsProcessedOutput: processedOutputs.contains,
+        assetIsProcessedOutput: (id) =>
+            buildState.isProcessedOutput(buildStepPlan: buildStepPlan, id: id),
         globEvaluator: _evaluateGlob,
       ),
       runningBuildStep: RunningBuildStep(
@@ -580,19 +441,28 @@ class Build {
     );
 
     final builderOutputs = expectedOutputs(builder, buildStepId.primaryInput);
-    if (!await _buildShouldRun(
+    final stepAction = await _computeStepAction(
       buildStepId,
       builderOutputs,
       singleStepReaderWriter,
-    )) {
+    );
+    if (stepAction.isSkip) {
       buildLog.skipStep(phase: phase, lazy: lazy);
-      for (final output in builderOutputs) {
-        processedOutputs.add(output);
+      if (stepAction == StepAction.skipMissingPrimaryInput) {
+        await _deletePreviousOutputs(builderOutputs);
+        _markStepSkipped(buildStepId, builderOutputs);
+      } else if (stepAction == StepAction.skipFailedPrimaryInput) {
+        await _markStepFailed(buildStepId, builderOutputs);
+      } else if (stepAction == StepAction.skipReuse) {
+        buildState.updateBuildStepResult(
+          buildStepId,
+          previousBuildState!.stepResult(buildStepId),
+        );
       }
       return <AssetId>[];
     }
 
-    await _cleanUpStaleOutputs(builderOutputs);
+    await _deletePreviousOutputs(builderOutputs);
 
     // Clear input tracking accumulated during `_buildShouldRun`.
     singleStepReaderWriter.inputTracker.clear();
@@ -649,7 +519,7 @@ class Build {
         phase: phase,
         anyOutputs: singleStepReaderWriter.assetsWritten.isNotEmpty,
         anyChangedOutputs: singleStepReaderWriter.assetsWritten.any(
-          changedOutputs.contains,
+          _isChangedOutput,
         ),
         lazy: lazy,
       );
@@ -775,7 +645,8 @@ class Build {
         buildStepPlan: buildStepPlan,
         buildState: buildState,
         assetBuilder: _buildOutput,
-        assetIsProcessedOutput: processedOutputs.contains,
+        assetIsProcessedOutput: (id) =>
+            buildState.isProcessedOutput(buildStepPlan: buildStepPlan, id: id),
         globEvaluator: _evaluateGlob,
       ),
       runningBuildStep: RunningBuildStep(
@@ -789,22 +660,30 @@ class Build {
     );
 
     final existingOutputs =
-        buildState
-            .postProcessBuildStepResultFor(postProcessBuildStepId)
+        previousBuildState
+            ?.postProcessBuildStepResultFor(postProcessBuildStepId)
             ?.outputs ??
         const <AssetId>{};
     if (!await _postProcessBuildStepShouldRun(
       postProcessBuildStepId,
       stepReaderWriter,
     )) {
-      processedOutputs.addAll(existingOutputs);
+      final oldResult = previousBuildState?.postProcessBuildStepResultFor(
+        postProcessBuildStepId,
+      );
+      if (oldResult != null) {
+        buildState.addPostProcessBuildStepResult(
+          postProcessBuildStepId,
+          oldResult,
+        );
+      }
       return <AssetId>[];
     }
     // Clear input tracking accumulated during `_buildShouldRun`.
     stepReaderWriter.inputTracker.clear();
 
     // Clean out the impacts of the previous run.
-    await _cleanUpStaleOutputs(existingOutputs);
+    await _deletePreviousOutputs(existingOutputs);
     buildState.removePostProcessBuildResult(postProcessBuildStepId);
 
     final logger = buildLog.loggerForOther(
@@ -863,12 +742,8 @@ class Build {
       buildStepId,
       BuildStepResult((b) => b..isHidden = isHidden),
     );
-    for (final output in outputs) {
-      processedOutputs.add(output);
-    }
   }
 
-  /// Marks the build step as failed and clears output digests.
   Future<void> _markStepFailed(
     BuildStepId buildStepId,
     Iterable<AssetId> outputs,
@@ -882,16 +757,14 @@ class Build {
         b.isHidden = isHidden;
       }),
     );
-    for (final output in outputs) {
-      processedOutputs.add(output);
-    }
+    await _deletePreviousOutputs(outputs);
   }
 
   /// Checks and returns whether any [outputs] need to be updated by
   /// the build step [step].
   ///
   /// As part of checking, builds any inputs that need building.
-  Future<bool> _buildShouldRun(
+  Future<StepAction> _computeStepAction(
     BuildStepId step,
     Iterable<AssetId> outputs,
     SingleStepReaderWriter readerWriter,
@@ -899,18 +772,19 @@ class Build {
     return await TimedActivity.track.runAsync(() async {
       // Update state for primary input if needed.
       if (buildStepPlan.isDeclaredOutput(step.primaryInput)) {
-        if (!processedOutputs.contains(step.primaryInput)) {
+        if (!buildState.isProcessedOutput(
+          buildStepPlan: buildStepPlan,
+          id: step.primaryInput,
+        )) {
           await _buildOutput(step.primaryInput);
         }
       }
 
-      // If the primary input has been deleted, the build is skipped.
-      if (deletedAssets.contains(step.primaryInput)) {
-        if (buildState.isMissingSource(step.primaryInput)) {
-          await _cleanUpStaleOutputs(outputs);
-          _markStepSkipped(step, outputs);
-          return false;
-        }
+      // If a primary input source file has been deleted, the build is skipped.
+      if (!buildStepPlan.isDeclaredOutput(step.primaryInput) &&
+          (buildInputs.deletedSources.contains(step.primaryInput) ||
+              buildInputs.deletedOutputs.contains(step.primaryInput))) {
+        return StepAction.skipMissingPrimaryInput;
       }
 
       // Propagate results for declared output primary input.
@@ -922,8 +796,7 @@ class Build {
         // If the primary input's generating step failed, this build is also
         // failed.
         if (inputStepResult.failed) {
-          await _markStepFailed(step, outputs);
-          return false;
+          return StepAction.skipFailedPrimaryInput;
         }
 
         // If the primary input succeeded but was not output, this build is
@@ -932,28 +805,48 @@ class Build {
           buildStepPlan: buildStepPlan,
           id: step.primaryInput,
         )) {
-          await _cleanUpStaleOutputs(outputs);
-          _markStepSkipped(step, outputs);
-          return false;
+          return StepAction.skipMissingPrimaryInput;
         }
       }
 
-      if (buildPlan.cleanBuild) return true;
+      if (buildInputs.cleanBuild) return StepAction.run;
 
-      if (buildPlan.triggersChanged) return true;
+      if (buildPlan.previousBuild.triggersChanged) return StepAction.run;
 
       if (buildPlan.phaseOptionsChanged(step.phaseNumber)) {
-        return true;
+        return StepAction.run;
       }
 
-      if (newPrimaryInputs.contains(step.primaryInput)) return true;
+      final primaryInput = step.primaryInput;
+      if (buildInputs.addedSources.contains(primaryInput)) {
+        return StepAction.run;
+      }
+
+      if (buildStepPlan.isDeclaredOutput(primaryInput)) {
+        final inputStep = buildStepPlan.stepForDeclaredOutput(primaryInput);
+        final oldResult = previousBuildState?.stepResultOrNull(inputStep);
+        final newResult = buildState.stepResult(inputStep);
+        final oldWasOutput =
+            oldResult?.result == true &&
+            oldResult!.outputs.containsKey(primaryInput);
+        final newWasOutput =
+            newResult.result == true &&
+            newResult.outputs.containsKey(primaryInput);
+
+        if (!oldWasOutput && newWasOutput) {
+          return StepAction.run;
+        }
+      }
 
       for (final output in outputs) {
-        if (deletedAssets.contains(output)) return true;
+        if (buildInputs.deletedSources.contains(output) ||
+            buildInputs.deletedOutputs.contains(output)) {
+          return StepAction.run;
+        }
       }
 
-      final stepResult = buildState.stepResultOrNull(step);
-      if (stepResult == null || !stepResult.hasRun) return true;
+      final stepResult = previousBuildState?.stepResultOrNull(step);
+      if (stepResult == null || !stepResult.hasRun) return StepAction.run;
 
       // Check for changes to any secondary inputs.
       for (final input in stepResult.inputs) {
@@ -962,15 +855,20 @@ class Build {
           input: input,
         );
 
-        if (changed) return true;
+        if (changed) return StepAction.run;
       }
 
       // Check for changes to any glob inputs.
       for (final globId in stepResult.globsEvaluated) {
-        if (!processedGlobs.contains(globId)) {
+        var currentGlobResult = buildState.globResultFor(globId);
+        if (currentGlobResult == null) {
           await _evaluateGlob(globId);
+          currentGlobResult = buildState.globResultFor(globId);
         }
-        if (changedGlobs.contains(globId)) return true;
+        if (previousBuildState?.globResultFor(globId)?.digest !=
+            currentGlobResult?.digest) {
+          return StepAction.run;
+        }
       }
 
       for (final graphId in stepResult.resolverEntrypoints) {
@@ -978,16 +876,12 @@ class Build {
           phaseNumber: step.phaseNumber,
           entrypointId: graphId,
         )) {
-          return true;
+          return StepAction.run;
         }
       }
 
       // No input changes: build is not needed, and outputs state is up to date.
-      for (final output in outputs) {
-        processedOutputs.add(output);
-      }
-
-      return false;
+      return StepAction.skipReuse;
     });
   }
 
@@ -1003,8 +897,8 @@ class Build {
     required int phaseNumber,
   }) async {
     // If the result has already been calculated, return it.
-    final entrypointGraph = (await previousLibraryCycleGraphLoader
-        .libraryCycleGraphOf(
+    final entrypointGraph =
+        (await previousLibraryCycleGraphLoader.libraryCycleGraphOf(
           previousDepsLoader!,
           entrypointId,
         )).valueAt(phase: phaseNumber);
@@ -1083,22 +977,24 @@ class Build {
         // It's not readable in this phase.
         return false;
       }
-      // Ensure that the input was built, so [changedOutputs] is updated.
-      if (!processedOutputs.contains(input)) {
+      // Ensure that the input was built.
+      if (!buildState.isProcessedOutput(
+        buildStepPlan: buildStepPlan,
+        id: input,
+      )) {
         await _buildOutput(input);
       }
-      if (changedOutputs.contains(input)) {
+      if (_isChangedOutput(input)) {
         return true;
       }
     } else if (buildState.isSource(input)) {
-      if (changedInputs.contains(input)) {
+      if (buildInputs.modifiedSources.contains(input) ||
+          buildInputs.addedSources.contains(input)) {
         return true;
       }
-    } else if (buildState.isMissingSource(input)) {
-      // It's only a newly-deleted asset if it's also in [deletedAssets].
-      if (deletedAssets.contains(input)) {
-        return true;
-      }
+    } else if (buildInputs.deletedSources.contains(input) ||
+        buildInputs.deletedOutputs.contains(input)) {
+      return true;
     }
     return false;
   }
@@ -1112,7 +1008,7 @@ class Build {
   ) async {
     final input = buildStepId.input;
 
-    if (buildPlan.cleanBuild) {
+    if (buildInputs.cleanBuild) {
       return true;
     }
 
@@ -1121,15 +1017,19 @@ class Build {
     }
 
     if (buildStepPlan.isDeclaredOutput(input)) {
-      // Check that the input was built, so [changedOutputs] is updated.
-      if (!processedOutputs.contains(input)) {
+      // Check that the input was built.
+      if (!buildState.isProcessedOutput(
+        buildStepPlan: buildStepPlan,
+        id: input,
+      )) {
         await _buildOutput(input);
       }
-      if (changedOutputs.contains(input)) {
+      if (_isChangedOutput(input)) {
         return true;
       }
     } else if (buildState.isSource(input)) {
-      if (changedInputs.contains(input)) {
+      if (buildInputs.modifiedSources.contains(input) ||
+          buildInputs.addedSources.contains(input)) {
         return true;
       }
     } else {
@@ -1140,15 +1040,16 @@ class Build {
   }
 
   /// Deletes any of [outputs] which previously were output.
-  ///
-  /// This should be called after deciding that an asset really needs to be
-  /// regenerated based on its inputs hash changing. All assets in [outputs]
-  /// must be generated assets.
-  Future<void> _cleanUpStaleOutputs(Iterable<AssetId> outputs) async {
+  Future<void> _deletePreviousOutputs(Iterable<AssetId> outputs) async {
+    final previousBuildState = this.previousBuildState;
+    if (previousBuildState == null) return;
     for (final output in outputs) {
-      if (buildState.isActualOutput(buildStepPlan: buildStepPlan, id: output) ||
-          buildState.isActualPostOutput(output)) {
-        await _delete(output);
+      if (previousBuildState.isActualOutput(
+            buildStepPlan: buildStepPlan,
+            id: output,
+          ) ||
+          previousBuildState.isActualPostOutput(output)) {
+        await readerWriter.delete(output);
       }
     }
   }
@@ -1169,7 +1070,7 @@ class Build {
   /// not useful to something that wants to read the file. In the glob result,
   /// it ends up in `inputs` but not in `results`.
   Future<void> _evaluateGlob(GlobId globId) async {
-    if (processedGlobs.contains(globId)) {
+    if (buildState.hasGlobResult(globId)) {
       return;
     }
 
@@ -1219,12 +1120,6 @@ class Build {
       final results = [...otherInputs, ...generatedFileResults];
       final digest = md5.convert(utf8.encode(results.join(' ')));
 
-      final previousGlobResult = buildState.globResultFor(globId);
-      if (previousGlobResult == null || previousGlobResult.digest != digest) {
-        changedGlobs.add(globId);
-      }
-      processedGlobs.add(globId);
-
       final globResult = GlobResult((b) {
         b.results.addAll(results);
         b.inputs.addAll(generatedFileInputs.followedBy(otherInputs));
@@ -1251,21 +1146,19 @@ class Build {
     Set<AssetId>? unusedAssets,
   }) async {
     final inputTracker = stepReaderWriter.inputTracker;
-    final usedInputs =
-        unusedAssets != null && unusedAssets.isNotEmpty
-            ? inputTracker.inputs.difference(unusedAssets)
-            : inputTracker.inputs;
+    final usedInputs = unusedAssets != null && unusedAssets.isNotEmpty
+        ? inputTracker.inputs.difference(unusedAssets)
+        : inputTracker.inputs;
     final result = errors.isEmpty;
     final phaseNum = stepReaderWriter.phase;
 
-    final buildStepResultBuilder =
-        BuildStepResultBuilder()
-          ..result = result
-          ..isHidden = buildPhases.inBuildPhases[phaseNum].hideOutput
-          ..inputs.replace(usedInputs)
-          ..globsEvaluated.replace(inputTracker.globsEvaluated)
-          ..resolverEntrypoints.replace(inputTracker.resolverEntrypoints)
-          ..errors.replace(errors);
+    final buildStepResultBuilder = BuildStepResultBuilder()
+      ..result = result
+      ..isHidden = buildPhases.inBuildPhases[phaseNum].hideOutput
+      ..inputs.replace(usedInputs)
+      ..globsEvaluated.replace(inputTracker.globsEvaluated)
+      ..resolverEntrypoints.replace(inputTracker.resolverEntrypoints)
+      ..errors.replace(errors);
     for (final output in outputs) {
       if (stepReaderWriter.assetsWritten.contains(output)) {
         buildStepResultBuilder.outputs[output] = await readerWriter.digest(
@@ -1276,36 +1169,27 @@ class Build {
     final buildStepResult = buildStepResultBuilder.build();
 
     final buildStepId = BuildStepId(primaryInput: input, phaseNumber: phaseNum);
-    final previousBuildStepResult = buildState.stepResultOrNull(buildStepId);
-    final previousResult = previousBuildStepResult?.result;
     buildState.updateBuildStepResult(buildStepId, buildStepResult);
-
-    if (result == false) {
-      errorsShownSteps.add(buildStepId);
-    }
-
-    for (final output in outputs) {
-      final oldDigest = previousBuildStepResult?.outputs[output];
-      final newDigest = buildStepResult.outputs[output];
-
-      // A transition from (missing or failed) to (written and not failed) is
-      // a new primary input that triggers generation even if no content
-      // changed.
-      if ((oldDigest == null || previousResult == false) &&
-          (newDigest != null && result)) {
-        newPrimaryInputs.add(output);
-      }
-      // Only a change to content matters for non-primary inputs.
-      if (oldDigest != newDigest) {
-        changedOutputs.add(output);
-      }
-
-      processedOutputs.add(output);
-    }
   }
 
   bool _isFile(AssetId id) =>
       buildState.isFile(buildStepPlan: buildStepPlan, id: id);
 
-  Future _delete(AssetId id) => readerWriter.delete(id);
+  bool _isChangedOutput(AssetId output) {
+    final generatingStep = buildStepPlan.stepForDeclaredOutput(output);
+    final oldDigest = previousBuildState
+        ?.stepResultOrNull(generatingStep)
+        ?.outputs[output];
+    final newDigest = buildState.stepResult(generatingStep).outputs[output];
+    return oldDigest != newDigest;
+  }
+}
+
+enum StepAction {
+  run,
+  skipReuse,
+  skipMissingPrimaryInput,
+  skipFailedPrimaryInput;
+
+  bool get isSkip => this != run;
 }

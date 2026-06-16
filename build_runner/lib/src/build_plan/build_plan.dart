@@ -2,327 +2,255 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:typed_data';
-
-import 'package:build/build.dart';
+import 'package:build/build.dart' hide Builder;
 import 'package:built_collection/built_collection.dart';
+import 'package:built_value/built_value.dart';
+import 'package:crypto/crypto.dart';
+import 'package:watcher/watcher.dart';
 
-import '../bootstrap/bootstrapper.dart';
-import '../bootstrap/depfile.dart';
-import '../build/build_state/asset_graph_json.dart';
 import '../build/build_state/build_state.dart';
-import '../build/build_state/exceptions.dart';
 import '../build/library_cycle_graph/phased_asset_deps.dart';
 import '../constants.dart';
 import '../exceptions.dart';
 import '../io/asset_tracker.dart';
-import '../io/filesystem_cache.dart';
 import '../io/generated_asset_hider.dart';
 import '../io/reader_writer.dart';
 import '../logging/build_log.dart';
-import 'build_configs.dart';
 import 'build_directory.dart';
 import 'build_filter.dart';
-import 'build_options.dart';
-import 'build_packages.dart';
-import 'build_phase_creator.dart';
-
-import 'build_plan_digest.dart';
+import 'build_inputs.dart';
+import 'build_spec.dart';
 import 'build_step_plan.dart';
-import 'builder_definition.dart';
-import 'builder_factories.dart';
-import 'testing_overrides.dart';
+import 'previous_build.dart';
+
+part 'build_plan.g.dart';
 
 /// Options and derived configuration for a build.
-class BuildPlan {
-  final BuildPlanDigest buildPlanDigest;
+abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
+  BuildSpec get buildSpec;
+  PreviousBuild get previousBuild;
+  BuildStepPlan get buildStepPlan;
+  ReaderWriter get readerWriter;
 
-  final BuilderFactories builderFactories;
-  final BuildOptions buildOptions;
-  final TestingOverrides testingOverrides;
+  /// Outputs that conflict with the current build setup and must be deleted.
+  BuiltList<AssetId> get conflictingOutputs;
 
-  final BuildPackages buildPackages;
-  final ReaderWriter readerWriter;
-  final BuildConfigs buildConfigs;
-  final BuildStepPlan buildStepPlan;
+  /// Sources and changes to sources before the build.
+  BuildInputs get buildInputs;
 
-  final BuildState? _previousBuildState;
-  bool _previousBuildStateWasTaken;
-  final PhasedAssetDeps? previousPhasedAssetDeps;
-  final bool restartIsNeeded;
+  /// Per-build build dirs, which can differ from the global option in
+  /// `BuildOptions`.
+  BuiltSet<BuildDirectory> get buildDirs;
 
-  final Bootstrapper bootstrapper;
-  final BuildState _buildState;
-  bool _buildStateWasTaken;
-  final BuiltSet<AssetId>? updates;
+  /// Per-build build filters, which can differ from the global option in
+  /// `BuildOptions`.
+  BuiltSet<BuildFilter> get buildFilters;
 
-  /// Whether this is a clean build.
+  BuildPlan._();
+  factory BuildPlan([void Function(BuildPlanBuilder) updates]) = _$BuildPlan;
+
+  /// Loads the build plan for [buildSpec].
   ///
-  /// If not, it's an incremental build.
-  final bool cleanBuild;
-
-  /// Whether build triggers config changed since the previous build.
-  final bool triggersChanged;
-
-  /// Whether phase options per phase changed since the previous build.
-  final BuiltList<bool> _phaseOptionsChanged;
-
-  /// Whether post process phase options per phase changed since the previous
-  /// build.
-  final BuiltList<bool> _postBuildOptionsChanged;
-
-  /// Files to delete before restarting or before the next build.
+  /// Loads information about the previous build as [previousBuild].
   ///
-  /// - Outputs from the previous build.
-  /// - Files on disk that conflict with outputs of the current build.
-  /// - The build state, if it's invalid.
-  ///
+  /// Files that should be deleted before restarting or building are tracked.
   /// Call [deleteFilesAndFolders] to delete them.
-  final BuiltList<AssetId> filesToDelete;
-
-  /// Folders to delete before restarting or before the next build.
   ///
-  /// Call [deleteFilesAndFolders] to delete them.
-  final BuiltList<AssetId> foldersToDelete;
+  /// [buildInputs] are resolved.
+  static Future<BuildPlan> load(BuildSpec buildSpec) async {
+    final previousBuild = await PreviousBuild.load(buildSpec);
+    final buildPackages = buildSpec.buildPackages;
 
-  BuildPlan({
-    required this.buildPlanDigest,
-    required this.builderFactories,
-    required this.buildOptions,
-    required this.testingOverrides,
-    required this.buildPackages,
-    required this.readerWriter,
-    required this.buildConfigs,
-    required this.buildStepPlan,
-    required BuildState? previousBuildState,
-    required bool previousBuildStateWasTaken,
-    required this.previousPhasedAssetDeps,
-    required this.restartIsNeeded,
-    required this.bootstrapper,
-    required BuildState buildState,
-    required bool buildStateWasTaken,
-    required this.updates,
-    required this.filesToDelete,
-    required this.foldersToDelete,
-    required this.cleanBuild,
-    required this.triggersChanged,
-    required BuiltList<bool> phaseOptionsChanged,
-    required BuiltList<bool> postBuildOptionsChanged,
-  }) : _previousBuildState = previousBuildState,
-       _previousBuildStateWasTaken = previousBuildStateWasTaken,
-       _buildState = buildState,
-       _buildStateWasTaken = buildStateWasTaken,
-       _phaseOptionsChanged = phaseOptionsChanged,
-       _postBuildOptionsChanged = postBuildOptionsChanged;
-
-  /// Loads a build plan.
-  ///
-  /// Loads the package strucure and build configuration; prepares
-  /// [readerWriter], deduces the buildPhases that will run, deserializes and
-  /// checks the `BuildState`.
-  ///
-  /// If the build state indicates a restart is needed, [restartIsNeeded] will
-  /// be set. Otherwise, if it's valid, the deserialized build state is
-  /// available from [takePreviousBuildState].
-  ///
-  /// Files that should be deleted before restarting or building are accumulated
-  /// in [filesToDelete] and [foldersToDelete]. Call [deleteFilesAndFolders] to
-  /// delete them.
-  ///
-  /// Set [recentlyBootstrapped] to false to do checks that are also done during
-  /// bootstrapping.
-  static Future<BuildPlan> load({
-    required BuilderFactories builderFactories,
-    required BuildOptions buildOptions,
-    required TestingOverrides testingOverrides,
-    bool recentlyBootstrapped = true,
-  }) async {
-    final bootstrapper = Bootstrapper(
-      buildPaths: buildOptions.buildPaths,
-      compileStrategy: buildOptions.compileStrategy,
-    );
-    var restartIsNeeded = false;
-    final compileFreshness =
-        testingOverrides.checkBuilderFreshness
-            ? await bootstrapper.checkCompileFreshness(
-              digestsAreFresh: recentlyBootstrapped,
-            )
-            : FreshnessResult(outputIsFresh: true, digest: 'dummy_digest');
-    if (!compileFreshness.outputIsFresh) {
-      restartIsNeeded = true;
-    }
-
-    final buildPackages =
-        testingOverrides.buildPackages ??
-        await BuildPackages.forPaths(buildOptions.buildPaths);
-    final readerWriter = (testingOverrides.readerWriter ??
-            ReaderWriter(buildPackages))
-        .copyWith(cache: InMemoryFilesystemCache());
-    final buildConfigs = await BuildConfigs.load(
-      readerWriter: readerWriter,
-      buildPackages: buildPackages,
-      testingOverrides: testingOverrides,
-      configKey: buildOptions.configKey,
-    );
-
-    var builderDefinitions =
-        testingOverrides.builderDefinitions ??
-        await AbstractBuilderDefinition.load(
-          buildPackages: buildPackages,
-          readerWriter: readerWriter,
-        );
-
-    // Check that there is a factory available for every builder, if not the
-    // config has changed since the script was written and a restart is needed.
-    if (!builderFactories.hasFactoriesFor(builderDefinitions)) {
-      restartIsNeeded = true;
-      builderDefinitions = BuiltList();
-    }
-
-    final buildPhases =
-        testingOverrides.buildPhases ??
-        await BuildPhaseCreator(
-          builderFactories: builderFactories,
-          buildPackages: buildPackages,
-          buildConfigs: buildConfigs,
-          builderDefinitions: builderDefinitions,
-          builderConfigOverrides: buildOptions.builderConfigOverrides,
-          isReleaseBuild: buildOptions.isReleaseBuild,
-          workspace: buildOptions.buildPaths.buildWorkspace,
-        ).createBuildPhases();
-    buildPhases.checkOutputLocations(buildPackages.outputPackages);
-
-    final buildPlanDigest = BuildPlanDigest(
-      compileDigest: compileFreshness.digest,
-      buildConfigs: buildConfigs,
-      buildPhases: buildPhases,
-      buildPackages: buildPackages,
-    );
-
-    final assetGraphJsonId = AssetId(
-      buildPackages.outputRoot,
-      assetGraphJsonPath,
-    );
-    final generatedOutputDirectoryId = AssetId(
-      buildPackages.outputRoot,
-      generatedOutputDirectory,
-    );
-    BuildPlanDigest? previousBuildPlanDigest;
-    BuildState? previousBuildState;
-    final filesToDelete = <AssetId>{};
-    final foldersToDelete = <AssetId>{};
-
-    PhasedAssetDeps? previousPhasedAssetDeps;
-    if (await readerWriter.canRead(assetGraphJsonId)) {
-      final assetGraphJson = AssetGraphJson.deserialize(
-        await readerWriter.readAsBytes(assetGraphJsonId) as Uint8List,
-      );
-      if (assetGraphJson != null) {
-        previousBuildState = assetGraphJson.buildState;
-        previousBuildPlanDigest = assetGraphJson.buildPlanDigest;
-        previousPhasedAssetDeps = assetGraphJson.phasedAssetDeps;
-      }
-      if (previousBuildState != null) {
-        if (restartIsNeeded ||
-            !buildPlanDigest.canIncrementallyBuildFrom(
-              previousBuildPlanDigest,
-            )) {
-          // Mark old outputs for deletion.
-          filesToDelete.addAll(
-            previousBuildState.outputsToDelete(buildPackages),
-          );
-
-          // Discard the invalid build state so that a new one will be created
-          // from scratch.
-          previousBuildState = null;
-        }
-      }
-    }
-
-    // If there was no previous build state or it was invalid, start by deleting
-    // any invalid asset graph json file and the generated output directory.
-    if (previousBuildState == null) {
-      filesToDelete.add(assetGraphJsonId);
-      foldersToDelete.add(generatedOutputDirectoryId);
-    }
-
+    // Find sources on disk.
     final assetTracker = AssetTracker(
-      readerWriter,
+      buildSpec.readerWriter,
       buildPackages,
-      buildConfigs,
+      buildSpec.buildConfigs,
     );
-    final inputSources = await assetTracker.findInputSources();
+    final assetTrackerInputSources = await assetTracker.findInputSources();
     final cacheDirSources = await assetTracker.findCacheDirSources();
 
-    BuildState? buildState;
-    Set<AssetId>? updates;
-    if (previousBuildState != null) {
-      updates = {
-        ...inputSources,
+    final previousBuildState = previousBuild.buildState;
+    if (previousBuildState == null) {
+      // If there is no compatible previous build, compute inputs with files
+      // that look like old generation outputs removed.
+
+      final inputSources = assetTrackerInputSources.toSet();
+
+      // Remove files from the incompatible build.
+      inputSources.removeAll(previousBuild.incompatibleBuildOutputsToDelete);
+      // The asset graph JSON is not an input.
+      inputSources.remove(
+        AssetId(buildPackages.outputRoot, assetGraphJsonPath),
+      );
+
+      // Remove from inputs files that will be generated by the current build.
+      final declaredOutputs = BuildStepPlan.compute(
+        buildPhases: buildSpec.buildPhases,
+        placeholderIds: buildPackages.placeholderIds,
+        sources: inputSources,
+      ).declaredOutputs;
+      inputSources.removeAll(declaredOutputs);
+
+      return _createClean(
+        buildSpec: buildSpec,
+        previousBuild: previousBuild,
+        buildDirs: buildSpec.buildOptions.buildDirs,
+        buildFilters: buildSpec.buildOptions.buildFilters,
+        filesToCheck: inputSources,
+        assetTrackerInputSources: assetTrackerInputSources,
+      );
+    } else {
+      // If there is a compatible previous build, check all previous build files
+      // and all discovered files on disk.
+      final filesToCheck = {
+        ...assetTrackerInputSources,
         ...cacheDirSources,
         ...previousBuildState.sources,
         ...previousBuildState.actualOutputs,
       };
-      buildState = previousBuildState.copyForNextBuild();
 
-      if (restartIsNeeded) {
-        // Mark old outputs for deletion.
-        filesToDelete.addAll(previousBuildState.outputsToDelete(buildPackages));
-        foldersToDelete.add(generatedOutputDirectoryId);
+      final previousBuildStepPlan = BuildStepPlan.compute(
+        buildPhases: buildSpec.buildPhases,
+        placeholderIds: buildPackages.placeholderIds,
+        sources: previousBuildState.sources,
+      );
 
-        // Discard the invalid AssetGraphJson so that a new one will be created
-        // from scratch, and mark it for deletion so that the same will happen
-        // if restarting.
-        previousBuildState = null;
-        filesToDelete.add(assetGraphJsonId);
+      return _createIncremental(
+        buildSpec: buildSpec,
+        previousBuild: previousBuild,
+        previousBuildStepPlan: previousBuildStepPlan,
+        buildDirs: buildSpec.buildOptions.buildDirs,
+        buildFilters: buildSpec.buildOptions.buildFilters,
+        filesToCheck: filesToCheck,
+      );
+    }
+  }
 
-        // Discard state tied to the invalid AssetGraphJson.
-        updates = null;
-      }
+  /// Returns a copy of the plan with [previousBuild] updated for the next
+  /// incremental build.
+  BuildPlan withCompatiblePreviousBuild({
+    required BuildState previousBuildState,
+    required PhasedAssetDeps previousPhasedAssetDeps,
+  }) => rebuild(
+    (b) => b
+      ..previousBuild.replace(
+        previousBuild.updateForNextBuild(
+          previousPhasedAssetDeps: previousPhasedAssetDeps,
+          previousBuildState: previousBuildState,
+        ),
+      )
+      ..conflictingOutputs.clear(),
+  );
+
+  Future<BuildPlan> updateForFileChanges(Set<AssetId> filesToCheck) {
+    final previousBuildState = previousBuild.buildState;
+    if (previousBuildState == null) {
+      return _createClean(
+        buildSpec: buildSpec,
+        previousBuild: previousBuild,
+        buildDirs: buildDirs,
+        buildFilters: buildFilters,
+        filesToCheck: filesToCheck,
+        // Updates are being made to a `BuildPlan` that didn't actually run.
+        // That means the conflicting file check was already done when that
+        // `BuildPlan` was created, don't repeat it.
+        assetTrackerInputSources: null,
+      );
+    } else {
+      return _createIncremental(
+        buildSpec: buildSpec,
+        previousBuild: previousBuild,
+        previousBuildStepPlan: buildStepPlan,
+        buildDirs: buildDirs,
+        buildFilters: buildFilters,
+        filesToCheck: filesToCheck,
+      );
+    }
+  }
+
+  /// Whether [phaseNumber] has different options to the previous build
+  /// and must be fully rebuilt.
+  bool phaseOptionsChanged(int phaseNumber) =>
+      previousBuild.phaseOptionsChangedList[phaseNumber];
+
+  /// Whether [actionNumber] has different options to the previous build
+  /// and must be fully rebuilt.
+  bool postBuildOptionsChanged(int actionNumber) =>
+      previousBuild.postBuildOptionsChangedList[actionNumber];
+
+  Future<void> deleteFilesAndFolders() async {
+    // Hidden outputs are deleted if needed by deleting the entire folder. So,
+    // only outputs in the source folder need to be deleted explicitly. Use a
+    // `ReaderWriter` that only acts on the source folder.
+    final cleanupReaderWriter = readerWriter.copyWith(
+      generatedAssetHider: const NoopGeneratedAssetHider(),
+    );
+
+    if (buildInputs.cleanBuild) {
+      final assetGraphJsonId = AssetId(
+        buildSpec.buildPackages.outputRoot,
+        assetGraphJsonPath,
+      );
+      final generatedOutputDirectoryId = AssetId(
+        buildSpec.buildPackages.outputRoot,
+        generatedOutputDirectory,
+      );
+      await cleanupReaderWriter.delete(assetGraphJsonId);
+      await cleanupReaderWriter.deleteDirectory(generatedOutputDirectoryId);
     }
 
-    if (buildState == null) {
-      // Files marked for deletion are not inputs.
-      inputSources.removeAll(filesToDelete);
-
-      // Compute build steps just to get declared outputs and prune the input
-      // sources to remove them. They are computed again below based on the
-      // pruned inputs.
-      final declaredOutputs =
-          BuildStepPlan.compute(
-            buildPhases: buildPhases,
-            placeholderIds: buildPackages.placeholderIds,
-            sources: inputSources,
-          ).declaredOutputs;
-      final inputSourcesWithoutOutputs = Set<AssetId>.from(inputSources);
-      for (final output in declaredOutputs) {
-        inputSourcesWithoutOutputs.remove(output);
+    for (final id in previousBuild.incompatibleBuildOutputsToDelete) {
+      if (await cleanupReaderWriter.canRead(id)) {
+        await cleanupReaderWriter.delete(id);
       }
+    }
+    for (final id in conflictingOutputs) {
+      if (await cleanupReaderWriter.canRead(id)) {
+        await cleanupReaderWriter.delete(id);
+      }
+    }
+  }
 
-      try {
-        buildState = BuildState.create(sources: inputSourcesWithoutOutputs);
-      } on DuplicateAssetIdException catch (e) {
-        buildLog.error(e.toString());
-        throw const CannotBuildException();
+  /// Creates a [BuildPlan] for a clean build.
+  ///
+  /// Pass [assetTrackerInputSources] to check if any files that builders
+  /// will generate conflict with files already on disk. Conflicts in
+  /// dependencies cause an exception to be thrown, conflicts in writable
+  /// packages are added to [conflictingOutputs] so they will be deleted.
+  static Future<BuildPlan> _createClean({
+    required BuildSpec buildSpec,
+    required PreviousBuild previousBuild,
+    required BuiltSet<BuildDirectory> buildDirs,
+    required BuiltSet<BuildFilter> buildFilters,
+    required Set<AssetId> filesToCheck,
+    Set<AssetId>? assetTrackerInputSources,
+  }) async {
+    final readerWriter = buildSpec.readerWriter.copyWith(
+      generatedAssetHider: const NoopGeneratedAssetHider(),
+    );
+    final result = BuildInputsBuilder()..cleanBuild = true;
+
+    for (final id in filesToCheck) {
+      if (await readerWriter.canRead(id)) {
+        result.sources.add(id);
       }
     }
 
     final buildStepPlan = BuildStepPlan.compute(
-      buildPhases: buildPhases,
-      placeholderIds: buildPackages.placeholderIds,
-      sources: buildState.sources,
+      buildPhases: buildSpec.buildPhases,
+      placeholderIds: buildSpec.buildPackages.placeholderIds,
+      sources: result.sources.build(),
     );
-    final declaredAndActualOutputs = [
-      ...buildStepPlan.declaredOutputs,
-      ...buildState.actualPostOutputs,
-    ];
 
-    if (previousBuildState == null) {
-      final conflictsInDeps =
-          declaredAndActualOutputs
-              .where((n) => !buildPackages.outputPackages.contains(n.package))
-              .where(inputSources.contains)
-              .toSet();
+    final conflictingOutputs = <AssetId>{};
+    final buildPackages = buildSpec.buildPackages;
+
+    if (assetTrackerInputSources != null) {
+      final conflictsInDeps = buildStepPlan.declaredOutputs
+          .where((n) => !buildPackages.outputPackages.contains(n.package))
+          .where(assetTrackerInputSources.contains)
+          .toSet();
       if (conflictsInDeps.isNotEmpty) {
         buildLog.error(
           'There are existing files in dependencies which conflict '
@@ -333,169 +261,177 @@ class BuildPlan {
         throw const CannotBuildException();
       }
 
-      filesToDelete.addAll(
-        declaredAndActualOutputs
+      conflictingOutputs.addAll(
+        buildStepPlan.declaredOutputs
             .where((n) => buildPackages.outputPackages.contains(n.package))
-            .where(inputSources.contains)
+            .where(assetTrackerInputSources.contains)
             .toSet(),
       );
     }
 
-    return BuildPlan(
-      buildPlanDigest: buildPlanDigest,
-      builderFactories: builderFactories,
-      buildOptions: buildOptions,
-      testingOverrides: testingOverrides,
-      buildPackages: buildPackages,
-      readerWriter: readerWriter,
-      buildConfigs: buildConfigs,
-      buildStepPlan: buildStepPlan,
-      previousBuildState: previousBuildState,
-      previousBuildStateWasTaken: false,
-      previousPhasedAssetDeps: previousPhasedAssetDeps,
-      restartIsNeeded: restartIsNeeded,
-      bootstrapper: bootstrapper,
-      buildState: buildState,
-      buildStateWasTaken: false,
-      updates: updates?.build(),
-      filesToDelete: filesToDelete.toBuiltList(),
-      foldersToDelete: foldersToDelete.toBuiltList(),
-      cleanBuild: previousBuildState == null,
-      triggersChanged:
-          !buildPlanDigest.hasSameTriggersAs(previousBuildPlanDigest),
-      phaseOptionsChanged: buildPlanDigest.computeChangedPhaseOptions(
-        previousBuildPlanDigest,
-      ),
-      postBuildOptionsChanged: buildPlanDigest.computeChangedPostBuildOptions(
-        previousBuildPlanDigest,
-      ),
-    );
-  }
-
-  BuildPlan copyWith({
-    BuildPlanDigest? buildPlanDigest,
-    BuiltSet<BuildDirectory>? buildDirs,
-    BuiltSet<BuildFilter>? buildFilters,
-    ReaderWriter? readerWriter,
-    bool? cleanBuild,
-    bool? triggersChanged,
-    PhasedAssetDeps? previousPhasedAssetDeps,
-    BuiltList<bool>? phaseOptionsChanged,
-    BuiltList<bool>? postBuildOptionsChanged,
-    BuildStepPlan? buildStepPlan,
-  }) => BuildPlan(
-    buildPlanDigest: buildPlanDigest ?? this.buildPlanDigest,
-    buildStepPlan: buildStepPlan ?? this.buildStepPlan,
-    builderFactories: builderFactories,
-    buildOptions: buildOptions.copyWith(
-      buildDirs: buildDirs,
-      buildFilters: buildFilters,
-    ),
-    testingOverrides: testingOverrides,
-    buildPackages: buildPackages,
-    buildConfigs: buildConfigs,
-    readerWriter: readerWriter ?? this.readerWriter,
-    previousBuildState: _previousBuildState,
-    previousBuildStateWasTaken: _previousBuildStateWasTaken,
-    previousPhasedAssetDeps:
-        previousPhasedAssetDeps ?? this.previousPhasedAssetDeps,
-    restartIsNeeded: restartIsNeeded,
-    bootstrapper: bootstrapper,
-    buildState: _buildState,
-    buildStateWasTaken: _buildStateWasTaken,
-    updates: updates,
-    filesToDelete: filesToDelete,
-    foldersToDelete: foldersToDelete,
-    cleanBuild: cleanBuild ?? this.cleanBuild,
-    triggersChanged: triggersChanged ?? this.triggersChanged,
-    phaseOptionsChanged: phaseOptionsChanged ?? _phaseOptionsChanged,
-    postBuildOptionsChanged:
-        postBuildOptionsChanged ?? _postBuildOptionsChanged,
-  );
-
-  /// Returns a copy of the plan updated for the next incremental build.
-  ///
-  /// Updates [previousPhasedAssetDeps] from the build result.
-  ///
-  /// Sets [cleanBuild], [triggersChanged], `phaseOptionsChanged` and
-  /// `postBuildOptionsChanged` to `false`.
-  BuildPlan updateForResult({PhasedAssetDeps? previousPhasedAssetDeps}) =>
-      copyWith(
-        cleanBuild: false,
-        triggersChanged: false,
-        previousPhasedAssetDeps: previousPhasedAssetDeps,
-        phaseOptionsChanged: BuiltList<bool>.from(
-          List.filled(
-            buildStepPlan.buildPhases.inBuildPhasesOptionsDigests.length,
-            false,
-          ),
-        ),
-        postBuildOptionsChanged: BuiltList<bool>.from(
-          List.filled(
-            buildStepPlan.buildPhases.postBuildActionsOptionsDigests.length,
-            false,
-          ),
-        ),
-      );
-
-  /// Returns a copy of the plan with [buildStepPlan] updated for changed input
-  /// sources.
-  BuildPlan updateForSources(Iterable<AssetId> sources) {
-    return copyWith(
-      buildStepPlan: BuildStepPlan.compute(
-        buildPhases: buildStepPlan.buildPhases,
-        placeholderIds: buildPackages.placeholderIds,
-        sources: sources,
-      ),
-    );
-  }
-
-  /// Takes the loaded [BuildState], which may be `null` if none could be
-  /// loaded or if it was invalid.
-  ///
-  /// Subsequent calls will throw. This is because [BuildState] is mutable, so
-  /// the initial loaded state is only available once.
-  BuildState? takePreviousBuildState() {
-    if (_previousBuildStateWasTaken) throw StateError('Already taken.');
-    _previousBuildStateWasTaken = true;
-    return _previousBuildState;
-  }
-
-  /// Takes the [BuildState] for the build.
-  ///
-  /// Subsequent calls will throw. This is because [BuildState] is mutable, so
-  /// the initial state is only available once.
-  BuildState takeBuildState() {
-    if (_buildStateWasTaken) throw StateError('Already taken.');
-    _buildStateWasTaken = true;
-    return _buildState;
-  }
-
-  /// Whether [phaseNumber] has different options to the previous build
-  /// and must be fully rebuilt.
-  bool phaseOptionsChanged(int phaseNumber) =>
-      _phaseOptionsChanged[phaseNumber];
-
-  /// Whether [actionNumber] has different options to the previous build
-  /// and must be fully rebuilt.
-  bool postBuildOptionsChanged(int actionNumber) =>
-      _postBuildOptionsChanged[actionNumber];
-
-  Future<void> deleteFilesAndFolders() async {
-    // Hidden outputs are deleted if needed by deleting the entire folder. So,
-    // only outputs in the source folder need to be deleted explicitly. Use a
-    // `ReaderWriter` that only acts on the source folder.
-    final cleanupReaderWriter = readerWriter.copyWith(
-      generatedAssetHider: const NoopGeneratedAssetHider(),
-    );
-    for (final id in filesToDelete) {
-      if (await cleanupReaderWriter.canRead(id)) {
-        await cleanupReaderWriter.delete(id);
+    for (final id in result.sources.build()) {
+      if (buildStepPlan.declaredOutputsOf(id).isNotEmpty) {
+        try {
+          result.digests[id] = await readerWriter.digest(id);
+        } catch (_) {}
       }
     }
-    for (final id in foldersToDelete) {
-      await cleanupReaderWriter.deleteDirectory(id);
+
+    return BuildPlan((b) {
+      b.buildSpec.replace(buildSpec);
+      b.previousBuild.replace(previousBuild);
+      b.buildStepPlan.replace(buildStepPlan);
+      b.readerWriter = readerWriter.copyWith(
+        generatedAssetHider: buildSpec.testingOverrides.flattenOutput
+            ? const NoopGeneratedAssetHider()
+            : buildStepPlan,
+      );
+      b.conflictingOutputs.replace(conflictingOutputs);
+      b.buildInputs.replace(result.build());
+      b.buildDirs.replace(buildDirs);
+      b.buildFilters.replace(buildFilters);
+    });
+  }
+
+  /// Creates a [BuildPlan] for an incremental build.
+  static Future<BuildPlan> _createIncremental({
+    required BuildSpec buildSpec,
+    required PreviousBuild previousBuild,
+    required BuildStepPlan previousBuildStepPlan,
+    required BuiltSet<BuildDirectory> buildDirs,
+    required BuiltSet<BuildFilter> buildFilters,
+    required Set<AssetId> filesToCheck,
+  }) async {
+    var readerWriter = buildSpec.readerWriter.copyWith(
+      generatedAssetHider: buildSpec.testingOverrides.flattenOutput
+          ? const NoopGeneratedAssetHider()
+          : previousBuildStepPlan,
+    );
+    final buildInputs = BuildInputsBuilder()..cleanBuild = false;
+
+    final newDigests = <AssetId, Digest>{};
+    final resolvedUpdates = <AssetId, ChangeType>{};
+    final previousSources = <AssetId>{};
+
+    readerWriter.cache.invalidate(filesToCheck);
+
+    final previousBuildState = previousBuild.buildState!;
+    var buildStepPlan = previousBuildStepPlan;
+
+    for (final id in filesToCheck) {
+      final oldIsSource = previousBuildState.isSource(id);
+      if (oldIsSource) {
+        previousSources.add(id);
+      }
+      final oldExisted = previousBuildState.isFile(
+        buildStepPlan: buildStepPlan,
+        id: id,
+      );
+      final oldDigest = oldIsSource
+          ? previousBuildState.digestOfSource(id)
+          : null;
+      var exists = false;
+      Digest? newDigest;
+
+      if (await readerWriter.canRead(id)) {
+        exists = true;
+        if (oldDigest != null) {
+          try {
+            newDigest = await readerWriter.digest(id);
+            newDigests[id] = newDigest;
+          } catch (_) {
+            exists = false;
+          }
+        }
+      }
+
+      if (oldExisted && !exists) {
+        resolvedUpdates[id] = ChangeType.REMOVE;
+        if (oldIsSource) {
+          buildInputs.deletedSources.add(id);
+        } else {
+          buildInputs.deletedOutputs.add(id);
+        }
+      } else if (!oldExisted && exists) {
+        buildInputs.addedSources.add(id);
+        resolvedUpdates[id] = ChangeType.ADD;
+      } else if (oldExisted &&
+          oldDigest != null &&
+          exists &&
+          oldDigest != newDigest) {
+        buildInputs.modifiedSources.add(id);
+        resolvedUpdates[id] = ChangeType.MODIFY;
+      }
     }
+
+    buildInputs.sources.addAll(previousBuildState.sources);
+    for (final entry in resolvedUpdates.entries) {
+      final id = entry.key;
+      switch (entry.value) {
+        case ChangeType.ADD:
+        case ChangeType.MODIFY:
+          if (!previousBuildState.isSource(id) ||
+              previousBuildState.isMissingSource(id)) {
+            buildInputs.sources.add(id);
+          }
+        case ChangeType.REMOVE:
+          if (previousBuildState.isSource(id)) {
+            buildInputs.sources.remove(id);
+          }
+      }
+    }
+
+    for (final id in buildInputs.sources.build()) {
+      if (resolvedUpdates[id] == null) {
+        if (previousBuildState.isSource(id)) {
+          final digest = previousBuildState.digestOfSource(id);
+          if (digest != null) {
+            buildInputs.digests[id] = digest;
+          }
+        }
+      } else if (newDigests[id] != null) {
+        buildInputs.digests[id] = newDigests[id]!;
+      }
+    }
+
+    buildStepPlan = BuildStepPlan.compute(
+      buildPhases: buildSpec.buildPhases,
+      placeholderIds: buildSpec.buildPackages.placeholderIds,
+      sources: buildInputs.sources.build(),
+    );
+
+    for (final id in buildInputs.sources.build()) {
+      if (buildInputs.digests[id] == null &&
+          buildStepPlan.declaredOutputsOf(id).isNotEmpty) {
+        try {
+          buildInputs.digests[id] = await readerWriter.digest(id);
+        } catch (_) {}
+      }
+    }
+
+    final deletedOutputs = previousBuildStepPlan
+        .transitiveDeclaredOutputsOf(buildInputs.deletedSources.build())
+        .toSet();
+    buildInputs.deletedOutputs.addAll(deletedOutputs);
+
+    readerWriter = readerWriter.copyWith(
+      generatedAssetHider: buildSpec.testingOverrides.flattenOutput
+          ? const NoopGeneratedAssetHider()
+          : buildStepPlan,
+    );
+    for (final id in deletedOutputs) {
+      await readerWriter.delete(id);
+    }
+
+    return BuildPlan((b) {
+      b.buildSpec.replace(buildSpec);
+      b.previousBuild.replace(previousBuild);
+      b.buildStepPlan.replace(buildStepPlan);
+      b.readerWriter = readerWriter;
+      b.buildInputs = buildInputs;
+      b.buildDirs.replace(buildDirs);
+      b.buildFilters.replace(buildFilters);
+    });
   }
 
   /// Reloads the build plan.
@@ -504,11 +440,16 @@ class BuildPlan {
   /// `recentlyBootstrapped` to `false` to redo checks from bootstrapping.
   ///
   /// The caller must call [deleteFilesAndFolders] on the result and check
-  /// [restartIsNeeded].
-  Future<BuildPlan> reload() => BuildPlan.load(
-    builderFactories: builderFactories,
-    buildOptions: buildOptions,
-    testingOverrides: testingOverrides,
-    recentlyBootstrapped: false,
+  /// `buildSpec.restartIsNeeded`.
+  Future<BuildPlan> reload() async => BuildPlan.load(
+    await BuildSpec.load(
+      builderFactories: buildSpec.builderFactories,
+      buildOptions: buildSpec.buildOptions.copyWith(
+        buildDirs: buildDirs,
+        buildFilters: buildFilters,
+      ),
+      testingOverrides: buildSpec.testingOverrides,
+      recentlyBootstrapped: false,
+    ),
   );
 }

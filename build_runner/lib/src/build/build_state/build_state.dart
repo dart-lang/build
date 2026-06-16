@@ -8,11 +8,10 @@ import 'package:built_value/serializer.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
-import 'package:watcher/watcher.dart';
 
 import '../../build_plan/build_packages.dart';
 import '../../build_plan/build_step_plan.dart';
-import '../../build_plan/placeholders.dart';
+
 import 'build_step_id.dart';
 import 'build_step_result.dart';
 import 'glob_id.dart';
@@ -47,60 +46,14 @@ class BuildState {
   /// All post process build step outputs.
   final Set<AssetId> _postProcessOutputs;
 
-  @visibleForTesting
-  BuildState.empty()
-    : _sources = Sources(),
+  BuildState([Iterable<AssetId> sources = const []])
+    : _sources = Sources()..addAll(sources),
       _postProcessResultsByInput = {},
       _postProcessOutputs = {},
       _buildStepResultsByPrimaryInput = {},
       _globResults = {};
 
-  /// Creates from sources.
-  factory BuildState.create({required Set<AssetId> sources}) {
-    final result = BuildState.empty();
-    result._sources.addAll(sources);
-    return result;
-  }
-
-  BuildState._with({
-    required Sources sources,
-    required Map<AssetId, Map<int, PostProcessBuildStepResult>>
-    postProcessResultsByInput,
-    required Set<AssetId> postProcessOutputs,
-    required Map<AssetId, Map<int, BuildStepResult>>
-    buildStepResultsByPrimaryInput,
-    required Map<GlobId, GlobResult> globResults,
-  }) : _postProcessOutputs = postProcessOutputs,
-       _postProcessResultsByInput = postProcessResultsByInput,
-       _globResults = globResults,
-       _buildStepResultsByPrimaryInput = buildStepResultsByPrimaryInput,
-       _sources = sources;
-
-  /// Copies the state and prepares it for the next build.
-  BuildState copyForNextBuild() {
-    return BuildState._with(
-      sources: _sources.clone(),
-      postProcessResultsByInput: {
-        for (final entry in _postProcessResultsByInput.entries)
-          entry.key: Map.of(entry.value),
-      },
-      postProcessOutputs: Set.of(_postProcessOutputs),
-      buildStepResultsByPrimaryInput: {
-        for (final entry in _buildStepResultsByPrimaryInput.entries)
-          entry.key: Map.of(entry.value),
-      },
-      globResults: Map.of(_globResults),
-    );
-  }
-
   // --  Predicates over IDs and iterables over IDs.
-
-  /// Whether [id] is a placeholder.
-  ///
-  /// Placeholders are virtual files that exist in every package. They can't be
-  /// read, but they can be matched as inputs. This allows builders to generate
-  /// a fixed list of outputs for any package.
-  bool isPlaceholder(AssetId id) => Placeholders.isPlaceholderPath(id.path);
 
   /// Whether [id] is one of: source, declared output or actual post process
   /// output.
@@ -183,6 +136,19 @@ class BuildState {
   /// Whether [id] is a post process build output that was actually generated.
   bool isActualPostOutput(AssetId id) => _postProcessOutputs.contains(id);
 
+  /// Whether the builder for [id] has been processed during this build.
+  ///
+  /// That means it has been run, skipped, or it failed.
+  bool isProcessedOutput({
+    required BuildStepPlan? buildStepPlan,
+    required AssetId id,
+  }) {
+    if (isActualPostOutput(id)) return true;
+    final step = buildStepPlan?.stepForDeclaredOutputOrNull(id);
+    if (step != null) return stepResultOrNull(step) != null;
+    return false;
+  }
+
   // -- Digests.
 
   /// Updates a source file digest.
@@ -232,13 +198,14 @@ class BuildState {
   /// Updates a build step result after the step runs.
   void updateBuildStepResult(BuildStepId buildStepId, BuildStepResult result) {
     _buildStepResultsByPrimaryInput.putIfAbsent(
-          buildStepId.primaryInput,
-          () => {},
-        )[buildStepId.phaseNumber] =
-        result;
+      buildStepId.primaryInput,
+      () => {},
+    )[buildStepId.phaseNumber] = result;
   }
 
   // -- Globs.
+
+  bool hasGlobResult(GlobId globId) => _globResults.containsKey(globId);
 
   GlobResult? globResultFor(GlobId globId) => _globResults[globId];
 
@@ -278,6 +245,19 @@ class BuildState {
   PostProcessBuildStepResult? postProcessBuildStepResultFor(
     PostProcessBuildStepId step,
   ) => _postProcessResultsByInput[step.input]?[step.actionNumber];
+
+  Iterable<BuildStepId> get failedSteps {
+    final results = <BuildStepId>[];
+    for (final outer in _buildStepResultsByPrimaryInput.entries) {
+      final input = outer.key;
+      for (final inner in outer.value.entries) {
+        if (inner.value.failed) {
+          results.add(BuildStepId(primaryInput: input, phaseNumber: inner.key));
+        }
+      }
+    }
+    return results;
+  }
 
   Iterable<PostProcessBuildStepId> get failedPostProcessSteps {
     final results = <PostProcessBuildStepId>[];
@@ -353,57 +333,6 @@ class BuildState {
   }
 
   // -- Creation of the state and updates for incremental builds.
-
-  /// Updates for the next build.
-  ///
-  /// Returns the set of [AssetId]s to delete.
-  Set<AssetId> updateForNextBuild(
-    BuildStepPlan buildStepPlan,
-    Map<AssetId, ChangeType> updates,
-  ) {
-    final newIds = <AssetId>{};
-    final modifyIds = <AssetId>{};
-    final removeIds = <AssetId>{};
-    for (final entry in updates.entries) {
-      final id = entry.key;
-      final changeType = entry.value;
-      switch (changeType) {
-        case ChangeType.ADD:
-        case ChangeType.MODIFY:
-          if (!isSource(id) || isMissingSource(id)) {
-            newIds.add(id);
-          } else {
-            modifyIds.add(id);
-          }
-        case ChangeType.REMOVE:
-          if (isSource(id)) removeIds.add(id);
-      }
-    }
-
-    _sources.addAll(newIds);
-
-    // Compute declared outputs that will no longer be output because their
-    // primary input was deleted. Mark them as missing sources, allowing them
-    // to remain referenced in `inputs` in order to trigger rebuilds.
-    final sourcesToRemove = removeIds.where(isSource).toList();
-    final transitiveRemovedIds = buildStepPlan.transitiveDeclaredOutputsOf(
-      sourcesToRemove,
-    );
-
-    for (final id in transitiveRemovedIds) {
-      _sources.setMissing(id);
-      final postProcessResults = _postProcessResultsByInput.remove(id);
-      if (postProcessResults != null) {
-        for (final result in postProcessResults.values) {
-          _postProcessOutputs.removeAll(result.outputs);
-        }
-      }
-    }
-
-    _sources.clearComputationResults();
-    transitiveRemovedIds.removeAll(removeIds);
-    return transitiveRemovedIds;
-  }
 
   // -- Testing.
 
