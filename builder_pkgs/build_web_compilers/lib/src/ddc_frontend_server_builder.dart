@@ -59,28 +59,17 @@ class DdcFrontendServerBuilder implements Builder {
       frontendServerState.entrypointAssetId = ddcEntrypointId;
     }
     final entrypointAssetId = frontendServerState.entrypointAssetId!;
-    final transitiveDeps = await buildStep.trackStage(
-      'CollectTransitiveDeps',
-      () => module.computeTransitiveDependencies(buildStep),
+    final transitiveDeps = await module.computeTransitiveDependencies(
+      buildStep,
     );
-    final transitiveJsDeps = [
-      for (final dep in transitiveDeps)
-        if (dep.primarySource.package != buildStep.inputId.package) ...[
-          dep.primarySource.changeExtension(jsModuleExtension),
-          dep.primarySource.changeExtension(metadataExtension),
-        ],
-    ];
     final transitiveSources = [
       for (final dep in transitiveDeps) ...dep.sources,
     ];
     var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
-    await buildStep.trackStage(
-      'EnsureAssets',
-      () => scratchSpace.ensureAssets([
-        ...module.sources,
-        ...transitiveSources,
-      ], buildStep),
-    );
+    await scratchSpace.ensureAssets([
+      ...module.sources,
+      ...transitiveSources,
+    ], buildStep);
     final root = getRootPackageName();
     final driver = await buildStep.fetchResource(
       frontendServerProxyDriverResource,
@@ -118,17 +107,14 @@ class DdcFrontendServerBuilder implements Builder {
         if (customDir != null) {
           frontendServerState.customScratchSpacePath = customDir;
         }
-        await buildStep.trackStage(
-          'EnsureAssets',
-          () => scratchSpace.ensureAssets([
-            if (frontendServerState.entrypointAssetId!.package ==
-                buildStep.inputId.package)
-              frontendServerState.entrypointAssetId!,
-            ...module.sources,
-            ...transitiveSources,
-            ...scratchSpace.changedFilesInBuild,
-          ], buildStep),
-        );
+        await scratchSpace.ensureAssets([
+          if (frontendServerState.entrypointAssetId!.package ==
+              buildStep.inputId.package)
+            frontendServerState.entrypointAssetId!,
+          ...module.sources,
+          ...transitiveSources,
+          ...scratchSpace.changedFilesInBuild,
+        ], buildStep);
         final compilerOutput = await driver.recompileAndRecord(
           entrypointArg,
           changedAssetUris,
@@ -149,10 +135,6 @@ class DdcFrontendServerBuilder implements Builder {
         }
       });
       await frontendServerState.waitForCompilation(entrypointAssetId);
-      await buildStep.trackStage(
-        'EnsureAssets',
-        () => scratchSpace.ensureAssets(transitiveJsDeps, buildStep),
-      );
 
       // Reads the compiled asset with [extension] from the Frontend Server's
       // filesystem and writes it to the build runner's output.
