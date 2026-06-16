@@ -75,7 +75,7 @@ class DdcFrontendServerBuilder implements Builder {
       frontendServerProxyDriverResource,
     );
     await buildStep.fetchResource(persistentFrontendServerResource);
-    final entrypointArg = sourceArg(frontendServerState.entrypointAssetId!);
+    final entrypointArg = sourceArg(entrypointAssetId);
     // Translates an AssetId to its scratch space file path.
     //
     // For example, AssetId('app', 'lib/src/foo.dart') becomes:
@@ -108,9 +108,7 @@ class DdcFrontendServerBuilder implements Builder {
           frontendServerState.customScratchSpacePath = customDir;
         }
         await scratchSpace.ensureAssets([
-          if (frontendServerState.entrypointAssetId!.package ==
-              buildStep.inputId.package)
-            frontendServerState.entrypointAssetId!,
+          entrypointAssetId,
           ...module.sources,
           ...transitiveSources,
           ...scratchSpace.changedFilesInBuild,
