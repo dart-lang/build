@@ -146,6 +146,15 @@ class FesManager {
     return FesManager._(fes: fes, driver: driver, packageConfig: packageConfig);
   }
 
+  void _verifyEntrypoint(String? entrypoint) {
+    if (entrypoint == null) return;
+    if (_cachedEntrypoint != null && entrypoint != _cachedEntrypoint) {
+      throw StateError('Cannot compile a different entrypoint: '
+          'expected $_cachedEntrypoint but got $entrypoint.');
+    }
+    _cachedEntrypoint ??= entrypoint;
+  }
+
   /// Delegates custom JSON instructions on [jsonLine] to [fes] and/or [driver].
   ///
   /// The result is serialized and written back to [socket].
@@ -153,6 +162,8 @@ class FesManager {
     try {
       final request = jsonDecode(jsonLine) as Map<String, dynamic>;
       final instruction = request['instruction'] as String?;
+      final entrypoint = request['entrypoint'] as String?;
+      _verifyEntrypoint(entrypoint);
 
       await _pool.withResource(() async {
         switch (instruction) {
@@ -239,7 +250,6 @@ class FesManager {
     Socket socket,
   ) async {
     final entrypoint = request['entrypoint'] as String;
-    _cachedEntrypoint = entrypoint;
     final recompileRestart = request['recompileRestart'] as bool? ?? false;
     // Rename the build system's '.ddc.js' extensions to FES's '.dart.lib.js'.
     final filesToWrite = (request['filesToWrite'] as List)
@@ -299,7 +309,6 @@ class FesManager {
     Socket socket,
   ) async {
     final path = request['path'] as String;
-    _cachedEntrypoint ??= request['entrypoint'] as String?;
     final invalidated = (request['invalidatedFiles'] as List?) ?? [];
     final isColdStart = fes.fileSystem.files.isEmpty;
     final invalidatedPaths = invalidated.cast<String>().toSet();
