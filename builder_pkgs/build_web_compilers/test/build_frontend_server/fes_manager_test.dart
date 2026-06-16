@@ -116,15 +116,22 @@ void main() {
 
       socket.writeln(
         jsonEncode({
-          'instruction': 'READ_OUTPUT_FILE',
-          'path': 'test_scratch_space/web/main.ddc.js',
+          'instruction': 'COMPILE',
           'entrypoint': 'org-dartlang-app:///web/main.dart',
-          'invalidatedFiles': ['org-dartlang-app:///web/main.dart'],
         }),
       );
+      var responseLine = await socketLines.first;
+      var response = jsonDecode(responseLine) as Map<String, dynamic>;
+      expect(response['errorCount'], 0);
 
-      final responseLine = await socketLines.first;
-      final response = jsonDecode(responseLine) as Map<String, dynamic>;
+      socket.writeln(
+        jsonEncode({
+          'instruction': 'READ_OUTPUT_FILE',
+          'path': 'test_scratch_space/web/main.ddc.js',
+        }),
+      );
+      responseLine = await socketLines.first;
+      response = jsonDecode(responseLine) as Map<String, dynamic>;
       expect(response.containsKey('content'), isTrue);
       expect(response['content'], contains('manager_hello'));
 
@@ -446,14 +453,24 @@ void main() {
         testMainFile.writeAsStringSync('void main() { print("hello"); }');
         testSocket.writeln(
           jsonEncode({
-            'instruction': 'READ_OUTPUT_FILE',
-            'path': 'test_scratch_space/web/main.ddc.js',
+            'instruction': 'RECOMPILE_AND_RECORD',
             'entrypoint': 'org-dartlang-app:///web/main.dart',
+            'filesToWrite': ['web/main.ddc.js'],
             'invalidatedFiles': ['org-dartlang-app:///web/main.dart'],
           }),
         );
         var responseLine = await testSocketLines.first;
         var response = jsonDecode(responseLine) as Map<String, dynamic>;
+        expect(response['errorCount'], 0);
+
+        testSocket.writeln(
+          jsonEncode({
+            'instruction': 'READ_OUTPUT_FILE',
+            'path': 'test_scratch_space/web/main.ddc.js',
+          }),
+        );
+        responseLine = await testSocketLines.first;
+        response = jsonDecode(responseLine) as Map<String, dynamic>;
         expect(response.containsKey('content'), isTrue);
         expect(response['content'], contains('print("hello")'));
 
@@ -461,9 +478,9 @@ void main() {
         testMainFile.writeAsStringSync('void main() { print("hello"');
         testSocket.writeln(
           jsonEncode({
-            'instruction': 'READ_OUTPUT_FILE',
-            'path': 'test_scratch_space/web/main.ddc.js',
+            'instruction': 'RECOMPILE_AND_RECORD',
             'entrypoint': 'org-dartlang-app:///web/main.dart',
+            'filesToWrite': ['web/main.ddc.js'],
             'invalidatedFiles': [
               'org-dartlang-app:///web/main.dart',
               'org-dartlang-app:///web/dummy1.dart',
@@ -472,19 +489,29 @@ void main() {
         );
         responseLine = await testSocketLines.first;
         response = jsonDecode(responseLine) as Map<String, dynamic>;
-        expect(response.containsKey('error'), isTrue);
+        expect(response['errorCount'], greaterThan(0));
 
         // 3. Fix the invalid file and recover
         testMainFile.writeAsStringSync('void main() { print("hello fixed"); }');
         testSocket.writeln(
           jsonEncode({
-            'instruction': 'READ_OUTPUT_FILE',
-            'path': 'test_scratch_space/web/main.ddc.js',
+            'instruction': 'RECOMPILE_AND_RECORD',
             'entrypoint': 'org-dartlang-app:///web/main.dart',
+            'filesToWrite': ['web/main.ddc.js'],
             'invalidatedFiles': [
               'org-dartlang-app:///web/main.dart',
               'org-dartlang-app:///web/dummy2.dart',
             ],
+          }),
+        );
+        responseLine = await testSocketLines.first;
+        response = jsonDecode(responseLine) as Map<String, dynamic>;
+        expect(response['errorCount'], 0);
+
+        testSocket.writeln(
+          jsonEncode({
+            'instruction': 'READ_OUTPUT_FILE',
+            'path': 'test_scratch_space/web/main.ddc.js',
           }),
         );
         responseLine = await testSocketLines.first;
