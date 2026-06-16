@@ -109,8 +109,8 @@ class RunningBuildStep {
 class SingleStepReaderWriter implements PhasedReader {
   late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);
 
-  final RunningBuild? _runningBuild;
-  final RunningBuildStep? _runningBuildStep;
+  final RunningBuild _runningBuild;
+  final RunningBuildStep _runningBuildStep;
 
   final ReaderWriter _delegate;
 
@@ -120,44 +120,17 @@ class SingleStepReaderWriter implements PhasedReader {
   final Set<AssetId> assetsWritten;
 
   SingleStepReaderWriter({
-    required RunningBuild? runningBuild,
-    required RunningBuildStep? runningBuildStep,
+    required RunningBuild runningBuild,
+    required RunningBuildStep runningBuildStep,
     required ReaderWriter readerWriter,
     required this.inputTracker,
     required this.assetsWritten,
   }) : _runningBuild = runningBuild,
        _runningBuildStep = runningBuildStep,
-       _delegate = readerWriter {
-    if (runningBuildStep != null) {
-      if (runningBuild == null) {
-        throw ArgumentError(
-          '`runningBuildStep` was set without `runningBuild`, they must`'
-          'be both null or both set.',
-        );
-      }
-    }
-    if (runningBuildStep == null) {
-      if (runningBuild != null) {
-        throw ArgumentError(
-          '`runningBuildStep` was not set but `runningBuild` '
-          'was, they must be both null or both set.',
-        );
-      }
-    }
-  }
-
-  factory SingleStepReaderWriter.fakeFor(ReaderWriter readerWriter) {
-    return SingleStepReaderWriter(
-      runningBuild: null,
-      runningBuildStep: null,
-      readerWriter: readerWriter,
-      inputTracker: InputTracker(readerWriter.filesystem),
-      assetsWritten: {},
-    );
-  }
+       _delegate = readerWriter;
 
   @override
-  int get phase => _runningBuildStep?.phaseNumber ?? 0;
+  int get phase => _runningBuildStep.phaseNumber;
 
   /// Checks whether [id] can be read by this step - attempting to build the
   /// asset if necessary.
@@ -178,11 +151,6 @@ class SingleStepReaderWriter implements PhasedReader {
     } on PackageNotFoundException {
       if (catchInvalidInputs) return false;
       rethrow;
-    }
-
-    if (_runningBuild == null) {
-      if (track) inputTracker.add(id);
-      return _delegate.canRead(id);
     }
 
     final buildState = _runningBuild.buildState;
@@ -213,7 +181,6 @@ class SingleStepReaderWriter implements PhasedReader {
       track: track,
     );
     if (!isReadable) return false;
-    if (_runningBuild == null) return true;
 
     if (_runningBuild.buildStepPlan.isDeclaredOutput(id) &&
         !await _delegate.canRead(id)) {
@@ -256,10 +223,6 @@ class SingleStepReaderWriter implements PhasedReader {
   }
 
   Stream<AssetId> _findAssets(Glob glob, {required String package}) {
-    if (_runningBuild == null) {
-      return _delegate.assetFinder.find(glob, package: package);
-    }
-
     final streamCompleter = StreamCompleter<AssetId>();
 
     _evaluateGlob(glob.pattern).then((globId) {
@@ -278,7 +241,6 @@ class SingleStepReaderWriter implements PhasedReader {
   ///
   /// Note that [id] must exist in the build state.
   Future<Digest> _ensureDigest(AssetId id) async {
-    if (_runningBuild == null) return _delegate.digest(id);
     final knownDigest = _runningBuild.buildState.digestOf(
       id: id,
       buildStepPlan: _runningBuild.buildStepPlan,
@@ -299,13 +261,13 @@ class SingleStepReaderWriter implements PhasedReader {
   ///
   /// If it's a declared output from an earlier phase, wait for it to be built.
   Future<Readability> _isReadableId(AssetId id) async {
-    if (_runningBuild!.buildState.isActualPostOutput(id)) {
+    if (_runningBuild.buildState.isActualPostOutput(id)) {
       // Post process outputs are not readable until after the build.
       return Readability.notReadable;
     }
     if (_runningBuild.buildStepPlan.isDeclaredOutput(id)) {
       final step = _runningBuild.buildStepPlan.stepForDeclaredOutput(id);
-      if (step.phaseNumber > _runningBuildStep!.phaseNumber) {
+      if (step.phaseNumber > _runningBuildStep.phaseNumber) {
         return Readability.notReadable;
       } else if (step.phaseNumber == _runningBuildStep.phaseNumber) {
         // allow a build step to read its outputs (contained in writtenAssets)
@@ -328,8 +290,6 @@ class SingleStepReaderWriter implements PhasedReader {
   }
 
   void _checkInvalidInput(AssetId id) {
-    if (_runningBuild == null) return;
-
     final package = _runningBuild.buildPackages[id.package];
     if (package == null) {
       throw PackageNotFoundException(id.package);
@@ -346,11 +306,11 @@ class SingleStepReaderWriter implements PhasedReader {
   /// Triggers the evaluation of the [glob] query inside the build engine.
   Future<GlobId> _evaluateGlob(String glob) async {
     final globId = GlobId(
-      package: _runningBuildStep!.primaryPackage,
+      package: _runningBuildStep.primaryPackage,
       glob: glob,
       phaseNumber: _runningBuildStep.phaseNumber,
     );
-    await _runningBuild!.globEvaluator(globId);
+    await _runningBuild.globEvaluator(globId);
     return globId;
   }
 
@@ -370,15 +330,6 @@ class SingleStepReaderWriter implements PhasedReader {
 
   @override
   Future<PhasedValue<String>> readPhased(AssetId id) async {
-    if (_runningBuild == null) {
-      final exists = await _delegate.canRead(id);
-      if (exists) {
-        return PhasedValue.fixed(await _delegate.readAsString(id));
-      } else {
-        return PhasedValue.fixed('');
-      }
-    }
-
     if (!_isFile(id)) {
       // Add to the build state for input tracking.
       _runningBuild.buildState.addMissingSource(id);
@@ -426,7 +377,7 @@ class SingleStepReaderWriter implements PhasedReader {
     return BuildRunnerFileContent(id.asPath, true, content, hash);
   }
 
-  bool _isFile(AssetId id) => _runningBuild!.buildState.isFile(
+  bool _isFile(AssetId id) => _runningBuild.buildState.isFile(
     buildStepPlan: _runningBuild.buildStepPlan,
     id: id,
   );
