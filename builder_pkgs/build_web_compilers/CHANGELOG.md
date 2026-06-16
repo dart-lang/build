@@ -1,3 +1,6 @@
+## 4.8.4
+- Fix deferred rebuilds sometimes crashing `DdcFrontendServerBuilder`.
+
 ## 4.8.3
 - Fix circular dependencies causing hangs in `DdcFrontendServerBuilder`.
 
