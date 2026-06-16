@@ -189,10 +189,9 @@ class Module {
     if (computeStronglyConnectedComponents) {
       final orderedModules = stronglyConnectedComponents<Module>(
         transitiveDeps.values,
-        (m) =>
-            m.directDependencies
-                .map((s) => transitiveDeps[s])
-                .whereType<Module>(),
+        (m) => m.directDependencies
+            .map((s) => transitiveDeps[s])
+            .whereType<Module>(),
         equals: (a, b) => a.primarySource == b.primarySource,
         hashCode: (m) => m.primarySource.hashCode,
       );

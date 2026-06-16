@@ -92,10 +92,9 @@ class DdcFrontendServerBuilder implements Builder {
     // For example, AssetId('app', 'lib/src/foo.dart') becomes:
     // 'lib/src/foo.dart' if 'app' is the root package
     // 'packages/app/src/bar.dart' if 'app' is a standard package.
-    String assetPath(AssetId id) =>
-        id.package == root
-            ? id.path
-            : 'packages/${id.package}/${id.path.replaceFirst('lib/', '')}';
+    String assetPath(AssetId id) => id.package == root
+        ? id.path
+        : 'packages/${id.package}/${id.path.replaceFirst('lib/', '')}';
 
     final changedAssetUris = [
       for (final asset in scratchSpace.changedFilesInBuild)
@@ -110,13 +109,12 @@ class DdcFrontendServerBuilder implements Builder {
     try {
       frontendServerState.triggerSharedCompilation(entrypointAssetId, () async {
         final customDir = scratchSpaceDir;
-        final sSpace =
-            customDir == null
-                ? scratchSpace
-                : _scratchSpaceCache.putIfAbsent(
-                  customDir,
-                  () => ScratchSpace.existing(Directory(customDir)),
-                );
+        final sSpace = customDir == null
+            ? scratchSpace
+            : _scratchSpaceCache.putIfAbsent(
+                customDir,
+                () => ScratchSpace.existing(Directory(customDir)),
+              );
         if (customDir != null) {
           frontendServerState.customScratchSpacePath = customDir;
         }
