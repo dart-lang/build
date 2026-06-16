@@ -68,8 +68,12 @@ class PackageConfig {
     return resolve(Uri.parse('package:$packageName/$subPath'));
   }
 
-  /// Rewrites [packageConfigFile]'s absolute package paths to absolute
-  /// URIs under [multiRootScheme].
+  /// Rewrites [packageConfigFile]'s relative root package paths to absolute
+  /// URIs under [multiRootScheme], ignoring absolute 'file:' root URIs.
+  ///
+  /// Examples:
+  /// * ../../path/to/my_package -> org-dartlang-app:///packages/my_package/
+  /// file:///local/system/path/my_package -> unchanged
   ///
   /// Ignores root packages.
   static void rewriteToMultiRoot(
@@ -85,8 +89,11 @@ class PackageConfig {
       final packageMap = package as Map<String, dynamic>;
       final name = packageMap['name'] as String;
       if (name != rootPackage) {
-        packageMap['rootUri'] = '$multiRootScheme:///packages/$name/';
-        modified = true;
+        final rootUri = packageMap['rootUri'] as String;
+        if (rootUri.startsWith('../')) {
+          packageMap['rootUri'] = '$multiRootScheme:///packages/$name/';
+          modified = true;
+        }
       }
     }
     if (modified) {

@@ -22,12 +22,12 @@ class DdcFrontendServerBuilder implements Builder {
   /// when it is initialized separately from the build daemon (like in tests).
   final String? scratchSpaceDir;
 
-  /// A persistent scratch space instance used when a custom scratch space
-  /// directory is provided.
+  /// Caches a [ScratchSpace] instance to its custom scratch space directory.
   ///
-  /// We cache this instance to maintain ScratchSpace's in-memory digests cache
-  /// for recompiles.
-  ScratchSpace? _scratchSpace;
+  /// We typically expect one scratch space to be provided per compilation,
+  /// but integration tests frequently run separate compilations on the same
+  /// entrypoint in the same process.
+  static final Map<String, ScratchSpace> _scratchSpaceCache = {};
 
   DdcFrontendServerBuilder({this.scratchSpaceDir});
 
@@ -89,24 +89,43 @@ class DdcFrontendServerBuilder implements Builder {
     );
     await buildStep.fetchResource(persistentFrontendServerResource);
     final entrypointArg = sourceArg(frontendServerState.entrypointAssetId!);
+    // Translates an AssetId to its scratch space file path.
+    //
+    // For example, AssetId('app', 'lib/src/foo.dart') becomes:
+    // 'lib/src/foo.dart' if 'app' is the root package
+    // 'packages/app/src/bar.dart' if 'app' is a standard package.
     String assetPath(AssetId id) =>
         id.package == root
             ? id.path
             : 'packages/${id.package}/${id.path.replaceFirst('lib/', '')}';
+
+    // Generates the URIs to invalidate when assets change in a format that the
+    // Frontend Server expects.
+    //
+    // Assets in 'lib' yield 'package:my_app/src/foo.dart', while other assets
+    // yield 'org-dartlang-app:///web/main.dart'.
     final changedAssetUris = [
       for (final asset in scratchSpace.changedFilesInBuild)
-        Uri(scheme: multiRootScheme, host: '', path: '/${assetPath(asset)}'),
+        if (asset.path.startsWith('lib/'))
+          Uri(
+            scheme: 'package',
+            path: '${asset.package}/${asset.path.replaceFirst('lib/', '')}',
+          )
+        else
+          Uri(scheme: multiRootScheme, host: '', path: '/${assetPath(asset)}'),
     ];
     try {
       frontendServerState.triggerSharedCompilation(entrypointAssetId, () async {
-        final ScratchSpace sSpace;
         final customDir = scratchSpaceDir;
+        final sSpace =
+            customDir == null
+                ? scratchSpace
+                : _scratchSpaceCache.putIfAbsent(
+                  customDir,
+                  () => ScratchSpace.existing(Directory(customDir)),
+                );
         if (customDir != null) {
           frontendServerState.customScratchSpacePath = customDir;
-          sSpace =
-              _scratchSpace ??= ScratchSpace.existing(Directory(customDir));
-        } else {
-          sSpace = scratchSpace;
         }
         await buildStep.trackStage(
           'EnsureAssets',
@@ -114,6 +133,9 @@ class DdcFrontendServerBuilder implements Builder {
             if (frontendServerState.entrypointAssetId!.package ==
                 buildStep.inputId.package)
               frontendServerState.entrypointAssetId!,
+            ...module.sources,
+            ...transitiveSources,
+            ...scratchSpace.changedFilesInBuild,
           ], buildStep),
         );
         final compilerOutput = await driver.recompileAndRecord(
@@ -141,42 +163,26 @@ class DdcFrontendServerBuilder implements Builder {
         () => scratchSpace.ensureAssets(transitiveJsDeps, buildStep),
       );
 
-      final jsOutputId = ddcEntrypointId.changeExtension(jsModuleExtension);
-      final mapOutputId = ddcEntrypointId.changeExtension(jsSourceMapExtension);
-      final metadataOutputId = ddcEntrypointId.changeExtension(
-        metadataExtension,
-      );
-
-      final jsPath = '$testScratchSpacePathPrefix${assetPath(jsOutputId)}';
-      final mapPath = '$testScratchSpacePathPrefix${assetPath(mapOutputId)}';
-      final metadataPath =
-          '$testScratchSpacePathPrefix${assetPath(metadataOutputId)}';
-
-      final jsContent = await driver.readInMemoryFile(
-        jsPath,
-        entrypointArg,
-        changedAssetUris,
-      );
-      final mapContent = await driver.readInMemoryFile(
-        mapPath,
-        entrypointArg,
-        changedAssetUris,
-      );
-      final metadataContent = await driver.readInMemoryFile(
-        metadataPath,
-        entrypointArg,
-        changedAssetUris,
-      );
-
-      if (jsContent != null) {
-        await buildStep.writeAsString(jsOutputId, jsContent);
+      // Reads the compiled asset with [extension] from the Frontend Server's
+      // filesystem and writes it to the build runner's output.
+      Future<void> readAndWriteOutput(String extension) async {
+        final outputId = ddcEntrypointId.changeExtension(extension);
+        final path = '$testScratchSpacePathPrefix${assetPath(outputId)}';
+        final content = await driver.readInMemoryFile(
+          path,
+          entrypointArg,
+          changedAssetUris,
+        );
+        if (content != null) {
+          await buildStep.writeAsString(outputId, content);
+        }
       }
-      if (mapContent != null) {
-        await buildStep.writeAsString(mapOutputId, mapContent);
-      }
-      if (metadataContent != null) {
-        await buildStep.writeAsString(metadataOutputId, metadataContent);
-      }
+
+      await Future.wait([
+        readAndWriteOutput(jsModuleExtension),
+        readAndWriteOutput(jsSourceMapExtension),
+        readAndWriteOutput(metadataExtension),
+      ]);
 
       if (isEntrypoint) {
         frontendServerState.needsRecompileRestart = false;

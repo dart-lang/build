@@ -400,6 +400,36 @@ void main() {
         expect(response['errorCount'], 0);
       });
 
+      test('throws an error when recompiling a different entrypoint '
+          'without restart', () async {
+        testMainFile.writeAsStringSync('void main() { print("hello"); }');
+        testSocket.writeln(
+          jsonEncode({
+            'instruction': 'COMPILE',
+            'entrypoint': 'org-dartlang-app:///web/main.dart',
+          }),
+        );
+        var responseLine = await testSocketLines.first;
+        var response = jsonDecode(responseLine) as Map<String, dynamic>;
+        expect(response['errorCount'], 0);
+
+        // Compile a different entrypoint.
+        testSocket.writeln(
+          jsonEncode({
+            'instruction': 'COMPILE',
+            'entrypoint': 'org-dartlang-app:///web/other.dart',
+          }),
+        );
+        responseLine = await testSocketLines.first;
+        response = jsonDecode(responseLine) as Map<String, dynamic>;
+
+        expect(response.containsKey('error'), isTrue);
+        expect(
+          response['error'],
+          contains('Cannot compile a different entrypoint'),
+        );
+      });
+
       test('READ_OUTPUT_FILE handles failures and recovers', () async {
         // 1. Initial valid compilation
         testMainFile.writeAsStringSync('void main() { print("hello"); }');
@@ -474,7 +504,6 @@ Future<String> _waitForFileContentChanges(
   }
 }
 
-// TODO(markzipan): Determine if this is sufficient to find 'fes_manager.dart'.
 String _resolveFesManagerScriptPath() {
   final localScript = p.absolute('bin/fes_manager.dart');
   if (File(localScript).existsSync()) return localScript;
