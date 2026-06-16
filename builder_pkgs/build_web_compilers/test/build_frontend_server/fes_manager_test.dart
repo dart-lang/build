@@ -116,15 +116,22 @@ void main() {
 
       socket.writeln(
         jsonEncode({
-          'instruction': 'READ_OUTPUT_FILE',
-          'path': 'test_scratch_space/web/main.ddc.js',
+          'instruction': 'COMPILE',
           'entrypoint': 'org-dartlang-app:///web/main.dart',
-          'invalidatedFiles': ['org-dartlang-app:///web/main.dart'],
         }),
       );
+      var responseLine = await socketLines.first;
+      var response = jsonDecode(responseLine) as Map<String, dynamic>;
+      expect(response['errorCount'], 0);
 
-      final responseLine = await socketLines.first;
-      final response = jsonDecode(responseLine) as Map<String, dynamic>;
+      socket.writeln(
+        jsonEncode({
+          'instruction': 'READ_OUTPUT_FILE',
+          'path': 'test_scratch_space/web/main.ddc.js',
+        }),
+      );
+      responseLine = await socketLines.first;
+      response = jsonDecode(responseLine) as Map<String, dynamic>;
       expect(response.containsKey('content'), isTrue);
       expect(response['content'], contains('manager_hello'));
 
@@ -411,19 +418,59 @@ void main() {
         expect(response['errorCount'], 0);
       });
 
+      test('throws an error when recompiling a different entrypoint '
+          'without restart', () async {
+        testMainFile.writeAsStringSync('void main() { print("hello"); }');
+        testSocket.writeln(
+          jsonEncode({
+            'instruction': 'COMPILE',
+            'entrypoint': 'org-dartlang-app:///web/main.dart',
+          }),
+        );
+        var responseLine = await testSocketLines.first;
+        var response = jsonDecode(responseLine) as Map<String, dynamic>;
+        expect(response['errorCount'], 0);
+
+        // Compile a different entrypoint.
+        testSocket.writeln(
+          jsonEncode({
+            'instruction': 'COMPILE',
+            'entrypoint': 'org-dartlang-app:///web/other.dart',
+          }),
+        );
+        responseLine = await testSocketLines.first;
+        response = jsonDecode(responseLine) as Map<String, dynamic>;
+
+        expect(response.containsKey('error'), isTrue);
+        expect(
+          response['error'],
+          contains('Cannot compile a different entrypoint'),
+        );
+      });
+
       test('READ_OUTPUT_FILE handles failures and recovers', () async {
         // 1. Initial valid compilation
         testMainFile.writeAsStringSync('void main() { print("hello"); }');
         testSocket.writeln(
           jsonEncode({
-            'instruction': 'READ_OUTPUT_FILE',
-            'path': 'test_scratch_space/web/main.ddc.js',
+            'instruction': 'RECOMPILE_AND_RECORD',
             'entrypoint': 'org-dartlang-app:///web/main.dart',
+            'filesToWrite': ['web/main.ddc.js'],
             'invalidatedFiles': ['org-dartlang-app:///web/main.dart'],
           }),
         );
         var responseLine = await testSocketLines.first;
         var response = jsonDecode(responseLine) as Map<String, dynamic>;
+        expect(response['errorCount'], 0);
+
+        testSocket.writeln(
+          jsonEncode({
+            'instruction': 'READ_OUTPUT_FILE',
+            'path': 'test_scratch_space/web/main.ddc.js',
+          }),
+        );
+        responseLine = await testSocketLines.first;
+        response = jsonDecode(responseLine) as Map<String, dynamic>;
         expect(response.containsKey('content'), isTrue);
         expect(response['content'], contains('print("hello")'));
 
@@ -431,9 +478,9 @@ void main() {
         testMainFile.writeAsStringSync('void main() { print("hello"');
         testSocket.writeln(
           jsonEncode({
-            'instruction': 'READ_OUTPUT_FILE',
-            'path': 'test_scratch_space/web/main.ddc.js',
+            'instruction': 'RECOMPILE_AND_RECORD',
             'entrypoint': 'org-dartlang-app:///web/main.dart',
+            'filesToWrite': ['web/main.ddc.js'],
             'invalidatedFiles': [
               'org-dartlang-app:///web/main.dart',
               'org-dartlang-app:///web/dummy1.dart',
@@ -442,19 +489,29 @@ void main() {
         );
         responseLine = await testSocketLines.first;
         response = jsonDecode(responseLine) as Map<String, dynamic>;
-        expect(response.containsKey('error'), isTrue);
+        expect(response['errorCount'], greaterThan(0));
 
         // 3. Fix the invalid file and recover
         testMainFile.writeAsStringSync('void main() { print("hello fixed"); }');
         testSocket.writeln(
           jsonEncode({
-            'instruction': 'READ_OUTPUT_FILE',
-            'path': 'test_scratch_space/web/main.ddc.js',
+            'instruction': 'RECOMPILE_AND_RECORD',
             'entrypoint': 'org-dartlang-app:///web/main.dart',
+            'filesToWrite': ['web/main.ddc.js'],
             'invalidatedFiles': [
               'org-dartlang-app:///web/main.dart',
               'org-dartlang-app:///web/dummy2.dart',
             ],
+          }),
+        );
+        responseLine = await testSocketLines.first;
+        response = jsonDecode(responseLine) as Map<String, dynamic>;
+        expect(response['errorCount'], 0);
+
+        testSocket.writeln(
+          jsonEncode({
+            'instruction': 'READ_OUTPUT_FILE',
+            'path': 'test_scratch_space/web/main.ddc.js',
           }),
         );
         responseLine = await testSocketLines.first;
@@ -485,7 +542,6 @@ Future<String> _waitForFileContentChanges(
   }
 }
 
-// TODO(markzipan): Determine if this is sufficient to find 'fes_manager.dart'.
 String _resolveFesManagerScriptPath() {
   final localScript = p.absolute('bin/fes_manager.dart');
   if (File(localScript).existsSync()) return localScript;

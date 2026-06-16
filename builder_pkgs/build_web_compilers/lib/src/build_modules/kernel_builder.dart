@@ -382,7 +382,7 @@ Future<Set<AssetId>> _parentsOfMissingKernelFiles(
     final current = toCrawl.removeFirst();
     if (!parents.containsKey(current)) continue;
     for (final next in parents[current]!) {
-      if (!sourceOnly.add(next)) {
+      if (sourceOnly.add(next)) {
         toCrawl.add(next);
       }
     }

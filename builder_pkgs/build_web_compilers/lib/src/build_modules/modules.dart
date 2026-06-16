@@ -153,13 +153,14 @@ class Module {
     final modules = await buildStep.fetchResource(moduleCache);
     final transitiveDeps = <AssetId, Module>{};
     final modulesToCrawl = {primarySource};
+    final visited = <AssetId>{};
     final missingModuleSources = <AssetId>{};
     final unsupportedModules = <Module>{};
 
     while (modulesToCrawl.isNotEmpty) {
       final next = modulesToCrawl.last;
       modulesToCrawl.remove(next);
-      if (transitiveDeps.containsKey(next)) continue;
+      if (!visited.add(next)) continue;
       final nextModuleId = next.changeExtension(moduleExtension(platform));
       final module = await modules.find(nextModuleId, buildStep);
       if (module == null || module.isMissing) {
@@ -188,11 +189,13 @@ class Module {
     if (computeStronglyConnectedComponents) {
       final orderedModules = stronglyConnectedComponents<Module>(
         transitiveDeps.values,
-        (m) => m.directDependencies.map((s) => transitiveDeps[s]!),
+        (m) => m.directDependencies
+            .map((s) => transitiveDeps[s])
+            .whereType<Module>(),
         equals: (a, b) => a.primarySource == b.primarySource,
         hashCode: (m) => m.primarySource.hashCode,
       );
-      return orderedModules.map((c) => c.single).toList();
+      return orderedModules.expand((c) => c).toList();
     }
     return transitiveDeps.values.toList();
   }

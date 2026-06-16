@@ -1,3 +1,7 @@
+## 4.8.2
+- Several bug fixes for `DdcFrontendServerBuilder`.
+- Several bug fixes for builder circular dependencies.
+
 ## 4.8.1
 - Bump the min sdk to 3.13.0-107.0.dev.
 - Internal only changes.

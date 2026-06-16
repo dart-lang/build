@@ -5,7 +5,6 @@
 import 'dart:convert';
 
 import 'package:build/build.dart';
-import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
 
 /// A persistent shared [FrontendServerState] for DDC workers that interact with
@@ -38,10 +37,9 @@ class FrontendServerState {
   ///
   /// Returns whether or not the `.web.entrypoint.json` was found and loaded.
   Future<bool> checkAndDeserializeState(BuildStep buildStep) async {
-    final rootDir = p.dirname(buildStep.inputId.path);
     final webEntrypointAsset = AssetId(
       buildStep.inputId.package,
-      p.join(rootDir, '.web.entrypoint.json'),
+      '.web.entrypoint.json',
     );
     if (await buildStep.canRead(webEntrypointAsset)) {
       final contents = json.decode(
