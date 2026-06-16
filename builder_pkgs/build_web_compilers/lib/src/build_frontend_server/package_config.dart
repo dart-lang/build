@@ -72,8 +72,8 @@ class PackageConfig {
   /// URIs under [multiRootScheme], ignoring absolute 'file:' root URIs.
   ///
   /// Examples:
-  /// * ../../path/to/my_package -> org-dartlang-app:///packages/my_package/
-  /// file:///local/system/path/my_package -> unchanged
+  /// ../../path/to/my_package -> org-dartlang-app:///packages/my_package/
+  /// file:///local/system/path/my_package is unchanged
   ///
   /// Ignores root packages.
   static void rewriteToMultiRoot(
