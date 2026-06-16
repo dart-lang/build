@@ -22,7 +22,7 @@ class DdcFrontendServerBuilder implements Builder {
   /// when it is initialized separately from the build daemon (like in tests).
   final String? scratchSpaceDir;
 
-  /// Caches a [ScratchSpace] instance to its custom scratch space directory.
+  /// Caches [ScratchSpace]s by their directory path.
   ///
   /// We typically expect one scratch space to be provided per compilation,
   /// but integration tests frequently run separate compilations on the same
@@ -73,7 +73,7 @@ class DdcFrontendServerBuilder implements Builder {
     final transitiveSources = [
       for (final dep in transitiveDeps) ...dep.sources,
     ];
-    final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
+    var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
     await buildStep.trackStage(
       'EnsureAssets',
       () => scratchSpace.ensureAssets([
@@ -109,18 +109,18 @@ class DdcFrontendServerBuilder implements Builder {
     try {
       frontendServerState.triggerSharedCompilation(entrypointAssetId, () async {
         final customDir = scratchSpaceDir;
-        final sSpace = customDir == null
-            ? scratchSpace
-            : _scratchSpaceCache.putIfAbsent(
-                customDir,
-                () => ScratchSpace.existing(Directory(customDir)),
-              );
+        if (customDir != null) {
+          scratchSpace = _scratchSpaceCache.putIfAbsent(
+            customDir,
+            () => ScratchSpace.existing(Directory(customDir)),
+          );
+        }
         if (customDir != null) {
           frontendServerState.customScratchSpacePath = customDir;
         }
         await buildStep.trackStage(
           'EnsureAssets',
-          () => sSpace.ensureAssets([
+          () => scratchSpace.ensureAssets([
             if (frontendServerState.entrypointAssetId!.package ==
                 buildStep.inputId.package)
               frontendServerState.entrypointAssetId!,
