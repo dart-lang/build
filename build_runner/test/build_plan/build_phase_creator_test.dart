@@ -22,6 +22,8 @@ import 'package:test/test.dart';
 import '../common/common.dart';
 
 void main() {
+  setUpTestLogging();
+
   group('BuildPhaseCreator', () {
     final buildPackages = BuildPackages.singlePackageBuild('a', [
       BuildPackage.forTesting(name: 'a', dependencies: ['b'], isOutput: true),

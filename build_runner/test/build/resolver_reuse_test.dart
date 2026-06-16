@@ -5,14 +5,12 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:build_runner/src/logging/build_log.dart';
-import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
+import '../common/common.dart';
 
 void main() {
-  setUp(() {
-    BuildLog.resetForTests(printOnFailure: printOnFailure);
-  });
+  setUpTestLogging();
+
   group('Resolver Reuse', () {
     test(
       'Does not remove sources due to crawling for an earlier phase',

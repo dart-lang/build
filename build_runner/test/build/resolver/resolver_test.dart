@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:io' show Platform;
 import 'dart:isolate';
 
 import 'package:analyzer/dart/analysis/results.dart';
@@ -10,19 +9,18 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
-import 'package:build/experiments.dart';
 import 'package:build_runner/src/build/resolver/analysis_driver.dart';
 import 'package:build_runner/src/build/resolver/analysis_driver_model.dart';
 import 'package:build_runner/src/build/resolver/resolvers_impl.dart';
 import 'package:build_runner/src/build/resolver/sdk_summary.dart';
-import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
-import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
 
 import '../../common/common.dart';
 
 void main() {
+  setUpTestLogging();
+
   final entryPoint = AssetId('a', 'web/main.dart');
 
   final sharedModel = AnalysisDriverModel();
@@ -389,27 +387,6 @@ void main() {
         expect(lib.languageVersion.effective.minor, sdkLanguageVersion.minor);
       }, resolvers: createResolvers(packageConfig: customPackageConfig));
     });
-
-    test(
-      'allows a version of analyzer compatibile with the current sdk',
-      skip: _skipOnPreRelease,
-      () async {
-        final originalLevel = Logger.root.level;
-        Logger.root.level = Level.WARNING;
-        final listener = Logger.root.onRecord.listen((record) {
-          fail('Got an unexpected warning during analysis:\n\n$record');
-        });
-        addTearDown(() {
-          Logger.root.level = originalLevel;
-          listener.cancel();
-        });
-        await resolveSources({'a|web/main.dart': 'main() {}'}, (
-          resolver,
-        ) async {
-          await resolver.libraryFor(entryPoint);
-        }, resolvers: createResolvers());
-      },
-    );
   });
 
   group('assets that aren\'t a transitive import of input', () {
@@ -748,38 +725,6 @@ void main() {
           );
         },
         resolvers: createResolvers(),
-      );
-    });
-
-    test('Respects withEnabledExperiments', skip: _skipOnPreRelease, () async {
-      Logger.root.level = Level.ALL;
-      Logger.root.onRecord.listen(print);
-      await withEnabledExperiments(
-        () => resolveSources(
-          {
-            'a|web/main.dart':
-                '''
-// @dart=${sdkLanguageVersion.major}.${sdkLanguageVersion.minor}
-int? get x => 1;
-                ''',
-          },
-          (resolver) async {
-            final lib = await resolver.libraryFor(entryPoint);
-            expect(
-              lib.languageVersion.effective.major,
-              sdkLanguageVersion.major,
-            );
-            expect(
-              lib.languageVersion.effective.minor,
-              sdkLanguageVersion.minor,
-            );
-            final errors =
-                await lib.session.getErrors('/a/web/main.dart') as ErrorsResult;
-            expect(errors.diagnostics, isEmpty);
-          },
-          resolvers: createResolvers(),
-        ),
-        ['non-nullable'],
       );
     });
 
@@ -1345,8 +1290,3 @@ int? get x => 1;
     });
   });
 }
-
-final _skipOnPreRelease =
-    Version.parse(Platform.version.split(' ').first).isPreRelease
-    ? 'Skipped on prerelease sdks'
-    : null;

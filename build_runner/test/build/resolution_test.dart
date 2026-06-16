@@ -5,14 +5,11 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:build_runner/src/logging/build_log.dart';
-import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
+import '../common/common.dart';
 
 void main() {
-  setUp(() {
-    BuildLog.resetForTests(printOnFailure: printOnFailure);
-  });
+  setUpTestLogging();
 
   test('should resolve a dart file with a part file', () async {
     await testBuilders(

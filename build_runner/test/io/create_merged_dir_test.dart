@@ -31,6 +31,8 @@ import 'package:test/test.dart';
 import '../common/common.dart';
 
 void main() {
+  setUpTestLogging();
+
   group('createMergedDir', () {
     late BuildPlan buildPlan;
     late BuildState buildState;
