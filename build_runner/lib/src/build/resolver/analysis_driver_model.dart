@@ -10,12 +10,11 @@ import 'package:build/build.dart';
 import 'package:pool/pool.dart';
 
 import '../../logging/timed_activities.dart';
-import '../input_tracker.dart';
+import '../build_step_impl.dart';
 import '../library_cycle_graph/asset_deps_loader.dart';
 import '../library_cycle_graph/library_cycle_graph.dart';
 import '../library_cycle_graph/library_cycle_graph_loader.dart';
 import '../library_cycle_graph/phased_asset_deps.dart';
-import '../library_cycle_graph/phased_reader.dart';
 import 'analysis_driver_filesystem.dart';
 
 /// Manages analysis driver and related build state.
@@ -90,20 +89,19 @@ class AnalysisDriverModel {
   }
 
   /// Updates [filesystem] and the driver provided by [withDriver] with updated
-  /// source of [entrypoint] at the phase viewed by [phasedReader].
+  /// source of [entrypoint] at the phase of the [buildStep].
   ///
   /// If [transitive], then all the transitive imports from [entrypoint] are
   /// also updated.
   ///
-  /// Records what was read in [inputTracker].
+  /// Records what was read in the [buildStep]'s input tracker.
   Future<void> updateDriver({
     required Future<void> Function(
       Future<void> Function(AnalysisDriverForPackageBuild),
     )
     withDriver,
+    required BuildStepImpl buildStep,
     required AssetId entrypoint,
-    required PhasedReader phasedReader,
-    required InputTracker inputTracker,
     required bool transitive,
   }) async {
     AssetId? idToSyncOntoFilesystem;
@@ -116,19 +114,26 @@ class AnalysisDriverModel {
             // Note: `transitiveDepsOf` can cause loads that cause builds that
             // cause a recursive `_performResolve` on this same `AnalysisDriver`
             // instance.
-            final nodeLoader = AssetDepsLoader(phasedReader);
-            inputTracker.addResolverEntrypoint(entrypoint);
+            final nodeLoader = AssetDepsLoader(
+              buildStep.buildFilesystem,
+              buildStep.phase,
+            );
+            buildStep.inputTracker.addResolverEntrypoint(entrypoint);
             return (await _graphLoader.libraryCycleGraphOf(
               nodeLoader,
               entrypoint,
-            )).valueAt(phase: phasedReader.phase);
+            )).valueAt(phase: buildStep.phase);
           });
     } else {
       // Notify [buildStep] of its inputs.
-      inputTracker.add(entrypoint);
+      buildStep.inputTracker.add(entrypoint);
       idToSyncOntoFilesystem = entrypoint;
       // Trigger any builds required for the file to be generated.
-      await phasedReader.readAtPhase(entrypoint);
+      await buildStep.buildFilesystem.readAtPhase(
+        entrypoint,
+        buildStep.phase,
+        (id, _) => buildStep.canRead(id, track: false),
+      );
     }
 
     await withDriver((driver) async {
@@ -136,11 +141,14 @@ class AnalysisDriverModel {
 
       await TimedActivity.resolve.runAsync(() async {
         // Change `filesystem`'s view of the files to be at `phase`.
-        final phase = phasedReader.phase;
-        filesystem.phase = phase;
+        filesystem.phase = buildStep.phase;
 
         Future<void> writeToFilesystem(AssetId id) async {
-          final content = await phasedReader.readAtPhase(id);
+          final content = await buildStep.buildFilesystem.readAtPhase(
+            id,
+            buildStep.phase,
+            (id, _) => buildStep.canRead(id, track: false),
+          );
           if (content.exists) {
             filesystem.writeContent(content);
           }
