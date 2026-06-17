@@ -22,6 +22,7 @@ import 'package:build_runner/src/build_plan/phase.dart';
 import 'package:build_runner/src/commands/serve/server.dart';
 import 'package:build_runner/src/commands/watch/watcher.dart';
 import 'package:build_runner/src/io/build_output_reader.dart';
+import 'package:build_runner/src/logging/build_log.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
@@ -305,8 +306,17 @@ void main() {
     });
 
     test('logs rejected requests', () async {
+      final logController = StreamController<LogRecord>();
+      final originalConfig = buildLog.configuration;
+      buildLog.configuration = buildLog.configuration.rebuild(
+        (b) => b.onLog = logController.add,
+      );
+      addTearDown(() {
+        logController.close();
+        buildLog.configuration = originalConfig;
+      });
       expect(
-        Logger.root.onRecord,
+        logController.stream,
         emitsThrough(
           predicate<LogRecord>(
             (record) =>
@@ -323,8 +333,17 @@ void main() {
 
   test('logs requests if you ask it to', () async {
     addSource('a|web/index.html', 'content');
+    final logController = StreamController<LogRecord>();
+    final originalConfig = buildLog.configuration;
+    buildLog.configuration = buildLog.configuration.rebuild(
+      (b) => b.onLog = logController.add,
+    );
+    addTearDown(() {
+      logController.close();
+      buildLog.configuration = originalConfig;
+    });
     expect(
-      Logger.root.onRecord,
+      logController.stream,
       emitsThrough(
         predicate<LogRecord>(
           (record) =>

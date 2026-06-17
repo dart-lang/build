@@ -24,7 +24,11 @@ import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 import 'package:watcher/watcher.dart';
 
+import '../common/common.dart';
+
 void main() {
+  setUpTestLogging();
+
   group('AssetTracker.collectChanges()', () {
     late AssetTracker assetTracker;
     late BuildState buildState;
