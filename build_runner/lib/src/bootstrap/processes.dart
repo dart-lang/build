@@ -15,6 +15,7 @@ import '../build_plan/builder_factories.dart';
 import '../build_runner.dart';
 import '../logging/build_log.dart';
 import 'build_process_state.dart';
+import 'powershell.dart';
 
 /// Methods for causing a child process to run and do work.
 ///
@@ -184,10 +185,7 @@ class ParentProcess {
     try {
       if (Platform.isWindows) {
         return await Process.start('powershell', [
-          // Flutter uses "-ExecutionPolicy Bypass" when it uses powershell for
-          // its "update Dart" script, do the same.
-          '-ExecutionPolicy',
-          'Bypass',
+          ...Powershell.baseArgs,
           '-Command',
           'Wait-Process -Id $parentPid; Stop-Process -Id $childPid -Force',
         ]);
