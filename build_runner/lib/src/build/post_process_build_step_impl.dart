@@ -8,16 +8,14 @@ import 'dart:convert';
 import 'package:build/build.dart';
 import 'package:crypto/crypto.dart' show Digest;
 
-import '../io/reader_writer.dart';
 import 'asset_content.dart';
 import 'builder_filesystem.dart';
 
 class PostProcessBuildStepImpl implements PostProcessBuildStep {
   @override
   final AssetId inputId;
-
   final BuilderFilesystem buildFilesystem;
-  final ReaderWriter _readerWriter;
+
   final void Function(AssetId) _addAsset;
   final void Function(AssetId) _deleteAsset;
 
@@ -26,28 +24,26 @@ class PostProcessBuildStepImpl implements PostProcessBuildStep {
   PostProcessBuildStepImpl({
     required this.inputId,
     required this.buildFilesystem,
-    required ReaderWriter readerWriter,
     required void Function(AssetId) addAsset,
     required void Function(AssetId) deleteAsset,
-  }) : _readerWriter = readerWriter,
-       _addAsset = addAsset,
+  }) : _addAsset = addAsset,
        _deleteAsset = deleteAsset;
 
   @override
-  Future<Digest> digest(AssetId id) => inputId == id
-      ? buildFilesystem.ensureDigest(id)
+  Future<Digest> digest(AssetId id) async => inputId == id
+      ? (await buildFilesystem.contentOf(id)).digest
       : Future.error(InvalidInputException(id));
 
   @override
   Future<List<int>> readInputAsBytes() async {
-    await buildFilesystem.ensureDigest(inputId);
-    return _readerWriter.readAsBytes(inputId);
+    return (await buildFilesystem.contentOf(inputId)).bytes;
   }
 
   @override
   Future<String> readInputAsString({Encoding encoding = utf8}) async {
-    await buildFilesystem.ensureDigest(inputId);
-    return _readerWriter.readAsString(inputId, encoding: encoding);
+    return (await buildFilesystem.contentOf(
+      inputId,
+    )).stringValue(encoding: encoding);
   }
 
   @override

@@ -6,6 +6,7 @@ import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 
 import '../io/build_output_reader.dart';
+import 'build_state/build_state.dart';
 import 'library_cycle_graph/phased_asset_deps.dart';
 
 /// The result of an individual build, this may be an incremental build or
@@ -29,12 +30,16 @@ class BuildResult {
   // The build output.
   final BuildOutputReader buildOutputReader;
 
+  // The build state.
+  final BuildState? buildState;
+
   BuildResult({
     required this.status,
     BuiltList<String>? errors,
     BuiltList<AssetId>? outputs,
     PhasedAssetDeps? phasedAssetDeps,
     required this.buildOutputReader,
+    this.buildState,
     FailureType? failureType,
   }) : failureType = failureType == null && status == BuildStatus.failure
            ? FailureType.general
@@ -47,14 +52,18 @@ class BuildResult {
     BuildStatus? status,
     FailureType? failureType,
     BuiltList<String>? errors,
+    BuiltList<AssetId>? outputs,
     PhasedAssetDeps? phasedAssetDeps,
+    BuildOutputReader? buildOutputReader,
+    BuildState? buildState,
   }) => BuildResult(
     status: status ?? this.status,
-    errors: errors ?? this.errors,
-    outputs: outputs,
-    phasedAssetDeps: phasedAssetDeps ?? this.phasedAssetDeps,
-    buildOutputReader: buildOutputReader,
     failureType: failureType ?? this.failureType,
+    errors: errors ?? this.errors,
+    outputs: outputs ?? this.outputs,
+    phasedAssetDeps: phasedAssetDeps ?? this.phasedAssetDeps,
+    buildOutputReader: buildOutputReader ?? this.buildOutputReader,
+    buildState: buildState ?? this.buildState,
   );
 
   @override

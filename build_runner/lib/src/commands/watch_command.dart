@@ -60,7 +60,6 @@ class WatchCommand implements BuildRunnerCommand {
       testingOverrides: testingOverrides,
     );
     final buildPlan = await BuildPlan.load(buildSpec);
-    await buildPlan.deleteFilesAndFolders();
     if (buildSpec.restartIsNeeded) return null;
 
     final terminator = Terminator(testingOverrides.terminateEventStream);

@@ -12,7 +12,7 @@ class _$BuildInputs extends BuildInputs {
   @override
   final BuiltSet<AssetId> sources;
   @override
-  final BuiltMap<AssetId, Digest> digests;
+  final BuiltMap<AssetId, AssetContent> sourceContents;
   @override
   final BuiltSet<AssetId> addedSources;
   @override
@@ -28,7 +28,7 @@ class _$BuildInputs extends BuildInputs {
   _$BuildInputs._({
     required this.cleanBuild,
     required this.sources,
-    required this.digests,
+    required this.sourceContents,
     required this.addedSources,
     required this.deletedSources,
     required this.modifiedSources,
@@ -47,7 +47,7 @@ class _$BuildInputs extends BuildInputs {
     return other is BuildInputs &&
         cleanBuild == other.cleanBuild &&
         sources == other.sources &&
-        digests == other.digests &&
+        sourceContents == other.sourceContents &&
         addedSources == other.addedSources &&
         deletedSources == other.deletedSources &&
         modifiedSources == other.modifiedSources &&
@@ -59,7 +59,7 @@ class _$BuildInputs extends BuildInputs {
     var _$hash = 0;
     _$hash = $jc(_$hash, cleanBuild.hashCode);
     _$hash = $jc(_$hash, sources.hashCode);
-    _$hash = $jc(_$hash, digests.hashCode);
+    _$hash = $jc(_$hash, sourceContents.hashCode);
     _$hash = $jc(_$hash, addedSources.hashCode);
     _$hash = $jc(_$hash, deletedSources.hashCode);
     _$hash = $jc(_$hash, modifiedSources.hashCode);
@@ -73,7 +73,7 @@ class _$BuildInputs extends BuildInputs {
     return (newBuiltValueToStringHelper(r'BuildInputs')
           ..add('cleanBuild', cleanBuild)
           ..add('sources', sources)
-          ..add('digests', digests)
+          ..add('sourceContents', sourceContents)
           ..add('addedSources', addedSources)
           ..add('deletedSources', deletedSources)
           ..add('modifiedSources', modifiedSources)
@@ -93,11 +93,11 @@ class BuildInputsBuilder implements Builder<BuildInputs, BuildInputsBuilder> {
   SetBuilder<AssetId> get sources => _$this._sources ??= SetBuilder<AssetId>();
   set sources(SetBuilder<AssetId>? sources) => _$this._sources = sources;
 
-  MapBuilder<AssetId, Digest>? _digests;
-  MapBuilder<AssetId, Digest> get digests =>
-      _$this._digests ??= MapBuilder<AssetId, Digest>();
-  set digests(MapBuilder<AssetId, Digest>? digests) =>
-      _$this._digests = digests;
+  MapBuilder<AssetId, AssetContent>? _sourceContents;
+  MapBuilder<AssetId, AssetContent> get sourceContents =>
+      _$this._sourceContents ??= MapBuilder<AssetId, AssetContent>();
+  set sourceContents(MapBuilder<AssetId, AssetContent>? sourceContents) =>
+      _$this._sourceContents = sourceContents;
 
   SetBuilder<AssetId>? _addedSources;
   SetBuilder<AssetId> get addedSources =>
@@ -130,7 +130,7 @@ class BuildInputsBuilder implements Builder<BuildInputs, BuildInputsBuilder> {
     if ($v != null) {
       _cleanBuild = $v.cleanBuild;
       _sources = $v.sources.toBuilder();
-      _digests = $v.digests.toBuilder();
+      _sourceContents = $v.sourceContents.toBuilder();
       _addedSources = $v.addedSources.toBuilder();
       _deletedSources = $v.deletedSources.toBuilder();
       _modifiedSources = $v.modifiedSources.toBuilder();
@@ -165,7 +165,7 @@ class BuildInputsBuilder implements Builder<BuildInputs, BuildInputsBuilder> {
               'cleanBuild',
             ),
             sources: sources.build(),
-            digests: digests.build(),
+            sourceContents: sourceContents.build(),
             addedSources: addedSources.build(),
             deletedSources: deletedSources.build(),
             modifiedSources: modifiedSources.build(),
@@ -176,8 +176,8 @@ class BuildInputsBuilder implements Builder<BuildInputs, BuildInputsBuilder> {
       try {
         _$failedField = 'sources';
         sources.build();
-        _$failedField = 'digests';
-        digests.build();
+        _$failedField = 'sourceContents';
+        sourceContents.build();
         _$failedField = 'addedSources';
         addedSources.build();
         _$failedField = 'deletedSources';

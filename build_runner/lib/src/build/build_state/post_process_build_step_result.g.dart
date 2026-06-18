@@ -36,8 +36,9 @@ class _$PostProcessBuildStepResultSerializer
       'outputs',
       serializers.serialize(
         object.outputs,
-        specifiedType: const FullType(BuiltSet, const [
+        specifiedType: const FullType(BuiltMap, const [
           const FullType(AssetId),
+          const FullType(AssetContent),
         ]),
       ),
       'errors',
@@ -85,12 +86,12 @@ class _$PostProcessBuildStepResultSerializer
         case 'outputs':
           result.outputs.replace(
             serializers.deserialize(
-                  value,
-                  specifiedType: const FullType(BuiltSet, const [
-                    const FullType(AssetId),
-                  ]),
-                )!
-                as BuiltSet<Object?>,
+              value,
+              specifiedType: const FullType(BuiltMap, const [
+                const FullType(AssetId),
+                const FullType(AssetContent),
+              ]),
+            )!,
           );
           break;
         case 'errors':
@@ -117,7 +118,7 @@ class _$PostProcessBuildStepResult extends PostProcessBuildStepResult {
   @override
   final bool deletedPrimaryInput;
   @override
-  final BuiltSet<AssetId> outputs;
+  final BuiltMap<AssetId, AssetContent> outputs;
   @override
   final BuiltList<String> errors;
 
@@ -186,9 +187,11 @@ class PostProcessBuildStepResultBuilder
   set deletedPrimaryInput(bool? deletedPrimaryInput) =>
       _$this._deletedPrimaryInput = deletedPrimaryInput;
 
-  SetBuilder<AssetId>? _outputs;
-  SetBuilder<AssetId> get outputs => _$this._outputs ??= SetBuilder<AssetId>();
-  set outputs(SetBuilder<AssetId>? outputs) => _$this._outputs = outputs;
+  MapBuilder<AssetId, AssetContent>? _outputs;
+  MapBuilder<AssetId, AssetContent> get outputs =>
+      _$this._outputs ??= MapBuilder<AssetId, AssetContent>();
+  set outputs(MapBuilder<AssetId, AssetContent>? outputs) =>
+      _$this._outputs = outputs;
 
   ListBuilder<String>? _errors;
   ListBuilder<String> get errors => _$this._errors ??= ListBuilder<String>();

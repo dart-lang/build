@@ -98,7 +98,6 @@ $logEndMarker''');
         testingOverrides: testingOverrides,
       );
       final buildPlan = await BuildPlan.load(buildSpec);
-      await buildPlan.deleteFilesAndFolders();
       if (buildSpec.restartIsNeeded) {
         return ChildProcess.recompileBuildersExitCode;
       }

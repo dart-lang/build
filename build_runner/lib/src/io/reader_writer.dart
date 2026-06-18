@@ -18,7 +18,6 @@ import '../logging/timed_activities.dart';
 import 'asset_finder.dart';
 import 'asset_path_provider.dart';
 import 'filesystem.dart';
-import 'filesystem_cache.dart';
 import 'generated_asset_hider.dart';
 
 /// File operations during a build.
@@ -30,7 +29,6 @@ class ReaderWriter implements AssetReader, AssetWriter {
   final AssetPathProvider assetPathProvider;
   final GeneratedAssetHider generatedAssetHider;
   final Filesystem filesystem;
-  final FilesystemCache cache;
 
   final void Function(AssetId)? onDelete;
 
@@ -45,7 +43,6 @@ class ReaderWriter implements AssetReader, AssetWriter {
     assetPathProvider: buildPackages,
     generatedAssetHider: const NoopGeneratedAssetHider(),
     filesystem: IoFilesystem(),
-    cache: const PassthroughFilesystemCache(),
     onDelete: null,
   );
 
@@ -54,12 +51,10 @@ class ReaderWriter implements AssetReader, AssetWriter {
     required this.assetPathProvider,
     required this.generatedAssetHider,
     required this.filesystem,
-    required this.cache,
     required this.onDelete,
   });
 
   ReaderWriter copyWith({
-    FilesystemCache? cache,
     GeneratedAssetHider? generatedAssetHider,
     void Function(AssetId)? onDelete,
   }) => ReaderWriter.using(
@@ -67,7 +62,6 @@ class ReaderWriter implements AssetReader, AssetWriter {
     assetPathProvider: assetPathProvider,
     generatedAssetHider: generatedAssetHider ?? this.generatedAssetHider,
     filesystem: filesystem,
-    cache: cache ?? this.cache,
     onDelete: onDelete ?? this.onDelete,
   );
 
@@ -81,52 +75,36 @@ class ReaderWriter implements AssetReader, AssetWriter {
   @override
   Future<bool> canRead(AssetId id) {
     return Future.value(
-      TimedActivity.read.run(
-        () => cache.exists(
-          id,
-          ifAbsent: () {
-            final path = _pathFor(id);
-            return filesystem.existsSync(path);
-          },
-        ),
-      ),
+      TimedActivity.read.run(() {
+        final path = _pathFor(id);
+        return filesystem.existsSync(path);
+      }),
     );
   }
 
   @override
   Future<List<int>> readAsBytes(AssetId id) {
     return Future.value(
-      TimedActivity.read.run(
-        () => cache.readAsBytes(
-          id,
-          ifAbsent: () {
-            final path = _pathFor(id);
-            if (!filesystem.existsSync(path)) {
-              throw AssetNotFoundException(id, path: path);
-            }
-            return filesystem.readAsBytesSync(path);
-          },
-        ),
-      ),
+      TimedActivity.read.run(() {
+        final path = _pathFor(id);
+        if (!filesystem.existsSync(path)) {
+          throw AssetNotFoundException(id, path: path);
+        }
+        return filesystem.readAsBytesSync(path);
+      }),
     );
   }
 
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
     return Future.value(
-      TimedActivity.read.run(
-        () => cache.readAsString(
-          id,
-          encoding: encoding,
-          ifAbsent: () {
-            final path = _pathFor(id);
-            if (!filesystem.existsSync(path)) {
-              throw AssetNotFoundException(id, path: path);
-            }
-            return filesystem.readAsBytesSync(path);
-          },
-        ),
-      ),
+      TimedActivity.read.run(() {
+        final path = _pathFor(id);
+        if (!filesystem.existsSync(path)) {
+          throw AssetNotFoundException(id, path: path);
+        }
+        return encoding.decode(filesystem.readAsBytesSync(path));
+      }),
     );
   }
 
@@ -136,13 +114,7 @@ class ReaderWriter implements AssetReader, AssetWriter {
   Future<void> writeAsBytes(AssetId id, List<int> bytes) {
     TimedActivity.write.run(() {
       final path = _pathFor(id);
-      cache.writeAsBytes(
-        id,
-        bytes,
-        writer: () {
-          filesystem.writeAsBytesSync(path, bytes);
-        },
-      );
+      filesystem.writeAsBytesSync(path, bytes);
     });
     return Future.value();
   }
@@ -155,13 +127,7 @@ class ReaderWriter implements AssetReader, AssetWriter {
   }) {
     TimedActivity.write.run(() {
       final path = _pathFor(id);
-      cache.writeAsString(
-        id,
-        contents,
-        writer: () {
-          filesystem.writeAsStringSync(path, contents, encoding: encoding);
-        },
-      );
+      filesystem.writeAsStringSync(path, contents, encoding: encoding);
     });
     return Future.value();
   }
@@ -180,12 +146,7 @@ class ReaderWriter implements AssetReader, AssetWriter {
     TimedActivity.write.run(() {
       onDelete?.call(id);
       final path = _pathFor(id, checkDeleteAllowed: true);
-      cache.delete(
-        id,
-        deleter: () {
-          filesystem.deleteSync(path);
-        },
-      );
+      filesystem.deleteSync(path);
     });
     return Future.value();
   }

@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
-import 'package:crypto/crypto.dart';
+
 import 'package:glob/glob.dart';
 
 import '../bootstrap/processes.dart';
@@ -12,6 +12,7 @@ import '../build_plan/build_packages.dart';
 import '../build_plan/build_step_plan.dart';
 import '../build_plan/placeholders.dart';
 import '../io/reader_writer.dart';
+import 'asset_content.dart';
 import 'build_state/build_state.dart';
 import 'build_state/glob_id.dart';
 import 'library_cycle_graph/phased_value.dart';
@@ -58,28 +59,36 @@ class BuilderFilesystem {
     return buildState.isFile(id: id, buildStepPlan: buildStepPlan);
   }
 
-  /// Returns the `lastKnownDigest` of [id], computing and caching it if
-  /// necessary.
+  /// Returns the content of [id].
   ///
-  /// This is called on any read or existence check. With filesystem caching
-  /// this ensures that the cached file content matches the build state hash.
+  /// It must be a known source or output.
   ///
-  /// Note that [id] must exist in the build state.
-  Future<Digest> ensureDigest(AssetId id) async {
-    final knownDigest = buildState.digestOf(
+  /// If it hasn't yet been read it will be read from the filesystem and stored
+  /// in memory.
+  Future<AssetContent> contentOf(AssetId id) async {
+    final maybeResult = buildState.contentOf(
       id: id,
       buildStepPlan: buildStepPlan,
     );
-    if (knownDigest != null) return knownDigest;
+    if (maybeResult != null && maybeResult.hasContent) return maybeResult;
 
-    Digest digest;
+    if (!isFile(id)) {
+      throw StateError('Cannot read $id, it is not a known source or output.');
+    }
+
+    List<int> bytes;
     try {
-      digest = await readerWriter.digest(id);
+      bytes = await readerWriter.readAsBytes(id);
     } on AssetNotFoundException {
       await ChildProcess.exitDueToAssetDeleted(id);
     }
-    buildState.updateSourceDigest(id, digest);
-    return digest;
+    final content = AssetContent.bytes(bytes);
+    buildState.updateContent(
+      buildStepPlan: buildStepPlan,
+      id: id,
+      content: content,
+    );
+    return content;
   }
 
   /// Checks whether [id] can be read by this step - attempting to build the
@@ -202,13 +211,13 @@ class BuilderFilesystem {
         return PhasedValue.generated(
           atPhase: stepPhase,
           before: '',
-          isSuccessOutput ? await readerWriter.readAsString(id) : '',
+          isSuccessOutput ? (await contentOf(id)).stringValue() : '',
         );
       }
     }
 
     return PhasedValue.fixed(
-      await readerWriter.canRead(id) ? await readerWriter.readAsString(id) : '',
+      await readerWriter.canRead(id) ? (await contentOf(id)).stringValue() : '',
     );
   }
 
@@ -222,9 +231,9 @@ class BuilderFilesystem {
       return BuildRunnerFileContent.missing(id.path);
     }
 
-    final content = await readerWriter.readAsString(id);
-    final hash = base64.encode((await ensureDigest(id)).bytes);
-    return BuildRunnerFileContent(id.asPath, true, content, hash);
+    final content = await contentOf(id);
+    final hash = base64.encode(content.digest.bytes);
+    return BuildRunnerFileContent(id.asPath, true, content.stringValue(), hash);
   }
 }
 

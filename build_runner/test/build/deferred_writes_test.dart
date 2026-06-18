@@ -9,7 +9,7 @@ import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
 void main() {
-  test('with caching writes wait until build completion', () async {
+  test('deferred writes wait until build completion', () async {
     final readerWriter = TestReaderWriter(rootPackage: 'a');
     final result = await testBuilder(
       TestBuilder(
@@ -30,7 +30,7 @@ void main() {
     );
   });
 
-  test('with caching writes are readable before fully written', () async {
+  test('deferred writes are readable before fully written', () async {
     final readerWriter = TestReaderWriter(rootPackage: 'a');
     final result = await testBuilder(
       TestBuilder(

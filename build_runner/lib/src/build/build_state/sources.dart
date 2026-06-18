@@ -3,16 +3,18 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:crypto/crypto.dart';
+
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
+
+import '../asset_content.dart';
 
 /// Assets that are inputs to the build.
 ///
 /// There are three types of source: actual files that haven't been read, actual
 /// files that have been read and digested, and missing sources.
 class Sources {
-  final Map<AssetId, Digest?> sources = {};
+  final Map<AssetId, AssetContent?> sources = {};
   final Set<AssetId> missingSources = {};
 
   /// Sorted sources by package, or `null` if they have not been computed.
@@ -31,18 +33,18 @@ class Sources {
   bool isUnreadSource(AssetId id) =>
       sources[id] == null && sources.containsKey(id);
 
-  /// The digest of source [id], or `null` if it has not been read.
+  /// The content of source [id], or `null` if it has not been read.
   ///
   /// Throws if it is not a source.
-  Digest? digestOfSource(AssetId id) {
+  AssetContent? contentOfSource(AssetId id) {
     if (!sources.containsKey(id)) {
-      throw StateError('Tried to read digest of non-source $id.');
+      throw StateError('Tried to read content of non-source $id.');
     }
     return sources[id];
   }
 
-  /// Updates the digest of [id] if it's a known source.
-  void updateDigestIfPresent(AssetId id, Digest? digest) {
+  /// Updates the content of [id] if it's a known source.
+  void updateContentIfPresent(AssetId id, AssetContent? digest) {
     if (sources.containsKey(id)) {
       sources[id] = digest;
     }
@@ -51,7 +53,7 @@ class Sources {
   /// Adds [id] as a known source.
   ///
   /// Throws a [StateError] if it was already known.
-  void add(AssetId id, {Digest? digest}) {
+  void add(AssetId id, {AssetContent? digest}) {
     _sortedFileIdsByPackage = null;
     if (sources.containsKey(id)) {
       throw StateError('Tried to add known source $id.');

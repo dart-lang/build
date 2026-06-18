@@ -5,9 +5,10 @@
 import 'package:build/build.dart' hide Builder;
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
-import 'package:crypto/crypto.dart';
+
 import 'package:watcher/watcher.dart';
 
+import '../build/asset_content.dart';
 import '../build/build_state/build_state.dart';
 import '../build/library_cycle_graph/phased_asset_deps.dart';
 import '../constants.dart';
@@ -54,7 +55,6 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
   /// Loads information about the previous build as [previousBuild].
   ///
   /// Files that should be deleted before restarting or building are tracked.
-  /// Call [deleteFilesAndFolders] to delete them.
   ///
   /// [buildInputs] are resolved.
   static Future<BuildPlan> load(BuildSpec buildSpec) async {
@@ -179,39 +179,6 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
   bool postBuildOptionsChanged(int actionNumber) =>
       previousBuild.postBuildOptionsChangedList[actionNumber];
 
-  Future<void> deleteFilesAndFolders() async {
-    // Hidden outputs are deleted if needed by deleting the entire folder. So,
-    // only outputs in the source folder need to be deleted explicitly. Use a
-    // `ReaderWriter` that only acts on the source folder.
-    final cleanupReaderWriter = readerWriter.copyWith(
-      generatedAssetHider: const NoopGeneratedAssetHider(),
-    );
-
-    if (buildInputs.cleanBuild) {
-      final assetGraphJsonId = AssetId(
-        buildSpec.buildPackages.outputRoot,
-        assetGraphJsonPath,
-      );
-      final generatedOutputDirectoryId = AssetId(
-        buildSpec.buildPackages.outputRoot,
-        generatedOutputDirectory,
-      );
-      await cleanupReaderWriter.delete(assetGraphJsonId);
-      await cleanupReaderWriter.deleteDirectory(generatedOutputDirectoryId);
-    }
-
-    for (final id in previousBuild.incompatibleBuildOutputsToDelete) {
-      if (await cleanupReaderWriter.canRead(id)) {
-        await cleanupReaderWriter.delete(id);
-      }
-    }
-    for (final id in conflictingOutputs) {
-      if (await cleanupReaderWriter.canRead(id)) {
-        await cleanupReaderWriter.delete(id);
-      }
-    }
-  }
-
   /// Creates a [BuildPlan] for a clean build.
   ///
   /// Pass [assetTrackerInputSources] to check if any files that builders
@@ -272,7 +239,9 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
     for (final id in result.sources.build()) {
       if (buildStepPlan.declaredOutputsOf(id).isNotEmpty) {
         try {
-          result.digests[id] = await readerWriter.digest(id);
+          result.sourceContents[id] = AssetContent.bytes(
+            await readerWriter.readAsBytes(id),
+          );
         } catch (_) {}
       }
     }
@@ -309,11 +278,9 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
     );
     final buildInputs = BuildInputsBuilder()..cleanBuild = false;
 
-    final newDigests = <AssetId, Digest>{};
+    final newContents = <AssetId, AssetContent>{};
     final resolvedUpdates = <AssetId, ChangeType>{};
     final previousSources = <AssetId>{};
-
-    readerWriter.cache.invalidate(filesToCheck);
 
     final previousBuildState = previousBuild.buildState!;
     var buildStepPlan = previousBuildStepPlan;
@@ -327,18 +294,19 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         buildStepPlan: buildStepPlan,
         id: id,
       );
-      final oldDigest = oldIsSource
-          ? previousBuildState.digestOfSource(id)
+      final oldContent = oldIsSource
+          ? previousBuildState.contentOfSource(id)
           : null;
       var exists = false;
-      Digest? newDigest;
+      AssetContent? newContent;
 
       if (await readerWriter.canRead(id)) {
         exists = true;
-        if (oldDigest != null) {
+        if (oldContent != null) {
           try {
-            newDigest = await readerWriter.digest(id);
-            newDigests[id] = newDigest;
+            final bytes = await readerWriter.readAsBytes(id);
+            newContent = AssetContent.bytes(bytes);
+            newContents[id] = newContent;
           } catch (_) {
             exists = false;
           }
@@ -356,9 +324,9 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         buildInputs.addedSources.add(id);
         resolvedUpdates[id] = ChangeType.ADD;
       } else if (oldExisted &&
-          oldDigest != null &&
+          oldContent != null &&
           exists &&
-          oldDigest != newDigest) {
+          oldContent.digest != newContent!.digest) {
         buildInputs.modifiedSources.add(id);
         resolvedUpdates[id] = ChangeType.MODIFY;
       }
@@ -382,15 +350,15 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
     }
 
     for (final id in buildInputs.sources.build()) {
-      if (resolvedUpdates[id] == null) {
+      if (newContents[id] != null) {
+        buildInputs.sourceContents[id] = newContents[id]!;
+      } else if (resolvedUpdates[id] == null) {
         if (previousBuildState.isSource(id)) {
-          final digest = previousBuildState.digestOfSource(id);
-          if (digest != null) {
-            buildInputs.digests[id] = digest;
+          final content = previousBuildState.contentOfSource(id);
+          if (content != null) {
+            buildInputs.sourceContents[id] = content;
           }
         }
-      } else if (newDigests[id] != null) {
-        buildInputs.digests[id] = newDigests[id]!;
       }
     }
 
@@ -401,10 +369,11 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
     );
 
     for (final id in buildInputs.sources.build()) {
-      if (buildInputs.digests[id] == null &&
+      if (buildInputs.sourceContents[id] == null &&
           buildStepPlan.declaredOutputsOf(id).isNotEmpty) {
         try {
-          buildInputs.digests[id] = await readerWriter.digest(id);
+          final bytes = await readerWriter.readAsBytes(id);
+          buildInputs.sourceContents[id] = AssetContent.bytes(bytes);
         } catch (_) {}
       }
     }
@@ -439,8 +408,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
   /// Works just like a new load of the build plan, but sets
   /// `recentlyBootstrapped` to `false` to redo checks from bootstrapping.
   ///
-  /// The caller must call [deleteFilesAndFolders] on the result and check
-  /// `buildSpec.restartIsNeeded`.
+  /// The caller must check `buildSpec.restartIsNeeded`.
   Future<BuildPlan> reload() async => BuildPlan.load(
     await BuildSpec.load(
       builderFactories: buildSpec.builderFactories,

@@ -8,6 +8,7 @@ import 'dart:io';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
+import 'package:build_runner/src/build/asset_content.dart';
 import 'package:build_runner/src/build/build_result.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/build_state/build_step_id.dart';
@@ -153,7 +154,7 @@ void main() {
     }
     buildState.addSourceForTest(
       parsedId,
-      digest: computeDigest(parsedId, content),
+      digest: AssetContent.digest(computeDigest(parsedId, content)),
     );
     readerWriter.testing.writeString(parsedId, content);
   }

@@ -48,7 +48,6 @@ class InternalTestReaderWriter extends ReaderWriter
       buildCachePackage: outputRootPackage ?? 'unset',
       generatedAssetHider: const NoopGeneratedAssetHider(),
       filesystem: filesystem,
-      cache: const PassthroughFilesystemCache(),
       onDelete: null,
       onCanReadController: StreamController(),
     );
@@ -62,7 +61,6 @@ class InternalTestReaderWriter extends ReaderWriter
     required this.buildCachePackage,
     required super.generatedAssetHider,
     required super.filesystem,
-    required super.cache,
     required super.onDelete,
     required this.onCanReadController,
   }) : super.using() {
@@ -71,7 +69,6 @@ class InternalTestReaderWriter extends ReaderWriter
 
   @override
   InternalTestReaderWriter copyWith({
-    FilesystemCache? cache,
     GeneratedAssetHider? generatedAssetHider,
     void Function(AssetId)? onDelete,
   }) => InternalTestReaderWriter.using(
@@ -82,7 +79,6 @@ class InternalTestReaderWriter extends ReaderWriter
     buildCachePackage: buildCachePackage,
     generatedAssetHider: generatedAssetHider ?? this.generatedAssetHider,
     filesystem: filesystem,
-    cache: cache ?? this.cache,
     onDelete: onDelete ?? this.onDelete,
     onCanReadController: onCanReadController,
   );
