@@ -9,6 +9,8 @@ import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:meta/meta.dart';
 
+import '../io/high_resolution_mtime.dart';
+
 /// A depfile, as written by `dart compile kernel ... --depfile=<output>`.
 ///
 /// It contains the output path followed by a colon then a space-separated list
@@ -36,23 +38,51 @@ class Depfile {
   /// will be re-used from disk if possible instead of recomputed.
   FreshnessResult checkFreshness({required bool digestsAreFresh}) {
     final outputFile = File(outputPath);
-    if (!outputFile.existsSync()) return FreshnessResult(outputIsFresh: false);
     final depsFile = File(depfilePath);
-    if (!depsFile.existsSync()) return FreshnessResult(outputIsFresh: false);
     final digestFile = File(digestPath);
-    if (!digestFile.existsSync()) return FreshnessResult(outputIsFresh: false);
+
+    if (!outputFile.existsSync() ||
+        !depsFile.existsSync() ||
+        !digestFile.existsSync()) {
+      if (depsFile.existsSync()) {
+        _depfilePaths = _readPaths();
+      }
+      return FreshnessResult(outputIsFresh: false);
+    }
+
     final digests = digestFile.readAsStringSync();
 
+    _depfilePaths ??= _readPaths();
+
+    final stampFile = File('$digestPath.stamp');
+    DateTime? stampTime;
+    if (stampFile.existsSync()) {
+      stampTime = stampFile.lastModifiedSync();
+    }
+
+    if (stampTime != null) {
+      for (final dep in _depfilePaths!) {
+        final path = dep.startsWith('file://')
+            ? Uri.parse(dep).toFilePath()
+            : dep;
+        final file = File(path);
+        if (file.existsSync() &&
+            HighResolutionMtime.isModifiedAfter(file, stampFile)) {
+          return FreshnessResult(outputIsFresh: false);
+        }
+      }
+    }
+
     if (digestsAreFresh) {
-      _depfilePaths ??= _readPaths();
       return FreshnessResult(outputIsFresh: true, digest: digests);
     }
 
-    _depfilePaths = _readPaths();
     final expectedDigests = _digestPaths();
-    return digests == expectedDigests
-        ? FreshnessResult(outputIsFresh: true, digest: digests)
-        : FreshnessResult(outputIsFresh: false);
+    if (digests == expectedDigests) {
+      return FreshnessResult(outputIsFresh: true, digest: digests);
+    } else {
+      return FreshnessResult(outputIsFresh: false);
+    }
   }
 
   /// Checks whether [path] is mentioned in the depfile.
@@ -60,6 +90,16 @@ class Depfile {
   /// Uses the paths loaded by the most recent [checkFreshness] or
   /// [writeDigest], throws if neither was called.
   bool isDependency(String path) => _depfilePaths!.contains(path);
+
+  /// Updates the compilation stamp to the current time, ensuring it is distinct
+  /// from the previous time. This is used to detect file modifications that
+  /// occur during the compilation.
+  void updateStamp() {
+    final stampFile = File('$digestPath.stamp');
+    stampFile.createSync(recursive: true);
+    stampFile.writeAsBytesSync([]);
+    HighResolutionMtime.ensureDistinctMtime(stampFile);
+  }
 
   /// Writes a digest of all input files mentioned in [depfilePath] to
   /// [digestPath].
@@ -105,10 +145,14 @@ class Depfile {
     final digestSink = AccumulatorSink<Digest>();
     final result = md5.startChunkedConversion(digestSink);
     for (final dep in _depfilePaths!) {
-      final file = File(dep);
+      final path = dep.startsWith('file://')
+          ? Uri.parse(dep).toFilePath()
+          : dep;
+      final file = File(path);
       if (file.existsSync()) {
         result.add([1]);
-        result.add(File(dep).readAsBytesSync());
+        final bytes = file.readAsBytesSync();
+        result.add(bytes);
       } else {
         result.add([0]);
       }
