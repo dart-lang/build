@@ -314,10 +314,8 @@ class BuildSeries {
       final content = result.buildState!.contentOf(
         id: output,
         buildStepPlan: _buildPlan.buildStepPlan,
-      );
-      if (content != null) {
-        await _buildPlan.readerWriter.writeAsBytes(output, content.bytes);
-      }
+      )!;
+      await _buildPlan.readerWriter.writeAsBytes(output, content.bytes);
     }
     for (final id in deletes) {
       await _buildPlan.readerWriter.delete(id);

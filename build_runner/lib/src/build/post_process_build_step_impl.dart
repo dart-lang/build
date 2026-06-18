@@ -31,21 +31,18 @@ class PostProcessBuildStepImpl implements PostProcessBuildStep {
 
   @override
   Future<Digest> digest(AssetId id) async => inputId == id
-      // TODO(davidmorgan): read post process primary inputs on build start
-      // so `allowReads` is not needed here or below.
-      ? (await buildFilesystem.contentOf(id, allowReads: true)).digest
+      ? (await buildFilesystem.contentOf(id)).digest
       : Future.error(InvalidInputException(id));
 
   @override
   Future<List<int>> readInputAsBytes() async {
-    return (await buildFilesystem.contentOf(inputId, allowReads: true)).bytes;
+    return (await buildFilesystem.contentOf(inputId)).bytes;
   }
 
   @override
   Future<String> readInputAsString({Encoding encoding = utf8}) async {
     return (await buildFilesystem.contentOf(
       inputId,
-      allowReads: true,
     )).stringValue(encoding: encoding);
   }
 

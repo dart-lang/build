@@ -546,11 +546,7 @@ class Build {
       inputTracker.add(partId);
       result.add(
         _parseCompilationUnit(
-          (await _builderFilesystem.contentOf(
-            partId,
-            // Part files might not be primary inputs.
-            allowReads: true,
-          )).stringValue(),
+          (await _builderFilesystem.contentOf(partId)).stringValue(),
         ),
       );
     }

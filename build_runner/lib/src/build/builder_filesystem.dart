@@ -63,31 +63,17 @@ class BuilderFilesystem {
   ///
   /// It must be a known source or output.
   ///
-  /// If [allowReads], read it from the filesystem if it's a source that has not
-  /// yet been read. If not [allowReads], throw in this case.
-  Future<AssetContent> contentOf(AssetId id, {bool allowReads = false}) async {
+  /// If it hasn't yet been read it will be read from the filesystem and stored
+  /// in memory.
+  Future<AssetContent> contentOf(AssetId id) async {
     final maybeResult = buildState.contentOf(
       id: id,
       buildStepPlan: buildStepPlan,
     );
     if (maybeResult != null && maybeResult.hasContent) return maybeResult;
 
-    var isUnverifiedOutput = false;
-    if (maybeResult != null && !maybeResult.hasContent) {
-      if (buildStepPlan.isDeclaredOutput(id) ||
-          buildState.isActualPostOutput(id)) {
-        // The output was reused without verification because none of its step
-        // inputs changed, so the content was not loaded yet. See
-        // https://github.com/dart-lang/build/issues/4985 for discussion on
-        // changing this behavior.
-        isUnverifiedOutput = true;
-      }
-    }
-
-    if (!allowReads && !isUnverifiedOutput) {
-      throw StateError(
-        'No content for $id, allowReads=false, and not an output.',
-      );
+    if (!isFile(id)) {
+      throw StateError('Cannot read $id, it is not a known source or output.');
     }
 
     List<int> bytes;
@@ -97,7 +83,11 @@ class BuilderFilesystem {
       await ChildProcess.exitDueToAssetDeleted(id);
     }
     final content = AssetContent.bytes(bytes);
-    buildState.updateSourceContent(id, content);
+    buildState.updateContent(
+      buildStepPlan: buildStepPlan,
+      id: id,
+      content: content,
+    );
     return content;
   }
 
@@ -227,9 +217,7 @@ class BuilderFilesystem {
     }
 
     return PhasedValue.fixed(
-      await readerWriter.canRead(id)
-          ? (await contentOf(id, allowReads: true)).stringValue()
-          : '',
+      await readerWriter.canRead(id) ? (await contentOf(id)).stringValue() : '',
     );
   }
 
@@ -243,7 +231,7 @@ class BuilderFilesystem {
       return BuildRunnerFileContent.missing(id.path);
     }
 
-    final content = await contentOf(id, allowReads: true);
+    final content = await contentOf(id);
     final hash = base64.encode(content.digest.bytes);
     return BuildRunnerFileContent(id.asPath, true, content.stringValue(), hash);
   }

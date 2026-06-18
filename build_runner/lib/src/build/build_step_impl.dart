@@ -119,7 +119,7 @@ class BuildStepImpl implements BuildStep {
 
     // Read the file so it's in memory; if that fails the file was deleted
     // during the build and the build is aborted.
-    await buildFilesystem.contentOf(id, allowReads: true);
+    await buildFilesystem.contentOf(id);
     return true;
   }
 
@@ -139,7 +139,7 @@ class BuildStepImpl implements BuildStep {
     if (outputs.containsKey(id)) {
       return outputs[id]!.bytes;
     }
-    final content = await buildFilesystem.contentOf(id, allowReads: true);
+    final content = await buildFilesystem.contentOf(id);
     return content.bytes;
   }
 
@@ -157,7 +157,7 @@ class BuildStepImpl implements BuildStep {
     if (outputs.containsKey(id)) {
       return outputs[id]!.stringValue(encoding: encoding);
     }
-    final content = await buildFilesystem.contentOf(id, allowReads: true);
+    final content = await buildFilesystem.contentOf(id);
     return content.stringValue(encoding: encoding);
   }
 
@@ -201,7 +201,7 @@ class BuildStepImpl implements BuildStep {
     if (outputs.containsKey(id)) {
       return outputs[id]!.digest;
     }
-    return (await buildFilesystem.contentOf(id, allowReads: true)).digest;
+    return (await buildFilesystem.contentOf(id)).digest;
   }
 
   @override

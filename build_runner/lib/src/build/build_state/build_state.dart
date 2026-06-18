@@ -160,6 +160,48 @@ class BuildState {
     _sources.updateContentIfPresent(id, content);
   }
 
+  /// Updates the content of [id], which must be a source, output, or
+  /// post-process output.
+  void updateContent({
+    required BuildStepPlan buildStepPlan,
+    required AssetId id,
+    required AssetContent content,
+  }) {
+    if (isSource(id)) {
+      _sources.updateContentIfPresent(id, content);
+      return;
+    }
+    final step = buildStepPlan.stepForDeclaredOutputOrNull(id);
+    if (step != null) {
+      final oldResult = stepResultOrNull(step);
+      if (oldResult == null || !oldResult.outputs.containsKey(id)) {
+        throw StateError(
+          'Cannot update content for output $id with no result.',
+        );
+      }
+      updateBuildStepResult(
+        step,
+        oldResult.rebuild((b) => b..outputs[id] = content),
+      );
+      return;
+    }
+    final postProcessStepId = _postProcessOutputs[id];
+    if (postProcessStepId != null) {
+      final oldResult = postProcessBuildStepResultFor(postProcessStepId);
+      if (oldResult == null || !oldResult.outputs.containsKey(id)) {
+        throw StateError(
+          'Cannot update content for post process output $id with no result.',
+        );
+      }
+      _postProcessResultsByInput[postProcessStepId.input]![postProcessStepId
+          .actionNumber] = oldResult.rebuild(
+        (b) => b..outputs[id] = content,
+      );
+      return;
+    }
+    throw StateError('Cannot update content for unknown asset $id.');
+  }
+
   /// The content of [id].
   ///
   /// If it is a source, returns `null` if it has not been read.
