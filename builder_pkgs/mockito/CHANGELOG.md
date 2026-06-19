@@ -1,3 +1,7 @@
+## 5.8.0-wip
+
+* Provide dummy values for `Int32` and `Int64` from `package:fixnum`.
+
 ## 5.7.0
 
 * Handle JS interop extension types and provide dummy values for them.

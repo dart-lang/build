@@ -1786,11 +1786,26 @@ class _MockClassInfo {
       // used, that's `String` when compiling to JS and an internal wrapper type
       // when compiling to Wasm.
       return _dummyValueFallbackToRuntime(type, invocation);
+    } else if (_isFixnumType(type)) {
+      final library = type.element.library;
+      final importUrl =
+          mockLibraryInfo.assetUris[type.element] ?? library.uri.toString();
+      return referImported(type.element.name!, importUrl).property('ZERO');
     }
 
     // This class is unknown; we must likely generate a fake class, and return
     // an instance here.
     return _dummyValueImplementing(type, invocation);
+  }
+
+  bool _isFixnumType(analyzer.DartType type) {
+    if (type is! analyzer.InterfaceType) return false;
+    final name = type.element.name;
+    if (name != 'Int32' && name != 'Int64') return false;
+    final uri = type.element.library.uri;
+    return uri.scheme == 'package' &&
+        uri.pathSegments.isNotEmpty &&
+        uri.pathSegments.first == 'fixnum';
   }
 
   /// Returns a reference to [Future], optionally with a type argument for the
