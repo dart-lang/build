@@ -20,12 +20,12 @@ class WebEntrypointMarkerBuilder implements Builder {
 
   /// The directory containing the 'main' entrypoint for the web target.
   ///
-  /// Defaults to 'web'.
+  /// Defaults to 'web,test,example,benchmark'.
   final String webAssetsPath;
 
   WebEntrypointMarkerBuilder({
     this.usesWebHotReload = false,
-    this.webAssetsPath = 'web',
+    this.webAssetsPath = 'web,test,example,benchmark',
   });
 
   @override
@@ -52,7 +52,7 @@ class WebEntrypointMarkerBuilder implements Builder {
           .toString();
     } else {
       final webAssets = await buildStep
-          .findAssets(Glob('$webAssetsPath/**'))
+          .findAssets(Glob('{$webAssetsPath}/**'))
           .toList();
 
       for (final asset in webAssets) {

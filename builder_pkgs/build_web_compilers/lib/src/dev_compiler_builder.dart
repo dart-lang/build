@@ -208,9 +208,9 @@ Future<void> _createDevCompilerModule(
       '-o',
       jsOutputFile.path,
       debugMode ? '--source-map' : '--no-source-map',
-      for (final dep in transitiveDeps) _summaryArg(dep),
+      for (final dep in transitiveDeps) _summaryArg(dep, ddcLibraryBundle: ddcLibraryBundle),
       '--packages=$multiRootScheme:///.dart_tool/package_config.json',
-      '--module-name=${ddcModuleName(jsId)}',
+      '--module-name=${ddcModuleName(jsId)}${ddcLibraryBundle ? '.dart' : ''}',
       '--multi-root-scheme=$multiRootScheme',
       '--multi-root=.',
       '--track-widget-creation',
@@ -340,10 +340,13 @@ Future<void> _createDevCompilerModule(
 }
 
 /// Returns the `--summary=` argument for a dependency.
-String _summaryArg(Module module) {
+String _summaryArg(Module module, {required bool ddcLibraryBundle}) {
   final kernelAsset = module.primarySource.changeExtension(ddcKernelExtension);
-  final moduleName = ddcModuleName(
+  var moduleName = ddcModuleName(
     module.primarySource.changeExtension(jsModuleExtension),
   );
+  if (ddcLibraryBundle) {
+    moduleName = '$moduleName.dart';
+  }
   return '--summary=${scratchSpace.fileFor(kernelAsset).path}=$moduleName';
 }

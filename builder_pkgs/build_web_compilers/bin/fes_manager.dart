@@ -222,7 +222,8 @@ class FesManager {
         }
       });
       await socket.flush().catchError((_) {});
-    } catch (e) {
+    } catch (e, st) {
+      print('FES_MANAGER_EXCEPTION in REQUEST: $e\n$st');
       try {
         socket.writeln(jsonEncode({'error': e.toString()}));
       } catch (_) {
@@ -266,21 +267,26 @@ class FesManager {
       invalidatedFiles.add(Uri.parse(entrypoint));
     }
 
-    final result = await driver.recompileAndRecord(
-      entrypoint,
-      invalidatedFiles,
-      filesToWrite,
-      recompileRestart: recompileRestart,
-    );
+    try {
+      final result = await driver.recompileAndRecord(
+        entrypoint,
+        invalidatedFiles,
+        filesToWrite,
+        recompileRestart: recompileRestart,
+      );
 
-    socket.writeln(
-      jsonEncode({
-        'outputFilename': result?.outputFilename,
-        'errorCount': result?.errorCount,
-        'sources': result?.sources.map((u) => u.toString()).toList(),
-        'errorMessage': result?.errorMessage,
-      }),
-    );
+      socket.writeln(
+        jsonEncode({
+          'outputFilename': result?.outputFilename,
+          'errorCount': result?.errorCount,
+          'sources': result?.sources.map((u) => u.toString()).toList(),
+          'errorMessage': result?.errorMessage,
+        }),
+      );
+    } catch (e, st) {
+      print('FES_MANAGER_EXCEPTION in RECOMPILE: $e\n$st');
+      socket.writeln(jsonEncode({'error': e.toString()}));
+    }
   }
 
   /// Handles MERGE_ALL_METADATA requests.
@@ -322,12 +328,20 @@ class FesManager {
         path.substring(index + scratchSpacePrefix.length),
         rootPackage: fes.fileSystem.rootPackageName,
       );
+      final fesRelativeKey = relativeKey.replaceAll(jsModuleExtension, fesJsExtension);
       final memoryData =
           fes.fileSystem.files[relativeKey] ??
           fes.fileSystem.sourcemaps[relativeKey] ??
-          fes.fileSystem.metadata[relativeKey];
+          fes.fileSystem.metadata[relativeKey] ??
+          fes.fileSystem.files[fesRelativeKey] ??
+          fes.fileSystem.sourcemaps[fesRelativeKey] ??
+          fes.fileSystem.metadata[fesRelativeKey];
       if (memoryData != null) {
         content = utf8.decode(memoryData);
+        print('FES_MANAGER_SUCCESS: read ${content.length} bytes for $path (found via $relativeKey or $fesRelativeKey)');
+      } else {
+        print('FES_MANAGER_FAILED: memoryData was null for $path (tried $relativeKey and $fesRelativeKey)');
+        print('AVAILABLE FILES IN FES: ${fes.fileSystem.files.keys.toList()}');
       }
     }
     if (content == null) {

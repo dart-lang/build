@@ -961,6 +961,7 @@ class SocketFrontendServerClient implements FrontendServerClient {
               .map(Uri.parse)
               .toList() ??
           [],
+      errorMessage: compileResult['errorMessage'] as String?,
     );
   }
 

@@ -129,7 +129,8 @@ Future<void> bootstrapDdc(
       // `packages/` for lib modules. We set baseUrl to `/` to simplify things,
       // and we only allow you to serve top level directories.
       final moduleName = ddcModuleName(jsId);
-      modulePaths[moduleName] = jsId.path.startsWith('lib')
+      final id = '$moduleName.dart';
+      modulePaths[id] = jsId.path.startsWith('lib')
           ? '$moduleName$jsModuleExtension'
           : _context.relative(
               jsId.path,
@@ -255,22 +256,29 @@ Future<List<AssetId>> _ensureTransitiveJsModules(
     for (final dep in transitiveDeps)
       dep.primarySource.changeExtension(jsModuleExtension),
   ];
-  // Check that each module is readable, and warn otherwise.
-  await Future.wait(
+  
+  final results = await Future.wait(
     jsModules.map((jsId) async {
-      if (await _lazyBuildPool.withResource(() => buildStep.canRead(jsId))) {
-        return;
-      }
-      final errorsId = jsId.addExtension('.errors');
-      await buildStep.canRead(errorsId);
-      log.warning(
-        'Unable to read $jsId, check your console or the '
-        '`.dart_tool/build/generated/${errorsId.package}/${errorsId.path}` '
-        'log file.',
+      final canRead = await _lazyBuildPool.withResource(
+        () => buildStep.canRead(jsId),
       );
+      if (!canRead) {
+        final errorsId = jsId.addExtension('.errors');
+        await buildStep.canRead(errorsId);
+        log.warning(
+          'Unable to read $jsId, check your console or the '
+          '`.dart_tool/build/generated/${errorsId.package}/${errorsId.path}` '
+          'log file.',
+        );
+      }
+      return (jsId, canRead: canRead);
     }),
   );
-  return jsModules;
+
+  return [
+    for (final result in results)
+      if (result.canRead) result.$1,
+  ];
 }
 
 /// Code that actually imports the [moduleName] module, and calls the
@@ -781,9 +789,9 @@ $_simpleLoaderScript
         if (url.endsWith('dart_sdk.js')) {
           return dartDevEmbedder.debugger.getSourceMap('dart_sdk');
         }
-        url = url.replace("$jsModuleExtension", "");
-        let relativeUrl = url.replace(_currentDirectory, "");
-        return dartDevEmbedder.debugger.getSourceMap(relativeUrl);
+        var relativeUrl = url.replace(_currentDirectory, "");
+        var moduleName = relativeUrl.replace("$jsModuleExtension", "");
+        return dartDevEmbedder.debugger.getSourceMap(moduleName);
       });
     }
 
