@@ -55,7 +55,9 @@ class WebEntrypointMarkerBuilder implements Builder {
     } else {
       final searchGlob = webAssetsPath == null
           ? '{${defaultWebDirs.join(',')}}/**'
-          : '{$webAssetsPath}/**';
+          : webAssetsPath!.contains(',')
+              ? '{$webAssetsPath}/**'
+              : '$webAssetsPath/**';
       final webAssets = await buildStep
           .findAssets(Glob(searchGlob))
           .toList();
