@@ -24,6 +24,8 @@ abstract class BuildStepPlan
 
   BuiltListMultimap<AssetId, AssetId> get declaredOutputsByPrimaryInput;
 
+  BuiltListMultimap<BuildStepId, AssetId> get declaredOutputsByStep;
+
   BuiltList<BuiltList<BuildStepId>> get buildStepsByPhase;
 
   factory BuildStepPlan([void Function(BuildStepPlanBuilder)? updates]) =
@@ -66,6 +68,7 @@ abstract class BuildStepPlan
           phaseNumber: phaseNum,
         );
         phaseSteps.add(buildStepId);
+        result.declaredOutputsByStep.addValues(buildStepId, outputs);
 
         for (final output in outputs) {
           if (result.buildStepsByDeclaredOutput[output] != null) {
@@ -162,9 +165,4 @@ abstract class BuildStepPlan
     }
     return results;
   }
-
-  Map<AssetId, int> get declaredOutputPhases => {
-    for (final entry in buildStepsByDeclaredOutput.entries)
-      entry.key: entry.value.phaseNumber,
-  };
 }

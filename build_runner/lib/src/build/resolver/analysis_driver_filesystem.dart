@@ -14,27 +14,25 @@ import 'package:analyzer/src/dart/analysis/file_content_cache.dart';
 import 'package:build/build.dart' hide Resource;
 import 'package:path/path.dart' as p;
 
+import '../../build_plan/build_inputs.dart';
+import '../asset_content.dart';
+import '../builder_filesystem.dart';
+import 'asset_ids.dart';
+
 /// The in-memory filesystem that is the analyzer's view of the build.
 ///
-/// Pass an `Iterable<AssetNode>` of generated file nodes to [startBuild] at the
-/// start of a build. This tells the filesystem at what phase each generated
-/// file becomes visible.
+/// Call [startBuild] first to pass a [BuilderFilesystem]. Its callbacks for new
+/// content are used to keep the filesystem in sync with the build state.
 ///
 /// During the build, set [phase] to change the phase that the files are viewed
 /// at.
-///
-/// Source files are added as they're needed during a build. [startBuild]
-/// manages how source and generated files are invalidated between builds.
 class AnalysisDriverFilesystem
     implements UriResolver, ResourceProvider, FileContentCache {
-  final Map<String, FileContent> _data = {};
+  late BuilderFilesystem _builderFilesystem;
+
+  final Map<String, BuildRunnerFileContent> _data = {};
   final Set<String> _changedPaths = {};
   final Set<String> _changedPathsThisBuild = {};
-
-  // Path and phase information derived from the `Iterable<AssetNode>` for fast
-  // lookup.
-  Map<String, int> _phaseByPath = {};
-  Map<int, List<String>> _pathByPhase = {};
 
   int _phase = 0;
 
@@ -53,79 +51,95 @@ class AnalysisDriverFilesystem
     final previousPhase = _phase;
     _phase = phase;
 
-    for (final entry in _pathByPhase.entries) {
-      final previouslyWasVisible = previousPhase > entry.key;
-      final isVisible = phase > entry.key;
-
-      if (previouslyWasVisible != isVisible) {
-        _changedPaths.addAll(entry.value);
+    final plan = _builderFilesystem.buildStepPlan;
+    final minPhase = previousPhase < phase ? previousPhase : phase;
+    final maxPhase = previousPhase > phase ? previousPhase : phase;
+    for (var phase = minPhase; phase != maxPhase; ++phase) {
+      for (final step in plan.buildStepsByPhase[phase]) {
+        for (final output in plan.declaredOutputsByStep[step]) {
+          _changedPaths.add(output.asPath);
+        }
       }
     }
   }
 
-  /// Initializes a new filesystem that will have files added due to the
-  /// build described by [generatedPhases].
+  /// Initializes for a build.
   ///
-  /// If [invalidatedSources] is `null`, this is an initial build and all
-  /// cached contents are cleared. Otherwise, only source files matching
-  /// [invalidatedSources] are removed.
-  void startBuild(
-    Map<AssetId, int> generatedPhases, {
-    required Iterable<AssetId>? invalidatedSources,
+  /// For a clean build, all content will be removed from the filesystem.
+  ///
+  /// For an incremental build, deleted sources and outputs will be removed
+  /// from the filesystem, and updated sources will be evicted or updated.
+  void startBuild({
+    required BuilderFilesystem builderFilesystem,
+    required BuildInputs buildInputs,
   }) {
-    final previousPhaseByPath = _phaseByPath;
-    _phaseByPath = <String, int>{};
-    _pathByPhase = <int, List<String>>{};
-    for (final entry in generatedPhases.entries) {
-      final phase = entry.value;
-      final idAsPath = entry.key.asPath;
-      _phaseByPath[idAsPath] = phase;
-      _pathByPhase.putIfAbsent(phase, () => []).add(idAsPath);
-    }
-
+    _builderFilesystem = builderFilesystem;
+    builderFilesystem.listenToContentUpdates(_updateContent);
     _changedPathsThisBuild.clear();
 
-    if (invalidatedSources == null) {
+    if (buildInputs.cleanBuild) {
+      _phase = 0;
       _changedPaths.addAll(_data.keys);
       _data.clear();
+      for (final id in builderFilesystem.buildState.sources) {
+        final content = builderFilesystem.buildState.contentOf(id: id);
+        if (content != null) {
+          _updateContent(id, content);
+        }
+      }
       return;
     }
 
-    for (final id in invalidatedSources) {
+    for (final id in buildInputs.deletedSources.followedBy(
+      buildInputs.deletedOutputs,
+    )) {
       final path = id.asPath;
       if (_data.remove(path) != null) {
         _changedPaths.add(path);
       }
     }
-
-    for (final entry in previousPhaseByPath.entries) {
-      final path = entry.key;
-      final previousPhase = entry.value;
-      final nextPhase = _phaseByPath[path];
-      if (nextPhase == null) {
-        if (_data.remove(path) != null && _phase > previousPhase) {
-          _changedPaths.add(path);
-        }
-        continue;
-      }
-      if (nextPhase == previousPhase || !_data.containsKey(path)) {
-        continue;
-      }
-      final previouslyWasVisible = _phase > previousPhase;
-      final isVisible = _phase > nextPhase;
-      if (previouslyWasVisible != isVisible) {
-        _changedPaths.add(path);
-      }
+    for (final id in buildInputs.updatedSources) {
+      _updateContent(id, builderFilesystem.buildState.contentOfSource(id));
     }
   }
 
-  /// Returns the phase of the generated file at [path] or `-1` if it's not a
-  /// generated file or not known.
-  int _phaseOf(String path) => _phaseByPath[path] ?? -1;
+  void _updateContent(AssetId id, AssetContent? content) {
+    if (!id.isDart) return;
+    if (content == null) {
+      // The update is that the file no longer exists.
+      final path = id.asPath;
+      if (_data.remove(path) != null) {
+        _changedPaths.add(path);
+      }
+      return;
+    }
+    if (!content.hasContent) {
+      // The update is that the file is known to the build but has not been read
+      // yet. Do nothing, it will be read before it is used.
+      return;
+    }
+    final phase =
+        _builderFilesystem.buildStepPlan
+            .stepForDeclaredOutputOrNull(id)
+            ?.phaseNumber ??
+        -1;
+    _writeContent(
+      BuildRunnerFileContent(
+        path: id.asPath,
+        exists: true,
+        content: content.dartStringValueOrEmptyFail(id: id),
+        contentHash: content.digest.toString(),
+        phase: phase,
+      ),
+    );
+  }
 
   /// Whether [path] exists.
-  bool exists(String path) =>
-      _data.containsKey(path) && _phase > _phaseOf(path);
+  bool exists(String path) {
+    final content = _data[path];
+    if (content == null) return false;
+    return _phase > content.phase;
+  }
 
   /// Reads the data previously written to [path].
   ///
@@ -136,11 +150,11 @@ class AnalysisDriverFilesystem
   }
 
   /// Writes [content].
-  void writeContent(BuildRunnerFileContent content) {
+  void _writeContent(BuildRunnerFileContent content) {
     if (!content.exists) throw ArgumentError('content must exist');
     final path = content.path;
     final previousContent = _data[path];
-    final isVisible = _phase > _phaseOf(path);
+    final isVisible = _phase > content.phase;
     if (previousContent != null &&
         content.contentHash == previousContent.contentHash) {
       return;
@@ -153,7 +167,7 @@ class AnalysisDriverFilesystem
     assert(_changedPathsThisBuild.add(path), path);
   }
 
-  /// Paths that were modified by [writeContent] since the last
+  /// Paths that were modified by [_writeContent] since the last
   /// call to [clearChangedPaths].
   Iterable<String> get changedPaths => _changedPaths;
 
@@ -285,15 +299,23 @@ class BuildRunnerFileContent implements FileContent {
   @override
   final String contentHash;
 
-  BuildRunnerFileContent(
-    this.path,
-    this.exists,
-    this.content,
-    this.contentHash,
-  );
+  final int phase;
 
-  static BuildRunnerFileContent missing(String path) =>
-      BuildRunnerFileContent(path, false, '', '');
+  BuildRunnerFileContent({
+    required this.path,
+    required this.exists,
+    required this.content,
+    required this.contentHash,
+    required this.phase,
+  });
+
+  static BuildRunnerFileContent missing(String path) => BuildRunnerFileContent(
+    path: path,
+    exists: false,
+    content: '',
+    contentHash: '',
+    phase: -1,
+  );
 }
 
 /// Minimal implementation of [File] and [Folder].

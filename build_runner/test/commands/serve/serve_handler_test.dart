@@ -122,7 +122,7 @@ void main() {
     readerWriter = InternalTestReaderWriter(
       outputRootPackage: buildPackages.outputRoot,
     );
-    buildState = BuildState(<AssetId>{});
+    buildState = BuildState();
     watcher = FakeWatcher(buildPackages);
     serveHandler = ServeHandler(watcher);
     buildStepPlan = BuildStepPlan(

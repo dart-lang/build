@@ -102,11 +102,10 @@ class Build {
         ResolversImpl r => r,
         _ => null,
       },
-      buildState = BuildState(buildPlan.buildInputs.sources) {
-    for (final entry in buildPlan.buildInputs.sourceContents.entries) {
-      buildState.updateSourceContent(entry.key, entry.value);
-    }
-  }
+      buildState = BuildState({
+        for (final id in buildPlan.buildInputs.sources)
+          id: buildPlan.buildInputs.sourceContents[id],
+      });
 
   BuildSpec get buildSpec => buildPlan.buildSpec;
   BuildOptions get buildOptions => buildSpec.buildOptions;
@@ -183,8 +182,8 @@ class Build {
     runZonedGuarded(
       () async {
         await resolversImpl?.takeLockAndStartBuild(
-          buildPlan.buildStepPlan.declaredOutputPhases,
-          invalidatedSources: buildInputs.invalidatedSources,
+          builderFilesystem: _builderFilesystem,
+          buildInputs: buildInputs,
         );
         final result = await _runPhases();
 
@@ -422,7 +421,7 @@ class Build {
       } else if (stepAction == StepAction.skipFailedPrimaryInput) {
         await _markStepFailed(buildStepId, builderOutputs);
       } else if (stepAction == StepAction.skipReuse) {
-        buildState.updateBuildStepResult(
+        _builderFilesystem.updateBuildStepResult(
           buildStepId,
           previousBuildState!.stepResult(buildStepId),
         );
@@ -667,7 +666,7 @@ class Build {
   void _markStepSkipped(BuildStepId buildStepId, Iterable<AssetId> outputs) {
     final isHidden =
         buildPhases.inBuildPhases[buildStepId.phaseNumber].hideOutput;
-    buildState.updateBuildStepResult(
+    _builderFilesystem.updateBuildStepResult(
       buildStepId,
       BuildStepResult((b) => b..isHidden = isHidden),
     );
@@ -679,7 +678,7 @@ class Build {
   ) async {
     final isHidden =
         buildPhases.inBuildPhases[buildStepId.phaseNumber].hideOutput;
-    buildState.updateBuildStepResult(
+    _builderFilesystem.updateBuildStepResult(
       buildStepId,
       BuildStepResult((b) {
         b.result = false;
@@ -745,9 +744,6 @@ class Build {
       }
 
       final primaryInput = step.primaryInput;
-      if (buildInputs.addedSources.contains(primaryInput)) {
-        return StepAction.run;
-      }
 
       if (buildStepPlan.isDeclaredOutput(primaryInput)) {
         final inputStep = buildStepPlan.stepForDeclaredOutput(primaryInput);
@@ -915,8 +911,7 @@ class Build {
         return true;
       }
     } else if (buildState.isSource(input)) {
-      if (buildInputs.modifiedSources.contains(input) ||
-          buildInputs.addedSources.contains(input)) {
+      if (buildInputs.updatedSources.contains(input)) {
         return true;
       }
     } else if (buildInputs.deletedSources.contains(input) ||
@@ -954,8 +949,7 @@ class Build {
         return true;
       }
     } else if (buildState.isSource(input)) {
-      if (buildInputs.modifiedSources.contains(input) ||
-          buildInputs.addedSources.contains(input)) {
+      if (buildInputs.updatedSources.contains(input)) {
         return true;
       }
     } else {
@@ -1079,7 +1073,7 @@ class Build {
     final buildStepResult = buildStepResultBuilder.build();
 
     final buildStepId = BuildStepId(primaryInput: input, phaseNumber: phaseNum);
-    buildState.updateBuildStepResult(buildStepId, buildStepResult);
+    _builderFilesystem.updateBuildStepResult(buildStepId, buildStepResult);
   }
 
   bool _isFile(AssetId id) =>

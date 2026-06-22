@@ -130,6 +130,14 @@ class BuildRunnerTester {
       ..writeAsStringSync(contents);
   }
 
+  /// Writes [contents] to workspace-relative [path].
+  void writeBytes(String path, List<int> contents) {
+    final file = File(p.join(tempDirectory.path, path));
+    file
+      ..createSync(recursive: true)
+      ..writeAsBytesSync(contents);
+  }
+
   /// Updates the file at workspace-relative [path], which must exist.
   void update(String path, String Function(String) update) {
     final file = File(p.join(tempDirectory.path, path));

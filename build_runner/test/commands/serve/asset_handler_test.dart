@@ -29,7 +29,7 @@ void main() {
   late BuildStepPlan buildStepPlan;
 
   setUp(() async {
-    buildState = BuildState(<AssetId>{});
+    buildState = BuildState();
     readerWriter = InternalTestReaderWriter();
     buildStepPlan = BuildStepPlan(
       (BuildStepPlanBuilder b) =>

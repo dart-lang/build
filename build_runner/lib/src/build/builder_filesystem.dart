@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
@@ -14,9 +13,10 @@ import '../build_plan/placeholders.dart';
 import '../io/reader_writer.dart';
 import 'asset_content.dart';
 import 'build_state/build_state.dart';
+import 'build_state/build_step_id.dart';
+import 'build_state/build_step_result.dart';
 import 'build_state/glob_id.dart';
 import 'library_cycle_graph/phased_value.dart';
-import 'resolver/analysis_driver_filesystem.dart';
 
 /// The filesystem from the point of view of a build step.
 ///
@@ -40,6 +40,67 @@ class BuilderFilesystem {
     required this.assetBuilder,
     required this.globEvaluator,
   });
+
+  void Function(AssetId, AssetContent?)? _onUpdateContent;
+
+  /// Listens to content updates: source files read for the first time,
+  /// generated outputs, generated outputs that are not written.
+  ///
+  /// Throws if called twice.
+  void listenToContentUpdates(
+    void Function(AssetId, AssetContent?) onUpdateContent,
+  ) {
+    if (_onUpdateContent != null) {
+      throw StateError('Already listening to content updates.');
+    }
+    _onUpdateContent = onUpdateContent;
+  }
+
+  /// Updates the content of [id] and notifies update listener.
+  ///
+  /// Throws if not a source.
+  void updateSourceContent(AssetId id, AssetContent? content) {
+    buildState.updateSourceContent(id, content);
+    _onUpdateContent?.call(id, content);
+  }
+
+  /// Updates the result of [buildStepId] and notifies update listener.
+  void updateBuildStepResult(BuildStepId buildStepId, BuildStepResult result) {
+    buildState.updateBuildStepResult(buildStepId, result);
+
+    for (final entry in result.outputs.entries) {
+      _onUpdateContent?.call(entry.key, entry.value);
+    }
+
+    final declaredOutputsForStep =
+        buildStepPlan.declaredOutputsByStep[buildStepId];
+    for (final declaredOutput in declaredOutputsForStep) {
+      if (!result.outputs.containsKey(declaredOutput)) {
+        _onUpdateContent?.call(declaredOutput, null);
+      }
+    }
+  }
+
+  /// Updates [id] with [content].
+  ///
+  /// It must be a source or declared output.
+  void updateContent({required AssetId id, required AssetContent content}) {
+    if (buildState.isSource(id)) {
+      updateSourceContent(id, content);
+      return;
+    }
+    final step = buildStepPlan.stepForDeclaredOutputOrNull(id);
+    if (step != null) {
+      buildState.updateDeclaredOutputContent(
+        step: step,
+        id: id,
+        content: content,
+      );
+      _onUpdateContent?.call(id, content);
+      return;
+    }
+    throw StateError('Cannot update content for unknown asset $id.');
+  }
 
   void checkInvalidInput(AssetId id) {
     final package = buildPackages[id.package];
@@ -83,11 +144,7 @@ class BuilderFilesystem {
       await ChildProcess.exitDueToAssetDeleted(id);
     }
     final content = AssetContent.bytes(bytes);
-    buildState.updateContent(
-      buildStepPlan: buildStepPlan,
-      id: id,
-      content: content,
-    );
+    updateContent(id: id, content: content);
     return content;
   }
 
@@ -211,29 +268,18 @@ class BuilderFilesystem {
         return PhasedValue.generated(
           atPhase: stepPhase,
           before: '',
-          isSuccessOutput ? (await contentOf(id)).stringValue() : '',
+          isSuccessOutput
+              ? (await contentOf(id)).dartStringValueOrEmptyFail(id: id)
+              : '',
         );
       }
     }
 
     return PhasedValue.fixed(
-      await readerWriter.canRead(id) ? (await contentOf(id)).stringValue() : '',
+      await readerWriter.canRead(id)
+          ? (await contentOf(id)).dartStringValueOrEmptyFail(id: id)
+          : '',
     );
-  }
-
-  /// The contents at [phase].
-  Future<BuildRunnerFileContent> readAtPhase(
-    AssetId id,
-    int phase,
-    Future<bool> Function(AssetId id, int phase) canRead,
-  ) async {
-    if (!await canRead(id, phase)) {
-      return BuildRunnerFileContent.missing(id.path);
-    }
-
-    final content = await contentOf(id);
-    final hash = base64.encode(content.digest.bytes);
-    return BuildRunnerFileContent(id.asPath, true, content.stringValue(), hash);
   }
 }
 
@@ -242,3 +288,20 @@ typedef AssetBuilder = Future<void> Function(AssetId);
 
 /// Evaluates all assets matching a glob.
 typedef GlobEvaluator = Future<void> Function(GlobId);
+
+extension AssetContentExtension on AssetContent {
+  /// Returns [stringValue] based on utf8 encoding, or an empty string if
+  /// decoding fails.
+  ///
+  /// Logs an error if decoding fails. Pass [id] for the log message.
+  String dartStringValueOrEmptyFail({required AssetId id}) {
+    try {
+      return stringValue();
+    } on FormatException {
+      // Use the `package:build` log so it counts as a fail for the
+      // currently-running builder.
+      log.severe('Dart source $id is not valid utf8.');
+      return '';
+    }
+  }
+}
