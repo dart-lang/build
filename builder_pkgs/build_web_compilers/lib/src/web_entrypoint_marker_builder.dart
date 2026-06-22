@@ -9,6 +9,7 @@ import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 
 import 'build_modules/build_modules.dart';
+import 'common.dart';
 
 /// A builder that gathers information about a web target's 'main' entrypoint.
 class WebEntrypointMarkerBuilder implements Builder {
@@ -53,7 +54,7 @@ class WebEntrypointMarkerBuilder implements Builder {
           .toString();
     } else {
       final searchGlob = webAssetsPath.isEmpty
-          ? '{web,test,example,benchmark}/**'
+          ? '{${defaultWebDirs.join(',')}}/**'
           : '{$webAssetsPath}/**';
       final webAssets = await buildStep
           .findAssets(Glob(searchGlob))
