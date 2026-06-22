@@ -20,12 +20,13 @@ class WebEntrypointMarkerBuilder implements Builder {
 
   /// The directory containing the 'main' entrypoint for the web target.
   ///
-  /// Defaults to 'web,test,example,benchmark'.
+  /// Defaults to an empty string, which searches all standard entrypoint directories
+  /// ('web', 'test', 'example', 'benchmark').
   final String webAssetsPath;
 
   WebEntrypointMarkerBuilder({
     this.usesWebHotReload = false,
-    this.webAssetsPath = 'web,test,example,benchmark',
+    this.webAssetsPath = '',
   });
 
   @override
@@ -51,8 +52,11 @@ class WebEntrypointMarkerBuilder implements Builder {
       webEntrypointJson['entrypoint'] = frontendServerState.entrypointAssetId
           .toString();
     } else {
+      final searchGlob = webAssetsPath.isEmpty
+          ? '{web,test,example,benchmark}/**'
+          : '{$webAssetsPath}/**';
       final webAssets = await buildStep
-          .findAssets(Glob('{$webAssetsPath}/**'))
+          .findAssets(Glob(searchGlob))
           .toList();
 
       for (final asset in webAssets) {
