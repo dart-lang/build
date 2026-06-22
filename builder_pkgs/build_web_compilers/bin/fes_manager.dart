@@ -222,8 +222,7 @@ class FesManager {
         }
       });
       await socket.flush().catchError((_) {});
-    } catch (e, st) {
-      print('FES_MANAGER_EXCEPTION in REQUEST: $e\n$st');
+    } catch (e) {
       try {
         socket.writeln(jsonEncode({'error': e.toString()}));
       } catch (_) {
@@ -267,26 +266,21 @@ class FesManager {
       invalidatedFiles.add(Uri.parse(entrypoint));
     }
 
-    try {
-      final result = await driver.recompileAndRecord(
-        entrypoint,
-        invalidatedFiles,
-        filesToWrite,
-        recompileRestart: recompileRestart,
-      );
+    final result = await driver.recompileAndRecord(
+      entrypoint,
+      invalidatedFiles,
+      filesToWrite,
+      recompileRestart: recompileRestart,
+    );
 
-      socket.writeln(
-        jsonEncode({
-          'outputFilename': result?.outputFilename,
-          'errorCount': result?.errorCount,
-          'sources': result?.sources.map((u) => u.toString()).toList(),
-          'errorMessage': result?.errorMessage,
-        }),
-      );
-    } catch (e, st) {
-      print('FES_MANAGER_EXCEPTION in RECOMPILE: $e\n$st');
-      socket.writeln(jsonEncode({'error': e.toString()}));
-    }
+    socket.writeln(
+      jsonEncode({
+        'outputFilename': result?.outputFilename,
+        'errorCount': result?.errorCount,
+        'sources': result?.sources.map((u) => u.toString()).toList(),
+        'errorMessage': result?.errorMessage,
+      }),
+    );
   }
 
   /// Handles MERGE_ALL_METADATA requests.
@@ -338,10 +332,6 @@ class FesManager {
           fes.fileSystem.metadata[fesRelativeKey];
       if (memoryData != null) {
         content = utf8.decode(memoryData);
-        print('FES_MANAGER_SUCCESS: read ${content.length} bytes for $path (found via $relativeKey or $fesRelativeKey)');
-      } else {
-        print('FES_MANAGER_FAILED: memoryData was null for $path (tried $relativeKey and $fesRelativeKey)');
-        print('AVAILABLE FILES IN FES: ${fes.fileSystem.files.keys.toList()}');
       }
     }
     if (content == null) {
