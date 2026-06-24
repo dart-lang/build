@@ -1,3 +1,10 @@
+## 5.8.0-wip
+
+* Add support for JS interop extension type mock generation to mockito.
+* It is now an error to generate mocks for non-JS interop extension types.
+  Instead, mock the representation type and cast to the extension type where
+  needed.
+
 ## 5.7.0
 
 * Handle JS interop extension types and provide dummy values for them.
