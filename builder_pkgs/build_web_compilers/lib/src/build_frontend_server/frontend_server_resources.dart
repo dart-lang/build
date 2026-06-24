@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
@@ -56,12 +57,14 @@ class FrontendServerState {
   /// Allows arbitrary DDC builders to share a single compiler execution run for
   /// an entrypoint. Typically the entrypoint for all builders - except for
   /// certain tests with multiple targets in the entrypoint.
-  final Map<AssetId, Future<void>> _activeCompilations = {};
+  final Map<AssetId, Completer<void>> _activeCompilations = {};
 
   /// Returns a future that completes when the compilation for [entrypointId]
   /// is complete, or immediately if there is no active compilation.
   Future<void> waitForCompilation(AssetId entrypointId) {
-    return _activeCompilations[entrypointId] ?? Future.value();
+    return _activeCompilations
+        .putIfAbsent(entrypointId, Completer<void>.new)
+        .future;
   }
 
   /// Initiates the compilation of [entrypointId] using [compileFn] if no
@@ -74,22 +77,39 @@ class FrontendServerState {
     AssetId entrypointId,
     Future<void> Function() compileFn,
   ) {
-    _activeCompilations.putIfAbsent(entrypointId, () async {
+    final completer = _activeCompilations.putIfAbsent(
+      entrypointId,
+      Completer<void>.new,
+    );
+    if (completer.isCompleted) return;
+
+    () async {
       try {
         await compileFn();
       } finally {
-        clearCompilation(entrypointId);
+        completer.complete();
       }
-    });
+    }();
   }
 
   /// Cancels the cached compilation future for [entrypointId].
   void clearCompilation(AssetId entrypointId) {
     _activeCompilations.remove(entrypointId);
   }
+
+  /// Clears all previous compilation requests.
+  ///
+  /// Called at the end of each build.
+  void clearActiveCompilations() {
+    for (final completer in _activeCompilations.values) {
+      if (!completer.isCompleted) completer.complete();
+    }
+    _activeCompilations.clear();
+  }
 }
 
 /// A shared [Resource] for a [FrontendServerState].
-final frontendServerStateResource = Resource<FrontendServerState>(() async {
-  return frontendServerState;
-});
+final frontendServerStateResource = Resource<FrontendServerState>(
+  () async => frontendServerState,
+  dispose: (state) => state.clearActiveCompilations(),
+);
