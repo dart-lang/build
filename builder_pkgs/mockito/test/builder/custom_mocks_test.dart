@@ -1861,14 +1861,12 @@ void main() {
     expect(mocksContent, isNot(contains('JSObject get o')));
 
     expect(mocksContent, contains('extension type MockE'));
+    expect(mocksContent, contains('factory MockE({_i1.JSObject? proto}) =>'));
+    expect(mocksContent, contains('factory MockE.withTarget('));
     expect(
       mocksContent,
-      contains('factory MockE([void Function(MockETarget)? setup])'),
+      matches(RegExp(r'_i1\.createJSInteropWrapper\(\s*target,\s*proto,\s*\)')),
     );
-    expect(mocksContent, contains('if (setup != null) {'));
-    expect(mocksContent, contains('setup(target);'));
-    expect(mocksContent, contains('return MockE.withTarget(target);'));
-    expect(mocksContent, contains('createJSInteropWrapper(target)'));
   });
 
   test('generates mock for a generic JS interop extension type', () async {
@@ -1902,15 +1900,44 @@ void main() {
         ),
       ),
     );
+    expect(mocksContent, contains('factory MockE({_i1.JSObject? proto}) =>'));
     expect(
       mocksContent,
-      contains('factory MockE([void Function(MockETarget<T>)? setup])'),
+      matches(
+        RegExp(r'factory MockE\.withTarget\(\s*MockETarget<T> target,\s*\{'),
+      ),
     );
     expect(
       mocksContent,
-      contains('factory MockE.withTarget(MockETarget<T> target) =>'),
+      matches(RegExp(r'_i1\.createJSInteropWrapper\(\s*target,\s*proto,\s*\)')),
     );
   });
+
+  test(
+    'throws when trying to mock a JS interop extension type wrapping JSArray',
+    () async {
+      await _expectBuilderThrows(
+        assets: {
+          ...annotationsAsset,
+          'foo|lib/foo.dart': dedent(r'''
+          import 'dart:js_interop';
+          extension type Foo(JSArray<JSString> foo) {}
+          '''),
+          'foo|test/foo_test.dart': '''
+          import 'package:foo/foo.dart';
+          import 'package:mockito/annotations.dart';
+          @GenerateMocks([Foo])
+          void main() {}
+          ''',
+        },
+        message: contains(
+          "Mockito cannot mock JS interop extension types wrapping 'JSArray<JSString>' (like 'Foo'). "
+          "Only extension types wrapping 'JSObject' are mockable. "
+          "For other types, you can create a real JS object or array and set the properties directly using 'dart:js_interop_unsafe'.",
+        ),
+      );
+    },
+  );
 
   test('throws when trying to mock a non-JS interop extension type', () async {
     await _expectBuilderThrows(
@@ -1931,6 +1958,40 @@ void main() {
         "Mockito cannot mock non-JS-interop extension types (like 'E'). "
         "Instead, mock the representation type (like 'Foo') "
         'and cast the mock to the extension type where needed.',
+      ),
+    );
+  });
+
+  test('generates mock for a nested JS interop extension type', () async {
+    final mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+        import 'dart:js_interop';
+        extension type A(JSObject o) {
+          external void foo();
+        }
+        extension type B(A o) implements A {
+          external void bar();
+        }
+        '''),
+      'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+        @GenerateMocks([B])
+        void main() {}
+        ''',
+    });
+    expect(mocksContent, contains('class MockBTarget extends'));
+    expect(mocksContent, contains('void foo()'));
+    expect(mocksContent, contains('void bar()'));
+    expect(mocksContent, contains('extension type MockB'));
+    expect(mocksContent, contains('factory MockB({_i1.JSObject? proto}) =>'));
+    expect(
+      mocksContent,
+      matches(
+        RegExp(
+          r'factory MockB\.withTarget\(\s*MockBTarget target,\s*\{\s*_i1\.JSObject\? proto,\s*\}\s*\)\s*=>\s*MockB\._\(\s*\(?\(?_i1\.createJSInteropWrapper\(\s*target,\s*proto,\s*\)\s*as _i\d+\.A\)?\)?\s*\);',
+        ),
       ),
     );
   });

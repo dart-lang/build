@@ -886,15 +886,27 @@ class _MockTargetGatherer {
     for (final mockTarget in _mockTargets) {
       final interfaceElement = mockTarget.interfaceElement;
       if (interfaceElement is ExtensionTypeElement) {
+        final typeName = interfaceElement.name;
         if (!interfaceElement.isJSInteropType) {
-          final className = interfaceElement.name;
           final representationType =
               interfaceElement.representation.type.getDisplayString();
           throw InvalidMockitoAnnotationException(
             'Mockito cannot mock non-JS-interop extension types '
-            "(like '$className'). Instead, mock the representation type "
+            "(like '$typeName'). Instead, mock the representation type "
             "(like '$representationType') and cast the mock to the extension "
             'type where needed.',
+          );
+        }
+        final representationType = interfaceElement.representation.type;
+        final ultimateType = _baseRepresentationType(representationType);
+        if (!_isJSObject(ultimateType)) {
+          final representationTypeName = representationType.getDisplayString();
+          throw InvalidMockitoAnnotationException(
+            'Mockito cannot mock JS interop extension types wrapping '
+            "'$representationTypeName' (like '$typeName'). "
+            "Only extension types wrapping 'JSObject' are mockable. "
+            'For other types, you can create a real JS object or array and set '
+            "the properties directly using 'dart:js_interop_unsafe'.",
           );
         }
       }
@@ -1278,11 +1290,6 @@ class _MockClassInfo {
   bool get _isExtensionType =>
       mockTarget.interfaceElement is ExtensionTypeElement;
 
-  static bool _isJSObject(analyzer.DartType type) =>
-      type is analyzer.InterfaceType &&
-      type.element.name == 'JSObject' &&
-      type.element.library.uri.toString() == 'dart:js_interop';
-
   Class _buildMockTargetClass() {
     assert(_isExtensionType);
 
@@ -1305,6 +1312,12 @@ class _MockClassInfo {
       cBuilder
         ..docs.add('/// A class which mocks [$className] for JS interop.')
         ..docs.add('///')
+        ..docs.add(
+          '/// This class is meant to be passed to createJSInteropWrapper.',
+        )
+        ..docs.add(
+          '/// It will only contain external members of the mocked type.',
+        )
         ..docs.add(
           '/// See the documentation for Mockito\'s code generation '
           'for more information.',
@@ -1393,13 +1406,6 @@ class _MockClassInfo {
           );
 
           // Add factories
-          final typeParamsStr =
-              typeParams.isEmpty
-                  ? ''
-                  : '<${typeParams.map((tp) => tp.symbol).join(', ')}>';
-          final setupType = refer(
-            'void Function(${mockTarget.mockName}Target$typeParamsStr)?',
-          );
           cBuilder.constructors.addAll([
             Constructor(
               (c) =>
@@ -1409,29 +1415,27 @@ class _MockClassInfo {
                       Parameter(
                         (p) =>
                             p
-                              ..name = 'setup'
-                              ..type = setupType,
+                              ..name = 'proto'
+                              ..named = true
+                              ..type = TypeReference((b) => b
+                                ..symbol = 'JSObject'
+                                ..url = 'dart:js_interop'
+                                ..isNullable = true),
                       ),
                     )
-                    ..body = Block(
-                      (b) => b.statements.addAll([
-                        declareFinal('target')
-                            .assign(
-                              TypeReference((tr) {
-                                tr
-                                  ..symbol = '${mockTarget.mockName}Target'
-                                  ..types.addAll(typeParams);
-                              }).call([]),
-                            )
-                            .statement,
-                        Code('if (setup != null) { setup(target); }'),
-                        refer(mockTarget.mockName)
-                            .property('withTarget')
-                            .call([refer('target')])
-                            .returned
-                            .statement,
-                      ]),
-                    ),
+                    ..body = refer(mockTarget.mockName)
+                        .property('withTarget')
+                        .call(
+                          [
+                            TypeReference((tr) {
+                              tr
+                                ..symbol = '${mockTarget.mockName}Target'
+                                ..types.addAll(typeParams);
+                            }).call([]),
+                          ],
+                          {'proto': refer('proto')},
+                        )
+                        .code,
             ),
             Constructor(
               (c) =>
@@ -1450,18 +1454,30 @@ class _MockClassInfo {
                               }),
                       ),
                     )
+                    ..optionalParameters.add(
+                      Parameter(
+                        (p) =>
+                            p
+                              ..name = 'proto'
+                              ..named = true
+                              ..type = TypeReference((b) => b
+                                ..symbol = 'JSObject'
+                                ..url = 'dart:js_interop'
+                                ..isNullable = true),
+                      ),
+                    )
                     ..body =
                         refer(mockTarget.mockName).property('_').call([
                           _isJSObject(representationType)
                               ? referImported(
                                 'createJSInteropWrapper',
                                 'dart:js_interop',
-                              ).call([refer('target')])
+                              ).call([refer('target'), refer('proto')])
                               : referImported(
                                     'createJSInteropWrapper',
                                     'dart:js_interop',
                                   )
-                                  .call([refer('target')])
+                                  .call([refer('target'), refer('proto')])
                                   .asA(_typeReference(representationType)),
                         ]).code,
             ),
@@ -3000,6 +3016,21 @@ extension on int {
 
 bool _needsOverrideForVoidStub(ExecutableElement method) =>
     method.returnType is analyzer.VoidType || method.returnType.isFutureOfVoid;
+
+bool _isJSObject(analyzer.DartType type) =>
+    type is analyzer.InterfaceType &&
+    type.element.name == 'JSObject' &&
+    type.element.library.uri.toString() == 'dart:js_interop';
+
+analyzer.DartType _baseRepresentationType(analyzer.DartType type) {
+  var current = type;
+  while (current is analyzer.InterfaceType &&
+      current.element is ExtensionTypeElement) {
+    if (_isJSObject(current)) break;
+    current = (current.element as ExtensionTypeElement).representation.type;
+  }
+  return current;
+}
 
 /// This casts `ElementAnnotation` to the internal `ElementAnnotationImpl`
 /// class, since analyzer doesn't provide public interface to access
