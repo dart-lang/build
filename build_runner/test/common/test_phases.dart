@@ -147,7 +147,6 @@ Future<TestBuildersResult> testPhases(
       ),
     ),
   );
-  await buildPlan.deleteFilesAndFolders();
 
   BuildResult result;
   final buildSeries = BuildSeries(buildPlan);

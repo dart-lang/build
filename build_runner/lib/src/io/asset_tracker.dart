@@ -94,11 +94,11 @@ class AssetTracker {
     final originalGraphSources = buildState.sources.toSet();
     final preExistingSources = originalGraphSources.intersection(inputSources);
     for (final id in preExistingSources) {
-      final originalDigest = buildState.digestOfSource(id);
+      final originalDigest = buildState.contentOfSource(id);
       if (originalDigest == null) continue;
-      _readerWriter.cache.invalidate([id]);
+
       final currentDigest = await _readerWriter.digest(id);
-      if (currentDigest != originalDigest) {
+      if (currentDigest != originalDigest.digest) {
         updates[id] = ChangeType.MODIFY;
       }
     }

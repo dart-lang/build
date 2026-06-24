@@ -5,7 +5,8 @@
 import 'package:build/build.dart' hide Builder;
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
-import 'package:crypto/crypto.dart';
+
+import '../build/asset_content.dart';
 
 part 'build_inputs.g.dart';
 
@@ -20,8 +21,8 @@ abstract class BuildInputs implements Built<BuildInputs, BuildInputsBuilder> {
   /// All source files that are input to the build.
   BuiltSet<AssetId> get sources;
 
-  /// Content hashes for source files that have declared outputs.
-  BuiltMap<AssetId, Digest> get digests;
+  /// Contents for source files that have declared outputs.
+  BuiltMap<AssetId, AssetContent> get sourceContents;
 
   /// Source files that were newly added since the last build.
   ///

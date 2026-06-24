@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build_runner/src/build/asset_content.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/build_state/build_step_result.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_id.dart';
@@ -31,6 +32,8 @@ import 'package:test/test.dart';
 import '../common/common.dart';
 
 void main() {
+  setUpTestLogging();
+
   group('createMergedDir', () {
     late BuildPlan buildPlan;
     late BuildState buildState;
@@ -118,7 +121,7 @@ void main() {
         final stepResult = BuildStepResult((b) {
           b.result = true;
           b.isHidden = false;
-          b.outputs[id] = Digest([]);
+          b.outputs[id] = AssetContent.digest(Digest([]));
         });
         buildState.updateBuildStepResult(
           buildPlan.buildStepPlan.stepForDeclaredOutput(id),

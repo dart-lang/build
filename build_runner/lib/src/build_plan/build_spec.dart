@@ -8,7 +8,6 @@ import 'package:built_value/built_value.dart';
 import '../bootstrap/bootstrapper.dart';
 import '../bootstrap/depfile.dart';
 
-import '../io/filesystem_cache.dart';
 import '../io/reader_writer.dart';
 import 'build_configs.dart';
 import 'build_options.dart';
@@ -70,9 +69,7 @@ abstract class BuildSpec implements Built<BuildSpec, BuildSpecBuilder> {
         testingOverrides.buildPackages ??
         await BuildPackages.forPaths(buildOptions.buildPaths);
     final readerWriter =
-        (testingOverrides.readerWriter ?? ReaderWriter(buildPackages)).copyWith(
-          cache: InMemoryFilesystemCache(),
-        );
+        testingOverrides.readerWriter ?? ReaderWriter(buildPackages);
     final buildConfigs = await BuildConfigs.load(
       readerWriter: readerWriter,
       buildPackages: buildPackages,
