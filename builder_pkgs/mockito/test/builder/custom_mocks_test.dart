@@ -1930,7 +1930,7 @@ void main() {
       message: contains(
         "Mockito cannot mock non-JS-interop extension types (like 'E'). "
         "Instead, mock the representation type (like 'Foo') "
-        "and cast the mock to the extension type where needed.",
+        'and cast the mock to the extension type where needed.',
       ),
     );
   });
