@@ -125,11 +125,11 @@ Future<bool> _createMergedOutputDir({
       await Future.wait([
         for (final id in builtAssets)
           _writeAsset(
+            buildOutputReader,
             id,
             outputDir,
             root,
             buildPackages,
-            readerWriter,
             symlinkOnly,
             hoist,
           ),
@@ -226,11 +226,11 @@ Set<String> _findRootDirs(Iterable<AssetId> allAssets, String outputPath) {
 ///
 /// Returns the relative path under [outputDir] that it was written to.
 Future<String> _writeAsset(
+  BuildOutputReader buildOutputReader,
   AssetId id,
   Directory outputDir,
   String root,
   BuildPackages buildPackages,
-  ReaderWriter readerWriter,
   bool symlinkOnly,
   bool hoist,
 ) {
@@ -254,18 +254,14 @@ Future<String> _writeAsset(
       if (symlinkOnly) {
         // We assert at the top of `createMergedOutputDirectories` that the
         // reader filesystem is `IoFilesystem`, so symlinks make sense.
-        await Link(_filePathFor(outputDir, assetPath)).create(
-          readerWriter.assetPathProvider.pathFor(
-            id,
-            hide: readerWriter.generatedAssetHider.isHidden(id),
-          ),
-          recursive: true,
-        );
+        await Link(
+          _filePathFor(outputDir, assetPath),
+        ).create(buildOutputReader.pathFor(id), recursive: true);
       } else {
         await _writeAsBytes(
           outputDir,
           assetPath,
-          await readerWriter.readAsBytes(id),
+          await buildOutputReader.readAsBytes(id),
         );
       }
     } on AssetNotFoundException catch (e) {

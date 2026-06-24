@@ -17,6 +17,7 @@ import 'build_state/build_step_id.dart';
 import 'build_state/build_step_result.dart';
 import 'build_state/glob_id.dart';
 import 'library_cycle_graph/phased_value.dart';
+import 'resolver/asset_ids.dart';
 
 /// The filesystem from the point of view of a build step.
 ///
@@ -139,7 +140,13 @@ class BuilderFilesystem {
 
     List<int> bytes;
     try {
-      bytes = await readerWriter.readAsBytes(id);
+      bytes = await readerWriter.readAsBytes(
+        id,
+        hidden: id.isHidden(
+          buildStepPlan: buildStepPlan,
+          buildState: buildState,
+        ),
+      );
     } on AssetNotFoundException {
       await ChildProcess.exitDueToAssetDeleted(id);
     }
@@ -276,7 +283,13 @@ class BuilderFilesystem {
     }
 
     return PhasedValue.fixed(
-      await readerWriter.canRead(id)
+      await readerWriter.canRead(
+            id,
+            hidden: id.isHidden(
+              buildStepPlan: buildStepPlan,
+              buildState: buildState,
+            ),
+          )
           ? (await contentOf(id)).dartStringValueOrEmptyFail(id: id)
           : '',
     );

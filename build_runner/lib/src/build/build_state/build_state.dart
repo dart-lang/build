@@ -101,8 +101,12 @@ class BuildState {
   /// Actual build step outputs.
   ///
   /// A subset of the declared outputs.
-  Iterable<AssetId> get actualOutputs => _buildStepResultsByPrimaryInput.values
-      .expand((map) => map.values.expand((result) => result.outputs.keys));
+  Iterable<AssetId> get actualOutputs =>
+      actualStepResults.expand((result) => result.outputs.keys);
+
+  /// All build step results that actually executed.
+  Iterable<BuildStepResult> get actualStepResults =>
+      _buildStepResultsByPrimaryInput.values.expand((map) => map.values);
 
   /// Whether [id] is a declared build output that was actually generated.
   bool isActualOutput({
@@ -133,6 +137,10 @@ class BuildState {
   /// main build this is either empty or is the post process outputs from the
   /// previous build.
   Iterable<AssetId> get actualPostOutputs => _postProcessOutputs.keys;
+
+  /// All post process build step results that actually executed.
+  Iterable<PostProcessBuildStepResult> get actualPostProcessResults =>
+      _postProcessResultsByInput.values.expand((map) => map.values);
 
   /// Whether [id] is a post process build output that was actually generated.
   bool isActualPostOutput(AssetId id) => _postProcessOutputs.containsKey(id);
@@ -265,6 +273,13 @@ class BuildState {
   PostProcessBuildStepResult? postProcessBuildStepResultFor(
     PostProcessBuildStepId step,
   ) => _postProcessResultsByInput[step.input]?[step.actionNumber];
+
+  bool isHiddenPostProcessOutput(AssetId id) {
+    final stepId = _postProcessOutputs[id];
+    if (stepId == null) return false;
+    final result = postProcessBuildStepResultFor(stepId);
+    return result?.hidden ?? false;
+  }
 
   Iterable<BuildStepId> get failedSteps {
     final results = <BuildStepId>[];

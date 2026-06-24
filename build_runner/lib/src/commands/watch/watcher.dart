@@ -31,11 +31,7 @@ class Watcher {
 
   factory Watcher({required BuildPlan buildPlan, required Future<void> until}) {
     final expectedDeletes = <AssetId>{};
-    buildPlan = buildPlan.rebuild(
-      (b) => b.readerWriter = buildPlan.readerWriter.copyWith(
-        onDelete: expectedDeletes.add,
-      ),
-    );
+    buildPlan = buildPlan.rebuild((b) => b.onDelete = expectedDeletes.add);
     final buildSeries = BuildSeries(buildPlan);
     final result = Watcher._(buildPlan, buildSeries, expectedDeletes);
     result._run(until);

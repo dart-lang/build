@@ -29,8 +29,11 @@ import 'test_builder.dart' show testBuilders;
 /// (eg. starting with `.dart_tool/build/generated/`) to access hidden files.
 /// See [testBuilders] `flattenOutput` parameter for more details.
 abstract interface class TestReaderWriter implements AssetReader, AssetWriter {
-  factory TestReaderWriter({String? rootPackage}) =>
-      InternalTestReaderWriter(outputRootPackage: rootPackage);
+  factory TestReaderWriter({String? rootPackage, bool flattenOutput = false}) =>
+      InternalTestReaderWriter(
+        outputRootPackage: rootPackage,
+        flattenOutput: flattenOutput,
+      );
 
   ReaderWriterTesting get testing;
 }

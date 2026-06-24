@@ -25,7 +25,7 @@ export 'constants.dart';
 export 'io/asset_finder.dart';
 export 'io/asset_path_provider.dart';
 export 'io/filesystem.dart';
-export 'io/generated_asset_hider.dart';
+
 export 'io/reader_writer.dart';
 export 'logging/build_log.dart';
 export 'logging/build_log_logger.dart';

@@ -353,7 +353,10 @@ Future<TestBuilderResult> testBuilderFactories(
   }
   rootPackage ??= allPackages.first;
 
-  readerWriter ??= TestReaderWriter(rootPackage: rootPackage);
+  readerWriter ??= TestReaderWriter(
+    rootPackage: rootPackage,
+    flattenOutput: flattenOutput,
+  );
 
   sourceAssets.forEach((serializedId, contents) {
     final id = makeAssetId(serializedId);
