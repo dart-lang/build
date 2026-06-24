@@ -108,7 +108,15 @@ class Server {
           _removeChannel(channel);
         },
       );
-    });
+    },
+        // Reject cross-origin browser handshakes (Cross-Site WebSocket
+        // Hijacking protection). The daemon's only legitimate client is a
+        // non-browser Dart program, which sends no `Origin` header and so is
+        // still accepted by `shelf_web_socket`. An empty allow-list causes any
+        // browser-initiated handshake (which always carries an `Origin`) to be
+        // rejected with a 403, preventing a malicious web page from connecting
+        // to the loopback daemon and driving builds / reading build output.
+        allowedOrigins: const []);
     final server = _server = await HttpMultiServer.loopback(0);
     // Serve requests in an error zone to prevent failures
     // when running from another error zone.
