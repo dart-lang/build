@@ -106,7 +106,7 @@ class MockBuilder implements Builder {
     );
 
     if (mockLibraryInfo.fakeClasses.isEmpty &&
-        mockLibraryInfo.mockClasses.isEmpty) {
+        mockLibraryInfo.mockSpecs.isEmpty) {
       // Nothing to mock here!
       return;
     }
@@ -147,7 +147,7 @@ class MockBuilder implements Builder {
         Code('// ignore_for_file: invalid_use_of_internal_member\n\n'),
       );
       b.body.addAll(mockLibraryInfo.fakeClasses);
-      b.body.addAll(mockLibraryInfo.mockClasses);
+      b.body.addAll(mockLibraryInfo.mockSpecs);
     });
 
     final emitter = DartEmitter(
@@ -310,6 +310,12 @@ class _TypeVisitor extends RecursiveElementVisitor2<void> {
   void visitEnumElement(EnumElement element) {
     _elements.add(element);
     super.visitEnumElement(element);
+  }
+
+  @override
+  void visitExtensionTypeElement(ExtensionTypeElement element) {
+    _elements.add(element);
+    super.visitExtensionTypeElement(element);
   }
 
   @override
@@ -582,7 +588,8 @@ class _MockTargetGatherer {
     }
     final mockTargets = <_MockTarget>[];
     for (final objectToMock in classesField.toListValue()!) {
-      final typeToMock = objectToMock.toTypeValue();
+      // ignore: experimental_member_use
+      final typeToMock = objectToMock.toTypeValueNotExtensionTypeErased();
       if (typeToMock == null) {
         throw InvalidMockitoAnnotationException(
           'The "classes" argument includes a non-type: $objectToMock',
@@ -639,10 +646,12 @@ class _MockTargetGatherer {
     List<ast.CollectionElement> mockSpecAsts, {
     bool nice = false,
   }) {
-    final mockSpecType = mockSpec.type as analyzer.InterfaceType;
+    final mockSpecType =
+        // ignore: experimental_member_use
+        mockSpec.typeNotExtensionTypeErased as analyzer.InterfaceType;
     assert(mockSpecType.typeArguments.length == 1);
     final mockType = _mockType(mockSpecAsts[index]);
-    final typeToMock = mockSpecType.typeArguments.single;
+    var typeToMock = mockSpecType.typeArguments.single;
     if (typeToMock is analyzer.DynamicType ||
         typeToMock is analyzer.InvalidType) {
       final mockTypeName = mockType?.qualifiedName;
@@ -875,6 +884,20 @@ class _MockTargetGatherer {
         "use the 'customMocks' argument in @GenerateMocks to specify a unique "
         'name';
     for (final mockTarget in _mockTargets) {
+      final interfaceElement = mockTarget.interfaceElement;
+      if (interfaceElement is ExtensionTypeElement) {
+        if (!interfaceElement.isJSInteropType) {
+          final className = interfaceElement.name;
+          final representationType =
+              interfaceElement.representation.type.getDisplayString();
+          throw InvalidMockitoAnnotationException(
+            'Mockito cannot mock non-JS-interop extension types '
+            "(like '$className'). Instead, mock the representation type "
+            "(like '$representationType') and cast the mock to the extension "
+            'type where needed.',
+          );
+        }
+      }
       final name = mockTarget.mockName;
       if (classNamesToMock.containsKey(name)) {
         final firstClass = classNamesToMock[name]!.interfaceElement;
@@ -1154,8 +1177,8 @@ class _MockTargetGatherer {
 }
 
 class _MockLibraryInfo {
-  /// Mock classes to be added to the generated library.
-  final mockClasses = <Class>[];
+  /// Mock classes and extension types to be added to the generated library.
+  final mockSpecs = <Spec>[];
 
   /// Fake classes to be added to the library.
   ///
@@ -1192,17 +1215,21 @@ class _MockLibraryInfo {
            .firstWhereOrNull((library) => library.isDartCore) {
     for (final mockTarget in mockTargets) {
       final fallbackGenerators = mockTarget.fallbackGenerators;
-      mockClasses.add(
-        _MockClassInfo(
-          mockTarget: mockTarget,
-          sourceLibIsNonNullable: true,
-          typeProvider: entryLib.typeProvider,
-          typeSystem: entryLib.typeSystem,
-          mockLibraryInfo: this,
-          fallbackGenerators: fallbackGenerators,
-          inheritanceManager: inheritanceManager,
-        )._buildMockClass(),
+      final mockClassInfo = _MockClassInfo(
+        mockTarget: mockTarget,
+        sourceLibIsNonNullable: true,
+        typeProvider: entryLib.typeProvider,
+        typeSystem: entryLib.typeSystem,
+        mockLibraryInfo: this,
+        fallbackGenerators: fallbackGenerators,
+        inheritanceManager: inheritanceManager,
       );
+      if (mockClassInfo._isExtensionType) {
+        mockSpecs.add(mockClassInfo._buildMockTargetClass());
+        mockSpecs.add(mockClassInfo._buildMockExtensionType());
+      } else {
+        mockSpecs.add(mockClassInfo._buildMockClass());
+      }
     }
   }
 
@@ -1247,6 +1274,202 @@ class _MockClassInfo {
     required this.fallbackGenerators,
     required this.inheritanceManager,
   });
+
+  bool get _isExtensionType =>
+      mockTarget.interfaceElement is ExtensionTypeElement;
+
+  static bool _isJSObject(analyzer.DartType type) =>
+      type is analyzer.InterfaceType &&
+      type.element.name == 'JSObject' &&
+      type.element.library.uri.toString() == 'dart:js_interop';
+
+  Class _buildMockTargetClass() {
+    assert(_isExtensionType);
+
+    final instantiatedAlias = mockTarget.classType.alias;
+    final aliasElement = instantiatedAlias?.element;
+    final aliasedType = aliasElement?.aliasedType as analyzer.InterfaceType?;
+    final typeToMock = aliasedType ?? mockTarget.classType;
+    final classToMock = mockTarget.interfaceElement;
+    final className = aliasElement?.name ?? classToMock.name;
+
+    return Class((cBuilder) {
+      cBuilder
+        ..name = '${mockTarget.mockName}Target'
+        ..extend = referImported('Mock', 'package:mockito/mockito.dart');
+
+      cBuilder.annotations.add(
+        referImported('JSExport', 'dart:js_interop').call([]),
+      );
+
+      cBuilder
+        ..docs.add('/// A class which mocks [$className] for JS interop.')
+        ..docs.add('///')
+        ..docs.add(
+          '/// See the documentation for Mockito\'s code generation '
+          'for more information.',
+        );
+
+      final typeParameters =
+          aliasElement?.typeParameters ?? classToMock.typeParameters;
+
+      _withTypeParameters(
+        mockTarget.hasExplicitTypeArguments ? [] : typeParameters,
+        (typeParamsWithBounds, typeParams) {
+          cBuilder.types.addAll(typeParamsWithBounds);
+
+          final substitution = Substitution.fromPairs2(
+            [...classToMock.typeParameters, ...?aliasElement?.typeParameters],
+            [...typeToMock.typeArguments, ...?instantiatedAlias?.typeArguments],
+          );
+          var members = inheritanceManager
+              .getInterface(classToMock)
+              .map
+              .values
+              .map((member) => member.substitute(substitution));
+
+          members = members.where((m) => m.isExternal);
+
+          cBuilder.methods.addAll(
+            fieldOverrides(members.whereType<PropertyAccessorElement>()),
+          );
+          cBuilder.methods.addAll(
+            methodOverrides(members.whereType<MethodElement>()),
+          );
+        },
+      );
+    });
+  }
+
+  ExtensionType _buildMockExtensionType() {
+    final instantiatedAlias = mockTarget.classType.alias;
+    final aliasElement = instantiatedAlias?.element;
+    final aliasedType = aliasElement?.aliasedType as analyzer.InterfaceType?;
+    final typeToMock = aliasedType ?? mockTarget.classType;
+    final classToMock = mockTarget.interfaceElement as ExtensionTypeElement;
+    final className = aliasElement?.name ?? classToMock.name;
+
+    final representationType = classToMock.representation.type;
+    final representationName = classToMock.representation.name;
+
+    return ExtensionType((cBuilder) {
+      cBuilder
+        ..name = mockTarget.mockName
+        ..primaryConstructorName = '_'
+        ..docs.add('/// An extension type mock which implements [$className].')
+        ..docs.add('///')
+        ..docs.add(
+          '/// See the documentation for Mockito\'s code generation '
+          'for more information.',
+        );
+
+      final typeParameters =
+          aliasElement?.typeParameters ?? classToMock.typeParameters;
+      final typeArguments =
+          instantiatedAlias?.typeArguments ?? typeToMock.typeArguments;
+
+      _withTypeParameters(
+        mockTarget.hasExplicitTypeArguments ? [] : typeParameters,
+        (typeParamsWithBounds, typeParams) {
+          cBuilder.types.addAll(typeParamsWithBounds);
+
+          cBuilder.representationDeclaration = RepresentationDeclaration((r) {
+            r
+              ..name = representationName
+              ..declaredRepresentationType = _typeReference(representationType);
+          });
+
+          cBuilder.implements.add(
+            TypeReference((b) {
+              b
+                ..symbol = className
+                ..url = _typeImport(aliasElement ?? classToMock)
+                ..types.addAll(
+                  mockTarget.hasExplicitTypeArguments
+                      ? typeArguments.map(_typeReference)
+                      : typeParams,
+                );
+            }),
+          );
+
+          // Add factories
+          final typeParamsStr =
+              typeParams.isEmpty
+                  ? ''
+                  : '<${typeParams.map((tp) => tp.symbol).join(', ')}>';
+          final setupType = refer(
+            'void Function(${mockTarget.mockName}Target$typeParamsStr)?',
+          );
+          cBuilder.constructors.addAll([
+            Constructor(
+              (c) =>
+                  c
+                    ..factory = true
+                    ..optionalParameters.add(
+                      Parameter(
+                        (p) =>
+                            p
+                              ..name = 'setup'
+                              ..type = setupType,
+                      ),
+                    )
+                    ..body = Block(
+                      (b) => b.statements.addAll([
+                        declareFinal('target')
+                            .assign(
+                              TypeReference((tr) {
+                                tr
+                                  ..symbol = '${mockTarget.mockName}Target'
+                                  ..types.addAll(typeParams);
+                              }).call([]),
+                            )
+                            .statement,
+                        Code('if (setup != null) { setup(target); }'),
+                        refer(mockTarget.mockName)
+                            .property('withTarget')
+                            .call([refer('target')])
+                            .returned
+                            .statement,
+                      ]),
+                    ),
+            ),
+            Constructor(
+              (c) =>
+                  c
+                    ..factory = true
+                    ..name = 'withTarget'
+                    ..requiredParameters.add(
+                      Parameter(
+                        (p) =>
+                            p
+                              ..name = 'target'
+                              ..type = TypeReference((tr) {
+                                tr
+                                  ..symbol = '${mockTarget.mockName}Target'
+                                  ..types.addAll(typeParams);
+                              }),
+                      ),
+                    )
+                    ..body =
+                        refer(mockTarget.mockName).property('_').call([
+                          _isJSObject(representationType)
+                              ? referImported(
+                                'createJSInteropWrapper',
+                                'dart:js_interop',
+                              ).call([refer('target')])
+                              : referImported(
+                                    'createJSInteropWrapper',
+                                    'dart:js_interop',
+                                  )
+                                  .call([refer('target')])
+                                  .asA(_typeReference(representationType)),
+                        ]).code,
+            ),
+          ]);
+        },
+      );
+    });
+  }
 
   Class _buildMockClass() {
     final instantiatedAlias = mockTarget.classType.alias;
@@ -1462,8 +1685,10 @@ class _MockClassInfo {
       (typeParamsWithBounds, _) {
         builder
           ..name = name
-          ..annotations.add(referImported('override', 'dart:core'))
           ..types.addAll(typeParamsWithBounds);
+        if (!_isExtensionType || name == 'toString') {
+          builder.annotations.add(referImported('override', 'dart:core'));
+        }
         // We allow overriding a method with a private return type by omitting
         // the return type (which is then inherited).
         if (!returnType.containsPrivateName) {
@@ -2219,8 +2444,10 @@ class _MockClassInfo {
   void _buildOverridingGetter(MethodBuilder builder, GetterElement getter) {
     builder
       ..name = getter.displayName
-      ..annotations.add(referImported('override', 'dart:core'))
       ..type = MethodType.getter;
+    if (!_isExtensionType) {
+      builder.annotations.add(referImported('override', 'dart:core'));
+    }
 
     if (!getter.returnType.containsPrivateName) {
       builder.returns = _typeReference(getter.returnType);
@@ -2290,8 +2517,10 @@ class _MockClassInfo {
     final name = setter.displayName;
     builder
       ..name = name
-      ..annotations.add(referImported('override', 'dart:core'))
       ..type = MethodType.setter;
+    if (!_isExtensionType) {
+      builder.annotations.add(referImported('override', 'dart:core'));
+    }
 
     assert(setter.formalParameters.length == 1);
     final parameter = setter.formalParameters.single;

@@ -1823,6 +1823,117 @@ void main() {
       ),
     );
   });
+
+  test('generates mock for a JS interop extension type', () async {
+    final mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+        import 'dart:js_interop';
+        extension type E(JSObject o) {
+          external int get foo;
+          external set foo(int val);
+          external String bar(String s);
+          external String toString({bool? option});
+          int get nonExternalGetter => 42;
+          void nonExternalMethod() {}
+        }
+        '''),
+      'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+        @GenerateMocks([E])
+        void main() {}
+        ''',
+    });
+    expect(mocksContent, contains('class MockETarget extends'));
+    expect(mocksContent, contains('int get foo =>'));
+    expect(mocksContent, contains('set foo(int? val) =>'));
+    expect(mocksContent, contains('String bar(String? s) =>'));
+    expect(mocksContent, contains('String toString({bool? option}) =>'));
+    // Ensure toString has @override, but other members do not
+    expect(mocksContent, matches(RegExp(r'@override\s+String toString\(')));
+    expect(mocksContent, isNot(matches(RegExp(r'@override\s+int get foo'))));
+    expect(mocksContent, isNot(matches(RegExp(r'@override\s+String bar'))));
+
+    // Ensure non-external members and representation field are NOT generated
+    expect(mocksContent, isNot(contains('nonExternalGetter')));
+    expect(mocksContent, isNot(contains('nonExternalMethod')));
+    expect(mocksContent, isNot(contains('JSObject get o')));
+
+    expect(mocksContent, contains('extension type MockE'));
+    expect(
+      mocksContent,
+      contains('factory MockE([void Function(MockETarget)? setup])'),
+    );
+    expect(mocksContent, contains('if (setup != null) {'));
+    expect(mocksContent, contains('setup(target);'));
+    expect(mocksContent, contains('return MockE.withTarget(target);'));
+    expect(mocksContent, contains('createJSInteropWrapper(target)'));
+  });
+
+  test('generates mock for a generic JS interop extension type', () async {
+    final mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+        import 'dart:js_interop';
+        extension type E<T extends JSObject>(JSObject o) {
+          external T get foo;
+          external void bar(T val);
+        }
+        '''),
+      'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+        @GenerateMocks([E])
+        void main() {}
+        ''',
+    });
+    expect(
+      mocksContent,
+      contains('class MockETarget<T extends _i1.JSObject> extends _i2.Mock'),
+    );
+    expect(mocksContent, contains('T get foo =>'));
+    expect(mocksContent, contains('void bar(T? val) =>'));
+    expect(
+      mocksContent,
+      matches(
+        RegExp(
+          r'extension type MockE<T extends _i1.JSObject>\._\(_i1.JSObject \w+\)\s+implements _i\d+\.E<T>',
+        ),
+      ),
+    );
+    expect(
+      mocksContent,
+      contains('factory MockE([void Function(MockETarget<T>)? setup])'),
+    );
+    expect(
+      mocksContent,
+      contains('factory MockE.withTarget(MockETarget<T> target) =>'),
+    );
+  });
+
+  test('throws when trying to mock a non-JS interop extension type', () async {
+    await _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
+          class Foo {}
+          extension type E(Foo o) implements Foo {}
+          '''),
+        'foo|test/foo_test.dart': '''
+          import 'package:foo/foo.dart';
+          import 'package:mockito/annotations.dart';
+          @GenerateMocks([E])
+          void main() {}
+          ''',
+      },
+      message: contains(
+        "Mockito cannot mock non-JS-interop extension types (like 'E'). "
+        "Instead, mock the representation type (like 'Foo') "
+        "and cast the mock to the extension type where needed.",
+      ),
+    );
+  });
 }
 
 /// Expect that [testBuilder], given [assets], throws an
