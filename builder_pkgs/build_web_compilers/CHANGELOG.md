@@ -1,3 +1,6 @@
+## 4.8.5
+- Fix `DdcFrontendServerBuilder` retaining old compile requests.
+
 ## 4.8.4
 - Fix deferred rebuilds sometimes crashing `DdcFrontendServerBuilder`.
 
