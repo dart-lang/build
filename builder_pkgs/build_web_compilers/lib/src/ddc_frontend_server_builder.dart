@@ -96,44 +96,42 @@ class DdcFrontendServerBuilder implements Builder {
           Uri(scheme: multiRootScheme, host: '', path: '/${assetPath(asset)}'),
     ];
     try {
-      if (isEntrypoint) {
-        frontendServerState.triggerSharedCompilation(entrypointAssetId, () async {
-          final customDir = scratchSpaceDir;
-          if (customDir != null) {
-            scratchSpace = _scratchSpaceCache.putIfAbsent(
-              customDir,
-              () => ScratchSpace.existing(Directory(customDir)),
-            );
-          }
-          if (customDir != null) {
-            frontendServerState.customScratchSpacePath = customDir;
-          }
-          await scratchSpace.ensureAssets([
-            entrypointAssetId,
-            ...module.sources,
-            ...transitiveSources,
-            ...scratchSpace.changedFilesInBuild,
-          ], buildStep);
-          final compilerOutput = await driver.recompileAndRecord(
-            entrypointArg,
-            changedAssetUris,
-            [assetPath(ddcEntrypointId.changeExtension(fesJsExtension))],
-            recompileRestart: frontendServerState.needsRecompileRestart,
+      frontendServerState.triggerSharedCompilation(entrypointAssetId, () async {
+        final customDir = scratchSpaceDir;
+        if (customDir != null) {
+          scratchSpace = _scratchSpaceCache.putIfAbsent(
+            customDir,
+            () => ScratchSpace.existing(Directory(customDir)),
           );
-          if (compilerOutput == null) {
-            throw FrontendServerCompilationException(
-              frontendServerState.entrypointAssetId!,
-              'Frontend Server produced no output.',
-            );
-          }
-          if (compilerOutput.errorCount != 0) {
-            throw FrontendServerCompilationException(
-              frontendServerState.entrypointAssetId!,
-              compilerOutput.errorMessage ?? 'Unknown error',
-            );
-          }
-        });
-      }
+        }
+        if (customDir != null) {
+          frontendServerState.customScratchSpacePath = customDir;
+        }
+        await scratchSpace.ensureAssets([
+          entrypointAssetId,
+          ...module.sources,
+          ...transitiveSources,
+          ...scratchSpace.changedFilesInBuild,
+        ], buildStep);
+        final compilerOutput = await driver.recompileAndRecord(
+          entrypointArg,
+          changedAssetUris,
+          [assetPath(ddcEntrypointId.changeExtension(fesJsExtension))],
+          recompileRestart: frontendServerState.needsRecompileRestart,
+        );
+        if (compilerOutput == null) {
+          throw FrontendServerCompilationException(
+            frontendServerState.entrypointAssetId!,
+            'Frontend Server produced no output.',
+          );
+        }
+        if (compilerOutput.errorCount != 0) {
+          throw FrontendServerCompilationException(
+            frontendServerState.entrypointAssetId!,
+            compilerOutput.errorMessage ?? 'Unknown error',
+          );
+        }
+      });
       await frontendServerState.waitForCompilation(entrypointAssetId);
 
       // Reads the compiled asset with [extension] from the Frontend Server's
