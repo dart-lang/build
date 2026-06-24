@@ -87,7 +87,9 @@ class FrontendServerState {
       try {
         await compileFn();
       } finally {
-        completer.complete();
+        if (!completer.isCompleted) {
+          completer.complete();
+        }
       }
     }();
   }
