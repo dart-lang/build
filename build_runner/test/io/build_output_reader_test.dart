@@ -43,7 +43,7 @@ void main() {
       buildPackages = BuildPackages.singlePackageBuild('a', [
         BuildPackage.forTesting(name: 'a', isOutput: true),
       ]);
-      buildState = BuildState(<AssetId>{});
+      buildState = BuildState();
       buildPhases = BuildPhases([]);
     });
 
@@ -90,7 +90,7 @@ void main() {
       final primaryId = AssetId('a', 'web/a.dart');
       final buildStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
 
-      var buildState = BuildState(<AssetId>{});
+      var buildState = BuildState();
       final stepResult = BuildStepResult((b) {
         b.result = false;
         b.isHidden = false;
@@ -147,7 +147,7 @@ void main() {
 
       // If a step is skipped due to build filters it is not evaluated and its
       // result is not added to the buildState.
-      buildState = BuildState(<AssetId>{});
+      buildState = BuildState();
 
       reader = BuildOutputReader(buildPlan: buildPlan, buildState: buildState);
 

@@ -60,7 +60,7 @@ void main() {
       ]);
       final reader = ReaderWriter(buildPackages);
       final aId = AssetId('a', 'web/a.txt');
-      buildState = BuildState({aId});
+      buildState = BuildState({aId: null});
       // Assign a digest so the source is recognized as having been used.
       final digest = await reader.digest(aId);
       buildState.updateSourceContent(aId, AssetContent.digest(digest));
@@ -86,7 +86,7 @@ void main() {
           newSources.remove(entry.key);
         }
       }
-      final nextState = BuildState(newSources);
+      final nextState = BuildState({for (final s in newSources) s: null});
       for (final id in newSources) {
         if (buildState.isSource(id)) {
           final digest = buildState.contentOfSource(id);
@@ -142,7 +142,7 @@ void main() {
 
     test('Collects deleted declared outputs', () async {
       // Create a buildState with no sources (so web/a.txt is not in sources).
-      final emptyBuildState = BuildState(const {});
+      final emptyBuildState = BuildState();
 
       // Delete the file from disk so it's actually missing.
       File(p.join(d.sandbox, 'a', 'web', 'a.txt')).deleteSync();

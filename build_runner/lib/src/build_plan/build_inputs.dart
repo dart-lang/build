@@ -24,31 +24,20 @@ abstract class BuildInputs implements Built<BuildInputs, BuildInputsBuilder> {
   /// Contents for source files that have declared outputs.
   BuiltMap<AssetId, AssetContent> get sourceContents;
 
-  /// Source files that were newly added since the last build.
+  /// Sources that were added or modified since the last build.
   ///
   /// Empty if [cleanBuild].
-  BuiltSet<AssetId> get addedSources;
+  BuiltSet<AssetId> get updatedSources;
 
   /// Source files that were removed since the last build.
   ///
   /// Empty if [cleanBuild].
   BuiltSet<AssetId> get deletedSources;
 
-  /// Source files that existed in the previous build but have been modified.
-  ///
-  /// Empty if [cleanBuild].
-  BuiltSet<AssetId> get modifiedSources;
-
   /// Generated outputs that were deleted from disk.
   ///
   /// Empty if [cleanBuild].
   BuiltSet<AssetId> get deletedOutputs;
-
-  /// Sources that were modified or deleted since the last build.
-  ///
-  /// `null` if [cleanBuild].
-  Iterable<AssetId>? get invalidatedSources =>
-      cleanBuild ? null : modifiedSources.followedBy(deletedSources);
 
   BuildInputs._();
   factory BuildInputs([void Function(BuildInputsBuilder) updates]) =

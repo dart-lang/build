@@ -14,6 +14,8 @@ class _$BuildStepPlan extends BuildStepPlan {
   @override
   final BuiltListMultimap<AssetId, AssetId> declaredOutputsByPrimaryInput;
   @override
+  final BuiltListMultimap<BuildStepId, AssetId> declaredOutputsByStep;
+  @override
   final BuiltList<BuiltList<BuildStepId>> buildStepsByPhase;
 
   factory _$BuildStepPlan([void Function(BuildStepPlanBuilder)? updates]) =>
@@ -23,6 +25,7 @@ class _$BuildStepPlan extends BuildStepPlan {
     required this.buildPhases,
     required this.buildStepsByDeclaredOutput,
     required this.declaredOutputsByPrimaryInput,
+    required this.declaredOutputsByStep,
     required this.buildStepsByPhase,
   }) : super._();
   @override
@@ -39,6 +42,7 @@ class _$BuildStepPlan extends BuildStepPlan {
         buildPhases == other.buildPhases &&
         buildStepsByDeclaredOutput == other.buildStepsByDeclaredOutput &&
         declaredOutputsByPrimaryInput == other.declaredOutputsByPrimaryInput &&
+        declaredOutputsByStep == other.declaredOutputsByStep &&
         buildStepsByPhase == other.buildStepsByPhase;
   }
 
@@ -48,6 +52,7 @@ class _$BuildStepPlan extends BuildStepPlan {
     _$hash = $jc(_$hash, buildPhases.hashCode);
     _$hash = $jc(_$hash, buildStepsByDeclaredOutput.hashCode);
     _$hash = $jc(_$hash, declaredOutputsByPrimaryInput.hashCode);
+    _$hash = $jc(_$hash, declaredOutputsByStep.hashCode);
     _$hash = $jc(_$hash, buildStepsByPhase.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
@@ -59,6 +64,7 @@ class _$BuildStepPlan extends BuildStepPlan {
           ..add('buildPhases', buildPhases)
           ..add('buildStepsByDeclaredOutput', buildStepsByDeclaredOutput)
           ..add('declaredOutputsByPrimaryInput', declaredOutputsByPrimaryInput)
+          ..add('declaredOutputsByStep', declaredOutputsByStep)
           ..add('buildStepsByPhase', buildStepsByPhase))
         .toString();
   }
@@ -88,6 +94,14 @@ class BuildStepPlanBuilder
     ListMultimapBuilder<AssetId, AssetId>? declaredOutputsByPrimaryInput,
   ) => _$this._declaredOutputsByPrimaryInput = declaredOutputsByPrimaryInput;
 
+  ListMultimapBuilder<BuildStepId, AssetId>? _declaredOutputsByStep;
+  ListMultimapBuilder<BuildStepId, AssetId> get declaredOutputsByStep =>
+      _$this._declaredOutputsByStep ??=
+          ListMultimapBuilder<BuildStepId, AssetId>();
+  set declaredOutputsByStep(
+    ListMultimapBuilder<BuildStepId, AssetId>? declaredOutputsByStep,
+  ) => _$this._declaredOutputsByStep = declaredOutputsByStep;
+
   ListBuilder<BuiltList<BuildStepId>>? _buildStepsByPhase;
   ListBuilder<BuiltList<BuildStepId>> get buildStepsByPhase =>
       _$this._buildStepsByPhase ??= ListBuilder<BuiltList<BuildStepId>>();
@@ -104,6 +118,7 @@ class BuildStepPlanBuilder
       _buildStepsByDeclaredOutput = $v.buildStepsByDeclaredOutput.toBuilder();
       _declaredOutputsByPrimaryInput = $v.declaredOutputsByPrimaryInput
           .toBuilder();
+      _declaredOutputsByStep = $v.declaredOutputsByStep.toBuilder();
       _buildStepsByPhase = $v.buildStepsByPhase.toBuilder();
       _$v = null;
     }
@@ -137,6 +152,7 @@ class BuildStepPlanBuilder
             buildStepsByDeclaredOutput: buildStepsByDeclaredOutput.build(),
             declaredOutputsByPrimaryInput: declaredOutputsByPrimaryInput
                 .build(),
+            declaredOutputsByStep: declaredOutputsByStep.build(),
             buildStepsByPhase: buildStepsByPhase.build(),
           );
     } catch (_) {
@@ -146,6 +162,8 @@ class BuildStepPlanBuilder
         buildStepsByDeclaredOutput.build();
         _$failedField = 'declaredOutputsByPrimaryInput';
         declaredOutputsByPrimaryInput.build();
+        _$failedField = 'declaredOutputsByStep';
+        declaredOutputsByStep.build();
         _$failedField = 'buildStepsByPhase';
         buildStepsByPhase.build();
       } catch (e) {

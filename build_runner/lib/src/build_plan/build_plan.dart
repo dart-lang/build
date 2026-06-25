@@ -5,9 +5,6 @@
 import 'package:build/build.dart' hide Builder;
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
-
-import 'package:watcher/watcher.dart';
-
 import '../build/asset_content.dart';
 import '../build/build_state/build_state.dart';
 import '../build/library_cycle_graph/phased_asset_deps.dart';
@@ -278,18 +275,19 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
     );
     final buildInputs = BuildInputsBuilder()..cleanBuild = false;
 
-    final newContents = <AssetId, AssetContent>{};
-    final resolvedUpdates = <AssetId, ChangeType>{};
-    final previousSources = <AssetId>{};
-
     final previousBuildState = previousBuild.buildState!;
     var buildStepPlan = previousBuildStepPlan;
 
+    buildInputs.sources.addAll(previousBuildState.sources);
+    for (final id in previousBuildState.sources) {
+      final content = previousBuildState.contentOfSource(id);
+      if (content != null) {
+        buildInputs.sourceContents[id] = content;
+      }
+    }
+
     for (final id in filesToCheck) {
       final oldIsSource = previousBuildState.isSource(id);
-      if (oldIsSource) {
-        previousSources.add(id);
-      }
       final oldExisted = previousBuildState.isFile(
         buildStepPlan: buildStepPlan,
         id: id,
@@ -306,7 +304,6 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
           try {
             final bytes = await readerWriter.readAsBytes(id);
             newContent = AssetContent.bytes(bytes);
-            newContents[id] = newContent;
           } catch (_) {
             exists = false;
           }
@@ -314,51 +311,22 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       }
 
       if (oldExisted && !exists) {
-        resolvedUpdates[id] = ChangeType.REMOVE;
         if (oldIsSource) {
           buildInputs.deletedSources.add(id);
+          buildInputs.sources.remove(id);
+          buildInputs.sourceContents.remove(id);
         } else {
           buildInputs.deletedOutputs.add(id);
         }
       } else if (!oldExisted && exists) {
-        buildInputs.addedSources.add(id);
-        resolvedUpdates[id] = ChangeType.ADD;
+        buildInputs.updatedSources.add(id);
+        buildInputs.sources.add(id);
       } else if (oldExisted &&
           oldContent != null &&
           exists &&
           oldContent.digest != newContent!.digest) {
-        buildInputs.modifiedSources.add(id);
-        resolvedUpdates[id] = ChangeType.MODIFY;
-      }
-    }
-
-    buildInputs.sources.addAll(previousBuildState.sources);
-    for (final entry in resolvedUpdates.entries) {
-      final id = entry.key;
-      switch (entry.value) {
-        case ChangeType.ADD:
-        case ChangeType.MODIFY:
-          if (!previousBuildState.isSource(id) ||
-              previousBuildState.isMissingSource(id)) {
-            buildInputs.sources.add(id);
-          }
-        case ChangeType.REMOVE:
-          if (previousBuildState.isSource(id)) {
-            buildInputs.sources.remove(id);
-          }
-      }
-    }
-
-    for (final id in buildInputs.sources.build()) {
-      if (newContents[id] != null) {
-        buildInputs.sourceContents[id] = newContents[id]!;
-      } else if (resolvedUpdates[id] == null) {
-        if (previousBuildState.isSource(id)) {
-          final content = previousBuildState.contentOfSource(id);
-          if (content != null) {
-            buildInputs.sourceContents[id] = content;
-          }
-        }
+        buildInputs.updatedSources.add(id);
+        buildInputs.sourceContents[id] = newContent;
       }
     }
 

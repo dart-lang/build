@@ -108,7 +108,7 @@ void main() {
           ),
         ),
       );
-      buildState = BuildState(buildPlan.buildInputs.sources.toSet());
+      buildState = BuildState(buildPlan.buildInputs.sourceContents.toMap());
       buildOutputReader = BuildOutputReader(
         buildPlan: buildPlan,
         buildState: buildState,
