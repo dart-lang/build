@@ -21,8 +21,9 @@ import 'invalidation_tester.dart';
 Future<void> main() async {
   for (var iteration = 0; iteration != 500; ++iteration) {
     test('invalidation stress test $iteration', () async {
-      final tester = InvalidationTester()..logSetup();
       final random = Random(iteration);
+      final tester = InvalidationTester(discardResolver: random.nextBool())
+        ..logSetup();
 
       // Whether to change the imports in source files between builds.
       final changeImports = iteration % 10 == 0;
