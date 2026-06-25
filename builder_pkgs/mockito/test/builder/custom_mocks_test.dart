@@ -1995,6 +1995,36 @@ void main() {
       ),
     );
   });
+
+  test(
+    'generates mock for an instantiated generic JS interop extension type',
+    () async {
+      final mocksContent = await buildWithNonNullable({
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        import 'dart:js_interop';
+        extension type A(JSObject o) {}
+        extension type E<T extends JSObject>(JSObject o) {
+          external T get foo;
+        }
+        '''),
+        'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+        @GenerateMocks([], customMocks: [MockSpec<E<A>>(as: #MockEA)])
+        void main() {}
+        ''',
+      });
+      expect(mocksContent, contains('class MockEATarget extends'));
+      expect(mocksContent, matches(RegExp(r'_i\d+\.A get foo')));
+      expect(mocksContent, contains('extension type MockEA'));
+      expect(
+        mocksContent,
+        contains('factory MockEA({_i1.JSObject? proto}) =>'),
+      );
+      expect(mocksContent, matches(RegExp(r'implements _i\d+\.E<_i\d+\.A>')));
+    },
+  );
 }
 
 /// Expect that [testBuilder], given [assets], throws an
