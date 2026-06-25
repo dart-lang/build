@@ -651,7 +651,7 @@ class _MockTargetGatherer {
         mockSpec.typeNotExtensionTypeErased as analyzer.InterfaceType;
     assert(mockSpecType.typeArguments.length == 1);
     final mockType = _mockType(mockSpecAsts[index]);
-    var typeToMock = mockSpecType.typeArguments.single;
+    final typeToMock = mockSpecType.typeArguments.single;
     if (typeToMock is analyzer.DynamicType ||
         typeToMock is analyzer.InvalidType) {
       final mockTypeName = mockType?.qualifiedName;
