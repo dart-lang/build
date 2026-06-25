@@ -46,7 +46,7 @@ class BuilderFilesystem {
   /// Listens to content updates: source files read for the first time,
   /// generated outputs, generated outputs that are not written.
   ///
-  /// Throws if called twice.
+  /// Throws if called more than once.
   void listenToContentUpdates(
     void Function(AssetId, AssetContent?) onUpdateContent,
   ) {

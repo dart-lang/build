@@ -320,17 +320,12 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         }
       } else if (!oldExisted && exists) {
         buildInputs.updatedSources.add(id);
-        if (!oldIsSource || previousBuildState.isMissingSource(id)) {
-          buildInputs.sources.add(id);
-        }
+        buildInputs.sources.add(id);
       } else if (oldExisted &&
           oldContent != null &&
           exists &&
           oldContent.digest != newContent!.digest) {
         buildInputs.updatedSources.add(id);
-        if (!oldIsSource || previousBuildState.isMissingSource(id)) {
-          buildInputs.sources.add(id);
-        }
         buildInputs.sourceContents[id] = newContent;
       }
     }
