@@ -1861,11 +1861,18 @@ void main() {
     expect(mocksContent, isNot(contains('JSObject get o')));
 
     expect(mocksContent, contains('extension type MockE'));
-    expect(mocksContent, contains('factory MockE({_i1.JSObject? proto}) =>'));
-    expect(mocksContent, contains('factory MockE.withTarget('));
     expect(
       mocksContent,
-      matches(RegExp(r'_i1\.createJSInteropWrapper\(\s*target,\s*proto,\s*\)')),
+      containsIgnoringFormatting(
+        'factory MockE({\n'
+        '    _i1.JSObject? prototype,\n'
+        '    MockETarget? target,\n'
+        '  }) =>\n'
+        '      MockE._(_i1.createJSInteropWrapper(\n'
+        '        target ?? MockETarget(),\n'
+        '        prototype,\n'
+        '      ));',
+      ),
     );
   });
 
@@ -1900,16 +1907,18 @@ void main() {
         ),
       ),
     );
-    expect(mocksContent, contains('factory MockE({_i1.JSObject? proto}) =>'));
     expect(
       mocksContent,
-      matches(
-        RegExp(r'factory MockE\.withTarget\(\s*MockETarget<T> target,\s*\{'),
+      containsIgnoringFormatting(
+        'factory MockE({\n'
+        '    _i1.JSObject? prototype,\n'
+        '    MockETarget<T>? target,\n'
+        '  }) =>\n'
+        '      MockE._(_i1.createJSInteropWrapper(\n'
+        '        target ?? MockETarget<T>(),\n'
+        '        prototype,\n'
+        '      ));',
       ),
-    );
-    expect(
-      mocksContent,
-      matches(RegExp(r'_i1\.createJSInteropWrapper\(\s*target,\s*proto,\s*\)')),
     );
   });
 
@@ -1985,13 +1994,17 @@ void main() {
     expect(mocksContent, contains('void foo()'));
     expect(mocksContent, contains('void bar()'));
     expect(mocksContent, contains('extension type MockB'));
-    expect(mocksContent, contains('factory MockB({_i1.JSObject? proto}) =>'));
     expect(
       mocksContent,
-      matches(
-        RegExp(
-          r'factory MockB\.withTarget\(\s*MockBTarget target,\s*\{\s*_i1\.JSObject\? proto,\s*\}\s*\)\s*=>\s*MockB\._\(\s*\(?\(?_i1\.createJSInteropWrapper\(\s*target,\s*proto,\s*\)\s*as _i\d+\.A\)?\)?\s*\);',
-        ),
+      containsIgnoringFormatting(
+        'factory MockB({\n'
+        '    _i1.JSObject? prototype,\n'
+        '    MockBTarget? target,\n'
+        '  }) =>\n'
+        '      MockB._((_i1.createJSInteropWrapper(\n'
+        '        target ?? MockBTarget(),\n'
+        '        prototype,\n'
+        '      ) as _i3.A));',
       ),
     );
   });
@@ -2020,7 +2033,16 @@ void main() {
       expect(mocksContent, contains('extension type MockEA'));
       expect(
         mocksContent,
-        contains('factory MockEA({_i1.JSObject? proto}) =>'),
+        containsIgnoringFormatting(
+          'factory MockEA({\n'
+          '    _i1.JSObject? prototype,\n'
+          '    MockEATarget? target,\n'
+          '  }) =>\n'
+          '      MockEA._(_i1.createJSInteropWrapper(\n'
+          '        target ?? MockEATarget(),\n'
+          '        prototype,\n'
+          '      ));',
+        ),
       );
       expect(mocksContent, matches(RegExp(r'implements _i\d+\.E<_i\d+\.A>')));
     },

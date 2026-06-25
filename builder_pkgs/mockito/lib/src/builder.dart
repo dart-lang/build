@@ -1237,7 +1237,7 @@ class _MockLibraryInfo {
         inheritanceManager: inheritanceManager,
       );
       if (mockClassInfo._isExtensionType) {
-        mockSpecs.add(mockClassInfo._buildMockTargetClass());
+        mockSpecs.add(mockClassInfo._buildMockJsInteropTargetClass());
         mockSpecs.add(mockClassInfo._buildMockExtensionType());
       } else {
         mockSpecs.add(mockClassInfo._buildMockClass());
@@ -1290,7 +1290,11 @@ class _MockClassInfo {
   bool get _isExtensionType =>
       mockTarget.interfaceElement is ExtensionTypeElement;
 
-  Class _buildMockTargetClass() {
+  /// Builds a mock implementation class for a JS interop extension type.
+  ///
+  /// This class is meant to be passed to createJSInteropWrapper.
+  /// It will only contain external members of the mocked type.
+  Class _buildMockJsInteropTargetClass() {
     assert(_isExtensionType);
 
     final instantiatedAlias = mockTarget.classType.alias;
@@ -1335,13 +1339,14 @@ class _MockClassInfo {
             [...classToMock.typeParameters, ...?aliasElement?.typeParameters],
             [...typeToMock.typeArguments, ...?instantiatedAlias?.typeArguments],
           );
-          var members = inheritanceManager
-              .getInterface(classToMock)
-              .map
-              .values
-              .map((member) => member.substitute(substitution));
-
-          members = members.where((m) => m.isExternal);
+          final members =
+              inheritanceManager
+                  .getInterface(classToMock)
+                  .map
+                  .values
+                  .map((member) => member.substitute(substitution))
+                  .where((m) => m.isExternal)
+                  .toList();
 
           cBuilder.methods.addAll(
             fieldOverrides(members.whereType<PropertyAccessorElement>()),
@@ -1407,80 +1412,57 @@ class _MockClassInfo {
 
           // Add factories
           cBuilder.constructors.addAll([
-            Constructor(
-              (c) =>
-                  c
-                    ..factory = true
-                    ..optionalParameters.add(
-                      Parameter(
-                        (p) =>
-                            p
-                              ..name = 'proto'
-                              ..named = true
-                              ..type = TypeReference((b) => b
-                                ..symbol = 'JSObject'
-                                ..url = 'dart:js_interop'
-                                ..isNullable = true),
-                      ),
-                    )
-                    ..body = refer(mockTarget.mockName)
-                        .property('withTarget')
-                        .call(
-                          [
-                            TypeReference((tr) {
-                              tr
-                                ..symbol = '${mockTarget.mockName}Target'
-                                ..types.addAll(typeParams);
-                            }).call([]),
-                          ],
-                          {'proto': refer('proto')},
-                        )
-                        .code,
-            ),
-            Constructor(
-              (c) =>
-                  c
-                    ..factory = true
-                    ..name = 'withTarget'
-                    ..requiredParameters.add(
-                      Parameter(
-                        (p) =>
-                            p
-                              ..name = 'target'
-                              ..type = TypeReference((tr) {
-                                tr
-                                  ..symbol = '${mockTarget.mockName}Target'
-                                  ..types.addAll(typeParams);
-                              }),
-                      ),
-                    )
-                    ..optionalParameters.add(
-                      Parameter(
-                        (p) =>
-                            p
-                              ..name = 'proto'
-                              ..named = true
-                              ..type = TypeReference((b) => b
-                                ..symbol = 'JSObject'
-                                ..url = 'dart:js_interop'
-                                ..isNullable = true),
-                      ),
-                    )
-                    ..body =
-                        refer(mockTarget.mockName).property('_').call([
-                          _isJSObject(representationType)
-                              ? referImported(
-                                'createJSInteropWrapper',
-                                'dart:js_interop',
-                              ).call([refer('target'), refer('proto')])
-                              : referImported(
-                                    'createJSInteropWrapper',
-                                    'dart:js_interop',
-                                  )
-                                  .call([refer('target'), refer('proto')])
-                                  .asA(_typeReference(representationType)),
-                        ]).code,
-            ),
+            Constructor((c) {
+              c
+                ..factory = true
+                ..optionalParameters.add(
+                  Parameter((p) {
+                    p
+                      ..name = 'prototype'
+                      ..named = true
+                      ..type = TypeReference((b) {
+                        b
+                          ..symbol = 'JSObject'
+                          ..url = 'dart:js_interop'
+                          ..isNullable = true;
+                      });
+                  }),
+                )
+                ..optionalParameters.add(
+                  Parameter((p) {
+                    p
+                      ..name = 'target'
+                      ..named = true
+                      ..type = TypeReference((tr) {
+                        tr
+                          ..symbol = '${mockTarget.mockName}Target'
+                          ..types.addAll(typeParams)
+                          ..isNullable = true;
+                      });
+                  }),
+                );
+              final targetOrNew = refer('target').ifNullThen(
+                TypeReference((tr) {
+                  tr
+                    ..symbol = '${mockTarget.mockName}Target'
+                    ..types.addAll(typeParams);
+                }).call([]),
+              );
+              c.body =
+                  refer(mockTarget.mockName).property('_').call([
+                    _isJSObject(representationType)
+                        ? referImported(
+                          'createJSInteropWrapper',
+                          'dart:js_interop',
+                        ).call([targetOrNew, refer('prototype')])
+                        : referImported(
+                              'createJSInteropWrapper',
+                              'dart:js_interop',
+                            )
+                            .call([targetOrNew, refer('prototype')])
+                            .asA(_typeReference(representationType)),
+                  ]).code;
+            }),
           ]);
         },
       );
