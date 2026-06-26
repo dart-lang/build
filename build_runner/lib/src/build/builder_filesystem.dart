@@ -29,8 +29,8 @@ class BuilderFilesystem {
   final BuildState buildState;
   final BuildStepPlan buildStepPlan;
   final ReaderWriter readerWriter;
-  final AssetBuilder assetBuilder;
-  final GlobEvaluator globEvaluator;
+  final AssetBuilder? assetBuilder;
+  final GlobEvaluator? globEvaluator;
 
   BuilderFilesystem({
     required this.buildPackages,
@@ -38,9 +38,19 @@ class BuilderFilesystem {
     required this.buildState,
     required this.buildStepPlan,
     required this.readerWriter,
-    required this.assetBuilder,
-    required this.globEvaluator,
+    this.assetBuilder,
+    this.globEvaluator,
   });
+
+  /// Returns a copy without in-build hooks: [assetBuilder], [globEvaluator],
+  /// content update listener.
+  BuilderFilesystem forAfterBuild() => BuilderFilesystem(
+    buildPackages: buildPackages,
+    buildConfigs: buildConfigs,
+    buildState: buildState,
+    buildStepPlan: buildStepPlan,
+    readerWriter: readerWriter,
+  );
 
   void Function(AssetId, AssetContent?)? _onUpdateContent;
 
@@ -84,7 +94,7 @@ class BuilderFilesystem {
 
   /// Updates [id] with [content].
   ///
-  /// It must be a source or declared output.
+  /// It must be a source, declared output or post process output.
   void updateContent({required AssetId id, required AssetContent content}) {
     if (buildState.isSource(id)) {
       updateSourceContent(id, content);
@@ -94,6 +104,16 @@ class BuilderFilesystem {
     if (step != null) {
       buildState.updateDeclaredOutputContent(
         step: step,
+        id: id,
+        content: content,
+      );
+      _onUpdateContent?.call(id, content);
+      return;
+    }
+    final postProcessStep = buildState.postProcessStepFor(id);
+    if (postProcessStep != null) {
+      buildState.updatePostProcessOutputContent(
+        step: postProcessStep,
         id: id,
         content: content,
       );
@@ -150,7 +170,9 @@ class BuilderFilesystem {
     } on AssetNotFoundException {
       await ChildProcess.exitDueToAssetDeleted(id);
     }
-    final content = AssetContent.bytes(bytes);
+    final content = maybeResult != null
+        ? maybeResult.withBytes(bytes)
+        : AssetContent.bytes(bytes);
     updateContent(id: id, content: content);
     return content;
   }
@@ -200,7 +222,9 @@ class BuilderFilesystem {
         return false;
       }
 
-      await assetBuilder(id);
+      // If a build is running: build the asset if needed.
+      await assetBuilder?.call(id);
+
       return buildState.isActualSuccessfulOutput(
         buildStepPlan: buildStepPlan,
         id: id,
@@ -209,14 +233,9 @@ class BuilderFilesystem {
     return buildState.isSource(id);
   }
 
-  /// Triggers the evaluation of the [glob] query inside the build engine.
-  Future<GlobId> evaluateGlob(String glob, String package, int phase) async {
-    final globId = GlobId(package: package, glob: glob, phaseNumber: phase);
-    await globEvaluator(globId);
-    return globId;
-  }
-
   /// Returns all readable assets matching [glob] under [package].
+  ///
+  /// Throws if a build is not running.
   Stream<AssetId> findAssets(
     Glob glob, {
     required String package,
@@ -224,8 +243,13 @@ class BuilderFilesystem {
     void Function(GlobId)? trackGlob,
   }) {
     final streamCompleter = StreamCompleter<AssetId>();
+    final globId = GlobId(
+      package: package,
+      glob: glob.pattern,
+      phaseNumber: phase,
+    );
 
-    evaluateGlob(glob.pattern, package, phase).then((globId) {
+    globEvaluator!(globId).then((_) {
       if (trackGlob != null) trackGlob(globId);
       final globResult = buildState.globResultFor(globId)!;
       streamCompleter.setSourceStream(Stream.fromIterable(globResult.results));
@@ -266,7 +290,7 @@ class BuilderFilesystem {
           buildStepPlan: buildStepPlan,
           id: id,
         )) {
-          await assetBuilder(id);
+          await assetBuilder?.call(id);
         }
         final isSuccessOutput = buildState.isActualSuccessfulOutput(
           buildStepPlan: buildStepPlan,

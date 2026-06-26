@@ -15,6 +15,8 @@ import 'package:build_runner/src/build/build_state/build_step_id.dart';
 import 'package:build_runner/src/build/build_state/build_step_result.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_id.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_result.dart';
+import 'package:build_runner/src/build/builder_filesystem.dart';
+import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
@@ -129,10 +131,14 @@ void main() {
       (BuildStepPlanBuilder b) =>
           b..buildPhases = BuildPhases(const <InBuildPhase>[]),
     );
-    finalizedReader = BuildOutputReader.buildStateOnly(
-      readerWriter: readerWriter,
-      buildState: buildState,
-      buildStepPlan: buildStepPlan,
+    finalizedReader = BuildOutputReader(
+      builderFilesystem: BuilderFilesystem(
+        buildPackages: buildPackages,
+        buildConfigs: BuildConfigs.empty(),
+        buildState: buildState,
+        buildStepPlan: buildStepPlan,
+        readerWriter: readerWriter,
+      ),
     );
     watcher.addFutureResult(
       Future.value(
@@ -269,10 +275,14 @@ void main() {
         b.buildStepsByDeclaredOutput.addAll({outputId: buildStepId});
       });
 
-      finalizedReader = BuildOutputReader.buildStateOnly(
-        readerWriter: readerWriter,
-        buildState: buildState,
-        buildStepPlan: buildStepPlan,
+      finalizedReader = BuildOutputReader(
+        builderFilesystem: BuilderFilesystem(
+          buildPackages: buildPackages,
+          buildConfigs: BuildConfigs.empty(),
+          buildState: buildState,
+          buildStepPlan: buildStepPlan,
+          readerWriter: readerWriter,
+        ),
       );
 
       final stepResult = BuildStepResult((b) {

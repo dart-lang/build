@@ -27,8 +27,10 @@ class BuildResult {
   /// The imports graph for resolved sources.
   final PhasedAssetDeps phasedAssetDeps;
 
-  // The build output.
-  final BuildOutputReader buildOutputReader;
+  /// The build output.
+  ///
+  /// `null` if the build failed with no output.
+  final BuildOutputReader? buildOutputReader;
 
   // The build state.
   final BuildState? buildState;
@@ -84,7 +86,7 @@ Build Failed :(
   factory BuildResult.buildScriptChanged() => BuildResult(
     status: BuildStatus.failure,
     failureType: FailureType.buildScriptChanged,
-    buildOutputReader: BuildOutputReader.empty(),
+    buildOutputReader: null,
   );
 }
 
