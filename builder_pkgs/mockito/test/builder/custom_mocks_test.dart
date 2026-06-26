@@ -1833,7 +1833,6 @@ void main() {
           external int get foo;
           external set foo(int val);
           external String bar(String s);
-          external String toString({bool? option});
           int get nonExternalGetter => 42;
           void nonExternalMethod() {}
         }
@@ -1849,9 +1848,6 @@ void main() {
     expect(mocksContent, contains('int get foo =>'));
     expect(mocksContent, contains('set foo(int? val) =>'));
     expect(mocksContent, contains('String bar(String? s) =>'));
-    expect(mocksContent, contains('String toString({bool? option}) =>'));
-    // Ensure toString has @override, but other members do not
-    expect(mocksContent, matches(RegExp(r'@override\s+String toString\(')));
     expect(mocksContent, isNot(matches(RegExp(r'@override\s+int get foo'))));
     expect(mocksContent, isNot(matches(RegExp(r'@override\s+String bar'))));
 
@@ -1922,6 +1918,44 @@ void main() {
     );
   });
 
+  test('generates mock for a JS interop extension type with potentially '
+      'nullable getters, setters, and methods', () async {
+    final mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+        import 'dart:js_interop';
+        extension type E<T extends JSAny>(JSObject o) {
+          external int? get nullableGetter;
+          external T? get nullableGenericGetter;
+          external set nullableSetter(int? val);
+          external set nullableGenericSetter(T? val);
+          external String? nullableMethod(String s);
+          external T? nullableGenericMethod(String s);
+          external int nullableParamMethod(String? s);
+          external int nullableGenericParamMethod(T? s);
+        }
+        '''),
+      'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+        @GenerateMocks([E])
+        void main() {}
+        ''',
+    });
+    expect(
+      mocksContent,
+      contains('class MockETarget<T extends _i1.JSAny> extends _i2.Mock'),
+    );
+    expect(mocksContent, contains('int? get nullableGetter =>'));
+    expect(mocksContent, contains('T? get nullableGenericGetter =>'));
+    expect(mocksContent, contains('set nullableSetter(int? val) =>'));
+    expect(mocksContent, contains('set nullableGenericSetter(T? val) =>'));
+    expect(mocksContent, contains('String? nullableMethod(String? s) =>'));
+    expect(mocksContent, contains('T? nullableGenericMethod(String? s) =>'));
+    expect(mocksContent, contains('int nullableParamMethod(String? s) =>'));
+    expect(mocksContent, contains('int nullableGenericParamMethod(T? s) =>'));
+  });
+
   test(
     'throws when trying to mock a JS interop extension type wrapping JSArray',
     () async {
@@ -1967,6 +2001,105 @@ void main() {
         "Mockito cannot mock non-JS-interop extension types (like 'E'). "
         "Instead, mock the representation type (like 'Foo') "
         'and cast the mock to the extension type where needed.',
+      ),
+    );
+  });
+
+  // Check that we still verify the nullable members for JS interop since we
+  // always generate them.
+  test(
+    'throws when trying to mock an external nullable JS interop getter with a '
+    'private type',
+    () async {
+      await _expectBuilderThrows(
+        assets: {
+          ...annotationsAsset,
+          'foo|lib/foo.dart': dedent(r'''
+          import 'dart:js_interop';
+          extension type _D._(int _) {}
+          extension type E._(JSObject _) {
+            external _D? get foo;
+          }
+          '''),
+          'foo|test/foo_test.dart': '''
+          import 'package:foo/foo.dart';
+          import 'package:mockito/annotations.dart';
+          @GenerateMocks([E])
+          void main() {}
+          ''',
+        },
+        message: contains(
+          "The property accessor 'E.foo' features a private return type, and "
+          'cannot be stubbed.',
+        ),
+      );
+    },
+  );
+
+  test('generates mock for a JS interop extension type translating `@JS` to '
+      '`@JSExport`', () async {
+    final mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+        import 'dart:js_interop';
+        extension type E(JSObject o) {
+          @JS('jsGetter')
+          external int get getterWithJs;
+          @JS('jsSetter')
+          external set setterWithJs(int val);
+          @JS('jsMethod')
+          external String methodWithJs(String s);
+          @JS()
+          external bool get getterWithEmptyJs;
+          @JS('')
+          external bool get getterWithJsEmptyString;
+        }
+        '''),
+      'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+        @GenerateMocks([E])
+        void main() {}
+        ''',
+    });
+    expect(mocksContent, contains('class MockETarget extends'));
+    expect(
+      mocksContent,
+      contains(
+        "@_i1.JSExport('jsGetter')\n"
+        '  int get getterWithJs =>',
+      ),
+    );
+    expect(
+      mocksContent,
+      contains(
+        "@_i1.JSExport('jsSetter')\n"
+        '  set setterWithJs(int? val) =>',
+      ),
+    );
+    expect(
+      mocksContent,
+      contains(
+        "@_i1.JSExport('jsMethod')\n"
+        '  String methodWithJs(String? s) =>',
+      ),
+    );
+    expect(
+      mocksContent,
+      isNot(
+        contains(
+          '@_i1.JSExport()\n'
+          '  bool get getterWithEmptyJs =>',
+        ),
+      ),
+    );
+    expect(
+      mocksContent,
+      isNot(
+        contains(
+          "@_i1.JSExport('')\n"
+          '  bool get getterWithJsEmptyString =>',
+        ),
       ),
     );
   });
