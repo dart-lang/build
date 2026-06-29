@@ -14,10 +14,19 @@ import 'invalidation_tester.dart';
 ///    `a1 resolves: a2 --> a3 --> a4` means that the generation of a1
 ///    resolves a2, which imports a3, which imports a4
 void main() {
+  for (final discardResolver in [false, true]) {
+    final groupName = discardResolver
+        ? 'discardResolver=true'
+        : 'discardResolver=false';
+    group(groupName, () => _runTests(discardResolver));
+  }
+}
+
+void _runTests(bool discardResolver) {
   late InvalidationTester tester;
 
   setUp(() {
-    tester = InvalidationTester();
+    tester = InvalidationTester(discardResolver: discardResolver);
   });
 
   group('a.1 <== a.2, a.2 resolves: a.1 --> za --> zb', () {
