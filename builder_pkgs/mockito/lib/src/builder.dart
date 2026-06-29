@@ -1619,8 +1619,7 @@ class _MockClassInfo {
           (includeNullables || typeSystem._returnTypeIsNonNullable(accessor))) {
         yield Method((mBuilder) => _buildOverridingGetter(mBuilder, accessor));
       }
-      if (accessor is SetterElement &&
-          (includeNullables || sourceLibIsNonNullable)) {
+      if (accessor is SetterElement && sourceLibIsNonNullable) {
         yield Method((mBuilder) => _buildOverridingSetter(mBuilder, accessor));
       }
     }
