@@ -4,6 +4,7 @@
 * It is now an error to generate mocks for non-JS interop extension types.
   Instead, mock the representation type and cast to the extension type where
   needed.
+* Add dummies for more platform value types. 
 
 ## 5.7.0
 
