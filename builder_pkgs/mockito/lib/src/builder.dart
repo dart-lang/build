@@ -959,7 +959,12 @@ class _MockTargetGatherer {
         );
       }
 
-      _checkMethodsToStubAreValid(mockTarget);
+      _checkMethodsToStubAreValid(
+        mockTarget,
+        // Mock target classes for JS interop types generate all members and
+        // JS interop types are the only extension types we allow.
+        checkAllMembers: mockTarget.interfaceElement is ExtensionTypeElement,
+      );
     });
   }
 
@@ -969,7 +974,13 @@ class _MockTargetGatherer {
   /// A method is not valid for stubbing if:
   /// - It has a private type anywhere in its signature; Mockito cannot override
   ///   such a method.
-  void _checkMethodsToStubAreValid(_MockTarget mockTarget) {
+  ///
+  /// If [checkAllMembers] is true, assumes all members will be generated and
+  /// therefore checked.
+  void _checkMethodsToStubAreValid(
+    _MockTarget mockTarget, {
+    required bool checkAllMembers,
+  }) {
     final interfaceElement = mockTarget.interfaceElement;
     final className = interfaceElement.name;
     final substitution = Substitution.fromInterfaceType(mockTarget.classType);
@@ -983,7 +994,8 @@ class _MockTargetGatherer {
         relevantMembers.expand((member) {
           final nameWithEquals =
               member is SetterElement ? '${member.name}=' : member.name;
-          if (_entryLib.typeSystem._returnTypeIsNonNullable(member) ||
+          if (checkAllMembers ||
+              _entryLib.typeSystem._returnTypeIsNonNullable(member) ||
               _entryLib.typeSystem._hasNonNullableParameter(member) ||
               _needsOverrideForVoidStub(member)) {
             return _checkFunction(
@@ -1349,10 +1361,16 @@ class _MockClassInfo {
                   .toList();
 
           cBuilder.methods.addAll(
-            fieldOverrides(members.whereType<PropertyAccessorElement>()),
+            fieldOverrides(
+              members.whereType<PropertyAccessorElement>(),
+              includeNullables: true,
+            ),
           );
           cBuilder.methods.addAll(
-            methodOverrides(members.whereType<MethodElement>()),
+            methodOverrides(
+              members.whereType<MethodElement>(),
+              includeNullables: true,
+            ),
           );
         },
       );
@@ -1580,10 +1598,11 @@ class _MockClassInfo {
   ///
   /// Only public instance fields which have either a potentially non-nullable
   /// return type (for getters) or a parameter with a potentially non-nullable
-  /// type (for setters) are yielded.
+  /// type (for setters) are yielded, unless [includeNullables] is true.
   Iterable<Method> fieldOverrides(
-    Iterable<PropertyAccessorElement> accessors,
-  ) sync* {
+    Iterable<PropertyAccessorElement> accessors, {
+    bool includeNullables = false,
+  }) sync* {
     for (final accessor in accessors) {
       if (accessor.isPrivate) {
         continue;
@@ -1597,7 +1616,7 @@ class _MockClassInfo {
         continue;
       }
       if (accessor is GetterElement &&
-          typeSystem._returnTypeIsNonNullable(accessor)) {
+          (includeNullables || typeSystem._returnTypeIsNonNullable(accessor))) {
         yield Method((mBuilder) => _buildOverridingGetter(mBuilder, accessor));
       }
       if (accessor is SetterElement && sourceLibIsNonNullable) {
@@ -1623,8 +1642,11 @@ class _MockClassInfo {
   ///
   /// Only public instance methods which have either a potentially non-nullable
   /// return type or a parameter with a potentially non-nullable type are
-  /// yielded.
-  Iterable<Method> methodOverrides(Iterable<MethodElement> methods) sync* {
+  /// yielded, unless [includeNullables] is true.
+  Iterable<Method> methodOverrides(
+    Iterable<MethodElement> methods, {
+    bool includeNullables = false,
+  }) sync* {
     for (final method in methods) {
       if (method.isPrivate) {
         continue;
@@ -1643,7 +1665,7 @@ class _MockClassInfo {
         // narrow the return type.
         continue;
       }
-      if (_methodNeedsOverride(method)) {
+      if (includeNullables || _methodNeedsOverride(method)) {
         _checkForConflictWithCore(method.name!);
         yield Method((mBuilder) => _buildOverridingMethod(mBuilder, method));
       }
@@ -1668,6 +1690,55 @@ class _MockClassInfo {
             ).call([refer('this')]).statement,
   );
 
+  /// Add needed annotation for the overriding member [builder] that overrides
+  /// [member].
+  ///
+  /// - If [member] is not an external JS interop member, adds an `@override`
+  ///   annotation to [builder]. Since the mock class for a JS interop
+  ///   extension type doesn't implement the extension type, the built member
+  ///   doesn't need an `@override` annotation.
+  /// - If [member] is an external JS interop member with an `@JS` annotation,
+  ///   adds a corresponding `@JSExport` annotation to [builder] with the same
+  ///   value.
+  void _addAnnotationsForOverridingMember(
+    MethodBuilder builder,
+    ExecutableElement member,
+  ) {
+    final isJSInteropMember = _isExtensionType && member.isExternal;
+    if (isJSInteropMember) {
+      final jsName = _getJSName(member);
+      if (jsName != null) {
+        builder.annotations.add(
+          referImported(
+            'JSExport',
+            'dart:js_interop',
+          ).call([literalString(jsName)]),
+        );
+      }
+    } else {
+      builder.annotations.add(referImported('override', 'dart:core'));
+    }
+  }
+
+  /// Returns the string value from the `dart:js_interop` `@JS()` annotation on
+  /// [element] if it exists and is non-empty.
+  String? _getJSName(Element element) {
+    for (final annotation in element.metadata.annotations) {
+      final annotationElement = annotation.element;
+      if (annotationElement is ConstructorElement &&
+          annotationElement.enclosingElement.name == 'JS' &&
+          annotationElement.library.uri.toString() == 'dart:js_interop') {
+        final value =
+            annotation
+                .computeConstantValue()
+                ?.getField('name')
+                ?.toStringValue();
+        if (value != null && value.isNotEmpty) return value;
+      }
+    }
+    return null;
+  }
+
   /// Build a method which overrides [method], with all non-nullable
   /// parameter types widened to be nullable.
   ///
@@ -1684,9 +1755,7 @@ class _MockClassInfo {
         builder
           ..name = name
           ..types.addAll(typeParamsWithBounds);
-        if (!_isExtensionType || name == 'toString') {
-          builder.annotations.add(referImported('override', 'dart:core'));
-        }
+        _addAnnotationsForOverridingMember(builder, method);
         // We allow overriding a method with a private return type by omitting
         // the return type (which is then inherited).
         if (!returnType.containsPrivateName) {
@@ -2443,9 +2512,7 @@ class _MockClassInfo {
     builder
       ..name = getter.displayName
       ..type = MethodType.getter;
-    if (!_isExtensionType) {
-      builder.annotations.add(referImported('override', 'dart:core'));
-    }
+    _addAnnotationsForOverridingMember(builder, getter);
 
     if (!getter.returnType.containsPrivateName) {
       builder.returns = _typeReference(getter.returnType);
@@ -2516,9 +2583,7 @@ class _MockClassInfo {
     builder
       ..name = name
       ..type = MethodType.setter;
-    if (!_isExtensionType) {
-      builder.annotations.add(referImported('override', 'dart:core'));
-    }
+    _addAnnotationsForOverridingMember(builder, setter);
 
     assert(setter.formalParameters.length == 1);
     final parameter = setter.formalParameters.single;
