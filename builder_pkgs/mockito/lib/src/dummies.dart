@@ -89,7 +89,8 @@ class MissingDummyValueError {
   final Type type;
   MissingDummyValueError(this.type);
   @override
-  String toString() => '''
+  String toString() =>
+      '''
 MissingDummyValueError: $type
 
 This means Mockito was not smart enough to generate a dummy value of type
@@ -145,7 +146,7 @@ List<Object?> _defaultDummies = [
   Stream<Never>.empty(),
   SplayTreeSet<Never>(),
   SplayTreeMap<Never, Never>(),
-  Future<Never>.error('dummy Mockito value, not for use')..ignore(),  
+  Future<Never>.error('dummy Mockito value, not for use')..ignore(),
 ];
 
 T? dummyValueOrNull<T>(Object parent, Invocation invocation) {
