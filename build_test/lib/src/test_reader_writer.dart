@@ -32,7 +32,7 @@ abstract interface class TestReaderWriter implements AssetReader, AssetWriter {
   factory TestReaderWriter({String? rootPackage, bool flattenOutput = false}) =>
       InternalTestReaderWriter(
         outputRootPackage: rootPackage,
-        flattenOutput: flattenOutput,
+        forceVisibleForTesting: flattenOutput,
       );
 
   ReaderWriterTesting get testing;

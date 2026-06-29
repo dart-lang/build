@@ -72,7 +72,7 @@ abstract class BuildSpec implements Built<BuildSpec, BuildSpecBuilder> {
         testingOverrides.readerWriter ??
         ReaderWriter(
           buildPackages,
-          flattenOutput: testingOverrides.flattenOutput,
+          forceVisibleForTesting: testingOverrides.forceVisibleForTesting,
         );
     final buildConfigs = await BuildConfigs.load(
       readerWriter: readerWriter,

@@ -34,7 +34,7 @@ class ReaderWriter implements AssetReader, AssetWriter {
   /// Whether to force `hidden` to false.
   ///
   /// Used only in tests.
-  final bool flattenOutput;
+  final bool forceVisibleForTesting;
 
   /// A [ReaderWriter] suitable for real builds.
   ///
@@ -42,19 +42,19 @@ class ReaderWriter implements AssetReader, AssetWriter {
   /// `dart-io` filesystem is used with no cache.
   factory ReaderWriter(
     BuildPackages buildPackages, {
-    bool flattenOutput = false,
+    bool forceVisibleForTesting = false,
   }) => ReaderWriter.using(
     assetFinder: BuildPackagesAssetFinder(buildPackages),
     assetPathProvider: buildPackages,
     filesystem: IoFilesystem(),
-    flattenOutput: flattenOutput,
+    forceVisibleForTesting: forceVisibleForTesting,
   );
 
   ReaderWriter.using({
     required this.assetFinder,
     required this.assetPathProvider,
     required this.filesystem,
-    this.flattenOutput = false,
+    this.forceVisibleForTesting = false,
   });
 
   String _pathFor(
@@ -64,7 +64,7 @@ class ReaderWriter implements AssetReader, AssetWriter {
   }) {
     return assetPathProvider.pathFor(
       id,
-      hide: hidden && !flattenOutput,
+      hide: hidden && !forceVisibleForTesting,
       checkDeleteAllowed: checkDeleteAllowed,
     );
   }

@@ -485,7 +485,7 @@ Future<TestBuilderResult> testBuilderFactories(
           }.build()
         : null,
     reportUnusedAssetsForInput: reportUnusedAssetsForInput,
-    flattenOutput: flattenOutput,
+    forceVisibleForTesting: flattenOutput,
   );
 
   final buildPlan = await BuildPlan.load(

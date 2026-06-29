@@ -38,7 +38,7 @@ class InternalTestReaderWriter extends ReaderWriter
   /// written, otherwise `unset` is used.
   factory InternalTestReaderWriter({
     String? outputRootPackage,
-    bool flattenOutput = false,
+    bool forceVisibleForTesting = false,
   }) {
     final filesystem = InMemoryFilesystem();
     return InternalTestReaderWriter.using(
@@ -51,7 +51,7 @@ class InternalTestReaderWriter extends ReaderWriter
       buildCachePackage: outputRootPackage ?? 'unset',
       filesystem: filesystem,
       onCanReadController: StreamController(),
-      flattenOutput: flattenOutput,
+      forceVisibleForTesting: forceVisibleForTesting,
     );
   }
 
@@ -63,7 +63,7 @@ class InternalTestReaderWriter extends ReaderWriter
     required this.buildCachePackage,
     required super.filesystem,
     required this.onCanReadController,
-    super.flattenOutput = false,
+    super.forceVisibleForTesting = false,
   }) : super.using() {
     InputTracker.captureInputTrackersForTesting = true;
   }
