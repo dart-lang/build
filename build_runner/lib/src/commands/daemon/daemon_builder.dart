@@ -227,11 +227,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         outputStreamController.add(ServerLog.fromLogRecord(record));
       };
     });
-    buildPlan = buildPlan.rebuild(
-      (b) => b.readerWriter = buildPlan.readerWriter.copyWith(
-        onDelete: expectedDeletes.add,
-      ),
-    );
+    buildPlan = buildPlan.rebuild((b) => b.onDelete = expectedDeletes.add);
 
     final buildSeries = BuildSeries(buildPlan);
 

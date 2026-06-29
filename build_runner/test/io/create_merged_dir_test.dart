@@ -11,6 +11,7 @@ import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/build_state/build_step_result.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_id.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_result.dart';
+import 'package:build_runner/src/build/resolver/asset_ids.dart';
 import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_directory.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
@@ -91,7 +92,7 @@ void main() {
     setUp(() async {
       readerWriter = InternalTestReaderWriter(outputRootPackage: 'a');
       for (final source in sources.entries) {
-        readerWriter.testing.writeString(source.key, source.value);
+        await readerWriter.writeAsString(source.key, source.value);
       }
       buildPlan = await BuildPlan.load(
         await BuildSpec.load(
@@ -127,11 +128,15 @@ void main() {
           buildPlan.buildStepPlan.stepForDeclaredOutput(id),
           stepResult,
         );
-        readerWriter.testing.writeString(
+        await readerWriter.writeAsString(
           id,
           sources[buildPlan.buildStepPlan
               .stepForDeclaredOutput(id)
               .primaryInput]!,
+          hidden: id.isHidden(
+            buildStepPlan: buildPlan.buildStepPlan,
+            buildState: buildState,
+          ),
         );
       }
       tmpDir = await Directory.systemTemp.createTemp('build_tests');

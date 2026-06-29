@@ -139,5 +139,17 @@ targets:
           '.more_post',
     );
     expect(tester.read('root_pkg/lib/a.txt.more_post'), 'c(default dev)');
+
+    // Hidden post process outputs are deleted on incremental build.
+    tester.writeFixturePackage(
+      FixturePackages.postProcessCopyBuilder(buildToCache: true),
+    );
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+    final hiddenPostOutput =
+        'root_pkg/.dart_tool/build/generated/root_pkg/lib/a.txt.post';
+    expect(tester.read(hiddenPostOutput), 'c(default dev)');
+    tester.delete('root_pkg/lib/a.txt');
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+    expect(tester.read(hiddenPostOutput), null);
   });
 }

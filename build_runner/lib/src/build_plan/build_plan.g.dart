@@ -12,9 +12,9 @@ class _$BuildPlan extends BuildPlan {
   @override
   final PreviousBuild previousBuild;
   @override
-  final BuildStepPlan buildStepPlan;
   @override
-  final ReaderWriter readerWriter;
+  final BuildStepPlan buildStepPlan;
+
   @override
   final BuiltList<AssetId> conflictingOutputs;
   @override
@@ -23,6 +23,8 @@ class _$BuildPlan extends BuildPlan {
   final BuiltSet<BuildDirectory> buildDirs;
   @override
   final BuiltSet<BuildFilter> buildFilters;
+  @override
+  final void Function(AssetId)? onDelete;
 
   factory _$BuildPlan([void Function(BuildPlanBuilder)? updates]) =>
       (BuildPlanBuilder()..update(updates))._build();
@@ -31,11 +33,11 @@ class _$BuildPlan extends BuildPlan {
     required this.buildSpec,
     required this.previousBuild,
     required this.buildStepPlan,
-    required this.readerWriter,
     required this.conflictingOutputs,
     required this.buildInputs,
     required this.buildDirs,
     required this.buildFilters,
+    this.onDelete,
   }) : super._();
   @override
   BuildPlan rebuild(void Function(BuildPlanBuilder) updates) =>
@@ -51,7 +53,6 @@ class _$BuildPlan extends BuildPlan {
         buildSpec == other.buildSpec &&
         previousBuild == other.previousBuild &&
         buildStepPlan == other.buildStepPlan &&
-        readerWriter == other.readerWriter &&
         conflictingOutputs == other.conflictingOutputs &&
         buildInputs == other.buildInputs &&
         buildDirs == other.buildDirs &&
@@ -64,7 +65,6 @@ class _$BuildPlan extends BuildPlan {
     _$hash = $jc(_$hash, buildSpec.hashCode);
     _$hash = $jc(_$hash, previousBuild.hashCode);
     _$hash = $jc(_$hash, buildStepPlan.hashCode);
-    _$hash = $jc(_$hash, readerWriter.hashCode);
     _$hash = $jc(_$hash, conflictingOutputs.hashCode);
     _$hash = $jc(_$hash, buildInputs.hashCode);
     _$hash = $jc(_$hash, buildDirs.hashCode);
@@ -79,7 +79,6 @@ class _$BuildPlan extends BuildPlan {
           ..add('buildSpec', buildSpec)
           ..add('previousBuild', previousBuild)
           ..add('buildStepPlan', buildStepPlan)
-          ..add('readerWriter', readerWriter)
           ..add('conflictingOutputs', conflictingOutputs)
           ..add('buildInputs', buildInputs)
           ..add('buildDirs', buildDirs)
@@ -107,10 +106,9 @@ class BuildPlanBuilder implements Builder<BuildPlan, BuildPlanBuilder> {
   set buildStepPlan(BuildStepPlanBuilder? buildStepPlan) =>
       _$this._buildStepPlan = buildStepPlan;
 
-  ReaderWriter? _readerWriter;
-  ReaderWriter? get readerWriter => _$this._readerWriter;
-  set readerWriter(ReaderWriter? readerWriter) =>
-      _$this._readerWriter = readerWriter;
+  void Function(AssetId)? _onDelete;
+  void Function(AssetId)? get onDelete => _$this._onDelete;
+  set onDelete(void Function(AssetId)? onDelete) => _$this._onDelete = onDelete;
 
   ListBuilder<AssetId>? _conflictingOutputs;
   ListBuilder<AssetId> get conflictingOutputs =>
@@ -144,11 +142,11 @@ class BuildPlanBuilder implements Builder<BuildPlan, BuildPlanBuilder> {
       _buildSpec = $v.buildSpec.toBuilder();
       _previousBuild = $v.previousBuild.toBuilder();
       _buildStepPlan = $v.buildStepPlan.toBuilder();
-      _readerWriter = $v.readerWriter;
       _conflictingOutputs = $v.conflictingOutputs.toBuilder();
       _buildInputs = $v.buildInputs.toBuilder();
       _buildDirs = $v.buildDirs.toBuilder();
       _buildFilters = $v.buildFilters.toBuilder();
+      _onDelete = $v.onDelete;
       _$v = null;
     }
     return this;
@@ -176,15 +174,11 @@ class BuildPlanBuilder implements Builder<BuildPlan, BuildPlanBuilder> {
             buildSpec: buildSpec.build(),
             previousBuild: previousBuild.build(),
             buildStepPlan: buildStepPlan.build(),
-            readerWriter: BuiltValueNullFieldError.checkNotNull(
-              readerWriter,
-              r'BuildPlan',
-              'readerWriter',
-            ),
             conflictingOutputs: conflictingOutputs.build(),
             buildInputs: buildInputs.build(),
             buildDirs: buildDirs.build(),
             buildFilters: buildFilters.build(),
+            onDelete: onDelete,
           );
     } catch (_) {
       late String _$failedField;

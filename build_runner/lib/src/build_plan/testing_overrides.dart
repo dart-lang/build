@@ -21,27 +21,27 @@ class TestingOverrides {
   final BuiltMap<String, BuildConfig>? buildConfig;
   final BuildPackages? buildPackages;
   final BuildPhases? buildPhases;
+  final bool checkBuilderFreshness;
   final Duration? debounceDelay;
   final BuiltList<String>? defaultRootPackageSources;
   final DirectoryWatcher Function(String)? directoryWatcherFactory;
+  final bool forceVisibleForTesting;
   final void Function(LogRecord)? onLog;
   final ReaderWriter? readerWriter;
   final void Function(AssetId, Iterable<AssetId>)? reportUnusedAssetsForInput;
   final Resolvers? resolvers;
   final Stream<ProcessSignal>? terminateEventStream;
-  final bool flattenOutput;
-  final bool checkBuilderFreshness;
 
   const TestingOverrides({
-    this.builderDefinitions,
     this.buildConfig,
+    this.builderDefinitions,
     this.buildPackages,
     this.buildPhases,
+    this.checkBuilderFreshness = true,
     this.debounceDelay,
     this.defaultRootPackageSources,
     this.directoryWatcherFactory,
-    this.flattenOutput = false,
-    this.checkBuilderFreshness = true,
+    this.forceVisibleForTesting = false,
     this.onLog,
     this.readerWriter,
     this.reportUnusedAssetsForInput,
@@ -55,19 +55,19 @@ class TestingOverrides {
     BuildPackages? buildPackages,
     bool? checkBuilderFreshness,
   }) => TestingOverrides(
-    builderDefinitions: builderDefinitions ?? this.builderDefinitions,
     buildConfig: buildConfig ?? this.buildConfig,
+    builderDefinitions: builderDefinitions ?? this.builderDefinitions,
     buildPackages: buildPackages ?? this.buildPackages,
     buildPhases: buildPhases,
+    checkBuilderFreshness: checkBuilderFreshness ?? this.checkBuilderFreshness,
     debounceDelay: debounceDelay,
     defaultRootPackageSources: defaultRootPackageSources,
     directoryWatcherFactory: directoryWatcherFactory,
+    forceVisibleForTesting: forceVisibleForTesting,
     onLog: onLog,
     readerWriter: readerWriter,
     reportUnusedAssetsForInput: reportUnusedAssetsForInput,
     resolvers: resolvers,
     terminateEventStream: terminateEventStream,
-    flattenOutput: flattenOutput,
-    checkBuilderFreshness: checkBuilderFreshness ?? this.checkBuilderFreshness,
   );
 }

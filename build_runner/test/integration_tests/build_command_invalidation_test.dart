@@ -113,5 +113,10 @@ void main() async {
       'dart run build_runner build --force-jit',
     );
     expect(output, contains('wrote 1 output'));
+
+    // Stale output is deleted on incremental build.
+    tester.delete('root_pkg/web/a.txt');
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+    expect(tester.read('root_pkg/web/a.txt.copy2'), null);
   });
 }
