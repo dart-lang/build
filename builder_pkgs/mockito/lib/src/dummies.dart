@@ -89,8 +89,7 @@ class MissingDummyValueError {
   final Type type;
   MissingDummyValueError(this.type);
   @override
-  String toString() =>
-      '''
+  String toString() => '''
 MissingDummyValueError: $type
 
 This means Mockito was not smart enough to generate a dummy value of type
