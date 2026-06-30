@@ -53,6 +53,7 @@ class BuilderFilesystem {
   );
 
   void Function(AssetId, AssetContent?)? _onUpdateContent;
+  void Function(AssetId, int, Iterable<String>)? _onUpdatePartContributions;
 
   /// Listens to content updates: source files read for the first time,
   /// generated outputs, generated outputs that are not written.
@@ -65,6 +66,18 @@ class BuilderFilesystem {
       throw StateError('Already listening to content updates.');
     }
     _onUpdateContent = onUpdateContent;
+  }
+
+  /// Listens to part contributions.
+  ///
+  /// Throws if called more than once.
+  void listenToPartContributions(
+    void Function(AssetId, int, Iterable<String>) onUpdatePartContributions,
+  ) {
+    if (_onUpdatePartContributions != null) {
+      throw StateError('Already listening to part contributions.');
+    }
+    _onUpdatePartContributions = onUpdatePartContributions;
   }
 
   /// Updates the content of [id] and notifies update listener.
@@ -81,6 +94,14 @@ class BuilderFilesystem {
 
     for (final entry in result.outputs.entries) {
       _onUpdateContent?.call(entry.key, entry.value);
+    }
+
+    if (result.partContributions.isNotEmpty) {
+      _onUpdatePartContributions?.call(
+        buildStepId.primaryInput,
+        buildStepId.phaseNumber,
+        result.partContributions,
+      );
     }
 
     final declaredOutputsForStep =

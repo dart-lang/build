@@ -33,6 +33,8 @@ class AnalysisDriverFilesystem
   final Map<String, BuildRunnerFileContent> _data = {};
   final Set<String> _changedPaths = {};
   final Set<String> _changedPathsThisBuild = {};
+  
+  final Map<String, List<PhasePartContributions>> _parts = {};
 
   int _phase = 0;
 
@@ -54,10 +56,14 @@ class AnalysisDriverFilesystem
     final plan = _builderFilesystem.buildStepPlan;
     final minPhase = previousPhase < phase ? previousPhase : phase;
     final maxPhase = previousPhase > phase ? previousPhase : phase;
-    for (var phase = minPhase; phase != maxPhase; ++phase) {
-      for (final step in plan.buildStepsByPhase[phase]) {
+    for (var p = minPhase; p != maxPhase; ++p) {
+      for (final step in plan.buildStepsByPhase[p]) {
         for (final output in plan.declaredOutputsByStep[step]) {
           _changedPaths.add(output.asPath);
+        }
+        final primaryInputPath = step.primaryInput.asPath;
+        if (_parts[primaryInputPath]?.any((c) => c.phase == p) == true) {
+          _changedPaths.add(_partPathForPrimaryInputPath(primaryInputPath));
         }
       }
     }
@@ -75,12 +81,17 @@ class AnalysisDriverFilesystem
   }) {
     _builderFilesystem = builderFilesystem;
     builderFilesystem.listenToContentUpdates(_updateContent);
+    builderFilesystem.listenToPartContributions(_updatePartContributions);
     _changedPathsThisBuild.clear();
 
     if (buildInputs.cleanBuild) {
       _phase = 0;
       _changedPaths.addAll(_data.keys);
+      for (final path in _parts.keys) {
+        _changedPaths.add(_partPathForPrimaryInputPath(path));
+      }
       _data.clear();
+      _parts.clear();
       for (final id in builderFilesystem.buildState.sources) {
         final content = builderFilesystem.buildState.contentOf(id: id);
         if (content != null) {
@@ -98,6 +109,16 @@ class AnalysisDriverFilesystem
         _changedPaths.add(path);
       }
     }
+    
+    for (final id in buildInputs.deletedSources.followedBy(
+      buildInputs.updatedSources,
+    )) {
+      final path = id.asPath;
+      if (_parts.remove(path) != null) {
+        _changedPaths.add(_partPathForPrimaryInputPath(path));
+      }
+    }
+
     for (final id in buildInputs.updatedSources) {
       _updateContent(id, builderFilesystem.buildState.contentOfSource(id));
     }
@@ -134,8 +155,37 @@ class AnalysisDriverFilesystem
     );
   }
 
+  void _updatePartContributions(
+    AssetId primaryInput,
+    int phase,
+    Iterable<String> contributions,
+  ) {
+    final path = primaryInput.asPath;
+    final phaseParts = _parts.putIfAbsent(path, () => []);
+    phaseParts.removeWhere((p) => p.phase == phase);
+    if (contributions.isNotEmpty) {
+      phaseParts.add(PhasePartContributions(phase, contributions.toList()));
+    }
+    
+    final partPath = _partPathForPrimaryInputPath(path);
+    if (_phase > phase) {
+      _changedPaths.add(partPath);
+    }
+    _changedPathsThisBuild.add(partPath);
+  }
+
   /// Whether [path] exists.
   bool exists(String path) {
+    if (path.endsWith('.gp.dart')) {
+      final primaryInputPath = _primaryInputPathForPart(path);
+      if (primaryInputPath != null) {
+        final contributionsList = _parts[primaryInputPath];
+        if (contributionsList != null && contributionsList.any((c) => _phase > c.phase)) {
+          return true;
+        }
+      }
+    }
+
     final content = _data[path];
     if (content == null) return false;
     return _phase > content.phase;
@@ -145,6 +195,16 @@ class AnalysisDriverFilesystem
   ///
   /// Throws if ![exists].
   String read(String path) {
+    if (path.endsWith('.gp.dart')) {
+      final primaryInputPath = _primaryInputPathForPart(path);
+      if (primaryInputPath != null) {
+        final contributionsList = _parts[primaryInputPath];
+        if (contributionsList != null && contributionsList.isNotEmpty) {
+          return _buildPartContent(primaryInputPath, contributionsList);
+        }
+      }
+    }
+
     if (!exists(path)) throw StateError('Read of non-existent file.');
     return _data[path]!.content;
   }
@@ -240,6 +300,42 @@ class AnalysisDriverFilesystem
   static String assetPathFor({required String package, required String path}) =>
       '/$package/$path';
 
+  static String _partPathForPrimaryInputPath(String path) {
+    final lastSlash = path.lastIndexOf('/');
+    final dir = path.substring(0, lastSlash);
+    final name = path.substring(lastSlash + 1);
+    final nameWithoutExt = name.endsWith('.dart') ? name.substring(0, name.length - 5) : name;
+    return '$dir/_gp/$nameWithoutExt.gp.dart';
+  }
+
+  static String? _primaryInputPathForPart(String path) {
+    if (!path.endsWith('.gp.dart')) return null;
+    final parts = path.split('/');
+    if (parts.length < 2 || parts[parts.length - 2] != '_gp') return null;
+    final name = parts.last;
+    final nameWithoutExt = name.substring(0, name.length - 8);
+    final dir = parts.sublist(0, parts.length - 2).join('/');
+    return '$dir/$nameWithoutExt.dart';
+  }
+
+  String _buildPartContent(String primaryInputPath, List<PhasePartContributions> contributionsList) {
+    final basename = primaryInputPath.split('/').last;
+    final buffer = StringBuffer();
+    buffer.writeln("part of '../$basename';");
+    buffer.writeln();
+
+    // Sort by phase to be deterministic
+    final sorted = contributionsList.where((p) => _phase > p.phase).toList()
+      ..sort((a, b) => a.phase.compareTo(b.phase));
+
+    for (final p in sorted) {
+      for (final c in p.contributions) {
+        buffer.writeln(c);
+      }
+    }
+    return buffer.toString();
+  }
+
   /// Attempts to parse [uri] into an [AssetId].
   ///
   /// Handles 'package:' or 'asset:' URIs, as well as 'file:' URIs that have the
@@ -316,6 +412,13 @@ class BuildRunnerFileContent implements FileContent {
     contentHash: '',
     phase: -1,
   );
+}
+
+class PhasePartContributions {
+  final int phase;
+  final List<String> contributions;
+
+  PhasePartContributions(this.phase, this.contributions);
 }
 
 /// Minimal implementation of [File] and [Folder].
