@@ -379,8 +379,7 @@ class BuildSeries {
         outputSymlinksOnly:
             _buildPlan.buildSpec.buildOptions.outputSymlinksOnly,
         buildDirs: _buildPlan.buildDirs,
-        buildOutputReader: result.buildOutputReader,
-        readerWriter: _buildPlan.readerWriter,
+        buildOutputReader: result.buildOutputReader!,
       )) {
         return result.copyWith(
           status: BuildStatus.failure,

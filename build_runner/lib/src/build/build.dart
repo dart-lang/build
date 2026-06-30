@@ -78,9 +78,6 @@ class Build {
   /// transitive source.
   final Map<LibraryCycleGraph, bool> changedGraphs = Map.identity();
 
-  /// The build output.
-  BuildOutputReader? _buildOutputReader;
-
   late final BuilderFilesystem _builderFilesystem = BuilderFilesystem(
     buildPackages: buildPackages,
     buildConfigs: buildConfigs,
@@ -116,9 +113,6 @@ class Build {
   BuildState? get previousBuildState => buildPlan.previousBuild.buildState;
   BuildInputs get buildInputs => buildPlan.buildInputs;
   BuildStepPlan get buildStepPlan => buildPlan.buildStepPlan;
-
-  BuildOutputReader get buildOutputReader => _buildOutputReader ??=
-      BuildOutputReader(buildPlan: buildPlan, buildState: buildState);
 
   Future<BuildResult> run() async {
     buildLog.configuration = buildLog.configuration.rebuild(
@@ -214,7 +208,9 @@ class Build {
               status: BuildStatus.failure,
               outputs: BuiltList(),
               buildState: buildState,
-              buildOutputReader: buildOutputReader,
+              buildOutputReader: BuildOutputReader(
+                builderFilesystem: _builderFilesystem.forAfterBuild(),
+              ),
             ),
           );
         }
@@ -303,7 +299,9 @@ class Build {
       status: BuildStatus.success,
       outputs: outputs.build(),
       buildState: buildState,
-      buildOutputReader: buildOutputReader,
+      buildOutputReader: BuildOutputReader(
+        builderFilesystem: _builderFilesystem.forAfterBuild(),
+      ),
     );
   }
 

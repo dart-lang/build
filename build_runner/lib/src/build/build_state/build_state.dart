@@ -187,6 +187,24 @@ class BuildState {
     );
   }
 
+  /// Updates the [step] post process output [id] to [content].
+  ///
+  /// Throws if not a post process output.
+  void updatePostProcessOutputContent({
+    required PostProcessBuildStepId step,
+    required AssetId id,
+    required AssetContent content,
+  }) {
+    final stepResult = postProcessBuildStepResultFor(step);
+    if (stepResult == null || !stepResult.outputs.containsKey(id)) {
+      throw StateError(
+        'Step $step does not have result with post process output $id.',
+      );
+    }
+    _postProcessResultsByInput[step.input]![step.actionNumber] = stepResult
+        .rebuild((b) => b..outputs[id] = content);
+  }
+
   /// The content of [id].
   ///
   /// If it is a source, returns `null` if it has not been read.
@@ -273,6 +291,9 @@ class BuildState {
   PostProcessBuildStepResult? postProcessBuildStepResultFor(
     PostProcessBuildStepId step,
   ) => _postProcessResultsByInput[step.input]?[step.actionNumber];
+
+  PostProcessBuildStepId? postProcessStepFor(AssetId id) =>
+      _postProcessOutputs[id];
 
   bool isHiddenPostProcessOutput(AssetId id) {
     final stepId = _postProcessOutputs[id];

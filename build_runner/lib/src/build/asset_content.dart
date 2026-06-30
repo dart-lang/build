@@ -46,6 +46,19 @@ class AssetContent {
     return encoding.decode(bytes);
   }
 
+  /// Returns a copy with [newBytes].
+  ///
+  /// If this instance has a digest, it's copied without checking that
+  /// [newBytes] matches the digest. This supports the current build_runner
+  /// behavior that manual changes to output content are ignored, see
+  /// https://github.com/dart-lang/build/issues/4985.
+  AssetContent withBytes(List<int> newBytes) {
+    if (_bytes == newBytes) return this;
+    final result = AssetContent.bytes(newBytes);
+    if (_digest != null) result._digest = _digest;
+    return result;
+  }
+
   Digest get digest => _digest ??= md5.convert(bytes);
 }
 
