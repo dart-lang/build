@@ -259,6 +259,35 @@ class BuildState {
     )[buildStepId.phaseNumber] = result;
   }
 
+  /// Primary inputs that have part contributions from successful build steps.
+  Iterable<AssetId> get primaryInputsWithParts {
+    final result = <AssetId>[];
+    for (final outer in _buildStepResultsByPrimaryInput.entries) {
+      for (final stepResult in outer.value.values) {
+        if (stepResult.succeeded && stepResult.partContributions.isNotEmpty) {
+          result.add(outer.key);
+          break;
+        }
+      }
+    }
+    return result;
+  }
+
+  /// The concatenated part contributions for [primaryInput], sorted by phase.
+  List<String> partContributionsFor(AssetId primaryInput) {
+    final results = _buildStepResultsByPrimaryInput[primaryInput];
+    if (results == null) return const [];
+    final phases = results.keys.toList()..sort();
+    final contributions = <String>[];
+    for (final phase in phases) {
+      final stepResult = results[phase]!;
+      if (stepResult.succeeded) {
+        contributions.addAll(stepResult.partContributions);
+      }
+    }
+    return contributions;
+  }
+
   // -- Globs.
 
   bool hasGlobResult(GlobId globId) => _globResults.containsKey(globId);

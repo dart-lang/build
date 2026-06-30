@@ -32,4 +32,24 @@ extension AssetIdExtension on AssetId {
     return buildStepPlan?.isHidden(this) == true ||
         buildState?.isHiddenPostProcessOutput(this) == true;
   }
+
+  /// Returns the corresponding `.gp.dart` AssetId if this is a `.dart` file.
+  AssetId get partIdForPrimaryInput {
+    final lastSlash = path.lastIndexOf('/');
+    final dir = path.substring(0, lastSlash);
+    final name = path.substring(lastSlash + 1);
+    final nameWithoutExt = name.endsWith('.dart') ? name.substring(0, name.length - 5) : name;
+    return AssetId(package, '$dir/_gp/$nameWithoutExt.gp.dart');
+  }
+
+  /// Returns the corresponding `.dart` AssetId if this is a `.gp.dart` file.
+  AssetId? get primaryInputForPartId {
+    if (!isGeneratedPart) return null;
+    final parts = path.split('/');
+    if (parts.length < 2 || parts[parts.length - 2] != '_gp') return null;
+    final name = parts.last;
+    final nameWithoutExt = name.substring(0, name.length - 8);
+    final dir = parts.sublist(0, parts.length - 2).join('/');
+    return AssetId(package, '$dir/$nameWithoutExt.dart');
+  }
 }
