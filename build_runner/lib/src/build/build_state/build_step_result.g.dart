@@ -182,6 +182,8 @@ class _$BuildStepResult extends BuildStepResult {
   final BuiltSet<AssetId> resolverEntrypoints;
   @override
   final BuiltList<String> errors;
+  @override
+  final BuiltList<String> partContributions;
 
   factory _$BuildStepResult([void Function(BuildStepResultBuilder)? updates]) =>
       (BuildStepResultBuilder()..update(updates))._build();
@@ -194,6 +196,7 @@ class _$BuildStepResult extends BuildStepResult {
     required this.globsEvaluated,
     required this.resolverEntrypoints,
     required this.errors,
+    required this.partContributions,
   }) : super._();
   @override
   BuildStepResult rebuild(void Function(BuildStepResultBuilder) updates) =>
@@ -281,6 +284,12 @@ class BuildStepResultBuilder
   ListBuilder<String> get errors => _$this._errors ??= ListBuilder<String>();
   set errors(ListBuilder<String>? errors) => _$this._errors = errors;
 
+  ListBuilder<String>? _partContributions;
+  ListBuilder<String> get partContributions =>
+      _$this._partContributions ??= ListBuilder<String>();
+  set partContributions(ListBuilder<String>? partContributions) =>
+      _$this._partContributions = partContributions;
+
   BuildStepResultBuilder();
 
   BuildStepResultBuilder get _$this {
@@ -293,6 +302,7 @@ class BuildStepResultBuilder
       _globsEvaluated = $v.globsEvaluated.toBuilder();
       _resolverEntrypoints = $v.resolverEntrypoints.toBuilder();
       _errors = $v.errors.toBuilder();
+      _partContributions = $v.partContributions.toBuilder();
       _$v = null;
     }
     return this;
@@ -328,6 +338,7 @@ class BuildStepResultBuilder
             globsEvaluated: globsEvaluated.build(),
             resolverEntrypoints: resolverEntrypoints.build(),
             errors: errors.build(),
+            partContributions: partContributions.build(),
           );
     } catch (_) {
       late String _$failedField;
@@ -342,6 +353,8 @@ class BuildStepResultBuilder
         resolverEntrypoints.build();
         _$failedField = 'errors';
         errors.build();
+        _$failedField = 'partContributions';
+        partContributions.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'BuildStepResult',

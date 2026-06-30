@@ -28,6 +28,9 @@ abstract class BuildStepResult
   /// Outputs written by the step.
   BuiltMap<AssetId, AssetContent> get outputs;
 
+  /// Part contributions written by the step.
+  BuiltList<String> get partContributions;
+
   /// Inputs and missing sources read.
   BuiltSet<AssetId> get inputs;
 
