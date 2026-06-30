@@ -64,6 +64,7 @@ class AnalysisDriverFilesystem
         final primaryInputPath = step.primaryInput.asPath;
         if (_parts[primaryInputPath]?.any((c) => c.phase == p) == true) {
           _changedPaths.add(_partPathForPrimaryInputPath(primaryInputPath));
+          _changedPaths.add(primaryInputPath);
         }
       }
     }
@@ -89,6 +90,7 @@ class AnalysisDriverFilesystem
       _changedPaths.addAll(_data.keys);
       for (final path in _parts.keys) {
         _changedPaths.add(_partPathForPrimaryInputPath(path));
+        _changedPaths.add(path);
       }
       _data.clear();
       _parts.clear();
@@ -116,6 +118,7 @@ class AnalysisDriverFilesystem
       final path = id.asPath;
       if (_parts.remove(path) != null) {
         _changedPaths.add(_partPathForPrimaryInputPath(path));
+        _changedPaths.add(path);
       }
     }
 
@@ -170,6 +173,7 @@ class AnalysisDriverFilesystem
     final partPath = _partPathForPrimaryInputPath(path);
     if (_phase > phase) {
       _changedPaths.add(partPath);
+      _changedPaths.add(path);
     }
     _changedPathsThisBuild.add(partPath);
   }
@@ -237,8 +241,20 @@ class AnalysisDriverFilesystem
   // `FileContentCache` methods.
 
   @override
-  FileContent get(String path) =>
-      exists(path) ? _data[path]! : BuildRunnerFileContent.missing(path);
+  FileContent get(String path) {
+    if (!exists(path)) return BuildRunnerFileContent.missing(path);
+    if (path.endsWith('.gp.dart')) {
+      final content = read(path);
+      return BuildRunnerFileContent(
+        path: path,
+        exists: true,
+        content: content,
+        contentHash: content.hashCode.toString(),
+        phase: _phase,
+      );
+    }
+    return _data[path]!;
+  }
 
   @override
   void invalidate(String path) {

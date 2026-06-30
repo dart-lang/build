@@ -29,6 +29,7 @@ extension AssetIdExtension on AssetId {
   /// Pass [buildState] to hide outputs of post process builders that are
   /// not configured with `build_to: source`, as the default is `cache`.
   bool isHidden({BuildStepPlan? buildStepPlan, BuildState? buildState}) {
+    if (isGeneratedPart) return true;
     return buildStepPlan?.isHidden(this) == true ||
         buildState?.isHiddenPostProcessOutput(this) == true;
   }

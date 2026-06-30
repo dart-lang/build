@@ -13,6 +13,7 @@ import '../../build_plan/build_packages.dart';
 import '../../build_plan/build_step_plan.dart';
 import '../asset_content.dart';
 
+import '../resolver/asset_ids.dart';
 import 'build_step_id.dart';
 import 'build_step_result.dart';
 import 'glob_id.dart';
@@ -59,6 +60,7 @@ class BuildState {
   /// Whether [id] is one of: source, declared output or actual post process
   /// output.
   bool isFile({required BuildStepPlan? buildStepPlan, required AssetId id}) =>
+      id.isGeneratedPart ||
       isSource(id) ||
       buildStepPlan?.isDeclaredOutput(id) == true ||
       isActualPostOutput(id);
@@ -214,6 +216,13 @@ class BuildState {
   /// If it is a post process output, returns `null` if it has not been
   /// generated.
   AssetContent? contentOf({BuildStepPlan? buildStepPlan, required AssetId id}) {
+    if (id.isGeneratedPart) {
+      final primaryInput = id.primaryInputForPartId!;
+      final contributions = partContributionsFor(primaryInput);
+      if (contributions.isEmpty) return null;
+      final content = "part of '../${primaryInput.pathSegments.last}';\n\n${contributions.join('\n\n')}";
+      return AssetContent.string(content);
+    }
     if (isSource(id)) return _sources.contentOfSource(id);
     final step = buildStepPlan?.stepForDeclaredOutputOrNull(id);
     if (step != null) {

@@ -38,6 +38,7 @@ import 'build_state/glob_result.dart';
 import 'build_state/post_process_build_step_id.dart';
 import 'build_state/post_process_build_step_result.dart';
 import 'build_step_impl.dart';
+import 'resolver/asset_ids.dart';
 import 'builder_filesystem.dart';
 import 'input_tracker.dart';
 import 'library_cycle_graph/asset_deps_loader.dart';
@@ -294,6 +295,10 @@ class Build {
           outputs.addAll(await lazyOuts),
     );
     // Assume success, failed outputs will be checked later.
+
+    final generatedPartOutputs = buildState.primaryInputsWithParts
+        .map((id) => id.partIdForPrimaryInput);
+    outputs.addAll(generatedPartOutputs);
 
     return BuildResult(
       status: BuildStatus.success,
