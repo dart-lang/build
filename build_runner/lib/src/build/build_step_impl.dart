@@ -42,6 +42,7 @@ class BuildStepImpl implements BuildStep {
 
   final InputTracker inputTracker;
   final Map<AssetId, AssetContent> outputs = {};
+  final List<String> partContributions = [];
 
   final int phase;
 
@@ -188,6 +189,12 @@ class BuildStepImpl implements BuildStep {
     if (_isComplete) throw BuildStepCompletedException();
     _checkOutput(id);
     outputs[id] = AssetContent.string(await content, encoding: encoding);
+  }
+
+  @override
+  void writePart(String content) {
+    if (_isComplete) throw BuildStepCompletedException();
+    partContributions.add(content);
   }
 
   @override

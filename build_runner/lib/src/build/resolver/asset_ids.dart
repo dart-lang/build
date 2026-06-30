@@ -10,6 +10,12 @@ import '../build_state/build_state.dart';
 extension AssetIdExtension on AssetId {
   bool get isDart => extension == '.dart';
 
+  /// Whether this is a synthetic generated part file.
+  bool get isGeneratedPart => path.endsWith('.gp.dart');
+
+  /// Whether this is a regular asset (not a synthetic generated part).
+  bool get isRegularAsset => !isGeneratedPart;
+
   /// Whether the asset is hidden.
   ///
   /// Hidden assets are written to and read from `.dart_tool/build/generated`
