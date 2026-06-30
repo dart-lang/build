@@ -57,21 +57,23 @@ class WritePartBuilder implements Builder {
     expect(output, contains(BuildLog.successPattern));
     expect(
       tester.read(
-        'root_pkg/.dart_tool/build/generated/root_pkg/lib/_gp/a.gp.dart',
+        'root_pkg/.dart_tool/build/generated/root_pkg/lib/_generated_parts/a.dart',
       ),
-      "part of '../a.dart';\n\n// part content",
+      "part of '../../a.dart';\n\n// part content",
     );
   });
 
-  test('two builders writing parts to same library end up concatenated', () async {
-    final pubspecs = await Pubspecs.load();
-    final tester = BuildRunnerTester(pubspecs);
+  test(
+    'two builders writing parts to same library end up concatenated',
+    () async {
+      final pubspecs = await Pubspecs.load();
+      final tester = BuildRunnerTester(pubspecs);
 
-    tester.writePackage(
-      name: 'multi_part_pkg',
-      dependencies: ['build', 'build_runner'],
-      files: {
-        'build.yaml': '''
+      tester.writePackage(
+        name: 'multi_part_pkg',
+        dependencies: ['build', 'build_runner'],
+        files: {
+          'build.yaml': '''
 builders:
   builder1:
     import: 'package:multi_part_pkg/builder.dart'
@@ -86,7 +88,7 @@ builders:
     auto_apply: 'root_package'
     build_to: 'cache'
 ''',
-        'lib/builder.dart': '''
+          'lib/builder.dart': '''
 import 'package:build/build.dart';
 
 Builder factory1(BuilderOptions options) => PartBuilder('// contribution 1');
@@ -105,38 +107,41 @@ class PartBuilder implements Builder {
   }
 }
 ''',
-      },
-    );
+        },
+      );
 
-    tester.writePackage(
-      name: 'root_pkg',
-      dependencies: ['build_runner'],
-      pathDependencies: ['multi_part_pkg'],
-      files: {'lib/a.dart': 'class A {}'},
-    );
+      tester.writePackage(
+        name: 'root_pkg',
+        dependencies: ['build_runner'],
+        pathDependencies: ['multi_part_pkg'],
+        files: {'lib/a.dart': 'class A {}'},
+      );
 
-    final output = await tester.run(
-      'root_pkg',
-      'dart run build_runner build --force-jit',
-    );
-    expect(output, contains(BuildLog.successPattern));
-    expect(
-      tester.read(
-        'root_pkg/.dart_tool/build/generated/root_pkg/lib/_gp/a.gp.dart',
-      ),
-      "part of '../a.dart';\n\n// contribution 2\n\n// contribution 1",
-    );
-  });
+      final output = await tester.run(
+        'root_pkg',
+        'dart run build_runner build --force-jit',
+      );
+      expect(output, contains(BuildLog.successPattern));
+      expect(
+        tester.read(
+          'root_pkg/.dart_tool/build/generated/root_pkg/lib/_generated_parts/a.dart',
+        ),
+        "part of '../../a.dart';\n\n// contribution 2\n\n// contribution 1",
+      );
+    },
+  );
 
-  test('resolving library in later phase sees generated part from earlier phase', () async {
-    final pubspecs = await Pubspecs.load();
-    final tester = BuildRunnerTester(pubspecs);
+  test(
+    'resolving library in later phase sees generated part from earlier phase',
+    () async {
+      final pubspecs = await Pubspecs.load();
+      final tester = BuildRunnerTester(pubspecs);
 
-    tester.writePackage(
-      name: 'phase_part_pkg',
-      dependencies: ['build', 'build_runner'],
-      files: {
-        'build.yaml': '''
+      tester.writePackage(
+        name: 'phase_part_pkg',
+        dependencies: ['build', 'build_runner'],
+        files: {
+          'build.yaml': '''
 builders:
   part_generator_1:
     import: 'package:phase_part_pkg/builder.dart'
@@ -159,7 +164,7 @@ builders:
     build_to: 'cache'
     required_inputs: ['.dummy2']
 ''',
-        'lib/builder.dart': '''
+          'lib/builder.dart': '''
 import 'package:build/build.dart';
 
 Builder partGen1Factory(BuilderOptions options) => PartGen1Builder();
@@ -210,42 +215,43 @@ class PartGen3Builder implements Builder {
   }
 }
 ''',
-      },
-    );
+        },
+      );
 
-    tester.writePackage(
-      name: 'root_pkg',
-      dependencies: ['build_runner'],
-      pathDependencies: ['phase_part_pkg'],
-      files: {
-        'lib/a.dart': '''
-part '_gp/a.gp.dart';
+      tester.writePackage(
+        name: 'root_pkg',
+        dependencies: ['build_runner'],
+        pathDependencies: ['phase_part_pkg'],
+        files: {
+          'lib/a.dart': '''
+part '_generated_parts/a.dart';
 
 class A {}
 ''',
-      },
-    );
+        },
+      );
 
-    final output = await tester.run(
-      'root_pkg',
-      'dart run build_runner build --force-jit',
-    );
-    expect(output, contains(BuildLog.successPattern));
+      final output = await tester.run(
+        'root_pkg',
+        'dart run build_runner build --force-jit',
+      );
+      expect(output, contains(BuildLog.successPattern));
 
-    expect(
-      tester.read(
-        'root_pkg/.dart_tool/build/generated/root_pkg/lib/a.resolved.txt',
-      ),
-      contains('Gen3 checks - Class1: true, Class2: true, Class3: false'),
-    );
+      expect(
+        tester.read(
+          'root_pkg/.dart_tool/build/generated/root_pkg/lib/a.resolved.txt',
+        ),
+        contains('Gen3 checks - Class1: true, Class2: true, Class3: false'),
+      );
 
-    expect(
-      tester.read(
-        'root_pkg/.dart_tool/build/generated/root_pkg/lib/_gp/a.gp.dart',
-      ),
-      "part of '../a.dart';\n\nclass Class1 {\n  // Gen1 checked hasClass1: false\n}\n\n"
-      "class Class2 {\n  // Gen2 checked hasClass1: true, hasClass2: false\n}\n\n"
-      "class Class3 {\n  // Gen3 checked hasClass1: true, hasClass2: true, hasClass3: false\n}",
-    );
-  });
+      expect(
+        tester.read(
+          'root_pkg/.dart_tool/build/generated/root_pkg/lib/_generated_parts/a.dart',
+        ),
+        "part of '../../a.dart';\n\nclass Class1 {\n  // Gen1 checked hasClass1: false\n}\n\n"
+        "class Class2 {\n  // Gen2 checked hasClass1: true, hasClass2: false\n}\n\n"
+        "class Class3 {\n  // Gen3 checked hasClass1: true, hasClass2: true, hasClass3: false\n}",
+      );
+    },
+  );
 }

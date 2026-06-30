@@ -220,7 +220,8 @@ class BuildState {
       final primaryInput = id.primaryInputForPartId!;
       final contributions = partContributionsFor(primaryInput);
       if (contributions.isEmpty) return null;
-      final content = "part of '../${primaryInput.pathSegments.last}';\n\n${contributions.join('\n\n')}";
+      final content =
+          "part of '../../${primaryInput.pathSegments.last}';\n\n${contributions.join('\n\n')}";
       return AssetContent.string(content);
     }
     if (isSource(id)) return _sources.contentOfSource(id);
@@ -273,7 +274,7 @@ class BuildState {
     final result = <AssetId>[];
     for (final outer in _buildStepResultsByPrimaryInput.entries) {
       for (final stepResult in outer.value.values) {
-        if (stepResult.succeeded && stepResult.partContributions.isNotEmpty) {
+        if (stepResult.succeeded && stepResult.partContribution != null) {
           result.add(outer.key);
           break;
         }
@@ -291,7 +292,9 @@ class BuildState {
     for (final phase in phases) {
       final stepResult = results[phase]!;
       if (stepResult.succeeded) {
-        contributions.addAll(stepResult.partContributions);
+        if (stepResult.partContribution != null) {
+          contributions.add(stepResult.partContribution!);
+        }
       }
     }
     return contributions;

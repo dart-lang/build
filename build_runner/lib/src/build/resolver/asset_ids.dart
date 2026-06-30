@@ -11,7 +11,10 @@ extension AssetIdExtension on AssetId {
   bool get isDart => extension == '.dart';
 
   /// Whether this is a synthetic generated part file.
-  bool get isGeneratedPart => path.endsWith('.gp.dart');
+  bool get isGeneratedPart {
+    if (path.startsWith(r'_generated_parts/')) return true;
+    return path.contains(r'/_generated_parts/');
+  }
 
   /// Whether this is a regular asset (not a synthetic generated part).
   bool get isRegularAsset => !isGeneratedPart;
@@ -34,23 +37,23 @@ extension AssetIdExtension on AssetId {
         buildState?.isHiddenPostProcessOutput(this) == true;
   }
 
-  /// Returns the corresponding `.gp.dart` AssetId if this is a `.dart` file.
+  /// Returns the corresponding `_generated_parts/` AssetId if this is a `.dart` file.
   AssetId get partIdForPrimaryInput {
     final lastSlash = path.lastIndexOf('/');
+    if (lastSlash == -1) {
+      return AssetId(package, '_generated_parts/$path');
+    }
     final dir = path.substring(0, lastSlash);
     final name = path.substring(lastSlash + 1);
-    final nameWithoutExt = name.endsWith('.dart') ? name.substring(0, name.length - 5) : name;
-    return AssetId(package, '$dir/_gp/$nameWithoutExt.gp.dart');
+    return AssetId(package, '$dir/_generated_parts/$name');
   }
 
-  /// Returns the corresponding `.dart` AssetId if this is a `.gp.dart` file.
+  /// Returns the corresponding `.dart` AssetId if this is a generated part file.
   AssetId? get primaryInputForPartId {
     if (!isGeneratedPart) return null;
-    final parts = path.split('/');
-    if (parts.length < 2 || parts[parts.length - 2] != '_gp') return null;
-    final name = parts.last;
-    final nameWithoutExt = name.substring(0, name.length - 8);
-    final dir = parts.sublist(0, parts.length - 2).join('/');
-    return AssetId(package, '$dir/$nameWithoutExt.dart');
+    if (path.startsWith(r'_generated_parts/')) {
+      return AssetId(package, path.substring(17));
+    }
+    return AssetId(package, path.replaceFirst(r'/_generated_parts/', '/'));
   }
 }

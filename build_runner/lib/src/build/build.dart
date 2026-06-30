@@ -296,8 +296,9 @@ class Build {
     );
     // Assume success, failed outputs will be checked later.
 
-    final generatedPartOutputs = buildState.primaryInputsWithParts
-        .map((id) => id.partIdForPrimaryInput);
+    final generatedPartOutputs = buildState.primaryInputsWithParts.map(
+      (id) => id.partIdForPrimaryInput,
+    );
     outputs.addAll(generatedPartOutputs);
 
     return BuildResult(
@@ -1079,7 +1080,7 @@ class Build {
       ..globsEvaluated.replace(inputTracker.globsEvaluated)
       ..resolverEntrypoints.replace(inputTracker.resolverEntrypoints)
       ..errors.replace(errors)
-      ..partContributions.replace(step.partContributions);
+      ..partContribution = step.partContribution;
     for (final output in outputs) {
       if (step.outputs.containsKey(output)) {
         final content = step.outputs[output]!;

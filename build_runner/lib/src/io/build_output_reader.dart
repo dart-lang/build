@@ -50,7 +50,7 @@ class BuildOutputReader {
   Future<UnreadableReason?> unreadableReason(AssetId id) async {
     final buildState = _buildState;
     final builderFilesystem = _builderFilesystem;
-    
+
     if (id.isGeneratedPart) {
       final primaryInputId = id.primaryInputForPartId;
       if (primaryInputId != null) {
@@ -145,7 +145,7 @@ class BuildOutputReader {
         if (parts.isNotEmpty) {
           final basename = primaryInputId.path.split('/').last;
           final buffer = StringBuffer();
-          buffer.writeln("part of '../$basename';");
+          buffer.writeln("part of '../../$basename';");
           buffer.writeln();
           for (final c in parts) {
             buffer.writeln(c);
