@@ -1,11 +1,6 @@
 ## 4.1.2-wip
 
-- Security: reject cross-origin WebSocket handshakes in the build daemon by
-  passing an empty `allowedOrigins` to `webSocketHandler`. This prevents a
-  malicious web page from connecting to the loopback daemon (Cross-Site
-  WebSocket Hijacking) to trigger builds or read build output. Non-browser
-  clients are unaffected.
-
+- Security: reject clients that set an Origin header, which includes all browsers.
 - Internal: remove use of `package:mockito` in test.
 - Require Dart 3.8.0.
 
