@@ -1,5 +1,6 @@
 ## 4.1.2-wip
 
+- Security: reject clients that set an Origin header, which includes all browsers.
 - Internal: remove use of `package:mockito` in test.
 - Require Dart 3.8.0.
 
