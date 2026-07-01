@@ -68,6 +68,19 @@ class InternalTestReaderWriter extends ReaderWriter
     InputTracker.captureInputTrackersForTesting = true;
   }
 
+  InternalTestReaderWriter copyWith({bool? forceVisibleForTesting}) =>
+      InternalTestReaderWriter.using(
+        assetsRead: assetsRead,
+        assetsWritten: assetsWritten,
+        assetFinder: assetFinder,
+        assetPathProvider: assetPathProvider,
+        buildCachePackage: buildCachePackage,
+        filesystem: filesystem,
+        onCanReadController: onCanReadController,
+        forceVisibleForTesting:
+            forceVisibleForTesting ?? this.forceVisibleForTesting,
+      );
+
   @override
   ReaderWriterTesting get testing => _ReaderWriterTestingImpl(this);
 
