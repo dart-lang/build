@@ -86,8 +86,8 @@ abstract class BuildSpecDigest
     if (other == null ||
         other.inBuildPhasesOptionsDigests.length !=
             inBuildPhasesOptionsDigests.length) {
-      return BuiltList<bool>.from(
-        List.filled(inBuildPhasesOptionsDigests.length, true),
+      return BuiltList.of(
+        List<bool>.filled(inBuildPhasesOptionsDigests.length, true),
       );
     }
     final result = ListBuilder<bool>();
@@ -108,8 +108,8 @@ abstract class BuildSpecDigest
     if (other == null ||
         postBuildActionsOptionsDigests.length !=
             other.postBuildActionsOptionsDigests.length) {
-      return BuiltList<bool>.from(
-        List.filled(postBuildActionsOptionsDigests.length, true),
+      return BuiltList.of(
+        List<bool>.filled(postBuildActionsOptionsDigests.length, true),
       );
     }
     final result = ListBuilder<bool>();
