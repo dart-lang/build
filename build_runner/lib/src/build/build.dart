@@ -433,6 +433,7 @@ class Build {
     final allowedByTriggers = await _allowedByTriggers(
       inputTracker: step.inputTracker,
       phase: phase,
+      phaseNum: buildStepId.phaseNumber,
       primaryInput: buildStepId.primaryInput,
     );
     final logger = buildLog.loggerFor(
@@ -489,6 +490,7 @@ class Build {
   Future<bool> _allowedByTriggers({
     required InputTracker inputTracker,
     required InBuildPhase phase,
+    required int phaseNum,
     required AssetId primaryInput,
   }) async {
     final runsIfTriggered = phase.options.config['run_only_if_triggered'];
@@ -512,6 +514,7 @@ class Build {
           inputTracker,
           primaryInput,
           compilationUnit,
+          phaseNum,
         );
         if (trigger.triggersOn(compilationUnits)) return true;
       } else {
@@ -531,6 +534,7 @@ class Build {
     InputTracker inputTracker,
     AssetId id,
     CompilationUnit compilationUnit,
+    int phaseNum,
   ) async {
     final result = [compilationUnit];
     for (final directive in compilationUnit.directives) {
@@ -539,7 +543,15 @@ class Build {
         Uri.parse(directive.uri.stringValue!),
         from: id,
       );
-      if (!_builderFilesystem.isFile(partId)) continue;
+      // Check that the part is readable, including generating it if it's
+      // an output from an earlier phase.
+      if (!await _builderFilesystem.isReadable(
+        partId,
+        phaseNum,
+        catchInvalidInputs: true,
+      )) {
+        continue;
+      }
       inputTracker.add(partId);
       result.add(
         _parseCompilationUnit(
