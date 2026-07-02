@@ -10,6 +10,15 @@ import '../build_state/build_state.dart';
 extension AssetIdExtension on AssetId {
   bool get isDart => extension == '.dart';
 
+  /// Whether this is a synthetic generated part file.
+  bool get isGeneratedPart {
+    if (path.startsWith(r'_generated_parts/')) return true;
+    return path.contains(r'/_generated_parts/');
+  }
+
+  /// Whether this is a regular asset (not a synthetic generated part).
+  bool get isRegularAsset => !isGeneratedPart;
+
   /// Whether the asset is hidden.
   ///
   /// Hidden assets are written to and read from `.dart_tool/build/generated`
@@ -23,7 +32,28 @@ extension AssetIdExtension on AssetId {
   /// Pass [buildState] to hide outputs of post process builders that are
   /// not configured with `build_to: source`, as the default is `cache`.
   bool isHidden({BuildStepPlan? buildStepPlan, BuildState? buildState}) {
+    if (isGeneratedPart) return true;
     return buildStepPlan?.isHidden(this) == true ||
         buildState?.isHiddenPostProcessOutput(this) == true;
+  }
+
+  /// Returns the corresponding `_generated_parts/` AssetId if this is a `.dart` file.
+  AssetId get partIdForPrimaryInput {
+    final lastSlash = path.lastIndexOf('/');
+    if (lastSlash == -1) {
+      return AssetId(package, '_generated_parts/$path');
+    }
+    final dir = path.substring(0, lastSlash);
+    final name = path.substring(lastSlash + 1);
+    return AssetId(package, '$dir/_generated_parts/$name');
+  }
+
+  /// Returns the corresponding `.dart` AssetId if this is a generated part file.
+  AssetId? get primaryInputForPartId {
+    if (!isGeneratedPart) return null;
+    if (path.startsWith(r'_generated_parts/')) {
+      return AssetId(package, path.substring(17));
+    }
+    return AssetId(package, path.replaceFirst(r'/_generated_parts/', '/'));
   }
 }

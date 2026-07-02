@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
@@ -49,6 +50,16 @@ class BuildOutputReader {
   Future<UnreadableReason?> unreadableReason(AssetId id) async {
     final buildState = _buildState;
     final builderFilesystem = _builderFilesystem;
+
+    if (id.isGeneratedPart) {
+      final primaryInputId = id.primaryInputForPartId;
+      if (primaryInputId != null) {
+        final parts = buildState.partContributionsFor(primaryInputId);
+        if (parts.isNotEmpty) return null;
+      }
+      return UnreadableReason.notFound;
+    }
+
     if (!_isFile(id)) {
       return UnreadableReason.notFound;
     }
@@ -112,6 +123,10 @@ class BuildOutputReader {
   }
 
   Future<List<int>> readAsBytes(AssetId id) async {
+    if (id.isGeneratedPart) {
+      final content = await readAsString(id);
+      return utf8.encode(content);
+    }
     try {
       final content = await _builderFilesystem.contentOf(id);
       return content.bytes;
@@ -123,6 +138,23 @@ class BuildOutputReader {
   }
 
   Future<String> readAsString(AssetId id) async {
+    if (id.isGeneratedPart) {
+      final primaryInputId = id.primaryInputForPartId;
+      if (primaryInputId != null) {
+        final parts = _buildState.partContributionsFor(primaryInputId);
+        if (parts.isNotEmpty) {
+          final basename = primaryInputId.path.split('/').last;
+          final buffer = StringBuffer();
+          buffer.writeln("part of '../../$basename';");
+          buffer.writeln();
+          for (final c in parts) {
+            buffer.writeln(c);
+          }
+          return buffer.toString();
+        }
+      }
+      throw AssetNotFoundException(id);
+    }
     try {
       final content = await _builderFilesystem.contentOf(id);
       return content.stringValue();
@@ -173,12 +205,25 @@ class BuildOutputReader {
       }
     }
     result.addAll(_buildState.actualPostOutputs);
+    for (final primaryInput in _buildState.primaryInputsWithParts) {
+      final partId = primaryInput.partIdForPrimaryInput;
+      if (!_shouldSkipId(partId, rootDir)) {
+        result.add(partId);
+      }
+    }
     return result;
   }
 
   bool _shouldSkipId(AssetId id, String? rootDir) {
-    if (!_isFile(id)) return true;
-    if (_assetsDeletedByPostProcessBuilders.contains(id)) return true;
+    if (id.isGeneratedPart) {
+      final primaryInputId = id.primaryInputForPartId;
+      if (primaryInputId == null) return true;
+      final parts = _buildState.partContributionsFor(primaryInputId);
+      if (parts.isEmpty) return true;
+    } else {
+      if (!_isFile(id)) return true;
+      if (_assetsDeletedByPostProcessBuilders.contains(id)) return true;
+    }
 
     // Exclude non-lib assets if they're outside of the root directory or not
     // an output package of the build.
