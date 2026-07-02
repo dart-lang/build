@@ -112,6 +112,7 @@ Map<Type, DummyBuilder> _defaultDummyBuilders = {
   num: (_, _) => _dummyInt,
   double: (_, _) => _dummyDouble,
   String: _dummyString,
+  Symbol: (Object o, Invocation i) => Symbol(_dummyString(o, i)),
   Int8List: (_, _) => Int8List(0),
   Int16List: (_, _) => Int16List(0),
   Int32List: (_, _) => Int32List(0),
@@ -123,7 +124,12 @@ Map<Type, DummyBuilder> _defaultDummyBuilders = {
   Float32List: (_, _) => Float32List(0),
   Float64List: (_, _) => Float64List(0),
   ByteData: (_, _) => ByteData(0),
+  BigInt: (_, _) => BigInt.zero,
+  Duration: (_, _) => Duration.zero,
+  DateTime: (_, _) => DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
   RegExp: (_, _) => RegExp(''),
+  Type: (_, _) => Type,
+  Uri: (Object o, Invocation i) => Uri(fragment: _dummyString(o, i)),
   ...platformDummies,
 };
 
@@ -139,6 +145,7 @@ List<Object?> _defaultDummies = [
   Stream<Never>.empty(),
   SplayTreeSet<Never>(),
   SplayTreeMap<Never, Never>(),
+  Future<Never>.error('dummy Mockito value, not for use')..ignore(),
 ];
 
 T? dummyValueOrNull<T>(Object parent, Invocation invocation) {
