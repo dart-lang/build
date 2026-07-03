@@ -1,3 +1,7 @@
+## 4.8.5
+
+- Allow Dart SDK 3.13.x and 3.14 prerelease.
+
 ## 4.8.4
 - Fix deferred rebuilds sometimes crashing `DdcFrontendServerBuilder`.
 
