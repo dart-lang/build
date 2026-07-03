@@ -83,5 +83,30 @@ dependencies:
       tester.read('p1/lib/p1.txt.copy'),
       '3',
     ); // No build of nested package.
+
+    tester.write('p1/build.yaml', r'''
+global_options:
+  builder_pkg:test_builder:
+    options:
+      extra_content: "(p1 local)"
+''');
+    tester.write('build.yaml', r'''
+global_options:
+  builder_pkg:test_builder:
+    options:
+      extra_content: "(workspace global)"
+''');
+
+    // Workspace build uses root `build.yaml` for options.
+    await tester.run('', 'dart run build_runner build --force-jit --workspace');
+    expect(tester.read('p1/lib/p1.txt.copy'), '4(workspace global)');
+
+    // Package build in `p1` uses `p1/build.yaml`.
+    await tester.run('p1', 'dart run build_runner build --force-jit');
+    expect(tester.read('p1/lib/p1.txt.copy'), '4(p1 local)');
+
+    // Workspace build uses root `build.yaml` again.
+    await tester.run('', 'dart run build_runner build --force-jit --workspace');
+    expect(tester.read('p1/lib/p1.txt.copy'), '4(workspace global)');
   });
 }

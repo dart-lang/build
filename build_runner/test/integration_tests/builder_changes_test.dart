@@ -34,22 +34,19 @@ void main() async {
     // modified code.
     tester.update(
       'builder_pkg/lib/builder.dart',
-      (script) => script.replaceAll(
-        'await buildStep.readAsString(buildStep.inputId)',
-        "'v1'",
-      ),
+      (script) => script.replaceAll(r"'$extraContent'", "'(v1)'"),
     );
     await watch.expect('Starting build #2 with updated builders.');
     await watch.expect(RegExp(r'1s compiling builders/jit'));
     tester.update(
       'builder_pkg/lib/builder.dart',
-      (script) => script.replaceAll("'v1'", "'v2'"),
+      (script) => script.replaceAll("'(v1)'", "'(v2)'"),
     );
     await watch.expect('Starting build #3 with updated builders.');
     await watch.expect(BuildLog.successPattern);
     await watch.kill();
 
     // Verify that the output is from the latest modified code.
-    expect(tester.read('root_pkg/web/a.txt.copy'), 'v2');
+    expect(tester.read('root_pkg/web/a.txt.copy'), 'a(v2)');
   });
 }
