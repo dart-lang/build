@@ -16,6 +16,8 @@
 - Bug fix: fix `dart run build_runner test` to correctly pass arguments after
   `--` to the test process.
 - Bug fix: fix crash if a resolved Dart source contains invalid utf8.
+- Bug fix: fix incorrect output when builder code changes during builder
+  compile.
 - Require Dart 3.8.0.
 
 ## 2.15.0

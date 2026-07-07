@@ -7,6 +7,7 @@ library;
 
 import 'dart:io';
 
+import 'package:build_runner/src/bootstrap/powershell.dart';
 import 'package:test/test.dart';
 
 import '../common/common.dart';
@@ -153,6 +154,7 @@ void main() async {
 bool processIsRunning(int pid) {
   if (Platform.isWindows) {
     return Process.runSync('powershell', [
+          ...Powershell.baseArgs,
           '-Command',
           'Get-Process -Id $pid',
         ]).exitCode ==
