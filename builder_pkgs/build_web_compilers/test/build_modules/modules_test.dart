@@ -48,9 +48,9 @@ void main() {
           },
           build: expectAsync2((buildStep, _) async {
             final transitiveDeps =
-                (await rootModule.computeTransitiveDependencies(
-                  buildStep,
-                )).map((m) => m.primarySource).toList();
+                (await rootModule.computeTransitiveDependencies(buildStep))
+                    .map((m) => m.primarySource)
+                    .toList();
             expect(
               transitiveDeps,
               unorderedEquals([
@@ -173,8 +173,7 @@ Please check the following imports:
             transitiveDepModule.toJson(),
           ),
           // No module for b|lib/src/dep.dart
-          'b|lib/b.dart':
-              'import \'some_other_dep.dart\' if (dart.library.js_interop) \'src/dep.dart\';',
+          'b|lib/b.dart': 'import \'some_other_dep.dart\' if (dart.library.js_interop) \'src/dep.dart\';',
         },
       );
     });
@@ -341,9 +340,9 @@ Please check the following imports:
             },
             build: expectAsync2((buildStep, _) async {
               final transitiveDeps =
-                  (await moduleA.computeTransitiveDependencies(
-                    buildStep,
-                  )).map((m) => m.primarySource).toList();
+                  (await moduleA.computeTransitiveDependencies(buildStep))
+                      .map((m) => m.primarySource)
+                      .toList();
               expect(transitiveDeps, contains(moduleB.primarySource));
             }),
           ),
@@ -382,9 +381,9 @@ Please check the following imports:
             },
             build: expectAsync2((buildStep, _) async {
               final transitiveDeps =
-                  (await moduleA.computeTransitiveDependencies(
-                    buildStep,
-                  )).map((m) => m.primarySource).toList();
+                  (await moduleA.computeTransitiveDependencies(buildStep))
+                      .map((m) => m.primarySource)
+                      .toList();
               expect(
                 transitiveDeps,
                 unorderedEquals([moduleB.primarySource, moduleC.primarySource]),
