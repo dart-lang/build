@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+
 import 'build_modules.dart';
 
 Builder moduleLibraryBuilder(BuilderOptions _) => const ModuleLibraryBuilder();

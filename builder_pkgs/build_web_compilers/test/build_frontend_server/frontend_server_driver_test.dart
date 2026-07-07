@@ -72,9 +72,8 @@ void main() {
     test('can reject and recompile with an invalidated file', () async {
       final entrypoint = tempDir.uri.resolve('entrypoint.dart');
       final dep = tempDir.uri.resolve('dep.dart');
-      File(
-        entrypoint.toFilePath(),
-      ).writeAsStringSync("import 'dep.dart'; void main() {}");
+      File(entrypoint.toFilePath())
+          .writeAsStringSync("import 'dep.dart'; void main() {}");
       File(dep.toFilePath()).writeAsStringSync('// empty');
 
       var output = await server.compile(entrypoint.toString());
@@ -145,12 +144,10 @@ void main() {
       expect(results[1], isNotNull);
       expect(results[1]!.errorCount, 0);
 
-      File(
-        file1.toFilePath(),
-      ).writeAsStringSync("void main() { print('edit!'); }");
-      File(
-        file2.toFilePath(),
-      ).writeAsStringSync("void main() { print('edit!'); }");
+      File(file1.toFilePath())
+          .writeAsStringSync("void main() { print('edit!'); }");
+      File(file2.toFilePath())
+          .writeAsStringSync("void main() { print('edit!'); }");
 
       future1 = driver.recompile(file1.toString(), [file1]);
       future2 = driver.recompile(file2.toString(), [file2]);
