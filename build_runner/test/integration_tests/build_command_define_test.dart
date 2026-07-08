@@ -14,18 +14,10 @@ void main() async {
     final pubspecs = await Pubspecs.load();
     final tester = BuildRunnerTester(pubspecs);
 
-    tester.writePackage(
-      name: 'builder_pkg',
-      dependencies: ['build', 'build_runner'],
-      files: {
-        'build.yaml': r'''
-builders:
-  test_builder:
-    import: 'package:builder_pkg/builder.dart'
-    builder_factories: ['testBuilderFactory']
-    build_extensions: {'.txt': ['.txt.copy']}
-    auto_apply: root_package
-    build_to: source
+    tester.writeFixturePackage(FixturePackages.copyBuilder());
+    tester.update(
+      'builder_pkg/build.yaml',
+      (content) => '''$content
     defaults:
       options:
         copy_from: root_pkg|web/a.txt
@@ -34,32 +26,6 @@ builders:
       release_options:
         extra_content: "(default release)"
 ''',
-        'lib/builder.dart': '''
-import 'package:build/build.dart';
-
-Builder testBuilderFactory(BuilderOptions options) =>
-    TestBuilder(
-        AssetId.parse(options.config['copy_from'] as String),
-        options.config['extra_content'] as Object? ?? '');
-
-class TestBuilder implements Builder {
-  final AssetId copyFrom;
-  final Object extraContent;
-
-  TestBuilder(this.copyFrom, this.extraContent);
-
-  @override
-  Map<String, List<String>> get buildExtensions => {'.txt': ['.txt.copy']};
-
-  @override
-  Future<void> build(BuildStep buildStep) async {
-    buildStep.writeAsString(
-        buildStep.inputId.addExtension('.copy'),
-        await buildStep.readAsString(copyFrom) + '\$extraContent',
-    );
-  }
-}''',
-      },
     );
     tester.writePackage(
       name: 'root_pkg',

@@ -120,7 +120,7 @@ class HighResolutionMtime {
     return mtime;
   }
 
-  static NanosecondsSinceEpoch _getHighResMtimeWithFallback(String filePath) {
+  static NanosecondsSinceEpoch getHighResMtimeWithFallback(String filePath) {
     return getHighResMtimeOrNull(filePath) ??
         File(filePath).lastModifiedSync().nanosecondsSinceEpoch;
   }
@@ -131,7 +131,7 @@ class HighResolutionMtime {
   /// This ensures that any subsequent file modifications will receive a
   /// strictly greater modification time.
   static Future<void> waitForNewMtime(String path) async {
-    final stampTime = _getHighResMtimeWithFallback(path);
+    final stampTime = getHighResMtimeWithFallback(path);
     final tempFile = File('$path.tmp');
     var delayMs = 1;
     try {
@@ -140,7 +140,7 @@ class HighResolutionMtime {
       // slow success.
       while (true) {
         tempFile.writeAsBytesSync(const []);
-        if (_getHighResMtimeWithFallback(tempFile.path) > stampTime) {
+        if (getHighResMtimeWithFallback(tempFile.path) > stampTime) {
           break;
         }
         await Future<void>.delayed(Duration(milliseconds: delayMs));

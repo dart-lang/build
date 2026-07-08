@@ -68,6 +68,10 @@ class BuildPackages implements AssetPathProvider {
   /// A [PackageConfig] representation of this `BuildPackages`.
   final PackageConfig asPackageConfig;
 
+  /// Whether an alternate root's asset graph is newer than ours, which means
+  /// that the current build `asset_graph.json` is stale.
+  final bool hasNewerAlternateRootBuild;
+
   /// Transitive dependencies by package name.
   final BuiltSetMultimap<String, String> _transitiveDependencies;
 
@@ -84,6 +88,7 @@ class BuildPackages implements AssetPathProvider {
     required this.asPackageConfig,
     required BuiltSetMultimap<String, String> transitiveDependencies,
     required BuiltSetMultimap<String, String> buildPackages,
+    this.hasNewerAlternateRootBuild = false,
   }) : _transitiveDependencies = transitiveDependencies,
        _peerPackages = buildPackages;
 
@@ -91,6 +96,7 @@ class BuildPackages implements AssetPathProvider {
     required String currentPackage,
     String? singlePackageToBuild,
     required String outputRoot,
+    bool hasNewerAlternateRootBuild = false,
     required BuiltMap<String, BuildPackage> packages,
   }) {
     for (final package in packages.values) {
@@ -138,6 +144,7 @@ class BuildPackages implements AssetPathProvider {
       asPackageConfig: asPackageConfig,
       transitiveDependencies: transitiveDependencies,
       buildPackages: buildPackages,
+      hasNewerAlternateRootBuild: hasNewerAlternateRootBuild,
     );
   }
 

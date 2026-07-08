@@ -18,6 +18,8 @@
 - Bug fix: fix crash if a resolved Dart source contains invalid utf8.
 - Bug fix: fix incorrect output when builder code changes during builder
   compile.
+- Bug fix: do a clean build when switching between a workspace build and a
+  package build, as incremental builds were sometimes incorrect.
 - Require Dart 3.8.0.
 
 ## 2.15.0

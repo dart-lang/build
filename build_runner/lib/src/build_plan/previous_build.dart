@@ -54,7 +54,6 @@ abstract class PreviousBuild
     final readerWriter = buildSpec.readerWriter;
     final buildPackages = buildSpec.buildPackages;
     final buildPlanDigest = buildSpec.buildPlanDigest;
-    final restartIsNeeded = buildSpec.restartIsNeeded;
     final assetGraphJsonId = AssetId(
       buildPackages.outputRoot,
       assetGraphJsonPath,
@@ -74,10 +73,12 @@ abstract class PreviousBuild
         previousPhasedAssetDeps = assetGraphJson.phasedAssetDeps;
       }
       if (previousBuildState != null) {
-        if (restartIsNeeded ||
-            !buildPlanDigest.canIncrementallyBuildFrom(
-              previousBuildPlanDigest,
-            )) {
+        final forceCleanBuild =
+            buildSpec.restartIsNeeded ||
+            buildPackages.hasNewerAlternateRootBuild ||
+            !buildPlanDigest.canIncrementallyBuildFrom(previousBuildPlanDigest);
+
+        if (forceCleanBuild) {
           incompatibleBuildOutputsToDelete.addAll(
             previousBuildState.outputsToDelete(buildPackages),
           );
