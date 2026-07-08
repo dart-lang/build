@@ -1,4 +1,4 @@
-## 4.0.7-wip
+## 4.0.7
 
 - Replace `Builder` extension method `hasOutputFor` with `matchesInput`.
   Deprecate `hasOutputFor`. The new `matchesInput` is identical, but now that

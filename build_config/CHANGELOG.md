@@ -1,4 +1,4 @@
-## 1.3.1-wip
+## 1.3.1
 
 - Document that `--define` values are parsed as JSON with a fallback.
 - Require Dart 3.8.0.

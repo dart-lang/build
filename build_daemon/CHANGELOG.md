@@ -1,4 +1,4 @@
-## 4.1.2-wip
+## 4.1.2
 
 - Security: reject clients that set an Origin header, which includes all browsers.
 - Internal: remove use of `package:mockito` in test.
