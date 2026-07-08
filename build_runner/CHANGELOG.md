@@ -1,4 +1,4 @@
-## 2.15.1-wip
+## 2.15.1
 
 - Pass Dart SDK `--packages` arg to builder compiles, so they can be compiled
   with different packages to the current version solve.

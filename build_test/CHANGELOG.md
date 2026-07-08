@@ -1,4 +1,4 @@
-## 3.5.16-wip
+## 3.5.16
 
 - Use `build_runner` 2.15.1.
 - Require Dart 3.8.0.
