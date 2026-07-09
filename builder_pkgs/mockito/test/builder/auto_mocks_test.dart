@@ -72,6 +72,17 @@ const immutable = _Immutable();
 ''',
 };
 
+const protobufAssets = {
+  'protobuf|lib/src/protobuf/internal.dart': '''
+    class ProtobufEnum {
+      final int value;
+      final String name;
+      const ProtobufEnum(this.value, this.name);
+    }
+    class GeneratedMessage {}
+  ''',
+};
+
 const simpleTestAsset = {
   'foo|test/foo_test.dart': '''
 import 'package:foo/foo.dart';
@@ -98,6 +109,12 @@ void main() {
         packageUriRoot: Uri.file('/foo/lib/'),
         languageVersion: LanguageVersion(3, 3),
       ),
+      Package(
+        'protobuf',
+        Uri.file('/protobuf/'),
+        packageUriRoot: Uri.file('/protobuf/lib/'),
+        languageVersion: LanguageVersion(3, 3),
+      ),
     ]);
     final builder = buildMocks(BuilderOptions(config));
     await testBuilders(
@@ -120,6 +137,12 @@ void main() {
         'foo',
         Uri.file('/foo/'),
         packageUriRoot: Uri.file('/foo/lib/'),
+        languageVersion: LanguageVersion(3, 3),
+      ),
+      Package(
+        'protobuf',
+        Uri.file('/protobuf/'),
+        packageUriRoot: Uri.file('/protobuf/lib/'),
         languageVersion: LanguageVersion(3, 3),
       ),
     ]);
@@ -148,6 +171,7 @@ void main() {
         ...metaAssets,
         ...annotationsAsset,
         ...simpleTestAsset,
+        ...protobufAssets,
         'foo|lib/foo.dart': sourceAssetText,
       },
       outputs: {'foo|test/foo_test.mocks.dart': output},
@@ -164,6 +188,7 @@ void main() {
       'foo|lib/foo.dart': sourceAssetText,
       ...annotationsAsset,
       ...simpleTestAsset,
+      ...protobufAssets,
     });
     final mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
     return readerWriter.testing.readString(mocksAsset);
@@ -2771,6 +2796,50 @@ void main() {
       _containsAllOf('returnValue: _i2.Bar.one'),
     );
   });
+
+  test(
+    'creates dummy ProtobufEnum return value and does not fake the class',
+    () async {
+      final mocksContent = await buildWithSingleNonNullableSource(
+        dedent(r'''
+      import 'package:protobuf/src/protobuf/internal.dart';
+      class MyEnum extends ProtobufEnum {
+        static const MyEnum v1 = MyEnum(1, 'v1');
+        static const List<MyEnum> values = [v1];
+        const MyEnum(int v, String n) : super(v, n);
+      }
+      class Foo {
+        MyEnum m() => MyEnum.v1;
+      }
+      '''),
+      );
+      expect(
+        mocksContent,
+        containsIgnoringFormatting('returnValue: _i2.MyEnum.values.first'),
+      );
+      expect(mocksContent, isNot(contains('_FakeMyEnum')));
+    },
+  );
+
+  test(
+    'creates dummy GeneratedMessage return value and does not fake the class',
+    () async {
+      final mocksContent = await buildWithSingleNonNullableSource(
+        dedent(r'''
+      import 'package:protobuf/src/protobuf/internal.dart';
+      class MyMessage extends GeneratedMessage {}
+      class Foo {
+        MyMessage m() => MyMessage();
+      }
+      '''),
+      );
+      expect(
+        mocksContent,
+        containsIgnoringFormatting('returnValue: _i2.MyMessage()'),
+      );
+      expect(mocksContent, isNot(contains('_FakeMyMessage')));
+    },
+  );
 
   test('creates a dummy non-null function-typed return value, with optional '
       'parameters', () async {
