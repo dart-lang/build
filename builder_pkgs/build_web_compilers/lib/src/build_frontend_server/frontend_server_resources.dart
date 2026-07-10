@@ -52,66 +52,57 @@ class FrontendServerState {
     return false;
   }
 
-  /// Tracks active background compilations keyed by their entrypoint [AssetId].
+  /// The active background compilation future.
   ///
   /// Allows arbitrary DDC builders to share a single compiler execution run for
-  /// an entrypoint. Typically the entrypoint for all builders - except for
-  /// certain tests with multiple targets in the entrypoint.
-  final Map<AssetId, Completer<void>> _activeCompilations = {};
+  /// the entrypoint. Sequential calls chain onto the previous compilation.
+  Future<void> _activeCompilation = Future.value();
 
-  /// Returns a future that completes when the compilation for [entrypointId]
-  /// is complete, or immediately if there is no active compilation.
+  /// Returns a future that completes when the active compilation is complete.
   Future<void> waitForCompilation(AssetId entrypointId) {
-    return _activeCompilations
-        .putIfAbsent(entrypointId, Completer<void>.new)
-        .future;
+    _verifyEntrypoint(entrypointId);
+    return _activeCompilation;
   }
 
-  /// Initiates the compilation of [entrypointId] using [compileFn] if no
-  /// compilation is currently active.
+  /// Initiates the compilation of [entrypointId] using [compileFn].
   ///
-  /// Concurrent calls for the same entrypoint will subscribe to and share
-  /// the same compilation future. The future is automatically removed from
-  /// the active registry once it completes or fails.
+  /// Sequential calls for the same entrypoint will subscribe to and share
+  /// the same compilation future chain.
   void triggerSharedCompilation(
     AssetId entrypointId,
     Future<void> Function() compileFn,
   ) {
-    final completer = _activeCompilations.putIfAbsent(
-      entrypointId,
-      Completer<void>.new,
-    );
-    if (completer.isCompleted) return;
+    _verifyEntrypoint(entrypointId);
+    entrypointAssetId ??= entrypointId;
+
+    final previous = _activeCompilation;
+    final completer = Completer<void>();
+    _activeCompilation = completer.future;
 
     () async {
       try {
+        await previous;
         await compileFn();
       } finally {
-        if (!completer.isCompleted) {
-          completer.complete();
+        if (_activeCompilation == completer.future) {
+          _activeCompilation = Future.value();
         }
+        completer.complete();
       }
     }();
   }
 
-  /// Cancels the cached compilation future for [entrypointId].
-  void clearCompilation(AssetId entrypointId) {
-    _activeCompilations.remove(entrypointId);
-  }
-
-  /// Clears all previous compilation requests.
-  ///
-  /// Called at the end of each build.
-  void clearActiveCompilations() {
-    for (final completer in _activeCompilations.values) {
-      if (!completer.isCompleted) completer.complete();
+  void _verifyEntrypoint(AssetId entrypointId) {
+    if (entrypointAssetId != null && entrypointAssetId != entrypointId) {
+      throw StateError(
+        'Cannot compile/wait for a different entrypoint: '
+        'expected $entrypointAssetId but got $entrypointId.',
+      );
     }
-    _activeCompilations.clear();
   }
 }
 
 /// A shared [Resource] for a [FrontendServerState].
-final frontendServerStateResource = Resource<FrontendServerState>(
-  () async => frontendServerState,
-  dispose: (state) => state.clearActiveCompilations(),
-);
+final frontendServerStateResource = Resource<FrontendServerState>(() async {
+  return frontendServerState;
+});

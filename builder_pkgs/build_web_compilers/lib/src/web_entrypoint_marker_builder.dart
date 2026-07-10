@@ -50,8 +50,9 @@ class WebEntrypointMarkerBuilder implements Builder {
     final webEntrypointJson = <String, Object?>{};
 
     if (hasCachedState) {
-      webEntrypointJson['entrypoint'] = frontendServerState.entrypointAssetId
-          .toString();
+      final asset = frontendServerState.entrypointAssetId!;
+      webEntrypointJson['entrypoint'] = asset.toString();
+      webEntrypointJson['canonicalUri'] = sourceArg(asset);
     } else {
       final searchGlob = webAssetsPath == null
           ? '{${defaultWebDirs.join(',')}}/**'
@@ -73,6 +74,7 @@ class WebEntrypointMarkerBuilder implements Builder {
             // the Frontend Server before any JS files are emitted.
             frontendServerState.entrypointAssetId = asset;
             webEntrypointJson['entrypoint'] = asset.toString();
+            webEntrypointJson['canonicalUri'] = sourceArg(asset);
             break;
           }
         }

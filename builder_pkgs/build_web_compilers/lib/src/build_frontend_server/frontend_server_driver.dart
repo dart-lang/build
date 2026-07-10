@@ -20,7 +20,6 @@ import '../common.dart';
 import 'package_config.dart';
 
 final _log = Logger('FrontendServerProxy');
-final dartaotruntimePath = p.join(sdkDir, 'bin', 'dartaotruntime');
 final frontendServerSnapshotPath = p.join(
   sdkDir,
   'bin',
@@ -347,7 +346,8 @@ class PersistentFrontendServer {
       for (final experiment in enabledExperiments)
         '--enable-experiment=$experiment',
     ];
-    final process = await _startWithReaper(dartaotruntimePath, args);
+    final dartaotruntime = p.join(sdkRoot, 'bin', 'dartaotruntime');
+    final process = await _startWithReaper(dartaotruntime, args);
     final fileSystem = WebMemoryFilesystem(fileSystemRoot, rootPackage);
     final stdoutHandler = StdoutHandler(logger: _log);
     process.stdout
