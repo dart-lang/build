@@ -1,3 +1,8 @@
+## 4.0.8
+
+- Allow `analyzer` 14.x, require 13.3.0.
+- Require Dart 3.11.0.
+
 ## 4.0.7
 
 - Replace `Builder` extension method `hasOutputFor` with `matchesInput`.

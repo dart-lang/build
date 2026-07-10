@@ -1,3 +1,7 @@
+## 4.1.3-wip
+
+- Require Dart 3.11.0.
+
 ## 4.1.2
 
 - Security: reject clients that set an Origin header, which includes all browsers.

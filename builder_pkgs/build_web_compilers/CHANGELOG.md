@@ -1,3 +1,8 @@
+## 4.8.6
+
+- Allow `analyzer` 14.x, require 13.3.0.
+- Require Dart 3.11.0.
+
 ## 4.8.5
 
 - Allow Dart SDK 3.13.x and 3.14 prerelease.

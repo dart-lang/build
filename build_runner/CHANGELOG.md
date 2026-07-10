@@ -1,3 +1,8 @@
+## 2.15.2
+
+- Allow `analyzer` 14.x, require 13.3.0.
+- Require Dart 3.11.0.
+
 ## 2.15.1
 
 - Pass Dart SDK `--packages` arg to builder compiles, so they can be compiled
