@@ -78,9 +78,6 @@ class Build {
   /// transitive source.
   final Map<LibraryCycleGraph, bool> changedGraphs = Map.identity();
 
-  /// The build output.
-  BuildOutputReader? _buildOutputReader;
-
   late final BuilderFilesystem _builderFilesystem = BuilderFilesystem(
     buildPackages: buildPackages,
     buildConfigs: buildConfigs,
@@ -102,11 +99,10 @@ class Build {
         ResolversImpl r => r,
         _ => null,
       },
-      buildState = BuildState(buildPlan.buildInputs.sources) {
-    for (final entry in buildPlan.buildInputs.sourceContents.entries) {
-      buildState.updateSourceContent(entry.key, entry.value);
-    }
-  }
+      buildState = BuildState({
+        for (final id in buildPlan.buildInputs.sources)
+          id: buildPlan.buildInputs.sourceContents[id],
+      });
 
   BuildSpec get buildSpec => buildPlan.buildSpec;
   BuildOptions get buildOptions => buildSpec.buildOptions;
@@ -117,9 +113,6 @@ class Build {
   BuildState? get previousBuildState => buildPlan.previousBuild.buildState;
   BuildInputs get buildInputs => buildPlan.buildInputs;
   BuildStepPlan get buildStepPlan => buildPlan.buildStepPlan;
-
-  BuildOutputReader get buildOutputReader => _buildOutputReader ??=
-      BuildOutputReader(buildPlan: buildPlan, buildState: buildState);
 
   Future<BuildResult> run() async {
     buildLog.configuration = buildLog.configuration.rebuild(
@@ -183,8 +176,8 @@ class Build {
     runZonedGuarded(
       () async {
         await resolversImpl?.takeLockAndStartBuild(
-          buildPlan.buildStepPlan.declaredOutputPhases,
-          invalidatedSources: buildInputs.invalidatedSources,
+          builderFilesystem: _builderFilesystem,
+          buildInputs: buildInputs,
         );
         final result = await _runPhases();
 
@@ -215,7 +208,9 @@ class Build {
               status: BuildStatus.failure,
               outputs: BuiltList(),
               buildState: buildState,
-              buildOutputReader: buildOutputReader,
+              buildOutputReader: BuildOutputReader(
+                builderFilesystem: _builderFilesystem.forAfterBuild(),
+              ),
             ),
           );
         }
@@ -304,7 +299,9 @@ class Build {
       status: BuildStatus.success,
       outputs: outputs.build(),
       buildState: buildState,
-      buildOutputReader: buildOutputReader,
+      buildOutputReader: BuildOutputReader(
+        builderFilesystem: _builderFilesystem.forAfterBuild(),
+      ),
     );
   }
 
@@ -422,7 +419,7 @@ class Build {
       } else if (stepAction == StepAction.skipFailedPrimaryInput) {
         await _markStepFailed(buildStepId, builderOutputs);
       } else if (stepAction == StepAction.skipReuse) {
-        buildState.updateBuildStepResult(
+        _builderFilesystem.updateBuildStepResult(
           buildStepId,
           previousBuildState!.stepResult(buildStepId),
         );
@@ -436,6 +433,7 @@ class Build {
     final allowedByTriggers = await _allowedByTriggers(
       inputTracker: step.inputTracker,
       phase: phase,
+      phaseNum: buildStepId.phaseNumber,
       primaryInput: buildStepId.primaryInput,
     );
     final logger = buildLog.loggerFor(
@@ -492,6 +490,7 @@ class Build {
   Future<bool> _allowedByTriggers({
     required InputTracker inputTracker,
     required InBuildPhase phase,
+    required int phaseNum,
     required AssetId primaryInput,
   }) async {
     final runsIfTriggered = phase.options.config['run_only_if_triggered'];
@@ -515,6 +514,7 @@ class Build {
           inputTracker,
           primaryInput,
           compilationUnit,
+          phaseNum,
         );
         if (trigger.triggersOn(compilationUnits)) return true;
       } else {
@@ -534,6 +534,7 @@ class Build {
     InputTracker inputTracker,
     AssetId id,
     CompilationUnit compilationUnit,
+    int phaseNum,
   ) async {
     final result = [compilationUnit];
     for (final directive in compilationUnit.directives) {
@@ -542,7 +543,15 @@ class Build {
         Uri.parse(directive.uri.stringValue!),
         from: id,
       );
-      if (!_builderFilesystem.isFile(partId)) continue;
+      // Check that the part is readable, including generating it if it's
+      // an output from an earlier phase.
+      if (!await _builderFilesystem.isReadable(
+        partId,
+        phaseNum,
+        catchInvalidInputs: true,
+      )) {
+        continue;
+      }
       inputTracker.add(partId);
       result.add(
         _parseCompilationUnit(
@@ -667,7 +676,7 @@ class Build {
   void _markStepSkipped(BuildStepId buildStepId, Iterable<AssetId> outputs) {
     final isHidden =
         buildPhases.inBuildPhases[buildStepId.phaseNumber].hideOutput;
-    buildState.updateBuildStepResult(
+    _builderFilesystem.updateBuildStepResult(
       buildStepId,
       BuildStepResult((b) => b..isHidden = isHidden),
     );
@@ -679,7 +688,7 @@ class Build {
   ) async {
     final isHidden =
         buildPhases.inBuildPhases[buildStepId.phaseNumber].hideOutput;
-    buildState.updateBuildStepResult(
+    _builderFilesystem.updateBuildStepResult(
       buildStepId,
       BuildStepResult((b) {
         b.result = false;
@@ -745,9 +754,6 @@ class Build {
       }
 
       final primaryInput = step.primaryInput;
-      if (buildInputs.addedSources.contains(primaryInput)) {
-        return StepAction.run;
-      }
 
       if (buildStepPlan.isDeclaredOutput(primaryInput)) {
         final inputStep = buildStepPlan.stepForDeclaredOutput(primaryInput);
@@ -915,8 +921,7 @@ class Build {
         return true;
       }
     } else if (buildState.isSource(input)) {
-      if (buildInputs.modifiedSources.contains(input) ||
-          buildInputs.addedSources.contains(input)) {
+      if (buildInputs.updatedSources.contains(input)) {
         return true;
       }
     } else if (buildInputs.deletedSources.contains(input) ||
@@ -954,8 +959,7 @@ class Build {
         return true;
       }
     } else if (buildState.isSource(input)) {
-      if (buildInputs.modifiedSources.contains(input) ||
-          buildInputs.addedSources.contains(input)) {
+      if (buildInputs.updatedSources.contains(input)) {
         return true;
       }
     } else {
@@ -1079,7 +1083,7 @@ class Build {
     final buildStepResult = buildStepResultBuilder.build();
 
     final buildStepId = BuildStepId(primaryInput: input, phaseNumber: phaseNum);
-    buildState.updateBuildStepResult(buildStepId, buildStepResult);
+    _builderFilesystem.updateBuildStepResult(buildStepId, buildStepResult);
   }
 
   bool _isFile(AssetId id) =>

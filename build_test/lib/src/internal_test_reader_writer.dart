@@ -36,7 +36,10 @@ class InternalTestReaderWriter extends ReaderWriter
   ///
   /// If provided [outputRootPackage] is the package where the build cache is
   /// written, otherwise `unset` is used.
-  factory InternalTestReaderWriter({String? outputRootPackage}) {
+  factory InternalTestReaderWriter({
+    String? outputRootPackage,
+    bool forceVisibleForTesting = false,
+  }) {
     final filesystem = InMemoryFilesystem();
     return InternalTestReaderWriter.using(
       assetsRead: {},
@@ -46,10 +49,9 @@ class InternalTestReaderWriter extends ReaderWriter
         outputRootPackage ?? 'unset',
       ),
       buildCachePackage: outputRootPackage ?? 'unset',
-      generatedAssetHider: const NoopGeneratedAssetHider(),
       filesystem: filesystem,
-      onDelete: null,
       onCanReadController: StreamController(),
+      forceVisibleForTesting: forceVisibleForTesting,
     );
   }
 
@@ -59,38 +61,34 @@ class InternalTestReaderWriter extends ReaderWriter
     required super.assetFinder,
     required super.assetPathProvider,
     required this.buildCachePackage,
-    required super.generatedAssetHider,
     required super.filesystem,
-    required super.onDelete,
     required this.onCanReadController,
+    super.forceVisibleForTesting = false,
   }) : super.using() {
     InputTracker.captureInputTrackersForTesting = true;
   }
 
-  @override
-  InternalTestReaderWriter copyWith({
-    GeneratedAssetHider? generatedAssetHider,
-    void Function(AssetId)? onDelete,
-  }) => InternalTestReaderWriter.using(
-    assetsRead: assetsRead,
-    assetsWritten: assetsWritten,
-    assetFinder: assetFinder,
-    assetPathProvider: assetPathProvider,
-    buildCachePackage: buildCachePackage,
-    generatedAssetHider: generatedAssetHider ?? this.generatedAssetHider,
-    filesystem: filesystem,
-    onDelete: onDelete ?? this.onDelete,
-    onCanReadController: onCanReadController,
-  );
+  InternalTestReaderWriter copyWith({bool? forceVisibleForTesting}) =>
+      InternalTestReaderWriter.using(
+        assetsRead: assetsRead,
+        assetsWritten: assetsWritten,
+        assetFinder: assetFinder,
+        assetPathProvider: assetPathProvider,
+        buildCachePackage: buildCachePackage,
+        filesystem: filesystem,
+        onCanReadController: onCanReadController,
+        forceVisibleForTesting:
+            forceVisibleForTesting ?? this.forceVisibleForTesting,
+      );
 
   @override
   ReaderWriterTesting get testing => _ReaderWriterTestingImpl(this);
 
   @override
-  Future<bool> canRead(AssetId id) {
+  Future<bool> canRead(AssetId id, {bool hidden = false}) {
     onCanReadController.add(id);
     assetsRead.add(id);
-    return super.canRead(id);
+    return super.canRead(id, hidden: hidden);
   }
 
   /// Emits an event when `canRead` is called.
@@ -100,22 +98,30 @@ class InternalTestReaderWriter extends ReaderWriter
   Stream<AssetId> get onCanRead => onCanReadController.stream;
 
   @override
-  Future<List<int>> readAsBytes(AssetId id) async {
+  Future<List<int>> readAsBytes(AssetId id, {bool hidden = false}) async {
     assetsRead.add(id);
-    return super.readAsBytes(id);
+    return super.readAsBytes(id, hidden: hidden);
   }
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
+  Future<String> readAsString(
+    AssetId id, {
+    Encoding encoding = utf8,
+    bool hidden = false,
+  }) {
     assetsRead.add(id);
-    return super.readAsString(id, encoding: encoding);
+    return super.readAsString(id, encoding: encoding, hidden: hidden);
   }
 
   @override
-  Future writeAsBytes(AssetId id, List<int> bytes) async {
+  Future writeAsBytes(
+    AssetId id,
+    List<int> bytes, {
+    bool hidden = false,
+  }) async {
     assetsWritten.add(id);
     final type = testing.exists(id) ? ChangeType.MODIFY : ChangeType.ADD;
-    await super.writeAsBytes(id, bytes);
+    await super.writeAsBytes(id, bytes, hidden: hidden);
     FakeWatcher.notifyWatchers(
       WatchEvent(type, p.absolute(id.package, p.fromUri(id.path))),
     );
@@ -126,22 +132,27 @@ class InternalTestReaderWriter extends ReaderWriter
     AssetId id,
     String contents, {
     Encoding encoding = utf8,
+    bool hidden = false,
   }) async {
     assetsWritten.add(id);
     final type = testing.exists(id) ? ChangeType.MODIFY : ChangeType.ADD;
-    await super.writeAsString(id, contents, encoding: encoding);
+    await super.writeAsString(id, contents, encoding: encoding, hidden: hidden);
     FakeWatcher.notifyWatchers(
       WatchEvent(type, p.absolute(id.package, p.fromUri(id.path))),
     );
   }
 
   @override
-  Future<void> delete(AssetId id) {
+  Future<void> delete(
+    AssetId id, {
+    bool hidden = false,
+    void Function(AssetId)? onDelete,
+  }) {
     onDelete?.call(id);
     FakeWatcher.notifyWatchers(
       WatchEvent(ChangeType.REMOVE, p.absolute(id.package, p.fromUri(id.path))),
     );
-    return super.delete(id);
+    return super.delete(id, hidden: hidden, onDelete: onDelete);
   }
 }
 

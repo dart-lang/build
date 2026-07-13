@@ -89,13 +89,9 @@ Future<TestBuildersResult> testPhases(
   buildPackages ??= BuildPackages.singlePackageBuild('a', [
     BuildPackage.forTesting(name: 'a', isOutput: true),
   ]);
-  var readerWriter = resumeFrom == null
+  final readerWriter = resumeFrom == null
       ? InternalTestReaderWriter(outputRootPackage: buildPackages.outputRoot)
       : resumeFrom.readerWriter;
-
-  if (onDelete != null) {
-    readerWriter = readerWriter.copyWith(onDelete: onDelete);
-  }
 
   final pkgConfigId = AssetId(
     buildPackages.outputRoot,
@@ -131,7 +127,7 @@ Future<TestBuildersResult> testPhases(
     b.verbose = verbose;
   });
 
-  final buildPlan = await BuildPlan.load(
+  var buildPlan = await BuildPlan.load(
     await BuildSpec.load(
       builderFactories: builderFactories,
       // ignore: invalid_use_of_visible_for_testing_member
@@ -147,6 +143,10 @@ Future<TestBuildersResult> testPhases(
       ),
     ),
   );
+
+  if (onDelete != null) {
+    buildPlan = buildPlan.rebuild((b) => b.onDelete = onDelete);
+  }
 
   BuildResult result;
   final buildSeries = BuildSeries(buildPlan);

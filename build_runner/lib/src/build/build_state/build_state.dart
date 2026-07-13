@@ -47,8 +47,8 @@ class BuildState {
   /// All post process build step outputs by the step that created them.
   final Map<AssetId, PostProcessBuildStepId> _postProcessOutputs;
 
-  BuildState([Iterable<AssetId> sources = const []])
-    : _sources = Sources()..addAll(sources),
+  BuildState([Map<AssetId, AssetContent?> sources = const {}])
+    : _sources = Sources(sources),
       _postProcessResultsByInput = {},
       _postProcessOutputs = {},
       _buildStepResultsByPrimaryInput = {},
@@ -101,8 +101,12 @@ class BuildState {
   /// Actual build step outputs.
   ///
   /// A subset of the declared outputs.
-  Iterable<AssetId> get actualOutputs => _buildStepResultsByPrimaryInput.values
-      .expand((map) => map.values.expand((result) => result.outputs.keys));
+  Iterable<AssetId> get actualOutputs =>
+      actualStepResults.expand((result) => result.outputs.keys);
+
+  /// All build step results that actually executed.
+  Iterable<BuildStepResult> get actualStepResults =>
+      _buildStepResultsByPrimaryInput.values.expand((map) => map.values);
 
   /// Whether [id] is a declared build output that was actually generated.
   bool isActualOutput({
@@ -134,6 +138,10 @@ class BuildState {
   /// previous build.
   Iterable<AssetId> get actualPostOutputs => _postProcessOutputs.keys;
 
+  /// All post process build step results that actually executed.
+  Iterable<PostProcessBuildStepResult> get actualPostProcessResults =>
+      _postProcessResultsByInput.values.expand((map) => map.values);
+
   /// Whether [id] is a post process build output that was actually generated.
   bool isActualPostOutput(AssetId id) => _postProcessOutputs.containsKey(id);
 
@@ -154,52 +162,47 @@ class BuildState {
 
   /// Updates a source file content.
   ///
-  /// Does nothing for generated files, their content is set when the build step
-  /// result is written.
+  /// Throws if not a source.
   void updateSourceContent(AssetId id, AssetContent? content) {
-    _sources.updateContentIfPresent(id, content);
+    _sources.updateContent(id, content);
   }
 
-  /// Updates the content of [id], which must be a source, output, or
-  /// post-process output.
-  void updateContent({
-    required BuildStepPlan buildStepPlan,
+  /// Updates the [step] declared output [id] to [content].
+  ///
+  /// Throws if not a declared output.
+  void updateDeclaredOutputContent({
+    required BuildStepId step,
     required AssetId id,
     required AssetContent content,
   }) {
-    if (isSource(id)) {
-      _sources.updateContentIfPresent(id, content);
-      return;
-    }
-    final step = buildStepPlan.stepForDeclaredOutputOrNull(id);
-    if (step != null) {
-      final oldResult = stepResultOrNull(step);
-      if (oldResult == null || !oldResult.outputs.containsKey(id)) {
-        throw StateError(
-          'Cannot update content for output $id with no result.',
-        );
-      }
-      updateBuildStepResult(
-        step,
-        oldResult.rebuild((b) => b..outputs[id] = content),
+    final stepResult = stepResultOrNull(step);
+    if (stepResult == null || !stepResult.outputs.containsKey(id)) {
+      throw StateError(
+        'Step $step does not have result with declared output $id.',
       );
-      return;
     }
-    final postProcessStepId = _postProcessOutputs[id];
-    if (postProcessStepId != null) {
-      final oldResult = postProcessBuildStepResultFor(postProcessStepId);
-      if (oldResult == null || !oldResult.outputs.containsKey(id)) {
-        throw StateError(
-          'Cannot update content for post process output $id with no result.',
-        );
-      }
-      _postProcessResultsByInput[postProcessStepId.input]![postProcessStepId
-          .actionNumber] = oldResult.rebuild(
-        (b) => b..outputs[id] = content,
+    updateBuildStepResult(
+      step,
+      stepResult.rebuild((b) => b..outputs[id] = content),
+    );
+  }
+
+  /// Updates the [step] post process output [id] to [content].
+  ///
+  /// Throws if not a post process output.
+  void updatePostProcessOutputContent({
+    required PostProcessBuildStepId step,
+    required AssetId id,
+    required AssetContent content,
+  }) {
+    final stepResult = postProcessBuildStepResultFor(step);
+    if (stepResult == null || !stepResult.outputs.containsKey(id)) {
+      throw StateError(
+        'Step $step does not have result with post process output $id.',
       );
-      return;
     }
-    throw StateError('Cannot update content for unknown asset $id.');
+    _postProcessResultsByInput[step.input]![step.actionNumber] = stepResult
+        .rebuild((b) => b..outputs[id] = content);
   }
 
   /// The content of [id].
@@ -288,6 +291,16 @@ class BuildState {
   PostProcessBuildStepResult? postProcessBuildStepResultFor(
     PostProcessBuildStepId step,
   ) => _postProcessResultsByInput[step.input]?[step.actionNumber];
+
+  PostProcessBuildStepId? postProcessStepFor(AssetId id) =>
+      _postProcessOutputs[id];
+
+  bool isHiddenPostProcessOutput(AssetId id) {
+    final stepId = _postProcessOutputs[id];
+    if (stepId == null) return false;
+    final result = postProcessBuildStepResultFor(stepId);
+    return result?.hidden ?? false;
+  }
 
   Iterable<BuildStepId> get failedSteps {
     final results = <BuildStepId>[];

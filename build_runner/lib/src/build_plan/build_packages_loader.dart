@@ -10,6 +10,8 @@ import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
+import '../bootstrap/high_resolution_mtime.dart';
+import '../constants.dart';
 import 'build_package.dart';
 import 'build_packages.dart';
 import 'build_paths.dart';
@@ -45,15 +47,18 @@ class BuildPackagesLoader {
 
     String? workspaceName;
     List<String>? workspacePackages;
-    if (buildType != BuildType.singlePackage) {
+    if (workspacePath != null) {
       final workspacePubspec = Pubspecs.load(
-        p.join(workspacePath!, 'pubspec.yaml'),
+        p.join(workspacePath, 'pubspec.yaml'),
       );
       workspaceName = workspacePubspec['name']! as String;
-      final workspacePackageGraph = _buildPackagesForPath(workspacePath);
-      workspacePackages = List.from(
-        workspacePackageGraph['roots'] as List<Object?>,
-      );
+
+      if (buildType != BuildType.singlePackage) {
+        final workspacePackageGraph = _buildPackagesForPath(workspacePath);
+        workspacePackages = List.from(
+          workspacePackageGraph['roots'] as List<Object?>,
+        );
+      }
     }
 
     final currentPackagePubspec = Pubspecs.load(
@@ -101,12 +106,61 @@ class BuildPackagesLoader {
       );
     }
 
+    final hasNewerAlternateRootBuild = _hasNewerAlternateRootBuild(
+      buildType: buildType,
+      workspaceName: workspaceName,
+      outputRootName: outputRootName,
+      packagesInBuild: packagesInBuild,
+      buildPackages: buildPackages,
+    );
+
     return BuildPackages.compute(
       currentPackage: currentPackage,
       singlePackageToBuild: singlePackageToBuild,
       outputRoot: outputRootName,
+      hasNewerAlternateRootBuild: hasNewerAlternateRootBuild,
       packages: buildPackages.build(),
     );
+  }
+
+  /// Determines whether there is a more recent build using a different root
+  /// that makes the current build's `asset_graph.json` stale.
+  static bool _hasNewerAlternateRootBuild({
+    required BuildType buildType,
+    required String? workspaceName,
+    required String outputRootName,
+    required Set<String> packagesInBuild,
+    required MapBuilder<String, BuildPackage> buildPackages,
+  }) {
+    if (workspaceName == null) return false;
+
+    final alternateRoots = buildType == BuildType.workspace
+        ? packagesInBuild.where((p) => p != workspaceName)
+        : [workspaceName];
+    if (alternateRoots.isEmpty) return false;
+
+    final currentAssetGraphFile = File(
+      p.join(buildPackages[outputRootName]!.path, assetGraphJsonPath),
+    );
+    if (!currentAssetGraphFile.existsSync()) return false;
+
+    final currentMtime = HighResolutionMtime.getHighResMtimeWithFallback(
+      currentAssetGraphFile.path,
+    );
+
+    for (final alternateRoot in alternateRoots) {
+      final alternateAssetGraphFile = File(
+        p.join(buildPackages[alternateRoot]!.path, assetGraphJsonPath),
+      );
+      if (alternateAssetGraphFile.existsSync()) {
+        final alternateMtime = HighResolutionMtime.getHighResMtimeWithFallback(
+          alternateAssetGraphFile.path,
+        );
+        if (alternateMtime > currentMtime) return true;
+      }
+    }
+
+    return false;
   }
 }
 

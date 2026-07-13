@@ -36,7 +36,8 @@ abstract class PreviousBuild
   BuiltList<bool> get phaseOptionsChangedList;
   BuiltList<bool> get postBuildOptionsChangedList;
 
-  /// If the previous build is not compatible, outputs from it to delete.
+  /// If the previous build is not compatible, source tree outputs from it to
+  /// delete.
   BuiltList<AssetId> get incompatibleBuildOutputsToDelete;
 
   /// Deserializes information about the previous build and compares it to
@@ -47,12 +48,12 @@ abstract class PreviousBuild
   /// and [postBuildOptionsChangedList] give more detail on compatibility.
   ///
   /// If the previous build cannot be used for an incremental build then
-  /// [incompatibleBuildOutputsToDelete] is filled with its outputs to delete.
+  /// [incompatibleBuildOutputsToDelete] is filled with its source tree outputs
+  /// to delete.
   static Future<PreviousBuild> load(BuildSpec buildSpec) async {
     final readerWriter = buildSpec.readerWriter;
     final buildPackages = buildSpec.buildPackages;
     final buildPlanDigest = buildSpec.buildPlanDigest;
-    final restartIsNeeded = buildSpec.restartIsNeeded;
     final assetGraphJsonId = AssetId(
       buildPackages.outputRoot,
       assetGraphJsonPath,
@@ -72,10 +73,12 @@ abstract class PreviousBuild
         previousPhasedAssetDeps = assetGraphJson.phasedAssetDeps;
       }
       if (previousBuildState != null) {
-        if (restartIsNeeded ||
-            !buildPlanDigest.canIncrementallyBuildFrom(
-              previousBuildPlanDigest,
-            )) {
+        final forceCleanBuild =
+            buildSpec.restartIsNeeded ||
+            buildPackages.hasNewerAlternateRootBuild ||
+            !buildPlanDigest.canIncrementallyBuildFrom(previousBuildPlanDigest);
+
+        if (forceCleanBuild) {
           incompatibleBuildOutputsToDelete.addAll(
             previousBuildState.outputsToDelete(buildPackages),
           );

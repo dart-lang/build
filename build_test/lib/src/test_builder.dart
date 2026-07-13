@@ -353,7 +353,18 @@ Future<TestBuilderResult> testBuilderFactories(
   }
   rootPackage ??= allPackages.first;
 
-  readerWriter ??= TestReaderWriter(rootPackage: rootPackage);
+  var internalReaderWriter = readerWriter as InternalTestReaderWriter?;
+  if (internalReaderWriter == null) {
+    internalReaderWriter = InternalTestReaderWriter(
+      outputRootPackage: rootPackage,
+      forceVisibleForTesting: flattenOutput,
+    );
+  } else {
+    internalReaderWriter = internalReaderWriter.copyWith(
+      forceVisibleForTesting: flattenOutput,
+    );
+  }
+  readerWriter = internalReaderWriter;
 
   sourceAssets.forEach((serializedId, contents) {
     final id = makeAssetId(serializedId);
@@ -445,7 +456,7 @@ Future<TestBuilderResult> testBuilderFactories(
   final testingOverrides = TestingOverrides(
     builderDefinitions: builderDefinitions.build(),
     buildPackages: buildPackages,
-    readerWriter: readerWriter as InternalTestReaderWriter,
+    readerWriter: readerWriter,
     resolvers: resolvers,
     checkBuilderFreshness: false,
     buildConfig:
@@ -482,7 +493,7 @@ Future<TestBuilderResult> testBuilderFactories(
           }.build()
         : null,
     reportUnusedAssetsForInput: reportUnusedAssetsForInput,
-    flattenOutput: flattenOutput,
+    forceVisibleForTesting: flattenOutput,
   );
 
   final buildPlan = await BuildPlan.load(

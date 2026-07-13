@@ -11,6 +11,10 @@ import 'package:build_runner/src/build/build_state/build_step_id.dart';
 import 'package:build_runner/src/build/build_state/build_step_result.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_id.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_result.dart';
+import 'package:build_runner/src/build/builder_filesystem.dart';
+import 'package:build_runner/src/build_plan/build_configs.dart';
+import 'package:build_runner/src/build_plan/build_package.dart';
+import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/build_step_plan.dart';
 import 'package:build_runner/src/build_plan/phase.dart';
@@ -27,18 +31,26 @@ void main() {
   late InternalTestReaderWriter readerWriter;
   late BuildState buildState;
   late BuildStepPlan buildStepPlan;
+  late BuildPackages buildPackages;
 
   setUp(() async {
-    buildState = BuildState(<AssetId>{});
+    buildState = BuildState();
     readerWriter = InternalTestReaderWriter();
     buildStepPlan = BuildStepPlan(
       (BuildStepPlanBuilder b) =>
           b..buildPhases = BuildPhases(const <InBuildPhase>[]),
     );
-    reader = BuildOutputReader.buildStateOnly(
-      readerWriter: readerWriter,
-      buildState: buildState,
-      buildStepPlan: buildStepPlan,
+    buildPackages = BuildPackages.singlePackageBuild('a', [
+      BuildPackage.forTesting(name: 'a', isOutput: true),
+    ]);
+    reader = BuildOutputReader(
+      builderFilesystem: BuilderFilesystem(
+        buildPackages: buildPackages,
+        buildConfigs: BuildConfigs.empty(),
+        buildState: buildState,
+        buildStepPlan: buildStepPlan,
+        readerWriter: readerWriter,
+      ),
     );
     handler = AssetHandler(() async => reader, 'a');
   });
@@ -139,10 +151,14 @@ void main() {
       b.buildPhases = BuildPhases(const <InBuildPhase>[]);
       b.buildStepsByDeclaredOutput.addAll({outputId: buildStepId});
     });
-    reader = BuildOutputReader.buildStateOnly(
-      readerWriter: readerWriter,
-      buildState: buildState,
-      buildStepPlan: buildStepPlan,
+    reader = BuildOutputReader(
+      builderFilesystem: BuilderFilesystem(
+        buildPackages: buildPackages,
+        buildConfigs: BuildConfigs.empty(),
+        buildState: buildState,
+        buildStepPlan: buildStepPlan,
+        readerWriter: readerWriter,
+      ),
     );
     handler = AssetHandler(() async => reader, 'a');
     final stepResult = BuildStepResult((b) {

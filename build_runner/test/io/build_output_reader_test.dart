@@ -12,6 +12,7 @@ import 'package:build_runner/src/build/build_state/build_step_id.dart';
 import 'package:build_runner/src/build/build_state/build_step_result.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_id.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_result.dart';
+import 'package:build_runner/src/build/builder_filesystem.dart';
 import 'package:build_runner/src/build_plan/build_directory.dart';
 import 'package:build_runner/src/build_plan/build_filter.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
@@ -43,7 +44,7 @@ void main() {
       buildPackages = BuildPackages.singlePackageBuild('a', [
         BuildPackage.forTesting(name: 'a', isOutput: true),
       ]);
-      buildState = BuildState(<AssetId>{});
+      buildState = BuildState();
       buildPhases = BuildPhases([]);
     });
 
@@ -80,7 +81,15 @@ void main() {
           ),
         ),
       );
-      reader = BuildOutputReader(buildPlan: buildPlan, buildState: buildState);
+      reader = BuildOutputReader(
+        builderFilesystem: BuilderFilesystem(
+          buildPackages: buildPlan.buildSpec.buildPackages,
+          buildConfigs: buildPlan.buildSpec.buildConfigs,
+          buildState: buildState,
+          buildStepPlan: buildPlan.buildStepPlan,
+          readerWriter: buildPlan.readerWriter,
+        ),
+      );
       expect(await reader.canRead(notDeletedId), true);
       expect(await reader.canRead(deletedId), false);
     });
@@ -90,7 +99,7 @@ void main() {
       final primaryId = AssetId('a', 'web/a.dart');
       final buildStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
 
-      var buildState = BuildState(<AssetId>{});
+      var buildState = BuildState();
       final stepResult = BuildStepResult((b) {
         b.result = false;
         b.isHidden = false;
@@ -123,7 +132,15 @@ void main() {
           ),
         ),
       );
-      reader = BuildOutputReader(buildPlan: buildPlan, buildState: buildState);
+      reader = BuildOutputReader(
+        builderFilesystem: BuilderFilesystem(
+          buildPackages: buildPlan.buildSpec.buildPackages,
+          buildConfigs: buildPlan.buildSpec.buildConfigs,
+          buildState: buildState,
+          buildStepPlan: buildPlan.buildStepPlan,
+          readerWriter: buildPlan.readerWriter,
+        ),
+      );
       expect(
         await reader.unreadableReason(id),
         UnreadableReason.failed,
@@ -147,9 +164,17 @@ void main() {
 
       // If a step is skipped due to build filters it is not evaluated and its
       // result is not added to the buildState.
-      buildState = BuildState(<AssetId>{});
+      buildState = BuildState();
 
-      reader = BuildOutputReader(buildPlan: buildPlan, buildState: buildState);
+      reader = BuildOutputReader(
+        builderFilesystem: BuilderFilesystem(
+          buildPackages: buildPlan.buildSpec.buildPackages,
+          buildConfigs: buildPlan.buildSpec.buildConfigs,
+          buildState: buildState,
+          buildStepPlan: buildPlan.buildStepPlan,
+          readerWriter: buildPlan.readerWriter,
+        ),
+      );
 
       expect(
         await reader.unreadableReason(id),

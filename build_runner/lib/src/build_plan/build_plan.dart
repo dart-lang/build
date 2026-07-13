@@ -6,15 +6,13 @@ import 'package:build/build.dart' hide Builder;
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 
-import 'package:watcher/watcher.dart';
-
 import '../build/asset_content.dart';
 import '../build/build_state/build_state.dart';
 import '../build/library_cycle_graph/phased_asset_deps.dart';
+import '../build/resolver/asset_ids.dart';
 import '../constants.dart';
 import '../exceptions.dart';
 import '../io/asset_tracker.dart';
-import '../io/generated_asset_hider.dart';
 import '../io/reader_writer.dart';
 import '../logging/build_log.dart';
 import 'build_directory.dart';
@@ -31,9 +29,13 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
   BuildSpec get buildSpec;
   PreviousBuild get previousBuild;
   BuildStepPlan get buildStepPlan;
-  ReaderWriter get readerWriter;
+  ReaderWriter get readerWriter => buildSpec.readerWriter;
 
-  /// Outputs that conflict with the current build setup and must be deleted.
+  /// Callback that gets notified of deletes.
+  void Function(AssetId)? get onDelete;
+
+  /// Inputs in the source tree that conflict with declared outputs and must be
+  /// deleted.
   BuiltList<AssetId> get conflictingOutputs;
 
   /// Sources and changes to sources before the build.
@@ -151,6 +153,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         previousBuild: previousBuild,
         buildDirs: buildDirs,
         buildFilters: buildFilters,
+        onDelete: onDelete,
         filesToCheck: filesToCheck,
         // Updates are being made to a `BuildPlan` that didn't actually run.
         // That means the conflicting file check was already done when that
@@ -164,6 +167,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         previousBuildStepPlan: buildStepPlan,
         buildDirs: buildDirs,
         buildFilters: buildFilters,
+        onDelete: onDelete,
         filesToCheck: filesToCheck,
       );
     }
@@ -190,12 +194,11 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
     required PreviousBuild previousBuild,
     required BuiltSet<BuildDirectory> buildDirs,
     required BuiltSet<BuildFilter> buildFilters,
+    void Function(AssetId)? onDelete,
     required Set<AssetId> filesToCheck,
     Set<AssetId>? assetTrackerInputSources,
   }) async {
-    final readerWriter = buildSpec.readerWriter.copyWith(
-      generatedAssetHider: const NoopGeneratedAssetHider(),
-    );
+    final readerWriter = buildSpec.readerWriter;
     final result = BuildInputsBuilder()..cleanBuild = true;
 
     for (final id in filesToCheck) {
@@ -250,11 +253,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       b.buildSpec.replace(buildSpec);
       b.previousBuild.replace(previousBuild);
       b.buildStepPlan.replace(buildStepPlan);
-      b.readerWriter = readerWriter.copyWith(
-        generatedAssetHider: buildSpec.testingOverrides.flattenOutput
-            ? const NoopGeneratedAssetHider()
-            : buildStepPlan,
-      );
+      b.onDelete = onDelete;
       b.conflictingOutputs.replace(conflictingOutputs);
       b.buildInputs.replace(result.build());
       b.buildDirs.replace(buildDirs);
@@ -269,27 +268,25 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
     required BuildStepPlan previousBuildStepPlan,
     required BuiltSet<BuildDirectory> buildDirs,
     required BuiltSet<BuildFilter> buildFilters,
+    void Function(AssetId)? onDelete,
     required Set<AssetId> filesToCheck,
   }) async {
-    var readerWriter = buildSpec.readerWriter.copyWith(
-      generatedAssetHider: buildSpec.testingOverrides.flattenOutput
-          ? const NoopGeneratedAssetHider()
-          : previousBuildStepPlan,
-    );
+    final readerWriter = buildSpec.readerWriter;
     final buildInputs = BuildInputsBuilder()..cleanBuild = false;
-
-    final newContents = <AssetId, AssetContent>{};
-    final resolvedUpdates = <AssetId, ChangeType>{};
-    final previousSources = <AssetId>{};
 
     final previousBuildState = previousBuild.buildState!;
     var buildStepPlan = previousBuildStepPlan;
 
+    buildInputs.sources.addAll(previousBuildState.sources);
+    for (final id in previousBuildState.sources) {
+      final content = previousBuildState.contentOfSource(id);
+      if (content != null) {
+        buildInputs.sourceContents[id] = content;
+      }
+    }
+
     for (final id in filesToCheck) {
       final oldIsSource = previousBuildState.isSource(id);
-      if (oldIsSource) {
-        previousSources.add(id);
-      }
       final oldExisted = previousBuildState.isFile(
         buildStepPlan: buildStepPlan,
         id: id,
@@ -300,13 +297,18 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       var exists = false;
       AssetContent? newContent;
 
-      if (await readerWriter.canRead(id)) {
+      if (await readerWriter.canRead(
+        id,
+        hidden: id.isHidden(buildStepPlan: previousBuildStepPlan),
+      )) {
         exists = true;
         if (oldContent != null) {
           try {
-            final bytes = await readerWriter.readAsBytes(id);
+            final bytes = await readerWriter.readAsBytes(
+              id,
+              hidden: id.isHidden(buildStepPlan: previousBuildStepPlan),
+            );
             newContent = AssetContent.bytes(bytes);
-            newContents[id] = newContent;
           } catch (_) {
             exists = false;
           }
@@ -314,51 +316,22 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       }
 
       if (oldExisted && !exists) {
-        resolvedUpdates[id] = ChangeType.REMOVE;
         if (oldIsSource) {
           buildInputs.deletedSources.add(id);
+          buildInputs.sources.remove(id);
+          buildInputs.sourceContents.remove(id);
         } else {
           buildInputs.deletedOutputs.add(id);
         }
       } else if (!oldExisted && exists) {
-        buildInputs.addedSources.add(id);
-        resolvedUpdates[id] = ChangeType.ADD;
+        buildInputs.updatedSources.add(id);
+        buildInputs.sources.add(id);
       } else if (oldExisted &&
           oldContent != null &&
           exists &&
           oldContent.digest != newContent!.digest) {
-        buildInputs.modifiedSources.add(id);
-        resolvedUpdates[id] = ChangeType.MODIFY;
-      }
-    }
-
-    buildInputs.sources.addAll(previousBuildState.sources);
-    for (final entry in resolvedUpdates.entries) {
-      final id = entry.key;
-      switch (entry.value) {
-        case ChangeType.ADD:
-        case ChangeType.MODIFY:
-          if (!previousBuildState.isSource(id) ||
-              previousBuildState.isMissingSource(id)) {
-            buildInputs.sources.add(id);
-          }
-        case ChangeType.REMOVE:
-          if (previousBuildState.isSource(id)) {
-            buildInputs.sources.remove(id);
-          }
-      }
-    }
-
-    for (final id in buildInputs.sources.build()) {
-      if (newContents[id] != null) {
-        buildInputs.sourceContents[id] = newContents[id]!;
-      } else if (resolvedUpdates[id] == null) {
-        if (previousBuildState.isSource(id)) {
-          final content = previousBuildState.contentOfSource(id);
-          if (content != null) {
-            buildInputs.sourceContents[id] = content;
-          }
-        }
+        buildInputs.updatedSources.add(id);
+        buildInputs.sourceContents[id] = newContent;
       }
     }
 
@@ -372,7 +345,10 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       if (buildInputs.sourceContents[id] == null &&
           buildStepPlan.declaredOutputsOf(id).isNotEmpty) {
         try {
-          final bytes = await readerWriter.readAsBytes(id);
+          final bytes = await readerWriter.readAsBytes(
+            id,
+            hidden: id.isHidden(buildStepPlan: buildStepPlan),
+          );
           buildInputs.sourceContents[id] = AssetContent.bytes(bytes);
         } catch (_) {}
       }
@@ -383,20 +359,22 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         .toSet();
     buildInputs.deletedOutputs.addAll(deletedOutputs);
 
-    readerWriter = readerWriter.copyWith(
-      generatedAssetHider: buildSpec.testingOverrides.flattenOutput
-          ? const NoopGeneratedAssetHider()
-          : buildStepPlan,
-    );
     for (final id in deletedOutputs) {
-      await readerWriter.delete(id);
+      await readerWriter.delete(
+        id,
+        hidden: id.isHidden(
+          buildStepPlan: previousBuildStepPlan,
+          buildState: previousBuild.buildState,
+        ),
+        onDelete: onDelete,
+      );
     }
 
     return BuildPlan((b) {
       b.buildSpec.replace(buildSpec);
       b.previousBuild.replace(previousBuild);
       b.buildStepPlan.replace(buildStepPlan);
-      b.readerWriter = readerWriter;
+      b.onDelete = onDelete;
       b.buildInputs = buildInputs;
       b.buildDirs.replace(buildDirs);
       b.buildFilters.replace(buildFilters);

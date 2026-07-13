@@ -47,9 +47,19 @@ builders:
           '''
 import 'package:build/build.dart';
 
-Builder testBuilderFactory(BuilderOptions options) => TestBuilder();
+Builder testBuilderFactory(BuilderOptions options) => TestBuilder(
+      options.config['copy_from'] == null
+          ? null
+          : AssetId.parse(options.config['copy_from'] as String),
+      options.config['extra_content'] as Object? ?? '',
+    );
 
 class TestBuilder implements Builder {
+  final AssetId? otherInput;
+  final Object extraContent;
+
+  TestBuilder(this.otherInput, this.extraContent);
+
   @override
   Map<String, List<String>> get buildExtensions
       => {'.txt': ['.txt$outputExtension']};
@@ -57,9 +67,10 @@ class TestBuilder implements Builder {
   @override
   Future<void> build(BuildStep buildStep) async {
 ${delayAtBuildStart ? 'await Future.delayed(Duration(seconds: 1));' : ''}
-    buildStep.writeAsString(
+    await buildStep.writeAsString(
         buildStep.inputId.addExtension('$outputExtension'),
-        await buildStep.readAsString(buildStep.inputId),
+        await buildStep.readAsString(otherInput ?? buildStep.inputId) +
+            '\$extraContent',
     );
   }
 }

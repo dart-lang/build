@@ -102,6 +102,7 @@ class ServeHandler {
   ) async {
     final buildResult = await _watcher.currentBuildResult;
     final reader = buildResult.buildOutputReader;
+    if (reader == null) return shelf.Response.notFound('Not Found');
     final assertPathList = (jsonDecode(await request.readAsString()) as List)
         .cast<String>();
     final results = <String, String>{};
@@ -164,7 +165,7 @@ class BuildUpdatesWebSocketHandler {
 
   Future emitUpdateMessage(BuildResult buildResult) async {
     if (buildResult.status != BuildStatus.success) return;
-    final reader = buildResult.buildOutputReader;
+    final reader = buildResult.buildOutputReader!;
     final digests = <AssetId, String>{};
     for (final assetId in buildResult.outputs) {
       final digest = await reader.digest(assetId);
@@ -251,7 +252,7 @@ window.\$dartLoader.forceLoadModule('packages/build_runner/src/commands/serve/$s
 ''';
 
 class AssetHandler {
-  final Future<BuildOutputReader> Function() _reader;
+  final Future<BuildOutputReader?> Function() _reader;
   final String _outputRootPackage;
 
   final _typeResolver = MimeTypeResolver();
@@ -279,6 +280,7 @@ class AssetHandler {
     bool fallbackToDirectoryList = false,
   }) async {
     final reader = await _reader();
+    if (reader == null) return shelf.Response.notFound('Not Found');
 
     // Use the first of [assetIds] that exists.
     AssetId? assetId;
@@ -359,6 +361,7 @@ class AssetHandler {
     final directoryPath = p.url.dirname(from.path);
     final glob = p.url.join(directoryPath, '*');
     final reader = await _reader();
+    if (reader == null) return 'Build failed.';
 
     final result = await reader
         .findAssets(Glob(glob), package: from.package)

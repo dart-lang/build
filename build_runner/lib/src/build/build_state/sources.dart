@@ -24,7 +24,9 @@ class Sources {
   /// this build.
   bool _sortedFileIdsByPackageWasComputed = false;
 
-  Sources();
+  Sources([Map<AssetId, AssetContent?> sources = const {}]) {
+    this.sources.addAll(sources);
+  }
 
   /// Whether [id] is a source file.
   bool isSource(AssetId id) => sources.containsKey(id);
@@ -43,11 +45,14 @@ class Sources {
     return sources[id];
   }
 
-  /// Updates the content of [id] if it's a known source.
-  void updateContentIfPresent(AssetId id, AssetContent? digest) {
-    if (sources.containsKey(id)) {
-      sources[id] = digest;
+  /// Updates the content of [id].
+  ///
+  /// Throws if it is not a known source.
+  void updateContent(AssetId id, AssetContent? digest) {
+    if (!sources.containsKey(id)) {
+      throw StateError('Tried to update content of non-source $id.');
     }
+    sources[id] = digest;
   }
 
   /// Adds [id] as a known source.

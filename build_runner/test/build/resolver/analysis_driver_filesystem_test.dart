@@ -3,188 +3,235 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+import 'package:build_runner/src/build/asset_content.dart';
+import 'package:build_runner/src/build/build_state/build_state.dart';
+import 'package:build_runner/src/build/build_state/build_step_id.dart';
+import 'package:build_runner/src/build/build_state/build_step_result.dart';
+import 'package:build_runner/src/build/builder_filesystem.dart';
 import 'package:build_runner/src/build/resolver/analysis_driver_filesystem.dart';
+import 'package:build_runner/src/build_plan/build_configs.dart';
+import 'package:build_runner/src/build_plan/build_inputs.dart';
+import 'package:build_runner/src/build_plan/build_package.dart';
+import 'package:build_runner/src/build_plan/build_packages.dart';
+import 'package:build_runner/src/build_plan/build_phases.dart';
+import 'package:build_runner/src/build_plan/build_step_plan.dart';
+import 'package:build_test/src/internal_test_reader_writer.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:test/test.dart';
 
 void main() {
   late AnalysisDriverFilesystem filesystem;
+  late BuildPackages buildPackages;
+  late InternalTestReaderWriter readerWriter;
+  late BuildConfigs buildConfigs;
+  late BuilderFilesystem builderFilesystem;
 
-  setUp(() {
+  BuilderFilesystem createBuilderFilesystem({
+    Map<AssetId, AssetContent> sources = const {},
+    Map<AssetId, int> generatedPhases = const {},
+  }) {
+    final buildStepPlan = BuildStepPlan((b) {
+      for (final entry in generatedPhases.entries) {
+        final phase = entry.value;
+        final stepId = BuildStepId(
+          primaryInput: AssetId('a', 'lib/a.dart'),
+          phaseNumber: phase,
+        );
+        b.buildStepsByDeclaredOutput[entry.key] = stepId;
+
+        while (b.buildStepsByPhase.length <= phase) {
+          b.buildStepsByPhase.add(BuiltList<BuildStepId>());
+        }
+        final phaseSteps = b.buildStepsByPhase[phase].toList();
+        if (!phaseSteps.contains(stepId)) phaseSteps.add(stepId);
+        b.buildStepsByPhase[phase] = BuiltList<BuildStepId>(phaseSteps);
+
+        b.declaredOutputsByStep.add(stepId, entry.key);
+      }
+      b.buildPhases = BuildPhases([]);
+    });
+    return BuilderFilesystem(
+      buildPackages: buildPackages,
+      buildConfigs: buildConfigs,
+      buildState: BuildState(sources),
+      buildStepPlan: buildStepPlan,
+      readerWriter: readerWriter,
+      assetBuilder: (_) async {},
+      globEvaluator: (_) async {},
+    );
+  }
+
+  setUp(() async {
     filesystem = AnalysisDriverFilesystem();
+    buildPackages = BuildPackages.singlePackageBuild('a', [
+      BuildPackage.forTesting(name: 'a', isOutput: true),
+    ]);
+    readerWriter = InternalTestReaderWriter(
+      outputRootPackage: buildPackages.outputRoot,
+    );
+    buildConfigs = await BuildConfigs.load(
+      buildPackages: buildPackages,
+      readerWriter: readerWriter,
+    );
+
+    builderFilesystem = createBuilderFilesystem();
   });
 
   group('AnalysisDriverFilesystem', () {
-    test('write then read', () {
-      filesystem.write('foo.txt', 'bar');
-      expect(filesystem.read('foo.txt'), 'bar');
-    });
+    test('startBuild clean populates from sources and changedPaths', () {
+      final sourceId = AssetId('a', 'lib/a.dart');
+      final sourceContent = AssetContent.string('class A {}');
 
-    test('read without write throws', () {
-      expect(() => filesystem.read('foo.txt'), throwsA(isA<Error>()));
-    });
-
-    test('write adds to changedPaths', () {
-      filesystem.write('foo.txt', 'bar');
-      expect(filesystem.changedPaths, ['foo.txt']);
-    });
-
-    test('identical write does not add to changedPaths', () {
-      filesystem.write('foo.txt', 'bar');
-      filesystem.clearChangedPaths();
-      expect(filesystem.changedPaths, isEmpty);
-      filesystem.write('foo.txt', 'bar');
-      expect(filesystem.changedPaths, isEmpty);
-    });
-
-    test('different write in the same build asserts', () {
-      filesystem.write('foo.txt', 'bar');
-      expect(
-        () => filesystem.write('foo.txt', 'baz'),
-        throwsA(isA<AssertionError>()),
+      builderFilesystem = createBuilderFilesystem(
+        sources: {sourceId: sourceContent},
       );
-    });
-
-    test('write updates `exists`', () {
-      expect(filesystem.exists('foo.txt'), false);
-      filesystem.write('foo.txt', 'bar');
-      expect(filesystem.exists('foo.txt'), true);
-    });
-
-    test('startBuild removes disappeared generated files', () {
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 1,
-      }, invalidatedSources: null);
-      filesystem.write('/a/lib/a.g.dart', 'a');
-      filesystem.phase = 2;
-      filesystem.clearChangedPaths();
-
-      filesystem.startBuild({}, invalidatedSources: const {});
-
-      expect(filesystem.changedPaths, {'/a/lib/a.g.dart'});
-      expect(filesystem.exists('/a/lib/a.g.dart'), false);
-    });
-
-    test('startBuild retains unchanged generated file contents', () {
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 1,
-      }, invalidatedSources: null);
-      filesystem.write('/a/lib/a.g.dart', 'a');
-      filesystem.phase = 2;
-      filesystem.clearChangedPaths();
-
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 1,
-      }, invalidatedSources: const {});
-
-      expect(filesystem.read('/a/lib/a.g.dart'), 'a');
-      expect(filesystem.changedPaths, isEmpty);
-    });
-
-    test('write with changed generated content across builds updates file and '
-        'changedPaths', () {
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 1,
-      }, invalidatedSources: null);
-      filesystem.write('/a/lib/a.g.dart', 'before');
-      filesystem.phase = 2;
-      filesystem.clearChangedPaths();
-
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 1,
-      }, invalidatedSources: const {});
-      filesystem.write('/a/lib/a.g.dart', 'after');
-
-      expect(filesystem.read('/a/lib/a.g.dart'), 'after');
-      expect(filesystem.changedPaths, {'/a/lib/a.g.dart'});
-    });
-
-    test('initial build clears all cached contents', () {
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 1,
-      }, invalidatedSources: null);
-      filesystem.write('/a/lib/a.dart', 'class A {}');
-      filesystem.write('/a/lib/a.g.dart', 'generated');
-      filesystem.phase = 2;
-      filesystem.clearChangedPaths();
-
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 1,
-      }, invalidatedSources: null);
-
-      expect(filesystem.exists('/a/lib/a.dart'), isFalse);
-      expect(filesystem.exists('/a/lib/a.g.dart'), isFalse);
-      expect(filesystem.changedPaths, {'/a/lib/a.dart', '/a/lib/a.g.dart'});
-    });
-
-    test('incremental build removes only invalidated source contents', () {
-      filesystem.write('/a/foo.txt', 'bar');
-      filesystem.write('/b/bar.txt', 'baz');
-      filesystem.clearChangedPaths();
 
       filesystem.startBuild(
-        const {},
-        invalidatedSources: {AssetId.parse('a|foo.txt')},
+        builderFilesystem: builderFilesystem,
+        buildInputs: BuildInputs((b) => b..cleanBuild = true),
       );
 
-      expect(filesystem.exists('/a/foo.txt'), isFalse);
-      expect(filesystem.exists('/b/bar.txt'), isTrue);
-      expect(filesystem.changedPaths, {'/a/foo.txt'});
+      expect(filesystem.exists('/a/lib/a.dart'), isTrue);
+      expect(filesystem.read('/a/lib/a.dart'), 'class A {}');
+      expect(filesystem.changedPaths, {'/a/lib/a.dart'});
     });
 
-    test('startBuild reports visibility changes for retained generated '
-        'files', () {
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 1,
-      }, invalidatedSources: null);
-      filesystem.write('/a/lib/a.g.dart', 'a');
-      filesystem.phase = 2;
+    test('startBuild incremental syncs deleted and updated sources', () {
+      final sourceA = AssetId('a', 'lib/a.dart');
+      final sourceB = AssetId('a', 'lib/b.dart');
+
+      builderFilesystem = createBuilderFilesystem(
+        sources: {
+          sourceA: AssetContent.string('A1'),
+          sourceB: AssetContent.string('B1'),
+        },
+      );
+      filesystem.startBuild(
+        builderFilesystem: builderFilesystem,
+        buildInputs: BuildInputs((b) => b..cleanBuild = true),
+      );
+
       filesystem.clearChangedPaths();
 
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 3,
-      }, invalidatedSources: const {});
+      // Incremental build: Delete A, Update B.
+      builderFilesystem = createBuilderFilesystem(
+        sources: {sourceB: AssetContent.string('B2')},
+      );
+      filesystem.startBuild(
+        builderFilesystem: builderFilesystem,
+        buildInputs: BuildInputs(
+          (b) => b
+            ..cleanBuild = false
+            ..deletedSources.add(sourceA)
+            ..updatedSources.add(sourceB),
+        ),
+      );
 
-      expect(filesystem.changedPaths, {'/a/lib/a.g.dart'});
-      expect(filesystem.exists('/a/lib/a.g.dart'), false);
+      expect(filesystem.exists('/a/lib/a.dart'), isFalse);
+      expect(filesystem.exists('/a/lib/b.dart'), isTrue);
+      expect(filesystem.read('/a/lib/b.dart'), 'B2');
+      expect(
+        filesystem.changedPaths,
+        unorderedEquals(['/a/lib/a.dart', '/a/lib/b.dart']),
+      );
     });
 
-    test('files change by phases', () {
-      filesystem.startBuild({
-        AssetId.parse('a|lib/a.g.dart'): 1,
-        AssetId.parse('b|lib/b.g.dart'): 2,
-      }, invalidatedSources: null);
+    test('mid-build output generation updates cache and changedPaths', () {
+      final outputId = AssetId('a', 'lib/out.g.dart');
 
-      filesystem.write('/a/lib/a.g.dart', 'a');
-      filesystem.write('/b/lib/b.g.dart', 'b');
-      filesystem.clearChangedPaths();
+      builderFilesystem = createBuilderFilesystem(
+        generatedPhases: {outputId: 1},
+      );
 
-      expect(filesystem.exists('/a/lib/a.g.dart'), false);
-      expect(filesystem.exists('/b/lib/b.g.dart'), false);
+      filesystem.startBuild(
+        builderFilesystem: builderFilesystem,
+        buildInputs: BuildInputs((b) => b..cleanBuild = true),
+      );
 
+      expect(filesystem.exists('/a/lib/out.g.dart'), isFalse);
+
+      // Mid-build, the builder generates the output.
+      builderFilesystem.buildState.updateBuildStepResult(
+        builderFilesystem.buildStepPlan.stepForDeclaredOutputOrNull(outputId)!,
+        BuildStepResult(
+          (b) => b
+            ..result = true
+            ..isHidden = false
+            ..outputs[outputId] = AssetContent.string('generated'),
+        ),
+      );
+      builderFilesystem.updateContent(
+        id: outputId,
+        content: AssetContent.string('generated'),
+      );
+
+      // Advance phase to make it visible.
       filesystem.phase = 2;
-      expect(filesystem.changedPaths, {'/a/lib/a.g.dart'});
-      filesystem.clearChangedPaths();
-      expect(filesystem.exists('/a/lib/a.g.dart'), true);
-      expect(filesystem.exists('/b/lib/b.g.dart'), false);
 
+      expect(filesystem.exists('/a/lib/out.g.dart'), isTrue);
+      expect(filesystem.read('/a/lib/out.g.dart'), 'generated');
+      expect(filesystem.changedPaths, {'/a/lib/out.g.dart'});
+    });
+
+    test('files generated at later phases are visible when phase advances', () {
+      final output1 = AssetId('a', 'lib/out1.g.dart');
+      final output2 = AssetId('a', 'lib/out2.g.dart');
+
+      builderFilesystem = createBuilderFilesystem(
+        generatedPhases: {output1: 1, output2: 2},
+      );
+
+      filesystem.startBuild(
+        builderFilesystem: builderFilesystem,
+        buildInputs: BuildInputs((b) => b..cleanBuild = true),
+      );
+
+      builderFilesystem.buildState.updateBuildStepResult(
+        builderFilesystem.buildStepPlan.stepForDeclaredOutputOrNull(output1)!,
+        BuildStepResult(
+          (b) => b
+            ..result = true
+            ..isHidden = false
+            ..outputs[output1] = AssetContent.string('g1'),
+        ),
+      );
+      builderFilesystem.updateContent(
+        id: output1,
+        content: AssetContent.string('g1'),
+      );
+
+      builderFilesystem.buildState.updateBuildStepResult(
+        builderFilesystem.buildStepPlan.stepForDeclaredOutputOrNull(output2)!,
+        BuildStepResult(
+          (b) => b
+            ..result = true
+            ..isHidden = false
+            ..outputs[output2] = AssetContent.string('g2'),
+        ),
+      );
+      builderFilesystem.updateContent(
+        id: output2,
+        content: AssetContent.string('g2'),
+      );
+      filesystem.clearChangedPaths();
+
+      // Phase 1 (executing): nothing visible yet.
+      filesystem.phase = 1;
+      expect(filesystem.exists('/a/lib/out1.g.dart'), isFalse);
+      expect(filesystem.exists('/a/lib/out2.g.dart'), isFalse);
+
+      // Phase 2: out1 is visible, out2 is executing.
+      filesystem.phase = 2;
+      expect(filesystem.exists('/a/lib/out1.g.dart'), isTrue);
+      expect(filesystem.exists('/a/lib/out2.g.dart'), isFalse);
+      expect(filesystem.changedPaths, {'/a/lib/out1.g.dart'});
+      filesystem.clearChangedPaths();
+
+      // Phase 3: out2 is visible.
       filesystem.phase = 3;
-      expect(filesystem.changedPaths, {'/b/lib/b.g.dart'});
-      filesystem.clearChangedPaths();
-      expect(filesystem.exists('/a/lib/a.g.dart'), true);
-      expect(filesystem.exists('/b/lib/b.g.dart'), true);
-
-      filesystem.phase = 0;
-      expect(filesystem.changedPaths, {'/a/lib/a.g.dart', '/b/lib/b.g.dart'});
-      expect(filesystem.exists('/a/lib/a.g.dart'), false);
-      expect(filesystem.exists('/b/lib/b.g.dart'), false);
+      expect(filesystem.exists('/a/lib/out1.g.dart'), isTrue);
+      expect(filesystem.exists('/a/lib/out2.g.dart'), isTrue);
+      expect(filesystem.changedPaths, {'/a/lib/out2.g.dart'});
     });
   });
-}
-
-extension _AnalysisDriverFilesystemExtensions on AnalysisDriverFilesystem {
-  void write(String path, String content) {
-    writeContent(
-      BuildRunnerFileContent(path, true, content, content.hashCode.toString()),
-    );
-  }
 }

@@ -21,6 +21,7 @@ import 'build.dart';
 import 'build_result.dart';
 import 'build_state/asset_graph_json.dart';
 import 'build_state/build_state.dart';
+import 'resolver/asset_ids.dart';
 
 /// A series of builds with the same configuration.
 ///
@@ -272,31 +273,43 @@ class BuildSeries {
   ///
   /// Serializes and writes the updated `asset_graph.json`.
   Future<void> _writeBuildOutput(BuildResult result) async {
-    final deletes = <AssetId>{};
-    deletes.addAll(_buildPlan.conflictingOutputs);
-    deletes.addAll(_buildPlan.previousBuild.incompatibleBuildOutputsToDelete);
+    // Outputs to delete and whether each is hidden.
+    final deletes = <AssetId, bool>{
+      // Conflicting outputs and incompatible outputs are always not hidden.
+      for (final id in _buildPlan.conflictingOutputs) id: false,
+      for (final id
+          in _buildPlan.previousBuild.incompatibleBuildOutputsToDelete)
+        id: false,
+    };
 
     final previousState = _buildPlan.previousBuild.buildState;
     if (previousState != null) {
+      // Delete outputs that are no longer outputs.
       final currentState = result.buildState!;
-
-      for (final id in previousState.actualOutputs) {
-        final stepId = _buildPlan.buildStepPlan.stepForDeclaredOutputOrNull(id);
-        if (stepId == null) {
-          deletes.add(id);
-        } else if (currentState.stepResultOrNull(stepId) != null) {
-          if (!currentState.isActualOutput(
-            buildStepPlan: _buildPlan.buildStepPlan,
-            id: id,
-          )) {
-            deletes.add(id);
+      for (final stepResult in previousState.actualStepResults) {
+        for (final id in stepResult.outputs.keys) {
+          final stepId = _buildPlan.buildStepPlan.stepForDeclaredOutputOrNull(
+            id,
+          );
+          if (stepId == null) {
+            // Step was removed from the build.
+            deletes[id] = stepResult.isHidden;
+          } else {
+            final stepResultOrNull = currentState.stepResultOrNull(stepId);
+            if (stepResultOrNull != null &&
+                !stepResultOrNull.outputs.containsKey(id)) {
+              // Step ran but did not produce the output.
+              deletes[id] = stepResult.isHidden;
+            }
           }
         }
       }
-
-      for (final id in previousState.actualPostOutputs) {
-        if (!currentState.isActualPostOutput(id)) {
-          deletes.add(id);
+      // Delete post process outputs.
+      for (final postProcessResult in previousState.actualPostProcessResults) {
+        for (final id in postProcessResult.outputs.keys) {
+          if (!currentState.isActualPostOutput(id)) {
+            deletes[id] = postProcessResult.hidden;
+          }
         }
       }
     }
@@ -306,7 +319,10 @@ class BuildSeries {
         _buildPlan.buildSpec.buildPackages.outputRoot,
         generatedOutputDirectory,
       );
-      await _buildPlan.readerWriter.deleteDirectory(generatedOutputDirectoryId);
+      await _buildPlan.readerWriter.deleteDirectory(
+        generatedOutputDirectoryId,
+        onDelete: _buildPlan.onDelete,
+      );
     }
 
     for (final output in result.outputs) {
@@ -315,10 +331,21 @@ class BuildSeries {
         id: output,
         buildStepPlan: _buildPlan.buildStepPlan,
       )!;
-      await _buildPlan.readerWriter.writeAsBytes(output, content.bytes);
+      await _buildPlan.readerWriter.writeAsBytes(
+        output,
+        content.bytes,
+        hidden: output.isHidden(
+          buildStepPlan: _buildPlan.buildStepPlan,
+          buildState: result.buildState!,
+        ),
+      );
     }
-    for (final id in deletes) {
-      await _buildPlan.readerWriter.delete(id);
+    for (final entry in deletes.entries) {
+      await _buildPlan.readerWriter.delete(
+        entry.key,
+        hidden: entry.value,
+        onDelete: _buildPlan.onDelete,
+      );
     }
 
     final assetGraphId = AssetId(
@@ -352,8 +379,7 @@ class BuildSeries {
         outputSymlinksOnly:
             _buildPlan.buildSpec.buildOptions.outputSymlinksOnly,
         buildDirs: _buildPlan.buildDirs,
-        buildOutputReader: result.buildOutputReader,
-        readerWriter: _buildPlan.readerWriter,
+        buildOutputReader: result.buildOutputReader!,
       )) {
         return result.copyWith(
           status: BuildStatus.failure,

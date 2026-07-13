@@ -1,4 +1,9 @@
-## 2.15.1-wip
+## 2.15.2
+
+- Allow `analyzer` 14.x, require 13.3.0.
+- Require Dart 3.11.0.
+
+## 2.15.1
 
 - Pass Dart SDK `--packages` arg to builder compiles, so they can be compiled
   with different packages to the current version solve.
@@ -15,6 +20,11 @@
   crashing.
 - Bug fix: fix `dart run build_runner test` to correctly pass arguments after
   `--` to the test process.
+- Bug fix: fix crash if a resolved Dart source contains invalid utf8.
+- Bug fix: fix incorrect output when builder code changes during builder
+  compile.
+- Bug fix: do a clean build when switching between a workspace build and a
+  package build, as incremental builds were sometimes incorrect.
 - Require Dart 3.8.0.
 
 ## 2.15.0

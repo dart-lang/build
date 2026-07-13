@@ -90,7 +90,7 @@ void main() {
     }
 
     test('reports updates', () async {
-      final buildState = BuildState({assetId, assetId2});
+      final buildState = BuildState({assetId: null, assetId2: null});
 
       // Write an output and add it to the build state as if it was built.
       await readerWriter.writeAsString(outputId, '// output');
@@ -123,8 +123,7 @@ void main() {
 
       expect(
         {
-          ...buildPlan.buildInputs.addedSources,
-          ...buildPlan.buildInputs.modifiedSources,
+          ...buildPlan.buildInputs.updatedSources,
           ...buildPlan.buildInputs.deletedSources,
           ...buildPlan.buildInputs.deletedOutputs,
         },

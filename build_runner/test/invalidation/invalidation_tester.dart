@@ -8,6 +8,7 @@ import 'dart:math';
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
+import 'package:build_runner/src/build/resolver/resolvers_impl.dart';
 import 'package:build_runner/src/constants.dart';
 import 'package:build_runner/src/logging/build_log.dart';
 import 'package:build_test/build_test.dart';
@@ -23,6 +24,7 @@ import 'package:test/test.dart';
 /// IDs under `.dart_tool` are mapped back to the same namespace.
 class InvalidationTester {
   final bool testIsRunning;
+  final bool discardResolver;
 
   /// The source assets on disk before the first build.
   final Set<AssetId> _sourceAssets = {};
@@ -70,7 +72,14 @@ class InvalidationTester {
   /// Output number, for writing outputs that are different.
   int _outputNumber = 0;
 
-  InvalidationTester({this.testIsRunning = true});
+  /// An invalidation tester.
+  ///
+  /// Set [discardResolver] to control whether the resolver instance is
+  /// discarded between builds. Discarding the resolver makes the builds more
+  /// like independent "build" commands. Keeping the resolver makes the builds
+  /// more like multiple builds by the same "watch" command. So, it's useful to
+  /// test both.
+  InvalidationTester({this.testIsRunning = true, this.discardResolver = true});
 
   /// Starts logging test setup.
   ///
@@ -253,6 +262,7 @@ class InvalidationTester {
       optionalBuilders: _builders.where((b) => b.isOptional).toSet(),
       visibleOutputBuilders: _builders.where((b) => b.outputIsVisible).toSet(),
       testingBuilderConfig: false,
+      resolvers: discardResolver ? ResolversImpl.custom() : null,
     );
     final logString = log.toString();
     if (testIsRunning) {

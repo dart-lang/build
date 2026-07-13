@@ -19,6 +19,7 @@ import '../../logging/timed_activities.dart';
 import '../build_step_impl.dart';
 import 'analysis_driver_filesystem.dart';
 import 'analysis_driver_model.dart';
+import 'asset_ids.dart';
 import 'build_step_resolver.dart';
 
 /// [Resolver] for the entire build.
@@ -38,7 +39,7 @@ class BuildResolver {
     : _driverPool = AnalyzeActivityPool(driverPool);
 
   Future<bool> isLibrary(AssetId assetId) async {
-    if (assetId.extension != '.dart') return false;
+    if (!assetId.isDart) return false;
     return _driverPool.withResource(() async {
       if (!_driver.isUriOfExistingFile(assetId.uri)) return false;
       final result =

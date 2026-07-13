@@ -9,7 +9,6 @@ import 'package:built_value/built_value.dart';
 import '../build/build_state/build_step_id.dart';
 import '../build/build_state/exceptions.dart';
 import '../constants.dart';
-import '../io/generated_asset_hider.dart';
 import 'build_phases.dart';
 import 'phase.dart';
 
@@ -17,12 +16,14 @@ part 'build_step_plan.g.dart';
 
 /// Planned build steps for one build and their declared outputs.
 abstract class BuildStepPlan
-    implements Built<BuildStepPlan, BuildStepPlanBuilder>, GeneratedAssetHider {
+    implements Built<BuildStepPlan, BuildStepPlanBuilder> {
   BuildPhases get buildPhases;
 
   BuiltMap<AssetId, BuildStepId> get buildStepsByDeclaredOutput;
 
   BuiltListMultimap<AssetId, AssetId> get declaredOutputsByPrimaryInput;
+
+  BuiltListMultimap<BuildStepId, AssetId> get declaredOutputsByStep;
 
   BuiltList<BuiltList<BuildStepId>> get buildStepsByPhase;
 
@@ -66,6 +67,7 @@ abstract class BuildStepPlan
           phaseNumber: phaseNum,
         );
         phaseSteps.add(buildStepId);
+        result.declaredOutputsByStep.addValues(buildStepId, outputs);
 
         for (final output in outputs) {
           if (result.buildStepsByDeclaredOutput[output] != null) {
@@ -121,7 +123,6 @@ abstract class BuildStepPlan
     return action.targetSources.matches(currentInput);
   }
 
-  @override
   bool isHidden(AssetId id) {
     if (id.path.startsWith(generatedOutputDirectory) ||
         id.path.startsWith(cacheDirectoryPath)) {
@@ -162,9 +163,4 @@ abstract class BuildStepPlan
     }
     return results;
   }
-
-  Map<AssetId, int> get declaredOutputPhases => {
-    for (final entry in buildStepsByDeclaredOutput.entries)
-      entry.key: entry.value.phaseNumber,
-  };
 }

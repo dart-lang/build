@@ -11,6 +11,8 @@ import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/build_state/build_step_result.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_id.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_result.dart';
+import 'package:build_runner/src/build/builder_filesystem.dart';
+import 'package:build_runner/src/build/resolver/asset_ids.dart';
 import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_directory.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
@@ -91,7 +93,7 @@ void main() {
     setUp(() async {
       readerWriter = InternalTestReaderWriter(outputRootPackage: 'a');
       for (final source in sources.entries) {
-        readerWriter.testing.writeString(source.key, source.value);
+        await readerWriter.writeAsString(source.key, source.value);
       }
       buildPlan = await BuildPlan.load(
         await BuildSpec.load(
@@ -108,10 +110,15 @@ void main() {
           ),
         ),
       );
-      buildState = BuildState(buildPlan.buildInputs.sources.toSet());
+      buildState = BuildState(buildPlan.buildInputs.sourceContents.toMap());
       buildOutputReader = BuildOutputReader(
-        buildPlan: buildPlan,
-        buildState: buildState,
+        builderFilesystem: BuilderFilesystem(
+          buildPackages: buildPlan.buildSpec.buildPackages,
+          buildConfigs: buildPlan.buildSpec.buildConfigs,
+          buildState: buildState,
+          buildStepPlan: buildPlan.buildStepPlan,
+          readerWriter: buildPlan.readerWriter,
+        ),
       );
 
       for (final id in [
@@ -127,11 +134,15 @@ void main() {
           buildPlan.buildStepPlan.stepForDeclaredOutput(id),
           stepResult,
         );
-        readerWriter.testing.writeString(
+        await readerWriter.writeAsString(
           id,
           sources[buildPlan.buildStepPlan
               .stepForDeclaredOutput(id)
               .primaryInput]!,
+          hidden: id.isHidden(
+            buildStepPlan: buildPlan.buildStepPlan,
+            buildState: buildState,
+          ),
         );
       }
       tmpDir = await Directory.systemTemp.createTemp('build_tests');
@@ -148,7 +159,6 @@ void main() {
           BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
         buildPackages: buildPackages,
-        readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
       );
@@ -169,7 +179,6 @@ void main() {
           BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
         buildPackages: buildPackages,
-        readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
       );
@@ -196,7 +205,6 @@ void main() {
           ),
         }.build(),
         buildPackages: buildPackages,
-        readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
       );
@@ -213,7 +221,6 @@ void main() {
           BuildDirectory('foo', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
         buildPackages: buildPackages,
-        readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
       );
@@ -225,7 +232,6 @@ void main() {
       final success = await createMergedOutputDirectories(
         buildDirs: {BuildDirectory('web'), BuildDirectory('foo')}.build(),
         buildPackages: buildPackages,
-        readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
       );
@@ -238,7 +244,6 @@ void main() {
           BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
         buildPackages: buildPackages,
-        readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
       );
@@ -258,7 +263,6 @@ void main() {
           ),
         }.build(),
         buildPackages: buildPackages,
-        readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
       );
@@ -272,7 +276,6 @@ void main() {
           BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
         buildPackages: buildPackages,
-        readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
       );
@@ -291,7 +294,6 @@ void main() {
           ),
         }.build(),
         buildPackages: buildPackages,
-        readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
       );
@@ -318,7 +320,6 @@ void main() {
           BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
         buildPackages: buildPackages,
-        readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
       );
@@ -336,7 +337,6 @@ void main() {
           ),
         }.build(),
         buildPackages: buildPackages,
-        readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
       );
@@ -371,7 +371,6 @@ void main() {
           BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
         buildPackages: buildPackages,
-        readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
       );
@@ -383,28 +382,29 @@ void main() {
 
     test('doesnt always write files not matching outputDirs', () async {
       buildOutputReader = BuildOutputReader(
-        buildPlan: buildPlan.rebuild(
-          (b) => b.buildDirs.replace({BuildDirectory('foo')}),
+        builderFilesystem: BuilderFilesystem(
+          buildPackages: buildPlan.buildSpec.buildPackages,
+          buildConfigs: buildPlan.buildSpec.buildConfigs,
+          buildState: buildState,
+          buildStepPlan: buildPlan.buildStepPlan,
+          readerWriter: buildPlan.readerWriter,
         ),
-        buildState: buildState,
       );
       final success = await createMergedOutputDirectories(
         buildDirs: {
-          BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
+          BuildDirectory('foo', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
         buildPackages: buildPackages,
-        readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
       );
       expect(success, isTrue);
 
       final expectedFiles = <String, dynamic>{
-        'foo/d.txt': 'd',
-        'foo/d.txt.copy': 'd',
+        'd.txt': 'd',
+        'd.txt.copy': 'd',
         'packages/a/a.txt': 'a',
         'packages/b/c.txt': 'c',
-        'web/b.txt': 'b',
         '.dart_tool/package_config.json': _expectedPackageConfig('a', [
           'a',
           'b',
@@ -427,7 +427,6 @@ void main() {
             BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
           }.build(),
           buildPackages: buildPackages,
-          readerWriter: readerWriter,
           buildOutputReader: buildOutputReader,
           outputSymlinksOnly: false,
         );
@@ -453,7 +452,6 @@ void main() {
             BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
           }.build(),
           buildPackages: buildPackages,
-          readerWriter: readerWriter,
           buildOutputReader: buildOutputReader,
           outputSymlinksOnly: false,
         );
@@ -468,15 +466,19 @@ void main() {
         }
         // Recreate buildOutputReader so it notices the delete.
         buildOutputReader = BuildOutputReader(
-          buildPlan: buildPlan,
-          buildState: buildState,
+          builderFilesystem: BuilderFilesystem(
+            buildPackages: buildPlan.buildSpec.buildPackages,
+            buildConfigs: buildPlan.buildSpec.buildConfigs,
+            buildState: buildState,
+            buildStepPlan: buildPlan.buildStepPlan,
+            readerWriter: buildPlan.readerWriter,
+          ),
         );
         success = await createMergedOutputDirectories(
           buildDirs: {
             BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
           }.build(),
           buildPackages: buildPackages,
-          readerWriter: readerWriter,
           buildOutputReader: buildOutputReader,
           outputSymlinksOnly: false,
         );

@@ -13,7 +13,11 @@ import 'invalidation_tester.dart';
 ///
 /// Run using `tool/leak_check.sh`.
 void main(List<String> arguments) async {
-  final tester = InvalidationTester(testIsRunning: false);
+  final tester = InvalidationTester(
+    testIsRunning: false,
+    // All the long-running commands keep the resolver, so do that.
+    discardResolver: false,
+  );
 
   tester.sources(['a.1']);
 

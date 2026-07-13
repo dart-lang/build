@@ -74,7 +74,12 @@ class Server {
 
   /// Starts listening for build daemon clients.
   Future<int> listen() async {
-    final handler = webSocketHandler((WebSocketChannel channel, _) async {
+    // The client does not set the Origin header. Reject any client that does,
+    // which includes all browsers.
+    final handler = webSocketHandler(allowedOrigins: const [], (
+      WebSocketChannel channel,
+      _,
+    ) async {
       channel.stream.listen(
         (message) async {
           dynamic request;
