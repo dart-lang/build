@@ -17,6 +17,7 @@ class AssetDepsLoader {
 
   final BuilderFilesystem _buildFilesystem;
   final int phase;
+  final List<int> runningAtPhases = [];
 
   AssetDepsLoader(this._buildFilesystem, this.phase);
   factory AssetDepsLoader.fromDeps(PhasedAssetDeps deps) =>
@@ -24,7 +25,6 @@ class AssetDepsLoader {
 
   /// Reads [id]
   ///
-  /// If [id] will be generated at a phase equal to or after [phase], the
   /// result is incomplete, with an expiry phase.
   Future<PhasedValue<AssetDeps>> load(AssetId id) async {
     final content = await _buildFilesystem.readPhased(phase, id);
@@ -86,6 +86,9 @@ class _InMemoryAssetDepsLoader implements AssetDepsLoader {
   // run, so incomplete data won't actually be used.
   @override
   int get phase => 0xffffffff;
+
+  @override
+  final List<int> runningAtPhases = [];
 
   @override
   ExpiringValue<AssetDeps> _parse(AssetId id, ExpiringValue<String> content) =>

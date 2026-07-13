@@ -20,6 +20,7 @@ import '../io/asset_tracker.dart';
 import '../io/create_merged_dir.dart';
 import '../logging/build_log.dart';
 import 'asset_content.dart';
+import 'br_outputs.dart';
 import 'build.dart';
 import 'build_result.dart';
 import 'build_state/asset_graph_json.dart';
@@ -99,16 +100,21 @@ class BuildSeries {
         // If the first is by `build_runner` and the second is an external
         // change then just ignoring the event would be incorrect.
         if ((change.type == .ADD || change.type == .MODIFY) &&
-            _buildPlan.buildStepPlan.isDeclaredOutput(id)) {
-          final expectedContent = _buildPlan.previousBuild.buildState
-              ?.contentOf(id: id, buildStepPlan: _buildPlan.buildStepPlan);
-          if (expectedContent != null) {
+            (_buildPlan.buildStepPlan.isDeclaredOutput(id) || id.isBrOutput)) {
+          final expectedDigest = id.isBrOutput
+              ? _buildPlan.previousBuild.buildState
+                    ?.sharedPartContent(id)
+                    ?.digest
+              : _buildPlan.previousBuild.buildState
+                    ?.contentOf(id: id, buildStepPlan: _buildPlan.buildStepPlan)
+                    ?.digest;
+          if (expectedDigest != null) {
             try {
               final bytes = await _buildPlan.readerWriter.readAsBytes(
                 id,
                 hidden: id.isHidden(buildStepPlan: _buildPlan.buildStepPlan),
               );
-              if (md5.convert(bytes) == expectedContent.digest) {
+              if (md5.convert(bytes) == expectedDigest) {
                 continue;
               }
             } catch (_) {}
@@ -133,7 +139,7 @@ class BuildSeries {
           false;
       if (!isFile) {
         // Ignore under `.dart_tool/build`.
-        if (id.path.startsWith(cacheDirectoryPath)) continue;
+        if (id.path.startsWith(cacheDirectoryPath) && !id.isBrOutput) continue;
 
         // Ignore modifications and deletes.
         if (change.type != ChangeType.ADD) continue;
@@ -150,6 +156,7 @@ class BuildSeries {
       // If not copying to a merged output directory, ignore changes to files
       // with no outputs.
       if (!_buildPlan.buildSpec.buildOptions.anyMergedOutputDirectory &&
+          !id.isBrOutput &&
           !(_buildPlan.previousBuild.buildState?.isMissingSource(id) ??
               false) &&
           _buildPlan.previousBuild.buildState?.contentOf(
@@ -161,7 +168,7 @@ class BuildSeries {
       }
 
       // Handle modifications and creations of outputs.
-      if (_buildPlan.buildStepPlan.isDeclaredOutput(id) &&
+      if ((_buildPlan.buildStepPlan.isDeclaredOutput(id) || id.isBrOutput) &&
           change.type != .REMOVE &&
           _outputStrategy == OutputStrategy.keep) {
         continue;
@@ -316,6 +323,12 @@ class BuildSeries {
     }
 
     for (final output in result.outputs) {
+      if (_outputStrategy == OutputStrategy.keep && output.isBrSharedPart) {
+        final primaryInput = output.primaryInputForSharedPartId!;
+        if (!_buildPlan.buildInputs.updatedSources.contains(primaryInput)) {
+          continue;
+        }
+      }
       final content = result.buildState!.contentOf(
         id: output,
         buildStepPlan: _buildPlan.buildStepPlan,
@@ -415,6 +428,11 @@ class BuildSeries {
           if (!currentState.isActualPostOutput(id)) {
             maybeAddDelete(id, postProcessResult.hidden);
           }
+        }
+      }
+      for (final primaryInput in previousState.sharedPartPrimaryInputs) {
+        if (!currentState.hasSharedPart(primaryInput)) {
+          maybeAddDelete(primaryInput.sharedPartIdForPrimaryInput, false);
         }
       }
     }

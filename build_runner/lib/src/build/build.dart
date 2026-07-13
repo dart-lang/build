@@ -22,12 +22,11 @@ import '../build_plan/build_spec.dart';
 import '../build_plan/build_step_plan.dart';
 import '../build_plan/phase.dart';
 import '../build_plan/testing_overrides.dart';
-
 import '../io/build_output_reader.dart';
-
 import '../logging/build_log.dart';
 import '../logging/build_log_logger.dart';
 import '../logging/timed_activities.dart';
+import 'br_outputs.dart';
 import 'build_dirs.dart';
 import 'build_result.dart';
 import 'build_state/build_state.dart';
@@ -47,6 +46,7 @@ import 'library_cycle_graph/phased_asset_deps.dart';
 import 'post_process_build_step_impl.dart';
 import 'resolver/analysis_driver_model.dart';
 import 'resolver/resolvers_impl.dart';
+import 'shared_part.dart';
 
 final ResolversImpl _defaultResolvers = ResolversImpl(
   analysisDriverModel: AnalysisDriverModel(),
@@ -62,6 +62,7 @@ class Build {
       LibraryCycleGraphLoader();
   final AssetDepsLoader? previousDepsLoader;
   final Resolvers resolvers;
+  final _partBuildersRan = <AssetId>{};
 
   /// If [resolvers] is a `ResolversImpl`, the same instance.
   ///
@@ -103,6 +104,17 @@ class Build {
         for (final id in buildPlan.buildInputs.sources)
           id: buildPlan.buildInputs.sourceContents[id],
       });
+
+  late final Map<int, int> _partPhaseIndices = () {
+    final result = <int, int>{};
+    var nextIndex = 0;
+    for (var i = 0; i < buildPhases.inBuildPhases.length; i++) {
+      if (buildPhases.inBuildPhases[i].addsToLibrary) {
+        result[i] = nextIndex++;
+      }
+    }
+    return result;
+  }();
 
   BuildSpec get buildSpec => buildPlan.buildSpec;
   BuildOptions get buildOptions => buildSpec.buildOptions;
@@ -295,6 +307,19 @@ class Build {
     );
     // Assume success, failed outputs will be checked later.
 
+    final generatedPartOutputs = buildState.sharedPartPrimaryInputs.toList();
+    for (final primaryInput in generatedPartOutputs) {
+      final partId = primaryInput.sharedPartIdForPrimaryInput;
+      final currentContent = buildState.sharedPartContent(partId);
+      final previousContent = previousBuildState?.sharedPartContent(partId);
+      if (_partBuildersRan.contains(primaryInput) ||
+          buildInputs.invalidOutputs.contains(partId) ||
+          previousContent == null ||
+          currentContent?.digest != previousContent.digest) {
+        outputs.add(partId);
+      }
+    }
+
     return BuildResult(
       status: BuildStatus.success,
       outputs: outputs.build(),
@@ -355,9 +380,16 @@ class Build {
   /// If it is currently being built according to [lazyPhases], waits for it to
   /// be built.
   Future<void> _buildOutput(AssetId id) async {
+    if (id.isBrSharedPart) return;
+
     final step = buildStepPlan.stepForDeclaredOutputOrNull(id);
-    if (step != null &&
-        !buildState.isProcessedOutput(buildStepPlan: buildStepPlan, id: id)) {
+    if (step != null) {
+      await _buildStepIfNotProcessed(step);
+    }
+  }
+
+  Future<void> _buildStepIfNotProcessed(BuildStepId step) async {
+    if (buildState.stepResultOrNull(step) == null) {
       await lazyPhases.putIfAbsent(step, () async {
         final phase = buildPhases.inBuildPhases[step.phaseNumber];
         return _buildForPrimaryInput(
@@ -405,6 +437,7 @@ class Build {
       inputTracker: inputTracker,
       buildFilesystem: _builderFilesystem,
       phase: buildStepId.phaseNumber,
+      partPhaseIndex: _partPhaseIndices[buildStepId.phaseNumber],
       resolvers: resolvers,
       resourceManager: resourceManager,
       reportUnusedAssets: (Iterable<AssetId> assets) =>
@@ -419,12 +452,21 @@ class Build {
       } else if (stepAction == StepAction.skipFailedPrimaryInput) {
         await _markStepFailed(buildStepId, builderOutputs);
       } else if (stepAction == StepAction.skipReuse) {
+        buildState.copyPartContribution(
+          from: previousBuildState!,
+          primaryInput: buildStepId.primaryInput,
+          phase: buildStepId.phaseNumber,
+          languageVersion: step.languageVersion,
+        );
         _builderFilesystem.updateBuildStepResult(
           buildStepId,
           previousBuildState!.stepResult(buildStepId),
         );
       }
       return <AssetId>[];
+    }
+    if (_partPhaseIndices[buildStepId.phaseNumber] != null) {
+      _partBuildersRan.add(buildStepId.primaryInput);
     }
 
     // Clear input tracking accumulated during `_buildShouldRun`.
@@ -782,6 +824,14 @@ class Build {
         }
       }
 
+      if (_partPhaseIndices[step.phaseNumber] != null) {
+        final partId = step.primaryInput.sharedPartIdForPrimaryInput;
+        if (buildInputs.deletedSources.contains(partId) ||
+            buildInputs.invalidOutputs.contains(partId)) {
+          return StepAction.run;
+        }
+      }
+
       final stepResult = previousBuildState?.stepResultOrNull(step);
       if (stepResult == null || !stepResult.hasRun) return StepAction.run;
 
@@ -881,6 +931,13 @@ class Build {
           rootLibraryCycleHasChanged = true;
           break;
         }
+        if (await _hasInputChanged(
+          phaseNumber: phaseNumber,
+          input: id.sharedPartIdForPrimaryInput,
+        )) {
+          rootLibraryCycleHasChanged = true;
+          break;
+        }
       }
       if (rootLibraryCycleHasChanged) {
         changedGraphs[nextGraph] = true;
@@ -908,7 +965,16 @@ class Build {
     required AssetId input,
     required int phaseNumber,
   }) async {
-    if (buildStepPlan.isDeclaredOutput(input)) {
+    if (input.isBrSharedPart) {
+      if (phaseNumber == 0) return false;
+      final oldDigest = previousBuildState
+          ?.sharedPartContent(input, upToPhase: phaseNumber - 1)
+          ?.digest;
+      final newDigest = buildState
+          .sharedPartContent(input, upToPhase: phaseNumber - 1)
+          ?.digest;
+      return oldDigest != newDigest;
+    } else if (buildStepPlan.isDeclaredOutput(input)) {
       final phase = buildStepPlan.stepForDeclaredOutput(input).phaseNumber;
       if (phase >= phaseNumber) {
         // It's not readable in this phase.
@@ -1077,7 +1143,19 @@ class Build {
       ..inputs.replace(usedInputs)
       ..globsEvaluated.replace(inputTracker.globsEvaluated)
       ..resolverEntrypoints.replace(inputTracker.resolverEntrypoints)
-      ..errors.replace(errors);
+      ..errors.replace(errors)
+      ..wrotePartContribution = step.wrotePartContribution;
+    if (step.wrotePartContribution) {
+      if (!buildState.hasSharedPart(input)) {
+        buildState.addSharedPart(SharedPart(input, step.languageVersion));
+      }
+      buildState.updatePartContribution(
+        input,
+        phaseNum,
+        step.partImports,
+        step.partContribution ?? '',
+      );
+    }
     for (final output in outputs) {
       if (step.outputs.containsKey(output)) {
         final content = step.outputs[output]!;

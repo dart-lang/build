@@ -5,7 +5,6 @@
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/serializer.dart';
-
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 
@@ -13,6 +12,8 @@ import '../../build_plan/build_packages.dart';
 import '../../build_plan/build_step_plan.dart';
 import '../asset_content.dart';
 
+import '../br_outputs.dart';
+import '../shared_part.dart';
 import 'build_step_id.dart';
 import 'build_step_result.dart';
 import 'glob_id.dart';
@@ -47,6 +48,9 @@ class BuildState {
   /// All post process build step outputs by the step that created them.
   final Map<AssetId, PostProcessBuildStepId> _postProcessOutputs;
 
+  /// Source added using `buildStep.librarySourceSink`.
+  final Map<AssetId, SharedPart> _partData = {};
+
   BuildState([Map<AssetId, AssetContent?> sources = const {}])
     : _sources = Sources(sources),
       _postProcessResultsByInput = {},
@@ -56,10 +60,11 @@ class BuildState {
 
   // --  Predicates over IDs and iterables over IDs.
 
-  /// Whether [id] is one of: source, declared output or actual post process
-  /// output.
+  /// Whether [id] is one of: source, `_br_` output, declared output or actual
+  /// post process output.
   bool isFile({required BuildStepPlan? buildStepPlan, required AssetId id}) =>
       isSource(id) ||
+      id.isBrOutput ||
       buildStepPlan?.isDeclaredOutput(id) == true ||
       isActualPostOutput(id);
 
@@ -214,6 +219,7 @@ class BuildState {
   /// If it is a post process output, returns `null` if it has not been
   /// generated.
   AssetContent? contentOf({BuildStepPlan? buildStepPlan, required AssetId id}) {
+    if (id.isBrOutput) return sharedPartContent(id);
     if (isSource(id)) return _sources.contentOfSource(id);
     final step = buildStepPlan?.stepForDeclaredOutputOrNull(id);
     if (step != null) {
@@ -230,6 +236,18 @@ class BuildState {
   ///
   /// Throws if it is not a source.
   AssetContent? contentOfSource(AssetId id) => _sources.contentOfSource(id);
+
+  // -- Shared parts.
+
+  /// Returns the content of the shared part [id], or `null` if it does not
+  /// exist.
+  AssetContent? sharedPartContent(AssetId id, {int? upToPhase}) {
+    final primaryInput = id.primaryInputForSharedPartId;
+    if (primaryInput == null) return null;
+    final partData = _partData[primaryInput];
+    if (partData == null) return null;
+    return partData.contentAt(phase: upToPhase);
+  }
 
   // -- Missing sources.
 
@@ -257,6 +275,52 @@ class BuildState {
       buildStepId.primaryInput,
       () => {},
     )[buildStepId.phaseNumber] = result;
+  }
+
+  void addSharedPart(SharedPart part) {
+    if (_partData.containsKey(part.primaryInput)) {
+      throw StateError('SharedPart for ${part.primaryInput} already exists.');
+    }
+    _partData[part.primaryInput] = part;
+  }
+
+  bool hasSharedPart(AssetId id) => _partData.containsKey(id);
+
+  Iterable<AssetId> get sharedPartPrimaryInputs => _partData.keys;
+
+  SharedPart? sharedPartOrNull(AssetId primaryInput) => _partData[primaryInput];
+
+  void updatePartContribution(
+    AssetId primaryInput,
+    int phase,
+    List<String> imports,
+    String contribution,
+  ) {
+    _partData[primaryInput]!.updateContribution(phase, imports, contribution);
+  }
+
+  void copyPartContribution({
+    required BuildState from,
+    required AssetId primaryInput,
+    required int phase,
+    required String? languageVersion,
+  }) {
+    final fromPart = from.sharedPartOrNull(primaryInput);
+    if (fromPart == null) return;
+    if (!hasSharedPart(primaryInput)) {
+      addSharedPart(
+        SharedPart(primaryInput, languageVersion ?? fromPart.languageVersion),
+      );
+    }
+    final imports = fromPart.imports[phase];
+    final contribution = fromPart.contributions[phase];
+    if (imports == null && contribution == null) return;
+    updatePartContribution(
+      primaryInput,
+      phase,
+      imports ?? const [],
+      contribution ?? '',
+    );
   }
 
   // -- Globs.

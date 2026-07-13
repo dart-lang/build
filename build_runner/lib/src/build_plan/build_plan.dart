@@ -7,6 +7,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 
 import '../build/asset_content.dart';
+import '../build/br_outputs.dart';
 import '../build/build_state/build_state.dart';
 import '../build/library_cycle_graph/phased_asset_deps.dart';
 import '../build/resolver/asset_ids.dart';
@@ -110,6 +111,8 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         ...cacheDirSources,
         ...previousBuildState.sources,
         ...previousBuildState.actualOutputs,
+        for (final id in previousBuildState.sharedPartPrimaryInputs)
+          id.sharedPartIdForPrimaryInput,
       };
 
       final previousBuildStepPlan = BuildStepPlan.compute(
@@ -332,6 +335,20 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         } else if (buildSpec.buildOptions.outputStrategy !=
             OutputStrategy.keep) {
           buildInputs.invalidOutputs.add(id);
+        } else if (id.isBrOutput) {
+          final primaryInput = id.primaryInputForSharedPartId;
+          if (primaryInput != null) {
+            final existing = previousBuildState.sharedPartOrNull(primaryInput);
+            existing?.restoreContent(newContent.stringValue());
+          }
+        }
+      } else if (oldExisted && exists && id.isBrOutput && newContent != null) {
+        final primaryInput = id.primaryInputForSharedPartId;
+        if (primaryInput != null) {
+          final existing = previousBuildState.sharedPartOrNull(primaryInput);
+          if (existing == null || !existing.tryRestore(newContent)) {
+            buildInputs.invalidOutputs.add(id);
+          }
         }
       }
     }

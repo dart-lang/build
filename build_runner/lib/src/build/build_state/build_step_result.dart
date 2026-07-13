@@ -28,6 +28,10 @@ abstract class BuildStepResult
   /// Outputs written by the step.
   BuiltMap<AssetId, AssetContent> get outputs;
 
+  /// Whether this step wrote a part contribution.
+  @BuiltValueField(wireName: 'wrotePartContribution')
+  bool? get wrotePartContribution;
+
   /// Inputs and missing sources read.
   BuiltSet<AssetId> get inputs;
 

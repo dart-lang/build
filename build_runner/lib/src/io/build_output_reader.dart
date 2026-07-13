@@ -10,6 +10,7 @@ import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 
 import '../build/asset_content.dart';
+import '../build/br_outputs.dart';
 import '../build/build_state/build_state.dart';
 import '../build/builder_filesystem.dart';
 import '../build/resolver/asset_ids.dart';
@@ -49,6 +50,12 @@ class BuildOutputReader {
   Future<UnreadableReason?> unreadableReason(AssetId id) async {
     final buildState = _buildState;
     final builderFilesystem = _builderFilesystem;
+
+    if (id.isBrSharedPart) {
+      if (buildState.sharedPartContent(id) != null) return null;
+      return UnreadableReason.notFound;
+    }
+
     if (!_isFile(id)) {
       return UnreadableReason.notFound;
     }
@@ -117,7 +124,7 @@ class BuildOutputReader {
       return content.bytes;
       // ignore: avoid_catching_errors
     } on StateError {
-      // BuilderFilesystem throws StateError if !isFile(id).
+      // BuilderFilesystem throws StateError if !isFile(id) or missing.
       throw AssetNotFoundException(id);
     }
   }
@@ -177,12 +184,22 @@ class BuildOutputReader {
         result.add(id);
       }
     }
+    for (final primaryInput in _buildState.sharedPartPrimaryInputs) {
+      final partId = primaryInput.sharedPartIdForPrimaryInput;
+      if (!_shouldSkipId(partId, rootDir)) {
+        result.add(partId);
+      }
+    }
     return result;
   }
 
   bool _shouldSkipId(AssetId id, String? rootDir) {
-    if (!_isFile(id)) return true;
-    if (_assetsDeletedByPostProcessBuilders.contains(id)) return true;
+    if (id.isBrSharedPart) {
+      if (_buildState.sharedPartContent(id) == null) return true;
+    } else {
+      if (!_isFile(id)) return true;
+      if (_assetsDeletedByPostProcessBuilders.contains(id)) return true;
+    }
 
     // Exclude non-lib assets if they're outside of the root directory or not
     // an output package of the build.

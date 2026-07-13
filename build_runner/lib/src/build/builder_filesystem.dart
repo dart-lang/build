@@ -12,6 +12,7 @@ import '../build_plan/build_step_plan.dart';
 import '../build_plan/placeholders.dart';
 import '../io/reader_writer.dart';
 import 'asset_content.dart';
+import 'br_outputs.dart';
 import 'build_state/build_state.dart';
 import 'build_state/build_step_id.dart';
 import 'build_state/build_step_result.dart';
@@ -81,6 +82,16 @@ class BuilderFilesystem {
 
     for (final entry in result.outputs.entries) {
       _onUpdateContent?.call(entry.key, entry.value);
+    }
+
+    final stepAddsToLibrary = buildStepPlan
+        .buildPhases
+        .inBuildPhases[buildStepId.phaseNumber]
+        .addsToLibrary;
+    if (result.wrotePartContribution == true || stepAddsToLibrary) {
+      final partId = buildStepId.primaryInput.sharedPartIdForPrimaryInput;
+      final partContent = buildState.sharedPartContent(partId);
+      _onUpdateContent?.call(partId, partContent);
     }
 
     final declaredOutputsForStep =
@@ -215,6 +226,9 @@ class BuilderFilesystem {
       // Post process outputs are not readable until after the build.
       return false;
     }
+    if (id.isBrOutput) {
+      return phase > 0;
+    }
     if (buildStepPlan.isDeclaredOutput(id)) {
       final step = buildStepPlan.stepForDeclaredOutput(id);
       if (step.phaseNumber >= phase) {
@@ -278,6 +292,15 @@ class BuilderFilesystem {
       return PhasedValue.fixed('');
     } else if (buildState.isMissingSource(id)) {
       return PhasedValue.fixed('');
+    }
+
+    if (id.isBrOutput) {
+      final content =
+          buildState
+              .sharedPartContent(id, upToPhase: phase - 1)
+              ?.stringValue() ??
+          '';
+      return PhasedValue.fixed(content);
     }
 
     if (buildStepPlan.isDeclaredOutput(id)) {
