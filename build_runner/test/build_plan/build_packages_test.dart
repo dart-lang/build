@@ -38,7 +38,7 @@ void main() {
           (p) => p.name == 'build_runner',
         );
 
-        expect(buildRunner.languageVersion, LanguageVersion(3, 8));
+        expect(buildRunner.languageVersion, LanguageVersion(3, 11));
       });
     });
 
