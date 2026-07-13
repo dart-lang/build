@@ -22,4 +22,4 @@ workspace:
 - example
 - tool
 dependency_overrides:
-  analyzer: 13.3.0
+  analyzer: 14.0.0

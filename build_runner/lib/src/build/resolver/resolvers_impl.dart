@@ -77,8 +77,8 @@ class ResolversImpl implements Resolvers {
       );
       final driver = analysisDriver(
         _analysisDriverModel,
-        // ignore: deprecated_member_use
         AnalysisOptionsImpl()
+          // ignore: deprecated_member_use
           ..contextFeatures = _featureSet(
             enableExperiments: enabledExperiments,
           ),
