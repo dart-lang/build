@@ -42,6 +42,7 @@ class BuildStepImpl implements BuildStep {
 
   final InputTracker inputTracker;
   final Map<AssetId, AssetContent> outputs = {};
+  String? partContribution;
 
   final int phase;
 
@@ -188,6 +189,15 @@ class BuildStepImpl implements BuildStep {
     if (_isComplete) throw BuildStepCompletedException();
     _checkOutput(id);
     outputs[id] = AssetContent.string(await content, encoding: encoding);
+  }
+
+  @override
+  void writePart(String content) {
+    if (_isComplete) throw BuildStepCompletedException();
+    if (partContribution != null) {
+      throw StateError('writePart may only be called once.');
+    }
+    partContribution = content;
   }
 
   @override

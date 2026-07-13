@@ -12,9 +12,9 @@ class _$BuildPlan extends BuildPlan {
   @override
   final PreviousBuild previousBuild;
   @override
-  @override
   final BuildStepPlan buildStepPlan;
-
+  @override
+  final void Function(AssetId)? onDelete;
   @override
   final BuiltList<AssetId> conflictingOutputs;
   @override
@@ -23,8 +23,6 @@ class _$BuildPlan extends BuildPlan {
   final BuiltSet<BuildDirectory> buildDirs;
   @override
   final BuiltSet<BuildFilter> buildFilters;
-  @override
-  final void Function(AssetId)? onDelete;
 
   factory _$BuildPlan([void Function(BuildPlanBuilder)? updates]) =>
       (BuildPlanBuilder()..update(updates))._build();
@@ -33,11 +31,11 @@ class _$BuildPlan extends BuildPlan {
     required this.buildSpec,
     required this.previousBuild,
     required this.buildStepPlan,
+    this.onDelete,
     required this.conflictingOutputs,
     required this.buildInputs,
     required this.buildDirs,
     required this.buildFilters,
-    this.onDelete,
   }) : super._();
   @override
   BuildPlan rebuild(void Function(BuildPlanBuilder) updates) =>
@@ -53,6 +51,7 @@ class _$BuildPlan extends BuildPlan {
         buildSpec == other.buildSpec &&
         previousBuild == other.previousBuild &&
         buildStepPlan == other.buildStepPlan &&
+        onDelete == other.onDelete &&
         conflictingOutputs == other.conflictingOutputs &&
         buildInputs == other.buildInputs &&
         buildDirs == other.buildDirs &&
@@ -65,6 +64,7 @@ class _$BuildPlan extends BuildPlan {
     _$hash = $jc(_$hash, buildSpec.hashCode);
     _$hash = $jc(_$hash, previousBuild.hashCode);
     _$hash = $jc(_$hash, buildStepPlan.hashCode);
+    _$hash = $jc(_$hash, onDelete.hashCode);
     _$hash = $jc(_$hash, conflictingOutputs.hashCode);
     _$hash = $jc(_$hash, buildInputs.hashCode);
     _$hash = $jc(_$hash, buildDirs.hashCode);
@@ -79,6 +79,7 @@ class _$BuildPlan extends BuildPlan {
           ..add('buildSpec', buildSpec)
           ..add('previousBuild', previousBuild)
           ..add('buildStepPlan', buildStepPlan)
+          ..add('onDelete', onDelete)
           ..add('conflictingOutputs', conflictingOutputs)
           ..add('buildInputs', buildInputs)
           ..add('buildDirs', buildDirs)
@@ -142,11 +143,11 @@ class BuildPlanBuilder implements Builder<BuildPlan, BuildPlanBuilder> {
       _buildSpec = $v.buildSpec.toBuilder();
       _previousBuild = $v.previousBuild.toBuilder();
       _buildStepPlan = $v.buildStepPlan.toBuilder();
+      _onDelete = $v.onDelete;
       _conflictingOutputs = $v.conflictingOutputs.toBuilder();
       _buildInputs = $v.buildInputs.toBuilder();
       _buildDirs = $v.buildDirs.toBuilder();
       _buildFilters = $v.buildFilters.toBuilder();
-      _onDelete = $v.onDelete;
       _$v = null;
     }
     return this;
@@ -174,11 +175,11 @@ class BuildPlanBuilder implements Builder<BuildPlan, BuildPlanBuilder> {
             buildSpec: buildSpec.build(),
             previousBuild: previousBuild.build(),
             buildStepPlan: buildStepPlan.build(),
+            onDelete: onDelete,
             conflictingOutputs: conflictingOutputs.build(),
             buildInputs: buildInputs.build(),
             buildDirs: buildDirs.build(),
             buildFilters: buildFilters.build(),
-            onDelete: onDelete,
           );
     } catch (_) {
       late String _$failedField;

@@ -146,6 +146,15 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   /// [AssetId.resolve], allowing files to be read with [readAsString] or
   /// [readAsBytes].
   Future<PackageConfig> get packageConfig;
+
+  /// Writes a contribution to the generated part file for the primary input.
+  ///
+  /// The [content] should contain the raw Dart code (e.g., classes, functions)
+  /// to be included. The build system will automatically handle the `part of`
+  /// directive and concatenation with other builders' contributions.
+  ///
+  /// TODO(davidmorgan): consider how to handle imports!
+  void writePart(String content);
 }
 
 /// The "write" part of the [BuildStep] API.
