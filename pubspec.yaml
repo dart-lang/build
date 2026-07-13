@@ -21,5 +21,3 @@ workspace:
 - builder_pkgs/scratch_space
 - example
 - tool
-dependency_overrides:
-  analyzer: 14.0.0
