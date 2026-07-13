@@ -63,27 +63,36 @@ void main() {
   group('GeneratedParts', () {
     test('generateContent uses correct relative path', () {
       expect(
-        GeneratedParts.generateContent(AssetId('a', 'lib/b.dart'), ['// c1']),
+        GeneratedParts.generateContent(AssetId('a', 'lib/b.dart'), [], ['// c1']),
         "part of '../b.dart';\n\n// c1",
       );
 
       expect(
-        GeneratedParts.generateContent(AssetId('a', 'lib/foo/bar.dart'), [
+        GeneratedParts.generateContent(AssetId('a', 'lib/foo/bar.dart'), [], [
           '// c1',
         ]),
         "part of '../../foo/bar.dart';\n\n// c1",
       );
 
       expect(
-        GeneratedParts.generateContent(AssetId('a', 'test/foo.dart'), [
+        GeneratedParts.generateContent(AssetId('a', 'test/foo.dart'), [], [
           '// c1',
         ]),
         "part of '../foo.dart';\n\n// c1",
       );
 
       expect(
-        GeneratedParts.generateContent(AssetId('a', 'root.dart'), ['// c1']),
+        GeneratedParts.generateContent(AssetId('a', 'root.dart'), [], ['// c1']),
         "part of '../root.dart';\n\n// c1",
+      );
+
+      expect(
+        GeneratedParts.generateContent(
+          AssetId('a', 'root.dart'),
+          ["import 'package:foo/foo.dart';", "import 'package:bar/bar.dart';"],
+          ['// c1'],
+        ),
+        "part of '../root.dart';\n\nimport 'package:foo/foo.dart';\nimport 'package:bar/bar.dart';\n\n// c1",
       );
     });
   });

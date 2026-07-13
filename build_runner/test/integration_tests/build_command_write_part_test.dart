@@ -36,7 +36,7 @@ class WritePartBuilder implements Builder {
 
   @override
   Future<void> build(BuildStep buildStep) async {
-    buildStep.writePart('// part content');
+    buildStep.partWriter.write('// part content');
   }
 }
 ''',
@@ -103,7 +103,7 @@ class PartBuilder implements Builder {
 
   @override
   Future<void> build(BuildStep buildStep) async {
-    buildStep.writePart(content);
+    buildStep.partWriter.write(content);
   }
 }
 ''',
@@ -179,7 +179,7 @@ class PartGen1Builder implements Builder {
   Future<void> build(BuildStep buildStep) async {
     final lib = await buildStep.inputLibrary;
     final hasClass1 = lib.getClass('Class1') != null;
-    buildStep.writePart("class Class1 {\\n  // Gen1 checked hasClass1: \$hasClass1\\n}");
+    buildStep.partWriter.write("class Class1 {\\n  // Gen1 checked hasClass1: \$hasClass1\\n}");
   }
 }
 
@@ -192,7 +192,7 @@ class PartGen2Builder implements Builder {
     final lib = await buildStep.inputLibrary;
     final hasClass1 = lib.getClass('Class1') != null;
     final hasClass2 = lib.getClass('Class2') != null;
-    buildStep.writePart("class Class2 {\\n  // Gen2 checked hasClass1: \$hasClass1, hasClass2: \$hasClass2\\n}");
+    buildStep.partWriter.write("class Class2 {\\n  // Gen2 checked hasClass1: \$hasClass1, hasClass2: \$hasClass2\\n}");
   }
 }
 
@@ -211,7 +211,7 @@ class PartGen3Builder implements Builder {
       buildStep.inputId.changeExtension('.resolved.txt'),
       'Gen3 checks - Class1: \$hasClass1, Class2: \$hasClass2, Class3: \$hasClass3',
     );
-    buildStep.writePart("class Class3 {\\n  // Gen3 checked hasClass1: \$hasClass1, hasClass2: \$hasClass2, hasClass3: \$hasClass3\\n}");
+    buildStep.partWriter.write("class Class3 {\\n  // Gen3 checked hasClass1: \$hasClass1, hasClass2: \$hasClass2, hasClass3: \$hasClass3\\n}");
   }
 }
 ''',
@@ -254,4 +254,71 @@ class A {}
       );
     },
   );
+
+  test('partWriter supports imports with enhanced-parts experiment', () async {
+    final pubspecs = await Pubspecs.load();
+    final tester = BuildRunnerTester(pubspecs);
+
+    tester.writePackage(
+      name: 'write_part_imports_pkg',
+      dependencies: ['build', 'build_runner'],
+      files: {
+        'build.yaml': '''
+builders:
+  write_part_builder:
+    import: 'package:write_part_imports_pkg/builder.dart'
+    builder_factories: ['writePartBuilderFactory']
+    build_extensions: {'.dart': []}
+    auto_apply: 'root_package'
+    build_to: 'cache'
+''',
+        'lib/builder.dart': '''
+import 'package:build/build.dart';
+
+Builder writePartBuilderFactory(BuilderOptions options) => WritePartBuilder();
+
+class WritePartBuilder implements Builder {
+  @override
+  Map<String, List<String>> get buildExtensions => {'.dart': []};
+
+  @override
+  Future<void> build(BuildStep buildStep) async {
+    final prefix = buildStep.partWriter.importPrefix;
+    buildStep.partWriter.addImport('package:foo/foo.dart', as: '\${prefix}foo');
+    buildStep.partWriter.write('// part content');
+  }
+}
+''',
+      },
+    );
+
+    tester.writePackage(
+      name: 'root_pkg',
+      dependencies: ['build_runner'],
+      pathDependencies: ['write_part_imports_pkg'],
+      files: {
+        'analysis_options.yaml': '''
+analyzer:
+  enable-experiment:
+    - enhanced-parts
+''',
+        'lib/a.dart': '''
+part '_generated_parts/a.dart';
+class A {}
+''',
+      },
+    );
+
+    final output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
+    expect(output, contains(BuildLog.successPattern));
+    expect(
+      tester.read(
+        'root_pkg/.dart_tool/build/generated/root_pkg/lib/_generated_parts/a.dart',
+      ),
+      "part of '../a.dart';\n\nimport 'package:foo/foo.dart' as i0_foo;\n\n// part content",
+    );
+  });
 }
