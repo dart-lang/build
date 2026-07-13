@@ -1200,19 +1200,20 @@ class StdioFrontendServerClient implements FrontendServerClient {
     String? content;
     final scratchSpacePrefix = testScratchSpacePathPrefix;
     final index = path.indexOf(scratchSpacePrefix);
-    if (index != -1) {
-      final relativeKey = fesToAssetPath(
-        path.substring(index + scratchSpacePrefix.length),
-        rootPackage: _fileSystem.rootPackageName,
-      );
+    final strippedPath = index != -1
+        ? path.substring(index + scratchSpacePrefix.length)
+        : path;
+    final relativeKey = fesToAssetPath(
+      strippedPath,
+      rootPackage: _fileSystem.rootPackageName,
+    );
 
-      final memoryData =
-          _fileSystem.files[relativeKey] ??
-          _fileSystem.sourcemaps[relativeKey] ??
-          _fileSystem.metadata[relativeKey];
-      if (memoryData != null) {
-        content = utf8.decode(memoryData);
-      }
+    final memoryData =
+        _fileSystem.files[relativeKey] ??
+        _fileSystem.sourcemaps[relativeKey] ??
+        _fileSystem.metadata[relativeKey];
+    if (memoryData != null) {
+      content = utf8.decode(memoryData);
     }
 
     if (content == null) {

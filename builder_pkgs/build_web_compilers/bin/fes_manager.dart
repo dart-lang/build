@@ -256,14 +256,14 @@ class FesManager {
         .cast<String>()
         .map((f) => f.replaceAll(jsModuleExtension, fesJsExtension))
         .toList();
-    final isColdStart = fes.fileSystem.files.isEmpty;
     final invalidatedFiles = (request['invalidatedFiles'] as List)
         .cast<String>()
         .map(Uri.parse)
         .map(_translateBuildRunnerUriToFrontendServerUri)
         .toList();
-    if (isColdStart) {
-      invalidatedFiles.add(Uri.parse(entrypoint));
+    final entrypointUri = Uri.parse(entrypoint);
+    if (!invalidatedFiles.contains(entrypointUri)) {
+      invalidatedFiles.add(entrypointUri);
     }
 
     final result = await driver.recompileAndRecord(
@@ -317,22 +317,19 @@ class FesManager {
     String? content;
     final scratchSpacePrefix = testScratchSpacePathPrefix;
     final index = path.indexOf(scratchSpacePrefix);
-    if (index != -1) {
-      final relativeKey = fesToAssetPath(
-        path.substring(index + scratchSpacePrefix.length),
-        rootPackage: fes.fileSystem.rootPackageName,
-      );
-      final fesRelativeKey = relativeKey.replaceAll(jsModuleExtension, fesJsExtension);
-      final memoryData =
-          fes.fileSystem.files[relativeKey] ??
-          fes.fileSystem.sourcemaps[relativeKey] ??
-          fes.fileSystem.metadata[relativeKey] ??
-          fes.fileSystem.files[fesRelativeKey] ??
-          fes.fileSystem.sourcemaps[fesRelativeKey] ??
-          fes.fileSystem.metadata[fesRelativeKey];
-      if (memoryData != null) {
-        content = utf8.decode(memoryData);
-      }
+    final strippedPath = index != -1
+        ? path.substring(index + scratchSpacePrefix.length)
+        : path;
+    final relativeKey = fesToAssetPath(
+      strippedPath,
+      rootPackage: fes.fileSystem.rootPackageName,
+    );
+    final memoryData =
+        fes.fileSystem.files[relativeKey] ??
+        fes.fileSystem.sourcemaps[relativeKey] ??
+        fes.fileSystem.metadata[relativeKey];
+    if (memoryData != null) {
+      content = utf8.decode(memoryData);
     }
     if (content == null) {
       throw StateError(

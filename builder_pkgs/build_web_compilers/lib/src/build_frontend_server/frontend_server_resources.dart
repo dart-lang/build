@@ -95,7 +95,7 @@ class FrontendServerState {
   void _verifyEntrypoint(AssetId entrypointId) {
     if (entrypointAssetId != null && entrypointAssetId != entrypointId) {
       throw StateError(
-        'Cannot compile/wait for a different entrypoint: '
+        'Cannot compile a different entrypoint: '
         'expected $entrypointAssetId but got $entrypointId.',
       );
     }

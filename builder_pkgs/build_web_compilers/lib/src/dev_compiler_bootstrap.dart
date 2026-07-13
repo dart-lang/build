@@ -256,29 +256,22 @@ Future<List<AssetId>> _ensureTransitiveJsModules(
     for (final dep in transitiveDeps)
       dep.primarySource.changeExtension(jsModuleExtension),
   ];
-  
-  final results = await Future.wait(
+  // Check that each module is readable, and warn otherwise.
+  await Future.wait(
     jsModules.map((jsId) async {
-      final canRead = await _lazyBuildPool.withResource(
-        () => buildStep.canRead(jsId),
-      );
-      if (!canRead) {
-        final errorsId = jsId.addExtension('.errors');
-        await buildStep.canRead(errorsId);
-        log.warning(
-          'Unable to read $jsId, check your console or the '
-          '`.dart_tool/build/generated/${errorsId.package}/${errorsId.path}` '
-          'log file.',
-        );
+      if (await _lazyBuildPool.withResource(() => buildStep.canRead(jsId))) {
+        return;
       }
-      return (jsId, canRead: canRead);
+      final errorsId = jsId.addExtension('.errors');
+      await buildStep.canRead(errorsId);
+      log.warning(
+        'Unable to read $jsId, check your console or the '
+        '`.dart_tool/build/generated/${errorsId.package}/${errorsId.path}` '
+        'log file.',
+      );
     }),
   );
-
-  return [
-    for (final result in results)
-      if (result.canRead) result.$1,
-  ];
+  return jsModules;
 }
 
 /// Code that actually imports the [moduleName] module, and calls the
