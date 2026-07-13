@@ -72,6 +72,14 @@ class _$IncrementalBuildStateSerializer
           const FullType(GlobResult),
         ]),
       ),
+      'partData',
+      serializers.serialize(
+        object.partData,
+        specifiedType: const FullType(BuiltMap, const [
+          const FullType(AssetId),
+          const FullType(SharedPart),
+        ]),
+      ),
     ];
 
     return result;
@@ -157,6 +165,17 @@ class _$IncrementalBuildStateSerializer
             )!,
           );
           break;
+        case 'partData':
+          result.partData.replace(
+            serializers.deserialize(
+              value,
+              specifiedType: const FullType(BuiltMap, const [
+                const FullType(AssetId),
+                const FullType(SharedPart),
+              ]),
+            )!,
+          );
+          break;
       }
     }
 
@@ -178,6 +197,8 @@ class _$IncrementalBuildState extends IncrementalBuildState {
   postProcessResults;
   @override
   final BuiltMap<GlobId, GlobResult> globResults;
+  @override
+  final BuiltMap<AssetId, SharedPart> partData;
 
   factory _$IncrementalBuildState([
     void Function(IncrementalBuildStateBuilder)? updates,
@@ -190,6 +211,7 @@ class _$IncrementalBuildState extends IncrementalBuildState {
     required this.buildStepResults,
     required this.postProcessResults,
     required this.globResults,
+    required this.partData,
   }) : super._();
   @override
   IncrementalBuildState rebuild(
@@ -209,7 +231,8 @@ class _$IncrementalBuildState extends IncrementalBuildState {
         missingSources == other.missingSources &&
         buildStepResults == other.buildStepResults &&
         postProcessResults == other.postProcessResults &&
-        globResults == other.globResults;
+        globResults == other.globResults &&
+        partData == other.partData;
   }
 
   @override
@@ -221,6 +244,7 @@ class _$IncrementalBuildState extends IncrementalBuildState {
     _$hash = $jc(_$hash, buildStepResults.hashCode);
     _$hash = $jc(_$hash, postProcessResults.hashCode);
     _$hash = $jc(_$hash, globResults.hashCode);
+    _$hash = $jc(_$hash, partData.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -233,7 +257,8 @@ class _$IncrementalBuildState extends IncrementalBuildState {
           ..add('missingSources', missingSources)
           ..add('buildStepResults', buildStepResults)
           ..add('postProcessResults', postProcessResults)
-          ..add('globResults', globResults))
+          ..add('globResults', globResults)
+          ..add('partData', partData))
         .toString();
   }
 }
@@ -281,6 +306,12 @@ class IncrementalBuildStateBuilder
   set globResults(MapBuilder<GlobId, GlobResult>? globResults) =>
       _$this._globResults = globResults;
 
+  MapBuilder<AssetId, SharedPart>? _partData;
+  MapBuilder<AssetId, SharedPart> get partData =>
+      _$this._partData ??= MapBuilder<AssetId, SharedPart>();
+  set partData(MapBuilder<AssetId, SharedPart>? partData) =>
+      _$this._partData = partData;
+
   IncrementalBuildStateBuilder();
 
   IncrementalBuildStateBuilder get _$this {
@@ -292,6 +323,7 @@ class IncrementalBuildStateBuilder
       _buildStepResults = $v.buildStepResults.toBuilder();
       _postProcessResults = $v.postProcessResults.toBuilder();
       _globResults = $v.globResults.toBuilder();
+      _partData = $v.partData.toBuilder();
       _$v = null;
     }
     return this;
@@ -322,6 +354,7 @@ class IncrementalBuildStateBuilder
             buildStepResults: buildStepResults.build(),
             postProcessResults: postProcessResults.build(),
             globResults: globResults.build(),
+            partData: partData.build(),
           );
     } catch (_) {
       late String _$failedField;
@@ -338,6 +371,8 @@ class IncrementalBuildStateBuilder
         postProcessResults.build();
         _$failedField = 'globResults';
         globResults.build();
+        _$failedField = 'partData';
+        partData.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'IncrementalBuildState',

@@ -8,9 +8,9 @@ environment:
   sdk: ^3.11.0
 
 dependencies:
-  build: ^4.0.0
-  build_config: ^1.0.0
-  build_runner: '2.16.2-wip'
+  build: ^4.1.0-wip
+  build_config: ^1.4.0-wip
+  build_runner: '2.17.0-wip'
   built_collection: ^5.1.1
   crypto: ^3.0.0
   glob: ^2.0.0

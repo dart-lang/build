@@ -131,7 +131,6 @@ class BuilderDefinition implements AbstractBuilderDefinition {
 
   /// Whether the builder is capable of contributing to part files.
   final bool addsToLibrary;
-
   @visibleForTesting
   BuilderDefinition(
     this.key, {

@@ -8,6 +8,8 @@ import 'package:meta/meta.dart';
 
 import '../../build_plan/build_step_plan.dart';
 import '../asset_content.dart';
+import '../br_outputs.dart';
+import '../shared_part.dart';
 import 'build_step_id.dart';
 import 'build_step_result.dart';
 import 'incremental_build_state.dart';
@@ -33,18 +35,23 @@ class FinishedBuildState {
   /// [IncrementalBuildState] does not store file content.
   final BuiltMap<AssetId, AssetContent> contents;
 
+  /// Part data from the build.
+  final BuiltMap<AssetId, SharedPart> partData;
+
   FinishedBuildState({
     required this.buildStepPlan,
     required this.incremental,
     required this.contents,
-  });
+    BuiltMap<AssetId, SharedPart>? partData,
+  }) : partData = partData ?? BuiltMap<AssetId, SharedPart>();
 
   /// An empty [FinishedBuildState] with no sources and an empty plan.
   @visibleForTesting
   FinishedBuildState.empty()
     : buildStepPlan = BuildStepPlan.empty(),
       incremental = IncrementalBuildState(),
-      contents = BuiltMap<AssetId, AssetContent>();
+      contents = BuiltMap<AssetId, AssetContent>(),
+      partData = BuiltMap<AssetId, SharedPart>();
 
   BuiltSet<AssetId> get sources => incremental.sources;
   BuiltMap<BuildStepId, BuildStepResult> get buildStepResults =>
@@ -97,7 +104,31 @@ class FinishedBuildState {
   bool isInArtifactTree(AssetId id) =>
       buildStepPlan.isDeclaredOutputInArtifactTree(id) ||
       _isArtifactTreePostProcessOutput(id);
-  AssetContent? contentOf(AssetId id) => contents[id];
+
+  // -- Shared parts.
+
+  Iterable<AssetId> get sharedPartLibraryIds => partData.keys;
+
+  Iterable<AssetId> get sharedPartIds =>
+      sharedPartLibraryIds.map((id) => id.sharedPartId);
+
+  bool hasSharedPart(AssetId id) =>
+      partData.containsKey(id.sharedPartLibraryId ?? id);
+
+  SharedPart? sharedPartOrNull(AssetId id) =>
+      partData[id.sharedPartLibraryId ?? id];
+
+  AssetContent? sharedPartContent(AssetId id, {int? upToPhase}) {
+    final actualLibraryId = id.sharedPartLibraryId ?? id;
+    final part = partData[actualLibraryId];
+    if (part == null) return null;
+    return part.contentAt(phase: upToPhase);
+  }
+
+  AssetContent? contentOf(AssetId id) {
+    if (id.isBrOutput) return sharedPartContent(id);
+    return contents[id];
+  }
 
   Iterable<MapEntry<AssetId, AssetContent>> get sourceContents =>
       contents.entries.where((e) => isSource(e.key));

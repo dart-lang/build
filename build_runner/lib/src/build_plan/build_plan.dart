@@ -7,6 +7,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 
 import '../build/asset_content.dart';
+import '../build/br_outputs.dart';
 import '../build/build_state/finished_build_state.dart';
 import '../build/library_cycle_graph/phased_asset_deps.dart';
 import '../constants.dart';
@@ -117,6 +118,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
           (id) =>
               AssetFile(id, inArtifactTree: previousBuild.isInArtifactTree(id)),
         ),
+        ...previousBuild.sharedPartIds.map(AssetFile.atPackagePath),
       };
 
       final previousBuildStepPlan = previousBuild.buildStepPlan!;
@@ -308,6 +310,8 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       AssetFile? oldFile;
       if (oldIsSource) {
         oldFile = AssetFile.atPackagePath(id);
+      } else if (id.isBrOutput && previousBuild.hasSharedPart(id)) {
+        oldFile = AssetFile.atPackagePath(id);
       } else if (previousBuild.isActualOutput(id) ||
           previousBuild.isActualPostOutput(id)) {
         oldFile = AssetFile(
@@ -355,6 +359,8 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         if (file.inArtifactTree) {
           newArtifactTreeFiles.add(id);
           conflictingOutputs.add(file);
+        } else if (id.isBrOutput) {
+          conflictingOutputs.add(file);
         } else {
           buildInputs.updatedSources.add(id);
           buildInputs.sources.add(id);
@@ -369,6 +375,29 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       if (oldIsSource) {
         if (changed) buildInputs.updatedSources.add(id);
         buildInputs.sourceContents[id] = newContent;
+        continue;
+      }
+
+      if (id.isBrOutput) {
+        final libraryId = id.sharedPartLibraryId;
+        final existing = libraryId != null
+            ? previousBuild.sharedPartOrNull(libraryId)
+            : null;
+        if (existing != null) {
+          if (buildSpec.buildOptions.outputStrategy == OutputStrategy.keep) {
+            existing.restoreContent(newContent.stringValue());
+            buildInputs.retainedOutputContents[id] = AssetContent.bytes(
+              newContent.bytes,
+              digest: oldDigest,
+            );
+          } else if (changed || !existing.tryRestore(newContent)) {
+            buildInputs.invalidOutputs.add(id);
+          } else {
+            buildInputs.retainedOutputContents[id] = newContent;
+          }
+        } else {
+          buildInputs.invalidOutputs.add(id);
+        }
         continue;
       }
 

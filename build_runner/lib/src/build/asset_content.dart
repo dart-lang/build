@@ -28,6 +28,14 @@ class AssetContent {
       _encoding = encoding,
       _digest = digest;
 
+  AssetContent.digest(Digest digest)
+    : _bytes = null,
+      _string = null,
+      _encoding = null,
+      _digest = digest;
+
+  bool get hasContent => _bytes != null || _string != null;
+
   List<int> get bytes => _bytes ??= _encoding!.encode(_string!);
 
   String stringValue({Encoding encoding = utf8}) {

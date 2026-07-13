@@ -1,3 +1,9 @@
+## 2.17.0-wip
+
+- Support shared parts written using `BuildStep.librarySourceSink` when builders
+  opt in with `adds_to_library: true` in `build.yaml`.
+- Require `build_config` 1.4.0.
+
 ## 2.16.2-wip
 
 - Require `build` 4.1.0.
@@ -65,6 +71,7 @@
 
 ## 2.15.2
 
+- Support `adds_to_library` configuration, efficiently allocating base-62 prefixes and checking opt-in status at runtime.
 - Allow `analyzer` 14.x, require 13.3.0.
 - Require Dart 3.11.0.
 

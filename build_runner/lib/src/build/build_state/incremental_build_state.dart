@@ -8,6 +8,7 @@ import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 import 'package:crypto/crypto.dart';
 
+import '../shared_part.dart';
 import 'build_step_id.dart';
 import 'build_step_result.dart';
 import 'glob_id.dart';
@@ -30,6 +31,7 @@ abstract class IncrementalBuildState
   BuiltMap<PostProcessBuildStepId, PostProcessBuildStepResult>
   get postProcessResults;
   BuiltMap<GlobId, GlobResult> get globResults;
+  BuiltMap<AssetId, SharedPart> get partData;
 
   IncrementalBuildState._();
   factory IncrementalBuildState([

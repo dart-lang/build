@@ -10,6 +10,8 @@ import 'package:built_value/built_value.dart';
 
 import 'package:crypto/crypto.dart';
 
+import '../build/asset_content.dart';
+import '../build/br_outputs.dart';
 import '../build/build_state/asset_graph_json.dart';
 import '../build/build_state/build_step_id.dart';
 import '../build/build_state/build_step_result.dart';
@@ -20,6 +22,7 @@ import '../build/build_state/incremental_build_state.dart';
 import '../build/build_state/post_process_build_step_id.dart';
 import '../build/build_state/post_process_build_step_result.dart';
 import '../build/library_cycle_graph/phased_asset_deps.dart';
+import '../build/shared_part.dart';
 import '../constants.dart';
 
 import 'build_packages.dart';
@@ -124,9 +127,36 @@ abstract class PreviousBuild
   bool isKnownAsset(AssetId id) =>
       isSource(id) ||
       (buildStepPlan?.isDeclaredOutput(id) ?? false) ||
-      isActualPostOutput(id);
+      isActualPostOutput(id) ||
+      id.isBrOutput;
 
-  Digest? digestOf(AssetId id) => digests[id];
+  Digest? digestOf(AssetId id) {
+    if (id.isBrOutput) return sharedPartContent(id)?.digest;
+    return digests[id];
+  }
+
+  // -- Shared parts.
+
+  BuiltMap<AssetId, SharedPart> get partData =>
+      incrementalState?.partData ?? BuiltMap<AssetId, SharedPart>();
+
+  Iterable<AssetId> get sharedPartLibraryIds => partData.keys;
+
+  Iterable<AssetId> get sharedPartIds =>
+      sharedPartLibraryIds.map((id) => id.sharedPartId);
+
+  bool hasSharedPart(AssetId id) =>
+      partData.containsKey(id.sharedPartLibraryId ?? id);
+
+  SharedPart? sharedPartOrNull(AssetId id) =>
+      partData[id.sharedPartLibraryId ?? id];
+
+  AssetContent? sharedPartContent(AssetId id, {int? upToPhase}) {
+    final actualLibraryId = id.sharedPartLibraryId ?? id;
+    final part = partData[actualLibraryId];
+    if (part == null) return null;
+    return part.contentAt(phase: upToPhase);
+  }
 
   /// Deserializes information about the previous build and compares it to
   /// [buildSpec] to determine whether an incremental build is possible.
