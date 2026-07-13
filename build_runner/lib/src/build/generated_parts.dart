@@ -43,12 +43,19 @@ class GeneratedParts {
 
   static String generateContent(
     AssetId primaryInput,
+    Iterable<String> imports,
     Iterable<String> contributions,
   ) {
     final partId = primaryInput.partIdForPrimaryInput;
     final buffer = StringBuffer();
     buffer.writeln(partOfDirective(primaryInput, partId));
     buffer.writeln();
+    for (final import in imports) {
+      buffer.writeln(import);
+    }
+    if (imports.isNotEmpty) {
+      buffer.writeln();
+    }
     buffer.writeAll(contributions, '\n\n');
     return buffer.toString();
   }

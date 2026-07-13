@@ -14,6 +14,24 @@ import 'asset_id.dart';
 import 'resolver.dart';
 import 'resource.dart';
 
+abstract class PartWriter {
+  /// A unique prefix assigned to the current builder.
+  String get importPrefix;
+
+  /// Adds an import directive to the top of the generated part.
+  /// 
+  /// Throws an [ArgumentError] if [as] does not start with [importPrefix].
+  void addImport(
+    String uri, {
+    required String as,
+    Iterable<String>? show,
+    Iterable<String>? hide,
+  });
+
+  /// Appends [content] to the body of the generated part.
+  void write(String content);
+}
+
 /// A single step in `build_runner` build.
 ///
 /// See the `Builder` class API for more information on what causes build steps
@@ -147,14 +165,8 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   /// [readAsBytes].
   Future<PackageConfig> get packageConfig;
 
-  /// Writes a contribution to the generated part file for the primary input.
-  ///
-  /// The [content] should contain the raw Dart code (e.g., classes, functions)
-  /// to be included. The build system will automatically handle the `part of`
-  /// directive and concatenation with other builders' contributions.
-  ///
-  /// TODO(davidmorgan): consider how to handle imports!
-  void writePart(String content);
+  /// The writer for the generated part file for the primary input.
+  PartWriter get partWriter;
 }
 
 /// The "write" part of the [BuildStep] API.

@@ -157,6 +157,7 @@ class AnalysisDriverFilesystem
   void _updatePartContributions(
     AssetId primaryInput,
     int phase,
+    Iterable<String> imports,
     String? contribution,
   ) {
     final partPath = primaryInput.partIdForPrimaryInput.asPath;
@@ -164,7 +165,7 @@ class AnalysisDriverFilesystem
       partPath,
       () => GeneratedPartFileContent(primaryInput, partPath),
     );
-    partData.update(phase, contribution);
+    partData.update(phase, imports, contribution);
 
     if (_phase > phase) {
       _changedPaths.add(partPath);
@@ -429,31 +430,51 @@ class GeneratedPartFileContent {
   final AssetId primaryInput;
   final String path;
   final Map<int, String> _contributions = {};
+  final Map<int, Iterable<String>> _imports = {};
 
   GeneratedPartFileContent(this.primaryInput, this.path);
 
-  void update(int phase, String? contribution) {
-    if (contribution == null) {
+  void update(int phase, Iterable<String> imports, String? contribution) {
+    if (contribution == null && imports.isEmpty) {
       _contributions.remove(phase);
+      _imports.remove(phase);
     } else {
-      _contributions[phase] = contribution;
+      if (contribution != null) {
+        _contributions[phase] = contribution;
+      }
+      if (imports.isNotEmpty) {
+        _imports[phase] = imports;
+      }
     }
   }
 
-  bool existsAt(int phase) => _contributions.keys.any((p) => phase > p);
+  bool existsAt(int phase) =>
+      _contributions.keys.any((p) => phase > p) ||
+      _imports.keys.any((p) => phase > p);
 
-  bool hasContributionAt(int phase) => _contributions.containsKey(phase);
+  bool hasContributionAt(int phase) =>
+      _contributions.containsKey(phase) || _imports.containsKey(phase);
 
   String contentAt(int phase) {
-    final validPhases = _contributions.keys.where((p) => phase > p).toList();
+    final validPhases = <int>{
+      ..._contributions.keys.where((p) => phase > p),
+      ..._imports.keys.where((p) => phase > p),
+    }.toList();
     if (validPhases.isEmpty) {
       throw StateError('Read of non-existent file.');
     }
     validPhases.sort();
 
+    final imports = <String>[];
+    for (final p in validPhases) {
+      if (_imports.containsKey(p)) imports.addAll(_imports[p]!);
+    }
     return GeneratedParts.generateContent(
       primaryInput,
-      validPhases.map((p) => _contributions[p]!),
+      imports,
+      validPhases
+          .where((p) => _contributions.containsKey(p))
+          .map((p) => _contributions[p]!),
     );
   }
 

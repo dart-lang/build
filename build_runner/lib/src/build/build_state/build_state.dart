@@ -219,9 +219,11 @@ class BuildState {
     if (id.isGeneratedPart) {
       final primaryInput = id.primaryInputForPartId!;
       final contributions = partContributionsFor(primaryInput);
-      if (contributions.isEmpty) return null;
+      final imports = partImportsFor(primaryInput);
+      if (contributions.isEmpty && imports.isEmpty) return null;
       final content = GeneratedParts.generateContent(
         primaryInput,
+        imports,
         contributions,
       );
       return AssetContent.string(content);
@@ -283,6 +285,23 @@ class BuildState {
       }
     }
     return result;
+  }
+
+  /// The concatenated part imports for [primaryInput], sorted by phase.
+  List<String> partImportsFor(AssetId primaryInput) {
+    final results = _buildStepResultsByPrimaryInput[primaryInput];
+    if (results == null) return const [];
+    final phases = results.keys.toList()..sort();
+    final imports = <String>[];
+    for (final phase in phases) {
+      final stepResult = results[phase]!;
+      if (stepResult.succeeded) {
+        if (stepResult.partImports.isNotEmpty) {
+          imports.addAll(stepResult.partImports);
+        }
+      }
+    }
+    return imports;
   }
 
   /// The concatenated part contributions for [primaryInput], sorted by phase.

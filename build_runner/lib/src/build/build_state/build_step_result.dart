@@ -31,6 +31,9 @@ abstract class BuildStepResult
   /// Part contribution written by the step.
   String? get partContribution;
 
+  /// Part imports written by the step.
+  BuiltList<String> get partImports;
+
   /// Inputs and missing sources read.
   BuiltSet<AssetId> get inputs;
 

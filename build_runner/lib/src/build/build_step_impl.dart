@@ -43,6 +43,10 @@ class BuildStepImpl implements BuildStep {
   final InputTracker inputTracker;
   final Map<AssetId, AssetContent> outputs = {};
   String? partContribution;
+  final List<String> partImports = [];
+
+  @override
+  late final PartWriter partWriter = PartWriterImpl(this, 'i${phase}_');
 
   final int phase;
 
@@ -191,14 +195,7 @@ class BuildStepImpl implements BuildStep {
     outputs[id] = AssetContent.string(await content, encoding: encoding);
   }
 
-  @override
-  void writePart(String content) {
-    if (_isComplete) throw BuildStepCompletedException();
-    if (partContribution != null) {
-      throw StateError('writePart may only be called once.');
-    }
-    partContribution = content;
-  }
+
 
   @override
   Future<Digest> digest(AssetId id, {bool track = true}) async {
@@ -252,6 +249,46 @@ class BuildStepImpl implements BuildStep {
   @override
   void reportUnusedAssets(Iterable<AssetId> assets) {
     _reportUnusedAssets?.call(assets);
+  }
+}
+
+class PartWriterImpl implements PartWriter {
+  final BuildStepImpl _buildStep;
+  @override
+  final String importPrefix;
+
+  PartWriterImpl(this._buildStep, this.importPrefix);
+
+  @override
+  void addImport(
+    String uri, {
+    required String as,
+    Iterable<String>? show,
+    Iterable<String>? hide,
+  }) {
+    if (_buildStep._isComplete) throw BuildStepCompletedException();
+    if (!as.startsWith(importPrefix)) {
+      throw ArgumentError.value(as, 'as', 'must start with $importPrefix');
+    }
+    
+    var buffer = StringBuffer('import \'$uri\' as $as');
+    if (show != null && show.isNotEmpty) {
+      buffer.write(' show ${show.join(', ')}');
+    }
+    if (hide != null && hide.isNotEmpty) {
+      buffer.write(' hide ${hide.join(', ')}');
+    }
+    buffer.write(';');
+    _buildStep.partImports.add(buffer.toString());
+  }
+
+  @override
+  void write(String content) {
+    if (_buildStep._isComplete) throw BuildStepCompletedException();
+    if (_buildStep.partContribution != null) {
+      throw StateError('write may only be called once.');
+    }
+    _buildStep.partContribution = content;
   }
 }
 

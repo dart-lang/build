@@ -1080,7 +1080,8 @@ class Build {
       ..globsEvaluated.replace(inputTracker.globsEvaluated)
       ..resolverEntrypoints.replace(inputTracker.resolverEntrypoints)
       ..errors.replace(errors)
-      ..partContribution = step.partContribution;
+      ..partContribution = step.partContribution
+      ..partImports.replace(step.partImports);
     for (final output in outputs) {
       if (step.outputs.containsKey(output)) {
         final content = step.outputs[output]!;
