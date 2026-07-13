@@ -208,7 +208,8 @@ Future<void> _createDevCompilerModule(
       '-o',
       jsOutputFile.path,
       debugMode ? '--source-map' : '--no-source-map',
-      for (final dep in transitiveDeps) _summaryArg(dep, ddcLibraryBundle: ddcLibraryBundle),
+      for (final dep in transitiveDeps)
+        _summaryArg(dep, ddcLibraryBundle: ddcLibraryBundle),
       '--packages=$multiRootScheme:///.dart_tool/package_config.json',
       '--module-name=${ddcModuleName(jsId)}${ddcLibraryBundle ? '.dart' : ''}',
       '--multi-root-scheme=$multiRootScheme',

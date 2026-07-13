@@ -57,11 +57,9 @@ class WebEntrypointMarkerBuilder implements Builder {
       final searchGlob = webAssetsPath == null
           ? '{${defaultWebDirs.join(',')}}/**'
           : webAssetsPath!.contains(',')
-              ? '{$webAssetsPath}/**'
-              : '$webAssetsPath/**';
-      final webAssets = await buildStep
-          .findAssets(Glob(searchGlob))
-          .toList();
+          ? '{$webAssetsPath}/**'
+          : '$webAssetsPath/**';
+      final webAssets = await buildStep.findAssets(Glob(searchGlob)).toList();
 
       for (final asset in webAssets) {
         if (asset.extension == '.dart') {
