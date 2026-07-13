@@ -179,8 +179,8 @@ imports should use *Add to Library* instead.
 -   The user includes the part in their code:
 
 ```dart
-// lib/src/user.dart -> lib/_br_/src/user.dart
-part '../_br_/src/user.dart';
+// lib/src/user.dart -> lib/_br_/src/user.part.dart
+part '../_br_/src/user.part.dart';
 
 @MyAnnotation()
 class User {
