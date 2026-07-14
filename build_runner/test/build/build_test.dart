@@ -234,6 +234,36 @@ void main() {
         );
       });
 
+      test(
+        'PostProcessBuilder does not collide with missing read inputs (#4975)',
+        () async {
+          final readOutputBuilder = TestBuilder(
+            extraWork: (buildStep, _) async {
+              try {
+                await buildStep.readAsString(
+                  AssetId('a', 'lib/output.txt.g.dart'),
+                );
+              } catch (_) {}
+            },
+          );
+          TestBuilder builderFactory(_) => readOutputBuilder;
+          await testBuilderFactories(
+            [builderFactory],
+            postProcessBuilderFactories: [
+              (_) => CopyingPostProcessBuilder(outputExtension: '.g.dart'),
+            ],
+            appliesBuilders: {
+              builderFactory: ['CopyingPostProcessBuilder'],
+            },
+            {'a|lib/output.txt': 'output'},
+            outputs: {
+              'a|lib/output.txt.copy': 'output',
+              'a|lib/output.txt.g.dart': 'output',
+            },
+          );
+        },
+      );
+
       test('with placeholder as input', () async {
         final builder1 = PlaceholderBuilder(
           {'lib.txt': 'libText'}.build(),
