@@ -45,8 +45,11 @@ class BuildStepImpl implements BuildStep {
   String? partContribution;
   final List<String> partImports = [];
 
+  PartWriterImpl? _partWriter;
+
   @override
-  late final PartWriter partWriter = PartWriterImpl(this, 'i${phase}_');
+  PartWriter get partWriter =>
+      _partWriter ??= PartWriterImpl(this, 'i${phase}_');
 
   final int phase;
 
@@ -195,8 +198,6 @@ class BuildStepImpl implements BuildStep {
     outputs[id] = AssetContent.string(await content, encoding: encoding);
   }
 
-
-
   @override
   Future<Digest> digest(AssetId id, {bool track = true}) async {
     if (_isComplete) throw BuildStepCompletedException();
@@ -225,6 +226,9 @@ class BuildStepImpl implements BuildStep {
   /// [Resolver] for this build step - if any - has been released.
   Future<void> complete() async {
     _isComplete = true;
+    if (_partWriter?.hasUnclosedState ?? false) {
+      throw StateError('PartWriter was left unclosed');
+    }
     try {
       (await _resolver)?.release();
     } catch (_) {}
@@ -257,7 +261,22 @@ class PartWriterImpl implements PartWriter {
   @override
   final String importPrefix;
 
+  final StringBuffer _buffer = StringBuffer();
+  final List<String> _imports = [];
+  bool _isClosed = false;
+  bool _isCanceled = false;
+  bool _isDirty = false;
+
   PartWriterImpl(this._buildStep, this.importPrefix);
+
+  bool get hasUnclosedState => _isDirty && !_isClosed && !_isCanceled;
+
+  void _checkCanWrite() {
+    if (_buildStep._isComplete) throw BuildStepCompletedException();
+    if (_isClosed) throw StateError('PartWriter is already closed.');
+    if (_isCanceled) throw StateError('PartWriter was canceled.');
+    _isDirty = true;
+  }
 
   @override
   void addImport(
@@ -266,11 +285,11 @@ class PartWriterImpl implements PartWriter {
     Iterable<String>? show,
     Iterable<String>? hide,
   }) {
-    if (_buildStep._isComplete) throw BuildStepCompletedException();
+    _checkCanWrite();
     if (!as.startsWith(importPrefix)) {
       throw ArgumentError.value(as, 'as', 'must start with $importPrefix');
     }
-    
+
     var buffer = StringBuffer('import \'$uri\' as $as');
     if (show != null && show.isNotEmpty) {
       buffer.write(' show ${show.join(', ')}');
@@ -279,16 +298,32 @@ class PartWriterImpl implements PartWriter {
       buffer.write(' hide ${hide.join(', ')}');
     }
     buffer.write(';');
-    _buildStep.partImports.add(buffer.toString());
+    _imports.add(buffer.toString());
   }
 
   @override
   void write(String content) {
-    if (_buildStep._isComplete) throw BuildStepCompletedException();
-    if (_buildStep.partContribution != null) {
-      throw StateError('write may only be called once.');
-    }
-    _buildStep.partContribution = content;
+    _checkCanWrite();
+    _buffer.write(content);
+  }
+
+  @override
+  void writeln([String content = '']) {
+    _checkCanWrite();
+    _buffer.writeln(content);
+  }
+
+  @override
+  void close() {
+    if (_isClosed || _isCanceled) return;
+    _isClosed = true;
+    _buildStep.partImports.addAll(_imports);
+    _buildStep.partContribution = _buffer.toString();
+  }
+
+  @override
+  void cancel() {
+    _isCanceled = true;
   }
 }
 

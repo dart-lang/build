@@ -1,4 +1,5 @@
 import 'package:build/build.dart';
+import 'package:dart_style/dart_style.dart';
 import 'package:path/path.dart' as p;
 
 extension AssetIdGeneratedPartsExtension on AssetId {
@@ -47,12 +48,9 @@ class GeneratedParts {
     Map<int, String> contributions, {
     String? languageVersion,
   }) {
-    var validPhases = <int>{
-      ...imports.keys,
-      ...contributions.keys,
-    }.toList();
+    var validPhases = <int>{...imports.keys, ...contributions.keys}.toList();
     validPhases.sort();
-    
+
     final partId = primaryInput.partIdForPrimaryInput;
     final buffer = StringBuffer();
     if (languageVersion != null) {
@@ -79,7 +77,24 @@ class GeneratedParts {
       }
     }
 
-    return buffer.toString();
+    final rawContent = buffer.toString();
+    String formattedContent;
+    try {
+      formattedContent = DartFormatter(
+        languageVersion: DartFormatter.latestLanguageVersion,
+      ).format(rawContent);
+    } catch (_) {
+      formattedContent = rawContent;
+    }
+
+    if (languageVersion != null) {
+      return formattedContent.replaceFirst(
+        languageVersion,
+        '$languageVersion\n// dart format off',
+      );
+    } else {
+      return '// dart format off\n$formattedContent';
+    }
   }
 
   static void parseContent(
@@ -87,22 +102,26 @@ class GeneratedParts {
     void Function(int phase, List<String> imports, String contribution) onPhase,
   ) {
     if (content.isEmpty) return;
-    
+
     final importPattern = RegExp(r'^// @PartBuilder:imports:(\d+)$');
     final contributionPattern = RegExp(r'^// @PartBuilder:contribution:(\d+)$');
-    
+
     var lines = content.split('\n');
     var currentPhase = -1;
     var isImport = false;
     List<String> currentImports = [];
     StringBuffer currentContribution = StringBuffer();
-    
+
     void commitPhase() {
       if (currentPhase != -1) {
-        onPhase(currentPhase, currentImports, currentContribution.toString().trimRight());
+        onPhase(
+          currentPhase,
+          currentImports,
+          currentContribution.toString().trimRight(),
+        );
       }
     }
-    
+
     var overallPhases = <int>{};
     // two passes: collect all phases?
     // wait, we can just process sequentially but phases might be split!
@@ -110,7 +129,7 @@ class GeneratedParts {
     // So we should collect them all before calling onPhase.
     var importsByPhase = <int, List<String>>{};
     var contributionsByPhase = <int, StringBuffer>{};
-    
+
     for (var line in lines) {
       var importMatch = importPattern.firstMatch(line);
       if (importMatch != null) {
@@ -126,26 +145,29 @@ class GeneratedParts {
         isImport = false;
         continue;
       }
-      
+
       if (currentPhase != -1) {
         if (isImport) {
           if (line.isNotEmpty) {
             importsByPhase.putIfAbsent(currentPhase, () => []).add(line);
           }
         } else {
-          var buf = contributionsByPhase.putIfAbsent(currentPhase, () => StringBuffer());
+          var buf = contributionsByPhase.putIfAbsent(
+            currentPhase,
+            () => StringBuffer(),
+          );
           if (buf.isNotEmpty) buf.writeln();
           buf.write(line);
         }
       }
     }
-    
+
     var sortedPhases = overallPhases.toList()..sort();
     for (var phase in sortedPhases) {
       onPhase(
         phase,
         importsByPhase[phase] ?? [],
-        contributionsByPhase[phase]?.toString().trimRight() ?? ''
+        contributionsByPhase[phase]?.toString().trimRight() ?? '',
       );
     }
   }

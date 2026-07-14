@@ -473,11 +473,7 @@ class GeneratedPartFileContent {
     for (final p in validPhases) {
       if (_contributions.containsKey(p)) contributions[p] = _contributions[p]!;
     }
-    return GeneratedParts.generateContent(
-      primaryInput,
-      imports,
-      contributions,
-    );
+    return GeneratedParts.generateContent(primaryInput, imports, contributions);
   }
 
   FileContent fileContentAt(int phase) {

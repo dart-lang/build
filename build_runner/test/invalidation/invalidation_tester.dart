@@ -569,9 +569,15 @@ class TestBuilder implements Builder {
     }
 
     if (partWrite != null) {
-      final actualContent = partWrite! == '_digest' ? recordedInput.map((l) => '// $l\n').join('') : partWrite!;
-      buildStep.partWriter.write(actualContent);
-      _tester._generatedOutputsWritten.add(buildStep.inputId.partIdForPrimaryInput);
+      final actualContent = partWrite! == '_digest'
+          ? recordedInput.map((l) => '// $l\n').join('')
+          : partWrite!;
+      buildStep.partWriter
+        ..write(actualContent)
+        ..close();
+      _tester._generatedOutputsWritten.add(
+        buildStep.inputId.partIdForPrimaryInput,
+      );
     }
   }
 

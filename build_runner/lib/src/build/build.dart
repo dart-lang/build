@@ -182,13 +182,23 @@ class Build {
           buildInputs: buildInputs,
         );
         if (previousBuildState != null) {
-          for (final primaryInput in previousBuildState!.primaryInputsWithParts) {
+          for (final primaryInput
+              in previousBuildState!.primaryInputsWithParts) {
             if (previousBuildState!.hasMissingPartStrings(primaryInput)) {
               final partId = primaryInput.partIdForPrimaryInput;
               final content = await _builderFilesystem.readOldPartFile(partId);
               if (content != null) {
-                GeneratedParts.parseContent(content, (phase, imports, contribution) {
-                  previousBuildState!.populatePartContent(primaryInput, phase, imports, contribution);
+                GeneratedParts.parseContent(content, (
+                  phase,
+                  imports,
+                  contribution,
+                ) {
+                  previousBuildState!.populatePartContent(
+                    primaryInput,
+                    phase,
+                    imports,
+                    contribution,
+                  );
                 });
               }
             }
@@ -1093,13 +1103,20 @@ class Build {
       ..globsEvaluated.replace(inputTracker.globsEvaluated)
       ..resolverEntrypoints.replace(inputTracker.resolverEntrypoints)
       ..errors.replace(errors)
-      ..partContribution = step.partContribution == null ? null : AssetContent.string(step.partContribution!)
-      ..partImports = step.partImports.isEmpty ? null : AssetContent.string(step.partImports.join('\n'));
+      ..partContribution = step.partContribution == null
+          ? null
+          : AssetContent.string(step.partContribution!)
+      ..partImports = step.partImports.isEmpty
+          ? null
+          : AssetContent.string(step.partImports.join('\n'));
     if (step.partContribution != null || step.partImports.isNotEmpty) {
       try {
-        final content = (await _builderFilesystem.contentOf(input)).stringValue();
+        final content = (await _builderFilesystem.contentOf(
+          input,
+        )).stringValue();
         final unit = _parseCompilationUnit(content);
-        buildStepResultBuilder.primaryLanguageVersion = unit.languageVersionToken?.lexeme;
+        buildStepResultBuilder.primaryLanguageVersion =
+            unit.languageVersionToken?.lexeme;
       } catch (_) {
         // Fallback or ignore if unreadable
       }

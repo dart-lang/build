@@ -307,7 +307,9 @@ class BuildState {
 
   /// The first found primaryLanguageVersion.
   String? languageVersionFor(AssetId id) {
-    for (final e in _buildStepResultsByPrimaryInput[id]?.values ?? const []) {
+    for (final e
+        in _buildStepResultsByPrimaryInput[id]?.values ??
+            const <BuildStepResult>[]) {
       final languageVersion = e.primaryLanguageVersion;
       if (languageVersion != null) return languageVersion;
     }
@@ -336,10 +338,12 @@ class BuildState {
     if (results == null) return false;
     for (final stepResult in results.values) {
       if (stepResult.succeeded) {
-        if (stepResult.partContribution != null && !stepResult.partContribution!.hasContent) {
+        if (stepResult.partContribution != null &&
+            !stepResult.partContribution!.hasContent) {
           return true;
         }
-        if (stepResult.partImports != null && !stepResult.partImports!.hasContent) {
+        if (stepResult.partImports != null &&
+            !stepResult.partImports!.hasContent) {
           return true;
         }
       }
@@ -347,17 +351,28 @@ class BuildState {
     return false;
   }
 
-  void populatePartContent(AssetId primaryInput, int phase, List<String> imports, String contribution) {
+  void populatePartContent(
+    AssetId primaryInput,
+    int phase,
+    List<String> imports,
+    String contribution,
+  ) {
     final results = _buildStepResultsByPrimaryInput[primaryInput];
     if (results == null) return;
     final stepResult = results[phase];
     if (stepResult != null && stepResult.succeeded) {
       BuildStepResult? newResult;
-      if (stepResult.partContribution != null && !stepResult.partContribution!.hasContent) {
-        newResult = stepResult.rebuild((b) => b.partContribution = AssetContent.string(contribution));
+      if (stepResult.partContribution != null &&
+          !stepResult.partContribution!.hasContent) {
+        newResult = stepResult.rebuild(
+          (b) => b.partContribution = AssetContent.string(contribution),
+        );
       }
-      if (stepResult.partImports != null && !stepResult.partImports!.hasContent) {
-        newResult = (newResult ?? stepResult).rebuild((b) => b.partImports = AssetContent.string(imports.join('\n')));
+      if (stepResult.partImports != null &&
+          !stepResult.partImports!.hasContent) {
+        newResult = (newResult ?? stepResult).rebuild(
+          (b) => b.partImports = AssetContent.string(imports.join('\n')),
+        );
       }
       if (newResult != null) {
         results[phase] = newResult;

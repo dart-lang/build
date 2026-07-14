@@ -54,7 +54,8 @@ class BuilderFilesystem {
   );
 
   void Function(AssetId, AssetContent?)? _onUpdateContent;
-  void Function(AssetId, int, AssetContent?, AssetContent?)? _onUpdatePartContributions;
+  void Function(AssetId, int, AssetContent?, AssetContent?)?
+  _onUpdatePartContributions;
 
   /// Listens to content updates: source files read for the first time,
   /// generated outputs, generated outputs that are not written.
@@ -73,7 +74,8 @@ class BuilderFilesystem {
   ///
   /// Throws if called more than once.
   void listenToPartContributions(
-    void Function(AssetId, int, AssetContent?, AssetContent?) onUpdatePartContributions,
+    void Function(AssetId, int, AssetContent?, AssetContent?)
+    onUpdatePartContributions,
   ) {
     if (_onUpdatePartContributions != null) {
       throw StateError('Already listening to part contributions.');

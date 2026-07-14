@@ -2,6 +2,7 @@ import 'package:build/build.dart';
 import 'package:build_runner/src/build/build_result.dart';
 import 'package:build_runner/src/build_plan/builder_definition.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
+import 'package:dart_style/dart_style.dart';
 import 'package:test/test.dart';
 
 import '../common/common.dart';
@@ -15,34 +16,71 @@ class PartWritingBuilder implements Builder {
 
   @override
   Map<String, List<String>> get buildExtensions => {
-        '.dart': [_extension],
-      };
+    '.dart': [_extension],
+  };
 
   @override
   Future<void> build(BuildStep buildStep) async {
     final readId = AssetId('a', _readFile);
-    final text = await buildStep.canRead(readId) ? await buildStep.readAsString(readId) : 'missing';
+    final text = await buildStep.canRead(readId)
+        ? await buildStep.readAsString(readId)
+        : 'missing';
     buildStep.partWriter
-      ..addImport('package:a/b.dart', as: '${buildStep.partWriter.importPrefix}b')
-      ..write('// builder saw: $text\n$_content');
+      ..addImport(
+        'package:a/b.dart',
+        as: '${buildStep.partWriter.importPrefix}b',
+      )
+      ..write('// builder saw: $text\n$_content')
+      ..close();
   }
+}
+
+String _formatGolden(String raw) {
+  String formatted;
+  try {
+    formatted = DartFormatter(
+      languageVersion: DartFormatter.latestLanguageVersion,
+    ).format(raw);
+  } catch (_) {
+    formatted = raw;
+  }
+  if (formatted.startsWith('// @dart=')) {
+    final languageVersion = formatted.substring(0, formatted.indexOf('\n'));
+    return formatted.replaceFirst(
+      languageVersion,
+      '$languageVersion\n// dart format off',
+    );
+  }
+  return '// dart format off\n$formatted';
 }
 
 void main() {
   group('Part Builders incremental build', () {
     test('updates generated part file correctly', () async {
       final builderFactories = BuilderFactories({
-        'a:builder1': [(_) => PartWritingBuilder('content1', 'lib/b.txt', '.b1.dart')],
-        'a:builder2': [(_) => PartWritingBuilder('content2', 'lib/c.txt', '.b2.dart')],
+        'a:builder1': [
+          (_) => PartWritingBuilder('content1', 'lib/b.txt', '.b1.dart'),
+        ],
+        'a:builder2': [
+          (_) => PartWritingBuilder('content2', 'lib/c.txt', '.b2.dart'),
+        ],
       });
       final builderDefinitions = [
-        BuilderDefinition('a:builder1', hideOutput: false, autoApply: AutoApply.allPackages),
-        BuilderDefinition('a:builder2', hideOutput: false, autoApply: AutoApply.allPackages),
+        BuilderDefinition(
+          'a:builder1',
+          hideOutput: false,
+          autoApply: AutoApply.allPackages,
+        ),
+        BuilderDefinition(
+          'a:builder2',
+          hideOutput: false,
+          autoApply: AutoApply.allPackages,
+        ),
       ];
 
       // Initial build.
       // Expected generated part combines imports and content from both.
-      final expectedGeneratedPart = '''
+      final expectedGeneratedPart = _formatGolden('''
 part of '../a.dart';
 
 // @PartBuilder:imports:0
@@ -58,7 +96,7 @@ content1
 // builder saw: initial_c
 content2
 
-''';
+''');
 
       final result1 = await testPhases(
         builderFactories,
@@ -73,7 +111,7 @@ content2
 
       // Now we do an incremental build where we ONLY change b.txt.
       // builder1 will run again, builder2 will be cached.
-      final expectedGeneratedPart2 = '''
+      final expectedGeneratedPart2 = _formatGolden('''
 part of '../a.dart';
 
 // @PartBuilder:imports:0
@@ -89,7 +127,7 @@ content1
 // builder saw: initial_c
 content2
 
-''';
+''');
 
       await testPhases(
         builderFactories,
@@ -104,15 +142,23 @@ content2
       );
     });
 
-    test('preserves language version comments from the primary input', () async {
-      final builderFactories = BuilderFactories({
-        'a:builder1': [(_) => PartWritingBuilder('content', 'lib/b.txt', '.b.dart')],
-      });
-      final builderDefinitions = [
-        BuilderDefinition('a:builder1', hideOutput: false, autoApply: AutoApply.allPackages),
-      ];
+    test(
+      'preserves language version comments from the primary input',
+      () async {
+        final builderFactories = BuilderFactories({
+          'a:builder1': [
+            (_) => PartWritingBuilder('content', 'lib/b.txt', '.b.dart'),
+          ],
+        });
+        final builderDefinitions = [
+          BuilderDefinition(
+            'a:builder1',
+            hideOutput: false,
+            autoApply: AutoApply.allPackages,
+          ),
+        ];
 
-      final expectedGeneratedPart = '''
+        final expectedGeneratedPart = _formatGolden('''
 // @dart=2.14
 part of '../a.dart';
 
@@ -123,17 +169,15 @@ import 'package:a/b.dart' as i0_b;
 // builder saw: b
 content
 
-''';
+''');
 
-      await testPhases(
-        builderFactories,
-        builderDefinitions,
-        {
-          'a|lib/a.dart': '// @dart=2.14\n',
-          'a|lib/b.txt': 'b',
-        },
-        outputs: {r'$$a|lib/_generated_parts/a.dart': expectedGeneratedPart},
-      );
-    });
+        await testPhases(
+          builderFactories,
+          builderDefinitions,
+          {'a|lib/a.dart': '// @dart=2.14\n', 'a|lib/b.txt': 'b'},
+          outputs: {r'$$a|lib/_generated_parts/a.dart': expectedGeneratedPart},
+        );
+      },
+    );
   });
 }

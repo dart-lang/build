@@ -3,9 +3,22 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build_runner/src/logging/build_log.dart';
+import 'package:dart_style/dart_style.dart';
 import 'package:test/test.dart';
 
 import '../common/common.dart';
+
+String _formatGolden(String raw) {
+  String formatted;
+  try {
+    formatted = DartFormatter(
+      languageVersion: DartFormatter.latestLanguageVersion,
+    ).format(raw);
+  } catch (_) {
+    formatted = raw;
+  }
+  return '// dart format off\n$formatted';
+}
 
 void main() {
   test('writePart writes part contribution to generated cache', () async {
@@ -36,7 +49,7 @@ class WritePartBuilder implements Builder {
 
   @override
   Future<void> build(BuildStep buildStep) async {
-    buildStep.partWriter.write('// part content');
+    buildStep.partWriter..write('// part content')..close();
   }
 }
 ''',
@@ -59,21 +72,21 @@ class WritePartBuilder implements Builder {
       tester.read(
         'root_pkg/.dart_tool/build/generated/root_pkg/lib/_generated_parts/a.dart',
       ),
-      "part of '../a.dart';\n\n\n// @PartBuilder:contribution:0\n// part content\n\n",
+      _formatGolden(
+        "part of '../a.dart';\n\n\n// @PartBuilder:contribution:0\n// part content\n\n",
+      ),
     );
   });
 
-  test(
-    'two builders writing parts to same library end up concatenated',
-    () async {
-      final pubspecs = await Pubspecs.load();
-      final tester = BuildRunnerTester(pubspecs);
+  test('two builders writing parts to same library end up concatenated', () async {
+    final pubspecs = await Pubspecs.load();
+    final tester = BuildRunnerTester(pubspecs);
 
-      tester.writePackage(
-        name: 'multi_part_pkg',
-        dependencies: ['build', 'build_runner'],
-        files: {
-          'build.yaml': '''
+    tester.writePackage(
+      name: 'multi_part_pkg',
+      dependencies: ['build', 'build_runner'],
+      files: {
+        'build.yaml': '''
 builders:
   builder1:
     import: 'package:multi_part_pkg/builder.dart'
@@ -88,7 +101,7 @@ builders:
     auto_apply: 'root_package'
     build_to: 'cache'
 ''',
-          'lib/builder.dart': '''
+        'lib/builder.dart': '''
 import 'package:build/build.dart';
 
 Builder factory1(BuilderOptions options) => PartBuilder('// contribution 1');
@@ -103,33 +116,34 @@ class PartBuilder implements Builder {
 
   @override
   Future<void> build(BuildStep buildStep) async {
-    buildStep.partWriter.write(content);
+    buildStep.partWriter..write(content)..close();
   }
 }
 ''',
-        },
-      );
+      },
+    );
 
-      tester.writePackage(
-        name: 'root_pkg',
-        dependencies: ['build_runner'],
-        pathDependencies: ['multi_part_pkg'],
-        files: {'lib/a.dart': 'class A {}'},
-      );
+    tester.writePackage(
+      name: 'root_pkg',
+      dependencies: ['build_runner'],
+      pathDependencies: ['multi_part_pkg'],
+      files: {'lib/a.dart': 'class A {}'},
+    );
 
-      final output = await tester.run(
-        'root_pkg',
-        'dart run build_runner build --force-jit',
-      );
-      expect(output, contains(BuildLog.successPattern));
-      expect(
-        tester.read(
-          'root_pkg/.dart_tool/build/generated/root_pkg/lib/_generated_parts/a.dart',
-        ),
+    final output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
+    expect(output, contains(BuildLog.successPattern));
+    expect(
+      tester.read(
+        'root_pkg/.dart_tool/build/generated/root_pkg/lib/_generated_parts/a.dart',
+      ),
+      _formatGolden(
         "part of '../a.dart';\n\n\n// @PartBuilder:contribution:0\n// contribution 2\n\n// @PartBuilder:contribution:1\n// contribution 1\n\n",
-      );
-    },
-  );
+      ),
+    );
+  });
 
   test(
     'resolving library in later phase sees generated part from earlier phase',
@@ -179,7 +193,9 @@ class PartGen1Builder implements Builder {
   Future<void> build(BuildStep buildStep) async {
     final lib = await buildStep.inputLibrary;
     final hasClass1 = lib.getClass('Class1') != null;
-    buildStep.partWriter.write("class Class1 {\\n  // Gen1 checked hasClass1: \$hasClass1\\n}");
+    buildStep.partWriter
+      ..write("class Class1 {\\n  // Gen1 checked hasClass1: \$hasClass1\\n}")
+      ..close();
   }
 }
 
@@ -192,7 +208,9 @@ class PartGen2Builder implements Builder {
     final lib = await buildStep.inputLibrary;
     final hasClass1 = lib.getClass('Class1') != null;
     final hasClass2 = lib.getClass('Class2') != null;
-    buildStep.partWriter.write("class Class2 {\\n  // Gen2 checked hasClass1: \$hasClass1, hasClass2: \$hasClass2\\n}");
+    buildStep.partWriter
+      ..write("class Class2 {\\n  // Gen2 checked hasClass1: \$hasClass1, hasClass2: \$hasClass2\\n}")
+      ..close();
   }
 }
 
@@ -211,7 +229,9 @@ class PartGen3Builder implements Builder {
       buildStep.inputId.changeExtension('.resolved.txt'),
       'Gen3 checks - Class1: \$hasClass1, Class2: \$hasClass2, Class3: \$hasClass3',
     );
-    buildStep.partWriter.write("class Class3 {\\n  // Gen3 checked hasClass1: \$hasClass1, hasClass2: \$hasClass2, hasClass3: \$hasClass3\\n}");
+    buildStep.partWriter
+      ..write("class Class3 {\\n  // Gen3 checked hasClass1: \$hasClass1, hasClass2: \$hasClass2, hasClass3: \$hasClass3\\n}")
+      ..close();
   }
 }
 ''',
@@ -248,9 +268,11 @@ class A {}
         tester.read(
           'root_pkg/.dart_tool/build/generated/root_pkg/lib/_generated_parts/a.dart',
         ),
-        "part of '../a.dart';\n\n\n// @PartBuilder:contribution:0\nclass Class1 {\n  // Gen1 checked hasClass1: false\n}\n\n"
-        "// @PartBuilder:contribution:1\nclass Class2 {\n  // Gen2 checked hasClass1: true, hasClass2: false\n}\n\n"
-        "// @PartBuilder:contribution:2\nclass Class3 {\n  // Gen3 checked hasClass1: true, hasClass2: true, hasClass3: false\n}\n\n",
+        _formatGolden(
+          "part of '../a.dart';\n\n\n// @PartBuilder:contribution:0\nclass Class1 {\n  // Gen1 checked hasClass1: false\n}\n\n"
+          "// @PartBuilder:contribution:1\nclass Class2 {\n  // Gen2 checked hasClass1: true, hasClass2: false\n}\n\n"
+          "// @PartBuilder:contribution:2\nclass Class3 {\n  // Gen3 checked hasClass1: true, hasClass2: true, hasClass3: false\n}\n\n",
+        ),
       );
     },
   );
@@ -285,7 +307,7 @@ class WritePartBuilder implements Builder {
   Future<void> build(BuildStep buildStep) async {
     final prefix = buildStep.partWriter.importPrefix;
     buildStep.partWriter.addImport('package:foo/foo.dart', as: '\${prefix}foo');
-    buildStep.partWriter.write('// part content');
+    buildStep.partWriter..write('// part content')..close();
   }
 }
 ''',
@@ -318,7 +340,9 @@ class A {}
       tester.read(
         'root_pkg/.dart_tool/build/generated/root_pkg/lib/_generated_parts/a.dart',
       ),
-      "part of '../a.dart';\n\n// @PartBuilder:imports:0\nimport 'package:foo/foo.dart' as i0_foo;\n\n// @PartBuilder:contribution:0\n// part content\n\n",
+      _formatGolden(
+        "part of '../a.dart';\n\n// @PartBuilder:imports:0\nimport 'package:foo/foo.dart' as i0_foo;\n\n// @PartBuilder:contribution:0\n// part content\n\n",
+      ),
     );
   });
 }

@@ -9,6 +9,7 @@ export 'src/exceptions.dart';
 export 'src/expected_outputs.dart';
 export 'src/file_deleting_builder.dart';
 export 'src/logging.dart' show log;
+export 'src/part_writer.dart';
 export 'src/post_process_build_step.dart';
 export 'src/post_process_builder.dart';
 export 'src/resolver.dart';

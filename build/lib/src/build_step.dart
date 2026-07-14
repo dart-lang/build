@@ -11,26 +11,9 @@ import 'package:glob/glob.dart';
 import 'package:package_config/package_config_types.dart';
 
 import 'asset_id.dart';
+import 'part_writer.dart';
 import 'resolver.dart';
 import 'resource.dart';
-
-abstract class PartWriter {
-  /// A unique prefix assigned to the current builder.
-  String get importPrefix;
-
-  /// Adds an import directive to the top of the generated part.
-  /// 
-  /// Throws an [ArgumentError] if [as] does not start with [importPrefix].
-  void addImport(
-    String uri, {
-    required String as,
-    Iterable<String>? show,
-    Iterable<String>? hide,
-  });
-
-  /// Appends [content] to the body of the generated part.
-  void write(String content);
-}
 
 /// A single step in `build_runner` build.
 ///
