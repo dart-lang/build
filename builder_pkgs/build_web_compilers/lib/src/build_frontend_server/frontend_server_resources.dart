@@ -83,11 +83,13 @@ class FrontendServerState {
       try {
         await previous;
         await compileFn();
+        completer.complete();
+      } catch (e, s) {
+        completer.completeError(e, s);
       } finally {
         if (_activeCompilation == completer.future) {
           _activeCompilation = Future.value();
         }
-        completer.complete();
       }
     }();
   }
