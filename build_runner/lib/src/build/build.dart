@@ -28,6 +28,7 @@ import '../io/build_output_reader.dart';
 import '../logging/build_log.dart';
 import '../logging/build_log_logger.dart';
 import '../logging/timed_activities.dart';
+import 'asset_content.dart';
 import 'build_dirs.dart';
 import 'build_result.dart';
 import 'build_state/build_state.dart';
@@ -180,6 +181,20 @@ class Build {
           builderFilesystem: _builderFilesystem,
           buildInputs: buildInputs,
         );
+        if (previousBuildState != null) {
+          for (final primaryInput in previousBuildState!.primaryInputsWithParts) {
+            if (previousBuildState!.hasMissingPartStrings(primaryInput)) {
+              final partId = primaryInput.partIdForPrimaryInput;
+              final content = await _builderFilesystem.readOldPartFile(partId);
+              if (content != null) {
+                GeneratedParts.parseContent(content, (phase, imports, contribution) {
+                  previousBuildState!.populatePartContent(primaryInput, phase, imports, contribution);
+                });
+              }
+            }
+          }
+        }
+
         final result = await _runPhases();
 
         // Combine previous phased asset deps, if any, with the newly loaded
@@ -296,10 +311,8 @@ class Build {
     );
     // Assume success, failed outputs will be checked later.
 
-    final generatedPartOutputs = buildState.primaryInputsWithParts.map(
-      (id) => id.partIdForPrimaryInput,
-    );
-    outputs.addAll(generatedPartOutputs);
+    final generatedPartOutputs = buildState.primaryInputsWithParts.toList();
+    outputs.addAll(generatedPartOutputs.map((id) => id.partIdForPrimaryInput));
 
     return BuildResult(
       status: BuildStatus.success,
@@ -1080,8 +1093,8 @@ class Build {
       ..globsEvaluated.replace(inputTracker.globsEvaluated)
       ..resolverEntrypoints.replace(inputTracker.resolverEntrypoints)
       ..errors.replace(errors)
-      ..partContribution = step.partContribution
-      ..partImports.replace(step.partImports);
+      ..partContribution = step.partContribution == null ? null : AssetContent.string(step.partContribution!)
+      ..partImports = step.partImports.isEmpty ? null : AssetContent.string(step.partImports.join('\n'));
     for (final output in outputs) {
       if (step.outputs.containsKey(output)) {
         final content = step.outputs[output]!;

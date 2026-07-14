@@ -288,16 +288,16 @@ class BuildState {
   }
 
   /// The concatenated part imports for [primaryInput], sorted by phase.
-  List<String> partImportsFor(AssetId primaryInput) {
+  Map<int, List<String>> partImportsFor(AssetId primaryInput) {
     final results = _buildStepResultsByPrimaryInput[primaryInput];
-    if (results == null) return const [];
+    if (results == null) return const {};
     final phases = results.keys.toList()..sort();
-    final imports = <String>[];
+    final imports = <int, List<String>>{};
     for (final phase in phases) {
       final stepResult = results[phase]!;
       if (stepResult.succeeded) {
-        if (stepResult.partImports.isNotEmpty) {
-          imports.addAll(stepResult.partImports);
+        if (stepResult.partImports != null) {
+          imports[phase] = stepResult.partImports!.stringValue().split('\n');
         }
       }
     }
@@ -305,20 +305,54 @@ class BuildState {
   }
 
   /// The concatenated part contributions for [primaryInput], sorted by phase.
-  List<String> partContributionsFor(AssetId primaryInput) {
+  Map<int, String> partContributionsFor(AssetId primaryInput) {
     final results = _buildStepResultsByPrimaryInput[primaryInput];
-    if (results == null) return const [];
+    if (results == null) return const {};
     final phases = results.keys.toList()..sort();
-    final contributions = <String>[];
+    final contributions = <int, String>{};
     for (final phase in phases) {
       final stepResult = results[phase]!;
       if (stepResult.succeeded) {
         if (stepResult.partContribution != null) {
-          contributions.add(stepResult.partContribution!);
+          contributions[phase] = stepResult.partContribution!.stringValue();
         }
       }
     }
     return contributions;
+  }
+
+  bool hasMissingPartStrings(AssetId primaryInput) {
+    final results = _buildStepResultsByPrimaryInput[primaryInput];
+    if (results == null) return false;
+    for (final stepResult in results.values) {
+      if (stepResult.succeeded) {
+        if (stepResult.partContribution != null && !stepResult.partContribution!.hasContent) {
+          return true;
+        }
+        if (stepResult.partImports != null && !stepResult.partImports!.hasContent) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  void populatePartContent(AssetId primaryInput, int phase, List<String> imports, String contribution) {
+    final results = _buildStepResultsByPrimaryInput[primaryInput];
+    if (results == null) return;
+    final stepResult = results[phase];
+    if (stepResult != null && stepResult.succeeded) {
+      BuildStepResult? newResult;
+      if (stepResult.partContribution != null && !stepResult.partContribution!.hasContent) {
+        newResult = stepResult.rebuild((b) => b.partContribution = AssetContent.string(contribution));
+      }
+      if (stepResult.partImports != null && !stepResult.partImports!.hasContent) {
+        newResult = (newResult ?? stepResult).rebuild((b) => b.partImports = AssetContent.string(imports.join('\n')));
+      }
+      if (newResult != null) {
+        results[phase] = newResult;
+      }
+    }
   }
 
   // -- Globs.

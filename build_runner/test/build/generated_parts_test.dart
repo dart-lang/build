@@ -63,36 +63,36 @@ void main() {
   group('GeneratedParts', () {
     test('generateContent uses correct relative path', () {
       expect(
-        GeneratedParts.generateContent(AssetId('a', 'lib/b.dart'), [], ['// c1']),
-        "part of '../b.dart';\n\n// c1",
+        GeneratedParts.generateContent(AssetId('a', 'lib/b.dart'), {}, {0: '// c1'}),
+        "part of '../b.dart';\n\n\n// @PartBuilder:contribution:0\n// c1\n\n",
       );
 
       expect(
-        GeneratedParts.generateContent(AssetId('a', 'lib/foo/bar.dart'), [], [
-          '// c1',
-        ]),
-        "part of '../../foo/bar.dart';\n\n// c1",
+        GeneratedParts.generateContent(AssetId('a', 'lib/foo/bar.dart'), {}, {
+          0: '// c1',
+        }),
+        "part of '../../foo/bar.dart';\n\n\n// @PartBuilder:contribution:0\n// c1\n\n",
       );
 
       expect(
-        GeneratedParts.generateContent(AssetId('a', 'test/foo.dart'), [], [
-          '// c1',
-        ]),
-        "part of '../foo.dart';\n\n// c1",
+        GeneratedParts.generateContent(AssetId('a', 'test/foo.dart'), {}, {
+          0: '// c1',
+        }),
+        "part of '../foo.dart';\n\n\n// @PartBuilder:contribution:0\n// c1\n\n",
       );
 
       expect(
-        GeneratedParts.generateContent(AssetId('a', 'root.dart'), [], ['// c1']),
-        "part of '../root.dart';\n\n// c1",
+        GeneratedParts.generateContent(AssetId('a', 'root.dart'), {}, {0: '// c1'}),
+        "part of '../root.dart';\n\n\n// @PartBuilder:contribution:0\n// c1\n\n",
       );
 
       expect(
         GeneratedParts.generateContent(
           AssetId('a', 'root.dart'),
-          ["import 'package:foo/foo.dart';", "import 'package:bar/bar.dart';"],
-          ['// c1'],
+          {0: ["import 'package:foo/foo.dart';", "import 'package:bar/bar.dart';"]},
+          {0: '// c1'},
         ),
-        "part of '../root.dart';\n\nimport 'package:foo/foo.dart';\nimport 'package:bar/bar.dart';\n\n// c1",
+        "part of '../root.dart';\n\n// @PartBuilder:imports:0\nimport 'package:foo/foo.dart';\nimport 'package:bar/bar.dart';\n\n// @PartBuilder:contribution:0\n// c1\n\n",
       );
     });
   });

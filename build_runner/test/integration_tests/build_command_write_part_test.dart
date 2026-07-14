@@ -59,7 +59,7 @@ class WritePartBuilder implements Builder {
       tester.read(
         'root_pkg/.dart_tool/build/generated/root_pkg/lib/_generated_parts/a.dart',
       ),
-      "part of '../a.dart';\n\n// part content",
+      "part of '../a.dart';\n\n\n// @PartBuilder:contribution:0\n// part content\n\n",
     );
   });
 
@@ -126,7 +126,7 @@ class PartBuilder implements Builder {
         tester.read(
           'root_pkg/.dart_tool/build/generated/root_pkg/lib/_generated_parts/a.dart',
         ),
-        "part of '../a.dart';\n\n// contribution 2\n\n// contribution 1",
+        "part of '../a.dart';\n\n\n// @PartBuilder:contribution:0\n// contribution 2\n\n// @PartBuilder:contribution:1\n// contribution 1\n\n",
       );
     },
   );
@@ -248,9 +248,9 @@ class A {}
         tester.read(
           'root_pkg/.dart_tool/build/generated/root_pkg/lib/_generated_parts/a.dart',
         ),
-        "part of '../a.dart';\n\nclass Class1 {\n  // Gen1 checked hasClass1: false\n}\n\n"
-        "class Class2 {\n  // Gen2 checked hasClass1: true, hasClass2: false\n}\n\n"
-        "class Class3 {\n  // Gen3 checked hasClass1: true, hasClass2: true, hasClass3: false\n}",
+        "part of '../a.dart';\n\n\n// @PartBuilder:contribution:0\nclass Class1 {\n  // Gen1 checked hasClass1: false\n}\n\n"
+        "// @PartBuilder:contribution:1\nclass Class2 {\n  // Gen2 checked hasClass1: true, hasClass2: false\n}\n\n"
+        "// @PartBuilder:contribution:2\nclass Class3 {\n  // Gen3 checked hasClass1: true, hasClass2: true, hasClass3: false\n}\n\n",
       );
     },
   );
@@ -318,7 +318,7 @@ class A {}
       tester.read(
         'root_pkg/.dart_tool/build/generated/root_pkg/lib/_generated_parts/a.dart',
       ),
-      "part of '../a.dart';\n\nimport 'package:foo/foo.dart' as i0_foo;\n\n// part content",
+      "part of '../a.dart';\n\n// @PartBuilder:imports:0\nimport 'package:foo/foo.dart' as i0_foo;\n\n// @PartBuilder:contribution:0\n// part content\n\n",
     );
   });
 }

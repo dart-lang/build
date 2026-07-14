@@ -157,8 +157,8 @@ class AnalysisDriverFilesystem
   void _updatePartContributions(
     AssetId primaryInput,
     int phase,
-    Iterable<String> imports,
-    String? contribution,
+    AssetContent? imports,
+    AssetContent? contribution,
   ) {
     final partPath = primaryInput.partIdForPrimaryInput.asPath;
     final partData = _partData.putIfAbsent(
@@ -434,16 +434,16 @@ class GeneratedPartFileContent {
 
   GeneratedPartFileContent(this.primaryInput, this.path);
 
-  void update(int phase, Iterable<String> imports, String? contribution) {
-    if (contribution == null && imports.isEmpty) {
+  void update(int phase, AssetContent? imports, AssetContent? contribution) {
+    if (contribution == null && imports == null) {
       _contributions.remove(phase);
       _imports.remove(phase);
     } else {
       if (contribution != null) {
-        _contributions[phase] = contribution;
+        _contributions[phase] = contribution.stringValue();
       }
-      if (imports.isNotEmpty) {
-        _imports[phase] = imports;
+      if (imports != null) {
+        _imports[phase] = imports.stringValue().split('\n');
       }
     }
   }
@@ -465,16 +465,18 @@ class GeneratedPartFileContent {
     }
     validPhases.sort();
 
-    final imports = <String>[];
+    final imports = <int, Iterable<String>>{};
     for (final p in validPhases) {
-      if (_imports.containsKey(p)) imports.addAll(_imports[p]!);
+      if (_imports.containsKey(p)) imports[p] = _imports[p]!;
+    }
+    final contributions = <int, String>{};
+    for (final p in validPhases) {
+      if (_contributions.containsKey(p)) contributions[p] = _contributions[p]!;
     }
     return GeneratedParts.generateContent(
       primaryInput,
       imports,
-      validPhases
-          .where((p) => _contributions.containsKey(p))
-          .map((p) => _contributions[p]!),
+      contributions,
     );
   }
 

@@ -29,10 +29,10 @@ abstract class BuildStepResult
   BuiltMap<AssetId, AssetContent> get outputs;
 
   /// Part contribution written by the step.
-  String? get partContribution;
+  AssetContent? get partContribution;
 
   /// Part imports written by the step.
-  BuiltList<String> get partImports;
+  AssetContent? get partImports;
 
   /// Inputs and missing sources read.
   BuiltSet<AssetId> get inputs;

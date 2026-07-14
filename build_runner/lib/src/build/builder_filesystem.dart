@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
@@ -53,7 +54,7 @@ class BuilderFilesystem {
   );
 
   void Function(AssetId, AssetContent?)? _onUpdateContent;
-  void Function(AssetId, int, Iterable<String>, String?)? _onUpdatePartContributions;
+  void Function(AssetId, int, AssetContent?, AssetContent?)? _onUpdatePartContributions;
 
   /// Listens to content updates: source files read for the first time,
   /// generated outputs, generated outputs that are not written.
@@ -72,7 +73,7 @@ class BuilderFilesystem {
   ///
   /// Throws if called more than once.
   void listenToPartContributions(
-    void Function(AssetId, int, Iterable<String>, String?) onUpdatePartContributions,
+    void Function(AssetId, int, AssetContent?, AssetContent?) onUpdatePartContributions,
   ) {
     if (_onUpdatePartContributions != null) {
       throw StateError('Already listening to part contributions.');
@@ -195,6 +196,21 @@ class BuilderFilesystem {
         : AssetContent.bytes(bytes);
     updateContent(id: id, content: content);
     return content;
+  }
+
+  Future<String?> readOldPartFile(AssetId id) async {
+    try {
+      final bytes = await readerWriter.readAsBytes(
+        id,
+        hidden: id.isHidden(
+          buildStepPlan: buildStepPlan,
+          buildState: buildState,
+        ),
+      );
+      return utf8.decode(bytes);
+    } on AssetNotFoundException {
+      return null;
+    }
   }
 
   /// Checks whether [id] can be read by this step - attempting to build the

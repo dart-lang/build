@@ -148,7 +148,7 @@ class BuildOutputReader {
           final buffer = StringBuffer();
           buffer.writeln("part of '../../$basename';");
           buffer.writeln();
-          for (final c in parts) {
+          for (final c in parts.values) {
             buffer.writeln(c);
           }
           return buffer.toString();

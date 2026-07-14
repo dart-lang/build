@@ -36,13 +36,6 @@ class _$BuildStepResultSerializer
           const FullType(AssetContent),
         ]),
       ),
-      'partImports',
-      serializers.serialize(
-        object.partImports,
-        specifiedType: const FullType(BuiltList, const [
-          const FullType(String),
-        ]),
-      ),
       'inputs',
       serializers.serialize(
         object.inputs,
@@ -84,7 +77,21 @@ class _$BuildStepResultSerializer
       result
         ..add('partContribution')
         ..add(
-          serializers.serialize(value, specifiedType: const FullType(String)),
+          serializers.serialize(
+            value,
+            specifiedType: const FullType(AssetContent),
+          ),
+        );
+    }
+    value = object.partImports;
+    if (value != null) {
+      result
+        ..add('partImports')
+        ..add(
+          serializers.serialize(
+            value,
+            specifiedType: const FullType(AssetContent),
+          ),
         );
     }
     return result;
@@ -135,20 +142,17 @@ class _$BuildStepResultSerializer
           result.partContribution =
               serializers.deserialize(
                     value,
-                    specifiedType: const FullType(String),
+                    specifiedType: const FullType(AssetContent),
                   )
-                  as String?;
+                  as AssetContent?;
           break;
         case 'partImports':
-          result.partImports.replace(
-            serializers.deserialize(
-                  value,
-                  specifiedType: const FullType(BuiltList, const [
-                    const FullType(String),
-                  ]),
-                )!
-                as BuiltList<Object?>,
-          );
+          result.partImports =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(AssetContent),
+                  )
+                  as AssetContent?;
           break;
         case 'inputs':
           result.inputs.replace(
@@ -209,9 +213,9 @@ class _$BuildStepResult extends BuildStepResult {
   @override
   final BuiltMap<AssetId, AssetContent> outputs;
   @override
-  final String? partContribution;
+  final AssetContent? partContribution;
   @override
-  final BuiltList<String> partImports;
+  final AssetContent? partImports;
   @override
   final BuiltSet<AssetId> inputs;
   @override
@@ -229,7 +233,7 @@ class _$BuildStepResult extends BuildStepResult {
     required this.isHidden,
     required this.outputs,
     this.partContribution,
-    required this.partImports,
+    this.partImports,
     required this.inputs,
     required this.globsEvaluated,
     required this.resolverEntrypoints,
@@ -307,15 +311,14 @@ class BuildStepResultBuilder
   set outputs(MapBuilder<AssetId, AssetContent>? outputs) =>
       _$this._outputs = outputs;
 
-  String? _partContribution;
-  String? get partContribution => _$this._partContribution;
-  set partContribution(String? partContribution) =>
+  AssetContent? _partContribution;
+  AssetContent? get partContribution => _$this._partContribution;
+  set partContribution(AssetContent? partContribution) =>
       _$this._partContribution = partContribution;
 
-  ListBuilder<String>? _partImports;
-  ListBuilder<String> get partImports =>
-      _$this._partImports ??= ListBuilder<String>();
-  set partImports(ListBuilder<String>? partImports) =>
+  AssetContent? _partImports;
+  AssetContent? get partImports => _$this._partImports;
+  set partImports(AssetContent? partImports) =>
       _$this._partImports = partImports;
 
   SetBuilder<AssetId>? _inputs;
@@ -347,7 +350,7 @@ class BuildStepResultBuilder
       _isHidden = $v.isHidden;
       _outputs = $v.outputs.toBuilder();
       _partContribution = $v.partContribution;
-      _partImports = $v.partImports.toBuilder();
+      _partImports = $v.partImports;
       _inputs = $v.inputs.toBuilder();
       _globsEvaluated = $v.globsEvaluated.toBuilder();
       _resolverEntrypoints = $v.resolverEntrypoints.toBuilder();
@@ -384,7 +387,7 @@ class BuildStepResultBuilder
             ),
             outputs: outputs.build(),
             partContribution: partContribution,
-            partImports: partImports.build(),
+            partImports: partImports,
             inputs: inputs.build(),
             globsEvaluated: globsEvaluated.build(),
             resolverEntrypoints: resolverEntrypoints.build(),
@@ -396,8 +399,6 @@ class BuildStepResultBuilder
         _$failedField = 'outputs';
         outputs.build();
 
-        _$failedField = 'partImports';
-        partImports.build();
         _$failedField = 'inputs';
         inputs.build();
         _$failedField = 'globsEvaluated';
