@@ -54,6 +54,23 @@ String _formatGolden(String raw) {
   return '// dart format off\n$formatted';
 }
 
+class ThrowingPrefixBuilder implements Builder {
+  @override
+  Map<String, List<String>> get buildExtensions => {'.dart': ['.g.dart']};
+
+  @override
+  Future<void> build(BuildStep buildStep) async {
+    expect(
+      () => buildStep.partWriter.addImport(
+        'package:a/b.dart',
+        as: 'wrong_prefix',
+      ),
+      throwsA(isA<ArgumentError>()),
+    );
+    buildStep.partWriter..write('foo')..close();
+  }
+}
+
 void main() {
   group('Part Builders incremental build', () {
     test('updates generated part file correctly', () async {
@@ -179,5 +196,26 @@ content
         );
       },
     );
+
+    test('throws if addImport uses incorrect prefix', () async {
+      final builderFactories = BuilderFactories({
+        '.dart': [
+          (_) => ThrowingPrefixBuilder(),
+        ],
+      });
+      final builderDefinitions = [
+        BuilderDefinition(
+          'a:builder1',
+          hideOutput: false,
+          autoApply: AutoApply.allPackages,
+        ),
+      ];
+
+      await testPhases(
+        builderFactories,
+        builderDefinitions,
+        {'a|lib/a.dart': '// @dart=2.14\n'},
+      );
+    });
   });
 }
