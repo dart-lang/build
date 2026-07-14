@@ -1095,6 +1095,15 @@ class Build {
       ..errors.replace(errors)
       ..partContribution = step.partContribution == null ? null : AssetContent.string(step.partContribution!)
       ..partImports = step.partImports.isEmpty ? null : AssetContent.string(step.partImports.join('\n'));
+    if (step.partContribution != null || step.partImports.isNotEmpty) {
+      try {
+        final content = (await _builderFilesystem.contentOf(input)).stringValue();
+        final unit = _parseCompilationUnit(content);
+        buildStepResultBuilder.primaryLanguageVersion = unit.languageVersionToken?.lexeme;
+      } catch (_) {
+        // Fallback or ignore if unreadable
+      }
+    }
     for (final output in outputs) {
       if (step.outputs.containsKey(output)) {
         final content = step.outputs[output]!;

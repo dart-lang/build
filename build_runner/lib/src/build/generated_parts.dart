@@ -44,8 +44,9 @@ class GeneratedParts {
   static String generateContent(
     AssetId primaryInput,
     Map<int, Iterable<String>> imports,
-    Map<int, String> contributions,
-  ) {
+    Map<int, String> contributions, {
+    String? languageVersion,
+  }) {
     var validPhases = <int>{
       ...imports.keys,
       ...contributions.keys,
@@ -54,6 +55,9 @@ class GeneratedParts {
     
     final partId = primaryInput.partIdForPrimaryInput;
     final buffer = StringBuffer();
+    if (languageVersion != null) {
+      buffer.writeln(languageVersion);
+    }
     buffer.writeln(partOfDirective(primaryInput, partId));
     buffer.writeln();
 

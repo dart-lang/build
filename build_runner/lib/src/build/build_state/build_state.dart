@@ -225,6 +225,7 @@ class BuildState {
         primaryInput,
         imports,
         contributions,
+        languageVersion: languageVersionFor(primaryInput),
       );
       return AssetContent.string(content);
     }
@@ -302,6 +303,15 @@ class BuildState {
       }
     }
     return imports;
+  }
+
+  /// The first found primaryLanguageVersion.
+  String? languageVersionFor(AssetId id) {
+    for (final e in _buildStepResultsByPrimaryInput[id]?.values ?? const []) {
+      final languageVersion = e.primaryLanguageVersion;
+      if (languageVersion != null) return languageVersion;
+    }
+    return null;
   }
 
   /// The concatenated part contributions for [primaryInput], sorted by phase.

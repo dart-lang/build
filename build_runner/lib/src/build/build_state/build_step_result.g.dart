@@ -94,6 +94,14 @@ class _$BuildStepResultSerializer
           ),
         );
     }
+    value = object.primaryLanguageVersion;
+    if (value != null) {
+      result
+        ..add('primaryLanguageVersion')
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
+    }
     return result;
   }
 
@@ -153,6 +161,14 @@ class _$BuildStepResultSerializer
                     specifiedType: const FullType(AssetContent),
                   )
                   as AssetContent?;
+          break;
+        case 'primaryLanguageVersion':
+          result.primaryLanguageVersion =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )
+                  as String?;
           break;
         case 'inputs':
           result.inputs.replace(
@@ -217,6 +233,8 @@ class _$BuildStepResult extends BuildStepResult {
   @override
   final AssetContent? partImports;
   @override
+  final String? primaryLanguageVersion;
+  @override
   final BuiltSet<AssetId> inputs;
   @override
   final BuiltSet<GlobId> globsEvaluated;
@@ -234,6 +252,7 @@ class _$BuildStepResult extends BuildStepResult {
     required this.outputs,
     this.partContribution,
     this.partImports,
+    this.primaryLanguageVersion,
     required this.inputs,
     required this.globsEvaluated,
     required this.resolverEntrypoints,
@@ -255,6 +274,7 @@ class _$BuildStepResult extends BuildStepResult {
         outputs == other.outputs &&
         partContribution == other.partContribution &&
         partImports == other.partImports &&
+        primaryLanguageVersion == other.primaryLanguageVersion &&
         inputs == other.inputs &&
         globsEvaluated == other.globsEvaluated &&
         resolverEntrypoints == other.resolverEntrypoints &&
@@ -269,6 +289,7 @@ class _$BuildStepResult extends BuildStepResult {
     _$hash = $jc(_$hash, outputs.hashCode);
     _$hash = $jc(_$hash, partContribution.hashCode);
     _$hash = $jc(_$hash, partImports.hashCode);
+    _$hash = $jc(_$hash, primaryLanguageVersion.hashCode);
     _$hash = $jc(_$hash, inputs.hashCode);
     _$hash = $jc(_$hash, globsEvaluated.hashCode);
     _$hash = $jc(_$hash, resolverEntrypoints.hashCode);
@@ -285,6 +306,7 @@ class _$BuildStepResult extends BuildStepResult {
           ..add('outputs', outputs)
           ..add('partContribution', partContribution)
           ..add('partImports', partImports)
+          ..add('primaryLanguageVersion', primaryLanguageVersion)
           ..add('inputs', inputs)
           ..add('globsEvaluated', globsEvaluated)
           ..add('resolverEntrypoints', resolverEntrypoints)
@@ -321,6 +343,11 @@ class BuildStepResultBuilder
   set partImports(AssetContent? partImports) =>
       _$this._partImports = partImports;
 
+  String? _primaryLanguageVersion;
+  String? get primaryLanguageVersion => _$this._primaryLanguageVersion;
+  set primaryLanguageVersion(String? primaryLanguageVersion) =>
+      _$this._primaryLanguageVersion = primaryLanguageVersion;
+
   SetBuilder<AssetId>? _inputs;
   SetBuilder<AssetId> get inputs => _$this._inputs ??= SetBuilder<AssetId>();
   set inputs(SetBuilder<AssetId>? inputs) => _$this._inputs = inputs;
@@ -351,6 +378,7 @@ class BuildStepResultBuilder
       _outputs = $v.outputs.toBuilder();
       _partContribution = $v.partContribution;
       _partImports = $v.partImports;
+      _primaryLanguageVersion = $v.primaryLanguageVersion;
       _inputs = $v.inputs.toBuilder();
       _globsEvaluated = $v.globsEvaluated.toBuilder();
       _resolverEntrypoints = $v.resolverEntrypoints.toBuilder();
@@ -388,6 +416,7 @@ class BuildStepResultBuilder
             outputs: outputs.build(),
             partContribution: partContribution,
             partImports: partImports,
+            primaryLanguageVersion: primaryLanguageVersion,
             inputs: inputs.build(),
             globsEvaluated: globsEvaluated.build(),
             resolverEntrypoints: resolverEntrypoints.build(),

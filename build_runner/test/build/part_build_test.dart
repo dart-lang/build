@@ -103,5 +103,37 @@ content2
         resumeFrom: result1,
       );
     });
+
+    test('preserves language version comments from the primary input', () async {
+      final builderFactories = BuilderFactories({
+        'a:builder1': [(_) => PartWritingBuilder('content', 'lib/b.txt', '.b.dart')],
+      });
+      final builderDefinitions = [
+        BuilderDefinition('a:builder1', hideOutput: false, autoApply: AutoApply.allPackages),
+      ];
+
+      final expectedGeneratedPart = '''
+// @dart=2.14
+part of '../a.dart';
+
+// @PartBuilder:imports:0
+import 'package:a/b.dart' as i0_b;
+
+// @PartBuilder:contribution:0
+// builder saw: b
+content
+
+''';
+
+      await testPhases(
+        builderFactories,
+        builderDefinitions,
+        {
+          'a|lib/a.dart': '// @dart=2.14\n',
+          'a|lib/b.txt': 'b',
+        },
+        outputs: {r'$$a|lib/_generated_parts/a.dart': expectedGeneratedPart},
+      );
+    });
   });
 }

@@ -34,6 +34,11 @@ abstract class BuildStepResult
   /// Part imports written by the step.
   AssetContent? get partImports;
 
+  /// The exact dart language version comment (e.g. `// @dart=2.14`) found
+  /// in the primary input, if this step ran a builder that emitted part 
+  /// contributions.
+  String? get primaryLanguageVersion;
+
   /// Inputs and missing sources read.
   BuiltSet<AssetId> get inputs;
 
