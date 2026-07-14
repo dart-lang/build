@@ -42,8 +42,8 @@ class BuildStepImpl implements BuildStep {
 
   final InputTracker inputTracker;
   final Map<AssetId, AssetContent> outputs = {};
-  String? partContribution;
-  final List<String> partImports = [];
+  String? get partContribution => _partWriter?.contribution;
+  List<String> get partImports => _partWriter?.imports ?? const [];
 
   PartWriterImpl? _partWriter;
 
@@ -271,6 +271,9 @@ class PartWriterImpl implements PartWriter {
 
   bool get hasUnclosedState => _isDirty && !_isClosed && !_isCanceled;
 
+  String? get contribution => _isClosed ? _buffer.toString() : null;
+  List<String> get imports => _isClosed ? List.unmodifiable(_imports) : const [];
+
   void _checkCanWrite() {
     if (_buildStep._isComplete) throw BuildStepCompletedException();
     if (_isClosed) throw StateError('PartWriter is already closed.');
@@ -317,8 +320,6 @@ class PartWriterImpl implements PartWriter {
   void close() {
     if (_isClosed || _isCanceled) return;
     _isClosed = true;
-    _buildStep.partImports.addAll(_imports);
-    _buildStep.partContribution = _buffer.toString();
   }
 
   @override
