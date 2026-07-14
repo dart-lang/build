@@ -49,7 +49,7 @@ class BuildStepImpl implements BuildStep {
 
   @override
   PartWriter get partWriter =>
-      _partWriter ??= PartWriterImpl(this, 'i${phase}_');
+      _partWriter ??= PartWriterImpl(this, _prefixForPhase(phase));
 
   final int phase;
 
@@ -325,6 +325,28 @@ class PartWriterImpl implements PartWriter {
   void cancel() {
     _isCanceled = true;
   }
+}
+
+const String _base62Chars =
+    'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+String _prefixForPhase(int phase) {
+  var value = phase;
+  var limit = 62;
+  var length = 1;
+  while (value >= limit) {
+    value -= limit;
+    limit *= 62;
+    length++;
+  }
+
+  var result = '';
+  for (var i = 0; i < length; i++) {
+    result = _base62Chars[value % 62] + result;
+    value ~/= 62;
+  }
+
+  return ('\$' * length) + result;
 }
 
 final _lib = Uri.parse('lib/');

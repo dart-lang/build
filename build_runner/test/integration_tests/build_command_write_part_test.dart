@@ -341,7 +341,7 @@ class A {}
         'root_pkg/.dart_tool/build/generated/root_pkg/lib/_generated_parts/a.dart',
       ),
       _formatGolden(
-        "part of '../a.dart';\n\n// @PartBuilder:imports:0\nimport 'package:foo/foo.dart' as i0_foo;\n\n// @PartBuilder:contribution:0\n// part content\n\n",
+        "part of '../a.dart';\n\n// @PartBuilder:imports:0\nimport 'package:foo/foo.dart' as \$afoo;\n\n// @PartBuilder:contribution:0\n// part content\n\n",
       ),
     );
   });

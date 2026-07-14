@@ -101,9 +101,9 @@ void main() {
 part of '../a.dart';
 
 // @PartBuilder:imports:0
-import 'package:a/b.dart' as i0_b;
+import 'package:a/b.dart' as \$ab;
 // @PartBuilder:imports:1
-import 'package:a/b.dart' as i1_b;
+import 'package:a/b.dart' as \$bb;
 
 // @PartBuilder:contribution:0
 // builder saw: initial_b
@@ -132,9 +132,9 @@ content2
 part of '../a.dart';
 
 // @PartBuilder:imports:0
-import 'package:a/b.dart' as i0_b;
+import 'package:a/b.dart' as \$ab;
 // @PartBuilder:imports:1
-import 'package:a/b.dart' as i1_b;
+import 'package:a/b.dart' as \$bb;
 
 // @PartBuilder:contribution:0
 // builder saw: modified_b
@@ -180,7 +180,7 @@ content2
 part of '../a.dart';
 
 // @PartBuilder:imports:0
-import 'package:a/b.dart' as i0_b;
+import 'package:a/b.dart' as \$ab;
 
 // @PartBuilder:contribution:0
 // builder saw: b
