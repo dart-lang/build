@@ -18,6 +18,7 @@ final fesManagerConfigPath = p.join(
 );
 final packagesFilePath = p.join('.dart_tool', 'package_config.json');
 const webHotReloadOption = 'web-hot-reload';
+const defaultWebDirs = ['web', 'test', 'example', 'benchmark'];
 
 final jsModuleErrorsExtension = '.ddc.js.errors';
 final jsModuleExtension = '.ddc.js';

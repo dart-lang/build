@@ -280,8 +280,8 @@ String? _readUsePrebuiltSdkFromPathOption(BuilderOptions options) {
   return options.config[_usePrebuiltSdkFromPathOption] as String?;
 }
 
-String _readWebAssetsPathOption(BuilderOptions options) {
-  return options.config[_webAssetsPathOption] as String? ?? 'web';
+String? _readWebAssetsPathOption(BuilderOptions options) {
+  return options.config[_webAssetsPathOption] as String?;
 }
 
 String? _readScratchSpaceDirOption(BuilderOptions options) {

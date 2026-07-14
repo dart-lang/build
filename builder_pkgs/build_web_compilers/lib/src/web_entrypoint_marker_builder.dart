@@ -9,6 +9,7 @@ import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 
 import 'build_modules/build_modules.dart';
+import 'common.dart';
 
 /// A builder that gathers information about a web target's 'main' entrypoint.
 class WebEntrypointMarkerBuilder implements Builder {
@@ -20,12 +21,13 @@ class WebEntrypointMarkerBuilder implements Builder {
 
   /// The directory containing the 'main' entrypoint for the web target.
   ///
-  /// Defaults to 'web'.
-  final String webAssetsPath;
+  /// If null, searches all standard entrypoint directories
+  /// ('web', 'test', 'example', 'benchmark').
+  final String? webAssetsPath;
 
   WebEntrypointMarkerBuilder({
     this.usesWebHotReload = false,
-    this.webAssetsPath = 'web',
+    this.webAssetsPath,
   });
 
   @override
@@ -48,12 +50,16 @@ class WebEntrypointMarkerBuilder implements Builder {
     final webEntrypointJson = <String, Object?>{};
 
     if (hasCachedState) {
-      webEntrypointJson['entrypoint'] = frontendServerState.entrypointAssetId
-          .toString();
+      final asset = frontendServerState.entrypointAssetId!;
+      webEntrypointJson['entrypoint'] = asset.toString();
+      webEntrypointJson['canonicalUri'] = sourceArg(asset);
     } else {
-      final webAssets = await buildStep
-          .findAssets(Glob('$webAssetsPath/**'))
-          .toList();
+      final searchGlob = webAssetsPath == null
+          ? '{${defaultWebDirs.join(',')}}/**'
+          : webAssetsPath!.contains(',')
+          ? '{$webAssetsPath}/**'
+          : '$webAssetsPath/**';
+      final webAssets = await buildStep.findAssets(Glob(searchGlob)).toList();
 
       for (final asset in webAssets) {
         if (asset.extension == '.dart') {
@@ -66,6 +72,7 @@ class WebEntrypointMarkerBuilder implements Builder {
             // the Frontend Server before any JS files are emitted.
             frontendServerState.entrypointAssetId = asset;
             webEntrypointJson['entrypoint'] = asset.toString();
+            webEntrypointJson['canonicalUri'] = sourceArg(asset);
             break;
           }
         }

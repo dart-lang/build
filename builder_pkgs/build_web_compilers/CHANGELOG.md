@@ -1,3 +1,7 @@
+## 4.8.7
+
+- Fix `DdcFrontendServerBuilder` retaining old compile requests.
+
 ## 4.8.6
 
 - Allow `analyzer` 14.x, require 13.3.0.

@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
@@ -51,41 +52,55 @@ class FrontendServerState {
     return false;
   }
 
-  /// Tracks active background compilations keyed by their entrypoint [AssetId].
+  /// The active background compilation future.
   ///
   /// Allows arbitrary DDC builders to share a single compiler execution run for
-  /// an entrypoint. Typically the entrypoint for all builders - except for
-  /// certain tests with multiple targets in the entrypoint.
-  final Map<AssetId, Future<void>> _activeCompilations = {};
+  /// the entrypoint. Sequential calls chain onto the previous compilation.
+  Future<void> _activeCompilation = Future.value();
 
-  /// Returns a future that completes when the compilation for [entrypointId]
-  /// is complete, or immediately if there is no active compilation.
+  /// Returns a future that completes when the active compilation is complete.
   Future<void> waitForCompilation(AssetId entrypointId) {
-    return _activeCompilations[entrypointId] ?? Future.value();
+    _verifyEntrypoint(entrypointId);
+    return _activeCompilation;
   }
 
-  /// Initiates the compilation of [entrypointId] using [compileFn] if no
-  /// compilation is currently active.
+  /// Initiates the compilation of [entrypointId] using [compileFn].
   ///
-  /// Concurrent calls for the same entrypoint will subscribe to and share
-  /// the same compilation future. The future is automatically removed from
-  /// the active registry once it completes or fails.
+  /// Sequential calls for the same entrypoint will subscribe to and share
+  /// the same compilation future chain.
   void triggerSharedCompilation(
     AssetId entrypointId,
     Future<void> Function() compileFn,
   ) {
-    _activeCompilations.putIfAbsent(entrypointId, () async {
+    _verifyEntrypoint(entrypointId);
+    entrypointAssetId ??= entrypointId;
+
+    final previous = _activeCompilation;
+    final completer = Completer<void>();
+    _activeCompilation = completer.future;
+
+    () async {
       try {
+        await previous;
         await compileFn();
+        completer.complete();
+      } catch (e, s) {
+        completer.completeError(e, s);
       } finally {
-        clearCompilation(entrypointId);
+        if (_activeCompilation == completer.future) {
+          _activeCompilation = Future.value();
+        }
       }
-    });
+    }();
   }
 
-  /// Cancels the cached compilation future for [entrypointId].
-  void clearCompilation(AssetId entrypointId) {
-    _activeCompilations.remove(entrypointId);
+  void _verifyEntrypoint(AssetId entrypointId) {
+    if (entrypointAssetId != null && entrypointAssetId != entrypointId) {
+      throw StateError(
+        'Cannot compile a different entrypoint: '
+        'expected $entrypointAssetId but got $entrypointId.',
+      );
+    }
   }
 }
 

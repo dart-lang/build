@@ -20,7 +20,6 @@ import '../common.dart';
 import 'package_config.dart';
 
 final _log = Logger('FrontendServerProxy');
-final dartaotruntimePath = p.join(sdkDir, 'bin', 'dartaotruntime');
 final frontendServerSnapshotPath = p.join(
   sdkDir,
   'bin',
@@ -347,7 +346,8 @@ class PersistentFrontendServer {
       for (final experiment in enabledExperiments)
         '--enable-experiment=$experiment',
     ];
-    final process = await _startWithReaper(dartaotruntimePath, args);
+    final dartaotruntime = p.join(sdkRoot, 'bin', 'dartaotruntime');
+    final process = await _startWithReaper(dartaotruntime, args);
     final fileSystem = WebMemoryFilesystem(fileSystemRoot, rootPackage);
     final stdoutHandler = StdoutHandler(logger: _log);
     process.stdout
@@ -961,6 +961,7 @@ class SocketFrontendServerClient implements FrontendServerClient {
               .map(Uri.parse)
               .toList() ??
           [],
+      errorMessage: compileResult['errorMessage'] as String?,
     );
   }
 
@@ -1199,19 +1200,20 @@ class StdioFrontendServerClient implements FrontendServerClient {
     String? content;
     final scratchSpacePrefix = testScratchSpacePathPrefix;
     final index = path.indexOf(scratchSpacePrefix);
-    if (index != -1) {
-      final relativeKey = fesToAssetPath(
-        path.substring(index + scratchSpacePrefix.length),
-        rootPackage: _fileSystem.rootPackageName,
-      );
+    final strippedPath = index != -1
+        ? path.substring(index + scratchSpacePrefix.length)
+        : path;
+    final relativeKey = fesToAssetPath(
+      strippedPath,
+      rootPackage: _fileSystem.rootPackageName,
+    );
 
-      final memoryData =
-          _fileSystem.files[relativeKey] ??
-          _fileSystem.sourcemaps[relativeKey] ??
-          _fileSystem.metadata[relativeKey];
-      if (memoryData != null) {
-        content = utf8.decode(memoryData);
-      }
+    final memoryData =
+        _fileSystem.files[relativeKey] ??
+        _fileSystem.sourcemaps[relativeKey] ??
+        _fileSystem.metadata[relativeKey];
+    if (memoryData != null) {
+      content = utf8.decode(memoryData);
     }
 
     if (content == null) {
