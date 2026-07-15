@@ -204,12 +204,15 @@ class PostProcessBuilderDefinition implements AbstractBuilderDefinition {
   @override
   final TargetBuilderConfigDefaults targetBuilderConfigDefaults;
 
+  final Iterable<String> sourceOutputGlobs;
+
   @visibleForTesting
   PostProcessBuilderDefinition(
     this.key, {
     String? package,
     this.hideOutput = true,
     this.targetBuilderConfigDefaults = const TargetBuilderConfigDefaults(),
+    this.sourceOutputGlobs = const [],
   }) : package = package ?? (key.contains(':') ? key.split(':').first : '');
 
   PostProcessBuilderDefinition.fromConfig(
@@ -217,5 +220,6 @@ class PostProcessBuilderDefinition implements AbstractBuilderDefinition {
   ) : package = builderDefinition.package,
       key = builderDefinition.key,
       hideOutput = builderDefinition.buildTo == build_config.BuildTo.cache,
-      targetBuilderConfigDefaults = builderDefinition.defaults;
+      targetBuilderConfigDefaults = builderDefinition.defaults,
+      sourceOutputGlobs = builderDefinition.sourceOutputGlobs ?? const [];
 }

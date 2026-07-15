@@ -151,5 +151,29 @@ targets:
     tester.delete('root_pkg/lib/a.txt');
     await tester.run('root_pkg', 'dart run build_runner build --force-jit');
     expect(tester.read(hiddenPostOutput), null);
+    // Cache deletion does not crash when sourceOutputGlobs covers the outputs.
+    tester.writeFixturePackage(
+      FixturePackages.postProcessCopyBuilder(
+        buildToCache: false,
+        sourceOutputGlobs: ['**/*.another_post'],
+      ),
+    );
+    tester.write('root_pkg/build.yaml', r'''
+targets:
+  $default:
+    builders:
+      builder_pkg:test_post_process_builder:
+        options:
+          output_extension: ".another_post"
+''');
+    tester.write('root_pkg/lib/a.txt', 'a');
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+    expect(tester.read('root_pkg/lib/a.txt.another_post'), 'a(default dev)');
+
+    // Simulating cache loss (e.g. branch switch / dart_tool deletion).
+    tester.delete('root_pkg/.dart_tool');
+    // Re-running the build should silently repair it, without Asset already exists exception.
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+    expect(tester.read('root_pkg/lib/a.txt.another_post'), 'a(default dev)');
   });
 }

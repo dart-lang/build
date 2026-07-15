@@ -50,7 +50,7 @@ class TestingOverrides {
   });
 
   TestingOverrides copyWith({
-    BuiltList<BuilderDefinition>? builderDefinitions,
+    BuiltList<AbstractBuilderDefinition>? builderDefinitions,
     BuiltMap<String, BuildConfig>? buildConfig,
     BuildPackages? buildPackages,
     bool? checkBuilderFreshness,

@@ -113,6 +113,7 @@ PostProcessBuilderDefinition _$PostProcessBuilderDefinitionFromJson(
         'target',
         'build_to',
         'defaults',
+        'source_output_globs',
       ],
       requiredKeys: const ['builder_factory', 'import'],
       disallowNullValues: const ['builder_factory', 'import'],
@@ -134,6 +135,10 @@ PostProcessBuilderDefinition _$PostProcessBuilderDefinitionFromJson(
         (v) =>
             v == null ? null : TargetBuilderConfigDefaults.fromJson(v as Map),
       ),
+      sourceOutputGlobs: $checkedConvert(
+        'source_output_globs',
+        (v) => (v as List<dynamic>?)?.map((e) => e as String),
+      ),
     );
     return val;
   },
@@ -141,6 +146,7 @@ PostProcessBuilderDefinition _$PostProcessBuilderDefinitionFromJson(
     'builderFactory': 'builder_factory',
     'inputExtensions': 'input_extensions',
     'buildTo': 'build_to',
+    'sourceOutputGlobs': 'source_output_globs',
   },
 );
 
