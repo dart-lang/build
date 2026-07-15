@@ -156,7 +156,7 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   ///
   ///
 
-  PartWriter get partWriter;
+  Future<PartWriter?> get partWriter;
 }
 
 /// The "write" part of the [BuildStep] API.

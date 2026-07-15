@@ -50,7 +50,7 @@ class WritePartBuilder implements Builder {
 
   @override
   Future<void> build(BuildStep buildStep) async {
-    buildStep.partWriter..write('// part content')..close();
+    (await buildStep.partWriter)?..write('// part content')..close();
   }
 }
 ''',
@@ -119,7 +119,7 @@ class PartBuilder implements Builder {
 
   @override
   Future<void> build(BuildStep buildStep) async {
-    buildStep.partWriter..write(content)..close();
+    (await buildStep.partWriter)?..write(content)..close();
   }
 }
 ''',
@@ -199,8 +199,8 @@ class PartGen1Builder implements Builder {
   Future<void> build(BuildStep buildStep) async {
     final lib = await buildStep.inputLibrary;
     final hasClass1 = lib.getClass('Class1') != null;
-    buildStep.partWriter
-      ..write("class Class1 {\\n  // Gen1 checked hasClass1: \$hasClass1\\n}")
+    (await buildStep.partWriter)
+      ?..write("class Class1 {\\n  // Gen1 checked hasClass1: \$hasClass1\\n}")
       ..close();
   }
 }
@@ -214,8 +214,8 @@ class PartGen2Builder implements Builder {
     final lib = await buildStep.inputLibrary;
     final hasClass1 = lib.getClass('Class1') != null;
     final hasClass2 = lib.getClass('Class2') != null;
-    buildStep.partWriter
-      ..write("class Class2 {\\n  // Gen2 checked hasClass1: \$hasClass1, hasClass2: \$hasClass2\\n}")
+    (await buildStep.partWriter)
+      ?..write("class Class2 {\\n  // Gen2 checked hasClass1: \$hasClass1, hasClass2: \$hasClass2\\n}")
       ..close();
   }
 }
@@ -235,8 +235,8 @@ class PartGen3Builder implements Builder {
       buildStep.inputId.changeExtension('.resolved.txt'),
       'Gen3 checks - Class1: \$hasClass1, Class2: \$hasClass2, Class3: \$hasClass3',
     );
-    buildStep.partWriter
-      ..write("class Class3 {\\n  // Gen3 checked hasClass1: \$hasClass1, hasClass2: \$hasClass2, hasClass3: \$hasClass3\\n}")
+    (await buildStep.partWriter)
+      ?..write("class Class3 {\\n  // Gen3 checked hasClass1: \$hasClass1, hasClass2: \$hasClass2, hasClass3: \$hasClass3\\n}")
       ..close();
   }
 }
@@ -312,9 +312,10 @@ class WritePartBuilder implements Builder {
 
   @override
   Future<void> build(BuildStep buildStep) async {
-    final prefix = buildStep.partWriter.importPrefix;
-    buildStep.partWriter.addImport('package:foo/foo.dart', as: '\${prefix}foo');
-    buildStep.partWriter..write('// part content')..close();
+    final writer = await buildStep.partWriter;
+    final prefix = writer?.importPrefix;
+    writer?.addImport('package:foo/foo.dart', as: '\${prefix}foo');
+    writer?..write('// part content')..close();
   }
 }
 ''',

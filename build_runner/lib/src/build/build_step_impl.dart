@@ -48,11 +48,14 @@ class BuildStepImpl implements BuildStep {
   PartWriterImpl? _partWriter;
 
   @override
-  PartWriter get partWriter {
+  Future<PartWriter?> get partWriter async {
     if (partPhaseIndex == null) {
       throw UnsupportedError(
         'Builder must opt into writes_parts in build.yaml to write parts.',
       );
+    }
+    if (!await resolver.isLibrary(inputId)) {
+      return null;
     }
     return _partWriter ??= PartWriterImpl(
       this,

@@ -24,11 +24,9 @@ class PartWritingBuilder implements Builder {
     final text = await buildStep.canRead(readId)
         ? await buildStep.readAsString(readId)
         : 'missing';
-    buildStep.partWriter
-      ..addImport(
-        'package:a/b.dart',
-        as: '${buildStep.partWriter.importPrefix}b',
-      )
+    final writer = await buildStep.partWriter;
+    writer
+      ?..addImport('package:a/b.dart', as: '${writer.importPrefix}b')
       ..write('// builder saw: $text\n$_content')
       ..close();
   }
@@ -61,15 +59,13 @@ class ThrowingPrefixBuilder implements Builder {
 
   @override
   Future<void> build(BuildStep buildStep) async {
+    final writer = await buildStep.partWriter;
     expect(
-      () => buildStep.partWriter.addImport(
-        'package:a/b.dart',
-        as: 'wrong_prefix',
-      ),
+      () => writer?.addImport('package:a/b.dart', as: 'wrong_prefix'),
       throwsA(isA<ArgumentError>()),
     );
-    buildStep.partWriter
-      ..write('foo')
+    writer
+      ?..write('foo')
       ..close();
   }
 }

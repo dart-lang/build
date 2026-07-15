@@ -573,8 +573,8 @@ class TestBuilder implements Builder {
       final actualContent = partWrite! == '_digest'
           ? recordedInput.map((l) => '// $l\n').join('')
           : partWrite!;
-      buildStep.partWriter
-        ..write(actualContent)
+      (await buildStep.partWriter)
+        ?..write(actualContent)
         ..close();
       _tester._generatedOutputsWritten.add(
         buildStep.inputId.partIdForPrimaryInput,
