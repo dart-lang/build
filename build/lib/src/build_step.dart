@@ -149,13 +149,17 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   Future<PackageConfig> get packageConfig;
 
   /// Creates or gets a [PartWriter] that will write a part file for the primary
-  /// input.
+  /// input library.
   ///
   /// Builders must declare `writes_parts: true` in `build.yaml` to use this
   /// getter. Otherwise, it throws.
   ///
+  /// Returns `null` if the primary input is not a Dart file or is a Dart part
+  /// file. If a part file needs generated code this must be done by the
+  /// builder running on the library that includes the part.
   ///
-
+  /// Having obtained a `PartWriter` a builder must call `close` or `cancel`
+  /// on it before the build step completes.
   Future<PartWriter?> get partWriter;
 }
 
