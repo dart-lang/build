@@ -68,6 +68,9 @@ class InBuildPhase extends BuildPhase implements BuildAction {
   @override
   final bool hideOutput;
 
+  /// Whether this phase is capable of contributing to .part files.
+  final bool writesParts;
+
   InBuildPhase._(
     this.package,
     this.builder,
@@ -78,6 +81,7 @@ class InBuildPhase extends BuildPhase implements BuildAction {
     required this.key,
     this.isOptional = false,
     this.hideOutput = false,
+    this.writesParts = false,
   });
 
   /// Creates an [BuildPhase] for a normal [Builder].
@@ -100,6 +104,7 @@ class InBuildPhase extends BuildPhase implements BuildAction {
     BuilderOptions options = const BuilderOptions({}),
     bool isOptional = false,
     bool hideOutput = false,
+    bool writesParts = false,
   }) : this._(
          package,
          builder,
@@ -110,6 +115,7 @@ class InBuildPhase extends BuildPhase implements BuildAction {
          displayName: _simpleBuilderKey(key),
          isOptional: isOptional,
          hideOutput: hideOutput,
+         writesParts: writesParts,
        );
 
   @override

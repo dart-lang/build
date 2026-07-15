@@ -262,6 +262,7 @@ class InvalidationTester {
       rootPackage: 'pkg',
       optionalBuilders: _builders.where((b) => b.isOptional).toSet(),
       visibleOutputBuilders: _builders.where((b) => b.outputIsVisible).toSet(),
+      writesPartsBuilders: _builders.where((b) => b.partWrite != null).toSet(),
       testingBuilderConfig: false,
       resolvers: discardResolver ? ResolversImpl.custom() : null,
     );

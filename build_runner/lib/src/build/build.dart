@@ -22,9 +22,7 @@ import '../build_plan/build_spec.dart';
 import '../build_plan/build_step_plan.dart';
 import '../build_plan/phase.dart';
 import '../build_plan/testing_overrides.dart';
-
 import '../io/build_output_reader.dart';
-
 import '../logging/build_log.dart';
 import '../logging/build_log_logger.dart';
 import '../logging/timed_activities.dart';
@@ -39,8 +37,8 @@ import 'build_state/glob_result.dart';
 import 'build_state/post_process_build_step_id.dart';
 import 'build_state/post_process_build_step_result.dart';
 import 'build_step_impl.dart';
-import 'generated_parts.dart';
 import 'builder_filesystem.dart';
+import 'generated_parts.dart';
 import 'input_tracker.dart';
 import 'library_cycle_graph/asset_deps_loader.dart';
 import 'library_cycle_graph/library_cycle_graph.dart';
@@ -105,6 +103,17 @@ class Build {
         for (final id in buildPlan.buildInputs.sources)
           id: buildPlan.buildInputs.sourceContents[id],
       });
+
+  late final Map<int, int> _partPhaseIndices = () {
+    final result = <int, int>{};
+    var nextIndex = 0;
+    for (var i = 0; i < buildPhases.inBuildPhases.length; i++) {
+      if (buildPhases.inBuildPhases[i].writesParts) {
+        result[i] = nextIndex++;
+      }
+    }
+    return result;
+  }();
 
   BuildSpec get buildSpec => buildPlan.buildSpec;
   BuildOptions get buildOptions => buildSpec.buildOptions;
@@ -434,6 +443,7 @@ class Build {
       inputTracker: inputTracker,
       buildFilesystem: _builderFilesystem,
       phase: buildStepId.phaseNumber,
+      partPhaseIndex: _partPhaseIndices[buildStepId.phaseNumber],
       resolvers: resolvers,
       resourceManager: resourceManager,
       reportUnusedAssets: (Iterable<AssetId> assets) =>

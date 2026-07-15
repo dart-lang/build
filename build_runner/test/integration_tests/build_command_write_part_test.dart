@@ -37,6 +37,7 @@ builders:
     build_extensions: {'.dart': []}
     auto_apply: 'root_package'
     build_to: 'cache'
+    writes_parts: true
 ''',
         'lib/builder.dart': '''
 import 'package:build/build.dart';
@@ -78,7 +79,7 @@ class WritePartBuilder implements Builder {
     );
   });
 
-  test('two builders writing parts to same library end up concatenated', () async {
+  test('two builders writing parts to same library concatenate', () async {
     final pubspecs = await Pubspecs.load();
     final tester = BuildRunnerTester(pubspecs);
 
@@ -94,12 +95,14 @@ builders:
     build_extensions: {'.dart': []}
     auto_apply: 'root_package'
     build_to: 'cache'
+    writes_parts: true
   builder2:
     import: 'package:multi_part_pkg/builder.dart'
     builder_factories: ['factory2']
     build_extensions: {'.dart': []}
     auto_apply: 'root_package'
     build_to: 'cache'
+    writes_parts: true
 ''',
         'lib/builder.dart': '''
 import 'package:build/build.dart';
@@ -163,6 +166,7 @@ builders:
     build_extensions: {'.dart': ['.dummy1']}
     auto_apply: 'root_package'
     build_to: 'cache'
+    writes_parts: true
   part_generator_2:
     import: 'package:phase_part_pkg/builder.dart'
     builder_factories: ['partGen2Factory']
@@ -170,6 +174,7 @@ builders:
     auto_apply: 'root_package'
     build_to: 'cache'
     required_inputs: ['.dummy1']
+    writes_parts: true
   part_generator_3:
     import: 'package:phase_part_pkg/builder.dart'
     builder_factories: ['partGen3Factory']
@@ -177,6 +182,7 @@ builders:
     auto_apply: 'root_package'
     build_to: 'cache'
     required_inputs: ['.dummy2']
+    writes_parts: true
 ''',
           'lib/builder.dart': '''
 import 'package:build/build.dart';
@@ -270,8 +276,8 @@ class A {}
         ),
         _formatGolden(
           "part of '../a.dart';\n\n\n// @PartBuilder:contribution:0\nclass Class1 {\n  // Gen1 checked hasClass1: false\n}\n\n"
-          "// @PartBuilder:contribution:1\nclass Class2 {\n  // Gen2 checked hasClass1: true, hasClass2: false\n}\n\n"
-          "// @PartBuilder:contribution:2\nclass Class3 {\n  // Gen3 checked hasClass1: true, hasClass2: true, hasClass3: false\n}\n\n",
+          '// @PartBuilder:contribution:1\nclass Class2 {\n  // Gen2 checked hasClass1: true, hasClass2: false\n}\n\n'
+          '// @PartBuilder:contribution:2\nclass Class3 {\n  // Gen3 checked hasClass1: true, hasClass2: true, hasClass3: false\n}\n\n',
         ),
       );
     },
@@ -293,6 +299,7 @@ builders:
     build_extensions: {'.dart': []}
     auto_apply: 'root_package'
     build_to: 'cache'
+    writes_parts: true
 ''',
         'lib/builder.dart': '''
 import 'package:build/build.dart';

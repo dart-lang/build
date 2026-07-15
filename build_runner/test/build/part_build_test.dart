@@ -1,5 +1,4 @@
 import 'package:build/build.dart';
-import 'package:build_runner/src/build/build_result.dart';
 import 'package:build_runner/src/build_plan/builder_definition.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
 import 'package:dart_style/dart_style.dart';
@@ -56,7 +55,9 @@ String _formatGolden(String raw) {
 
 class ThrowingPrefixBuilder implements Builder {
   @override
-  Map<String, List<String>> get buildExtensions => {'.dart': ['.g.dart']};
+  Map<String, List<String>> get buildExtensions => {
+    '.dart': ['.g.dart'],
+  };
 
   @override
   Future<void> build(BuildStep buildStep) async {
@@ -67,7 +68,9 @@ class ThrowingPrefixBuilder implements Builder {
       ),
       throwsA(isA<ArgumentError>()),
     );
-    buildStep.partWriter..write('foo')..close();
+    buildStep.partWriter
+      ..write('foo')
+      ..close();
   }
 }
 
@@ -87,11 +90,13 @@ void main() {
           'a:builder1',
           hideOutput: false,
           autoApply: AutoApply.allPackages,
+          writesParts: true,
         ),
         BuilderDefinition(
           'a:builder2',
           hideOutput: false,
           autoApply: AutoApply.allPackages,
+          writesParts: true,
         ),
       ];
 
@@ -172,6 +177,7 @@ content2
             'a:builder1',
             hideOutput: false,
             autoApply: AutoApply.allPackages,
+            writesParts: true,
           ),
         ];
 
@@ -199,23 +205,20 @@ content
 
     test('throws if addImport uses incorrect prefix', () async {
       final builderFactories = BuilderFactories({
-        '.dart': [
-          (_) => ThrowingPrefixBuilder(),
-        ],
+        '.dart': [(_) => ThrowingPrefixBuilder()],
       });
       final builderDefinitions = [
         BuilderDefinition(
           'a:builder1',
           hideOutput: false,
           autoApply: AutoApply.allPackages,
+          writesParts: true,
         ),
       ];
 
-      await testPhases(
-        builderFactories,
-        builderDefinitions,
-        {'a|lib/a.dart': '// @dart=2.14\n'},
-      );
+      await testPhases(builderFactories, builderDefinitions, {
+        'a|lib/a.dart': '// @dart=2.14\n',
+      });
     });
   });
 }

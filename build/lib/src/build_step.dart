@@ -148,7 +148,14 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   /// [readAsBytes].
   Future<PackageConfig> get packageConfig;
 
-  /// The writer for the generated part file for the primary input.
+  /// Creates or gets a [PartWriter] that will write a part file for the primary
+  /// input.
+  ///
+  /// Builders must declare `writes_parts: true` in `build.yaml` to use this
+  /// getter. Otherwise, it throws.
+  ///
+  ///
+
   PartWriter get partWriter;
 }
 

@@ -48,10 +48,20 @@ class BuildStepImpl implements BuildStep {
   PartWriterImpl? _partWriter;
 
   @override
-  PartWriter get partWriter =>
-      _partWriter ??= PartWriterImpl(this, _prefixForPhase(phase));
+  PartWriter get partWriter {
+    if (partPhaseIndex == null) {
+      throw UnsupportedError(
+        'Builder must opt into writes_parts in build.yaml to write parts.',
+      );
+    }
+    return _partWriter ??= PartWriterImpl(
+      this,
+      _prefixForPhase(partPhaseIndex!),
+    );
+  }
 
   final int phase;
+  final int? partPhaseIndex;
 
   final BuilderFilesystem buildFilesystem;
 
@@ -71,6 +81,7 @@ class BuildStepImpl implements BuildStep {
     required this.inputTracker,
     required this.buildFilesystem,
     required this.phase,
+    this.partPhaseIndex,
     required Resolvers resolvers,
     required ResourceManager resourceManager,
     void Function(Iterable<AssetId>)? reportUnusedAssets,
@@ -272,7 +283,8 @@ class PartWriterImpl implements PartWriter {
   bool get hasUnclosedState => _isDirty && !_isClosed && !_isCanceled;
 
   String? get contribution => _isClosed ? _buffer.toString() : null;
-  List<String> get imports => _isClosed ? List.unmodifiable(_imports) : const [];
+  List<String> get imports =>
+      _isClosed ? List.unmodifiable(_imports) : const [];
 
   void _checkCanWrite() {
     if (_buildStep._isComplete) throw BuildStepCompletedException();
@@ -293,7 +305,7 @@ class PartWriterImpl implements PartWriter {
       throw ArgumentError.value(as, 'as', 'must start with $importPrefix');
     }
 
-    var buffer = StringBuffer('import \'$uri\' as $as');
+    final buffer = StringBuffer('import \'$uri\' as $as');
     if (show != null && show.isNotEmpty) {
       buffer.write(' show ${show.join(', ')}');
     }

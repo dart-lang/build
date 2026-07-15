@@ -188,8 +188,9 @@ class AnalysisDriverFilesystem
   /// Throws if ![exists].
   String read(String path) {
     final partData = _partData[path];
-    if (partData != null && partData.existsAt(_phase))
+    if (partData != null && partData.existsAt(_phase)) {
       return partData.contentAt(_phase);
+    }
 
     if (!exists(path)) throw StateError('Read of non-existent file.');
     return _data[path]!.content;
@@ -226,8 +227,9 @@ class AnalysisDriverFilesystem
   FileContent get(String path) {
     if (!exists(path)) return BuildRunnerFileContent.missing(path);
     final partData = _partData[path];
-    if (partData != null && partData.existsAt(_phase))
+    if (partData != null && partData.existsAt(_phase)) {
       return partData.fileContentAt(_phase);
+    }
     return _data[path]!;
   }
 

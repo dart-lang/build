@@ -1,5 +1,6 @@
 ## 4.0.8
 
+- Add `partWriter` to `BuildStep` and `PartWriter` API for writing `.part` files.
 - Allow `analyzer` 14.x, require 13.3.0.
 - Require Dart 3.11.0.
 

@@ -62,7 +62,7 @@ void main() {
   });
 
   group('GeneratedParts', () {
-    String _formatGolden(String raw) {
+    String formatGolden(String raw) {
       String formatted;
       try {
         formatted = DartFormatter(
@@ -79,7 +79,7 @@ void main() {
         GeneratedParts.generateContent(AssetId('a', 'lib/b.dart'), {}, {
           0: '// c1',
         }),
-        _formatGolden(
+        formatGolden(
           "part of '../b.dart';\n\n\n// @PartBuilder:contribution:0\n// c1\n\n",
         ),
       );
@@ -88,7 +88,7 @@ void main() {
         GeneratedParts.generateContent(AssetId('a', 'lib/foo/bar.dart'), {}, {
           0: '// c1',
         }),
-        _formatGolden(
+        formatGolden(
           "part of '../../foo/bar.dart';\n\n\n// @PartBuilder:contribution:0\n// c1\n\n",
         ),
       );
@@ -97,7 +97,7 @@ void main() {
         GeneratedParts.generateContent(AssetId('a', 'test/foo.dart'), {}, {
           0: '// c1',
         }),
-        _formatGolden(
+        formatGolden(
           "part of '../foo.dart';\n\n\n// @PartBuilder:contribution:0\n// c1\n\n",
         ),
       );
@@ -106,7 +106,7 @@ void main() {
         GeneratedParts.generateContent(AssetId('a', 'root.dart'), {}, {
           0: '// c1',
         }),
-        _formatGolden(
+        formatGolden(
           "part of '../root.dart';\n\n\n// @PartBuilder:contribution:0\n// c1\n\n",
         ),
       );
@@ -122,7 +122,7 @@ void main() {
           },
           {0: '// c1'},
         ),
-        _formatGolden(
+        formatGolden(
           "part of '../root.dart';\n\n// @PartBuilder:imports:0\nimport 'package:foo/foo.dart';\nimport 'package:bar/bar.dart';\n\n// @PartBuilder:contribution:0\n// c1\n\n",
         ),
       );

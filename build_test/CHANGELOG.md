@@ -1,5 +1,6 @@
 ## 3.5.17
 
+- Add `writesPartsBuilders` to `testBuilders` (and `testBuilderFactories`) to support testing builders that use `BuildStep.partWriter`.
 - Allow `analyzer` 14.x, require 13.3.0.
 - Require Dart 3.11.0.
 

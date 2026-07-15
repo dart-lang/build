@@ -13,8 +13,8 @@ import 'package:path/path.dart' as p;
 import '../build/asset_content.dart';
 import '../build/build_state/build_state.dart';
 import '../build/builder_filesystem.dart';
-import '../build/resolver/asset_ids.dart';
 import '../build/generated_parts.dart';
+import '../build/resolver/asset_ids.dart';
 import '../build_plan/build_step_plan.dart';
 
 /// A view of the build output.

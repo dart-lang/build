@@ -19,7 +19,7 @@ void main() {
       tester.builder(from: '', to: '.1')
         ..readsOther('b')
         ..writesPart('// part from builder 1');
-      tester.builder(from: '', to: '.2')..writesPart('// part from builder 2');
+      tester.builder(from: '', to: '.2').writesPart('// part from builder 2');
     });
 
     test('initial build writes the generated part', () async {
@@ -29,17 +29,15 @@ void main() {
       );
     });
 
-    test(
-      'change b, part is rewritten because builder 1 ran, but builder 2 is cached',
-      () async {
-        await tester.build();
-        // change b invalidated builder 1 on a, but builder 2 on a is cached
-        expect(
-          await tester.build(change: 'b'),
-          Result(written: ['_generated_parts/a', '_generated_parts/b']),
-        );
-      },
-    );
+    test('change b, part is rewritten because builder 1 ran, but builder 2 is '
+        'cached', () async {
+      await tester.build();
+      // change b invalidated builder 1 on a, but builder 2 on a is cached
+      expect(
+        await tester.build(change: 'b'),
+        Result(written: ['_generated_parts/a', '_generated_parts/b']),
+      );
+    });
 
     test('no-op build does not rewrite part', () async {
       await tester.build();

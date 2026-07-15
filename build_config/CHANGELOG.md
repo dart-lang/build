@@ -1,5 +1,6 @@
 ## 1.3.1
 
+- Add boolean `writes_parts` builder configuration to opt in to writing parts via `BuildStep.partWriter`.
 - Document that `--define` values are parsed as JSON with a fallback.
 - Require Dart 3.8.0.
 

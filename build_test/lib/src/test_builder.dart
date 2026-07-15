@@ -189,6 +189,7 @@ Future<TestBuilderResult> testBuilders(
   Resolvers? resolvers,
   Set<Builder> optionalBuilders = const {},
   Set<Builder> visibleOutputBuilders = const {},
+  Set<Builder> writesPartsBuilders = const {},
   Map<Builder, List<String>> appliesBuilders = const {},
   bool testingBuilderConfig = true,
   TestReaderWriter? readerWriter,
@@ -198,6 +199,7 @@ Future<TestBuilderResult> testBuilders(
   final builderFactories = <BuilderFactory>[];
   final optionalBuilderFactories = Set<BuilderFactory>.identity();
   final visibleOutputBuilderFactories = Set<BuilderFactory>.identity();
+  final writesPartsBuilderFactories = Set<BuilderFactory>.identity();
   final appliesBuildersToFactories = <BuilderFactory, List<String>>{};
   for (final builder in builders) {
     Builder builderFactory(_) => builder;
@@ -207,6 +209,9 @@ Future<TestBuilderResult> testBuilders(
     }
     if (visibleOutputBuilders.contains(builder)) {
       visibleOutputBuilderFactories.add(builderFactory);
+    }
+    if (writesPartsBuilders.contains(builder)) {
+      writesPartsBuilderFactories.add(builderFactory);
     }
     if (appliesBuilders.containsKey(builder)) {
       appliesBuildersToFactories[builderFactory] = appliesBuilders[builder]!;
@@ -230,6 +235,7 @@ Future<TestBuilderResult> testBuilders(
     resolvers: resolvers,
     optionalBuilderFactories: optionalBuilderFactories,
     visibleOutputBuilderFactories: visibleOutputBuilderFactories,
+    writesPartsBuilderFactories: writesPartsBuilderFactories,
     appliesBuilders: appliesBuildersToFactories,
     testingBuilderConfig: testingBuilderConfig,
     readerWriter: readerWriter,
@@ -320,6 +326,7 @@ Future<TestBuilderResult> testBuilderFactories(
   Resolvers? resolvers,
   Set<BuilderFactory> optionalBuilderFactories = const {},
   Set<BuilderFactory> visibleOutputBuilderFactories = const {},
+  Set<BuilderFactory> writesPartsBuilderFactories = const {},
   Map<BuilderFactory, List<String>> appliesBuilders = const {},
   bool testingBuilderConfig = true,
   TestReaderWriter? readerWriter,
@@ -429,6 +436,7 @@ Future<TestBuilderResult> testBuilderFactories(
           autoApply: build_config.AutoApply.allPackages,
           isOptional: optionalBuilderFactories.contains(builderFactory),
           hideOutput: !visibleOutputBuilderFactories.contains(builderFactory),
+          writesParts: writesPartsBuilderFactories.contains(builderFactory),
           appliesBuilders: appliesBuilders[builderFactory] ?? const [],
         ),
         applyToPackages: inputPackages,
@@ -597,6 +605,9 @@ class _ApplyBuilderDefinitionToPackages implements BuilderDefinition {
 
   @override
   String get package => delegate.package;
+
+  @override
+  bool get writesParts => delegate.writesParts;
 
   @override
   bool get hideOutput => delegate.hideOutput;
