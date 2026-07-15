@@ -24,11 +24,10 @@ class PartWritingBuilder implements Builder {
     final text = await buildStep.canRead(readId)
         ? await buildStep.readAsString(readId)
         : 'missing';
-    final writer = await buildStep.partWriter;
+    final writer = await buildStep.librarySourceSink;
     writer
       ?..addImport('package:a/b.dart', as: '${writer.importPrefix}b')
-      ..write('// builder saw: $text\n$_content')
-      ..close();
+      ..add('// builder saw: $text\n$_content');
   }
 }
 
@@ -59,14 +58,12 @@ class ThrowingPrefixBuilder implements Builder {
 
   @override
   Future<void> build(BuildStep buildStep) async {
-    final writer = await buildStep.partWriter;
+    final writer = await buildStep.librarySourceSink;
     expect(
       () => writer?.addImport('package:a/b.dart', as: 'wrong_prefix'),
       throwsA(isA<ArgumentError>()),
     );
-    writer
-      ?..write('foo')
-      ..close();
+    writer?.add('foo');
   }
 }
 
@@ -86,13 +83,13 @@ void main() {
           'a:builder1',
           hideOutput: false,
           autoApply: AutoApply.allPackages,
-          writesParts: true,
+          addsToLibrary: true,
         ),
         BuilderDefinition(
           'a:builder2',
           hideOutput: false,
           autoApply: AutoApply.allPackages,
-          writesParts: true,
+          addsToLibrary: true,
         ),
       ];
 
@@ -124,7 +121,7 @@ content2
           'a|lib/b.txt': 'initial_b',
           'a|lib/c.txt': 'initial_c',
         },
-        outputs: {r'$$a|lib/_generated_parts/a.dart': expectedGeneratedPart},
+        outputs: {r'$$a|lib/_br_/a.dart': expectedGeneratedPart},
       );
 
       // Now we do an incremental build where we ONLY change b.txt.
@@ -155,7 +152,7 @@ content2
           'a|lib/b.txt': 'modified_b',
           'a|lib/c.txt': 'initial_c',
         },
-        outputs: {r'$$a|lib/_generated_parts/a.dart': expectedGeneratedPart2},
+        outputs: {r'$$a|lib/_br_/a.dart': expectedGeneratedPart2},
         resumeFrom: result1,
       );
     });
@@ -173,7 +170,7 @@ content2
             'a:builder1',
             hideOutput: false,
             autoApply: AutoApply.allPackages,
-            writesParts: true,
+            addsToLibrary: true,
           ),
         ];
 
@@ -194,7 +191,7 @@ content
           builderFactories,
           builderDefinitions,
           {'a|lib/a.dart': '// @dart=2.14\n', 'a|lib/b.txt': 'b'},
-          outputs: {r'$$a|lib/_generated_parts/a.dart': expectedGeneratedPart},
+          outputs: {r'$$a|lib/_br_/a.dart': expectedGeneratedPart},
         );
       },
     );
@@ -208,7 +205,7 @@ content
           'a:builder1',
           hideOutput: false,
           autoApply: AutoApply.allPackages,
-          writesParts: true,
+          addsToLibrary: true,
         ),
       ];
 

@@ -23,7 +23,7 @@ BuilderDefinition _$BuilderDefinitionFromJson(Map json) => $checkedCreate(
         'applies_builders',
         'is_optional',
         'build_to',
-        'writes_parts',
+        'adds_to_library',
         'defaults',
       ],
       requiredKeys: const ['builder_factories', 'import', 'build_extensions'],
@@ -70,7 +70,7 @@ BuilderDefinition _$BuilderDefinitionFromJson(Map json) => $checkedCreate(
         'build_to',
         (v) => $enumDecodeNullable(_$BuildToEnumMap, v),
       ),
-      writesParts: $checkedConvert('writes_parts', (v) => v as bool?),
+      addsToLibrary: $checkedConvert('adds_to_library', (v) => v as bool?),
       defaults: $checkedConvert(
         'defaults',
         (v) =>
@@ -88,7 +88,7 @@ BuilderDefinition _$BuilderDefinitionFromJson(Map json) => $checkedCreate(
     'appliesBuilders': 'applies_builders',
     'isOptional': 'is_optional',
     'buildTo': 'build_to',
-    'writesParts': 'writes_parts',
+    'addsToLibrary': 'adds_to_library',
   },
 );
 

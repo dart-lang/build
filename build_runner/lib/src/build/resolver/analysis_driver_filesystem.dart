@@ -16,8 +16,8 @@ import 'package:path/path.dart' as p;
 
 import '../../build_plan/build_inputs.dart';
 import '../asset_content.dart';
+import '../br_outputs.dart';
 import '../builder_filesystem.dart';
-import '../generated_parts.dart';
 import 'asset_ids.dart';
 
 /// The in-memory filesystem that is the analyzer's view of the build.
@@ -62,7 +62,7 @@ class AnalysisDriverFilesystem
         for (final output in plan.declaredOutputsByStep[step]) {
           _changedPaths.add(output.asPath);
         }
-        final partPath = step.primaryInput.partIdForPrimaryInput.asPath;
+        final partPath = step.primaryInput.brOutputIdForPrimaryInput.asPath;
         if (_partData[partPath]?.hasContributionAt(p) == true) {
           _changedPaths.add(partPath);
         }
@@ -112,7 +112,7 @@ class AnalysisDriverFilesystem
     for (final id in buildInputs.deletedSources.followedBy(
       buildInputs.updatedSources,
     )) {
-      final partPath = id.partIdForPrimaryInput.asPath;
+      final partPath = id.brOutputIdForPrimaryInput.asPath;
       if (_partData.remove(partPath) != null) {
         _changedPaths.add(partPath);
       }
@@ -160,7 +160,7 @@ class AnalysisDriverFilesystem
     AssetContent? imports,
     AssetContent? contribution,
   ) {
-    final partPath = primaryInput.partIdForPrimaryInput.asPath;
+    final partPath = primaryInput.brOutputIdForPrimaryInput.asPath;
     final partData = _partData.putIfAbsent(
       partPath,
       () => GeneratedPartFileContent(primaryInput, partPath),
@@ -475,7 +475,7 @@ class GeneratedPartFileContent {
     for (final p in validPhases) {
       if (_contributions.containsKey(p)) contributions[p] = _contributions[p]!;
     }
-    return GeneratedParts.generateContent(primaryInput, imports, contributions);
+    return BrOutputs.generateContent(primaryInput, imports, contributions);
   }
 
   FileContent fileContentAt(int phase) {

@@ -1,6 +1,11 @@
+## 4.1.0-wip
+ - Add `librarySourceSink` to `BuildStep`, a new way for builders to to add
+    source to a library. Additions are collected from all builders and written
+    to a single shared part file. Experimental, may change following feedback
+    and discussion at https://github.com/dart-lang/build/discussions.
+
 ## 4.0.8
 
-- Add `partWriter` to `BuildStep` and `PartWriter` API for writing `.part` files.
 - Allow `analyzer` 14.x, require 13.3.0.
 - Require Dart 3.11.0.
 

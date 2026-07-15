@@ -79,8 +79,8 @@ class BuilderDefinition {
   /// Where the outputs of this builder should be written.
   final BuildTo buildTo;
 
-  /// Whether this builder is capable of contributing to .part files.
-  final bool writesParts;
+  /// Whether this builder is allowed to use `BuildStep.librarySourceSink`.
+  final bool addsToLibrary;
 
   final TargetBuilderConfigDefaults defaults;
 
@@ -95,14 +95,14 @@ class BuilderDefinition {
     Iterable<String>? appliesBuilders,
     bool? isOptional,
     BuildTo? buildTo,
-    bool? writesParts,
+    bool? addsToLibrary,
     TargetBuilderConfigDefaults? defaults,
   }) : // ignore: deprecated_member_use
        target = target != null
            ? normalizeTargetKeyUsage(target, currentPackage)
            : null,
        autoApply = autoApply ?? AutoApply.none,
-       writesParts = writesParts ?? false,
+       addsToLibrary = addsToLibrary ?? false,
        requiredInputs = requiredInputs?.toList() ?? const [],
        runsBefore =
            runsBefore

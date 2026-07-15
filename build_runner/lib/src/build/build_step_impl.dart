@@ -42,22 +42,22 @@ class BuildStepImpl implements BuildStep {
 
   final InputTracker inputTracker;
   final Map<AssetId, AssetContent> outputs = {};
-  String? get partContribution => _partWriter?.contribution;
-  List<String> get partImports => _partWriter?.imports ?? const [];
+  String? get partContribution => _librarySourceSink?.contribution;
+  List<String> get partImports => _librarySourceSink?.imports ?? const [];
 
-  PartWriterImpl? _partWriter;
+  LibrarySourceSinkImpl? _librarySourceSink;
 
   @override
-  Future<PartWriter?> get partWriter async {
+  Future<LibrarySourceSink?> get librarySourceSink async {
     if (partPhaseIndex == null) {
       throw UnsupportedError(
-        'Builder must opt into writes_parts in build.yaml to write parts.',
+        'Builder must opt into adds_to_library in build.yaml to write parts.',
       );
     }
     if (!await resolver.isLibrary(inputId)) {
       return null;
     }
-    return _partWriter ??= PartWriterImpl(
+    return _librarySourceSink ??= LibrarySourceSinkImpl(
       this,
       _prefixForPhase(partPhaseIndex!),
     );
@@ -240,9 +240,6 @@ class BuildStepImpl implements BuildStep {
   /// [Resolver] for this build step - if any - has been released.
   Future<void> complete() async {
     _isComplete = true;
-    if (_partWriter?.hasUnclosedState ?? false) {
-      throw StateError('PartWriter was left unclosed');
-    }
     try {
       (await _resolver)?.release();
     } catch (_) {}
@@ -270,30 +267,21 @@ class BuildStepImpl implements BuildStep {
   }
 }
 
-class PartWriterImpl implements PartWriter {
+class LibrarySourceSinkImpl implements LibrarySourceSink {
   final BuildStepImpl _buildStep;
   @override
   final String importPrefix;
 
   final StringBuffer _buffer = StringBuffer();
   final List<String> _imports = [];
-  bool _isClosed = false;
-  bool _isCanceled = false;
-  bool _isDirty = false;
 
-  PartWriterImpl(this._buildStep, this.importPrefix);
+  LibrarySourceSinkImpl(this._buildStep, this.importPrefix);
 
-  bool get hasUnclosedState => _isDirty && !_isClosed && !_isCanceled;
-
-  String? get contribution => _isClosed ? _buffer.toString() : null;
-  List<String> get imports =>
-      _isClosed ? List.unmodifiable(_imports) : const [];
+  String? get contribution => _buffer.isNotEmpty ? _buffer.toString() : null;
+  List<String> get imports => List.unmodifiable(_imports);
 
   void _checkCanWrite() {
     if (_buildStep._isComplete) throw BuildStepCompletedException();
-    if (_isClosed) throw StateError('PartWriter is already closed.');
-    if (_isCanceled) throw StateError('PartWriter was canceled.');
-    _isDirty = true;
   }
 
   @override
@@ -320,26 +308,9 @@ class PartWriterImpl implements PartWriter {
   }
 
   @override
-  void write(String content) {
+  void add(String content) {
     _checkCanWrite();
     _buffer.write(content);
-  }
-
-  @override
-  void writeln([String content = '']) {
-    _checkCanWrite();
-    _buffer.writeln(content);
-  }
-
-  @override
-  void close() {
-    if (_isClosed || _isCanceled) return;
-    _isClosed = true;
-  }
-
-  @override
-  void cancel() {
-    _isCanceled = true;
   }
 }
 

@@ -11,9 +11,9 @@ import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 
 import '../build/asset_content.dart';
+import '../build/br_outputs.dart';
 import '../build/build_state/build_state.dart';
 import '../build/builder_filesystem.dart';
-import '../build/generated_parts.dart';
 import '../build/resolver/asset_ids.dart';
 import '../build_plan/build_step_plan.dart';
 
@@ -52,8 +52,8 @@ class BuildOutputReader {
     final buildState = _buildState;
     final builderFilesystem = _builderFilesystem;
 
-    if (id.isGeneratedPart) {
-      final primaryInputId = id.primaryInputForPartId;
+    if (id.isBrOutput) {
+      final primaryInputId = id.primaryInputForBrOutputId;
       if (primaryInputId != null) {
         final parts = buildState.partContributionsFor(primaryInputId);
         if (parts.isNotEmpty) return null;
@@ -124,7 +124,7 @@ class BuildOutputReader {
   }
 
   Future<List<int>> readAsBytes(AssetId id) async {
-    if (id.isGeneratedPart) {
+    if (id.isBrOutput) {
       final content = await readAsString(id);
       return utf8.encode(content);
     }
@@ -139,8 +139,8 @@ class BuildOutputReader {
   }
 
   Future<String> readAsString(AssetId id) async {
-    if (id.isGeneratedPart) {
-      final primaryInputId = id.primaryInputForPartId;
+    if (id.isBrOutput) {
+      final primaryInputId = id.primaryInputForBrOutputId;
       if (primaryInputId != null) {
         final parts = _buildState.partContributionsFor(primaryInputId);
         if (parts.isNotEmpty) {
@@ -207,7 +207,7 @@ class BuildOutputReader {
     }
     result.addAll(_buildState.actualPostOutputs);
     for (final primaryInput in _buildState.primaryInputsWithParts) {
-      final partId = primaryInput.partIdForPrimaryInput;
+      final partId = primaryInput.brOutputIdForPrimaryInput;
       if (!_shouldSkipId(partId, rootDir)) {
         result.add(partId);
       }
@@ -216,8 +216,8 @@ class BuildOutputReader {
   }
 
   bool _shouldSkipId(AssetId id, String? rootDir) {
-    if (id.isGeneratedPart) {
-      final primaryInputId = id.primaryInputForPartId;
+    if (id.isBrOutput) {
+      final primaryInputId = id.primaryInputForBrOutputId;
       if (primaryInputId == null) return true;
       final parts = _buildState.partContributionsFor(primaryInputId);
       if (parts.isEmpty) return true;

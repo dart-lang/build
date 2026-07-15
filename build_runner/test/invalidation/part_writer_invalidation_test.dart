@@ -23,10 +23,7 @@ void main() {
     });
 
     test('initial build writes the generated part', () async {
-      expect(
-        await tester.build(),
-        Result(written: ['_generated_parts/a', '_generated_parts/b']),
-      );
+      expect(await tester.build(), Result(written: ['_br_/a', '_br_/b']));
     });
 
     test('change b, part is rewritten because builder 1 ran, but builder 2 is '
@@ -35,7 +32,7 @@ void main() {
       // change b invalidated builder 1 on a, but builder 2 on a is cached
       expect(
         await tester.build(change: 'b'),
-        Result(written: ['_generated_parts/a', '_generated_parts/b']),
+        Result(written: ['_br_/a', '_br_/b']),
       );
     });
 

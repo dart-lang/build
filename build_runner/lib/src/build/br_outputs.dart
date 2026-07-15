@@ -2,38 +2,14 @@ import 'package:build/build.dart';
 import 'package:dart_style/dart_style.dart';
 import 'package:path/path.dart' as p;
 
-extension AssetIdGeneratedPartsExtension on AssetId {
-  /// Whether this is a synthetic generated part file.
-  bool get isGeneratedPart {
-    if (path.startsWith(r'_generated_parts/')) return true;
-    return path.contains(r'/_generated_parts/');
-  }
-
-  /// Whether this is a regular asset (not a synthetic generated part).
-  bool get isRegularAsset => !isGeneratedPart;
-
-  /// Returns the corresponding `_generated_parts/` AssetId if this is a `.dart` file.
-  AssetId get partIdForPrimaryInput {
-    final firstSlash = path.indexOf('/');
-    if (firstSlash == -1) {
-      return AssetId(package, '_generated_parts/$path');
-    }
-    final topLevelDir = path.substring(0, firstSlash);
-    final rest = path.substring(firstSlash + 1);
-    return AssetId(package, '$topLevelDir/_generated_parts/$rest');
-  }
-
-  /// Returns the corresponding `.dart` AssetId if this is a generated part.
-  AssetId? get primaryInputForPartId {
-    if (!isGeneratedPart) return null;
-    if (path.startsWith(r'_generated_parts/')) {
-      return AssetId(package, path.substring(17));
-    }
-    return AssetId(package, path.replaceFirst(r'/_generated_parts/', '/'));
-  }
-}
-
-class GeneratedParts {
+/// Outputs in per-package directories fully owned by `build_runner`.
+///
+/// Public outputs are written under the directory `lib/_br_`.
+///
+/// Package-private outputs are written under a top-level directory `_br_`.
+///
+/// Used for part files that combine source added to a `LibrarySourceSink`.
+class BrOutputs {
   static String partOfDirective(AssetId primaryInput, AssetId partId) {
     final relativePath = p.url.relative(
       primaryInput.path,
@@ -51,7 +27,7 @@ class GeneratedParts {
     final validPhases = <int>{...imports.keys, ...contributions.keys}.toList();
     validPhases.sort();
 
-    final partId = primaryInput.partIdForPrimaryInput;
+    final partId = primaryInput.brOutputIdForPrimaryInput;
     final buffer = StringBuffer();
     if (languageVersion != null) {
       buffer.writeln(languageVersion);
@@ -158,5 +134,38 @@ class GeneratedParts {
         contributionsByPhase[phase]?.toString().trimRight() ?? '',
       );
     }
+  }
+}
+
+extension AssetIdBrOutputsExtension on AssetId {
+  /// Whether this is a synthetic generated part file.
+  bool get isBrOutput =>
+      path.startsWith('lib/_br_/') || path.startsWith('_br_/');
+
+  /// Whether this is a regular asset (not a synthetic generated part).
+  bool get isRegularAsset => !isBrOutput;
+
+  /// Returns the corresponding `_br_/` AssetId if this is a `.dart` file.
+  AssetId get brOutputIdForPrimaryInput {
+    final firstSlash = path.indexOf('/');
+    if (firstSlash == -1) return AssetId(package, '_br_/$path');
+
+    final topLevelDir = path.substring(0, firstSlash);
+    if (topLevelDir == 'lib') {
+      final rest = path.substring(firstSlash + 1);
+      return AssetId(package, 'lib/_br_/$rest');
+    }
+    return AssetId(package, '_br_/$path');
+  }
+
+  /// Returns the corresponding `.dart` AssetId if this is a generated part.
+  AssetId? get primaryInputForBrOutputId {
+    if (path.startsWith('lib/_br_/')) {
+      return AssetId(package, 'lib/${path.substring(9)}');
+    }
+    if (path.startsWith('_br_/')) {
+      return AssetId(package, path.substring(5));
+    }
+    return null;
   }
 }

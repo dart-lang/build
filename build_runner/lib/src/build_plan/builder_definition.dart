@@ -130,7 +130,7 @@ class BuilderDefinition implements AbstractBuilderDefinition {
   final bool isOptional;
 
   /// Whether the builder is capable of contributing to .part files.
-  final bool writesParts;
+  final bool addsToLibrary;
 
   @visibleForTesting
   BuilderDefinition(
@@ -140,7 +140,7 @@ class BuilderDefinition implements AbstractBuilderDefinition {
     Iterable<String> appliesBuilders = const [],
     this.hideOutput = true,
     this.isOptional = false,
-    this.writesParts = false,
+    this.addsToLibrary = false,
     this.targetBuilderConfigDefaults = const TargetBuilderConfigDefaults(),
   }) : package = package ?? (key.contains(':') ? key.split(':').first : ''),
        appliesBuilders = appliesBuilders.toBuiltList();
@@ -154,7 +154,7 @@ class BuilderDefinition implements AbstractBuilderDefinition {
     appliesBuilders: builderDefinition.appliesBuilders,
     hideOutput: builderDefinition.buildTo == build_config.BuildTo.cache,
     isOptional: builderDefinition.isOptional,
-    writesParts: builderDefinition.writesParts,
+    addsToLibrary: builderDefinition.addsToLibrary,
     targetBuilderConfigDefaults: builderDefinition.defaults,
   );
 

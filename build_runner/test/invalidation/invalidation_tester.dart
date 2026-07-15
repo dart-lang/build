@@ -8,7 +8,7 @@ import 'dart:math';
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
-import 'package:build_runner/src/build/generated_parts.dart';
+import 'package:build_runner/src/build/br_outputs.dart';
 import 'package:build_runner/src/build/resolver/resolvers_impl.dart';
 import 'package:build_runner/src/constants.dart';
 import 'package:build_runner/src/logging/build_log.dart';
@@ -262,7 +262,9 @@ class InvalidationTester {
       rootPackage: 'pkg',
       optionalBuilders: _builders.where((b) => b.isOptional).toSet(),
       visibleOutputBuilders: _builders.where((b) => b.outputIsVisible).toSet(),
-      writesPartsBuilders: _builders.where((b) => b.partWrite != null).toSet(),
+      addsToLibraryBuilders: _builders
+          .where((b) => b.partWrite != null)
+          .toSet(),
       testingBuilderConfig: false,
       resolvers: discardResolver ? ResolversImpl.custom() : null,
     );
@@ -573,11 +575,9 @@ class TestBuilder implements Builder {
       final actualContent = partWrite! == '_digest'
           ? recordedInput.map((l) => '// $l\n').join('')
           : partWrite!;
-      (await buildStep.partWriter)
-        ?..write(actualContent)
-        ..close();
+      (await buildStep.librarySourceSink)?.add(actualContent);
       _tester._generatedOutputsWritten.add(
-        buildStep.inputId.partIdForPrimaryInput,
+        buildStep.inputId.brOutputIdForPrimaryInput,
       );
     }
   }

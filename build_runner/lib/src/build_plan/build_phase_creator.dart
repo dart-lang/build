@@ -192,7 +192,7 @@ class BuildPhaseCreator {
             options: options,
             hideOutput: builderDefinition.hideOutput,
             isOptional: builderDefinition.isOptional,
-            writesParts: builderDefinition.writesParts,
+            addsToLibrary: builderDefinition.addsToLibrary,
           ),
         );
       }

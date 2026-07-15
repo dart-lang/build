@@ -11,7 +11,7 @@ import 'package:glob/glob.dart';
 import 'package:package_config/package_config_types.dart';
 
 import 'asset_id.dart';
-import 'part_writer.dart';
+import 'library_source_sink.dart';
 import 'resolver.dart';
 import 'resource.dart';
 
@@ -148,19 +148,18 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   /// [readAsBytes].
   Future<PackageConfig> get packageConfig;
 
-  /// Creates or gets a [PartWriter] that will write a part file for the primary
-  /// input library.
+  /// Creates or gets a [LibrarySourceSink] that will add source code to the
+  /// primary input library.
   ///
-  /// Builders must declare `writes_parts: true` in `build.yaml` to use this
-  /// getter. Otherwise, it throws.
+  /// The builder must have `adds_to_library: true` in its `build.yaml`, or
+  /// `UnsupportedError` is thrown.
   ///
-  /// Returns `null` if the primary input is not a Dart file or is a Dart part
-  /// file. If a part file needs generated code this must be done by the
-  /// builder running on the library that includes the part.
+  /// The primary input must be a Dart file that contains a library, not a
+  /// library part, or `null` is returned.
   ///
-  /// Having obtained a `PartWriter` a builder must call `close` or `cancel`
-  /// on it before the build step completes.
-  Future<PartWriter?> get partWriter;
+  /// Experimental, may change following feedback and discussion at
+  /// https://github.com/dart-lang/build/discussions.
+  Future<LibrarySourceSink?> get librarySourceSink;
 }
 
 /// The "write" part of the [BuildStep] API.

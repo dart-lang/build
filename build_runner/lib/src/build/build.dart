@@ -27,6 +27,7 @@ import '../logging/build_log.dart';
 import '../logging/build_log_logger.dart';
 import '../logging/timed_activities.dart';
 import 'asset_content.dart';
+import 'br_outputs.dart';
 import 'build_dirs.dart';
 import 'build_result.dart';
 import 'build_state/build_state.dart';
@@ -38,7 +39,6 @@ import 'build_state/post_process_build_step_id.dart';
 import 'build_state/post_process_build_step_result.dart';
 import 'build_step_impl.dart';
 import 'builder_filesystem.dart';
-import 'generated_parts.dart';
 import 'input_tracker.dart';
 import 'library_cycle_graph/asset_deps_loader.dart';
 import 'library_cycle_graph/library_cycle_graph.dart';
@@ -108,7 +108,7 @@ class Build {
     final result = <int, int>{};
     var nextIndex = 0;
     for (var i = 0; i < buildPhases.inBuildPhases.length; i++) {
-      if (buildPhases.inBuildPhases[i].writesParts) {
+      if (buildPhases.inBuildPhases[i].addsToLibrary) {
         result[i] = nextIndex++;
       }
     }
@@ -194,14 +194,10 @@ class Build {
           for (final primaryInput
               in previousBuildState!.primaryInputsWithParts) {
             if (previousBuildState!.hasMissingPartStrings(primaryInput)) {
-              final partId = primaryInput.partIdForPrimaryInput;
+              final partId = primaryInput.brOutputIdForPrimaryInput;
               final content = await _builderFilesystem.readOldPartFile(partId);
               if (content != null) {
-                GeneratedParts.parseContent(content, (
-                  phase,
-                  imports,
-                  contribution,
-                ) {
+                BrOutputs.parseContent(content, (phase, imports, contribution) {
                   previousBuildState!.populatePartContent(
                     primaryInput,
                     phase,
@@ -331,7 +327,9 @@ class Build {
     // Assume success, failed outputs will be checked later.
 
     final generatedPartOutputs = buildState.primaryInputsWithParts.toList();
-    outputs.addAll(generatedPartOutputs.map((id) => id.partIdForPrimaryInput));
+    outputs.addAll(
+      generatedPartOutputs.map((id) => id.brOutputIdForPrimaryInput),
+    );
 
     return BuildResult(
       status: BuildStatus.success,
