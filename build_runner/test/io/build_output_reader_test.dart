@@ -94,6 +94,50 @@ void main() {
       expect(await reader.canRead(deletedId), false);
     });
 
+    test('can fully read generated shared parts (retaining imports)', () async {
+      final inputId = AssetId('a', 'lib/a.dart');
+      final expectedGeneratedPartId = AssetId('a', 'lib/_br_/a.dart');
+
+      final buildStepId = BuildStepId(primaryInput: inputId, phaseNumber: 0);
+      buildState.updateBuildStepResult(
+        buildStepId,
+        BuildStepResult((b) {
+          b.result = true;
+          b.isHidden = false;
+          b.partImports = AssetContent.string("import 'package:foo/foo.dart';\n");
+          b.partContribution = AssetContent.string("// contribution");
+          b.primaryLanguageVersion = "// @dart=3.0";
+        }),
+      );
+
+      final buildPlan = await BuildPlan.load(
+        await BuildSpec.load(
+          builderFactories: BuilderFactories({}),
+          buildOptions: BuildOptions.forTests(),
+          testingOverrides: TestingOverrides(
+            buildPhases: buildPhases,
+            readerWriter: readerWriter,
+            buildPackages: buildPackages,
+          ),
+        ),
+      );
+      reader = BuildOutputReader(
+        builderFilesystem: BuilderFilesystem(
+          buildPackages: buildPlan.buildSpec.buildPackages,
+          buildConfigs: buildPlan.buildSpec.buildConfigs,
+          buildState: buildState,
+          buildStepPlan: buildPlan.buildStepPlan,
+          readerWriter: buildPlan.readerWriter,
+        ),
+      );
+
+      expect(await reader.canRead(expectedGeneratedPartId), true);
+      final content = await reader.readAsString(expectedGeneratedPartId);
+      expect(content, contains('import \'package:foo/foo.dart\';'));
+      expect(content, contains('// @dart=3.0'));
+      expect(content, contains('// contribution'));
+    });
+
     test('Failed steps interact well with build filters ', () async {
       final id = AssetId('a', 'web/a.txt');
       final primaryId = AssetId('a', 'web/a.dart');
