@@ -64,7 +64,7 @@ class AnalysisDriverFilesystem
         for (final output in plan.declaredOutputsByStep[step]) {
           _changedPaths.add(output.asPath);
         }
-        final partPath = step.primaryInput.brOutputIdForPrimaryInput.asPath;
+        final partPath = step.primaryInput.sharedPartIdForPrimaryInput.asPath;
         if (_partData[partPath]?.hasContributionAt(p) == true) {
           _changedPaths.add(partPath);
         }
@@ -114,7 +114,7 @@ class AnalysisDriverFilesystem
     for (final id in buildInputs.deletedSources.followedBy(
       buildInputs.updatedSources,
     )) {
-      final partPath = id.brOutputIdForPrimaryInput.asPath;
+      final partPath = id.sharedPartIdForPrimaryInput.asPath;
       if (_partData.remove(partPath) != null) {
         _changedPaths.add(partPath);
       }
@@ -162,7 +162,7 @@ class AnalysisDriverFilesystem
     AssetContent? imports,
     AssetContent? contribution,
   ) {
-    final partPath = primaryInput.brOutputIdForPrimaryInput.asPath;
+    final partPath = primaryInput.sharedPartIdForPrimaryInput.asPath;
     final partData = _partData.putIfAbsent(
       partPath,
       () => GeneratedPartFileContent(primaryInput, partPath),

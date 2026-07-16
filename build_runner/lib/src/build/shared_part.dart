@@ -23,7 +23,7 @@ class SharedPart {
   String get partOfDirective {
     final relativePath = p.url.relative(
       primaryInput.path,
-      from: p.url.dirname(primaryInput.brOutputIdForPrimaryInput.path),
+      from: p.url.dirname(primaryInput.sharedPartIdForPrimaryInput.path),
     );
     return "part of '$relativePath';";
   }

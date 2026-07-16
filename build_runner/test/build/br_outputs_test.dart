@@ -11,43 +11,43 @@ void main() {
       expect(AssetId('a', 'lib/b.dart').isBrOutput, isFalse);
     });
 
-    test('brOutputIdForPrimaryInput', () {
+    test('sharedPartIdForPrimaryInput', () {
       expect(
-        AssetId('a', 'lib/b.dart').brOutputIdForPrimaryInput,
+        AssetId('a', 'lib/b.dart').sharedPartIdForPrimaryInput,
         AssetId('a', 'lib/_br_/b.dart'),
       );
       expect(
-        AssetId('a', 'lib/foo/bar.dart').brOutputIdForPrimaryInput,
+        AssetId('a', 'lib/foo/bar.dart').sharedPartIdForPrimaryInput,
         AssetId('a', 'lib/_br_/foo/bar.dart'),
       );
       expect(
-        AssetId('a', 'test/foo/bar.dart').brOutputIdForPrimaryInput,
+        AssetId('a', 'test/foo/bar.dart').sharedPartIdForPrimaryInput,
         AssetId('a', '_br_/test/foo/bar.dart'),
       );
       expect(
-        AssetId('a', 'root_file.dart').brOutputIdForPrimaryInput,
+        AssetId('a', 'root_file.dart').sharedPartIdForPrimaryInput,
         AssetId('a', '_br_/root_file.dart'),
       );
     });
 
-    test('primaryInputForBrOutputId', () {
+    test('primaryInputForSharedPartId', () {
       expect(
-        AssetId('a', 'lib/_br_/b.dart').primaryInputForBrOutputId,
+        AssetId('a', 'lib/_br_/b.dart').primaryInputForSharedPartId,
         AssetId('a', 'lib/b.dart'),
       );
       expect(
-        AssetId('a', 'lib/_br_/foo/bar.dart').primaryInputForBrOutputId,
+        AssetId('a', 'lib/_br_/foo/bar.dart').primaryInputForSharedPartId,
         AssetId('a', 'lib/foo/bar.dart'),
       );
       expect(
-        AssetId('a', '_br_/test/foo/bar.dart').primaryInputForBrOutputId,
+        AssetId('a', '_br_/test/foo/bar.dart').primaryInputForSharedPartId,
         AssetId('a', 'test/foo/bar.dart'),
       );
       expect(
-        AssetId('a', '_br_/root_file.dart').primaryInputForBrOutputId,
+        AssetId('a', '_br_/root_file.dart').primaryInputForSharedPartId,
         AssetId('a', 'root_file.dart'),
       );
-      expect(AssetId('a', 'lib/b.dart').primaryInputForBrOutputId, isNull);
+      expect(AssetId('a', 'lib/b.dart').primaryInputForSharedPartId, isNull);
     });
   });
 }

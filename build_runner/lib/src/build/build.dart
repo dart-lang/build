@@ -195,7 +195,7 @@ class Build {
           for (final primaryInput
               in previousBuildState!.primaryInputsWithParts) {
             if (previousBuildState!.hasMissingPartStrings(primaryInput)) {
-              final partId = primaryInput.brOutputIdForPrimaryInput;
+              final partId = primaryInput.sharedPartIdForPrimaryInput;
               final content = await _builderFilesystem.readOldPartFile(partId);
               if (content != null) {
                 final sharedPart = SharedPart.parseContent(
@@ -339,7 +339,7 @@ class Build {
 
     final generatedPartOutputs = buildState.primaryInputsWithParts.toList();
     outputs.addAll(
-      generatedPartOutputs.map((id) => id.brOutputIdForPrimaryInput),
+      generatedPartOutputs.map((id) => id.sharedPartIdForPrimaryInput),
     );
 
     return BuildResult(

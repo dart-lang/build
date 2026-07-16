@@ -577,7 +577,7 @@ class TestBuilder implements Builder {
           : partWrite!;
       (await buildStep.librarySourceSink)?.add(actualContent);
       _tester._generatedOutputsWritten.add(
-        buildStep.inputId.brOutputIdForPrimaryInput,
+        buildStep.inputId.sharedPartIdForPrimaryInput,
       );
     }
   }

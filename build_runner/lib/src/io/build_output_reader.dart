@@ -51,8 +51,8 @@ class BuildOutputReader {
     final buildState = _buildState;
     final builderFilesystem = _builderFilesystem;
 
-    if (id.isBrOutput) {
-      final primaryInputId = id.primaryInputForBrOutputId;
+    if (id.isBrSharedPart) {
+      final primaryInputId = id.primaryInputForSharedPartId;
       if (primaryInputId != null) {
         final parts = buildState.partContributionsFor(primaryInputId);
         if (parts.isNotEmpty) return null;
@@ -185,7 +185,7 @@ class BuildOutputReader {
     }
     result.addAll(_buildState.actualPostOutputs);
     for (final primaryInput in _buildState.primaryInputsWithParts) {
-      final partId = primaryInput.brOutputIdForPrimaryInput;
+      final partId = primaryInput.sharedPartIdForPrimaryInput;
       if (!_shouldSkipId(partId, rootDir)) {
         result.add(partId);
       }
@@ -194,8 +194,8 @@ class BuildOutputReader {
   }
 
   bool _shouldSkipId(AssetId id, String? rootDir) {
-    if (id.isBrOutput) {
-      final primaryInputId = id.primaryInputForBrOutputId;
+    if (id.isBrSharedPart) {
+      final primaryInputId = id.primaryInputForSharedPartId;
       if (primaryInputId == null) return true;
       final parts = _buildState.partContributionsFor(primaryInputId);
       if (parts.isEmpty) return true;

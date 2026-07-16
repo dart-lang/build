@@ -58,11 +58,11 @@ class BuildState {
 
   // --  Predicates over IDs and iterables over IDs.
 
-  /// Whether [id] is one of: source, declared output or actual post process
-  /// output.
+  /// Whether [id] is one of: source, `_br_` output, declared output or actual
+  /// post process output.
   bool isFile({required BuildStepPlan? buildStepPlan, required AssetId id}) =>
-      id.isBrOutput ||
       isSource(id) ||
+      id.isBrOutput ||
       buildStepPlan?.isDeclaredOutput(id) == true ||
       isActualPostOutput(id);
 
@@ -218,7 +218,8 @@ class BuildState {
   /// generated.
   AssetContent? contentOf({BuildStepPlan? buildStepPlan, required AssetId id}) {
     if (id.isBrOutput) {
-      final primaryInput = id.primaryInputForBrOutputId!;
+      final primaryInput = id.primaryInputForSharedPartId;
+      if (primaryInput == null) return null;
       final contributions = partContributionsFor(primaryInput);
       final imports = partImportsFor(primaryInput);
       if (contributions.isEmpty && imports.isEmpty) return null;
