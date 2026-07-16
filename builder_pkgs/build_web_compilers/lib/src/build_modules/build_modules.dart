@@ -18,7 +18,8 @@ export 'module_library_builder.dart'
     show ModuleLibraryBuilder, moduleLibraryExtension;
 export 'modules.dart';
 export 'platform.dart' show DartPlatform;
-export 'scratch_space.dart' show scratchSpace, scratchSpaceResource;
+export 'scratch_space.dart'
+    show configureScratchSpace, scratchSpace, scratchSpaceResource;
 export 'workers.dart'
     show
         dartdevkDriverResource,

@@ -57,11 +57,14 @@ Builder ddcBuilder(BuilderOptions options) {
   _ensureSameDdcHotReloadOptions(options);
   _ensureSameDdcOptions(options);
 
+  final scratchDir = _readScratchSpaceDirOption(options);
+  if (scratchDir != null) {
+    configureScratchSpace(scratchDir);
+  }
+
   if (_readWebHotReloadOption(options)) {
     frontendServerEnvironment = _readEnvironmentOption(options);
-    return DdcFrontendServerBuilder(
-      scratchSpaceDir: _readScratchSpaceDirOption(options),
-    );
+    return DdcFrontendServerBuilder();
   }
 
   return DevCompilerBuilder(
