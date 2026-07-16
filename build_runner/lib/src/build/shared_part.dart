@@ -39,7 +39,7 @@ abstract class SharedPart implements Built<SharedPart, SharedPartBuilder> {
 
   /// Converts this [SharedPart] into the final source code to be written to
   /// disk.
-  String generateContent() {
+  String generateContent({bool format = true}) {
     final validPhases = <int>{...imports.keys, ...contributions.keys}.toList();
     validPhases.sort();
 
@@ -70,11 +70,15 @@ abstract class SharedPart implements Built<SharedPart, SharedPartBuilder> {
 
     final rawContent = buffer.toString();
     String formattedContent;
-    try {
-      formattedContent = DartFormatter(
-        languageVersion: DartFormatter.latestLanguageVersion,
-      ).format(rawContent);
-    } catch (_) {
+    if (format) {
+      try {
+        formattedContent = DartFormatter(
+          languageVersion: DartFormatter.latestLanguageVersion,
+        ).format(rawContent);
+      } catch (_) {
+        formattedContent = rawContent;
+      }
+    } else {
       formattedContent = rawContent;
     }
 

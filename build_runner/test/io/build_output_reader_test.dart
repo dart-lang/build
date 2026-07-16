@@ -104,9 +104,11 @@ void main() {
         BuildStepResult((b) {
           b.result = true;
           b.isHidden = false;
-          b.partImports = AssetContent.string("import 'package:foo/foo.dart';\n");
-          b.partContribution = AssetContent.string("// contribution");
-          b.primaryLanguageVersion = "// @dart=3.0";
+          b.partImports = AssetContent.string(
+            'import \'package:foo/foo.dart\';\n',
+          );
+          b.partContribution = AssetContent.string('// contribution');
+          b.primaryLanguageVersion = '// @dart=3.0';
         }),
       );
 

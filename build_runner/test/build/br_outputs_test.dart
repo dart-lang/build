@@ -50,5 +50,4 @@ void main() {
       expect(AssetId('a', 'lib/b.dart').primaryInputForBrOutputId, isNull);
     });
   });
-
 }

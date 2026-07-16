@@ -31,7 +31,6 @@ import 'br_outputs.dart';
 import 'build_dirs.dart';
 import 'build_result.dart';
 import 'build_state/build_state.dart';
-import 'shared_part.dart';
 import 'build_state/build_step_id.dart';
 import 'build_state/build_step_result.dart';
 import 'build_state/glob_id.dart';
@@ -48,6 +47,7 @@ import 'library_cycle_graph/phased_asset_deps.dart';
 import 'post_process_build_step_impl.dart';
 import 'resolver/analysis_driver_model.dart';
 import 'resolver/resolvers_impl.dart';
+import 'shared_part.dart';
 
 final ResolversImpl _defaultResolvers = ResolversImpl(
   analysisDriverModel: AnalysisDriverModel(),
@@ -198,9 +198,11 @@ class Build {
               final partId = primaryInput.brOutputIdForPrimaryInput;
               final content = await _builderFilesystem.readOldPartFile(partId);
               if (content != null) {
-                final sharedPart =
-                    SharedPart.parseContent(content, primaryInput);
-                
+                final sharedPart = SharedPart.parseContent(
+                  content,
+                  primaryInput,
+                );
+
                 final allPhases = <int>{
                   ...sharedPart.imports.keys,
                   ...sharedPart.contributions.keys,

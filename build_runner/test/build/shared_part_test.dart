@@ -21,10 +21,9 @@ void main() {
     test('generateContent uses correct relative path', () {
       expect(
         SharedPart(
-          (b) =>
-              b
-                ..primaryInput = AssetId('a', 'lib/b.dart')
-                ..contributions[0] = '// c1',
+          (b) => b
+            ..primaryInput = AssetId('a', 'lib/b.dart')
+            ..contributions[0] = '// c1',
         ).generateContent(),
         formatGolden(
           "part of '../b.dart';\n\n\n// @PartBuilder:contribution:0\n// c1\n\n",
@@ -33,10 +32,9 @@ void main() {
 
       expect(
         SharedPart(
-          (b) =>
-              b
-                ..primaryInput = AssetId('a', 'lib/foo/bar.dart')
-                ..contributions[0] = '// c1',
+          (b) => b
+            ..primaryInput = AssetId('a', 'lib/foo/bar.dart')
+            ..contributions[0] = '// c1',
         ).generateContent(),
         formatGolden(
           "part of '../../foo/bar.dart';\n\n\n// @PartBuilder:contribution:0\n// c1\n\n",
@@ -45,10 +43,9 @@ void main() {
 
       expect(
         SharedPart(
-          (b) =>
-              b
-                ..primaryInput = AssetId('a', 'test/foo.dart')
-                ..contributions[0] = '// c1',
+          (b) => b
+            ..primaryInput = AssetId('a', 'test/foo.dart')
+            ..contributions[0] = '// c1',
         ).generateContent(),
         formatGolden(
           "part of '../../test/foo.dart';\n\n\n// @PartBuilder:contribution:0\n// c1\n\n",
@@ -57,10 +54,9 @@ void main() {
 
       expect(
         SharedPart(
-          (b) =>
-              b
-                ..primaryInput = AssetId('a', 'root.dart')
-                ..contributions[0] = '// c1',
+          (b) => b
+            ..primaryInput = AssetId('a', 'root.dart')
+            ..contributions[0] = '// c1',
         ).generateContent(),
         formatGolden(
           "part of '../root.dart';\n\n\n// @PartBuilder:contribution:0\n// c1\n\n",
@@ -69,14 +65,13 @@ void main() {
 
       expect(
         SharedPart(
-          (b) =>
-              b
-                ..primaryInput = AssetId('a', 'root.dart')
-                ..imports[0] = BuiltList<String>([
-                  "import 'package:foo/foo.dart';",
-                  "import 'package:bar/bar.dart';",
-                ])
-                ..contributions[0] = '// c1',
+          (b) => b
+            ..primaryInput = AssetId('a', 'root.dart')
+            ..imports[0] = BuiltList<String>([
+              "import 'package:foo/foo.dart';",
+              "import 'package:bar/bar.dart';",
+            ])
+            ..contributions[0] = '// c1',
         ).generateContent(),
         formatGolden(
           "part of '../root.dart';\n\n// @PartBuilder:imports:0\nimport 'package:foo/foo.dart';\nimport 'package:bar/bar.dart';\n\n// @PartBuilder:contribution:0\n// c1\n\n",

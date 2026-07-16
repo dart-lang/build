@@ -1,4 +1,5 @@
 import 'package:build/build.dart';
+
 /// Outputs in per-package directories fully owned by `build_runner`.
 ///
 /// Public outputs are written under the directory `lib/_br_`.

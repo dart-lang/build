@@ -480,8 +480,7 @@ class GeneratedPartFileContent {
         }
       }
     });
-
-    return sharedPart.generateContent();
+    return sharedPart.generateContent(format: false);
   }
 
   FileContent fileContentAt(int phase) {
