@@ -222,12 +222,11 @@ class BuildState {
       final contributions = partContributionsFor(primaryInput);
       final imports = partImportsFor(primaryInput);
       if (contributions.isEmpty && imports.isEmpty) return null;
-      final content = SharedPart((b) {
-        b.primaryInput = primaryInput;
-        b.languageVersion = languageVersionFor(primaryInput);
-        imports.forEach((p, list) => b.imports[p] = BuiltList<String>(list));
-        contributions.forEach((p, string) => b.contributions[p] = string);
-      }).generateContent();
+      final sharedPart = SharedPart(primaryInput);
+      sharedPart.languageVersion = languageVersionFor(primaryInput);
+      sharedPart.imports.addAll(imports);
+      sharedPart.contributions.addAll(contributions);
+      final content = sharedPart.generateContent();
       return AssetContent.string(content);
     }
     if (isSource(id)) return _sources.contentOfSource(id);

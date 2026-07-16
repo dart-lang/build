@@ -12,7 +12,7 @@ import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/dart/analysis/file_content_cache.dart';
 import 'package:build/build.dart' hide Resource;
-import 'package:built_collection/built_collection.dart';
+
 import 'package:path/path.dart' as p;
 
 import '../../build_plan/build_inputs.dart';
@@ -469,17 +469,15 @@ class GeneratedPartFileContent {
     }
     validPhases.sort();
 
-    final sharedPart = SharedPart((b) {
-      b.primaryInput = primaryInput;
-      for (final p in validPhases) {
-        if (_imports.containsKey(p)) {
-          b.imports[p] = BuiltList<String>(_imports[p]!);
-        }
-        if (_contributions.containsKey(p)) {
-          b.contributions[p] = _contributions[p]!;
-        }
+    final sharedPart = SharedPart(primaryInput);
+    for (final p in validPhases) {
+      if (_imports.containsKey(p)) {
+        sharedPart.imports[p] = _imports[p]!.toList();
       }
-    });
+      if (_contributions.containsKey(p)) {
+        sharedPart.contributions[p] = _contributions[p]!;
+      }
+    }
     return sharedPart.generateContent(format: false);
   }
 
