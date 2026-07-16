@@ -19,7 +19,14 @@ final _logger = Logger('BuildModules');
 
 /// A shared [ScratchSpace] for ddc and analyzer workers that persists
 /// throughout builds.
-final scratchSpace = ScratchSpace();
+ScratchSpace? _scratchSpace;
+ScratchSpace get scratchSpace => _scratchSpace ??= ScratchSpace();
+
+void configureScratchSpace(String? path) {
+  if (path != null) {
+    _scratchSpace = ScratchSpace.existing(Directory(path));
+  }
+}
 
 /// A shared [Resource] for a [ScratchSpace], which cleans up the contents of
 /// the [ScratchSpace] in dispose, but doesn't delete it entirely.

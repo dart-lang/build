@@ -4,10 +4,8 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:scratch_space/scratch_space.dart';
 
 import 'build_modules/build_modules.dart';
 import 'common.dart';
@@ -16,21 +14,6 @@ import 'platforms.dart';
 
 /// A builder that compiles DDC modules with the Frontend Server.
 class DdcFrontendServerBuilder implements Builder {
-  /// A custom directory to use for the scratch space, if provided.
-  ///
-  /// Used to share the scratch space directory with the `fes_manager` process
-  /// when it is initialized separately from the build daemon (like in tests).
-  final String? scratchSpaceDir;
-
-  /// Caches [ScratchSpace]s by their directory path.
-  ///
-  /// We typically expect one scratch space to be provided per compilation,
-  /// but integration tests frequently run separate compilations on the same
-  /// entrypoint in the same process.
-  static final Map<String, ScratchSpace> _scratchSpaceCache = {};
-
-  DdcFrontendServerBuilder({this.scratchSpaceDir});
-
   @override
   Map<String, List<String>> get buildExtensions => {
     moduleExtension(ddcPlatform): [
@@ -65,7 +48,7 @@ class DdcFrontendServerBuilder implements Builder {
     final transitiveSources = [
       for (final dep in transitiveDeps) ...dep.sources,
     ];
-    var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
+    final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
     await scratchSpace.ensureAssets([
       ...module.sources,
       ...transitiveSources,
@@ -97,16 +80,6 @@ class DdcFrontendServerBuilder implements Builder {
     ];
     try {
       frontendServerState.triggerSharedCompilation(entrypointAssetId, () async {
-        final customDir = scratchSpaceDir;
-        if (customDir != null) {
-          scratchSpace = _scratchSpaceCache.putIfAbsent(
-            customDir,
-            () => ScratchSpace.existing(Directory(customDir)),
-          );
-        }
-        if (customDir != null) {
-          frontendServerState.customScratchSpacePath = customDir;
-        }
         await scratchSpace.ensureAssets([
           entrypointAssetId,
           ...module.sources,

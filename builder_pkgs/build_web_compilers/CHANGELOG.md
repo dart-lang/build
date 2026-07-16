@@ -1,3 +1,7 @@
+## 4.8.8
+
+- Allow all DDC builders to use the scratch space specified by `scratch-space-dir`.
+
 ## 4.8.7
 
 - Fix `DdcFrontendServerBuilder` retaining old compile requests.
