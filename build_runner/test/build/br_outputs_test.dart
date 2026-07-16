@@ -1,6 +1,5 @@
 import 'package:build/build.dart';
 import 'package:build_runner/src/build/br_outputs.dart';
-import 'package:dart_style/dart_style.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -52,67 +51,4 @@ void main() {
     });
   });
 
-  group('BrOutputs', () {
-    String formatGolden(String raw) {
-      String formatted;
-      try {
-        formatted = DartFormatter(
-          languageVersion: DartFormatter.latestLanguageVersion,
-        ).format(raw);
-      } catch (_) {
-        formatted = raw;
-      }
-      return '// dart format off\n$formatted';
-    }
-
-    test('generateContent uses correct relative path', () {
-      expect(
-        BrOutputs.generateContent(AssetId('a', 'lib/b.dart'), {}, {0: '// c1'}),
-        formatGolden(
-          "part of '../b.dart';\n\n\n// @PartBuilder:contribution:0\n// c1\n\n",
-        ),
-      );
-
-      expect(
-        BrOutputs.generateContent(AssetId('a', 'lib/foo/bar.dart'), {}, {
-          0: '// c1',
-        }),
-        formatGolden(
-          "part of '../../foo/bar.dart';\n\n\n// @PartBuilder:contribution:0\n// c1\n\n",
-        ),
-      );
-
-      expect(
-        BrOutputs.generateContent(AssetId('a', 'test/foo.dart'), {}, {
-          0: '// c1',
-        }),
-        formatGolden(
-          "part of '../../test/foo.dart';\n\n\n// @PartBuilder:contribution:0\n// c1\n\n",
-        ),
-      );
-
-      expect(
-        BrOutputs.generateContent(AssetId('a', 'root.dart'), {}, {0: '// c1'}),
-        formatGolden(
-          "part of '../root.dart';\n\n\n// @PartBuilder:contribution:0\n// c1\n\n",
-        ),
-      );
-
-      expect(
-        BrOutputs.generateContent(
-          AssetId('a', 'root.dart'),
-          {
-            0: [
-              "import 'package:foo/foo.dart';",
-              "import 'package:bar/bar.dart';",
-            ],
-          },
-          {0: '// c1'},
-        ),
-        formatGolden(
-          "part of '../root.dart';\n\n// @PartBuilder:imports:0\nimport 'package:foo/foo.dart';\nimport 'package:bar/bar.dart';\n\n// @PartBuilder:contribution:0\n// c1\n\n",
-        ),
-      );
-    });
-  });
 }

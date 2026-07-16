@@ -12,12 +12,14 @@ import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/dart/analysis/file_content_cache.dart';
 import 'package:build/build.dart' hide Resource;
+import 'package:built_collection/built_collection.dart';
 import 'package:path/path.dart' as p;
 
 import '../../build_plan/build_inputs.dart';
 import '../asset_content.dart';
 import '../br_outputs.dart';
 import '../builder_filesystem.dart';
+import '../shared_part.dart';
 import 'asset_ids.dart';
 
 /// The in-memory filesystem that is the analyzer's view of the build.
@@ -467,15 +469,19 @@ class GeneratedPartFileContent {
     }
     validPhases.sort();
 
-    final imports = <int, Iterable<String>>{};
-    for (final p in validPhases) {
-      if (_imports.containsKey(p)) imports[p] = _imports[p]!;
-    }
-    final contributions = <int, String>{};
-    for (final p in validPhases) {
-      if (_contributions.containsKey(p)) contributions[p] = _contributions[p]!;
-    }
-    return BrOutputs.generateContent(primaryInput, imports, contributions);
+    final sharedPart = SharedPart((b) {
+      b.primaryInput = primaryInput;
+      for (final p in validPhases) {
+        if (_imports.containsKey(p)) {
+          b.imports[p] = BuiltList<String>(_imports[p]!);
+        }
+        if (_contributions.containsKey(p)) {
+          b.contributions[p] = _contributions[p]!;
+        }
+      }
+    });
+
+    return sharedPart.generateContent();
   }
 
   FileContent fileContentAt(int phase) {

@@ -14,6 +14,7 @@ import '../../build_plan/build_step_plan.dart';
 import '../asset_content.dart';
 
 import '../br_outputs.dart';
+import '../shared_part.dart';
 import 'build_step_id.dart';
 import 'build_step_result.dart';
 import 'glob_id.dart';
@@ -221,12 +222,12 @@ class BuildState {
       final contributions = partContributionsFor(primaryInput);
       final imports = partImportsFor(primaryInput);
       if (contributions.isEmpty && imports.isEmpty) return null;
-      final content = BrOutputs.generateContent(
-        primaryInput,
-        imports,
-        contributions,
-        languageVersion: languageVersionFor(primaryInput),
-      );
+      final content = SharedPart((b) {
+        b.primaryInput = primaryInput;
+        b.languageVersion = languageVersionFor(primaryInput);
+        imports.forEach((p, list) => b.imports[p] = BuiltList<String>(list));
+        contributions.forEach((p, string) => b.contributions[p] = string);
+      }).generateContent();
       return AssetContent.string(content);
     }
     if (isSource(id)) return _sources.contentOfSource(id);

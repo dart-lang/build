@@ -31,6 +31,7 @@ import 'br_outputs.dart';
 import 'build_dirs.dart';
 import 'build_result.dart';
 import 'build_state/build_state.dart';
+import 'shared_part.dart';
 import 'build_state/build_step_id.dart';
 import 'build_state/build_step_result.dart';
 import 'build_state/glob_id.dart';
@@ -197,14 +198,22 @@ class Build {
               final partId = primaryInput.brOutputIdForPrimaryInput;
               final content = await _builderFilesystem.readOldPartFile(partId);
               if (content != null) {
-                BrOutputs.parseContent(content, (phase, imports, contribution) {
+                final sharedPart =
+                    SharedPart.parseContent(content, primaryInput);
+                
+                final allPhases = <int>{
+                  ...sharedPart.imports.keys,
+                  ...sharedPart.contributions.keys,
+                };
+
+                for (final phase in allPhases) {
                   previousBuildState!.populatePartContent(
                     primaryInput,
                     phase,
-                    imports,
-                    contribution,
+                    sharedPart.imports[phase]?.toList() ?? [],
+                    sharedPart.contributions[phase] ?? '',
                   );
-                });
+                }
               }
             }
           }
