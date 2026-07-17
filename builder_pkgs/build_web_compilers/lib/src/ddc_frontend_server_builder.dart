@@ -49,10 +49,6 @@ class DdcFrontendServerBuilder implements Builder {
       for (final dep in transitiveDeps) ...dep.sources,
     ];
     final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
-    await scratchSpace.ensureAssets([
-      ...module.sources,
-      ...transitiveSources,
-    ], buildStep);
     final root = getRootPackageName();
     final driver = await buildStep.fetchResource(
       frontendServerProxyDriverResource,
@@ -68,41 +64,51 @@ class DdcFrontendServerBuilder implements Builder {
         ? id.path
         : 'packages/${id.package}/${id.path.replaceFirst('lib/', '')}';
 
-    final changedAssetUris = [
-      for (final asset in scratchSpace.changedFilesInBuild)
-        if (asset.path.startsWith('lib/'))
-          Uri(
-            scheme: 'package',
-            path: '${asset.package}/${asset.path.replaceFirst('lib/', '')}',
-          )
-        else
-          Uri(scheme: multiRootScheme, host: '', path: '/${assetPath(asset)}'),
-    ];
     try {
+      final changedAssetUris = <Uri>[];
       frontendServerState.triggerSharedCompilation(entrypointAssetId, () async {
         await scratchSpace.ensureAssets([
           entrypointAssetId,
           ...module.sources,
           ...transitiveSources,
-          ...scratchSpace.changedFilesInBuild,
         ], buildStep);
-        final compilerOutput = await driver.recompileAndRecord(
-          entrypointArg,
-          changedAssetUris,
-          [assetPath(ddcEntrypointId.changeExtension(fesJsExtension))],
-          recompileRestart: frontendServerState.needsRecompileRestart,
-        );
-        if (compilerOutput == null) {
-          throw FrontendServerCompilationException(
-            frontendServerState.entrypointAssetId!,
-            'Frontend Server produced no output.',
+        changedAssetUris.addAll([
+          for (final asset in scratchSpace.changedFilesInBuild)
+            asset.path.startsWith('lib/')
+                ? Uri(
+                    scheme: 'package',
+                    path:
+                        '${asset.package}/${asset.path.replaceFirst('lib/', '')}',
+                  )
+                : Uri(
+                    scheme: multiRootScheme,
+                    host: '',
+                    path: '/${assetPath(asset)}',
+                  ),
+        ]);
+        scratchSpace.dispose();
+        final shouldCompile =
+            changedAssetUris.isNotEmpty ||
+            frontendServerState.needsRecompileRestart;
+        if (shouldCompile) {
+          final compilerOutput = await driver.recompileAndRecord(
+            entrypointArg,
+            changedAssetUris,
+            [assetPath(ddcEntrypointId.changeExtension(fesJsExtension))],
+            recompileRestart: frontendServerState.needsRecompileRestart,
           );
-        }
-        if (compilerOutput.errorCount != 0) {
-          throw FrontendServerCompilationException(
-            frontendServerState.entrypointAssetId!,
-            compilerOutput.errorMessage ?? 'Unknown error',
-          );
+          if (compilerOutput == null) {
+            throw FrontendServerCompilationException(
+              frontendServerState.entrypointAssetId!,
+              'Frontend Server produced no output.',
+            );
+          }
+          if (compilerOutput.errorCount != 0) {
+            throw FrontendServerCompilationException(
+              frontendServerState.entrypointAssetId!,
+              compilerOutput.errorMessage ?? 'Unknown error',
+            );
+          }
         }
       });
       await frontendServerState.waitForCompilation(entrypointAssetId);
