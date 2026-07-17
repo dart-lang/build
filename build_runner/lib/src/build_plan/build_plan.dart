@@ -5,6 +5,7 @@
 import 'package:build/build.dart' hide Builder;
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
+import 'package:glob/glob.dart';
 
 import '../build/asset_content.dart';
 import '../build/build_state/build_state.dart';
@@ -201,9 +202,21 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
     final readerWriter = buildSpec.readerWriter;
     final result = BuildInputsBuilder()..cleanBuild = true;
 
+    final conflictingOutputs = <AssetId>{};
+    final postProcessGlobs = <Glob>[];
+    for (final action in buildSpec.buildPhases.postBuildPhase.builderActions) {
+      if (!action.hideOutput) {
+        postProcessGlobs.addAll(action.sourceOutputGlobs.map(Glob.new));
+      }
+    }
+
     for (final id in filesToCheck) {
       if (await readerWriter.canRead(id)) {
-        result.sources.add(id);
+        if (postProcessGlobs.any((g) => g.matches(id.path))) {
+          conflictingOutputs.add(id);
+        } else {
+          result.sources.add(id);
+        }
       }
     }
 
@@ -213,7 +226,6 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       sources: result.sources.build(),
     );
 
-    final conflictingOutputs = <AssetId>{};
     final buildPackages = buildSpec.buildPackages;
 
     if (assetTrackerInputSources != null) {
@@ -285,7 +297,18 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       }
     }
 
+    final postProcessGlobs = <Glob>[];
+    for (final action in buildSpec.buildPhases.postBuildPhase.builderActions) {
+      if (!action.hideOutput) {
+        postProcessGlobs.addAll(action.sourceOutputGlobs.map(Glob.new));
+      }
+    }
+
     for (final id in filesToCheck) {
+      if (postProcessGlobs.any((g) => g.matches(id.path))) {
+        continue;
+      }
+
       final oldIsSource = previousBuildState.isSource(id);
       final oldExisted = previousBuildState.isFile(
         buildStepPlan: buildStepPlan,

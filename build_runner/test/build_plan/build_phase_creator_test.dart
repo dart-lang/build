@@ -432,6 +432,49 @@ void main() {
       );
     });
 
+    test('passes sourceOutputGlobs to PostBuildAction', () async {
+      final buildPackages = BuildPackages.singlePackageBuild('a', [
+        BuildPackage.forTesting(name: 'a', isOutput: true),
+      ]);
+      final buildConfigs = await BuildConfigs.load(
+        buildPackages: buildPackages,
+        testingOverrides: TestingOverrides(
+          defaultRootPackageSources: ['**'].build(),
+        ),
+      );
+      final builderDefinitions = [
+        BuilderDefinition(
+          'a:regular',
+          autoApply: AutoApply.allPackages,
+          appliesBuilders: ['a:post'],
+        ),
+        PostProcessBuilderDefinition(
+          'a:post',
+          sourceOutputGlobs: ['**/*.slang.dart'],
+        ),
+      ];
+
+      final phases = await BuildPhaseCreator(
+        builderFactories: BuilderFactories(
+          {
+            'a:regular': [CoolBuilder.new],
+          },
+          postProcessBuilderFactories: {
+            'a:post': (_) => _ValidPostProcessBuilder(),
+          },
+        ),
+        buildPackages: buildPackages,
+        buildConfigs: buildConfigs,
+        builderDefinitions: builderDefinitions,
+        builderConfigOverrides: BuiltMap(),
+        isReleaseBuild: false,
+      ).createBuildPhases();
+
+      expect(phases.postBuildPhase, isNotNull);
+      final action = phases.postBuildPhase!.builderActions.first;
+      expect(action.sourceOutputGlobs, equals(['**/*.slang.dart']));
+    });
+
     test(
       'does not allow post process builders with capturing inputs',
       () async {
@@ -501,4 +544,12 @@ class _InvalidPostProcessBuilder extends PostProcessBuilder {
 
   @override
   Iterable<String> get inputExtensions => const ['lib/{{}}.dart'];
+}
+
+class _ValidPostProcessBuilder extends PostProcessBuilder {
+  @override
+  Iterable<String> get inputExtensions => ['.dart'];
+
+  @override
+  Future<void> build(PostProcessBuildStep buildStep) async {}
 }

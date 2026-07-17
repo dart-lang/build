@@ -233,6 +233,7 @@ class BuildPhaseCreator {
         generateFor: targetConfig?.generateFor ?? builderConfig.generateFor,
         hideOutput: builderDefinition.hideOutput,
         targetSources: buildTarget.sources,
+        sourceOutputGlobs: builderDefinition.sourceOutputGlobs,
       );
       result.add(builderAction);
     }
