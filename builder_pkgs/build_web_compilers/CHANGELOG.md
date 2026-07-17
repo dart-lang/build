@@ -1,3 +1,6 @@
+## 4.8.9
+- Fix an issue where `DdcFrontendServerBuilder` accumulates changed files across builds.
+
 ## 4.8.8
 
 - Allow all DDC builders to use the scratch space specified by `scratch-space-dir`.
