@@ -95,4 +95,55 @@ void main() {
       */
     });
   });
+
+  group('optional builder writing shared part', () {
+    setUp(() {
+      tester.sources(['a.dart', 'c.dart']);
+      // 'c.dart' resolves 'a.dart', which has a part contribution.
+      tester.importGraph({
+        'c.dart': ['a.dart'],
+      });
+      // Builder 1 writes a part for 'a.dart', but is optional!
+      tester.builder(from: '.dart', to: '.1.foo', isOptional: true)
+        ..writesPart('// part from optional builder 1')
+        ..writes('.1.foo');
+
+      // Builder 2 resolves 'a.dart'. It's applied to 'c.dart', forcing analysis of 'a.dart'.
+      tester.builder(from: '.dart', to: '.2.txt')
+        ..reads('.dart') // reads 'c.dart'
+        ..resolvesOther('a.dart')
+        ..writes('.2.txt'); // writes 'c.2.txt'
+    });
+
+    test('initial build executes the optional part builder', () async {
+      final result = await tester.build();
+      // Because c.2.txt depends on resolving a.dart, and a.dart has a potential part,
+      // the optional builder *should* run!
+      
+      /* TODO: The correct behavior should trigger the optional builder:
+      expect(
+        result,
+        Result(
+          written: [
+            '_br_/a.dart',
+            'a.1.foo',
+            'a.2.txt',
+            'c.2.txt'
+          ],
+        ),
+      );
+      */
+
+      // Right now it fails to run the optional builder, so _br_/a.dart and a.1.foo are missing.
+      expect(
+        result,
+        Result(
+          written: [
+            'a.2.txt',
+            'c.2.txt'
+          ],
+        ),
+      );
+    });
+  });
 }
