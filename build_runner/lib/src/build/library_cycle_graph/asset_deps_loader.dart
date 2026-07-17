@@ -6,6 +6,7 @@ import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:build/build.dart';
 
+import '../br_outputs.dart';
 import '../builder_filesystem.dart';
 import 'asset_deps.dart';
 import 'phased_asset_deps.dart';
@@ -17,6 +18,7 @@ class AssetDepsLoader {
 
   final BuilderFilesystem _buildFilesystem;
   final int phase;
+  final List<int> runningAtPhases = [];
 
   AssetDepsLoader(this._buildFilesystem, this.phase);
   factory AssetDepsLoader.fromDeps(PhasedAssetDeps deps) =>
@@ -24,9 +26,15 @@ class AssetDepsLoader {
 
   /// Reads [id]
   ///
-  /// If [id] will be generated at a phase equal to or after [phase], the
   /// result is incomplete, with an expiry phase.
   Future<PhasedValue<AssetDeps>> load(AssetId id) async {
+    for (final step in _buildFilesystem.buildStepPlan.partContributorStepsFor(id)) {
+      if (step.phaseNumber < phase) {
+        await _buildFilesystem.assetBuilder?.call(id.sharedPartIdForPrimaryInput);
+        break;
+      }
+    }
+    
     final content = await _buildFilesystem.readPhased(phase, id);
 
     return PhasedValue((b) {
@@ -86,6 +94,9 @@ class _InMemoryAssetDepsLoader implements AssetDepsLoader {
   // run, so incomplete data won't actually be used.
   @override
   int get phase => 0xffffffff;
+
+  @override
+  final List<int> runningAtPhases = [];
 
   @override
   ExpiringValue<AssetDeps> _parse(AssetId id, ExpiringValue<String> content) =>

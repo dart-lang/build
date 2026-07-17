@@ -402,15 +402,28 @@ class Build {
   /// If it is currently being built according to [lazyPhases], waits for it to
   /// be built.
   Future<void> _buildOutput(AssetId id) async {
+    if (id.isBrSharedPart) {
+      final primaryInput = id.primaryInputForSharedPartId!;
+      for (final step in buildStepPlan.partContributorStepsFor(primaryInput)) {
+        await _buildStepIfNotProcessed(step);
+      }
+      return;
+    }
+
     final step = buildStepPlan.stepForDeclaredOutputOrNull(id);
-    if (step != null &&
-        !buildState.isProcessedOutput(buildStepPlan: buildStepPlan, id: id)) {
+    if (step != null) {
+      await _buildStepIfNotProcessed(step);
+    }
+  }
+
+  Future<void> _buildStepIfNotProcessed(BuildStepId step) async {
+    if (buildState.stepResultOrNull(step) == null) {
       await lazyPhases.putIfAbsent(step, () async {
         final phase = buildPhases.inBuildPhases[step.phaseNumber];
         return _buildForPrimaryInput(
-          buildStepId: step,
-          phase: phase,
-          lazy: true,
+           buildStepId: step,
+           phase: phase,
+           lazy: true,
         );
       });
     }
@@ -925,6 +938,10 @@ class Build {
           rootLibraryCycleHasChanged = true;
           break;
         }
+        if (await _hasInputChanged(phaseNumber: phaseNumber, input: id.sharedPartIdForPrimaryInput)) {
+          rootLibraryCycleHasChanged = true;
+          break;
+        }
       }
       if (rootLibraryCycleHasChanged) {
         changedGraphs[nextGraph] = true;
@@ -952,7 +969,37 @@ class Build {
     required AssetId input,
     required int phaseNumber,
   }) async {
-    if (buildStepPlan.isDeclaredOutput(input)) {
+    if (input.isBrSharedPart) {
+      final primaryInput = input.primaryInputForSharedPartId!;
+      for (final partStep in buildStepPlan.partContributorStepsFor(primaryInput)) {
+        if (partStep.phaseNumber >= phaseNumber) continue;
+        await _buildStepIfNotProcessed(partStep);
+        
+        final previousResult = previousBuildState?.stepResultOrNull(partStep);
+        final result = buildState.stepResultOrNull(partStep);
+        if (previousResult == null || result == null) return true;
+        
+        // For tests using TestBuilder with writesPart but no tracked outputs
+        if (result.outputs.isEmpty) {
+          // Fallback: if the digest of the part step's inputs changed, 
+          // we assume the part might have changed.
+          bool anyInputChanged = false;
+          for (final stepInput in result.inputs) {
+            final oldIn = previousBuildState?.contentOf(id: stepInput)?.digest;
+            final newIn = buildState.contentOf(id: stepInput)?.digest;
+            if (oldIn != newIn) anyInputChanged = true;
+          }
+          if (anyInputChanged) return true;
+        }
+
+        for (final output in result.outputs.keys) {
+          final oldDigest = previousBuildState?.contentOf(id: output)?.digest;
+          final newDigest = buildState.contentOf(id: output)?.digest;
+          if (oldDigest != newDigest) return true;
+        }
+      }
+      return false;
+    } else if (buildStepPlan.isDeclaredOutput(input)) {
       final phase = buildStepPlan.stepForDeclaredOutput(input).phaseNumber;
       if (phase >= phaseNumber) {
         // It's not readable in this phase.

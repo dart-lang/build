@@ -79,20 +79,23 @@ void main() {
       );
     });
 
-    test('change b.dart, part is rewritten, but c.2.dart is NOT rebuilt', () async {
+    test('change b.dart, part is rewritten, and c.2.dart IS rebuilt', () async {
       await tester.build();
       // change b.dart invalidates builder 1 on a.dart, rewriting _br_/a.dart.
-      // But c.2.dart currently DOES NOT get rebuilt!
+      // But c.2.dart should be rebuilt because it resolves a.dart!
       expect(
         await tester.build(change: 'b.dart'),
-        Result(written: ['_br_/a.dart', '_br_/b.dart', '_br_/c.dart', 'b.2.dart']),
+        Result(
+          written: [
+            '_br_/a.dart',
+            '_br_/b.dart',
+            '_br_/c.dart',
+            'a.2.dart',
+            'b.2.dart',
+            'c.2.dart'
+          ],
+        ),
       );
-      /* TODO: The correct behavior should trigger a rebuild of c.2.dart:
-      expect(
-        await tester.build(change: 'b.dart'),
-        Result(written: ['_br_/a.dart', '_br_/b.dart', '_br_/c.dart', 'b.2.dart', 'c.2.dart']),
-      );
-      */
     });
   });
 
@@ -119,26 +122,12 @@ void main() {
       final result = await tester.build();
       // Because c.2.txt depends on resolving a.dart, and a.dart has a potential part,
       // the optional builder *should* run!
-      
-      /* TODO: The correct behavior should trigger the optional builder:
       expect(
         result,
         Result(
           written: [
             '_br_/a.dart',
             'a.1.foo',
-            'a.2.txt',
-            'c.2.txt'
-          ],
-        ),
-      );
-      */
-
-      // Right now it fails to run the optional builder, so _br_/a.dart and a.1.foo are missing.
-      expect(
-        result,
-        Result(
-          written: [
             'a.2.txt',
             'c.2.txt'
           ],

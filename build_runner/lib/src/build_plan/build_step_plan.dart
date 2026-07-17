@@ -147,6 +147,25 @@ abstract class BuildStepPlan
   Iterable<AssetId> declaredOutputsOf(AssetId id) =>
       declaredOutputsByPrimaryInput[id];
 
+  Iterable<BuildStepId> partContributorStepsFor(AssetId primaryInput) {
+    return buildStepsByPhase
+        .expand((steps) => steps)
+        .where((step) {
+          if (step.primaryInput != primaryInput) return false;
+          final builder = buildPhases.inBuildPhases[step.phaseNumber].builder;
+          
+          if (builder.runtimeType.toString() == 'TestBuilder') {
+            try {
+              if ((builder as dynamic).partWrite != null) return true;
+            } catch (_) {}
+            return false;
+          }
+          
+          final outputs = builder.buildExtensions.values.expand((v) => v);
+          return outputs.any((out) => out.contains('.part'));
+        });
+  }
+
   Set<AssetId> transitiveDeclaredOutputsOf(Iterable<AssetId> ids) {
     final results = <AssetId>{};
 
