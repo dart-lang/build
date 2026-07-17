@@ -4,6 +4,8 @@
 * It is now an error to generate mocks for non-JS interop extension types.
   Instead, mock the representation type and cast to the extension type where
   needed.
+* Avoid generating fake classes for dummy values of ProtobufEnum subclasses or
+  GeneratedMessage subclasses from the protobuf package.
 
 ## 5.7.0
 

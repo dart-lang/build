@@ -2040,6 +2040,16 @@ class _MockClassInfo {
           ..url = 'dart:async'
           ..types.add(elementType);
       }).property('empty').call([]);
+    } else if (type.isProtobufEnum) {
+      return referImported(
+        type.element.name!,
+        type.element.library.uri.toString(),
+      ).property('values').property('first');
+    } else if (type.isProtobufMessage) {
+      return referImported(
+        type.element.name!,
+        type.element.library.uri.toString(),
+      ).call([]);
     } else if (type.isDartTypedDataSealed) {
       // These types (XXXList + ByteData) from dart:typed_data are
       // sealed, e.g. "non-subtypeable", but they
@@ -3008,6 +3018,26 @@ extension on analyzer.DartType {
   bool get isFutureOfVoid =>
       isDartAsyncFuture &&
       (this as analyzer.InterfaceType).typeArguments.first is analyzer.VoidType;
+
+  bool get isProtobufEnum {
+    final element = this.element;
+    if (element is! ClassElement) return false;
+    final supertype = element.supertype?.element;
+    final library = supertype?.library;
+    return library?.uri.toString() ==
+            'package:protobuf/src/protobuf/internal.dart' &&
+        supertype?.name == 'ProtobufEnum';
+  }
+
+  bool get isProtobufMessage {
+    final element = this.element;
+    if (element is! ClassElement) return false;
+    final supertype = element.supertype?.element;
+    final library = supertype?.library;
+    return library?.uri.toString() ==
+            'package:protobuf/src/protobuf/internal.dart' &&
+        supertype?.name == 'GeneratedMessage';
+  }
 
   /// Returns whether this type is a sealed type from the dart:typed_data
   /// library.
