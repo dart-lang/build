@@ -4,7 +4,6 @@
 
 import 'dart:async';
 
-import 'package:build/build.dart';
 import 'package:stream_transform/stream_transform.dart';
 
 import '../../bootstrap/build_process_state.dart';
@@ -22,18 +21,13 @@ class Watcher {
   final BuildPlan _buildPlan;
   final BuildSeries _buildSeries;
 
-  /// Pending expected delete events from the build.
-  final Set<AssetId> _expectedDeletes;
-
-  Watcher._(this._buildPlan, this._buildSeries, this._expectedDeletes);
+  Watcher._(this._buildPlan, this._buildSeries);
 
   BuildPackages get buildPackages => _buildPlan.buildSpec.buildPackages;
 
   factory Watcher({required BuildPlan buildPlan, required Future<void> until}) {
-    final expectedDeletes = <AssetId>{};
-    buildPlan = buildPlan.rebuild((b) => b.onDelete = expectedDeletes.add);
     final buildSeries = BuildSeries(buildPlan);
-    final result = Watcher._(buildPlan, buildSeries, expectedDeletes);
+    final result = Watcher._(buildPlan, buildSeries);
     result._run(until);
     return result;
   }
@@ -76,9 +70,7 @@ class Watcher {
           _buildPlan.buildSpec.testingOverrides.debounceDelay ??
               const Duration(milliseconds: 250),
         )
-        .asyncMap(
-          (changes) => _buildSeries.filterChanges(changes, _expectedDeletes),
-        )
+        .asyncMap(_buildSeries.filterChanges)
         .where((changes) => changes.isNotEmpty)
         .takeUntil(terminate)
         .asyncMapBuffer(_doBuild)
@@ -100,7 +92,6 @@ class Watcher {
 
   Future<BuildResult> _doBuild(List<List<AssetChange>> changes) async {
     final mergedChanges = collectChanges(changes);
-    _expectedDeletes.clear();
     final result = await _buildSeries.run(
       mergedChanges,
       recentlyBootstrapped: false,

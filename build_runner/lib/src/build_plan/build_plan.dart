@@ -32,7 +32,6 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
   ReaderWriter get readerWriter => buildSpec.readerWriter;
 
   /// Callback that gets notified of deletes.
-  void Function(AssetId)? get onDelete;
 
   /// Inputs in the source tree that conflict with declared outputs and must be
   /// deleted.
@@ -153,7 +152,6 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         previousBuild: previousBuild,
         buildDirs: buildDirs,
         buildFilters: buildFilters,
-        onDelete: onDelete,
         filesToCheck: filesToCheck,
         // Updates are being made to a `BuildPlan` that didn't actually run.
         // That means the conflicting file check was already done when that
@@ -167,7 +165,6 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         previousBuildStepPlan: buildStepPlan,
         buildDirs: buildDirs,
         buildFilters: buildFilters,
-        onDelete: onDelete,
         filesToCheck: filesToCheck,
       );
     }
@@ -194,7 +191,6 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
     required PreviousBuild previousBuild,
     required BuiltSet<BuildDirectory> buildDirs,
     required BuiltSet<BuildFilter> buildFilters,
-    void Function(AssetId)? onDelete,
     required Set<AssetId> filesToCheck,
     Set<AssetId>? assetTrackerInputSources,
   }) async {
@@ -253,7 +249,6 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       b.buildSpec.replace(buildSpec);
       b.previousBuild.replace(previousBuild);
       b.buildStepPlan.replace(buildStepPlan);
-      b.onDelete = onDelete;
       b.conflictingOutputs.replace(conflictingOutputs);
       b.buildInputs.replace(result.build());
       b.buildDirs.replace(buildDirs);
@@ -268,7 +263,6 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
     required BuildStepPlan previousBuildStepPlan,
     required BuiltSet<BuildDirectory> buildDirs,
     required BuiltSet<BuildFilter> buildFilters,
-    void Function(AssetId)? onDelete,
     required Set<AssetId> filesToCheck,
   }) async {
     final readerWriter = buildSpec.readerWriter;
@@ -363,7 +357,6 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       b.buildSpec.replace(buildSpec);
       b.previousBuild.replace(previousBuild);
       b.buildStepPlan.replace(buildStepPlan);
-      b.onDelete = onDelete;
       b.buildInputs = buildInputs;
       b.buildDirs.replace(buildDirs);
       b.buildFilters.replace(buildFilters);

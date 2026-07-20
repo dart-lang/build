@@ -84,7 +84,6 @@ Future<TestBuildersResult> testPhases(
   bool verbose = false,
   Set<BuildDirectory> buildDirs = const {},
   Set<BuildFilter> buildFilters = const {},
-  void Function(AssetId id)? onDelete,
 }) async {
   buildPackages ??= BuildPackages.singlePackageBuild('a', [
     BuildPackage.forTesting(name: 'a', isOutput: true),
@@ -127,7 +126,7 @@ Future<TestBuildersResult> testPhases(
     b.verbose = verbose;
   });
 
-  var buildPlan = await BuildPlan.load(
+  final buildPlan = await BuildPlan.load(
     await BuildSpec.load(
       builderFactories: builderFactories,
       // ignore: invalid_use_of_visible_for_testing_member
@@ -144,13 +143,8 @@ Future<TestBuildersResult> testPhases(
     ),
   );
 
-  if (onDelete != null) {
-    buildPlan = buildPlan.rebuild((b) => b.onDelete = onDelete);
-  }
-
-  BuildResult result;
   final buildSeries = BuildSeries(buildPlan);
-  result = await buildSeries.run({}, recentlyBootstrapped: true);
+  final result = await buildSeries.run({}, recentlyBootstrapped: true);
   await buildSeries.close();
 
   if (checkBuildStatus) {

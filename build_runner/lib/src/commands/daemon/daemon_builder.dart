@@ -219,7 +219,6 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     required BuildPlan buildPlan,
     required DaemonOptions daemonOptions,
   }) async {
-    final expectedDeletes = <AssetId>{};
     final outputStreamController = StreamController<ServerLog>(sync: true);
 
     buildLog.configuration = buildLog.configuration.rebuild((b) {
@@ -227,7 +226,6 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         outputStreamController.add(ServerLog.fromLogRecord(record));
       };
     });
-    buildPlan = buildPlan.rebuild((b) => b.onDelete = expectedDeletes.add);
 
     final buildSeries = BuildSeries(buildPlan);
 
@@ -239,9 +237,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
               buildPlan.buildSpec.testingOverrides.debounceDelay ??
                   const Duration(milliseconds: 250),
             )
-            .asyncMap(
-              (changes) => buildSeries.filterChanges(changes, expectedDeletes),
-            )
+            .asyncMap(buildSeries.filterChanges)
             .where((changes) => changes.isNotEmpty)
             .map(
               (changes) => changes
