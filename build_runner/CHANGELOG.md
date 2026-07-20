@@ -1,3 +1,17 @@
+## 2.15.4-wip
+
+- New default output behavior: always fix incorrect generated files. For
+  example: if you "dart run build_runner build", modify a generated file,
+  then build again, it will be fixed, undoing your modifications.
+- New option, `--keep-modified-outputs`. Use this to get the old output
+  behavior: manual modifications to generated files are kept. They will be
+  overwritten if a build is triggered due to an input file change, a
+  configuration change or `dart run build_runner clean`.
+- New option, `--only-check`, for use in continuous builds and tests. With this
+  option `build_runner` writes nothing, but builds and compares with the files
+  already on disk. If there is any difference between disk and expected output
+  then the differences are logged and the build fails.
+
 ## 2.15.3
 
 - Simplify deletion of stale outputs: don't try to handle package renames.

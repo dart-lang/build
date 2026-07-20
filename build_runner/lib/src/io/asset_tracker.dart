@@ -11,6 +11,7 @@ import 'package:glob/glob.dart';
 import 'package:watcher/watcher.dart';
 
 import '../build/build_state/build_state.dart';
+import '../build/resolver/asset_ids.dart';
 import '../build_plan/build_configs.dart';
 import '../build_plan/build_packages.dart';
 import '../build_plan/build_step_plan.dart';
@@ -44,6 +45,7 @@ class AssetTracker {
       generatedSources,
       buildState,
       declaredAndActualOutputs,
+      buildStepPlan: buildStepPlan,
     );
   }
 
@@ -68,8 +70,9 @@ class AssetTracker {
     Set<AssetId> inputSources,
     Set<AssetId> generatedSources,
     BuildState buildState,
-    Iterable<AssetId> declaredAndActualOutputs,
-  ) async {
+    Iterable<AssetId> declaredAndActualOutputs, {
+    required BuildStepPlan buildStepPlan,
+  }) async {
     final allSources = <AssetId>{}
       ..addAll(inputSources)
       ..addAll(generatedSources);
@@ -99,6 +102,28 @@ class AssetTracker {
 
       final currentDigest = await _readerWriter.digest(id);
       if (currentDigest != originalDigest.digest) {
+        updates[id] = ChangeType.MODIFY;
+      }
+    }
+
+    final preExistingOutputs = declaredAndActualOutputs.toSet().intersection(
+      allSources,
+    );
+    for (final id in preExistingOutputs) {
+      final originalContent = buildState.contentOf(
+        buildStepPlan: buildStepPlan,
+        id: id,
+      );
+      if (originalContent == null) continue;
+
+      final currentDigest = await _readerWriter.digest(
+        id,
+        hidden: id.isHidden(
+          buildStepPlan: buildStepPlan,
+          buildState: buildState,
+        ),
+      );
+      if (currentDigest != originalContent.digest) {
         updates[id] = ChangeType.MODIFY;
       }
     }

@@ -91,7 +91,7 @@ class AnalysisDriverFilesystem
     }
 
     for (final id in buildInputs.deletedSources.followedBy(
-      buildInputs.deletedOutputs,
+      buildInputs.invalidOutputs,
     )) {
       final path = id.asPath;
       if (_data.remove(path) != null) {

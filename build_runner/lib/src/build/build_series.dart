@@ -6,11 +6,13 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
+import 'package:crypto/crypto.dart';
 import 'package:watcher/watcher.dart';
 
 import '../build_plan/build_directory.dart';
 import '../build_plan/build_filter.dart';
 import '../build_plan/build_plan.dart';
+import '../build_plan/output_strategy.dart';
 import '../commands/watch/asset_change.dart';
 import '../constants.dart';
 import '../io/asset_tracker.dart';
@@ -66,6 +68,9 @@ class BuildSeries {
   /// Then, no further builds are allowed.
   Future<void> get closing => _closingCompleter.future;
 
+  OutputStrategy get _outputStrategy =>
+      _buildPlan.buildSpec.buildOptions.outputStrategy;
+
   /// Filters [changes] to only changes that might trigger a build.
   Future<List<AssetChange>> filterChanges(List<AssetChange> changes) async {
     final result = <AssetChange>[];
@@ -80,9 +85,34 @@ class BuildSeries {
         continue;
       }
 
-      // Ignore any expected delete once.
-      if (change.type == ChangeType.REMOVE && _expectedDeletes.remove(id)) {
-        continue;
+      // Ignore deletes and writes done by `build_runner`, for output strategies
+      // that do deletes and writes.
+      if (_outputStrategy == .overwrite || _outputStrategy == .keep) {
+        // Ignore deletes done by `build_runner`.
+        if (change.type == .REMOVE && _expectedDeletes.remove(id)) {
+          continue;
+        }
+
+        // Ignore writes done by `build_runner`. It's necessary to check content
+        // because `package:watcher` can coalesce two modify events into one.
+        // If the first is by `build_runner` and the second is an external
+        // change then just ignoring the event would be incorrect.
+        if ((change.type == .ADD || change.type == .MODIFY) &&
+            _buildPlan.buildStepPlan.isDeclaredOutput(id)) {
+          final expectedContent = _buildPlan.previousBuild.buildState
+              ?.contentOf(id: id, buildStepPlan: _buildPlan.buildStepPlan);
+          if (expectedContent != null) {
+            try {
+              final bytes = await _buildPlan.readerWriter.readAsBytes(
+                id,
+                hidden: id.isHidden(buildStepPlan: _buildPlan.buildStepPlan),
+              );
+              if (md5.convert(bytes) == expectedContent.digest) {
+                continue;
+              }
+            } catch (_) {}
+          }
+        }
       }
 
       if (id.path.startsWith(entrypointDirectoryPath)) {
@@ -129,10 +159,10 @@ class BuildSeries {
         continue;
       }
 
-      // Ignore creation or modification of outputs.
+      // Handle modifications and creations of outputs.
       if (_buildPlan.buildStepPlan.isDeclaredOutput(id) &&
-          change.type != ChangeType.REMOVE) {
-        continue;
+          change.type != .REMOVE) {
+        if (_outputStrategy == OutputStrategy.keep) continue;
       }
 
       // It's an add of a "missing source" or a deletion of an input.
@@ -159,6 +189,7 @@ class BuildSeries {
           buildStepPlan: _buildPlan.buildStepPlan,
           buildState: _buildPlan.previousBuild.buildState ?? BuildState(),
         );
+
     return List.of(
       updates.entries.map((entry) => WatchEvent(entry.value, '${entry.key}')),
     );
@@ -230,11 +261,7 @@ class BuildSeries {
         ..buildFilters.replace(buildFilters!),
     );
 
-    if (firstBuild) {
-      if (updates.isNotEmpty) {
-        _buildPlan = await _buildPlan.updateForFileChanges(updates);
-      }
-    } else {
+    if (!firstBuild || updates.isNotEmpty) {
       _buildPlan = await _buildPlan.updateForFileChanges(updates);
     }
 
@@ -253,7 +280,13 @@ class BuildSeries {
   Future<BuildResult> _runBuildAndWrite(Build build) async {
     var result = await build.run();
 
-    await _writeBuildOutput(result);
+    if (_outputStrategy == .verify) {
+      if (result.status == .success) {
+        result = await _verifyBuildOutput(result);
+      }
+    } else {
+      await _writeBuildOutput(result);
+    }
     result = await _createMergedOutputDirectories(result);
 
     _buildPlan = build.buildPlan.withCompatiblePreviousBuild(
@@ -262,7 +295,7 @@ class BuildSeries {
     );
     return result.copyWith(
       errors: buildLog.finishBuild(
-        result: result.status == BuildStatus.success,
+        result: result.status == .success,
         outputs: result.outputs.length,
       ),
     );
@@ -272,46 +305,7 @@ class BuildSeries {
   ///
   /// Serializes and writes the updated `asset_graph.json`.
   Future<void> _writeBuildOutput(BuildResult result) async {
-    // Outputs to delete and whether each is hidden.
-    final deletes = <AssetId, bool>{
-      // Conflicting outputs and incompatible outputs are always not hidden.
-      for (final id in _buildPlan.conflictingOutputs) id: false,
-      for (final id
-          in _buildPlan.previousBuild.incompatibleBuildOutputsToDelete)
-        id: false,
-    };
-
-    final previousState = _buildPlan.previousBuild.buildState;
-    if (previousState != null) {
-      // Delete outputs that are no longer outputs.
-      final currentState = result.buildState!;
-      for (final stepResult in previousState.actualStepResults) {
-        for (final id in stepResult.outputs.keys) {
-          final stepId = _buildPlan.buildStepPlan.stepForDeclaredOutputOrNull(
-            id,
-          );
-          if (stepId == null) {
-            // Step was removed from the build.
-            deletes[id] = stepResult.isHidden;
-          } else {
-            final stepResultOrNull = currentState.stepResultOrNull(stepId);
-            if (stepResultOrNull != null &&
-                !stepResultOrNull.outputs.containsKey(id)) {
-              // Step ran but did not produce the output.
-              deletes[id] = stepResult.isHidden;
-            }
-          }
-        }
-      }
-      // Delete post process outputs.
-      for (final postProcessResult in previousState.actualPostProcessResults) {
-        for (final id in postProcessResult.outputs.keys) {
-          if (!currentState.isActualPostOutput(id)) {
-            deletes[id] = postProcessResult.hidden;
-          }
-        }
-      }
-    }
+    final deletes = _computeDeletes(result);
 
     if (_buildPlan.buildInputs.cleanBuild) {
       final generatedOutputDirectoryId = AssetId(
@@ -359,6 +353,109 @@ class BuildSeries {
       assetGraphId,
       assetGraphContent.bytes,
     );
+  }
+
+  /// Outputs to delete and whether each is hidden.
+  Map<AssetId, bool> _computeDeletes(BuildResult result) {
+    final deletes = <AssetId, bool>{
+      for (final id in _buildPlan.conflictingOutputs) id: false,
+      for (final id
+          in _buildPlan.previousBuild.incompatibleBuildOutputsToDelete)
+        id: false,
+    };
+
+    final previousState = _buildPlan.previousBuild.buildState;
+    if (previousState != null) {
+      final currentState = result.buildState!;
+      for (final stepResult in previousState.actualStepResults) {
+        for (final id in stepResult.outputs.keys) {
+          final stepId = _buildPlan.buildStepPlan.stepForDeclaredOutputOrNull(
+            id,
+          );
+          if (stepId == null) {
+            deletes[id] = stepResult.isHidden;
+          } else {
+            final stepResultOrNull = currentState.stepResultOrNull(stepId);
+            if (stepResultOrNull != null &&
+                !stepResultOrNull.outputs.containsKey(id)) {
+              deletes[id] = stepResult.isHidden;
+            }
+          }
+        }
+      }
+      for (final postProcessResult in previousState.actualPostProcessResults) {
+        for (final id in postProcessResult.outputs.keys) {
+          if (!currentState.isActualPostOutput(id)) {
+            deletes[id] = postProcessResult.hidden;
+          }
+        }
+      }
+    }
+    return deletes;
+  }
+
+  /// Verifies outputs on disk match [result].
+  ///
+  /// If there are unexpected, missing, or incorrect outputs on disk, logs them
+  /// and returns a failed result.
+  Future<BuildResult> _verifyBuildOutput(BuildResult result) async {
+    final allDeletes = _computeDeletes(result);
+    final deletes = {
+      for (final MapEntry(key: id, value: hidden) in allDeletes.entries)
+        if (!hidden) id,
+    };
+
+    final unexpected = <AssetId>[];
+    final missing = <AssetId>[];
+    final incorrect = <AssetId>[];
+
+    for (final output in result.outputs) {
+      deletes.remove(output);
+      final hidden = output.isHidden(
+        buildStepPlan: _buildPlan.buildStepPlan,
+        buildState: result.buildState!,
+      );
+      if (hidden) continue;
+
+      final expectedContent = result.buildState!.contentOf(
+        id: output,
+        buildStepPlan: _buildPlan.buildStepPlan,
+      )!;
+      final exists = await _buildPlan.readerWriter.canRead(output);
+      if (!exists) {
+        missing.add(output);
+      } else {
+        final existingBytes = await _buildPlan.readerWriter.readAsBytes(output);
+        final existingDigest = AssetContent.bytes(existingBytes).digest;
+        if (existingDigest != expectedContent.digest) {
+          incorrect.add(output);
+        }
+      }
+    }
+
+    for (final toDelete in deletes) {
+      final exists = await _buildPlan.readerWriter.canRead(toDelete);
+      if (exists) {
+        unexpected.add(toDelete);
+      }
+    }
+
+    if (unexpected.isNotEmpty || missing.isNotEmpty || incorrect.isNotEmpty) {
+      final lines = <String>[
+        for (final id in unexpected) 'U ${buildLog.renderId(id)}',
+        for (final id in missing) 'M ${buildLog.renderId(id)}',
+        for (final id in incorrect) 'I ${buildLog.renderId(id)}',
+      ]..sort();
+
+      final message = StringBuffer(
+        'Verify failed due to Incorrect|Missing|Unexpected:\n\n',
+      );
+      message.write(lines.join('\n'));
+      buildLog.error(message.toString());
+
+      return result.copyWith(status: BuildStatus.failure);
+    }
+    return result;
   }
 
   /// Creates merged output directories if they are configured.
