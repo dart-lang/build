@@ -359,17 +359,6 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         .toSet();
     buildInputs.deletedOutputs.addAll(deletedOutputs);
 
-    for (final id in deletedOutputs) {
-      await readerWriter.delete(
-        id,
-        hidden: id.isHidden(
-          buildStepPlan: previousBuildStepPlan,
-          buildState: previousBuild.buildState,
-        ),
-        onDelete: onDelete,
-      );
-    }
-
     return BuildPlan((b) {
       b.buildSpec.replace(buildSpec);
       b.previousBuild.replace(previousBuild);
