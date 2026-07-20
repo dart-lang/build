@@ -34,7 +34,8 @@ abstract class BuildInputs implements Built<BuildInputs, BuildInputsBuilder> {
   /// Empty if [cleanBuild].
   BuiltSet<AssetId> get deletedSources;
 
-  /// Generated outputs that were deleted from disk.
+  /// Generated outputs that will be deleted from disk at the end of the build
+  /// because their input is gone.
   ///
   /// Empty if [cleanBuild].
   BuiltSet<AssetId> get deletedOutputs;
