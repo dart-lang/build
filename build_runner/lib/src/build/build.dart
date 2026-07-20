@@ -474,6 +474,9 @@ class Build {
         phase: phase,
         anyOutputs: step.outputs.isNotEmpty,
         anyChangedOutputs: step.outputs.keys.any(_isChangedOutput),
+        anyFixedOutputs: step.outputs.keys.any(
+          buildPlan.buildInputs.deletedOutputs.contains,
+        ),
         lazy: lazy,
       );
     } else {

@@ -20,6 +20,7 @@ import 'build_filter.dart';
 import 'build_inputs.dart';
 import 'build_spec.dart';
 import 'build_step_plan.dart';
+import 'output_strategy.dart';
 import 'previous_build.dart';
 
 part 'build_plan.g.dart';
@@ -285,9 +286,10 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         buildStepPlan: buildStepPlan,
         id: id,
       );
-      final oldContent = oldIsSource
-          ? previousBuildState.contentOfSource(id)
-          : null;
+      final oldContent = previousBuildState.contentOf(
+        id: id,
+        buildStepPlan: previousBuildStepPlan,
+      );
       var exists = false;
       AssetContent? newContent;
 
@@ -324,8 +326,13 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
           oldContent != null &&
           exists &&
           oldContent.digest != newContent!.digest) {
-        buildInputs.updatedSources.add(id);
-        buildInputs.sourceContents[id] = newContent;
+        if (oldIsSource) {
+          buildInputs.updatedSources.add(id);
+          buildInputs.sourceContents[id] = newContent;
+        } else if (buildSpec.buildOptions.outputStrategy !=
+            OutputStrategy.keep) {
+          buildInputs.deletedOutputs.add(id);
+        }
       }
     }
 

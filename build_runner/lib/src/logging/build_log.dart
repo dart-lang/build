@@ -402,12 +402,15 @@ class BuildLog {
     required bool lazy,
     required bool anyOutputs,
     required bool anyChangedOutputs,
+    bool anyFixedOutputs = false,
   }) {
     final phaseName = phase.name(lazy: lazy);
     final progress = _getProgress(phase: phase, lazy: lazy);
     progress.nextInput = null;
     if (anyChangedOutputs) {
       progress.builtNew++;
+    } else if (anyFixedOutputs) {
+      progress.builtFixed++;
     } else if (anyOutputs) {
       progress.builtSame++;
     } else {
@@ -683,6 +686,8 @@ class BuildLog {
       if (progress.notTriggered != 0)
         '${separator()}${progress.notTriggered} not triggered',
       if (progress.builtNew != 0) '${separator()}${progress.builtNew} output',
+      if (progress.builtFixed != 0)
+        '${separator()}${progress.builtFixed} fixed',
       if (progress.builtSame != 0) '${separator()}${progress.builtSame} same',
       if (progress.builtNothing != 0)
         '${separator()}${progress.builtNothing} no-op',
@@ -761,6 +766,9 @@ class _PhaseProgress {
   /// Build steps that ran and output new or different output.
   int builtNew = 0;
 
+  /// Build steps that ran but output the same as previously, but restored it.
+  int builtFixed = 0;
+
   /// Build steps that ran but output the same output as they did previously.
   int builtSame = 0;
 
@@ -774,7 +782,7 @@ class _PhaseProgress {
 
   /// The number of build steps that have run in this phase.
   int get runCount =>
-      skipped + notTriggered + builtNew + builtSame + builtNothing;
+      skipped + notTriggered + builtNew + builtSame + builtFixed + builtNothing;
 
   /// Whether this progress in displayed.
   ///

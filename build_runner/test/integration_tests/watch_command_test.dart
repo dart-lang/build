@@ -75,6 +75,11 @@ void main() async {
     await watch.expect('wrote 1 output');
     expect(tester.read('root_pkg/web/a.txt.copy'), 'updated');
 
+    // Modified output.
+    tester.write('root_pkg/web/a.txt.copy', 'manually modified');
+    await watch.expect('wrote 1 output');
+    expect(tester.read('root_pkg/web/a.txt.copy'), 'updated');
+
     // File change during build.
     tester.write('root_pkg/web/a.txt', 'a');
     await watch.expect('builder_pkg:test_builder');

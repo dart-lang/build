@@ -10,6 +10,7 @@ import 'package:build_daemon/constants.dart';
 import 'package:built_collection/built_collection.dart';
 
 import 'bootstrap/compile_type.dart';
+import 'build_plan/output_strategy.dart';
 import 'internal.dart';
 
 enum CommandType {
@@ -70,11 +71,30 @@ class BuildRunnerCommandLine {
     return CompileStrategy.tryAot;
   }
 
+  OutputStrategy get outputStrategy {
+    if (argResults?.wasParsed(onlyCheckOption) ?? false) {
+      if (argResults?.wasParsed(keepModifiedOutputsOption) ?? false) {
+        throw UsageException(
+          'Cannot specify both --$onlyCheckOption and '
+          '--$keepModifiedOutputsOption',
+          usage,
+        );
+      }
+      return OutputStrategy.verify;
+    }
+    if (argResults?.wasParsed(keepModifiedOutputsOption) ?? false) {
+      return OutputStrategy.keep;
+    }
+    return OutputStrategy.overwrite;
+  }
+
   static Future<BuildRunnerCommandLine?> parse(Iterable<String> arguments) =>
       _CommandRunner().run(arguments);
 
-  BuildRunnerCommandLine(this.type, ArgResults argResults)
-    : arguments = argResults.arguments.build(),
+  final ArgResults? argResults;
+
+  BuildRunnerCommandLine(this.type, this.argResults)
+    : arguments = argResults!.arguments.build(),
       rest = argResults.rest.build(),
       buildFilter = argResults.listNamed(buildFilterOption),
       buildMode = argResults.stringNamed(buildModeFlag),
@@ -161,6 +181,8 @@ const symlinkOption = 'symlink';
 const verboseDurationsOption = 'verbose-durations';
 const verboseOption = 'verbose';
 const workspaceOption = 'workspace';
+const keepModifiedOutputsOption = 'keep-modified-outputs';
+const onlyCheckOption = 'only-check';
 
 // Removed options, kept to not break old command lines.
 const deleteFilesByDefaultOption = 'delete-conflicting-outputs';
@@ -277,6 +299,20 @@ class _Build extends _Command<BuildRunnerCommandLine> {
         defaultsTo: symlinksDefault,
         negatable: true,
         help: 'Symlink files in the output directories, instead of copying.',
+      )
+      ..addFlag(
+        keepModifiedOutputsOption,
+        defaultsTo: false,
+        negatable: false,
+        help: 'Leaves manual modifications to generated files in place.',
+      )
+      ..addFlag(
+        onlyCheckOption,
+        defaultsTo: false,
+        negatable: false,
+        help:
+            'Fails the build if there are out of date or modified outputs '
+            'without writing to disk. Typically used in CI.',
       )
       ..addMultiOption(
         buildFilterOption,
