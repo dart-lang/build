@@ -165,7 +165,7 @@ class InMemoryAssetPathProvider implements AssetPathProvider {
   String pathFor(
     AssetId id, {
     required bool hide,
-    bool checkDeleteAllowed = false,
+    bool checkWriteAllowed = false,
   }) {
     if (hide) {
       id = AssetPathProvider.hide(id, outputRootPackage);

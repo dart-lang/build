@@ -215,36 +215,11 @@ class BuildPackages implements AssetPathProvider {
   String pathFor(
     AssetId id, {
     required bool hide,
-    bool checkDeleteAllowed = false,
+    bool checkWriteAllowed = false,
   }) {
-    if (checkDeleteAllowed) {
-      // Delete is allowed if it's a hidden output in `outputRoot` or if it's a
-      // package in the build.
-      final isUnderCacheDirectory = id.path.startsWith('$cacheDirectoryPath/');
-      final deleteIsAllowed =
-          hide ||
-          (isUnderCacheDirectory && id.package == outputRoot) ||
-          outputPackages.contains(id.package);
-      if (!deleteIsAllowed) {
-        if (isUnderCacheDirectory) {
-          throw InvalidOutputException(
-            id,
-            'Tried to delete from $cacheDirectoryPath in wrong package, should '
-            'be $outputRoot.',
-          );
-        } else {
-          throw InvalidOutputException(
-            id,
-            'Tried to delete from package not in the build. Packages in the '
-            'build are: ${outputPackages.join(', ')}',
-          );
-        }
-      }
-    }
+    if (hide) id = AssetPathProvider.hide(id, outputRoot);
+    if (checkWriteAllowed) throwIfReadonly(id);
 
-    if (hide) {
-      id = AssetPathProvider.hide(id, outputRoot);
-    }
     final package = packages[id.package];
     if (package == null) {
       throw PackageNotFoundException(id.package);
@@ -254,6 +229,32 @@ class BuildPackages implements AssetPathProvider {
       path = path.replaceAll('/', Platform.pathSeparator);
     }
     return p.join(package.path, path);
+  }
+
+  /// Throws if [id] is not allowed to be written or deleted.
+  ///
+  /// Write or delete is allowed if [id] is in the cache directory for
+  /// `outputRoot` or is in a package that is a build output.
+  void throwIfReadonly(AssetId id) {
+    final isUnderCacheDirectory = id.path.startsWith('$cacheDirectoryPath/');
+    final writeIsAllowed =
+        (isUnderCacheDirectory && id.package == outputRoot) ||
+        outputPackages.contains(id.package);
+    if (!writeIsAllowed) {
+      if (isUnderCacheDirectory) {
+        throw InvalidOutputException(
+          id,
+          'Tried to write or delete from $cacheDirectoryPath in wrong '
+          'package, should be $outputRoot.',
+        );
+      } else {
+        throw InvalidOutputException(
+          id,
+          'Tried to write or delete in a package not in the build. Packages '
+          'in the build are: ${outputPackages.join(', ')}',
+        );
+      }
+    }
   }
 
   /// Gets transitive deps of [packageName].

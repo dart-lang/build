@@ -189,6 +189,7 @@ Future<TestBuilderResult> testBuilders(
   Resolvers? resolvers,
   Set<Builder> optionalBuilders = const {},
   Set<Builder> visibleOutputBuilders = const {},
+  Set<PostProcessBuilder> visibleOutputPostProcessBuilders = const {},
   Map<Builder, List<String>> appliesBuilders = const {},
   bool testingBuilderConfig = true,
   TestReaderWriter? readerWriter,
@@ -213,8 +214,14 @@ Future<TestBuilderResult> testBuilders(
     }
   }
   final postProcessBuilderFactories = <PostProcessBuilderFactory>[];
+  final visibleOutputPostProcessBuilderFactories =
+      Set<PostProcessBuilderFactory>.identity();
   for (final postProcessBuilder in postProcessBuilders) {
-    postProcessBuilderFactories.add((_) => postProcessBuilder);
+    PostProcessBuilder factory(_) => postProcessBuilder;
+    postProcessBuilderFactories.add(factory);
+    if (visibleOutputPostProcessBuilders.contains(postProcessBuilder)) {
+      visibleOutputPostProcessBuilderFactories.add(factory);
+    }
   }
   return testBuilderFactories(
     builderFactories,
@@ -230,6 +237,8 @@ Future<TestBuilderResult> testBuilders(
     resolvers: resolvers,
     optionalBuilderFactories: optionalBuilderFactories,
     visibleOutputBuilderFactories: visibleOutputBuilderFactories,
+    visibleOutputPostProcessBuilderFactories:
+        visibleOutputPostProcessBuilderFactories,
     appliesBuilders: appliesBuildersToFactories,
     testingBuilderConfig: testingBuilderConfig,
     readerWriter: readerWriter,
@@ -286,6 +295,10 @@ Future<TestBuilderResult> testBuilders(
 /// [visibleOutputBuilderFactories]. The builder then writes its outputs next to
 /// its input, instead of hidden under `.dart_tool`.
 ///
+/// To mark a post process builder's output as visible, add it to
+/// [visibleOutputPostProcessBuilderFactories]. The builder then writes its
+/// outputs next to its input, instead of hidden under `.dart_tool`.
+///
 /// To cause a builder to apply another builder, as `applies_builders` in
 /// `build.yaml`, pass [appliesBuilders].
 ///
@@ -320,6 +333,8 @@ Future<TestBuilderResult> testBuilderFactories(
   Resolvers? resolvers,
   Set<BuilderFactory> optionalBuilderFactories = const {},
   Set<BuilderFactory> visibleOutputBuilderFactories = const {},
+  Set<PostProcessBuilderFactory> visibleOutputPostProcessBuilderFactories =
+      const {},
   Map<BuilderFactory, List<String>> appliesBuilders = const {},
   bool testingBuilderConfig = true,
   TestReaderWriter? readerWriter,
@@ -449,7 +464,14 @@ Future<TestBuilderResult> testBuilderFactories(
       name,
       postProcessBuilderNameToBuilderFactory.keys.toSet(),
     );
-    builderDefinitions.add(PostProcessBuilderDefinition(name));
+    builderDefinitions.add(
+      PostProcessBuilderDefinition(
+        name,
+        hideOutput: !visibleOutputPostProcessBuilderFactories.contains(
+          postProcessBuilderFactory,
+        ),
+      ),
+    );
     postProcessBuilderNameToBuilderFactory[name] = postProcessBuilderFactory;
   }
 
