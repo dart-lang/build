@@ -72,6 +72,36 @@ class _$BuildStepResultSerializer
           serializers.serialize(value, specifiedType: const FullType(bool)),
         );
     }
+    value = object.partContribution;
+    if (value != null) {
+      result
+        ..add('partContribution')
+        ..add(
+          serializers.serialize(
+            value,
+            specifiedType: const FullType(AssetContent),
+          ),
+        );
+    }
+    value = object.partImports;
+    if (value != null) {
+      result
+        ..add('partImports')
+        ..add(
+          serializers.serialize(
+            value,
+            specifiedType: const FullType(AssetContent),
+          ),
+        );
+    }
+    value = object.primaryLanguageVersion;
+    if (value != null) {
+      result
+        ..add('primaryLanguageVersion')
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
+    }
     return result;
   }
 
@@ -115,6 +145,30 @@ class _$BuildStepResultSerializer
               ]),
             )!,
           );
+          break;
+        case 'partContribution':
+          result.partContribution =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(AssetContent),
+                  )
+                  as AssetContent?;
+          break;
+        case 'partImports':
+          result.partImports =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(AssetContent),
+                  )
+                  as AssetContent?;
+          break;
+        case 'primaryLanguageVersion':
+          result.primaryLanguageVersion =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )
+                  as String?;
           break;
         case 'inputs':
           result.inputs.replace(
@@ -175,6 +229,12 @@ class _$BuildStepResult extends BuildStepResult {
   @override
   final BuiltMap<AssetId, AssetContent> outputs;
   @override
+  final AssetContent? partContribution;
+  @override
+  final AssetContent? partImports;
+  @override
+  final String? primaryLanguageVersion;
+  @override
   final BuiltSet<AssetId> inputs;
   @override
   final BuiltSet<GlobId> globsEvaluated;
@@ -190,6 +250,9 @@ class _$BuildStepResult extends BuildStepResult {
     this.result,
     required this.isHidden,
     required this.outputs,
+    this.partContribution,
+    this.partImports,
+    this.primaryLanguageVersion,
     required this.inputs,
     required this.globsEvaluated,
     required this.resolverEntrypoints,
@@ -209,6 +272,9 @@ class _$BuildStepResult extends BuildStepResult {
         result == other.result &&
         isHidden == other.isHidden &&
         outputs == other.outputs &&
+        partContribution == other.partContribution &&
+        partImports == other.partImports &&
+        primaryLanguageVersion == other.primaryLanguageVersion &&
         inputs == other.inputs &&
         globsEvaluated == other.globsEvaluated &&
         resolverEntrypoints == other.resolverEntrypoints &&
@@ -221,6 +287,9 @@ class _$BuildStepResult extends BuildStepResult {
     _$hash = $jc(_$hash, result.hashCode);
     _$hash = $jc(_$hash, isHidden.hashCode);
     _$hash = $jc(_$hash, outputs.hashCode);
+    _$hash = $jc(_$hash, partContribution.hashCode);
+    _$hash = $jc(_$hash, partImports.hashCode);
+    _$hash = $jc(_$hash, primaryLanguageVersion.hashCode);
     _$hash = $jc(_$hash, inputs.hashCode);
     _$hash = $jc(_$hash, globsEvaluated.hashCode);
     _$hash = $jc(_$hash, resolverEntrypoints.hashCode);
@@ -235,6 +304,9 @@ class _$BuildStepResult extends BuildStepResult {
           ..add('result', result)
           ..add('isHidden', isHidden)
           ..add('outputs', outputs)
+          ..add('partContribution', partContribution)
+          ..add('partImports', partImports)
+          ..add('primaryLanguageVersion', primaryLanguageVersion)
           ..add('inputs', inputs)
           ..add('globsEvaluated', globsEvaluated)
           ..add('resolverEntrypoints', resolverEntrypoints)
@@ -260,6 +332,21 @@ class BuildStepResultBuilder
       _$this._outputs ??= MapBuilder<AssetId, AssetContent>();
   set outputs(MapBuilder<AssetId, AssetContent>? outputs) =>
       _$this._outputs = outputs;
+
+  AssetContent? _partContribution;
+  AssetContent? get partContribution => _$this._partContribution;
+  set partContribution(AssetContent? partContribution) =>
+      _$this._partContribution = partContribution;
+
+  AssetContent? _partImports;
+  AssetContent? get partImports => _$this._partImports;
+  set partImports(AssetContent? partImports) =>
+      _$this._partImports = partImports;
+
+  String? _primaryLanguageVersion;
+  String? get primaryLanguageVersion => _$this._primaryLanguageVersion;
+  set primaryLanguageVersion(String? primaryLanguageVersion) =>
+      _$this._primaryLanguageVersion = primaryLanguageVersion;
 
   SetBuilder<AssetId>? _inputs;
   SetBuilder<AssetId> get inputs => _$this._inputs ??= SetBuilder<AssetId>();
@@ -289,6 +376,9 @@ class BuildStepResultBuilder
       _result = $v.result;
       _isHidden = $v.isHidden;
       _outputs = $v.outputs.toBuilder();
+      _partContribution = $v.partContribution;
+      _partImports = $v.partImports;
+      _primaryLanguageVersion = $v.primaryLanguageVersion;
       _inputs = $v.inputs.toBuilder();
       _globsEvaluated = $v.globsEvaluated.toBuilder();
       _resolverEntrypoints = $v.resolverEntrypoints.toBuilder();
@@ -324,6 +414,9 @@ class BuildStepResultBuilder
               'isHidden',
             ),
             outputs: outputs.build(),
+            partContribution: partContribution,
+            partImports: partImports,
+            primaryLanguageVersion: primaryLanguageVersion,
             inputs: inputs.build(),
             globsEvaluated: globsEvaluated.build(),
             resolverEntrypoints: resolverEntrypoints.build(),
@@ -334,6 +427,7 @@ class BuildStepResultBuilder
       try {
         _$failedField = 'outputs';
         outputs.build();
+
         _$failedField = 'inputs';
         inputs.build();
         _$failedField = 'globsEvaluated';

@@ -13,6 +13,8 @@ import '../../build_plan/build_packages.dart';
 import '../../build_plan/build_step_plan.dart';
 import '../asset_content.dart';
 
+import '../br_outputs.dart';
+import '../shared_part.dart';
 import 'build_step_id.dart';
 import 'build_step_result.dart';
 import 'glob_id.dart';
@@ -56,10 +58,11 @@ class BuildState {
 
   // --  Predicates over IDs and iterables over IDs.
 
-  /// Whether [id] is one of: source, declared output or actual post process
-  /// output.
+  /// Whether [id] is one of: source, `_br_` output, declared output or actual
+  /// post process output.
   bool isFile({required BuildStepPlan? buildStepPlan, required AssetId id}) =>
       isSource(id) ||
+      id.isBrOutput ||
       buildStepPlan?.isDeclaredOutput(id) == true ||
       isActualPostOutput(id);
 
@@ -214,6 +217,19 @@ class BuildState {
   /// If it is a post process output, returns `null` if it has not been
   /// generated.
   AssetContent? contentOf({BuildStepPlan? buildStepPlan, required AssetId id}) {
+    if (id.isBrOutput) {
+      final primaryInput = id.primaryInputForSharedPartId;
+      if (primaryInput == null) return null;
+      final contributions = partContributionsFor(primaryInput);
+      final imports = partImportsFor(primaryInput);
+      if (contributions.isEmpty && imports.isEmpty) return null;
+      final sharedPart = SharedPart(primaryInput);
+      sharedPart.languageVersion = languageVersionFor(primaryInput);
+      sharedPart.imports.addAll(imports);
+      sharedPart.contributions.addAll(contributions);
+      final content = sharedPart.generateContent();
+      return AssetContent.string(content);
+    }
     if (isSource(id)) return _sources.contentOfSource(id);
     final step = buildStepPlan?.stepForDeclaredOutputOrNull(id);
     if (step != null) {
@@ -257,6 +273,112 @@ class BuildState {
       buildStepId.primaryInput,
       () => {},
     )[buildStepId.phaseNumber] = result;
+  }
+
+  /// Primary inputs that have part contributions from successful build steps.
+  Iterable<AssetId> get primaryInputsWithParts {
+    final result = <AssetId>[];
+    for (final outer in _buildStepResultsByPrimaryInput.entries) {
+      for (final stepResult in outer.value.values) {
+        if (stepResult.succeeded && stepResult.partContribution != null) {
+          result.add(outer.key);
+          break;
+        }
+      }
+    }
+    return result;
+  }
+
+  /// The concatenated part imports for [primaryInput], sorted by phase.
+  Map<int, List<String>> partImportsFor(AssetId primaryInput) {
+    final results = _buildStepResultsByPrimaryInput[primaryInput];
+    if (results == null) return const {};
+    final phases = results.keys.toList()..sort();
+    final imports = <int, List<String>>{};
+    for (final phase in phases) {
+      final stepResult = results[phase]!;
+      if (stepResult.succeeded) {
+        if (stepResult.partImports != null) {
+          imports[phase] = stepResult.partImports!.stringValue().split('\n');
+        }
+      }
+    }
+    return imports;
+  }
+
+  /// The first found primaryLanguageVersion.
+  String? languageVersionFor(AssetId id) {
+    for (final e
+        in _buildStepResultsByPrimaryInput[id]?.values ??
+            const <BuildStepResult>[]) {
+      final languageVersion = e.primaryLanguageVersion;
+      if (languageVersion != null) return languageVersion;
+    }
+    return null;
+  }
+
+  /// The concatenated part contributions for [primaryInput], sorted by phase.
+  Map<int, String> partContributionsFor(AssetId primaryInput) {
+    final results = _buildStepResultsByPrimaryInput[primaryInput];
+    if (results == null) return const {};
+    final phases = results.keys.toList()..sort();
+    final contributions = <int, String>{};
+    for (final phase in phases) {
+      final stepResult = results[phase]!;
+      if (stepResult.succeeded) {
+        if (stepResult.partContribution != null) {
+          contributions[phase] = stepResult.partContribution!.stringValue();
+        }
+      }
+    }
+    return contributions;
+  }
+
+  bool hasMissingPartStrings(AssetId primaryInput) {
+    final results = _buildStepResultsByPrimaryInput[primaryInput];
+    if (results == null) return false;
+    for (final stepResult in results.values) {
+      if (stepResult.succeeded) {
+        if (stepResult.partContribution != null &&
+            !stepResult.partContribution!.hasContent) {
+          return true;
+        }
+        if (stepResult.partImports != null &&
+            !stepResult.partImports!.hasContent) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  void populatePartContent(
+    AssetId primaryInput,
+    int phase,
+    List<String> imports,
+    String contribution,
+  ) {
+    final results = _buildStepResultsByPrimaryInput[primaryInput];
+    if (results == null) return;
+    final stepResult = results[phase];
+    if (stepResult != null && stepResult.succeeded) {
+      BuildStepResult? newResult;
+      if (stepResult.partContribution != null &&
+          !stepResult.partContribution!.hasContent) {
+        newResult = stepResult.rebuild(
+          (b) => b.partContribution = AssetContent.string(contribution),
+        );
+      }
+      if (stepResult.partImports != null &&
+          !stepResult.partImports!.hasContent) {
+        newResult = (newResult ?? stepResult).rebuild(
+          (b) => b.partImports = AssetContent.string(imports.join('\n')),
+        );
+      }
+      if (newResult != null) {
+        results[phase] = newResult;
+      }
+    }
   }
 
   // -- Globs.

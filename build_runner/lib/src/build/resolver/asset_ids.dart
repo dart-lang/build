@@ -5,6 +5,7 @@
 import 'package:build/build.dart';
 
 import '../../build_plan/build_step_plan.dart';
+import '../br_outputs.dart';
 import '../build_state/build_state.dart';
 
 extension AssetIdExtension on AssetId {
@@ -23,6 +24,7 @@ extension AssetIdExtension on AssetId {
   /// Pass [buildState] to hide outputs of post process builders that are
   /// not configured with `build_to: source`, as the default is `cache`.
   bool isHidden({BuildStepPlan? buildStepPlan, BuildState? buildState}) {
+    if (isBrOutput) return true;
     return buildStepPlan?.isHidden(this) == true ||
         buildState?.isHiddenPostProcessOutput(this) == true;
   }

@@ -42,8 +42,29 @@ class BuildStepImpl implements BuildStep {
 
   final InputTracker inputTracker;
   final Map<AssetId, AssetContent> outputs = {};
+  String? get partContribution => _librarySourceSink?.contribution;
+  List<String> get partImports => _librarySourceSink?.imports ?? const [];
+
+  LibrarySourceSinkImpl? _librarySourceSink;
+
+  @override
+  Future<LibrarySourceSink?> get librarySourceSink async {
+    if (partPhaseIndex == null) {
+      throw UnsupportedError(
+        'Builder must opt into adds_to_library in build.yaml to write parts.',
+      );
+    }
+    if (!await resolver.isLibrary(inputId)) {
+      return null;
+    }
+    return _librarySourceSink ??= LibrarySourceSinkImpl(
+      this,
+      _prefixForPhase(partPhaseIndex!),
+    );
+  }
 
   final int phase;
+  final int? partPhaseIndex;
 
   final BuilderFilesystem buildFilesystem;
 
@@ -63,6 +84,7 @@ class BuildStepImpl implements BuildStep {
     required this.inputTracker,
     required this.buildFilesystem,
     required this.phase,
+    this.partPhaseIndex,
     required Resolvers resolvers,
     required ResourceManager resourceManager,
     void Function(Iterable<AssetId>)? reportUnusedAssets,
@@ -243,6 +265,75 @@ class BuildStepImpl implements BuildStep {
   void reportUnusedAssets(Iterable<AssetId> assets) {
     _reportUnusedAssets?.call(assets);
   }
+}
+
+class LibrarySourceSinkImpl implements LibrarySourceSink {
+  final BuildStepImpl _buildStep;
+  @override
+  final String importPrefix;
+
+  final StringBuffer _buffer = StringBuffer();
+  final List<String> _imports = [];
+
+  LibrarySourceSinkImpl(this._buildStep, this.importPrefix);
+
+  String? get contribution => _buffer.isNotEmpty ? _buffer.toString() : null;
+  List<String> get imports => List.unmodifiable(_imports);
+
+  void _checkCanWrite() {
+    if (_buildStep._isComplete) throw BuildStepCompletedException();
+  }
+
+  @override
+  void addImport(
+    String uri, {
+    required String as,
+    Iterable<String>? show,
+    Iterable<String>? hide,
+  }) {
+    _checkCanWrite();
+    if (!as.startsWith(importPrefix)) {
+      throw ArgumentError.value(as, 'as', 'must start with $importPrefix');
+    }
+
+    final buffer = StringBuffer('import \'$uri\' as $as');
+    if (show != null && show.isNotEmpty) {
+      buffer.write(' show ${show.join(', ')}');
+    }
+    if (hide != null && hide.isNotEmpty) {
+      buffer.write(' hide ${hide.join(', ')}');
+    }
+    buffer.write(';');
+    _imports.add(buffer.toString());
+  }
+
+  @override
+  void add(String content) {
+    _checkCanWrite();
+    _buffer.write(content);
+  }
+}
+
+const String _base62Chars =
+    'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+String _prefixForPhase(int phase) {
+  var value = phase;
+  var limit = 62;
+  var length = 1;
+  while (value >= limit) {
+    value -= limit;
+    limit *= 62;
+    length++;
+  }
+
+  var result = '';
+  for (var i = 0; i < length; i++) {
+    result = _base62Chars[value % 62] + result;
+    value ~/= 62;
+  }
+
+  return ('\$' * length) + result;
 }
 
 final _lib = Uri.parse('lib/');

@@ -546,6 +546,8 @@ class TestAssetDepsLoader implements AssetDepsLoader {
     this.built,
   ]);
 
+  final List<int> runningAtPhases = [];
+
   @override
   Future<PhasedValue<AssetDeps>> load(AssetId id) async {
     final result = results[id]!;

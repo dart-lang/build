@@ -1,3 +1,8 @@
+## 1.4.0-wip
+
+- Add boolean `adds_to_library` builder configuration that grants access to new
+   builder feature `BuildStep.librarySourceSink`.
+
 ## 1.3.1
 
 - Document that `--define` values are parsed as JSON with a fallback.

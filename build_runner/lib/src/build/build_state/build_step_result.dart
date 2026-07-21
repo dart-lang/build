@@ -28,6 +28,17 @@ abstract class BuildStepResult
   /// Outputs written by the step.
   BuiltMap<AssetId, AssetContent> get outputs;
 
+  /// Part contribution written by the step.
+  AssetContent? get partContribution;
+
+  /// Part imports written by the step.
+  AssetContent? get partImports;
+
+  /// The exact dart language version comment (e.g. `// @dart=2.14`) found
+  /// in the primary input, if this step ran a builder that emitted part
+  /// contributions.
+  String? get primaryLanguageVersion;
+
   /// Inputs and missing sources read.
   BuiltSet<AssetId> get inputs;
 

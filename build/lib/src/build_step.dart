@@ -11,6 +11,7 @@ import 'package:glob/glob.dart';
 import 'package:package_config/package_config_types.dart';
 
 import 'asset_id.dart';
+import 'library_source_sink.dart';
 import 'resolver.dart';
 import 'resource.dart';
 
@@ -146,6 +147,19 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   /// [AssetId.resolve], allowing files to be read with [readAsString] or
   /// [readAsBytes].
   Future<PackageConfig> get packageConfig;
+
+  /// Creates or gets a [LibrarySourceSink] that will add source code to the
+  /// primary input library.
+  ///
+  /// The builder must have `adds_to_library: true` in its `build.yaml`, or
+  /// `UnsupportedError` is thrown.
+  ///
+  /// The primary input must be a Dart file that contains a library, not a
+  /// library part, or `null` is returned.
+  ///
+  /// Experimental, may change following feedback and discussion at
+  /// https://github.com/dart-lang/build/discussions.
+  Future<LibrarySourceSink?> get librarySourceSink;
 }
 
 /// The "write" part of the [BuildStep] API.

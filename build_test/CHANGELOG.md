@@ -4,6 +4,7 @@
 
 ## 3.5.17
 
+- Add `addsToLibraryBuilders` to `testBuilders` (and `testBuilderFactories`) to support testing builders that use `BuildStep.librarySourceSink`.
 - Allow `analyzer` 14.x, require 13.3.0.
 - Require Dart 3.11.0.
 

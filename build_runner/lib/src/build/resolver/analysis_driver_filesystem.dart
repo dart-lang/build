@@ -12,11 +12,14 @@ import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/dart/analysis/file_content_cache.dart';
 import 'package:build/build.dart' hide Resource;
+
 import 'package:path/path.dart' as p;
 
 import '../../build_plan/build_inputs.dart';
 import '../asset_content.dart';
+import '../br_outputs.dart';
 import '../builder_filesystem.dart';
+import '../shared_part.dart';
 import 'asset_ids.dart';
 
 /// The in-memory filesystem that is the analyzer's view of the build.
@@ -33,6 +36,8 @@ class AnalysisDriverFilesystem
   final Map<String, BuildRunnerFileContent> _data = {};
   final Set<String> _changedPaths = {};
   final Set<String> _changedPathsThisBuild = {};
+
+  final Map<String, GeneratedPartFileContent> _partData = {};
 
   int _phase = 0;
 
@@ -54,10 +59,14 @@ class AnalysisDriverFilesystem
     final plan = _builderFilesystem.buildStepPlan;
     final minPhase = previousPhase < phase ? previousPhase : phase;
     final maxPhase = previousPhase > phase ? previousPhase : phase;
-    for (var phase = minPhase; phase != maxPhase; ++phase) {
-      for (final step in plan.buildStepsByPhase[phase]) {
+    for (var p = minPhase; p != maxPhase; ++p) {
+      for (final step in plan.buildStepsByPhase[p]) {
         for (final output in plan.declaredOutputsByStep[step]) {
           _changedPaths.add(output.asPath);
+        }
+        final partPath = step.primaryInput.sharedPartIdForPrimaryInput.asPath;
+        if (_partData[partPath]?.hasContributionAt(p) == true) {
+          _changedPaths.add(partPath);
         }
       }
     }
@@ -75,12 +84,15 @@ class AnalysisDriverFilesystem
   }) {
     _builderFilesystem = builderFilesystem;
     builderFilesystem.listenToContentUpdates(_updateContent);
+    builderFilesystem.listenToPartContributions(_updatePartContributions);
     _changedPathsThisBuild.clear();
 
     if (buildInputs.cleanBuild) {
       _phase = 0;
       _changedPaths.addAll(_data.keys);
+      _changedPaths.addAll(_partData.keys);
       _data.clear();
+      _partData.clear();
       for (final id in builderFilesystem.buildState.sources) {
         final content = builderFilesystem.buildState.contentOf(id: id);
         if (content != null) {
@@ -98,6 +110,16 @@ class AnalysisDriverFilesystem
         _changedPaths.add(path);
       }
     }
+
+    for (final id in buildInputs.deletedSources.followedBy(
+      buildInputs.updatedSources,
+    )) {
+      final partPath = id.sharedPartIdForPrimaryInput.asPath;
+      if (_partData.remove(partPath) != null) {
+        _changedPaths.add(partPath);
+      }
+    }
+
     for (final id in buildInputs.updatedSources) {
       _updateContent(id, builderFilesystem.buildState.contentOfSource(id));
     }
@@ -134,8 +156,30 @@ class AnalysisDriverFilesystem
     );
   }
 
+  void _updatePartContributions(
+    AssetId primaryInput,
+    int phase,
+    AssetContent? imports,
+    AssetContent? contribution,
+  ) {
+    final partPath = primaryInput.sharedPartIdForPrimaryInput.asPath;
+    final partData = _partData.putIfAbsent(
+      partPath,
+      () => GeneratedPartFileContent(primaryInput, partPath),
+    );
+    partData.update(phase, imports, contribution);
+
+    if (_phase > phase) {
+      _changedPaths.add(partPath);
+    }
+    _changedPathsThisBuild.add(partPath);
+  }
+
   /// Whether [path] exists.
   bool exists(String path) {
+    final partData = _partData[path];
+    if (partData != null && partData.existsAt(_phase)) return true;
+
     final content = _data[path];
     if (content == null) return false;
     return _phase > content.phase;
@@ -145,6 +189,11 @@ class AnalysisDriverFilesystem
   ///
   /// Throws if ![exists].
   String read(String path) {
+    final partData = _partData[path];
+    if (partData != null && partData.existsAt(_phase)) {
+      return partData.contentAt(_phase);
+    }
+
     if (!exists(path)) throw StateError('Read of non-existent file.');
     return _data[path]!.content;
   }
@@ -177,8 +226,14 @@ class AnalysisDriverFilesystem
   // `FileContentCache` methods.
 
   @override
-  FileContent get(String path) =>
-      exists(path) ? _data[path]! : BuildRunnerFileContent.missing(path);
+  FileContent get(String path) {
+    if (!exists(path)) return BuildRunnerFileContent.missing(path);
+    final partData = _partData[path];
+    if (partData != null && partData.existsAt(_phase)) {
+      return partData.fileContentAt(_phase);
+    }
+    return _data[path]!;
+  }
 
   @override
   void invalidate(String path) {
@@ -373,4 +428,68 @@ class _Resource implements File, Folder {
 extension AssetIdExtensions on AssetId {
   /// Asset path for the in-memory filesystem.
   String get asPath => AnalysisDriverFilesystem.assetPath(this);
+}
+
+class GeneratedPartFileContent {
+  final AssetId primaryInput;
+  final String path;
+  final Map<int, String> _contributions = {};
+  final Map<int, Iterable<String>> _imports = {};
+
+  GeneratedPartFileContent(this.primaryInput, this.path);
+
+  void update(int phase, AssetContent? imports, AssetContent? contribution) {
+    if (contribution == null && imports == null) {
+      _contributions.remove(phase);
+      _imports.remove(phase);
+    } else {
+      if (contribution != null) {
+        _contributions[phase] = contribution.stringValue();
+      }
+      if (imports != null) {
+        _imports[phase] = imports.stringValue().split('\n');
+      }
+    }
+  }
+
+  bool existsAt(int phase) =>
+      _contributions.keys.any((p) => phase > p) ||
+      _imports.keys.any((p) => phase > p);
+
+  bool hasContributionAt(int phase) =>
+      _contributions.containsKey(phase) || _imports.containsKey(phase);
+
+  String contentAt(int phase) {
+    final validPhases = <int>{
+      ..._contributions.keys.where((p) => phase > p),
+      ..._imports.keys.where((p) => phase > p),
+    }.toList();
+    if (validPhases.isEmpty) {
+      throw StateError('Read of non-existent file.');
+    }
+    validPhases.sort();
+
+    final sharedPart = SharedPart(primaryInput);
+    for (final p in validPhases) {
+      if (_imports.containsKey(p)) {
+        sharedPart.imports[p] = _imports[p]!.toList();
+      }
+      if (_contributions.containsKey(p)) {
+        sharedPart.contributions[p] = _contributions[p]!;
+      }
+    }
+    return sharedPart.generateContent(format: false);
+  }
+
+  FileContent fileContentAt(int phase) {
+    if (!existsAt(phase)) return BuildRunnerFileContent.missing(path);
+    final content = contentAt(phase);
+    return BuildRunnerFileContent(
+      path: path,
+      exists: true,
+      content: content,
+      contentHash: content.hashCode.toString(),
+      phase: phase,
+    );
+  }
 }

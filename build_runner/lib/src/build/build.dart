@@ -22,12 +22,12 @@ import '../build_plan/build_spec.dart';
 import '../build_plan/build_step_plan.dart';
 import '../build_plan/phase.dart';
 import '../build_plan/testing_overrides.dart';
-
 import '../io/build_output_reader.dart';
-
 import '../logging/build_log.dart';
 import '../logging/build_log_logger.dart';
 import '../logging/timed_activities.dart';
+import 'asset_content.dart';
+import 'br_outputs.dart';
 import 'build_dirs.dart';
 import 'build_result.dart';
 import 'build_state/build_state.dart';
@@ -47,6 +47,7 @@ import 'library_cycle_graph/phased_asset_deps.dart';
 import 'post_process_build_step_impl.dart';
 import 'resolver/analysis_driver_model.dart';
 import 'resolver/resolvers_impl.dart';
+import 'shared_part.dart';
 
 final ResolversImpl _defaultResolvers = ResolversImpl(
   analysisDriverModel: AnalysisDriverModel(),
@@ -103,6 +104,17 @@ class Build {
         for (final id in buildPlan.buildInputs.sources)
           id: buildPlan.buildInputs.sourceContents[id],
       });
+
+  late final Map<int, int> _partPhaseIndices = () {
+    final result = <int, int>{};
+    var nextIndex = 0;
+    for (var i = 0; i < buildPhases.inBuildPhases.length; i++) {
+      if (buildPhases.inBuildPhases[i].addsToLibrary) {
+        result[i] = nextIndex++;
+      }
+    }
+    return result;
+  }();
 
   BuildSpec get buildSpec => buildPlan.buildSpec;
   BuildOptions get buildOptions => buildSpec.buildOptions;
@@ -179,6 +191,36 @@ class Build {
           builderFilesystem: _builderFilesystem,
           buildInputs: buildInputs,
         );
+        if (previousBuildState != null) {
+          for (final primaryInput
+              in previousBuildState!.primaryInputsWithParts) {
+            if (previousBuildState!.hasMissingPartStrings(primaryInput)) {
+              final partId = primaryInput.sharedPartIdForPrimaryInput;
+              final content = await _builderFilesystem.readOldPartFile(partId);
+              if (content != null) {
+                final sharedPart = SharedPart.parseContent(
+                  content,
+                  primaryInput,
+                );
+
+                final allPhases = <int>{
+                  ...sharedPart.imports.keys,
+                  ...sharedPart.contributions.keys,
+                };
+
+                for (final phase in allPhases) {
+                  previousBuildState!.populatePartContent(
+                    primaryInput,
+                    phase,
+                    sharedPart.imports[phase]?.toList() ?? [],
+                    sharedPart.contributions[phase] ?? '',
+                  );
+                }
+              }
+            }
+          }
+        }
+
         final result = await _runPhases();
 
         // Combine previous phased asset deps, if any, with the newly loaded
@@ -295,6 +337,11 @@ class Build {
     );
     // Assume success, failed outputs will be checked later.
 
+    final generatedPartOutputs = buildState.primaryInputsWithParts.toList();
+    outputs.addAll(
+      generatedPartOutputs.map((id) => id.sharedPartIdForPrimaryInput),
+    );
+
     return BuildResult(
       status: BuildStatus.success,
       outputs: outputs.build(),
@@ -355,15 +402,28 @@ class Build {
   /// If it is currently being built according to [lazyPhases], waits for it to
   /// be built.
   Future<void> _buildOutput(AssetId id) async {
+    if (id.isBrSharedPart) {
+      final primaryInput = id.primaryInputForSharedPartId!;
+      for (final step in buildStepPlan.partContributorStepsFor(primaryInput)) {
+        await _buildStepIfNotProcessed(step);
+      }
+      return;
+    }
+
     final step = buildStepPlan.stepForDeclaredOutputOrNull(id);
-    if (step != null &&
-        !buildState.isProcessedOutput(buildStepPlan: buildStepPlan, id: id)) {
+    if (step != null) {
+      await _buildStepIfNotProcessed(step);
+    }
+  }
+
+  Future<void> _buildStepIfNotProcessed(BuildStepId step) async {
+    if (buildState.stepResultOrNull(step) == null) {
       await lazyPhases.putIfAbsent(step, () async {
         final phase = buildPhases.inBuildPhases[step.phaseNumber];
         return _buildForPrimaryInput(
-          buildStepId: step,
-          phase: phase,
-          lazy: true,
+           buildStepId: step,
+           phase: phase,
+           lazy: true,
         );
       });
     }
@@ -405,6 +465,7 @@ class Build {
       inputTracker: inputTracker,
       buildFilesystem: _builderFilesystem,
       phase: buildStepId.phaseNumber,
+      partPhaseIndex: _partPhaseIndices[buildStepId.phaseNumber],
       resolvers: resolvers,
       resourceManager: resourceManager,
       reportUnusedAssets: (Iterable<AssetId> assets) =>
@@ -877,6 +938,10 @@ class Build {
           rootLibraryCycleHasChanged = true;
           break;
         }
+        if (await _hasInputChanged(phaseNumber: phaseNumber, input: id.sharedPartIdForPrimaryInput)) {
+          rootLibraryCycleHasChanged = true;
+          break;
+        }
       }
       if (rootLibraryCycleHasChanged) {
         changedGraphs[nextGraph] = true;
@@ -904,7 +969,37 @@ class Build {
     required AssetId input,
     required int phaseNumber,
   }) async {
-    if (buildStepPlan.isDeclaredOutput(input)) {
+    if (input.isBrSharedPart) {
+      final primaryInput = input.primaryInputForSharedPartId!;
+      for (final partStep in buildStepPlan.partContributorStepsFor(primaryInput)) {
+        if (partStep.phaseNumber >= phaseNumber) continue;
+        await _buildStepIfNotProcessed(partStep);
+        
+        final previousResult = previousBuildState?.stepResultOrNull(partStep);
+        final result = buildState.stepResultOrNull(partStep);
+        if (previousResult == null || result == null) return true;
+        
+        // For tests using TestBuilder with writesPart but no tracked outputs
+        if (result.outputs.isEmpty) {
+          // Fallback: if the digest of the part step's inputs changed, 
+          // we assume the part might have changed.
+          bool anyInputChanged = false;
+          for (final stepInput in result.inputs) {
+            final oldIn = previousBuildState?.contentOf(id: stepInput)?.digest;
+            final newIn = buildState.contentOf(id: stepInput)?.digest;
+            if (oldIn != newIn) anyInputChanged = true;
+          }
+          if (anyInputChanged) return true;
+        }
+
+        for (final output in result.outputs.keys) {
+          final oldDigest = previousBuildState?.contentOf(id: output)?.digest;
+          final newDigest = buildState.contentOf(id: output)?.digest;
+          if (oldDigest != newDigest) return true;
+        }
+      }
+      return false;
+    } else if (buildStepPlan.isDeclaredOutput(input)) {
       final phase = buildStepPlan.stepForDeclaredOutput(input).phaseNumber;
       if (phase >= phaseNumber) {
         // It's not readable in this phase.
@@ -1073,7 +1168,25 @@ class Build {
       ..inputs.replace(usedInputs)
       ..globsEvaluated.replace(inputTracker.globsEvaluated)
       ..resolverEntrypoints.replace(inputTracker.resolverEntrypoints)
-      ..errors.replace(errors);
+      ..errors.replace(errors)
+      ..partContribution = step.partContribution == null
+          ? null
+          : AssetContent.string(step.partContribution!)
+      ..partImports = step.partImports.isEmpty
+          ? null
+          : AssetContent.string(step.partImports.join('\n'));
+    if (step.partContribution != null || step.partImports.isNotEmpty) {
+      try {
+        final content = (await _builderFilesystem.contentOf(
+          input,
+        )).stringValue();
+        final unit = _parseCompilationUnit(content);
+        buildStepResultBuilder.primaryLanguageVersion =
+            unit.languageVersionToken?.lexeme;
+      } catch (_) {
+        // Fallback or ignore if unreadable
+      }
+    }
     for (final output in outputs) {
       if (step.outputs.containsKey(output)) {
         final content = step.outputs[output]!;

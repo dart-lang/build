@@ -6,6 +6,7 @@
 
 ## 2.15.2
 
+- Support `adds_to_library` configuration, efficiently allocating base-62 prefixes and checking opt-in status at runtime.
 - Allow `analyzer` 14.x, require 13.3.0.
 - Require Dart 3.11.0.
 
