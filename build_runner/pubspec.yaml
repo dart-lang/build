@@ -46,6 +46,7 @@ dependencies:
 
 dev_dependencies:
   build_test: ^3.0.0
+  built_value_generator: any
   dart_flutter_team_lints: ^3.1.0
   stream_channel: ^2.0.0
   test: ^1.25.5

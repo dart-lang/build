@@ -13,6 +13,7 @@ import '../../build_plan/build_packages.dart';
 import '../../build_plan/build_step_plan.dart';
 import '../asset_content.dart';
 
+import '../resolver/asset_ids.dart';
 import 'build_step_id.dart';
 import 'build_step_result.dart';
 import 'glob_id.dart';
@@ -59,6 +60,7 @@ class BuildState {
   /// Whether [id] is one of: source, declared output or actual post process
   /// output.
   bool isFile({required BuildStepPlan? buildStepPlan, required AssetId id}) =>
+      id.isGeneratedPart ||
       isSource(id) ||
       buildStepPlan?.isDeclaredOutput(id) == true ||
       isActualPostOutput(id);
@@ -214,6 +216,14 @@ class BuildState {
   /// If it is a post process output, returns `null` if it has not been
   /// generated.
   AssetContent? contentOf({BuildStepPlan? buildStepPlan, required AssetId id}) {
+    if (id.isGeneratedPart) {
+      final primaryInput = id.primaryInputForPartId!;
+      final contributions = partContributionsFor(primaryInput);
+      if (contributions.isEmpty) return null;
+      final content =
+          "part of '../../${primaryInput.pathSegments.last}';\n\n${contributions.join('\n\n')}";
+      return AssetContent.string(content);
+    }
     if (isSource(id)) return _sources.contentOfSource(id);
     final step = buildStepPlan?.stepForDeclaredOutputOrNull(id);
     if (step != null) {
@@ -257,6 +267,37 @@ class BuildState {
       buildStepId.primaryInput,
       () => {},
     )[buildStepId.phaseNumber] = result;
+  }
+
+  /// Primary inputs that have part contributions from successful build steps.
+  Iterable<AssetId> get primaryInputsWithParts {
+    final result = <AssetId>[];
+    for (final outer in _buildStepResultsByPrimaryInput.entries) {
+      for (final stepResult in outer.value.values) {
+        if (stepResult.succeeded && stepResult.partContribution != null) {
+          result.add(outer.key);
+          break;
+        }
+      }
+    }
+    return result;
+  }
+
+  /// The concatenated part contributions for [primaryInput], sorted by phase.
+  List<String> partContributionsFor(AssetId primaryInput) {
+    final results = _buildStepResultsByPrimaryInput[primaryInput];
+    if (results == null) return const [];
+    final phases = results.keys.toList()..sort();
+    final contributions = <String>[];
+    for (final phase in phases) {
+      final stepResult = results[phase]!;
+      if (stepResult.succeeded) {
+        if (stepResult.partContribution != null) {
+          contributions.add(stepResult.partContribution!);
+        }
+      }
+    }
+    return contributions;
   }
 
   // -- Globs.

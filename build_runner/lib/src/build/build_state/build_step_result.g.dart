@@ -72,6 +72,14 @@ class _$BuildStepResultSerializer
           serializers.serialize(value, specifiedType: const FullType(bool)),
         );
     }
+    value = object.partContribution;
+    if (value != null) {
+      result
+        ..add('partContribution')
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
+    }
     return result;
   }
 
@@ -115,6 +123,14 @@ class _$BuildStepResultSerializer
               ]),
             )!,
           );
+          break;
+        case 'partContribution':
+          result.partContribution =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )
+                  as String?;
           break;
         case 'inputs':
           result.inputs.replace(
@@ -175,6 +191,8 @@ class _$BuildStepResult extends BuildStepResult {
   @override
   final BuiltMap<AssetId, AssetContent> outputs;
   @override
+  final String? partContribution;
+  @override
   final BuiltSet<AssetId> inputs;
   @override
   final BuiltSet<GlobId> globsEvaluated;
@@ -190,6 +208,7 @@ class _$BuildStepResult extends BuildStepResult {
     this.result,
     required this.isHidden,
     required this.outputs,
+    this.partContribution,
     required this.inputs,
     required this.globsEvaluated,
     required this.resolverEntrypoints,
@@ -209,6 +228,7 @@ class _$BuildStepResult extends BuildStepResult {
         result == other.result &&
         isHidden == other.isHidden &&
         outputs == other.outputs &&
+        partContribution == other.partContribution &&
         inputs == other.inputs &&
         globsEvaluated == other.globsEvaluated &&
         resolverEntrypoints == other.resolverEntrypoints &&
@@ -221,6 +241,7 @@ class _$BuildStepResult extends BuildStepResult {
     _$hash = $jc(_$hash, result.hashCode);
     _$hash = $jc(_$hash, isHidden.hashCode);
     _$hash = $jc(_$hash, outputs.hashCode);
+    _$hash = $jc(_$hash, partContribution.hashCode);
     _$hash = $jc(_$hash, inputs.hashCode);
     _$hash = $jc(_$hash, globsEvaluated.hashCode);
     _$hash = $jc(_$hash, resolverEntrypoints.hashCode);
@@ -235,6 +256,7 @@ class _$BuildStepResult extends BuildStepResult {
           ..add('result', result)
           ..add('isHidden', isHidden)
           ..add('outputs', outputs)
+          ..add('partContribution', partContribution)
           ..add('inputs', inputs)
           ..add('globsEvaluated', globsEvaluated)
           ..add('resolverEntrypoints', resolverEntrypoints)
@@ -260,6 +282,11 @@ class BuildStepResultBuilder
       _$this._outputs ??= MapBuilder<AssetId, AssetContent>();
   set outputs(MapBuilder<AssetId, AssetContent>? outputs) =>
       _$this._outputs = outputs;
+
+  String? _partContribution;
+  String? get partContribution => _$this._partContribution;
+  set partContribution(String? partContribution) =>
+      _$this._partContribution = partContribution;
 
   SetBuilder<AssetId>? _inputs;
   SetBuilder<AssetId> get inputs => _$this._inputs ??= SetBuilder<AssetId>();
@@ -289,6 +316,7 @@ class BuildStepResultBuilder
       _result = $v.result;
       _isHidden = $v.isHidden;
       _outputs = $v.outputs.toBuilder();
+      _partContribution = $v.partContribution;
       _inputs = $v.inputs.toBuilder();
       _globsEvaluated = $v.globsEvaluated.toBuilder();
       _resolverEntrypoints = $v.resolverEntrypoints.toBuilder();
@@ -324,6 +352,7 @@ class BuildStepResultBuilder
               'isHidden',
             ),
             outputs: outputs.build(),
+            partContribution: partContribution,
             inputs: inputs.build(),
             globsEvaluated: globsEvaluated.build(),
             resolverEntrypoints: resolverEntrypoints.build(),
@@ -334,6 +363,7 @@ class BuildStepResultBuilder
       try {
         _$failedField = 'outputs';
         outputs.build();
+
         _$failedField = 'inputs';
         inputs.build();
         _$failedField = 'globsEvaluated';
