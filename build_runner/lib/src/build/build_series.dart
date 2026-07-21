@@ -44,6 +44,10 @@ class BuildSeries {
 
   final Completer<void> _closingCompleter = Completer();
 
+  /// Deletes that are part of build output, so the resulting file watch events
+  /// can be ignored.
+  final Set<AssetId> _expectedDeletes = {};
+
   /// Whether the next build is the first build.
   bool firstBuild = true;
 
@@ -63,13 +67,7 @@ class BuildSeries {
   Future<void> get closing => _closingCompleter.future;
 
   /// Filters [changes] to only changes that might trigger a build.
-  ///
-  /// Pass expected deletes in [expectedDeletes]. Expected deletes do not
-  /// trigger a build. A delete that matches is removed from the set.
-  Future<List<AssetChange>> filterChanges(
-    List<AssetChange> changes,
-    Set<AssetId> expectedDeletes,
-  ) async {
+  Future<List<AssetChange>> filterChanges(List<AssetChange> changes) async {
     final result = <AssetChange>[];
     for (final change in changes) {
       final id = change.id;
@@ -81,12 +79,13 @@ class BuildSeries {
         result.add(change);
         continue;
       }
-      if (id.path.startsWith(entrypointDirectoryPath)) {
+
+      // Ignore any expected delete once.
+      if (change.type == ChangeType.REMOVE && _expectedDeletes.remove(id)) {
         continue;
       }
 
-      // Ignore any expected delete once.
-      if (change.type == ChangeType.REMOVE && expectedDeletes.remove(id)) {
+      if (id.path.startsWith(entrypointDirectoryPath)) {
         continue;
       }
 
@@ -319,10 +318,7 @@ class BuildSeries {
         _buildPlan.buildSpec.buildPackages.outputRoot,
         generatedOutputDirectory,
       );
-      await _buildPlan.readerWriter.deleteDirectory(
-        generatedOutputDirectoryId,
-        onDelete: _buildPlan.onDelete,
-      );
+      await _buildPlan.readerWriter.deleteDirectory(generatedOutputDirectoryId);
     }
 
     for (final output in result.outputs) {
@@ -344,7 +340,7 @@ class BuildSeries {
       await _buildPlan.readerWriter.delete(
         entry.key,
         hidden: entry.value,
-        onDelete: _buildPlan.onDelete,
+        onDelete: _expectedDeletes.add,
       );
     }
 
