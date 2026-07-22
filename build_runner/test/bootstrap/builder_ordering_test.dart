@@ -219,6 +219,32 @@ void main() {
       final orderedKeys = orderedBuilders.map((b) => b.key);
       expect(orderedKeys, ['a:self_cycle']);
     });
+
+    test('throws on duplicate builder keys', () {
+      final buildConfigs = parseBuildConfigs({
+        'a': {
+          'builders': {
+            'b': {
+              'builder_factories': ['createBuilder'],
+              'build_extensions': <String, List<String>>{},
+              'target': '',
+              'import': '',
+            },
+          },
+        },
+      });
+      final builder = buildConfigs['a']!.builderDefinitions.values.single;
+      expect(
+        () => findBuilderOrder([builder, builder], {}),
+        throwsA(
+          isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            'Duplicate builder key: a:b',
+          ),
+        ),
+      );
+    });
   });
 }
 

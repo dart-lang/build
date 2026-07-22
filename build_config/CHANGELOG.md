@@ -1,3 +1,7 @@
+## 1.3.2-wip
+
+- Reject builder names with the wrong package name.
+
 ## 1.3.1
 
 - Document that `--define` values are parsed as JSON with a fallback.
