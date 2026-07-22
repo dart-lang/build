@@ -19,8 +19,13 @@ import 'data/server_log.dart';
 import 'data/shutdown_notification.dart';
 import 'src/file_wait.dart';
 
-Future<int> _existingPort(String workingDirectory) async {
-  final portFile = File(portFilePath(workingDirectory));
+Future<int> _existingPort(
+  String workingDirectory, {
+  String? daemonSharedPath,
+}) async {
+  final portFile = File(
+    portFilePath(workingDirectory, daemonSharedPath: daemonSharedPath),
+  );
   if (!await waitForFile(portFile)) throw MissingPortFile();
   return int.parse(portFile.readAsStringSync());
 }
@@ -179,6 +184,7 @@ class BuildDaemonClient {
     bool includeParentEnvironment = true,
     Map<String, String>? environment,
     BuildMode buildMode = BuildMode.Auto,
+    String? daemonSharedPath,
   }) async {
     logHandler ??= (_) {};
     final daemonArgs = daemonCommand.sublist(1)
@@ -204,6 +210,7 @@ class BuildDaemonClient {
       workingDirectory,
       serializersOverride: serializersOverride,
       logHandler: logHandler,
+      daemonSharedPath: daemonSharedPath,
     );
   }
 
@@ -217,11 +224,12 @@ class BuildDaemonClient {
     String workingDirectory, {
     Serializers? serializersOverride,
     void Function(ServerLog)? logHandler,
+    String? daemonSharedPath,
   }) async {
     logHandler ??= (_) {};
     final daemonSerializers = serializersOverride ?? serializers;
     return BuildDaemonClient._(
-      await _existingPort(workingDirectory),
+      await _existingPort(workingDirectory, daemonSharedPath: daemonSharedPath),
       daemonSerializers,
       logHandler,
     );

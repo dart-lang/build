@@ -41,8 +41,19 @@ const logEndMarker = 'BUILD DAEMON LOG END';
 const currentVersion = '9';
 
 var _username = Platform.environment['USER'] ?? '';
-String daemonWorkspace(String workingDirectory) {
-  final segments = [Directory.systemTemp.path];
+
+/// The directory where lock files are kept.
+///
+/// Defaults to `.dart_tool/build_daemon` under `workingDirectory`.
+///
+/// Optionally pass `daemonSharedPath` to use a separate shared path for lock
+/// files. Avoid using globally shared paths on shared machines.
+String daemonWorkspace(String workingDirectory, {String? daemonSharedPath}) {
+  if (daemonSharedPath == null) {
+    return p.join(workingDirectory, '.dart_tool', 'build_daemon');
+  }
+
+  final segments = [daemonSharedPath];
   if (_username.isNotEmpty) segments.add(_username);
 
   // Canonicalize the working directory so it can be used as a key. First
@@ -63,17 +74,29 @@ String daemonWorkspace(String workingDirectory) {
 }
 
 /// Used to ensure that only one instance of this daemon is running at a time.
-String lockFilePath(String workingDirectory) =>
-    p.join(daemonWorkspace(workingDirectory), '.dart_build_lock');
+String lockFilePath(String workingDirectory, {String? daemonSharedPath}) =>
+    p.join(
+      daemonWorkspace(workingDirectory, daemonSharedPath: daemonSharedPath),
+      '.dart_build_lock',
+    );
 
 /// Used to signal to clients on what port the running daemon is listening.
-String portFilePath(String workingDirectory) =>
-    p.join(daemonWorkspace(workingDirectory), '.dart_build_daemon_port');
+String portFilePath(String workingDirectory, {String? daemonSharedPath}) =>
+    p.join(
+      daemonWorkspace(workingDirectory, daemonSharedPath: daemonSharedPath),
+      '.dart_build_daemon_port',
+    );
 
 /// Used to signal to clients the current version of the build daemon.
-String versionFilePath(String workingDirectory) =>
-    p.join(daemonWorkspace(workingDirectory), '.dart_build_daemon_version');
+String versionFilePath(String workingDirectory, {String? daemonSharedPath}) =>
+    p.join(
+      daemonWorkspace(workingDirectory, daemonSharedPath: daemonSharedPath),
+      '.dart_build_daemon_version',
+    );
 
 /// Used to signal to clients the current set of options of the build daemon.
-String optionsFilePath(String workingDirectory) =>
-    p.join(daemonWorkspace(workingDirectory), '.dart_build_daemon_options');
+String optionsFilePath(String workingDirectory, {String? daemonSharedPath}) =>
+    p.join(
+      daemonWorkspace(workingDirectory, daemonSharedPath: daemonSharedPath),
+      '.dart_build_daemon_options',
+    );
