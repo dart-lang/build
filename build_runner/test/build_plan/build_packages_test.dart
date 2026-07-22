@@ -7,6 +7,7 @@ library;
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:build/build.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_paths.dart';
@@ -39,6 +40,25 @@ void main() {
         );
 
         expect(buildRunner.languageVersion, LanguageVersion(3, 11));
+      });
+
+      test('checkWriteAllowed', () {
+        expect(
+          buildPackages.pathFor(
+            AssetId('build_runner', 'lib/a.txt'),
+            hide: false,
+            checkWriteAllowed: true,
+          ),
+          isNotNull,
+        );
+        expect(
+          () => buildPackages.pathFor(
+            AssetId('not_build_runner', 'lib/a.txt'),
+            hide: false,
+            checkWriteAllowed: true,
+          ),
+          throwsA(isA<InvalidOutputException>()),
+        );
       });
     });
 

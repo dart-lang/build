@@ -633,6 +633,7 @@ class Build {
       inputId: input,
       buildFilesystem: _builderFilesystem,
       addAsset: (assetId) {
+        if (!hideOutput) buildPackages.throwIfReadonly(assetId);
         if (_isFile(assetId)) {
           throw InvalidOutputException(assetId, 'Asset already exists');
         }

@@ -281,7 +281,6 @@ void main() {
           outputs: {'a|lib/lib.txt': 'libText', 'a|root.txt': 'rootText'},
         );
       });
-
       test('one phase, one builder, one-to-many outputs', () async {
         await testPhases(
           BuilderFactories({
@@ -760,36 +759,40 @@ additional_public_assets:
     );
 
     group('with `hideOutput: true`', () {
-      late BuildPackages buildPackages;
-
-      setUp(() {
-        buildPackages = BuildPackages.singlePackageBuild('a', [
-          BuildPackage(
-            name: 'a',
-            path: 'a/',
-            dependencies: ['b'],
-            isOutput: true,
-          ),
-          BuildPackage(name: 'b', path: 'a/b/'),
-        ]);
-      });
       test('can output files in non-root packages', () async {
-        await testPhases(
-          builderFactories,
-          [
-            BuilderDefinition(
-              '',
-              autoApply: AutoApply.allPackages,
-              hideOutput: true,
-              appliesBuilders: ['a:post_copy_builder'],
-            ),
-            postCopyABuilderDefinition,
-          ],
+        await testBuilders(
+          [testBuilder],
           {'b|lib/b.txt': 'b'},
-          buildPackages: buildPackages,
-          outputs: {r'$$b|lib/b.txt.copy': 'b', r'$$b|lib/b.txt.post': 'b'},
+          postProcessBuilders: [
+            CopyingPostProcessBuilder(outputExtension: '.post'),
+          ],
+          appliesBuilders: {
+            testBuilder: ['CopyingPostProcessBuilder'],
+          },
+          rootPackage: 'a',
+          outputs: {r'b|lib/b.txt.copy': 'b', r'b|lib/b.txt.post': 'b'},
         );
       });
+
+      test(
+        'cannot output files in non-root packages with hideOutput: false',
+        () async {
+          final differentPackagePostProcessBuilder =
+              DifferentPackagePostProcessBuilder();
+          final result = await testBuilders(
+            [testBuilder],
+            {'a|lib/a.txt': 'a'},
+            postProcessBuilders: [differentPackagePostProcessBuilder],
+            appliesBuilders: {
+              testBuilder: ['DifferentPackagePostProcessBuilder'],
+            },
+            visibleOutputPostProcessBuilders: {
+              differentPackagePostProcessBuilder,
+            },
+          );
+          expect(result.succeeded, false);
+        },
+      );
 
       test('handles mixed hidden and non-hidden outputs', () async {
         final result = await testBuilders(
@@ -1900,6 +1903,20 @@ class SiblingCopyBuilder extends Builder {
     await buildStep.writeAsString(
       buildStep.inputId.addExtension('.new'),
       await buildStep.readAsString(sibling),
+    );
+  }
+}
+
+/// A builder that writes to a different package.
+class DifferentPackagePostProcessBuilder implements PostProcessBuilder {
+  @override
+  final inputExtensions = const ['.txt'];
+
+  @override
+  Future<void> build(PostProcessBuildStep buildStep) async {
+    await buildStep.writeAsBytes(
+      AssetId('different_package', 'lib/a.txt'),
+      <int>[],
     );
   }
 }

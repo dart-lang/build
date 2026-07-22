@@ -3,6 +3,8 @@
 - Bug fix: in incremental builds, when an input was deleted, its output was
   deleted at the start of the build. Make it consistent with other output
   deletions: wait until the end of the build.
+- Bug fix: post process builders with `build_to: source` can only write to
+  output packages.
 
 ## 2.15.2
 

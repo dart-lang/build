@@ -60,12 +60,12 @@ class ReaderWriter implements AssetReader, AssetWriter {
   String _pathFor(
     AssetId id, {
     bool hidden = false,
-    bool checkDeleteAllowed = false,
+    bool checkWriteAllowed = false,
   }) {
     return assetPathProvider.pathFor(
       id,
       hide: hidden && !forceVisibleForTesting,
-      checkDeleteAllowed: checkDeleteAllowed,
+      checkWriteAllowed: checkWriteAllowed,
     );
   }
 
@@ -118,7 +118,7 @@ class ReaderWriter implements AssetReader, AssetWriter {
     bool hidden = false,
   }) {
     TimedActivity.write.run(() {
-      final path = _pathFor(id, hidden: hidden);
+      final path = _pathFor(id, hidden: hidden, checkWriteAllowed: true);
       filesystem.writeAsBytesSync(path, bytes);
     });
     return Future.value();
@@ -132,7 +132,7 @@ class ReaderWriter implements AssetReader, AssetWriter {
     bool hidden = false,
   }) {
     TimedActivity.write.run(() {
-      final path = _pathFor(id, hidden: hidden);
+      final path = _pathFor(id, hidden: hidden, checkWriteAllowed: true);
       filesystem.writeAsStringSync(path, contents, encoding: encoding);
     });
     return Future.value();
@@ -155,7 +155,7 @@ class ReaderWriter implements AssetReader, AssetWriter {
   }) {
     TimedActivity.write.run(() {
       onDelete?.call(id);
-      final path = _pathFor(id, hidden: hidden, checkDeleteAllowed: true);
+      final path = _pathFor(id, hidden: hidden, checkWriteAllowed: true);
       filesystem.deleteSync(path);
     });
     return Future.value();
@@ -167,7 +167,7 @@ class ReaderWriter implements AssetReader, AssetWriter {
     void Function(AssetId)? onDelete,
   }) {
     TimedActivity.write.run(() {
-      final path = _pathFor(id, hidden: hidden);
+      final path = _pathFor(id, hidden: hidden, checkWriteAllowed: true);
       filesystem.deleteDirectorySync(path);
     });
     return Future.value();
