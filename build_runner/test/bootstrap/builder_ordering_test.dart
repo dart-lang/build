@@ -221,6 +221,7 @@ void main() {
     });
 
     test('throws on duplicate builder keys', () {
+      // Parse can't return duplicate keys, so parse then duplicate.
       final buildConfigs = parseBuildConfigs({
         'a': {
           'builders': {
@@ -234,8 +235,9 @@ void main() {
         },
       });
       final builder = buildConfigs['a']!.builderDefinitions.values.single;
+      final duplicateBuilders = [builder, builder];
       expect(
-        () => findBuilderOrder([builder, builder], {}),
+        () => findBuilderOrder(duplicateBuilders, {}),
         throwsA(
           isA<ArgumentError>().having(
             (e) => e.message,
