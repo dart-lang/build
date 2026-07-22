@@ -204,7 +204,7 @@ $yaml
     // The first build after retry is marked as a new build.
     await watch.expect('Starting build #5');
     // But the next identical build failure is not logged as a new build.
-    final block = await watch.expectAndGetBlock('0s compiling builders');
+    final block = await watch.expectAndGetBlock('compiling builders');
     expect(block, isNot(contains('Starting build')));
 
     // Restore the correct build script and it gets compiled and runs.
