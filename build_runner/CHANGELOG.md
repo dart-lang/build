@@ -5,6 +5,7 @@
   deletions: wait until the end of the build.
 - Bug fix: post process builders with `build_to: source` can only write to
   output packages.
+- Bug fix: reject incorrect builder config that has duplicate builder keys.
 
 ## 2.15.2
 
