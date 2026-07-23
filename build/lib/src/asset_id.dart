@@ -132,14 +132,14 @@ class AssetId implements Comparable<AssetId> {
 }
 
 String _normalizePath(String path) {
-  if (p.isAbsolute(path)) {
+  path = path.replaceAll(r'\', '/');
+  if (p.posix.isAbsolute(path) || p.isAbsolute(path)) {
     throw ArgumentError.value(path, 'Asset paths must be relative.');
   }
-  path = path.replaceAll(r'\', '/');
 
   // Collapse "." and "..".
   final result = p.posix.normalize(path);
-  if (result.startsWith('../')) {
+  if (result.startsWith('../') || result == '..') {
     throw ArgumentError.value(
       path,
       'Asset paths must be within the specified the package.',

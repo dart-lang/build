@@ -1,3 +1,7 @@
+## 4.0.9-wip
+
+- Bug fix: more strictly prohibit absolute paths in `AssetId` path validation.
+
 ## 4.0.8
 
 - Allow `analyzer` 14.x, require 13.3.0.
