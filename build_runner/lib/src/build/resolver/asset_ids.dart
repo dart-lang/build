@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:io';
+
 import 'package:build/build.dart';
 
 import '../../build_plan/build_step_plan.dart';
@@ -30,5 +32,24 @@ extension AssetIdExtension on AssetId {
   bool isHidden({BuildStepPlan? buildStepPlan, BuildState? buildState}) {
     return buildStepPlan?.isHidden(this) == true ||
         buildState?.isHiddenPostProcessOutput(this) == true;
+  }
+
+  /// Returns [path] for the current platform.
+  String get platformPath => Platform.isWindows ? windowsPath : path;
+
+  /// Returns [path] for Windows.
+  ///
+  /// Throws an [ArgumentError] if the path contains a colon. This prevents
+  /// paths that are relative on POSIX becoming absolute on Windows due to
+  /// starting with a drive letter and a colon.
+  String get windowsPath {
+    if (path.contains(':')) {
+      throw ArgumentError.value(
+        path,
+        'path',
+        'Windows paths cannot contain colons.',
+      );
+    }
+    return path.replaceAll('/', '\\');
   }
 }

@@ -9,12 +9,14 @@ class AssetId implements Comparable<AssetId> {
   /// The package containing the file.
   final String package;
 
-  /// The relative path of the file under the root of [package].
+  /// The relative path within [package].
   ///
-  /// The path is relative and contains no parent references `..`, guaranteeing
-  /// that it is under [package].
+  /// The `AssetId` contructor guarantees that it's a POSIX-formatted relative
+  /// path: it uses `/` for separators, does not start with `/`, does not
+  /// contain `..`.
   ///
-  /// The path segment separator is `/` on all platforms.
+  /// Additionally, the `AssetId` constructor guarantees that it does not
+  /// contain any backslashes.
   final String path;
 
   /// The segments of [path].
@@ -26,10 +28,9 @@ class AssetId implements Comparable<AssetId> {
 
   /// An [AssetId] with the specified [path] under [package].
   ///
-  /// The [path] must be relative and under [package], or an [ArgumentError] is
-  /// thrown.
-  ///
-  /// The [path] is normalized: `\` is replaced with `/`, then `.` and `..` are removed.
+  /// Backslashes in [path] are converted to forward slashes, then it is
+  /// normalized. After normalization it must be relative and contain no `..` or
+  /// an [ArgumentError] is thrown.
   ///
   /// [package] must be a valid Dart package name, or an [ArgumentError] is
   /// thrown.
@@ -142,14 +143,13 @@ class AssetId implements Comparable<AssetId> {
 }
 
 String _normalizePath(String path) {
-  if (p.isAbsolute(path)) {
+  final normalized = path.replaceAll(r'\', '/');
+  final result = p.posix.normalize(normalized);
+
+  if (p.posix.isAbsolute(result)) {
     throw ArgumentError.value(path, 'Asset paths must be relative.');
   }
-  path = path.replaceAll(r'\', '/');
-
-  // Collapse "." and "..".
-  final result = p.posix.normalize(path);
-  if (result.startsWith('../')) {
+  if (result.startsWith('../') || result == '..') {
     throw ArgumentError.value(
       path,
       'Asset paths must be within the specified the package.',
