@@ -8,6 +8,14 @@ import '../../build_plan/build_step_plan.dart';
 import '../build_state/build_state.dart';
 
 extension AssetIdExtension on AssetId {
+  /// Normalizes this [AssetId].
+  ///
+  /// If the type of `this` is exactly `AssetId` then normalization of package
+  /// and path was already done by the constructor and `this` is returned.
+  ///
+  /// Otherwise returns a new `AssetId` constructed from [package] and [path].
+  AssetId normalize() => runtimeType == AssetId ? this : AssetId(package, path);
+
   bool get isDart => extension == '.dart';
 
   /// Whether the asset is hidden.

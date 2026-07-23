@@ -9,6 +9,19 @@ import 'package:test/test.dart';
 
 void main() {
   group('constructor', () {
+    test('validates the package parameter', () {
+      expect(() => AssetId('..', 'a'), throwsArgumentError);
+      expect(() => AssetId('a..b', 'a'), throwsArgumentError);
+      expect(() => AssetId('.a', 'a'), throwsArgumentError);
+      expect(() => AssetId('a.', 'a'), throwsArgumentError);
+      expect(() => AssetId('a/b', 'a'), throwsArgumentError);
+      expect(() => AssetId('a\\b', 'a'), throwsArgumentError);
+      expect(AssetId('', 'a').package, '');
+      expect(AssetId('a.b', 'a').package, 'a.b');
+      expect(AssetId('a\$b', 'a').package, 'a\$b');
+      expect(AssetId('a-b', 'a').package, 'a-b');
+    });
+
     test('normalizes the path', () {
       final id = AssetId('app', r'path/././/to/drop/..//asset.txt');
       expect(id.path, equals('path/to/asset.txt'));

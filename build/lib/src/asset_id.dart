@@ -30,7 +30,18 @@ class AssetId implements Comparable<AssetId> {
   /// thrown.
   ///
   /// The [path] is normalized: `\` is replaced with `/`, then `.` and `..` are removed.
-  AssetId(this.package, String path) : path = _normalizePath(path);
+  ///
+  /// [package] must be a valid Dart package name, or an [ArgumentError] is
+  /// thrown.
+  AssetId(this.package, String path) : path = _normalizePath(path) {
+    if (!_packageRegExp.hasMatch(package)) {
+      throw ArgumentError.value(
+        package,
+        'package',
+        'Package name contains invalid characters.',
+      );
+    }
+  }
 
   /// Creates an [AssetId] from a [uri].
   ///
@@ -155,3 +166,5 @@ Uri _constructUri(AssetId id) {
   final pathSegments = isLib ? originalSegments.skip(1) : originalSegments;
   return Uri(scheme: scheme, pathSegments: [id.package, ...pathSegments]);
 }
+
+final _packageRegExp = RegExp(r'^([a-zA-Z0-9_$-]+(\.[a-zA-Z0-9_$-]+)*)?$');

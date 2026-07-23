@@ -22,7 +22,7 @@ void main() {
   late BuildPackages buildPackages;
 
   group('BuildPackages', () {
-    group('forThisPackage ', () {
+    group('forThisPackage', () {
       setUp(() async {
         buildPackages = await BuildPackages.forPaths(
           BuildPaths.load(p.current, buildWorkspace: false),
@@ -42,7 +42,7 @@ void main() {
         expect(buildRunner.languageVersion, LanguageVersion(3, 11));
       });
 
-      test('checkWriteAllowed', () {
+      test('pathFor allows write to output package', () {
         expect(
           buildPackages.pathFor(
             AssetId('build_runner', 'lib/a.txt'),
@@ -51,13 +51,57 @@ void main() {
           ),
           isNotNull,
         );
+      });
+
+      test('pathFor prohibits write to known but non-output package', () {
         expect(
           () => buildPackages.pathFor(
-            AssetId('not_build_runner', 'lib/a.txt'),
+            AssetId('test', 'lib/a.txt'),
             hide: false,
             checkWriteAllowed: true,
           ),
           throwsA(isA<InvalidOutputException>()),
+        );
+      });
+
+      test('pathFor prohibits access to unknown package', () {
+        expect(
+          () => buildPackages.pathFor(
+            AssetId('unknown', 'lib/a.txt'),
+            hide: false,
+          ),
+          throwsA(isA<PackageNotFoundException>()),
+        );
+      });
+
+      test('pathFor allows write to cache in output package', () {
+        expect(
+          buildPackages.pathFor(
+            AssetId('build_runner', 'lib/a.txt'),
+            hide: true,
+            checkWriteAllowed: true,
+          ),
+          isNotNull,
+        );
+      });
+      test('pathFor allows write to cache in known but non-output package', () {
+        expect(
+          () => buildPackages.pathFor(
+            AssetId('test', 'lib/a.txt'),
+            hide: true,
+            checkWriteAllowed: true,
+          ),
+          isNotNull,
+        );
+      });
+
+      test('pathFor prohibits access to cache for unknown package', () {
+        expect(
+          () => buildPackages.pathFor(
+            AssetId('unknown', 'lib/a.txt'),
+            hide: true,
+          ),
+          throwsA(isA<PackageNotFoundException>()),
         );
       });
     });
