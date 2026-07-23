@@ -172,7 +172,11 @@ class BuildOutputReader {
         result.add(id);
       }
     }
-    result.addAll(_buildState.actualPostOutputs);
+    for (final id in _buildState.actualPostOutputs) {
+      if (!_shouldSkipId(id, rootDir)) {
+        result.add(id);
+      }
+    }
     return result;
   }
 

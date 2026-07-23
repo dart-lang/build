@@ -184,5 +184,55 @@ void main() {
             'build filters',
       );
     });
+
+    test('allAssets filters actualPostOutputs by rootDir', () async {
+      final postOutput = AssetId('a', 'test/post_output.txt');
+
+      final postProcessId = PostProcessBuildStepId(
+        input: AssetId('a', 'test/foo.txt'),
+        actionNumber: 0,
+      );
+
+      buildState.addPostProcessBuildStepResult(
+        postProcessId,
+        PostProcessBuildStepResult(
+          hidden: false,
+          deletedPrimaryInput: false,
+          outputs: {
+            postOutput: AssetContent.digest(computeDigest(postOutput, 'a')),
+          },
+        ),
+      );
+
+      final buildPlan = await BuildPlan.load(
+        await BuildSpec.load(
+          builderFactories: BuilderFactories({}),
+          buildOptions: BuildOptions.forTests(
+            buildDirs: {BuildDirectory('web')}.build(),
+          ),
+          testingOverrides: TestingOverrides(
+            buildPhases: buildPhases,
+            readerWriter: readerWriter,
+            buildPackages: buildPackages,
+          ),
+        ),
+      );
+
+      reader = BuildOutputReader(
+        builderFilesystem: BuilderFilesystem(
+          buildPackages: buildPlan.buildSpec.buildPackages,
+          buildConfigs: buildPlan.buildSpec.buildConfigs,
+          buildState: buildState,
+          buildStepPlan: buildPlan.buildStepPlan,
+          readerWriter: buildPlan.readerWriter,
+        ),
+      );
+
+      final webAssets = reader.allAssets(rootDir: 'web');
+      expect(webAssets, isNot(contains(postOutput)));
+
+      final testAssets = reader.allAssets(rootDir: 'test');
+      expect(testAssets, contains(postOutput));
+    });
   });
 }

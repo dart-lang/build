@@ -7,6 +7,7 @@
   output packages.
 - Bug fix: reject incorrect builder config that has duplicate builder keys.
 - Bug fix: reject invalid builder factories in `build.yaml`.
+- Bug fix: correctly filter served or `--output` post process output.
 
 ## 2.15.2
 
