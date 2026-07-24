@@ -288,7 +288,7 @@ String _filePathFor(Directory outputDir, String path) {
 ///
 /// Returns whether or not the directory was successfully cleaned up.
 Future<bool> _cleanUpOutputDir(Directory outputDir) async {
-  final outputPath = outputDir.path;
+  final outputPath = outputDir.resolveSymbolicLinksSync();
   final manifestFile = File(p.join(outputPath, _manifestName));
   if (!manifestFile.existsSync()) {
     if (outputDir.listSync(recursive: false).isNotEmpty) {
@@ -305,8 +305,8 @@ Future<bool> _cleanUpOutputDir(Directory outputDir) async {
 
     for (final path in previousOutputs) {
       final file = File(p.join(outputPath, path));
-      if (!p.isWithin(outputPath, file.path)) continue;
-      if (file.existsSync()) file.deleteSync();
+      if (!_existsResolvedWithin(file, outputPath)) continue;
+      file.deleteSync();
     }
     _cleanEmptyDirectories(outputPath, previousOutputs);
   }
@@ -333,8 +333,16 @@ void _deleteUp(String from, String to) {
   var directoryPath = from;
   while (p.isWithin(to, directoryPath)) {
     final directory = Directory(directoryPath);
-    if (!directory.existsSync() || directory.listSync().isNotEmpty) return;
+    if (!_existsResolvedWithin(directory, to) ||
+        directory.listSync().isNotEmpty) {
+      return;
+    }
     directory.deleteSync();
     directoryPath = p.dirname(directoryPath);
   }
+}
+
+bool _existsResolvedWithin(FileSystemEntity entity, String rootPath) {
+  if (!entity.existsSync()) return false;
+  return p.isWithin(rootPath, entity.resolveSymbolicLinksSync());
 }
