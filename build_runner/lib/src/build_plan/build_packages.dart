@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:io';
-
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:graphs/graphs.dart';
@@ -11,6 +9,7 @@ import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 
+import '../build/resolver/asset_ids.dart';
 import '../constants.dart';
 import '../io/asset_path_provider.dart';
 import 'build_package.dart';
@@ -222,13 +221,8 @@ class BuildPackages implements AssetPathProvider {
     }
     if (hide) id = AssetPathProvider.hide(id, outputRoot);
     if (checkWriteAllowed) throwIfReadonly(id);
-
     final package = packages[id.package]!;
-    var path = id.path;
-    if (Platform.pathSeparator != '/') {
-      path = path.replaceAll('/', Platform.pathSeparator);
-    }
-    return p.join(package.path, path);
+    return p.join(package.path, id.platformPath);
   }
 
   /// Throws if [id] is not allowed to be written or deleted.

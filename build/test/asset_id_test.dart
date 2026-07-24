@@ -39,6 +39,17 @@ void main() {
     test('allows empty package and path', () {
       AssetId('', '');
     });
+
+    test('throws for absolute paths', () {
+      expect(() => AssetId('app', '/tmp/asset.txt'), throwsArgumentError);
+      expect(() => AssetId('app', r'\tmp\asset.txt'), throwsArgumentError);
+    });
+
+    test('throws for paths that escape the package root', () {
+      expect(() => AssetId('app', '../asset.txt'), throwsArgumentError);
+      expect(() => AssetId('app', '..'), throwsArgumentError);
+      expect(() => AssetId('app', 'foo/../../asset.txt'), throwsArgumentError);
+    });
   });
 
   group('parse', () {
