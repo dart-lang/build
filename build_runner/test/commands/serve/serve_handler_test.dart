@@ -30,7 +30,6 @@ import 'package:built_collection/built_collection.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 import 'package:stream_channel/stream_channel.dart';
-import 'package:test/fake.dart';
 import 'package:test/test.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -503,7 +502,7 @@ void main() {
             (WebSocketChannel serverChannel, String rootDir) async {
               final mockResponse = await handler.createHandlerByRootDir(
                 rootDir,
-              )(FakeRequest());
+              )(Request('GET', Uri.parse('http://localhost/')));
               final onConnect =
                   mockResponse.context['onConnect']
                       as void Function(WebSocketChannel, String);
@@ -536,6 +535,34 @@ void main() {
         );
         await clientChannel1.sink.close();
         await clientChannel2.sink.close();
+      });
+
+      group('Origin checks', () {
+        test('rejects cross-origin requests', () async {
+          final request = Request(
+            'GET',
+            Uri.parse('http://localhost/'),
+            headers: {'origin': 'http://example.com'},
+          );
+          final response = await handler.createHandlerByRootDir('web')(request);
+          expect(response.statusCode, 403);
+        });
+
+        test('allows localhost origin requests', () async {
+          final request = Request(
+            'GET',
+            Uri.parse('http://localhost/'),
+            headers: {'origin': 'http://localhost:8080'},
+          );
+          final response = await handler.createHandlerByRootDir('web')(request);
+          expect(response.statusCode, 200);
+        });
+
+        test('allows missing origin requests', () async {
+          final request = Request('GET', Uri.parse('http://localhost/'));
+          final response = await handler.createHandlerByRootDir('web')(request);
+          expect(response.statusCode, 200);
+        });
       });
 
       test('deletes listeners on disconnect', () async {
@@ -708,5 +735,3 @@ class FakeWatcher implements Watcher {
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
-
-class FakeRequest with Fake implements Request {}
