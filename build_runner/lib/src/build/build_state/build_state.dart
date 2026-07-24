@@ -344,33 +344,15 @@ class BuildState {
     return result;
   }
 
-  /// Returns outputs that were written to the source tree.
+  /// Returns outputs that were written to the source tree in packages that
+  /// still exist.
   Iterable<AssetId> outputsToDelete(BuildPackages buildPackages) {
-    // Checks if `id` is in a known package. If so, returns it.
-    //
-    // If not, and a single package is being built, returns `id` moved to that
-    // package. This allows old generated output to be deleted if the package
-    // was renamed since the last build.
-    //
-    // If `id` is not in a known package and a single package is not being
-    // built, returns `null`.
-    AssetId? checkAndMoveId(AssetId id) {
-      if (buildPackages[id.package] != null) {
-        return id;
-      }
-      final singleOutputPackage = buildPackages.singleOutputPackage;
-      if (singleOutputPackage == null) return null;
-      return AssetId(singleOutputPackage, id.path);
-    }
-
     final result = <AssetId>[];
-    // Delete all the non-hidden outputs.
     for (final map in _buildStepResultsByPrimaryInput.values) {
       for (final stepResult in map.values) {
         if (!stepResult.isHidden) {
           for (final id in stepResult.outputs.keys) {
-            final idToDelete = checkAndMoveId(id);
-            if (idToDelete != null) result.add(idToDelete);
+            if (buildPackages[id.package] != null) result.add(id);
           }
         }
       }
@@ -379,8 +361,7 @@ class BuildState {
       for (final postProcessResults in results.values) {
         if (!postProcessResults.hidden) {
           for (final id in postProcessResults.outputs.keys) {
-            final idToDelete = checkAndMoveId(id);
-            if (idToDelete != null) result.add(idToDelete);
+            if (buildPackages[id.package] != null) result.add(id);
           }
         }
       }

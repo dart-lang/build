@@ -1,5 +1,6 @@
 ## 2.15.3-wip
 
+- Simplify deletion of stale outputs: don't try to handle package renames.
 - Bug fix: in incremental builds, when an input was deleted, its output was
   deleted at the start of the build. Make it consistent with other output
   deletions: wait until the end of the build.
