@@ -15,6 +15,7 @@ import '../build_runner_command_line.dart';
 import 'build_directory.dart';
 import 'build_filter.dart';
 import 'build_paths.dart';
+import 'output_strategy.dart';
 
 /// The command line options common to all `build_runner` commands that do a
 /// build.
@@ -39,6 +40,7 @@ class BuildOptions {
   final bool dartAotPerf;
   final bool isReleaseBuild;
   final bool outputSymlinksOnly;
+  final OutputStrategy outputStrategy;
   final bool verbose;
   final bool verboseDurations;
 
@@ -57,6 +59,7 @@ class BuildOptions {
     required this.enableExperiments,
     required this.isReleaseBuild,
     required this.outputSymlinksOnly,
+    required this.outputStrategy,
     required this.verbose,
     required this.verboseDurations,
   });
@@ -77,6 +80,7 @@ class BuildOptions {
     BuiltList<String>? enableExperiments,
     bool? isReleaseBuild,
     bool? outputSymlinksOnly,
+    OutputStrategy? outputStrategy,
     bool? verbose,
     bool? verboseDurations,
   }) => BuildOptions(
@@ -91,6 +95,7 @@ class BuildOptions {
     enableExperiments: enableExperiments ?? BuiltList(),
     isReleaseBuild: isReleaseBuild ?? false,
     outputSymlinksOnly: outputSymlinksOnly ?? false,
+    outputStrategy: outputStrategy ?? OutputStrategy.overwrite,
     verbose: verbose ?? false,
     verboseDurations: verboseDurations ?? false,
   );
@@ -146,6 +151,7 @@ class BuildOptions {
       enableExperiments: commandLine.enableExperiments!,
       isReleaseBuild: commandLine.release!,
       outputSymlinksOnly: commandLine.symlink!,
+      outputStrategy: commandLine.outputStrategy,
       verbose: commandLine.verbose!,
       verboseDurations: commandLine.verboseDurations!,
       compileStrategy: commandLine.compileStrategy,
@@ -167,6 +173,7 @@ class BuildOptions {
     enableExperiments: enableExperiments,
     isReleaseBuild: isReleaseBuild,
     outputSymlinksOnly: outputSymlinksOnly,
+    outputStrategy: outputStrategy,
     verbose: verbose,
     verboseDurations: verboseDurations,
     compileStrategy: compileStrategy ?? this.compileStrategy,

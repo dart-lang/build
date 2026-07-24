@@ -1,0 +1,1895 @@
+diff --git a/build_runner/lib/src/build/build.dart b/build_runner/lib/src/build/build.dart
+index 9ccd72e8b6..34ce58d0c4 100644
+--- a/build_runner/lib/src/build/build.dart
++++ b/build_runner/lib/src/build/build.dart
+@@ -474,6 +474,9 @@
+         phase: phase,
+         anyOutputs: step.outputs.isNotEmpty,
+         anyChangedOutputs: step.outputs.keys.any(_isChangedOutput),
++        anyFixedOutputs: step.outputs.keys.any(
++          buildPlan.buildInputs.deletedOutputs.contains,
++        ),
+         lazy: lazy,
+       );
+     } else {
+diff --git a/build_runner/lib/src/build/build_series.dart b/build_runner/lib/src/build/build_series.dart
+index 5bbb5c7ea4..21eda388cd 100644
+--- a/build_runner/lib/src/build/build_series.dart
++++ b/build_runner/lib/src/build/build_series.dart
+@@ -6,11 +6,13 @@
+ 
+ import 'package:build/build.dart';
+ import 'package:built_collection/built_collection.dart';
++
+ import 'package:watcher/watcher.dart';
+ 
+ import '../build_plan/build_directory.dart';
+ import '../build_plan/build_filter.dart';
+ import '../build_plan/build_plan.dart';
++import '../build_plan/output_strategy.dart';
+ import '../commands/watch/asset_change.dart';
+ import '../constants.dart';
+ import '../io/asset_tracker.dart';
+@@ -48,6 +50,10 @@
+   /// can be ignored.
+   final Set<AssetId> _expectedDeletes = {};
+ 
++  /// Writes that are part of build output, so the resulting file watch events
++  /// can be ignored.
++  final Set<AssetId> _expectedWrites = {};
++
+   /// Whether the next build is the first build.
+   bool firstBuild = true;
+ 
+@@ -85,6 +91,12 @@
+         continue;
+       }
+ 
++      // Ignore any expected write once.
++      if ((change.type == ChangeType.ADD || change.type == ChangeType.MODIFY) &&
++          _expectedWrites.remove(id)) {
++        continue;
++      }
++
+       if (id.path.startsWith(entrypointDirectoryPath)) {
+         continue;
+       }
+@@ -129,10 +141,13 @@
+         continue;
+       }
+ 
+-      // Ignore creation or modification of outputs.
++      // Handle modifications and creations of outputs.
+       if (_buildPlan.buildStepPlan.isDeclaredOutput(id) &&
+           change.type != ChangeType.REMOVE) {
+-        continue;
++        if (_buildPlan.buildSpec.buildOptions.outputStrategy ==
++            OutputStrategy.keep) {
++          continue;
++        }
+       }
+ 
+       // It's an add of a "missing source" or a deletion of an input.
+@@ -159,6 +174,15 @@
+           buildStepPlan: _buildPlan.buildStepPlan,
+           buildState: _buildPlan.previousBuild.buildState ?? BuildState(),
+         );
++
++    if (_buildPlan.buildSpec.buildOptions.outputStrategy ==
++        OutputStrategy.keep) {
++      final declaredOutputs = _buildPlan.buildStepPlan.declaredOutputs;
++      updates.removeWhere(
++        (id, type) => type != ChangeType.REMOVE && declaredOutputs.contains(id),
++      );
++    }
++
+     return List.of(
+       updates.entries.map((entry) => WatchEvent(entry.value, '${entry.key}')),
+     );
+@@ -232,6 +256,13 @@
+ 
+     if (firstBuild) {
+       if (updates.isNotEmpty) {
++        if (_buildPlan.buildSpec.buildOptions.outputStrategy ==
++            OutputStrategy.keep) {
++          final declaredOutputs = _buildPlan.buildStepPlan.declaredOutputs;
++          updates = updates
++              .where((id) => !declaredOutputs.contains(id))
++              .toSet();
++        }
+         _buildPlan = await _buildPlan.updateForFileChanges(updates);
+       }
+     } else {
+@@ -253,7 +284,14 @@
+   Future<BuildResult> _runBuildAndWrite(Build build) async {
+     var result = await build.run();
+ 
+-    await _writeBuildOutput(result);
++    if (_buildPlan.buildSpec.buildOptions.outputStrategy ==
++        OutputStrategy.verify) {
++      if (result.status == BuildStatus.success) {
++        result = await _verifyBuildOutput(result);
++      }
++    } else {
++      await _writeBuildOutput(result);
++    }
+     result = await _createMergedOutputDirectories(result);
+ 
+     _buildPlan = build.buildPlan.withCompatiblePreviousBuild(
+@@ -272,46 +310,7 @@
+   ///
+   /// Serializes and writes the updated `asset_graph.json`.
+   Future<void> _writeBuildOutput(BuildResult result) async {
+-    // Outputs to delete and whether each is hidden.
+-    final deletes = <AssetId, bool>{
+-      // Conflicting outputs and incompatible outputs are always not hidden.
+-      for (final id in _buildPlan.conflictingOutputs) id: false,
+-      for (final id
+-          in _buildPlan.previousBuild.incompatibleBuildOutputsToDelete)
+-        id: false,
+-    };
+-
+-    final previousState = _buildPlan.previousBuild.buildState;
+-    if (previousState != null) {
+-      // Delete outputs that are no longer outputs.
+-      final currentState = result.buildState!;
+-      for (final stepResult in previousState.actualStepResults) {
+-        for (final id in stepResult.outputs.keys) {
+-          final stepId = _buildPlan.buildStepPlan.stepForDeclaredOutputOrNull(
+-            id,
+-          );
+-          if (stepId == null) {
+-            // Step was removed from the build.
+-            deletes[id] = stepResult.isHidden;
+-          } else {
+-            final stepResultOrNull = currentState.stepResultOrNull(stepId);
+-            if (stepResultOrNull != null &&
+-                !stepResultOrNull.outputs.containsKey(id)) {
+-              // Step ran but did not produce the output.
+-              deletes[id] = stepResult.isHidden;
+-            }
+-          }
+-        }
+-      }
+-      // Delete post process outputs.
+-      for (final postProcessResult in previousState.actualPostProcessResults) {
+-        for (final id in postProcessResult.outputs.keys) {
+-          if (!currentState.isActualPostOutput(id)) {
+-            deletes[id] = postProcessResult.hidden;
+-          }
+-        }
+-      }
+-    }
++    final deletes = _computeDeletes(result);
+ 
+     if (_buildPlan.buildInputs.cleanBuild) {
+       final generatedOutputDirectoryId = AssetId(
+@@ -327,6 +326,7 @@
+         id: output,
+         buildStepPlan: _buildPlan.buildStepPlan,
+       )!;
++      _expectedWrites.add(output);
+       await _buildPlan.readerWriter.writeAsBytes(
+         output,
+         content.bytes,
+@@ -348,6 +348,7 @@
+       _buildPlan.buildSpec.buildPackages.outputRoot,
+       assetGraphJsonPath,
+     );
++    _expectedWrites.add(assetGraphId);
+     final assetGraphContent = AssetContent.bytes(
+       AssetGraphJson.serialize(
+         buildPlanDigest: _buildPlan.buildSpec.buildPlanDigest,
+@@ -361,6 +362,102 @@
+     );
+   }
+ 
++  /// Outputs to delete and whether each is hidden.
++  Map<AssetId, bool> _computeDeletes(BuildResult result) {
++    final deletes = <AssetId, bool>{
++      for (final id in _buildPlan.conflictingOutputs) id: false,
++      for (final id
++          in _buildPlan.previousBuild.incompatibleBuildOutputsToDelete)
++        id: false,
++    };
++
++    final previousState = _buildPlan.previousBuild.buildState;
++    if (previousState != null) {
++      final currentState = result.buildState!;
++      for (final stepResult in previousState.actualStepResults) {
++        for (final id in stepResult.outputs.keys) {
++          final stepId = _buildPlan.buildStepPlan.stepForDeclaredOutputOrNull(
++            id,
++          );
++          if (stepId == null) {
++            deletes[id] = stepResult.isHidden;
++          } else {
++            final stepResultOrNull = currentState.stepResultOrNull(stepId);
++            if (stepResultOrNull != null &&
++                !stepResultOrNull.outputs.containsKey(id)) {
++              deletes[id] = stepResult.isHidden;
++            }
++          }
++        }
++      }
++      for (final postProcessResult in previousState.actualPostProcessResults) {
++        for (final id in postProcessResult.outputs.keys) {
++          if (!currentState.isActualPostOutput(id)) {
++            deletes[id] = postProcessResult.hidden;
++          }
++        }
++      }
++    }
++    return deletes;
++  }
++
++  Future<BuildResult> _verifyBuildOutput(BuildResult result) async {
++    final deletes = _computeDeletes(result);
++    final deletesToCheck = deletes.keys.where((id) => !deletes[id]!).toSet();
++
++    final added = <AssetId>[];
++    final deleted = <AssetId>[];
++    final modified = <AssetId>[];
++
++    for (final output in result.outputs) {
++      deletesToCheck.remove(output);
++      final hidden = output.isHidden(
++        buildStepPlan: _buildPlan.buildStepPlan,
++        buildState: result.buildState!,
++      );
++      if (hidden) continue;
++
++      final expectedContent = result.buildState!.contentOf(
++        id: output,
++        buildStepPlan: _buildPlan.buildStepPlan,
++      )!;
++      final exists = await _buildPlan.readerWriter.canRead(output);
++      if (!exists) {
++        deleted.add(output);
++      } else {
++        final existingBytes = await _buildPlan.readerWriter.readAsBytes(output);
++        final existingDigest = AssetContent.bytes(existingBytes).digest;
++        if (existingDigest != expectedContent.digest) {
++          modified.add(output);
++        }
++      }
++    }
++
++    for (final toDelete in deletesToCheck) {
++      final exists = await _buildPlan.readerWriter.canRead(toDelete);
++      if (exists) {
++        added.add(toDelete);
++      }
++    }
++
++    if (added.isNotEmpty || deleted.isNotEmpty || modified.isNotEmpty) {
++      final lines = <String>[
++        for (final id in added) 'A ${buildLog.renderId(id)}',
++        for (final id in deleted) 'D ${buildLog.renderId(id)}',
++        for (final id in modified) 'M ${buildLog.renderId(id)}',
++      ]..sort();
++
++      final message = StringBuffer(
++        'Verify failed due to Added|Deleted|Modified:\n\n',
++      );
++      message.write(lines.join('\n'));
++      buildLog.error(message.toString());
++
++      return result.copyWith(status: BuildStatus.failure);
++    }
++    return result;
++  }
++
+   /// Creates merged output directories if they are configured.
+   ///
+   /// Returns `result` with `status` modified to `failure` if any creation
+diff --git a/build_runner/lib/src/build_plan/build_options.dart b/build_runner/lib/src/build_plan/build_options.dart
+index 70eb7107c5..f1b722eaa2 100644
+--- a/build_runner/lib/src/build_plan/build_options.dart
++++ b/build_runner/lib/src/build_plan/build_options.dart
+@@ -15,6 +15,7 @@
+ import 'build_directory.dart';
+ import 'build_filter.dart';
+ import 'build_paths.dart';
++import 'output_strategy.dart';
+ 
+ /// The command line options common to all `build_runner` commands that do a
+ /// build.
+@@ -39,6 +40,7 @@
+   final bool dartAotPerf;
+   final bool isReleaseBuild;
+   final bool outputSymlinksOnly;
++  final OutputStrategy outputStrategy;
+   final bool verbose;
+   final bool verboseDurations;
+ 
+@@ -57,6 +59,7 @@
+     required this.enableExperiments,
+     required this.isReleaseBuild,
+     required this.outputSymlinksOnly,
++    required this.outputStrategy,
+     required this.verbose,
+     required this.verboseDurations,
+   });
+@@ -77,6 +80,7 @@
+     BuiltList<String>? enableExperiments,
+     bool? isReleaseBuild,
+     bool? outputSymlinksOnly,
++    OutputStrategy? outputStrategy,
+     bool? verbose,
+     bool? verboseDurations,
+   }) => BuildOptions(
+@@ -91,6 +95,7 @@
+     enableExperiments: enableExperiments ?? BuiltList(),
+     isReleaseBuild: isReleaseBuild ?? false,
+     outputSymlinksOnly: outputSymlinksOnly ?? false,
++    outputStrategy: outputStrategy ?? OutputStrategy.overwrite,
+     verbose: verbose ?? false,
+     verboseDurations: verboseDurations ?? false,
+   );
+@@ -146,6 +151,7 @@
+       enableExperiments: commandLine.enableExperiments!,
+       isReleaseBuild: commandLine.release!,
+       outputSymlinksOnly: commandLine.symlink!,
++      outputStrategy: commandLine.outputStrategy,
+       verbose: commandLine.verbose!,
+       verboseDurations: commandLine.verboseDurations!,
+       compileStrategy: commandLine.compileStrategy,
+@@ -167,6 +173,7 @@
+     enableExperiments: enableExperiments,
+     isReleaseBuild: isReleaseBuild,
+     outputSymlinksOnly: outputSymlinksOnly,
++    outputStrategy: outputStrategy,
+     verbose: verbose,
+     verboseDurations: verboseDurations,
+     compileStrategy: compileStrategy ?? this.compileStrategy,
+diff --git a/build_runner/lib/src/build_plan/build_plan.dart b/build_runner/lib/src/build_plan/build_plan.dart
+index 8092b2f14a..7834d29de2 100644
+--- a/build_runner/lib/src/build_plan/build_plan.dart
++++ b/build_runner/lib/src/build_plan/build_plan.dart
+@@ -20,6 +20,7 @@
+ import 'build_inputs.dart';
+ import 'build_spec.dart';
+ import 'build_step_plan.dart';
++import 'output_strategy.dart';
+ import 'previous_build.dart';
+ 
+ part 'build_plan.g.dart';
+@@ -285,9 +286,10 @@
+         buildStepPlan: buildStepPlan,
+         id: id,
+       );
+-      final oldContent = oldIsSource
+-          ? previousBuildState.contentOfSource(id)
+-          : null;
++      final oldContent = previousBuildState.contentOf(
++        id: id,
++        buildStepPlan: previousBuildStepPlan,
++      );
+       var exists = false;
+       AssetContent? newContent;
+ 
+@@ -324,8 +326,13 @@
+           oldContent != null &&
+           exists &&
+           oldContent.digest != newContent!.digest) {
+-        buildInputs.updatedSources.add(id);
+-        buildInputs.sourceContents[id] = newContent;
++        if (oldIsSource) {
++          buildInputs.updatedSources.add(id);
++          buildInputs.sourceContents[id] = newContent;
++        } else if (buildSpec.buildOptions.outputStrategy !=
++            OutputStrategy.keep) {
++          buildInputs.deletedOutputs.add(id);
++        }
+       }
+     }
+ 
+diff --git a/build_runner/lib/src/build_plan/output_strategy.dart b/build_runner/lib/src/build_plan/output_strategy.dart
+new file mode 100644
+index 0000000000..ad4abf323c
+--- /dev/null
++++ b/build_runner/lib/src/build_plan/output_strategy.dart
+@@ -0,0 +1,7 @@
++// Copyright (c) 2025, the Dart project authors.  Please see the AUTHORS file
++// for details. All rights reserved. Use of this source code is governed by a
++// BSD-style license that can be found in the LICENSE file.
++
++/// The strategy to use when dealing with conflicting or modified
++/// generated files.
++enum OutputStrategy { overwrite, keep, verify }
+diff --git a/build_runner/lib/src/build_runner_command_line.dart b/build_runner/lib/src/build_runner_command_line.dart
+index a13d6c7628..13e482a033 100644
+--- a/build_runner/lib/src/build_runner_command_line.dart
++++ b/build_runner/lib/src/build_runner_command_line.dart
+@@ -10,6 +10,7 @@
+ import 'package:built_collection/built_collection.dart';
+ 
+ import 'bootstrap/compile_type.dart';
++import 'build_plan/output_strategy.dart';
+ import 'internal.dart';
+ 
+ enum CommandType {
+@@ -70,11 +71,30 @@
+     return CompileStrategy.tryAot;
+   }
+ 
++  OutputStrategy get outputStrategy {
++    if (argResults?.wasParsed(onlyCheckOption) ?? false) {
++      if (argResults?.wasParsed(keepModifiedOutputsOption) ?? false) {
++        throw UsageException(
++          'Cannot specify both --$onlyCheckOption and '
++          '--$keepModifiedOutputsOption',
++          usage,
++        );
++      }
++      return OutputStrategy.verify;
++    }
++    if (argResults?.wasParsed(keepModifiedOutputsOption) ?? false) {
++      return OutputStrategy.keep;
++    }
++    return OutputStrategy.overwrite;
++  }
++
+   static Future<BuildRunnerCommandLine?> parse(Iterable<String> arguments) =>
+       _CommandRunner().run(arguments);
+ 
+-  BuildRunnerCommandLine(this.type, ArgResults argResults)
+-    : arguments = argResults.arguments.build(),
++  final ArgResults? argResults;
++
++  BuildRunnerCommandLine(this.type, this.argResults)
++    : arguments = argResults!.arguments.build(),
+       rest = argResults.rest.build(),
+       buildFilter = argResults.listNamed(buildFilterOption),
+       buildMode = argResults.stringNamed(buildModeFlag),
+@@ -161,6 +181,8 @@
+ const verboseDurationsOption = 'verbose-durations';
+ const verboseOption = 'verbose';
+ const workspaceOption = 'workspace';
++const keepModifiedOutputsOption = 'keep-modified-outputs';
++const onlyCheckOption = 'only-check';
+ 
+ // Removed options, kept to not break old command lines.
+ const deleteFilesByDefaultOption = 'delete-conflicting-outputs';
+@@ -278,6 +300,20 @@
+         negatable: true,
+         help: 'Symlink files in the output directories, instead of copying.',
+       )
++      ..addFlag(
++        keepModifiedOutputsOption,
++        defaultsTo: false,
++        negatable: false,
++        help: 'Leaves manual modifications to generated files in place.',
++      )
++      ..addFlag(
++        onlyCheckOption,
++        defaultsTo: false,
++        negatable: false,
++        help:
++            'Fails the build if there are out of date or modified outputs '
++            'without writing to disk. Typically used in CI.',
++      )
+       ..addMultiOption(
+         buildFilterOption,
+         help:
+diff --git a/build_runner/lib/src/io/asset_tracker.dart b/build_runner/lib/src/io/asset_tracker.dart
+index ba827a7a5d..395b7be06a 100644
+--- a/build_runner/lib/src/io/asset_tracker.dart
++++ b/build_runner/lib/src/io/asset_tracker.dart
+@@ -7,10 +7,12 @@
+ 
+ import 'package:async/async.dart';
+ import 'package:build/build.dart';
++import 'package:crypto/crypto.dart';
+ import 'package:glob/glob.dart';
+ import 'package:watcher/watcher.dart';
+ 
+ import '../build/build_state/build_state.dart';
++import '../build/resolver/asset_ids.dart';
+ import '../build_plan/build_configs.dart';
+ import '../build_plan/build_packages.dart';
+ import '../build_plan/build_step_plan.dart';
+@@ -44,6 +46,7 @@
+       generatedSources,
+       buildState,
+       declaredAndActualOutputs,
++      buildStepPlan: buildStepPlan,
+     );
+   }
+ 
+@@ -68,8 +71,9 @@
+     Set<AssetId> inputSources,
+     Set<AssetId> generatedSources,
+     BuildState buildState,
+-    Iterable<AssetId> declaredAndActualOutputs,
+-  ) async {
++    Iterable<AssetId> declaredAndActualOutputs, {
++    required BuildStepPlan buildStepPlan,
++  }) async {
+     final allSources = <AssetId>{}
+       ..addAll(inputSources)
+       ..addAll(generatedSources);
+@@ -97,11 +101,47 @@
+       final originalDigest = buildState.contentOfSource(id);
+       if (originalDigest == null) continue;
+ 
+-      final currentDigest = await _readerWriter.digest(id);
++      Digest? currentDigest;
++      try {
++        currentDigest = await _readerWriter.digest(id);
++      } on AssetNotFoundException {
++        continue;
++      } on FileSystemException {
++        continue;
++      }
+       if (currentDigest != originalDigest.digest) {
+         updates[id] = ChangeType.MODIFY;
+       }
+     }
++
++    final preExistingOutputs = declaredAndActualOutputs.toSet().intersection(
++      allSources,
++    );
++    for (final id in preExistingOutputs) {
++      final originalContent = buildState.contentOf(
++        buildStepPlan: buildStepPlan,
++        id: id,
++      );
++      if (originalContent == null) continue;
++
++      Digest? currentDigest;
++      try {
++        currentDigest = await _readerWriter.digest(
++          id,
++          hidden: id.isHidden(
++            buildStepPlan: buildStepPlan,
++            buildState: buildState,
++          ),
++        );
++      } on AssetNotFoundException {
++        continue;
++      } on FileSystemException {
++        continue;
++      }
++      if (currentDigest != originalContent.digest) {
++        updates[id] = ChangeType.MODIFY;
++      }
++    }
+     return updates;
+   }
+ 
+diff --git a/build_runner/lib/src/logging/build_log.dart b/build_runner/lib/src/logging/build_log.dart
+index 8bffde4983..138430e1f6 100644
+--- a/build_runner/lib/src/logging/build_log.dart
++++ b/build_runner/lib/src/logging/build_log.dart
+@@ -402,12 +402,15 @@
+     required bool lazy,
+     required bool anyOutputs,
+     required bool anyChangedOutputs,
++    bool anyFixedOutputs = false,
+   }) {
+     final phaseName = phase.name(lazy: lazy);
+     final progress = _getProgress(phase: phase, lazy: lazy);
+     progress.nextInput = null;
+     if (anyChangedOutputs) {
+       progress.builtNew++;
++    } else if (anyFixedOutputs) {
++      progress.builtFixed++;
+     } else if (anyOutputs) {
+       progress.builtSame++;
+     } else {
+@@ -683,6 +686,8 @@
+       if (progress.notTriggered != 0)
+         '${separator()}${progress.notTriggered} not triggered',
+       if (progress.builtNew != 0) '${separator()}${progress.builtNew} output',
++      if (progress.builtFixed != 0)
++        '${separator()}${progress.builtFixed} fixed',
+       if (progress.builtSame != 0) '${separator()}${progress.builtSame} same',
+       if (progress.builtNothing != 0)
+         '${separator()}${progress.builtNothing} no-op',
+@@ -761,6 +766,9 @@
+   /// Build steps that ran and output new or different output.
+   int builtNew = 0;
+ 
++  /// Build steps that ran but output the same as previously, but restored it.
++  int builtFixed = 0;
++
+   /// Build steps that ran but output the same output as they did previously.
+   int builtSame = 0;
+ 
+@@ -774,7 +782,7 @@
+ 
+   /// The number of build steps that have run in this phase.
+   int get runCount =>
+-      skipped + notTriggered + builtNew + builtSame + builtNothing;
++      skipped + notTriggered + builtNew + builtSame + builtFixed + builtNothing;
+ 
+   /// Whether this progress in displayed.
+   ///
+diff --git a/build_runner/scratch/debug_run.dart b/build_runner/scratch/debug_run.dart
+new file mode 100644
+index 0000000000..59dbea8ce8
+--- /dev/null
++++ b/build_runner/scratch/debug_run.dart
+@@ -0,0 +1,11 @@
++import 'dart:io';
++
++Future<void> main() async {
++  final result = await Process.run('dart', [
++    'run',
++    'test/integration_tests/output_strategy_test.dart',
++  ]);
++  print('Exit code: ${result.exitCode}');
++  print('STDOUT:\n${result.stdout}');
++  print('STDERR:\n${result.stderr}');
++}
+diff --git a/build_runner/scratch/full_pr_diff.patch b/build_runner/scratch/full_pr_diff.patch
+new file mode 100644
+index 0000000000..e69de29bb2
+diff --git a/build_runner/test/integration_tests/output_strategy_test.dart b/build_runner/test/integration_tests/output_strategy_test.dart
+new file mode 100644
+index 0000000000..d1bf370601
+--- /dev/null
++++ b/build_runner/test/integration_tests/output_strategy_test.dart
+@@ -0,0 +1,171 @@
++// Copyright (c) 2018, the Dart project authors.  Please see the AUTHORS file
++// for details. All rights reserved. Use of this source code is governed by a
++// BSD-style license that can be found in the LICENSE file.
++
++@Tags(['integration'])
++library;
++
++import 'package:build_runner/src/logging/build_log.dart';
++import 'package:test/test.dart';
++
++import '../common/common.dart';
++
++void main() async {
++  test(
++    'output strategy',
++    timeout: const Timeout(Duration(minutes: 5)),
++    () async {
++      final pubspecs = await Pubspecs.load();
++      final tester = BuildRunnerTester(pubspecs);
++
++      tester.writeFixturePackage(FixturePackages.copyBuilder());
++      tester.writePackage(
++        name: 'root_pkg',
++        dependencies: ['build_runner'],
++        pathDependencies: ['builder_pkg'],
++        files: {'web/a.txt': 'a', 'web/b.txt': 'b', 'web/c.txt': 'c'},
++      );
++
++      // Initial build.
++      var build = await tester.start(
++        'root_pkg',
++        'dart run build_runner build --force-jit',
++      );
++      await build.expect(BuildLog.successPattern);
++      await build.exitCode;
++      expect(tester.read('root_pkg/web/a.txt.copy'), 'a');
++
++      // Overwrite is default behavior even without input changes.
++      tester.write('root_pkg/web/a.txt.copy', 'User modified a');
++      build = await tester.start(
++        'root_pkg',
++        'dart run build_runner build --force-jit',
++      );
++      await build.expect(BuildLog.successPattern);
++      await build.exitCode;
++      expect(tester.read('root_pkg/web/a.txt.copy'), 'a');
++
++      // Overwrite is default behavior with input changes.
++      tester.write('root_pkg/web/a.txt.copy', 'User modified a');
++      tester.write('root_pkg/web/a.txt', 'a2');
++      build = await tester.start(
++        'root_pkg',
++        'dart run build_runner build --force-jit',
++      );
++      await build.expect(BuildLog.successPattern);
++      await build.exitCode;
++      expect(tester.read('root_pkg/web/a.txt.copy'), 'a2');
++
++      // --keep-modified-outputs keeps developer modifications.
++      tester.write('root_pkg/web/a.txt.copy', 'User modified a');
++      build = await tester.start(
++        'root_pkg',
++        'dart run build_runner build --force-jit --keep-modified-outputs',
++      );
++      await build.expect(BuildLog.successPattern);
++      await build.exitCode;
++      expect(tester.read('root_pkg/web/a.txt.copy'), 'User modified a');
++
++      // Restore state.
++      tester.delete('root_pkg/web/a.txt.copy');
++      tester.write('root_pkg/web/a.txt', 'a');
++      tester.write('root_pkg/web/b.txt', 'b');
++      tester.write('root_pkg/web/c.txt', 'c');
++      build = await tester.start(
++        'root_pkg',
++        'dart run build_runner build --force-jit --delete-conflicting-outputs',
++      );
++      await build.expect(BuildLog.successPattern);
++      await build.exitCode;
++
++      // --only-check passes incrementally.
++      build = await tester.start(
++        'root_pkg',
++        'dart run build_runner build --force-jit --only-check',
++      );
++      await build.expect(BuildLog.successPattern);
++      await build.exitCode;
++
++      // --only-check fails incrementally on M, D, A.
++      tester.write('root_pkg/web/a.txt.copy', 'User modified a');
++      tester.delete('root_pkg/web/b.txt.copy');
++      tester.delete('root_pkg/web/c.txt');
++      build = await tester.start(
++        'root_pkg',
++        'dart run build_runner build --force-jit --only-check',
++      );
++      await build.expect('Verify failed due to Added|Deleted|Modified:');
++      await build.expect(RegExp('.*web/c.txt.copy'));
++      await build.expect(RegExp('.*web/b.txt.copy'));
++      await build.expect(RegExp('.*web/a.txt.copy'));
++      await build.expect(BuildLog.failurePattern);
++      await build.exitCode; // Failed verification usually has exit code 73
++
++      // --only-check passes cleanly.
++      tester.write('root_pkg/web/a.txt.copy', 'a2');
++      tester.write('root_pkg/web/b.txt.copy', 'b');
++      tester.write('root_pkg/web/c.txt', 'c');
++      build = await tester.start(
++        'root_pkg',
++        'dart run build_runner build --force-jit',
++      );
++      await build.expect(BuildLog.successPattern);
++      await build.exitCode;
++
++      tester.delete('root_pkg/.dart_tool');
++      build = await tester.start(
++        'root_pkg',
++        'dart run build_runner build --force-jit --only-check',
++      );
++      await build.expect(BuildLog.successPattern);
++      await build.exitCode;
++
++      // --only-check fails cleanly on M, D.
++      build = await tester.start(
++        'root_pkg',
++        'dart run build_runner build --force-jit',
++      );
++      await build.expect(BuildLog.successPattern);
++      await build.exitCode;
++
++      tester.write('root_pkg/web/a.txt.copy', 'User modified a');
++      tester.delete('root_pkg/web/b.txt.copy');
++      tester.delete('root_pkg/.dart_tool');
++
++      build = await tester.start(
++        'root_pkg',
++        'dart run build_runner build --force-jit --only-check',
++      );
++      await build.expect('Verify failed due to Added|Deleted|Modified:');
++      await build.expect(RegExp('.*web/b.txt.copy'));
++      await build.expect(RegExp('.*web/a.txt.copy'));
++      await build.expect(BuildLog.failurePattern);
++      await build.exitCode;
++
++      // watch --only-check stream verification.
++      tester.write('root_pkg/web/a.txt.copy', 'a2');
++      tester.write('root_pkg/web/b.txt.copy', 'b');
++      build = await tester.start(
++        'root_pkg',
++        'dart run build_runner build --force-jit',
++      );
++      await build.expect(BuildLog.successPattern);
++      await build.exitCode;
++
++      final watch = await tester.start(
++        'root_pkg',
++        'dart run build_runner watch --force-jit --only-check',
++      );
++      await watch.expect(BuildLog.successPattern);
++
++      tester.write('root_pkg/web/a.txt.copy', 'User modified a');
++      await watch.expect('Verify failed due to Added|Deleted|Modified:');
++      await watch.expect('M web/a.txt.copy');
++      await watch.expect(BuildLog.failurePattern);
++
++      tester.write('root_pkg/web/a.txt.copy', 'a');
++      await watch.expect(BuildLog.successPattern);
++      await watch.kill();
++    },
++  );
++}
+diff --git a/build_runner/test/integration_tests/watch_command_test.dart b/build_runner/test/integration_tests/watch_command_test.dart
+index 1ecf4823d7..0aaa1b8288 100644
+--- a/build_runner/test/integration_tests/watch_command_test.dart
++++ b/build_runner/test/integration_tests/watch_command_test.dart
+@@ -75,6 +75,11 @@
+     await watch.expect('wrote 1 output');
+     expect(tester.read('root_pkg/web/a.txt.copy'), 'updated');
+ 
++    // Modified output.
++    tester.write('root_pkg/web/a.txt.copy', 'manually modified');
++    await watch.expect('wrote 1 output');
++    expect(tester.read('root_pkg/web/a.txt.copy'), 'updated');
++
+     // File change during build.
+     tester.write('root_pkg/web/a.txt', 'a');
+     await watch.expect('builder_pkg:test_builder');
+diff --git a/build_runner/test/io/asset_tracker_test.dart b/build_runner/test/io/asset_tracker_test.dart
+index a0dd0076a7..111a65409c 100644
+--- a/build_runner/test/io/asset_tracker_test.dart
++++ b/build_runner/test/io/asset_tracker_test.dart
+@@ -14,6 +14,7 @@
+ import 'package:build_runner/src/build_plan/build_packages.dart';
+ import 'package:build_runner/src/build_plan/build_phases.dart';
+ import 'package:build_runner/src/build_plan/build_step_plan.dart';
++
+ import 'package:build_runner/src/build_plan/phase.dart';
+ import 'package:build_runner/src/build_plan/testing_overrides.dart';
+ import 'package:build_runner/src/io/asset_tracker.dart';
+diff --git a/patch b/patch
+new file mode 100644
+index 0000000000..34fc74fd18
+--- /dev/null
++++ b/patch
+@@ -0,0 +1,1055 @@
++diff --git a/build_runner/lib/src/build/build_series.dart b/build_runner/lib/src/build/build_series.dart
++index 1fd775e095..53ff031e05 100644
++--- a/build_runner/lib/src/build/build_series.dart
+++++ b/build_runner/lib/src/build/build_series.dart
++@@ -6,11 +6,13 @@
++ 
++ import 'package:build/build.dart';
++ import 'package:built_collection/built_collection.dart';
+++
++ import 'package:watcher/watcher.dart';
++ 
++ import '../build_plan/build_directory.dart';
++ import '../build_plan/build_filter.dart';
++ import '../build_plan/build_plan.dart';
+++import '../build_plan/output_strategy.dart';
++ import '../commands/watch/asset_change.dart';
++ import '../constants.dart';
++ import '../io/asset_tracker.dart';
++@@ -44,6 +46,10 @@
++ 
++   final Completer<void> _closingCompleter = Completer();
++ 
+++  /// Deletes that are part of build output, so the resulting file watch events
+++  /// can be ignored.
+++  final Set<AssetId> _expectedDeletes = {};
+++
++   /// Whether the next build is the first build.
++   bool firstBuild = true;
++ 
++@@ -63,13 +69,7 @@
++   Future<void> get closing => _closingCompleter.future;
++ 
++   /// Filters [changes] to only changes that might trigger a build.
++-  ///
++-  /// Pass expected deletes in [expectedDeletes]. Expected deletes do not
++-  /// trigger a build. A delete that matches is removed from the set.
++-  Future<List<AssetChange>> filterChanges(
++-    List<AssetChange> changes,
++-    Set<AssetId> expectedDeletes,
++-  ) async {
+++  Future<List<AssetChange>> filterChanges(List<AssetChange> changes) async {
++     final result = <AssetChange>[];
++     for (final change in changes) {
++       final id = change.id;
++@@ -81,15 +81,16 @@
++         result.add(change);
++         continue;
++       }
+++
+++      // Ignore any expected delete once.
+++      if (change.type == ChangeType.REMOVE && _expectedDeletes.remove(id)) {
+++        continue;
+++      }
+++
++       if (id.path.startsWith(entrypointDirectoryPath)) {
++         continue;
++       }
++ 
++-      // Ignore any expected delete once.
++-      if (change.type == ChangeType.REMOVE && expectedDeletes.remove(id)) {
++-        continue;
++-      }
++-
++       if (_isBuildConfiguration(id)) {
++         result.add(change);
++         continue;
++@@ -159,6 +160,7 @@
++         ).collectChanges(
++           buildStepPlan: _buildPlan.buildStepPlan,
++           buildState: _buildPlan.previousBuild.buildState ?? BuildState(),
+++          outputStrategy: _buildPlan.buildSpec.buildOptions.outputStrategy,
++         );
++     return List.of(
++       updates.entries.map((entry) => WatchEvent(entry.value, '${entry.key}')),
++@@ -254,7 +256,14 @@
++   Future<BuildResult> _runBuildAndWrite(Build build) async {
++     var result = await build.run();
++ 
++-    await _writeBuildOutput(result);
+++    if (_buildPlan.buildSpec.buildOptions.outputStrategy ==
+++        OutputStrategy.verify) {
+++      if (result.status == BuildStatus.success) {
+++        result = await _verifyBuildOutput(result);
+++      }
+++    } else {
+++      await _writeBuildOutput(result);
+++    }
++     result = await _createMergedOutputDirectories(result);
++ 
++     _buildPlan = build.buildPlan.withCompatiblePreviousBuild(
++@@ -273,9 +282,59 @@
++   ///
++   /// Serializes and writes the updated `asset_graph.json`.
++   Future<void> _writeBuildOutput(BuildResult result) async {
++-    // Outputs to delete and whether each is hidden.
+++    final deletes = _computeDeletes(result);
+++
+++    if (_buildPlan.buildInputs.cleanBuild) {
+++      final generatedOutputDirectoryId = AssetId(
+++        _buildPlan.buildSpec.buildPackages.outputRoot,
+++        generatedOutputDirectory,
+++      );
+++      await _buildPlan.readerWriter.deleteDirectory(generatedOutputDirectoryId);
+++    }
+++
+++    for (final output in result.outputs) {
+++      deletes.remove(output);
+++      final content = result.buildState!.contentOf(
+++        id: output,
+++        buildStepPlan: _buildPlan.buildStepPlan,
+++      )!;
+++      await _buildPlan.readerWriter.writeAsBytes(
+++        output,
+++        content.bytes,
+++        hidden: output.isHidden(
+++          buildStepPlan: _buildPlan.buildStepPlan,
+++          buildState: result.buildState!,
+++        ),
+++      );
+++    }
+++    for (final entry in deletes.entries) {
+++      await _buildPlan.readerWriter.delete(
+++        entry.key,
+++        hidden: entry.value,
+++        onDelete: _expectedDeletes.add,
+++      );
+++    }
+++
+++    final assetGraphId = AssetId(
+++      _buildPlan.buildSpec.buildPackages.outputRoot,
+++      assetGraphJsonPath,
+++    );
+++    final assetGraphContent = AssetContent.bytes(
+++      AssetGraphJson.serialize(
+++        buildPlanDigest: _buildPlan.buildSpec.buildPlanDigest,
+++        buildState: result.buildState!,
+++        phasedAssetDeps: result.phasedAssetDeps,
+++      ),
+++    );
+++    await _buildPlan.readerWriter.writeAsBytes(
+++      assetGraphId,
+++      assetGraphContent.bytes,
+++    );
+++  }
+++
+++  /// Outputs to delete and whether each is hidden.
+++  Map<AssetId, bool> _computeDeletes(BuildResult result) {
++     final deletes = <AssetId, bool>{
++-      // Conflicting outputs and incompatible outputs are always not hidden.
++       for (final id in _buildPlan.conflictingOutputs) id: false,
++       for (final id
++           in _buildPlan.previousBuild.incompatibleBuildOutputsToDelete)
++@@ -284,7 +343,6 @@
++ 
++     final previousState = _buildPlan.previousBuild.buildState;
++     if (previousState != null) {
++-      // Delete outputs that are no longer outputs.
++       final currentState = result.buildState!;
++       for (final stepResult in previousState.actualStepResults) {
++         for (final id in stepResult.outputs.keys) {
++@@ -292,19 +350,16 @@
++             id,
++           );
++           if (stepId == null) {
++-            // Step was removed from the build.
++             deletes[id] = stepResult.isHidden;
++           } else {
++             final stepResultOrNull = currentState.stepResultOrNull(stepId);
++             if (stepResultOrNull != null &&
++                 !stepResultOrNull.outputs.containsKey(id)) {
++-              // Step ran but did not produce the output.
++               deletes[id] = stepResult.isHidden;
++             }
++           }
++         }
++       }
++-      // Delete post process outputs.
++       for (final postProcessResult in previousState.actualPostProcessResults) {
++         for (final id in postProcessResult.outputs.keys) {
++           if (!currentState.isActualPostOutput(id)) {
++@@ -313,56 +368,63 @@
++         }
++       }
++     }
++-
++-    if (_buildPlan.buildInputs.cleanBuild) {
++-      final generatedOutputDirectoryId = AssetId(
++-        _buildPlan.buildSpec.buildPackages.outputRoot,
++-        generatedOutputDirectory,
++-      );
++-      await _buildPlan.readerWriter.deleteDirectory(
++-        generatedOutputDirectoryId,
++-        onDelete: _buildPlan.onDelete,
++-      );
++-    }
+++    return deletes;
+++  }
+++
+++  Future<BuildResult> _verifyBuildOutput(BuildResult result) async {
+++    final deletes = _computeDeletes(result);
+++    final deletesToCheck = deletes.keys.where((id) => !deletes[id]!).toSet();
+++
+++    final added = <AssetId>[];
+++    final deleted = <AssetId>[];
+++    final modified = <AssetId>[];
++ 
++     for (final output in result.outputs) {
++-      deletes.remove(output);
++-      final content = result.buildState!.contentOf(
+++      deletesToCheck.remove(output);
+++      final hidden = output.isHidden(
+++        buildStepPlan: _buildPlan.buildStepPlan,
+++        buildState: result.buildState!,
+++      );
+++      if (hidden) continue;
+++
+++      final expectedContent = result.buildState!.contentOf(
++         id: output,
++         buildStepPlan: _buildPlan.buildStepPlan,
++       )!;
++-      await _buildPlan.readerWriter.writeAsBytes(
++-        output,
++-        content.bytes,
++-        hidden: output.isHidden(
++-          buildStepPlan: _buildPlan.buildStepPlan,
++-          buildState: result.buildState!,
++-        ),
++-      );
++-    }
++-    for (final entry in deletes.entries) {
++-      await _buildPlan.readerWriter.delete(
++-        entry.key,
++-        hidden: entry.value,
++-        onDelete: _buildPlan.onDelete,
++-      );
++-    }
++-
++-    final assetGraphId = AssetId(
++-      _buildPlan.buildSpec.buildPackages.outputRoot,
++-      assetGraphJsonPath,
++-    );
++-    final assetGraphContent = AssetContent.bytes(
++-      AssetGraphJson.serialize(
++-        buildPlanDigest: _buildPlan.buildSpec.buildPlanDigest,
++-        buildState: result.buildState!,
++-        phasedAssetDeps: result.phasedAssetDeps,
++-      ),
++-    );
++-    await _buildPlan.readerWriter.writeAsBytes(
++-      assetGraphId,
++-      assetGraphContent.bytes,
++-    );
+++      final exists = await _buildPlan.readerWriter.canRead(output);
+++      if (!exists) {
+++        deleted.add(output);
+++      } else {
+++        final existingDigest = await _buildPlan.readerWriter.digest(output);
+++        if (existingDigest != expectedContent.digest) {
+++          modified.add(output);
+++        }
+++      }
+++    }
+++
+++    for (final toDelete in deletesToCheck) {
+++      final exists = await _buildPlan.readerWriter.canRead(toDelete);
+++      if (exists) {
+++        added.add(toDelete);
+++      }
+++    }
+++
+++    if (added.isNotEmpty || deleted.isNotEmpty || modified.isNotEmpty) {
+++      final lines = <String>[
+++        for (final id in added) 'A ${buildLog.renderId(id)}',
+++        for (final id in deleted) 'D ${buildLog.renderId(id)}',
+++        for (final id in modified) 'M ${buildLog.renderId(id)}',
+++      ]..sort();
+++
+++      final message = StringBuffer(
+++        'Verify failed due to Added|Deleted|Modified:\n\n',
+++      );
+++      message.write(lines.join('\n'));
+++      buildLog.error(message.toString());
+++
+++      return result.copyWith(status: BuildStatus.failure);
+++    }
+++    return result;
++   }
++ 
++   /// Creates merged output directories if they are configured.
++diff --git a/build_runner/lib/src/build_plan/build_options.dart b/build_runner/lib/src/build_plan/build_options.dart
++index 70eb7107c5..f1b722eaa2 100644
++--- a/build_runner/lib/src/build_plan/build_options.dart
+++++ b/build_runner/lib/src/build_plan/build_options.dart
++@@ -15,6 +15,7 @@
++ import 'build_directory.dart';
++ import 'build_filter.dart';
++ import 'build_paths.dart';
+++import 'output_strategy.dart';
++ 
++ /// The command line options common to all `build_runner` commands that do a
++ /// build.
++@@ -39,6 +40,7 @@
++   final bool dartAotPerf;
++   final bool isReleaseBuild;
++   final bool outputSymlinksOnly;
+++  final OutputStrategy outputStrategy;
++   final bool verbose;
++   final bool verboseDurations;
++ 
++@@ -57,6 +59,7 @@
++     required this.enableExperiments,
++     required this.isReleaseBuild,
++     required this.outputSymlinksOnly,
+++    required this.outputStrategy,
++     required this.verbose,
++     required this.verboseDurations,
++   });
++@@ -77,6 +80,7 @@
++     BuiltList<String>? enableExperiments,
++     bool? isReleaseBuild,
++     bool? outputSymlinksOnly,
+++    OutputStrategy? outputStrategy,
++     bool? verbose,
++     bool? verboseDurations,
++   }) => BuildOptions(
++@@ -91,6 +95,7 @@
++     enableExperiments: enableExperiments ?? BuiltList(),
++     isReleaseBuild: isReleaseBuild ?? false,
++     outputSymlinksOnly: outputSymlinksOnly ?? false,
+++    outputStrategy: outputStrategy ?? OutputStrategy.overwrite,
++     verbose: verbose ?? false,
++     verboseDurations: verboseDurations ?? false,
++   );
++@@ -146,6 +151,7 @@
++       enableExperiments: commandLine.enableExperiments!,
++       isReleaseBuild: commandLine.release!,
++       outputSymlinksOnly: commandLine.symlink!,
+++      outputStrategy: commandLine.outputStrategy,
++       verbose: commandLine.verbose!,
++       verboseDurations: commandLine.verboseDurations!,
++       compileStrategy: commandLine.compileStrategy,
++@@ -167,6 +173,7 @@
++     enableExperiments: enableExperiments,
++     isReleaseBuild: isReleaseBuild,
++     outputSymlinksOnly: outputSymlinksOnly,
+++    outputStrategy: outputStrategy,
++     verbose: verbose,
++     verboseDurations: verboseDurations,
++     compileStrategy: compileStrategy ?? this.compileStrategy,
++diff --git a/build_runner/lib/src/build_plan/build_plan.dart b/build_runner/lib/src/build_plan/build_plan.dart
++index 7e5e62daee..8092b2f14a 100644
++--- a/build_runner/lib/src/build_plan/build_plan.dart
+++++ b/build_runner/lib/src/build_plan/build_plan.dart
++@@ -32,7 +32,6 @@
++   ReaderWriter get readerWriter => buildSpec.readerWriter;
++ 
++   /// Callback that gets notified of deletes.
++-  void Function(AssetId)? get onDelete;
++ 
++   /// Inputs in the source tree that conflict with declared outputs and must be
++   /// deleted.
++@@ -153,7 +152,6 @@
++         previousBuild: previousBuild,
++         buildDirs: buildDirs,
++         buildFilters: buildFilters,
++-        onDelete: onDelete,
++         filesToCheck: filesToCheck,
++         // Updates are being made to a `BuildPlan` that didn't actually run.
++         // That means the conflicting file check was already done when that
++@@ -167,7 +165,6 @@
++         previousBuildStepPlan: buildStepPlan,
++         buildDirs: buildDirs,
++         buildFilters: buildFilters,
++-        onDelete: onDelete,
++         filesToCheck: filesToCheck,
++       );
++     }
++@@ -194,7 +191,6 @@
++     required PreviousBuild previousBuild,
++     required BuiltSet<BuildDirectory> buildDirs,
++     required BuiltSet<BuildFilter> buildFilters,
++-    void Function(AssetId)? onDelete,
++     required Set<AssetId> filesToCheck,
++     Set<AssetId>? assetTrackerInputSources,
++   }) async {
++@@ -253,7 +249,6 @@
++       b.buildSpec.replace(buildSpec);
++       b.previousBuild.replace(previousBuild);
++       b.buildStepPlan.replace(buildStepPlan);
++-      b.onDelete = onDelete;
++       b.conflictingOutputs.replace(conflictingOutputs);
++       b.buildInputs.replace(result.build());
++       b.buildDirs.replace(buildDirs);
++@@ -268,7 +263,6 @@
++     required BuildStepPlan previousBuildStepPlan,
++     required BuiltSet<BuildDirectory> buildDirs,
++     required BuiltSet<BuildFilter> buildFilters,
++-    void Function(AssetId)? onDelete,
++     required Set<AssetId> filesToCheck,
++   }) async {
++     final readerWriter = buildSpec.readerWriter;
++@@ -363,7 +357,6 @@
++       b.buildSpec.replace(buildSpec);
++       b.previousBuild.replace(previousBuild);
++       b.buildStepPlan.replace(buildStepPlan);
++-      b.onDelete = onDelete;
++       b.buildInputs = buildInputs;
++       b.buildDirs.replace(buildDirs);
++       b.buildFilters.replace(buildFilters);
++diff --git a/build_runner/lib/src/build_plan/build_plan.g.dart b/build_runner/lib/src/build_plan/build_plan.g.dart
++index cca8f7b416..2469b93e7c 100644
++--- a/build_runner/lib/src/build_plan/build_plan.g.dart
+++++ b/build_runner/lib/src/build_plan/build_plan.g.dart
++@@ -23,8 +23,6 @@
++   final BuiltSet<BuildDirectory> buildDirs;
++   @override
++   final BuiltSet<BuildFilter> buildFilters;
++-  @override
++-  final void Function(AssetId)? onDelete;
++ 
++   factory _$BuildPlan([void Function(BuildPlanBuilder)? updates]) =>
++       (BuildPlanBuilder()..update(updates))._build();
++@@ -37,7 +35,6 @@
++     required this.buildInputs,
++     required this.buildDirs,
++     required this.buildFilters,
++-    this.onDelete,
++   }) : super._();
++   @override
++   BuildPlan rebuild(void Function(BuildPlanBuilder) updates) =>
++@@ -106,10 +103,6 @@
++   set buildStepPlan(BuildStepPlanBuilder? buildStepPlan) =>
++       _$this._buildStepPlan = buildStepPlan;
++ 
++-  void Function(AssetId)? _onDelete;
++-  void Function(AssetId)? get onDelete => _$this._onDelete;
++-  set onDelete(void Function(AssetId)? onDelete) => _$this._onDelete = onDelete;
++-
++   ListBuilder<AssetId>? _conflictingOutputs;
++   ListBuilder<AssetId> get conflictingOutputs =>
++       _$this._conflictingOutputs ??= ListBuilder<AssetId>();
++@@ -146,7 +139,6 @@
++       _buildInputs = $v.buildInputs.toBuilder();
++       _buildDirs = $v.buildDirs.toBuilder();
++       _buildFilters = $v.buildFilters.toBuilder();
++-      _onDelete = $v.onDelete;
++       _$v = null;
++     }
++     return this;
++@@ -178,7 +170,6 @@
++             buildInputs: buildInputs.build(),
++             buildDirs: buildDirs.build(),
++             buildFilters: buildFilters.build(),
++-            onDelete: onDelete,
++           );
++     } catch (_) {
++       late String _$failedField;
++diff --git a/build_runner/lib/src/build_plan/output_strategy.dart b/build_runner/lib/src/build_plan/output_strategy.dart
++new file mode 100644
++index 0000000000..ad4abf323c
++--- /dev/null
+++++ b/build_runner/lib/src/build_plan/output_strategy.dart
++@@ -0,0 +1,7 @@
+++// Copyright (c) 2025, the Dart project authors.  Please see the AUTHORS file
+++// for details. All rights reserved. Use of this source code is governed by a
+++// BSD-style license that can be found in the LICENSE file.
+++
+++/// The strategy to use when dealing with conflicting or modified
+++/// generated files.
+++enum OutputStrategy { overwrite, keep, verify }
++diff --git a/build_runner/lib/src/build_runner_command_line.dart b/build_runner/lib/src/build_runner_command_line.dart
++index a13d6c7628..13e482a033 100644
++--- a/build_runner/lib/src/build_runner_command_line.dart
+++++ b/build_runner/lib/src/build_runner_command_line.dart
++@@ -10,6 +10,7 @@
++ import 'package:built_collection/built_collection.dart';
++ 
++ import 'bootstrap/compile_type.dart';
+++import 'build_plan/output_strategy.dart';
++ import 'internal.dart';
++ 
++ enum CommandType {
++@@ -70,11 +71,30 @@
++     return CompileStrategy.tryAot;
++   }
++ 
+++  OutputStrategy get outputStrategy {
+++    if (argResults?.wasParsed(onlyCheckOption) ?? false) {
+++      if (argResults?.wasParsed(keepModifiedOutputsOption) ?? false) {
+++        throw UsageException(
+++          'Cannot specify both --$onlyCheckOption and '
+++          '--$keepModifiedOutputsOption',
+++          usage,
+++        );
+++      }
+++      return OutputStrategy.verify;
+++    }
+++    if (argResults?.wasParsed(keepModifiedOutputsOption) ?? false) {
+++      return OutputStrategy.keep;
+++    }
+++    return OutputStrategy.overwrite;
+++  }
+++
++   static Future<BuildRunnerCommandLine?> parse(Iterable<String> arguments) =>
++       _CommandRunner().run(arguments);
++ 
++-  BuildRunnerCommandLine(this.type, ArgResults argResults)
++-    : arguments = argResults.arguments.build(),
+++  final ArgResults? argResults;
+++
+++  BuildRunnerCommandLine(this.type, this.argResults)
+++    : arguments = argResults!.arguments.build(),
++       rest = argResults.rest.build(),
++       buildFilter = argResults.listNamed(buildFilterOption),
++       buildMode = argResults.stringNamed(buildModeFlag),
++@@ -161,6 +181,8 @@
++ const verboseDurationsOption = 'verbose-durations';
++ const verboseOption = 'verbose';
++ const workspaceOption = 'workspace';
+++const keepModifiedOutputsOption = 'keep-modified-outputs';
+++const onlyCheckOption = 'only-check';
++ 
++ // Removed options, kept to not break old command lines.
++ const deleteFilesByDefaultOption = 'delete-conflicting-outputs';
++@@ -278,6 +300,20 @@
++         negatable: true,
++         help: 'Symlink files in the output directories, instead of copying.',
++       )
+++      ..addFlag(
+++        keepModifiedOutputsOption,
+++        defaultsTo: false,
+++        negatable: false,
+++        help: 'Leaves manual modifications to generated files in place.',
+++      )
+++      ..addFlag(
+++        onlyCheckOption,
+++        defaultsTo: false,
+++        negatable: false,
+++        help:
+++            'Fails the build if there are out of date or modified outputs '
+++            'without writing to disk. Typically used in CI.',
+++      )
++       ..addMultiOption(
++         buildFilterOption,
++         help:
++diff --git a/build_runner/lib/src/commands/daemon/daemon_builder.dart b/build_runner/lib/src/commands/daemon/daemon_builder.dart
++index b3b10b7d70..d671f2e86a 100644
++--- a/build_runner/lib/src/commands/daemon/daemon_builder.dart
+++++ b/build_runner/lib/src/commands/daemon/daemon_builder.dart
++@@ -219,7 +219,6 @@
++     required BuildPlan buildPlan,
++     required DaemonOptions daemonOptions,
++   }) async {
++-    final expectedDeletes = <AssetId>{};
++     final outputStreamController = StreamController<ServerLog>(sync: true);
++ 
++     buildLog.configuration = buildLog.configuration.rebuild((b) {
++@@ -227,7 +226,6 @@
++         outputStreamController.add(ServerLog.fromLogRecord(record));
++       };
++     });
++-    buildPlan = buildPlan.rebuild((b) => b.onDelete = expectedDeletes.add);
++ 
++     final buildSeries = BuildSeries(buildPlan);
++ 
++@@ -239,9 +237,7 @@
++               buildPlan.buildSpec.testingOverrides.debounceDelay ??
++                   const Duration(milliseconds: 250),
++             )
++-            .asyncMap(
++-              (changes) => buildSeries.filterChanges(changes, expectedDeletes),
++-            )
+++            .asyncMap(buildSeries.filterChanges)
++             .where((changes) => changes.isNotEmpty)
++             .map(
++               (changes) => changes
++diff --git a/build_runner/lib/src/commands/watch/watcher.dart b/build_runner/lib/src/commands/watch/watcher.dart
++index 359c722802..4a69563f47 100644
++--- a/build_runner/lib/src/commands/watch/watcher.dart
+++++ b/build_runner/lib/src/commands/watch/watcher.dart
++@@ -4,7 +4,6 @@
++ 
++ import 'dart:async';
++ 
++-import 'package:build/build.dart';
++ import 'package:stream_transform/stream_transform.dart';
++ 
++ import '../../bootstrap/build_process_state.dart';
++@@ -22,18 +21,13 @@
++   final BuildPlan _buildPlan;
++   final BuildSeries _buildSeries;
++ 
++-  /// Pending expected delete events from the build.
++-  final Set<AssetId> _expectedDeletes;
++-
++-  Watcher._(this._buildPlan, this._buildSeries, this._expectedDeletes);
+++  Watcher._(this._buildPlan, this._buildSeries);
++ 
++   BuildPackages get buildPackages => _buildPlan.buildSpec.buildPackages;
++ 
++   factory Watcher({required BuildPlan buildPlan, required Future<void> until}) {
++-    final expectedDeletes = <AssetId>{};
++-    buildPlan = buildPlan.rebuild((b) => b.onDelete = expectedDeletes.add);
++     final buildSeries = BuildSeries(buildPlan);
++-    final result = Watcher._(buildPlan, buildSeries, expectedDeletes);
+++    final result = Watcher._(buildPlan, buildSeries);
++     result._run(until);
++     return result;
++   }
++@@ -76,9 +70,7 @@
++           _buildPlan.buildSpec.testingOverrides.debounceDelay ??
++               const Duration(milliseconds: 250),
++         )
++-        .asyncMap(
++-          (changes) => _buildSeries.filterChanges(changes, _expectedDeletes),
++-        )
+++        .asyncMap(_buildSeries.filterChanges)
++         .where((changes) => changes.isNotEmpty)
++         .takeUntil(terminate)
++         .asyncMapBuffer(_doBuild)
++@@ -100,7 +92,6 @@
++ 
++   Future<BuildResult> _doBuild(List<List<AssetChange>> changes) async {
++     final mergedChanges = collectChanges(changes);
++-    _expectedDeletes.clear();
++     final result = await _buildSeries.run(
++       mergedChanges,
++       recentlyBootstrapped: false,
++diff --git a/build_runner/lib/src/io/asset_tracker.dart b/build_runner/lib/src/io/asset_tracker.dart
++index ba827a7a5d..eedc6c3257 100644
++--- a/build_runner/lib/src/io/asset_tracker.dart
+++++ b/build_runner/lib/src/io/asset_tracker.dart
++@@ -7,14 +7,17 @@
++ 
++ import 'package:async/async.dart';
++ import 'package:build/build.dart';
+++import 'package:crypto/crypto.dart';
++ import 'package:glob/glob.dart';
++ import 'package:watcher/watcher.dart';
++ 
++ import '../build/build_state/build_state.dart';
+++import '../build/resolver/asset_ids.dart';
++ import '../build_plan/build_configs.dart';
++ import '../build_plan/build_packages.dart';
++ import '../build_plan/build_step_plan.dart';
++ import '../build_plan/build_target.dart';
+++import '../build_plan/output_strategy.dart';
++ import '../constants.dart';
++ import '../logging/timed_activities.dart';
++ import 'reader_writer.dart';
++@@ -32,6 +35,7 @@
++   Future<Map<AssetId, ChangeType>> collectChanges({
++     required BuildStepPlan buildStepPlan,
++     required BuildState buildState,
+++    required OutputStrategy outputStrategy,
++   }) async {
++     final inputSources = await findInputSources();
++     final generatedSources = await findCacheDirSources();
++@@ -44,6 +48,8 @@
++       generatedSources,
++       buildState,
++       declaredAndActualOutputs,
+++      buildStepPlan: buildStepPlan,
+++      outputStrategy: outputStrategy,
++     );
++   }
++ 
++@@ -68,8 +74,10 @@
++     Set<AssetId> inputSources,
++     Set<AssetId> generatedSources,
++     BuildState buildState,
++-    Iterable<AssetId> declaredAndActualOutputs,
++-  ) async {
+++    Iterable<AssetId> declaredAndActualOutputs, {
+++    required BuildStepPlan buildStepPlan,
+++    required OutputStrategy outputStrategy,
+++  }) async {
++     final allSources = <AssetId>{}
++       ..addAll(inputSources)
++       ..addAll(generatedSources);
++@@ -97,11 +105,49 @@
++       final originalDigest = buildState.contentOfSource(id);
++       if (originalDigest == null) continue;
++ 
++-      final currentDigest = await _readerWriter.digest(id);
+++      Digest? currentDigest;
+++      try {
+++        currentDigest = await _readerWriter.digest(id);
+++      } on AssetNotFoundException {
+++        continue;
+++      } on FileSystemException {
+++        continue;
+++      }
++       if (currentDigest != originalDigest.digest) {
++         updates[id] = ChangeType.MODIFY;
++       }
++     }
+++
+++    if (outputStrategy != OutputStrategy.keep) {
+++      final preExistingOutputs = declaredAndActualOutputs.toSet().intersection(
+++        allSources,
+++      );
+++      for (final id in preExistingOutputs) {
+++        final originalContent = buildState.contentOf(
+++          buildStepPlan: buildStepPlan,
+++          id: id,
+++        );
+++        if (originalContent == null) continue;
+++
+++        Digest? currentDigest;
+++        try {
+++          currentDigest = await _readerWriter.digest(
+++            id,
+++            hidden: id.isHidden(
+++              buildStepPlan: buildStepPlan,
+++              buildState: buildState,
+++            ),
+++          );
+++        } on AssetNotFoundException {
+++          continue;
+++        } on FileSystemException {
+++          continue;
+++        }
+++        if (currentDigest != originalContent.digest) {
+++          updates[id] = ChangeType.MODIFY;
+++        }
+++      }
+++    }
++     return updates;
++   }
++ 
++diff --git a/build_runner/test/build/build_test.dart b/build_runner/test/build/build_test.dart
++index 8cc71b6c6f..326167614e 100644
++--- a/build_runner/test/build/build_test.dart
+++++ b/build_runner/test/build/build_test.dart
++@@ -852,33 +852,6 @@
++           },
++         );
++       });
++-
++-      test('Will not delete from non-root packages', () async {
++-        await testPhases(
++-          builderFactories,
++-          [
++-            BuilderDefinition(
++-              '',
++-              autoApply: AutoApply.allPackages,
++-              hideOutput: true,
++-            ),
++-          ],
++-          {
++-            'b|lib/b.txt': 'b',
++-            'a|.dart_tool/build/generated/b/lib/b.txt.copy': 'b',
++-          },
++-          buildPackages: buildPackages,
++-          outputs: {r'$$b|lib/b.txt.copy': 'b'},
++-          onDelete: (AssetId assetId) {
++-            if (assetId.package != 'a') {
++-              throw StateError(
++-                'Should not delete outside of package:a, '
++-                'tried to delete $assetId',
++-              );
++-            }
++-          },
++-        );
++-      });
++     });
++ 
++     test('can read files from external packages', () async {
++diff --git a/build_runner/test/common/test_phases.dart b/build_runner/test/common/test_phases.dart
++index 6ab4ec2698..a96e98da14 100644
++--- a/build_runner/test/common/test_phases.dart
+++++ b/build_runner/test/common/test_phases.dart
++@@ -84,7 +84,6 @@
++   bool verbose = false,
++   Set<BuildDirectory> buildDirs = const {},
++   Set<BuildFilter> buildFilters = const {},
++-  void Function(AssetId id)? onDelete,
++ }) async {
++   buildPackages ??= BuildPackages.singlePackageBuild('a', [
++     BuildPackage.forTesting(name: 'a', isOutput: true),
++@@ -127,7 +126,7 @@
++     b.verbose = verbose;
++   });
++ 
++-  var buildPlan = await BuildPlan.load(
+++  final buildPlan = await BuildPlan.load(
++     await BuildSpec.load(
++       builderFactories: builderFactories,
++       // ignore: invalid_use_of_visible_for_testing_member
++@@ -144,13 +143,8 @@
++     ),
++   );
++ 
++-  if (onDelete != null) {
++-    buildPlan = buildPlan.rebuild((b) => b.onDelete = onDelete);
++-  }
++-
++-  BuildResult result;
++   final buildSeries = BuildSeries(buildPlan);
++-  result = await buildSeries.run({}, recentlyBootstrapped: true);
+++  final result = await buildSeries.run({}, recentlyBootstrapped: true);
++   await buildSeries.close();
++ 
++   if (checkBuildStatus) {
++diff --git a/build_runner/test/integration_tests/output_strategy_test.dart b/build_runner/test/integration_tests/output_strategy_test.dart
++new file mode 100644
++index 0000000000..8a94bf125f
++--- /dev/null
+++++ b/build_runner/test/integration_tests/output_strategy_test.dart
++@@ -0,0 +1,189 @@
+++// Copyright (c) 2026, the Dart project authors.  Please see the AUTHORS file
+++// for details. All rights reserved. Use of this source code is governed by a
+++// BSD-style license that can be found in the LICENSE file.
+++
+++@Tags(['integration4'])
+++library;
+++
+++import 'package:build_runner/src/logging/build_log.dart';
+++import 'package:test/test.dart';
+++
+++import '../common/common.dart';
+++
+++void main() async {
+++  test('overwrite is the default behavior', () async {
+++    final pubspecs = await Pubspecs.load();
+++    final tester = BuildRunnerTester(pubspecs);
+++
+++    tester.writeFixturePackage(FixturePackages.copyBuilder());
+++    tester.writePackage(
+++      name: 'root_pkg',
+++      dependencies: ['build_runner'],
+++      pathDependencies: ['builder_pkg'],
+++      files: {'web/a.txt': 'a'},
+++    );
+++
+++    // Initial build.
+++    final build1 = await tester.start(
+++      'root_pkg',
+++      'dart run build_runner build --force-jit',
+++    );
+++    await build1.expect(BuildLog.successPattern);
+++    expect(tester.read('root_pkg/web/a.txt.copy'), 'a');
+++
+++    // User modifies the output manually!
+++    tester.write('root_pkg/web/a.txt.copy', 'User modified a');
+++
+++    // Trigger rebuild
+++    tester.write('root_pkg/web/a.txt', 'b');
+++
+++    // Default behavior should OVERWRITE without error.
+++    final build2 = await tester.start(
+++      'root_pkg',
+++      'dart run build_runner build --force-jit',
+++    );
+++    await build2.expect(BuildLog.successPattern);
+++
+++    // Note: since input changed, the builder runs and the file is overwritten.
+++    expect(tester.read('root_pkg/web/a.txt.copy'), 'b');
+++  });
+++
+++  test('--keep-modified-outputs keeps developer modifications', () async {
+++    final pubspecs = await Pubspecs.load();
+++    final tester = BuildRunnerTester(pubspecs);
+++
+++    tester.writeFixturePackage(FixturePackages.copyBuilder());
+++    tester.writePackage(
+++      name: 'root_pkg',
+++      dependencies: ['build_runner'],
+++      pathDependencies: ['builder_pkg'],
+++      files: {'web/a.txt': 'a'},
+++    );
+++
+++    // Initial build.
+++    final build1 = await tester.start(
+++      'root_pkg',
+++      'dart run build_runner build --force-jit',
+++    );
+++    await build1.expect(BuildLog.successPattern);
+++    expect(tester.read('root_pkg/web/a.txt.copy'), 'a');
+++
+++    // Trigger a REBUILD, but without changing the input this time!
+++    // We just want to see if a normal build without input changes
+++    // will overwrite the user's modifications (it would if overwrite was on,
+++    // because overwrite causes AssetTracker to flag the file as MODIFY, triggering\n    // a build?).
+++    // Actually, in the first test we proved that overwrite OVERWRITES even if input\n    // didn't change!
+++
+++    // User modifies the output manually!
+++    tester.write('root_pkg/web/a.txt.copy', 'User modified a');
+++
+++    // So here, we just run a build without input change:
+++
+++    // With --keep-modified-outputs, it should not overwrite the file because it ignores\n    // the manual edit!
+++    final build2 = await tester.start(
+++      'root_pkg',
+++      'dart run build_runner build --force-jit --keep-modified-outputs',
+++    );
+++    await build2.expect(BuildLog.successPattern);
+++    expect(tester.read('root_pkg/web/a.txt.copy'), 'User modified a');
+++  });
+++
+++  test('--only-check fails on modified outputs', () async {
+++    final pubspecs = await Pubspecs.load();
+++    final tester = BuildRunnerTester(pubspecs);
+++
+++    tester.writeFixturePackage(FixturePackages.copyBuilder());
+++    tester.writePackage(
+++      name: 'root_pkg',
+++      dependencies: ['build_runner'],
+++      pathDependencies: ['builder_pkg'],
+++      files: {'web/a.txt': 'a'},
+++    );
+++
+++    // Initial build.
+++    final build1 = await tester.start(
+++      'root_pkg',
+++      'dart run build_runner build --force-jit',
+++    );
+++    await build1.expect(BuildLog.successPattern);
+++    expect(tester.read('root_pkg/web/a.txt.copy'), 'a');
+++
+++    // Trigger a new build by changing input!
+++    tester.write('root_pkg/web/a.txt', 'b');
+++
+++    // With --only-check, it should fail because the output doesn't match the new expected\n    // output.
+++    final build2 = await tester.start(
+++      'root_pkg',
+++      'dart run build_runner build --force-jit --only-check',
+++    );
+++
+++    await build2.expect('Verify failed due to Added|Deleted|Modified:');
+++    await build2.expect('M web/a.txt.copy');
+++    // The build fails!
+++    await build2.expect(BuildLog.failurePattern);
+++  });
+++
+++  test('--only-check fails on deleted outputs', () async {
+++    final pubspecs = await Pubspecs.load();
+++    final tester = BuildRunnerTester(pubspecs);
+++
+++    tester.writeFixturePackage(FixturePackages.copyBuilder());
+++    tester.writePackage(
+++      name: 'root_pkg',
+++      dependencies: ['build_runner'],
+++      pathDependencies: ['builder_pkg'],
+++      files: {'web/a.txt': 'a'},
+++    );
+++
+++    // Initial build.
+++    final build1 = await tester.start(
+++      'root_pkg',
+++      'dart run build_runner build --force-jit',
+++    );
+++    await build1.expect(BuildLog.successPattern);
+++
+++    // Trigger a verified build by deleting the generated output
+++    tester.delete('root_pkg/web/a.txt.copy');
+++
+++    final build2 = await tester.start(
+++      'root_pkg',
+++      'dart run build_runner build --force-jit --only-check',
+++    );
+++
+++    await build2.expect('Verify failed due to Added|Deleted|Modified:');
+++    await build2.expect('D web/a.txt.copy');
+++    await build2.expect(BuildLog.failurePattern);
+++  });
+++
+++  test('--only-check fails on added (unexpected) outputs', () async {
+++    final pubspecs = await Pubspecs.load();
+++    final tester = BuildRunnerTester(pubspecs);
+++
+++    tester.writeFixturePackage(FixturePackages.copyBuilder());
+++    tester.writePackage(
+++      name: 'root_pkg',
+++      dependencies: ['build_runner'],
+++      pathDependencies: ['builder_pkg'],
+++      files: {'web/a.txt': 'a'},
+++    );
+++
+++    // Initial build.
+++    final build1 = await tester.start(
+++      'root_pkg',
+++      'dart run build_runner build --force-jit',
+++    );
+++    await build1.expect(BuildLog.successPattern);
+++
+++    // Delete the input to make the output "unexpected" (should be deleted)
+++    tester.delete('root_pkg/web/a.txt');
+++
+++    final build2 = await tester.start(
+++      'root_pkg',
+++      'dart run build_runner build --force-jit --only-check',
+++    );
+++
+++    await build2.expect('Verify failed due to Added|Deleted|Modified:');
+++    await build2.expect('A web/a.txt.copy');
+++    await build2.expect(BuildLog.failurePattern);
+++  });
+++}
++diff --git a/build_runner/test/io/asset_tracker_test.dart b/build_runner/test/io/asset_tracker_test.dart
++index a0dd0076a7..2171a4654e 100644
++--- a/build_runner/test/io/asset_tracker_test.dart
+++++ b/build_runner/test/io/asset_tracker_test.dart
++@@ -14,6 +14,7 @@
++ import 'package:build_runner/src/build_plan/build_packages.dart';
++ import 'package:build_runner/src/build_plan/build_phases.dart';
++ import 'package:build_runner/src/build_plan/build_step_plan.dart';
+++import 'package:build_runner/src/build_plan/output_strategy.dart';
++ import 'package:build_runner/src/build_plan/phase.dart';
++ import 'package:build_runner/src/build_plan/testing_overrides.dart';
++ import 'package:build_runner/src/io/asset_tracker.dart';
++@@ -75,6 +76,7 @@
++       final updates = await assetTracker.collectChanges(
++         buildState: buildState,
++         buildStepPlan: buildStepPlan,
+++        outputStrategy: OutputStrategy.overwrite,
++       );
++       // Advance buildState for the next tests so these initial sources are
++       // known.
++@@ -111,6 +113,7 @@
++         await assetTracker.collectChanges(
++           buildState: buildState,
++           buildStepPlan: buildStepPlan,
+++          outputStrategy: OutputStrategy.overwrite,
++         ),
++         {AssetId('a', 'web/a.txt'): ChangeType.MODIFY},
++       );
++@@ -123,6 +126,7 @@
++         await assetTracker.collectChanges(
++           buildState: buildState,
++           buildStepPlan: buildStepPlan,
+++          outputStrategy: OutputStrategy.overwrite,
++         ),
++         {AssetId('a', 'web/b.txt'): ChangeType.ADD},
++       );
++@@ -135,6 +139,7 @@
++         await assetTracker.collectChanges(
++           buildState: buildState,
++           buildStepPlan: buildStepPlan,
+++          outputStrategy: OutputStrategy.overwrite,
++         ),
++         {AssetId('a', 'web/a.txt'): ChangeType.REMOVE},
++       );
++@@ -162,6 +167,7 @@
++       final changes = await assetTracker.collectChanges(
++         buildState: emptyBuildState,
++         buildStepPlan: planWithOutput,
+++        outputStrategy: OutputStrategy.overwrite,
++       );
++       changes.removeWhere((id, type) => id.package == r'$sdk');
++       expect(changes, {outputId: ChangeType.REMOVE});
++diff --git a/patch b/patch
++new file mode 100644
++index 0000000000..e69de29bb2
