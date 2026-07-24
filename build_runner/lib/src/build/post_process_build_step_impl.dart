@@ -10,6 +10,7 @@ import 'package:crypto/crypto.dart' show Digest;
 
 import 'asset_content.dart';
 import 'builder_filesystem.dart';
+import 'resolver/asset_ids.dart';
 
 class PostProcessBuildStepImpl implements PostProcessBuildStep {
   @override
@@ -30,9 +31,12 @@ class PostProcessBuildStepImpl implements PostProcessBuildStep {
        _deleteAsset = deleteAsset;
 
   @override
-  Future<Digest> digest(AssetId id) async => inputId == id
-      ? (await buildFilesystem.contentOf(id)).digest
-      : Future.error(InvalidInputException(id));
+  Future<Digest> digest(AssetId id) async {
+    id = id.normalize();
+    return inputId == id
+        ? (await buildFilesystem.contentOf(id)).digest
+        : Future.error(InvalidInputException(id));
+  }
 
   @override
   Future<List<int>> readInputAsBytes() async {
@@ -48,6 +52,7 @@ class PostProcessBuildStepImpl implements PostProcessBuildStep {
 
   @override
   Future<void> writeAsBytes(AssetId id, FutureOr<List<int>> bytes) async {
+    id = id.normalize();
     _addAsset(id);
     outputs[id] = AssetContent.bytes(await bytes);
   }
@@ -58,6 +63,7 @@ class PostProcessBuildStepImpl implements PostProcessBuildStep {
     FutureOr<String> content, {
     Encoding encoding = utf8,
   }) async {
+    id = id.normalize();
     _addAsset(id);
     outputs[id] = AssetContent.string(await content, encoding: encoding);
   }

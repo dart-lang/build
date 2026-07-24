@@ -8,6 +8,11 @@ import '../../build_plan/build_step_plan.dart';
 import '../build_state/build_state.dart';
 
 extension AssetIdExtension on AssetId {
+  /// Returns a new [AssetId] constructed from [package] and [path].
+  ///
+  /// Normalizes the path; throws on invalid package or path.
+  AssetId normalize() => AssetId(package, path);
+
   bool get isDart => extension == '.dart';
 
   /// Whether the asset is hidden.

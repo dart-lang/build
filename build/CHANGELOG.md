@@ -1,3 +1,7 @@
+## 4.0.9-wip
+
+- `AssetId` now validates package names in addition to paths.
+
 ## 4.0.8
 
 - Allow `analyzer` 14.x, require 13.3.0.

@@ -16,6 +16,7 @@ import 'package:package_config/package_config_types.dart';
 import 'asset_content.dart';
 import 'builder_filesystem.dart';
 import 'input_tracker.dart';
+import 'resolver/asset_ids.dart';
 import 'resolver/delegating_resolver.dart';
 
 /// A single step in the build processes.
@@ -110,6 +111,7 @@ class BuildStepImpl implements BuildStep {
   @override
   Future<bool> canRead(AssetId id, {bool track = true}) async {
     if (_isComplete) throw BuildStepCompletedException();
+    id = id.normalize();
     final isReadable = await _isReadable(
       id,
       catchInvalidInputs: true,
@@ -132,6 +134,7 @@ class BuildStepImpl implements BuildStep {
   @override
   Future<List<int>> readAsBytes(AssetId id) async {
     if (_isComplete) throw BuildStepCompletedException();
+    id = id.normalize();
     final isReadable = await _isReadable(id);
     if (!isReadable) {
       throw AssetNotFoundException(id);
@@ -150,6 +153,7 @@ class BuildStepImpl implements BuildStep {
     bool track = true,
   }) async {
     if (_isComplete) throw BuildStepCompletedException();
+    id = id.normalize();
     final isReadable = await _isReadable(id, track: track);
     if (!isReadable) {
       throw AssetNotFoundException(id);
@@ -175,6 +179,7 @@ class BuildStepImpl implements BuildStep {
   @override
   Future<void> writeAsBytes(AssetId id, FutureOr<List<int>> bytes) async {
     if (_isComplete) throw BuildStepCompletedException();
+    id = id.normalize();
     _checkOutput(id);
     outputs[id] = AssetContent.bytes(await bytes);
   }
@@ -186,6 +191,7 @@ class BuildStepImpl implements BuildStep {
     Encoding encoding = utf8,
   }) async {
     if (_isComplete) throw BuildStepCompletedException();
+    id = id.normalize();
     _checkOutput(id);
     outputs[id] = AssetContent.string(await content, encoding: encoding);
   }
@@ -193,6 +199,7 @@ class BuildStepImpl implements BuildStep {
   @override
   Future<Digest> digest(AssetId id, {bool track = true}) async {
     if (_isComplete) throw BuildStepCompletedException();
+    id = id.normalize();
     final isReadable = await _isReadable(id, track: track);
 
     if (!isReadable) {

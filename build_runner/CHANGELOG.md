@@ -6,6 +6,8 @@
   deletions: wait until the end of the build.
 - Bug fix: post process builders with `build_to: source` can only write to
   output packages.
+- Bug fix: post process builders with `build_to: cache` can only write output
+  corresponding to known packages.
 - Bug fix: reject incorrect builder config that has duplicate builder keys.
 - Bug fix: reject invalid builder factories in `build.yaml`.
 - Bug fix: correctly filter served or `--output` post process output.

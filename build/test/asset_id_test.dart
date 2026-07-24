@@ -9,6 +9,23 @@ import 'package:test/test.dart';
 
 void main() {
   group('constructor', () {
+    test('validates the package parameter', () {
+      expect(() => AssetId('..', 'a'), throwsArgumentError);
+      expect(() => AssetId('a..b', 'a'), throwsArgumentError);
+      expect(() => AssetId('.a', 'a'), throwsArgumentError);
+      expect(() => AssetId('a.', 'a'), throwsArgumentError);
+      expect(() => AssetId('a/b', 'a'), throwsArgumentError);
+      expect(() => AssetId('a\\b', 'a'), throwsArgumentError);
+      expect(() => AssetId('a-b', 'a'), throwsArgumentError);
+
+      // Dots are valid in package names, just not in published packages.
+      expect(AssetId('a.b', 'a').package, 'a.b');
+
+      // Dollars are not valid in package names, but they are used by
+      // `build_runner` internally.
+      expect(AssetId(r'$sdk', 'a').package, r'$sdk');
+    });
+
     test('normalizes the path', () {
       final id = AssetId('app', r'path/././/to/drop/..//asset.txt');
       expect(id.path, equals('path/to/asset.txt'));

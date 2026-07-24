@@ -217,13 +217,13 @@ class BuildPackages implements AssetPathProvider {
     required bool hide,
     bool checkWriteAllowed = false,
   }) {
+    if (!packages.containsKey(id.package)) {
+      throw PackageNotFoundException(id.package);
+    }
     if (hide) id = AssetPathProvider.hide(id, outputRoot);
     if (checkWriteAllowed) throwIfReadonly(id);
 
-    final package = packages[id.package];
-    if (package == null) {
-      throw PackageNotFoundException(id.package);
-    }
+    final package = packages[id.package]!;
     var path = id.path;
     if (Platform.pathSeparator != '/') {
       path = path.replaceAll('/', Platform.pathSeparator);

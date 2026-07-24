@@ -30,7 +30,18 @@ class AssetId implements Comparable<AssetId> {
   /// thrown.
   ///
   /// The [path] is normalized: `\` is replaced with `/`, then `.` and `..` are removed.
-  AssetId(this.package, String path) : path = _normalizePath(path);
+  ///
+  /// [package] must be a valid Dart package name, or an [ArgumentError] is
+  /// thrown.
+  AssetId(this.package, String path) : path = _normalizePath(path) {
+    if (!_packageRegExp.hasMatch(package)) {
+      throw ArgumentError.value(
+        package,
+        'package',
+        'Package name contains invalid characters.',
+      );
+    }
+  }
 
   /// Creates an [AssetId] from a [uri].
   ///
@@ -102,9 +113,8 @@ class AssetId implements Comparable<AssetId> {
       AssetId(package, p.withoutExtension(path) + newExtension);
 
   /// Deserializes a `List<dynamic>` from [serialize].
-  AssetId.deserialize(List<dynamic> serialized)
-    : package = serialized[0] as String,
-      path = serialized[1] as String;
+  factory AssetId.deserialize(List<dynamic> serialized) =>
+      AssetId(serialized[0] as String, serialized[1] as String);
 
   /// Serializes this [AssetId] to an `Object` that can be sent across isolates.
   ///
@@ -155,3 +165,5 @@ Uri _constructUri(AssetId id) {
   final pathSegments = isLib ? originalSegments.skip(1) : originalSegments;
   return Uri(scheme: scheme, pathSegments: [id.package, ...pathSegments]);
 }
+
+final _packageRegExp = RegExp(r'^([a-zA-Z0-9_$]+(\.[a-zA-Z0-9_$]+)*)?$');
