@@ -113,9 +113,8 @@ class AssetId implements Comparable<AssetId> {
       AssetId(package, p.withoutExtension(path) + newExtension);
 
   /// Deserializes a `List<dynamic>` from [serialize].
-  AssetId.deserialize(List<dynamic> serialized)
-    : package = serialized[0] as String,
-      path = serialized[1] as String;
+  factory AssetId.deserialize(List<dynamic> serialized) =>
+      AssetId(serialized[0] as String, serialized[1] as String);
 
   /// Serializes this [AssetId] to an `Object` that can be sent across isolates.
   ///
@@ -167,4 +166,4 @@ Uri _constructUri(AssetId id) {
   return Uri(scheme: scheme, pathSegments: [id.package, ...pathSegments]);
 }
 
-final _packageRegExp = RegExp(r'^([a-zA-Z0-9_$-]+(\.[a-zA-Z0-9_$-]+)*)?$');
+final _packageRegExp = RegExp(r'^([a-zA-Z0-9_$]+(\.[a-zA-Z0-9_$]+)*)?$');
