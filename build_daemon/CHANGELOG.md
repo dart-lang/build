@@ -1,5 +1,7 @@
 ## 4.1.3-wip
 
+- Put lock file under `.dart_tool` in the workspace by default. Add
+  `daemonSharedPath` to keep support for other locations.
 - Require Dart 3.11.0.
 
 ## 4.1.2
