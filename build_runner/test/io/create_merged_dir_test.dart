@@ -150,7 +150,12 @@ void main() {
     });
 
     tearDown(() async {
-      await tmpDir.delete(recursive: true);
+      if (tmpDir.existsSync()) {
+        await tmpDir.delete(recursive: true);
+      }
+      if (anotherTmpDir.existsSync()) {
+        await anotherTmpDir.delete(recursive: true);
+      }
     });
 
     test('creates a valid merged output directory', () async {
@@ -485,6 +490,65 @@ void main() {
         expect(success, isTrue);
         final packageADir = p.join(tmpDir.path, 'packages', 'a');
         expect(Directory(packageADir).existsSync(), isFalse);
+      });
+    });
+
+    group('Cleanup bounds checking', () {
+      late Directory unrelatedDir;
+
+      setUp(() async {
+        unrelatedDir = await Directory.systemTemp.createTemp('unrelated');
+      });
+
+      tearDown(() async {
+        if (unrelatedDir.existsSync()) {
+          await unrelatedDir.delete(recursive: true);
+        }
+      });
+
+      test('does not delete files outside the output directory', () async {
+        final unrelatedFile = File(
+          p.join(unrelatedDir.path, 'unrelated_file.txt'),
+        )..createSync();
+
+        final traversalPath = p.relative(unrelatedFile.path, from: tmpDir.path);
+        final manifestFile = File(p.join(tmpDir.path, '.build.manifest'));
+        manifestFile.writeAsStringSync(traversalPath);
+
+        await createMergedOutputDirectories(
+          buildDirs: {
+            BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
+          }.build(),
+          buildPackages: buildPackages,
+          buildOutputReader: buildOutputReader,
+          outputSymlinksOnly: false,
+        );
+
+        expect(unrelatedFile.existsSync(), isTrue);
+      });
+
+      test('does not traverse symlinks to delete external files', () async {
+        final unrelatedFile = File(
+          p.join(unrelatedDir.path, 'unrelated_file.txt'),
+        )..createSync();
+
+        final linkPath = p.join(tmpDir.path, 'link');
+        Link(linkPath).createSync(unrelatedDir.path);
+
+        final manifestFile = File(p.join(tmpDir.path, '.build.manifest'));
+        final manifestPath = 'link/unrelated_file.txt';
+        manifestFile.writeAsStringSync(manifestPath);
+
+        await createMergedOutputDirectories(
+          buildDirs: {
+            BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
+          }.build(),
+          buildPackages: buildPackages,
+          buildOutputReader: buildOutputReader,
+          outputSymlinksOnly: false,
+        );
+
+        expect(unrelatedFile.existsSync(), isTrue);
       });
     });
   });

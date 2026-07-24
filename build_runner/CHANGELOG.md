@@ -11,6 +11,7 @@
 - Bug fix: correctly filter served or `--output` post process output.
 - Bug fix: `serve` mode only serves the specified package subdirectories.
 - Bug fix: `serve` live reload websocket checks for localhost origin.
+- Bug fix: don't follow symlinks when cleaning up output folders.
 
 ## 2.15.2
 
