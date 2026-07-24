@@ -18,8 +18,9 @@ import 'data/serializers.dart';
 import 'data/server_log.dart';
 import 'data/shutdown_notification.dart';
 import 'src/file_wait.dart';
+import 'src/server_info.dart';
 
-Future<int> _existingPort(
+Future<ServerInfo> _existingServerInfo(
   String workingDirectory, {
   required String? daemonSharedPath,
 }) async {
@@ -27,7 +28,9 @@ Future<int> _existingPort(
     portFilePath(workingDirectory, daemonSharedPath: daemonSharedPath),
   );
   if (!await waitForFile(portFile)) throw MissingPortFile();
-  return int.parse(portFile.readAsStringSync());
+  final serverInfo = ServerInfo.fromFile(portFile);
+  if (serverInfo == null) throw VersionSkew();
+  return serverInfo;
 }
 
 Future<void> _handleDaemonStartup(
@@ -122,10 +125,10 @@ class BuildDaemonClient {
   final IOWebSocketChannel _channel;
 
   BuildDaemonClient._(
-    int port,
+    Uri serverUrl,
     this._serializers,
     void Function(ServerLog) logHandler,
-  ) : _channel = IOWebSocketChannel.connect('ws://localhost:$port') {
+  ) : _channel = IOWebSocketChannel.connect(serverUrl) {
     _channel.stream
         .listen((data) {
           final message = _serializers.deserialize(jsonDecode(data as String));
@@ -228,8 +231,12 @@ class BuildDaemonClient {
   }) async {
     logHandler ??= (_) {};
     final daemonSerializers = serializersOverride ?? serializers;
+    final serverInfo = await _existingServerInfo(
+      workingDirectory,
+      daemonSharedPath: daemonSharedPath,
+    );
     return BuildDaemonClient._(
-      await _existingPort(workingDirectory, daemonSharedPath: daemonSharedPath),
+      serverInfo.requestUrl,
       daemonSerializers,
       logHandler,
     );

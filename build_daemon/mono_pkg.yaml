@@ -13,3 +13,4 @@ stages:
     os:
     - linux
     - windows
+    - macos
