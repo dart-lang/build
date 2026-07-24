@@ -276,7 +276,7 @@ Future<String> _statusOf(Process daemon, {String logPrefix = ''}) async {
 
 Future<Process> _runDaemon(
   String workspace, {
-  String? daemonSharedPath,
+  required String? daemonSharedPath,
   int timeout = -1,
   int errorChangeProviderAfterNSeconds = -1,
   int closeChangeProviderAfterNSeconds = -1,

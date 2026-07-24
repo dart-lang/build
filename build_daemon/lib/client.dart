@@ -21,7 +21,7 @@ import 'src/file_wait.dart';
 
 Future<int> _existingPort(
   String workingDirectory, {
-  String? daemonSharedPath,
+  required String? daemonSharedPath,
 }) async {
   final portFile = File(
     portFilePath(workingDirectory, daemonSharedPath: daemonSharedPath),

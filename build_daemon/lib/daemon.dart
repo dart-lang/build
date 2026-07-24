@@ -141,7 +141,7 @@ class Daemon {
 
 RandomAccessFile? _tryGetLock(
   String workingDirectory, {
-  String? daemonSharedPath,
+  required String? daemonSharedPath,
 }) {
   try {
     _createDaemonWorkspace(
@@ -159,7 +159,7 @@ RandomAccessFile? _tryGetLock(
 
 void _createDaemonWorkspace(
   String workingDirectory, {
-  String? daemonSharedPath,
+  required String? daemonSharedPath,
 }) {
   try {
     Directory(
