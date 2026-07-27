@@ -1,4 +1,4 @@
-## 2.15.3-wip
+## 2.15.3
 
 - Simplify deletion of stale outputs: don't try to handle package renames.
 - The `daemon` asset server now rejects various non-local connections.
