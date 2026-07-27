@@ -1,4 +1,4 @@
-## 1.3.2-wip
+## 1.3.2
 
 - Reject builder names with the wrong package name.
 

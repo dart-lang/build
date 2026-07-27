@@ -1,4 +1,4 @@
-## 4.0.9-wip
+## 4.0.9
 
 - `AssetId` now validates package names in addition to paths.
 - Bug fix: more strictly prohibit absolute paths in `AssetId` path validation.

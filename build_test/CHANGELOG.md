@@ -1,4 +1,4 @@
-## 3.5.18-wip
+## 3.5.18
 
 - Add `visibleOutputPostProcessBuilders` to `testBuilders`.
 - Use `build_runner` 2.15.3.
