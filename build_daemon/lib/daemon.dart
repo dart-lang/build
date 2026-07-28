@@ -106,14 +106,25 @@ class Daemon {
   Future<void> _cleanUp(int exitCode) async {
     await _server?.stop();
     await _sub?.cancel();
-    // We need to close the lock prior to deleting the file.
-    _lock?.closeSync();
-    final workspace = Directory(
-      daemonWorkspace(_workingDirectory, daemonSharedPath: _daemonSharedPath),
-    );
-    if (workspace.existsSync()) {
-      workspace.deleteSync(recursive: true);
+
+    // Windows doesn't allow `Directory.deleteSync` while the lock is held, so
+    // delete exact files.
+    for (final path in [
+      portFilePath(_workingDirectory, daemonSharedPath: _daemonSharedPath),
+      versionFilePath(_workingDirectory, daemonSharedPath: _daemonSharedPath),
+      optionsFilePath(_workingDirectory, daemonSharedPath: _daemonSharedPath),
+    ]) {
+      try {
+        File(path).deleteSync();
+      } catch (_) {}
     }
+
+    // Close the lock.
+    _lock?.closeSync();
+
+    // Leave the directory and lock file: there's not much value in cleaning up
+    // further and it avoids a race if a new daemon starts up immediately.
+
     if (!_doneCompleter.isCompleted) _doneCompleter.complete(exitCode);
   }
 

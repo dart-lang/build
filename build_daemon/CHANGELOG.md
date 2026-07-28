@@ -1,5 +1,7 @@
 ## 4.1.3-wip
 
+- Bug fix: fix race condition when a new daemon immediately starts after
+  shutdown.
 - Put lock and config files under `.dart_tool` in the workspace by default.
   Make them user private. Add `daemonSharedPath` to keep support for other
   locations.
