@@ -1,4 +1,4 @@
-# Created with package:mono_repo v6.6.3
+# Created with package:mono_repo v6.7.1
 name: Dart CI
 on:
   push:
@@ -33,8 +33,10 @@ jobs:
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - name: mono_repo self validate
-        run: dart pub global activate mono_repo 6.6.3
+        run: dart pub global activate mono_repo 6.7.1
       - name: mono_repo self validate
         run: dart pub global run mono_repo generate --validate
   job_002:
@@ -45,19 +47,21 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_web_compilers-builder_pkgs/scratch_space-example;commands:analyze"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_web_compilers-builder_pkgs/scratch_space-example;commands:analyze"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_web_compilers-builder_pkgs/scratch_space-example
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_web_compilers-builder_pkgs/scratch_space-example
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
-          sdk: dev
+          sdk: beta
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - id: _benchmark_pub_upgrade
         name: _benchmark; dart pub upgrade
         run: dart pub upgrade
@@ -147,19 +151,21 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_web_compilers-builder_pkgs/mockito-builder_pkgs/scratch_space-example;commands:format"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_web_compilers-builder_pkgs/mockito-builder_pkgs/scratch_space-example;commands:format"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_web_compilers-builder_pkgs/mockito-builder_pkgs/scratch_space-example
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_web_compilers-builder_pkgs/mockito-builder_pkgs/scratch_space-example
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
-          sdk: dev
+          sdk: beta
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - id: _benchmark_pub_upgrade
         name: _benchmark; dart pub upgrade
         run: dart pub upgrade
@@ -258,19 +264,21 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:builder_pkgs/mockito;commands:command_1-analyze"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:builder_pkgs/mockito;commands:command_1-analyze"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:builder_pkgs/mockito
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:builder_pkgs/mockito
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
-          sdk: dev
+          sdk: beta
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - id: builder_pkgs_mockito_pub_upgrade
         name: builder_pkgs/mockito; dart pub upgrade
         run: dart pub upgrade
@@ -292,19 +300,21 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build;commands:test_0"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:build;commands:test_0"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:build
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
-          sdk: dev
+          sdk: beta
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - id: build_pub_upgrade
         name: build; dart pub upgrade
         run: dart pub upgrade
@@ -327,19 +337,21 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_config;commands:test_0"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:build_config;commands:test_0"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_config
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:build_config
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
-          sdk: dev
+          sdk: beta
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - id: build_config_pub_upgrade
         name: build_config; dart pub upgrade
         run: dart pub upgrade
@@ -362,19 +374,21 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_daemon;commands:test_0"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:build_daemon;commands:test_0"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_daemon
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:build_daemon
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
-          sdk: dev
+          sdk: beta
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - id: build_daemon_pub_upgrade
         name: build_daemon; dart pub upgrade
         run: dart pub upgrade
@@ -397,19 +411,21 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_test;commands:test_0"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:build_test;commands:test_0"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_test
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:build_test
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
-          sdk: dev
+          sdk: beta
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - id: build_test_pub_upgrade
         name: build_test; dart pub upgrade
         run: dart pub upgrade
@@ -432,19 +448,21 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:builder_pkgs/build_web_compilers;commands:test_0"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:builder_pkgs/build_web_compilers;commands:test_0"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:builder_pkgs/build_web_compilers
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:builder_pkgs/build_web_compilers
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
-          sdk: dev
+          sdk: beta
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - id: builder_pkgs_build_web_compilers_pub_upgrade
         name: builder_pkgs/build_web_compilers; dart pub upgrade
         run: dart pub upgrade
@@ -467,19 +485,21 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:builder_pkgs/scratch_space;commands:test_0"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:builder_pkgs/scratch_space;commands:test_0"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:builder_pkgs/scratch_space
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:builder_pkgs/scratch_space
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
-          sdk: dev
+          sdk: beta
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - id: builder_pkgs_scratch_space_pub_upgrade
         name: builder_pkgs/scratch_space; dart pub upgrade
         run: dart pub upgrade
@@ -502,19 +522,21 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:command_0"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:build_runner;commands:command_0"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:build_runner
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
-          sdk: dev
+          sdk: beta
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - id: build_runner_pub_upgrade
         name: build_runner; dart pub upgrade
         run: dart pub upgrade
@@ -537,19 +559,21 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:test_2"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:build_runner;commands:test_2"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:build_runner
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
-          sdk: dev
+          sdk: beta
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - id: build_runner_pub_upgrade
         name: build_runner; dart pub upgrade
         run: dart pub upgrade
@@ -572,19 +596,21 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:test_3"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:build_runner;commands:test_3"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:build_runner
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
-          sdk: dev
+          sdk: beta
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - id: build_runner_pub_upgrade
         name: build_runner; dart pub upgrade
         run: dart pub upgrade
@@ -607,19 +633,21 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:test_4"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:build_runner;commands:test_4"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:build_runner
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
-          sdk: dev
+          sdk: beta
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - id: build_runner_pub_upgrade
         name: build_runner; dart pub upgrade
         run: dart pub upgrade
@@ -642,19 +670,21 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:test_5"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:build_runner;commands:test_5"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:build_runner
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
-          sdk: dev
+          sdk: beta
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - id: build_runner_pub_upgrade
         name: build_runner; dart pub upgrade
         run: dart pub upgrade
@@ -677,19 +707,21 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:test_1"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:build_runner;commands:test_1"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:build_runner
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
-          sdk: dev
+          sdk: beta
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - id: build_runner_pub_upgrade
         name: build_runner; dart pub upgrade
         run: dart pub upgrade
@@ -712,19 +744,21 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:builder_pkgs/mockito;commands:command_1-test_0-test_6-test_7"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:builder_pkgs/mockito;commands:command_1-test_0-test_6-test_7"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:builder_pkgs/mockito
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta;packages:builder_pkgs/mockito
+            os:ubuntu-latest;pub-cache-hosted;sdk:beta
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
-          sdk: dev
+          sdk: beta
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - id: builder_pkgs_mockito_pub_upgrade
         name: builder_pkgs/mockito; dart pub upgrade
         run: dart pub upgrade
@@ -759,19 +793,21 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:macos-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:test_2"
+          key: "os:macos-latest;pub-cache-hosted;sdk:beta;packages:build_runner;commands:test_2"
           restore-keys: |
-            os:macos-latest;pub-cache-hosted;sdk:dev;packages:build_runner
-            os:macos-latest;pub-cache-hosted;sdk:dev
+            os:macos-latest;pub-cache-hosted;sdk:beta;packages:build_runner
+            os:macos-latest;pub-cache-hosted;sdk:beta
             os:macos-latest;pub-cache-hosted
             os:macos-latest
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
-          sdk: dev
+          sdk: beta
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - id: build_runner_pub_upgrade
         name: build_runner; dart pub upgrade
         run: dart pub upgrade
@@ -794,19 +830,21 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:macos-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:test_3"
+          key: "os:macos-latest;pub-cache-hosted;sdk:beta;packages:build_runner;commands:test_3"
           restore-keys: |
-            os:macos-latest;pub-cache-hosted;sdk:dev;packages:build_runner
-            os:macos-latest;pub-cache-hosted;sdk:dev
+            os:macos-latest;pub-cache-hosted;sdk:beta;packages:build_runner
+            os:macos-latest;pub-cache-hosted;sdk:beta
             os:macos-latest;pub-cache-hosted
             os:macos-latest
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
-          sdk: dev
+          sdk: beta
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - id: build_runner_pub_upgrade
         name: build_runner; dart pub upgrade
         run: dart pub upgrade
@@ -829,19 +867,21 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:macos-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:test_4"
+          key: "os:macos-latest;pub-cache-hosted;sdk:beta;packages:build_runner;commands:test_4"
           restore-keys: |
-            os:macos-latest;pub-cache-hosted;sdk:dev;packages:build_runner
-            os:macos-latest;pub-cache-hosted;sdk:dev
+            os:macos-latest;pub-cache-hosted;sdk:beta;packages:build_runner
+            os:macos-latest;pub-cache-hosted;sdk:beta
             os:macos-latest;pub-cache-hosted
             os:macos-latest
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
-          sdk: dev
+          sdk: beta
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - id: build_runner_pub_upgrade
         name: build_runner; dart pub upgrade
         run: dart pub upgrade
@@ -864,19 +904,21 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:macos-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:test_5"
+          key: "os:macos-latest;pub-cache-hosted;sdk:beta;packages:build_runner;commands:test_5"
           restore-keys: |
-            os:macos-latest;pub-cache-hosted;sdk:dev;packages:build_runner
-            os:macos-latest;pub-cache-hosted;sdk:dev
+            os:macos-latest;pub-cache-hosted;sdk:beta;packages:build_runner
+            os:macos-latest;pub-cache-hosted;sdk:beta
             os:macos-latest;pub-cache-hosted
             os:macos-latest
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
-          sdk: dev
+          sdk: beta
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - id: build_runner_pub_upgrade
         name: build_runner; dart pub upgrade
         run: dart pub upgrade
@@ -898,10 +940,12 @@ jobs:
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
-          sdk: dev
+          sdk: beta
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - id: build_daemon_pub_upgrade
         name: build_daemon; dart pub upgrade
         run: dart pub upgrade
@@ -923,10 +967,12 @@ jobs:
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
-          sdk: dev
+          sdk: beta
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - id: build_runner_pub_upgrade
         name: build_runner; dart pub upgrade
         run: dart pub upgrade
@@ -948,10 +994,12 @@ jobs:
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
-          sdk: dev
+          sdk: beta
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - id: build_runner_pub_upgrade
         name: build_runner; dart pub upgrade
         run: dart pub upgrade
@@ -973,10 +1021,12 @@ jobs:
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
-          sdk: dev
+          sdk: beta
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - id: build_runner_pub_upgrade
         name: build_runner; dart pub upgrade
         run: dart pub upgrade
@@ -998,10 +1048,12 @@ jobs:
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
-          sdk: dev
+          sdk: beta
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - id: build_runner_pub_upgrade
         name: build_runner; dart pub upgrade
         run: dart pub upgrade
