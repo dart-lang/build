@@ -40,9 +40,7 @@ class Daemon {
   Daemon(String workingDirectory, {String? daemonSharedPath})
     : _workingDirectory = workingDirectory,
       _daemonSharedPath = daemonSharedPath,
-      _lock = _tryGetLock(workingDirectory, daemonSharedPath: daemonSharedPath) {
-    throw StateError('!!! PROVING REPRO-DELAY WORKSPACE IS USED !!!');
-  }
+      _lock = _tryGetLock(workingDirectory, daemonSharedPath: daemonSharedPath);
 
   /// Returns exit code.
   Future<int> get onDone => _doneCompleter.future;
