@@ -40,7 +40,9 @@ class Daemon {
   Daemon(String workingDirectory, {String? daemonSharedPath})
     : _workingDirectory = workingDirectory,
       _daemonSharedPath = daemonSharedPath,
-      _lock = _tryGetLock(workingDirectory, daemonSharedPath: daemonSharedPath);
+      _lock = _tryGetLock(workingDirectory, daemonSharedPath: daemonSharedPath) {
+    throw StateError('!!! PROVING REPRO-DELAY WORKSPACE IS USED !!!');
+  }
 
   /// Returns exit code.
   Future<int> get onDone => _doneCompleter.future;
@@ -107,6 +109,7 @@ class Daemon {
     await _server?.stop();
     await _sub?.cancel();
     // We need to close the lock prior to deleting the file.
+    await Future.delayed(const Duration(seconds: 2));
     _lock?.closeSync();
     final workspace = Directory(
       daemonWorkspace(_workingDirectory, daemonSharedPath: _daemonSharedPath),
