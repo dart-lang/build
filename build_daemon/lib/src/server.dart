@@ -6,9 +6,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'dart:math';
+
 import 'package:built_value/serializer.dart';
 import 'package:http_multi_server/http_multi_server.dart';
 import 'package:pool/pool.dart';
+import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart';
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:stream_transform/stream_transform.dart';
@@ -45,6 +48,8 @@ class Server {
   final _subs = <StreamSubscription>[];
   final _outputStreamController = StreamController<ServerLog>();
   late final Stream<ServerLog> _logs;
+  final String token;
+
   Server(
     this._builder,
     Duration timeout,
@@ -55,7 +60,8 @@ class Server {
        _serializers = serializersOverride ?? serializers,
        _buildTargetManager = BuildTargetManager(
          shouldBuildOverride: shouldBuild,
-       ) {
+       ),
+       token = _generateToken() {
     _logs = _outputStreamController.stream;
     _forwardData();
     if (changeProvider is AutoChangeProvider) {
@@ -69,51 +75,32 @@ class Server {
     });
   }
 
+  static String _generateToken() {
+    final random = Random.secure();
+    return base64UrlEncode(List<int>.generate(8, (_) => random.nextInt(256)));
+  }
+
+  Handler _checkToken(Handler innerHandler) =>
+      (request) => request.url.queryParameters['token'] == token
+      ? innerHandler(request)
+      : Response.forbidden('');
+
   /// Returns exit code.
   Future<int> get onDone => _isDoneCompleter.future;
 
   /// Starts listening for build daemon clients.
   Future<int> listen() async {
-    // The client does not set the Origin header. Reject any client that does,
-    // which includes all browsers.
-    final handler = webSocketHandler(allowedOrigins: const [], (
-      WebSocketChannel channel,
-      _,
-    ) async {
-      channel.stream.listen(
-        (message) async {
-          dynamic request;
-          try {
-            request = _serializers.deserialize(jsonDecode(message as String));
-          } catch (e, s) {
-            _logMessage(
-              Level.WARNING,
-              'Unable to parse message: $message',
-              e,
-              s,
-            );
-            return;
-          }
-          if (request is BuildTargetRequest) {
-            _buildTargetManager.addBuildTarget(request.target, channel);
-          } else if (request is BuildRequest) {
-            // We can only get explicit build requests if we have a manual
-            // change provider.
-            final changeProvider = _changeProvider;
-            final changes = changeProvider is ManualChangeProvider
-                ? await changeProvider.collectChanges()
-                : <WatchEvent>[];
-            final targets = changes.isEmpty
-                ? _buildTargetManager.targets
-                : _buildTargetManager.targetsForChanges(changes);
-            await _build(targets, changes);
-          }
-        },
-        onDone: () {
-          _removeChannel(channel);
-        },
-      );
-    });
+    final handler = const Pipeline()
+        .addMiddleware(_checkToken)
+        .addHandler(
+          webSocketHandler(
+            _handleWebsocket,
+            // The client does not set the Origin header. Reject any client that
+            // does, which includes all browsers.
+            allowedOrigins: const [],
+          ),
+        );
+
     final server = _server = await HttpMultiServer.loopback(0);
     // Serve requests in an error zone to prevent failures
     // when running from another error zone.
@@ -121,6 +108,37 @@ class Server {
       _logMessage(Level.WARNING, 'Error serving requests', e, s);
     });
     return server.port;
+  }
+
+  void _handleWebsocket(WebSocketChannel channel, _) {
+    channel.stream.listen(
+      (message) async {
+        dynamic request;
+        try {
+          request = _serializers.deserialize(jsonDecode(message as String));
+        } catch (e, s) {
+          _logMessage(Level.WARNING, 'Unable to parse message: $message', e, s);
+          return;
+        }
+        if (request is BuildTargetRequest) {
+          _buildTargetManager.addBuildTarget(request.target, channel);
+        } else if (request is BuildRequest) {
+          // We can only get explicit build requests if we have a manual
+          // change provider.
+          final changeProvider = _changeProvider;
+          final changes = changeProvider is ManualChangeProvider
+              ? await changeProvider.collectChanges()
+              : <WatchEvent>[];
+          final targets = changes.isEmpty
+              ? _buildTargetManager.targets
+              : _buildTargetManager.targetsForChanges(changes);
+          await _build(targets, changes);
+        }
+      },
+      onDone: () {
+        _removeChannel(channel);
+      },
+    );
   }
 
   Future<void> stop({String message = '', int failureType = 0}) async {

@@ -12,8 +12,10 @@ import 'change_provider.dart';
 import 'constants.dart';
 import 'daemon_builder.dart';
 import 'data/build_target.dart';
+import 'src/file_permissions.dart';
 import 'src/file_wait.dart';
 import 'src/server.dart';
+import 'src/server_info.dart';
 
 /// The long running daemon process.
 ///
@@ -115,9 +117,12 @@ class Daemon {
     if (!_doneCompleter.isCompleted) _doneCompleter.complete(exitCode);
   }
 
-  void _createPortFile(int port) => File(
-    portFilePath(_workingDirectory, daemonSharedPath: _daemonSharedPath),
-  ).writeAsStringSync('$port');
+  void _createPortFile(int port) {
+    final portFile = File(
+      portFilePath(_workingDirectory, daemonSharedPath: _daemonSharedPath),
+    );
+    ServerInfo(port, _server!.token).writeToFile(portFile);
+  }
 
   void _createVersionFile() => File(
     versionFilePath(_workingDirectory, daemonSharedPath: _daemonSharedPath),
@@ -162,9 +167,16 @@ void _createDaemonWorkspace(
   required String? daemonSharedPath,
 }) {
   try {
-    Directory(
-      daemonWorkspace(workingDirectory, daemonSharedPath: daemonSharedPath),
-    ).createSync(recursive: true);
+    final workspace = daemonWorkspace(
+      workingDirectory,
+      daemonSharedPath: daemonSharedPath,
+    );
+    final directory = Directory(workspace);
+    final isNew = !directory.existsSync();
+    directory.createSync(recursive: true);
+    if (isNew && daemonSharedPath == null) {
+      FilePermissions.makeUserPrivate(workspace);
+    }
   } catch (e) {
     throw Exception('Unable to create daemon workspace: $e');
   }

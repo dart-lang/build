@@ -9,6 +9,7 @@ library;
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:build_daemon/data/build_request.dart';
 import 'package:build_daemon/data/build_status.dart';
@@ -19,6 +20,7 @@ import 'package:build_daemon/data/server_log.dart';
 import 'package:build_daemon/src/fakes/fake_change_provider.dart';
 import 'package:build_daemon/src/fakes/fake_test_builder.dart';
 import 'package:build_daemon/src/server.dart';
+import 'package:build_daemon/src/server_info.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'package:test/test.dart';
 import 'package:web_socket_channel/io.dart';
@@ -39,7 +41,7 @@ void main() {
       port = await server.listen();
 
       // Connect the client and redirect its logs.
-      client = _createClient(controller, port);
+      client = _createClient(controller, ServerInfo(port, server.token));
     });
 
     tearDown(() async {
@@ -91,8 +93,11 @@ void main() {
 
     test('forwards changed assets to interested clients', () async {
       final interestedEvents = StreamController<Object?>();
-      final interstedClient = _createClient(interestedEvents, port);
-      addTearDown(interstedClient.sink.close);
+      final interestedClient = _createClient(
+        interestedEvents,
+        ServerInfo(port, server.token),
+      );
+      addTearDown(interestedClient.sink.close);
       addTearDown(interestedEvents.close);
 
       // Register default client, not intersted in changes
@@ -110,7 +115,7 @@ void main() {
           ..target = ''
           ..reportChangedAssets = true,
       );
-      interstedClient.sink.add(
+      interestedClient.sink.add(
         jsonEncode(
           serializers.serialize(
             BuildTargetRequest((b) => b.target = targetWithChanges),
@@ -146,6 +151,33 @@ void main() {
       );
     });
   });
+
+  group('token check', () {
+    late Server server;
+    late int port;
+
+    setUp(() async {
+      server = _createServer();
+      port = await server.listen();
+    });
+
+    tearDown(() async {
+      await server.stop();
+      await expectLater(server.onDone, completes);
+    });
+
+    test('rejects invalid connections', () async {
+      await expectLater(
+        WebSocket.connect('ws://localhost:$port'),
+        throwsA(isA<WebSocketException>()),
+      );
+
+      await expectLater(
+        WebSocket.connect('ws://localhost:$port?token=invalid_token'),
+        throwsA(isA<WebSocketException>()),
+      );
+    });
+  });
 }
 
 Server _createServer() {
@@ -158,9 +190,9 @@ Server _createServer() {
 
 IOWebSocketChannel _createClient(
   StreamController<Object?> controller,
-  int port,
+  ServerInfo serverInfo,
 ) {
-  final client = IOWebSocketChannel.connect('ws://localhost:$port');
+  final client = IOWebSocketChannel.connect(serverInfo.requestUrl);
   client.stream.listen((data) {
     final message = serializers.deserialize(jsonDecode(data as String));
     controller.add(message);
