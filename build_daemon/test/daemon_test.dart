@@ -216,6 +216,24 @@ void _testGroup({required bool useSharedPath}) {
         Directory(
           daemonWorkspace(workspace, daemonSharedPath: daemonSharedPath),
         ).existsSync(),
+        isTrue,
+      );
+      expect(
+        File(
+          portFilePath(workspace, daemonSharedPath: daemonSharedPath),
+        ).existsSync(),
+        isFalse,
+      );
+      expect(
+        File(
+          versionFilePath(workspace, daemonSharedPath: daemonSharedPath),
+        ).existsSync(),
+        isFalse,
+      );
+      expect(
+        File(
+          optionsFilePath(workspace, daemonSharedPath: daemonSharedPath),
+        ).existsSync(),
         isFalse,
       );
     });
@@ -232,6 +250,24 @@ void _testGroup({required bool useSharedPath}) {
         Directory(
           daemonWorkspace(workspace, daemonSharedPath: daemonSharedPath),
         ).existsSync(),
+        isTrue,
+      );
+      expect(
+        File(
+          portFilePath(workspace, daemonSharedPath: daemonSharedPath),
+        ).existsSync(),
+        isFalse,
+      );
+      expect(
+        File(
+          versionFilePath(workspace, daemonSharedPath: daemonSharedPath),
+        ).existsSync(),
+        isFalse,
+      );
+      expect(
+        File(
+          optionsFilePath(workspace, daemonSharedPath: daemonSharedPath),
+        ).existsSync(),
         isFalse,
       );
     });
@@ -247,6 +283,24 @@ void _testGroup({required bool useSharedPath}) {
       expect(
         Directory(
           daemonWorkspace(workspace, daemonSharedPath: daemonSharedPath),
+        ).existsSync(),
+        isTrue,
+      );
+      expect(
+        File(
+          portFilePath(workspace, daemonSharedPath: daemonSharedPath),
+        ).existsSync(),
+        isFalse,
+      );
+      expect(
+        File(
+          versionFilePath(workspace, daemonSharedPath: daemonSharedPath),
+        ).existsSync(),
+        isFalse,
+      );
+      expect(
+        File(
+          optionsFilePath(workspace, daemonSharedPath: daemonSharedPath),
         ).existsSync(),
         isFalse,
       );
