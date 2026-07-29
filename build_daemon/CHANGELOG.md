@@ -1,4 +1,4 @@
-## 4.1.3-wip
+## 4.1.3
 
 - Bug fix: fix race condition when a new daemon immediately starts after
   shutdown.
