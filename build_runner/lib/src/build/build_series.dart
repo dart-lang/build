@@ -15,6 +15,7 @@ import '../build_plan/build_plan.dart';
 import '../build_plan/output_strategy.dart';
 import '../commands/watch/asset_change.dart';
 import '../constants.dart';
+import '../io/asset_path_provider.dart';
 import '../io/asset_tracker.dart';
 import '../io/create_merged_dir.dart';
 import '../logging/build_log.dart';
@@ -161,8 +162,9 @@ class BuildSeries {
 
       // Handle modifications and creations of outputs.
       if (_buildPlan.buildStepPlan.isDeclaredOutput(id) &&
-          change.type != .REMOVE) {
-        if (_outputStrategy == OutputStrategy.keep) continue;
+          change.type != .REMOVE &&
+          _outputStrategy == OutputStrategy.keep) {
+        continue;
       }
 
       // It's an add of a "missing source" or a deletion of an input.
@@ -305,8 +307,6 @@ class BuildSeries {
   ///
   /// Serializes and writes the updated `asset_graph.json`.
   Future<void> _writeBuildOutput(BuildResult result) async {
-    final deletes = _computeDeletes(result);
-
     if (_buildPlan.buildInputs.cleanBuild) {
       final generatedOutputDirectoryId = AssetId(
         _buildPlan.buildSpec.buildPackages.outputRoot,
@@ -316,7 +316,6 @@ class BuildSeries {
     }
 
     for (final output in result.outputs) {
-      deletes.remove(output);
       final content = result.buildState!.contentOf(
         id: output,
         buildStepPlan: _buildPlan.buildStepPlan,
@@ -330,10 +329,9 @@ class BuildSeries {
         ),
       );
     }
-    for (final entry in deletes.entries) {
+    for (final toDelete in _computeDeletes(result)) {
       await _buildPlan.readerWriter.delete(
-        entry.key,
-        hidden: entry.value,
+        toDelete,
         onDelete: _expectedDeletes.add,
       );
     }
@@ -355,30 +353,61 @@ class BuildSeries {
     );
   }
 
-  /// Outputs to delete and whether each is hidden.
-  Map<AssetId, bool> _computeDeletes(BuildResult result) {
-    final deletes = <AssetId, bool>{
-      for (final id in _buildPlan.conflictingOutputs) id: false,
-      for (final id
-          in _buildPlan.previousBuild.incompatibleBuildOutputsToDelete)
-        id: false,
-    };
+  /// Files that should be deleted: outputs of the previous build that are no
+  /// longer declared outputs, plus files on disk that match declared outputs
+  /// that were not actually output.
+  ///
+  /// Set [onlyVisible] to skip hidden files.
+  Set<AssetId> _computeDeletes(BuildResult result, {bool onlyVisible = false}) {
+    final deletes = <AssetId>{};
+    final currentState = result.buildState!;
+    for (final id in _buildPlan.conflictingOutputs) {
+      if (!currentState.isActualOutput(
+            id: id,
+            buildStepPlan: _buildPlan.buildStepPlan,
+          ) &&
+          !currentState.isActualPostOutput(id)) {
+        deletes.add(id);
+      }
+    }
+    for (final id
+        in _buildPlan.previousBuild.incompatibleBuildOutputsToDelete) {
+      if (!currentState.isActualOutput(
+            id: id,
+            buildStepPlan: _buildPlan.buildStepPlan,
+          ) &&
+          !currentState.isActualPostOutput(id)) {
+        deletes.add(id);
+      }
+    }
+
+    final outputRoot = _buildPlan.buildSpec.buildPackages.outputRoot;
+    // Adds a delete result, unless it's a hidden file and `onlyVisible` was
+    // requested.
+    void maybeAddDelete(AssetId id, bool isHidden) {
+      if (isHidden) {
+        if (!onlyVisible) {
+          deletes.add(AssetPathProvider.hide(id, outputRoot));
+        }
+      } else {
+        deletes.add(id);
+      }
+    }
 
     final previousState = _buildPlan.previousBuild.buildState;
     if (previousState != null) {
-      final currentState = result.buildState!;
       for (final stepResult in previousState.actualStepResults) {
         for (final id in stepResult.outputs.keys) {
           final stepId = _buildPlan.buildStepPlan.stepForDeclaredOutputOrNull(
             id,
           );
           if (stepId == null) {
-            deletes[id] = stepResult.isHidden;
+            maybeAddDelete(id, stepResult.isHidden);
           } else {
             final stepResultOrNull = currentState.stepResultOrNull(stepId);
             if (stepResultOrNull != null &&
                 !stepResultOrNull.outputs.containsKey(id)) {
-              deletes[id] = stepResult.isHidden;
+              maybeAddDelete(id, stepResult.isHidden);
             }
           }
         }
@@ -386,7 +415,7 @@ class BuildSeries {
       for (final postProcessResult in previousState.actualPostProcessResults) {
         for (final id in postProcessResult.outputs.keys) {
           if (!currentState.isActualPostOutput(id)) {
-            deletes[id] = postProcessResult.hidden;
+            maybeAddDelete(id, postProcessResult.hidden);
           }
         }
       }
@@ -398,19 +427,17 @@ class BuildSeries {
   ///
   /// If there are unexpected, missing, or incorrect outputs on disk, logs them
   /// and returns a failed result.
+  ///
+  /// Only outputs and deletes in the source tree are checked; hidden outputs
+  /// and deletes of hidden files are skipped. This supports the presubmit use
+  /// case where source tree generated files are checked in but `.dart_tool`
+  /// generated files are not.
   Future<BuildResult> _verifyBuildOutput(BuildResult result) async {
-    final allDeletes = _computeDeletes(result);
-    final deletes = {
-      for (final MapEntry(key: id, value: hidden) in allDeletes.entries)
-        if (!hidden) id,
-    };
-
     final unexpected = <AssetId>[];
     final missing = <AssetId>[];
     final incorrect = <AssetId>[];
 
     for (final output in result.outputs) {
-      deletes.remove(output);
       final hidden = output.isHidden(
         buildStepPlan: _buildPlan.buildStepPlan,
         buildState: result.buildState!,
@@ -433,7 +460,7 @@ class BuildSeries {
       }
     }
 
-    for (final toDelete in deletes) {
+    for (final toDelete in _computeDeletes(result, onlyVisible: true)) {
       final exists = await _buildPlan.readerWriter.canRead(toDelete);
       if (exists) {
         unexpected.add(toDelete);
