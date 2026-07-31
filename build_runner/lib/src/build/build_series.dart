@@ -330,10 +330,8 @@ class BuildSeries {
       );
     }
     for (final toDelete in _computeDeletes(result)) {
-      await _buildPlan.readerWriter.delete(
-        toDelete,
-        onDelete: _expectedDeletes.add,
-      );
+      _expectedDeletes.add(toDelete);
+      await _buildPlan.readerWriter.delete(toDelete);
     }
 
     final assetGraphId = AssetId(

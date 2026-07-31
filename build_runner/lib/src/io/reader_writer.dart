@@ -148,24 +148,15 @@ class ReaderWriter implements AssetReader, AssetWriter {
     return digestSink.events.first;
   }
 
-  Future<void> delete(
-    AssetId id, {
-    bool hidden = false,
-    void Function(AssetId)? onDelete,
-  }) {
+  Future<void> delete(AssetId id, {bool hidden = false}) {
     TimedActivity.write.run(() {
-      onDelete?.call(id);
       final path = _pathFor(id, hidden: hidden, checkWriteAllowed: true);
       filesystem.deleteSync(path);
     });
     return Future.value();
   }
 
-  Future<void> deleteDirectory(
-    AssetId id, {
-    bool hidden = false,
-    void Function(AssetId)? onDelete,
-  }) {
+  Future<void> deleteDirectory(AssetId id, {bool hidden = false}) {
     TimedActivity.write.run(() {
       final path = _pathFor(id, hidden: hidden, checkWriteAllowed: true);
       filesystem.deleteDirectorySync(path);

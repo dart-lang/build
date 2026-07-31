@@ -143,16 +143,11 @@ class InternalTestReaderWriter extends ReaderWriter
   }
 
   @override
-  Future<void> delete(
-    AssetId id, {
-    bool hidden = false,
-    void Function(AssetId)? onDelete,
-  }) {
-    onDelete?.call(id);
+  Future<void> delete(AssetId id, {bool hidden = false}) {
     FakeWatcher.notifyWatchers(
       WatchEvent(ChangeType.REMOVE, p.absolute(id.package, p.fromUri(id.path))),
     );
-    return super.delete(id, hidden: hidden, onDelete: onDelete);
+    return super.delete(id, hidden: hidden);
   }
 }
 
