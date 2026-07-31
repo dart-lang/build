@@ -8,6 +8,3 @@ pubspec.lock
 build/
 
 coverage/
-
-# ignore generated mocks
-**/*.mocks.dart
