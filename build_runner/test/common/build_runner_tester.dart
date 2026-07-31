@@ -33,7 +33,20 @@ class BuildRunnerTester {
       );
 
   BuildRunnerTester._(this.pubspecs, this.tempDirectory) {
-    addTearDown(() => tempDirectory.deleteSync(recursive: true));
+    addTearDown(() async {
+      // Temp cleanup can fail on Windows if some process is slow to close,
+      // retry for 5s.
+      var tries = 0;
+      while (true) {
+        try {
+          tempDirectory.deleteSync(recursive: true);
+          return;
+        } on PathAccessException {
+          if (++tries == 10) rethrow;
+          await Future<void>.delayed(const Duration(milliseconds: 500));
+        }
+      }
+    });
   }
 
   /// Copies the entire workspace, returns a new `BuildRunnerTester` using
