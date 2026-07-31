@@ -1,4 +1,4 @@
-## 2.15.4-wip
+## 2.16.0
 
 - New default output behavior: always fix incorrect generated files. For
   example: if you "dart run build_runner build", modify a generated file,
@@ -11,6 +11,7 @@
   option `build_runner` writes nothing, but builds and compares with the files
   already on disk. If there is any difference between disk and expected output
   then the differences are logged and the build fails.
+- Allow `package_config` 3.0.0.
 
 ## 2.15.3
 
