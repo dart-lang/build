@@ -18,7 +18,7 @@ class _$BuildInputs extends BuildInputs {
   @override
   final BuiltSet<AssetId> deletedSources;
   @override
-  final BuiltSet<AssetId> deletedOutputs;
+  final BuiltSet<AssetId> invalidOutputs;
 
   factory _$BuildInputs([void Function(BuildInputsBuilder)? updates]) =>
       (BuildInputsBuilder()..update(updates))._build();
@@ -29,7 +29,7 @@ class _$BuildInputs extends BuildInputs {
     required this.sourceContents,
     required this.updatedSources,
     required this.deletedSources,
-    required this.deletedOutputs,
+    required this.invalidOutputs,
   }) : super._();
   @override
   BuildInputs rebuild(void Function(BuildInputsBuilder) updates) =>
@@ -47,7 +47,7 @@ class _$BuildInputs extends BuildInputs {
         sourceContents == other.sourceContents &&
         updatedSources == other.updatedSources &&
         deletedSources == other.deletedSources &&
-        deletedOutputs == other.deletedOutputs;
+        invalidOutputs == other.invalidOutputs;
   }
 
   @override
@@ -58,7 +58,7 @@ class _$BuildInputs extends BuildInputs {
     _$hash = $jc(_$hash, sourceContents.hashCode);
     _$hash = $jc(_$hash, updatedSources.hashCode);
     _$hash = $jc(_$hash, deletedSources.hashCode);
-    _$hash = $jc(_$hash, deletedOutputs.hashCode);
+    _$hash = $jc(_$hash, invalidOutputs.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -71,7 +71,7 @@ class _$BuildInputs extends BuildInputs {
           ..add('sourceContents', sourceContents)
           ..add('updatedSources', updatedSources)
           ..add('deletedSources', deletedSources)
-          ..add('deletedOutputs', deletedOutputs))
+          ..add('invalidOutputs', invalidOutputs))
         .toString();
   }
 }
@@ -105,11 +105,11 @@ class BuildInputsBuilder implements Builder<BuildInputs, BuildInputsBuilder> {
   set deletedSources(SetBuilder<AssetId>? deletedSources) =>
       _$this._deletedSources = deletedSources;
 
-  SetBuilder<AssetId>? _deletedOutputs;
-  SetBuilder<AssetId> get deletedOutputs =>
-      _$this._deletedOutputs ??= SetBuilder<AssetId>();
-  set deletedOutputs(SetBuilder<AssetId>? deletedOutputs) =>
-      _$this._deletedOutputs = deletedOutputs;
+  SetBuilder<AssetId>? _invalidOutputs;
+  SetBuilder<AssetId> get invalidOutputs =>
+      _$this._invalidOutputs ??= SetBuilder<AssetId>();
+  set invalidOutputs(SetBuilder<AssetId>? invalidOutputs) =>
+      _$this._invalidOutputs = invalidOutputs;
 
   BuildInputsBuilder();
 
@@ -121,7 +121,7 @@ class BuildInputsBuilder implements Builder<BuildInputs, BuildInputsBuilder> {
       _sourceContents = $v.sourceContents.toBuilder();
       _updatedSources = $v.updatedSources.toBuilder();
       _deletedSources = $v.deletedSources.toBuilder();
-      _deletedOutputs = $v.deletedOutputs.toBuilder();
+      _invalidOutputs = $v.invalidOutputs.toBuilder();
       _$v = null;
     }
     return this;
@@ -155,7 +155,7 @@ class BuildInputsBuilder implements Builder<BuildInputs, BuildInputsBuilder> {
             sourceContents: sourceContents.build(),
             updatedSources: updatedSources.build(),
             deletedSources: deletedSources.build(),
-            deletedOutputs: deletedOutputs.build(),
+            invalidOutputs: invalidOutputs.build(),
           );
     } catch (_) {
       late String _$failedField;
@@ -168,8 +168,8 @@ class BuildInputsBuilder implements Builder<BuildInputs, BuildInputsBuilder> {
         updatedSources.build();
         _$failedField = 'deletedSources';
         deletedSources.build();
-        _$failedField = 'deletedOutputs';
-        deletedOutputs.build();
+        _$failedField = 'invalidOutputs';
+        invalidOutputs.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'BuildInputs',

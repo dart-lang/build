@@ -125,7 +125,7 @@ void main() {
         {
           ...buildPlan.buildInputs.updatedSources,
           ...buildPlan.buildInputs.deletedSources,
-          ...buildPlan.buildInputs.deletedOutputs,
+          ...buildPlan.buildInputs.invalidOutputs,
         },
         {assetId, assetId2, assetId3, outputId},
       );

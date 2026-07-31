@@ -35,10 +35,11 @@ abstract class BuildInputs implements Built<BuildInputs, BuildInputsBuilder> {
   BuiltSet<AssetId> get deletedSources;
 
   /// Generated outputs that will be deleted from disk at the end of the build
-  /// because their input is gone.
+  /// because their input is gone, or that will be forcefully overwritten
+  /// because they have been manually modified or deleted by the user.
   ///
   /// Empty if [cleanBuild].
-  BuiltSet<AssetId> get deletedOutputs;
+  BuiltSet<AssetId> get invalidOutputs;
 
   BuildInputs._();
   factory BuildInputs([void Function(BuildInputsBuilder) updates]) =

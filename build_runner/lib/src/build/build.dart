@@ -474,6 +474,9 @@ class Build {
         phase: phase,
         anyOutputs: step.outputs.isNotEmpty,
         anyChangedOutputs: step.outputs.keys.any(_isChangedOutput),
+        anyFixedOutputs: step.outputs.keys.any(
+          buildPlan.buildInputs.invalidOutputs.contains,
+        ),
         lazy: lazy,
       );
     } else {
@@ -707,27 +710,23 @@ class Build {
     Iterable<AssetId> outputs,
   ) async {
     return await TimedActivity.track.runAsync(() async {
-      // Update state for primary input if needed.
-      if (buildStepPlan.isDeclaredOutput(step.primaryInput)) {
+      final primaryInput = step.primaryInput;
+      final primaryInputIsDeclaredOutput = buildStepPlan.isDeclaredOutput(
+        primaryInput,
+      );
+
+      if (primaryInputIsDeclaredOutput) {
+        // Update state for primary input if needed.
         if (!buildState.isProcessedOutput(
           buildStepPlan: buildStepPlan,
-          id: step.primaryInput,
+          id: primaryInput,
         )) {
-          await _buildOutput(step.primaryInput);
+          await _buildOutput(primaryInput);
         }
-      }
 
-      // If a primary input source file has been deleted, the build is skipped.
-      if (!buildStepPlan.isDeclaredOutput(step.primaryInput) &&
-          (buildInputs.deletedSources.contains(step.primaryInput) ||
-              buildInputs.deletedOutputs.contains(step.primaryInput))) {
-        return StepAction.skipMissingPrimaryInput;
-      }
-
-      // Propagate results for declared output primary input.
-      if (buildStepPlan.isDeclaredOutput(step.primaryInput)) {
+        // Propagate results for declared output primary input.
         final inputStepResult = buildState.stepResult(
-          buildStepPlan.stepForDeclaredOutput(step.primaryInput),
+          buildStepPlan.stepForDeclaredOutput(primaryInput),
         );
 
         // If the primary input's generating step failed, this build is also
@@ -740,8 +739,14 @@ class Build {
         // skipped.
         if (!buildState.isActualOutput(
           buildStepPlan: buildStepPlan,
-          id: step.primaryInput,
+          id: primaryInput,
         )) {
+          return StepAction.skipMissingPrimaryInput;
+        }
+      } else {
+        // If a primary input source file is deleted, the build is skipped.
+        if (buildInputs.deletedSources.contains(primaryInput) ||
+            buildInputs.invalidOutputs.contains(primaryInput)) {
           return StepAction.skipMissingPrimaryInput;
         }
       }
@@ -754,9 +759,7 @@ class Build {
         return StepAction.run;
       }
 
-      final primaryInput = step.primaryInput;
-
-      if (buildStepPlan.isDeclaredOutput(primaryInput)) {
+      if (primaryInputIsDeclaredOutput) {
         final inputStep = buildStepPlan.stepForDeclaredOutput(primaryInput);
         final oldResult = previousBuildState?.stepResultOrNull(inputStep);
         final newResult = buildState.stepResult(inputStep);
@@ -774,7 +777,7 @@ class Build {
 
       for (final output in outputs) {
         if (buildInputs.deletedSources.contains(output) ||
-            buildInputs.deletedOutputs.contains(output)) {
+            buildInputs.invalidOutputs.contains(output)) {
           return StepAction.run;
         }
       }
@@ -926,7 +929,7 @@ class Build {
         return true;
       }
     } else if (buildInputs.deletedSources.contains(input) ||
-        buildInputs.deletedOutputs.contains(input)) {
+        buildInputs.invalidOutputs.contains(input)) {
       return true;
     }
     return false;
