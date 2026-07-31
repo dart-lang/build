@@ -3,3 +3,7 @@ self_validate: analyze_and_format
 
 merge_stages:
 - analyze_and_format
+
+github:
+  permissions:
+    content: read
