@@ -1,6 +1,7 @@
-## 3.5.19-wip
+## 3.5.19
 
-- Use `build_runner` 2.15.4.
+- Use `build_runner` 2.16.0.
+- Allow `package_config` 3.x.
 
 ## 3.5.18
 

@@ -1,10 +1,11 @@
-## 5.8.0-wip
+## 5.8.0
 
 * Add support for JS interop extension type mock generation to mockito.
 * It is now an error to generate mocks for non-JS interop extension types.
   Instead, mock the representation type and cast to the extension type where
   needed.
 * Remove Mockito version number from generated output.
+* Allow `analyzer` 14.0.0.
 
 ## 5.7.0
 

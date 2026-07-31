@@ -1,5 +1,5 @@
 name: build_runner
-version: 2.15.4-wip
+version: 2.16.0
 description: A build system for Dart code generation and modular compilation.
 repository: https://github.com/dart-lang/build/tree/master/build_runner
 resolution: workspace
@@ -33,7 +33,7 @@ dependencies:
   logging: ^1.0.0
   meta: ^1.16.0
   mime: '>=1.0.0 <3.0.0'
-  package_config: ^2.0.0
+  package_config: '>=2.0.0 <4.0.0'
   path: ^1.8.0
   pool: ^1.5.0
   pub_semver: ^2.0.0

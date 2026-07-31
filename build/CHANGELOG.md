@@ -1,3 +1,7 @@
+## 4.0.10
+
+- Allow `package_config` 3.0.0.
+
 ## 4.0.9
 
 - `AssetId` now validates package names in addition to paths.
@@ -5,7 +9,7 @@
 
 ## 4.0.8
 
-- Allow `analyzer` 14.x, require 13.3.0.
+- Allow `analyzer` 14.0.0, require 13.3.0.
 - Require Dart 3.11.0.
 
 ## 4.0.7
