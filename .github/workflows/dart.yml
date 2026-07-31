@@ -12,7 +12,7 @@ defaults:
 env:
   PUB_ENVIRONMENT: bot.github
 permissions:
-  content: read
+  contents: read
 
 jobs:
   job_001:
