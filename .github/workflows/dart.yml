@@ -251,7 +251,7 @@ jobs:
         if: "always() && steps.example_pub_upgrade.conclusion == 'success'"
         working-directory: example
   job_004:
-    name: "analyze_and_format; linux; PKG: builder_pkgs/mockito; `dart run build_runner build`, `dart analyze --fatal-infos .`"
+    name: "analyze_and_format; linux; PKG: builder_pkgs/mockito; `dart run build_runner build --force-jit --only-check`, `dart analyze --fatal-infos .`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -276,8 +276,8 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: builder_pkgs/mockito
-      - name: builder_pkgs/mockito; dart run build_runner build
-        run: dart run build_runner build
+      - name: "builder_pkgs/mockito; dart run build_runner build --force-jit --only-check"
+        run: dart run build_runner build --force-jit --only-check
         if: "always() && steps.builder_pkgs_mockito_pub_upgrade.conclusion == 'success'"
         working-directory: builder_pkgs/mockito
       - name: "builder_pkgs/mockito; dart analyze --fatal-infos ."
@@ -705,7 +705,7 @@ jobs:
       - job_003
       - job_004
   job_017:
-    name: "test; linux; PKG: builder_pkgs/mockito; `dart run build_runner build`, `dart test --test-randomize-ordering-seed=random`, `dart test --test-randomize-ordering-seed=random -p chrome`, `dart test --test-randomize-ordering-seed=random -p chrome -c dart2wasm`"
+    name: "test; linux; PKG: builder_pkgs/mockito; `dart run build_runner build --force-jit --only-check`, `dart test --test-randomize-ordering-seed=random`, `dart test --test-randomize-ordering-seed=random -p chrome`, `dart test --test-randomize-ordering-seed=random -p chrome -c dart2wasm`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -730,8 +730,8 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: builder_pkgs/mockito
-      - name: builder_pkgs/mockito; dart run build_runner build
-        run: dart run build_runner build
+      - name: "builder_pkgs/mockito; dart run build_runner build --force-jit --only-check"
+        run: dart run build_runner build --force-jit --only-check
         if: "always() && steps.builder_pkgs_mockito_pub_upgrade.conclusion == 'success'"
         working-directory: builder_pkgs/mockito
       - name: "builder_pkgs/mockito; dart test --test-randomize-ordering-seed=random"

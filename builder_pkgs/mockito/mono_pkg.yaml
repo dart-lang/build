@@ -8,11 +8,11 @@ stages:
 - analyze_and_format:
   - format
   - group:
-    - command: dart run build_runner build
+    - command: dart run build_runner build --force-jit --only-check
     - analyze: --fatal-infos .
 - test:
   - group:
-    - command: dart run build_runner build
+    - command: dart run build_runner build --force-jit --only-check
     - test: --test-randomize-ordering-seed=random
     - test: --test-randomize-ordering-seed=random -p chrome
     - test: --test-randomize-ordering-seed=random -p chrome -c dart2wasm

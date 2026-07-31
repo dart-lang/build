@@ -72,8 +72,8 @@ for PKG in ${PKGS}; do
         ../tool/leak_check.sh || EXIT_CODE=$?
         ;;
       command_1)
-        echo 'dart run build_runner build'
-        dart run build_runner build || EXIT_CODE=$?
+        echo 'dart run build_runner build --force-jit --only-check'
+        dart run build_runner build --force-jit --only-check || EXIT_CODE=$?
         ;;
       format)
         echo 'dart format --output=none --set-exit-if-changed .'
