@@ -1,3 +1,10 @@
+## 5.8.1-wip
+
+* Throw `InvalidMockitoAnnotationException` with a clear message when
+  `@GenerateMocks` `customMocks` or `@GenerateNiceMocks` `mocks` is not a list
+  literal, instead of crashing with a type cast exception.
+  [#4428](https://github.com/dart-lang/build/issues/4428)
+
 ## 5.8.0
 
 * Add support for JS interop extension type mock generation to mockito.
