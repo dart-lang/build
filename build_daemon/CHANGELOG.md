@@ -1,3 +1,11 @@
+## 4.1.4
+
+- Check the target project's `.dart_tool/package_config.json` before spawning
+  a build daemon and throw `VersionSkew` if the project resolved an
+  incompatible version of `build_daemon`.
+- Add descriptive messages and custom `toString` overrides to
+  `MissingPortFile`, `OptionsSkew`, and `VersionSkew`.
+
 ## 4.1.3
 
 - Bug fix: fix race condition when a new daemon immediately starts after

@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:built_value/serializer.dart';
+import 'package:path/path.dart' as p;
 import 'package:web_socket_channel/io.dart';
 
 import 'constants.dart';
@@ -20,6 +21,56 @@ import 'data/shutdown_notification.dart';
 import 'src/file_wait.dart';
 import 'src/server_info.dart';
 
+const _minimumCompatibleDaemonVersion = '4.1.3';
+
+bool _isCompatibleVersion(String version) {
+  final parts = version.split('-').first.split('.').map(int.tryParse).toList();
+  if (parts.length != 3 || parts.any((e) => e == null)) return true;
+  final major = parts[0]!;
+  final minor = parts[1]!;
+  final patch = parts[2]!;
+  if (major < 4) return false;
+  if (major > 4) return true;
+  if (minor < 1) return false;
+  if (minor > 1) return true;
+  return patch >= 3;
+}
+
+void _checkProjectBuildDaemonVersion(String workingDirectory) {
+  final packageConfigFile = File(
+    p.join(workingDirectory, '.dart_tool', 'package_config.json'),
+  );
+  if (!packageConfigFile.existsSync()) return;
+  try {
+    final packageConfig =
+        jsonDecode(packageConfigFile.readAsStringSync())
+            as Map<String, dynamic>;
+    final packages = packageConfig['packages'] as List<dynamic>?;
+    if (packages == null) return;
+    for (final package in packages) {
+      if (package is Map<String, dynamic> &&
+          package['name'] == 'build_daemon') {
+        final rootUri = package['rootUri'] as String?;
+        if (rootUri == null) return;
+        final match = RegExp(
+          r'build_daemon-(\d+\.\d+\.\d+(?:-[a-zA-Z0-9.+]+)?)',
+        ).firstMatch(rootUri);
+        if (match == null) return;
+        final version = match.group(1)!;
+        if (!_isCompatibleVersion(version)) {
+          throw VersionSkew(
+            'Project resolved build_daemon $version which is incompatible with '
+            'client requiring >=$_minimumCompatibleDaemonVersion.',
+          );
+        }
+        return;
+      }
+    }
+  } on VersionSkew {
+    rethrow;
+  } catch (_) {}
+}
+
 Future<ServerInfo> _existingServerInfo(
   String workingDirectory, {
   required String? daemonSharedPath,
@@ -27,9 +78,13 @@ Future<ServerInfo> _existingServerInfo(
   final portFile = File(
     portFilePath(workingDirectory, daemonSharedPath: daemonSharedPath),
   );
-  if (!await waitForFile(portFile)) throw MissingPortFile();
+  if (!await waitForFile(portFile)) {
+    throw MissingPortFile('Timeout waiting for port file at ${portFile.path}.');
+  }
   final serverInfo = ServerInfo.fromFile(portFile);
-  if (serverInfo == null) throw VersionSkew();
+  if (serverInfo == null) {
+    throw VersionSkew('Unable to read ServerInfo from ${portFile.path}.');
+  }
   return serverInfo;
 }
 
@@ -100,9 +155,9 @@ Future<void> _handleDaemonStartup(
   );
 
   if (daemonAction == versionSkew) {
-    throw VersionSkew();
+    throw VersionSkew('Running daemon version does not match client version.');
   } else if (daemonAction == optionsSkew) {
-    throw OptionsSkew();
+    throw OptionsSkew('Requested options do not match running daemon options.');
   }
   await sub.cancel();
 }
@@ -189,6 +244,7 @@ class BuildDaemonClient {
     BuildMode buildMode = BuildMode.Auto,
     String? daemonSharedPath,
   }) async {
+    _checkProjectBuildDaemonVersion(workingDirectory);
     logHandler ??= (_) {};
     final daemonArgs = daemonCommand.sublist(1)
       ..add('--$buildModeFlag=$buildMode');
@@ -244,12 +300,36 @@ class BuildDaemonClient {
 }
 
 /// Thrown when the port file for the running daemon instance can't be found.
-class MissingPortFile implements Exception {}
+class MissingPortFile implements Exception {
+  final String? details;
+
+  MissingPortFile([this.details]);
+
+  @override
+  String toString() =>
+      details == null ? 'MissingPortFile' : 'MissingPortFile: $details';
+}
 
 /// Thrown if the client requests conflicting options with the current daemon
 /// instance.
-class OptionsSkew implements Exception {}
+class OptionsSkew implements Exception {
+  final String? details;
+
+  OptionsSkew([this.details]);
+
+  @override
+  String toString() =>
+      details == null ? 'OptionsSkew' : 'OptionsSkew: $details';
+}
 
 /// Thrown if the current daemon instance version does not match that of the
 /// client.
-class VersionSkew implements Exception {}
+class VersionSkew implements Exception {
+  final String? details;
+
+  VersionSkew([this.details]);
+
+  @override
+  String toString() =>
+      details == null ? 'VersionSkew' : 'VersionSkew: $details';
+}
