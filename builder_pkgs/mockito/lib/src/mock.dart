@@ -1050,8 +1050,6 @@ class VerificationResult {
   /// The number of calls matched in this verification.
   int callCount;
 
-  bool _testApiMismatchHasBeenChecked = false;
-
   VerificationResult._(this.callCount, this._captured);
 
   /// Assert that the number of calls matches [matcher].
@@ -1064,11 +1062,6 @@ class VerificationResult {
   ///
   /// To assert that a method was called zero times, use [verifyNever].
   void called(dynamic matcher) {
-    if (!_testApiMismatchHasBeenChecked) {
-      // Only execute the check below once. `Invoker.current` may look like a
-      // cheap getter, but it involves Zones and casting.
-      _testApiMismatchHasBeenChecked = true;
-    }
     expect(
       callCount,
       wrapMatcher(matcher),
