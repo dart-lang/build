@@ -1,3 +1,9 @@
+## 5.8.1-wip
+
+* Remove redundant per-class `// ignore: must_be_immutable` comment to prevent
+  `duplicate_ignore` warnings.
+  [#4588](https://github.com/dart-lang/build/issues/4588)
+
 ## 5.8.0
 
 * Add support for JS interop extension type mock generation to mockito.
