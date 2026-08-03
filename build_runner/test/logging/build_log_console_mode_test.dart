@@ -54,14 +54,14 @@ E An error.'''),
       expect(
         render(),
         padLinesRight('''
-0s compiling builders/jit'''),
+compiling builders/jit'''),
       );
       buildLog.logCompile(compileType: CompileType.aot, function: () async {});
       expect(
         render(),
         padLinesRight('''
-0s compiling builders/jit
-0s compiling builders/aot'''),
+compiling builders/jit
+compiling builders/aot'''),
       );
     });
 

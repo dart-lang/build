@@ -306,10 +306,11 @@ class BuildLog {
       }
     }
 
-    if (_shouldShowProgressNow || lastTick) {
+    if (_shouldShowProgressNow || firstTick || lastTick) {
       if (_display.displayingBlocks) {
         _display.block(render());
       } else {
+        if (!firstTick && !lastTick) return;
         _display.message(
           Severity.info,
           _renderCompiling(compileType: compileType).toString(),
@@ -649,8 +650,8 @@ class BuildLog {
         ? _aotCompileProgress!
         : _jitCompileProgress!;
     return AnsiBufferLine([
-      renderDuration(progress.duration),
-      ' ',
+      if (progress.duration != Duration.zero)
+        '${renderDuration(progress.duration)} ',
       AnsiBuffer.bold,
       'compiling builders',
       AnsiBuffer.reset,
