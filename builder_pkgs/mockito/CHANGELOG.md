@@ -1,5 +1,8 @@
 ## 5.8.1-wip
 
+* Fix mock generation when a class has metadata annotations or constructor default
+  parameters using unrevivable SDK constants like `bool.fromEnvironment`.
+  [#4467](https://github.com/dart-lang/build/issues/4467)
 * Throw `InvalidMockitoAnnotationException` with a clear message when
   `@GenerateMocks` `customMocks` or `@GenerateNiceMocks` `mocks` is not a list
   literal, instead of crashing with a type cast exception.

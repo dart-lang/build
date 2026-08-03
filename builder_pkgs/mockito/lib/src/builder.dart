@@ -450,12 +450,21 @@ class _TypeVisitor extends RecursiveElementVisitor2<void> {
     } else {
       // If [constant] is not null, a literal, or a type, then it must be an
       // object constructed with `const`. Revive it.
-      final revivable = constant.revive();
-      for (final argument in revivable.positionalArguments) {
-        _addTypesFromConstant(argument);
+      Revivable? revivable;
+      try {
+        revivable = constant.revive();
+      } catch (_) {
+        // Continue generating when revive fails: there might be no types that
+        // need to be added.
       }
-      for (final pair in revivable.namedArguments.entries) {
-        _addTypesFromConstant(pair.value);
+
+      if (revivable != null) {
+        for (final argument in revivable.positionalArguments) {
+          _addTypesFromConstant(argument);
+        }
+        for (final pair in revivable.namedArguments.entries) {
+          _addTypesFromConstant(pair.value);
+        }
       }
       _addType(object.type);
     }
@@ -1779,6 +1788,7 @@ class _MockClassInfo {
         final invocationPositionalArgs = <Expression>[];
         final invocationNamedArgs = <Expression, Expression>{};
 
+        _ReviveException? unrevivableDefault;
         var position = 0;
         for (final parameter in method.formalParameters) {
           if (parameter.isRequiredPositional ||
@@ -1795,6 +1805,7 @@ class _MockClassInfo {
               // we pass it to `Invocation.method`.
               defaultName: '_$position',
               forceNullable: true,
+              onUnrevivableDefault: (e) => unrevivableDefault = e,
             );
             if (parameter.isRequiredPositional) {
               builder.requiredParameters.add(matchingParameter);
@@ -1812,6 +1823,7 @@ class _MockClassInfo {
               parameter,
               superParameterType: superParameterType,
               forceNullable: true,
+              onUnrevivableDefault: (e) => unrevivableDefault = e,
             );
             builder.optionalParameters.add(matchingParameter);
             invocationNamedArgs[refer('#${parameter.displayName}')] = refer(
@@ -1840,8 +1852,9 @@ class _MockClassInfo {
             fallbackGenerator == null &&
             (returnType.containsPrivateName || parametersContainPrivateName);
 
-        if (throwsUnsupported) {
-          if (!mockTarget.unsupportedMembers.contains(name)) {
+        if (throwsUnsupported || unrevivableDefault != null) {
+          if (throwsUnsupported &&
+              !mockTarget.unsupportedMembers.contains(name)) {
             // We shouldn't get here as this is guarded against in
             // [_MockTargetGatherer._checkFunction].
             throw InvalidMockitoAnnotationException(
@@ -1849,15 +1862,17 @@ class _MockClassInfo {
               'a private type in its signature.',
             );
           }
+          final reason =
+              unrevivableDefault != null
+                  ? 'because parameter '
+                      '"${unrevivableDefault!.paramName}" '
+                      'has an unrevivable default value'
+                  : 'without a mockito fallback generator';
           builder.body =
               refer('UnsupportedError')
                   .call([
                     // Generate a raw string since name might contain a $.
-                    literalString(
-                      '"$name" cannot be used without a mockito fallback '
-                      'generator.',
-                      raw: true,
-                    ),
+                    literalString('"$name" cannot be used $reason.', raw: true),
                   ])
                   .thrown
                   .code;
@@ -2303,6 +2318,7 @@ class _MockClassInfo {
     required analyzer.DartType superParameterType,
     String? defaultName,
     bool forceNullable = false,
+    void Function(_ReviveException)? onUnrevivableDefault,
   }) {
     final parameterHasName =
         parameter.name != null && parameter.name != '' && parameter.name != '_';
@@ -2333,6 +2349,19 @@ class _MockClassInfo {
                 parameter.computeConstantValue()!,
                 parameter,
               ).code;
+        } on _UnrevivableDefaultValueException catch (e) {
+          if (onUnrevivableDefault != null) {
+            onUnrevivableDefault(e);
+          } else {
+            final method = parameter.enclosingElement!;
+            throw InvalidMockitoAnnotationException(
+              'Mockito cannot generate a valid override for method '
+              "'${mockTarget.interfaceElement.displayName}."
+              "${method.displayName}'; "
+              "parameter '${parameter.displayName}' causes a problem: "
+              '${e.message}',
+            );
+          }
         } on _ReviveException catch (e) {
           final method = parameter.enclosingElement!;
           throw InvalidMockitoAnnotationException(
@@ -2461,11 +2490,22 @@ class _MockClassInfo {
       // does not revive Types; we should investigate this if users request it.
       final type = object.toTypeValue()!;
       final typeStr = type.getDisplayString();
-      throw _ReviveException('default value is a Type: $typeStr.');
+      throw _ReviveException(
+        'default value is a Type: $typeStr.',
+        parameter?.displayName,
+      );
     } else {
       // If [constant] is not null, a literal, or a type, then it must be an
       // object constructed with `const`. Revive it.
-      final revivable = constant.revive();
+      Revivable revivable;
+      try {
+        revivable = constant.revive();
+      } catch (e) {
+        throw _UnrevivableDefaultValueException(
+          'an unrevivable default value ($e)',
+          parameter?.displayName,
+        );
+      }
       if (revivable.isPrivate) {
         final privateReference =
             revivable.accessor.isNotEmpty
@@ -2473,6 +2513,7 @@ class _MockClassInfo {
                 : '${revivable.source}';
         throw _ReviveException(
           'default value has a private type: $privateReference.',
+          parameter?.displayName,
         );
       }
       if (object.toFunctionValue() != null) {
@@ -2872,8 +2913,13 @@ class _MockClassInfo {
 /// catching this exception.
 class _ReviveException implements Exception {
   final String message;
+  final String? paramName;
 
-  _ReviveException(this.message);
+  _ReviveException(this.message, [this.paramName]);
+}
+
+class _UnrevivableDefaultValueException extends _ReviveException {
+  _UnrevivableDefaultValueException(super.message, [super.paramName]);
 }
 
 /// An exception which is thrown when Mockito encounters an invalid annotation.

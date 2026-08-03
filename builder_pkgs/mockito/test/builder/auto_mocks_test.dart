@@ -379,6 +379,42 @@ void main() {
     },
   );
 
+  test(
+    'matches unrevivable fromEnvironment parameter default values',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
+      class Foo {
+        void m([bool a = const bool.fromEnvironment('dart.library.js_util')]) {}
+      }
+      '''),
+        _containsAllOf(
+          dedent2(r'''
+        void m([bool? a]) => throw UnsupportedError(
+          r'"m" cannot be used because parameter "a" has an unrevivable default value.',
+        );
+        '''),
+        ),
+      );
+    },
+  );
+
+  test('ignores unrevivable metadata annotations', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        @pragma('vm:entry-point', const bool.fromEnvironment('dart.library.js_util'))
+        void m() {}
+      }
+      '''),
+      _containsAllOf(
+        dedent2('''
+        void m() => super.noSuchMethod(
+        '''),
+      ),
+    );
+  });
+
   test('matches raw string literal parameter default values', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
