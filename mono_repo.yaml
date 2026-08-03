@@ -6,4 +6,4 @@ merge_stages:
 
 github:
   permissions:
-    content: read
+    contents: read
