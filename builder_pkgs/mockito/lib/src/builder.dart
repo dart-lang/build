@@ -125,6 +125,9 @@ class MockBuilder implements Builder {
       b.body.add(
         Code('// ignore_for_file: deprecated_member_use_from_same_package\n'),
       );
+      // We might import an experimental library, or implement an experimental
+      // class.
+      b.body.add(Code('// ignore_for_file: experimental_member_use\n'));
       // We might import a package's 'src' directory.
       b.body.add(Code('// ignore_for_file: implementation_imports\n'));
       // `Mock.noSuchMethod` is `@visibleForTesting`, but the generated code is

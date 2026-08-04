@@ -11,15 +11,15 @@ package's `pubspec.yaml` file, under `dev_dependencies`; something like
 
 For alternatives to the code generation API, see the [NULL_SAFETY_README][].
 
-Let's start with a Dart library, `cat.dart`:
+Let's start with a Dart test library, `cat_test.dart`:
 
 ```dart
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
-// Annotation which generates the cat.mocks.dart library and the MockCat class.
+// Annotation which generates the cat_test.mocks.dart library and the MockCat class.
 @GenerateNiceMocks([MockSpec<Cat>()])
-import 'cat.mocks.dart';
+import 'cat_test.mocks.dart';
 
 // Real class
 class Cat {
@@ -49,8 +49,8 @@ dart run build_runner build
 ```
 
 `build_runner` will generate a file with a name based on the file containing the
-`@GenerateNiceMocks` annotation. In the above `cat.dart` example, we import the
-generated library as `cat.mocks.dart`.
+`@GenerateNiceMocks` annotation. In the above `cat_test.dart` example, we import
+the generated library as `cat_test.mocks.dart`.
 
 **NOTE**: by default only annotations in files under `test/` are processed, if
 you want to add Mockito annotations in other places, you will need to add a
@@ -340,7 +340,8 @@ with `when(cat.sound())`, so what should the code do? What is the "missing stub"
 behavior?
 
 * The "missing stub" behavior of a mock class generated with `@GenerateMocks` is
-  to throw an exception.
+  to throw an exception, except for methods returning `void` or `Future<void>`,
+  which return normally without a stub.
 * The "missing stub" behavior of a mock class generated with
   `@GenerateNiceMocks` is to return a "simple" legal value (for example, a
   non-`null` value for a non-nullable return type). The value should not be used
