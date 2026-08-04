@@ -1,5 +1,8 @@
 ## 5.8.1-wip
 
+* Use canonical asset path in generated header comments so symlink paths are
+  excluded.
+  [#4545](https://github.com/dart-lang/build/issues/4545)
 * Throw `InvalidMockitoAnnotationException` with a clear message when
   `@GenerateMocks` `customMocks` or `@GenerateNiceMocks` `mocks` is not a list
   literal, instead of crashing with a type cast exception.
