@@ -340,7 +340,8 @@ with `when(cat.sound())`, so what should the code do? What is the "missing stub"
 behavior?
 
 * The "missing stub" behavior of a mock class generated with `@GenerateMocks` is
-  to throw an exception.
+  to throw an exception, except for methods returning `void` or `Future<void>`,
+  which return normally without a stub.
 * The "missing stub" behavior of a mock class generated with
   `@GenerateNiceMocks` is to return a "simple" legal value (for example, a
   non-`null` value for a non-nullable return type). The value should not be used
