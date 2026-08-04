@@ -1,5 +1,11 @@
 ## 5.8.1-wip
 
+* Deterministically select library to import when multiple libraries export the
+  same type.
+  [#4549](https://github.com/dart-lang/build/issues/4549)
+* Prefer importing public entrypoints over `/src/` implementation libraries
+  when multiple libraries export the same type.
+  [#4551](https://github.com/dart-lang/build/issues/4551)
 * Throw `InvalidMockitoAnnotationException` with a clear message when
   `@GenerateMocks` `customMocks` or `@GenerateNiceMocks` `mocks` is not a list
   literal, instead of crashing with a type cast exception.

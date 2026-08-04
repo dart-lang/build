@@ -1241,6 +1241,67 @@ void main() {
     },
   );
 
+  test(
+    'deterministically selects exporting library by URI when multiple libraries re-export a type',
+    () async {
+      final mocksContent = await buildWithNonNullable({
+        ...annotationsAsset,
+        'foo|lib/bar_decl.dart': dedent(r'''
+        class Bar {}
+        '''),
+        'foo|lib/bar_a.dart': dedent(r'''
+        export 'bar_decl.dart';
+        '''),
+        'foo|lib/bar_b.dart': dedent(r'''
+        export 'bar_decl.dart';
+        '''),
+        'foo|lib/foo.dart': dedent(r'''
+        import 'bar_b.dart';
+        import 'bar_a.dart';
+        class Foo {
+          Bar m() => Bar();
+        }
+        '''),
+        'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+        @GenerateMocks([Foo])
+        void fooTests() {}
+        ''',
+      });
+      expect(mocksContent, contains("import 'package:foo/bar_a.dart' as _i2;"));
+    },
+  );
+
+  test(
+    'prefers exporting library without /src/ over exporting library with /src/',
+    () async {
+      final mocksContent = await buildWithNonNullable({
+        ...annotationsAsset,
+        'foo|lib/src/bar.dart': dedent(r'''
+        class Bar {}
+        '''),
+        'foo|lib/z_bar.dart': dedent(r'''
+        export 'src/bar.dart';
+        '''),
+        'foo|lib/foo.dart': dedent(r'''
+        import 'src/bar.dart';
+        import 'z_bar.dart';
+        class Foo {
+          Bar m() => Bar();
+        }
+        '''),
+        'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+        @GenerateMocks([Foo])
+        void fooTests() {}
+        ''',
+      });
+      expect(mocksContent, contains("import 'package:foo/z_bar.dart' as _i2;"));
+    },
+  );
+
   test('imports libraries for external class types found in a method return '
       'type', () async {
     final mocksContent = await buildWithSingleNonNullableSource(
