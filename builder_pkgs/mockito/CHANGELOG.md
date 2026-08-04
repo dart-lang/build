@@ -1,5 +1,8 @@
 ## 5.8.1-wip
 
+* Remove redundant per-class `// ignore: must_be_immutable` comment to prevent
+  `duplicate_ignore` warnings.
+  [#4588](https://github.com/dart-lang/build/issues/4588)
 * Clarify in `README.md` that generated `.mocks.dart` filenames are based on the
   source file name.
   [#4599](https://github.com/dart-lang/build/issues/4599)
