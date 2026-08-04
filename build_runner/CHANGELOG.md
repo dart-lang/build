@@ -1,5 +1,8 @@
 ## 2.16.1-wip
 
+- Reduce logged compile progress output for non-interactive builds, for example
+  presubmits.
+
 ## 2.16.0
 
 - New default output behavior: always fix incorrect generated files. For
