@@ -1,9 +1,11 @@
 ## 5.8.1-wip
 
+* Clarify in `README.md` that generated `.mocks.dart` filenames are based on the
+  source file name.
+  [#4599](https://github.com/dart-lang/build/issues/4599)
 * Suppress `experimental_member_use` warnings in generated mock files.
   [#4602](https://github.com/dart-lang/build/issues/4602)
 * Document missing stub behavior for `void` and `Future<void>`.
-
 ## 5.8.0
 
 * Add support for JS interop extension type mock generation to mockito.
