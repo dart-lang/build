@@ -1013,6 +1013,45 @@ void main() {
     },
   );
 
+  test('throws when GenerateMocks customMocks is not a list literal', () async {
+    await _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        'foo|test/foo_test.dart': dedent('''
+        import 'package:mockito/annotations.dart';
+        class Foo {}
+        const _mocks = [MockSpec<Foo>()];
+        @GenerateMocks([], customMocks: _mocks)
+        void main() {}
+        '''),
+      },
+      message: contains(
+        'The GenerateMocks "customMocks" argument must be a list literal',
+      ),
+    );
+  });
+
+  test(
+    'throws when GenerateNiceMocks argument is not a list literal',
+    () async {
+      await _expectBuilderThrows(
+        assets: {
+          ...annotationsAsset,
+          'foo|test/foo_test.dart': dedent('''
+        import 'package:mockito/annotations.dart';
+        class Foo {}
+        const _mocks = [MockSpec<Foo>()];
+        @GenerateNiceMocks(_mocks)
+        void main() {}
+        '''),
+        },
+        message: contains(
+          'The GenerateNiceMocks "mocks" argument must be a list literal',
+        ),
+      );
+    },
+  );
+
   test('throws when MockSpec() is missing a type argument', () async {
     await _expectBuilderThrows(
       assets: {

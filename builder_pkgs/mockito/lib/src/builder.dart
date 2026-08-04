@@ -125,6 +125,9 @@ class MockBuilder implements Builder {
       b.body.add(
         Code('// ignore_for_file: deprecated_member_use_from_same_package\n'),
       );
+      // We might import an experimental library, or implement an experimental
+      // class.
+      b.body.add(Code('// ignore_for_file: experimental_member_use\n'));
       // We might import a package's 'src' directory.
       b.body.add(Code('// ignore_for_file: implementation_imports\n'));
       // `Mock.noSuchMethod` is `@visibleForTesting`, but the generated code is
@@ -562,16 +565,32 @@ class _MockTargetGatherer {
         as ast.NamedType?;
   }
 
-  static ast.ListLiteral? _customMocksAst(ast.Annotation annotation) =>
-      (annotation.arguments!.arguments.firstWhereOrNull(
-                    (arg) => arg is ast.NamedArgument,
-                  )
-                  as ast.NamedArgument?)
-              ?.argumentExpression
-          as ast.ListLiteral?;
+  static ast.ListLiteral? _customMocksAst(ast.Annotation annotation) {
+    final customMocksArg =
+        annotation.arguments!.arguments.firstWhereOrNull(
+              (arg) =>
+                  arg is ast.NamedArgument && arg.name.lexeme == 'customMocks',
+            )
+            as ast.NamedArgument?;
+    if (customMocksArg == null) return null;
+    final expression = customMocksArg.argumentExpression;
+    if (expression is! ast.ListLiteral) {
+      throw InvalidMockitoAnnotationException(
+        'The GenerateMocks "customMocks" argument must be a list literal',
+      );
+    }
+    return expression;
+  }
 
-  static ast.ListLiteral _niceMocksAst(ast.Annotation annotation) =>
-      annotation.arguments!.arguments.first as ast.ListLiteral;
+  static ast.ListLiteral _niceMocksAst(ast.Annotation annotation) {
+    final expression = annotation.arguments!.arguments.first;
+    if (expression is! ast.ListLiteral) {
+      throw InvalidMockitoAnnotationException(
+        'The GenerateNiceMocks "mocks" argument must be a list literal',
+      );
+    }
+    return expression;
+  }
 
   static Iterable<_MockTarget> _mockTargetsFromGenerateMocks(
     ElementAnnotation annotation,
@@ -1492,9 +1511,6 @@ class _MockClassInfo {
     final aliasedType = aliasElement?.aliasedType as analyzer.InterfaceType?;
     final typeToMock = aliasedType ?? mockTarget.classType;
     final classToMock = mockTarget.interfaceElement;
-    final classIsImmutable = classToMock.metadata.annotations.any(
-      (it) => it.isImmutable,
-    );
     final className = aliasElement?.name ?? classToMock.name;
 
     return Class((cBuilder) {
@@ -1509,9 +1525,6 @@ class _MockClassInfo {
           '/// See the documentation for Mockito\'s code generation '
           'for more information.',
         );
-      if (classIsImmutable) {
-        cBuilder.docs.add('// ignore: must_be_immutable');
-      }
       // For each type parameter on [classToMock], the Mock class needs a type
       // parameter with same type variables, and a mirrored type argument for
       // the "implements" clause.

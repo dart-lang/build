@@ -3809,20 +3809,6 @@ void main() {
     );
   });
 
-  test('adds ignore: must_be_immutable analyzer comment if mocked class is '
-      'immutable', () async {
-    await expectSingleNonNullableOutput(
-      dedent(r'''
-      import 'package:meta/meta.dart';
-      @immutable
-      class Foo {
-        void foo();
-      }
-      '''),
-      _containsAllOf('// ignore: must_be_immutable\nclass MockFoo'),
-    );
-  });
-
   group('typedef mocks', () {
     group('are generated properly', () {
       test('when aliased type parameters are instantiated', () async {

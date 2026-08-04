@@ -1,3 +1,10 @@
+## 4.1.4
+
+- In the client, check the workspace build daemon version and throw
+  `VersionSkew` if there is a mismatch.
+- Add descriptive messages and custom `toString` overrides to
+  `MissingPortFile`, `OptionsSkew`, and `VersionSkew`.
+
 ## 4.1.3
 
 - Bug fix: fix race condition when a new daemon immediately starts after

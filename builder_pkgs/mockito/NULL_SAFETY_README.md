@@ -152,8 +152,9 @@ legal default value is returned. This is the default and recommended
 "missing stub" behavior.
 
 There is a "classic" "missing stub" behavior, which is to throw an exception
-when such a method call is received. To generate a mock class with this
-behavior, use `@GenerateMocks`:
+when such a method call is received, except for methods returning `void` or
+`Future<void>`, which return normally without a stub. To generate a mock class
+with this behavior, use `@GenerateMocks`:
 
 ```dart
 @GenerateMocks([Foo])
