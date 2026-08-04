@@ -565,16 +565,32 @@ class _MockTargetGatherer {
         as ast.NamedType?;
   }
 
-  static ast.ListLiteral? _customMocksAst(ast.Annotation annotation) =>
-      (annotation.arguments!.arguments.firstWhereOrNull(
-                    (arg) => arg is ast.NamedArgument,
-                  )
-                  as ast.NamedArgument?)
-              ?.argumentExpression
-          as ast.ListLiteral?;
+  static ast.ListLiteral? _customMocksAst(ast.Annotation annotation) {
+    final customMocksArg =
+        annotation.arguments!.arguments.firstWhereOrNull(
+              (arg) =>
+                  arg is ast.NamedArgument && arg.name.lexeme == 'customMocks',
+            )
+            as ast.NamedArgument?;
+    if (customMocksArg == null) return null;
+    final expression = customMocksArg.argumentExpression;
+    if (expression is! ast.ListLiteral) {
+      throw InvalidMockitoAnnotationException(
+        'The GenerateMocks "customMocks" argument must be a list literal',
+      );
+    }
+    return expression;
+  }
 
-  static ast.ListLiteral _niceMocksAst(ast.Annotation annotation) =>
-      annotation.arguments!.arguments.first as ast.ListLiteral;
+  static ast.ListLiteral _niceMocksAst(ast.Annotation annotation) {
+    final expression = annotation.arguments!.arguments.first;
+    if (expression is! ast.ListLiteral) {
+      throw InvalidMockitoAnnotationException(
+        'The GenerateNiceMocks "mocks" argument must be a list literal',
+      );
+    }
+    return expression;
+  }
 
   static Iterable<_MockTarget> _mockTargetsFromGenerateMocks(
     ElementAnnotation annotation,

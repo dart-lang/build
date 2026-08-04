@@ -1,5 +1,9 @@
 ## 5.8.1-wip
 
+* Throw `InvalidMockitoAnnotationException` with a clear message when
+  `@GenerateMocks` `customMocks` or `@GenerateNiceMocks` `mocks` is not a list
+  literal, instead of crashing with a type cast exception.
+  [#4428](https://github.com/dart-lang/build/issues/4428)
 * Remove redundant per-class `// ignore: must_be_immutable` comment to prevent
   `duplicate_ignore` warnings.
   [#4588](https://github.com/dart-lang/build/issues/4588)
