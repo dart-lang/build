@@ -235,6 +235,18 @@ $rawOutput
         ...mockTarget.fallbackGenerators.values,
     ];
 
+    // Collect the non-SDK-private libraries imported by libraries containing
+    // referenced types. These are the candidates that might export the types.
+    // Sort them to make selection of import deterministic.
+    final candidateLibraries =
+        {
+            for (final library in librariesWithTypes)
+              for (final imported in library.firstFragment.importedLibraries)
+                if (!imported.isInSdk || !imported.name!.startsWith('dart._'))
+                  imported,
+          }.toList()
+          ..sort(_compareLibraries);
+
     for (final element in elements) {
       final elementLibrary = element.library!;
       if (elementLibrary.isInSdk &&
@@ -243,7 +255,7 @@ $rawOutput
         typeUris[element] = elementLibrary.uri.toString();
         continue;
       }
-      final exportingLibrary = _findExportOf(librariesWithTypes, element);
+      final exportingLibrary = _findExportOf(candidateLibraries, element);
 
       try {
         final typeAssetId = await resolver.assetIdForElement(exportingLibrary);
@@ -265,13 +277,12 @@ $rawOutput
     return typeUris;
   }
 
-  /// Returns a library which exports [element], selecting from the imports of
-  /// [inputLibraries] (and all exported libraries).
+  /// Returns the first library in [candidateLibraries] which exports
+  /// [element].
   ///
-  /// If [element] is not exported by any libraries in this set, then
-  /// [element]'s declaring library is returned.
+  /// If there is no such library, returns [element]'s declaring library.
   static LibraryElement _findExportOf(
-    Iterable<LibraryElement> inputLibraries,
+    Iterable<LibraryElement> candidateLibraries,
     Element element,
   ) {
     final elementName = element.name;
@@ -279,17 +290,25 @@ $rawOutput
       return element.library!;
     }
 
-    final libraries = Queue.of([
-      for (final library in inputLibraries)
-        ...library.firstFragment.importedLibraries,
-    ]);
-
-    for (final library in libraries) {
+    for (final library in candidateLibraries) {
       if (library.exportNamespace.get2(elementName) == element) {
         return library;
       }
     }
     return element.library!;
+  }
+
+  static int _compareLibraries(LibraryElement a, LibraryElement b) {
+    final schemeComparison = a.uri.scheme.compareTo(b.uri.scheme);
+    if (schemeComparison != 0) {
+      return schemeComparison;
+    }
+    final aIsSrc = a.uri.path.contains('/src/');
+    final bIsSrc = b.uri.path.contains('/src/');
+    if (aIsSrc != bIsSrc) {
+      return aIsSrc ? 1 : -1;
+    }
+    return a.uri.path.compareTo(b.uri.path);
   }
 }
 
