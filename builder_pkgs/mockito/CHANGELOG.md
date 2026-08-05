@@ -6,6 +6,8 @@
 * Prefer importing public entrypoints over `/src/` implementation libraries
   when multiple libraries export the same type.
   [#4551](https://github.com/dart-lang/build/issues/4551)
+  excluded.
+  [#4545](https://github.com/dart-lang/build/issues/4545)
 * Throw `InvalidMockitoAnnotationException` with a clear message when
   `@GenerateMocks` `customMocks` or `@GenerateNiceMocks` `mocks` is not a list
   literal, instead of crashing with a type cast exception.

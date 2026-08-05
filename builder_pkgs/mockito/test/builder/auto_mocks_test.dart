@@ -174,6 +174,42 @@ void main() {
   });
 
   test(
+    'header comment includes canonical input package and asset path',
+    () async {
+      final packageConfig = PackageConfig([
+        Package(
+          'foo',
+          Uri.file('/foo/'),
+          packageUriRoot: Uri.file('/foo/lib/'),
+          languageVersion: LanguageVersion(3, 3),
+        ),
+      ]);
+      final builder = buildMocks(BuilderOptions({}));
+      await testBuilders(
+        [builder],
+        visibleOutputBuilders: {builder},
+        {
+          ...annotationsAsset,
+          'foo|lib/foo.dart': 'class Foo {}',
+          'foo|lib/foo_test.dart': '''
+          import 'package:foo/foo.dart';
+          import 'package:mockito/annotations.dart';
+          @GenerateMocks([Foo])
+          void main() {}
+          ''',
+        },
+        rootPackage: 'foo',
+        readerWriter: readerWriter,
+        packageConfig: packageConfig,
+      );
+      final mocksContent = readerWriter.testing.readString(
+        AssetId('foo', 'lib/foo_test.mocks.dart'),
+      );
+      expect(mocksContent, contains('// in foo/lib/foo_test.dart.'));
+    },
+  );
+
+  test(
     'generates a mock class but does not override methods w/ zero parameters',
     () async {
       final mocksContent = await buildWithSingleNonNullableSource(
