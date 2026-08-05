@@ -4255,7 +4255,24 @@ void main() {
           E get v;
         }
         '''),
-        decodedMatches(allOf(contains('E get v'), contains('returnValue: 0'))),
+        decodedMatches(
+          allOf(contains('E get v'), contains('returnValue: (0 as _i2.E)')),
+        ),
+      );
+    });
+
+    test('are supported as type arguments in return types', () async {
+      await expectSingleNonNullableOutput(
+        dedent('''
+        extension type E(int v) {}
+        class Foo {
+          Future<E> get v;
+        }
+        '''),
+        _containsAllOf(
+          'Future<_i2.E> get v',
+          'returnValue: _i3.Future<_i2.E>.value((0 as _i2.E))',
+        ),
       );
     });
   });

@@ -1002,8 +1002,8 @@ class MockUsesExtTypes extends _i1.Mock implements _i3.UsesExtTypes {
   _i3.Ext extTypeReturn(int? _0) =>
       (super.noSuchMethod(
             Invocation.method(#extTypeReturn, [_0]),
-            returnValue: 0,
-            returnValueForMissingStub: 0,
+            returnValue: (0 as _i3.Ext),
+            returnValueForMissingStub: (0 as _i3.Ext),
           )
           as _i3.Ext);
 

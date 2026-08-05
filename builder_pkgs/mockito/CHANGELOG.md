@@ -1,13 +1,17 @@
 ## 5.8.1-wip
 
+* Cast dummy values for extension types to the extension type so they satisfy
+  static type checking in generic return types like `Future<ExtensionType>`.
+  [#4590](https://github.com/dart-lang/build/issues/4590)
+* Use canonical asset path in generated header comments so symlink paths are
+  excluded.
+  [#4545](https://github.com/dart-lang/build/issues/4545)
 * Deterministically select library to import when multiple libraries export the
   same type.
   [#4549](https://github.com/dart-lang/build/issues/4549)
 * Prefer importing public entrypoints over `/src/` implementation libraries
   when multiple libraries export the same type.
   [#4551](https://github.com/dart-lang/build/issues/4551)
-  excluded.
-  [#4545](https://github.com/dart-lang/build/issues/4545)
 * Throw `InvalidMockitoAnnotationException` with a clear message when
   `@GenerateMocks` `customMocks` or `@GenerateNiceMocks` `mocks` is not a list
   literal, instead of crashing with a type cast exception.
