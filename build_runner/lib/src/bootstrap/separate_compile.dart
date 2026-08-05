@@ -50,10 +50,10 @@ Future<CompileResult> compileInTemporaryWorkspace({
       }
     }
     pubspecBuf.writeln('dependency_overrides:');
-    for (final pkgName in requiredPackages) {
-      final pkg = buildPackages[pkgName];
-      if (pkg != null) {
-        pubspecBuf.writeln('  $pkgName:');
+    for (final pkg in buildPackages.packages.values) {
+      if (pkg.name.startsWith(r'$')) continue;
+      if (!pkg.path.contains('.pub-cache')) {
+        pubspecBuf.writeln('  ${pkg.name}:');
         pubspecBuf.writeln('    path: ${pkg.path}');
       }
     }
