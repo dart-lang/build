@@ -1,3 +1,7 @@
+## 4.1.5
+
+- Support the latest `package_config`.
+
 ## 4.1.4
 
 - In the client, check the workspace build daemon version and throw
