@@ -148,9 +148,14 @@ class ParentProcess {
   /// child process is killed if the parent process is killed.
   static Future<ProcessResult> run(
     String command,
-    List<String> arguments,
-  ) async {
-    final process = await _startWithReaper(command, arguments);
+    List<String> arguments, {
+    String? workingDirectory,
+  }) async {
+    final process = await _startWithReaper(
+      command,
+      arguments,
+      workingDirectory: workingDirectory,
+    );
     final stdout = StringBuffer();
     final stderr = StringBuffer();
     process.stdout.transform(utf8.decoder).listen(stdout.write);
@@ -168,9 +173,14 @@ class ParentProcess {
   /// if the parent process is killed.
   static Future<Process> _startWithReaper(
     String command,
-    List<String> arguments,
-  ) async {
-    final result = await Process.start(command, arguments);
+    List<String> arguments, {
+    String? workingDirectory,
+  }) async {
+    final result = await Process.start(
+      command,
+      arguments,
+      workingDirectory: workingDirectory,
+    );
     final reaper = await _startReaper(parentPid: pid, childPid: result.pid);
     if (reaper != null) {
       result.exitCode.then<void>((_) {

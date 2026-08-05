@@ -21,7 +21,10 @@ abstract class Compiler {
   bool isDependency(String path);
 
   /// Compiles the entrypoint script.
-  Future<CompileResult> compile({Iterable<String>? experiments});
+  Future<CompileResult> compile({
+    Iterable<String>? experiments,
+    bool separateBuilderCompile = false,
+  });
 }
 
 class CompileResult {

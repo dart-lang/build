@@ -61,6 +61,7 @@ class BuildRunnerCommandLine {
   final bool? verbose;
   final bool? verboseDurations;
   final bool? workspace;
+  final bool? separateBuilderCompile;
 
   final BuiltList<String> removedOptionsUsed;
 
@@ -113,6 +114,9 @@ class BuildRunnerCommandLine {
       symlink = argResults.boolNamed(symlinkOption),
       verbose = argResults.boolNamed(verboseOption),
       verboseDurations = argResults.boolNamed(verboseDurationsOption),
+      separateBuilderCompile = argResults.boolNamed(
+        separateBuilderCompileOption,
+      ),
       // Only "build" and "watch" support --workspace, default to false for
       // other commands.
       workspace = argResults.boolNamed(workspaceOption) ?? false,
@@ -170,6 +174,7 @@ const defineOption = 'define';
 const enableExperimentOption = 'enable-experiment';
 const forceAotOption = 'force-aot';
 const forceJitOption = 'force-jit';
+const separateBuilderCompileOption = 'separate-builder-compile';
 const dartAotPerfOption = 'dart-aot-perf';
 const dartJitVmArgOption = 'dart-jit-vm-arg';
 const hostnameOption = 'hostname';
@@ -258,6 +263,12 @@ class _Build extends _Command<BuildRunnerCommandLine> {
         defaultsTo: false,
         negatable: false,
         help: 'Compiles builders with JIT mode.',
+      )
+      ..addFlag(
+        separateBuilderCompileOption,
+        defaultsTo: false,
+        negatable: false,
+        help: 'Compiles builders in an isolated temporary workspace.',
       )
       ..addFlag(
         verboseDurationsOption,

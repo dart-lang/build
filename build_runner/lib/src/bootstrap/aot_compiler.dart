@@ -13,6 +13,7 @@ import 'compile_type.dart';
 import 'compiler.dart';
 import 'depfile.dart';
 import 'processes.dart';
+import 'separate_compile.dart';
 
 const entrypointAotPath = '$entrypointScriptPath.aot';
 const entrypointAotDepfilePath = '$entrypointScriptPath.aot.deps';
@@ -44,8 +45,27 @@ class AotCompiler implements Compiler {
   bool isDependency(String path) => _outputDepfile.isDependency(path);
 
   @override
-  Future<CompileResult> compile({Iterable<String>? experiments}) async {
+  Future<CompileResult> compile({
+    Iterable<String>? experiments,
+    bool separateBuilderCompile = false,
+  }) async {
     await _outputDepfile.updateStamp();
+    if (separateBuilderCompile) {
+      final res = await compileInTemporaryWorkspace(
+        buildPaths: buildPaths,
+        mode: 'aot-snapshot',
+        outputPath: p.join(buildPaths.outputRootPath, entrypointAotPath),
+        depfilePath: p.join(
+          buildPaths.outputRootPath,
+          entrypointAotDepfilePath,
+        ),
+        experiments: experiments,
+      );
+      if (res.succeeded) {
+        _outputDepfile.writeDigest();
+      }
+      return res;
+    }
     final dart = Platform.resolvedExecutable;
     final result = await ParentProcess.run(dart, [
       'compile',

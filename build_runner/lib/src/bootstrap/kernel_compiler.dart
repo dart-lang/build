@@ -13,6 +13,7 @@ import 'compile_type.dart';
 import 'compiler.dart';
 import 'depfile.dart';
 import 'processes.dart';
+import 'separate_compile.dart';
 
 const entrypointDillPath = '$entrypointScriptPath.dill';
 const entrypointDillDepfilePath = '$entrypointScriptPath.dill.deps';
@@ -44,8 +45,27 @@ class KernelCompiler implements Compiler {
   bool isDependency(String path) => _outputDepfile.isDependency(path);
 
   @override
-  Future<CompileResult> compile({Iterable<String>? experiments}) async {
+  Future<CompileResult> compile({
+    Iterable<String>? experiments,
+    bool separateBuilderCompile = false,
+  }) async {
     await _outputDepfile.updateStamp();
+    if (separateBuilderCompile) {
+      final res = await compileInTemporaryWorkspace(
+        buildPaths: buildPaths,
+        mode: 'kernel',
+        outputPath: p.join(buildPaths.outputRootPath, entrypointDillPath),
+        depfilePath: p.join(
+          buildPaths.outputRootPath,
+          entrypointDillDepfilePath,
+        ),
+        experiments: experiments,
+      );
+      if (res.succeeded) {
+        _outputDepfile.writeDigest();
+      }
+      return res;
+    }
     final dart = Platform.resolvedExecutable;
     final result = await ParentProcess.run(dart, [
       'compile',

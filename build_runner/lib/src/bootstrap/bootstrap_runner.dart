@@ -122,6 +122,7 @@ class BootstrapRunner {
     final bootstrapper = Bootstrapper(
       buildPaths: buildPaths,
       compileStrategy: compileStrategy,
+      separateBuilderCompile: commandLine.separateBuilderCompile ?? false,
     );
     return await bootstrapper.run(
       arguments,

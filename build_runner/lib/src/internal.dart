@@ -4,6 +4,7 @@
 
 export 'bootstrap/build_process_state.dart';
 export 'bootstrap/build_script_generate.dart';
+export 'bootstrap/separate_compile.dart';
 export 'build/build_result.dart';
 export 'build/build_series.dart';
 export 'build/input_tracker.dart';

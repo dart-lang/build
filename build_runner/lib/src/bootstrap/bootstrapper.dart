@@ -41,10 +41,16 @@ import 'parent_process.dart';
 class Bootstrapper {
   final BuildPaths buildPaths;
   final CompileStrategy compileStrategy;
+  final bool separateBuilderCompile;
   Compiler _compiler;
 
-  Bootstrapper({required this.buildPaths, required this.compileStrategy})
-    : _compiler = compileStrategy.initialCompileType.createCompiler(buildPaths);
+  Bootstrapper({
+    required this.buildPaths,
+    required this.compileStrategy,
+    this.separateBuilderCompile = false,
+  }) : _compiler = compileStrategy.initialCompileType.createCompiler(
+         buildPaths,
+       );
 
   /// Generates the entrypoint script, compiles it and runs it with [arguments].
   ///
@@ -75,7 +81,10 @@ class Bootstrapper {
       if (!_compiler.checkFreshness(digestsAreFresh: false).outputIsFresh) {
         final result = await buildLog.logCompile(
           compileType: _compiler.compileType,
-          function: () => _compiler.compile(experiments: experiments),
+          function: () => _compiler.compile(
+            experiments: experiments,
+            separateBuilderCompile: separateBuilderCompile,
+          ),
         );
 
         // When retrying: for the first failure, log the start of a new build.
