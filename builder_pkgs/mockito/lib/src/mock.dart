@@ -572,15 +572,12 @@ class PostExpectation<T> {
   ///
   /// Note: [expects] cannot contain a Future or Stream, due to Zone
   /// considerations.
-  /// To return a Future or Stream from a method stub, use [thenAnswer].
+  /// To return a Future or Stream from a method stub, use [thenAnswer] or
+  /// [thenAnswerInOrder].
   ///
   /// Note: when the method stub is called more times than there are responses
-  /// in [expects], it will throw an StateError in the missing case.
+  /// in [expects], it will throw a [StateError].
   void thenReturnInOrder(List<T> expects) {
-    if (expects.isEmpty) {
-      throw ArgumentError('thenReturnInOrder expects should not be empty');
-    }
-
     expects.forEach(_throwIfInvalid);
 
     final answers = Queue.of(expects);
@@ -607,6 +604,26 @@ class PostExpectation<T> {
   /// The function will be called, and the return value will be returned.
   void thenAnswer(Answering<T> answer) {
     return _completeWhen(answer);
+  }
+
+  /// Store a sequence of functions which are called when this method stub is
+  /// called.
+  ///
+  /// The functions will be called in order, and their return values will be
+  /// returned.
+  ///
+  /// Note: when the method stub is called more times than there are answers
+  /// in [answers], it will throw a [StateError].
+  void thenAnswerInOrder(List<Answering<T>> answers) {
+    final queue = Queue.of(answers);
+
+    thenAnswer((invocation) {
+      if (queue.isEmpty) {
+        throw StateError('thenAnswerInOrder does not have enough answers');
+      }
+
+      return queue.removeFirst()(invocation);
+    });
   }
 
   void _completeWhen(Answering<T> answer) {
