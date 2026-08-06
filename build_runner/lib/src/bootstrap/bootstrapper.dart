@@ -9,18 +9,21 @@ import 'package:built_collection/built_collection.dart';
 import 'package:path/path.dart' as p;
 
 import '../build_plan/build_paths.dart';
+import '../constants.dart';
 import '../exceptions.dart';
-import '../internal.dart';
+import '../logging/build_log.dart';
 import 'aot_compiler.dart';
+import 'build_process_state.dart';
+import 'build_script_generate.dart';
 import 'compile_type.dart';
 import 'compiler.dart';
 import 'depfile.dart';
 import 'kernel_compiler.dart';
-import 'processes.dart';
+import 'parent_process.dart';
 
 /// Generates, runs and checks freshness of the entrypoint script.
 ///
-/// The entrypoint script calls [ChildProcess.run] passing a `BuilderFactories`
+/// The entrypoint script calls `ChildProcess.run` passing a `BuilderFactories`
 /// that knows how to instantiate all the builders that will run during the
 /// build.
 ///
@@ -38,10 +41,16 @@ import 'processes.dart';
 class Bootstrapper {
   final BuildPaths buildPaths;
   final CompileStrategy compileStrategy;
+  final bool separateBuilderCompile;
   Compiler _compiler;
 
-  Bootstrapper({required this.buildPaths, required this.compileStrategy})
-    : _compiler = compileStrategy.initialCompileType.createCompiler(buildPaths);
+  Bootstrapper({
+    required this.buildPaths,
+    required this.compileStrategy,
+    this.separateBuilderCompile = false,
+  }) : _compiler = compileStrategy.initialCompileType.createCompiler(
+         buildPaths,
+       );
 
   /// Generates the entrypoint script, compiles it and runs it with [arguments].
   ///
@@ -72,7 +81,10 @@ class Bootstrapper {
       if (!_compiler.checkFreshness(digestsAreFresh: false).outputIsFresh) {
         final result = await buildLog.logCompile(
           compileType: _compiler.compileType,
-          function: () => _compiler.compile(experiments: experiments),
+          function: () => _compiler.compile(
+            experiments: experiments,
+            separateBuilderCompile: separateBuilderCompile,
+          ),
         );
 
         // When retrying: for the first failure, log the start of a new build.
@@ -148,13 +160,13 @@ class Bootstrapper {
       buildProcessState.deserializeAndSet(result.message);
       final exitCode = result.exitCode;
 
-      if (exitCode != ChildProcess.recompileBuildersExitCode &&
-          exitCode != ChildProcess.assetDeletedExitCode) {
+      if (exitCode != recompileBuildersExitCode &&
+          exitCode != assetDeletedExitCode) {
         return exitCode;
       }
 
       buildLog.nextBuild(
-        recompilingBuilders: exitCode == ChildProcess.recompileBuildersExitCode,
+        recompilingBuilders: exitCode == recompileBuildersExitCode,
       );
     }
   }
@@ -182,7 +194,7 @@ class Bootstrapper {
   Future<FreshnessResult> checkCompileFreshness({
     required bool digestsAreFresh,
   }) async {
-    if (!ChildProcess.isRunning) {
+    if (!isChildProcessRunning) {
       // Any real use or realistic test has a child process; so this is only hit
       // in small tests. Return "fresh" so nothing related to recompiling is
       // triggered.
@@ -199,7 +211,7 @@ class Bootstrapper {
 
   /// Whether [path] is a dependency of the compiled entrypoint script.
   bool isCompileDependency(String path) {
-    if (!ChildProcess.isRunning) {
+    if (!isChildProcessRunning) {
       // Any real use or realistic test has a child process; so this is only hit
       // in small tests. Return "not a dependency" so nothing related to
       // recompiling is triggered.

@@ -24,7 +24,7 @@ import 'build.dart';
 import 'build_result.dart';
 import 'build_state/asset_graph_json.dart';
 import 'build_state/build_state.dart';
-import 'resolver/asset_ids.dart';
+import 'resolver/asset_ids_hidden.dart';
 
 /// A series of builds with the same configuration.
 ///

@@ -18,6 +18,8 @@ workspace:
 - builder_pkgs/build_web_compilers/test/fixtures/c
 - builder_pkgs/build_web_compilers/test/fixtures/d
 - builder_pkgs/mockito
+- builder_pkgs/reflectable_test_annotation
+- builder_pkgs/reflectable_test_builder
 - builder_pkgs/scratch_space
 - example
 - tool

@@ -1,0 +1,17 @@
+name: reflectable_test_builder
+version: 0.1.0
+description: Codegen builder for @reflectiveTest classes.
+resolution: workspace
+
+environment:
+  sdk: ^3.7.0
+
+dependencies:
+  analyzer: any
+  build: any
+  reflectable_test_annotation: any
+  source_gen: any
+
+dev_dependencies:
+  build_test: any
+  test: any

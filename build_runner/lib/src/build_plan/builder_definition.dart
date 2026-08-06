@@ -9,7 +9,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:meta/meta.dart';
 
 import '../io/reader_writer.dart';
-import 'build_configs.dart';
+import 'build_config_overrides.dart';
 import 'build_package.dart';
 import 'build_packages.dart';
 import 'builder_ordering.dart';
