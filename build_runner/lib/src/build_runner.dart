@@ -11,9 +11,6 @@ import 'package:io/io.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
-import 'bootstrap/bootstrapper.dart';
-import 'bootstrap/build_process_state.dart';
-import 'bootstrap/compile_type.dart';
 import 'build_plan/build_options.dart';
 import 'build_plan/build_paths.dart';
 import 'build_plan/builder_factories.dart';
@@ -36,7 +33,7 @@ import 'logging/build_log.dart';
 
 /// The `build_runner` tool.
 class BuildRunner {
-  final BuilderFactories? builderFactories;
+  final BuilderFactories builderFactories;
   final BuiltList<String> arguments;
 
   late final BuildRunnerCommandLine commandLine;
@@ -87,30 +84,10 @@ class BuildRunner {
                 as YamlMap)['name']!
             as String;
 
-    // Take the process lock if this is the outer process. All commands except
-    // `daemon` take the lock; `daemon` has its own locking.
     final buildPaths = BuildPaths.load(
       p.current,
       buildWorkspace: commandLine.workspace ?? false,
     );
-    if (builderFactories == null && commandLine.type != CommandType.daemon) {
-      await buildProcessState.takeLock(buildPaths);
-    }
-
-    if ((commandLine.forceAot ?? false) && (commandLine.forceJit ?? false)) {
-      throw UsageException(
-        'Only one compile mode can be used, '
-        'got --force-aot and --force-jit.',
-        commandLine.usage,
-      );
-    }
-
-    if (commandLine.type.requiresBuilders && builderFactories == null) {
-      return await _runWithBuilders(
-        buildPaths: buildPaths,
-        compileStrategy: commandLine.compileStrategy,
-      );
-    }
 
     final removedOptionsUsed = commandLine.removedOptionsUsed;
     if (removedOptionsUsed.isNotEmpty) {
@@ -124,7 +101,7 @@ class BuildRunner {
     switch (commandLine.type) {
       case CommandType.build:
         command = BuildCommand(
-          builderFactories: builderFactories!,
+          builderFactories: builderFactories,
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: true,
@@ -142,7 +119,7 @@ class BuildRunner {
       case CommandType.daemon:
         command = DaemonCommand(
           arguments: commandLine.arguments,
-          builderFactories: builderFactories!,
+          builderFactories: builderFactories,
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: false,
@@ -154,7 +131,7 @@ class BuildRunner {
 
       case CommandType.run:
         command = RunCommand(
-          builderFactories: builderFactories!,
+          builderFactories: builderFactories,
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: false,
@@ -167,7 +144,7 @@ class BuildRunner {
       case CommandType.serve:
         final serveOptions = ServeOptions.parse(commandLine);
         command = ServeCommand(
-          builderFactories: builderFactories!,
+          builderFactories: builderFactories,
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: false,
@@ -180,7 +157,7 @@ class BuildRunner {
 
       case CommandType.test:
         command = TestCommand(
-          builderFactories: builderFactories!,
+          builderFactories: builderFactories,
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: false,
@@ -192,7 +169,7 @@ class BuildRunner {
 
       case CommandType.watch:
         command = WatchCommand(
-          builderFactories: builderFactories!,
+          builderFactories: builderFactories,
           buildOptions: BuildOptions.parse(
             commandLine,
             restIsBuildDirs: true,
@@ -203,34 +180,5 @@ class BuildRunner {
     }
 
     return await command.run();
-  }
-
-  /// Builds and runs `build_runner` with the configured builders.
-  ///
-  /// The nested `build_runner` invocation reaches [run] with [builderFactories]
-  /// set, so it runs the command instead of bootstrapping.
-  Future<int> _runWithBuilders({
-    required BuildPaths buildPaths,
-    required CompileStrategy compileStrategy,
-  }) async {
-    buildLog.configuration = buildLog.configuration.rebuild((b) {
-      b.mode = commandLine.type.buildLogMode;
-      b.verbose = commandLine.verbose;
-      b.verboseDurations = commandLine.verboseDurations;
-    });
-
-    final bootstrapper = Bootstrapper(
-      buildPaths: buildPaths,
-      compileStrategy: compileStrategy,
-    );
-    return await bootstrapper.run(
-      arguments,
-      dartAotPerf: commandLine.dartAotPerf ?? false,
-      jitVmArgs: commandLine.jitVmArgs ?? const Iterable.empty(),
-      experiments: commandLine.enableExperiments,
-      retryCompileFailures:
-          commandLine.type == CommandType.watch ||
-          commandLine.type == CommandType.serve,
-    );
   }
 }
