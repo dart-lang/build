@@ -11,7 +11,7 @@ import 'package:glob/glob.dart';
 import 'package:watcher/watcher.dart';
 
 import '../build/build_state/build_state.dart';
-import '../build/resolver/asset_ids.dart';
+import '../build/resolver/asset_ids_hidden.dart';
 import '../build_plan/build_configs.dart';
 import '../build_plan/build_packages.dart';
 import '../build_plan/build_step_plan.dart';
