@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import '../build_plan/phase.dart';
 import 'ansi_buffer.dart';
 import 'build_log.dart';
 
@@ -37,7 +36,7 @@ extension type TimedActivity(String name) {
   ///
   /// Only lazy builds, which means builds that are triggered by a required
   /// build, are tracked in this way.
-  TimedActivity.lazyPhase(InBuildPhase phase) : name = phase.displayName;
+  TimedActivity.lazyPhase(BuildLogPhase phase) : name = phase.displayName;
 
   /// Runs [function] attributing the time spent to this activity.
   ///

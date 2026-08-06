@@ -8,7 +8,7 @@ import 'package:build_config/build_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 
-import '../build_plan/build_configs.dart';
+import '../build_plan/build_config_overrides.dart';
 import '../build_plan/build_packages.dart';
 import '../build_plan/build_paths.dart';
 import '../constants.dart';

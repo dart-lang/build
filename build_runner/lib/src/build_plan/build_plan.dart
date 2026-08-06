@@ -9,7 +9,7 @@ import 'package:built_value/built_value.dart';
 import '../build/asset_content.dart';
 import '../build/build_state/build_state.dart';
 import '../build/library_cycle_graph/phased_asset_deps.dart';
-import '../build/resolver/asset_ids.dart';
+import '../build/resolver/asset_ids_hidden.dart';
 import '../constants.dart';
 import '../exceptions.dart';
 import '../io/asset_tracker.dart';

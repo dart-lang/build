@@ -6,12 +6,13 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
+import '../build_plan/build_package.dart';
 import '../build_plan/build_packages.dart';
 import '../build_plan/build_paths.dart';
 import '../constants.dart';
 import 'build_script_generate.dart';
 import 'compiler.dart';
-import 'processes.dart';
+import 'parent_process.dart';
 
 /// Compiles the build script in an isolated temporary workspace containing
 /// a minimal `pubspec.yaml` with only builder dependencies.
@@ -39,23 +40,46 @@ Future<CompileResult> compileInTemporaryWorkspace({
       }
     }
 
+    // Collect all local path packages transitively required by builders.
+    final builderPackagesToOverride = <String, BuildPackage>{};
+    final toVisit = <String>[...requiredPackages];
+    final visited = <String>{};
+
+    while (toVisit.isNotEmpty) {
+      final pkgName = toVisit.removeLast();
+      if (!visited.add(pkgName)) continue;
+      if (pkgName == buildPackages.outputRoot) continue;
+      final pkg = buildPackages[pkgName];
+      if (pkg == null) continue;
+      if (!pkg.path.contains('.pub-cache')) {
+        builderPackagesToOverride[pkgName] = pkg;
+      }
+      for (final dep in pkg.dependencies) {
+        if (!visited.contains(dep)) {
+          toVisit.add(dep);
+        }
+      }
+    }
+
     final pubspecBuf = StringBuffer();
     pubspecBuf.writeln('name: _build_runner_tmp');
     pubspecBuf.writeln('environment:');
     pubspecBuf.writeln('  sdk: ^${Platform.version.split(' ').first}');
     pubspecBuf.writeln('dependencies:');
     for (final pkgName in requiredPackages) {
-      if (buildPackages[pkgName] != null) {
+      final pkg = buildPackages[pkgName];
+      if (pkg != null && !pkg.path.contains('.pub-cache')) {
+        pubspecBuf.writeln('  $pkgName:');
+        pubspecBuf.writeln('    path: ${pkg.path}');
+      } else {
         pubspecBuf.writeln('  $pkgName: any');
       }
     }
     pubspecBuf.writeln('dependency_overrides:');
-    for (final pkg in buildPackages.packages.values) {
-      if (pkg.name.startsWith(r'$')) continue;
-      if (!pkg.path.contains('.pub-cache')) {
-        pubspecBuf.writeln('  ${pkg.name}:');
-        pubspecBuf.writeln('    path: ${pkg.path}');
-      }
+    for (final pkg in builderPackagesToOverride.values) {
+      if (pkg.name == buildPackages.outputRoot) continue;
+      pubspecBuf.writeln('  ${pkg.name}:');
+      pubspecBuf.writeln('    path: ${pkg.path}');
     }
 
     final pubspecPath = p.join(tmpDir.path, 'pubspec.yaml');

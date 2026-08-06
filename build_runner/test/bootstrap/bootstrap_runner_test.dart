@@ -37,24 +37,31 @@ void main() {
       final packageConfig =
           jsonDecode(packageConfigFile.readAsStringSync())
               as Map<String, dynamic>;
+      final packageConfigUri = packageConfigFile.uri;
       final packageMap = <String, String>{};
       final packages = (packageConfig['packages'] as List)
           .cast<Map<String, dynamic>>();
       for (final pkg in packages) {
         final name = pkg['name'] as String;
-        final rootUri = pkg['rootUri'] as String;
-        final packageUri = pkg['packageUri'] as String? ?? 'lib/';
-        final libPath = p.normalize(
-          p.join(searchDir.path, '.dart_tool', rootUri, packageUri),
-        );
-        packageMap[name] = libPath;
+        var rootUri = Uri.parse(pkg['rootUri'] as String);
+        if (!rootUri.path.endsWith('/')) {
+          rootUri = rootUri.replace(path: '${rootUri.path}/');
+        }
+        final packageUri = Uri.parse(pkg['packageUri'] as String? ?? 'lib/');
+        final resolved = packageConfigUri
+            .resolveUri(rootUri)
+            .resolveUri(packageUri);
+        packageMap[name] = p.normalize(resolved.toFilePath());
       }
 
       final visited = <String>{};
       final toVisit = <String>[entrypoint];
       final visitedPackages = <String>{};
 
-      final importRegex = RegExp(r'''(?:import|export)\s+['"]([^'"]+)['"]''');
+      final importRegex = RegExp(
+        r'''^\s*(?:import|export)\s+['"]([^'"]+)['"]''',
+        multiLine: true,
+      );
 
       while (toVisit.isNotEmpty) {
         final currentPath = toVisit.removeLast();
@@ -63,7 +70,9 @@ void main() {
         final file = File(currentPath);
         if (!file.existsSync()) continue;
 
-        final content = file.readAsStringSync();
+        var content = file.readAsStringSync();
+        content = content.replaceAll(RegExp(r"'''[\s\S]*?'''"), "''");
+        content = content.replaceAll(RegExp(r'"""[\s\S]*?"""'), '""');
         for (final match in importRegex.allMatches(content)) {
           final uri = match.group(1)!;
 

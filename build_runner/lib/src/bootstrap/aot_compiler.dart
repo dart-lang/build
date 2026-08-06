@@ -12,7 +12,7 @@ import '../constants.dart';
 import 'compile_type.dart';
 import 'compiler.dart';
 import 'depfile.dart';
-import 'processes.dart';
+import 'parent_process.dart';
 import 'separate_compile.dart';
 
 const entrypointAotPath = '$entrypointScriptPath.aot';

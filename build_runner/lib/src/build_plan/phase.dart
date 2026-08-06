@@ -6,6 +6,7 @@ import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:collection/collection.dart';
 
+import '../logging/build_log.dart';
 import 'input_matcher.dart';
 
 /// A "phase" in the build graph, which represents running a one or more
@@ -40,7 +41,7 @@ abstract class BuildAction {
 }
 
 /// A [BuildPhase] that uses a single [Builder] to generate files.
-class InBuildPhase extends BuildPhase implements BuildAction {
+class InBuildPhase extends BuildPhase implements BuildAction, BuildLogPhase {
   final Builder builder;
 
   /// The key with which the builder is referred to in `build.yaml` files.
@@ -52,6 +53,7 @@ class InBuildPhase extends BuildPhase implements BuildAction {
   ///
   /// It's the same as [key] except that if package name and builder name are
   /// the same then the duplication and colon are removed.
+  @override
   final String displayName;
 
   @override
