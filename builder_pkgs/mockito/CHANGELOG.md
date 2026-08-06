@@ -1,4 +1,4 @@
-## 5.8.1-wip
+## 5.8.1
 
 * Cast dummy values for extension types to the extension type so they satisfy
   static type checking in generic return types like `Future<ExtensionType>`.
