@@ -160,7 +160,7 @@ void main() {
       expect(mock.getter, equals('A'));
     });
 
-    test('throws an exception if not enough answers were provided', () {
+    test('thenReturnInOrder throws if not enough answers are provided', () {
       when(mock.methodWithNormalArgs(any)).thenReturnInOrder(['One', 'Two']);
 
       expect(mock.methodWithNormalArgs(100), equals('One'));
@@ -177,6 +177,71 @@ void main() {
         ),
       );
     });
+
+    test(
+      'thenReturnInOrder allows empty list at stubbing and throws when called',
+      () {
+        when(mock.methodWithNormalArgs(any)).thenReturnInOrder([]);
+
+        expect(
+          () => mock.methodWithNormalArgs(100),
+          throwsA(
+            isA<StateError>().having(
+              (e) => e.message,
+              'message',
+              contains('thenReturnInOrder does not have enough answers'),
+            ),
+          ),
+        );
+      },
+    );
+
+    test('thenAnswerInOrder returns responses in order', () async {
+      when(
+        mock.methodReturningFuture(),
+      ).thenAnswerInOrder([(_) async => 'One', (_) async => 'Two']);
+
+      expect(await mock.methodReturningFuture(), equals('One'));
+      expect(await mock.methodReturningFuture(), equals('Two'));
+    });
+
+    test('thenAnswerInOrder throws if not enough answers are provided', () {
+      when(
+        mock.methodWithNormalArgs(any),
+      ).thenAnswerInOrder([(_) => 'One', (_) => 'Two']);
+
+      expect(mock.methodWithNormalArgs(100), equals('One'));
+      expect(mock.methodWithNormalArgs(100), equals('Two'));
+
+      expect(
+        () => mock.methodWithNormalArgs(100),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            contains('thenAnswerInOrder does not have enough answers'),
+          ),
+        ),
+      );
+    });
+
+    test(
+      'thenAnswerInOrder allows empty list at stubbing and throws when called',
+      () {
+        when(mock.methodWithNormalArgs(any)).thenAnswerInOrder([]);
+
+        expect(
+          () => mock.methodWithNormalArgs(100),
+          throwsA(
+            isA<StateError>().having(
+              (e) => e.message,
+              'message',
+              contains('thenAnswerInOrder does not have enough answers'),
+            ),
+          ),
+        );
+      },
+    );
 
     test('should have hashCode when it is not mocked', () {
       expect(mock.hashCode, isNotNull);
@@ -249,13 +314,6 @@ void main() {
         () => when(
           mock.methodReturningStream(),
         ).thenReturn(Stream.fromIterable(['stub'])),
-        throwsArgumentError,
-      );
-    });
-
-    test('thenReturn throws if provided expects are empty for inOrder', () {
-      expect(
-        () => when(mock.methodReturningStream()).thenReturnInOrder([]),
         throwsArgumentError,
       );
     });

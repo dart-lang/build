@@ -1,3 +1,10 @@
+## 5.8.2-wip
+
+* Add `thenAnswerInOrder` to `PostExpectation`.
+  [#4476](https://github.com/dart-lang/build/issues/4476)
+* Allow empty lists in `thenReturnInOrder` and `thenAnswerInOrder` without
+  throwing `ArgumentError` at stubbing time.
+
 ## 5.8.1
 
 * Cast dummy values for extension types to the extension type so they satisfy
