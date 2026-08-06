@@ -1,3 +1,5 @@
+reporter: failures-only
+
 tags:
   integration1:
     timeout: 3m
