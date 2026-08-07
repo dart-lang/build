@@ -13,6 +13,7 @@ import 'package:build_runner/src/build/build_state/build_step_result.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_id.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_result.dart';
 import 'package:build_runner/src/build/builder_filesystem.dart';
+import 'package:build_runner/src/build/shared_part.dart';
 import 'package:build_runner/src/build_plan/build_directory.dart';
 import 'package:build_runner/src/build_plan/build_filter.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
@@ -92,6 +93,52 @@ void main() {
       );
       expect(await reader.canRead(notDeletedId), true);
       expect(await reader.canRead(deletedId), false);
+    });
+
+    test('can fully read generated shared parts (retaining imports)', () async {
+      final inputId = AssetId('a', 'lib/a.dart');
+      final expectedGeneratedPartId = AssetId('a', 'lib/_br_/a.dart');
+
+      final buildStepId = BuildStepId(primaryInput: inputId, phaseNumber: 0);
+      buildState.updateBuildStepResult(
+        buildStepId,
+        BuildStepResult((b) {
+          b.result = true;
+          b.isHidden = false;
+          b.wrotePartContribution = true;
+        }),
+      );
+      buildState.addSharedPart(SharedPart(inputId, '// @dart=3.0'));
+      buildState.updatePartContribution(inputId, 0, [
+        'import \'package:foo/foo.dart\';',
+      ], '// contribution');
+
+      final buildPlan = await BuildPlan.load(
+        await BuildSpec.load(
+          builderFactories: BuilderFactories({}),
+          buildOptions: BuildOptions.forTests(),
+          testingOverrides: TestingOverrides(
+            buildPhases: buildPhases,
+            readerWriter: readerWriter,
+            buildPackages: buildPackages,
+          ),
+        ),
+      );
+      reader = BuildOutputReader(
+        builderFilesystem: BuilderFilesystem(
+          buildPackages: buildPlan.buildSpec.buildPackages,
+          buildConfigs: buildPlan.buildSpec.buildConfigs,
+          buildState: buildState,
+          buildStepPlan: buildPlan.buildStepPlan,
+          readerWriter: buildPlan.readerWriter,
+        ),
+      );
+
+      expect(await reader.canRead(expectedGeneratedPartId), true);
+      final content = await reader.readAsString(expectedGeneratedPartId);
+      expect(content, contains('import \'package:foo/foo.dart\';'));
+      expect(content, contains('// @dart=3.0'));
+      expect(content, contains('// contribution'));
     });
 
     test('Failed steps interact well with build filters ', () async {

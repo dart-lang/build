@@ -14,6 +14,7 @@ import '../asset_content.dart';
 import '../library_cycle_graph/asset_deps.dart';
 import '../library_cycle_graph/phased_asset_deps.dart';
 import '../library_cycle_graph/phased_value.dart';
+import '../shared_part.dart';
 import 'build_step_id.dart';
 import 'build_step_result.dart';
 import 'glob_id.dart';
@@ -50,6 +51,15 @@ final Serializers serializers =
           ..add(identityAssetIdSerializer)
           ..add(AssetContentSerializer())
           ..add(DigestSerializer())
+          ..add(SharedPartSerializer())
+          ..addBuilderFactory(
+            const FullType(BuiltMap, [FullType(AssetId), FullType(SharedPart)]),
+            MapBuilder<AssetId, SharedPart>.new,
+          )
+          ..addBuilderFactory(
+            const FullType(Map, [FullType(int), FullType(AssetContent)]),
+            () => <int, AssetContent>{},
+          )
           ..addBuilderFactory(
             const FullType(BuiltSet, [FullType(AssetId)]),
             SetBuilder<AssetId>.new,
@@ -165,4 +175,87 @@ class DigestSerializer implements PrimitiveSerializer<Digest> {
     Digest object, {
     FullType specifiedType = FullType.unspecified,
   }) => base64.encode(object.bytes);
+}
+
+/// Serializer for [SharedPart].
+class SharedPartSerializer implements StructuredSerializer<SharedPart> {
+  @override
+  final Iterable<Type> types = const [SharedPart];
+
+  @override
+  final String wireName = 'SharedPart';
+
+  @override
+  Iterable<Object?> serialize(
+    Serializers serializers,
+    SharedPart object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    return [
+      'primaryInput',
+      serializers.serialize(
+        object.primaryInput,
+        specifiedType: const FullType(AssetId),
+      ),
+      if (object.languageVersion != null) ...[
+        'languageVersion',
+        object.languageVersion,
+      ],
+      'contentsByPhase',
+      serializers.serialize(
+        object.contentsByPhase,
+        specifiedType: const FullType(Map, [
+          FullType(int),
+          FullType(AssetContent),
+        ]),
+      ),
+    ];
+  }
+
+  @override
+  SharedPart deserialize(
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    final iterator = serialized.iterator;
+    late AssetId primaryInput;
+    String? languageVersion;
+    var contentsByPhase = <int, AssetContent>{};
+    while (iterator.moveNext()) {
+      final key = iterator.current as String;
+      iterator.moveNext();
+      final value = iterator.current;
+      switch (key) {
+        case 'primaryInput':
+          primaryInput =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(AssetId),
+                  )
+                  as AssetId;
+        case 'languageVersion':
+          languageVersion = value as String?;
+        case 'contentsByPhase':
+          final map =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(Map, [
+                      FullType(int),
+                      FullType(AssetContent),
+                    ]),
+                  )
+                  as Map;
+          contentsByPhase = map.map(
+            (k, v) => MapEntry(
+              k is int ? k : int.parse(k.toString()),
+              v as AssetContent,
+            ),
+          );
+      }
+    }
+    final part = SharedPart(primaryInput, languageVersion);
+    contentsByPhase.forEach((k, v) => part.contentsByPhase[k] = v);
+    return part;
+  }
 }

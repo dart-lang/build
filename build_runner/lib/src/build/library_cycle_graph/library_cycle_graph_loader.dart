@@ -49,11 +49,6 @@ import 'phased_value.dart';
 /// an earlier phase. This happens when a load does a read that triggers a build
 /// of a generated file in an earlier phase.
 class LibraryCycleGraphLoader {
-  /// The phases at which evaluation is currently running.
-  ///
-  /// Used to check that recursive loads are always to an earlier phase.
-  final List<int> _runningAtPhases = [];
-
   /// The dependencies of loaded assets, as far as is known.
   ///
   /// Source files do not change during the build, so as soon as loaded
@@ -87,7 +82,6 @@ class LibraryCycleGraphLoader {
 
   /// Clears all data.
   void clear() {
-    _runningAtPhases.clear();
     _assetDeps.clear();
     _idsToLoad.clear();
     _cycles.clear();
@@ -431,20 +425,21 @@ class LibraryCycleGraphLoader {
     AssetId id,
   ) async {
     final phase = assetDepsLoader.phase;
-    if (_runningAtPhases.isNotEmpty && phase >= _runningAtPhases.last) {
+    final runningAtPhases = assetDepsLoader.runningAtPhases;
+    if (runningAtPhases.isNotEmpty && phase >= runningAtPhases.last) {
       throw StateError(
         'Cannot recurse at later or equal phase $phase, already running at: '
-        '$_runningAtPhases',
+        '$runningAtPhases',
       );
     }
-    _runningAtPhases.add(assetDepsLoader.phase);
+    runningAtPhases.add(assetDepsLoader.phase);
 
     await _load(assetDepsLoader, id);
     _buildCycles(assetDepsLoader.phase);
     final result = _cycles[id]!;
 
     // A recursive call always finishes before the outer call resumes.
-    final removedPhase = _runningAtPhases.removeLast();
+    final removedPhase = runningAtPhases.removeLast();
     if (removedPhase != phase) {
       throw StateError('Removed phase $removedPhase, expected $phase.');
     }
@@ -498,7 +493,6 @@ class LibraryCycleGraphLoader {
   String toString() =>
       '''
 LibraryCycleGraphLoader(
-  _runningAtPhases: $_runningAtPhases
   _assetDeps: $_assetDeps,
   _idsToLoad: $_idsToLoad,
   _cycles: $_cycles,

@@ -129,6 +129,9 @@ class BuilderDefinition implements AbstractBuilderDefinition {
   /// Whether the builder is skipped if nothing uses its output.
   final bool isOptional;
 
+  /// Whether the builder is capable of contributing to .part files.
+  final bool addsToLibrary;
+
   @visibleForTesting
   BuilderDefinition(
     this.key, {
@@ -137,9 +140,17 @@ class BuilderDefinition implements AbstractBuilderDefinition {
     Iterable<String> appliesBuilders = const [],
     this.hideOutput = true,
     this.isOptional = false,
+    this.addsToLibrary = false,
     this.targetBuilderConfigDefaults = const TargetBuilderConfigDefaults(),
   }) : package = package ?? (key.contains(':') ? key.split(':').first : ''),
-       appliesBuilders = appliesBuilders.toBuiltList();
+       appliesBuilders = appliesBuilders.toBuiltList() {
+    if (addsToLibrary && isOptional) {
+      throw ArgumentError(
+        'Builder "$key" sets both `adds_to_library: true` and '
+        '`is_optional: true`, which is not supported.',
+      );
+    }
+  }
 
   factory BuilderDefinition.fromConfig(
     build_config.BuilderDefinition builderDefinition,
@@ -150,6 +161,7 @@ class BuilderDefinition implements AbstractBuilderDefinition {
     appliesBuilders: builderDefinition.appliesBuilders,
     hideOutput: builderDefinition.buildTo == build_config.BuildTo.cache,
     isOptional: builderDefinition.isOptional,
+    addsToLibrary: builderDefinition.addsToLibrary,
     targetBuilderConfigDefaults: builderDefinition.defaults,
   );
 

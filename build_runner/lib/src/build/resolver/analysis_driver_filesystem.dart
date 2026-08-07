@@ -12,12 +12,13 @@ import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/dart/analysis/file_content_cache.dart';
 import 'package:build/build.dart' hide Resource;
+
 import 'package:path/path.dart' as p;
 
 import '../../build_plan/build_inputs.dart';
 import '../asset_content.dart';
+import '../br_outputs.dart';
 import '../builder_filesystem.dart';
-import 'asset_ids.dart';
 
 /// The in-memory filesystem that is the analyzer's view of the build.
 ///
@@ -54,12 +55,29 @@ class AnalysisDriverFilesystem
     final plan = _builderFilesystem.buildStepPlan;
     final minPhase = previousPhase < phase ? previousPhase : phase;
     final maxPhase = previousPhase > phase ? previousPhase : phase;
-    for (var phase = minPhase; phase != maxPhase; ++phase) {
-      for (final step in plan.buildStepsByPhase[phase]) {
+    for (var p = minPhase; p != maxPhase; ++p) {
+      for (final step in plan.buildStepsByPhase[p]) {
         for (final output in plan.declaredOutputsByStep[step]) {
           _changedPaths.add(output.asPath);
         }
       }
+    }
+    for (final primaryInput
+        in _builderFilesystem.buildState.sharedPartPrimaryInputs) {
+      final partId = primaryInput.sharedPartIdForPrimaryInput;
+      final partContent = _builderFilesystem.buildState.sharedPartContent(
+        partId,
+        upToPhase: _phase - 1,
+      )!;
+      _writeContent(
+        BuildRunnerFileContent(
+          path: partId.asPath,
+          exists: true,
+          content: partContent.dartStringValueOrEmptyFail(id: partId),
+          contentHash: partContent.digest.toString(),
+          phase: -1,
+        ),
+      );
     }
   }
 
@@ -98,13 +116,19 @@ class AnalysisDriverFilesystem
         _changedPaths.add(path);
       }
     }
+
     for (final id in buildInputs.updatedSources) {
       _updateContent(id, builderFilesystem.buildState.contentOfSource(id));
+    }
+
+    for (final primaryInput
+        in builderFilesystem.buildState.sharedPartPrimaryInputs) {
+      _data.remove(primaryInput.sharedPartIdForPrimaryInput.asPath);
     }
   }
 
   void _updateContent(AssetId id, AssetContent? content) {
-    if (!id.isDart) return;
+    if (!id.path.endsWith('.dart') || id.isBrSharedPart) return;
     if (content == null) {
       // The update is that the file no longer exists.
       final path = id.asPath;
@@ -134,7 +158,6 @@ class AnalysisDriverFilesystem
     );
   }
 
-  /// Whether [path] exists.
   bool exists(String path) {
     final content = _data[path];
     if (content == null) return false;
@@ -164,7 +187,7 @@ class AnalysisDriverFilesystem
     if (isVisible) {
       _changedPaths.add(path);
     }
-    assert(_changedPathsThisBuild.add(path), path);
+    assert(_changedPathsThisBuild.add(path) || path.contains('_br_'), path);
   }
 
   /// Paths that were modified by [_writeContent] since the last
@@ -177,8 +200,10 @@ class AnalysisDriverFilesystem
   // `FileContentCache` methods.
 
   @override
-  FileContent get(String path) =>
-      exists(path) ? _data[path]! : BuildRunnerFileContent.missing(path);
+  FileContent get(String path) {
+    if (!exists(path)) return BuildRunnerFileContent.missing(path);
+    return _data[path]!;
+  }
 
   @override
   void invalidate(String path) {
