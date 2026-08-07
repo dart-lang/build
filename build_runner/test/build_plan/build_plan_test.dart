@@ -3,7 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:build_config/build_config.dart' hide BuilderDefinition;
+import 'package:build_config/build_config.dart'
+    hide BuilderDefinition, PostProcessBuilderDefinition;
 import 'package:build_runner/src/build/asset_content.dart';
 import 'package:build_runner/src/build/build_state/asset_graph_json.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
@@ -62,10 +63,15 @@ void main() {
       await readerWriter.writeAsString(assetId, '// a.dart');
       await readerWriter.writeAsString(assetId2, '// other');
       buildOptions = BuildOptions.forTests();
-      builderFactories = BuilderFactories({
-        '': [(_) => TestBuilder()],
-        'b2': [(_) => TestBuilder(buildExtensions: appendExtension('.copy2'))],
-      });
+      builderFactories = BuilderFactories(
+        {
+          '': [(_) => TestBuilder()],
+          'b2': [
+            (_) => TestBuilder(buildExtensions: appendExtension('.copy2')),
+          ],
+        },
+        postProcessBuilderFactories: {'a:p': (_) => MockPostProcessBuilder()},
+      );
       testingOverrides = TestingOverrides(
         builderDefinitions: [BuilderDefinition('')].build(),
         readerWriter: readerWriter,
@@ -129,6 +135,81 @@ void main() {
         },
         {assetId, assetId2, assetId3, outputId},
       );
+    });
+
+    test('skips post-process source outputs on clean build', () async {
+      final slangId = AssetId('a', 'lib/strings.slang.dart');
+      await readerWriter.writeAsString(slangId, '// slang');
+
+      final buildConfig = runInBuildConfigZone(
+        () => BuildConfig(
+          packageName: 'a',
+          buildTargets: {
+            'a|a': BuildTarget(
+              builders: {'a:p': TargetBuilderConfig(isEnabled: true)},
+            ),
+          },
+        ),
+        'a',
+        [],
+      );
+
+      final over = testingOverrides.copyWith(
+        builderDefinitions: <AbstractBuilderDefinition>[
+          PostProcessBuilderDefinition(
+            'a:p',
+            hideOutput: false,
+            sourceOutputGlobs: ['**/*.slang.dart'],
+          ),
+        ].build(),
+        buildConfig: {'a': buildConfig}.build(),
+      );
+
+      buildPlan = await loadPlan(over);
+
+      // Verify that it is filtered from sources and added to conflictingOutputs.
+      expect(buildPlan.buildInputs.sources.contains(slangId), isFalse);
+      expect(buildPlan.conflictingOutputs.contains(slangId), isTrue);
+    });
+
+    test('ignores post-process source outputs on incremental build', () async {
+      final slangId = AssetId('a', 'lib/strings.slang.dart');
+      final buildState = BuildState({assetId: null});
+
+      await writeBuildStateAndPlan(buildState, buildPlan);
+
+      final buildConfig = runInBuildConfigZone(
+        () => BuildConfig(
+          packageName: 'a',
+          buildTargets: {
+            'a|a': BuildTarget(
+              builders: {'a:p': TargetBuilderConfig(isEnabled: true)},
+            ),
+          },
+        ),
+        'a',
+        [],
+      );
+
+      final over = testingOverrides.copyWith(
+        builderDefinitions: <AbstractBuilderDefinition>[
+          PostProcessBuilderDefinition(
+            'a:p',
+            hideOutput: false,
+            sourceOutputGlobs: ['**/*.slang.dart'],
+          ),
+        ].build(),
+        buildConfig: {'a': buildConfig}.build(),
+      );
+
+      // Create new slang file, which should trigger an incremental update if it were a source.
+      await readerWriter.writeAsString(slangId, '// slang');
+
+      buildPlan = await loadPlan(over);
+
+      // Verify that it doesn't get flagged as an updated or new source.
+      expect(buildPlan.buildInputs.updatedSources.contains(slangId), isFalse);
+      expect(buildPlan.buildInputs.sources.contains(slangId), isFalse);
     });
 
     test('applies target glob from build config', () async {
@@ -232,4 +313,12 @@ void main() {
       );
     });
   });
+}
+
+class MockPostProcessBuilder implements PostProcessBuilder {
+  @override
+  Iterable<String> get inputExtensions => ['.dart'];
+
+  @override
+  Future<void> build(PostProcessBuildStep buildStep) async {}
 }

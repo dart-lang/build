@@ -171,6 +171,7 @@ class PostBuildAction implements BuildAction {
   final InputMatcher targetSources;
   @override
   final bool hideOutput;
+  final Iterable<String> sourceOutputGlobs;
 
   PostBuildAction({
     required this.builder,
@@ -179,6 +180,7 @@ class PostBuildAction implements BuildAction {
     required InputSet targetSources,
     required InputSet generateFor,
     required this.hideOutput,
+    this.sourceOutputGlobs = const [],
   }) : builderLabel = _builderLabel(builder),
        targetSources = InputMatcher(targetSources),
        generateFor = InputMatcher(generateFor);
@@ -190,6 +192,7 @@ class PostBuildAction implements BuildAction {
     package,
     targetSources,
     hideOutput,
+    sourceOutputGlobs.toList(),
   ]);
 }
 

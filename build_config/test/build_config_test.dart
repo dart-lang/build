@@ -85,6 +85,7 @@ void main() {
             options: {'foo': 'bar'},
             releaseOptions: {'baz': 'bop'},
           ),
+          sourceOutputGlobs: ['**/*.slang.dart'],
         ),
       },
     );
@@ -247,6 +248,7 @@ post_process_builders:
         foo: bar
       release_options:
         baz: bop
+    source_output_globs: ["**/*.slang.dart"]
 additional_public_assets:
   - "test/**"
 ''';
@@ -493,6 +495,7 @@ PostProcessBuilderDefinition createPostProcessBuilderDefinition(
   required String import,
   String? key,
   TargetBuilderConfigDefaults? defaults,
+  Iterable<String>? sourceOutputGlobs,
 }) {
   return runInBuildConfigZone(
     () {
@@ -500,6 +503,7 @@ PostProcessBuilderDefinition createPostProcessBuilderDefinition(
         builderFactory: builderFactory,
         import: import,
         defaults: defaults,
+        sourceOutputGlobs: sourceOutputGlobs,
       );
       packageExpando[definition] = package;
       builderKeyExpando[definition] = key ?? '$package:$package';
