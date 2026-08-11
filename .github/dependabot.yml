@@ -7,6 +7,8 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 7
     labels:
       - autosubmit
     groups:
@@ -20,6 +22,8 @@ updates:
     directory: "build"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
     versioning-strategy: increase-if-necessary
     reviewers:
       - "jakemac53"
@@ -27,6 +31,8 @@ updates:
     directory: "build_modules"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
     versioning-strategy: increase-if-necessary
     reviewers:
       - "jakemac53"
@@ -34,6 +40,8 @@ updates:
     directory: "build_resolvers"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
     versioning-strategy: increase-if-necessary
     reviewers:
       - "jakemac53"
@@ -41,6 +49,8 @@ updates:
     directory: "build_runner"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
     versioning-strategy: increase-if-necessary
     reviewers:
       - "jakemac53"
@@ -48,6 +58,8 @@ updates:
     directory: "build_web_compilers"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
     versioning-strategy: increase-if-necessary
     reviewers:
       - "jakemac53"
