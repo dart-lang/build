@@ -141,6 +141,13 @@ class BuildRunnerTester {
     file
       ..createSync(recursive: true)
       ..writeAsStringSync(contents);
+    if (p.basename(path) == 'pubspec.yaml') {
+      // Work around "dart run" issue https://github.com/dart-lang/sdk/issues/61950.
+      final rootLock = File(p.join(tempDirectory.path, 'pubspec.lock'));
+      if (rootLock.existsSync()) rootLock.deleteSync();
+      final pkgLock = File(p.join(file.parent.path, 'pubspec.lock'));
+      if (pkgLock.existsSync()) pkgLock.deleteSync();
+    }
   }
 
   /// Writes [contents] to workspace-relative [path].
@@ -156,6 +163,13 @@ class BuildRunnerTester {
     final file = File(p.join(tempDirectory.path, path));
     final data = file.readAsStringSync();
     file.writeAsStringSync(update(data));
+    if (p.basename(path) == 'pubspec.yaml') {
+      // Work around "dart run" issue https://github.com/dart-lang/sdk/issues/61950.
+      final rootLock = File(p.join(tempDirectory.path, 'pubspec.lock'));
+      if (rootLock.existsSync()) rootLock.deleteSync();
+      final pkgLock = File(p.join(file.parent.path, 'pubspec.lock'));
+      if (pkgLock.existsSync()) pkgLock.deleteSync();
+    }
   }
 
   /// Deletes the file or directory at workspace-relative [path].
