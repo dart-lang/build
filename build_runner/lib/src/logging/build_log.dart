@@ -402,6 +402,7 @@ class BuildLog {
     _popPhase();
   }
 
+  /// Displays the current progress for [phaseName].
   void _displayProgress(String phaseName) {
     if (_display.displayingBlocks) {
       _display.block(render());
@@ -410,6 +411,7 @@ class BuildLog {
     }
   }
 
+  /// Displays progress if [progress] for [phaseName] has finished.
   void _displayProgressIfFinished(_PhaseProgress progress, String phaseName) {
     // Usually the next step will immediately run and update with more useful
     // information, so only display if this is the last for the builder.

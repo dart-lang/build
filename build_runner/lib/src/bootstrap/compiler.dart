@@ -33,6 +33,9 @@ abstract class Compiler {
 }
 
 /// Common base class for process-based Dart compilers.
+///
+/// Handles invoking the compiler subprocess, depfile freshness checks, and
+/// output cleanup.
 abstract class BaseCompiler implements Compiler {
   final BuildPaths buildPaths;
   final String outputPath;

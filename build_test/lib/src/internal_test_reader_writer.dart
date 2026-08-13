@@ -209,6 +209,7 @@ class _ReaderWriterTestingImpl implements ReaderWriterTesting {
         AssetId.parse,
       );
 
+  /// Returns tracked inputs or resolver entrypoints matching the filter.
   Set<AssetId> _trackedFor(
     Iterable<AssetId> Function(InputTracker tracker) selector, {
     AssetId? primaryInput,

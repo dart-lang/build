@@ -80,6 +80,7 @@ void main() {
     return result;
   }
 
+  /// Runs `build_runner` in [directory] and records elapsed time or failure.
   Future<Duration?> _runBuild(String description, PendingResult result) async {
     final stopwatch = Stopwatch()..start();
     final process = await Process.start('dart', [
