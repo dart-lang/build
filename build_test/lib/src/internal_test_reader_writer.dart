@@ -209,43 +209,46 @@ class _ReaderWriterTestingImpl implements ReaderWriterTesting {
         AssetId.parse,
       );
 
-  @override
-  Iterable<AssetId> get inputsTracked => InputTracker
-      .inputTrackersForTesting[_readerWriter.filesystem]!
-      .expand((tracker) => tracker.inputs)
+  Set<AssetId> _trackedFor(
+    Iterable<AssetId> Function(InputTracker tracker) selector, {
+    AssetId? primaryInput,
+    String? builderLabel,
+  }) => InputTracker.inputTrackersForTesting[_readerWriter.filesystem]!
+      .where((inputTracker) {
+        return (primaryInput == null ||
+                primaryInput == inputTracker.primaryInput) &&
+            (builderLabel == null || builderLabel == inputTracker.builderLabel);
+      })
+      .expand(selector)
       .toSet();
+
+  @override
+  Iterable<AssetId> get inputsTracked =>
+      _trackedFor((tracker) => tracker.inputs);
 
   @override
   Iterable<AssetId> inputsTrackedFor({
     AssetId? primaryInput,
     String? builderLabel,
-  }) => InputTracker.inputTrackersForTesting[_readerWriter.filesystem]!
-      .where((inputTracker) {
-        return (primaryInput == null ||
-                primaryInput == inputTracker.primaryInput) &&
-            (builderLabel == null || builderLabel == inputTracker.builderLabel);
-      })
-      .expand((tracker) => tracker.inputs)
-      .toSet();
+  }) => _trackedFor(
+    (tracker) => tracker.inputs,
+    primaryInput: primaryInput,
+    builderLabel: builderLabel,
+  );
 
   @override
-  Iterable<AssetId> get resolverEntrypointsTracked => InputTracker
-      .inputTrackersForTesting[_readerWriter.filesystem]!
-      .expand((tracker) => tracker.resolverEntrypoints)
-      .toSet();
+  Iterable<AssetId> get resolverEntrypointsTracked =>
+      _trackedFor((tracker) => tracker.resolverEntrypoints);
 
   @override
   Iterable<AssetId> resolverEntrypointsTrackedFor({
     AssetId? primaryInput,
     String? builderLabel,
-  }) => InputTracker.inputTrackersForTesting[_readerWriter.filesystem]!
-      .where((inputTracker) {
-        return (primaryInput == null ||
-                primaryInput == inputTracker.primaryInput) &&
-            (builderLabel == null || builderLabel == inputTracker.builderLabel);
-      })
-      .expand((tracker) => tracker.resolverEntrypoints)
-      .toSet();
+  }) => _trackedFor(
+    (tracker) => tracker.resolverEntrypoints,
+    primaryInput: primaryInput,
+    builderLabel: builderLabel,
+  );
 
   @override
   Iterable<AssetId> get assetsRead => _readerWriter.assetsRead;

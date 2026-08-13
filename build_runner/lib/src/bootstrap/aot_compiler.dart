@@ -2,95 +2,32 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:io';
-import 'dart:isolate';
-
-import 'package:path/path.dart' as p;
-
 import '../build_plan/build_paths.dart';
 import '../constants.dart';
 import 'compile_type.dart';
 import 'compiler.dart';
-import 'depfile.dart';
-import 'processes.dart';
 
 const entrypointAotPath = '$entrypointScriptPath.aot';
 const entrypointAotDepfilePath = '$entrypointScriptPath.aot.deps';
 const entrypointAotDigestPath = '$entrypointScriptPath.aot.digest';
 
 /// Compiles the build script to an AOT snapshot.
-class AotCompiler implements Compiler {
-  final BuildPaths buildPaths;
-  final Depfile _outputDepfile;
-
-  AotCompiler(this.buildPaths)
-    : _outputDepfile = Depfile(
-        outputPath: p.join(buildPaths.outputRootPath, entrypointAotPath),
-        depfilePath: p.join(
-          buildPaths.outputRootPath,
-          entrypointAotDepfilePath,
-        ),
-        digestPath: p.join(buildPaths.outputRootPath, entrypointAotDigestPath),
+class AotCompiler extends BaseCompiler {
+  AotCompiler(BuildPaths buildPaths)
+    : super(
+        buildPaths: buildPaths,
+        relativeOutputPath: entrypointAotPath,
+        relativeDepfilePath: entrypointAotDepfilePath,
+        relativeDigestPath: entrypointAotDigestPath,
+        compileSubcommand: 'aot-snapshot',
       );
 
   @override
   CompileType get compileType => CompileType.aot;
 
   @override
-  FreshnessResult checkFreshness({required bool digestsAreFresh}) =>
-      _outputDepfile.checkFreshness(digestsAreFresh: digestsAreFresh);
-
-  @override
-  bool isDependency(String path) => _outputDepfile.isDependency(path);
-
-  @override
-  Future<CompileResult> compile({Iterable<String>? experiments}) async {
-    await _outputDepfile.updateStamp();
-    final dart = Platform.resolvedExecutable;
-    final result = await ParentProcess.run(dart, [
-      'compile',
-      'aot-snapshot',
-      if (Isolate.packageConfigSync != null) ...[
-        '--packages',
-        Isolate.packageConfigSync!.toFilePath(),
-      ],
-      p.join(buildPaths.outputRootPath, entrypointScriptPath),
-      '--output',
-      p.join(buildPaths.outputRootPath, entrypointAotPath),
-      '--depfile',
-      p.join(buildPaths.outputRootPath, entrypointAotDepfilePath),
-      if (experiments != null)
-        for (final experiment in experiments) '--enable-experiment=$experiment',
-    ]);
-
-    if (result.exitCode == 0) {
-      final stdout = result.stdout as String;
-
-      // Convert "unknown experiment" warnings to errors.
-      if (stdout.contains('Unknown experiment:')) {
-        final aotFile = File(
-          p.join(buildPaths.outputRootPath, entrypointAotPath),
-        );
-        if (aotFile.existsSync()) {
-          aotFile.deleteSync();
-        }
-        final messages = stdout
-            .split('\n')
-            .where((e) => e.startsWith('Unknown experiment'))
-            .join('\n');
-        return CompileResult(messages: messages);
-      }
-
-      // Update depfile digest on successful compile.
-      _outputDepfile.writeDigest();
-    }
-
-    var stderr = result.stderr as String;
-    // Tidy up the compiler output to leave just the failure.
-    stderr = stderr
-        .replaceAll('Error: AOT compilation failed', '')
-        .replaceAll('Bad state: Generating AOT snapshot failed!', '')
-        .trim();
-    return CompileResult(messages: result.exitCode == 0 ? null : stderr);
-  }
+  String cleanStderr(String stderr) => stderr
+      .replaceAll('Error: AOT compilation failed', '')
+      .replaceAll('Bad state: Generating AOT snapshot failed!', '')
+      .trim();
 }
