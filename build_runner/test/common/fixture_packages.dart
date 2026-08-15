@@ -144,6 +144,7 @@ class ReadBuilder implements Builder {
   static FixturePackage postProcessCopyBuilder({
     String packageName = 'builder_pkg',
     bool buildToCache = true,
+    Iterable<String>? sourceOutputGlobs,
   }) => FixturePackage(
     name: packageName,
     dependencies: ['build', 'build_runner'],
@@ -165,6 +166,7 @@ post_process_builders:
     builder_factory: "testPostProcessBuilder"
     input_extensions: [".txt"]
     build_to: ${buildToCache ? 'cache' : 'source'}
+${sourceOutputGlobs != null ? '    source_output_globs: [${sourceOutputGlobs.map((g) => '"$g"').join(', ')}]' : ''}
     defaults:
       options:
         output_extension: ".post"

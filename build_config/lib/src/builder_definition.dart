@@ -188,6 +188,10 @@ class PostProcessBuilderDefinition {
 
   final TargetBuilderConfigDefaults defaults;
 
+  /// A list of glob patterns for outputs written to the source tree.
+  @JsonKey(name: 'source_output_globs')
+  final Iterable<String>? sourceOutputGlobs;
+
   PostProcessBuilderDefinition({
     required this.builderFactory,
     required this.import,
@@ -195,6 +199,7 @@ class PostProcessBuilderDefinition {
     this.target,
     BuildTo? buildTo,
     TargetBuilderConfigDefaults? defaults,
+    this.sourceOutputGlobs,
   }) : buildTo = buildTo ?? BuildTo.cache,
        defaults = defaults ?? const TargetBuilderConfigDefaults();
 
@@ -208,6 +213,7 @@ class PostProcessBuilderDefinition {
     'import': import,
     'builderFactory': builderFactory,
     'defaults': defaults,
+    'sourceOutputGlobs': sourceOutputGlobs,
   }.toString();
 }
 
