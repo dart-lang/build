@@ -141,6 +141,7 @@ class BuildRunnerTester {
     file
       ..createSync(recursive: true)
       ..writeAsStringSync(contents);
+    _deletePubspecLocksFor(path);
   }
 
   /// Writes [contents] to workspace-relative [path].
@@ -156,6 +157,20 @@ class BuildRunnerTester {
     final file = File(p.join(tempDirectory.path, path));
     final data = file.readAsStringSync();
     file.writeAsStringSync(update(data));
+    _deletePubspecLocksFor(path);
+  }
+
+  /// Work around "dart run" issue https://github.com/dart-lang/sdk/issues/61950.
+  ///
+  /// TODO(davidmorgan): remove when the SDK is fixed.
+  void _deletePubspecLocksFor(String path) {
+    if (p.basename(path) != 'pubspec.yaml') return;
+    final rootLock = File(p.join(tempDirectory.path, 'pubspec.lock'));
+    if (rootLock.existsSync()) rootLock.deleteSync();
+    final pkgLock = File(
+      p.join(tempDirectory.path, p.dirname(path), 'pubspec.lock'),
+    );
+    if (pkgLock.existsSync()) pkgLock.deleteSync();
   }
 
   /// Deletes the file or directory at workspace-relative [path].
