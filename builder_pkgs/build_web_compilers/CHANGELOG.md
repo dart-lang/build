@@ -1,3 +1,7 @@
+## 4.8.10
+
+- Require Dart `3.13.0`.
+
 ## 4.8.9
 - Fix an issue where `DdcFrontendServerBuilder` accumulates changed files across builds.
 
