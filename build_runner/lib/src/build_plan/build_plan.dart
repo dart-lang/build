@@ -25,6 +25,17 @@ import 'previous_build.dart';
 
 part 'build_plan.g.dart';
 
+/// An unexpected file on disk that conflicts with a declared build output.
+abstract class OutputConflict
+    implements Built<OutputConflict, OutputConflictBuilder> {
+  AssetId get id;
+  bool get hidden;
+
+  OutputConflict._();
+  factory OutputConflict([void Function(OutputConflictBuilder) updates]) =
+      _$OutputConflict;
+}
+
 /// Options and derived configuration for a build.
 abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
   BuildSpec get buildSpec;
@@ -36,7 +47,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
 
   /// Inputs in the source tree that conflict with declared outputs and must be
   /// deleted.
-  BuiltList<AssetId> get conflictingOutputs;
+  BuiltList<OutputConflict> get conflictingOutputs;
 
   /// Sources and changes to sources before the build.
   BuildInputs get buildInputs;
@@ -210,7 +221,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       sources: result.sources.build(),
     );
 
-    final conflictingOutputs = <AssetId>{};
+    final conflictingOutputs = <OutputConflict>[];
     final buildPackages = buildSpec.buildPackages;
 
     if (assetTrackerInputSources != null) {
@@ -232,7 +243,13 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         buildStepPlan.declaredOutputs
             .where((n) => buildPackages.outputPackages.contains(n.package))
             .where(assetTrackerInputSources.contains)
-            .toSet(),
+            .map(
+              (id) => OutputConflict(
+                (b) => b
+                  ..id = id
+                  ..hidden = id.isHidden(buildStepPlan: buildStepPlan),
+              ),
+            ),
       );
     }
 

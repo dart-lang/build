@@ -359,26 +359,6 @@ class BuildSeries {
   Set<AssetId> _computeDeletes(BuildResult result, {bool onlyVisible = false}) {
     final deletes = <AssetId>{};
     final currentState = result.buildState!;
-    for (final id in _buildPlan.conflictingOutputs) {
-      if (!currentState.isActualOutput(
-            id: id,
-            buildStepPlan: _buildPlan.buildStepPlan,
-          ) &&
-          !currentState.isActualPostOutput(id)) {
-        deletes.add(id);
-      }
-    }
-    for (final id
-        in _buildPlan.previousBuild.incompatibleBuildOutputsToDelete) {
-      if (!currentState.isActualOutput(
-            id: id,
-            buildStepPlan: _buildPlan.buildStepPlan,
-          ) &&
-          !currentState.isActualPostOutput(id)) {
-        deletes.add(id);
-      }
-    }
-
     final outputRoot = _buildPlan.buildSpec.buildPackages.outputRoot;
     // Adds a delete result, unless it's a hidden file and `onlyVisible` was
     // requested.
@@ -388,6 +368,26 @@ class BuildSeries {
           deletes.add(AssetPathProvider.hide(id, outputRoot));
         }
       } else {
+        deletes.add(id);
+      }
+    }
+
+    for (final conflict in _buildPlan.conflictingOutputs) {
+      if (!currentState.isActualOutput(
+            id: conflict.id,
+            buildStepPlan: _buildPlan.buildStepPlan,
+          ) &&
+          !currentState.isActualPostOutput(conflict.id)) {
+        maybeAddDelete(conflict.id, conflict.hidden);
+      }
+    }
+    for (final id
+        in _buildPlan.previousBuild.incompatibleBuildOutputsToDelete) {
+      if (!currentState.isActualOutput(
+            id: id,
+            buildStepPlan: _buildPlan.buildStepPlan,
+          ) &&
+          !currentState.isActualPostOutput(id)) {
         deletes.add(id);
       }
     }
