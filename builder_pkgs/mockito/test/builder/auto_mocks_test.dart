@@ -20,6 +20,7 @@ library;
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_test/build_test.dart';
+import 'package:dart_style/dart_style.dart';
 import 'package:logging/logging.dart';
 import 'package:mockito/src/builder.dart';
 import 'package:package_config/package_config.dart';
@@ -208,6 +209,28 @@ void main() {
       expect(mocksContent, contains('// in foo/lib/foo_test.dart.'));
     },
   );
+
+  test('generated mock output is ignored by DartFormatter', () async {
+    final mocksContent = await buildWithSingleNonNullableSource(
+      'class Foo { int bar(int a, int b, int c) => 0; }',
+    );
+    expect(mocksContent, contains('// dart format off'));
+    final reformatted = DartFormatter(
+      languageVersion: DartFormatter.latestLanguageVersion,
+      pageWidth: 40,
+    ).format(mocksContent);
+    expect(reformatted, equals(mocksContent));
+
+    final contentWithoutFormatOff = mocksContent.replaceFirst(
+      '// dart format off\n',
+      '',
+    );
+    final reformattedWithoutFormatOff = DartFormatter(
+      languageVersion: DartFormatter.latestLanguageVersion,
+      pageWidth: 40,
+    ).format(contentWithoutFormatOff);
+    expect(reformattedWithoutFormatOff, isNot(equals(contentWithoutFormatOff)));
+  });
 
   test(
     'generates a mock class but does not override methods w/ zero parameters',
