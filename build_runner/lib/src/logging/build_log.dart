@@ -413,8 +413,6 @@ class BuildLog {
 
   /// Displays progress if [progress] for [phaseName] has finished.
   void _displayProgressIfFinished(_PhaseProgress progress, String phaseName) {
-    // Usually the next step will immediately run and update with more useful
-    // information, so only display if this is the last for the builder.
     if (progress.isFinished) {
       _displayProgress(phaseName);
     }
