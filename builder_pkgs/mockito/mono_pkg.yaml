@@ -1,5 +1,5 @@
 sdk:
-- dev
+- 3.14.0-93.0.dev
 
 os:
 - linux
