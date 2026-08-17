@@ -9,6 +9,7 @@ import 'package:built_value/serializer.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 
+import '../../asset_location.dart';
 import '../../build_plan/build_packages.dart';
 import '../../build_plan/build_step_plan.dart';
 import '../asset_content.dart';
@@ -141,6 +142,28 @@ class BuildState {
   /// All post process build step results that actually executed.
   Iterable<PostProcessBuildStepResult> get actualPostProcessResults =>
       _postProcessResultsByInput.values.expand((map) => map.values);
+
+  /// All actual output locations from build steps and post process steps.
+  Iterable<AssetLocation> get actualOutputLocations sync* {
+    for (final stepResult in actualStepResults) {
+      for (final id in stepResult.outputs.keys) {
+        yield AssetLocation(
+          (b) => b
+            ..id = id
+            ..hidden = stepResult.isHidden,
+        );
+      }
+    }
+    for (final postProcessResult in actualPostProcessResults) {
+      for (final id in postProcessResult.outputs.keys) {
+        yield AssetLocation(
+          (b) => b
+            ..id = id
+            ..hidden = postProcessResult.hidden,
+        );
+      }
+    }
+  }
 
   /// Whether [id] is a post process build output that was actually generated.
   bool isActualPostOutput(AssetId id) => _postProcessOutputs.containsKey(id);

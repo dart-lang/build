@@ -6,104 +6,6 @@ part of 'build_plan.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-class _$OutputConflict extends OutputConflict {
-  @override
-  final AssetId id;
-  @override
-  final bool hidden;
-
-  factory _$OutputConflict([void Function(OutputConflictBuilder)? updates]) =>
-      (OutputConflictBuilder()..update(updates))._build();
-
-  _$OutputConflict._({required this.id, required this.hidden}) : super._();
-  @override
-  OutputConflict rebuild(void Function(OutputConflictBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
-
-  @override
-  OutputConflictBuilder toBuilder() => OutputConflictBuilder()..replace(this);
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(other, this)) return true;
-    return other is OutputConflict && id == other.id && hidden == other.hidden;
-  }
-
-  @override
-  int get hashCode {
-    var _$hash = 0;
-    _$hash = $jc(_$hash, id.hashCode);
-    _$hash = $jc(_$hash, hidden.hashCode);
-    _$hash = $jf(_$hash);
-    return _$hash;
-  }
-
-  @override
-  String toString() {
-    return (newBuiltValueToStringHelper(r'OutputConflict')
-          ..add('id', id)
-          ..add('hidden', hidden))
-        .toString();
-  }
-}
-
-class OutputConflictBuilder
-    implements Builder<OutputConflict, OutputConflictBuilder> {
-  _$OutputConflict? _$v;
-
-  AssetId? _id;
-  AssetId? get id => _$this._id;
-  set id(AssetId? id) => _$this._id = id;
-
-  bool? _hidden;
-  bool? get hidden => _$this._hidden;
-  set hidden(bool? hidden) => _$this._hidden = hidden;
-
-  OutputConflictBuilder();
-
-  OutputConflictBuilder get _$this {
-    final $v = _$v;
-    if ($v != null) {
-      _id = $v.id;
-      _hidden = $v.hidden;
-      _$v = null;
-    }
-    return this;
-  }
-
-  @override
-  void replace(OutputConflict other) {
-    _$v = other as _$OutputConflict;
-  }
-
-  @override
-  void update(void Function(OutputConflictBuilder)? updates) {
-    if (updates != null) updates(this);
-  }
-
-  @override
-  OutputConflict build() => _build();
-
-  _$OutputConflict _build() {
-    final _$result =
-        _$v ??
-        _$OutputConflict._(
-          id: BuiltValueNullFieldError.checkNotNull(
-            id,
-            r'OutputConflict',
-            'id',
-          ),
-          hidden: BuiltValueNullFieldError.checkNotNull(
-            hidden,
-            r'OutputConflict',
-            'hidden',
-          ),
-        );
-    replace(_$result);
-    return _$result;
-  }
-}
-
 class _$BuildPlan extends BuildPlan {
   @override
   final BuildSpec buildSpec;
@@ -112,7 +14,7 @@ class _$BuildPlan extends BuildPlan {
   @override
   final BuildStepPlan buildStepPlan;
   @override
-  final BuiltList<OutputConflict> conflictingOutputs;
+  final BuiltList<AssetLocation> conflictingOutputs;
   @override
   final BuildInputs buildInputs;
   @override
@@ -199,10 +101,10 @@ class BuildPlanBuilder implements Builder<BuildPlan, BuildPlanBuilder> {
   set buildStepPlan(BuildStepPlanBuilder? buildStepPlan) =>
       _$this._buildStepPlan = buildStepPlan;
 
-  ListBuilder<OutputConflict>? _conflictingOutputs;
-  ListBuilder<OutputConflict> get conflictingOutputs =>
-      _$this._conflictingOutputs ??= ListBuilder<OutputConflict>();
-  set conflictingOutputs(ListBuilder<OutputConflict>? conflictingOutputs) =>
+  ListBuilder<AssetLocation>? _conflictingOutputs;
+  ListBuilder<AssetLocation> get conflictingOutputs =>
+      _$this._conflictingOutputs ??= ListBuilder<AssetLocation>();
+  set conflictingOutputs(ListBuilder<AssetLocation>? conflictingOutputs) =>
       _$this._conflictingOutputs = conflictingOutputs;
 
   BuildInputsBuilder? _buildInputs;

@@ -119,4 +119,89 @@ void main() async {
     await tester.run('root_pkg', 'dart run build_runner build --force-jit');
     expect(tester.read('root_pkg/web/a.txt.copy2'), null);
   });
+
+  test(
+    'conflicts deleted when builder output mode differs from conflict location',
+    () async {
+      final pubspecs = await Pubspecs.load();
+      final tester = BuildRunnerTester(pubspecs);
+
+      // 1. Visible builder scenarios.
+      tester.writeFixturePackage(
+        FixturePackages.copyBuilder(buildToCache: false),
+      );
+      tester.writePackage(
+        name: 'root_pkg',
+        dependencies: ['build_runner'],
+        pathDependencies: ['builder_pkg'],
+        files: {
+          'web/a.txt': 'a',
+          'web/a.txt.copy': 'visible conflict',
+          '.dart_tool/build/generated/root_pkg/web/a.txt.copy':
+              'hidden conflict',
+        },
+      );
+      // Both locations conflict, builder writes visible: hidden is deleted.
+      await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+      expect(tester.read('root_pkg/web/a.txt.copy'), 'a');
+      expect(
+        tester.read(
+          'root_pkg/.dart_tool/build/generated/root_pkg/web/a.txt.copy',
+        ),
+        null,
+      );
+
+      // Previous visible actual output plus new hidden conflict: hidden is
+      // deleted.
+      tester.write(
+        'root_pkg/.dart_tool/build/generated/root_pkg/web/a.txt.copy',
+        'new hidden conflict',
+      );
+      await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+      expect(
+        tester.read(
+          'root_pkg/.dart_tool/build/generated/root_pkg/web/a.txt.copy',
+        ),
+        null,
+      );
+      expect(tester.read('root_pkg/web/a.txt.copy'), 'a');
+
+      // 2. Hidden builder scenarios.
+      tester.writeFixturePackage(
+        FixturePackages.copyBuilder(buildToCache: true),
+      );
+      tester.writePackage(
+        name: 'root_pkg2',
+        dependencies: ['build_runner'],
+        pathDependencies: ['builder_pkg'],
+        files: {
+          'web/a.txt': 'a',
+          'web/a.txt.copy': 'visible conflict',
+          '.dart_tool/build/generated/root_pkg2/web/a.txt.copy':
+              'hidden conflict',
+        },
+      );
+      // Both locations conflict, builder writes hidden: visible is deleted.
+      await tester.run('root_pkg2', 'dart run build_runner build --force-jit');
+      expect(
+        tester.read(
+          'root_pkg2/.dart_tool/build/generated/root_pkg2/web/a.txt.copy',
+        ),
+        'a',
+      );
+      expect(tester.read('root_pkg2/web/a.txt.copy'), null);
+
+      // Previous hidden actual output plus new visible conflict: visible is
+      // deleted.
+      tester.write('root_pkg2/web/a.txt.copy', 'new visible conflict');
+      await tester.run('root_pkg2', 'dart run build_runner build --force-jit');
+      expect(tester.read('root_pkg2/web/a.txt.copy'), null);
+      expect(
+        tester.read(
+          'root_pkg2/.dart_tool/build/generated/root_pkg2/web/a.txt.copy',
+        ),
+        'a',
+      );
+    },
+  );
 }

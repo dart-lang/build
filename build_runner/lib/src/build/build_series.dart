@@ -373,11 +373,17 @@ class BuildSeries {
     }
 
     for (final conflict in _buildPlan.conflictingOutputs) {
-      if (!currentState.isActualOutput(
-            id: conflict.id,
-            buildStepPlan: _buildPlan.buildStepPlan,
-          ) &&
-          !currentState.isActualPostOutput(conflict.id)) {
+      final wasGeneratedAtSameLocation =
+          (currentState.isActualOutput(
+                id: conflict.id,
+                buildStepPlan: _buildPlan.buildStepPlan,
+              ) &&
+              _buildPlan.buildStepPlan.isHidden(conflict.id) ==
+                  conflict.hidden) ||
+          (currentState.isActualPostOutput(conflict.id) &&
+              currentState.isHiddenPostProcessOutput(conflict.id) ==
+                  conflict.hidden);
+      if (!wasGeneratedAtSameLocation) {
         maybeAddDelete(conflict.id, conflict.hidden);
       }
     }

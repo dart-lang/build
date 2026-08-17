@@ -4,6 +4,7 @@
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart' hide BuilderDefinition;
+import 'package:build_runner/src/asset_location.dart';
 import 'package:build_runner/src/build/asset_content.dart';
 import 'package:build_runner/src/build/build_state/asset_graph_json.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
@@ -229,6 +230,236 @@ void main() {
           ),
         ),
         throwsA(const TypeMatcher<CannotBuildException>()),
+      );
+    });
+
+    test('incremental build does not classify new files that match declared '
+        'outputs as inputs', () async {
+      final buildState = BuildState({assetId: null});
+      await writeBuildStateAndPlan(buildState, buildPlan);
+
+      final newSourceId = AssetId('a', 'lib/b.dart');
+      final matchingOutputId = AssetId('a', 'lib/b.dart.copy');
+      await readerWriter.writeAsString(newSourceId, '// b.dart');
+      await readerWriter.writeAsString(matchingOutputId, '');
+
+      buildPlan = await loadPlan();
+
+      expect(buildPlan.buildInputs.sources.toSet(), contains(newSourceId));
+      expect(
+        buildPlan.buildInputs.sources.toSet(),
+        isNot(contains(matchingOutputId)),
+      );
+      expect(
+        buildPlan.conflictingOutputs.map((c) => c.id),
+        contains(matchingOutputId),
+      );
+    });
+
+    test('incremental build handles hidden unexpected outputs in dependency '
+        'without throwing', () async {
+      final buildPackagesWithDep = BuildPackages.singlePackageBuild('a', [
+        BuildPackage.forTesting(
+          name: 'a',
+          watch: true,
+          isOutput: true,
+          dependencies: const ['dep'],
+        ),
+        BuildPackage.forTesting(name: 'dep', watch: false, isOutput: false),
+      ]);
+      final depBuildConfig = BuildConfig.parse('dep', const [], '''
+targets:
+  \$default:
+    auto_apply_builders: true
+''');
+      final initialTestingOverrides = TestingOverrides(
+        builderDefinitions: [
+          BuilderDefinition(
+            '',
+            hideOutput: true,
+            autoApply: AutoApply.allPackages,
+          ),
+        ].build(),
+        buildConfig: {'dep': depBuildConfig}.build(),
+        readerWriter: readerWriter,
+        buildPackages: buildPackagesWithDep,
+        checkBuilderFreshness: false,
+      );
+      final depSourceId = AssetId('dep', 'lib/a.dart');
+      await readerWriter.writeAsString(depSourceId, '// dep a.dart');
+      final initialPlan = await loadPlan(initialTestingOverrides);
+      final buildState = BuildState({assetId: null, depSourceId: null});
+      await writeBuildStateAndPlan(buildState, initialPlan);
+
+      final depOutputId = AssetId('dep', 'lib/a.dart.copy');
+      await readerWriter.writeAsString(depOutputId, '', hidden: true);
+
+      buildPlan = await loadPlan(initialTestingOverrides);
+      expect(
+        buildPlan.conflictingOutputs.map((c) => c.id),
+        contains(depOutputId),
+      );
+      expect(
+        buildPlan.conflictingOutputs
+            .firstWhere((c) => c.id == depOutputId)
+            .hidden,
+        isTrue,
+      );
+    });
+
+    test(
+      'tracks both source and cache conflicting files for the same output',
+      () async {
+        final buildState = BuildState({assetId: null});
+        await writeBuildStateAndPlan(buildState, buildPlan);
+
+        final newSourceId = AssetId('a', 'lib/b.dart');
+        final matchingOutputId = AssetId('a', 'lib/b.dart.copy');
+        await readerWriter.writeAsString(newSourceId, '// b.dart');
+        // Write visible conflict in source tree.
+        await readerWriter.writeAsString(matchingOutputId, '// visible');
+        // Write hidden conflict in cache.
+        await readerWriter.writeAsString(
+          matchingOutputId,
+          '// hidden',
+          hidden: true,
+        );
+
+        buildPlan = await loadPlan();
+
+        expect(buildPlan.buildInputs.sources.toSet(), contains(newSourceId));
+        expect(
+          buildPlan.buildInputs.sources.toSet(),
+          isNot(contains(matchingOutputId)),
+        );
+        final conflicts = buildPlan.conflictingOutputs
+            .where((c) => c.id == matchingOutputId)
+            .toSet();
+        expect(
+          conflicts,
+          equals({
+            AssetLocation.source(matchingOutputId),
+            AssetLocation.cache(matchingOutputId),
+          }),
+        );
+      },
+    );
+
+    test('clean build includes hidden conflicting files from cache', () async {
+      final conflictId = AssetId('a', 'lib/a.dart.copy');
+      await readerWriter.writeAsString(conflictId, '// hidden', hidden: true);
+
+      buildPlan = await loadPlan();
+
+      expect(
+        buildPlan.conflictingOutputs,
+        contains(AssetLocation.cache(conflictId)),
+      );
+    });
+
+    test(
+      'conflict hidden reflects file location, not builder output location',
+      () async {
+        final buildState = BuildState({assetId: null});
+        await writeBuildStateAndPlan(buildState, buildPlan);
+
+        final newSourceId = AssetId('a', 'lib/b.dart');
+        final matchingOutputId = AssetId('a', 'lib/b.dart.copy');
+        await readerWriter.writeAsString(newSourceId, '// b.dart');
+        // Builder default is visible output, but the conflicting file is in
+        // cache.
+        await readerWriter.writeAsString(
+          matchingOutputId,
+          '// hidden',
+          hidden: true,
+        );
+
+        buildPlan = await loadPlan();
+
+        expect(
+          buildPlan.conflictingOutputs,
+          contains(AssetLocation.cache(matchingOutputId)),
+        );
+      },
+    );
+
+    test('previous hidden actual output plus new visible conflict', () async {
+      final testingOverrides = TestingOverrides(
+        builderDefinitions: [
+          BuilderDefinition(
+            '',
+            hideOutput: true,
+            autoApply: AutoApply.allPackages,
+          ),
+        ].build(),
+        readerWriter: readerWriter,
+        buildPackages: buildPackages,
+        checkBuilderFreshness: false,
+      );
+      final initialPlan = await loadPlan(testingOverrides);
+      final buildState = BuildState({assetId: null});
+
+      // Write hidden output and add to build state.
+      await readerWriter.writeAsString(outputId, '// hidden', hidden: true);
+      final stepId = initialPlan.buildStepPlan.stepForDeclaredOutput(outputId);
+      buildState.updateBuildStepResult(
+        stepId,
+        BuildStepResult((b) {
+          b.isHidden = true;
+          b.outputs[outputId] = AssetContent.digest(Digest([]));
+        }),
+      );
+      await writeBuildStateAndPlan(buildState, initialPlan);
+
+      // Now create new visible conflict in source tree.
+      await readerWriter.writeAsString(outputId, '// visible conflict');
+
+      buildPlan = await loadPlan(testingOverrides);
+      expect(
+        buildPlan.conflictingOutputs,
+        contains(AssetLocation.source(outputId)),
+      );
+    });
+
+    test('previous visible actual output plus new hidden conflict', () async {
+      final testingOverrides = TestingOverrides(
+        builderDefinitions: [
+          BuilderDefinition(
+            '',
+            hideOutput: false,
+            autoApply: AutoApply.allPackages,
+          ),
+        ].build(),
+        readerWriter: readerWriter,
+        buildPackages: buildPackages,
+        checkBuilderFreshness: false,
+      );
+      final initialPlan = await loadPlan(testingOverrides);
+      final buildState = BuildState({assetId: null});
+
+      // Write visible output and add to build state.
+      await readerWriter.writeAsString(outputId, '// visible');
+      final stepId = initialPlan.buildStepPlan.stepForDeclaredOutput(outputId);
+      buildState.updateBuildStepResult(
+        stepId,
+        BuildStepResult((b) {
+          b.isHidden = false;
+          b.outputs[outputId] = AssetContent.digest(Digest([]));
+        }),
+      );
+      await writeBuildStateAndPlan(buildState, initialPlan);
+
+      // Now create new hidden conflict in cache.
+      await readerWriter.writeAsString(
+        outputId,
+        '// hidden conflict',
+        hidden: true,
+      );
+
+      buildPlan = await loadPlan(testingOverrides);
+      expect(
+        buildPlan.conflictingOutputs,
+        contains(AssetLocation.cache(outputId)),
       );
     });
   });
