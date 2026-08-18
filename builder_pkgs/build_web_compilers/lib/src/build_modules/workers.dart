@@ -140,10 +140,6 @@ Map<String, String> frontendServerEnvironment = const {};
 
 PersistentFrontendServer? __persistentFrontendServer;
 
-/// Returns the running instance of the PersistentFrontendServer, if any.
-PersistentFrontendServer? get persistentFrontendServer =>
-    __persistentFrontendServer;
-
 /// Starts a single persistent instance of the Frontend Server targeting DDC.
 Future<PersistentFrontendServer> startFrontendServerWorker() async {
   if (__persistentFrontendServer != null) return __persistentFrontendServer!;
