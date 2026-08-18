@@ -38,18 +38,20 @@ void main() {
       readerWriter = InternalTestReaderWriter(
         outputRootPackage: buildPackages.outputRoot,
       );
-      await readerWriter.writeAsString(
-        makeAssetId('a|.dart_tool/package_config.json'),
-        jsonEncode({
-          'configVersion': 2,
-          'packages': [
-            {
-              'name': 'a',
-              'rootUri': 'file://fake/pkg/path',
-              'packageUri': 'lib/',
-            },
-          ],
-        }),
+      await readerWriter.writeCacheAsBytes(
+        '.dart_tool/package_config.json',
+        utf8.encode(
+          jsonEncode({
+            'configVersion': 2,
+            'packages': [
+              {
+                'name': 'a',
+                'rootUri': 'file://fake/pkg/path',
+                'packageUri': 'lib/',
+              },
+            ],
+          }),
+        ),
       );
     });
 

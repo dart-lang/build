@@ -64,22 +64,6 @@ void main() {
       makeAssetId('b|lib/c.txt'): 'c',
       makeAssetId('b|test/outside.txt'): 'not in lib',
       makeAssetId('a|foo/d.txt'): 'd',
-      makeAssetId('a|.dart_tool/package_config.json'): '''
-{
-  "configVersion": 2,
-  "packages": [
-    {
-      "name": "a",
-      "rootUri": "file:///packages/a",
-      "packageUri": "lib/"
-    }, {
-      "name": "b",
-      "rootUri": "file:///packages/b",
-      "packageUri": "lib/"
-    }
-  ]
-}
-''',
     };
     final buildPackages = BuildPackages.singlePackageBuild('a', [
       BuildPackage.forTesting(name: 'a', isOutput: true, dependencies: ['b']),

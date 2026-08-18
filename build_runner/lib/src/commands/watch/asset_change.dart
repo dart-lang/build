@@ -1,48 +1,55 @@
-// Copyright (c) 2017, the Dart project authors.  Please see the AUTHORS file
-// for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
-
 import 'package:build/build.dart';
-import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
+import '../../asset_location.dart';
 import '../../build_plan/build_package.dart';
 
-/// Represents an [id] that was modified on disk as a result of [type].
+/// Represents a change that was detected on disk as a result of [type].
 class AssetChange {
-  /// Asset that was changed.
-  final AssetId id;
+  /// Asset location that was changed, or null if the change was to a non-asset
+  /// file like `.dart_tool/package_config.json`.
+  final AssetLocation? location;
+
+  /// The path of the file that was changed.
+  final String path;
 
   /// What caused the asset to be detected as changed.
   final ChangeType type;
 
-  const AssetChange(this.id, this.type);
+  AssetChange(AssetId id, this.type)
+    : location = AssetLocation.source(id),
+      path = id.path;
 
-  /// Creates a new change record in [package] from an existing watcher [event].
-  AssetChange.fromEvent(BuildPackage package, WatchEvent event)
-    : this(
-        AssetId(package.name, _normalizeRelativePath(package, event)),
-        event.type,
-      );
+  const AssetChange.withLocation(this.location, this.path, this.type);
 
-  static String _normalizeRelativePath(BuildPackage package, WatchEvent event) {
-    final pkgPath = package.path;
-    final absoluteEventPath = p.isAbsolute(event.path)
-        ? event.path
-        : p.absolute(event.path);
-    if (!p.isWithin(pkgPath, absoluteEventPath)) {
-      throw ArgumentError('"$absoluteEventPath" is not in "$pkgPath".');
-    }
-    return p.relative(absoluteEventPath, from: pkgPath);
+  factory AssetChange.fromPath(
+    BuildPackage package,
+    String path,
+    ChangeType type,
+  ) {
+    final location = AssetLocation.fromPath(package, path);
+    final relativePath = AssetLocation.normalizeRelativePath(package, path);
+    return AssetChange.withLocation(location, relativePath, type);
   }
 
+  factory AssetChange.fromEvent(BuildPackage package, WatchEvent event) =>
+      AssetChange.fromPath(package, event.path, event.type);
+
+  AssetId get id =>
+      location?.id ??
+      (throw StateError('Change to $path has no associated AssetId.'));
+
   @override
-  int get hashCode => id.hashCode ^ type.hashCode;
+  int get hashCode => location.hashCode ^ path.hashCode ^ type.hashCode;
 
   @override
   bool operator ==(Object other) =>
-      other is AssetChange && other.id == id && other.type == type;
+      other is AssetChange &&
+      other.location == location &&
+      other.path == path &&
+      other.type == type;
 
   @override
-  String toString() => 'AssetChange {asset: $id, type: $type}';
+  String toString() =>
+      'AssetChange {path: $path, location: $location, type: $type}';
 }

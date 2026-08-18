@@ -31,7 +31,6 @@ class BuildPackageWatcher {
   /// Returns a stream of records for assets that change recursively.
   Stream<AssetChange> watch() {
     _watcher = _strategy(buildPackage.path);
-    final events = _watcher.events;
-    return events.map((e) => AssetChange.fromEvent(buildPackage, e));
+    return _watcher.events.map((e) => AssetChange.fromEvent(buildPackage, e));
   }
 }

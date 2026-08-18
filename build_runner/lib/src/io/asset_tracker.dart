@@ -8,6 +8,8 @@ import 'dart:io';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
+import 'package:glob/list_local_fs.dart';
+import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
 import '../build/build_state/build_state.dart';
@@ -18,6 +20,7 @@ import '../build_plan/build_step_plan.dart';
 import '../build_plan/build_target.dart';
 import '../constants.dart';
 import '../logging/timed_activities.dart';
+import 'filesystem.dart';
 import 'reader_writer.dart';
 
 /// Finds build assets and computes changes to build assets.
@@ -148,18 +151,44 @@ class AssetTracker {
   }
 
   Stream<AssetId> _listGeneratedAssetIds() {
-    final glob = Glob('$generatedOutputDirectory/**');
-
-    return _listIdsSafe(glob, package: _buildPackages.outputRoot)
-        .map((id) {
-          final packagePath = id.path.substring(
-            generatedOutputDirectory.length + 1,
-          );
-          final firstSlash = packagePath.indexOf('/');
+    final fs = _readerWriter.filesystem;
+    if (fs is InMemoryFilesystem) {
+      return Stream.fromIterable(
+        fs.filePaths
+            .where((path) => path.contains('$generatedOutputDirectory/'))
+            .map((path) {
+              final prefix = '$generatedOutputDirectory/';
+              final idx = path.indexOf(prefix);
+              final sub = path.substring(idx + prefix.length);
+              final firstSlash = sub.indexOf('/');
+              if (firstSlash == -1) return null;
+              final package = sub.substring(0, firstSlash);
+              final relPath = sub.substring(firstSlash + 1);
+              return AssetId(package, relPath);
+            })
+            .whereType<AssetId>(),
+      );
+    }
+    final generatedDirPath = _buildPackages.cachePathFor(
+      generatedOutputDirectory,
+    );
+    final generatedDir = Directory(generatedDirPath);
+    if (!generatedDir.existsSync()) return const Stream.empty();
+    return Glob('**')
+        .list(followLinks: true, root: generatedDirPath)
+        .where((e) => e is File && !p.basename(e.path).startsWith('._'))
+        .cast<File>()
+        .map((file) {
+          final filePath = p.normalize(file.absolute.path);
+          final relativePath = p.relative(filePath, from: generatedDirPath);
+          final firstSlash = relativePath.indexOf(p.separator);
           if (firstSlash == -1) return null;
-          final package = packagePath.substring(0, firstSlash);
-          final path = packagePath.substring(firstSlash + 1);
-          return AssetId(package, path);
+          final package = relativePath.substring(0, firstSlash);
+          final subPath = relativePath.substring(firstSlash + 1);
+          final normalizedSubPath = p.posix.normalize(
+            subPath.replaceAll(r'\', '/'),
+          );
+          return AssetId(package, normalizedSubPath);
         })
         .where((id) => id != null)
         .cast<AssetId>();

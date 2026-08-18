@@ -219,35 +219,36 @@ class BuildPackages implements AssetPathProvider {
     if (!packages.containsKey(id.package)) {
       throw PackageNotFoundException(id.package);
     }
-    if (hide) id = AssetPathProvider.hide(id, outputRoot);
-    if (checkWriteAllowed) throwIfReadonly(id);
+    if (checkWriteAllowed) throwIfReadonly(id, hide: hide);
+    if (hide) {
+      final rootPackage = packages[outputRoot]!;
+      return p.join(
+        rootPackage.path,
+        generatedOutputDirectory,
+        id.package,
+        id.platformPath,
+      );
+    }
     final package = packages[id.package]!;
     return p.join(package.path, id.platformPath);
   }
 
+  @override
+  String cachePathFor(String relativePath) =>
+      p.join(packages[outputRoot]!.path, relativePath);
+
   /// Throws if [id] is not allowed to be written or deleted.
   ///
-  /// Write or delete is allowed if [id] is in the cache directory for
-  /// `outputRoot` or is in a package that is a build output.
-  void throwIfReadonly(AssetId id) {
-    final isUnderCacheDirectory = id.path.startsWith('$cacheDirectoryPath/');
-    final writeIsAllowed =
-        (isUnderCacheDirectory && id.package == outputRoot) ||
-        outputPackages.contains(id.package);
+  /// Write or delete is allowed if [hide] is true or is in a package that is a
+  /// build output.
+  void throwIfReadonly(AssetId id, {bool hide = false}) {
+    final writeIsAllowed = hide || outputPackages.contains(id.package);
     if (!writeIsAllowed) {
-      if (isUnderCacheDirectory) {
-        throw InvalidOutputException(
-          id,
-          'Tried to write or delete from $cacheDirectoryPath in wrong '
-          'package, should be $outputRoot.',
-        );
-      } else {
-        throw InvalidOutputException(
-          id,
-          'Tried to write or delete in a package not in the build. Packages '
-          'in the build are: ${outputPackages.join(', ')}',
-        );
-      }
+      throw InvalidOutputException(
+        id,
+        'Tried to write or delete in a package not in the build. Packages '
+        'in the build are: ${outputPackages.join(', ')}',
+      );
     }
   }
 

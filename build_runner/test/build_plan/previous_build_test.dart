@@ -37,7 +37,6 @@ void main() {
     final assetId = AssetId('a', 'lib/a.dart');
     final outputId = AssetId('a', 'lib/a.dart.copy');
     final assetId2 = AssetId('a', 'lib/an.other');
-    final assetGraphJsonId = AssetId('a', assetGraphJsonPath);
 
     late BuildPackages buildPackages;
     late ReaderWriter readerWriter;
@@ -88,8 +87,8 @@ void main() {
       BuildState buildState,
       BuildSpecDigest buildPlanDigest,
     ) async {
-      await readerWriter.writeAsBytes(
-        assetGraphJsonId,
+      await readerWriter.writeCacheAsBytes(
+        assetGraphJsonPath,
         AssetGraphJson.serialize(
           buildPlanDigest: buildPlanDigest,
           buildState: buildState,
@@ -420,11 +419,16 @@ void main() {
       );
 
       final decodedMap =
-          json.decode(await readerWriter.readAsString(assetGraphJsonId)) as Map;
+          json.decode(
+                utf8.decode(
+                  await readerWriter.readCacheAsBytes(assetGraphJsonPath),
+                ),
+              )
+              as Map;
       decodedMap['version'] = 999;
-      await readerWriter.writeAsString(
-        assetGraphJsonId,
-        json.encode(decodedMap),
+      await readerWriter.writeCacheAsBytes(
+        assetGraphJsonPath,
+        utf8.encode(json.encode(decodedMap)),
       );
 
       final reloadedBuild = await loadPreviousBuild();

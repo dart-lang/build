@@ -163,10 +163,14 @@ class InMemoryAssetPathProvider implements AssetPathProvider {
     bool checkWriteAllowed = false,
   }) {
     if (hide) {
-      id = AssetPathProvider.hide(id, outputRootPackage);
+      return '$outputRootPackage|$generatedOutputDirectory/${id.package}/${id.path}';
     }
     return id.toString();
   }
+
+  @override
+  String cachePathFor(String relativePath) =>
+      '$outputRootPackage|$relativePath';
 }
 
 class InMemoryAssetFinder implements AssetFinder {
@@ -178,8 +182,16 @@ class InMemoryAssetFinder implements AssetFinder {
   Stream<AssetId> find(Glob glob, {required String package}) {
     return Stream.fromIterable(
       filesystem.filePaths
-          .map(AssetId.parse)
-          .where((id) => id.package == package && glob.matches(id.path)),
+          .where((path) {
+            final pipeIndex = path.indexOf('|');
+            if (pipeIndex == -1) return false;
+            final pkg = path.substring(0, pipeIndex);
+            final assetPath = path.substring(pipeIndex + 1);
+            if (pkg != package) return false;
+            if (assetPath.startsWith('.dart_tool/')) return false;
+            return glob.matches(assetPath);
+          })
+          .map(AssetId.parse),
     );
   }
 }
@@ -205,9 +217,21 @@ class _ReaderWriterTestingImpl implements ReaderWriterTesting {
 
   @override
   Iterable<AssetId> get assets =>
-      (_readerWriter.filesystem as InMemoryFilesystem).filePaths.map(
-        AssetId.parse,
-      );
+      (_readerWriter.filesystem as InMemoryFilesystem).filePaths
+          .where((path) => !path.contains('.dart_tool/'))
+          .map(AssetId.parse);
+
+  @override
+  Iterable<AssetId> get hiddenAssets =>
+      (_readerWriter.filesystem as InMemoryFilesystem).filePaths
+          .where((path) => path.contains('.dart_tool/build/generated/'))
+          .map((path) {
+            final pipeIndex = path.indexOf('|');
+            final package = path.substring(0, pipeIndex);
+            final prefix = '$package|.dart_tool/build/generated/$package/';
+            final relPath = path.substring(prefix.length);
+            return AssetId(package, relPath);
+          });
 
   @override
   Iterable<AssetId> get inputsTracked => InputTracker

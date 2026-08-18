@@ -7,15 +7,16 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
+import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
+import '../asset_location.dart';
 import '../build_plan/build_directory.dart';
 import '../build_plan/build_filter.dart';
 import '../build_plan/build_plan.dart';
 import '../build_plan/output_strategy.dart';
 import '../commands/watch/asset_change.dart';
 import '../constants.dart';
-import '../io/asset_path_provider.dart';
 import '../io/asset_tracker.dart';
 import '../io/create_merged_dir.dart';
 import '../logging/build_log.dart';
@@ -75,16 +76,29 @@ class BuildSeries {
   /// Filters [changes] to only changes that might trigger a build.
   Future<List<AssetChange>> filterChanges(List<AssetChange> changes) async {
     final result = <AssetChange>[];
+    final buildPackages = _buildPlan.buildSpec.buildPackages;
+    final rootPackagePath = buildPackages[buildPackages.outputRoot]!.path;
     for (final change in changes) {
-      final id = change.id;
+      final String diskPath;
+      if (change.location != null) {
+        diskPath = buildPackages.pathFor(
+          change.location!.id,
+          hide: change.location!.hidden,
+        );
+      } else {
+        diskPath = p.join(rootPackagePath, change.path);
+      }
 
       // Changes to the entrypoint are handled via depfiles.
-      if (_buildPlan.buildSpec.bootstrapper.isCompileDependency(
-        _buildPlan.buildSpec.buildPackages.pathFor(id, hide: false),
-      )) {
+      if (_buildPlan.buildSpec.bootstrapper.isCompileDependency(change.path) ||
+          _buildPlan.buildSpec.bootstrapper.isCompileDependency(diskPath)) {
         result.add(change);
         continue;
       }
+
+      final location = change.location;
+      if (location == null) continue;
+      final id = location.id;
 
       // Ignore deletes and writes done by `build_runner`, for output strategies
       // that do deletes and writes.
@@ -308,11 +322,9 @@ class BuildSeries {
   /// Serializes and writes the updated `asset_graph.json`.
   Future<void> _writeBuildOutput(BuildResult result) async {
     if (_buildPlan.buildInputs.cleanBuild) {
-      final generatedOutputDirectoryId = AssetId(
-        _buildPlan.buildSpec.buildPackages.outputRoot,
+      await _buildPlan.readerWriter.deleteCacheDirectory(
         generatedOutputDirectory,
       );
-      await _buildPlan.readerWriter.deleteDirectory(generatedOutputDirectoryId);
     }
 
     for (final output in result.outputs) {
@@ -330,14 +342,13 @@ class BuildSeries {
       );
     }
     for (final toDelete in _computeDeletes(result)) {
-      _expectedDeletes.add(toDelete);
-      await _buildPlan.readerWriter.delete(toDelete);
+      _expectedDeletes.add(toDelete.id);
+      await _buildPlan.readerWriter.delete(
+        toDelete.id,
+        hidden: toDelete.hidden,
+      );
     }
 
-    final assetGraphId = AssetId(
-      _buildPlan.buildSpec.buildPackages.outputRoot,
-      assetGraphJsonPath,
-    );
     final assetGraphContent = AssetContent.bytes(
       AssetGraphJson.serialize(
         buildPlanDigest: _buildPlan.buildSpec.buildPlanDigest,
@@ -345,8 +356,8 @@ class BuildSeries {
         phasedAssetDeps: result.phasedAssetDeps,
       ),
     );
-    await _buildPlan.readerWriter.writeAsBytes(
-      assetGraphId,
+    await _buildPlan.readerWriter.writeCacheAsBytes(
+      assetGraphJsonPath,
       assetGraphContent.bytes,
     );
   }
@@ -356,8 +367,11 @@ class BuildSeries {
   /// that were not actually output.
   ///
   /// Set [onlyVisible] to skip hidden files.
-  Set<AssetId> _computeDeletes(BuildResult result, {bool onlyVisible = false}) {
-    final deletes = <AssetId>{};
+  Set<AssetLocation> _computeDeletes(
+    BuildResult result, {
+    bool onlyVisible = false,
+  }) {
+    final deletes = <AssetLocation>{};
     final currentState = result.buildState!;
     for (final id in _buildPlan.conflictingOutputs) {
       if (!currentState.isActualOutput(
@@ -365,7 +379,7 @@ class BuildSeries {
             buildStepPlan: _buildPlan.buildStepPlan,
           ) &&
           !currentState.isActualPostOutput(id)) {
-        deletes.add(id);
+        deletes.add(AssetLocation.source(id));
       }
     }
     for (final id
@@ -375,20 +389,19 @@ class BuildSeries {
             buildStepPlan: _buildPlan.buildStepPlan,
           ) &&
           !currentState.isActualPostOutput(id)) {
-        deletes.add(id);
+        deletes.add(AssetLocation.source(id));
       }
     }
 
-    final outputRoot = _buildPlan.buildSpec.buildPackages.outputRoot;
     // Adds a delete result, unless it's a hidden file and `onlyVisible` was
     // requested.
     void maybeAddDelete(AssetId id, bool isHidden) {
       if (isHidden) {
         if (!onlyVisible) {
-          deletes.add(AssetPathProvider.hide(id, outputRoot));
+          deletes.add(AssetLocation.cache(id));
         }
       } else {
-        deletes.add(id);
+        deletes.add(AssetLocation.source(id));
       }
     }
 
@@ -459,9 +472,9 @@ class BuildSeries {
     }
 
     for (final toDelete in _computeDeletes(result, onlyVisible: true)) {
-      final exists = await _buildPlan.readerWriter.canRead(toDelete);
+      final exists = await _buildPlan.readerWriter.canRead(toDelete.id);
       if (exists) {
-        unexpected.add(toDelete);
+        unexpected.add(toDelete.id);
       }
     }
 

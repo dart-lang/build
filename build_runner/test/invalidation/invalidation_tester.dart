@@ -12,6 +12,7 @@ import 'package:build_runner/src/build/resolver/resolvers_impl.dart';
 import 'package:build_runner/src/constants.dart';
 import 'package:build_runner/src/logging/build_log.dart';
 import 'package:build_test/build_test.dart';
+import 'package:build_test/src/internal_test_reader_writer.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
@@ -232,12 +233,9 @@ class InvalidationTester {
     if (delete != null) {
       if (assets.containsKey(delete.assetId)) {
         assets.remove(delete.assetId);
+        readerWriter?.testing.delete(delete.assetId);
       } else {
-        if (assets.containsKey(delete.generatedAssetId)) {
-          assets.remove(delete.generatedAssetId);
-        } else {
-          throw StateError('Did not find $delete to delete in: $assets');
-        }
+        throw StateError('Did not find $delete to delete in: $assets');
       }
     }
     if (create != null) {
@@ -251,7 +249,11 @@ class InvalidationTester {
     }
 
     // Build and check what changed.
-    final startingAssets = assets.keys.toSet();
+    final startingAssets = <AssetId>{
+      ...assets.keys,
+      if (readerWriter != null)
+        ...(readerWriter as InternalTestReaderWriter).testing.hiddenAssets,
+    };
     _generatedOutputsWritten.clear();
     final log = StringBuffer();
     final testBuildResult = await testBuilders(
@@ -263,6 +265,7 @@ class InvalidationTester {
       visibleOutputBuilders: _builders.where((b) => b.outputIsVisible).toSet(),
       testingBuilderConfig: false,
       resolvers: discardResolver ? ResolversImpl.custom() : null,
+      readerWriter: readerWriter,
     );
     final logString = log.toString();
     if (testIsRunning) {
@@ -276,9 +279,11 @@ class InvalidationTester {
     readerWriter = testBuildResult.readerWriter;
 
     final written = _generatedOutputsWritten.map(_assetIdToName);
-    final deletedAssets = startingAssets.difference(
-      readerWriter!.testing.assets.toSet(),
-    );
+    final endingAssets = {
+      ...readerWriter!.testing.assets,
+      ...(readerWriter as InternalTestReaderWriter).testing.hiddenAssets,
+    };
+    final deletedAssets = startingAssets.difference(endingAssets);
     final deleted = deletedAssets.map(_assetIdToName);
 
     return logString.contains(BuildLog.successPattern)
@@ -287,8 +292,9 @@ class InvalidationTester {
   }
 
   /// The size of the asset graph that was written by [build], in bytes.
-  int get assetGraphJsonSize => readerWriter!.testing
-      .readBytes(AssetId('pkg', assetGraphJsonPath))
+  int get assetGraphJsonSize => (readerWriter as InternalTestReaderWriter)
+      .filesystem
+      .readAsBytesSync('pkg|$assetGraphJsonPath')
       .length;
 }
 
@@ -581,10 +587,6 @@ extension StringExtension on String {
   /// See [InvalidationTester] class dartdoc.
   AssetId get assetId => AssetId('pkg', 'lib/$this.dart');
 
-  /// Maps "names" to [AssetId]s under `build/generated`.
-  AssetId get generatedAssetId =>
-      AssetId('pkg', '.dart_tool/build/generated/pkg/lib/$this.dart');
-
   /// Maps "names" to relative import path.
   String get pathForImport => '$this.dart';
 
@@ -592,16 +594,14 @@ extension StringExtension on String {
   String get trimAndIndent => '  ${toString().trim().replaceAll('\n', '\n  ')}';
 }
 
-/// Converts [StringExtension.assetId] and [StringExtension.generatedAssetId]
-/// back to [AssetId].
+/// Converts [StringExtension.assetId] back to name.
 String _assetIdToName(AssetId id) {
-  final path = id.path.replaceAll('.dart_tool/build/generated/pkg/', '');
   if (id.package != 'pkg' ||
-      !path.startsWith('lib/') ||
-      !path.endsWith('.dart')) {
+      !id.path.startsWith('lib/') ||
+      !id.path.endsWith('.dart')) {
     throw ArgumentError('Unexpected: $id');
   }
-  return path.substring('lib/'.length, path.length - '.dart'.length);
+  return id.path.substring('lib/'.length, id.path.length - '.dart'.length);
 }
 
 extension AssetIdExtension on AssetId {

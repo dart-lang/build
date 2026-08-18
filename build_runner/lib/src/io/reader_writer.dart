@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:build/build.dart';
 import 'package:convert/convert.dart';
@@ -164,6 +165,53 @@ class ReaderWriter implements AssetReader, AssetWriter {
     return Future.value();
   }
 
+  Future<bool> canReadCache(String relativePath) {
+    return Future.value(
+      TimedActivity.read.run(() {
+        final path = assetPathProvider.cachePathFor(relativePath);
+        return filesystem.existsSync(path);
+      }),
+    );
+  }
+
+  Future<Uint8List> readCacheAsBytes(String relativePath) {
+    return Future.value(
+      TimedActivity.read.run(() {
+        final path = assetPathProvider.cachePathFor(relativePath);
+        if (!filesystem.existsSync(path)) {
+          throw FileSystemException('File not found', path);
+        }
+        return filesystem.readAsBytesSync(path);
+      }),
+    );
+  }
+
+  Future<void> writeCacheAsBytes(String relativePath, List<int> bytes) {
+    TimedActivity.write.run(() {
+      final path = assetPathProvider.cachePathFor(relativePath);
+      filesystem.writeAsBytesSync(path, bytes);
+    });
+    return Future.value();
+  }
+
+  Future<void> deleteCache(String relativePath) {
+    TimedActivity.write.run(() {
+      final path = assetPathProvider.cachePathFor(relativePath);
+      if (filesystem.existsSync(path)) {
+        filesystem.deleteSync(path);
+      }
+    });
+    return Future.value();
+  }
+
+  Future<void> deleteCacheDirectory(String relativePath) {
+    TimedActivity.write.run(() {
+      final path = assetPathProvider.cachePathFor(relativePath);
+      filesystem.deleteDirectorySync(path);
+    });
+    return Future.value();
+  }
+
   // This is only for builders, so only `BuildStep` needs to implement it.
   @override
   Stream<AssetId> findAssets(Glob glob) => throw UnimplementedError();
@@ -192,6 +240,12 @@ class BuildPackagesAssetFinder implements AssetFinder {
         .list(followLinks: true, root: packageNode.path)
         .where((e) => e is File && !path.basename(e.path).startsWith('._'))
         .cast<File>()
+        .where((file) {
+          final filePath = path.normalize(file.absolute.path);
+          final relativePath = path.relative(filePath, from: packageNode.path);
+          return !relativePath.startsWith('.dart_tool/') &&
+              relativePath != '.dart_tool';
+        })
         .map((file) => _fileToAssetId(file, packageNode));
   }
 

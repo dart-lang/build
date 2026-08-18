@@ -4,9 +4,7 @@
 
 import 'package:build/build.dart';
 
-import '../constants.dart';
-
-/// Converts [AssetId]s to paths.
+/// Converts [AssetId]s and cache paths to filesystem paths.
 abstract interface class AssetPathProvider {
   /// Converts [id] to a path.
   ///
@@ -20,9 +18,6 @@ abstract interface class AssetPathProvider {
     bool checkWriteAllowed = false,
   });
 
-  /// Returns [id] hidden in [buildCachePackage].
-  static AssetId hide(AssetId id, String buildCachePackage) => AssetId(
-    buildCachePackage,
-    '$generatedOutputDirectory/${id.package}/${id.path}',
-  );
+  /// Converts [relativePath] within the cache directory to a filesystem path.
+  String cachePathFor(String relativePath);
 }

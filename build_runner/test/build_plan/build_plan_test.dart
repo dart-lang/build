@@ -35,7 +35,6 @@ void main() {
     final assetId = AssetId('a', 'lib/a.dart');
     final outputId = AssetId('a', 'lib/a.dart.copy');
     final assetId2 = AssetId('a', 'lib/an.other');
-    final assetGraphJsonId = AssetId('a', assetGraphJsonPath);
 
     late BuildPackages buildPackages;
     late ReaderWriter readerWriter;
@@ -79,8 +78,8 @@ void main() {
       BuildState buildState,
       BuildPlan buildPlan,
     ) async {
-      await readerWriter.writeAsBytes(
-        assetGraphJsonId,
+      await readerWriter.writeCacheAsBytes(
+        assetGraphJsonPath,
         AssetGraphJson.serialize(
           buildPlanDigest: buildPlan.buildSpec.buildPlanDigest,
           buildState: buildState,

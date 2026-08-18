@@ -6,7 +6,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:async/async.dart';
-import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 
 import '../../build_plan/build_package.dart';
@@ -151,7 +150,7 @@ class WatchablePackageTree {
   ///
   /// Throws if it's not in the tree.
   AssetChange moveToDeepestPackage(AssetChange change) {
-    final absolutePath = p.join(package.path, change.id.platformPath);
+    final absolutePath = p.join(package.path, change.path);
     final deepestPackage = deepestPackageForPath(absolutePath);
     if (deepestPackage == null) {
       throw StateError('No package found for path: $absolutePath');
@@ -160,12 +159,6 @@ class WatchablePackageTree {
       return change;
     }
     final relativePath = p.relative(absolutePath, from: deepestPackage.path);
-    return AssetChange(AssetId(deepestPackage.name, relativePath), change.type);
+    return AssetChange.fromPath(deepestPackage, relativePath, change.type);
   }
-}
-
-extension _AssetIdExtension on AssetId {
-  // Returns [path] with platform separators.
-  String get platformPath =>
-      Platform.isWindows ? path.replaceAll('/', r'\') : path;
 }

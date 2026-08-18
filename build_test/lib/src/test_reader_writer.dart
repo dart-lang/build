@@ -46,6 +46,10 @@ abstract interface class ReaderWriterTesting {
   /// All the assets that exist on the [TestReaderWriter] in-memory filesystem.
   Iterable<AssetId> get assets;
 
+  /// All the hidden generated assets on the [TestReaderWriter] in-memory
+  /// filesystem.
+  Iterable<AssetId> get hiddenAssets;
+
   /// The assets that have been recorded as inputs of the build.
   Iterable<AssetId> get inputsTracked;
 

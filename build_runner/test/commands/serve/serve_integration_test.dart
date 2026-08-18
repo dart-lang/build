@@ -42,9 +42,10 @@ void main() {
       ..testing.writeString(
         AssetId('example', 'web/large.txt'),
         'large' * 10000,
-      )
-      ..testing.writeString(
-        makeAssetId('example|.dart_tool/package_config.json'),
+      );
+    await readerWriter.writeCacheAsBytes(
+      '.dart_tool/package_config.json',
+      utf8.encode(
         jsonEncode({
           'configVersion': 2,
           'packages': [
@@ -55,7 +56,8 @@ void main() {
             },
           ],
         }),
-      );
+      ),
+    );
 
     terminateController = StreamController<ProcessSignal>();
     final watchCommnd = WatchCommand(

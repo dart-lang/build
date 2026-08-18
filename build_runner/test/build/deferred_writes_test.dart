@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
+import 'package:build_test/src/internal_test_reader_writer.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -21,12 +22,13 @@ void main() {
       readerWriter: readerWriter,
     );
     expect(result.succeeded, true);
+    expect(readerWriter.testing.assets, [AssetId('a', 'lib/a.dart')]);
     expect(
-      readerWriter.testing.assets,
-      containsAll([
-        AssetId('a', 'lib/a.dart'),
-        AssetId('a', '.dart_tool/build/generated/a/lib/a.g.dart'),
-      ]),
+      await (readerWriter as InternalTestReaderWriter).canRead(
+        AssetId('a', 'lib/a.g.dart'),
+        hidden: true,
+      ),
+      true,
     );
   });
 

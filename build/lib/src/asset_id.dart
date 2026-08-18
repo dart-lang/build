@@ -42,6 +42,13 @@ class AssetId implements Comparable<AssetId> {
         'Package name contains invalid characters.',
       );
     }
+    if (this.path.startsWith('.dart_tool/') || this.path == '.dart_tool') {
+      throw ArgumentError.value(
+        this.path,
+        'path',
+        'AssetId path cannot be inside .dart_tool.',
+      );
+    }
   }
 
   /// Creates an [AssetId] from a [uri].

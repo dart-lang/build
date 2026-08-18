@@ -74,28 +74,41 @@ void checkOutputs(
         reason: 'Builder failed to write asset $assetId',
       );
       modifiableActualAssets.remove(assetId);
-      var mappedAssetId = assetId;
-      if (!writer.testing.exists(assetId)) {
-        // The asset was output but not to the expected location. First try the
-        // `mapAssetIds` if one was supplied.
-        mappedAssetId = mapAssetIds(assetId);
-        if (!writer.testing.exists(mappedAssetId)) {
-          // Then try the usual mapping for generated assets.
-          mappedAssetId = AssetId(
-            (writer as InternalTestReaderWriter).buildCachePackage,
-            '.dart_tool/build/generated/${assetId.package}/${assetId.path}',
-          );
-        }
-        // If neither succeeded then the asset was output but written somewhere
-        // unexpected.
-        if (!writer.testing.exists(mappedAssetId)) {
-          throw StateError(
-            'Internal error: "$assetId" was recorded as output, but the file '
-            'could not be found. All assets: ${writer.testing.assets}',
-          );
-        }
+
+      final internalWriter = writer as InternalTestReaderWriter;
+      final normalPath = internalWriter.assetPathProvider.pathFor(
+        assetId,
+        hide: false,
+      );
+      final hiddenPath = internalWriter.assetPathProvider.pathFor(
+        assetId,
+        hide: true,
+      );
+      final mappedId = mapAssetIds(assetId);
+      final mappedNormalPath = internalWriter.assetPathProvider.pathFor(
+        mappedId,
+        hide: false,
+      );
+      final mappedHiddenPath = internalWriter.assetPathProvider.pathFor(
+        mappedId,
+        hide: true,
+      );
+
+      List<int> actual;
+      if (internalWriter.filesystem.existsSync(normalPath)) {
+        actual = internalWriter.filesystem.readAsBytesSync(normalPath);
+      } else if (internalWriter.filesystem.existsSync(hiddenPath)) {
+        actual = internalWriter.filesystem.readAsBytesSync(hiddenPath);
+      } else if (internalWriter.filesystem.existsSync(mappedNormalPath)) {
+        actual = internalWriter.filesystem.readAsBytesSync(mappedNormalPath);
+      } else if (internalWriter.filesystem.existsSync(mappedHiddenPath)) {
+        actual = internalWriter.filesystem.readAsBytesSync(mappedHiddenPath);
+      } else {
+        throw StateError(
+          'Internal error: "$assetId" was recorded as output, but the file '
+          'could not be found.',
+        );
       }
-      final actual = writer.testing.readBytes(mappedAssetId);
       Object expected;
       if (contentsMatcher is String) {
         expected = utf8.decode(actual);
@@ -344,7 +357,8 @@ Future<TestBuilderResult> testBuilderFactories(
   onLog ??= _printOnFailureOrWrite;
 
   final inputIds = {
-    for (final descriptor in sourceAssets.keys) makeAssetId(descriptor),
+    for (final descriptor in sourceAssets.keys)
+      if (!descriptor.contains('.dart_tool/')) makeAssetId(descriptor),
   };
 
   if (inputIds.isEmpty && rootPackage == null) {
@@ -382,11 +396,24 @@ Future<TestBuilderResult> testBuilderFactories(
   readerWriter = internalReaderWriter;
 
   sourceAssets.forEach((serializedId, contents) {
-    final id = makeAssetId(serializedId);
-    if (contents is String) {
-      readerWriter!.testing.writeString(id, contents);
-    } else if (contents is List<int>) {
-      readerWriter!.testing.writeBytes(id, contents);
+    if (serializedId.contains('.dart_tool/')) {
+      final pipeIndex = serializedId.indexOf('|');
+      final relPath = serializedId.substring(pipeIndex + 1);
+      final filePath = internalReaderWriter!.assetPathProvider.cachePathFor(
+        relPath,
+      );
+      if (contents is String) {
+        internalReaderWriter.filesystem.writeAsStringSync(filePath, contents);
+      } else if (contents is List<int>) {
+        internalReaderWriter.filesystem.writeAsBytesSync(filePath, contents);
+      }
+    } else {
+      final id = makeAssetId(serializedId);
+      if (contents is String) {
+        readerWriter!.testing.writeString(id, contents);
+      } else if (contents is List<int>) {
+        readerWriter!.testing.writeBytes(id, contents);
+      }
     }
   });
 

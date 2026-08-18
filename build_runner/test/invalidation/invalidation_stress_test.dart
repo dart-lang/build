@@ -5,6 +5,7 @@
 import 'dart:math';
 
 import 'package:build/build.dart' show AssetId;
+import 'package:build_test/src/internal_test_reader_writer.dart';
 import 'package:test/test.dart';
 
 import 'invalidation_tester.dart';
@@ -103,14 +104,12 @@ Future<void> main() async {
         Future<void> addExpectedOutputs(String invalidatedInput) async {
           for (final output in outputs) {
             final assetId = AssetId('pkg', 'lib/$output.dart');
-            final hiddenAssetId = AssetId(
-              'pkg',
-              '.dart_tool/build/generated/pkg/lib/$output.dart',
-            );
-            final outputContents = tester.readerWriter!.testing.exists(assetId)
-                ? tester.readerWriter!.testing.readString(assetId)
-                : tester.readerWriter!.testing.exists(hiddenAssetId)
-                ? tester.readerWriter!.testing.readString(hiddenAssetId)
+            final internalWriter =
+                tester.readerWriter! as InternalTestReaderWriter;
+            final outputContents = await internalWriter.canRead(assetId)
+                ? await internalWriter.readAsString(assetId)
+                : await internalWriter.canRead(assetId, hidden: true)
+                ? await internalWriter.readAsString(assetId, hidden: true)
                 : '';
             // The test builder output is a list of "$name,$hash" for each input
             // that was read, including transitively resolved sources. Check it
