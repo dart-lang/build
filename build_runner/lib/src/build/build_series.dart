@@ -9,6 +9,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:watcher/watcher.dart';
 
+import '../asset_location.dart';
 import '../build_plan/build_directory.dart';
 import '../build_plan/build_filter.dart';
 import '../build_plan/build_plan.dart';
@@ -264,7 +265,9 @@ class BuildSeries {
     );
 
     if (!firstBuild || updates.isNotEmpty) {
-      _buildPlan = await _buildPlan.updateForFileChanges(updates);
+      _buildPlan = await _buildPlan.updateForFileChanges(
+        updates.map(AssetLocation.source).toSet(),
+      );
     }
 
     final build = Build(
