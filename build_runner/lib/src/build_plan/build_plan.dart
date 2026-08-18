@@ -71,10 +71,6 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
     );
     final assetTrackerInputSources = await assetTracker.findInputSources();
     final cacheDirSources = await assetTracker.findCacheDirSources();
-    final discoveredLocations = {
-      ...assetTrackerInputSources.map(AssetLocation.source),
-      ...cacheDirSources.map(AssetLocation.cache),
-    };
 
     final previousBuildState = previousBuild.buildState;
     if (previousBuildState == null) {
@@ -98,19 +94,25 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       ).declaredOutputs;
       inputSources.removeAll(declaredOutputs);
 
+      final locationsToCheck = {
+        ...inputSources.map(AssetLocation.source),
+        ...assetTrackerInputSources.map(AssetLocation.source),
+        ...cacheDirSources.map(AssetLocation.cache),
+      };
+
       return _createClean(
         buildSpec: buildSpec,
         previousBuild: previousBuild,
         buildDirs: buildSpec.buildOptions.buildDirs,
         buildFilters: buildSpec.buildOptions.buildFilters,
-        filesToCheck: inputSources.map(AssetLocation.source).toSet(),
-        discoveredLocations: discoveredLocations,
+        locationsToCheck: locationsToCheck,
       );
     } else {
       // If there is a compatible previous build, check all previous build files
       // and all discovered files on disk.
-      final filesToCheck = {
-        ...discoveredLocations,
+      final locationsToCheck = {
+        ...assetTrackerInputSources.map(AssetLocation.source),
+        ...cacheDirSources.map(AssetLocation.cache),
         ...previousBuildState.sources.map(AssetLocation.source),
         ...previousBuildState.actualOutputLocations,
       };
@@ -127,8 +129,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         previousBuildStepPlan: previousBuildStepPlan,
         buildDirs: buildSpec.buildOptions.buildDirs,
         buildFilters: buildSpec.buildOptions.buildFilters,
-        filesToCheck: filesToCheck,
-        discoveredLocations: discoveredLocations,
+        locationsToCheck: locationsToCheck,
       );
     }
   }
@@ -149,7 +150,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       ..conflictingOutputs.clear(),
   );
 
-  Future<BuildPlan> updateForFileChanges(Set<AssetLocation> filesToCheck) {
+  Future<BuildPlan> updateForFileChanges(Set<AssetLocation> locationsToCheck) {
     final previousBuildState = previousBuild.buildState;
     if (previousBuildState == null) {
       return _createClean(
@@ -157,11 +158,8 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         previousBuild: previousBuild,
         buildDirs: buildDirs,
         buildFilters: buildFilters,
-        filesToCheck: filesToCheck,
-        // Updates are being made to a `BuildPlan` that didn't actually run.
-        // That means the conflicting file check was already done when that
-        // `BuildPlan` was created, don't repeat it.
-        discoveredLocations: const {},
+        locationsToCheck: locationsToCheck,
+        initialConflicts: conflictingOutputs.toSet(),
       );
     } else {
       return _createIncremental(
@@ -170,8 +168,8 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         previousBuildStepPlan: buildStepPlan,
         buildDirs: buildDirs,
         buildFilters: buildFilters,
-        filesToCheck: filesToCheck,
-        discoveredLocations: const {},
+        locationsToCheck: locationsToCheck,
+        initialConflicts: conflictingOutputs.toSet(),
       );
     }
   }
@@ -188,7 +186,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
 
   /// Creates a [BuildPlan] for a clean build.
   ///
-  /// Pass [discoveredLocations] to check if any files that builders will
+  /// Pass [locationsToCheck] to check if any files that builders will
   /// generate conflict with files already on disk. Conflicts in dependencies
   /// cause an exception to be thrown, conflicts in writable packages are added
   /// to [conflictingOutputs] so they will be deleted.
@@ -197,29 +195,55 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
     required PreviousBuild previousBuild,
     required BuiltSet<BuildDirectory> buildDirs,
     required BuiltSet<BuildFilter> buildFilters,
-    required Set<AssetLocation> filesToCheck,
-    required Set<AssetLocation> discoveredLocations,
+    required Set<AssetLocation> locationsToCheck,
+    Set<AssetLocation> initialConflicts = const {},
   }) async {
     final readerWriter = buildSpec.readerWriter;
     final result = BuildInputsBuilder()..cleanBuild = true;
+    final existingLocations = <AssetLocation>{};
+    final nonExistingLocations = <AssetLocation>{};
 
-    for (final location in filesToCheck) {
-      if (!location.hidden &&
-          await readerWriter.canRead(location.id, hidden: false)) {
-        result.sources.add(location.id);
+    for (final location in locationsToCheck) {
+      if (await readerWriter.canRead(location.id, hidden: location.hidden)) {
+        existingLocations.add(location);
+        if (!location.hidden) {
+          result.sources.add(location.id);
+        }
+      } else {
+        nonExistingLocations.add(location);
       }
     }
 
-    final buildStepPlan = BuildStepPlan.compute(
+    var buildStepPlan = BuildStepPlan.compute(
       buildPhases: buildSpec.buildPhases,
       placeholderIds: buildSpec.buildPackages.placeholderIds,
       sources: result.sources.build(),
     );
 
-    final buildPackages = buildSpec.buildPackages;
-    final conflictingOutputs = discoveredLocations
-        .where((loc) => buildStepPlan.isDeclaredOutput(loc.id))
+    final declaredOutputs = buildStepPlan.declaredOutputs.toSet();
+    final unexpectedDeclaredOutputs = result.sources
+        .build()
+        .where(declaredOutputs.contains)
         .toList();
+    if (unexpectedDeclaredOutputs.isNotEmpty) {
+      for (final id in unexpectedDeclaredOutputs) {
+        result.sources.remove(id);
+      }
+      buildStepPlan = BuildStepPlan.compute(
+        buildPhases: buildSpec.buildPhases,
+        placeholderIds: buildSpec.buildPackages.placeholderIds,
+        sources: result.sources.build(),
+      );
+    }
+
+    final buildPackages = buildSpec.buildPackages;
+    final conflictingOutputs = initialConflicts.toSet();
+    for (final location in existingLocations) {
+      if (buildStepPlan.isDeclaredOutput(location.id)) {
+        conflictingOutputs.add(location);
+      }
+    }
+    conflictingOutputs.removeAll(nonExistingLocations);
 
     final conflictsInDeps = conflictingOutputs
         .where((loc) => !loc.hidden)
@@ -263,8 +287,8 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
     required BuildStepPlan previousBuildStepPlan,
     required BuiltSet<BuildDirectory> buildDirs,
     required BuiltSet<BuildFilter> buildFilters,
-    required Set<AssetLocation> filesToCheck,
-    required Set<AssetLocation> discoveredLocations,
+    required Set<AssetLocation> locationsToCheck,
+    Set<AssetLocation> initialConflicts = const {},
   }) async {
     final readerWriter = buildSpec.readerWriter;
     final buildInputs = BuildInputsBuilder()..cleanBuild = false;
@@ -280,7 +304,10 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       }
     }
 
-    for (final location in filesToCheck) {
+    final existingLocations = <AssetLocation>{};
+    final nonExistingLocations = <AssetLocation>{};
+
+    for (final location in locationsToCheck) {
       final oldIsSource =
           !location.hidden && previousBuildState.isSource(location.id);
       final oldContent = previousBuildState.contentAt(
@@ -293,6 +320,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
 
       if (await readerWriter.canRead(location.id, hidden: location.hidden)) {
         exists = true;
+        existingLocations.add(location);
         if (oldContent != null) {
           try {
             final bytes = await readerWriter.readAsBytes(
@@ -302,8 +330,12 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
             newContent = AssetContent.bytes(bytes);
           } catch (_) {
             exists = false;
+            existingLocations.remove(location);
+            nonExistingLocations.add(location);
           }
         }
+      } else {
+        nonExistingLocations.add(location);
       }
 
       if (oldExisted && !exists) {
@@ -361,10 +393,14 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
     final buildPackages = buildSpec.buildPackages;
     final previousActualOutputs = previousBuildState.actualOutputLocations
         .toSet();
-    final conflictingOutputs = discoveredLocations
-        .where((loc) => buildStepPlan.isDeclaredOutput(loc.id))
-        .where((loc) => !previousActualOutputs.contains(loc))
-        .toList();
+    final conflictingOutputs = initialConflicts.toSet();
+    for (final location in existingLocations) {
+      if (buildStepPlan.isDeclaredOutput(location.id) &&
+          !previousActualOutputs.contains(location)) {
+        conflictingOutputs.add(location);
+      }
+    }
+    conflictingOutputs.removeAll(nonExistingLocations);
 
     final conflictsInDeps = conflictingOutputs
         .where((loc) => !loc.hidden)

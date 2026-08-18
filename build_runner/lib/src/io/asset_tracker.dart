@@ -162,7 +162,8 @@ class AssetTracker {
           return AssetId(package, path);
         })
         .where((id) => id != null)
-        .cast<AssetId>();
+        .cast<AssetId>()
+        .where((id) => _buildPackages.packages.containsKey(id.package));
   }
 
   /// Lists asset IDs and swallows file not found errors.
