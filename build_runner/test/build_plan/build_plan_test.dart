@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:convert';
+
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart' hide BuilderDefinition;
 import 'package:build_runner/src/asset_location.dart';
@@ -462,5 +464,31 @@ targets:
         contains(AssetLocation.cache(outputId)),
       );
     });
+
+    test(
+      'previous visible source and unrelated cache file with same AssetId',
+      () async {
+        final buildState = BuildState({
+          assetId: AssetContent.bytes(utf8.encode('// a.dart')),
+          assetId2: AssetContent.bytes(utf8.encode('// other')),
+        });
+        await writeBuildStateAndPlan(buildState, buildPlan);
+
+        // Write an unrelated cache file with the same AssetId but different
+        // content.
+        await readerWriter.writeAsString(
+          assetId,
+          '// cache content',
+          hidden: true,
+        );
+
+        buildPlan = await loadPlan();
+
+        expect(buildPlan.buildInputs.sources, contains(assetId));
+        expect(buildPlan.buildInputs.invalidOutputs, isEmpty);
+        expect(buildPlan.buildInputs.updatedSources, isEmpty);
+        expect(buildPlan.buildInputs.deletedSources, isEmpty);
+      },
+    );
   });
 }

@@ -283,8 +283,8 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
     for (final location in filesToCheck) {
       final oldIsSource =
           !location.hidden && previousBuildState.isSource(location.id);
-      final oldContent = previousBuildState.contentOf(
-        id: location.id,
+      final oldContent = previousBuildState.contentAt(
+        location,
         buildStepPlan: previousBuildStepPlan,
       );
       final oldExisted = oldIsSource || oldContent != null;

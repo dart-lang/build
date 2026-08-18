@@ -228,6 +228,38 @@ class BuildState {
         .rebuild((b) => b..outputs[id] = content);
   }
 
+  /// The content at [location].
+  ///
+  /// If it is a source, returns `null` if it has not been read.
+  ///
+  /// If it is a build output, returns `null` if it has not been generated.
+  ///
+  /// If it is a post process output, returns `null` if it has not been
+  /// generated.
+  AssetContent? contentAt(
+    AssetLocation location, {
+    BuildStepPlan? buildStepPlan,
+  }) {
+    if (!location.hidden && isSource(location.id)) {
+      return _sources.contentOfSource(location.id);
+    }
+    final step = buildStepPlan?.stepForDeclaredOutputOrNull(location.id);
+    if (step != null) {
+      final result = stepResultOrNull(step);
+      if (result != null && result.isHidden == location.hidden) {
+        return result.outputs[location.id];
+      }
+    }
+    final postProcessStepId = _postProcessOutputs[location.id];
+    if (postProcessStepId != null) {
+      final result = postProcessBuildStepResultFor(postProcessStepId);
+      if (result != null && result.hidden == location.hidden) {
+        return result.outputs[location.id];
+      }
+    }
+    return null;
+  }
+
   /// The content of [id].
   ///
   /// If it is a source, returns `null` if it has not been read.
