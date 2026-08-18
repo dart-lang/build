@@ -63,7 +63,7 @@ class ReaderWriter implements AssetReader, AssetWriter {
     bool hidden = false,
     bool checkWriteAllowed = false,
   }) {
-    return assetPathProvider.pathFor(
+    return assetPathProvider.pathForAsset(
       id,
       hide: hidden && !forceVisibleForTesting,
       checkWriteAllowed: checkWriteAllowed,

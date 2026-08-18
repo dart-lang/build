@@ -76,20 +76,20 @@ void checkOutputs(
       modifiableActualAssets.remove(assetId);
 
       final internalWriter = writer as InternalTestReaderWriter;
-      final normalPath = internalWriter.assetPathProvider.pathFor(
+      final normalPath = internalWriter.assetPathProvider.pathForAsset(
         assetId,
         hide: false,
       );
-      final hiddenPath = internalWriter.assetPathProvider.pathFor(
+      final hiddenPath = internalWriter.assetPathProvider.pathForAsset(
         assetId,
         hide: true,
       );
       final mappedId = mapAssetIds(assetId);
-      final mappedNormalPath = internalWriter.assetPathProvider.pathFor(
+      final mappedNormalPath = internalWriter.assetPathProvider.pathForAsset(
         mappedId,
         hide: false,
       );
-      final mappedHiddenPath = internalWriter.assetPathProvider.pathFor(
+      final mappedHiddenPath = internalWriter.assetPathProvider.pathForAsset(
         mappedId,
         hide: true,
       );

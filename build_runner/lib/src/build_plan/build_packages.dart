@@ -10,6 +10,8 @@ import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 
 import '../build/resolver/asset_ids.dart';
+import '../build_file.dart';
+import '../build_file_layout.dart';
 import '../constants.dart';
 import '../io/asset_path_provider.dart';
 import 'build_package.dart';
@@ -22,7 +24,7 @@ import 'placeholders.dart';
 final _sdkPackage = BuildPackage(name: r'$sdk', path: sdkPath);
 
 /// The [BuildPackage]s in the build.
-class BuildPackages implements AssetPathProvider {
+class BuildPackages implements AssetPathProvider, BuildFileLayout {
   /// All packages by package name.
   final BuiltMap<String, BuildPackage> packages;
 
@@ -211,7 +213,25 @@ class BuildPackages implements AssetPathProvider {
   }.build();
 
   @override
-  String pathFor(
+  String pathFor(BuildFile file, {bool checkWriteAllowed = false}) {
+    if (file is AssetFile) {
+      return pathForAsset(
+        file.id,
+        hide: file.hidden,
+        checkWriteAllowed: checkWriteAllowed,
+      );
+    } else if (file is InternalFile) {
+      final package = packages[file.package];
+      if (package == null) {
+        throw PackageNotFoundException(file.package);
+      }
+      return p.join(package.path, file.path);
+    }
+    throw ArgumentError('Unknown BuildFile type: $file');
+  }
+
+  @override
+  String pathForAsset(
     AssetId id, {
     required bool hide,
     bool checkWriteAllowed = false,
@@ -232,6 +252,10 @@ class BuildPackages implements AssetPathProvider {
     final package = packages[id.package]!;
     return p.join(package.path, id.platformPath);
   }
+
+  @override
+  BuildFile fromPath(BuildPackage package, String path) =>
+      BuildFileLayout.fileFromPath(package, path);
 
   @override
   String cachePathFor(String relativePath) =>

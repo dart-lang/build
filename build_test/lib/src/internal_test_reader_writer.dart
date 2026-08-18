@@ -157,7 +157,7 @@ class InMemoryAssetPathProvider implements AssetPathProvider {
   InMemoryAssetPathProvider(this.outputRootPackage);
 
   @override
-  String pathFor(
+  String pathForAsset(
     AssetId id, {
     required bool hide,
     bool checkWriteAllowed = false,
@@ -279,35 +279,35 @@ class _ReaderWriterTestingImpl implements ReaderWriterTesting {
 
   @override
   bool exists(AssetId id) => _readerWriter.filesystem.existsSync(
-    _readerWriter.assetPathProvider.pathFor(id, hide: false),
+    _readerWriter.assetPathProvider.pathForAsset(id, hide: false),
   );
 
   @override
   void writeString(AssetId id, String contents) =>
       _readerWriter.filesystem.writeAsStringSync(
-        _readerWriter.assetPathProvider.pathFor(id, hide: false),
+        _readerWriter.assetPathProvider.pathForAsset(id, hide: false),
         contents,
       );
 
   @override
   void writeBytes(AssetId id, List<int> contents) =>
       _readerWriter.filesystem.writeAsBytesSync(
-        _readerWriter.assetPathProvider.pathFor(id, hide: false),
+        _readerWriter.assetPathProvider.pathForAsset(id, hide: false),
         contents,
       );
 
   @override
   Uint8List readBytes(AssetId id) => _readerWriter.filesystem.readAsBytesSync(
-    _readerWriter.assetPathProvider.pathFor(id, hide: false),
+    _readerWriter.assetPathProvider.pathForAsset(id, hide: false),
   );
 
   @override
   String readString(AssetId id) => _readerWriter.filesystem.readAsStringSync(
-    _readerWriter.assetPathProvider.pathFor(id, hide: false),
+    _readerWriter.assetPathProvider.pathForAsset(id, hide: false),
   );
 
   @override
   void delete(AssetId id) => _readerWriter.filesystem.deleteSync(
-    _readerWriter.assetPathProvider.pathFor(id, hide: false),
+    _readerWriter.assetPathProvider.pathForAsset(id, hide: false),
   );
 }

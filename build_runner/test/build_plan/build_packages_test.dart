@@ -42,9 +42,9 @@ void main() {
         expect(buildRunner.languageVersion, LanguageVersion(3, 11));
       });
 
-      test('pathFor allows write to output package', () {
+      test('pathForAsset allows write to output package', () {
         expect(
-          buildPackages.pathFor(
+          buildPackages.pathForAsset(
             AssetId('build_runner', 'lib/a.txt'),
             hide: false,
             checkWriteAllowed: true,
@@ -53,9 +53,9 @@ void main() {
         );
       });
 
-      test('pathFor prohibits write to known but non-output package', () {
+      test('pathForAsset prohibits write to known but non-output package', () {
         expect(
-          () => buildPackages.pathFor(
+          () => buildPackages.pathForAsset(
             AssetId('test', 'lib/a.txt'),
             hide: false,
             checkWriteAllowed: true,
@@ -64,9 +64,9 @@ void main() {
         );
       });
 
-      test('pathFor prohibits access to unknown package', () {
+      test('pathForAsset prohibits access to unknown package', () {
         expect(
-          () => buildPackages.pathFor(
+          () => buildPackages.pathForAsset(
             AssetId('unknown', 'lib/a.txt'),
             hide: false,
           ),
@@ -74,9 +74,9 @@ void main() {
         );
       });
 
-      test('pathFor allows write to cache in output package', () {
+      test('pathForAsset allows write to cache in output package', () {
         expect(
-          buildPackages.pathFor(
+          buildPackages.pathForAsset(
             AssetId('build_runner', 'lib/a.txt'),
             hide: true,
             checkWriteAllowed: true,
@@ -84,20 +84,23 @@ void main() {
           isNotNull,
         );
       });
-      test('pathFor allows write to cache in known but non-output package', () {
-        expect(
-          () => buildPackages.pathFor(
-            AssetId('test', 'lib/a.txt'),
-            hide: true,
-            checkWriteAllowed: true,
-          ),
-          isNotNull,
-        );
-      });
+      test(
+        'pathForAsset allows write to cache in known but non-output package',
+        () {
+          expect(
+            () => buildPackages.pathForAsset(
+              AssetId('test', 'lib/a.txt'),
+              hide: true,
+              checkWriteAllowed: true,
+            ),
+            isNotNull,
+          );
+        },
+      );
 
-      test('pathFor prohibits access to cache for unknown package', () {
+      test('pathForAsset prohibits access to cache for unknown package', () {
         expect(
-          () => buildPackages.pathFor(
+          () => buildPackages.pathForAsset(
             AssetId('unknown', 'lib/a.txt'),
             hide: true,
           ),

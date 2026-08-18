@@ -39,7 +39,7 @@ class BuildOutputReader {
       _buildState.assetsDeletedByPostProcess;
 
   String pathFor(AssetId id) {
-    return _builderFilesystem.readerWriter.assetPathProvider.pathFor(
+    return _builderFilesystem.readerWriter.assetPathProvider.pathForAsset(
       id,
       hide: id.isHidden(buildStepPlan: _buildStepPlan, buildState: _buildState),
     );

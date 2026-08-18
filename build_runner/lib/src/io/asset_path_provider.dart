@@ -12,7 +12,7 @@ abstract interface class AssetPathProvider {
   /// directory containing manually written source code.
   ///
   /// Set [checkWriteAllowed] to throw if the path is read only.
-  String pathFor(
+  String pathForAsset(
     AssetId id, {
     required bool hide,
     bool checkWriteAllowed = false,
