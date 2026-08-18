@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:build_web_compilers/src/build_frontend_server/fes_server_info.dart';
 import 'package:build_web_compilers/src/common.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -50,22 +51,23 @@ void main() {
 
       // Wait for a config file to be written.
       final configFile = File(p.join(tempDir.path, fesManagerConfigPath));
-      final content = await _waitForFileContentChanges(configFile);
-      final json = jsonDecode(content) as Map<String, dynamic>;
-      final port = json['port'] as int?;
+      await _waitForFileContentChanges(configFile);
+      final serverInfo = FesServerInfo.fromFile(configFile);
+      expect(serverInfo, isNotNull);
+      expect(serverInfo!.port, isPositive);
+      expect(serverInfo.token, isNotEmpty);
 
-      expect(port, isNotNull);
-
-      // Connect to the FES socket, send a request, and verify its response.
-      final socket = await Socket.connect(InternetAddress.loopbackIPv4, port!);
+      // Connect to the FES socket, authenticate, send a request, and verify
+      // response.
+      final connection = await _connectAndAuth(
+        serverInfo.port,
+        serverInfo.token,
+      );
+      final socket = connection.socket;
       socket.writeln(
         jsonEncode({'instruction': 'READ_OUTPUT_FILE', 'path': 'non_existent'}),
       );
-      final responseLine = await socket
-          .cast<List<int>>()
-          .transform(utf8.decoder)
-          .transform(const LineSplitter())
-          .first;
+      final responseLine = await connection.socketLines.first;
       final response = jsonDecode(responseLine) as Map<String, dynamic>;
       expect(response.containsKey('error'), isTrue);
 
@@ -101,18 +103,17 @@ void main() {
           .listen((line) => print('Manager defines test stdout: $line'));
 
       final configFile = File(p.join(tempDir.path, fesManagerConfigPath));
-      final content = await _waitForFileContentChanges(configFile);
-      final json = jsonDecode(content) as Map<String, dynamic>;
-      final port = json['port'] as int?;
+      await _waitForFileContentChanges(configFile);
+      final serverInfo = FesServerInfo.fromFile(configFile);
 
-      expect(port, isNotNull);
+      expect(serverInfo, isNotNull);
 
-      final socket = await Socket.connect(InternetAddress.loopbackIPv4, port!);
-      final socketLines = socket
-          .cast<List<int>>()
-          .transform(utf8.decoder)
-          .transform(const LineSplitter())
-          .asBroadcastStream();
+      final connection = await _connectAndAuth(
+        serverInfo!.port,
+        serverInfo.token,
+      );
+      final socket = connection.socket;
+      final socketLines = connection.socketLines;
 
       socket.writeln(
         jsonEncode({
@@ -171,23 +172,20 @@ void main() {
       ], workingDirectory: tempDir.path);
 
       // Wait for the config file to be updated with new content
-      final content2 = await _waitForFileContentChanges(
-        configFile,
-        previousContent: content1,
-      );
-      final json2 = jsonDecode(content2) as Map<String, dynamic>;
-      final port2 = json2['port'] as int;
+      await _waitForFileContentChanges(configFile, previousContent: content1);
+      final serverInfo2 = FesServerInfo.fromFile(configFile);
+      expect(serverInfo2, isNotNull);
 
       // Connect to the new socket and send a request.
-      final socket = await Socket.connect(InternetAddress.loopbackIPv4, port2);
+      final connection = await _connectAndAuth(
+        serverInfo2!.port,
+        serverInfo2.token,
+      );
+      final socket = connection.socket;
       socket.writeln(
         jsonEncode({'instruction': 'READ_OUTPUT_FILE', 'path': 'non_existent'}),
       );
-      final responseLine = await socket
-          .cast<List<int>>()
-          .transform(utf8.decoder)
-          .transform(const LineSplitter())
-          .first;
+      final responseLine = await connection.socketLines.first;
 
       final response = jsonDecode(responseLine) as Map<String, dynamic>;
       expect(response.containsKey('error'), isTrue);
@@ -195,6 +193,117 @@ void main() {
       await socket.close();
       process2.kill();
       await process2.exitCode;
+    });
+
+    group('Token authorization', () {
+      late Directory authTempDir;
+      late File authPackageConfig;
+      late Process authProcess;
+      late FesServerInfo authServerInfo;
+
+      setUp(() async {
+        authTempDir = await Directory.systemTemp.createTemp('fes-auth-test');
+        authPackageConfig = File(
+          p.join(authTempDir.path, '.dart_tool', 'package_config.json'),
+        );
+        authPackageConfig.createSync(recursive: true);
+        authPackageConfig.writeAsStringSync(
+          jsonEncode({'configVersion': 2, 'packages': <String>[]}),
+        );
+
+        final fileSystemRoot = authTempDir.uri.resolve('fes_root/');
+        await Directory.fromUri(fileSystemRoot).create(recursive: true);
+
+        final scriptPath = _resolveFesManagerScriptPath();
+        authProcess = await Process.start('dart', [
+          scriptPath,
+          sdkDir,
+          fileSystemRoot.toString(),
+          p.toUri(authPackageConfig.path).toString(),
+        ], workingDirectory: authTempDir.path);
+
+        final configFile = File(p.join(authTempDir.path, fesManagerConfigPath));
+        await _waitForFileContentChanges(configFile);
+        authServerInfo = FesServerInfo.fromFile(configFile)!;
+      });
+
+      tearDown(() async {
+        authProcess.kill();
+        await authProcess.exitCode;
+        await authTempDir.delete(recursive: true);
+      });
+
+      test('rejects connection with invalid token', () async {
+        final socket = await Socket.connect(
+          InternetAddress.loopbackIPv4,
+          authServerInfo.port,
+        );
+        final socketLines = socket
+            .cast<List<int>>()
+            .transform(utf8.decoder)
+            .transform(const LineSplitter())
+            .asBroadcastStream();
+
+        final authResponseFuture = socketLines.first;
+        socket.writeln(jsonEncode({'token': 'wrong_token'}));
+        await socket.flush();
+
+        final responseLine = await authResponseFuture;
+        final response = jsonDecode(responseLine) as Map<String, dynamic>;
+        expect(response['error'], 'Unauthorized');
+
+        // Verify that the socket was closed by the server
+        expect(socketLines.isEmpty, completion(isTrue));
+      });
+
+      test('rejects connection without token handshake', () async {
+        final socket = await Socket.connect(
+          InternetAddress.loopbackIPv4,
+          authServerInfo.port,
+        );
+        final socketLines = socket
+            .cast<List<int>>()
+            .transform(utf8.decoder)
+            .transform(const LineSplitter())
+            .asBroadcastStream();
+
+        final authResponseFuture = socketLines.first;
+        socket.writeln(
+          jsonEncode({'instruction': 'COMPILE', 'entrypoint': 'test.dart'}),
+        );
+        await socket.flush();
+
+        final responseLine = await authResponseFuture;
+        final response = jsonDecode(responseLine) as Map<String, dynamic>;
+        expect(response['error'], 'Unauthorized');
+
+        // Verify that the socket was closed by the server
+        expect(socketLines.isEmpty, completion(isTrue));
+      });
+
+      test('config directory and file are user-private', () {
+        final configFile = File(p.join(authTempDir.path, fesManagerConfigPath));
+        final configDir = configFile.parent;
+
+        if (Platform.isWindows) {
+          final result = Process.runSync('powershell', [
+            '-NoProfile',
+            '-NonInteractive',
+            '-Command',
+            '(Get-Acl "${configDir.path}").AreAccessRulesProtected',
+          ]);
+          expect(result.exitCode, 0);
+          expect(result.stdout.toString().trim(), 'True');
+        } else {
+          final dirStat = configDir.statSync();
+          final dirMode = dirStat.mode & (7 * 8 * 8 + 7 * 8 + 7);
+          expect(dirMode, 7 * 8 * 8);
+
+          final fileStat = configFile.statSync();
+          final fileMode = fileStat.mode & (7 * 8 * 8 + 7 * 8 + 7);
+          expect(fileMode, 7 * 8 * 8);
+        }
+      });
     });
 
     group('FES Manager API', () {
@@ -244,16 +353,14 @@ void main() {
             .listen((line) => print('FES Manager stderr: $line'));
 
         final configFile = File(p.join(testTempDir.path, fesManagerConfigPath));
-        final content = await _waitForFileContentChanges(configFile);
-        final json = jsonDecode(content) as Map<String, dynamic>;
-        final port = json['port'] as int;
-
-        testSocket = await Socket.connect(InternetAddress.loopbackIPv4, port);
-        testSocketLines = testSocket
-            .cast<List<int>>()
-            .transform(utf8.decoder)
-            .transform(const LineSplitter())
-            .asBroadcastStream();
+        await _waitForFileContentChanges(configFile);
+        final serverInfo = FesServerInfo.fromFile(configFile)!;
+        final connection = await _connectAndAuth(
+          serverInfo.port,
+          serverInfo.token,
+        );
+        testSocket = connection.socket;
+        testSocketLines = connection.socketLines;
 
         // Perform an initial compile to ensure the Frontend Server is warmed up
         // and initialized for subsequent expression compilation and metadata
@@ -521,6 +628,26 @@ void main() {
       });
     });
   });
+}
+
+Future<({Socket socket, Stream<String> socketLines})> _connectAndAuth(
+  int port,
+  String token,
+) async {
+  final socket = await Socket.connect(InternetAddress.loopbackIPv4, port);
+  final socketLines = socket
+      .cast<List<int>>()
+      .transform(utf8.decoder)
+      .transform(const LineSplitter())
+      .asBroadcastStream();
+
+  final authFuture = socketLines.first;
+  socket.writeln(jsonEncode({'token': token}));
+  await socket.flush();
+  final authResponseLine = await authFuture;
+  final authResponse = jsonDecode(authResponseLine) as Map<String, dynamic>;
+  expect(authResponse['status'], 'AUTHENTICATED');
+  return (socket: socket, socketLines: socketLines);
 }
 
 Future<String> _waitForFileContentChanges(

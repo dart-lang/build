@@ -2,8 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-// NOTE: builder_pkgs/build_web_compilers/lib/src/build_frontend_server/file_permissions.dart
-// is a copy of this file and must be kept synchronized.
+// NOTE: This file is a copy of build_daemon/lib/src/file_permissions.dart and
+// must be kept synchronized.
 
 import 'dart:io';
 

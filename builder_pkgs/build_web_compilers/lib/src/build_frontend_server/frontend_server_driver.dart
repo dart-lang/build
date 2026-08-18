@@ -17,6 +17,7 @@ import 'package:pool/pool.dart';
 import 'package:uuid/uuid.dart';
 
 import '../common.dart';
+import 'fes_server_info.dart';
 import 'package_config.dart';
 
 final _log = Logger('FrontendServerProxy');
@@ -383,34 +384,47 @@ class PersistentFrontendServer {
     );
     if (!configFile.existsSync()) return null;
 
-    int? port;
+    FesServerInfo? serverInfo;
     for (var i = 0; i < retries; i++) {
       try {
-        final content = await configFile.readAsString();
-        final json = jsonDecode(content) as Map<String, dynamic>;
-        port = json['port'] as int?;
-        if (port != null) break;
+        serverInfo = FesServerInfo.fromFile(configFile);
+        if (serverInfo != null) break;
       } catch (_) {}
       await Future<void>.delayed(const Duration(milliseconds: 25));
     }
 
-    if (port == null) {
+    if (serverInfo == null) {
       throw StateError(
         'FES config file found at ${configFile.path} '
-        'but port could not be read.',
+        'but server info could not be read.',
       );
     }
 
     try {
-      final socket = await Socket.connect(InternetAddress.loopbackIPv4, port);
+      final socket = await Socket.connect(
+        InternetAddress.loopbackIPv4,
+        serverInfo.port,
+      );
       final socketLines = socket
           .cast<List<int>>()
           .transform(utf8.decoder)
           .transform(const LineSplitter())
           .asBroadcastStream();
+      final authResponseFuture = socketLines.first;
+      socket.writeln(jsonEncode({'token': serverInfo.token}));
+      await socket.flush();
+      final authResponseLine = await authResponseFuture;
+      final authResponse = jsonDecode(authResponseLine) as Map<String, dynamic>;
+      if (authResponse['status'] != 'AUTHENTICATED') {
+        throw StateError(
+          'Failed to authenticate with FES manager: ${authResponse['error']}',
+        );
+      }
       return _FesSocketConnection(socket, socketLines);
     } catch (e) {
-      throw StateError('Failed to connect to FES manager at port $port: $e');
+      throw StateError(
+        'Failed to connect to FES manager at port ${serverInfo.port}: $e',
+      );
     }
   }
 

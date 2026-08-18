@@ -1,3 +1,8 @@
+## 4.8.11-wip
+
+- Make `fes_manager` config directory and file user-private.
+- Use a token for socket authentication in `fes_manager`.
+
 ## 4.8.10
 
 - Require Dart `3.13.0`.
