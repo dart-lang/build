@@ -347,11 +347,7 @@ class BuildLog {
     _pushPhase(phaseName);
     // Always log if it's the first step in the phase, otherwise throttle.
     if (progress.isStarting || _shouldShowProgressNow) {
-      if (_display.displayingBlocks) {
-        _display.block(render());
-      } else {
-        _display.message(Severity.info, _renderPhase(phaseName).toString());
-      }
+      _displayProgress(phaseName);
     }
   }
 
@@ -363,16 +359,7 @@ class BuildLog {
     final phaseName = phase.name(lazy: lazy);
     _tick();
 
-    // Usually the next step will immediately run and update with more useful
-    // information, so only display if this is the last for the builder.
-    if (progress.isFinished) {
-      if (_display.displayingBlocks) {
-        _display.block(render());
-      } else {
-        _display.message(Severity.info, _renderPhase(phaseName).toString());
-      }
-    }
-
+    _displayProgressIfFinished(progress, phaseName);
     _popPhase();
   }
 
@@ -384,16 +371,7 @@ class BuildLog {
     final phaseName = phase.name(lazy: lazy);
     _tick();
 
-    // Usually the next step will immediately run and update with more useful
-    // information, so only display if this is the last for the builder.
-    if (progress.isFinished) {
-      if (_display.displayingBlocks) {
-        _display.block(render());
-      } else {
-        _display.message(Severity.info, _renderPhase(phaseName).toString());
-      }
-    }
-
+    _displayProgressIfFinished(progress, phaseName);
     _popPhase();
   }
 
@@ -420,17 +398,24 @@ class BuildLog {
 
     _tick();
 
-    // Usually the next step will immediately run and update with more useful
-    // information, so only display if this is the last for the builder.
-    if (progress.isFinished) {
-      if (_display.displayingBlocks) {
-        _display.block(render());
-      } else {
-        _display.message(Severity.info, _renderPhase(phaseName).toString());
-      }
-    }
-
+    _displayProgressIfFinished(progress, phaseName);
     _popPhase();
+  }
+
+  /// Displays the current progress for [phaseName].
+  void _displayProgress(String phaseName) {
+    if (_display.displayingBlocks) {
+      _display.block(render());
+    } else {
+      _display.message(Severity.info, _renderPhase(phaseName).toString());
+    }
+  }
+
+  /// Displays progress if [progress] for [phaseName] has finished.
+  void _displayProgressIfFinished(_PhaseProgress progress, String phaseName) {
+    if (progress.isFinished) {
+      _displayProgress(phaseName);
+    }
   }
 
   /// For `watch` and `serve` modes, logs that a new build (not the initial
