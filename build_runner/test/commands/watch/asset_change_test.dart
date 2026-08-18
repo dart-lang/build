@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+import 'package:build_runner/src/asset_location.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/commands/watch/asset_change.dart';
 import 'package:path/path.dart' as p;
@@ -13,8 +14,8 @@ void main() {
   group('AssetChange', () {
     test('should be equal if asset and type are equivalent', () {
       AssetId asset(String name) => AssetId(name, 'lib/$asset.dart');
-      final pkgA1 = asset('a');
-      final pkgA2 = asset('a');
+      final pkgA1 = AssetLocation.source(asset('a'));
+      final pkgA2 = AssetLocation.source(asset('a'));
 
       final change1 = AssetChange(pkgA1, ChangeType.ADD);
       final change2 = AssetChange(pkgA2, ChangeType.ADD);
@@ -24,7 +25,7 @@ void main() {
       final change3 = AssetChange(pkgA1, ChangeType.MODIFY);
       expect(change1, isNot(equals(change3)));
 
-      final pkgB = asset('b');
+      final pkgB = AssetLocation.source(asset('b'));
       final change4 = AssetChange(pkgB, ChangeType.ADD);
       expect(change1, isNot(equals(change4)));
     });
@@ -41,6 +42,10 @@ void main() {
       final event = WatchEvent(ChangeType.ADD, barFile);
       final change = AssetChange.fromEvent(nodeBar, event);
 
+      expect(
+        change.location,
+        AssetLocation.source(AssetId('bar', 'lib/bar.dart')),
+      );
       expect(change.id.package, 'bar');
       expect(change.id.path, p.join('lib', 'bar.dart'));
     });
@@ -53,8 +58,36 @@ void main() {
       final event = WatchEvent(ChangeType.ADD, barFile);
       final change = AssetChange.fromEvent(nodeBar, event);
 
+      expect(
+        change.location,
+        AssetLocation.source(AssetId('bar', 'lib/bar.dart')),
+      );
       expect(change.id.package, 'bar');
       expect(change.id.path, p.join('lib', 'bar.dart'));
+    });
+
+    test('should parse hidden cache paths', () {
+      final pkgBar = p.join('/', 'foo', 'bar');
+      final barFile = p.join(
+        pkgBar,
+        '.dart_tool',
+        'build',
+        'generated',
+        'other_pkg',
+        'lib',
+        'bar.dart',
+      );
+      final nodeBar = BuildPackage(name: 'bar', path: pkgBar, watch: true);
+
+      final event = WatchEvent(ChangeType.MODIFY, barFile);
+      final change = AssetChange.fromEvent(nodeBar, event);
+
+      expect(
+        change.location,
+        AssetLocation.cache(AssetId('other_pkg', 'lib/bar.dart')),
+      );
+      expect(change.id.package, 'other_pkg');
+      expect(change.id.path, 'lib/bar.dart');
     });
   });
 }

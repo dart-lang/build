@@ -9,6 +9,7 @@ import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 
+import '../../asset_location.dart';
 import '../../build_plan/build_package.dart';
 import '../../build_plan/build_packages.dart';
 import '../../logging/build_log.dart';
@@ -151,6 +152,7 @@ class WatchablePackageTree {
   ///
   /// Throws if it's not in the tree.
   AssetChange moveToDeepestPackage(AssetChange change) {
+    if (change.location.hidden) return change;
     final absolutePath = p.join(package.path, change.id.platformPath);
     final deepestPackage = deepestPackageForPath(absolutePath);
     if (deepestPackage == null) {
@@ -160,7 +162,10 @@ class WatchablePackageTree {
       return change;
     }
     final relativePath = p.relative(absolutePath, from: deepestPackage.path);
-    return AssetChange(AssetId(deepestPackage.name, relativePath), change.type);
+    return AssetChange(
+      AssetLocation.source(AssetId(deepestPackage.name, relativePath)),
+      change.type,
+    );
   }
 }
 

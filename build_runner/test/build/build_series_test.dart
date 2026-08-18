@@ -5,6 +5,7 @@
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:build_runner/src/asset_location.dart';
 import 'package:build_runner/src/build/build_result.dart';
 import 'package:build_runner/src/build/build_series.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
@@ -96,7 +97,9 @@ void main() {
 
       // Check for changes on disk.
       final changes = await buildSeries.checkForChanges();
-      final updates = changes.map((e) => makeAssetId(e.path)).toSet();
+      final updates = changes
+          .map((e) => AssetLocation.fromAssetId(AssetId.parse(e.path)))
+          .toSet();
 
       // Run incremental build with detected updates.
       final result2 = await buildSeries.run(
