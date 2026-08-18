@@ -43,21 +43,10 @@ abstract class AssetLocation
   );
 
   /// Converts a filesystem [path] within [package] to an [AssetLocation].
-  factory AssetLocation.fromPath(BuildPackage package, String path) {
-    final relativePath = _normalizeRelativePath(package, path);
-    if (relativePath.startsWith('$generatedOutputDirectory/')) {
-      final packagePath = relativePath.substring(
-        generatedOutputDirectory.length + 1,
+  factory AssetLocation.fromPath(BuildPackage package, String path) =>
+      AssetLocation.fromAssetId(
+        AssetId(package.name, _normalizeRelativePath(package, path)),
       );
-      final firstSlash = packagePath.indexOf('/');
-      if (firstSlash != -1) {
-        final targetPackage = packagePath.substring(0, firstSlash);
-        final targetPath = packagePath.substring(firstSlash + 1);
-        return AssetLocation.cache(AssetId(targetPackage, targetPath));
-      }
-    }
-    return AssetLocation.source(AssetId(package.name, relativePath));
-  }
 
   static String _normalizeRelativePath(BuildPackage package, String path) {
     final pkgPath = package.path;

@@ -23,6 +23,13 @@ void main() {
       expect(location, AssetLocation.source(AssetId('pkg_a', 'lib/foo.dart')));
     });
 
+    test('fromPath handles backslash paths for source files', () {
+      final filePath = p.join('/', 'root', 'pkg_a', r'lib\foo.dart');
+      final location = AssetLocation.fromPath(pkg, filePath);
+
+      expect(location, AssetLocation.source(AssetId('pkg_a', 'lib/foo.dart')));
+    });
+
     test('fromPath creates cache location for generated files', () {
       final filePath = p.join(
         '/',
@@ -34,6 +41,18 @@ void main() {
         'pkg_b',
         'lib',
         'bar.dart',
+      );
+      final location = AssetLocation.fromPath(pkg, filePath);
+
+      expect(location, AssetLocation.cache(AssetId('pkg_b', 'lib/bar.dart')));
+    });
+
+    test('fromPath handles backslash paths for generated files', () {
+      final filePath = p.join(
+        '/',
+        'root',
+        'pkg_a',
+        r'.dart_tool\build\generated\pkg_b\lib\bar.dart',
       );
       final location = AssetLocation.fromPath(pkg, filePath);
 
