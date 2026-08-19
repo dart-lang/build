@@ -26,9 +26,7 @@ abstract interface class BuildFileLayout {
     final lowerPosixPath = posixPath.toLowerCase();
     if (lowerPosixPath == '.dart_tool' ||
         lowerPosixPath.startsWith('.dart_tool/')) {
-      if (lowerPosixPath.startsWith(
-        '${generatedOutputDirectory.toLowerCase()}/',
-      )) {
+      if (posixPath.startsWith('$generatedOutputDirectory/')) {
         final packagePath = posixPath.substring(
           generatedOutputDirectory.length + 1,
         );

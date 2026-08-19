@@ -72,10 +72,10 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     for (final change in fileChanges) {
       final path = change.path;
       final BuildFile file;
-      if (path.contains('|')) {
-        file = AssetFile.source(AssetId.parse(path));
-      } else if (p.isAbsolute(path)) {
+      if (p.isAbsolute(path)) {
         file = buildPackages.fileFromPath(path);
+      } else if (path.contains('|')) {
+        file = AssetFile.source(AssetId.parse(path));
       } else {
         final currentPackage = buildPackages.packages[_currentPackageName]!;
         file = buildPackages.fromPath(currentPackage, path);

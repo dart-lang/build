@@ -233,12 +233,12 @@ class _ReaderWriterTestingImpl implements ReaderWriterTesting {
 
   @override
   Iterable<AssetId> get hiddenAssets {
-    const prefix = '.dart_tool/build/generated/';
+    final prefix =
+        '${_readerWriter.buildCachePackage}|$generatedOutputDirectory/';
     return (_readerWriter.filesystem as InMemoryFilesystem).filePaths
-        .where((path) => path.contains(prefix))
+        .where((path) => path.startsWith(prefix))
         .map((path) {
-          final pipeIndex = path.indexOf('|');
-          final afterPrefix = path.substring(pipeIndex + 1 + prefix.length);
+          final afterPrefix = path.substring(prefix.length);
           final slashIndex = afterPrefix.indexOf('/');
           final package = afterPrefix.substring(0, slashIndex);
           final relPath = afterPrefix.substring(slashIndex + 1);

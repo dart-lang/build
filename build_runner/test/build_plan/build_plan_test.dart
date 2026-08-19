@@ -337,43 +337,45 @@ void main() {
         expect(newPlan.buildInputs.invalidOutputs, contains(outputId));
       });
 
-      test(
-        'displaced location where source replaces cache output marks new '
-        'source and invalidates cache',
-        () async {
-          final buildState = BuildState({assetId: null});
-          final hiddenOutputId = AssetId('a', 'lib/a.dart.copy');
-          await readerWriter.writeAsString(
-            hiddenOutputId,
-            '// hidden output',
-            hidden: true,
-          );
-          final stepId = buildPlan.buildStepPlan.stepForDeclaredOutput(
-            hiddenOutputId,
-          );
-          buildState.updateBuildStepResult(
-            stepId,
-            BuildStepResult((b) {
-              b.isHidden = true;
-              b.outputs[hiddenOutputId] = AssetContent.digest(Digest([1]));
-            }),
-          );
-          buildState.updateSourceContent(
-            assetId,
-            AssetContent.digest(Digest([1])),
-          );
-          await writeBuildStateAndPlan(buildState, buildPlan);
+      test('displaced location where source replaces cache output marks new '
+          'source and invalidates cache', () async {
+        final buildState = BuildState({assetId: null});
+        final hiddenOutputId = AssetId('a', 'lib/a.dart.copy');
+        await readerWriter.writeAsString(
+          hiddenOutputId,
+          '// hidden output',
+          hidden: true,
+        );
+        final stepId = buildPlan.buildStepPlan.stepForDeclaredOutput(
+          hiddenOutputId,
+        );
+        final hiddenDigest = await readerWriter.digest(
+          hiddenOutputId,
+          hidden: true,
+        );
+        buildState.updateBuildStepResult(
+          stepId,
+          BuildStepResult((b) {
+            b.isHidden = true;
+            b.outputs[hiddenOutputId] = AssetContent.digest(hiddenDigest);
+          }),
+        );
+        final assetDigest = await readerWriter.digest(assetId);
+        buildState.updateSourceContent(
+          assetId,
+          AssetContent.digest(assetDigest),
+        );
+        await writeBuildStateAndPlan(buildState, buildPlan);
 
-          // Now user creates a source file with the same ID in the source tree
-          await readerWriter.writeAsString(
-            hiddenOutputId,
-            '// source replacement',
-          );
-          final newPlan = await loadPlan();
-          expect(newPlan.buildInputs.updatedSources, contains(hiddenOutputId));
-          expect(newPlan.buildInputs.invalidOutputs, contains(hiddenOutputId));
-        },
-      );
+        // Now user creates a source file with the same ID in the source tree
+        await readerWriter.writeAsString(
+          hiddenOutputId,
+          '// source replacement',
+        );
+        final newPlan = await loadPlan();
+        expect(newPlan.buildInputs.updatedSources, contains(hiddenOutputId));
+        expect(newPlan.buildInputs.invalidOutputs, contains(hiddenOutputId));
+      });
     });
   });
 }

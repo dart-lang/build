@@ -111,10 +111,16 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         for (final id in assetTrackerInputSources) AssetFile.source(id),
         for (final id in cacheDirSources) AssetFile.cache(id),
         for (final id in previousBuildState.sources) AssetFile.source(id),
-        for (final id in previousBuildState.actualOutputs)
+        for (final id in [
+          ...previousBuildState.actualOutputs,
+          ...previousBuildState.actualPostOutputs,
+        ])
           AssetFile(
             id,
-            hidden: id.isHidden(buildStepPlan: previousBuildStepPlan),
+            hidden: id.isHidden(
+              buildStepPlan: previousBuildStepPlan,
+              buildState: previousBuildState,
+            ),
           ),
       };
 
@@ -293,7 +299,10 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
           ? AssetFile.source(id)
           : AssetFile(
               id,
-              hidden: id.isHidden(buildStepPlan: previousBuildStepPlan),
+              hidden: id.isHidden(
+                buildStepPlan: previousBuildStepPlan,
+                buildState: previousBuildState,
+              ),
             );
       final oldExistedHere = oldExisted && oldFile == file;
       final oldContent = previousBuildState.contentOf(

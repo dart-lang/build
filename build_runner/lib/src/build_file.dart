@@ -64,7 +64,7 @@ class InternalFile implements BuildFile {
         'InternalFile path must be under .dart_tool.',
       );
     }
-    if (lowerPath.startsWith('${generatedOutputDirectory.toLowerCase()}/')) {
+    if (path.startsWith('$generatedOutputDirectory/')) {
       throw ArgumentError.value(
         path,
         'path',

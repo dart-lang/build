@@ -77,9 +77,6 @@ class AssetTracker {
     Iterable<AssetId> declaredAndActualOutputs, {
     required BuildStepPlan buildStepPlan,
   }) async {
-    final allSources = <AssetId>{}
-      ..addAll(inputSources)
-      ..addAll(generatedSources);
     final updates = <AssetFile, ChangeType>{};
 
     final newSources = inputSources.difference(buildState.sources.toSet());
@@ -87,20 +84,20 @@ class AssetTracker {
       updates[AssetFile.source(id)] = ChangeType.ADD;
     }
     for (final id in buildState.sources) {
-      if (!allSources.contains(id)) {
+      if (!inputSources.contains(id)) {
         updates[AssetFile.source(id)] = ChangeType.REMOVE;
       }
     }
     for (final id in declaredAndActualOutputs) {
-      if (!allSources.contains(id)) {
-        updates[AssetFile(
-              id,
-              hidden: id.isHidden(
-                buildStepPlan: buildStepPlan,
-                buildState: buildState,
-              ),
-            )] =
-            ChangeType.REMOVE;
+      final isHidden = id.isHidden(
+        buildStepPlan: buildStepPlan,
+        buildState: buildState,
+      );
+      final exists = isHidden
+          ? generatedSources.contains(id)
+          : inputSources.contains(id);
+      if (!exists) {
+        updates[AssetFile(id, hidden: isHidden)] = ChangeType.REMOVE;
       }
     }
 
@@ -116,9 +113,15 @@ class AssetTracker {
       }
     }
 
-    final preExistingOutputs = declaredAndActualOutputs.toSet().intersection(
-      allSources,
-    );
+    final preExistingOutputs = declaredAndActualOutputs.toSet().where((id) {
+      final isHidden = id.isHidden(
+        buildStepPlan: buildStepPlan,
+        buildState: buildState,
+      );
+      return isHidden
+          ? generatedSources.contains(id)
+          : inputSources.contains(id);
+    });
     for (final id in preExistingOutputs) {
       final originalContent = buildState.contentOf(
         buildStepPlan: buildStepPlan,
