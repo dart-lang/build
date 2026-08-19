@@ -338,6 +338,9 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         } else {
           buildInputs.updatedSources.add(id);
           buildInputs.sources.add(id);
+          if (oldFile != null && oldFile.hidden) {
+            buildInputs.invalidOutputs.add(id);
+          }
         }
       } else if (oldExistedHere &&
           oldContent != null &&

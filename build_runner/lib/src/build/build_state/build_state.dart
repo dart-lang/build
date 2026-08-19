@@ -214,15 +214,19 @@ class BuildState {
   /// If it is a post process output, returns `null` if it has not been
   /// generated.
   AssetContent? contentOf({BuildStepPlan? buildStepPlan, required AssetId id}) {
-    if (isSource(id)) return _sources.contentOfSource(id);
     final step = buildStepPlan?.stepForDeclaredOutputOrNull(id);
     if (step != null) {
-      return stepResultOrNull(step)?.outputs[id];
+      final outputContent = stepResultOrNull(step)?.outputs[id];
+      if (outputContent != null) return outputContent;
     }
     final postProcessStepId = _postProcessOutputs[id];
     if (postProcessStepId != null) {
-      return postProcessBuildStepResultFor(postProcessStepId)?.outputs[id];
+      final postContent = postProcessBuildStepResultFor(
+        postProcessStepId,
+      )?.outputs[id];
+      if (postContent != null) return postContent;
     }
+    if (isSource(id)) return _sources.contentOfSource(id);
     return null;
   }
 

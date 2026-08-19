@@ -339,7 +339,7 @@ void main() {
 
       test('displaced location where source replaces cache output marks new '
           'source and invalidates cache', () async {
-        final buildState = BuildState({assetId: null});
+        final buildState = BuildState({assetId: null, assetId2: null});
         final hiddenOutputId = AssetId('a', 'lib/a.dart.copy');
         await readerWriter.writeAsString(
           hiddenOutputId,
@@ -349,21 +349,20 @@ void main() {
         final stepId = buildPlan.buildStepPlan.stepForDeclaredOutput(
           hiddenOutputId,
         );
-        final hiddenDigest = await readerWriter.digest(
-          hiddenOutputId,
-          hidden: true,
-        );
         buildState.updateBuildStepResult(
           stepId,
           BuildStepResult((b) {
             b.isHidden = true;
-            b.outputs[hiddenOutputId] = AssetContent.digest(hiddenDigest);
+            b.outputs[hiddenOutputId] = AssetContent.string('// hidden output');
           }),
         );
-        final assetDigest = await readerWriter.digest(assetId);
         buildState.updateSourceContent(
           assetId,
-          AssetContent.digest(assetDigest),
+          AssetContent.string('// a.dart'),
+        );
+        buildState.updateSourceContent(
+          assetId2,
+          AssetContent.string('// other'),
         );
         await writeBuildStateAndPlan(buildState, buildPlan);
 
@@ -375,6 +374,40 @@ void main() {
         final newPlan = await loadPlan();
         expect(newPlan.buildInputs.updatedSources, contains(hiddenOutputId));
         expect(newPlan.buildInputs.invalidOutputs, contains(hiddenOutputId));
+
+        // Simulate build completion: delete the invalid cache output and update
+        // build state to record the new source file.
+        await readerWriter.delete(hiddenOutputId, hidden: true);
+        final nextState = BuildState({
+          assetId: null,
+          assetId2: null,
+          hiddenOutputId: null,
+        });
+        nextState.updateSourceContent(
+          assetId,
+          AssetContent.string('// a.dart'),
+        );
+        nextState.updateSourceContent(
+          assetId2,
+          AssetContent.string('// other'),
+        );
+        nextState.updateSourceContent(
+          hiddenOutputId,
+          AssetContent.string('// source replacement'),
+        );
+        nextState.updateBuildStepResult(
+          stepId,
+          BuildStepResult((b) => b..isHidden = true),
+        );
+        await writeBuildStateAndPlan(nextState, newPlan);
+
+        // Third build with no changes is a no-op and consistently treats the
+        // ID as a source.
+        final thirdPlan = await loadPlan();
+        expect(thirdPlan.buildInputs.updatedSources, isEmpty);
+        expect(thirdPlan.buildInputs.deletedSources, isEmpty);
+        expect(thirdPlan.buildInputs.invalidOutputs, isEmpty);
+        expect(thirdPlan.buildInputs.sources, contains(hiddenOutputId));
       });
     });
   });

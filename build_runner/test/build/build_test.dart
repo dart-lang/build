@@ -1587,7 +1587,6 @@ targets:
         builderDefinitions,
         {
           'a|lib/file.a': 'a',
-          'a|lib/file.a.copy': 'b',
           // Hack to get the file to rebuild, we are being bad by changing the
           // builder but pretending its the same.
           'a|lib/file.b': 'b2',
@@ -1647,12 +1646,7 @@ targets:
       await testPhases(
         builderFactories,
         builderDefinitions,
-        {
-          'a|lib/file.a': 'a2',
-          'a|lib/file.b': 'b',
-          'a|lib/file.a.copy': 'b',
-          'a|lib/file.a.copy.copy': 'b',
-        },
+        {'a|lib/file.a': 'a2', 'a|lib/file.b': 'b'},
         outputs: {'a|lib/file.a.copy': 'b'},
         resumeFrom: result,
       );
