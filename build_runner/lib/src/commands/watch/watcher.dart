@@ -12,7 +12,7 @@ import '../../build/build_series.dart';
 import '../../build_plan/build_packages.dart';
 import '../../build_plan/build_plan.dart';
 import '../../logging/build_log.dart';
-import 'asset_change.dart';
+import 'build_file_change.dart';
 import 'build_package_watcher.dart';
 import 'build_packages_watcher.dart';
 import 'collect_changes.dart';
@@ -61,7 +61,7 @@ class Watcher {
     );
     packagesWatcher
         .watch()
-        .asyncMap<AssetChange>((change) async {
+        .asyncMap<BuildFileChange>((change) async {
           // Delay any events until the current build is completed.
           await currentBuildResult;
           return change;
@@ -90,7 +90,7 @@ class Watcher {
     await _buildSeries.run({}, recentlyBootstrapped: true);
   }
 
-  Future<BuildResult> _doBuild(List<List<AssetChange>> changes) async {
+  Future<BuildResult> _doBuild(List<List<BuildFileChange>> changes) async {
     final mergedChanges = collectChanges(changes);
     final result = await _buildSeries.run(
       mergedChanges,

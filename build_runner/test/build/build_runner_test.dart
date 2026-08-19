@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build_runner/src/build/build_result.dart';
+import 'package:build_runner/src/build_file.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
@@ -66,8 +67,8 @@ Future<BuildResult> _doBuild(
   inputs.forEach((serializedId, contents) {
     readerWriter.writeAsString(makeAssetId(serializedId), contents);
   });
-  await readerWriter.writeCacheAsBytes(
-    '.dart_tool/package_config.json',
+  await readerWriter.writeFileAsBytes(
+    const InternalFile('a', '.dart_tool/package_config.json'),
     utf8.encode(jsonEncode(_packageConfig)),
   );
 

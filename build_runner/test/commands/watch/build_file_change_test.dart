@@ -4,28 +4,28 @@
 
 import 'package:build/build.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
-import 'package:build_runner/src/commands/watch/asset_change.dart';
+import 'package:build_runner/src/commands/watch/build_file_change.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
 void main() {
-  group('AssetChange', () {
+  group('BuildFileChange', () {
     test('should be equal if asset and type are equivalent', () {
       AssetId asset(String name) => AssetId(name, 'lib/$asset.dart');
       final pkgA1 = asset('a');
       final pkgA2 = asset('a');
 
-      final change1 = AssetChange(pkgA1, ChangeType.ADD);
-      final change2 = AssetChange(pkgA2, ChangeType.ADD);
+      final change1 = BuildFileChange(pkgA1, ChangeType.ADD);
+      final change2 = BuildFileChange(pkgA2, ChangeType.ADD);
 
       expect(change1, equals(change2));
 
-      final change3 = AssetChange(pkgA1, ChangeType.MODIFY);
+      final change3 = BuildFileChange(pkgA1, ChangeType.MODIFY);
       expect(change1, isNot(equals(change3)));
 
       final pkgB = asset('b');
-      final change4 = AssetChange(pkgB, ChangeType.ADD);
+      final change4 = BuildFileChange(pkgB, ChangeType.ADD);
       expect(change1, isNot(equals(change4)));
     });
 
@@ -39,10 +39,10 @@ void main() {
       final nodeBar = BuildPackage(name: 'bar', path: pkgBar, watch: true);
 
       final event = WatchEvent(ChangeType.ADD, barFile);
-      final change = AssetChange.fromEvent(nodeBar, event);
+      final change = BuildFileChange.fromEvent(nodeBar, event);
 
-      expect(change.id.package, 'bar');
-      expect(change.id.path, p.join('lib', 'bar.dart'));
+      expect(change.id!.package, 'bar');
+      expect(change.id!.path, p.join('lib', 'bar.dart'));
     });
 
     test('should normalize absolute paths to relative', () {
@@ -51,10 +51,10 @@ void main() {
 
       final nodeBar = BuildPackage(name: 'bar', path: pkgBar, watch: true);
       final event = WatchEvent(ChangeType.ADD, barFile);
-      final change = AssetChange.fromEvent(nodeBar, event);
+      final change = BuildFileChange.fromEvent(nodeBar, event);
 
-      expect(change.id.package, 'bar');
-      expect(change.id.path, p.join('lib', 'bar.dart'));
+      expect(change.id!.package, 'bar');
+      expect(change.id!.path, p.join('lib', 'bar.dart'));
     });
   });
 }

@@ -12,6 +12,7 @@ import 'package:path/path.dart' as p;
 
 import '../bootstrap/build_process_state.dart';
 import '../bootstrap/compile_type.dart';
+import '../build_file.dart';
 import '../build_plan/build_packages.dart';
 import '../build_plan/phase.dart';
 import 'ansi_buffer.dart';
@@ -537,7 +538,7 @@ class BuildLog {
   Uri? _targetUriForAssetId(AssetId id, {bool? windows}) {
     String? path;
     try {
-      path = buildPackages?.pathForAsset(id, hide: false);
+      path = buildPackages?.pathFor(AssetFile.source(id));
     } on PackageNotFoundException {
       return null;
     }

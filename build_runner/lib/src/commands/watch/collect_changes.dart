@@ -4,15 +4,16 @@
 
 import 'package:build/build.dart';
 
-import 'asset_change.dart';
+import 'build_file_change.dart';
 
-/// Merges [AssetChange] events into a set of changed [AssetId]s, discarding
+/// Merges [BuildFileChange] events into a set of changed [AssetId]s, discarding
 /// the change types.
-Set<AssetId> collectChanges(List<List<AssetChange>> changes) {
+Set<AssetId> collectChanges(List<List<BuildFileChange>> changes) {
   final result = <AssetId>{};
   for (final change in changes.expand((l) => l)) {
-    if (change.assetFile != null) {
-      result.add(change.id);
+    final id = change.id;
+    if (id != null) {
+      result.add(id);
     }
   }
   return result;

@@ -4,7 +4,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:build/build.dart';
 import 'package:convert/convert.dart';
@@ -13,11 +12,12 @@ import 'package:glob/glob.dart';
 import 'package:glob/list_local_fs.dart';
 import 'package:path/path.dart' as path;
 
+import '../build_file.dart';
+import '../build_file_layout.dart';
 import '../build_plan/build_package.dart';
 import '../build_plan/build_packages.dart';
 import '../logging/timed_activities.dart';
 import 'asset_finder.dart';
-import 'asset_path_provider.dart';
 import 'filesystem.dart';
 
 /// File operations during a build.
@@ -29,7 +29,7 @@ import 'filesystem.dart';
 /// `.dart_tool/build/generated` instead of in the source tree.
 class ReaderWriter implements AssetReader, AssetWriter {
   final AssetFinder assetFinder;
-  final AssetPathProvider assetPathProvider;
+  final BuildFileLayout buildFileLayout;
   final Filesystem filesystem;
 
   /// Whether to force `hidden` to false.
@@ -46,49 +46,66 @@ class ReaderWriter implements AssetReader, AssetWriter {
     bool forceVisibleForTesting = false,
   }) => ReaderWriter.using(
     assetFinder: BuildPackagesAssetFinder(buildPackages),
-    assetPathProvider: buildPackages,
+    buildFileLayout: buildPackages,
     filesystem: IoFilesystem(),
     forceVisibleForTesting: forceVisibleForTesting,
   );
 
   ReaderWriter.using({
     required this.assetFinder,
-    required this.assetPathProvider,
+    required this.buildFileLayout,
     required this.filesystem,
     this.forceVisibleForTesting = false,
   });
 
-  String _pathFor(
-    AssetId id, {
-    bool hidden = false,
-    bool checkWriteAllowed = false,
-  }) {
-    return assetPathProvider.pathForAsset(
-      id,
-      hide: hidden && !forceVisibleForTesting,
-      checkWriteAllowed: checkWriteAllowed,
-    );
+  String _pathFor(BuildFile file, {bool checkWriteAllowed = false}) {
+    if (file is AssetFile && forceVisibleForTesting) {
+      file = AssetFile.source(file.id);
+    }
+    return buildFileLayout.pathFor(file, checkWriteAllowed: checkWriteAllowed);
   }
 
-  @override
-  Future<bool> canRead(AssetId id, {bool hidden = false}) {
+  Future<bool> canReadFile(BuildFile file) {
     return Future.value(
       TimedActivity.read.run(() {
-        final path = _pathFor(id, hidden: hidden);
+        final path = _pathFor(file);
         return filesystem.existsSync(path);
       }),
     );
   }
 
   @override
-  Future<List<int>> readAsBytes(AssetId id, {bool hidden = false}) {
+  Future<bool> canRead(AssetId id, {bool hidden = false}) =>
+      canReadFile(AssetFile(id, hidden: hidden));
+
+  Future<List<int>> readFileAsBytes(BuildFile file) {
     return Future.value(
       TimedActivity.read.run(() {
-        final path = _pathFor(id, hidden: hidden);
+        final path = _pathFor(file);
         if (!filesystem.existsSync(path)) {
-          throw AssetNotFoundException(id, path: path);
+          throw file is AssetFile
+              ? AssetNotFoundException(file.id, path: path)
+              : FileSystemException('File not found', path);
         }
         return filesystem.readAsBytesSync(path);
+      }),
+    );
+  }
+
+  @override
+  Future<List<int>> readAsBytes(AssetId id, {bool hidden = false}) =>
+      readFileAsBytes(AssetFile(id, hidden: hidden));
+
+  Future<String> readFileAsString(BuildFile file, {Encoding encoding = utf8}) {
+    return Future.value(
+      TimedActivity.read.run(() {
+        final path = _pathFor(file);
+        if (!filesystem.existsSync(path)) {
+          throw file is AssetFile
+              ? AssetNotFoundException(file.id, path: path)
+              : FileSystemException('File not found', path);
+        }
+        return encoding.decode(filesystem.readAsBytesSync(path));
       }),
     );
   }
@@ -98,29 +115,33 @@ class ReaderWriter implements AssetReader, AssetWriter {
     AssetId id, {
     Encoding encoding = utf8,
     bool hidden = false,
-  }) {
-    return Future.value(
-      TimedActivity.read.run(() {
-        final path = _pathFor(id, hidden: hidden);
-        if (!filesystem.existsSync(path)) {
-          throw AssetNotFoundException(id, path: path);
-        }
-        return encoding.decode(filesystem.readAsBytesSync(path));
-      }),
-    );
-  }
+  }) => readFileAsString(AssetFile(id, hidden: hidden), encoding: encoding);
 
   // [AssetWriter] methods.
+
+  Future<void> writeFileAsBytes(BuildFile file, List<int> bytes) {
+    TimedActivity.write.run(() {
+      final path = _pathFor(file, checkWriteAllowed: true);
+      filesystem.writeAsBytesSync(path, bytes);
+    });
+    return Future.value();
+  }
 
   @override
   Future<void> writeAsBytes(
     AssetId id,
     List<int> bytes, {
     bool hidden = false,
+  }) => writeFileAsBytes(AssetFile(id, hidden: hidden), bytes);
+
+  Future<void> writeFileAsString(
+    BuildFile file,
+    String contents, {
+    Encoding encoding = utf8,
   }) {
     TimedActivity.write.run(() {
-      final path = _pathFor(id, hidden: hidden, checkWriteAllowed: true);
-      filesystem.writeAsBytesSync(path, bytes);
+      final path = _pathFor(file, checkWriteAllowed: true);
+      filesystem.writeAsStringSync(path, contents, encoding: encoding);
     });
     return Future.value();
   }
@@ -131,13 +152,33 @@ class ReaderWriter implements AssetReader, AssetWriter {
     String contents, {
     Encoding encoding = utf8,
     bool hidden = false,
-  }) {
+  }) => writeFileAsString(
+    AssetFile(id, hidden: hidden),
+    contents,
+    encoding: encoding,
+  );
+
+  Future<void> deleteFile(BuildFile file) {
     TimedActivity.write.run(() {
-      final path = _pathFor(id, hidden: hidden, checkWriteAllowed: true);
-      filesystem.writeAsStringSync(path, contents, encoding: encoding);
+      final path = _pathFor(file, checkWriteAllowed: true);
+      filesystem.deleteSync(path);
     });
     return Future.value();
   }
+
+  Future<void> delete(AssetId id, {bool hidden = false}) =>
+      deleteFile(AssetFile(id, hidden: hidden));
+
+  Future<void> deleteDirectoryFile(BuildFile file) {
+    TimedActivity.write.run(() {
+      final path = _pathFor(file, checkWriteAllowed: true);
+      filesystem.deleteDirectorySync(path);
+    });
+    return Future.value();
+  }
+
+  Future<void> deleteDirectory(AssetId id, {bool hidden = false}) =>
+      deleteDirectoryFile(AssetFile(id, hidden: hidden));
 
   @override
   Future<Digest> digest(AssetId id, {bool hidden = false}) async {
@@ -147,69 +188,6 @@ class ReaderWriter implements AssetReader, AssetWriter {
       ..add(id.toString().codeUnits)
       ..close();
     return digestSink.events.first;
-  }
-
-  Future<void> delete(AssetId id, {bool hidden = false}) {
-    TimedActivity.write.run(() {
-      final path = _pathFor(id, hidden: hidden, checkWriteAllowed: true);
-      filesystem.deleteSync(path);
-    });
-    return Future.value();
-  }
-
-  Future<void> deleteDirectory(AssetId id, {bool hidden = false}) {
-    TimedActivity.write.run(() {
-      final path = _pathFor(id, hidden: hidden, checkWriteAllowed: true);
-      filesystem.deleteDirectorySync(path);
-    });
-    return Future.value();
-  }
-
-  Future<bool> canReadCache(String relativePath) {
-    return Future.value(
-      TimedActivity.read.run(() {
-        final path = assetPathProvider.cachePathFor(relativePath);
-        return filesystem.existsSync(path);
-      }),
-    );
-  }
-
-  Future<Uint8List> readCacheAsBytes(String relativePath) {
-    return Future.value(
-      TimedActivity.read.run(() {
-        final path = assetPathProvider.cachePathFor(relativePath);
-        if (!filesystem.existsSync(path)) {
-          throw FileSystemException('File not found', path);
-        }
-        return filesystem.readAsBytesSync(path);
-      }),
-    );
-  }
-
-  Future<void> writeCacheAsBytes(String relativePath, List<int> bytes) {
-    TimedActivity.write.run(() {
-      final path = assetPathProvider.cachePathFor(relativePath);
-      filesystem.writeAsBytesSync(path, bytes);
-    });
-    return Future.value();
-  }
-
-  Future<void> deleteCache(String relativePath) {
-    TimedActivity.write.run(() {
-      final path = assetPathProvider.cachePathFor(relativePath);
-      if (filesystem.existsSync(path)) {
-        filesystem.deleteSync(path);
-      }
-    });
-    return Future.value();
-  }
-
-  Future<void> deleteCacheDirectory(String relativePath) {
-    TimedActivity.write.run(() {
-      final path = assetPathProvider.cachePathFor(relativePath);
-      filesystem.deleteDirectorySync(path);
-    });
-    return Future.value();
   }
 
   // This is only for builders, so only `BuildStep` needs to implement it.

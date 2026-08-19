@@ -13,6 +13,7 @@ import '../build/asset_content.dart';
 import '../build/build_state/build_state.dart';
 import '../build/builder_filesystem.dart';
 import '../build/resolver/asset_ids.dart';
+import '../build_file.dart';
 import '../build_plan/build_step_plan.dart';
 
 /// A view of the build output.
@@ -39,9 +40,14 @@ class BuildOutputReader {
       _buildState.assetsDeletedByPostProcess;
 
   String pathFor(AssetId id) {
-    return _builderFilesystem.readerWriter.assetPathProvider.pathForAsset(
-      id,
-      hide: id.isHidden(buildStepPlan: _buildStepPlan, buildState: _buildState),
+    return _builderFilesystem.readerWriter.buildFileLayout.pathFor(
+      AssetFile(
+        id,
+        hidden: id.isHidden(
+          buildStepPlan: _buildStepPlan,
+          buildState: _buildState,
+        ),
+      ),
     );
   }
 
@@ -83,11 +89,13 @@ class BuildOutputReader {
     }
 
     if (buildState.isSource(id) &&
-        await builderFilesystem.readerWriter.canRead(
-          id,
-          hidden: id.isHidden(
-            buildStepPlan: _buildStepPlan,
-            buildState: buildState,
+        await builderFilesystem.readerWriter.canReadFile(
+          AssetFile(
+            id,
+            hidden: id.isHidden(
+              buildStepPlan: _buildStepPlan,
+              buildState: buildState,
+            ),
           ),
         )) {
       return null;

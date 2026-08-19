@@ -13,7 +13,7 @@ import '../build/resolver/asset_ids.dart';
 import '../build_file.dart';
 import '../build_file_layout.dart';
 import '../constants.dart';
-import '../io/asset_path_provider.dart';
+
 import 'build_package.dart';
 import 'build_packages_loader.dart';
 import 'build_paths.dart';
@@ -24,7 +24,7 @@ import 'placeholders.dart';
 final _sdkPackage = BuildPackage(name: r'$sdk', path: sdkPath);
 
 /// The [BuildPackage]s in the build.
-class BuildPackages implements AssetPathProvider, BuildFileLayout {
+class BuildPackages implements BuildFileLayout {
   /// All packages by package name.
   final BuiltMap<String, BuildPackage> packages;
 
@@ -215,11 +215,22 @@ class BuildPackages implements AssetPathProvider, BuildFileLayout {
   @override
   String pathFor(BuildFile file, {bool checkWriteAllowed = false}) {
     if (file is AssetFile) {
-      return pathForAsset(
-        file.id,
-        hide: file.hidden,
-        checkWriteAllowed: checkWriteAllowed,
-      );
+      final id = file.id;
+      if (!packages.containsKey(id.package)) {
+        throw PackageNotFoundException(id.package);
+      }
+      if (checkWriteAllowed) throwIfReadonly(id, hide: file.hidden);
+      if (file.hidden) {
+        final rootPackage = packages[outputRoot]!;
+        return p.join(
+          rootPackage.path,
+          generatedOutputDirectory,
+          id.package,
+          id.platformPath,
+        );
+      }
+      final package = packages[id.package]!;
+      return p.join(package.path, id.platformPath);
     } else if (file is InternalFile) {
       final package = packages[file.package];
       if (package == null) {
@@ -231,35 +242,8 @@ class BuildPackages implements AssetPathProvider, BuildFileLayout {
   }
 
   @override
-  String pathForAsset(
-    AssetId id, {
-    required bool hide,
-    bool checkWriteAllowed = false,
-  }) {
-    if (!packages.containsKey(id.package)) {
-      throw PackageNotFoundException(id.package);
-    }
-    if (checkWriteAllowed) throwIfReadonly(id, hide: hide);
-    if (hide) {
-      final rootPackage = packages[outputRoot]!;
-      return p.join(
-        rootPackage.path,
-        generatedOutputDirectory,
-        id.package,
-        id.platformPath,
-      );
-    }
-    final package = packages[id.package]!;
-    return p.join(package.path, id.platformPath);
-  }
-
-  @override
   BuildFile fromPath(BuildPackage package, String path) =>
       BuildFileLayout.fileFromPath(package, path);
-
-  @override
-  String cachePathFor(String relativePath) =>
-      p.join(packages[outputRoot]!.path, relativePath);
 
   /// Throws if [id] is not allowed to be written or deleted.
   ///

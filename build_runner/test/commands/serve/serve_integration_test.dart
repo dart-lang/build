@@ -8,6 +8,7 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_runner/src/build/build_result.dart';
+import 'package:build_runner/src/build_file.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
@@ -43,8 +44,8 @@ void main() {
         AssetId('example', 'web/large.txt'),
         'large' * 10000,
       );
-    await readerWriter.writeCacheAsBytes(
-      '.dart_tool/package_config.json',
+    await readerWriter.writeFileAsBytes(
+      const InternalFile('a', '.dart_tool/package_config.json'),
       utf8.encode(
         jsonEncode({
           'configVersion': 2,

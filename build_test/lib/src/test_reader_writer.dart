@@ -4,6 +4,8 @@
 import 'dart:typed_data';
 
 import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build_runner/src/internal.dart';
 
 import 'fake_watcher.dart';
 import 'internal_test_reader_writer.dart';
@@ -91,40 +93,42 @@ abstract interface class ReaderWriterTesting {
   Iterable<AssetId> get assetsWritten;
 
   /// Whether [id] exists on the [TestReaderWriter] in-memory filesystem.
-  ///
-  /// [AssetId]s are from the point of view of the filesystem,
-  /// so "hidden" assets are under .dart_tool.
-  /// See also [TestReaderWriter] class documentation and
-  /// [testBuilders] `flattenOutput` parameter.
-  bool exists(AssetId id);
+  bool exists(AssetId id, {bool hidden = false});
 
   /// Writes [id] with [contents] to the [TestReaderWriter] in-memory
   /// filesystem.
-  void writeString(AssetId id, String contents);
+  void writeString(AssetId id, String contents, {bool hidden = false});
 
   /// Writes [id] with [contents] to the [TestReaderWriter] in-memory
   /// filesystem.
-  void writeBytes(AssetId id, List<int> contents);
+  void writeBytes(AssetId id, List<int> contents, {bool hidden = false});
 
   /// Reads [id] from the [TestReaderWriter] in-memory filesystem.
-  ///
-  /// [AssetId]s are from the point of view of the filesystem,
-  /// so "hidden" assets are under .dart_tool.
-  /// See also [TestReaderWriter] class documentation and
-  /// [testBuilders] `flattenOutput` parameter.
-  Uint8List readBytes(AssetId id);
+  Uint8List readBytes(AssetId id, {bool hidden = false});
 
   /// Reads [id] from the [TestReaderWriter] in-memory filesystem.
-  ///
-  /// [AssetId]s are from the point of view of the filesystem,
-  /// so "hidden" assets are under .dart_tool.
-  /// /// See also [TestReaderWriter] class documentation and
-  String readString(AssetId id);
+  String readString(AssetId id, {bool hidden = false});
 
   /// Deletes [id] from the [TestReaderWriter] in-memory filesystem.
-  ///
-  /// [AssetId]s are from the point of view of the filesystem,
-  /// so "hidden" assets are under .dart_tool.
-  /// /// [testBuilders] `flattenOutput` parameter.
-  void delete(AssetId id);
+  void delete(AssetId id, {bool hidden = false});
+
+  /// Whether [file] exists on the [TestReaderWriter] in-memory filesystem.
+  bool existsFile(BuildFile file);
+
+  /// Writes [file] with [contents] to the [TestReaderWriter] in-memory
+  /// filesystem.
+  void writeFileString(BuildFile file, String contents);
+
+  /// Writes [file] with [contents] to the [TestReaderWriter] in-memory
+  /// filesystem.
+  void writeFileBytes(BuildFile file, List<int> contents);
+
+  /// Reads [file] from the [TestReaderWriter] in-memory filesystem.
+  Uint8List readFileBytes(BuildFile file);
+
+  /// Reads [file] from the [TestReaderWriter] in-memory filesystem.
+  String readFileString(BuildFile file);
+
+  /// Deletes [file] from the [TestReaderWriter] in-memory filesystem.
+  void deleteFile(BuildFile file);
 }

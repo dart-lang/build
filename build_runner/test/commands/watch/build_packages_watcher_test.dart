@@ -7,7 +7,7 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
-import 'package:build_runner/src/commands/watch/asset_change.dart';
+import 'package:build_runner/src/commands/watch/build_file_change.dart';
 import 'package:build_runner/src/commands/watch/build_package_watcher.dart';
 import 'package:build_runner/src/commands/watch/build_packages_watcher.dart';
 import 'package:test/test.dart';
@@ -46,8 +46,8 @@ void main() {
       expect(
         watcher.watch(),
         emitsInOrder([
-          AssetChange(AssetId('a', 'lib/a.dart'), ChangeType.ADD),
-          AssetChange(AssetId('b', 'lib/b.dart'), ChangeType.ADD),
+          BuildFileChange(AssetId('a', 'lib/a.dart'), ChangeType.ADD),
+          BuildFileChange(AssetId('b', 'lib/b.dart'), ChangeType.ADD),
         ]),
       );
     });
@@ -74,7 +74,7 @@ void main() {
         },
       );
 
-      final events = <AssetChange>[];
+      final events = <BuildFileChange>[];
       unawaited(watcher.watch().forEach(events.add));
       await watcher.ready;
 
@@ -83,7 +83,9 @@ void main() {
 
       await pumpEventQueue();
 
-      expect(events, [AssetChange(AssetId('b', 'lib/b.dart'), ChangeType.ADD)]);
+      expect(events, [
+        BuildFileChange(AssetId('b', 'lib/b.dart'), ChangeType.ADD),
+      ]);
     });
 
     test('should avoid watchers on pub dependencies', () {
@@ -245,7 +247,7 @@ void main() {
         },
       );
 
-      final events = <AssetChange>[];
+      final events = <BuildFileChange>[];
       unawaited(watcher.watch().forEach(events.add));
       await watcher.ready;
 
@@ -257,8 +259,8 @@ void main() {
       expect(
         events,
         unorderedEquals([
-          AssetChange(AssetId('b', 'lib/b.dart'), ChangeType.ADD),
-          AssetChange(AssetId('a', 'lib/a.dart'), ChangeType.ADD),
+          BuildFileChange(AssetId('b', 'lib/b.dart'), ChangeType.ADD),
+          BuildFileChange(AssetId('a', 'lib/a.dart'), ChangeType.ADD),
         ]),
       );
     });
@@ -268,7 +270,7 @@ void main() {
 class FakeNodeWatcher implements BuildPackageWatcher {
   @override
   final BuildPackage buildPackage;
-  final _events = StreamController<AssetChange>();
+  final _events = StreamController<BuildFileChange>();
 
   FakeNodeWatcher(this.buildPackage);
 
@@ -279,11 +281,13 @@ class FakeNodeWatcher implements BuildPackageWatcher {
   void markReady() => _watcher._readyCompleter.complete();
 
   void emitAdd(String path) {
-    _events.add(AssetChange(AssetId(buildPackage.name, path), ChangeType.ADD));
+    _events.add(
+      BuildFileChange(AssetId(buildPackage.name, path), ChangeType.ADD),
+    );
   }
 
   @override
-  Stream<AssetChange> watch() => _events.stream;
+  Stream<BuildFileChange> watch() => _events.stream;
 }
 
 class _FakeWatcher implements Watcher {

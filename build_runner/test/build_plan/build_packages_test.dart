@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build_runner/src/build_file.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_paths.dart';
@@ -44,9 +45,8 @@ void main() {
 
       test('pathForAsset allows write to output package', () {
         expect(
-          buildPackages.pathForAsset(
-            AssetId('build_runner', 'lib/a.txt'),
-            hide: false,
+          buildPackages.pathFor(
+            AssetFile.source(AssetId('build_runner', 'lib/a.txt')),
             checkWriteAllowed: true,
           ),
           isNotNull,
@@ -55,9 +55,8 @@ void main() {
 
       test('pathForAsset prohibits write to known but non-output package', () {
         expect(
-          () => buildPackages.pathForAsset(
-            AssetId('test', 'lib/a.txt'),
-            hide: false,
+          () => buildPackages.pathFor(
+            AssetFile.source(AssetId('test', 'lib/a.txt')),
             checkWriteAllowed: true,
           ),
           throwsA(isA<InvalidOutputException>()),
@@ -66,9 +65,8 @@ void main() {
 
       test('pathForAsset prohibits access to unknown package', () {
         expect(
-          () => buildPackages.pathForAsset(
-            AssetId('unknown', 'lib/a.txt'),
-            hide: false,
+          () => buildPackages.pathFor(
+            AssetFile.source(AssetId('unknown', 'lib/a.txt')),
           ),
           throwsA(isA<PackageNotFoundException>()),
         );
@@ -76,9 +74,8 @@ void main() {
 
       test('pathForAsset allows write to cache in output package', () {
         expect(
-          buildPackages.pathForAsset(
-            AssetId('build_runner', 'lib/a.txt'),
-            hide: true,
+          buildPackages.pathFor(
+            AssetFile.cache(AssetId('build_runner', 'lib/a.txt')),
             checkWriteAllowed: true,
           ),
           isNotNull,
@@ -88,9 +85,8 @@ void main() {
         'pathForAsset allows write to cache in known but non-output package',
         () {
           expect(
-            () => buildPackages.pathForAsset(
-              AssetId('test', 'lib/a.txt'),
-              hide: true,
+            buildPackages.pathFor(
+              AssetFile.cache(AssetId('test', 'lib/a.txt')),
               checkWriteAllowed: true,
             ),
             isNotNull,
@@ -100,9 +96,8 @@ void main() {
 
       test('pathForAsset prohibits access to cache for unknown package', () {
         expect(
-          () => buildPackages.pathForAsset(
-            AssetId('unknown', 'lib/a.txt'),
-            hide: true,
+          () => buildPackages.pathFor(
+            AssetFile.cache(AssetId('unknown', 'lib/a.txt')),
           ),
           throwsA(isA<PackageNotFoundException>()),
         );

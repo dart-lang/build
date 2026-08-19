@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
@@ -11,8 +10,8 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
+import 'package:build_runner/src/build_file.dart';
 import 'package:build_test/build_test.dart';
-import 'package:build_test/src/internal_test_reader_writer.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -186,9 +185,9 @@ void main() {
         sources,
         readAllSourcesFromFilesystem: true,
         assetReaderChecks: (testReaderWriter) async {
-          final internalWriter = testReaderWriter as InternalTestReaderWriter;
-          assetGraphContent = utf8.decode(
-            await internalWriter.readCacheAsBytes(
+          assetGraphContent = testReaderWriter.testing.readFileString(
+            const InternalFile(
+              'build_test',
               '.dart_tool/build/asset_graph.json',
             ),
           );

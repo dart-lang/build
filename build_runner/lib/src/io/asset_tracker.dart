@@ -14,6 +14,7 @@ import 'package:watcher/watcher.dart';
 
 import '../build/build_state/build_state.dart';
 import '../build/resolver/asset_ids.dart';
+import '../build_file.dart';
 import '../build_plan/build_configs.dart';
 import '../build_plan/build_packages.dart';
 import '../build_plan/build_step_plan.dart';
@@ -169,8 +170,8 @@ class AssetTracker {
             .whereType<AssetId>(),
       );
     }
-    final generatedDirPath = _buildPackages.cachePathFor(
-      generatedOutputDirectory,
+    final generatedDirPath = _buildPackages.pathFor(
+      InternalFile(_buildPackages.outputRoot, generatedOutputDirectory),
     );
     final generatedDir = Directory(generatedDirPath);
     if (!generatedDir.existsSync()) return const Stream.empty();

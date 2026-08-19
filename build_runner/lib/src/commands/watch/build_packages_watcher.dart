@@ -11,7 +11,7 @@ import 'package:path/path.dart' as p;
 import '../../build_plan/build_package.dart';
 import '../../build_plan/build_packages.dart';
 import '../../logging/build_log.dart';
-import 'asset_change.dart';
+import 'build_file_change.dart';
 import 'build_package_watcher.dart';
 
 BuildPackageWatcher _default(BuildPackage buildPackage) =>
@@ -36,16 +36,16 @@ class BuildPackagesWatcher {
   }) : _strategy = watch ?? _default;
 
   /// Returns a stream of records for assets that changed in the build packages.
-  Stream<AssetChange> watch() {
+  Stream<BuildFileChange> watch() {
     assert(!_isWatching);
     _isWatching = true;
     return LazyStream(_watch);
   }
 
-  Stream<AssetChange> _watch() {
+  Stream<BuildFileChange> _watch() {
     final forest = _buildPackageForest();
     final watchers = <BuildPackageWatcher>[];
-    final events = <Stream<AssetChange>>[];
+    final events = <Stream<BuildFileChange>>[];
 
     for (final tree in forest) {
       final watcher = _strategy(tree.package);
@@ -149,7 +149,7 @@ class WatchablePackageTree {
   /// Moves [change] to the deepest matching package in the tree.
   ///
   /// Throws if it's not in the tree.
-  AssetChange moveToDeepestPackage(AssetChange change) {
+  BuildFileChange moveToDeepestPackage(BuildFileChange change) {
     final absolutePath = p.join(package.path, change.path);
     final deepestPackage = deepestPackageForPath(absolutePath);
     if (deepestPackage == null) {
@@ -159,6 +159,6 @@ class WatchablePackageTree {
       return change;
     }
     final relativePath = p.relative(absolutePath, from: deepestPackage.path);
-    return AssetChange.fromPath(deepestPackage, relativePath, change.type);
+    return BuildFileChange.fromPath(deepestPackage, relativePath, change.type);
   }
 }

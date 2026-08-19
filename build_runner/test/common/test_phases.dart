@@ -1,6 +1,7 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -93,7 +94,7 @@ Future<TestBuildersResult> testPhases(
       : resumeFrom.readerWriter;
 
   const pkgConfigPath = '.dart_tool/package_config.json';
-  if (!await readerWriter.canReadCache(pkgConfigPath)) {
+  if (!await readerWriter.canReadFile(const InternalFile('a', pkgConfigPath))) {
     final packageConfig = {
       'configVersion': 2,
       'packages': [
@@ -106,8 +107,8 @@ Future<TestBuildersResult> testPhases(
           },
       ],
     };
-    await readerWriter.writeCacheAsBytes(
-      pkgConfigPath,
+    await readerWriter.writeFileAsBytes(
+      const InternalFile('a', pkgConfigPath),
       utf8.encode(jsonEncode(packageConfig)),
     );
   }

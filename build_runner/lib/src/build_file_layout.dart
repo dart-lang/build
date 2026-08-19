@@ -16,9 +16,6 @@ abstract interface class BuildFileLayout {
   /// Set [checkWriteAllowed] to throw if the file is read only.
   String pathFor(BuildFile file, {bool checkWriteAllowed = false});
 
-  /// Converts [relativePath] within the cache directory to a filesystem path.
-  String cachePathFor(String relativePath);
-
   /// Converts a filesystem [path] within [package] to a [BuildFile].
   BuildFile fromPath(BuildPackage package, String path);
 
