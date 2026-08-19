@@ -6,20 +6,25 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:build/build.dart' show AssetId, PackageNotFoundException;
+import 'package:build/src/asset_id.dart';
+import 'package:build/src/exceptions.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:path/path.dart' as p;
 
 import '../bootstrap/build_process_state.dart';
 import '../bootstrap/compile_type.dart';
 import '../build_plan/build_packages.dart';
-import '../build_plan/phase.dart';
 import 'ansi_buffer.dart';
 import 'build_log_configuration.dart';
 import 'build_log_logger.dart';
 import 'build_log_messages.dart';
 import 'log_display.dart';
 import 'timed_activities.dart';
+
+/// A build phase as viewed by [BuildLog].
+abstract interface class BuildLogPhase {
+  String get displayName;
+}
 
 /// The `build_runner` log.
 ///
@@ -160,7 +165,7 @@ class BuildLog {
   /// Creates a logger that logs to the [BuildLog] stage for [phase] on
   /// [primaryInput].
   BuildLogLogger loggerFor({
-    required InBuildPhase phase,
+    required BuildLogPhase phase,
     required AssetId primaryInput,
     required bool lazy,
   }) => BuildLogLogger(
@@ -252,7 +257,7 @@ class BuildLog {
   }
 
   _PhaseProgress _getProgress({
-    required InBuildPhase phase,
+    required BuildLogPhase phase,
     required bool lazy,
   }) {
     return _phaseProgress.putIfAbsent(
@@ -322,7 +327,7 @@ class BuildLog {
   /// Sets up logging of build phases with the number of primary inputs matching
   /// for each required phase.
   void startPhases(
-    Map<InBuildPhase, int> primaryInputCountsByPhase, {
+    Map<BuildLogPhase, int> primaryInputCountsByPhase, {
     BuildPackages? buildPackages,
   }) {
     _phaseProgress.clear();
@@ -336,7 +341,7 @@ class BuildLog {
 
   /// Logs that a build step is starting.
   void startStep({
-    required InBuildPhase phase,
+    required BuildLogPhase phase,
     required AssetId primaryInput,
     required bool lazy,
   }) {
@@ -352,7 +357,7 @@ class BuildLog {
   }
 
   /// Logs that a build step was not triggered.
-  void stepNotTriggered({required InBuildPhase phase, required bool lazy}) {
+  void stepNotTriggered({required BuildLogPhase phase, required bool lazy}) {
     final progress = _getProgress(phase: phase, lazy: lazy);
     progress.notTriggered++;
     progress.nextInput = null;
@@ -364,7 +369,7 @@ class BuildLog {
   }
 
   /// Logs that a build step has been skipped during an incremental build.
-  void skipStep({required InBuildPhase phase, required bool lazy}) {
+  void skipStep({required BuildLogPhase phase, required bool lazy}) {
     final progress = _getProgress(phase: phase, lazy: lazy);
     progress.skipped++;
     progress.nextInput = null;
@@ -377,7 +382,7 @@ class BuildLog {
 
   /// Logs that a build step has finished.
   void finishStep({
-    required InBuildPhase phase,
+    required BuildLogPhase phase,
     required bool lazy,
     required bool anyOutputs,
     required bool anyChangedOutputs,
@@ -714,7 +719,7 @@ extension _IntExtension on int {
   String renderNamed(String name) => '$this $name${this == 1 ? '' : 's'}';
 }
 
-extension _PhaseExtension on InBuildPhase {
+extension _PhaseExtension on BuildLogPhase {
   String name({required bool lazy}) =>
       lazy ? '$displayName (lazy)' : displayName;
 }

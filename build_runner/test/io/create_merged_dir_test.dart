@@ -12,7 +12,7 @@ import 'package:build_runner/src/build/build_state/build_step_result.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_id.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_result.dart';
 import 'package:build_runner/src/build/builder_filesystem.dart';
-import 'package:build_runner/src/build/resolver/asset_ids.dart';
+import 'package:build_runner/src/build/resolver/asset_ids_hidden.dart';
 import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_directory.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';

@@ -17,7 +17,7 @@ import 'build_state/build_step_id.dart';
 import 'build_state/build_step_result.dart';
 import 'build_state/glob_id.dart';
 import 'library_cycle_graph/phased_value.dart';
-import 'resolver/asset_ids.dart';
+import 'resolver/asset_ids_hidden.dart';
 
 /// The filesystem from the point of view of a build step.
 ///

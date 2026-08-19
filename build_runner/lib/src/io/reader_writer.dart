@@ -5,7 +5,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:build/build.dart';
+import 'package:build/src/asset_id.dart';
+import 'package:build/src/exceptions.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
@@ -21,12 +22,9 @@ import 'filesystem.dart';
 
 /// File operations during a build.
 ///
-/// [AssetReader] and [AssetWriter] are the builder-facing file operations APIs,
-/// and are implemented here so that `TestReaderWriter` can offer them.
-///
 /// Various methods accept `hidden`, which causes assets to be resolved under
 /// `.dart_tool/build/generated` instead of in the source tree.
-class ReaderWriter implements AssetReader, AssetWriter {
+class ReaderWriter {
   final AssetFinder assetFinder;
   final AssetPathProvider assetPathProvider;
   final Filesystem filesystem;
@@ -69,7 +67,6 @@ class ReaderWriter implements AssetReader, AssetWriter {
     );
   }
 
-  @override
   Future<bool> canRead(AssetId id, {bool hidden = false}) {
     return Future.value(
       TimedActivity.read.run(() {
@@ -79,7 +76,6 @@ class ReaderWriter implements AssetReader, AssetWriter {
     );
   }
 
-  @override
   Future<List<int>> readAsBytes(AssetId id, {bool hidden = false}) {
     return Future.value(
       TimedActivity.read.run(() {
@@ -92,7 +88,6 @@ class ReaderWriter implements AssetReader, AssetWriter {
     );
   }
 
-  @override
   Future<String> readAsString(
     AssetId id, {
     Encoding encoding = utf8,
@@ -111,7 +106,6 @@ class ReaderWriter implements AssetReader, AssetWriter {
 
   // [AssetWriter] methods.
 
-  @override
   Future<void> writeAsBytes(
     AssetId id,
     List<int> bytes, {
@@ -124,7 +118,6 @@ class ReaderWriter implements AssetReader, AssetWriter {
     return Future.value();
   }
 
-  @override
   Future<void> writeAsString(
     AssetId id,
     String contents, {
@@ -138,7 +131,6 @@ class ReaderWriter implements AssetReader, AssetWriter {
     return Future.value();
   }
 
-  @override
   Future<Digest> digest(AssetId id, {bool hidden = false}) async {
     final digestSink = AccumulatorSink<Digest>();
     md5.startChunkedConversion(digestSink)
@@ -165,7 +157,6 @@ class ReaderWriter implements AssetReader, AssetWriter {
   }
 
   // This is only for builders, so only `BuildStep` needs to implement it.
-  @override
   Stream<AssetId> findAssets(Glob glob) => throw UnimplementedError();
 }
 

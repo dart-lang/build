@@ -9,9 +9,9 @@ import 'package:args/command_runner.dart';
 import 'package:build_daemon/constants.dart';
 import 'package:built_collection/built_collection.dart';
 
+import 'bootstrap/build_process_state.dart';
 import 'bootstrap/compile_type.dart';
 import 'build_plan/output_strategy.dart';
-import 'internal.dart';
 
 enum CommandType {
   build,
