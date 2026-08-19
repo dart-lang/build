@@ -9,6 +9,7 @@ import 'package:build_runner/src/build/build_state/asset_graph_json.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/build_state/build_step_result.dart';
 import 'package:build_runner/src/build/library_cycle_graph/phased_asset_deps.dart';
+import 'package:build_runner/src/build_file.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
@@ -78,8 +79,8 @@ void main() {
       BuildState buildState,
       BuildPlan buildPlan,
     ) async {
-      await readerWriter.writeCacheAsBytes(
-        assetGraphJsonPath,
+      await readerWriter.writeFileAsBytes(
+        InternalFile('a', assetGraphJsonPath),
         AssetGraphJson.serialize(
           buildPlanDigest: buildPlan.buildSpec.buildPlanDigest,
           buildState: buildState,

@@ -14,6 +14,7 @@ import 'package:build_config/build_config.dart'
 import 'package:build_runner/src/build/build_result.dart';
 import 'package:build_runner/src/build/build_state/asset_graph_json.dart';
 import 'package:build_runner/src/build/build_state/build_step_id.dart';
+import 'package:build_runner/src/build_file.dart';
 import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_directory.dart';
 import 'package:build_runner/src/build_plan/build_filter.dart';
@@ -556,11 +557,15 @@ targets:
         );
 
         expect(
-          await result.readerWriter.canReadCache(assetGraphJsonPath),
+          await result.readerWriter.canReadFile(
+            InternalFile('a', assetGraphJsonPath),
+          ),
           isTrue,
         );
         final cachedBuildState = AssetGraphJson.deserialize(
-          await result.readerWriter.readCacheAsBytes(assetGraphJsonPath),
+          result.readerWriter.testing.readFileBytes(
+            InternalFile('a', assetGraphJsonPath),
+          ),
         )!.buildState;
         expect(
           cachedBuildState.sources,
@@ -1210,8 +1215,8 @@ targets:
     );
 
     final cachedBuildState = AssetGraphJson.deserialize(
-      await (result.readerWriter as InternalTestReaderWriter).readCacheAsBytes(
-        assetGraphJsonPath,
+      result.readerWriter.testing.readFileBytes(
+        InternalFile('a', assetGraphJsonPath),
       ),
     )!.buildState;
     final outputId = AssetId('a', 'lib/a.txt.out');
@@ -1267,8 +1272,8 @@ targets:
     );
 
     // Delete the `asset_graph.json` file!
-    await (result.readerWriter as InternalTestReaderWriter).deleteCache(
-      assetGraphJsonPath,
+    result.readerWriter.testing.deleteFile(
+      InternalFile('a', assetGraphJsonPath),
     );
 
     // Second run, should have no extra outputs.
@@ -1485,7 +1490,9 @@ targets:
 
       /// Should be deleted using the writer, and converted to missingSource.
       final newBuildState = AssetGraphJson.deserialize(
-        await result.readerWriter.readCacheAsBytes(assetGraphJsonPath),
+        result.readerWriter.testing.readFileBytes(
+          InternalFile('a', assetGraphJsonPath),
+        ),
       )!.buildState;
       final anId = makeAssetId('a|lib/a.txt');
       final aCopyId = makeAssetId('a|lib/a.txt.copy');
@@ -1592,7 +1599,9 @@ targets:
 
       // Read cached build state and validate.
       final buildState = AssetGraphJson.deserialize(
-        await result.readerWriter.readCacheAsBytes(assetGraphJsonPath),
+        result.readerWriter.testing.readFileBytes(
+          InternalFile('a', assetGraphJsonPath),
+        ),
       )!.buildState;
       final fileAId = makeAssetId('a|lib/file.a');
       final fileCId = makeAssetId('a|lib/file.c');
@@ -1828,7 +1837,9 @@ targets:
       );
 
       final finalBuildState = AssetGraphJson.deserialize(
-        await result.readerWriter.readCacheAsBytes(assetGraphJsonPath),
+        result.readerWriter.testing.readFileBytes(
+          InternalFile('a', assetGraphJsonPath),
+        ),
       )!.buildState;
 
       expect(

@@ -11,8 +11,9 @@ import 'asset_change.dart';
 Set<AssetId> collectChanges(List<List<AssetChange>> changes) {
   final result = <AssetId>{};
   for (final change in changes.expand((l) => l)) {
-    if (change.assetFile != null) {
-      result.add(change.id);
+    final id = change.id;
+    if (id != null) {
+      result.add(id);
     }
   }
   return result;

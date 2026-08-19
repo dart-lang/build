@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:async/async.dart';
+import 'package:build_runner/src/build_file.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
@@ -38,8 +39,8 @@ void main() {
       readerWriter = InternalTestReaderWriter(
         outputRootPackage: buildPackages.outputRoot,
       );
-      await readerWriter.writeCacheAsBytes(
-        '.dart_tool/package_config.json',
+      await readerWriter.writeFileAsBytes(
+        const InternalFile('a', '.dart_tool/package_config.json'),
         utf8.encode(
           jsonEncode({
             'configVersion': 2,

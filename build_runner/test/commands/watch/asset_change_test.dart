@@ -41,8 +41,8 @@ void main() {
       final event = WatchEvent(ChangeType.ADD, barFile);
       final change = AssetChange.fromEvent(nodeBar, event);
 
-      expect(change.id.package, 'bar');
-      expect(change.id.path, p.join('lib', 'bar.dart'));
+      expect(change.id!.package, 'bar');
+      expect(change.id!.path, p.join('lib', 'bar.dart'));
     });
 
     test('should normalize absolute paths to relative', () {
@@ -53,8 +53,8 @@ void main() {
       final event = WatchEvent(ChangeType.ADD, barFile);
       final change = AssetChange.fromEvent(nodeBar, event);
 
-      expect(change.id.package, 'bar');
-      expect(change.id.path, p.join('lib', 'bar.dart'));
+      expect(change.id!.package, 'bar');
+      expect(change.id!.path, p.join('lib', 'bar.dart'));
     });
   });
 }

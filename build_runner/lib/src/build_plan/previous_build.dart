@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:typed_data';
+
 import 'package:build/build.dart' hide Builder;
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
@@ -9,6 +11,7 @@ import 'package:built_value/built_value.dart';
 import '../build/build_state/asset_graph_json.dart';
 import '../build/build_state/build_state.dart';
 import '../build/library_cycle_graph/phased_asset_deps.dart';
+import '../build_file.dart';
 import '../constants.dart';
 
 import 'build_spec.dart';
@@ -57,9 +60,13 @@ abstract class PreviousBuild
     final incompatibleBuildOutputsToDelete = <AssetId>{};
     PhasedAssetDeps? previousPhasedAssetDeps;
 
-    if (await readerWriter.canReadCache(assetGraphJsonPath)) {
+    final assetGraphFile = InternalFile(
+      buildPackages.outputRoot,
+      assetGraphJsonPath,
+    );
+    if (await readerWriter.canReadFile(assetGraphFile)) {
       final assetGraphJson = AssetGraphJson.deserialize(
-        await readerWriter.readCacheAsBytes(assetGraphJsonPath),
+        Uint8List.fromList(await readerWriter.readFileAsBytes(assetGraphFile)),
       );
       if (assetGraphJson != null) {
         previousBuildState = assetGraphJson.buildState;

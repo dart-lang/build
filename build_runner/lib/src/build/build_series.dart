@@ -49,7 +49,7 @@ class BuildSeries {
 
   /// Deletes that are part of build output, so the resulting file watch events
   /// can be ignored.
-  final Set<AssetId> _expectedDeletes = {};
+  final Set<AssetFile> _expectedDeletes = {};
 
   /// Whether the next build is the first build.
   bool firstBuild = true;
@@ -94,7 +94,7 @@ class BuildSeries {
       // that do deletes and writes.
       if (_outputStrategy == .overwrite || _outputStrategy == .keep) {
         // Ignore deletes done by `build_runner`.
-        if (change.type == .REMOVE && _expectedDeletes.remove(id)) {
+        if (change.type == .REMOVE && _expectedDeletes.remove(assetFile)) {
           continue;
         }
 
@@ -312,8 +312,11 @@ class BuildSeries {
   /// Serializes and writes the updated `asset_graph.json`.
   Future<void> _writeBuildOutput(BuildResult result) async {
     if (_buildPlan.buildInputs.cleanBuild) {
-      await _buildPlan.readerWriter.deleteCacheDirectory(
-        generatedOutputDirectory,
+      await _buildPlan.readerWriter.deleteDirectoryFile(
+        InternalFile(
+          _buildPlan.buildSpec.buildPackages.outputRoot,
+          generatedOutputDirectory,
+        ),
       );
     }
 
@@ -332,11 +335,8 @@ class BuildSeries {
       );
     }
     for (final toDelete in _computeDeletes(result)) {
-      _expectedDeletes.add(toDelete.id);
-      await _buildPlan.readerWriter.delete(
-        toDelete.id,
-        hidden: toDelete.hidden,
-      );
+      _expectedDeletes.add(toDelete);
+      await _buildPlan.readerWriter.deleteFile(toDelete);
     }
 
     final assetGraphContent = AssetContent.bytes(
@@ -346,8 +346,11 @@ class BuildSeries {
         phasedAssetDeps: result.phasedAssetDeps,
       ),
     );
-    await _buildPlan.readerWriter.writeCacheAsBytes(
-      assetGraphJsonPath,
+    await _buildPlan.readerWriter.writeFileAsBytes(
+      InternalFile(
+        _buildPlan.buildSpec.buildPackages.outputRoot,
+        assetGraphJsonPath,
+      ),
       assetGraphContent.bytes,
     );
   }

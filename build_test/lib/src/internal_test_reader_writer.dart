@@ -45,9 +45,7 @@ class InternalTestReaderWriter extends ReaderWriter
       assetsRead: {},
       assetsWritten: {},
       assetFinder: InMemoryAssetFinder(filesystem),
-      assetPathProvider: InMemoryAssetPathProvider(
-        outputRootPackage ?? 'unset',
-      ),
+      buildFileLayout: InMemoryBuildFileLayout(outputRootPackage ?? 'unset'),
       buildCachePackage: outputRootPackage ?? 'unset',
       filesystem: filesystem,
       onCanReadController: StreamController(),
@@ -59,7 +57,7 @@ class InternalTestReaderWriter extends ReaderWriter
     required this.assetsRead,
     required this.assetsWritten,
     required super.assetFinder,
-    required super.assetPathProvider,
+    required super.buildFileLayout,
     required this.buildCachePackage,
     required super.filesystem,
     required this.onCanReadController,
@@ -73,7 +71,7 @@ class InternalTestReaderWriter extends ReaderWriter
         assetsRead: assetsRead,
         assetsWritten: assetsWritten,
         assetFinder: assetFinder,
-        assetPathProvider: assetPathProvider,
+        buildFileLayout: buildFileLayout,
         buildCachePackage: buildCachePackage,
         filesystem: filesystem,
         onCanReadController: onCanReadController,
@@ -114,59 +112,75 @@ class InternalTestReaderWriter extends ReaderWriter
   }
 
   @override
-  Future writeAsBytes(
-    AssetId id,
-    List<int> bytes, {
-    bool hidden = false,
-  }) async {
-    assetsWritten.add(id);
-    final type = testing.exists(id) ? ChangeType.MODIFY : ChangeType.ADD;
-    await super.writeAsBytes(id, bytes, hidden: hidden);
+  Future<void> writeFileAsBytes(BuildFile file, List<int> bytes) async {
+    if (file is AssetFile) {
+      assetsWritten.add(file.id);
+    }
+    final type = testing.existsFile(file) ? ChangeType.MODIFY : ChangeType.ADD;
+    await super.writeFileAsBytes(file, bytes);
+    final pkg = file is AssetFile
+        ? file.id.package
+        : (file as InternalFile).package;
+    final path = file is AssetFile ? file.id.path : (file as InternalFile).path;
     FakeWatcher.notifyWatchers(
-      WatchEvent(type, p.absolute(id.package, p.fromUri(id.path))),
+      WatchEvent(type, p.absolute(pkg, p.fromUri(path))),
     );
   }
 
   @override
-  Future writeAsString(
-    AssetId id,
+  Future<void> writeFileAsString(
+    BuildFile file,
     String contents, {
     Encoding encoding = utf8,
-    bool hidden = false,
   }) async {
-    assetsWritten.add(id);
-    final type = testing.exists(id) ? ChangeType.MODIFY : ChangeType.ADD;
-    await super.writeAsString(id, contents, encoding: encoding, hidden: hidden);
+    if (file is AssetFile) {
+      assetsWritten.add(file.id);
+    }
+    final type = testing.existsFile(file) ? ChangeType.MODIFY : ChangeType.ADD;
+    await super.writeFileAsString(file, contents, encoding: encoding);
+    final pkg = file is AssetFile
+        ? file.id.package
+        : (file as InternalFile).package;
+    final path = file is AssetFile ? file.id.path : (file as InternalFile).path;
     FakeWatcher.notifyWatchers(
-      WatchEvent(type, p.absolute(id.package, p.fromUri(id.path))),
+      WatchEvent(type, p.absolute(pkg, p.fromUri(path))),
     );
   }
 
   @override
-  Future<void> delete(AssetId id, {bool hidden = false}) {
+  Future<void> deleteFile(BuildFile file) {
+    final pkg = file is AssetFile
+        ? file.id.package
+        : (file as InternalFile).package;
+    final path = file is AssetFile ? file.id.path : (file as InternalFile).path;
     FakeWatcher.notifyWatchers(
-      WatchEvent(ChangeType.REMOVE, p.absolute(id.package, p.fromUri(id.path))),
+      WatchEvent(ChangeType.REMOVE, p.absolute(pkg, p.fromUri(path))),
     );
-    return super.delete(id, hidden: hidden);
+    return super.deleteFile(file);
   }
 }
 
-class InMemoryAssetPathProvider implements AssetPathProvider {
+class InMemoryBuildFileLayout implements BuildFileLayout {
   final String outputRootPackage;
 
-  InMemoryAssetPathProvider(this.outputRootPackage);
+  InMemoryBuildFileLayout(this.outputRootPackage);
 
   @override
-  String pathForAsset(
-    AssetId id, {
-    required bool hide,
-    bool checkWriteAllowed = false,
-  }) {
-    if (hide) {
-      return '$outputRootPackage|$generatedOutputDirectory/${id.package}/${id.path}';
+  String pathFor(BuildFile file, {bool checkWriteAllowed = false}) {
+    if (file is AssetFile) {
+      if (file.hidden) {
+        return '$outputRootPackage|$generatedOutputDirectory/${file.id.package}/${file.id.path}';
+      }
+      return file.id.toString();
+    } else if (file is InternalFile) {
+      return '${file.package}|${file.path}';
     }
-    return id.toString();
+    throw ArgumentError('Unknown BuildFile type: $file');
   }
+
+  @override
+  BuildFile fromPath(BuildPackage package, String path) =>
+      BuildFileLayout.fileFromPath(package, path);
 
   @override
   String cachePathFor(String relativePath) =>
@@ -222,16 +236,19 @@ class _ReaderWriterTestingImpl implements ReaderWriterTesting {
           .map(AssetId.parse);
 
   @override
-  Iterable<AssetId> get hiddenAssets =>
-      (_readerWriter.filesystem as InMemoryFilesystem).filePaths
-          .where((path) => path.contains('.dart_tool/build/generated/'))
-          .map((path) {
-            final pipeIndex = path.indexOf('|');
-            final package = path.substring(0, pipeIndex);
-            final prefix = '$package|.dart_tool/build/generated/$package/';
-            final relPath = path.substring(prefix.length);
-            return AssetId(package, relPath);
-          });
+  Iterable<AssetId> get hiddenAssets {
+    const prefix = '.dart_tool/build/generated/';
+    return (_readerWriter.filesystem as InMemoryFilesystem).filePaths
+        .where((path) => path.contains(prefix))
+        .map((path) {
+          final pipeIndex = path.indexOf('|');
+          final afterPrefix = path.substring(pipeIndex + 1 + prefix.length);
+          final slashIndex = afterPrefix.indexOf('/');
+          final package = afterPrefix.substring(0, slashIndex);
+          final relPath = afterPrefix.substring(slashIndex + 1);
+          return AssetId(package, relPath);
+        });
+  }
 
   @override
   Iterable<AssetId> get inputsTracked => InputTracker
@@ -278,36 +295,54 @@ class _ReaderWriterTestingImpl implements ReaderWriterTesting {
   Iterable<AssetId> get assetsWritten => _readerWriter.assetsWritten;
 
   @override
-  bool exists(AssetId id) => _readerWriter.filesystem.existsSync(
-    _readerWriter.assetPathProvider.pathForAsset(id, hide: false),
+  bool exists(AssetId id, {bool hidden = false}) =>
+      existsFile(AssetFile(id, hidden: hidden));
+
+  @override
+  void writeString(AssetId id, String contents, {bool hidden = false}) =>
+      writeFileString(AssetFile(id, hidden: hidden), contents);
+
+  @override
+  void writeBytes(AssetId id, List<int> contents, {bool hidden = false}) =>
+      writeFileBytes(AssetFile(id, hidden: hidden), contents);
+
+  @override
+  Uint8List readBytes(AssetId id, {bool hidden = false}) =>
+      readFileBytes(AssetFile(id, hidden: hidden));
+
+  @override
+  String readString(AssetId id, {bool hidden = false}) =>
+      readFileString(AssetFile(id, hidden: hidden));
+
+  @override
+  void delete(AssetId id, {bool hidden = false}) =>
+      deleteFile(AssetFile(id, hidden: hidden));
+
+  @override
+  bool existsFile(BuildFile file) => _readerWriter.filesystem.existsSync(
+    _readerWriter.buildFileLayout.pathFor(file),
   );
 
   @override
-  void writeString(AssetId id, String contents) =>
-      _readerWriter.filesystem.writeAsStringSync(
-        _readerWriter.assetPathProvider.pathForAsset(id, hide: false),
-        contents,
-      );
+  void writeFileString(BuildFile file, String contents) => _readerWriter
+      .filesystem
+      .writeAsStringSync(_readerWriter.buildFileLayout.pathFor(file), contents);
 
   @override
-  void writeBytes(AssetId id, List<int> contents) =>
-      _readerWriter.filesystem.writeAsBytesSync(
-        _readerWriter.assetPathProvider.pathForAsset(id, hide: false),
-        contents,
-      );
+  void writeFileBytes(BuildFile file, List<int> contents) => _readerWriter
+      .filesystem
+      .writeAsBytesSync(_readerWriter.buildFileLayout.pathFor(file), contents);
 
   @override
-  Uint8List readBytes(AssetId id) => _readerWriter.filesystem.readAsBytesSync(
-    _readerWriter.assetPathProvider.pathForAsset(id, hide: false),
-  );
+  Uint8List readFileBytes(BuildFile file) => _readerWriter.filesystem
+      .readAsBytesSync(_readerWriter.buildFileLayout.pathFor(file));
 
   @override
-  String readString(AssetId id) => _readerWriter.filesystem.readAsStringSync(
-    _readerWriter.assetPathProvider.pathForAsset(id, hide: false),
-  );
+  String readFileString(BuildFile file) => _readerWriter.filesystem
+      .readAsStringSync(_readerWriter.buildFileLayout.pathFor(file));
 
   @override
-  void delete(AssetId id) => _readerWriter.filesystem.deleteSync(
-    _readerWriter.assetPathProvider.pathForAsset(id, hide: false),
+  void deleteFile(BuildFile file) => _readerWriter.filesystem.deleteSync(
+    _readerWriter.buildFileLayout.pathFor(file),
   );
 }

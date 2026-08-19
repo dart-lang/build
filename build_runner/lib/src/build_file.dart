@@ -5,12 +5,21 @@
 import 'package:build/build.dart';
 
 /// Base interface for all files `build_runner` interacts with.
-abstract interface class BuildFile {}
+abstract interface class BuildFile {
+  String get package;
+  String get path;
+}
 
 /// An [AssetId] and its location, either in the visible source tree or in the
 /// hidden build cache.
 class AssetFile implements BuildFile {
   final AssetId id;
+
+  @override
+  String get package => id.package;
+
+  @override
+  String get path => id.path;
 
   /// Whether the asset is in the hidden build cache instead of the source tree.
   final bool hidden;
@@ -37,7 +46,9 @@ class AssetFile implements BuildFile {
 /// An internal non-asset file under `.dart_tool`, such as
 /// `.dart_tool/package_config.json` or `.dart_tool/build/asset_graph.json`.
 class InternalFile implements BuildFile {
+  @override
   final String package;
+  @override
   final String path;
 
   const InternalFile(this.package, this.path);

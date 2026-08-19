@@ -37,9 +37,7 @@ class AssetChange {
 
   AssetFile? get assetFile => file is AssetFile ? file as AssetFile : null;
 
-  AssetId get id =>
-      assetFile?.id ??
-      (throw StateError('Change to $path has no associated AssetId.'));
+  AssetId? get id => assetFile?.id;
 
   @override
   int get hashCode => file.hashCode ^ path.hashCode ^ type.hashCode;

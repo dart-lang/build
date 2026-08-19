@@ -6,7 +6,6 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:build_test/src/internal_test_reader_writer.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
@@ -500,13 +499,18 @@ import 'package:glob/glob.dart';
       {'a|a.txt': ''},
       outputs: {'a|a.txt.copy': ''},
     );
-    final readerWriter = result.readerWriter as InternalTestReaderWriter;
     expect(
-      await readerWriter.canRead(AssetId('a', 'a.txt.copy'), hidden: true),
+      result.readerWriter.testing.exists(
+        AssetId('a', 'a.txt.copy'),
+        hidden: true,
+      ),
       true,
     );
     expect(
-      await readerWriter.canRead(AssetId('a', 'a.txt.copy'), hidden: false),
+      result.readerWriter.testing.exists(
+        AssetId('a', 'a.txt.copy'),
+        hidden: false,
+      ),
       false,
     );
   });

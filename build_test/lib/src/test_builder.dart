@@ -75,34 +75,16 @@ void checkOutputs(
       );
       modifiableActualAssets.remove(assetId);
 
-      final internalWriter = writer as InternalTestReaderWriter;
-      final normalPath = internalWriter.assetPathProvider.pathForAsset(
-        assetId,
-        hide: false,
-      );
-      final hiddenPath = internalWriter.assetPathProvider.pathForAsset(
-        assetId,
-        hide: true,
-      );
       final mappedId = mapAssetIds(assetId);
-      final mappedNormalPath = internalWriter.assetPathProvider.pathForAsset(
-        mappedId,
-        hide: false,
-      );
-      final mappedHiddenPath = internalWriter.assetPathProvider.pathForAsset(
-        mappedId,
-        hide: true,
-      );
-
       List<int> actual;
-      if (internalWriter.filesystem.existsSync(normalPath)) {
-        actual = internalWriter.filesystem.readAsBytesSync(normalPath);
-      } else if (internalWriter.filesystem.existsSync(hiddenPath)) {
-        actual = internalWriter.filesystem.readAsBytesSync(hiddenPath);
-      } else if (internalWriter.filesystem.existsSync(mappedNormalPath)) {
-        actual = internalWriter.filesystem.readAsBytesSync(mappedNormalPath);
-      } else if (internalWriter.filesystem.existsSync(mappedHiddenPath)) {
-        actual = internalWriter.filesystem.readAsBytesSync(mappedHiddenPath);
+      if (writer.testing.exists(assetId)) {
+        actual = writer.testing.readBytes(assetId);
+      } else if (writer.testing.exists(assetId, hidden: true)) {
+        actual = writer.testing.readBytes(assetId, hidden: true);
+      } else if (writer.testing.exists(mappedId)) {
+        actual = writer.testing.readBytes(mappedId);
+      } else if (writer.testing.exists(mappedId, hidden: true)) {
+        actual = writer.testing.readBytes(mappedId, hidden: true);
       } else {
         throw StateError(
           'Internal error: "$assetId" was recorded as output, but the file '
@@ -382,7 +364,9 @@ Future<TestBuilderResult> testBuilderFactories(
   }
   rootPackage ??= allPackages.first;
 
-  var internalReaderWriter = readerWriter as InternalTestReaderWriter?;
+  var internalReaderWriter = readerWriter is InternalTestReaderWriter
+      ? readerWriter
+      : null;
   if (internalReaderWriter == null) {
     internalReaderWriter = InternalTestReaderWriter(
       outputRootPackage: rootPackage,
@@ -395,17 +379,35 @@ Future<TestBuilderResult> testBuilderFactories(
   }
   readerWriter = internalReaderWriter;
 
+  // Build a `buildPackages` based on [sourceAssets].
+  final otherPackages = allPackages.toSet()..remove(rootPackage);
+  final rootNode = BuildPackage(
+    name: rootPackage,
+    path: '/$rootPackage',
+    watch: true,
+    isOutput: true,
+    dependencies: otherPackages,
+  );
+  final buildPackages = BuildPackages.singlePackageBuild(rootPackage, [
+    rootNode,
+    for (final otherPackage in otherPackages)
+      BuildPackage(name: otherPackage, path: '/$otherPackage', watch: true),
+  ]);
+
   sourceAssets.forEach((serializedId, contents) {
     if (serializedId.contains('.dart_tool/')) {
       final pipeIndex = serializedId.indexOf('|');
-      final relPath = serializedId.substring(pipeIndex + 1);
-      final filePath = internalReaderWriter!.assetPathProvider.cachePathFor(
-        relPath,
-      );
+      final pkg = pipeIndex == -1
+          ? rootPackage!
+          : serializedId.substring(0, pipeIndex);
+      final relPath = pipeIndex == -1
+          ? serializedId
+          : serializedId.substring(pipeIndex + 1);
+      final file = InternalFile(pkg, relPath);
       if (contents is String) {
-        internalReaderWriter.filesystem.writeAsStringSync(filePath, contents);
+        readerWriter!.testing.writeFileString(file, contents);
       } else if (contents is List<int>) {
-        internalReaderWriter.filesystem.writeAsBytesSync(filePath, contents);
+        readerWriter!.testing.writeFileBytes(file, contents);
       }
     } else {
       final id = makeAssetId(serializedId);
@@ -427,21 +429,6 @@ Future<TestBuilderResult> testBuilderFactories(
   resolvers ??= packageConfig == null && enabledExperiments.isEmpty
       ? _defaultResolvers
       : ResolversImpl.custom(packageConfig: packageConfig);
-
-  // Build a `buildPackages` based on [sourceAssets].
-  final otherPackages = allPackages.toSet()..remove(rootPackage);
-  final rootNode = BuildPackage(
-    name: rootPackage,
-    path: '/$rootPackage',
-    watch: true,
-    isOutput: true,
-    dependencies: otherPackages,
-  );
-  final buildPackages = BuildPackages.singlePackageBuild(rootPackage, [
-    rootNode,
-    for (final otherPackage in otherPackages)
-      BuildPackage(name: otherPackage, path: '/$otherPackage', watch: true),
-  ]);
 
   String builderName(Object builder) {
     final result = builder.toString();
