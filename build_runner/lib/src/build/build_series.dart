@@ -110,7 +110,7 @@ class BuildSeries {
                 change.type == ChangeType.MODIFY) &&
             _buildPlan.buildStepPlan.isDeclaredOutput(id)) {
           final expectedContent = _buildPlan.previousBuild.buildState
-              ?.contentOf(id: id, buildStepPlan: _buildPlan.buildStepPlan);
+              ?.contentAt(assetFile, buildStepPlan: _buildPlan.buildStepPlan);
           if (expectedContent != null) {
             try {
               final bytes = await _buildPlan.readerWriter.readFileAsBytes(
@@ -160,8 +160,8 @@ class BuildSeries {
       if (!_buildPlan.buildSpec.buildOptions.anyMergedOutputDirectory &&
           !(_buildPlan.previousBuild.buildState?.isMissingSource(id) ??
               false) &&
-          _buildPlan.previousBuild.buildState?.contentOf(
-                id: id,
+          _buildPlan.previousBuild.buildState?.contentAt(
+                assetFile,
                 buildStepPlan: _buildPlan.buildStepPlan,
               ) ==
               null) {
@@ -330,17 +330,19 @@ class BuildSeries {
     }
 
     for (final output in result.outputs) {
-      final content = result.buildState!.contentOf(
-        id: output,
+      final hidden = output.isHidden(
+        buildStepPlan: _buildPlan.buildStepPlan,
+        buildState: result.buildState!,
+      );
+      final file = AssetFile(output, hidden: hidden);
+      final content = result.buildState!.contentAt(
+        file,
         buildStepPlan: _buildPlan.buildStepPlan,
       )!;
       await _buildPlan.readerWriter.writeAsBytes(
         output,
         content.bytes,
-        hidden: output.isHidden(
-          buildStepPlan: _buildPlan.buildStepPlan,
-          buildState: result.buildState!,
-        ),
+        hidden: hidden,
       );
     }
     for (final toDelete in _computeDeletes(result)) {
@@ -457,8 +459,9 @@ class BuildSeries {
       );
       if (hidden) continue;
 
-      final expectedContent = result.buildState!.contentOf(
-        id: output,
+      final file = AssetFile(output, hidden: false);
+      final expectedContent = result.buildState!.contentAt(
+        file,
         buildStepPlan: _buildPlan.buildStepPlan,
       )!;
       final exists = await _buildPlan.readerWriter.canRead(output);

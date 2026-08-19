@@ -123,19 +123,20 @@ class AssetTracker {
           : inputSources.contains(id);
     });
     for (final id in preExistingOutputs) {
-      final originalContent = buildState.contentOf(
-        buildStepPlan: buildStepPlan,
-        id: id,
-      );
-      if (originalContent == null) continue;
-
       final hidden = id.isHidden(
         buildStepPlan: buildStepPlan,
         buildState: buildState,
       );
+      final file = AssetFile(id, hidden: hidden);
+      final originalContent = buildState.contentAt(
+        file,
+        buildStepPlan: buildStepPlan,
+      );
+      if (originalContent == null) continue;
+
       final currentDigest = await _readerWriter.digest(id, hidden: hidden);
       if (currentDigest != originalContent.digest) {
-        updates[AssetFile(id, hidden: hidden)] = ChangeType.MODIFY;
+        updates[file] = ChangeType.MODIFY;
       }
     }
     return updates;

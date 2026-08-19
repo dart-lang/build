@@ -4,9 +4,12 @@
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
+import 'package:build_runner/src/build/asset_content.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/build_state/build_step_id.dart';
+import 'package:build_runner/src/build/build_state/build_step_result.dart';
 import 'package:build_runner/src/build/build_state/exceptions.dart';
+import 'package:build_runner/src/build_file.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/build_step_plan.dart';
 import 'package:build_runner/src/build_plan/phase.dart';
@@ -97,6 +100,74 @@ void main() {
         expect(
           buildStepPlan.stepForDeclaredOutput(primaryOutputId).primaryInput,
           primaryInputId,
+        );
+      });
+
+      test('contentAt resolves content based on file location', () {
+        final sourceContent = AssetContent.string('source content');
+        final outputContent = AssetContent.string('hidden output content');
+        buildState.updateSourceContent(primaryInputId, sourceContent);
+
+        final buildStepId = BuildStepId(
+          primaryInput: primaryInputId,
+          phaseNumber: 0,
+        );
+        buildState.updateBuildStepResult(
+          buildStepId,
+          BuildStepResult((b) {
+            b.isHidden = true;
+            b.outputs[primaryOutputId] = outputContent;
+          }),
+        );
+
+        expect(
+          buildState.contentAt(AssetFile.source(primaryInputId)),
+          sourceContent,
+        );
+        expect(buildState.contentAt(AssetFile.cache(primaryInputId)), isNull);
+
+        expect(
+          buildState.contentAt(
+            AssetFile.cache(primaryOutputId),
+            buildStepPlan: buildStepPlan,
+          ),
+          outputContent,
+        );
+        expect(
+          buildState.contentAt(
+            AssetFile.source(primaryOutputId),
+            buildStepPlan: buildStepPlan,
+          ),
+          isNull,
+        );
+
+        // When a source file is created with the same ID as a cache output
+        buildState.addSourceForTest(primaryOutputId);
+        final displacedSourceContent = AssetContent.string('displaced source');
+        buildState.updateSourceContent(primaryOutputId, displacedSourceContent);
+
+        expect(
+          buildState.contentAt(
+            AssetFile.source(primaryOutputId),
+            buildStepPlan: buildStepPlan,
+          ),
+          displacedSourceContent,
+        );
+        expect(
+          buildState.contentAt(
+            AssetFile.cache(primaryOutputId),
+            buildStepPlan: buildStepPlan,
+          ),
+          outputContent,
+        );
+
+        // contentOf prioritizes source content when the ID is a source
+        expect(
+          buildState.contentOf(
+            id: primaryOutputId,
+            buildStepPlan: buildStepPlan,
+          ),
+          displacedSourceContent,
         );
       });
 

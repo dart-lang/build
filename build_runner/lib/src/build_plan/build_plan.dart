@@ -305,10 +305,12 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
               ),
             );
       final oldExistedHere = oldExisted && oldFile == file;
-      final oldContent = previousBuildState.contentOf(
-        id: id,
-        buildStepPlan: previousBuildStepPlan,
-      );
+      final oldContent = oldFile == null
+          ? null
+          : previousBuildState.contentAt(
+              oldFile,
+              buildStepPlan: previousBuildStepPlan,
+            );
       var exists = false;
       AssetContent? newContent;
 

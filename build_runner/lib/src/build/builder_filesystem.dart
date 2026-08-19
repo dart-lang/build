@@ -6,6 +6,7 @@ import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 
 import '../bootstrap/processes.dart';
+import '../build_file.dart';
 import '../build_plan/build_configs.dart';
 import '../build_plan/build_packages.dart';
 import '../build_plan/build_step_plan.dart';
@@ -148,8 +149,13 @@ class BuilderFilesystem {
   /// If it hasn't yet been read it will be read from the filesystem and stored
   /// in memory.
   Future<AssetContent> contentOf(AssetId id) async {
-    final maybeResult = buildState.contentOf(
-      id: id,
+    final hidden = id.isHidden(
+      buildStepPlan: buildStepPlan,
+      buildState: buildState,
+    );
+    final file = AssetFile(id, hidden: hidden);
+    final maybeResult = buildState.contentAt(
+      file,
       buildStepPlan: buildStepPlan,
     );
     if (maybeResult != null && maybeResult.hasContent) return maybeResult;
@@ -160,13 +166,7 @@ class BuilderFilesystem {
 
     List<int> bytes;
     try {
-      bytes = await readerWriter.readAsBytes(
-        id,
-        hidden: id.isHidden(
-          buildStepPlan: buildStepPlan,
-          buildState: buildState,
-        ),
-      );
+      bytes = await readerWriter.readAsBytes(id, hidden: hidden);
     } on AssetNotFoundException {
       await ChildProcess.exitDueToAssetDeleted(id);
     }

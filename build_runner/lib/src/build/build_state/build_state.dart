@@ -9,9 +9,11 @@ import 'package:built_value/serializer.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 
+import '../../build_file.dart';
 import '../../build_plan/build_packages.dart';
 import '../../build_plan/build_step_plan.dart';
 import '../asset_content.dart';
+import '../resolver/asset_ids.dart';
 
 import 'build_step_id.dart';
 import 'build_step_result.dart';
@@ -205,29 +207,76 @@ class BuildState {
         .rebuild((b) => b..outputs[id] = content);
   }
 
+  /// The content of [file].
+  ///
+  /// If [file] is not hidden:
+  /// - Returns source content if the ID is a source.
+  /// - Returns declared output content if the ID is a non-hidden output.
+  /// - Returns post process output content if the ID is a non-hidden post
+  ///   process output.
+  ///
+  /// If [file] is hidden:
+  /// - Returns declared output content if the ID is a hidden output.
+  /// - Returns post process output content if the ID is a hidden post
+  ///   process output.
+  /// - Returns null if the ID is not a hidden output.
+  AssetContent? contentAt(AssetFile file, {BuildStepPlan? buildStepPlan}) {
+    if (file.hidden) {
+      final step = buildStepPlan?.stepForDeclaredOutputOrNull(file.id);
+      if (step != null) {
+        final stepResult = stepResultOrNull(step);
+        final isHidden =
+            stepResult?.isHidden ?? buildStepPlan!.isHidden(file.id);
+        if (isHidden) {
+          return stepResult?.outputs[file.id];
+        }
+      }
+      final postProcessStepId = _postProcessOutputs[file.id];
+      if (postProcessStepId != null) {
+        final stepResult = postProcessBuildStepResultFor(postProcessStepId);
+        if (stepResult?.hidden == true) {
+          return stepResult?.outputs[file.id];
+        }
+      }
+      return null;
+    } else {
+      if (isSource(file.id)) return _sources.contentOfSource(file.id);
+      final step = buildStepPlan?.stepForDeclaredOutputOrNull(file.id);
+      if (step != null) {
+        final stepResult = stepResultOrNull(step);
+        final isHidden =
+            stepResult?.isHidden ?? buildStepPlan!.isHidden(file.id);
+        if (!isHidden) {
+          return stepResult?.outputs[file.id];
+        }
+      }
+      final postProcessStepId = _postProcessOutputs[file.id];
+      if (postProcessStepId != null) {
+        final stepResult = postProcessBuildStepResultFor(postProcessStepId);
+        if (stepResult?.hidden == false) {
+          return stepResult?.outputs[file.id];
+        }
+      }
+      return null;
+    }
+  }
+
   /// The content of [id].
   ///
-  /// If it is a source, returns `null` if it has not been read.
+  /// If it is a source, returns source content, or null if it has not been
+  /// read.
   ///
-  /// If it is a build output, returns `null` if it has not been generated.
+  /// If it is a build output, returns null if it has not been generated.
   ///
-  /// If it is a post process output, returns `null` if it has not been
+  /// If it is a post process output, returns null if it has not been
   /// generated.
   AssetContent? contentOf({BuildStepPlan? buildStepPlan, required AssetId id}) {
-    final step = buildStepPlan?.stepForDeclaredOutputOrNull(id);
-    if (step != null) {
-      final outputContent = stepResultOrNull(step)?.outputs[id];
-      if (outputContent != null) return outputContent;
-    }
-    final postProcessStepId = _postProcessOutputs[id];
-    if (postProcessStepId != null) {
-      final postContent = postProcessBuildStepResultFor(
-        postProcessStepId,
-      )?.outputs[id];
-      if (postContent != null) return postContent;
-    }
     if (isSource(id)) return _sources.contentOfSource(id);
-    return null;
+    final hidden = id.isHidden(buildStepPlan: buildStepPlan, buildState: this);
+    return contentAt(
+      AssetFile(id, hidden: hidden),
+      buildStepPlan: buildStepPlan,
+    );
   }
 
   /// The content of source [id], or `null` if it has not been read.

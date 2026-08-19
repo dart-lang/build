@@ -148,9 +148,13 @@ class BuildOutputReader {
   ///
   /// Note that [id] must exist in the asset graph.
   FutureOr<Digest> _ensureDigest(AssetId id) async {
-    final content = _buildState.contentOf(
+    final hidden = id.isHidden(
       buildStepPlan: _buildStepPlan,
-      id: id,
+      buildState: _buildState,
+    );
+    final content = _buildState.contentAt(
+      AssetFile(id, hidden: hidden),
+      buildStepPlan: _buildStepPlan,
     );
     if (content != null) return content.digest;
     final bytes = await readAsBytes(id);
