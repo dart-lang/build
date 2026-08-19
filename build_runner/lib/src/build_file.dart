@@ -3,6 +3,9 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+import 'package:path/path.dart' as p;
+
+import 'constants.dart';
 
 /// Base interface for all files `build_runner` interacts with.
 abstract interface class BuildFile {
@@ -51,7 +54,19 @@ class InternalFile implements BuildFile {
   @override
   final String path;
 
-  const InternalFile(this.package, this.path);
+  InternalFile(this.package, String path) : path = p.posix.normalize(path) {
+    if (p.isAbsolute(this.path)) {
+      throw ArgumentError('Must be relative: ${this.path}');
+    }
+    if (!this.path.startsWith('.dart_tool/')) {
+      throw ArgumentError('Must be under .dart_tool: ${this.path}');
+    }
+    if (this.path.startsWith('$generatedOutputDirectory/')) {
+      throw ArgumentError(
+        'Must not be under generated output directory: ${this.path}',
+      );
+    }
+  }
 
   @override
   int get hashCode => package.hashCode ^ path.hashCode;

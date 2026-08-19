@@ -89,7 +89,9 @@ class BuildSeries {
       }
 
       final assetFile = change.assetFile;
-      if (assetFile == null) continue;
+      if (assetFile == null) {
+        continue;
+      }
       final id = assetFile.id;
 
       // Ignore deletes and writes done by `build_runner`, for output strategies
@@ -226,7 +228,7 @@ class BuildSeries {
   /// Set [recentlyBootstrapped] to skip doing checks that are done during
   /// bootstrapping. If [recentlyBootstrapped] then [updates] must be empty.
   Future<BuildResult> run(
-    Set<AssetId> updates, {
+    Set<AssetFile> updates, {
     required bool recentlyBootstrapped,
     BuiltSet<BuildDirectory>? buildDirs,
     BuiltSet<BuildFilter>? buildFilters,
@@ -250,7 +252,7 @@ class BuildSeries {
       }
     }
 
-    if (updates.any(_isBuildConfiguration)) {
+    if (updates.any((file) => _isBuildConfiguration(file.id))) {
       _buildPlan = await _buildPlan.reload();
       // A config change might have caused new builders to be needed, which
       // needs a restart to change the build script.

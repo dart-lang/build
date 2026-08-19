@@ -59,14 +59,14 @@ abstract class PreviousBuild
     final incompatibleBuildOutputsToDelete = <AssetId>{};
     PhasedAssetDeps? previousPhasedAssetDeps;
 
-    if (await readerWriter.canReadFile(
-      InternalFile(buildPackages.outputRoot, assetGraphJsonPath),
-    )) {
+    final assetGraphJsonFile = InternalFile(
+      buildPackages.outputRoot,
+      assetGraphJsonPath,
+    );
+    if (await readerWriter.canReadFile(assetGraphJsonFile)) {
       final assetGraphJson = AssetGraphJson.deserialize(
         Uint8List.fromList(
-          await readerWriter.readFileAsBytes(
-            InternalFile(buildPackages.outputRoot, assetGraphJsonPath),
-          ),
+          await readerWriter.readFileAsBytes(assetGraphJsonFile),
         ),
       );
       if (assetGraphJson != null) {

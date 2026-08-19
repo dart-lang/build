@@ -154,20 +154,16 @@ class AssetTracker {
   Stream<AssetId> _listGeneratedAssetIds() {
     final fs = _readerWriter.filesystem;
     if (fs is InMemoryFilesystem) {
+      final prefix = '${_buildPackages.outputRoot}|$generatedOutputDirectory/';
       return Stream.fromIterable(
-        fs.filePaths
-            .where((path) => path.contains('$generatedOutputDirectory/'))
-            .map((path) {
-              final prefix = '$generatedOutputDirectory/';
-              final idx = path.indexOf(prefix);
-              final sub = path.substring(idx + prefix.length);
-              final firstSlash = sub.indexOf('/');
-              if (firstSlash == -1) return null;
-              final package = sub.substring(0, firstSlash);
-              final relPath = sub.substring(firstSlash + 1);
-              return AssetId(package, relPath);
-            })
-            .whereType<AssetId>(),
+        fs.filePaths.where((path) => path.startsWith(prefix)).map((path) {
+          final sub = path.substring(prefix.length);
+          final firstSlash = sub.indexOf('/');
+          if (firstSlash == -1) return null;
+          final package = sub.substring(0, firstSlash);
+          final relPath = sub.substring(firstSlash + 1);
+          return AssetId(package, relPath);
+        }).whereType<AssetId>(),
       );
     }
     final generatedDirPath = _buildPackages.pathFor(

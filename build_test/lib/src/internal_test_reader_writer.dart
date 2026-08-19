@@ -180,7 +180,7 @@ class InMemoryBuildFileLayout implements BuildFileLayout {
 
   @override
   BuildFile fromPath(BuildPackage package, String path) {
-    throw UnimplementedError('Not needed for InMemory');
+    return BuildFileLayout.fileFromPath(package, path);
   }
 }
 

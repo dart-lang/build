@@ -186,10 +186,7 @@ void main() {
         readAllSourcesFromFilesystem: true,
         assetReaderChecks: (testReaderWriter) async {
           assetGraphContent = testReaderWriter.testing.readFileString(
-            const InternalFile(
-              'build_test',
-              '.dart_tool/build/asset_graph.json',
-            ),
+            InternalFile('build_test', '.dart_tool/build/asset_graph.json'),
           );
         },
         (resolver) async {},

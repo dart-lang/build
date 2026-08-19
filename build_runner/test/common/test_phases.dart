@@ -94,7 +94,7 @@ Future<TestBuildersResult> testPhases(
       : resumeFrom.readerWriter;
 
   const pkgConfigPath = '.dart_tool/package_config.json';
-  if (!await readerWriter.canReadFile(const InternalFile('a', pkgConfigPath))) {
+  if (!await readerWriter.canReadFile(InternalFile('a', pkgConfigPath))) {
     final packageConfig = {
       'configVersion': 2,
       'packages': [
@@ -108,7 +108,7 @@ Future<TestBuildersResult> testPhases(
       ],
     };
     await readerWriter.writeFileAsBytes(
-      const InternalFile('a', pkgConfigPath),
+      InternalFile('a', pkgConfigPath),
       utf8.encode(jsonEncode(packageConfig)),
     );
   }

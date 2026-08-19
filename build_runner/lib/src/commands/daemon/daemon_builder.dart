@@ -8,6 +8,11 @@ import 'package:build/build.dart';
 import 'package:build_daemon/change_provider.dart';
 import 'package:build_daemon/constants.dart';
 import 'package:build_daemon/daemon_builder.dart';
+import 'package:path/path.dart' as p;
+import '../../build_plan/build_package.dart';
+import '../../build_file_layout.dart';
+
+import "../../build_file.dart";
 import 'package:build_daemon/data/build_status.dart';
 import 'package:build_daemon/data/build_target.dart' hide OutputLocation;
 import 'package:build_daemon/data/server_log.dart';
@@ -65,9 +70,28 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     Iterable<WatchEvent> fileChanges,
   ) async {
     final defaultTargets = targets.cast<DefaultBuildTarget>();
-    final updates = fileChanges
-        .map((change) => AssetId.parse(change.path))
-        .toSet();
+    final updates = <AssetFile>{};
+    for (final change in fileChanges) {
+      if (p.isAbsolute(change.path)) {
+        BuildPackage? bestPackage;
+        for (final pkg in _buildPlan.buildSpec.buildPackages.packages.values) {
+          if (p.isWithin(pkg.path, change.path)) {
+            if (bestPackage == null ||
+                pkg.path.length > bestPackage.path.length) {
+              bestPackage = pkg;
+            }
+          }
+        }
+        if (bestPackage != null) {
+          final file = BuildFileLayout.fileFromPath(bestPackage, change.path);
+          if (file is AssetFile) {
+            updates.add(file);
+          }
+        }
+      } else {
+        updates.add(AssetFile.source(AssetId.parse(change.path)));
+      }
+    }
 
     final targetNames = targets.map((t) => t.target).toSet();
     _logMessage(Level.INFO, 'About to build ${targetNames.toList()}...');
@@ -132,7 +156,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       );
 
       if (interestedInOutputs) {
-        outputs = {for (final id in updates) id, ...result.outputs};
+        outputs = {for (final file in updates) file.id, ...result.outputs};
       }
 
       for (final target in targets) {
@@ -241,7 +265,12 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
             .where((changes) => changes.isNotEmpty)
             .map(
               (changes) => changes
-                  .map((change) => WatchEvent(change.type, '${change.id}'))
+                  .map(
+                    (change) => WatchEvent(
+                      change.type,
+                      '${change.file.package}|${change.file.path}',
+                    ),
+                  )
                   .toList(),
             );
 
