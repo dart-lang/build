@@ -287,6 +287,15 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         buildStepPlan: buildStepPlan,
         id: id,
       );
+      final oldFile = !oldExisted
+          ? null
+          : oldIsSource
+          ? AssetFile.source(id)
+          : AssetFile(
+              id,
+              hidden: id.isHidden(buildStepPlan: previousBuildStepPlan),
+            );
+      final oldExistedHere = oldExisted && oldFile == file;
       final oldContent = previousBuildState.contentOf(
         id: id,
         buildStepPlan: previousBuildStepPlan,
@@ -306,7 +315,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         }
       }
 
-      if (oldExisted && !exists) {
+      if (oldExistedHere && !exists) {
         if (oldIsSource) {
           buildInputs.deletedSources.add(id);
           buildInputs.sources.remove(id);
@@ -314,10 +323,14 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         } else {
           buildInputs.invalidOutputs.add(id);
         }
-      } else if (!oldExisted && exists) {
-        buildInputs.updatedSources.add(id);
-        buildInputs.sources.add(id);
-      } else if (oldExisted &&
+      } else if (!oldExistedHere && exists) {
+        if (file.hidden) {
+          buildInputs.invalidOutputs.add(id);
+        } else {
+          buildInputs.updatedSources.add(id);
+          buildInputs.sources.add(id);
+        }
+      } else if (oldExistedHere &&
           oldContent != null &&
           exists &&
           oldContent.digest != newContent!.digest) {

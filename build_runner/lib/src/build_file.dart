@@ -55,20 +55,30 @@ class InternalFile implements BuildFile {
   @override
   final String path;
 
-  InternalFile(this.package, this.path)
-    : assert(
-        path == '.dart_tool' || path.startsWith('.dart_tool/'),
-        'InternalFile path must be under .dart_tool: $path',
-      ),
-      assert(
-        !path.startsWith('$generatedOutputDirectory/'),
-        'InternalFile path must not be under the build cache '
-        '$generatedOutputDirectory: $path',
-      ),
-      assert(
-        !p.isAbsolute(path) && p.posix.normalize(path) == path,
-        'InternalFile path must be a normalized relative path: $path',
+  InternalFile(this.package, this.path) {
+    if (path != '.dart_tool' && !path.startsWith('.dart_tool/')) {
+      throw ArgumentError.value(
+        path,
+        'path',
+        'InternalFile path must be under .dart_tool.',
       );
+    }
+    if (path.startsWith('$generatedOutputDirectory/')) {
+      throw ArgumentError.value(
+        path,
+        'path',
+        'InternalFile path must not be under the build cache '
+            '$generatedOutputDirectory.',
+      );
+    }
+    if (p.isAbsolute(path) || p.posix.normalize(path) != path) {
+      throw ArgumentError.value(
+        path,
+        'path',
+        'InternalFile path must be a normalized relative path.',
+      );
+    }
+  }
 
   @override
   int get hashCode => package.hashCode ^ path.hashCode;

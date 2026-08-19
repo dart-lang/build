@@ -28,8 +28,8 @@ import 'test_builder.dart' show testBuilders;
 /// Some parts of this API are from the point of view of a builder and use a
 /// unified namespace for [AssetId]s, while others see a split view
 /// of the hidden/non-hidden filesystem structure, and require an explicit
-/// mapping of [AssetId]s to the on-disk structure
-/// (eg. starting with `.dart_tool/build/generated/`) to access hidden files.
+/// mapping of [AssetId]s to the on-disk structure,
+/// such as starting with `.dart_tool/build/generated/` to access hidden files.
 /// See [testBuilders] `flattenOutput` parameter for more details.
 abstract interface class TestReaderWriter implements AssetReader, AssetWriter {
   factory TestReaderWriter({String? rootPackage, bool flattenOutput = false}) =>

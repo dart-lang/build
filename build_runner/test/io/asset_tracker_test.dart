@@ -9,6 +9,7 @@ import 'package:build/build.dart';
 import 'package:build_runner/src/build/asset_content.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/build_state/build_step_id.dart';
+import 'package:build_runner/src/build_file.dart';
 import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
@@ -81,9 +82,9 @@ void main() {
       final newSources = buildState.sources.toSet();
       for (final entry in updates.entries) {
         if (entry.value != ChangeType.REMOVE) {
-          newSources.add(entry.key);
+          newSources.add(entry.key.id);
         } else {
-          newSources.remove(entry.key);
+          newSources.remove(entry.key.id);
         }
       }
       final nextState = BuildState({for (final s in newSources) s: null});
@@ -98,7 +99,7 @@ void main() {
       // We should see no changes initially other than new sdk sources
       expect(
         updates..removeWhere(
-          (id, type) => id.package == r'$sdk' && type == ChangeType.ADD,
+          (file, type) => file.package == r'$sdk' && type == ChangeType.ADD,
         ),
         isEmpty,
       );
@@ -112,7 +113,7 @@ void main() {
           buildState: buildState,
           buildStepPlan: buildStepPlan,
         ),
-        {AssetId('a', 'web/a.txt'): ChangeType.MODIFY},
+        {AssetFile.source(AssetId('a', 'web/a.txt')): ChangeType.MODIFY},
       );
     });
 
@@ -124,7 +125,7 @@ void main() {
           buildState: buildState,
           buildStepPlan: buildStepPlan,
         ),
-        {AssetId('a', 'web/b.txt'): ChangeType.ADD},
+        {AssetFile.source(AssetId('a', 'web/b.txt')): ChangeType.ADD},
       );
     });
 
@@ -136,7 +137,7 @@ void main() {
           buildState: buildState,
           buildStepPlan: buildStepPlan,
         ),
-        {AssetId('a', 'web/a.txt'): ChangeType.REMOVE},
+        {AssetFile.source(AssetId('a', 'web/a.txt')): ChangeType.REMOVE},
       );
     });
 
@@ -163,8 +164,8 @@ void main() {
         buildState: emptyBuildState,
         buildStepPlan: planWithOutput,
       );
-      changes.removeWhere((id, type) => id.package == r'$sdk');
-      expect(changes, {outputId: ChangeType.REMOVE});
+      changes.removeWhere((file, type) => file.package == r'$sdk');
+      expect(changes, {AssetFile.source(outputId): ChangeType.REMOVE});
     });
   });
 }

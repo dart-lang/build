@@ -113,7 +113,7 @@ Future<TestBuildersResult> testPhases(
   }
 
   inputs.forEach((serializedId, contents) {
-    final file = BuildFileLayout.fileFromDescriptor(
+    final file = makeBuildFile(
       serializedId,
       defaultPackage: buildPackages!.outputRoot,
     );

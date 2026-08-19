@@ -183,11 +183,13 @@ class BuildSeries {
   }
 
   bool _isBuildConfiguration(BuildFile file) =>
-      file.path == 'build.yaml' ||
-      file.path.endsWith('.build.yaml') ||
-      (file.package == _buildPlan.buildSpec.buildPackages.outputRoot &&
-          file.path ==
-              'build.${_buildPlan.buildSpec.buildOptions.configKey}.yaml');
+      file is AssetFile &&
+      !file.hidden &&
+      (file.path == 'build.yaml' ||
+          file.path.endsWith('.build.yaml') ||
+          (file.package == _buildPlan.buildSpec.buildPackages.outputRoot &&
+              file.path ==
+                  'build.${_buildPlan.buildSpec.buildOptions.configKey}.yaml'));
 
   Future<List<WatchEvent>> checkForChanges() async {
     final updates =
@@ -203,10 +205,7 @@ class BuildSeries {
     final buildPackages = _buildPlan.buildSpec.buildPackages;
     return List.of(
       updates.entries.map(
-        (entry) => WatchEvent(
-          entry.value,
-          buildPackages.pathFor(AssetFile.source(entry.key)),
-        ),
+        (entry) => WatchEvent(entry.value, buildPackages.pathFor(entry.key)),
       ),
     );
   }

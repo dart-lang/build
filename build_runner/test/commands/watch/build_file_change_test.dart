@@ -33,22 +33,6 @@ void main() {
       expect(change1, isNot(equals(change4)));
     });
 
-    test('should support relative paths', () {
-      final pkgBar = p.join('/', 'foo', 'bar');
-      final barFile = p.join(
-        p.relative(pkgBar, from: p.current),
-        'lib',
-        'bar.dart',
-      );
-      final nodeBar = BuildPackage(name: 'bar', path: pkgBar, watch: true);
-
-      final event = WatchEvent(ChangeType.ADD, barFile);
-      final change = BuildFileChange.fromEvent(nodeBar, event);
-
-      expect(change.id!.package, 'bar');
-      expect(change.id!.path, p.join('lib', 'bar.dart'));
-    });
-
     test('should normalize absolute paths to relative', () {
       final pkgBar = p.join('/', 'foo', 'bar');
       final barFile = p.join('/', 'foo', 'bar', 'lib', 'bar.dart');
@@ -59,6 +43,18 @@ void main() {
 
       expect(change.id!.package, 'bar');
       expect(change.id!.path, p.join('lib', 'bar.dart'));
+    });
+
+    test('throws if path is outside package', () {
+      final pkgBar = p.join('/', 'foo', 'bar');
+      final otherFile = p.join('/', 'foo', 'baz', 'lib', 'baz.dart');
+
+      final nodeBar = BuildPackage(name: 'bar', path: pkgBar, watch: true);
+      final event = WatchEvent(ChangeType.ADD, otherFile);
+      expect(
+        () => BuildFileChange.fromEvent(nodeBar, event),
+        throwsArgumentError,
+      );
     });
   });
 }

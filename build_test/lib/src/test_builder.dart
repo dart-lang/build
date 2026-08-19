@@ -340,10 +340,7 @@ Future<TestBuilderResult> testBuilderFactories(
 
   final inputIds = {
     for (final descriptor in sourceAssets.keys)
-      if (BuildFileLayout.fileFromDescriptor(
-            descriptor,
-            defaultPackage: rootPackage ?? '',
-          )
+      if (makeBuildFile(descriptor, defaultPackage: rootPackage ?? '')
           case AssetFile(:final id, hidden: false))
         id,
   };
@@ -400,10 +397,7 @@ Future<TestBuilderResult> testBuilderFactories(
   ]);
 
   sourceAssets.forEach((serializedId, contents) {
-    final file = BuildFileLayout.fileFromDescriptor(
-      serializedId,
-      defaultPackage: rootPackage!,
-    );
+    final file = makeBuildFile(serializedId, defaultPackage: rootPackage!);
     if (contents is String) {
       readerWriter!.testing.writeFileString(file, contents);
     } else if (contents is List<int>) {

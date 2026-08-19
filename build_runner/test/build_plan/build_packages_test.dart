@@ -94,12 +94,12 @@ void main() {
         },
       );
 
-      test('pathForAsset prohibits access to cache for unknown package', () {
+      test('pathFor allows access to cache for unknown package', () {
         expect(
-          () => buildPackages.pathFor(
+          buildPackages.pathFor(
             AssetFile.cache(AssetId('unknown', 'lib/a.txt')),
           ),
-          throwsA(isA<PackageNotFoundException>()),
+          endsWith('.dart_tool/build/generated/unknown/lib/a.txt'),
         );
       });
     });

@@ -43,21 +43,22 @@ void main() {
     });
 
     test('enforces constraints', () {
-      expect(
-        () => InternalFile('a', 'lib/a.dart'),
-        throwsA(isA<AssertionError>()),
-      );
+      expect(() => InternalFile('a', 'lib/a.dart'), throwsArgumentError);
       expect(
         () => InternalFile('a', '.dart_tool/build/generated/a/lib/a.dart'),
-        throwsA(isA<AssertionError>()),
+        throwsArgumentError,
+      );
+      expect(
+        InternalFile('a', '.dart_tool/build/generated').path,
+        '.dart_tool/build/generated',
       );
       expect(
         () => InternalFile('a', '/.dart_tool/package_config.json'),
-        throwsA(isA<AssertionError>()),
+        throwsArgumentError,
       );
       expect(
         () => InternalFile('a', '.dart_tool/../.dart_tool'),
-        throwsA(isA<AssertionError>()),
+        throwsArgumentError,
       );
     });
 

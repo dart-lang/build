@@ -12,13 +12,13 @@ import 'package:build_daemon/data/build_status.dart';
 import 'package:build_daemon/data/build_target.dart' hide OutputLocation;
 import 'package:build_daemon/data/server_log.dart';
 import 'package:built_collection/built_collection.dart';
+import 'package:path/path.dart' as p;
 import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
 import '../../build/build_result.dart' as core;
 import '../../build/build_series.dart';
 import '../../build_file.dart';
-import '../../build_file_layout.dart';
 import '../../build_plan/build_directory.dart';
 import '../../build_plan/build_filter.dart';
 import '../../build_plan/build_plan.dart';
@@ -70,14 +70,15 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     final buildPackages = _buildPlan.buildSpec.buildPackages;
     final updates = <AssetFile>{};
     for (final change in fileChanges) {
-      BuildFile file;
-      try {
-        file = buildPackages.fileFromPath(change.path);
-      } catch (_) {
-        file = BuildFileLayout.fileFromDescriptor(
-          change.path,
-          defaultPackage: _currentPackageName,
-        );
+      final path = change.path;
+      final BuildFile file;
+      if (path.contains('|')) {
+        file = AssetFile.source(AssetId.parse(path));
+      } else if (p.isAbsolute(path)) {
+        file = buildPackages.fileFromPath(path);
+      } else {
+        final currentPackage = buildPackages.packages[_currentPackageName]!;
+        file = buildPackages.fromPath(currentPackage, path);
       }
       if (file is AssetFile) {
         updates.add(file);

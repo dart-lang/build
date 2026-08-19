@@ -215,27 +215,29 @@ class BuildPackages implements BuildFileLayout {
   String pathFor(BuildFile file, {bool checkWriteAllowed = false}) {
     if (file is AssetFile) {
       final id = file.id;
-      if (!packages.containsKey(id.package)) {
-        throw PackageNotFoundException(id.package);
-      }
       if (checkWriteAllowed) throwIfReadonly(id, hide: file.hidden);
       if (file.hidden) {
         final rootPackage = packages[outputRoot]!;
-        return p.join(
-          rootPackage.path,
-          generatedOutputDirectory,
-          id.package,
-          id.platformPath,
+        return p.normalize(
+          p.join(
+            rootPackage.path,
+            generatedOutputDirectory,
+            id.package,
+            id.platformPath,
+          ),
         );
       }
+      if (!packages.containsKey(id.package)) {
+        throw PackageNotFoundException(id.package);
+      }
       final package = packages[id.package]!;
-      return p.join(package.path, id.platformPath);
+      return p.normalize(p.join(package.path, id.platformPath));
     } else if (file is InternalFile) {
       final package = packages[file.package];
       if (package == null) {
         throw PackageNotFoundException(file.package);
       }
-      return p.join(package.path, file.path);
+      return p.normalize(p.join(package.path, file.path));
     }
     throw ArgumentError('Unknown BuildFile type: $file');
   }
@@ -244,13 +246,20 @@ class BuildPackages implements BuildFileLayout {
   BuildFile fromPath(BuildPackage package, String path) =>
       BuildFileLayout.fileFromPath(package, path);
 
-  /// Converts a filesystem [path] to a [BuildFile] by finding the matching
-  /// package.
+  /// Converts a filesystem [path] to a [BuildFile] by finding the deepest
+  /// matching package.
   BuildFile fileFromPath(String path) {
+    BuildPackage? bestPackage;
     for (final package in packages.values) {
       if (p.isWithin(package.path, path) || package.path == path) {
-        return BuildFileLayout.fileFromPath(package, path);
+        if (bestPackage == null ||
+            package.path.length > bestPackage.path.length) {
+          bestPackage = package;
+        }
       }
+    }
+    if (bestPackage != null) {
+      return BuildFileLayout.fileFromPath(bestPackage, path);
     }
     throw ArgumentError('No package found for path: $path');
   }
