@@ -221,8 +221,9 @@ class BuildPackagesAssetFinder implements AssetFinder {
         .where((file) {
           final filePath = path.normalize(file.absolute.path);
           final relativePath = path.relative(filePath, from: packageNode.path);
-          return !relativePath.startsWith('.dart_tool/') &&
-              relativePath != '.dart_tool';
+          final lowerRelativePath = relativePath.toLowerCase();
+          return !lowerRelativePath.startsWith('.dart_tool/') &&
+              lowerRelativePath != '.dart_tool';
         })
         .map((file) => _fileToAssetId(file, packageNode));
   }

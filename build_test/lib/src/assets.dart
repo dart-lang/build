@@ -34,7 +34,8 @@ BuildFile makeBuildFile(String descriptor, {required String defaultPackage}) {
       : descriptor.substring(pipeIndex + 1);
 
   final posixPath = p.posix.normalize(path.replaceAll(r'\', '/'));
-  if (posixPath.startsWith('$generatedOutputDirectory/')) {
+  final lowerPosixPath = posixPath.toLowerCase();
+  if (lowerPosixPath.startsWith('${generatedOutputDirectory.toLowerCase()}/')) {
     final packagePath = posixPath.substring(
       generatedOutputDirectory.length + 1,
     );
@@ -45,7 +46,8 @@ BuildFile makeBuildFile(String descriptor, {required String defaultPackage}) {
       return AssetFile.cache(AssetId(targetPackage, targetPath));
     }
   }
-  if (posixPath == '.dart_tool' || posixPath.startsWith('.dart_tool/')) {
+  if (lowerPosixPath == '.dart_tool' ||
+      lowerPosixPath.startsWith('.dart_tool/')) {
     return InternalFile(package, posixPath);
   }
   return AssetFile.source(AssetId(package, posixPath));

@@ -42,7 +42,8 @@ class AssetId implements Comparable<AssetId> {
         'Package name contains invalid characters.',
       );
     }
-    if (this.path.startsWith('.dart_tool/') || this.path == '.dart_tool') {
+    final lowerPath = this.path.toLowerCase();
+    if (lowerPath.startsWith('.dart_tool/') || lowerPath == '.dart_tool') {
       throw ArgumentError.value(
         this.path,
         'path',

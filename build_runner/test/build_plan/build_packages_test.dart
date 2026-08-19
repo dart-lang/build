@@ -102,6 +102,29 @@ void main() {
           endsWith('.dart_tool/build/generated/unknown/lib/a.txt'),
         );
       });
+
+      test('pathFor allows write for InternalFile in output package', () {
+        expect(
+          buildPackages.pathFor(
+            InternalFile('build_runner', '.dart_tool/package_config.json'),
+            checkWriteAllowed: true,
+          ),
+          isNotNull,
+        );
+      });
+
+      test(
+        'pathFor prohibits write for InternalFile in non-output package',
+        () {
+          expect(
+            () => buildPackages.pathFor(
+              InternalFile('test', '.dart_tool/package_config.json'),
+              checkWriteAllowed: true,
+            ),
+            throwsA(isA<PackageReadonlyException>()),
+          );
+        },
+      );
     });
 
     group('basic package', () {

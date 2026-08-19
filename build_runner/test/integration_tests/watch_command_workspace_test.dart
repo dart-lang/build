@@ -124,6 +124,15 @@ void main() async {
     await watch.expect(BuildLog.successPattern);
     expect(tester.read('p6/lib/p6.txt.copy'), '2');
 
+    // Modify a cached file externally on disk, check that the watcher triggers
+    // and restores the expected output.
+    tester.write(
+      '.dart_tool/build/generated/p1/lib/p1.txt.hidden',
+      'external_edit',
+    );
+    await watch.expect(BuildLog.successPattern);
+    expect(tester.read('.dart_tool/build/generated/p1/lib/p1.txt.hidden'), '2');
+
     // Change workspace build.yaml, check that a build takes place.
     tester.write('build.yaml', '''
 global_options:

@@ -7,6 +7,7 @@ import 'package:build_runner/src/build_file.dart';
 import 'package:build_runner/src/build_file_layout.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -145,6 +146,78 @@ void main() {
         buildPackages.pathFor(internal),
         p.join('/', 'root', 'a', '.dart_tool', 'package_config.json'),
       );
+    });
+
+    test('round-trip source -> pathFor -> fileFromPath -> source', () {
+      final source = AssetFile.source(AssetId('a', 'lib/a.dart'));
+      final absPath = buildPackages.pathFor(source);
+      expect(buildPackages.fileFromPath(absPath), equals(source));
+      expect(BuildFileLayout.fileFromPath(pkgA, 'lib/a.dart'), equals(source));
+    });
+
+    test('round-trip cache -> pathFor -> fileFromPath -> cache', () {
+      final cached = AssetFile.cache(AssetId('b', 'lib/b.g.dart'));
+      final absPath = buildPackages.pathFor(cached);
+      expect(buildPackages.fileFromPath(absPath), equals(cached));
+      expect(
+        BuildFileLayout.fileFromPath(
+          pkgA,
+          '.dart_tool/build/generated/b/lib/b.g.dart',
+        ),
+        equals(cached),
+      );
+    });
+
+    test(
+      'round-trip InternalFile -> pathFor -> fileFromPath -> InternalFile',
+      () {
+        final internal = InternalFile('a', '.dart_tool/package_config.json');
+        final absPath = buildPackages.pathFor(internal);
+        expect(buildPackages.fileFromPath(absPath), equals(internal));
+        expect(
+          BuildFileLayout.fileFromPath(pkgA, '.dart_tool/package_config.json'),
+          equals(internal),
+        );
+      },
+    );
+
+    test('handles malformed cache paths', () {
+      final file1 = BuildFileLayout.fileFromPath(
+        pkgA,
+        '.dart_tool/build/generated',
+      );
+      expect(file1, InternalFile('a', '.dart_tool/build/generated'));
+
+      expect(
+        () => BuildFileLayout.fileFromPath(
+          pkgA,
+          '.dart_tool/build/generated/no_file_only_package',
+        ),
+        throwsArgumentError,
+      );
+    });
+
+    test('nested workspace package paths selects deepest package', () {
+      final rootPkg = BuildPackage(
+        name: 'root',
+        path: p.join('/', 'ws', 'root'),
+        isOutput: true,
+      );
+      final nestedPkg = BuildPackage(
+        name: 'nested',
+        path: p.join('/', 'ws', 'root', 'nested'),
+        isOutput: true,
+      );
+      final wsPackages = BuildPackages.compute(
+        currentPackage: 'root',
+        outputRoot: 'root',
+        packages: {'root': rootPkg, 'nested': nestedPkg}.build(),
+      );
+
+      final file = wsPackages.fileFromPath(
+        p.join('/', 'ws', 'root', 'nested', 'lib', 'c.dart'),
+      );
+      expect(file, AssetFile.source(AssetId('nested', 'lib/c.dart')));
     });
   });
 }

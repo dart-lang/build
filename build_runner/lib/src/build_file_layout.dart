@@ -23,8 +23,12 @@ abstract interface class BuildFileLayout {
   static BuildFile fileFromPath(BuildPackage package, String path) {
     final relativePath = normalizeRelativePath(package, path);
     final posixPath = p.posix.normalize(relativePath.replaceAll(r'\', '/'));
-    if (posixPath == '.dart_tool' || posixPath.startsWith('.dart_tool/')) {
-      if (posixPath.startsWith('$generatedOutputDirectory/')) {
+    final lowerPosixPath = posixPath.toLowerCase();
+    if (lowerPosixPath == '.dart_tool' ||
+        lowerPosixPath.startsWith('.dart_tool/')) {
+      if (lowerPosixPath.startsWith(
+        '${generatedOutputDirectory.toLowerCase()}/',
+      )) {
         final packagePath = posixPath.substring(
           generatedOutputDirectory.length + 1,
         );

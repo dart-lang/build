@@ -231,5 +231,149 @@ void main() {
         throwsA(const TypeMatcher<CannotBuildException>()),
       );
     });
+
+    group('incremental planning (oldExistedHere)', () {
+      test('deleted source is marked as deleted', () async {
+        final buildState = BuildState({assetId: null});
+        buildState.updateSourceContent(
+          assetId,
+          AssetContent.digest(Digest([1])),
+        );
+        await writeBuildStateAndPlan(buildState, buildPlan);
+
+        await readerWriter.delete(assetId);
+        final newPlan = await loadPlan();
+        expect(newPlan.buildInputs.deletedSources, contains(assetId));
+        expect(newPlan.buildInputs.sources, isNot(contains(assetId)));
+      });
+
+      test('deleted output is marked as invalid output', () async {
+        final buildState = BuildState({assetId: null});
+        await readerWriter.writeAsString(outputId, '// output');
+        final stepId = buildPlan.buildStepPlan.stepForDeclaredOutput(outputId);
+        buildState.updateBuildStepResult(
+          stepId,
+          BuildStepResult((b) {
+            b.isHidden = false;
+            b.outputs[outputId] = AssetContent.digest(Digest([1]));
+          }),
+        );
+        buildState.updateSourceContent(
+          assetId,
+          AssetContent.digest(Digest([1])),
+        );
+        await writeBuildStateAndPlan(buildState, buildPlan);
+
+        await readerWriter.delete(outputId);
+        final newPlan = await loadPlan();
+        expect(newPlan.buildInputs.invalidOutputs, contains(outputId));
+      });
+
+      test('new source file is marked as updated source', () async {
+        final buildState = BuildState({assetId: null});
+        buildState.updateSourceContent(
+          assetId,
+          AssetContent.digest(Digest([1])),
+        );
+        await writeBuildStateAndPlan(buildState, buildPlan);
+
+        final newSourceId = AssetId('a', 'lib/new_file.dart');
+        await readerWriter.writeAsString(newSourceId, '// new');
+        final newPlan = await loadPlan();
+        expect(newPlan.buildInputs.updatedSources, contains(newSourceId));
+        expect(newPlan.buildInputs.sources, contains(newSourceId));
+      });
+
+      test('stale cache file is marked as invalid output', () async {
+        final buildState = BuildState({assetId: null});
+        buildState.updateSourceContent(
+          assetId,
+          AssetContent.digest(Digest([1])),
+        );
+        await writeBuildStateAndPlan(buildState, buildPlan);
+
+        final staleCacheId = AssetId('a', 'lib/stale.dart.copy');
+        await readerWriter.writeAsString(
+          staleCacheId,
+          '// stale',
+          hidden: true,
+        );
+        final newPlan = await loadPlan();
+        expect(newPlan.buildInputs.invalidOutputs, contains(staleCacheId));
+      });
+
+      test('modified source is marked as updated source', () async {
+        final buildState = BuildState({assetId: null});
+        buildState.updateSourceContent(
+          assetId,
+          AssetContent.digest(Digest([1])),
+        );
+        await writeBuildStateAndPlan(buildState, buildPlan);
+
+        await readerWriter.writeAsString(assetId, '// modified content');
+        final newPlan = await loadPlan();
+        expect(newPlan.buildInputs.updatedSources, contains(assetId));
+      });
+
+      test('modified output is marked as invalid output', () async {
+        final buildState = BuildState({assetId: null});
+        await readerWriter.writeAsString(outputId, '// output');
+        final stepId = buildPlan.buildStepPlan.stepForDeclaredOutput(outputId);
+        buildState.updateBuildStepResult(
+          stepId,
+          BuildStepResult((b) {
+            b.isHidden = false;
+            b.outputs[outputId] = AssetContent.digest(Digest([1]));
+          }),
+        );
+        buildState.updateSourceContent(
+          assetId,
+          AssetContent.digest(Digest([1])),
+        );
+        await writeBuildStateAndPlan(buildState, buildPlan);
+
+        await readerWriter.writeAsString(outputId, '// modified output');
+        final newPlan = await loadPlan();
+        expect(newPlan.buildInputs.invalidOutputs, contains(outputId));
+      });
+
+      test(
+        'displaced location where source replaces cache output marks new '
+        'source and invalidates cache',
+        () async {
+          final buildState = BuildState({assetId: null});
+          final hiddenOutputId = AssetId('a', 'lib/a.dart.copy');
+          await readerWriter.writeAsString(
+            hiddenOutputId,
+            '// hidden output',
+            hidden: true,
+          );
+          final stepId = buildPlan.buildStepPlan.stepForDeclaredOutput(
+            hiddenOutputId,
+          );
+          buildState.updateBuildStepResult(
+            stepId,
+            BuildStepResult((b) {
+              b.isHidden = true;
+              b.outputs[hiddenOutputId] = AssetContent.digest(Digest([1]));
+            }),
+          );
+          buildState.updateSourceContent(
+            assetId,
+            AssetContent.digest(Digest([1])),
+          );
+          await writeBuildStateAndPlan(buildState, buildPlan);
+
+          // Now user creates a source file with the same ID in the source tree
+          await readerWriter.writeAsString(
+            hiddenOutputId,
+            '// source replacement',
+          );
+          final newPlan = await loadPlan();
+          expect(newPlan.buildInputs.updatedSources, contains(hiddenOutputId));
+          expect(newPlan.buildInputs.invalidOutputs, contains(hiddenOutputId));
+        },
+      );
+    });
   });
 }

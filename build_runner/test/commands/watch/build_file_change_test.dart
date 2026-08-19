@@ -33,16 +33,53 @@ void main() {
       expect(change1, isNot(equals(change4)));
     });
 
-    test('should normalize absolute paths to relative', () {
+    test('should convert events for source, internal, and cache files', () {
       final pkgBar = p.join('/', 'foo', 'bar');
-      final barFile = p.join('/', 'foo', 'bar', 'lib', 'bar.dart');
-
       final nodeBar = BuildPackage(name: 'bar', path: pkgBar, watch: true);
-      final event = WatchEvent(ChangeType.ADD, barFile);
-      final change = BuildFileChange.fromEvent(nodeBar, event);
 
-      expect(change.id!.package, 'bar');
-      expect(change.id!.path, p.join('lib', 'bar.dart'));
+      // Source file
+      final sourceFile = p.join(pkgBar, 'lib', 'bar.dart');
+      final sourceChange = BuildFileChange.fromEvent(
+        nodeBar,
+        WatchEvent(ChangeType.ADD, sourceFile),
+      );
+      expect(
+        sourceChange.file,
+        equals(AssetFile.source(AssetId('bar', 'lib/bar.dart'))),
+      );
+      expect(sourceChange.id, equals(AssetId('bar', 'lib/bar.dart')));
+
+      // Internal file
+      final internalFile = p.join(pkgBar, '.dart_tool', 'package_config.json');
+      final internalChange = BuildFileChange.fromEvent(
+        nodeBar,
+        WatchEvent(ChangeType.MODIFY, internalFile),
+      );
+      expect(
+        internalChange.file,
+        equals(InternalFile('bar', '.dart_tool/package_config.json')),
+      );
+      expect(internalChange.id, isNull);
+
+      // Cache file for dependency
+      final cacheFile = p.join(
+        pkgBar,
+        '.dart_tool',
+        'build',
+        'generated',
+        'dep',
+        'lib',
+        'dep.g.dart',
+      );
+      final cacheChange = BuildFileChange.fromEvent(
+        nodeBar,
+        WatchEvent(ChangeType.REMOVE, cacheFile),
+      );
+      expect(
+        cacheChange.file,
+        equals(AssetFile.cache(AssetId('dep', 'lib/dep.g.dart'))),
+      );
+      expect(cacheChange.id, equals(AssetId('dep', 'lib/dep.g.dart')));
     });
 
     test('throws if path is outside package', () {

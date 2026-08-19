@@ -168,4 +168,84 @@ void main() {
       expect(changes, {AssetFile.source(outputId): ChangeType.REMOVE});
     });
   });
+
+  group('AssetTracker.findCacheDirSources()', () {
+    test('discovers cache files using IoFilesystem', () async {
+      await d.dir('pkg', [
+        d.dir('.dart_tool', [
+          d.dir('build', [
+            d.dir('generated', [
+              d.dir('pkg', [
+                d.dir('lib', [d.file('a.g.dart', '// generated')]),
+              ]),
+              d.dir('other_pkg', [
+                d.dir('lib', [d.file('b.g.dart', '// dep generated')]),
+              ]),
+            ]),
+          ]),
+        ]),
+      ]).create();
+
+      final buildPackages = BuildPackages.singlePackageBuild('pkg', [
+        BuildPackage(
+          name: 'pkg',
+          path: p.join(d.sandbox, 'pkg'),
+          languageVersion: LanguageVersion(2, 6),
+          watch: true,
+          isOutput: true,
+        ),
+      ]);
+      final reader = ReaderWriter(buildPackages);
+      final buildConfigs = await BuildConfigs.load(
+        buildPackages: buildPackages,
+        testingOverrides: TestingOverrides(
+          defaultRootPackageSources: ['lib/**'].build(),
+        ),
+      );
+      final tracker = AssetTracker(reader, buildPackages, buildConfigs);
+      final cacheSources = await tracker.findCacheDirSources();
+
+      expect(
+        cacheSources,
+        unorderedEquals({
+          AssetId('pkg', 'lib/a.g.dart'),
+          AssetId('other_pkg', 'lib/b.g.dart'),
+        }),
+      );
+    });
+
+    test('discovers cache files using InMemoryFilesystem', () async {
+      final buildPackages = BuildPackages.singlePackageBuild('pkg', [
+        BuildPackage.forTesting(name: 'pkg', watch: true, isOutput: true),
+      ]);
+      final readerWriter = InternalTestReaderWriter(outputRootPackage: 'pkg');
+      await readerWriter.writeAsString(
+        AssetId('pkg', 'lib/a.g.dart'),
+        '// generated',
+        hidden: true,
+      );
+      await readerWriter.writeAsString(
+        AssetId('other_pkg', 'lib/b.g.dart'),
+        '// dep generated',
+        hidden: true,
+      );
+
+      final buildConfigs = await BuildConfigs.load(
+        buildPackages: buildPackages,
+        testingOverrides: TestingOverrides(
+          defaultRootPackageSources: ['lib/**'].build(),
+        ),
+      );
+      final tracker = AssetTracker(readerWriter, buildPackages, buildConfigs);
+      final cacheSources = await tracker.findCacheDirSources();
+
+      expect(
+        cacheSources,
+        unorderedEquals({
+          AssetId('pkg', 'lib/a.g.dart'),
+          AssetId('other_pkg', 'lib/b.g.dart'),
+        }),
+      );
+    });
+  });
 }

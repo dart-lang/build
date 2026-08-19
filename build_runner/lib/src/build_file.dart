@@ -56,14 +56,15 @@ class InternalFile implements BuildFile {
   final String path;
 
   InternalFile(this.package, this.path) {
-    if (path != '.dart_tool' && !path.startsWith('.dart_tool/')) {
+    final lowerPath = path.toLowerCase();
+    if (lowerPath != '.dart_tool' && !lowerPath.startsWith('.dart_tool/')) {
       throw ArgumentError.value(
         path,
         'path',
         'InternalFile path must be under .dart_tool.',
       );
     }
-    if (path.startsWith('$generatedOutputDirectory/')) {
+    if (lowerPath.startsWith('${generatedOutputDirectory.toLowerCase()}/')) {
       throw ArgumentError.value(
         path,
         'path',

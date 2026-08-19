@@ -213,9 +213,9 @@ class BuildPackages implements BuildFileLayout {
 
   @override
   String pathFor(BuildFile file, {bool checkWriteAllowed = false}) {
+    if (checkWriteAllowed) throwIfReadonly(file);
     if (file is AssetFile) {
       final id = file.id;
-      if (checkWriteAllowed) throwIfReadonly(id, hide: file.hidden);
       if (file.hidden) {
         final rootPackage = packages[outputRoot]!;
         return p.normalize(
@@ -264,18 +264,24 @@ class BuildPackages implements BuildFileLayout {
     throw ArgumentError('No package found for path: $path');
   }
 
-  /// Throws if [id] is not allowed to be written or deleted.
+  /// Throws if [file] is not allowed to be written or deleted.
   ///
-  /// Write or delete is allowed if [hide] is true or is in a package that is a
-  /// build output.
-  void throwIfReadonly(AssetId id, {bool hide = false}) {
-    final writeIsAllowed = hide || outputPackages.contains(id.package);
+  /// Write or delete is allowed if [file] is in the cache directory or is in a
+  /// package that is a build output.
+  void throwIfReadonly(BuildFile file) {
+    final writeIsAllowed =
+        (file is AssetFile && file.hidden) ||
+        outputPackages.contains(file.package);
     if (!writeIsAllowed) {
-      throw InvalidOutputException(
-        id,
-        'Tried to write or delete in a package not in the build. Packages '
-        'in the build are: ${outputPackages.join(', ')}',
-      );
+      if (file is AssetFile) {
+        throw InvalidOutputException(
+          file.id,
+          'Tried to write or delete in a package not in the build. Packages '
+          'in the build are: ${outputPackages.join(', ')}',
+        );
+      } else {
+        throw PackageReadonlyException(file.package);
+      }
     }
   }
 
@@ -385,4 +391,13 @@ Set<String> _computeTransitiveDeps(
     }
   }
   return result;
+}
+
+class PackageReadonlyException implements Exception {
+  final String package;
+
+  PackageReadonlyException(this.package);
+
+  @override
+  String toString() => 'Package $package is not an output package';
 }

@@ -50,6 +50,28 @@ void main() {
       expect(() => AssetId('app', '..'), throwsArgumentError);
       expect(() => AssetId('app', 'foo/../../asset.txt'), throwsArgumentError);
     });
+
+    test('throws for paths inside .dart_tool', () {
+      expect(() => AssetId('app', '.dart_tool'), throwsArgumentError);
+      expect(
+        () => AssetId('app', '.dart_tool/package_config.json'),
+        throwsArgumentError,
+      );
+      expect(() => AssetId('app', '.DART_TOOL/foo.dart'), throwsArgumentError);
+      expect(() => AssetId('app', '.Dart_Tool/foo.dart'), throwsArgumentError);
+      expect(
+        () => AssetId('app', 'foo/../.dart_tool/bar.dart'),
+        throwsArgumentError,
+      );
+      expect(
+        () => AssetId('app', 'foo/..//.DART_TOOL/bar.dart'),
+        throwsArgumentError,
+      );
+      expect(
+        () => AssetId('app', r'.\.dart_tool\foo.dart'),
+        throwsArgumentError,
+      );
+    });
   });
 
   group('parse', () {

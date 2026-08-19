@@ -119,4 +119,35 @@ void main() async {
     await tester.run('root_pkg', 'dart run build_runner build --force-jit');
     expect(tester.read('root_pkg/web/a.txt.copy2'), null);
   });
+
+  test('conflicting logical ID exists in both source and cache', () async {
+    final pubspecs = await Pubspecs.load();
+    final tester = BuildRunnerTester(pubspecs);
+
+    tester.writeFixturePackage(
+      FixturePackages.copyBuilder(
+        buildToCache: true,
+        outputExtension: '.hidden',
+      ),
+    );
+    tester.writePackage(
+      name: 'root_pkg',
+      dependencies: ['build_runner'],
+      pathDependencies: ['builder_pkg'],
+      files: {'web/a.txt': 'a'},
+    );
+
+    // Initial build creates hidden output in cache.
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+    final cacheFile =
+        'root_pkg/.dart_tool/build/generated/root_pkg/web/a.txt.hidden';
+    expect(tester.read(cacheFile), 'a');
+
+    // Create a source file with the exact same logical ID.
+    tester.write('root_pkg/web/a.txt.hidden', 'source content');
+
+    // Next build recognizes the new source file and handles the conflict.
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+    expect(tester.read('root_pkg/web/a.txt.hidden'), 'source content');
+  });
 }

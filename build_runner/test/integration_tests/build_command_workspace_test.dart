@@ -138,6 +138,16 @@ void main() async {
     expect(tester.read('.dart_tool/build/generated/p4/lib/p4.txt.hidden'), '1');
     expect(tester.read('.dart_tool/build/generated/p5/lib/p5.txt.hidden'), '1');
 
+    // Subsequent build with no changes rediscovers cached outputs, does not
+    // classify them as sources, reruns no builders, and preserves cached files.
+    final noOpOutput = await tester.run(
+      '',
+      'dart run build_runner build --force-jit --workspace',
+    );
+    expect(noOpOutput, contains('wrote 0 outputs'));
+    expect(tester.read('.dart_tool/build/generated/p4/lib/p4.txt.hidden'), '1');
+    expect(tester.read('.dart_tool/build/generated/p5/lib/p5.txt.hidden'), '1');
+
     // Write a builder that applies another builder in its build.yaml.
     tester.writeFixturePackage(
       FixturePackages.copyBuilder(
