@@ -39,15 +39,15 @@ class BuildOutputReader {
   Set<AssetId> _collectAssetsDeletedByPostProcessBuilders() =>
       _buildState.assetsDeletedByPostProcess;
 
-  String pathFor(AssetId id) {
-    final hidden = id.isHidden(
-      buildStepPlan: _buildStepPlan,
-      buildState: _buildState,
-    );
-    return _builderFilesystem.readerWriter.buildFileLayout.pathFor(
-      AssetFile(id, hidden: hidden),
-    );
-  }
+  AssetFile _assetFile(AssetId id) => AssetFile(
+    id,
+    hidden: id.isHidden(buildStepPlan: _buildStepPlan, buildState: _buildState),
+  );
+
+  String pathFor(AssetId id) => pathForFile(_assetFile(id));
+
+  String pathForFile(AssetFile file) =>
+      _builderFilesystem.readerWriter.buildFileLayout.pathFor(file);
 
   /// Returns a reason why [id] is not readable, or null if it is readable.
   Future<UnreadableReason?> unreadableReason(AssetId id) async {
@@ -87,13 +87,7 @@ class BuildOutputReader {
     }
 
     if (buildState.isSource(id) &&
-        await builderFilesystem.readerWriter.canRead(
-          id,
-          hidden: id.isHidden(
-            buildStepPlan: _buildStepPlan,
-            buildState: buildState,
-          ),
-        )) {
+        await builderFilesystem.readerWriter.canReadFile(_assetFile(id))) {
       return null;
     }
     return UnreadableReason.notFound;

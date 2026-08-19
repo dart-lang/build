@@ -17,6 +17,8 @@ import 'package:watcher/watcher.dart';
 
 import '../../build/build_result.dart' as core;
 import '../../build/build_series.dart';
+import '../../build_file.dart';
+import '../../build_file_layout.dart';
 import '../../build_plan/build_directory.dart';
 import '../../build_plan/build_filter.dart';
 import '../../build_plan/build_plan.dart';
@@ -65,9 +67,22 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     Iterable<WatchEvent> fileChanges,
   ) async {
     final defaultTargets = targets.cast<DefaultBuildTarget>();
-    final updates = fileChanges
-        .map((change) => AssetId.parse(change.path))
-        .toSet();
+    final buildPackages = _buildPlan.buildSpec.buildPackages;
+    final updates = <AssetFile>{};
+    for (final change in fileChanges) {
+      BuildFile file;
+      try {
+        file = buildPackages.fileFromPath(change.path);
+      } catch (_) {
+        file = BuildFileLayout.fileFromDescriptor(
+          change.path,
+          defaultPackage: _currentPackageName,
+        );
+      }
+      if (file is AssetFile) {
+        updates.add(file);
+      }
+    }
 
     final targetNames = targets.map((t) => t.target).toSet();
     _logMessage(Level.INFO, 'About to build ${targetNames.toList()}...');
@@ -132,7 +147,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       );
 
       if (interestedInOutputs) {
-        outputs = {for (final id in updates) id, ...result.outputs};
+        outputs = {for (final file in updates) file.id, ...result.outputs};
       }
 
       for (final target in targets) {
@@ -241,7 +256,12 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
             .where((changes) => changes.isNotEmpty)
             .map(
               (changes) => changes
-                  .map((change) => WatchEvent(change.type, '${change.id}'))
+                  .map(
+                    (change) => WatchEvent(
+                      change.type,
+                      buildPlan.buildSpec.buildPackages.pathFor(change.file),
+                    ),
+                  )
                   .toList(),
             );
 

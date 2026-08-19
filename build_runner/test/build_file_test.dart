@@ -37,15 +37,34 @@ void main() {
 
   group('InternalFile', () {
     test('holds package and path', () {
-      const file = InternalFile('a', '.dart_tool/package_config.json');
+      final file = InternalFile('a', '.dart_tool/package_config.json');
       expect(file.package, 'a');
       expect(file.path, '.dart_tool/package_config.json');
     });
 
+    test('enforces constraints', () {
+      expect(
+        () => InternalFile('a', 'lib/a.dart'),
+        throwsA(isA<AssertionError>()),
+      );
+      expect(
+        () => InternalFile('a', '.dart_tool/build/generated/a/lib/a.dart'),
+        throwsA(isA<AssertionError>()),
+      );
+      expect(
+        () => InternalFile('a', '/.dart_tool/package_config.json'),
+        throwsA(isA<AssertionError>()),
+      );
+      expect(
+        () => InternalFile('a', '.dart_tool/../.dart_tool'),
+        throwsA(isA<AssertionError>()),
+      );
+    });
+
     test('equality and hashCode', () {
-      const file1 = InternalFile('a', '.dart_tool/package_config.json');
-      const file2 = InternalFile('a', '.dart_tool/package_config.json');
-      const file3 = InternalFile('b', '.dart_tool/package_config.json');
+      final file1 = InternalFile('a', '.dart_tool/package_config.json');
+      final file2 = InternalFile('a', '.dart_tool/package_config.json');
+      final file3 = InternalFile('b', '.dart_tool/package_config.json');
 
       expect(file1, equals(file2));
       expect(file1.hashCode, equals(file2.hashCode));
@@ -120,7 +139,7 @@ void main() {
         ),
       );
 
-      const internal = InternalFile('a', '.dart_tool/package_config.json');
+      final internal = InternalFile('a', '.dart_tool/package_config.json');
       expect(
         buildPackages.pathFor(internal),
         p.join('/', 'root', 'a', '.dart_tool', 'package_config.json'),

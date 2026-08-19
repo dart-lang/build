@@ -244,9 +244,16 @@ class BuildPackages implements BuildFileLayout {
   BuildFile fromPath(BuildPackage package, String path) =>
       BuildFileLayout.fileFromPath(package, path);
 
-  @override
-  String cachePathFor(String relativePath) =>
-      p.join(packages[outputRoot]!.path, relativePath);
+  /// Converts a filesystem [path] to a [BuildFile] by finding the matching
+  /// package.
+  BuildFile fileFromPath(String path) {
+    for (final package in packages.values) {
+      if (p.isWithin(package.path, path) || package.path == path) {
+        return BuildFileLayout.fileFromPath(package, path);
+      }
+    }
+    throw ArgumentError('No package found for path: $path');
+  }
 
   /// Throws if [id] is not allowed to be written or deleted.
   ///

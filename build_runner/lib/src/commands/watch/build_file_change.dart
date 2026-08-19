@@ -1,3 +1,7 @@
+// Copyright (c) 2017, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
 import 'package:build/build.dart';
 import 'package:watcher/watcher.dart';
 
@@ -6,7 +10,7 @@ import '../../build_file_layout.dart';
 import '../../build_plan/build_package.dart';
 
 /// Represents a change that was detected on disk as a result of [type].
-class AssetChange {
+class BuildFileChange {
   /// The build file that was changed.
   final BuildFile file;
 
@@ -16,24 +20,22 @@ class AssetChange {
   /// What caused the asset to be detected as changed.
   final ChangeType type;
 
-  AssetChange(AssetId id, this.type)
-    : file = AssetFile.source(id),
-      path = id.path;
+  BuildFileChange(this.file, this.type) : path = file.path;
 
-  const AssetChange.withFile(this.file, this.path, this.type);
+  const BuildFileChange.withPath(this.file, this.path, this.type);
 
-  factory AssetChange.fromPath(
+  factory BuildFileChange.fromPath(
     BuildPackage package,
     String path,
     ChangeType type,
   ) {
     final file = BuildFileLayout.fileFromPath(package, path);
     final relativePath = BuildFileLayout.normalizeRelativePath(package, path);
-    return AssetChange.withFile(file, relativePath, type);
+    return BuildFileChange.withPath(file, relativePath, type);
   }
 
-  factory AssetChange.fromEvent(BuildPackage package, WatchEvent event) =>
-      AssetChange.fromPath(package, event.path, event.type);
+  factory BuildFileChange.fromEvent(BuildPackage package, WatchEvent event) =>
+      BuildFileChange.fromPath(package, event.path, event.type);
 
   AssetFile? get assetFile => file is AssetFile ? file as AssetFile : null;
 
@@ -44,11 +46,12 @@ class AssetChange {
 
   @override
   bool operator ==(Object other) =>
-      other is AssetChange &&
+      other is BuildFileChange &&
       other.file == file &&
       other.path == path &&
       other.type == type;
 
   @override
-  String toString() => 'AssetChange {path: $path, file: $file, type: $type}';
+  String toString() =>
+      'BuildFileChange {path: $path, file: $file, type: $type}';
 }

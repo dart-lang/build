@@ -340,7 +340,12 @@ Future<TestBuilderResult> testBuilderFactories(
 
   final inputIds = {
     for (final descriptor in sourceAssets.keys)
-      if (!descriptor.contains('.dart_tool/')) makeAssetId(descriptor),
+      if (BuildFileLayout.fileFromDescriptor(
+            descriptor,
+            defaultPackage: rootPackage ?? '',
+          )
+          case AssetFile(:final id, hidden: false))
+        id,
   };
 
   if (inputIds.isEmpty && rootPackage == null) {
@@ -395,27 +400,14 @@ Future<TestBuilderResult> testBuilderFactories(
   ]);
 
   sourceAssets.forEach((serializedId, contents) {
-    if (serializedId.contains('.dart_tool/')) {
-      final pipeIndex = serializedId.indexOf('|');
-      final pkg = pipeIndex == -1
-          ? rootPackage!
-          : serializedId.substring(0, pipeIndex);
-      final relPath = pipeIndex == -1
-          ? serializedId
-          : serializedId.substring(pipeIndex + 1);
-      final file = InternalFile(pkg, relPath);
-      if (contents is String) {
-        readerWriter!.testing.writeFileString(file, contents);
-      } else if (contents is List<int>) {
-        readerWriter!.testing.writeFileBytes(file, contents);
-      }
-    } else {
-      final id = makeAssetId(serializedId);
-      if (contents is String) {
-        readerWriter!.testing.writeString(id, contents);
-      } else if (contents is List<int>) {
-        readerWriter!.testing.writeBytes(id, contents);
-      }
+    final file = BuildFileLayout.fileFromDescriptor(
+      serializedId,
+      defaultPackage: rootPackage!,
+    );
+    if (contents is String) {
+      readerWriter!.testing.writeFileString(file, contents);
+    } else if (contents is List<int>) {
+      readerWriter!.testing.writeFileBytes(file, contents);
     }
   });
 

@@ -2,18 +2,17 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:build/build.dart';
+import '../../build_file.dart';
+import 'build_file_change.dart';
 
-import 'asset_change.dart';
-
-/// Merges [AssetChange] events into a set of changed [AssetId]s, discarding
-/// the change types.
-Set<AssetId> collectChanges(List<List<AssetChange>> changes) {
-  final result = <AssetId>{};
+/// Merges [BuildFileChange] events into a set of changed [AssetFile]s,
+/// discarding the change types.
+Set<AssetFile> collectChanges(List<List<BuildFileChange>> changes) {
+  final result = <AssetFile>{};
   for (final change in changes.expand((l) => l)) {
-    final id = change.id;
-    if (id != null) {
-      result.add(id);
+    final assetFile = change.assetFile;
+    if (assetFile != null) {
+      result.add(assetFile);
     }
   }
   return result;

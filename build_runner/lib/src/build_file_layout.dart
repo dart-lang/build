@@ -16,11 +16,42 @@ abstract interface class BuildFileLayout {
   /// Set [checkWriteAllowed] to throw if the file is read only.
   String pathFor(BuildFile file, {bool checkWriteAllowed = false});
 
-  /// Converts [relativePath] within the cache directory to a filesystem path.
-  String cachePathFor(String relativePath);
-
   /// Converts a filesystem [path] within [package] to a [BuildFile].
   BuildFile fromPath(BuildPackage package, String path);
+
+  /// Converts a serialized test fixture descriptor to a [BuildFile].
+  ///
+  /// Supports serialized IDs of the form `package|path`, or paths like
+  /// `.dart_tool/...` or `.dart_tool/build/generated/...`.
+  static BuildFile fileFromDescriptor(
+    String descriptor, {
+    required String defaultPackage,
+  }) {
+    final pipeIndex = descriptor.indexOf('|');
+    final package = pipeIndex == -1
+        ? defaultPackage
+        : descriptor.substring(0, pipeIndex);
+    final path = pipeIndex == -1
+        ? descriptor
+        : descriptor.substring(pipeIndex + 1);
+
+    final posixPath = p.posix.normalize(path.replaceAll(r'\', '/'));
+    if (posixPath.startsWith('$generatedOutputDirectory/')) {
+      final packagePath = posixPath.substring(
+        generatedOutputDirectory.length + 1,
+      );
+      final firstSlash = packagePath.indexOf('/');
+      if (firstSlash != -1) {
+        final targetPackage = packagePath.substring(0, firstSlash);
+        final targetPath = packagePath.substring(firstSlash + 1);
+        return AssetFile.cache(AssetId(targetPackage, targetPath));
+      }
+    }
+    if (posixPath == '.dart_tool' || posixPath.startsWith('.dart_tool/')) {
+      return InternalFile(package, posixPath);
+    }
+    return AssetFile.source(AssetId(package, posixPath));
+  }
 
   /// Converts a filesystem [path] within [package] to a [BuildFile].
   static BuildFile fileFromPath(BuildPackage package, String path) {

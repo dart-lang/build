@@ -7,7 +7,7 @@ import 'dart:async';
 import 'package:watcher/watcher.dart';
 
 import '../../build_plan/build_package.dart';
-import 'asset_change.dart';
+import 'build_file_change.dart';
 
 Watcher _default(String path) => Watcher(path);
 
@@ -29,8 +29,10 @@ class BuildPackageWatcher {
     : _strategy = watch ?? _default;
 
   /// Returns a stream of records for assets that change recursively.
-  Stream<AssetChange> watch() {
+  Stream<BuildFileChange> watch() {
     _watcher = _strategy(buildPackage.path);
-    return _watcher.events.map((e) => AssetChange.fromEvent(buildPackage, e));
+    return _watcher.events.map(
+      (e) => BuildFileChange.fromEvent(buildPackage, e),
+    );
   }
 }

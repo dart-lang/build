@@ -181,10 +181,6 @@ class InMemoryBuildFileLayout implements BuildFileLayout {
   @override
   BuildFile fromPath(BuildPackage package, String path) =>
       BuildFileLayout.fileFromPath(package, path);
-
-  @override
-  String cachePathFor(String relativePath) =>
-      '$outputRootPackage|$relativePath';
 }
 
 class InMemoryAssetFinder implements AssetFinder {

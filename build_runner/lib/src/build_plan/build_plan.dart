@@ -10,6 +10,7 @@ import '../build/asset_content.dart';
 import '../build/build_state/build_state.dart';
 import '../build/library_cycle_graph/phased_asset_deps.dart';
 import '../build/resolver/asset_ids.dart';
+import '../build_file.dart';
 import '../exceptions.dart';
 import '../io/asset_tracker.dart';
 import '../io/reader_writer.dart';
@@ -94,24 +95,28 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         previousBuild: previousBuild,
         buildDirs: buildSpec.buildOptions.buildDirs,
         buildFilters: buildSpec.buildOptions.buildFilters,
-        filesToCheck: inputSources,
+        filesToCheck: {for (final id in inputSources) AssetFile.source(id)},
         assetTrackerInputSources: assetTrackerInputSources,
       );
     } else {
       // If there is a compatible previous build, check all previous build files
       // and all discovered files on disk.
-      final filesToCheck = {
-        ...assetTrackerInputSources,
-        ...cacheDirSources,
-        ...previousBuildState.sources,
-        ...previousBuildState.actualOutputs,
-      };
-
       final previousBuildStepPlan = BuildStepPlan.compute(
         buildPhases: buildSpec.buildPhases,
         placeholderIds: buildPackages.placeholderIds,
         sources: previousBuildState.sources,
       );
+
+      final filesToCheck = <AssetFile>{
+        for (final id in assetTrackerInputSources) AssetFile.source(id),
+        for (final id in cacheDirSources) AssetFile.cache(id),
+        for (final id in previousBuildState.sources) AssetFile.source(id),
+        for (final id in previousBuildState.actualOutputs)
+          AssetFile(
+            id,
+            hidden: id.isHidden(buildStepPlan: previousBuildStepPlan),
+          ),
+      };
 
       return _createIncremental(
         buildSpec: buildSpec,
@@ -140,7 +145,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       ..conflictingOutputs.clear(),
   );
 
-  Future<BuildPlan> updateForFileChanges(Set<AssetId> filesToCheck) {
+  Future<BuildPlan> updateForFileChanges(Set<AssetFile> filesToCheck) {
     final previousBuildState = previousBuild.buildState;
     if (previousBuildState == null) {
       return _createClean(
@@ -187,15 +192,15 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
     required PreviousBuild previousBuild,
     required BuiltSet<BuildDirectory> buildDirs,
     required BuiltSet<BuildFilter> buildFilters,
-    required Set<AssetId> filesToCheck,
+    required Set<AssetFile> filesToCheck,
     Set<AssetId>? assetTrackerInputSources,
   }) async {
     final readerWriter = buildSpec.readerWriter;
     final result = BuildInputsBuilder()..cleanBuild = true;
 
-    for (final id in filesToCheck) {
-      if (await readerWriter.canRead(id)) {
-        result.sources.add(id);
+    for (final file in filesToCheck) {
+      if (await readerWriter.canReadFile(file)) {
+        result.sources.add(file.id);
       }
     }
 
@@ -235,7 +240,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       if (buildStepPlan.declaredOutputsOf(id).isNotEmpty) {
         try {
           result.sourceContents[id] = AssetContent.bytes(
-            await readerWriter.readAsBytes(id),
+            await readerWriter.readFileAsBytes(AssetFile.source(id)),
           );
         } catch (_) {}
       }
@@ -259,7 +264,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
     required BuildStepPlan previousBuildStepPlan,
     required BuiltSet<BuildDirectory> buildDirs,
     required BuiltSet<BuildFilter> buildFilters,
-    required Set<AssetId> filesToCheck,
+    required Set<AssetFile> filesToCheck,
   }) async {
     final readerWriter = buildSpec.readerWriter;
     final buildInputs = BuildInputsBuilder()..cleanBuild = false;
@@ -275,7 +280,8 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       }
     }
 
-    for (final id in filesToCheck) {
+    for (final file in filesToCheck) {
+      final id = file.id;
       final oldIsSource = previousBuildState.isSource(id);
       final oldExisted = previousBuildState.isFile(
         buildStepPlan: buildStepPlan,
@@ -288,17 +294,11 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       var exists = false;
       AssetContent? newContent;
 
-      if (await readerWriter.canRead(
-        id,
-        hidden: id.isHidden(buildStepPlan: previousBuildStepPlan),
-      )) {
+      if (await readerWriter.canReadFile(file)) {
         exists = true;
         if (oldContent != null) {
           try {
-            final bytes = await readerWriter.readAsBytes(
-              id,
-              hidden: id.isHidden(buildStepPlan: previousBuildStepPlan),
-            );
+            final bytes = await readerWriter.readFileAsBytes(file);
             newContent = AssetContent.bytes(bytes);
           } catch (_) {
             exists = false;
@@ -341,9 +341,8 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       if (buildInputs.sourceContents[id] == null &&
           buildStepPlan.declaredOutputsOf(id).isNotEmpty) {
         try {
-          final bytes = await readerWriter.readAsBytes(
-            id,
-            hidden: id.isHidden(buildStepPlan: buildStepPlan),
+          final bytes = await readerWriter.readFileAsBytes(
+            AssetFile.source(id),
           );
           buildInputs.sourceContents[id] = AssetContent.bytes(bytes);
         } catch (_) {}

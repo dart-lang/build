@@ -14,7 +14,7 @@ import '../build_plan/build_directory.dart';
 import '../build_plan/build_filter.dart';
 import '../build_plan/build_plan.dart';
 import '../build_plan/output_strategy.dart';
-import '../commands/watch/asset_change.dart';
+import '../commands/watch/build_file_change.dart';
 import '../constants.dart';
 import '../io/asset_tracker.dart';
 import '../io/create_merged_dir.dart';
@@ -73,8 +73,10 @@ class BuildSeries {
       _buildPlan.buildSpec.buildOptions.outputStrategy;
 
   /// Filters [changes] to only changes that might trigger a build.
-  Future<List<AssetChange>> filterChanges(List<AssetChange> changes) async {
-    final result = <AssetChange>[];
+  Future<List<BuildFileChange>> filterChanges(
+    List<BuildFileChange> changes,
+  ) async {
+    final result = <BuildFileChange>[];
     final buildPackages = _buildPlan.buildSpec.buildPackages;
     for (final change in changes) {
       final diskPath = buildPackages.pathFor(change.file);
@@ -92,9 +94,11 @@ class BuildSeries {
 
       // Ignore deletes and writes done by `build_runner`, for output strategies
       // that do deletes and writes.
-      if (_outputStrategy == .overwrite || _outputStrategy == .keep) {
+      if (_outputStrategy == OutputStrategy.overwrite ||
+          _outputStrategy == OutputStrategy.keep) {
         // Ignore deletes done by `build_runner`.
-        if (change.type == .REMOVE && _expectedDeletes.remove(assetFile)) {
+        if (change.type == ChangeType.REMOVE &&
+            _expectedDeletes.remove(assetFile)) {
           continue;
         }
 
@@ -102,15 +106,15 @@ class BuildSeries {
         // because `package:watcher` can coalesce two modify events into one.
         // If the first is by `build_runner` and the second is an external
         // change then just ignoring the event would be incorrect.
-        if ((change.type == .ADD || change.type == .MODIFY) &&
+        if ((change.type == ChangeType.ADD ||
+                change.type == ChangeType.MODIFY) &&
             _buildPlan.buildStepPlan.isDeclaredOutput(id)) {
           final expectedContent = _buildPlan.previousBuild.buildState
               ?.contentOf(id: id, buildStepPlan: _buildPlan.buildStepPlan);
           if (expectedContent != null) {
             try {
-              final bytes = await _buildPlan.readerWriter.readAsBytes(
-                id,
-                hidden: id.isHidden(buildStepPlan: _buildPlan.buildStepPlan),
+              final bytes = await _buildPlan.readerWriter.readFileAsBytes(
+                assetFile,
               );
               if (md5.convert(bytes) == expectedContent.digest) {
                 continue;
@@ -124,7 +128,7 @@ class BuildSeries {
         continue;
       }
 
-      if (_isBuildConfiguration(id)) {
+      if (_isBuildConfiguration(assetFile)) {
         result.add(change);
         continue;
       }
@@ -166,7 +170,7 @@ class BuildSeries {
 
       // Handle modifications and creations of outputs.
       if (_buildPlan.buildStepPlan.isDeclaredOutput(id) &&
-          change.type != .REMOVE &&
+          change.type != ChangeType.REMOVE &&
           _outputStrategy == OutputStrategy.keep) {
         continue;
       }
@@ -178,11 +182,11 @@ class BuildSeries {
     return result;
   }
 
-  bool _isBuildConfiguration(AssetId id) =>
-      id.path == 'build.yaml' ||
-      id.path.endsWith('.build.yaml') ||
-      (id.package == _buildPlan.buildSpec.buildPackages.outputRoot &&
-          id.path ==
+  bool _isBuildConfiguration(BuildFile file) =>
+      file.path == 'build.yaml' ||
+      file.path.endsWith('.build.yaml') ||
+      (file.package == _buildPlan.buildSpec.buildPackages.outputRoot &&
+          file.path ==
               'build.${_buildPlan.buildSpec.buildOptions.configKey}.yaml');
 
   Future<List<WatchEvent>> checkForChanges() async {
@@ -196,8 +200,14 @@ class BuildSeries {
           buildState: _buildPlan.previousBuild.buildState ?? BuildState(),
         );
 
+    final buildPackages = _buildPlan.buildSpec.buildPackages;
     return List.of(
-      updates.entries.map((entry) => WatchEvent(entry.value, '${entry.key}')),
+      updates.entries.map(
+        (entry) => WatchEvent(
+          entry.value,
+          buildPackages.pathFor(AssetFile.source(entry.key)),
+        ),
+      ),
     );
   }
 
@@ -222,7 +232,7 @@ class BuildSeries {
   /// Set [recentlyBootstrapped] to skip doing checks that are done during
   /// bootstrapping. If [recentlyBootstrapped] then [updates] must be empty.
   Future<BuildResult> run(
-    Set<AssetId> updates, {
+    Set<AssetFile> updates, {
     required bool recentlyBootstrapped,
     BuiltSet<BuildDirectory>? buildDirs,
     BuiltSet<BuildFilter>? buildFilters,

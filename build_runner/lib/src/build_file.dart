@@ -4,6 +4,10 @@
 
 import 'package:build/build.dart';
 
+import 'package:path/path.dart' as p;
+
+import 'constants.dart';
+
 /// Base interface for all files `build_runner` interacts with.
 abstract interface class BuildFile {
   String get package;
@@ -51,7 +55,20 @@ class InternalFile implements BuildFile {
   @override
   final String path;
 
-  const InternalFile(this.package, this.path);
+  InternalFile(this.package, this.path)
+    : assert(
+        path == '.dart_tool' || path.startsWith('.dart_tool/'),
+        'InternalFile path must be under .dart_tool: $path',
+      ),
+      assert(
+        !path.startsWith('$generatedOutputDirectory/'),
+        'InternalFile path must not be under the build cache '
+        '$generatedOutputDirectory: $path',
+      ),
+      assert(
+        !p.isAbsolute(path) && p.posix.normalize(path) == path,
+        'InternalFile path must be a normalized relative path: $path',
+      );
 
   @override
   int get hashCode => package.hashCode ^ path.hashCode;

@@ -40,7 +40,7 @@ void main() {
         outputRootPackage: buildPackages.outputRoot,
       );
       await readerWriter.writeFileAsBytes(
-        const InternalFile('a', '.dart_tool/package_config.json'),
+        InternalFile('a', '.dart_tool/package_config.json'),
         utf8.encode(
           jsonEncode({
             'configVersion': 2,

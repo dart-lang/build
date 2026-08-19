@@ -169,7 +169,8 @@ class AssetTracker {
             .whereType<AssetId>(),
       );
     }
-    final generatedDirPath = _buildPackages.cachePathFor(
+    final generatedDirPath = p.join(
+      _buildPackages.packages[_buildPackages.outputRoot]!.path,
       generatedOutputDirectory,
     );
     final generatedDir = Directory(generatedDirPath);
