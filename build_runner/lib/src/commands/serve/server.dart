@@ -24,17 +24,6 @@ final _assetsDigestPath = r'$assetDigests';
 final _buildUpdatesProtocol = r'$buildUpdates';
 final entrypointExtensionMarker = '/* ENTRYPOINT_EXTENTION_MARKER */';
 
-enum PerfSortOrder {
-  startTimeAsc,
-  startTimeDesc,
-  stopTimeAsc,
-  stopTimeDesc,
-  durationAsc,
-  durationDesc,
-  innerDurationAsc,
-  innerDurationDesc,
-}
-
 class ServeHandler {
   final Watcher _watcher;
 

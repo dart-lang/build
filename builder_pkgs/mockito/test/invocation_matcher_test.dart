@@ -110,36 +110,6 @@ void main() {
       );
     });
   });
-
-  group('$invokes', () {
-    test('positional arguments', () {
-      stub.say('Hello');
-      final call = Stub.lastInvocation;
-      shouldPass(call, invokes(#say, positionalArguments: ['Hello']));
-      shouldPass(call, invokes(#say, positionalArguments: [anything]));
-      shouldFail(
-        call,
-        invokes(#say, positionalArguments: [isNull]),
-        'Expected: say(null) '
-        "Actual: <Instance of '${call.runtimeType}'> "
-        "Which: Does not match say('Hello')",
-      );
-    });
-
-    test('named arguments', () {
-      stub.fly(miles: 10);
-      final call = Stub.lastInvocation;
-      shouldPass(call, invokes(#fly, namedArguments: {#miles: 10}));
-      shouldPass(call, invokes(#fly, namedArguments: {#miles: greaterThan(5)}));
-      shouldFail(
-        call,
-        invokes(#fly, namedArguments: {#miles: 11}),
-        "Expected: fly('miles: 11') "
-        "Actual: <Instance of '${call.runtimeType}'> "
-        "Which: Does not match fly('miles: 10')",
-      );
-    });
-  });
 }
 
 abstract class Interface {

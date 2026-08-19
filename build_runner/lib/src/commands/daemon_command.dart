@@ -13,6 +13,8 @@ import 'package:build_daemon/data/serializers.dart';
 import 'package:build_daemon/data/server_log.dart';
 import 'package:built_collection/built_collection.dart';
 
+import 'package:path/path.dart' as p;
+
 import '../bootstrap/build_process_state.dart';
 import '../bootstrap/processes.dart';
 import '../build_plan/build_options.dart';
@@ -23,7 +25,6 @@ import '../build_plan/testing_overrides.dart';
 import '../logging/build_log.dart';
 import 'build_runner_command.dart';
 import 'daemon/asset_server.dart';
-import 'daemon/constants.dart';
 import 'daemon/daemon_builder.dart';
 import 'daemon_options.dart';
 
@@ -153,3 +154,6 @@ $logEndMarker''');
     }
   }
 }
+
+String assetServerPortFilePath(String workingDirectory) =>
+    p.join(daemonWorkspace(workingDirectory), '.asset_server_port');

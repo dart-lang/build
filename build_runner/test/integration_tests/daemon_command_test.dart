@@ -12,7 +12,7 @@ import 'package:build_daemon/client.dart';
 import 'package:build_daemon/constants.dart';
 import 'package:build_daemon/data/build_status.dart';
 import 'package:build_daemon/data/build_target.dart';
-import 'package:build_runner/src/commands/daemon/constants.dart';
+import 'package:build_runner/src/commands/daemon_command.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
