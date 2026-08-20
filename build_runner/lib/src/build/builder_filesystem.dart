@@ -17,7 +17,6 @@ import 'build_state/build_step_id.dart';
 import 'build_state/build_step_result.dart';
 import 'build_state/glob_id.dart';
 import 'library_cycle_graph/phased_value.dart';
-import 'resolver/asset_ids.dart';
 
 /// The filesystem from the point of view of a build step.
 ///
@@ -29,8 +28,8 @@ class BuilderFilesystem {
   final BuildState buildState;
   final BuildStepPlan buildStepPlan;
   final ReaderWriter readerWriter;
-  final AssetBuilder? assetBuilder;
-  final GlobEvaluator? globEvaluator;
+  final AssetBuilder assetBuilder;
+  final GlobEvaluator globEvaluator;
 
   BuilderFilesystem({
     required this.buildPackages,
@@ -38,19 +37,9 @@ class BuilderFilesystem {
     required this.buildState,
     required this.buildStepPlan,
     required this.readerWriter,
-    this.assetBuilder,
-    this.globEvaluator,
+    required this.assetBuilder,
+    required this.globEvaluator,
   });
-
-  /// Returns a copy without in-build hooks: [assetBuilder], [globEvaluator],
-  /// content update listener.
-  BuilderFilesystem forAfterBuild() => BuilderFilesystem(
-    buildPackages: buildPackages,
-    buildConfigs: buildConfigs,
-    buildState: buildState,
-    buildStepPlan: buildStepPlan,
-    readerWriter: readerWriter,
-  );
 
   void Function(AssetId, AssetContent?)? _onUpdateContent;
 
@@ -138,7 +127,7 @@ class BuilderFilesystem {
   }
 
   bool isFile(AssetId id) {
-    return buildState.isFile(id: id, buildStepPlan: buildStepPlan);
+    return buildState.isFile(id);
   }
 
   /// Returns the content of [id].
@@ -148,10 +137,7 @@ class BuilderFilesystem {
   /// If it hasn't yet been read it will be read from the filesystem and stored
   /// in memory.
   Future<AssetContent> contentOf(AssetId id) async {
-    final maybeResult = buildState.contentOf(
-      id: id,
-      buildStepPlan: buildStepPlan,
-    );
+    final maybeResult = buildState.contentOf(id);
     if (maybeResult != null && maybeResult.hasContent) return maybeResult;
 
     if (!isFile(id)) {
@@ -162,10 +148,7 @@ class BuilderFilesystem {
     try {
       bytes = await readerWriter.readAsBytes(
         id,
-        hidden: id.isHidden(
-          buildStepPlan: buildStepPlan,
-          buildState: buildState,
-        ),
+        hidden: buildState.isHidden(id),
       );
     } on AssetNotFoundException {
       await ChildProcess.exitDueToAssetDeleted(id);
@@ -218,17 +201,14 @@ class BuilderFilesystem {
     if (buildStepPlan.isDeclaredOutput(id)) {
       final step = buildStepPlan.stepForDeclaredOutput(id);
       if (step.phaseNumber >= phase) {
-        // Parallel outputs (or own outputs not caught earlier) are hidden.
+        // Parallel outputs, or own outputs not caught earlier, are hidden.
         return false;
       }
 
-      // If a build is running: build the asset if needed.
-      await assetBuilder?.call(id);
+      // Build the asset if needed.
+      await assetBuilder(id);
 
-      return buildState.isActualSuccessfulOutput(
-        buildStepPlan: buildStepPlan,
-        id: id,
-      );
+      return buildState.isActualSuccessfulOutput(id);
     }
     return buildState.isSource(id);
   }
@@ -249,7 +229,7 @@ class BuilderFilesystem {
       phaseNumber: phase,
     );
 
-    globEvaluator!(globId).then((_) {
+    globEvaluator(globId).then((_) {
       if (trackGlob != null) trackGlob(globId);
       final globResult = buildState.globResultFor(globId)!;
       streamCompleter.setSourceStream(Stream.fromIterable(globResult.results));
@@ -286,16 +266,10 @@ class BuilderFilesystem {
       if (stepPhase >= phase) {
         return PhasedValue.unavailable(before: '', expiresAfter: stepPhase);
       } else {
-        if (!buildState.isProcessedOutput(
-          buildStepPlan: buildStepPlan,
-          id: id,
-        )) {
-          await assetBuilder?.call(id);
+        if (!buildState.isProcessedOutput(id)) {
+          await assetBuilder(id);
         }
-        final isSuccessOutput = buildState.isActualSuccessfulOutput(
-          buildStepPlan: buildStepPlan,
-          id: id,
-        );
+        final isSuccessOutput = buildState.isActualSuccessfulOutput(id);
         return PhasedValue.generated(
           atPhase: stepPhase,
           before: '',
@@ -307,13 +281,7 @@ class BuilderFilesystem {
     }
 
     return PhasedValue.fixed(
-      await readerWriter.canRead(
-            id,
-            hidden: id.isHidden(
-              buildStepPlan: buildStepPlan,
-              buildState: buildState,
-            ),
-          )
+      await readerWriter.canRead(id, hidden: buildState.isHidden(id))
           ? (await contentOf(id)).dartStringValueOrEmptyFail(id: id)
           : '',
     );

@@ -51,6 +51,8 @@ void main() {
   print(message);
 }
 ''',
+        'web/index.html': '<h1>Hello</h1>',
+        'web/unconsumed.html': '<h1>Unconsumed</h1>',
         'test/hello.dart': '''
 void main() {
   print('hello');
@@ -90,9 +92,13 @@ void main() {
     await differentOptionsDaemon.expect(optionsSkew);
 
     // Start client.
+    final logs = <String>[];
     var client = await BuildDaemonClient.connectUnchecked(
       p.join(tester.tempDirectory.path, 'root_pkg'),
-      logHandler: (event) => printOnFailure('(0) ${event.message}'),
+      logHandler: (event) {
+        logs.add(event.message);
+        printOnFailure('(0) ${event.message}');
+      },
     );
     addTearDown(client.close);
 
@@ -102,8 +108,10 @@ void main() {
     var results = StreamQueue(client.buildResults);
     expect((await results.next).results.single.status, BuildStatus.started);
     expect((await results.next).results.single.status, BuildStatus.succeeded);
+    expect(logs, contains('About to build [web]...'));
 
     // File change causes a build; input and output changes are reported.
+    logs.clear();
     tester.update('root_pkg/lib/message.dart', (script) => '$script\n');
     expect((await results.next).results.single.status, BuildStatus.started);
     final result = await results.next;
@@ -115,6 +123,49 @@ void main() {
         contains(Uri.parse('package:root_pkg/message.ddc.js')),
       ]),
     );
+    expect(logs, contains('About to build [web]...'));
+
+    // Unbuilt file changes are only reported if consumed via asset server.
+    final port = int.parse(
+      File(
+        assetServerPortFilePath(p.join(tester.tempDirectory.path, 'root_pkg')),
+      ).readAsStringSync(),
+    );
+    final httpClient = HttpClient();
+    addTearDown(httpClient.close);
+    final request = await httpClient.get('localhost', port, 'web/index.html');
+    final response = await request.close();
+    expect(response.statusCode, HttpStatus.ok);
+
+    // Unconsumed unbuilt file change does not cause a build.
+    logs.clear();
+    tester.update('root_pkg/web/unconsumed.html', (c) => '$c\n');
+    await daemon.expectNoOutput(const Duration(milliseconds: 500));
+    expect(logs, isEmpty);
+
+    // Consumed unbuilt file change causes a synthetic build and reports changed
+    // asset. No real build is performed.
+    tester.update('root_pkg/web/index.html', (c) => '$c\n');
+    expect((await results.next).results.single.status, BuildStatus.started);
+    final consumedResult = await results.next;
+    expect(consumedResult.results.single.status, BuildStatus.succeeded);
+    expect(
+      consumedResult.changedAssets,
+      contains(Uri.parse('asset:root_pkg/web/index.html')),
+    );
+    expect(logs.any((l) => l.contains('About to build')), isFalse);
+
+    // Consumed unbuilt file delete causes a synthetic build and reports changed
+    // asset. No real build is performed.
+    tester.delete('root_pkg/web/index.html');
+    expect((await results.next).results.single.status, BuildStatus.started);
+    final deleteResult = await results.next;
+    expect(deleteResult.results.single.status, BuildStatus.succeeded);
+    expect(
+      deleteResult.changedAssets,
+      contains(Uri.parse('asset:root_pkg/web/index.html')),
+    );
+    expect(logs.any((l) => l.contains('About to build')), isFalse);
 
     // Builder change causes shutdown.
     final shutdownNotificationFuture = client.shutdownNotifications.first;

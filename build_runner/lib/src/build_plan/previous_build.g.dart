@@ -8,7 +8,7 @@ part of 'previous_build.dart';
 
 class _$PreviousBuild extends PreviousBuild {
   @override
-  final BuildState? buildState;
+  final FinishedBuildState? state;
   @override
   final PhasedAssetDeps? phasedAssetDeps;
   @override
@@ -24,7 +24,7 @@ class _$PreviousBuild extends PreviousBuild {
       (PreviousBuildBuilder()..update(updates))._build();
 
   _$PreviousBuild._({
-    this.buildState,
+    this.state,
     this.phasedAssetDeps,
     required this.triggersChanged,
     required this.phaseOptionsChangedList,
@@ -42,7 +42,7 @@ class _$PreviousBuild extends PreviousBuild {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is PreviousBuild &&
-        buildState == other.buildState &&
+        state == other.state &&
         phasedAssetDeps == other.phasedAssetDeps &&
         triggersChanged == other.triggersChanged &&
         phaseOptionsChangedList == other.phaseOptionsChangedList &&
@@ -54,7 +54,7 @@ class _$PreviousBuild extends PreviousBuild {
   @override
   int get hashCode {
     var _$hash = 0;
-    _$hash = $jc(_$hash, buildState.hashCode);
+    _$hash = $jc(_$hash, state.hashCode);
     _$hash = $jc(_$hash, phasedAssetDeps.hashCode);
     _$hash = $jc(_$hash, triggersChanged.hashCode);
     _$hash = $jc(_$hash, phaseOptionsChangedList.hashCode);
@@ -67,7 +67,7 @@ class _$PreviousBuild extends PreviousBuild {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'PreviousBuild')
-          ..add('buildState', buildState)
+          ..add('state', state)
           ..add('phasedAssetDeps', phasedAssetDeps)
           ..add('triggersChanged', triggersChanged)
           ..add('phaseOptionsChangedList', phaseOptionsChangedList)
@@ -84,9 +84,9 @@ class PreviousBuildBuilder
     implements Builder<PreviousBuild, PreviousBuildBuilder> {
   _$PreviousBuild? _$v;
 
-  BuildState? _buildState;
-  BuildState? get buildState => _$this._buildState;
-  set buildState(BuildState? buildState) => _$this._buildState = buildState;
+  FinishedBuildState? _state;
+  FinishedBuildState? get state => _$this._state;
+  set state(FinishedBuildState? state) => _$this._state = state;
 
   PhasedAssetDepsBuilder? _phasedAssetDeps;
   PhasedAssetDepsBuilder get phasedAssetDeps =>
@@ -125,7 +125,7 @@ class PreviousBuildBuilder
   PreviousBuildBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
-      _buildState = $v.buildState;
+      _state = $v.state;
       _phasedAssetDeps = $v.phasedAssetDeps?.toBuilder();
       _triggersChanged = $v.triggersChanged;
       _phaseOptionsChangedList = $v.phaseOptionsChangedList.toBuilder();
@@ -156,7 +156,7 @@ class PreviousBuildBuilder
       _$result =
           _$v ??
           _$PreviousBuild._(
-            buildState: buildState,
+            state: state,
             phasedAssetDeps: _phasedAssetDeps?.build(),
             triggersChanged: BuiltValueNullFieldError.checkNotNull(
               triggersChanged,

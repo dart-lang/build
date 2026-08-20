@@ -22,6 +22,7 @@ import '../../build_plan/build_filter.dart';
 import '../../build_plan/build_plan.dart';
 import '../../logging/build_log.dart';
 import '../daemon_options.dart';
+import '../watch/asset_change.dart';
 import '../watch/build_packages_watcher.dart';
 import 'change_providers.dart';
 
@@ -33,6 +34,9 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   final BuildSeries buildSeries;
   final StreamController<ServerLog> _outputStreamController;
   final ChangeProvider changeProvider;
+  final DaemonOptions daemonOptions;
+
+  final Map<BuildTarget, BuildResult> _lastResultByTarget = {};
 
   Completer<void>? _buildingCompleter;
 
@@ -44,7 +48,10 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     this.buildSeries,
     this._outputStreamController,
     this.changeProvider,
+    this.daemonOptions,
   ) : logs = _outputStreamController.stream.asBroadcastStream();
+
+  bool get _isAutoBuild => daemonOptions.buildMode == BuildMode.Auto;
 
   /// Returns a future that completes when the current build is complete, or
   /// `null` if there is no active build.
@@ -64,12 +71,27 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     Set<BuildTarget> targets,
     Iterable<WatchEvent> fileChanges,
   ) async {
+    if (targets.isEmpty) return;
+
     final defaultTargets = targets.cast<DefaultBuildTarget>();
-    final updates = fileChanges
-        .map((change) => AssetId.parse(change.path))
-        .toSet();
+    final Set<AssetId> updates;
+    final Set<AssetId> consumedRejected;
+
+    if (_isAutoBuild) {
+      final autoBuild = await _prepareAutoBuild(targets, fileChanges);
+      if (autoBuild == null) return;
+      updates = autoBuild.updates;
+      consumedRejected = autoBuild.consumedRejected;
+    } else {
+      updates = fileChanges.map((change) => AssetId.parse(change.path)).toSet();
+      consumedRejected = const {};
+    }
 
     final targetNames = targets.map((t) => t.target).toSet();
+    final interestedInOutputs = targets.any(
+      (e) => e is DefaultBuildTarget && e.reportChangedAssets,
+    );
+
     _logMessage(Level.INFO, 'About to build ${targetNames.toList()}...');
     _signalStart(targetNames);
     final results = <BuildResult>[];
@@ -127,46 +149,38 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         }
         return;
       }
-      final interestedInOutputs = targets.any(
-        (e) => e is DefaultBuildTarget && e.reportChangedAssets,
-      );
 
       if (interestedInOutputs) {
-        outputs = {for (final id in updates) id, ...result.outputs};
+        outputs = {...updates, ...consumedRejected, ...result.outputs};
       }
 
       for (final target in targets) {
         if (result.status == core.BuildStatus.success) {
-          // TODO(grouma) - Can we notify if a target was cached?
-          results.add(
-            DefaultBuildResult((b) {
-              b.status = BuildStatus.succeeded;
-              b.target = target.target;
-            }),
-          );
+          final targetResult = DefaultBuildResult((b) {
+            b.status = BuildStatus.succeeded;
+            b.target = target.target;
+          });
+          _lastResultByTarget[target] = targetResult;
+          results.add(targetResult);
         } else {
-          results.add(
-            DefaultBuildResult((b) {
-              b.status = BuildStatus.failed;
-              // TODO(grouma) - We should forward the error messages
-              // instead.
-              // We can use the BuildState and FailureReporter to provide
-              // a better error message.;
-              b.error = 'FailureType: ${result.failureType?.exitCode}';
-              b.target = target.target;
-            }),
-          );
+          final targetResult = DefaultBuildResult((b) {
+            b.status = BuildStatus.failed;
+            b.error = 'FailureType: ${result.failureType?.exitCode}';
+            b.target = target.target;
+          });
+          _lastResultByTarget[target] = targetResult;
+          results.add(targetResult);
         }
       }
     } catch (e) {
       for (final target in targets) {
-        results.add(
-          DefaultBuildResult((b) {
-            b.status = BuildStatus.failed;
-            b.error = '$e';
-            b.target = target.target;
-          }),
-        );
+        final targetResult = DefaultBuildResult((b) {
+          b.status = BuildStatus.failed;
+          b.error = '$e';
+          b.target = target.target;
+        });
+        _lastResultByTarget[target] = targetResult;
+        results.add(targetResult);
       }
       _logMessage(Level.SEVERE, 'Build Failed:\n${e.toString()}');
     }
@@ -215,6 +229,85 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     _buildResults.add(BuildResults((b) => b..results.addAll(results)));
   }
 
+  /// Prepares auto build updates by filtering [fileChanges] and handling
+  /// unbuilt sources consumed outside the build.
+  ///
+  /// In auto build mode, incoming file changes are filtered into accepted build
+  /// inputs and rejected changes.
+  ///
+  /// Rejected changes that were read or digested outside the build, for example
+  /// by a development server, require notifying targets even though no build
+  /// steps need to run.
+  ///
+  /// If only consumed rejected changes occurred and all targets have cached
+  /// results, synthetic results are emitted immediately without rerunning the
+  /// build.
+  ///
+  /// Returns null if no build is required or if synthetic results were already
+  /// emitted.
+  Future<({Set<AssetId> updates, Set<AssetId> consumedRejected})?>
+  _prepareAutoBuild(
+    Set<BuildTarget> targets,
+    Iterable<WatchEvent> fileChanges,
+  ) async {
+    final assetChanges = [
+      for (final change in fileChanges)
+        AssetChange(AssetId.parse(change.path), change.type),
+    ];
+    final filtered = await buildSeries.filterChanges(assetChanges);
+    var consumedRejected = <AssetId>{};
+
+    if (!buildSeries.firstBuild) {
+      final lastResult = await buildSeries.currentBuildResult;
+      final reader = lastResult.buildOutputReader;
+      consumedRejected = filtered.rejected
+          .where(
+            (change) =>
+                reader?.wasSourceConsumedOutsideBuild(change.id) ?? false,
+          )
+          .map((change) => change.id)
+          .toSet();
+
+      // If neither accepted changes nor consumed rejected changes exist, do
+      // nothing.
+      if (filtered.accepted.isEmpty &&
+          consumedRejected.isEmpty &&
+          fileChanges.isNotEmpty) {
+        return null;
+      }
+
+      // If only consumed rejected changes exist and all targets have a cached
+      // result, emit synthetic results.
+      if (filtered.accepted.isEmpty &&
+          fileChanges.isNotEmpty &&
+          targets.every(_lastResultByTarget.containsKey)) {
+        _emitSyntheticResults(targets, consumedRejected);
+        return null;
+      }
+    }
+
+    return (
+      updates: filtered.accepted.map((c) => c.id).toSet(),
+      consumedRejected: consumedRejected,
+    );
+  }
+
+  void _emitSyntheticResults(
+    Set<BuildTarget> targets,
+    Set<AssetId> consumedRejected,
+  ) {
+    final targetNames = targets.map((t) => t.target).toSet();
+    final interestedInOutputs = targets.any(
+      (e) => e is DefaultBuildTarget && e.reportChangedAssets,
+    );
+    _signalStart(targetNames);
+    final results = [
+      for (final target in targets) _lastResultByTarget[target]!,
+    ];
+    final outputs = interestedInOutputs ? consumedRejected : null;
+    _signalEnd(results, outputs?.map((e) => e.uri));
+  }
+
   static Future<BuildRunnerDaemonBuilder> create({
     required BuildPlan buildPlan,
     required DaemonOptions daemonOptions,
@@ -237,8 +330,6 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
               buildPlan.buildSpec.testingOverrides.debounceDelay ??
                   const Duration(milliseconds: 250),
             )
-            .asyncMap(buildSeries.filterChanges)
-            .where((changes) => changes.isNotEmpty)
             .map(
               (changes) => changes
                   .map((change) => WatchEvent(change.type, '${change.id}'))
@@ -254,6 +345,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       buildSeries,
       outputStreamController,
       changeProvider,
+      daemonOptions,
     );
   }
 }

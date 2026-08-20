@@ -11,8 +11,6 @@ import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/build_state/build_step_result.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_id.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_result.dart';
-import 'package:build_runner/src/build/builder_filesystem.dart';
-import 'package:build_runner/src/build/resolver/asset_ids.dart';
 import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_directory.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
@@ -110,15 +108,9 @@ void main() {
           ),
         ),
       );
-      buildState = BuildState(buildPlan.buildInputs.sourceContents.toMap());
-      buildOutputReader = BuildOutputReader(
-        builderFilesystem: BuilderFilesystem(
-          buildPackages: buildPlan.buildSpec.buildPackages,
-          buildConfigs: buildPlan.buildSpec.buildConfigs,
-          buildState: buildState,
-          buildStepPlan: buildPlan.buildStepPlan,
-          readerWriter: buildPlan.readerWriter,
-        ),
+      buildState = BuildState(
+        buildStepPlan: buildPlan.buildStepPlan,
+        sources: buildPlan.buildInputs.sourceContents.toMap(),
       );
 
       for (final id in [
@@ -139,12 +131,14 @@ void main() {
           sources[buildPlan.buildStepPlan
               .stepForDeclaredOutput(id)
               .primaryInput]!,
-          hidden: id.isHidden(
-            buildStepPlan: buildPlan.buildStepPlan,
-            buildState: buildState,
-          ),
+          hidden: buildState.isHidden(id),
         );
       }
+      buildOutputReader = BuildOutputReader(
+        buildPackages: buildPlan.buildSpec.buildPackages,
+        readerWriter: buildPlan.readerWriter,
+        buildState: buildState.toFinishedBuildState(),
+      );
       tmpDir = await Directory.systemTemp.createTemp('build_tests');
       anotherTmpDir = await Directory.systemTemp.createTemp('build_tests');
     });
@@ -177,6 +171,11 @@ void main() {
       buildState.addPostProcessBuildStepResult(
         PostProcessBuildStepId(input: targetId, actionNumber: 1),
         PostProcessBuildStepResult(hidden: true, deletedPrimaryInput: true),
+      );
+      buildOutputReader = BuildOutputReader(
+        buildPackages: buildPlan.buildSpec.buildPackages,
+        readerWriter: buildPlan.readerWriter,
+        buildState: buildState.toFinishedBuildState(),
       );
 
       final success = await createMergedOutputDirectories(
@@ -370,6 +369,11 @@ void main() {
         buildPlan.buildStepPlan.stepForDeclaredOutput(targetId),
         stepResult,
       );
+      buildOutputReader = BuildOutputReader(
+        buildPackages: buildPlan.buildSpec.buildPackages,
+        readerWriter: buildPlan.readerWriter,
+        buildState: buildState.toFinishedBuildState(),
+      );
 
       final success = await createMergedOutputDirectories(
         buildDirs: {
@@ -387,13 +391,9 @@ void main() {
 
     test('doesnt always write files not matching outputDirs', () async {
       buildOutputReader = BuildOutputReader(
-        builderFilesystem: BuilderFilesystem(
-          buildPackages: buildPlan.buildSpec.buildPackages,
-          buildConfigs: buildPlan.buildSpec.buildConfigs,
-          buildState: buildState,
-          buildStepPlan: buildPlan.buildStepPlan,
-          readerWriter: buildPlan.readerWriter,
-        ),
+        buildPackages: buildPlan.buildSpec.buildPackages,
+        readerWriter: buildPlan.readerWriter,
+        buildState: buildState.toFinishedBuildState(),
       );
       final success = await createMergedOutputDirectories(
         buildDirs: {
@@ -471,13 +471,9 @@ void main() {
         }
         // Recreate buildOutputReader so it notices the delete.
         buildOutputReader = BuildOutputReader(
-          builderFilesystem: BuilderFilesystem(
-            buildPackages: buildPlan.buildSpec.buildPackages,
-            buildConfigs: buildPlan.buildSpec.buildConfigs,
-            buildState: buildState,
-            buildStepPlan: buildPlan.buildStepPlan,
-            readerWriter: buildPlan.readerWriter,
-          ),
+          buildPackages: buildPlan.buildSpec.buildPackages,
+          readerWriter: buildPlan.readerWriter,
+          buildState: buildState.toFinishedBuildState(),
         );
         success = await createMergedOutputDirectories(
           buildDirs: {
