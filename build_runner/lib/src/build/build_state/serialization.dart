@@ -81,11 +81,33 @@ BuildState? deserializeBuildState(Map serializedBuildState) {
     }
   }
 
+  if (serializedBuildState.containsKey('partData')) {
+    final deserialized =
+        serializers.deserialize(
+              serializedBuildState['partData'],
+              specifiedType: const FullType(BuiltMap, [
+                FullType(AssetId),
+                FullType(SharedPart),
+              ]),
+            )
+            as BuiltMap<AssetId, SharedPart>;
+    for (final part in deserialized.values) {
+      buildState.addSharedPart(part);
+    }
+  }
+
   return buildState;
 }
 
 /// Serializes an [BuildState] into a [Map].
 Map<String, Object?> serializeBuildState(BuildState buildState) {
+  for (final part in buildState._partData.values) {
+    for (final phase in [...part.imports.keys, ...part.contributions.keys]) {
+      part.contentAt(phase: phase);
+    }
+    part.contentAt();
+  }
+
   final result = <String, Object?>{
     'sourceIds': serializers.serialize(
       BuiltSet<AssetId>.of(buildState._sources.sources.keys),
@@ -131,6 +153,13 @@ Map<String, Object?> serializeBuildState(BuildState buildState) {
       specifiedType: const FullType(BuiltMap, [
         FullType(GlobId),
         FullType(GlobResult),
+      ]),
+    ),
+    'partData': serializers.serialize(
+      BuiltMap<AssetId, SharedPart>.of(buildState._partData),
+      specifiedType: const FullType(BuiltMap, [
+        FullType(AssetId),
+        FullType(SharedPart),
       ]),
     ),
   };

@@ -12,9 +12,7 @@ class _$BuildPlan extends BuildPlan {
   @override
   final PreviousBuild previousBuild;
   @override
-  @override
   final BuildStepPlan buildStepPlan;
-
   @override
   final BuiltList<AssetId> conflictingOutputs;
   @override
@@ -180,7 +178,6 @@ class BuildPlanBuilder implements Builder<BuildPlan, BuildPlanBuilder> {
         previousBuild.build();
         _$failedField = 'buildStepPlan';
         buildStepPlan.build();
-
         _$failedField = 'conflictingOutputs';
         conflictingOutputs.build();
         _$failedField = 'buildInputs';

@@ -79,6 +79,9 @@ class BuilderDefinition {
   /// Where the outputs of this builder should be written.
   final BuildTo buildTo;
 
+  /// Whether this builder is allowed to use `BuildStep.librarySourceSink`.
+  final bool addsToLibrary;
+
   final TargetBuilderConfigDefaults defaults;
 
   BuilderDefinition({
@@ -92,12 +95,14 @@ class BuilderDefinition {
     Iterable<String>? appliesBuilders,
     bool? isOptional,
     BuildTo? buildTo,
+    bool? addsToLibrary,
     TargetBuilderConfigDefaults? defaults,
   }) : // ignore: deprecated_member_use
        target = target != null
            ? normalizeTargetKeyUsage(target, currentPackage)
            : null,
        autoApply = autoApply ?? AutoApply.none,
+       addsToLibrary = addsToLibrary ?? false,
        requiredInputs = requiredInputs?.toList() ?? const [],
        runsBefore =
            runsBefore

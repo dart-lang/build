@@ -473,6 +473,18 @@ void main() {
         );
       },
     );
+
+    test('throws ArgumentError if BuilderDefinition sets '
+        'addsToLibrary and isOptional', () {
+      expect(
+        () => BuilderDefinition(
+          'a:builder',
+          addsToLibrary: true,
+          isOptional: true,
+        ),
+        throwsA(isArgumentError),
+      );
+    });
   });
 }
 

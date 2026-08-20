@@ -1,5 +1,7 @@
-## 2.16.1-wip
+## 2.17.0-wip
 
+- Support shared parts written using `BuildStep.librarySourceSink` when builders
+  opt in with `adds_to_library: true` in `build.yaml`.
 - Reduce logged compile progress output for non-interactive builds, for example
   presubmits.
 
@@ -39,6 +41,7 @@
 
 ## 2.15.2
 
+- Support `adds_to_library` configuration, efficiently allocating base-62 prefixes and checking opt-in status at runtime.
 - Allow `analyzer` 14.x, require 13.3.0.
 - Require Dart 3.11.0.
 
