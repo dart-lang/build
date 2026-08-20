@@ -26,30 +26,30 @@ class FesServerInfo {
 
   /// Reads and parses [FesServerInfo] from [file].
   ///
-  /// Returns `null` if the file is missing or invalid.
+  /// Returns `null` if [file] is missing or invalid.
   static FesServerInfo? fromFile(File file) {
     if (!file.existsSync()) return null;
+    int? port;
+    String? token;
     try {
       final content = file.readAsStringSync();
-      final json = jsonDecode(content);
-      if (json is! Map<String, dynamic>) return null;
-      final port = json['port'] as int?;
-      final token = json['token'] as String?;
-      if (port != null && token == null) {
-        throw StateError(
-          'Found a running Frontend Server Manager at ${file.path} started '
-          'by an incompatible version of build_web_compilers '
-          '(missing auth token). Please upgrade to build_web_compilers '
-          '>=4.8.11 and restart.',
-        );
-      }
-
-      if (port != null && token != null) {
-        return FesServerInfo(port, token);
-      }
-    } on FormatException {
-      // Invalid Json
+      final json = jsonDecode(content) as Map<String, dynamic>;
+      port = json['port'] as int?;
+      token = json['token'] as String?;
+    } catch (_) {
+      return null;
     }
-    return null;
+    if (port == null) {
+      return null;
+    }
+    if (token == null) {
+      throw StateError(
+        'Found a running Frontend Server Manager at ${file.path} started '
+        'by an incompatible version of build_web_compilers '
+        '(missing auth token). Please upgrade to build_web_compilers '
+        '>=4.8.11 and restart.',
+      );
+    }
+    return FesServerInfo(port, token);
   }
 }
