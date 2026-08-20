@@ -5,6 +5,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:build_web_compilers/src/build_frontend_server/fes_server_info.dart';
+import 'package:build_web_compilers/src/build_frontend_server/file_permissions.dart';
 import 'package:build_web_compilers/src/build_frontend_server/frontend_server_driver.dart';
 import 'package:build_web_compilers/src/build_frontend_server/package_config.dart';
 import 'package:build_web_compilers/src/common.dart';
@@ -65,13 +67,18 @@ void main(List<String> args) async {
     environment: environment,
   );
 
+  final token = FesServerInfo.generateToken();
   final server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
 
   // Write the Frontend Server's config to file so we can create connections to
   // it later in the build.
+  final configDir = configFile.parent;
+  configDir.createSync(recursive: true);
+  FilePermissions.makeUserPrivate(configDir.path);
+
+  final serverInfo = FesServerInfo(server.port, token);
   final tempConfigFile = File('${configFile.path}.tmp');
-  tempConfigFile.createSync(recursive: true);
-  tempConfigFile.writeAsStringSync(jsonEncode({'port': server.port}));
+  serverInfo.writeToFile(tempConfigFile);
   tempConfigFile.renameSync(configFile.path);
 
   print('Frontend Server Manager listening on port ${server.port}');
@@ -82,12 +89,33 @@ void main(List<String> args) async {
     socket.done.catchError((Object error) {
       // Ignore 'SocketException: Connection reset by peer' exceptions.
     });
+    var authenticated = false;
     socket
         .cast<List<int>>()
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .listen(
-          (line) => manager.handleRequest(line, socket),
+          (line) {
+            // Require authentication on the first message before processing any
+            // instructions.
+            if (!authenticated) {
+              try {
+                final auth = jsonDecode(line);
+                if (auth is Map<String, dynamic> && auth['token'] == token) {
+                  authenticated = true;
+                  socket.writeln(jsonEncode({'status': 'AUTHENTICATED'}));
+                  return;
+                }
+              } on FormatException {
+                // Reject malformed JSON payloads.
+              }
+              // Terminate unauthenticated connections.
+              socket.writeln(jsonEncode({'error': 'Unauthorized'}));
+              socket.destroy();
+              return;
+            }
+            manager.handleRequest(line, socket);
+          },
           onDone: () => activeSockets.remove(socket),
           onError: (_) => activeSockets.remove(socket),
         );
