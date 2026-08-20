@@ -73,16 +73,12 @@ void main(List<String> args) async {
   // Write the Frontend Server's config to file so we can create connections to
   // it later in the build.
   final configDir = configFile.parent;
-  final isNew = !configDir.existsSync();
-  if (isNew) {
-    configDir.createSync(recursive: true);
-    FilePermissions.makeUserPrivate(configDir.path);
-  }
+  configDir.createSync(recursive: true);
+  FilePermissions.makeUserPrivate(configDir.path);
 
   final serverInfo = FesServerInfo(server.port, token);
   final tempConfigFile = File('${configFile.path}.tmp');
   serverInfo.writeToFile(tempConfigFile);
-  FilePermissions.makeUserPrivate(tempConfigFile.path);
   tempConfigFile.renameSync(configFile.path);
 
   print('Frontend Server Manager listening on port ${server.port}');

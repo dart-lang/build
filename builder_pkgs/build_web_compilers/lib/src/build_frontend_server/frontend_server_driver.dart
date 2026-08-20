@@ -386,10 +386,8 @@ class PersistentFrontendServer {
 
     FesServerInfo? serverInfo;
     for (var i = 0; i < retries; i++) {
-      try {
-        serverInfo = FesServerInfo.fromFile(configFile);
-        if (serverInfo != null) break;
-      } catch (_) {}
+      serverInfo = FesServerInfo.fromFile(configFile);
+      if (serverInfo != null) break;
       await Future<void>.delayed(const Duration(milliseconds: 25));
     }
 
@@ -417,11 +415,14 @@ class PersistentFrontendServer {
       final authResponse = jsonDecode(authResponseLine) as Map<String, dynamic>;
       if (authResponse['status'] != 'AUTHENTICATED') {
         throw StateError(
-          'Failed to authenticate with FES manager: ${authResponse['error']}',
+          'Failed to authenticate with Frontend Server Manager at port '
+          '${serverInfo.port} (Unauthorized). Please ensure '
+          'build_web_compilers is upgraded to >=4.8.11 and restart.',
         );
       }
       return _FesSocketConnection(socket, socketLines);
     } catch (e) {
+      if (e is StateError) rethrow;
       throw StateError(
         'Failed to connect to FES manager at port ${serverInfo.port}: $e',
       );

@@ -281,7 +281,7 @@ void main() {
         expect(socketLines.isEmpty, completion(isTrue));
       });
 
-      test('config directory and file are user-private', () {
+      test('config directory is user-private', () {
         final configFile = File(p.join(authTempDir.path, fesManagerConfigPath));
         final configDir = configFile.parent;
 
@@ -298,12 +298,31 @@ void main() {
           final dirStat = configDir.statSync();
           final dirMode = dirStat.mode & (7 * 8 * 8 + 7 * 8 + 7);
           expect(dirMode, 7 * 8 * 8);
-
-          final fileStat = configFile.statSync();
-          final fileMode = fileStat.mode & (7 * 8 * 8 + 7 * 8 + 7);
-          expect(fileMode, 7 * 8 * 8);
         }
       });
+
+      test(
+        'throws version skew error when reading config file without token',
+        () {
+          final legacyConfigFile = File(
+            p.join(authTempDir.path, 'legacy_config.json'),
+          )..writeAsStringSync(jsonEncode({'port': 12345}));
+
+          expect(
+            () => FesServerInfo.fromFile(legacyConfigFile),
+            throwsA(
+              isA<StateError>().having(
+                (e) => e.message,
+                'message',
+                allOf(
+                  contains('incompatible version of build_web_compilers'),
+                  contains('build_web_compilers >=4.8.11'),
+                ),
+              ),
+            ),
+          );
+        },
+      );
     });
 
     group('FES Manager API', () {
