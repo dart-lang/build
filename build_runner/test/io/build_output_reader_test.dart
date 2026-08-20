@@ -12,7 +12,6 @@ import 'package:build_runner/src/build/build_state/build_step_id.dart';
 import 'package:build_runner/src/build/build_state/build_step_result.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_id.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_result.dart';
-import 'package:build_runner/src/build/builder_filesystem.dart';
 import 'package:build_runner/src/build_plan/build_directory.dart';
 import 'package:build_runner/src/build_plan/build_filter.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
@@ -32,7 +31,7 @@ import 'package:test/test.dart';
 import '../common/common.dart';
 
 void main() {
-  group('FinalizedReader', () {
+  group('BuildOutputReader', () {
     BuildOutputReader reader;
     late InternalTestReaderWriter readerWriter;
     late BuildState buildState;
@@ -44,9 +43,71 @@ void main() {
       buildPackages = BuildPackages.singlePackageBuild('a', [
         BuildPackage.forTesting(name: 'a', isOutput: true),
       ]);
-      buildState = BuildState();
+      buildState = BuildState.empty();
       buildPhases = BuildPhases([]);
     });
+
+    test(
+      'rereads source not part of the build when disk content changes',
+      () async {
+        final id = AssetId('a', 'web/a.txt');
+        buildState.addSourceForTest(id);
+        readerWriter.testing.writeString(id, 'initial');
+
+        final buildPlan = await BuildPlan.load(
+          await BuildSpec.load(
+            builderFactories: BuilderFactories({}),
+            buildOptions: BuildOptions.forTests(),
+            testingOverrides: TestingOverrides(
+              buildPhases: buildPhases,
+              readerWriter: readerWriter,
+              buildPackages: buildPackages,
+            ),
+          ),
+        );
+        reader = BuildOutputReader(
+          buildPackages: buildPlan.buildSpec.buildPackages,
+          readerWriter: buildPlan.readerWriter,
+          buildState: buildState.toFinishedBuildState(),
+        );
+
+        expect(await reader.readAsString(id), 'initial');
+
+        readerWriter.testing.writeString(id, 'modified');
+        expect(await reader.readAsString(id), 'modified');
+      },
+    );
+
+    test(
+      'does not reread source part of the build when disk content changes',
+      () async {
+        final id = AssetId('a', 'web/a.txt');
+        buildState.addSourceForTest(id, digest: AssetContent.string('initial'));
+        readerWriter.testing.writeString(id, 'initial');
+
+        final buildPlan = await BuildPlan.load(
+          await BuildSpec.load(
+            builderFactories: BuilderFactories({}),
+            buildOptions: BuildOptions.forTests(),
+            testingOverrides: TestingOverrides(
+              buildPhases: buildPhases,
+              readerWriter: readerWriter,
+              buildPackages: buildPackages,
+            ),
+          ),
+        );
+        reader = BuildOutputReader(
+          buildPackages: buildPlan.buildSpec.buildPackages,
+          readerWriter: buildPlan.readerWriter,
+          buildState: buildState.toFinishedBuildState(),
+        );
+
+        expect(await reader.readAsString(id), 'initial');
+
+        readerWriter.testing.writeString(id, 'modified');
+        expect(await reader.readAsString(id), 'initial');
+      },
+    );
 
     test('can not read deleted files', () async {
       final notDeletedId = AssetId.parse('a|web/a.txt');
@@ -82,13 +143,9 @@ void main() {
         ),
       );
       reader = BuildOutputReader(
-        builderFilesystem: BuilderFilesystem(
-          buildPackages: buildPlan.buildSpec.buildPackages,
-          buildConfigs: buildPlan.buildSpec.buildConfigs,
-          buildState: buildState,
-          buildStepPlan: buildPlan.buildStepPlan,
-          readerWriter: buildPlan.readerWriter,
-        ),
+        buildPackages: buildPlan.buildSpec.buildPackages,
+        readerWriter: buildPlan.readerWriter,
+        buildState: buildState.toFinishedBuildState(),
       );
       expect(await reader.canRead(notDeletedId), true);
       expect(await reader.canRead(deletedId), false);
@@ -99,12 +156,6 @@ void main() {
       final primaryId = AssetId('a', 'web/a.dart');
       final buildStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
 
-      var buildState = BuildState();
-      final stepResult = BuildStepResult((b) {
-        b.result = false;
-        b.isHidden = false;
-      });
-      buildState.updateBuildStepResult(buildStepId, stepResult);
       readerWriter.testing.writeString(primaryId, '');
       readerWriter.testing.writeString(id, '');
 
@@ -132,14 +183,19 @@ void main() {
           ),
         ),
       );
+      var buildState = BuildState(
+        buildStepPlan: buildPlan.buildStepPlan,
+        sources: const {},
+      );
+      final stepResult = BuildStepResult((b) {
+        b.result = false;
+        b.isHidden = false;
+      });
+      buildState.updateBuildStepResult(buildStepId, stepResult);
       reader = BuildOutputReader(
-        builderFilesystem: BuilderFilesystem(
-          buildPackages: buildPlan.buildSpec.buildPackages,
-          buildConfigs: buildPlan.buildSpec.buildConfigs,
-          buildState: buildState,
-          buildStepPlan: buildPlan.buildStepPlan,
-          readerWriter: buildPlan.readerWriter,
-        ),
+        buildPackages: buildPlan.buildSpec.buildPackages,
+        readerWriter: buildPlan.readerWriter,
+        buildState: buildState.toFinishedBuildState(),
       );
       expect(
         await reader.unreadableReason(id),
@@ -164,16 +220,15 @@ void main() {
 
       // If a step is skipped due to build filters it is not evaluated and its
       // result is not added to the buildState.
-      buildState = BuildState();
+      buildState = BuildState(
+        buildStepPlan: buildPlan.buildStepPlan,
+        sources: const {},
+      );
 
       reader = BuildOutputReader(
-        builderFilesystem: BuilderFilesystem(
-          buildPackages: buildPlan.buildSpec.buildPackages,
-          buildConfigs: buildPlan.buildSpec.buildConfigs,
-          buildState: buildState,
-          buildStepPlan: buildPlan.buildStepPlan,
-          readerWriter: buildPlan.readerWriter,
-        ),
+        buildPackages: buildPlan.buildSpec.buildPackages,
+        readerWriter: buildPlan.readerWriter,
+        buildState: buildState.toFinishedBuildState(),
       );
 
       expect(
@@ -219,13 +274,9 @@ void main() {
       );
 
       reader = BuildOutputReader(
-        builderFilesystem: BuilderFilesystem(
-          buildPackages: buildPlan.buildSpec.buildPackages,
-          buildConfigs: buildPlan.buildSpec.buildConfigs,
-          buildState: buildState,
-          buildStepPlan: buildPlan.buildStepPlan,
-          readerWriter: buildPlan.readerWriter,
-        ),
+        buildPackages: buildPlan.buildSpec.buildPackages,
+        readerWriter: buildPlan.readerWriter,
+        buildState: buildState.toFinishedBuildState(),
       );
 
       final webAssets = reader.allAssets(rootDir: 'web');
@@ -234,5 +285,98 @@ void main() {
       final testAssets = reader.allAssets(rootDir: 'test');
       expect(testAssets, contains(postOutput));
     });
+
+    test('marks files as consumed outside build on read or digest, but not on '
+        'canRead', () async {
+      final id = AssetId('a', 'web/a.txt');
+      buildState.addSourceForTest(id);
+      readerWriter.testing.writeString(id, 'initial');
+
+      final buildPlan = await BuildPlan.load(
+        await BuildSpec.load(
+          builderFactories: BuilderFactories({}),
+          buildOptions: BuildOptions.forTests(),
+          testingOverrides: TestingOverrides(
+            buildPhases: buildPhases,
+            readerWriter: readerWriter,
+            buildPackages: buildPackages,
+          ),
+        ),
+      );
+      reader = BuildOutputReader(
+        buildPackages: buildPlan.buildSpec.buildPackages,
+        readerWriter: buildPlan.readerWriter,
+        buildState: buildState.toFinishedBuildState(),
+      );
+
+      expect(reader.wasSourceConsumedOutsideBuild(id), isFalse);
+      expect(await reader.canRead(id), isTrue);
+      expect(await reader.unreadableReason(id), isNull);
+      expect(reader.wasSourceConsumedOutsideBuild(id), isFalse);
+
+      expect(await reader.digest(id), isNotNull);
+      expect(reader.wasSourceConsumedOutsideBuild(id), isTrue);
+    });
+
+    test(
+      'marks files as consumed outside build only when contentOfSource is null',
+      () async {
+        final unusedSourceId = AssetId('a', 'web/unused.txt');
+        final usedSourceId = AssetId('a', 'web/used.txt');
+        final generatedId = AssetId('a', 'web/gen.txt');
+        final postProcessId = PostProcessBuildStepId(
+          input: usedSourceId,
+          actionNumber: 0,
+        );
+
+        buildState.addSourceForTest(unusedSourceId);
+        buildState.addSourceForTest(
+          usedSourceId,
+          digest: AssetContent.string('used content'),
+        );
+        buildState.addPostProcessBuildStepResult(
+          postProcessId,
+          PostProcessBuildStepResult(
+            hidden: false,
+            deletedPrimaryInput: false,
+            outputs: {generatedId: AssetContent.string('generated content')},
+          ),
+        );
+
+        readerWriter.testing.writeString(unusedSourceId, 'unused content');
+        readerWriter.testing.writeString(usedSourceId, 'used content');
+        readerWriter.testing.writeString(generatedId, 'generated content');
+
+        final buildPlan = await BuildPlan.load(
+          await BuildSpec.load(
+            builderFactories: BuilderFactories({}),
+            buildOptions: BuildOptions.forTests(),
+            testingOverrides: TestingOverrides(
+              buildPhases: buildPhases,
+              readerWriter: readerWriter,
+              buildPackages: buildPackages,
+            ),
+          ),
+        );
+        reader = BuildOutputReader(
+          buildPackages: buildPlan.buildSpec.buildPackages,
+          readerWriter: buildPlan.readerWriter,
+          buildState: buildState.toFinishedBuildState(),
+        );
+
+        // Reading an unused source marks it consumed outside the build.
+        await reader.readAsString(unusedSourceId);
+        expect(reader.wasSourceConsumedOutsideBuild(unusedSourceId), isTrue);
+
+        // Reading a used source does not mark it consumed outside the build.
+        await reader.readAsString(usedSourceId);
+        expect(reader.wasSourceConsumedOutsideBuild(usedSourceId), isFalse);
+
+        // Reading a generated output does not mark it consumed outside the
+        // build.
+        await reader.readAsString(generatedId);
+        expect(reader.wasSourceConsumedOutsideBuild(generatedId), isFalse);
+      },
+    );
   });
 }

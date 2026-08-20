@@ -10,8 +10,7 @@ import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import 'package:watcher/watcher.dart';
 
-import '../build/build_state/build_state.dart';
-import '../build/resolver/asset_ids.dart';
+import '../build/build_state/finished_build_state.dart';
 import '../build_plan/build_configs.dart';
 import '../build_plan/build_packages.dart';
 import '../build_plan/build_step_plan.dart';
@@ -32,7 +31,7 @@ class AssetTracker {
   /// build step plan and build state.
   Future<Map<AssetId, ChangeType>> collectChanges({
     required BuildStepPlan buildStepPlan,
-    required BuildState buildState,
+    required FinishedBuildState buildState,
   }) async {
     final inputSources = await findInputSources();
     final generatedSources = await findCacheDirSources();
@@ -69,7 +68,7 @@ class AssetTracker {
   Future<Map<AssetId, ChangeType>> computeSourceUpdates(
     Set<AssetId> inputSources,
     Set<AssetId> generatedSources,
-    BuildState buildState,
+    FinishedBuildState buildState,
     Iterable<AssetId> declaredAndActualOutputs, {
     required BuildStepPlan buildStepPlan,
   }) async {
@@ -110,18 +109,12 @@ class AssetTracker {
       allSources,
     );
     for (final id in preExistingOutputs) {
-      final originalContent = buildState.contentOf(
-        buildStepPlan: buildStepPlan,
-        id: id,
-      );
+      final originalContent = buildState.contentOf(id);
       if (originalContent == null) continue;
 
       final currentDigest = await _readerWriter.digest(
         id,
-        hidden: id.isHidden(
-          buildStepPlan: buildStepPlan,
-          buildState: buildState,
-        ),
+        hidden: buildState.isHidden(id),
       );
       if (currentDigest != originalContent.digest) {
         updates[id] = ChangeType.MODIFY;

@@ -30,7 +30,7 @@ void main() {
 
     group('simple build state', () {
       setUp(() async {
-        buildState = BuildState();
+        buildState = BuildState.empty();
       });
 
       test('add, contains, get, allNodes', () {
@@ -68,11 +68,15 @@ void main() {
       final primaryOutputId = makeAssetId('foo|file.txt.copy');
 
       setUp(() async {
-        buildState = BuildState({primaryInputId: null, excludedInputId: null});
+        final sources = [primaryInputId, excludedInputId];
         buildStepPlan = BuildStepPlan.compute(
           buildPhases: buildPhases,
           placeholderIds: [],
-          sources: buildState.sources,
+          sources: sources,
+        );
+        buildState = BuildState(
+          buildStepPlan: buildStepPlan,
+          sources: {primaryInputId: null, excludedInputId: null},
         );
       });
 

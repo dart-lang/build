@@ -33,6 +33,7 @@ import 'build_result.dart';
 import 'build_state/build_state.dart';
 import 'build_state/build_step_id.dart';
 import 'build_state/build_step_result.dart';
+import 'build_state/finished_build_state.dart';
 import 'build_state/glob_id.dart';
 import 'build_state/glob_result.dart';
 import 'build_state/post_process_build_step_id.dart';
@@ -99,10 +100,13 @@ class Build {
         ResolversImpl r => r,
         _ => null,
       },
-      buildState = BuildState({
-        for (final id in buildPlan.buildInputs.sources)
-          id: buildPlan.buildInputs.sourceContents[id],
-      });
+      buildState = BuildState(
+        buildStepPlan: buildPlan.buildStepPlan,
+        sources: {
+          for (final id in buildPlan.buildInputs.sources)
+            id: buildPlan.buildInputs.sourceContents[id],
+        },
+      );
 
   BuildSpec get buildSpec => buildPlan.buildSpec;
   BuildOptions get buildOptions => buildSpec.buildOptions;
@@ -110,7 +114,7 @@ class Build {
   BuildPackages get buildPackages => buildSpec.buildPackages;
   BuildConfigs get buildConfigs => buildSpec.buildConfigs;
   BuildPhases get buildPhases => buildPlan.buildStepPlan.buildPhases;
-  BuildState? get previousBuildState => buildPlan.previousBuild.buildState;
+  FinishedBuildState? get previousBuildState => buildPlan.previousBuild.state;
   BuildInputs get buildInputs => buildPlan.buildInputs;
   BuildStepPlan get buildStepPlan => buildPlan.buildStepPlan;
 
@@ -203,13 +207,16 @@ class Build {
           buildLog.error(
             buildLog.renderThrowable('Unhandled build failure!', e, st),
           );
+          final finishedBuildState = buildState.toFinishedBuildState();
           done.complete(
             BuildResult(
               status: BuildStatus.failure,
               outputs: BuiltList(),
-              buildState: buildState,
+              buildState: finishedBuildState,
               buildOutputReader: BuildOutputReader(
-                builderFilesystem: _builderFilesystem.forAfterBuild(),
+                buildPackages: buildPackages,
+                readerWriter: buildPlan.readerWriter,
+                buildState: finishedBuildState,
               ),
             ),
           );
@@ -295,12 +302,15 @@ class Build {
     );
     // Assume success, failed outputs will be checked later.
 
+    final finishedBuildState = buildState.toFinishedBuildState();
     return BuildResult(
       status: BuildStatus.success,
       outputs: outputs.build(),
-      buildState: buildState,
+      buildState: finishedBuildState,
       buildOutputReader: BuildOutputReader(
-        builderFilesystem: _builderFilesystem.forAfterBuild(),
+        buildPackages: buildPackages,
+        readerWriter: buildPlan.readerWriter,
+        buildState: finishedBuildState,
       ),
     );
   }
@@ -356,8 +366,7 @@ class Build {
   /// be built.
   Future<void> _buildOutput(AssetId id) async {
     final step = buildStepPlan.stepForDeclaredOutputOrNull(id);
-    if (step != null &&
-        !buildState.isProcessedOutput(buildStepPlan: buildStepPlan, id: id)) {
+    if (step != null && !buildState.isProcessedOutput(id)) {
       await lazyPhases.putIfAbsent(step, () async {
         final phase = buildPhases.inBuildPhases[step.phaseNumber];
         return _buildForPrimaryInput(
@@ -717,10 +726,7 @@ class Build {
 
       if (primaryInputIsDeclaredOutput) {
         // Update state for primary input if needed.
-        if (!buildState.isProcessedOutput(
-          buildStepPlan: buildStepPlan,
-          id: primaryInput,
-        )) {
+        if (!buildState.isProcessedOutput(primaryInput)) {
           await _buildOutput(primaryInput);
         }
 
@@ -737,10 +743,7 @@ class Build {
 
         // If the primary input succeeded but was not output, this build is
         // skipped.
-        if (!buildState.isActualOutput(
-          buildStepPlan: buildStepPlan,
-          id: primaryInput,
-        )) {
+        if (!buildState.isActualOutput(primaryInput)) {
           return StepAction.skipMissingPrimaryInput;
         }
       } else {
@@ -915,10 +918,7 @@ class Build {
         return false;
       }
       // Ensure that the input was built.
-      if (!buildState.isProcessedOutput(
-        buildStepPlan: buildStepPlan,
-        id: input,
-      )) {
+      if (!buildState.isProcessedOutput(input)) {
         await _buildOutput(input);
       }
       if (_isChangedOutput(input)) {
@@ -953,10 +953,7 @@ class Build {
 
     if (buildStepPlan.isDeclaredOutput(input)) {
       // Check that the input was built.
-      if (!buildState.isProcessedOutput(
-        buildStepPlan: buildStepPlan,
-        id: input,
-      )) {
+      if (!buildState.isProcessedOutput(input)) {
         await _buildOutput(input);
       }
       if (_isChangedOutput(input)) {
@@ -1003,7 +1000,6 @@ class Build {
 
       for (final id in buildState.findFiles(
         package: globId.package,
-        buildStepPlan: buildStepPlan,
         glob: glob,
       )) {
         if (buildStepPlan.isDeclaredOutput(id)) {
@@ -1090,8 +1086,7 @@ class Build {
     _builderFilesystem.updateBuildStepResult(buildStepId, buildStepResult);
   }
 
-  bool _isFile(AssetId id) =>
-      buildState.isFile(buildStepPlan: buildStepPlan, id: id);
+  bool _isFile(AssetId id) => buildState.isFile(id);
 
   bool _isChangedOutput(AssetId output) {
     final generatingStep = buildStepPlan.stepForDeclaredOutput(output);

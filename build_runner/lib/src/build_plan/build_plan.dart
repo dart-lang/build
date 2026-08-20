@@ -7,9 +7,8 @@ import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 
 import '../build/asset_content.dart';
-import '../build/build_state/build_state.dart';
+import '../build/build_state/finished_build_state.dart';
 import '../build/library_cycle_graph/phased_asset_deps.dart';
-import '../build/resolver/asset_ids.dart';
 import '../constants.dart';
 import '../exceptions.dart';
 import '../io/asset_tracker.dart';
@@ -72,7 +71,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
     final assetTrackerInputSources = await assetTracker.findInputSources();
     final cacheDirSources = await assetTracker.findCacheDirSources();
 
-    final previousBuildState = previousBuild.buildState;
+    final previousBuildState = previousBuild.state;
     if (previousBuildState == null) {
       // If there is no compatible previous build, compute inputs with files
       // that look like old generation outputs removed.
@@ -112,11 +111,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         ...previousBuildState.actualOutputs,
       };
 
-      final previousBuildStepPlan = BuildStepPlan.compute(
-        buildPhases: buildSpec.buildPhases,
-        placeholderIds: buildPackages.placeholderIds,
-        sources: previousBuildState.sources,
-      );
+      final previousBuildStepPlan = previousBuildState.buildStepPlan;
 
       return _createIncremental(
         buildSpec: buildSpec,
@@ -132,21 +127,21 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
   /// Returns a copy of the plan with [previousBuild] updated for the next
   /// incremental build.
   BuildPlan withCompatiblePreviousBuild({
-    required BuildState previousBuildState,
+    required FinishedBuildState previousBuildState,
     required PhasedAssetDeps previousPhasedAssetDeps,
   }) => rebuild(
     (b) => b
       ..previousBuild.replace(
         previousBuild.updateForNextBuild(
           previousPhasedAssetDeps: previousPhasedAssetDeps,
-          previousBuildState: previousBuildState,
+          finishedBuildState: previousBuildState,
         ),
       )
       ..conflictingOutputs.clear(),
   );
 
   Future<BuildPlan> updateForFileChanges(Set<AssetId> filesToCheck) {
-    final previousBuildState = previousBuild.buildState;
+    final previousBuildState = previousBuild.state;
     if (previousBuildState == null) {
       return _createClean(
         buildSpec: buildSpec,
@@ -269,7 +264,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
     final readerWriter = buildSpec.readerWriter;
     final buildInputs = BuildInputsBuilder()..cleanBuild = false;
 
-    final previousBuildState = previousBuild.buildState!;
+    final previousBuildState = previousBuild.state!;
     var buildStepPlan = previousBuildStepPlan;
 
     buildInputs.sources.addAll(previousBuildState.sources);
@@ -282,27 +277,21 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
 
     for (final id in filesToCheck) {
       final oldIsSource = previousBuildState.isSource(id);
-      final oldExisted = previousBuildState.isFile(
-        buildStepPlan: buildStepPlan,
-        id: id,
-      );
-      final oldContent = previousBuildState.contentOf(
-        id: id,
-        buildStepPlan: previousBuildStepPlan,
-      );
+      final oldExisted = previousBuildState.isFile(id);
+      final oldContent = previousBuildState.contentOf(id);
       var exists = false;
       AssetContent? newContent;
 
       if (await readerWriter.canRead(
         id,
-        hidden: id.isHidden(buildStepPlan: previousBuildStepPlan),
+        hidden: previousBuildState.isHidden(id),
       )) {
         exists = true;
         if (oldContent != null) {
           try {
             final bytes = await readerWriter.readAsBytes(
               id,
-              hidden: id.isHidden(buildStepPlan: previousBuildStepPlan),
+              hidden: previousBuildState.isHidden(id),
             );
             newContent = AssetContent.bytes(bytes);
           } catch (_) {
@@ -348,7 +337,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         try {
           final bytes = await readerWriter.readAsBytes(
             id,
-            hidden: id.isHidden(buildStepPlan: buildStepPlan),
+            hidden: buildStepPlan.isHidden(id),
           );
           buildInputs.sourceContents[id] = AssetContent.bytes(bytes);
         } catch (_) {}

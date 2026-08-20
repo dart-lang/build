@@ -21,13 +21,9 @@ import 'glob_result.dart';
 import 'identity_serializer.dart';
 import 'post_process_build_step_id.dart';
 import 'post_process_build_step_result.dart';
+import 'serialized_build_state.dart';
 
 part 'serializers.g.dart';
-
-final postProcessBuildStepResultsFullType = const FullType(BuiltMap, [
-  FullType(PostProcessBuildStepId),
-  FullType(PostProcessBuildStepResult),
-]);
 
 final assetIdSerializer = AssetIdSerializer();
 final identityAssetIdSerializer = IdentitySerializer<AssetId>(
@@ -44,6 +40,7 @@ final identityAssetIdSerializer = IdentitySerializer<AssetId>(
   PhasedAssetDeps,
   PostProcessBuildStepId,
   PostProcessBuildStepResult,
+  SerializedBuildState,
 ])
 final Serializers serializers =
     (_$serializers.toBuilder()
@@ -86,10 +83,6 @@ final Serializers serializers =
           ..addBuilderFactory(
             const FullType(Set, [FullType(AssetId)]),
             () => <AssetId>{},
-          )
-          ..addBuilderFactory(
-            postProcessBuildStepResultsFullType,
-            MapBuilder<PostProcessBuildStepId, PostProcessBuildStepResult>.new,
           )
           ..addBuilderFactory(
             const FullType(BuiltMap, [

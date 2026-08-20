@@ -9,12 +9,15 @@ import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 
 import '../build/build_state/asset_graph_json.dart';
-import '../build/build_state/build_state.dart';
+import '../build/build_state/finished_build_state.dart';
+import '../build/build_state/serialized_build_state.dart';
 import '../build/library_cycle_graph/phased_asset_deps.dart';
 import '../constants.dart';
 
+import 'build_packages.dart';
 import 'build_spec.dart';
 import 'build_spec_digest.dart';
+import 'build_step_plan.dart';
 
 part 'previous_build.g.dart';
 
@@ -22,9 +25,9 @@ part 'previous_build.g.dart';
 /// configuration.
 abstract class PreviousBuild
     implements Built<PreviousBuild, PreviousBuildBuilder> {
-  /// The deserialized build state (asset graph) from the previous run,
-  /// or null if it was missing or incompatible.
-  BuildState? get buildState;
+  /// The `FinishedBuildState` of the previous build, or null if it was missing
+  /// or incompatible.
+  FinishedBuildState? get state;
 
   /// Phased asset dependencies from the previous run, or null.
   PhasedAssetDeps? get phasedAssetDeps;
@@ -43,7 +46,7 @@ abstract class PreviousBuild
   /// Deserializes information about the previous build and compares it to
   /// [buildSpec] to determine whether an incremental build is possible.
   ///
-  /// If so then [buildState] and [phasedAssetDeps] hold detailed information
+  /// If so then [state] and [phasedAssetDeps] hold detailed information
   /// about the previous build, and [triggersChanged], [phaseOptionsChangedList]
   /// and [postBuildOptionsChangedList] give more detail on compatibility.
   ///
@@ -59,7 +62,8 @@ abstract class PreviousBuild
       assetGraphJsonPath,
     );
     BuildSpecDigest? previousBuildPlanDigest;
-    BuildState? previousBuildState;
+    SerializedBuildState? serializedBuildState;
+    FinishedBuildState? previousFinishedBuildState;
     final incompatibleBuildOutputsToDelete = <AssetId>{};
     PhasedAssetDeps? previousPhasedAssetDeps;
 
@@ -68,11 +72,11 @@ abstract class PreviousBuild
         await readerWriter.readAsBytes(assetGraphJsonId) as Uint8List,
       );
       if (assetGraphJson != null) {
-        previousBuildState = assetGraphJson.buildState;
+        serializedBuildState = assetGraphJson.serializedBuildState;
         previousBuildPlanDigest = assetGraphJson.buildPlanDigest;
         previousPhasedAssetDeps = assetGraphJson.phasedAssetDeps;
       }
-      if (previousBuildState != null) {
+      if (serializedBuildState != null) {
         final forceCleanBuild =
             buildSpec.restartIsNeeded ||
             buildPackages.hasNewerAlternateRootBuild ||
@@ -80,9 +84,21 @@ abstract class PreviousBuild
 
         if (forceCleanBuild) {
           incompatibleBuildOutputsToDelete.addAll(
-            previousBuildState.outputsToDelete(buildPackages),
+            _outputsToDelete(
+              buildState: serializedBuildState,
+              buildPackages: buildPackages,
+            ),
           );
-          previousBuildState = null;
+        } else {
+          final previousBuildStepPlan = BuildStepPlan.compute(
+            buildPhases: buildSpec.buildPhases,
+            placeholderIds: buildPackages.placeholderIds,
+            sources: serializedBuildState.sources,
+          );
+          previousFinishedBuildState = FinishedBuildState(
+            serialized: serializedBuildState,
+            buildStepPlan: previousBuildStepPlan,
+          );
         }
       }
     }
@@ -97,7 +113,7 @@ abstract class PreviousBuild
         .computeChangedPostBuildOptions(previousBuildPlanDigest);
 
     return PreviousBuild((b) {
-      b.buildState = previousBuildState;
+      b.state = previousFinishedBuildState;
       if (previousPhasedAssetDeps != null) {
         b.phasedAssetDeps.replace(previousPhasedAssetDeps);
       }
@@ -112,16 +128,16 @@ abstract class PreviousBuild
 
   /// Returns a new instance ready for the next incremental build.
   ///
-  /// Sets [previousBuildState] and [previousPhasedAssetDeps].
+  /// Sets [finishedBuildState] and [previousPhasedAssetDeps].
   ///
   /// Clears `triggersChanged` and other fields related to checking
   /// whether an incremental build is possible.
   PreviousBuild updateForNextBuild({
-    required BuildState previousBuildState,
+    required FinishedBuildState finishedBuildState,
     required PhasedAssetDeps previousPhasedAssetDeps,
   }) => rebuild((b) {
     b.triggersChanged = false;
-    b.buildState = previousBuildState;
+    b.state = finishedBuildState;
     b.phasedAssetDeps = previousPhasedAssetDeps.toBuilder();
     b.phaseOptionsChangedList.replace(
       List.filled(phaseOptionsChangedList.length, false),
@@ -135,4 +151,28 @@ abstract class PreviousBuild
   PreviousBuild._();
   factory PreviousBuild([void Function(PreviousBuildBuilder) updates]) =
       _$PreviousBuild;
+}
+
+/// Computes declared and post process outputs in [buildState] to delete for
+/// [buildPackages].
+Iterable<AssetId> _outputsToDelete({
+  required SerializedBuildState buildState,
+  required BuildPackages buildPackages,
+}) {
+  final result = <AssetId>[];
+  for (final stepResult in buildState.buildStepResults.values) {
+    if (!stepResult.isHidden) {
+      for (final id in stepResult.outputs.keys) {
+        if (buildPackages[id.package] != null) result.add(id);
+      }
+    }
+  }
+  for (final postProcessResult in buildState.postProcessResults.values) {
+    if (!postProcessResult.hidden) {
+      for (final id in postProcessResult.outputs.keys) {
+        if (buildPackages[id.package] != null) result.add(id);
+      }
+    }
+  }
+  return result;
 }

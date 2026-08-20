@@ -560,7 +560,7 @@ targets:
         expect(result.readerWriter.testing.exists(assetGraphJsonId), isTrue);
         final cachedBuildState = AssetGraphJson.deserialize(
           result.readerWriter.testing.readBytes(assetGraphJsonId),
-        )!.buildState;
+        )!.serializedBuildState;
         expect(
           cachedBuildState.sources,
           unorderedEquals([makeAssetId('a|web/a.txt')]),
@@ -569,7 +569,9 @@ targets:
         expect(
           [
             ...result.buildPlan.buildStepPlan.declaredOutputs,
-            ...cachedBuildState.actualPostOutputs,
+            ...cachedBuildState.postProcessResults.values.expand(
+              (r) => r.outputs.keys,
+            ),
           ],
           unorderedEquals([
             makeAssetId('a|web/a.txt.copy'),
@@ -1186,14 +1188,14 @@ targets:
     final graphId = makeAssetId('a|$assetGraphJsonPath');
     final cachedBuildState = AssetGraphJson.deserialize(
       result.readerWriter.testing.readBytes(graphId),
-    )!.buildState;
+    )!.serializedBuildState;
     final outputId = AssetId('a', 'lib/a.txt.out');
 
     final buildStepId = BuildStepId(
       primaryInput: makeAssetId('a|lib/a.txt'),
       phaseNumber: 0,
     );
-    final stepResult = cachedBuildState.stepResult(buildStepId);
+    final stepResult = cachedBuildState.buildStepResults[buildStepId]!;
     expect(stepResult.inputs, isNot(contains(outputId)));
   });
 
@@ -1457,12 +1459,12 @@ targets:
         result.readerWriter.testing.readBytes(
           makeAssetId('a|$assetGraphJsonPath'),
         ),
-      )!.buildState;
+      )!.serializedBuildState;
       final anId = makeAssetId('a|lib/a.txt');
       final aCopyId = makeAssetId('a|lib/a.txt.copy');
       final aCloneId = makeAssetId('a|lib/a.txt.copy.clone');
       expect(
-        newBuildState.isSource(aCloneId) ||
+        newBuildState.sources.contains(aCloneId) ||
             result.buildPlan.buildStepPlan.isDeclaredOutput(aCloneId),
         isFalse,
       );
@@ -1566,16 +1568,16 @@ targets:
         result.readerWriter.testing.readBytes(
           makeAssetId('a|$assetGraphJsonPath'),
         ),
-      )!.buildState;
+      )!.serializedBuildState;
       final fileAId = makeAssetId('a|lib/file.a');
       final fileCId = makeAssetId('a|lib/file.c');
-      expect(buildState.isSource(fileAId), isTrue);
-      expect(buildState.isSource(fileCId), isTrue);
+      expect(buildState.sources.contains(fileAId), isTrue);
+      expect(buildState.sources.contains(fileCId), isTrue);
       final buildStepId = BuildStepId(
         primaryInput: makeAssetId('a|lib/file.a'),
         phaseNumber: 0,
       );
-      final stepResult = buildState.stepResult(buildStepId);
+      final stepResult = buildState.buildStepResults[buildStepId]!;
       expect(stepResult.inputs, unorderedEquals([fileAId, fileCId]));
     });
 
@@ -1802,37 +1804,28 @@ targets:
 
       final finalBuildState = AssetGraphJson.deserialize(
         result.readerWriter.testing.readBytes(AssetId('a', assetGraphJsonPath)),
-      )!.buildState;
+      )!.serializedBuildState;
 
       expect(
         finalBuildState
-            .stepResult(
-              result.buildPlan.buildStepPlan.stepForDeclaredOutput(
-                AssetId('a', 'web/a.g1'),
-              ),
-            )
+            .buildStepResults[result.buildPlan.buildStepPlan
+                .stepForDeclaredOutput(AssetId('a', 'web/a.g1'))]!
             .result,
         isFalse,
       );
 
       expect(
         finalBuildState
-            .stepResult(
-              result.buildPlan.buildStepPlan.stepForDeclaredOutput(
-                AssetId('a', 'web/a.g2'),
-              ),
-            )
+            .buildStepResults[result.buildPlan.buildStepPlan
+                .stepForDeclaredOutput(AssetId('a', 'web/a.g2'))]!
             .result,
         isFalse,
       );
 
       expect(
         finalBuildState
-            .stepResult(
-              result.buildPlan.buildStepPlan.stepForDeclaredOutput(
-                AssetId('a', 'web/a.g3'),
-              ),
-            )
+            .buildStepResults[result.buildPlan.buildStepPlan
+                .stepForDeclaredOutput(AssetId('a', 'web/a.g3'))]!
             .result,
         isFalse,
       );

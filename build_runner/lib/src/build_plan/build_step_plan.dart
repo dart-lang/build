@@ -31,6 +31,10 @@ abstract class BuildStepPlan
       _$BuildStepPlan;
   BuildStepPlan._();
 
+  /// An empty [BuildStepPlan] with no phases and no outputs.
+  factory BuildStepPlan.empty() =>
+      BuildStepPlan((b) => b.buildPhases = BuildPhases(const <InBuildPhase>[]));
+
   /// Plans build steps from [buildPhases], placeholder IDs and source IDs.
   factory BuildStepPlan.compute({
     required BuildPhases buildPhases,

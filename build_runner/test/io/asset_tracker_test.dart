@@ -9,6 +9,7 @@ import 'package:build/build.dart';
 import 'package:build_runner/src/build/asset_content.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/build_state/build_step_id.dart';
+import 'package:build_runner/src/build/build_state/finished_build_state.dart';
 import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
@@ -32,7 +33,7 @@ void main() {
 
   group('AssetTracker.collectChanges()', () {
     late AssetTracker assetTracker;
-    late BuildState buildState;
+    late FinishedBuildState finishedBuildState;
     late BuildStepPlan buildStepPlan;
 
     setUp(() async {
@@ -60,10 +61,14 @@ void main() {
       ]);
       final reader = ReaderWriter(buildPackages);
       final aId = AssetId('a', 'web/a.txt');
-      buildState = BuildState({aId: null});
+      final buildState = BuildState(
+        buildStepPlan: buildStepPlan,
+        sources: {aId: null},
+      );
       // Assign a digest so the source is recognized as having been used.
       final digest = await reader.digest(aId);
       buildState.updateSourceContent(aId, AssetContent.digest(digest));
+      finishedBuildState = buildState.toFinishedBuildState();
 
       final buildConfigs = await BuildConfigs.load(
         buildPackages: buildPackages,
@@ -73,12 +78,12 @@ void main() {
       );
       assetTracker = AssetTracker(reader, buildPackages, buildConfigs);
       final updates = await assetTracker.collectChanges(
-        buildState: buildState,
+        buildState: finishedBuildState,
         buildStepPlan: buildStepPlan,
       );
       // Advance buildState for the next tests so these initial sources are
       // known.
-      final newSources = buildState.sources.toSet();
+      final newSources = finishedBuildState.sources.toSet();
       for (final entry in updates.entries) {
         if (entry.value != ChangeType.REMOVE) {
           newSources.add(entry.key);
@@ -86,14 +91,17 @@ void main() {
           newSources.remove(entry.key);
         }
       }
-      final nextState = BuildState({for (final s in newSources) s: null});
+      final nextState = BuildState(
+        buildStepPlan: buildStepPlan,
+        sources: {for (final s in newSources) s: null},
+      );
       for (final id in newSources) {
-        if (buildState.isSource(id)) {
-          final digest = buildState.contentOfSource(id);
+        if (finishedBuildState.isSource(id)) {
+          final digest = finishedBuildState.contentOfSource(id);
           if (digest != null) nextState.updateSourceContent(id, digest);
         }
       }
-      buildState = nextState;
+      finishedBuildState = nextState.toFinishedBuildState();
 
       // We should see no changes initially other than new sdk sources
       expect(
@@ -109,7 +117,7 @@ void main() {
 
       expect(
         await assetTracker.collectChanges(
-          buildState: buildState,
+          buildState: finishedBuildState,
           buildStepPlan: buildStepPlan,
         ),
         {AssetId('a', 'web/a.txt'): ChangeType.MODIFY},
@@ -121,7 +129,7 @@ void main() {
 
       expect(
         await assetTracker.collectChanges(
-          buildState: buildState,
+          buildState: finishedBuildState,
           buildStepPlan: buildStepPlan,
         ),
         {AssetId('a', 'web/b.txt'): ChangeType.ADD},
@@ -133,7 +141,7 @@ void main() {
 
       expect(
         await assetTracker.collectChanges(
-          buildState: buildState,
+          buildState: finishedBuildState,
           buildStepPlan: buildStepPlan,
         ),
         {AssetId('a', 'web/a.txt'): ChangeType.REMOVE},
@@ -142,7 +150,7 @@ void main() {
 
     test('Collects deleted declared outputs', () async {
       // Create a buildState with no sources (so web/a.txt is not in sources).
-      final emptyBuildState = BuildState();
+      final emptyBuildState = FinishedBuildState.empty();
 
       // Delete the file from disk so it's actually missing.
       File(p.join(d.sandbox, 'a', 'web', 'a.txt')).deleteSync();
