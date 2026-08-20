@@ -9,6 +9,7 @@ import 'package:built_value/serializer.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 
+import '../../asset_location.dart';
 import '../../build_plan/build_packages.dart';
 import '../../build_plan/build_step_plan.dart';
 import '../asset_content.dart';
@@ -142,6 +143,28 @@ class BuildState {
   Iterable<PostProcessBuildStepResult> get actualPostProcessResults =>
       _postProcessResultsByInput.values.expand((map) => map.values);
 
+  /// All actual output locations from build steps and post process steps.
+  Iterable<AssetLocation> get actualOutputLocations sync* {
+    for (final stepResult in actualStepResults) {
+      for (final id in stepResult.outputs.keys) {
+        yield AssetLocation(
+          (b) => b
+            ..id = id
+            ..hidden = stepResult.isHidden,
+        );
+      }
+    }
+    for (final postProcessResult in actualPostProcessResults) {
+      for (final id in postProcessResult.outputs.keys) {
+        yield AssetLocation(
+          (b) => b
+            ..id = id
+            ..hidden = postProcessResult.hidden,
+        );
+      }
+    }
+  }
+
   /// Whether [id] is a post process build output that was actually generated.
   bool isActualPostOutput(AssetId id) => _postProcessOutputs.containsKey(id);
 
@@ -203,6 +226,38 @@ class BuildState {
     }
     _postProcessResultsByInput[step.input]![step.actionNumber] = stepResult
         .rebuild((b) => b..outputs[id] = content);
+  }
+
+  /// The content at [location].
+  ///
+  /// If it is a source, returns `null` if it has not been read.
+  ///
+  /// If it is a build output, returns `null` if it has not been generated.
+  ///
+  /// If it is a post process output, returns `null` if it has not been
+  /// generated.
+  AssetContent? contentAt(
+    AssetLocation location, {
+    BuildStepPlan? buildStepPlan,
+  }) {
+    if (!location.hidden && isSource(location.id)) {
+      return _sources.contentOfSource(location.id);
+    }
+    final step = buildStepPlan?.stepForDeclaredOutputOrNull(location.id);
+    if (step != null) {
+      final result = stepResultOrNull(step);
+      if (result != null && result.isHidden == location.hidden) {
+        return result.outputs[location.id];
+      }
+    }
+    final postProcessStepId = _postProcessOutputs[location.id];
+    if (postProcessStepId != null) {
+      final result = postProcessBuildStepResultFor(postProcessStepId);
+      if (result != null && result.hidden == location.hidden) {
+        return result.outputs[location.id];
+      }
+    }
+    return null;
   }
 
   /// The content of [id].

@@ -5,6 +5,7 @@
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build_runner/src/asset_location.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/commands/watch/asset_change.dart';
 import 'package:build_runner/src/commands/watch/build_package_watcher.dart';
@@ -52,9 +53,18 @@ void main() {
       expect(
         nodeWatcher.watch(),
         emitsInAnyOrder([
-          AssetChange(AssetId('a', 'lib/1.dart'), ChangeType.ADD),
-          AssetChange(AssetId('a', 'lib/2.dart'), ChangeType.MODIFY),
-          AssetChange(AssetId('a', 'lib/3.dart'), ChangeType.REMOVE),
+          AssetChange(
+            AssetLocation.source(AssetId('a', 'lib/1.dart')),
+            ChangeType.ADD,
+          ),
+          AssetChange(
+            AssetLocation.source(AssetId('a', 'lib/2.dart')),
+            ChangeType.MODIFY,
+          ),
+          AssetChange(
+            AssetLocation.source(AssetId('a', 'lib/3.dart')),
+            ChangeType.REMOVE,
+          ),
         ]),
       );
 
@@ -75,9 +85,18 @@ void main() {
       expect(
         nodeWatcher.watch(),
         emitsInAnyOrder([
-          AssetChange(AssetId('a', 'lib/1.dart'), ChangeType.ADD),
-          AssetChange(AssetId('a', 'lib/2.dart'), ChangeType.MODIFY),
-          AssetChange(AssetId('a', 'lib/3.dart'), ChangeType.REMOVE),
+          AssetChange(
+            AssetLocation.source(AssetId('a', 'lib/1.dart')),
+            ChangeType.ADD,
+          ),
+          AssetChange(
+            AssetLocation.source(AssetId('a', 'lib/2.dart')),
+            ChangeType.MODIFY,
+          ),
+          AssetChange(
+            AssetLocation.source(AssetId('a', 'lib/3.dart')),
+            ChangeType.REMOVE,
+          ),
         ]),
       );
 

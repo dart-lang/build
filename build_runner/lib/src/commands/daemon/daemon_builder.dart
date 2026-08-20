@@ -15,6 +15,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
+import '../../asset_location.dart';
 import '../../build/build_result.dart' as core;
 import '../../build/build_series.dart';
 import '../../build_plan/build_directory.dart';
@@ -66,7 +67,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   ) async {
     final defaultTargets = targets.cast<DefaultBuildTarget>();
     final updates = fileChanges
-        .map((change) => AssetId.parse(change.path))
+        .map((change) => AssetLocation.fromAssetId(AssetId.parse(change.path)))
         .toSet();
 
     final targetNames = targets.map((t) => t.target).toSet();
@@ -132,7 +133,10 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       );
 
       if (interestedInOutputs) {
-        outputs = {for (final id in updates) id, ...result.outputs};
+        outputs = {
+          for (final location in updates) location.id,
+          ...result.outputs,
+        };
       }
 
       for (final target in targets) {
@@ -240,9 +244,13 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
             .asyncMap(buildSeries.filterChanges)
             .where((changes) => changes.isNotEmpty)
             .map(
-              (changes) => changes
-                  .map((change) => WatchEvent(change.type, '${change.id}'))
-                  .toList(),
+              (changes) => changes.map((change) {
+                final outputRoot = buildPlan.buildSpec.buildPackages.outputRoot;
+                return WatchEvent(
+                  change.type,
+                  '${change.location.toAssetId(outputRoot)}',
+                );
+              }).toList(),
             );
 
     final changeProvider = daemonOptions.buildMode == BuildMode.Auto

@@ -1594,8 +1594,8 @@ targets:
         ],
       });
       final builderDefinitions = [
-        BuilderDefinition(''),
-        BuilderDefinition('b2'),
+        BuilderDefinition('', hideOutput: false),
+        BuilderDefinition('b2', hideOutput: false),
       ];
 
       // Initial build.

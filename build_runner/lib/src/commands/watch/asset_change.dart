@@ -3,46 +3,36 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
+import '../../asset_location.dart';
 import '../../build_plan/build_package.dart';
 
-/// Represents an [id] that was modified on disk as a result of [type].
+/// Represents an asset [location] that was modified on disk as a result of
+/// [type].
 class AssetChange {
+  /// Asset location that was changed.
+  final AssetLocation location;
+
   /// Asset that was changed.
-  final AssetId id;
+  AssetId get id => location.id;
 
   /// What caused the asset to be detected as changed.
   final ChangeType type;
 
-  const AssetChange(this.id, this.type);
+  const AssetChange(this.location, this.type);
 
   /// Creates a new change record in [package] from an existing watcher [event].
   AssetChange.fromEvent(BuildPackage package, WatchEvent event)
-    : this(
-        AssetId(package.name, _normalizeRelativePath(package, event)),
-        event.type,
-      );
-
-  static String _normalizeRelativePath(BuildPackage package, WatchEvent event) {
-    final pkgPath = package.path;
-    final absoluteEventPath = p.isAbsolute(event.path)
-        ? event.path
-        : p.absolute(event.path);
-    if (!p.isWithin(pkgPath, absoluteEventPath)) {
-      throw ArgumentError('"$absoluteEventPath" is not in "$pkgPath".');
-    }
-    return p.relative(absoluteEventPath, from: pkgPath);
-  }
+    : this(AssetLocation.fromPath(package, event.path), event.type);
 
   @override
-  int get hashCode => id.hashCode ^ type.hashCode;
+  int get hashCode => location.hashCode ^ type.hashCode;
 
   @override
   bool operator ==(Object other) =>
-      other is AssetChange && other.id == id && other.type == type;
+      other is AssetChange && other.location == location && other.type == type;
 
   @override
-  String toString() => 'AssetChange {asset: $id, type: $type}';
+  String toString() => 'AssetChange {location: $location, type: $type}';
 }

@@ -2,6 +2,8 @@
 
 - Reduce logged compile progress output for non-interactive builds, for example
   presubmits.
+- Bug fix: correctly detect and clean up unexpected generated files on disk in
+  incremental builds.
 
 ## 2.16.0
 

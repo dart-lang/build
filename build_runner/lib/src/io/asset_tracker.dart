@@ -10,6 +10,7 @@ import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import 'package:watcher/watcher.dart';
 
+import '../asset_location.dart';
 import '../build/build_state/build_state.dart';
 import '../build/resolver/asset_ids.dart';
 import '../build_plan/build_configs.dart';
@@ -30,7 +31,7 @@ class AssetTracker {
 
   /// Checks for and returns any file system changes compared to the current
   /// build step plan and build state.
-  Future<Map<AssetId, ChangeType>> collectChanges({
+  Future<Map<AssetLocation, ChangeType>> collectChanges({
     required BuildStepPlan buildStepPlan,
     required BuildState buildState,
   }) async {
@@ -66,33 +67,41 @@ class AssetTracker {
   /// Finds the asset changes which have happened while unwatched between builds
   /// by taking a difference between the assets in the build state and the
   /// assets on disk.
-  Future<Map<AssetId, ChangeType>> computeSourceUpdates(
+  Future<Map<AssetLocation, ChangeType>> computeSourceUpdates(
     Set<AssetId> inputSources,
     Set<AssetId> generatedSources,
     BuildState buildState,
     Iterable<AssetId> declaredAndActualOutputs, {
     required BuildStepPlan buildStepPlan,
   }) async {
-    final allSources = <AssetId>{}
-      ..addAll(inputSources)
-      ..addAll(generatedSources);
-    final updates = <AssetId, ChangeType>{};
-    void addUpdates(Iterable<AssetId> assets, ChangeType type) {
-      for (final asset in assets) {
-        updates[asset] = type;
+    final updates = <AssetLocation, ChangeType>{};
+
+    final newSources = inputSources.difference(buildState.sources.toSet());
+    for (final id in newSources) {
+      updates[AssetLocation.source(id)] = ChangeType.ADD;
+    }
+
+    for (final id in buildState.sources) {
+      if (!inputSources.contains(id)) {
+        updates[AssetLocation.source(id)] = ChangeType.REMOVE;
       }
     }
 
-    final newSources = inputSources.difference(buildState.sources.toSet());
-    addUpdates(newSources, ChangeType.ADD);
-    final removedAssets = [
-      for (final id in buildState.sources)
-        if (!allSources.contains(id)) id,
-      for (final id in declaredAndActualOutputs)
-        if (!allSources.contains(id)) id,
-    ];
-
-    addUpdates(removedAssets, ChangeType.REMOVE);
+    for (final id in declaredAndActualOutputs) {
+      final isHidden = id.isHidden(
+        buildStepPlan: buildStepPlan,
+        buildState: buildState,
+      );
+      final allOutputs = isHidden ? generatedSources : inputSources;
+      if (!allOutputs.contains(id)) {
+        updates[AssetLocation(
+              (b) => b
+                ..id = id
+                ..hidden = isHidden,
+            )] =
+            ChangeType.REMOVE;
+      }
+    }
 
     final originalGraphSources = buildState.sources.toSet();
     final preExistingSources = originalGraphSources.intersection(inputSources);
@@ -102,13 +111,11 @@ class AssetTracker {
 
       final currentDigest = await _readerWriter.digest(id);
       if (currentDigest != originalDigest.digest) {
-        updates[id] = ChangeType.MODIFY;
+        updates[AssetLocation.source(id)] = ChangeType.MODIFY;
       }
     }
 
-    final preExistingOutputs = declaredAndActualOutputs.toSet().intersection(
-      allSources,
-    );
+    final preExistingOutputs = declaredAndActualOutputs.toSet();
     for (final id in preExistingOutputs) {
       final originalContent = buildState.contentOf(
         buildStepPlan: buildStepPlan,
@@ -116,15 +123,23 @@ class AssetTracker {
       );
       if (originalContent == null) continue;
 
-      final currentDigest = await _readerWriter.digest(
-        id,
-        hidden: id.isHidden(
-          buildStepPlan: buildStepPlan,
-          buildState: buildState,
-        ),
+      final isHidden = id.isHidden(
+        buildStepPlan: buildStepPlan,
+        buildState: buildState,
       );
+      final exists = isHidden
+          ? generatedSources.contains(id)
+          : inputSources.contains(id);
+      if (!exists) continue;
+
+      final currentDigest = await _readerWriter.digest(id, hidden: isHidden);
       if (currentDigest != originalContent.digest) {
-        updates[id] = ChangeType.MODIFY;
+        updates[AssetLocation(
+              (b) => b
+                ..id = id
+                ..hidden = isHidden,
+            )] =
+            ChangeType.MODIFY;
       }
     }
     return updates;
@@ -162,7 +177,8 @@ class AssetTracker {
           return AssetId(package, path);
         })
         .where((id) => id != null)
-        .cast<AssetId>();
+        .cast<AssetId>()
+        .where((id) => _buildPackages.packages.containsKey(id.package));
   }
 
   /// Lists asset IDs and swallows file not found errors.

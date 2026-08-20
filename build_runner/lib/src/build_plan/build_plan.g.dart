@@ -12,11 +12,9 @@ class _$BuildPlan extends BuildPlan {
   @override
   final PreviousBuild previousBuild;
   @override
-  @override
   final BuildStepPlan buildStepPlan;
-
   @override
-  final BuiltList<AssetId> conflictingOutputs;
+  final BuiltList<AssetLocation> conflictingOutputs;
   @override
   final BuildInputs buildInputs;
   @override
@@ -103,10 +101,10 @@ class BuildPlanBuilder implements Builder<BuildPlan, BuildPlanBuilder> {
   set buildStepPlan(BuildStepPlanBuilder? buildStepPlan) =>
       _$this._buildStepPlan = buildStepPlan;
 
-  ListBuilder<AssetId>? _conflictingOutputs;
-  ListBuilder<AssetId> get conflictingOutputs =>
-      _$this._conflictingOutputs ??= ListBuilder<AssetId>();
-  set conflictingOutputs(ListBuilder<AssetId>? conflictingOutputs) =>
+  ListBuilder<AssetLocation>? _conflictingOutputs;
+  ListBuilder<AssetLocation> get conflictingOutputs =>
+      _$this._conflictingOutputs ??= ListBuilder<AssetLocation>();
+  set conflictingOutputs(ListBuilder<AssetLocation>? conflictingOutputs) =>
       _$this._conflictingOutputs = conflictingOutputs;
 
   BuildInputsBuilder? _buildInputs;
@@ -180,7 +178,6 @@ class BuildPlanBuilder implements Builder<BuildPlan, BuildPlanBuilder> {
         previousBuild.build();
         _$failedField = 'buildStepPlan';
         buildStepPlan.build();
-
         _$failedField = 'conflictingOutputs';
         conflictingOutputs.build();
         _$failedField = 'buildInputs';

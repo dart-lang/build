@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+import 'package:build_runner/src/asset_location.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/commands/watch/asset_change.dart';
@@ -46,8 +47,14 @@ void main() {
       expect(
         watcher.watch(),
         emitsInOrder([
-          AssetChange(AssetId('a', 'lib/a.dart'), ChangeType.ADD),
-          AssetChange(AssetId('b', 'lib/b.dart'), ChangeType.ADD),
+          AssetChange(
+            AssetLocation.source(AssetId('a', 'lib/a.dart')),
+            ChangeType.ADD,
+          ),
+          AssetChange(
+            AssetLocation.source(AssetId('b', 'lib/b.dart')),
+            ChangeType.ADD,
+          ),
         ]),
       );
     });
@@ -83,7 +90,12 @@ void main() {
 
       await pumpEventQueue();
 
-      expect(events, [AssetChange(AssetId('b', 'lib/b.dart'), ChangeType.ADD)]);
+      expect(events, [
+        AssetChange(
+          AssetLocation.source(AssetId('b', 'lib/b.dart')),
+          ChangeType.ADD,
+        ),
+      ]);
     });
 
     test('should avoid watchers on pub dependencies', () {
@@ -257,8 +269,14 @@ void main() {
       expect(
         events,
         unorderedEquals([
-          AssetChange(AssetId('b', 'lib/b.dart'), ChangeType.ADD),
-          AssetChange(AssetId('a', 'lib/a.dart'), ChangeType.ADD),
+          AssetChange(
+            AssetLocation.source(AssetId('b', 'lib/b.dart')),
+            ChangeType.ADD,
+          ),
+          AssetChange(
+            AssetLocation.source(AssetId('a', 'lib/a.dart')),
+            ChangeType.ADD,
+          ),
         ]),
       );
     });
@@ -279,7 +297,12 @@ class FakeNodeWatcher implements BuildPackageWatcher {
   void markReady() => _watcher._readyCompleter.complete();
 
   void emitAdd(String path) {
-    _events.add(AssetChange(AssetId(buildPackage.name, path), ChangeType.ADD));
+    _events.add(
+      AssetChange(
+        AssetLocation.source(AssetId(buildPackage.name, path)),
+        ChangeType.ADD,
+      ),
+    );
   }
 
   @override

@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+export 'asset_location.dart';
 export 'bootstrap/build_process_state.dart';
 export 'bootstrap/build_script_generate.dart';
 export 'build/build_result.dart';

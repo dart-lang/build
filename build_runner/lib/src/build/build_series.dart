@@ -9,6 +9,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:watcher/watcher.dart';
 
+import '../asset_location.dart';
 import '../build_plan/build_directory.dart';
 import '../build_plan/build_filter.dart';
 import '../build_plan/build_plan.dart';
@@ -77,11 +78,13 @@ class BuildSeries {
     final result = <AssetChange>[];
     for (final change in changes) {
       final id = change.id;
+      final location = change.location;
 
       // Changes to the entrypoint are handled via depfiles.
-      if (_buildPlan.buildSpec.bootstrapper.isCompileDependency(
-        _buildPlan.buildSpec.buildPackages.pathFor(id, hide: false),
-      )) {
+      if (!location.hidden &&
+          _buildPlan.buildSpec.bootstrapper.isCompileDependency(
+            _buildPlan.buildSpec.buildPackages.pathFor(id, hide: false),
+          )) {
         result.add(change);
         continue;
       }
@@ -90,7 +93,13 @@ class BuildSeries {
       // that do deletes and writes.
       if (_outputStrategy == .overwrite || _outputStrategy == .keep) {
         // Ignore deletes done by `build_runner`.
-        if (change.type == .REMOVE && _expectedDeletes.remove(id)) {
+        final deleteId = location.hidden
+            ? AssetPathProvider.hide(
+                id,
+                _buildPlan.buildSpec.buildPackages.outputRoot,
+              )
+            : id;
+        if (change.type == .REMOVE && _expectedDeletes.remove(deleteId)) {
           continue;
         }
 
@@ -101,12 +110,12 @@ class BuildSeries {
         if ((change.type == .ADD || change.type == .MODIFY) &&
             _buildPlan.buildStepPlan.isDeclaredOutput(id)) {
           final expectedContent = _buildPlan.previousBuild.buildState
-              ?.contentOf(id: id, buildStepPlan: _buildPlan.buildStepPlan);
+              ?.contentAt(location, buildStepPlan: _buildPlan.buildStepPlan);
           if (expectedContent != null) {
             try {
               final bytes = await _buildPlan.readerWriter.readAsBytes(
                 id,
-                hidden: id.isHidden(buildStepPlan: _buildPlan.buildStepPlan),
+                hidden: location.hidden,
               );
               if (md5.convert(bytes) == expectedContent.digest) {
                 continue;
@@ -120,7 +129,7 @@ class BuildSeries {
         continue;
       }
 
-      if (_isBuildConfiguration(id)) {
+      if (!location.hidden && _isBuildConfiguration(id)) {
         result.add(change);
         continue;
       }
@@ -152,8 +161,8 @@ class BuildSeries {
       if (!_buildPlan.buildSpec.buildOptions.anyMergedOutputDirectory &&
           !(_buildPlan.previousBuild.buildState?.isMissingSource(id) ??
               false) &&
-          _buildPlan.previousBuild.buildState?.contentOf(
-                id: id,
+          _buildPlan.previousBuild.buildState?.contentAt(
+                location,
                 buildStepPlan: _buildPlan.buildStepPlan,
               ) ==
               null) {
@@ -192,8 +201,11 @@ class BuildSeries {
           buildState: _buildPlan.previousBuild.buildState ?? BuildState(),
         );
 
+    final outputRoot = _buildPlan.buildSpec.buildPackages.outputRoot;
     return List.of(
-      updates.entries.map((entry) => WatchEvent(entry.value, '${entry.key}')),
+      updates.entries.map((entry) {
+        return WatchEvent(entry.value, '${entry.key.toAssetId(outputRoot)}');
+      }),
     );
   }
 
@@ -218,7 +230,7 @@ class BuildSeries {
   /// Set [recentlyBootstrapped] to skip doing checks that are done during
   /// bootstrapping. If [recentlyBootstrapped] then [updates] must be empty.
   Future<BuildResult> run(
-    Set<AssetId> updates, {
+    Set<AssetLocation> updates, {
     required bool recentlyBootstrapped,
     BuiltSet<BuildDirectory>? buildDirs,
     BuiltSet<BuildFilter>? buildFilters,
@@ -242,7 +254,7 @@ class BuildSeries {
       }
     }
 
-    if (updates.any(_isBuildConfiguration)) {
+    if (updates.any((l) => !l.hidden && _isBuildConfiguration(l.id))) {
       _buildPlan = await _buildPlan.reload();
       // A config change might have caused new builders to be needed, which
       // needs a restart to change the build script.
@@ -359,26 +371,6 @@ class BuildSeries {
   Set<AssetId> _computeDeletes(BuildResult result, {bool onlyVisible = false}) {
     final deletes = <AssetId>{};
     final currentState = result.buildState!;
-    for (final id in _buildPlan.conflictingOutputs) {
-      if (!currentState.isActualOutput(
-            id: id,
-            buildStepPlan: _buildPlan.buildStepPlan,
-          ) &&
-          !currentState.isActualPostOutput(id)) {
-        deletes.add(id);
-      }
-    }
-    for (final id
-        in _buildPlan.previousBuild.incompatibleBuildOutputsToDelete) {
-      if (!currentState.isActualOutput(
-            id: id,
-            buildStepPlan: _buildPlan.buildStepPlan,
-          ) &&
-          !currentState.isActualPostOutput(id)) {
-        deletes.add(id);
-      }
-    }
-
     final outputRoot = _buildPlan.buildSpec.buildPackages.outputRoot;
     // Adds a delete result, unless it's a hidden file and `onlyVisible` was
     // requested.
@@ -388,6 +380,32 @@ class BuildSeries {
           deletes.add(AssetPathProvider.hide(id, outputRoot));
         }
       } else {
+        deletes.add(id);
+      }
+    }
+
+    for (final conflict in _buildPlan.conflictingOutputs) {
+      final wasGeneratedAtSameLocation =
+          (currentState.isActualOutput(
+                id: conflict.id,
+                buildStepPlan: _buildPlan.buildStepPlan,
+              ) &&
+              _buildPlan.buildStepPlan.isHidden(conflict.id) ==
+                  conflict.hidden) ||
+          (currentState.isActualPostOutput(conflict.id) &&
+              currentState.isHiddenPostProcessOutput(conflict.id) ==
+                  conflict.hidden);
+      if (!wasGeneratedAtSameLocation) {
+        maybeAddDelete(conflict.id, conflict.hidden);
+      }
+    }
+    for (final id
+        in _buildPlan.previousBuild.incompatibleBuildOutputsToDelete) {
+      if (!currentState.isActualOutput(
+            id: id,
+            buildStepPlan: _buildPlan.buildStepPlan,
+          ) &&
+          !currentState.isActualPostOutput(id)) {
         deletes.add(id);
       }
     }
