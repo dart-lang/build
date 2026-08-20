@@ -12,6 +12,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
+import '../build_file.dart';
 import '../build_plan/build_configs.dart';
 import '../build_plan/build_inputs.dart';
 import '../build_plan/build_options.dart';
@@ -636,7 +637,9 @@ class Build {
       inputId: input,
       buildFilesystem: _builderFilesystem,
       addAsset: (assetId) {
-        if (!hideOutput) buildPackages.throwIfReadonly(assetId);
+        if (!hideOutput) {
+          buildPackages.throwIfReadonly(AssetFile(assetId, hidden: hideOutput));
+        }
         if (_isFile(assetId)) {
           throw InvalidOutputException(assetId, 'Asset already exists');
         }

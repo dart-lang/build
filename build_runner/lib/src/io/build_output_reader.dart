@@ -13,6 +13,7 @@ import '../build/asset_content.dart';
 import '../build/build_state/build_state.dart';
 import '../build/builder_filesystem.dart';
 import '../build/resolver/asset_ids.dart';
+import '../build_file.dart';
 import '../build_plan/build_step_plan.dart';
 
 /// A view of the build output.
@@ -38,12 +39,15 @@ class BuildOutputReader {
   Set<AssetId> _collectAssetsDeletedByPostProcessBuilders() =>
       _buildState.assetsDeletedByPostProcess;
 
-  String pathFor(AssetId id) {
-    return _builderFilesystem.readerWriter.assetPathProvider.pathFor(
-      id,
-      hide: id.isHidden(buildStepPlan: _buildStepPlan, buildState: _buildState),
-    );
-  }
+  AssetFile _assetFile(AssetId id) => AssetFile(
+    id,
+    hidden: id.isHidden(buildStepPlan: _buildStepPlan, buildState: _buildState),
+  );
+
+  String pathFor(AssetId id) => pathForFile(_assetFile(id));
+
+  String pathForFile(AssetFile file) =>
+      _builderFilesystem.readerWriter.buildFileLayout.pathFor(file);
 
   /// Returns a reason why [id] is not readable, or null if it is readable.
   Future<UnreadableReason?> unreadableReason(AssetId id) async {
@@ -83,13 +87,7 @@ class BuildOutputReader {
     }
 
     if (buildState.isSource(id) &&
-        await builderFilesystem.readerWriter.canRead(
-          id,
-          hidden: id.isHidden(
-            buildStepPlan: _buildStepPlan,
-            buildState: buildState,
-          ),
-        )) {
+        await builderFilesystem.readerWriter.canReadFile(_assetFile(id))) {
       return null;
     }
     return UnreadableReason.notFound;
@@ -150,9 +148,13 @@ class BuildOutputReader {
   ///
   /// Note that [id] must exist in the asset graph.
   FutureOr<Digest> _ensureDigest(AssetId id) async {
-    final content = _buildState.contentOf(
+    final hidden = id.isHidden(
       buildStepPlan: _buildStepPlan,
-      id: id,
+      buildState: _buildState,
+    );
+    final content = _buildState.contentAt(
+      AssetFile(id, hidden: hidden),
+      buildStepPlan: _buildStepPlan,
     );
     if (content != null) return content.digest;
     final bytes = await readAsBytes(id);

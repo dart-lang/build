@@ -3,6 +3,11 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build_runner/src/build_file.dart';
+// ignore: implementation_imports
+import 'package:build_runner/src/constants.dart';
+import 'package:path/path.dart' as p;
 
 import 'test_reader_writer.dart';
 
@@ -13,6 +18,39 @@ AssetId makeAssetId([String? assetIdString]) {
     _nextId++;
   }
   return AssetId.parse(assetIdString);
+}
+
+/// Converts a serialized test fixture descriptor to a [BuildFile].
+///
+/// Supports serialized IDs of the form `package|path`, or paths like
+/// `.dart_tool/...` or `.dart_tool/build/generated/...`.
+BuildFile makeBuildFile(String descriptor, {required String defaultPackage}) {
+  final pipeIndex = descriptor.indexOf('|');
+  final package = pipeIndex == -1
+      ? defaultPackage
+      : descriptor.substring(0, pipeIndex);
+  final path = pipeIndex == -1
+      ? descriptor
+      : descriptor.substring(pipeIndex + 1);
+
+  final posixPath = p.posix.normalize(path.replaceAll(r'\', '/'));
+  if (posixPath.startsWith('$generatedOutputDirectory/')) {
+    final packagePath = posixPath.substring(
+      generatedOutputDirectory.length + 1,
+    );
+    final firstSlash = packagePath.indexOf('/');
+    if (firstSlash != -1) {
+      final targetPackage = packagePath.substring(0, firstSlash);
+      final targetPath = packagePath.substring(firstSlash + 1);
+      return AssetFile.cache(AssetId(targetPackage, targetPath));
+    }
+  }
+  final lowerPosixPath = posixPath.toLowerCase();
+  if (lowerPosixPath == '.dart_tool' ||
+      lowerPosixPath.startsWith('.dart_tool/')) {
+    return InternalFile(package, posixPath);
+  }
+  return AssetFile.source(AssetId(package, posixPath));
 }
 
 void addAssets(Map<AssetId, dynamic> assets, TestReaderWriter writer) {

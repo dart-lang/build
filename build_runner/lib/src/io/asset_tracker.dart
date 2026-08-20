@@ -8,16 +8,20 @@ import 'dart:io';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
+import 'package:glob/list_local_fs.dart';
+import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
 import '../build/build_state/build_state.dart';
 import '../build/resolver/asset_ids.dart';
+import '../build_file.dart';
 import '../build_plan/build_configs.dart';
 import '../build_plan/build_packages.dart';
 import '../build_plan/build_step_plan.dart';
 import '../build_plan/build_target.dart';
 import '../constants.dart';
 import '../logging/timed_activities.dart';
+import 'filesystem.dart';
 import 'reader_writer.dart';
 
 /// Finds build assets and computes changes to build assets.
@@ -30,7 +34,7 @@ class AssetTracker {
 
   /// Checks for and returns any file system changes compared to the current
   /// build step plan and build state.
-  Future<Map<AssetId, ChangeType>> collectChanges({
+  Future<Map<AssetFile, ChangeType>> collectChanges({
     required BuildStepPlan buildStepPlan,
     required BuildState buildState,
   }) async {
@@ -66,33 +70,36 @@ class AssetTracker {
   /// Finds the asset changes which have happened while unwatched between builds
   /// by taking a difference between the assets in the build state and the
   /// assets on disk.
-  Future<Map<AssetId, ChangeType>> computeSourceUpdates(
+  Future<Map<AssetFile, ChangeType>> computeSourceUpdates(
     Set<AssetId> inputSources,
     Set<AssetId> generatedSources,
     BuildState buildState,
     Iterable<AssetId> declaredAndActualOutputs, {
     required BuildStepPlan buildStepPlan,
   }) async {
-    final allSources = <AssetId>{}
-      ..addAll(inputSources)
-      ..addAll(generatedSources);
-    final updates = <AssetId, ChangeType>{};
-    void addUpdates(Iterable<AssetId> assets, ChangeType type) {
-      for (final asset in assets) {
-        updates[asset] = type;
-      }
-    }
+    final updates = <AssetFile, ChangeType>{};
 
     final newSources = inputSources.difference(buildState.sources.toSet());
-    addUpdates(newSources, ChangeType.ADD);
-    final removedAssets = [
-      for (final id in buildState.sources)
-        if (!allSources.contains(id)) id,
-      for (final id in declaredAndActualOutputs)
-        if (!allSources.contains(id)) id,
-    ];
-
-    addUpdates(removedAssets, ChangeType.REMOVE);
+    for (final id in newSources) {
+      updates[AssetFile.source(id)] = ChangeType.ADD;
+    }
+    for (final id in buildState.sources) {
+      if (!inputSources.contains(id)) {
+        updates[AssetFile.source(id)] = ChangeType.REMOVE;
+      }
+    }
+    for (final id in declaredAndActualOutputs) {
+      final isHidden = id.isHidden(
+        buildStepPlan: buildStepPlan,
+        buildState: buildState,
+      );
+      final exists = isHidden
+          ? generatedSources.contains(id)
+          : inputSources.contains(id);
+      if (!exists) {
+        updates[AssetFile(id, hidden: isHidden)] = ChangeType.REMOVE;
+      }
+    }
 
     final originalGraphSources = buildState.sources.toSet();
     final preExistingSources = originalGraphSources.intersection(inputSources);
@@ -102,29 +109,34 @@ class AssetTracker {
 
       final currentDigest = await _readerWriter.digest(id);
       if (currentDigest != originalDigest.digest) {
-        updates[id] = ChangeType.MODIFY;
+        updates[AssetFile.source(id)] = ChangeType.MODIFY;
       }
     }
 
-    final preExistingOutputs = declaredAndActualOutputs.toSet().intersection(
-      allSources,
-    );
-    for (final id in preExistingOutputs) {
-      final originalContent = buildState.contentOf(
+    final preExistingOutputs = declaredAndActualOutputs.toSet().where((id) {
+      final isHidden = id.isHidden(
         buildStepPlan: buildStepPlan,
-        id: id,
+        buildState: buildState,
+      );
+      return isHidden
+          ? generatedSources.contains(id)
+          : inputSources.contains(id);
+    });
+    for (final id in preExistingOutputs) {
+      final hidden = id.isHidden(
+        buildStepPlan: buildStepPlan,
+        buildState: buildState,
+      );
+      final file = AssetFile(id, hidden: hidden);
+      final originalContent = buildState.contentAt(
+        file,
+        buildStepPlan: buildStepPlan,
       );
       if (originalContent == null) continue;
 
-      final currentDigest = await _readerWriter.digest(
-        id,
-        hidden: id.isHidden(
-          buildStepPlan: buildStepPlan,
-          buildState: buildState,
-        ),
-      );
+      final currentDigest = await _readerWriter.digest(id, hidden: hidden);
       if (currentDigest != originalContent.digest) {
-        updates[id] = ChangeType.MODIFY;
+        updates[file] = ChangeType.MODIFY;
       }
     }
     return updates;
@@ -148,18 +160,45 @@ class AssetTracker {
   }
 
   Stream<AssetId> _listGeneratedAssetIds() {
-    final glob = Glob('$generatedOutputDirectory/**');
-
-    return _listIdsSafe(glob, package: _buildPackages.outputRoot)
-        .map((id) {
-          final packagePath = id.path.substring(
-            generatedOutputDirectory.length + 1,
-          );
-          final firstSlash = packagePath.indexOf('/');
+    final fs = _readerWriter.filesystem;
+    if (fs is InMemoryFilesystem) {
+      return Stream.fromIterable(
+        fs.filePaths
+            .where((path) => path.contains('$generatedOutputDirectory/'))
+            .map((path) {
+              final prefix = '$generatedOutputDirectory/';
+              final idx = path.indexOf(prefix);
+              final sub = path.substring(idx + prefix.length);
+              final firstSlash = sub.indexOf('/');
+              if (firstSlash == -1) return null;
+              final package = sub.substring(0, firstSlash);
+              final relPath = sub.substring(firstSlash + 1);
+              return AssetId(package, relPath);
+            })
+            .whereType<AssetId>(),
+      );
+    }
+    final generatedDirPath = p.join(
+      _buildPackages.packages[_buildPackages.outputRoot]!.path,
+      generatedOutputDirectory,
+    );
+    final generatedDir = Directory(generatedDirPath);
+    if (!generatedDir.existsSync()) return const Stream.empty();
+    return Glob('**')
+        .list(followLinks: true, root: generatedDirPath)
+        .where((e) => e is File && !p.basename(e.path).startsWith('._'))
+        .cast<File>()
+        .map((file) {
+          final filePath = p.normalize(file.absolute.path);
+          final relativePath = p.relative(filePath, from: generatedDirPath);
+          final firstSlash = relativePath.indexOf(p.separator);
           if (firstSlash == -1) return null;
-          final package = packagePath.substring(0, firstSlash);
-          final path = packagePath.substring(firstSlash + 1);
-          return AssetId(package, path);
+          final package = relativePath.substring(0, firstSlash);
+          final subPath = relativePath.substring(firstSlash + 1);
+          final normalizedSubPath = p.posix.normalize(
+            subPath.replaceAll(r'\', '/'),
+          );
+          return AssetId(package, normalizedSubPath);
         })
         .where((id) => id != null)
         .cast<AssetId>();

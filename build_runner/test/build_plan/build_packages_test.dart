@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build_runner/src/build_file.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_paths.dart';
@@ -42,68 +43,88 @@ void main() {
         expect(buildRunner.languageVersion, LanguageVersion(3, 11));
       });
 
-      test('pathFor allows write to output package', () {
+      test('pathForAsset allows write to output package', () {
         expect(
           buildPackages.pathFor(
-            AssetId('build_runner', 'lib/a.txt'),
-            hide: false,
+            AssetFile.source(AssetId('build_runner', 'lib/a.txt')),
             checkWriteAllowed: true,
           ),
           isNotNull,
         );
       });
 
-      test('pathFor prohibits write to known but non-output package', () {
+      test('pathForAsset prohibits write to known but non-output package', () {
         expect(
           () => buildPackages.pathFor(
-            AssetId('test', 'lib/a.txt'),
-            hide: false,
+            AssetFile.source(AssetId('test', 'lib/a.txt')),
             checkWriteAllowed: true,
           ),
           throwsA(isA<InvalidOutputException>()),
         );
       });
 
-      test('pathFor prohibits access to unknown package', () {
+      test('pathForAsset prohibits access to unknown package', () {
         expect(
           () => buildPackages.pathFor(
-            AssetId('unknown', 'lib/a.txt'),
-            hide: false,
+            AssetFile.source(AssetId('unknown', 'lib/a.txt')),
           ),
           throwsA(isA<PackageNotFoundException>()),
         );
       });
 
-      test('pathFor allows write to cache in output package', () {
+      test('pathForAsset allows write to cache in output package', () {
         expect(
           buildPackages.pathFor(
-            AssetId('build_runner', 'lib/a.txt'),
-            hide: true,
+            AssetFile.cache(AssetId('build_runner', 'lib/a.txt')),
             checkWriteAllowed: true,
           ),
           isNotNull,
         );
       });
-      test('pathFor allows write to cache in known but non-output package', () {
+      test(
+        'pathForAsset allows write to cache in known but non-output package',
+        () {
+          expect(
+            buildPackages.pathFor(
+              AssetFile.cache(AssetId('test', 'lib/a.txt')),
+              checkWriteAllowed: true,
+            ),
+            isNotNull,
+          );
+        },
+      );
+
+      test('pathFor allows access to cache for unknown package', () {
         expect(
-          () => buildPackages.pathFor(
-            AssetId('test', 'lib/a.txt'),
-            hide: true,
+          buildPackages.pathFor(
+            AssetFile.cache(AssetId('unknown', 'lib/a.txt')),
+          ),
+          endsWith('.dart_tool/build/generated/unknown/lib/a.txt'),
+        );
+      });
+
+      test('pathFor allows write for InternalFile in output package', () {
+        expect(
+          buildPackages.pathFor(
+            InternalFile('build_runner', '.dart_tool/package_config.json'),
             checkWriteAllowed: true,
           ),
           isNotNull,
         );
       });
 
-      test('pathFor prohibits access to cache for unknown package', () {
-        expect(
-          () => buildPackages.pathFor(
-            AssetId('unknown', 'lib/a.txt'),
-            hide: true,
-          ),
-          throwsA(isA<PackageNotFoundException>()),
-        );
-      });
+      test(
+        'pathFor prohibits write for InternalFile in non-output package',
+        () {
+          expect(
+            () => buildPackages.pathFor(
+              InternalFile('test', '.dart_tool/package_config.json'),
+              checkWriteAllowed: true,
+            ),
+            throwsA(isA<PackageReadonlyException>()),
+          );
+        },
+      );
     });
 
     group('basic package', () {

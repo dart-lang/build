@@ -5,8 +5,8 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:build/build.dart';
 import 'package:build_runner/src/build/build_result.dart';
+import 'package:build_runner/src/build_file.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
@@ -21,8 +21,6 @@ import 'package:test/test.dart';
 import '../common/common.dart';
 
 void main() {
-  final packageConfigId = makeAssetId('a|.dart_tool/package_config.json');
-
   group('--config', () {
     test('warns override config defines builders', () async {
       final logs = <LogRecord>[];
@@ -40,7 +38,6 @@ builders:
     build_extensions: {"a": ["b"]}
 ''',
         },
-        packageConfigId: packageConfigId,
         configKey: 'cool',
         onLog: logs.add,
         buildPackages: buildPackages,
@@ -59,7 +56,6 @@ builders:
 
 Future<BuildResult> _doBuild(
   Map<String, String> inputs, {
-  required AssetId packageConfigId,
   required BuildPackages buildPackages,
   void Function(LogRecord)? onLog,
   String? configKey,
@@ -71,7 +67,10 @@ Future<BuildResult> _doBuild(
   inputs.forEach((serializedId, contents) {
     readerWriter.writeAsString(makeAssetId(serializedId), contents);
   });
-  await readerWriter.writeAsString(packageConfigId, jsonEncode(_packageConfig));
+  await readerWriter.writeFileAsBytes(
+    InternalFile('a', '.dart_tool/package_config.json'),
+    utf8.encode(jsonEncode(_packageConfig)),
+  );
 
   return await BuildCommand(
     builderFactories: BuilderFactories({}),

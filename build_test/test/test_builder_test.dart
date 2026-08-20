@@ -500,8 +500,18 @@ import 'package:glob/glob.dart';
       outputs: {'a|a.txt.copy': ''},
     );
     expect(
-      result.readerWriter.testing.assets,
-      contains(AssetId('a', '.dart_tool/build/generated/a/a.txt.copy')),
+      result.readerWriter.testing.exists(
+        AssetId('a', 'a.txt.copy'),
+        hidden: true,
+      ),
+      true,
+    );
+    expect(
+      result.readerWriter.testing.exists(
+        AssetId('a', 'a.txt.copy'),
+        hidden: false,
+      ),
+      false,
     );
   });
 

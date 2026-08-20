@@ -1,9 +1,12 @@
 // Copyright (c) 2025, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+
 import 'dart:typed_data';
 
 import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build_runner/src/internal.dart';
 
 import 'fake_watcher.dart';
 import 'internal_test_reader_writer.dart';
@@ -25,8 +28,8 @@ import 'test_builder.dart' show testBuilders;
 /// Some parts of this API are from the point of view of a builder and use a
 /// unified namespace for [AssetId]s, while others see a split view
 /// of the hidden/non-hidden filesystem structure, and require an explicit
-/// mapping of [AssetId]s to the on-disk structure
-/// (eg. starting with `.dart_tool/build/generated/`) to access hidden files.
+/// mapping of [AssetId]s to the on-disk structure,
+/// such as starting with `.dart_tool/build/generated/` to access hidden files.
 /// See [testBuilders] `flattenOutput` parameter for more details.
 abstract interface class TestReaderWriter implements AssetReader, AssetWriter {
   factory TestReaderWriter({String? rootPackage, bool flattenOutput = false}) =>
@@ -45,6 +48,10 @@ abstract interface class ReaderWriterTesting {
 
   /// All the assets that exist on the [TestReaderWriter] in-memory filesystem.
   Iterable<AssetId> get assets;
+
+  /// All the hidden generated assets on the [TestReaderWriter] in-memory
+  /// filesystem.
+  Iterable<AssetId> get hiddenAssets;
 
   /// The assets that have been recorded as inputs of the build.
   Iterable<AssetId> get inputsTracked;
@@ -87,40 +94,42 @@ abstract interface class ReaderWriterTesting {
   Iterable<AssetId> get assetsWritten;
 
   /// Whether [id] exists on the [TestReaderWriter] in-memory filesystem.
-  ///
-  /// [AssetId]s are from the point of view of the filesystem,
-  /// so "hidden" assets are under .dart_tool.
-  /// See also [TestReaderWriter] class documentation and
-  /// [testBuilders] `flattenOutput` parameter.
-  bool exists(AssetId id);
+  bool exists(AssetId id, {bool hidden = false});
 
   /// Writes [id] with [contents] to the [TestReaderWriter] in-memory
   /// filesystem.
-  void writeString(AssetId id, String contents);
+  void writeString(AssetId id, String contents, {bool hidden = false});
 
   /// Writes [id] with [contents] to the [TestReaderWriter] in-memory
   /// filesystem.
-  void writeBytes(AssetId id, List<int> contents);
+  void writeBytes(AssetId id, List<int> contents, {bool hidden = false});
 
   /// Reads [id] from the [TestReaderWriter] in-memory filesystem.
-  ///
-  /// [AssetId]s are from the point of view of the filesystem,
-  /// so "hidden" assets are under .dart_tool.
-  /// See also [TestReaderWriter] class documentation and
-  /// [testBuilders] `flattenOutput` parameter.
-  Uint8List readBytes(AssetId id);
+  Uint8List readBytes(AssetId id, {bool hidden = false});
 
   /// Reads [id] from the [TestReaderWriter] in-memory filesystem.
-  ///
-  /// [AssetId]s are from the point of view of the filesystem,
-  /// so "hidden" assets are under .dart_tool.
-  /// /// See also [TestReaderWriter] class documentation and
-  String readString(AssetId id);
+  String readString(AssetId id, {bool hidden = false});
 
   /// Deletes [id] from the [TestReaderWriter] in-memory filesystem.
-  ///
-  /// [AssetId]s are from the point of view of the filesystem,
-  /// so "hidden" assets are under .dart_tool.
-  /// /// [testBuilders] `flattenOutput` parameter.
-  void delete(AssetId id);
+  void delete(AssetId id, {bool hidden = false});
+
+  /// Whether [file] exists on the [TestReaderWriter] in-memory filesystem.
+  bool existsFile(BuildFile file);
+
+  /// Writes [file] with [contents] to the [TestReaderWriter] in-memory
+  /// filesystem.
+  void writeFileString(BuildFile file, String contents);
+
+  /// Writes [file] with [contents] to the [TestReaderWriter] in-memory
+  /// filesystem.
+  void writeFileBytes(BuildFile file, List<int> contents);
+
+  /// Reads [file] from the [TestReaderWriter] in-memory filesystem.
+  Uint8List readFileBytes(BuildFile file);
+
+  /// Reads [file] from the [TestReaderWriter] in-memory filesystem.
+  String readFileString(BuildFile file);
+
+  /// Deletes [file] from the [TestReaderWriter] in-memory filesystem.
+  void deleteFile(BuildFile file);
 }

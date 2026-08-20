@@ -74,28 +74,23 @@ void checkOutputs(
         reason: 'Builder failed to write asset $assetId',
       );
       modifiableActualAssets.remove(assetId);
-      var mappedAssetId = assetId;
-      if (!writer.testing.exists(assetId)) {
-        // The asset was output but not to the expected location. First try the
-        // `mapAssetIds` if one was supplied.
-        mappedAssetId = mapAssetIds(assetId);
-        if (!writer.testing.exists(mappedAssetId)) {
-          // Then try the usual mapping for generated assets.
-          mappedAssetId = AssetId(
-            (writer as InternalTestReaderWriter).buildCachePackage,
-            '.dart_tool/build/generated/${assetId.package}/${assetId.path}',
-          );
-        }
-        // If neither succeeded then the asset was output but written somewhere
-        // unexpected.
-        if (!writer.testing.exists(mappedAssetId)) {
-          throw StateError(
-            'Internal error: "$assetId" was recorded as output, but the file '
-            'could not be found. All assets: ${writer.testing.assets}',
-          );
-        }
+
+      final mappedId = mapAssetIds(assetId);
+      List<int> actual;
+      if (writer.testing.exists(assetId)) {
+        actual = writer.testing.readBytes(assetId);
+      } else if (writer.testing.exists(assetId, hidden: true)) {
+        actual = writer.testing.readBytes(assetId, hidden: true);
+      } else if (writer.testing.exists(mappedId)) {
+        actual = writer.testing.readBytes(mappedId);
+      } else if (writer.testing.exists(mappedId, hidden: true)) {
+        actual = writer.testing.readBytes(mappedId, hidden: true);
+      } else {
+        throw StateError(
+          'Internal error: "$assetId" was recorded as output, but the file '
+          'could not be found.',
+        );
       }
-      final actual = writer.testing.readBytes(mappedAssetId);
       Object expected;
       if (contentsMatcher is String) {
         expected = utf8.decode(actual);
@@ -344,7 +339,10 @@ Future<TestBuilderResult> testBuilderFactories(
   onLog ??= _printOnFailureOrWrite;
 
   final inputIds = {
-    for (final descriptor in sourceAssets.keys) makeAssetId(descriptor),
+    for (final descriptor in sourceAssets.keys)
+      if (makeBuildFile(descriptor, defaultPackage: rootPackage ?? '')
+          case AssetFile(:final id, hidden: false))
+        id,
   };
 
   if (inputIds.isEmpty && rootPackage == null) {
@@ -368,7 +366,9 @@ Future<TestBuilderResult> testBuilderFactories(
   }
   rootPackage ??= allPackages.first;
 
-  var internalReaderWriter = readerWriter as InternalTestReaderWriter?;
+  var internalReaderWriter = readerWriter is InternalTestReaderWriter
+      ? readerWriter
+      : null;
   if (internalReaderWriter == null) {
     internalReaderWriter = InternalTestReaderWriter(
       outputRootPackage: rootPackage,
@@ -380,26 +380,6 @@ Future<TestBuilderResult> testBuilderFactories(
     );
   }
   readerWriter = internalReaderWriter;
-
-  sourceAssets.forEach((serializedId, contents) {
-    final id = makeAssetId(serializedId);
-    if (contents is String) {
-      readerWriter!.testing.writeString(id, contents);
-    } else if (contents is List<int>) {
-      readerWriter!.testing.writeBytes(id, contents);
-    }
-  });
-
-  final inputFilter = isInput ?? generateFor?.contains ?? (_) => true;
-  inputIds.retainWhere((id) => inputFilter('$id'));
-
-  buildLog.configuration = buildLog.configuration.rebuild((b) {
-    b.onLog = onLog;
-    b.verbose = verbose;
-  });
-  resolvers ??= packageConfig == null && enabledExperiments.isEmpty
-      ? _defaultResolvers
-      : ResolversImpl.custom(packageConfig: packageConfig);
 
   // Build a `buildPackages` based on [sourceAssets].
   final otherPackages = allPackages.toSet()..remove(rootPackage);
@@ -415,6 +395,26 @@ Future<TestBuilderResult> testBuilderFactories(
     for (final otherPackage in otherPackages)
       BuildPackage(name: otherPackage, path: '/$otherPackage', watch: true),
   ]);
+
+  sourceAssets.forEach((serializedId, contents) {
+    final file = makeBuildFile(serializedId, defaultPackage: rootPackage!);
+    if (contents is String) {
+      readerWriter!.testing.writeFileString(file, contents);
+    } else if (contents is List<int>) {
+      readerWriter!.testing.writeFileBytes(file, contents);
+    }
+  });
+
+  final inputFilter = isInput ?? generateFor?.contains ?? (_) => true;
+  inputIds.retainWhere((id) => inputFilter('$id'));
+
+  buildLog.configuration = buildLog.configuration.rebuild((b) {
+    b.onLog = onLog;
+    b.verbose = verbose;
+  });
+  resolvers ??= packageConfig == null && enabledExperiments.isEmpty
+      ? _defaultResolvers
+      : ResolversImpl.custom(packageConfig: packageConfig);
 
   String builderName(Object builder) {
     final result = builder.toString();

@@ -5,6 +5,7 @@
 import 'package:build/build.dart';
 import 'package:build_runner/src/bootstrap/build_process_state.dart';
 import 'package:build_runner/src/bootstrap/compile_type.dart';
+import 'package:build_runner/src/build_file.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/phase.dart';
@@ -423,4 +424,4 @@ BuildPackages _testBuildPackages(String packageName) =>
     ]);
 
 Uri _packageFileUri(BuildPackages buildPackages, AssetId assetId) =>
-    Uri.file(buildPackages.pathFor(assetId, hide: false));
+    Uri.file(buildPackages.pathFor(AssetFile.source(assetId)));

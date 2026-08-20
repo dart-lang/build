@@ -10,6 +10,7 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
+import 'package:build_runner/src/build_file.dart';
 import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
@@ -183,9 +184,9 @@ void main() {
       await resolveSources(
         sources,
         readAllSourcesFromFilesystem: true,
-        assetReaderChecks: (testReaderWriter) {
-          assetGraphContent = testReaderWriter.testing.readString(
-            AssetId('build_test', '.dart_tool/build/asset_graph.json'),
+        assetReaderChecks: (testReaderWriter) async {
+          assetGraphContent = testReaderWriter.testing.readFileString(
+            InternalFile('build_test', '.dart_tool/build/asset_graph.json'),
           );
         },
         (resolver) async {},

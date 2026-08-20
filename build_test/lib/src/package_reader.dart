@@ -152,10 +152,19 @@ class PackageAssetReader {
             .list(recursive: true)
             .whereType<File>()
             .map((f) => p.relative(f.path, from: _rootPackagePath))
-            .where((p) => !(p.startsWith('packages/') || p.startsWith('lib/'))),
+            .where(
+              (p) =>
+                  !(p.startsWith('packages/') ||
+                      p.startsWith('lib/') ||
+                      p.startsWith('.dart_tool/') ||
+                      p == '.dart_tool'),
+            ),
       );
     }
-    return result.where(glob.matches).map((p) => AssetId(package!, p));
+    return result
+        .where((p) => !p.startsWith('.dart_tool/') && p != '.dart_tool')
+        .where(glob.matches)
+        .map((p) => AssetId(package!, p));
   }
 
   Future<bool> canRead(AssetId id) =>

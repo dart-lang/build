@@ -10,8 +10,9 @@ import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 
 import '../build/resolver/asset_ids.dart';
+import '../build_file.dart';
+import '../build_file_layout.dart';
 import '../constants.dart';
-import '../io/asset_path_provider.dart';
 import 'build_package.dart';
 import 'build_packages_loader.dart';
 import 'build_paths.dart';
@@ -22,7 +23,7 @@ import 'placeholders.dart';
 final _sdkPackage = BuildPackage(name: r'$sdk', path: sdkPath);
 
 /// The [BuildPackage]s in the build.
-class BuildPackages implements AssetPathProvider {
+class BuildPackages implements BuildFileLayout {
   /// All packages by package name.
   final BuiltMap<String, BuildPackage> packages;
 
@@ -211,42 +212,75 @@ class BuildPackages implements AssetPathProvider {
   }.build();
 
   @override
-  String pathFor(
-    AssetId id, {
-    required bool hide,
-    bool checkWriteAllowed = false,
-  }) {
-    if (!packages.containsKey(id.package)) {
-      throw PackageNotFoundException(id.package);
+  String pathFor(BuildFile file, {bool checkWriteAllowed = false}) {
+    if (checkWriteAllowed) throwIfReadonly(file);
+    if (file is AssetFile) {
+      final id = file.id;
+      if (file.hidden) {
+        final rootPackage = packages[outputRoot]!;
+        return p.normalize(
+          p.join(
+            rootPackage.path,
+            generatedOutputDirectory,
+            id.package,
+            id.platformPath,
+          ),
+        );
+      }
+      if (!packages.containsKey(id.package)) {
+        throw PackageNotFoundException(id.package);
+      }
+      final package = packages[id.package]!;
+      return p.normalize(p.join(package.path, id.platformPath));
+    } else if (file is InternalFile) {
+      final package = packages[file.package];
+      if (package == null) {
+        throw PackageNotFoundException(file.package);
+      }
+      return p.normalize(p.join(package.path, file.path));
     }
-    if (hide) id = AssetPathProvider.hide(id, outputRoot);
-    if (checkWriteAllowed) throwIfReadonly(id);
-    final package = packages[id.package]!;
-    return p.join(package.path, id.platformPath);
+    throw ArgumentError('Unknown BuildFile type: $file');
   }
 
-  /// Throws if [id] is not allowed to be written or deleted.
+  @override
+  BuildFile fromPath(BuildPackage package, String path) =>
+      BuildFileLayout.fileFromPath(package, path);
+
+  /// Converts a filesystem [path] to a [BuildFile] by finding the deepest
+  /// matching package.
+  BuildFile fileFromPath(String path) {
+    BuildPackage? bestPackage;
+    for (final package in packages.values) {
+      if (p.isWithin(package.path, path) || package.path == path) {
+        if (bestPackage == null ||
+            package.path.length > bestPackage.path.length) {
+          bestPackage = package;
+        }
+      }
+    }
+    if (bestPackage != null) {
+      return BuildFileLayout.fileFromPath(bestPackage, path);
+    }
+    throw ArgumentError('No package found for path: $path');
+  }
+
+  /// Throws if [file] is not allowed to be written or deleted.
   ///
-  /// Write or delete is allowed if [id] is in the cache directory for
-  /// `outputRoot` or is in a package that is a build output.
-  void throwIfReadonly(AssetId id) {
-    final isUnderCacheDirectory = id.path.startsWith('$cacheDirectoryPath/');
+  /// Write or delete is allowed if [file] is in the cache directory or is in a
+  /// package that is a build output.
+  void throwIfReadonly(BuildFile file) {
     final writeIsAllowed =
-        (isUnderCacheDirectory && id.package == outputRoot) ||
-        outputPackages.contains(id.package);
+        (file is AssetFile && file.hidden) ||
+        outputPackages.contains(file.package);
     if (!writeIsAllowed) {
-      if (isUnderCacheDirectory) {
+      if (file is AssetFile) {
         throw InvalidOutputException(
-          id,
-          'Tried to write or delete from $cacheDirectoryPath in wrong '
-          'package, should be $outputRoot.',
-        );
-      } else {
-        throw InvalidOutputException(
-          id,
+          file.id,
           'Tried to write or delete in a package not in the build. Packages '
           'in the build are: ${outputPackages.join(', ')}',
         );
+      } else {
+        throw PackageReadonlyException(file.package);
       }
     }
   }
@@ -357,4 +391,13 @@ Set<String> _computeTransitiveDeps(
     }
   }
   return result;
+}
+
+class PackageReadonlyException implements Exception {
+  final String package;
+
+  PackageReadonlyException(this.package);
+
+  @override
+  String toString() => 'Package $package is not an output package';
 }

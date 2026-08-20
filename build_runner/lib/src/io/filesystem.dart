@@ -6,6 +6,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:path/path.dart' as p;
+
 /// The filesystem the build is running on.
 ///
 /// Methods behave as the `dart:io` methods with the same names, with some
@@ -65,7 +67,7 @@ class IoFilesystem implements Filesystem {
 
   @override
   void deleteDirectorySync(String path) {
-    final directory = Directory(path);
+    final directory = Directory(p.normalize(path));
     if (directory.existsSync()) directory.deleteSync(recursive: true);
   }
 

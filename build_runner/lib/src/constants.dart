@@ -14,10 +14,10 @@ const entrypointDirectoryPath = '$cacheDirectoryPath/entrypoint';
 const entrypointScriptPath = '$entrypointDirectoryPath/build.dart';
 
 /// Relative path to the AssetGraphJson from the root package dir.
-final String assetGraphJsonPath = '$cacheDirectoryPath/asset_graph.json';
+const String assetGraphJsonPath = '$cacheDirectoryPath/asset_graph.json';
 
 /// The directory to which hidden assets will be written.
-String get generatedOutputDirectory => '$cacheDirectoryPath/generated';
+const String generatedOutputDirectory = '$cacheDirectoryPath/generated';
 
 /// The dart binary from the current sdk.
 String get dartBinary => p.join(sdkBin, 'dart');

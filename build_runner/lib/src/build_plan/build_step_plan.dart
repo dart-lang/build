@@ -130,6 +130,7 @@ abstract class BuildStepPlan
     }
     final step = stepForDeclaredOutputOrNull(id);
     if (step == null) return false;
+    if (step.phaseNumber >= buildPhases.inBuildPhases.length) return false;
     return buildPhases.inBuildPhases[step.phaseNumber].hideOutput;
   }
 

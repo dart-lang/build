@@ -92,11 +92,8 @@ Future<TestBuildersResult> testPhases(
       ? InternalTestReaderWriter(outputRootPackage: buildPackages.outputRoot)
       : resumeFrom.readerWriter;
 
-  final pkgConfigId = AssetId(
-    buildPackages.outputRoot,
-    '.dart_tool/package_config.json',
-  );
-  if (!await readerWriter.canRead(pkgConfigId)) {
+  const pkgConfigPath = '.dart_tool/package_config.json';
+  if (!await readerWriter.canReadFile(InternalFile('a', pkgConfigPath))) {
     final packageConfig = {
       'configVersion': 2,
       'packages': [
@@ -109,15 +106,21 @@ Future<TestBuildersResult> testPhases(
           },
       ],
     };
-    await readerWriter.writeAsString(pkgConfigId, jsonEncode(packageConfig));
+    await readerWriter.writeFileAsBytes(
+      InternalFile('a', pkgConfigPath),
+      utf8.encode(jsonEncode(packageConfig)),
+    );
   }
 
   inputs.forEach((serializedId, contents) {
-    final id = makeAssetId(serializedId);
+    final file = makeBuildFile(
+      serializedId,
+      defaultPackage: buildPackages!.outputRoot,
+    );
     if (contents is String) {
-      readerWriter.testing.writeString(id, contents);
+      readerWriter.testing.writeFileString(file, contents);
     } else if (contents is List<int>) {
-      readerWriter.testing.writeBytes(id, contents);
+      readerWriter.testing.writeFileBytes(file, contents);
     }
   });
 
@@ -187,20 +190,8 @@ void checkBuild(
     }
   }
 
-  AssetId mapHidden(AssetId id) => unhiddenAssets.contains(id)
-      ? AssetId(
-          buildCachePackage,
-          '.dart_tool/build/generated/${id.package}/${id.path}',
-        )
-      : id;
-
   if (status == BuildStatus.success) {
-    checkOutputs(
-      unhiddenOutputs,
-      result.outputs,
-      readerWriter,
-      mapAssetIds: mapHidden,
-    );
+    checkOutputs(unhiddenOutputs, result.outputs, readerWriter);
   }
 }
 

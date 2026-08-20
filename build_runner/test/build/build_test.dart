@@ -14,6 +14,7 @@ import 'package:build_config/build_config.dart'
 import 'package:build_runner/src/build/build_result.dart';
 import 'package:build_runner/src/build/build_state/asset_graph_json.dart';
 import 'package:build_runner/src/build/build_state/build_step_id.dart';
+import 'package:build_runner/src/build_file.dart';
 import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_directory.dart';
 import 'package:build_runner/src/build_plan/build_filter.dart';
@@ -24,7 +25,6 @@ import 'package:build_runner/src/build_plan/builder_factories.dart';
 import 'package:build_runner/src/build_plan/placeholders.dart';
 import 'package:build_runner/src/constants.dart';
 import 'package:build_runner/src/exceptions.dart';
-import 'package:build_runner/src/io/reader_writer.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:glob/glob.dart';
 import 'package:test/test.dart';
@@ -556,10 +556,16 @@ targets:
           outputs: {'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.clone': 'a'},
         );
 
-        final assetGraphJsonId = makeAssetId('a|$assetGraphJsonPath');
-        expect(result.readerWriter.testing.exists(assetGraphJsonId), isTrue);
+        expect(
+          await result.readerWriter.canReadFile(
+            InternalFile('a', assetGraphJsonPath),
+          ),
+          isTrue,
+        );
         final cachedBuildState = AssetGraphJson.deserialize(
-          result.readerWriter.testing.readBytes(assetGraphJsonId),
+          result.readerWriter.testing.readFileBytes(
+            InternalFile('a', assetGraphJsonPath),
+          ),
         )!.buildState;
         expect(
           cachedBuildState.sources,
@@ -585,10 +591,14 @@ targets:
           outputs: {'a|web/a.txt.copy': 'a'},
         );
 
-        final copyId = makeAssetId(
-          'a|.dart_tool/build/generated/a/web/a.txt.copy',
+        final copyId = makeAssetId('a|web/a.txt.copy');
+        expect(
+          await (result.readerWriter as InternalTestReaderWriter).canRead(
+            copyId,
+            hidden: true,
+          ),
+          isTrue,
         );
-        expect(result.readerWriter.testing.exists(copyId), isTrue);
 
         final canReadInBuild = Completer<bool>();
         final blockingCompleter = Completer<void>();
@@ -611,14 +621,26 @@ targets:
 
         // Before the build starts we should still see the asset, we haven't
         // actually deleted it yet.
-        expect(result.readerWriter.testing.exists(copyId), isTrue);
+        expect(
+          await (result.readerWriter as InternalTestReaderWriter).canRead(
+            copyId,
+            hidden: true,
+          ),
+          isTrue,
+        );
 
         // But we should delete it before actually running the builder.
         final inputId = makeAssetId('a|web/a.txt');
         await builder.buildInputs.firstWhere((id) => id == inputId);
 
         // Because of write caching, it's not deleted from `readerWriter`.
-        expect(result.readerWriter.testing.exists(copyId), isTrue);
+        expect(
+          await (result.readerWriter as InternalTestReaderWriter).canRead(
+            copyId,
+            hidden: true,
+          ),
+          isTrue,
+        );
         // ...but it is gone from the point of view of the build.
         expect(await canReadInBuild.future, isFalse);
 
@@ -808,12 +830,27 @@ additional_public_assets:
             r'a|lib/a.txt.copy': 'a',
           },
         );
-        // Two of the outputs are under the generated output path.
+        final readerWriter = result.readerWriter as InternalTestReaderWriter;
         expect(
-          result.readerWriter.testing.assets.where(
-            (a) => a.path.contains('.dart_tool/build/generated'),
+          await readerWriter.canRead(
+            makeAssetId('a|lib/a.txt.hiddencopy'),
+            hidden: true,
           ),
-          hasLength(2),
+          isTrue,
+        );
+        expect(
+          await readerWriter.canRead(
+            makeAssetId('a|lib/a.txt.copy.hiddencopy'),
+            hidden: true,
+          ),
+          isTrue,
+        );
+        expect(
+          await readerWriter.canRead(
+            makeAssetId('a|lib/a.txt.copy'),
+            hidden: false,
+          ),
+          isTrue,
         );
       });
 
@@ -934,14 +971,8 @@ targets:
       );
     });
 
-    test('can\'t read files in .dart_tool', () async {
-      expect(
-        (await testBuilders(
-          [TestBuilder(build: copyFrom(makeAssetId('a|.dart_tool/any_file')))],
-          {'a|lib/a.txt': 'a', 'a|.dart_tool/any_file': 'content'},
-        )).succeeded,
-        false,
-      );
+    test('can\'t read files in .dart_tool', () {
+      expect(() => makeAssetId('a|.dart_tool/any_file'), throwsArgumentError);
     });
 
     test(
@@ -1183,9 +1214,10 @@ targets:
       outputs: {'a|lib/a.txt.out': 'a'},
     );
 
-    final graphId = makeAssetId('a|$assetGraphJsonPath');
     final cachedBuildState = AssetGraphJson.deserialize(
-      result.readerWriter.testing.readBytes(graphId),
+      result.readerWriter.testing.readFileBytes(
+        InternalFile('a', assetGraphJsonPath),
+      ),
     )!.buildState;
     final outputId = AssetId('a', 'lib/a.txt.out');
 
@@ -1211,14 +1243,17 @@ targets:
         inputs,
         outputs: outputs,
       );
-      // Second run, only output should be the asset graph JSON.
+      // Second run, no assets should be written.
       for (final id in result.readerWriter.testing.assets) {
         inputs[id.toString()] = await result.readerWriter.readAsString(id);
       }
       result = await testBuilders([TestBuilder()], inputs);
       expect(
-        result.readerWriter.testing.assetsWritten.single.toString(),
-        contains('asset_graph.json'),
+        result.readerWriter.testing.assetsWritten,
+        unorderedEquals([
+          AssetId('a', 'web/a.txt.copy'),
+          AssetId('a', 'lib/b.txt.copy'),
+        ]),
       );
     },
   );
@@ -1237,8 +1272,9 @@ targets:
     );
 
     // Delete the `asset_graph.json` file!
-    final outputId = makeAssetId('a|$assetGraphJsonPath');
-    await (result.readerWriter as ReaderWriter).delete(outputId);
+    result.readerWriter.testing.deleteFile(
+      InternalFile('a', assetGraphJsonPath),
+    );
 
     // Second run, should have no extra outputs.
     await testBuilders(
@@ -1454,8 +1490,8 @@ targets:
 
       /// Should be deleted using the writer, and converted to missingSource.
       final newBuildState = AssetGraphJson.deserialize(
-        result.readerWriter.testing.readBytes(
-          makeAssetId('a|$assetGraphJsonPath'),
+        result.readerWriter.testing.readFileBytes(
+          InternalFile('a', assetGraphJsonPath),
         ),
       )!.buildState;
       final anId = makeAssetId('a|lib/a.txt');
@@ -1551,7 +1587,6 @@ targets:
         builderDefinitions,
         {
           'a|lib/file.a': 'a',
-          'a|lib/file.a.copy': 'b',
           // Hack to get the file to rebuild, we are being bad by changing the
           // builder but pretending its the same.
           'a|lib/file.b': 'b2',
@@ -1563,8 +1598,8 @@ targets:
 
       // Read cached build state and validate.
       final buildState = AssetGraphJson.deserialize(
-        result.readerWriter.testing.readBytes(
-          makeAssetId('a|$assetGraphJsonPath'),
+        result.readerWriter.testing.readFileBytes(
+          InternalFile('a', assetGraphJsonPath),
         ),
       )!.buildState;
       final fileAId = makeAssetId('a|lib/file.a');
@@ -1611,12 +1646,7 @@ targets:
       await testPhases(
         builderFactories,
         builderDefinitions,
-        {
-          'a|lib/file.a': 'a2',
-          'a|lib/file.b': 'b',
-          'a|lib/file.a.copy': 'b',
-          'a|lib/file.a.copy.copy': 'b',
-        },
+        {'a|lib/file.a': 'a2', 'a|lib/file.b': 'b'},
         outputs: {'a|lib/file.a.copy': 'b'},
         resumeFrom: result,
       );
@@ -1716,7 +1746,7 @@ targets:
           build: (buildStep, _) async {
             final hasEntrypoint = await buildStep
                 .findAssets(Glob('**'))
-                .contains(makeAssetId('a|$entrypointScriptPath'));
+                .any((id) => id.path.contains('entrypoint'));
             await buildStep.writeAsString(
               buildStep.inputId.changeExtension('.hasEntrypoint'),
               '$hasEntrypoint',
@@ -1801,7 +1831,9 @@ targets:
       );
 
       final finalBuildState = AssetGraphJson.deserialize(
-        result.readerWriter.testing.readBytes(AssetId('a', assetGraphJsonPath)),
+        result.readerWriter.testing.readFileBytes(
+          InternalFile('a', assetGraphJsonPath),
+        ),
       )!.buildState;
 
       expect(

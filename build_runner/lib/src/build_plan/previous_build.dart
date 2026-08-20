@@ -11,6 +11,7 @@ import 'package:built_value/built_value.dart';
 import '../build/build_state/asset_graph_json.dart';
 import '../build/build_state/build_state.dart';
 import '../build/library_cycle_graph/phased_asset_deps.dart';
+import '../build_file.dart';
 import '../constants.dart';
 
 import 'build_spec.dart';
@@ -54,18 +55,18 @@ abstract class PreviousBuild
     final readerWriter = buildSpec.readerWriter;
     final buildPackages = buildSpec.buildPackages;
     final buildPlanDigest = buildSpec.buildPlanDigest;
-    final assetGraphJsonId = AssetId(
-      buildPackages.outputRoot,
-      assetGraphJsonPath,
-    );
     BuildSpecDigest? previousBuildPlanDigest;
     BuildState? previousBuildState;
     final incompatibleBuildOutputsToDelete = <AssetId>{};
     PhasedAssetDeps? previousPhasedAssetDeps;
 
-    if (await readerWriter.canRead(assetGraphJsonId)) {
+    final assetGraphFile = InternalFile(
+      buildPackages.outputRoot,
+      assetGraphJsonPath,
+    );
+    if (await readerWriter.canReadFile(assetGraphFile)) {
       final assetGraphJson = AssetGraphJson.deserialize(
-        await readerWriter.readAsBytes(assetGraphJsonId) as Uint8List,
+        Uint8List.fromList(await readerWriter.readFileAsBytes(assetGraphFile)),
       );
       if (assetGraphJson != null) {
         previousBuildState = assetGraphJson.buildState;

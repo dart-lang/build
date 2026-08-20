@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:async/async.dart';
+import 'package:build_runner/src/build_file.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
@@ -38,18 +39,20 @@ void main() {
       readerWriter = InternalTestReaderWriter(
         outputRootPackage: buildPackages.outputRoot,
       );
-      await readerWriter.writeAsString(
-        makeAssetId('a|.dart_tool/package_config.json'),
-        jsonEncode({
-          'configVersion': 2,
-          'packages': [
-            {
-              'name': 'a',
-              'rootUri': 'file://fake/pkg/path',
-              'packageUri': 'lib/',
-            },
-          ],
-        }),
+      await readerWriter.writeFileAsBytes(
+        InternalFile('a', '.dart_tool/package_config.json'),
+        utf8.encode(
+          jsonEncode({
+            'configVersion': 2,
+            'packages': [
+              {
+                'name': 'a',
+                'rootUri': 'file://fake/pkg/path',
+                'packageUri': 'lib/',
+              },
+            ],
+          }),
+        ),
       );
     });
 
