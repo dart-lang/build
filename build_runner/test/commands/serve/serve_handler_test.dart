@@ -15,8 +15,6 @@ import 'package:build_runner/src/build/build_state/build_step_id.dart';
 import 'package:build_runner/src/build/build_state/build_step_result.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_id.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_result.dart';
-import 'package:build_runner/src/build/builder_filesystem.dart';
-import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
@@ -123,21 +121,17 @@ void main() {
     readerWriter = InternalTestReaderWriter(
       outputRootPackage: buildPackages.outputRoot,
     );
-    buildState = BuildState();
-    watcher = FakeWatcher(buildPackages);
-    serveHandler = ServeHandler(watcher);
     buildStepPlan = BuildStepPlan(
       (BuildStepPlanBuilder b) =>
           b..buildPhases = BuildPhases(const <InBuildPhase>[]),
     );
+    buildState = BuildState(buildStepPlan: buildStepPlan, sources: const {});
+    watcher = FakeWatcher(buildPackages);
+    serveHandler = ServeHandler(watcher);
     finalizedReader = BuildOutputReader(
-      builderFilesystem: BuilderFilesystem(
-        buildPackages: buildPackages,
-        buildConfigs: BuildConfigs.empty(),
-        buildState: buildState,
-        buildStepPlan: buildStepPlan,
-        readerWriter: readerWriter,
-      ),
+      buildPackages: buildPackages,
+      readerWriter: readerWriter,
+      buildState: buildState.toFinishedBuildState(),
     );
     watcher.addFutureResult(
       Future.value(
@@ -162,6 +156,19 @@ void main() {
       digest: AssetContent.digest(computeDigest(parsedId, content)),
     );
     readerWriter.testing.writeString(parsedId, content);
+    finalizedReader = BuildOutputReader(
+      buildPackages: buildPackages,
+      readerWriter: readerWriter,
+      buildState: buildState.toFinishedBuildState(),
+    );
+    watcher.addFutureResult(
+      Future.value(
+        BuildResult(
+          status: BuildStatus.success,
+          buildOutputReader: finalizedReader,
+        ),
+      ),
+    );
   }
 
   test('can get handlers for a subdirectory', () async {
@@ -264,7 +271,6 @@ void main() {
 
   group('build failures', () {
     setUp(() async {
-      addSource('a|web/index.html', '');
       final primaryId = AssetId('a', 'web/main.dart');
       final outputId = AssetId('a', 'web/main.ddc.js');
       final buildStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
@@ -274,21 +280,20 @@ void main() {
         b.buildStepsByDeclaredOutput.addAll({outputId: buildStepId});
       });
 
-      finalizedReader = BuildOutputReader(
-        builderFilesystem: BuilderFilesystem(
-          buildPackages: buildPackages,
-          buildConfigs: BuildConfigs.empty(),
-          buildState: buildState,
-          buildStepPlan: buildStepPlan,
-          readerWriter: readerWriter,
-        ),
-      );
+      buildState = BuildState(buildStepPlan: buildStepPlan, sources: const {});
+      addSource('a|web/index.html', '');
 
       final stepResult = BuildStepResult((b) {
         b.result = false;
         b.isHidden = false;
       });
       buildState.updateBuildStepResult(buildStepId, stepResult);
+
+      finalizedReader = BuildOutputReader(
+        buildPackages: buildPackages,
+        readerWriter: readerWriter,
+        buildState: buildState.toFinishedBuildState(),
+      );
       watcher.addFutureResult(
         Future.value(
           BuildResult(
@@ -647,6 +652,25 @@ void main() {
         await clientChannel1.sink.close();
       });
 
+      test('emits null digest for deleted files', () async {
+        expect(
+          clientChannel1.stream.map((s) => jsonDecode(s.toString())),
+          emitsInOrder([
+            {'index.html': null},
+            emitsDone,
+          ]),
+        );
+        await createMockConnection(serverChannel1, 'web');
+        await handler.emitUpdateMessage(
+          BuildResult(
+            status: BuildStatus.success,
+            outputs: [AssetId('a', 'web/index.html')].build(),
+            buildOutputReader: finalizedReader,
+          ),
+        );
+        await clientChannel1.sink.close();
+      });
+
       test('works for different root dirs', () async {
         addSource('a|web1/index.html', 'content1');
         addSource('a|web2/index.html', 'content2');
@@ -710,27 +734,17 @@ class FakeWatcher implements Watcher {
   @override
   Future<BuildResult> get currentBuildResult => _currentBuild!;
 
-  final _futureBuildResultsController = StreamController<Future<BuildResult>>();
-  final _buildResultsController = StreamController<BuildResult>();
+  final _buildResultsController = StreamController<BuildResult>.broadcast();
 
   @override
   Stream<BuildResult> get buildResults => _buildResultsController.stream;
 
   void addFutureResult(Future<BuildResult> result) {
-    _futureBuildResultsController.add(result);
+    _currentBuild = result;
+    result.then(_buildResultsController.add);
   }
 
-  FakeWatcher(this.buildPackages) {
-    final firstBuild = Completer<BuildResult>();
-    _currentBuild = firstBuild.future;
-    _futureBuildResultsController.stream.listen((futureBuildResult) {
-      if (!firstBuild.isCompleted) {
-        firstBuild.complete(futureBuildResult);
-      }
-      _currentBuild = _currentBuild!.then((_) => futureBuildResult)
-        ..then(_buildResultsController.add);
-    });
-  }
+  FakeWatcher(this.buildPackages);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

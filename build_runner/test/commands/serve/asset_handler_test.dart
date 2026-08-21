@@ -11,8 +11,6 @@ import 'package:build_runner/src/build/build_state/build_step_id.dart';
 import 'package:build_runner/src/build/build_state/build_step_result.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_id.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_result.dart';
-import 'package:build_runner/src/build/builder_filesystem.dart';
-import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
@@ -27,32 +25,29 @@ import '../../common/common.dart';
 
 void main() {
   late AssetHandler handler;
-  late BuildOutputReader reader;
   late InternalTestReaderWriter readerWriter;
   late BuildState buildState;
   late BuildStepPlan buildStepPlan;
   late BuildPackages buildPackages;
 
   setUp(() async {
-    buildState = BuildState();
     readerWriter = InternalTestReaderWriter();
     buildStepPlan = BuildStepPlan(
       (BuildStepPlanBuilder b) =>
           b..buildPhases = BuildPhases(const <InBuildPhase>[]),
     );
+    buildState = BuildState(buildStepPlan: buildStepPlan, sources: const {});
     buildPackages = BuildPackages.singlePackageBuild('a', [
       BuildPackage.forTesting(name: 'a', isOutput: true),
     ]);
-    reader = BuildOutputReader(
-      builderFilesystem: BuilderFilesystem(
+    handler = AssetHandler(
+      () async => BuildOutputReader(
         buildPackages: buildPackages,
-        buildConfigs: BuildConfigs.empty(),
-        buildState: buildState,
-        buildStepPlan: buildStepPlan,
         readerWriter: readerWriter,
+        buildState: buildState.toFinishedBuildState(),
       ),
+      'a',
     );
-    handler = AssetHandler(() async => reader, 'a');
   });
 
   void addAsset(String id, String content, {bool deleted = false}) {
@@ -151,21 +146,23 @@ void main() {
       b.buildPhases = BuildPhases(const <InBuildPhase>[]);
       b.buildStepsByDeclaredOutput.addAll({outputId: buildStepId});
     });
-    reader = BuildOutputReader(
-      builderFilesystem: BuilderFilesystem(
-        buildPackages: buildPackages,
-        buildConfigs: BuildConfigs.empty(),
-        buildState: buildState,
-        buildStepPlan: buildStepPlan,
-        readerWriter: readerWriter,
-      ),
+    final buildState = BuildState(
+      buildStepPlan: buildStepPlan,
+      sources: const {},
     );
-    handler = AssetHandler(() async => reader, 'a');
     final stepResult = BuildStepResult((b) {
       b.result = false;
       b.isHidden = false;
     });
     buildState.updateBuildStepResult(buildStepId, stepResult);
+    handler = AssetHandler(
+      () async => BuildOutputReader(
+        buildPackages: buildPackages,
+        readerWriter: readerWriter,
+        buildState: buildState.toFinishedBuildState(),
+      ),
+      'a',
+    );
 
     final response = await handler.handle(
       Request('GET', Uri.parse('http://server.com/main.ddc.js')),

@@ -83,14 +83,17 @@ void main() {
         assetGraphJsonId,
         AssetGraphJson.serialize(
           buildPlanDigest: buildPlan.buildSpec.buildPlanDigest,
-          buildState: buildState,
+          buildState: buildState.toSerializedBuildState(),
           phasedAssetDeps: PhasedAssetDeps(),
         ),
       );
     }
 
     test('reports updates', () async {
-      final buildState = BuildState({assetId: null, assetId2: null});
+      final buildState = BuildState(
+        buildStepPlan: buildPlan.buildStepPlan,
+        sources: {assetId: null, assetId2: null},
+      );
 
       // Write an output and add it to the build state as if it was built.
       await readerWriter.writeAsString(outputId, '// output');

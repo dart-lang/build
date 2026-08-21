@@ -7,7 +7,6 @@ library;
 
 import 'dart:io';
 
-import 'package:build_runner/src/logging/build_log.dart';
 import 'package:io/io.dart';
 import 'package:test/test.dart';
 
@@ -51,6 +50,7 @@ void main() async {
     );
 
     // Responds with etags, accepts and checks them.
+    expect(await serve.fetchContent('a.txt'), 'a');
     final etag = (await serve.fetch(
       'a.txt',
     )).headers[HttpHeaders.etagHeader]!.single;
@@ -65,7 +65,8 @@ void main() async {
       'a.txt',
     )).headers[HttpHeaders.etagHeader]!.single;
     tester.write('root_pkg/web/a.txt', 'b');
-    await serve.expect(BuildLog.successPattern);
+    await serve.expectNoOutput(const Duration(seconds: 1));
+    expect(await serve.fetchContent('a.txt'), 'b');
     final etag3 = (await serve.fetch(
       'a.txt',
     )).headers[HttpHeaders.etagHeader]!.single;

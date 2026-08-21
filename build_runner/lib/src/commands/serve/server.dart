@@ -103,13 +103,9 @@ class ServeHandler {
       );
       AssetId? assetId;
       for (final id in assetIds) {
-        try {
-          if (await reader.canRead(id)) {
-            assetId = id;
-            break;
-          }
-        } on AssetNotFoundException {
-          // Try the next one.
+        if (await reader.canRead(id)) {
+          assetId = id;
+          break;
         }
       }
 
@@ -167,10 +163,14 @@ class BuildUpdatesWebSocketHandler {
   Future emitUpdateMessage(BuildResult buildResult) async {
     if (buildResult.status != BuildStatus.success) return;
     final reader = buildResult.buildOutputReader!;
-    final digests = <AssetId, String>{};
+    final digests = <AssetId, String?>{};
     for (final assetId in buildResult.outputs) {
-      final digest = await reader.digest(assetId);
-      digests[assetId] = digest.toString();
+      try {
+        final digest = await reader.digest(assetId);
+        digests[assetId] = digest.toString();
+      } on AssetNotFoundException {
+        digests[assetId] = null;
+      }
     }
     for (final rootDir in connectionsByRootDir.keys) {
       final resultMap = <String, String?>{};
