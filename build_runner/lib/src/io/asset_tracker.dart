@@ -11,6 +11,7 @@ import 'package:glob/glob.dart';
 import 'package:watcher/watcher.dart';
 
 import '../build/build_state/finished_build_state.dart';
+import '../build_plan/asset_file.dart';
 import '../build_plan/build_configs.dart';
 import '../build_plan/build_packages.dart';
 import '../build_plan/build_step_plan.dart';
@@ -29,21 +30,21 @@ class AssetTracker {
 
   /// Checks for and returns any file system changes compared to the current
   /// build step plan and build state.
-  Future<Map<AssetId, ChangeType>> collectChanges({
+  Future<Map<AssetFile, ChangeType>> collectChanges({
     required BuildStepPlan buildStepPlan,
     required FinishedBuildState buildState,
   }) async {
     final inputSources = await findInputSources();
     final generatedSources = await findCacheDirSources();
-    final declaredAndActualOutputs = [
-      ...buildStepPlan.declaredOutputs,
+    final actualOutputs = [
+      ...buildState.actualOutputs,
       ...buildState.actualPostOutputs,
     ];
     return computeSourceUpdates(
       inputSources,
       generatedSources,
       buildState,
-      declaredAndActualOutputs,
+      actualOutputs,
       buildStepPlan: buildStepPlan,
     );
   }
@@ -65,33 +66,44 @@ class AssetTracker {
   /// Finds the asset changes which have happened while unwatched between builds
   /// by taking a difference between the assets in the build state and the
   /// assets on disk.
-  Future<Map<AssetId, ChangeType>> computeSourceUpdates(
+  Future<Map<AssetFile, ChangeType>> computeSourceUpdates(
     Set<AssetId> inputSources,
     Set<AssetId> generatedSources,
     FinishedBuildState buildState,
-    Iterable<AssetId> declaredAndActualOutputs, {
+    Iterable<AssetId> actualOutputs, {
     required BuildStepPlan buildStepPlan,
   }) async {
-    final allSources = <AssetId>{}
-      ..addAll(inputSources)
-      ..addAll(generatedSources);
-    final updates = <AssetId, ChangeType>{};
-    void addUpdates(Iterable<AssetId> assets, ChangeType type) {
-      for (final asset in assets) {
-        updates[asset] = type;
+    final updates = <AssetFile, ChangeType>{};
+
+    final newSources = inputSources.difference(buildState.sources.toSet());
+    for (final id in newSources) {
+      updates[AssetFile.source(id)] = ChangeType.ADD;
+    }
+
+    final newCacheSources = generatedSources.where(
+      (id) => !buildState.isActualHiddenOutput(id),
+    );
+    for (final id in newCacheSources) {
+      updates[AssetFile.cache(id)] = ChangeType.ADD;
+    }
+
+    for (final id in buildState.sources) {
+      if (!inputSources.contains(id)) {
+        updates[AssetFile.source(id)] = ChangeType.REMOVE;
       }
     }
 
-    final newSources = inputSources.difference(buildState.sources.toSet());
-    addUpdates(newSources, ChangeType.ADD);
-    final removedAssets = [
-      for (final id in buildState.sources)
-        if (!allSources.contains(id)) id,
-      for (final id in declaredAndActualOutputs)
-        if (!allSources.contains(id)) id,
-    ];
-
-    addUpdates(removedAssets, ChangeType.REMOVE);
+    for (final id in actualOutputs) {
+      final isHidden =
+          buildStepPlan.isHidden(id) ||
+          buildState.isHiddenPostProcessOutput(id);
+      final exists = isHidden
+          ? generatedSources.contains(id)
+          : inputSources.contains(id);
+      if (!exists) {
+        updates[AssetFile(id, hidden: isHidden)] = ChangeType.REMOVE;
+      }
+    }
 
     final originalGraphSources = buildState.sources.toSet();
     final preExistingSources = originalGraphSources.intersection(inputSources);
@@ -101,23 +113,29 @@ class AssetTracker {
 
       final currentDigest = await _readerWriter.digest(id);
       if (currentDigest != originalDigest.digest) {
-        updates[id] = ChangeType.MODIFY;
+        updates[AssetFile.source(id)] = ChangeType.MODIFY;
       }
     }
 
-    final preExistingOutputs = declaredAndActualOutputs.toSet().intersection(
-      allSources,
-    );
+    final preExistingOutputs = actualOutputs.toSet().where((id) {
+      final isHidden =
+          buildStepPlan.isHidden(id) ||
+          buildState.isHiddenPostProcessOutput(id);
+      return isHidden
+          ? generatedSources.contains(id)
+          : inputSources.contains(id);
+    });
     for (final id in preExistingOutputs) {
+      final hidden =
+          buildStepPlan.isHidden(id) ||
+          buildState.isHiddenPostProcessOutput(id);
+      final file = AssetFile(id, hidden: hidden);
       final originalContent = buildState.contentOf(id);
       if (originalContent == null) continue;
 
-      final currentDigest = await _readerWriter.digest(
-        id,
-        hidden: buildState.isHidden(id),
-      );
+      final currentDigest = await _readerWriter.digest(id, hidden: hidden);
       if (currentDigest != originalContent.digest) {
-        updates[id] = ChangeType.MODIFY;
+        updates[file] = ChangeType.MODIFY;
       }
     }
     return updates;

@@ -119,4 +119,85 @@ void main() async {
     await tester.run('root_pkg', 'dart run build_runner build --force-jit');
     expect(tester.read('root_pkg/web/a.txt.copy2'), null);
   });
+
+  test('conflicting logical ID exists in both source and cache', () async {
+    final pubspecs = await Pubspecs.load();
+    final tester = BuildRunnerTester(pubspecs);
+
+    tester.writeFixturePackage(
+      FixturePackages.copyBuilder(
+        buildToCache: true,
+        outputExtension: '.hidden',
+      ),
+    );
+    tester.writePackage(
+      name: 'root_pkg',
+      dependencies: ['build_runner'],
+      pathDependencies: ['builder_pkg'],
+      files: {'web/a.txt': 'a'},
+    );
+
+    // Initial build creates hidden output in cache.
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+    final cacheFile =
+        'root_pkg/.dart_tool/build/generated/root_pkg/web/a.txt.hidden';
+    expect(tester.read(cacheFile), 'a');
+
+    // Create a source file with the exact same logical ID.
+    tester.write('root_pkg/web/a.txt.hidden', 'source content');
+
+    // Next build recognizes the new source file and handles the conflict:
+    // the conflicting source file is deleted and hidden output remains in
+    // cache.
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+    expect(tester.read('root_pkg/web/a.txt.hidden'), null);
+    expect(tester.read(cacheFile), 'a');
+  });
+
+  test(
+    'conflicts in cache deleted when builder outputs to source tree',
+    () async {
+      final pubspecs = await Pubspecs.load();
+      final tester = BuildRunnerTester(pubspecs);
+
+      tester.writeFixturePackage(
+        FixturePackages.copyBuilder(buildToCache: false),
+      );
+      tester.writePackage(
+        name: 'root_pkg',
+        dependencies: ['build_runner'],
+        pathDependencies: ['builder_pkg'],
+        files: {
+          'web/a.txt': 'a',
+          'web/a.txt.copy': 'visible conflict',
+          '.dart_tool/build/generated/root_pkg/web/a.txt.copy':
+              'hidden conflict',
+        },
+      );
+      // Both locations conflict, builder writes visible: hidden is deleted.
+      await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+      expect(tester.read('root_pkg/web/a.txt.copy'), 'a');
+      expect(
+        tester.read(
+          'root_pkg/.dart_tool/build/generated/root_pkg/web/a.txt.copy',
+        ),
+        null,
+      );
+
+      // Previous visible actual output plus new hidden conflict: hidden is
+      // deleted.
+      tester.write(
+        'root_pkg/.dart_tool/build/generated/root_pkg/web/a.txt.copy',
+        'new hidden conflict',
+      );
+      await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+      expect(
+        tester.read(
+          'root_pkg/.dart_tool/build/generated/root_pkg/web/a.txt.copy',
+        ),
+        null,
+      );
+      expect(tester.read('root_pkg/web/a.txt.copy'), 'a');
+    },
+  );
 }

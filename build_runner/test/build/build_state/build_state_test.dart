@@ -4,8 +4,10 @@
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
+import 'package:build_runner/src/build/asset_content.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/build_state/build_step_id.dart';
+import 'package:build_runner/src/build/build_state/build_step_result.dart';
 import 'package:build_runner/src/build/build_state/exceptions.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/build_step_plan.dart';
@@ -101,6 +103,41 @@ void main() {
         expect(
           buildStepPlan.stepForDeclaredOutput(primaryOutputId).primaryInput,
           primaryInputId,
+        );
+      });
+
+      test(
+        'contentOf returns source content for sources and output content for '
+        'outputs',
+        () {
+          final sourceContent = AssetContent.string('source content');
+          final outputContent = AssetContent.string('hidden output content');
+          buildState.updateSourceContent(primaryInputId, sourceContent);
+
+          final buildStepId = BuildStepId(
+            primaryInput: primaryInputId,
+            phaseNumber: 0,
+          );
+          buildState.updateBuildStepResult(
+            buildStepId,
+            BuildStepResult((b) {
+              b.isHidden = true;
+              b.outputs[primaryOutputId] = outputContent;
+            }),
+          );
+
+          expect(buildState.contentOf(primaryInputId), sourceContent);
+          expect(buildState.contentOf(primaryOutputId), outputContent);
+        },
+      );
+
+      test('clash between source and declared output throws', () {
+        expect(
+          () => BuildState(
+            buildStepPlan: buildStepPlan,
+            sources: {primaryOutputId: null},
+          ),
+          throwsArgumentError,
         );
       });
 

@@ -1613,12 +1613,7 @@ targets:
       await testPhases(
         builderFactories,
         builderDefinitions,
-        {
-          'a|lib/file.a': 'a2',
-          'a|lib/file.b': 'b',
-          'a|lib/file.a.copy': 'b',
-          'a|lib/file.a.copy.copy': 'b',
-        },
+        {'a|lib/file.a': 'a2', 'a|lib/file.b': 'b'},
         outputs: {'a|lib/file.a.copy': 'b'},
         resumeFrom: result,
       );

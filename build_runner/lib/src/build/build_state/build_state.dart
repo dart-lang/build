@@ -331,6 +331,12 @@ class BuildState {
   PostProcessBuildStepId? postProcessStepFor(AssetId id) =>
       _postProcessOutputs[id];
 
+  bool isHiddenDeclaredOutput(AssetId id) {
+    final step = buildStepPlan.stepForDeclaredOutputOrNull(id);
+    if (step == null) return false;
+    return stepResultOrNull(step)?.isHidden ?? buildStepPlan.isHidden(id);
+  }
+
   bool isHiddenPostProcessOutput(AssetId id) {
     final stepId = _postProcessOutputs[id];
     if (stepId == null) return false;
@@ -339,7 +345,7 @@ class BuildState {
   }
 
   bool isHidden(AssetId id) =>
-      buildStepPlan.isHidden(id) || isHiddenPostProcessOutput(id);
+      isHiddenDeclaredOutput(id) || isHiddenPostProcessOutput(id);
 
   Iterable<BuildStepId> get failedSteps {
     final results = <BuildStepId>[];

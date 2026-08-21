@@ -88,6 +88,12 @@ class FinishedBuildState {
     return stepResultOrNull(step)?.outputs.containsKey(id) ?? false;
   }
 
+  bool isHiddenDeclaredOutput(AssetId id) {
+    final step = buildStepPlan.stepForDeclaredOutputOrNull(id);
+    if (step == null) return false;
+    return stepResultOrNull(step)?.isHidden ?? buildStepPlan.isHidden(id);
+  }
+
   bool isHiddenPostProcessOutput(AssetId id) {
     final step = postProcessOutputs[id];
     if (step == null) return false;
@@ -95,8 +101,13 @@ class FinishedBuildState {
   }
 
   bool isHidden(AssetId id) =>
-      buildStepPlan.isHidden(id) || isHiddenPostProcessOutput(id);
+      isHiddenDeclaredOutput(id) || isHiddenPostProcessOutput(id);
 
+  bool isActualHiddenOutput(AssetId id) =>
+      isHidden(id) && (isActualOutput(id) || isActualPostOutput(id));
+
+  /// Whether [id] is one of: source, declared output or actual post process
+  /// output.
   bool isFile(AssetId id) =>
       isSource(id) ||
       buildStepPlan.isDeclaredOutput(id) ||

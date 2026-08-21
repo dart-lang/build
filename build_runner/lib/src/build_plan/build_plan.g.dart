@@ -14,7 +14,7 @@ class _$BuildPlan extends BuildPlan {
   @override
   final BuildStepPlan buildStepPlan;
   @override
-  final BuiltList<AssetId> conflictingOutputs;
+  final BuiltList<AssetFile> conflictingOutputs;
   @override
   final BuildInputs buildInputs;
   @override
@@ -101,10 +101,10 @@ class BuildPlanBuilder implements Builder<BuildPlan, BuildPlanBuilder> {
   set buildStepPlan(BuildStepPlanBuilder? buildStepPlan) =>
       _$this._buildStepPlan = buildStepPlan;
 
-  ListBuilder<AssetId>? _conflictingOutputs;
-  ListBuilder<AssetId> get conflictingOutputs =>
-      _$this._conflictingOutputs ??= ListBuilder<AssetId>();
-  set conflictingOutputs(ListBuilder<AssetId>? conflictingOutputs) =>
+  ListBuilder<AssetFile>? _conflictingOutputs;
+  ListBuilder<AssetFile> get conflictingOutputs =>
+      _$this._conflictingOutputs ??= ListBuilder<AssetFile>();
+  set conflictingOutputs(ListBuilder<AssetFile>? conflictingOutputs) =>
       _$this._conflictingOutputs = conflictingOutputs;
 
   BuildInputsBuilder? _buildInputs;

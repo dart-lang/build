@@ -9,6 +9,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:watcher/watcher.dart';
 
+import '../build_plan/asset_file.dart';
 import '../build_plan/build_directory.dart';
 import '../build_plan/build_filter.dart';
 import '../build_plan/build_plan.dart';
@@ -107,13 +108,20 @@ class BuildSeries {
         if ((change.type == .ADD || change.type == .MODIFY) &&
             _buildPlan.buildStepPlan.isDeclaredOutput(id)) {
           final expectedContent = previousState?.contentOf(id);
+          final isHidden = _buildPlan.buildStepPlan.isHidden(id);
           if (expectedContent != null) {
             try {
               final bytes = await _buildPlan.readerWriter.readAsBytes(
                 id,
-                hidden: _buildPlan.buildStepPlan.isHidden(id),
+                hidden: isHidden,
               );
-              if (md5.convert(bytes) == expectedContent.digest) {
+              // TODO(davidmorgan): alternative is to track location in events
+              final conflictingExists = await _buildPlan.readerWriter.canRead(
+                id,
+                hidden: !isHidden,
+              );
+              if (!conflictingExists &&
+                  md5.convert(bytes) == expectedContent.digest) {
                 continue;
               }
             } catch (_) {}
@@ -150,8 +158,9 @@ class BuildSeries {
       // If not copying to a merged output directory, ignore changes to files
       // with no outputs.
       if (!_buildPlan.buildSpec.buildOptions.anyMergedOutputDirectory &&
+          (previousState?.isSource(id) ?? false) &&
           !(previousState?.isMissingSource(id) ?? false) &&
-          previousState?.contentOf(id) == null) {
+          previousState?.contentOfSource(id) == null) {
         rejected.add(change);
         continue;
       }
@@ -190,7 +199,9 @@ class BuildSeries {
         );
 
     return List.of(
-      updates.entries.map((entry) => WatchEvent(entry.value, '${entry.key}')),
+      updates.entries.map(
+        (entry) => WatchEvent(entry.value, '${entry.key.id}'),
+      ),
     );
   }
 
@@ -261,7 +272,11 @@ class BuildSeries {
     );
 
     if (!firstBuild || updates.isNotEmpty) {
-      _buildPlan = await _buildPlan.updateForFileChanges(updates);
+      final filesToCheck = <AssetFile>{
+        for (final id in updates) AssetFile.source(id),
+        for (final id in updates) AssetFile.cache(id),
+      };
+      _buildPlan = await _buildPlan.updateForFileChanges(filesToCheck);
     }
 
     final build = Build(
@@ -326,11 +341,12 @@ class BuildSeries {
     }
 
     for (final output in result.outputs) {
+      final isHidden = result.buildState!.isHidden(output);
       final content = result.buildState!.contentOf(output)!;
       await _buildPlan.readerWriter.writeAsBytes(
         output,
         content.bytes,
-        hidden: result.buildState!.isHidden(output),
+        hidden: isHidden,
       );
     }
     for (final toDelete in _computeDeletes(result)) {
@@ -363,20 +379,6 @@ class BuildSeries {
   Set<AssetId> _computeDeletes(BuildResult result, {bool onlyVisible = false}) {
     final deletes = <AssetId>{};
     final currentState = result.buildState!;
-    for (final id in _buildPlan.conflictingOutputs) {
-      if (!currentState.isActualOutput(id) &&
-          !currentState.isActualPostOutput(id)) {
-        deletes.add(id);
-      }
-    }
-    for (final id
-        in _buildPlan.previousBuild.incompatibleBuildOutputsToDelete) {
-      if (!currentState.isActualOutput(id) &&
-          !currentState.isActualPostOutput(id)) {
-        deletes.add(id);
-      }
-    }
-
     final outputRoot = _buildPlan.buildSpec.buildPackages.outputRoot;
     // Adds a delete result, unless it's a hidden file and `onlyVisible` was
     // requested.
@@ -386,6 +388,28 @@ class BuildSeries {
           deletes.add(AssetPathProvider.hide(id, outputRoot));
         }
       } else {
+        deletes.add(id);
+      }
+    }
+
+    final forceVisible =
+        _buildPlan.buildSpec.testingOverrides.forceVisibleForTesting;
+    for (final file in _buildPlan.conflictingOutputs) {
+      final outputIsHidden = forceVisible
+          ? false
+          : currentState.isHidden(file.id);
+      final isMatchingActualOutput =
+          (currentState.isActualOutput(file.id) ||
+              currentState.isActualPostOutput(file.id)) &&
+          outputIsHidden == file.hidden;
+      if (!isMatchingActualOutput) {
+        maybeAddDelete(file.id, file.hidden);
+      }
+    }
+    for (final id
+        in _buildPlan.previousBuild.incompatibleBuildOutputsToDelete) {
+      if (!currentState.isActualOutput(id) &&
+          !currentState.isActualPostOutput(id)) {
         deletes.add(id);
       }
     }
