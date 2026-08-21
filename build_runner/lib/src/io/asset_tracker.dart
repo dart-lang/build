@@ -10,9 +10,9 @@ import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import 'package:watcher/watcher.dart';
 
+import '../build_plan/asset_file.dart';
 import '../build_plan/build_configs.dart';
 import '../build_plan/build_packages.dart';
-import '../build_plan/build_step_plan.dart';
 import '../build_plan/build_target.dart';
 import '../build_plan/previous_build.dart';
 import '../constants.dart';
@@ -27,25 +27,27 @@ class AssetTracker {
 
   AssetTracker(this._readerWriter, this._buildPackages, this._buildConfigs);
 
-  /// Checks for and returns any file system changes compared to the current
-  /// build step plan and previous build.
-  Future<Map<AssetId, ChangeType>> collectChanges({
-    required BuildStepPlan buildStepPlan,
+  /// Checks for and returns any file system changes compared to the previous
+  /// build.
+  Future<Map<AssetFile, ChangeType>> collectChanges({
     required PreviousBuild previousBuild,
   }) async {
-    final inputSources = await findInputSources();
-    final generatedSources = await findCacheDirSources();
-    final declaredAndActualOutputs = [
-      ...buildStepPlan.declaredOutputs,
+    final diskFiles = await findFiles();
+    final actualOutputs = [
+      ...previousBuild.actualOutputs,
       ...previousBuild.actualPostOutputs,
     ];
-    return computeSourceUpdates(
-      inputSources,
-      generatedSources,
-      previousBuild,
-      declaredAndActualOutputs,
-      buildStepPlan: buildStepPlan,
-    );
+    return computeSourceUpdates(diskFiles, previousBuild, actualOutputs);
+  }
+
+  /// Returns all assets found on disk: both source files and cache files.
+  Future<Set<AssetFile>> findFiles() async {
+    final inputSources = await findInputSources();
+    final cacheSources = await findCacheDirSources();
+    return {
+      ...inputSources.map(AssetFile.source),
+      ...cacheSources.map(AssetFile.cache),
+    };
   }
 
   /// Returns the all the sources found in the cache directory.
@@ -65,61 +67,41 @@ class AssetTracker {
   /// Finds the asset changes which have happened while unwatched between builds
   /// by taking a difference between the assets in the previous build and the
   /// assets on disk.
-  Future<Map<AssetId, ChangeType>> computeSourceUpdates(
-    Set<AssetId> inputSources,
-    Set<AssetId> generatedSources,
+  Future<Map<AssetFile, ChangeType>> computeSourceUpdates(
+    Set<AssetFile> diskFiles,
     PreviousBuild previousBuild,
-    Iterable<AssetId> declaredAndActualOutputs, {
-    required BuildStepPlan buildStepPlan,
-  }) async {
-    final allSources = <AssetId>{}
-      ..addAll(inputSources)
-      ..addAll(generatedSources);
-    final updates = <AssetId, ChangeType>{};
-    void addUpdates(Iterable<AssetId> assets, ChangeType type) {
-      for (final asset in assets) {
-        updates[asset] = type;
-      }
+    Iterable<AssetId> actualOutputs,
+  ) async {
+    final previousFiles = <AssetFile>{
+      ...previousBuild.sources.map(AssetFile.source),
+      ...actualOutputs.map(
+        (id) => AssetFile(id, hidden: previousBuild.isHidden(id)),
+      ),
+    };
+
+    final updates = <AssetFile, ChangeType>{};
+
+    for (final file in diskFiles.difference(previousFiles)) {
+      updates[file] = ChangeType.ADD;
     }
 
-    final newSources = inputSources.difference(previousBuild.sources.toSet());
-    addUpdates(newSources, ChangeType.ADD);
-    final removedAssets = [
-      for (final id in previousBuild.sources)
-        if (!allSources.contains(id)) id,
-      for (final id in declaredAndActualOutputs)
-        if (!allSources.contains(id)) id,
-    ];
-
-    addUpdates(removedAssets, ChangeType.REMOVE);
-
-    final originalGraphSources = previousBuild.sources.toSet();
-    final preExistingSources = originalGraphSources.intersection(inputSources);
-    for (final id in preExistingSources) {
-      final originalDigest = previousBuild.digestOf(id);
-      if (originalDigest == null) continue;
-
-      final currentDigest = await _readerWriter.digest(id);
-      if (currentDigest != originalDigest) {
-        updates[id] = ChangeType.MODIFY;
-      }
+    for (final file in previousFiles.difference(diskFiles)) {
+      updates[file] = ChangeType.REMOVE;
     }
 
-    final preExistingOutputs = declaredAndActualOutputs.toSet().intersection(
-      allSources,
-    );
-    for (final id in preExistingOutputs) {
-      final originalDigest = previousBuild.digestOf(id);
+    for (final file in previousFiles.intersection(diskFiles)) {
+      final originalDigest = previousBuild.digestOf(file.id);
       if (originalDigest == null) continue;
 
       final currentDigest = await _readerWriter.digest(
-        id,
-        hidden: previousBuild.isHidden(id),
+        file.id,
+        hidden: file.hidden,
       );
       if (currentDigest != originalDigest) {
-        updates[id] = ChangeType.MODIFY;
+        updates[file] = ChangeType.MODIFY;
       }
     }
+
     return updates;
   }
 

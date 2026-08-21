@@ -108,6 +108,16 @@ void main() {
         );
       });
 
+      test('clash between source and declared output throws', () {
+        expect(
+          () => BuildState(
+            buildStepPlan: buildStepPlan,
+            sources: {primaryOutputId: null},
+          ),
+          throwsArgumentError,
+        );
+      });
+
       test('overlapping build phases cause an error', () async {
         expect(
           () => BuildStepPlan.compute(
