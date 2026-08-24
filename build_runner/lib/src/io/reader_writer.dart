@@ -12,6 +12,7 @@ import 'package:glob/glob.dart';
 import 'package:glob/list_local_fs.dart';
 import 'package:path/path.dart' as path;
 
+import '../build_plan/asset_file.dart';
 import '../build_plan/build_package.dart';
 import '../build_plan/build_packages.dart';
 import '../logging/timed_activities.dart';
@@ -156,11 +157,11 @@ class ReaderWriter implements AssetReader, AssetWriter {
     return digestSink.events.first;
   }
 
-  Future<void> delete(AssetId id, {bool inArtifactTree = false}) {
+  Future<void> delete(AssetFile file) {
     TimedActivity.write.run(() {
       final path = _pathFor(
-        id,
-        inArtifactTree: inArtifactTree,
+        file.id,
+        inArtifactTree: file.inArtifactTree,
         checkWriteAllowed: true,
       );
       filesystem.deleteSync(path);

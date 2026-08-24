@@ -127,10 +127,16 @@ class InternalTestReaderWriter extends ReaderWriter
     bool inArtifactTree = false,
   }) async {
     assetsWritten.add(id);
-    final type = testing.exists(id) ? ChangeType.MODIFY : ChangeType.ADD;
+    final eventAssetId = _eventAssetId(id, inArtifactTree: inArtifactTree);
+    final type = testing.exists(eventAssetId)
+        ? ChangeType.MODIFY
+        : ChangeType.ADD;
     await super.writeAsBytes(id, bytes, inArtifactTree: inArtifactTree);
     FakeWatcher.notifyWatchers(
-      WatchEvent(type, p.absolute(id.package, p.fromUri(id.path))),
+      WatchEvent(
+        type,
+        p.absolute(eventAssetId.package, p.fromUri(eventAssetId.path)),
+      ),
     );
   }
 
@@ -142,7 +148,10 @@ class InternalTestReaderWriter extends ReaderWriter
     bool inArtifactTree = false,
   }) async {
     assetsWritten.add(id);
-    final type = testing.exists(id) ? ChangeType.MODIFY : ChangeType.ADD;
+    final eventAssetId = _eventAssetId(id, inArtifactTree: inArtifactTree);
+    final type = testing.exists(eventAssetId)
+        ? ChangeType.MODIFY
+        : ChangeType.ADD;
     await super.writeAsString(
       id,
       contents,
@@ -150,17 +159,32 @@ class InternalTestReaderWriter extends ReaderWriter
       inArtifactTree: inArtifactTree,
     );
     FakeWatcher.notifyWatchers(
-      WatchEvent(type, p.absolute(id.package, p.fromUri(id.path))),
+      WatchEvent(
+        type,
+        p.absolute(eventAssetId.package, p.fromUri(eventAssetId.path)),
+      ),
     );
   }
 
   @override
-  Future<void> delete(AssetId id, {bool inArtifactTree = false}) {
-    FakeWatcher.notifyWatchers(
-      WatchEvent(ChangeType.REMOVE, p.absolute(id.package, p.fromUri(id.path))),
+  Future<void> delete(AssetFile file) {
+    final eventAssetId = _eventAssetId(
+      file.id,
+      inArtifactTree: file.inArtifactTree,
     );
-    return super.delete(id, inArtifactTree: inArtifactTree);
+    FakeWatcher.notifyWatchers(
+      WatchEvent(
+        ChangeType.REMOVE,
+        p.absolute(eventAssetId.package, p.fromUri(eventAssetId.path)),
+      ),
+    );
+    return super.delete(file);
   }
+
+  AssetId _eventAssetId(AssetId id, {required bool inArtifactTree}) =>
+      inArtifactTree && !forceToPackagePathsForTesting
+      ? AssetPathProvider.inArtifactTree(id, outputRootPackage)
+      : id;
 }
 
 class InMemoryAssetPathProvider implements AssetPathProvider {

@@ -14,6 +14,7 @@ import 'package:build_config/build_config.dart'
 import 'package:build_runner/src/build/build_result.dart';
 import 'package:build_runner/src/build/build_state/asset_graph_json.dart';
 import 'package:build_runner/src/build/build_state/build_step_id.dart';
+import 'package:build_runner/src/build_plan/asset_file.dart';
 import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_directory.dart';
 import 'package:build_runner/src/build_plan/build_filter.dart';
@@ -1247,7 +1248,9 @@ targets:
 
     // Delete the `asset_graph.json` file!
     final outputId = makeAssetId('a|$assetGraphJsonPath');
-    await (result.readerWriter as ReaderWriter).delete(outputId);
+    await (result.readerWriter as ReaderWriter).delete(
+      AssetFile.atPackagePath(outputId),
+    );
 
     // Second run, should have no extra outputs.
     await testBuilders(

@@ -124,7 +124,7 @@ void main() {
       await writeBuildStateAndPlan(buildState, buildPlan);
 
       // Remove source.
-      await readerWriter.delete(assetId);
+      await readerWriter.delete(AssetFile.atPackagePath(assetId));
       // Change source.
       await readerWriter.writeAsString(assetId2, 'changed');
       // Add source.
@@ -132,7 +132,7 @@ void main() {
       await readerWriter.writeAsString(assetId3, '');
 
       // Remove generated.
-      await readerWriter.delete(outputId);
+      await readerWriter.delete(AssetFile.atPackagePath(outputId));
 
       buildPlan = await loadPlan();
 
@@ -314,7 +314,7 @@ void main() {
         );
         await writeBuildStateAndPlan(buildState, buildPlan);
 
-        await readerWriter.delete(assetId);
+        await readerWriter.delete(AssetFile.atPackagePath(assetId));
         final newPlan = await loadPlan();
         expect(newPlan.buildInputs.deletedSources, contains(assetId));
         expect(newPlan.buildInputs.sources, isNot(contains(assetId)));
@@ -342,7 +342,7 @@ void main() {
         );
         await writeBuildStateAndPlan(buildState, buildPlan);
 
-        await readerWriter.delete(outputId);
+        await readerWriter.delete(AssetFile.atPackagePath(outputId));
         final newPlan = await loadPlan();
         expect(newPlan.buildInputs.invalidOutputs, contains(outputId));
       });
@@ -793,7 +793,7 @@ void main() {
         await writeBuildStateAndPlan(buildState, initialPlan);
 
         // Delete the input and create a source file at the old output path.
-        await readerWriter.delete(inputId);
+        await readerWriter.delete(AssetFile.atPackagePath(inputId));
         await readerWriter.writeAsString(postOutputId, '// new source');
 
         final loadedPlan = await loadPlan(postOverrides, postFactories);
@@ -874,8 +874,8 @@ void main() {
         await writeBuildStateAndPlan(buildState, initialPlan);
 
         // Delete the input and the old artifact tree output.
-        await readerWriter.delete(inputId);
-        await readerWriter.delete(postOutputId, inArtifactTree: true);
+        await readerWriter.delete(AssetFile.atPackagePath(inputId));
+        await readerWriter.delete(AssetFile.inArtifactTree(postOutputId));
         await readerWriter.writeAsString(postOutputId, '// new source');
 
         final loadedPlan = await loadPlan(postOverrides, postFactories);
@@ -996,8 +996,8 @@ void main() {
 
         // Delete the input and the artifact tree output, and add a package
         // path source file.
-        await readerWriter.delete(assetId);
-        await readerWriter.delete(outputId, inArtifactTree: true);
+        await readerWriter.delete(AssetFile.atPackagePath(assetId));
+        await readerWriter.delete(AssetFile.inArtifactTree(outputId));
         await readerWriter.writeAsString(outputId, '// source content');
 
         final loadedPlan = await loadPlan();
@@ -1050,7 +1050,7 @@ void main() {
           await writeBuildStateAndPlan(buildState, initialPlan);
 
           // Delete the input source.
-          await readerWriter.delete(assetId);
+          await readerWriter.delete(AssetFile.atPackagePath(assetId));
 
           final loadedPlan = await loadPlan(overrides);
           expect(loadedPlan.buildInputs.deletedSources, contains(assetId));

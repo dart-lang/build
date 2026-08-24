@@ -6,6 +6,7 @@ library;
 
 import 'dart:io';
 
+import 'package:build_runner/src/build_plan/asset_file.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_paths.dart';
 import 'package:build_runner/src/io/reader_writer.dart';
@@ -187,8 +188,18 @@ void main() async {
       expect(await file.exists(), isTrue);
       expect(await file.readAsString(), content);
 
-      await readerWriter.delete(id);
+      await readerWriter.delete(AssetFile.atPackagePath(id));
       expect(await file.exists(), isFalse);
+    });
+
+    test('can output and delete files in the artifact tree', () async {
+      final id = makeAssetId('basic_pkg|test_file.txt');
+      final content = 'test';
+      await readerWriter.writeAsString(id, content, inArtifactTree: true);
+      expect(await readerWriter.canRead(id, inArtifactTree: true), isTrue);
+
+      await readerWriter.delete(AssetFile.inArtifactTree(id));
+      expect(await readerWriter.canRead(id, inArtifactTree: true), isFalse);
     });
   });
 }
