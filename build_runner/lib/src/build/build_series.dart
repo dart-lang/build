@@ -17,7 +17,6 @@ import '../build_plan/output_strategy.dart';
 import '../commands/watch/asset_change.dart';
 import '../commands/watch/filtered_changes.dart';
 import '../constants.dart';
-import '../io/asset_path_provider.dart';
 import '../io/asset_tracker.dart';
 import '../io/build_output_reader.dart';
 import '../io/create_merged_dir.dart';
@@ -53,7 +52,7 @@ class BuildSeries {
 
   /// Deletes that are part of build output, so the resulting file watch events
   /// can be ignored.
-  final Set<AssetId> _expectedDeletes = {};
+  final Set<AssetFile> _expectedDeletes = {};
 
   /// Whether the next build is the first build.
   bool firstBuild = true;
@@ -97,7 +96,11 @@ class BuildSeries {
       // that do deletes and writes.
       if (_outputStrategy == .overwrite || _outputStrategy == .keep) {
         // Ignore deletes done by `build_runner`.
-        if (change.type == .REMOVE && _expectedDeletes.remove(id)) {
+        final expectedDelete =
+            _expectedDeletes.lookup(AssetFile.source(id)) ??
+            _expectedDeletes.lookup(AssetFile.cache(id));
+        if (change.type == .REMOVE && expectedDelete != null) {
+          _expectedDeletes.remove(expectedDelete);
           continue;
         }
 
@@ -351,7 +354,10 @@ class BuildSeries {
     }
     for (final toDelete in _computeDeletes(result)) {
       _expectedDeletes.add(toDelete);
-      await _buildPlan.readerWriter.delete(toDelete);
+      await _buildPlan.readerWriter.delete(
+        toDelete.id,
+        hidden: toDelete.hidden,
+      );
     }
 
     final assetGraphId = AssetId(
@@ -376,19 +382,18 @@ class BuildSeries {
   /// that were not actually output.
   ///
   /// Set [onlyVisible] to skip hidden files.
-  Set<AssetId> _computeDeletes(BuildResult result, {bool onlyVisible = false}) {
-    final deletes = <AssetId>{};
+  Set<AssetFile> _computeDeletes(
+    BuildResult result, {
+    bool onlyVisible = false,
+  }) {
+    final deletes = <AssetFile>{};
     final currentState = result.buildState!;
-    final outputRoot = _buildPlan.buildSpec.buildPackages.outputRoot;
+
     // Adds a delete result, unless it's a hidden file and `onlyVisible` was
     // requested.
     void maybeAddDelete(AssetId id, bool isHidden) {
-      if (isHidden) {
-        if (!onlyVisible) {
-          deletes.add(AssetPathProvider.hide(id, outputRoot));
-        }
-      } else {
-        deletes.add(id);
+      if (!isHidden || !onlyVisible) {
+        deletes.add(AssetFile(id, hidden: isHidden));
       }
     }
 
@@ -410,7 +415,7 @@ class BuildSeries {
         in _buildPlan.previousBuild.incompatibleBuildOutputsToDelete) {
       if (!currentState.isActualOutput(id) &&
           !currentState.isActualPostOutput(id)) {
-        deletes.add(id);
+        deletes.add(AssetFile.source(id));
       }
     }
 
@@ -475,9 +480,12 @@ class BuildSeries {
     }
 
     for (final toDelete in _computeDeletes(result, onlyVisible: true)) {
-      final exists = await _buildPlan.readerWriter.canRead(toDelete);
+      final exists = await _buildPlan.readerWriter.canRead(
+        toDelete.id,
+        hidden: toDelete.hidden,
+      );
       if (exists) {
-        unexpected.add(toDelete);
+        unexpected.add(toDelete.id);
       }
     }
 
