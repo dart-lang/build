@@ -66,9 +66,6 @@ class BuildOutputReader {
 
   /// Returns a reason why [id] is not readable, or null if it is readable.
   Future<UnreadableReason?> unreadableReason(AssetId id) async {
-    if (!_isFile(id)) {
-      return UnreadableReason.notFound;
-    }
     if (buildState.assetsDeletedByPostProcess.contains(id)) {
       return UnreadableReason.deleted;
     }
@@ -128,7 +125,9 @@ class BuildOutputReader {
       return cached.bytes;
     }
 
-    if (!_isFile(id)) {
+    if (!buildState.isSource(id) &&
+        !buildState.isActualOutput(id) &&
+        !buildState.isActualPostOutput(id)) {
       throw AssetNotFoundException(id);
     }
 
@@ -203,7 +202,6 @@ class BuildOutputReader {
   }
 
   bool _shouldSkipId(AssetId id, String? rootDir) {
-    if (!_isFile(id)) return true;
     if (buildState.assetsDeletedByPostProcess.contains(id)) return true;
 
     // Exclude non-lib assets if they're outside of the root directory or not
@@ -232,8 +230,6 @@ class BuildOutputReader {
     if (id.path == '.dart_tool/package_config.json') return true;
     return false;
   }
-
-  bool _isFile(AssetId id) => buildState.isFile(id);
 }
 
 enum UnreadableReason { notFound, notOutput, deleted, failed }

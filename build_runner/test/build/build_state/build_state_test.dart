@@ -9,6 +9,8 @@ import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/build_state/build_step_id.dart';
 import 'package:build_runner/src/build/build_state/build_step_result.dart';
 import 'package:build_runner/src/build/build_state/exceptions.dart';
+import 'package:build_runner/src/build/build_state/post_process_build_step_id.dart';
+import 'package:build_runner/src/build/build_state/post_process_build_step_result.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/build_step_plan.dart';
 import 'package:build_runner/src/build_plan/phase.dart';
@@ -105,6 +107,34 @@ void main() {
           primaryInputId,
         );
       });
+
+      test(
+        'isKnownAsset checks sources, declared outputs, and post outputs',
+        () {
+          final postOutputId = makeAssetId('foo|file.txt.post');
+          final unknownId = makeAssetId('foo|unknown.txt');
+
+          buildState.addPostProcessBuildStepResult(
+            PostProcessBuildStepId(input: primaryInputId, actionNumber: 0),
+            PostProcessBuildStepResult(
+              hidden: true,
+              deletedPrimaryInput: false,
+              outputs: {postOutputId: AssetContent.string('post')},
+            ),
+          );
+
+          expect(buildState.isKnownAsset(primaryInputId), isTrue);
+          expect(buildState.isKnownAsset(primaryOutputId), isTrue);
+          expect(buildState.isKnownAsset(postOutputId), isTrue);
+          expect(buildState.isKnownAsset(unknownId), isFalse);
+
+          final finished = buildState.toFinishedBuildState();
+          expect(finished.isKnownAsset(primaryInputId), isTrue);
+          expect(finished.isKnownAsset(primaryOutputId), isTrue);
+          expect(finished.isKnownAsset(postOutputId), isTrue);
+          expect(finished.isKnownAsset(unknownId), isFalse);
+        },
+      );
 
       test(
         'contentOf returns source content for sources and output content for '

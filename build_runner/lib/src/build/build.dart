@@ -646,12 +646,12 @@ class Build {
       buildFilesystem: _builderFilesystem,
       addAsset: (assetId) {
         if (!hideOutput) buildPackages.throwIfReadonly(assetId);
-        if (_isFile(assetId)) {
+        if (buildState.isKnownAsset(assetId)) {
           throw InvalidOutputException(assetId, 'Asset already exists');
         }
       },
       deleteAsset: (assetId) {
-        if (!_isFile(assetId)) {
+        if (!buildState.isKnownAsset(assetId)) {
           throw AssetNotFoundException(assetId);
         }
         if (assetId != input) {
@@ -1085,8 +1085,6 @@ class Build {
     final buildStepId = BuildStepId(primaryInput: input, phaseNumber: phaseNum);
     _builderFilesystem.updateBuildStepResult(buildStepId, buildStepResult);
   }
-
-  bool _isFile(AssetId id) => buildState.isFile(id);
 
   bool _isChangedOutput(AssetId output) {
     final generatingStep = buildStepPlan.stepForDeclaredOutput(output);

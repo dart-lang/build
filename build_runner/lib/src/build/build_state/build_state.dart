@@ -79,13 +79,6 @@ class BuildState {
 
   // -- Predicates over IDs and iterables over IDs.
 
-  /// Whether [id] is one of: source, declared output or actual post process
-  /// output.
-  bool isFile(AssetId id) =>
-      isSource(id) ||
-      buildStepPlan.isDeclaredOutput(id) ||
-      isActualPostOutput(id);
-
   /// Files that are in [package] and match [glob].
   ///
   /// Matches declared outputs as well as sources.
@@ -105,6 +98,13 @@ class BuildState {
 
   /// Whether [id] is a source file that was accessed but did not exist.
   bool isMissingSource(AssetId id) => _sources.isMissingSource(id);
+
+  /// Whether [id] is one of: source, declared output or actual post process
+  /// output.
+  bool isKnownAsset(AssetId id) =>
+      isSource(id) ||
+      buildStepPlan.isDeclaredOutput(id) ||
+      isActualPostOutput(id);
 
   /// Actual build step outputs.
   ///

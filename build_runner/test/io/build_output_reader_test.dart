@@ -378,5 +378,65 @@ void main() {
         expect(reader.wasSourceConsumedOutsideBuild(generatedId), isFalse);
       },
     );
+
+    test('throws AssetNotFoundException for declared output not generated even '
+        'if file exists on disk', () async {
+      final id = AssetId('a', 'web/a.txt');
+      final primaryId = AssetId('a', 'web/a.dart');
+      final buildStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
+
+      buildPhases = BuildPhases([
+        InBuildPhase(
+          builder: TestBuilder(
+            buildExtensions: replaceExtension('.dart', '.txt'),
+          ),
+          key: 'TestBuilder',
+          package: 'a',
+          isOptional: false,
+        ),
+      ]);
+
+      await readerWriter.writeAsString(primaryId, '// primary source');
+
+      final buildPlan = await BuildPlan.load(
+        await BuildSpec.load(
+          builderFactories: BuilderFactories({}),
+          buildOptions: BuildOptions.forTests(),
+          testingOverrides: TestingOverrides(
+            buildPhases: buildPhases,
+            readerWriter: readerWriter,
+            buildPackages: buildPackages,
+          ),
+        ),
+      );
+
+      // Step was evaluated but did not produce output id.
+      final buildState = BuildState(
+        buildStepPlan: buildPlan.buildStepPlan,
+        sources: const {},
+      );
+      final stepResult = BuildStepResult((b) {
+        b.result = true;
+        b.isHidden = false;
+        b.outputs.clear();
+      });
+      buildState.updateBuildStepResult(buildStepId, stepResult);
+
+      // A stray physical file exists on disk at the output location.
+      await readerWriter.writeAsString(
+        id,
+        '// stray file on disk',
+        hidden: buildState.isHidden(id),
+      );
+
+      reader = BuildOutputReader(
+        buildPackages: buildPlan.buildSpec.buildPackages,
+        readerWriter: buildPlan.readerWriter,
+        buildState: buildState.toFinishedBuildState(),
+      );
+
+      expect(reader.readAsBytes(id), throwsA(isA<AssetNotFoundException>()));
+      expect(reader.readAsString(id), throwsA(isA<AssetNotFoundException>()));
+    });
   });
 }

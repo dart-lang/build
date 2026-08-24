@@ -63,6 +63,10 @@ class FinishedBuildState {
 
   bool isSource(AssetId id) => sources.contains(id);
   bool isMissingSource(AssetId id) => missingSources.contains(id);
+  bool isKnownAsset(AssetId id) =>
+      isSource(id) ||
+      buildStepPlan.isDeclaredOutput(id) ||
+      isActualPostOutput(id);
   AssetContent? contentOfSource(AssetId id) => sourceContents[id];
 
   BuildStepResult? stepResultOrNull(BuildStepId step) => buildStepResults[step];
@@ -105,13 +109,6 @@ class FinishedBuildState {
 
   bool isActualHiddenOutput(AssetId id) =>
       isHidden(id) && (isActualOutput(id) || isActualPostOutput(id));
-
-  /// Whether [id] is one of: source, declared output or actual post process
-  /// output.
-  bool isFile(AssetId id) =>
-      isSource(id) ||
-      buildStepPlan.isDeclaredOutput(id) ||
-      isActualPostOutput(id);
 
   AssetContent? contentOf(AssetId id) {
     if (isSource(id)) return sourceContents[id];
