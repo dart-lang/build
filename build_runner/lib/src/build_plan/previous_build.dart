@@ -135,7 +135,7 @@ abstract class PreviousBuild
       (buildStepPlan?.isDeclaredOutputInArtifactTree(id) ?? false) ||
       _isInArtifactTreePostProcessOutput(id);
 
-  bool isFile(AssetId id) =>
+  bool isKnownAsset(AssetId id) =>
       isSource(id) ||
       (buildStepPlan?.isDeclaredOutput(id) ?? false) ||
       isActualPostOutput(id);

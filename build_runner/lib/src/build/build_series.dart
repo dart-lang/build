@@ -138,8 +138,8 @@ class BuildSeries {
         continue;
       }
 
-      final isFile = previousBuild.isFile(id);
-      if (!isFile) {
+      final isKnownAsset = previousBuild.isKnownAsset(id);
+      if (!isKnownAsset) {
         // Ignore under `.dart_tool/build`.
         if (id.path.startsWith(hiddenBuildDirectoryPath)) continue;
 

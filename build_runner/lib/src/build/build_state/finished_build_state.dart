@@ -97,12 +97,6 @@ class FinishedBuildState {
   bool isInArtifactTree(AssetId id) =>
       buildStepPlan.isDeclaredOutputInArtifactTree(id) ||
       _isArtifactTreePostProcessOutput(id);
-
-  bool isFile(AssetId id) =>
-      isSource(id) ||
-      buildStepPlan.isDeclaredOutput(id) ||
-      isActualPostOutput(id);
-
   AssetContent? contentOf(AssetId id) => contents[id];
 
   Iterable<MapEntry<AssetId, AssetContent>> get sourceContents =>
