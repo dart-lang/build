@@ -78,7 +78,14 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     final Set<AssetId> consumedRejected;
 
     if (_isAutoBuild) {
-      final autoBuild = await _prepareAutoBuild(targets, fileChanges);
+      // In auto build mode, an empty changes list indicates an explicit build
+      // request as distinct from a file watch based request.
+      final isExplicitBuild = fileChanges.isEmpty;
+      final autoBuild = await _prepareAutoBuild(
+        targets,
+        fileChanges,
+        isExplicitBuild: isExplicitBuild,
+      );
       if (autoBuild == null) return;
       updates = autoBuild.updates;
       consumedRejected = autoBuild.consumedRejected;
@@ -248,8 +255,9 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   Future<({Set<AssetId> updates, Set<AssetId> consumedRejected})?>
   _prepareAutoBuild(
     Set<BuildTarget> targets,
-    Iterable<WatchEvent> fileChanges,
-  ) async {
+    Iterable<WatchEvent> fileChanges, {
+    required bool isExplicitBuild,
+  }) async {
     final assetChanges = [
       for (final change in fileChanges)
         AssetChange(AssetId.parse(change.path), change.type),
@@ -268,18 +276,17 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
           .map((change) => change.id)
           .toSet();
 
-      // If neither accepted changes nor consumed rejected changes exist, do
-      // nothing.
-      if (filtered.accepted.isEmpty &&
-          consumedRejected.isEmpty &&
-          fileChanges.isNotEmpty) {
+      // Do nothing if it's not an explicit build and there are neither accepted
+      // changes nor consumed rejected changes.
+      if (!isExplicitBuild &&
+          filtered.accepted.isEmpty &&
+          consumedRejected.isEmpty) {
         return null;
       }
 
       // If only consumed rejected changes exist and all targets have a cached
       // result, emit synthetic results.
       if (filtered.accepted.isEmpty &&
-          fileChanges.isNotEmpty &&
           targets.every(_lastResultByTarget.containsKey)) {
         _emitSyntheticResults(targets, consumedRejected);
         return null;

@@ -123,9 +123,9 @@ class Server {
         if (request is BuildTargetRequest) {
           _buildTargetManager.addBuildTarget(request.target, channel);
         } else if (request is BuildRequest) {
-          // We can only get explicit build requests if we have a manual
-          // change provider.
           final changeProvider = _changeProvider;
+          // In auto build mode, an empty changes list indicates an explicit
+          // build request as distinct from a file watch based request.
           final changes = changeProvider is ManualChangeProvider
               ? await changeProvider.collectChanges()
               : <WatchEvent>[];
