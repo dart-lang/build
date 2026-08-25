@@ -16,6 +16,7 @@ import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/build_step_plan.dart';
 import 'package:build_runner/src/build_plan/phase.dart';
+import 'package:build_runner/src/build_plan/previous_build.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
 import 'package:build_runner/src/io/asset_tracker.dart';
 import 'package:build_runner/src/io/reader_writer.dart';
@@ -65,9 +66,14 @@ void main() {
         buildStepPlan: buildStepPlan,
         sources: {aId: null},
       );
-      // Assign a digest so the source is recognized as having been used.
+      // Record the initial content so the finished state has a digest for
+      // change detection.
+      final bytes = await reader.readAsBytes(aId);
       final digest = await reader.digest(aId);
-      buildState.updateSourceContent(aId, AssetContent.digest(digest));
+      buildState.updateSourceContent(
+        aId,
+        AssetContent.bytes(bytes, digest: digest),
+      );
       finishedBuildState = buildState.toFinishedBuildState();
 
       final buildConfigs = await BuildConfigs.load(
@@ -78,7 +84,7 @@ void main() {
       );
       assetTracker = AssetTracker(reader, buildPackages, buildConfigs);
       final updates = await assetTracker.collectChanges(
-        buildState: finishedBuildState,
+        previousBuild: PreviousBuild.fromFinishedBuildState(finishedBuildState),
         buildStepPlan: buildStepPlan,
       );
       // Advance buildState for the next tests so these initial sources are
@@ -97,7 +103,7 @@ void main() {
       );
       for (final id in newSources) {
         if (finishedBuildState.isSource(id)) {
-          final digest = finishedBuildState.contentOfSource(id);
+          final digest = finishedBuildState.contentOf(id);
           if (digest != null) nextState.updateSourceContent(id, digest);
         }
       }
@@ -117,7 +123,9 @@ void main() {
 
       expect(
         await assetTracker.collectChanges(
-          buildState: finishedBuildState,
+          previousBuild: PreviousBuild.fromFinishedBuildState(
+            finishedBuildState,
+          ),
           buildStepPlan: buildStepPlan,
         ),
         {AssetId('a', 'web/a.txt'): ChangeType.MODIFY},
@@ -129,7 +137,9 @@ void main() {
 
       expect(
         await assetTracker.collectChanges(
-          buildState: finishedBuildState,
+          previousBuild: PreviousBuild.fromFinishedBuildState(
+            finishedBuildState,
+          ),
           buildStepPlan: buildStepPlan,
         ),
         {AssetId('a', 'web/b.txt'): ChangeType.ADD},
@@ -141,7 +151,9 @@ void main() {
 
       expect(
         await assetTracker.collectChanges(
-          buildState: finishedBuildState,
+          previousBuild: PreviousBuild.fromFinishedBuildState(
+            finishedBuildState,
+          ),
           buildStepPlan: buildStepPlan,
         ),
         {AssetId('a', 'web/a.txt'): ChangeType.REMOVE},
@@ -168,7 +180,7 @@ void main() {
       );
 
       final changes = await assetTracker.collectChanges(
-        buildState: emptyBuildState,
+        previousBuild: PreviousBuild.fromFinishedBuildState(emptyBuildState),
         buildStepPlan: planWithOutput,
       );
       changes.removeWhere((id, type) => id.package == r'$sdk');

@@ -31,9 +31,8 @@ class _$BuildStepResultSerializer
       'outputs',
       serializers.serialize(
         object.outputs,
-        specifiedType: const FullType(BuiltMap, const [
+        specifiedType: const FullType(BuiltSet, const [
           const FullType(AssetId),
-          const FullType(AssetContent),
         ]),
       ),
       'inputs',
@@ -108,12 +107,12 @@ class _$BuildStepResultSerializer
         case 'outputs':
           result.outputs.replace(
             serializers.deserialize(
-              value,
-              specifiedType: const FullType(BuiltMap, const [
-                const FullType(AssetId),
-                const FullType(AssetContent),
-              ]),
-            )!,
+                  value,
+                  specifiedType: const FullType(BuiltSet, const [
+                    const FullType(AssetId),
+                  ]),
+                )!
+                as BuiltSet<Object?>,
           );
           break;
         case 'inputs':
@@ -173,7 +172,7 @@ class _$BuildStepResult extends BuildStepResult {
   @override
   final bool isHidden;
   @override
-  final BuiltMap<AssetId, AssetContent> outputs;
+  final BuiltSet<AssetId> outputs;
   @override
   final BuiltSet<AssetId> inputs;
   @override
@@ -255,11 +254,9 @@ class BuildStepResultBuilder
   bool? get isHidden => _$this._isHidden;
   set isHidden(bool? isHidden) => _$this._isHidden = isHidden;
 
-  MapBuilder<AssetId, AssetContent>? _outputs;
-  MapBuilder<AssetId, AssetContent> get outputs =>
-      _$this._outputs ??= MapBuilder<AssetId, AssetContent>();
-  set outputs(MapBuilder<AssetId, AssetContent>? outputs) =>
-      _$this._outputs = outputs;
+  SetBuilder<AssetId>? _outputs;
+  SetBuilder<AssetId> get outputs => _$this._outputs ??= SetBuilder<AssetId>();
+  set outputs(SetBuilder<AssetId>? outputs) => _$this._outputs = outputs;
 
   SetBuilder<AssetId>? _inputs;
   SetBuilder<AssetId> get inputs => _$this._inputs ??= SetBuilder<AssetId>();

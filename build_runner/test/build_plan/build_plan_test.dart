@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:convert';
+
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart' hide BuilderDefinition;
 import 'package:build_runner/src/build/asset_content.dart';
@@ -14,9 +16,9 @@ import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_plan.dart';
 import 'package:build_runner/src/build_plan/build_spec.dart';
-
 import 'package:build_runner/src/build_plan/builder_definition.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
+import 'package:build_runner/src/build_plan/output_strategy.dart';
 
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
 import 'package:build_runner/src/constants.dart';
@@ -98,16 +100,19 @@ void main() {
       // Write an output and add it to the build state as if it was built.
       await readerWriter.writeAsString(outputId, '// output');
       final stepId = buildPlan.buildStepPlan.stepForDeclaredOutput(outputId);
-      buildState.updateBuildStepResult(
-        stepId,
-        BuildStepResult((b) {
+      buildState.addBuildStepResult(
+        step: stepId,
+        result: BuildStepResult((b) {
           b.isHidden = false;
-          b.outputs[outputId] = AssetContent.digest(Digest([]));
+          b.outputs.add(outputId);
         }),
+        contents: {
+          outputId: AssetContent.string('// output', digest: Digest([])),
+        },
       );
       // Give digests to inputs so they are monitored for modifications.
-      buildState.updateSourceContent(assetId, AssetContent.digest(Digest([])));
-      buildState.updateSourceContent(assetId2, AssetContent.digest(Digest([])));
+      buildState.updateSourceContent(assetId, AssetContent.bytes([]));
+      buildState.updateSourceContent(assetId2, AssetContent.bytes([]));
 
       await writeBuildStateAndPlan(buildState, buildPlan);
 
@@ -132,6 +137,58 @@ void main() {
         },
         {assetId, assetId2, assetId3, outputId},
       );
+    });
+
+    test('keep output strategy preserves manual changes to outputs '
+        'with old digest', () async {
+      buildOptions = BuildOptions.forTests(outputStrategy: OutputStrategy.keep);
+      testingOverrides = testingOverrides.copyWith(
+        builderDefinitions: [BuilderDefinition('', hideOutput: false)].build(),
+      );
+      buildPlan = await loadPlan();
+
+      final buildState = BuildState(
+        buildStepPlan: buildPlan.buildStepPlan,
+        sources: {assetId: null, assetId2: null},
+      );
+
+      await readerWriter.writeAsString(outputId, '// output');
+      final stepId = buildPlan.buildStepPlan.stepForDeclaredOutput(outputId);
+      final initialDigest = md5.convert(utf8.encode('// output'));
+      buildState.addBuildStepResult(
+        step: stepId,
+        result: BuildStepResult((b) {
+          b.isHidden = false;
+          b.outputs.add(outputId);
+        }),
+        contents: {
+          outputId: AssetContent.bytes(
+            utf8.encode('// output'),
+            digest: initialDigest,
+          ),
+        },
+      );
+      buildState.updateSourceContent(
+        assetId,
+        AssetContent.bytes(utf8.encode('// a.dart')),
+      );
+      buildState.updateSourceContent(
+        assetId2,
+        AssetContent.bytes(utf8.encode('// other')),
+      );
+
+      await writeBuildStateAndPlan(buildState, buildPlan);
+
+      await readerWriter.writeAsString(outputId, '// manually edited output');
+
+      buildPlan = await loadPlan();
+
+      expect(buildPlan.buildInputs.invalidOutputs, isEmpty);
+
+      final outputContent = buildPlan.previousBuild.contentOf(outputId);
+      expect(outputContent, isNotNull);
+      expect(outputContent!.stringValue(), '// manually edited output');
+      expect(outputContent.digest, initialDigest);
     });
 
     test('applies target glob from build config', () async {

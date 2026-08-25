@@ -10,11 +10,11 @@ import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import 'package:watcher/watcher.dart';
 
-import '../build/build_state/finished_build_state.dart';
 import '../build_plan/build_configs.dart';
 import '../build_plan/build_packages.dart';
 import '../build_plan/build_step_plan.dart';
 import '../build_plan/build_target.dart';
+import '../build_plan/previous_build.dart';
 import '../constants.dart';
 import '../logging/timed_activities.dart';
 import 'reader_writer.dart';
@@ -28,21 +28,21 @@ class AssetTracker {
   AssetTracker(this._readerWriter, this._buildPackages, this._buildConfigs);
 
   /// Checks for and returns any file system changes compared to the current
-  /// build step plan and build state.
+  /// build step plan and previous build.
   Future<Map<AssetId, ChangeType>> collectChanges({
     required BuildStepPlan buildStepPlan,
-    required FinishedBuildState buildState,
+    required PreviousBuild previousBuild,
   }) async {
     final inputSources = await findInputSources();
     final generatedSources = await findCacheDirSources();
     final declaredAndActualOutputs = [
       ...buildStepPlan.declaredOutputs,
-      ...buildState.actualPostOutputs,
+      ...previousBuild.actualPostOutputs,
     ];
     return computeSourceUpdates(
       inputSources,
       generatedSources,
-      buildState,
+      previousBuild,
       declaredAndActualOutputs,
       buildStepPlan: buildStepPlan,
     );
@@ -63,12 +63,12 @@ class AssetTracker {
   }
 
   /// Finds the asset changes which have happened while unwatched between builds
-  /// by taking a difference between the assets in the build state and the
+  /// by taking a difference between the assets in the previous build and the
   /// assets on disk.
   Future<Map<AssetId, ChangeType>> computeSourceUpdates(
     Set<AssetId> inputSources,
     Set<AssetId> generatedSources,
-    FinishedBuildState buildState,
+    PreviousBuild previousBuild,
     Iterable<AssetId> declaredAndActualOutputs, {
     required BuildStepPlan buildStepPlan,
   }) async {
@@ -82,10 +82,10 @@ class AssetTracker {
       }
     }
 
-    final newSources = inputSources.difference(buildState.sources.toSet());
+    final newSources = inputSources.difference(previousBuild.sources.toSet());
     addUpdates(newSources, ChangeType.ADD);
     final removedAssets = [
-      for (final id in buildState.sources)
+      for (final id in previousBuild.sources)
         if (!allSources.contains(id)) id,
       for (final id in declaredAndActualOutputs)
         if (!allSources.contains(id)) id,
@@ -93,14 +93,14 @@ class AssetTracker {
 
     addUpdates(removedAssets, ChangeType.REMOVE);
 
-    final originalGraphSources = buildState.sources.toSet();
+    final originalGraphSources = previousBuild.sources.toSet();
     final preExistingSources = originalGraphSources.intersection(inputSources);
     for (final id in preExistingSources) {
-      final originalDigest = buildState.contentOfSource(id);
+      final originalDigest = previousBuild.digestOf(id);
       if (originalDigest == null) continue;
 
       final currentDigest = await _readerWriter.digest(id);
-      if (currentDigest != originalDigest.digest) {
+      if (currentDigest != originalDigest) {
         updates[id] = ChangeType.MODIFY;
       }
     }
@@ -109,14 +109,14 @@ class AssetTracker {
       allSources,
     );
     for (final id in preExistingOutputs) {
-      final originalContent = buildState.contentOf(id);
-      if (originalContent == null) continue;
+      final originalDigest = previousBuild.digestOf(id);
+      if (originalDigest == null) continue;
 
       final currentDigest = await _readerWriter.digest(
         id,
-        hidden: buildState.isHidden(id),
+        hidden: previousBuild.isHidden(id),
       );
-      if (currentDigest != originalContent.digest) {
+      if (currentDigest != originalDigest) {
         updates[id] = ChangeType.MODIFY;
       }
     }

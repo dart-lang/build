@@ -63,6 +63,8 @@ class AnalysisDriverFilesystem
     }
   }
 
+  bool _hasStartedBuild = false;
+
   /// Initializes for a build.
   ///
   /// For a clean build, all content will be removed from the filesystem.
@@ -77,7 +79,10 @@ class AnalysisDriverFilesystem
     builderFilesystem.listenToContentUpdates(_updateContent);
     _changedPathsThisBuild.clear();
 
-    if (buildInputs.cleanBuild) {
+    final needsInitialization = !_hasStartedBuild;
+    _hasStartedBuild = true;
+
+    if (buildInputs.cleanBuild || needsInitialization) {
       _phase = 0;
       _changedPaths.addAll(_data.keys);
       _data.clear();
@@ -87,6 +92,7 @@ class AnalysisDriverFilesystem
           _updateContent(id, content);
         }
       }
+      _changedPathsThisBuild.clear();
       return;
     }
 
@@ -99,8 +105,10 @@ class AnalysisDriverFilesystem
       }
     }
     for (final id in buildInputs.updatedSources) {
-      _updateContent(id, builderFilesystem.buildState.contentOfSource(id));
+      if (!id.isDart) continue;
+      _updateContent(id, builderFilesystem.buildState.contentOf(id));
     }
+    _changedPathsThisBuild.clear();
   }
 
   void _updateContent(AssetId id, AssetContent? content) {
@@ -111,11 +119,6 @@ class AnalysisDriverFilesystem
       if (_data.remove(path) != null) {
         _changedPaths.add(path);
       }
-      return;
-    }
-    if (!content.hasContent) {
-      // The update is that the file is known to the build but has not been read
-      // yet. Do nothing, it will be read before it is used.
       return;
     }
     final phase =

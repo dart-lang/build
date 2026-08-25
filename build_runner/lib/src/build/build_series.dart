@@ -25,7 +25,6 @@ import 'asset_content.dart';
 import 'build.dart';
 import 'build_result.dart';
 import 'build_state/asset_graph_json.dart';
-import 'build_state/finished_build_state.dart';
 
 /// A series of builds with the same configuration.
 ///
@@ -78,7 +77,7 @@ class BuildSeries {
   /// Filters [changes], separating them into [FilteredChanges.accepted] which
   /// trigger a build and [FilteredChanges.rejected] which do not.
   Future<FilteredChanges> filterChanges(List<AssetChange> changes) async {
-    final previousState = _buildPlan.previousBuild.state;
+    final previousBuild = _buildPlan.previousBuild;
     final accepted = <AssetChange>[];
     final rejected = <AssetChange>[];
     for (final change in changes) {
@@ -106,14 +105,14 @@ class BuildSeries {
         // change then just ignoring the event would be incorrect.
         if ((change.type == .ADD || change.type == .MODIFY) &&
             _buildPlan.buildStepPlan.isDeclaredOutput(id)) {
-          final expectedContent = previousState?.contentOf(id);
-          if (expectedContent != null) {
+          final expectedDigest = previousBuild.digestOf(id);
+          if (expectedDigest != null) {
             try {
               final bytes = await _buildPlan.readerWriter.readAsBytes(
                 id,
                 hidden: _buildPlan.buildStepPlan.isHidden(id),
               );
-              if (md5.convert(bytes) == expectedContent.digest) {
+              if (md5.convert(bytes) == expectedDigest) {
                 continue;
               }
             } catch (_) {}
@@ -130,7 +129,7 @@ class BuildSeries {
         continue;
       }
 
-      final isFile = previousState?.isFile(id) ?? false;
+      final isFile = previousBuild.isFile(id);
       if (!isFile) {
         // Ignore under `.dart_tool/build`.
         if (id.path.startsWith(cacheDirectoryPath)) continue;
@@ -150,8 +149,8 @@ class BuildSeries {
       // If not copying to a merged output directory, ignore changes to files
       // with no outputs.
       if (!_buildPlan.buildSpec.buildOptions.anyMergedOutputDirectory &&
-          !(previousState?.isMissingSource(id) ?? false) &&
-          previousState?.contentOf(id) == null) {
+          !previousBuild.isMissingSource(id) &&
+          previousBuild.contentOf(id) == null) {
         rejected.add(change);
         continue;
       }
@@ -185,8 +184,7 @@ class BuildSeries {
           _buildPlan.buildSpec.buildConfigs,
         ).collectChanges(
           buildStepPlan: _buildPlan.buildStepPlan,
-          buildState:
-              _buildPlan.previousBuild.state ?? FinishedBuildState.empty(),
+          previousBuild: _buildPlan.previousBuild,
         );
 
     return List.of(
@@ -390,10 +388,10 @@ class BuildSeries {
       }
     }
 
-    final previousState = _buildPlan.previousBuild.state;
-    if (previousState != null) {
-      for (final stepResult in previousState.actualStepResults) {
-        for (final id in stepResult.outputs.keys) {
+    final previousBuild = _buildPlan.previousBuild;
+    if (previousBuild.incrementalState != null) {
+      for (final stepResult in previousBuild.actualStepResults) {
+        for (final id in stepResult.outputs) {
           final stepId = _buildPlan.buildStepPlan.stepForDeclaredOutputOrNull(
             id,
           );
@@ -402,14 +400,14 @@ class BuildSeries {
           } else {
             final stepResultOrNull = currentState.stepResultOrNull(stepId);
             if (stepResultOrNull != null &&
-                !stepResultOrNull.outputs.containsKey(id)) {
+                !stepResultOrNull.outputs.contains(id)) {
               maybeAddDelete(id, stepResult.isHidden);
             }
           }
         }
       }
-      for (final postProcessResult in previousState.actualPostProcessResults) {
-        for (final id in postProcessResult.outputs.keys) {
+      for (final postProcessResult in previousBuild.actualPostProcessResults) {
+        for (final id in postProcessResult.outputs) {
           if (!currentState.isActualPostOutput(id)) {
             maybeAddDelete(id, postProcessResult.hidden);
           }

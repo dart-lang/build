@@ -7,7 +7,6 @@ import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
-import '../asset_content.dart';
 import 'glob_id.dart';
 
 part 'build_step_result.g.dart';
@@ -26,7 +25,7 @@ abstract class BuildStepResult
   bool get isHidden;
 
   /// Outputs written by the step.
-  BuiltMap<AssetId, AssetContent> get outputs;
+  BuiltSet<AssetId> get outputs;
 
   /// Inputs and missing sources read.
   BuiltSet<AssetId> get inputs;

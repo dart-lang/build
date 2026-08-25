@@ -27,7 +27,7 @@ void main() {
   late BuilderFilesystem builderFilesystem;
 
   BuilderFilesystem createBuilderFilesystem({
-    Map<AssetId, AssetContent> sources = const {},
+    Map<AssetId, AssetContent?> sources = const {},
     Map<AssetId, int> generatedPhases = const {},
   }) {
     final buildStepPlan = BuildStepPlan((b) {
@@ -54,7 +54,6 @@ void main() {
       buildPackages: buildPackages,
       buildConfigs: buildConfigs,
       buildState: BuildState(buildStepPlan: buildStepPlan, sources: sources),
-      buildStepPlan: buildStepPlan,
       readerWriter: readerWriter,
       assetBuilder: (_) async {},
       globEvaluator: (_) async {},
@@ -136,6 +135,25 @@ void main() {
       );
     });
 
+    test('startBuild cold incremental populates sources with content', () {
+      final sourceA = AssetId('a', 'lib/a.dart');
+      final sourceB = AssetId('a', 'lib/b.dart');
+
+      builderFilesystem = createBuilderFilesystem(
+        sources: {sourceA: AssetContent.string('A1'), sourceB: null},
+      );
+
+      filesystem.startBuild(
+        builderFilesystem: builderFilesystem,
+        buildInputs: BuildInputs((b) => b..cleanBuild = false),
+      );
+
+      expect(filesystem.exists('/a/lib/a.dart'), isTrue);
+      expect(filesystem.read('/a/lib/a.dart'), 'A1');
+      expect(filesystem.exists('/a/lib/b.dart'), isFalse);
+      expect(filesystem.changedPaths, {'/a/lib/a.dart'});
+    });
+
     test('mid-build output generation updates cache and changedPaths', () {
       final outputId = AssetId('a', 'lib/out.g.dart');
 
@@ -151,18 +169,17 @@ void main() {
       expect(filesystem.exists('/a/lib/out.g.dart'), isFalse);
 
       // Mid-build, the builder generates the output.
-      builderFilesystem.buildState.updateBuildStepResult(
-        builderFilesystem.buildStepPlan.stepForDeclaredOutputOrNull(outputId)!,
-        BuildStepResult(
+      builderFilesystem.addBuildStepResult(
+        step: builderFilesystem.buildStepPlan.stepForDeclaredOutputOrNull(
+          outputId,
+        )!,
+        result: BuildStepResult(
           (b) => b
             ..result = true
             ..isHidden = false
-            ..outputs[outputId] = AssetContent.string('generated'),
+            ..outputs.add(outputId),
         ),
-      );
-      builderFilesystem.updateContent(
-        id: outputId,
-        content: AssetContent.string('generated'),
+        contents: {outputId: AssetContent.string('generated')},
       );
 
       // Advance phase to make it visible.
@@ -186,32 +203,30 @@ void main() {
         buildInputs: BuildInputs((b) => b..cleanBuild = true),
       );
 
-      builderFilesystem.buildState.updateBuildStepResult(
-        builderFilesystem.buildStepPlan.stepForDeclaredOutputOrNull(output1)!,
-        BuildStepResult(
+      builderFilesystem.addBuildStepResult(
+        step: builderFilesystem.buildStepPlan.stepForDeclaredOutputOrNull(
+          output1,
+        )!,
+        result: BuildStepResult(
           (b) => b
             ..result = true
             ..isHidden = false
-            ..outputs[output1] = AssetContent.string('g1'),
+            ..outputs.add(output1),
         ),
-      );
-      builderFilesystem.updateContent(
-        id: output1,
-        content: AssetContent.string('g1'),
+        contents: {output1: AssetContent.string('g1')},
       );
 
-      builderFilesystem.buildState.updateBuildStepResult(
-        builderFilesystem.buildStepPlan.stepForDeclaredOutputOrNull(output2)!,
-        BuildStepResult(
+      builderFilesystem.addBuildStepResult(
+        step: builderFilesystem.buildStepPlan.stepForDeclaredOutputOrNull(
+          output2,
+        )!,
+        result: BuildStepResult(
           (b) => b
             ..result = true
             ..isHidden = false
-            ..outputs[output2] = AssetContent.string('g2'),
+            ..outputs.add(output2),
         ),
-      );
-      builderFilesystem.updateContent(
-        id: output2,
-        content: AssetContent.string('g2'),
+        contents: {output2: AssetContent.string('g2')},
       );
       filesystem.clearChangedPaths();
 
