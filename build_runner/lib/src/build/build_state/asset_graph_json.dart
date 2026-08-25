@@ -7,7 +7,7 @@ import 'dart:typed_data';
 
 import '../../build_plan/build_spec_digest.dart';
 import '../library_cycle_graph/phased_asset_deps.dart';
-import 'serialized_build_state.dart';
+import 'incremental_build_state.dart';
 import 'serializers.dart';
 
 /// State stored in `asset_graph.json`.
@@ -16,25 +16,25 @@ import 'serializers.dart';
 /// and if so exactly what should be rebuilt.
 class AssetGraphJson {
   final BuildSpecDigest buildPlanDigest;
-  final SerializedBuildState serializedBuildState;
+  final IncrementalBuildState incrementalBuildState;
   final PhasedAssetDeps phasedAssetDeps;
 
   AssetGraphJson({
     required this.buildPlanDigest,
-    required this.serializedBuildState,
+    required this.incrementalBuildState,
     required this.phasedAssetDeps,
   });
 
   /// Serializes for `asset_graph.json`.
   static Uint8List serialize({
     required BuildSpecDigest buildPlanDigest,
-    required SerializedBuildState buildState,
+    required IncrementalBuildState buildState,
     required PhasedAssetDeps phasedAssetDeps,
   }) {
     // Serialize fields first so all `AssetId` instances are seen by
     // `identityAssetIdSeralizer`.
     final serializedBuildState = serializers.serializeWith(
-      SerializedBuildState.serializer,
+      IncrementalBuildState.serializer,
       buildState,
     );
     final serializedBuildPlanDigest = serializers.serializeWith(
@@ -77,7 +77,7 @@ class AssetGraphJson {
       );
 
       final buildState = serializers.deserializeWith(
-        SerializedBuildState.serializer,
+        IncrementalBuildState.serializer,
         deserialized['buildState'],
       );
 
@@ -87,7 +87,7 @@ class AssetGraphJson {
       );
 
       return AssetGraphJson(
-        serializedBuildState: buildState!,
+        incrementalBuildState: buildState!,
         buildPlanDigest: buildPlanDigest!,
         phasedAssetDeps: phasedAssetDeps!,
       );

@@ -11,7 +11,7 @@ import 'package:build_runner/src/build/asset_content.dart';
 import 'package:build_runner/src/build/build_state/asset_graph_json.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/build_state/build_step_result.dart';
-import 'package:build_runner/src/build/build_state/serialized_build_state.dart';
+import 'package:build_runner/src/build/build_state/incremental_build_state.dart';
 import 'package:build_runner/src/build/library_cycle_graph/phased_asset_deps.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
@@ -86,7 +86,7 @@ void main() {
     });
 
     Future<void> writeBuildStateAndPlan(
-      SerializedBuildState buildState,
+      IncrementalBuildState buildState,
       BuildSpecDigest buildPlanDigest,
     ) async {
       await readerWriter.writeAsBytes(
@@ -103,18 +103,21 @@ void main() {
       final spec = await loadSpec();
       final previousBuild = await PreviousBuild.load(spec);
       final buildState =
-          previousBuild.state?.serialized ?? SerializedBuildState();
+          previousBuild.state?.incremental ?? IncrementalBuildState();
       await writeBuildStateAndPlan(buildState, spec.buildPlanDigest);
 
       final reloadedBuild = await loadPreviousBuild();
-      expect(reloadedBuild.state?.serialized.toString(), buildState.toString());
+      expect(
+        reloadedBuild.state?.incremental.toString(),
+        buildState.toString(),
+      );
     });
 
     test('discards previous build state if build phases changed', () async {
       final spec = await loadSpec();
       final previousBuild = await PreviousBuild.load(spec);
       final buildState =
-          previousBuild.state?.serialized ?? SerializedBuildState();
+          previousBuild.state?.incremental ?? IncrementalBuildState();
       await writeBuildStateAndPlan(buildState, spec.buildPlanDigest);
 
       final buildSpec2 = await BuildSpec.load(
@@ -160,7 +163,7 @@ void main() {
         }),
       );
       await writeBuildStateAndPlan(
-        buildState.toSerializedBuildState(),
+        buildState.toIncrementalBuildState(),
         spec.buildPlanDigest,
       );
 
@@ -187,7 +190,7 @@ void main() {
       final spec = await loadSpec();
       final previousBuild = await PreviousBuild.load(spec);
       final buildState =
-          previousBuild.state?.serialized ?? SerializedBuildState();
+          previousBuild.state?.incremental ?? IncrementalBuildState();
       await writeBuildStateAndPlan(buildState, spec.buildPlanDigest);
 
       final spec2 = await BuildSpec.load(
@@ -209,7 +212,7 @@ void main() {
       final spec = await loadSpec();
       final previousBuild = await PreviousBuild.load(spec);
       final buildState =
-          previousBuild.state?.serialized ?? SerializedBuildState();
+          previousBuild.state?.incremental ?? IncrementalBuildState();
       await writeBuildStateAndPlan(buildState, spec.buildPlanDigest);
 
       final buildPackages2 = BuildPackages.singlePackageBuild('b', [
@@ -228,7 +231,7 @@ void main() {
         final spec = await loadSpec();
         final previousBuild = await PreviousBuild.load(spec);
         final buildState =
-            previousBuild.state?.serialized ?? SerializedBuildState();
+            previousBuild.state?.incremental ?? IncrementalBuildState();
         await writeBuildStateAndPlan(buildState, spec.buildPlanDigest);
 
         final reloadedBuild = await withEnabledExperiments(
@@ -251,7 +254,7 @@ void main() {
         final spec = await loadSpec();
         final previousBuild = await PreviousBuild.load(spec);
         await writeBuildStateAndPlan(
-          previousBuild.state?.serialized ?? SerializedBuildState(),
+          previousBuild.state?.incremental ?? IncrementalBuildState(),
           spec.buildPlanDigest,
         );
         final reloadedBuild = await loadPreviousBuild();
@@ -268,7 +271,7 @@ void main() {
           (b) => b.compileDigest = 'stale_digest',
         );
         await writeBuildStateAndPlan(
-          previousBuild.state?.serialized ?? SerializedBuildState(),
+          previousBuild.state?.incremental ?? IncrementalBuildState(),
           staleDigest,
         );
 
@@ -284,7 +287,7 @@ void main() {
         (b) => b.buildTriggersDigest = 'triggers_1',
       );
       await writeBuildStateAndPlan(
-        previousBuild.state?.serialized ?? SerializedBuildState(),
+        previousBuild.state?.incremental ?? IncrementalBuildState(),
         staleDigest,
       );
 
@@ -325,7 +328,7 @@ void main() {
         (b) => b.inBuildPhasesOptionsDigests[0] = 'dummy_digest_1',
       );
       await writeBuildStateAndPlan(
-        previousBuild.state?.serialized ?? SerializedBuildState(),
+        previousBuild.state?.incremental ?? IncrementalBuildState(),
         staleDigest,
       );
 
@@ -366,7 +369,7 @@ void main() {
         (b) => b.buildPhasesDigest = 'stale_digest',
       );
       await writeBuildStateAndPlan(
-        previousBuild.state?.serialized ?? SerializedBuildState(),
+        previousBuild.state?.incremental ?? IncrementalBuildState(),
         staleDigest,
       );
 
@@ -381,7 +384,7 @@ void main() {
         (b) => b.dartVersion = 'stale_version',
       );
       await writeBuildStateAndPlan(
-        previousBuild.state?.serialized ?? SerializedBuildState(),
+        previousBuild.state?.incremental ?? IncrementalBuildState(),
         staleDigest,
       );
 
@@ -396,7 +399,7 @@ void main() {
         (b) => b.enabledExperiments.add('stale_experiment'),
       );
       await writeBuildStateAndPlan(
-        previousBuild.state?.serialized ?? SerializedBuildState(),
+        previousBuild.state?.incremental ?? IncrementalBuildState(),
         staleDigest,
       );
 
@@ -413,7 +416,7 @@ void main() {
           (b) => b.packageLanguageVersions['a'] = '1.0',
         );
         await writeBuildStateAndPlan(
-          previousBuild.state?.serialized ?? SerializedBuildState(),
+          previousBuild.state?.incremental ?? IncrementalBuildState(),
           staleDigest,
         );
 
@@ -426,7 +429,7 @@ void main() {
       final spec = await loadSpec();
       final previousBuild = await PreviousBuild.load(spec);
       await writeBuildStateAndPlan(
-        previousBuild.state?.serialized ?? SerializedBuildState(),
+        previousBuild.state?.incremental ?? IncrementalBuildState(),
         spec.buildPlanDigest,
       );
 

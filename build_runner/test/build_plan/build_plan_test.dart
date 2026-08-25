@@ -83,7 +83,7 @@ void main() {
         assetGraphJsonId,
         AssetGraphJson.serialize(
           buildPlanDigest: buildPlan.buildSpec.buildPlanDigest,
-          buildState: buildState.toSerializedBuildState(),
+          buildState: buildState.toIncrementalBuildState(),
           phasedAssetDeps: PhasedAssetDeps(),
         ),
       );

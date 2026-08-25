@@ -17,13 +17,13 @@ import 'build_step_result.dart';
 import 'finished_build_state.dart';
 import 'glob_id.dart';
 import 'glob_result.dart';
+import 'incremental_build_state.dart';
 import 'post_process_build_step_id.dart';
 import 'post_process_build_step_result.dart';
-import 'serialized_build_state.dart';
 import 'sources.dart';
 
 /// Build state that is updated during the build then converted to
-/// [SerializedBuildState] and [FinishedBuildState] for serialization and
+/// [IncrementalBuildState] and [FinishedBuildState] for serialization and
 /// follow-on incremental builds.
 ///
 /// - Sources and their digests; missing sources.
@@ -218,8 +218,8 @@ class BuildState {
     return null;
   }
 
-  SerializedBuildState toSerializedBuildState() {
-    final builder = SerializedBuildStateBuilder()
+  IncrementalBuildState toIncrementalBuildState() {
+    final builder = IncrementalBuildStateBuilder()
       ..sources.addAll(_sources.sourceIds)
       ..missingSources.addAll(_sources.missingSources);
 
@@ -233,22 +233,19 @@ class BuildState {
     for (final outer in _buildStepResultsByPrimaryInput.entries) {
       final input = outer.key;
       for (final inner in outer.value.entries) {
-        builder.buildStepResults[BuildStepId(
-              primaryInput: input,
-              phaseNumber: inner.key,
-            )] =
-            inner.value;
+        final stepId = BuildStepId(primaryInput: input, phaseNumber: inner.key);
+        builder.buildStepResults[stepId] = inner.value;
       }
     }
 
     for (final outer in _postProcessResultsByInput.entries) {
       final input = outer.key;
       for (final inner in outer.value.entries) {
-        builder.postProcessResults[PostProcessBuildStepId(
-              input: input,
-              actionNumber: inner.key,
-            )] =
-            inner.value;
+        final stepId = PostProcessBuildStepId(
+          input: input,
+          actionNumber: inner.key,
+        );
+        builder.postProcessResults[stepId] = inner.value;
       }
     }
 
@@ -258,7 +255,7 @@ class BuildState {
   }
 
   FinishedBuildState toFinishedBuildState() => FinishedBuildState(
-    serialized: toSerializedBuildState(),
+    incremental: toIncrementalBuildState(),
     buildStepPlan: buildStepPlan,
   );
 

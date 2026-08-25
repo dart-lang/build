@@ -19,9 +19,9 @@ import 'build_step_result.dart';
 import 'glob_id.dart';
 import 'glob_result.dart';
 import 'identity_serializer.dart';
+import 'incremental_build_state.dart';
 import 'post_process_build_step_id.dart';
 import 'post_process_build_step_result.dart';
-import 'serialized_build_state.dart';
 
 part 'serializers.g.dart';
 
@@ -37,10 +37,10 @@ final identityAssetIdSerializer = IdentitySerializer<AssetId>(
   BuildStepResult,
   GlobId,
   GlobResult,
+  IncrementalBuildState,
   PhasedAssetDeps,
   PostProcessBuildStepId,
   PostProcessBuildStepResult,
-  SerializedBuildState,
 ])
 final Serializers serializers =
     (_$serializers.toBuilder()

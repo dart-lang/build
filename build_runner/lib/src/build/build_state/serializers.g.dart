@@ -15,11 +15,11 @@ Serializers _$serializers =
           ..add(ExpiringValue.serializer)
           ..add(GlobId.serializer)
           ..add(GlobResult.serializer)
+          ..add(IncrementalBuildState.serializer)
           ..add(PhasedAssetDeps.serializer)
           ..add(PhasedValue.serializer)
           ..add(PostProcessBuildStepId.serializer)
           ..add(PostProcessBuildStepResult.serializer)
-          ..add(SerializedBuildState.serializer)
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(String)]),
             () => ListBuilder<String>(),

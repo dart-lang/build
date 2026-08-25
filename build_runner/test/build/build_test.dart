@@ -560,7 +560,7 @@ targets:
         expect(result.readerWriter.testing.exists(assetGraphJsonId), isTrue);
         final cachedBuildState = AssetGraphJson.deserialize(
           result.readerWriter.testing.readBytes(assetGraphJsonId),
-        )!.serializedBuildState;
+        )!.incrementalBuildState;
         expect(
           cachedBuildState.sources,
           unorderedEquals([makeAssetId('a|web/a.txt')]),
@@ -1188,7 +1188,7 @@ targets:
     final graphId = makeAssetId('a|$assetGraphJsonPath');
     final cachedBuildState = AssetGraphJson.deserialize(
       result.readerWriter.testing.readBytes(graphId),
-    )!.serializedBuildState;
+    )!.incrementalBuildState;
     final outputId = AssetId('a', 'lib/a.txt.out');
 
     final buildStepId = BuildStepId(
@@ -1459,7 +1459,7 @@ targets:
         result.readerWriter.testing.readBytes(
           makeAssetId('a|$assetGraphJsonPath'),
         ),
-      )!.serializedBuildState;
+      )!.incrementalBuildState;
       final anId = makeAssetId('a|lib/a.txt');
       final aCopyId = makeAssetId('a|lib/a.txt.copy');
       final aCloneId = makeAssetId('a|lib/a.txt.copy.clone');
@@ -1568,7 +1568,7 @@ targets:
         result.readerWriter.testing.readBytes(
           makeAssetId('a|$assetGraphJsonPath'),
         ),
-      )!.serializedBuildState;
+      )!.incrementalBuildState;
       final fileAId = makeAssetId('a|lib/file.a');
       final fileCId = makeAssetId('a|lib/file.c');
       expect(buildState.sources.contains(fileAId), isTrue);
@@ -1804,7 +1804,7 @@ targets:
 
       final finalBuildState = AssetGraphJson.deserialize(
         result.readerWriter.testing.readBytes(AssetId('a', assetGraphJsonPath)),
-      )!.serializedBuildState;
+      )!.incrementalBuildState;
 
       expect(
         finalBuildState

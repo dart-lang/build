@@ -37,7 +37,7 @@ import 'build_state/finished_build_state.dart';
 ///
 /// In both cases, `FinishedBuildState` is output by the build to give the
 /// starting state for the next build. For `build_runner build` this state is
-/// partly serialized to disk as `SerializedBuildState`. The next build can
+/// partly serialized to disk as `IncrementalBuildState`. The next build can
 /// turn it back into `FinishedBuildState` by reconstructing its
 /// `BuildStepPlan`. For `watch` and `serve` the `FinishedBuildState` is kept in
 /// memory.
@@ -345,7 +345,7 @@ class BuildSeries {
     final assetGraphContent = AssetContent.bytes(
       AssetGraphJson.serialize(
         buildPlanDigest: _buildPlan.buildSpec.buildPlanDigest,
-        buildState: result.buildState!.serialized,
+        buildState: result.buildState!.incremental,
         phasedAssetDeps: result.phasedAssetDeps,
       ),
     );

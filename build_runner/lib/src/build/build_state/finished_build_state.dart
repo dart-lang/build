@@ -11,35 +11,35 @@ import 'build_step_id.dart';
 import 'build_step_result.dart';
 import 'glob_id.dart';
 import 'glob_result.dart';
+import 'incremental_build_state.dart';
 import 'post_process_build_step_id.dart';
 import 'post_process_build_step_result.dart';
-import 'serialized_build_state.dart';
 
-/// State of a finished build, pairing the [SerializedBuildState] with the
+/// State of a finished build, pairing the [IncrementalBuildState] with the
 /// [BuildStepPlan].
 ///
 /// Offers functionality used after the build, for example in serving files,
 /// and in preparation for the next build.
 class FinishedBuildState {
-  final SerializedBuildState serialized;
+  final IncrementalBuildState incremental;
   final BuildStepPlan buildStepPlan;
 
-  FinishedBuildState({required this.serialized, required this.buildStepPlan});
+  FinishedBuildState({required this.incremental, required this.buildStepPlan});
 
   /// An empty [FinishedBuildState] with no sources and an empty plan.
   FinishedBuildState.empty()
-    : serialized = SerializedBuildState(),
+    : incremental = IncrementalBuildState(),
       buildStepPlan = BuildStepPlan.empty();
 
-  BuiltSet<AssetId> get sources => serialized.sources;
+  BuiltSet<AssetId> get sources => incremental.sources;
   BuiltMap<AssetId, AssetContent> get sourceContents =>
-      serialized.sourceContents;
-  BuiltSet<AssetId> get missingSources => serialized.missingSources;
+      incremental.sourceContents;
+  BuiltSet<AssetId> get missingSources => incremental.missingSources;
   BuiltMap<BuildStepId, BuildStepResult> get buildStepResults =>
-      serialized.buildStepResults;
+      incremental.buildStepResults;
   BuiltMap<PostProcessBuildStepId, PostProcessBuildStepResult>
-  get postProcessResults => serialized.postProcessResults;
-  BuiltMap<GlobId, GlobResult> get globResults => serialized.globResults;
+  get postProcessResults => incremental.postProcessResults;
+  BuiltMap<GlobId, GlobResult> get globResults => incremental.globResults;
 
   late final BuiltSet<AssetId> assetsDeletedByPostProcess = () {
     final builder = SetBuilder<AssetId>();

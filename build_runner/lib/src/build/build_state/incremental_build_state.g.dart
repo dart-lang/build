@@ -1,28 +1,28 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'serialized_build_state.dart';
+part of 'incremental_build_state.dart';
 
 // **************************************************************************
 // BuiltValueGenerator
 // **************************************************************************
 
-Serializer<SerializedBuildState> _$serializedBuildStateSerializer =
-    _$SerializedBuildStateSerializer();
+Serializer<IncrementalBuildState> _$incrementalBuildStateSerializer =
+    _$IncrementalBuildStateSerializer();
 
-class _$SerializedBuildStateSerializer
-    implements StructuredSerializer<SerializedBuildState> {
+class _$IncrementalBuildStateSerializer
+    implements StructuredSerializer<IncrementalBuildState> {
   @override
   final Iterable<Type> types = const [
-    SerializedBuildState,
-    _$SerializedBuildState,
+    IncrementalBuildState,
+    _$IncrementalBuildState,
   ];
   @override
-  final String wireName = 'SerializedBuildState';
+  final String wireName = 'IncrementalBuildState';
 
   @override
   Iterable<Object?> serialize(
     Serializers serializers,
-    SerializedBuildState object, {
+    IncrementalBuildState object, {
     FullType specifiedType = FullType.unspecified,
   }) {
     final result = <Object?>[
@@ -78,12 +78,12 @@ class _$SerializedBuildStateSerializer
   }
 
   @override
-  SerializedBuildState deserialize(
+  IncrementalBuildState deserialize(
     Serializers serializers,
     Iterable<Object?> serialized, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    final result = SerializedBuildStateBuilder();
+    final result = IncrementalBuildStateBuilder();
 
     final iterator = serialized.iterator;
     while (iterator.moveNext()) {
@@ -164,7 +164,7 @@ class _$SerializedBuildStateSerializer
   }
 }
 
-class _$SerializedBuildState extends SerializedBuildState {
+class _$IncrementalBuildState extends IncrementalBuildState {
   @override
   final BuiltSet<AssetId> sources;
   @override
@@ -179,11 +179,11 @@ class _$SerializedBuildState extends SerializedBuildState {
   @override
   final BuiltMap<GlobId, GlobResult> globResults;
 
-  factory _$SerializedBuildState([
-    void Function(SerializedBuildStateBuilder)? updates,
-  ]) => (SerializedBuildStateBuilder()..update(updates))._build();
+  factory _$IncrementalBuildState([
+    void Function(IncrementalBuildStateBuilder)? updates,
+  ]) => (IncrementalBuildStateBuilder()..update(updates))._build();
 
-  _$SerializedBuildState._({
+  _$IncrementalBuildState._({
     required this.sources,
     required this.sourceContents,
     required this.missingSources,
@@ -192,18 +192,18 @@ class _$SerializedBuildState extends SerializedBuildState {
     required this.globResults,
   }) : super._();
   @override
-  SerializedBuildState rebuild(
-    void Function(SerializedBuildStateBuilder) updates,
+  IncrementalBuildState rebuild(
+    void Function(IncrementalBuildStateBuilder) updates,
   ) => (toBuilder()..update(updates)).build();
 
   @override
-  SerializedBuildStateBuilder toBuilder() =>
-      SerializedBuildStateBuilder()..replace(this);
+  IncrementalBuildStateBuilder toBuilder() =>
+      IncrementalBuildStateBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
-    return other is SerializedBuildState &&
+    return other is IncrementalBuildState &&
         sources == other.sources &&
         sourceContents == other.sourceContents &&
         missingSources == other.missingSources &&
@@ -227,7 +227,7 @@ class _$SerializedBuildState extends SerializedBuildState {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(r'SerializedBuildState')
+    return (newBuiltValueToStringHelper(r'IncrementalBuildState')
           ..add('sources', sources)
           ..add('sourceContents', sourceContents)
           ..add('missingSources', missingSources)
@@ -238,9 +238,9 @@ class _$SerializedBuildState extends SerializedBuildState {
   }
 }
 
-class SerializedBuildStateBuilder
-    implements Builder<SerializedBuildState, SerializedBuildStateBuilder> {
-  _$SerializedBuildState? _$v;
+class IncrementalBuildStateBuilder
+    implements Builder<IncrementalBuildState, IncrementalBuildStateBuilder> {
+  _$IncrementalBuildState? _$v;
 
   SetBuilder<AssetId>? _sources;
   SetBuilder<AssetId> get sources => _$this._sources ??= SetBuilder<AssetId>();
@@ -281,9 +281,9 @@ class SerializedBuildStateBuilder
   set globResults(MapBuilder<GlobId, GlobResult>? globResults) =>
       _$this._globResults = globResults;
 
-  SerializedBuildStateBuilder();
+  IncrementalBuildStateBuilder();
 
-  SerializedBuildStateBuilder get _$this {
+  IncrementalBuildStateBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
       _sources = $v.sources.toBuilder();
@@ -298,24 +298,24 @@ class SerializedBuildStateBuilder
   }
 
   @override
-  void replace(SerializedBuildState other) {
-    _$v = other as _$SerializedBuildState;
+  void replace(IncrementalBuildState other) {
+    _$v = other as _$IncrementalBuildState;
   }
 
   @override
-  void update(void Function(SerializedBuildStateBuilder)? updates) {
+  void update(void Function(IncrementalBuildStateBuilder)? updates) {
     if (updates != null) updates(this);
   }
 
   @override
-  SerializedBuildState build() => _build();
+  IncrementalBuildState build() => _build();
 
-  _$SerializedBuildState _build() {
-    _$SerializedBuildState _$result;
+  _$IncrementalBuildState _build() {
+    _$IncrementalBuildState _$result;
     try {
       _$result =
           _$v ??
-          _$SerializedBuildState._(
+          _$IncrementalBuildState._(
             sources: sources.build(),
             sourceContents: sourceContents.build(),
             missingSources: missingSources.build(),
@@ -340,7 +340,7 @@ class SerializedBuildStateBuilder
         globResults.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-          r'SerializedBuildState',
+          r'IncrementalBuildState',
           _$failedField,
           e.toString(),
         );

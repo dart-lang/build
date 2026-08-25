@@ -15,13 +15,13 @@ import 'glob_result.dart';
 import 'post_process_build_step_id.dart';
 import 'post_process_build_step_result.dart';
 
-part 'serialized_build_state.g.dart';
+part 'incremental_build_state.g.dart';
 
-/// `BuildState` serialized for use across builds.
-abstract class SerializedBuildState
-    implements Built<SerializedBuildState, SerializedBuildStateBuilder> {
-  static Serializer<SerializedBuildState> get serializer =>
-      _$serializedBuildStateSerializer;
+/// `BuildState` saved for use in incremental builds.
+abstract class IncrementalBuildState
+    implements Built<IncrementalBuildState, IncrementalBuildStateBuilder> {
+  static Serializer<IncrementalBuildState> get serializer =>
+      _$incrementalBuildStateSerializer;
 
   BuiltSet<AssetId> get sources;
   BuiltMap<AssetId, AssetContent> get sourceContents;
@@ -31,8 +31,8 @@ abstract class SerializedBuildState
   get postProcessResults;
   BuiltMap<GlobId, GlobResult> get globResults;
 
-  SerializedBuildState._();
-  factory SerializedBuildState([
-    void Function(SerializedBuildStateBuilder) updates,
-  ]) = _$SerializedBuildState;
+  IncrementalBuildState._();
+  factory IncrementalBuildState([
+    void Function(IncrementalBuildStateBuilder) updates,
+  ]) = _$IncrementalBuildState;
 }

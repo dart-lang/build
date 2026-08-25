@@ -10,7 +10,7 @@ import 'package:built_value/built_value.dart';
 
 import '../build/build_state/asset_graph_json.dart';
 import '../build/build_state/finished_build_state.dart';
-import '../build/build_state/serialized_build_state.dart';
+import '../build/build_state/incremental_build_state.dart';
 import '../build/library_cycle_graph/phased_asset_deps.dart';
 import '../constants.dart';
 
@@ -62,7 +62,7 @@ abstract class PreviousBuild
       assetGraphJsonPath,
     );
     BuildSpecDigest? previousBuildPlanDigest;
-    SerializedBuildState? serializedBuildState;
+    IncrementalBuildState? incrementalBuildState;
     FinishedBuildState? previousFinishedBuildState;
     final incompatibleBuildOutputsToDelete = <AssetId>{};
     PhasedAssetDeps? previousPhasedAssetDeps;
@@ -72,11 +72,11 @@ abstract class PreviousBuild
         await readerWriter.readAsBytes(assetGraphJsonId) as Uint8List,
       );
       if (assetGraphJson != null) {
-        serializedBuildState = assetGraphJson.serializedBuildState;
+        incrementalBuildState = assetGraphJson.incrementalBuildState;
         previousBuildPlanDigest = assetGraphJson.buildPlanDigest;
         previousPhasedAssetDeps = assetGraphJson.phasedAssetDeps;
       }
-      if (serializedBuildState != null) {
+      if (incrementalBuildState != null) {
         final forceCleanBuild =
             buildSpec.restartIsNeeded ||
             buildPackages.hasNewerAlternateRootBuild ||
@@ -85,7 +85,7 @@ abstract class PreviousBuild
         if (forceCleanBuild) {
           incompatibleBuildOutputsToDelete.addAll(
             _outputsToDelete(
-              buildState: serializedBuildState,
+              buildState: incrementalBuildState,
               buildPackages: buildPackages,
             ),
           );
@@ -93,10 +93,10 @@ abstract class PreviousBuild
           final previousBuildStepPlan = BuildStepPlan.compute(
             buildPhases: buildSpec.buildPhases,
             placeholderIds: buildPackages.placeholderIds,
-            sources: serializedBuildState.sources,
+            sources: incrementalBuildState.sources,
           );
           previousFinishedBuildState = FinishedBuildState(
-            serialized: serializedBuildState,
+            incremental: incrementalBuildState,
             buildStepPlan: previousBuildStepPlan,
           );
         }
@@ -156,7 +156,7 @@ abstract class PreviousBuild
 /// Computes declared and post process outputs in [buildState] to delete for
 /// [buildPackages].
 Iterable<AssetId> _outputsToDelete({
-  required SerializedBuildState buildState,
+  required IncrementalBuildState buildState,
   required BuildPackages buildPackages,
 }) {
   final result = <AssetId>[];
