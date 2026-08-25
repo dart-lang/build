@@ -40,7 +40,7 @@ void main(List<String> arguments) {
   );
   tempDirectory.createSync(recursive: true);
   File.fromUri(tempDirectory.uri.resolve('pubspec.yaml')).writeAsStringSync('''
-name: none
+name: fake_package
 environment:
   sdk: ^3.7.0
 dependencies:
@@ -59,6 +59,11 @@ dependencies:
         as Map<String, Object?>,
   );
 
+  final packageConfigFile = File.fromUri(
+    repoRoot.uri.resolve('.dart_tool/package_config.json'),
+  );
+  final packageConfig = packageConfigFile.readAsStringSync();
+
   // Merge `pubConfig` into the local package config.
   //
   // `build_runner` expects to run with the local package config because it
@@ -68,12 +73,7 @@ dependencies:
   // So the merged config will have the two things needed: `build` packages
   // not broken by local changes, and whatever generators are needed.
   final mergedConfig = PackageConfig(
-    json.decode(
-          File.fromUri(
-            repoRoot.uri.resolve('.dart_tool/package_config.json'),
-          ).readAsStringSync(),
-        )
-        as Map<String, Object?>,
+    json.decode(packageConfig) as Map<String, Object?>,
   );
 
   // Ensure temp pubConfig and workspace relative URIs are made absolute.
@@ -90,10 +90,9 @@ dependencies:
   }
 
   // Override build packages with published versions from temp pubConfig.
-  final currentPackageName = RegExp(
-    r'^name:\s*(\S+)',
-    multiLine: true,
-  ).firstMatch(File('pubspec.yaml').readAsStringSync())?.group(1);
+  final pubspecFile = File('pubspec.yaml');
+  final pubspec = pubspecFile.readAsStringSync();
+  final packageName = (loadYaml(pubspec) as Map)['name'] as String?;
 
   final buildRunnerPath = pubConfig.packageNamedOrNull('build_runner')!.rootUri;
 
@@ -104,7 +103,7 @@ dependencies:
     'build_runner',
     'build_test',
   ]) {
-    if (package == currentPackageName) continue;
+    if (package == packageName) continue;
     final packageConfig = pubConfig.packageNamedOrNull(package);
     if (packageConfig != null) {
       final existing = mergedConfig.packageNamedOrNull(package);
@@ -119,25 +118,19 @@ dependencies:
   // Add all other packages from pubConfig not present in mergedConfig, such as
   // built_value_generator, json_serializable, and their dependencies.
   for (final package in pubConfig.packages) {
-    if (package.name != 'none' &&
+    if (package.name != 'fake_package' &&
         mergedConfig.packageNamedOrNull(package.name) == null) {
       mergedConfig.addPackage(package);
     }
   }
 
-  final repoRootPackageConfigFile = File.fromUri(
-    repoRoot.uri.resolve('.dart_tool/package_config.json'),
-  );
-  final originalPackageConfig = repoRootPackageConfigFile.readAsStringSync();
-  final localPubspecFile = File('pubspec.yaml');
-  final originalPubspec = localPubspecFile.readAsStringSync();
   var exitCode = 0;
   try {
-    repoRootPackageConfigFile.writeAsStringSync(json.encode(mergedConfig));
-    localPubspecFile.writeAsStringSync(_injectGenerators(originalPubspec));
+    packageConfigFile.writeAsStringSync(json.encode(mergedConfig));
+    pubspecFile.writeAsStringSync(_injectGenerators(pubspec));
 
     final buildResult = Process.runSync('dart', [
-      '--packages=${repoRootPackageConfigFile.path}',
+      '--packages=${packageConfigFile.path}',
       'run',
       '$buildRunnerPath/bin/build_runner.dart',
       'build',
@@ -153,8 +146,8 @@ dependencies:
       tempDirectory.deleteSync(recursive: true);
     }
   } finally {
-    localPubspecFile.writeAsStringSync(originalPubspec);
-    repoRootPackageConfigFile.writeAsStringSync(originalPackageConfig);
+    pubspecFile.writeAsStringSync(pubspec);
+    packageConfigFile.writeAsStringSync(packageConfig);
   }
   exit(exitCode);
 }
