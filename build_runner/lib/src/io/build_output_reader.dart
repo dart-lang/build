@@ -137,7 +137,7 @@ class BuildOutputReader {
       hidden: buildState.isHidden(id),
     );
     _recordSourceConsumedOutsideBuild(id);
-    return cached != null ? cached.withBytes(bytes).bytes : bytes;
+    return bytes;
   }
 
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async {
@@ -148,9 +148,7 @@ class BuildOutputReader {
     }
 
     final bytes = await readAsBytes(id);
-    return cached != null
-        ? cached.withBytes(bytes).stringValue(encoding: encoding)
-        : encoding.decode(bytes);
+    return encoding.decode(bytes);
   }
 
   void _recordSourceConsumedOutsideBuild(AssetId id) {
