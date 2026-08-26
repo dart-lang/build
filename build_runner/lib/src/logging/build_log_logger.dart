@@ -4,7 +4,7 @@
 
 import 'dart:async';
 
-import 'package:build/build.dart' show AssetId;
+import 'package:build/src/asset_id.dart';
 // ignore: implementation_imports
 import 'package:build/src/logging.dart';
 import 'package:logging/logging.dart';

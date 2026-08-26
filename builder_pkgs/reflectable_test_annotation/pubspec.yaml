@@ -1,0 +1,10 @@
+name: reflectable_test_annotation
+version: 0.1.0
+description: Annotations and runtime support for generated reflective tests.
+resolution: workspace
+
+environment:
+  sdk: ^3.7.0
+
+dependencies:
+  test: any

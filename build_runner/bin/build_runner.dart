@@ -4,11 +4,8 @@
 
 import 'dart:io';
 
-import 'package:build_runner/src/build_runner.dart';
+import 'package:build_runner/src/bootstrap/bootstrap_runner.dart';
 
 Future<void> main(List<String> arguments) async {
-  exitCode = await BuildRunner(
-    arguments: arguments,
-    builderFactories: null,
-  ).run();
+  exitCode = await BootstrapRunner(arguments: arguments).run();
 }

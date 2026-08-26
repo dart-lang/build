@@ -1,0 +1,7 @@
+builders:
+  reflectable_test_builder:
+    import: "package:reflectable_test_builder/reflectable_test_builder.dart"
+    builder_factories: ["reflectableTestBuilder"]
+    build_extensions: {".dart": [".rt.dart"]}
+    auto_apply: dependents
+    build_to: source
