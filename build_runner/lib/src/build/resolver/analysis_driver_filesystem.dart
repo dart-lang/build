@@ -82,7 +82,7 @@ class AnalysisDriverFilesystem
       _changedPaths.addAll(_data.keys);
       _data.clear();
       for (final id in builderFilesystem.buildState.sources) {
-        final content = builderFilesystem.buildState.contentOf(id: id);
+        final content = builderFilesystem.buildState.contentOf(id);
         if (content != null) {
           _updateContent(id, content);
         }

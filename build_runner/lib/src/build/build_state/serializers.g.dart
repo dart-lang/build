@@ -15,6 +15,7 @@ Serializers _$serializers =
           ..add(ExpiringValue.serializer)
           ..add(GlobId.serializer)
           ..add(GlobResult.serializer)
+          ..add(IncrementalBuildState.serializer)
           ..add(PhasedAssetDeps.serializer)
           ..add(PhasedValue.serializer)
           ..add(PostProcessBuildStepId.serializer)
@@ -82,6 +83,46 @@ Serializers _$serializers =
           ..addBuilderFactory(
             const FullType(BuiltSet, const [const FullType(AssetId)]),
             () => SetBuilder<AssetId>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltSet, const [const FullType(AssetId)]),
+            () => SetBuilder<AssetId>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltMap, const [
+              const FullType(AssetId),
+              const FullType(AssetContent),
+            ]),
+            () => MapBuilder<AssetId, AssetContent>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltSet, const [const FullType(AssetId)]),
+            () => SetBuilder<AssetId>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltMap, const [
+              const FullType(BuildStepId),
+              const FullType(BuildStepResult),
+            ]),
+            () => MapBuilder<BuildStepId, BuildStepResult>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltMap, const [
+              const FullType(PostProcessBuildStepId),
+              const FullType(PostProcessBuildStepResult),
+            ]),
+            () =>
+                MapBuilder<
+                  PostProcessBuildStepId,
+                  PostProcessBuildStepResult
+                >(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltMap, const [
+              const FullType(GlobId),
+              const FullType(GlobResult),
+            ]),
+            () => MapBuilder<GlobId, GlobResult>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltSet, const [const FullType(AssetId)]),

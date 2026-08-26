@@ -7,7 +7,7 @@ import 'dart:typed_data';
 
 import '../../build_plan/build_spec_digest.dart';
 import '../library_cycle_graph/phased_asset_deps.dart';
-import 'build_state.dart';
+import 'incremental_build_state.dart';
 import 'serializers.dart';
 
 /// State stored in `asset_graph.json`.
@@ -16,24 +16,27 @@ import 'serializers.dart';
 /// and if so exactly what should be rebuilt.
 class AssetGraphJson {
   final BuildSpecDigest buildPlanDigest;
-  final BuildState buildState;
+  final IncrementalBuildState incrementalBuildState;
   final PhasedAssetDeps phasedAssetDeps;
 
   AssetGraphJson({
     required this.buildPlanDigest,
-    required this.buildState,
+    required this.incrementalBuildState,
     required this.phasedAssetDeps,
   });
 
   /// Serializes for `asset_graph.json`.
   static Uint8List serialize({
     required BuildSpecDigest buildPlanDigest,
-    required BuildState buildState,
+    required IncrementalBuildState buildState,
     required PhasedAssetDeps phasedAssetDeps,
   }) {
     // Serialize fields first so all `AssetId` instances are seen by
     // `identityAssetIdSeralizer`.
-    final serializedBuildState = serializeBuildState(buildState);
+    final serializedBuildState = serializers.serializeWith(
+      IncrementalBuildState.serializer,
+      buildState,
+    );
     final serializedBuildPlanDigest = serializers.serializeWith(
       BuildSpecDigest.serializer,
       buildPlanDigest,
@@ -73,8 +76,9 @@ class AssetGraphJson {
         deserialized['buildPlanDigest'],
       );
 
-      final buildState = deserializeBuildState(
-        deserialized['buildState'] as Map,
+      final buildState = serializers.deserializeWith(
+        IncrementalBuildState.serializer,
+        deserialized['buildState'],
       );
 
       final phasedAssetDeps = serializers.deserializeWith(
@@ -83,7 +87,7 @@ class AssetGraphJson {
       );
 
       return AssetGraphJson(
-        buildState: buildState!,
+        incrementalBuildState: buildState!,
         buildPlanDigest: buildPlanDigest!,
         phasedAssetDeps: phasedAssetDeps!,
       );
@@ -96,5 +100,5 @@ class AssetGraphJson {
 }
 
 /// Increment whenever older `asset_graph.json` files should be rejected.
-const _version = 44;
+const _version = 45;
 final jsonUtf8 = json.fuse(utf8);

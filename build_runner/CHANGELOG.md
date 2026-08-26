@@ -2,6 +2,8 @@
 
 - Reduce logged compile progress output for non-interactive builds, for example
   presubmits.
+- In `serve` and `daemon` modes, source files not involved in the build are no
+  longer cached on read. They are re-read when requested.
 
 ## 2.16.0
 

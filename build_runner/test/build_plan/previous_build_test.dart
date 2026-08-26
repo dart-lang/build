@@ -11,6 +11,7 @@ import 'package:build_runner/src/build/asset_content.dart';
 import 'package:build_runner/src/build/build_state/asset_graph_json.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/build_state/build_step_result.dart';
+import 'package:build_runner/src/build/build_state/incremental_build_state.dart';
 import 'package:build_runner/src/build/library_cycle_graph/phased_asset_deps.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
@@ -81,11 +82,11 @@ void main() {
 
     test('loads with no previous build state', () async {
       final previousBuild = await loadPreviousBuild();
-      expect(previousBuild.buildState, null);
+      expect(previousBuild.state, null);
     });
 
     Future<void> writeBuildStateAndPlan(
-      BuildState buildState,
+      IncrementalBuildState buildState,
       BuildSpecDigest buildPlanDigest,
     ) async {
       await readerWriter.writeAsBytes(
@@ -101,17 +102,22 @@ void main() {
     test('loads previous build state', () async {
       final spec = await loadSpec();
       final previousBuild = await PreviousBuild.load(spec);
-      final buildState = previousBuild.buildState ?? BuildState();
+      final buildState =
+          previousBuild.state?.incremental ?? IncrementalBuildState();
       await writeBuildStateAndPlan(buildState, spec.buildPlanDigest);
 
       final reloadedBuild = await loadPreviousBuild();
-      expect(reloadedBuild.buildState.toString(), buildState.toString());
+      expect(
+        reloadedBuild.state?.incremental.toString(),
+        buildState.toString(),
+      );
     });
 
     test('discards previous build state if build phases changed', () async {
       final spec = await loadSpec();
       final previousBuild = await PreviousBuild.load(spec);
-      final buildState = previousBuild.buildState ?? BuildState();
+      final buildState =
+          previousBuild.state?.incremental ?? IncrementalBuildState();
       await writeBuildStateAndPlan(buildState, spec.buildPlanDigest);
 
       final buildSpec2 = await BuildSpec.load(
@@ -126,7 +132,7 @@ void main() {
       );
 
       final reloadedBuild = await PreviousBuild.load(buildSpec2);
-      expect(reloadedBuild.buildState, null);
+      expect(reloadedBuild.state, null);
     });
 
     test('tracks lost outputs if build phases changed', () async {
@@ -137,15 +143,17 @@ void main() {
           ].build(),
         ),
       );
-      final previousBuild = await PreviousBuild.load(spec);
-      final buildState = previousBuild.buildState ?? BuildState();
-
-      await readerWriter.writeAsString(outputId, '// output');
       final buildStepPlan = BuildStepPlan.compute(
         buildPhases: spec.buildPhases,
         placeholderIds: buildPackages.placeholderIds,
         sources: {assetId, assetId2},
       );
+      final buildState = BuildState(
+        buildStepPlan: buildStepPlan,
+        sources: {assetId: null, assetId2: null},
+      );
+
+      await readerWriter.writeAsString(outputId, '// output');
       final step = buildStepPlan.stepForDeclaredOutput(outputId);
       buildState.updateBuildStepResult(
         step,
@@ -154,7 +162,10 @@ void main() {
           b.outputs[outputId] = AssetContent.digest(Digest(<int>[]));
         }),
       );
-      await writeBuildStateAndPlan(buildState, spec.buildPlanDigest);
+      await writeBuildStateAndPlan(
+        buildState.toIncrementalBuildState(),
+        spec.buildPlanDigest,
+      );
 
       final buildSpec2 = await BuildSpec.load(
         builderFactories: builderFactories,
@@ -168,7 +179,7 @@ void main() {
       );
 
       final reloadedBuild = await PreviousBuild.load(buildSpec2);
-      expect(reloadedBuild.buildState, null);
+      expect(reloadedBuild.state, null);
       expect(
         reloadedBuild.incompatibleBuildOutputsToDelete,
         contains(outputId),
@@ -178,7 +189,8 @@ void main() {
     test('discards previous build state if SDK version changed', () async {
       final spec = await loadSpec();
       final previousBuild = await PreviousBuild.load(spec);
-      final buildState = previousBuild.buildState ?? BuildState();
+      final buildState =
+          previousBuild.state?.incremental ?? IncrementalBuildState();
       await writeBuildStateAndPlan(buildState, spec.buildPlanDigest);
 
       final spec2 = await BuildSpec.load(
@@ -193,13 +205,14 @@ void main() {
       );
 
       final reloadedBuild = await PreviousBuild.load(spec2);
-      expect(reloadedBuild.buildState, null);
+      expect(reloadedBuild.state, null);
     });
 
     test('discards previous build state if packages changed', () async {
       final spec = await loadSpec();
       final previousBuild = await PreviousBuild.load(spec);
-      final buildState = previousBuild.buildState ?? BuildState();
+      final buildState =
+          previousBuild.state?.incremental ?? IncrementalBuildState();
       await writeBuildStateAndPlan(buildState, spec.buildPlanDigest);
 
       final buildPackages2 = BuildPackages.singlePackageBuild('b', [
@@ -209,7 +222,7 @@ void main() {
         testingOverrides.copyWith(buildPackages: buildPackages2),
       );
 
-      expect(reloadedBuild.buildState, null);
+      expect(reloadedBuild.state, null);
     });
 
     test(
@@ -217,7 +230,8 @@ void main() {
       () async {
         final spec = await loadSpec();
         final previousBuild = await PreviousBuild.load(spec);
-        final buildState = previousBuild.buildState ?? BuildState();
+        final buildState =
+            previousBuild.state?.incremental ?? IncrementalBuildState();
         await writeBuildStateAndPlan(buildState, spec.buildPlanDigest);
 
         final reloadedBuild = await withEnabledExperiments(
@@ -225,13 +239,13 @@ void main() {
           ['an_experiment'],
         );
 
-        expect(reloadedBuild.buildState, null);
+        expect(reloadedBuild.state, null);
       },
     );
 
     test('tracks cleanBuild when build_plan.json does not exist', () async {
       final previousBuild = await loadPreviousBuild();
-      expect(previousBuild.buildState, isNull);
+      expect(previousBuild.state, isNull);
     });
 
     test(
@@ -240,11 +254,11 @@ void main() {
         final spec = await loadSpec();
         final previousBuild = await PreviousBuild.load(spec);
         await writeBuildStateAndPlan(
-          previousBuild.buildState ?? BuildState(),
+          previousBuild.state?.incremental ?? IncrementalBuildState(),
           spec.buildPlanDigest,
         );
         final reloadedBuild = await loadPreviousBuild();
-        expect(reloadedBuild.buildState, isNotNull);
+        expect(reloadedBuild.state, isNotNull);
       },
     );
 
@@ -257,12 +271,12 @@ void main() {
           (b) => b.compileDigest = 'stale_digest',
         );
         await writeBuildStateAndPlan(
-          previousBuild.buildState ?? BuildState(),
+          previousBuild.state?.incremental ?? IncrementalBuildState(),
           staleDigest,
         );
 
         final reloadedBuild = await loadPreviousBuild();
-        expect(reloadedBuild.buildState, isNull);
+        expect(reloadedBuild.state, isNull);
       },
     );
 
@@ -273,7 +287,7 @@ void main() {
         (b) => b.buildTriggersDigest = 'triggers_1',
       );
       await writeBuildStateAndPlan(
-        previousBuild.buildState ?? BuildState(),
+        previousBuild.state?.incremental ?? IncrementalBuildState(),
         staleDigest,
       );
 
@@ -303,7 +317,7 @@ void main() {
       );
 
       final reloadedBuild = await PreviousBuild.load(spec2);
-      expect(reloadedBuild.buildState, isNotNull);
+      expect(reloadedBuild.state, isNotNull);
       expect(reloadedBuild.triggersChanged, isTrue);
     });
 
@@ -314,7 +328,7 @@ void main() {
         (b) => b.inBuildPhasesOptionsDigests[0] = 'dummy_digest_1',
       );
       await writeBuildStateAndPlan(
-        previousBuild.buildState ?? BuildState(),
+        previousBuild.state?.incremental ?? IncrementalBuildState(),
         staleDigest,
       );
 
@@ -344,7 +358,7 @@ void main() {
       );
 
       final reloadedBuild = await PreviousBuild.load(spec2);
-      expect(reloadedBuild.buildState, isNotNull);
+      expect(reloadedBuild.state, isNotNull);
       expect(reloadedBuild.phaseOptionsChangedList[0], isTrue);
     });
 
@@ -355,12 +369,12 @@ void main() {
         (b) => b.buildPhasesDigest = 'stale_digest',
       );
       await writeBuildStateAndPlan(
-        previousBuild.buildState ?? BuildState(),
+        previousBuild.state?.incremental ?? IncrementalBuildState(),
         staleDigest,
       );
 
       final reloadedBuild = await loadPreviousBuild();
-      expect(reloadedBuild.buildState, isNull);
+      expect(reloadedBuild.state, isNull);
     });
 
     test('tracks dartVersion when SDK version changes', () async {
@@ -370,12 +384,12 @@ void main() {
         (b) => b.dartVersion = 'stale_version',
       );
       await writeBuildStateAndPlan(
-        previousBuild.buildState ?? BuildState(),
+        previousBuild.state?.incremental ?? IncrementalBuildState(),
         staleDigest,
       );
 
       final reloadedBuild = await loadPreviousBuild();
-      expect(reloadedBuild.buildState, isNull);
+      expect(reloadedBuild.state, isNull);
     });
 
     test('tracks enabledExperiments when experiments change', () async {
@@ -385,12 +399,12 @@ void main() {
         (b) => b.enabledExperiments.add('stale_experiment'),
       );
       await writeBuildStateAndPlan(
-        previousBuild.buildState ?? BuildState(),
+        previousBuild.state?.incremental ?? IncrementalBuildState(),
         staleDigest,
       );
 
       final reloadedBuild = await loadPreviousBuild();
-      expect(reloadedBuild.buildState, isNull);
+      expect(reloadedBuild.state, isNull);
     });
 
     test(
@@ -402,12 +416,12 @@ void main() {
           (b) => b.packageLanguageVersions['a'] = '1.0',
         );
         await writeBuildStateAndPlan(
-          previousBuild.buildState ?? BuildState(),
+          previousBuild.state?.incremental ?? IncrementalBuildState(),
           staleDigest,
         );
 
         final reloadedBuild = await loadPreviousBuild();
-        expect(reloadedBuild.buildState, isNull);
+        expect(reloadedBuild.state, isNull);
       },
     );
 
@@ -415,7 +429,7 @@ void main() {
       final spec = await loadSpec();
       final previousBuild = await PreviousBuild.load(spec);
       await writeBuildStateAndPlan(
-        previousBuild.buildState ?? BuildState(),
+        previousBuild.state?.incremental ?? IncrementalBuildState(),
         spec.buildPlanDigest,
       );
 
@@ -428,7 +442,7 @@ void main() {
       );
 
       final reloadedBuild = await loadPreviousBuild();
-      expect(reloadedBuild.buildState, isNull);
+      expect(reloadedBuild.state, isNull);
     });
   });
 }

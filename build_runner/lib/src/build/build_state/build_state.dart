@@ -3,34 +3,37 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:built_collection/built_collection.dart';
-import 'package:built_value/serializer.dart';
 
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 
-import '../../build_plan/build_packages.dart';
+import '../../build_plan/build_phases.dart';
 import '../../build_plan/build_step_plan.dart';
+import '../../build_plan/phase.dart';
 import '../asset_content.dart';
 
 import 'build_step_id.dart';
 import 'build_step_result.dart';
+import 'finished_build_state.dart';
 import 'glob_id.dart';
 import 'glob_result.dart';
+import 'incremental_build_state.dart';
 import 'post_process_build_step_id.dart';
 import 'post_process_build_step_result.dart';
-import 'serializers.dart';
 import 'sources.dart';
 
-part 'serialization.dart';
-
-/// Build state that is updated during the build then serialized to allow a
-/// follow-on incremental build.
+/// Build state that is updated during the build then converted to
+/// [IncrementalBuildState] and [FinishedBuildState] for serialization and
+/// follow-on incremental builds.
 ///
 /// - Sources and their digests; missing sources.
 /// - Glob results.
+/// - Build step results.
 /// - Post process build step results.
 class BuildState {
+  /// The planned build steps for this build.
+  final BuildStepPlan buildStepPlan;
+
   /// Sources and missing sources.
   final Sources _sources;
 
@@ -47,38 +50,49 @@ class BuildState {
   /// All post process build step outputs by the step that created them.
   final Map<AssetId, PostProcessBuildStepId> _postProcessOutputs;
 
-  BuildState([Map<AssetId, AssetContent?> sources = const {}])
-    : _sources = Sources(sources),
-      _postProcessResultsByInput = {},
-      _postProcessOutputs = {},
-      _buildStepResultsByPrimaryInput = {},
-      _globResults = {};
+  BuildState({
+    required this.buildStepPlan,
+    required Map<AssetId, AssetContent?> sources,
+  }) : _sources = Sources(sources),
+       _postProcessResultsByInput = {},
+       _postProcessOutputs = {},
+       _buildStepResultsByPrimaryInput = {},
+       _globResults = {} {
+    for (final id in _sources.sourceIds) {
+      if (buildStepPlan.isDeclaredOutput(id)) {
+        throw ArgumentError(
+          'Source $id clashes with declared output in buildStepPlan.',
+        );
+      }
+    }
+  }
 
-  // --  Predicates over IDs and iterables over IDs.
+  /// An empty [BuildState] with no sources and an empty plan.
+  @visibleForTesting
+  BuildState.empty()
+    : this(
+        buildStepPlan: BuildStepPlan(
+          (b) => b.buildPhases = BuildPhases(const <InBuildPhase>[]),
+        ),
+        sources: const {},
+      );
+
+  // -- Predicates over IDs and iterables over IDs.
 
   /// Whether [id] is one of: source, declared output or actual post process
   /// output.
-  bool isFile({required BuildStepPlan? buildStepPlan, required AssetId id}) =>
+  bool isFile(AssetId id) =>
       isSource(id) ||
-      buildStepPlan?.isDeclaredOutput(id) == true ||
+      buildStepPlan.isDeclaredOutput(id) ||
       isActualPostOutput(id);
 
   /// Files that are in [package] and match [glob].
   ///
-  /// To match declared outputs as well as sources, pass `buildStepPlan`. The
-  /// declared outputs that match might not exist yet if their build step hasn't
-  /// run, or might never exist if it runs but decides not to output them.
+  /// Matches declared outputs as well as sources.
   ///
   /// Does not match post process outputs.
-  Iterable<AssetId> findFiles({
-    required String package,
-    required BuildStepPlan? buildStepPlan,
-    Glob? glob,
-  }) => _sources.findFiles(
-    package,
-    buildStepPlan?.declaredOutputs ?? const [],
-    glob: glob,
-  );
+  Iterable<AssetId> findFiles({required String package, Glob? glob}) =>
+      _sources.findFiles(package, buildStepPlan.declaredOutputs, glob: glob);
 
   /// Sources.
   ///
@@ -89,30 +103,18 @@ class BuildState {
   /// Whether [id] is a source file.
   bool isSource(AssetId id) => _sources.isSource(id);
 
-  /// Whether [id] is a source file that has never been read.
-  ///
-  /// That means it is not a primary input and has never been read by any
-  /// builder as an additional input.
-  bool isUnreadSource(AssetId id) => _sources.isUnreadSource(id);
-
   /// Whether [id] is a source file that was accessed but did not exist.
   bool isMissingSource(AssetId id) => _sources.isMissingSource(id);
 
   /// Actual build step outputs.
   ///
   /// A subset of the declared outputs.
-  Iterable<AssetId> get actualOutputs =>
-      actualStepResults.expand((result) => result.outputs.keys);
-
-  /// All build step results that actually executed.
-  Iterable<BuildStepResult> get actualStepResults =>
-      _buildStepResultsByPrimaryInput.values.expand((map) => map.values);
+  Iterable<AssetId> get actualOutputs => _buildStepResultsByPrimaryInput.values
+      .expand((map) => map.values)
+      .expand((result) => result.outputs.keys);
 
   /// Whether [id] is a declared build output that was actually generated.
-  bool isActualOutput({
-    required BuildStepPlan buildStepPlan,
-    required AssetId id,
-  }) {
+  bool isActualOutput(AssetId id) {
     final buildStepId = buildStepPlan.stepForDeclaredOutputOrNull(id);
     if (buildStepId == null) return false;
     return stepResultOrNull(buildStepId)?.outputs.containsKey(id) ?? false;
@@ -120,10 +122,7 @@ class BuildState {
 
   /// Whether [id] is a declared build output that was actually generated by
   /// a build step that succeeded.
-  bool isActualSuccessfulOutput({
-    required BuildStepPlan buildStepPlan,
-    required AssetId id,
-  }) {
+  bool isActualSuccessfulOutput(AssetId id) {
     final step = buildStepPlan.stepForDeclaredOutputOrNull(id);
     if (step == null) return false;
     final stepResult = stepResultOrNull(step);
@@ -138,22 +137,15 @@ class BuildState {
   /// previous build.
   Iterable<AssetId> get actualPostOutputs => _postProcessOutputs.keys;
 
-  /// All post process build step results that actually executed.
-  Iterable<PostProcessBuildStepResult> get actualPostProcessResults =>
-      _postProcessResultsByInput.values.expand((map) => map.values);
-
   /// Whether [id] is a post process build output that was actually generated.
   bool isActualPostOutput(AssetId id) => _postProcessOutputs.containsKey(id);
 
   /// Whether the builder for [id] has been processed during this build.
   ///
   /// That means it has been run, skipped, or it failed.
-  bool isProcessedOutput({
-    required BuildStepPlan? buildStepPlan,
-    required AssetId id,
-  }) {
+  bool isProcessedOutput(AssetId id) {
     if (isActualPostOutput(id)) return true;
-    final step = buildStepPlan?.stepForDeclaredOutputOrNull(id);
+    final step = buildStepPlan.stepForDeclaredOutputOrNull(id);
     if (step != null) return stepResultOrNull(step) != null;
     return false;
   }
@@ -213,9 +205,9 @@ class BuildState {
   ///
   /// If it is a post process output, returns `null` if it has not been
   /// generated.
-  AssetContent? contentOf({BuildStepPlan? buildStepPlan, required AssetId id}) {
+  AssetContent? contentOf(AssetId id) {
     if (isSource(id)) return _sources.contentOfSource(id);
-    final step = buildStepPlan?.stepForDeclaredOutputOrNull(id);
+    final step = buildStepPlan.stepForDeclaredOutputOrNull(id);
     if (step != null) {
       return stepResultOrNull(step)?.outputs[id];
     }
@@ -225,6 +217,47 @@ class BuildState {
     }
     return null;
   }
+
+  IncrementalBuildState toIncrementalBuildState() {
+    final builder = IncrementalBuildStateBuilder()
+      ..sources.addAll(_sources.sourceIds)
+      ..missingSources.addAll(_sources.missingSources);
+
+    for (final id in _sources.sourceIds) {
+      final content = _sources.contentOfSource(id);
+      if (content != null) {
+        builder.sourceContents[id] = content;
+      }
+    }
+
+    for (final outer in _buildStepResultsByPrimaryInput.entries) {
+      final input = outer.key;
+      for (final inner in outer.value.entries) {
+        final stepId = BuildStepId(primaryInput: input, phaseNumber: inner.key);
+        builder.buildStepResults[stepId] = inner.value;
+      }
+    }
+
+    for (final outer in _postProcessResultsByInput.entries) {
+      final input = outer.key;
+      for (final inner in outer.value.entries) {
+        final stepId = PostProcessBuildStepId(
+          input: input,
+          actionNumber: inner.key,
+        );
+        builder.postProcessResults[stepId] = inner.value;
+      }
+    }
+
+    builder.globResults.addAll(_globResults);
+
+    return builder.build();
+  }
+
+  FinishedBuildState toFinishedBuildState() => FinishedBuildState(
+    incremental: toIncrementalBuildState(),
+    buildStepPlan: buildStepPlan,
+  );
 
   /// The content of source [id], or `null` if it has not been read.
   ///
@@ -302,6 +335,9 @@ class BuildState {
     return result?.hidden ?? false;
   }
 
+  bool isHidden(AssetId id) =>
+      buildStepPlan.isHidden(id) || isHiddenPostProcessOutput(id);
+
   Iterable<BuildStepId> get failedSteps {
     final results = <BuildStepId>[];
     for (final outer in _buildStepResultsByPrimaryInput.entries) {
@@ -343,33 +379,6 @@ class BuildState {
     }
     return result;
   }
-
-  /// Returns outputs that were written to the source tree in packages that
-  /// still exist.
-  Iterable<AssetId> outputsToDelete(BuildPackages buildPackages) {
-    final result = <AssetId>[];
-    for (final map in _buildStepResultsByPrimaryInput.values) {
-      for (final stepResult in map.values) {
-        if (!stepResult.isHidden) {
-          for (final id in stepResult.outputs.keys) {
-            if (buildPackages[id.package] != null) result.add(id);
-          }
-        }
-      }
-    }
-    for (final results in _postProcessResultsByInput.values) {
-      for (final postProcessResults in results.values) {
-        if (!postProcessResults.hidden) {
-          for (final id in postProcessResults.outputs.keys) {
-            if (buildPackages[id.package] != null) result.add(id);
-          }
-        }
-      }
-    }
-    return result;
-  }
-
-  // -- Creation of the state and updates for incremental builds.
 
   // -- Testing.
 

@@ -53,7 +53,7 @@ void main() {
     return BuilderFilesystem(
       buildPackages: buildPackages,
       buildConfigs: buildConfigs,
-      buildState: BuildState(sources),
+      buildState: BuildState(buildStepPlan: buildStepPlan, sources: sources),
       buildStepPlan: buildStepPlan,
       readerWriter: readerWriter,
       assetBuilder: (_) async {},

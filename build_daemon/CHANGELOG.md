@@ -1,3 +1,7 @@
+## 4.1.6-wip
+
+- Add doc comment to `DaemonBuilder.build`.
+
 ## 4.1.5
 
 - Support the latest `package_config`.
