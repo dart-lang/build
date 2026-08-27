@@ -24,6 +24,15 @@ abstract class BuildInputs implements Built<BuildInputs, BuildInputsBuilder> {
   /// Contents for source files that have declared outputs.
   BuiltMap<AssetId, AssetContent> get sourceContents;
 
+  /// Output contents from the previous build that are retained for reuse.
+  ///
+  /// Invalid or deleted outputs are omitted. In `--keep` mode, externally
+  /// modified outputs are retained with modified content but the previous
+  /// digest.
+  ///
+  /// Empty if [cleanBuild].
+  BuiltMap<AssetId, AssetContent> get retainedOutputContents;
+
   /// Sources that were added or modified since the last build.
   ///
   /// Empty if [cleanBuild].

@@ -150,7 +150,7 @@ class BuildSeries {
       // with no outputs.
       if (!_buildPlan.buildSpec.buildOptions.anyMergedOutputDirectory &&
           !previousBuild.isMissingSource(id) &&
-          previousBuild.contentOf(id) == null) {
+          previousBuild.digestOf(id) == null) {
         rejected.add(change);
         continue;
       }

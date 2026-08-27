@@ -12,8 +12,6 @@ class _$PreviousBuild extends PreviousBuild {
   @override
   final BuildStepPlan? buildStepPlan;
   @override
-  final BuiltMap<AssetId, AssetContent> contents;
-  @override
   final PhasedAssetDeps? phasedAssetDeps;
   @override
   final bool triggersChanged;
@@ -31,7 +29,6 @@ class _$PreviousBuild extends PreviousBuild {
   _$PreviousBuild._({
     this.incrementalState,
     this.buildStepPlan,
-    required this.contents,
     this.phasedAssetDeps,
     required this.triggersChanged,
     required this.phaseOptionsChangedList,
@@ -55,7 +52,6 @@ class _$PreviousBuild extends PreviousBuild {
     return other is PreviousBuild &&
         incrementalState == other.incrementalState &&
         buildStepPlan == other.buildStepPlan &&
-        contents == other.contents &&
         phasedAssetDeps == other.phasedAssetDeps &&
         triggersChanged == other.triggersChanged &&
         phaseOptionsChangedList == other.phaseOptionsChangedList &&
@@ -69,7 +65,6 @@ class _$PreviousBuild extends PreviousBuild {
     var _$hash = 0;
     _$hash = $jc(_$hash, incrementalState.hashCode);
     _$hash = $jc(_$hash, buildStepPlan.hashCode);
-    _$hash = $jc(_$hash, contents.hashCode);
     _$hash = $jc(_$hash, phasedAssetDeps.hashCode);
     _$hash = $jc(_$hash, triggersChanged.hashCode);
     _$hash = $jc(_$hash, phaseOptionsChangedList.hashCode);
@@ -84,7 +79,6 @@ class _$PreviousBuild extends PreviousBuild {
     return (newBuiltValueToStringHelper(r'PreviousBuild')
           ..add('incrementalState', incrementalState)
           ..add('buildStepPlan', buildStepPlan)
-          ..add('contents', contents)
           ..add('phasedAssetDeps', phasedAssetDeps)
           ..add('triggersChanged', triggersChanged)
           ..add('phaseOptionsChangedList', phaseOptionsChangedList)
@@ -112,12 +106,6 @@ class PreviousBuildBuilder
       _$this._buildStepPlan ??= BuildStepPlanBuilder();
   set buildStepPlan(BuildStepPlanBuilder? buildStepPlan) =>
       _$this._buildStepPlan = buildStepPlan;
-
-  MapBuilder<AssetId, AssetContent>? _contents;
-  MapBuilder<AssetId, AssetContent> get contents =>
-      _$this._contents ??= MapBuilder<AssetId, AssetContent>();
-  set contents(MapBuilder<AssetId, AssetContent>? contents) =>
-      _$this._contents = contents;
 
   PhasedAssetDepsBuilder? _phasedAssetDeps;
   PhasedAssetDepsBuilder get phasedAssetDeps =>
@@ -158,7 +146,6 @@ class PreviousBuildBuilder
     if ($v != null) {
       _incrementalState = $v.incrementalState?.toBuilder();
       _buildStepPlan = $v.buildStepPlan?.toBuilder();
-      _contents = $v.contents.toBuilder();
       _phasedAssetDeps = $v.phasedAssetDeps?.toBuilder();
       _triggersChanged = $v.triggersChanged;
       _phaseOptionsChangedList = $v.phaseOptionsChangedList.toBuilder();
@@ -191,7 +178,6 @@ class PreviousBuildBuilder
           _$PreviousBuild._(
             incrementalState: _incrementalState?.build(),
             buildStepPlan: _buildStepPlan?.build(),
-            contents: contents.build(),
             phasedAssetDeps: _phasedAssetDeps?.build(),
             triggersChanged: BuiltValueNullFieldError.checkNotNull(
               triggersChanged,
@@ -210,8 +196,6 @@ class PreviousBuildBuilder
         _incrementalState?.build();
         _$failedField = 'buildStepPlan';
         _buildStepPlan?.build();
-        _$failedField = 'contents';
-        contents.build();
         _$failedField = 'phasedAssetDeps';
         _phasedAssetDeps?.build();
 

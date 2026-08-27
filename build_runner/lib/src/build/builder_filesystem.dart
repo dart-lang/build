@@ -72,11 +72,7 @@ class BuilderFilesystem {
 
     final declaredOutputsForStep = buildStepPlan.declaredOutputsByStep[step];
     for (final declaredOutput in declaredOutputsForStep) {
-      if (!result.outputs.contains(declaredOutput)) {
-        _onUpdateContent?.call(declaredOutput, null);
-      } else {
-        _onUpdateContent?.call(declaredOutput, contents[declaredOutput]);
-      }
+      _onUpdateContent?.call(declaredOutput, contents[declaredOutput]);
     }
   }
 

@@ -433,7 +433,8 @@ class Build {
       } else if (stepAction == StepAction.skipReuse) {
         final stepResult = previousBuild.stepResult(buildStepId);
         final contents = <AssetId, AssetContent>{
-          for (final id in stepResult.outputs) id: previousBuild.contents[id]!,
+          for (final id in stepResult.outputs)
+            id: buildInputs.retainedOutputContents[id]!,
         };
         _builderFilesystem.addBuildStepResult(
           step: buildStepId,
@@ -636,7 +637,8 @@ class Build {
       );
       if (oldResult != null) {
         final contents = <AssetId, AssetContent>{
-          for (final id in oldResult.outputs) id: previousBuild.contents[id]!,
+          for (final id in oldResult.outputs)
+            id: buildInputs.retainedOutputContents[id]!,
         };
         _builderFilesystem.addPostProcessBuildStepResult(
           step: postProcessBuildStepId,

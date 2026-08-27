@@ -76,6 +76,8 @@ class FinishedBuildState {
 
   BuildStepResult? stepResultOrNull(BuildStepId step) => buildStepResults[step];
 
+  Iterable<AssetId> get actualOutputs =>
+      buildStepResults.values.expand((r) => r.outputs);
   Iterable<AssetId> get actualPostOutputs => postProcessOutputs.keys;
 
   bool isActualPostOutput(AssetId id) => postProcessOutputs.containsKey(id);
@@ -101,4 +103,10 @@ class FinishedBuildState {
       isActualPostOutput(id);
 
   AssetContent? contentOf(AssetId id) => contents[id];
+
+  Iterable<MapEntry<AssetId, AssetContent>> get sourceContents =>
+      contents.entries.where((e) => isSource(e.key));
+
+  Iterable<MapEntry<AssetId, AssetContent>> get outputContents =>
+      contents.entries.where((e) => !isSource(e.key));
 }

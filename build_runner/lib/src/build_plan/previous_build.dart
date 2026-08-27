@@ -11,7 +11,6 @@ import 'package:built_value/built_value.dart';
 import 'package:crypto/crypto.dart';
 import 'package:meta/meta.dart';
 
-import '../build/asset_content.dart';
 import '../build/build_state/asset_graph_json.dart';
 import '../build/build_state/build_step_id.dart';
 import '../build/build_state/build_step_result.dart';
@@ -42,9 +41,6 @@ abstract class PreviousBuild
   /// The build step plan from the previous build, or null.
   BuildStepPlan? get buildStepPlan;
 
-  /// Partially or fully loaded contents from the previous build.
-  BuiltMap<AssetId, AssetContent> get contents;
-
   /// Phased asset dependencies from the previous run, or null.
   PhasedAssetDeps? get phasedAssetDeps;
 
@@ -70,7 +66,6 @@ abstract class PreviousBuild
     b.triggersChanged = false;
     b.incrementalState.replace(finishedBuildState.incremental);
     b.buildStepPlan.replace(finishedBuildState.buildStepPlan);
-    b.contents.replace(finishedBuildState.contents);
     if (phasedAssetDeps != null) {
       b.phasedAssetDeps.replace(phasedAssetDeps);
     }
@@ -138,8 +133,6 @@ abstract class PreviousBuild
       _isActualPostOutput(id);
 
   Digest? digestOf(AssetId id) => digests[id];
-
-  AssetContent? contentOf(AssetId id) => contents[id];
 
   /// Deserializes information about the previous build and compares it to
   /// [buildSpec] to determine whether an incremental build is possible.
@@ -238,7 +231,6 @@ abstract class PreviousBuild
     b.triggersChanged = false;
     b.incrementalState.replace(finishedBuildState.incremental);
     b.buildStepPlan.replace(finishedBuildState.buildStepPlan);
-    b.contents.replace(finishedBuildState.contents);
     b.phasedAssetDeps = previousPhasedAssetDeps.toBuilder();
     b.phaseOptionsChangedList.replace(
       List.filled(phaseOptionsChangedList.length, false),

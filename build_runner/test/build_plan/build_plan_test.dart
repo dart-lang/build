@@ -185,7 +185,8 @@ void main() {
 
       expect(buildPlan.buildInputs.invalidOutputs, isEmpty);
 
-      final outputContent = buildPlan.previousBuild.contentOf(outputId);
+      final outputContent =
+          buildPlan.buildInputs.retainedOutputContents[outputId];
       expect(outputContent, isNotNull);
       expect(outputContent!.stringValue(), '// manually edited output');
       expect(outputContent.digest, initialDigest);

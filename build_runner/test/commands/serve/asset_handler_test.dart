@@ -65,7 +65,7 @@ void main() {
       parsedId,
       content: AssetContent.string(
         content,
-        digest: computeDigest(parsedId, 'a'),
+        digest: computeDigest(parsedId, content),
       ),
     );
     readerWriter.testing.writeString(parsedId, content);
