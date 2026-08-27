@@ -4,6 +4,9 @@
   presubmits.
 - In `serve` and `daemon` modes, source files not involved in the build are no
   longer cached on read. They are re-read when requested.
+- Bug fix: make post-process output behavior match normal outputs: by default,
+  rebuild if deleted or incorrect. Follow `--keep-modified-outputs` and
+  `--only-check`.
 
 ## 2.16.0
 

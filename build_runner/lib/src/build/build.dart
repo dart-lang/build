@@ -21,6 +21,7 @@ import '../build_plan/build_plan.dart';
 import '../build_plan/build_spec.dart';
 import '../build_plan/build_step_plan.dart';
 import '../build_plan/phase.dart';
+import '../build_plan/previous_build.dart';
 import '../build_plan/testing_overrides.dart';
 
 import '../io/build_output_reader.dart';
@@ -28,12 +29,13 @@ import '../io/build_output_reader.dart';
 import '../logging/build_log.dart';
 import '../logging/build_log_logger.dart';
 import '../logging/timed_activities.dart';
+import 'asset_content.dart';
 import 'build_dirs.dart';
+import 'build_file_index.dart';
 import 'build_result.dart';
 import 'build_state/build_state.dart';
 import 'build_state/build_step_id.dart';
 import 'build_state/build_step_result.dart';
-import 'build_state/finished_build_state.dart';
 import 'build_state/glob_id.dart';
 import 'build_state/glob_result.dart';
 import 'build_state/post_process_build_step_id.dart';
@@ -79,10 +81,14 @@ class Build {
   /// transitive source.
   final Map<LibraryCycleGraph, bool> changedGraphs = Map.identity();
 
+  /// Index of sources and declared outputs by package.
+  late final BuildFileIndex _fileIndex = BuildFileIndex(
+    buildState.sources.followedBy(buildStepPlan.declaredOutputs),
+  );
+
   late final BuilderFilesystem _builderFilesystem = BuilderFilesystem(
     buildPackages: buildPackages,
     buildConfigs: buildConfigs,
-    buildStepPlan: buildStepPlan,
     buildState: buildState,
     readerWriter: buildPlan.readerWriter,
     assetBuilder: _buildOutput,
@@ -114,7 +120,7 @@ class Build {
   BuildPackages get buildPackages => buildSpec.buildPackages;
   BuildConfigs get buildConfigs => buildSpec.buildConfigs;
   BuildPhases get buildPhases => buildPlan.buildStepPlan.buildPhases;
-  FinishedBuildState? get previousBuildState => buildPlan.previousBuild.state;
+  PreviousBuild get previousBuild => buildPlan.previousBuild;
   BuildInputs get buildInputs => buildPlan.buildInputs;
   BuildStepPlan get buildStepPlan => buildPlan.buildStepPlan;
 
@@ -128,10 +134,7 @@ class Build {
       if (failedSteps.isNotEmpty) {
         for (final step in failedSteps) {
           final stepResult = buildState.stepResult(step);
-          if (!identical(
-            stepResult,
-            previousBuildState?.stepResultOrNull(step),
-          )) {
+          if (!identical(stepResult, previousBuild.stepResultOrNull(step))) {
             // It was run in this build, so the errors were already logged
             // by the builder itself.
             continue;
@@ -428,9 +431,15 @@ class Build {
       } else if (stepAction == StepAction.skipFailedPrimaryInput) {
         await _markStepFailed(buildStepId, builderOutputs);
       } else if (stepAction == StepAction.skipReuse) {
-        _builderFilesystem.updateBuildStepResult(
-          buildStepId,
-          previousBuildState!.stepResult(buildStepId),
+        final stepResult = previousBuild.stepResult(buildStepId);
+        final contents = <AssetId, AssetContent>{
+          for (final id in stepResult.outputs)
+            id: buildInputs.retainedOutputContents[id]!,
+        };
+        _builderFilesystem.addBuildStepResult(
+          step: buildStepId,
+          result: stepResult,
+          contents: contents,
         );
       }
       return <AssetId>[];
@@ -623,13 +632,18 @@ class Build {
     final input = postProcessBuildStepId.input;
 
     if (!await _postProcessBuildStepShouldRun(postProcessBuildStepId)) {
-      final oldResult = previousBuildState?.postProcessBuildStepResultFor(
+      final oldResult = previousBuild.postProcessBuildStepResultFor(
         postProcessBuildStepId,
       );
       if (oldResult != null) {
-        buildState.addPostProcessBuildStepResult(
-          postProcessBuildStepId,
-          oldResult,
+        final contents = <AssetId, AssetContent>{
+          for (final id in oldResult.outputs)
+            id: buildInputs.retainedOutputContents[id]!,
+        };
+        _builderFilesystem.addPostProcessBuildStepResult(
+          step: postProcessBuildStepId,
+          result: oldResult,
+          contents: contents,
         );
       }
       return <AssetId>[];
@@ -674,13 +688,14 @@ class Build {
 
     final stepResult = PostProcessBuildStepResult(
       hidden: hideOutput,
-      outputs: step.outputs,
+      outputs: step.outputs.keys,
       errors: logger.errors,
       deletedPrimaryInput: deletedPrimaryInput,
     );
-    buildState.addPostProcessBuildStepResult(
-      postProcessBuildStepId,
-      stepResult,
+    _builderFilesystem.addPostProcessBuildStepResult(
+      step: postProcessBuildStepId,
+      result: stepResult,
+      contents: step.outputs,
     );
 
     return step.outputs.keys;
@@ -689,9 +704,9 @@ class Build {
   void _markStepSkipped(BuildStepId buildStepId, Iterable<AssetId> outputs) {
     final isHidden =
         buildPhases.inBuildPhases[buildStepId.phaseNumber].hideOutput;
-    _builderFilesystem.updateBuildStepResult(
-      buildStepId,
-      BuildStepResult((b) => b..isHidden = isHidden),
+    _builderFilesystem.addBuildStepResult(
+      step: buildStepId,
+      result: BuildStepResult((b) => b..isHidden = isHidden),
     );
   }
 
@@ -701,9 +716,9 @@ class Build {
   ) async {
     final isHidden =
         buildPhases.inBuildPhases[buildStepId.phaseNumber].hideOutput;
-    _builderFilesystem.updateBuildStepResult(
-      buildStepId,
-      BuildStepResult((b) {
+    _builderFilesystem.addBuildStepResult(
+      step: buildStepId,
+      result: BuildStepResult((b) {
         b.result = false;
         b.isHidden = isHidden;
       }),
@@ -764,14 +779,14 @@ class Build {
 
       if (primaryInputIsDeclaredOutput) {
         final inputStep = buildStepPlan.stepForDeclaredOutput(primaryInput);
-        final oldResult = previousBuildState?.stepResultOrNull(inputStep);
+        final oldResult = previousBuild.stepResultOrNull(inputStep);
         final newResult = buildState.stepResult(inputStep);
         final oldWasOutput =
             oldResult?.result == true &&
-            oldResult!.outputs.containsKey(primaryInput);
+            oldResult!.outputs.contains(primaryInput);
         final newWasOutput =
             newResult.result == true &&
-            newResult.outputs.containsKey(primaryInput);
+            newResult.outputs.contains(primaryInput);
 
         if (!oldWasOutput && newWasOutput) {
           return StepAction.run;
@@ -785,7 +800,7 @@ class Build {
         }
       }
 
-      final stepResult = previousBuildState?.stepResultOrNull(step);
+      final stepResult = previousBuild.stepResultOrNull(step);
       if (stepResult == null || !stepResult.hasRun) return StepAction.run;
 
       // Check for changes to any secondary inputs.
@@ -805,7 +820,7 @@ class Build {
           await _evaluateGlob(globId);
           currentGlobResult = buildState.globResultFor(globId);
         }
-        if (previousBuildState?.globResultFor(globId)?.digest !=
+        if (previousBuild.globResultFor(globId)?.digest !=
             currentGlobResult?.digest) {
           return StepAction.run;
         }
@@ -937,7 +952,8 @@ class Build {
 
   /// Whether the post process build step [buildStepId] should run.
   ///
-  /// It should run if its builder options changed or its input changed.
+  /// It should run if its builder options changed, any of its previous outputs
+  /// were modified or deleted, or its input changed.
   Future<bool> _postProcessBuildStepShouldRun(
     PostProcessBuildStepId buildStepId,
   ) async {
@@ -948,6 +964,12 @@ class Build {
     }
 
     if (buildPlan.postBuildOptionsChanged(buildStepId.actionNumber)) {
+      return true;
+    }
+
+    final stepResult = previousBuild.postProcessBuildStepResultFor(buildStepId);
+    if (stepResult != null &&
+        stepResult.outputs.any(buildInputs.invalidOutputs.contains)) {
       return true;
     }
 
@@ -998,10 +1020,7 @@ class Build {
       // Other types of file that match the glob.
       final otherInputs = <AssetId>[];
 
-      for (final id in buildState.findFiles(
-        package: globId.package,
-        glob: glob,
-      )) {
+      for (final id in _fileIndex.findFiles(globId.package, glob: glob)) {
         if (buildStepPlan.isDeclaredOutput(id)) {
           // Only outputs from an earlier phase can match.
           if (buildStepPlan.stepForDeclaredOutput(id).phaseNumber <
@@ -1027,7 +1046,7 @@ class Build {
         );
         if (stepResult != null &&
             stepResult.succeeded &&
-            stepResult.outputs.containsKey(id)) {
+            stepResult.outputs.contains(id)) {
           generatedFileResults.add(id);
         }
       }
@@ -1076,25 +1095,29 @@ class Build {
       ..errors.replace(errors);
     for (final output in outputs) {
       if (step.outputs.containsKey(output)) {
-        final content = step.outputs[output]!;
-        buildStepResultBuilder.outputs[output] = content;
+        buildStepResultBuilder.outputs.add(output);
       }
     }
     final buildStepResult = buildStepResultBuilder.build();
 
     final buildStepId = BuildStepId(primaryInput: input, phaseNumber: phaseNum);
-    _builderFilesystem.updateBuildStepResult(buildStepId, buildStepResult);
+    final contents = <AssetId, AssetContent>{
+      for (final output in buildStepResult.outputs)
+        output: step.outputs[output]!,
+    };
+    _builderFilesystem.addBuildStepResult(
+      step: buildStepId,
+      result: buildStepResult,
+      contents: contents,
+    );
   }
 
   bool _isFile(AssetId id) => buildState.isFile(id);
 
   bool _isChangedOutput(AssetId output) {
-    final generatingStep = buildStepPlan.stepForDeclaredOutput(output);
-    final oldContent = previousBuildState
-        ?.stepResultOrNull(generatingStep)
-        ?.outputs[output];
-    final newContent = buildState.stepResult(generatingStep).outputs[output];
-    return oldContent?.digest != newContent?.digest;
+    final oldDigest = previousBuild.digestOf(output);
+    final newDigest = buildState.digestOf(output);
+    return oldDigest != newDigest;
   }
 }
 

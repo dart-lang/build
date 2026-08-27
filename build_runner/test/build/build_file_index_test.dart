@@ -3,53 +3,50 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:build_runner/src/build/build_state/sources.dart';
+import 'package:build_runner/src/build/build_file_index.dart';
 import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('Sources', () {
+  group('BuildFileIndex', () {
     test('packageFileIds matches only files in the specified package', () {
-      final sources = Sources();
-      for (final id in [
+      final files = [
         // Should match.
         AssetId('a', 'lib/a.dart'),
         AssetId('b', 'lib/a.dart'),
-      ]) {
-        sources.add(id);
-      }
-      expect(sources.findFiles('a', [AssetId('a', 'lib/a.g.dart')]), [
+        AssetId('a', 'lib/a.g.dart'),
+      ];
+      final index = BuildFileIndex(files);
+      expect(index.findFiles('a'), [
         AssetId('a', 'lib/a.dart'),
         AssetId('a', 'lib/a.g.dart'),
       ]);
     });
 
     test('packageFileIds matches paths to glob, sorts results', () {
-      final sources = Sources();
-      for (final id in [
+      final files = [
         AssetId('a', 'lib/aa.dart'),
         AssetId('a', 'lib/ab.dart'),
         AssetId('a', 'lib/aa/a.dart'),
         AssetId('a', 'lib/ba.dart'),
         AssetId('a', 'lib/bb.dart'),
         AssetId('a', 'lib/bb/b.dart'),
-      ]) {
-        sources.add(id);
-      }
-      expect(sources.findFiles('a', [], glob: Glob('lib/a*.dart')), [
+      ];
+      final index = BuildFileIndex(files);
+      expect(index.findFiles('a', glob: Glob('lib/a*.dart')), [
         AssetId('a', 'lib/aa.dart'),
         AssetId('a', 'lib/ab.dart'),
       ]);
-      expect(sources.findFiles('a', [], glob: Glob('lib/*a.dart')), [
+      expect(index.findFiles('a', glob: Glob('lib/*a.dart')), [
         AssetId('a', 'lib/aa.dart'),
         AssetId('a', 'lib/ba.dart'),
       ]);
-      expect(sources.findFiles('a', [], glob: Glob('*/aa.dart')), [
+      expect(index.findFiles('a', glob: Glob('*/aa.dart')), [
         AssetId('a', 'lib/aa.dart'),
       ]);
-      expect(sources.findFiles('a', [], glob: Glob('*')), isEmpty);
+      expect(index.findFiles('a', glob: Glob('*')), isEmpty);
 
-      expect(sources.findFiles('a', [], glob: Glob('**')), [
+      expect(index.findFiles('a', glob: Glob('**')), [
         // Matches are sorted.
         AssetId('a', 'lib/aa.dart'),
         AssetId('a', 'lib/aa/a.dart'),
@@ -58,7 +55,7 @@ void main() {
         AssetId('a', 'lib/bb.dart'),
         AssetId('a', 'lib/bb/b.dart'),
       ]);
-      expect(sources.findFiles('a', [], glob: Glob('**/a.dart')), [
+      expect(index.findFiles('a', glob: Glob('**/a.dart')), [
         AssetId('a', 'lib/aa/a.dart'),
       ]);
     });

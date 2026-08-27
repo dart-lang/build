@@ -6,8 +6,8 @@ import 'package:build/build.dart' hide Builder;
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
+import 'package:crypto/crypto.dart';
 
-import '../asset_content.dart';
 import 'build_step_id.dart';
 import 'build_step_result.dart';
 import 'glob_id.dart';
@@ -24,7 +24,7 @@ abstract class IncrementalBuildState
       _$incrementalBuildStateSerializer;
 
   BuiltSet<AssetId> get sources;
-  BuiltMap<AssetId, AssetContent> get sourceContents;
+  BuiltMap<AssetId, Digest> get digests;
   BuiltSet<AssetId> get missingSources;
   BuiltMap<BuildStepId, BuildStepResult> get buildStepResults;
   BuiltMap<PostProcessBuildStepId, PostProcessBuildStepResult>

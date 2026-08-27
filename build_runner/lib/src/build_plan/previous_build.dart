@@ -8,9 +8,18 @@ import 'package:build/build.dart' hide Builder;
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 
+import 'package:crypto/crypto.dart';
+import 'package:meta/meta.dart';
+
 import '../build/build_state/asset_graph_json.dart';
+import '../build/build_state/build_step_id.dart';
+import '../build/build_state/build_step_result.dart';
 import '../build/build_state/finished_build_state.dart';
+import '../build/build_state/glob_id.dart';
+import '../build/build_state/glob_result.dart';
 import '../build/build_state/incremental_build_state.dart';
+import '../build/build_state/post_process_build_step_id.dart';
+import '../build/build_state/post_process_build_step_result.dart';
 import '../build/library_cycle_graph/phased_asset_deps.dart';
 import '../constants.dart';
 
@@ -25,9 +34,12 @@ part 'previous_build.g.dart';
 /// configuration.
 abstract class PreviousBuild
     implements Built<PreviousBuild, PreviousBuildBuilder> {
-  /// The `FinishedBuildState` of the previous build, or null if it was missing
-  /// or incompatible.
-  FinishedBuildState? get state;
+  /// The `IncrementalBuildState` of the previous build, or null if it was
+  /// missing or incompatible.
+  IncrementalBuildState? get incrementalState;
+
+  /// The build step plan from the previous build, or null.
+  BuildStepPlan? get buildStepPlan;
 
   /// Phased asset dependencies from the previous run, or null.
   PhasedAssetDeps? get phasedAssetDeps;
@@ -43,12 +55,92 @@ abstract class PreviousBuild
   /// delete.
   BuiltList<AssetId> get incompatibleBuildOutputsToDelete;
 
+  factory PreviousBuild([void Function(PreviousBuildBuilder) updates]) =
+      _$PreviousBuild;
+
+  @visibleForTesting
+  factory PreviousBuild.fromFinishedBuildState(
+    FinishedBuildState finishedBuildState, {
+    PhasedAssetDeps? phasedAssetDeps,
+  }) => PreviousBuild((b) {
+    b.triggersChanged = false;
+    b.incrementalState.replace(finishedBuildState.incremental);
+    b.buildStepPlan.replace(finishedBuildState.buildStepPlan);
+    if (phasedAssetDeps != null) {
+      b.phasedAssetDeps.replace(phasedAssetDeps);
+    }
+  });
+
+  BuiltSet<AssetId> get sources =>
+      incrementalState?.sources ?? BuiltSet<AssetId>();
+  BuiltMap<AssetId, Digest> get digests =>
+      incrementalState?.digests ?? BuiltMap<AssetId, Digest>();
+  BuiltSet<AssetId> get missingSources =>
+      incrementalState?.missingSources ?? BuiltSet<AssetId>();
+  BuiltMap<BuildStepId, BuildStepResult> get buildStepResults =>
+      incrementalState?.buildStepResults ??
+      BuiltMap<BuildStepId, BuildStepResult>();
+  BuiltMap<PostProcessBuildStepId, PostProcessBuildStepResult>
+  get postProcessResults =>
+      incrementalState?.postProcessResults ??
+      BuiltMap<PostProcessBuildStepId, PostProcessBuildStepResult>();
+  BuiltMap<GlobId, GlobResult> get globResults =>
+      incrementalState?.globResults ?? BuiltMap<GlobId, GlobResult>();
+
+  @memoized
+  BuiltMap<AssetId, PostProcessBuildStepId> get postProcessOutputs {
+    final builder = MapBuilder<AssetId, PostProcessBuildStepId>();
+    for (final entry in postProcessResults.entries) {
+      for (final id in entry.value.outputs) {
+        builder[id] = entry.key;
+      }
+    }
+    return builder.build();
+  }
+
+  bool isSource(AssetId id) => sources.contains(id);
+  bool isMissingSource(AssetId id) => missingSources.contains(id);
+
+  BuildStepResult? stepResultOrNull(BuildStepId step) => buildStepResults[step];
+  BuildStepResult stepResult(BuildStepId step) => stepResultOrNull(step)!;
+  PostProcessBuildStepResult? postProcessBuildStepResultFor(
+    PostProcessBuildStepId step,
+  ) => postProcessResults[step];
+  GlobResult? globResultFor(GlobId id) => globResults[id];
+
+  Iterable<BuildStepResult> get actualStepResults => buildStepResults.values;
+  Iterable<PostProcessBuildStepResult> get actualPostProcessResults =>
+      postProcessResults.values;
+
+  Iterable<AssetId> get actualOutputs =>
+      buildStepResults.values.expand((r) => r.outputs);
+  Iterable<AssetId> get actualPostOutputs => postProcessOutputs.keys;
+
+  bool _isActualPostOutput(AssetId id) => postProcessOutputs.containsKey(id);
+
+  bool _isHiddenPostProcessOutput(AssetId id) {
+    final step = postProcessOutputs[id];
+    if (step == null) return false;
+    return postProcessResults[step]?.hidden ?? false;
+  }
+
+  bool isHidden(AssetId id) =>
+      (buildStepPlan?.isHidden(id) ?? false) || _isHiddenPostProcessOutput(id);
+
+  bool isFile(AssetId id) =>
+      isSource(id) ||
+      (buildStepPlan?.isDeclaredOutput(id) ?? false) ||
+      _isActualPostOutput(id);
+
+  Digest? digestOf(AssetId id) => digests[id];
+
   /// Deserializes information about the previous build and compares it to
   /// [buildSpec] to determine whether an incremental build is possible.
   ///
-  /// If so then [state] and [phasedAssetDeps] hold detailed information
-  /// about the previous build, and [triggersChanged], [phaseOptionsChangedList]
-  /// and [postBuildOptionsChangedList] give more detail on compatibility.
+  /// If so then [incrementalState], [buildStepPlan], and [phasedAssetDeps] hold
+  /// detailed information about the previous build, and [triggersChanged],
+  /// [phaseOptionsChangedList], and [postBuildOptionsChangedList] give more
+  /// detail on compatibility.
   ///
   /// If the previous build cannot be used for an incremental build then
   /// [incompatibleBuildOutputsToDelete] is filled with its source tree outputs
@@ -63,7 +155,7 @@ abstract class PreviousBuild
     );
     BuildSpecDigest? previousBuildPlanDigest;
     IncrementalBuildState? incrementalBuildState;
-    FinishedBuildState? previousFinishedBuildState;
+    BuildStepPlan? previousBuildStepPlan;
     final incompatibleBuildOutputsToDelete = <AssetId>{};
     PhasedAssetDeps? previousPhasedAssetDeps;
 
@@ -89,15 +181,12 @@ abstract class PreviousBuild
               buildPackages: buildPackages,
             ),
           );
+          incrementalBuildState = null;
         } else {
-          final previousBuildStepPlan = BuildStepPlan.compute(
+          previousBuildStepPlan = BuildStepPlan.compute(
             buildPhases: buildSpec.buildPhases,
             placeholderIds: buildPackages.placeholderIds,
             sources: incrementalBuildState.sources,
-          );
-          previousFinishedBuildState = FinishedBuildState(
-            incremental: incrementalBuildState,
-            buildStepPlan: previousBuildStepPlan,
           );
         }
       }
@@ -113,7 +202,10 @@ abstract class PreviousBuild
         .computeChangedPostBuildOptions(previousBuildPlanDigest);
 
     return PreviousBuild((b) {
-      b.state = previousFinishedBuildState;
+      b.incrementalState = incrementalBuildState?.toBuilder();
+      if (previousBuildStepPlan != null) {
+        b.buildStepPlan.replace(previousBuildStepPlan);
+      }
       if (previousPhasedAssetDeps != null) {
         b.phasedAssetDeps.replace(previousPhasedAssetDeps);
       }
@@ -128,16 +220,17 @@ abstract class PreviousBuild
 
   /// Returns a new instance ready for the next incremental build.
   ///
-  /// Sets [finishedBuildState] and [previousPhasedAssetDeps].
+  /// Sets state, content maps, and [previousPhasedAssetDeps].
   ///
-  /// Clears `triggersChanged` and other fields related to checking
-  /// whether an incremental build is possible.
+  /// Clears `triggersChanged` and other fields related to checking whether an
+  /// incremental build is possible.
   PreviousBuild updateForNextBuild({
     required FinishedBuildState finishedBuildState,
     required PhasedAssetDeps previousPhasedAssetDeps,
   }) => rebuild((b) {
     b.triggersChanged = false;
-    b.state = finishedBuildState;
+    b.incrementalState.replace(finishedBuildState.incremental);
+    b.buildStepPlan.replace(finishedBuildState.buildStepPlan);
     b.phasedAssetDeps = previousPhasedAssetDeps.toBuilder();
     b.phaseOptionsChangedList.replace(
       List.filled(phaseOptionsChangedList.length, false),
@@ -149,8 +242,6 @@ abstract class PreviousBuild
   });
 
   PreviousBuild._();
-  factory PreviousBuild([void Function(PreviousBuildBuilder) updates]) =
-      _$PreviousBuild;
 }
 
 /// Computes declared and post process outputs in [buildState] to delete for
@@ -162,14 +253,14 @@ Iterable<AssetId> _outputsToDelete({
   final result = <AssetId>[];
   for (final stepResult in buildState.buildStepResults.values) {
     if (!stepResult.isHidden) {
-      for (final id in stepResult.outputs.keys) {
+      for (final id in stepResult.outputs) {
         if (buildPackages[id.package] != null) result.add(id);
       }
     }
   }
   for (final postProcessResult in buildState.postProcessResults.values) {
     if (!postProcessResult.hidden) {
-      for (final id in postProcessResult.outputs.keys) {
+      for (final id in postProcessResult.outputs) {
         if (buildPackages[id.package] != null) result.add(id);
       }
     }

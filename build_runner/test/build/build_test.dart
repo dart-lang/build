@@ -570,7 +570,7 @@ targets:
           [
             ...result.buildPlan.buildStepPlan.declaredOutputs,
             ...cachedBuildState.postProcessResults.values.expand(
-              (r) => r.outputs.keys,
+              (r) => r.outputs,
             ),
           ],
           unorderedEquals([

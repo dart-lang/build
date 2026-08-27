@@ -7,8 +7,6 @@ import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
-import '../asset_content.dart';
-
 part 'post_process_build_step_result.g.dart';
 
 /// The outputs and errors of a post process build step, and whether its
@@ -23,19 +21,19 @@ abstract class PostProcessBuildStepResult
 
   bool get deletedPrimaryInput;
 
-  BuiltMap<AssetId, AssetContent> get outputs;
+  BuiltSet<AssetId> get outputs;
 
   BuiltList<String> get errors;
 
   factory PostProcessBuildStepResult({
     required bool hidden,
-    Map<AssetId, AssetContent> outputs = const {},
+    Iterable<AssetId> outputs = const [],
     Iterable<String> errors = const [],
     bool deletedPrimaryInput = false,
   }) => _$PostProcessBuildStepResult._(
     hidden: hidden,
     deletedPrimaryInput: deletedPrimaryInput,
-    outputs: outputs.build(),
+    outputs: outputs.toBuiltSet(),
     errors: errors.toBuiltList(),
   );
 

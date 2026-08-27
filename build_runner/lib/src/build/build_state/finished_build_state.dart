@@ -4,42 +4,53 @@
 
 import 'package:build/build.dart' hide Builder;
 import 'package:built_collection/built_collection.dart';
+import 'package:meta/meta.dart';
 
 import '../../build_plan/build_step_plan.dart';
 import '../asset_content.dart';
 import 'build_step_id.dart';
 import 'build_step_result.dart';
-import 'glob_id.dart';
-import 'glob_result.dart';
 import 'incremental_build_state.dart';
 import 'post_process_build_step_id.dart';
 import 'post_process_build_step_result.dart';
 
-/// State of a finished build, pairing the [IncrementalBuildState] with the
-/// [BuildStepPlan].
+/// Data from the `BuildState` of a finished build.
 ///
-/// Offers functionality used after the build, for example in serving files,
-/// and in preparation for the next build.
+/// Because the build is finished, all file content used in the build is
+/// available.
+///
+/// Used by post-build consumers and to prepare the next incremental build.
 class FinishedBuildState {
-  final IncrementalBuildState incremental;
+  /// Description of the build.
   final BuildStepPlan buildStepPlan;
 
-  FinishedBuildState({required this.incremental, required this.buildStepPlan});
+  /// State that will be persisted for a later build.
+  final IncrementalBuildState incremental;
+
+  /// Contents of all files that were used in the build, inputs or outputs.
+  ///
+  /// This is retained separately to [incremental] because
+  /// [IncrementalBuildState] does not store file content.
+  final BuiltMap<AssetId, AssetContent> contents;
+
+  FinishedBuildState({
+    required this.buildStepPlan,
+    required this.incremental,
+    required this.contents,
+  });
 
   /// An empty [FinishedBuildState] with no sources and an empty plan.
+  @visibleForTesting
   FinishedBuildState.empty()
-    : incremental = IncrementalBuildState(),
-      buildStepPlan = BuildStepPlan.empty();
+    : buildStepPlan = BuildStepPlan.empty(),
+      incremental = IncrementalBuildState(),
+      contents = BuiltMap<AssetId, AssetContent>();
 
   BuiltSet<AssetId> get sources => incremental.sources;
-  BuiltMap<AssetId, AssetContent> get sourceContents =>
-      incremental.sourceContents;
-  BuiltSet<AssetId> get missingSources => incremental.missingSources;
   BuiltMap<BuildStepId, BuildStepResult> get buildStepResults =>
       incremental.buildStepResults;
   BuiltMap<PostProcessBuildStepId, PostProcessBuildStepResult>
   get postProcessResults => incremental.postProcessResults;
-  BuiltMap<GlobId, GlobResult> get globResults => incremental.globResults;
 
   late final BuiltSet<AssetId> assetsDeletedByPostProcess = () {
     final builder = SetBuilder<AssetId>();
@@ -54,7 +65,7 @@ class FinishedBuildState {
   late final BuiltMap<AssetId, PostProcessBuildStepId> postProcessOutputs = () {
     final builder = MapBuilder<AssetId, PostProcessBuildStepId>();
     for (final entry in postProcessResults.entries) {
-      for (final id in entry.value.outputs.keys) {
+      for (final id in entry.value.outputs) {
         builder[id] = entry.key;
       }
     }
@@ -62,22 +73,11 @@ class FinishedBuildState {
   }();
 
   bool isSource(AssetId id) => sources.contains(id);
-  bool isMissingSource(AssetId id) => missingSources.contains(id);
-  AssetContent? contentOfSource(AssetId id) => sourceContents[id];
 
   BuildStepResult? stepResultOrNull(BuildStepId step) => buildStepResults[step];
-  BuildStepResult stepResult(BuildStepId step) => stepResultOrNull(step)!;
-  PostProcessBuildStepResult? postProcessBuildStepResultFor(
-    PostProcessBuildStepId step,
-  ) => postProcessResults[step];
-  GlobResult? globResultFor(GlobId id) => globResults[id];
-
-  Iterable<BuildStepResult> get actualStepResults => buildStepResults.values;
-  Iterable<PostProcessBuildStepResult> get actualPostProcessResults =>
-      postProcessResults.values;
 
   Iterable<AssetId> get actualOutputs =>
-      buildStepResults.values.expand((r) => r.outputs.keys);
+      buildStepResults.values.expand((r) => r.outputs);
   Iterable<AssetId> get actualPostOutputs => postProcessOutputs.keys;
 
   bool isActualPostOutput(AssetId id) => postProcessOutputs.containsKey(id);
@@ -85,33 +85,28 @@ class FinishedBuildState {
   bool isActualOutput(AssetId id) {
     final step = buildStepPlan.stepForDeclaredOutputOrNull(id);
     if (step == null) return false;
-    return stepResultOrNull(step)?.outputs.containsKey(id) ?? false;
+    return stepResultOrNull(step)?.outputs.contains(id) ?? false;
   }
 
-  bool isHiddenPostProcessOutput(AssetId id) {
+  bool _isHiddenPostProcessOutput(AssetId id) {
     final step = postProcessOutputs[id];
     if (step == null) return false;
     return postProcessResults[step]?.hidden ?? false;
   }
 
   bool isHidden(AssetId id) =>
-      buildStepPlan.isHidden(id) || isHiddenPostProcessOutput(id);
+      buildStepPlan.isHidden(id) || _isHiddenPostProcessOutput(id);
 
   bool isFile(AssetId id) =>
       isSource(id) ||
       buildStepPlan.isDeclaredOutput(id) ||
       isActualPostOutput(id);
 
-  AssetContent? contentOf(AssetId id) {
-    if (isSource(id)) return sourceContents[id];
-    final step = buildStepPlan.stepForDeclaredOutputOrNull(id);
-    if (step != null) {
-      return stepResultOrNull(step)?.outputs[id];
-    }
-    final postStep = postProcessOutputs[id];
-    if (postStep != null) {
-      return postProcessResults[postStep]?.outputs[id];
-    }
-    return null;
-  }
+  AssetContent? contentOf(AssetId id) => contents[id];
+
+  Iterable<MapEntry<AssetId, AssetContent>> get sourceContents =>
+      contents.entries.where((e) => isSource(e.key));
+
+  Iterable<MapEntry<AssetId, AssetContent>> get outputContents =>
+      contents.entries.where((e) => !isSource(e.key));
 }

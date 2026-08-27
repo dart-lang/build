@@ -147,13 +147,19 @@ void main() {
     final parsedId = AssetId.parse(id);
     if (deleted) {
       buildState.addPostProcessBuildStepResult(
-        PostProcessBuildStepId(input: parsedId, actionNumber: 1),
-        PostProcessBuildStepResult(hidden: true, deletedPrimaryInput: true),
+        step: PostProcessBuildStepId(input: parsedId, actionNumber: 1),
+        result: PostProcessBuildStepResult(
+          hidden: true,
+          deletedPrimaryInput: true,
+        ),
       );
     }
     buildState.addSourceForTest(
       parsedId,
-      digest: AssetContent.digest(computeDigest(parsedId, content)),
+      content: AssetContent.string(
+        content,
+        digest: computeDigest(parsedId, content),
+      ),
     );
     readerWriter.testing.writeString(parsedId, content);
     finalizedReader = BuildOutputReader(
@@ -287,7 +293,7 @@ void main() {
         b.result = false;
         b.isHidden = false;
       });
-      buildState.updateBuildStepResult(buildStepId, stepResult);
+      buildState.addBuildStepResult(step: buildStepId, result: stepResult);
 
       finalizedReader = BuildOutputReader(
         buildPackages: buildPackages,

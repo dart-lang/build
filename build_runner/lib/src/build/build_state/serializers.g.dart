@@ -42,40 +42,6 @@ Serializers _$serializers =
           ..addBuilderFactory(
             const FullType(BuiltMap, const [
               const FullType(AssetId),
-              const FullType(AssetContent),
-            ]),
-            () => MapBuilder<AssetId, AssetContent>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltList, const [const FullType(String)]),
-            () => ListBuilder<String>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltMap, const [
-              const FullType(AssetId),
-              const FullType(AssetContent),
-            ]),
-            () => MapBuilder<AssetId, AssetContent>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltSet, const [const FullType(AssetId)]),
-            () => SetBuilder<AssetId>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltSet, const [const FullType(GlobId)]),
-            () => SetBuilder<GlobId>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltSet, const [const FullType(AssetId)]),
-            () => SetBuilder<AssetId>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltList, const [const FullType(String)]),
-            () => ListBuilder<String>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltMap, const [
-              const FullType(AssetId),
               const FullType(PhasedValue, const [const FullType(AssetDeps)]),
             ]),
             () => MapBuilder<AssetId, PhasedValue<AssetDeps>>(),
@@ -89,11 +55,19 @@ Serializers _$serializers =
             () => SetBuilder<AssetId>(),
           )
           ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltSet, const [const FullType(AssetId)]),
+            () => SetBuilder<AssetId>(),
+          )
+          ..addBuilderFactory(
             const FullType(BuiltMap, const [
               const FullType(AssetId),
-              const FullType(AssetContent),
+              const FullType(Digest),
             ]),
-            () => MapBuilder<AssetId, AssetContent>(),
+            () => MapBuilder<AssetId, Digest>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltSet, const [const FullType(AssetId)]),
@@ -131,6 +105,26 @@ Serializers _$serializers =
           ..addBuilderFactory(
             const FullType(BuiltSet, const [const FullType(AssetId)]),
             () => SetBuilder<AssetId>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltSet, const [const FullType(AssetId)]),
+            () => SetBuilder<AssetId>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltSet, const [const FullType(AssetId)]),
+            () => SetBuilder<AssetId>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltSet, const [const FullType(GlobId)]),
+            () => SetBuilder<GlobId>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltSet, const [const FullType(AssetId)]),
+            () => SetBuilder<AssetId>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
           ))
         .build();
 

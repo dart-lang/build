@@ -8,7 +8,9 @@ part of 'previous_build.dart';
 
 class _$PreviousBuild extends PreviousBuild {
   @override
-  final FinishedBuildState? state;
+  final IncrementalBuildState? incrementalState;
+  @override
+  final BuildStepPlan? buildStepPlan;
   @override
   final PhasedAssetDeps? phasedAssetDeps;
   @override
@@ -19,18 +21,24 @@ class _$PreviousBuild extends PreviousBuild {
   final BuiltList<bool> postBuildOptionsChangedList;
   @override
   final BuiltList<AssetId> incompatibleBuildOutputsToDelete;
+  BuiltMap<AssetId, PostProcessBuildStepId>? __postProcessOutputs;
 
   factory _$PreviousBuild([void Function(PreviousBuildBuilder)? updates]) =>
       (PreviousBuildBuilder()..update(updates))._build();
 
   _$PreviousBuild._({
-    this.state,
+    this.incrementalState,
+    this.buildStepPlan,
     this.phasedAssetDeps,
     required this.triggersChanged,
     required this.phaseOptionsChangedList,
     required this.postBuildOptionsChangedList,
     required this.incompatibleBuildOutputsToDelete,
   }) : super._();
+  @override
+  BuiltMap<AssetId, PostProcessBuildStepId> get postProcessOutputs =>
+      __postProcessOutputs ??= super.postProcessOutputs;
+
   @override
   PreviousBuild rebuild(void Function(PreviousBuildBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -42,7 +50,8 @@ class _$PreviousBuild extends PreviousBuild {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is PreviousBuild &&
-        state == other.state &&
+        incrementalState == other.incrementalState &&
+        buildStepPlan == other.buildStepPlan &&
         phasedAssetDeps == other.phasedAssetDeps &&
         triggersChanged == other.triggersChanged &&
         phaseOptionsChangedList == other.phaseOptionsChangedList &&
@@ -54,7 +63,8 @@ class _$PreviousBuild extends PreviousBuild {
   @override
   int get hashCode {
     var _$hash = 0;
-    _$hash = $jc(_$hash, state.hashCode);
+    _$hash = $jc(_$hash, incrementalState.hashCode);
+    _$hash = $jc(_$hash, buildStepPlan.hashCode);
     _$hash = $jc(_$hash, phasedAssetDeps.hashCode);
     _$hash = $jc(_$hash, triggersChanged.hashCode);
     _$hash = $jc(_$hash, phaseOptionsChangedList.hashCode);
@@ -67,7 +77,8 @@ class _$PreviousBuild extends PreviousBuild {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'PreviousBuild')
-          ..add('state', state)
+          ..add('incrementalState', incrementalState)
+          ..add('buildStepPlan', buildStepPlan)
           ..add('phasedAssetDeps', phasedAssetDeps)
           ..add('triggersChanged', triggersChanged)
           ..add('phaseOptionsChangedList', phaseOptionsChangedList)
@@ -84,9 +95,17 @@ class PreviousBuildBuilder
     implements Builder<PreviousBuild, PreviousBuildBuilder> {
   _$PreviousBuild? _$v;
 
-  FinishedBuildState? _state;
-  FinishedBuildState? get state => _$this._state;
-  set state(FinishedBuildState? state) => _$this._state = state;
+  IncrementalBuildStateBuilder? _incrementalState;
+  IncrementalBuildStateBuilder get incrementalState =>
+      _$this._incrementalState ??= IncrementalBuildStateBuilder();
+  set incrementalState(IncrementalBuildStateBuilder? incrementalState) =>
+      _$this._incrementalState = incrementalState;
+
+  BuildStepPlanBuilder? _buildStepPlan;
+  BuildStepPlanBuilder get buildStepPlan =>
+      _$this._buildStepPlan ??= BuildStepPlanBuilder();
+  set buildStepPlan(BuildStepPlanBuilder? buildStepPlan) =>
+      _$this._buildStepPlan = buildStepPlan;
 
   PhasedAssetDepsBuilder? _phasedAssetDeps;
   PhasedAssetDepsBuilder get phasedAssetDeps =>
@@ -125,7 +144,8 @@ class PreviousBuildBuilder
   PreviousBuildBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
-      _state = $v.state;
+      _incrementalState = $v.incrementalState?.toBuilder();
+      _buildStepPlan = $v.buildStepPlan?.toBuilder();
       _phasedAssetDeps = $v.phasedAssetDeps?.toBuilder();
       _triggersChanged = $v.triggersChanged;
       _phaseOptionsChangedList = $v.phaseOptionsChangedList.toBuilder();
@@ -156,7 +176,8 @@ class PreviousBuildBuilder
       _$result =
           _$v ??
           _$PreviousBuild._(
-            state: state,
+            incrementalState: _incrementalState?.build(),
+            buildStepPlan: _buildStepPlan?.build(),
             phasedAssetDeps: _phasedAssetDeps?.build(),
             triggersChanged: BuiltValueNullFieldError.checkNotNull(
               triggersChanged,
@@ -171,6 +192,10 @@ class PreviousBuildBuilder
     } catch (_) {
       late String _$failedField;
       try {
+        _$failedField = 'incrementalState';
+        _incrementalState?.build();
+        _$failedField = 'buildStepPlan';
+        _buildStepPlan?.build();
         _$failedField = 'phasedAssetDeps';
         _phasedAssetDeps?.build();
 

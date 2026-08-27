@@ -10,7 +10,6 @@ import 'package:built_value/serializer.dart';
 import 'package:crypto/crypto.dart';
 
 import '../../build_plan/build_spec_digest.dart';
-import '../asset_content.dart';
 import '../library_cycle_graph/asset_deps.dart';
 import '../library_cycle_graph/phased_asset_deps.dart';
 import '../library_cycle_graph/phased_value.dart';
@@ -45,11 +44,14 @@ final identityAssetIdSerializer = IdentitySerializer<AssetId>(
 final Serializers serializers =
     (_$serializers.toBuilder()
           ..add(identityAssetIdSerializer)
-          ..add(AssetContentSerializer())
           ..add(DigestSerializer())
           ..addBuilderFactory(
             const FullType(BuiltSet, [FullType(AssetId)]),
             SetBuilder<AssetId>.new,
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltSet, [FullType(GlobId)]),
+            SetBuilder<GlobId>.new,
           )
           ..addBuilderFactory(
             const FullType(BuiltList, [FullType(String)]),
@@ -85,15 +87,15 @@ final Serializers serializers =
             () => <AssetId>{},
           )
           ..addBuilderFactory(
-            const FullType(BuiltMap, [
-              FullType(AssetId),
-              FullType(AssetContent),
-            ]),
-            MapBuilder<AssetId, AssetContent>.new,
+            const FullType(BuiltMap, [FullType(AssetId), FullType(Digest)]),
+            MapBuilder<AssetId, Digest>.new,
           )
           ..addBuilderFactory(
-            const FullType(BuiltList, [FullType(AssetContent)]),
-            ListBuilder<AssetContent>.new,
+            const FullType(BuiltMap, [
+              FullType(AssetId),
+              FullType(PhasedValue, [FullType(AssetDeps)]),
+            ]),
+            MapBuilder<AssetId, PhasedValue<AssetDeps>>.new,
           )
           ..addBuilderFactory(
             const FullType(PhasedValue, [FullType(AssetDeps)]),
