@@ -2,6 +2,11 @@
 
 - Make `fes_manager` config directory and file user-private.
 - Use a token for socket authentication in `fes_manager`.
+- By default, prefer entrypoints from the `web` directory over
+  entrypoints in other directories such as `test` or `example`.
+- Prefer entrypoints closer to the root of a searched directory,
+  and `main.dart` over other entrypoints alongside it.
+- Accept a list of directories for `web-assets-path`.
 
 ## 4.8.10
 

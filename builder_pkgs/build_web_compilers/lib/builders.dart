@@ -25,7 +25,7 @@ Builder webEntrypointMarkerBuilder(BuilderOptions options) {
   _ensureSameDdcHotReloadOptions(options);
   return WebEntrypointMarkerBuilder(
     usesWebHotReload: _readWebHotReloadOption(options),
-    webAssetsPath: _readWebAssetsPathOption(options),
+    webAssetPaths: _readWebAssetPathsOption(options),
   );
 }
 
@@ -283,8 +283,38 @@ String? _readUsePrebuiltSdkFromPathOption(BuilderOptions options) {
   return options.config[_usePrebuiltSdkFromPathOption] as String?;
 }
 
-String? _readWebAssetsPathOption(BuilderOptions options) {
-  return options.config[_webAssetsPathOption] as String?;
+/// Returns the web asset paths configured in [options], or `null` if omitted.
+///
+/// The option accepts either a comma-separated string or a YAML list.
+/// Blank entries are ignored.
+List<String>? _readWebAssetPathsOption(BuilderOptions options) {
+  final specifiedOption = options.config[_webAssetsPathOption];
+  if (specifiedOption == null) return null;
+
+  final paths = switch (specifiedOption) {
+    final String option => option.split(','),
+    final List<Object?> option => option.map((path) => '$path'),
+    _ => throw ArgumentError.value(
+      specifiedOption,
+      _webAssetsPathOption,
+      'Must be a comma-separated string or a list of directories.',
+    ),
+  };
+
+  final trimmedPaths = [
+    for (final path in paths)
+      if (path.trim() case final trimmed when trimmed.isNotEmpty) trimmed,
+  ];
+  if (trimmedPaths.isEmpty) {
+    throw ArgumentError.value(
+      specifiedOption,
+      _webAssetsPathOption,
+      'Must specify at least one directory. '
+      'Omit the option to search the defaults.',
+    );
+  }
+
+  return trimmedPaths;
 }
 
 String? _readScratchSpaceDirOption(BuilderOptions options) {
