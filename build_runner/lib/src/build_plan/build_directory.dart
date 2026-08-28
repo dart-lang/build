@@ -4,6 +4,8 @@
 
 import 'package:built_collection/built_collection.dart';
 
+import '../contracts.dart';
+
 class BuildDirectory {
   final String directory;
   final OutputLocation? outputLocation;
@@ -25,6 +27,7 @@ class BuildDirectory {
       : buildDirs.map((b) => b.directory).toBuiltSet();
 }
 
+@Invariant('!(path.isEmpty && hoist)')
 class OutputLocation {
   final String path;
   final bool useSymlinks;
