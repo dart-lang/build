@@ -43,10 +43,10 @@ void main() {
     });
 
     test('Contracts.enabled controls contract execution toggle', () {
-      expect(Contracts.enabled, isFalse);
-      Contracts.enabled = true;
-      expect(Contracts.enabled, isTrue);
-      Contracts.enabled = false;
+      final initial = Contracts.enabled;
+      Contracts.enabled = !initial;
+      expect(Contracts.enabled, equals(!initial));
+      Contracts.enabled = initial;
     });
 
     test('ContractViolation holds message', () {

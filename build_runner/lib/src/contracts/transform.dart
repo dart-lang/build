@@ -14,6 +14,8 @@ String transformContracts(String source) {
   final collector = _ContractTransformCollector(source);
   unit.accept(collector);
 
+  if (collector.isEmpty) return source;
+
   final transformed = collector.applyReplacements();
   try {
     return DartFormatter(
@@ -61,6 +63,8 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
   final List<_Replacement> _replacements = [];
 
   _ContractTransformCollector(this.source);
+
+  bool get isEmpty => _replacements.isEmpty;
 
   String applyReplacements() {
     // Sort descending by offset. If offsets are equal, preserve order.
@@ -182,6 +186,9 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
     if (node.redirectedConstructor != null) return;
     if (node.factoryKeyword != null) return;
     if (node.constKeyword != null) return;
+    if (node.initializers.any((i) => i is RedirectingConstructorInvocation)) {
+      return;
+    }
 
     final preClauses = _extractClauses(node.metadata, 'Pre');
     final hasPre = preClauses.isNotEmpty;
@@ -261,10 +268,11 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
           buffer.write(_buildPostCheck(postClauses));
           if (checkInvariant) buffer.writeln('_checkInvariants();');
         } else {
-          buffer.writeln('final result = $exprSource;');
+          buffer.writeln('return ((result) {');
           buffer.write(_buildPostCheck(postClauses));
           if (checkInvariant) buffer.writeln('_checkInvariants();');
           buffer.writeln('return result;');
+          buffer.writeln('})($exprSource);');
         }
       } else {
         if (isVoid) {
@@ -330,12 +338,11 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
         final expr = statement.expression;
         if (expr != null) {
           final exprSource = source.substring(expr.offset, expr.end);
-          final buffer = StringBuffer('return () {\n');
-          buffer.writeln('  final result = $exprSource;');
+          final buffer = StringBuffer('return ((result) {\n');
           buffer.write(_buildPostCheck(postClauses));
           if (checkInvariant) buffer.writeln('  _checkInvariants();');
           buffer.writeln('  return result;');
-          buffer.write('}();');
+          buffer.write('})($exprSource);');
 
           _replacements.add(
             _Replacement(statement.offset, statement.length, buffer.toString()),
@@ -377,9 +384,10 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
           buffer.writeln('$exprSource;');
           buffer.write(_buildPostCheck(postClauses));
         } else {
-          buffer.writeln('final result = $exprSource;');
+          buffer.writeln('return ((result) {');
           buffer.write(_buildPostCheck(postClauses));
           buffer.writeln('return result;');
+          buffer.writeln('})($exprSource);');
         }
       } else {
         if (isVoid) {

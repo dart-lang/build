@@ -48,7 +48,8 @@ class Calculator {
 }
 ''';
       final output = transformContracts(input);
-      expect(output, contains('final result = x + 1;'));
+      expect(output, contains('return ((result) {'));
+      expect(output, contains('})(x + 1);'));
       expect(output, contains('Postcondition failed: result > 0'));
       expect(output, contains('return result;'));
     });

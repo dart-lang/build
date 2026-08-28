@@ -7,7 +7,10 @@ import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 
+import '../contracts.dart';
+
 /// A Dart package in the build.
+@Invariant('name.isNotEmpty', 'path.isNotEmpty')
 class BuildPackage {
   /// The name of the package as listed in `pubspec.yaml`.
   final String name;

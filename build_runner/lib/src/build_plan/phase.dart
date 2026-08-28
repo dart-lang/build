@@ -6,6 +6,7 @@ import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:collection/collection.dart';
 
+import '../contracts.dart';
 import 'input_matcher.dart';
 
 /// A "phase" in the build graph, which represents running a one or more
@@ -40,6 +41,7 @@ abstract class BuildAction {
 }
 
 /// A [BuildPhase] that uses a single [Builder] to generate files.
+@Invariant('package.isNotEmpty')
 class InBuildPhase extends BuildPhase implements BuildAction {
   final Builder builder;
 
@@ -139,6 +141,7 @@ class InBuildPhase extends BuildPhase implements BuildAction {
 ///
 /// There should only be one of these per build, and it should be the final
 /// phase.
+@Invariant('!isOptional')
 class PostBuildPhase implements BuildPhase {
   final List<PostBuildAction> builderActions;
 
@@ -158,6 +161,7 @@ class PostBuildPhase implements BuildPhase {
 
 /// Part of a larger [PostBuildPhase], applies a single
 /// [PostProcessBuilder] to a single [package] with some additional options.
+@Invariant('package.isNotEmpty')
 class PostBuildAction implements BuildAction {
   final PostProcessBuilder builder;
   final String builderLabel;
