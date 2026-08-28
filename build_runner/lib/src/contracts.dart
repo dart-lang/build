@@ -1,3 +1,5 @@
+import 'dart:io';
+
 class Pre {
   final String c1;
   final String? c2;
@@ -29,7 +31,8 @@ class Invariant {
 }
 
 class Contracts {
-  static bool enabled = false;
+  static bool enabled =
+      Platform.environment['DART_CONTRACTS_ENABLED'] == 'true';
 }
 
 class ContractViolation implements Exception {
