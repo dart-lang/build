@@ -105,9 +105,9 @@ root_package | Applies to only the root (application) package.                  
 ## BuildTo
 
 value  | meaning
------- | -------------------------------------------------
-cache  | Writes all files to the cache directory
-source | Writes all files directly to the source directory
+------ | ---------------------------------------
+cache  | Writes all files in the artifact tree
+source | Writes all files at their package paths
 
 ## TargetKey
 

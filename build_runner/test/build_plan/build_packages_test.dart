@@ -46,7 +46,7 @@ void main() {
         expect(
           buildPackages.pathFor(
             AssetId('build_runner', 'lib/a.txt'),
-            hide: false,
+            inArtifactTree: false,
             checkWriteAllowed: true,
           ),
           isNotNull,
@@ -57,7 +57,7 @@ void main() {
         expect(
           () => buildPackages.pathFor(
             AssetId('test', 'lib/a.txt'),
-            hide: false,
+            inArtifactTree: false,
             checkWriteAllowed: true,
           ),
           throwsA(isA<InvalidOutputException>()),
@@ -68,38 +68,41 @@ void main() {
         expect(
           () => buildPackages.pathFor(
             AssetId('unknown', 'lib/a.txt'),
-            hide: false,
+            inArtifactTree: false,
           ),
           throwsA(isA<PackageNotFoundException>()),
         );
       });
 
-      test('pathFor allows write to cache in output package', () {
+      test('pathFor allows write to artifact tree in output package', () {
         expect(
           buildPackages.pathFor(
             AssetId('build_runner', 'lib/a.txt'),
-            hide: true,
+            inArtifactTree: true,
             checkWriteAllowed: true,
           ),
           isNotNull,
         );
       });
-      test('pathFor allows write to cache in known but non-output package', () {
-        expect(
-          () => buildPackages.pathFor(
-            AssetId('test', 'lib/a.txt'),
-            hide: true,
-            checkWriteAllowed: true,
-          ),
-          isNotNull,
-        );
-      });
+      test(
+        'pathFor allows write to artifact tree in known but non-output package',
+        () {
+          expect(
+            () => buildPackages.pathFor(
+              AssetId('test', 'lib/a.txt'),
+              inArtifactTree: true,
+              checkWriteAllowed: true,
+            ),
+            isNotNull,
+          );
+        },
+      );
 
-      test('pathFor prohibits access to cache for unknown package', () {
+      test('pathFor prohibits access to artifact tree for unknown package', () {
         expect(
           () => buildPackages.pathFor(
             AssetId('unknown', 'lib/a.txt'),
-            hide: true,
+            inArtifactTree: true,
           ),
           throwsA(isA<PackageNotFoundException>()),
         );

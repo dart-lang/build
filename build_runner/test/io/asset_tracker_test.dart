@@ -130,7 +130,7 @@ void main() {
             finishedBuildState,
           ),
         ),
-        {AssetFile.source(AssetId('a', 'web/a.txt')): ChangeType.MODIFY},
+        {AssetFile.atPackagePath(AssetId('a', 'web/a.txt')): ChangeType.MODIFY},
       );
     });
 
@@ -143,16 +143,18 @@ void main() {
             finishedBuildState,
           ),
         ),
-        {AssetFile.source(AssetId('a', 'web/b.txt')): ChangeType.ADD},
+        {AssetFile.atPackagePath(AssetId('a', 'web/b.txt')): ChangeType.ADD},
       );
     });
 
-    test('Collects new cache files', () async {
+    test('Collects new artifact tree files', () async {
       final generatedDir = Directory(
         p.join(d.sandbox, 'a', '.dart_tool', 'build', 'generated', 'a', 'web'),
       );
       generatedDir.createSync(recursive: true);
-      File(p.join(generatedDir.path, 'cache.txt')).writeAsStringSync('cached');
+      File(
+        p.join(generatedDir.path, 'artifact.txt'),
+      ).writeAsStringSync('artifact');
 
       expect(
         await assetTracker.collectChanges(
@@ -160,40 +162,31 @@ void main() {
             finishedBuildState,
           ),
         ),
-        {AssetFile.cache(AssetId('a', 'web/cache.txt')): ChangeType.ADD},
+        {
+          AssetFile.inArtifactTree(AssetId('a', 'web/artifact.txt')):
+              ChangeType.ADD,
+        },
       );
     });
 
-    test(
-      'Collects new cache file for declared-but-not-actual hidden output',
-      () async {
-        final outputId = AssetId('a', 'web/a.txt.hidden');
+    test('Collects new artifact tree file for declared-but-not-actual artifact '
+        'tree output', () async {
+      final outputId = AssetId('a', 'web/a.txt.artifact');
 
-        final generatedDir = Directory(
-          p.join(
-            d.sandbox,
-            'a',
-            '.dart_tool',
-            'build',
-            'generated',
-            'a',
-            'web',
-          ),
-        );
-        generatedDir.createSync(recursive: true);
-        File(
-          p.join(generatedDir.path, 'a.txt.hidden'),
-        ).writeAsStringSync('hidden');
+      final generatedDir = Directory(
+        p.join(d.sandbox, 'a', '.dart_tool', 'build', 'generated', 'a', 'web'),
+      );
+      generatedDir.createSync(recursive: true);
+      File(
+        p.join(generatedDir.path, 'a.txt.artifact'),
+      ).writeAsStringSync('artifact');
 
-        final changes = await assetTracker.collectChanges(
-          previousBuild: PreviousBuild.fromFinishedBuildState(
-            finishedBuildState,
-          ),
-        );
-        changes.removeWhere((file, type) => file.id.package == r'$sdk');
-        expect(changes, {AssetFile.cache(outputId): ChangeType.ADD});
-      },
-    );
+      final changes = await assetTracker.collectChanges(
+        previousBuild: PreviousBuild.fromFinishedBuildState(finishedBuildState),
+      );
+      changes.removeWhere((file, type) => file.id.package == r'$sdk');
+      expect(changes, {AssetFile.inArtifactTree(outputId): ChangeType.ADD});
+    });
 
     test('Collects deleted files', () async {
       File(p.join(d.sandbox, 'a', 'web', 'a.txt')).deleteSync();
@@ -204,7 +197,7 @@ void main() {
             finishedBuildState,
           ),
         ),
-        {AssetFile.source(AssetId('a', 'web/a.txt')): ChangeType.REMOVE},
+        {AssetFile.atPackagePath(AssetId('a', 'web/a.txt')): ChangeType.REMOVE},
       );
     });
 
@@ -239,7 +232,7 @@ void main() {
               builder: TestBuilder(),
               key: 'a:builder',
               package: 'a',
-              hideOutput: false,
+              outputsToArtifactTree: false,
             ),
           ])
           ..buildStepsByDeclaredOutput.addAll({outputId: buildStepId}),
@@ -250,7 +243,7 @@ void main() {
         step: buildStepId,
         result: BuildStepResult((b) {
           b.result = true;
-          b.isHidden = false;
+          b.inArtifactTree = false;
           b.outputs.add(outputId);
         }),
         contents: {
@@ -264,7 +257,7 @@ void main() {
         ),
       );
       changes.removeWhere((file, type) => file.id.package == r'$sdk');
-      expect(changes, {AssetFile.source(outputId): ChangeType.REMOVE});
+      expect(changes, {AssetFile.atPackagePath(outputId): ChangeType.REMOVE});
     });
 
     test('Collects deleted actual post process outputs', () async {
@@ -279,7 +272,10 @@ void main() {
       final buildState = BuildState(buildStepPlan: buildStepPlan, sources: {});
       buildState.addPostProcessBuildStepResult(
         step: postStepId,
-        result: PostProcessBuildStepResult(hidden: false, outputs: [outputId]),
+        result: PostProcessBuildStepResult(
+          inArtifactTree: false,
+          outputs: [outputId],
+        ),
         contents: {
           outputId: AssetContent.bytes([1, 2, 3]),
         },
@@ -291,12 +287,12 @@ void main() {
         ),
       );
       changes.removeWhere((file, type) => file.id.package == r'$sdk');
-      expect(changes, {AssetFile.source(outputId): ChangeType.REMOVE});
+      expect(changes, {AssetFile.atPackagePath(outputId): ChangeType.REMOVE});
     });
   });
 
-  group('AssetTracker.findCacheDirSources()', () {
-    test('discovers cache files using IoFilesystem', () async {
+  group('AssetTracker.findArtifactTreeFiles()', () {
+    test('discovers artifact tree files using IoFilesystem', () async {
       await d.dir('pkg', [
         d.dir('.dart_tool', [
           d.dir('build', [
@@ -329,10 +325,10 @@ void main() {
         ),
       );
       final tracker = AssetTracker(reader, buildPackages, buildConfigs);
-      final cacheSources = await tracker.findCacheDirSources();
+      final artifactTreeFiles = await tracker.findArtifactTreeFiles();
 
       expect(
-        cacheSources,
+        artifactTreeFiles,
         unorderedEquals({
           AssetId('pkg', 'lib/a.g.dart'),
           AssetId('other_pkg', 'lib/b.g.dart'),
@@ -340,7 +336,7 @@ void main() {
       );
     });
 
-    test('discovers cache files using InMemoryFilesystem', () async {
+    test('discovers artifact tree files using InMemoryFilesystem', () async {
       final buildPackages = BuildPackages.singlePackageBuild('pkg', [
         BuildPackage.forTesting(name: 'pkg', watch: true, isOutput: true),
       ]);
@@ -348,12 +344,12 @@ void main() {
       await readerWriter.writeAsString(
         AssetId('pkg', 'lib/a.g.dart'),
         '// generated',
-        hidden: true,
+        inArtifactTree: true,
       );
       await readerWriter.writeAsString(
         AssetId('other_pkg', 'lib/b.g.dart'),
         '// dep generated',
-        hidden: true,
+        inArtifactTree: true,
       );
 
       final buildConfigs = await BuildConfigs.load(
@@ -363,10 +359,10 @@ void main() {
         ),
       );
       final tracker = AssetTracker(readerWriter, buildPackages, buildConfigs);
-      final cacheSources = await tracker.findCacheDirSources();
+      final artifactTreeFiles = await tracker.findArtifactTreeFiles();
 
       expect(
-        cacheSources,
+        artifactTreeFiles,
         unorderedEquals({
           AssetId('pkg', 'lib/a.g.dart'),
           AssetId('other_pkg', 'lib/b.g.dart'),

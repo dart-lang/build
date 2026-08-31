@@ -23,9 +23,9 @@ class _$BuildStepResultSerializer
     FullType specifiedType = FullType.unspecified,
   }) {
     final result = <Object?>[
-      'isHidden',
+      'inArtifactTree',
       serializers.serialize(
-        object.isHidden,
+        object.inArtifactTree,
         specifiedType: const FullType(bool),
       ),
       'outputs',
@@ -96,8 +96,8 @@ class _$BuildStepResultSerializer
                   )
                   as bool?;
           break;
-        case 'isHidden':
-          result.isHidden =
+        case 'inArtifactTree':
+          result.inArtifactTree =
               serializers.deserialize(
                     value,
                     specifiedType: const FullType(bool),
@@ -170,7 +170,7 @@ class _$BuildStepResult extends BuildStepResult {
   @override
   final bool? result;
   @override
-  final bool isHidden;
+  final bool inArtifactTree;
   @override
   final BuiltSet<AssetId> outputs;
   @override
@@ -187,7 +187,7 @@ class _$BuildStepResult extends BuildStepResult {
 
   _$BuildStepResult._({
     this.result,
-    required this.isHidden,
+    required this.inArtifactTree,
     required this.outputs,
     required this.inputs,
     required this.globsEvaluated,
@@ -206,7 +206,7 @@ class _$BuildStepResult extends BuildStepResult {
     if (identical(other, this)) return true;
     return other is BuildStepResult &&
         result == other.result &&
-        isHidden == other.isHidden &&
+        inArtifactTree == other.inArtifactTree &&
         outputs == other.outputs &&
         inputs == other.inputs &&
         globsEvaluated == other.globsEvaluated &&
@@ -218,7 +218,7 @@ class _$BuildStepResult extends BuildStepResult {
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, result.hashCode);
-    _$hash = $jc(_$hash, isHidden.hashCode);
+    _$hash = $jc(_$hash, inArtifactTree.hashCode);
     _$hash = $jc(_$hash, outputs.hashCode);
     _$hash = $jc(_$hash, inputs.hashCode);
     _$hash = $jc(_$hash, globsEvaluated.hashCode);
@@ -232,7 +232,7 @@ class _$BuildStepResult extends BuildStepResult {
   String toString() {
     return (newBuiltValueToStringHelper(r'BuildStepResult')
           ..add('result', result)
-          ..add('isHidden', isHidden)
+          ..add('inArtifactTree', inArtifactTree)
           ..add('outputs', outputs)
           ..add('inputs', inputs)
           ..add('globsEvaluated', globsEvaluated)
@@ -250,9 +250,10 @@ class BuildStepResultBuilder
   bool? get result => _$this._result;
   set result(bool? result) => _$this._result = result;
 
-  bool? _isHidden;
-  bool? get isHidden => _$this._isHidden;
-  set isHidden(bool? isHidden) => _$this._isHidden = isHidden;
+  bool? _inArtifactTree;
+  bool? get inArtifactTree => _$this._inArtifactTree;
+  set inArtifactTree(bool? inArtifactTree) =>
+      _$this._inArtifactTree = inArtifactTree;
 
   SetBuilder<AssetId>? _outputs;
   SetBuilder<AssetId> get outputs => _$this._outputs ??= SetBuilder<AssetId>();
@@ -284,7 +285,7 @@ class BuildStepResultBuilder
     final $v = _$v;
     if ($v != null) {
       _result = $v.result;
-      _isHidden = $v.isHidden;
+      _inArtifactTree = $v.inArtifactTree;
       _outputs = $v.outputs.toBuilder();
       _inputs = $v.inputs.toBuilder();
       _globsEvaluated = $v.globsEvaluated.toBuilder();
@@ -315,10 +316,10 @@ class BuildStepResultBuilder
           _$v ??
           _$BuildStepResult._(
             result: result,
-            isHidden: BuiltValueNullFieldError.checkNotNull(
-              isHidden,
+            inArtifactTree: BuiltValueNullFieldError.checkNotNull(
+              inArtifactTree,
               r'BuildStepResult',
-              'isHidden',
+              'inArtifactTree',
             ),
             outputs: outputs.build(),
             inputs: inputs.build(),

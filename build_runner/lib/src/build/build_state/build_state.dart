@@ -305,15 +305,16 @@ class BuildState {
     PostProcessBuildStepId step,
   ) => _postProcessResultsByInput[step.input]?[step.actionNumber];
 
-  bool _isHiddenPostProcessOutput(AssetId id) {
+  bool _isArtifactTreePostProcessOutput(AssetId id) {
     final stepId = _postProcessOutputs[id];
     if (stepId == null) return false;
     final result = postProcessBuildStepResultFor(stepId);
-    return result?.hidden ?? false;
+    return result?.inArtifactTree ?? false;
   }
 
-  bool isHidden(AssetId id) =>
-      buildStepPlan.isHidden(id) || _isHiddenPostProcessOutput(id);
+  bool isInArtifactTree(AssetId id) =>
+      buildStepPlan.isDeclaredOutputInArtifactTree(id) ||
+      _isArtifactTreePostProcessOutput(id);
 
   Iterable<BuildStepId> get failedSteps {
     final results = <BuildStepId>[];

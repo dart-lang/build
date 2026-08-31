@@ -59,7 +59,7 @@ class BuildOutputReader {
   String pathFor(AssetId id) {
     return readerWriter.assetPathProvider.pathFor(
       id,
-      hide: buildState.isHidden(id),
+      inArtifactTree: buildState.isInArtifactTree(id),
     );
   }
 
@@ -96,7 +96,10 @@ class BuildOutputReader {
     }
 
     if (buildState.isSource(id) &&
-        await readerWriter.canRead(id, hidden: buildState.isHidden(id))) {
+        await readerWriter.canRead(
+          id,
+          inArtifactTree: buildState.isInArtifactTree(id),
+        )) {
       return null;
     }
     return UnreadableReason.notFound;
@@ -133,7 +136,7 @@ class BuildOutputReader {
 
     final bytes = await readerWriter.readAsBytes(
       id,
-      hidden: buildState.isHidden(id),
+      inArtifactTree: buildState.isInArtifactTree(id),
     );
     _recordSourceConsumedOutsideBuild(id);
     return bytes;

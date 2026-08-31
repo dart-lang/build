@@ -20,19 +20,19 @@ import 'test_builder.dart' show testBuilders;
 /// You must pass a `rootPackage` if the `TestReaderWriter` will be used in
 /// a build. This specifies which package `build_runner` is running in.
 ///
-/// On disk "hidden" assets are placed under `.dart_tool/build/generated/<package>`
-/// while non-hidden assets are placed in the main source tree.
-/// Some parts of this API are from the point of view of a builder and use a
-/// unified namespace for [AssetId]s, while others see a split view
-/// of the hidden/non-hidden filesystem structure, and require an explicit
-/// mapping of [AssetId]s to the on-disk structure
-/// (eg. starting with `.dart_tool/build/generated/`) to access hidden files.
+/// On disk, artifact tree assets are placed under
+/// `.dart_tool/build/generated/<package>` while other assets are placed in the
+/// package path. Some parts of this API are from the point of view of a builder
+/// and use a unified namespace for [AssetId]s, while others see a split view of
+/// the artifact tree and package path filesystem structure, and require an
+/// explicit mapping of [AssetId]s to the on-disk structure, for example
+/// starting with `.dart_tool/build/generated/`, to access artifact tree files.
 /// See [testBuilders] `flattenOutput` parameter for more details.
 abstract interface class TestReaderWriter implements AssetReader, AssetWriter {
   factory TestReaderWriter({String? rootPackage, bool flattenOutput = false}) =>
       InternalTestReaderWriter(
         outputRootPackage: rootPackage,
-        forceVisibleForTesting: flattenOutput,
+        forceToPackagePathsForTesting: flattenOutput,
       );
 
   ReaderWriterTesting get testing;
@@ -89,7 +89,7 @@ abstract interface class ReaderWriterTesting {
   /// Whether [id] exists on the [TestReaderWriter] in-memory filesystem.
   ///
   /// [AssetId]s are from the point of view of the filesystem,
-  /// so "hidden" assets are under .dart_tool.
+  /// so artifact tree assets are under .dart_tool.
   /// See also [TestReaderWriter] class documentation and
   /// [testBuilders] `flattenOutput` parameter.
   bool exists(AssetId id);
@@ -105,7 +105,7 @@ abstract interface class ReaderWriterTesting {
   /// Reads [id] from the [TestReaderWriter] in-memory filesystem.
   ///
   /// [AssetId]s are from the point of view of the filesystem,
-  /// so "hidden" assets are under .dart_tool.
+  /// so artifact tree assets are under .dart_tool.
   /// See also [TestReaderWriter] class documentation and
   /// [testBuilders] `flattenOutput` parameter.
   Uint8List readBytes(AssetId id);
@@ -113,14 +113,16 @@ abstract interface class ReaderWriterTesting {
   /// Reads [id] from the [TestReaderWriter] in-memory filesystem.
   ///
   /// [AssetId]s are from the point of view of the filesystem,
-  /// so "hidden" assets are under .dart_tool.
-  /// /// See also [TestReaderWriter] class documentation and
+  /// so artifact tree assets are under .dart_tool.
+  /// See also [TestReaderWriter] class documentation and
+  /// [testBuilders] `flattenOutput` parameter.
   String readString(AssetId id);
 
   /// Deletes [id] from the [TestReaderWriter] in-memory filesystem.
   ///
   /// [AssetId]s are from the point of view of the filesystem,
-  /// so "hidden" assets are under .dart_tool.
-  /// /// [testBuilders] `flattenOutput` parameter.
+  /// so artifact tree assets are under .dart_tool.
+  /// See also [TestReaderWriter] class documentation and
+  /// [testBuilders] `flattenOutput` parameter.
   void delete(AssetId id);
 }

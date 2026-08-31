@@ -25,8 +25,8 @@ sealed class AbstractBuilderDefinition {
   /// The package the builder is in.
   String get package;
 
-  /// Whether generated assets should be placed in the build cache.
-  bool get hideOutput;
+  /// Whether generated assets should be placed in the artifact tree.
+  bool get outputsToArtifactTree;
 
   /// The defaults specified in `build.yaml` for this builder.
   TargetBuilderConfigDefaults get targetBuilderConfigDefaults;
@@ -124,7 +124,7 @@ class BuilderDefinition implements AbstractBuilderDefinition {
   final BuiltList<String> appliesBuilders;
 
   @override
-  final bool hideOutput;
+  final bool outputsToArtifactTree;
 
   /// Whether the builder is skipped if nothing uses its output.
   final bool isOptional;
@@ -135,7 +135,7 @@ class BuilderDefinition implements AbstractBuilderDefinition {
     String? package,
     this.autoApply = AutoApply.rootPackage,
     Iterable<String> appliesBuilders = const [],
-    this.hideOutput = true,
+    this.outputsToArtifactTree = true,
     this.isOptional = false,
     this.targetBuilderConfigDefaults = const TargetBuilderConfigDefaults(),
   }) : package = package ?? (key.contains(':') ? key.split(':').first : ''),
@@ -148,7 +148,8 @@ class BuilderDefinition implements AbstractBuilderDefinition {
     package: builderDefinition.package,
     autoApply: builderDefinition.autoApply,
     appliesBuilders: builderDefinition.appliesBuilders,
-    hideOutput: builderDefinition.buildTo == build_config.BuildTo.cache,
+    outputsToArtifactTree:
+        builderDefinition.buildTo == build_config.BuildTo.cache,
     isOptional: builderDefinition.isOptional,
     targetBuilderConfigDefaults: builderDefinition.defaults,
   );
@@ -199,7 +200,7 @@ class PostProcessBuilderDefinition implements AbstractBuilderDefinition {
   final String package;
 
   @override
-  final bool hideOutput;
+  final bool outputsToArtifactTree;
 
   @override
   final TargetBuilderConfigDefaults targetBuilderConfigDefaults;
@@ -208,7 +209,7 @@ class PostProcessBuilderDefinition implements AbstractBuilderDefinition {
   PostProcessBuilderDefinition(
     this.key, {
     String? package,
-    this.hideOutput = true,
+    this.outputsToArtifactTree = true,
     this.targetBuilderConfigDefaults = const TargetBuilderConfigDefaults(),
   }) : package = package ?? (key.contains(':') ? key.split(':').first : '');
 
@@ -216,6 +217,7 @@ class PostProcessBuilderDefinition implements AbstractBuilderDefinition {
     build_config.PostProcessBuilderDefinition builderDefinition,
   ) : package = builderDefinition.package,
       key = builderDefinition.key,
-      hideOutput = builderDefinition.buildTo == build_config.BuildTo.cache,
+      outputsToArtifactTree =
+          builderDefinition.buildTo == build_config.BuildTo.cache,
       targetBuilderConfigDefaults = builderDefinition.defaults;
 }

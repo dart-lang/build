@@ -119,7 +119,7 @@ void main() {
       buildState.addPostProcessBuildStepResult(
         step: PostProcessBuildStepId(input: deletedId, actionNumber: 0),
         result: PostProcessBuildStepResult(
-          hidden: true,
+          inArtifactTree: true,
           deletedPrimaryInput: true,
         ),
       );
@@ -201,7 +201,7 @@ void main() {
       );
       final stepResult = BuildStepResult((b) {
         b.result = false;
-        b.isHidden = false;
+        b.inArtifactTree = false;
       });
       buildState.addBuildStepResult(step: buildStepId, result: stepResult);
       reader = BuildOutputReader(
@@ -263,7 +263,7 @@ void main() {
       buildState.addPostProcessBuildStepResult(
         step: postProcessId,
         result: PostProcessBuildStepResult(
-          hidden: false,
+          inArtifactTree: false,
           deletedPrimaryInput: false,
           outputs: [postOutput],
         ),
@@ -353,7 +353,7 @@ void main() {
         buildState.addPostProcessBuildStepResult(
           step: postProcessId,
           result: PostProcessBuildStepResult(
-            hidden: false,
+            inArtifactTree: false,
             deletedPrimaryInput: false,
             outputs: [generatedId],
           ),

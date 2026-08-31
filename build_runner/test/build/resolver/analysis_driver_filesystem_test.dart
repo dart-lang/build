@@ -176,7 +176,7 @@ void main() {
         result: BuildStepResult(
           (b) => b
             ..result = true
-            ..isHidden = false
+            ..inArtifactTree = false
             ..outputs.add(outputId),
         ),
         contents: {outputId: AssetContent.string('generated')},
@@ -210,7 +210,7 @@ void main() {
         result: BuildStepResult(
           (b) => b
             ..result = true
-            ..isHidden = false
+            ..inArtifactTree = false
             ..outputs.add(output1),
         ),
         contents: {output1: AssetContent.string('g1')},
@@ -223,7 +223,7 @@ void main() {
         result: BuildStepResult(
           (b) => b
             ..result = true
-            ..isHidden = false
+            ..inArtifactTree = false
             ..outputs.add(output2),
         ),
         contents: {output2: AssetContent.string('g2')},

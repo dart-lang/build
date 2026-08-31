@@ -136,7 +136,7 @@ void main() {
       final spec = await loadSpec(
         testingOverrides.copyWith(
           builderDefinitions: [
-            BuilderDefinition('', hideOutput: false),
+            BuilderDefinition('', outputsToArtifactTree: false),
           ].build(),
         ),
       );
@@ -155,7 +155,7 @@ void main() {
       buildState.addBuildStepResult(
         step: step,
         result: BuildStepResult((b) {
-          b.isHidden = false;
+          b.inArtifactTree = false;
           b.outputs.add(outputId);
         }),
         contents: {

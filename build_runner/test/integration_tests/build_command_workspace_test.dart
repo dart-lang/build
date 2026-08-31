@@ -22,7 +22,7 @@ void main() async {
         packageName: 'cache_builder_pkg',
         buildToCache: true,
         applyToAllPackages: true,
-        outputExtension: '.hidden',
+        outputExtension: '.artifact',
       ),
     );
     // Workspace package with direct dependency on builder_pkg and
@@ -40,7 +40,7 @@ void main() async {
     await tester.run('p1', 'dart run build_runner build --force-jit');
     expect(tester.read('p1/lib/p1.txt.copy'), '1');
     expect(
-      tester.read('p1/.dart_tool/build/generated/p1/lib/p1.txt.hidden'),
+      tester.read('p1/.dart_tool/build/generated/p1/lib/p1.txt.artifact'),
       '1',
     );
 
@@ -55,7 +55,10 @@ void main() async {
     );
     expect(tester.read('p1/lib/p1.txt.copy'), '2');
     // Output is now under the workspace root.
-    expect(tester.read('.dart_tool/build/generated/p1/lib/p1.txt.hidden'), '2');
+    expect(
+      tester.read('.dart_tool/build/generated/p1/lib/p1.txt.artifact'),
+      '2',
+    );
 
     // Run with --workspace in workspace root, builders apply.
     tester.write('p1/lib/p1.txt', '3');
@@ -67,7 +70,10 @@ void main() async {
       contains('on 1 input; p1|lib/p1.txt'),
     );
     expect(tester.read('p1/lib/p1.txt.copy'), '3');
-    expect(tester.read('.dart_tool/build/generated/p1/lib/p1.txt.hidden'), '3');
+    expect(
+      tester.read('.dart_tool/build/generated/p1/lib/p1.txt.artifact'),
+      '3',
+    );
 
     // Add a package to the workspace that has no dependency, direct or
     // transitive, on `build_runner` or `builder_pkg`.
@@ -82,7 +88,7 @@ void main() async {
     await tester.run('', 'dart run build_runner build --force-jit --workspace');
     expect(tester.read('p2/lib/p2.txt.copy'), null);
     expect(
-      tester.read('.dart_tool/build/generated/p2/lib/p2.txt.hidden'),
+      tester.read('.dart_tool/build/generated/p2/lib/p2.txt.artifact'),
       null,
     );
 
@@ -102,7 +108,10 @@ void main() async {
       'dart run build_runner build --force-jit --workspace',
     );
     expect(tester.read('p3/lib/p3.txt.copy'), '1');
-    expect(tester.read('.dart_tool/build/generated/p3/lib/p3.txt.hidden'), '1');
+    expect(
+      tester.read('.dart_tool/build/generated/p3/lib/p3.txt.artifact'),
+      '1',
+    );
 
     // Add a package to the workspace that are direct and indirect dependencies
     // of `p1`.
@@ -135,8 +144,14 @@ void main() async {
     expect(tester.read('p4/lib/p4.txt.copy'), null);
     // `AutoApply.all` does apply because the builder is in the build of `p1`
     // and `p4` and `p5` are also in the build of `p1`.
-    expect(tester.read('.dart_tool/build/generated/p4/lib/p4.txt.hidden'), '1');
-    expect(tester.read('.dart_tool/build/generated/p5/lib/p5.txt.hidden'), '1');
+    expect(
+      tester.read('.dart_tool/build/generated/p4/lib/p4.txt.artifact'),
+      '1',
+    );
+    expect(
+      tester.read('.dart_tool/build/generated/p5/lib/p5.txt.artifact'),
+      '1',
+    );
 
     // Write a builder that applies another builder in its build.yaml.
     tester.writeFixturePackage(

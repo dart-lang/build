@@ -22,7 +22,7 @@ void main() async {
         packageName: 'cache_builder_pkg',
         buildToCache: true,
         applyToAllPackages: true,
-        outputExtension: '.hidden',
+        outputExtension: '.artifact',
       ),
     );
     tester.writePackage(

@@ -40,19 +40,20 @@ class AssetTracker {
     return computeSourceUpdates(diskFiles, previousBuild, actualOutputs);
   }
 
-  /// Returns all assets found on disk: both source files and cache files.
+  /// Returns all assets found on disk: both package path files and artifact
+  /// tree files.
   Future<Set<AssetFile>> findFiles() async {
     final inputSources = await findInputSources();
-    final cacheSources = await findCacheDirSources();
+    final artifactTreeFiles = await findArtifactTreeFiles();
     return {
-      ...inputSources.map(AssetFile.source),
-      ...cacheSources.map(AssetFile.cache),
+      ...inputSources.map(AssetFile.atPackagePath),
+      ...artifactTreeFiles.map(AssetFile.inArtifactTree),
     };
   }
 
-  /// Returns the all the sources found in the cache directory.
-  Future<Set<AssetId>> findCacheDirSources() =>
-      _listGeneratedAssetIds().toSet();
+  /// Returns all the assets found in the artifact tree.
+  Future<Set<AssetId>> findArtifactTreeFiles() =>
+      _listArtifactTreeAssetIds().toSet();
 
   /// Returns the set of original package inputs on disk.
   Future<Set<AssetId>> findInputSources() {
@@ -73,9 +74,10 @@ class AssetTracker {
     Iterable<AssetId> actualOutputs,
   ) async {
     final previousFiles = <AssetFile>{
-      ...previousBuild.sources.map(AssetFile.source),
+      ...previousBuild.sources.map(AssetFile.atPackagePath),
       ...actualOutputs.map(
-        (id) => AssetFile(id, hidden: previousBuild.isHidden(id)),
+        (id) =>
+            AssetFile(id, inArtifactTree: previousBuild.isInArtifactTree(id)),
       ),
     };
 
@@ -95,7 +97,7 @@ class AssetTracker {
 
       final currentDigest = await _readerWriter.digest(
         file.id,
-        hidden: file.hidden,
+        inArtifactTree: file.inArtifactTree,
       );
       if (currentDigest != originalDigest) {
         updates[file] = ChangeType.MODIFY;
@@ -122,14 +124,12 @@ class AssetTracker {
           );
   }
 
-  Stream<AssetId> _listGeneratedAssetIds() {
-    final glob = Glob('$generatedOutputDirectory/**');
+  Stream<AssetId> _listArtifactTreeAssetIds() {
+    final glob = Glob('$artifactTreePath/**');
 
     return _listIdsSafe(glob, package: _buildPackages.outputRoot)
         .map((id) {
-          final packagePath = id.path.substring(
-            generatedOutputDirectory.length + 1,
-          );
+          final packagePath = id.path.substring(artifactTreePath.length + 1);
           final firstSlash = packagePath.indexOf('/');
           if (firstSlash == -1) return null;
           final package = packagePath.substring(0, firstSlash);

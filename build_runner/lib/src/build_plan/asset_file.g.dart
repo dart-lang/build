@@ -10,12 +10,12 @@ class _$AssetFile extends AssetFile {
   @override
   final AssetId id;
   @override
-  final bool hidden;
+  final bool inArtifactTree;
 
   factory _$AssetFile([void Function(AssetFileBuilder)? updates]) =>
       (AssetFileBuilder()..update(updates))._build();
 
-  _$AssetFile._({required this.id, required this.hidden}) : super._();
+  _$AssetFile._({required this.id, required this.inArtifactTree}) : super._();
   @override
   AssetFile rebuild(void Function(AssetFileBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -26,14 +26,16 @@ class _$AssetFile extends AssetFile {
   @override
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
-    return other is AssetFile && id == other.id && hidden == other.hidden;
+    return other is AssetFile &&
+        id == other.id &&
+        inArtifactTree == other.inArtifactTree;
   }
 
   @override
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, id.hashCode);
-    _$hash = $jc(_$hash, hidden.hashCode);
+    _$hash = $jc(_$hash, inArtifactTree.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -42,7 +44,7 @@ class _$AssetFile extends AssetFile {
   String toString() {
     return (newBuiltValueToStringHelper(r'AssetFile')
           ..add('id', id)
-          ..add('hidden', hidden))
+          ..add('inArtifactTree', inArtifactTree))
         .toString();
   }
 }
@@ -54,9 +56,10 @@ class AssetFileBuilder implements Builder<AssetFile, AssetFileBuilder> {
   AssetId? get id => _$this._id;
   set id(AssetId? id) => _$this._id = id;
 
-  bool? _hidden;
-  bool? get hidden => _$this._hidden;
-  set hidden(bool? hidden) => _$this._hidden = hidden;
+  bool? _inArtifactTree;
+  bool? get inArtifactTree => _$this._inArtifactTree;
+  set inArtifactTree(bool? inArtifactTree) =>
+      _$this._inArtifactTree = inArtifactTree;
 
   AssetFileBuilder();
 
@@ -64,7 +67,7 @@ class AssetFileBuilder implements Builder<AssetFile, AssetFileBuilder> {
     final $v = _$v;
     if ($v != null) {
       _id = $v.id;
-      _hidden = $v.hidden;
+      _inArtifactTree = $v.inArtifactTree;
       _$v = null;
     }
     return this;
@@ -88,10 +91,10 @@ class AssetFileBuilder implements Builder<AssetFile, AssetFileBuilder> {
         _$v ??
         _$AssetFile._(
           id: BuiltValueNullFieldError.checkNotNull(id, r'AssetFile', 'id'),
-          hidden: BuiltValueNullFieldError.checkNotNull(
-            hidden,
+          inArtifactTree: BuiltValueNullFieldError.checkNotNull(
+            inArtifactTree,
             r'AssetFile',
-            'hidden',
+            'inArtifactTree',
           ),
         );
     replace(_$result);

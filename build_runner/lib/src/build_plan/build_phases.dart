@@ -82,7 +82,8 @@ class BuildPhases {
 
   /// Checks that outputs are to allowed locations.
   ///
-  /// Valid outputs are hidden or to packages in [packagesInBuild].
+  /// Valid outputs are in the artifact tree or in packages in
+  /// [packagesInBuild].
   ///
   /// If the phases are not valid, logs then throws
   /// [CannotBuildException].
@@ -90,16 +91,16 @@ class BuildPhases {
     for (final action in inBuildPhases.cast<BuildAction>().followedBy(
       postBuildPhase.builderActions,
     )) {
-      if (action.hideOutput) continue;
+      if (action.outputsToArtifactTree) continue;
       if (packagesInBuild.contains(action.package)) continue;
-      // This should happen only with a manual build script since the build
-      // phases generation filters these out.
+      // Phase generation should have filtered these out; only possible if
+      // there is a bug.
       final name = action is InBuildPhase
           ? action.displayName
           : (action as PostBuildAction).builderLabel;
       buildLog.error(
-        'A build phase ($name) is attempting '
-        'to operate on package "${action.package}" without "hideOutput". '
+        'A build phase ($name) is attempting to operate on package '
+        '"${action.package}" without "outputsToArtifactTree". '
         'This is only allowed for packages in the build, not for dependency '
         'packages.',
       );

@@ -79,7 +79,7 @@ void main() {
       },
     );
 
-    test('A hidden generated file does not poison resolving', () async {
+    test('An artifact tree generated file does not poison resolving', () async {
       final slowBuilderCompleter = Completer<void>();
       final builders = [
         TestBuilder(

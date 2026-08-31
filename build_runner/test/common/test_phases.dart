@@ -40,9 +40,9 @@ void _printOnFailure(LogRecord record) {
 /// is the path to a file relative to the package. `PATH_WITHIN_PACKAGE` must
 /// include `lib`, `web`, `bin` or `test`. Example: "myapp|lib/utils.dart".
 ///
-/// When an output is expected in the build cache start the package with `$$`.
+/// When an output is expected in the artifact tree start the package with `$$`.
 /// For example `$$myapp|lib/utils.copy.dart` will check that the generated
-/// output was written to the build cache.
+/// output was written to the artifact tree.
 ///
 /// [resumeFrom] reuses the `readerWriter` from a previous [BuildResult].
 ///
@@ -153,7 +153,7 @@ Future<TestBuildersResult> testPhases(
       outputs: outputs,
       readerWriter: readerWriter,
       status: status,
-      buildCachePackage: buildPackages.outputRoot,
+      outputRootPackage: buildPackages.outputRoot,
     );
   }
 
@@ -164,42 +164,42 @@ Future<TestBuildersResult> testPhases(
   );
 }
 
-/// Translates expected outptus which start with `$$` to the build cache and
+/// Translates expected outputs which start with `$$` to the artifact tree and
 /// validates the success and outputs of the build.
 void checkBuild(
   BuildResult result, {
   Map<String, Object>? outputs,
   required TestReaderWriter readerWriter,
   BuildStatus status = BuildStatus.success,
-  String buildCachePackage = 'a',
+  String outputRootPackage = 'a',
 }) {
   expect(result.status, status, reason: '$result');
 
-  final unhiddenOutputs = <String, Object>{};
-  final unhiddenAssets = <AssetId>{};
+  final normalizedOutputs = <String, Object>{};
+  final artifactTreeAssets = <AssetId>{};
   for (final id in outputs?.keys ?? const <String>[]) {
     if (id.startsWith(r'$$')) {
-      final unhidden = id.substring(2);
-      unhiddenAssets.add(makeAssetId(unhidden));
-      unhiddenOutputs[unhidden] = outputs![id]!;
+      final stripped = id.substring(2);
+      artifactTreeAssets.add(makeAssetId(stripped));
+      normalizedOutputs[stripped] = outputs![id]!;
     } else {
-      unhiddenOutputs[id] = outputs![id]!;
+      normalizedOutputs[id] = outputs![id]!;
     }
   }
 
-  AssetId mapHidden(AssetId id) => unhiddenAssets.contains(id)
+  AssetId mapArtifactTree(AssetId id) => artifactTreeAssets.contains(id)
       ? AssetId(
-          buildCachePackage,
+          outputRootPackage,
           '.dart_tool/build/generated/${id.package}/${id.path}',
         )
       : id;
 
   if (status == BuildStatus.success) {
     checkOutputs(
-      unhiddenOutputs,
+      normalizedOutputs,
       result.outputs,
       readerWriter,
-      mapAssetIds: mapHidden,
+      mapAssetIds: mapArtifactTree,
     );
   }
 }

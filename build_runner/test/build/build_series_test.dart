@@ -83,7 +83,9 @@ void main() {
         ],
       });
       testingOverrides = TestingOverrides(
-        builderDefinitions: [BuilderDefinition('', hideOutput: false)].build(),
+        builderDefinitions: [
+          BuilderDefinition('', outputsToArtifactTree: false),
+        ].build(),
         readerWriter: readerWriter,
         buildPackages: buildPackages,
         checkBuilderFreshness: false,
@@ -180,7 +182,7 @@ void main() {
           step: stepId,
           result: BuildStepResult((b) {
             b.result = true;
-            b.isHidden = false;
+            b.inArtifactTree = false;
             b.outputs.add(outputId);
           }),
           contents: {outputId: AssetContent.string(outputContent)},
@@ -207,7 +209,7 @@ void main() {
           step: stepId,
           result: BuildStepResult((b) {
             b.result = true;
-            b.isHidden = false;
+            b.inArtifactTree = false;
             b.outputs.add(outputId);
           }),
           contents: {outputId: AssetContent.string('// previous content')},
@@ -223,126 +225,112 @@ void main() {
         expect(filtered.rejected, isEmpty);
       });
 
-      test(
-        'accepts conflicting visible file when hidden output is unchanged',
-        () async {
-          final hiddenPlan = await loadPlan(
-            TestingOverrides(
-              builderDefinitions: [
-                BuilderDefinition('', hideOutput: true),
-              ].build(),
-              readerWriter: readerWriter,
-              buildPackages: buildPackages,
-              checkBuilderFreshness: false,
-            ),
-          );
-          final buildState = BuildState(
-            buildStepPlan: hiddenPlan.buildStepPlan,
-            sources: {assetId: null},
-          );
-          final outputContent = '// output';
-          await readerWriter.writeAsString(
-            outputId,
-            outputContent,
-            hidden: true,
-          );
-          final stepId = hiddenPlan.buildStepPlan.stepForDeclaredOutput(
-            outputId,
-          );
-          buildState.addBuildStepResult(
-            step: stepId,
-            result: BuildStepResult((b) {
-              b.result = true;
-              b.isHidden = true;
-              b.outputs.add(outputId);
-            }),
-            contents: {outputId: AssetContent.string(outputContent)},
-          );
-          await writeBuildStateAndPlan(buildState, hiddenPlan);
-          final loadedPlan = await loadPlan(
-            TestingOverrides(
-              builderDefinitions: [
-                BuilderDefinition('', hideOutput: true),
-              ].build(),
-              readerWriter: readerWriter,
-              buildPackages: buildPackages,
-              checkBuilderFreshness: false,
-            ),
-          );
-          final buildSeries = BuildSeries(loadedPlan);
+      test('accepts conflicting package path file when artifact tree output is '
+          'unchanged', () async {
+        final artifactTreePlan = await loadPlan(
+          TestingOverrides(
+            builderDefinitions: [
+              BuilderDefinition('', outputsToArtifactTree: true),
+            ].build(),
+            readerWriter: readerWriter,
+            buildPackages: buildPackages,
+            checkBuilderFreshness: false,
+          ),
+        );
+        final buildState = BuildState(
+          buildStepPlan: artifactTreePlan.buildStepPlan,
+          sources: {assetId: null},
+        );
+        final outputContent = '// output';
+        await readerWriter.writeAsString(
+          outputId,
+          outputContent,
+          inArtifactTree: true,
+        );
+        final stepId = artifactTreePlan.buildStepPlan.stepForDeclaredOutput(
+          outputId,
+        );
+        buildState.addBuildStepResult(
+          step: stepId,
+          result: BuildStepResult((b) {
+            b.result = true;
+            b.inArtifactTree = true;
+            b.outputs.add(outputId);
+          }),
+          contents: {outputId: AssetContent.string(outputContent)},
+        );
+        await writeBuildStateAndPlan(buildState, artifactTreePlan);
+        final loadedPlan = await loadPlan(
+          TestingOverrides(
+            builderDefinitions: [
+              BuilderDefinition('', outputsToArtifactTree: true),
+            ].build(),
+            readerWriter: readerWriter,
+            buildPackages: buildPackages,
+            checkBuilderFreshness: false,
+          ),
+        );
+        final buildSeries = BuildSeries(loadedPlan);
 
-          // A conflicting visible file is added.
-          await readerWriter.writeAsString(
-            outputId,
-            '// visible conflict',
-            hidden: false,
-          );
+        // A conflicting package path file is added.
+        await readerWriter.writeAsString(outputId, '// package path conflict');
 
-          final change = AssetChange(outputId, ChangeType.ADD);
-          final filtered = await buildSeries.filterChanges([change]);
+        final change = AssetChange(outputId, ChangeType.ADD);
+        final filtered = await buildSeries.filterChanges([change]);
 
-          expect(filtered.accepted, [change]);
-          expect(filtered.rejected, isEmpty);
-        },
-      );
+        expect(filtered.accepted, [change]);
+        expect(filtered.rejected, isEmpty);
+      });
 
-      test(
-        'accepts conflicting cache file when visible output is unchanged',
-        () async {
-          final buildState = BuildState(
-            buildStepPlan: buildPlan.buildStepPlan,
-            sources: {assetId: null},
-          );
-          final outputContent = '// output';
-          await readerWriter.writeAsString(
-            outputId,
-            outputContent,
-            hidden: false,
-          );
-          final stepId = buildPlan.buildStepPlan.stepForDeclaredOutput(
-            outputId,
-          );
-          buildState.addBuildStepResult(
-            step: stepId,
-            result: BuildStepResult((b) {
-              b.result = true;
-              b.isHidden = false;
-              b.outputs.add(outputId);
-            }),
-            contents: {outputId: AssetContent.string(outputContent)},
-          );
-          await writeBuildStateAndPlan(buildState, buildPlan);
-          final loadedPlan = await loadPlan();
-          final buildSeries = BuildSeries(loadedPlan);
+      test('accepts conflicting artifact tree file when package path output is '
+          'unchanged', () async {
+        final buildState = BuildState(
+          buildStepPlan: buildPlan.buildStepPlan,
+          sources: {assetId: null},
+        );
+        final outputContent = '// output';
+        await readerWriter.writeAsString(outputId, outputContent);
+        final stepId = buildPlan.buildStepPlan.stepForDeclaredOutput(outputId);
+        buildState.addBuildStepResult(
+          step: stepId,
+          result: BuildStepResult((b) {
+            b.result = true;
+            b.inArtifactTree = false;
+            b.outputs.add(outputId);
+          }),
+          contents: {outputId: AssetContent.string(outputContent)},
+        );
+        await writeBuildStateAndPlan(buildState, buildPlan);
+        final loadedPlan = await loadPlan();
+        final buildSeries = BuildSeries(loadedPlan);
 
-          // A conflicting cache file is found by manual scanning.
-          await readerWriter.writeAsString(
-            outputId,
-            '// cache conflict',
-            hidden: true,
-          );
+        // A conflicting artifact tree file is found by manual scanning.
+        await readerWriter.writeAsString(
+          outputId,
+          '// artifact conflict',
+          inArtifactTree: true,
+        );
 
-          final change = AssetChange(outputId, ChangeType.ADD);
-          final filtered = await buildSeries.filterChanges([change]);
+        final change = AssetChange(outputId, ChangeType.ADD);
+        final filtered = await buildSeries.filterChanges([change]);
 
-          expect(filtered.accepted, [change]);
-          expect(filtered.rejected, isEmpty);
-        },
-      );
+        expect(filtered.accepted, [change]);
+        expect(filtered.rejected, isEmpty);
+      });
 
-      test('runs build step for existing source when unexpected cache file '
-          'appears', () async {
+      test('runs build step for existing source when unexpected artifact tree '
+          'file appears', () async {
         final series = BuildSeries(buildPlan);
         final firstResult = await series.run({}, recentlyBootstrapped: true);
         expect(firstResult.status, BuildStatus.success);
         expect(firstResult.outputs, contains(outputId));
 
-        // An unexpected cache file appears at the source ID, and the source
-        // is updated.
+        // An unexpected artifact tree file appears at the source ID, and the
+        // source is updated.
         await readerWriter.writeAsString(
           assetId,
-          '// unexpected cache',
-          hidden: true,
+          '// unexpected artifact',
+          inArtifactTree: true,
         );
         await readerWriter.writeAsString(assetId, '// updated source');
 

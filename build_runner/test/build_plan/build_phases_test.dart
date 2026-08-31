@@ -114,7 +114,7 @@ void main() {
             options: const BuilderOptions({}),
             targetSources: const InputSet(),
             generateFor: const InputSet(),
-            hideOutput: true,
+            outputsToArtifactTree: true,
           ),
         ]),
       );
@@ -127,7 +127,7 @@ void main() {
             options: const BuilderOptions({'a': 'b'}),
             targetSources: const InputSet(),
             generateFor: const InputSet(),
-            hideOutput: true,
+            outputsToArtifactTree: true,
           ),
         ]),
       );

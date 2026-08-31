@@ -213,13 +213,15 @@ class BuildPackages implements AssetPathProvider {
   @override
   String pathFor(
     AssetId id, {
-    required bool hide,
+    required bool inArtifactTree,
     bool checkWriteAllowed = false,
   }) {
     if (!packages.containsKey(id.package)) {
       throw PackageNotFoundException(id.package);
     }
-    if (hide) id = AssetPathProvider.hide(id, outputRoot);
+    if (inArtifactTree) {
+      id = AssetPathProvider.inArtifactTree(id, outputRoot);
+    }
     if (checkWriteAllowed) throwIfReadonly(id);
     final package = packages[id.package]!;
     return p.join(package.path, id.platformPath);
@@ -227,18 +229,22 @@ class BuildPackages implements AssetPathProvider {
 
   /// Throws if [id] is not allowed to be written or deleted.
   ///
-  /// Write or delete is allowed if [id] is in the cache directory for
-  /// `outputRoot` or is in a package that is a build output.
+  /// Write or delete is allowed if [id] is in a package that is a build output
+  /// or is in the hidden build directory for `outputRoot`. The hidden build
+  /// directory contains the artifact tree and internal files such as
+  /// `asset_graph.json`.
   void throwIfReadonly(AssetId id) {
-    final isUnderCacheDirectory = id.path.startsWith('$cacheDirectoryPath/');
+    final isUnderHiddenBuildDirectory = id.path.startsWith(
+      '$hiddenBuildDirectoryPath/',
+    );
     final writeIsAllowed =
-        (isUnderCacheDirectory && id.package == outputRoot) ||
+        (isUnderHiddenBuildDirectory && id.package == outputRoot) ||
         outputPackages.contains(id.package);
     if (!writeIsAllowed) {
-      if (isUnderCacheDirectory) {
+      if (isUnderHiddenBuildDirectory) {
         throw InvalidOutputException(
           id,
-          'Tried to write or delete from $cacheDirectoryPath in wrong '
+          'Tried to write or delete from $hiddenBuildDirectoryPath in wrong '
           'package, should be $outputRoot.',
         );
       } else {
