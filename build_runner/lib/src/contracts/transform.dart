@@ -151,16 +151,97 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
     return buffer.toString();
   }
 
+  String? _currentClassName;
+
+  bool _hasTrace(NodeList<Annotation> metadata) {
+    return metadata.any((a) => a.name.name == 'Trace');
+  }
+
+  String? _extractTraceMessage(NodeList<Annotation> metadata) {
+    for (final a in metadata) {
+      if (a.name.name != 'Trace') continue;
+      final args = a.arguments?.arguments;
+      if (args != null && args.isNotEmpty) {
+        final arg = args.first;
+        final raw = source.substring(arg.offset, arg.end);
+        if ((raw.startsWith("'") && raw.endsWith("'")) ||
+            (raw.startsWith('"') && raw.endsWith('"'))) {
+          final unquoted = raw.substring(1, raw.length - 1);
+          // Unescape backslash dollar so that the generated string performs
+          // runtime interpolation inside the method body.
+          return unquoted.replaceAll(r'\$', r'$');
+        }
+        return '\$($raw)';
+      }
+    }
+    return null;
+  }
+
+  String _buildTraceEntry(
+    String qualifiedName,
+    String? customMessage,
+    FormalParameterList? parameters,
+  ) {
+    final buffer = StringBuffer();
+    buffer.writeln('if (Contracts.enabled) {');
+    buffer.writeln('  Contracts.enabled = false;');
+    buffer.writeln('  try {');
+    if (customMessage != null) {
+      buffer.writeln("    Contracts.recordTrace('>> $customMessage');");
+    } else {
+      final paramParts = <String>[];
+      if (parameters != null) {
+        for (final p in parameters.parameters) {
+          final name = p.name?.lexeme;
+          if (name != null) {
+            paramParts.add('$name: \$$name');
+          }
+        }
+      }
+      final paramsStr = paramParts.join(', ');
+      buffer.writeln(
+        "    Contracts.recordTrace('>> $qualifiedName($paramsStr)');",
+      );
+    }
+    buffer.writeln('  } finally {');
+    buffer.writeln('    Contracts.enabled = true;');
+    buffer.writeln('  }');
+    buffer.writeln('}');
+    return buffer.toString();
+  }
+
+  String _buildTraceExit(String qualifiedName, bool isVoid) {
+    final buffer = StringBuffer();
+    buffer.writeln('if (Contracts.enabled) {');
+    buffer.writeln('  Contracts.enabled = false;');
+    buffer.writeln('  try {');
+    if (isVoid) {
+      buffer.writeln("    Contracts.recordTrace('<< $qualifiedName');");
+    } else {
+      buffer.writeln(
+        "    Contracts.recordTrace('<< $qualifiedName -> \$result');",
+      );
+    }
+    buffer.writeln('  } finally {');
+    buffer.writeln('    Contracts.enabled = true;');
+    buffer.writeln('  }');
+    buffer.writeln('}');
+    return buffer.toString();
+  }
+
   @override
   void visitClassDeclaration(ClassDeclaration node) {
     final body = node.body;
     if (body is! BlockClassBody) return;
 
+    final previousClassName = _currentClassName;
+    _currentClassName = node.namePart.typeName.lexeme;
+
     final invariantClauses = _extractClauses(node.metadata, 'Invariant');
     final hasInvariant = invariantClauses.isNotEmpty;
 
     if (hasInvariant) {
-      // Inject _checkInvariants() method before right bracket of class.
+      // Inject _checkInvariants method before right bracket of class.
       _replacements.add(
         _Replacement(
           body.rightBracket.offset,
@@ -170,12 +251,16 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
       );
     }
 
-    for (final member in body.members) {
-      if (member is ConstructorDeclaration) {
-        _transformConstructor(member, hasInvariant);
-      } else if (member is MethodDeclaration) {
-        _transformMethod(member, hasInvariant);
+    try {
+      for (final member in body.members) {
+        if (member is ConstructorDeclaration) {
+          _transformConstructor(member, hasInvariant);
+        } else if (member is MethodDeclaration) {
+          _transformMethod(member, hasInvariant);
+        }
       }
+    } finally {
+      _currentClassName = previousClassName;
     }
   }
 
@@ -285,6 +370,8 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
 
     final preClauses = _extractClauses(node.metadata, 'Pre');
     final postClauses = _extractClauses(node.metadata, 'Post');
+    final hasTrace = _hasTrace(node.metadata);
+    final customTrace = _extractTraceMessage(node.metadata);
     final methodName = node.name.lexeme;
     final isExcludedFromInvariants =
         node.isGetter ||
@@ -297,9 +384,16 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
         !isExcludedFromInvariants;
     final checkInvariant = classHasInvariant && isPublicInstance;
 
-    if (preClauses.isEmpty && postClauses.isEmpty && !checkInvariant) {
+    if (preClauses.isEmpty &&
+        postClauses.isEmpty &&
+        !checkInvariant &&
+        !hasTrace) {
       return;
     }
+
+    final qualifiedName = _currentClassName != null
+        ? '$_currentClassName.$methodName'
+        : methodName;
 
     final body = node.body;
     if (body is ExpressionFunctionBody) {
@@ -313,32 +407,49 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
           node.returnType?.toSource().startsWith('Future') ?? false;
 
       final buffer = StringBuffer('{\n');
+      if (hasTrace) {
+        buffer.write(
+          _buildTraceEntry(qualifiedName, customTrace, node.parameters),
+        );
+      }
       if (checkInvariant) buffer.writeln('_checkInvariants();');
       if (preClauses.isNotEmpty) buffer.write(_buildPreCheck(preClauses));
 
-      if (postClauses.isNotEmpty) {
+      if (postClauses.isNotEmpty || hasTrace) {
         if (isVoid) {
           buffer.writeln('$exprSource;');
-          buffer.write(_buildPostCheck(postClauses));
+          if (postClauses.isNotEmpty) {
+            buffer.write(_buildPostCheck(postClauses));
+          }
           if (checkInvariant) buffer.writeln('_checkInvariants();');
+          if (hasTrace) buffer.write(_buildTraceExit(qualifiedName, true));
         } else if (isAsync) {
           buffer.writeln(
             'return await (Future.value($exprSource).then((result) {',
           );
-          buffer.write(_buildPostCheck(postClauses));
+          if (postClauses.isNotEmpty) {
+            buffer.write(_buildPostCheck(postClauses));
+          }
           if (checkInvariant) buffer.writeln('_checkInvariants();');
+          if (hasTrace) buffer.write(_buildTraceExit(qualifiedName, false));
           buffer.writeln('return result;');
           buffer.writeln('}));');
         } else if (isFuture) {
           buffer.writeln('return ($exprSource).then((result) {');
-          buffer.write(_buildPostCheck(postClauses));
+          if (postClauses.isNotEmpty) {
+            buffer.write(_buildPostCheck(postClauses));
+          }
           if (checkInvariant) buffer.writeln('_checkInvariants();');
+          if (hasTrace) buffer.write(_buildTraceExit(qualifiedName, false));
           buffer.writeln('return result;');
           buffer.writeln('});');
         } else {
           buffer.writeln('return ((result) {');
-          buffer.write(_buildPostCheck(postClauses));
+          if (postClauses.isNotEmpty) {
+            buffer.write(_buildPostCheck(postClauses));
+          }
           if (checkInvariant) buffer.writeln('_checkInvariants();');
+          if (hasTrace) buffer.write(_buildTraceExit(qualifiedName, false));
           buffer.writeln('return result;');
           buffer.writeln('})($exprSource);');
         }
@@ -363,12 +474,17 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
       _replacements.add(_Replacement(startOffset, length, buffer.toString()));
     } else if (body is BlockFunctionBody) {
       final entryBuffer = StringBuffer();
+      if (hasTrace) {
+        entryBuffer.write(
+          _buildTraceEntry(qualifiedName, customTrace, node.parameters),
+        );
+      }
       if (checkInvariant) entryBuffer.writeln('_checkInvariants();');
       if (preClauses.isNotEmpty) {
         entryBuffer.write(_buildPreCheck(preClauses));
       }
 
-      if (checkInvariant && postClauses.isEmpty) {
+      if (checkInvariant && postClauses.isEmpty && !hasTrace) {
         // Wrap method execution with try-finally to guarantee invariant
         // check on exit.
         entryBuffer.writeln('try {');
@@ -389,7 +505,7 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
           );
         }
 
-        if (postClauses.isNotEmpty) {
+        if (postClauses.isNotEmpty || hasTrace) {
           final isVoid = node.returnType?.toSource() == 'void';
           final isAsync = body.isAsynchronous;
           final isFuture =
@@ -401,6 +517,7 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
             isVoid,
             isAsync,
             isFuture,
+            hasTrace ? qualifiedName : null,
           );
         }
       }
@@ -413,8 +530,9 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
     bool checkInvariant,
     bool isVoid,
     bool isAsync,
-    bool isFuture,
-  ) {
+    bool isFuture, [
+    String? traceQualifiedName,
+  ]) {
     final collector = _ReturnStatementCollector();
     block.accept(collector);
 
@@ -427,20 +545,35 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
           buffer.writeln(
             'return await (Future.value($exprSource).then((result) {',
           );
-          buffer.write(_buildPostCheck(postClauses));
+          if (postClauses.isNotEmpty) {
+            buffer.write(_buildPostCheck(postClauses));
+          }
           if (checkInvariant) buffer.writeln('  _checkInvariants();');
+          if (traceQualifiedName != null) {
+            buffer.write(_buildTraceExit(traceQualifiedName, false));
+          }
           buffer.writeln('  return result;');
           buffer.write('}));');
         } else if (isFuture) {
           buffer.writeln('return ($exprSource).then((result) {');
-          buffer.write(_buildPostCheck(postClauses));
+          if (postClauses.isNotEmpty) {
+            buffer.write(_buildPostCheck(postClauses));
+          }
           if (checkInvariant) buffer.writeln('  _checkInvariants();');
+          if (traceQualifiedName != null) {
+            buffer.write(_buildTraceExit(traceQualifiedName, false));
+          }
           buffer.writeln('  return result;');
           buffer.write('});');
         } else {
           buffer.write('return ((result) {\n');
-          buffer.write(_buildPostCheck(postClauses));
+          if (postClauses.isNotEmpty) {
+            buffer.write(_buildPostCheck(postClauses));
+          }
           if (checkInvariant) buffer.writeln('  _checkInvariants();');
+          if (traceQualifiedName != null) {
+            buffer.write(_buildTraceExit(traceQualifiedName, false));
+          }
           buffer.writeln('  return result;');
           buffer.write('})($exprSource);');
         }
@@ -450,8 +583,11 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
         );
       } else {
         final buffer = StringBuffer('{\n');
-        buffer.write(_buildPostCheck(postClauses));
+        if (postClauses.isNotEmpty) buffer.write(_buildPostCheck(postClauses));
         if (checkInvariant) buffer.writeln('_checkInvariants();');
+        if (traceQualifiedName != null) {
+          buffer.write(_buildTraceExit(traceQualifiedName, true));
+        }
         buffer.writeln('return;');
         buffer.write('}');
 
@@ -467,8 +603,13 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
           : null;
       if (lastStatement is! ReturnStatement) {
         final exitBuffer = StringBuffer('\n');
-        exitBuffer.write(_buildPostCheck(postClauses));
+        if (postClauses.isNotEmpty) {
+          exitBuffer.write(_buildPostCheck(postClauses));
+        }
         if (checkInvariant) exitBuffer.writeln('_checkInvariants();');
+        if (traceQualifiedName != null) {
+          exitBuffer.write(_buildTraceExit(traceQualifiedName, true));
+        }
         _replacements.add(
           _Replacement(block.rightBracket.offset, 0, exitBuffer.toString()),
         );
@@ -480,8 +621,11 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
   void visitFunctionDeclaration(FunctionDeclaration node) {
     final preClauses = _extractClauses(node.metadata, 'Pre');
     final postClauses = _extractClauses(node.metadata, 'Post');
-    if (preClauses.isEmpty && postClauses.isEmpty) return;
+    final hasTrace = _hasTrace(node.metadata);
+    final customTrace = _extractTraceMessage(node.metadata);
+    if (preClauses.isEmpty && postClauses.isEmpty && !hasTrace) return;
 
+    final functionName = node.name.lexeme;
     final body = node.functionExpression.body;
     final isVoid = node.returnType?.toSource() == 'void';
     final isAsync = body.isAsynchronous;
@@ -494,27 +638,48 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
       );
 
       final buffer = StringBuffer('{\n');
+      if (hasTrace) {
+        buffer.write(
+          _buildTraceEntry(
+            functionName,
+            customTrace,
+            node.functionExpression.parameters,
+          ),
+        );
+      }
       if (preClauses.isNotEmpty) buffer.write(_buildPreCheck(preClauses));
 
-      if (postClauses.isNotEmpty) {
+      if (postClauses.isNotEmpty || hasTrace) {
         if (isVoid) {
           buffer.writeln('$exprSource;');
-          buffer.write(_buildPostCheck(postClauses));
+          if (postClauses.isNotEmpty) {
+            buffer.write(_buildPostCheck(postClauses));
+          }
+          if (hasTrace) buffer.write(_buildTraceExit(functionName, true));
         } else if (isAsync) {
           buffer.writeln(
             'return await (Future.value($exprSource).then((result) {',
           );
-          buffer.write(_buildPostCheck(postClauses));
+          if (postClauses.isNotEmpty) {
+            buffer.write(_buildPostCheck(postClauses));
+          }
+          if (hasTrace) buffer.write(_buildTraceExit(functionName, false));
           buffer.writeln('return result;');
           buffer.writeln('}));');
         } else if (isFuture) {
           buffer.writeln('return ($exprSource).then((result) {');
-          buffer.write(_buildPostCheck(postClauses));
+          if (postClauses.isNotEmpty) {
+            buffer.write(_buildPostCheck(postClauses));
+          }
+          if (hasTrace) buffer.write(_buildTraceExit(functionName, false));
           buffer.writeln('return result;');
           buffer.writeln('});');
         } else {
           buffer.writeln('return ((result) {');
-          buffer.write(_buildPostCheck(postClauses));
+          if (postClauses.isNotEmpty) {
+            buffer.write(_buildPostCheck(postClauses));
+          }
+          if (hasTrace) buffer.write(_buildTraceExit(functionName, false));
           buffer.writeln('return result;');
           buffer.writeln('})($exprSource);');
         }
@@ -531,16 +696,26 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
       final length = body.end - startOffset;
       _replacements.add(_Replacement(startOffset, length, buffer.toString()));
     } else if (body is BlockFunctionBody) {
-      if (preClauses.isNotEmpty) {
-        _replacements.add(
-          _Replacement(
-            body.block.leftBracket.end,
-            0,
-            '\n${_buildPreCheck(preClauses)}\n',
+      final entryBuffer = StringBuffer();
+      if (hasTrace) {
+        entryBuffer.write(
+          _buildTraceEntry(
+            functionName,
+            customTrace,
+            node.functionExpression.parameters,
           ),
         );
       }
-      if (postClauses.isNotEmpty) {
+      if (preClauses.isNotEmpty) {
+        entryBuffer.write(_buildPreCheck(preClauses));
+      }
+
+      if (entryBuffer.isNotEmpty) {
+        _replacements.add(
+          _Replacement(body.block.leftBracket.end, 0, '\n$entryBuffer\n'),
+        );
+      }
+      if (postClauses.isNotEmpty || hasTrace) {
         _transformBlockReturns(
           body.block,
           postClauses,
@@ -548,6 +723,7 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
           isVoid,
           isAsync,
           isFuture,
+          hasTrace ? functionName : null,
         );
       }
     }

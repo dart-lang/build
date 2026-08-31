@@ -54,5 +54,55 @@ void main() {
       expect(violation.message, 'Precondition failed: x != null');
       expect(violation.toString(), contains('Precondition failed: x != null'));
     });
+
+    test('Trace constructor stores message', () {
+      const traceEmpty = Trace();
+      expect(traceEmpty.message, isNull);
+
+      const traceCustom = Trace('custom message');
+      expect(traceCustom.message, 'custom message');
+    });
+
+    test('Contracts flight recorder records and caps history', () {
+      Contracts.clearTraceHistory();
+      expect(Contracts.traceHistory, isEmpty);
+
+      Contracts.recordTrace('entry 1');
+      Contracts.recordTrace('entry 2');
+      expect(Contracts.traceHistory, ['entry 1', 'entry 2']);
+
+      for (var i = 3; i <= 60; i++) {
+        Contracts.recordTrace('entry $i');
+      }
+      expect(Contracts.traceHistory.length, Contracts.maxTraceHistory);
+      expect(Contracts.traceHistory.first, 'entry 11');
+      expect(Contracts.traceHistory.last, 'entry 60');
+
+      Contracts.clearTraceHistory();
+      expect(Contracts.traceHistory, isEmpty);
+    });
+
+    test('ContractViolation captures recent trace in toString', () {
+      Contracts.clearTraceHistory();
+      Contracts.recordTrace('>> Operation.start');
+      Contracts.recordTrace('>> Operation.step');
+
+      final violation = ContractViolation('Postcondition failed: result > 0');
+      expect(violation.recentTraces, [
+        '>> Operation.start',
+        '>> Operation.step',
+      ]);
+      expect(
+        violation.toString(),
+        contains(
+          'ContractViolation: Postcondition failed: result > 0\n'
+          'Recent trace:\n'
+          '  >> Operation.start\n'
+          '  >> Operation.step',
+        ),
+      );
+
+      Contracts.clearTraceHistory();
+    });
   });
 }

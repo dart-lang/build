@@ -174,6 +174,28 @@ class AsyncService {
       expect(output, contains('Postcondition failed: result > 0'));
     });
 
+    test('transforms @Trace on method to record entry and exit', () {
+      const input = '''
+import 'package:build_runner/src/contracts.dart';
+
+class Service {
+  @Trace()
+  int process(int id, String name) {
+    return id * 2;
+  }
+
+  @Trace('custom message: \$id')
+  void ping(int id) {}
+}
+''';
+      final output = transformContracts(input);
+      expect(output, contains('Contracts.recordTrace'));
+      expect(output, contains('>> Service.process(id: \$id, name: \$name)'));
+      expect(output, contains('<< Service.process -> \$result'));
+      expect(output, contains('>> custom message: \$id'));
+      expect(output, contains('<< Service.ping'));
+    });
+
     test('executes transformed contract checks dynamically', () async {
       final tempDir = await Directory.systemTemp.createTemp('contracts_test_');
       try {
@@ -479,6 +501,101 @@ Future<void> main() async {
         await tempDir.delete(recursive: true);
       }
     });
+
+    test(
+      'captures trace history in ContractViolation when @Trace is used',
+      () async {
+        final tempDir = await Directory.systemTemp.createTemp(
+          'contracts_trace_',
+        );
+        try {
+          final script = File('${tempDir.path}/trace_runner.dart');
+          const originalSource = '''
+class Pre {
+  final String c1;
+  const Pre(this.c1);
+}
+class Post {
+  final String c1;
+  const Post(this.c1);
+}
+class Trace {
+  final String? message;
+  const Trace([this.message]);
+}
+class Contracts {
+  static bool enabled = true;
+  static const int maxTraceHistory = 50;
+  static final List<String> _traceHistory = [];
+  static void recordTrace(String entry) {
+    _traceHistory.add(entry);
+  }
+  static List<String> get traceHistory => List.unmodifiable(_traceHistory);
+}
+class ContractViolation implements Exception {
+  final String message;
+  final List<String> recentTraces;
+  ContractViolation(this.message, [List<String>? recentTraces])
+      : recentTraces = recentTraces ?? Contracts.traceHistory;
+  @override
+  String toString() {
+    if (recentTraces.isEmpty) return 'ContractViolation: \$message';
+    final buffer = StringBuffer('ContractViolation: \$message\\nRecent trace:\\n');
+    for (final t in recentTraces) {
+      buffer.writeln('  \$t');
+    }
+    return buffer.toString().trimRight();
+  }
+}
+
+class Pipeline {
+  @Trace()
+  void stepOne(String name) {}
+
+  @Trace('stepTwo processing: \\\$value')
+  int stepTwo(int value) => value * 2;
+
+  @Pre('count > 0')
+  void stepThree(int count) {}
+}
+
+void main() {
+  final p = Pipeline();
+  p.stepOne('build');
+  p.stepTwo(21);
+
+  try {
+    p.stepThree(-1);
+    throw StateError('Should have thrown ContractViolation');
+  } on ContractViolation catch (e) {
+    if (!e.recentTraces.any((t) => t.contains('Pipeline.stepOne(name: build)'))) {
+      throw StateError('Missing stepOne trace in \${e.recentTraces}');
+    }
+    if (!e.recentTraces.any((t) => t.contains('stepTwo processing: 21'))) {
+      throw StateError('Missing stepTwo trace in \${e.recentTraces}');
+    }
+    if (!e.toString().contains('Recent trace:')) {
+      throw StateError('Missing Recent trace: header in \${e.toString()}');
+    }
+  }
+}
+''';
+          final transformedSource = transformContracts(originalSource);
+          await script.writeAsString(transformedSource);
+
+          final result = await Process.run(Platform.resolvedExecutable, [
+            script.path,
+          ]);
+          expect(
+            result.exitCode,
+            0,
+            reason: 'stderr: ${result.stderr}\nstdout: ${result.stdout}',
+          );
+        } finally {
+          await tempDir.delete(recursive: true);
+        }
+      },
+    );
 
     test(
       're-entrancy guard prevents recursion during contract evaluation',
