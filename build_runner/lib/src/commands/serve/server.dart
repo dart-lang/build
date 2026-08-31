@@ -47,6 +47,7 @@ class ServeHandler {
     String rootDir, {
     bool logRequests = false,
     bool liveReload = false,
+    bool restrictToLoopback = false,
   }) {
     if (p.url.split(rootDir).length != 1 || rootDir == '.') {
       throw ArgumentError.value(
@@ -74,6 +75,9 @@ class ServeHandler {
     var pipeline = const shelf.Pipeline();
     if (logRequests) {
       pipeline = pipeline.addMiddleware(_logRequests);
+    }
+    if (restrictToLoopback) {
+      pipeline = pipeline.addMiddleware(_loopbackOnly);
     }
     if (liveReload) {
       pipeline = pipeline.addMiddleware(_injectLiveReloadClientCode);
@@ -141,25 +145,13 @@ class BuildUpdatesWebSocketHandler {
     if (!_internalHandlers.containsKey(rootDir)) {
       void closureForRootDir(WebSocketChannel webSocket, String? protocol) =>
           _handleConnection(webSocket, protocol, rootDir);
-      _internalHandlers[rootDir] = _rejectCrossOrigin(
-        _handlerFactory(closureForRootDir, protocols: [_buildUpdatesProtocol]),
+      _internalHandlers[rootDir] = _handlerFactory(
+        closureForRootDir,
+        protocols: [_buildUpdatesProtocol],
       );
     }
     return _internalHandlers[rootDir]!;
   }
-
-  /// Rejects WebSocket upgrade requests carrying a non-loopback `origin`
-  /// header.
-  static shelf.Handler _rejectCrossOrigin(shelf.Handler inner) => (request) {
-    final origin = request.headers['origin'];
-    if (origin == null) return inner(request);
-    final host = Uri.tryParse(origin)?.host ?? '';
-    final isLoopback =
-        host == 'localhost' ||
-        (InternetAddress.tryParse(host)?.isLoopback ?? false);
-    if (isLoopback) return inner(request);
-    return shelf.Response.forbidden(null);
-  };
 
   Future emitUpdateMessage(BuildResult buildResult) async {
     if (buildResult.status != BuildStatus.success) return;
@@ -248,6 +240,33 @@ String _buildUpdatesInjectedJS(String scriptName) =>
 // Injected by build_runner for build updates support
 window.\$dartLoader.forceLoadModule('packages/build_runner/src/commands/serve/$scriptName');
 ''';
+
+/// Whether [host] refers to a loopback interface.
+bool _isLoopbackHost(String host) =>
+    host == 'localhost' ||
+    (InternetAddress.tryParse(host)?.isLoopback ?? false);
+
+/// Rejects requests that lack a loopback `Host` header or that carry a
+/// non-loopback `Origin` header.
+shelf.Handler _loopbackOnly(shelf.Handler inner) => (request) {
+  final hostHeader = request.headers['host'];
+  if (hostHeader == null) return shelf.Response.forbidden(null);
+
+  final host = Uri.tryParse('http://$hostHeader')?.host ?? '';
+  if (!_isLoopbackHost(host)) {
+    return shelf.Response.forbidden(null);
+  }
+
+  final origin = request.headers['origin'];
+  if (origin != null) {
+    final parsed = Uri.tryParse(origin);
+    if (parsed == null || !_isLoopbackHost(parsed.host)) {
+      return shelf.Response.forbidden(null);
+    }
+  }
+
+  return inner(request);
+};
 
 class AssetHandler {
   final Future<BuildOutputReader?> Function() _reader;
