@@ -7,6 +7,9 @@
 - Bug fix: make post-process output behavior match normal outputs: by default,
   rebuild if deleted or incorrect. Follow `--keep-modified-outputs` and
   `--only-check`.
+- Bug fix: in incremental builds, detect and delete conflicting outputs in the
+  source directory rather than treating them as sources, which could cause
+  builder dependency cycles and hangs; fix #5079.
 
 ## 2.16.0
 

@@ -14,6 +14,7 @@ import '../exceptions.dart';
 import '../io/asset_tracker.dart';
 import '../io/reader_writer.dart';
 import '../logging/build_log.dart';
+import 'asset_file.dart';
 import 'build_directory.dart';
 import 'build_filter.dart';
 import 'build_inputs.dart';
@@ -33,9 +34,8 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
 
   /// Callback that gets notified of deletes.
 
-  /// Inputs in the source tree that conflict with declared outputs and must be
-  /// deleted.
-  BuiltList<AssetId> get conflictingOutputs;
+  /// Files on disk that conflict with declared outputs and must be deleted.
+  BuiltList<AssetFile> get conflictingOutputs;
 
   /// Sources and changes to sources before the build.
   BuildInputs get buildInputs;
@@ -68,15 +68,17 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       buildPackages,
       buildSpec.buildConfigs,
     );
-    final assetTrackerInputSources = await assetTracker.findInputSources();
-    final cacheDirSources = await assetTracker.findCacheDirSources();
+    final diskFiles = await assetTracker.findFiles();
 
     final hasCompatiblePreviousBuild = previousBuild.incrementalState != null;
     if (!hasCompatiblePreviousBuild) {
       // If there is no compatible previous build, compute inputs with files
       // that look like old generation outputs removed.
 
-      final inputSources = assetTrackerInputSources.toSet();
+      final inputSources = diskFiles
+          .where((f) => !f.hidden)
+          .map((f) => f.id)
+          .toSet();
 
       // Remove files from the incompatible build.
       inputSources.removeAll(previousBuild.incompatibleBuildOutputsToDelete);
@@ -98,18 +100,21 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         previousBuild: previousBuild,
         buildDirs: buildSpec.buildOptions.buildDirs,
         buildFilters: buildSpec.buildOptions.buildFilters,
-        filesToCheck: inputSources,
-        assetTrackerInputSources: assetTrackerInputSources,
+        filesToCheck: inputSources.map(AssetFile.source).toSet(),
+        diskFiles: diskFiles,
       );
     } else {
       // If there is a compatible previous build, check all previous build files
       // and all discovered files on disk.
-      final filesToCheck = {
-        ...assetTrackerInputSources,
-        ...cacheDirSources,
-        ...previousBuild.sources,
-        ...previousBuild.actualOutputs,
-        ...previousBuild.actualPostOutputs,
+      final filesToCheck = <AssetFile>{
+        ...diskFiles,
+        ...previousBuild.sources.map(AssetFile.source),
+        ...previousBuild.actualOutputs.map(
+          (id) => AssetFile(id, hidden: previousBuild.isHidden(id)),
+        ),
+        ...previousBuild.actualPostOutputs.map(
+          (id) => AssetFile(id, hidden: previousBuild.isHidden(id)),
+        ),
       };
 
       final previousBuildStepPlan = previousBuild.buildStepPlan!;
@@ -147,7 +152,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       ..conflictingOutputs.clear(),
   );
 
-  Future<BuildPlan> updateForFileChanges(Set<AssetId> filesToCheck) {
+  Future<BuildPlan> updateForFileChanges(Set<AssetFile> filesToCheck) {
     if (previousBuild.incrementalState == null) {
       return _createClean(
         buildSpec: buildSpec,
@@ -158,7 +163,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         // Updates are being made to a `BuildPlan` that didn't actually run.
         // That means the conflicting file check was already done when that
         // `BuildPlan` was created, don't repeat it.
-        assetTrackerInputSources: null,
+        diskFiles: null,
       );
     } else {
       return _createIncremental(
@@ -185,24 +190,25 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
 
   /// Creates a [BuildPlan] for a clean build.
   ///
-  /// Pass [assetTrackerInputSources] to check if any files that builders
-  /// will generate conflict with files already on disk. Conflicts in
-  /// dependencies cause an exception to be thrown, conflicts in writable
-  /// packages are added to [conflictingOutputs] so they will be deleted.
+  /// Pass [diskFiles] to check if any files that builders will generate
+  /// conflict with files already on disk. Conflicts in dependencies cause an
+  /// exception to be thrown, conflicts in writable packages are added to
+  /// [conflictingOutputs] so they will be deleted.
   static Future<BuildPlan> _createClean({
     required BuildSpec buildSpec,
     required PreviousBuild previousBuild,
     required BuiltSet<BuildDirectory> buildDirs,
     required BuiltSet<BuildFilter> buildFilters,
-    required Set<AssetId> filesToCheck,
-    Set<AssetId>? assetTrackerInputSources,
+    required Set<AssetFile> filesToCheck,
+    Set<AssetFile>? diskFiles,
   }) async {
     final readerWriter = buildSpec.readerWriter;
     final result = BuildInputsBuilder()..cleanBuild = true;
 
-    for (final id in filesToCheck) {
-      if (await readerWriter.canRead(id)) {
-        result.sources.add(id);
+    for (final file in filesToCheck) {
+      if (file.hidden) continue;
+      if (await readerWriter.canRead(file.id, hidden: false)) {
+        result.sources.add(file.id);
       }
     }
 
@@ -212,13 +218,13 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       sources: result.sources.build(),
     );
 
-    final conflictingOutputs = <AssetId>{};
+    final conflictingOutputs = <AssetFile>{};
     final buildPackages = buildSpec.buildPackages;
 
-    if (assetTrackerInputSources != null) {
+    if (diskFiles != null) {
       final conflictsInDeps = buildStepPlan.declaredOutputs
           .where((n) => !buildPackages.outputPackages.contains(n.package))
-          .where(assetTrackerInputSources.contains)
+          .where((n) => diskFiles.contains(AssetFile.source(n)))
           .toSet();
       if (conflictsInDeps.isNotEmpty) {
         buildLog.error(
@@ -230,12 +236,16 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         throw const CannotBuildException();
       }
 
-      conflictingOutputs.addAll(
-        buildStepPlan.declaredOutputs
-            .where((n) => buildPackages.outputPackages.contains(n.package))
-            .where(assetTrackerInputSources.contains)
-            .toSet(),
-      );
+      for (final file in diskFiles) {
+        if (buildStepPlan.isDeclaredOutput(file.id)) {
+          if (!file.hidden &&
+              buildPackages.outputPackages.contains(file.id.package)) {
+            conflictingOutputs.add(file);
+          } else if (file.hidden && !buildStepPlan.isHidden(file.id)) {
+            conflictingOutputs.add(file);
+          }
+        }
+      }
     }
 
     for (final id in result.sources.build()) {
@@ -267,7 +277,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
     BuildInputs? previousBuildInputs,
     required BuiltSet<BuildDirectory> buildDirs,
     required BuiltSet<BuildFilter> buildFilters,
-    required Set<AssetId> filesToCheck,
+    required Set<AssetFile> filesToCheck,
   }) async {
     final readerWriter = buildSpec.readerWriter;
     final buildInputs = BuildInputsBuilder()..cleanBuild = false;
@@ -282,20 +292,33 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
 
     buildInputs.sources.addAll(previousBuild.sources);
 
-    for (final id in filesToCheck) {
+    final conflictingOutputs = <AssetFile>{};
+    final newCacheFiles = <AssetId>{};
+
+    for (final file in filesToCheck) {
+      final id = file.id;
       final oldIsSource = previousBuild.isSource(id);
-      final oldExisted = previousBuild.isFile(id);
-      final oldDigest = previousBuild.digestOf(id);
+      AssetFile? oldFile;
+      if (oldIsSource) {
+        oldFile = AssetFile.source(id);
+      } else if (previousBuild.isActualOutput(id) ||
+          previousBuild.isActualPostOutput(id)) {
+        oldFile = AssetFile(id, hidden: previousBuild.isHidden(id));
+      }
+      final oldExistedSameLocation = oldFile == file;
+      final oldDigest = oldExistedSameLocation
+          ? previousBuild.digestOf(id)
+          : null;
+
       var exists = false;
       AssetContent? newContent;
-
-      if (await readerWriter.canRead(id, hidden: previousBuild.isHidden(id))) {
+      if (await readerWriter.canRead(id, hidden: file.hidden)) {
         exists = true;
         if (oldDigest != null) {
           try {
             final bytes = await readerWriter.readAsBytes(
               id,
-              hidden: previousBuild.isHidden(id),
+              hidden: file.hidden,
             );
             newContent = AssetContent.bytes(bytes);
           } catch (_) {
@@ -305,7 +328,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       }
 
       if (!exists) {
-        if (oldExisted) {
+        if (oldExistedSameLocation) {
           if (oldIsSource) {
             buildInputs.deletedSources.add(id);
             buildInputs.sources.remove(id);
@@ -318,9 +341,14 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         continue;
       }
 
-      if (!oldExisted) {
-        buildInputs.updatedSources.add(id);
-        buildInputs.sources.add(id);
+      if (!oldExistedSameLocation) {
+        if (file.hidden) {
+          newCacheFiles.add(id);
+          conflictingOutputs.add(file);
+        } else {
+          buildInputs.updatedSources.add(id);
+          buildInputs.sources.add(id);
+        }
         continue;
       }
 
@@ -361,7 +389,71 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       sources: buildInputs.sources.build(),
     );
 
-    for (final id in buildInputs.sources.build()) {
+    final declaredOutputs = buildStepPlan.declaredOutputs;
+    final currentSources = buildInputs.sources.build();
+    final postBuildActions =
+        buildSpec.buildPhases.postBuildPhase.builderActions;
+    // Outputs that were misclassified as sources.
+    final misclassifiedSources = <AssetId>{};
+    for (final id in currentSources) {
+      if (declaredOutputs.contains(id)) {
+        misclassifiedSources.add(id);
+      } else {
+        final postStepId = previousBuild.postProcessOutputs[id];
+        if (postStepId != null) {
+          final producingInput = postStepId.input;
+          final inputExists =
+              currentSources.contains(producingInput) ||
+              buildStepPlan.isDeclaredOutput(producingInput);
+          if (inputExists &&
+              postStepId.actionNumber < postBuildActions.length &&
+              buildStepPlan.actionMatches(
+                postBuildActions[postStepId.actionNumber],
+                producingInput,
+              )) {
+            misclassifiedSources.add(id);
+          }
+        }
+      }
+    }
+    if (misclassifiedSources.isNotEmpty) {
+      final buildPackages = buildSpec.buildPackages;
+      final conflictsInDeps = misclassifiedSources
+          .where((n) => !buildPackages.outputPackages.contains(n.package))
+          .toSet();
+      if (conflictsInDeps.isNotEmpty) {
+        buildLog.error(
+          'There are existing files in dependencies which conflict '
+          'with files that a Builder may produce. These must be removed or '
+          'the Builders disabled before a build can continue: '
+          '${conflictsInDeps.map((a) => a.uri).join('\n')}',
+        );
+        throw const CannotBuildException();
+      }
+
+      buildInputs.sources.removeAll(misclassifiedSources);
+      buildInputs.sourceContents.removeWhere(
+        (id, _) => misclassifiedSources.contains(id),
+      );
+      buildInputs.updatedSources.removeWhere(misclassifiedSources.contains);
+      for (final id in misclassifiedSources) {
+        conflictingOutputs.add(AssetFile.source(id));
+      }
+      buildStepPlan = BuildStepPlan.compute(
+        buildPhases: buildSpec.buildPhases,
+        placeholderIds: buildSpec.buildPackages.placeholderIds,
+        sources: buildInputs.sources.build(),
+      );
+    }
+
+    final finalSources = buildInputs.sources.build();
+    for (final id in newCacheFiles) {
+      if (!finalSources.contains(id)) {
+        buildInputs.invalidOutputs.add(id);
+      }
+    }
+
+    for (final id in finalSources) {
       if (buildInputs.sourceContents[id] == null &&
           buildStepPlan.declaredOutputsOf(id).isNotEmpty) {
         try {
@@ -379,11 +471,13 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         .transitiveDeclaredOutputsOf(buildInputs.deletedSources.build())
         .toSet();
     buildInputs.invalidOutputs.addAll(invalidOutputs);
+    buildInputs.invalidOutputs.removeAll(finalSources);
 
     return BuildPlan((b) {
       b.buildSpec.replace(buildSpec);
       b.previousBuild.replace(previousBuild);
       b.buildStepPlan.replace(buildStepPlan);
+      b.conflictingOutputs.replace(conflictingOutputs);
       b.buildInputs = buildInputs;
       b.buildDirs.replace(buildDirs);
       b.buildFilters.replace(buildFilters);

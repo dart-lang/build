@@ -116,7 +116,13 @@ abstract class PreviousBuild
       buildStepResults.values.expand((r) => r.outputs);
   Iterable<AssetId> get actualPostOutputs => postProcessOutputs.keys;
 
-  bool _isActualPostOutput(AssetId id) => postProcessOutputs.containsKey(id);
+  bool isActualPostOutput(AssetId id) => postProcessOutputs.containsKey(id);
+
+  bool isActualOutput(AssetId id) {
+    final step = buildStepPlan?.stepForDeclaredOutputOrNull(id);
+    if (step == null) return false;
+    return stepResultOrNull(step)?.outputs.contains(id) ?? false;
+  }
 
   bool _isHiddenPostProcessOutput(AssetId id) {
     final step = postProcessOutputs[id];
@@ -130,7 +136,7 @@ abstract class PreviousBuild
   bool isFile(AssetId id) =>
       isSource(id) ||
       (buildStepPlan?.isDeclaredOutput(id) ?? false) ||
-      _isActualPostOutput(id);
+      isActualPostOutput(id);
 
   Digest? digestOf(AssetId id) => digests[id];
 

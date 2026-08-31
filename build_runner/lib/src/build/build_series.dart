@@ -9,6 +9,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:watcher/watcher.dart';
 
+import '../build_plan/asset_file.dart';
 import '../build_plan/build_directory.dart';
 import '../build_plan/build_filter.dart';
 import '../build_plan/build_plan.dart';
@@ -106,13 +107,19 @@ class BuildSeries {
         if ((change.type == .ADD || change.type == .MODIFY) &&
             _buildPlan.buildStepPlan.isDeclaredOutput(id)) {
           final expectedDigest = previousBuild.digestOf(id);
+          final isHidden = _buildPlan.buildStepPlan.isHidden(id);
           if (expectedDigest != null) {
             try {
               final bytes = await _buildPlan.readerWriter.readAsBytes(
                 id,
-                hidden: _buildPlan.buildStepPlan.isHidden(id),
+                hidden: isHidden,
               );
-              if (md5.convert(bytes) == expectedDigest) {
+              // TODO(davidmorgan): alternative is to track location in events.
+              final conflictingExists = await _buildPlan.readerWriter.canRead(
+                id,
+                hidden: !isHidden,
+              );
+              if (!conflictingExists && md5.convert(bytes) == expectedDigest) {
                 continue;
               }
             } catch (_) {}
@@ -146,10 +153,10 @@ class BuildSeries {
 
       // Changes to files that are part of the build.
 
-      // If not copying to a merged output directory, ignore changes to files
+      // If not copying to a merged output directory, ignore changes to sources
       // with no outputs.
       if (!_buildPlan.buildSpec.buildOptions.anyMergedOutputDirectory &&
-          !previousBuild.isMissingSource(id) &&
+          previousBuild.isSource(id) &&
           previousBuild.digestOf(id) == null) {
         rejected.add(change);
         continue;
@@ -177,18 +184,16 @@ class BuildSeries {
               'build.${_buildPlan.buildSpec.buildOptions.configKey}.yaml');
 
   Future<List<WatchEvent>> checkForChanges() async {
-    final updates =
-        await AssetTracker(
-          _buildPlan.readerWriter,
-          _buildPlan.buildSpec.buildPackages,
-          _buildPlan.buildSpec.buildConfigs,
-        ).collectChanges(
-          buildStepPlan: _buildPlan.buildStepPlan,
-          previousBuild: _buildPlan.previousBuild,
-        );
+    final updates = await AssetTracker(
+      _buildPlan.readerWriter,
+      _buildPlan.buildSpec.buildPackages,
+      _buildPlan.buildSpec.buildConfigs,
+    ).collectChanges(previousBuild: _buildPlan.previousBuild);
 
     return List.of(
-      updates.entries.map((entry) => WatchEvent(entry.value, '${entry.key}')),
+      updates.entries.map(
+        (entry) => WatchEvent(entry.value, '${entry.key.id}'),
+      ),
     );
   }
 
@@ -259,7 +264,11 @@ class BuildSeries {
     );
 
     if (!firstBuild || updates.isNotEmpty) {
-      _buildPlan = await _buildPlan.updateForFileChanges(updates);
+      final filesToCheck = <AssetFile>{
+        for (final id in updates) AssetFile.source(id),
+        for (final id in updates) AssetFile.cache(id),
+      };
+      _buildPlan = await _buildPlan.updateForFileChanges(filesToCheck);
     }
 
     final build = Build(
@@ -361,20 +370,6 @@ class BuildSeries {
   Set<AssetId> _computeDeletes(BuildResult result, {bool onlyVisible = false}) {
     final deletes = <AssetId>{};
     final currentState = result.buildState!;
-    for (final id in _buildPlan.conflictingOutputs) {
-      if (!currentState.isActualOutput(id) &&
-          !currentState.isActualPostOutput(id)) {
-        deletes.add(id);
-      }
-    }
-    for (final id
-        in _buildPlan.previousBuild.incompatibleBuildOutputsToDelete) {
-      if (!currentState.isActualOutput(id) &&
-          !currentState.isActualPostOutput(id)) {
-        deletes.add(id);
-      }
-    }
-
     final outputRoot = _buildPlan.buildSpec.buildPackages.outputRoot;
     // Adds a delete result, unless it's a hidden file and `onlyVisible` was
     // requested.
@@ -384,6 +379,30 @@ class BuildSeries {
           deletes.add(AssetPathProvider.hide(id, outputRoot));
         }
       } else {
+        deletes.add(id);
+      }
+    }
+
+    // With `forceVisibleForTesting` all hidden outputs are forced to non-hidden
+    // outputs for simpler test assertions.
+    final forceVisibleForTesting =
+        _buildPlan.buildSpec.testingOverrides.forceVisibleForTesting;
+    for (final file in _buildPlan.conflictingOutputs) {
+      final outputIsHidden = forceVisibleForTesting
+          ? false
+          : currentState.isHidden(file.id);
+      final isMatchingActualOutput =
+          (currentState.isActualOutput(file.id) ||
+              currentState.isActualPostOutput(file.id)) &&
+          outputIsHidden == file.hidden;
+      if (!isMatchingActualOutput) {
+        maybeAddDelete(file.id, file.hidden);
+      }
+    }
+    for (final id
+        in _buildPlan.previousBuild.incompatibleBuildOutputsToDelete) {
+      if (!currentState.isActualOutput(id) &&
+          !currentState.isActualPostOutput(id)) {
         deletes.add(id);
       }
     }
