@@ -15,6 +15,7 @@ import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../build/build_result.dart';
+import '../../io/build_output_read_result.dart';
 import '../../io/build_output_reader.dart';
 import '../../logging/build_log.dart';
 import '../watch/watcher.dart';
@@ -101,19 +102,19 @@ class ServeHandler {
         rootDir,
         p.url.split(path),
       );
-      AssetId? assetId;
+      BuildOutputReadResult? result;
       for (final id in assetIds) {
-        if (await reader.canRead(id)) {
-          assetId = id;
+        final candidate = await reader.read(id);
+        if (candidate.canRead) {
+          result = candidate;
           break;
         }
       }
 
-      if (assetId == null) {
+      if (result == null) {
         results.remove(path);
       } else {
-        final digest = await reader.digest(assetId);
-        results[path] = digest.toString();
+        results[path] = result.digest.toString();
       }
     }
     return shelf.Response.ok(
@@ -165,12 +166,8 @@ class BuildUpdatesWebSocketHandler {
     final reader = buildResult.buildOutputReader!;
     final digests = <AssetId, String?>{};
     for (final assetId in buildResult.outputs) {
-      try {
-        final digest = await reader.digest(assetId);
-        digests[assetId] = digest.toString();
-      } on AssetNotFoundException {
-        digests[assetId] = null;
-      }
+      final result = await reader.read(assetId);
+      digests[assetId] = result.canRead ? result.digest.toString() : null;
     }
     for (final rootDir in connectionsByRootDir.keys) {
       final resultMap = <String, String?>{};
@@ -284,31 +281,32 @@ class AssetHandler {
     if (reader == null) return shelf.Response.notFound('Not Found');
 
     // Use the first of [assetIds] that exists.
-    AssetId? assetId;
+    BuildOutputReadResult? result;
     for (final id in assetIds) {
-      if (await reader.canRead(id)) {
-        assetId = id;
+      final candidate = await reader.read(id);
+      if (candidate.canRead) {
+        result = candidate;
         break;
       }
+      result ??= candidate;
     }
     // Or if none exists, report an error about the first one.
-    assetId ??= assetIds.first;
+    result ??= await reader.read(assetIds.first);
 
     try {
       try {
-        if (!await reader.canRead(assetId)) {
-          final reason = await reader.unreadableReason(assetId);
-          switch (reason) {
+        if (!result.canRead) {
+          switch (result.unreadableReason!) {
             case UnreadableReason.failed:
               return shelf.Response.internalServerError(
-                body: 'Build failed for $assetId',
+                body: 'Build failed for ${result.id}',
               );
             case UnreadableReason.notOutput:
-              return shelf.Response.notFound('$assetId was not output');
+              return shelf.Response.notFound('${result.id} was not output');
             case UnreadableReason.notFound:
               if (fallbackToDirectoryList) {
                 return shelf.Response.notFound(
-                  await _findDirectoryList(assetId),
+                  await _findDirectoryList(result.id),
                 );
               }
               return shelf.Response.notFound('Not Found');
@@ -321,8 +319,8 @@ class AssetHandler {
         return shelf.Response.notFound('Not Found');
       }
 
-      final etag = base64.encode((await reader.digest(assetId)).bytes);
-      var contentType = _typeResolver.lookup(assetId.path);
+      final etag = base64.encode(result.digest.bytes);
+      var contentType = _typeResolver.lookup(result.id.path);
       if (contentType == 'text/x-dart') {
         contentType = '$contentType; charset=utf-8';
       }
@@ -343,7 +341,7 @@ class AssetHandler {
       }
       List<int>? body;
       if (request.method != 'HEAD') {
-        body = await reader.readAsBytes(assetId);
+        body = result.bytes;
         headers[HttpHeaders.contentLengthHeader] = '${body.length}';
       }
       return shelf.Response.ok(body, headers: headers);
