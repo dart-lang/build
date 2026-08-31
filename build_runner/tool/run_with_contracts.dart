@@ -1,100 +1,170 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:build_runner/src/contracts/transform.dart';
 
 Future<void> main(List<String> args) async {
-  final buildRunnerDir = Directory.current;
-  final libDir = Directory('${buildRunnerDir.path}/lib');
-  if (!libDir.existsSync()) {
-    stderr.writeln('Error: lib/ directory not found in current directory.');
+  final clean = args.contains('--clean');
+  final filteredArgs = args
+      .where((a) => a != '--clean' && !a.startsWith('--stage-dir='))
+      .toList();
+
+  final stageDirArg = args
+      .where((a) => a.startsWith('--stage-dir='))
+      .map((a) => a.substring('--stage-dir='.length))
+      .firstOrNull;
+
+  final stageDir = Directory(
+    stageDirArg ?? '${Directory.systemTemp.path}/contracts_workspace',
+  );
+
+  // Locate the root workspace directory containing workspace pubspec.yaml.
+  Directory? workspaceRoot;
+  for (var dir = Directory.current; ; dir = dir.parent) {
+    final pubspec = File('${dir.path}/pubspec.yaml');
+    if (pubspec.existsSync()) {
+      final content = pubspec.readAsStringSync();
+      if (content.contains('workspace:')) {
+        workspaceRoot = dir;
+        break;
+      }
+    }
+    if (dir.path == dir.parent.path) break;
+  }
+
+  if (workspaceRoot == null) {
+    stderr.writeln('Error: Could not locate workspace root pubspec.yaml.');
     exitCode = 1;
     return;
   }
 
-  final outContractsDir = Directory(
-    '${buildRunnerDir.path}/.dart_tool/contracts',
-  );
-  final outLibDir = Directory('${outContractsDir.path}/lib');
-
-  if (outLibDir.existsSync()) {
-    outLibDir.deleteSync(recursive: true);
+  if (clean && stageDir.existsSync()) {
+    stdout.writeln('Cleaning staged workspace at ${stageDir.path} ...');
+    stageDir.deleteSync(recursive: true);
   }
-  outLibDir.createSync(recursive: true);
+
+  stdout.writeln('Staging contracts workspace at ${stageDir.path} ...');
+  stageDir.createSync(recursive: true);
+
+  // Copy root workspace configuration files.
+  for (final filename in [
+    'pubspec.yaml',
+    'pubspec.lock',
+    'analysis_options.yaml',
+    'dart_test.yaml',
+  ]) {
+    final src = File('${workspaceRoot.path}/$filename');
+    if (src.existsSync()) {
+      final dest = File('${stageDir.path}/$filename');
+      dest.writeAsStringSync(src.readAsStringSync());
+    }
+  }
+
+  // Symlink top-level packages and directories from workspace root.
+  for (final entity in workspaceRoot.listSync()) {
+    final name = entity.uri.pathSegments.where((s) => s.isNotEmpty).last;
+    if (name.startsWith('.') ||
+        name == 'build_runner' ||
+        name == 'pubspec.yaml' ||
+        name == 'pubspec.lock' ||
+        name == 'analysis_options.yaml' ||
+        name == 'dart_test.yaml') {
+      continue;
+    }
+    final link = Link('${stageDir.path}/$name');
+    final type = FileSystemEntity.typeSync(link.path, followLinks: false);
+    if (type == FileSystemEntityType.notFound) {
+      link.createSync(entity.absolute.path);
+    }
+  }
+
+  // Setup build_runner in staged workspace.
+  final srcBuildRunner = Directory('${workspaceRoot.path}/build_runner');
+  final stagedBuildRunner = Directory('${stageDir.path}/build_runner');
+  stagedBuildRunner.createSync(recursive: true);
+
+  for (final entity in srcBuildRunner.listSync()) {
+    final name = entity.uri.pathSegments.where((s) => s.isNotEmpty).last;
+    if (name.startsWith('.') || name == 'lib') continue;
+
+    final targetPath = '${stagedBuildRunner.path}/$name';
+    final type = FileSystemEntity.typeSync(targetPath, followLinks: false);
+    if (type == FileSystemEntityType.notFound) {
+      Link(targetPath).createSync(entity.absolute.path);
+    }
+  }
+
+  // Populate staged build_runner/lib with transformed contracts.
+  final srcLib = Directory('${srcBuildRunner.path}/lib');
+  final stagedLib = Directory('${stagedBuildRunner.path}/lib');
+  stagedLib.createSync(recursive: true);
 
   var transformedCount = 0;
-  var copiedCount = 0;
+  var symlinkCount = 0;
 
-  for (final entity in libDir.listSync(recursive: true)) {
-    if (entity is File && entity.path.endsWith('.dart')) {
-      final relative = entity.path.substring(libDir.path.length + 1);
-      final outFile = File('${outLibDir.path}/$relative');
-      outFile.parent.createSync(recursive: true);
+  for (final entity in srcLib.listSync(recursive: true)) {
+    final relative = entity.path.substring(srcLib.path.length + 1);
+    final targetPath = '${stagedLib.path}/$relative';
 
+    if (entity is Directory) {
+      Directory(targetPath).createSync(recursive: true);
+    } else if (entity is File && entity.path.endsWith('.dart')) {
       final content = entity.readAsStringSync();
       final transformed = transformContracts(content);
+
+      // Clean up previous entity at target if type differs.
+      final existingType = FileSystemEntity.typeSync(
+        targetPath,
+        followLinks: false,
+      );
+
       if (transformed != content) {
-        outFile.writeAsStringSync(transformed);
+        if (existingType == FileSystemEntityType.link) {
+          Link(targetPath).deleteSync();
+        }
+        File(targetPath).writeAsStringSync(transformed);
         transformedCount++;
       } else {
-        outFile.writeAsStringSync(content);
-        copiedCount++;
+        if (existingType == FileSystemEntityType.file) {
+          File(targetPath).deleteSync();
+        }
+        if (existingType == FileSystemEntityType.notFound) {
+          Link(targetPath).createSync(entity.absolute.path);
+        }
+        symlinkCount++;
       }
     }
   }
 
   stdout.writeln(
-    'Transformed $transformedCount files to ${outLibDir.path} '
-    '($copiedCount unchanged).',
+    'Staged build_runner/lib: $transformedCount transformed, '
+    '$symlinkCount symlinked.',
   );
 
-  // Locate the root package_config.json.
-  File? rootPackageConfig;
-  for (var dir = buildRunnerDir; ; dir = dir.parent) {
-    final candidate = File('${dir.path}/.dart_tool/package_config.json');
-    if (candidate.existsSync()) {
-      rootPackageConfig = candidate;
-      break;
+  // Ensure dependencies are resolved in staged workspace.
+  final stagedPackageConfig = File(
+    '${stageDir.path}/.dart_tool/package_config.json',
+  );
+  if (!stagedPackageConfig.existsSync()) {
+    stdout.writeln('Resolving dependencies in staged workspace...');
+    final pubResult = await Process.run(Platform.resolvedExecutable, [
+      'pub',
+      'get',
+      '--offline',
+    ], workingDirectory: stageDir.path);
+    if (pubResult.exitCode != 0) {
+      // Fall back to online pub get if offline cache does not suffice.
+      await Process.run(Platform.resolvedExecutable, [
+        'pub',
+        'get',
+      ], workingDirectory: stageDir.path);
     }
-    if (dir.path == dir.parent.path) break;
-  }
-
-  if (rootPackageConfig == null) {
-    stderr.writeln(
-      'Error: Could not locate root .dart_tool/package_config.json',
-    );
-    exitCode = 1;
-    return;
-  }
-
-  final rootWorkspaceDir = rootPackageConfig.parent.parent.path;
-  final configData =
-      jsonDecode(rootPackageConfig.readAsStringSync()) as Map<String, dynamic>;
-  final packages = (configData['packages'] as List<dynamic>)
-      .cast<Map<String, dynamic>>();
-
-  for (final p in packages) {
-    final uri = p['rootUri'] as String;
-    if (uri.startsWith('../')) {
-      p['rootUri'] = 'file://$rootWorkspaceDir/${uri.substring(3)}';
-    }
-    if (p['name'] == 'build_runner') {
-      p['packageUri'] = '.dart_tool/contracts/lib/';
-    }
-  }
-
-  final outConfigFile = File('${outContractsDir.path}/package_config.json');
-  outConfigFile.writeAsStringSync(jsonEncode(configData));
-
-  if (args.contains('--transform-only')) {
-    stdout.writeln('Transform complete.');
-    return;
   }
 
   stdout.writeln('Running tests with contracts enabled...');
   final testProcess = await Process.start(
     Platform.resolvedExecutable,
-    ['run', '--packages=${outConfigFile.path}', 'test:test', ...args],
+    ['test', ...filteredArgs],
+    workingDirectory: stagedBuildRunner.path,
     environment: {...Platform.environment, 'DART_CONTRACTS_ENABLED': 'true'},
     mode: ProcessStartMode.inheritStdio,
   );
