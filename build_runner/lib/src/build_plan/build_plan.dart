@@ -206,10 +206,9 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
     final result = BuildInputsBuilder()..cleanBuild = true;
 
     for (final file in filesToCheck) {
-      if (await readerWriter.canRead(file.id, hidden: file.hidden)) {
-        if (!file.hidden) {
-          result.sources.add(file.id);
-        }
+      if (file.hidden) continue;
+      if (await readerWriter.canRead(file.id, hidden: false)) {
+        result.sources.add(file.id);
       }
     }
 
@@ -299,20 +298,20 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
     for (final file in filesToCheck) {
       final id = file.id;
       final oldIsSource = previousBuild.isSource(id);
-      final oldExisted =
-          oldIsSource ||
-          previousBuild.isActualOutput(id) ||
-          previousBuild.isActualPostOutput(id);
-      final oldFile = !oldExisted
-          ? null
-          : oldIsSource
-          ? AssetFile.source(id)
-          : AssetFile(id, hidden: previousBuild.isHidden(id));
-      final oldExistedHere = oldExisted && oldFile == file;
-      final oldDigest = oldExistedHere ? previousBuild.digestOf(id) : null;
+      AssetFile? oldFile;
+      if (oldIsSource) {
+        oldFile = AssetFile.source(id);
+      } else if (previousBuild.isActualOutput(id) ||
+          previousBuild.isActualPostOutput(id)) {
+        oldFile = AssetFile(id, hidden: previousBuild.isHidden(id));
+      }
+      final oldExistedSameLocation = oldFile == file;
+      final oldDigest = oldExistedSameLocation
+          ? previousBuild.digestOf(id)
+          : null;
+
       var exists = false;
       AssetContent? newContent;
-
       if (await readerWriter.canRead(id, hidden: file.hidden)) {
         exists = true;
         if (oldDigest != null) {
@@ -329,7 +328,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       }
 
       if (!exists) {
-        if (oldExistedHere) {
+        if (oldExistedSameLocation) {
           if (oldIsSource) {
             buildInputs.deletedSources.add(id);
             buildInputs.sources.remove(id);
@@ -342,7 +341,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         continue;
       }
 
-      if (!oldExistedHere) {
+      if (!oldExistedSameLocation) {
         if (file.hidden) {
           newCacheFiles.add(id);
           conflictingOutputs.add(file);

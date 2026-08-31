@@ -383,10 +383,12 @@ class BuildSeries {
       }
     }
 
-    final forceVisible =
+    // With `forceVisibleForTesting` all hidden outputs are forced to non-hidden
+    // outputs for simpler test assertions.
+    final forceVisibleForTesting =
         _buildPlan.buildSpec.testingOverrides.forceVisibleForTesting;
     for (final file in _buildPlan.conflictingOutputs) {
-      final outputIsHidden = forceVisible
+      final outputIsHidden = forceVisibleForTesting
           ? false
           : currentState.isHidden(file.id);
       final isMatchingActualOutput =
