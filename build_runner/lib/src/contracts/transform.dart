@@ -184,8 +184,59 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
     bool classHasInvariant,
   ) {
     if (node.redirectedConstructor != null) return;
-    if (node.factoryKeyword != null) return;
     if (node.constKeyword != null) return;
+
+    if (node.factoryKeyword != null) {
+      final preClauses = _extractClauses(node.metadata, 'Pre');
+      final postClauses = _extractClauses(node.metadata, 'Post');
+      if (preClauses.isEmpty && postClauses.isEmpty) return;
+
+      final body = node.body;
+      if (body is ExpressionFunctionBody) {
+        final exprSource = source.substring(
+          body.expression.offset,
+          body.expression.end,
+        );
+        final buffer = StringBuffer('{\n');
+        if (preClauses.isNotEmpty) buffer.write(_buildPreCheck(preClauses));
+
+        if (postClauses.isNotEmpty) {
+          buffer.writeln('return ((result) {');
+          buffer.write(_buildPostCheck(postClauses));
+          buffer.writeln('return result;');
+          buffer.writeln('})($exprSource);');
+        } else {
+          buffer.writeln('return $exprSource;');
+        }
+        buffer.write('}');
+
+        final startOffset = body.functionDefinition.offset;
+        final length = body.end - startOffset;
+        _replacements.add(_Replacement(startOffset, length, buffer.toString()));
+      } else if (body is BlockFunctionBody) {
+        if (preClauses.isNotEmpty) {
+          _replacements.add(
+            _Replacement(
+              body.block.leftBracket.end,
+              0,
+              '\n${_buildPreCheck(preClauses)}\n',
+            ),
+          );
+        }
+        if (postClauses.isNotEmpty) {
+          _transformBlockReturns(
+            body.block,
+            postClauses,
+            false,
+            false,
+            false,
+            false,
+          );
+        }
+      }
+      return;
+    }
+
     if (node.initializers.any((i) => i is RedirectingConstructorInvocation)) {
       return;
     }
@@ -257,6 +308,9 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
         body.expression.end,
       );
       final isVoid = node.returnType?.toSource() == 'void';
+      final isAsync = body.isAsynchronous;
+      final isFuture =
+          node.returnType?.toSource().startsWith('Future') ?? false;
 
       final buffer = StringBuffer('{\n');
       if (checkInvariant) buffer.writeln('_checkInvariants();');
@@ -267,6 +321,20 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
           buffer.writeln('$exprSource;');
           buffer.write(_buildPostCheck(postClauses));
           if (checkInvariant) buffer.writeln('_checkInvariants();');
+        } else if (isAsync) {
+          buffer.writeln(
+            'return await (Future.value($exprSource).then((result) {',
+          );
+          buffer.write(_buildPostCheck(postClauses));
+          if (checkInvariant) buffer.writeln('_checkInvariants();');
+          buffer.writeln('return result;');
+          buffer.writeln('}));');
+        } else if (isFuture) {
+          buffer.writeln('return ($exprSource).then((result) {');
+          buffer.write(_buildPostCheck(postClauses));
+          if (checkInvariant) buffer.writeln('_checkInvariants();');
+          buffer.writeln('return result;');
+          buffer.writeln('});');
         } else {
           buffer.writeln('return ((result) {');
           buffer.write(_buildPostCheck(postClauses));
@@ -322,7 +390,18 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
         }
 
         if (postClauses.isNotEmpty) {
-          _transformBlockReturns(body.block, postClauses, checkInvariant);
+          final isVoid = node.returnType?.toSource() == 'void';
+          final isAsync = body.isAsynchronous;
+          final isFuture =
+              node.returnType?.toSource().startsWith('Future') ?? false;
+          _transformBlockReturns(
+            body.block,
+            postClauses,
+            checkInvariant,
+            isVoid,
+            isAsync,
+            isFuture,
+          );
         }
       }
     }
@@ -332,32 +411,67 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
     Block block,
     List<String> postClauses,
     bool checkInvariant,
+    bool isVoid,
+    bool isAsync,
+    bool isFuture,
   ) {
-    for (final statement in block.statements) {
-      if (statement is ReturnStatement) {
-        final expr = statement.expression;
-        if (expr != null) {
-          final exprSource = source.substring(expr.offset, expr.end);
-          final buffer = StringBuffer('return ((result) {\n');
+    final collector = _ReturnStatementCollector();
+    block.accept(collector);
+
+    for (final statement in collector.returns) {
+      final expr = statement.expression;
+      if (expr != null) {
+        final exprSource = source.substring(expr.offset, expr.end);
+        final buffer = StringBuffer();
+        if (isAsync) {
+          buffer.writeln(
+            'return await (Future.value($exprSource).then((result) {',
+          );
+          buffer.write(_buildPostCheck(postClauses));
+          if (checkInvariant) buffer.writeln('  _checkInvariants();');
+          buffer.writeln('  return result;');
+          buffer.write('}));');
+        } else if (isFuture) {
+          buffer.writeln('return ($exprSource).then((result) {');
+          buffer.write(_buildPostCheck(postClauses));
+          if (checkInvariant) buffer.writeln('  _checkInvariants();');
+          buffer.writeln('  return result;');
+          buffer.write('});');
+        } else {
+          buffer.write('return ((result) {\n');
           buffer.write(_buildPostCheck(postClauses));
           if (checkInvariant) buffer.writeln('  _checkInvariants();');
           buffer.writeln('  return result;');
           buffer.write('})($exprSource);');
-
-          _replacements.add(
-            _Replacement(statement.offset, statement.length, buffer.toString()),
-          );
-        } else {
-          final buffer = StringBuffer('{\n');
-          buffer.write(_buildPostCheck(postClauses));
-          if (checkInvariant) buffer.writeln('_checkInvariants();');
-          buffer.writeln('return;');
-          buffer.write('}');
-
-          _replacements.add(
-            _Replacement(statement.offset, statement.length, buffer.toString()),
-          );
         }
+
+        _replacements.add(
+          _Replacement(statement.offset, statement.length, buffer.toString()),
+        );
+      } else {
+        final buffer = StringBuffer('{\n');
+        buffer.write(_buildPostCheck(postClauses));
+        if (checkInvariant) buffer.writeln('_checkInvariants();');
+        buffer.writeln('return;');
+        buffer.write('}');
+
+        _replacements.add(
+          _Replacement(statement.offset, statement.length, buffer.toString()),
+        );
+      }
+    }
+
+    if (isVoid) {
+      final lastStatement = block.statements.isNotEmpty
+          ? block.statements.last
+          : null;
+      if (lastStatement is! ReturnStatement) {
+        final exitBuffer = StringBuffer('\n');
+        exitBuffer.write(_buildPostCheck(postClauses));
+        if (checkInvariant) exitBuffer.writeln('_checkInvariants();');
+        _replacements.add(
+          _Replacement(block.rightBracket.offset, 0, exitBuffer.toString()),
+        );
       }
     }
   }
@@ -369,12 +483,15 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
     if (preClauses.isEmpty && postClauses.isEmpty) return;
 
     final body = node.functionExpression.body;
+    final isVoid = node.returnType?.toSource() == 'void';
+    final isAsync = body.isAsynchronous;
+    final isFuture = node.returnType?.toSource().startsWith('Future') ?? false;
+
     if (body is ExpressionFunctionBody) {
       final exprSource = source.substring(
         body.expression.offset,
         body.expression.end,
       );
-      final isVoid = node.returnType?.toSource() == 'void';
 
       final buffer = StringBuffer('{\n');
       if (preClauses.isNotEmpty) buffer.write(_buildPreCheck(preClauses));
@@ -383,6 +500,18 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
         if (isVoid) {
           buffer.writeln('$exprSource;');
           buffer.write(_buildPostCheck(postClauses));
+        } else if (isAsync) {
+          buffer.writeln(
+            'return await (Future.value($exprSource).then((result) {',
+          );
+          buffer.write(_buildPostCheck(postClauses));
+          buffer.writeln('return result;');
+          buffer.writeln('}));');
+        } else if (isFuture) {
+          buffer.writeln('return ($exprSource).then((result) {');
+          buffer.write(_buildPostCheck(postClauses));
+          buffer.writeln('return result;');
+          buffer.writeln('});');
         } else {
           buffer.writeln('return ((result) {');
           buffer.write(_buildPostCheck(postClauses));
@@ -412,8 +541,34 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
         );
       }
       if (postClauses.isNotEmpty) {
-        _transformBlockReturns(body.block, postClauses, false);
+        _transformBlockReturns(
+          body.block,
+          postClauses,
+          false,
+          isVoid,
+          isAsync,
+          isFuture,
+        );
       }
     }
+  }
+}
+
+class _ReturnStatementCollector extends RecursiveAstVisitor<void> {
+  final List<ReturnStatement> returns = [];
+
+  @override
+  void visitReturnStatement(ReturnStatement node) {
+    returns.add(node);
+  }
+
+  @override
+  void visitFunctionExpression(FunctionExpression node) {
+    // Stop traversal at nested function expressions and closures.
+  }
+
+  @override
+  void visitFunctionDeclaration(FunctionDeclaration node) {
+    // Stop traversal at nested local function declarations.
   }
 }
