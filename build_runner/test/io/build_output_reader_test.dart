@@ -518,6 +518,7 @@ void main() {
       expect(readableResult.canRead, isTrue);
       expect(readableResult.unreadableReason, isNull);
       expect(readableResult.readAsString(), 'content');
+      // The decoded string representation is cached on the result.
       expect(
         identical(readableResult.readAsString(), readableResult.readAsString()),
         isTrue,

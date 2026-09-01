@@ -288,14 +288,14 @@ class AssetHandler {
         result = candidate;
         break;
       }
+      // Ensure some result, if it's not readable then an error will be reported
+      // against it.
       result ??= candidate;
     }
-    // Or if none exists, report an error about the first one.
-    result ??= await reader.read(assetIds.first);
 
     try {
       try {
-        if (!result.canRead) {
+        if (!result!.canRead) {
           switch (result.unreadableReason!) {
             case UnreadableReason.failed:
               return shelf.Response.internalServerError(
