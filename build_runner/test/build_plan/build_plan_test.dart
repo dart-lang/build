@@ -1034,6 +1034,31 @@ void main() {
           );
         },
       );
+
+      test('withCompatiblePreviousBuild resets change tracking sets and '
+          'cleanBuild', () async {
+        final buildPlan = await loadPlan();
+        final updatedPlan = buildPlan.rebuild(
+          (b) => b
+            ..buildInputs.cleanBuild = true
+            ..buildInputs.deletedSources.add(assetId)
+            ..buildInputs.updatedSources.add(assetId2)
+            ..buildInputs.invalidOutputs.add(outputId),
+        );
+
+        final nextPlan = updatedPlan.withCompatiblePreviousBuild(
+          previousBuildState: BuildState(
+            buildStepPlan: buildPlan.buildStepPlan,
+            sources: {assetId2: null},
+          ).toFinishedBuildState(),
+          previousPhasedAssetDeps: PhasedAssetDeps(),
+        );
+
+        expect(nextPlan.buildInputs.cleanBuild, isFalse);
+        expect(nextPlan.buildInputs.deletedSources, isEmpty);
+        expect(nextPlan.buildInputs.updatedSources, isEmpty);
+        expect(nextPlan.buildInputs.invalidOutputs, isEmpty);
+      });
     });
   });
 }

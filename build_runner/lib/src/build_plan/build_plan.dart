@@ -143,12 +143,16 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
           finishedBuildState: previousBuildState,
         ),
       )
+      ..buildInputs.cleanBuild = false
       ..buildInputs.sourceContents.clear()
       ..buildInputs.sourceContents.addEntries(previousBuildState.sourceContents)
       ..buildInputs.retainedOutputContents.clear()
       ..buildInputs.retainedOutputContents.addEntries(
         previousBuildState.outputContents,
       )
+      ..buildInputs.deletedSources.clear()
+      ..buildInputs.updatedSources.clear()
+      ..buildInputs.invalidOutputs.clear()
       ..conflictingOutputs.clear(),
   );
 
