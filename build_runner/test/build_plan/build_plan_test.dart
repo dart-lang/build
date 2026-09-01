@@ -795,6 +795,12 @@ void main() {
           loadedPlan.buildInputs.invalidOutputs,
           isNot(contains(postOutputId)),
         );
+        expect(
+          loadedPlan.buildInputs.retainedOutputContents.containsKey(
+            postOutputId,
+          ),
+          isFalse,
+        );
       });
 
       test('deleted input and deleted hidden post process output does not mark '
@@ -974,6 +980,60 @@ void main() {
           isNot(contains(outputId)),
         );
       });
+
+      test(
+        'outputs of deleted sources are evicted from retainedOutputContents',
+        () async {
+          final overrides = TestingOverrides(
+            builderDefinitions: [
+              BuilderDefinition('', hideOutput: false),
+            ].build(),
+            readerWriter: readerWriter,
+            buildPackages: buildPackages,
+            checkBuilderFreshness: false,
+          );
+          final initialPlan = await loadPlan(overrides);
+          final buildState = BuildState(
+            buildStepPlan: initialPlan.buildStepPlan,
+            sources: {assetId: null, assetId2: null},
+          );
+          await readerWriter.writeAsString(outputId, '// copy');
+          final stepId = initialPlan.buildStepPlan.stepForDeclaredOutput(
+            outputId,
+          );
+          final initialDigest = md5.convert(utf8.encode('// copy'));
+          buildState.addBuildStepResult(
+            step: stepId,
+            result: BuildStepResult((b) {
+              b.result = true;
+              b.isHidden = false;
+              b.outputs.add(outputId);
+            }),
+            contents: {
+              outputId: AssetContent.bytes(
+                utf8.encode('// copy'),
+                digest: initialDigest,
+              ),
+            },
+          );
+          buildState.updateSourceContent(
+            assetId,
+            AssetContent.bytes(utf8.encode('// a.dart')),
+          );
+          await writeBuildStateAndPlan(buildState, initialPlan);
+
+          // Delete the input source.
+          await readerWriter.delete(assetId);
+
+          final loadedPlan = await loadPlan(overrides);
+          expect(loadedPlan.buildInputs.deletedSources, contains(assetId));
+          expect(loadedPlan.buildInputs.invalidOutputs, contains(outputId));
+          expect(
+            loadedPlan.buildInputs.retainedOutputContents.containsKey(outputId),
+            isFalse,
+          );
+        },
+      );
 
       test('withCompatiblePreviousBuild resets change tracking sets and '
           'cleanBuild', () async {

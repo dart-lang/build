@@ -451,6 +451,9 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
     }
 
     final finalSources = buildInputs.sources.build();
+    for (final id in finalSources) {
+      buildInputs.retainedOutputContents.remove(id);
+    }
     for (final id in newCacheFiles) {
       if (!finalSources.contains(id)) {
         buildInputs.invalidOutputs.add(id);
@@ -476,6 +479,9 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         .toSet();
     buildInputs.invalidOutputs.addAll(invalidOutputs);
     buildInputs.invalidOutputs.removeAll(finalSources);
+    for (final invalid in invalidOutputs) {
+      buildInputs.retainedOutputContents.remove(invalid);
+    }
 
     return BuildPlan((b) {
       b.buildSpec.replace(buildSpec);
