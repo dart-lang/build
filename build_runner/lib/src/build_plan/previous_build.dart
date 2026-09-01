@@ -260,14 +260,14 @@ Iterable<AssetId> _outputsToDelete({
   for (final stepResult in buildState.buildStepResults.values) {
     if (!stepResult.isHidden) {
       for (final id in stepResult.outputs) {
-        if (buildPackages[id.package] != null) result.add(id);
+        if (buildPackages.outputPackages.contains(id.package)) result.add(id);
       }
     }
   }
   for (final postProcessResult in buildState.postProcessResults.values) {
     if (!postProcessResult.hidden) {
       for (final id in postProcessResult.outputs) {
-        if (buildPackages[id.package] != null) result.add(id);
+        if (buildPackages.outputPackages.contains(id.package)) result.add(id);
       }
     }
   }
