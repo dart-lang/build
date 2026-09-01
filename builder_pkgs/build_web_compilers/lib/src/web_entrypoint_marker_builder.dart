@@ -116,15 +116,14 @@ int _compareEntrypointPriority(AssetId a, AssetId b) {
   // A top-level entrypoint is usually the app itself,
   // while a nested one is more often a secondary target,
   // such as a debug or example page.
-  final depthComparison = p
-      .split(a.path)
-      .length
-      .compareTo(p.split(b.path).length);
-  if (depthComparison != 0) return depthComparison;
+  if (a.pathSegments.length.compareTo(b.pathSegments.length)
+      case final depthComparison when depthComparison != 0) {
+    return depthComparison;
+  }
 
   // Among entrypoints alongside each other, `main.dart` is the convention.
-  final aIsMain = p.basename(a.path) == 'main.dart';
-  final bIsMain = p.basename(b.path) == 'main.dart';
+  final aIsMain = p.url.basename(a.path) == 'main.dart';
+  final bIsMain = p.url.basename(b.path) == 'main.dart';
   if (aIsMain != bIsMain) return aIsMain ? -1 : 1;
 
   // Fall back to a stable order so the entrypoint doesn't vary between builds.
