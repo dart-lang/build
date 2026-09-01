@@ -12,6 +12,8 @@
 - Bug fix: in incremental builds, detect and delete conflicting outputs in the
   source directory rather than treating them as sources, which could cause
   builder dependency cycles and hangs; fix #5079.
+- Bug fix: restrict incompatible build output deletion to output packages; do
+  not attempt to delete files in dependency packages.
 
 ## 2.16.0
 
