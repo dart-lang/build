@@ -76,7 +76,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       // that look like old generation outputs removed.
 
       final inputSources = diskFiles
-          .where((f) => !f.hidden)
+          .where((f) => f.atPackagePath)
           .map((f) => f.id)
           .toSet();
 
@@ -100,7 +100,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         previousBuild: previousBuild,
         buildDirs: buildSpec.buildOptions.buildDirs,
         buildFilters: buildSpec.buildOptions.buildFilters,
-        filesToCheck: inputSources.map(AssetFile.source).toSet(),
+        filesToCheck: inputSources.map(AssetFile.atPackagePath).toSet(),
         diskFiles: diskFiles,
       );
     } else {
@@ -108,12 +108,14 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       // and all discovered files on disk.
       final filesToCheck = <AssetFile>{
         ...diskFiles,
-        ...previousBuild.sources.map(AssetFile.source),
+        ...previousBuild.sources.map(AssetFile.atPackagePath),
         ...previousBuild.actualOutputs.map(
-          (id) => AssetFile(id, hidden: previousBuild.isHidden(id)),
+          (id) =>
+              AssetFile(id, inArtifactTree: previousBuild.isInArtifactTree(id)),
         ),
         ...previousBuild.actualPostOutputs.map(
-          (id) => AssetFile(id, hidden: previousBuild.isHidden(id)),
+          (id) =>
+              AssetFile(id, inArtifactTree: previousBuild.isInArtifactTree(id)),
         ),
       };
 
@@ -210,8 +212,8 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
     final result = BuildInputsBuilder()..cleanBuild = true;
 
     for (final file in filesToCheck) {
-      if (file.hidden) continue;
-      if (await readerWriter.canRead(file.id, hidden: false)) {
+      if (file.inArtifactTree) continue;
+      if (await readerWriter.canRead(file.id)) {
         result.sources.add(file.id);
       }
     }
@@ -228,7 +230,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
     if (diskFiles != null) {
       final conflictsInDeps = buildStepPlan.declaredOutputs
           .where((n) => !buildPackages.outputPackages.contains(n.package))
-          .where((n) => diskFiles.contains(AssetFile.source(n)))
+          .where((n) => diskFiles.contains(AssetFile.atPackagePath(n)))
           .toSet();
       if (conflictsInDeps.isNotEmpty) {
         buildLog.error(
@@ -242,10 +244,11 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
 
       for (final file in diskFiles) {
         if (buildStepPlan.isDeclaredOutput(file.id)) {
-          if (!file.hidden &&
+          if (file.atPackagePath &&
               buildPackages.outputPackages.contains(file.id.package)) {
             conflictingOutputs.add(file);
-          } else if (file.hidden && !buildStepPlan.isHidden(file.id)) {
+          } else if (file.inArtifactTree &&
+              buildStepPlan.isDeclaredOutputAtPackagePath(file.id)) {
             conflictingOutputs.add(file);
           }
         }
@@ -297,17 +300,20 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
     buildInputs.sources.addAll(previousBuild.sources);
 
     final conflictingOutputs = <AssetFile>{};
-    final newCacheFiles = <AssetId>{};
+    final newArtifactTreeFiles = <AssetId>{};
 
     for (final file in filesToCheck) {
       final id = file.id;
       final oldIsSource = previousBuild.isSource(id);
       AssetFile? oldFile;
       if (oldIsSource) {
-        oldFile = AssetFile.source(id);
+        oldFile = AssetFile.atPackagePath(id);
       } else if (previousBuild.isActualOutput(id) ||
           previousBuild.isActualPostOutput(id)) {
-        oldFile = AssetFile(id, hidden: previousBuild.isHidden(id));
+        oldFile = AssetFile(
+          id,
+          inArtifactTree: previousBuild.isInArtifactTree(id),
+        );
       }
       final oldExistedSameLocation = oldFile == file;
       final oldDigest = oldExistedSameLocation
@@ -316,13 +322,13 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
 
       var exists = false;
       AssetContent? newContent;
-      if (await readerWriter.canRead(id, hidden: file.hidden)) {
+      if (await readerWriter.canRead(id, inArtifactTree: file.inArtifactTree)) {
         exists = true;
         if (oldDigest != null) {
           try {
             final bytes = await readerWriter.readAsBytes(
               id,
-              hidden: file.hidden,
+              inArtifactTree: file.inArtifactTree,
             );
             newContent = AssetContent.bytes(bytes);
           } catch (_) {
@@ -346,8 +352,8 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       }
 
       if (!oldExistedSameLocation) {
-        if (file.hidden) {
-          newCacheFiles.add(id);
+        if (file.inArtifactTree) {
+          newArtifactTreeFiles.add(id);
           conflictingOutputs.add(file);
         } else {
           buildInputs.updatedSources.add(id);
@@ -441,7 +447,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       );
       buildInputs.updatedSources.removeWhere(misclassifiedSources.contains);
       for (final id in misclassifiedSources) {
-        conflictingOutputs.add(AssetFile.source(id));
+        conflictingOutputs.add(AssetFile.atPackagePath(id));
       }
       buildStepPlan = BuildStepPlan.compute(
         buildPhases: buildSpec.buildPhases,
@@ -454,7 +460,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
     for (final id in finalSources) {
       buildInputs.retainedOutputContents.remove(id);
     }
-    for (final id in newCacheFiles) {
+    for (final id in newArtifactTreeFiles) {
       if (!finalSources.contains(id)) {
         buildInputs.invalidOutputs.add(id);
       }
@@ -466,7 +472,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         try {
           final bytes = await readerWriter.readAsBytes(
             id,
-            hidden: buildStepPlan.isHidden(id),
+            inArtifactTree: buildStepPlan.isDeclaredOutputInArtifactTree(id),
           );
           final content = AssetContent.bytes(bytes);
           buildInputs.sourceContents[id] = content;

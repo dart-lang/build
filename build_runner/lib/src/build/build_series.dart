@@ -86,7 +86,7 @@ class BuildSeries {
 
       // Changes to the entrypoint are handled via depfiles.
       if (_buildPlan.buildSpec.bootstrapper.isCompileDependency(
-        _buildPlan.buildSpec.buildPackages.pathFor(id, hide: false),
+        _buildPlan.buildSpec.buildPackages.pathFor(id, inArtifactTree: false),
       )) {
         accepted.add(change);
         continue;
@@ -107,17 +107,19 @@ class BuildSeries {
         if ((change.type == .ADD || change.type == .MODIFY) &&
             _buildPlan.buildStepPlan.isDeclaredOutput(id)) {
           final expectedDigest = previousBuild.digestOf(id);
-          final isHidden = _buildPlan.buildStepPlan.isHidden(id);
+          final inArtifactTree = _buildPlan.buildStepPlan
+              .isDeclaredOutputInArtifactTree(id);
+
           if (expectedDigest != null) {
             try {
               final bytes = await _buildPlan.readerWriter.readAsBytes(
                 id,
-                hidden: isHidden,
+                inArtifactTree: inArtifactTree,
               );
               // TODO(davidmorgan): alternative is to track location in events.
               final conflictingExists = await _buildPlan.readerWriter.canRead(
                 id,
-                hidden: !isHidden,
+                inArtifactTree: !inArtifactTree,
               );
               if (!conflictingExists && md5.convert(bytes) == expectedDigest) {
                 continue;
@@ -139,7 +141,7 @@ class BuildSeries {
       final isFile = previousBuild.isFile(id);
       if (!isFile) {
         // Ignore under `.dart_tool/build`.
-        if (id.path.startsWith(cacheDirectoryPath)) continue;
+        if (id.path.startsWith(hiddenBuildDirectoryPath)) continue;
 
         // Ignore modifications and deletes.
         if (change.type != .ADD) continue;
@@ -265,8 +267,8 @@ class BuildSeries {
 
     if (!firstBuild || updates.isNotEmpty) {
       final filesToCheck = <AssetFile>{
-        for (final id in updates) AssetFile.source(id),
-        for (final id in updates) AssetFile.cache(id),
+        for (final id in updates) AssetFile.atPackagePath(id),
+        for (final id in updates) AssetFile.inArtifactTree(id),
       };
       _buildPlan = await _buildPlan.updateForFileChanges(filesToCheck);
     }
@@ -325,11 +327,11 @@ class BuildSeries {
   /// Serializes and writes the updated `asset_graph.json`.
   Future<void> _writeBuildOutput(BuildResult result) async {
     if (_buildPlan.buildInputs.cleanBuild) {
-      final generatedOutputDirectoryId = AssetId(
+      final artifactTreeDirectoryId = AssetId(
         _buildPlan.buildSpec.buildPackages.outputRoot,
-        generatedOutputDirectory,
+        artifactTreePath,
       );
-      await _buildPlan.readerWriter.deleteDirectory(generatedOutputDirectoryId);
+      await _buildPlan.readerWriter.deleteDirectory(artifactTreeDirectoryId);
     }
 
     for (final output in result.outputs) {
@@ -337,10 +339,10 @@ class BuildSeries {
       await _buildPlan.readerWriter.writeAsBytes(
         output,
         content.bytes,
-        hidden: result.buildState!.isHidden(output),
+        inArtifactTree: result.buildState!.isInArtifactTree(output),
       );
     }
-    for (final toDelete in _computeDeletes(result)) {
+    for (final toDelete in _computeDeletes(result, includeArtifactTree: true)) {
       _expectedDeletes.add(toDelete);
       await _buildPlan.readerWriter.delete(toDelete);
     }
@@ -365,38 +367,39 @@ class BuildSeries {
   /// Files that should be deleted: outputs of the previous build that are no
   /// longer declared outputs, plus files on disk that match declared outputs
   /// that were not actually output.
-  ///
-  /// Set [onlyVisible] to skip hidden files.
-  Set<AssetId> _computeDeletes(BuildResult result, {bool onlyVisible = false}) {
+  Set<AssetId> _computeDeletes(
+    BuildResult result, {
+    required bool includeArtifactTree,
+  }) {
     final deletes = <AssetId>{};
     final currentState = result.buildState!;
     final outputRoot = _buildPlan.buildSpec.buildPackages.outputRoot;
-    // Adds a delete result, unless it's a hidden file and `onlyVisible` was
-    // requested.
-    void maybeAddDelete(AssetId id, bool isHidden) {
-      if (isHidden) {
-        if (!onlyVisible) {
-          deletes.add(AssetPathProvider.hide(id, outputRoot));
+    // Adds a delete result, unless it is in the artifact tree and
+    // `includeArtifactTree` is false.
+    void maybeAddDelete(AssetId id, {required bool inArtifactTree}) {
+      if (inArtifactTree) {
+        if (includeArtifactTree) {
+          deletes.add(AssetPathProvider.inArtifactTree(id, outputRoot));
         }
       } else {
         deletes.add(id);
       }
     }
 
-    // With `forceVisibleForTesting` all hidden outputs are forced to non-hidden
-    // outputs for simpler test assertions.
-    final forceVisibleForTesting =
-        _buildPlan.buildSpec.testingOverrides.forceVisibleForTesting;
+    // If set, artifact tree outputs are forced to package paths for simpler
+    // test assertions.
+    final forceToPackagePathsForTesting =
+        _buildPlan.buildSpec.testingOverrides.forceToPackagePathsForTesting;
     for (final file in _buildPlan.conflictingOutputs) {
-      final outputIsHidden = forceVisibleForTesting
+      final outputInArtifactTree = forceToPackagePathsForTesting
           ? false
-          : currentState.isHidden(file.id);
+          : currentState.isInArtifactTree(file.id);
       final isMatchingActualOutput =
           (currentState.isActualOutput(file.id) ||
               currentState.isActualPostOutput(file.id)) &&
-          outputIsHidden == file.hidden;
+          outputInArtifactTree == file.inArtifactTree;
       if (!isMatchingActualOutput) {
-        maybeAddDelete(file.id, file.hidden);
+        maybeAddDelete(file.id, inArtifactTree: file.inArtifactTree);
       }
     }
     for (final id
@@ -415,12 +418,12 @@ class BuildSeries {
             id,
           );
           if (stepId == null) {
-            maybeAddDelete(id, stepResult.isHidden);
+            maybeAddDelete(id, inArtifactTree: stepResult.inArtifactTree);
           } else {
             final stepResultOrNull = currentState.stepResultOrNull(stepId);
             if (stepResultOrNull != null &&
                 !stepResultOrNull.outputs.contains(id)) {
-              maybeAddDelete(id, stepResult.isHidden);
+              maybeAddDelete(id, inArtifactTree: stepResult.inArtifactTree);
             }
           }
         }
@@ -428,7 +431,10 @@ class BuildSeries {
       for (final postProcessResult in previousBuild.actualPostProcessResults) {
         for (final id in postProcessResult.outputs) {
           if (!currentState.isActualPostOutput(id)) {
-            maybeAddDelete(id, postProcessResult.hidden);
+            maybeAddDelete(
+              id,
+              inArtifactTree: postProcessResult.inArtifactTree,
+            );
           }
         }
       }
@@ -441,9 +447,9 @@ class BuildSeries {
   /// If there are unexpected, missing, or incorrect outputs on disk, logs them
   /// and returns a failed result.
   ///
-  /// Only outputs and deletes in the source tree are checked; hidden outputs
-  /// and deletes of hidden files are skipped. This supports the presubmit use
-  /// case where source tree generated files are checked in but `.dart_tool`
+  /// Only outputs and deletes in package paths are checked; outputs and
+  /// deletes in the artifact tree are skipped. This supports the presubmit use
+  /// case where package path generated files are checked in but `.dart_tool`
   /// generated files are not.
   Future<BuildResult> _verifyBuildOutput(BuildResult result) async {
     final unexpected = <AssetId>[];
@@ -451,8 +457,7 @@ class BuildSeries {
     final incorrect = <AssetId>[];
 
     for (final output in result.outputs) {
-      final hidden = result.buildState!.isHidden(output);
-      if (hidden) continue;
+      if (result.buildState!.isInArtifactTree(output)) continue;
 
       final expectedContent = result.buildState!.contentOf(output)!;
       final exists = await _buildPlan.readerWriter.canRead(output);
@@ -467,7 +472,10 @@ class BuildSeries {
       }
     }
 
-    for (final toDelete in _computeDeletes(result, onlyVisible: true)) {
+    for (final toDelete in _computeDeletes(
+      result,
+      includeArtifactTree: false,
+    )) {
       final exists = await _buildPlan.readerWriter.canRead(toDelete);
       if (exists) {
         unexpected.add(toDelete);

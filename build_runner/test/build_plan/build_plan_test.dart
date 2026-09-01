@@ -110,7 +110,7 @@ void main() {
       buildState.addBuildStepResult(
         step: stepId,
         result: BuildStepResult((b) {
-          b.isHidden = false;
+          b.inArtifactTree = false;
           b.outputs.add(outputId);
         }),
         contents: {
@@ -150,7 +150,9 @@ void main() {
         'with old digest', () async {
       buildOptions = BuildOptions.forTests(outputStrategy: OutputStrategy.keep);
       testingOverrides = testingOverrides.copyWith(
-        builderDefinitions: [BuilderDefinition('', hideOutput: false)].build(),
+        builderDefinitions: [
+          BuilderDefinition('', outputsToArtifactTree: false),
+        ].build(),
       );
       buildPlan = await loadPlan();
 
@@ -165,7 +167,7 @@ void main() {
       buildState.addBuildStepResult(
         step: stepId,
         result: BuildStepResult((b) {
-          b.isHidden = false;
+          b.inArtifactTree = false;
           b.outputs.add(outputId);
         }),
         contents: {
@@ -279,7 +281,7 @@ void main() {
         builderDefinitions: [
           BuilderDefinition(
             '',
-            hideOutput: true,
+            outputsToArtifactTree: true,
             autoApply: AutoApply.allPackages,
           ),
         ].build(),
@@ -329,7 +331,7 @@ void main() {
           step: stepId,
           result: BuildStepResult((b) {
             b.result = true;
-            b.isHidden = false;
+            b.inArtifactTree = false;
             b.outputs.add(outputId);
           }),
           contents: {outputId: AssetContent.string('// output')},
@@ -363,7 +365,7 @@ void main() {
         expect(newPlan.buildInputs.sources, contains(newSourceId));
       });
 
-      test('stale cache file is marked as invalid output', () async {
+      test('stale artifact tree file is marked as invalid output', () async {
         final buildState = BuildState(
           buildStepPlan: buildPlan.buildStepPlan,
           sources: {assetId: null},
@@ -374,14 +376,17 @@ void main() {
         );
         await writeBuildStateAndPlan(buildState, buildPlan);
 
-        final staleCacheId = AssetId('a', 'lib/stale.dart.copy');
+        final staleArtifactTreeId = AssetId('a', 'lib/stale.dart.copy');
         await readerWriter.writeAsString(
-          staleCacheId,
+          staleArtifactTreeId,
           '// stale',
-          hidden: true,
+          inArtifactTree: true,
         );
         final newPlan = await loadPlan();
-        expect(newPlan.buildInputs.invalidOutputs, contains(staleCacheId));
+        expect(
+          newPlan.buildInputs.invalidOutputs,
+          contains(staleArtifactTreeId),
+        );
       });
 
       test('modified source is marked as updated source', () async {
@@ -411,7 +416,7 @@ void main() {
           step: stepId,
           result: BuildStepResult((b) {
             b.result = true;
-            b.isHidden = false;
+            b.inArtifactTree = false;
             b.outputs.add(outputId);
           }),
           contents: {outputId: AssetContent.string('// output')},
@@ -427,59 +432,65 @@ void main() {
         expect(newPlan.buildInputs.invalidOutputs, contains(outputId));
       });
 
-      test(
-        'displaced location where source conflicts with cache output marks '
-        'conflicting source output to delete and keeps hidden output valid',
-        () async {
-          final buildState = BuildState(
-            buildStepPlan: buildPlan.buildStepPlan,
-            sources: {assetId: null, assetId2: null},
-          );
-          final hiddenOutputId = AssetId('a', 'lib/a.dart.copy');
-          await readerWriter.writeAsString(
-            hiddenOutputId,
-            '// hidden output',
-            hidden: true,
-          );
-          final stepId = buildPlan.buildStepPlan.stepForDeclaredOutput(
-            hiddenOutputId,
-          );
-          buildState.addBuildStepResult(
-            step: stepId,
-            result: BuildStepResult((b) {
-              b.result = true;
-              b.isHidden = true;
-              b.outputs.add(hiddenOutputId);
-            }),
-            contents: {hiddenOutputId: AssetContent.string('// hidden output')},
-          );
-          buildState.updateSourceContent(
-            assetId,
-            AssetContent.string('// a.dart'),
-          );
-          buildState.updateSourceContent(
-            assetId2,
-            AssetContent.string('// other'),
-          );
-          await writeBuildStateAndPlan(buildState, buildPlan);
+      test('displaced location where source conflicts with artifact tree '
+          'output marks conflicting source output to delete and keeps '
+          'artifact tree output valid', () async {
+        final buildState = BuildState(
+          buildStepPlan: buildPlan.buildStepPlan,
+          sources: {assetId: null, assetId2: null},
+        );
+        final artifactTreeOutputId = AssetId('a', 'lib/a.dart.copy');
+        await readerWriter.writeAsString(
+          artifactTreeOutputId,
+          '// artifact tree output',
+          inArtifactTree: true,
+        );
+        final stepId = buildPlan.buildStepPlan.stepForDeclaredOutput(
+          artifactTreeOutputId,
+        );
+        buildState.addBuildStepResult(
+          step: stepId,
+          result: BuildStepResult((b) {
+            b.result = true;
+            b.inArtifactTree = true;
+            b.outputs.add(artifactTreeOutputId);
+          }),
+          contents: {
+            artifactTreeOutputId: AssetContent.string(
+              '// artifact tree output',
+            ),
+          },
+        );
+        buildState.updateSourceContent(
+          assetId,
+          AssetContent.string('// a.dart'),
+        );
+        buildState.updateSourceContent(
+          assetId2,
+          AssetContent.string('// other'),
+        );
+        await writeBuildStateAndPlan(buildState, buildPlan);
 
-          // Now user creates a source file with the same ID in the source tree.
-          await readerWriter.writeAsString(
-            hiddenOutputId,
-            '// conflicting source',
-          );
-          final newPlan = await loadPlan();
-          expect(
-            newPlan.conflictingOutputs,
-            contains(AssetFile.source(hiddenOutputId)),
-          );
-          expect(
-            newPlan.buildInputs.invalidOutputs,
-            isNot(contains(hiddenOutputId)),
-          );
-          expect(newPlan.buildInputs.sources, isNot(contains(hiddenOutputId)));
-        },
-      );
+        // Now user creates a source file with the same ID at the package
+        // path.
+        await readerWriter.writeAsString(
+          artifactTreeOutputId,
+          '// conflicting source',
+        );
+        final newPlan = await loadPlan();
+        expect(
+          newPlan.conflictingOutputs,
+          contains(AssetFile.atPackagePath(artifactTreeOutputId)),
+        );
+        expect(
+          newPlan.buildInputs.invalidOutputs,
+          isNot(contains(artifactTreeOutputId)),
+        );
+        expect(
+          newPlan.buildInputs.sources,
+          isNot(contains(artifactTreeOutputId)),
+        );
+      });
 
       test('throws CannotBuildException if incremental build encounters '
           'conflicting outputs in dependencies', () async {
@@ -502,7 +513,7 @@ void main() {
           builderDefinitions: [
             BuilderDefinition(
               '',
-              hideOutput: true,
+              outputsToArtifactTree: true,
               autoApply: AutoApply.allPackages,
             ),
           ].build(),
@@ -565,8 +576,8 @@ void main() {
 
         final loadedPlan = await loadPlan();
         final updatedPlan = await loadedPlan.updateForFileChanges({
-          AssetFile.source(outputId),
-          AssetFile.cache(outputId),
+          AssetFile.atPackagePath(outputId),
+          AssetFile.inArtifactTree(outputId),
         });
         expect(
           updatedPlan.buildInputs.invalidOutputs,
@@ -580,7 +591,7 @@ void main() {
 
       test(
         'declared output that was never generated is marked as invalid output '
-        'and conflicting output when created in cache',
+        'and conflicting output when created in artifact tree',
         () async {
           final buildState = BuildState(
             buildStepPlan: buildPlan.buildStepPlan,
@@ -598,57 +609,51 @@ void main() {
 
           await readerWriter.writeAsString(
             outputId,
-            '// unexpected cache file',
-            hidden: true,
+            '// unexpected artifact tree file',
+            inArtifactTree: true,
           );
 
           final loadedPlan = await loadPlan();
           expect(
             loadedPlan.conflictingOutputs,
-            contains(AssetFile.cache(outputId)),
+            contains(AssetFile.inArtifactTree(outputId)),
           );
           expect(loadedPlan.buildInputs.invalidOutputs, contains(outputId));
         },
       );
 
-      test(
-        'existing source is not marked as invalid output when unexpected cache '
-        'file is created',
-        () async {
-          final buildState = BuildState(
-            buildStepPlan: buildPlan.buildStepPlan,
-            sources: {assetId: null, assetId2: null},
-          );
-          buildState.updateSourceContent(
-            assetId,
-            AssetContent.string('// a.dart'),
-          );
-          buildState.updateSourceContent(
-            assetId2,
-            AssetContent.string('// other'),
-          );
-          await writeBuildStateAndPlan(buildState, buildPlan);
+      test('existing source is not marked as invalid output when unexpected '
+          'artifact tree file is created', () async {
+        final buildState = BuildState(
+          buildStepPlan: buildPlan.buildStepPlan,
+          sources: {assetId: null, assetId2: null},
+        );
+        buildState.updateSourceContent(
+          assetId,
+          AssetContent.string('// a.dart'),
+        );
+        buildState.updateSourceContent(
+          assetId2,
+          AssetContent.string('// other'),
+        );
+        await writeBuildStateAndPlan(buildState, buildPlan);
 
-          // An unexpected cache file appears with the same ID as an existing
-          // source.
-          await readerWriter.writeAsString(
-            assetId,
-            '// unexpected cache file',
-            hidden: true,
-          );
+        // An unexpected artifact tree file appears with the same ID as an
+        // existing source.
+        await readerWriter.writeAsString(
+          assetId,
+          '// unexpected artifact tree file',
+          inArtifactTree: true,
+        );
 
-          final loadedPlan = await loadPlan();
-          expect(
-            loadedPlan.conflictingOutputs,
-            contains(AssetFile.cache(assetId)),
-          );
-          expect(
-            loadedPlan.buildInputs.invalidOutputs,
-            isNot(contains(assetId)),
-          );
-          expect(loadedPlan.buildInputs.sources, contains(assetId));
-        },
-      );
+        final loadedPlan = await loadPlan();
+        expect(
+          loadedPlan.conflictingOutputs,
+          contains(AssetFile.inArtifactTree(assetId)),
+        );
+        expect(loadedPlan.buildInputs.invalidOutputs, isNot(contains(assetId)));
+        expect(loadedPlan.buildInputs.sources, contains(assetId));
+      });
 
       test(
         'incremental build discovers an input and its output simultaneously',
@@ -681,7 +686,7 @@ void main() {
           // Output is marked conflicting and not retained as a source.
           expect(
             loadedPlan.conflictingOutputs,
-            contains(AssetFile.source(newOutputId)),
+            contains(AssetFile.atPackagePath(newOutputId)),
           );
           expect(loadedPlan.buildInputs.sources, isNot(contains(newOutputId)));
 
@@ -693,45 +698,52 @@ void main() {
         },
       );
 
-      test('newly discovered source with unexpected cache file does not mark '
-          'source as invalid output', () async {
-        final buildState = BuildState(
-          buildStepPlan: buildPlan.buildStepPlan,
-          sources: {assetId: null},
-        );
-        buildState.updateSourceContent(
-          assetId,
-          AssetContent.string('// a.dart'),
-        );
-        await writeBuildStateAndPlan(buildState, buildPlan);
+      test(
+        'newly discovered source with unexpected artifact tree file does not '
+        'mark source as invalid output',
+        () async {
+          final buildState = BuildState(
+            buildStepPlan: buildPlan.buildStepPlan,
+            sources: {assetId: null},
+          );
+          buildState.updateSourceContent(
+            assetId,
+            AssetContent.string('// a.dart'),
+          );
+          await writeBuildStateAndPlan(buildState, buildPlan);
 
-        final newSourceId = AssetId('a', 'lib/new_source.dart');
-        await readerWriter.writeAsString(newSourceId, '// new source');
-        await readerWriter.writeAsString(
-          newSourceId,
-          '// unexpected cache',
-          hidden: true,
-        );
+          final newSourceId = AssetId('a', 'lib/new_source.dart');
+          await readerWriter.writeAsString(newSourceId, '// new source');
+          await readerWriter.writeAsString(
+            newSourceId,
+            '// unexpected artifact tree file',
+            inArtifactTree: true,
+          );
 
-        final loadedPlan = await loadPlan();
-        expect(
-          loadedPlan.conflictingOutputs,
-          contains(AssetFile.cache(newSourceId)),
-        );
-        expect(
-          loadedPlan.buildInputs.invalidOutputs,
-          isNot(contains(newSourceId)),
-        );
-        expect(loadedPlan.buildInputs.sources, contains(newSourceId));
-        expect(loadedPlan.buildInputs.updatedSources, contains(newSourceId));
-      });
+          final loadedPlan = await loadPlan();
+          expect(
+            loadedPlan.conflictingOutputs,
+            contains(AssetFile.inArtifactTree(newSourceId)),
+          );
+          expect(
+            loadedPlan.buildInputs.invalidOutputs,
+            isNot(contains(newSourceId)),
+          );
+          expect(loadedPlan.buildInputs.sources, contains(newSourceId));
+          expect(loadedPlan.buildInputs.updatedSources, contains(newSourceId));
+        },
+      );
 
-      test('deleted input with hidden post process output does not mark new '
-          'source as conflicting output', () async {
+      test('deleted input with artifact tree post process output does not mark '
+          'new source as conflicting output', () async {
         final inputId = AssetId('a', 'lib/input.txt');
         final postOutputId = AssetId('a', 'lib/input.txt.post');
         await readerWriter.writeAsString(inputId, '// input');
-        await readerWriter.writeAsString(postOutputId, '// post', hidden: true);
+        await readerWriter.writeAsString(
+          postOutputId,
+          '// post',
+          inArtifactTree: true,
+        );
 
         final postBuilderDef = PostProcessBuilderDefinition('a:post');
         final postOverrides = TestingOverrides(
@@ -769,7 +781,7 @@ void main() {
         buildState.addPostProcessBuildStepResult(
           step: postStepId,
           result: PostProcessBuildStepResult(
-            hidden: true,
+            inArtifactTree: true,
             outputs: [postOutputId],
           ),
           contents: {postOutputId: AssetContent.string('// post')},
@@ -789,7 +801,7 @@ void main() {
         expect(loadedPlan.buildInputs.updatedSources, contains(postOutputId));
         expect(
           loadedPlan.conflictingOutputs,
-          isNot(contains(AssetFile.source(postOutputId))),
+          isNot(contains(AssetFile.atPackagePath(postOutputId))),
         );
         expect(
           loadedPlan.buildInputs.invalidOutputs,
@@ -803,12 +815,16 @@ void main() {
         );
       });
 
-      test('deleted input and deleted hidden post process output does not mark '
-          'new source as invalid output', () async {
+      test('deleted input and deleted artifact tree post process output does '
+          'not mark new source as invalid output', () async {
         final inputId = AssetId('a', 'lib/input.txt');
         final postOutputId = AssetId('a', 'lib/input.txt.post');
         await readerWriter.writeAsString(inputId, '// input');
-        await readerWriter.writeAsString(postOutputId, '// post', hidden: true);
+        await readerWriter.writeAsString(
+          postOutputId,
+          '// post',
+          inArtifactTree: true,
+        );
 
         final postBuilderDef = PostProcessBuilderDefinition('a:post');
         final postOverrides = TestingOverrides(
@@ -846,7 +862,7 @@ void main() {
         buildState.addPostProcessBuildStepResult(
           step: postStepId,
           result: PostProcessBuildStepResult(
-            hidden: true,
+            inArtifactTree: true,
             outputs: [postOutputId],
           ),
           contents: {postOutputId: AssetContent.string('// post')},
@@ -857,9 +873,9 @@ void main() {
         );
         await writeBuildStateAndPlan(buildState, initialPlan);
 
-        // Delete the input and the old hidden output.
+        // Delete the input and the old artifact tree output.
         await readerWriter.delete(inputId);
-        await readerWriter.delete(postOutputId, hidden: true);
+        await readerWriter.delete(postOutputId, inArtifactTree: true);
         await readerWriter.writeAsString(postOutputId, '// new source');
 
         final loadedPlan = await loadPlan(postOverrides, postFactories);
@@ -867,7 +883,7 @@ void main() {
         expect(loadedPlan.buildInputs.updatedSources, contains(postOutputId));
         expect(
           loadedPlan.conflictingOutputs,
-          isNot(contains(AssetFile.source(postOutputId))),
+          isNot(contains(AssetFile.atPackagePath(postOutputId))),
         );
         expect(
           loadedPlan.buildInputs.invalidOutputs,
@@ -875,12 +891,16 @@ void main() {
         );
       });
 
-      test('existing input with hidden post process output marks new visible '
-          'source as conflicting output', () async {
+      test('existing input with artifact tree post process output marks new '
+          'package path source as conflicting output', () async {
         final inputId = AssetId('a', 'lib/input.txt');
         final postOutputId = AssetId('a', 'lib/input.txt.post');
         await readerWriter.writeAsString(inputId, '// input');
-        await readerWriter.writeAsString(postOutputId, '// post', hidden: true);
+        await readerWriter.writeAsString(
+          postOutputId,
+          '// post',
+          inArtifactTree: true,
+        );
 
         final postBuilderDef = PostProcessBuilderDefinition('a:post');
         final postOverrides = TestingOverrides(
@@ -918,7 +938,7 @@ void main() {
         buildState.addPostProcessBuildStepResult(
           step: postStepId,
           result: PostProcessBuildStepResult(
-            hidden: true,
+            inArtifactTree: true,
             outputs: [postOutputId],
           ),
           contents: {postOutputId: AssetContent.string('// post')},
@@ -929,13 +949,16 @@ void main() {
         );
         await writeBuildStateAndPlan(buildState, initialPlan);
 
-        // Create a visible file at the post-process output location.
-        await readerWriter.writeAsString(postOutputId, '// visible collision');
+        // Create a package path file at the post-process output location.
+        await readerWriter.writeAsString(
+          postOutputId,
+          '// package path collision',
+        );
 
         final loadedPlan = await loadPlan(postOverrides, postFactories);
         expect(
           loadedPlan.conflictingOutputs,
-          contains(AssetFile.source(postOutputId)),
+          contains(AssetFile.atPackagePath(postOutputId)),
         );
         expect(loadedPlan.buildInputs.sources, isNot(contains(postOutputId)));
         expect(
@@ -944,8 +967,8 @@ void main() {
         );
       });
 
-      test('deleted input with transitive declared output replaced by visible '
-          'source does not mark source as invalid output', () async {
+      test('deleted input with transitive declared output replaced by package '
+          'path source does not mark source as invalid output', () async {
         final stepId = buildPlan.buildStepPlan.stepForDeclaredOutput(outputId);
         final buildState = BuildState(
           buildStepPlan: buildPlan.buildStepPlan,
@@ -955,7 +978,7 @@ void main() {
           step: stepId,
           result: BuildStepResult((b) {
             b.result = true;
-            b.isHidden = true;
+            b.inArtifactTree = true;
             b.outputs.add(outputId);
           }),
           contents: {outputId: AssetContent.string('// copy')},
@@ -964,13 +987,17 @@ void main() {
           assetId,
           AssetContent.string('// a.dart'),
         );
-        await readerWriter.writeAsString(outputId, '// copy', hidden: true);
+        await readerWriter.writeAsString(
+          outputId,
+          '// copy',
+          inArtifactTree: true,
+        );
         await writeBuildStateAndPlan(buildState, buildPlan);
 
-        // Delete the input and the hidden output, and add a visible source
-        // file.
+        // Delete the input and the artifact tree output, and add a package
+        // path source file.
         await readerWriter.delete(assetId);
-        await readerWriter.delete(outputId, hidden: true);
+        await readerWriter.delete(outputId, inArtifactTree: true);
         await readerWriter.writeAsString(outputId, '// source content');
 
         final loadedPlan = await loadPlan();
@@ -986,7 +1013,7 @@ void main() {
         () async {
           final overrides = TestingOverrides(
             builderDefinitions: [
-              BuilderDefinition('', hideOutput: false),
+              BuilderDefinition('', outputsToArtifactTree: false),
             ].build(),
             readerWriter: readerWriter,
             buildPackages: buildPackages,
@@ -1006,7 +1033,7 @@ void main() {
             step: stepId,
             result: BuildStepResult((b) {
               b.result = true;
-              b.isHidden = false;
+              b.inArtifactTree = false;
               b.outputs.add(outputId);
             }),
             contents: {

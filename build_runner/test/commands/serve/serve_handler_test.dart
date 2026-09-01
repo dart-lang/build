@@ -149,7 +149,7 @@ void main() {
       buildState.addPostProcessBuildStepResult(
         step: PostProcessBuildStepId(input: parsedId, actionNumber: 1),
         result: PostProcessBuildStepResult(
-          hidden: true,
+          inArtifactTree: true,
           deletedPrimaryInput: true,
         ),
       );
@@ -291,7 +291,7 @@ void main() {
 
       final stepResult = BuildStepResult((b) {
         b.result = false;
-        b.isHidden = false;
+        b.inArtifactTree = false;
       });
       buildState.addBuildStepResult(step: buildStepId, result: stepResult);
 

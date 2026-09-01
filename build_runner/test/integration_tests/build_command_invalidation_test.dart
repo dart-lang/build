@@ -119,11 +119,11 @@ void main() async {
     await tester.run('root_pkg', 'dart run build_runner build --force-jit');
     expect(tester.read('root_pkg/web/a.txt.copy2'), null);
 
-    // Conflicting logical ID exists in both source and cache.
+    // Conflicting logical ID exists at both package path and in artifact tree.
     tester.writeFixturePackage(
       FixturePackages.copyBuilder(
         buildToCache: true,
-        outputExtension: '.hidden',
+        outputExtension: '.artifact',
       ),
     );
     tester.writePackage(
@@ -133,23 +133,24 @@ void main() async {
       files: {'web/a.txt': 'a'},
     );
 
-    // Initial build creates hidden output in cache.
+    // Initial build creates output in the artifact tree.
     await tester.run('root_pkg', 'dart run build_runner build --force-jit');
-    final cacheFile =
-        'root_pkg/.dart_tool/build/generated/root_pkg/web/a.txt.hidden';
-    expect(tester.read(cacheFile), 'a');
+    final artifactFile =
+        'root_pkg/.dart_tool/build/generated/root_pkg/web/a.txt.artifact';
+    expect(tester.read(artifactFile), 'a');
 
     // Create a source file with the exact same logical ID.
-    tester.write('root_pkg/web/a.txt.hidden', 'source content');
+    tester.write('root_pkg/web/a.txt.artifact', 'source content');
 
     // Next build recognizes the new source file and handles the conflict:
-    // the conflicting source file is deleted and hidden output remains in
-    // cache.
+    // the conflicting source file is deleted and output remains in the
+    // artifact tree.
     await tester.run('root_pkg', 'dart run build_runner build --force-jit');
-    expect(tester.read('root_pkg/web/a.txt.hidden'), null);
-    expect(tester.read(cacheFile), 'a');
+    expect(tester.read('root_pkg/web/a.txt.artifact'), null);
+    expect(tester.read(artifactFile), 'a');
 
-    // Conflicts in cache deleted when builder outputs to source tree.
+    // Conflicts in the artifact tree deleted when builder outputs to package
+    // path.
     tester.writeFixturePackage(
       FixturePackages.copyBuilder(buildToCache: false),
     );
@@ -159,11 +160,13 @@ void main() async {
       pathDependencies: ['builder_pkg'],
       files: {
         'web/a.txt': 'a',
-        'web/a.txt.copy': 'visible conflict',
-        '.dart_tool/build/generated/root_pkg/web/a.txt.copy': 'hidden conflict',
+        'web/a.txt.copy': 'package path conflict',
+        '.dart_tool/build/generated/root_pkg/web/a.txt.copy':
+            'artifact tree conflict',
       },
     );
-    // Both locations conflict, builder writes visible: hidden is deleted.
+    // Both locations conflict, builder writes package path: artifact tree is
+    // deleted.
     await tester.run('root_pkg', 'dart run build_runner build --force-jit');
     expect(tester.read('root_pkg/web/a.txt.copy'), 'a');
     expect(
@@ -173,11 +176,11 @@ void main() async {
       null,
     );
 
-    // Previous visible actual output plus new hidden conflict: hidden is
-    // deleted.
+    // Previous package path actual output plus new artifact tree conflict:
+    // artifact tree is deleted.
     tester.write(
       'root_pkg/.dart_tool/build/generated/root_pkg/web/a.txt.copy',
-      'new hidden conflict',
+      'new artifact tree conflict',
     );
     await tester.run('root_pkg', 'dart run build_runner build --force-jit');
     expect(

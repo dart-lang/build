@@ -76,8 +76,8 @@ Future<void> main() async {
             to: '.${i + 1}',
             // Cover optional+required builders.
             isOptional: random.nextBool(),
-            // Cover builders with hidden+visible output.
-            outputIsVisible: random.nextBool(),
+            // Cover builders with artifact tree and package path output.
+            outputAtPackagePath: random.nextBool(),
           )
           // Use the input as the seed for what additional reads to do,
           // so reads won't change between identical runs.
@@ -103,14 +103,14 @@ Future<void> main() async {
         Future<void> addExpectedOutputs(String invalidatedInput) async {
           for (final output in outputs) {
             final assetId = AssetId('pkg', 'lib/$output.dart');
-            final hiddenAssetId = AssetId(
+            final artifactTreeAssetId = AssetId(
               'pkg',
               '.dart_tool/build/generated/pkg/lib/$output.dart',
             );
             final outputContents = tester.readerWriter!.testing.exists(assetId)
                 ? tester.readerWriter!.testing.readString(assetId)
-                : tester.readerWriter!.testing.exists(hiddenAssetId)
-                ? tester.readerWriter!.testing.readString(hiddenAssetId)
+                : tester.readerWriter!.testing.exists(artifactTreeAssetId)
+                ? tester.readerWriter!.testing.readString(artifactTreeAssetId)
                 : '';
             // The test builder output is a list of "$name,$hash" for each input
             // that was read, including transitively resolved sources. Check it

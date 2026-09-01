@@ -131,7 +131,7 @@ class BuilderFilesystem {
     try {
       bytes = await readerWriter.readAsBytes(
         id,
-        hidden: buildState.isHidden(id),
+        inArtifactTree: buildState.isInArtifactTree(id),
       );
     } on AssetNotFoundException {
       await ChildProcess.exitDueToAssetDeleted(id);
@@ -183,7 +183,8 @@ class BuilderFilesystem {
     if (buildStepPlan.isDeclaredOutput(id)) {
       final step = buildStepPlan.stepForDeclaredOutput(id);
       if (step.phaseNumber >= phase) {
-        // Parallel outputs, or own outputs not caught earlier, are hidden.
+        // Parallel outputs, or own outputs not caught earlier, are not
+        // readable.
         return false;
       }
 
@@ -263,7 +264,10 @@ class BuilderFilesystem {
     }
 
     return PhasedValue.fixed(
-      await readerWriter.canRead(id, hidden: buildState.isHidden(id))
+      await readerWriter.canRead(
+            id,
+            inArtifactTree: buildState.isInArtifactTree(id),
+          )
           ? (await contentOf(id)).dartStringValueOrEmptyFail(id: id)
           : '',
     );

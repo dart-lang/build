@@ -51,8 +51,8 @@ abstract class PreviousBuild
   BuiltList<bool> get phaseOptionsChangedList;
   BuiltList<bool> get postBuildOptionsChangedList;
 
-  /// If the previous build is not compatible, source tree outputs from it to
-  /// delete.
+  /// If the previous build is not compatible, these are the package path
+  /// outputs from it that should be deleted.
   BuiltList<AssetId> get incompatibleBuildOutputsToDelete;
 
   factory PreviousBuild([void Function(PreviousBuildBuilder) updates]) =
@@ -124,14 +124,16 @@ abstract class PreviousBuild
     return stepResultOrNull(step)?.outputs.contains(id) ?? false;
   }
 
-  bool _isHiddenPostProcessOutput(AssetId id) {
+  bool _isInArtifactTreePostProcessOutput(AssetId id) {
     final step = postProcessOutputs[id];
     if (step == null) return false;
-    return postProcessResults[step]?.hidden ?? false;
+    return postProcessResults[step]?.inArtifactTree ?? false;
   }
 
-  bool isHidden(AssetId id) =>
-      (buildStepPlan?.isHidden(id) ?? false) || _isHiddenPostProcessOutput(id);
+  /// Whether the output id is written in the artifact tree.
+  bool isInArtifactTree(AssetId id) =>
+      (buildStepPlan?.isDeclaredOutputInArtifactTree(id) ?? false) ||
+      _isInArtifactTreePostProcessOutput(id);
 
   bool isFile(AssetId id) =>
       isSource(id) ||
@@ -149,8 +151,8 @@ abstract class PreviousBuild
   /// detail on compatibility.
   ///
   /// If the previous build cannot be used for an incremental build then
-  /// [incompatibleBuildOutputsToDelete] is filled with its source tree outputs
-  /// to delete.
+  /// [incompatibleBuildOutputsToDelete] is filled with its package path outputs
+  /// that should be deleted.
   static Future<PreviousBuild> load(BuildSpec buildSpec) async {
     final readerWriter = buildSpec.readerWriter;
     final buildPackages = buildSpec.buildPackages;
@@ -258,14 +260,14 @@ Iterable<AssetId> _outputsToDelete({
 }) {
   final result = <AssetId>[];
   for (final stepResult in buildState.buildStepResults.values) {
-    if (!stepResult.isHidden) {
+    if (!stepResult.inArtifactTree) {
       for (final id in stepResult.outputs) {
         if (buildPackages[id.package] != null) result.add(id);
       }
     }
   }
   for (final postProcessResult in buildState.postProcessResults.values) {
-    if (!postProcessResult.hidden) {
+    if (!postProcessResult.inArtifactTree) {
       for (final id in postProcessResult.outputs) {
         if (buildPackages[id.package] != null) result.add(id);
       }

@@ -423,4 +423,4 @@ BuildPackages _testBuildPackages(String packageName) =>
     ]);
 
 Uri _packageFileUri(BuildPackages buildPackages, AssetId assetId) =>
-    Uri.file(buildPackages.pathFor(assetId, hide: false));
+    Uri.file(buildPackages.pathFor(assetId, inArtifactTree: false));

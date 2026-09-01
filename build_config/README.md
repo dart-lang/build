@@ -141,8 +141,11 @@ the following keys:
   later Builder. This option should be rare. Defaults to `False`.
 - **build_to**: Optional. The location that generated assets should be output
   to. The possibilities are:
-  - `"source"`: Outputs go to the source tree next to their primary inputs.
-  - `"cache"`: Outputs go to a hidden build cache and won't be published.
+  - `"source"`: Outputs are written at their package paths. They're written
+    next to their primary inputs except for the unusual case when
+    `build_extensions` is used to match and change the enclosing path.
+  - `"cache"`: Outputs are written in the artifact tree under
+    `.dart_tool/build/generated` and won't be published.
   The default is "cache". If a Builder specifies that it outputs to "source" it
   will never run on any package other than the root - but does not necessarily
   need to use the "root_package" value for "auto_apply". If it would otherwise
@@ -200,8 +203,9 @@ Each post process builder config may contain the following keys:
   returned by the `builder_factory`.
 - **build_to**: Optional. The location that generated assets should be output
   to. The possibilities are:
-  - `"source"`: Outputs go to the source tree next to their primary inputs.
-  - `"cache"`: Outputs go to a hidden build cache and won't be published.
+  - `"source"`: Outputs are written at their package paths.
+  - `"cache"`: Outputs are written in the artifact tree under
+    `.dart_tool/build/generated` and won't be published.
 - **defaults**: Optional: Default values to apply when a user does not specify
   the corresponding key in their `builders` section. May contain the following
   keys:

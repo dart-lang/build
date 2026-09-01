@@ -1,5 +1,7 @@
 ## 2.16.1-wip
 
+- Clarify terminology: refer to `.dart_tool/build/generated` as the "artifact
+  tree", and the normal output location as the "package path".
 - Reduce logged compile progress output for non-interactive builds, for example
   presubmits.
 - In `serve` and `daemon` modes, source files not involved in the build are no

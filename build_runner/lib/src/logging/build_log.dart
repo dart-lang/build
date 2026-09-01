@@ -522,7 +522,7 @@ class BuildLog {
   Uri? _targetUriForAssetId(AssetId id, {bool? windows}) {
     String? path;
     try {
-      path = buildPackages?.pathFor(id, hide: false);
+      path = buildPackages?.pathFor(id, inArtifactTree: false);
     } on PackageNotFoundException {
       return null;
     }

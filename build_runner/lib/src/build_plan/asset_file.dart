@@ -7,23 +7,28 @@ import 'package:built_value/built_value.dart';
 
 part 'asset_file.g.dart';
 
-/// An asset with its physical location on disk: either in the source directory
-/// or in the hidden cache directory.
+/// An asset with its physical location on disk: either at its package path or
+/// in the artifact tree.
 abstract class AssetFile implements Built<AssetFile, AssetFileBuilder> {
   /// The logical asset identifier.
   AssetId get id;
 
-  /// Whether the file is located in the hidden cache directory.
-  bool get hidden;
+  /// Whether the file is located in the artifact tree.
+  bool get inArtifactTree;
 
-  factory AssetFile(AssetId id, {required bool hidden}) =>
-      _$AssetFile._(id: id, hidden: hidden);
+  /// Whether the file is located at its package path.
+  bool get atPackagePath => !inArtifactTree;
 
-  /// An asset in the source directory.
-  factory AssetFile.source(AssetId id) => _$AssetFile._(id: id, hidden: false);
+  factory AssetFile(AssetId id, {required bool inArtifactTree}) =>
+      _$AssetFile._(id: id, inArtifactTree: inArtifactTree);
 
-  /// An asset in the hidden cache directory.
-  factory AssetFile.cache(AssetId id) => _$AssetFile._(id: id, hidden: true);
+  /// An asset at its package path.
+  factory AssetFile.atPackagePath(AssetId id) =>
+      _$AssetFile._(id: id, inArtifactTree: false);
+
+  /// An asset in the artifact tree.
+  factory AssetFile.inArtifactTree(AssetId id) =>
+      _$AssetFile._(id: id, inArtifactTree: true);
 
   AssetFile._();
 }

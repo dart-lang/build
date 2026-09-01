@@ -616,7 +616,7 @@ class Build {
           phaseNum,
           action.builder,
           buildStepId,
-          hideOutput: action.hideOutput,
+          outputsToArtifactTree: action.outputsToArtifactTree,
         ),
       );
     }
@@ -627,7 +627,7 @@ class Build {
     int phaseNumber,
     PostProcessBuilder builder,
     PostProcessBuildStepId postProcessBuildStepId, {
-    required bool hideOutput,
+    required bool outputsToArtifactTree,
   }) async {
     final input = postProcessBuildStepId.input;
 
@@ -659,7 +659,7 @@ class Build {
       inputId: input,
       buildFilesystem: _builderFilesystem,
       addAsset: (assetId) {
-        if (!hideOutput) buildPackages.throwIfReadonly(assetId);
+        if (!outputsToArtifactTree) buildPackages.throwIfReadonly(assetId);
         if (_isFile(assetId)) {
           throw InvalidOutputException(assetId, 'Asset already exists');
         }
@@ -687,7 +687,7 @@ class Build {
     }, logger);
 
     final stepResult = PostProcessBuildStepResult(
-      hidden: hideOutput,
+      inArtifactTree: outputsToArtifactTree,
       outputs: step.outputs.keys,
       errors: logger.errors,
       deletedPrimaryInput: deletedPrimaryInput,
@@ -702,11 +702,12 @@ class Build {
   }
 
   void _markStepSkipped(BuildStepId buildStepId, Iterable<AssetId> outputs) {
-    final isHidden =
-        buildPhases.inBuildPhases[buildStepId.phaseNumber].hideOutput;
+    final inArtifactTree = buildPhases
+        .inBuildPhases[buildStepId.phaseNumber]
+        .outputsToArtifactTree;
     _builderFilesystem.addBuildStepResult(
       step: buildStepId,
-      result: BuildStepResult((b) => b..isHidden = isHidden),
+      result: BuildStepResult((b) => b..inArtifactTree = inArtifactTree),
     );
   }
 
@@ -714,13 +715,14 @@ class Build {
     BuildStepId buildStepId,
     Iterable<AssetId> outputs,
   ) async {
-    final isHidden =
-        buildPhases.inBuildPhases[buildStepId.phaseNumber].hideOutput;
+    final inArtifactTree = buildPhases
+        .inBuildPhases[buildStepId.phaseNumber]
+        .outputsToArtifactTree;
     _builderFilesystem.addBuildStepResult(
       step: buildStepId,
       result: BuildStepResult((b) {
         b.result = false;
-        b.isHidden = isHidden;
+        b.inArtifactTree = inArtifactTree;
       }),
     );
   }
@@ -1088,7 +1090,8 @@ class Build {
 
     final buildStepResultBuilder = BuildStepResultBuilder()
       ..result = result
-      ..isHidden = buildPhases.inBuildPhases[phaseNum].hideOutput
+      ..inArtifactTree =
+          buildPhases.inBuildPhases[phaseNum].outputsToArtifactTree
       ..inputs.replace(usedInputs)
       ..globsEvaluated.replace(inputTracker.globsEvaluated)
       ..resolverEntrypoints.replace(inputTracker.resolverEntrypoints)

@@ -1,3 +1,8 @@
+## 1.3.3-wip
+
+- Clarify terminology: refer to `.dart_tool/build/generated` as the "artifact
+  tree", and the normal output location as the "package path".
+
 ## 1.3.2
 
 - Reject builder names with the wrong package name.

@@ -394,13 +394,13 @@ void main() {
             'a:clone_txt',
             autoApply: AutoApply.rootPackage,
             isOptional: true,
-            hideOutput: false,
+            outputsToArtifactTree: false,
             appliesBuilders: ['a:post_copy_builder'],
           ),
           BuilderDefinition(
             'a:copy_web_clones',
             autoApply: AutoApply.rootPackage,
-            hideOutput: false,
+            outputsToArtifactTree: false,
           ),
           postCopyABuilderDefinition,
         ];
@@ -629,10 +629,10 @@ targets:
         await done;
       });
 
-      test('does not build hidden non-lib assets by default', () async {
+      test('does not build artifact tree non-lib assets by default', () async {
         final result = await testPhases(
           builderFactories,
-          [BuilderDefinition('', hideOutput: true)],
+          [BuilderDefinition('', outputsToArtifactTree: true)],
           {'a|example/a.txt': 'a', 'a|lib/b.txt': 'b'},
           checkBuildStatus: false,
           buildDirs: {BuildDirectory('web')},
@@ -645,28 +645,34 @@ targets:
         );
       });
 
-      test('builds hidden asset forming a custom public source', () async {
-        final result = await testPhases(
-          builderFactories,
-          [BuilderDefinition('', hideOutput: true)],
-          {
-            'a|include/a.txt': 'a',
-            'a|lib/b.txt': 'b',
-            'a|build.yaml': '''
+      test(
+        'builds artifact tree asset forming a custom public source',
+        () async {
+          final result = await testPhases(
+            builderFactories,
+            [BuilderDefinition('', outputsToArtifactTree: true)],
+            {
+              'a|include/a.txt': 'a',
+              'a|lib/b.txt': 'b',
+              'a|build.yaml': '''
 additional_public_assets:
   - include/**
 ''',
-          },
-          checkBuildStatus: false,
-          buildDirs: {BuildDirectory('web')},
-        );
+            },
+            checkBuildStatus: false,
+            buildDirs: {BuildDirectory('web')},
+          );
 
-        checkBuild(
-          result.buildResult,
-          readerWriter: result.readerWriter,
-          outputs: {r'$$a|include/a.txt.copy': 'a', r'$$a|lib/b.txt.copy': 'b'},
-        );
-      });
+          checkBuild(
+            result.buildResult,
+            readerWriter: result.readerWriter,
+            outputs: {
+              r'$$a|include/a.txt.copy': 'a',
+              r'$$a|lib/b.txt.copy': 'b',
+            },
+          );
+        },
+      );
     });
 
     group('reading assets outside of the root package', () {
@@ -685,7 +691,7 @@ additional_public_assets:
   - test/**
 ''',
           },
-          // Visible output so it only runs on the root package `a`.
+          // Package path output so it only runs on the root package `a`.
           visibleOutputBuilders: {builder},
           outputs: {r'a|lib/a.foo.copy': 'content'},
           testingBuilderConfig: false,
@@ -752,7 +758,7 @@ additional_public_assets:
         await testBuilders(
           [testBuilder],
           {'b|lib/b.txt': 'b'},
-          // Visible output so it only runs on the root package `a`.
+          // Package path output so it only runs on the root package `a`.
           visibleOutputBuilders: {testBuilder},
           rootPackage: 'a',
           outputs: {},
@@ -760,7 +766,7 @@ additional_public_assets:
       },
     );
 
-    group('with `hideOutput: true`', () {
+    group('with `outputsToArtifactTree: true`', () {
       test('can output files in non-root packages', () async {
         await testBuilders(
           [testBuilder],
@@ -776,37 +782,35 @@ additional_public_assets:
         );
       });
 
-      test(
-        'cannot output files in non-root packages with hideOutput: false',
-        () async {
-          final differentPackagePostProcessBuilder =
-              DifferentPackagePostProcessBuilder();
-          final result = await testBuilders(
-            [testBuilder],
-            {'a|lib/a.txt': 'a'},
-            postProcessBuilders: [differentPackagePostProcessBuilder],
-            appliesBuilders: {
-              testBuilder: ['DifferentPackagePostProcessBuilder'],
-            },
-            visibleOutputPostProcessBuilders: {
-              differentPackagePostProcessBuilder,
-            },
-          );
-          expect(result.succeeded, false);
-        },
-      );
+      test('cannot output files in non-root packages with '
+          'outputsToArtifactTree: false', () async {
+        final differentPackagePostProcessBuilder =
+            DifferentPackagePostProcessBuilder();
+        final result = await testBuilders(
+          [testBuilder],
+          {'a|lib/a.txt': 'a'},
+          postProcessBuilders: [differentPackagePostProcessBuilder],
+          appliesBuilders: {
+            testBuilder: ['DifferentPackagePostProcessBuilder'],
+          },
+          visibleOutputPostProcessBuilders: {
+            differentPackagePostProcessBuilder,
+          },
+        );
+        expect(result.succeeded, false);
+      });
 
-      test('handles mixed hidden and non-hidden outputs', () async {
+      test('handles mixed artifact tree and package path outputs', () async {
         final result = await testBuilders(
           [
             testBuilder,
-            TestBuilder(buildExtensions: appendExtension('.hiddencopy')),
+            TestBuilder(buildExtensions: appendExtension('.artifactcopy')),
           ],
           {'a|lib/a.txt': 'a'},
           visibleOutputBuilders: {testBuilder},
           outputs: {
-            r'a|lib/a.txt.hiddencopy': 'a',
-            r'a|lib/a.txt.copy.hiddencopy': 'a',
+            r'a|lib/a.txt.artifactcopy': 'a',
+            r'a|lib/a.txt.copy.artifactcopy': 'a',
             r'a|lib/a.txt.copy': 'a',
           },
         );
@@ -819,28 +823,31 @@ additional_public_assets:
         );
       });
 
-      test('allows reading hidden outputs from another package to create '
-          'a non-hidden output', () async {
-        final builder1 = TestBuilder();
-        final builder2 = TestBuilder(
-          buildExtensions: appendExtension('.check_can_read'),
-          build: writeCanRead(makeAssetId('b|lib/b.txt.copy')),
-        );
-        await testBuilders(
-          [builder1, builder2],
-          {'a|lib/a.txt': 'a', 'b|lib/b.txt': 'b'},
-          visibleOutputBuilders: {builder2},
-          outputs: {
-            r'a|lib/a.txt.copy': 'a',
-            r'a|lib/a.txt.copy.check_can_read': 'true',
-            r'b|lib/b.txt.copy': 'b',
-            r'a|lib/a.txt.check_can_read': 'true',
-          },
-        );
-      });
+      test(
+        'allows reading artifact tree outputs from another package to create '
+        'a package path output',
+        () async {
+          final builder1 = TestBuilder();
+          final builder2 = TestBuilder(
+            buildExtensions: appendExtension('.check_can_read'),
+            build: writeCanRead(makeAssetId('b|lib/b.txt.copy')),
+          );
+          await testBuilders(
+            [builder1, builder2],
+            {'a|lib/a.txt': 'a', 'b|lib/b.txt': 'b'},
+            visibleOutputBuilders: {builder2},
+            outputs: {
+              r'a|lib/a.txt.copy': 'a',
+              r'a|lib/a.txt.copy.check_can_read': 'true',
+              r'b|lib/b.txt.copy': 'b',
+              r'a|lib/a.txt.check_can_read': 'true',
+            },
+          );
+        },
+      );
 
-      test('allows reading hidden outputs from same package to create '
-          'a non-hidden output', () async {
+      test('allows reading artifact tree outputs from same package to create '
+          'a package path output', () async {
         final builder1 = TestBuilder();
         final builder2 = TestBuilder(
           buildExtensions: appendExtension('.check_can_read'),
@@ -988,14 +995,14 @@ targets:
         [
           BuilderDefinition(
             '',
-            hideOutput: true,
+            outputsToArtifactTree: true,
             targetBuilderConfigDefaults: const TargetBuilderConfigDefaults(
               generateFor: InputSet(include: ['test/*.txt']),
             ),
           ),
           BuilderDefinition(
             'b2',
-            hideOutput: true,
+            outputsToArtifactTree: true,
             targetBuilderConfigDefaults: const TargetBuilderConfigDefaults(
               generateFor: InputSet(include: ['web/*.txt']),
             ),
@@ -1009,14 +1016,14 @@ targets:
     });
 
     test(
-      'build to source builders are always ran regardless of buildDirs',
+      'build to package path builders are always ran regardless of buildDirs',
       () async {
         await testPhases(
           builderFactories,
           [
             BuilderDefinition(
               '',
-              hideOutput: false,
+              outputsToArtifactTree: false,
               targetBuilderConfigDefaults: const TargetBuilderConfigDefaults(
                 generateFor: InputSet(include: ['**/*.txt']),
               ),
@@ -1278,7 +1285,9 @@ targets:
             ),
           ],
         });
-        final builderDefinitions = [BuilderDefinition('', hideOutput: false)];
+        final builderDefinitions = [
+          BuilderDefinition('', outputsToArtifactTree: false),
+        ];
 
         // Initial build.
         final result = await testPhases(
@@ -1350,7 +1359,9 @@ targets:
             ),
           ],
         });
-        final builderDefinitions = [BuilderDefinition('', hideOutput: false)];
+        final builderDefinitions = [
+          BuilderDefinition('', outputsToArtifactTree: false),
+        ];
 
         // Initial build.
         final result = await testPhases(
@@ -1398,7 +1409,9 @@ targets:
               ),
             ],
           });
-          final builderDefinitions = [BuilderDefinition('', hideOutput: false)];
+          final builderDefinitions = [
+            BuilderDefinition('', outputsToArtifactTree: false),
+          ];
           // Initial build.
           final result = await testPhases(
             builderFactories,
@@ -1432,8 +1445,8 @@ targets:
         ],
       });
       final builderDefinitions = [
-        BuilderDefinition('', hideOutput: false),
-        BuilderDefinition('b2', hideOutput: false),
+        BuilderDefinition('', outputsToArtifactTree: false),
+        BuilderDefinition('b2', outputsToArtifactTree: false),
       ];
 
       // Initial build.
@@ -1474,7 +1487,9 @@ targets:
     });
 
     test('no outputs if no changed sources', () async {
-      final builderDefinitions = [BuilderDefinition('', hideOutput: false)];
+      final builderDefinitions = [
+        BuilderDefinition('', outputsToArtifactTree: false),
+      ];
       // Initial build.
       final result = await testPhases(
         builderFactories,
@@ -1493,37 +1508,42 @@ targets:
       );
     });
 
-    test('no outputs if no changed sources using `hideOutput: true`', () async {
-      final builderDefinitions = [
-        BuilderDefinition(
-          '',
-          autoApply: AutoApply.rootPackage,
-          hideOutput: true,
-        ),
-      ];
+    test(
+      'no outputs if no changed sources using `outputsToArtifactTree: true`',
+      () async {
+        final builderDefinitions = [
+          BuilderDefinition(
+            '',
+            autoApply: AutoApply.rootPackage,
+            outputsToArtifactTree: true,
+          ),
+        ];
 
-      // Initial build.
-      final result = await testPhases(
-        builderFactories,
-        builderDefinitions,
-        {'a|web/a.txt': 'a'},
-        // Note that `testBuilders` converts generated cache dir paths to the
-        // original ones for matching.
-        outputs: {r'$$a|web/a.txt.copy': 'a'},
-      );
+        // Initial build.
+        final result = await testPhases(
+          builderFactories,
+          builderDefinitions,
+          {'a|web/a.txt': 'a'},
+          // Note that `testBuilders` converts artifact tree paths to the
+          // original ones for matching.
+          outputs: {r'$$a|web/a.txt.copy': 'a'},
+        );
 
-      // Followup build with same sources + cached build state.
-      await testPhases(
-        builderFactories,
-        builderDefinitions,
-        {},
-        outputs: {},
-        resumeFrom: result,
-      );
-    });
+        // Followup build with same sources + cached build state.
+        await testPhases(
+          builderFactories,
+          builderDefinitions,
+          {},
+          outputs: {},
+          resumeFrom: result,
+        );
+      },
+    );
 
     test('inputs/outputs are updated if they change', () async {
-      final builderDefinitions = [BuilderDefinition('', hideOutput: false)];
+      final builderDefinitions = [
+        BuilderDefinition('', outputsToArtifactTree: false),
+      ];
       // Initial build.
       final result = await testPhases(
         BuilderFactories({
@@ -1628,7 +1648,9 @@ targets:
       final builderFactories = BuilderFactories({
         '': [(_) => SiblingCopyBuilder()],
       });
-      final builderDefinitions = [BuilderDefinition('', hideOutput: false)];
+      final builderDefinitions = [
+        BuilderDefinition('', outputsToArtifactTree: false),
+      ];
 
       // Initial build.
       var result = await testPhases(
@@ -1850,7 +1872,7 @@ targets:
       final builderDefinitions = [
         BuilderDefinition(
           '',
-          hideOutput: false,
+          outputsToArtifactTree: false,
           appliesBuilders: ['a|copy_builder'],
         ),
         PostProcessBuilderDefinition('a|copy_builder'),

@@ -20,8 +20,8 @@ import 'package:test/test.dart';
 /// Test case which build steps are triggered by changes to files.
 ///
 /// For concise tests, "names" are used instead of asset IDs. The name `a` maps
-/// to the path `lib/a.dart`; all names map to the package `pkg`. "Hidden" asset
-/// IDs under `.dart_tool` are mapped back to the same namespace.
+/// to the path `lib/a.dart`; all names map to the package `pkg`. Artifact tree
+/// IDs are mapped back to the same namespace.
 class InvalidationTester {
   final bool testIsRunning;
   final bool discardResolver;
@@ -132,16 +132,22 @@ class InvalidationTester {
     required String from,
     required String to,
     bool isOptional = false,
-    bool outputIsVisible = true,
+    bool outputAtPackagePath = true,
   }) {
     if (_logSetup) {
       _setupLog.add(
         'tester.builder('
         '$from, $to, isOptional: $isOptional, '
-        'outputIsVisible: $outputIsVisible)',
+        'outputAtPackagePath: $outputAtPackagePath)',
       );
     }
-    final builder = TestBuilder(this, from, [to], isOptional, outputIsVisible);
+    final builder = TestBuilder(
+      this,
+      from,
+      [to],
+      isOptional,
+      outputAtPackagePath,
+    );
     _builders.add(builder);
     return TestBuilderBuilder(builder);
   }
@@ -260,7 +266,9 @@ class InvalidationTester {
       assets.map((id, content) => MapEntry(id.toString(), content)),
       rootPackage: 'pkg',
       optionalBuilders: _builders.where((b) => b.isOptional).toSet(),
-      visibleOutputBuilders: _builders.where((b) => b.outputIsVisible).toSet(),
+      visibleOutputBuilders: _builders
+          .where((b) => b.outputAtPackagePath)
+          .toSet(),
       testingBuilderConfig: false,
       resolvers: discardResolver ? ResolversImpl.custom() : null,
     );
@@ -410,7 +418,7 @@ class TestBuilder implements Builder {
 
   final bool isOptional;
 
-  final bool outputIsVisible;
+  final bool outputAtPackagePath;
 
   final InvalidationTester _tester;
 
@@ -445,7 +453,7 @@ class TestBuilder implements Builder {
     this.from,
     Iterable<String> to,
     this.isOptional,
-    this.outputIsVisible,
+    this.outputAtPackagePath,
   ) : buildExtensions = {'$from.dart': to.map((to) => '$to.dart').toList()};
 
   @override

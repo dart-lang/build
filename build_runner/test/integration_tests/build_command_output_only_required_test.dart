@@ -56,7 +56,7 @@ void main() async {
       'b.txt': 'b',
     });
 
-    // But it is not removed from the source tree.
+    // But it is not removed from the package path.
     expect(tester.readFileTree('root_pkg/lib'), {
       'a.txt': 'a',
       'a.txt.copy': 'a',
