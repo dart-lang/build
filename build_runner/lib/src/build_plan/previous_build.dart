@@ -51,8 +51,8 @@ abstract class PreviousBuild
   BuiltList<bool> get phaseOptionsChangedList;
   BuiltList<bool> get postBuildOptionsChangedList;
 
-  /// If the previous build is not compatible, package path outputs from it to
-  /// delete.
+  /// If the previous build is not compatible, these are the package path
+  /// outputs from it that should be deleted.
   BuiltList<AssetId> get incompatibleBuildOutputsToDelete;
 
   factory PreviousBuild([void Function(PreviousBuildBuilder) updates]) =
@@ -152,7 +152,7 @@ abstract class PreviousBuild
   ///
   /// If the previous build cannot be used for an incremental build then
   /// [incompatibleBuildOutputsToDelete] is filled with its package path outputs
-  /// to delete.
+  /// that should be deleted.
   static Future<PreviousBuild> load(BuildSpec buildSpec) async {
     final readerWriter = buildSpec.readerWriter;
     final buildPackages = buildSpec.buildPackages;

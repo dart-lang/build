@@ -342,7 +342,7 @@ class BuildSeries {
         inArtifactTree: result.buildState!.isInArtifactTree(output),
       );
     }
-    for (final toDelete in _computeDeletes(result)) {
+    for (final toDelete in _computeDeletes(result, includeArtifactTree: true)) {
       _expectedDeletes.add(toDelete);
       await _buildPlan.readerWriter.delete(toDelete);
     }
@@ -367,20 +367,18 @@ class BuildSeries {
   /// Files that should be deleted: outputs of the previous build that are no
   /// longer declared outputs, plus files on disk that match declared outputs
   /// that were not actually output.
-  ///
-  /// Set [onlyAtPackagePath] to skip files in the artifact tree.
   Set<AssetId> _computeDeletes(
     BuildResult result, {
-    bool onlyAtPackagePath = false,
+    required bool includeArtifactTree,
   }) {
     final deletes = <AssetId>{};
     final currentState = result.buildState!;
     final outputRoot = _buildPlan.buildSpec.buildPackages.outputRoot;
     // Adds a delete result, unless it is in the artifact tree and
-    // `onlyAtPackagePath` was requested.
+    // `includeArtifactTree` is false.
     void maybeAddDelete(AssetId id, {required bool inArtifactTree}) {
       if (inArtifactTree) {
-        if (!onlyAtPackagePath) {
+        if (includeArtifactTree) {
           deletes.add(AssetPathProvider.inArtifactTree(id, outputRoot));
         }
       } else {
@@ -474,7 +472,10 @@ class BuildSeries {
       }
     }
 
-    for (final toDelete in _computeDeletes(result, onlyAtPackagePath: true)) {
+    for (final toDelete in _computeDeletes(
+      result,
+      includeArtifactTree: false,
+    )) {
       final exists = await _buildPlan.readerWriter.canRead(toDelete);
       if (exists) {
         unexpected.add(toDelete);

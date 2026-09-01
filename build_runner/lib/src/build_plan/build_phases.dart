@@ -93,8 +93,8 @@ class BuildPhases {
     )) {
       if (action.outputsToArtifactTree) continue;
       if (packagesInBuild.contains(action.package)) continue;
-      // Phase generation should have filtered these out; only possible if
-      // there is a bug.
+      // BuildPhaseCreator filters these out; this should only be reachable
+      // if there is a bug.
       final name = action is InBuildPhase
           ? action.displayName
           : (action as PostBuildAction).builderLabel;
