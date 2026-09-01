@@ -1,5 +1,7 @@
 ## 2.16.1-wip
 
+- Clarify terminology: refer to `.dart_tool/build/generated` as the "artifact
+  tree", and the normal output location as the "package path".
 - Reduce logged compile progress output for non-interactive builds, for example
   presubmits.
 - In `serve` and `daemon` modes, source files not involved in the build are no
@@ -7,6 +9,11 @@
 - Bug fix: make post-process output behavior match normal outputs: by default,
   rebuild if deleted or incorrect. Follow `--keep-modified-outputs` and
   `--only-check`.
+- Bug fix: in incremental builds, detect and delete conflicting outputs in the
+  source directory rather than treating them as sources, which could cause
+  builder dependency cycles and hangs; fix #5079.
+- Bug fix: restrict incompatible build output deletion to output packages; do
+  not attempt to delete files in dependency packages.
 
 ## 2.16.0
 

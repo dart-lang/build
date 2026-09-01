@@ -88,14 +88,15 @@ class FinishedBuildState {
     return stepResultOrNull(step)?.outputs.contains(id) ?? false;
   }
 
-  bool _isHiddenPostProcessOutput(AssetId id) {
+  bool _isArtifactTreePostProcessOutput(AssetId id) {
     final step = postProcessOutputs[id];
     if (step == null) return false;
-    return postProcessResults[step]?.hidden ?? false;
+    return postProcessResults[step]?.inArtifactTree ?? false;
   }
 
-  bool isHidden(AssetId id) =>
-      buildStepPlan.isHidden(id) || _isHiddenPostProcessOutput(id);
+  bool isInArtifactTree(AssetId id) =>
+      buildStepPlan.isDeclaredOutputInArtifactTree(id) ||
+      _isArtifactTreePostProcessOutput(id);
 
   bool isFile(AssetId id) =>
       isSource(id) ||

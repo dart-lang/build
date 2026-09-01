@@ -1,3 +1,8 @@
+## 4.0.11-wip
+
+- Clarify terminology: refer to `.dart_tool/build/generated` as the "artifact
+  tree", and the normal output location as the "package path".
+
 ## 4.0.10
 
 - Allow `package_config` 3.0.0.

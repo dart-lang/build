@@ -8,7 +8,6 @@ import 'package:built_value/built_value.dart';
 
 import '../build/build_state/build_step_id.dart';
 import '../build/build_state/exceptions.dart';
-import '../constants.dart';
 import 'build_phases.dart';
 import 'phase.dart';
 
@@ -127,14 +126,18 @@ abstract class BuildStepPlan
     return action.targetSources.matches(currentInput);
   }
 
-  bool isHidden(AssetId id) {
-    if (id.path.startsWith(generatedOutputDirectory) ||
-        id.path.startsWith(cacheDirectoryPath)) {
-      return false;
-    }
+  /// Whether [id] is a declared output that is declared in the artifact tree.
+  bool isDeclaredOutputInArtifactTree(AssetId id) {
     final step = stepForDeclaredOutputOrNull(id);
     if (step == null) return false;
-    return buildPhases.inBuildPhases[step.phaseNumber].hideOutput;
+    return buildPhases.inBuildPhases[step.phaseNumber].outputsToArtifactTree;
+  }
+
+  /// Whether [id] is a declared output that is declared in the package path.
+  bool isDeclaredOutputAtPackagePath(AssetId id) {
+    final step = stepForDeclaredOutputOrNull(id);
+    if (step == null) return false;
+    return !buildPhases.inBuildPhases[step.phaseNumber].outputsToArtifactTree;
   }
 
   Iterable<AssetId> get declaredOutputs => buildStepsByDeclaredOutput.keys;

@@ -1,5 +1,7 @@
 ## 3.5.20-wip
 
+- Clarify terminology: refer to `.dart_tool/build/generated` as the "artifact
+  tree", and the normal output location as the "package path".
 - Use `build_runner` 2.16.1.
 
 ## 3.5.19

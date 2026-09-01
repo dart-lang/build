@@ -188,7 +188,7 @@ void main() {
       );
     });
 
-    test('skips non-hidden builders on non-root packages', () async {
+    test('skips package path builders on non-root packages', () async {
       final buildPackages = BuildPackages.singlePackageBuild('a', [
         BuildPackage.forTesting(
           name: 'a',
@@ -214,7 +214,7 @@ void main() {
           BuilderDefinition(
             'c:cool_builder',
             autoApply: AutoApply.dependents,
-            hideOutput: false,
+            outputsToArtifactTree: false,
           ),
         ],
         builderConfigOverrides: BuiltMap(),
@@ -234,7 +234,7 @@ void main() {
     });
 
     test(
-      'skips builders which apply non-hidden builders on non-root packages',
+      'skips builders which apply package path builders on non-root packages',
       () async {
         final buildPackages = BuildPackages.singlePackageBuild('a', [
           BuildPackage.forTesting(
@@ -260,7 +260,7 @@ void main() {
           BuilderDefinition(
             'c:not_by_default',
             autoApply: AutoApply.none,
-            hideOutput: false,
+            outputsToArtifactTree: false,
           ),
         ];
         final phases = await BuildPhaseCreator(

@@ -6,11 +6,14 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 
-/// Asset content with bytes or string in memory and an optional cached digest.
+/// Asset content with bytes and/or string in memory and an optional cached digest.
+///
+/// If only bytes are stored, conversion to string with [stringValue] is cached.
+/// If only a string is stored, conversion to bytes with [bytes] is cached.
 class AssetContent {
   List<int>? _bytes;
-  final String? _string;
-  final Encoding? _encoding;
+  String? _string;
+  Encoding? _encoding;
   Digest? _digest;
 
   AssetContent.bytes(List<int> bytes, {Digest? digest})
@@ -28,8 +31,13 @@ class AssetContent {
   List<int> get bytes => _bytes ??= _encoding!.encode(_string!);
 
   String stringValue({Encoding encoding = utf8}) {
-    if (_string != null && _encoding == encoding) return _string;
-    return encoding.decode(bytes);
+    if (_string != null && _encoding == encoding) return _string!;
+    final string = encoding.decode(bytes);
+    if (_string == null) {
+      _string = string;
+      _encoding = encoding;
+    }
+    return string;
   }
 
   /// Returns a copy with [newBytes].

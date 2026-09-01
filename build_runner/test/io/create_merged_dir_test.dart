@@ -50,7 +50,7 @@ void main() {
         ),
         key: 'TestBuilder',
         package: 'b',
-        hideOutput: true,
+        outputsToArtifactTree: true,
       ),
     ]);
     final sources = {
@@ -123,7 +123,7 @@ void main() {
         final step = buildPlan.buildStepPlan.stepForDeclaredOutput(id);
         final stepResult = BuildStepResult((b) {
           b.result = true;
-          b.isHidden = false;
+          b.inArtifactTree = false;
           b.outputs.add(id);
         });
         buildState.addBuildStepResult(
@@ -134,7 +134,7 @@ void main() {
         await readerWriter.writeAsString(
           id,
           content,
-          hidden: buildState.isHidden(id),
+          inArtifactTree: buildState.isInArtifactTree(id),
         );
       }
       buildOutputReader = BuildOutputReader(
@@ -174,7 +174,7 @@ void main() {
       buildState.addPostProcessBuildStepResult(
         step: PostProcessBuildStepId(input: targetId, actionNumber: 1),
         result: PostProcessBuildStepResult(
-          hidden: true,
+          inArtifactTree: true,
           deletedPrimaryInput: true,
         ),
       );
@@ -373,7 +373,7 @@ void main() {
       );
       final targetId = AssetId('b', 'lib/c.txt.copy');
       final stepResult = BuildStepResult((b) {
-        b.isHidden = false;
+        b.inArtifactTree = false;
       });
       buildState.addBuildStepResult(
         step: buildPlan.buildStepPlan.stepForDeclaredOutput(targetId),
@@ -477,7 +477,7 @@ void main() {
           buildState.addPostProcessBuildStepResult(
             step: PostProcessBuildStepId(input: removeId, actionNumber: 1),
             result: PostProcessBuildStepResult(
-              hidden: true,
+              inArtifactTree: true,
               deletedPrimaryInput: true,
             ),
           );

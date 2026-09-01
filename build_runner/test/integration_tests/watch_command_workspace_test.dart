@@ -26,7 +26,7 @@ void main() async {
         packageName: 'cache_builder_pkg',
         buildToCache: true,
         applyToAllPackages: true,
-        outputExtension: '.hidden',
+        outputExtension: '.artifact',
       ),
     );
     tester.writePackage(
@@ -84,17 +84,29 @@ void main() async {
     await watch.expect(BuildLog.successPattern);
 
     expect(tester.read('p1/lib/p1.txt.copy'), '1');
-    expect(tester.read('.dart_tool/build/generated/p1/lib/p1.txt.hidden'), '1');
+    expect(
+      tester.read('.dart_tool/build/generated/p1/lib/p1.txt.artifact'),
+      '1',
+    );
     expect(tester.read('p2/lib/p2.txt.copy'), null);
     expect(
-      tester.read('.dart_tool/build/generated/p2/lib/p2.txt.hidden'),
+      tester.read('.dart_tool/build/generated/p2/lib/p2.txt.artifact'),
       null,
     );
     expect(tester.read('p3/lib/p3.txt.copy'), '1');
-    expect(tester.read('.dart_tool/build/generated/p3/lib/p3.txt.hidden'), '1');
+    expect(
+      tester.read('.dart_tool/build/generated/p3/lib/p3.txt.artifact'),
+      '1',
+    );
     expect(tester.read('p4/lib/p4.txt.copy'), null);
-    expect(tester.read('.dart_tool/build/generated/p4/lib/p4.txt.hidden'), '1');
-    expect(tester.read('.dart_tool/build/generated/p5/lib/p5.txt.hidden'), '1');
+    expect(
+      tester.read('.dart_tool/build/generated/p4/lib/p4.txt.artifact'),
+      '1',
+    );
+    expect(
+      tester.read('.dart_tool/build/generated/p5/lib/p5.txt.artifact'),
+      '1',
+    );
     expect(tester.read('p6/lib/p6.txt.copy'), '1');
 
     // Change a file in each workspace package, check the output is updated.
@@ -102,7 +114,10 @@ void main() async {
     tester.write('p1/lib/p1.txt', '2');
     await watch.expect(BuildLog.successPattern);
     expect(tester.read('p1/lib/p1.txt.copy'), '2');
-    expect(tester.read('.dart_tool/build/generated/p1/lib/p1.txt.hidden'), '2');
+    expect(
+      tester.read('.dart_tool/build/generated/p1/lib/p1.txt.artifact'),
+      '2',
+    );
 
     tester.write('p2/lib/p2.txt', '2');
     await watch.expectNoOutput(const Duration(seconds: 1));
@@ -110,15 +125,24 @@ void main() async {
     tester.write('p3/lib/p3.txt', '2');
     await watch.expect(BuildLog.successPattern);
     expect(tester.read('p3/lib/p3.txt.copy'), '2');
-    expect(tester.read('.dart_tool/build/generated/p3/lib/p3.txt.hidden'), '2');
+    expect(
+      tester.read('.dart_tool/build/generated/p3/lib/p3.txt.artifact'),
+      '2',
+    );
 
     tester.write('p4/lib/p4.txt', '2');
     await watch.expect(BuildLog.successPattern);
-    expect(tester.read('.dart_tool/build/generated/p4/lib/p4.txt.hidden'), '2');
+    expect(
+      tester.read('.dart_tool/build/generated/p4/lib/p4.txt.artifact'),
+      '2',
+    );
 
     tester.write('p5/lib/p5.txt', '2');
     await watch.expect(BuildLog.successPattern);
-    expect(tester.read('.dart_tool/build/generated/p5/lib/p5.txt.hidden'), '2');
+    expect(
+      tester.read('.dart_tool/build/generated/p5/lib/p5.txt.artifact'),
+      '2',
+    );
 
     tester.write('p6/lib/p6.txt', '2');
     await watch.expect(BuildLog.successPattern);

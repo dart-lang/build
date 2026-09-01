@@ -22,7 +22,7 @@ void main() async {
         packageName: 'cache_builder_pkg',
         buildToCache: true,
         applyToAllPackages: true,
-        outputExtension: '.hidden',
+        outputExtension: '.artifact',
       ),
     );
     tester.writePackage(
@@ -39,6 +39,12 @@ ${tester.read('pubspec.yaml')}
 dependencies:
   builder_pkg:
     path: builder_pkg
+  # Make p1 an explicit dependency so it changes between being part of the
+  # build with --workspace and a dep of the build without. This verifies that
+  # the "without" build doesn't try to delete outputs in p1 from the previous
+  # build.
+  p1:
+    path: p1
 ''');
     tester.write('lib/w.txt', '1');
 

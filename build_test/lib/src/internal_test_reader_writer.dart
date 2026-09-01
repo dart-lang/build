@@ -22,7 +22,7 @@ import 'test_reader_writer.dart';
 /// and `build_runner`.
 class InternalTestReaderWriter extends ReaderWriter
     implements TestReaderWriter {
-  final String buildCachePackage;
+  final String outputRootPackage;
 
   /// Assets read directly from this reader/writer.
   final Set<AssetId> assetsRead;
@@ -34,11 +34,11 @@ class InternalTestReaderWriter extends ReaderWriter
 
   /// Create a new asset reader/writer.
   ///
-  /// If provided [outputRootPackage] is the package where the build cache is
+  /// If provided [outputRootPackage] is the package where the artifact tree is
   /// written, otherwise `unset` is used.
   factory InternalTestReaderWriter({
     String? outputRootPackage,
-    bool forceVisibleForTesting = false,
+    bool forceToPackagePathsForTesting = false,
   }) {
     final filesystem = InMemoryFilesystem();
     return InternalTestReaderWriter.using(
@@ -48,10 +48,10 @@ class InternalTestReaderWriter extends ReaderWriter
       assetPathProvider: InMemoryAssetPathProvider(
         outputRootPackage ?? 'unset',
       ),
-      buildCachePackage: outputRootPackage ?? 'unset',
+      outputRootPackage: outputRootPackage ?? 'unset',
       filesystem: filesystem,
       onCanReadController: StreamController(),
-      forceVisibleForTesting: forceVisibleForTesting,
+      forceToPackagePathsForTesting: forceToPackagePathsForTesting,
     );
   }
 
@@ -60,35 +60,35 @@ class InternalTestReaderWriter extends ReaderWriter
     required this.assetsWritten,
     required super.assetFinder,
     required super.assetPathProvider,
-    required this.buildCachePackage,
+    required this.outputRootPackage,
     required super.filesystem,
     required this.onCanReadController,
-    super.forceVisibleForTesting = false,
+    super.forceToPackagePathsForTesting = false,
   }) : super.using() {
     InputTracker.captureInputTrackersForTesting = true;
   }
 
-  InternalTestReaderWriter copyWith({bool? forceVisibleForTesting}) =>
+  InternalTestReaderWriter copyWith({bool? forceToPackagePathsForTesting}) =>
       InternalTestReaderWriter.using(
         assetsRead: assetsRead,
         assetsWritten: assetsWritten,
         assetFinder: assetFinder,
         assetPathProvider: assetPathProvider,
-        buildCachePackage: buildCachePackage,
+        outputRootPackage: outputRootPackage,
         filesystem: filesystem,
         onCanReadController: onCanReadController,
-        forceVisibleForTesting:
-            forceVisibleForTesting ?? this.forceVisibleForTesting,
+        forceToPackagePathsForTesting:
+            forceToPackagePathsForTesting ?? this.forceToPackagePathsForTesting,
       );
 
   @override
   ReaderWriterTesting get testing => _ReaderWriterTestingImpl(this);
 
   @override
-  Future<bool> canRead(AssetId id, {bool hidden = false}) {
+  Future<bool> canRead(AssetId id, {bool inArtifactTree = false}) {
     onCanReadController.add(id);
     assetsRead.add(id);
-    return super.canRead(id, hidden: hidden);
+    return super.canRead(id, inArtifactTree: inArtifactTree);
   }
 
   /// Emits an event when `canRead` is called.
@@ -98,30 +98,37 @@ class InternalTestReaderWriter extends ReaderWriter
   Stream<AssetId> get onCanRead => onCanReadController.stream;
 
   @override
-  Future<List<int>> readAsBytes(AssetId id, {bool hidden = false}) async {
+  Future<List<int>> readAsBytes(
+    AssetId id, {
+    bool inArtifactTree = false,
+  }) async {
     assetsRead.add(id);
-    return super.readAsBytes(id, hidden: hidden);
+    return super.readAsBytes(id, inArtifactTree: inArtifactTree);
   }
 
   @override
   Future<String> readAsString(
     AssetId id, {
     Encoding encoding = utf8,
-    bool hidden = false,
+    bool inArtifactTree = false,
   }) {
     assetsRead.add(id);
-    return super.readAsString(id, encoding: encoding, hidden: hidden);
+    return super.readAsString(
+      id,
+      encoding: encoding,
+      inArtifactTree: inArtifactTree,
+    );
   }
 
   @override
   Future writeAsBytes(
     AssetId id,
     List<int> bytes, {
-    bool hidden = false,
+    bool inArtifactTree = false,
   }) async {
     assetsWritten.add(id);
     final type = testing.exists(id) ? ChangeType.MODIFY : ChangeType.ADD;
-    await super.writeAsBytes(id, bytes, hidden: hidden);
+    await super.writeAsBytes(id, bytes, inArtifactTree: inArtifactTree);
     FakeWatcher.notifyWatchers(
       WatchEvent(type, p.absolute(id.package, p.fromUri(id.path))),
     );
@@ -132,22 +139,27 @@ class InternalTestReaderWriter extends ReaderWriter
     AssetId id,
     String contents, {
     Encoding encoding = utf8,
-    bool hidden = false,
+    bool inArtifactTree = false,
   }) async {
     assetsWritten.add(id);
     final type = testing.exists(id) ? ChangeType.MODIFY : ChangeType.ADD;
-    await super.writeAsString(id, contents, encoding: encoding, hidden: hidden);
+    await super.writeAsString(
+      id,
+      contents,
+      encoding: encoding,
+      inArtifactTree: inArtifactTree,
+    );
     FakeWatcher.notifyWatchers(
       WatchEvent(type, p.absolute(id.package, p.fromUri(id.path))),
     );
   }
 
   @override
-  Future<void> delete(AssetId id, {bool hidden = false}) {
+  Future<void> delete(AssetId id, {bool inArtifactTree = false}) {
     FakeWatcher.notifyWatchers(
       WatchEvent(ChangeType.REMOVE, p.absolute(id.package, p.fromUri(id.path))),
     );
-    return super.delete(id, hidden: hidden);
+    return super.delete(id, inArtifactTree: inArtifactTree);
   }
 }
 
@@ -159,11 +171,11 @@ class InMemoryAssetPathProvider implements AssetPathProvider {
   @override
   String pathFor(
     AssetId id, {
-    required bool hide,
+    required bool inArtifactTree,
     bool checkWriteAllowed = false,
   }) {
-    if (hide) {
-      id = AssetPathProvider.hide(id, outputRootPackage);
+    if (inArtifactTree) {
+      id = AssetPathProvider.inArtifactTree(id, outputRootPackage);
     }
     return id.toString();
   }
@@ -255,35 +267,35 @@ class _ReaderWriterTestingImpl implements ReaderWriterTesting {
 
   @override
   bool exists(AssetId id) => _readerWriter.filesystem.existsSync(
-    _readerWriter.assetPathProvider.pathFor(id, hide: false),
+    _readerWriter.assetPathProvider.pathFor(id, inArtifactTree: false),
   );
 
   @override
   void writeString(AssetId id, String contents) =>
       _readerWriter.filesystem.writeAsStringSync(
-        _readerWriter.assetPathProvider.pathFor(id, hide: false),
+        _readerWriter.assetPathProvider.pathFor(id, inArtifactTree: false),
         contents,
       );
 
   @override
   void writeBytes(AssetId id, List<int> contents) =>
       _readerWriter.filesystem.writeAsBytesSync(
-        _readerWriter.assetPathProvider.pathFor(id, hide: false),
+        _readerWriter.assetPathProvider.pathFor(id, inArtifactTree: false),
         contents,
       );
 
   @override
   Uint8List readBytes(AssetId id) => _readerWriter.filesystem.readAsBytesSync(
-    _readerWriter.assetPathProvider.pathFor(id, hide: false),
+    _readerWriter.assetPathProvider.pathFor(id, inArtifactTree: false),
   );
 
   @override
   String readString(AssetId id) => _readerWriter.filesystem.readAsStringSync(
-    _readerWriter.assetPathProvider.pathFor(id, hide: false),
+    _readerWriter.assetPathProvider.pathFor(id, inArtifactTree: false),
   );
 
   @override
   void delete(AssetId id) => _readerWriter.filesystem.deleteSync(
-    _readerWriter.assetPathProvider.pathFor(id, hide: false),
+    _readerWriter.assetPathProvider.pathFor(id, inArtifactTree: false),
   );
 }

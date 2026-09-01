@@ -63,7 +63,7 @@ void main() {
             targetSources: targetSources,
             options: const BuilderOptions({}),
             generateFor: const InputSet(),
-            hideOutput: true,
+            outputsToArtifactTree: true,
           ),
         ]),
       );
@@ -108,6 +108,16 @@ void main() {
         );
       });
 
+      test('clash between source and declared output throws', () {
+        expect(
+          () => BuildState(
+            buildStepPlan: buildStepPlan,
+            sources: {primaryOutputId: null},
+          ),
+          throwsArgumentError,
+        );
+      });
+
       test('overlapping build phases cause an error', () async {
         expect(
           () => BuildStepPlan.compute(
@@ -137,7 +147,7 @@ void main() {
               ),
               key: 'TestBuilder',
               package: 'foo',
-              hideOutput: false,
+              outputsToArtifactTree: false,
             ),
             InBuildPhase(
               builder: TestBuilder(
@@ -145,7 +155,7 @@ void main() {
               ),
               key: 'TestBuilder',
               package: 'foo',
-              hideOutput: false,
+              outputsToArtifactTree: false,
             ),
             InBuildPhase(
               builder: TestBuilder(
@@ -153,7 +163,7 @@ void main() {
               ),
               key: 'TestBuilder',
               package: 'foo',
-              hideOutput: false,
+              outputsToArtifactTree: false,
             ),
           ]);
 
@@ -225,7 +235,7 @@ void main() {
             phaseNumber: 0,
           );
           final stepResult = BuildStepResult((b) {
-            b.isHidden = true;
+            b.inArtifactTree = true;
             b.outputs.add(primaryOutputId);
           });
           final content = AssetContent.string('output content');
@@ -248,7 +258,7 @@ void main() {
           );
           final stepResult = BuildStepResult((b) {
             b.result = false;
-            b.isHidden = true;
+            b.inArtifactTree = true;
           });
 
           buildState.addBuildStepResult(step: step, result: stepResult);
@@ -262,7 +272,7 @@ void main() {
             phaseNumber: 0,
           );
           final stepResult = BuildStepResult((b) {
-            b.isHidden = true;
+            b.inArtifactTree = true;
             b.outputs.add(primaryOutputId);
           });
 
@@ -292,7 +302,7 @@ void main() {
             phaseNumber: 0,
           );
           final stepResult = BuildStepResult((b) {
-            b.isHidden = true;
+            b.inArtifactTree = true;
             b.outputs.add(primaryOutputId);
           });
           final content = AssetContent.string('output content');
@@ -320,7 +330,7 @@ void main() {
           );
           final postOutputId = makeAssetId('foo|file.txt.post');
           final stepResult = PostProcessBuildStepResult(
-            hidden: true,
+            inArtifactTree: true,
             outputs: [postOutputId],
             errors: const [],
             deletedPrimaryInput: false,
@@ -345,7 +355,7 @@ void main() {
           );
           final postOutputId = makeAssetId('foo|file.txt.post');
           final stepResult = PostProcessBuildStepResult(
-            hidden: true,
+            inArtifactTree: true,
             outputs: [postOutputId],
             errors: const [],
             deletedPrimaryInput: false,
@@ -368,7 +378,7 @@ void main() {
           );
           final postOutputId = makeAssetId('foo|file.txt.post');
           final stepResult = PostProcessBuildStepResult(
-            hidden: true,
+            inArtifactTree: true,
             outputs: [postOutputId],
             errors: const [],
             deletedPrimaryInput: false,

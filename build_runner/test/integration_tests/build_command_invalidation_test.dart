@@ -118,5 +118,77 @@ void main() async {
     tester.delete('root_pkg/web/a.txt');
     await tester.run('root_pkg', 'dart run build_runner build --force-jit');
     expect(tester.read('root_pkg/web/a.txt.copy2'), null);
+
+    // Conflicting logical ID exists at both package path and in artifact tree.
+    tester.writeFixturePackage(
+      FixturePackages.copyBuilder(
+        buildToCache: true,
+        outputExtension: '.artifact',
+      ),
+    );
+    tester.writePackage(
+      name: 'root_pkg',
+      dependencies: ['build_runner'],
+      pathDependencies: ['builder_pkg'],
+      files: {'web/a.txt': 'a'},
+    );
+
+    // Initial build creates output in the artifact tree.
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+    final artifactFile =
+        'root_pkg/.dart_tool/build/generated/root_pkg/web/a.txt.artifact';
+    expect(tester.read(artifactFile), 'a');
+
+    // Create a source file with the exact same logical ID.
+    tester.write('root_pkg/web/a.txt.artifact', 'source content');
+
+    // Next build recognizes the new source file and handles the conflict:
+    // the conflicting source file is deleted and output remains in the
+    // artifact tree.
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+    expect(tester.read('root_pkg/web/a.txt.artifact'), null);
+    expect(tester.read(artifactFile), 'a');
+
+    // Conflicts in the artifact tree deleted when builder outputs to package
+    // path.
+    tester.writeFixturePackage(
+      FixturePackages.copyBuilder(buildToCache: false),
+    );
+    tester.writePackage(
+      name: 'root_pkg',
+      dependencies: ['build_runner'],
+      pathDependencies: ['builder_pkg'],
+      files: {
+        'web/a.txt': 'a',
+        'web/a.txt.copy': 'package path conflict',
+        '.dart_tool/build/generated/root_pkg/web/a.txt.copy':
+            'artifact tree conflict',
+      },
+    );
+    // Both locations conflict, builder writes package path: artifact tree is
+    // deleted.
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+    expect(tester.read('root_pkg/web/a.txt.copy'), 'a');
+    expect(
+      tester.read(
+        'root_pkg/.dart_tool/build/generated/root_pkg/web/a.txt.copy',
+      ),
+      null,
+    );
+
+    // Previous package path actual output plus new artifact tree conflict:
+    // artifact tree is deleted.
+    tester.write(
+      'root_pkg/.dart_tool/build/generated/root_pkg/web/a.txt.copy',
+      'new artifact tree conflict',
+    );
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+    expect(
+      tester.read(
+        'root_pkg/.dart_tool/build/generated/root_pkg/web/a.txt.copy',
+      ),
+      null,
+    );
+    expect(tester.read('root_pkg/web/a.txt.copy'), 'a');
   });
 }

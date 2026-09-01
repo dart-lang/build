@@ -51,8 +51,8 @@ abstract class PreviousBuild
   BuiltList<bool> get phaseOptionsChangedList;
   BuiltList<bool> get postBuildOptionsChangedList;
 
-  /// If the previous build is not compatible, source tree outputs from it to
-  /// delete.
+  /// If the previous build is not compatible, these are the package path
+  /// outputs from it that should be deleted.
   BuiltList<AssetId> get incompatibleBuildOutputsToDelete;
 
   factory PreviousBuild([void Function(PreviousBuildBuilder) updates]) =
@@ -116,21 +116,29 @@ abstract class PreviousBuild
       buildStepResults.values.expand((r) => r.outputs);
   Iterable<AssetId> get actualPostOutputs => postProcessOutputs.keys;
 
-  bool _isActualPostOutput(AssetId id) => postProcessOutputs.containsKey(id);
+  bool isActualPostOutput(AssetId id) => postProcessOutputs.containsKey(id);
 
-  bool _isHiddenPostProcessOutput(AssetId id) {
-    final step = postProcessOutputs[id];
+  bool isActualOutput(AssetId id) {
+    final step = buildStepPlan?.stepForDeclaredOutputOrNull(id);
     if (step == null) return false;
-    return postProcessResults[step]?.hidden ?? false;
+    return stepResultOrNull(step)?.outputs.contains(id) ?? false;
   }
 
-  bool isHidden(AssetId id) =>
-      (buildStepPlan?.isHidden(id) ?? false) || _isHiddenPostProcessOutput(id);
+  bool _isInArtifactTreePostProcessOutput(AssetId id) {
+    final step = postProcessOutputs[id];
+    if (step == null) return false;
+    return postProcessResults[step]?.inArtifactTree ?? false;
+  }
+
+  /// Whether the output id is written in the artifact tree.
+  bool isInArtifactTree(AssetId id) =>
+      (buildStepPlan?.isDeclaredOutputInArtifactTree(id) ?? false) ||
+      _isInArtifactTreePostProcessOutput(id);
 
   bool isFile(AssetId id) =>
       isSource(id) ||
       (buildStepPlan?.isDeclaredOutput(id) ?? false) ||
-      _isActualPostOutput(id);
+      isActualPostOutput(id);
 
   Digest? digestOf(AssetId id) => digests[id];
 
@@ -143,8 +151,8 @@ abstract class PreviousBuild
   /// detail on compatibility.
   ///
   /// If the previous build cannot be used for an incremental build then
-  /// [incompatibleBuildOutputsToDelete] is filled with its source tree outputs
-  /// to delete.
+  /// [incompatibleBuildOutputsToDelete] is filled with its package path outputs
+  /// that should be deleted.
   static Future<PreviousBuild> load(BuildSpec buildSpec) async {
     final readerWriter = buildSpec.readerWriter;
     final buildPackages = buildSpec.buildPackages;
@@ -252,16 +260,16 @@ Iterable<AssetId> _outputsToDelete({
 }) {
   final result = <AssetId>[];
   for (final stepResult in buildState.buildStepResults.values) {
-    if (!stepResult.isHidden) {
+    if (!stepResult.inArtifactTree) {
       for (final id in stepResult.outputs) {
-        if (buildPackages[id.package] != null) result.add(id);
+        if (buildPackages.outputPackages.contains(id.package)) result.add(id);
       }
     }
   }
   for (final postProcessResult in buildState.postProcessResults.values) {
-    if (!postProcessResult.hidden) {
+    if (!postProcessResult.inArtifactTree) {
       for (final id in postProcessResult.outputs) {
-        if (buildPackages[id.package] != null) result.add(id);
+        if (buildPackages.outputPackages.contains(id.package)) result.add(id);
       }
     }
   }

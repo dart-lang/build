@@ -16,11 +16,10 @@ part 'builder_definition.g.dart';
 enum AutoApply { none, dependents, allPackages, rootPackage }
 
 enum BuildTo {
-  /// Generated files are written to the source directory next to their primary
-  /// inputs.
+  /// Outputs are written to their package paths.
   source,
 
-  /// Generated files are written to the hidden 'generated' directory.
+  /// Outputs are written to the artifact tree `.dart_tool/build/generated`.
   cache,
 }
 
