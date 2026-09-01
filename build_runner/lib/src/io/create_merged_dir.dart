@@ -247,7 +247,7 @@ Future<String> _writeAsset(
         await _writeAsBytes(
           outputDir,
           assetPath,
-          await buildOutputReader.readAsBytes(id),
+          (await buildOutputReader.read(id)).bytes,
         );
       }
     } on AssetNotFoundException catch (e) {

@@ -5,6 +5,8 @@
 @TestOn('vm')
 library;
 
+import 'dart:convert';
+
 import 'package:build/build.dart';
 import 'package:build_runner/src/build/asset_content.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
@@ -23,8 +25,10 @@ import 'package:build_runner/src/build_plan/build_spec.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
 import 'package:build_runner/src/build_plan/phase.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
+import 'package:build_runner/src/io/build_output_read_result.dart';
 import 'package:build_runner/src/io/build_output_reader.dart';
 import 'package:built_collection/built_collection.dart';
+import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 
@@ -71,10 +75,10 @@ void main() {
           buildState: buildState.toFinishedBuildState(),
         );
 
-        expect(await reader.readAsString(id), 'initial');
+        expect((await reader.read(id)).readAsString(), 'initial');
 
         readerWriter.testing.writeString(id, 'modified');
-        expect(await reader.readAsString(id), 'modified');
+        expect((await reader.read(id)).readAsString(), 'modified');
       },
     );
 
@@ -105,10 +109,10 @@ void main() {
           buildState: buildState.toFinishedBuildState(),
         );
 
-        expect(await reader.readAsString(id), 'initial');
+        expect((await reader.read(id)).readAsString(), 'initial');
 
         readerWriter.testing.writeString(id, 'modified');
-        expect(await reader.readAsString(id), 'initial');
+        expect((await reader.read(id)).readAsString(), 'initial');
       },
     );
 
@@ -210,7 +214,7 @@ void main() {
         buildState: buildState.toFinishedBuildState(),
       );
       expect(
-        await reader.unreadableReason(id),
+        (await reader.read(id)).unreadableReason,
         UnreadableReason.failed,
         reason: 'Should report a failure if no build filters apply',
       );
@@ -244,7 +248,7 @@ void main() {
       );
 
       expect(
-        await reader.unreadableReason(id),
+        (await reader.read(id)).unreadableReason,
         UnreadableReason.notOutput,
         reason:
             'Should report as not output if it doesn\'t match requested '
@@ -327,10 +331,11 @@ void main() {
 
       expect(reader.wasSourceConsumedOutsideBuild(id), isFalse);
       expect(await reader.canRead(id), isTrue);
-      expect(await reader.unreadableReason(id), isNull);
       expect(reader.wasSourceConsumedOutsideBuild(id), isFalse);
 
-      expect(await reader.digest(id), isNotNull);
+      final result = await reader.read(id);
+      expect(result.unreadableReason, isNull);
+      expect(result.digest, isNotNull);
       expect(reader.wasSourceConsumedOutsideBuild(id), isTrue);
     });
 
@@ -382,18 +387,152 @@ void main() {
         );
 
         // Reading an unused source marks it consumed outside the build.
-        await reader.readAsString(unusedSourceId);
+        await reader.read(unusedSourceId);
         expect(reader.wasSourceConsumedOutsideBuild(unusedSourceId), isTrue);
 
         // Reading a used source does not mark it consumed outside the build.
-        await reader.readAsString(usedSourceId);
+        await reader.read(usedSourceId);
         expect(reader.wasSourceConsumedOutsideBuild(usedSourceId), isFalse);
 
         // Reading a generated output does not mark it consumed outside the
         // build.
-        await reader.readAsString(generatedId);
+        await reader.read(generatedId);
         expect(reader.wasSourceConsumedOutsideBuild(generatedId), isFalse);
       },
     );
+
+    test(
+      'BuildOutputReadResult throws for failed step with stale disk output',
+      () async {
+        final id = AssetId('a', 'web/a.txt');
+        final primaryId = AssetId('a', 'web/a.dart');
+        final buildStepId = BuildStepId(
+          primaryInput: primaryId,
+          phaseNumber: 0,
+        );
+
+        readerWriter.testing.writeString(primaryId, '');
+        readerWriter.testing.writeString(id, 'stale content on disk');
+
+        buildPhases = BuildPhases([
+          InBuildPhase(
+            builder: TestBuilder(
+              buildExtensions: replaceExtension('.dart', '.txt'),
+            ),
+            key: 'TestBuilder',
+            package: 'a',
+            isOptional: false,
+          ),
+        ]);
+
+        final buildPlan = await BuildPlan.load(
+          await BuildSpec.load(
+            builderFactories: BuilderFactories({}),
+            buildOptions: BuildOptions.forTests(
+              buildDirs: {BuildDirectory('web')}.build(),
+            ),
+            testingOverrides: TestingOverrides(
+              buildPhases: buildPhases,
+              readerWriter: readerWriter,
+              buildPackages: buildPackages,
+            ),
+          ),
+        );
+        final buildState = BuildState(
+          buildStepPlan: buildPlan.buildStepPlan,
+          sources: const {},
+        );
+        final stepResult = BuildStepResult((b) {
+          b.result = false;
+          b.isHidden = false;
+        });
+        buildState.addBuildStepResult(step: buildStepId, result: stepResult);
+        reader = BuildOutputReader(
+          buildPackages: buildPlan.buildSpec.buildPackages,
+          readerWriter: buildPlan.readerWriter,
+          buildState: buildState.toFinishedBuildState(),
+        );
+
+        expect(await reader.canRead(id), isFalse);
+        final result = await reader.read(id);
+        expect(result.canRead, isFalse);
+        expect(result.unreadableReason, UnreadableReason.failed);
+        expect(result.readAsString, throwsA(isA<AssetNotFoundException>()));
+        expect(() => result.bytes, throwsA(isA<AssetNotFoundException>()));
+      },
+    );
+
+    test('read returns BuildOutputReadResult expressing readability and '
+        'unreadableReason', () async {
+      final readableId = AssetId('a', 'web/readable.txt');
+      final failedId = AssetId('a', 'web/input.txt');
+      final primaryId = AssetId('a', 'web/input.dart');
+      final failedStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
+
+      readerWriter.testing.writeString(primaryId, '');
+      readerWriter.testing.writeString(readableId, 'content');
+      readerWriter.testing.writeString(failedId, 'stale content on disk');
+
+      buildPhases = BuildPhases([
+        InBuildPhase(
+          builder: TestBuilder(
+            buildExtensions: replaceExtension('.dart', '.txt'),
+          ),
+          key: 'TestBuilder',
+          package: 'a',
+          isOptional: false,
+        ),
+      ]);
+
+      final buildPlan = await BuildPlan.load(
+        await BuildSpec.load(
+          builderFactories: BuilderFactories({}),
+          buildOptions: BuildOptions.forTests(
+            buildDirs: {BuildDirectory('web')}.build(),
+          ),
+          testingOverrides: TestingOverrides(
+            buildPhases: buildPhases,
+            readerWriter: readerWriter,
+            buildPackages: buildPackages,
+          ),
+        ),
+      );
+      final buildState = BuildState(
+        buildStepPlan: buildPlan.buildStepPlan,
+        sources: const {},
+      );
+      buildState.addSourceForTest(readableId);
+      final stepResult = BuildStepResult((b) {
+        b.result = false;
+        b.isHidden = false;
+      });
+      buildState.addBuildStepResult(step: failedStepId, result: stepResult);
+      reader = BuildOutputReader(
+        buildPackages: buildPlan.buildSpec.buildPackages,
+        readerWriter: buildPlan.readerWriter,
+        buildState: buildState.toFinishedBuildState(),
+      );
+
+      final readableResult = await reader.read(readableId);
+      expect(readableResult, isA<BuildOutputReadResult>());
+      expect(readableResult.canRead, isTrue);
+      expect(readableResult.unreadableReason, isNull);
+      expect(readableResult.readAsString(), 'content');
+      // The decoded string representation is cached on the result.
+      expect(
+        identical(readableResult.readAsString(), readableResult.readAsString()),
+        isTrue,
+      );
+      expect(readableResult.bytes, utf8.encode('content'));
+      expect(readableResult.digest, md5.convert(utf8.encode('content')));
+
+      final failedResult = await reader.read(failedId);
+      expect(failedResult, isA<BuildOutputReadResult>());
+      expect(failedResult.canRead, isFalse);
+      expect(failedResult.unreadableReason, UnreadableReason.failed);
+      expect(failedResult.readAsString, throwsA(isA<AssetNotFoundException>()));
+      expect(() => failedResult.bytes, throwsA(isA<AssetNotFoundException>()));
+      expect(() => failedResult.digest, throwsA(isA<AssetNotFoundException>()));
+    });
   });
 }
