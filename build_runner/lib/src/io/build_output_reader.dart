@@ -3,26 +3,25 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:build/build.dart';
-import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 
+import '../build/asset_content.dart';
 import '../build/build_file_index.dart';
 import '../build/build_state/finished_build_state.dart';
 import '../build_plan/build_packages.dart';
 import '../build_plan/build_step_plan.dart';
+import 'build_output_read_result.dart';
 import 'reader_writer.dart';
 
-/// A view of the build output.
+/// A view of the build inputs and output.
 ///
-/// If [canRead] returns false, [unreadableReason] explains why the file is
-/// missing; for example, it might say that generation failed.
+/// Build inputs that were used and all outputs are returned from memory.
 ///
-/// Files are only visible if they were a required part of the build, even if
-/// they exist on disk from a previous build.
+/// Build inputs that were not used in the build are not in memory and are
+/// returned directly from disk with no caching.
 class BuildOutputReader {
   final BuildPackages buildPackages;
   final ReaderWriter readerWriter;
@@ -64,7 +63,7 @@ class BuildOutputReader {
   }
 
   /// Returns a reason why [id] is not readable, or null if it is readable.
-  Future<UnreadableReason?> unreadableReason(AssetId id) async {
+  Future<UnreadableReason?> _unreadableReason(AssetId id) async {
     if (!_isFile(id)) {
       return UnreadableReason.notFound;
     }
@@ -105,33 +104,17 @@ class BuildOutputReader {
     return UnreadableReason.notFound;
   }
 
-  Future<bool> canRead(AssetId id) async =>
-      (await unreadableReason(id)) == null;
-
-  Future<Digest> digest(AssetId id) async {
-    final unreadableReason = await this.unreadableReason(id);
-    // Do provide digests for generated files that are known but not output
-    // or known to be deleted. `build serve` uses these digests, which
-    // reflect that the file is missing.
-    if (unreadableReason != null &&
-        unreadableReason != UnreadableReason.notOutput &&
-        unreadableReason != UnreadableReason.deleted) {
-      throw AssetNotFoundException(id);
+  /// Reads [id] from the build output, returning a [BuildOutputReadResult].
+  Future<BuildOutputReadResult> read(AssetId id) async {
+    final reason = await _unreadableReason(id);
+    if (reason != null) {
+      return BuildOutputReadResult.unreadable(id, reason);
     }
-    final digest = await _ensureDigest(id);
-    _recordSourceConsumedOutsideBuild(id);
-    return digest;
-  }
 
-  Future<List<int>> readAsBytes(AssetId id) async {
     final cached = buildState.contentOf(id);
     if (cached != null) {
       _recordSourceConsumedOutsideBuild(id);
-      return cached.bytes;
-    }
-
-    if (!_isFile(id)) {
-      throw AssetNotFoundException(id);
+      return BuildOutputReadResult.available(id, cached);
     }
 
     final bytes = await readerWriter.readAsBytes(
@@ -139,19 +122,11 @@ class BuildOutputReader {
       inArtifactTree: buildState.isInArtifactTree(id),
     );
     _recordSourceConsumedOutsideBuild(id);
-    return bytes;
+    return BuildOutputReadResult.available(id, AssetContent.bytes(bytes));
   }
 
-  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async {
-    final cached = buildState.contentOf(id);
-    if (cached != null) {
-      _recordSourceConsumedOutsideBuild(id);
-      return cached.stringValue(encoding: encoding);
-    }
-
-    final bytes = await readAsBytes(id);
-    return encoding.decode(bytes);
-  }
+  Future<bool> canRead(AssetId id) async =>
+      (await _unreadableReason(id)) == null;
 
   void _recordSourceConsumedOutsideBuild(AssetId id) {
     if (buildState.isSource(id) && buildState.contentOf(id) == null) {
@@ -165,16 +140,6 @@ class BuildOutputReader {
         yield id;
       }
     }
-  }
-
-  /// Returns the digest of [id], computing it if necessary.
-  ///
-  /// Note that [id] must exist in the asset graph.
-  FutureOr<Digest> _ensureDigest(AssetId id) async {
-    final content = buildState.contentOf(id);
-    if (content != null) return content.digest;
-    final bytes = await readAsBytes(id);
-    return md5.convert(bytes);
   }
 
   /// A lazily computed view of all the assets available after a build.
@@ -231,5 +196,3 @@ class BuildOutputReader {
 
   bool _isFile(AssetId id) => buildState.isFile(id);
 }
-
-enum UnreadableReason { notFound, notOutput, deleted, failed }
