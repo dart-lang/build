@@ -9,7 +9,6 @@ import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 
 import 'package:crypto/crypto.dart';
-import 'package:meta/meta.dart';
 
 import '../build/build_state/asset_graph_json.dart';
 import '../build/build_state/build_step_id.dart';
@@ -57,19 +56,6 @@ abstract class PreviousBuild
 
   factory PreviousBuild([void Function(PreviousBuildBuilder) updates]) =
       _$PreviousBuild;
-
-  @visibleForTesting
-  factory PreviousBuild.fromFinishedBuildState(
-    FinishedBuildState finishedBuildState, {
-    PhasedAssetDeps? phasedAssetDeps,
-  }) => PreviousBuild((b) {
-    b.triggersChanged = false;
-    b.incrementalState.replace(finishedBuildState.incremental);
-    b.buildStepPlan.replace(finishedBuildState.buildStepPlan);
-    if (phasedAssetDeps != null) {
-      b.phasedAssetDeps.replace(phasedAssetDeps);
-    }
-  });
 
   BuiltSet<AssetId> get sources =>
       incrementalState?.sources ?? BuiltSet<AssetId>();
