@@ -1,0 +1,83 @@
+#!/bin/bash --
+# Copyright (c) 2016, Google Inc. Please see the AUTHORS file for details.
+# All rights reserved. Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file.
+
+set -e
+
+directories="built_value built_value_generator built_value_test \
+    end_to_end_test benchmark example chat_example"
+
+parent_directory=$PWD
+
+for directory in $directories; do
+  echo
+  echo "*** Formatting $directory..."
+  echo
+  cd "$parent_directory/$directory"
+
+  dart format $(find bin lib test -name \*.dart 2>/dev/null)
+done
+
+for directory in $directories; do
+  echo
+  echo "*** Building $directory..."
+  echo
+  cd "$parent_directory/$directory"
+
+  dart pub get
+  dart pub upgrade
+
+  # Clear any pre-existing build output so package:build doesn't get confused
+  # when we use built_value to build itself.
+  rm -rf .dart_tool/build/
+
+  grep -q build_runner pubspec.yaml && \
+      dart run build_runner build \
+          --delete-conflicting-outputs \
+          --fail-on-severe
+done
+
+for directory in $directories; do
+  echo
+  echo "*** Analyzing $directory..."
+  echo
+  cd "$parent_directory/$directory"
+
+  dart analyze \
+      --fatal-warnings \
+      --fatal-infos \
+      $(find bin lib test -name \*.dart 2>/dev/null)
+done
+
+for directory in $directories; do
+  echo
+  echo "*** Testing $directory..."
+  echo
+  cd "$parent_directory/$directory"
+
+  dart run test
+done
+
+
+echo "*** Preparing to benchmark build..."
+cd "$parent_directory/end_to_end_test"
+cat << 'EOF' > lib/many_values.dart
+import 'package:built_value/built_value.dart';
+part 'many_values.g.dart';
+EOF
+dart run build_runner build
+
+for n in $(seq 1 2500); do
+  cat << 'EOF' | sed -e "s#1#$n#g" >> lib/many_values.dart
+  abstract class Value1 implements Built<Value1, Value1Builder> {
+      factory Value1([void Function(Value1Builder) updates]) = _$Value1;
+      Value1._();
+  }
+EOF
+done
+echo "*** Benchmarking build, should be ~30s..."
+dart run build_runner build
+
+rm "$parent_directory/end_to_end_test/lib/many_values.dart"
+rm "$parent_directory/end_to_end_test/lib/many_values.g.dart"
