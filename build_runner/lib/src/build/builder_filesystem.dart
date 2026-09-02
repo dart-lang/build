@@ -107,10 +107,6 @@ class BuilderFilesystem {
     }
   }
 
-  bool isFile(AssetId id) {
-    return buildState.isFile(id);
-  }
-
   /// Returns the content of [id].
   ///
   /// It must be a known source or an output that has already been generated.
@@ -164,7 +160,7 @@ class BuilderFilesystem {
     }
 
     if (Placeholders.isPlaceholderPath(id.path)) return false;
-    if (!isFile(id)) {
+    if (!buildState.isKnownAsset(id)) {
       buildState.addMissingSource(id);
       return false;
     }
@@ -236,7 +232,7 @@ class BuilderFilesystem {
   /// its content. Note that generation might output nothing, in which case an
   /// empty string is returned for its content.
   Future<PhasedValue<String>> readPhased(int phase, AssetId id) async {
-    if (!isFile(id)) {
+    if (!buildState.isKnownAsset(id)) {
       buildState.addMissingSource(id);
       return PhasedValue.fixed('');
     } else if (buildState.isMissingSource(id)) {

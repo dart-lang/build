@@ -660,12 +660,12 @@ class Build {
       buildFilesystem: _builderFilesystem,
       addAsset: (assetId) {
         if (!outputsToArtifactTree) buildPackages.throwIfReadonly(assetId);
-        if (_isFile(assetId)) {
+        if (buildState.isKnownAsset(assetId)) {
           throw InvalidOutputException(assetId, 'Asset already exists');
         }
       },
       deleteAsset: (assetId) {
-        if (!_isFile(assetId)) {
+        if (!buildState.isKnownAsset(assetId)) {
           throw AssetNotFoundException(assetId);
         }
         if (assetId != input) {
@@ -1114,8 +1114,6 @@ class Build {
       contents: contents,
     );
   }
-
-  bool _isFile(AssetId id) => buildState.isFile(id);
 
   bool _isChangedOutput(AssetId output) {
     final oldDigest = previousBuild.digestOf(output);
