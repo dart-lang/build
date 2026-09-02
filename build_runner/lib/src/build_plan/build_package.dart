@@ -10,7 +10,12 @@ import 'package:path/path.dart' as p;
 import '../contracts.dart';
 
 /// A Dart package in the build.
-@Invariant('name.isNotEmpty', 'path.isNotEmpty')
+@Invariant(
+  'name.isNotEmpty',
+  'path.isNotEmpty',
+  '!dependencies.contains(name)',
+  'dependencies.every((d) => d.isNotEmpty)',
+)
 class BuildPackage {
   /// The name of the package as listed in `pubspec.yaml`.
   final String name;

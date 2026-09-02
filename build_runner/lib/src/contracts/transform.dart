@@ -9,6 +9,10 @@ import 'package:dart_style/dart_style.dart';
 /// `@Pre`, `@Post`, and `@Invariant` contracts.
 String transformContracts(String source) {
   final parseResult = parseString(content: source, throwIfDiagnostics: false);
+  if (parseResult.errors.isNotEmpty) {
+    final messages = parseResult.errors.map((e) => e.message).join('\n');
+    throw FormatException('Source has parse errors:\n$messages');
+  }
   final unit = parseResult.unit;
 
   final collector = _ContractTransformCollector(source);
@@ -21,8 +25,11 @@ String transformContracts(String source) {
     return DartFormatter(
       languageVersion: DartFormatter.latestLanguageVersion,
     ).format(transformed);
-  } catch (_) {
-    return transformed;
+  } catch (e) {
+    throw FormatException(
+      'Failed to format transformed contracts code: $e\n'
+      'Transformed code was:\n$transformed',
+    );
   }
 }
 
@@ -66,6 +73,16 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
 
   bool get isEmpty => _replacements.isEmpty;
 
+  bool _isFutureType(String? typeStr) {
+    if (typeStr == null) return false;
+    final trimmed = typeStr.trim();
+    if (trimmed == 'FutureOr' || trimmed.startsWith('FutureOr<')) return false;
+    return trimmed == 'Future' ||
+        trimmed.startsWith('Future<') ||
+        trimmed.endsWith('.Future') ||
+        trimmed.contains('.Future<');
+  }
+
   String applyReplacements() {
     // Sort descending by offset. If offsets are equal, preserve order.
     _replacements.sort((a, b) => b.offset.compareTo(a.offset));
@@ -85,13 +102,29 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
     for (final annotation in metadata) {
       if (annotation.name.name != name) continue;
       final args = annotation.arguments?.arguments;
-      if (args == null) continue;
+      if (args == null || args.isEmpty) {
+        throw FormatException(
+          '@$name annotation requires at least one contract expression string.',
+        );
+      }
       for (final arg in args) {
         if (arg is SimpleStringLiteral) {
           clauses.add(arg.value);
         } else if (arg is StringLiteral) {
           final val = arg.stringValue;
-          if (val != null) clauses.add(val);
+          if (val != null) {
+            clauses.add(val);
+          } else {
+            throw FormatException(
+              '@$name contract expression must be a non-empty string literal.',
+            );
+          }
+        } else {
+          final argText = source.substring(arg.offset, arg.end);
+          throw FormatException(
+            '@$name contract expression must be a string literal, '
+            'got: $argText',
+          );
         }
       }
     }
@@ -277,6 +310,9 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
       if (preClauses.isEmpty && postClauses.isEmpty) return;
 
       final body = node.body;
+      final returnTypePrefix = _currentClassName != null
+          ? '$_currentClassName '
+          : '';
       if (body is ExpressionFunctionBody) {
         final exprSource = source.substring(
           body.expression.offset,
@@ -286,7 +322,7 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
         if (preClauses.isNotEmpty) buffer.write(_buildPreCheck(preClauses));
 
         if (postClauses.isNotEmpty) {
-          buffer.writeln('return ((result) {');
+          buffer.writeln('return (($returnTypePrefix result) {');
           buffer.write(_buildPostCheck(postClauses));
           buffer.writeln('return result;');
           buffer.writeln('})($exprSource);');
@@ -315,7 +351,8 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
             false,
             false,
             false,
-            false,
+            _currentClassName,
+            null,
           );
         }
       }
@@ -327,14 +364,17 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
     }
 
     final preClauses = _extractClauses(node.metadata, 'Pre');
+    final postClauses = _extractClauses(node.metadata, 'Post');
     final hasPre = preClauses.isNotEmpty;
-    if (!hasPre && !classHasInvariant) return;
+    final hasPost = postClauses.isNotEmpty;
+    if (!hasPre && !hasPost && !classHasInvariant) return;
 
     final body = node.body;
     if (body is EmptyFunctionBody) {
       final buffer = StringBuffer('{\n');
       if (hasPre) buffer.write(_buildPreCheck(preClauses));
       if (classHasInvariant) buffer.writeln('_checkInvariants();');
+      if (hasPost) buffer.write(_buildPostCheck(postClauses));
       buffer.write('}');
       _replacements.add(
         _Replacement(
@@ -353,14 +393,35 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
           ),
         );
       }
-      if (classHasInvariant) {
-        _replacements.add(
-          _Replacement(
-            body.block.rightBracket.offset,
-            0,
-            '\n_checkInvariants();\n',
-          ),
-        );
+      if (classHasInvariant || hasPost) {
+        final collector = _ReturnStatementCollector();
+        body.block.accept(collector);
+        for (final ret in collector.returns) {
+          final retBuffer = StringBuffer('{\n');
+          if (classHasInvariant) retBuffer.writeln('_checkInvariants();');
+          if (hasPost) retBuffer.write(_buildPostCheck(postClauses));
+          retBuffer.writeln('return;');
+          retBuffer.write('}');
+          _replacements.add(
+            _Replacement(ret.offset, ret.length, retBuffer.toString()),
+          );
+        }
+
+        final lastStatement = body.block.statements.isNotEmpty
+            ? body.block.statements.last
+            : null;
+        if (lastStatement is! ReturnStatement) {
+          final exitBuffer = StringBuffer('\n');
+          if (classHasInvariant) exitBuffer.writeln('_checkInvariants();');
+          if (hasPost) exitBuffer.write(_buildPostCheck(postClauses));
+          _replacements.add(
+            _Replacement(
+              body.block.rightBracket.offset,
+              0,
+              exitBuffer.toString(),
+            ),
+          );
+        }
       }
     }
   }
@@ -396,15 +457,17 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
         : methodName;
 
     final body = node.body;
+    final returnTypeStr = node.returnType?.toSource();
+    final isSetter = node.isSetter;
+    final isVoid = isSetter || returnTypeStr == 'void';
+    final isAsync = body.isAsynchronous;
+    final isFuture = _isFutureType(returnTypeStr);
+
     if (body is ExpressionFunctionBody) {
       final exprSource = source.substring(
         body.expression.offset,
         body.expression.end,
       );
-      final isVoid = node.returnType?.toSource() == 'void';
-      final isAsync = body.isAsynchronous;
-      final isFuture =
-          node.returnType?.toSource().startsWith('Future') ?? false;
 
       final buffer = StringBuffer('{\n');
       if (hasTrace) {
@@ -415,13 +478,14 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
       if (checkInvariant) buffer.writeln('_checkInvariants();');
       if (preClauses.isNotEmpty) buffer.write(_buildPreCheck(preClauses));
 
+      if (checkInvariant) buffer.writeln('try {');
+
       if (postClauses.isNotEmpty || hasTrace) {
         if (isVoid) {
           buffer.writeln('$exprSource;');
           if (postClauses.isNotEmpty) {
             buffer.write(_buildPostCheck(postClauses));
           }
-          if (checkInvariant) buffer.writeln('_checkInvariants();');
           if (hasTrace) buffer.write(_buildTraceExit(qualifiedName, true));
         } else if (isAsync) {
           buffer.writeln(
@@ -430,7 +494,6 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
           if (postClauses.isNotEmpty) {
             buffer.write(_buildPostCheck(postClauses));
           }
-          if (checkInvariant) buffer.writeln('_checkInvariants();');
           if (hasTrace) buffer.write(_buildTraceExit(qualifiedName, false));
           buffer.writeln('return result;');
           buffer.writeln('}));');
@@ -439,16 +502,20 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
           if (postClauses.isNotEmpty) {
             buffer.write(_buildPostCheck(postClauses));
           }
-          if (checkInvariant) buffer.writeln('_checkInvariants();');
           if (hasTrace) buffer.write(_buildTraceExit(qualifiedName, false));
           buffer.writeln('return result;');
           buffer.writeln('});');
         } else {
-          buffer.writeln('return ((result) {');
+          final typePrefix =
+              returnTypeStr != null &&
+                  returnTypeStr != 'void' &&
+                  returnTypeStr != 'dynamic'
+              ? '$returnTypeStr '
+              : '';
+          buffer.writeln('return (($typePrefix result) {');
           if (postClauses.isNotEmpty) {
             buffer.write(_buildPostCheck(postClauses));
           }
-          if (checkInvariant) buffer.writeln('_checkInvariants();');
           if (hasTrace) buffer.write(_buildTraceExit(qualifiedName, false));
           buffer.writeln('return result;');
           buffer.writeln('})($exprSource);');
@@ -456,16 +523,15 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
       } else {
         if (isVoid) {
           buffer.writeln('$exprSource;');
-          if (checkInvariant) buffer.writeln('_checkInvariants();');
         } else {
-          if (checkInvariant) {
-            buffer.writeln('final result = $exprSource;');
-            buffer.writeln('_checkInvariants();');
-            buffer.writeln('return result;');
-          } else {
-            buffer.writeln('return $exprSource;');
-          }
+          buffer.writeln('return $exprSource;');
         }
+      }
+
+      if (checkInvariant) {
+        buffer.writeln('} finally {');
+        buffer.writeln('  _checkInvariants();');
+        buffer.writeln('}');
       }
       buffer.write('}');
 
@@ -483,43 +549,51 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
       if (preClauses.isNotEmpty) {
         entryBuffer.write(_buildPreCheck(preClauses));
       }
+      if (checkInvariant) entryBuffer.writeln('try {');
 
-      if (checkInvariant && postClauses.isEmpty && !hasTrace) {
-        // Wrap method execution with try-finally to guarantee invariant
-        // check on exit.
-        entryBuffer.writeln('try {');
+      if (entryBuffer.isNotEmpty) {
         _replacements.add(
           _Replacement(body.block.leftBracket.end, 0, '\n$entryBuffer\n'),
         );
+      }
+
+      if (postClauses.isNotEmpty || hasTrace) {
+        _transformBlockReturns(
+          body.block,
+          postClauses,
+          isVoid,
+          isAsync,
+          isFuture,
+          returnTypeStr,
+          hasTrace ? qualifiedName : null,
+        );
+      }
+
+      final closingBuffer = StringBuffer('\n');
+      final lastStatement = body.block.statements.isNotEmpty
+          ? body.block.statements.last
+          : null;
+      if (isVoid && lastStatement is! ReturnStatement) {
+        if (postClauses.isNotEmpty) {
+          closingBuffer.write(_buildPostCheck(postClauses));
+        }
+        if (hasTrace) {
+          closingBuffer.write(_buildTraceExit(qualifiedName, true));
+        }
+      }
+      if (checkInvariant) {
+        closingBuffer.writeln('} finally {');
+        closingBuffer.writeln('  _checkInvariants();');
+        closingBuffer.writeln('}');
+      }
+      if (closingBuffer.length > 1) {
         _replacements.add(
           _Replacement(
             body.block.rightBracket.offset,
             0,
-            '\n} finally {\n  _checkInvariants();\n}\n',
+            closingBuffer.toString(),
           ),
         );
-      } else {
-        if (entryBuffer.isNotEmpty) {
-          _replacements.add(
-            _Replacement(body.block.leftBracket.end, 0, '\n$entryBuffer\n'),
-          );
-        }
-
-        if (postClauses.isNotEmpty || hasTrace) {
-          final isVoid = node.returnType?.toSource() == 'void';
-          final isAsync = body.isAsynchronous;
-          final isFuture =
-              node.returnType?.toSource().startsWith('Future') ?? false;
-          _transformBlockReturns(
-            body.block,
-            postClauses,
-            checkInvariant,
-            isVoid,
-            isAsync,
-            isFuture,
-            hasTrace ? qualifiedName : null,
-          );
-        }
       }
     }
   }
@@ -527,10 +601,10 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
   void _transformBlockReturns(
     Block block,
     List<String> postClauses,
-    bool checkInvariant,
     bool isVoid,
     bool isAsync,
-    bool isFuture, [
+    bool isFuture,
+    String? returnTypeStr, [
     String? traceQualifiedName,
   ]) {
     final collector = _ReturnStatementCollector();
@@ -548,7 +622,6 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
           if (postClauses.isNotEmpty) {
             buffer.write(_buildPostCheck(postClauses));
           }
-          if (checkInvariant) buffer.writeln('  _checkInvariants();');
           if (traceQualifiedName != null) {
             buffer.write(_buildTraceExit(traceQualifiedName, false));
           }
@@ -559,18 +632,22 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
           if (postClauses.isNotEmpty) {
             buffer.write(_buildPostCheck(postClauses));
           }
-          if (checkInvariant) buffer.writeln('  _checkInvariants();');
           if (traceQualifiedName != null) {
             buffer.write(_buildTraceExit(traceQualifiedName, false));
           }
           buffer.writeln('  return result;');
           buffer.write('});');
         } else {
-          buffer.write('return ((result) {\n');
+          final typePrefix =
+              returnTypeStr != null &&
+                  returnTypeStr != 'void' &&
+                  returnTypeStr != 'dynamic'
+              ? '$returnTypeStr '
+              : '';
+          buffer.write('return (($typePrefix result) {\n');
           if (postClauses.isNotEmpty) {
             buffer.write(_buildPostCheck(postClauses));
           }
-          if (checkInvariant) buffer.writeln('  _checkInvariants();');
           if (traceQualifiedName != null) {
             buffer.write(_buildTraceExit(traceQualifiedName, false));
           }
@@ -584,7 +661,6 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
       } else {
         final buffer = StringBuffer('{\n');
         if (postClauses.isNotEmpty) buffer.write(_buildPostCheck(postClauses));
-        if (checkInvariant) buffer.writeln('_checkInvariants();');
         if (traceQualifiedName != null) {
           buffer.write(_buildTraceExit(traceQualifiedName, true));
         }
@@ -593,25 +669,6 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
 
         _replacements.add(
           _Replacement(statement.offset, statement.length, buffer.toString()),
-        );
-      }
-    }
-
-    if (isVoid) {
-      final lastStatement = block.statements.isNotEmpty
-          ? block.statements.last
-          : null;
-      if (lastStatement is! ReturnStatement) {
-        final exitBuffer = StringBuffer('\n');
-        if (postClauses.isNotEmpty) {
-          exitBuffer.write(_buildPostCheck(postClauses));
-        }
-        if (checkInvariant) exitBuffer.writeln('_checkInvariants();');
-        if (traceQualifiedName != null) {
-          exitBuffer.write(_buildTraceExit(traceQualifiedName, true));
-        }
-        _replacements.add(
-          _Replacement(block.rightBracket.offset, 0, exitBuffer.toString()),
         );
       }
     }
@@ -627,9 +684,10 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
 
     final functionName = node.name.lexeme;
     final body = node.functionExpression.body;
-    final isVoid = node.returnType?.toSource() == 'void';
+    final returnTypeStr = node.returnType?.toSource();
+    final isVoid = returnTypeStr == 'void';
     final isAsync = body.isAsynchronous;
-    final isFuture = node.returnType?.toSource().startsWith('Future') ?? false;
+    final isFuture = _isFutureType(returnTypeStr);
 
     if (body is ExpressionFunctionBody) {
       final exprSource = source.substring(
@@ -675,7 +733,13 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
           buffer.writeln('return result;');
           buffer.writeln('});');
         } else {
-          buffer.writeln('return ((result) {');
+          final typePrefix =
+              returnTypeStr != null &&
+                  returnTypeStr != 'void' &&
+                  returnTypeStr != 'dynamic'
+              ? '$returnTypeStr '
+              : '';
+          buffer.writeln('return (($typePrefix result) {');
           if (postClauses.isNotEmpty) {
             buffer.write(_buildPostCheck(postClauses));
           }
@@ -719,12 +783,32 @@ class _ContractTransformCollector extends RecursiveAstVisitor<void> {
         _transformBlockReturns(
           body.block,
           postClauses,
-          false,
           isVoid,
           isAsync,
           isFuture,
+          returnTypeStr,
           hasTrace ? functionName : null,
         );
+
+        final lastStatement = body.block.statements.isNotEmpty
+            ? body.block.statements.last
+            : null;
+        if (isVoid && lastStatement is! ReturnStatement) {
+          final exitBuffer = StringBuffer('\n');
+          if (postClauses.isNotEmpty) {
+            exitBuffer.write(_buildPostCheck(postClauses));
+          }
+          if (hasTrace) {
+            exitBuffer.write(_buildTraceExit(functionName, true));
+          }
+          _replacements.add(
+            _Replacement(
+              body.block.rightBracket.offset,
+              0,
+              exitBuffer.toString(),
+            ),
+          );
+        }
       }
     }
   }

@@ -8,6 +8,7 @@ import 'package:build_config/build_config.dart' as build_config;
 import 'package:built_collection/built_collection.dart';
 import 'package:meta/meta.dart';
 
+import '../contracts.dart';
 import '../io/reader_writer.dart';
 import 'build_configs.dart';
 import 'build_package.dart';
@@ -106,6 +107,7 @@ sealed class AbstractBuilderDefinition {
 
 /// A builder definition read from `build.yaml` using
 /// [build_config.BuilderDefinition].
+@Invariant('key.isNotEmpty')
 class BuilderDefinition implements AbstractBuilderDefinition {
   @override
   final String key;
@@ -192,6 +194,7 @@ class BuilderDefinition implements AbstractBuilderDefinition {
 
 /// A post process builder definition read from `build.yaml` using
 /// [build_config.PostProcessBuilderDefinition]
+@Invariant('key.isNotEmpty')
 class PostProcessBuilderDefinition implements AbstractBuilderDefinition {
   @override
   final String key;

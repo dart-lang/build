@@ -48,7 +48,7 @@ class Calculator {
 }
 ''';
       final output = transformContracts(input);
-      expect(output, contains('return ((result) {'));
+      expect(output, contains('return ((int result) {'));
       expect(output, contains('})(x + 1);'));
       expect(output, contains('Postcondition failed: result > 0'));
       expect(output, contains('return result;'));
@@ -639,6 +639,211 @@ void main() {
             script.path,
           ]);
           expect(result.exitCode, 0, reason: 'stderr: ${result.stderr}');
+        } finally {
+          await tempDir.delete(recursive: true);
+        }
+      },
+    );
+
+    test('throws FormatException when source has parse errors', () {
+      const invalid = 'class Unclosed {';
+      expect(() => transformContracts(invalid), throwsFormatException);
+    });
+
+    test(
+      'throws FormatException when contract clause is not a string literal',
+      () {
+        const invalid = '''
+import 'package:build_runner/src/contracts.dart';
+class Foo {
+  @Pre(1 + 1)
+  void bar() {}
+}
+''';
+        expect(() => transformContracts(invalid), throwsFormatException);
+      },
+    );
+
+    test('transforms @Post and @Invariant on block and expression setters', () {
+      const input = '''
+import 'package:build_runner/src/contracts.dart';
+
+@Invariant('count >= 0')
+class Counter {
+  int count = 0;
+
+  @Post('count > 0')
+  set positiveCount(int value) {
+    count = value;
+  }
+
+  set directCount(int value) => count = value;
+}
+''';
+      final output = transformContracts(input);
+      expect(output, contains('Postcondition failed: count > 0'));
+      expect(output, contains('_checkInvariants();'));
+    });
+
+    test('transforms @Post on generative constructor', () {
+      const input = '''
+import 'package:build_runner/src/contracts.dart';
+
+class Widget {
+  final int size;
+
+  @Post('size > 0')
+  Widget(this.size);
+}
+''';
+      final output = transformContracts(input);
+      expect(output, contains('Postcondition failed: size > 0'));
+    });
+
+    test('does not treat FutureOr as Future for .then transformation', () {
+      const input = '''
+import 'dart:async';
+import 'package:build_runner/src/contracts.dart';
+
+class Provider {
+  @Post('result != null')
+  FutureOr<int> getValue() => 42;
+}
+''';
+      final output = transformContracts(input);
+      expect(output, isNot(contains('.then(')));
+      expect(output, contains('return ((FutureOr<int> result) {'));
+    });
+
+    test('preserves downward type inference in top-level functions and factory '
+        'constructors', () {
+      const input = '''
+import 'package:build_runner/src/contracts.dart';
+
+@Post('result.isNotEmpty')
+List<String> createList() => ['a', 'b'];
+
+class Node {
+  final String label;
+  Node._(this.label);
+
+  @Post('result != null')
+  factory Node(String label) => Node._(label);
+}
+''';
+      final output = transformContracts(input);
+      expect(output, contains('return ((List<String> result) {'));
+      expect(output, contains('return ((Node result) {'));
+    });
+
+    test(
+      'executes setters, generative constructor postconditions, and exception '
+      'invariants dynamically',
+      () async {
+        final tempDir = await Directory.systemTemp.createTemp(
+          'contracts_fixes_',
+        );
+        try {
+          final script = File('${tempDir.path}/fixes_runner.dart');
+          const originalSource = '''
+import 'dart:async';
+
+class Pre {
+  final String c1;
+  const Pre(this.c1);
+}
+class Post {
+  final String c1;
+  const Post(this.c1);
+}
+class Invariant {
+  final String c1;
+  const Invariant(this.c1);
+}
+class Contracts {
+  static bool enabled = true;
+}
+class ContractViolation implements Exception {
+  final String message;
+  ContractViolation(this.message);
+}
+
+@Invariant('value >= 0')
+class Target {
+  int value;
+
+  @Post('value > 0')
+  Target(this.value);
+
+  @Post('value > 0')
+  set positiveValue(int v) {
+    value = v;
+  }
+
+  set exprValue(int v) => value = v;
+
+  @Post('result != null')
+  FutureOr<int> syncFutureOr() => value;
+
+  void mutateAndThrow() {
+    value = -100;
+    throw StateError('Simulated failure');
+  }
+}
+
+void main() {
+  // Generative constructor @Post test.
+  final valid = Target(10);
+  try {
+    Target(0);
+    throw StateError('Should have failed constructor postcondition');
+  } on ContractViolation {
+    // Expected
+  }
+
+  // Setter @Post test.
+  try {
+    valid.positiveValue = 0;
+    throw StateError('Should have failed setter postcondition');
+  } on ContractViolation {
+    // Expected
+  }
+
+  // Setter @Invariant test.
+  try {
+    valid.exprValue = -5;
+    throw StateError('Should have failed setter invariant');
+  } on ContractViolation {
+    // Expected
+  }
+
+  // Restore valid state after setter failure.
+  valid.value = 10;
+
+  // FutureOr test.
+  final res = valid.syncFutureOr();
+  if (res != 10) throw StateError('Expected 10 from FutureOr');
+
+  // Invariant checked in finally when exception is thrown.
+  try {
+    valid.mutateAndThrow();
+    throw StateError('Should have thrown StateError or ContractViolation');
+  } on ContractViolation {
+    // Expected: invariant violated before unwinding
+  }
+}
+''';
+          final transformedSource = transformContracts(originalSource);
+          await script.writeAsString(transformedSource);
+
+          final result = await Process.run(Platform.resolvedExecutable, [
+            script.path,
+          ]);
+          expect(
+            result.exitCode,
+            0,
+            reason: 'stderr: ${result.stderr}\nstdout: ${result.stdout}',
+          );
         } finally {
           await tempDir.delete(recursive: true);
         }

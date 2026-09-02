@@ -235,7 +235,9 @@ void main() {
               outputsToArtifactTree: false,
             ),
           ])
-          ..buildStepsByDeclaredOutput.addAll({outputId: buildStepId}),
+          ..buildStepsByPhase.add(BuiltList<BuildStepId>([buildStepId]))
+          ..buildStepsByDeclaredOutput.addAll({outputId: buildStepId})
+          ..declaredOutputsByStep.add(buildStepId, outputId),
       );
 
       final buildState = BuildState(buildStepPlan: planWithOutput, sources: {});

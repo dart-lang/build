@@ -282,8 +282,12 @@ void main() {
       final buildStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
 
       final buildStepPlan = BuildStepPlan((BuildStepPlanBuilder b) {
-        b.buildPhases = BuildPhases(const <InBuildPhase>[]);
+        b.buildPhases = BuildPhases([
+          InBuildPhase(builder: TestBuilder(), key: 'b1', package: 'a'),
+        ]);
+        b.buildStepsByPhase.add(BuiltList<BuildStepId>([buildStepId]));
         b.buildStepsByDeclaredOutput.addAll({outputId: buildStepId});
+        b.declaredOutputsByStep.add(buildStepId, outputId);
       });
 
       buildState = BuildState(buildStepPlan: buildStepPlan, sources: const {});

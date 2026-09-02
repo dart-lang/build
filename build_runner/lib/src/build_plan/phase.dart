@@ -41,7 +41,7 @@ abstract class BuildAction {
 }
 
 /// A [BuildPhase] that uses a single [Builder] to generate files.
-@Invariant('package.isNotEmpty')
+@Invariant('package.isNotEmpty', 'key.isNotEmpty', 'displayName.isNotEmpty')
 class InBuildPhase extends BuildPhase implements BuildAction {
   final Builder builder;
 

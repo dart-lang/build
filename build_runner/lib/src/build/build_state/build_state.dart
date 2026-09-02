@@ -11,6 +11,7 @@ import 'package:meta/meta.dart';
 import '../../build_plan/build_phases.dart';
 import '../../build_plan/build_step_plan.dart';
 import '../../build_plan/phase.dart';
+import '../../contracts.dart';
 import '../asset_content.dart';
 
 import 'build_step_id.dart';
@@ -30,6 +31,12 @@ import 'post_process_build_step_result.dart';
 /// - Glob results.
 /// - Build step results.
 /// - Post process build step results.
+@Invariant(
+  '_sources.every((id) => !buildStepPlan.isDeclaredOutput(id))',
+  '_missingSources.every((id) => !_sources.contains(id))',
+  '_postProcessOutputs.keys.every((id) => !_sources.contains(id))',
+  '_contents.keys.every((id) => isFile(id))',
+)
 class BuildState {
   /// The planned build steps for this build.
   final BuildStepPlan buildStepPlan;
@@ -155,6 +162,7 @@ class BuildState {
   /// Updates a source file content.
   ///
   /// Throws if not a source.
+  @Pre('isSource(id)')
   void updateSourceContent(AssetId id, AssetContent content) {
     if (!isSource(id)) {
       throw StateError('Tried to update content of non-source $id.');
@@ -218,6 +226,7 @@ class BuildState {
   ///
   /// The builder must check and find there is no declared output or
   /// source before calling this.
+  @Pre('!isSource(id)', '!buildStepPlan.isDeclaredOutput(id)')
   void addMissingSource(AssetId id) => _missingSources.add(id);
 
   // -- Build steps.

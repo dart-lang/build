@@ -74,7 +74,7 @@ void main() {
       await readerWriter.writeAsString(assetId, '// a.dart');
       buildOptions = BuildOptions.forTests();
       builderFactories = BuilderFactories({
-        '': [
+        'b1': [
           (_) => TestBuilder(
             buildExtensions: const {
               '.dart': ['.dart.copy'],
@@ -84,7 +84,7 @@ void main() {
       });
       testingOverrides = TestingOverrides(
         builderDefinitions: [
-          BuilderDefinition('', outputsToArtifactTree: false),
+          BuilderDefinition('b1', outputsToArtifactTree: false),
         ].build(),
         readerWriter: readerWriter,
         buildPackages: buildPackages,
@@ -230,7 +230,7 @@ void main() {
         final artifactTreePlan = await loadPlan(
           TestingOverrides(
             builderDefinitions: [
-              BuilderDefinition('', outputsToArtifactTree: true),
+              BuilderDefinition('b1', outputsToArtifactTree: true),
             ].build(),
             readerWriter: readerWriter,
             buildPackages: buildPackages,
@@ -263,7 +263,7 @@ void main() {
         final loadedPlan = await loadPlan(
           TestingOverrides(
             builderDefinitions: [
-              BuilderDefinition('', outputsToArtifactTree: true),
+              BuilderDefinition('b1', outputsToArtifactTree: true),
             ].build(),
             readerWriter: readerWriter,
             buildPackages: buildPackages,

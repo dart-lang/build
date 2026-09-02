@@ -72,11 +72,11 @@ void main() {
       await readerWriter.writeAsString(assetId2, '// other');
       buildOptions = BuildOptions.forTests();
       builderFactories = BuilderFactories({
-        '': [(_) => TestBuilder()],
+        'b1': [(_) => TestBuilder()],
         'b2': [(_) => TestBuilder(buildExtensions: appendExtension('.copy2'))],
       });
       testingOverrides = TestingOverrides(
-        builderDefinitions: [BuilderDefinition('')].build(),
+        builderDefinitions: [BuilderDefinition('b1')].build(),
         readerWriter: readerWriter,
         buildPackages: buildPackages,
         checkBuilderFreshness: false,
@@ -151,7 +151,7 @@ void main() {
       buildOptions = BuildOptions.forTests(outputStrategy: OutputStrategy.keep);
       testingOverrides = testingOverrides.copyWith(
         builderDefinitions: [
-          BuilderDefinition('', outputsToArtifactTree: false),
+          BuilderDefinition('b1', outputsToArtifactTree: false),
         ].build(),
       );
       buildPlan = await loadPlan();
@@ -280,7 +280,7 @@ void main() {
       final testingOverrides = TestingOverrides(
         builderDefinitions: [
           BuilderDefinition(
-            '',
+            'b1',
             outputsToArtifactTree: true,
             autoApply: AutoApply.allPackages,
           ),
@@ -512,7 +512,7 @@ void main() {
         final testingOverrides = TestingOverrides(
           builderDefinitions: [
             BuilderDefinition(
-              '',
+              'b1',
               outputsToArtifactTree: true,
               autoApply: AutoApply.allPackages,
             ),
@@ -749,7 +749,7 @@ void main() {
         final postOverrides = TestingOverrides(
           builderDefinitions: [
             BuilderDefinition(
-              '',
+              'b1',
               appliesBuilders: ['a:post'],
               autoApply: AutoApply.rootPackage,
             ),
@@ -761,7 +761,7 @@ void main() {
         );
         final postFactories = BuilderFactories(
           {
-            '': [(_) => TestBuilder()],
+            'b1': [(_) => TestBuilder()],
           },
           postProcessBuilderFactories: {
             'a:post': (_) =>
@@ -830,7 +830,7 @@ void main() {
         final postOverrides = TestingOverrides(
           builderDefinitions: [
             BuilderDefinition(
-              '',
+              'b1',
               appliesBuilders: ['a:post'],
               autoApply: AutoApply.rootPackage,
             ),
@@ -842,7 +842,7 @@ void main() {
         );
         final postFactories = BuilderFactories(
           {
-            '': [(_) => TestBuilder()],
+            'b1': [(_) => TestBuilder()],
           },
           postProcessBuilderFactories: {
             'a:post': (_) =>
@@ -906,7 +906,7 @@ void main() {
         final postOverrides = TestingOverrides(
           builderDefinitions: [
             BuilderDefinition(
-              '',
+              'b1',
               appliesBuilders: ['a:post'],
               autoApply: AutoApply.rootPackage,
             ),
@@ -918,7 +918,7 @@ void main() {
         );
         final postFactories = BuilderFactories(
           {
-            '': [(_) => TestBuilder()],
+            'b1': [(_) => TestBuilder()],
           },
           postProcessBuilderFactories: {
             'a:post': (_) =>
@@ -1013,7 +1013,7 @@ void main() {
         () async {
           final overrides = TestingOverrides(
             builderDefinitions: [
-              BuilderDefinition('', outputsToArtifactTree: false),
+              BuilderDefinition('b1', outputsToArtifactTree: false),
             ].build(),
             readerWriter: readerWriter,
             buildPackages: buildPackages,
@@ -1065,9 +1065,22 @@ void main() {
       test('withCompatiblePreviousBuild resets change tracking sets and '
           'cleanBuild', () async {
         final buildPlan = await loadPlan();
+        expect(buildPlan.buildInputs.cleanBuild, isTrue);
+
+        final nextCleanPlan = buildPlan.withCompatiblePreviousBuild(
+          previousBuildState: BuildState(
+            buildStepPlan: buildPlan.buildStepPlan,
+            sources: {assetId: null, assetId2: null},
+          ).toFinishedBuildState(),
+          previousPhasedAssetDeps: PhasedAssetDeps(),
+        );
+        expect(nextCleanPlan.buildInputs.cleanBuild, isFalse);
+
         final updatedPlan = buildPlan.rebuild(
           (b) => b
-            ..buildInputs.cleanBuild = true
+            ..buildInputs.cleanBuild = false
+            ..buildInputs.sources.remove(assetId)
+            ..buildInputs.sourceContents.remove(assetId)
             ..buildInputs.deletedSources.add(assetId)
             ..buildInputs.updatedSources.add(assetId2)
             ..buildInputs.invalidOutputs.add(outputId),

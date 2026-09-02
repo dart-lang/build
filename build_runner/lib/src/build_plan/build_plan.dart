@@ -10,6 +10,7 @@ import '../build/asset_content.dart';
 import '../build/build_state/finished_build_state.dart';
 import '../build/library_cycle_graph/phased_asset_deps.dart';
 import '../constants.dart';
+import '../contracts.dart';
 import '../exceptions.dart';
 import '../io/asset_tracker.dart';
 import '../io/reader_writer.dart';
@@ -26,6 +27,13 @@ import 'previous_build.dart';
 part 'build_plan.g.dart';
 
 /// Options and derived configuration for a build.
+@Invariant(
+  'conflictingOutputs.every((file) => '
+      'buildSpec.buildPackages.outputPackages.contains(file.id.package))',
+  'buildStepPlan.buildPhases.digest == buildSpec.buildPhases.digest',
+  'previousBuild.incompatibleBuildOutputsToDelete.every('
+      '(id) => buildSpec.buildPackages.outputPackages.contains(id.package))',
+)
 abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
   BuildSpec get buildSpec;
   PreviousBuild get previousBuild;
@@ -461,7 +469,8 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       buildInputs.retainedOutputContents.remove(id);
     }
     for (final id in newArtifactTreeFiles) {
-      if (!finalSources.contains(id)) {
+      if (!finalSources.contains(id) &&
+          buildInputs.retainedOutputContents[id] == null) {
         buildInputs.invalidOutputs.add(id);
       }
     }

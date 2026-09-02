@@ -8,6 +8,8 @@ import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
+import '../../contracts.dart';
+
 part 'phased_value.g.dart';
 
 /// A value that changes during the build, according to the `int` build phase.
@@ -43,6 +45,12 @@ part 'phased_value.g.dart';
 ///
 /// TODO(davidmorgan): it might be more efficient to represent the simpler
 /// cases, fixed or changing exactly once, as different implementation types.
+@Invariant(
+  'values.isNotEmpty',
+  'values.every((v) => v.expiresAfter == null || v.expiresAfter! >= 0)',
+  'values.length <= 1 || '
+      'values.take(values.length - 1).every((v) => v.expiresAfter != null)',
+)
 abstract class PhasedValue<T>
     implements Built<PhasedValue<T>, PhasedValueBuilder<T>> {
   static Serializer<PhasedValue> get serializer => _$phasedValueSerializer;
@@ -94,6 +102,7 @@ abstract class PhasedValue<T>
 
   /// Whether this value has expired at the specified [phase], meaning the
   /// actual value is not known.
+  @Pre('phase >= 0')
   bool isExpiredAt({required int phase}) {
     return expiresAfter != null && expiresAfter! < phase;
   }
@@ -102,6 +111,7 @@ abstract class PhasedValue<T>
   ///
   /// Throws `StateError` if the value has expired at [phase], meaning the value
   /// is not known.
+  @Pre('phase >= 0')
   ExpiringValue<T> expiringValueAt({required int phase}) {
     for (final value in values) {
       if (value.expiresAfter == null || value.expiresAfter! >= phase) {
@@ -115,6 +125,7 @@ abstract class PhasedValue<T>
   ///
   /// Throws `StateError` if the value has expired at [phase], meaning the value
   /// is not known.
+  @Pre('phase >= 0')
   T valueAt({required int phase}) => expiringValueAt(phase: phase).value;
 
   /// The value after all changes have happened.
@@ -153,6 +164,7 @@ abstract class PhasedValue<T>
 ///
 /// If [expiresAfter] is set, the value expires after that phase, taking a new
 /// value in the next phase.
+@Invariant('expiresAfter == null || expiresAfter! >= 0')
 abstract class ExpiringValue<T>
     implements Built<ExpiringValue<T>, ExpiringValueBuilder<T>> {
   static Serializer<ExpiringValue> get serializer => _$expiringValueSerializer;

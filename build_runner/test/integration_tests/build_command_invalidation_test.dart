@@ -182,7 +182,13 @@ void main() async {
       'root_pkg/.dart_tool/build/generated/root_pkg/web/a.txt.copy',
       'new artifact tree conflict',
     );
-    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
+    // The conflicting artifact tree file was deleted and the existing package
+    // path output is still valid, so there is no rerun.
+    expect(output, contains('wrote 0 outputs'));
     expect(
       tester.read(
         'root_pkg/.dart_tool/build/generated/root_pkg/web/a.txt.copy',

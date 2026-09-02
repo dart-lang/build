@@ -10,6 +10,7 @@ import '../build_plan/build_configs.dart';
 import '../build_plan/build_packages.dart';
 import '../build_plan/build_step_plan.dart';
 import '../build_plan/placeholders.dart';
+import '../contracts.dart';
 import '../io/reader_writer.dart';
 import 'asset_content.dart';
 import 'build_state/build_state.dart';
@@ -148,6 +149,7 @@ class BuilderFilesystem {
   /// If [catchInvalidInputs] is set to true and [checkInvalidInput] throws an
   /// [InvalidInputException], this method will return `false` instead of
   /// throwing.
+  @Pre('id.package.isNotEmpty', 'id.path.isNotEmpty', 'phase >= 0')
   Future<bool> isReadable(
     AssetId id,
     int phase, {
@@ -175,6 +177,7 @@ class BuilderFilesystem {
   /// Checks whether [id] can be read by this step.
   ///
   /// If it's a declared output from an earlier phase, wait for it to be built.
+  @Pre('id.package.isNotEmpty', 'id.path.isNotEmpty', 'phase >= 0')
   Future<bool> isReadableId(AssetId id, int phase) async {
     if (buildState.isActualPostOutput(id)) {
       // Post process outputs are not readable until after the build.
@@ -199,6 +202,7 @@ class BuilderFilesystem {
   /// Returns all readable assets matching [glob] under [package].
   ///
   /// Throws if a build is not running.
+  @Pre('package.isNotEmpty', 'phase >= 0')
   Stream<AssetId> findAssets(
     Glob glob, {
     required String package,
@@ -235,6 +239,7 @@ class BuilderFilesystem {
   /// a [PhasedValue.generated] specifying both when it was generated and
   /// its content. Note that generation might output nothing, in which case an
   /// empty string is returned for its content.
+  @Pre('phase >= 0', 'id.package.isNotEmpty', 'id.path.isNotEmpty')
   Future<PhasedValue<String>> readPhased(int phase, AssetId id) async {
     if (!isFile(id)) {
       buildState.addMissingSource(id);

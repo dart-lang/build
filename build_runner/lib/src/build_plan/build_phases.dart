@@ -9,12 +9,18 @@ import 'package:built_collection/built_collection.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 
+import '../contracts.dart';
 import '../exceptions.dart';
 import '../logging/build_log.dart';
 import 'phase.dart';
 
 /// The [BuildPhases] defining the sequence of actions in a build, and their
 /// [Digest] and options digests.
+@Invariant(
+  'inBuildPhasesOptionsDigests.length == inBuildPhases.length',
+  'postBuildActionsOptionsDigests.length == '
+      'postBuildPhase.builderActions.length',
+)
 class BuildPhases {
   /// The sequence of actions in the main build.
   final BuiltList<InBuildPhase> inBuildPhases;

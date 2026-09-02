@@ -8,6 +8,7 @@ import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 import 'package:crypto/crypto.dart';
 
+import '../../contracts.dart';
 import 'build_step_id.dart';
 import 'build_step_result.dart';
 import 'glob_id.dart';
@@ -18,6 +19,11 @@ import 'post_process_build_step_result.dart';
 part 'incremental_build_state.g.dart';
 
 /// `BuildState` saved for use in incremental builds.
+@Invariant(
+  'missingSources.every((id) => !sources.contains(id))',
+  'sources.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)',
+  'missingSources.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)',
+)
 abstract class IncrementalBuildState
     implements Built<IncrementalBuildState, IncrementalBuildStateBuilder> {
   static Serializer<IncrementalBuildState> get serializer =>
