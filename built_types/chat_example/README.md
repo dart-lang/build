@@ -9,7 +9,7 @@ Launch pub serve and the server, in separate terminals:
 `dart bin/main.dart`
 
 You can now load the app in Dartium or any modern browser at
-http://localhost:26199.
+`http://localhost:26199`.
 
 When developing, run
 

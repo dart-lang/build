@@ -619,8 +619,7 @@ Fixes:
 
 - Add an experimental analyzer plugin that surfaces compile time generation
   errors as suggestions in your IDE. Turn it on by modifying your
-  `analysis_options.yaml` file to add `plugins` entries,
-  [example](https://github.com/google/built_value.dart/blob/master/analysis_options.yaml).
+  `analysis_options.yaml` file to add `plugins` entries.
 
 # 5.3.0
 
