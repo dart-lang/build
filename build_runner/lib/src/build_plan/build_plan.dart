@@ -461,7 +461,8 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       buildInputs.retainedOutputContents.remove(id);
     }
     for (final id in newArtifactTreeFiles) {
-      if (!finalSources.contains(id)) {
+      if (!finalSources.contains(id) &&
+          buildInputs.retainedOutputContents[id] == null) {
         buildInputs.invalidOutputs.add(id);
       }
     }

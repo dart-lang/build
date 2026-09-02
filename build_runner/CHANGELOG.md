@@ -14,6 +14,8 @@
   builder dependency cycles and hangs; fix #5079.
 - Bug fix: restrict incompatible build output deletion to output packages; do
   not attempt to delete files in dependency packages.
+- Bug fix: do not invalidate retained package path outputs when conflicting
+  artifact tree files appear; avoid unnecessary build step reruns.
 
 ## 2.16.0
 
