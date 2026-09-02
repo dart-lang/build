@@ -216,10 +216,12 @@ the workspace root, if there is one.
 
 ## Writing your own builder
 
-For advanced use cases it's possible to write your own builder.
+For advanced use cases it's possible to write your own builder:
 
-Get started with the [build package documentation](https://pub.dev/packages/build).
-For testing builders, see the [`build_test` package](https://pub.dev/packages/build_test).
+- Read [Writing builders](https://github.com/dart-lang/build/blob/master/docs/writing_builders.md)
+  to understand builder types, output strategies, and how builders integrate with Dart libraries.
+- Get started with the [build package documentation](https://pub.dev/packages/build).
+- For testing builders, see the [`build_test` package](https://pub.dev/packages/build_test).
 
 ## Debugging builds
 
