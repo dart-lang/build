@@ -8,12 +8,23 @@ import 'package:built_value/built_value.dart';
 
 import '../build/build_state/build_step_id.dart';
 import '../build/build_state/exceptions.dart';
+import '../contracts.dart';
 import 'build_phases.dart';
 import 'phase.dart';
 
 part 'build_step_plan.g.dart';
 
 /// Planned build steps for one build and their declared outputs.
+@Invariant(
+  'buildStepsByPhase.length == buildPhases.inBuildPhases.length',
+  'buildStepsByDeclaredOutput.values.every('
+      '(step) => step.phaseNumber < buildPhases.inBuildPhases.length)',
+  'buildStepsByDeclaredOutput.keys.every('
+      '(id) => id.package.isNotEmpty && id.path.isNotEmpty)',
+  'declaredOutputsByStep.asMap().entries.every('
+      '(entry) => entry.value.every('
+      '(out) => buildStepsByDeclaredOutput[out] == entry.key))',
+)
 abstract class BuildStepPlan
     implements Built<BuildStepPlan, BuildStepPlanBuilder> {
   BuildPhases get buildPhases;
@@ -142,15 +153,18 @@ abstract class BuildStepPlan
 
   Iterable<AssetId> get declaredOutputs => buildStepsByDeclaredOutput.keys;
 
+  @Pre('id.package.isNotEmpty', 'id.path.isNotEmpty')
   bool isDeclaredOutput(AssetId id) =>
       buildStepsByDeclaredOutput.containsKey(id);
 
+  @Pre('isDeclaredOutput(id)')
   BuildStepId stepForDeclaredOutput(AssetId id) =>
       buildStepsByDeclaredOutput[id]!;
 
   BuildStepId? stepForDeclaredOutputOrNull(AssetId id) =>
       buildStepsByDeclaredOutput[id];
 
+  @Pre('id.package.isNotEmpty', 'id.path.isNotEmpty')
   Iterable<AssetId> declaredOutputsOf(AssetId id) =>
       declaredOutputsByPrimaryInput[id];
 

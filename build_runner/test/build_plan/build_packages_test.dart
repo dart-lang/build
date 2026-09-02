@@ -469,7 +469,7 @@ workspace:
         BuildPackage.forTesting(name: 'g', dependencies: ['h']),
         BuildPackage.forTesting(name: 'h', dependencies: ['g', 'i']),
         BuildPackage.forTesting(name: 'i'),
-        BuildPackage.forTesting(name: 'workspace'),
+        BuildPackage.forTesting(name: 'workspace', isOutput: true),
       ],
     );
 
@@ -484,7 +484,7 @@ workspace:
     final buildPackages = BuildPackages.singlePackageBuild('f', [
       BuildPackage.forTesting(name: 'a', dependencies: ['b']),
       BuildPackage.forTesting(name: 'b'),
-      BuildPackage.forTesting(name: 'f', dependencies: ['g']),
+      BuildPackage.forTesting(name: 'f', dependencies: ['g'], isOutput: true),
       BuildPackage.forTesting(name: 'g'),
     ]);
 

@@ -5,12 +5,16 @@
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 
+import '../contracts.dart';
 import '../io/build_output_reader.dart';
 import 'build_state/finished_build_state.dart';
 import 'library_cycle_graph/phased_asset_deps.dart';
 
 /// The result of an individual build, this may be an incremental build or
 /// a full build.
+@Invariant(
+  'status == BuildStatus.failure ? failureType != null : failureType == null',
+)
 class BuildResult {
   /// The status of this build.
   final BuildStatus status;

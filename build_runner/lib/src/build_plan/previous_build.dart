@@ -22,6 +22,7 @@ import '../build/build_state/post_process_build_step_id.dart';
 import '../build/build_state/post_process_build_step_result.dart';
 import '../build/library_cycle_graph/phased_asset_deps.dart';
 import '../constants.dart';
+import '../contracts.dart';
 
 import 'build_packages.dart';
 import 'build_spec.dart';
@@ -32,6 +33,18 @@ part 'previous_build.g.dart';
 
 /// Information about the previous build run and how it relates to the current
 /// configuration.
+@Invariant(
+  'incrementalState == null || incompatibleBuildOutputsToDelete.isEmpty',
+  'incrementalState == null || buildStepPlan != null',
+  'buildStepPlan == null || '
+      'phaseOptionsChangedList.length == '
+      'buildStepPlan!.buildPhases.inBuildPhases.length',
+  'buildStepPlan == null || '
+      'postBuildOptionsChangedList.length == '
+      'buildStepPlan!.buildPhases.postBuildPhase.builderActions.length',
+  'incompatibleBuildOutputsToDelete.every('
+      '(id) => id.package.isNotEmpty && id.path.isNotEmpty)',
+)
 abstract class PreviousBuild
     implements Built<PreviousBuild, PreviousBuildBuilder> {
   /// The `IncrementalBuildState` of the previous build, or null if it was
@@ -66,6 +79,23 @@ abstract class PreviousBuild
     b.triggersChanged = false;
     b.incrementalState.replace(finishedBuildState.incremental);
     b.buildStepPlan.replace(finishedBuildState.buildStepPlan);
+    b.phaseOptionsChangedList.replace(
+      List.filled(
+        finishedBuildState.buildStepPlan.buildPhases.inBuildPhases.length,
+        false,
+      ),
+    );
+    b.postBuildOptionsChangedList.replace(
+      List.filled(
+        finishedBuildState
+            .buildStepPlan
+            .buildPhases
+            .postBuildPhase
+            .builderActions
+            .length,
+        false,
+      ),
+    );
     if (phasedAssetDeps != null) {
       b.phasedAssetDeps.replace(phasedAssetDeps);
     }

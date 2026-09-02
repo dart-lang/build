@@ -7,6 +7,8 @@ import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 
+import '../contracts.dart';
+
 /// Indexes build files by package for fast glob matching and file lookup.
 ///
 /// Used both during the build and by `BuildOutputReader`.
@@ -21,6 +23,8 @@ class BuildFileIndex {
   /// All IDs in `package` that refer to files and match.
   ///
   /// If [glob] is passed, return only IDs for which the glob matches the path.
+  @Pre('package.isNotEmpty')
+  @Post('result.every((id) => id.package == package)')
   Iterable<AssetId> findFiles(String package, {Glob? glob}) {
     _sortedFileIdsByPackage ??= _computeSortedFileIdsByPackage();
     final list = _sortedFileIdsByPackage![package];

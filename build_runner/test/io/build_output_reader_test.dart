@@ -400,7 +400,6 @@ void main() {
         expect(reader.wasSourceConsumedOutsideBuild(generatedId), isFalse);
       },
     );
-
     test(
       'BuildOutputReadResult throws for failed step with stale disk output',
       () async {

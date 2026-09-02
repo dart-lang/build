@@ -15,6 +15,8 @@ import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/build_step_plan.dart';
+import 'package:build_runner/src/build_plan/phase.dart';
+import 'package:build_test/build_test.dart';
 import 'package:build_test/src/internal_test_reader_writer.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:test/test.dart';
@@ -48,7 +50,10 @@ void main() {
 
         b.declaredOutputsByStep.add(stepId, entry.key);
       }
-      b.buildPhases = BuildPhases([]);
+      b.buildPhases = BuildPhases([
+        for (var i = 0; i < b.buildStepsByPhase.length; i++)
+          InBuildPhase(builder: TestBuilder(), key: 'b$i', package: 'a'),
+      ]);
     });
     return BuilderFilesystem(
       buildPackages: buildPackages,
@@ -121,6 +126,7 @@ void main() {
         buildInputs: BuildInputs(
           (b) => b
             ..cleanBuild = false
+            ..sources.add(sourceB)
             ..deletedSources.add(sourceA)
             ..updatedSources.add(sourceB),
         ),

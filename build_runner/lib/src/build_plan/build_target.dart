@@ -7,9 +7,11 @@ import 'package:build_config/build_config.dart' as build_config;
 import 'package:built_collection/built_collection.dart';
 import 'package:glob/glob.dart';
 
+import '../contracts.dart';
 import 'input_matcher.dart';
 
 /// A build target specified in `build.yaml` to apply and/or configure builders.
+@Invariant('package.isNotEmpty', 'key.isNotEmpty')
 class BuildTarget {
   final String package;
   final String key;

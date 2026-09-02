@@ -7,6 +7,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:meta/meta.dart';
 
 import '../../build_plan/build_step_plan.dart';
+import '../../contracts.dart';
 import '../asset_content.dart';
 import 'build_step_id.dart';
 import 'build_step_result.dart';
@@ -20,6 +21,13 @@ import 'post_process_build_step_result.dart';
 /// available.
 ///
 /// Used by post-build consumers and to prepare the next incremental build.
+@Invariant(
+  'contents.keys.every((id) => isFile(id))',
+  'sources.every((id) => !buildStepPlan.isDeclaredOutput(id))',
+  'sources.every((id) => !isActualPostOutput(id))',
+  'actualOutputs.every((id) => buildStepPlan.isDeclaredOutput(id))',
+  'incremental.missingSources.every((id) => !isSource(id))',
+)
 class FinishedBuildState {
   /// Description of the build.
   final BuildStepPlan buildStepPlan;

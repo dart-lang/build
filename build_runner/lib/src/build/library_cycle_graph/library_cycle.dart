@@ -6,11 +6,17 @@ import 'package:build/build.dart' hide Builder;
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 
+import '../../contracts.dart';
+
 part 'library_cycle.g.dart';
 
 /// A set of Dart source assets that mutually depend on each other.
 ///
 /// This means they have to be compiled as a single unit.
+@Invariant(
+  'ids.isNotEmpty',
+  'ids.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)',
+)
 abstract class LibraryCycle
     implements Built<LibraryCycle, LibraryCycleBuilder> {
   BuiltSet<AssetId> get ids;
