@@ -1,4 +1,4 @@
-## 3.5.20-wip
+## 3.5.20
 
 - Clarify terminology: refer to `.dart_tool/build/generated` as the "artifact
   tree", and the normal output location as the "package path".

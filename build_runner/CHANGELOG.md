@@ -1,4 +1,4 @@
-## 2.16.1-wip
+## 2.16.1
 
 - Clarify terminology: refer to `.dart_tool/build/generated` as the "artifact
   tree", and the normal output location as the "package path".

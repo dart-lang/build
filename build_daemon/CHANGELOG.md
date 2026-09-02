@@ -1,4 +1,4 @@
-## 4.1.6-wip
+## 4.1.6
 
 - Add doc comment to `DaemonBuilder.build`.
 
