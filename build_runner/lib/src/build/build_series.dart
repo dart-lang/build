@@ -17,7 +17,6 @@ import '../build_plan/output_strategy.dart';
 import '../commands/watch/asset_change.dart';
 import '../commands/watch/filtered_changes.dart';
 import '../constants.dart';
-import '../io/asset_path_provider.dart';
 import '../io/asset_tracker.dart';
 import '../io/build_output_reader.dart';
 import '../io/create_merged_dir.dart';
@@ -342,8 +341,12 @@ class BuildSeries {
         inArtifactTree: result.buildState!.isInArtifactTree(output),
       );
     }
-    for (final toDelete in _computeDeletes(result, includeArtifactTree: true)) {
-      _expectedDeletes.add(toDelete);
+    final forceToPackagePathsForTesting =
+        _buildPlan.buildSpec.testingOverrides.forceToPackagePathsForTesting;
+    for (final toDelete in _computeDeletes(result)) {
+      if (toDelete.atPackagePath || forceToPackagePathsForTesting) {
+        _expectedDeletes.add(toDelete.id);
+      }
       await _buildPlan.readerWriter.delete(toDelete);
     }
 
@@ -367,24 +370,9 @@ class BuildSeries {
   /// Files that should be deleted: outputs of the previous build that are no
   /// longer declared outputs, plus files on disk that match declared outputs
   /// that were not actually output.
-  Set<AssetId> _computeDeletes(
-    BuildResult result, {
-    required bool includeArtifactTree,
-  }) {
-    final deletes = <AssetId>{};
+  Set<AssetFile> _computeDeletes(BuildResult result) {
+    final deletes = <AssetFile>{};
     final currentState = result.buildState!;
-    final outputRoot = _buildPlan.buildSpec.buildPackages.outputRoot;
-    // Adds a delete result, unless it is in the artifact tree and
-    // `includeArtifactTree` is false.
-    void maybeAddDelete(AssetId id, {required bool inArtifactTree}) {
-      if (inArtifactTree) {
-        if (includeArtifactTree) {
-          deletes.add(AssetPathProvider.inArtifactTree(id, outputRoot));
-        }
-      } else {
-        deletes.add(id);
-      }
-    }
 
     // If set, artifact tree outputs are forced to package paths for simpler
     // test assertions.
@@ -399,14 +387,14 @@ class BuildSeries {
               currentState.isActualPostOutput(file.id)) &&
           outputInArtifactTree == file.inArtifactTree;
       if (!isMatchingActualOutput) {
-        maybeAddDelete(file.id, inArtifactTree: file.inArtifactTree);
+        deletes.add(file);
       }
     }
     for (final id
         in _buildPlan.previousBuild.incompatibleBuildOutputsToDelete) {
       if (!currentState.isActualOutput(id) &&
           !currentState.isActualPostOutput(id)) {
-        deletes.add(id);
+        deletes.add(AssetFile.atPackagePath(id));
       }
     }
 
@@ -418,12 +406,16 @@ class BuildSeries {
             id,
           );
           if (stepId == null) {
-            maybeAddDelete(id, inArtifactTree: stepResult.inArtifactTree);
+            deletes.add(
+              AssetFile(id, inArtifactTree: stepResult.inArtifactTree),
+            );
           } else {
             final stepResultOrNull = currentState.stepResultOrNull(stepId);
             if (stepResultOrNull != null &&
                 !stepResultOrNull.outputs.contains(id)) {
-              maybeAddDelete(id, inArtifactTree: stepResult.inArtifactTree);
+              deletes.add(
+                AssetFile(id, inArtifactTree: stepResult.inArtifactTree),
+              );
             }
           }
         }
@@ -431,9 +423,8 @@ class BuildSeries {
       for (final postProcessResult in previousBuild.actualPostProcessResults) {
         for (final id in postProcessResult.outputs) {
           if (!currentState.isActualPostOutput(id)) {
-            maybeAddDelete(
-              id,
-              inArtifactTree: postProcessResult.inArtifactTree,
+            deletes.add(
+              AssetFile(id, inArtifactTree: postProcessResult.inArtifactTree),
             );
           }
         }
@@ -472,13 +463,11 @@ class BuildSeries {
       }
     }
 
-    for (final toDelete in _computeDeletes(
-      result,
-      includeArtifactTree: false,
-    )) {
-      final exists = await _buildPlan.readerWriter.canRead(toDelete);
+    for (final toDelete in _computeDeletes(result)) {
+      if (toDelete.inArtifactTree) continue;
+      final exists = await _buildPlan.readerWriter.canRead(toDelete.id);
       if (exists) {
-        unexpected.add(toDelete);
+        unexpected.add(toDelete.id);
       }
     }
 
