@@ -1,0 +1,19 @@
+name: example
+publish_to: none
+description: >
+  Just an example, not for publishing.
+homepage: https://github.com/google/built_value.dart
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  built_collection: ^5.0.0
+  built_value: ^8.7.0
+
+dev_dependencies:
+  build_runner: '>=1.0.0 <3.0.0'
+  built_value_generator: ^8.13.0
+  pedantic: ^1.4.0
+  quiver: '>=0.21.0 <4.0.0'
+  test: ^1.0.0
