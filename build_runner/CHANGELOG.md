@@ -4,6 +4,9 @@
   build step.
 - Bug fix: run post-process builder on incremental builds when no prior step
   result exists.
+- Bug fix: preserve analyzer dependency information on unhandled build failures,
+  preventing subsequent incremental builds from missing changes to transitively
+  imported files.
 
 ## 2.16.1
 

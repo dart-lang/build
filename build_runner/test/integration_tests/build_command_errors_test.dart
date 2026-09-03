@@ -102,9 +102,9 @@ builders:
   test_builder:
     import: "package:builder_pkg/builder.dart"
     builder_factories: ["testBuilder"]
-    build_extensions: {".dart": [".unused"]}
+    build_extensions: {".dart": [".g.dart"]}
     auto_apply: all_packages
-    build_to: cache
+    build_to: source
     applies_builders:
       - builder_pkg:test_post_process_builder
 post_process_builders:
@@ -126,10 +126,18 @@ TestPostProcessBuilder testPostProcessBuilder(BuilderOptions options)
 
 class TestBuilder implements Builder {
   @override
-  Map<String, List<String>> get buildExtensions => {'.dart': ['.unused']};
+  Map<String, List<String>> get buildExtensions => {'.dart': ['.g.dart']};
 
   @override
-  Future<void> build(BuildStep buildStep) async {}
+  Future<void> build(BuildStep buildStep) async {
+    final lib = await buildStep.inputLibrary;
+    final imported = lib.firstFragment.libraryImports.first.importedLibrary!;
+    final names = imported.topLevelVariables.map((v) => v.name).toList();
+    await buildStep.writeAsString(
+      buildStep.inputId.changeExtension('.g.dart'),
+      '// \$names',
+    );
+  }
 }
 
 class TestPostProcessBuilder implements PostProcessBuilder {
@@ -205,5 +213,24 @@ class TestPostProcessBuilder implements PostProcessBuilder {
       ),
       'output: ok',
     );
+
+    // An unhandled build failure preserves resolver dependency information so
+    // subsequent incremental builds rebuild on transitive changes.
+    tester.write('root_pkg/lib/a.dart', "import 'b.dart';");
+    tester.write('root_pkg/lib/b.dart', 'const b1 = 1;');
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+    expect(tester.read('root_pkg/lib/a.g.dart'), '// [b1]');
+
+    tester.write('root_pkg/web/a.txt', 'crash');
+    await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+      expectExitCode: 1,
+    );
+
+    tester.write('root_pkg/web/a.txt', 'ok');
+    tester.write('root_pkg/lib/b.dart', 'const b2 = 2;');
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+    expect(tester.read('root_pkg/lib/a.g.dart'), '// [b2]');
   });
 }
