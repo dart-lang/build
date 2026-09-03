@@ -78,6 +78,9 @@ class BuilderDefinition {
   /// Where the outputs of this builder should be written.
   final BuildTo buildTo;
 
+  /// Whether this builder is allowed to use `BuildStep.librarySourceSink`.
+  final bool addsToLibrary;
+
   final TargetBuilderConfigDefaults defaults;
 
   BuilderDefinition({
@@ -91,12 +94,14 @@ class BuilderDefinition {
     Iterable<String>? appliesBuilders,
     bool? isOptional,
     BuildTo? buildTo,
+    bool? addsToLibrary,
     TargetBuilderConfigDefaults? defaults,
   }) : // ignore: deprecated_member_use
        target = target != null
            ? normalizeTargetKeyUsage(target, currentPackage)
            : null,
        autoApply = autoApply ?? AutoApply.none,
+       addsToLibrary = addsToLibrary ?? false,
        requiredInputs = requiredInputs?.toList() ?? const [],
        runsBefore =
            runsBefore
@@ -130,6 +135,12 @@ class BuilderDefinition {
             'the output extensions must not contain the input extension',
       );
     }
+    if (this.addsToLibrary && this.isOptional) {
+      throw ArgumentError(
+        'A builder cannot set both `adds_to_library: true` and '
+        '`is_optional: true`.',
+      );
+    }
   }
 
   factory BuilderDefinition.fromJson(Map json) {
@@ -147,6 +158,7 @@ class BuilderDefinition {
     'runsBefore': runsBefore,
     'isOptional': isOptional,
     'buildTo': buildTo,
+    'addsToLibrary': addsToLibrary,
     'defaults': defaults,
   }.toString();
 }

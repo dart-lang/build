@@ -38,7 +38,10 @@ runs_before       | List<[BuilderKey](#builderkey)>                             
 applies_builders  | List<[BuilderKey](#builderkey)>                             | none
 is_optional       | bool                                                        | false
 build_to          | [BuildTo](#buildto)                                         | `BuildTo.cache`
+adds_to_library   | bool                                                        | false
 defaults          | [TargetBuilderConfigDefaults](#targetbuilderconfigdefaults) | none
+
+Note: `adds_to_library: true` cannot be combined with `is_optional: true`.
 
 ## PostProcessBuilderDefinition
 

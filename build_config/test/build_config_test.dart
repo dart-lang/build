@@ -168,6 +168,31 @@ builders:
       'a:foo_builder',
     ]);
   });
+
+  test('build.yaml can configure adds_to_library', () {
+    final buildConfig = BuildConfig.parse(
+      'example',
+      ['a', 'b'],
+      '''
+builders:
+  example|example:
+    builder_factories: ["createBuilder"]
+    import: package:example/builders.dart
+    build_extensions: {".dart": []}
+    adds_to_library: true
+''',
+    );
+    expectBuilderDefinitions(buildConfig.builderDefinitions, {
+      'example:example': createBuilderDefinition(
+        'example',
+        key: 'example:example',
+        builderFactories: ['createBuilder'],
+        import: 'package:example/builders.dart',
+        buildExtensions: {'.dart': []},
+        addsToLibrary: true,
+      ),
+    });
+  });
 }
 
 String buildYaml = r'''
@@ -320,6 +345,11 @@ Matcher _matchesBuilderDefinition(BuilderDefinition definition) =>
         .having((d) => d.autoApply, 'autoApply', definition.autoApply)
         .having((d) => d.isOptional, 'isOptional', definition.isOptional)
         .having((d) => d.buildTo, 'buildTo', definition.buildTo)
+        .having(
+          (d) => d.addsToLibrary,
+          'addsToLibrary',
+          definition.addsToLibrary,
+        )
         .having((d) => d.import, 'import', definition.import)
         .having((d) => d.key, 'key', definition.key)
         .having((d) => d.package, 'package', definition.package);
@@ -456,6 +486,7 @@ BuilderDefinition createBuilderDefinition(
   AutoApply? autoApply,
   bool? isOptional,
   BuildTo? buildTo,
+  bool? addsToLibrary,
   required String import,
   required Map<String, List<String>> buildExtensions,
   String? key,
@@ -471,6 +502,7 @@ BuilderDefinition createBuilderDefinition(
         autoApply: autoApply,
         isOptional: isOptional,
         buildTo: buildTo,
+        addsToLibrary: addsToLibrary,
         import: import,
         buildExtensions: buildExtensions,
         requiredInputs: requiredInputs,

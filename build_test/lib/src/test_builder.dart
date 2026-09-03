@@ -624,6 +624,9 @@ class _ApplyBuilderDefinitionToPackages implements BuilderDefinition {
   bool get outputsToArtifactTree => delegate.outputsToArtifactTree;
 
   @override
+  bool get addsToLibrary => delegate.addsToLibrary;
+
+  @override
   bool get isOptional => delegate.isOptional;
 
   @override

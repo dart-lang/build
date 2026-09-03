@@ -50,6 +50,22 @@ void main() {
       expect(buildPhases1.digest, isNot(buildPhases2.digest));
     });
 
+    test('digest changes on addsToLibrary change', () {
+      final buildPhases1 = BuildPhases([
+        InBuildPhase(builder: TestBuilder(), key: 'TestBuilder', package: 'a'),
+      ]);
+      final buildPhases2 = BuildPhases([
+        InBuildPhase(
+          builder: TestBuilder(),
+          key: 'TestBuilder',
+          package: 'a',
+          addsToLibrary: true,
+        ),
+      ]);
+
+      expect(buildPhases1.digest, isNot(buildPhases2.digest));
+    });
+
     test('digest does not change on builder change', () {
       // Changes to builder code is checked via changes to the build script and
       // deps, not by `BuildPhases`.
