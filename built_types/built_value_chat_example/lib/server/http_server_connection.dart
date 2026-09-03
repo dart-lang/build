@@ -4,7 +4,7 @@
 
 import 'dart:async';
 
-import 'package:chat_example/server/server_connection.dart';
+import 'package:built_value_chat_example/server/server_connection.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 /// [ServerConnection] using a web socket.

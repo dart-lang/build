@@ -4,7 +4,7 @@
 // @dart=2.12
 
 import 'package:built_collection/src/internal/hash.dart';
-import 'package:end_to_end_test/collections.dart';
+import 'package:_built_value_end_to_end_test/collections.dart';
 import 'package:test/test.dart';
 
 void main() {

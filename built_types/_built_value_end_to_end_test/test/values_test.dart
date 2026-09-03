@@ -5,9 +5,9 @@
 
 import 'package:built_collection/src/internal/hash.dart';
 import 'package:built_value/built_value.dart';
-import 'package:end_to_end_test/enums.dart';
-import 'package:end_to_end_test/errors_matchers.dart';
-import 'package:end_to_end_test/values.dart';
+import 'package:_built_value_end_to_end_test/enums.dart';
+import 'package:_built_value_end_to_end_test/errors_matchers.dart';
+import 'package:_built_value_end_to_end_test/values.dart';
 import 'package:test/test.dart';
 
 void main() {

@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 // @dart=2.12
 
-import 'package:end_to_end_test/enums.dart';
+import 'package:_built_value_end_to_end_test/enums.dart';
 import 'package:test/test.dart';
 
 void main() {

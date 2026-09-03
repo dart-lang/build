@@ -5,7 +5,7 @@
 import 'dart:convert';
 import 'dart:js_interop';
 
-import 'package:chat_example/client/display.dart';
+import 'package:built_value_chat_example/client/display.dart';
 import 'package:web/web.dart';
 
 /// [Display] using `dart:html`.

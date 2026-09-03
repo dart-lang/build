@@ -4,12 +4,12 @@
 
 import 'dart:async';
 
-import 'package:chat_example/client/client.dart';
-import 'package:chat_example/server/server.dart';
-import 'package:chat_example/testing/fake_client_connection.dart';
-import 'package:chat_example/testing/fake_display.dart';
-import 'package:chat_example/testing/fake_server_connection.dart';
-import 'package:chat_example/testing/test_user.dart';
+import 'package:built_value_chat_example/client/client.dart';
+import 'package:built_value_chat_example/server/server.dart';
+import 'package:built_value_chat_example/testing/fake_client_connection.dart';
+import 'package:built_value_chat_example/testing/fake_display.dart';
+import 'package:built_value_chat_example/testing/fake_server_connection.dart';
+import 'package:built_value_chat_example/testing/test_user.dart';
 
 /// Environment for testing server and client logic together.
 ///

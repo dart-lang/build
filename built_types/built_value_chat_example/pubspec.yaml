@@ -1,12 +1,13 @@
-name: chat_example
+name: built_value_chat_example
 version: 8.13.0
 publish_to: none
 description: >
   Just an example, not for publishing.
 homepage: https://github.com/google/built_value.dart
+resolution: workspace
 
 environment:
-  sdk: '>=3.4.0 <4.0.0'
+  sdk: '>=3.5.0 <4.0.0'
 
 dependencies:
   built_collection: ^5.0.0

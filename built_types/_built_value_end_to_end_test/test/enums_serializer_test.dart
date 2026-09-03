@@ -5,8 +5,8 @@
 
 import 'dart:convert';
 
-import 'package:end_to_end_test/enums.dart';
-import 'package:end_to_end_test/serializers.dart';
+import 'package:_built_value_end_to_end_test/enums.dart';
+import 'package:_built_value_end_to_end_test/serializers.dart';
 import 'package:test/test.dart';
 
 void main() {

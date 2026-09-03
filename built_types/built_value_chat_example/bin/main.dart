@@ -2,9 +2,9 @@
 // All rights reserved. Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-import 'package:chat_example/server/http_server_connection.dart';
-import 'package:chat_example/server/resource_server.dart';
-import 'package:chat_example/server/server.dart';
+import 'package:built_value_chat_example/server/http_server_connection.dart';
+import 'package:built_value_chat_example/server/resource_server.dart';
+import 'package:built_value_chat_example/server/server.dart';
 
 void main() {
   final server = Server();

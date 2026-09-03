@@ -5,10 +5,10 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:chat_example/client/client_connection.dart';
-import 'package:chat_example/client/display.dart';
-import 'package:chat_example/data_model/data_model.dart';
-import 'package:chat_example/data_model/serializers.dart';
+import 'package:built_value_chat_example/client/client_connection.dart';
+import 'package:built_value_chat_example/client/display.dart';
+import 'package:built_value_chat_example/data_model/data_model.dart';
+import 'package:built_value_chat_example/data_model/serializers.dart';
 
 typedef CommandRunner = void Function(String command);
 

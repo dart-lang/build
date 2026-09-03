@@ -7,10 +7,10 @@ import 'dart:convert';
 
 import 'package:built_value/serializer.dart';
 import 'package:built_value/standard_json_plugin.dart';
-import 'package:end_to_end_test/enums.dart';
-import 'package:end_to_end_test/errors_matchers.dart';
-import 'package:end_to_end_test/serializers.dart';
-import 'package:end_to_end_test/values.dart';
+import 'package:_built_value_end_to_end_test/enums.dart';
+import 'package:_built_value_end_to_end_test/errors_matchers.dart';
+import 'package:_built_value_end_to_end_test/serializers.dart';
+import 'package:_built_value_end_to_end_test/values.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:test/test.dart';
 

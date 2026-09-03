@@ -4,7 +4,7 @@
 
 import 'dart:async';
 
-import 'package:chat_example/testing/fake_display.dart';
+import 'package:built_value_chat_example/testing/fake_display.dart';
 import 'package:test/test.dart';
 
 /// A test user connected to the fake environment.

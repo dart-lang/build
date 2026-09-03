@@ -1,9 +1,10 @@
-name: end_to_end_test
+name: _built_value_end_to_end_test
 version: 8.13.0
 publish_to: none
 description: >
   Tests, not for publishing.
 homepage: https://github.com/google/built_value.dart
+resolution: workspace
 
 environment:
   sdk: '>=3.13.0 <4.0.0'

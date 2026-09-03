@@ -2,6 +2,6 @@
 // All rights reserved. Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-import 'package:benchmark/benchmark.dart';
+import 'package:_built_value_benchmark/benchmark.dart';
 
 void main() => benchmark();

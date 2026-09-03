@@ -6,7 +6,7 @@ library serializers;
 
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/serializer.dart';
-import 'package:chat_example/data_model/data_model.dart';
+import 'package:built_value_chat_example/data_model/data_model.dart';
 
 part 'serializers.g.dart';
 

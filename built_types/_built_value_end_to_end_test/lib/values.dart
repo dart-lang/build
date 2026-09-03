@@ -5,8 +5,8 @@
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
-import 'package:end_to_end_test/enums.dart' as using_import_as;
-import 'package:end_to_end_test/mixins_src.dart';
+import 'package:_built_value_end_to_end_test/enums.dart' as using_import_as;
+import 'package:_built_value_end_to_end_test/mixins_src.dart';
 import 'package:fixnum/fixnum.dart';
 
 part 'values.g.dart';

@@ -5,7 +5,7 @@
 
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
-import 'package:end_to_end_test/mixins_src.dart';
+import 'package:_built_value_end_to_end_test/mixins_src.dart';
 
 part 'mixins.g.dart';
 

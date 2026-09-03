@@ -19,5 +19,12 @@ workspace:
 - builder_pkgs/build_web_compilers/test/fixtures/d
 - builder_pkgs/mockito
 - builder_pkgs/scratch_space
+- built_types/_built_value_benchmark
+- built_types/_built_value_end_to_end_test
+- built_types/built_value
+- built_types/built_value_chat_example
+- built_types/built_value_example
+- built_types/built_value_generator
+- built_types/built_value_test
 - example
 - tool

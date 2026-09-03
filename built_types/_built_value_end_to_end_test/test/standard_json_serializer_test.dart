@@ -8,9 +8,9 @@ import 'dart:convert';
 import 'package:built_value/json_object.dart';
 import 'package:built_value/serializer.dart';
 import 'package:built_value/standard_json_plugin.dart';
-import 'package:end_to_end_test/polymorphism.dart';
-import 'package:end_to_end_test/serializers.dart';
-import 'package:end_to_end_test/standard_json.dart';
+import 'package:_built_value_end_to_end_test/polymorphism.dart';
+import 'package:_built_value_end_to_end_test/serializers.dart';
+import 'package:_built_value_end_to_end_test/standard_json.dart';
 import 'package:test/test.dart';
 
 void main() {

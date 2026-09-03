@@ -6,9 +6,9 @@
 import 'dart:convert';
 
 import 'package:built_collection/built_collection.dart';
-import 'package:end_to_end_test/imported_values.dart';
-import 'package:end_to_end_test/serializers.dart';
-import 'package:end_to_end_test/values.dart';
+import 'package:_built_value_end_to_end_test/imported_values.dart';
+import 'package:_built_value_end_to_end_test/serializers.dart';
+import 'package:_built_value_end_to_end_test/values.dart';
 import 'package:test/test.dart';
 
 void main() {

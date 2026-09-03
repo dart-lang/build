@@ -1,8 +1,8 @@
 import 'package:built_value/standard_json_plugin.dart';
-import 'package:example/generics.dart';
-import 'package:example/polymorphism.dart';
-import 'package:example/serializers.dart';
-import 'package:example/values.dart';
+import 'package:built_value_example/generics.dart';
+import 'package:built_value_example/polymorphism.dart';
+import 'package:built_value_example/serializers.dart';
+import 'package:built_value_example/values.dart';
 
 /// Simple usage examples for built_value.
 void example() {
