@@ -118,6 +118,7 @@ class BuildStepImpl implements BuildStep {
       track: track,
     );
     if (!isReadable) return false;
+    if (outputs.containsKey(id)) return true;
 
     // Read the file so it's in memory; if that fails the file was deleted
     // during the build and the build is aborted.
