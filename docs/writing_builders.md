@@ -15,8 +15,7 @@ builder APIs and detail on the upcoming *Add to Library* feature.
 -   [Upcoming build runner feature: Add to Library](#upcoming-build-runner-feature-add-to-library)
     -   [How it works](#how-it-works)
     -   [Scoped imports](#scoped-imports)
-    -   [Simpler](#simpler)
-    -   [Faster](#faster)
+    -   [Simpler output](#simpler-output)
     -   [More powerful](#more-powerful)
     -   [Builder configuration and implementation](#builder-configuration-and-implementation)
 
