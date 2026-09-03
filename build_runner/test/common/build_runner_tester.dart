@@ -25,14 +25,26 @@ import 'fixture_packages.dart';
 class BuildRunnerTester {
   final Pubspecs pubspecs;
   final Directory tempDirectory;
+  final bool bootstrap;
+  late final String testingEntrypoint = p.join(
+    pubspecs.packageConfig['build_runner']!.root.toFilePath(),
+    'testing',
+    'bin',
+    'build_runner.dill',
+  );
 
-  BuildRunnerTester(Pubspecs pubspecs)
+  BuildRunnerTester(Pubspecs pubspecs, {bool bootstrap = false})
     : this._(
         pubspecs,
         Directory.systemTemp.createTempSync('BuildRunnerTester-'),
+        bootstrap: bootstrap,
       );
 
-  BuildRunnerTester._(this.pubspecs, this.tempDirectory) {
+  BuildRunnerTester._(
+    this.pubspecs,
+    this.tempDirectory, {
+    this.bootstrap = false,
+  }) {
     addTearDown(() async {
       // Temp cleanup can fail on Windows if some process is slow to close,
       // retry for 5s.
@@ -56,7 +68,7 @@ class BuildRunnerTester {
       'BuildRunnerTester-copy-',
     );
     copyPathSync(tempDirectory.path, newTemp.path);
-    return BuildRunnerTester._(pubspecs, newTemp);
+    return BuildRunnerTester._(pubspecs, newTemp, bootstrap: bootstrap);
   }
 
   /// Writes a Dart package to the workspace.
@@ -213,6 +225,56 @@ class BuildRunnerTester {
     }
   }
 
+  /// Ensures package config exists for [directory], running pub get if needed.
+  Future<void> _ensurePackageConfig(String directory) async {
+    final dirPath = p.join(tempDirectory.path, directory);
+    String? workspaceRoot;
+    var current = dirPath;
+    while (current.startsWith(tempDirectory.path)) {
+      final pubspec = File(p.join(current, 'pubspec.yaml'));
+      if (pubspec.existsSync()) {
+        final content = pubspec.readAsStringSync();
+        if (content.contains('workspace:') &&
+            !content.contains('resolution: workspace')) {
+          workspaceRoot = current;
+          break;
+        }
+      }
+      final parent = p.dirname(current);
+      if (parent == current) break;
+      current = parent;
+    }
+
+    final targetDir = workspaceRoot ?? dirPath;
+    final packageConfig = File(
+      p.join(targetDir, '.dart_tool', 'package_config.json'),
+    );
+    var needsPubGet = !packageConfig.existsSync();
+    if (!needsPubGet) {
+      final configMtime = packageConfig.lastModifiedSync();
+      for (final entity in Directory(targetDir).listSync(recursive: true)) {
+        if (entity is File && p.basename(entity.path) == 'pubspec.yaml') {
+          if (entity.lastModifiedSync().isAfter(configMtime)) {
+            needsPubGet = true;
+            break;
+          }
+        }
+      }
+    }
+    if (needsPubGet) {
+      final result = await Process.run('dart', [
+        'pub',
+        'get',
+        '--offline',
+      ], workingDirectory: targetDir);
+      if (result.exitCode != 0) {
+        throw StateError(
+          'pub get failed in $targetDir:\n${result.stderr}\n${result.stdout}',
+        );
+      }
+    }
+  }
+
   /// Runs [commandLine] in [directory].
   ///
   /// By default, expects exit code 0 and fails the test if any other exit code
@@ -224,8 +286,20 @@ class BuildRunnerTester {
     String commandLine, {
     int expectExitCode = 0,
     Map<String, String>? environment,
+    bool? bootstrap,
   }) async {
-    final args = commandLine.split(' ');
+    await _ensurePackageConfig(directory);
+    final useBootstrap = bootstrap ?? this.bootstrap;
+    final effectiveCommandLine =
+        !useBootstrap &&
+            (commandLine == 'dart run build_runner' ||
+                commandLine.startsWith('dart run build_runner '))
+        ? commandLine.replaceFirst(
+            'dart run build_runner',
+            'dart $testingEntrypoint',
+          )
+        : commandLine;
+    final args = effectiveCommandLine.split(' ');
     final command = args.removeAt(0);
     final result = await Process.run(
       command,
@@ -246,8 +320,23 @@ ${result.stdout}${result.stderr}===
   /// Starts [commandLine] in [directory].
   ///
   /// Returns a [BuildRunnerProcess] which can be used to interact with it.
-  Future<BuildRunnerProcess> start(String directory, String commandLine) async {
-    final args = commandLine.split(' ');
+  Future<BuildRunnerProcess> start(
+    String directory,
+    String commandLine, {
+    bool? bootstrap,
+  }) async {
+    await _ensurePackageConfig(directory);
+    final useBootstrap = bootstrap ?? this.bootstrap;
+    final effectiveCommandLine =
+        !useBootstrap &&
+            (commandLine == 'dart run build_runner' ||
+                commandLine.startsWith('dart run build_runner '))
+        ? commandLine.replaceFirst(
+            'dart run build_runner',
+            'dart $testingEntrypoint',
+          )
+        : commandLine;
+    final args = effectiveCommandLine.split(' ');
     final command = args.removeAt(0);
     final process = await Process.start(
       command,
@@ -493,6 +582,85 @@ class Pubspecs {
 
   static Future<Pubspecs> _load() async {
     final config = await loadPackageConfigUri((await Isolate.packageConfig)!);
+    final buildRunnerDir = config['build_runner']!.root.toFilePath();
+    final dillFile = File(
+      p.join(buildRunnerDir, 'testing', 'bin', 'build_runner.dill'),
+    );
+    final scriptFile = File(
+      p.join(buildRunnerDir, 'testing', 'bin', 'build_runner.dart'),
+    );
+    var newestSourceTime = DateTime.fromMillisecondsSinceEpoch(0);
+    for (final dirName in ['lib', 'testing']) {
+      final dir = Directory(p.join(buildRunnerDir, dirName));
+      if (dir.existsSync()) {
+        for (final entity in dir.listSync(recursive: true)) {
+          if (entity is File && entity.path.endsWith('.dart')) {
+            final modified = entity.lastModifiedSync();
+            if (modified.isAfter(newestSourceTime)) {
+              newestSourceTime = modified;
+            }
+          }
+        }
+      }
+    }
+    final lockDir = Directory(
+      p.join(buildRunnerDir, 'testing', 'bin', '.compile.lock'),
+    );
+    var acquired = false;
+    while (!acquired) {
+      try {
+        lockDir.createSync();
+        acquired = true;
+      } on FileSystemException {
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        if (dillFile.existsSync() &&
+            !dillFile.lastModifiedSync().isBefore(newestSourceTime)) {
+          break;
+        }
+      }
+    }
+    if (acquired) {
+      try {
+        final needsCompile =
+            !dillFile.existsSync() ||
+            dillFile.lastModifiedSync().isBefore(newestSourceTime);
+        if (needsCompile) {
+          final tempDill = p.join(
+            Directory.systemTemp.path,
+            'build_runner_${pid}_'
+            '${DateTime.now().microsecondsSinceEpoch}.dill',
+          );
+          final result = await Process.run('dart', [
+            'compile',
+            'kernel',
+            scriptFile.path,
+            '-o',
+            tempDill,
+          ], workingDirectory: buildRunnerDir);
+          if (result.exitCode == 0) {
+            final tempFile = File(tempDill);
+            try {
+              tempFile.renameSync(dillFile.path);
+            } on FileSystemException {
+              tempFile.copySync(dillFile.path);
+              tempFile.deleteSync();
+            }
+          } else {
+            throw StateError(
+              'Failed to compile testing entrypoint:\n'
+              '${result.stderr}\n${result.stdout}',
+            );
+          }
+        }
+      } finally {
+        try {
+          lockDir.deleteSync();
+        } on FileSystemException {
+          // Ignore if already cleaned up.
+        }
+      }
+    }
+
     final copiedPackagesDir = Directory.systemTemp.createTempSync(
       'BuildRunnerTester-packages-',
     );
@@ -525,7 +693,7 @@ class Pubspecs {
   }
 
   static void _copyPackage(String source, String dest) {
-    for (final name in ['lib', 'bin']) {
+    for (final name in ['lib', 'bin', 'testing']) {
       final entityPath = p.join(source, name);
       if (FileSystemEntity.isDirectorySync(entityPath)) {
         copyPathSync(entityPath, p.join(dest, name));
@@ -534,7 +702,14 @@ class Pubspecs {
     for (final name in ['pubspec.yaml', 'build.yaml']) {
       final entityPath = p.join(source, name);
       if (FileSystemEntity.isFileSync(entityPath)) {
-        File(entityPath).copySync(p.join(dest, name));
+        var content = File(entityPath).readAsStringSync();
+        if (name == 'pubspec.yaml') {
+          content = content.replaceAll(
+            RegExp(r'resolution:\s*workspace\n?'),
+            '',
+          );
+        }
+        File(p.join(dest, name)).writeAsStringSync(content);
       }
     }
   }

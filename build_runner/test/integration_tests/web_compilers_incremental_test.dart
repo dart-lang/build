@@ -16,7 +16,7 @@ void main() async {
   test('DDC compiled with the Frontend Server '
       'can recompile incrementally after valid edits', () async {
     final pubspecs = await Pubspecs.load();
-    final tester = BuildRunnerTester(pubspecs);
+    final tester = BuildRunnerTester(pubspecs, bootstrap: true);
 
     tester.writeFixturePackage(FixturePackages.copyBuilder());
     tester.writePackage(
@@ -117,7 +117,7 @@ void main() async {
   test('DDC compiled with the Frontend Server '
       'can recompile incrementally after invalid edits', () async {
     final pubspecs = await Pubspecs.load();
-    final tester = BuildRunnerTester(pubspecs);
+    final tester = BuildRunnerTester(pubspecs, bootstrap: true);
 
     tester.writeFixturePackage(FixturePackages.copyBuilder());
     tester.writePackage(

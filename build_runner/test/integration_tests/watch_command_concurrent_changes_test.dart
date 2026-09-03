@@ -13,7 +13,7 @@ import '../common/common.dart';
 void main() async {
   test('watch command concurrent changes', () async {
     final pubspecs = await Pubspecs.load();
-    final tester = BuildRunnerTester(pubspecs);
+    final tester = BuildRunnerTester(pubspecs, bootstrap: true);
 
     tester.writeFixturePackage(FixturePackages.copyBuilder());
     // Builder with a one second delay before read.
