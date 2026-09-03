@@ -1,3 +1,8 @@
+## 4.0.12-wip
+
+- Bug fix: handle `Resource` disposal failure gracefully: log an error instead
+  of letting the exception escape.
+
 ## 4.0.11
 
 - Clarify terminology: refer to `.dart_tool/build/generated` as the "artifact
