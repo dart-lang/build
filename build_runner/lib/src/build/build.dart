@@ -970,8 +970,10 @@ class Build {
     }
 
     final stepResult = previousBuild.postProcessBuildStepResultFor(buildStepId);
-    if (stepResult != null &&
-        stepResult.outputs.any(buildInputs.invalidOutputs.contains)) {
+    if (stepResult == null) {
+      return true;
+    }
+    if (stepResult.outputs.any(buildInputs.invalidOutputs.contains)) {
       return true;
     }
 

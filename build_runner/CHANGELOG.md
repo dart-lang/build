@@ -2,6 +2,8 @@
 
 - Bug fix: allow calling `BuildStep.canRead` on outputs written by the same
   build step.
+- Bug fix: run post-process builder on incremental builds when no prior step
+  result exists.
 
 ## 2.16.1
 

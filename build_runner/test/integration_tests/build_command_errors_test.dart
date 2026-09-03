@@ -141,11 +141,17 @@ class TestPostProcessBuilder implements PostProcessBuilder {
 
   @override
   Future<void> build(PostProcessBuildStep buildStep) async {
-    log.warning('post process builder ran');
-    log.severe('post process builder failed');
+    final content = await buildStep.readInputAsString();
+    if (content == 'crash') {
+      throw StateError('post process builder crashed');
+    }
+    if (content != 'ok') {
+      log.warning('post process builder ran');
+      log.severe('post process builder failed');
+    }
     await buildStep.writeAsString(
       buildStep.inputId.addExtension(outputExtension),
-      'failed output',
+      'output: \$content',
     );
   }
 }
@@ -178,5 +184,26 @@ class TestPostProcessBuilder implements PostProcessBuilder {
     );
     expect(output, isNot(contains('post process builder ran')));
     expect(output, contains('post process builder failed'));
+
+    // An unhandled error crashes the post process phase, omitting later inputs.
+    // On an incremental build after fixing the crash, the omitted input runs.
+    tester.write('root_pkg/web/a.txt', 'crash');
+    tester.write('root_pkg/web/b.txt', 'ok');
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+      expectExitCode: 1,
+    );
+    expect(output, contains('post process builder crashed'));
+
+    // Fix a.txt. b.txt was omitted in the previous build and must run now.
+    tester.write('root_pkg/web/a.txt', 'ok');
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+    expect(
+      tester.read(
+        'root_pkg/.dart_tool/build/generated/root_pkg/web/b.txt.post',
+      ),
+      'output: ok',
+    );
   });
 }
