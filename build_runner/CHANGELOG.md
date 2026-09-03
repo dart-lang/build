@@ -1,5 +1,6 @@
 ## 2.16.2-wip
 
+- Require `build` 4.1.0.
 - Require `build_config` 1.4.0.
 - Bug fix: allow calling `BuildStep.canRead` on outputs written by the same
   build step.
